@@ -102,6 +102,8 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`请先选择一个朋友圈媒体文件。`);
     case "MOMENTS_INVALID_MEDIA_TYPE":
       return translateRuntimeMessage(msg`朋友圈当前仅支持图片或视频。`);
+    case "MOMENTS_MEDIA_URL_INVALID":
+      return translateRuntimeMessage(msg`朋友圈媒体必须来自上传接口。`);
     case "MOMENTS_MEDIA_NOT_FOUND":
       return translateRuntimeMessage(msg`朋友圈媒体不存在。`);
     case "MOMENTS_NOT_FOUND":
@@ -110,18 +112,42 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`需先加为好友才能互动。`);
     case "MOMENTS_EMPTY":
       return translateRuntimeMessage(msg`朋友圈内容和媒体不能同时为空。`);
+    case "MOMENTS_TEXT_TOO_LONG":
+      // 走查 R1：backend 抛 MOMENTS_TEXT_TOO_LONG（带 max=2000 params），但之前
+      // 此 case 缺失 → 走 default 返回 null → 前端只能 fallback 到 server 的
+      // legacyMessage「朋友圈正文最多 2000 字。」。zh-CN 用户看着没毛病，但
+      // en-US / ja-JP / ko-KR locale 等于直接糊一段中文上去。和其它 MOMENTS_*
+      // 错误风格对齐。
+      return translateRuntimeMessage(
+        msg`朋友圈正文最多 ${String(params.max ?? 2000)} 字。`,
+      );
     case "MOMENTS_TEXT_NO_MEDIA":
       return translateRuntimeMessage(msg`纯文本朋友圈不能附带图片或视频。`);
     case "MOMENTS_VIDEO_SINGLE":
       return translateRuntimeMessage(msg`视频朋友圈必须且只能包含 1 条视频。`);
     case "MOMENTS_VIDEO_TOO_LONG":
       return translateRuntimeMessage(msg`朋友圈视频时长不能超过 5 分钟。`);
+    case "MOMENTS_AUDIO_SINGLE":
+      // 走查 R1：和 MOMENTS_TEXT_TOO_LONG 同一类 i18n 漏接——contracts 里
+      // 声明了，backend 抛了，但前端 case 缺失，非 zh-CN locale 拿到的是
+      // backend legacyMessage 的中文。补上后所有 locale 都走 lingui 字典翻译。
+      return translateRuntimeMessage(msg`音乐朋友圈必须且只能包含 1 条音频。`);
     case "MOMENTS_IMAGES_MAX":
       return translateRuntimeMessage(
         msg`图片朋友圈最多支持 ${String(params.max ?? 9)} 张图片。`,
       );
     case "MOMENTS_IMAGES_TYPE_ONLY":
       return translateRuntimeMessage(msg`图片朋友圈当前只支持图片资源。`);
+    case "MOMENTS_COMMENT_EMPTY":
+      return translateRuntimeMessage(msg`评论内容不能为空。`);
+    case "MOMENTS_COMMENT_TOO_LONG":
+      return translateRuntimeMessage(
+        msg`评论最多 ${String(params.max ?? 500)} 字。`,
+      );
+    case "MOMENTS_COMMENT_REPLY_TARGET_INVALID":
+      return translateRuntimeMessage(msg`被回复的评论不存在或已被删除。`);
+    case "MOMENTS_DELETE_FORBIDDEN":
+      return translateRuntimeMessage(msg`只能删除自己发布的朋友圈。`);
     case "REMINDER_LIMIT_INVALID":
       return translateRuntimeMessage(msg`limit 必须是正整数。`);
     case "REMINDER_ONLY_ACTIVE_COMPLETE":
@@ -186,6 +212,16 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`当前摇一摇结果无法创建对应角色。`);
     case "SHAKE_NO_DIRECTIONS":
       return translateRuntimeMessage(msg`没有可用的摇一摇方向。`);
+    case "SHAKE_AI_PLANNING_FAILED":
+      return translateRuntimeMessage(msg`摇一摇生成失败，请稍后重试。`);
+    case "SHAKE_AI_GENERATION_FAILED":
+      return translateRuntimeMessage(msg`摇一摇生成失败，请稍后重试。`);
+    case "SOCIAL_SCENE_INVALID":
+      return translateRuntimeMessage(msg`请选择一个场景。`);
+    case "SOCIAL_SCENE_COOLDOWN":
+      return translateRuntimeMessage(msg`别走太急，过一会再去下一个地方。`);
+    case "SOCIAL_SCENE_DAILY_LIMIT":
+      return translateRuntimeMessage(msg`今天的场景相遇次数已经用完，明天再试试。`);
     case "AUTH_USERNAME_PASSWORD_REQUIRED":
       return translateRuntimeMessage(msg`用户名与密码不能为空。`);
     case "AUTH_USERNAME_TAKEN":
@@ -484,6 +520,43 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`默认 self 角色尚未落库。`);
     case "WORLD_OWNER_NOT_FOUND":
       return translateRuntimeMessage(msg`世界主人不存在。`);
+    case "WORLD_OWNER_NAME_TOO_SHORT": {
+      const minLength =
+        typeof params.minLength === "number" ? params.minLength : 2;
+      return translateRuntimeMessage(
+        msg`世界主人昵称至少 ${minLength} 个字。`,
+      );
+    }
+    case "WORLD_OWNER_NAME_TOO_LONG": {
+      const maxLength =
+        typeof params.maxLength === "number" ? params.maxLength : 64;
+      return translateRuntimeMessage(
+        msg`世界主人昵称最多 ${maxLength} 个字符。`,
+      );
+    }
+    case "WORLD_OWNER_SIGNATURE_TOO_LONG": {
+      const maxLength =
+        typeof params.maxLength === "number" ? params.maxLength : 300;
+      return translateRuntimeMessage(
+        msg`个性签名最多 ${maxLength} 个字符。`,
+      );
+    }
+    case "WORLD_OWNER_AVATAR_TOO_LARGE":
+      return translateRuntimeMessage(
+        msg`头像图片超过 2MB 上限，请压缩后再试。`,
+      );
+    case "WORLD_OWNER_AVATAR_UNSAFE_URL":
+      return translateRuntimeMessage(
+        msg`头像链接必须是 http/https 图片地址，或 data:image/ 开头的图片数据。`,
+      );
+    case "WORLD_OWNER_NAME_INVALID":
+      return translateRuntimeMessage(msg`世界主人昵称必须是字符串。`);
+    case "WORLD_OWNER_SIGNATURE_INVALID":
+      return translateRuntimeMessage(msg`个性签名必须是字符串。`);
+    case "WORLD_OWNER_AVATAR_INVALID":
+      return translateRuntimeMessage(
+        msg`头像必须是字符串（URL 或 data:image/ 数据）。`,
+      );
     case "OFFICIAL_ACCOUNT_FOLLOW_NOT_FOUND":
       return translateRuntimeMessage(msg`公众号关注关系不存在。`);
     case "OFFICIAL_ACCOUNT_PUSH_NOT_FOUND":
@@ -510,8 +583,18 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`视频号作者不存在。`);
     case "FEED_COMMENT_NOT_FOUND":
       return translateRuntimeMessage(msg`评论不存在。`);
+    case "FEED_COMMENT_EMPTY":
+      return translateRuntimeMessage(msg`评论内容不能为空。`);
+    case "FEED_COMMENT_TOO_LONG":
+      return translateRuntimeMessage(
+        msg`评论最多 ${String(params.max ?? 500)} 字。`,
+      );
     case "FEED_EMPTY":
       return translateRuntimeMessage(msg`动态内容和媒体不能同时为空。`);
+    case "FEED_TEXT_TOO_LONG":
+      return translateRuntimeMessage(
+        msg`广场动态正文最多 ${String(params.max ?? 2000)} 字。`,
+      );
     case "FEED_TEXT_NO_MEDIA":
       return translateRuntimeMessage(msg`纯文本动态不能附带图片或视频。`);
     case "FEED_VIDEO_SINGLE":

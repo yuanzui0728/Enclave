@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import type {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
+  MinimaxHourlyTelemetryResponse,
   TelemetryApiHealthResponse,
   TelemetryAppId,
   TelemetryErrorsResponse,
@@ -10,11 +11,23 @@ import type {
   TelemetryTimeseriesResponse,
   TelemetryTopEventsResponse,
   TelemetryTopWorldsResponse,
+  TelemetryTopWorldsSortDir,
+  TelemetryTopWorldsSortKey,
   TelemetryWorldRow,
 } from "@yinjie/contracts";
-import { Transform } from "class-transformer";
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import {
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from "class-validator";
 import { AdminGuard } from "../auth/admin.guard";
+import { MinimaxUsageService } from "./minimax-usage.service";
 import { TelemetryService } from "./telemetry.service";
 
 const RANGE_VALUES = ["24h", "7d", "30d"] as const;
@@ -63,10 +76,45 @@ class FunnelQueryDto extends RangeQueryDto {
   steps: string;
 }
 
+const TOP_WORLDS_SORT_BY_VALUES = [
+  "eventCount",
+  "uniqueUsers",
+  "errorCount",
+] as const;
+const TOP_WORLDS_SORT_DIR_VALUES = ["asc", "desc"] as const;
+
+class TopWorldsQueryDto extends RangeQueryDto {
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  pageSize?: number;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(TOP_WORLDS_SORT_BY_VALUES, { message: "sortBy 不合法。" })
+  sortBy?: TelemetryTopWorldsSortKey;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(TOP_WORLDS_SORT_DIR_VALUES, { message: "sortDir 不合法。" })
+  sortDir?: TelemetryTopWorldsSortDir;
+}
+
 @Controller("admin/cloud/telemetry")
 @UseGuards(AdminGuard)
 export class TelemetryAdminController {
-  constructor(private readonly telemetry: TelemetryService) {}
+  constructor(
+    private readonly telemetry: TelemetryService,
+    private readonly minimaxUsage: MinimaxUsageService,
+  ) {}
 
   @Get("overview")
   overview(@Query() q: RangeQueryDto): Promise<TelemetryOverviewResponse> {
@@ -131,16 +179,29 @@ export class TelemetryAdminController {
   }
 
   @Get("top-worlds")
-  topWorlds(@Query() q: RangeQueryDto): Promise<TelemetryTopWorldsResponse> {
-    return this.telemetry.topWorlds(
-      (q.range ?? "7d") as TelemetryRange,
-    );
+  topWorlds(@Query() q: TopWorldsQueryDto): Promise<TelemetryTopWorldsResponse> {
+    return this.telemetry.topWorlds((q.range ?? "7d") as TelemetryRange, {
+      page: q.page,
+      pageSize: q.pageSize,
+      sortBy: q.sortBy,
+      sortDir: q.sortDir,
+    });
   }
 
   @Get("worlds")
   worlds(@Query() q: RangeQueryDto): Promise<TelemetryWorldRow[]> {
     return this.telemetry.listWorldsForFilter(
       (q.range ?? "7d") as TelemetryRange,
+    );
+  }
+
+  @Get("minimax-hourly")
+  minimaxHourly(
+    @Query() q: RangeQueryDto,
+  ): Promise<MinimaxHourlyTelemetryResponse> {
+    return this.minimaxUsage.getHourly(
+      (q.range ?? "24h") as TelemetryRange,
+      q.worldId,
     );
   }
 }

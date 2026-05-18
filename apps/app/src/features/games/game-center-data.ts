@@ -255,7 +255,11 @@ export const gameCenterGames: GameCenterGame[] = [
     heroLabel: t(msg`小时级农场`),
     category: "strategy",
     tone: "forest",
-    playersLabel: t(msg`世界自治`),
+    // 注意：playersLabel 不要和 badge 同字 ("世界自治")——卡片上 badge
+    // 已经在左上角显示，playersLabel 又在底部出现一次会重复。其它游戏
+    // 这里都是 "X 万人在玩" 这类数字面板；隐界农场没有真实玩家数，用
+    // "NPC 在场" 表意更准、跟 badge 区分开。
+    playersLabel: t(msg`NPC 自治在场`),
     friendsLabel: t(msg`全员 NPC`),
     updateNote: t(msg`首发 14 种作物 + 偷菜小道消息`),
     deckLabel: t(msg`世界经营`),
@@ -282,6 +286,25 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: t(msg`花圃币 + 联营订单`),
     sessionObjective: t(msg`先收完成熟作物，再去邻居花圃里把本周联营订单补齐。`),
     tags: [t(msg`农场`), t(msg`互助`), t(msg`长线`)],
+  },
+  {
+    id: "tank-war",
+    name: t(msg`坦克大战`),
+    slogan: t(msg`一辆小坦克，守护一个老巢。`),
+    description: t(msg`经典 FC 像素动作完整复刻：35 关原版地图、4 种敌方坦克、7 种道具、4 级武器升级、支持桌面键盘双人本地对战。`),
+    studio: t(msg`隐界游戏厅`),
+    badge: t(msg`怀旧像素`),
+    heroLabel: t(msg`即时动作`),
+    category: "competitive",
+    tone: "sunset",
+    playersLabel: t(msg`单人 / 桌面双人`),
+    friendsLabel: t(msg`和朋友肩并肩守基地`),
+    updateNote: t(msg`FC 原版 35 关完整还原`),
+    deckLabel: t(msg`复古像素`),
+    estimatedDuration: t(msg`8-30 分钟一局`),
+    rewardLabel: t(msg`通关解锁下一关 + 最高分`),
+    sessionObjective: t(msg`守住基地，消灭 20 辆敌方坦克。`),
+    tags: [t(msg`像素`), t(msg`动作`), t(msg`双人`), t(msg`怀旧`)],
   },
   {
     id: "island-concert",
@@ -349,21 +372,31 @@ export const gameCenterHotRankings: GameCenterRankingEntry[] = [
     gameId: "pixel-arena",
     note: t(msg`双人同屏模式让社交传播继续放大。`),
   },
+  {
+    rank: 4,
+    gameId: "cloud-farm",
+    note: t(msg`花圃联营开放后回访稳定增长。`),
+  },
 ];
 
 export const gameCenterNewRankings: GameCenterRankingEntry[] = [
   {
     rank: 1,
+    gameId: "tank-war",
+    note: t(msg`FC 经典 35 关像素级完整复刻，桌面双人键位首发。`),
+  },
+  {
+    rank: 2,
     gameId: "cat-inn",
     note: t(msg`治愈感和布置玩法带动收藏率。`),
   },
   {
-    rank: 2,
+    rank: 3,
     gameId: "forest-train",
     note: t(msg`支线站点更新后回访率提升。`),
   },
   {
-    rank: 3,
+    rank: 4,
     gameId: "island-concert",
     note: t(msg`周末派对活动带来新一轮曝光。`),
   },

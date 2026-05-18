@@ -2,20 +2,71 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <!--
+    模板里所有 Apple/Yinjie 字段都对齐 ios/App/App/Info.plist。关键点：
+      - CFBundleIdentifier / CFBundleName / CFBundleExecutable 走 Xcode 变量替换
+        ($(PRODUCT_BUNDLE_IDENTIFIER) / $(PRODUCT_NAME) / $(EXECUTABLE_NAME))，
+        configure-ios-project.mjs 走 applyReleaseBuildSettings 把 PRODUCT_BUNDLE_IDENTIFIER
+        从 env / shell config 写进 pbxproj，build 时 Xcode 自动替进 Info.plist。
+        模板里如果写死 com.yinjie.ios，fresh checkout 复制到 Info.plist 后会
+        bypass Xcode 变量替换 —— 用户改 ios-shell.config.json 的 appId 没用，
+        IPA 仍然以 com.yinjie.ios 上 App Store / TestFlight。
+      - Yinjie* 字段保持空串：configure 的 ensureInfoPlistDefaults 在 Info.plist
+        已存在时会补齐缺失的 key，但不会改已有值。模板写
+        "https://api.example.yinjie.app" 这种占位会被一路带到 .app，YinjieRuntime
+        getConfig 的 native-fallback 路径就会读到假 URL。
+      - CFBundleVersion / CFBundleShortVersionString 走 $(CURRENT_PROJECT_VERSION)
+        / $(MARKETING_VERSION)，跟着 release env / ios-shell.config.json buildNumber
+        + marketingVersion 自动注入。
+  -->
+  <key>CFBundleAllowMixedLocalizations</key>
+  <true/>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
   <key>CFBundleDisplayName</key>
   <string></string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
   <key>CFBundleIdentifier</key>
-  <string>com.yinjie.ios</string>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>zh-Hans</string>
+    <string>en</string>
+    <string>ja</string>
+    <string>ko</string>
+  </array>
   <key>CFBundleName</key>
-  <string>Yinjie</string>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$(MARKETING_VERSION)</string>
+  <key>CFBundleVersion</key>
+  <string>$(CURRENT_PROJECT_VERSION)</string>
   <key>YinjieApiBaseUrl</key>
-  <string>https://api.example.yinjie.app</string>
+  <string></string>
   <key>YinjieSocketBaseUrl</key>
-  <string>https://api.example.yinjie.app</string>
+  <string></string>
+  <key>YinjieCloudApiBaseUrl</key>
+  <string></string>
   <key>YinjieEnvironment</key>
-  <string>production</string>
+  <string></string>
   <key>YinjiePublicAppName</key>
   <string></string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>mailto</string>
+    <string>tel</string>
+    <string>sms</string>
+    <string>itms-apps</string>
+    <string>https</string>
+    <string>http</string>
+  </array>
   <key>LSRequiresIPhoneOS</key>
   <true/>
   <key>NSAppTransportSecurity</key>
@@ -31,6 +82,10 @@
   <string></string>
   <key>NSMicrophoneUsageDescription</key>
   <string></string>
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+  <key>UIMainStoryboardFile</key>
+  <string>Main</string>
   <key>UIBackgroundModes</key>
   <array>
     <string>remote-notification</string>
@@ -39,5 +94,20 @@
   <array>
     <string>arm64</string>
   </array>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UIViewControllerBasedStatusBarAppearance</key>
+  <true/>
 </dict>
 </plist>

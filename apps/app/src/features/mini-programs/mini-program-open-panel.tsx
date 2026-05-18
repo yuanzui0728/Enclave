@@ -128,7 +128,9 @@ export function MiniProgramOpenPanel({
                 compact ? "mt-1.5 text-[14px]" : "mt-3 text-lg",
               )}
             >
-              {isActive ? `${t(msg`继续使用`)} ${miniProgram.name}` : miniProgram.name}
+              {isActive
+                ? `${t(msg`继续使用`)} ${t(miniProgram.nameMessage)}`
+                : t(miniProgram.nameMessage)}
             </div>
             <div
               className={cn(

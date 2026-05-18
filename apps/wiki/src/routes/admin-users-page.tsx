@@ -63,8 +63,8 @@ export function AdminUsersPage() {
       )}
       {usersQ.data && (
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="wiki-touch-scroll overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm">
               <thead className="bg-[color:var(--surface-card-hover)] text-left text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">

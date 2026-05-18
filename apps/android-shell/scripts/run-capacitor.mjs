@@ -17,13 +17,17 @@ const shellDir = resolve(currentDir, "..");
 const workspaceDir = resolve(shellDir, "../..");
 const appDir = resolve(shellDir, "../app");
 const androidProjectDir = resolve(shellDir, "android");
+const androidAssetsPublicDir = resolve(
+  androidProjectDir,
+  "app/src/main/assets/public",
+);
 const shellConfigPath = resolve(shellDir, "android-shell.config.json");
 const shellConfigLocalPath = resolve(
   shellDir,
   "android-shell.config.local.json",
 );
 const capacitorConfigPath = resolve(shellDir, "capacitor.config.json");
-const appBundledRuntimeConfigPath = resolve(appDir, "dist/runtime-config.json");
+const appBundledRuntimeConfigPath = resolve(appDir, "dist-mobile/runtime-config.json");
 const localToolsDir = resolve(workspaceDir, ".cache/tools");
 const localJdkDir = resolve(localToolsDir, "jdk-21");
 const localJdkDownloadDir = resolve(localToolsDir, "downloads");
@@ -422,6 +426,9 @@ function buildReleaseEnvShellConfigOverride(env = process.env) {
   const socketBaseUrl = normalizeOptionalString(
     env.YINJIE_ANDROID_SOCKET_BASE_URL,
   );
+  const cloudApiBaseUrl = normalizeOptionalString(
+    env.YINJIE_ANDROID_CLOUD_API_BASE_URL,
+  );
   const appId = normalizeOptionalString(env.YINJIE_ANDROID_APP_ID);
   const appName = normalizeOptionalString(env.YINJIE_ANDROID_APP_NAME);
   const versionName = normalizeOptionalString(env.YINJIE_ANDROID_VERSION_NAME);
@@ -452,7 +459,7 @@ function buildReleaseEnvShellConfigOverride(env = process.env) {
     override.allowCleartextTraffic = allowCleartextTraffic;
   }
 
-  if (runtimeEnvironment || apiBaseUrl || socketBaseUrl) {
+  if (runtimeEnvironment || apiBaseUrl || socketBaseUrl || cloudApiBaseUrl) {
     override.runtime = {};
   }
 
@@ -468,7 +475,36 @@ function buildReleaseEnvShellConfigOverride(env = process.env) {
     override.runtime.socketBaseUrl = socketBaseUrl;
   }
 
+  if (cloudApiBaseUrl) {
+    override.runtime.cloudApiBaseUrl = cloudApiBaseUrl;
+  }
+
   return override;
+}
+
+// Round 28：跟 iOS Round 36 对齐。release env example 的 URL 占位是
+// https://*.example.yinjie.app，本地 example 占位是 192.168.1.10 / your-domain
+// 这种。这条 helper 用来拦掉用户照 example 复制不改 URL 就 build 的情形。
+// 未配置 (undefined / null / 空串) 不算 placeholder —— 缺失由 Boolean(url)
+// 那条 check 单独拦。
+function isPlaceholderUrl(value) {
+  if (!value || typeof value !== "string") {
+    return false;
+  }
+  const lower = value.toLowerCase().trim();
+  if (!lower) {
+    return false;
+  }
+  // *.example.* / .example.com / api.example.foo —— 单独 "example" 一段是
+  // iOS Round 36 那种 placeholder 模板的指纹。
+  if (/\.example\./.test(lower) || /\bexample\.(com|org|net|io|app|dev|yinjie\.app)\b/.test(lower)) {
+    return true;
+  }
+  // your-domain.xxx / replace-me / placeholder / changeme：常见占位 token。
+  if (/\b(your[-_]?domain|replace[-_]?me|placeholder|changeme|todo[-_]?fill)\b/.test(lower)) {
+    return true;
+  }
+  return false;
 }
 
 function hasShellConfigOverride(override) {
@@ -520,6 +556,9 @@ function normalizeShellConfig(rawConfig) {
   const socketBaseUrl = normalizeOptionalString(
     rawConfig.runtime?.socketBaseUrl,
   );
+  const cloudApiBaseUrl = normalizeOptionalString(
+    rawConfig.runtime?.cloudApiBaseUrl,
+  );
 
   if (!appId) {
     throw new Error("android-shell config requires a non-empty appId");
@@ -553,6 +592,7 @@ function normalizeShellConfig(rawConfig) {
       environment,
       apiBaseUrl,
       socketBaseUrl,
+      cloudApiBaseUrl,
     },
   };
 }
@@ -593,6 +633,16 @@ function validateReleaseShellConfig(config) {
   if (!config.runtime.apiBaseUrl) {
     throw new Error(
       "release android bundle requires runtime.apiBaseUrl from tracked config or YINJIE_ANDROID_CORE_API_BASE_URL",
+    );
+  }
+
+  // Round 9 之后 YinjieRuntimePlugin.getConfig 会读 cloudApiBaseUrl 透给 JS。
+  // 原生壳 origin 是 https://localhost，没有同源 cloud-api 后端；setCloudApiBaseUrlProvider
+  // 在 Capacitor 壳里只认这一条，缺了就 worlds 列表 / cloud session refresh / 公共账号
+  // 刷新整条链路返 null 不发请求，安装包看着能跑实际跑不通。release 必须强制带上。
+  if (!config.runtime.cloudApiBaseUrl) {
+    throw new Error(
+      "release android bundle requires runtime.cloudApiBaseUrl from tracked config or YINJIE_ANDROID_CLOUD_API_BASE_URL (native shell origin is https://localhost, no same-origin cloud-api)",
     );
   }
 
@@ -640,6 +690,10 @@ function buildBundledAppRuntimeConfig(config) {
     config.runtime.socketBaseUrl || config.runtime.apiBaseUrl;
   if (socketBaseUrl) {
     nextRuntimeConfig.socketBaseUrl = socketBaseUrl;
+  }
+
+  if (config.runtime.cloudApiBaseUrl) {
+    nextRuntimeConfig.cloudApiBaseUrl = config.runtime.cloudApiBaseUrl;
   }
 
   return nextRuntimeConfig;
@@ -765,6 +819,33 @@ function runGradle(taskName, env = process.env) {
   });
 }
 
+// vite-plugin-compression 给 dist/ 生成了 *.gz / *.br 兄弟文件用于 nginx 静态服务，
+// 但 Android Gradle 资源合并器把同名 foo.js 与 foo.js.gz 当成 duplicate resource 拒绝。
+// cap sync 完成后顺手把这些预压缩产物从 android assets 里剔掉，让 APK 构建通过。
+function stripPrecompressedAssets() {
+  if (!existsSync(androidAssetsPublicDir)) {
+    return;
+  }
+  let removed = 0;
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = resolve(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+      if (entry.name.endsWith(".gz") || entry.name.endsWith(".br")) {
+        rmSync(fullPath, { force: true });
+        removed += 1;
+      }
+    }
+  };
+  walk(androidAssetsPublicDir);
+  if (removed > 0) {
+    console.log(`stripped ${removed} precompressed assets (.gz/.br)`);
+  }
+}
+
 function reportBuildArtifact(label, artifactPath) {
   if (!existsSync(artifactPath)) {
     console.log(`note  expected ${label} output not found at ${artifactPath}`);
@@ -858,9 +939,9 @@ if (command === "doctor") {
       "capacitor.config.json",
       existsSync(resolve(shellDir, "capacitor.config.json")),
     ],
-    ["apps/app/dist", existsSync(resolve(appDir, "dist"))],
+    ["apps/app/dist-mobile", existsSync(resolve(appDir, "dist-mobile"))],
     [
-      "apps/app/dist/runtime-config.json",
+      "apps/app/dist-mobile/runtime-config.json",
       existsSync(appBundledRuntimeConfigPath),
     ],
     ["android project", existsSync(androidProjectDir)],
@@ -900,9 +981,23 @@ if (command === "doctor") {
       "active production apiBaseUrl",
       Boolean(activeShellConfig.runtime.apiBaseUrl),
     ]);
+    // Round 17：跟 validateReleaseShellConfig 对齐，提早曝光 cloudApiBaseUrl 缺失。
+    checks.push([
+      "active production cloudApiBaseUrl",
+      Boolean(activeShellConfig.runtime.cloudApiBaseUrl),
+    ]);
     checks.push([
       "active production cleartext traffic disabled",
       !activeShellConfig.allowCleartextTraffic,
+    ]);
+    // Round 28：active production URL 也要拦 placeholder。
+    checks.push([
+      "active production apiBaseUrl is not placeholder",
+      !isPlaceholderUrl(activeShellConfig.runtime.apiBaseUrl),
+    ]);
+    checks.push([
+      "active production cloudApiBaseUrl is not placeholder",
+      !isPlaceholderUrl(activeShellConfig.runtime.cloudApiBaseUrl),
     ]);
   }
 
@@ -915,8 +1010,21 @@ if (command === "doctor") {
       Boolean(trackedShellConfig.runtime.apiBaseUrl),
     ]);
     checks.push([
+      "tracked production cloudApiBaseUrl",
+      Boolean(trackedShellConfig.runtime.cloudApiBaseUrl),
+    ]);
+    checks.push([
       "tracked production cleartext traffic disabled",
       !trackedShellConfig.allowCleartextTraffic,
+    ]);
+    // Round 28：tracked production URL 也要拦 placeholder。
+    checks.push([
+      "tracked production apiBaseUrl is not placeholder",
+      !isPlaceholderUrl(trackedShellConfig.runtime.apiBaseUrl),
+    ]);
+    checks.push([
+      "tracked production cloudApiBaseUrl is not placeholder",
+      !isPlaceholderUrl(trackedShellConfig.runtime.cloudApiBaseUrl),
     ]);
   }
 
@@ -929,8 +1037,32 @@ if (command === "doctor") {
       Boolean(releaseEnvShellConfig.runtime.apiBaseUrl),
     ]);
     checks.push([
+      "release env production cloudApiBaseUrl",
+      Boolean(releaseEnvShellConfig.runtime.cloudApiBaseUrl),
+    ]);
+    checks.push([
       "release env production cleartext traffic disabled",
       !releaseEnvShellConfig.allowCleartextTraffic,
+    ]);
+
+    // Round 28：跟 iOS Round 36 对齐。android-release.env.example 里所有 URL
+    // 占位都是 https://*.example.yinjie.app —— 用户照样 cp env.example
+    // env.local 然后忘了改 URL，validate "Boolean(url)" 这条 check 不看内容，
+    // 静默放行后 release APK 装到真机所有请求 DNS NXDOMAIN，前端只能看到
+    // fetch reject「network-error」，根本不知道是 URL 占位没替换。这里拦
+    // *.example.* / placeholder.* / your-domain.* / replace-me 这几种典型
+    // 占位模式，强制 release build 之前必须用真实 URL。
+    checks.push([
+      "release env apiBaseUrl is not placeholder",
+      !isPlaceholderUrl(releaseEnvShellConfig.runtime.apiBaseUrl),
+    ]);
+    checks.push([
+      "release env socketBaseUrl is not placeholder",
+      !isPlaceholderUrl(releaseEnvShellConfig.runtime.socketBaseUrl),
+    ]);
+    checks.push([
+      "release env cloudApiBaseUrl is not placeholder",
+      !isPlaceholderUrl(releaseEnvShellConfig.runtime.cloudApiBaseUrl),
     ]);
   }
 
@@ -945,6 +1077,90 @@ if (command === "doctor") {
         androidManifest.includes(`android:name="${permission}"`),
       ]);
     }
+
+    // Round 19：缺这条 meta-data，background 系统通知会回落到 SDK 的
+    // fcm_fallback_notification_channel（IMPORTANCE_DEFAULT + 英文 Miscellaneous），
+    // 跟我们前台 / 本地推送的 yinjie_messages 高优先级 channel 脱节。
+    checks.push([
+      "manifest fcm default channel = yinjie_messages",
+      /com\.google\.firebase\.messaging\.default_notification_channel_id[\s\S]*?android:value="yinjie_messages"/.test(
+        androidManifest,
+      ),
+    ]);
+
+    // Round 24：缺 default_notification_icon meta-data，FCM SDK 在 app 处于
+    // background 直接走系统通知栏时，smallIcon 默认取 launcher。彩色 launcher
+    // PNG 在 Android 5+ 会被 mask 成纯白方块，没有任何品牌识别度。这两条
+    // meta-data 必须指到 alpha-only 的 ic_stat_notification + 品牌 accent color。
+    checks.push([
+      "manifest fcm default icon = ic_stat_notification",
+      /com\.google\.firebase\.messaging\.default_notification_icon[\s\S]*?android:resource="@drawable\/ic_stat_notification"/.test(
+        androidManifest,
+      ),
+    ]);
+    checks.push([
+      "manifest fcm default color = notification_accent",
+      /com\.google\.firebase\.messaging\.default_notification_color[\s\S]*?android:resource="@color\/notification_accent"/.test(
+        androidManifest,
+      ),
+    ]);
+
+    // Round 27：Android 11+ package visibility 强制要求 manifest 声明
+    // <queries>，否则 resolveActivity 一律返回 null（捏死 captureImage 这条
+    // 路径），startActivity 对部分 scheme / mimeType 也会 ActivityNotFoundException。
+    // 这些条目跟 plugin 真实用到的 intent 一一对应。
+    checks.push([
+      "manifest queries declared",
+      /<queries>[\s\S]*?<\/queries>/.test(androidManifest),
+    ]);
+    checks.push([
+      "manifest queries IMAGE_CAPTURE",
+      /<queries>[\s\S]*?android\.media\.action\.IMAGE_CAPTURE[\s\S]*?<\/queries>/.test(
+        androidManifest,
+      ),
+    ]);
+    checks.push([
+      "manifest queries tel scheme",
+      /<queries>[\s\S]*?android:scheme="tel"[\s\S]*?<\/queries>/.test(
+        androidManifest,
+      ),
+    ]);
+    checks.push([
+      "manifest queries mailto scheme",
+      /<queries>[\s\S]*?android:scheme="mailto"[\s\S]*?<\/queries>/.test(
+        androidManifest,
+      ),
+    ]);
+
+    // Round 31：<uses-permission CAMERA> 必须配 <uses-feature CAMERA required=false>，
+    // 否则 Play Store 把无摄像头设备过滤出可安装名单，listing 看不到。
+    // record_audio 同款逻辑。
+    checks.push([
+      "manifest uses-feature camera optional",
+      /<uses-feature[^>]*android:name="android\.hardware\.camera"[^>]*android:required="false"/.test(
+        androidManifest,
+      ),
+    ]);
+    checks.push([
+      "manifest uses-feature microphone optional",
+      /<uses-feature[^>]*android:name="android\.hardware\.microphone"[^>]*android:required="false"/.test(
+        androidManifest,
+      ),
+    ]);
+
+    // Round 36：MainActivity 必须 windowSoftInputMode=adjustResize，
+    // Capacitor Keyboard plugin 的 resize:"native" 依赖 manifest 上写明这条，
+    // 否则部分 OEM (Samsung/Huawei/Xiaomi 早期 MIUI) 默认 adjustPan，
+    // 键盘弹起盖住输入框用户看不到打字。
+    checks.push([
+      "manifest MainActivity windowSoftInputMode adjustResize",
+      /<activity[^>]*android:name=".MainActivity"[^>]*android:windowSoftInputMode="adjustResize"/.test(
+        androidManifest,
+      ) ||
+        /<activity[^>]*android:windowSoftInputMode="adjustResize"[^>]*android:name=".MainActivity"/.test(
+          androidManifest,
+        ),
+    ]);
 
     // Hardening: manifest cleartext must be a build-variant placeholder, not
     // a hardcoded literal that can drift in tracked git history.
@@ -1191,6 +1407,7 @@ if (command === "apk") {
     cwd: shellDir,
     env: executionEnvironment.env,
   });
+  stripPrecompressedAssets();
   if (
     executionEnvironment.usingLocalJdk &&
     executionEnvironment.resolvedLocalJdkDir
@@ -1218,6 +1435,7 @@ if (command === "bundle") {
     cwd: shellDir,
     env: executionEnvironment.env,
   });
+  stripPrecompressedAssets();
   if (
     executionEnvironment.usingLocalJdk &&
     executionEnvironment.resolvedLocalJdkDir
@@ -1235,6 +1453,10 @@ run("pnpm", ["exec", "cap", command, ...restArgs], {
   cwd: shellDir,
   env: executionEnvironment.env,
 });
+
+if (command === "sync") {
+  stripPrecompressedAssets();
+}
 
 if (command === "add" && restArgs[0] === "android") {
   const { changedPaths } = configureAndroidShell();

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    method options:
+      - app-store-connect (Xcode 15+) / app-store (Xcode <15)  → 上 App Store / TestFlight
+      - release-testing   (Xcode 15+) / ad-hoc     (Xcode <15) → 给已登记 UDID 的设备打 IPA
+      - debugging         (Xcode 15+) / development(Xcode <15) → 开发证书 IPA
+      - enterprise (in-house distribution，要 Apple Enterprise Program)
+    build-ios-ipa.mjs 会从 YINJIE_IOS_EXPORT_METHOD 注入这一项，
+    所以这份模板里写 ad-hoc 只是个能直接 review 的默认，不会泄到 release 流程。
+  -->
+  <key>method</key>
+  <string>ad-hoc</string>
+  <key>teamID</key>
+  <string>__YINJIE_IOS_DEVELOPMENT_TEAM__</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>stripSwiftSymbols</key>
+  <true/>
+  <key>uploadBitcode</key>
+  <false/>
+  <key>uploadSymbols</key>
+  <true/>
+  <key>compileBitcode</key>
+  <false/>
+  <key>destination</key>
+  <string>export</string>
+  <!--
+    手动签名时取消下面 4 行注释，并填实际值；自动签名时保持注释即可。
+    provisioningProfiles 的 key 必须是 bundle identifier。
+  -->
+  <!--
+  <key>signingCertificate</key>
+  <string>Apple Distribution</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>__YINJIE_IOS_BUNDLE_IDENTIFIER__</key>
+    <string>__YINJIE_IOS_PROVISIONING_PROFILE_SPECIFIER__</string>
+  </dict>
+  -->
+</dict>
+</plist>

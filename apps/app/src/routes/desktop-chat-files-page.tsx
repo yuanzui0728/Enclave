@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -93,6 +93,9 @@ export function DesktopChatFilesPage() {
   const baseUrl = runtimeConfig.apiBaseUrl ?? "";
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const routeState = parseDesktopChatFilesRouteState(hash);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -111,7 +114,21 @@ export function DesktopChatFilesPage() {
   } | null>(null);
   const localMessageActionState = useLocalChatMessageActionState();
 
+  // 走查电脑端群聊 R5：和姊妹 DesktopGroupDetailCard R4（commit 165ca9815）/
+  // GroupChatDetailsPanel R1（commit bf7e3914b）同款 pattern。「定位到原消息」
+  // 按钮 line 832 原版 onClick → navigateToAttachmentMessage(item) → 直接 push
+  // /tabs/chat?...messageId=... history 项，无任何 throttle。同帧 <16ms 双击
+  // 都通过 → 2 条相同 history 项 → 用户从被定位的群消息回到附件页要按 2 次
+  // 返回；群消息的 around-message 窗口拉取走 getGroupMessages 公网 RTT
+  //（~600ms），第 2 次也会重复发出（thread panel 内 highlightedMessageId
+  // 的 anchor-window fetch 也跟着第二次重打）。按 messageId 分锁（不同附件
+  // 同帧连点是合法用法），raf 释放兜底"navigate 没真正切走"边界。
+  const navigatingAttachmentMessageIdsRef = useRef<Set<string>>(new Set());
   const navigateToAttachmentMessage = (item: AttachmentRow) => {
+    if (navigatingAttachmentMessageIdsRef.current.has(item.id)) {
+      return;
+    }
+    navigatingAttachmentMessageIdsRef.current.add(item.id);
     void navigate({
       to: "/tabs/chat",
       hash: buildDesktopChatThreadHash({
@@ -119,6 +136,13 @@ export function DesktopChatFilesPage() {
         messageId: item.id,
       }),
     });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        navigatingAttachmentMessageIdsRef.current.delete(item.id);
+      });
+    } else {
+      navigatingAttachmentMessageIdsRef.current.delete(item.id);
+    }
   };
 
   useEffect(() => {
@@ -184,10 +208,17 @@ export function DesktopChatFilesPage() {
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
 
+  // 走查新会话桌面端群聊 R1：app-conversations 是和 chat-list / chat-workspace /
+  // chat-details 共用的 query key——其它入口都已经按 15s staleTime 对齐过；这里
+  // 漏掉，用户从群「聊天文件」入口跳进来时即使 cache 刚刷过几百 ms 也会再发一
+  // 次 getConversations，公网隧道 ~600ms RTT 直接撞文件列表 query → "进入文件
+  // 页空白半秒"。和移动端单聊 R4 / desktop-message-avatar-popover R1 同款补
+  // staleTime: 15s。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
 
   const conversations = useMemo(
@@ -236,6 +267,12 @@ export function DesktopChatFilesPage() {
     if (!isDesktopLayout) {
       return;
     }
+    // 在 "/desktop/chat-files" 外不要回写 hash —— 否则用户点「定位到原消息」
+    // 跳 /tabs/chat#... 的瞬间这个 effect 会把路径 replace 回 /desktop/chat-files
+    // 把跳转吞掉（与 profile-settings 同款坑）。
+    if (!pathname.startsWith("/desktop/chat-files")) {
+      return;
+    }
 
     const nextHash = buildDesktopChatFilesRouteHash(selectedConversationId);
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -253,20 +290,32 @@ export function DesktopChatFilesPage() {
     hash,
     isDesktopLayout,
     navigate,
+    pathname,
     selectedConversationId,
   ]);
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
+  // 走查新会话桌面端群聊 R1：原版 queryKey 第 3 段直接 `conversations.map(...)`
+  // 按服务端返回的"按最近活跃排序"顺序构造数组。chat-list 的 60s 轮询 / socket
+  // 推一条群消息都会让 conversations 重新排序（lastActivityAt 变化）——id 集合
+  // 没变，但数组元素的顺序变了 → react-query 深比较判断 key 不同 → 触发
+  // allAttachmentsQuery 整页 Promise.all 把 7 个 group + N 个单聊的全部消息再
+  // 全量 fetch 一遍（每条对话最多 100 条消息）。用户在文件页停一分钟，期间
+  // 群里有人发消息就会重新拉一次全量 attachments。先 sort 后再 join，让 key
+  // 只在"参与的对话集合"真变化时才换。
+  const allAttachmentsQueryKey = useMemo(
+    () =>
+      conversations
+        .map(
+          (item) =>
+            `${item.id}:${item.source ?? getConversationThreadType(item)}`,
+        )
+        .sort(),
+    [conversations],
+  );
   const allAttachmentsQuery = useQuery({
-    queryKey: [
-      "desktop-chat-files",
-      baseUrl,
-      conversations.map(
-        (item) =>
-          `${item.id}:${item.source ?? getConversationThreadType(item)}`,
-      ),
-    ],
+    queryKey: ["desktop-chat-files", baseUrl, allAttachmentsQueryKey],
     queryFn: async () => {
       if (!baseUrl) {
         return [];
@@ -281,50 +330,77 @@ export function DesktopChatFilesPage() {
       return rows.flat();
     },
     enabled: isDesktopLayout && Boolean(baseUrl) && conversations.length > 0,
+    // 文件清单（图片 + 文件附件）是低变更频率数据——新消息到达由
+    // app-conversations refetch 自然触发 queryKey 变化（id 集合变 → key 变），
+    // 重复进入 /desktop/chat-files 时 15s 内沿用上次结果，避免每次都重做 7
+    // 路 getGroupMessages + N 路 getConversationMessages 大数据回拉。
+    staleTime: 15_000,
   });
 
-  const baseAttachmentRows = useMemo(() => {
-    const rows = filterSearchableChatMessages(
-      allAttachmentsQuery.data ?? [],
-      localMessageActionState,
-    );
-
-    if (!selectedConversationId) {
-      return rows;
-    }
-
-    return rows.filter(
-      (item) => item.conversationId === selectedConversationId,
-    );
-  }, [
-    allAttachmentsQuery.data,
-    localMessageActionState,
-    selectedConversationId,
-  ]);
-
-  const attachmentCounts = useMemo(
+  // 走查新一轮 R28：原版 baseAttachmentRows / attachmentCounts /
+  // visibleAttachmentRowCount 三处 useMemo 各自跑一遍 filterSearchableChatMessages
+  // (allAttachmentsQuery.data ?? [], localMessageActionState)，allAttachmentsQuery
+  // 把全部对话最多 100 条消息平 flat 出来动辄 1000+ 项，每次 hide / recall /
+  // socket 推新消息 → query data 换引用都让这条过滤器在同一帧跑 3 次。把它
+  // 提到 searchableAttachmentRows 单 useMemo，下游三处 derive，filter 只跑 1 次。
+  const searchableAttachmentRows = useMemo(
     () =>
       filterSearchableChatMessages(
         allAttachmentsQuery.data ?? [],
         localMessageActionState,
-      ).reduce<Record<string, number>>((result, item) => {
-        result[item.conversationId] = (result[item.conversationId] ?? 0) + 1;
-        return result;
-      }, {}),
+      ),
     [allAttachmentsQuery.data, localMessageActionState],
   );
 
+  const baseAttachmentRows = useMemo(() => {
+    if (!selectedConversationId) {
+      return searchableAttachmentRows;
+    }
+
+    return searchableAttachmentRows.filter(
+      (item) => item.conversationId === selectedConversationId,
+    );
+  }, [searchableAttachmentRows, selectedConversationId]);
+
+  const attachmentCounts = useMemo(
+    () =>
+      searchableAttachmentRows.reduce<Record<string, number>>(
+        (result, item) => {
+          result[item.conversationId] =
+            (result[item.conversationId] ?? 0) + 1;
+          return result;
+        },
+        {},
+      ),
+    [searchableAttachmentRows],
+  );
+
+  // 走查新一轮 R2：原 useMemo 把 .sort + 双 .filter + searchText 全压在一个
+  // dep 上。baseAttachmentRows 可能上千项（用户在「全部会话」视图下、几十个
+  // 对话各自最近百条消息平 flat 出来），每个 keystroke：
+  // · filter chip 没变、conversation 没切的情况下 baseAttachmentRows 完全不变
+  // · sort 跟 searchText 没关系，但还是被拖着重跑（parseTimestamp 两次×N，
+  //   500 项 ~10k 次 parse + ~5ms sort）
+  // 排序拆到只依赖 baseAttachmentRows 的独立 useMemo，下游 filter 沿用稳定
+  // 顺序；searchText 走 useDeferredValue，让输入框先把字打进去、filter 在
+  // 下个 idle 帧跑，长列表搜索时 backlog 体感明显改善。和姊妹 forward-dialog
+  // R3 / note-send-dialog 同款 deferred + 拆 sort/filter 思路。
+  const sortedBaseAttachmentRows = useMemo(
+    () =>
+      [...baseAttachmentRows].sort(
+        (left, right) =>
+          (parseTimestamp(right.createdAt) ?? 0) -
+          (parseTimestamp(left.createdAt) ?? 0),
+      ),
+    [baseAttachmentRows],
+  );
+  const deferredSearchText = useDeferredValue(searchText);
   const attachmentRows = useMemo(
     () =>
-      baseAttachmentRows
+      sortedBaseAttachmentRows
         .filter((item) => matchesAttachmentFilter(item, filter))
-        .filter((item) => matchesAttachmentSearch(item, searchText))
-        .sort(
-          (left, right) =>
-            (parseTimestamp(right.createdAt) ?? 0) -
-            (parseTimestamp(left.createdAt) ?? 0),
-        ),
-    [baseAttachmentRows, filter, searchText],
+        .filter((item) => matchesAttachmentSearch(item, deferredSearchText)),
+    [sortedBaseAttachmentRows, filter, deferredSearchText],
   );
   const imageRows = useMemo(
     () => attachmentRows.filter(isImageAttachmentRow),
@@ -348,14 +424,7 @@ export function DesktopChatFilesPage() {
       ),
     [imageRows],
   );
-  const visibleAttachmentRowCount = useMemo(
-    () =>
-      filterSearchableChatMessages(
-        allAttachmentsQuery.data ?? [],
-        localMessageActionState,
-      ).length,
-    [allAttachmentsQuery.data, localMessageActionState],
-  );
+  const visibleAttachmentRowCount = searchableAttachmentRows.length;
 
   useEffect(() => {
     setViewerAttachmentId((current) =>
@@ -363,17 +432,31 @@ export function DesktopChatFilesPage() {
     );
   }, [imageRows]);
 
+  // 走查新一轮 R4：和姊妹 chat-image-viewer-page R2 / chat-message-list R3 同
+  // 款 — handleAttachmentSave 是 fire-and-forget，无任何同步锁。聊天文件页
+  // 列表行 + 大图查看器内「保存」按钮 + 行内 hover 操作三处都直接调用，同
+  // 帧 <16ms double-click 弹出 2 个文件保存对话框堆叠。按 url 上锁，finally
+  // 解锁，不同附件互不影响（用户在文件页里挨个保存合法）。
+  const savingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const handleAttachmentSave = (input: {
     url: string;
     fileName: string;
     kind: "image" | "file";
   }) => {
+    if (savingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    savingAttachmentUrlsRef.current.add(input.url);
     void saveRemoteFile({
       url: input.url,
       fileName: input.fileName,
       kind: input.kind,
       dialogTitle: input.kind === "image" ? t(msg`保存图片`) : t(msg`保存文件`),
-    }).then((result) => {
+    })
+      .finally(() => {
+        savingAttachmentUrlsRef.current.delete(input.url);
+      })
+      .then((result) => {
       if (result.status === "cancelled") {
         return;
       }
@@ -402,26 +485,56 @@ export function DesktopChatFilesPage() {
     });
   };
 
+  // 走查电脑端单聊新一轮 R4：和 handleAttachmentSave R3 同款 — handleAttachmentOpen
+  // 是 fire-and-forget，无任何同步锁。聊天文件页列表行「打开附件」按钮 + 大图
+  // 查看器三处都直接调用，同帧 <16ms double-click openExternalUrl 走 OS 默认 app
+  // 时被 spawn 两次，桌面会看到「图片预览器」/ 系统 default 文件管理器在前台被
+  // 顶起两次（macOS Preview / Windows Photos 是 single-instance 的，第二次刷
+  // 一下窗口；Linux 取决于桌面环境）。按 url 上锁。
+  const openingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const handleAttachmentOpen = (input: {
     url: string;
     kind: "image" | "file";
   }) => {
-    void openExternalUrl(input.url).then((opened) => {
-      setActionNotice({
-        message:
-          input.kind === "image"
-            ? opened
-              ? t(msg`已打开图片。`)
-              : t(msg`图片打开失败，请稍后再试。`)
-            : opened
-              ? t(msg`已打开附件。`)
-              : t(msg`附件打开失败，请稍后再试。`),
-        tone: opened ? "success" : "danger",
+    if (openingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    openingAttachmentUrlsRef.current.add(input.url);
+    void openExternalUrl(input.url)
+      .then((opened) => {
+        setActionNotice({
+          message:
+            input.kind === "image"
+              ? opened
+                ? t(msg`已打开图片。`)
+                : t(msg`图片打开失败，请稍后再试。`)
+              : opened
+                ? t(msg`已打开附件。`)
+                : t(msg`附件打开失败，请稍后再试。`),
+          tone: opened ? "success" : "danger",
+        });
+      })
+      .finally(() => {
+        openingAttachmentUrlsRef.current.delete(input.url);
       });
-    });
   };
 
+  // 走查电脑端单聊新一轮 R4：和姊妹 chat-message-list R3（图片预览 onOpenInWindow）
+  // / R7（会话「在独立窗口打开」commit 2a0fc8632）同款 — 聊天文件页大图查看
+  // 器「在独立窗口打开」按钮 onClick 走 handleOpenInWindow，无任何同步锁，
+  // 也没 .catch（dynamic import + 跨窗口 IPC 拉失败时 rejection 直接落 window.
+  // unhandledrejection 污染 telemetry）。同帧 <16ms double-click：
+  // · 第一次 getByLabel → undefined → new WebviewWindow 在 Tauri settle 中
+  // · 第二次 getByLabel 也 undefined → 也 new WebviewWindow(same label) →
+  //   Tauri 返回「window already exists」→ tauri://error → finish(false)
+  // · 用户：第一次窗口已成功打开 + 又看到「浏览器阻止了新窗口」红色 notice
+  // 按 attachment id 上锁，finally 解锁；不同图片互不影响。
+  const openingWindowAttachmentIdsRef = useRef<Set<string>>(new Set());
   const handleOpenInWindow = (item: ImageAttachmentRow) => {
+    if (openingWindowAttachmentIdsRef.current.has(item.id)) {
+      return;
+    }
+    openingWindowAttachmentIdsRef.current.add(item.id);
     void openDesktopChatImageViewerWindow({
       imageUrl: item.attachment.url,
       title: item.attachment.fileName,
@@ -429,14 +542,24 @@ export function DesktopChatFilesPage() {
       returnTo: buildAttachmentMessagePath(item),
       items: standaloneViewerItems,
       activeId: item.id,
-    }).then((opened) => {
-      setActionNotice({
-        message: opened
-          ? t(msg`已在独立窗口打开图片。`)
-          : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
-        tone: opened ? "success" : "danger",
+    })
+      .then((opened) => {
+        setActionNotice({
+          message: opened
+            ? t(msg`已在独立窗口打开图片。`)
+            : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
+          tone: opened ? "success" : "danger",
+        });
+      })
+      .catch(() => {
+        setActionNotice({
+          message: t(msg`打开独立窗口失败，请稍后再试。`),
+          tone: "danger",
+        });
+      })
+      .finally(() => {
+        openingWindowAttachmentIdsRef.current.delete(item.id);
       });
-    });
   };
 
   if (!isDesktopLayout) {
@@ -453,7 +576,7 @@ export function DesktopChatFilesPage() {
   return (
     <>
       <DesktopUtilityShell
-        title={selectedConversation?.title ?? t(msg`全部聊天文件`)}
+        title={selectedConversation?.title || t(msg`全部聊天文件`)}
         subtitle={
           selectedConversation
             ? t(msg`当前会话里的图片和文件会集中显示在这里。`)
@@ -478,6 +601,14 @@ export function DesktopChatFilesPage() {
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder={t(msg`搜索文件名或消息内容`)}
+                // 走查新一轮 R25：和姊妹 chat-history R24 / forward-dialog
+                // / create-group / contacts add-friend 同款 a11y 修法——
+                // TextField 外层只有 section 标题文本，没有 <label>
+                // / aria-labelledby 把标题和输入框绑起来。SR focus 进来
+                // 只听到「编辑栏 搜索文件名或消息内容 空」（部分 SR
+                // 实现读 placeholder、部分不读），盲人用户从 sidebar
+                // 进来不知道这个输入框是搜什么的。
+                aria-label={t(msg`搜索聊天文件`)}
                 className="mt-4 h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
               />
             </div>

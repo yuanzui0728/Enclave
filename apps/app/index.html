@@ -26,6 +26,16 @@
       (function () {
         if (typeof window === "undefined") return;
         if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+        // Capacitor 原生壳（iOS capacitor://，Android https://localhost）里
+        // 走 register-service-worker.ts 的 Capacitor 守卫，根本不会注册 SW。
+        // 在这条更前置的内联 kill switch 里也要早退，否则 ?nosw=1 或 localStorage
+        // 残留触发后调 location.reload()，深路径下 ./assets 相对解析会把 app
+        // 加载死（详见 Round 13）。
+        try {
+          if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) {
+            return;
+          }
+        } catch (e) {}
         var active = false;
         try {
           var sp = new URLSearchParams(window.location.search);

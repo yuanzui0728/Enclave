@@ -374,6 +374,7 @@ export interface ReplyLogicHistoryItem {
   senderType: "user" | "character" | "system";
   senderId: string;
   senderName: string;
+  senderRemark?: { from: string; to: string } | null;
   type: string;
   text: string;
   attachmentKind?: string | null;

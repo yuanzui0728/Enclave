@@ -307,13 +307,18 @@ export function useCatInnState() {
     };
   }, [state]);
 
+  // 卸载时刷新最新 state；直接闭包 state + deps [] 会把 disk 回滚到 mount 时的初始 state。
+  const stateRef = useRef(state);
+  stateRef.current = state;
   useEffect(() => {
-    return () => saveState(state);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => saveState(stateRef.current);
   }, []);
 
+  // tick reducer 在 idle/ended 也会 cloneState + setState 触发重渲。
+  // 只 running 才需要 1Hz 推进 remainingMs。
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (stateRef.current.status !== "running") return;
       dispatch({ type: "tick", nowMs: Date.now() });
     }, 1000);
     return () => window.clearInterval(id);

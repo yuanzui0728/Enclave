@@ -1,11 +1,14 @@
-import { registerPlugin } from "@capacitor/core";
 import { resolveSupportedLocale, type SupportedLocale } from "@yinjie/i18n";
 import {
   getDesktopLocale,
   isDesktopRuntimeAvailable,
   setDesktopLocale,
 } from "@yinjie/ui";
-import { isNativeAndroidRuntime } from "./native-runtime";
+import {
+  isNativeMobileRuntime,
+  yinjieRuntimePlugin,
+  type NativeLocalePayload,
+} from "./native-runtime";
 
 export type NativeLocaleSource = "app" | "storage" | "system" | "default";
 
@@ -15,18 +18,10 @@ export type NativeLocalePreference = {
   source: NativeLocaleSource;
 };
 
-type NativeLocalePayload = {
-  locale?: string | null;
-  source?: string | null;
-};
-
-type YinjieRuntimeLocalePlugin = {
-  getLocale(): Promise<NativeLocalePayload>;
-  setLocale(options: { locale: SupportedLocale }): Promise<NativeLocalePayload>;
-};
-
-const yinjieRuntime =
-  registerPlugin<YinjieRuntimeLocalePlugin>("YinjieRuntime");
+// 走查新一轮：单点注册的 YinjieRuntime plugin（见 native-runtime.ts）现在统一暴露
+// getConfig + getLocale + setLocale 三个方法；本文件不再独自调 registerPlugin —
+// 避免 dev console 一直打 "Cannot register plugins twice." 警告。
+const yinjieRuntime = yinjieRuntimePlugin;
 
 function normalizeNativeLocaleSource(
   source?: string | null,
@@ -40,7 +35,7 @@ function normalizeNativeLocaleSource(
 }
 
 export async function readNativeLocalePreference(): Promise<NativeLocalePreference | null> {
-  if (!isNativeAndroidRuntime()) {
+  if (!isNativeMobileRuntime()) {
     return null;
   }
 
@@ -85,7 +80,7 @@ export async function readDesktopLocalePreference(): Promise<NativeLocalePrefere
 export async function syncNativeLocalePreference(locale: SupportedLocale) {
   let synced = false;
 
-  if (!isNativeAndroidRuntime()) {
+  if (!isNativeMobileRuntime()) {
     return syncDesktopLocalePreference(locale);
   }
 

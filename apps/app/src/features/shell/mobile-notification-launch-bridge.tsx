@@ -3,6 +3,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   clearPendingNativeLaunchTarget,
   getPendingNativeLaunchTarget,
+  onNativePendingLaunchTargetChanged,
 } from "../../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
@@ -91,7 +92,15 @@ export function MobileNotificationLaunchBridge() {
       try {
         const target = await getPendingNativeLaunchTarget();
         const resolved = resolveNavigationTarget(target, navigate);
-        if (!active || !resolved) {
+        if (!active) {
+          return;
+        }
+        if (!resolved) {
+          // target 存在但解不到具体路由（旧版本格式、kind 不识别、字段缺失被
+          // normalize 干成 null 之类）时也必须把 UserDefaults 里的 pending
+          // 清掉，否则它会在每次 focus / visibilitychange 上反复触发本函数，
+          // 重启 app 也不会自然过期，相当于一条死信永远塞着。
+          await clearPendingNativeLaunchTarget();
           return;
         }
 
@@ -124,6 +133,29 @@ export function MobileNotificationLaunchBridge() {
     window.addEventListener("focus", syncPendingLaunchTarget);
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // 真机走查 R4：前台横幅点击的死链。用户在 chat A 时收到 chat B 的 push，
+    // willPresent 选项含 .banner → iOS 顶部弹横幅 → 用户点横幅 → AppDelegate
+    // didReceive 写 UserDefaults，但 app 全程一直 focused & visible，
+    // focus / pageshow / visibilitychange 三条监听都不触发，syncPendingLaunchTarget
+    // 不会跑。订阅 native 侧 "pendingLaunchTargetChanged" 事件作为前台路径
+    // 兜底：AppDelegate 写完 target 之后 post NotificationCenter 信号，
+    // YinjieMobileBridgePlugin 转给 JS 触发这条 callback，等于 native 主动
+    // 叫 JS 重读 UserDefaults 跑 sync。
+    let nativeListenerHandle: { remove: () => void } | null = null;
+    void onNativePendingLaunchTargetChanged(() => {
+      void syncPendingLaunchTarget();
+    }).then((handle) => {
+      if (!handle) {
+        return;
+      }
+      if (!active) {
+        void handle.remove();
+        return;
+      }
+      nativeListenerHandle = handle;
+    });
+
     void syncPendingLaunchTarget();
 
     return () => {
@@ -131,6 +163,10 @@ export function MobileNotificationLaunchBridge() {
       window.removeEventListener("focus", syncPendingLaunchTarget);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (nativeListenerHandle) {
+        void nativeListenerHandle.remove();
+        nativeListenerHandle = null;
+      }
     };
   }, [
     hash,

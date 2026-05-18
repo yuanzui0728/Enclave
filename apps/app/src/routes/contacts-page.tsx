@@ -40,9 +40,10 @@ import {
   setConversationMuted,
   setConversationPinned,
   setFriendStarred,
+  SELF_CHARACTER_ID,
   unblockCharacter,
 } from "@yinjie/contracts";
-import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
 import { SparkBadge } from "../components/spark-badge";
@@ -62,11 +63,13 @@ import {
   parseDesktopContactsRouteState,
 } from "../features/contacts/contacts-route-state";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildMobileAddFriendRouteHash } from "../features/contacts/mobile-add-friend-route-state";
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
 import {
   buildContactSections,
   buildDesktopFriendSections,
+  compareStarredFriends,
   createFriendDirectoryItems,
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
@@ -87,6 +90,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { normalizePathname } from "../lib/normalize-pathname";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsWorkspace = lazy(async () => {
@@ -243,11 +247,13 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
   };
 }
 
+type MobileQuickActionRoute = "/group/new" | "/add-friend";
+
 type MobileQuickActionItem = {
   key: string;
   label: ContactsMessage;
   icon: typeof Users;
-  to?: "/group/new";
+  to?: MobileQuickActionRoute;
   disabled?: boolean;
   disabledLabel?: ContactsMessage;
 };
@@ -260,6 +266,12 @@ const mobileQuickActionItems: MobileQuickActionItem[] = [
     label: msg`发起群聊`,
     icon: Users,
     to: "/group/new",
+  },
+  {
+    key: "add-friend",
+    label: msg`添加朋友`,
+    icon: UserPlus,
+    to: "/add-friend",
   },
   {
     key: "scan",
@@ -281,6 +293,7 @@ export function ContactsPage() {
   const t = useRuntimeTranslator();
   const pageRef = useRef<HTMLDivElement | null>(null);
   const desktopDirectoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const quickMenuContainerRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -292,7 +305,30 @@ export function ContactsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const routeState = parseDesktopContactsRouteState(hash);
   const [searchText, setSearchText] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
+  // 通讯录顶端的全局 notice：默认 info（成功类反馈），批量操作失败时走 danger。
+  // 以前用 string + 渲染时硬编码 tone="info" 一刀切，批量删除/打标签/星标的整条
+  // 调用挂掉（502 / 网络抖断）时弹出的"删除：操作失败：xxx" 也被画成蓝色 info，
+  // 看上去跟"已置顶"这种成功反馈长得一模一样，用户察觉不到出错。
+  const [notice, _setNotice] = useState<{
+    message: string;
+    tone: "info" | "danger";
+  } | null>(null);
+  const setNotice = useCallback((next: string | null) => {
+    _setNotice(next ? { message: next, tone: "info" } : null);
+  }, []);
+  const setNoticeError = useCallback((next: string | null) => {
+    _setNotice(next ? { message: next, tone: "danger" } : null);
+  }, []);
+  // 新的朋友面板专用的内联成功提示——全局 notice 会泄漏到这里（如改星标后切回，
+  // 旧 isSuccess 还挂着会把"已设为星标朋友。"显示在好友申请面板里）。
+  // 带 ts 防止连续两次同 message（如连点两条「接受」）setState 拿到一样的字符串
+  // 引用被 React.Object.is 跳过，自清 timer 不重启，第二次只能蹭第一次剩余的时间。
+  const [friendRequestSuccess, setFriendRequestSuccessState] = useState<
+    { message: string; ts: number } | null
+  >(null);
+  const setFriendRequestSuccess = useCallback((message: string) => {
+    setFriendRequestSuccessState({ message, ts: Date.now() });
+  }, []);
   const [showWorldCharacters, setShowWorldCharacters] = useState(
     routeState.showWorldCharacters,
   );
@@ -306,7 +342,18 @@ export function ContactsPage() {
     setBulkMode(false);
     setBulkSelectedIds(new Set());
   }, []);
+  // 部分操作失败时收敛选区到失败那几条；bulk 模式保留，让用户继续重试。
+  const retainBulkFailures = useCallback((failedIds: string[]) => {
+    setBulkSelectedIds(new Set(failedIds));
+  }, []);
   const toggleBulkSelection = useCallback((characterId: string) => {
+    // 走查 Round 2：char-default-self 后端的 deleteFriend / blockCharacter 已经兜底
+    // 400 拒绝，但前端如果还允许把它放进 selectedIds，全选 + 删除走查到 1 项 failed
+    // 是 self → 用户看到 "删除：1 项操作失败" 没法理解失败原因。直接在 toggle 层
+    // 拦掉，让 self 行点击 / 全选都不进选区。
+    if (characterId === SELF_CHARACTER_ID) {
+      return;
+    }
     setBulkSelectedIds((current) => {
       const next = new Set(current);
       if (next.has(characterId)) {
@@ -328,7 +375,11 @@ export function ContactsPage() {
   >(null);
   const previousBaseUrlRef = useRef(baseUrl);
   const startChatResetRef = useRef<() => void>(() => {});
-  const deferredSearchText = useDeferredValue("");
+  // 之前写成 useDeferredValue("") —— deferredSearchText 永远是空串，导致桌面
+  // 通讯录的内联搜索一直跑不到 matchesFriendSearch 分支：输入框打了字看上去没
+  // 反应，「没有找到匹配的联系人」「清空搜索」这两个空态分支也永远不会亮起。
+  // 必须把 searchText 真正喂进 useDeferredValue 才能让搜索生效。
+  const deferredSearchText = useDeferredValue(searchText);
   const desktopContactsPath = "/tabs/contacts";
   const normalizedPathname = normalizePathname(pathname);
   const desktopPathMismatch = normalizedPathname !== desktopContactsPath;
@@ -356,36 +407,49 @@ export function ContactsPage() {
     });
   }, [desktopContactsPath, desktopPathMismatch, hash, isDesktopLayout, navigate]);
 
+  // 新一轮走查：通讯录主页是 tab bar 第二格，用户在 tabs/chat / tabs/contacts /
+  // tabs/discover / tabs/me 之间频繁来回切，每次切回 /tabs/contacts 都把 4-6 条
+  // query 全部 background refetch（staleTime 默认 0 → 进入立即 stale）。在弱网真机
+  // 上 4 条并发请求 ≈ 400-800ms 无谓流量，电池/数据双费。所有 mutation 都
+  // 显式 invalidate 这几条 key，跨会话变更交给 focus refetch 兜底即可，因此用
+  // staleTime: 15-30s 配合 mobile-add-friend-page 同名 query 的窗口，让 tab
+  // 切换在 15s 内复用缓存。
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
 
   const charactersQuery = useQuery({
     queryKey: ["app-characters", baseUrl],
     queryFn: () => listCharacters(baseUrl),
+    staleTime: 30_000,
   });
 
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
+    staleTime: 15_000,
   });
 
   const contactGroupsQuery = useQuery({
     queryKey: ["app-contact-groups", baseUrl],
     queryFn: () => getGroups(baseUrl),
+    staleTime: 30_000,
   });
 
   const blockedCharactersQuery = useQuery({
     queryKey: ["app-contacts-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 30_000,
   });
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
 
   const startChatMutation = useMutation({
@@ -507,7 +571,17 @@ export function ContactsPage() {
       ).length,
     [friendRequestsQuery.data],
   );
-  const groupCount = contactGroupsQuery.data?.length ?? 0;
+  // 走查 Round 7：原版用 contactGroupsQuery.data.length 当 "X 个群聊" 副标，
+  // 但 /contacts/groups 子页早在 Round 3 加了客户端过滤 isHidden=true，
+  // visibleGroups 只统计未隐藏的——两边数对不上：父页"5 个群聊"，进去
+  // 实际只能看到 2 条，差出来的 3 条是 hide 状态的。统一按 visible 口径
+  // 算 count。
+  const groupCount = useMemo(
+    () =>
+      (contactGroupsQuery.data ?? []).filter((group) => !group.isHidden)
+        .length,
+    [contactGroupsQuery.data],
+  );
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -592,12 +666,139 @@ export function ContactsPage() {
   );
   const desktopDefaultFriendItem = desktopFriendSections[0]?.items[0] ?? null;
   const starredFriends = useMemo(
-    () => (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred),
+    // 排序逻辑跟移动 starred-friends-page 共用：starredAt DESC → 显示名 → id。
+    // 没排序时桌面星标列表的顺序就是 getFriends() 落库顺序，刚加星标的好友常常
+    // 排到中间或末尾，用户找不到自己刚操作的那条；mobile 早就是 starredAt DESC，
+    // 桌面这边一直没补。
+    () =>
+      (friendsQuery.data ?? [])
+        .filter((item) => item.friendship.isStarred)
+        .sort(compareStarredFriends),
     [friendsQuery.data],
+  );
+  // 把「星标好友的共同群聊 + 直通会话」两份索引合并到一次 conversations
+  // 遍历里建好。原实现对每个 starred friend 都 .filter / .find 一遍整个
+  // conversations 数组：O(starred × conversations)；用户星标多 + 群聊多时
+  // 每次 conversationsQuery 变（来一条消息 / 切置顶都会变）这两条 useMemo
+  // 全量重算，2.4s notice 还没消主线程已经被刷了两遍。反过来 outer-loop
+  // conversations + inner-loop participants（群聊 ≤ 几十人 / 直通会话只有
+  // 2 人）配合 starredIdSet O(1) 命中，总开销 ≈ O(conversations) + O(starred)。
+  const { starredCommonGroupsByCharacterId, starredDirectConversationByCharacterId } = useMemo(() => {
+    const commonGroupsMap: Record<string, Array<{ id: string; name: string }>> = {};
+    const directConvMap: Record<
+      string,
+      { id: string; isPinned: boolean; isMuted: boolean }
+    > = {};
+    const starredIdSet = new Set(
+      starredFriends.map((item) => item.character.id),
+    );
+    if (!starredIdSet.size) {
+      return {
+        starredCommonGroupsByCharacterId: commonGroupsMap,
+        starredDirectConversationByCharacterId: directConvMap,
+      };
+    }
+    // 预填 commonGroups 为 []：跟旧实现保持「starred 但 0 共同群聊」也有 entry，
+    // 避免下游 `?? []` 形态差异（虽然语义等价，单测里曾经按 key 个数断言过）。
+    for (const id of starredIdSet) {
+      commonGroupsMap[id] = [];
+    }
+    const conversations = conversationsQuery.data ?? [];
+    for (const conversation of conversations) {
+      const isGroup = isPersistedGroupConversation(conversation);
+      if (isGroup) {
+        // participants 是 string[] 没去重保证：万一同一 starred 好友在同一群
+        // participants 里出现两次（如服务端 join 漏 distinct），老 .filter()
+        // 语义只算一条；这里 inner-loop 不加 seen 集合会重复 push 同一群。
+        // 用一个轻量 Set 守住「同一 conversation 内对同一 participant 只算一次」。
+        const seen = new Set<string>();
+        for (const participantId of conversation.participants) {
+          if (!starredIdSet.has(participantId) || seen.has(participantId)) {
+            continue;
+          }
+          seen.add(participantId);
+          commonGroupsMap[participantId]!.push({
+            id: conversation.id,
+            name: conversation.title,
+          });
+        }
+        continue;
+      }
+      // 直通会话：找到 starred 对方那一位（参与者通常 2 人，包含 self；跳过 self
+      // 以免误把自己当对面 starred 友的直通会话）。已经命中过的不再覆写，沿用
+      // 旧 .find() 「第一条匹配」语义，避免后台并行返回多条直通时表现漂移。
+      for (const participantId of conversation.participants) {
+        if (!starredIdSet.has(participantId)) {
+          continue;
+        }
+        if (directConvMap[participantId]) {
+          continue;
+        }
+        directConvMap[participantId] = {
+          id: conversation.id,
+          isPinned: Boolean(conversation.isPinned),
+          isMuted: Boolean(conversation.isMuted),
+        };
+      }
+    }
+    return {
+      starredCommonGroupsByCharacterId: commonGroupsMap,
+      starredDirectConversationByCharacterId: directConvMap,
+    };
+  }, [conversationsQuery.data, starredFriends]);
+  const starredIsPinnedByCharacterId = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const [characterId, conversation] of Object.entries(
+      starredDirectConversationByCharacterId,
+    )) {
+      map[characterId] = conversation.isPinned;
+    }
+    return map;
+  }, [starredDirectConversationByCharacterId]);
+  const starredIsMutedByCharacterId = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const [characterId, conversation] of Object.entries(
+      starredDirectConversationByCharacterId,
+    )) {
+      map[characterId] = conversation.isMuted;
+    }
+    return map;
+  }, [starredDirectConversationByCharacterId]);
+  const blockedCharacterIdSet = useMemo(
+    () =>
+      new Set(
+        (blockedCharactersQuery.data ?? []).map((item) => item.characterId),
+      ),
+    [blockedCharactersQuery.data],
   );
   const tagGroupCount = useMemo(
     () => buildContactTagGroups(friendsQuery.data ?? [], "").length,
     [friendsQuery.data],
+  );
+  // 桌面 / 移动「批量管理」全选时需要把所有可见好友的 characterId 拍平成一个数组。
+  // 原来同样的 flatMap 在 JSX 里写了两遍（totalIds + onSelectAll 里），每渲染都新建
+  // 数组；这里抽出来共用，避免在 ContactsBulkActionBar 里也无谓地拿到不同的引用
+  // 触发 allSelected 的重比较。
+  // 走查 Round 2：把 char-default-self 从全选集合里排除，跟 toggleBulkSelection 的
+  // self 守卫一致；否则 bulkBar.allSelected 永远没法变 true（totalIds 含 self，
+  // selectedIds 里 toggle 又永远进不去 self），「取消全选」按钮永远不亮。
+  const desktopBulkAllIds = useMemo(
+    () =>
+      desktopFriendSections.flatMap((section) =>
+        section.items
+          .filter((item) => item.character.id !== SELF_CHARACTER_ID)
+          .map((item) => item.character.id),
+      ),
+    [desktopFriendSections],
+  );
+  const mobileBulkAllIds = useMemo(
+    () =>
+      friendSections.flatMap((section) =>
+        section.items
+          .filter((item) => item.character.id !== SELF_CHARACTER_ID)
+          .map((item) => item.character.id),
+      ),
+    [friendSections],
   );
 
   const commitDesktopRouteState = useCallback(
@@ -689,6 +890,10 @@ export function ContactsPage() {
         variables.blocked ? t(msg`已移出黑名单。`) : t(msg`已加入黑名单。`),
       );
       await Promise.all([
+        // 加入黑名单后服务端把 friendship.status 改成 'blocked'，getFriends() 会
+        // 把它过滤掉。如果不 invalidate app-friends，列表里这位「已黑」联系人
+        // 仍然显示成普通好友（连星标徽章都还在），看上去拉黑没生效。
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
         queryClient.invalidateQueries({
           queryKey: ["app-contacts-blocked", baseUrl],
         }),
@@ -706,30 +911,44 @@ export function ContactsPage() {
   });
   const acceptFriendRequestMutation = useMutation({
     mutationFn: (requestId: string) => acceptFriendRequest(requestId, baseUrl),
-    onSuccess: async (_, requestId) => {
+    // mutate 开新一轮前先把对面 mutation 的错误清掉，否则用户点接受失败 → 改点
+    // 拒绝成功，actionError 里那条旧的"接受失败"红字还会卡在面板顶端。
+    // 同时把"点击时是否在 new-friends 面板"快照成 context，避免 onSuccess
+    // 里再读 desktopSelection 时用户已经手动切到别处，被 auto-navigate 拽回来。
+    // 还要清掉上一条 success 提示——否则新动作刚开始 pending 时 banner 里还
+    // 挂着上次的"已通过/已忽略"，用户会以为"咦我刚点的已经成了？"。
+    onMutate: () => {
+      declineFriendRequestMutation.reset();
+      setFriendRequestSuccessState(null);
+      return {
+        wasOnNewFriendsPane: desktopSelection?.kind === "new-friends",
+      };
+    },
+    onSuccess: async (_data, requestId, context) => {
       const acceptedRequest =
         (friendRequestsQuery.data ?? []).find(
           (request) => request.id === requestId,
         ) ?? null;
+      // 用户在「新的朋友」面板里多半是在批量处理；接受一条就强制跳到该好友详情
+      // 等于把人甩出列表，下一条还得手动回来。这里只在用户原本就不在 new-friends
+      // 面板（例如通知/路由直跳进来 accept）时才跳，避免打断批量流。
+      const wasOnNewFriendsPane = context?.wasOnNewFriendsPane ?? false;
 
       setNotice(t(msg`已通过好友申请。`));
+      setFriendRequestSuccess(t(msg`已通过好友申请。`));
+      // 走查 R1：app-friends-quick-start 全代码库 0 个 useQuery 订阅；app-group-friends
+      // 在 create-group-page 已统一到 app-friends。两条 invalidate 都是死代码。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
         }),
         queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
         queryClient.invalidateQueries({
-          queryKey: ["app-friends-quick-start", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-friends", baseUrl],
-        }),
-        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
 
-      if (acceptedRequest?.characterId) {
+      if (!wasOnNewFriendsPane && acceptedRequest?.characterId) {
         const nextSelection = {
           kind: "friend",
           id: acceptedRequest.characterId,
@@ -741,8 +960,29 @@ export function ContactsPage() {
   });
   const declineFriendRequestMutation = useMutation({
     mutationFn: (requestId: string) => declineFriendRequest(requestId, baseUrl),
-    onSuccess: async () => {
-      setNotice(t(msg`好友请求已处理。`));
+    onMutate: (requestId: string) => {
+      acceptFriendRequestMutation.reset();
+      setFriendRequestSuccessState(null);
+      // 桌面端「清除」/「拒绝」都走同一个 declineFriendRequest endpoint，但
+      // success 文案要区分：过期请求点的是「清除」，反馈应该是「已清除过期
+      // 请求。」；活跃请求点的是「拒绝」，反馈是「已忽略好友申请。」。请求是否
+      // 过期得在点击瞬间从当前 list 里拍下来，onSuccess 那时数据已经被
+      // invalidate 重拉、本条已经不在里面了。
+      const target = (friendRequestsQuery.data ?? []).find(
+        (item) => item.id === requestId,
+      );
+      const expired =
+        target?.expiresAt != null &&
+        !Number.isNaN(new Date(target.expiresAt).getTime()) &&
+        new Date(target.expiresAt).getTime() <= Date.now();
+      return { expired };
+    },
+    onSuccess: async (_data, _requestId, context) => {
+      const message = context?.expired
+        ? t(msg`已清除过期请求。`)
+        : t(msg`已忽略好友申请。`);
+      setNotice(message);
+      setFriendRequestSuccess(message);
       await queryClient.invalidateQueries({
         queryKey: ["app-friend-requests", baseUrl],
       });
@@ -773,11 +1013,19 @@ export function ContactsPage() {
       characterId: string;
       pinned: boolean;
     }) => {
+      // 原实现只看 selectedConversation（来自 friend pane 选中的好友），
+      // 在 starred-friends / tags / groups sub-pane 里 selectedFriendItem=null →
+      // selectedConversation=null，所有 pin/mute 切换都白白多打一次 getOrCreate
+      // 即便 conversationsQuery.data 里就有那条直通会话。先在 cache 里找；找不到
+      // 才回退到 getOrCreate（新好友、刚加好友但还没生成 direct conversation）。
+      const cachedConversation = (conversationsQuery.data ?? []).find(
+        (conversation) =>
+          !isPersistedGroupConversation(conversation) &&
+          conversation.participants.includes(characterId),
+      );
       const conversationId =
-        selectedConversation?.participants.includes(characterId) &&
-        !isPersistedGroupConversation(selectedConversation)
-          ? selectedConversation.id
-          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+        cachedConversation?.id ??
+        (await getOrCreateConversation({ characterId }, baseUrl)).id;
 
       return setConversationPinned(conversationId, { pinned }, baseUrl);
     },
@@ -798,11 +1046,14 @@ export function ContactsPage() {
       characterId: string;
       muted: boolean;
     }) => {
+      const cachedConversation = (conversationsQuery.data ?? []).find(
+        (conversation) =>
+          !isPersistedGroupConversation(conversation) &&
+          conversation.participants.includes(characterId),
+      );
       const conversationId =
-        selectedConversation?.participants.includes(characterId) &&
-        !isPersistedGroupConversation(selectedConversation)
-          ? selectedConversation.id
-          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+        cachedConversation?.id ??
+        (await getOrCreateConversation({ characterId }, baseUrl)).id;
 
       return setConversationMuted(conversationId, { muted }, baseUrl);
     },
@@ -836,8 +1087,160 @@ export function ContactsPage() {
     }
 
     previousBaseUrlRef.current = baseUrl;
+    // 切世界 / 切账号会让所有 character/friendship ID 整套换掉，bulk 选中的
+    // characterIds 在新世界基本对不上号；如果不清，用户在 bulk 模式下切 world
+    // 之后点删除 → bulkFriendshipAction 拿一堆"上个世界 ID"打过去，server 全
+    // 部 SOCIAL_FRIEND_NOT_FOUND，看上去像批量删除整条挂掉。同理管理 modal /
+    // + 快捷菜单 / 搜索框 / 提示条都是"上个世界的 UI 状态"，一并复位。
+    setBulkMode(false);
+    setBulkSelectedIds(new Set());
+    setManagementOpen(false);
+    setIsQuickMenuOpen(false);
+    setSearchText("");
+    _setNotice(null);
     startChatResetRef.current();
   }, [baseUrl]);
+
+  // 通讯录全局 notice 完成动作后应该自然淡出，对齐 mobile-add-friend / friend-
+  // requests 的自清模板。原本一律 2.4s，但 danger（批量失败）信息在 2.4s 里
+  // 用户基本来不及读完红字 + 错误原因，延长到 4.5s。
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const delay = notice.tone === "danger" ? 4500 : 2400;
+    const timer = window.setTimeout(() => _setNotice(null), delay);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!friendRequestSuccess) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setFriendRequestSuccessState(null),
+      2400,
+    );
+    return () => window.clearTimeout(timer);
+  }, [friendRequestSuccess]);
+
+  // 有待处理好友申请且在桌面布局下时，提前 warm 这个 lazy chunk。用户多半
+  // 会点 sidebar 那个 shortcut，预加载后命中点击瞬间不再走 Suspense fallback。
+  // chunk 很小（pane 自身 + AvatarChip），eager 一次没有成本顾虑。
+  const hasPendingRequests = pendingRequestCount > 0;
+  useEffect(() => {
+    if (!isDesktopLayout || !hasPendingRequests) {
+      return;
+    }
+    void import(
+      "../features/desktop/contacts/desktop-contacts-friend-requests-pane"
+    );
+  }, [isDesktopLayout, hasPendingRequests]);
+
+  // 同样地，有星标朋友时 warm 一下 starred-friends pane chunk——首次点
+  // 「星标朋友」shortcut 时如果 chunk 没下，会走 Suspense fallback 显示
+  // 「正在打开星标朋友...」loader，瞬态体验不好。friend-requests pane 已经
+  // 有这套预热逻辑，starred pane 漏了。
+  const hasStarredFriends = starredFriends.length > 0;
+  useEffect(() => {
+    if (!isDesktopLayout || !hasStarredFriends) {
+      return;
+    }
+    void import(
+      "../features/desktop/contacts/desktop-contacts-starred-friends-pane"
+    );
+  }, [isDesktopLayout, hasStarredFriends]);
+
+  // 走查 R2：移动端用户点开 + 快捷菜单后，大概率会落到「发起群聊」或
+  // 「添加朋友」其中一个。这两条路由在 router 里都是 lazy() 包的，chunk
+  // 没预热的话从点 + → 选项 → navigate 这段会卡在 TanStack Router 的 Suspense
+  // fallback（contact-page 整页白屏 → create-group / add-friend 才挂出来），
+  // 慢网下 1-2 秒明显可见。router 的 defaultPreload:"intent" 只对 <Link>
+  // 起 hover/focus 作用，这里两条都是 <button onClick={navigate}>，preload
+  // 永远不会触发。menu 一打开就 warm 这两条 chunk，等用户的手指从 + 移到
+  // 选项的几百毫秒里基本能拉完。React.lazy 内部对同一个 import URL 做了
+  // promise dedupe，重开 + menu 不会重新拉。
+  useEffect(() => {
+    if (isDesktopLayout || !isQuickMenuOpen) {
+      return;
+    }
+    void import("./create-group-page");
+    void import("./mobile-add-friend-page");
+  }, [isDesktopLayout, isQuickMenuOpen]);
+
+  // 离开 new-friends 面板时清掉 success 提示。否则用户接受好友 → 切到其它
+  // 面板 → 2.4s 内切回来，pane 重新挂载读到上次的 friendRequestSuccess，
+  // 闪一遍旧确认条，看起来像新动作刚发生。
+  useEffect(() => {
+    if (desktopSelection?.kind !== "new-friends") {
+      setFriendRequestSuccessState(null);
+    }
+  }, [desktopSelection?.kind]);
+
+  // 原生壳硬件 Back（仅移动布局生效）：
+  // 1) + 快捷菜单打开时先收菜单
+  // 2) 批量管理模式时先退多选
+  // 不接的话 BACK 会落到 root-tab 双击退出分支，看着像菜单/多选丢了。
+  // 管理 modal 自己注册更晚 → 优先级更高，不会被这条吞掉。
+  useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+    if (!isQuickMenuOpen && !bulkMode) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      if (isQuickMenuOpen) {
+        event.preventDefault();
+        setIsQuickMenuOpen(false);
+        return true;
+      }
+      if (bulkMode) {
+        event.preventDefault();
+        exitBulkMode();
+        return true;
+      }
+      return false;
+    });
+    return unregister;
+  }, [isDesktopLayout, isQuickMenuOpen, bulkMode, exitBulkMode]);
+
+  // + 快捷菜单点空白收起：之前用 fixed inset-0 z-30 的全屏 button 接 onClick
+  // 来关菜单。问题是这块 overlay 也盖住了底部 MobileShell 的 4 个 tab，用户在
+  // 菜单展开时点 "我" 之类的底部 tab，第一下被 overlay 吃掉只关菜单、第二下
+  // 才真的导航。改用 document pointerdown 监听 + 容器 ref，菜单外侧任何位置
+  // 的点击都正常落到目标元素（tab/链接/按钮），同时也把菜单收起。
+  // 走查新一轮 R1：跟 chat-list-page b45435c2 对齐补 ESC——aria-haspopup="menu"
+  // 摆好了但 ESC 完全不起作用。外接键盘 / Bluetooth 键盘用户没法 dismiss；屏幕
+  // 阅读器用户被困在菜单里。Android 硬件 Back 已经在上一条 effect 兜了，这里
+  // 只补 ESC。
+  useEffect(() => {
+    if (isDesktopLayout || !isQuickMenuOpen) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const container = quickMenuContainerRef.current;
+      if (!container) {
+        return;
+      }
+      if (event.target instanceof Node && container.contains(event.target)) {
+        return;
+      }
+      setIsQuickMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsQuickMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isDesktopLayout, isQuickMenuOpen]);
 
   useEffect(() => {
     if (normalizedSearchText || !friendSections.length) {
@@ -1089,9 +1492,18 @@ export function ContactsPage() {
     });
   }
 
-  function handleMobileQuickActionNavigate(to: "/group/new") {
+  function handleMobileQuickActionNavigate(to: MobileQuickActionRoute) {
     setIsQuickMenuOpen(false);
     setNotice(null);
+    if (to === "/add-friend") {
+      void navigate({
+        to,
+        hash: buildMobileAddFriendRouteHash({
+          returnPath: pathname,
+        }),
+      });
+      return;
+    }
     void navigate({
       to,
       hash: buildCreateGroupRouteHash({
@@ -1373,11 +1785,18 @@ export function ContactsPage() {
       icon: Star,
       iconClassName: "bg-[linear-gradient(135deg,#f59e0b,#d97706)]",
       onClick: () => {
+        // 已经在 starred-friends pane 里再点这个 shortcut 时，不要把 selection 强
+        // 行重置回 starredFriends[0]——用户可能已经在中间列表里选中了第 N 位，
+        // 这一下又把他甩回第一位。只在首次进入（或从别的 pane 切回）时才用首项
+        // 作为默认 id，已在该 pane 时保留 desktopSelection.id 原值。
+        const currentId =
+          desktopSelection?.kind === "starred-friends"
+            ? (desktopSelection.id ?? null)
+            : null;
+        const nextId = currentId ?? starredFriends[0]?.character.id ?? null;
         const nextSelection = {
           kind: "starred-friends",
-          ...(starredFriends[0]?.character.id
-            ? { id: starredFriends[0].character.id }
-            : {}),
+          ...(nextId ? { id: nextId } : {}),
         } satisfies DesktopSelection;
         setDesktopSelection(nextSelection);
         commitDesktopRouteState(nextSelection, showWorldCharacters);
@@ -1567,21 +1986,15 @@ export function ContactsPage() {
               <ContactsBulkActionBar
                 desktop
                 selectedIds={Array.from(bulkSelectedIds)}
-                totalIds={desktopFriendSections.flatMap((section) =>
-                  section.items.map((item) => item.character.id),
-                )}
+                totalIds={desktopBulkAllIds}
                 onSelectAll={() =>
-                  setBulkSelectedIds(
-                    new Set(
-                      desktopFriendSections.flatMap((section) =>
-                        section.items.map((item) => item.character.id),
-                      ),
-                    ),
-                  )
+                  setBulkSelectedIds(new Set(desktopBulkAllIds))
                 }
                 onClearSelection={() => setBulkSelectedIds(new Set())}
                 onDone={exitBulkMode}
+                onPartialFailure={retainBulkFailures}
                 setNotice={setNotice}
+                setNoticeError={setNoticeError}
               />
             ) : null
           }
@@ -1615,7 +2028,11 @@ export function ContactsPage() {
                   }
                   description={
                     normalizedSearchText
-                      ? t(msg`换个关键词试试，或者展开世界角色目录继续找人。`)
+                      ? // 之前文案说"换个关键词试试，或者展开世界角色目录继续找人"，
+                        // 但搜索激活时世界角色目录会一起被关键词过滤，命中 0 条
+                        // 就整段隐藏 + 唯一 action 按钮也只是「清空搜索」。
+                        // 用户读到「展开世界角色目录」却找不到按钮 → 文案和动作不一致。
+                        t(msg`换个关键词试试，或者清空搜索回到完整通讯录。`)
                       : t(msg`先从新的朋友里建立关系，或者去看看世界角色。`)
                   }
                   action={
@@ -1626,6 +2043,12 @@ export function ContactsPage() {
                       >
                         {t(msg`清空搜索`)}
                       </Button>
+                    ) : showWorldCharacters ? (
+                      // 世界角色目录已经在下面展开（且为空态时通讯录里没好友），
+                      // 这里再点「浏览世界角色」会调 handleOpenWorldCharacters，因为
+                      // 它是 toggle —— 第二次按反而把下面已展开的角色列表收起来，
+                      // 用户看着像「按下按钮内容消失了」。已经展开就别再给按钮。
+                      null
                     ) : (
                       <Button
                         variant="secondary"
@@ -1661,40 +2084,66 @@ export function ContactsPage() {
           }}
           detailContent={
             desktopSelection?.kind === "new-friends" ? (
-              <DesktopContactsFriendRequestsPane
-                requests={friendRequestsQuery.data ?? []}
-                loading={friendRequestsQuery.isLoading}
-                error={
-                  friendRequestsQuery.error instanceof Error
-                    ? friendRequestsQuery.error.message
-                    : null
+              // 内层 Suspense：lazy pane chunk 第一次加载时只让右栏 detail
+              // 区显示 loader，避免外层 RouteRedirectState 把已经渲染好的 sidebar
+              // 也一起替换掉，用户瞬间失去通讯录上下文。fallback 用 LoadingBlock
+              // 居中，跟 pane 自带的 loading 状态视觉一致。
+              <Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center bg-[rgba(245,247,247,0.96)]">
+                    <LoadingBlock label={t(msg`正在打开新的朋友...`)} />
+                  </div>
                 }
-                actionError={
-                  acceptFriendRequestMutation.error instanceof Error
-                    ? acceptFriendRequestMutation.error.message
-                    : declineFriendRequestMutation.error instanceof Error
-                      ? declineFriendRequestMutation.error.message
+              >
+                <DesktopContactsFriendRequestsPane
+                  requests={friendRequestsQuery.data ?? []}
+                  loading={friendRequestsQuery.isLoading}
+                  error={
+                    friendRequestsQuery.error instanceof Error
+                      ? friendRequestsQuery.error.message
                       : null
-                }
-                notice={notice}
-                acceptPendingId={
-                  acceptFriendRequestMutation.isPending
-                    ? (acceptFriendRequestMutation.variables ?? null)
-                    : null
-                }
-                declinePendingId={
-                  declineFriendRequestMutation.isPending
-                    ? (declineFriendRequestMutation.variables ?? null)
-                    : null
-                }
-                onAccept={(requestId) =>
-                  acceptFriendRequestMutation.mutate(requestId)
-                }
-                onDecline={(requestId) =>
-                  declineFriendRequestMutation.mutate(requestId)
-                }
-              />
+                  }
+                  actionError={
+                    acceptFriendRequestMutation.error instanceof Error
+                      ? acceptFriendRequestMutation.error.message
+                      : declineFriendRequestMutation.error instanceof Error
+                        ? declineFriendRequestMutation.error.message
+                        : null
+                  }
+                  actionSuccess={friendRequestSuccess?.message ?? null}
+                  acceptPendingId={
+                    acceptFriendRequestMutation.isPending
+                      ? (acceptFriendRequestMutation.variables ?? null)
+                      : null
+                  }
+                  declinePendingId={
+                    declineFriendRequestMutation.isPending
+                      ? (declineFriendRequestMutation.variables ?? null)
+                      : null
+                  }
+                  onAccept={(requestId) =>
+                    acceptFriendRequestMutation.mutate(requestId)
+                  }
+                  onDecline={(requestId) =>
+                    declineFriendRequestMutation.mutate(requestId)
+                  }
+                  onRetry={() => {
+                    void friendRequestsQuery.refetch();
+                  }}
+                />
+              </Suspense>
             ) : desktopSelection?.kind === "starred-friends" ? (
+              // 内层 Suspense：pane chunk 首次加载时只让右栏 detail 区显示 loader，
+              // 否则外层 RouteRedirectState 会把整个 workspace（包括 sidebar 的
+              // shortcut list + 联系人目录）都替换成"正在打开桌面通讯录"的占位，
+              // 用户瞬间失去通讯录上下文。跟 new-friends pane 对齐。
+              <Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center bg-[rgba(245,247,247,0.96)]">
+                    <LoadingBlock label={t(msg`正在打开星标朋友...`)} />
+                  </div>
+                }
+              >
               <DesktopContactsStarredFriendsPane
                 friends={starredFriends}
                 selectedCharacterId={desktopSelection.id ?? null}
@@ -1704,18 +2153,91 @@ export function ContactsPage() {
                     ? friendsQuery.error.message
                     : null
                 }
-                actionError={
-                  startChatMutation.error instanceof Error
-                    ? startChatMutation.error.message
-                    : setStarredMutation.error instanceof Error
-                      ? setStarredMutation.error.message
-                      : null
-                }
-                notice={notice}
+                actionError={(() => {
+                  // startChatMutation / setStarredMutation / pinMutation /
+                  // muteMutation / blockMutation / deleteFriendMutation 在
+                  // friend / world / tags / starred 四个 pane 之间共用同一份
+                  // mutation 实例。原先只翻 startChat / setStarred 两条错；
+                  // Round 1 把 pin/mute/block/delete 也纳入显示——但只按
+                  // 「目标当前仍是 starred 好友」过滤，不够：用户给 Alice 点
+                  // 「置顶聊天」失败 → 错误条挂在中间侧栏 → 切到 Bob（也是
+                  // starred 好友），错误条没消，看起来像 Bob 的「置顶」出错。
+                  // 进一步绑到「当前选中的那位」：mutation.variables.characterId
+                  // 必须就是 selectedCharacterId，错误才在这个 pane 显示。
+                  // 切走那位 → 错误隐藏；切回去 → 又出现。最左侧 workspace
+                  // errors 区仍然保留全量错误兜底，不会丢。
+                  const targetId = desktopSelection.id;
+                  if (!targetId) {
+                    return null;
+                  }
+                  const isCurrent = (characterId: string | undefined) =>
+                    !!characterId && characterId === targetId;
+                  if (
+                    startChatMutation.error instanceof Error &&
+                    isCurrent(startChatMutation.variables)
+                  ) {
+                    return startChatMutation.error.message;
+                  }
+                  if (
+                    setStarredMutation.error instanceof Error &&
+                    isCurrent(setStarredMutation.variables?.characterId)
+                  ) {
+                    return setStarredMutation.error.message;
+                  }
+                  if (
+                    pinMutation.error instanceof Error &&
+                    isCurrent(pinMutation.variables?.characterId)
+                  ) {
+                    return pinMutation.error.message;
+                  }
+                  if (
+                    muteMutation.error instanceof Error &&
+                    isCurrent(muteMutation.variables?.characterId)
+                  ) {
+                    return muteMutation.error.message;
+                  }
+                  if (
+                    blockMutation.error instanceof Error &&
+                    isCurrent(blockMutation.variables?.characterId)
+                  ) {
+                    return blockMutation.error.message;
+                  }
+                  if (
+                    deleteFriendMutation.error instanceof Error &&
+                    isCurrent(deleteFriendMutation.variables)
+                  ) {
+                    return deleteFriendMutation.error.message;
+                  }
+                  return null;
+                })()}
                 startChatPendingId={pendingCharacterId}
                 starPendingId={
                   setStarredMutation.isPending
                     ? (setStarredMutation.variables?.characterId ?? null)
+                    : null
+                }
+                commonGroupsByCharacterId={starredCommonGroupsByCharacterId}
+                isPinnedByCharacterId={starredIsPinnedByCharacterId}
+                isMutedByCharacterId={starredIsMutedByCharacterId}
+                blockedCharacterIds={blockedCharacterIdSet}
+                pinPendingCharacterId={
+                  pinMutation.isPending
+                    ? (pinMutation.variables?.characterId ?? null)
+                    : null
+                }
+                mutePendingCharacterId={
+                  muteMutation.isPending
+                    ? (muteMutation.variables?.characterId ?? null)
+                    : null
+                }
+                blockPendingCharacterId={
+                  blockMutation.isPending
+                    ? (blockMutation.variables?.characterId ?? null)
+                    : null
+                }
+                deletePendingCharacterId={
+                  deleteFriendMutation.isPending
+                    ? (deleteFriendMutation.variables ?? null)
                     : null
                 }
                 onSelectCharacter={(characterId) => {
@@ -1737,6 +2259,26 @@ export function ContactsPage() {
                     starred,
                   });
                 }}
+                onOpenGroup={(groupId) => {
+                  void navigate({
+                    to: buildDesktopChatThreadPath({
+                      conversationId: groupId,
+                    }),
+                  });
+                }}
+                onTogglePinned={(characterId, pinned) => {
+                  pinMutation.mutate({ characterId, pinned });
+                }}
+                onToggleMuted={(characterId, muted) => {
+                  muteMutation.mutate({ characterId, muted });
+                }}
+                onToggleBlock={(characterId, blocked) => {
+                  setNotice(null);
+                  blockMutation.mutate({ characterId, blocked });
+                }}
+                onDeleteFriend={(characterId) => {
+                  deleteFriendMutation.mutate(characterId);
+                }}
                 onOpenProfile={handleOpenProfile}
                 onOpenMoments={(characterId) => {
                   void navigate({
@@ -1753,7 +2295,11 @@ export function ContactsPage() {
                     }),
                   });
                 }}
+                onRetry={() => {
+                  void friendsQuery.refetch();
+                }}
               />
+              </Suspense>
             ) : desktopSelection?.kind === "tags" ? (
               <DesktopContactsTagsPane />
             ) : desktopSelection?.kind === "groups" ? (
@@ -1998,15 +2544,6 @@ export function ContactsPage() {
   return (
     <div ref={pageRef}>
       <AppPage className="relative min-h-full space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
-        {isQuickMenuOpen ? (
-          <button
-            type="button"
-            aria-label={t(msg`关闭快捷菜单`)}
-            onClick={() => setIsQuickMenuOpen(false)}
-            className="fixed inset-0 z-30 bg-black/[0.03]"
-          />
-        ) : null}
-
         <TabPageTopBar
           title={t(msg`通讯录`)}
           titleAlign="center"
@@ -2023,12 +2560,18 @@ export function ContactsPage() {
                 {t(msg`取消`)}
               </Button>
             ) : (
-            <div className="relative flex items-center gap-1">
+            <div
+              ref={quickMenuContainerRef}
+              className="relative flex items-center gap-1"
+            >
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => setManagementOpen(true)}
+                onClick={() => {
+                  setIsQuickMenuOpen(false);
+                  setManagementOpen(true);
+                }}
                 className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
                 aria-label={t(msg`通讯录管理`)}
               >
@@ -2040,13 +2583,27 @@ export function ContactsPage() {
                 size="icon"
                 onClick={() => setIsQuickMenuOpen((current) => !current)}
                 className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
-                aria-label={t(msg`打开快捷菜单`)}
+                aria-label={
+                  isQuickMenuOpen ? t(msg`关闭快捷菜单`) : t(msg`打开快捷菜单`)
+                }
+                aria-expanded={isQuickMenuOpen}
+                aria-haspopup="menu"
               >
                 <Plus size={15} strokeWidth={2.4} />
               </Button>
 
               {isQuickMenuOpen && !bulkMode ? (
-                <div className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]">
+                // bg 必须完全不透明：rgba(44,44,44,0.96) 时 “新的朋友” 的红色 6 badge
+                // 会从下层穿透到 “添加朋友” 行的右侧，看着像 + 菜单自己有红点。
+                // 走查新一轮 R1：role="menu" + role="menuitem" 对齐 trigger 的
+                // aria-haspopup="menu"。原本 trigger 声明了 menu popup 但弹层
+                // 没 menu 语义，屏幕阅读器把整块当通用 region，听不到「4 个菜单项
+                // 里第 1 项」之类导航。跟 chat-list-page b45435c2 修复对齐。
+                <div
+                  role="menu"
+                  aria-label={t(msg`快捷操作`)}
+                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]"
+                >
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
 
@@ -2056,6 +2613,7 @@ export function ContactsPage() {
                         <button
                           key={item.key}
                           type="button"
+                          role="menuitem"
                           onClick={() => handleMobileQuickActionNavigate(to)}
                           className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                         >
@@ -2067,11 +2625,25 @@ export function ContactsPage() {
                       );
                     }
 
+                    // 走查 R1：disabled menuitem（扫一扫 / 收付款）只设 disabled
+                      // 在 iOS Safari + 部分 Android 壳里依旧能被 Tab 聚焦，键盘 / 屏
+                      // 阅用户 Tab 到这里按 Enter 完全没反应，无法理解 "为什么聚到
+                      // 这里又不能用"。tabIndex=-1 让 Tab 序列跳过这两项，仅靠视觉
+                      // 「暂未开放」+ aria-disabled 提示功能未上线；以后开放时去掉
+                      // disabled 即可恢复 Tab 顺序。aria-label 把主标题 + 「暂未开
+                      // 放」合并播报，避免屏阅器只读到主标题就误以为可点。
+                      const disabledItemLabel = item.disabled && item.disabledLabel
+                        ? `${t(item.label)}，${t(item.disabledLabel)}`
+                        : undefined;
                     return (
                       <button
                         key={item.key}
                         type="button"
+                        role="menuitem"
                         disabled={item.disabled}
+                        aria-disabled={item.disabled || undefined}
+                        aria-label={disabledItemLabel}
+                        tabIndex={item.disabled ? -1 : undefined}
                         className={cn(
                           "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                           item.disabled
@@ -2104,26 +2676,28 @@ export function ContactsPage() {
             )
           }
         >
-          <div className="pt-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                void navigate({
-                  to: "/tabs/search",
-                  hash: buildSearchRouteHash({
-                    category: "all",
-                    keyword: "",
-                    source: "contacts",
-                  }),
-                });
-              }}
-              className="flex h-9 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
-              aria-label={t(msg`打开搜一搜`)}
-            >
-              <Search size={14} className="shrink-0" />
-              <span className="min-w-0 flex-1 text-left">{t(msg`搜索`)}</span>
-            </button>
-          </div>
+          {bulkMode ? null : (
+            <div className="pt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({
+                    to: "/tabs/search",
+                    hash: buildSearchRouteHash({
+                      category: "all",
+                      keyword: "",
+                      source: "contacts",
+                    }),
+                  });
+                }}
+                className="flex h-9 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
+                aria-label={t(msg`打开搜一搜`)}
+              >
+                <Search size={14} className="shrink-0" />
+                <span className="min-w-0 flex-1 text-left">{t(msg`搜索`)}</span>
+              </button>
+            </div>
+          )}
         </TabPageTopBar>
 
         <div className="pb-8">
@@ -2131,10 +2705,15 @@ export function ContactsPage() {
             <div className="space-y-1.5 px-3 pt-2">
               {notice ? (
                 <InlineNotice
-                  tone="info"
-                  className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                  tone={notice.tone}
+                  className={cn(
+                    "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+                    notice.tone === "danger"
+                      ? "border-[rgba(220,38,38,0.18)]"
+                      : "border-[rgba(96,165,250,0.16)]",
+                  )}
                 >
-                  {notice}
+                  {notice.message}
                 </InlineNotice>
               ) : null}
               {mobileErrorItems.map((item) => (
@@ -2171,11 +2750,13 @@ export function ContactsPage() {
             </div>
           ) : null}
 
-          <ContactShortcutList
-            items={mobileShortcutItems}
-            mobileDense
-            className="mt-0.5 border-x-0 shadow-none"
-          />
+          {bulkMode ? null : (
+            <ContactShortcutList
+              items={mobileShortcutItems}
+              mobileDense
+              className="mt-0.5 border-x-0 shadow-none"
+            />
+          )}
 
           <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {friendsQuery.isLoading ? (
@@ -2226,27 +2807,50 @@ export function ContactsPage() {
               </div>
             ) : null}
 
-            {friendSections.map((section) => (
-              <div key={section.key} id={section.anchorId}>
-                <SectionHeader title={section.title} />
-                {section.items.map((item, index) => (
-                  <FriendListRow
-                    key={item.character.id}
-                    item={item}
-                    index={index}
-                    bulkMode={bulkMode}
-                    selected={bulkSelectedIds.has(item.character.id)}
-                    onClick={() => {
-                      if (bulkMode) {
-                        toggleBulkSelection(item.character.id);
-                        return;
-                      }
-                      handleOpenProfile(item.character.id);
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
+            {friendSections.map((section) => {
+              // 新一轮走查：bulk 模式下把"我自己"过滤掉。原写法 friendSections 含
+              // SELF，bulk 模式渲染 FriendListRow 时会显示空 checkbox 圆圈，但
+              // toggleBulkSelection 的 SELF 守卫又会拒绝写入 → 用户点 SELF 行 checkbox
+              // 没反应，看着像 App 卡了。totalIds / onSelectAll 已经把 SELF 排除，
+              // 把渲染侧也对齐。section 全空时仍保留 header 占位，避免右侧 A-Z
+              // 索引点 W 后 scrollIntoView 找不到锚点。
+              const items =
+                bulkMode
+                  ? section.items.filter(
+                      (item) => item.character.id !== SELF_CHARACTER_ID,
+                    )
+                  : section.items;
+              return (
+                // scroll-margin-top 跟 syncActiveMobileIndexKey 的 stickyOffset 保
+                // 持 104px 一致：右侧 A-Z 索引点 "M" 后 scrollIntoView 把这块锚点
+                // 对齐到 MobileViewportPane 滚动容器的 top，而 TabPageTopBar 是
+                // sticky top-0 占着同一个位置，section header（字母 "M"）直接被
+                // 盖住；加 104px scroll-margin 让锚点落在 top bar 下沿。
+                <div
+                  key={section.key}
+                  id={section.anchorId}
+                  style={{ scrollMarginTop: 104 }}
+                >
+                  <SectionHeader title={section.title} />
+                  {items.map((item, index) => (
+                    <FriendListRow
+                      key={item.character.id}
+                      item={item}
+                      index={index}
+                      bulkMode={bulkMode}
+                      selected={bulkSelectedIds.has(item.character.id)}
+                      onClick={() => {
+                        if (bulkMode) {
+                          toggleBulkSelection(item.character.id);
+                          return;
+                        }
+                        handleOpenProfile(item.character.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </section>
         </div>
 
@@ -2263,21 +2867,13 @@ export function ContactsPage() {
         {bulkMode ? (
           <ContactsBulkActionBar
             selectedIds={Array.from(bulkSelectedIds)}
-            totalIds={friendSections.flatMap((section) =>
-              section.items.map((item) => item.character.id),
-            )}
-            onSelectAll={() =>
-              setBulkSelectedIds(
-                new Set(
-                  friendSections.flatMap((section) =>
-                    section.items.map((item) => item.character.id),
-                  ),
-                ),
-              )
-            }
+            totalIds={mobileBulkAllIds}
+            onSelectAll={() => setBulkSelectedIds(new Set(mobileBulkAllIds))}
             onClearSelection={() => setBulkSelectedIds(new Set())}
             onDone={exitBulkMode}
+            onPartialFailure={retainBulkFailures}
             setNotice={setNotice}
+            setNoticeError={setNoticeError}
           />
         ) : null}
 

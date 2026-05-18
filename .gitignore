@@ -21,6 +21,7 @@ build/
 .next/
 out/
 apps/*/dist/
+apps/*/dist-mobile/
 packages/*/dist/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/

@@ -20,6 +20,19 @@ function shouldUseDesktopLayout(platform: AppPlatform) {
     return false;
   }
 
+  // 原生壳 (Capacitor) 在 runtimeConfig.appPlatform 还没 hydrate 完的瞬间
+  // 会被 detectAppPlatform 报成 "web"，落到下面的 innerWidth 判断；模拟器/
+  // 平板宽度 >= 960 会被判定为 desktop 走 DesktopShell，hydrate 完才切回
+  // MobileShell。这中间 1-2s DesktopShell 的顶部导航条会闪一下。
+  // 任何时刻只要 Capacitor.isNativePlatform() 为 true，强制走 mobile，
+  // 不再走宽度判断。
+  const capacitorWindow = window as Window & {
+    Capacitor?: { isNativePlatform?: () => boolean };
+  };
+  if (capacitorWindow.Capacitor?.isNativePlatform?.()) {
+    return false;
+  }
+
   if (isMobileWebRuntime(platform)) {
     return false;
   }

@@ -58,6 +58,7 @@ import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useCappedPending } from "../hooks/use-capped-pending";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -112,21 +113,26 @@ function MobileAddFriend() {
       ? routeState.returnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const [searchText, setSearchText] = useState(routeState.keyword ?? "");
+  const [submittedKeyword, setSubmittedKeyword] = useState(
+    routeState.keyword ?? "",
+  );
+  // currentRouteHash 编码当前已提交的搜索词（不是初始 URL 里的 keyword）：用户
+  // 在 /add-friend 上敲 "Alice" 搜出来后点头像看资料 / 点右上"新的朋友"，
+  // 子页面带的 returnHash 要能让用户返回时看到 "Alice" 的结果，而不是落回
+  // welcome 状态。原写法 keyword 取 routeState.keyword（初始 URL），用户搜
+  // 完跳子页再返回，搜索词全丢。
   const currentRouteHash = useMemo(
     () =>
       buildMobileAddFriendRouteHash({
         returnPath: safeReturnPath,
         returnHash: safeReturnHash,
-        keyword: routeState.keyword,
+        keyword: submittedKeyword.trim() || undefined,
       }),
-    [routeState.keyword, safeReturnHash, safeReturnPath],
+    [submittedKeyword, safeReturnHash, safeReturnPath],
   );
 
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [searchText, setSearchText] = useState(routeState.keyword ?? "");
-  const [submittedKeyword, setSubmittedKeyword] = useState(
-    routeState.keyword ?? "",
-  );
   const [notice, setNotice] = useState<{
     message: string;
     tone: "info" | "success";
@@ -134,6 +140,34 @@ function MobileAddFriend() {
   const [sendDialogCharacterId, setSendDialogCharacterId] = useState<
     string | null
   >(null);
+  const previousBaseUrlRef = useRef(baseUrl);
+
+  // baseUrl 切换（切账号 / 切世界）后旧 character.id 在新世界里基本不存在：
+  // 1) submittedKeyword="Alice" 残留 → buildAddFriendSearchResults 在新世界字典
+  //    里 filter 出空 → "没有找到 Alice" 误导态，用户以为新世界没人叫 Alice。
+  // 2) sendDialogCharacterId 还指向旧世界的 character.id，sendDialogResult 通过
+  //    searchResults.find 在新世界数据里找不到 → 立即变成 null → MobileAddFriend
+  //    SendSheet 接到 open=false 自动关掉，用户正在敲的招呼语整段丢失，且没有任何
+  //    "切世界了" 之类提示，看着像点击没生效。
+  // 3) 旧的 notice（来自上个世界的 "好友申请已发送。"）2.4s 内还会在新世界顶端
+  //    继续吊着，跟新世界毫无关系。
+  // 4) 走查 R3 补：旧世界踩过的 sendRequest/openChat 4xx 错误，mutation.isError
+  //    依然是 true，page-level ErrorBlock（line ~544）会把旧世界的错误一路挂在新
+  //    世界顶端（SOCIAL_FRIEND_TARGET_NOT_FOUND 之类，文案完全跟新世界对不上）。
+  //    mutation.reset() 在 baseUrl 翻面时一并把这两条 mutation 的 isError/error 清掉。
+  //    实际 reset 调用放在两条 mutation 声明之后的下一条 useEffect，这里只先做 UI
+  //    state 的同步清理；如果在这里直接引用 mutation.reset 会读到 use-before-init。
+  // 上述四条本质都是"旧世界 UI 状态泄漏到新世界"，统一在 baseUrl 翻面那一刻清掉。
+  useEffect(() => {
+    if (previousBaseUrlRef.current === baseUrl) {
+      return;
+    }
+    previousBaseUrlRef.current = baseUrl;
+    setSearchText("");
+    setSubmittedKeyword("");
+    setSendDialogCharacterId(null);
+    setNotice(null);
+  }, [baseUrl]);
 
   useEffect(() => {
     if (routeState.keyword) {
@@ -163,21 +197,50 @@ function MobileAddFriend() {
     staleTime: 15_000,
   });
 
+  // 用 direction=all 拿全集：默认 inbound-only 拿不到用户主动发出的 outbound
+  // 请求，导致用户已经申请过的角色行还显示「可添加」可以再点一次（后端会
+  // 静默 dedupe，但 UI 上误导用户以为可以再加）。和 character-detail-page 用
+  // 同一个 ['app-friend-requests', baseUrl, 'all'] key 共享 react-query 缓存。
   const friendRequestsQuery = useQuery({
-    queryKey: ["app-friend-requests", baseUrl],
-    queryFn: () => getFriendRequests(baseUrl),
+    queryKey: ["app-friend-requests", baseUrl, "all"],
+    queryFn: () => getFriendRequests(baseUrl, { direction: "all" }),
+    // 跟兄弟 query（charactersQuery / friendsQuery）一致：用户在通讯录 → +
+    // 添加朋友 → 角色详情来回切时不要每次都强制 refetch；同一 baseUrl 短时间
+    // 内复用缓存即可，被本页 sendRequestMutation.onSuccess 主动 invalidate
+    // 之后会立刻刷新。
+    staleTime: 15_000,
   });
 
   const blockedQuery = useQuery({
     queryKey: ["app-contacts-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
+    staleTime: 30_000,
   });
 
   const openChatMutation = useMutation({
     mutationFn: (characterId: string) =>
       getOrCreateConversation({ characterId }, baseUrl),
     onSuccess: (conversation) => {
-      void navigate({ to: "/chat/$conversationId", params: { conversationId: conversation.id } });
+      // 与 contacts-page.tsx 的 startChatMutation 对齐：conversation 可能为
+      // null（被拉黑 / 权限受限时后端会返回空），漏 null 守护会让
+      // navigate 取 .id 时 throw。
+      if (!conversation) {
+        // 静默 return 会让按钮从「打开中...」直接闪回「发消息」，用户看不到
+        // 任何反馈，以为「点了没反应」会再点一次。给一条 info 提示告诉用户
+        // 当前打不开的可能原因（多半是对方刚被拉黑 / 权限变了），避免无脑
+        // 重试。
+        setNotice({
+          tone: "info",
+          message: t(
+            msg`暂时无法打开会话，对方可能已被屏蔽或权限受限，稍后再试。`,
+          ),
+        });
+        return;
+      }
+      void navigate({
+        to: "/chat/$conversationId",
+        params: { conversationId: conversation.id },
+      });
     },
   });
 
@@ -219,6 +282,25 @@ function MobileAddFriend() {
     sendDialogCharacterId,
   ]);
 
+  // 走查 R3：baseUrl 翻面时把 sendRequest / openChat 两条 mutation 的 isError
+  // 也清掉。上面那条 UI state 清理 effect 跑得早，那时 mutation 还没初始化，
+  // 这里独立一条 effect、放在 mutation 声明之后；走 ref 把 reset 函数固化避免
+  // 把 mutation 本身当成 dep 触发无关 re-run。详细动机见上方 baseUrl effect
+  // 第 4 条注释。
+  const sendRequestResetRef = useRef(sendRequestMutation.reset);
+  sendRequestResetRef.current = sendRequestMutation.reset;
+  const openChatResetRef = useRef(openChatMutation.reset);
+  openChatResetRef.current = openChatMutation.reset;
+  const baseUrlMutationResetRef = useRef(baseUrl);
+  useEffect(() => {
+    if (baseUrlMutationResetRef.current === baseUrl) {
+      return;
+    }
+    baseUrlMutationResetRef.current = baseUrl;
+    sendRequestResetRef.current();
+    openChatResetRef.current();
+  }, [baseUrl]);
+
   const friendshipMap = useMemo(
     () =>
       new Map(
@@ -242,7 +324,18 @@ function MobileAddFriend() {
     () => new Set((blockedQuery.data ?? []).map((item) => item.characterId)),
     [blockedQuery.data],
   );
-  const pendingRequestCount = pendingRequestMap.size;
+  // 右上角 "新的朋友" badge 只算需要用户处理的 inbound 请求（acceptAt=null
+  // 是角色主动发起、等用户决定）；outbound 那些是用户已经发出去、等角色
+  // 自动通过的，不应该在 badge 上提醒用户去 /friend-requests 操作。
+  const pendingRequestCount = useMemo(() => {
+    let count = 0;
+    for (const request of friendRequestsQuery.data ?? []) {
+      if (request.status === "pending" && !request.acceptAt) {
+        count += 1;
+      }
+    }
+    return count;
+  }, [friendRequestsQuery.data]);
 
   const trimmedKeyword = submittedKeyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
@@ -300,17 +393,20 @@ function MobileAddFriend() {
   }
 
   function handleBack() {
-    navigateBackOrFallback(() => {
-      if (safeReturnPath) {
-        void navigate({
-          to: safeReturnPath,
-          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
-        });
-        return;
-      }
+    navigateBackOrFallback(
+      () => {
+        if (safeReturnPath) {
+          void navigate({
+            to: safeReturnPath,
+            ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+          });
+          return;
+        }
 
-      void navigate({ to: "/tabs/chat" });
-    });
+        void navigate({ to: "/tabs/chat" });
+      },
+      safeReturnPath ?? "/tabs/chat",
+    );
   }
 
   function openFriendRequests() {
@@ -331,6 +427,18 @@ function MobileAddFriend() {
 
     if (result.status === "friend") {
       openChatMutation.mutate(result.character.id);
+      return;
+    }
+
+    // inbound pending（对方发来的、还在等用户决定）：按钮不再 disabled，点击
+    // 跳到 /friend-requests 让用户去通过 / 拒绝。outbound pending（用户已发）
+    // 按钮还是 disabled，handler 不会触发。
+    if (
+      result.status === "pending" &&
+      result.pendingRequest &&
+      !result.pendingRequest.acceptAt
+    ) {
+      openFriendRequests();
       return;
     }
   }
@@ -398,15 +506,33 @@ function MobileAddFriend() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`隐界号 / 角色名`)}
-              className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
+              // 这里 autoFocus 进来就直接抖。
+              className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               autoFocus
               enterKeyHint="search"
+              // 隐界号是带下划线的小写英数 ID（yinjie_alice123）；iOS 默认会
+              // 自动大写句首字母 + 自动纠正"alice"→"Alice"，用户键入完按"搜
+              // 索"被静默改成"Yinjie_Alice123"，跟服务端存的 ID 永远 case-
+              // mismatch（matchCharacter 内部已经 toLowerCase，所以 case 不是
+              // 直接致命，但 autocorrect 把"alice123"换成"alike123"才是真坑——
+              // 用户根本意识不到自己敲的不是原 ID）。同 profile-info-name /
+              // mobile-search-workspace 同款关 autocorrect / autocaps / spell。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
             />
             {searchText ? (
               <button
                 type="button"
                 onClick={() => {
+                  // X 同时清掉 searchText 和 submittedKeyword——之前只清
+                  // searchText，结果输入框已经空了、底下还在显示上一个 keyword
+                  // 的结果，看着像「点 X 没反应」。submittedKeyword 一起清才会
+                  // 回到 welcome 态，跟「取消」按钮一致。
                   setSearchText("");
+                  setSubmittedKeyword("");
+                  setNotice(null);
                   inputRef.current?.focus();
                 }}
                 className="-mr-1 flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
@@ -466,7 +592,25 @@ function MobileAddFriend() {
           </div>
         ) : loadingError ? (
           <div className="px-3 pt-3">
-            <ErrorBlock message={loadingError.message} />
+            <ErrorBlock message={loadingError.message}>
+              {/* 对齐 friend-requests-page / contacts-page 的错误重试模板：4 条
+                  query 任一挂掉时用户原本只能退页再进；这里把 refetch 一次性
+                  重跑 4 条，让用户原地恢复。 */}
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void charactersQuery.refetch();
+                    void friendsQuery.refetch();
+                    void friendRequestsQuery.refetch();
+                    void blockedQuery.refetch();
+                  }}
+                  className="rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-3 py-1 text-[11px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  {t(msg`重试读取`)}
+                </button>
+              </div>
+            </ErrorBlock>
           </div>
         ) : !trimmedKeyword ? (
           <MobileAddFriendWelcomeState
@@ -484,8 +628,12 @@ function MobileAddFriend() {
                 key={result.character.id}
                 item={result}
                 actionPending={
+                  // capped pending（500ms）只用来兜 sheet 自动关闭，row 上的
+                  // 按钮要锁到真正的 mutation 完成为止，不然慢网下：发送 → 弹层
+                  // 自动收 → row 又变回"添加" → 用户再点一次就触发第二条发送，
+                  // 后端最终收到两条 friend request。这里看真实的 isPending。
                   (result.status === "available" &&
-                    sendRequestDisplayedPending &&
+                    sendRequestMutation.isPending &&
                     sendRequestMutation.variables?.characterId ===
                       result.character.id) ||
                   (result.status === "friend" &&
@@ -506,6 +654,20 @@ function MobileAddFriend() {
         result={sendDialogResult}
         ownerName={ownerName}
         pending={sendRequestDisplayedPending}
+        // 走查 R2：sendRequest 失败时 ErrorBlock 在 AppPage 文档流里渲染 (line ~544)
+        // 但 sheet 是 fixed inset-0 z-50 整屏覆盖，错误被完全盖住。用户只看到
+        // 按钮从"发送中"复位回"发送"，以为只是手抖没点中，再点一次又踩同一个
+        // 4xx，整个循环里没有任何"为什么失败"的反馈。把 mutation.error 透传进
+        // sheet 内部展示在 textarea 下方——既不关 sheet 也不丢用户已敲的 greeting，
+        // 用户能直接看到"对方拒绝/限流/网络断开"，再决定是否重试或改文案。只在
+        // sheet 仍开着的时候透传，免得关闭后又把"我自己"打来的过期 error 拍回来。
+        errorMessage={
+          sendDialogResult &&
+          sendRequestMutation.isError &&
+          sendRequestMutation.error instanceof Error
+            ? sendRequestMutation.error.message
+            : null
+        }
         onClose={() => setSendDialogCharacterId(null)}
         onSubmit={async (greeting) => {
           if (!sendDialogResult) {
@@ -527,7 +689,23 @@ function MobileAddFriendWelcomeState({
   onQuickSearch: (keyword: string) => void;
 }) {
   const t = useRuntimeTranslator();
-  const examples = [t(msg`角色名`), t(msg`隐界号`), t(msg`关系描述`)];
+  // chip 必须是「真能搜的字符串」而不是描述用法的标签。原来用 ["角色名",
+  // "隐界号", "关系描述"]——点击就把这些 label 作为 keyword 提交，几乎永远
+  // 命中不到东西。第二轮换成 ["yinjie_1234abcd","白石","数字人","治愈系"]
+  // 依然全部命中 0：fake yinjie_ ID 必定不匹配，"白石/数字人/治愈系" 在当前
+  // 世界角色池里没有任何角色名 / 资料 / expertDomains 命中。点一下就直接
+  // 落到 "没有找到 X" 空态，比不放 chip 还误导用户。
+  // 改成默认 seed 角色池里高命中的关键词（角色名前缀 / 关系描述 / expert
+  // domain 都会命中）：林 = 13 命中（林佑/林医生/林晨…），老师 = 11 命中
+  // （苏老师 + profile.relationship 含「老师」一片），导师 = 6 命中，复盘 =
+  // 6 命中。隐界号格式提示由顶端 placeholder「隐界号 / 角色名」承担，不再
+  // 硬编码 fake yinjie_ chip。
+  const examples = [
+    t(msg`林`),
+    t(msg`老师`),
+    t(msg`导师`),
+    t(msg`复盘`),
+  ];
 
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
@@ -563,7 +741,13 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]">
         <Search size={22} />
       </div>
-      <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
+      {/* 走查 R3：原版标题没 max-w / break-words，submittedKeyword 来自 URL
+          hash 的 q= 参数，攻击者诱导用户打开 /add-friend#q=<60 个无空格字符>
+          时标题文本会撑破窄屏（iOS 320px 容器只剩 ~270px），整页落到水平
+          滚动。Chinese 在字间会自然换行不踩；纯 ASCII 长串才会爆。加 mx-auto
+          max-w-[280px] + break-words 跟下方描述统一收紧；description 已经有
+          max-w-[280px] 就是这套防线，title 漏了一个。 */}
+      <div className="mx-auto mt-4 max-w-[280px] break-words text-[16px] font-medium text-[color:var(--text-primary)]">
         {t(msg`没有找到“${keyword}”`)}
       </div>
       <div className="mt-1.5 max-w-[280px] text-[12px] leading-5 text-[color:var(--text-muted)]">
@@ -590,7 +774,11 @@ function MobileAddFriendResultRow({
 }: MobileAddFriendResultRowProps) {
   const t = useRuntimeTranslator();
   const displayName = getSearchResultDisplayName(item);
-  const meta = getMobileResultStatusMeta(item.status, actionPending);
+  const meta = getMobileResultStatusMeta(
+    item.status,
+    actionPending,
+    item.pendingRequest,
+  );
   const PrimaryIcon = meta.icon;
   const matchReasonText = t(item.matchReason);
   const subtitle =
@@ -628,8 +816,14 @@ function MobileAddFriendResultRow({
               <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
                 {displayName}
               </div>
+              {/* badge 跟按钮文案对齐：Bug W 之后 outbound pending 按钮显示
+                  "已发送"、inbound pending 显示"待处理"，但顶部 badge 一律
+                  formatRelationshipStatus("pending")="待处理"——同一行 badge 跟
+                  button 描述对不上。pending 状态时按 acceptAt 区分。 */}
               <span className="shrink-0 text-[10px] text-[color:var(--text-dim)]">
-                {t(formatRelationshipStatus(item.status))}
+                {item.status === "pending" && item.pendingRequest?.acceptAt
+                  ? t(msg`已发送`)
+                  : t(formatRelationshipStatus(item.status))}
               </span>
             </div>
             <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
@@ -652,9 +846,12 @@ function MobileAddFriendResultRow({
                 item.status === "available"
                   ? "bg-[#07c160] text-white hover:bg-[#06ad56]"
                   : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]",
-                item.status === "pending" || item.status === "blocked"
-                  ? "opacity-70"
-                  : undefined,
+                // 按 meta.disabled 加 opacity-70 而不是按 status：Bug W 之后
+                // inbound pending（acceptAt=null）按钮其实是可点的（跳 /friend-requests），
+                // 旧 status==="pending" 一刀切的话会把 inbound 也变成 70% 透明，
+                // 看起来跟 disabled 一样让人不敢点。outbound pending / blocked
+                // 仍是真 disabled，由 meta.disabled 维持原样。
+                meta.disabled ? "opacity-70" : undefined,
               )}
             >
               <PrimaryIcon size={13} />
@@ -676,6 +873,7 @@ type ResultStatusMeta = {
 function getMobileResultStatusMeta(
   status: AddFriendRelationshipState,
   actionPending: boolean,
+  pendingRequest?: AddFriendSearchResult["pendingRequest"],
 ): ResultStatusMeta {
   if (status === "friend") {
     return {
@@ -686,6 +884,18 @@ function getMobileResultStatusMeta(
   }
 
   if (status === "pending") {
+    // acceptAt=null 表示对方（角色）主动发来的、还在等用户决定的 inbound 请求；
+    // acceptAt=set 表示用户自己发出去、等角色 auto-accept 的 outbound。原来一律
+    // 显示成"已发送"会让用户以为是自己发的（实际可能是摇一摇 / 相遇 inbound），
+    // 而且没有任何指引去 /friend-requests 处理。inbound 改成"待处理"并可点击。
+    const isInbound = !pendingRequest?.acceptAt;
+    if (isInbound) {
+      return {
+        label: msg`待处理`,
+        icon: UserPlus,
+        disabled: false,
+      };
+    }
     return {
       label: msg`已发送`,
       icon: CheckCircle2,
@@ -713,6 +923,7 @@ type MobileAddFriendSendSheetProps = {
   result: AddFriendSearchResult | null;
   ownerName: string;
   pending: boolean;
+  errorMessage?: string | null;
   onClose: () => void;
   onSubmit: (greeting: string) => Promise<void> | void;
 };
@@ -722,6 +933,7 @@ function MobileAddFriendSendSheet({
   result,
   ownerName,
   pending,
+  errorMessage,
   onClose,
   onSubmit,
 }: MobileAddFriendSendSheetProps) {
@@ -729,26 +941,55 @@ function MobileAddFriendSendSheet({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [greeting, setGreeting] = useState("");
 
+  // 只在弹层打开 / 切换到不同角色时重置 greeting；以前 dep 用 result 整个对象，
+  // searchResults useMemo 一旦重算 result 引用就变，这条 effect 会把用户已经
+  // 改过的 greeting 直接覆盖回模板（在网络一抖 / friendRequestsQuery 自动 refresh
+  // 时复现）。
+  // 二次收紧：ownerName / t 也别进 dep —— ownerName 来自 world-owner-store，
+  // hydrate 完 / 用户在另一处改了用户名 / WS 推过来都会让引用换；t 来自
+  // useRuntimeTranslator，locale 一变就换。这两条本来都和"用户正在敲招呼"
+  // 互不相干，但只要进 dep，effect 一重跑就把 draft 拍回模板，用户的"hi
+  // 啊好久不见"立刻被覆盖成"你好，我是X，想把你添加到通讯录里。"
+  // 用 sessionRef 标记"这次会话已经初始化过模板了"——同一个 (open=true,
+  // targetCharacterId) 组合下不再重置。
+  const targetCharacterId = result?.character.id ?? null;
+  const initializedSessionRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!open || !result) {
+    if (!open || !targetCharacterId) {
+      initializedSessionRef.current = null;
       return;
     }
-
+    if (initializedSessionRef.current === targetCharacterId) {
+      return;
+    }
+    initializedSessionRef.current = targetCharacterId;
     const owner = ownerName.trim() || t(msg`我`);
     setGreeting(t(msg`你好，我是${owner}，想把你添加到通讯录里。`));
-  }, [open, ownerName, result, t]);
+  }, [open, ownerName, targetCharacterId, t]);
 
+  // 把 "首次聚焦/把光标移到末尾" 和 "Escape 监听" 拆成两条 effect：
+  // 原写法把 onClose（父组件每次 render 都是新箭头函数）放进 deps，导致父端
+  // 任何 re-render（如 friendRequestsQuery 后台 refetch）都会把这条 effect 重跑
+  // → cleanup + 重新 setTimeout(80ms)。用户正在编辑 greeting 时光标会被强制
+  // 跳到文本末尾。focus 只在 open 翻转那一次跑一次就行。
   useEffect(() => {
     if (!open) {
       return;
     }
-
     const timer = window.setTimeout(() => {
       textareaRef.current?.focus();
       const length = textareaRef.current?.value.length ?? 0;
       textareaRef.current?.setSelectionRange(length, length);
     }, 80);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !pending) {
         event.preventDefault();
@@ -756,12 +997,39 @@ function MobileAddFriendSendSheet({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
-      window.clearTimeout(timer);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose, open, pending]);
+
+  // 原生壳硬件 Back：sheet 打开时先关 sheet，不让 BACK 把用户从 /add-friend 直
+  // 接 history.back 弹回 /tabs/contacts。pending 中（正在发送）不拦避免打断。
+  useEffect(() => {
+    if (!open || pending) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [open, onClose, pending]);
+
+  // 走查 R1：sheet 是 fixed inset-0，但没锁 body scroll —— iOS Safari WKWebView
+  // 上用户用手指在半透明遮罩 / sheet 之外区域滑动会"穿透"滚动底层 /add-friend
+  // 的搜索结果列表，遮罩看着不动、底下列表却在飘。同 share-card-modal /
+  // channels-forward-picker 同款 body.style.overflow="hidden" 兜一下。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   if (!open || !result) {
     return null;
@@ -783,7 +1051,13 @@ function MobileAddFriendSendSheet({
         className="absolute inset-0"
       />
 
-      <div className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] shadow-[0_-12px_32px_rgba(15,23,42,0.18)] sm:rounded-[14px]">
+      <div
+        // pb 接 --keyboard-inset：iOS WKWebView 上软键盘弹起会盖住 fixed
+        // 元素，sheet 底部「取消 / 发送」按钮看不见。mobile-shell 把 keyboard
+        // 高度写进 --keyboard-inset CSS 变量，这里 max(safe-area, keyboard)
+        // 抬高 sheet 内容，保证按钮始终高于键盘。
+        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(15,23,42,0.18)] sm:rounded-[14px]"
+      >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <button
             type="button"
@@ -840,12 +1114,25 @@ function MobileAddFriendSendSheet({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
-              className="min-h-[112px] w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[14px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.42)]"
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-h-[112px] w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.42)]"
             />
             <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
               {greeting.length}/60
             </div>
           </div>
+
+          {/* 走查 R2：失败原因渲染在 sheet 内部（textarea 下方）。父端 page-level
+              的 ErrorBlock 被 z-50 sheet 完全盖住，不在这里二次展示用户就只能反复
+              踩同一个 4xx。 */}
+          {errorMessage ? (
+            <div
+              role="alert"
+              className="mt-2.5 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.94)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+            >
+              {errorMessage}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

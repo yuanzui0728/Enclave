@@ -23,9 +23,20 @@ function normalizeHash(value?: string | null) {
   return nextValue.startsWith("#") ? nextValue.slice(1) : nextValue;
 }
 
+// 走查 2026-05-17 R4：和 character-detail-route-state / mobile-group-route-state /
+// mobile-group-call-route-state 同款修法。channels-page 移动端"返回上一页"按钮
+// 会 navigate({ to: safeReturnPath })，浏览器 history.replaceState 接受 "//host"
+// 形式 → 浏览器拼成 "https://evil.com"，攻击者只需诱导用户点
+// /discover/channels#returnPath=//evil.com&section=recommended 的链接，进入视频号
+// 后按"返回上一页"就跳第三方站。同时也用于 channel-author 页的 safeReturnPath、
+// MobileChannelMediaSurface 卡片转发回链 chain，本轮一并把这条 normalize 加上。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
-  if (!nextValue || !nextValue.startsWith("/")) {
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    nextValue.startsWith("//")
+  ) {
     return undefined;
   }
 

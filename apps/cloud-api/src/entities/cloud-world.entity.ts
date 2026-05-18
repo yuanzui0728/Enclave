@@ -59,6 +59,9 @@ export class CloudWorldEntity {
   lastInteractiveAt: Date | null;
 
   @Column({ type: "datetime", nullable: true })
+  lastUserMessageAt: Date | null;
+
+  @Column({ type: "datetime", nullable: true })
   lastBootedAt: Date | null;
 
   @Column({ type: "datetime", nullable: true })

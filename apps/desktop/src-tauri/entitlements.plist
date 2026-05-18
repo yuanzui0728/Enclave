@@ -1,21 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    Yinjie desktop entitlements (macOS).
+
+    Hardened-runtime exceptions are required for the embedded WKWebView /
+    JavaScriptCore JIT used by Tauri to render the shared Yinjie web app.
+    Apple's notarization service accepts these entitlements when they are
+    individually justified, but bare flags without context tend to fail
+    initial human re-review when something escalates. Keep this manifest
+    annotated so re-review and audit can verify each line.
+
+    Sandbox (com.apple.security.app-sandbox) is intentionally NOT enabled:
+    Tauri's WKWebView + tauri-plugin-opener (used to spawn the default
+    browser for external links) require non-sandbox execution, and this
+    desktop shell is distributed via direct DMG download rather than the
+    Mac App Store. Notarization (Gatekeeper) is the active protection
+    layer; see DEPLOY.md desktop section.
+-->
 <plist version="1.0">
 <dict>
+    <!-- JIT (JavaScriptCore) — WKWebView ships a JIT'd JS engine; required
+         by every Tauri app that renders web content. -->
     <key>com.apple.security.cs.allow-jit</key>
     <true/>
+
+    <!-- Unsigned executable memory — paired with allow-jit; WKWebView's JIT
+         allocates RWX pages that are not part of the signed binary. -->
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
     <true/>
+
+    <!-- Library validation — Tauri loads system frameworks (WebKit,
+         JavaScriptCore, Foundation) plus runtime-loaded helper bundles
+         (tauri-plugin-dialog file dialogs). Disable library validation so
+         Apple's loader does not reject those at launch. -->
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
+
+    <!-- Outbound network — required to reach the Yinjie cloud-api / world
+         APIs (chat, moments, channels) and the configured remote core API. -->
     <key>com.apple.security.network.client</key>
     <true/>
+
+    <!-- Inbound network (server) — kept for future local Core API serve
+         scenarios (start_core_api / stop_core_api commands in main.rs).
+         Notarization treats this as a non-blocking note; revisit when
+         Core API in-process serve is finalized. -->
     <key>com.apple.security.network.server</key>
     <true/>
+
+    <!-- Camera — NSCameraUsageDescription explains the user-facing reason;
+         used by avatar capture and video calls. -->
     <key>com.apple.security.device.camera</key>
     <true/>
+
+    <!-- Microphone — NSMicrophoneUsageDescription explains the user-facing
+         reason; used by voice messages and voice calls. -->
     <key>com.apple.security.device.audio-input</key>
     <true/>
+
+    <!-- User-selected file access — covers desktop_save_remote_file /
+         desktop_save_text_file / desktop_save_binary_file commands which
+         always present an NSSavePanel; the user explicitly picks the path.
+         No NS*FolderUsageDescription is needed because we never reach into
+         Documents/Desktop/Downloads outside of user-driven dialogs. -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
 </dict>

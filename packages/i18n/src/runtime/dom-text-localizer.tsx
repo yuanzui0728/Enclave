@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DEFAULT_LOCALE, type SupportedLocale } from "../locales";
+import type { SupportedLocale } from "../locales";
 
 const SKIP_ELEMENT_SELECTOR = [
   "script",
@@ -46,10 +46,11 @@ export function DomTextLocalizer({
     }
 
     const translateValue = (sourceValue: string) => {
-      if (locale === DEFAULT_LOCALE && dictionary.size === 0) {
-        return sourceValue;
-      }
-
+      // 不再用 "locale === DEFAULT_LOCALE && dictionary.size === 0" 短路：
+      // 这种情况下服务端落库的 en-US / ja-JP / ko-KR 老系统消息（比如世界
+      // 之前是 en-US 时生成的 "You added X." friend-added notice）切回中文
+      // UI 后会原样泄漏，根本走不到 translateKnownPattern。pattern matching
+      // 只是几条 regex tests，开销可忽略。
       const trimmedSource = sourceValue.trim();
       if (!trimmedSource) {
         return sourceValue;
@@ -313,6 +314,69 @@ function translateKnownPattern(
       return `최대 ${limit}개 영수증 중 최신 ${visibleCount}개를 표시합니다.`;
     }
     return `最多 ${limit} 条回执中显示最新 ${visibleCount} 条。`;
+  }
+
+  // social.service.ts:buildFriendAddedSystemMessage 按"加好友当时"world 的
+  // 语言把 system 消息直接落库（zh-CN / en-US / ja-JP / ko-KR 四套硬编码
+  // 文案）。用户后续切语言时，老消息仍是当时 locale 的原文。这里识别四种
+  // 源串都映射到当前 locale，避免 zh→en 单向命中、en→zh 反向继续显示英文。
+  // 注意这一段**必须**放在 zh-CN early-return 之前——下面对 zh-CN locale 会
+  // 直接 return null（跳过本文件所有 zh-CN-only-source 的 fallthrough），如果
+  // 把 characterAddedPatterns 留在文件下方，en-US/ja-JP/ko-KR 老系统消息就再
+  // 也翻不回 zh-CN 了。
+  const characterAddedPatterns: Array<{
+    pattern: RegExp;
+    sourceLocale: SupportedLocale;
+  }> = [
+    {
+      pattern: /^你已添加了(.+)，现在可以开始聊天了。$/,
+      sourceLocale: "zh-CN",
+    },
+    {
+      pattern: /^You added (.+)\. You can start chatting now\.$/,
+      sourceLocale: "en-US",
+    },
+    {
+      pattern: /^(.+)を追加しました。これでチャットを始められます。$/,
+      sourceLocale: "ja-JP",
+    },
+    {
+      pattern: /^(.+)을\(를\) 추가했어요\. 이제 채팅을 시작할 수 있어요\.$/,
+      sourceLocale: "ko-KR",
+    },
+  ];
+  for (const { pattern, sourceLocale } of characterAddedPatterns) {
+    const match = sourceValue.match(pattern);
+    if (!match) continue;
+    if (locale === sourceLocale) return null;
+    const target = translatePatternTarget(match[1] ?? "");
+    if (locale === "zh-CN") {
+      return `你已添加了${target}，现在可以开始聊天了。`;
+    }
+    if (locale === "ja-JP") {
+      return `${target}を追加しました。これでチャットを始められます。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}을(를) 추가했어요. 이제 채팅을 시작할 수 있어요.`;
+    }
+    return `You added ${target}. You can start chatting now.`;
+  }
+
+  // 走查 R1：commit 7bb36bf2 把 "locale === DEFAULT_LOCALE && dictionary.size
+  // === 0" 的 short-circuit 拆了（为了让落库的英/日/韩老 system message 切回
+  // zh-CN 时能被反向翻译）。副作用：下面 ~70 个 pattern 都是"zh-CN 源 → 翻
+  // 成 en/ja/ko"的单向 regex，default 分支返回英文——locale 是 zh-CN 时全部
+  // fallthrough 把"4 人群聊"覆写成"4-person group chat"、"4 人"覆写成
+  // "4 person"、"已加载 N 条"覆写成 "loaded N items" 等等，整个 zh-CN UI 大
+  // 面积泄漏英文。
+  //
+  // 上方 en-US 源 pattern 都已经在自己的 if 里 `&& locale !== "en-US"` 提前
+  // 守住，characterAddedPatterns 也已经移到这里、每条 entry 自带 sourceLocale
+  // 守护——所以走到这里时如果 locale 是 zh-CN，剩下全部 fallthrough 都是
+  // "zh-CN 源 → 其它 locale" 的目标方向，对 zh-CN 用户就是噪声覆写。直接
+  // 返回 null，让上层 translateValue 保留原始 zh-CN 文案。
+  if (locale === "zh-CN") {
+    return null;
   }
 
   const popularPlayersMatch = sourceValue.match(/^(\d+(?:\.\d+)?) 万人在玩$/);
@@ -816,19 +880,9 @@ function translateKnownPattern(
     return `${opener}: ${authorName} just sent an AI-generated short, worth pausing for 10 seconds.`;
   }
 
-  const characterAddedMatch = sourceValue.match(
-    /^你已添加了(.+)，现在可以开始聊天了。$/,
-  );
-  if (characterAddedMatch) {
-    const target = translatePatternTarget(characterAddedMatch[1] ?? "");
-    if (locale === "ja-JP") {
-      return `${target} を追加しました。チャットを開始できます。`;
-    }
-    if (locale === "ko-KR") {
-      return `${target}을(를) 추가했습니다. 이제 채팅을 시작할 수 있습니다.`;
-    }
-    return `${target} has been added. You can start chatting now.`;
-  }
+  // characterAddedPatterns 已上移到 zh-CN early-return 之前，避免被
+  // `if (locale === "zh-CN") return null` 跳过——en-US/ja-JP/ko-KR 老系统
+  // 消息反向翻回 zh-CN 必须先于 zh-CN 默认 early-return 之前处理。
 
   const nicknameMatch = sourceValue.match(/^昵称：(.+?)(?: · (.+))?$/);
   if (nicknameMatch) {

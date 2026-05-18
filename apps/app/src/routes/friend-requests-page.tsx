@@ -15,6 +15,8 @@ type Translator = ReturnType<typeof useRuntimeTranslator>;
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { getFriendRequestSourceLabel } from "../features/contacts/friend-request-scene-label";
 import {
   buildMobileFriendRequestsRouteHash,
   parseMobileFriendRequestsRouteState,
@@ -77,26 +79,25 @@ function MobileFriendRequestsPage() {
     returnHash: safeReturnHash,
   });
 
+  // 新一轮走查：和 contacts-page / mobile-add-friend-page 同 cache key，但前两者已经
+  // 把 staleTime 设到 15s；这边不设 → 用户从通讯录 / 加号页跳进来时仍触发 background
+  // refetch，cache 明明是新鲜的（< 15s 前刚拉过）也照刷一遍。同步 15s。
   const requestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
+    staleTime: 15_000,
   });
 
   const acceptMutation = useMutation({
     mutationFn: (requestId: string) => acceptFriendRequest(requestId, baseUrl),
     onSuccess: async () => {
       setSuccessNotice(t(msg`已通过好友申请。`));
+      // 走查 R1：app-friends-quick-start / app-group-friends 都是无订阅者的死 key。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
         }),
         queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-friends-quick-start", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-friends", baseUrl],
-        }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
@@ -105,9 +106,14 @@ function MobileFriendRequestsPage() {
   });
 
   const declineMutation = useMutation({
-    mutationFn: (requestId: string) => declineFriendRequest(requestId, baseUrl),
-    onSuccess: async () => {
-      setSuccessNotice(t(msg`好友请求已处理。`));
+    mutationFn: ({ requestId }: { requestId: string; expired: boolean }) =>
+      declineFriendRequest(requestId, baseUrl),
+    onSuccess: async (_data, variables) => {
+      setSuccessNotice(
+        variables.expired
+          ? t(msg`已清除过期请求。`)
+          : t(msg`已忽略好友申请。`),
+      );
       await queryClient.invalidateQueries({
         queryKey: ["app-friend-requests", baseUrl],
       });
@@ -144,6 +150,17 @@ function MobileFriendRequestsPage() {
       to: "/contacts/world-characters",
       hash: buildWorldCharactersRouteHash({
         keyword: "",
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function openCharacterProfile(characterId: string) {
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId },
+      hash: buildCharacterDetailRouteHash({
         returnPath: pathname,
         returnHash: currentRouteHash || undefined,
       }),
@@ -189,17 +206,21 @@ function MobileFriendRequestsPage() {
         leftActions={
           <Button
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
+            aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={17} />
           </Button>
@@ -276,7 +297,21 @@ function MobileFriendRequestsPage() {
 
         {(requestsQuery.data ?? []).length ? (
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-            {(requestsQuery.data ?? []).map((request, index) => (
+            {(requestsQuery.data ?? []).map((request, index) => {
+              const expired = isFriendRequestExpired(request.expiresAt);
+              const acceptErrorForRow =
+                acceptMutation.isError &&
+                acceptMutation.variables === request.id &&
+                acceptMutation.error instanceof Error
+                  ? acceptMutation.error
+                  : null;
+              const declineErrorForRow =
+                declineMutation.isError &&
+                declineMutation.variables?.requestId === request.id &&
+                declineMutation.error instanceof Error
+                  ? declineMutation.error
+                  : null;
+              return (
               <div
                 key={request.id}
                 className={cn(
@@ -287,142 +322,133 @@ function MobileFriendRequestsPage() {
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <AvatarChip
-                    name={request.characterName}
-                    src={request.characterAvatar}
-                    size="wechat"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => openCharacterProfile(request.characterId)}
+                    className={cn(
+                      "shrink-0 rounded-[8px] active:opacity-70",
+                      expired ? "opacity-70" : undefined,
+                    )}
+                    aria-label={t(msg`查看 ${request.characterName} 的资料`)}
+                  >
+                    <AvatarChip
+                      name={request.characterName}
+                      src={request.characterAvatar}
+                      size="wechat"
+                    />
+                  </button>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openCharacterProfile(request.characterId)}
+                      className="flex w-full items-start justify-between gap-3 text-left active:opacity-70"
+                      aria-label={t(msg`查看 ${request.characterName} 的资料`)}
+                    >
                       <div className="min-w-0">
-                        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+                        <div
+                          className={cn(
+                            "truncate text-[14px] text-[color:var(--text-primary)]",
+                            expired ? "opacity-70" : undefined,
+                          )}
+                        >
                           {request.characterName}
                         </div>
-                        <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
-                          {getFriendRequestSourceLabel(t, request.triggerScene)}
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+                          <span className={expired ? "opacity-70" : undefined}>
+                            {t(getFriendRequestSourceLabel(request.triggerScene))}
+                          </span>
+                          {expired ? (
+                            <span className="inline-flex h-[14px] items-center rounded-full bg-[rgba(245,158,11,0.12)] px-1.5 text-[9px] font-medium leading-none tracking-[0.04em] text-[color:var(--state-warning-text)]">
+                              {t(msg`已过期`)}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                       <div className="shrink-0 text-[10px] text-[color:var(--text-dim)]">
                         {formatFriendRequestDate(t, request.createdAt)}
                       </div>
-                    </div>
+                    </button>
 
-                    <div className="mt-2 rounded-[12px] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
+                    <div
+                      className={cn(
+                        "mt-2 whitespace-pre-line break-words rounded-[12px] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[13px] leading-5 text-[color:var(--text-secondary)]",
+                        expired ? "opacity-70" : undefined,
+                      )}
+                    >
                       {request.greeting || t(msg`想认识你。`)}
                     </div>
+
+                    {acceptErrorForRow || declineErrorForRow ? (
+                      <div className="mt-2 rounded-[10px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[11px] leading-4 text-[color:var(--state-danger-text)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1">
+                            {(acceptErrorForRow ?? declineErrorForRow)?.message}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={
+                              acceptErrorForRow
+                                ? handleRetryAccept
+                                : handleRetryDecline
+                            }
+                            className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                          >
+                            {acceptErrorForRow
+                              ? t(msg`重试通过`)
+                              : t(msg`重试拒绝`)}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="mt-2.5 flex items-center justify-end gap-2">
                       <Button
                         disabled={
                           acceptMutation.isPending || declineMutation.isPending
                         }
-                        onClick={() => declineMutation.mutate(request.id)}
+                        onClick={() =>
+                          declineMutation.mutate({
+                            requestId: request.id,
+                            expired,
+                          })
+                        }
                         variant="secondary"
                         size="sm"
-                        className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-8 min-w-[3.5rem] rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                       >
                         {declineMutation.isPending &&
-                        declineMutation.variables === request.id
-                          ? t(msg`处理中...`)
-                          : t(msg`拒绝`)}
+                        declineMutation.variables?.requestId === request.id
+                          ? expired
+                            ? t(msg`清除中...`)
+                            : t(msg`拒绝中...`)
+                          : expired
+                            ? t(msg`清除`)
+                            : t(msg`拒绝`)}
                       </Button>
-                      <Button
-                        disabled={
-                          acceptMutation.isPending || declineMutation.isPending
-                        }
-                        onClick={() => acceptMutation.mutate(request.id)}
-                        variant="primary"
-                        size="sm"
-                        className="h-8 rounded-[10px] bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
-                      >
-                        {acceptMutation.isPending &&
-                        acceptMutation.variables === request.id
-                          ? t(msg`接受中...`)
-                          : t(msg`接受`)}
-                      </Button>
+                      {!expired ? (
+                        <Button
+                          disabled={
+                            acceptMutation.isPending ||
+                            declineMutation.isPending
+                          }
+                          onClick={() => acceptMutation.mutate(request.id)}
+                          variant="primary"
+                          size="sm"
+                          className="h-8 min-w-[3.5rem] rounded-[10px] bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
+                        >
+                          {acceptMutation.isPending &&
+                          acceptMutation.variables === request.id
+                            ? t(msg`接受中...`)
+                            : t(msg`接受`)}
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </section>
-        ) : null}
-
-        {acceptMutation.isError && acceptMutation.error instanceof Error ? (
-          <div className="px-3 pt-2">
-            <InlineNotice
-              tone="danger"
-              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1">
-                  {acceptMutation.error.message}
-                </span>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {acceptMutation.variables ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                      onClick={handleRetryAccept}
-                    >
-                      {t(msg`重试通过`)}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                    onClick={handleStatusBack}
-                  >
-                    {safeReturnPath
-                      ? t(msg`返回上一页`)
-                      : t(msg`浏览世界角色`)}
-                  </Button>
-                </div>
-              </div>
-            </InlineNotice>
-          </div>
-        ) : null}
-        {declineMutation.isError && declineMutation.error instanceof Error ? (
-          <div className="px-3 pt-2">
-            <InlineNotice
-              tone="danger"
-              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1">
-                  {declineMutation.error.message}
-                </span>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {declineMutation.variables ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                      onClick={handleRetryDecline}
-                    >
-                      {t(msg`重试拒绝`)}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                    onClick={handleStatusBack}
-                  >
-                    {safeReturnPath
-                      ? t(msg`返回上一页`)
-                      : t(msg`浏览世界角色`)}
-                  </Button>
-                </div>
-              </div>
-            </InlineNotice>
-          </div>
         ) : null}
 
         {!requestsQuery.isLoading &&
@@ -454,56 +480,15 @@ function MobileFriendRequestsPage() {
   );
 }
 
-function getFriendRequestSourceLabel(t: Translator, triggerScene?: string) {
-  if (!triggerScene) {
-    return t(msg`新的朋友`);
+function isFriendRequestExpired(expiresAt?: string | null) {
+  if (!expiresAt) {
+    return false;
   }
-
-  if (triggerScene === "shake") {
-    return t(msg`来自摇一摇`);
+  const date = new Date(expiresAt);
+  if (Number.isNaN(date.getTime())) {
+    return false;
   }
-
-  const localizedScene = getSceneLabelById(t, triggerScene);
-  return t(msg`来自${localizedScene}`);
-}
-
-function getSceneLabelById(t: Translator, sceneId: string): string {
-  switch (sceneId) {
-    case "coffee_shop":
-      return t(msg`咖啡馆`);
-    case "gym":
-      return t(msg`健身房`);
-    case "library":
-      return t(msg`图书馆`);
-    case "park":
-      return t(msg`公园`);
-    case "classroom":
-      return t(msg`教室`);
-    case "lab":
-      return t(msg`实验室`);
-    case "office":
-      return t(msg`办公室`);
-    case "coworking":
-      return t(msg`联合办公空间`);
-    case "study_room":
-      return t(msg`自习室`);
-    case "restaurant":
-      return t(msg`餐厅`);
-    case "museum":
-      return t(msg`博物馆`);
-    case "bookstore":
-      return t(msg`书店`);
-    case "travel":
-      return t(msg`旅途`);
-    case "night_walk":
-      return t(msg`夜晚的街道`);
-    case "theater":
-      return t(msg`剧场`);
-    case "home":
-      return t(msg`居家场景`);
-    default:
-      return sceneId; // i18n-ignore-line: unknown scene id passthrough
-  }
+  return date.getTime() <= Date.now();
 }
 
 function formatFriendRequestDate(t: Translator, createdAt: string) {
@@ -521,7 +506,11 @@ function formatFriendRequestDate(t: Translator, createdAt: string) {
     return t(msg`今天`);
   }
 
+  // 跨年的请求只显示 MM-DD 会让 "12-25" 看上去像今年 12-25 ——
+  // 但其实是去年的 (好友请求最长可挂到一周后过期，但 UI 里偶尔
+  // 也会出现状态 stuck 的旧记录)。同一年只显示 MM-DD，跨年加 YYYY-。
   const formatter = new Intl.DateTimeFormat(getActiveLocale(), {
+    ...(sameYear ? {} : { year: "numeric" }),
     month: "2-digit",
     day: "2-digit",
   });

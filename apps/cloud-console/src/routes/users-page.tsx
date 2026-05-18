@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import type { CloudUserStatus, SubscriptionStatus } from "@yinjie/contracts";
+import type {
+  CloudUserStatus,
+  SubscriptionStatus,
+} from "@yinjie/contracts";
 import { formatDateTime, useAppLocale } from "@yinjie/i18n";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
@@ -9,7 +12,9 @@ import {
   formatCloudConsolePageOfTotal,
   useCloudConsoleText,
 } from "../lib/cloud-console-i18n";
+import { useIpRegion } from "../lib/ip-region";
 import { SurfaceCard } from "../components/ui";
+import { DistributionPieCard } from "../components/users/distribution-pie-card";
 
 function formatTimestamp(value?: string | null) {
   if (!value) return "-";
@@ -21,6 +26,75 @@ function formatTimestamp(value?: string | null) {
 const FILTER_CONTROL_CLASS =
   "rounded-2xl border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-sm";
 
+type SortField = "expires" | "registered" | "lastLogin" | "lastChatMessage";
+type SortDirection = "asc" | "desc";
+
+function IpRegionCell({ ip }: { ip: string | null }) {
+  const region = useIpRegion(ip);
+  if (!ip) return <span>-</span>;
+  if (region.isLoading) {
+    return (
+      <span
+        className="text-[color:var(--text-muted)]"
+        title={ip}
+      >
+        …
+      </span>
+    );
+  }
+  if (region.isError || !region.data) {
+    // 解析失败时退回展示原始 IP，避免空白
+    return <span title={ip}>{ip}</span>;
+  }
+  return (
+    <span
+      className="cursor-help text-[color:var(--text-secondary)]"
+      title={ip}
+    >
+      {region.data.display}
+    </span>
+  );
+}
+
+function SortableHeader({
+  label,
+  field,
+  activeField,
+  direction,
+  onToggle,
+}: {
+  label: string;
+  field: SortField;
+  activeField: SortField | null;
+  direction: SortDirection;
+  onToggle: (field: SortField) => void;
+}) {
+  const isActive = activeField === field;
+  // 三档 (asc/desc/inactive) 用同一 family 的字符 + 固定宽度容器，避免 ↕/▲/▼
+  // 切换时撑动列宽
+  const indicator = isActive ? (direction === "asc" ? "▲" : "▼") : "▼";
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(field)}
+      className={`inline-flex items-center gap-1 font-medium ${
+        isActive
+          ? "text-[color:var(--text-primary)]"
+          : "text-[color:var(--text-muted)]"
+      } hover:text-[color:var(--text-primary)]`}
+    >
+      <span>{label}</span>
+      <span
+        className={`inline-block w-3 text-center text-[10px] leading-none ${
+          isActive ? "opacity-100" : "opacity-30"
+        }`}
+      >
+        {indicator}
+      </span>
+    </button>
+  );
+}
+
 export function UsersPage() {
   const t = useCloudConsoleText();
   const { locale } = useAppLocale();
@@ -29,21 +103,125 @@ export function UsersPage() {
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<SubscriptionStatus | "">("");
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [includeTestAccounts, setIncludeTestAccounts] = useState(false);
 
+  // 后端搜索时也 trim，前端这里 normalize 一遍避免 " 138" / "138 " 走出两条 cache key
+  const normalizedQuery = query.trim();
   const usersQuery = useQuery({
-    queryKey: ["cloud-console", "saas-users", query, status, subscriptionStatus, page],
+    queryKey: [
+      "cloud-console",
+      "saas-users",
+      normalizedQuery,
+      status,
+      subscriptionStatus,
+      page,
+      includeTestAccounts,
+      sortField,
+      sortDirection,
+    ],
     queryFn: () =>
       cloudAdminApi.listCloudUsers({
-        query: query || undefined,
+        query: normalizedQuery || undefined,
         status: status || undefined,
         subscriptionStatus: subscriptionStatus || undefined,
         page,
         pageSize: 20,
+        includeTestAccounts: includeTestAccounts || undefined,
+        // 全局排序：后端在 LIMIT 之前 ORDER BY，避免"只排当前页 20 条"。
+        // sortField=null 时不传 → 后端走默认 registered/desc。
+        orderBy: sortField ?? undefined,
+        orderDir: sortField ? sortDirection : undefined,
       }),
   });
 
+  const items = usersQuery.data?.items ?? [];
+
+  // 顶部统计卡片：口径固定为生产用户，跟当前列表筛选器解耦——ops 切搜索 /
+  // 状态 / 订阅状态都不会影响这两个数字。staleTime 拉到 30s，避免每次切筛选
+  // 都重 fetch。
+  const statsQuery = useQuery({
+    queryKey: ["cloud-console", "saas-users", "stats"],
+    queryFn: () => cloudAdminApi.getCloudUserStats(),
+    staleTime: 30_000,
+  });
+
+  // 地区 / 设备分布饼图：聚合口径剔除测试号，与 stats 卡保持一致。staleTime
+  // 30s 与上面 stats 同步，避免每次切表格筛选都触发 ip-region/distribution 重算。
+  const distributionQuery = useQuery({
+    queryKey: ["cloud-console", "saas-users", "distribution"],
+    queryFn: () => cloudAdminApi.getCloudUserDistribution(),
+    staleTime: 30_000,
+  });
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+    // 切换排序字段 / 方向时回到第 1 页，否则用户在第 5 页点排序看到的是新排序
+    // 下"第 5 页那 20 条"，而不是想象中的"按新字段重新排好的最前面 20 条"。
+    setPage(1);
+  }
+
+  const statsItems: { label: string; value: string }[] = [
+    {
+      label: t("Real users"),
+      value: statsQuery.data ? String(statsQuery.data.totalUsers) : "—",
+    },
+    {
+      label: t("Member users"),
+      value: statsQuery.data ? String(statsQuery.data.memberUsers) : "—",
+    },
+  ];
+
+  // 设备维度饼图永远三档；后端返回的 raw label 是 'mobile' / 'desktop' /
+  // 'unknown'，前端做本地化映射。
+  const deviceLabelFormatter = (raw: string) => {
+    if (raw === "mobile") return t("Mobile");
+    if (raw === "desktop") return t("Desktop");
+    return t("Unknown");
+  };
+
   return (
     <SurfaceCard className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {statsItems.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-[color:var(--border-faint)] bg-white px-4 py-3"
+          >
+            <div className="text-xs text-[color:var(--text-muted)]">
+              {stat.label}
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-[color:var(--text-primary)] tabular-nums">
+              {stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <DistributionPieCard
+          title={t("Region distribution")}
+          data={distributionQuery.data?.byRegion}
+          isLoading={distributionQuery.isLoading}
+          emptyLabel={t("No data yet.")}
+          loadingLabel={t("Loading…")}
+        />
+        <DistributionPieCard
+          title={t("Device distribution")}
+          data={distributionQuery.data?.byDevice}
+          isLoading={distributionQuery.isLoading}
+          emptyLabel={t("No data yet.")}
+          loadingLabel={t("Loading…")}
+          formatLabel={deviceLabelFormatter}
+        />
+      </div>
+
       <div className="grid gap-3 md:grid-cols-4">
         <input
           value={query}
@@ -51,7 +229,7 @@ export function UsersPage() {
             setQuery(event.target.value);
             setPage(1);
           }}
-          placeholder={t("Search phone")}
+          placeholder={t("Search phone or email")}
           className={FILTER_CONTROL_CLASS}
         />
         <select
@@ -89,6 +267,18 @@ export function UsersPage() {
         </div>
       </div>
 
+      <label className="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+        <input
+          type="checkbox"
+          checked={includeTestAccounts}
+          onChange={(event) => {
+            setIncludeTestAccounts(event.target.checked);
+            setPage(1);
+          }}
+        />
+        <span>{t("Include test accounts (smoke / e2e / Twilio)")}</span>
+      </label>
+
       {usersQuery.isLoading ? (
         <LoadingBlock label={t("Loading SaaS users...")} />
       ) : null}
@@ -103,57 +293,102 @@ export function UsersPage() {
       ) : null}
 
       {usersQuery.data ? (
-        <div className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white">
-          <table className="min-w-full divide-y divide-[color:var(--border-faint)] text-sm">
+        <div className="overflow-x-auto rounded-[24px] border border-[color:var(--border-faint)] bg-white">
+          {/* table-fixed + 显式宽度：避免排序切换、IP 异步解析导致列宽抖动 */}
+          <table className="w-full table-fixed divide-y divide-[color:var(--border-faint)] text-sm">
+            <colgroup>
+              <col className="w-[15%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[11%]" />
+              <col className="w-[14%]" />
+            </colgroup>
             <thead className="bg-[#f8faf8] text-left text-[color:var(--text-muted)]">
               <tr>
-                <th className="px-4 py-3 font-medium">{t("Phone")}</th>
                 <th className="px-4 py-3 font-medium">{t("Email")}</th>
-                <th className="px-4 py-3 font-medium">{t("Account")}</th>
-                <th className="px-4 py-3 font-medium">{t("Subscription")}</th>
-                <th className="px-4 py-3 font-medium">{t("Expires")}</th>
-                <th className="px-4 py-3 font-medium">{t("Registered")}</th>
+                <th className="px-4 py-3 font-medium">
+                  <SortableHeader
+                    label={t("Expires")}
+                    field="expires"
+                    activeField={sortField}
+                    direction={sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <SortableHeader
+                    label={t("Registered")}
+                    field="registered"
+                    activeField={sortField}
+                    direction={sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">{t("Registration IP")}</th>
-                <th className="px-4 py-3 font-medium">{t("Last login")}</th>
+                <th className="px-4 py-3 font-medium">
+                  <SortableHeader
+                    label={t("Last login")}
+                    field="lastLogin"
+                    activeField={sortField}
+                    direction={sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">{t("Last login IP")}</th>
+                <th className="px-4 py-3 font-medium">{t("Device")}</th>
+                <th className="px-4 py-3 font-medium">
+                  <SortableHeader
+                    label={t("Last chat")}
+                    field="lastChatMessage"
+                    activeField={sortField}
+                    direction={sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">{t("Inviter")}</th>
-                <th className="px-4 py-3 font-medium">{t("World")}</th>
-                <th className="px-4 py-3 font-medium">{t("Plan")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--border-faint)]">
-              {usersQuery.data.items.map((user) => (
+              {items.map((user) => (
                 <tr key={user.id} className="align-top">
-                  <td className="px-4 py-3">
+                  <td className="truncate px-4 py-3">
                     <Link
                       to="/users/$userId"
                       params={{ userId: user.id }}
                       className="font-medium text-[color:var(--brand-primary)]"
+                      title={user.email ?? user.displayName ?? undefined}
                     >
-                      {user.phone || t("(no phone)")}
+                      {user.email || user.displayName || t("(no email)")}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 break-all text-[color:var(--text-secondary)]">
-                    {user.email || "-"}
-                  </td>
-                  <td className="px-4 py-3">{t(user.status)}</td>
-                  <td className="px-4 py-3">{t(user.subscriptionStatus)}</td>
                   <td className="px-4 py-3">
                     {formatTimestamp(user.subscriptionExpiresAt)}
                   </td>
                   <td className="px-4 py-3">{formatTimestamp(user.createdAt)}</td>
-                  <td className="px-4 py-3 break-all text-[color:var(--text-secondary)]">
-                    {user.registrationIp || "-"}
+                  <td className="truncate px-4 py-3">
+                    <IpRegionCell ip={user.registrationIp} />
                   </td>
                   <td className="px-4 py-3">{formatTimestamp(user.lastLoginAt)}</td>
-                  <td className="px-4 py-3 break-all text-[color:var(--text-secondary)]">
-                    {user.lastLoginIp || "-"}
+                  <td className="truncate px-4 py-3">
+                    <IpRegionCell ip={user.lastLoginIp} />
                   </td>
-                  <td className="px-4 py-3">{user.inviterPhone || "-"}</td>
+                  <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                    {user.lastLoginDeviceType === "mobile"
+                      ? t("Mobile")
+                      : user.lastLoginDeviceType === "desktop"
+                        ? t("Desktop")
+                        : "-"}
+                  </td>
                   <td className="px-4 py-3">
-                    {user.worldStatus ? t(user.worldStatus) : "-"}
+                    {formatTimestamp(user.lastChatMessageAt)}
                   </td>
-                  <td className="px-4 py-3">{user.currentPlanCode || "-"}</td>
+                  <td className="truncate px-4 py-3">
+                    {user.inviterPhone || "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

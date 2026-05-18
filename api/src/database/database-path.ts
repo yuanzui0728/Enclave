@@ -137,8 +137,19 @@ export function prepareDatabasePath(configuredPath?: string | null) {
     return targetPath;
   }
 
-  // Target is missing or schema-only (no rows) — fall back to legacy locations
-  // for one-time bootstrap so a fresh account dir can adopt existing data.
+  // Cloud multi-tenant mode: cloud-api spawns one child per phone with
+  // YINJIE_DATA_ROOT=/data/accounts/<phone>. A "fresh" account must start
+  // empty — adopting /data/database.sqlite (legacy single-tenant DB) here
+  // means every new world inherits the same 28 seed messages / characters /
+  // users / conversations, and in the admin console it looks like worlds
+  // are sharing chat history. Skip the legacy fallback whenever
+  // YINJIE_DATA_ROOT is set; TypeORM synchronize will build an empty schema.
+  if (process.env.YINJIE_DATA_ROOT?.trim()) {
+    return targetPath;
+  }
+
+  // Single-tenant / dev mode without YINJIE_DATA_ROOT: keep the one-time
+  // bootstrap so a fresh account dir can adopt existing data from legacy paths.
   const legacyCandidatePaths = Array.from(
     new Set([
       resolveApiPath('database.sqlite'),

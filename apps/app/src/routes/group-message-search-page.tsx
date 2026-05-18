@@ -12,7 +12,7 @@ import {
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupMessageSearchPage() {
@@ -54,14 +54,20 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
       returnHash: safeReturnHash,
     }) || undefined;
 
+  // 走查 R2：两条 query 都没 staleTime（默认 0），用户在 details → search
+  // → details → search 反复切换时每次都冷启动 refetch /api/groups/$id +
+  // /messages（活跃群消息表 100+ 条）；公网隧道 RTT ~600ms × 多次浪费明显。
+  // socket onChatMessage 已显式 invalidate app-group-messages 所以 stale 不会脏。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
 
   const messagesQuery = useQuery({
     queryKey: ["app-group-messages", baseUrl, groupId],
     queryFn: () => getGroupMessages(groupId, baseUrl),
+    staleTime: 15_000,
   });
 
   useEffect(() => {
@@ -93,7 +99,7 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
 
   return (
     <ChatMessageSearchPanel
-      subtitle={groupQuery.data?.name ?? t(msg`群聊`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊`)}
       messages={messagesQuery.data}
       enableSenderFilter
       isLoading={messagesQuery.isLoading}
@@ -111,11 +117,19 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        void navigate({
-          to: "/group/$groupId/details",
-          params: { groupId },
-          ...(searchRouteHash ? { hash: searchRouteHash } : {}),
-        });
+        // 走查 R1：原版直接 navigate push 新 history 项，用户 [details →
+        // search → 点返回] 后浏览器后退会落回 search 死循环。和 background
+        // 页同口径用 navigateBackOrFallback。
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/group/$groupId/details",
+              params: { groupId },
+              ...(searchRouteHash ? { hash: searchRouteHash } : {}),
+            });
+          },
+          `/group/${groupId}/details`,
+        );
       }}
       onOpenMessage={(messageId) => {
         void navigate({

@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { AppError } from '../../../common/app-error.exception';
 import { CharacterPageEntity } from '../entities/character-page.entity';
 import { CharacterRevisionEntity } from '../entities/character-revision.entity';
 import { WikiTalkThreadEntity } from '../entities/wiki-talk-thread.entity';
@@ -8,6 +9,10 @@ import { WikiWatchlistEntity } from '../entities/wiki-watchlist.entity';
 
 export type WatchlistEntryView = {
   characterId: string;
+  // page.title 不为空就是 page.title；否则回落到 characterId。
+  // UI 历来只渲染 characterId（一串 char_wiki_… UUID），用户根本认不出哪条；2026-05-15 走查时
+  // 把 title 加回来，watchlist/feed 都按 title || characterId 显示。
+  title: string;
   notifyOnEdit: boolean;
   notifyOnTalk: boolean;
   addedAt: Date;
@@ -17,8 +22,8 @@ export type WatchlistEntryView = {
 };
 
 export type WatchlistFeedItem =
-  | { kind: 'revision'; characterId: string; revision: CharacterRevisionEntity }
-  | { kind: 'talk'; characterId: string; thread: WikiTalkThreadEntity };
+  | { kind: 'revision'; characterId: string; title: string; revision: CharacterRevisionEntity }
+  | { kind: 'talk'; characterId: string; title: string; thread: WikiTalkThreadEntity };
 
 @Injectable()
 export class WikiWatchlistService {
@@ -47,6 +52,7 @@ export class WikiWatchlistService {
       const page = pageMap.get(e.characterId);
       return {
         characterId: e.characterId,
+        title: page?.title || e.characterId,
         notifyOnEdit: e.notifyOnEdit,
         notifyOnTalk: e.notifyOnTalk,
         addedAt: e.addedAt,
@@ -62,6 +68,15 @@ export class WikiWatchlistService {
     characterId: string,
     flags: { notifyOnEdit?: boolean; notifyOnTalk?: boolean } = {},
   ): Promise<WikiWatchlistEntity> {
+    // 词条必须存在再允许加 watch；否则任何字符串都能被加进表里，
+    // /watchlist 页面会渲染一堆点不开的脏行（2026-05-16 走查发现）。
+    const page = await this.pageRepo.findOne({ where: { characterId } });
+    if (!page) {
+      throw new AppError('WIKI_PAGE_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: `角色 ${characterId} 不存在`,
+      });
+    }
     const existing = await this.entryRepo.findOne({
       where: { userId, characterId },
     });
@@ -113,6 +128,15 @@ export class WikiWatchlistService {
       .map((e) => e.characterId);
     const since = sinceISO ? new Date(sinceISO) : null;
 
+    // 一次性把所有相关 page 的 title 取出来，避免每个 feed item 再查一次。
+    // UI 之前只有 characterId 可显示，feed 列表全是 char_wiki_… UUID。
+    const allIds = Array.from(new Set([...editIds, ...talkIds]));
+    const pages = allIds.length > 0
+      ? await this.pageRepo.find({ where: { characterId: In(allIds) } })
+      : [];
+    const titleMap = new Map(pages.map((p) => [p.characterId, p.title || p.characterId]));
+    const titleOf = (id: string) => titleMap.get(id) ?? id;
+
     const items: WatchlistFeedItem[] = [];
     if (editIds.length > 0) {
       const qb = this.revisionRepo
@@ -126,7 +150,12 @@ export class WikiWatchlistService {
       if (since) qb.andWhere('r.createdAt > :since', { since });
       const revisions = await qb.getMany();
       for (const rev of revisions) {
-        items.push({ kind: 'revision', characterId: rev.characterId, revision: rev });
+        items.push({
+          kind: 'revision',
+          characterId: rev.characterId,
+          title: rev.contentSnapshot?.name || titleOf(rev.characterId),
+          revision: rev,
+        });
       }
     }
     if (talkIds.length > 0) {
@@ -138,7 +167,12 @@ export class WikiWatchlistService {
       if (since) qb.andWhere('t.lastReplyAt > :since', { since });
       const threads = await qb.getMany();
       for (const thread of threads) {
-        items.push({ kind: 'talk', characterId: thread.characterId, thread });
+        items.push({
+          kind: 'talk',
+          characterId: thread.characterId,
+          title: titleOf(thread.characterId),
+          thread,
+        });
       }
     }
     items.sort((a, b) => {

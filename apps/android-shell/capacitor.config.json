@@ -1,16 +1,33 @@
 {
   "appId": "com.yinjie.mobile",
   "appName": "Yinjie",
-  "webDir": "../app/dist",
+  "webDir": "../app/dist-mobile",
   "server": {
     "androidScheme": "https"
   },
   "plugins": {
     "Keyboard": {
-      "resizeOnFullScreen": true
+      "resize": "native",
+      "resizeOnFullScreen": true,
+      "style": "DARK"
+    },
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#ffffff",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT",
+      "backgroundColor": "#ffffff"
     }
   },
   "android": {
-    "path": "android"
+    "path": "android",
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
   }
 }

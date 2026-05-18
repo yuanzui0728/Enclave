@@ -24,6 +24,7 @@ export function useSelfCameraPreview({
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraPreviewStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const supported =
     typeof navigator !== "undefined" &&
     Boolean(navigator.mediaDevices?.getUserMedia);
@@ -44,6 +45,7 @@ export function useSelfCameraPreview({
       stopCurrentStream();
       setStatus("unsupported");
       setError(resolveCameraPreviewUnsupportedCopy());
+      setPermissionDenied(false);
       return;
     }
 
@@ -51,6 +53,7 @@ export function useSelfCameraPreview({
       stopCurrentStream();
       setStatus("idle");
       setError(null);
+      setPermissionDenied(false);
       return;
     }
 
@@ -61,6 +64,7 @@ export function useSelfCameraPreview({
       connectRequestId = requestId;
       setStatus("requesting-permission");
       setError(null);
+      setPermissionDenied(false);
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -101,9 +105,9 @@ export function useSelfCameraPreview({
 
         stopCurrentStream();
         setStatus("idle");
-        setError(
-          mapCameraPreviewError(cameraError),
-        );
+        const mapped = mapCameraPreviewError(cameraError);
+        setError(mapped.message);
+        setPermissionDenied(mapped.permissionDenied);
       }
     };
 
@@ -145,39 +149,62 @@ export function useSelfCameraPreview({
 
   return {
     error,
-    // i18n-ignore-next-line: substring match against translated denied copy; preserved as legacy probe
-    permissionDenied: Boolean(error?.includes(t(msg`权限被拒绝`))),
+    permissionDenied,
     status,
     supported,
     videoRef,
   };
 }
 
-function mapCameraPreviewError(error: unknown) {
+function mapCameraPreviewError(error: unknown): {
+  message: string;
+  permissionDenied: boolean;
+} {
   if (error instanceof DOMException) {
     switch (error.name) {
       case "AbortError":
-        return t(msg`摄像头启动被中断了，请再试一次。`);
+        return {
+          message: t(msg`摄像头启动被中断了，请再试一次。`),
+          permissionDenied: false,
+        };
       case "NotAllowedError":
       case "SecurityError":
-        return resolveCameraPermissionDeniedCopy();
+        return {
+          message: resolveCameraPermissionDeniedCopy(),
+          permissionDenied: true,
+        };
       case "NotFoundError":
-        return t(msg`当前设备没有可用的摄像头。`);
+        return {
+          message: t(msg`当前设备没有可用的摄像头。`),
+          permissionDenied: false,
+        };
       case "NotReadableError":
       case "TrackStartError":
-        return t(msg`摄像头可能正被其他应用占用，请关闭后重试。`);
+        return {
+          message: t(msg`摄像头可能正被其他应用占用，请关闭后重试。`),
+          permissionDenied: false,
+        };
       case "OverconstrainedError":
-        return t(msg`当前摄像头参数不可用，请重试。`);
+        return {
+          message: t(msg`当前摄像头参数不可用，请重试。`),
+          permissionDenied: false,
+        };
       default:
         break;
     }
   }
 
   if (error instanceof Error) {
-    return error.message || resolveCameraPermissionCheckCopy();
+    return {
+      message: error.message || resolveCameraPermissionCheckCopy(),
+      permissionDenied: false,
+    };
   }
 
-  return resolveCameraPermissionCheckCopy();
+  return {
+    message: resolveCameraPermissionCheckCopy(),
+    permissionDenied: false,
+  };
 }
 
 function resolveCameraPreviewUnsupportedCopy() {

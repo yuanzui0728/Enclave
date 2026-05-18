@@ -15,9 +15,13 @@ export function buildMockDigitalHumanPlayerPage(input: {
   initialSession?: DigitalHumanPlayerPageSessionSnapshot;
 }) {
   const escapedName = escapeHtml(input.characterName || 'AI 数字人');
-  const initialSessionPayload = escapeHtml(
-    JSON.stringify(input.initialSession ?? null),
-  );
+  // 不能用 escapeHtml — <script type="application/json"> 内是 script data，
+  // 浏览器不会解 HTML entity，textContent 里 &quot; 仍是字面 6 个字符，
+  // 下面 JSON.parse(... || "null") 第一时间抛 SyntaxError，整段 player
+  // 初始化 (polling / SSE / audio 绑定) 全断；从 + 面板点视频通话进来时复现。
+  // 按 OWASP 推荐：JSON 里只转义 < / 防 </script>，其它原样写。
+  const initialSessionPayload = JSON.stringify(input.initialSession ?? null)
+    .replaceAll('<', '\\u003c');
 
   return `<!doctype html>
 <html lang="zh-CN">

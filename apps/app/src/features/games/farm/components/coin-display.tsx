@@ -13,16 +13,22 @@ export function CoinDisplay({ state }: CoinDisplayProps) {
   const currentLevel = state.level;
   const currentLevelXp =
     FARM_LEVEL_EXPERIENCE_THRESHOLDS[currentLevel - 1] ?? 0;
-  const nextLevelXp =
-    FARM_LEVEL_EXPERIENCE_THRESHOLDS[currentLevel] ?? currentLevelXp + 100;
-  const progress = Math.max(
-    0,
-    Math.min(
-      1,
-      (state.experience - currentLevelXp) /
-        Math.max(1, nextLevelXp - currentLevelXp),
-    ),
-  );
+  // thresholds 数组定义到 Lv.10。到顶后没有"下一级"，之前用 currentLevelXp+100
+  // 兜底会让顶级玩家看到"经验 0 / 100"和半空进度条，像还差一点升级——其实是已满级。
+  const isMaxLevel = currentLevel >= FARM_LEVEL_EXPERIENCE_THRESHOLDS.length;
+  const nextLevelXp = isMaxLevel
+    ? state.experience
+    : (FARM_LEVEL_EXPERIENCE_THRESHOLDS[currentLevel] ?? currentLevelXp);
+  const progress = isMaxLevel
+    ? 1
+    : Math.max(
+        0,
+        Math.min(
+          1,
+          (state.experience - currentLevelXp) /
+            Math.max(1, nextLevelXp - currentLevelXp),
+        ),
+      );
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/65 px-4 py-3 shadow-md backdrop-blur-md">
@@ -37,9 +43,11 @@ export function CoinDisplay({ state }: CoinDisplayProps) {
       </div>
       <div className="flex items-center justify-between text-xs text-stone-600">
         <span>
-          {t(
-            msg`经验 ${state.experience - currentLevelXp} / ${nextLevelXp - currentLevelXp}`,
-          )}
+          {isMaxLevel
+            ? t(msg`经验 ${state.experience}（已满级）`)
+            : t(
+                msg`经验 ${state.experience - currentLevelXp} / ${nextLevelXp - currentLevelXp}`,
+              )}
         </span>
         <span>{t(msg`田块 ${state.plotCount}`)}</span>
       </div>

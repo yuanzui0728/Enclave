@@ -167,7 +167,36 @@ export class SubscriptionService {
     );
   }
 
+  // 同一个 userId 下 grantSubscription 的串行队列。读最远 expiresAt 再写入新
+  // 订阅这一段不是原子的——并发 grant 都看到同一个"当前最远"快照、各自往同一
+  // 个时间点写一张新订阅。早先的多 invitee 并发邀请就因此把 5 张奖励 stack
+  // 成同一个 30 天，inviter 实际只多了 30 天而不是 5×30。每 user 一把内存锁
+  // 把读+写绑成一段，写完再清掉 map 防内存涨。
+  private grantQueueByUser = new Map<string, Promise<unknown>>();
+
   async grantSubscription(payload: {
+    userId: string;
+    planCode?: string;
+    durationDays?: number;
+    source: "trial" | "purchase" | "invite_reward" | "admin_grant";
+    note?: string;
+    createdBy?: string | null;
+  }): Promise<UserSubscriptionEntity> {
+    const prev = this.grantQueueByUser.get(payload.userId) ?? Promise.resolve();
+    const run = prev
+      .catch(() => undefined)
+      .then(() => this.grantSubscriptionImpl(payload));
+    this.grantQueueByUser.set(payload.userId, run);
+    try {
+      return await run;
+    } finally {
+      if (this.grantQueueByUser.get(payload.userId) === run) {
+        this.grantQueueByUser.delete(payload.userId);
+      }
+    }
+  }
+
+  private async grantSubscriptionImpl(payload: {
     userId: string;
     planCode?: string;
     durationDays?: number;
@@ -200,16 +229,18 @@ export class SubscriptionService {
       throw new BadRequestException("缺少 planCode。");
     }
 
+    // 接在所有 active（含 future-dated 已排队）订阅里最远的 expiresAt 之后，
+    // 不是接在"现在正在跑的"那条之后——后者会让排队中的 invite_reward 全
+    // stack 到 trial 末尾、互相覆盖。findFurthestActiveExpiresAt 看 status=active
+    // && expiresAt>now，不带 startsAt<=now 这条限制，正好是我们要的口径。
     const now = new Date();
-    const active = await this.findActiveSubscription(payload.userId);
-    let startsAt = now;
-    let expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
-    if (active) {
-      // 累加到现有有效订阅之后
-      startsAt = active.expiresAt;
-      expiresAt = new Date(active.expiresAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
-    }
+    const furthestExpiresAt = await this.findFurthestActiveExpiresAt(payload.userId);
+    const baseTime =
+      furthestExpiresAt && furthestExpiresAt > now ? furthestExpiresAt : now;
+    const startsAt = baseTime;
+    const expiresAt = new Date(
+      baseTime.getTime() + durationDays * 24 * 60 * 60 * 1000,
+    );
 
     return this.subscriptionRepo.save(
       this.subscriptionRepo.create({
@@ -318,18 +349,24 @@ export class SubscriptionService {
       this.loadCopy(),
     ]);
 
+    // 跟 InviteService.buildClientSummary 对齐：isActive=false 的 code 一律
+    // 当作"没 code"，避免管理员 deactivate 后用户在订阅页看到死链可分享。
     let inviteCodeValue: string | null = null;
     if (user.inviteCodeId) {
       const inviteCode = await this.inviteCodeRepo.findOne({
         where: { id: user.inviteCodeId },
       });
-      inviteCodeValue = inviteCode?.code ?? null;
+      if (inviteCode?.isActive) {
+        inviteCodeValue = inviteCode.code;
+      }
     }
     if (!inviteCodeValue) {
       const inviteCode = await this.inviteCodeRepo.findOne({
         where: { ownerUserId: user.id },
       });
-      inviteCodeValue = inviteCode?.code ?? null;
+      if (inviteCode?.isActive) {
+        inviteCodeValue = inviteCode.code;
+      }
     }
 
     const planMap = new Map(plans.map((plan) => [plan.code, plan]));

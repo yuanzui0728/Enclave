@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
+
+type MessageDescriptor = ReturnType<typeof msg>;
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
@@ -57,32 +59,32 @@ const NEED_DISCOVERY_NOTICES: Record<NeedDiscoveryJob, string> = {
   discover_need_characters_daily: "每日需求发现已执行。", // i18n-ignore-line
 };
 
-const WORKSPACE_TABS: Array<{ key: NeedDiscoveryView; label: string }> = [
+const WORKSPACE_TABS: Array<{ key: NeedDiscoveryView; label: MessageDescriptor }> = [
   { key: "overview", label: msg`总览` },
   { key: "candidates", label: msg`候选处理` },
   { key: "config", label: msg`规则配置` },
   { key: "shake", label: msg`摇一摇` },
 ];
 
-const CONFIG_TABS: Array<{ key: ConfigPanelKey; label: string }> = [
+const CONFIG_TABS: Array<{ key: ConfigPanelKey; label: MessageDescriptor }> = [
   { key: "short", label: msg`短周期` },
   { key: "daily", label: msg`每日` },
   { key: "shared", label: msg`共享约束` },
 ];
 
-const SHAKE_TABS: Array<{ key: ShakePanelKey; label: string }> = [
+const SHAKE_TABS: Array<{ key: ShakePanelKey; label: MessageDescriptor }> = [
   { key: "sessions", label: msg`Session` },
   { key: "config", label: msg`配置` },
 ];
 
-const SHAKE_TRACE_TABS: Array<{ key: ShakeTraceTab; label: string }> = [
+const SHAKE_TRACE_TABS: Array<{ key: ShakeTraceTab; label: MessageDescriptor }> = [
   { key: "planning", label: msg`方向规划 Prompt` },
   { key: "generation", label: msg`角色生成 Prompt` },
 ];
 
 const CANDIDATE_STATUS_OPTIONS: Array<{
   value: CandidateStatusFilter;
-  label: string;
+  label: MessageDescriptor;
 }> = [
   { value: "all", label: msg`全部` },
   { value: "draft", label: msg`草稿` },
@@ -96,7 +98,7 @@ const CANDIDATE_STATUS_OPTIONS: Array<{
 
 const SHAKE_STATUS_OPTIONS: Array<{
   value: ShakeStatusFilter;
-  label: string;
+  label: MessageDescriptor;
 }> = [
   { value: "all", label: msg`全部` },
   { value: "preview_ready", label: msg`待决定` },
@@ -696,7 +698,7 @@ function WorkspaceToolbar({
       </div>
 
       <AdminTabs
-        tabs={WORKSPACE_TABS}
+        tabs={WORKSPACE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
         activeKey={view}
         onChange={(key) => onViewChange(key as NeedDiscoveryView)}
         className="mt-4"
@@ -770,14 +772,14 @@ function OverviewWorkspace({
             </StatusPill>
           }
         />
-        <div className="mt-4 grid gap-4 xl:grid-cols-3">
-          {todayActions.map((action) => (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {todayActions.slice(0, 2).map((action) => (
             <OverviewActionCard key={action.key} action={action} />
           ))}
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <MetricCard
           label={t(msg`候选池`)}
           value={queueOccupancy}
@@ -838,8 +840,8 @@ function OverviewWorkspace({
           draft={draft}
           latestRun={latestRun}
           enabledCadenceCount={enabledCadenceCount}
-          onOpenRunWorkspace={openRunWorkspace}
           onOpenConfigWorkspace={openConfigWorkspace}
+          onOpenRunWorkspace={openRunWorkspace}
         />
         <HealthOverviewCard
           activeCandidates={activeCandidates}
@@ -906,14 +908,14 @@ function CadenceOverviewCard({
   draft,
   latestRun,
   enabledCadenceCount,
-  onOpenRunWorkspace,
   onOpenConfigWorkspace,
+  onOpenRunWorkspace,
 }: {
   draft: NeedDiscoveryConfig;
   latestRun: NeedDiscoveryRunRecord | null;
   enabledCadenceCount: number;
-  onOpenRunWorkspace: (cadence?: RunCadenceFilter) => void;
   onOpenConfigWorkspace: (panel?: ConfigPanelKey) => void;
+  onOpenRunWorkspace: (cadence?: RunCadenceFilter) => void;
 }) {
   const t = translateRuntimeMessage;
   const shortLatest =
@@ -930,7 +932,7 @@ function CadenceOverviewCard({
           </StatusPill>
         }
       />
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
         <SummaryButtonCard
           title={t(msg`短周期补位`)}
           detail={`${
@@ -1266,6 +1268,7 @@ function CandidateQueueCard({
   candidateStatusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
   expiringSoonCount: number;
 }) {
+  const t = translateRuntimeMessage;
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
@@ -1277,7 +1280,7 @@ function CandidateQueueCard({
         }
       />
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1">
         <AdminMiniPanel title={t(msg`当前数据源`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {dataset === "active" ? t(msg`当前候选`) : t(msg`最近候选`)}
@@ -1321,8 +1324,8 @@ function CandidateQueueCard({
             key: option.value,
             label:
               option.value === "all"
-                ? `${t(msg`全部`)} ${sourceCount}`
-                : `${option.label} ${candidateStatusCounts[option.value] ?? 0}`,
+                ? `${t(option.label)} ${sourceCount}`
+                : `${t(option.label)} ${candidateStatusCounts[option.value] ?? 0}`,
           }))}
           activeKey={statusFilter}
           onChange={(key) => onStatusFilterChange(key as CandidateStatusFilter)}
@@ -1479,7 +1482,7 @@ function CandidateInspectorCard({
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <AdminMiniPanel title={t(msg`Need 分类`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {candidate.needCategory}
@@ -1602,7 +1605,7 @@ function RunsInspectorCard({
           options={[
             { key: "all", label: t(msg`全部`) },
             { key: "short_interval", label: t(msg`短周期`) },
-            { key: "daily", label: msg`每日` },
+            { key: "daily", label: t(msg`每日`) },
           ]}
           activeKey={cadenceFilter}
           onChange={(key) => onCadenceFilterChange(key as RunCadenceFilter)}
@@ -1652,6 +1655,7 @@ function RunListItem({
   selected: boolean;
   onClick: () => void;
 }) {
+  const t = translateRuntimeMessage;
   return (
     <button
       type="button"
@@ -1701,7 +1705,7 @@ function RunDetailCard({ run }: { run: NeedDiscoveryRunRecord }) {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <AdminMiniPanel title={t(msg`信号数`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {run.signalCount} {t(msg`条`)}
@@ -1792,7 +1796,7 @@ function ConfigWorkspace({
           {t(msg`一次只编辑一组规则。先选短周期、每日或共享约束，再进入当前组的详细字段和 Prompt，避免在多组长表单间来回跳。`)}
         </p>
         <AdminTabs
-          tabs={CONFIG_TABS}
+          tabs={CONFIG_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           activeKey={panel}
           onChange={(key) => onPanelChange(key as ConfigPanelKey)}
           className="mt-4"
@@ -1875,7 +1879,7 @@ function ShakeWorkspace({
           {t(msg`Session 和配置分开处理。抽查即时相遇质量时只看 session；改规则时只看配置，不把两类任务堆在同一屏里。`)}
         </p>
         <AdminTabs
-          tabs={SHAKE_TABS}
+          tabs={SHAKE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           activeKey={panel}
           onChange={(key) => onPanelChange(key as ShakePanelKey)}
           className="mt-4"
@@ -1925,6 +1929,7 @@ function ShakeSessionQueueCard({
   onSelectSession: (id: string) => void;
   statusCounts: Record<ShakeDiscoverySessionRecord["status"], number>;
 }) {
+  const t = translateRuntimeMessage;
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
@@ -1956,8 +1961,8 @@ function ShakeSessionQueueCard({
             key: option.value,
             label:
               option.value === "all"
-                ? `${t(msg`全部`)} ${allSessions.length}`
-                : `${option.label} ${statusCounts[option.value] ?? 0}`,
+                ? `${t(option.label)} ${allSessions.length}`
+                : `${t(option.label)} ${statusCounts[option.value] ?? 0}`,
           }))}
           activeKey={statusFilter}
           onChange={(key) => onStatusFilterChange(key as ShakeStatusFilter)}
@@ -1994,6 +1999,7 @@ function ShakeSessionListItem({
   selected: boolean;
   onClick: () => void;
 }) {
+  const t = translateRuntimeMessage;
   return (
     <button
       type="button"
@@ -2063,7 +2069,7 @@ function ShakeSessionInspectorCard({
         }
       />
 
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <AdminMiniPanel title={t(msg`角色`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {session.character.name}
@@ -2129,7 +2135,7 @@ function ShakeSessionInspectorCard({
                   </span>
                 ))}
               </div>
-              <div className="grid gap-2 md:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-2">
                 <AdminMiniPanel title="Fit"> {/* i18n-ignore-line: technical scoring term */}
                   <div className="text-sm text-[color:var(--text-primary)]">
                     {session.selectedDirection.fitScore.toFixed(2)}
@@ -2169,7 +2175,7 @@ function ShakeSessionInspectorCard({
 
       <div className="mt-4">
         <AdminTabs
-          tabs={SHAKE_TRACE_TABS}
+          tabs={SHAKE_TRACE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           activeKey={traceTab}
           onChange={(key) => onTraceTabChange(key as ShakeTraceTab)}
         />
@@ -2509,7 +2515,7 @@ function CadenceCard({
         {description}
       </p>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <AdminMiniPanel title={t(msg`执行模式`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {formatExecutionMode(cadence.executionMode)}
@@ -2741,6 +2747,7 @@ function SharedCard({
   config: NeedDiscoveryConfig;
   onChange: (next: NeedDiscoveryConfig) => void;
 }) {
+  const t = translateRuntimeMessage;
   const shared = config.shared;
 
   return (
@@ -2753,7 +2760,7 @@ function SharedCard({
         {t(msg`这里不是单条 cadence 的细节，而是所有自动补位统一遵守的队列上限、抑制期和风险域边界。`)}
       </p>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <AdminMiniPanel title={t(msg`队列上限`)}>
           <div className="text-sm text-[color:var(--text-primary)]">
             {t(msg`待处理最多`)} {shared.pendingCandidateLimit}

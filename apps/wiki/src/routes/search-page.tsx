@@ -25,7 +25,9 @@ export function SearchPage() {
         query
           ? resultsQ.isLoading
             ? t(msg`搜索中...`)
-            : t(msg`命中 ${resultsQ.data?.length ?? 0} 条相关词条`)
+            : resultsQ.isError
+              ? t(msg`搜索请求失败，请稍后重试。`)
+              : t(msg`命中 ${resultsQ.data?.length ?? 0} 条相关词条`)
           : t(
               msg`在顶栏的搜索框输入关键字，按回车进行搜索。系统会按词条名、关系、简介与画像字段全文检索。`,
             )
@@ -58,16 +60,20 @@ export function SearchPage() {
                 >
                   {r.name || r.characterId}
                 </Link>
-                <span className="text-xs text-[color:var(--text-muted)]">
-                  {r.relationship}
-                </span>
-                <span className="ml-auto text-xs text-[color:var(--text-muted)]">
+                {r.relationship && (
+                  <span className="text-xs text-[color:var(--text-muted)]">
+                    {r.relationship}
+                  </span>
+                )}
+                <span className="ml-auto whitespace-nowrap text-xs text-[color:var(--text-muted)]">
                   <Trans>相关度 {Math.round(r.score * 100) / 100}</Trans>
                 </span>
               </div>
-              <p className="mt-1 line-clamp-2 text-sm text-[color:var(--text-secondary)]">
-                {r.bio}
-              </p>
+              {r.bio && (
+                <p className="mt-1 line-clamp-2 text-sm text-[color:var(--text-secondary)]">
+                  {r.bio}
+                </p>
+              )}
             </li>
           ))}
         </ul>

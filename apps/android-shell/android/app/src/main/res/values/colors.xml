@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    notification_accent 用 apps/site brand 渐变里偏深的那一档 (#ff741a)，
+    在 NotificationCompat.setColor 和 FCM default_notification_color 之间
+    保持一致：状态栏小图标本体被系统强制变白，setColor 控制的是通知里
+    title / action / accent 的着色，Material You 的设备上还会用它来着色
+    背景胶囊。
+-->
+<resources>
+    <color name="notification_accent">#FF741A</color>
+</resources>

@@ -17,10 +17,13 @@ import type {
   TelemetryTimeseriesResponse,
   TelemetryTopEventsResponse,
   TelemetryTopWorldsResponse,
+  TelemetryTopWorldsSortDir,
+  TelemetryTopWorldsSortKey,
   TelemetryWorldRow,
 } from "@yinjie/contracts";
 import { createHash, randomUUID } from "crypto";
 import { Repository } from "typeorm";
+import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { ClientTelemetryDailyEntity } from "../entities/client-telemetry-daily.entity";
 import { ClientTelemetryEventEntity } from "../entities/client-telemetry-event.entity";
@@ -53,6 +56,8 @@ export class TelemetryService {
     private readonly daily: Repository<ClientTelemetryDailyEntity>,
     @InjectRepository(CloudWorldEntity)
     private readonly worlds: Repository<CloudWorldEntity>,
+    @InjectRepository(CloudUserEntity)
+    private readonly users: Repository<CloudUserEntity>,
   ) {}
 
   async ingestBatch(
@@ -535,10 +540,36 @@ export class TelemetryService {
 
   async topWorlds(
     range: TelemetryRange,
-    limit = 10,
+    opts: {
+      page?: number;
+      pageSize?: number;
+      sortBy?: TelemetryTopWorldsSortKey;
+      sortDir?: TelemetryTopWorldsSortDir;
+    } = {},
   ): Promise<TelemetryTopWorldsResponse> {
+    const pageSize = Math.min(Math.max(opts.pageSize ?? 10, 1), 200);
+    const page = Math.max(opts.page ?? 1, 1);
+    const offset = (page - 1) * pageSize;
     const startIso = startOfRange(range);
-    const rows = await this.events
+
+    // 白名单兜底，防御 DTO 之外的入口（如 listWorldsForFilter 直接传 opts）。
+    const sortBy: TelemetryTopWorldsSortKey =
+      opts.sortBy === "uniqueUsers" || opts.sortBy === "errorCount"
+        ? opts.sortBy
+        : "eventCount";
+    const sortDir: "ASC" | "DESC" = opts.sortDir === "asc" ? "ASC" : "DESC";
+
+    // total: 当前 range 内有事件的世界总数（COUNT DISTINCT worldId）。
+    // 单独一条 SQL，避免在分页查询里 wrap subquery。
+    const totalRow = await this.events
+      .createQueryBuilder("e")
+      .select("COUNT(DISTINCT e.worldId)", "total")
+      .where("e.worldId IS NOT NULL")
+      .andWhere("e.occurredAt >= :start", { start: startIso })
+      .getRawOne<{ total: string | number }>();
+    const total = toInt(totalRow?.total ?? 0);
+
+    const rowsQb = this.events
       .createQueryBuilder("e")
       .select("e.worldId", "worldId")
       .addSelect("COUNT(*)", "eventCount")
@@ -550,8 +581,12 @@ export class TelemetryService {
       .where("e.worldId IS NOT NULL")
       .andWhere("e.occurredAt >= :start", { start: startIso })
       .groupBy("e.worldId")
-      .orderBy("eventCount", "DESC")
-      .limit(limit)
+      .orderBy(sortBy, sortDir);
+    // 非 eventCount 列做 tiebreaker，保证同值时分页稳定。
+    if (sortBy !== "eventCount") rowsQb.addOrderBy("eventCount", "DESC");
+    const rows = await rowsQb
+      .limit(pageSize)
+      .offset(offset)
       .getRawMany<{
         worldId: string;
         eventCount: string;
@@ -560,28 +595,54 @@ export class TelemetryService {
       }>();
 
     if (rows.length === 0) {
-      return { range, rows: [] };
+      return { range, rows: [], total, page, pageSize };
     }
 
     // 名字翻译：单独查一次世界表，不在 events QB 上 JOIN，避免在 GROUP BY 后
     // 引入笛卡尔积 / SQLite 的 ONLY_FULL_GROUP_BY 行为差异。
     const worldIds = rows.map((r) => r.worldId);
-    const nameRows = await this.worlds
+    const worldInfoRows = await this.worlds
       .createQueryBuilder("w")
       .select("w.id", "id")
       .addSelect("w.name", "name")
+      .addSelect("w.phone", "phone")
       .where("w.id IN (:...ids)", { ids: worldIds })
-      .getRawMany<{ id: string; name: string | null }>();
-    const nameMap = new Map(nameRows.map((r) => [r.id, r.name ?? null]));
+      .getRawMany<{ id: string; name: string | null; phone: string | null }>();
+    const worldInfoMap = new Map(worldInfoRows.map((r) => [r.id, r]));
 
-    const result: TelemetryWorldRow[] = rows.map((r) => ({
-      worldId: r.worldId,
-      worldName: nameMap.get(r.worldId) ?? null,
-      eventCount: toInt(r.eventCount),
-      uniqueUsers: toInt(r.uniqueUsers),
-      errorCount: toInt(r.errorCount),
-    }));
-    return { range, rows: result };
+    // 用 world.phone 反查用户邮箱（cloud_worlds.phone unique）。phone 也可能是邮箱字符串本身，
+    // 但 cloud_users 表里两者分列，所以单独 join 一次拿 email。
+    const phones = worldInfoRows
+      .map((r) => r.phone)
+      .filter((p): p is string => typeof p === "string" && p.length > 0);
+    const userByPhone = new Map<string, { email: string | null }>();
+    if (phones.length > 0) {
+      const userRows = await this.users
+        .createQueryBuilder("u")
+        .select("u.phone", "phone")
+        .addSelect("u.email", "email")
+        .where("u.phone IN (:...phones)", { phones })
+        .getRawMany<{ phone: string; email: string | null }>();
+      for (const u of userRows) {
+        userByPhone.set(u.phone, { email: u.email ?? null });
+      }
+    }
+
+    const result: TelemetryWorldRow[] = rows.map((r) => {
+      const info = worldInfoMap.get(r.worldId);
+      const phone = info?.phone ?? null;
+      const email = phone ? userByPhone.get(phone)?.email ?? null : null;
+      return {
+        worldId: r.worldId,
+        worldName: info?.name ?? null,
+        ownerEmail: email,
+        ownerPhone: phone,
+        eventCount: toInt(r.eventCount),
+        uniqueUsers: toInt(r.uniqueUsers),
+        errorCount: toInt(r.errorCount),
+      };
+    });
+    return { range, rows: result, total, page, pageSize };
   }
 
   async listWorldsForFilter(
@@ -589,7 +650,7 @@ export class TelemetryService {
   ): Promise<TelemetryWorldRow[]> {
     // 给 cloud-console 下拉填选项：返回当前 range 内有事件的世界（含名字）。
     // 数据形状跟 topWorlds 一致，但默认拉到 100 条以保证下拉覆盖。
-    const resp = await this.topWorlds(range, 100);
+    const resp = await this.topWorlds(range, { pageSize: 100, page: 1 });
     return resp.rows;
   }
 }

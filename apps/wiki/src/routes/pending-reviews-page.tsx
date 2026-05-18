@@ -18,6 +18,7 @@ import {
 import { hasRole } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi, type PendingReviewItem } from "../lib/wiki-api";
+import { useUsernameMap } from "../lib/use-username-map";
 import { SnapshotDiff } from "../components/snapshot-diff";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
@@ -54,11 +55,24 @@ export function PendingReviewsPage() {
     },
   });
 
+  // 必须放在条件 return 之前，否则用户登入/登出时本组件下一次渲染会调用更少/更多
+  // hooks，触发 React "Rendered fewer/more hooks than during the previous render"。
+  const items = pendingQ.data ?? [];
+  const { resolve: resolveUsername } = useUsernameMap(
+    items.map((it) => it.revision.editorUserId),
+  );
+
   if (!user) {
     return (
       <PageShell eyebrow={t(msg`审核`)} title={t(msg`待审编辑`)}>
         <Card className="p-6 text-sm">
-          <Trans>请先登录。</Trans>
+          <Trans>
+            请先{" "}
+            <Link to="/login" className="font-medium underline">
+              登录
+            </Link>{" "}
+            后再访问待审编辑队列。
+          </Trans>
         </Card>
       </PageShell>
     );
@@ -72,8 +86,6 @@ export function PendingReviewsPage() {
       </PageShell>
     );
   }
-
-  const items = pendingQ.data ?? [];
   return (
     <PageShell
       eyebrow={t(msg`审核`)}
@@ -86,7 +98,7 @@ export function PendingReviewsPage() {
         msg`所有等待巡查的提交。可按操作类型、修订类型、风险等级筛选；快速通过 / 要求修改 / 驳回。`,
       )}
     >
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3 text-sm shadow-[var(--shadow-soft)]">
+      <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3 text-sm shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap sm:items-center">
         <FilterSelect
           label={t(msg`操作`)}
           value={operation}
@@ -139,6 +151,7 @@ export function PendingReviewsPage() {
           <li key={item.submission.id}>
             <ReviewCard
               item={item}
+              editorName={resolveUsername(item.revision.editorUserId)}
               onDecide={(decision, note) =>
                 decideMut.mutate({
                   revisionId: item.revision.id,
@@ -168,10 +181,12 @@ function FilterSelect({
 }) {
   const t = translateRuntimeMessage;
   return (
-    <label className="flex items-center gap-2">
-      <span className="text-xs text-[color:var(--text-muted)]">{label}</span>
+    <label className="flex w-full items-center gap-2 sm:w-auto">
+      <span className="w-12 shrink-0 text-xs text-[color:var(--text-muted)] sm:w-auto">
+        {label}
+      </span>
       <select
-        className="rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        className="w-full rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none sm:w-auto"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -187,10 +202,12 @@ function FilterSelect({
 
 function ReviewCard({
   item,
+  editorName,
   onDecide,
   loading,
 }: {
   item: PendingReviewItem;
+  editorName: string;
   onDecide: (
     decision: "approve" | "reject" | "request_changes",
     note?: string,
@@ -215,7 +232,7 @@ function ReviewCard({
           params={{ characterId: rev.characterId }}
           className="font-medium text-[color:var(--text-primary)] hover:underline"
         >
-          {rev.characterId}
+          {rev.contentSnapshot?.name || rev.characterId}
         </Link>
         <StatusPill>v{rev.version}</StatusPill>
         <StatusPill>{rev.operation}</StatusPill>
@@ -225,9 +242,9 @@ function ReviewCard({
             <Trans>高风险</Trans>
           </StatusPill>
         )}
-        <span className="ml-auto text-xs text-[color:var(--text-muted)]">
+        <span className="text-xs text-[color:var(--text-muted)] sm:ml-auto">
           <Trans>
-            由 {rev.editorUserId}（{rev.editorRoleAtTime}）提交于{" "}
+            由 {editorName}（{rev.editorRoleAtTime}）提交于{" "}
             {formatDateTime(rev.createdAt)}
           </Trans>
         </span>
@@ -282,10 +299,11 @@ function ReviewCard({
           />
         </FormRow>
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card-hover)] px-4 py-3">
+      <div className="grid grid-cols-1 gap-2 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card-hover)] px-4 py-3 sm:flex sm:flex-wrap sm:items-center">
         <Button
           variant="primary"
           size="sm"
+          className="w-full sm:w-auto"
           disabled={loading}
           onClick={() => onDecide("approve", note || undefined)}
         >
@@ -294,6 +312,7 @@ function ReviewCard({
         <Button
           variant="secondary"
           size="sm"
+          className="w-full sm:w-auto"
           disabled={loading}
           onClick={() => onDecide("request_changes", note || undefined)}
         >
@@ -302,6 +321,7 @@ function ReviewCard({
         <Button
           variant="danger"
           size="sm"
+          className="w-full sm:w-auto"
           disabled={loading}
           onClick={() => onDecide("reject", note || undefined)}
         >

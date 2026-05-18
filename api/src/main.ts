@@ -77,9 +77,16 @@ async function bootstrap() {
   app.use(applyCorsHeaders);
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.useGlobalFilters(new AppErrorFilter());
+  // character-assets 都是相对稳定的 SVG（角色头像 / 默认资产），默认
+  // Cache-Control: public, max-age=0 → 每次进 chat-list 把 73 个会话头像
+  // 全部走条件 GET → 公网隧道 ~600ms RTT 下肉眼可见的"灰色框 → 头像"延迟。
+  // 给 1 天的强缓存：浏览器零网络命中本地副本；偶尔的资产更新走 ETag
+  // 在缓存失效后兜底。
   app.use(
     '/api/character-assets',
-    express.static(resolveApiPath('public/character-assets')),
+    express.static(resolveApiPath('public/character-assets'), {
+      maxAge: '1d',
+    }),
   );
 
   // Health check endpoint for Docker / load balancer

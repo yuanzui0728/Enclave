@@ -1,9 +1,9 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +40,9 @@ import {
 } from "../features/chat/mobile-chat-route-state";
 import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type UploadTarget = "default" | "conversation";
@@ -56,7 +58,6 @@ export function ChatBackgroundPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploadTarget, setUploadTarget] = useState<UploadTarget>("default");
   const [defaultDraft, setDefaultDraft] = useState<ChatBackgroundAsset | null>(
@@ -90,9 +91,13 @@ export function ChatBackgroundPage() {
     [conversationId],
   );
 
+  // 走查 R6（第 6 轮）：和兄弟入口共享 ["app-conversations", baseUrl]，那一群
+  // 对齐到 15s staleTime；本页是 chat-details 「设置当前聊天背景」二级入口，
+  // 上一页 cache 还热，缺 staleTime 会按默认重发一次 GET /conversations。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
 
   const backgroundQuery = useConversationBackground(conversationId);
@@ -103,7 +108,32 @@ export function ChatBackgroundPage() {
       ) ?? null,
     [conversationId, conversationsQuery.data],
   );
+  // 走查新一轮 R3：和 chat-details / chat-message-search / chat-list 等姊妹
+  // 入口对齐 — 服务端 sentinel "未知联系人" / "Direct conversation" 经此 helper
+  // 翻成当前 locale，避免 en/ja/ko 用户看到原始中文。本页 background preview
+  // 两处（mobile / desktop xl 布局）都用同一份。
+  const displayedConversationTitle = conversation
+    ? getConversationDisplayTitle(conversation.title)
+    : "";
   const supportsConversationOverride = conversation?.type !== "group";
+  // 走查新一轮 R5：和 chat-room-page handleMobileBack / chat-details-page R5
+  // 同款修法——ChatDetailsShell 顶部返回按钮 onBack 走 navigateBackOrFallback，
+  // 同帧 <16ms 双击会让 window.history.back() 跑 2 次 → 用户后退 2 页跳出
+  // 整个聊天页。同 mount 内首次 click 后 guard 住所有后续 click；raf 后释放
+  // 兜底 navigate 没真正切走的边界。
+  const backFiredRef = useRef(false);
+  const guardBackAction = useCallback(<Args extends unknown[]>(handler: (...args: Args) => void) => {
+    return (...args: Args) => {
+      if (backFiredRef.current) return;
+      backFiredRef.current = true;
+      handler(...args);
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          backFiredRef.current = false;
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!backgroundQuery.data) {
@@ -118,6 +148,20 @@ export function ChatBackgroundPage() {
   useEffect(() => {
     setNotice(null);
   }, [conversationId]);
+
+  // 走查 R2：和 chat-details-page R1 同款问题——「背景图已上传，记得保存当前
+  // 设置。」「默认背景图已保存。」「当前聊天背景已切到新预览，保存后生效。」
+  // 这一串 setNotice 调用之后没 auto-dismiss，notice 文本一直挂在背景预览
+  // 上方，直到用户离开页面或换 conversationId。chat-list-page / chat-details
+  // 都对齐 3.5s auto-dismiss，本页只用纯字符串 notice，没有 actionLabel 分支
+  // 要兜，直接 dismiss 即可。pageError 走 mutation.error 渲染，不经 notice 状态。
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
@@ -253,6 +297,59 @@ export function ChatBackgroundPage() {
     clearDefaultMutation.isPending ||
     saveConversationMutation.isPending ||
     clearConversationMutation.isPending;
+
+  // 走查 R3：原版「保存默认背景 / 恢复系统背景 / 保存当前聊天背景 / 跟随默认
+  // 背景 / 保存当前聊天设置」5 个 button 全部只靠 disabled={busy} 兜双击，
+  // playwright 实测三连点「保存默认背景」落 3 份 PATCH /world/owner/chat-
+  // background + 3 份 GET /conversations/$id/background 联动 invalidate（公网
+  // RTT 6×~600ms 浪费）。同帧 <16ms 第二次 click 即使 disabled={busy} 也兜不住
+  // ——React state 要等 commit。和 chat-details muteSubmittingRef / pinSubmittingRef
+  // 同款修法，给 4 条 save/clear mutation 全部加 sync ref 锁，复位由 useEffect
+  // [isPending] 触发。
+  const saveDefaultSubmittingRef = useRef(false);
+  const clearDefaultSubmittingRef = useRef(false);
+  const saveConversationSubmittingRef = useRef(false);
+  const clearConversationSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!saveDefaultMutation.isPending) {
+      saveDefaultSubmittingRef.current = false;
+    }
+  }, [saveDefaultMutation.isPending]);
+  useEffect(() => {
+    if (!clearDefaultMutation.isPending) {
+      clearDefaultSubmittingRef.current = false;
+    }
+  }, [clearDefaultMutation.isPending]);
+  useEffect(() => {
+    if (!saveConversationMutation.isPending) {
+      saveConversationSubmittingRef.current = false;
+    }
+  }, [saveConversationMutation.isPending]);
+  useEffect(() => {
+    if (!clearConversationMutation.isPending) {
+      clearConversationSubmittingRef.current = false;
+    }
+  }, [clearConversationMutation.isPending]);
+  const handleSaveDefault = () => {
+    if (saveDefaultSubmittingRef.current) return;
+    saveDefaultSubmittingRef.current = true;
+    saveDefaultMutation.mutate();
+  };
+  const handleClearDefault = () => {
+    if (clearDefaultSubmittingRef.current) return;
+    clearDefaultSubmittingRef.current = true;
+    clearDefaultMutation.mutate();
+  };
+  const handleSaveConversation = () => {
+    if (saveConversationSubmittingRef.current) return;
+    saveConversationSubmittingRef.current = true;
+    saveConversationMutation.mutate();
+  };
+  const handleClearConversation = () => {
+    if (clearConversationSubmittingRef.current) return;
+    clearConversationSubmittingRef.current = true;
+    clearConversationMutation.mutate();
+  };
   const pageError =
     (uploadMutation.error instanceof Error && uploadMutation.error.message) ||
     (saveDefaultMutation.error instanceof Error &&
@@ -265,9 +362,19 @@ export function ChatBackgroundPage() {
       clearConversationMutation.error.message) ||
     null;
 
-  const openPicker = (target: UploadTarget) => {
+  const openPicker = async (target: UploadTarget) => {
     setUploadTarget(target);
-    fileInputRef.current?.click();
+    const files = await pickImageFiles({ multiple: false });
+    const file = files[0];
+    if (!file) {
+      return;
+    }
+    // 用 mutate() 而不是 mutateAsync()——caller 是 onClick={() => openPicker(...)}
+    // fire-and-forget，没人接 rejection；uploadMutation.error 已通过 pageError
+    // (line 254-264) 渲染在页面上，业务上不需要 await。改成 mutate() 后 rejection
+    // 不再外泄到 window.unhandledrejection（公网隧道 / cloud token 过期重连时
+    // compressChatBackgroundImage 后端 5xx / 上传 4xx 会抛，每次都污染 telemetry）。
+    uploadMutation.mutate({ file });
   };
 
   const navigateToRouteStateReturn = () => {
@@ -319,17 +426,6 @@ export function ChatBackgroundPage() {
     setConversationMode("custom");
     setConversationDraft(background);
     setNotice(t(msg`当前聊天背景已切到新预览，保存后生效。`));
-  };
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.currentTarget.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    await uploadMutation.mutateAsync({ file });
   };
 
   const content = (
@@ -485,7 +581,7 @@ export function ChatBackgroundPage() {
           {!isDesktopLayout ? (
             <ChatBackgroundPreview
               background={effectivePreviewBackground}
-              title={conversation.title}
+              title={displayedConversationTitle}
               subtitle={
                 conversationMode === "custom" && supportsConversationOverride
                   ? t(msg`当前聊天正在预览专属背景`)
@@ -514,14 +610,14 @@ export function ChatBackgroundPage() {
               <Button
                 variant="primary"
                 disabled={busy || !defaultDraft}
-                onClick={() => saveDefaultMutation.mutate()}
+                onClick={handleSaveDefault}
               >
                 {t(msg`保存默认背景`)}
               </Button>
               <Button
                 variant="ghost"
                 disabled={busy}
-                onClick={() => clearDefaultMutation.mutate()}
+                onClick={handleClearDefault}
               >
                 {t(msg`恢复系统背景`)}
               </Button>
@@ -580,14 +676,14 @@ export function ChatBackgroundPage() {
                   <Button
                     variant="primary"
                     disabled={busy || !conversationDraft}
-                    onClick={() => saveConversationMutation.mutate()}
+                    onClick={handleSaveConversation}
                   >
                     {t(msg`保存当前聊天背景`)}
                   </Button>
                   <Button
                     variant="ghost"
                     disabled={busy}
-                    onClick={() => clearConversationMutation.mutate()}
+                    onClick={handleClearConversation}
                   >
                     {t(msg`跟随默认背景`)}
                   </Button>
@@ -605,8 +701,18 @@ export function ChatBackgroundPage() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="primary"
-                  disabled={busy}
-                  onClick={() => saveConversationMutation.mutate()}
+                  // 走查第一轮 R1：和上方 line 676 的「保存当前聊天背景」对齐
+                  // ——在 custom 模式还没挑 draft 时，上方那条已经 disabled，
+                  // 用户视线一往下扫看到本条「保存当前聊天设置」却是 enabled，
+                  // 点下去 saveConversationMutation.mutationFn 会走到「!conversationDraft」
+                  // 分支抛 Error("请先为当前聊天选择背景图。") → 顶部 pageError
+                  // 红条挂出一条本应不该看到的错。inherit 模式没 draft 需求，
+                  // 这条按钮还能正常保存 mode:"inherit" 落库。
+                  disabled={
+                    busy ||
+                    (conversationMode === "custom" && !conversationDraft)
+                  }
+                  onClick={handleSaveConversation}
                 >
                   {t(msg`保存当前聊天设置`)}
                 </Button>
@@ -616,13 +722,6 @@ export function ChatBackgroundPage() {
         </>
       ) : null}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => void handleFileChange(event)}
-      />
     </>
   );
 
@@ -664,7 +763,7 @@ export function ChatBackgroundPage() {
               {conversation ? (
                 <ChatBackgroundPreview
                   background={effectivePreviewBackground}
-                  title={conversation.title}
+                  title={displayedConversationTitle}
                   subtitle={t(msg`桌面端预览会同步展示在聊天工作区`)}
                 />
               ) : null}
@@ -678,17 +777,20 @@ export function ChatBackgroundPage() {
 
   return (
     <ChatDetailsShell
-      title={conversation?.title ?? t(msg`聊天背景`)}
+      title={displayedConversationTitle || t(msg`聊天背景`)}
       subtitle={t(msg`默认背景和好友专属背景`)}
-      onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({
-            to: "/chat/$conversationId/details",
-            params: { conversationId },
-            ...(currentRouteHash ? { hash: currentRouteHash } : {}),
-          });
-        });
-      }}
+      onBack={guardBackAction(() => {
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/chat/$conversationId/details",
+              params: { conversationId },
+              ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+            });
+          },
+          `/chat/${conversationId}/details`,
+        );
+      })}
     >
       <div className="space-y-3 px-3">{content}</div>
     </ChatDetailsShell>

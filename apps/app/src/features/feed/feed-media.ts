@@ -5,6 +5,7 @@ import type {
   MomentContentType,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { stripToolCallSyntax } from "../moments/moment-content";
 
 const t = translateRuntimeMessage;
 
@@ -28,7 +29,7 @@ export function resolveFeedMomentContentType(
 export function getFeedSummaryText(
   post: Pick<FeedPost, "text" | "media" | "mediaType">,
 ) {
-  const text = post.text.trim();
+  const text = stripToolCallSyntax(post.text);
   if (text) {
     return text;
   }

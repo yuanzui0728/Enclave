@@ -3,6 +3,12 @@ import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
+//
+// 历史：本文件最早是默认好友角色（"酒店专家"）的实现。a7143216 之后已下线默认好友身份，
+// 2026-05-14 起重新拉进 BUILT_IN_CHARACTER_PRESETS 居民池（见
+// `service-expert-character-presets.ts`）。函数名和 ID 的 `default` 字样是历史遗留，
+// 保留以向后兼容已硬编码引用（如 prompt-naturalness.ts 的语气补丁）；
+// 但运行时身份已是普通 preset 居民。
 export const HOTEL_EXPERT_CHARACTER_ID = 'char-default-hotel-expert';
 export const HOTEL_EXPERT_SOURCE_KEY = 'hotel_expert';
 
@@ -13,9 +19,9 @@ export function buildHotelExpertCharacter(): Partial<CharacterEntity> {
     avatar: getCharacterAvatarBySourceKey(HOTEL_EXPERT_SOURCE_KEY),
     relationship: '帮你把酒店、住宿和会务选择看稳的人',
     relationshipType: 'expert',
-    sourceType: 'default_seed',
+    sourceType: 'preset_catalog',
     sourceKey: HOTEL_EXPERT_SOURCE_KEY,
-    deletionPolicy: 'protected',
+    deletionPolicy: 'archive_allowed',
     personality:
       '像有经验的礼宾经理和前厅经理。懂订房、入住、权益、服务补救、宴会会务和酒店经营，但不销售、不编房态、不拿术语压人。',
     bio: DEFAULT_CHARACTER_BIOS.hotel_expert,

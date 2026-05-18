@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
 import defaultAvatarEmber from "../assets/default-avatar-ember.svg";
 import defaultAvatarMint from "../assets/default-avatar-mint.svg";
@@ -32,16 +32,67 @@ export function AvatarChip({
           : size === "lg"
             ? "h-14 w-14 rounded-full text-xl"
             : "h-11 w-11 rounded-full text-base";
-  const trimmedSrc = src?.trim() ?? "";
-  const fallbackSrc = pickFallbackAvatar(name, trimmedSrc);
-  const resolvedSrc =
-    !loadFailed && isLikelyImageSource(trimmedSrc)
-      ? resolveAvatarSource(trimmedSrc)
-      : fallbackSrc;
+  // 第三轮新会话 R2：之前 src?.trim() 在 render 函数体里裸跑——AvatarChip 全
+  // 站用 113 次，profile-info-avatar-page 用户在 URL 输入框敲字时，1MB data URL
+  // 头像每个 keystroke 都被 trim() 复制一次（O(n) 但生成新字符串副本，更重）。
+  // 长列表（contacts / chat / moments）滚动时每个可视 chip 同样命中，CPU 抖动
+  // 肉眼可感。src 多数时候是稳定引用（store / contract data），用 useMemo([src])
+  // 就能把 trim 成本控在「src 真换了才再跑」。
+  const trimmedSrc = useMemo(() => src?.trim() ?? "", [src]);
 
   useEffect(() => {
     setLoadFailed(false);
   }, [trimmedSrc]);
+
+  // 走查 R1：fallbackSrc useMemo 原来挂在 emoji 早 return 之后，hook 顺序受
+  // isEmojiAvatar(trimmedSrc) 影响——emoji 串只跑 3 个 hook（useState/useMemo/
+  // useEffect），非 emoji 串跑 4 个。同一个 AvatarChip 实例的 src 在 emoji 与
+  // 图片之间切换时（典型：角色资料里 emoji 头像，后端推一次真实 avatar URL；或
+  // 反向：头像清空回退到 emoji），React 会撞到「Rendered fewer hooks than
+  // expected」并被 CatchBoundary 整片接管，移动端单聊 details / 群聊 details /
+  // contact-profile 都会渲染成 "Something went wrong!" 空页面，长按消息时弹出
+  // 的 MessageAvatarPopover 同样砸掉。Rules of Hooks：所有 hook 必须无条件、
+  // 同顺序调用。把 fallbackSrc useMemo 提到任何 conditional return 之前。
+  // 角色 / 好友请求里 avatar 经常被存成单 emoji（比如 🌙 / 💬 / ☀️），
+  // 之前 isLikelyImageSource 直接 false → 全部回落到默认渐变头像，导致「新的朋友」
+  // 里 4/5 张头像都长得一样、看不出谁是谁。这里把 emoji 直接当文字 glyph 渲染，
+  // 背景仍然走稳定 hash 出的渐变色，肉眼能立刻区分。
+  // 第三轮新会话 R3：pickFallbackAvatar 之前裸跑每次 render。其中
+  //   for (const character of seed) hash = ... char.codePointAt(0) ...
+  // 把整段 seed（含 src）一字一字过一遍。1MB data URL 头像走这条 = 1M+ 次
+  // codePointAt，hash 用不上时也照样跑（图片加载成功的常规路径就不需要 fallback）。
+  // useMemo([name, trimmedSrc]) 让 fallbackSrc 只在 src 真变化时重算；
+  // pickFallbackAvatar 内部把 seed 截到 256 字符上限（短串保持原 hash 行为，
+  //   长 data URL 也只过头 256 个 byte 算 hash，足够分散）。
+  const fallbackSrc = useMemo(
+    () => pickFallbackAvatar(name, trimmedSrc),
+    [name, trimmedSrc],
+  );
+
+  if (!isLikelyImageSource(trimmedSrc) && isEmojiAvatar(trimmedSrc)) {
+    const emojiTextSize =
+      size === "sm"
+        ? "text-[18px]"
+        : size === "xl"
+          ? "text-[34px]"
+          : size === "wechat"
+            ? "text-[24px]"
+            : size === "lg"
+              ? "text-[28px]"
+              : "text-[22px]";
+    return (
+      <span
+        aria-label={name ?? "avatar"}
+        className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f5f5)] leading-none shadow-[var(--shadow-soft)]`}
+      >
+        <span aria-hidden="true">{trimmedSrc}</span>
+      </span>
+    );
+  }
+  const resolvedSrc =
+    !loadFailed && isLikelyImageSource(trimmedSrc)
+      ? resolveAvatarSource(trimmedSrc)
+      : fallbackSrc;
 
   return (
     <img
@@ -60,19 +111,63 @@ export function AvatarChip({
   );
 }
 
+const EMOJI_PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
+// 数学/字母变体（𝕏 / 𝓜 / 𝟙 等）的 Unicode 一般类别其实是 Lu/Ll/Nd，不是 Symbol，
+// 所以 \p{S} / Extended_Pictographic 都 catch 不到。但它们都落在 SMP plane
+// (U+10000 - U+10FFFF)，单 codepoint 拿来做角色头像 logo 是常见用法（xAI 用 "𝕏"）。
+// 旧 isEmojiAvatar 判 false → 一律 fallback 默认渐变头像，xAI 的 logo 认不出。
+// 补一条：单 codepoint 且落在 SMP 以上 → 也按 glyph 渲染。
+const SMP_OR_HIGHER_GLYPH = /^[\u{10000}-\u{10FFFF}]$/u;
+
+function isEmojiAvatar(value: string) {
+  if (!value) {
+    return false;
+  }
+  // 限定到「短串 + 含 emoji code point」：避免把名字里有 emoji 的长字符串当 emoji
+  // 头像渲染（那种应该走文字 fallback）。一个复合 emoji（带 ZWJ / 修饰符）大概
+  // 6~8 个 UTF-16 code unit，这里给 12 留点余地。
+  if (value.length > 12) {
+    return false;
+  }
+  if (EMOJI_PICTOGRAPHIC.test(value)) {
+    return true;
+  }
+  // 单 codepoint && SMP+ → glyph。Array.from 按 codepoint 拆分（避免 surrogate
+  // pair 被算成 2 个 length 误判成 "A𝕏" 这种组合）。
+  const codepoints = Array.from(value);
+  if (codepoints.length === 1 && SMP_OR_HIGHER_GLYPH.test(codepoints[0]!)) {
+    return true;
+  }
+  return false;
+}
+
+// 走查 2026-05-18 新会话 R1（移动端视频号）：原逻辑里两条放行规则会让 <img>
+// 替用户的浏览器去打陌生 host：
+//   1) 任意 `./` / `../` / 裸 `xxx.png` 都被当图片渲染——结果 `<img src="x.png">`
+//      在 `/tabs/channels` 这种页面上被浏览器按当前 URL 相对路径解析（实测落到
+//      `/api/x.png`、`/tabs/x.png` 都拿不到），每打开一次转发 picker / 作者列表
+//      就给 cloud-api 打一炮 404，referer 还把 channels 页面 URL 透出去。
+//   2) `//evil.example/icon.png` 这种 scheme-relative 串前两个字符以两个「斜杠
+//      类」字符开头（`/`、`\` 互相组合）的，被 URL parser 一规范化就跑到外部
+//      第三方 host（隐私探针 / 跟踪像素 / 内网 SSRF）。后端
+//      `isSafeAvatarValueBackend` 已经按这条规则在写入端 reject（见
+//      api/src/modules/characters/characters.service.ts:1287），但 DB 里历史脏
+//      数据 + curl 直 PUT 绕过仍能存进来——前端渲染要再守一道。
+// 收紧成「必有可识别 scheme / 站内绝对路径前缀」：emoji / 文字会落到 isEmoji-
+// Avatar 通道，外部 http(s) 头像（可信 CDN）仍然放行，裸字符串走 fallback 渐变。
+const SCHEME_RELATIVE_AVATAR_RE = /^[/\\][/\\]/;
 function isLikelyImageSource(value: string) {
   if (!value) {
     return false;
   }
-
+  if (SCHEME_RELATIVE_AVATAR_RE.test(value)) {
+    return false;
+  }
   return (
     value.startsWith("/") ||
-    value.startsWith("./") ||
-    value.startsWith("../") ||
     value.startsWith("blob:") ||
     /^https?:\/\//i.test(value) ||
-    /^data:image\//i.test(value) ||
-    /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
+    /^data:image\//i.test(value)
   );
 }
 
@@ -86,9 +181,18 @@ function resolveAvatarSource(value: string) {
   return resolveAppMediaUrl(value);
 }
 
+// 第三轮新会话 R3：fallback hash 只是用来从 4 个备用头像里挑一个，整个串过
+// codePointAt 是浪费——前 256 字符给 4 个 bucket 分散已经足够（其实更短都够）。
+// legacy 1MB data URL 头像走这条之前要 1M+ 次迭代，截短到 256 是 4000x 提速。
+const PICK_FALLBACK_SEED_MAX = 256;
+
 function pickFallbackAvatar(name?: string | null, src?: string | null) {
   const seedParts = [name?.trim(), src?.trim()].filter(Boolean);
-  const seed = seedParts.join(":") || "yinjie-avatar";
+  const seedRaw = seedParts.join(":") || "yinjie-avatar";
+  const seed =
+    seedRaw.length > PICK_FALLBACK_SEED_MAX
+      ? seedRaw.slice(0, PICK_FALLBACK_SEED_MAX)
+      : seedRaw;
   let hash = 0;
 
   for (const character of seed) {

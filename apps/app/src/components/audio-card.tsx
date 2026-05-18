@@ -11,6 +11,10 @@ type AudioCardProps = {
   title?: string;
   durationMs?: number;
   variant?: "moment" | "feed";
+  // 视频号桌面工作区把多张 slide 同时挂在 DOM 里；离开当前 slide 时把音频暂停 + 复位，
+  // 否则下一张 slide 已经显示出来、上一张的音乐还在背景里继续放。undefined = 不做处理，
+  // 兼容 moments 这类不在 snap-scroll 容器里的用法。
+  isActive?: boolean;
 };
 
 const audioRegistry = new Set<HTMLAudioElement>();
@@ -37,6 +41,7 @@ export function AudioCard({
   title,
   durationMs,
   variant = "moment",
+  isActive,
 }: AudioCardProps) {
   const t = useRuntimeTranslator();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,8 +57,27 @@ export function AudioCard({
     audioRegistry.add(el);
     return () => {
       audioRegistry.delete(el);
+      // 走查新一轮：朋友圈 audio_card 类型动态在以下场景下 AudioCard unmount —
+      //   1) 屏蔽该角色 / 删除该 moment → 卡片被 filter 出 visibleMoments
+      //   2) 切账户 / 离开页 → 整页 unmount
+      // React 把 <audio> 从 DOM 摘掉后 Chromium / Firefox 不会自动 pause（webkit
+      // 实测会），音轨会一直 loop 到刷新整页。和 51b8980a (ChannelAudioPictorial)
+      // 同模式：unmount cleanup 主动 pause。
+      if (!el.paused) {
+        el.pause();
+      }
     };
   }, []);
+
+  // 仅当 isActive 明确为 false 时才介入：调用方主动声明"我这张 slide 已经不可见了"。
+  // isActive===undefined 的旧用法（moments 等）行为不变。
+  useEffect(() => {
+    if (isActive !== false) return;
+    const el = audioRef.current;
+    if (!el) return;
+    if (!el.paused) el.pause();
+    if (el.currentTime !== 0) el.currentTime = 0;
+  }, [isActive]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -168,7 +192,11 @@ export function AudioCard({
           </span>
         </div>
       </div>
-      <audio ref={audioRef} src={resolvedAudioUrl} preload="metadata" />
+      {/* preload="none"：feed 上一屏出现多张 audio_card（朋友圈一次拉 20 条，
+          有 18 条 audio_card 时 metadata 探针就是 18 个 HTTP；Chromium / Safari 对
+          短 mp3 还会把整文件抓回来）。我们已经从 moment 数据里拿到 durationMs，
+          首屏不需要再去探 metadata。第一次 play 时再开始拉流。 */}
+      <audio ref={audioRef} src={resolvedAudioUrl} preload="none" />
     </div>
   );
 }

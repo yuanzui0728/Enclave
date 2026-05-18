@@ -1,9 +1,16 @@
 @import "tailwindcss";
+@source "../../../packages/ui/src";
 
 html,
 body,
 #root {
   min-height: 100%;
+}
+
+html {
+  /* 防止 iOS 横屏字体自动放大 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -12,6 +19,9 @@ body {
   background: var(--bg-canvas);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  /* iOS 安全区内边距：父级 inset 已经在 layout 给 px-4，这里只补 bottom */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 * {
@@ -19,5 +29,27 @@ body {
 }
 
 body {
-  min-width: 360px;
+  min-width: 320px;
+}
+
+/* 输入框基线 16px，避免 iOS Safari 在 < 16px 时聚焦自动缩放 */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* 当 RootLayout 打开移动端抽屉时，给 <html> 加这个 class 锁掉背景滚动 */
+html.wiki-nav-open,
+html.wiki-nav-open body {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* 让所有滚动容器在 iOS 上有惯性滚动；同时把 PR review pre 这类长代码块在
+   小屏拉满 */
+.wiki-touch-scroll {
+  -webkit-overflow-scrolling: touch;
 }

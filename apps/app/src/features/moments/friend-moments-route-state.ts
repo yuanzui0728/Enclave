@@ -33,7 +33,17 @@ const desktopFriendMomentsRouteSources = new Set<DesktopFriendMomentsRouteSource
 
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
-  if (!nextValue || !nextValue.startsWith("/")) {
+  // 走查 R1：和 channels-route-state R4 (b169dd7a) / character-detail-route-state /
+  // mobile-group-route-state 同款 open-redirect 修法。这条 parser 同时被
+  // coerceToMobileFriendMomentsRouteHash 复用（mobile 解析 desktop 格式的 fallback
+  // 链），不拦 "//" 等于给 mobile 也漏了同样的口子。浏览器 history.replaceState
+  // 接受 "//host" 拼出 "https://evil.com"，攻击者诱导用户点
+  // /desktop/friend-moments/X#returnPath=//evil.com 进入后按返回跳第三方站。
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    nextValue.startsWith("//")
+  ) {
     return undefined;
   }
 

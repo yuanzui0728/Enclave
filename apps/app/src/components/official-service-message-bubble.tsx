@@ -138,6 +138,8 @@ export function OfficialServiceMessageBubble({
                       <img
                         src={message.attachment!.coverImage}
                         alt={message.attachment!.title}
+                        loading="lazy"
+                        decoding="async"
                         className={
                           isDesktop
                             ? "h-20 w-20 shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"

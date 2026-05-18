@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -8,6 +15,7 @@ import {
   getGroup,
   getGroupMembers,
   removeGroupMember,
+  SELF_CHARACTER_ID,
 } from "@yinjie/contracts";
 import { getActiveLocale, useRuntimeTranslator } from "@yinjie/i18n";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
@@ -20,6 +28,7 @@ import {
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
+import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import {
   buildMobileGroupRouteHash,
@@ -27,7 +36,7 @@ import {
 } from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupMemberPickerMode = "add" | "remove";
@@ -102,7 +111,14 @@ function MobileGroupMemberPickerPage({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [keyword, setKeyword] = useState("");
+  // 走查 R1：filteredCandidateItems 直接吃 keyword，add 模式好友 100+
+  // 时每个 keystroke 都同步重新 createFriendDirectoryItems + filter +
+  // matchesFriendSearch 一遍——其中 createFriendDirectoryItems 内部还要
+  // 重新算 indexLabel/sort，是这段流程里最贵的一步。和 create-group-page /
+  // group-contacts-page 同口径补 useDeferredValue。
+  const deferredKeyword = useDeferredValue(keyword);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const routeState = parseMobileGroupRouteState(hash);
   const safeReturnPath =
     routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
@@ -119,19 +135,41 @@ function MobileGroupMemberPickerPage({
     [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
   );
 
+  // 走查 R1：三个 query 都没 staleTime（默认 0），用户在 /group/A/members/add
+  // → /chat-list → 再 /group/A/members/add 这种秒级回访会重新 GET 三次
+  // /api/groups/$id + /members + /friends，公网隧道 RTT ~600ms × 3 浪费明显。
+  // create-group-page friendsQuery 已用 staleTime: 15_000 与其它兄弟页对齐；
+  // 这里同样统一，contacts/add-friend mutation 也已经在显式 invalidate 这些 key
+  // 所以 stale 不会脏。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: Boolean(groupId),
+    staleTime: 15_000,
   });
+
+  // 走查 R1：tanstack-router 在 /group/A/members/add → /group/B/members/add 这种
+  // 只换 param 的跳转下不重挂载组件，selectedIds / keyword / removeConfirmOpen
+  // 仍保留上一群 A 的状态。selectedFriends 虽然按 candidateMap 过滤所以视觉上
+  // 看不到 A 的旧选项，但 selectedIds 仍带着 stale id，点"确定"会把 A 的成员
+  // POST 到 B；keyword 没清空导致搜索框留着 A 的关键字、候选直接被过滤成空——
+  // 用户以为没人能选。和 background/edit/announcement 几个姊妹页面对齐，
+  // groupId/baseUrl/mode 任一变化都重置一次。
+  useEffect(() => {
+    setSelectedIds([]);
+    setKeyword("");
+    setRemoveConfirmOpen(false);
+  }, [baseUrl, groupId, mode]);
 
   useEffect(() => {
     if (
@@ -174,9 +212,18 @@ function MobileGroupMemberPickerPage({
 
   const allCandidateItems = useMemo(() => {
     if (mode === "add") {
+      // 再次走查 Round 1：getFriends 服务端把 char-default-self（"我自己"
+      // 自我镜像）作为默认好友 intimacy=100 塞回好友列表；create-group-page
+      // 早就在 R2 注释过同样的事，过滤掉了 SELF。这里"添加群成员"漏掉，
+      // 用户能把"我自己" 作为 character member 加进去——服务端会落一条
+      // memberType=character 的成员记录，加上原来 memberType=user 的群主
+      // 就变成"你自己和你自己同时在群里"两条；后续 typing/atMe 走 character
+      // 路径也会出现"我自己 正在回复..."这种诡异提示。
       return createFriendDirectoryItems(
         (friendsQuery.data ?? []).filter(
-          (item) => !memberIds.has(item.character.id),
+          (item) =>
+            item.character.id !== SELF_CHARACTER_ID &&
+            !memberIds.has(item.character.id),
         ),
       ).map((item) => ({
         id: item.character.id,
@@ -216,15 +263,18 @@ function MobileGroupMemberPickerPage({
   }, [friendMap, friendsQuery.data, memberIds, membersQuery.data, mode, t]);
 
   const filteredCandidateItems = useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase();
+    const normalizedKeyword = deferredKeyword.trim().toLowerCase();
     if (!normalizedKeyword) {
       return allCandidateItems;
     }
 
     if (mode === "add") {
+      // 同上：搜索分支也得把 SELF 过掉，否则用户输入"我"还是能在搜索结果里
+      // 看到"我自己"被勾选添加进群。
       return createFriendDirectoryItems(
         (friendsQuery.data ?? []).filter(
           (item) =>
+            item.character.id !== SELF_CHARACTER_ID &&
             !memberIds.has(item.character.id) &&
             matchesFriendSearch(item, normalizedKeyword),
         ),
@@ -245,7 +295,7 @@ function MobileGroupMemberPickerPage({
         value.toLowerCase().includes(normalizedKeyword),
       ),
     );
-  }, [allCandidateItems, friendsQuery.data, keyword, memberIds, mode, t]);
+  }, [allCandidateItems, deferredKeyword, friendsQuery.data, memberIds, mode, t]);
 
   const candidateSections = useMemo(() => {
     return buildContactSections(
@@ -260,6 +310,28 @@ function MobileGroupMemberPickerPage({
     () => new Map(allCandidateItems.map((item) => [item.id, item])),
     [allCandidateItems],
   );
+  // 走查新一轮 R1：和 create-group-page R1 同款问题——membersQuery / friendsQuery
+  // 60s staleTime 期间用户在另一台设备上把候选项打散了（add 模式：另一端把同一
+  // 个 character 也拉进群；remove 模式：另一端先把这个 character 移走），
+  // socket conversation_updated → 这里 invalidate → membersQuery 刷新 →
+  // allCandidateItems 把这个 id 摘掉。但 selectedIds 还攒着这个 stale id —
+  // 横滚「已选成员」里看不到（selectedItems 已经按 candidateMap 过滤），
+  // 顶部「确定(N)」按钮上的 N 多算一个；点确定时这一批 memberId 里仍带它，
+  // add 模式服务端遇重复 return existing 没问题，remove 模式直接 404 把整批
+  // 翻成"部分失败"。candidateMap 一旦重建就 reconcile：丢掉 map 里不再存在
+  // 的 id。candidateMap 还是 0 size 时（query 还在 loading）不动 selectedIds，
+  // 免得初始挂载就把刚选好的项清空。
+  useEffect(() => {
+    if (!candidateMap.size) {
+      return;
+    }
+    setSelectedIds((current) => {
+      if (current.every((id) => candidateMap.has(id))) {
+        return current;
+      }
+      return current.filter((id) => candidateMap.has(id));
+    });
+  }, [candidateMap]);
   const selectedItems = useMemo(
     () =>
       selectedIds.flatMap((id) => {
@@ -272,46 +344,109 @@ function MobileGroupMemberPickerPage({
     setSelectedIds((current) => toggleSelectionItem(current, targetId));
   };
 
+  // 同步防双击锁——下面「确定」按钮原本只靠 disabled=submitMutation.isPending
+  // 兜底，但 disabled 要等 React commit 才生效。add 模式连点 2 次会同时通过
+  // 两次 isPending=false → 同一批 memberId 被 POST /groups/$id/members 两遍，
+  // 服务端唯一约束会让第二批全部 409，但还是浪费 RTT 且 UI 上看着像"成功了"
+  // 但实际后端冒出一堆 409 日志。submittingRef 同步赋值，第一次 click 翻
+  // true 后同帧后续 click 都被早返。remove 模式靠 setRemoveConfirmOpen 弹层
+  // 二次确认，天然只点一次，不受影响。
+  const submittingRef = useRef(false);
+  // 走查 Round 2：原版用 Promise.all，任意一条 add/remove 失败就把整批抛错——
+  // 但已经先成功的那几条仍然落库了，membersQuery 不 invalidate / selectedIds
+  // 不收口，用户点"重试" 会拿同一批 memberId 再打一遍：
+  //   - remove 模式下，已经成功移除的那些会触发 CHAT_GROUP_MEMBER_NOT_FOUND，
+  //     本来"部分成功"的批次反而被翻成"整批失败"，UI 没法区分；
+  //   - add 模式下 addMember 服务端遇到重复直接 return existing（不抛），所
+  //     以 retry 在 add 模式是幂等的，但 selectedIds 还留着已经加进群的 ID，
+  //     重试 toast 总条数显示也不对。
+  // 改成 Promise.allSettled：把已成功的 ID 从 selectedIds 摘掉、refetch 群
+  // 成员，让用户基于真实当前成员状态决定剩余失败项要不要重试。
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!selectedIds.length) {
         return;
       }
 
-      if (mode === "add") {
-        await Promise.all(
-          selectedIds.map((memberId) =>
-            addGroupMember(
-              groupId,
-              {
-                memberId,
-                memberType: "character",
-              },
-              baseUrl,
-            ),
-          ),
-        );
-        return;
-      }
-
-      await Promise.all(
+      const results = await Promise.allSettled(
         selectedIds.map((memberId) =>
-          removeGroupMember(groupId, memberId, baseUrl),
+          mode === "add"
+            ? addGroupMember(
+                groupId,
+                {
+                  memberId,
+                  memberType: "character",
+                },
+                baseUrl,
+              ).then(() => memberId)
+            : removeGroupMember(groupId, memberId, baseUrl).then(
+                () => memberId,
+              ),
         ),
       );
+
+      const fulfilledIds: string[] = [];
+      const errors: Error[] = [];
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          fulfilledIds.push(result.value);
+        } else {
+          const reason = result.reason;
+          errors.push(
+            reason instanceof Error ? reason : new Error(String(reason)),
+          );
+        }
+      }
+
+      if (errors.length) {
+        if (fulfilledIds.length) {
+          setSelectedIds((current) =>
+            current.filter((id) => !fulfilledIds.includes(id)),
+          );
+          // 走查 R4：部分成功路径下 await Promise.all 3 条 invalidate 后才
+          // throw error → 用户看到失败提示前要多等 ~1.8s 公网隧道 RTT。
+          // 立即 throw 让 toast 立刻弹出，invalidate 后台同步即可。
+          void queryClient.invalidateQueries({
+            queryKey: ["app-group", baseUrl, groupId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["app-group-members", baseUrl, groupId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["app-conversations", baseUrl],
+          });
+        }
+        const firstMessage = errors[0]?.message?.trim();
+        throw new Error(
+          firstMessage ||
+            (mode === "add"
+              ? t(msg`部分成员添加失败，请稍后再试。`)
+              : t(msg`部分成员移除失败，请稍后再试。`)),
+        );
+      }
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      setRemoveConfirmOpen(false);
+      // 走查 R3：和姊妹页 pin/preferences/leave 同口径——本页 add/remove 成员
+      // 都会改变 listGroups 返回的 memberCount，contacts-page / group-contacts-page
+      // 的 ["app-contact-groups"] cache（30s staleTime）不会自动跟上，用户从本
+      // 页 navigate 回 details → 退到 /contacts/groups 时人数仍是旧值。把这条
+      // 也 invalidate，确保所有 cohort 看到最新成员数。
+      // 走查 R4：原本 await Promise.all 4 条 invalidate 才 navigate，公网隧道
+      // ~600ms × 4 ≈ 2.4s 用户看着 spinner 才跳回详情页。fire-and-forget 让
+      // 导航立刻发生，目标页 react-query 监听同 key 会自动重拉。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-members", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
@@ -319,7 +454,29 @@ function MobileGroupMemberPickerPage({
         replace: true,
       });
     },
+    onError: () => {
+      setRemoveConfirmOpen(false);
+    },
   });
+
+  function handleSubmit() {
+    if (!selectedIds.length || submitMutation.isPending) {
+      return;
+    }
+    if (mode === "remove") {
+      setRemoveConfirmOpen(true);
+      return;
+    }
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    submitMutation.mutate(undefined, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
+    });
+  }
 
   const pageTitle = mode === "add" ? t(msg`添加成员`) : t(msg`移除成员`);
   const emptyStateTitle =
@@ -345,8 +502,15 @@ function MobileGroupMemberPickerPage({
     if (!selectedIds.length) {
       return;
     }
-
-    submitMutation.mutate();
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    submitMutation.mutate(undefined, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
+    });
   }
 
   return (
@@ -361,7 +525,17 @@ function MobileGroupMemberPickerPage({
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
-            onClick={openGroupDetails}
+            onClick={() => {
+              // R1 走查：原本直接 navigate({to: details}) push 一条新 history
+              // 项，用户 [details → members/add → 点返回] 后浏览器后退会落回
+              // members/add 死循环。和姊妹页 announcement/edit/background/search
+              // 同口径用 navigateBackOrFallback：能 history.back() 就 back，安全
+              // 兜不住时再走 fresh navigate 到 details。
+              navigateBackOrFallback(
+                openGroupDetails,
+                `/group/${groupId}/details`,
+              );
+            }}
             aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={18} />
@@ -370,7 +544,7 @@ function MobileGroupMemberPickerPage({
         rightActions={
           <button
             type="button"
-            onClick={() => submitMutation.mutate()}
+            onClick={handleSubmit}
             disabled={!selectedIds.length || submitMutation.isPending}
             className={cn(
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
@@ -447,7 +621,24 @@ function MobileGroupMemberPickerPage({
               placeholder={
                 mode === "add" ? t(msg`搜索联系人`) : t(msg`搜索群成员`)
               }
-              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R3：和姊妹页 chat-message-search-panel R1 / create-group-page
+              // R2 同款 a11y 修法——父 label 没有文本子节点，placeholder 行为
+              // 在 SR 上分裂。挂 aria-label 把当前 mode 的意图明确表达。
+              aria-label={
+                mode === "add" ? t(msg`搜索联系人`) : t(msg`搜索群成员`)
+              }
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和姊妹页 create-group-page R1 同款修法。备注名/角色名
+              // 常是 ASCII（"wangxiaoming"、"zhang yang"）或英文姓名缩写，
+              // iOS 默认句首大写 + autocorrect 把"wang"改成"Wang"或"Want"，
+              // matchesFriendSearch 内部 toLowerCase 所以 case 不致命，但
+              // autocorrect 把字直接改掉是真坑。enterKeyHint=search 让软键盘
+              // 的 Return 键长得像"搜索"，与"搜索结果列表"语义对齐。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
         </div>
@@ -647,6 +838,43 @@ function MobileGroupMemberPickerPage({
           </div>
         ) : null}
       </div>
+      {mode === "remove" ? (
+        <MobileDetailsActionSheet
+          open={removeConfirmOpen}
+          title={t(msg`移除 ${selectedIds.length} 位群成员`)}
+          description={t(
+            msg`移除后，这些成员将不再参与本群消息。可以稍后通过“添加成员”重新邀请。`,
+          )}
+          actions={[
+            {
+              key: "confirm-remove",
+              label: t(msg`确认移除`),
+              danger: true,
+              disabled: submitMutation.isPending,
+              onClick: () => {
+                if (submitMutation.isPending) {
+                  return;
+                }
+                if (submittingRef.current) {
+                  return;
+                }
+                submittingRef.current = true;
+                submitMutation.mutate(undefined, {
+                  onSettled: () => {
+                    submittingRef.current = false;
+                  },
+                });
+              },
+            },
+          ]}
+          onClose={() => {
+            if (submitMutation.isPending) {
+              return;
+            }
+            setRemoveConfirmOpen(false);
+          }}
+        />
+      ) : null}
     </AppPage>
   );
 }

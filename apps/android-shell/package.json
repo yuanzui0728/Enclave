@@ -18,8 +18,11 @@
   },
   "dependencies": {
     "@capacitor/android": "^7.1.1",
+    "@capacitor/app": "^7.1.0",
     "@capacitor/core": "^7.1.1",
-    "@capacitor/keyboard": "^7.0.6"
+    "@capacitor/keyboard": "^7.0.6",
+    "@capacitor/splash-screen": "^7.0.2",
+    "@capacitor/status-bar": "^7.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.1.1"

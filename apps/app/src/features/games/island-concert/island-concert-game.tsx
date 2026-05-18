@@ -48,15 +48,19 @@ export function IslandConcertGame({
 }: IslandConcertGameProps) {
   const { state, actions } = useIslandConcertState();
   const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 80);
-    return () => window.clearInterval(id);
-  }, []);
 
   const isIdle = state.status === "idle";
   const isPerforming = state.status === "performing";
   const isBetween = state.status === "between";
   const isEnded = state.status === "ended";
+
+  // now 只服务 performing/between 的节拍窗口 / 间歇倒计时——idle/ended 完全用不到，
+  // 停在选乐器或结算页就别再 80ms setNow 拽着 React 空转。
+  useEffect(() => {
+    if (!isPerforming && !isBetween) return;
+    const id = window.setInterval(() => setNow(Date.now()), 80);
+    return () => window.clearInterval(id);
+  }, [isPerforming, isBetween]);
   const containerCls =
     variant === "embedded"
       ? "rounded-[16px] bg-white"

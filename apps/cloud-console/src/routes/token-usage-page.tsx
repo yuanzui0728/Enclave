@@ -153,69 +153,63 @@ function OverviewTab({ range }: { range: { from: string; to: string } }) {
   const overview = overviewQuery.data;
   const trends = trendsQuery.data ?? [];
   const currency = overview?.currency ?? "CNY";
-
-  const cards: Array<{ label: string; value: string }> = overview
-    ? [
-        {
-          label: t("Total tokens"),
-          value: formatNumber(overview.totalTokens),
-        },
-        {
-          label: t("Estimated cost"),
-          value: formatCost(overview.estimatedCost, currency),
-        },
-        {
-          label: t("Request count"),
-          value: formatNumber(overview.requestCount),
-        },
-        {
-          label: t("Active worlds"),
-          value: formatNumber(overview.activeWorldCount),
-        },
-      ]
-    : [];
+  const failureRate =
+    overview && overview.requestCount > 0
+      ? overview.failedCount / overview.requestCount
+      : null;
 
   return (
     <div className="space-y-6">
       <section className={SECTION}>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {overviewQuery.isLoading
-            ? Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-24 animate-pulse rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)]"
-                />
-              ))
-            : cards.map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-4"
-                >
+        <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
+          {overviewQuery.isLoading || !overview ? (
+            Array.from({ length: 2 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-28 animate-pulse rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)]"
+              />
+            ))
+          ) : (
+            <>
+              <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-4">
+                <div className="text-xs text-[color:var(--text-muted)]">
+                  {t("Estimated cost")}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
+                  {formatCost(overview.estimatedCost, currency)}
+                </div>
+                <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                  {t("Total tokens")}: {formatNumber(overview.totalTokens)}
+                  {" · "}
+                  {t("Request count")}: {formatNumber(overview.requestCount)}
+                  {" · "}
+                  {t("Active worlds")}:{" "}
+                  {formatNumber(overview.activeWorldCount)}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-4">
+                <div className="flex items-baseline justify-between gap-2">
                   <div className="text-xs text-[color:var(--text-muted)]">
-                    {card.label}
+                    {t("Failed requests")}
                   </div>
-                  <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                    {card.value}
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    {t("Failure rate")}: {formatPercent(failureRate)}
                   </div>
                 </div>
-              ))}
+                <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
+                  {formatNumber(overview.failedCount)}
+                </div>
+                <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                  {t("Successful requests")}:{" "}
+                  {formatNumber(overview.successCount)}
+                  {" · "}
+                  {t("Active characters")}:{" "}
+                  {formatNumber(overview.activeCharacterCount)}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-        {overview && (
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <SmallStat
-              label={t("Successful requests")}
-              value={formatNumber(overview.successCount)}
-            />
-            <SmallStat
-              label={t("Failed requests")}
-              value={formatNumber(overview.failedCount)}
-            />
-            <SmallStat
-              label={t("Active characters")}
-              value={formatNumber(overview.activeCharacterCount)}
-            />
-          </div>
-        )}
       </section>
 
       <section className={SECTION}>
@@ -239,7 +233,16 @@ function OverviewTab({ range }: { range: { from: string; to: string } }) {
                 stroke="#64748b"
                 fontSize={11}
               />
-              <Tooltip />
+              <Tooltip
+                formatter={(value, name) => {
+                  const num = Number(value);
+                  if (!Number.isFinite(num)) return String(value);
+                  if (name === t("Estimated cost")) {
+                    return formatCost(num, currency);
+                  }
+                  return formatNumber(num);
+                }}
+              />
               <Legend />
               <Line
                 yAxisId="tokens"
@@ -259,15 +262,6 @@ function OverviewTab({ range }: { range: { from: string; to: string } }) {
                 strokeWidth={2}
                 dot={false}
               />
-              <Line
-                yAxisId="tokens"
-                type="monotone"
-                dataKey="requestCount"
-                name={t("Request count")}
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={false}
-              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -281,19 +275,7 @@ function trendDataForChart(points: TokenUsageTrendPoint[]) {
     date: point.label || point.bucketStart,
     totalTokens: point.totalTokens,
     estimatedCost: Math.round(point.estimatedCost * 100) / 100,
-    requestCount: point.requestCount,
   }));
-}
-
-function SmallStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3">
-      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-        {value}
-      </div>
-    </div>
-  );
 }
 
 function WorldsTab({ range }: { range: { from: string; to: string } }) {
@@ -362,7 +344,6 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
               <th className="px-4 py-2 text-right">{t("Request count")}</th>
               <th className="px-4 py-2 text-right">{t("Failure rate")}</th>
               <th className="px-4 py-2 text-right">{t("Active characters")}</th>
-              <th className="px-4 py-2 text-right">{t("Last synced")}</th>
             </tr>
           </thead>
           <tbody>
@@ -370,7 +351,7 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
               <tr>
                 <td
                   className="px-4 py-6 text-center text-[color:var(--text-muted)]"
-                  colSpan={7}
+                  colSpan={6}
                 >
                   {t("Loading…")}
                 </td>
@@ -379,7 +360,7 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
               <tr>
                 <td
                   className="px-4 py-6 text-center text-[color:var(--text-muted)]"
-                  colSpan={7}
+                  colSpan={6}
                 >
                   {t("No data for the selected range yet.")}
                 </td>
@@ -423,11 +404,6 @@ function WorldRow({ row }: { row: CloudTokenUsageWorldRow }) {
       </td>
       <td className="px-4 py-2 text-right tabular-nums">
         {formatNumber(row.activeCharacterCount)}
-      </td>
-      <td className="px-4 py-2 text-right text-xs text-[color:var(--text-muted)]">
-        {row.lastSyncedAt
-          ? new Date(row.lastSyncedAt).toLocaleString()
-          : "-"}
       </td>
     </tr>
   );
@@ -795,11 +771,23 @@ function PricingTab() {
     onError: (error: unknown) => showCloudAdminErrorNotice(showNotice, error),
   });
 
+  const items = catalogQuery.data?.items;
+  const groupedItems = useMemo(() => {
+    const groups: Record<"CNY" | "USD", CloudTokenPricingItem[]> = {
+      CNY: [],
+      USD: [],
+    };
+    for (const item of items ?? []) {
+      groups[item.currency]?.push(item);
+    }
+    return groups;
+  }, [items]);
+
   if (catalogQuery.error) {
     return <CloudAdminErrorBlock error={catalogQuery.error} />;
   }
 
-  const items = catalogQuery.data?.items ?? [];
+  const totalItems = (items ?? []).length;
 
   return (
     <div className="space-y-6">
@@ -819,50 +807,30 @@ function PricingTab() {
               : t("Sync from n1n.ai")}
           </button>
         </div>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-[color:var(--border-subtle)]">
-          <table className="w-full text-sm">
-            <thead className="bg-[color:var(--surface-input)] text-left text-xs uppercase tracking-wide text-[color:var(--text-muted)]">
-              <tr>
-                <th className="px-4 py-2">{t("Currency")}</th>
-                <th className="px-4 py-2">{t("Model")}</th>
-                <th className="px-4 py-2 text-right">
-                  {t("Input / 1k tokens")}
-                </th>
-                <th className="px-4 py-2 text-right">
-                  {t("Output / 1k tokens")}
-                </th>
-                <th className="px-4 py-2">{t("Status")}</th>
-                <th className="px-4 py-2">{t("Note")}</th>
-                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td
-                    className="px-4 py-6 text-center text-[color:var(--text-muted)]"
-                    colSpan={7}
-                  >
-                    {t("No pricing entries yet.")}
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <PricingRow
-                    key={`${item.currency}-${item.model}`}
-                    item={item}
-                    onDelete={() =>
-                      deleteMutation.mutate({
-                        currency: item.currency,
-                        model: item.model,
-                      })
-                    }
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {catalogQuery.isLoading ? (
+          <div className="mt-3 rounded-2xl border border-[color:var(--border-subtle)] px-4 py-6 text-center text-sm text-[color:var(--text-muted)]">
+            {t("Loading…")}
+          </div>
+        ) : totalItems === 0 ? (
+          <div className="mt-3 rounded-2xl border border-[color:var(--border-subtle)] px-4 py-6 text-center text-sm text-[color:var(--text-muted)]">
+            {t("No pricing entries yet.")}
+          </div>
+        ) : (
+          <div className="mt-3 space-y-4">
+            {(["CNY", "USD"] as const).map((cur) =>
+              groupedItems[cur].length === 0 ? null : (
+                <PricingCatalogGroup
+                  key={cur}
+                  currency={cur}
+                  items={groupedItems[cur]}
+                  onDelete={(model) =>
+                    deleteMutation.mutate({ currency: cur, model })
+                  }
+                />
+              ),
+            )}
+          </div>
+        )}
       </section>
 
       <section className={SECTION}>
@@ -878,6 +846,51 @@ function PricingTab() {
   );
 }
 
+function PricingCatalogGroup({
+  currency,
+  items,
+  onDelete,
+}: {
+  currency: "CNY" | "USD";
+  items: CloudTokenPricingItem[];
+  onDelete: (model: string) => void;
+}) {
+  const t = useCloudConsoleText();
+  return (
+    <div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--text-muted)]">
+        {currency}
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--border-subtle)]">
+        <table className="w-full text-sm">
+          <thead className="bg-[color:var(--surface-input)] text-left text-xs uppercase tracking-wide text-[color:var(--text-muted)]">
+            <tr>
+              <th className="px-4 py-2">{t("Model")}</th>
+              <th className="px-4 py-2 text-right">
+                {t("Input / 1k tokens")}
+              </th>
+              <th className="px-4 py-2 text-right">
+                {t("Output / 1k tokens")}
+              </th>
+              <th className="px-4 py-2">{t("Note")}</th>
+              <th className="px-4 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <PricingRow
+                key={`${item.currency}-${item.model}`}
+                item={item}
+                onDelete={() => onDelete(item.model)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function PricingRow({
   item,
   onDelete,
@@ -888,16 +901,21 @@ function PricingRow({
   const t = useCloudConsoleText();
   return (
     <tr className="border-t border-[color:var(--border-subtle)]">
-      <td className="px-4 py-2">{item.currency}</td>
-      <td className="px-4 py-2 font-mono text-xs">{item.model}</td>
+      <td className="px-4 py-2">
+        <div className="font-mono text-xs text-[color:var(--text-primary)]">
+          {item.model}
+        </div>
+        {!item.enabled && (
+          <div className="mt-0.5 inline-block rounded-full bg-[color:var(--surface-input)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[color:var(--text-muted)]">
+            {t("Disabled")}
+          </div>
+        )}
+      </td>
       <td className="px-4 py-2 text-right tabular-nums">
         {item.inputPer1kTokens.toFixed(4)}
       </td>
       <td className="px-4 py-2 text-right tabular-nums">
         {item.outputPer1kTokens.toFixed(4)}
-      </td>
-      <td className="px-4 py-2">
-        {item.enabled ? t("Enabled") : t("Disabled")}
       </td>
       <td className="px-4 py-2 text-xs text-[color:var(--text-muted)]">
         {item.note ?? "-"}
@@ -931,7 +949,7 @@ function PricingEditor(props: {
   const [note, setNote] = useState("");
 
   return (
-    <div className="mt-3 grid gap-3 md:grid-cols-3">
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
       <label className="block">
         <span className="text-xs text-[color:var(--text-muted)]">
           {t("Currency")}
@@ -947,7 +965,7 @@ function PricingEditor(props: {
           <option value="USD">USD</option>
         </select>
       </label>
-      <label className="block md:col-span-2">
+      <label className="block">
         <span className="text-xs text-[color:var(--text-muted)]">
           {t("Model")}
         </span>
@@ -990,7 +1008,7 @@ function PricingEditor(props: {
         />
         <span className="text-sm">{t("Enabled")}</span>
       </label>
-      <label className="block md:col-span-3">
+      <label className="block">
         <span className="text-xs text-[color:var(--text-muted)]">
           {t("Note")}
         </span>
@@ -1001,7 +1019,7 @@ function PricingEditor(props: {
           placeholder={t("Optional")}
         />
       </label>
-      <div className="md:col-span-3">
+      <div className="md:col-span-2">
         <button
           type="button"
           className={BUTTON}

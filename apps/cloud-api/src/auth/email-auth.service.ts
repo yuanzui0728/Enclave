@@ -12,6 +12,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
+  SendChangePasswordCodeResponse,
   SendEmailCodeResponse,
   VerifyEmailCodeResponse,
 } from "@yinjie/contracts";
@@ -21,6 +22,7 @@ import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { EmailVerificationSessionEntity } from "../entities/email-verification-session.entity";
 import { issueCloudClientAccessToken } from "./cloud-client-token";
 import { CloudMailService } from "./cloud-mail.service";
+import { assertPasswordStrength } from "./password-policy";
 
 const DEV_BYPASS_CODE = "123456";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,6 +39,9 @@ export type EmailVerifyExtras = {
   inviteCode?: string | null;
   deviceFingerprint?: string | null;
   ip?: string | null;
+  userAgent?: string | null;
+  clientPlatform?: string | null;
+  setPasswordOnRegister?: string | null;
 };
 
 @Injectable()
@@ -53,7 +58,7 @@ export class EmailAuthService {
 
   async sendCode(email: string): Promise<SendEmailCodeResponse> {
     const normalized = this.normalizeEmail(email);
-    await this.enforceSendCodeRateLimit(normalized);
+    await this.enforceSendCodeRateLimit(normalized, "world_access");
 
     const existing = await this.userRepo.findOne({
       where: { email: normalized },
@@ -66,6 +71,7 @@ export class EmailAuthService {
     const session = this.sessionRepo.create({
       email: normalized,
       code,
+      purpose: "world_access",
       expiresAt,
       verifiedAt: null,
     });
@@ -102,32 +108,39 @@ export class EmailAuthService {
       throw new BadRequestException("验证码不能为空。");
     }
 
-    let session: EmailVerificationSessionEntity | null;
+    // 先**只读校验** session 状态，不写 verifiedAt；等下面 hook + 签 token 全部
+    // 成功后再 markSessionUsed 作废，避免「校验通过但下游操作失败」时码被白白消费。
+    let session: EmailVerificationSessionEntity;
 
     if (trimmedCode === DEV_BYPASS_CODE) {
+      // dev bypass 不查库；直接 in-memory 构造一条「待写入」session，等末尾跟其他
+      // 路径走同一条 markSessionUsed 路径写库。
       session = this.sessionRepo.create({
         email: normalized,
         code: trimmedCode,
+        purpose: "world_access",
         expiresAt: new Date(Date.now() + this.getCodeTtlSeconds() * 1000),
-        verifiedAt: new Date(),
+        verifiedAt: null,
       });
-      await this.sessionRepo.save(session);
     } else {
-      session = await this.sessionRepo.findOne({
-        where: { email: normalized, code: trimmedCode },
+      const found = await this.sessionRepo.findOne({
+        where: {
+          email: normalized,
+          code: trimmedCode,
+          purpose: "world_access",
+        },
         order: { createdAt: "DESC" },
       });
-      if (!session) {
+      if (!found) {
         throw new UnauthorizedException("验证码错误。");
       }
-      if (session.verifiedAt) {
+      if (found.verifiedAt) {
         throw new UnauthorizedException("该验证码已使用。");
       }
-      if (session.expiresAt.getTime() < Date.now()) {
+      if (found.expiresAt.getTime() < Date.now()) {
         throw new UnauthorizedException("验证码已过期。");
       }
-      session.verifiedAt = new Date();
-      await this.sessionRepo.save(session);
+      session = found;
     }
 
     const existingUser = await this.userRepo.findOne({
@@ -143,6 +156,12 @@ export class EmailAuthService {
 
     const synthPhone = synthesizePhoneFromEmail(normalized);
 
+    // setPasswordOnRegister 在这里硬校验（72 字节 / 跟身份相同 / 含空格），不让
+    // hook 里那段 try/catch 把 BadRequest 吞掉、客户端误以为密码已设。
+    if (extras?.setPasswordOnRegister) {
+      assertPasswordStrength(extras.setPasswordOnRegister, [normalized, synthPhone]);
+    }
+
     if (this.userPostVerifyHook) {
       try {
         await this.userPostVerifyHook(normalized, synthPhone, extras ?? {});
@@ -152,7 +171,7 @@ export class EmailAuthService {
     }
 
     // 邮箱用户在云端用合成 phone 作为身份标识，CloudClientAuthGuard 与下游 by-phone 查询都能命中。
-    const { accessToken, expiresAt } = await issueCloudClientAccessToken({
+    const tokenResult = await issueCloudClientAccessToken({
       jwtService: this.jwtService,
       configService: this.configService,
       sessionId: session.id,
@@ -160,10 +179,15 @@ export class EmailAuthService {
       email: normalized,
     });
 
+    // 所有副作用都完成、token 已签发，最后一步才把 session 标记成已用。
+    // dev bypass 的 in-memory session 这里第一次落库；普通路径走 update。
+    session.verifiedAt = new Date();
+    await this.sessionRepo.save(session);
+
     return {
-      accessToken,
+      accessToken: tokenResult.accessToken,
       email: normalized,
-      expiresAt,
+      expiresAt: tokenResult.expiresAt,
     };
   }
 
@@ -205,7 +229,7 @@ export class EmailAuthService {
     );
   }
 
-  private async enforceSendCodeRateLimit(email: string) {
+  private async enforceSendCodeRateLimit(email: string, purpose: string) {
     const cooldownSeconds = this.parsePositiveInteger(
       this.configService.get<string>("CLOUD_EMAIL_CODE_RESEND_COOLDOWN_SECONDS") ??
         this.configService.get<string>("CLOUD_CODE_RESEND_COOLDOWN_SECONDS"),
@@ -223,7 +247,7 @@ export class EmailAuthService {
     );
 
     const latest = await this.sessionRepo.findOne({
-      where: { email },
+      where: { email, purpose },
       order: { createdAt: "DESC" },
     });
     if (latest) {
@@ -240,7 +264,7 @@ export class EmailAuthService {
 
     const since = new Date(Date.now() - windowSeconds * 1000);
     const count = await this.sessionRepo.count({
-      where: { email, createdAt: MoreThan(since) },
+      where: { email, purpose, createdAt: MoreThan(since) },
     });
     if (count >= maxPerWindow) {
       throw new HttpException(
@@ -248,6 +272,119 @@ export class EmailAuthService {
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
+  }
+
+  // 改密码场景的发码：要求邮箱必须是已有用户的绑定邮箱（避免「枚举注册邮箱」），
+  // 与 world_access 通道分开走限流计数器，互不影响。
+  async sendChangePasswordCode(
+    email: string,
+  ): Promise<SendChangePasswordCodeResponse> {
+    const normalized = this.normalizeEmail(email);
+
+    const user = await this.userRepo.findOne({
+      where: { email: normalized },
+    });
+    if (!user) {
+      // 不区分「邮箱未注册」和「未绑定」对外报同样错，避免枚举。
+      throw new BadRequestException("邮箱与当前账号不匹配。");
+    }
+
+    await this.enforceSendCodeRateLimit(normalized, "change_password");
+
+    const code = this.generateCode();
+    const expiresAt = new Date(Date.now() + this.getCodeTtlSeconds() * 1000);
+    const session = this.sessionRepo.create({
+      email: normalized,
+      code,
+      purpose: "change_password",
+      expiresAt,
+      verifiedAt: null,
+    });
+    await this.sessionRepo.save(session);
+
+    let result: Awaited<ReturnType<CloudMailService["sendVerificationCode"]>>;
+    try {
+      result = await this.mailService.sendVerificationCode(
+        normalized,
+        code,
+        false,
+      );
+    } catch (error) {
+      await this.sessionRepo.delete({ id: session.id });
+      if (error instanceof ServiceUnavailableException) throw error;
+      throw new ServiceUnavailableException("邮件验证码发送失败，请稍后重试。");
+    }
+
+    return {
+      email: normalized,
+      expiresAt: expiresAt.toISOString(),
+      debugCode: result.debugCode ?? null,
+    };
+  }
+
+  // 改密码场景的「**只读**校验」：检查验证码 + 用户状态，但**不**写 verifiedAt。
+  // 与 verifyCode 不同：**故意不接受** DEV_BYPASS_CODE，改密码必须凭真实邮箱
+  // 验证码，避免「拿到任意账号 token + 默认码 123456」就能改密的攻击面。
+  //
+  // 调用方流程：validateChangePasswordCode → 完成密码强度校验 + 写新 hash →
+  // 最后调 markChangePasswordCodeUsed 作废 code。这样如果密码强度校验失败、
+  // hash 写库失败，code 仍可被同一用户重试使用，不会让用户被迫再发一遍码。
+  async validateChangePasswordCode(
+    email: string,
+    code: string,
+  ): Promise<{
+    email: string;
+    user: CloudUserEntity;
+    session: EmailVerificationSessionEntity;
+  }> {
+    const normalized = this.normalizeEmail(email);
+    const trimmedCode = (code ?? "").trim();
+    if (!trimmedCode) {
+      throw new BadRequestException("验证码不能为空。");
+    }
+
+    const session = await this.sessionRepo.findOne({
+      where: {
+        email: normalized,
+        code: trimmedCode,
+        purpose: "change_password",
+      },
+      order: { createdAt: "DESC" },
+    });
+    if (!session) {
+      throw new UnauthorizedException("验证码错误。");
+    }
+    if (session.verifiedAt) {
+      throw new UnauthorizedException("该验证码已使用。");
+    }
+    if (session.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException("验证码已过期。");
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { email: normalized },
+    });
+    if (!user) {
+      throw new BadRequestException("邮箱与当前账号不匹配。");
+    }
+    if (user.status !== "active") {
+      throw new ForbiddenException(
+        user.status === "banned"
+          ? "This cloud account has been banned."
+          : "This cloud account has been archived.",
+      );
+    }
+
+    return { email: normalized, user, session };
+  }
+
+  // 真正作废一条 change_password 验证码 session。调用方在所有副作用（密码写库
+  // 等）都成功后才调用，避免「码废了但操作失败」的尴尬。
+  async markChangePasswordCodeUsed(sessionId: string): Promise<void> {
+    await this.sessionRepo.update(
+      { id: sessionId },
+      { verifiedAt: new Date() },
+    );
   }
 
   private parsePositiveInteger(rawValue: string | undefined, fallback: number) {

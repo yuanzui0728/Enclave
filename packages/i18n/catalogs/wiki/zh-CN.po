@@ -12,85 +12,711 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: apps/wiki/src/components/character-edit-form.tsx:60
+msgid "朋友"
+msgstr "朋友"
+
+#: apps/wiki/src/components/character-edit-form.tsx:61
+msgid "家人"
+msgstr "家人"
+
+#: apps/wiki/src/components/character-edit-form.tsx:62
+msgid "导师"
+msgstr "导师"
+
+#: apps/wiki/src/components/character-edit-form.tsx:63
+msgid "专家"
+msgstr "专家"
+
+#: apps/wiki/src/components/character-edit-form.tsx:64
+msgid "自定义"
+msgstr "自定义"
+
+#: apps/wiki/src/components/character-edit-form.tsx:74
+#: apps/wiki/src/components/character-edit-form.tsx:1096
+#: apps/wiki/src/components/character-edit-form.tsx:1785
+msgid "基础信息"
+msgstr "基础信息"
+
+#: apps/wiki/src/components/character-edit-form.tsx:75
+#: apps/wiki/src/components/character-edit-form.tsx:1238
+#: apps/wiki/src/components/character-edit-form.tsx:1789
+msgid "聊天回复"
+msgstr "聊天回复"
+
+#: apps/wiki/src/components/character-edit-form.tsx:76
+#: apps/wiki/src/components/character-edit-form.tsx:1290
+#: apps/wiki/src/components/character-edit-form.tsx:1314
+#: apps/wiki/src/components/character-edit-form.tsx:1787
+msgid "底层逻辑"
+msgstr "底层逻辑"
+
+#: apps/wiki/src/components/character-edit-form.tsx:77
+#: apps/wiki/src/components/character-edit-form.tsx:1360
+#: apps/wiki/src/components/character-edit-form.tsx:1791
+msgid "场景提示词"
+msgstr "场景提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:78
+#: apps/wiki/src/components/character-edit-form.tsx:1509
+#: apps/wiki/src/components/character-edit-form.tsx:1793
+msgid "记忆提示词"
+msgstr "记忆提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:79
+#: apps/wiki/src/components/character-edit-form.tsx:1568
+msgid "社交参数"
+msgstr "社交参数"
+
+#: apps/wiki/src/components/character-edit-form.tsx:564
+msgid "头像只能填 emoji、http(s) URL 或 / 开头的站内路径"
+msgstr "头像只能填 emoji、http(s) URL 或 / 开头的站内路径"
+
+#. placeholder {0}: gen.message
+#: apps/wiki/src/components/character-edit-form.tsx:922
+msgid "AI 生成失败：{0}"
+msgstr "AI 生成失败：{0}"
+
+#: apps/wiki/src/components/character-edit-form.tsx:983
+msgid "本编辑器和私有角色完全一致；这里的改动会作为一次 wiki 评审提交（涉及 prompting / memorySeed / lifeStrategy / tone / expertise / publishMapping / realityLink / identity.background|motivation|worldview 这些路径会被识别为高风险，需要 patroller 审核）。"
+msgstr "本编辑器和私有角色完全一致；这里的改动会作为一次 wiki 评审提交（涉及 prompting / memorySeed / lifeStrategy / tone / expertise / publishMapping / realityLink / identity.background|motivation|worldview 这些路径会被识别为高风险，需要 patroller 审核）。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1004
+msgid "加载中…"
+msgstr "加载中…"
+
+#. placeholder {0}: getSectionLabel(aiFlash.section, t)
+#. placeholder {1}: aiFlash.count
+#: apps/wiki/src/components/character-edit-form.tsx:1049
+#: apps/wiki/src/components/character-edit-form.tsx:1667
+msgid "✨ 已优化「{0}」共 {1} 个字段"
+msgstr "✨ 已优化「{0}」共 {1} 个字段"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1054
+msgid "✨ AI 优化未返回不同内容（已保留你的填写）"
+msgstr "✨ AI 优化未返回不同内容（已保留你的填写）"
+
+#. placeholder {0}: aiFlash.count
+#: apps/wiki/src/components/character-edit-form.tsx:1059
+msgid "✨ 已补全 {0} 个字段"
+msgstr "✨ 已补全 {0} 个字段"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1061
+msgid "✨ AI 已生成完毕（未发现需要补全的空字段）"
+msgstr "✨ AI 已生成完毕（未发现需要补全的空字段）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1098
+msgid "角色名、头像、关系、简介、专长领域；只有「名称」是必填。"
+msgstr "角色名、头像、关系、简介、专长领域；只有「名称」是必填。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1112
+msgid "✨ AI 正在生成基础信息（含头像 emoji、专长领域），完成前本节字段已锁定。"
+msgstr "✨ AI 正在生成基础信息（含头像 emoji、专长领域），完成前本节字段已锁定。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1122
+#: apps/wiki/src/components/character-edit-form.tsx:1948
+#: apps/wiki/src/components/character-edit-form.tsx:1991
 #: apps/wiki/src/components/conflict-resolver.tsx:10
 #: apps/wiki/src/components/snapshot-diff.tsx:16
-#: apps/wiki/src/routes/character-page.tsx:613
-#: apps/wiki/src/routes/create-character-page.tsx:130
 msgid "名称"
 msgstr "名称"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1128
+msgid "例如 苏然"
+msgstr "例如 苏然"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1132
 #: apps/wiki/src/components/conflict-resolver.tsx:11
 #: apps/wiki/src/components/snapshot-diff.tsx:17
 msgid "头像"
 msgstr "头像"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1134
+msgid "emoji（🦊）、图片 URL，或点\"上传图片\"传一张本地图（PNG/JPG/WebP/GIF，≤4 MB）。空则用首字母占位（AI 生成基础信息时会自动补一个 emoji）"
+msgstr "emoji（🦊）、图片 URL，或点\"上传图片\"传一张本地图（PNG/JPG/WebP/GIF，≤4 MB）。空则用首字母占位（AI 生成基础信息时会自动补一个 emoji）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1136
+msgid "在角色卡片和列表里展示，不直接进 AI 提示词"
+msgstr "在角色卡片和列表里展示，不直接进 AI 提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1145
+#: apps/wiki/src/components/character-edit-form.tsx:1949
+#: apps/wiki/src/components/character-edit-form.tsx:1992
+#: apps/wiki/src/components/conflict-resolver.tsx:16
+#: apps/wiki/src/components/snapshot-diff.tsx:22
+msgid "关系描述"
+msgstr "关系描述"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1146
+msgid "这个角色相对于你的身份"
+msgstr "这个角色相对于你的身份"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1147
+msgid "AI 自我介绍时会用这句来定位你"
+msgstr "AI 自我介绍时会用这句来定位你"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1153
+msgid "例如 大学室友"
+msgstr "例如 大学室友"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1157
+#: apps/wiki/src/components/conflict-resolver.tsx:17
+#: apps/wiki/src/components/snapshot-diff.tsx:23
+msgid "关系类型"
+msgstr "关系类型"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1158
+msgid "在角色卡和列表里展示，不直接进 AI 提示词"
+msgstr "在角色卡和列表里展示，不直接进 AI 提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1182
+msgid "填一个具体的关系，例如 师傅 / 房东 / 邻居"
+msgstr "填一个具体的关系，例如 师傅 / 房东 / 邻居"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1192
+msgid "擅长领域"
+msgstr "擅长领域"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1193
+#: apps/wiki/src/components/character-edit-form.tsx:1206
+#: apps/wiki/src/components/character-edit-form.tsx:1315
+msgid "推荐"
+msgstr "推荐"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1194
+msgid "逗号分隔；用于检索、推荐与触发对话"
+msgstr "逗号分隔；用于检索、推荐与触发对话"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1195
+msgid "AI 会优先接这些领域的话题"
+msgstr "AI 会优先接这些领域的话题"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1200
+msgid "编程, 音乐, 心理学"
+msgstr "编程, 音乐, 心理学"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1205
+#: apps/wiki/src/components/character-edit-form.tsx:1950
+#: apps/wiki/src/components/character-edit-form.tsx:1993
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
-#: apps/wiki/src/routes/character-page.tsx:322
+#: apps/wiki/src/routes/character-page.tsx:320
 msgid "简介"
 msgstr "简介"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1208
+msgid "一段话介绍角色背景与人设；其他用户可以读到。"
+msgstr "一段话介绍角色背景与人设；其他用户可以读到。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1211
+msgid "在角色卡片和搜索结果里展示给其他人；不直接进 AI 提示词。"
+msgstr "在角色卡片和搜索结果里展示给其他人；不直接进 AI 提示词。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1220
+msgid "例如：心理学背景，慢热而锋利。喜欢半夜读书，习惯先观察再回应。"
+msgstr "例如：心理学背景，慢热而锋利。喜欢半夜读书，习惯先观察再回应。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1240
+msgid "私聊 / 群聊场景下的具体回复风格与规则。"
+msgstr "私聊 / 群聊场景下的具体回复风格与规则。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1252
+msgid "✨ AI 正在生成聊天回复，完成前本节字段已锁定。"
+msgstr "✨ AI 正在生成聊天回复，完成前本节字段已锁定。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1260
+msgid "聊天场景提示词"
+msgstr "聊天场景提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1261
+msgid "私聊 / 群聊场景的具体行为"
+msgstr "私聊 / 群聊场景的具体行为"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1262
+msgid "AI 在私聊和群聊场景下的具体表现"
+msgstr "AI 在私聊和群聊场景下的具体表现"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1270
+msgid "短句优先，能反问就别陈述。被夸时低调反弹回去。"
+msgstr "短句优先，能反问就别陈述。被夸时低调反弹回去。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1272
+#: apps/wiki/src/components/character-edit-form.tsx:1327
+#: apps/wiki/src/components/character-edit-form.tsx:1398
+#: apps/wiki/src/components/character-edit-form.tsx:1416
+#: apps/wiki/src/components/character-edit-form.tsx:1430
+#: apps/wiki/src/components/character-edit-form.tsx:1447
+#: apps/wiki/src/components/character-edit-form.tsx:1461
+#: apps/wiki/src/components/character-edit-form.tsx:1475
+#: apps/wiki/src/components/character-edit-form.tsx:1491
+msgid "📋 查看示例"
+msgstr "📋 查看示例"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1273
+#: apps/wiki/src/components/character-edit-form.tsx:1328
+#: apps/wiki/src/components/character-edit-form.tsx:1399
+#: apps/wiki/src/components/character-edit-form.tsx:1417
+#: apps/wiki/src/components/character-edit-form.tsx:1431
+#: apps/wiki/src/components/character-edit-form.tsx:1448
+#: apps/wiki/src/components/character-edit-form.tsx:1462
+#: apps/wiki/src/components/character-edit-form.tsx:1476
+#: apps/wiki/src/components/character-edit-form.tsx:1492
+msgid "收起示例"
+msgstr "收起示例"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1292
+msgid "角色在所有场景下都遵循的\"心法\"。优先级高于场景提示词。"
+msgstr "角色在所有场景下都遵循的\"心法\"。优先级高于场景提示词。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1306
+msgid "✨ AI 正在生成底层逻辑，完成前本节字段已锁定。"
+msgstr "✨ AI 正在生成底层逻辑，完成前本节字段已锁定。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1316
+msgid "贯穿所有场景的\"心法\"；优先级高于场景 prompt"
+msgstr "贯穿所有场景的\"心法\"；优先级高于场景 prompt"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1317
+msgid "AI 在所有场景里都会遵循这段（最高优先级）"
+msgstr "AI 在所有场景里都会遵循这段（最高优先级）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1325
+msgid "永远先确认对方在问什么，再用一句反问引导他说更多。不替对方下结论。"
+msgstr "永远先确认对方在问什么，再用一句反问引导他说更多。不替对方下结论。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1332
+msgid "遗忘曲线（0-100，默认 70）"
+msgstr "遗忘曲线（0-100，默认 70）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1333
+#: apps/wiki/src/components/character-edit-form.tsx:1534
+#: apps/wiki/src/components/character-edit-form.tsx:1547
+msgid "进阶"
+msgstr "进阶"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1334
+msgid "数值越高记得越牢；建议 50-80"
+msgstr "数值越高记得越牢；建议 50-80"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1335
+msgid "AI 记忆衰减速度，越大越牢"
+msgstr "AI 记忆衰减速度，越大越牢"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1362
+msgid "控制 AI 在朋友圈、广场、视频号、招呼、主动外联等场景下的措辞。不填会用默认推断。"
+msgstr "控制 AI 在朋友圈、广场、视频号、招呼、主动外联等场景下的措辞。不填会用默认推断。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1376
+msgid "✨ AI 正在生成场景提示词，完成前本节字段已锁定。"
+msgstr "✨ AI 正在生成场景提示词，完成前本节字段已锁定。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1386
+msgid "主动发布"
+msgstr "主动发布"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1389
+msgid "发朋友圈"
+msgstr "发朋友圈"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1390
+msgid "AI 发朋友圈时的内容风格"
+msgstr "AI 发朋友圈时的内容风格"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1397
+msgid "最近遇到一个小事 + 一句感受，不超过两句话。"
+msgstr "最近遇到一个小事 + 一句感受，不超过两句话。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1403
+#: apps/wiki/src/components/scene-prompt-preview.tsx:17
+msgid "广场发帖"
+msgstr "广场发帖"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1405
+msgid "AI 在广场公开发帖（比朋友圈正式、任何人都看得到）时的写作风格"
+msgstr "AI 在广场公开发帖（比朋友圈正式、任何人都看得到）时的写作风格"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1414
+msgid "写一段最近的观察 + 一个开放问题，给读者留余地。"
+msgstr "写一段最近的观察 + 一个开放问题，给读者留余地。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1421
+msgid "发视频号内容"
+msgstr "发视频号内容"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1422
+msgid "AI 发视频号 / 频道内容时的风格"
+msgstr "AI 发视频号 / 频道内容时的风格"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1429
+msgid "30 秒内能讲完的小见解 + 一句反差结尾。"
+msgstr "30 秒内能讲完的小见解 + 一句反差结尾。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1435
+msgid "互动响应"
+msgstr "互动响应"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1438
+msgid "朋友圈评论 / 回复"
+msgstr "朋友圈评论 / 回复"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1439
+msgid "AI 在朋友圈下评论时的风格"
+msgstr "AI 在朋友圈下评论时的风格"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1446
+msgid "先回应朋友的情绪，再问一个具体的细节。"
+msgstr "先回应朋友的情绪，再问一个具体的细节。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1452
+#: apps/wiki/src/components/scene-prompt-preview.tsx:18
+msgid "广场评论"
+msgstr "广场评论"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1453
+msgid "AI 在别人发的广场公开贴下面留言时的措辞"
+msgstr "AI 在别人发的广场公开贴下面留言时的措辞"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1460
+msgid "针对原作者的某一句具体回应，不抢话也不空夸。"
+msgstr "针对原作者的某一句具体回应，不抢话也不空夸。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1466
+msgid "好友请求 / 摇一摇问候"
+msgstr "好友请求 / 摇一摇问候"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1467
+msgid "AI 加好友 / 打招呼时的开场措辞"
+msgstr "AI 加好友 / 打招呼时的开场措辞"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1474
+msgid "先报上身份和我们怎么认识，问对方最近忙什么。"
+msgstr "先报上身份和我们怎么认识，问对方最近忙什么。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1480
+msgid "主动提醒"
+msgstr "主动提醒"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1481
+msgid "AI 主动外联用户时的开场措辞"
+msgstr "AI 主动外联用户时的开场措辞"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1489
+msgid "不打扰式开场：\"刚想起 xxx，想问你一句\"。不索取注意力。"
+msgstr "不打扰式开场：\"刚想起 xxx，想问你一句\"。不索取注意力。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1511
+msgid "控制 AI 整理近期记忆和提炼核心记忆时使用的指示模板。留空使用全局默认。"
+msgstr "控制 AI 整理近期记忆和提炼核心记忆时使用的指示模板。留空使用全局默认。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1525
+msgid "✨ AI 正在生成记忆提示词，完成前本节字段已锁定。"
+msgstr "✨ AI 正在生成记忆提示词，完成前本节字段已锁定。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1533
+msgid "近期记忆提示词"
+msgstr "近期记忆提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1535
+msgid "AI 整理近期记忆时使用的指示模板"
+msgstr "AI 整理近期记忆时使用的指示模板"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1536
+msgid "变量：{{name}}、{{chatHistory}}"
+msgstr "变量：{{name}}、{{chatHistory}}"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1546
+msgid "长期记忆提示词"
+msgstr "长期记忆提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1548
+msgid "AI 提炼核心记忆时使用的指示模板"
+msgstr "AI 提炼核心记忆时使用的指示模板"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1549
+msgid "变量：{{name}}、{{interactionHistory}}"
+msgstr "变量：{{name}}、{{interactionHistory}}"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1571
+msgid "控制角色对朋友圈/动态的开放度、主动浏览的频率，以及和你\"刚认识时\"的亲密度起点。运行时会自动调整。"
+msgstr "控制角色对朋友圈/动态的开放度、主动浏览的频率，以及和你\"刚认识时\"的亲密度起点。运行时会自动调整。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1578
+msgid "社交开放度"
+msgstr "社交开放度"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1579
+msgid "open 公开 / normal 普通 / private 仅好友"
+msgstr "open 公开 / normal 普通 / private 仅好友"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1585
+msgid "open 公开"
+msgstr "open 公开"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1586
+msgid "normal 普通"
+msgstr "normal 普通"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1587
+msgid "private 仅好友"
+msgstr "private 仅好友"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1591
+msgid "主动浏览概率（0-1）"
+msgstr "主动浏览概率（0-1）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1592
+msgid "数值越高，AI 越频繁主动看你的内容"
+msgstr "数值越高，AI 越频繁主动看你的内容"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1607
+msgid "亲密度种子（0-100）"
+msgstr "亲密度种子（0-100）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1608
+msgid "角色首次入库时的初始值，运行时会被自动调节"
+msgstr "角色首次入库时的初始值，运行时会被自动调节"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1623
+msgid "亲密度只是\"初始值\"——上线后会随你和角色的真实互动被自动调整，这里设的高低不会锁死。"
+msgstr "亲密度只是\"初始值\"——上线后会随你和角色的真实互动被自动调整，这里设的高低不会锁死。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1630
+msgid "世界角色的社交参数由 admin 管理，wiki 评审通道不会写入这三个字段；这里展示的是当前默认值，无法通过本表单提交修改。"
+msgstr "世界角色的社交参数由 admin 管理，wiki 评审通道不会写入这三个字段；这里展示的是当前默认值，无法通过本表单提交修改。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1650
+msgid "已保存 ✓"
+msgstr "已保存 ✓"
+
+#. placeholder {0}: getSectionLabel(aiFlash.section, t)
+#: apps/wiki/src/components/character-edit-form.tsx:1672
+msgid "✨ AI 优化「{0}」未返回不同内容（已保留你的填写）"
+msgstr "✨ AI 优化「{0}」未返回不同内容（已保留你的填写）"
+
+#. placeholder {0}: getSectionLabel(aiFlash.section, t)
+#. placeholder {1}: aiFlash.count
+#: apps/wiki/src/components/character-edit-form.tsx:1678
+msgid "✨ 已为「{0}」补全 {1} 个字段"
+msgstr "✨ 已为「{0}」补全 {1} 个字段"
+
+#. placeholder {0}: getSectionLabel(aiFlash.section, t)
+#: apps/wiki/src/components/character-edit-form.tsx:1683
+msgid "✨ 「{0}」没有空字段需要补全"
+msgstr "✨ 「{0}」没有空字段需要补全"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1689
+msgid "· 已自动保存为草稿（可在「我的草稿」找回）"
+msgstr "· 已自动保存为草稿（可在「我的草稿」找回）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1719
+msgid "请填写「名称」才能保存"
+msgstr "请填写「名称」才能保存"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1795
+msgid "整个角色"
+msgstr "整个角色"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1837
+msgid "全部内容已填满"
+msgstr "全部内容已填满"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1839
+msgid "「{sectionLabel}」已填满"
+msgstr "「{sectionLabel}」已填满"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1846
+msgid "AI 一键生成可以补的字段都已填好——再点不会有任何\"补空\"效果。"
+msgstr "AI 一键生成可以补的字段都已填好——再点不会有任何\"补空\"效果。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1851
+msgid "如果想让 AI 把整角色\"优化\"一遍，会用新生成的内容覆盖大部分字段 （sacred 3 字段——名称、关系、简介——始终保留）。是否进行优化？"
+msgstr "如果想让 AI 把整角色\"优化\"一遍，会用新生成的内容覆盖大部分字段 （sacred 3 字段——名称、关系、简介——始终保留）。是否进行优化？"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1860
+msgid "本节字段已经全部填写。AI 生成（默认）只会填补空字段，不会 改动已填的内容。"
+msgstr "本节字段已经全部填写。AI 生成（默认）只会填补空字段，不会 改动已填的内容。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1866
+msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
+msgstr "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1876
+#: apps/wiki/src/components/conflict-resolver.tsx:144
+#: apps/wiki/src/components/report-button.tsx:91
+#: apps/wiki/src/components/talk-panel.tsx:65
+#: apps/wiki/src/routes/character-page.tsx:212
+#: apps/wiki/src/routes/character-page.tsx:757
+msgid "取消"
+msgstr "取消"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1879
+msgid "✨ 开始优化"
+msgstr "✨ 开始优化"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1961
+#: apps/wiki/src/components/character-edit-form.tsx:2004
+msgid "生成中…"
+msgstr "生成中…"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1961
+msgid "✨ AI 生成本节"
+msgstr "✨ AI 生成本节"
+
+#. placeholder {0}: missing.join("、")
+#: apps/wiki/src/components/character-edit-form.tsx:1965
+#: apps/wiki/src/components/character-edit-form.tsx:2011
+msgid "还需填写：{0}（点上方按钮可跳到第一个未填）"
+msgstr "还需填写：{0}（点上方按钮可跳到第一个未填）"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2006
+msgid "✨ AI 一键生成全部"
+msgstr "✨ AI 一键生成全部"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2049
+msgid "把右侧字段填上，这里会同步展示 AI 看到的你的角色"
+msgstr "把右侧字段填上，这里会同步展示 AI 看到的你的角色"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2053
+msgid "AI 眼里的你的角色 ↑"
+msgstr "AI 眼里的你的角色 ↑"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2066
+msgid "章节"
+msgstr "章节"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2092
+msgid "↓ 跳到保存"
+msgstr "↓ 跳到保存"
+
+#. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
+#: apps/wiki/src/components/character-edit-form.tsx:2204
+msgid "图片太大（{0} MB），上限 4 MB。"
+msgstr "图片太大（{0} MB），上限 4 MB。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2214
+msgid "只支持 PNG / JPG / WebP / GIF。"
+msgstr "只支持 PNG / JPG / WebP / GIF。"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2223
+msgid "头像上传失败，请稍后再试"
+msgstr "头像上传失败，请稍后再试"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2260
+msgid "上传中…"
+msgstr "上传中…"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2262
+msgid "上传图片"
+msgstr "上传图片"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2273
+msgid "清除"
+msgstr "清除"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2335
+msgid "AI 正在生成「{sectionLabel}」…"
+msgstr "AI 正在生成「{sectionLabel}」…"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2341
+msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
+msgstr "表单已锁定。可以返回列表，回来后结果会自动填好。"
+
 #: apps/wiki/src/components/conflict-resolver.tsx:13
 #: apps/wiki/src/components/snapshot-diff.tsx:19
-#: apps/wiki/src/routes/character-page.tsx:324
+#: apps/wiki/src/routes/character-page.tsx:322
 msgid "性格"
 msgstr "性格"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:14
 #: apps/wiki/src/components/snapshot-diff.tsx:20
-#: apps/wiki/src/routes/character-page.tsx:327
-#: apps/wiki/src/routes/create-character-page.tsx:176
+#: apps/wiki/src/routes/character-page.tsx:325
 msgid "专长领域"
 msgstr "专长领域"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:15
 #: apps/wiki/src/components/snapshot-diff.tsx:21
-#: apps/wiki/src/routes/character-page.tsx:336
-#: apps/wiki/src/routes/create-character-page.tsx:182
+#: apps/wiki/src/routes/character-page.tsx:334
 msgid "触发场景"
 msgstr "触发场景"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:16
-#: apps/wiki/src/components/snapshot-diff.tsx:22
-#: apps/wiki/src/routes/character-page.tsx:627
-#: apps/wiki/src/routes/create-character-page.tsx:143
-msgid "关系描述"
-msgstr "关系描述"
-
-#: apps/wiki/src/components/conflict-resolver.tsx:17
-#: apps/wiki/src/components/snapshot-diff.tsx:23
-#: apps/wiki/src/routes/character-page.tsx:635
-#: apps/wiki/src/routes/create-character-page.tsx:150
-msgid "关系类型"
-msgstr "关系类型"
-
-#: apps/wiki/src/components/conflict-resolver.tsx:84
+#: apps/wiki/src/components/conflict-resolver.tsx:93
 msgid "编辑冲突"
 msgstr "编辑冲突"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:86
+#: apps/wiki/src/components/conflict-resolver.tsx:95
 msgid "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 msgstr "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:109
+#: apps/wiki/src/components/conflict-resolver.tsx:118
 msgid "服务器当前"
 msgstr "服务器当前"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:123
+#: apps/wiki/src/components/conflict-resolver.tsx:132
 msgid "我的修改"
 msgstr "我的修改"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:132
+#: apps/wiki/src/components/conflict-resolver.tsx:141
 msgid "应用所选并重新提交"
 msgstr "应用所选并重新提交"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:135
-#: apps/wiki/src/components/report-button.tsx:91
-#: apps/wiki/src/components/talk-panel.tsx:61
-#: apps/wiki/src/routes/character-page.tsx:206
-#: apps/wiki/src/routes/character-page.tsx:2018
-msgid "取消"
-msgstr "取消"
+#: apps/wiki/src/components/form-row.tsx:49
+msgid "影响："
+msgstr "影响："
+
+#: apps/wiki/src/components/form-row.tsx:113
+msgid "说明"
+msgstr "说明"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:64
+msgid "复制失败，请手动选中。"
+msgstr "复制失败，请手动选中。"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:97
+msgid "复制"
+msgstr "复制"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:132
+msgid "微信"
+msgstr "微信"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:133
+#: apps/wiki/src/routes/account-page.tsx:120
+#: apps/wiki/src/routes/login-page.tsx:212
+msgid "邮箱"
+msgstr "邮箱"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:143
+msgid "AI 生成额度用完：每小时上限 {quota} 次，{retryHint}后再试。"
+msgstr "AI 生成额度用完：每小时上限 {quota} 次，{retryHint}后再试。"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:147
+msgid "AI 生成额度用完：每小时上限 {quota} 次，请稍后再试。"
+msgstr "AI 生成额度用完：每小时上限 {quota} 次，请稍后再试。"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:151
+msgid "需要更多额度 / 商务合作，可联系运营："
+msgstr "需要更多额度 / 商务合作，可联系运营："
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:157
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:163
+msgid "已复制"
+msgstr "已复制"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:158
+msgid "复制{wxLabel}号 {SUPPORT_WECHAT}"
+msgstr "复制{wxLabel}号 {SUPPORT_WECHAT}"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:164
+msgid "复制{emailLabel} {SUPPORT_EMAIL}"
+msgstr "复制{emailLabel} {SUPPORT_EMAIL}"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:178
+msgid "约 {min} 分钟"
+msgstr "约 {min} 分钟"
+
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:180
+msgid "{sec} 秒"
+msgstr "{sec} 秒"
 
 #: apps/wiki/src/components/report-button.tsx:55
 msgid "举报"
@@ -109,11 +735,11 @@ msgid "已提交，管理员将处理。"
 msgstr "已提交，管理员将处理。"
 
 #: apps/wiki/src/components/report-button.tsx:88
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:440
-#: apps/wiki/src/routes/admin-blocks-page.tsx:163
-#: apps/wiki/src/routes/character-page.tsx:196
-#: apps/wiki/src/routes/character-page.tsx:765
-#: apps/wiki/src/routes/create-character-page.tsx:251
+#: apps/wiki/src/routes/account-page.tsx:349
+#: apps/wiki/src/routes/account-page.tsx:455
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:457
+#: apps/wiki/src/routes/admin-blocks-page.tsx:164
+#: apps/wiki/src/routes/character-page.tsx:202
 msgid "提交中..."
 msgstr "提交中..."
 
@@ -122,22 +748,22 @@ msgid "提交举报"
 msgstr "提交举报"
 
 #: apps/wiki/src/components/risk-badge.tsx:28
-#: apps/wiki/src/lib/auth-store.ts:82
+#: apps/wiki/src/lib/auth-store.ts:95
 msgid "新人"
 msgstr "新人"
 
 #: apps/wiki/src/components/risk-badge.tsx:29
-#: apps/wiki/src/lib/auth-store.ts:80
+#: apps/wiki/src/lib/auth-store.ts:93
 msgid "自动确认"
 msgstr "自动确认"
 
 #: apps/wiki/src/components/risk-badge.tsx:30
-#: apps/wiki/src/lib/auth-store.ts:78
+#: apps/wiki/src/lib/auth-store.ts:91
 msgid "巡查员"
 msgstr "巡查员"
 
 #: apps/wiki/src/components/risk-badge.tsx:31
-#: apps/wiki/src/lib/auth-store.ts:76
+#: apps/wiki/src/lib/auth-store.ts:89
 msgid "管理员"
 msgstr "管理员"
 
@@ -153,149 +779,191 @@ msgstr "{minRoleLabel}+ 才能改"
 msgid "高风险（patroller 审核）"
 msgstr "高风险（patroller 审核）"
 
-#: apps/wiki/src/components/root-layout.tsx:33
+#: apps/wiki/src/components/root-layout.tsx:50
 msgid "浏览"
 msgstr "浏览"
 
-#: apps/wiki/src/components/root-layout.tsx:37
+#: apps/wiki/src/components/root-layout.tsx:54
 #: apps/wiki/src/routes/home-page.tsx:31
 msgid "角色目录"
 msgstr "角色目录"
 
-#: apps/wiki/src/components/root-layout.tsx:46
-#: apps/wiki/src/routes/recent-changes-page.tsx:42
+#: apps/wiki/src/components/root-layout.tsx:63
+#: apps/wiki/src/routes/recent-changes-page.tsx:47
 msgid "最近修改"
 msgstr "最近修改"
 
-#: apps/wiki/src/components/root-layout.tsx:52
+#: apps/wiki/src/components/root-layout.tsx:69
 #: apps/wiki/src/routes/search-page.tsx:22
 msgid "搜索"
 msgstr "搜索"
 
-#: apps/wiki/src/components/root-layout.tsx:59
-#: apps/wiki/src/routes/character-page.tsx:84
-#: apps/wiki/src/routes/create-character-page.tsx:101
-#: apps/wiki/src/routes/create-character-page.tsx:111
-#: apps/wiki/src/routes/pending-reviews-page.tsx:97
-#: apps/wiki/src/routes/watchlist-page.tsx:132
+#: apps/wiki/src/components/root-layout.tsx:76
+#: apps/wiki/src/routes/character-page.tsx:83
+#: apps/wiki/src/routes/create-character-page.tsx:102
+#: apps/wiki/src/routes/create-character-page.tsx:182
+#: apps/wiki/src/routes/pending-reviews-page.tsx:109
+#: apps/wiki/src/routes/watchlist-page.tsx:138
+#: apps/wiki/src/routes/world-character-edit-page.tsx:121
+#: apps/wiki/src/routes/world-character-edit-page.tsx:136
+#: apps/wiki/src/routes/world-character-edit-page.tsx:143
+#: apps/wiki/src/routes/world-character-edit-page.tsx:158
+#: apps/wiki/src/routes/world-character-edit-page.tsx:234
 msgid "编辑"
 msgstr "编辑"
 
-#: apps/wiki/src/components/root-layout.tsx:63
+#: apps/wiki/src/components/root-layout.tsx:80
 msgid "创建角色"
 msgstr "创建角色"
 
-#: apps/wiki/src/components/root-layout.tsx:69
+#: apps/wiki/src/components/root-layout.tsx:86
+#: apps/wiki/src/routes/my-characters-page.tsx:98
+#: apps/wiki/src/routes/my-characters-page.tsx:119
+msgid "我的私有角色"
+msgstr "我的私有角色"
+
+#: apps/wiki/src/components/root-layout.tsx:93
+#: apps/wiki/src/routes/my-drafts-page.tsx:84
+#: apps/wiki/src/routes/my-drafts-page.tsx:144
+msgid "我的草稿"
+msgstr "我的草稿"
+
+#: apps/wiki/src/components/root-layout.tsx:99
 #: apps/wiki/src/routes/watchlist-page.tsx:36
-#: apps/wiki/src/routes/watchlist-page.tsx:49
+#: apps/wiki/src/routes/watchlist-page.tsx:55
 msgid "我的观察列表"
 msgstr "我的观察列表"
 
-#: apps/wiki/src/components/root-layout.tsx:76
+#: apps/wiki/src/components/root-layout.tsx:106
 msgid "巡查"
 msgstr "巡查"
 
-#: apps/wiki/src/components/root-layout.tsx:80
-#: apps/wiki/src/routes/pending-reviews-page.tsx:59
-#: apps/wiki/src/routes/pending-reviews-page.tsx:68
-#: apps/wiki/src/routes/pending-reviews-page.tsx:83
+#: apps/wiki/src/components/root-layout.tsx:110
+#: apps/wiki/src/routes/pending-reviews-page.tsx:67
+#: apps/wiki/src/routes/pending-reviews-page.tsx:82
+#: apps/wiki/src/routes/pending-reviews-page.tsx:95
 msgid "待审编辑"
 msgstr "待审编辑"
 
-#: apps/wiki/src/components/root-layout.tsx:87
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:58
+#: apps/wiki/src/components/root-layout.tsx:117
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:62
 #: apps/wiki/src/routes/admin-blocks-page.tsx:63
-#: apps/wiki/src/routes/admin-protection-page.tsx:86
-#: apps/wiki/src/routes/admin-reports-page.tsx:43
-#: apps/wiki/src/routes/admin-stats-page.tsx:31
+#: apps/wiki/src/routes/admin-protection-page.tsx:90
+#: apps/wiki/src/routes/admin-reports-page.tsx:44
+#: apps/wiki/src/routes/admin-stats-page.tsx:35
 #: apps/wiki/src/routes/admin-users-page.tsx:45
 msgid "管理"
 msgstr "管理"
 
-#: apps/wiki/src/components/root-layout.tsx:91
+#: apps/wiki/src/components/root-layout.tsx:121
 #: apps/wiki/src/routes/admin-layout.tsx:11
 #: apps/wiki/src/routes/admin-users-page.tsx:49
 msgid "用户与权限"
 msgstr "用户与权限"
 
-#: apps/wiki/src/components/root-layout.tsx:97
+#: apps/wiki/src/components/root-layout.tsx:127
 #: apps/wiki/src/routes/admin-layout.tsx:12
 msgid "封禁"
 msgstr "封禁"
 
-#: apps/wiki/src/components/root-layout.tsx:103
+#: apps/wiki/src/components/root-layout.tsx:133
 #: apps/wiki/src/routes/admin-layout.tsx:13
-#: apps/wiki/src/routes/admin-protection-page.tsx:87
+#: apps/wiki/src/routes/admin-protection-page.tsx:91
 msgid "页面保护"
 msgstr "页面保护"
 
-#: apps/wiki/src/components/root-layout.tsx:109
+#: apps/wiki/src/components/root-layout.tsx:139
 #: apps/wiki/src/routes/admin-layout.tsx:14
-#: apps/wiki/src/routes/admin-reports-page.tsx:44
+#: apps/wiki/src/routes/admin-reports-page.tsx:45
 msgid "举报队列"
 msgstr "举报队列"
 
-#: apps/wiki/src/components/root-layout.tsx:115
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:59
+#: apps/wiki/src/components/root-layout.tsx:145
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
 #: apps/wiki/src/routes/admin-layout.tsx:15
 msgid "反破坏过滤器"
 msgstr "反破坏过滤器"
 
-#: apps/wiki/src/components/root-layout.tsx:121
+#: apps/wiki/src/components/root-layout.tsx:151
 #: apps/wiki/src/routes/admin-layout.tsx:16
-#: apps/wiki/src/routes/admin-stats-page.tsx:32
+#: apps/wiki/src/routes/admin-stats-page.tsx:36
 msgid "治理仪表盘"
 msgstr "治理仪表盘"
 
-#: apps/wiki/src/components/root-layout.tsx:166
+#: apps/wiki/src/components/root-layout.tsx:188
+msgid "隐界角色百科"
+msgstr "隐界角色百科"
+
+#: apps/wiki/src/components/root-layout.tsx:246
 msgid "打开导航"
 msgstr "打开导航"
 
-#: apps/wiki/src/components/root-layout.tsx:176
+#: apps/wiki/src/components/root-layout.tsx:256
 msgid "隐"
 msgstr "隐"
 
-#: apps/wiki/src/components/root-layout.tsx:179
+#: apps/wiki/src/components/root-layout.tsx:259
 msgid "隐界世界角色管理平台"
 msgstr "隐界世界角色管理平台"
 
-#: apps/wiki/src/components/root-layout.tsx:182
+#: apps/wiki/src/components/root-layout.tsx:262
 msgid "隐界角色管理"
 msgstr "隐界角色管理"
 
-#: apps/wiki/src/components/root-layout.tsx:197
+#: apps/wiki/src/components/root-layout.tsx:277
 msgid "搜索角色词条…（回车）"
 msgstr "搜索角色词条…（回车）"
 
-#: apps/wiki/src/components/root-layout.tsx:222
-msgid "退出"
-msgstr "退出"
+#: apps/wiki/src/components/root-layout.tsx:293
+#: apps/wiki/src/components/root-layout.tsx:311
+msgid "新手教程 / Tutorial"
+msgstr "新手教程 / Tutorial"
 
-#: apps/wiki/src/components/root-layout.tsx:232
+#: apps/wiki/src/components/root-layout.tsx:294
+msgid "新手教程"
+msgstr "新手教程"
+
+#: apps/wiki/src/components/root-layout.tsx:315
+msgid "教程"
+msgstr "教程"
+
+#: apps/wiki/src/components/root-layout.tsx:333
+#: apps/wiki/src/components/root-layout.tsx:351
 #: apps/wiki/src/routes/login-page.tsx:41
-#: apps/wiki/src/routes/login-page.tsx:134
+#: apps/wiki/src/routes/login-page.tsx:138
 #: apps/wiki/src/routes/register-page.tsx:112
 msgid "登录"
 msgstr "登录"
 
-#: apps/wiki/src/components/root-layout.tsx:239
+#: apps/wiki/src/components/root-layout.tsx:348
 #: apps/wiki/src/routes/admin-users-page.tsx:77
 #: apps/wiki/src/routes/register-page.tsx:52
 #: apps/wiki/src/routes/register-page.tsx:103
 msgid "注册"
 msgstr "注册"
 
-#: apps/wiki/src/components/root-layout.tsx:256
+#: apps/wiki/src/components/root-layout.tsx:369
 msgid "搜索词条…"
 msgstr "搜索词条…"
 
-#: apps/wiki/src/components/root-layout.tsx:268
+#: apps/wiki/src/components/root-layout.tsx:381
+#: apps/wiki/src/components/root-layout.tsx:395
 msgid "关闭导航"
 msgstr "关闭导航"
 
-#: apps/wiki/src/components/root-layout.tsx:290
+#: apps/wiki/src/components/root-layout.tsx:417
 msgid "隐界世界角色管理平台 · 任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效"
 msgstr "隐界世界角色管理平台 · 任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效"
+
+#: apps/wiki/src/components/root-layout.tsx:512
+#: apps/wiki/src/routes/account-page.tsx:54
+#: apps/wiki/src/routes/account-page.tsx:69
+msgid "账户设置"
+msgstr "账户设置"
+
+#: apps/wiki/src/components/root-layout.tsx:524
+msgid "退出"
+msgstr "退出"
 
 #: apps/wiki/src/components/scene-prompt-preview.tsx:12
 msgid "聊天"
@@ -316,14 +984,6 @@ msgstr "朋友圈"
 #: apps/wiki/src/components/scene-prompt-preview.tsx:16
 msgid "朋友圈评论"
 msgstr "朋友圈评论"
-
-#: apps/wiki/src/components/scene-prompt-preview.tsx:17
-msgid "广场发帖"
-msgstr "广场发帖"
-
-#: apps/wiki/src/components/scene-prompt-preview.tsx:18
-msgid "广场评论"
-msgstr "广场评论"
 
 #: apps/wiki/src/components/scene-prompt-preview.tsx:19
 msgid "视频号"
@@ -378,100 +1038,101 @@ msgstr "新"
 msgid "未检测到字段变化。"
 msgstr "未检测到字段变化。"
 
-#: apps/wiki/src/components/talk-panel.tsx:52
+#: apps/wiki/src/components/talk-panel.tsx:56
 msgid "讨论页"
 msgstr "讨论页"
 
-#: apps/wiki/src/components/talk-panel.tsx:61
+#: apps/wiki/src/components/talk-panel.tsx:65
 msgid "新建话题"
 msgstr "新建话题"
 
-#: apps/wiki/src/components/talk-panel.tsx:70
+#: apps/wiki/src/components/talk-panel.tsx:74
 msgid "标题"
 msgstr "标题"
 
-#: apps/wiki/src/components/talk-panel.tsx:80
+#: apps/wiki/src/components/talk-panel.tsx:84
 msgid "正文"
 msgstr "正文"
 
-#: apps/wiki/src/components/talk-panel.tsx:95
+#: apps/wiki/src/components/talk-panel.tsx:100
 msgid "发布中..."
 msgstr "发布中..."
 
-#: apps/wiki/src/components/talk-panel.tsx:95
+#: apps/wiki/src/components/talk-panel.tsx:100
 msgid "发布"
 msgstr "发布"
 
-#: apps/wiki/src/components/talk-panel.tsx:109
+#: apps/wiki/src/components/talk-panel.tsx:114
 msgid "还没有任何讨论。"
 msgstr "还没有任何讨论。"
 
-#: apps/wiki/src/components/talk-panel.tsx:148
+#: apps/wiki/src/components/talk-panel.tsx:153
 msgid "已锁定"
 msgstr "已锁定"
 
-#: apps/wiki/src/components/talk-panel.tsx:153
+#: apps/wiki/src/components/talk-panel.tsx:158
 msgid "已解决"
 msgstr "已解决"
 
 #. placeholder {0}: thread.postCount
 #. placeholder {1}: thread.lastReplyAt ? formatDateTime(thread.lastReplyAt) : "—"
-#: apps/wiki/src/components/talk-panel.tsx:157
+#: apps/wiki/src/components/talk-panel.tsx:162
 msgid "{0} 条 · 最近 {1}"
 msgstr "{0} 条 · 最近 {1}"
 
-#: apps/wiki/src/components/talk-panel.tsx:225
+#: apps/wiki/src/components/talk-panel.tsx:233
 msgid "解锁"
 msgstr "解锁"
 
-#: apps/wiki/src/components/talk-panel.tsx:225
+#: apps/wiki/src/components/talk-panel.tsx:233
 msgid "锁定"
 msgstr "锁定"
 
-#: apps/wiki/src/components/talk-panel.tsx:232
+#: apps/wiki/src/components/talk-panel.tsx:240
 msgid "标记未解决"
 msgstr "标记未解决"
 
-#: apps/wiki/src/components/talk-panel.tsx:232
+#: apps/wiki/src/components/talk-panel.tsx:240
 msgid "标记已解决"
 msgstr "标记已解决"
 
-#: apps/wiki/src/components/talk-panel.tsx:244
+#: apps/wiki/src/components/talk-panel.tsx:253
 msgid "确认删除这条回复？删除后会标记为「已删除」。"
 msgstr "确认删除这条回复？删除后会标记为「已删除」。"
 
 #. placeholder {0}: replyTo.slice(0, 8)
-#: apps/wiki/src/components/talk-panel.tsx:256
+#: apps/wiki/src/components/talk-panel.tsx:265
 msgid "回复楼中楼 · {0}…"
 msgstr "回复楼中楼 · {0}…"
 
-#: apps/wiki/src/components/talk-panel.tsx:262
+#: apps/wiki/src/components/talk-panel.tsx:271
 msgid "取消引用"
 msgstr "取消引用"
 
-#: apps/wiki/src/components/talk-panel.tsx:268
+#: apps/wiki/src/components/talk-panel.tsx:277
 msgid "写下你的回复"
 msgstr "写下你的回复"
 
-#: apps/wiki/src/components/talk-panel.tsx:278
+#: apps/wiki/src/components/talk-panel.tsx:288
 msgid "回复中..."
 msgstr "回复中..."
 
-#: apps/wiki/src/components/talk-panel.tsx:278
-#: apps/wiki/src/components/talk-panel.tsx:332
+#: apps/wiki/src/components/talk-panel.tsx:288
+#: apps/wiki/src/components/talk-panel.tsx:354
 msgid "回复"
 msgstr "回复"
 
-#: apps/wiki/src/components/talk-panel.tsx:322
-#: apps/wiki/src/routes/character-page.tsx:106
+#: apps/wiki/src/components/talk-panel.tsx:344
+#: apps/wiki/src/routes/character-page.tsx:109
 #: apps/wiki/src/routes/home-page.tsx:103
-#: apps/wiki/src/routes/watchlist-page.tsx:86
+#: apps/wiki/src/routes/my-characters-page.tsx:65
+#: apps/wiki/src/routes/watchlist-page.tsx:92
 msgid "已删除"
 msgstr "已删除"
 
-#: apps/wiki/src/components/talk-panel.tsx:340
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:202
-#: apps/wiki/src/routes/pending-reviews-page.tsx:98
+#: apps/wiki/src/components/talk-panel.tsx:363
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:212
+#: apps/wiki/src/routes/pending-reviews-page.tsx:110
 msgid "删除"
 msgstr "删除"
 
@@ -483,181 +1144,358 @@ msgstr "★ 已观察"
 msgid "☆ 观察"
 msgstr "☆ 观察"
 
+#: apps/wiki/src/lib/wiki-api.ts:60
+msgid "网络请求失败，请检查网络后重试。"
+msgstr "网络请求失败，请检查网络后重试。"
+
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:58
+#: apps/wiki/src/lib/wiki-api.ts:100
+msgid "该功能暂未上线（路径 {0}），请稍后重试或刷新页面。"
+msgstr "该功能暂未上线（路径 {0}），请稍后重试或刷新页面。"
+
+#. placeholder {0}: res.status
+#: apps/wiki/src/lib/wiki-api.ts:104
 msgid "请求失败 ({0})"
 msgstr "请求失败 ({0})"
 
-#: apps/wiki/src/lib/wiki-api.ts:582
+#: apps/wiki/src/lib/wiki-api.ts:667
 msgid "管理员直接删除词条"
 msgstr "管理员直接删除词条"
 
-#: apps/wiki/src/lib/wiki-api.ts:593
+#: apps/wiki/src/lib/wiki-api.ts:678
 msgid "管理员直接恢复词条"
 msgstr "管理员直接恢复词条"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:61
+#. placeholder {0}: res.status
+#: apps/wiki/src/lib/wiki-api.ts:999
+msgid "导出失败 ({0})"
+msgstr "导出失败 ({0})"
+
+#. placeholder {0}: res.status
+#: apps/wiki/src/lib/wiki-api.ts:1057
+msgid "头像上传失败 ({0})"
+msgstr "头像上传失败 ({0})"
+
+#: apps/wiki/src/lib/wiki-api.ts:1075
+msgid "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
+msgstr "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
+
+#: apps/wiki/src/lib/wiki-api.ts:1088
+msgid "JSON 解析失败：{reason}"
+msgstr "JSON 解析失败：{reason}"
+
+#: apps/wiki/src/router.tsx:25
+msgid "页面不存在"
+msgstr "页面不存在"
+
+#: apps/wiki/src/router.tsx:28
+msgid "请检查链接是否正确，或回到首页继续浏览。"
+msgstr "请检查链接是否正确，或回到首页继续浏览。"
+
+#: apps/wiki/src/router.tsx:33
+msgid "返回首页"
+msgstr "返回首页"
+
+#: apps/wiki/src/routes/account-page.tsx:56
+msgid "请先 <0>登录</0> 后再访问账户设置。"
+msgstr "请先 <0>登录</0> 后再访问账户设置。"
+
+#: apps/wiki/src/routes/account-page.tsx:69
+#: apps/wiki/src/routes/login-page.tsx:41
+#: apps/wiki/src/routes/register-page.tsx:51
+msgid "账号"
+msgstr "账号"
+
+#: apps/wiki/src/routes/account-page.tsx:99
+msgid "该模块尚未开放，后续版本上线。"
+msgstr "该模块尚未开放，后续版本上线。"
+
+#: apps/wiki/src/routes/account-page.tsx:118
+msgid "修改密码"
+msgstr "修改密码"
+
+#: apps/wiki/src/routes/account-page.tsx:119
+msgid "个人资料"
+msgstr "个人资料"
+
+#: apps/wiki/src/routes/account-page.tsx:143
+msgid "即将推出"
+msgstr "即将推出"
+
+#: apps/wiki/src/routes/account-page.tsx:200
+msgid "当前账号尚未绑定邮箱，无法通过邮箱验证码修改密码。请联系管理员绑定邮箱后再试。"
+msgstr "当前账号尚未绑定邮箱，无法通过邮箱验证码修改密码。请联系管理员绑定邮箱后再试。"
+
+#. placeholder {0}: result.debugCode
+#: apps/wiki/src/routes/account-page.tsx:231
+#: apps/wiki/src/routes/login-page.tsx:185
+msgid "开发模式：验证码已打印到服务端日志（debug={0}）"
+msgstr "开发模式：验证码已打印到服务端日志（debug={0}）"
+
+#: apps/wiki/src/routes/account-page.tsx:232
+msgid "验证码已发送到 {maskedEmail}，请查收邮箱（含垃圾邮件箱）。"
+msgstr "验证码已发送到 {maskedEmail}，请查收邮箱（含垃圾邮件箱）。"
+
+#: apps/wiki/src/routes/account-page.tsx:258
+msgid "密码已修改成功，下次登录请使用新密码。"
+msgstr "密码已修改成功，下次登录请使用新密码。"
+
+#: apps/wiki/src/routes/account-page.tsx:272
+msgid "账户邮箱：<0>{maskedEmail}</0>。验证码将发送到此邮箱。"
+msgstr "账户邮箱：<0>{maskedEmail}</0>。验证码将发送到此邮箱。"
+
+#: apps/wiki/src/routes/account-page.tsx:274
+msgid "你尚未设置过登录密码——完成本次流程后，即可使用用户名 + 密码登录。账户邮箱：<0>{maskedEmail}</0>。"
+msgstr "你尚未设置过登录密码——完成本次流程后，即可使用用户名 + 密码登录。账户邮箱：<0>{maskedEmail}</0>。"
+
+#: apps/wiki/src/routes/account-page.tsx:278
+#: apps/wiki/src/routes/login-page.tsx:58
+msgid "邮箱验证码"
+msgstr "邮箱验证码"
+
+#: apps/wiki/src/routes/account-page.tsx:278
+#: apps/wiki/src/routes/login-page.tsx:223
+msgid "6 位数字，10 分钟内有效"
+msgstr "6 位数字，10 分钟内有效"
+
+#: apps/wiki/src/routes/account-page.tsx:297
+#: apps/wiki/src/routes/login-page.tsx:242
+msgid "{cooldown}s 后重发"
+msgstr "{cooldown}s 后重发"
+
+#: apps/wiki/src/routes/account-page.tsx:299
+#: apps/wiki/src/routes/login-page.tsx:244
+msgid "发送中..."
+msgstr "发送中..."
+
+#: apps/wiki/src/routes/account-page.tsx:300
+#: apps/wiki/src/routes/login-page.tsx:245
+msgid "发送验证码"
+msgstr "发送验证码"
+
+#: apps/wiki/src/routes/account-page.tsx:305
+msgid "新密码"
+msgstr "新密码"
+
+#: apps/wiki/src/routes/account-page.tsx:305
+msgid "至少 6 位"
+msgstr "至少 6 位"
+
+#: apps/wiki/src/routes/account-page.tsx:316
+msgid "确认新密码"
+msgstr "确认新密码"
+
+#: apps/wiki/src/routes/account-page.tsx:329
+msgid "两次输入的新密码不一致。"
+msgstr "两次输入的新密码不一致。"
+
+#: apps/wiki/src/routes/account-page.tsx:334
+msgid "新密码包含开头或结尾的空白字符（来自粘贴/自动填充？）。下次登录时也必须带上，否则会登录失败 —— 请确认这是你想要的。"
+msgstr "新密码包含开头或结尾的空白字符（来自粘贴/自动填充？）。下次登录时也必须带上，否则会登录失败 —— 请确认这是你想要的。"
+
+#: apps/wiki/src/routes/account-page.tsx:351
+msgid "确认修改密码"
+msgstr "确认修改密码"
+
+#: apps/wiki/src/routes/account-page.tsx:352
+msgid "确认设置密码"
+msgstr "确认设置密码"
+
+#. placeholder {0}: session.user.username
+#: apps/wiki/src/routes/account-page.tsx:396
+msgid "用户名已更新为 {0}。"
+msgstr "用户名已更新为 {0}。"
+
+#. placeholder {0}: profile.username
+#: apps/wiki/src/routes/account-page.tsx:408
+msgid "当前用户名：<0>{0}</0>。修改后旧用户名立即释放，登录可用新用户名或绑定邮箱。"
+msgstr "当前用户名：<0>{0}</0>。修改后旧用户名立即释放，登录可用新用户名或绑定邮箱。"
+
+#: apps/wiki/src/routes/account-page.tsx:418
+msgid "新用户名"
+msgstr "新用户名"
+
+#: apps/wiki/src/routes/account-page.tsx:419
+msgid "2-32 个字符，不能包含 @"
+msgstr "2-32 个字符，不能包含 @"
+
+#: apps/wiki/src/routes/account-page.tsx:433
+msgid "用户名不能包含 @ 字符（保留给邮箱登录）。"
+msgstr "用户名不能包含 @ 字符（保留给邮箱登录）。"
+
+#: apps/wiki/src/routes/account-page.tsx:438
+msgid "用户名至少 2 个字符。"
+msgstr "用户名至少 2 个字符。"
+
+#: apps/wiki/src/routes/account-page.tsx:443
+msgid "用户名不能超过 32 个字符。"
+msgstr "用户名不能超过 32 个字符。"
+
+#: apps/wiki/src/routes/account-page.tsx:455
+msgid "保存新用户名"
+msgstr "保存新用户名"
+
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:65
 msgid "每次 wiki 写入都会按规则匹配；命中后可触发记录、警告、强制人工审核或直接拦截。"
 msgstr "每次 wiki 写入都会按规则匹配；命中后可触发记录、警告、强制人工审核或直接拦截。"
 
 #. placeholder {0}: f.name
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:85
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:89
 msgid "删除规则 {0}？"
 msgstr "删除规则 {0}？"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:95
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:99
 msgid "暂无过滤规则。可使用上方\"+ 新建过滤器\"快速添加一条；模块启动也会自动种入预置规则。"
 msgstr "暂无过滤规则。可使用上方\"+ 新建过滤器\"快速添加一条；模块启动也会自动种入预置规则。"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:103
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:107
 msgid "最近命中（50 条）"
 msgstr "最近命中（50 条）"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:107
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:111
 msgid "尚无命中记录。"
 msgstr "尚无命中记录。"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:170
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:174
 msgid "已停用"
 msgstr "已停用"
 
 #. placeholder {0}: filter.hitCount
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:174
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:178
 msgid "命中 {0} 次"
 msgstr "命中 {0} 次"
 
 #. placeholder {0}: formatDateTime(filter.lastHitAt)
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:176
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
 msgid "最近 {0}"
 msgstr "最近 {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:199
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:204
 msgid "停用"
 msgstr "停用"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:199
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:405
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:204
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:421
 msgid "启用"
 msgstr "启用"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:213
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:223
 msgid "拦截"
 msgstr "拦截"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:215
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:225
 msgid "标高风险"
 msgstr "标高风险"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:217
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:227
 msgid "警告"
 msgstr "警告"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:218
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:228
 msgid "记录"
 msgstr "记录"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:285
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:296
 msgid "pattern 必须是含有 type 字段的 JSON 对象"
 msgstr "pattern 必须是含有 type 字段的 JSON 对象"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:323
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:334
 msgid "新建过滤规则：name + pattern + 命中后动作。"
 msgstr "新建过滤规则：name + pattern + 命中后动作。"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:326
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:342
 msgid "+ 新建过滤器"
 msgstr "+ 新建过滤器"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:336
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:352
 msgid "新建过滤器"
 msgstr "新建过滤器"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:347
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:363
 msgid "关闭"
 msgstr "关闭"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:351
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:367
 msgid "规则名称"
 msgstr "规则名称"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:355
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:371
 msgid "例如：明显广告关键字"
 msgstr "例如：明显广告关键字"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:358
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:374
 msgid "描述"
 msgstr "描述"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:362
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:378
 msgid "简短说明命中条件与目的"
 msgstr "简短说明命中条件与目的"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:365
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:381
 msgid "扫描范围 (scope)"
 msgstr "扫描范围 (scope)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:371
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
 msgid "全部 (all)"
 msgstr "全部 (all)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:372
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:388
 msgid "仅档案 (content)"
 msgstr "仅档案 (content)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:373
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:389
 msgid "仅角色逻辑 (recipe)"
 msgstr "仅角色逻辑 (recipe)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:376
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:392
 msgid "命中后动作 (action)"
 msgstr "命中后动作 (action)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:384
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:400
 msgid "记录 (log)"
 msgstr "记录 (log)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:385
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:401
 msgid "警告 (warn)"
 msgstr "警告 (warn)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:403
 msgid "标高风险 (tag_high_risk)"
 msgstr "标高风险 (tag_high_risk)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:389
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:405
 msgid "拦截 (block)"
 msgstr "拦截 (block)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:392
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:408
 msgid "严重等级"
 msgstr "严重等级"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:400
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:416
 msgid "低"
 msgstr "低"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:401
-#: apps/wiki/src/routes/character-page.tsx:1040
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:417
 msgid "中"
 msgstr "中"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:402
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:418
 msgid "高"
 msgstr "高"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:428
 msgid "创建后立即生效"
 msgstr "创建后立即生效"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:417
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:433
 msgid "Pattern (JSON)"
 msgstr "Pattern (JSON)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:419
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:435
 msgid "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 msgstr "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:440
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:457
 msgid "提交并启用"
 msgstr "提交并启用"
 
@@ -695,7 +1533,7 @@ msgstr "单条目"
 
 #: apps/wiki/src/routes/admin-blocks-page.tsx:103
 #: apps/wiki/src/routes/character-page.tsx:93
-#: apps/wiki/src/routes/watchlist-page.tsx:156
+#: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
 msgstr "讨论"
 
@@ -708,7 +1546,7 @@ msgid "例如：char-celebrity-andrej-karpathy"
 msgstr "例如：char-celebrity-andrej-karpathy"
 
 #: apps/wiki/src/routes/admin-blocks-page.tsx:117
-#: apps/wiki/src/routes/admin-protection-page.tsx:189
+#: apps/wiki/src/routes/admin-protection-page.tsx:193
 msgid "原因"
 msgstr "原因"
 
@@ -717,61 +1555,61 @@ msgid "说明为什么对此用户/范围执行封禁"
 msgstr "说明为什么对此用户/范围执行封禁"
 
 #: apps/wiki/src/routes/admin-blocks-page.tsx:125
-#: apps/wiki/src/routes/admin-protection-page.tsx:179
+#: apps/wiki/src/routes/admin-protection-page.tsx:183
 msgid "到期时间"
 msgstr "到期时间"
 
 #: apps/wiki/src/routes/admin-blocks-page.tsx:126
-#: apps/wiki/src/routes/admin-protection-page.tsx:179
+#: apps/wiki/src/routes/admin-protection-page.tsx:183
 msgid "可选；留空 = 永久"
 msgstr "可选；留空 = 永久"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:163
+#: apps/wiki/src/routes/admin-blocks-page.tsx:164
 msgid "提交封禁"
 msgstr "提交封禁"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:175
+#: apps/wiki/src/routes/admin-blocks-page.tsx:176
 msgid "封禁列表"
 msgstr "封禁列表"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:183
+#: apps/wiki/src/routes/admin-blocks-page.tsx:184
 msgid "含已撤销 / 已到期"
 msgstr "含已撤销 / 已到期"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:196
+#: apps/wiki/src/routes/admin-blocks-page.tsx:197
 msgid "没有相关封禁记录。"
 msgstr "没有相关封禁记录。"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:238
+#: apps/wiki/src/routes/admin-blocks-page.tsx:239
 msgid "生效中"
 msgstr "生效中"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:242
+#: apps/wiki/src/routes/admin-blocks-page.tsx:243
 msgid "已撤销"
 msgstr "已撤销"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:246
+#: apps/wiki/src/routes/admin-blocks-page.tsx:247
 msgid "已到期"
 msgstr "已到期"
 
 #. placeholder {0}: formatDateTime(block.createdAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:257
+#: apps/wiki/src/routes/admin-blocks-page.tsx:258
 msgid "创建于 {0}"
 msgstr "创建于 {0}"
 
 #. placeholder {0}: formatDateTime(block.expiresAt)
 #. placeholder {0}: formatDateTime(row.expiresAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:259
-#: apps/wiki/src/routes/admin-protection-page.tsx:238
+#: apps/wiki/src/routes/admin-blocks-page.tsx:260
+#: apps/wiki/src/routes/admin-protection-page.tsx:243
 msgid "到期 {0}"
 msgstr "到期 {0}"
 
 #. placeholder {0}: formatDateTime(block.revokedAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:261
+#: apps/wiki/src/routes/admin-blocks-page.tsx:262
 msgid "撤销于 {0}"
 msgstr "撤销于 {0}"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:271
+#: apps/wiki/src/routes/admin-blocks-page.tsx:273
 msgid "撤销"
 msgstr "撤销"
 
@@ -779,188 +1617,191 @@ msgstr "撤销"
 msgid "需要管理员权限"
 msgstr "需要管理员权限"
 
-#: apps/wiki/src/routes/admin-layout.tsx:31
-msgid "仅管理员可访问此区域。请用管理员账号登录后再试。"
-msgstr "仅管理员可访问此区域。请用管理员账号登录后再试。"
+#: apps/wiki/src/routes/admin-layout.tsx:32
+msgid "仅管理员可访问此区域。当前账号权限不足。"
+msgstr "仅管理员可访问此区域。当前账号权限不足。"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:89
+#: apps/wiki/src/routes/admin-layout.tsx:34
+msgid "仅管理员可访问此区域。请先 <0>登录</0> 管理员账号。"
+msgstr "仅管理员可访问此区域。请先 <0>登录</0> 管理员账号。"
+
+#: apps/wiki/src/routes/admin-protection-page.tsx:93
 msgid "对单个角色词条设置编辑保护级别和审核策略：无保护 / 半保护（自动确认及以上）/ 完全保护（仅管理员）。"
 msgstr "对单个角色词条设置编辑保护级别和审核策略：无保护 / 半保护（自动确认及以上）/ 完全保护（仅管理员）。"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:93
+#: apps/wiki/src/routes/admin-protection-page.tsx:97
 msgid "选择条目"
 msgstr "选择条目"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:99
+#: apps/wiki/src/routes/admin-protection-page.tsx:103
 msgid "— 选择 —"
 msgstr "— 选择 —"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:119
+#: apps/wiki/src/routes/admin-protection-page.tsx:123
 msgid "当前级别"
 msgstr "当前级别"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:123
-#: apps/wiki/src/routes/admin-protection-page.tsx:158
+#: apps/wiki/src/routes/admin-protection-page.tsx:127
+#: apps/wiki/src/routes/admin-protection-page.tsx:162
 msgid "无保护"
 msgstr "无保护"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:125
-#: apps/wiki/src/routes/character-page.tsx:296
+#: apps/wiki/src/routes/admin-protection-page.tsx:129
+#: apps/wiki/src/routes/character-page.tsx:295
 #: apps/wiki/src/routes/home-page.tsx:110
-#: apps/wiki/src/routes/watchlist-page.tsx:92
+#: apps/wiki/src/routes/watchlist-page.tsx:98
 msgid "半保护"
 msgstr "半保护"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:126
-#: apps/wiki/src/routes/character-page.tsx:296
+#: apps/wiki/src/routes/admin-protection-page.tsx:130
+#: apps/wiki/src/routes/character-page.tsx:295
 #: apps/wiki/src/routes/home-page.tsx:111
-#: apps/wiki/src/routes/watchlist-page.tsx:93
+#: apps/wiki/src/routes/watchlist-page.tsx:99
 msgid "完全保护"
 msgstr "完全保护"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:129
-#: apps/wiki/src/routes/admin-protection-page.tsx:163
+#: apps/wiki/src/routes/admin-protection-page.tsx:133
+#: apps/wiki/src/routes/admin-protection-page.tsx:167
 msgid "审核策略"
 msgstr "审核策略"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:133
-#: apps/wiki/src/routes/admin-protection-page.tsx:176
+#: apps/wiki/src/routes/admin-protection-page.tsx:137
+#: apps/wiki/src/routes/admin-protection-page.tsx:180
 msgid "待审变更"
 msgstr "待审变更"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:134
-#: apps/wiki/src/routes/admin-protection-page.tsx:175
+#: apps/wiki/src/routes/admin-protection-page.tsx:138
+#: apps/wiki/src/routes/admin-protection-page.tsx:179
 msgid "开放编辑"
 msgstr "开放编辑"
 
 #. placeholder {0}: formatDateTime(pageQ.data.page.protectionExpiresAt)
-#: apps/wiki/src/routes/admin-protection-page.tsx:139
+#: apps/wiki/src/routes/admin-protection-page.tsx:143
 msgid "到期：{0}"
 msgstr "到期：{0}"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:147
+#: apps/wiki/src/routes/admin-protection-page.tsx:151
 msgid "新级别"
 msgstr "新级别"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:159
+#: apps/wiki/src/routes/admin-protection-page.tsx:163
 msgid "半保护（自动确认+）"
 msgstr "半保护（自动确认+）"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:160
+#: apps/wiki/src/routes/admin-protection-page.tsx:164
 msgid "完全保护（仅管理员）"
 msgstr "完全保护（仅管理员）"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:204
+#: apps/wiki/src/routes/admin-protection-page.tsx:209
 msgid "保存中..."
 msgstr "保存中..."
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:204
+#: apps/wiki/src/routes/admin-protection-page.tsx:209
 msgid "应用保护级别"
 msgstr "应用保护级别"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:217
+#: apps/wiki/src/routes/admin-protection-page.tsx:222
 msgid "变更历史"
 msgstr "变更历史"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:221
+#: apps/wiki/src/routes/admin-protection-page.tsx:226
 msgid "暂无记录。"
 msgstr "暂无记录。"
 
 #. placeholder {0}: formatDateTime(row.createdAt)
-#. placeholder {1}: row.changedBy
-#: apps/wiki/src/routes/admin-protection-page.tsx:233
+#. placeholder {1}: resolveUsername(row.changedBy)
+#: apps/wiki/src/routes/admin-protection-page.tsx:238
 msgid "{0} · 由 {1}"
 msgstr "{0} · 由 {1}"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:36
+#: apps/wiki/src/routes/admin-reports-page.tsx:37
 msgid "未处理"
 msgstr "未处理"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:37
+#: apps/wiki/src/routes/admin-reports-page.tsx:38
 msgid "已处理"
 msgstr "已处理"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:38
+#: apps/wiki/src/routes/admin-reports-page.tsx:39
 msgid "已驳回"
 msgstr "已驳回"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:46
+#: apps/wiki/src/routes/admin-reports-page.tsx:47
 msgid "社区举报的内容会先进入\"未处理\"状态。逐条审核后选择已处理或驳回。"
 msgstr "社区举报的内容会先进入\"未处理\"状态。逐条审核后选择已处理或驳回。"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:52
+#: apps/wiki/src/routes/admin-reports-page.tsx:53
 msgid "载入中…"
 msgstr "载入中…"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:81
+#: apps/wiki/src/routes/admin-reports-page.tsx:82
 msgid "当前分类下暂无举报。"
 msgstr "当前分类下暂无举报。"
 
-#. placeholder {0}: report.ownerId.slice(0, 8)
-#. placeholder {1}: formatDateTime(report.createdAt)
-#: apps/wiki/src/routes/admin-reports-page.tsx:114
-msgid "举报人 {0} · {1}"
-msgstr "举报人 {0} · {1}"
+#. placeholder {0}: formatDateTime(report.createdAt)
+#: apps/wiki/src/routes/admin-reports-page.tsx:139
+msgid "举报人 {ownerLabel} · {0}"
+msgstr "举报人 {ownerLabel} · {0}"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:133
+#: apps/wiki/src/routes/admin-reports-page.tsx:157
 msgid "打开词条"
 msgstr "打开词条"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:144
+#: apps/wiki/src/routes/admin-reports-page.tsx:169
 msgid "标记已处理"
 msgstr "标记已处理"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:152
-#: apps/wiki/src/routes/pending-reviews-page.tsx:308
+#: apps/wiki/src/routes/admin-reports-page.tsx:178
+#: apps/wiki/src/routes/pending-reviews-page.tsx:328
 msgid "驳回"
 msgstr "驳回"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:34
+#: apps/wiki/src/routes/admin-stats-page.tsx:38
 msgid "日度新建/审核数据、被回滚最多的用户、过滤器近 7 天命中量。"
 msgstr "日度新建/审核数据、被回滚最多的用户、过滤器近 7 天命中量。"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:44
+#: apps/wiki/src/routes/admin-stats-page.tsx:48
 msgid "今日新建词条"
 msgstr "今日新建词条"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:48
+#: apps/wiki/src/routes/admin-stats-page.tsx:52
 msgid "近 7 天新建词条"
 msgstr "近 7 天新建词条"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:52
+#: apps/wiki/src/routes/admin-stats-page.tsx:56
 msgid "待审队列长度"
 msgstr "待审队列长度"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:56
+#: apps/wiki/src/routes/admin-stats-page.tsx:60
 msgid "今日通过审核"
 msgstr "今日通过审核"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:60
+#: apps/wiki/src/routes/admin-stats-page.tsx:64
 msgid "今日驳回"
 msgstr "今日驳回"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:64
+#: apps/wiki/src/routes/admin-stats-page.tsx:68
 msgid "今日反破坏命中"
 msgstr "今日反破坏命中"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:68
+#: apps/wiki/src/routes/admin-stats-page.tsx:72
 msgid "本周新晋自动确认"
 msgstr "本周新晋自动确认"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:76
+#: apps/wiki/src/routes/admin-stats-page.tsx:80
 msgid "被回滚最多的用户（top 20）"
 msgstr "被回滚最多的用户（top 20）"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:80
-#: apps/wiki/src/routes/admin-stats-page.tsx:112
+#: apps/wiki/src/routes/admin-stats-page.tsx:84
+#: apps/wiki/src/routes/admin-stats-page.tsx:116
 msgid "无记录"
 msgstr "无记录"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:108
+#: apps/wiki/src/routes/admin-stats-page.tsx:112
 msgid "过滤器命中（近 7 天）"
 msgstr "过滤器命中（近 7 天）"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:125
+#: apps/wiki/src/routes/admin-stats-page.tsx:129
 msgid "近 7 天 {recentHits} 命中"
 msgstr "近 7 天 {recentHits} 命中"
 
@@ -978,7 +1819,7 @@ msgid "用户"
 msgstr "用户"
 
 #: apps/wiki/src/routes/admin-users-page.tsx:74
-#: apps/wiki/src/routes/pending-reviews-page.tsx:103
+#: apps/wiki/src/routes/pending-reviews-page.tsx:115
 msgid "类型"
 msgstr "类型"
 
@@ -1017,10 +1858,10 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} 对比 v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:49
-#: apps/wiki/src/routes/character-page.tsx:1918
-#: apps/wiki/src/routes/pending-reviews-page.tsx:120
-#: apps/wiki/src/routes/pending-reviews-page.tsx:225
-#: apps/wiki/src/routes/recent-changes-page.tsx:122
+#: apps/wiki/src/routes/character-page.tsx:655
+#: apps/wiki/src/routes/pending-reviews-page.tsx:132
+#: apps/wiki/src/routes/pending-reviews-page.tsx:242
+#: apps/wiki/src/routes/recent-changes-page.tsx:130
 msgid "高风险"
 msgstr "高风险"
 
@@ -1032,7 +1873,7 @@ msgstr "旧角色逻辑"
 msgid "新角色逻辑"
 msgstr "新角色逻辑"
 
-#: apps/wiki/src/routes/character-page.tsx:81
+#: apps/wiki/src/routes/character-page.tsx:77
 msgid "阅读"
 msgstr "阅读"
 
@@ -1040,652 +1881,343 @@ msgstr "阅读"
 msgid "历史"
 msgstr "历史"
 
-#: apps/wiki/src/routes/character-page.tsx:111
+#: apps/wiki/src/routes/character-page.tsx:114
 #: apps/wiki/src/routes/home-page.tsx:101
 msgid "待创建"
 msgstr "待创建"
 
-#: apps/wiki/src/routes/character-page.tsx:116
+#: apps/wiki/src/routes/character-page.tsx:119
 msgid "有待审版本"
 msgstr "有待审版本"
 
-#: apps/wiki/src/routes/character-page.tsx:124
+#: apps/wiki/src/routes/character-page.tsx:127
 msgid "版本切换"
 msgstr "版本切换"
 
-#: apps/wiki/src/routes/character-page.tsx:137
-#: apps/wiki/src/routes/character-page.tsx:381
+#: apps/wiki/src/routes/character-page.tsx:140
+#: apps/wiki/src/routes/character-page.tsx:379
 msgid "稳定版"
 msgstr "稳定版"
 
-#: apps/wiki/src/routes/character-page.tsx:149
-#: apps/wiki/src/routes/character-page.tsx:381
+#: apps/wiki/src/routes/character-page.tsx:152
+#: apps/wiki/src/routes/character-page.tsx:379
 msgid "最新版"
 msgstr "最新版"
 
-#: apps/wiki/src/routes/character-page.tsx:161
+#: apps/wiki/src/routes/character-page.tsx:167
 msgid "申请恢复"
 msgstr "申请恢复"
 
-#: apps/wiki/src/routes/character-page.tsx:161
+#: apps/wiki/src/routes/character-page.tsx:167
 msgid "申请删除"
 msgstr "申请删除"
 
-#: apps/wiki/src/routes/character-page.tsx:170
+#: apps/wiki/src/routes/character-page.tsx:176
 msgid "恢复理由"
 msgstr "恢复理由"
 
-#: apps/wiki/src/routes/character-page.tsx:170
+#: apps/wiki/src/routes/character-page.tsx:176
 msgid "删除理由"
 msgstr "删除理由"
 
-#: apps/wiki/src/routes/character-page.tsx:178
+#: apps/wiki/src/routes/character-page.tsx:184
 msgid "说明为什么这个角色词条应恢复"
 msgstr "说明为什么这个角色词条应恢复"
 
-#: apps/wiki/src/routes/character-page.tsx:179
+#: apps/wiki/src/routes/character-page.tsx:185
 msgid "说明为什么这个角色词条应归档为红链"
 msgstr "说明为什么这个角色词条应归档为红链"
 
-#: apps/wiki/src/routes/character-page.tsx:198
+#: apps/wiki/src/routes/character-page.tsx:204
 msgid "提交恢复申请"
 msgstr "提交恢复申请"
 
-#: apps/wiki/src/routes/character-page.tsx:199
+#: apps/wiki/src/routes/character-page.tsx:205
 msgid "提交删除申请"
 msgstr "提交删除申请"
 
-#: apps/wiki/src/routes/character-page.tsx:215
+#: apps/wiki/src/routes/character-page.tsx:221
 msgid "此词条已被软删除（红链）。"
 msgstr "此词条已被软删除（红链）。"
 
-#: apps/wiki/src/routes/character-page.tsx:217
+#: apps/wiki/src/routes/character-page.tsx:223
 msgid "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 msgstr "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 
-#: apps/wiki/src/routes/character-page.tsx:225
+#: apps/wiki/src/routes/character-page.tsx:231
 msgid "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 msgstr "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 
-#: apps/wiki/src/routes/character-page.tsx:346
-#: apps/wiki/src/routes/character-page.tsx:1138
+#: apps/wiki/src/routes/character-page.tsx:344
 msgid "核心逻辑"
 msgstr "核心逻辑"
 
-#: apps/wiki/src/routes/character-page.tsx:350
-#: apps/wiki/src/routes/character-page.tsx:1165
+#: apps/wiki/src/routes/character-page.tsx:348
 msgid "聊天 Prompt"
 msgstr "聊天 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:353
-#: apps/wiki/src/routes/character-page.tsx:1203
+#: apps/wiki/src/routes/character-page.tsx:351
 msgid "主动触达 Prompt"
 msgstr "主动触达 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:358
-#: apps/wiki/src/routes/character-page.tsx:1429
+#: apps/wiki/src/routes/character-page.tsx:356
 msgid "发圈频率"
 msgstr "发圈频率"
 
-#: apps/wiki/src/routes/character-page.tsx:361
-#: apps/wiki/src/routes/character-page.tsx:1448
+#: apps/wiki/src/routes/character-page.tsx:359
 msgid "广场频率"
 msgstr "广场频率"
 
-#: apps/wiki/src/routes/character-page.tsx:364
+#: apps/wiki/src/routes/character-page.tsx:362
 msgid "活跃时段"
 msgstr "活跃时段"
 
 #. placeholder {0}: view.pendingRevisions.length
-#: apps/wiki/src/routes/character-page.tsx:373
+#: apps/wiki/src/routes/character-page.tsx:371
 msgid "有 {0} 个待审版本，最新为："
 msgstr "有 {0} 个待审版本，最新为："
 
 #. placeholder {0}: view.currentRevision.version
-#. placeholder {1}: view.currentRevision.editorUserId
+#. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:384
+#: apps/wiki/src/routes/character-page.tsx:382
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · 由 {1} 提交于 {2}"
 
-#: apps/wiki/src/routes/character-page.tsx:386
+#: apps/wiki/src/routes/character-page.tsx:384
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "尚未有 wiki 版本（显示后台原始数据）"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:390
+#: apps/wiki/src/routes/character-page.tsx:388
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "稳定版 v{0} / 最新版 v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:533
-msgid "修改已直接生效（自动确认/巡查员/管理员）"
-msgstr "修改已直接生效（自动确认/巡查员/管理员）"
-
-#: apps/wiki/src/routes/character-page.tsx:534
-msgid "修改已提交，等待巡查员审核"
-msgstr "修改已提交，等待巡查员审核"
-
-#: apps/wiki/src/routes/character-page.tsx:552
-msgid "角色逻辑存在并发修改，请刷新页面后基于最新版本重新编辑。"
-msgstr "角色逻辑存在并发修改，请刷新页面后基于最新版本重新编辑。"
-
-#: apps/wiki/src/routes/character-page.tsx:578
-msgid "请先登录后再编辑。"
-msgstr "请先登录后再编辑。"
+#: apps/wiki/src/routes/character-page.tsx:493
+msgid "请先 <0>登录</0> 后再编辑。"
+msgstr "请先 <0>登录</0> 后再编辑。"
 
 #. placeholder {0}: user.role
-#: apps/wiki/src/routes/character-page.tsx:587
-msgid "当前你的权限是<0>{0}</0>。内容字段和角色逻辑都走同一套版本、冲突检测和巡查审核。"
-msgstr "当前你的权限是<0>{0}</0>。内容字段和角色逻辑都走同一套版本、冲突检测和巡查审核。"
+#: apps/wiki/src/routes/character-page.tsx:507
+msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
+msgstr "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 
+#. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:594
+#: apps/wiki/src/routes/character-page.tsx:515
+#: apps/wiki/src/routes/world-character-edit-page.tsx:248
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 
-#: apps/wiki/src/routes/character-page.tsx:601
-msgid "服务器上的版本已经发生变化，但你正在编辑的草稿已保留。"
-msgstr "服务器上的版本已经发生变化，但你正在编辑的草稿已保留。"
-
-#: apps/wiki/src/routes/character-page.tsx:609
-msgid "加载最新覆盖草稿"
-msgstr "加载最新覆盖草稿"
-
-#: apps/wiki/src/routes/character-page.tsx:619
-#: apps/wiki/src/routes/create-character-page.tsx:137
-msgid "头像 URL"
-msgstr "头像 URL"
-
-#: apps/wiki/src/routes/character-page.tsx:643
-msgid "角色简介（bio）"
-msgstr "角色简介（bio）"
-
-#: apps/wiki/src/routes/character-page.tsx:650
-msgid "性格 ⚠ 影响 AI 行为"
-msgstr "性格 ⚠ 影响 AI 行为"
-
-#: apps/wiki/src/routes/character-page.tsx:659
-msgid "专长领域（逗号分隔） ⚠ 影响 AI 行为"
-msgstr "专长领域（逗号分隔） ⚠ 影响 AI 行为"
-
-#: apps/wiki/src/routes/character-page.tsx:673
-msgid "触发场景（逗号分隔） ⚠ 影响 AI 行为"
-msgstr "触发场景（逗号分隔） ⚠ 影响 AI 行为"
-
-#: apps/wiki/src/routes/character-page.tsx:697
-msgid "修改摘要"
-msgstr "修改摘要"
-
-#: apps/wiki/src/routes/character-page.tsx:699
-msgid "高风险字段（人格/记忆/逻辑等）、创建词条、生命周期变更要求 ≥10 字"
-msgstr "高风险字段（人格/记忆/逻辑等）、创建词条、生命周期变更要求 ≥10 字"
-
-#: apps/wiki/src/routes/character-page.tsx:705
-msgid "例如：补充了职业信息"
-msgstr "例如：补充了职业信息"
-
-#: apps/wiki/src/routes/character-page.tsx:718
-msgid "小修改（错别字、格式调整等）"
-msgstr "小修改（错别字、格式调整等）"
-
-#: apps/wiki/src/routes/character-page.tsx:751
-msgid "你修改了高风险字段（人格 / 角色逻辑），修改摘要至少 10 字。"
-msgstr "你修改了高风险字段（人格 / 角色逻辑），修改摘要至少 10 字。"
-
-#: apps/wiki/src/routes/character-page.tsx:765
-msgid "提交编辑"
-msgstr "提交编辑"
-
-#: apps/wiki/src/routes/character-page.tsx:854
-msgid "⚠ 以下字段会进入角色工厂发布流，属于影响运行时行为的高风险编辑。修改后请仔细核对。"
-msgstr "⚠ 以下字段会进入角色工厂发布流，属于影响运行时行为的高风险编辑。修改后请仔细核对。"
-
-#: apps/wiki/src/routes/character-page.tsx:859
-msgid "身份"
-msgstr "身份"
-
-#: apps/wiki/src/routes/character-page.tsx:860
-msgid "角色的基础信息：职业、背景、动机、世界观。"
-msgstr "角色的基础信息：职业、背景、动机、世界观。"
-
-#: apps/wiki/src/routes/character-page.tsx:863
-msgid "职业 / 身份"
-msgstr "职业 / 身份"
-
-#: apps/wiki/src/routes/character-page.tsx:877
-msgid "活动频率"
-msgstr "活动频率"
-
-#: apps/wiki/src/routes/character-page.tsx:892
-msgid "背景"
-msgstr "背景"
-
-#: apps/wiki/src/routes/character-page.tsx:905
-msgid "动机"
-msgstr "动机"
-
-#: apps/wiki/src/routes/character-page.tsx:920
-msgid "世界观"
-msgstr "世界观"
-
-#: apps/wiki/src/routes/character-page.tsx:938
-msgid "专长"
-msgstr "专长"
-
-#: apps/wiki/src/routes/character-page.tsx:939
-msgid "角色的知识范围、知识边界、拒答风格。"
-msgstr "角色的知识范围、知识边界、拒答风格。"
-
-#: apps/wiki/src/routes/character-page.tsx:942
-msgid "专长说明"
-msgstr "专长说明"
-
-#: apps/wiki/src/routes/character-page.tsx:957
-msgid "知识边界"
-msgstr "知识边界"
-
-#: apps/wiki/src/routes/character-page.tsx:972
-msgid "拒答风格"
-msgstr "拒答风格"
-
-#: apps/wiki/src/routes/character-page.tsx:990
-msgid "语气与人设"
-msgstr "语气与人设"
-
-#: apps/wiki/src/routes/character-page.tsx:992
-msgid "决定 AI 说话风格、表达密度，以及 base / system prompt 的核心字段。"
-msgstr "决定 AI 说话风格、表达密度，以及 base / system prompt 的核心字段。"
-
-#: apps/wiki/src/routes/character-page.tsx:996
-msgid "说话模式（逗号分隔）"
-msgstr "说话模式（逗号分隔）"
-
-#: apps/wiki/src/routes/character-page.tsx:1010
-msgid "兴趣主题（逗号分隔）"
-msgstr "兴趣主题（逗号分隔）"
-
-#: apps/wiki/src/routes/character-page.tsx:1024
-msgid "回复长度"
-msgstr "回复长度"
-
-#: apps/wiki/src/routes/character-page.tsx:1039
-msgid "短"
-msgstr "短"
-
-#: apps/wiki/src/routes/character-page.tsx:1041
-msgid "长"
-msgstr "长"
-
-#: apps/wiki/src/routes/character-page.tsx:1044
-msgid "Emoji 使用"
-msgstr "Emoji 使用"
-
-#: apps/wiki/src/routes/character-page.tsx:1059
-msgid "不使用"
-msgstr "不使用"
-
-#: apps/wiki/src/routes/character-page.tsx:1060
-msgid "偶尔"
-msgstr "偶尔"
-
-#: apps/wiki/src/routes/character-page.tsx:1061
-msgid "频繁"
-msgstr "频繁"
-
-#: apps/wiki/src/routes/character-page.tsx:1064
-msgid "工作风格"
-msgstr "工作风格"
-
-#: apps/wiki/src/routes/character-page.tsx:1076
-msgid "社交风格"
-msgstr "社交风格"
-
-#: apps/wiki/src/routes/character-page.tsx:1089
-msgid "核心指令"
-msgstr "核心指令"
-
-#: apps/wiki/src/routes/character-page.tsx:1101
-msgid "Base Prompt"
-msgstr "Base Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1113
-msgid "System Prompt"
-msgstr "System Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1127
-msgid "提示词"
-msgstr "提示词"
-
-#: apps/wiki/src/routes/character-page.tsx:1128
-msgid "核心逻辑、各场景 prompt、ScenePrompt 预览。"
-msgstr "核心逻辑、各场景 prompt、ScenePrompt 预览。"
-
-#: apps/wiki/src/routes/character-page.tsx:1184
-msgid "问候 Prompt"
-msgstr "问候 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1222
-msgid "朋友圈 Prompt"
-msgstr "朋友圈 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1238
-msgid "朋友圈评论 Prompt"
-msgstr "朋友圈评论 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1254
-msgid "广场发帖 Prompt"
-msgstr "广场发帖 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1270
-msgid "视频号内容 Prompt"
-msgstr "视频号内容 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1286
-msgid "广场评论 Prompt"
-msgstr "广场评论 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1304
-msgid "记忆"
-msgstr "记忆"
-
-#: apps/wiki/src/routes/character-page.tsx:1305
-msgid "记忆摘要、核心记忆、近期摘要 prompt 与遗忘曲线。"
-msgstr "记忆摘要、核心记忆、近期摘要 prompt 与遗忘曲线。"
-
-#: apps/wiki/src/routes/character-page.tsx:1308
-msgid "记忆摘要"
-msgstr "记忆摘要"
-
-#: apps/wiki/src/routes/character-page.tsx:1324
-msgid "核心记忆"
-msgstr "核心记忆"
-
-#: apps/wiki/src/routes/character-page.tsx:1349
-msgid "近期摘要种子"
-msgstr "近期摘要种子"
-
-#: apps/wiki/src/routes/character-page.tsx:1364
-msgid "遗忘曲线"
-msgstr "遗忘曲线"
-
-#: apps/wiki/src/routes/character-page.tsx:1390
-msgid "近期摘要 Prompt"
-msgstr "近期摘要 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1405
-msgid "核心记忆 Prompt"
-msgstr "核心记忆 Prompt"
-
-#: apps/wiki/src/routes/character-page.tsx:1423
-msgid "生活策略与推理"
-msgstr "生活策略与推理"
-
-#: apps/wiki/src/routes/character-page.tsx:1425
-msgid "发圈/广场频率、活跃时段，以及 CoT / 反思 / 路由开关。"
-msgstr "发圈/广场频率、活跃时段，以及 CoT / 反思 / 路由开关。"
-
-#: apps/wiki/src/routes/character-page.tsx:1467
-msgid "活跃开始小时"
-msgstr "活跃开始小时"
-
-#: apps/wiki/src/routes/character-page.tsx:1484
-msgid "活跃结束小时"
-msgstr "活跃结束小时"
-
-#: apps/wiki/src/routes/character-page.tsx:1517
-msgid "启用 CoT"
-msgstr "启用 CoT"
-
-#: apps/wiki/src/routes/character-page.tsx:1533
-msgid "启用反思"
-msgstr "启用反思"
-
-#: apps/wiki/src/routes/character-page.tsx:1549
-msgid "启用路由"
-msgstr "启用路由"
-
-#: apps/wiki/src/routes/character-page.tsx:1554
-msgid "个性细节"
-msgstr "个性细节"
-
-#: apps/wiki/src/routes/character-page.tsx:1556
-msgid "口头禅、禁忌、小癖好——通常是低风险但能让角色更立体的字段。"
-msgstr "口头禅、禁忌、小癖好——通常是低风险但能让角色更立体的字段。"
-
-#: apps/wiki/src/routes/character-page.tsx:1560
-msgid "口头禅（逗号分隔）"
-msgstr "口头禅（逗号分隔）"
-
-#: apps/wiki/src/routes/character-page.tsx:1574
-msgid "禁忌（逗号分隔）"
-msgstr "禁忌（逗号分隔）"
-
-#: apps/wiki/src/routes/character-page.tsx:1588
-msgid "小癖好（逗号分隔）"
-msgstr "小癖好（逗号分隔）"
-
-#: apps/wiki/src/routes/character-page.tsx:1605
-msgid "发布映射"
-msgstr "发布映射"
-
-#: apps/wiki/src/routes/character-page.tsx:1607
-msgid "角色发布到运行时后的初始状态：模板、上线、活动模式默认值。"
-msgstr "角色发布到运行时后的初始状态：模板、上线、活动模式默认值。"
-
-#: apps/wiki/src/routes/character-page.tsx:1625
-msgid "模板角色"
-msgstr "模板角色"
-
-#: apps/wiki/src/routes/character-page.tsx:1641
-msgid "初始在线"
-msgstr "初始在线"
-
-#: apps/wiki/src/routes/character-page.tsx:1643
-msgid "初始活动"
-msgstr "初始活动"
-
-#: apps/wiki/src/routes/character-page.tsx:1657
-msgid "在线模式默认值"
-msgstr "在线模式默认值"
-
-#: apps/wiki/src/routes/character-page.tsx:1672
-#: apps/wiki/src/routes/character-page.tsx:1691
-msgid "自动"
-msgstr "自动"
-
-#: apps/wiki/src/routes/character-page.tsx:1673
-#: apps/wiki/src/routes/character-page.tsx:1692
-msgid "手动"
-msgstr "手动"
-
-#: apps/wiki/src/routes/character-page.tsx:1676
-msgid "活动模式默认值"
-msgstr "活动模式默认值"
-
-#: apps/wiki/src/routes/character-page.tsx:1698
-msgid "现实联动"
-msgstr "现实联动"
-
-#: apps/wiki/src/routes/character-page.tsx:1700
-msgid "可选 JSON：从外部数据源（社交账号、自媒体、API 等）读取动态信号注入提示词。"
-msgstr "可选 JSON：从外部数据源（社交账号、自媒体、API 等）读取动态信号注入提示词。"
-
-#: apps/wiki/src/routes/character-page.tsx:1704
-msgid "现实联动配置 JSON"
-msgstr "现实联动配置 JSON"
-
-#: apps/wiki/src/routes/character-page.tsx:1728
-msgid "JSON 格式无效，修正后才会写入草稿。"
-msgstr "JSON 格式无效，修正后才会写入草稿。"
-
-#: apps/wiki/src/routes/character-page.tsx:1854
+#: apps/wiki/src/routes/character-page.tsx:527
+msgid "✨ 打开编辑器"
+msgstr "✨ 打开编辑器"
+
+#: apps/wiki/src/routes/character-page.tsx:530
+msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
+msgstr "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
+
+#: apps/wiki/src/routes/character-page.tsx:588
 msgid "还没有任何编辑记录。"
 msgstr "还没有任何编辑记录。"
 
-#: apps/wiki/src/routes/character-page.tsx:1926
+#: apps/wiki/src/routes/character-page.tsx:663
 msgid "当前版本"
 msgstr "当前版本"
 
-#: apps/wiki/src/routes/character-page.tsx:1931
-#: apps/wiki/src/routes/recent-changes-page.tsx:130
+#: apps/wiki/src/routes/character-page.tsx:668
+#: apps/wiki/src/routes/recent-changes-page.tsx:138
 msgid "待巡查"
 msgstr "待巡查"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:1939
-#: apps/wiki/src/routes/recent-changes-page.tsx:150
+#: apps/wiki/src/routes/character-page.tsx:678
+#: apps/wiki/src/routes/recent-changes-page.tsx:158
 msgid "字段：{0}"
 msgstr "字段：{0}"
 
-#: apps/wiki/src/routes/character-page.tsx:1947
+#: apps/wiki/src/routes/character-page.tsx:686
 msgid "收起对比"
 msgstr "收起对比"
 
-#: apps/wiki/src/routes/character-page.tsx:1947
+#: apps/wiki/src/routes/character-page.tsx:686
 msgid "查看对比"
 msgstr "查看对比"
 
-#: apps/wiki/src/routes/character-page.tsx:1956
+#: apps/wiki/src/routes/character-page.tsx:695
 msgid "独立对比"
 msgstr "独立对比"
 
-#: apps/wiki/src/routes/character-page.tsx:1965
+#: apps/wiki/src/routes/character-page.tsx:704
 msgid "回滚到此版本"
 msgstr "回滚到此版本"
 
-#: apps/wiki/src/routes/character-page.tsx:1979
-#: apps/wiki/src/routes/pending-reviews-page.tsx:267
+#: apps/wiki/src/routes/character-page.tsx:718
+#: apps/wiki/src/routes/pending-reviews-page.tsx:284
 msgid "查看角色逻辑快照"
 msgstr "查看角色逻辑快照"
 
-#: apps/wiki/src/routes/character-page.tsx:1992
+#: apps/wiki/src/routes/character-page.tsx:731
 msgid "回滚原因（必填）"
 msgstr "回滚原因（必填）"
 
-#: apps/wiki/src/routes/character-page.tsx:1997
+#: apps/wiki/src/routes/character-page.tsx:736
 msgid "例如：v3 涉及破坏性内容"
 msgstr "例如：v3 涉及破坏性内容"
 
-#: apps/wiki/src/routes/character-page.tsx:2011
+#: apps/wiki/src/routes/character-page.tsx:750
 msgid "回滚中..."
 msgstr "回滚中..."
 
-#: apps/wiki/src/routes/character-page.tsx:2011
+#: apps/wiki/src/routes/character-page.tsx:750
 msgid "确认回滚"
 msgstr "确认回滚"
 
-#: apps/wiki/src/routes/character-page.tsx:2053
+#: apps/wiki/src/routes/character-page.tsx:792
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ 角色已被管理员后台直接修改"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:2056
+#: apps/wiki/src/routes/character-page.tsx:795
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 
-#: apps/wiki/src/routes/character-page.tsx:2063
+#: apps/wiki/src/routes/character-page.tsx:802
 msgid "内容字段："
 msgstr "内容字段："
 
-#: apps/wiki/src/routes/character-page.tsx:2069
+#: apps/wiki/src/routes/character-page.tsx:808
 msgid "逻辑字段："
 msgstr "逻辑字段："
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:2073
+#: apps/wiki/src/routes/character-page.tsx:812
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:2085
+#: apps/wiki/src/routes/character-page.tsx:825
 msgid "同步中..."
 msgstr "同步中..."
 
-#: apps/wiki/src/routes/character-page.tsx:2085
+#: apps/wiki/src/routes/character-page.tsx:825
 msgid "纳入 wiki 历史"
 msgstr "纳入 wiki 历史"
 
-#: apps/wiki/src/routes/create-character-page.tsx:40
-msgid "世界角色"
-msgstr "世界角色"
+#: apps/wiki/src/routes/create-character-page.tsx:89
+#: apps/wiki/src/routes/my-character-edit-page.tsx:80
+msgid "当前页面有未保存的内容，恢复草稿会覆盖。继续吗？"
+msgstr "当前页面有未保存的内容，恢复草稿会覆盖。继续吗？"
 
-#: apps/wiki/src/routes/create-character-page.tsx:82
-msgid "由当前贡献者初始化创建的角色词条"
-msgstr "由当前贡献者初始化创建的角色词条"
-
-#: apps/wiki/src/routes/create-character-page.tsx:101
-#: apps/wiki/src/routes/create-character-page.tsx:112
+#: apps/wiki/src/routes/create-character-page.tsx:102
+#: apps/wiki/src/routes/create-character-page.tsx:183
 msgid "创建世界角色"
 msgstr "创建世界角色"
 
-#: apps/wiki/src/routes/create-character-page.tsx:103
-msgid "请先登录后再创建角色。"
-msgstr "请先登录后再创建角色。"
-
-#: apps/wiki/src/routes/create-character-page.tsx:114
-msgid "新角色会先进入待创建队列；巡查员通过后才会发布到运行时角色注册表。"
-msgstr "新角色会先进入待创建队列；巡查员通过后才会发布到运行时角色注册表。"
-
-#: apps/wiki/src/routes/create-character-page.tsx:120
-msgid "基础信息"
-msgstr "基础信息"
+#: apps/wiki/src/routes/create-character-page.tsx:104
+msgid "请先 <0>登录</0> 后再创建角色。"
+msgstr "请先 <0>登录</0> 后再创建角色。"
 
 #: apps/wiki/src/routes/create-character-page.tsx:123
-msgid "角色 ID"
-msgstr "角色 ID"
+msgid "← 返回首页"
+msgstr "← 返回首页"
 
-#: apps/wiki/src/routes/create-character-page.tsx:123
-msgid "可选；留空由系统生成"
-msgstr "可选；留空由系统生成"
+#: apps/wiki/src/routes/create-character-page.tsx:130
+msgid "创建摘要至少 10 字（创建操作评审要求）"
+msgstr "创建摘要至少 10 字（创建操作评审要求）"
 
-#: apps/wiki/src/routes/create-character-page.tsx:127
+#: apps/wiki/src/routes/create-character-page.tsx:136
+#: apps/wiki/src/routes/world-character-edit-page.tsx:189
+#: apps/wiki/src/routes/world-character-edit-page.tsx:273
+msgid "提交评审"
+msgstr "提交评审"
+
+#: apps/wiki/src/routes/create-character-page.tsx:139
+msgid "角色 ID（可选）"
+msgstr "角色 ID（可选）"
+
+#: apps/wiki/src/routes/create-character-page.tsx:141
+msgid "留空由系统生成。设了之后会作为 URL 路径，例如 /character/night-archivist"
+msgstr "留空由系统生成。设了之后会作为 URL 路径，例如 /character/night-archivist"
+
+#: apps/wiki/src/routes/create-character-page.tsx:147
 msgid "例如 night-archivist"
 msgstr "例如 night-archivist"
 
-#: apps/wiki/src/routes/create-character-page.tsx:160
-msgid "角色简介"
-msgstr "角色简介"
-
-#: apps/wiki/src/routes/create-character-page.tsx:168
-msgid "性格 / 语气"
-msgstr "性格 / 语气"
-
-#: apps/wiki/src/routes/create-character-page.tsx:176
-#: apps/wiki/src/routes/create-character-page.tsx:182
-msgid "逗号分隔"
-msgstr "逗号分隔"
-
-#: apps/wiki/src/routes/create-character-page.tsx:190
+#: apps/wiki/src/routes/create-character-page.tsx:151
 msgid "创建摘要"
 msgstr "创建摘要"
 
-#: apps/wiki/src/routes/create-character-page.tsx:192
+#: apps/wiki/src/routes/create-character-page.tsx:153
 msgid "≥10 字。说明这个角色为什么值得加入"
 msgstr "≥10 字。说明这个角色为什么值得加入"
 
-#: apps/wiki/src/routes/create-character-page.tsx:203
+#: apps/wiki/src/routes/create-character-page.tsx:159
+msgid "例如：补一个心理咨询师角色，专擅深夜叙事疏导，文风克制"
+msgstr "例如：补一个心理咨询师角色，专擅深夜叙事疏导，文风克制"
+
+#: apps/wiki/src/routes/create-character-page.tsx:167
+#: apps/wiki/src/routes/world-character-edit-page.tsx:208
 msgid "至少需要 10 字"
 msgstr "至少需要 10 字"
 
-#: apps/wiki/src/routes/create-character-page.tsx:214
-msgid "高级：直接贴 recipe JSON（可选）"
-msgstr "高级：直接贴 recipe JSON（可选）"
+#: apps/wiki/src/routes/create-character-page.tsx:173
+msgid "新角色会先进入待创建队列，patroller 通过后才会发布到运行时角色注册表。"
+msgstr "新角色会先进入待创建队列，patroller 通过后才会发布到运行时角色注册表。"
 
-#: apps/wiki/src/routes/create-character-page.tsx:217
-msgid "填写后会忽略上方分节字段，直接用此 JSON 提交。留空则按上方字段生成默认逻辑。"
-msgstr "填写后会忽略上方分节字段，直接用此 JSON 提交。留空则按上方字段生成默认逻辑。"
+#: apps/wiki/src/routes/create-character-page.tsx:185
+msgid "和私有角色 / 世界角色编辑器同一套体验；保存后角色会作为 wiki 待创建稿提交，patroller 通过后才发布。"
+msgstr "和私有角色 / 世界角色编辑器同一套体验；保存后角色会作为 wiki 待创建稿提交，patroller 通过后才发布。"
 
-#: apps/wiki/src/routes/create-character-page.tsx:225
-msgid "留空则按上方档案字段生成默认角色逻辑"
-msgstr "留空则按上方档案字段生成默认角色逻辑"
+#. placeholder {0}: draftQ.data.name || t(msg`未命名草稿`)
+#: apps/wiki/src/routes/create-character-page.tsx:198
+#: apps/wiki/src/routes/my-character-edit-page.tsx:294
+msgid "已从草稿「{0}」恢复。"
+msgstr "已从草稿「{0}」恢复。"
+
+#: apps/wiki/src/routes/create-character-page.tsx:199
+#: apps/wiki/src/routes/my-character-edit-page.tsx:295
+#: apps/wiki/src/routes/my-drafts-page.tsx:119
+#: apps/wiki/src/routes/my-drafts-page.tsx:246
+msgid "未命名草稿"
+msgstr "未命名草稿"
+
+#: apps/wiki/src/routes/create-character-page.tsx:209
+#: apps/wiki/src/routes/my-character-edit-page.tsx:305
+msgid "清空表单"
+msgstr "清空表单"
+
+#: apps/wiki/src/routes/create-character-page.tsx:223
+#: apps/wiki/src/routes/my-character-edit-page.tsx:319
+msgid "该草稿已不存在（可能已被删除），按空白表单继续。"
+msgstr "该草稿已不存在（可能已被删除），按空白表单继续。"
 
 #: apps/wiki/src/routes/create-character-page.tsx:229
-msgid "高级 recipe JSON 格式无效："
-msgstr "高级 recipe JSON 格式无效："
+#: apps/wiki/src/routes/my-character-edit-page.tsx:327
+msgid "清掉 URL 中的 draftId"
+msgstr "清掉 URL 中的 draftId"
 
-#: apps/wiki/src/routes/create-character-page.tsx:251
+#: apps/wiki/src/routes/create-character-page.tsx:263
 msgid "✨ 提交创建"
 msgstr "✨ 提交创建"
+
+#: apps/wiki/src/routes/create-character-page.tsx:264
+msgid "提交"
+msgstr "提交"
+
+#: apps/wiki/src/routes/create-character-page.tsx:265
+#: apps/wiki/src/routes/world-character-edit-page.tsx:275
+msgid "提交中…"
+msgstr "提交中…"
+
+#: apps/wiki/src/routes/create-character-page.tsx:268
+#: apps/wiki/src/routes/world-character-edit-page.tsx:278
+msgid "提交后进 patroller 审核队列"
+msgstr "提交后进 patroller 审核队列"
+
+#: apps/wiki/src/routes/create-character-page.tsx:269
+msgid "提交后进评审队列"
+msgstr "提交后进评审队列"
 
 #: apps/wiki/src/routes/home-page.tsx:32
 msgid "所有角色词条"
@@ -1696,6 +2228,7 @@ msgid "按维基百科模式管理世界角色：任何登录用户都能创建�
 msgstr "按维基百科模式管理世界角色：任何登录用户都能创建角色、编辑画像和运行逻辑、申请删除或恢复；高风险改动进入巡查队列，通过后才发布到角色运行时。"
 
 #: apps/wiki/src/routes/home-page.tsx:42
+#: apps/wiki/src/routes/my-character-edit-page.tsx:357
 msgid "✨ 创建角色"
 msgstr "✨ 创建角色"
 
@@ -1727,18 +2260,9 @@ msgstr "社区创建"
 msgid "（暂无简介）"
 msgstr "（暂无简介）"
 
-#: apps/wiki/src/routes/login-page.tsx:41
-#: apps/wiki/src/routes/register-page.tsx:51
-msgid "账号"
-msgstr "账号"
-
 #: apps/wiki/src/routes/login-page.tsx:50
 msgid "用户名密码"
 msgstr "用户名密码"
-
-#: apps/wiki/src/routes/login-page.tsx:58
-msgid "邮箱验证码"
-msgstr "邮箱验证码"
 
 #: apps/wiki/src/routes/login-page.tsx:69
 msgid "还没有账号？"
@@ -1752,200 +2276,389 @@ msgstr "创建一个"
 msgid "或直接用邮箱登录。"
 msgstr "或直接用邮箱登录。"
 
-#: apps/wiki/src/routes/login-page.tsx:111
-#: apps/wiki/src/routes/register-page.tsx:59
-msgid "用户名"
-msgstr "用户名"
+#: apps/wiki/src/routes/login-page.tsx:112
+msgid "用户名或邮箱"
+msgstr "用户名或邮箱"
 
-#: apps/wiki/src/routes/login-page.tsx:119
+#: apps/wiki/src/routes/login-page.tsx:113
+msgid "两者皆可登录；含 @ 视为邮箱"
+msgstr "两者皆可登录；含 @ 视为邮箱"
+
+#: apps/wiki/src/routes/login-page.tsx:123
 #: apps/wiki/src/routes/register-page.tsx:69
 msgid "密码"
 msgstr "密码"
 
-#: apps/wiki/src/routes/login-page.tsx:134
-#: apps/wiki/src/routes/login-page.tsx:252
+#: apps/wiki/src/routes/login-page.tsx:138
+#: apps/wiki/src/routes/login-page.tsx:257
 msgid "登录中..."
 msgstr "登录中..."
 
-#. placeholder {0}: result.debugCode
-#: apps/wiki/src/routes/login-page.tsx:181
-msgid "开发模式：验证码已打印到服务端日志（debug={0}）"
-msgstr "开发模式：验证码已打印到服务端日志（debug={0}）"
-
-#: apps/wiki/src/routes/login-page.tsx:182
+#: apps/wiki/src/routes/login-page.tsx:186
 msgid "验证码已发送，请查收邮箱（含垃圾邮件箱）。"
 msgstr "验证码已发送，请查收邮箱（含垃圾邮件箱）。"
 
-#: apps/wiki/src/routes/login-page.tsx:208
-msgid "邮箱"
-msgstr "邮箱"
+#: apps/wiki/src/routes/login-page.tsx:220
+msgid "you@example.com"
+msgstr "you@example.com"
 
-#: apps/wiki/src/routes/login-page.tsx:219
+#: apps/wiki/src/routes/login-page.tsx:223
 msgid "验证码"
 msgstr "验证码"
 
-#: apps/wiki/src/routes/login-page.tsx:219
-msgid "6 位数字，10 分钟内有效"
-msgstr "6 位数字，10 分钟内有效"
-
-#: apps/wiki/src/routes/login-page.tsx:237
-msgid "{cooldown}s 后重发"
-msgstr "{cooldown}s 后重发"
-
-#: apps/wiki/src/routes/login-page.tsx:239
-msgid "发送中..."
-msgstr "发送中..."
-
-#: apps/wiki/src/routes/login-page.tsx:240
-msgid "发送验证码"
-msgstr "发送验证码"
-
-#: apps/wiki/src/routes/login-page.tsx:252
+#: apps/wiki/src/routes/login-page.tsx:257
 msgid "登录 / 注册"
 msgstr "登录 / 注册"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:59
-#: apps/wiki/src/routes/pending-reviews-page.tsx:68
-#: apps/wiki/src/routes/pending-reviews-page.tsx:79
+#. placeholder {0}: recordQ.data.name
+#. placeholder {0}: row.name
+#: apps/wiki/src/routes/my-character-edit-page.tsx:151
+#: apps/wiki/src/routes/my-characters-page.tsx:217
+msgid "确认删除「{0}」？此操作无法撤销。"
+msgstr "确认删除「{0}」？此操作无法撤销。"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:160
+#: apps/wiki/src/routes/my-character-edit-page.tsx:176
+#: apps/wiki/src/routes/my-character-edit-page.tsx:183
+#: apps/wiki/src/routes/my-character-edit-page.tsx:280
+#: apps/wiki/src/routes/my-characters-page.tsx:97
+#: apps/wiki/src/routes/my-characters-page.tsx:118
+#: apps/wiki/src/routes/my-drafts-page.tsx:83
+#: apps/wiki/src/routes/my-drafts-page.tsx:143
+msgid "我的"
+msgstr "我的"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:160
+#: apps/wiki/src/routes/my-character-edit-page.tsx:176
+#: apps/wiki/src/routes/my-character-edit-page.tsx:183
+#: apps/wiki/src/routes/my-drafts-page.tsx:131
+msgid "私有角色"
+msgstr "私有角色"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:162
+#: apps/wiki/src/routes/my-characters-page.tsx:102
+#: apps/wiki/src/routes/my-drafts-page.tsx:88
+#: apps/wiki/src/routes/watchlist-page.tsx:40
+msgid "请先 <0>登录</0> 后再使用此功能。"
+msgstr "请先 <0>登录</0> 后再使用此功能。"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:197
+msgid "← 返回列表"
+msgstr "← 返回列表"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:214
+#: apps/wiki/src/routes/my-characters-page.tsx:298
+msgid "导出中…"
+msgstr "导出中…"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:216
+msgid "📤 导出 JSON"
+msgstr "📤 导出 JSON"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:226
+#: apps/wiki/src/routes/my-characters-page.tsx:307
+#: apps/wiki/src/routes/my-drafts-page.tsx:287
+msgid "🗑 删除"
+msgstr "🗑 删除"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:281
+msgid "新建私有角色"
+msgstr "新建私有角色"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:281
+msgid "编辑私有角色"
+msgstr "编辑私有角色"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:283
+msgid "这里保存的内容仅你可见。同名再导入会覆盖。点击「导出」下载 JSON，可在 app 端导入到你的世界。模块布局完全对齐隐界后台。"
+msgstr "这里保存的内容仅你可见。同名再导入会覆盖。点击「导出」下载 JSON，可在 app 端导入到你的世界。模块布局完全对齐隐界后台。"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:358
+msgid "💾 保存修改"
+msgstr "💾 保存修改"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:359
+msgid "保存中…"
+msgstr "保存中…"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:362
+msgid "保存后会跳到编辑页继续完善"
+msgstr "保存后会跳到编辑页继续完善"
+
+#: apps/wiki/src/routes/my-character-edit-page.tsx:363
+msgid "同名再导入会覆盖此角色"
+msgstr "同名再导入会覆盖此角色"
+
+#. placeholder {0}: res.record.name
+#: apps/wiki/src/routes/my-characters-page.tsx:54
+msgid "已覆盖同名角色：{0}"
+msgstr "已覆盖同名角色：{0}"
+
+#. placeholder {0}: res.record.name
+#: apps/wiki/src/routes/my-characters-page.tsx:55
+msgid "已导入新角色：{0}"
+msgstr "已导入新角色：{0}"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:99
+msgid "登录后即可创建和管理只属于你自己的角色。"
+msgstr "登录后即可创建和管理只属于你自己的角色。"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:121
+msgid "这里的角色不会出现在公开词条目录，也不走巡查审核流。你可以创建、编辑、导出 JSON，或上传一个 JSON 文件覆盖同名角色。导出的 JSON 文件可在 app 端直接导入到你的世界。"
+msgstr "这里的角色不会出现在公开词条目录，也不走巡查审核流。你可以创建、编辑、导出 JSON，或上传一个 JSON 文件覆盖同名角色。导出的 JSON 文件可在 app 端直接导入到你的世界。"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:139
+#: apps/wiki/src/routes/my-characters-page.tsx:190
+msgid "导入中…"
+msgstr "导入中…"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:141
+msgid "📥 导入文件"
+msgstr "📥 导入文件"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:149
+msgid "✨ 新建角色"
+msgstr "✨ 新建角色"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:168
+msgid "还没有任何私有角色"
+msgstr "还没有任何私有角色"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:171
+msgid "从零创建一个完全属于你自己的角色，或者上传一份从其它世界导出的 JSON 文件来快速开始。"
+msgstr "从零创建一个完全属于你自己的角色，或者上传一份从其它世界导出的 JSON 文件来快速开始。"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:182
+msgid "✨ 新建第一个角色"
+msgstr "✨ 新建第一个角色"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:192
+msgid "📥 导入 JSON 文件"
+msgstr "📥 导入 JSON 文件"
+
+#. placeholder {0}: items.length
+#: apps/wiki/src/routes/my-characters-page.tsx:203
+msgid "共 {0} 个角色"
+msgstr "共 {0} 个角色"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:263
+#: apps/wiki/src/routes/my-drafts-page.tsx:266
+msgid "更新于"
+msgstr "更新于"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:295
+msgid "导出此角色 JSON"
+msgstr "导出此角色 JSON"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:298
+msgid "📤 导出"
+msgstr "📤 导出"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:304
+msgid "删除此角色"
+msgstr "删除此角色"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:51
+msgid "已删除草稿"
+msgstr "已删除草稿"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:60
+msgid "草稿已被其它会话删除，已为你刷新列表。"
+msgstr "草稿已被其它会话删除，已为你刷新列表。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:85
+msgid "登录后即可查看自己未提交的角色草稿。"
+msgstr "登录后即可查看自己未提交的角色草稿。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:121
+msgid "确认删除「{label}」？此操作无法撤销。"
+msgstr "确认删除「{label}」？此操作无法撤销。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:128
+#: apps/wiki/src/routes/pending-reviews-page.tsx:107
+#: apps/wiki/src/routes/pending-reviews-page.tsx:119
+#: apps/wiki/src/routes/pending-reviews-page.tsx:130
+msgid "全部"
+msgstr "全部"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:136
+#: apps/wiki/src/routes/my-drafts-page.tsx:261
+msgid "Wiki 公开"
+msgstr "Wiki 公开"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:146
+msgid "点「AI 一键生成全部」后，无论你是否离开页面，生成完的内容都会自动保存到这里。仅你自己可见。"
+msgstr "点「AI 一键生成全部」后，无论你是否离开页面，生成完的内容都会自动保存到这里。仅你自己可见。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:161
+msgid "还没有任何草稿"
+msgstr "还没有任何草稿"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:164
+msgid "在「新建私有角色」或「创建 wiki 角色」页填好基础字段后，点顶部的「✨ AI 一键生成全部」，AI 跑完后会自动保存一份草稿到这里。"
+msgstr "在「新建私有角色」或「创建 wiki 角色」页填好基础字段后，点顶部的「✨ AI 一键生成全部」，AI 跑完后会自动保存一份草稿到这里。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:175
+msgid "✨ 新建私有角色"
+msgstr "✨ 新建私有角色"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:181
+msgid "创建 wiki 角色"
+msgstr "创建 wiki 角色"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:211
+msgid "当前筛选下没有草稿。"
+msgstr "当前筛选下没有草稿。"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:259
+msgid "私有"
+msgstr "私有"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:268
+msgid "由 AI 一键生成自动保存"
+msgstr "由 AI 一键生成自动保存"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:278
+msgid "恢复编辑"
+msgstr "恢复编辑"
+
+#: apps/wiki/src/routes/my-drafts-page.tsx:287
+msgid "删除中…"
+msgstr "删除中…"
+
+#: apps/wiki/src/routes/pending-reviews-page.tsx:67
+#: apps/wiki/src/routes/pending-reviews-page.tsx:82
+#: apps/wiki/src/routes/pending-reviews-page.tsx:91
 msgid "审核"
 msgstr "审核"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:61
-#: apps/wiki/src/routes/watchlist-page.tsx:40
-msgid "请先登录。"
-msgstr "请先登录。"
+#: apps/wiki/src/routes/pending-reviews-page.tsx:69
+msgid "请先 <0>登录</0> 后再访问待审编辑队列。"
+msgstr "请先 <0>登录</0> 后再访问待审编辑队列。"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:70
+#: apps/wiki/src/routes/pending-reviews-page.tsx:84
 msgid "仅巡查员及以上可访问待审编辑队列。"
 msgstr "仅巡查员及以上可访问待审编辑队列。"
 
 #. placeholder {0}: items.length
-#: apps/wiki/src/routes/pending-reviews-page.tsx:82
+#: apps/wiki/src/routes/pending-reviews-page.tsx:94
 msgid "待审编辑（{0}）"
 msgstr "待审编辑（{0}）"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:86
+#: apps/wiki/src/routes/pending-reviews-page.tsx:98
 msgid "所有等待巡查的提交。可按操作类型、修订类型、风险等级筛选；快速通过 / 要求修改 / 驳回。"
 msgstr "所有等待巡查的提交。可按操作类型、修订类型、风险等级筛选；快速通过 / 要求修改 / 驳回。"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:91
+#: apps/wiki/src/routes/pending-reviews-page.tsx:103
 msgid "操作"
 msgstr "操作"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:95
-#: apps/wiki/src/routes/pending-reviews-page.tsx:107
-#: apps/wiki/src/routes/pending-reviews-page.tsx:118
-msgid "全部"
-msgstr "全部"
-
-#: apps/wiki/src/routes/pending-reviews-page.tsx:96
+#: apps/wiki/src/routes/pending-reviews-page.tsx:108
 msgid "创建"
 msgstr "创建"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:99
+#: apps/wiki/src/routes/pending-reviews-page.tsx:111
 msgid "恢复"
 msgstr "恢复"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:108
+#: apps/wiki/src/routes/pending-reviews-page.tsx:120
 msgid "档案"
 msgstr "档案"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:109
+#: apps/wiki/src/routes/pending-reviews-page.tsx:121
 msgid "逻辑"
 msgstr "逻辑"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:110
+#: apps/wiki/src/routes/pending-reviews-page.tsx:122
 msgid "生命周期"
 msgstr "生命周期"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:114
+#: apps/wiki/src/routes/pending-reviews-page.tsx:126
 msgid "风险"
 msgstr "风险"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:119
+#: apps/wiki/src/routes/pending-reviews-page.tsx:131
 msgid "低风险"
 msgstr "低风险"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:132
+#: apps/wiki/src/routes/pending-reviews-page.tsx:144
 msgid "没有符合筛选条件的待审项。试试清空筛选。"
 msgstr "没有符合筛选条件的待审项。试试清空筛选。"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:133
+#: apps/wiki/src/routes/pending-reviews-page.tsx:145
 msgid "待审队列为空，喘口气吧 ☕。"
 msgstr "待审队列为空，喘口气吧 ☕。"
 
-#. placeholder {0}: rev.editorUserId
-#. placeholder {1}: rev.editorRoleAtTime
-#. placeholder {2}: formatDateTime(rev.createdAt)
-#: apps/wiki/src/routes/pending-reviews-page.tsx:229
-msgid "由 {0}（{1}）提交于 {2}"
-msgstr "由 {0}（{1}）提交于 {2}"
+#. placeholder {0}: rev.editorRoleAtTime
+#. placeholder {1}: formatDateTime(rev.createdAt)
+#: apps/wiki/src/routes/pending-reviews-page.tsx:246
+msgid "由 {editorName}（{0}）提交于 {1}"
+msgstr "由 {editorName}（{0}）提交于 {1}"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:239
+#: apps/wiki/src/routes/pending-reviews-page.tsx:256
 msgid "摘要"
 msgstr "摘要"
 
 #. placeholder {0}: rev.diffFromParent?.changed?.join(", ") ?? "—"
-#: apps/wiki/src/routes/pending-reviews-page.tsx:245
+#: apps/wiki/src/routes/pending-reviews-page.tsx:262
 msgid "改动字段：{0}"
 msgstr "改动字段：{0}"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:258
+#: apps/wiki/src/routes/pending-reviews-page.tsx:275
 msgid "查看完整快照"
 msgstr "查看完整快照"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:275
+#: apps/wiki/src/routes/pending-reviews-page.tsx:292
 msgid "审核备注（可选）"
 msgstr "审核备注（可选）"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:276
+#: apps/wiki/src/routes/pending-reviews-page.tsx:293
 msgid "留给提交者的反馈。要求修改 / 驳回时建议填写"
 msgstr "留给提交者的反馈。要求修改 / 驳回时建议填写"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:281
+#: apps/wiki/src/routes/pending-reviews-page.tsx:298
 msgid "例如：请补充背景说明"
 msgstr "例如：请补充背景说明"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:292
+#: apps/wiki/src/routes/pending-reviews-page.tsx:310
 msgid "✓ 通过"
 msgstr "✓ 通过"
 
-#: apps/wiki/src/routes/pending-reviews-page.tsx:300
+#: apps/wiki/src/routes/pending-reviews-page.tsx:319
 msgid "要求修改"
 msgstr "要求修改"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:41
+#: apps/wiki/src/routes/recent-changes-page.tsx:46
 msgid "动态"
 msgstr "动态"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:44
+#: apps/wiki/src/routes/recent-changes-page.tsx:49
 msgid "所有词条的提交、生命周期变更与审核流转。巡查员可以勾选\"仅看待巡查\"筛掉已巡查项。"
 msgstr "所有词条的提交、生命周期变更与审核流转。巡查员可以勾选\"仅看待巡查\"筛掉已巡查项。"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:55
+#: apps/wiki/src/routes/recent-changes-page.tsx:60
 msgid "仅看待巡查"
 msgstr "仅看待巡查"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:68
+#: apps/wiki/src/routes/recent-changes-page.tsx:73
 msgid "所有变更都已巡查 ✅。取消勾选可看完整列表。"
 msgstr "所有变更都已巡查 ✅。取消勾选可看完整列表。"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:69
+#: apps/wiki/src/routes/recent-changes-page.tsx:74
 msgid "暂无变更。"
 msgstr "暂无变更。"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:135
+#: apps/wiki/src/routes/recent-changes-page.tsx:143
 msgid "小修改"
 msgstr "小修改"
 
-#. placeholder {0}: rev.editorUserId
-#. placeholder {1}: rev.editorRoleAtTime
-#. placeholder {2}: formatDateTime(rev.createdAt)
-#: apps/wiki/src/routes/recent-changes-page.tsx:140
-msgid "{0}（{1}） · {2}"
-msgstr "{0}（{1}） · {2}"
+#. placeholder {0}: rev.editorRoleAtTime
+#. placeholder {1}: formatDateTime(rev.createdAt)
+#: apps/wiki/src/routes/recent-changes-page.tsx:148
+msgid "{editorName}（{0}） · {1}"
+msgstr "{editorName}（{0}） · {1}"
 
-#: apps/wiki/src/routes/recent-changes-page.tsx:161
+#: apps/wiki/src/routes/recent-changes-page.tsx:170
 msgid "标记已巡查"
 msgstr "标记已巡查"
 
@@ -1956,6 +2669,10 @@ msgstr "两次输入的密码不一致"
 #: apps/wiki/src/routes/register-page.tsx:54
 msgid "新账号默认为「新人」。提交的编辑需经巡查员审核后生效；累积达标后会自动晋升为「自动确认」。"
 msgstr "新账号默认为「新人」。提交的编辑需经巡查员审核后生效；累积达标后会自动晋升为「自动确认」。"
+
+#: apps/wiki/src/routes/register-page.tsx:59
+msgid "用户名"
+msgstr "用户名"
 
 #: apps/wiki/src/routes/register-page.tsx:59
 msgid "≥ 2 字"
@@ -1997,30 +2714,34 @@ msgstr "搜索词条"
 msgid "搜索中..."
 msgstr "搜索中..."
 
+#: apps/wiki/src/routes/search-page.tsx:29
+msgid "搜索请求失败，请稍后重试。"
+msgstr "搜索请求失败，请稍后重试。"
+
 #. placeholder {0}: resultsQ.data?.length ?? 0
-#: apps/wiki/src/routes/search-page.tsx:28
+#: apps/wiki/src/routes/search-page.tsx:30
 msgid "命中 {0} 条相关词条"
 msgstr "命中 {0} 条相关词条"
 
-#: apps/wiki/src/routes/search-page.tsx:30
+#: apps/wiki/src/routes/search-page.tsx:32
 msgid "在顶栏的搜索框输入关键字，按回车进行搜索。系统会按词条名、关系、简介与画像字段全文检索。"
 msgstr "在顶栏的搜索框输入关键字，按回车进行搜索。系统会按词条名、关系、简介与画像字段全文检索。"
 
-#: apps/wiki/src/routes/search-page.tsx:35
+#: apps/wiki/src/routes/search-page.tsx:37
 msgid "请在顶栏输入关键字开始搜索。"
 msgstr "请在顶栏输入关键字开始搜索。"
 
-#: apps/wiki/src/routes/search-page.tsx:43
+#: apps/wiki/src/routes/search-page.tsx:45
 msgid "没有匹配的词条。换个关键字试试，或检查是否有拼写错误。"
 msgstr "没有匹配的词条。换个关键字试试，或检查是否有拼写错误。"
 
 #. placeholder {0}: Math.round(r.score * 100) / 100
-#: apps/wiki/src/routes/search-page.tsx:65
+#: apps/wiki/src/routes/search-page.tsx:69
 msgid "相关度 {0}"
 msgstr "相关度 {0}"
 
 #: apps/wiki/src/routes/watchlist-page.tsx:35
-#: apps/wiki/src/routes/watchlist-page.tsx:48
+#: apps/wiki/src/routes/watchlist-page.tsx:54
 msgid "个人"
 msgstr "个人"
 
@@ -2028,27 +2749,98 @@ msgstr "个人"
 msgid "登录后即可关注词条并查看最新动态。"
 msgstr "登录后即可关注词条并查看最新动态。"
 
-#: apps/wiki/src/routes/watchlist-page.tsx:51
+#: apps/wiki/src/routes/watchlist-page.tsx:57
 msgid "左侧是你正在观察的所有词条；右侧汇总它们的最新版本与讨论动态。在词条页右上角点击 ⭐ 关注/取消关注。"
 msgstr "左侧是你正在观察的所有词条；右侧汇总它们的最新版本与讨论动态。在词条页右上角点击 ⭐ 关注/取消关注。"
 
-#: apps/wiki/src/routes/watchlist-page.tsx:57
+#: apps/wiki/src/routes/watchlist-page.tsx:63
 msgid "观察的词条"
 msgstr "观察的词条"
 
-#: apps/wiki/src/routes/watchlist-page.tsx:66
+#: apps/wiki/src/routes/watchlist-page.tsx:72
 msgid "还没有观察任何词条。打开任意角色页，点击右上角的 ⭐ 关注按钮即可加入。"
 msgstr "还没有观察任何词条。打开任意角色页，点击右上角的 ⭐ 关注按钮即可加入。"
 
 #. placeholder {0}: formatDate(entry.addedAt)
-#: apps/wiki/src/routes/watchlist-page.tsx:97
+#: apps/wiki/src/routes/watchlist-page.tsx:103
 msgid "自 {0}"
 msgstr "自 {0}"
 
-#: apps/wiki/src/routes/watchlist-page.tsx:109
+#: apps/wiki/src/routes/watchlist-page.tsx:115
 msgid "最新动态"
 msgstr "最新动态"
 
-#: apps/wiki/src/routes/watchlist-page.tsx:116
+#: apps/wiki/src/routes/watchlist-page.tsx:122
 msgid "观察的词条暂无更新。"
 msgstr "观察的词条暂无更新。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:91
+msgid "修改已直接生效（autoconfirmed / patroller / admin 通道）"
+msgstr "修改已直接生效（autoconfirmed / patroller / admin 通道）"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:92
+msgid "修改已提交，等待巡查员审核（涉及高风险字段时 patroller 必审）"
+msgstr "修改已提交，等待巡查员审核（涉及高风险字段时 patroller 必审）"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:115
+msgid "← 返回角色页"
+msgstr "← 返回角色页"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:121
+#: apps/wiki/src/routes/world-character-edit-page.tsx:136
+#: apps/wiki/src/routes/world-character-edit-page.tsx:143
+msgid "世界角色"
+msgstr "世界角色"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:123
+msgid "请先 <0>登录</0> 后再编辑角色。"
+msgstr "请先 <0>登录</0> 后再编辑角色。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:146
+msgid "加载失败"
+msgstr "加载失败"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:159
+#: apps/wiki/src/routes/world-character-edit-page.tsx:235
+msgid "编辑世界角色"
+msgstr "编辑世界角色"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:163
+msgid "该词条仍在待创建评审中，patroller 通过后才能进入编辑流。请回到角色页查看当前提交的快照。"
+msgstr "该词条仍在待创建评审中，patroller 通过后才能进入编辑流。请回到角色页查看当前提交的快照。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:183
+msgid "编辑摘要至少 10 字（高风险改动评审需要）"
+msgstr "编辑摘要至少 10 字（高风险改动评审需要）"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:192
+msgid "编辑摘要"
+msgstr "编辑摘要"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:195
+msgid "≥10 字。说明本次改动的目的；patroller 会在审核队列看到这一行。"
+msgstr "≥10 字。说明本次改动的目的；patroller 会在审核队列看到这一行。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:201
+msgid "例如：补充底层逻辑，加入对话节奏的具体引导"
+msgstr "例如：补充底层逻辑，加入对话节奏的具体引导"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:219
+msgid "小修改（错别字 / 格式调整等）"
+msgstr "小修改（错别字 / 格式调整等）"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:222
+msgid "注意：本编辑器对接 wiki 评审/补丁队列。涉及 prompting / memorySeed / tone / expertise / publishMapping / realityLink / lifeStrategy / reasoning 的改动 = 高风险，需要 patroller 审核才能合并；其他低风险的 内容改动可能根据你的 rank 自动通过。"
+msgstr "注意：本编辑器对接 wiki 评审/补丁队列。涉及 prompting / memorySeed / tone / expertise / publishMapping / realityLink / lifeStrategy / reasoning 的改动 = 高风险，需要 patroller 审核才能合并；其他低风险的 内容改动可能根据你的 rank 自动通过。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:237
+msgid "和私有角色用同一套 6-section 编辑器，但保存后会作为 wiki 评审稿提交，patroller 通过才合并到 stable 版本。"
+msgstr "和私有角色用同一套 6-section 编辑器，但保存后会作为 wiki 评审稿提交，patroller 通过才合并到 stable 版本。"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:274
+msgid "📝 提交编辑（进评审）"
+msgstr "📝 提交编辑（进评审）"
+
+#: apps/wiki/src/routes/world-character-edit-page.tsx:279
+msgid "提交后进评审队列，通过后合并"
+msgstr "提交后进评审队列，通过后合并"

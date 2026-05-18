@@ -26,7 +26,10 @@ import {
   setGroupPinned,
   updateGroupPreferences,
   type ConversationListItem,
+  type GroupMessage,
+  type Message,
 } from "@yinjie/contracts";
+import { upsertServerMessageInCache } from "../features/chat/chat-message-delivery";
 import {
   BellOff,
   BellRing,
@@ -46,6 +49,7 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 
 import { AvatarChip } from "../components/avatar-chip";
+import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { SparkBadge } from "../components/spark-badge";
@@ -87,6 +91,7 @@ import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entri
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { normalizePathname } from "../lib/normalize-pathname";
 import {
+  getConversationDisplayTitle,
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
 } from "../lib/conversation-preview";
@@ -94,6 +99,7 @@ import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { onChatMessage, onConversationUpdated } from "../lib/socket";
 
 type QuickActionItem = {
@@ -225,13 +231,22 @@ function MobileChatListPage() {
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders, clearReminder, clearReminders } = useMessageReminders();
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
+  const quickMenuRef = useRef<HTMLDivElement | null>(null);
   const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
     useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  // 失败 toast 必须能跟成功 toast 在样式上区分（红 vs 蓝），不然
+  // pin/mute/markRead/delete 出错时用户看到的"操作失败请稍后再试"和成功
+  // 提示用同一个 info 蓝条，肉眼几乎无差别 —— 用户以为操作生效了。
+  const [notice, setNotice] = useState<
+    { message: string; tone: "info" | "danger" } | null
+  >(null);
+  const setNoticeInfo = (message: string) =>
+    setNotice({ message, tone: "info" });
+  const setNoticeError = (message: string) =>
+    setNotice({ message, tone: "danger" });
   const [openSwipeConversationId, setOpenSwipeConversationId] = useState<
     string | null
   >(null);
-  const [swipeResetVersion, setSwipeResetVersion] = useState(0);
   const [pendingHideConversation, setPendingHideConversation] =
     useState<PendingHideConversation | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
@@ -288,7 +303,10 @@ function MobileChatListPage() {
     navigateToReminder: (entry) => {
       void navigate(buildChatReminderNavigation(entry));
     },
-    onNoticeChange: setNotice,
+    // useChatReminderActions 不区分 info/danger，统一当 info 蓝条；reminder
+    // 完成/出错回执都不是 mutation 级别的 hard fail，info 已经够提示。
+    onNoticeChange: (message) =>
+      message ? setNoticeInfo(message) : setNotice(null),
     onCompleteReminder: clearReminder,
   });
   const visibleConversations = useMemo(
@@ -312,11 +330,16 @@ function MobileChatListPage() {
     }
   }, [hasNotifiedReminderGroup, isNotifiedReminderGroupExpanded]);
 
-  const hasConversations =
-    reminderEntries.length > 0 ||
+  // 「下方会话列表 section 该不该渲染」只看真正会塞进 section 的三类条目；
+  // reminderEntries 走单独的「消息提醒」section（line 1020 起），不应该
+  // 撑起一张空的会话 section。否则用户「只有提醒、没有会话」时下面就会
+  // 多出一条 border-y 包着的空白横条。
+  const hasConversationSectionContent =
     visibleConversations.length > 0 ||
     serviceConversations.length > 0 ||
     showSubscriptionInboxItem;
+  const hasConversations =
+    reminderEntries.length > 0 || hasConversationSectionContent;
   const hasConversationLoadError =
     conversationsQuery.isError && conversationsQuery.error instanceof Error;
   const hasMessageEntriesError =
@@ -325,30 +348,33 @@ function MobileChatListPage() {
   // optimistic helper: 把单个 conversation 的某些字段就地 patch，遍历所有
   // ["app-conversations", baseUrl, ...] 形态的 cache（含 hash 后缀的变种）。
   // 公网隧道 ~600ms RTT 下，pin/mute 不做 optimistic 会让用户看到 600ms 后
-  // 才有 UI 反应。
+  // 才有 UI 反应。reorder=true 时按后端的排序规则
+  // （isPinned → pinnedAt desc → lastActivityAt desc）就地重排，避免 pin
+  // 之后会话留在原位置 600ms 才跳到顶部。
+  //
+  // 不再返回完整 snapshot —— 之前 onError 把整张 conversations cache 全覆盖
+  // 回去，并发场景下（pin A 还在飞 → mute B / pin C 又乐观跑了 → pin A 失败）
+  // 会把 B / C 的乐观更新一起冲掉，红心闪回旧态。改为 onError 在调用端拿
+  // 旧字段值反向 patch 那一条，对其他行零影响（参见 discover-feed-page
+  // likeMutation 同款修复）。
   const patchConversationCache = async (
     conversationId: string,
     patch: (item: ConversationListItem) => ConversationListItem,
+    options?: { reorder?: boolean },
   ) => {
     await queryClient.cancelQueries({
       queryKey: ["app-conversations", baseUrl],
     });
-    const snapshots = queryClient.getQueriesData<ConversationListItem[]>({
-      queryKey: ["app-conversations", baseUrl],
-    });
-    snapshots.forEach(([key, data]) => {
-      if (!data) return;
-      queryClient.setQueryData<ConversationListItem[]>(
-        key,
-        data.map((item) => (item.id === conversationId ? patch(item) : item)),
-      );
-    });
-    return snapshots;
-  };
-  const restoreConversationCache = (
-    snapshots: ReturnType<typeof queryClient.getQueriesData<ConversationListItem[]>>,
-  ) => {
-    snapshots.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    queryClient.setQueriesData<ConversationListItem[]>(
+      { queryKey: ["app-conversations", baseUrl] },
+      (data) => {
+        if (!data) return data;
+        const next = data.map((item) =>
+          item.id === conversationId ? patch(item) : item,
+        );
+        return options?.reorder ? sortConversationsByBackendOrder(next) : next;
+      },
+    );
   };
 
   const pinMutation = useMutation({
@@ -366,31 +392,75 @@ function MobileChatListPage() {
         : setConversationPinned(conversationId, { pinned }, baseUrl),
     onMutate: async (variables) => {
       const now = new Date().toISOString();
-      const snapshots = await patchConversationCache(
+      // 记下这一条 conv 改前的 isPinned / pinnedAt，onError 单独翻回去；
+      // 全 snapshot rollback 会把并发的 mute/pin 一起冲掉，避坑。
+      let previousPinned: boolean | undefined;
+      let previousPinnedAt: string | null | undefined;
+      const cached = queryClient.getQueriesData<ConversationListItem[]>({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      for (const [, data] of cached) {
+        if (!data) continue;
+        const found = data.find((item) => item.id === variables.conversationId);
+        if (found) {
+          previousPinned = found.isPinned;
+          previousPinnedAt = found.pinnedAt ?? null;
+          break;
+        }
+      }
+      await patchConversationCache(
         variables.conversationId,
         (item) => ({
           ...item,
           isPinned: variables.pinned,
           pinnedAt: variables.pinned ? now : undefined,
         }),
+        { reorder: true },
       );
-      return { snapshots };
+      return { previousPinned, previousPinnedAt };
     },
-    onError: (_err, _variables, context) => {
-      if (context?.snapshots) restoreConversationCache(context.snapshots);
+    onError: (error, variables, context) => {
+      if (context && context.previousPinned !== undefined) {
+        void patchConversationCache(
+          variables.conversationId,
+          (item) => ({
+            ...item,
+            isPinned: context.previousPinned!,
+            pinnedAt: context.previousPinnedAt ?? undefined,
+          }),
+          { reorder: true },
+        );
+      }
+      // optimistic 已回滚，但用户看不到任何反馈：列表里 pin 状态默默闪回原样。
+      // 公网隧道偶发超时 / cloud token 过期重连那几百 ms 都会触发，必须给个 toast，
+      // 否则用户以为"系统忽略了我的点击"。
+      setNoticeError(
+        error instanceof Error && error.message
+          ? error.message
+          : variables.pinned
+            ? t(msg`置顶失败，请稍后再试。`)
+            : t(msg`取消置顶失败，请稍后再试。`),
+      );
     },
-    onSuccess: async (_, variables) => {
-      setNotice(
+    onSuccess: (_, variables) => {
+      setNoticeInfo(
         variables.pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：原版 `await Promise.all([invalidate(app-conversations),
+      // invalidate(app-group)])` 让 pinMutation.isPending 一直撑到这两条 GET
+      // refetch 回来（公网隧道 ~600ms RTT × 2 路并发 ≈ 600ms）。但 line ~1442
+      // 把 pinMutation.isPending && variables.conversationId === conversation.id
+      // 塞进 `pending` prop，pending 真值时这一行 `pointer-events-none opacity-70`
+      // —— 用户刚 pin 完想进群聊看消息，这行有近 1s 没法点击，看着像"卡死"。
+      // optimistic 已经在 onMutate 里走 patchConversationCache(... reorder:true)
+      // 把 cache + 排序就地改了，invalidate 只是兜底服务端 canonical，不必 await。
+      // 同 group-chat-details-page leaveMutation/hideMutation 本会话 R1 / R3 改法。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
   const muteMutation = useMutation({
@@ -408,33 +478,58 @@ function MobileChatListPage() {
         : setConversationMuted(conversationId, { muted }, baseUrl),
     onMutate: async (variables) => {
       const now = new Date().toISOString();
-      const snapshots = await patchConversationCache(
-        variables.conversationId,
-        (item) => ({
+      let previousMuted: boolean | undefined;
+      let previousMutedAt: string | null | undefined;
+      const cached = queryClient.getQueriesData<ConversationListItem[]>({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      for (const [, data] of cached) {
+        if (!data) continue;
+        const found = data.find((item) => item.id === variables.conversationId);
+        if (found) {
+          previousMuted = found.isMuted;
+          previousMutedAt = found.mutedAt ?? null;
+          break;
+        }
+      }
+      await patchConversationCache(variables.conversationId, (item) => ({
+        ...item,
+        isMuted: variables.muted,
+        mutedAt: variables.muted ? now : undefined,
+      }));
+      return { previousMuted, previousMutedAt };
+    },
+    onError: (error, variables, context) => {
+      if (context && context.previousMuted !== undefined) {
+        void patchConversationCache(variables.conversationId, (item) => ({
           ...item,
-          isMuted: variables.muted,
-          mutedAt: variables.muted ? now : undefined,
-        }),
+          isMuted: context.previousMuted!,
+          mutedAt: context.previousMutedAt ?? undefined,
+        }));
+      }
+      setNoticeError(
+        error instanceof Error && error.message
+          ? error.message
+          : variables.muted
+            ? t(msg`开启免打扰失败，请稍后再试。`)
+            : t(msg`关闭免打扰失败，请稍后再试。`),
       );
-      return { snapshots };
     },
-    onError: (_err, _variables, context) => {
-      if (context?.snapshots) restoreConversationCache(context.snapshots);
-    },
-    onSuccess: async (_, variables) => {
-      setNotice(
+    onSuccess: (_, variables) => {
+      setNoticeInfo(
         variables.muted
           ? t(msg`已开启消息免打扰。`)
           : t(msg`已关闭消息免打扰。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：和 pinMutation 同款——原版 await 让 muteMutation.isPending
+      // 一直撑到 invalidate refetch 完，line ~1445 把它接进 `pending` prop 让
+      // 这一行近 1s 不可点击。optimistic 已在 onMutate 改 cache，fire-and-forget。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
   const readStateMutation = useMutation({
@@ -454,20 +549,73 @@ function MobileChatListPage() {
         : action === "read"
           ? markConversationRead(conversationId, baseUrl)
           : markConversationUnread(conversationId, baseUrl),
-    onSuccess: async (_, variables) => {
-      setNotice(
+    // 标已读是日常超高频动作，公网隧道 RTT ~600ms 期间未读 badge 不消失，
+    // 用户会以为点击没生效（pin/mute 已经做了 optimistic，这里没做留了一个
+    // 一致性缺口）。优先 patch "read"→ unreadCount=0 + lastReadAt=now；
+    // "unread" 因为服务端语义（重置到上一条消息前）不好本地纯计算，先不动。
+    onMutate: async (variables) => {
+      if (variables.action !== "read") {
+        return undefined;
+      }
+      const now = new Date().toISOString();
+      let previousUnreadCount: number | undefined;
+      let previousLastReadAt: string | null | undefined;
+      const cached = queryClient.getQueriesData<ConversationListItem[]>({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      for (const [, data] of cached) {
+        if (!data) continue;
+        const found = data.find((item) => item.id === variables.conversationId);
+        if (found) {
+          previousUnreadCount = found.unreadCount;
+          previousLastReadAt = found.lastReadAt ?? null;
+          break;
+        }
+      }
+      await patchConversationCache(variables.conversationId, (item) => ({
+        ...item,
+        unreadCount: 0,
+        lastReadAt: now,
+      }));
+      return { previousUnreadCount, previousLastReadAt };
+    },
+    onError: (error, variables, context) => {
+      if (
+        variables.action === "read" &&
+        context &&
+        context.previousUnreadCount !== undefined
+      ) {
+        void patchConversationCache(variables.conversationId, (item) => ({
+          ...item,
+          unreadCount: context.previousUnreadCount!,
+          lastReadAt: context.previousLastReadAt ?? undefined,
+        }));
+      }
+      setNoticeError(
+        error instanceof Error && error.message
+          ? error.message
+          : variables.action === "read"
+            ? t(msg`标记已读失败，请稍后再试。`)
+            : t(msg`标记未读失败，请稍后再试。`),
+      );
+    },
+    onSuccess: (_, variables) => {
+      setNoticeInfo(
         variables.action === "read"
           ? t(msg`已标记为已读。`)
           : t(msg`已标记为未读。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：和 pinMutation / muteMutation 同款——原版 await 让
+      // readStateMutation.isPending 一直撑到 invalidate 回来（公网隧道 ~600ms
+      // RTT），line ~1448 把它接进 `pending` prop 让这一行近 1s 不可点击。
+      // optimistic 已经在 onMutate 把 unreadCount/lastReadAt 改了；invalidate
+      // 只是兜底服务端 canonical，fire-and-forget。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
 
@@ -483,10 +631,10 @@ function MobileChatListPage() {
       }
 
       if (showSuccessNotice) {
-        setNotice(t(msg`聊天已从列表移除。`));
+        setNoticeInfo(t(msg`聊天已从列表移除。`));
       }
     } catch (error) {
-      setNotice(
+      setNoticeError(
         error instanceof Error
           ? error.message
           : t(msg`聊天移除失败，请稍后再试。`),
@@ -527,9 +675,60 @@ function MobileChatListPage() {
       return;
     }
 
+    // 之前这里还 setSwipeResetVersion((c) => c + 1)，并且把 version 拼进
+    // <ConversationListItemLink key=...>。结果每次进 /tabs/chat（包括首次
+    // 挂载！）都会把所有会话行整体 unmount + remount —— 一遍正常 render
+    // 用 key "0:id" 挂上去，紧接着 effect 立刻把 version 推到 1 又重挂一次。
+    // 行内 ChatItem 已经把 open prop 同步到内部 swipeOffset（参见 useEffect
+    // [open, swipeActionWidth]），父组件这里 setOpenSwipeConversationId(null)
+    // 就够了，不需要再用 key 强制全表重挂。
     setOpenSwipeConversationId(null);
-    setSwipeResetVersion((current) => current + 1);
   }, [isActiveTab]);
+
+  // 「聊天已置顶」「已开启消息免打扰」这类成功提示之前没有 auto-dismiss——
+  // setNotice 后会一直挂在搜索框下面，直到用户下一次操作或离开 tab，看起来
+  // 像未完成的状态。pendingHideConversation 有自己的 5s 撤销窗口，这里只
+  // 给纯文本的 notice 加个 3.5s 自动消失。
+  useEffect(() => {
+    if (!notice || pendingHideConversation) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice, pendingHideConversation]);
+
+  // 点 + 菜单容器之外（顶栏标题、搜索按钮、会话行等）任意位置都关菜单。
+  // 之前用 z-30 fixed overlay 拦 click 会有两个问题：
+  // 1) TabPageTopBar 是 sticky z-40，topbar 内的点击不会冒泡到 overlay；
+  // 2) overlay 覆盖会话行的点击，菜单关闭但会话不会被点开（要点两次）。
+  // 改用 pointerdown 文档级监听 + ref 判断，参考 chat-composer.tsx#885。
+  useEffect(() => {
+    if (!isQuickMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!quickMenuRef.current?.contains(event.target as Node)) {
+        setIsQuickMenuOpen(false);
+      }
+    };
+    // 走查 R2：aria-haspopup="menu" 摆好了但 ESC 完全不起作用。键盘 / 屏幕阅读器
+    // 用户无法 dismiss；移动端虽然没硬键盘，外接键盘 / Bluetooth 也常用。Android
+    // 硬件 Back 已经在下面的 registerAndroidBackInterceptor 兜了，这里只补 ESC。
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsQuickMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isQuickMenuOpen]);
 
   useEffect(() => {
     if (
@@ -542,6 +741,53 @@ function MobileChatListPage() {
     }
   }, [openSwipeConversationId, visibleConversations]);
 
+  // 原生壳硬件 Back 键：在 /tabs/chat 上展开了 + 菜单 / 滑开了会话操作 /
+  // 还在 5s 撤销删除窗口里时，BACK 应当先关掉这些瞬态层，而不是触发"再按
+  // 一次返回退出"的根 tab 默认行为。优先级：撤销删除 > 滑开 > 快捷菜单。
+  useEffect(() => {
+    if (!isActiveTab) {
+      return;
+    }
+    if (!pendingHideConversation && !openSwipeConversationId && !isQuickMenuOpen) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      if (pendingHideConversation) {
+        event.preventDefault();
+        // 直接 inline 撤销逻辑（原来调用的 handleUndoHideConversation 是组件内
+        // function declaration，每次 render 重建一次，按 exhaustive-deps 必须
+        // 进 deps 才不会拿到旧闭包；inline 后 ref / 稳定 setter 直接捕获，
+        // effect 也不必跟着 handler ref 抖动）。
+        if (hideTimeoutRef.current !== null) {
+          window.clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+        pendingHideRef.current = null;
+        setPendingHideConversation(null);
+        setNotice({ message: t(msg`已撤销删除。`), tone: "info" });
+        return true;
+      }
+      if (openSwipeConversationId) {
+        event.preventDefault();
+        setOpenSwipeConversationId(null);
+        return true;
+      }
+      if (isQuickMenuOpen) {
+        event.preventDefault();
+        setIsQuickMenuOpen(false);
+        return true;
+      }
+      return false;
+    });
+    return unregister;
+  }, [
+    isActiveTab,
+    isQuickMenuOpen,
+    openSwipeConversationId,
+    pendingHideConversation,
+    t,
+  ]);
+
   useEffect(() => {
     return () => {
       clearPendingHideTimer();
@@ -552,15 +798,24 @@ function MobileChatListPage() {
         return;
       }
 
+      // 走查 R4：unmount 兜底落库 pending hide。.finally 不接 rejection——
+       // 公网隧道超时 / cloud token 过期 / 服务端 5xx 时 hideGroup/hideConversation
+       // 抛错 → 落 unhandledrejection 污染 telemetry。这条路径在用户离开 tab
+       // 时跑，没地方挂 UI 提示，加 .catch 静默吞掉就好；下次进消息列表
+       // invalidate 一定会重拉 conversations，列表上看不到这条聊天意味着实际
+       // 没被 hide，对用户来说就是"没生效，可以再划一次"，比让 console / 远
+       // 程 telemetry 多一条 unhandled error 更合适。
       void (
         pending.isGroup
           ? hideGroup(pending.conversationId, baseUrl)
           : hideConversation(pending.conversationId, baseUrl)
-      ).finally(() => {
-        void queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
+      )
+        .catch(() => {})
+        .finally(() => {
+          void queryClient.invalidateQueries({
+            queryKey: ["app-conversations", baseUrl],
+          });
         });
-      });
     };
   }, [baseUrl, queryClient]);
 
@@ -573,10 +828,26 @@ function MobileChatListPage() {
         queryKey: ["app-conversations", baseUrl],
       });
     });
-    const offMessage = onChatMessage(() => {
+    const offMessage = onChatMessage((payload) => {
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+      // 直接把新消息写进对应会话的 messages cache：上一版用 invalidate 依赖
+      // 下次 mount 触发 refetch，移动端 staleTime=60s 内 useQuery 可能仍然先
+      // 把旧 cache 返回再后台 refetch → 用户进去先看到旧消息，AI 回复要 RTT
+      // 后才出现。setQueriesData 直接合并新消息，进 chat-room 立刻就在。
+      // partial queryKey 匹配所有 messageLimit 变体（60/100/...）。
+      if ("conversationId" in payload) {
+        queryClient.setQueriesData<Message[]>(
+          { queryKey: ["app-conversation-messages", baseUrl, payload.conversationId] },
+          (current) => upsertServerMessageInCache(current, payload),
+        );
+      } else if ("groupId" in payload) {
+        queryClient.setQueriesData<GroupMessage[]>(
+          { queryKey: ["app-group-messages", baseUrl, payload.groupId] },
+          (current) => upsertServerMessageInCache(current, payload),
+        );
+      }
     });
     return () => {
       offUpdated();
@@ -637,8 +908,21 @@ function MobileChatListPage() {
     setNotice(null);
 
     const currentPending = pendingHideRef.current;
-    if (currentPending) {
+    // 第四轮 R3：同一会话被连点两次「删除」时，原版会把 currentPending（其实
+    // 就是它自己）立刻 commitPendingHideConversation 提交 → server DELETE，再
+    // 重新 setTimeout(5s) 调度同一条 → 5s 后再 DELETE 一次 → 第二次走 404
+    // catch 路径，把刚刚的「聊天已从列表移除」覆盖成「聊天移除失败」红条，
+    // 用户以为没生效但其实早删了。同帧双击时 visibleConversations.filter 还
+    // 没 commit，"删除"按钮仍可点中（行还没消失）。
+    // 仅当 currentPending 不是同一条会话时才 commit（保留"先 A 再 B"的快速
+    // 切换语义），同一条直接 no-op 保留已挂的 5s undo 窗口。
+    if (
+      currentPending &&
+      currentPending.conversationId !== conversation.id
+    ) {
       void commitPendingHideConversation(currentPending, false);
+    } else if (currentPending) {
+      return;
     }
 
     const nextPending: PendingHideConversation = {
@@ -666,9 +950,18 @@ function MobileChatListPage() {
     clearPendingHideTimer();
     pendingHideRef.current = null;
     setPendingHideConversation(null);
-    setNotice(t(msg`已撤销删除。`));
+    setNoticeInfo(t(msg`已撤销删除。`));
   }
 
+  // 第四轮 R1：「清空全部」按钮只挂 onClick={() => void handleClearReminderGroup(...)}，
+  // 无任何双击兜底。clearReminders 内部 Promise.allSettled 一组 mutateAsync 出去，
+  // 同帧第二次 click 也照样把同一份 messageIds 再打一遍 → server 端第二批拿到
+  // 404（第一批已经把 reminder 删干净），clearReminders 把 rejected 抛出来 →
+  // 本函数 catch 走 setNoticeError，把刚刚成功的「已清除 N 条提醒」蓝条覆盖成
+  // 红色失败提示，用户以为没生效。和 chat-message-list 撤回/删除
+  // / chat-details 危险操作的 sync ref 锁同款修法；status 区分锁，让"逾期"和
+  // "已通知"两组互不影响。
+  const clearReminderGroupBusyRef = useRef<Set<string>>(new Set());
   async function handleClearReminderGroup(
     status: "pending" | "due" | "notified",
     messageIds: string[],
@@ -676,50 +969,58 @@ function MobileChatListPage() {
     if (!isChatReminderGroupClearable(status)) {
       return;
     }
+    if (clearReminderGroupBusyRef.current.has(status)) {
+      return;
+    }
 
+    clearReminderGroupBusyRef.current.add(status);
     try {
       await clearReminders(messageIds);
-      setNotice(getChatReminderGroupClearNotice(status, messageIds.length));
+      setNoticeInfo(getChatReminderGroupClearNotice(status, messageIds.length));
     } catch (error) {
-      setNotice(
+      setNoticeError(
         error instanceof Error
           ? error.message
           : getChatReminderGroupClearErrorMessage(status),
       );
+    } finally {
+      clearReminderGroupBusyRef.current.delete(status);
     }
   }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
-      {isQuickMenuOpen ? (
-        <button
-          type="button"
-          aria-label={t(msg`关闭快捷菜单`)}
-          onClick={() => setIsQuickMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-black/[0.03]"
-        />
-      ) : null}
-
       <TabPageTopBar
         title={t(msg`消息`)}
         className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
-          <div className="relative">
+          <div ref={quickMenuRef} className="relative">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
               className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
-              aria-label={t(msg`打开快捷菜单`)}
+              aria-label={
+                isQuickMenuOpen ? t(msg`关闭快捷菜单`) : t(msg`打开快捷菜单`)
+              }
+              aria-expanded={isQuickMenuOpen}
+              aria-haspopup="menu"
             >
               <Plus size={15} strokeWidth={2.4} />
             </Button>
 
             {isQuickMenuOpen ? (
-              <div className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]">
+              // role="menu" + role="menuitem" 对齐 aria-haspopup="menu"。原本
+              // trigger 声明了 menu popup，弹层却没 menu 语义；屏幕阅读器把
+              // 整块当通用 region，听不到「3 个菜单项里第 1 项」之类的导航。
+              <div
+                role="menu"
+                aria-label={t(msg`快捷操作`)}
+                className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]"
+              >
                 {quickActionItems.map((item) => {
                   const Icon = item.icon;
 
@@ -729,6 +1030,7 @@ function MobileChatListPage() {
                       <button
                         key={item.key}
                         type="button"
+                        role="menuitem"
                         onClick={() => handleNavigate(to)}
                         className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                       >
@@ -740,11 +1042,21 @@ function MobileChatListPage() {
                     );
                   }
 
+                  // 走查 R1：跟 contacts-page + 菜单同款，disabled 仍能 Tab 聚焦但
+                  // Enter 没反应；tabIndex=-1 跳过 + aria-label 合并 「暂未开放」让
+                  // 屏阅器一次播报"功能 + 暂未开放"，避免 Tab 进来不知所云。
+                  const disabledItemLabel = item.disabled && item.disabledLabel
+                    ? `${t(item.label)}，${t(item.disabledLabel)}`
+                    : undefined;
                   return (
                     <button
                       key={item.key}
                       type="button"
+                      role="menuitem"
                       disabled={item.disabled}
+                      aria-disabled={item.disabled || undefined}
+                      aria-label={disabledItemLabel}
+                      tabIndex={item.disabled ? -1 : undefined}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                         item.disabled
@@ -827,10 +1139,15 @@ function MobileChatListPage() {
         ) : notice ? (
           <div className="px-3 pt-2">
             <InlineNotice
-              tone="info"
-              className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              tone={notice.tone}
+              className={cn(
+                "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+                notice.tone === "info"
+                  ? "border-[rgba(96,165,250,0.16)]"
+                  : undefined,
+              )}
             >
-              {notice}
+              {notice.message}
             </InlineNotice>
           </div>
         ) : null}
@@ -1087,7 +1404,7 @@ function MobileChatListPage() {
         ) : null}
 
         {!conversationsQuery.isLoading && !hasConversationLoadError ? (
-          hasConversations ? (
+          hasConversationSectionContent ? (
             <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {showSubscriptionInboxItem && subscriptionInboxSummary ? (
                 <SubscriptionInboxCard
@@ -1128,7 +1445,7 @@ function MobileChatListPage() {
 
               {visibleConversations.map((conversation, index) => (
                 <ConversationListItemLink
-                  key={`${swipeResetVersion}:${conversation.id}`}
+                  key={conversation.id}
                   conversation={conversation}
                   localMessageActionState={localMessageActionState}
                   open={openSwipeConversationId === conversation.id}
@@ -1192,7 +1509,14 @@ function MobileChatListPage() {
                 />
               ))}
             </section>
-          ) : (
+          ) : pendingHideConversation || hasConversations ? null : (
+            // pendingHideConversation 在 5s 撤销窗口内同时把 hasConversationSectionContent
+            // 拉成 false——这时上方 InlineNotice 已经在显示「xxx 已从列表移除，5 秒内可
+            // 撤销」，再叠一张「还没有新消息」会误导用户以为永久没了；空态等撤销
+            // 窗口过期或被取消后下一次渲染再补。
+            // hasConversations 但 !hasConversationSectionContent 的场景：用户只有
+            // 「消息提醒」没有任何 conv / service / subscription，提醒 section 已经
+            // 在上方独立渲染，这里再补「还没有新消息」会和已经在列的提醒自相矛盾。
             <div className="px-3 pt-2">
               <MobileChatListStatusCard
                 badge={t(msg`消息`)}
@@ -1330,6 +1654,10 @@ function ConversationListItemLinkImpl({
       emptyText: t(msg`从这里开始第一句问候`),
     },
   );
+  // 服务端 normalizeLegacyConversationEntity 在 title 全部 fallback 失败时
+  // 持久化字面量 "未知联系人" / "Direct conversation"，切到英/日/韩 时仍渲染
+  // 原始中文。这里用本地 i18n 把这两个 sentinel 翻译成当前 locale。
+  const displayTitle = getConversationDisplayTitle(conversation.title);
 
   const updateSwipeOffset = (nextOffset: number) => {
     swipeOffsetRef.current = nextOffset;
@@ -1386,9 +1714,8 @@ function ConversationListItemLinkImpl({
       -swipeActionWidth,
       0,
     );
-    if (Math.abs(deltaX) > 6) {
-      event.preventDefault();
-    }
+    // 容器 `touch-action: pan-y` 已经把横向手势让给了 JS（浏览器只负责竖向滚动），
+    // 之前在 React onTouchMove 里 preventDefault 是 no-op + 控制台噪音，删掉。
     updateSwipeOffset(nextOffset);
   };
 
@@ -1411,16 +1738,30 @@ function ConversationListItemLinkImpl({
         isPinned ? "bg-[#f5f5f5]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
-      <AvatarChip
-        name={conversation.title}
-        src={conversation.avatar}
-        size="wechat"
-      />
+      {/* 群聊和单聊用不同的头像组件——群聊后端没维护 avatar 字段（只有
+          setGroupAvatar 这条没人调用的私有 API），AvatarChip 拿不到 src 就
+          fallback 成"群名首字"单格占位（"林"），跟 /contacts/groups + 通讯录
+          页用的 GroupAvatarChip 2×2 马赛克对不上——同一群在两处入口看见的
+          icon 完全不一样。统一到 GroupAvatarChip，传 participants 让它按
+          memberId 哈希出 4 格马赛克。 */}
+      {isGroupConversation ? (
+        <GroupAvatarChip
+          name={displayTitle}
+          members={conversation.participants}
+          size="wechat"
+        />
+      ) : (
+        <AvatarChip
+          name={displayTitle}
+          src={conversation.avatar}
+          size="wechat"
+        />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
             <div className="truncate text-[14px] font-normal leading-[1.25] text-[color:var(--text-primary)]">
-              {conversation.title}
+              {displayTitle}
             </div>
             <div className="mt-0.5 truncate text-[11px] leading-[1.35] text-[color:var(--text-muted)]">
               {preview.prefix}
@@ -1524,7 +1865,7 @@ function ConversationListItemLinkImpl({
   return (
     <div
       className={cn(
-        "yj-list-item-virtual relative overflow-hidden bg-[#c4c7cc]",
+        "yj-list-item-virtual relative overflow-hidden bg-[#c4c7cc] touch-pan-y",
         className,
       )}
       onTouchStart={handleTouchStart}
@@ -1609,6 +1950,32 @@ const ConversationListItemLink = memo(
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+// 与 api/src/modules/chat/chat.service.ts#listConversations 的排序规则保持一致：
+// isPinned → pinnedAt desc → lastActivityAt desc。optimistic pin/取消置顶时本
+// 地按同样的规则重排，避免会话在客户端留在旧位置直到下一次刷新。
+function sortConversationsByBackendOrder<T extends ConversationListItem>(
+  conversations: T[],
+): T[] {
+  const toMillis = (value: string | null | undefined) => {
+    if (!value) return 0;
+    const ms = Date.parse(value);
+    return Number.isNaN(ms) ? 0 : ms;
+  };
+
+  return [...conversations].sort((left, right) => {
+    if (left.isPinned !== right.isPinned) {
+      return left.isPinned ? -1 : 1;
+    }
+
+    const pinnedDelta = toMillis(right.pinnedAt) - toMillis(left.pinnedAt);
+    if (pinnedDelta !== 0) {
+      return pinnedDelta;
+    }
+
+    return toMillis(right.lastActivityAt) - toMillis(left.lastActivityAt);
+  });
 }
 
 function canConversationBeMarkedUnread(conversation: ConversationListEntry) {

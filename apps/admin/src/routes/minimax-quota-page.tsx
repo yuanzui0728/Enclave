@@ -11,6 +11,8 @@ const MODEL_LABELS: Record<string, string> = {
   "music-2.5": "Music 2.5 (fallback)",
   "image-01": "Image-01 (图像 / 视频封面)",
   lyrics: "Lyrics 生成",
+  "MiniMax-M2.7": "MiniMax M2.7 (Chat LLM)",
+  "speech-02-hd": "Speech 02 HD (语音合成 · 高保真)",
 };
 
 function formatPct(used: number, limit: number): string {

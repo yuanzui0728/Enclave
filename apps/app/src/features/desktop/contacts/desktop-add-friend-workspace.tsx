@@ -759,12 +759,18 @@ function DesktopAddFriendWelcomeState({
         <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
           {t(msg`输入更完整的隐界号能更快命中目标角色，也可以通过角色名和资料关键词查找。`)}
         </div>
+        {/* 走查 R1：原 ["yinjie_1234abcd","白石","数字人","治愈系"] 在现网角色
+            池里全部命中 0：fake yinjie_id 不可能匹配，"白石/数字人/治愈系" 也
+            没有任何角色名 / 资料命中。点示例 = 立刻"没有找到 X"，比没 chip
+            更误导。改用默认 seed 角色高命中关键词：林=13 / 老师=11 / 导师=6 /
+            复盘=6。隐界号格式由顶部 placeholder 承担。同步 mobile-add-friend
+            -page.MobileAddFriendWelcomeState。 */}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {[
-            "yinjie_1234abcd",
-            t(msg`白石`),
-            t(msg`数字人`),
-            t(msg`治愈系`),
+            t(msg`林`),
+            t(msg`老师`),
+            t(msg`导师`),
+            t(msg`复盘`),
           ].map((item) => (
             <SearchExampleChip
               key={item}
@@ -818,8 +824,12 @@ function DesktopAddFriendNoResultsState({
             ? t(msg`这个角色可能已被移除，或者当前世界里还没有同步到该资料。你可以重新搜索其他角色。`)
             : t(msg`请检查隐界号是否完整，或者尝试使用角色名、签名和资料关键词重新搜索。`)}
         </div>
+        {/* 走查 R1：原 ["yinjie_","角色名","关系描述"] 是描述用法的 label 不是
+            可搜的关键词，点 chip 二次搜索仍然落到"没有找到 X"——同一空态原地
+            打转。换成跟 WelcomeState 一致的高命中关键词，至少能从空态导回
+            非空结果列表，让用户看到 add-friend 在哪个方向上是 work 的。 */}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {["yinjie_", t(msg`角色名`), t(msg`关系描述`)].map((item) => (
+          {[t(msg`林`), t(msg`老师`), t(msg`导师`), t(msg`复盘`)].map((item) => (
             <SearchExampleChip
               key={item}
               label={item}

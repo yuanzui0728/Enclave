@@ -3,6 +3,10 @@ import type { CharacterEntity } from './character.entity';
 import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
+//
+// 注：本文件名里的 "FIXED_WORLD" 是历史名字，并不代表"每个 world 必有"这种特殊语义。
+// 它就是 BUILT_IN_CHARACTER_PRESETS 的一个子文件，和 teacher / council / celebrity
+// 等其他子文件平级。统一术语见 `built-in-character-presets.ts` 顶部的三层模型说明。
 const LIN_CHEN_SOURCE_KEY = 'lin_chen_sleep_support';
 const LIN_MIAN_SOURCE_KEY = 'lin_mian_sleep_support';
 const XU_ZHE_SOURCE_KEY = 'xu_zhe_career_growth';

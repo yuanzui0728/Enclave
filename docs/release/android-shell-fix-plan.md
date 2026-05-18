@@ -91,3 +91,38 @@
 
 - 手机 Web 代码已经可以更新进 Android 壳，当前不是“同步失败”问题。
 - 阻塞 Android 发包和真机验证的主要问题在构建环境与 release 配置，不在 WebView 页面代码本身。
+
+## 2026-05-16 彻底适配本轮收尾
+
+完成项：
+
+- 填上 production `runtime.apiBaseUrl` / `socketBaseUrl` 为 `https://1gw06751dd053.vicp.fun`，发版 doctor 现在全绿（仅缺 keystore）。
+- `capacitor.config.json` 补齐 Keyboard `resize: native`、SplashScreen `launchAutoHide: false`、StatusBar `overlaysWebView: false` 等，避免启动白闪和键盘越位。
+- 新增 `apps/app/src/runtime/android-back-button.ts`：
+  - 接入 `@capacitor/app` 的 `backButton` 事件，链式处理 sheet/路由/双击退出。
+  - 暴露 `registerAppStateChangeListener` 给上层订阅前后台切换。
+- 修通 3 个连锁 bug 才让 Back 键真正工作：(1) Capacitor 插件代理被 Promise 解析当作 thenable 追 `.then` 报错，包一层 plain object 绕开；(2) 根 tab 路径写错应当是 `/tabs/chat`；(3) `recordAppNavigation` 之前只在 mobile-web 跑，Capacitor 下 `canSafelyNavigateBack` 永远 false，现已对所有 mobile channel 启用。
+- 5 处主要 input[type=file] 入口（profile-info-avatar / chat-background / group-chat-background / mobile-feed-publish / mobile-moments-publish）接入新增的 `native-image-picker.ts`，原生壳直接拉 Camera/Gallery Intent。
+- `MobileShell` 用 `useKeyboardInset` 把当前键盘高度发布到 `--keyboard-inset` CSS 变量；index.css 加 `.yj-safe-{top,bottom,bottom-with-keyboard,left,right}` 工具类。
+- `run-capacitor.mjs` 在每次 `cap sync` 后剔除 vite-plugin-compression 生成的 *.gz/*.br 文件，否则 Android 资源合并器报 Duplicate resources。
+- 一并修了俩预存在 build 阻塞：`desktop-runtime-guard.tsx` 的 `QueryState.failureCount` → `fetchFailureCount`；`mobile-friend-moments-page.tsx` 的 `useState` 写在了 early return 之后。
+
+真机/模拟器回归（Pixel 9 Pro XL Android emulator）：
+
+- ✅ 冷启动 → 消息 tab，状态栏不挡 WebView
+- ✅ 4 大 tab 切换（消息/通讯录/发现/我）渲染正确，底部 tab bar 处理了 safe-area-inset-bottom
+- ✅ 进入聊天页（二级）→ 显示
+- ✅ 硬件 Back 键：聊天页 → chat list → toast「再按一次返回键退出」→ minimizeApp 到桌面，进程保留
+- ✅ Capacitor 插件加载：@capacitor/app, @capacitor/keyboard 正常注册
+
+未做（emulator 限制）：
+
+- 软键盘真实弹起 / 输入条抬升验证
+- 相机拍照 / 相册选图（模拟器没真实硬件）
+- FCM 推送落地路由
+- 网络切换 / 后台恢复
+
+发版仍缺：
+
+- `apps/android-shell/android-signing.local.properties`（keystore）—— 用户准备后即可 `pnpm android:release:bundle` 出 AAB。
+- 真机走 P2 长链路回归（朋友圈/广场/视频号 等高流量页面 + 输入/语音/相机权限），需用户在真机过一遍。

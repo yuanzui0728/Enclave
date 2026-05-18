@@ -1,4 +1,5 @@
 import { msg } from "@lingui/macro";
+import type { MessageDescriptor } from "@lingui/core";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 
 const t = translateRuntimeMessage;
@@ -15,7 +16,12 @@ export type MiniProgramCategoryId =
 
 export type MiniProgramEntry = {
   id: string;
+  // 立即求值版本，模块加载时拿到当前 locale 的翻译，给搜索索引、URL 等不可变
+  // 场景用。在 UI 渲染场景下，模块若在 catalog hydrate 之前就被 import 进来
+  // （e.g. search-page 触发 search-quick-links），name 会冻在 zh-CN 源串。
+  // 此时优先用 nameMessage 做延迟翻译。
   name: string;
+  nameMessage: MessageDescriptor;
   slogan: string;
   description: string;
   developer: string;
@@ -107,6 +113,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "schedule-assistant",
     name: t(msg`日程管家`),
+    nameMessage: msg`日程管家`,
     slogan: t(msg`把聊天里说过的安排，拎成今天真的要做的事。`),
     description: t(msg`从聊天、群聊和提醒里抽出今天要执行的任务，适合放在最近使用和我的小程序里常驻。`),
     developer: t(msg`隐界效率实验室`),
@@ -124,6 +131,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "group-relay",
     name: t(msg`群接龙`),
+    nameMessage: msg`群接龙`,
     slogan: t(msg`像微信接龙一样，把收集、报名和确认做轻。`),
     description: t(msg`适合群聊里快速发起接龙、收集名单和做状态回填，桌面端更适合边聊天边看结果。`),
     developer: t(msg`社交协同组`),
@@ -141,6 +149,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "file-drop",
     name: t(msg`文件快传`),
+    nameMessage: msg`文件快传`,
     slogan: t(msg`把聊天附件先放进一个顺手的临时抽屉。`),
     description: t(msg`适合把聊天里的文件、图片和草稿暂存到一个轻量中转面板，桌面端的价值尤其明显。`),
     developer: t(msg`桌面体验组`),
@@ -158,6 +167,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "world-map",
     name: t(msg`世界地图`),
+    nameMessage: msg`世界地图`,
     slogan: t(msg`把地点、居民和活动放回同一张图上看。`),
     description: t(msg`适合在世界内查看地点分布、最近活动和角色出现区域，移动端更适合轻浏览，桌面端适合长期悬停。`),
     developer: t(msg`世界编辑部`),
@@ -175,6 +185,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "idea-notes",
     name: t(msg`灵感速记`),
+    nameMessage: msg`灵感速记`,
     slogan: t(msg`一句话、一张图，也能先留住。`),
     description: t(msg`面向聊天中临时冒出的灵感片段，适合和桌面笔记、内容工作流配合，先快速记，再慢慢整理。`),
     developer: t(msg`内容引擎组`),
@@ -192,6 +203,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "live-clips",
     name: t(msg`直播剪贴板`),
+    nameMessage: msg`直播剪贴板`,
     slogan: t(msg`把直播里的重点片段，切得像工作流一样顺手。`),
     description: t(msg`适合视频号和直播内容整理，先把直播片段、时间点和要点摘出来，后续再进入正式剪辑。`),
     developer: t(msg`视频号工具组`),
@@ -209,6 +221,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "resident-services",
     name: t(msg`居民办事`),
+    nameMessage: msg`居民办事`,
     slogan: t(msg`把世界里的办事流程做成一个统一入口。`),
     description: t(msg`集中承接报名、申请、生活服务和状态查询，移动端适合随手办，桌面端适合查全量记录。`),
     developer: t(msg`居民服务台`),
@@ -226,6 +239,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "event-board",
     name: t(msg`活动报名`),
+    nameMessage: msg`活动报名`,
     slogan: t(msg`活动、打卡、报名和回执，放进同一块面板里。`),
     description: t(msg`适合活动运营和社交报名，把发起、收集、提醒和回执压缩成一个微信式小程序入口。`),
     developer: t(msg`活动运营台`),
@@ -243,6 +257,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "read-later",
     name: t(msg`稍后再看`),
+    nameMessage: msg`稍后再看`,
     slogan: t(msg`把文章、动态和聊天链接先收进一个队列里。`),
     description: t(msg`适合把公众号文章、广场动态和聊天中的链接先收口，等到有时间再统一处理。`),
     developer: t(msg`阅读工具组`),
@@ -260,6 +275,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
   {
     id: "photo-wall",
     name: t(msg`世界相册`),
+    nameMessage: msg`世界相册`,
     slogan: t(msg`把聊天图片、朋友圈和活动图，一次看全。`),
     description: t(msg`更适合作为桌面端的整理工作区，也能在手机上作为最近回看的轻入口。`),
     developer: t(msg`影像工作室`),

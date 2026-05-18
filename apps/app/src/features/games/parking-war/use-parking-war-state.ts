@@ -1,197 +1,226 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  buyCar,
-  catchUpOffline,
-  cloneState,
-  collectAllOwnSlots,
-  collectFromOwnSlot,
-  createInitialState,
-  fineAllNpcsOnPlayerLot,
-  fineNpcOnPlayerSlot,
-  kickNpcOffPlayerSlot,
-  parkOwnedCarHome,
-  parkPlayerInNpcLot,
-  recallPlayerFromNpcLot,
-  tickOnline,
-} from "./parking-war-engine";
-import {
-  loadParkingWarState,
-  resetParkingWarState,
-  saveParkingWarState,
-} from "./parking-war-storage";
-import type { CarTier, ParkingWarState } from "./parking-war-types";
+  buyParkingWarCar,
+  claimParkingWarDailyBonus,
+  claimParkingWarDailyTask,
+  collectParkingWarSlot,
+  getParkingWarEvents,
+  getParkingWarLeaderboard,
+  getParkingWarNeighborDetail,
+  getParkingWarNeighbors,
+  getParkingWarState,
+  paintParkingWarCar,
+  parkParkingWarCar,
+  recallParkingWarCar,
+  repairParkingWarCar,
+  ticketParkingWarOccupancy,
+  towParkingWarOccupancy,
+  upgradeParkingWarCar,
+  upgradeParkingWarGarage,
+  upgradeParkingWarLot,
+  type ParkingWarCarTier,
+  type ParkingWarDailyBonusResult,
+  type ParkingWarEventView,
+  type ParkingWarLeaderboardRow,
+  type ParkingWarLotSurface,
+  type ParkingWarNeighborDetail,
+  type ParkingWarNeighborSummary,
+  type ParkingWarPlayerStateView,
+  type ParkingWarRarity,
+} from "@yinjie/contracts";
 
-type Action =
-  | { type: "tick"; nowMs: number }
-  | { type: "collect"; slotIndex: number; nowMs: number }
-  | { type: "collect-all"; nowMs: number }
-  | { type: "fine"; slotIndex: number; nowMs: number }
-  | { type: "fine-all"; nowMs: number }
-  | { type: "kick"; slotIndex: number; nowMs: number }
-  | {
-      type: "park-in-npc";
-      npcId: string;
-      slotIndex: number;
-      carId: string;
-      nowMs: number;
-    }
-  | { type: "recall"; npcId: string; slotIndex: number; nowMs: number }
-  | { type: "park-home"; carId: string; nowMs: number }
-  | { type: "buy"; tier: CarTier; nowMs: number }
-  | { type: "reset"; nowMs: number };
-
-function reducer(state: ParkingWarState, action: Action): ParkingWarState {
-  if (action.type === "reset") {
-    return createInitialState(action.nowMs);
-  }
-  const next = cloneState(state);
-  switch (action.type) {
-    case "tick":
-      tickOnline(next, action.nowMs);
-      break;
-    case "collect":
-      collectFromOwnSlot(next, action.slotIndex, action.nowMs);
-      break;
-    case "collect-all":
-      collectAllOwnSlots(next, action.nowMs);
-      break;
-    case "fine":
-      fineNpcOnPlayerSlot(next, action.slotIndex, action.nowMs);
-      break;
-    case "fine-all":
-      fineAllNpcsOnPlayerLot(next, action.nowMs);
-      break;
-    case "kick":
-      kickNpcOffPlayerSlot(next, action.slotIndex, action.nowMs);
-      break;
-    case "park-in-npc":
-      parkPlayerInNpcLot(
-        next,
-        action.npcId,
-        action.slotIndex,
-        action.carId,
-        action.nowMs,
-      );
-      break;
-    case "recall":
-      recallPlayerFromNpcLot(next, action.npcId, action.slotIndex, action.nowMs);
-      break;
-    case "park-home":
-      parkOwnedCarHome(next, action.carId, action.nowMs);
-      break;
-    case "buy":
-      buyCar(next, action.tier, action.nowMs);
-      break;
-  }
-  return next;
-}
-
-function init(): ParkingWarState {
-  const now = Date.now();
-  const stored = loadParkingWarState();
-  if (!stored) {
-    const fresh = createInitialState(now);
-    catchUpOffline(fresh, now);
-    return fresh;
-  }
-  const next = cloneState(stored);
-  catchUpOffline(next, now);
-  return next;
-}
+const STATE_KEY = ["parking-war", "state"] as const;
+const NEIGHBORS_KEY = ["parking-war", "neighbors"] as const;
+const EVENTS_KEY = ["parking-war", "events"] as const;
+const LEADERBOARD_KEY = ["parking-war", "leaderboard"] as const;
 
 export function useParkingWarState() {
-  const [state, dispatch] = useReducer(reducer, undefined, init);
+  return useQuery<ParkingWarPlayerStateView>({
+    queryKey: STATE_KEY,
+    queryFn: () => getParkingWarState(),
+    // 服务端每次 GET /state 都跑一次 tick，所以前端不必频繁 poll；
+    // 30s stale 是个折中，玩家来回切 tab 时只要 staleTime 过期就再拉一次看新 pending。
+    // 玩家长开页面挂机时，每 60s 静默拉一次让累计收益数字保持鲜活
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+}
 
-  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-    persistTimerRef.current = setTimeout(() => saveParkingWarState(state), 500);
-    return () => {
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-    };
-  }, [state]);
+export function useParkingWarNeighbors(options?: { limit?: number }) {
+  return useQuery<ParkingWarNeighborSummary[]>({
+    queryKey: [...NEIGHBORS_KEY, options?.limit ?? null] as const,
+    queryFn: () => getParkingWarNeighbors(options),
+    staleTime: 60_000,
+  });
+}
 
-  useEffect(() => {
-    return () => {
-      saveParkingWarState(state);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+export function useParkingWarNeighborDetail(
+  characterId: string | null | undefined,
+) {
+  return useQuery<ParkingWarNeighborDetail>({
+    queryKey: ["parking-war", "neighbor", characterId ?? "_"] as const,
+    queryFn: () => getParkingWarNeighborDetail(characterId!),
+    enabled: !!characterId,
+    staleTime: 15_000,
+  });
+}
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      dispatch({ type: "tick", nowMs: Date.now() });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, []);
+export function useParkingWarEvents(options?: {
+  since?: string;
+  limit?: number;
+}) {
+  return useQuery<ParkingWarEventView[]>({
+    queryKey: [
+      ...EVENTS_KEY,
+      options?.since ?? null,
+      options?.limit ?? null,
+    ] as const,
+    queryFn: () => getParkingWarEvents(options),
+    staleTime: 15_000,
+  });
+}
 
-  useEffect(() => {
-    function onVisible() {
-      if (document.visibilityState === "visible") {
-        dispatch({ type: "tick", nowMs: Date.now() });
-      }
-    }
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, []);
+export function useParkingWarLeaderboard(options?: {
+  scope?: "global" | "friends";
+  limit?: number;
+}) {
+  return useQuery<ParkingWarLeaderboardRow[]>({
+    queryKey: [
+      ...LEADERBOARD_KEY,
+      options?.scope ?? "friends",
+      options?.limit ?? 50,
+    ] as const,
+    queryFn: () => getParkingWarLeaderboard(options),
+    staleTime: 30_000,
+  });
+}
 
-  const collect = useCallback(
-    (slotIndex: number) =>
-      dispatch({ type: "collect", slotIndex, nowMs: Date.now() }),
-    [],
-  );
-  const collectAll = useCallback(
-    () => dispatch({ type: "collect-all", nowMs: Date.now() }),
-    [],
-  );
-  const fine = useCallback(
-    (slotIndex: number) => dispatch({ type: "fine", slotIndex, nowMs: Date.now() }),
-    [],
-  );
-  const fineAll = useCallback(
-    () => dispatch({ type: "fine-all", nowMs: Date.now() }),
-    [],
-  );
-  const kick = useCallback(
-    (slotIndex: number) => dispatch({ type: "kick", slotIndex, nowMs: Date.now() }),
-    [],
-  );
-  const parkInNpc = useCallback(
-    (npcId: string, slotIndex: number, carId: string) =>
-      dispatch({ type: "park-in-npc", npcId, slotIndex, carId, nowMs: Date.now() }),
-    [],
-  );
-  const recall = useCallback(
-    (npcId: string, slotIndex: number) =>
-      dispatch({ type: "recall", npcId, slotIndex, nowMs: Date.now() }),
-    [],
-  );
-  const parkHome = useCallback(
-    (carId: string) => dispatch({ type: "park-home", carId, nowMs: Date.now() }),
-    [],
-  );
-  const buy = useCallback(
-    (tier: CarTier) => dispatch({ type: "buy", tier, nowMs: Date.now() }),
-    [],
-  );
-  const reset = useCallback(() => {
-    resetParkingWarState();
-    dispatch({ type: "reset", nowMs: Date.now() });
-  }, []);
-
-  return {
-    state,
-    actions: {
-      collect,
-      collectAll,
-      fine,
-      fineAll,
-      kick,
-      parkInNpc,
-      recall,
-      parkHome,
-      buy,
-      reset,
-    },
+function useInvalidateAll() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: STATE_KEY });
+    qc.invalidateQueries({ queryKey: NEIGHBORS_KEY });
+    qc.invalidateQueries({ queryKey: EVENTS_KEY });
+    qc.invalidateQueries({ queryKey: LEADERBOARD_KEY });
+    qc.invalidateQueries({ queryKey: ["parking-war", "neighbor"] });
   };
+}
+
+export function useParkParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: {
+      carId: string;
+      slotIndex: number;
+      characterId?: string;
+    }) => parkParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRecallParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { occupancyId: string }) => recallParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCollectParkingWarSlot() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { slotIndex?: number }) => collectParkingWarSlot(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useTicketParkingWarOccupancy() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { occupancyId: string }) =>
+      ticketParkingWarOccupancy(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useTowParkingWarOccupancy() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { occupancyId: string }) =>
+      towParkingWarOccupancy(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useBuyParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: {
+      tier: ParkingWarCarTier;
+      rarity: ParkingWarRarity;
+    }) => buyParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpgradeParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { carId: string }) => upgradeParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function usePaintParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { carId: string; paintIndex: number }) =>
+      paintParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRepairParkingWarCar() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { carId: string }) => repairParkingWarCar(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpgradeParkingWarLot() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: {
+      target: "size" | "surface";
+      value: number | ParkingWarLotSurface;
+    }) => upgradeParkingWarLot(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpgradeParkingWarGarage() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: () => upgradeParkingWarGarage(),
+    onSuccess: invalidate,
+  });
+}
+
+export function useClaimParkingWarDailyBonus() {
+  const invalidate = useInvalidateAll();
+  return useMutation<ParkingWarDailyBonusResult, Error, void>({
+    mutationFn: () => claimParkingWarDailyBonus(),
+    onSuccess: invalidate,
+  });
+}
+
+export function useClaimParkingWarDailyTask() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: (input: { taskId: string }) => claimParkingWarDailyTask(input),
+    onSuccess: invalidate,
+  });
 }

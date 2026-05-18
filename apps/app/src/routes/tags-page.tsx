@@ -96,9 +96,12 @@ function MobileTagsPage() {
     [safeReturnHash, safeReturnPath, searchText],
   );
 
+  // 新一轮走查：通讯录管理 → 标签 共享 contacts-page 同 cache key；配 staleTime
+  // 让"打开标签 → 看某标签下成员 → 返回 → 再开"不每次都 background fetch。
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
 
   const tagGroups = useMemo(
@@ -107,11 +110,23 @@ function MobileTagsPage() {
   );
   const hasSearchText = searchText.trim().length > 0;
 
+  // 新一轮走查：URL ↔ searchText 双向同步的死循环
+  // 旧实现 effect deps 是 [routeState.keyword, searchText]：用户敲 'h'
+  //   → setSearchText('h') → 重渲染（routeState.keyword 还是 ''）
+  //   → effect 1 比较 'h' !== '' → setSearchText('') 把用户刚敲的字撤掉
+  //   → effect 2 同时 navigate(hash='q=h')
+  //   → 下一帧 searchText='', routeState.keyword='h'
+  //   → effect 1 又把 searchText 设回 'h'
+  //   → effect 2 navigate(hash='') 又把 keyword 清掉
+  // 两个 effect 互相打回去，URL/输入框来回闪、瞬间死循环占满主线程。
+  // 拆掉 searchText 这个 dep：effect 1 只在 routeState.keyword 真变化（如返回
+  // 上一页、shortcut 注入参数）时同步进 searchText；用户敲字走 onChange 直接
+  // 改 searchText，由 effect 2 单向推到 URL。
   useEffect(() => {
-    if (searchText !== routeState.keyword) {
-      setSearchText(routeState.keyword);
-    }
-  }, [routeState.keyword, searchText]);
+    setSearchText((current) =>
+      current === routeState.keyword ? current : routeState.keyword,
+    );
+  }, [routeState.keyword]);
 
   useEffect(() => {
     if (normalizedHash === (currentRouteHash ?? "")) {
@@ -181,13 +196,16 @@ function MobileTagsPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             aria-label={t(msg`返回通讯录`)}
           >
@@ -215,7 +233,9 @@ function MobileTagsPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索标签或联系人`)}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>

@@ -14,6 +14,12 @@ type MomentCommentComposerProps = {
   inputClassName?: string;
   buttonClassName?: string;
   inputRef?: Ref<HTMLTextAreaElement>;
+  /**
+   * 评论硬上限。默认 500 与服务端 MAX_COMMENT_TEXT_LENGTH 对齐 —— 之前桌面
+   * 端 composer 没卡，用户能打 1k 字按发送→服务端 400 反弹「评论最多 500 字」，
+   * 中间几百毫秒空窗用户以为是网络抽风。移动端 wechat-comment-bar 已经卡了。
+   */
+  maxLength?: number;
   submitLabel?: string;
   pendingLabel?: string;
   onChange: (value: string) => void;
@@ -29,6 +35,7 @@ export function MomentCommentComposer({
   inputClassName,
   buttonClassName,
   inputRef,
+  maxLength = 500,
   submitLabel = t(msg`发送`),
   pendingLabel = t(msg`发送中...`),
   onChange,
@@ -37,10 +44,19 @@ export function MomentCommentComposer({
   const canSubmit = Boolean(value.trim()) && !pending && !disabled;
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+    // 走查新 R3：跟 wechat-comment-bar R3 (bb9f3bda) / mobile-feed-publish R5
+    // / desktop-feed-compose-panel R1 同款 IME 兜底——Android Chrome 上搜狗 /
+    // 百度 输入法在 composing 期间按 Enter 选词时，nativeEvent.isComposing 不
+    // 一定置 true，只有 keyCode 走 229 信号。原本只看 isComposing 漏了 keyCode
+    // 这一支，中文用户敲拼音回车选词时半句被当评论提交，桌面广场 / 桌面朋友圈
+    // / 移动朋友圈 comment composer 都受影响（mobile 广场 evt 走 wechat-comment-
+    // bar 不走这里）。补 keyCode=229 双判定。
     if (
-      event.key !== "Enter" ||
-      event.shiftKey ||
-      event.nativeEvent.isComposing
+      event.nativeEvent.isComposing ||
+      event.nativeEvent.keyCode === 229
     ) {
       return;
     }
@@ -62,6 +78,7 @@ export function MomentCommentComposer({
         placeholder={placeholder}
         aria-label={t(msg`评论内容`)}
         disabled={disabled}
+        maxLength={maxLength}
         inputMode="text"
         enterKeyHint="send"
         autoComplete="off"

@@ -5,8 +5,8 @@ export type DetailedTimestampModeState = {
   updatedAt: string | null;
 };
 
-const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
-const DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY =
+export const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
+export const DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY =
   "chat-detailed-timestamp-mode-updated-at";
 const defaultState: DetailedTimestampModeState = {
   enabled: false,
@@ -89,6 +89,13 @@ function queueNativeWrite(state: DetailedTimestampModeState) {
     .catch(() => undefined);
 }
 
+// 走查新一轮 R3：localStorage.setItem 配额满 / Safari iOS 隐私模式下抛错。
+// 这条 writeLocalState 通过 writeDetailedTimestampModeEnabled 被
+// chat-message-list.tsx line 689 在 useEffect 内同步调——抛错会冒到 React
+// error boundary，把整条聊天消息列表（单聊 + 群聊共享渲染）整片白屏。
+// 跟 R2 的 group-invite-delivery 是同一类问题；这里走同款修法：每段
+// setItem/removeItem 各裹 try/catch，单段失败不影响其它段，业务上做"持久化
+// 降级"——内存里的 React state 仍正确，下次再写就 OK。
 function writeLocalState(
   state: DetailedTimestampModeState,
   options?: {
@@ -97,25 +104,45 @@ function writeLocalState(
 ) {
   if (typeof window !== "undefined") {
     if (hasStateData(state)) {
-      window.localStorage.setItem(
-        DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
-        state.enabled ? "1" : "0",
-      );
-      if (state.updatedAt) {
+      try {
         window.localStorage.setItem(
-          DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
-          state.updatedAt,
+          DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
+          state.enabled ? "1" : "0",
         );
+      } catch {
+        // 配额满 / Safari 隐私模式 —— 静默降级
+      }
+      if (state.updatedAt) {
+        try {
+          window.localStorage.setItem(
+            DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
+            state.updatedAt,
+          );
+        } catch {
+          // 同上
+        }
       } else {
+        try {
+          window.localStorage.removeItem(
+            DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
+          );
+        } catch {
+          // 同上
+        }
+      }
+    } else {
+      try {
+        window.localStorage.removeItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY);
+      } catch {
+        // 同上
+      }
+      try {
         window.localStorage.removeItem(
           DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
         );
+      } catch {
+        // 同上
       }
-    } else {
-      window.localStorage.removeItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY);
-      window.localStorage.removeItem(
-        DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
-      );
     }
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -14,7 +14,9 @@ import {
   getOrCreateConversation,
   markFollowupRecommendationChatStarted,
   markFollowupRecommendationFriendRequestPending,
+  SELF_CHARACTER_ID,
   sendFriendRequest,
+  setCharacterDefaultVoiceReply,
   setConversationMuted,
   setConversationPinned,
   setFriendStarred,
@@ -39,6 +41,7 @@ import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-sta
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
+import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import {
   buildCharacterDetailRouteHash,
   parseCharacterDetailRouteState,
@@ -55,12 +58,14 @@ import { useCappedPending } from "../hooks/use-capped-pending";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
   translateCharacterActivity,
   translateCharacterBio,
@@ -68,6 +73,13 @@ import {
 } from "../lib/character-i18n";
 
 const CHARACTER_DETAIL_BLOCK_REASON = "character_detail_block";
+// 走查 R1：备注/标签后端 social.service updateFriendProfile 走 normalizeOptionalText
+// + normalizeTags，不卡长度也不卡条目数 —— 之前测过粘 500 字 / 200 条标签都能落库。
+// remarkName 跟随 profile-info-name-page 的 NAME_MAX_LENGTH=20；tags 输入框是一整段
+// "tag1, tag2, ..." 字符串，给 200 字符足够放十几条短 tag，再加 disable + counter 让
+// 用户看见上限。后端缺校验是更深的问题，但作为前端兜底先把超长粘贴挡在表单层。
+const REMARK_NAME_MAX_LENGTH = 20;
+const TAGS_INPUT_MAX_LENGTH = 200;
 
 type FriendProfileFormState = {
   remarkName: string;
@@ -110,7 +122,11 @@ async function buildDesktopContactsRouteHashOnDemand(input: {
 }
 
 export function CharacterDetailPage() {
-  const t = translateRuntimeMessage;
+  // 走查新 R5：原来用静态 translateRuntimeMessage，不订阅 locale。用户在这页时
+  // 切换语言（设置 → 语言）→ 整页 t(msg`xxx`) 表达式卡在旧 locale，直到下一次
+  // 因别的 state 推渲染才补上。chat-details-page (L96) 已经在用 useRuntimeTranslator
+  // 解决同样问题（背后 deps 列了 activationVersion + locale）。
+  const t = useRuntimeTranslator();
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -166,26 +182,81 @@ export function CharacterDetailPage() {
     [recommendationId, safeMobileReturnHash, safeMobileReturnPath],
   );
 
+  // 走查 R5（第 5 轮）：和 chat-details-page / mobile-ai-call-screen / desktop
+  // 三处共享 "app-character"，其余 5 处都对齐到 15s staleTime；本页一直裸跑
+  // → 用户从 chat-details 点联系人卡片进入资料页时上一页刚拉过的 character
+  // cache 还热，按 mobile-web 60s / 其它 10s 默认会被判 stale 重发一次 GET。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    // 走查第七轮 R1：contacts-page / mobile-add-friend-page / tags-page /
+    // starred-friends-page / create-group-page 在挂这条 query 时都配了
+    // staleTime: 15_000，character-detail-page 反而缺，从 contacts tab 跳
+    // 资料页时 friend 列表刚刚 15s 内还热，又被强制 refetch 一次（默认
+    // staleTime=0 + refetchOnMount=true）。跟其它入口对齐避免无用重拉。
+    staleTime: 15_000,
   });
+  const isAlreadyFriend = useMemo(
+    () =>
+      (friendsQuery.data ?? []).some(
+        (item) => item.character.id === characterId,
+      ),
+    [characterId, friendsQuery.data],
+  );
+  // 走查 R1：character-detail 进来时如果已经是好友（绝大多数从消息 tab→详情进入
+  // 都是这条路径），底部按钮直接渲染「发消息 / 音视频通话」，friendRequestsQuery
+  // 的结果只在 "添加到通讯录" / "等待对方通过" / "查看好友申请" 三种非好友状态下
+  // 使用。原来无条件 enabled 让每个名片打开都触发一次 /social/friend-requests
+  // 全量查询，毫无价值地多一次后台往返。已确认是好友就 skip；friendsQuery 还在
+  // loading / 报错时仍允许拉，保证非好友态下 UI 能拿到 inbound/outbound 状态。
+  //
+  // 走查 R2：上面那条改动留了个尾巴——冷启动时 friendsQuery 还在 loading，
+  // isAlreadyFriend 默认就是 false，friendRequestsQuery enabled 立刻成 true 直接发车。
+  // 之后 friendsQuery 拿到数据发现"其实是好友"再翻 enabled 已经晚了，这一次
+  // /social/friend-requests 已经空跑掉。改成：friendsQuery 还在 loading 阶段先
+  // 按住别发；等 friendsQuery 结束（成功或失败）再按 isAlreadyFriend 决策。
+  // 好友态下能彻底省一次后台往返；非好友态只比原来晚 ~一次 RTT，无感。
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl, "all"],
     queryFn: () => getFriendRequests(baseUrl, { direction: "all" }),
+    enabled: !friendsQuery.isLoading && !isAlreadyFriend,
+    // 走查第七轮 R2：跟 mobile-add-friend-page / contacts-page 对齐 15s
+    // staleTime——同一 queryKey 在多个入口共享，缺 staleTime 时挂到一个
+    // 新页面就强制 refetch，浪费一次 round-trip。
+    staleTime: 15_000,
   });
+  // 走查 R2 试过按 isAlreadyFriend gate 这条 query 省一次后台往返，但 R3 复查
+  // 发现会留 TOCTOU 窗口：用户在好友页点「加入黑名单」→ blockMutation.onSuccess
+  // 同时 invalidate friends + blocked → friendsQuery 先回（isAlreadyFriend=false）
+  // → blockedQuery 这一刻才被 enabled，开始重新发车 → 中间一拍 isBlocked 仍是
+  // false，底部按钮翻成「添加到通讯录」enabled。用户那一秒点下去 → 后端
+  // activateFriendship 看到 existing.status='blocked' 不在 ACTIVE_FRIENDSHIP_
+  // STATUSES（'friend'/'close'/'best'）里，直接 existing.status='friend' 把
+  // 刚拉黑的 friendship 重置回来，绕过黑名单 —— 正是 line 2147-2152 的注释
+  // 提前提防住的场景。一次 /social/blocks 不值得这种正确性 regression，保持
+  // 始终 enabled。
+  // 走查 R5（第 5 轮）：和 chat-details-page / contacts-page / desktop-chat-details-panel
+  // 共享 "app-chat-details-blocked"，那 3 处对齐到 15s staleTime（chat-details
+  // 走查新一轮 R7 commit 8ccbb528d 已修），本页一直裸跑——上方那段大注释里
+  // "character-detail-page (line 247)" 其实是 conversationsQuery 的 staleTime，
+  // 不是 blockedQuery；这条 blockedQuery 是从 chat-details 跳进资料页时同
+  // queryKey cache 已经热的，缺 staleTime 会按默认重发一次 GET /social/blocks。
   const blockedQuery = useQuery({
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
+    staleTime: 15_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    // 走查第七轮 R2：跟 contacts-page 对齐 15s staleTime。
+    staleTime: 15_000,
   });
 
   useEffect(() => {
@@ -250,6 +321,21 @@ export function CharacterDetailPage() {
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === characterId,
   );
+  // 走查 R5：char-default-self 是用户在隐界里的"自我镜像"角色，本质就是用户
+  // 自己。后端 social.service.ts 已在 blockCharacter/deleteFriend 这两个端口
+  // 走 SELF_CHARACTER_ID 守卫直接抛 400（SOCIAL_CANNOT_BLOCK_SELF /
+  // SOCIAL_CANNOT_DELETE_SELF），但前端这页对这两个按钮没做任何 gate。如果
+  // 用户从通讯录列表 / 私聊详情 / 群成员里点到「我自己」并误触：
+  //   (a) 老 world child 还没装上后端守卫的版本会真把"自己"拉黑 / 删掉，
+  //       自我镜像 friendship 永久变 'blocked'/'removed'，自我对谈链路彻底断；
+  //   (b) 装上守卫的世界会回 400 + 英文 legacyMessage "Cannot block self
+  //       mirror character"，用户看到一条很技术、看不懂的报错。
+  // 跟桌面 ContactDetailPane 的"通过不传 onToggleBlock/onDeleteFriend 来隐
+  // 藏 row"思路一致：这里识别自我镜像，对应 row / 按钮整体不渲染。
+  // 桌面分支不传 onToggleBlock/onDeleteFriend；移动分支条件渲染。
+  // 其它操作（备注 / 标签 / 星标 / 默认语音回复 / 推荐名片）后端没禁，对自我
+  // 镜像也有合理语义（自己给自己起备注、把自己的隐界名片复制出去），保留。
+  const isSelfMirror = characterId === SELF_CHARACTER_ID;
   const pendingFriendRequest = (friendRequestsQuery.data ?? []).find(
     (item) => item.characterId === characterId && item.status === "pending",
   );
@@ -422,17 +508,89 @@ export function CharacterDetailPage() {
     </Button>
   );
 
+  // 切角色才清状态；如果只是同一角色的 friendship 重新拉回来，不要把刚弹出的
+  // 成功提示和正在编辑的备注/标签输入框一并冲掉。
   useEffect(() => {
     setNotice(null);
     setMobileSheetAction(null);
     setIsEditingProfile(false);
     resetEntryGuard();
+  }, [characterId, resetEntryGuard]);
+
+  // 走查 R7：success notice 没有自动消失定时器 —— 用户点「设为星标朋友 / 加入
+  // 黑名单 / 添加到通讯录 / 朋友资料已更新」之后那条绿色横幅会一直挂着，直到
+  // 用户跳页 / 触发下一个 mutation 才会被替换。桌面 ContactDetailPane 的
+  // profileNotice 早就加过 2.4s 兜底（contact-detail-pane.tsx L147-L153），这
+  // 边只给 success 加同款（info 自带"重试 / 返回上一页"按钮，需要用户主动确认；
+  // warning 是失败提示，留着让用户看见错误原因）。
+  useEffect(() => {
+    if (!notice || notice.tone !== "success") {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  // 走查 Round 1：friendship.tags 是数组，每次 friendsQuery 重新拉就换一份引用，
+  // 之前把 tags 作为 deps 直接放进上面的 effect → 后台刷新时 setNotice(null) 把
+  // updateProfileMutation onSuccess 刚弹的"朋友资料已更新"瞬间吃掉，正在编辑的
+  // 备注/标签输入框也被强行关闭并清空。改成只在非编辑态时把表单同步成服务器值，
+  // 同时把 tags 数组扁平成字符串当 dep，避免引用抖动。
+  const friendshipTagsKey = friendship?.tags?.join("，") ?? "";
+  useEffect(() => {
+    if (isEditingProfile) {
+      return;
+    }
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
-      tags: friendship?.tags?.join("，") ?? "",
+      tags: friendshipTagsKey,
     });
-  }, [characterId, friendship?.remarkName, friendship?.tags, resetEntryGuard]);
+  }, [characterId, friendship?.remarkName, friendshipTagsKey, isEditingProfile]);
 
+  // 走查新 R6：entryNotice（数字人入口提示）在页面顶部 inline 渲染，但用户触发
+  // 它的「视频通话」按钮在底部 action bar。底部点视频通话 → sheet 关掉 + entryNotice
+  // 出现在顶部 → 用户当前在底部根本看不到。当前 mock_iframe 模式下每次点视频通话
+  // 都会触发这条 notice，UX 影响实在。notice 出现就滚到它，让用户能看到。
+  const entryNoticeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!entryNotice || !entryNoticeRef.current) {
+      return;
+    }
+    entryNoticeRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [entryNotice]);
+
+  // 走查新 R2：用户在备注/标签 inline 表单里输到一半按 Android 硬件返回 → 默认
+  // history.back 直接走出 /character/$id，没保存的输入丢光。MobileDetailsActionSheet
+  // 那条交互一直有同款 interceptor（mobile-details-action-sheet.tsx L39-L49）。
+  // 这里补上：表单打开时吃掉一次 back，关表单并把 form 重置回服务器值；用户再按
+  // 一次才真的退页。
+  useEffect(() => {
+    if (!isEditingProfile) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      setIsEditingProfile(false);
+      setProfileForm({
+        remarkName: friendship?.remarkName ?? "",
+        tags: friendshipTagsKey,
+      });
+      return true;
+    });
+    return unregister;
+  }, [isEditingProfile, friendship?.remarkName, friendshipTagsKey]);
+
+  // 走查 R4：getOrCreateConversation 后端有两个会改 conversation 行的副作用：
+  // (a) 第一次跟某角色聊天会 INSERT 一条新 direct conversation；(b) 用户之前
+  // 从 /chat 列表 hide 过的会话，再次 getOr* 会把 isHidden 翻回 false 并清
+  // hiddenAt（chat.service.ts L246-L250）。这两种情况下 app-conversations 缓存
+  // 都已经脏。原 onSuccess 直接 navigate 不 invalidate，用户从 character-detail
+  // 点"发消息"进入聊天 → 看完按 back → /tabs/chat 列表里要么少这条新会话，要么
+  // 还把它显示在隐藏列表（导致冗余 hide 提示反复弹）。openCallMutation 同样会
+  // 触发 getOrCreateConversation，需要一并补上。
   const startChatMutation = useMutation({
     mutationFn: async () => {
       if (!character) {
@@ -452,6 +610,9 @@ export function CharacterDetailPage() {
           baseUrl,
         ).catch(() => undefined);
       }
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: isDesktopLayout
           ? buildDesktopChatThreadPath({
@@ -486,11 +647,14 @@ export function CharacterDetailPage() {
         kind,
       };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (!result?.conversation) {
         return;
       }
 
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: isDesktopLayout
           ? "/tabs/chat"
@@ -538,22 +702,19 @@ export function CharacterDetailPage() {
           ? t(msg`好友申请已发送。`)
           : t(msg`已添加到通讯录。`),
       });
+      // 走查 R10：autoAccept=true 时 backend 会立刻 activateFriendship + 写一条
+      // 系统消息进对话；同时 moments.service.canOwnerViewPost 用
+      // ownerFriendCharacterIds 决定可见性，新好友过去发过的 moments / feed post
+      // 这一刻起就该出现在用户的 feed 里。但原 onSuccess 只 invalidate
+      // app-friend-requests / app-friends / app-conversations，moments / feed
+      // 这一堆 surface 上加好友前的旧 post 要等 query 自然 stale 才补进来。改用
+      // invalidateFriendDisplayQueries 覆盖 friend / conversation / messages /
+      // moments / feed 全套；app-friend-requests 不在它里面，单独留一条。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
         }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-friends", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-friends-quick-start", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-friends", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
+        invalidateFriendDisplayQueries(queryClient, baseUrl),
       ]);
     },
   });
@@ -571,6 +732,21 @@ export function CharacterDetailPage() {
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
+      });
+    },
+  });
+  const setDefaultVoiceReplyMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setCharacterDefaultVoiceReply(characterId, enabled, baseUrl),
+    onSuccess: async (_, enabled) => {
+      setNotice({
+        tone: "success",
+        message: enabled
+          ? t(msg`已开启默认语音回复（消耗 token plan 配额）。`)
+          : t(msg`已关闭默认语音回复。`),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-character", baseUrl, characterId],
       });
     },
   });
@@ -625,9 +801,7 @@ export function CharacterDetailPage() {
         message: t(msg`朋友资料已更新。`),
       });
       setIsEditingProfile(false);
-      await queryClient.invalidateQueries({
-        queryKey: ["app-friends", baseUrl],
-      });
+      await invalidateFriendDisplayQueries(queryClient, baseUrl);
     },
   });
   const blockMutation = useMutation({
@@ -650,6 +824,14 @@ export function CharacterDetailPage() {
         tone: "success",
         message: blocked ? t(msg`已移出黑名单。`) : t(msg`已加入黑名单。`),
       });
+      // 走查 R3：blockCharacter 后端把 friendship.status 改成 'blocked' 且
+      // 把 isStarred 一并清掉，getFriends() 此后不再返回这条 friendship。
+      // 走查 R9：moments.service.getFeed 用 ownerFriendCharacterIds 判断
+      // canOwnerViewPost，加入黑名单后这个 character 的 moments / 广场动态都该
+      // 从结果里消失。但 onSuccess 没动 app-moments-paged / app-feed-paged，
+      // 用户拉黑后回 /tabs/discover/moments 仍然看到这位被拉黑用户的旧 post
+      // 直到 query stale。改用 invalidateFriendDisplayQueries 覆盖 friend /
+      // conversation / moments / feed / individual post 全套缓存。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-chat-details-blocked", baseUrl],
@@ -660,18 +842,19 @@ export function CharacterDetailPage() {
         queryClient.invalidateQueries({
           queryKey: ["app-chat-blocked-characters", baseUrl],
         }),
+        invalidateFriendDisplayQueries(queryClient, baseUrl),
       ]);
     },
   });
   const deleteFriendMutation = useMutation({
     mutationFn: () => deleteFriend(characterId, baseUrl),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      // 走查 R9：deleteFriend 把 friendship.status 改成 'removed'，跟 block 一样
+      // 让 canOwnerViewPost 把对方过往的 moments / feed post 全过滤掉。原来只
+      // invalidate app-friends + app-conversations，moments / feed 这两条
+      // surface 上的脏 post 要等下一次 staleTime 才更新。用 invalidateFriend-
+      // DisplayQueries 一并覆盖。
+      await invalidateFriendDisplayQueries(queryClient, baseUrl);
       if (navigateToRouteStateReturn({ replace: true })) {
         return;
       }
@@ -685,28 +868,95 @@ export function CharacterDetailPage() {
     },
   });
 
+  // 走查 R4：每个 mutation hook 在整个 CharacterDetailPage 生命周期内是同一个
+  // 实例，character 切换只走 useParams 路由 re-render 不会 unmount。意味着用户
+  // 在 A 的资料页"拉黑/删除/改备注"失败留下的 mutation.error，挂到 B 的页面上
+  // 同样会被 isError && error instanceof Error 那一组 MobileCharacterErrorNotice
+  // 全部点亮——Bob 没动一下就看到一条"加入黑名单失败：xxx"，会以为是自己页面
+  // 的 Bug。桌面 ContactDetailPane 早就给 updateProfileMutation 加过 reset()
+  // (contact-detail-pane.tsx L135-L145)，但只覆盖了 desktop pane 自己持有的一个；
+  // 移动 page 这一侧 10 个 mutation 全漏。切角色时把它们一并 reset。
+  // mutations 在上面已经全部用 const 初始化完成，这个 effect 在 mount/update
+  // 之后才执行，闭包能拿到它们；不放进 deps 因为每次 render 引用都新，避免无限
+  // 重置死循环。
+  useEffect(() => {
+    startChatMutation.reset();
+    openCallMutation.reset();
+    sendFriendRequestMutation.reset();
+    setStarredMutation.reset();
+    setDefaultVoiceReplyMutation.reset();
+    pinMutation.reset();
+    muteMutation.reset();
+    updateProfileMutation.reset();
+    blockMutation.reset();
+    deleteFriendMutation.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characterId]);
+
   const handleBack = () => {
-    navigateBackOrFallback(() => {
-      if (navigateToRouteStateReturn()) {
-        return;
-      }
+    // 走查新 R3：跟新 R2 的 Android back interceptor 对齐 —— 用户在 inline 备注/
+    // 标签表单输到一半点左上角箭头，跟硬件返回是同一份心智模型，应该先收回表单
+    // 不丢输入。Android back 走 registerAndroidBackInterceptor 自动收，软件按钮
+    // 走这里手动收一次再返回。
+    if (isEditingProfile) {
+      setIsEditingProfile(false);
+      setProfileForm({
+        remarkName: friendship?.remarkName ?? "",
+        tags: friendshipTagsKey,
+      });
+      return;
+    }
+    const expectedPreviousPath = safeMobileReturnPath ?? "/tabs/contacts";
+    navigateBackOrFallback(
+      () => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
 
-      if (isDesktopLayout) {
-        navigateToDesktopContactsSelection();
-        return;
-      }
+        if (isDesktopLayout) {
+          navigateToDesktopContactsSelection();
+          return;
+        }
 
-      void navigate({ to: "/tabs/contacts" });
-    });
+        void navigate({ to: "/tabs/contacts" });
+      },
+      expectedPreviousPath,
+    );
   };
 
+  // 走查 R2：手机端备注/标签编辑表单的「保存」按钮只看 isPending 决定 disabled，
+  // 即便用户没动过任何字符也会发一次 updateFriendProfile。后端会照样写 friendship
+  // + 触发 cyber_avatar.captureSignal 这一整路审计/数字人 signal。点了「设置备注和
+  // 标签」只是想关一下面板的人会无意识地刷一次后台 IO。对比一下"normalize 后"的
+  // remarkName 和 tags，跟服务器值完全等价就 setIsEditingProfile(false) 直接关
+  // 面板，跟桌面 DesktopContactTextEditDialog 的 confirmDisabled 行为对齐。
   const handleSaveProfile = async () => {
+    // 走查 R1：input maxLength 拦的是键盘 / 常规粘贴，但 IME 合成态、自动填充、
+    // 编程式 setValue 都能绕开。Save 之前再卡一次硬上限，超限直接吃掉（避免
+    // 把超长 remarkName/tags 写进后端 — social.service 现在不会拒）。
+    if (
+      profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH ||
+      profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
+    ) {
+      return;
+    }
+    const nextRemarkName = profileForm.remarkName.trim() || null;
+    const nextTags = profileForm.tags
+      .split(/[，,]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const currentRemarkName = friendship?.remarkName?.trim() || null;
+    const currentTags = friendship?.tags ?? [];
+    const tagsUnchanged =
+      nextTags.length === currentTags.length &&
+      nextTags.every((tag, index) => tag === currentTags[index]);
+    if (nextRemarkName === currentRemarkName && tagsUnchanged) {
+      setIsEditingProfile(false);
+      return;
+    }
     await updateProfileMutation.mutateAsync({
-      remarkName: profileForm.remarkName.trim() || null,
-      tags: profileForm.tags
-        .split(/[，,]/)
-        .map((item) => item.trim())
-        .filter(Boolean),
+      remarkName: nextRemarkName,
+      tags: nextTags,
     });
   };
 
@@ -730,12 +980,14 @@ export function CharacterDetailPage() {
     }
 
     const profilePath = `/character/${character.id}`;
-    const profileUrl =
-      typeof window === "undefined"
-        ? profilePath
-        : `${window.location.origin}${profilePath}`;
+    const profileUrl = buildPublicShareUrl(profilePath);
+    // 走查新 R4：原来分享 title/summary 用 displayName，但 displayName =
+    // remarkName || character.name —— 用户把对方备注成「妈妈」之后分享出去，
+    // 对方收到的是「妈妈 的隐界名片」，根本不知道是谁。备注是 viewer-local
+    // 概念，对外分享必须用 character 的真实 name。
+    const shareDisplayName = character.name || displayName;
     const profileSummary = [
-      t(msg`${displayName} 的隐界名片`),
+      t(msg`${shareDisplayName} 的隐界名片`),
       character.relationship?.trim() || worldContactLabel,
       t(msg`隐界号：${buildYinjieId(character.id)}`),
       profileUrl,
@@ -743,7 +995,7 @@ export function CharacterDetailPage() {
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
-        title: t(msg`${displayName} 的隐界名片`),
+        title: t(msg`${shareDisplayName} 的隐界名片`),
         text: profileSummary,
         url: profileUrl,
       });
@@ -959,12 +1211,18 @@ export function CharacterDetailPage() {
         : mobileSheetAction === "delete"
           ? {
               title: t(msg`删除联系人`),
-              description: t(msg`删除后会从通讯录移除这个联系人。`),
+              // 走查 R1：原 sheet 主标题写「删除后会从通讯录移除这个联系人。」，
+              // 二级 description 写「此操作不可恢复」—— 后者是错的：后端
+              // deleteFriend 只是把 friendship.status='removed'，再发一次好友
+              // 申请就能恢复。桌面 ContactDetailPane 的 DangerConfirmDialog 一直
+              // 用「删除后将不会通知对方，可重新添加。」，两端拉齐，避免用户被
+              // "不可恢复"四个字吓住不敢操作。
+              description: t(msg`删除后将不会通知对方，可重新添加。`),
               actions: [
                 {
                   key: "confirm",
                   label: t(msg`删除联系人`),
-                  description: t(msg`此操作不可恢复`),
+                  description: t(msg`对方不会收到通知`),
                   danger: true,
                   disabled: deleteFriendMutation.isPending,
                   onClick: () => deleteFriendMutation.mutate(),
@@ -1002,7 +1260,10 @@ export function CharacterDetailPage() {
               </div>
             ) : null}
             {entryNotice ? (
-              <div className="mx-auto w-full max-w-[640px] px-3">
+              <div
+                ref={entryNoticeRef}
+                className="mx-auto w-full max-w-[640px] px-3"
+              >
                 <DigitalHumanEntryNotice
                   tone={entryNotice.tone}
                   message={entryNotice.message}
@@ -1027,6 +1288,10 @@ export function CharacterDetailPage() {
                       ? voiceConnectingLabel
                       : entryNotice.voiceLabel
                   }
+                  // 走查第四轮 R1：mutation pending 中按钮 label 已换成
+                  // 「正在接通...」但按钮 enabled 不变，双击就再发一次
+                  // openCallMutation.mutate(...)。disabled 收尾防一次。
+                  disabled={openCallMutation.isPending}
                   compact={false}
                 />
               </div>
@@ -1070,14 +1335,12 @@ export function CharacterDetailPage() {
                 <ErrorBlock message={setStarredMutation.error.message} />
               </div>
             ) : null}
-            {pinMutation.isError && pinMutation.error instanceof Error ? (
+            {setDefaultVoiceReplyMutation.isError &&
+            setDefaultVoiceReplyMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={pinMutation.error.message} />
-              </div>
-            ) : null}
-            {muteMutation.isError && muteMutation.error instanceof Error ? (
-              <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={muteMutation.error.message} />
+                <ErrorBlock
+                  message={setDefaultVoiceReplyMutation.error.message}
+                />
               </div>
             ) : null}
             {blockMutation.isError && blockMutation.error instanceof Error ? (
@@ -1096,14 +1359,13 @@ export function CharacterDetailPage() {
               character={character}
               friendship={friendship}
               commonGroups={commonGroups}
-              onOpenGroup={(groupId) => {
-                void navigate({
-                  to: buildDesktopChatThreadPath({
-                    conversationId: groupId,
-                  }),
-                });
-              }}
-              onOpenMoments={handleOpenMoments}
+              // 走查新 R1：character-detail-page 自身就是"详细资料"目的地，
+              // ContactDetailPane 里的「详细资料」入口行 onOpenProfile={() => {}}
+              // 点了什么都不会发生，行尾的箭头还在邀请用户去戳。把这一行直接
+              // 隐掉（showProfileEntry=false），同时把"朋友圈"那行需要的 fallback
+              // 收口到 onOpenMoments——本来 contact-detail-pane 在 onOpenMoments
+              // 缺失时还会 fallback 到 onOpenProfile，传一个 throw 兜底避免误用。
+              showProfileEntry={false}
               onOpenProfile={() => {}}
               onStartChat={() => {
                 setNotice(null);
@@ -1128,16 +1390,41 @@ export function CharacterDetailPage() {
                 setNotice(null);
                 setStarredMutation.mutate(!friendship.isStarred);
               }}
+              defaultVoiceReply={character.defaultVoiceReply ?? false}
+              defaultVoiceReplyPending={
+                setDefaultVoiceReplyMutation.isPending
+              }
+              onToggleDefaultVoiceReply={() => {
+                setNotice(null);
+                setDefaultVoiceReplyMutation.mutate(
+                  !(character.defaultVoiceReply ?? false),
+                );
+              }}
               isBlocked={isBlocked}
               blockPending={blockMutation.isPending}
-              onToggleBlock={() => {
-                setNotice(null);
-                blockMutation.mutate(isBlocked);
-              }}
+              onToggleBlock={
+                isSelfMirror
+                  ? undefined
+                  : () => {
+                      setNotice(null);
+                      blockMutation.mutate(isBlocked);
+                    }
+              }
               deletePending={deleteFriendMutation.isPending}
-              onDeleteFriend={() => {
-                handleDeleteFriendAction();
-              }}
+              // 走查第三遍 R1：原来 onDeleteFriend 走 handleDeleteFriendAction →
+              // 里面 isDesktopLayout 分支又 window.confirm 一次，跟 ContactDetailPane
+              // 自己的 DangerConfirmDialog 叠成 double-confirm（用户在 pane 里点
+              // 「删除」→ 又弹原生 confirm "确认删除这个联系人吗？"）。隔壁的
+              // onToggleBlock 写法已经直接 blockMutation.mutate(isBlocked)，因为
+              // pane 已经确认过；delete 这里漏对齐。改成同款直 mutate。
+              onDeleteFriend={
+                isSelfMirror
+                  ? undefined
+                  : () => {
+                      setNotice(null);
+                      deleteFriendMutation.mutate();
+                    }
+              }
             />
           </div>
         </div>
@@ -1271,18 +1558,24 @@ export function CharacterDetailPage() {
                     : "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 }
               >
-                {!isDesktopLayout && notice.tone === "info" ? (
+                {!isDesktopLayout &&
+                notice.tone === "info" &&
+                notice.actionLabel &&
+                notice.onAction ? (
+                  // 走查 R3：原 info notice 永远会在右侧拼一个「返回通讯录 / 返回上
+                  // 一页」按钮。但实际两条 info 落点都是分享场景的 retry 提示——
+                  // "复制名片失败，请稍后重试" / "当前环境暂不支持复制名片"，都已经
+                  // 带有 actionLabel/onAction 触发的重试 button。再加一个"返回"按钮
+                  // 等于把分享失败误导成"该退回上一页"。AppPage 顶 header 已经有
+                  // 左上角 ArrowLeft 返回，info notice 就只暴露 retry 一颗按钮够了。
+                  // 兜底：如果某次 info 没带 actionLabel/onAction（目前没有这种调用
+                  // 点，但保留以防回潮），就 fall through 到纯文本，不再补 back。
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{notice.message}</span>
-                    <div className="flex shrink-0 flex-wrap items-center gap-2">
-                      {notice.actionLabel && notice.onAction ? (
-                        <InlineNoticeActionButton
-                          label={notice.actionLabel}
-                          onClick={notice.onAction}
-                        />
-                      ) : null}
-                      {renderMobileErrorBackAction()}
-                    </div>
+                    <InlineNoticeActionButton
+                      label={notice.actionLabel}
+                      onClick={notice.onAction}
+                    />
                   </div>
                 ) : (
                   notice.message
@@ -1290,32 +1583,37 @@ export function CharacterDetailPage() {
               </InlineNotice>
             ) : null}
             {entryNotice ? (
-              <DigitalHumanEntryNotice
-                tone={entryNotice.tone}
-                message={entryNotice.message}
-                onDismiss={() => {
-                  resetEntryGuard();
-                }}
-                onContinue={() => {
-                  resetEntryGuard();
-                  openCallMutation.mutate("video");
-                }}
-                onSwitchToVoice={() => {
-                  resetEntryGuard();
-                  openCallMutation.mutate("voice");
-                }}
-                continueLabel={
-                  openCallMutation.isPending
-                    ? videoConnectingLabel
-                    : entryNotice.continueLabel
-                }
-                voiceLabel={
-                  openCallMutation.isPending
-                    ? voiceConnectingLabel
-                    : entryNotice.voiceLabel
-                }
-                compact={!isDesktopLayout}
-              />
+              <div ref={entryNoticeRef}>
+                <DigitalHumanEntryNotice
+                  tone={entryNotice.tone}
+                  message={entryNotice.message}
+                  onDismiss={() => {
+                    resetEntryGuard();
+                  }}
+                  onContinue={() => {
+                    resetEntryGuard();
+                    openCallMutation.mutate("video");
+                  }}
+                  onSwitchToVoice={() => {
+                    resetEntryGuard();
+                    openCallMutation.mutate("voice");
+                  }}
+                  continueLabel={
+                    openCallMutation.isPending
+                      ? videoConnectingLabel
+                      : entryNotice.continueLabel
+                  }
+                  voiceLabel={
+                    openCallMutation.isPending
+                      ? voiceConnectingLabel
+                      : entryNotice.voiceLabel
+                  }
+                  // 见上方 desktop entryNotice 的注释 —— mobile/desktop 都走
+                  // 同一份 mutate 直调，双击同样会开两路。
+                  disabled={openCallMutation.isPending}
+                  compact={!isDesktopLayout}
+                />
+              </div>
             ) : null}
             {friendsQuery.isError && friendsQuery.error instanceof Error ? (
               isDesktopLayout ? (
@@ -1399,6 +1697,23 @@ export function CharacterDetailPage() {
                 </MobileCharacterErrorNotice>
               )
             ) : null}
+            {/* 走查 Round 4：默认语音回复 switch 在桌面/移动两端都暴露，但
+                整页就这一个 mutation 没接 error 渲染——失败（如 token plan 配额
+                耗尽 / 网络抖动）时开关回弹但用户得不到任何提示，怀疑自己点漏。 */}
+            {setDefaultVoiceReplyMutation.isError &&
+            setDefaultVoiceReplyMutation.error instanceof Error ? (
+              isDesktopLayout ? (
+                <ErrorBlock
+                  message={setDefaultVoiceReplyMutation.error.message}
+                />
+              ) : (
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
+                  {setDefaultVoiceReplyMutation.error.message}
+                </MobileCharacterErrorNotice>
+              )
+            ) : null}
             {updateProfileMutation.isError &&
             updateProfileMutation.error instanceof Error ? (
               isDesktopLayout ? (
@@ -1408,6 +1723,33 @@ export function CharacterDetailPage() {
                   action={renderMobileErrorBackAction()}
                 >
                   {updateProfileMutation.error.message}
+                </MobileCharacterErrorNotice>
+              )
+            ) : null}
+            {/* 走查新 R1：之前 pinMutation/muteMutation 的 ErrorBlock 只挂在
+                desktop 分支（旧 1318-1326）；mobile 静默失败，开关回弹但屏幕
+                没任何反馈，用户怀疑自己点漏。统一到 isDesktopLayout ?
+                <ErrorBlock> : <MobileCharacterErrorNotice> 的范式，跟上下
+                10 个 mutation 写法对齐，避免一处双写。 */}
+            {pinMutation.isError && pinMutation.error instanceof Error ? (
+              isDesktopLayout ? (
+                <ErrorBlock message={pinMutation.error.message} />
+              ) : (
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
+                  {pinMutation.error.message}
+                </MobileCharacterErrorNotice>
+              )
+            ) : null}
+            {muteMutation.isError && muteMutation.error instanceof Error ? (
+              isDesktopLayout ? (
+                <ErrorBlock message={muteMutation.error.message} />
+              ) : (
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
+                  {muteMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
@@ -1560,19 +1902,31 @@ export function CharacterDetailPage() {
                         handleAddToContacts();
                       }}
                       className="h-11 rounded-[12px] bg-[#07c160] text-[15px] text-white shadow-none hover:bg-[#06ad56]"
+                      // 走查新 R1：disabled 没把 friendsQuery.isLoading 算进去。
+                      // characterQuery 命中缓存秒回时底部 bar 已经渲染，friendsQuery
+                      // 还在拉就 isAlreadyFriend=false 走非好友 layout，按钮显示
+                      // 「添加到通讯录」enabled。用户抢着点 → 后端 sendFriendRequest
+                      // 给已经是好友的 character 又创建一条 friend_request 行 +
+                      // cyber_avatar 一条 friend_request_auto_accept signal（虽然
+                      // activateFriendship 看到 status 已经是 'friend' 不会改 DB，
+                      // 但 audit 流水照样污染）。等 friendsQuery 回来再放行。
                       disabled={
+                        friendsQuery.isLoading ||
+                        isBlocked ||
                         hasOutboundFriendRequest ||
                         (sendFriendRequestMutation.isPending &&
                           !hasPendingFriendRequest)
                       }
                     >
-                      {hasOutboundFriendRequest
-                        ? awaitingAcceptanceLabel
-                        : hasInboundFriendRequest
-                          ? viewFriendRequestLabel
-                          : sendFriendRequestDisplayedPending
-                            ? sendingLabel
-                            : addToContactsLabel}
+                      {isBlocked
+                        ? t(msg`已加入黑名单`)
+                        : hasOutboundFriendRequest
+                          ? awaitingAcceptanceLabel
+                          : hasInboundFriendRequest
+                            ? viewFriendRequestLabel
+                            : sendFriendRequestDisplayedPending
+                              ? sendingLabel
+                              : addToContactsLabel}
                     </Button>
                   )}
                 </div>
@@ -1597,7 +1951,9 @@ export function CharacterDetailPage() {
                 />
               ) : null}
               {isFriend && isEditingProfile ? (
-                <div className="border-t border-[color:var(--border-faint)] bg-[#f7f7f7] px-4 py-3">
+                // border-t 由父级 ProfileSection 的 divide-y 统一管（走查 R5），
+                // 这里只留 background 跟 padding 避免叠成双线。
+                <div className="bg-[#f7f7f7] px-4 py-3">
                   <div className="space-y-3">
                     <DetailInputField
                       label={remarkLabel}
@@ -1610,6 +1966,7 @@ export function CharacterDetailPage() {
                         }))
                       }
                       compact={!isDesktopLayout}
+                      maxLength={REMARK_NAME_MAX_LENGTH}
                     />
                     <DetailInputField
                       label={tagsLabel}
@@ -1622,6 +1979,7 @@ export function CharacterDetailPage() {
                         }))
                       }
                       compact={!isDesktopLayout}
+                      maxLength={TAGS_INPUT_MAX_LENGTH}
                     />
                   </div>
                   <div className="mt-3 flex items-center gap-2">
@@ -1643,7 +2001,12 @@ export function CharacterDetailPage() {
                       variant="primary"
                       onClick={() => void handleSaveProfile()}
                       className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
-                      disabled={updateProfileMutation.isPending}
+                      disabled={
+                        updateProfileMutation.isPending ||
+                        profileForm.remarkName.length >
+                          REMARK_NAME_MAX_LENGTH ||
+                        profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
+                      }
                     >
                       {updateProfileMutation.isPending
                         ? savingLabel
@@ -1678,12 +2041,29 @@ export function CharacterDetailPage() {
                   compact={!isDesktopLayout}
                 />
               ) : null}
-              <ProfileRow
-                label={momentsLabel}
-                value={momentsValueLabel}
-                onClick={handleOpenMoments}
-                compact={!isDesktopLayout}
-              />
+              {/* 走查 R1：朋友圈入口在移动端无条件渲染，非好友点进去后端按"未授权"
+                  返回空列表/错误，跟 desktop ContactDetailPane（已用 isFriend 包过）
+                  不一致；非好友本来就拿不到对方朋友圈，挪到 isFriend 分支里。
+                  走查 R3：用户从「朋友权限管理」把这位朋友的"看 TA 的朋友圈"关掉
+                  (friendship.momentsHiddenFromMe=true) 之后，moments.service
+                  canOwnerViewPost 这边就会把 TA 过去发的 moments 全部过滤掉
+                  —但 contact-profile 这行 value 还是「查看这位角色最近的朋友圈」，
+                  点进去拿到的是一片空，连为什么空都没人告诉。和 friendship 字段
+                  对齐：hideTheir 状态下 value 文案改成「已不再看 TA 的朋友圈」，
+                  click 仍然带用户去 mobile-friend-moments，让 ta 在那一页能拿到
+                  empty state 解释 / 撤销路径，不再让人盯着空白页面发呆。 */}
+              {isFriend ? (
+                <ProfileRow
+                  label={momentsLabel}
+                  value={
+                    friendship?.momentsHiddenFromMe
+                      ? t(msg`已不再看 TA 的朋友圈`)
+                      : momentsValueLabel
+                  }
+                  onClick={handleOpenMoments}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
               <ProfileRow
                 label={recommendToFriendLabel}
                 value={
@@ -1782,28 +2162,64 @@ export function CharacterDetailPage() {
                 <ProfileSwitchRow
                   label={starredFriendLabel}
                   checked={friendship?.isStarred ?? false}
-                  onToggle={() =>
-                    setStarredMutation.mutate(!(friendship?.isStarred ?? false))
-                  }
+                  onToggle={() => {
+                    // 走查第三遍 R2：桌面 onToggleStarred wrapper (line 1351) 一直
+                    // setNotice(null) 起手，移动 ProfileSwitchRow 这里漏了，前一条
+                    // success notice 会跟新 toggle 重叠几百 ms 才被替换。对齐。
+                    setNotice(null);
+                    setStarredMutation.mutate(
+                      !(friendship?.isStarred ?? false),
+                    );
+                  }}
                   disabled={setStarredMutation.isPending}
                   compact={!isDesktopLayout}
                 />
               ) : null}
-              <ProfileRow
-                label={isBlocked ? t(msg`移出黑名单`) : t(msg`加入黑名单`)}
-                value={
-                  blockMutation.isPending
-                    ? updatingLabel
-                    : isBlocked
-                      ? restoreNormalContactLabel
-                      : stopReceivingInteractionLabel
-                }
-                danger
-                onClick={handleBlockAction}
-                disabled={blockMutation.isPending}
-                compact={!isDesktopLayout}
-              />
+              {/* 走查 R1：「默认用语音回复」只对已经在通讯录里的好友有意义——
+                  你还没加上 ta，根本没有 chat conversation 可以"默认转语音"。桌面
+                  ContactDetailPane 早就把这个 toggle 关在 isFriend 块里
+                  (contact-detail-pane.tsx L409-L438)，移动端这里漏了 gate，导致
+                  非好友 / 黑名单状态的"关系管理"面板里挂着一个动了也没人会受影响
+                  的语音开关。和桌面行为对齐：只给好友显示。 */}
               {isFriend ? (
+                <ProfileSwitchRow
+                  label={t(msg`默认用语音回复`)}
+                  checked={character.defaultVoiceReply ?? false}
+                  onToggle={() => {
+                    // 走查第三遍 R2：同上 —— 桌面 onToggleDefaultVoiceReply 已经
+                    // setNotice(null) 起手，对齐移动这里。
+                    setNotice(null);
+                    setDefaultVoiceReplyMutation.mutate(
+                      !(character.defaultVoiceReply ?? false),
+                    );
+                  }}
+                  disabled={setDefaultVoiceReplyMutation.isPending}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
+              {/* 走查 R5：char-default-self 是用户自我镜像，后端 social.service
+                  在 block / delete 两端都装了 SELF_CHARACTER_ID 守卫；前端必须
+                  对应把这两 row 整体隐藏，不然用户从通讯录或私聊点到自我镜像
+                  会看到误导性按钮 → 误触后要么破坏自我对谈链路、要么看到一条
+                  英文 legacyMessage。和桌面 ContactDetailPane 通过不传
+                  onToggleBlock/onDeleteFriend 来隐藏 row 的思路对齐。 */}
+              {!isSelfMirror ? (
+                <ProfileRow
+                  label={isBlocked ? t(msg`移出黑名单`) : t(msg`加入黑名单`)}
+                  value={
+                    blockMutation.isPending
+                      ? updatingLabel
+                      : isBlocked
+                        ? restoreNormalContactLabel
+                        : stopReceivingInteractionLabel
+                  }
+                  danger
+                  onClick={handleBlockAction}
+                  disabled={blockMutation.isPending}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
+              {isFriend && !isSelfMirror ? (
                 <ProfileRow
                   label={deleteContactLabel}
                   value={
@@ -1823,7 +2239,12 @@ export function CharacterDetailPage() {
       </div>
 
       {!isDesktopLayout && character ? (
-        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-3 pt-3 backdrop-blur-xl">
+        // 走查再 R2：/character/$id 不走 MobileShell 的 safeBottom，AppPage 自己也
+        // 没补 safe-area。原来 pb-3=12px 在 iPhone X+ 34pt 的 home indicator 下
+        // "发消息 / 音视频通话 / 添加到通讯录"会被横条盖到一半。和
+        // chat-message-list / message-quote-selection-sheet 已经在用的写法对齐，
+        // pb 走 env(safe-area-inset-bottom)。
+        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
           <div
             className={cn(
               "grid gap-2",
@@ -1859,18 +2280,33 @@ export function CharacterDetailPage() {
                 />
               </>
             ) : (
+              // 走查 R1：拉黑后会把 friendship 删掉，整页转回非好友 layout，bottom
+              // bar 直接展示「添加到通讯录」邀请用户再 sendFriendRequest——但用户
+              // 刚刚才点了"加入黑名单"，此刻再发一次好友请求只会跑去后端被审计
+              // (autoAccept=true 时甚至会立刻 reactivate friendship 把 block
+              // 的效果绕过)。黑名单态下把主按钮换成不可点的「已加入黑名单」，
+              // 让用户先走"移出黑名单"那条 row 才能继续添加。
               <MobileProfileActionButton
                 primary
                 label={
-                  hasOutboundFriendRequest
-                    ? awaitingAcceptanceLabel
-                    : hasInboundFriendRequest
-                      ? viewFriendRequestLabel
-                      : sendFriendRequestDisplayedPending
-                        ? sendingLabel
-                        : addToContactsLabel
+                  isBlocked
+                    ? t(msg`已加入黑名单`)
+                    : hasOutboundFriendRequest
+                      ? awaitingAcceptanceLabel
+                      : hasInboundFriendRequest
+                        ? viewFriendRequestLabel
+                        : sendFriendRequestDisplayedPending
+                          ? sendingLabel
+                          : addToContactsLabel
                 }
+                // 走查新 R1：见上方 desktop add-button 的注释 —— characterQuery
+                // 缓存命中时底部 bar 就渲染，friendsQuery 还在拉就让 isAlreadyFriend
+                // 默认 false 走非好友 layout，按钮 enabled 给用户抢点的机会，给
+                // 已经是好友的 character 又发一次 friend_request。等 friendsQuery
+                // 回来再放行。
                 disabled={
+                  friendsQuery.isLoading ||
+                  isBlocked ||
                   hasOutboundFriendRequest ||
                   (sendFriendRequestMutation.isPending &&
                     !hasPendingFriendRequest)
@@ -2039,7 +2475,14 @@ function ProfileSection({
       >
         {title}
       </div>
-      <div className="border-t border-[color:var(--border-faint)]">
+      {/* 走查 R5：ProfileSection 的 children 容器只画了顶部一条横线（隔开 title
+          跟第一行），相邻 ProfileRow / ProfileSwitchRow 之间没有任何 separator。
+          移动端"设置备注和标签 / 地区 / 来源 / 标签 / 朋友圈 / 推荐给朋友"这堆
+          ProfileRow 在 WeChat 白底面板里挨在一起、视觉上糊成一块连看哪行是哪行
+          都得数 label 字数。和 chat-details-page 用的 divide-y 模式对齐，给所
+          有非首子加 border-t。inline 编辑表单本身就有 border-t（line 1671），
+          配合 divide-y 会把它跟自己叠成双线，下方把它移除让 divide 统一管。 */}
+      <div className="divide-y divide-[color:var(--border-faint)] border-t border-[color:var(--border-faint)]">
         {children}
       </div>
     </section>
@@ -2076,7 +2519,9 @@ function ProfileRow({
       >
         <div
           className={cn(
-            compact ? "w-[5.5rem] shrink-0" : "w-24 shrink-0",
+            compact
+            ? "min-w-[5.5rem] shrink-0 whitespace-nowrap"
+            : "min-w-24 shrink-0 whitespace-nowrap",
             danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
           )}
         >
@@ -2110,7 +2555,9 @@ function ProfileRow({
     >
       <div
         className={cn(
-          compact ? "w-[5.5rem] shrink-0" : "w-24 shrink-0",
+          compact
+            ? "min-w-[5.5rem] shrink-0 whitespace-nowrap"
+            : "min-w-24 shrink-0 whitespace-nowrap",
           danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
         )}
       >
@@ -2193,31 +2640,57 @@ function DetailInputField({
   placeholder,
   onChange,
   compact = false,
+  maxLength,
 }: {
   label: string;
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
   compact?: boolean;
+  maxLength?: number;
 }) {
+  // 走查 R1：备注 / 标签输入框原本没设 maxLength，用户粘 500+ 字符直接落 friendship 表，
+  // displayName / chat 列表标题 / 聊天 header 全被撑爆。后端 social.service.updateFriendProfile
+  // 只做 trim 不卡长度，前端先兜底。maxLength 一并喂到 <input> 让浏览器/IME 直接截断，
+  // 旁边再画一条 length/max 的 counter 给用户反馈。
+  const showCounter = typeof maxLength === "number";
+  const overLimit = showCounter && value.length > (maxLength as number);
   return (
     <label className="block">
       <div
         className={cn(
-          "mb-2 text-[color:var(--text-muted)]",
+          "mb-2 flex items-center justify-between gap-2 text-[color:var(--text-muted)]",
           compact ? "text-[11px]" : "text-xs uppercase tracking-[0.12em]",
         )}
       >
-        {label}
+        <span>{label}</span>
+        {showCounter ? (
+          <span
+            className={cn(
+              "tabular-nums",
+              overLimit
+                ? "text-[color:var(--state-danger-text)]"
+                : "text-[color:var(--text-dim)]",
+            )}
+          >
+            {value.length}/{maxLength}
+          </span>
+        ) : null}
       </div>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
+        // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+        // zoom-in。原本 compact (mobile) 给 text-[13px]、desktop 给 text-sm
+        // (14px) 都不够；mobile 走 DetailInputField 在角色详情页里铺了 10+ 处
+        // (备注名 / 备注标签 / 朋友圈权限 ...)，挨个点过去整页会反复弹缩。
+        // 移动端固定 16px；桌面端没有 zoom 问题继续用 14px 维持视觉密度。
         className={cn(
           "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
           compact
-            ? "rounded-[11px] py-2.5 text-[13px]"
+            ? "rounded-[11px] py-2.5 text-[16px]"
             : "rounded-[12px] py-3 text-sm",
         )}
       />

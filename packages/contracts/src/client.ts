@@ -37,6 +37,11 @@ import type {
   CreateCloudWorldRequest,
   ResolveWorldAccessRequest,
   ResolveWorldAccessResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  LoginWithPasswordRequest,
+  LoginWithPasswordResponse,
+  SendChangePasswordCodeResponse,
   SendEmailCodeRequest,
   SendEmailCodeResponse,
   SendPhoneCodeRequest,
@@ -60,6 +65,7 @@ import type {
   FeedMediaAsset,
   CreateFeedPostRequest,
   FeedChannelAuthorProfile,
+  FeedChannelHomeDecorationsResponse,
   FeedChannelHomeResponse,
   FeedChannelHomeSection,
   FeedListResponse,
@@ -70,12 +76,26 @@ import type {
   FeedViewRequest,
 } from "./feed";
 import type {
+  FarmCheckinResult,
+  FarmCheckinView,
+  FarmConsumableId,
+  FarmConsumablePurchaseResult,
   FarmCropId,
+  FarmDecorationId,
+  FarmDecorationPlaceResult,
+  FarmDecorationPurchaseResult,
+  FarmDogPurchaseResult,
   FarmEventView,
+  FarmGiftCoinsResult,
+  FarmGiftItemResult,
   FarmHarvestResult,
+  FarmLeaderboardType,
+  FarmLeaderboardView,
   FarmNeighborDetail,
   FarmNeighborSummary,
   FarmPlayerStateView,
+  FarmQuestClaimResult,
+  FarmQuestsView,
   FarmStealResult,
 } from "./farm";
 import type { GameCenterHomeResponse, GameCenterOwnerState } from "./games";
@@ -243,6 +263,15 @@ let coreApiAdminSecretProvider:
 let cloudWorldApiTokenProvider:
   | ((baseUrl: string | undefined) => string | null | undefined)
   | null = null;
+// 客户端当前的 UI locale。cloud-api 的 error filter 优先按 X-Yinjie-Locale
+// 头确定响应语言，没有才回落到 Accept-Language（即浏览器 / 系统语言）。
+// 用户在 app 内显式选了 locale（多语言设置）后，必须把这个值透传过去，否则
+// 系统是 zh-CN 而 app 选了 en-US 的用户会拿到中文 cloud-api 报错。
+// provider 由 app 在 main.tsx hydrate 后调 setCloudApiLocaleProvider 注册。
+// 返回 null/undefined 表示不附带，cloud-api 会按 Accept-Language 回落。
+let cloudApiLocaleProvider:
+  | (() => string | null | undefined)
+  | null = null;
 let apiRequestErrorHandler:
   | ((error: ApiRequestError) => void)
   | null = null;
@@ -254,6 +283,10 @@ export type ApiCallObservation = {
   durationMs: number;
   ok: boolean;
   errorCode?: string | null;
+  // 请求是否带上了 Authorization header。consumer（analytics bridge）用这个
+  // 标签把"用户还没登录 / cloud session 还没 rehydrate"导致的 401 滤掉，避免
+  // boot 期的预期 401 灌进 cloud-console 的错误率视图。
+  hadAuth?: boolean;
 };
 
 let apiCallObserver: ((observation: ApiCallObservation) => void) | null = null;
@@ -359,6 +392,14 @@ export function setCloudWorldApiTokenProvider(
   cloudWorldApiTokenProvider = provider;
 }
 
+// 注册当前 UI locale provider；cloud-api 请求会以此设 X-Yinjie-Locale 头，
+// 让服务端按用户在 app 内选择的语言返回 error message（而非浏览器系统语言）。
+export function setCloudApiLocaleProvider(
+  provider: (() => string | null | undefined) | null,
+) {
+  cloudApiLocaleProvider = provider;
+}
+
 export function setApiRequestErrorHandler(
   handler: ((error: ApiRequestError) => void) | null,
 ) {
@@ -402,6 +443,7 @@ async function request<T>(
       headers.set("Authorization", `Bearer ${token}`);
     }
   }
+  const hadAuth = headers.has("Authorization");
 
   const method = (init?.method ?? "GET").toUpperCase();
   const startedAt =
@@ -422,6 +464,7 @@ async function request<T>(
       durationMs: Math.round(currentTime() - startedAt),
       ok: false,
       errorCode: "network_error",
+      hadAuth,
     });
     throw networkError;
   }
@@ -478,6 +521,7 @@ async function request<T>(
       durationMs: Math.round(currentTime() - startedAt),
       ok: false,
       errorCode: error.errorCode,
+      hadAuth,
     });
 
     throw error;
@@ -490,6 +534,7 @@ async function request<T>(
     durationMs: Math.round(currentTime() - startedAt),
     ok: true,
     errorCode: null,
+    hadAuth,
   });
 
   return (rawBody ? (JSON.parse(rawBody) as T) : undefined) as T;
@@ -573,6 +618,18 @@ function requestCloudApi<T>(
   init?: RequestInit,
   baseUrl?: string,
 ) {
+  // 把用户在 app 内显式选的 UI locale 透传给 cloud-api，让 error filter
+  // 优先按 X-Yinjie-Locale 而不是 Accept-Language（系统语言）渲染错误文案。
+  // 避免「系统 zh-CN 但 app 改成 en-US」的用户在改密 / 发码失败时拿到中文。
+  // 调用方已在 headers 里显式设了同名头时不覆盖（保留它的意图）。
+  const locale = cloudApiLocaleProvider?.()?.trim();
+  if (locale) {
+    const headers = new Headers(init?.headers);
+    if (!headers.has("X-Yinjie-Locale")) {
+      headers.set("X-Yinjie-Locale", locale);
+      init = { ...(init ?? {}), headers };
+    }
+  }
   return request<T>(path, init, resolveCloudApiBaseUrl(baseUrl));
 }
 
@@ -895,24 +952,20 @@ function normalizeFeedPost<T extends FeedPost>(post: T, baseUrl?: string): T {
           baseUrl,
         )
       : undefined;
-  const normalizedCoverUrl =
+  // 音乐帖封面：MiniMax 给每首 audio 都附了一张 album-cover 图作为 posterUrl，
+  // 但原来这里没把 audio 走 posterUrl 这条 fallback —— channel-author-page 的
+  // ChannelPostCover 判 post.coverUrl truthy 渲缩略图，audio 全部 fall through
+  // 到灰色占位面板；视频号当前 18 条全是 audio，作者页缩略图全是占位灰板。
+  const primaryCoverCandidate =
     post.coverUrl?.trim() ||
-    (primaryMedia?.kind === "video"
+    (primaryMedia?.kind === "video" || primaryMedia?.kind === "audio"
       ? primaryMedia.posterUrl
       : primaryMedia?.kind === "image"
         ? primaryMedia.thumbnailUrl || primaryMedia.url
-        : undefined)
-      ? normalizeAttachmentAssetUrl(
-          post.coverUrl?.trim() ||
-            (primaryMedia?.kind === "video"
-              ? primaryMedia.posterUrl
-              : primaryMedia?.kind === "image"
-                ? primaryMedia.thumbnailUrl || primaryMedia.url
-                : undefined) ||
-            "",
-          baseUrl,
-        )
-      : null;
+        : undefined);
+  const normalizedCoverUrl = primaryCoverCandidate
+    ? normalizeAttachmentAssetUrl(primaryCoverCandidate, baseUrl)
+    : null;
 
   return {
     ...post,
@@ -924,7 +977,7 @@ function normalizeFeedPost<T extends FeedPost>(post: T, baseUrl?: string): T {
     durationMs:
       typeof post.durationMs === "number"
         ? post.durationMs
-        : primaryMedia?.kind === "video"
+        : primaryMedia?.kind === "video" || primaryMedia?.kind === "audio"
           ? (primaryMedia.durationMs ?? null)
           : null,
     aspectRatio:
@@ -977,6 +1030,21 @@ function normalizeFeedChannelHomeResponse(
   return {
     ...response,
     posts: response.posts.map((post) => normalizeFeedPost(post, baseUrl)),
+    liveEntries: response.liveEntries.map((entry) => ({
+      ...entry,
+      coverUrl: entry.coverUrl
+        ? normalizeAttachmentAssetUrl(entry.coverUrl, baseUrl)
+        : entry.coverUrl,
+    })),
+  };
+}
+
+function normalizeFeedChannelHomeDecorationsResponse(
+  response: FeedChannelHomeDecorationsResponse,
+  baseUrl?: string,
+): FeedChannelHomeDecorationsResponse {
+  return {
+    ...response,
     liveEntries: response.liveEntries.map((entry) => ({
       ...entry,
       coverUrl: entry.coverUrl
@@ -1203,6 +1271,46 @@ export function verifyCloudGoogleIdToken(
       method: "POST",
       body: JSON.stringify(payload),
     },
+    baseUrl,
+  );
+}
+
+export function loginCloudWithPassword(
+  payload: LoginWithPasswordRequest,
+  baseUrl?: string,
+) {
+  return requestCloudApi<LoginWithPasswordResponse>(
+    "/cloud/auth/login-with-password",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function sendCloudChangePasswordCode(
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<SendChangePasswordCodeResponse>(
+    "/cloud/auth/password/send-change-code",
+    buildCloudAuthHeaders(accessToken, { method: "POST" }),
+    baseUrl,
+  );
+}
+
+export function changeCloudPassword(
+  payload: ChangePasswordRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<ChangePasswordResponse>(
+    "/cloud/auth/password/change",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
     baseUrl,
   );
 }
@@ -1779,6 +1887,21 @@ export function deleteCharacter(id: string, baseUrl?: string) {
   );
 }
 
+export function setCharacterDefaultVoiceReply(
+  id: string,
+  enabled: boolean,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<{ id: string; defaultVoiceReply: boolean }>(
+    `/characters/${id}/default-voice-reply`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ enabled }),
+    },
+    baseUrl,
+  );
+}
+
 /**
  * Tenant-facing：从 wiki 导出的 JSON bundle 导入私有角色到当前 world，
  * 按 name upsert。同名→覆盖；新名→新建并自动建 friendship。
@@ -1787,7 +1910,14 @@ export function importPersonalCharacter(
   bundle: unknown,
   baseUrl?: string,
 ) {
-  return requestLegacyApi<{ character: Character; overwrote: boolean }>(
+  return requestLegacyApi<{
+    character: Character;
+    overwrote: boolean;
+    // 'friend' | 'close' | 'best' | 'blocked' | 'removed'。blocked 状态的角色
+    // re-import 后仍保留 blocked（用户明确动作不被覆盖），UI 据此显示对应文案
+    // 而不是无脑说"已加为好友"。
+    friendshipStatus: string;
+  }>(
     "/characters/import-personal",
     {
       method: "POST",
@@ -2403,6 +2533,34 @@ export function searchGroupMessages(
   }));
 }
 
+export interface RecordSearchActivityResponse {
+  success: true;
+  item: {
+    query: string;
+    usedAt: string;
+    source?: string | null;
+  };
+}
+
+/**
+ * 用户提交一次搜索关键词时上报到后端 owner_search_history_records，
+ * 同时触发 cyber-avatar 的 search_activity 信号——shake-discovery /
+ * need-discovery 这些 AI 推荐特性会从这里取用户兴趣信号。
+ */
+export function recordSearchActivity(
+  payload: { query: string; source?: string | null },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<RecordSearchActivityResponse>(
+    "/search/history",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
 export function recallGroupMessage(
   groupId: string,
   messageId: string,
@@ -2885,6 +3043,40 @@ export function getMoments(baseUrl?: string) {
   );
 }
 
+// 「我的朋友圈」专用：服务端只返回当前 world owner 发的 Moment[]，
+// 不再把全表 248+ 条 ~960KB 都拉回前端 filter 出 7 条。
+export function getOwnMoments(baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  return requestLegacyApi<Moment[]>(
+    "/moments?mine=true",
+    undefined,
+    baseUrl,
+  ).then((moments) =>
+    moments.map((moment) => normalizeMoment(moment, resolvedBaseUrl)),
+  );
+}
+
+// 单角色朋友圈专用：服务端按 authorType='character' AND authorId=id 过滤，
+// mobile-friend-moments-page / friend-moments-page 用。之前走 getMoments 拉全表
+// ~724KB 再客户端 filter 出该角色 5-10 条，每次进单个角色朋友圈页都付这流量。
+// 改成服务端过滤后只回该角色实际发过的几条。
+export function getCharacterMoments(characterId: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  const search = new URLSearchParams();
+  search.set("character", characterId);
+  return requestLegacyApi<Moment[]>(
+    `/moments?${search.toString()}`,
+    undefined,
+    baseUrl,
+  ).then((moments) =>
+    moments.map((moment) => normalizeMoment(moment, resolvedBaseUrl)),
+  );
+}
+
 export interface MomentsPageResponse {
   items: Moment[];
   total: number;
@@ -3234,6 +3426,225 @@ export function sellFarmCrop(
   );
 }
 
+export function buyFarmConsumable(
+  input: { consumableId: FarmConsumableId; quantity: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmConsumablePurchaseResult>(
+    "/games/farm/buy-consumable",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function applyFarmFertilizer(
+  input: { plotIndex: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmPlayerStateView>(
+    "/games/farm/apply-fertilizer",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function applyFarmPesticide(
+  input: { plotIndex: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmPlayerStateView>(
+    "/games/farm/apply-pesticide",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function buyFarmDog(baseUrl?: string) {
+  return requestLegacyApi<FarmDogPurchaseResult>(
+    "/games/farm/buy-dog",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    },
+    baseUrl,
+  );
+}
+
+export function feedFarmDog(baseUrl?: string) {
+  return requestLegacyApi<FarmPlayerStateView>(
+    "/games/farm/feed-dog",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    },
+    baseUrl,
+  );
+}
+
+export function uprootFarmPlot(input: { plotIndex: number }, baseUrl?: string) {
+  return requestLegacyApi<FarmPlayerStateView>(
+    "/games/farm/uproot",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function buyFarmDecoration(
+  input: { decorationId: FarmDecorationId; quantity: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmDecorationPurchaseResult>(
+    "/games/farm/buy-decoration",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function placeFarmDecoration(
+  input: { decorationId: FarmDecorationId; x: number; y: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmDecorationPlaceResult>(
+    "/games/farm/place-decoration",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function removeFarmDecoration(
+  input: { placementId: string },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmPlayerStateView>(
+    "/games/farm/remove-decoration",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function getFarmLeaderboard(
+  options?: { type?: FarmLeaderboardType; limit?: number },
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (options?.type) params.set("type", options.type);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  return requestLegacyApi<FarmLeaderboardView>(
+    qs ? `/games/farm/leaderboard?${qs}` : "/games/farm/leaderboard",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function giftFarmCoins(
+  input: { characterId: string; amount: number },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmGiftCoinsResult>(
+    "/games/farm/gift-coins",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function giftFarmItem(
+  input: {
+    characterId: string;
+    itemKind: "crop" | "seed" | "consumable";
+    itemId: string;
+    quantity: number;
+  },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmGiftItemResult>(
+    "/games/farm/gift-item",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
+export function getFarmCheckin(baseUrl?: string) {
+  return requestLegacyApi<FarmCheckinView>(
+    "/games/farm/checkin",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function doFarmCheckin(baseUrl?: string) {
+  return requestLegacyApi<FarmCheckinResult>(
+    "/games/farm/checkin",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    },
+    baseUrl,
+  );
+}
+
+export function getFarmQuests(baseUrl?: string) {
+  return requestLegacyApi<FarmQuestsView>(
+    "/games/farm/quests",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function claimFarmQuest(
+  input: { questId: string },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FarmQuestClaimResult>(
+    "/games/farm/quests/claim",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    baseUrl,
+  );
+}
+
 export function getFarmEvents(
   options?: { since?: string; limit?: number },
   baseUrl?: string,
@@ -3291,6 +3702,38 @@ export function getChannelHome(
     baseUrl,
   ).then((response) =>
     normalizeFeedChannelHomeResponse(response, resolvedBaseUrl),
+  );
+}
+
+export function getChannelHomeDecorations(
+  baseUrl?: string,
+  options?: {
+    section?: FeedChannelHomeSection;
+    page?: number;
+    limit?: number;
+  },
+) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  const params = new URLSearchParams();
+
+  if (options?.section) {
+    params.set("section", options.section);
+  }
+  if (typeof options?.page === "number") {
+    params.set("page", String(options.page));
+  }
+  if (typeof options?.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+
+  return requestLegacyApi<FeedChannelHomeDecorationsResponse>(
+    `/feed/channels/home/decorations${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  ).then((response) =>
+    normalizeFeedChannelHomeDecorationsResponse(response, resolvedBaseUrl),
   );
 }
 
@@ -3367,6 +3810,16 @@ export function likeFeedPost(id: string, baseUrl?: string) {
     `/feed/${id}/like`,
     {
       method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function unlikeFeedPost(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/like`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );
@@ -3501,13 +3954,18 @@ export function generateChannelPost(baseUrl?: string) {
   const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
     allowDefault: false,
   });
-  return requestLegacyApi<FeedPost>(
+  // 后端 generateChannelPost 在以下几种情况都返回 null（HTTP 201 + 空 body）：
+  // MINIMAX_API_KEY 没配 / 视频额度今日用完 / 没有 feedFrequency>0 的角色。
+  // requestLegacyApi 拿到空 body 会返回 undefined，传给 normalizeFeedPost
+  // 会读 `post.media` 抛 TypeError——上层 mutation 又没 onError，UI 上
+  // 用户看到的就是一坨堆栈。这里直接挡掉，让 mutation 自己判 null。
+  return requestLegacyApi<FeedPost | null | undefined>(
     "/feed/channels/generate",
     {
       method: "POST",
     },
     baseUrl,
-  ).then((post) => normalizeFeedPost(post, resolvedBaseUrl));
+  ).then((post) => (post ? normalizeFeedPost(post, resolvedBaseUrl) : null));
 }
 
 export function listOfficialAccounts(baseUrl?: string) {
@@ -4099,4 +4557,240 @@ export function rejectInviteRedemption(
   baseUrl?: string,
 ) {
   return rejectInviteRedemptionAdmin(id, payload, init, baseUrl);
+}
+
+// ============================================================
+// 抢车位 (parking-war) — see api/src/modules/games/parking-war/
+// ============================================================
+import type {
+  ParkingWarCarTier,
+  ParkingWarCollectResult,
+  ParkingWarDailyBonusResult,
+  ParkingWarEventView,
+  ParkingWarLeaderboardRow,
+  ParkingWarLotSurface,
+  ParkingWarNeighborDetail,
+  ParkingWarNeighborSummary,
+  ParkingWarPlayerStateView,
+  ParkingWarRarity,
+  ParkingWarRecallResult,
+  ParkingWarTicketResult,
+  ParkingWarTowResult,
+} from "./parking-war";
+
+const PW = "/games/parking-war";
+
+function postJsonParkingWar<T>(path: string, body: unknown, baseUrl?: string) {
+  return requestLegacyApi<T>(
+    path,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body ?? {}),
+    },
+    baseUrl,
+  );
+}
+
+export function getParkingWarState(baseUrl?: string) {
+  return requestLegacyApi<ParkingWarPlayerStateView>(
+    `${PW}/state`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getParkingWarNeighbors(
+  options?: { limit?: number },
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  return requestLegacyApi<ParkingWarNeighborSummary[]>(
+    qs ? `${PW}/neighbors?${qs}` : `${PW}/neighbors`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getParkingWarNeighborDetail(
+  characterId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<ParkingWarNeighborDetail>(
+    `${PW}/neighbors/${encodeURIComponent(characterId)}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getParkingWarEvents(
+  options?: { since?: string; limit?: number },
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (options?.since) params.set("since", options.since);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  return requestLegacyApi<ParkingWarEventView[]>(
+    qs ? `${PW}/events?${qs}` : `${PW}/events`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getParkingWarLeaderboard(
+  options?: { scope?: "global" | "friends"; limit?: number },
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (options?.scope) params.set("scope", options.scope);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  const qs = params.toString();
+  return requestLegacyApi<ParkingWarLeaderboardRow[]>(
+    qs ? `${PW}/leaderboard?${qs}` : `${PW}/leaderboard`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function parkParkingWarCar(
+  input: { carId: string; slotIndex: number; characterId?: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/park`,
+    input,
+    baseUrl,
+  );
+}
+
+export function recallParkingWarCar(
+  input: { occupancyId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarRecallResult>(
+    `${PW}/recall`,
+    input,
+    baseUrl,
+  );
+}
+
+export function collectParkingWarSlot(
+  input: { slotIndex?: number },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarCollectResult>(
+    `${PW}/collect`,
+    input,
+    baseUrl,
+  );
+}
+
+export function ticketParkingWarOccupancy(
+  input: { occupancyId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarTicketResult>(
+    `${PW}/ticket`,
+    input,
+    baseUrl,
+  );
+}
+
+export function towParkingWarOccupancy(
+  input: { occupancyId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarTowResult>(
+    `${PW}/tow`,
+    input,
+    baseUrl,
+  );
+}
+
+export function buyParkingWarCar(
+  input: { tier: ParkingWarCarTier; rarity: ParkingWarRarity },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/buy-car`,
+    input,
+    baseUrl,
+  );
+}
+
+export function upgradeParkingWarCar(
+  input: { carId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/upgrade-car`,
+    input,
+    baseUrl,
+  );
+}
+
+export function paintParkingWarCar(
+  input: { carId: string; paintIndex: number },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/paint-car`,
+    input,
+    baseUrl,
+  );
+}
+
+export function repairParkingWarCar(
+  input: { carId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/repair-car`,
+    input,
+    baseUrl,
+  );
+}
+
+export function upgradeParkingWarLot(
+  input: {
+    target: "size" | "surface";
+    value: number | ParkingWarLotSurface;
+  },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/upgrade-lot`,
+    input,
+    baseUrl,
+  );
+}
+
+export function upgradeParkingWarGarage(baseUrl?: string) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/upgrade-garage`,
+    {},
+    baseUrl,
+  );
+}
+
+export function claimParkingWarDailyBonus(baseUrl?: string) {
+  return postJsonParkingWar<ParkingWarDailyBonusResult>(
+    `${PW}/daily-bonus`,
+    {},
+    baseUrl,
+  );
+}
+
+export function claimParkingWarDailyTask(
+  input: { taskId: string },
+  baseUrl?: string,
+) {
+  return postJsonParkingWar<ParkingWarPlayerStateView>(
+    `${PW}/daily-task/claim`,
+    input,
+    baseUrl,
+  );
 }

@@ -1,6 +1,8 @@
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -222,31 +224,50 @@ function DirectChatDetailsPanel({
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  // 走查 R1：单聊「聊天信息」侧栏每次打开都重拉这 5 份 cache（详情按钮在
+  // header 右侧，用户切会话 / 打开 details / 关掉再开都会重 mount），其中
+  // app-character/app-friends/app-friend-requests/app-conversations/blocked
+  // 五个上一个页面（contacts/character-detail/workspace 60s 轮询）大概率刚
+  // 加载过。公网隧道 RTT ~600ms × 5 并发，明显的"开侧栏后空白几百毫秒"。
+  // 对齐其他页面（contacts-page / chat-details-page / character-detail-page
+  // 均为 15s）的 staleTime；blocked 与 contacts 走查同款给 30s。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, targetCharacterId],
     queryFn: () => getCharacter(targetCharacterId, baseUrl),
     enabled: Boolean(targetCharacterId),
+    staleTime: 15_000,
   });
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
     enabled: Boolean(targetCharacterId),
+    staleTime: 15_000,
   });
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
 
+  // 走查 R22：原 queryKey 用 "app-chat-details-blocked"，是给移动端 chat-details-page
+  // 这条独立路由用的；desktop 这套 DesktopChatDetailsPanel 只在 desktop-chat-workspace
+  // 的右侧侧栏里挂，workspace 自己（line 338-347）+ desktop-message-avatar-popover
+  // 都用 "app-chat-blocked-characters" key。三者同屏 / 同 session 共存，但本面板
+  // 用独立 key → workspace 已经把 blocked 列表拉过、cache 是热的，详情侧栏一打
+  // 开还要在公网隧道（~600ms RTT）再发一次完全一样的 getBlockedCharacters。
+  // 统一到 desktop 端的 "app-chat-blocked-characters" key 复用主缓存。
   const blockedQuery = useQuery({
-    queryKey: ["app-chat-details-blocked", baseUrl],
+    queryKey: ["app-chat-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
+    staleTime: 30_000,
   });
 
   const targetCharacter = characterQuery.data;
@@ -280,7 +301,7 @@ function DirectChatDetailsPanel({
     : undefined;
   const relationshipSummary = isFriend
     ? remarkName
-      ? t(msg`昵称：${targetCharacter?.name ?? conversation.title}`)
+      ? t(msg`昵称：${targetCharacter?.name || conversation.title}`)
       : targetCharacter?.relationship || t(msg`联系人`)
     : targetCharacter?.relationship || t(msg`世界角色`);
   const backgroundLabel = getChatBackgroundLabel(
@@ -344,6 +365,11 @@ function DirectChatDetailsPanel({
         queryKey: ["app-friends", baseUrl],
       });
     },
+    // 错误反馈本身已经走面板顶部那张 updateProfileMutation.isError ErrorBlock，
+    // 不要再走 setNotice：notice 上面是 InlineNotice tone="success"（绿色调，
+    // 文案库里都是「已更新/已置顶」），把网络失败塞进去会出现"绿色成功条上
+    // 写着‘FRIEND_NOT_FOUND’"的怪 UX。真正要修的只是 handleProfileSave
+    // 那条 await mutateAsync 漏 catch（详见下方）。
   });
 
   const clearMutation = useMutation({
@@ -422,7 +448,92 @@ function DirectChatDetailsPanel({
       navigateToChatWorkspace(true);
     },
   });
-  const handleAddToContacts = () => {
+
+  // 走查新一轮 R29：和姊妹移动端 chat-details-page R2（commit 2d6d33d57）同款
+  // 修法——「星标朋友」/「置顶聊天」/「消息免打扰」3 个 toggle 行只挂了
+  // `disabled={busy}`，busy = mutation.isPending 是 React state 要等 commit
+  // 才进 DOM。同帧 <16ms 第二次 click 都看到 disabled=false → mutation.mutate
+  // 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本闪两次。叠 sync
+  // ref 锁兜同帧 double-tap，pending 翻 false 后 useEffect 复位。
+  const starredSubmittingRef = useRef(false);
+  const pinSubmittingRef = useRef(false);
+  const muteSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!setStarredMutation.isPending) {
+      starredSubmittingRef.current = false;
+    }
+  }, [setStarredMutation.isPending]);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!muteMutation.isPending) {
+      muteSubmittingRef.current = false;
+    }
+  }, [muteMutation.isPending]);
+  const handleToggleStarred = (next: boolean) => {
+    if (starredSubmittingRef.current) {
+      return;
+    }
+    starredSubmittingRef.current = true;
+    setStarredMutation.mutate(next);
+  };
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleToggleMute = (next: boolean) => {
+    if (muteSubmittingRef.current) {
+      return;
+    }
+    muteSubmittingRef.current = true;
+    muteMutation.mutate(next);
+  };
+
+  // 走查 R2：和姊妹 mobile chat-details-page R3（commit cdc13e28a）同款问题。
+  // 单聊「聊天信息」侧栏内 8 处「点行进二级页」按钮全部走
+  // `onClick={() => { void navigate({ to: ... }) }}` 形态、没挂同步 ref 守：
+  // - 添加到通讯录 (handleAddToContacts, /tabs/contacts 或 /desktop/add-friend)
+  // - 朋友圈 (handleOpenMoments, /desktop/friend-moments/$characterId)
+  // - 共同群聊 (buildDesktopChatThreadPath)
+  // - 更多资料 (/character/$characterId)
+  // - 聊天文件 (/desktop/chat-files)
+  // - 聊天背景 (/chat/$conversationId/background)
+  // - 发起群聊 fallback (/group/new，onCreateGroup 缺省时走)
+  //
+  // DesktopContactProfileActionRow / DesktopContactProfileToggleRow 内 onClick
+  // 没有任何 throttle，每个 tap 都直冲 navigate；同帧 <16ms 双击任一行都让
+  // tanstack-router push 2 条相同 history 项 → 用户从二级页返回还要按 2 次返回
+  // 才能回到 details，并且像 friend-moments / character-detail 这种二级页
+  // mount 时拉网络数据的，第二次也会重复 RTT 一次（公网隧道 ~600ms）。
+  //
+  // 加一把共享 rowNavigateFiredRef + guardRowNavigation 包装器（和姊妹
+  // backFiredRef / chat-details-page guardRowNavigation 同款写法），同 mount
+  // 内首次 click 后所有后续 row click 直接 noop，raf 后释放兜底 navigate 没
+  // 真正切走的边界（例如 disabled / dialog 拦截）。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+
+  const handleAddToContacts = guardRowNavigation(() => {
     if (!targetCharacterId) {
       return;
     }
@@ -441,14 +552,14 @@ function DirectChatDetailsPanel({
     void navigate({
       to: "/desktop/add-friend",
       hash: buildDesktopAddFriendRouteHash({
-        keyword: targetCharacter?.name ?? conversation.title ?? "",
+        keyword: targetCharacter?.name || conversation.title || "",
         characterId: targetCharacterId,
         openCompose: true,
       }),
     });
-  };
+  });
 
-  const handleOpenMoments = () => {
+  const handleOpenMoments = guardRowNavigation(() => {
     if (!isFriend || !targetCharacterId) {
       return;
     }
@@ -465,7 +576,7 @@ function DirectChatDetailsPanel({
         }),
       }),
     });
-  };
+  });
 
   const currentEditDialog =
     editingField === "remarkName"
@@ -477,8 +588,10 @@ function DirectChatDetailsPanel({
           onConfirm: async (value: string) => {
             const nextForm = { ...profileForm, remarkName: value };
             setProfileForm(nextForm);
-            await handleProfileSave(nextForm);
-            setEditingField(null);
+            const saved = await handleProfileSave(nextForm);
+            if (saved) {
+              setEditingField(null);
+            }
           },
         }
       : editingField === "tags"
@@ -490,8 +603,10 @@ function DirectChatDetailsPanel({
             onConfirm: async (value: string) => {
               const nextForm = { ...profileForm, tags: value };
               setProfileForm(nextForm);
-              await handleProfileSave(nextForm);
-              setEditingField(null);
+              const saved = await handleProfileSave(nextForm);
+              if (saved) {
+                setEditingField(null);
+              }
             },
           }
         : null;
@@ -500,13 +615,24 @@ function DirectChatDetailsPanel({
     remarkName: string;
     tags: string;
   }) {
-    await updateProfileMutation.mutateAsync({
-      remarkName: nextForm.remarkName.trim() || null,
-      tags: nextForm.tags
-        .split(/[，,]/)
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    });
+    // 旧版直接 await mutateAsync 不 catch：mutation 失败时 mutateAsync 会
+    // reject 一路冒到 currentEditDialog.onConfirm → 父层的
+    // `void currentEditDialog.onConfirm(value)` 漏接，落 window
+    // unhandledrejection。这里改成 try/catch — 成功 / 失败由 mutation
+    // 的 onSuccess / onError 各自负责写 notice，函数只负责告诉调用方该不
+    // 该关弹层。
+    try {
+      await updateProfileMutation.mutateAsync({
+        remarkName: nextForm.remarkName.trim() || null,
+        tags: nextForm.tags
+          .split(/[，,]/)
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   const busy =
@@ -599,10 +725,33 @@ function DirectChatDetailsPanel({
       updateProfileMutation.error instanceof Error ? (
         <ErrorBlock message={updateProfileMutation.error.message} />
       ) : null}
+      {/* 走查新一轮 R1：pin / mute / clear / hide / report / block 6 个 mutation
+          都只挂了 onSuccess，错误路径完全静默 — server 返 4xx/5xx 时用户在 UI
+          上看不到任何反馈，会反复点同一个按钮（toggle 行尤其坑：conversation.isPinned
+          props 没翻，按钮视觉上没变化，用户以为没点中）。和姊妹 setStarred /
+          updateProfile 同款，把 isError 接入 ErrorBlock 列表。 */}
+      {pinMutation.isError && pinMutation.error instanceof Error ? (
+        <ErrorBlock message={pinMutation.error.message} />
+      ) : null}
+      {muteMutation.isError && muteMutation.error instanceof Error ? (
+        <ErrorBlock message={muteMutation.error.message} />
+      ) : null}
+      {clearMutation.isError && clearMutation.error instanceof Error ? (
+        <ErrorBlock message={clearMutation.error.message} />
+      ) : null}
+      {hideMutation.isError && hideMutation.error instanceof Error ? (
+        <ErrorBlock message={hideMutation.error.message} />
+      ) : null}
+      {reportMutation.isError && reportMutation.error instanceof Error ? (
+        <ErrorBlock message={reportMutation.error.message} />
+      ) : null}
+      {blockMutation.isError && blockMutation.error instanceof Error ? (
+        <ErrorBlock message={blockMutation.error.message} />
+      ) : null}
 
       <DesktopContactProfileHeader
         avatar={targetCharacter?.avatar}
-        name={targetCharacter?.name ?? conversation.title}
+        name={targetCharacter?.name || conversation.title}
         displayName={displayName}
         subline={relationshipSummary}
         compact
@@ -640,7 +789,7 @@ function DirectChatDetailsPanel({
                 />
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name ?? conversation.title}
+                  value={targetCharacter?.name || conversation.title}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`个性签名`)}
@@ -684,7 +833,7 @@ function DirectChatDetailsPanel({
               <>
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name ?? conversation.title}
+                  value={targetCharacter?.name || conversation.title}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`身份`)}
@@ -721,7 +870,7 @@ function DirectChatDetailsPanel({
                   ? t(msg`${commonGroups.length} 个共同群聊`)
                   : t(msg`暂时没有共同群聊`)
               }
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (!commonGroups[0]) {
                   return;
                 }
@@ -731,7 +880,7 @@ function DirectChatDetailsPanel({
                     conversationId: commonGroups[0].id,
                   }),
                 });
-              }}
+              })}
               disabled={!commonGroups.length}
               valueMuted={!commonGroups.length}
             />
@@ -742,7 +891,7 @@ function DirectChatDetailsPanel({
                   ? t(msg`查看角色档案与扩展介绍`)
                   : t(msg`查看角色资料`)
               }
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (!targetCharacterId) {
                   return;
                 }
@@ -758,7 +907,7 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
               disabled={!targetCharacterId}
             />
           </DesktopContactProfileSection>
@@ -772,17 +921,17 @@ function DirectChatDetailsPanel({
             <DesktopContactProfileActionRow
               label={t(msg`聊天文件`)}
               value={t(msg`查看本聊天附件`)}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 void navigate({
                   to: "/desktop/chat-files",
                   hash: buildDesktopChatFilesRouteHash(conversation.id),
                 });
-              }}
+              })}
             />
             <DesktopContactProfileActionRow
               label={t(msg`聊天背景`)}
               value={backgroundLabel}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 void navigate({
                   to: "/chat/$conversationId/background",
                   params: { conversationId: conversation.id },
@@ -794,12 +943,12 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
             />
             <DesktopContactProfileActionRow
               label={t(msg`发起群聊`)}
               value={t(msg`和对方创建新群`)}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (onCreateGroup) {
                   onCreateGroup({
                     conversationId: conversation.id,
@@ -821,7 +970,7 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
             />
           </DesktopContactProfileSection>
 
@@ -832,20 +981,20 @@ function DirectChatDetailsPanel({
                 checked={friendship?.isStarred ?? false}
                 disabled={busy}
                 onToggle={() =>
-                  setStarredMutation.mutate(!(friendship?.isStarred ?? false))
+                  handleToggleStarred(!(friendship?.isStarred ?? false))
                 }
               />
               <DesktopContactProfileToggleRow
                 label={t(msg`置顶聊天`)}
                 checked={conversation.isPinned}
                 disabled={busy}
-                onToggle={() => pinMutation.mutate(!conversation.isPinned)}
+                onToggle={() => handleTogglePin(!conversation.isPinned)}
               />
               <DesktopContactProfileToggleRow
                 label={t(msg`消息免打扰`)}
                 checked={conversation.isMuted}
                 disabled={busy}
-                onToggle={() => muteMutation.mutate(!conversation.isMuted)}
+                onToggle={() => handleToggleMute(!conversation.isMuted)}
               />
             </DesktopContactProfileSection>
           ) : null}
@@ -902,24 +1051,6 @@ function DirectChatDetailsPanel({
         </>
       )}
 
-      {pinMutation.isError && pinMutation.error instanceof Error ? (
-        <ErrorBlock message={pinMutation.error.message} />
-      ) : null}
-      {muteMutation.isError && muteMutation.error instanceof Error ? (
-        <ErrorBlock message={muteMutation.error.message} />
-      ) : null}
-      {hideMutation.isError && hideMutation.error instanceof Error ? (
-        <ErrorBlock message={hideMutation.error.message} />
-      ) : null}
-      {clearMutation.isError && clearMutation.error instanceof Error ? (
-        <ErrorBlock message={clearMutation.error.message} />
-      ) : null}
-      {reportMutation.isError && reportMutation.error instanceof Error ? (
-        <ErrorBlock message={reportMutation.error.message} />
-      ) : null}
-      {blockMutation.isError && blockMutation.error instanceof Error ? (
-        <ErrorBlock message={blockMutation.error.message} />
-      ) : null}
       <DesktopChatConfirmDialog
         open={Boolean(activeConfirm)}
         title={activeConfirm?.title ?? ""}
@@ -958,6 +1089,18 @@ function DirectChatDetailsPanel({
           placeholder={currentEditDialog.placeholder}
           initialValue={currentEditDialog.initialValue}
           pending={updateProfileMutation.isPending}
+          // 走查新一轮 R26：updateProfileMutation 错误反馈在面板顶部那张
+          // ErrorBlock 渲染，但 dialog 打开时 backdrop 把面板整片遮住，错误
+          // 信息看不到。用户改备注 / 标签失败时只看到 dialog 没关、按钮回到
+          // 「保存」状态，分不清是"刚才保存了一下没反应"还是"还没保存"。
+          // DesktopContactTextEditDialog 内置 error 槽，把 mutation.error
+          // 透传过去渲染在保存按钮上方。
+          error={
+            updateProfileMutation.isError &&
+            updateProfileMutation.error instanceof Error
+              ? updateProfileMutation.error.message
+              : null
+          }
           onClose={() => setEditingField(null)}
           onConfirm={(value: string) => {
             void currentEditDialog.onConfirm(value);
@@ -1017,6 +1160,79 @@ function GroupChatDetailsPanel({
     setAvatarPopover(null);
   }, [conversation.id]);
 
+  // 走查电脑端群聊 R1：和姊妹 DirectChatDetailsPanel R2（commit 34f317955 —
+  // 「聊天信息」侧栏 8 处行进二级页缺同帧双击 ref 守）/ 移动端 chat-details
+  // R3（commit cdc13e28a）同款问题。本群聊「聊天信息」侧栏下方 3 处行进
+  // 二级页 row 全部裸跑 `onClick={() => { void navigate({ to: ... }) }}`：
+  //   - 群二维码 → /group/$groupId/qr （line 1868-1888）
+  //   - 聊天文件 → /desktop/chat-files （line 1894-1903）
+  //   - 聊天背景 → /group/$groupId/background （line 1973-1989）
+  // DesktopWechatGroupRow 内 onClick 没有任何 throttle，每个 tap 都直冲
+  // navigate；同帧 <16ms 双击任一行都让 tanstack-router push 2 条相同
+  // history 项 → 用户从二级页返回还要按 2 次返回才能回到 details；并且
+  // chat-files / group-qr / chat-background 几个二级页 mount 时各自拉网络
+  // 数据（getGroupAttachments / getGroupBackground / getGroupQrcode），第二次
+  // 也会重复 RTT 一次（公网隧道 ~600ms）。
+  // 加一把共享 rowNavigateFiredRef + guardRowNavigation 包装器（和姊妹
+  // DirectChatDetailsPanel 同款写法），同 mount 内首次 click 后所有后续 row
+  // click 直接 noop，raf 后释放兜底"navigate 没真正切走"（disabled/dialog 拦截）
+  // 的边界。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+
+  const handleOpenGroupQr = guardRowNavigation(() => {
+    void navigate({
+      to: "/group/$groupId/qr",
+      params: { groupId: conversation.id },
+      search: buildGroupInviteReturnSearch({
+        conversationPath: `/group/${conversation.id}`,
+        conversationTitle: groupQuery.data?.name || conversation.title,
+      }),
+      hash: buildMobileGroupRouteHash({
+        returnPath: "/tabs/chat",
+        returnHash: buildDesktopChatRouteHash({
+          conversationId: conversation.id,
+          panel: "details",
+        }),
+      }),
+    });
+  });
+
+  const handleOpenChatFiles = guardRowNavigation(() => {
+    void navigate({
+      to: "/desktop/chat-files",
+      hash: buildDesktopChatFilesRouteHash(conversation.id),
+    });
+  });
+
+  const handleOpenChatBackground = guardRowNavigation(() => {
+    void navigate({
+      to: "/group/$groupId/background",
+      params: { groupId: conversation.id },
+      hash: buildMobileGroupRouteHash({
+        returnPath: "/tabs/chat",
+        returnHash: buildDesktopChatRouteHash({
+          conversationId: conversation.id,
+          panel: "details",
+        }),
+      }),
+    });
+  });
+
   useEffect(() => {
     if (!notice) {
       return;
@@ -1063,18 +1279,23 @@ function GroupChatDetailsPanel({
     }
   }, [actionRequest]);
 
+  // 同上方 DirectChatDetailsPanel 走查 R1：群聊「聊天信息」侧栏 3 份 cache
+  // 都缺 staleTime，开侧栏重 mount 3 路并发 RTT，对齐其他页面 15s。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, conversation.id],
     queryFn: () => getGroup(conversation.id, baseUrl),
+    staleTime: 15_000,
   });
 
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, conversation.id],
     queryFn: () => getGroupMembers(conversation.id, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
 
   const backgroundLabel = getChatBackgroundLabel(
@@ -1181,24 +1402,75 @@ function GroupChatDetailsPanel({
   });
 
   const addMembersMutation = useMutation({
+    // 走查桌面端群聊 R1：原版顺序 `for await addGroupMember` —— 公网隧道 ~600ms
+    // RTT × N 个成员，选 5 个就要等 3 秒按钮一直 disabled。removeMembersMutation
+    // 已经用 Promise.all 并发 DELETE，add 路径维持串行没有特殊理由（server
+    // 端 addMember 对重复成员幂等返回 existing，相互之间无序）。对齐 remove
+    // 路径，并发起 N 路 POST，5 个成员从 3s 降到 ~600ms。
+    //
+    // 新一轮走查 R2：和姊妹 chat-message-list R1 (commit 279cd8f41 — 多选收藏
+    // Promise.all 失败一条全批 throw) 同款 partial-success 修法。原版 Promise.all
+    // 一条 addGroupMember 抛错就整段 await throw（公网 timeout / cloud token 续期
+    // 都可能），但前 K 条已经成功落库——server 端已加 K 个成员、frontend 显示
+    // ErrorBlock 但 notice 没说成功了几个。用户重选同样 N 个再试 → 前 K 个 server
+    // 端幂等返回 existing 不报错（add 是幂等的）→ 但用户其实不知道刚才已经成功
+    // K 个。改成 Promise.allSettled：全失败时仍 throw 触发 ErrorBlock 兜底，
+    // 部分成功时 onSuccess 给出"已添加 N 位；剩余 M 位添加失败：reason"，让用户
+    // 基于真实状态决定要不要继续操作。
     mutationFn: async (memberIds: string[]) => {
-      for (const memberId of memberIds) {
-        await addGroupMember(
-          conversation.id,
-          {
-            memberId,
-            memberType: "character",
-          },
-          baseUrl,
+      const results = await Promise.allSettled(
+        memberIds.map((memberId) =>
+          addGroupMember(
+            conversation.id,
+            {
+              memberId,
+              memberType: "character",
+            },
+            baseUrl,
+          ),
+        ),
+      );
+      const succeededIds: string[] = [];
+      const failures: Array<{ memberId: string; error: unknown }> = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          succeededIds.push(memberIds[index]!);
+        } else {
+          failures.push({
+            memberId: memberIds[index]!,
+            error: result.reason,
+          });
+        }
+      });
+      if (succeededIds.length === 0 && failures.length > 0) {
+        throw failures[0]!.error;
+      }
+      return { succeededIds, failures };
+    },
+    onSuccess: async (result) => {
+      const { succeededIds, failures } = result;
+      if (failures.length === 0) {
+        setNotice(
+          succeededIds.length === 1
+            ? t(msg`已添加 1 位群成员。`)
+            : t(msg`已添加 ${succeededIds.length} 位群成员。`),
+        );
+      } else {
+        const firstError = failures[0]!.error;
+        const errorMessage =
+          firstError instanceof Error && firstError.message
+            ? firstError.message
+            : "";
+        setNotice(
+          errorMessage
+            ? t(
+                msg`已添加 ${succeededIds.length} 位；剩余 ${failures.length} 位添加失败：${errorMessage}`,
+              )
+            : t(
+                msg`已添加 ${succeededIds.length} 位；剩余 ${failures.length} 位添加失败，请稍后再试。`,
+              ),
         );
       }
-    },
-    onSuccess: async (_, memberIds) => {
-      setNotice(
-        memberIds.length === 1
-          ? t(msg`已添加 1 位群成员。`)
-          : t(msg`已添加 ${memberIds.length} 位群成员。`),
-      );
       setMemberPickerOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({
@@ -1233,19 +1505,63 @@ function GroupChatDetailsPanel({
   });
 
   const removeMembersMutation = useMutation({
+    // 新一轮走查 R2：和姊妹 chat-message-list R1 (commit 279cd8f41) / 上方
+    // addMembersMutation 同款 partial-success 修法。原版 Promise.all 一条
+    // removeGroupMember 抛错就整段 throw——remove 路径比 add 路径更敏感，
+    // server 端对"已删除成员"硬抛 CHAT_GROUP_MEMBER_NOT_FOUND（add 是幂等
+    // 返回 existing），但偏偏 picker 的同帧 double-click 由 picker R1 的
+    // sync ref 拦掉了，所以这条 path 现在主要是公网 timeout 部分失败：选 5 个
+    // 移除、中间 1 个超时 → 前 K 个其实已经从群里 DELETE 成功、UI 却只显示
+    // "移除失败"红条 → 用户再选剩下重试，前 K 个 server 端返回 NOT_FOUND
+    // 又"移除失败"。Promise.allSettled 部分成功时给出"已移除 N 位；剩余 M 位
+    // 移除失败：reason"，全失败时仍 throw 触发 ErrorBlock。
     mutationFn: async (memberIds: string[]) => {
-      await Promise.all(
+      const results = await Promise.allSettled(
         memberIds.map((memberId) =>
           removeGroupMember(conversation.id, memberId, baseUrl),
         ),
       );
+      const succeededIds: string[] = [];
+      const failures: Array<{ memberId: string; error: unknown }> = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          succeededIds.push(memberIds[index]!);
+        } else {
+          failures.push({
+            memberId: memberIds[index]!,
+            error: result.reason,
+          });
+        }
+      });
+      if (succeededIds.length === 0 && failures.length > 0) {
+        throw failures[0]!.error;
+      }
+      return { succeededIds, failures };
     },
-    onSuccess: async (_, memberIds) => {
-      setNotice(
-        memberIds.length === 1
-          ? t(msg`已移除 1 位群成员。`)
-          : t(msg`已移除 ${memberIds.length} 位群成员。`),
-      );
+    onSuccess: async (result) => {
+      const { succeededIds, failures } = result;
+      if (failures.length === 0) {
+        setNotice(
+          succeededIds.length === 1
+            ? t(msg`已移除 1 位群成员。`)
+            : t(msg`已移除 ${succeededIds.length} 位群成员。`),
+        );
+      } else {
+        const firstError = failures[0]!.error;
+        const errorMessage =
+          firstError instanceof Error && firstError.message
+            ? firstError.message
+            : "";
+        setNotice(
+          errorMessage
+            ? t(
+                msg`已移除 ${succeededIds.length} 位；剩余 ${failures.length} 位移除失败：${errorMessage}`,
+              )
+            : t(
+                msg`已移除 ${succeededIds.length} 位；剩余 ${failures.length} 位移除失败，请稍后再试。`,
+              ),
+        );
+      }
       setMemberPickerOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({
@@ -1285,6 +1601,46 @@ function GroupChatDetailsPanel({
     },
   });
 
+  // 新一轮走查 R1：和姊妹单聊 R29（commit 01dcc31c6）/ 移动端 R2（2d6d33d57）
+  // 同款修法——「聊天信息」侧栏一共 7 个群聊 toggle 行（消息免打扰 / @我仍通知
+  // / @所有人仍通知 / 群公告仍通知 / 置顶聊天 / 保存到通讯录 / 显示群成员昵称）
+  // 都只挂了 `disabled={busy}`，busy = mutation.isPending 是 React state 要等
+  // commit 才进 DOM。同帧 <16ms 第二次 click 都看到 disabled=false → mutation.
+  // mutate 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本闪两次
+  // （比如「已开启群消息免打扰」连刷两遍）。叠 sync ref 锁兜同帧 double-tap，
+  // pending 翻 false 后 useEffect 复位。preferencesMutation 被 6 个 toggle 共用，
+  // 共一把 ref 锁——同帧切两个不同偏好的极端 case 也被挡掉，但用户单击一个
+  // toggle 后 RTT 内换另一个 toggle（人类反应时间 >100ms）走的是 disabled
+  // 路径，正常通过。
+  const pinSubmittingRef = useRef(false);
+  const preferencesSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!preferencesMutation.isPending) {
+      preferencesSubmittingRef.current = false;
+    }
+  }, [preferencesMutation.isPending]);
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleTogglePreferences = (
+    payload: Parameters<typeof preferencesMutation.mutate>[0],
+  ) => {
+    if (preferencesSubmittingRef.current) {
+      return;
+    }
+    preferencesSubmittingRef.current = true;
+    preferencesMutation.mutate(payload);
+  };
+
   const ownerMember = useMemo(
     () =>
       (membersQuery.data ?? []).find(
@@ -1317,6 +1673,19 @@ function GroupChatDetailsPanel({
     [friendMap],
   );
 
+  // 走查电脑端群聊 R2：原版下方 JSX 里 existingMemberIds={(membersQuery.data ?? []).map(...)}
+  // 直接在 JSX 里 .map 出 array → 每次 GroupChatDetailsPanel re-render（typing
+  // socket / messages 流 / conversations 60s 轮询透传 conversation prop 都会
+  // 让父 workspace 重渲带本侧栏一起）都 new 一份 array。picker 内 existingMemberIdSet
+  // useMemo 依赖这个 array 引用 → set 重建 → availableFriends useMemo 跟着失效
+  //（filter × 70+ 好友 × toLowerCase + matchesFriendSearch 多路 haystack），
+  // 弹层打开期间每个父 tick 都 O(N) 白扫一次。锁住引用让 picker 内 deferredSearchTerm
+  // 真正起作用。removableMembers 已经 useMemo（line 1583），口径对齐。
+  const existingMemberIds = useMemo(
+    () => (membersQuery.data ?? []).map((item) => item.memberId),
+    [membersQuery.data],
+  );
+
   const removableMembers = useMemo(
     () =>
       (membersQuery.data ?? [])
@@ -1342,56 +1711,71 @@ function GroupChatDetailsPanel({
   const groupMembers = membersQuery.data ?? [];
   const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
 
-  const memberItems: DesktopMemberGridItem[] = [
-    ...groupMembers
-      .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
-      .map((member) => ({
-        key: member.id,
-        label: resolveGroupMemberDisplayName(member),
-        src: member.memberAvatar,
-        onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
-          if (member.memberType === "character") {
+  const group = groupQuery.data;
+  // 走查桌面端群聊 R1：原版每次 render 重建 memberItems 数组 + 重建所有 onClick
+  // 闭包 + 重建 add/remove 两个 action 对象 → DesktopWechatMemberGrid 子组件全部
+  // 拿到新 props 引用全量重渲。GroupChatDetailsPanel 的高频 render 源很多
+  // （typing socket / messages stream / conversations 60s 轮询都会让父 workspace
+  // re-render 透传 conversation prop）。conversation.id / conversation.title /
+  // group?.name / groupMembers 引用都稳定时（无变化时），整段直接复用旧引用。
+  const groupNameOrTitle = group?.name || conversation.title;
+  const memberItems = useMemo<DesktopMemberGridItem[]>(
+    () => [
+      ...groupMembers
+        .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
+        .map((member) => ({
+          key: member.id,
+          label: resolveGroupMemberDisplayName(member),
+          src: member.memberAvatar,
+          onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+            if (member.memberType === "character") {
+              setAvatarPopover({
+                anchorElement: event.currentTarget,
+                kind: "character",
+                characterId: member.memberId,
+                fallbackName: resolveGroupMemberDisplayName(member),
+                fallbackAvatar: member.memberAvatar,
+                threadContext: {
+                  id: conversation.id,
+                  type: "group",
+                  title: groupNameOrTitle,
+                },
+              });
+              return;
+            }
+
             setAvatarPopover({
               anchorElement: event.currentTarget,
-              kind: "character",
-              characterId: member.memberId,
-              fallbackName: resolveGroupMemberDisplayName(member),
-              fallbackAvatar: member.memberAvatar,
-              threadContext: {
-                id: conversation.id,
-                type: "group",
-                title: group?.name ?? conversation.title,
-              },
+              kind: "owner",
             });
-            return;
-          }
-
-          setAvatarPopover({
-            anchorElement: event.currentTarget,
-            kind: "owner",
-          });
+          },
+        })),
+      {
+        key: "add",
+        label: t(msg`添加`),
+        kind: "add" as const,
+        onClick: () => {
+          setMemberPickerMode("add");
+          setMemberPickerOpen(true);
         },
-      })),
-    {
-      key: "add",
-      label: t(msg`添加`),
-      kind: "add" as const,
-      onClick: () => {
-        setMemberPickerMode("add");
-        setMemberPickerOpen(true);
       },
-    },
-    {
-      key: "remove",
-      label: t(msg`移除`),
-      kind: "remove" as const,
-      onClick: () => {
-        setMemberPickerMode("remove");
-        setMemberPickerOpen(true);
+      {
+        key: "remove",
+        label: t(msg`移除`),
+        kind: "remove" as const,
+        onClick: () => {
+          setMemberPickerMode("remove");
+          setMemberPickerOpen(true);
+        },
       },
-    },
-  ];
-  const group = groupQuery.data;
+    ],
+    [
+      conversation.id,
+      groupMembers,
+      groupNameOrTitle,
+      resolveGroupMemberDisplayName,
+    ],
+  );
   const isMuted = group?.isMuted ?? conversation.isMuted;
   const busy =
     updateGroupMutation.isPending ||
@@ -1525,7 +1909,7 @@ function GroupChatDetailsPanel({
       <DesktopWechatGroupSection title={t(msg`群聊资料`)}>
         <DesktopWechatGroupRow
           label={t(msg`群聊名称`)}
-          value={groupQuery.data?.name ?? conversation.title}
+          value={groupQuery.data?.name || conversation.title}
           disabled={busy}
           onClick={() => setEditorMode("name")}
         />
@@ -1539,23 +1923,7 @@ function GroupChatDetailsPanel({
         <DesktopWechatGroupRow
           label={t(msg`群二维码`)}
           value={t(msg`查看邀请卡`)}
-          onClick={() => {
-            void navigate({
-              to: "/group/$groupId/qr",
-              params: { groupId: conversation.id },
-              search: buildGroupInviteReturnSearch({
-                conversationPath: `/group/${conversation.id}`,
-                conversationTitle: groupQuery.data?.name ?? conversation.title,
-              }),
-              hash: buildMobileGroupRouteHash({
-                returnPath: "/tabs/chat",
-                returnHash: buildDesktopChatRouteHash({
-                  conversationId: conversation.id,
-                  panel: "details",
-                }),
-              }),
-            });
-          }}
+          onClick={handleOpenGroupQr}
         />
         <DesktopWechatGroupRow
           label={t(msg`查找聊天记录`)}
@@ -1565,12 +1933,7 @@ function GroupChatDetailsPanel({
         <DesktopWechatGroupRow
           label={t(msg`聊天文件`)}
           value={t(msg`查看本群附件`)}
-          onClick={() => {
-            void navigate({
-              to: "/desktop/chat-files",
-              hash: buildDesktopChatFilesRouteHash(conversation.id),
-            });
-          }}
+          onClick={handleOpenChatFiles}
         />
       </DesktopWechatGroupSection>
 
@@ -1580,7 +1943,7 @@ function GroupChatDetailsPanel({
           checked={isMuted}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ isMuted: checked })
+            handleTogglePreferences({ isMuted: checked })
           }
         />
         {isMuted ? (
@@ -1590,7 +1953,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAtMe ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({ notifyOnAtMe: checked })
+                handleTogglePreferences({ notifyOnAtMe: checked })
               }
             />
             <DesktopWechatGroupRow
@@ -1598,7 +1961,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAtAll ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({ notifyOnAtAll: checked })
+                handleTogglePreferences({ notifyOnAtAll: checked })
               }
             />
             <DesktopWechatGroupRow
@@ -1606,7 +1969,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAnnouncement ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({
+                handleTogglePreferences({
                   notifyOnAnnouncement: checked,
                 })
               }
@@ -1617,19 +1980,19 @@ function GroupChatDetailsPanel({
           label={t(msg`置顶聊天`)}
           checked={group?.isPinned ?? conversation.isPinned}
           disabled={busy || !group}
-          onToggle={(checked) => pinMutation.mutate(checked)}
+          onToggle={(checked) => handleTogglePin(checked)}
         />
         <DesktopWechatGroupRow
           label={t(msg`保存到通讯录`)}
           checked={group?.savedToContacts ?? false}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ savedToContacts: checked })
+            handleTogglePreferences({ savedToContacts: checked })
           }
         />
         <DesktopWechatGroupRow
           label={t(msg`我在本群的昵称`)}
-          value={ownerMember?.memberName ?? t(msg`未设置`)}
+          value={ownerMember?.memberName || t(msg`未设置`)}
           disabled={busy}
           onClick={() => setEditorMode("nickname")}
         />
@@ -1638,25 +2001,13 @@ function GroupChatDetailsPanel({
           checked={group?.showMemberNicknames ?? true}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ showMemberNicknames: checked })
+            handleTogglePreferences({ showMemberNicknames: checked })
           }
         />
         <DesktopWechatGroupRow
           label={t(msg`聊天背景`)}
           value={backgroundLabel}
-          onClick={() => {
-            void navigate({
-              to: "/group/$groupId/background",
-              params: { groupId: conversation.id },
-              hash: buildMobileGroupRouteHash({
-                returnPath: "/tabs/chat",
-                returnHash: buildDesktopChatRouteHash({
-                  conversationId: conversation.id,
-                  panel: "details",
-                }),
-              }),
-            });
-          }}
+          onClick={handleOpenChatBackground}
         />
       </DesktopWechatGroupSection>
 
@@ -1710,17 +2061,15 @@ function GroupChatDetailsPanel({
 
       <DesktopGroupMemberPicker
         open={memberPickerOpen && memberPickerMode === "add"}
-        groupName={groupQuery.data?.name ?? conversation.title}
-        existingMemberIds={(membersQuery.data ?? []).map(
-          (item) => item.memberId,
-        )}
+        groupName={groupQuery.data?.name || conversation.title}
+        existingMemberIds={existingMemberIds}
         pending={addMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
         onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
       />
       <DesktopGroupMemberRemovalPicker
         open={memberPickerOpen && memberPickerMode === "remove"}
-        groupName={groupQuery.data?.name ?? conversation.title}
+        groupName={groupQuery.data?.name || conversation.title}
         removableMembers={removableMembers}
         pending={removeMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
@@ -1729,7 +2078,7 @@ function GroupChatDetailsPanel({
       <DesktopGroupMemberBrowserDialog
         open={memberBrowserOpen}
         autoFocusSearch={memberBrowserAutoFocusSearch}
-        groupName={groupQuery.data?.name ?? conversation.title}
+        groupName={groupQuery.data?.name || conversation.title}
         members={groupMembers}
         resolveDisplayName={resolveGroupMemberDisplayName}
         pending={busy}
@@ -1762,12 +2111,12 @@ function GroupChatDetailsPanel({
               anchorElement,
               kind: "character",
               characterId: member.memberId,
-              fallbackName: member.memberName ?? member.memberId,
+              fallbackName: member.memberName || member.memberId,
               fallbackAvatar: member.memberAvatar,
               threadContext: {
                 id: conversation.id,
                 type: "group",
-                title: group?.name ?? conversation.title,
+                title: group?.name || conversation.title,
               },
             });
             return;
@@ -2030,9 +2379,17 @@ function DesktopGroupMemberBrowserDialog({
   ) => void;
 }) {
   const t = translateRuntimeMessage;
+  const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和姊妹 picker / removal-picker / create-group-dialog 同款问题。
+  // filteredMembers 直接吃 searchTerm，每个 keystroke 都会同步对每位成员
+  // 跑 4 路 toLowerCase 包含检查 + 三路 t(msg`群主/管理员/群成员`) 翻译查表
+  // —— 30 人群一次 keystroke 至少 90 次 t() 调用。useDeferredValue 让 React
+  // 优先把字打进输入框，过滤排到下个 idle 帧。同口径地把 roleLabel 的 3 条
+  // 文案提到 useMemo 外的稳定常量上（searchTerm 变化不影响 roleLabels 引用）。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [activeFilter, setActiveFilter] =
     useState<DesktopGroupMemberBrowserFilter>("all");
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
@@ -2059,18 +2416,54 @@ function DesktopGroupMemberBrowserDialog({
     return () => window.clearTimeout(timer);
   }, [autoFocusSearch, open]);
 
-  const ownerCount = useMemo(
-    () => members.filter((member) => member.role === "owner").length,
-    [members],
-  );
-  const adminCount = useMemo(
-    () => members.filter((member) => member.role === "admin").length,
-    [members],
-  );
-  const characterCount = useMemo(
-    () => members.filter((member) => member.memberType === "character").length,
-    [members],
-  );
+  // 走查桌面端群聊 R1：成员浏览 dialog 之前 X / 点背板才能关，整个 app 其它
+  // dialog（DesktopCreateGroupDialog / DesktopGroupMemberPicker 父侧栏 esc）
+  // 都支持 Escape，独这个 dialog 漏掉。补 ESC 与现有 X 等价，pending 时禁用。
+  // stopPropagation 避免冒泡触发外层 desktop-chat-workspace 的 dismissSidePanel
+  // 把背后的"聊天信息"侧栏一起关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      // 走查电脑端群聊 R7（和 R5/R6 同款）：pending 时仍要消费 Esc，否则
+      // workspace queueMicrotask 兜底跑 dismissSidePanel 把背后的"聊天信息"
+      // 侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关 dialog
+      // 倒把侧栏弄没了"。
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
+  // 走查桌面端群聊 R1：原版 3 路 useMemo 各自跑一遍 members.filter，3 倍 O(N)
+  // 比较。N 通常 5-30 但 dialog 一打开各种 dep 变化（searchTerm / activeFilter
+  // / activeMemberId / members 父级 30s 轮询）会让父 useMemo 阵列连续重算。
+  // 合并到一次 reduce 算清三类——同样的 O(N)，但 cache 友好；引用上由
+  // useMemo 自动 dedupe（members ref 不变就返回旧对象，filterTabs 那行 inline
+  // 也跟着不重建）。
+  const roleCounts = useMemo(() => {
+    let owner = 0;
+    let admin = 0;
+    let character = 0;
+    for (const member of members) {
+      if (member.role === "owner") owner += 1;
+      if (member.role === "admin") admin += 1;
+      if (member.memberType === "character") character += 1;
+    }
+    return { owner, admin, character };
+  }, [members]);
+  const ownerCount = roleCounts.owner;
+  const adminCount = roleCounts.admin;
+  const characterCount = roleCounts.character;
   const filterTabs: Array<{
     id: DesktopGroupMemberBrowserFilter;
     label: string;
@@ -2082,8 +2475,16 @@ function DesktopGroupMemberBrowserDialog({
     { id: "character", label: t(msg`角色成员`), count: characterCount },
   ];
 
+  const roleLabels = useMemo(
+    () => ({
+      owner: t(msg`群主`),
+      admin: t(msg`管理员`),
+      member: t(msg`群成员`),
+    }),
+    [t],
+  );
   const filteredMembers = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return members.filter((member) => {
       if (activeFilter === "owner" && member.role !== "owner") {
         return false;
@@ -2103,14 +2504,14 @@ function DesktopGroupMemberBrowserDialog({
 
       const displayName = resolveDisplayName
         ? resolveDisplayName(member)
-        : (member.memberName ?? member.memberId);
-      const rawName = member.memberName ?? member.memberId;
+        : (member.memberName || member.memberId);
+      const rawName = member.memberName || member.memberId;
       const roleLabel =
         member.role === "owner"
-          ? t(msg`群主`)
+          ? roleLabels.owner
           : member.role === "admin"
-            ? t(msg`管理员`)
-            : t(msg`群成员`);
+            ? roleLabels.admin
+            : roleLabels.member;
 
       return (
         displayName.toLowerCase().includes(keyword) ||
@@ -2119,7 +2520,7 @@ function DesktopGroupMemberBrowserDialog({
         member.memberId.toLowerCase().includes(keyword)
       );
     });
-  }, [activeFilter, members, resolveDisplayName, searchTerm, t]);
+  }, [activeFilter, deferredSearchTerm, members, resolveDisplayName, roleLabels]);
 
   const activeFilterLabel =
     filterTabs.find((tab) => tab.id === activeFilter)?.label ?? t(msg`全部`);
@@ -2228,7 +2629,16 @@ function DesktopGroupMemberBrowserDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 picker / removal-picker / confirm / text-edit / forward
+    // 一批 dialog 同款 portal-shield 缺漏。「聊天信息」→「群成员 N 人」打开
+    // 这个浏览 dialog，inline 渲染在 workspace 根 div 下，无 shield → workspace
+    // onPointerDownCapture 在 rightPanelMode=details 时点 dialog 内任意非
+    // sidePanel/header/thread 节点都会偷关侧栏；用户点 X / 关闭 / 选择成员
+    // 后回不到原详情侧栏。Esc 路径 R1 已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-browser-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭群成员列表`)}
@@ -2240,10 +2650,22 @@ function DesktopGroupMemberBrowserDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 a11y 修过的 dialog 系列同款缺漏——modal 但 panel 既
+          没挂 role="dialog" + aria-modal 也没挂 aria-labelledby。盲人屏幕阅读
+          器只听到「关闭群成员列表 按钮」+ 搜索框 + 成员行，听不到「群成员」
+          title。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div>
-            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[16px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -2288,6 +2710,10 @@ function DesktopGroupMemberBrowserDialog({
                   onChange={(event) => setSearchTerm(event.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder={t(msg`搜索昵称、角色或成员 ID`)}
+                  // 走查 R5：父 label 只含 Search 图标 + input，没文本子节点，
+                  // SR 进来只听到「编辑栏 搜索昵称、角色或成员 ID 空」分裂行为。
+                  // 和姊妹 chat-history R24 / 移动端 group-member-picker R3 同款。
+                  aria-label={t(msg`搜索群成员`)}
                   className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
                 />
               </label>
@@ -2350,7 +2776,7 @@ function DesktopGroupMemberBrowserDialog({
               {filteredMembers.map((member) => {
                 const displayName = resolveDisplayName
                   ? resolveDisplayName(member)
-                  : (member.memberName ?? member.memberId);
+                  : (member.memberName || member.memberId);
                 const rawName = member.memberName?.trim() || member.memberId;
                 const roleLabel =
                   member.role === "owner"

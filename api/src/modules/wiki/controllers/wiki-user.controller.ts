@@ -26,6 +26,14 @@ export class WikiUserController {
     return this.roles.listUsers();
   }
 
+  // 任何登录用户都能拿到一批 userId 的 username/role；用于把 recent-changes、
+  // pending-reviews、character-page 修订卡上的 editorUserId UUID 替换成用户名。
+  // 不下发 email / passwordHash 等敏感字段。
+  @Post('lookup')
+  lookup(@Body() body: { ids?: string[] }) {
+    return this.roles.lookupPublic(Array.isArray(body?.ids) ? body.ids : []);
+  }
+
   @Post(':id/role')
   @RequireRole('admin')
   setRole(

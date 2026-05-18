@@ -29,6 +29,7 @@ import {
   MapPin,
   MoreHorizontal,
   Pause,
+  Pencil,
   Play,
   Printer,
   Share2,
@@ -37,7 +38,9 @@ import {
   X,
 } from "lucide-react";
 import {
+  ApiRequestError,
   createMessageFavorite,
+  createSpeechSynthesis,
   deleteConversationMessage,
   deleteGroupMessage,
   getFavoriteNote,
@@ -64,6 +67,8 @@ import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import {
+  DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
+  DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
   hydrateDetailedTimestampModeFromNative,
   readDetailedTimestampModeEnabled,
   writeDetailedTimestampModeEnabled,
@@ -85,18 +90,26 @@ import type {
 } from "../features/chat/message-forward-dialog-shell";
 import type { DesktopChatImageViewerSessionItem } from "../features/chat/chat-image-viewer-route-state";
 import {
+  DESKTOP_FAVORITES_STORAGE_KEY,
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
-import { isFavoriteNoteMissingError } from "../features/favorites/note-editor-helpers";
+import {
+  isFavoriteNoteMissingError,
+  isSafeFavoriteAssetUrl,
+} from "../features/favorites/note-editor-helpers";
+import { buildMobileNoteEditorRouteHash } from "../features/notes/mobile-note-editor-route-state";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { buildDesktopChannelsRouteHash } from "../features/channels/channels-route-state";
+import { stripToolCallSyntax } from "../features/moments/moment-content";
 import { resolveAppMediaUrl } from "../lib/media-url";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import {
   extractChatReplyMetadata,
+  isServerRecalledSystemMessage,
   sanitizeDisplayedChatText,
   splitChatTextSegments,
 } from "../lib/chat-text";
@@ -109,6 +122,7 @@ import {
 } from "../lib/format";
 import { resolveMessageSemanticPreview } from "../lib/message-attachment-semantic";
 import { resolveConfiguredCoreApiBaseUrl } from "../lib/runtime-config";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import {
@@ -142,10 +156,14 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import {
   parseDirectCallInviteMessage,
-  formatGroupCallStatusLabel,
   parseGroupCallInviteMessage,
   type CallInviteSource,
 } from "../features/chat/group-call-message";
+import {
+  buildDirectCallWorkspaceSummaryLines,
+  buildGroupCallWorkspaceSummaryLines,
+  getGroupCallStatusLabel,
+} from "../features/chat/group-call-presentation";
 import {
   resolveGroupRelayCompletionBadge,
   resolveGroupRelayCompletionTime,
@@ -422,6 +440,27 @@ export function ChatMessageList({
   const [selectionActionPending, setSelectionActionPending] = useState<
     "favorite" | "delete" | "recall" | null
   >(null);
+  // 同步防双击锁——下面多选 action bar 上「收藏 / 撤回 / 删除」3 个按钮都
+  // 用 `disabled={selectionActionPending !== null}` 兜底，但 selectionActionPending
+  // 是 React state，要等 commit 才进 DOM。多选 8 条群消息后双击「删除」 →
+  // 两份 handleDeleteSelectedMessages 同时跑 → 同一批 8 个 messageId 各被
+  // POST /groups/$id/messages/$mid DELETE 2 遍。第二轮全部 404 server log
+  // 飘红，UI 上则跑到 setActionNotice("批量删除失败...") 让用户以为操作没
+  // 成功——其实第一轮已经全删了。ref 同步赋值挡掉同帧第二次 click。
+  const selectionActionBusyRef = useRef(false);
+  // 走查 R3：单条消息「撤回 / 删除」按钮在 context menu / mobile action sheet
+  // 上原本只有 setContextMenuState(null) / setMobileActionMessage(null) 关弹
+  // 层，但 sheet/menu 关闭是 React state，要等 commit 才生效，同帧第二次
+  // click 仍能进 onClick → recallMutation.mutate(message) 飞两份相同 POST。
+  // 后端 recallOwnerMessage 第一次把 message senderType 改成 system，第二次
+  // 看到 message.senderType !== "user" → 抛 CHAT_REVOKE_OWN_ONLY「只能撤回
+  // 自己发送的消息」；deleteMessage 第二次直接 404。两条错误都会被 onError
+  // 写进 actionNotice，把"已撤回这条消息"/"已删除这条消息"成功提示覆盖掉，
+  // 用户看着像失败但操作其实成功了。按 messageId 上锁，onSettled 解锁，
+  // 不同消息互不影响。triggerRecallMessage / triggerDeleteMessage 定义在
+  // recallMutation / deleteMutation 之后，避免 closure 时 mutation 还未声明。
+  const recallingMessageIdsRef = useRef<Set<string>>(new Set());
+  const deletingMessageIdsRef = useRef<Set<string>>(new Set());
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
   >(null);
@@ -441,6 +480,72 @@ export function ChatMessageList({
   >(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
+  // 走查本会话 R1：MobileMessageReminderSheet 内任一时间选项 onClick 都是
+  // `() => onSelect(option)` 没 disabled 守，handleSelectReminder 入口 `if
+  // (!reminderTargetMessage) return` 走的是 React state 闭包 — `await setReminder`
+  // 飞行的 ~600ms 公网 RTT 窗口内，state 还没翻 null 之前用户连点 2 次（同一
+  // 选项或不同选项都行），两份 POST /reminders 同时打到服务端，群消息上挂 2 条
+  // 几乎相同的提醒。和姊妹 mutation (sendingTextRef / retryingMessageIdsRef /
+  // submittingRef) 一样补一把同步 ref 锁，retry-path 的 `void handleSelectReminder
+  // (option)` 也走同一把锁。
+  const selectingReminderRef = useRef(false);
+  // 走查本会话 R1：share{Location,Contact,Note}Summary 全部无双击锁。最危险的入口
+  // 是 LocationViewerOverlay / NoteViewerOverlay 上的「系统分享 / 复制位置(笔记)」
+  // ViewerActionButton：onClick 直接调 shareXxxSummary，没有任何 disabled / sync ref。
+  // 同帧 <16ms double-tap：iOS 原生壳上 shareWithNativeShell 触发 UIActivityController
+  // 两次——第二次在第一个 modal 还在堆栈上时会被系统竞争拒掉或落到 sad path，
+  // 让"系统分享暂时不可用"覆盖掉刚刚正常打开的分享。web mobile 落 clipboard
+  // 分支时 navigator.clipboard.writeText 跑两遍 + setActionNotice 闪 2 次同文案。
+  // shareLocationSummary / shareNoteSummary 的真实曝光面在两个 ViewerOverlay 的
+  // share 按钮上；shareContactSummary 走 saveAttachment 入口（mobile-message-action-
+  // sheet 自带 actionFiredRef），但 retry 通知 onAction 双击同样飞 2 次。
+  // 三个函数共用一把 ref：UI 一次只能开一个 viewer overlay，互斥安全，retry 同
+  // 一把锁顺带覆盖。和 chat-details-page shareContactSubmittingRef 同款修法。
+  const sharingAttachmentSummaryRef = useRef(false);
+  // 见下方 openAttachment file 分支注释 — 按 messageId 互斥同一个文件气泡的同帧
+  // 双击，不同消息互不影响（用户连续点 2 个文件气泡是合法用法）。
+  const openingFileMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查移动端群聊 R1：和姊妹路径 cdc13e28a「chat-details 6 处「点行进二级页」
+  // 缺同帧双击 ref 守」同款问题——下方 handleMobileCharacterAvatarClick (line
+  // ~1721) 点 character 头像走 `void navigate({to:"/character/$characterId"})`
+  // 无 disabled / 无同步 ref 守。本组件被 resolveCharacterAvatarAction R1（line
+  // ~4665-4672）特意补成「移动端群聊里头像点开走 mobile-profile」之后，群聊
+  // 里同帧 <16ms 双击同一个 character 头像 push 2 条相同 history 项—用户从
+  // 角色资料页退回群聊要按 2 次返回。按 characterId 上锁，不同 character 不
+  // 影响（连点 2 张不同头像合法）；500ms timeout 复位免得页面 unmount → remount
+  // 同一 character 头像点不进去（chat-message-list 在 thread-panel 内常驻不一
+  // 定 remount）。
+  const openingCharacterProfileIdsRef = useRef<Set<string>>(new Set());
+  // 走查电脑端单聊新一轮 R2：contact_card desktop 分支 onClick → openAttachment 走
+  // `void getOrCreateConversation(...).then(navigate).catch(...)`，无任何同步锁。
+  // 同帧 <16ms double-click 同一张 ContactCardMessage 气泡都进入 →
+  // getOrCreateConversation 飞 2 次（服务端按 characterId 查再创建虽幂等，但公网
+  // 隧道 RTT ~600ms × 2 + markFollowupRecommendationOpened / chat-started 各打 2
+  // 次浪费 telemetry）。note_card desktop 分支同款 — buildDesktopNoteWindowRouteHashOnDemand
+  // 异步走 dynamic import + createDesktopNoteDraft，双击会跑 2 遍 import + 2 次
+  // navigate。和 openingFileMessageIdsRef 同思路按 messageId 上锁，不同消息互不
+  // 影响（用户连续点 2 张不同的名片/笔记卡片是合法用法）。
+  const openingAttachmentMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查电脑端单聊新一轮 R3：和 R7（commit 2a0fc8632 — 会话「在独立窗口打开」
+  // 漏同步锁 Tauri 二次创建走 error 路径假报失败）同款问题，这次出现在图片预
+  // 览：openImagePreview / ImageViewerOverlay 的「在独立窗口打开」/「打印」3
+  // 个入口都 `void openDesktopChatImageViewerWindowOnDemand(...)`，无任何同
+  // 步锁。同帧 <16ms double-click 都进入：
+  // · openDesktopStandaloneWindow 内部按 windowLabel 查重，但两次并发执行先
+  //   后跑 WebviewWindow.getByLabel
+  // · 第一次 getByLabel → undefined → new WebviewWindow 在 Tauri settle 中
+  // · 第二次 getByLabel 也 undefined → 也 new WebviewWindow(same label) →
+  //   Tauri 返回「window already exists」→ tauri://error → finish(false)
+  // · 用户：第一次窗口已成功打开 + 又看到「浏览器阻止了新窗口」红色 notice +
+  //   openImagePreview fallback 还顺手 setViewerMessageId 把当前页查看器一起
+  //   打开（窗口里和当前页同时显示同一张图，画面闪烁）
+  // 按 messageId + autoPrint 上锁，finally 解锁；不同图片/不同模式互不影响。
+  const openingImageViewerWindowKeysRef = useRef<Set<string>>(new Set());
+  const speakAudioRef = useRef<HTMLAudioElement | null>(null);
+  // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
+  // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
+  const speakRequestRef = useRef(0);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const contextMenuEnabled = isDesktop && !selectionMode;
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>(
@@ -461,6 +566,29 @@ export function ChatMessageList({
     (url: string) => resolveRuntimeAttachmentUrl(url, baseUrl),
     [baseUrl],
   );
+
+  // mobile 长按消息气泡时 Android WebView 会同时触发系统 selection 工具栏，
+  // 跟自家的 MessageActionSheet 重叠。yj-no-callout 关 webkit-user-select
+  // 还不够 —— Chromium 在 long-press 触发 selectstart 之后才看 user-select，
+  // 必须在 selectstart 阶段就 preventDefault。React 没有 onSelectStart 类型，
+  // 这里 mobile 平台用 document-level listener，按 [data-yj-msg-bubble] 命中。
+  useEffect(() => {
+    if (isDesktop || typeof document === "undefined") {
+      return;
+    }
+    const blockOnBubble = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.("[data-yj-msg-bubble='1']")) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("selectstart", blockOnBubble, true);
+    document.addEventListener("contextmenu", blockOnBubble, true);
+    return () => {
+      document.removeEventListener("selectstart", blockOnBubble, true);
+      document.removeEventListener("contextmenu", blockOnBubble, true);
+    };
+  }, [isDesktop]);
 
   useEffect(() => {
     if (!highlightedMessageId) {
@@ -483,9 +611,21 @@ export function ChatMessageList({
       return;
     }
 
+    // 走查本会话 R3：和姊妹 chat-details-page R3 同款 — 原版只看 primary
+    // actionLabel 判断 dismiss 时长，2.2s 太短赶不上用户阅读"已设为消息提醒
+    // · ...系统通知未开启" 类 warning + 顺手点 "返回上一页"。
+    // handleSelectReminder（line ~2670）在 web 移动端 permission==="denied"
+    // 分支会让 actionLabel=undefined（只在原生壳里给"去设置"），
+    // 只挂 secondaryActionLabel="返回上一页"。原写法把它当作"无 action 的纯
+    // 信息 notice"以 2200ms dismiss，用户唯一能点的二级按钮还没看清楚就被
+    // 收回去。任一组 action（primary or secondary）有完整 label+handler 都
+    // 走 5000ms。
+    const hasInteractiveAction =
+      Boolean(actionNotice.actionLabel && actionNotice.onAction) ||
+      Boolean(actionNotice.secondaryActionLabel && actionNotice.onSecondaryAction);
     const timer = window.setTimeout(
       () => setActionNotice(null),
-      actionNotice.actionLabel ? 5000 : 2200,
+      hasInteractiveAction ? 5000 : 2200,
     );
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
@@ -499,77 +639,115 @@ export function ChatMessageList({
     setDesktopAvatarPopover(null);
   }, [selectionMode, threadContext?.id]);
 
+  // 卸载组件 / 切换会话时停掉正在播的朗读音频，避免跳路由后还在响
+  useEffect(() => {
+    return () => {
+      speakRequestRef.current += 1;
+      const audio = speakAudioRef.current;
+      if (audio) {
+        try {
+          audio.pause();
+        } catch {
+          // ignore
+        }
+        speakAudioRef.current = null;
+      }
+    };
+  }, [threadContext?.id]);
+
   useEffect(() => {
     if (!contextMenuState) {
       return;
     }
 
     const closeMenu = () => setContextMenuState(null);
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // 不 preventDefault：desktop-chat-workspace 那条 window keydown
+        // microtask 兜底（line 919）会接着跑 dismissSidePanel。用户在
+        // 桌面单聊开着「聊天信息」侧栏然后右键消息打开 contextMenu，按
+        // Esc 会同时把 contextMenu 和背后的侧栏一起关掉。和 image
+        // viewer / dialog 同款修法。
+        event.preventDefault();
+        closeMenu();
+      }
+    };
     window.addEventListener("pointerdown", closeMenu);
     window.addEventListener("resize", closeMenu);
     window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("pointerdown", closeMenu);
       window.removeEventListener("resize", closeMenu);
       window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [contextMenuState]);
 
   useEffect(() => {
-    setContextMenuState(null);
-    setMobileActionMessage(null);
+    // 注释原本说"长按 sheet 只在目标消息消失时关——socket 推新消息也会
+    // 触发这个 effect，如果无条件清空会把用户的点击意图打断。和下面
+    // reminderTarget / quoteSelection / forward 等 7 个面板的 pattern 对齐。"
+    // 但 contextMenuState 反倒是上面那个例外——之前一直无条件 setNull，
+    // 桌面右键消息打开 menu 时只要 AI 回一句话，messages 数组变了 effect
+    // 重跑，菜单就被强制关掉了，用户的点击意图被 socket 打断。补成同款
+    // 条件式：目标消息还在就保留，消失才关。
+    //
+    // 这里 9 条 setX 都依赖"目标 id 是否还在 messages 里"。每条单独
+    // .some() 是 O(n)，9 条加起来 9·n。socket 一推消息（reply / typing tick /
+    // 任何 setQueriesData）就跑一遍，长聊天里 messages 长度 ~200 时每次状态
+    // 变化 ~1800 次比较；最后那条 avatar popover 还要按 senderId 扫一遍
+    // character 消息。一次性把 id 集合和 character senderId 集合算出来，
+    // 后面所有 has() 走 O(1)。
+    const messageIdSet = new Set(messages.map((message) => message.id));
+    setContextMenuState((current) =>
+      current && messageIdSet.has(current.message.id) ? current : null,
+    );
+    setMobileActionMessage((current) =>
+      current && messageIdSet.has(current.id) ? current : null,
+    );
     setReminderTargetMessage((current) =>
-      current && messages.some((message) => message.id === current.id)
-        ? current
-        : null,
+      current && messageIdSet.has(current.id) ? current : null,
     );
     setQuoteSelectionMessage((current) =>
-      current && messages.some((message) => message.id === current.id)
-        ? current
-        : null,
+      current && messageIdSet.has(current.id) ? current : null,
     );
     setSelectedMessageIds((current) =>
-      filterStableStringIds(current, (item) =>
-        messages.some((message) => message.id === item),
-      ),
+      filterStableStringIds(current, (item) => messageIdSet.has(item)),
     );
     setForwardMessages((current) =>
-      filterStableMessageList(current, (item) =>
-        messages.some((message) => message.id === item.id),
-      ),
+      filterStableMessageList(current, (item) => messageIdSet.has(item.id)),
     );
     setSelectionAnchorMessageId((current) =>
-      current && messages.some((message) => message.id === current)
-        ? current
-        : null,
+      current && messageIdSet.has(current) ? current : null,
     );
     setViewerMessageId((current) =>
-      current && messages.some((message) => message.id === current)
-        ? current
-        : null,
+      current && messageIdSet.has(current) ? current : null,
     );
     setLocationViewerMessageId((current) =>
-      current && messages.some((message) => message.id === current)
-        ? current
-        : null,
+      current && messageIdSet.has(current) ? current : null,
     );
     setNoteViewerMessageId((current) =>
-      current && messages.some((message) => message.id === current)
-        ? current
-        : null,
+      current && messageIdSet.has(current) ? current : null,
     );
-    setDesktopAvatarPopover((current) =>
-      current &&
-      (current.kind === "owner" ||
-        messages.some(
-          (message) =>
-            message.senderType === "character" &&
-            message.senderId === current.characterId,
-        ))
-        ? current
-        : null,
-    );
+    setDesktopAvatarPopover((current) => {
+      if (!current) {
+        return current;
+      }
+      if (current.kind === "owner") {
+        return current;
+      }
+      for (const message of messages) {
+        if (
+          message.senderType === "character" &&
+          message.senderId === current.characterId
+        ) {
+          return current;
+        }
+      }
+      return null;
+    });
   }, [messages]);
 
   useEffect(() => {
@@ -615,17 +793,34 @@ export function ChatMessageList({
 
       void syncDetailedTimestampMode();
     };
+    // 走查 R1：原版 storage 监听对任何 OTHER tab 的 localStorage 写入都触发
+    // syncDetailedTimestampMode → 拍 hydrateDetailedTimestampModeFromNative
+    // 的 Tauri invoke IPC + setState；和 local-chat-message-actions / chat-room-page
+    // 同款 storage event 漏 gate 问题。chat-message-list 在单聊 / 群聊都挂着，
+    // 多 tab 时主题切换 / 草稿落盘 / 收藏指纹更新等等都会无意义地把这条 invoke
+    // 打一遍。按 STORAGE_KEY gate：只在 chat-detailed-timestamp-mode 自己那两个
+    // key 上同步；event.key=null 是 Safari localStorage.clear()，仍按全量同步对待。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (
+        event.key !== null &&
+        event.key !== DETAILED_TIMESTAMP_MODE_STORAGE_KEY &&
+        event.key !== DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY
+      ) {
+        return;
+      }
+      void syncDetailedTimestampMode();
+    };
 
     void syncDetailedTimestampMode();
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isDesktop, nativeDesktopDetailedTimestampMode]);
@@ -650,14 +845,48 @@ export function ChatMessageList({
     onSelectionModeChange?.(selectionMode);
   }, [onSelectionModeChange, selectionMode]);
 
+  // 原生壳硬件 Back：移动端多选模式打开时，BACK 应该先退出多选，而不是
+  // 直接 history.back 退聊天页（用户进了多选准备转发/删除，BACK 误退会
+  // 让选好的几条全没了）。desktop 注册没副作用。
+  useEffect(() => {
+    if (isDesktop || !selectionMode) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      setSelectionMode(false);
+      return true;
+    });
+    return unregister;
+  }, [isDesktop, selectionMode]);
+
+  // perf：原来用独立 cache key ["desktop-message-forward-conversations"]，
+  // 跟全 app 其它十几处统一的 ["app-conversations", baseUrl]
+  // （chat-list / desktop-chat-window-page / discover-page / group-chat-thread-panel /
+  // use-conversation-thread / desktop-notes-workspace 等都用这个 key）两份
+  // 完全独立的 cache。chat-list 早就把 app-conversations 拉热了，但开"转发"
+  // 弹层（dialog 在 desktop 和 mobile 都用，long-press → 转发都走这条）这边
+  // cache 是冷的，要等 getConversations 网络回来才能渲染目标 picker —— 公网
+  // 隧道 ~600ms RTT。统一到 app-conversations 复用主缓存。
+  // 同 desktop-notes-workspace.tsx 走查 R10 / create-group-page.tsx app-friends
+  // R1 同款修法。
+  // 走查 R7（第 7 轮）：原注释承诺「配 60s staleTime」但代码漏写，实际裸跑
+  // 默认 mobile-web 60s / 其它 10s。和兄弟入口（chat-list / chat-room /
+  // chat-details 等 8 处）对齐到 15s。
   const forwardConversationsQuery = useQuery({
-    queryKey: ["desktop-message-forward-conversations", baseUrl],
+    queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(forwardMessages?.length),
+    staleTime: 15_000,
   });
+  // 走查 R7（第 7 轮）：和 mobile-chat-plus-panel 同 queryKey "app-favorites"
+  // 共享 cache，那边配 30s（收藏只读、频繁开合不必重抓）；本观察者每个聊天
+  // 页都挂着裸跑，跨页面切换原生壳 10s 默认就 stale，会无谓重发一次 GET
+  // /favorites（公网隧道 ~600ms）。对齐 30s。
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
+    staleTime: 30_000,
   });
 
   const updateGroupMessageQueries = (
@@ -732,15 +961,27 @@ export function ChatMessageList({
 
       void syncDesktopFavorites();
     };
+    // 走查 R1：和上方 detailedTimestamp 同款 storage event 漏 gate。
+    // chat-message-list 在所有单聊 / 群聊里都挂着，多 tab 时主题 / 草稿 / 已读
+    // 标记等 OTHER tab 写 localStorage 都触发 syncDesktopFavorites →
+    // hydrateDesktopFavoritesFromNative 拍 Tauri invoke IPC + readDesktopFavorites
+    // JSON.parse 整份收藏列表。按 DESKTOP_FAVORITES_STORAGE_KEY gate，event.key=null
+    // (Safari localStorage.clear()) 仍按全量同步处理避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== DESKTOP_FAVORITES_STORAGE_KEY) {
+        return;
+      }
+      void syncDesktopFavorites();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [
@@ -826,13 +1067,18 @@ export function ChatMessageList({
         tone: "danger",
         actionLabel: t(msg`继续转发消息`),
         onAction: () => {
-          void forwardMutation.mutateAsync(input);
+          forwardMutation.mutate(input);
         },
         secondaryActionLabel: errorActionLabel,
         onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
+  // 用 mutate() 而不是 mutateAsync()——forwardMutation 同文件 line 4018 的
+  // sheet onForward 也是同样的 fire-and-forget 场景。把上面 onAction 里
+  // void forwardMutation.mutateAsync(input) 换成 mutate() 是为了避免转发
+  // 重试再次失败时落 window.unhandledrejection（这里 onError 已重新挂出
+  // notice，业务上不需要 await 结果）。
 
   const recallMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
@@ -912,7 +1158,7 @@ export function ChatMessageList({
         tone: "danger",
         actionLabel: t(msg`继续撤回`),
         onAction: () => {
-          recallMutation.mutate(message);
+          triggerRecallMessage(message);
         },
         secondaryActionLabel: errorActionLabel,
         onSecondaryAction: onErrorAction ?? undefined,
@@ -946,24 +1192,27 @@ export function ChatMessageList({
       }
 
       clearTransientMessageState(message.id);
+      // perf：和姊妹 recallMutation.onSuccess 对齐——updateXxxMessageQueries
+      // 已经用 setQueriesData 把这条消息从 cache 里 filter 掉，再追加
+      // invalidate(["app-group-messages" / "app-conversation-messages"]) 等于
+      // 强制 GET /messages?limit=60 把刚 filter 完的 cache 拉回来重渲染一次
+      // （公网隧道 ~600ms RTT × N 条消息体）。recall 路径只 invalidate
+      // conversations 让 chat-list 同步 lastMessage 即可；删除走完全一样的
+      // 后端 emitGroupConversationUpdated → socket 路径，messages cache
+      // 本地 filter 已经是 canonical 形态。同 group-chat-thread-panel.tsx
+      // sendMutation R3 / sendCallInviteMutation R1 同款修法。
       if (result.threadType === "group") {
         updateGroupMessageQueries(
           threadContext.id,
           (current) =>
             current?.filter((item) => item.id !== message.id) ?? current,
         );
-        await queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, threadContext.id],
-        });
       } else {
         updateConversationMessageQueries(
           threadContext.id,
           (current) =>
             current?.filter((item) => item.id !== message.id) ?? current,
         );
-        await queryClient.invalidateQueries({
-          queryKey: ["app-conversation-messages", baseUrl, threadContext.id],
-        });
       }
 
       setActionNotice({
@@ -984,7 +1233,7 @@ export function ChatMessageList({
         tone: "danger",
         actionLabel: t(msg`继续删除`),
         onAction: () => {
-          deleteMutation.mutate(message);
+          triggerDeleteMessage(message);
         },
         secondaryActionLabel: errorActionLabel,
         onSecondaryAction: onErrorAction ?? undefined,
@@ -992,6 +1241,43 @@ export function ChatMessageList({
     },
   });
 
+  // 见上方 recallingMessageIdsRef / deletingMessageIdsRef 注释——按 messageId
+  // 上同步锁，挡掉同帧第二次 click 让两份相同 POST 飞出去把成功 notice 覆盖
+  // 成失败提示。
+  const triggerRecallMessage = (message: ChatRenderableMessage) => {
+    if (recallingMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    recallingMessageIdsRef.current.add(message.id);
+    recallMutation.mutate(message, {
+      onSettled: () => {
+        recallingMessageIdsRef.current.delete(message.id);
+      },
+    });
+  };
+  const triggerDeleteMessage = (message: ChatRenderableMessage) => {
+    if (deletingMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    deletingMessageIdsRef.current.add(message.id);
+    deleteMutation.mutate(message, {
+      onSettled: () => {
+        deletingMessageIdsRef.current.delete(message.id);
+      },
+    });
+  };
+
+  // 走查桌面端单聊新一轮 R4：和姊妹 recallingMessageIdsRef / deletingMessageIdsRef
+  // R3 同款修法。「添加到表情」context menu 项 onClick 只是
+  // `addToStickerMutation.mutate(message); setContextMenuState(null);`，
+  // setContextMenuState(null) 是 React state 要等 commit 才把菜单从 DOM 移
+  // 走；同帧 <16ms double-click 仍命中菜单按钮 → mutate 飞 2 次 → 同一条
+  // 消息的图片被 prepareRemoteCustomStickerUpload + POST /custom-stickers 跑
+  // 2 遍，用户的自定义表情库冒出 2 张完全一样的 sticker（server 落库以新生
+  // 成 stickerId 为主键，没有按 source 去重）。按 messageId 上锁，onSettled
+  // 解锁，不同消息互不影响（用户连续右键 2 条不同消息「添加到表情」是合法
+  // 用法，不应被锁住）。
+  const addingToStickerMessageIdsRef = useRef<Set<string>>(new Set());
   const addToStickerMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
       const source = resolveCustomStickerUploadSource(
@@ -1031,13 +1317,24 @@ export function ChatMessageList({
         tone: "danger",
         actionLabel: t(msg`继续添加到表情`),
         onAction: () => {
-          addToStickerMutation.mutate(message);
+          triggerAddToStickerMessage(message);
         },
         secondaryActionLabel: errorActionLabel,
         onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
+  const triggerAddToStickerMessage = (message: ChatRenderableMessage) => {
+    if (addingToStickerMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    addingToStickerMessageIdsRef.current.add(message.id);
+    addToStickerMutation.mutate(message, {
+      onSettled: () => {
+        addingToStickerMessageIdsRef.current.delete(message.id);
+      },
+    });
+  };
 
   const copyToClipboard = async (text: string, successMessage: string) => {
     if (
@@ -1072,191 +1369,327 @@ export function ChatMessageList({
     }
   };
 
+  const stopSpeakingMessage = () => {
+    // 自增请求号 —— 所有还在 await 的 createSpeechSynthesis 回调走到下面
+    // 时都会发现自己的 requestId 已经过期，直接 return，不再 setSpeakingMessageId
+    // 也不再挂 audio 上去。
+    speakRequestRef.current += 1;
+    const audio = speakAudioRef.current;
+    if (audio) {
+      try {
+        audio.pause();
+      } catch {
+        // ignore
+      }
+      speakAudioRef.current = null;
+    }
+    setSpeakingMessageId(null);
+  };
+
+  const extractSpeakableMessageText = (message: ChatRenderableMessage) => {
+    // 取消息原文，跳过 buildClipboardText 的"消息"占位 fallback ——
+    // 那个 fallback 是给复制按钮用的，朗读"消息"两个字毫无意义
+    const replyContent = extractChatReplyMetadata(message.text);
+    return message.senderType === "user"
+      ? replyContent.body.trim()
+      : sanitizeDisplayedChatText(message.text).trim();
+  };
+
+  const speakMessage = async (message: ChatRenderableMessage) => {
+    const text = extractSpeakableMessageText(message);
+    if (!text) {
+      setActionNotice({
+        message: t(msg`此消息没有可朗读的文本。`),
+        tone: "warning",
+      });
+      return;
+    }
+    // 同条消息再点 = 停止；不同条消息 = 切换
+    if (speakingMessageId === message.id) {
+      stopSpeakingMessage();
+      return;
+    }
+    stopSpeakingMessage();
+    const requestId = ++speakRequestRef.current;
+    setSpeakingMessageId(message.id);
+    try {
+      const result = await createSpeechSynthesis(
+        {
+          text,
+          conversationId:
+            threadContext?.type === "direct" ? threadContext.id : undefined,
+          characterId:
+            message.senderType !== "user" && message.senderId
+              ? message.senderId
+              : undefined,
+        },
+        baseUrl,
+      );
+      if (speakRequestRef.current !== requestId) {
+        // 在 await 期间用户点了别的消息或同条 stop —— 本次结果作废，
+        // 不要触碰 speakAudioRef / speakingMessageId 状态
+        return;
+      }
+      const audioUrl = resolveAppMediaUrl(result.audioUrl);
+      const audio = new Audio(audioUrl);
+      speakAudioRef.current = audio;
+      audio.onended = () => {
+        if (speakAudioRef.current === audio) {
+          speakAudioRef.current = null;
+          setSpeakingMessageId((current) =>
+            current === message.id ? null : current,
+          );
+        }
+      };
+      audio.onerror = () => {
+        if (speakAudioRef.current === audio) {
+          speakAudioRef.current = null;
+          setSpeakingMessageId((current) =>
+            current === message.id ? null : current,
+          );
+          setActionNotice({
+            message: t(msg`语音播放失败，请稍后再试。`),
+            tone: "danger",
+          });
+        }
+      };
+      await audio.play();
+    } catch (error) {
+      if (speakRequestRef.current !== requestId) {
+        return;
+      }
+      // 失败时清掉 ref —— 比如 audio.play() 被浏览器 autoplay policy 拒绝，
+      // 此时 audio 已经赋给了 ref 但实际没在播；不清掉的话下一次 stop
+      // 会去 pause 一个根本没播的 audio，状态错乱
+      speakAudioRef.current = null;
+      setSpeakingMessageId((current) =>
+        current === message.id ? null : current,
+      );
+      const isQuotaExhausted =
+        error instanceof ApiRequestError &&
+        (error.errorCode === "AI_TTS_QUOTA_EXHAUSTED" ||
+          error.statusCode === 429);
+      setActionNotice({
+        message: isQuotaExhausted
+          ? t(msg`今日语音合成额度已用完，请稍后再试。`)
+          : t(msg`生成语音失败，请稍后再试。`),
+        tone: "danger",
+        actionLabel: isQuotaExhausted ? undefined : t(msg`重试`),
+        onAction: isQuotaExhausted
+          ? undefined
+          : () => {
+              void speakMessage(message);
+            },
+      });
+    }
+  };
+
   const shareLocationSummary = async (
     attachment: Extract<MessageAttachment, { kind: "location_card" }>,
   ) => {
-    const summary = buildLocationAttachmentSummary(attachment);
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`位置内容已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: attachment.title,
-      text: summary,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareLocationSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制位置内容。`),
-        tone: "success",
+      const summary = buildLocationAttachmentSummary(attachment);
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`位置内容已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: attachment.title,
+        text: summary,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareLocationSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareLocationSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制位置内容。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareLocationSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
   const shareContactSummary = async (
     attachment: Extract<MessageAttachment, { kind: "contact_card" }>,
   ) => {
-    const profilePath = `/character/${attachment.characterId}`;
-    const profileUrl =
-      typeof window === "undefined"
-        ? profilePath
-        : `${window.location.origin}${profilePath}`;
-    const summary = buildContactAttachmentSummary(attachment, profileUrl);
-
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`名片摘要已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: t(msg`${attachment.name} 的隐界名片`),
-      text: summary,
-      url: profileUrl,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareContactSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制名片摘要。`),
-        tone: "success",
+      const profilePath = `/character/${attachment.characterId}`;
+      const profileUrl = buildPublicShareUrl(profilePath);
+      const summary = buildContactAttachmentSummary(attachment, profileUrl);
+
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`名片摘要已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: t(msg`${attachment.name} 的隐界名片`),
+        text: summary,
+        url: profileUrl,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareContactSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareContactSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制名片摘要。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareContactSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
   const shareNoteSummary = async (
     attachment: Extract<MessageAttachment, { kind: "note_card" }>,
   ) => {
-    const summary = buildNoteAttachmentSummary(attachment);
-
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`笔记摘要已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: attachment.title,
-      text: summary,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareNoteSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制笔记摘要。`),
-        tone: "success",
+      const summary = buildNoteAttachmentSummary(attachment);
+
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`笔记摘要已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: attachment.title,
+        text: summary,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareNoteSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareNoteSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制笔记摘要。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareNoteSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
@@ -1305,6 +1738,19 @@ export function ChatMessageList({
     if (!characterId) {
       return;
     }
+
+    // 走查移动端群聊 R1：同帧双击 ref 守。resolveCharacterAvatarAction 在群聊
+    // 里也会走 mobile-profile 路径（line ~4665-4672 R1 已经把死链补好），双击
+    // 同一头像 push 2 条相同 history，用户从 /character/$id 退回群聊要按 2 次
+    // 返回。按 characterId 上锁；500ms timeout 复位让 unmount→remount 后仍可
+    // 点；不同头像互不阻塞。
+    if (openingCharacterProfileIdsRef.current.has(characterId)) {
+      return;
+    }
+    openingCharacterProfileIdsRef.current.add(characterId);
+    window.setTimeout(() => {
+      openingCharacterProfileIdsRef.current.delete(characterId);
+    }, 500);
 
     void navigate({
       to: "/character/$characterId",
@@ -1441,46 +1887,65 @@ export function ChatMessageList({
     }
 
     return nextIds;
-  }, [visibleMessages]);
+    // t 必须进 deps：parseSharedHistorySummaryMessage 用 t 来识别"已转发 N 条
+    // 消息"系统提示的本地化前缀，locale 切换后旧 closure 用上个 locale 的前缀
+    // 匹配，会漏判 → 转发卡片在新 locale 下不会被标成 imported。
+  }, [t, visibleMessages]);
 
-  const imageMessages = visibleMessages
-    .filter(
-      (
-        message,
-      ): message is ChatRenderableMessage & {
-        type: "image";
-        attachment: Extract<MessageAttachment, { kind: "image" }>;
-      } =>
-        !recalledMessageIdSet.has(message.id) &&
-        message.type === "image" &&
-        message.attachment?.kind === "image",
-    )
-    .map((message) => {
-      const label =
-        message.attachment.fileName ||
-        sanitizeDisplayedChatText(message.text) ||
-        t(msg`[图片]`);
-      const returnTo =
-        buildMessageReturnTo?.(message.id) ??
-        (threadContext
-          ? threadContext.type === "group"
-            ? `/group/${threadContext.id}#chat-message-${message.id}`
-            : `/chat/${threadContext.id}#chat-message-${message.id}`
-          : undefined);
-      const meta = threadContext?.title?.trim()
-        ? `${threadContext.title} · ${formatMessageTimestamp(message.createdAt)}`
-        : formatMessageTimestamp(message.createdAt);
+  // useMemo：每次父组件渲染（typing 指示器 tick / 任何 state 变化）都会
+  // 走到这里，filter + map 历史里所有图片消息 → 让下游 standaloneViewerItems
+  // 的 useMemo 也跟着重算。长聊天滚动到顶后历史里图片 ≥10 张时这层 O(n) 是
+  // 可见开销。挂 useMemo 后只在 visibleMessages / recalledMessageIdSet /
+  // buildMessageReturnTo / threadContext / resolveAttachmentUrl 真变了时重算。
+  const imageMessages = useMemo(
+    () =>
+      visibleMessages
+        .filter(
+          (
+            message,
+          ): message is ChatRenderableMessage & {
+            type: "image";
+            attachment: Extract<MessageAttachment, { kind: "image" }>;
+          } =>
+            !recalledMessageIdSet.has(message.id) &&
+            message.type === "image" &&
+            message.attachment?.kind === "image",
+        )
+        .map((message) => {
+          const label =
+            message.attachment.fileName ||
+            sanitizeDisplayedChatText(message.text) ||
+            t(msg`[图片]`);
+          const returnTo =
+            buildMessageReturnTo?.(message.id) ??
+            (threadContext
+              ? threadContext.type === "group"
+                ? `/group/${threadContext.id}#chat-message-${message.id}`
+                : `/chat/${threadContext.id}#chat-message-${message.id}`
+              : undefined);
+          const meta = threadContext?.title?.trim()
+            ? `${threadContext.title} · ${formatMessageTimestamp(message.createdAt)}`
+            : formatMessageTimestamp(message.createdAt);
 
-      return {
-        id: message.id,
-        url: resolveAttachmentUrl(message.attachment.url),
-        label,
-        fileName: message.attachment.fileName,
-        createdAt: message.createdAt,
-        meta,
-        returnTo,
-      };
-    });
+          return {
+            id: message.id,
+            url: resolveAttachmentUrl(message.attachment.url),
+            label,
+            fileName: message.attachment.fileName,
+            createdAt: message.createdAt,
+            meta,
+            returnTo,
+          };
+        }),
+    [
+      buildMessageReturnTo,
+      recalledMessageIdSet,
+      resolveAttachmentUrl,
+      t,
+      threadContext,
+      visibleMessages,
+    ],
+  );
   const standaloneViewerItems = useMemo(
     () =>
       imageMessages.map(
@@ -1492,7 +1957,9 @@ export function ChatMessageList({
           returnTo: image.returnTo,
         }),
       ),
-    [imageMessages],
+    // t 必须进 deps：fallback title t(msg`图片`)（图片无 fileName/label 时）
+    // 漏 dep 会让 locale 切换后 viewer 标题卡在上个 locale 的"图片"。
+    [imageMessages, t],
   );
   const unreadMarkerDomId = buildChatUnreadMarkerDomId(threadContext);
   const resolvedUnreadMarkerLabel =
@@ -1554,6 +2021,12 @@ export function ChatMessageList({
       return;
     }
 
+    // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef 注释。
+    const lockKey = `preview:${target.id}`;
+    if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+      return;
+    }
+    openingImageViewerWindowKeysRef.current.add(lockKey);
     void openDesktopChatImageViewerWindowOnDemand({
       imageUrl: target.url,
       title: target.fileName || target.label || t(msg`图片`),
@@ -1579,6 +2052,9 @@ export function ChatMessageList({
           message: t(msg`图片预览打开失败，已改为当前页预览。`),
           tone: "warning",
         });
+      })
+      .finally(() => {
+        openingImageViewerWindowKeysRef.current.delete(lockKey);
       });
   };
 
@@ -1598,6 +2074,12 @@ export function ChatMessageList({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        // 不 preventDefault 的话 desktop-chat-workspace 的 window keydown
+        // microtask 兜底会接着跑 dismissSidePanel —— 用户开着「聊天信息」/
+        // 「查找记录」侧栏然后点开消息里的图片预览，按 Esc 会同时把图片查
+        // 看器和背后的侧栏一起关掉。和 Round 5/6/7 给 popover / confirm /
+        // text-edit dialog 补的 preventDefault 同款修法。
+        event.preventDefault();
         setViewerMessageId(null);
         return;
       }
@@ -1620,7 +2102,30 @@ export function ChatMessageList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeImage, activeImageIndex, imageMessages, isDesktop]);
 
+  // 走查桌面端单聊新一轮 R5：和姊妹 addingToStickerMessageIdsRef R4 /
+  // recallingMessageIdsRef / deletingMessageIdsRef 同款 — handleToggleFavorite
+  // 无任何同步双击锁，context menu 「收藏消息」/「取消收藏」 onClick 调用后
+  // setContextMenuState(null) 走 React state 异步；同帧 <16ms double-click 仍
+  // 命中菜单按钮 → 2 次 handleToggleFavorite 都在闭包里看到 collected=false
+  // → 2 次 POST /favorites（add 路径）或 2 次 DELETE /favorites（remove 路径）。
+  // remove 路径尤其坑：第 2 次 DELETE 在 server 端 sourceId 已经删掉 → 404 →
+  // catch 把 favoriteSourceIds rollback（line 下方 set + setActionNotice），
+  // UI 显示"收藏失败"和一条「依然标着收藏」的消息，用户得 refresh 才知真状态。
+  // 按 messageId 上锁，finally 解锁；不同消息互不影响（连续右键 2 条不同消息
+  // 收藏是合法用法）。
+  const togglingFavoriteMessageIdsRef = useRef<Set<string>>(new Set());
   const handleToggleFavorite = async (message: ChatRenderableMessage) => {
+    if (togglingFavoriteMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    togglingFavoriteMessageIdsRef.current.add(message.id);
+    try {
+      await runToggleFavorite(message);
+    } finally {
+      togglingFavoriteMessageIdsRef.current.delete(message.id);
+    }
+  };
+  const runToggleFavorite = async (message: ChatRenderableMessage) => {
     const sourceId = buildFavoriteSourceId(message.id);
     const collected = favoriteSourceIds.includes(sourceId);
 
@@ -1682,7 +2187,7 @@ export function ChatMessageList({
       }
 
       const nextFavorites = upsertDesktopFavorite(
-        buildMessageFavoriteRecord(t, message, groupMode),
+        buildMessageFavoriteRecord(t, message, groupMode, threadContext),
       );
       setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
       setActionNotice({
@@ -1734,6 +2239,14 @@ export function ChatMessageList({
       }
 
       if (variant === "desktop") {
+        // 走查电脑端单聊新一轮 R2：同帧 double-click 同一张 ContactCardMessage
+        // 气泡会让下面 getOrCreateConversation / buildDesktopAddFriendRouteHashOnDemand
+        // 跑 2 次。按 messageId 上锁，finally 解锁。
+        if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+          return;
+        }
+        openingAttachmentMessageIdsRef.current.add(message.id);
+
         if (attachment.recommendationMetadata?.relationshipState === "friend") {
           void getOrCreateConversation(
             { characterId: attachment.characterId },
@@ -1752,7 +2265,22 @@ export function ChatMessageList({
                 }),
               });
             })
-            .catch(() => undefined);
+            // 桌面单聊里点联系人名片 → getOrCreateConversation 失败时原来
+            // 直接 .catch(() => undefined) 静默吞掉，用户点了卡片却毫无反
+            // 应，会反复点。和下面 add-friend 分支的 catch 行为对齐，弹
+            // ActionNotice 让用户知道这次失败了。
+            .catch((error) => {
+              setActionNotice({
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : t(msg`打开聊天失败，请稍后重试。`),
+                tone: "danger",
+              });
+            })
+            .finally(() => {
+              openingAttachmentMessageIdsRef.current.delete(message.id);
+            });
           return;
         }
 
@@ -1774,6 +2302,9 @@ export function ChatMessageList({
               message: t(msg`打开添加朋友页失败，请稍后重试。`),
               tone: "danger",
             });
+          })
+          .finally(() => {
+            openingAttachmentMessageIdsRef.current.delete(message.id);
           });
         return;
       }
@@ -1797,6 +2328,13 @@ export function ChatMessageList({
 
     if (attachment.kind === "note_card") {
       if (variant === "desktop") {
+        // 走查电脑端单聊新一轮 R2：和 contact_card desktop 同款 — 同帧 double-
+        // click NoteCardMessage 气泡让 buildDesktopNoteWindowRouteHashOnDemand
+        // 跑 2 次（dynamic import + createDesktopNoteDraft）+ navigate 2 次。
+        if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+          return;
+        }
+        openingAttachmentMessageIdsRef.current.add(message.id);
         void buildDesktopNoteWindowRouteHashOnDemand({
           noteId: attachment.noteId,
           returnTo:
@@ -1815,6 +2353,9 @@ export function ChatMessageList({
               message: t(msg`打开笔记失败，请稍后重试。`),
               tone: "danger",
             });
+          })
+          .finally(() => {
+            openingAttachmentMessageIdsRef.current.delete(message.id);
           });
         return;
       }
@@ -1826,20 +2367,62 @@ export function ChatMessageList({
     if (attachment.kind === "feed_post_card") {
       // 视频号转发卡片点开 → 跳到对应视频号详情。复用 channels-route-state
       // 的 hash 编码（postId / section / returnPath）。
+      //
+      // 走查 R4：原 channelsHash 没带 returnPath / returnHash，用户在聊天里点
+      // 视频号卡跳到 /discover/channels 后，ChannelsPage 的「返回」按钮拿不到
+      // safeReturnPath 兜底落到 /tabs/discover，把用户从「上一条对话」甩到发现
+      // 首页，下一句不知道往哪回。带上当前 chat 的 pathname + hash，让返回能回
+      // 到这条对话原来的位置。
       const channelsHash = buildDesktopChannelsRouteHash({
         postId: attachment.postId,
         section: "recommended",
+        returnPath: pathname,
+        returnHash: hash || undefined,
       });
-      // 桌面走 /discover/channels；移动走 /tabs/channels（与 channels-page 保持一致）
-      if (variant === "desktop") {
-        void navigate({ to: "/discover/channels", hash: channelsHash });
-      } else {
-        void navigate({ to: "/tabs/channels", hash: channelsHash });
+      // 走查 R3 新一轮：原注释/代码两路对调了——channels-page 的 URL hash
+      // 同步 effect 是「桌面走 /tabs/channels（effect L1196 cond `!isDesktopLayout
+      // || !isDesktopChannelsRoute` + navigate to /tabs/channels），移动走
+      // /discover/channels（effect L1237 cond `normalizedPathname !==
+      // "/discover/channels"`）」。原代码把 desktop 推到 /discover/channels、
+      // mobile 推到 /tabs/channels，结果用户在聊天里点 feed_post_card 跳到视频号后
+      // 改 section / 选 post，URL hash 永远不同步——刷新整页就退回 recommended，
+      // 转发链接也带不上 postId。和 discover-page 的入口（mobile 一直走
+      // /discover/channels，line 178）以及 channels-page 的 effect 保持一致。
+      // 走查电脑端群聊 R9：和姊妹 contact_card / note_card 同款 — 原版裸跑
+      // `void navigate({...})` 无 messageId 锁，群里有人转发视频号卡片后用户
+      // 同帧 <16ms 双击同一张卡，tanstack-router push 2 条相同
+      // /tabs/channels?...postId=... history 项 → 用户从视频号页返回群聊
+      // 要按 2 次返回。和 line 2245-2248 / 2334-2337 的 openingAttachmentMessageIdsRef
+      // 口径对齐，按 messageId 上锁，.finally 解锁（navigate 成功后本组件随路由
+      // 变化 unmount，ref 自动 GC；navigate 失败或同会话内 hash-update 仍 finally
+      // 解锁让用户能立刻重试）。
+      if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+        return;
       }
+      openingAttachmentMessageIdsRef.current.add(message.id);
+      const navigatePromise =
+        variant === "desktop"
+          ? navigate({ to: "/tabs/channels", hash: channelsHash })
+          : navigate({ to: "/discover/channels", hash: channelsHash });
+      void Promise.resolve(navigatePromise).finally(() => {
+        openingAttachmentMessageIdsRef.current.delete(message.id);
+      });
       return;
     }
 
     if (attachment.kind === "file") {
+      // 走查本会话 R2：和姊妹 savingAttachmentUrlsRef R3 同款 — openRemoteFile
+      // 是 fire-and-forget，无任何同步锁。FileAttachmentMessage 是个 <button>，
+      // 点 file 气泡 onClick={() => openAttachment(message)}，同帧双击同一个文件
+      // 气泡时同步走两次 openRemoteFile：iOS 原生壳上 UIDocumentInteractionController
+      // 弹两次（系统会拒掉第二次或先 dismiss 当前的）；web fallback anchor.click
+      // 触发两次下载。按 messageId 上锁，finally 解锁（不论 opened/false 都解锁
+      // 让用户能立刻重试），retry-notice 的 onAction 不走这个锁（重试是用户明确
+      // 单次意图，复用同样的 openFileAttachment closure 不再重新读 ref）。
+      if (openingFileMessageIdsRef.current.has(message.id)) {
+        return;
+      }
+      openingFileMessageIdsRef.current.add(message.id);
       const openFileAttachment = () =>
         openRemoteFile({
           url: resolveAttachmentUrl(attachment.url),
@@ -1863,15 +2446,29 @@ export function ChatMessageList({
         });
       };
 
-      void openFileAttachment().then(showFileOpenResult);
+      void openFileAttachment()
+        .finally(() => {
+          openingFileMessageIdsRef.current.delete(message.id);
+        })
+        .then(showFileOpenResult);
     }
   };
 
+  // 走查新一轮 R3：和姊妹 chat-image-viewer-page R2 同款 — saveAttachmentFile
+  // 是 fire-and-forget，无任何同步锁。从 context menu「保存附件」/ mobile action
+  // sheet 双触发，saveRemoteFile 走 Tauri 弹 2 个文件保存对话框堆叠；web fallback
+  // 走 anchor download 触发 2 次下载。按 url 上锁，finally 解锁，不同附件互不
+  // 影响。
+  const savingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const saveAttachmentFile = (input: {
     url: string;
     fileName: string;
     kind: "image" | "file";
   }) => {
+    if (savingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    savingAttachmentUrlsRef.current.add(input.url);
     const retryLabel =
       input.kind === "image" ? t(msg`重试保存图片`) : t(msg`重试保存文件`);
 
@@ -1881,7 +2478,11 @@ export function ChatMessageList({
       kind: input.kind,
       dialogTitle:
         input.kind === "image" ? t(msg`保存图片`) : t(msg`保存文件`),
-    }).then((result) => {
+    })
+      .finally(() => {
+        savingAttachmentUrlsRef.current.delete(input.url);
+      })
+      .then((result) => {
       if (result.status === "cancelled") {
         return;
       }
@@ -1990,7 +2591,7 @@ export function ChatMessageList({
     }
 
     if (threadContext) {
-      deleteMutation.mutate(message);
+      triggerDeleteMessage(message);
       return;
     }
 
@@ -2036,15 +2637,56 @@ export function ChatMessageList({
     setReminderTargetMessage(message);
   };
 
+  // 走查桌面端单聊新一轮 R6：和 R5 togglingFavoriteMessageIdsRef 同款问题。
+  // handleClearReminder 无任何同步锁，handleToggleReminder 根据
+  // messageReminderMap.has(message.id) 分发到 clearReminder / openPicker —
+  // map 在 await clearReminder 飞行期间还没翻 false（本地缓存 + server 推送）。
+  // 同帧 <16ms double-click「取消提醒」context menu 项：
+  // · click 1: messageReminderMap.has=true → handleClearReminder → DELETE
+  // · click 2: messageReminderMap.has 仍 true（state 未提交）→ 又 handleClearReminder
+  //   → 第 2 次 DELETE /reminders 命中 server 已删的 sourceId → 404 → catch →
+  //   setActionNotice 「取消提醒失败」红色 notice，但 server 端已成功取消。
+  // 用户得 refresh 才看见真实状态。按 messageId 上锁。
+  const clearingReminderMessageIdsRef = useRef<Set<string>>(new Set());
   const handleClearReminder = async (messageId: string) => {
-    await clearReminder(messageId);
-    setReminderTargetMessage((current) =>
-      current?.id === messageId ? null : current,
-    );
-    setActionNotice({
-      message: t(msg`已取消这条消息的提醒。`),
-      tone: "success",
-    });
+    // clearReminder 走的是 removeReminderMutation.mutateAsync —— 公网隧道
+    // 偶发超时 / cloud token 重连那几百 ms 都会 reject。caller 是
+    // void handleClearReminder(...) fire-and-forget，漏 try/catch 整条
+    // rejection 直接落 unhandledrejection 污染 telemetry，用户那边还看不到
+    // 任何 toast，以为操作生效了。
+    if (clearingReminderMessageIdsRef.current.has(messageId)) {
+      return;
+    }
+    clearingReminderMessageIdsRef.current.add(messageId);
+    try {
+      try {
+        await clearReminder(messageId);
+      } catch (error) {
+        setActionNotice({
+          message:
+            error instanceof Error
+              ? error.message
+              : t(msg`取消提醒失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续取消提醒`),
+          onAction: () => {
+            void handleClearReminder(messageId);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+      setReminderTargetMessage((current) =>
+        current?.id === messageId ? null : current,
+      );
+      setActionNotice({
+        message: t(msg`已取消这条消息的提醒。`),
+        tone: "success",
+      });
+    } finally {
+      clearingReminderMessageIdsRef.current.delete(messageId);
+    }
   };
 
   const handleToggleReminder = (message: ChatRenderableMessage) => {
@@ -2086,75 +2728,88 @@ export function ChatMessageList({
       return;
     }
 
-    try {
-      await setReminder(
-        {
-          messageId: reminderTargetMessage.id,
-          remindAt: option.remindAt,
-          threadId: threadContext?.id ?? "",
-          threadType: threadContext?.type ?? "direct",
-        },
-        {
-          messageId: reminderTargetMessage.id,
-          remindAt: option.remindAt,
-          threadId: threadContext?.id ?? "",
-          threadType: threadContext?.type ?? "direct",
-          threadTitle: threadContext?.title,
-          previewText: buildClipboardText(t, reminderTargetMessage),
-        },
-      );
-      setReminderTargetMessage(null);
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`设置提醒失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续设置提醒`),
-        onAction: () => {
-          void handleSelectReminder(option);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+    // 见上面 selectingReminderRef 的注释：mutateAsync 飞行期间 React state
+    // 还没翻 null，同帧/同 RTT 窗口内连点 2 次会同时通过 `if (!reminderTargetMessage)`
+    // 守门，两份 POST /reminders 同时落库。ref 同步赋值挡掉同帧后续 click，
+    // finally 释放（无论成功 / 失败都解锁，让重试路径能再跑一次）。
+    if (selectingReminderRef.current) {
       return;
     }
+    selectingReminderRef.current = true;
 
-    void requestNotificationPermission().then((permissionState) => {
-      const nativeMobileShareSupported = isNativeMobileShareSurface();
-      const summary = formatReminderSummary(t, option.remindAt);
-      if (permissionState === "granted") {
+    try {
+      try {
+        await setReminder(
+          {
+            messageId: reminderTargetMessage.id,
+            remindAt: option.remindAt,
+            threadId: threadContext?.id ?? "",
+            threadType: threadContext?.type ?? "direct",
+          },
+          {
+            messageId: reminderTargetMessage.id,
+            remindAt: option.remindAt,
+            threadId: threadContext?.id ?? "",
+            threadType: threadContext?.type ?? "direct",
+            threadTitle: threadContext?.title,
+            previewText: buildClipboardText(t, reminderTargetMessage),
+          },
+        );
+        setReminderTargetMessage(null);
+      } catch (error) {
         setActionNotice({
-          message: t(msg`已设为消息提醒 · ${summary}，系统通知已开启。`),
-          tone: "success",
-        });
-        return;
-      }
-
-      if (permissionState === "denied") {
-        setActionNotice({
-          message: nativeMobileShareSupported
-            ? t(msg`已设为消息提醒 · ${summary}，系统通知未开启。可前往系统设置继续打开通知。`)
-            : t(msg`已设为消息提醒 · ${summary}，系统通知未开启。`),
-          tone: "warning",
-          actionLabel: nativeMobileShareSupported ? t(msg`去设置`) : undefined,
-          onAction: nativeMobileShareSupported
-            ? () => {
-                void openAppSettings();
-              }
-            : undefined,
+          message:
+            error instanceof Error
+              ? error.message
+              : t(msg`设置提醒失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续设置提醒`),
+          onAction: () => {
+            void handleSelectReminder(option);
+          },
           secondaryActionLabel: errorActionLabel,
           onSecondaryAction: onErrorAction ?? undefined,
         });
         return;
       }
 
-      setActionNotice({
-        message: t(msg`已设为消息提醒 · ${summary}。`),
-        tone: "success",
+      void requestNotificationPermission().then((permissionState) => {
+        const nativeMobileShareSupported = isNativeMobileShareSurface();
+        const summary = formatReminderSummary(t, option.remindAt);
+        if (permissionState === "granted") {
+          setActionNotice({
+            message: t(msg`已设为消息提醒 · ${summary}，系统通知已开启。`),
+            tone: "success",
+          });
+          return;
+        }
+
+        if (permissionState === "denied") {
+          setActionNotice({
+            message: nativeMobileShareSupported
+              ? t(msg`已设为消息提醒 · ${summary}，系统通知未开启。可前往系统设置继续打开通知。`)
+              : t(msg`已设为消息提醒 · ${summary}，系统通知未开启。`),
+            tone: "warning",
+            actionLabel: nativeMobileShareSupported ? t(msg`去设置`) : undefined,
+            onAction: nativeMobileShareSupported
+              ? () => {
+                  void openAppSettings();
+                }
+              : undefined,
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+          return;
+        }
+
+        setActionNotice({
+          message: t(msg`已设为消息提醒 · ${summary}。`),
+          tone: "success",
+        });
       });
-    });
+    } finally {
+      selectingReminderRef.current = false;
+    }
   };
 
   const selectedMessageIdSet = useMemo(
@@ -2184,7 +2839,10 @@ export function ChatMessageList({
         previewText: buildForwardPreviewText(t, message),
         typeLabel: resolveForwardTypeLabel(t, message),
       })),
-    [forwardMessages],
+    // t 必须进 deps：buildClipboardSender / buildForwardPreviewText /
+    // resolveForwardTypeLabel 都通过 t 渲染本地化文案（发送者别名 / "图片"
+    // / "语音" 等类型标签），locale 切换后转发预览卡片会卡上个语言。
+    [forwardMessages, t],
   );
 
   const handleOpenDirectCallInviteCard = (input: {
@@ -2293,11 +2951,27 @@ export function ChatMessageList({
     if (!messagesToFavorite.length) {
       return;
     }
+    if (selectionActionBusyRef.current) {
+      return;
+    }
 
+    selectionActionBusyRef.current = true;
     setSelectionActionPending("favorite");
     try {
       if (threadContext) {
-        await Promise.all(
+        // 走查新一轮 R1：和姊妹 handleDeleteSelectedMessages / handleRecallSelectedMessages
+        // 同款问题——原版 Promise.all 任意一条 createMessageFavorite 抛错就把整段
+        // throw 出去（公网隧道 timeout / cloud token 续期 / 服务端 409 重复收藏
+        // 都会抛），但前 K 条已经成功落库。catch 分支显示"批量收藏失败"，UI
+        // favoriteSourceIds 完全没更新；用户点"继续收藏"重试相同一批 N 个 → 之前
+        // 成功的 K 个被服务端再 409 → 又"批量收藏失败"，死循环看着没动。改成
+        // Promise.allSettled：成功的 id 攒到 set，走完一轮统一通过 syncFavoriteSourceIds
+        // 把成功项标到 UI；部分失败时 notice 给出"已收藏 N 条；剩余 M 条..."
+        // 让用户基于真实状态决定要不要重试。本路径同时给单聊和群聊多选用，
+        // 群聊里清整段调试消息时一次能命中 5-10 条，公网 RTT ~600ms × N 中
+        // 间 timeout 概率不低。
+        const fulfilledMessageIds = new Set<string>();
+        const results = await Promise.allSettled(
           messagesToFavorite.map((message) =>
             createMessageFavorite(
               {
@@ -2306,25 +2980,82 @@ export function ChatMessageList({
                 messageId: message.id,
               },
               baseUrl,
-            ),
+            ).then(() => message.id),
           ),
         );
-        const nextRemoteFavorites = await queryClient.fetchQuery({
-          queryKey: ["app-favorites", baseUrl],
-          queryFn: () => getFavorites(baseUrl),
-          staleTime: 0,
-        });
-        syncFavoriteSourceIds(nextRemoteFavorites);
-      } else {
-        let nextFavorites = readDesktopFavorites();
-        for (const message of messagesToFavorite) {
-          nextFavorites = upsertDesktopFavorite(
-            buildMessageFavoriteRecord(t, message, groupMode),
-          );
+        let firstError: unknown = null;
+        for (const result of results) {
+          if (result.status === "fulfilled") {
+            fulfilledMessageIds.add(result.value);
+          } else if (firstError === null) {
+            firstError = result.reason;
+          }
         }
 
-        setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+        if (fulfilledMessageIds.size > 0) {
+          const nextRemoteFavorites = await queryClient.fetchQuery({
+            queryKey: ["app-favorites", baseUrl],
+            queryFn: () => getFavorites(baseUrl),
+            staleTime: 0,
+          });
+          syncFavoriteSourceIds(nextRemoteFavorites);
+        }
+
+        const failedCount =
+          messagesToFavorite.length - fulfilledMessageIds.size;
+        if (failedCount === 0) {
+          resetSelectionMode();
+          setActionNotice({
+            message:
+              messagesToFavorite.length === 1
+                ? t(msg`已收藏 1 条消息。`)
+                : t(msg`已收藏 ${messagesToFavorite.length} 条消息。`),
+            tone: "success",
+          });
+        } else if (fulfilledMessageIds.size === 0) {
+          setActionNotice({
+            message:
+              firstError instanceof Error && firstError.message
+                ? firstError.message
+                : t(msg`收藏失败，请稍后再试。`),
+            tone: "danger",
+            actionLabel: t(msg`继续收藏所选消息`),
+            onAction: () => {
+              void handleFavoriteSelectedMessages();
+            },
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+        } else {
+          setActionNotice({
+            message:
+              firstError instanceof Error && firstError.message
+                ? t(
+                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条未收藏：${firstError.message}`,
+                  )
+                : t(
+                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条收藏失败，请稍后再试。`,
+                  ),
+            tone: "danger",
+            actionLabel: t(msg`继续收藏剩余消息`),
+            onAction: () => {
+              void handleFavoriteSelectedMessages();
+            },
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+        }
+        return;
       }
+
+      let nextFavorites = readDesktopFavorites();
+      for (const message of messagesToFavorite) {
+        nextFavorites = upsertDesktopFavorite(
+          buildMessageFavoriteRecord(t, message, groupMode, threadContext),
+        );
+      }
+
+      setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
       resetSelectionMode();
       setActionNotice({
         message:
@@ -2333,21 +3064,8 @@ export function ChatMessageList({
             : t(msg`已收藏 ${messagesToFavorite.length} 条消息。`),
         tone: "success",
       });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`收藏失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续收藏所选消息`),
-        onAction: () => {
-          void handleFavoriteSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
     } finally {
+      selectionActionBusyRef.current = false;
       setSelectionActionPending(null);
     }
   };
@@ -2357,8 +3075,27 @@ export function ChatMessageList({
     if (!messagesToDelete.length) {
       return;
     }
+    if (selectionActionBusyRef.current) {
+      return;
+    }
 
     const deletedMessageIdSet = new Set<string>();
+    // 走查新一轮 R1：原版 for-await 一路裸跑，第 K 条 deleteXxxMessage 抛错
+    // （网络抖 / cloud token 续期 / 群被对方移除致 403）→ 整个函数 throw 出去
+    // 直接 catch 显示"批量删除失败"；但前 K-1 条服务端已经删掉，本地 cache
+    // 完全没动（cache 更新挂在 try 块 throw 点之后）。结果：
+    //   · UI 仍显示前 K-1 条消息（cache 没 filter）
+    //   · 用户点"继续删除所选消息"重试，selectedMessageIds 还含前 K-1 条 →
+    //     再 DELETE 一次 → 服务端返 404 → 又"批量删除失败"，死循环看着没动
+    //   · 用户最后强退多选，下次进群聊 messagesQuery refetch 才发现"咦怎么
+    //     少了几条"，跟自己最初的预期对不上
+    // 群聊里多选删 5-10 条很常见（清整段调试消息 / 清掉一段无关 AI 闲聊），
+    // 公网隧道 ~600ms RTT × 10 条 = 6 秒滚动，中途 timeout 的概率不低。
+    // 改成 per-iteration try/catch：成功的 add 到 set 继续往后跑；记下第一
+    // 条错误的 message 用于 notice；走完循环统一把 deletedMessageIdSet 拍进
+    // cache，部分成功也写回，UI 与服务端一致。
+    let firstError: unknown = null;
+    selectionActionBusyRef.current = true;
     setSelectionActionPending("delete");
 
     try {
@@ -2371,20 +3108,27 @@ export function ChatMessageList({
           if (isLocalOnlyMessage(message)) {
             nextLocalState = hideLocalChatMessage(message.id);
             clearTransientMessageState(message.id);
+            deletedMessageIdSet.add(message.id);
             continue;
           }
 
-          if (threadContext.type === "group") {
-            await deleteGroupMessage(threadContext.id, message.id, baseUrl);
-          } else {
-            await deleteConversationMessage(
-              threadContext.id,
-              message.id,
-              baseUrl,
-            );
+          try {
+            if (threadContext.type === "group") {
+              await deleteGroupMessage(threadContext.id, message.id, baseUrl);
+            } else {
+              await deleteConversationMessage(
+                threadContext.id,
+                message.id,
+                baseUrl,
+              );
+            }
+            deletedMessageIdSet.add(message.id);
+            clearTransientMessageState(message.id);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
           }
-          deletedMessageIdSet.add(message.id);
-          clearTransientMessageState(message.id);
         }
 
         if (nextLocalState) {
@@ -2392,6 +3136,14 @@ export function ChatMessageList({
           setRecalledMessageIds(nextLocalState.recalledMessageIds);
         }
 
+        // perf：和 deleteMutation / 姊妹 handleRecallSelectedMessages 对齐
+        // —— updateXxxMessageQueries 已经把要删的消息从 cache 里 filter 掉，
+        // 再走一次 invalidate(["app-group-messages" / "app-conversation-messages"])
+        // 会强制 GET /messages?limit=N 把刚刚 filter 完的 cache 拉回来重渲染
+        // 一次（多选删除一次能命中几十条 → 几十次 RTT 上没价值的 N 条 payload）。
+        // recall 路径只 invalidate conversations 让 chat-list 同步 lastMessage 即可；
+        // 删除走完全一样的后端 emit 路径，messages cache 本地 filter 已经是
+        // canonical 形态。同 group-chat-thread-panel sendMutation R3 同款修法。
         if (deletedMessageIdSet.size > 0 && threadContext.type === "group") {
           updateGroupMessageQueries(
             threadContext.id,
@@ -2399,9 +3151,6 @@ export function ChatMessageList({
               current?.filter((item) => !deletedMessageIdSet.has(item.id)) ??
               current,
           );
-          await queryClient.invalidateQueries({
-            queryKey: ["app-group-messages", baseUrl, threadContext.id],
-          });
         } else if (deletedMessageIdSet.size > 0) {
           updateConversationMessageQueries(
             threadContext.id,
@@ -2409,13 +3158,17 @@ export function ChatMessageList({
               current?.filter((item) => !deletedMessageIdSet.has(item.id)) ??
               current,
           );
-          await queryClient.invalidateQueries({
-            queryKey: ["app-conversation-messages", baseUrl, threadContext.id],
-          });
         }
 
         if (deletedMessageIdSet.size > 0) {
-          await queryClient.invalidateQueries({
+          // 新一轮走查 R3：原版 `await invalidateQueries(app-conversations)` 把
+          // setActionNotice 推到 invalidate refetch 回来之后才执行，公网隧道
+          // ~600ms RTT 期间用户底部工具栏停在"删除中..."、看不到"已删除 N
+          // 条消息"的成功 notice。message cache 已经在 updateGroupMessageQueries
+          // / updateConversationMessageQueries 里就地 filter 完了，chat-list
+          // lastMessage badge 只需要兜底刷新，fire-and-forget。和 group-chat-
+          // thread-panel sendMutation R3 / chat-list-page 新一轮 R2 同款修法。
+          void queryClient.invalidateQueries({
             queryKey: ["app-conversations", baseUrl],
           });
         }
@@ -2431,29 +3184,49 @@ export function ChatMessageList({
         setRecalledMessageIds(nextState.recalledMessageIds);
       }
 
-      resetSelectionMode();
-      setActionNotice({
-        message:
-          messagesToDelete.length === 1
-            ? t(msg`已删除 1 条消息。`)
-            : t(msg`已删除 ${messagesToDelete.length} 条消息。`),
-        tone: "success",
-      });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`批量删除失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续删除所选消息`),
-        onAction: () => {
-          void handleDeleteSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+      const failedCount = messagesToDelete.length - deletedMessageIdSet.size;
+      if (failedCount === 0) {
+        resetSelectionMode();
+        setActionNotice({
+          message:
+            messagesToDelete.length === 1
+              ? t(msg`已删除 1 条消息。`)
+              : t(msg`已删除 ${messagesToDelete.length} 条消息。`),
+          tone: "success",
+        });
+      } else if (deletedMessageIdSet.size === 0) {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? firstError.message
+              : t(msg`批量删除失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续删除所选消息`),
+          onAction: () => {
+            void handleDeleteSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      } else {
+        // 部分成功：cache 已经过滤掉成功的，selectedMessageIds 的 messages-changed
+        // effect (line ~615) 会顺手清掉成功条 → 留下未删的几条等用户重试或取消。
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条未删除：${firstError.message}`)
+              : t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条删除失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续删除剩余消息`),
+          onAction: () => {
+            void handleDeleteSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
     } finally {
+      selectionActionBusyRef.current = false;
       setSelectionActionPending(null);
     }
   };
@@ -2463,78 +3236,137 @@ export function ChatMessageList({
     if (!messagesToRecall.length || !threadContext) {
       return;
     }
+    if (selectionActionBusyRef.current) {
+      return;
+    }
 
     const skippedCount = selectedMessages.length - messagesToRecall.length;
+    selectionActionBusyRef.current = true;
     setSelectionActionPending("recall");
+    // 走查新一轮 R1：和姊妹 handleDeleteSelectedMessages 同款问题——原版
+    // for-await 撤回 N 条，第 K 条失败（公网隧道 timeout / cloud token 续期 /
+    // 服务端窗口期判定 GROUP_MESSAGE_RECALL_EXPIRED）就把整段循环 throw 出去，
+    // 前 K-1 条服务端已经成功撤回但 cache 完全没动（updateXxxMessageQueries
+    // 在 catch 之外的 throw 点之后）。结果：群里 K-1 条已经显示为"[消息已撤回]"，
+    // 但当前用户的本地 UI 还显示正文；下次 mount refetch 才发现差异，跟"撤回"
+    // 的"立即可见"语义严重不符。改成 per-iteration try/catch，把成功的累计
+    // 到 recalledMessageMap，循环走完之后统一拍回 cache；notice 分 all-success
+    // / partial / total-fail 三档展示。
 
+    let firstError: unknown = null;
+    const groupRecalled = new Map<string, GroupMessage>();
+    const directRecalled = new Map<string, Message>();
     try {
       if (threadContext.type === "group") {
-        const recalledMessageMap = new Map<string, GroupMessage>();
         for (const message of messagesToRecall) {
-          const recalledMessage = await recallGroupMessage(
-            threadContext.id,
-            message.id,
-            baseUrl,
-          );
-          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+          try {
+            const recalledMessage = await recallGroupMessage(
+              threadContext.id,
+              message.id,
+              baseUrl,
+            );
+            groupRecalled.set(recalledMessage.id, recalledMessage);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
+          }
         }
 
-        updateGroupMessageQueries(
-          threadContext.id,
-          (current): GroupMessage[] | undefined =>
-            current?.map(
-              (item): GroupMessage => recalledMessageMap.get(item.id) ?? item,
-            ) ?? current,
-        );
+        if (groupRecalled.size > 0) {
+          updateGroupMessageQueries(
+            threadContext.id,
+            (current): GroupMessage[] | undefined =>
+              current?.map(
+                (item): GroupMessage => groupRecalled.get(item.id) ?? item,
+              ) ?? current,
+          );
+        }
       } else {
-        const recalledMessageMap = new Map<string, Message>();
         for (const message of messagesToRecall) {
-          const recalledMessage = await recallConversationMessage(
-            threadContext.id,
-            message.id,
-            baseUrl,
-          );
-          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+          try {
+            const recalledMessage = await recallConversationMessage(
+              threadContext.id,
+              message.id,
+              baseUrl,
+            );
+            directRecalled.set(recalledMessage.id, recalledMessage);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
+          }
         }
 
-        updateConversationMessageQueries(
-          threadContext.id,
-          (current): Message[] | undefined =>
-            current?.map(
-              (item): Message => recalledMessageMap.get(item.id) ?? item,
-            ) ?? current,
-        );
+        if (directRecalled.size > 0) {
+          updateConversationMessageQueries(
+            threadContext.id,
+            (current): Message[] | undefined =>
+              current?.map(
+                (item): Message => directRecalled.get(item.id) ?? item,
+              ) ?? current,
+          );
+        }
       }
 
-      resetSelectionMode();
-      setActionNotice({
-        message:
-          skippedCount > 0
-            ? t(msg`已撤回 ${messagesToRecall.length} 条消息，另有 ${skippedCount} 条不支持撤回。`)
-            : messagesToRecall.length === 1
-              ? t(msg`已撤回 1 条消息。`)
-              : t(msg`已撤回 ${messagesToRecall.length} 条消息。`),
-        tone: "success",
-      });
+      const succeededCount =
+        threadContext.type === "group" ? groupRecalled.size : directRecalled.size;
+      const failedCount = messagesToRecall.length - succeededCount;
+      if (failedCount === 0) {
+        resetSelectionMode();
+        setActionNotice({
+          message:
+            skippedCount > 0
+              ? t(msg`已撤回 ${messagesToRecall.length} 条消息，另有 ${skippedCount} 条不支持撤回。`)
+              : messagesToRecall.length === 1
+                ? t(msg`已撤回 1 条消息。`)
+                : t(msg`已撤回 ${messagesToRecall.length} 条消息。`),
+          tone: "success",
+        });
+      } else if (succeededCount === 0) {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? firstError.message
+              : t(msg`批量撤回失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续撤回所选消息`),
+          onAction: () => {
+            void handleRecallSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      } else {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条未撤回：${firstError.message}`)
+              : t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条撤回失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续撤回剩余消息`),
+          onAction: () => {
+            void handleRecallSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
 
-      await queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`批量撤回失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续撤回所选消息`),
-        onAction: () => {
-          void handleRecallSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+      if (succeededCount > 0) {
+        // 新一轮走查 R3：和姊妹 handleDeleteSelectedMessages 同款——原版 await
+        // 让 selectionActionBusyRef / selectionActionPending 一直撑到 invalidate
+        // 回来，底部多选工具栏的 4 个按钮（收藏/转发/撤回/删除）继续 disabled
+        // 一个公网 RTT （~600ms），用户撤回完后只能干等。messages cache 已经
+        // 在循环里通过 updateGroupMessageQueries / updateConversationMessageQueries
+        // 就地替换成"已撤回"标记的 message，conversations 的 lastMessage 慢一帧
+        // 同步不影响功能。fire-and-forget。
+        void queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }
     } finally {
+      selectionActionBusyRef.current = false;
       setSelectionActionPending(null);
     }
   };
@@ -2734,6 +3566,11 @@ export function ChatMessageList({
           message.senderType === "user" && recalledMessageIdSet.has(message.id);
         const isSystem =
           message.type === "system" || message.senderType === "system";
+        // 服务端 recall（chat.service.ts:506 / group.service.ts:579）把消息
+        // 整段重写成 senderType=system + 中文 text "你撤回了一条消息"，refresh
+        // 后或 socket echo 路径都拿到的是这个原文。en/ja/ko locale 用户会原样
+        // 看到中文。客户端识别 marker，仍走 buildRecalledMessageNotice 翻译输出。
+        const isServerSideRecalled = isServerRecalledSystemMessage(message);
         const isHighlighted = message.id === resolvedHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
         const continuesMessageRun =
@@ -2796,7 +3633,7 @@ export function ChatMessageList({
                   }
                 />
               ) : null}
-              {sharedHistorySummary && !isRecalled ? (
+              {sharedHistorySummary && !isRecalled && !isServerSideRecalled ? (
                 <SharedHistorySummaryNotice
                   id={`chat-message-${message.id}`}
                   summary={sharedHistorySummary}
@@ -2815,7 +3652,14 @@ export function ChatMessageList({
                 >
                   {isRecalled
                     ? buildRecalledMessageNotice(t, message)
-                    : displayText}
+                    : isServerSideRecalled
+                      ? // 服务端 recall 是 owner-only：能落到这个 marker 的一定是
+                        // 用户自己撤回的。actor 走"你"分支，复用同款翻译。
+                        buildRecalledMessageNotice(t, {
+                          ...message,
+                          senderType: "user",
+                        })
+                      : displayText}
                 </InlineNotice>
               )}
             </div>
@@ -2862,12 +3706,15 @@ export function ChatMessageList({
               onPointerUp={clearLongPressTimer}
               onPointerCancel={clearLongPressTimer}
               onPointerMove={handleMobileMessagePointerMove}
+              data-yj-msg-bubble={isDesktop ? undefined : "1"}
               className={`rounded-[16px] transition-[background-color,box-shadow] duration-300 ${
                 isDesktop
                   ? "space-y-1.5 px-2 py-1.5"
-                  : continuesMessageRun
-                    ? "space-y-0.5 px-1.5 py-0.5"
-                    : "space-y-1 px-1.5 py-1"
+                  : `yj-no-callout ${
+                      continuesMessageRun
+                        ? "space-y-0.5 px-1.5 py-0.5"
+                        : "space-y-1 px-1.5 py-1"
+                    }`
               } ${
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
@@ -2991,6 +3838,11 @@ export function ChatMessageList({
                       label={message.attachment.fileName || displayText}
                       variant={variant}
                       maxSize={isDesktop ? 180 : 136}
+                      // 真实图片宽高，让浏览器在加载完成前就按 aspect-ratio
+                      // 占位，避免 60 条历史里每张图加载完再撑高一格 → 整列
+                      // 跳动（CLS）。server 早已返回，但之前没透传进 <img>。
+                      width={message.attachment.width}
+                      height={message.attachment.height}
                       onOpen={
                         selectionMode
                           ? undefined
@@ -3200,14 +4052,14 @@ export function ChatMessageList({
                       aria-label={t(msg`查看${ownerName?.trim() || t(msg`我的`)}资料`)}
                     >
                       <AvatarChip
-                        name={ownerName ?? t(msg`我`)}
+                        name={ownerName || t(msg`我`)}
                         src={ownerAvatar}
                         size={isDesktop ? "wechat" : "sm"}
                       />
                     </button>
                   ) : (
                     <AvatarChip
-                      name={ownerName ?? t(msg`我`)}
+                      name={ownerName || t(msg`我`)}
                       src={ownerAvatar}
                       size={isDesktop ? "wechat" : "sm"}
                     />
@@ -3344,7 +4196,7 @@ export function ChatMessageList({
           onAddToStickers={
             canAddMessageToStickers(contextMenuState.message)
               ? () => {
-                  addToStickerMutation.mutate(contextMenuState.message);
+                  triggerAddToStickerMessage(contextMenuState.message);
                   setContextMenuState(null);
                 }
               : undefined
@@ -3382,10 +4234,23 @@ export function ChatMessageList({
             );
             setContextMenuState(null);
           }}
+          onSpeakAloud={
+            extractSpeakableMessageText(contextMenuState.message)
+              ? () => {
+                  void speakMessage(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
+          speakAloudLabel={
+            speakingMessageId === contextMenuState.message.id
+              ? t(msg`停止朗读`)
+              : t(msg`朗读`)
+          }
           onRecall={
             canRecallMessage(contextMenuState.message, threadContext)
               ? () => {
-                  recallMutation.mutate(contextMenuState.message);
+                  triggerRecallMessage(contextMenuState.message);
                   setContextMenuState(null);
                 }
               : undefined
@@ -3516,6 +4381,20 @@ export function ChatMessageList({
               }
             : undefined
         }
+        onSpeakAloud={
+          mobileActionMessage &&
+          extractSpeakableMessageText(mobileActionMessage)
+            ? () => {
+                void speakMessage(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        speakAloudLabel={
+          mobileActionMessage && speakingMessageId === mobileActionMessage.id
+            ? t(msg`停止朗读`)
+            : t(msg`朗读`)
+        }
         onOpenAttachment={
           mobileActionMessage && getOpenableAttachment(mobileActionMessage)
             ? () => {
@@ -3546,7 +4425,7 @@ export function ChatMessageList({
           mobileActionMessage &&
           canRecallMessage(mobileActionMessage, threadContext)
             ? () => {
-                recallMutation.mutate(mobileActionMessage);
+                triggerRecallMessage(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -3564,6 +4443,7 @@ export function ChatMessageList({
       />
       <MobileMessageReminderSheet
         open={Boolean(reminderTargetMessage)}
+        variant={variant}
         previewText={
           reminderTargetMessage
             ? buildClipboardText(t, reminderTargetMessage)
@@ -3620,6 +4500,19 @@ export function ChatMessageList({
           onOpenInWindow={
             isDesktop
               ? () => {
+                  // 上面 openImagePreview 那条同款链有 .catch 兜底（line 1803）。
+                  // 这两个 overlay 上的「在独立窗口打开 / 打印」按钮一直只有
+                  // .then 没 .catch —— openDesktopChatImageViewerWindowOnDemand
+                  // 本质是 dynamic import + 跨窗口 IPC，chunk 拉失败 / 桌面
+                  // shell 没起来都会让它 reject，这条 rejection 走 void 直接
+                  // 落 window.unhandledrejection 污染 telemetry。补一条
+                  // ActionNotice 反馈 + .catch 吞掉冒泡。
+                  // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef。
+                  const lockKey = `open:${activeImage.id}`;
+                  if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+                    return;
+                  }
+                  openingImageViewerWindowKeysRef.current.add(lockKey);
                   void openDesktopChatImageViewerWindowOnDemand({
                     imageUrl: activeImage.url,
                     title: activeImage.fileName || activeImage.label || t(msg`图片`),
@@ -3627,26 +4520,42 @@ export function ChatMessageList({
                     returnTo: activeImage.returnTo,
                     items: standaloneViewerItems,
                     activeId: activeImage.id,
-                  }).then((opened) => {
-                    if (opened) {
-                      setActionNotice({
-                        message: t(msg`已在独立窗口打开图片。`),
-                        tone: "success",
-                      });
-                      return;
-                    }
+                  })
+                    .then((opened) => {
+                      if (opened) {
+                        setActionNotice({
+                          message: t(msg`已在独立窗口打开图片。`),
+                          tone: "success",
+                        });
+                        return;
+                      }
 
-                    setActionNotice({
-                      message: t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
-                      tone: "danger",
+                      setActionNotice({
+                        message: t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
+                        tone: "danger",
+                      });
+                    })
+                    .catch(() => {
+                      setActionNotice({
+                        message: t(msg`打开独立窗口失败，请稍后再试。`),
+                        tone: "danger",
+                      });
+                    })
+                    .finally(() => {
+                      openingImageViewerWindowKeysRef.current.delete(lockKey);
                     });
-                  });
                 }
               : undefined
           }
           onPrint={
             isDesktop
               ? () => {
+                  // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef。
+                  const lockKey = `print:${activeImage.id}`;
+                  if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+                    return;
+                  }
+                  openingImageViewerWindowKeysRef.current.add(lockKey);
                   void openDesktopChatImageViewerWindowOnDemand({
                     imageUrl: activeImage.url,
                     title: activeImage.fileName || activeImage.label || t(msg`图片`),
@@ -3655,20 +4564,30 @@ export function ChatMessageList({
                     items: standaloneViewerItems,
                     activeId: activeImage.id,
                     autoPrint: true,
-                  }).then((opened) => {
-                    if (opened) {
-                      setActionNotice({
-                        message: t(msg`已打开图片打印视图。`),
-                        tone: "success",
-                      });
-                      return;
-                    }
+                  })
+                    .then((opened) => {
+                      if (opened) {
+                        setActionNotice({
+                          message: t(msg`已打开图片打印视图。`),
+                          tone: "success",
+                        });
+                        return;
+                      }
 
-                    setActionNotice({
-                      message: t(msg`浏览器阻止了打印窗口，请检查弹窗权限。`),
-                      tone: "danger",
+                      setActionNotice({
+                        message: t(msg`浏览器阻止了打印窗口，请检查弹窗权限。`),
+                        tone: "danger",
+                      });
+                    })
+                    .catch(() => {
+                      setActionNotice({
+                        message: t(msg`打开打印窗口失败，请稍后再试。`),
+                        tone: "danger",
+                      });
+                    })
+                    .finally(() => {
+                      openingImageViewerWindowKeysRef.current.delete(lockKey);
                     });
-                  });
                 }
               : undefined
           }
@@ -3720,7 +4639,7 @@ export function ChatMessageList({
             }
             onClose={() => setForwardMessages(null)}
             onForward={(conversation, mode) => {
-              void forwardMutation.mutateAsync({ conversation, mode });
+              forwardMutation.mutate({ conversation, mode });
             }}
           />
         </Suspense>
@@ -3781,7 +4700,14 @@ function resolveCharacterAvatarAction(
     return null;
   }
 
-  return threadType === "direct" ? ("mobile-profile" as const) : null;
+  // 走查 R1：原版仅 threadType==="direct" 时才挂 mobile-profile，群聊里点
+  // 角色头像 → button 路径走不进 → fallback 到不可交互的 <AvatarChip>，移
+  // 动端群聊里完全没法点头像查资料。group-chat-details-page 的成员九宫格 R1
+  // 已经把死链补成跳 /character/$id，桌面群聊也走 desktop-popover 弹层有
+  // 反馈；唯独移动端群聊消息列表里头像还是哑的。补成 group / direct 同源
+  // mobile-profile，handleMobileCharacterAvatarClick 已经 buildCharacterProfileHash
+  // 带 returnPath 回得来。
+  return threadType ? ("mobile-profile" as const) : null;
 }
 
 function UnreadMarkerDivider({
@@ -3945,6 +4871,18 @@ function filterStableMessageList(
 }
 
 function parseSharedHistorySummaryMessage(t: Translator, text: string) {
+  // 走查电脑端群聊 R7：和姊妹 parseDirectCallInviteMessage / parseGroupCallInviteMessage
+  // / parseGroupRelaySummaryMessage 同款早退优化。ChatMessageList 渲染每条消息时这
+  // 4 个 parser 都会被试着跑一遍，长群聊 200+ 历史 × 4 parser × 每次 typing tick /
+  // socket echo / mutation 翻 isPending 触发的 re-render 是 hot path。其它 3 个 parser
+  // 都用 startsWith 把不命中消息（普通文本/图片/语音/system 等绝大多数）挡掉，
+  // 唯独本 parser 不论什么消息都先 trim() + 跑 regex.match (含 `(.+?)` 回溯 +
+  // `\d+`)，对长汉字消息更费 CPU。protocol-data 固定为中文 `已分享你和...的...条聊天记录`
+  // （buildSharedHistoryNotice 写死），用 prefix 早退 99% 不命中的情况，剩下少数命中
+  // path 仍走原 regex 严格校验。
+  if (!text.includes("已分享你和")) {
+    return null;
+  }
   const normalized = text.trim();
   const match = normalized.match(/^已分享你和(.+?)的(\d+)条聊天记录$/); // i18n-ignore-line: protocol data regex
   if (!match) {
@@ -4033,9 +4971,15 @@ function buildReminderOptions(
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
   const tonight = new Date(now);
   tonight.setHours(20, 0, 0, 0);
-  if (tonight.getTime() <= now.getTime()) {
+  // 20:00 已过的话推到第二天，并把 label 改成「明晚 20:00」——
+  // 否则用户会看到 label「今晚 20:00」、副标题却写「明天 20:00」，前后矛盾。
+  const tonightPassed = tonight.getTime() <= now.getTime();
+  if (tonightPassed) {
     tonight.setDate(tonight.getDate() + 1);
   }
+  const tonightLabel = tonightPassed
+    ? t(msg`明晚 20:00`)
+    : t(msg`今晚 20:00`);
 
   const tomorrowMorning = new Date(now);
   tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
@@ -4050,7 +4994,7 @@ function buildReminderOptions(
     },
     {
       id: "tonight",
-      label: t(msg`今晚 20:00`),
+      label: tonightLabel,
       detail: formatReminderSummary(t, tonight.toISOString()),
       remindAt: tonight.toISOString(),
     },
@@ -4249,13 +5193,21 @@ function buildMessageFavoriteRecord(
   t: Translator,
   message: ChatRenderableMessage,
   groupMode: boolean,
+  threadContext: ChatMessageListProps["threadContext"],
 ) {
   const senderName = buildClipboardSender(t, message);
   const description = buildClipboardText(t, message);
-  const currentPath =
-    typeof window === "undefined"
-      ? "/tabs/chat"
-      : `${window.location.pathname}${window.location.search}#chat-message-${message.id}`;
+  // 之前用 window.location.pathname 拼乐观 to——桌面端 pathname 永远是
+  // /tabs/chat（conversationId 在 hash 里），结果乐观记录的 to 长成
+  // /tabs/chat?...#chat-message-XXX，没有会话标识。搜索结果点击 → 跳到
+  // /tabs/chat 但 conversationId 解析不出来 → 工作区选不出会话。
+  // 后端返回的 to 走的是 mobile 风格 /chat/<id>#chat-message-<id>，
+  // 搜索导航解析器会把它转换成桌面端 hash，这里跟齐就行。
+  const threadPath = threadContext?.id
+    ? threadContext.type === "group"
+      ? `/group/${threadContext.id}#chat-message-${message.id}`
+      : `/chat/${threadContext.id}#chat-message-${message.id}`
+    : `#chat-message-${message.id}`;
 
   return {
     id: `favorite-${buildFavoriteSourceId(message.id)}`,
@@ -4264,9 +5216,17 @@ function buildMessageFavoriteRecord(
     title: senderName,
     description,
     meta: formatMessageTimestamp(message.createdAt),
-    to: currentPath,
+    to: threadPath,
     badge: groupMode ? t(msg`群聊消息`) : t(msg`聊天消息`),
     avatarName: senderName,
+    // 走查新一轮 R3：群聊消息的 senderAvatar 是真实角色头像 URL（群成员可能
+    // 是多个不同 character，每个有自己的形象），原版只塞 avatarName 走
+    // AvatarChip 的 seed 灰底首字 fallback，收藏列表里所有群消息看上去都是
+    // 一堆"阿"/"林"/"老"的色块，互相分不清；FavoriteRecord 早就有 avatarSrc
+    // 字段（contracts/favorites.ts:20）+ 渲染端（mobile-favorites-page:563 /
+    // favorites-page:913）已经 <AvatarChip src={item.avatarSrc} /> 走通了，
+    // 只是 builder 没把数据接上。null → undefined 避免 contract 类型不匹配。
+    avatarSrc: message.senderAvatar ?? undefined,
   };
 }
 
@@ -4711,6 +5671,8 @@ function renderTextWithMentions(text: string): ReactNode {
           src={segment.src}
           alt={segment.label}
           draggable={false}
+          loading="lazy"
+          decoding="async"
           className="inline-block h-7 w-7 align-[-0.45em] object-contain"
         />
       );
@@ -4805,6 +5767,8 @@ function ImageMessage({
   label,
   variant,
   maxSize,
+  width,
+  height,
   onOpen,
   onMediaReady,
 }: {
@@ -4812,6 +5776,8 @@ function ImageMessage({
   label: string;
   variant: "mobile" | "desktop";
   maxSize: number;
+  width?: number;
+  height?: number;
   onOpen?: () => void;
   onMediaReady?: () => void;
 }) {
@@ -4836,10 +5802,23 @@ function ImageMessage({
     );
   }
 
+  // 用真实宽高按 maxSize 等比缩放占位：CLS 修复关键 — 图片加载前
+  // <img> 就有 aspect-ratio + 真实显示尺寸，60 条历史的图陆续完成
+  // 解码时不会让列高一格一格往上长。server 没给尺寸时回退到老行为
+  // （maxWidth + maxHeight 双向 cap，加载完才知道高度）。
+  const renderedSize =
+    width && height && width > 0 && height > 0
+      ? width >= height
+        ? { width: maxSize, height: Math.round((height / width) * maxSize) }
+        : { width: Math.round((width / height) * maxSize), height: maxSize }
+      : null;
+
   const image = (
     <img
       src={url}
       alt={label}
+      width={renderedSize?.width}
+      height={renderedSize?.height}
       onError={() => setLoadFailed(true)}
       onLoad={onMediaReady}
       className={`bg-white object-cover shadow-none ${
@@ -4847,8 +5826,18 @@ function ImageMessage({
           ? "rounded-[16px] border border-black/6"
           : "rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
-      style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
+      style={
+        renderedSize
+          ? {
+              width: `${renderedSize.width}px`,
+              height: `${renderedSize.height}px`,
+              maxWidth: `${maxSize}px`,
+              maxHeight: `${maxSize}px`,
+            }
+          : { maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }
+      }
       loading="lazy"
+      decoding="async"
     />
   );
 
@@ -4905,6 +5894,33 @@ function ContactCardMessage({
 }) {
   const isDesktop = variant === "desktop";
   const recommendation = attachment.recommendationMetadata;
+  // 走查新一轮 R6：和 GroupCallInviteMessage R4 / GroupRelaySummaryMessage R5
+  // 同款修法——本联系人名片底部的 button onClick 父级 chat-message-list 走
+  // openAttachment → navigate({to:"/character/$id" / "/desktop/add-friend"
+  // / "/tabs/chat" / ...}) 形态，没挂 disabled / 没同步 ref 守。同帧 <16ms
+  // 双击群里某条联系人名片 push 2 条相同 history 项—用户从角色资料页 / 添加朋友
+  // 页退回群聊要按 2 次返回。同对 markFollowupRecommendationOpened 这种 POST
+  // 也会重复打两份。每张卡独立 guard，第一次成功后页面 unmount re-mount 时
+  // ref 自动复位。本组件单聊 / 群聊共享，单聊路径同样受益。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 设置后永不复位，假设第一次点击
+  // 必然导致页面 navigate / 卡片随页面 unmount。但桌面 friend 分支 onOpen → 父
+  // 级 openAttachment 走 getOrCreateConversation，网络抖 / 4xx 时 catch 弹 toast，
+  // 但 card 仍 mounted、ref 仍 true → 用户拿到红色错误想点卡片重试时直接被锁
+  // 死（catch 分支不知道怎么通知 card 释放 ref）。短 setTimeout 复位足以挡同帧
+  // <16ms 双击又允许后续手动重试，跟下方 NoteCardMessage / FeedPostCardMessage
+  // 一致。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
+      }
+    : undefined;
   const card = (
     <div
       className={`bg-white shadow-none ${
@@ -4967,14 +5983,14 @@ function ContactCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(msg`查看名片`)} ${attachment.name}`}
     >
@@ -4993,12 +6009,62 @@ function NoteCardMessage({
   onOpen?: () => void;
 }) {
   const isDesktop = variant === "desktop";
-  const previewImage = attachment.assets.find(
-    (asset) => asset.kind === "image",
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  // 走查新一轮 R6：和 ContactCardMessage 同源——onOpen → openAttachment 走
+  // navigate({to:"/tabs/favorites" 桌面 / setNoteViewerMessageId 移动}) 形态。
+  // 移动端 setNoteViewerMessageId 是 state setter 同值 bailout 天然幂等，但
+  // 桌面端走 navigate({to:"/tabs/favorites", hash:buildDesktopNoteWindowRouteHash...})
+  // 没挂 guard，桌面同帧双击笔记卡会 push 2 条 history。本组件单聊 / 群聊共享。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 设置后永不复位。移动端 onOpen
+  // 走 setNoteViewerMessageId 开 NoteViewerOverlay → 卡片仍挂在消息流里没 unmount
+  // → 用户关掉 overlay 再点同张笔记卡时被 ref=true 锁死，再也点不开了。桌面端
+  // friend / add-friend 链路也有类似的「navigate 失败但 card 仍 mounted」陷阱。
+  // 短 setTimeout 复位足以挡同帧 <16ms 双击又允许后续手动重试，跟 ContactCardMessage
+  // / FeedPostCardMessage 一致。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
+      }
+    : undefined;
+  // 拉最新笔记数据让缩略图跟原笔记编辑实时同步；笔记被删除时静默回退 snapshot，
+  // 不在历史气泡上突然标红。
+  const noteQuery = useQuery({
+    queryKey: ["favorite-note", baseUrl, attachment.noteId],
+    queryFn: () => getFavoriteNote(attachment.noteId, baseUrl),
+    enabled: Boolean(attachment.noteId),
+    staleTime: 30_000,
+    retry: false,
+  });
+  const noteDocument = noteQuery.data;
+  const title =
+    (noteDocument?.title?.trim() || attachment.title || "").trim();
+  const excerpt = noteDocument?.excerpt?.trim() || attachment.excerpt || "";
+  const tags = noteDocument?.tags?.length ? noteDocument.tags : attachment.tags;
+  const assets = noteDocument?.assets ?? attachment.assets;
+  // 走查新一轮 R1：本卡缩略 <img> 之前直接拿 previewImage.url 塞 <img src=...>。
+  // 后端 normalizeFavoriteNoteAssets / R1/R3 已经在写入侧拦 javascript: 等危险
+  // 协议，但 (1) cloud 多租户 / 公网隧道场景下 URL 形如 "/api/..." 相对路径，
+  // 浏览器按 document.origin 解析会拼到 app origin 而不是 world-api 那条 URL，
+  // 缩略图 404；NoteViewerOverlay 已经在 resolveNotePreviewImageUrl 里走
+  // isSafeFavoriteAssetUrl + resolveAttachmentUrl 双关，气泡缩略卡漏到一致性
+  // 之外。(2) /api/... 在 cloud world-api 反代下还需要追加 token，复用同 helper。
+  // 用 resolveAppMediaUrl 兜底（同 FeedPostCardMessage cover R5 同款），保证
+  // 不再裸用相对 URL。
+  const previewImage = assets.find(
+    (asset) => asset.kind === "image" && isSafeFavoriteAssetUrl(asset.url),
   );
-  const fileCount = attachment.assets.filter(
-    (asset) => asset.kind === "file",
-  ).length;
+  const previewImageSrc = previewImage?.url
+    ? resolveAppMediaUrl(previewImage.url)
+    : null;
+  const fileCount = assets.filter((asset) => asset.kind === "file").length;
   const card = (
     <div
       className={`overflow-hidden bg-white shadow-none ${
@@ -5007,11 +6073,13 @@ function NoteCardMessage({
           : "w-[220px] rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
     >
-      {previewImage?.url ? (
+      {previewImageSrc ? (
         <div className={isDesktop ? "h-[104px]" : "h-[92px]"}>
           <img
-            src={previewImage.url}
-            alt={attachment.title}
+            src={previewImageSrc}
+            alt={title}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover"
           />
         </div>
@@ -5042,18 +6110,18 @@ function NoteCardMessage({
             isDesktop ? "text-sm leading-6" : "text-[13px] leading-5"
           }`}
         >
-          {attachment.title}
+          {title}
         </div>
         <div
           className={`line-clamp-3 text-[color:var(--text-muted)] ${
             isDesktop ? "text-xs leading-5" : "text-[11px] leading-[18px]"
           }`}
         >
-          {attachment.excerpt || translateRuntimeMessage(msg`点击查看完整笔记`)}
+          {excerpt || translateRuntimeMessage(msg`点击查看完整笔记`)}
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-[rgba(15,23,42,0.06)] pt-2.5">
           <div className="flex min-w-0 flex-wrap gap-1.5">
-            {attachment.tags.slice(0, 2).map((tag) => (
+            {tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]"
@@ -5070,16 +6138,16 @@ function NoteCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={`${translateRuntimeMessage(variant === "desktop" ? msg`打开笔记` : msg`查看笔记摘要`)} ${attachment.title}`}
+      aria-label={`${translateRuntimeMessage(variant === "desktop" ? msg`打开笔记` : msg`查看笔记摘要`)} ${title}`}
     >
       {card}
     </button>
@@ -5105,10 +6173,49 @@ function FeedPostCardMessage({
   const cover = attachment.coverUrl
     ? resolveAppMediaUrl(attachment.coverUrl)
     : null;
+  // 走查新一轮 R6：和 ContactCardMessage / NoteCardMessage 同源——onOpen →
+  // openAttachment 走 navigate({to:"/discover/channels" 移动 / "/tabs/channels"
+  // 桌面, hash:buildDesktopChannelsRouteHash...}) 形态，没挂 disabled / 没
+  // 同步 ref 守。同帧 <16ms 双击群里某条视频号卡 push 2 条相同 history 项—
+  // 用户从视频号页退回群聊要按 2 次返回。本组件单聊 / 群聊共享。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 永不复位 — 假设第一次点击
+  // 必然让页面 unmount。但用户从视频号页用 browser back 回到聊天后，原视频号
+  // 卡可能因为 cache 命中直接复用（chat-message-list 不一定 remount）→ ref
+  // 仍 true → 点同张卡进不去视频号。短 setTimeout 复位跟 ContactCardMessage /
+  // NoteCardMessage 一致。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
+      }
+    : undefined;
+  // 走查 2026-05-17 新会话 R5：attachment.excerpt 由 server forwardChannelPost
+  // ToChat 写入，直接是 post.text.slice(0,160)，没过 stripToolCallSyntax。
+  // AI 生成的视频号偶发把 <tool_call>...</tool_call> / [TOOL_CALL] 等当成
+  // 正文落到 post.text，转发卡会把这串 XML/JSON 当成"动态摘要"原样塞到
+  // line-clamp-2 里炸开。视频号 home / 评论 sheet 都已经走 stripToolCallSyntax
+  // 过滤，这条聊天里"二次展现"的入口也要对齐。
+  // 走查 R5：跟视频号卡封面 img 同款问题——minimax cover 偶发 404 / cloud-api
+  // 反代 token 边界 401 / 资源被回收。原本浏览器原生 broken-image icon 直接
+  // 占满整条 feed_post_card，对方收到的转发卡看着像「这条视频号坏了」实际只是
+  // 缩略图没拉到。回退到无 cover 的渐变 + mediaLabel 占位（同款视觉），用户至少
+  // 能看到这条是「视频/音频/图文」并点开尝试播放。
+  const [coverFailed, setCoverFailed] = useState(false);
   const mediaLabel = (() => {
     if (attachment.mediaType === "video") return translateRuntimeMessage(msg`视频`);
     if (attachment.mediaType === "audio") return translateRuntimeMessage(msg`音频`);
     if (attachment.mediaType === "image") return translateRuntimeMessage(msg`图文`);
+    // 走查 R2（本轮）：text 类型走到这条默认分支只能拿"视频号"——但那是品牌名、
+    // 跟 video/audio/image 的"内容形态标签"风格不一致。yuanzui R3 测试 text 帖被
+    // 转发到聊天里时占位卡上写"视频号"，对方看不出这是文字动态。给 text 一条
+    // 明确的"文字动态"标签，对齐其它形态。
+    if (attachment.mediaType === "text") return translateRuntimeMessage(msg`文字动态`);
     return translateRuntimeMessage(msg`视频号`);
   })();
   const card = (
@@ -5119,11 +6226,14 @@ function FeedPostCardMessage({
           : "w-[228px] rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
     >
-      {cover ? (
+      {cover && !coverFailed ? (
         <div className={isDesktop ? "h-[140px]" : "h-[124px]"}>
           <img
             src={cover}
             alt={attachment.title ?? attachment.authorName}
+            loading="lazy"
+            decoding="async"
+            onError={() => setCoverFailed(true)}
             className="h-full w-full object-cover"
           />
         </div>
@@ -5145,7 +6255,7 @@ function FeedPostCardMessage({
           }`}
         >
           {attachment.title?.trim() ||
-            attachment.excerpt ||
+            stripToolCallSyntax(attachment.excerpt ?? "") ||
             translateRuntimeMessage(msg`视频号动态`)}
         </div>
         <div
@@ -5164,14 +6274,14 @@ function FeedPostCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(msg`打开视频号`)} ${attachment.authorName}`}
     >
@@ -5350,6 +6460,20 @@ function VoiceMessage({
     };
   }, []);
 
+  // 切到别条消息时把自己暂停 —— 浏览器不会自动 mutual-exclude 多个 <audio>，
+  // 用户连点两条会同时响。MessageList 里 TTS 朗读用 speakRequestRef 串行化，
+  // voice 附件这条以前没有同款机制。
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+    return () => {
+      activeVoiceMessageAudios.delete(audio);
+      audio.pause();
+    };
+  }, []);
+
   const togglePlayback = () => {
     const audio = audioRef.current;
     if (!audio) {
@@ -5357,7 +6481,12 @@ function VoiceMessage({
     }
 
     if (audio.paused) {
-      void audio.play().catch(() => setPlaying(false));
+      stopOtherVoiceMessages(audio);
+      activeVoiceMessageAudios.add(audio);
+      void audio.play().catch(() => {
+        activeVoiceMessageAudios.delete(audio);
+        setPlaying(false);
+      });
       return;
     }
 
@@ -5421,6 +6550,19 @@ function VoiceMessage({
   );
 }
 
+// 模块级，跨 VoiceMessage 实例。点新一条就把其它正在播的暂停。
+const activeVoiceMessageAudios = new Set<HTMLAudioElement>();
+
+function stopOtherVoiceMessages(except: HTMLAudioElement) {
+  for (const audio of activeVoiceMessageAudios) {
+    if (audio === except) {
+      continue;
+    }
+    audio.pause();
+    activeVoiceMessageAudios.delete(audio);
+  }
+}
+
 function GroupRelaySummaryMessage({
   own,
   variant,
@@ -5432,6 +6574,24 @@ function GroupRelaySummaryMessage({
   summary: ReturnType<typeof parseGroupRelaySummaryMessage>;
   onOpen?: () => void;
 }) {
+  // 走查新一轮 R5：和姊妹卡片 GroupCallInviteMessage 新一轮 R4（commit
+  // 61ef3043e）同款修法——本群接龙汇总卡 onOpen 父级（chat-message-list.tsx
+  // line ~3878）走 `void navigate({to:"/discover/mini-programs", search:...})`，
+  // 没挂 disabled / 没同步 ref 守。同帧 <16ms 双击群接龙卡 push 2 条相同
+  // history 项，用户从迷你程序退回群聊要按 2 次返回。
+  //
+  // 每张卡独立 guard：用户点 A 卡再点 B 卡（不同 relay summary）不互相影响，
+  // 只挡同一张卡的 same-frame double tap。第一次成功后页面 unmount re-mount
+  // 时 ref 自动复位。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
+
   if (!summary) {
     return null;
   }
@@ -5595,14 +6755,14 @@ function GroupRelaySummaryMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={ctaCopy.ariaLabel}
     >
@@ -5642,7 +6802,19 @@ function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {
 
 function resolveGroupCallInvite(message: ChatRenderableMessage) {
   const isSystem = message.type === "system" || message.senderType === "system";
-  if (isSystem || message.senderType === "user") {
+  // 走查新一轮 R1：原版还排除了 `senderType === "user"`——但 yinjie 架构里群
+  // 通话邀请永远是 user 发出（mobile-group-call-screen 的 syncStatus/endStatus +
+  // group-chat-thread-panel.sendCallInviteMutation 走 sendGroupMessage →
+  // sendOwnerMessage → senderType:'user'，character 这边没有发起群通话的代码
+  // 路径）。结果整套 collapseGroupCallMessages 在所有真实群通话场景下都不工作：
+  // mobile-group-call-screen panel-opened 立刻 fire 一份 "ongoing"，1200ms
+  // 后 deferred sync effect 再发一份，counts 每变一次又一份，每按一下"同步最
+  // 新状态"又一份——yuanzui 实测群 (group-douyin-d2-trio) 一轮通话里堆出 10+
+  // 张 "进行中" 卡片不折叠。SQLite 一查全是 senderType=user 的群语音/群视频
+  // invite 消息。摘掉 user 排除，剩下 status==="ongoing" 的 prev 规则就够：
+  // ongoing→ongoing 同类同群名 → 折叠成最新一张；ongoing→ended 收口成 ended；
+  // ended→ongoing 是新一轮通话，自然不折叠。
+  if (isSystem) {
     return null;
   }
 
@@ -5731,6 +6903,44 @@ function GroupCallInviteMessage({
   invite: ReturnType<typeof parseGroupCallInviteMessage>;
   onOpen?: () => void;
 }) {
+  // 走查新一轮 R4：和 MobileChatThreadHeader R1（commit 222ec0680）/
+  // MobileDetailsActionSheet R2（commit bb1f6bf63）同款修法——本卡片底部的
+  // 「加入通话 / 查看通话工作台 / 续呼桌面端」可点击 button 的 onClick 在父级
+  // chat-message-list.tsx 那里全部都是 `void navigate({to:"/group/$id/voice-call"
+  // 或 video-call"})` 形态（移动端路径，line ~3802-3824 onOpenGroupCallInvite），
+  // 没挂 disabled / 没同步 ref 守。同帧 <16ms 双击群通话卡 push 2 条相同
+  // history 项—用户点返回要按 2 次才能从通话页退回群聊。
+  //
+  // 桌面端 onOpen 是 setDesktopCallPanelState(input)，setState 同值 bailout，
+  // 双击行为天然幂等不受影响，但 guard 加在卡级别多挂一道防线不冲突。
+  //
+  // 每张卡独立 guard：用户依次点 A 卡再点 B 卡（不同通话邀请）时不互相影响，
+  // 只挡同一张卡的 same-frame double tap。
+  //
+  // 走查电脑端群聊 R8：原版 openFiredRef 一旦被翻 true 就永不复位——只指望
+  // "第一次成功后 mobile 路径页面 unmount re-mount 时 ref 自动复位"。但电脑端
+  // onOpen=setDesktopCallPanelState(input) 不会让本组件 unmount —— 群消息列表
+  // 一直挂着。用户在群里点了同一张群通话卡 → 通话面板打开 → 点「返回聊天」
+  // 关掉面板（setDesktopCallPanelState(null)，本组件仍 mount）→ 想再点同一张卡
+  // 重新打开通话面板 → openFiredRef 仍然 true → handleOpen early return →
+  // setDesktopCallPanelState 不被调用 → 通话面板再也打不开，必须刷新页面才能
+  // 重新点同一个邀请。raf 释放兜底"第一次成功后下一帧解锁"。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            openFiredRef.current = false;
+          });
+        } else {
+          openFiredRef.current = false;
+        }
+      }
+    : undefined;
+
   if (!invite) {
     return null;
   }
@@ -5739,6 +6949,20 @@ function GroupCallInviteMessage({
   const canReopenCall = Boolean(onOpen);
   const footerCopy = resolveGroupCallFooterCopy(invite, canReopenCall);
   const completionBadge = resolveGroupCallCompletionBadge(invite);
+  const translatedSummaryLines = buildGroupCallWorkspaceSummaryLines({
+    kind: invite.kind,
+    status: invite.status,
+    sourceLabel: invite.sourceLabel,
+    counts: invite.activeCount
+      ? {
+          activeCount: invite.activeCount.current,
+          totalCount: invite.activeCount.total,
+          waitingCount:
+            invite.waitingCount ??
+            Math.max(invite.activeCount.total - invite.activeCount.current, 0),
+        }
+      : null,
+  });
 
   const card = (
     <div
@@ -5785,13 +7009,21 @@ function GroupCallInviteMessage({
       <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
         <ResultCardMetric
           label={translateRuntimeMessage(msg`当前状态`)}
-          value={formatGroupCallStatusLabel(invite.kind, invite.status)}
+          value={getGroupCallStatusLabel(invite.kind, invite.status)}
           variant={variant}
         />
         {invite.timestampLabel ? (
           <ResultCardMetric
-            label={translateRuntimeMessage(msg`时间`)}
-            value={invite.timestampLabel}
+            label={
+              invite.status === "ended"
+                ? translateRuntimeMessage(msg`结束于`)
+                : translateRuntimeMessage(msg`发起于`)
+            }
+            value={
+              invite.recordedAt
+                ? formatDetailedMessageTimestamp(invite.recordedAt)
+                : invite.timestampLabel
+            }
             variant={variant}
           />
         ) : null}
@@ -5844,7 +7076,7 @@ function GroupCallInviteMessage({
             />
           </div>
         ) : null}
-        {invite.summaryLines.map((line) => (
+        {translatedSummaryLines.map((line) => (
           <div
             key={line}
             className={
@@ -5882,14 +7114,14 @@ function GroupCallInviteMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={footerCopy.ariaLabel}
     >
@@ -5952,6 +7184,11 @@ function DirectCallInviteMessage({
   const isDesktop = variant === "desktop";
   const canReopenCall = Boolean(onOpen);
   const footerCopy = resolveDirectCallFooterCopy(invite, canReopenCall);
+  const translatedSummaryLines = buildDirectCallWorkspaceSummaryLines({
+    kind: invite.kind,
+    status: invite.connectionStatus ?? "waiting",
+    sourceLabel: invite.sourceLabel,
+  });
 
   const card = (
     <div
@@ -5997,8 +7234,16 @@ function DirectCallInviteMessage({
         ) : null}
         {invite.timestampLabel ? (
           <ResultCardMetric
-            label={translateRuntimeMessage(msg`时间`)}
-            value={invite.timestampLabel}
+            label={
+              invite.connectionStatus === "ended"
+                ? translateRuntimeMessage(msg`结束于`)
+                : translateRuntimeMessage(msg`发起于`)
+            }
+            value={
+              invite.recordedAt
+                ? formatDetailedMessageTimestamp(invite.recordedAt)
+                : invite.timestampLabel
+            }
             variant={variant}
           />
         ) : null}
@@ -6016,7 +7261,7 @@ function DirectCallInviteMessage({
             variant={variant}
           />
         ) : null}
-        {invite.summaryLines.map((line) => (
+        {translatedSummaryLines.map((line) => (
           <div
             key={line}
             className={
@@ -6101,6 +7346,8 @@ function StickerMessage({
       alt={label}
       width={maxSize}
       height={maxSize}
+      loading="lazy"
+      decoding="async"
       onError={() => setLoadFailed(true)}
       onLoad={onMediaReady}
       className="rounded-[18px] bg-white/70 object-contain shadow-none"
@@ -6145,8 +7392,50 @@ function ImageViewerOverlay({
   onPrint?: () => void;
 }) {
   const isDesktop = variant === "desktop";
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    onBackdrop: boolean;
+  } | null>(null);
   const touchDeltaXRef = useRef(0);
+  const touchDeltaYRef = useRef(0);
+
+  // 原生壳硬件 Back 键：图片查看器打开时 BACK 应当先关查看器，不要直接
+  // history.back 跳出聊天页。desktop 形态注册没副作用。
+  useEffect(() => {
+    if (isDesktop) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [isDesktop, onClose]);
+
+  // 第三轮 R1：mobile variant ESC 漏挂。父组件 chat-message-list 在 line 1920
+  // 那条 ESC + ←/→ 键盘 nav effect 加了 `if (!isDesktop) return`——desktop 才
+  // 接监听；mobile 这边只挂了 Android Back，外接键盘 / iPad Magic Keyboard /
+  // 模拟器 / 桌面 web 移动模拟（chrome devtools "mobile responsive"）按 ESC
+  // 关不掉图片查看器，只能点 backdrop。和姊妹 LocationViewerOverlay
+  // （本文件下方）/ 单聊里其他 sheet 都已经统一兜过 ESC，这里补齐。
+  // isDesktop 时让位给父组件那条带 ←/→ 翻图的 handler，避免双重监听。
+  // defaultPrevented 时让位：嵌套子模态（理论上没有，但保留语义）。
+  useEffect(() => {
+    if (isDesktop) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDesktop, onClose]);
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
@@ -6154,8 +7443,13 @@ function ImageViewerOverlay({
       return;
     }
 
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      onBackdrop: event.target === event.currentTarget,
+    };
     touchDeltaXRef.current = 0;
+    touchDeltaYRef.current = 0;
   };
 
   const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
@@ -6166,20 +7460,35 @@ function ImageViewerOverlay({
     }
 
     touchDeltaXRef.current = touch.clientX - start.x;
+    touchDeltaYRef.current = touch.clientY - start.y;
   };
 
   const handleTouchEnd = () => {
     const deltaX = touchDeltaXRef.current;
+    const deltaY = touchDeltaYRef.current;
+    const start = touchStartRef.current;
     const threshold = 48;
 
     if (deltaX <= -threshold && onNext) {
       onNext();
     } else if (deltaX >= threshold && onPrevious) {
       onPrevious();
+    } else if (
+      // 走查 R1：handleTouchEnd 兜底"tap 关闭"——上方 onClick 走 React 合成
+      // click 路径，iOS Safari 在 touchstart→touchmove(<10px)→touchend 这种带
+      // 轻微抖动的 tap 上会把 click 抑制掉（< 48px swipe 阈值的死区），用户
+      // 点黑色背景关不掉图片查看器只能找右上角 ✕。touchstart 时 target ===
+      // currentTarget 才算"点的是 backdrop 自己"，触图本身的 tap 不走关闭。
+      start?.onBackdrop &&
+      Math.abs(deltaX) < 10 &&
+      Math.abs(deltaY) < 10
+    ) {
+      onClose();
     }
 
     touchStartRef.current = null;
     touchDeltaXRef.current = 0;
+    touchDeltaYRef.current = 0;
   };
 
   return (
@@ -6297,12 +7606,26 @@ function ImageViewerOverlay({
         </>
       )}
 
+      {/* 走查新一轮 R2：这一层 `absolute inset-0` 把上面那个 backdrop 关闭按钮
+          整张盖住了——后兄弟元素永远在前兄弟上面，背景按钮根本收不到点击。
+          移动端用户看 chat 里 1 张图 → 全屏查看器，点周围"黑色背景"想关，
+          只能找右上角 ✕（mobile 在左上角）；标准 photo viewer 模式（IG / 微信 /
+          系统相册）都是"图片以外的黑色区域 tap 关闭"。给容器自己挂 onClick：
+          target === currentTarget 时（点的是容器本身的 padding 区，不是 <img>）
+          才关闭，点图片本身不关。同时手势 onTouchEnd 也补一份 fallback——
+          mobile 的 React 合成 click 在 touchmove 后偶发不触发，借助现有
+          touchDeltaXRef 判定"无横向滑动"再 close，等价于点击意图。 */}
       <div
         className={`absolute inset-0 flex items-center justify-center ${
           isDesktop
             ? "px-24 pb-10 pt-24"
             : "px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.75rem)] pt-24"
         }`}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onClose();
+          }
+        }}
         onTouchStart={isDesktop ? undefined : handleTouchStart}
         onTouchMove={isDesktop ? undefined : handleTouchMove}
         onTouchEnd={isDesktop ? undefined : handleTouchEnd}
@@ -6335,6 +7658,34 @@ function LocationViewerOverlay({
   const isDesktop = variant === "desktop";
   const nativeMobileShareSupported = !isDesktop && isNativeMobileShareSurface();
 
+  // 原生壳硬件 Back：位置查看器打开时 BACK 关查看器，不退聊天页。
+  useEffect(() => {
+    if (isDesktop) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [isDesktop, onClose]);
+
+  // 桌面键盘 Esc：位置查看器是 fixed inset-0 全屏模态，desktop 用户
+  // 不该只能点 ✕ 或 backdrop 关。和 image viewer 父级的 Esc 处理对齐。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
       <button
@@ -6359,7 +7710,20 @@ function LocationViewerOverlay({
           </ViewerActionButton>
         </div>
 
-        <div className="relative flex-1 px-4 pb-5 pt-2">
+        {/* 走查新一轮 R3：同 ImageViewerOverlay R2 — 上面那个 absolute inset-0
+            backdrop 按钮被后兄弟（radial gradient + 这条 relative flex h-full）
+            完全覆盖，点不到。位置查看器的可视 backdrop 区域只剩中间这条
+            `flex-1` 的 padding（卡片以外的暗色环绕区）。给容器自己挂 onClick：
+            target === currentTarget（点在 padding 上而不是卡片）才关闭，点卡片
+            本身不关。 */}
+        <div
+          className="relative flex-1 px-4 pb-5 pt-2"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              onClose();
+            }
+          }}
+        >
           <div
             className={`relative h-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
               isDesktop ? "mx-auto max-w-4xl" : ""
@@ -6437,12 +7801,54 @@ function NoteViewerOverlay({
   onLocate: () => void;
   onShareOrCopy: () => void;
 }) {
+  const navigate = useNavigate();
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+
+  // 原生壳硬件 Back：笔记卡片查看器打开时 BACK 优先关 action 子菜单 → 再
+  // 关查看器，最后再退聊天页。
+  useEffect(() => {
+    const unregister = registerAndroidBackInterceptor((event) => {
+      if (actionMenuOpen) {
+        event.preventDefault();
+        setActionMenuOpen(false);
+        return true;
+      }
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [actionMenuOpen, onClose]);
+
+  // 桌面键盘 Esc：笔记查看器同样是 fixed inset-0 全屏模态，Esc 先关
+  // action 子菜单，再关查看器。和原生壳 Back 拦截器的 fallback 顺序对齐。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      if (actionMenuOpen) {
+        setActionMenuOpen(false);
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [actionMenuOpen, onClose]);
+  // 走查 R2：上方 NoteCardAttachment（消息气泡里的笔记缩略卡）已经把
+  // 同 queryKey 的 noteQuery 设了 staleTime: 30_000；这条「全屏查看器」
+  // 没设 → 用户在聊天里点缩略卡打开查看器时，react-query 看到 observer
+  // 的 staleTime=0 立刻重发一次 getFavoriteNote。两份 observer 共享同一
+  // cache，新的那条没必要再发。对齐 30s。
   const noteQuery = useQuery({
     queryKey: ["favorite-note", baseUrl, attachment.noteId],
     queryFn: () => getFavoriteNote(attachment.noteId, baseUrl),
     enabled: Boolean(attachment.noteId),
+    staleTime: 30_000,
   });
   const document: FavoriteNoteDocument | undefined = noteQuery.data;
   const noteMissing = isFavoriteNoteMissingError(noteQuery.error);
@@ -6451,11 +7857,14 @@ function NoteViewerOverlay({
   );
   const title = (document?.title || attachment.title || "").trim() || translateRuntimeMessage(msg`未命名笔记`);
   const tags = document?.tags?.length ? document.tags : attachment.tags;
+  // 防御性 URL 过滤：后端 R1/R3 已经在 normalizeFavoriteNoteAssets 里拦了
+  // javascript:/vbscript:/data:text。这里再加一层，覆盖老数据 + 透传给
+  // <a href> / <img src> 时绝不会带危险协议。
   const fileAssets = (document?.assets ?? attachment.assets).filter(
-    (asset) => asset.kind === "file",
+    (asset) => asset.kind === "file" && isSafeFavoriteAssetUrl(asset.url),
   );
   const imageAssetsFallback = (document?.assets ?? attachment.assets).filter(
-    (asset) => asset.kind === "image",
+    (asset) => asset.kind === "image" && isSafeFavoriteAssetUrl(asset.url),
   );
   const hasContentHtml = Boolean(document?.contentHtml?.trim());
 
@@ -6531,6 +7940,8 @@ function NoteViewerOverlay({
                     <img
                       src={previewImageUrl}
                       alt={title}
+                      loading="lazy"
+                      decoding="async"
                       className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
                     />
                   ) : null}
@@ -6544,6 +7955,8 @@ function NoteViewerOverlay({
                         key={asset.id}
                         src={asset.url}
                         alt={asset.fileName}
+                        loading="lazy"
+                        decoding="async"
                         className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
                       />
                     ))}
@@ -6593,6 +8006,28 @@ function NoteViewerOverlay({
               <Copy size={16} />
             )
           }
+          canEdit={
+            Boolean(attachment.noteId) && !noteMissing && !noteQuery.isLoading
+          }
+          onEdit={() => {
+            setActionMenuOpen(false);
+            const currentPath =
+              typeof window !== "undefined" ? window.location.pathname : "/";
+            const currentHash =
+              typeof window !== "undefined"
+                ? window.location.hash.replace(/^#/, "")
+                : undefined;
+            onClose();
+            void navigate({
+              to: "/notes/new",
+              hash: buildMobileNoteEditorRouteHash({
+                draftId: attachment.noteId,
+                noteId: attachment.noteId,
+                returnPath: currentPath,
+                returnHash: currentHash || undefined,
+              }),
+            });
+          }}
           onShareOrCopy={() => {
             setActionMenuOpen(false);
             onShareOrCopy();
@@ -6611,12 +8046,16 @@ function NoteViewerOverlay({
 function NoteDetailActionSheet({
   shareLabel,
   shareIcon,
+  canEdit,
+  onEdit,
   onShareOrCopy,
   onLocate,
   onClose,
 }: {
   shareLabel: string;
   shareIcon: ReactNode;
+  canEdit: boolean;
+  onEdit: () => void;
   onShareOrCopy: () => void;
   onLocate: () => void;
   onClose: () => void;
@@ -6633,6 +8072,18 @@ function NoteDetailActionSheet({
         <div className="flex justify-center pb-2">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
+        {canEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex items-center gap-3 rounded-[12px] px-4 py-3 text-left text-[15px] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
+          >
+            <span className="flex h-7 w-7 items-center justify-center text-[color:var(--text-secondary)]">
+              <Pencil size={16} />
+            </span>
+            {translateRuntimeMessage(msg`编辑笔记`)}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onShareOrCopy}
@@ -6713,7 +8164,10 @@ function resolveNotePreviewImageUrl(
   attachment: Extract<MessageAttachment, { kind: "note_card" }>,
   resolveAttachmentUrl: (url: string) => string,
 ) {
-  const previewImage = attachment.assets.find((asset) => asset.kind === "image");
+  // 跟 fileAssets/imageAssetsFallback 一样过滤危险协议——封面图也走同一关。
+  const previewImage = attachment.assets.find(
+    (asset) => asset.kind === "image" && isSafeFavoriteAssetUrl(asset.url),
+  );
   return previewImage?.url ? resolveAttachmentUrl(previewImage.url) : null;
 }
 

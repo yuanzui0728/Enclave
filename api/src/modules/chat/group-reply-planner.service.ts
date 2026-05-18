@@ -35,14 +35,28 @@ export class GroupReplyPlannerService {
         ? currentUserContext.replyTargetMessage.senderId
         : undefined;
 
+    // 走查 Round 4：原版对每个 member 各 await 一次 findById + getProfile
+    // (getProfile 内部又 findOneBy 一次)，50 人群 = 100 次 SQL round-trip，
+    // 每条群消息触发一次 planner 都跑一次（公网 600ms RTT 下肉眼可见停顿）。
+    // 改成单次 findManyByIds 拿到所有 character 实体，再用
+    // getRuntimeProfileFromCharacter 直接 build profile（无 DB），50 人群从
+    // 100 次查询降到 1 次。
+    const characterEntities = await this.characters.findManyByIds(
+      members.map((member) => member.memberId),
+    );
+    const charactersById = new Map(
+      characterEntities.map((character) => [character.id, character] as const),
+    );
+
     const maybeCandidates = await Promise.all(
       members.map(async (member) => {
-        const character = await this.characters.findById(member.memberId);
+        const character = charactersById.get(member.memberId);
         if (!character) {
           return null;
         }
 
-        const profile = await this.characters.getProfile(member.memberId);
+        const profile =
+          await this.characters.getRuntimeProfileFromCharacter(character);
         if (!profile) {
           return null;
         }

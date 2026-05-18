@@ -176,13 +176,16 @@ function MobileOfficialAccountsPage() {
         leftActions={
           <Button
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             variant="ghost"
             size="icon"
@@ -214,7 +217,9 @@ function MobileOfficialAccountsPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder={t(msg`搜索公众号`)}
-            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[12px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-white"
+            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
+            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-white"
           />
         </label>
       </TabPageTopBar>
@@ -341,13 +346,16 @@ function MobileOfficialAccountsPage() {
         <Button
           type="button"
           onClick={() =>
-            navigateBackOrFallback(() => {
-              if (navigateToRouteStateReturn()) {
-                return;
-              }
+            navigateBackOrFallback(
+              () => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
 
-              void navigate({ to: "/tabs/contacts" });
-            })
+                void navigate({ to: "/tabs/contacts" });
+              },
+              safeReturnPath ?? "/tabs/contacts",
+            )
           }
           variant="ghost"
           size="icon"
@@ -366,13 +374,16 @@ function MobileOfficialAccountsPage() {
           <Button
             type="button"
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             variant="primary"
             size="md"

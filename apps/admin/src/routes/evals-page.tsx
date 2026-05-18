@@ -156,6 +156,7 @@ export function EvalsPage() {
   const [reportDecisionNote, setReportDecisionNote] = useState("");
   const [savedPresets, setSavedPresets] = useState<EvalsPreset[]>([]);
   const [successNotice, setSuccessNotice] = useState("");
+  const [traceDetailTab, setTraceDetailTab] = useState<"output" | "context">("output");
   const digitalHumanSummary = buildDigitalHumanAdminSummary(
     systemStatusQuery.data?.digitalHumanGateway,
   );
@@ -1133,23 +1134,20 @@ window.alert(t(msg`预设 JSON 无效`));
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const currentFocusRows = [
+  const quickStatusRows = [
     { label: t(msg`显示模式`), value: compactView ? t(msg`紧凑`) : t(msg`完整`) },
     { label: t(msg`当前数据集`), value: selectedDatasetId ?? t(msg`全部`) },
     { label: t(msg`当前运行`), value: selectedRunId ?? t(msg`未选择`) },
-    { label: t(msg`当前链路`), value: selectedTraceId ?? t(msg`未选择`) },
-    { label: t(msg`实验报告`), value: selectedReport?.presetTitle ?? t(msg`未选择`) },
-    { label: t(msg`用例聚焦`), value: focusedCaseId ?? t(msg`未聚焦`) },
-    { label: t(msg`数字人状态`), value: digitalHumanSummary.statusLabel },
-  ];
-  const quickStatusRows = [
-    { label: t(msg`最近运行`), value: overviewQuery.data?.latestRunAt ?? t(msg`暂无`) },
-    { label: t(msg`对比筛选`), value: t(msg`${activeCompareFilterCount} 个`) },
-    { label: t(msg`链路筛选`), value: t(msg`${activeTraceFilterCount} 个`) },
     {
       label: t(msg`当前对比`),
       value: baselineRunId && candidateRunId ? t(msg`已锁定`) : t(msg`未锁定`),
     },
+    { label: t(msg`当前链路`), value: selectedTraceId ?? t(msg`未选择`) },
+    { label: t(msg`实验报告`), value: selectedReport?.presetTitle ?? t(msg`未选择`) },
+    { label: t(msg`用例聚焦`), value: focusedCaseId ?? t(msg`未聚焦`) },
+    { label: t(msg`最近运行`), value: overviewQuery.data?.latestRunAt ?? t(msg`暂无`) },
+    { label: t(msg`对比筛选`), value: t(msg`${activeCompareFilterCount} 个`) },
+    { label: t(msg`链路筛选`), value: t(msg`${activeTraceFilterCount} 个`) },
   ];
 
   return (
@@ -1167,31 +1165,23 @@ window.alert(t(msg`预设 JSON 无效`));
               <Button variant="secondary" onClick={resetViewState}>{t(msg`重置筛选`)}</Button>
             </>
           }
-          metrics={[
-            { label: t(msg`数据集`), value: overviewQuery.data?.datasetCount ?? 0 },
-            { label: t(msg`运行次数`), value: overviewQuery.data?.runCount ?? 0 },
-            { label: t(msg`链路数`), value: overviewQuery.data?.traceCount ?? 0 },
-            { label: t(msg`数字人`), value: digitalHumanSummary.statusLabel },
-            { label: t(msg`失败运行`), value: overviewQuery.data?.failedRunCount ?? 0 },
-          ]}
         />
 
         <div className="space-y-4">
-          <AdminInfoRows title={t(msg`当前聚焦`)} rows={currentFocusRows} />
+          <AdminCallout
+            tone={digitalHumanSummary.ready ? "success" : "warning"}
+            title={
+              digitalHumanSummary.ready
+                ? t(msg`数字人链路已进入可联调状态`)
+                : t(msg`数字人当前阻塞：${digitalHumanSummary.statusLabel}`)
+            }
+            description={t(msg`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`)}
+          />
           {shareViewName.trim() ? (
             <InlineNotice tone="info">{t(msg`当前分享视图：${shareViewName.trim()}`)}</InlineNotice>
           ) : null}
         </div>
       </div>
-      <AdminCallout
-        tone={digitalHumanSummary.ready ? "success" : "warning"}
-        title={
-          digitalHumanSummary.ready
-            ? t(msg`数字人链路已进入可联调状态`)
-            : t(msg`数字人当前阻塞：${digitalHumanSummary.statusLabel}`)
-        }
-        description={t(msg`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`)}
-      />
 
       <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
@@ -1243,7 +1233,7 @@ window.alert(t(msg`预设 JSON 无效`));
               {savedPresets.length === 0 ? (
                 <AdminEmptyState
                   title={t(msg`还没有保存的视图预设`)}
-                  description={t(msg`先在评测概览里保存一组筛选状态，后面就能反复复用。`)}
+                  description={t(msg`在评测概览保存一组筛选状态后复用。`)}
                 />
               ) : null}
             </div>
@@ -1253,7 +1243,7 @@ window.alert(t(msg`预设 JSON 无效`));
         <div className="space-y-6">
       <Card id="eval-overview" className="bg-[color:var(--surface-console)]">
         <SectionHeading>{t(msg`评测概览`)}</SectionHeading>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <MetricCard label={t(msg`数据集`)} value={overviewQuery.data?.datasetCount ?? 0} />
           <MetricCard label={t(msg`运行次数`)} value={overviewQuery.data?.runCount ?? 0} />
           <MetricCard label={t(msg`链路数`)} value={overviewQuery.data?.traceCount ?? 0} />
@@ -1263,49 +1253,17 @@ window.alert(t(msg`预设 JSON 无效`));
         <div className="mt-4 text-sm text-[color:var(--text-secondary)]">
           {t(msg`最近运行`)}：{overviewQuery.data?.latestRunAt ?? t(msg`暂无`)}
         </div>
-        {shareViewName.trim() ? (
-          <div className="mt-4">
-            <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-2 text-sm text-sky-100">
-              {t(msg`视图：${shareViewName.trim()}`)}
-            </span>
-          </div>
-        ) : null}
         <InlineNotice className="mt-4" tone={compactView ? "info" : "muted"}>
           {compactView
             ? t(msg`当前是紧凑模式，只优先展示失败、异常和差异明显的结果。`)
             : t(msg`当前是完整模式，适合完整浏览运行记录、对比结果、实验报告和生成链路。`)}
         </InlineNotice>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <h3 className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+          {t(msg`任务状态`)}
+        </h3>
+        <div className="mt-3 flex flex-wrap gap-3">
           <AdminPillTextField value={presetName} onChange={setPresetName} placeholder={t(msg`预设名称`)} className="w-auto min-w-44" />
-          <AdminPillTextField value={shareViewName} onChange={setShareViewName} placeholder={t(msg`分享视图名称`)} className="w-auto min-w-48" />
-          <Button variant="secondary" onClick={saveCurrentPreset}>{t(msg`保存预设`)}</Button>
-          <Button variant="secondary" onClick={() => {
-            void exportCurrentPreset();
-          }}>{t(msg`导出当前预设`)}</Button>
-          <Button variant="secondary" onClick={() => {
-            void exportAllPresets();
-          }}>{t(msg`导出全部预设`)}</Button>
-          <Button variant="secondary" onClick={importPresets}>{t(msg`导入预设`)}</Button>
-          <AdminPillSelectField
-            value={presetName}
-            onChange={(value) => {
-              setPresetName(value);
-              applyPreset(value);
-            }}
-          >
-            <option value="">{t(msg`应用预设`)}</option>
-            {savedPresets.map((preset) => (
-              <option key={preset.name} value={preset.name}>
-                {preset.name}
-              </option>
-            ))}
-          </AdminPillSelectField>
-          {presetName && savedPresets.some((preset) => preset.name === presetName) ? (
-            <Button variant="danger" onClick={() => deletePreset(presetName)}>{t(msg`删除预设`)}</Button>
-          ) : null}
-          <Button variant="secondary" onClick={() => {
-            void copyCurrentViewLink();
-          }}>{t(msg`复制视图链接`)}</Button>
+          <Button variant="primary" onClick={saveCurrentPreset}>{t(msg`保存当前预设`)}</Button>
         </div>
         {evalRunBusy || reportDecisionBusy ? (
           <AdminActionFeedback
@@ -1373,7 +1331,38 @@ window.alert(t(msg`预设 JSON 无效`));
 
       <Card id="eval-presets" className="bg-[color:var(--surface-console)]">
         <SectionHeading>{t(msg`已保存视图`)}</SectionHeading>
-        <div className="mt-4 grid gap-3 xl:grid-cols-3">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <AdminPillTextField value={shareViewName} onChange={setShareViewName} placeholder={t(msg`分享视图名称`)} className="w-auto min-w-48" />
+          <AdminPillSelectField
+            value={presetName}
+            onChange={(value) => {
+              setPresetName(value);
+              applyPreset(value);
+            }}
+          >
+            <option value="">{t(msg`快速应用预设`)}</option>
+            {savedPresets.map((preset) => (
+              <option key={preset.name} value={preset.name}>
+                {preset.name}
+              </option>
+            ))}
+          </AdminPillSelectField>
+          <Button variant="secondary" onClick={importPresets}>{t(msg`导入预设`)}</Button>
+          <Button variant="secondary" onClick={() => {
+            void exportAllPresets();
+          }}>{t(msg`导出全部预设`)}</Button>
+          {presetName && savedPresets.some((preset) => preset.name === presetName) ? (
+            <Button variant="secondary" onClick={() => {
+              void exportCurrentPreset();
+            }}>{t(msg`导出当前预设`)}</Button>
+          ) : null}
+          {shareViewName.trim() ? (
+            <Button variant="secondary" onClick={() => {
+              void copyCurrentViewLink();
+            }}>{t(msg`复制视图链接`)}</Button>
+          ) : null}
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           {savedPresets.map((preset) => (
             <AdminRecordCard
               key={preset.name}
@@ -1401,6 +1390,14 @@ window.alert(t(msg`预设 JSON 无效`));
               actions={
                 <>
                   <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setPresetName(preset.name);
+                      applyPreset(preset.name);
+                    }}
+                  >{t(msg`应用视图`)}</Button>
+                  <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => togglePresetPinned(preset.name)}
@@ -1418,13 +1415,10 @@ window.alert(t(msg`预设 JSON 无效`));
                     onClick={() => movePreset(preset.name, "down")}
                   >{t(msg`下移`)}</Button>
                   <Button
-                    variant="secondary"
+                    variant="danger"
                     size="sm"
-                    onClick={() => {
-                      setPresetName(preset.name);
-                      applyPreset(preset.name);
-                    }}
-                  >{t(msg`应用视图`)}</Button>
+                    onClick={() => deletePreset(preset.name)}
+                  >{t(msg`删除`)}</Button>
                 </>
               }
             />
@@ -1432,7 +1426,7 @@ window.alert(t(msg`预设 JSON 无效`));
           {savedPresets.length === 0 ? (
             <AdminEmptyState
               title={t(msg`当前还没有保存的视图`)}
-              description={t(msg`先把当前筛选状态保存为预设，后面切换视图会更快。`)}
+              description={t(msg`先把当前筛选状态保存为预设。`)}
             />
           ) : null}
         </div>
@@ -1443,7 +1437,7 @@ window.alert(t(msg`预设 JSON 无效`));
         <Card id="eval-runs" className="bg-[color:var(--surface-console)]">
           <SectionHeading>{t(msg`数据集运行`)}</SectionHeading>
           <InlineNotice className="mt-4" tone="muted">
-            {t(msg`这里是运行入口。先填实验标签和候选覆盖配置，再按数据集执行单次运行或成对评测。`)}
+            {t(msg`先填实验标签和覆盖配置，再按数据集运行或成对评测。`)}
           </InlineNotice>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <AdminInlineTextField value={experimentLabel} onChange={setExperimentLabel} placeholder={t(msg`实验标签`)} />
@@ -1561,7 +1555,7 @@ window.alert(t(msg`预设 JSON 无效`));
             {experimentPresets.length === 0 ? (
               <AdminEmptyState
                 title={t(msg`当前还没有实验预设`)}
-                description={t(msg`先沉淀一组基线和候选组合，后续重复实验时会更高效。`)}
+                description={t(msg`先沉淀一组基线候选组合。`)}
               />
             ) : null}
           </div>
@@ -1625,7 +1619,7 @@ window.alert(t(msg`预设 JSON 无效`));
             ) : (
               <AdminEmptyState
                 title={t(msg`当前还没有评测运行记录`)}
-                description={t(msg`先运行一个数据集，后面才能查看运行详情、报告和对比历史。`)}
+                description={t(msg`先运行一个数据集。`)}
               />
             )}
           </div>
@@ -1661,7 +1655,7 @@ window.alert(t(msg`预设 JSON 无效`));
             {(comparisonsQuery.data ?? []).length === 0 ? (
               <AdminEmptyState
                 title={t(msg`当前还没有对比记录`)}
-                description={t(msg`先运行一次成对评测，才能开始查看基线与候选的差异。`)}
+                description={t(msg`先运行一次成对评测。`)}
               />
             ) : null}
           </div>
@@ -1764,8 +1758,8 @@ window.alert(t(msg`预设 JSON 无效`));
                 title={experimentReports.length === 0 ? t(msg`当前还没有实验报告`) : t(msg`当前筛选下没有实验报告`)}
                 description={
                   experimentReports.length === 0
-                    ? t(msg`先运行一次实验预设，系统才会生成建议、回退点和决策依据。`)
-                    : t(msg`换一个数据集或实验标签，或者先清空当前筛选。`)
+                    ? t(msg`先运行一次实验预设。`)
+                    : t(msg`换数据集/标签，或清空筛选。`)
                 }
               />
             ) : null}
@@ -1891,7 +1885,7 @@ window.alert(t(msg`预设 JSON 无效`));
                       >{t(msg`打开候选运行`)}</Button>
                     ) : null}
                   </div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-4">
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <MetricCard label={t(msg`用例数`)} value={selectedReport.summary.totalCases} />
                     <MetricCard label={t(msg`胜出`)} value={selectedReport.summary.wins} />
                     <MetricCard label={t(msg`落后`)} value={selectedReport.summary.losses} />
@@ -1931,7 +1925,7 @@ window.alert(t(msg`预设 JSON 无效`));
               ) : (
                 <AdminEmptyState
                   title={t(msg`先选择一份实验报告`)}
-                  description={t(msg`选中左侧报告后，这里会展示它的汇总、建议、差异和决策信息。`)}
+                  description={t(msg`选中左侧报告查看详情与决策。`)}
                 />
               )}
             </div>
@@ -2010,7 +2004,7 @@ window.alert(t(msg`预设 JSON 无效`));
           ) : (
             <AdminEmptyState
               title={t(msg`先选择一个数据集`)}
-              description={t(msg`点选上方数据集卡片后，这里会展示用例输入、硬规则和裁判标准。`)}
+              description={t(msg`点选数据集卡片查看用例与规则。`)}
             />
           )}
         </div>
@@ -2032,7 +2026,7 @@ window.alert(t(msg`预设 JSON 无效`));
                   </StatusPill>
                 }
                 footer={
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <MetricCard label={t(msg`模式`)} value={formatEvalMode(runDetailQuery.data.mode)} />
                     <MetricCard label={t(msg`开始时间`)} value={runDetailQuery.data.startedAt} />
                     <MetricCard label={t(msg`运行器`)} value={runDetailQuery.data.runnerVersion} />
@@ -2182,7 +2176,7 @@ window.alert(t(msg`预设 JSON 无效`));
           ) : (
             <AdminEmptyState
               title={t(msg`先选择一次运行`)}
-              description={t(msg`选中最近运行后，这里会展开用例级输出、规则违背和链路关联。`)}
+              description={t(msg`选中最近运行查看用例输出与链路。`)}
             />
           )}
         </div>
@@ -2257,7 +2251,7 @@ window.alert(t(msg`预设 JSON 无效`));
               <ListItemCard
                 title={t(msg`${compareQuery.data.candidateDatasetId} 对比 ${compareQuery.data.baselineDatasetId}`)}
                 footer={
-                  <div className="grid gap-3 md:grid-cols-4">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <MetricCard label={t(msg`用例数`)} value={displayedComparisons.length} />
                     <MetricCard label={t(msg`胜出`)} value={filteredComparisonSummary.wins} />
                     <MetricCard label={t(msg`落后`)} value={filteredComparisonSummary.losses} />
@@ -2388,7 +2382,7 @@ window.alert(t(msg`预设 JSON 无效`));
           ) : (
             <AdminEmptyState
               title={t(msg`至少需要两次运行`)}
-              description={t(msg`先积累两次可比较的运行记录，才能锁定基线和候选做成对分析。`)}
+              description={t(msg`先积累两次可比较的运行记录。`)}
             />
           )}
         </div>
@@ -2505,7 +2499,7 @@ window.alert(t(msg`预设 JSON 无效`));
             </div>
           </AdminDetailPanel>
         ) : null}
-        <div className="mt-4 grid gap-6 xl:grid-cols-[0.8fr_1.05fr_0.95fr]">
+        <div className="mt-4 grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
           <div className="space-y-3">
             {displayedTraces.length > 0 ? (
               displayedTraces.map((trace) => (
@@ -2536,187 +2530,207 @@ window.alert(t(msg`预设 JSON 无效`));
             ) : (
               <AdminEmptyState
                 title={t(msg`当前还没有生成链路`)}
-                description={t(msg`先运行数据集或触发一次真实生成，后面才能沿链路下钻到 prompt 和上下文。`)}
+                description={t(msg`先运行数据集触发一次生成。`)}
               />
             )}
           </div>
           <div>
             {traceDetailQuery.data ? (
-              <AdminDetailPanel title={t(msg`链路输出`)} contentClassName="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-[color:var(--text-primary)]">{formatTraceSource(traceDetailQuery.data.source)}</div>
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
-                      {formatEvalStatus(traceDetailQuery.data.status)}
-                    </StatusPill>
-                    {traceDetailQuery.data.evaluationSummary?.judgeSource ? (
-                      <TagBadge tone={traceDetailQuery.data.evaluationSummary.judgeSource === "llm" ? "success" : traceDetailQuery.data.evaluationSummary.judgeSource === "heuristic" ? "warning" : "info"}>
+              <div className="space-y-4">
+                <div className="inline-flex rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTraceDetailTab("output")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                      traceDetailTab === "output"
+                        ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                        : "text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
+                    }`}
+                  >
+                    {t(msg`链路输出`)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTraceDetailTab("context")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                      traceDetailTab === "context"
+                        ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                        : "text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
+                    }`}
+                  >
+                    {t(msg`链路上下文`)}
+                  </button>
+                </div>
+                {traceDetailTab === "output" ? (
+                  <AdminDetailPanel title={t(msg`链路输出`)} contentClassName="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-semibold text-[color:var(--text-primary)]">{formatTraceSource(traceDetailQuery.data.source)}</div>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
+                          {formatEvalStatus(traceDetailQuery.data.status)}
+                        </StatusPill>
+                        {traceDetailQuery.data.evaluationSummary?.judgeSource ? (
+                          <TagBadge tone={traceDetailQuery.data.evaluationSummary.judgeSource === "llm" ? "success" : traceDetailQuery.data.evaluationSummary.judgeSource === "heuristic" ? "warning" : "info"}>
 {t(msg`裁判`)}：{formatJudgeSource(traceDetailQuery.data.evaluationSummary.judgeSource)}
-                      </TagBadge>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <div>{t(msg`链路`)}：{traceDetailQuery.data.id}</div>
-                  <div>{t(msg`角色`)}：{traceDetailQuery.data.characterId ?? t(msg`无`)}</div>
-                  <div>{t(msg`模型`)}：{traceDetailQuery.data.provider?.model ?? t(msg`无`)}</div>
-                  <div>{t(msg`耗时`)}：{traceDetailQuery.data.latencyMs ?? 0} ms</div>
-                </div>
-                <AdminMiniPanel title={t(msg`筛选命中`)}>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <TagBadge>
-{t(msg`范围`)}：{formatTraceScope(traceScopeFilter)}
-                    </TagBadge>
-                    {traceSource ? (
-                      <TagBadge>
-{t(msg`来源`)}：{formatTraceSource(traceDetailQuery.data.source)}
-                      </TagBadge>
-                    ) : null}
-                    {traceStatus ? (
-                      <TagBadge>
-{t(msg`状态`)}：{formatEvalStatus(traceDetailQuery.data.status)}
-                      </TagBadge>
-                    ) : null}
-                    {traceCharacterId ? (
-                      <TagBadge>
-{t(msg`角色`)}：{traceDetailQuery.data.characterId ?? t(msg`无`)}
-                      </TagBadge>
-                    ) : null}
-                    {traceCaseFilter ? (
-                      <TagBadge tone="warning">
-{t(msg`用例`)}：{selectedTraceCaseIds.join(", ") || t(msg`无关联用例`)}
-                      </TagBadge>
-                    ) : null}
-                    {traceFailureTagFilter ? (
-                      <TagBadge tone="danger">
-{t(msg`失败标签`)}：{selectedTraceFailureTags.join(", ") || t(msg`无`)}
-                      </TagBadge>
-                    ) : null}
-                    {focusedCaseId ? (
-                      <TagBadge tone="info">
-{t(msg`聚焦用例`)}：{focusedCaseId}
-                      </TagBadge>
-                    ) : null}
-                    {selectedTraceLinkedRunCases.length > 0 ? (
-                      <TagBadge tone="success">
-{t(msg`选中运行`)}：{selectedTraceLinkedRunCases.join(", ")}
-                      </TagBadge>
-                    ) : null}
-                    {selectedTraceComparisonMatches.length > 0 ? (
-                      <TagBadge tone="accent">
-{t(msg`对比角色`)}：{selectedTraceComparisonMatches.map(formatTraceCompareMatch).join(", ")}
-                      </TagBadge>
-                    ) : null}
-                  </div>
-                </AdminMiniPanel>
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`提示词消息`)}</div>
-                  <div className="mt-2 space-y-2">
-                    {traceDetailQuery.data.input.promptMessages.map((message, index) => (
-                      <AdminMiniPanel key={`${message.role}-${index}`} title={formatPromptRole(message.role)}>
-                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">{message.content}</div>
-                      </AdminMiniPanel>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`输出`)}</div>
-                  <div className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 text-[color:var(--text-secondary)]">
-                    {traceDetailQuery.data.output.normalizedOutput ??
-                      traceDetailQuery.data.output.rawOutput ??
-                      traceDetailQuery.data.output.errorMessage ??
-                      t(msg`空`)}
-                  </div>
-                </div>
-                {traceDetailQuery.data.output.judgePayload ? (
-                  // i18n-ignore-next-line: admin technical label
-                  <SnapshotPanel title="Judge JSON" value={traceDetailQuery.data.output.judgePayload} />
-                ) : null}
-              </AdminDetailPanel>
-            ) : (
-              <AdminEmptyState
-                title={t(msg`先选择一条链路`)}
-                description={t(msg`选中左侧链路后，这里会展示提示词消息、筛选命中和标准化输出。`)}
-              />
-            )}
-          </div>
-          <div>
-            {traceDetailQuery.data ? (
-              <AdminDetailPanel title={t(msg`链路上下文`)} contentClassName="space-y-4">
-                <div className="grid gap-3">
-                  <SnapshotPanel title={t(msg`请求配置`)} value={traceDetailQuery.data.input.requestConfig} />
-                  <SnapshotPanel title={t(msg`世界上下文快照`)} value={traceDetailQuery.data.input.worldContextSnapshot} />
-                  <SnapshotPanel title={t(msg`活动快照`)} value={traceDetailQuery.data.input.activitySnapshot} />
-                  <SnapshotPanel title={t(msg`记忆快照`)} value={traceDetailQuery.data.input.memorySnapshot} />
-                </div>
-                {traceDetailQuery.data.evaluationSummary ? (
-                  <>
-                    <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`评测汇总`)}</div>
-                    <div className="grid gap-3">
-                      <AdminMiniPanel title={t(msg`评分`)}>
-                        <div className="mt-2 space-y-2">
-                          {traceDetailQuery.data.evaluationSummary.scores.map((score) => (
-                            <div key={score.key} className="flex items-center justify-between gap-3">
-                              <div className="text-[color:var(--text-primary)]">{score.label}</div>
-                              <div className="text-[color:var(--text-secondary)]">{score.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </AdminMiniPanel>
-                      <AdminMiniPanel title={t(msg`失败标签`)}>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {traceDetailQuery.data.evaluationSummary.failureTags.length > 0 ? (
-                            traceDetailQuery.data.evaluationSummary.failureTags.map((tag) => (
-                              <TagBadge key={tag.key} tone="warning">
-                                {tag.label}
-                                {typeof tag.count === "number" ? ` · ${tag.count}` : ""}
-                              </TagBadge>
-                            ))
-                          ) : (
-<span className="text-[color:var(--text-secondary)]">{t(msg`无`)}</span>
-                          )}
-                        </div>
-                      </AdminMiniPanel>
-                      <AdminMiniPanel title={t(msg`裁判信息`)}>
-                        <div className="mt-2 space-y-2 text-sm text-[color:var(--text-secondary)]">
-                          <div>{t(msg`来源`)}：{traceDetailQuery.data.evaluationSummary.judgeSource ? formatJudgeSource(traceDetailQuery.data.evaluationSummary.judgeSource) : t(msg`无`)}</div>
-                          <div>{t(msg`结论`)}：{traceDetailQuery.data.evaluationSummary.judgeRationale || t(msg`无`)}</div>
-                          <div>
-                            {t(msg`规则违背`)}：
-                            {traceDetailQuery.data.evaluationSummary.ruleViolations?.length ? ` ${traceDetailQuery.data.evaluationSummary.ruleViolations.join("；")}` : t(msg` 无`)}
-                          </div>
-                        </div>
-                      </AdminMiniPanel>
+                          </TagBadge>
+                        ) : null}
+                      </div>
                     </div>
-                  </>
-                ) : null}
-                {runDetailQuery.data ? (
-                  <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`关联用例`)}</div>
-                ) : null}
-                {runDetailQuery.data ? (
-                  <div className="flex flex-wrap gap-2">
-                    {runDetailQuery.data.caseResults
-                      .filter((caseResult) => collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id))
-                      .map((caseResult) => (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          key={caseResult.caseId}
-                          onClick={() => focusCase(caseResult.caseId, collectCaseTraceIds(caseResult))}
-                        >
-                          {caseResult.caseId}
-                        </Button>
-                      ))}
-                    {runDetailQuery.data.caseResults.every((caseResult) => !collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id)) ? (
-<span className="text-[color:var(--text-secondary)]">{t(msg`当前所选运行中无关联用例`)}</span>
+                    <div className="grid gap-2">
+                      <div>{t(msg`链路`)}：{traceDetailQuery.data.id}</div>
+                      <div>{t(msg`角色`)}：{traceDetailQuery.data.characterId ?? t(msg`无`)}</div>
+                      <div>{t(msg`模型`)}：{traceDetailQuery.data.provider?.model ?? t(msg`无`)}</div>
+                      <div>{t(msg`耗时`)}：{traceDetailQuery.data.latencyMs ?? 0} ms</div>
+                    </div>
+                    <AdminMiniPanel title={t(msg`筛选命中`)}>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <TagBadge>
+{t(msg`范围`)}：{formatTraceScope(traceScopeFilter)}
+                        </TagBadge>
+                        {traceSource ? (
+                          <TagBadge>
+{t(msg`来源`)}：{formatTraceSource(traceDetailQuery.data.source)}
+                          </TagBadge>
+                        ) : null}
+                        {traceStatus ? (
+                          <TagBadge>
+{t(msg`状态`)}：{formatEvalStatus(traceDetailQuery.data.status)}
+                          </TagBadge>
+                        ) : null}
+                        {traceCharacterId ? (
+                          <TagBadge>
+{t(msg`角色`)}：{traceDetailQuery.data.characterId ?? t(msg`无`)}
+                          </TagBadge>
+                        ) : null}
+                        {traceCaseFilter ? (
+                          <TagBadge tone="warning">
+{t(msg`用例`)}：{selectedTraceCaseIds.join(", ") || t(msg`无关联用例`)}
+                          </TagBadge>
+                        ) : null}
+                        {traceFailureTagFilter ? (
+                          <TagBadge tone="danger">
+{t(msg`失败标签`)}：{selectedTraceFailureTags.join(", ") || t(msg`无`)}
+                          </TagBadge>
+                        ) : null}
+                        {focusedCaseId ? (
+                          <TagBadge tone="info">
+{t(msg`聚焦用例`)}：{focusedCaseId}
+                          </TagBadge>
+                        ) : null}
+                        {selectedTraceLinkedRunCases.length > 0 ? (
+                          <TagBadge tone="success">
+{t(msg`选中运行`)}：{selectedTraceLinkedRunCases.join(", ")}
+                          </TagBadge>
+                        ) : null}
+                        {selectedTraceComparisonMatches.length > 0 ? (
+                          <TagBadge tone="accent">
+{t(msg`对比角色`)}：{selectedTraceComparisonMatches.map(formatTraceCompareMatch).join(", ")}
+                          </TagBadge>
+                        ) : null}
+                      </div>
+                    </AdminMiniPanel>
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`提示词消息`)}</div>
+                      <div className="mt-2 space-y-2">
+                        {traceDetailQuery.data.input.promptMessages.map((message, index) => (
+                          <AdminMiniPanel key={`${message.role}-${index}`} title={formatPromptRole(message.role)}>
+                            <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">{message.content}</div>
+                          </AdminMiniPanel>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`输出`)}</div>
+                      <div className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 text-[color:var(--text-secondary)]">
+                        {traceDetailQuery.data.output.normalizedOutput ??
+                          traceDetailQuery.data.output.rawOutput ??
+                          traceDetailQuery.data.output.errorMessage ??
+                          t(msg`空`)}
+                      </div>
+                    </div>
+                    {traceDetailQuery.data.output.judgePayload ? (
+                      // i18n-ignore-next-line: admin technical label
+                      <SnapshotPanel title="Judge JSON" value={traceDetailQuery.data.output.judgePayload} />
                     ) : null}
-                  </div>
-                ) : null}
-              </AdminDetailPanel>
+                  </AdminDetailPanel>
+                ) : (
+                  <AdminDetailPanel title={t(msg`链路上下文`)} contentClassName="space-y-4">
+                    <div className="grid gap-3">
+                      <SnapshotPanel title={t(msg`请求配置`)} value={traceDetailQuery.data.input.requestConfig} />
+                      <SnapshotPanel title={t(msg`世界上下文快照`)} value={traceDetailQuery.data.input.worldContextSnapshot} />
+                      <SnapshotPanel title={t(msg`活动快照`)} value={traceDetailQuery.data.input.activitySnapshot} />
+                      <SnapshotPanel title={t(msg`记忆快照`)} value={traceDetailQuery.data.input.memorySnapshot} />
+                    </div>
+                    {traceDetailQuery.data.evaluationSummary ? (
+                      <>
+                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`评测汇总`)}</div>
+                        <div className="grid gap-3">
+                          <AdminMiniPanel title={t(msg`评分`)}>
+                            <div className="mt-2 space-y-2">
+                              {traceDetailQuery.data.evaluationSummary.scores.map((score) => (
+                                <div key={score.key} className="flex items-center justify-between gap-3">
+                                  <div className="text-[color:var(--text-primary)]">{score.label}</div>
+                                  <div className="text-[color:var(--text-secondary)]">{score.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </AdminMiniPanel>
+                          <AdminMiniPanel title={t(msg`失败标签`)}>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {traceDetailQuery.data.evaluationSummary.failureTags.length > 0 ? (
+                                traceDetailQuery.data.evaluationSummary.failureTags.map((tag) => (
+                                  <TagBadge key={tag.key} tone="warning">
+                                    {tag.label}
+                                    {typeof tag.count === "number" ? ` · ${tag.count}` : ""}
+                                  </TagBadge>
+                                ))
+                              ) : (
+<span className="text-[color:var(--text-secondary)]">{t(msg`无`)}</span>
+                              )}
+                            </div>
+                          </AdminMiniPanel>
+                          <AdminMiniPanel title={t(msg`裁判信息`)}>
+                            <div className="mt-2 space-y-2 text-sm text-[color:var(--text-secondary)]">
+                              <div>{t(msg`来源`)}：{traceDetailQuery.data.evaluationSummary.judgeSource ? formatJudgeSource(traceDetailQuery.data.evaluationSummary.judgeSource) : t(msg`无`)}</div>
+                              <div>{t(msg`结论`)}：{traceDetailQuery.data.evaluationSummary.judgeRationale || t(msg`无`)}</div>
+                              <div>
+                                {t(msg`规则违背`)}：
+                                {traceDetailQuery.data.evaluationSummary.ruleViolations?.length ? ` ${traceDetailQuery.data.evaluationSummary.ruleViolations.join("；")}` : t(msg` 无`)}
+                              </div>
+                            </div>
+                          </AdminMiniPanel>
+                        </div>
+                      </>
+                    ) : null}
+                    {runDetailQuery.data ? (
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{t(msg`关联用例`)}</div>
+                    ) : null}
+                    {runDetailQuery.data ? (
+                      <div className="flex flex-wrap gap-2">
+                        {runDetailQuery.data.caseResults
+                          .filter((caseResult) => collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id))
+                          .map((caseResult) => (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              key={caseResult.caseId}
+                              onClick={() => focusCase(caseResult.caseId, collectCaseTraceIds(caseResult))}
+                            >
+                              {caseResult.caseId}
+                            </Button>
+                          ))}
+                        {runDetailQuery.data.caseResults.every((caseResult) => !collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id)) ? (
+<span className="text-[color:var(--text-secondary)]">{t(msg`当前所选运行中无关联用例`)}</span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </AdminDetailPanel>
+                )}
+              </div>
             ) : (
               <AdminEmptyState
                 title={t(msg`先选择一条链路`)}
-                description={t(msg`选中后，这里会展示请求配置、世界快照、评测汇总和关联用例。`)}
+                description={t(msg`选中后查看提示词、输出与上下文。`)}
               />
             )}
           </div>

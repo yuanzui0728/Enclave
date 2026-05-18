@@ -26,6 +26,7 @@
     "test:desktop": "pnpm test:desktop-unit && pnpm test:desktop-browser"
   },
   "dependencies": {
+    "@capacitor/app": "^7.1.0",
     "@capacitor/core": "^7.1.1",
     "@capacitor/keyboard": "^7.0.6",
     "@capacitor/splash-screen": "^7.0.5",

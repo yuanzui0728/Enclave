@@ -5,11 +5,16 @@ export type MobileFriendRequestsRouteState = {
   returnHash?: string;
 };
 
+// 走查 R1：跟 mobile-add-friend-route-state / mobile-group-route-state 同款补
+// "//" 协议无关 URL 校验。/friend-requests 是 + → 添加朋友 → "新的朋友" 二跳
+// 子页，路径同样收 returnPath；原版只挡 startsWith("/")，"//evil.com" 也满足，
+// 用户点"返回"会被 navigate 带去第三方站。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

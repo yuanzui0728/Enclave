@@ -1,6 +1,7 @@
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import type { FarmNeighborSummary } from "@yinjie/contracts";
+import { AvatarChip } from "../../../../components/avatar-chip";
 import { useFarmNeighbors } from "../use-farm-state";
 
 const t = translateRuntimeMessage;
@@ -62,19 +63,12 @@ function NeighborRow({
         onClick={onClick}
         className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-emerald-50"
       >
-        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-stone-200">
-          {neighbor.characterAvatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={neighbor.characterAvatar}
-              alt={neighbor.characterName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-sm text-stone-500">
-              {neighbor.characterName.slice(0, 1)}
-            </span>
-          )}
+        <div className="relative shrink-0">
+          <AvatarChip
+            name={neighbor.characterName}
+            src={neighbor.characterAvatar}
+            size="sm"
+          />
           {neighbor.isOnline && (
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-emerald-500" />
           )}

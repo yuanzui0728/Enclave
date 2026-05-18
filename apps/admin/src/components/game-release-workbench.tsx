@@ -11,12 +11,11 @@ import {
   Card,
   ErrorBlock,
   LoadingBlock,
-  MetricCard,
   SelectField,
   StatusPill,
   TextAreaField,
 } from "@yinjie/ui";
-import { AdminCallout, AdminEmptyState } from "./admin-workbench";
+import { AdminEmptyState } from "./admin-workbench";
 import { adminApi } from "../lib/admin-api";
 
 type FeedbackPayload = {
@@ -232,18 +231,6 @@ export function GameReleaseWorkbench({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard label={t(msg`当前版本号`)} value={String(selectedGame?.publishedVersion ?? 0)} />
-        <MetricCard label={t(msg`修订记录`)} value={String(metrics.revisionCount)} />
-        <MetricCard label={t(msg`已发布次数`)} value={String(metrics.publishedCount)} />
-      </div>
-
-      <AdminCallout
-        title={t(msg`目录草稿已经具备版本发布流`)}
-        description={t(msg`这里管理每个游戏的版本历史、发布摘要和最近一次正式发布状态。更新目录资料后会形成新的草稿修订，点击发布才会形成正式版本。`)}
-        tone="info"
-      />
-
       {!selectedGameId || !selectedGame ? (
         <AdminEmptyState
           title={t(msg`先选择一个游戏`)}
@@ -340,7 +327,7 @@ export function GameReleaseWorkbench({
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-[12px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                   Revision Timeline
@@ -352,6 +339,18 @@ export function GameReleaseWorkbench({
                   {t(msg`记录每次创建、编辑、投稿入库、恢复和正式发布的快照。`)}
                 </div>
               </div>
+              {metrics.revisionCount > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill tone="muted">
+                    {t(msg`共 ${metrics.revisionCount} 条修订`)}
+                  </StatusPill>
+                  {metrics.publishedCount > 0 ? (
+                    <StatusPill tone="healthy">
+                      {t(msg`已发布 ${metrics.publishedCount} 次`)}
+                    </StatusPill>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             {revisionsQuery.isLoading ? (
@@ -408,7 +407,7 @@ export function GameReleaseWorkbench({
                   </label>
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <SummaryField
                     label={t(msg`对比修订`)}
                     value={`#${comparedRevision.revisionSequence}`}

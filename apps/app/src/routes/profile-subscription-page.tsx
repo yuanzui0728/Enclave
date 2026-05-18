@@ -26,15 +26,40 @@ import { CheckoutContactDialog } from "../features/subscription/checkout-contact
 import { clearCloudRuntimeSession } from "../lib/cloud-session";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
-import {
-  isNativeMobileBridgeAvailable,
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { buildPublicShareUrl } from "../lib/share-url";
+import { isNativeMobileBridgeAvailable } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
+import { shareTextOrUrl } from "../runtime/native-share";
 import { useCloudSessionStore } from "../store/cloud-session-store";
 
+// 主流货币给个符号前缀（CNY 套餐展示 "CNY 49.9" 比 "¥49.9" 累赘）。
+// 不识别的币种保持 "ABC 12.3" 兜底格式，避免新币种悄悄塞个错符号。
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  CNY: "¥",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  HKD: "HK$",
+  TWD: "NT$",
+};
+
 function formatPrice(priceCents: number, currency: string) {
-  const amount = (priceCents / 100).toFixed(1);
-  return `${currency.toUpperCase()} ${amount}`;
+  // toFixed(1) 之前给出 "¥499.0" / "¥49.9" 这种半截小数，年付 49900 cents 应该是
+  // "¥499" 整数，月付 4990 cents 是 "¥49.90" 两位小数。整数就不带小数，否则保留两位。
+  const upper = currency.toUpperCase();
+  const yuan = priceCents / 100;
+  const amount =
+    Number.isInteger(yuan) ? String(yuan) : yuan.toFixed(2);
+  const symbol = CURRENCY_SYMBOLS[upper];
+  return symbol ? `${symbol}${amount}` : `${upper} ${amount}`;
+}
+
+// email 用户走 synthesizePhoneFromEmail（apps/cloud-api/.../email-auth.service.ts）
+// 落到一个固定形如 "9" + 13 位数字的合成号码，把它当真实手机号展示给用户毫无意义且
+// 会让人以为绑过一个奇怪的国际号。这里靠这个特征拦住，UI 端不展示给"手机号"行。
+function isSynthesizedEmailPhone(phone?: string | null) {
+  return Boolean(phone && /^9\d{13}$/.test(phone));
 }
 
 function formatDateTime(value?: string | null) {
@@ -52,6 +77,9 @@ function formatDateTime(value?: string | null) {
 
 async function copyTextToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
+  if (await writeClipboardText(text)) {
+    return true;
+  }
   if (
     typeof navigator !== "undefined" &&
     navigator.clipboard?.writeText
@@ -82,10 +110,7 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 
 function buildFallbackShareUrl(code: string | null) {
   if (!code) return null;
-  if (typeof window === "undefined") return null;
-  const origin = window.location.origin;
-  if (!origin) return null;
-  return `${origin.replace(/\/+$/, "")}/?invite=${encodeURIComponent(code)}`;
+  return buildPublicShareUrl(`/?invite=${encodeURIComponent(code)}`);
 }
 
 interface InviteShareCardProps {
@@ -168,31 +193,25 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
 
   const handleShare = useCallback(async () => {
     if (!shareUrl) return;
-    const payload = {
+    const result = await shareTextOrUrl({
       title: invite.shareTitle,
       text: invite.shareBody,
       url: shareUrl,
-    };
-    if (isNativeMobileBridgeAvailable()) {
-      const ok = await shareWithNativeShell(payload);
-      if (ok) {
+    });
+
+    if (result.ok) {
+      if (result.via === "clipboard") {
+        setFeedback({ tone: "success", message: t(msg`已复制邀请链接。`) });
+      } else {
         setFeedback({ tone: "success", message: t(msg`已唤起分享面板。`) });
-        return;
       }
+      return;
     }
-    if (
-      typeof navigator !== "undefined" &&
-      typeof navigator.share === "function"
-    ) {
-      try {
-        await navigator.share(payload);
-        return;
-      } catch (error) {
-        if ((error as DOMException)?.name === "AbortError") {
-          return;
-        }
-      }
+
+    if (result.reason === "cancelled") {
+      return;
     }
+
     void handleCopy(shareUrl, t(msg`已复制邀请链接。`));
   }, [shareUrl, invite.shareTitle, invite.shareBody, handleCopy, t]);
 
@@ -347,14 +366,10 @@ export function ProfileSubscriptionPage() {
     planName: string;
   }>({ open: false, hint: "", contact: "", planName: "" }); // i18n-ignore-line
 
-  useEffect(() => {
-    if (accessToken) {
-      return;
-    }
-
+  const handleGoLogin = useCallback(() => {
     clearCloudRuntimeSession();
     void navigate({ to: "/welcome", replace: true });
-  }, [accessToken, navigate]);
+  }, [navigate]);
 
   const profileQuery = useQuery({
     queryKey: ["cloud-profile", accessToken],
@@ -428,17 +443,81 @@ export function ProfileSubscriptionPage() {
     void navigate({ to: "/desktop/settings" });
 
   const goBack = () =>
-    navigateBackOrFallback(() => {
-      void navigate({ to: "/tabs/profile" });
-    });
+    navigateBackOrFallback(
+      () => {
+        void navigate({ to: "/tabs/profile" });
+      },
+      "/tabs/profile",
+    );
 
+  // local-world / 还没登过云账号的世界主人会落到这里：原本直接 navigate(/welcome)
+  // 把整个壳替换成登录页，用户看到的是「我明明已经登录世界主人，为什么被踢出来？」。
+  // 改成留在 /profile/subscription 内显示一条提示卡 + 跳转按钮，让用户主动选择是否
+  // 去做云端登录，不破坏当前导航上下文。
   if (!accessToken) {
-    return null;
+    return (
+      <AppPage
+        className="bg-[color:var(--bg-canvas)] px-4 pt-6"
+        style={{
+          paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))",
+        }}
+      >
+        {!isDesktopLayout ? (
+          <TabPageTopBar
+            title={t(msg`会员中心`)}
+            titleAlign="center"
+            leftActions={
+              <Button
+                onClick={goBack}
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none active:bg-black/[0.05]"
+                aria-label={t(msg`返回`)}
+              >
+                <ArrowLeft size={17} />
+              </Button>
+            }
+          />
+        ) : null}
+        <AppSection className="mx-auto max-w-3xl space-y-3 px-5 py-6">
+          <InlineNotice tone="info">
+            {t(msg`会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。`)}
+          </InlineNotice>
+          <Button onClick={handleGoLogin} className="w-full">
+            {t(msg`去登录云账号`)}
+          </Button>
+        </AppSection>
+      </AppPage>
+    );
   }
+
+  // 移动端 loading/error 不再裸渲染——之前没有 TopBar，公网隧道下任意一个
+  // query 卡几秒就让用户停在「正在加载会员信息…」无路可走，只能软件层
+  // 退出 app。给个返回按钮，至少能滚回上一级。
+  const mobileTopBar = !isDesktopLayout ? (
+    <TabPageTopBar
+      title={t(msg`会员中心`)}
+      titleAlign="center"
+      leftActions={
+        <Button
+          onClick={goBack}
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none active:bg-black/[0.05]"
+          aria-label={t(msg`返回`)}
+        >
+          <ArrowLeft size={17} />
+        </Button>
+      }
+    />
+  ) : null;
 
   if (loading) {
     return (
-      <AppPage className="px-4 py-6">
+      <AppPage className="bg-[color:var(--bg-canvas)] px-4 pt-6">
+        {/* TabPageTopBar 内部用 -mx-4 -mt-6 把自己撑到屏幕边——AppPage 必须给
+            `px-4 pt-6`，否则 TopBar 把 inset 溢出页面外。和数据态保持一致。 */}
+        {mobileTopBar}
         <AppSection className="mx-auto max-w-3xl">
           <LoadingBlock label={t(msg`正在加载会员信息…`)} />
         </AppSection>
@@ -448,7 +527,8 @@ export function ProfileSubscriptionPage() {
 
   if (error) {
     return (
-      <AppPage className="px-4 py-6">
+      <AppPage className="bg-[color:var(--bg-canvas)] px-4 pt-6">
+        {mobileTopBar}
         <AppSection className="mx-auto max-w-3xl">
           <ErrorBlock message={describeRequestError(error)} />
         </AppSection>
@@ -501,15 +581,34 @@ export function ProfileSubscriptionPage() {
         <AppSection className="overflow-hidden rounded-[28px] border-black/5 bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                {t(msg`订阅`)}
-              </div>
-              <h1 className="mt-2 text-3xl font-semibold text-[color:var(--text-primary)]">
-                {t(msg`会员中心`)}
-              </h1>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-                {t(msg`手机号`)}: {profile.phone || phone || "-"}
-                <br />
+              {isDesktopLayout ? (
+                // 移动端 TopBar 已经渲染过 "会员中心" 标题，hero 卡里再放 h1 是重复的；
+                // 桌面端没有 TopBar，hero 卡的 h1 + "订阅" eyebrow 是页面唯一标题。
+                <>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                    {t(msg`订阅`)}
+                  </div>
+                  <h1 className="mt-2 text-3xl font-semibold text-[color:var(--text-primary)]">
+                    {t(msg`会员中心`)}
+                  </h1>
+                </>
+              ) : null}
+              <p className={`${isDesktopLayout ? "mt-2 " : ""}text-sm leading-7 text-[color:var(--text-secondary)]`}>
+                {isSynthesizedEmailPhone(profile.phone || phone) ? (
+                  // 邮箱注册的用户没真手机号，挂上一个 "9xxxxxxxxxxxxx" 合成号
+                  // 不如直接展示昵称（cloud_users.displayName，比如 yuanzui0728
+                  // 的 "吴港钧"），实在没有再 fallback 到通用 label。
+                  <>
+                    {t(msg`账号`)}:{" "}
+                    {profile.displayName?.trim() || t(msg`邮箱账号`)}
+                    <br />
+                  </>
+                ) : (
+                  <>
+                    {t(msg`手机号`)}: {profile.phone || phone || "-"}
+                    <br />
+                  </>
+                )}
                 {t(msg`状态`)}: {subscriptionStatusLabel}
                 <br />
                 {t(msg`当前套餐`)}:{" "}

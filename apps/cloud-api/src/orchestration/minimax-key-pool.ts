@@ -4,6 +4,10 @@ import { createHash } from "node:crypto";
 // MiniMax token plan key 池：按 worldId 稳定 hash 分配。
 // 同一 world 永远命中同一 key（重启 cloud-api 不变），加 key 时只有少数 world 的 mod 余数变化。
 // 池为空时返回 null，spawn 端不注入，child 自己读 api/.env 的单 key 兜底。
+//
+// 历史：2026-05-17 期间因为第一把 key 周限告紧，临时引入过 PRIMARY_KEY_WORLDS
+// 白名单 + "pool>=2 时一律走 idx=1" 的强制改流。本轮（2026-05-17）已经把全部
+// world 回退到按 hash 随机平均分配（含未来新 world），不再做白名单/强制改流。
 
 export type MinimaxKeyAllocation = {
   key: string;

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
 
@@ -25,6 +26,7 @@ export function MessageQuoteSelectionSheet({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [selectedText, setSelectedText] = useState("");
   const isDesktop = variant === "desktop";
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) {
@@ -38,6 +40,42 @@ export function MessageQuoteSelectionSheet({
 
     return () => window.clearTimeout(timer);
   }, [open, messageText]);
+
+  // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
+  // 把用户从聊天页带回 chat list（移动端形态），desktop 形态注册没副作用。
+  // 和 mobile-message-action-sheet.tsx 对齐。
+  useEffect(() => {
+    if (!open || isDesktop) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [isDesktop, onClose, open]);
+
+  // 桌面键盘 Esc：sheet 是 modal 风格（带半透明 backdrop），按 Esc 关闭符合
+  // 桌面用户对模态的预期。原写法只接了原生壳 Back 拦截，桌面用户只能点
+  // 「取消」或点 backdrop 关，跟同一文件下被 fix 过的会话/消息右键菜单
+  // 和确认弹层不一致。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
 
   if (!open) {
     return null;
@@ -63,7 +101,17 @@ export function MessageQuoteSelectionSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
+      {/* 走查新一轮 R3：和姊妹 sheet mobile-message-action-sheet.tsx
+          （commit 30f58a286）+ mobile-message-reminder-sheet.tsx（本轮 R2）
+          同款 a11y 缺漏——长按消息选「部分引用」打开的这个 sheet 没挂
+          role="dialog" + aria-modal + aria-labelledby。盲人用户长按后只
+          听到 "关闭部分引用面板 按钮" + 一片 textarea，听不到 "部分引用"
+          这个标题。Desktop variant 同一个 panel 复用 backdrop modal 写法，
+          统一覆盖。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`absolute ${
           isDesktop
             ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[22px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
@@ -77,7 +125,7 @@ export function MessageQuoteSelectionSheet({
         )}
 
         <div className={isDesktop ? "" : "px-1 pb-0.5"}>
-          <div className="text-center text-[12px] text-[#8c8c8c]">
+          <div id={titleId} className="text-center text-[12px] text-[#8c8c8c]">
             {t(msg`部分引用`)}
           </div>
           <div
@@ -113,10 +161,19 @@ export function MessageQuoteSelectionSheet({
             onKeyUp={updateSelection}
             onPointerUp={updateSelection}
             spellCheck={false}
+            // 走查 R10：和姊妹页 R1-R9 同款 a11y 修法——上方"原消息"小标题
+            // 视觉上是 label，但和这个 readonly textarea 之间没有 htmlFor /
+            // aria-labelledby 关联，屏幕阅读器 focus 进来听不到上下文。挂
+            // aria-label="原消息内容" 让 SR 知道这块是被引用的原文。本 sheet
+            // 同时给单聊 / 群聊"部分引用"路径用，一处修复双路径受益。
+            aria-label={t(msg`原消息内容`)}
             className={`w-full resize-none bg-transparent text-[color:var(--text-primary)] outline-none ${
               isDesktop
                 ? "min-h-[164px] text-[15px] leading-7"
-                : "min-h-[152px] rounded-[12px] text-[14px] leading-6"
+                : // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport
+                  // zoom-in，readOnly 也不豁免。用户点 textarea 选文字也算
+                  // focus → 页面突然放大。
+                  "min-h-[152px] rounded-[12px] text-[16px] leading-6"
             }`}
           />
         </div>

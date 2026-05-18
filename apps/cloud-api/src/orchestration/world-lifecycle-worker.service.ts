@@ -590,6 +590,16 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     instance.lastOperationAt = new Date();
     await this.instanceRepo.save(instance);
 
+    // provider.startInstance 可能因端口被占而重新分配端口；优先用它返回的 apiBaseUrl
+    // 把 world.apiBaseUrl 同步到真实落地的 URL，否则 sleep 时清空 + resume 不刷新会
+    // 让 world 进 ready 后却没有 apiBaseUrl，云控制台"进入后台"按钮也禁用。
+    if (resumeResult.apiBaseUrl !== undefined) {
+      world.apiBaseUrl = resumeResult.apiBaseUrl;
+    }
+    if (resumeResult.adminUrl !== undefined) {
+      world.adminUrl = resumeResult.adminUrl;
+    }
+
     if (!provider.summary.capabilities.managedLifecycle) {
       world.apiBaseUrl = world.apiBaseUrl ?? resolveSuggestedWorldApiBaseUrl(world, this.configService);
       world.adminUrl = world.adminUrl ?? resolveSuggestedWorldAdminUrl(world, this.configService);
@@ -638,12 +648,19 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     const instance = await this.instanceRepo.findOne({
       where: { worldId: world.id },
     });
+    let suspendApiBaseUrl: string | null | undefined;
     if (instance) {
       const suspendResult = await provider.stopInstance(instance, world);
       instance.powerState = suspendResult.powerState;
       instance.providerSnapshotId = suspendResult.providerSnapshotId ?? instance.providerSnapshotId;
       instance.lastOperationAt = new Date();
       await this.instanceRepo.save(instance);
+      suspendApiBaseUrl = suspendResult.apiBaseUrl;
+    } else if (provider.summary.deploymentMode === "local-process") {
+      // instance 行被外部清掉但 world 还在的边角态：local-process child 已经没了，
+      // 那个端口随时可能被下一个新 world 拿去；不清 apiBaseUrl 就会出现串台。
+      // 别的 provider（mock/manual-docker）apiBaseUrl 稳定，不动。
+      suspendApiBaseUrl = null;
     }
 
     await this.sleep(500);
@@ -652,6 +669,14 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.healthStatus = "sleeping";
     world.healthMessage = "World is sleeping.";
     world.lastSuspendedAt = new Date();
+    // local-process provider 会在 stopInstance 里显式返回 apiBaseUrl: null —— child
+    // 进程死了，端口可能被下一个 world 复用，apiBaseUrl 必须释放，否则云控制台
+    // "进入后台"会按旧 URL 串台到别人的 child 上。
+    // mock / manual-docker provider 的 apiBaseUrl 是稳定不变的，它们不返回该字段
+    // （undefined），这里就不动。
+    if (suspendApiBaseUrl !== undefined) {
+      world.apiBaseUrl = suspendApiBaseUrl;
+    }
     await this.worldRepo.save(world);
     await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
       world.id,
@@ -909,6 +934,12 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         if (world.failureCode || world.failureMessage) {
           world.failureCode = null;
           world.failureMessage = null;
+          worldDirty = true;
+        }
+        // provider 已经报告 deployment 不在了；apiBaseUrl 也不能继续挂着旧端口。
+        // 否则在云控制台"进入后台"会跟现在占同一个端口的别人 world 串台。
+        if (world.apiBaseUrl) {
+          world.apiBaseUrl = null;
           worldDirty = true;
         }
         reconcileAction = "normalize_sleeping";

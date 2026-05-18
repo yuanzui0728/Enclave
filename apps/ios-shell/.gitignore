@@ -1,3 +1,13 @@
 node_modules
 dist
 ios/App/App/public
+ios/App/build
+ios/App/Pods
+ios/App/Podfile.lock
+ios-release.env.local
+ios-export-options.local.plist
+ios-shell.config.local.json
+build
+*.ipa
+*.xcarchive
+*.dSYM.zip

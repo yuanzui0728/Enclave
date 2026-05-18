@@ -24,7 +24,7 @@ export type WikiContentSnapshot = {
 };
 
 @Entity('character_revisions')
-@Index(['characterId', 'version'])
+@Index(['characterId', 'version'], { unique: true })
 @Index(['status', 'createdAt'])
 @Index(['isPatrolled', 'status'])
 export class CharacterRevisionEntity {

@@ -21,6 +21,7 @@ type RuntimeCallbackPayload = {
   healthMessage?: string | null;
   reportedAt?: string | null;
   lastInteractiveAt?: string | null;
+  lastUserMessageAt?: string | null;
 };
 
 type RuntimeFailurePayload = RuntimeCallbackPayload & {
@@ -62,6 +63,7 @@ export class WorldRuntimeService {
 
     const reportedAt = this.parseOptionalDate(payload.reportedAt, "reportedAt") ?? new Date();
     const lastInteractiveAt = this.parseOptionalDate(payload.lastInteractiveAt, "lastInteractiveAt");
+    const lastUserMessageAt = this.parseOptionalDate(payload.lastUserMessageAt, "lastUserMessageAt");
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });
@@ -69,6 +71,9 @@ export class WorldRuntimeService {
     this.applyWorldMetadata(world, payload);
     if (lastInteractiveAt && this.isNewerTimestamp(world.lastInteractiveAt, lastInteractiveAt)) {
       world.lastInteractiveAt = lastInteractiveAt;
+    }
+    if (lastUserMessageAt && this.isNewerTimestamp(world.lastUserMessageAt, lastUserMessageAt)) {
+      world.lastUserMessageAt = lastUserMessageAt;
     }
 
     const failureMessage =
@@ -112,6 +117,7 @@ export class WorldRuntimeService {
 
     const reportedAt = this.parseOptionalDate(payload.reportedAt, "reportedAt") ?? new Date();
     const lastInteractiveAt = this.parseOptionalDate(payload.lastInteractiveAt, "lastInteractiveAt");
+    const lastUserMessageAt = this.parseOptionalDate(payload.lastUserMessageAt, "lastUserMessageAt");
     const instance =
       signal === "bootstrap" || signal === "heartbeat"
         ? await this.findOrCreateInstance(world)
@@ -123,6 +129,9 @@ export class WorldRuntimeService {
 
     if (lastInteractiveAt && this.isNewerTimestamp(world.lastInteractiveAt, lastInteractiveAt)) {
       world.lastInteractiveAt = lastInteractiveAt;
+    }
+    if (lastUserMessageAt && this.isNewerTimestamp(world.lastUserMessageAt, lastUserMessageAt)) {
+      world.lastUserMessageAt = lastUserMessageAt;
     }
 
     if (signal === "bootstrap") {

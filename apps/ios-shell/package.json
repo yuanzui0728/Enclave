@@ -10,7 +10,12 @@
     "sync": "pnpm run prepare:web && cap sync ios",
     "configure": "node ./scripts/configure-ios-project.mjs",
     "doctor": "node ./scripts/doctor-ios.mjs",
+    "doctor:release": "node ./scripts/run-release-command.mjs doctor",
     "open": "cap open ios",
+    "archive": "node ./scripts/run-release-command.mjs archive",
+    "export": "node ./scripts/run-release-command.mjs export",
+    "ipa": "node ./scripts/run-release-command.mjs ipa",
+    "ipa:release": "node ./scripts/run-release-command.mjs ipa",
     "typecheck": "node -e \"console.log('iOS shell is scaffolded and currently managed by Capacitor tooling.')\"",
     "lint": "node -e \"console.log('iOS shell linting is handled by Capacitor/Xcode tooling when installed.')\""
   },

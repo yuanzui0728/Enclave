@@ -43,8 +43,9 @@ export function ProfileInfoPlaceholderPage() {
           <button
             type="button"
             onClick={() =>
-              navigateBackOrFallback(() =>
-                navigate({ to: "/profile/info", replace: true }),
+              navigateBackOrFallback(
+                () => navigate({ to: "/profile/info", replace: true }),
+                "/profile/info",
               )
             }
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"

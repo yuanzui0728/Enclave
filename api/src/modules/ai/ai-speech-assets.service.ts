@@ -27,9 +27,12 @@ export class AiSpeechAssetsService {
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, fileName), buffer);
 
+    // 存相对 URL 而非快照 PUBLIC_API_BASE_URL：前端 chat-message-list / channels-page
+      // 已经把 audioUrl 过 resolveAppMediaUrl absolutize（含公网 /cloud/world-api 反代 + token）。
+      // 若再写绝对 URL，公网入口端口/协议变更后老缓存里的 URL 会 404。
     return {
       fileName,
-      audioUrl: `${this.resolvePublicApiBaseUrl()}/api/ai/speech/${fileName}`,
+      audioUrl: `/api/ai/speech/${fileName}`,
       mimeType: options.mimeType,
     };
   }
@@ -65,13 +68,6 @@ export class AiSpeechAssetsService {
 
   private resolveLegacyStorageDir() {
     return resolveApiPath('storage', 'ai-speech');
-  }
-
-  private resolvePublicApiBaseUrl() {
-    return (
-      process.env.PUBLIC_API_BASE_URL?.trim() ||
-      `http://localhost:${process.env.PORT ?? '3000'}`
-    );
   }
 }
 

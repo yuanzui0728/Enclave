@@ -1,10 +1,12 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
-import { BadRequestException } from '@nestjs/common';
+import { AppError } from '../../common/app-error.exception';
 import {
   WIKI_CONTENT_SCHEMA_VERSION,
   WIKI_REJECTED_FIELDS,
   assertWikiEditSummary,
+  assertWikiNameNotVisuallyEmpty,
   isHighRiskRecipeChange,
+  isNameVisuallyEmpty,
   pickWikiContent,
   resolveMinorEdit,
   snapshotFromCharacter,
@@ -77,7 +79,7 @@ describe('isHighRiskRecipeChange', () => {
 });
 
 describe('pickWikiContent', () => {
-  it('rejects D/E class fields with BadRequestException', () => {
+  it('rejects D/E class fields with AppError', () => {
     for (const field of WIKI_REJECTED_FIELDS) {
       expect(() =>
         pickWikiContent({
@@ -89,7 +91,7 @@ describe('pickWikiContent', () => {
           expertDomains: [],
           [field]: 'leak',
         }),
-      ).toThrow(BadRequestException);
+      ).toThrow(AppError);
     }
   });
 
@@ -119,7 +121,7 @@ describe('pickWikiContent', () => {
         relationship: 'r',
         relationshipType: 'rt',
         expertDomains: [],
-        isOnline: undefined,
+        modelRoutingMode: undefined,
       }),
     ).not.toThrow();
   });
@@ -155,7 +157,7 @@ describe('assertWikiEditSummary', () => {
         revisionKind: 'recipe',
         summary: '',
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(AppError);
     expect(() =>
       assertWikiEditSummary({
         operation: 'create',
@@ -163,7 +165,7 @@ describe('assertWikiEditSummary', () => {
         revisionKind: 'recipe',
         summary: '太短',
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(AppError);
     expect(() =>
       assertWikiEditSummary({
         operation: 'create',
@@ -182,7 +184,7 @@ describe('assertWikiEditSummary', () => {
         revisionKind: 'recipe',
         summary: '',
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(AppError);
   });
 
   it('requires ≥10 chars for lifecycle ops', () => {
@@ -193,7 +195,7 @@ describe('assertWikiEditSummary', () => {
         revisionKind: 'lifecycle',
         summary: '想删',
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(AppError);
   });
 
   it('does not require summary for low-risk content edits', () => {
@@ -215,7 +217,7 @@ describe('assertWikiEditSummary', () => {
         revisionKind: 'recipe',
         summary: '          ',
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(AppError);
   });
 });
 
@@ -249,6 +251,55 @@ describe('snapshotFromRecipe', () => {
     const snap = snapshotFromRecipe(recipe);
     expect(snap.schemaVersion).toBe(WIKI_CONTENT_SCHEMA_VERSION);
     expect(snap.name).toBe('R');
+  });
+});
+
+// 2026-05-15 走查发现：createPage / submit / submitRecipeEdit 三条路径都漏 ZWS-only
+// 名校验，导致 curl 可起一条「未命名角色」占位词条或把已发布角色 name 改成空白行。
+// 私有角色那侧 2026-05-15 v2/v3 走查已修，这里把规则抽到 wiki.types.ts 并由三个写入
+// 路径统一调用，锁一组 spec 防回归。
+describe('isNameVisuallyEmpty', () => {
+  it('returns true for empty / whitespace / ZWS-only inputs', () => {
+    expect(isNameVisuallyEmpty('')).toBe(true);
+    expect(isNameVisuallyEmpty('   ')).toBe(true);
+    expect(isNameVisuallyEmpty('\t \n')).toBe(true);
+    // U+200B / U+200C / U+200D / U+FEFF / U+2060
+    expect(isNameVisuallyEmpty('​‌‍')).toBe(true);
+    expect(isNameVisuallyEmpty('﻿⁠')).toBe(true);
+    // Consecutive ZWS chars with no whitespace in between still strip to empty.
+    expect(isNameVisuallyEmpty('​​‌‌‍‍')).toBe(true);
+  });
+
+  it('returns false when any visible char remains', () => {
+    expect(isNameVisuallyEmpty('a')).toBe(false);
+    expect(isNameVisuallyEmpty(' A ')).toBe(false);
+    // ZWS jammed into a real name should still count as a real name.
+    expect(isNameVisuallyEmpty('A​B')).toBe(false);
+    expect(isNameVisuallyEmpty('阿巡')).toBe(false);
+    expect(isNameVisuallyEmpty('🌙')).toBe(false);
+  });
+});
+
+describe('assertWikiNameNotVisuallyEmpty', () => {
+  it('throws WIKI_VALIDATION_FAILED with "name 不能为空" for visually-empty inputs', () => {
+    for (const value of ['', '  ', '​‌‍']) {
+      let caught: unknown;
+      try {
+        assertWikiNameNotVisuallyEmpty(value);
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).toBeInstanceOf(AppError);
+      const body = (caught as AppError).getResponse() as Record<string, unknown>;
+      expect(body.code).toBe('WIKI_VALIDATION_FAILED');
+      expect(body.legacyMessage).toBe('name 不能为空');
+    }
+  });
+
+  it('does not throw for any visibly non-empty input', () => {
+    expect(() => assertWikiNameNotVisuallyEmpty('阿巡')).not.toThrow();
+    expect(() => assertWikiNameNotVisuallyEmpty(' A ')).not.toThrow();
+    expect(() => assertWikiNameNotVisuallyEmpty('A​B')).not.toThrow();
   });
 });
 // i18n-ignore-end

@@ -31,8 +31,9 @@ export function ProfileSettingsLanguagePage() {
   }
 
   const goBack = () =>
-    navigateBackOrFallback(() =>
-      navigate({ to: "/profile/settings", replace: true }),
+    navigateBackOrFallback(
+      () => navigate({ to: "/profile/settings", replace: true }),
+      "/profile/settings",
     );
 
   return (
@@ -54,6 +55,11 @@ export function ProfileSettingsLanguagePage() {
       />
 
       <div
+        // 跟 profile-settings-page 桌面端 tab/legal radiogroup（line 449/621）
+        // 对齐：移动端这条 list 也是单选语义，加 role=radiogroup + aria-label，
+        // SR/键盘用户才能感知到「这是单选」而不是一组独立 button。
+        role="radiogroup"
+        aria-label={t(msg`界面语言`)}
         data-i18n-skip="true"
         className={cn(
           "mt-1 divide-y divide-[color:var(--border-faint)] border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -66,6 +72,8 @@ export function ProfileSettingsLanguagePage() {
             <button
               key={locale}
               type="button"
+              role="radio"
+              aria-checked={selected}
               onClick={() => setLocale(locale)}
               className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-black/[0.04]"
             >
@@ -84,7 +92,11 @@ export function ProfileSettingsLanguagePage() {
         <div className="px-4 pt-2 text-[11px] leading-5 text-[color:var(--text-muted)]">
           <Trans>正在切换语言...</Trans>
         </div>
-      ) : null}
+      ) : (
+        <div className="px-4 pt-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          {t(msg`语言偏好保存在当前设备并立即生效，同时决定好友回复使用的语言。`)}
+        </div>
+      )}
     </AppPage>
   );
 }

@@ -17,7 +17,6 @@ import {
   Card,
   ErrorBlock,
   LoadingBlock,
-  MetricCard,
   StatusPill,
 } from "@yinjie/ui";
 import {
@@ -31,9 +30,9 @@ import {
   AdminPageHero,
   AdminRecordCard,
   AdminSectionHeader,
-  AdminSectionNav,
   AdminSelectableCard,
   AdminSoftBox,
+  AdminSubTabs,
   AdminTabs,
   AdminTextArea,
   AdminTextField,
@@ -441,11 +440,6 @@ export function ActionRuntimePage() {
   const errorConnectors = sortedConnectors.filter(
     (connector) => connector.status === "error",
   );
-  const disabledConnectors = sortedConnectors.filter(
-    (connector) => connector.status === "disabled",
-  );
-  const latestSucceededRun =
-    completedRuns.find((run) => run.status === "succeeded") ?? null;
   const latestRun = rawRecentRuns[0] ?? null;
   const evidenceTabs: Array<{ key: EvidenceTab; label: string }> = [
     { key: "all", label: t(msg`全部运行 (${rawRecentRuns.length})`) },
@@ -677,12 +671,6 @@ export function ActionRuntimePage() {
         eyebrow="Action Runtime"
         title={t(msg`行动助理真实世界动作工作台`)}
         description={t(msg`围绕运营人员的查看路径重排：先看当前动作链是否健康，再决定是改门控、跑预演、校连接器，还是回看执行证据。`)}
-        badges={[
-          t(msg`承接角色：${
-            overview.operatorCharacter?.name ??
-            (overview.rules.policy.entryCharacterSourceKey || t(msg`未限制角色`))
-          }`),
-        ]}
         metrics={[
           { label: t(msg`总动作数`), value: overview.counts.totalRuns },
           { label: t(msg`待处理动作`), value: attentionRuns.length },
@@ -719,43 +707,43 @@ export function ActionRuntimePage() {
         }
       />
 
-      <AdminCallout
-        tone={operatorSummary.tone}
-        title={operatorSummary.title}
-        description={
-          <div className="space-y-2">
-            {operatorSummary.notes.map((note) => (
-              <AdminSoftBox key={note}>{note}</AdminSoftBox>
-            ))}
-          </div>
-        }
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setWorkspaceTab("evidence");
-                setEvidenceTab("attention");
-              }}
-            >
-              {t(msg`查看待处理动作`)}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (errorConnectors[0]) {
-                  setSelectedConnectorId(errorConnectors[0].id);
-                  setWorkspaceTab("connectors");
-                  return;
-                }
-                setWorkspaceTab("preview");
-              }}
-            >
-              {errorConnectors.length ? t(msg`检查错误连接器`) : t(msg`去消息预演`)}
-            </Button>
-          </>
-        }
-      />
+      {operatorSummary.tone === "warning" ? (
+        <AdminCallout
+          tone={operatorSummary.tone}
+          title={operatorSummary.title}
+          description={
+            <div className="space-y-2">
+              {operatorSummary.notes.map((note) => (
+                <AdminSoftBox key={note}>{note}</AdminSoftBox>
+              ))}
+            </div>
+          }
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setWorkspaceTab("evidence");
+                  setEvidenceTab("attention");
+                }}
+              >
+                {t(msg`查看待处理动作`)}
+              </Button>
+              {errorConnectors.length ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSelectedConnectorId(errorConnectors[0].id);
+                    setWorkspaceTab("connectors");
+                  }}
+                >
+                  {t(msg`检查错误连接器`)}
+                </Button>
+              ) : null}
+            </>
+          }
+        />
+      ) : null}
 
       {saveRulesMutation.isSuccess ? (
         <AdminActionFeedback
@@ -778,233 +766,17 @@ export function ActionRuntimePage() {
         <ErrorBlock message={retryRunMutation.error.message} />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[0.34fr_0.66fr]">
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <AdminSectionNav
-            title={t(msg`工作区`)}
-            items={[
-              {
-                label: t(msg`运营总览`),
-                detail:
-                  t(msg`先确认动作入口、动作角色、待处理动作和连接器是否健康。`),
-                onClick: () => setWorkspaceTab("overview"),
-              },
-              {
-                label: t(msg`规则编辑`),
-                detail: t(msg`拆开看门控策略和提示模板，减少长页面滚动。`),
-                onClick: () => setWorkspaceTab("rules"),
-              },
-              {
-                label: t(msg`消息预演`),
-                detail: t(msg`快速验证一条用户话术是否会命中真实世界动作链。`),
-                onClick: () => setWorkspaceTab("preview"),
-              },
-              {
-                label: t(msg`连接器编排`),
-                detail: t(msg`按选中连接器查看配置、自检、凭证和实体映射。`),
-                onClick: () => setWorkspaceTab("connectors"),
-              },
-              {
-                label: t(msg`执行证据`),
-                detail: t(msg`按待处理、已完成两种视角回看动作运行与完整 trace。`),
-                onClick: () => setWorkspaceTab("evidence"),
-              },
-            ]}
-          />
-
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader title={t(msg`当前脉冲`)} />
-            <div className="mt-4 grid gap-3">
-              <AdminValueCard
-                label={t(msg`动作角色`)}
-                value={
-                  overview.operatorCharacter ? (
-                    <StatusPill tone="healthy">
-                      {overview.operatorCharacter.name}
-                    </StatusPill>
-                  ) : overview.rules.policy.entryCharacterSourceKey ? (
-                    <StatusPill tone="warning">
-                      {overview.rules.policy.entryCharacterSourceKey}
-                    </StatusPill>
-                  ) : (
-                    <StatusPill tone="muted">{t(msg`未限制角色`)}</StatusPill>
-                  )
-                }
-              />
-              <AdminValueCard
-                label={t(msg`动作入口`)}
-                value={
-                  <StatusPill
-                    tone={overview.rules.policy.enabled ? "healthy" : "warning"}
-                  >
-                    {overview.rules.policy.enabled ? t(msg`已启用`) : t(msg`已关闭`)}
-                  </StatusPill>
-                }
-              />
-              <AdminValueCard
-                label="Planner" // i18n-ignore-line: admin technical label
-                value={translatePlannerMode(overview.rules.plannerMode)}
-              />
-              <AdminValueCard
-                label={t(msg`待处理动作`)}
-                value={t(msg`${attentionRuns.length} 条`)}
-              />
-              <AdminValueCard
-                label={t(msg`错误连接器`)}
-                value={t(msg`${errorConnectors.length} 个`)}
-              />
-              <AdminValueCard
-                label={t(msg`最近成功`)}
-                value={
-                  latestSucceededRun
-                    ? formatDateTime(latestSucceededRun.updatedAt)
-                    : t(msg`暂无`)
-                }
-              />
-            </div>
-          </Card>
-
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader title={t(msg`快捷操作`)} />
-            <div className="mt-4 grid gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setWorkspaceTab("evidence");
-                  setEvidenceTab("attention");
-                }}
-              >
-                {t(msg`处理待运营动作`)}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setWorkspaceTab("connectors");
-                  if (errorConnectors[0]) {
-                    setSelectedConnectorId(errorConnectors[0].id);
-                  }
-                }}
-              >
-                {t(msg`检查连接器`)}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setPreviewMessage(PREVIEW_EXAMPLES[0].message);
-                  setWorkspaceTab("preview");
-                }}
-              >
-                {t(msg`预填智能家居示例`)}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setWorkspaceTab("rules");
-                  setRulesTab("policy");
-                }}
-              >
-                {t(msg`编辑动作规则`)}
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader
-              title={t(msg`当前选中连接器`)}
-              actions={
-                selectedConnector ? (
-                  <StatusPill
-                    tone={resolveConnectorTone(selectedConnector.status)}
-                  >
-                    {translateConnectorStatus(selectedConnector.status)}
-                  </StatusPill>
-                ) : null
-              }
-            />
-            <div className="mt-4">
-              {selectedConnector ? (
-                <div className="grid gap-3">
-                  <AdminValueCard
-                    label={t(msg`名称`)}
-                    value={selectedConnector.displayName}
-                  />
-                  <AdminValueCard
-                    label={t(msg`类型`)}
-                    value={translateProviderType(
-                      selectedConnector.providerType,
-                    )}
-                  />
-                  <AdminValueCard
-                    label={t(msg`能力数`)}
-                    value={t(msg`${selectedConnector.capabilities.length} 项`)}
-                  />
-                  <AdminValueCard
-                    label={t(msg`最近自检`)}
-                    value={formatDateTime(selectedConnector.lastHealthCheckAt)}
-                  />
-                </div>
-              ) : (
-                <AdminEmptyState
-                  title={t(msg`还没有连接器`)}
-                  description={t(msg`等 Action Runtime 初始化完连接器后，这里会显示当前选中的一项。`)}
-                />
-              )}
-            </div>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
+      <div className="space-y-6">
+        <div className="sticky top-0 z-10 -mx-2 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-2 py-2 backdrop-blur">
           <AdminTabs
             tabs={WORKSPACE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
             activeKey={workspaceTab}
             onChange={(key) => setWorkspaceTab(key as WorkspaceTab)}
           />
+        </div>
 
           {workspaceTab === "overview" ? (
             <div className="space-y-6">
-              <Card className="bg-[color:var(--surface-console)]">
-                <AdminSectionHeader
-                  title={t(msg`动作链状态概览`)}
-                  actions={
-                    overview.operatorCharacter ? (
-                      <StatusPill tone="healthy">
-                        {t(msg`动作角色：${overview.operatorCharacter.name}`)}
-                      </StatusPill>
-                    ) : overview.rules.policy.entryCharacterSourceKey ? (
-                      <StatusPill tone="warning">
-                        {t(msg`缺少 ${overview.rules.policy.entryCharacterSourceKey}`)}
-                      </StatusPill>
-                    ) : (
-                      <StatusPill tone="muted">{t(msg`未限制入口角色`)}</StatusPill>
-                    )
-                  }
-                />
-                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <MetricCard
-                    label="Planner" // i18n-ignore-line: admin technical label
-                    value={translatePlannerMode(overview.rules.plannerMode)}
-                  />
-                  <MetricCard
-                    label={t(msg`自动执行风险等级`)}
-                    value={
-                      overview.rules.policy.autoExecuteRiskLevels.length
-                        ? overview.rules.policy.autoExecuteRiskLevels
-                            .map(translateRiskLevel)
-                            .join(" / ")
-                        : t(msg`无`)
-                    }
-                  />
-                  <MetricCard
-                    label={t(msg`可信自动执行操作`)}
-                    value={overview.rules.policy.trustedOperationKeys.length}
-                  />
-                  <MetricCard
-                    label={t(msg`已停用连接器`)}
-                    value={disabledConnectors.length}
-                  />
-                </div>
-              </Card>
-
               <div className="grid gap-6 xl:grid-cols-2">
                 <AdminInfoRows
                   title={t(msg`当前门控`)}
@@ -1178,11 +950,27 @@ export function ActionRuntimePage() {
               </div>
 
               <Card className="bg-[color:var(--surface-console)]">
-                <AdminSectionHeader title={t(msg`最近完成动作`)} />
+                <AdminSectionHeader
+                  title={t(msg`最近成功动作`)}
+                  actions={
+                    completedRuns.length ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setWorkspaceTab("evidence");
+                          setEvidenceTab("completed");
+                        }}
+                      >
+                        {t(msg`查看全部`)}
+                      </Button>
+                    ) : null
+                  }
+                />
                 <div className="mt-4 space-y-3">
                   {completedRuns.length ? (
                     completedRuns
-                      .slice(0, 4)
+                      .slice(0, 3)
                       .map((run) => (
                         <AdminRecordCard
                           key={run.id}
@@ -1215,24 +1003,18 @@ export function ActionRuntimePage() {
                 description={t(msg`门控策略决定哪些消息会进入动作链，提示模板决定进入动作链后的对话方式。先改门控，再调模板，能更快定位问题。`)}
               />
 
-              <Card className="bg-[color:var(--surface-console)]">
-                <AdminSectionHeader
-                  title={t(msg`规则编辑`)}
-                  actions={
-                    <AdminDraftStatusPill
-                      ready={Boolean(rulesDraft)}
-                      dirty={isRulesDirty}
-                    />
-                  }
+              <div className="flex items-center justify-between gap-3">
+                <AdminTabs
+                  tabs={RULE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
+                  activeKey={rulesTab}
+                  onChange={(key) => setRulesTab(key as RulesTab)}
+                  className="flex-1"
                 />
-                <div className="mt-4">
-                  <AdminTabs
-                    tabs={RULE_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
-                    activeKey={rulesTab}
-                    onChange={(key) => setRulesTab(key as RulesTab)}
-                  />
-                </div>
-              </Card>
+                <AdminDraftStatusPill
+                  ready={Boolean(rulesDraft)}
+                  dirty={isRulesDirty}
+                />
+              </div>
 
               {rulesTab === "policy" ? (
                 <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
@@ -1327,7 +1109,7 @@ export function ActionRuntimePage() {
 
                     <Card className="bg-[color:var(--surface-console)]">
                       <AdminSectionHeader title={t(msg`自动执行风险等级`)} />
-                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
                         {RISK_LEVEL_OPTIONS.map((option) => {
                           const active =
                             rulesDraft.policy.autoExecuteRiskLevels.includes(
@@ -1476,6 +1258,18 @@ export function ActionRuntimePage() {
                         {t(example.label)}
                       </Button>
                     ))}
+                    {previewMessage ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setPreviewMessage("");
+                          previewMutation.reset();
+                        }}
+                      >
+                        {t(msg`清空`)}
+                      </Button>
+                    ) : null}
                   </div>
                   <AdminTextArea
                     label={t(msg`候选消息`)}
@@ -1665,105 +1459,105 @@ export function ActionRuntimePage() {
                       />
 
                       <div className="mt-4 space-y-4">
-                        <div className="flex flex-wrap gap-3">
-                          <Button
-                            variant="secondary"
-                            disabled={
-                              selectedConnectorSaving || !selectedConnectorDirty
-                            }
-                            onClick={() =>
-                              handleSaveConnector(selectedConnector)
-                            }
-                          >
-                            {selectedConnectorSaving ? t(msg`保存中...`) : t(msg`保存配置`)}
-                          </Button>
-                          {selectedConnector.providerType === "official_api" ||
-                          selectedConnector.providerType === "http_bridge" ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap gap-2">
                             <Button
-                              variant="secondary"
+                              variant="primary"
                               disabled={
-                                selectedConnectorSaving ||
-                                !selectedConnector.credentialConfigured
+                                selectedConnectorSaving || !selectedConnectorDirty
                               }
                               onClick={() =>
-                                handleClearConnectorCredential(
-                                  selectedConnector,
-                                )
+                                handleSaveConnector(selectedConnector)
                               }
                             >
-                              {t(msg`清除凭证`)}
+                              {selectedConnectorSaving ? t(msg`保存中...`) : t(msg`保存配置`)}
                             </Button>
-                          ) : null}
-                          <Button
-                            variant="secondary"
-                            disabled={Boolean(selectedConnectorTesting)}
-                            onClick={() =>
-                              testConnectorMutation.mutate({
-                                id: selectedConnector.id,
-                                sampleMessage:
-                                  selectedConnectorDraft.testMessage,
-                              })
-                            }
-                          >
-                            {selectedConnectorTesting
-                              ? t(msg`自检中...`)
-                              : t(msg`测试连接器`)}
-                          </Button>
-                          {selectedConnector.connectorKey ===
-                          "official-home-assistant-smart-home" ? (
                             <Button
                               variant="secondary"
-                              disabled={Boolean(selectedConnectorDiscovering)}
+                              disabled={Boolean(selectedConnectorTesting)}
                               onClick={() =>
-                                void handleDiscoverConnector(selectedConnector)
+                                testConnectorMutation.mutate({
+                                  id: selectedConnector.id,
+                                  sampleMessage:
+                                    selectedConnectorDraft.testMessage,
+                                })
                               }
                             >
-                              {selectedConnectorDiscovering
-                                ? t(msg`发现中...`)
-                                : t(msg`发现实体`)}
+                              {selectedConnectorTesting
+                                ? t(msg`自检中...`)
+                                : t(msg`测试连接器`)}
                             </Button>
-                          ) : null}
-                          <Button
-                            variant="secondary"
-                            disabled={
-                              Boolean(selectedConnectorToggling) ||
-                              selectedConnector.status === "ready"
-                            }
-                            onClick={() =>
-                              toggleConnectorStatusMutation.mutate({
-                                id: selectedConnector.id,
-                                status: "ready",
-                              })
-                            }
-                          >
-                            {selectedConnectorToggling &&
-                            toggleConnectorStatusMutation.variables?.status ===
-                              "ready"
-                              ? t(msg`启用中...`)
-                              : t(msg`启用`)}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            disabled={
-                              Boolean(selectedConnectorToggling) ||
-                              selectedConnector.status === "disabled"
-                            }
-                            onClick={() =>
-                              toggleConnectorStatusMutation.mutate({
-                                id: selectedConnector.id,
-                                status: "disabled",
-                              })
-                            }
-                          >
-                            {selectedConnectorToggling &&
-                            toggleConnectorStatusMutation.variables?.status ===
-                              "disabled"
-                              ? t(msg`停用中...`)
-                              : t(msg`停用`)}
-                          </Button>
+                            {selectedConnector.connectorKey ===
+                            "official-home-assistant-smart-home" ? (
+                              <Button
+                                variant="secondary"
+                                disabled={Boolean(selectedConnectorDiscovering)}
+                                onClick={() =>
+                                  void handleDiscoverConnector(selectedConnector)
+                                }
+                              >
+                                {selectedConnectorDiscovering
+                                  ? t(msg`发现中...`)
+                                  : t(msg`发现实体`)}
+                              </Button>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedConnector.status !== "ready" ? (
+                              <Button
+                                variant="secondary"
+                                disabled={Boolean(selectedConnectorToggling)}
+                                onClick={() =>
+                                  toggleConnectorStatusMutation.mutate({
+                                    id: selectedConnector.id,
+                                    status: "ready",
+                                  })
+                                }
+                              >
+                                {selectedConnectorToggling &&
+                                toggleConnectorStatusMutation.variables?.status ===
+                                  "ready"
+                                  ? t(msg`启用中...`)
+                                  : t(msg`启用`)}
+                              </Button>
+                            ) : null}
+                            {selectedConnector.status !== "disabled" ? (
+                              <Button
+                                variant="secondary"
+                                disabled={Boolean(selectedConnectorToggling)}
+                                onClick={() =>
+                                  toggleConnectorStatusMutation.mutate({
+                                    id: selectedConnector.id,
+                                    status: "disabled",
+                                  })
+                                }
+                              >
+                                {selectedConnectorToggling &&
+                                toggleConnectorStatusMutation.variables?.status ===
+                                  "disabled"
+                                  ? t(msg`停用中...`)
+                                  : t(msg`停用`)}
+                              </Button>
+                            ) : null}
+                            {(selectedConnector.providerType === "official_api" ||
+                              selectedConnector.providerType === "http_bridge") &&
+                            selectedConnector.credentialConfigured ? (
+                              <Button
+                                variant="secondary"
+                                disabled={Boolean(selectedConnectorSaving)}
+                                onClick={() =>
+                                  handleClearConnectorCredential(
+                                    selectedConnector,
+                                  )
+                                }
+                              >
+                                {t(msg`清除凭证`)}
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
 
-                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid gap-3 md:grid-cols-2">
                           <AdminValueCard
                             label={t(msg`类型`)}
                             value={translateProviderType(
@@ -2017,23 +1811,18 @@ export function ActionRuntimePage() {
                                             {t(msg`写入映射`)}
                                           </Button>
                                         </div>
-                                        <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                          <MetricCard
-                                            label={t(msg`推荐房间`)}
-                                            value={
-                                              item.suggestedRoom || t(msg`未识别`)
-                                            }
-                                          />
-                                          <MetricCard
-                                            label={t(msg`推荐设备`)}
-                                            value={
-                                              item.suggestedDevice || t(msg`设备`)
-                                            }
-                                          />
-                                          <MetricCard
-                                            label={t(msg`映射键`)}
-                                            value={item.key}
-                                          />
+                                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+                                          <span>
+                                            {t(msg`推荐房间`)}：
+                                            {item.suggestedRoom || t(msg`未识别`)}
+                                          </span>
+                                          <span>
+                                            {t(msg`推荐设备`)}：
+                                            {item.suggestedDevice || t(msg`设备`)}
+                                          </span>
+                                          <span>
+                                            {t(msg`映射键`)}：{item.key}
+                                          </span>
                                         </div>
                                         {/* i18n-ignore-start: nested template literals inside t(msg`...`) */}
                                         <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
@@ -2239,16 +2028,11 @@ export function ActionRuntimePage() {
                 }
               />
 
-              <Card className="bg-[color:var(--surface-console)]">
-                <AdminSectionHeader title={t(msg`运行筛选`)} />
-                <div className="mt-4">
-                  <AdminTabs
-                    tabs={evidenceTabs}
-                    activeKey={evidenceTab}
-                    onChange={(key) => setEvidenceTab(key as EvidenceTab)}
-                  />
-                </div>
-              </Card>
+              <AdminTabs
+                tabs={evidenceTabs}
+                activeKey={evidenceTab}
+                onChange={(key) => setEvidenceTab(key as EvidenceTab)}
+              />
 
               <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
                 <Card className="bg-[color:var(--surface-console)]">
@@ -2288,7 +2072,9 @@ export function ActionRuntimePage() {
                   <AdminSectionHeader
                     title={t(msg`动作详情`)}
                     actions={
-                      selectedRunId ? (
+                      selectedRunId &&
+                      runDetailQuery.data &&
+                      isRetryableRunStatus(runDetailQuery.data.status) ? (
                         <Button
                           variant="secondary"
                           disabled={retryRunMutation.isPending}
@@ -2325,7 +2111,6 @@ export function ActionRuntimePage() {
               </div>
             </div>
           ) : null}
-        </div>
       </div>
     </div>
   );
@@ -2342,9 +2127,12 @@ function LabeledCodeBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
+type PayloadTabKey = "plan" | "execution" | "result" | "trace";
+
 function ActionRunDetailPanel({ detail }: { detail: ActionRunDetail }) {
   const t = translateRuntimeMessage;
   const hint = buildActionRunHint(detail);
+  const [payloadTab, setPayloadTab] = useState<PayloadTabKey>("result");
 
   return (
     <div className="space-y-4">
@@ -2354,7 +2142,7 @@ function ActionRunDetailPanel({ detail }: { detail: ActionRunDetail }) {
         description={hint.description}
       />
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2">
         <AdminValueCard
           label={t(msg`状态`)}
           value={
@@ -2407,38 +2195,82 @@ function ActionRunDetailPanel({ detail }: { detail: ActionRunDetail }) {
         </AdminMiniPanel>
       </div>
 
-      {/* i18n-ignore-start: admin technical payload labels */}
-      <LabeledCodeBlock
-        label="Plan Payload"
-        value={prettyJson(detail.planPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Policy Decision"
-        value={prettyJson(detail.policyDecisionPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Confirmation Payload"
-        value={prettyJson(detail.confirmationPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Execution Payload"
-        value={prettyJson(detail.executionPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Result Payload"
-        value={prettyJson(detail.resultPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Error Payload"
-        value={prettyJson(detail.errorPayload ?? {})}
-      />
-      <LabeledCodeBlock
-        label="Trace Payload"
-        value={prettyJson(detail.tracePayload ?? {})}
-      />
-      {/* i18n-ignore-end */}
+      <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            {t(msg`Payload 详情`)}
+          </div>
+          <AdminSubTabs
+            tabs={[
+              { key: "result", label: t(msg`结果`) },
+              { key: "execution", label: t(msg`执行`) },
+              { key: "plan", label: "Plan" }, // i18n-ignore-line: admin technical label
+              { key: "trace", label: "Trace" }, // i18n-ignore-line: admin technical label
+            ]}
+            activeKey={payloadTab}
+            onChange={(key) => setPayloadTab(key as PayloadTabKey)}
+          />
+        </div>
+        <div className="mt-4 space-y-4">
+          {/* i18n-ignore-start: admin technical payload labels */}
+          {payloadTab === "result" ? (
+            <>
+              <LabeledCodeBlock
+                label="Result Payload"
+                value={prettyJson(detail.resultPayload ?? {})}
+              />
+              <LabeledCodeBlock
+                label="Error Payload"
+                value={prettyJson(detail.errorPayload ?? {})}
+              />
+            </>
+          ) : null}
+          {payloadTab === "execution" ? (
+            <>
+              <LabeledCodeBlock
+                label="Confirmation Payload"
+                value={prettyJson(detail.confirmationPayload ?? {})}
+              />
+              <LabeledCodeBlock
+                label="Execution Payload"
+                value={prettyJson(detail.executionPayload ?? {})}
+              />
+            </>
+          ) : null}
+          {payloadTab === "plan" ? (
+            <>
+              <LabeledCodeBlock
+                label="Plan Payload"
+                value={prettyJson(detail.planPayload ?? {})}
+              />
+              <LabeledCodeBlock
+                label="Policy Decision"
+                value={prettyJson(detail.policyDecisionPayload ?? {})}
+              />
+            </>
+          ) : null}
+          {payloadTab === "trace" ? (
+            <LabeledCodeBlock
+              label="Trace Payload"
+              value={prettyJson(detail.tracePayload ?? {})}
+            />
+          ) : null}
+          {/* i18n-ignore-end */}
+        </div>
+      </div>
     </div>
   );
+}
+
+const RETRYABLE_RUN_STATUSES = new Set<ActionRunDetail["status"]>([
+  "awaiting_slots",
+  "awaiting_confirmation",
+  "failed",
+  "cancelled",
+]);
+
+function isRetryableRunStatus(status: ActionRunDetail["status"]): boolean {
+  return RETRYABLE_RUN_STATUSES.has(status);
 }
 
 function buildActionOperatorSummary(

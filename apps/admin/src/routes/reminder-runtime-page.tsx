@@ -33,7 +33,6 @@ import {
   AdminMetaText,
   AdminMiniPanel,
   AdminPageHero,
-  AdminPillSelectField,
   AdminPillTextField,
   AdminSectionHeader,
   AdminSoftBox,
@@ -435,49 +434,6 @@ function buildTaskFilterCount(
   return overview.stats.activeTaskCount;
 }
 
-function buildOperationsSummary(overview: ReminderRuntimeOverview) {
-  const t = translateRuntimeMessage;
-  const { stats, recentMessages, recentMoments } = overview;
-
-  if (stats.overdueTaskCount > 0) {
-    return {
-      tone: "warning" as const,
-      title: t(msg`优先处理 ${stats.overdueTaskCount} 条逾期提醒`),
-      description: t(msg`当前仍有 ${stats.overdueTaskCount} 条任务已超过计划时间，其中 ${stats.hardTaskCount} 条是硬提醒。建议先切到"优先处理"队列逐条判断是完成、顺延还是继续观察。`),
-    };
-  }
-
-  if (stats.dueSoonTaskCount > 0) {
-    return {
-      tone: "info" as const,
-      title: t(msg`未来 6 小时内有 ${stats.dueSoonTaskCount} 条提醒会到点`),
-      description: t(msg`当前没有逾期项，但下一波提醒已经接近触发窗口，适合提前检查是否存在扎堆触发或需要顺延的事项。`),
-    };
-  }
-
-  if (stats.activeTaskCount === 0) {
-    return {
-      tone: "muted" as const,
-      title: t(msg`当前没有活跃提醒`),
-      description: t(msg`值班侧重点可以转向最近出站内容和规则窗口，确认提醒角色近期是否仍有需要新增的盯办事项。`),
-    };
-  }
-
-  if (!recentMessages.length && !recentMoments.length) {
-    return {
-      tone: "info" as const,
-      title: t(msg`提醒队列存在，但今天还没有对外动作`),
-      description: t(msg`可以先看值班工作台里的最近触发时间，必要时执行一次"到点提醒"验证链路是否按预期出站。`),
-    };
-  }
-
-  return {
-    tone: "success" as const,
-    title: t(msg`提醒链路运行稳定`),
-    description: t(msg`当前共有 ${stats.activeTaskCount} 条活跃提醒，今天已触发 ${stats.deliveredTodayCount} 次、完成 ${stats.completedTodayCount} 次，可继续回看最近输出内容和完成节奏。`),
-  };
-}
-
 function matchesTaskFilter(
   task: ReminderTaskRecord,
   filter: ReminderTaskFilter,
@@ -605,11 +561,22 @@ function TaskQueueListItem({
   selected,
   now,
   onSelect,
+  onComplete,
+  onSnoozeMinutes,
+  onCancel,
+  activeTaskAction,
 }: {
   task: ReminderTaskRecord;
   selected: boolean;
   now: Date;
   onSelect: () => void;
+  onComplete: () => void;
+  onSnoozeMinutes: () => void;
+  onCancel: () => void;
+  activeTaskAction: {
+    taskId: string | null;
+    action: ReminderTaskAction | null;
+  };
 }) {
   const t = translateRuntimeMessage;
   const queue = resolveTaskQueue(task, now);
@@ -619,13 +586,28 @@ function TaskQueueListItem({
       : task.lastDeliveredAt != null
         ? t(msg`最近触发 ${formatDateTime(task.lastDeliveredAt)}`)
         : t(msg`还没有触发或完成记录`);
+  const actionBusy = Boolean(activeTaskAction.taskId);
+  const thisRowAction =
+    activeTaskAction.taskId === task.id ? activeTaskAction.action : null;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) {
+          // 焦点在内嵌 <button> 上时不要把 Enter/Space 当作"选中该行"，
+          // 否则点完成/顺延/删除的同时还会顺手把行选中并刷新右侧详情面板。
+          return;
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "w-full rounded-[20px] border p-4 text-left transition",
+        "w-full cursor-pointer rounded-[20px] border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300",
         selected
           ? "border-amber-300 bg-amber-50/70 shadow-[var(--shadow-soft)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-subtle)] hover:bg-white/95",
@@ -653,7 +635,39 @@ function TaskQueueListItem({
       <div className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-white/70 px-3 py-2 text-xs text-[color:var(--text-secondary)]">
         {latestAction}
       </div>
-    </button>
+      <div
+        className="mt-3 flex flex-wrap gap-2"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={actionBusy}
+          onClick={onComplete}
+        >
+          {thisRowAction === "complete" ? t(msg`处理中...`) : t(msg`完成`)}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={actionBusy}
+          onClick={onSnoozeMinutes}
+        >
+          {thisRowAction === "snooze_30m"
+            ? t(msg`处理中...`)
+            : t(msg`顺延 30 分钟`)}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+          disabled={actionBusy}
+          onClick={onCancel}
+        >
+          {thisRowAction === "cancel" ? t(msg`处理中...`) : t(msg`删除`)}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -2089,7 +2103,6 @@ export function ReminderRuntimePage() {
 
   const { stats } = overviewQuery.data;
   const runningJob = runMutation.variables ?? null;
-  const operationsSummary = buildOperationsSummary(overviewQuery.data);
   const taskGroups = [
     {
       key: "overdue" as const,
@@ -2126,6 +2139,7 @@ export function ReminderRuntimePage() {
         description={t(msg`把逾期、即将到点、最近触发与最近输出收敛到同一页，方便运营先判断优先级，再逐条完成、顺延或删除提醒。`)}
         badges={[t(msg`承接角色：小盯`)]}
         metrics={metrics}
+        metricsClassName="md:grid-cols-2"
         actions={
           <>
             <AdminDraftStatusPill ready dirty={dirty} />
@@ -2186,290 +2200,210 @@ export function ReminderRuntimePage() {
         <ErrorBlock message={taskActionError.message} />
       ) : null}
 
-      <AdminCallout
-        title={operationsSummary.title}
-        tone={operationsSummary.tone}
-        description={operationsSummary.description}
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]">
-        <div className="space-y-6">
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader
-              title={t(msg`值班工作台`)}
-              actions={
-                <StatusPill
-                  tone={filteredTasks.length > 0 ? "healthy" : "muted"}
-                >
-                  {t(msg`显示 ${filteredTasks.length} / ${stats.activeTaskCount} 条`)}
-                </StatusPill>
-              }
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title={t(msg`值班工作台`)}
+          actions={
+            <StatusPill tone={filteredTasks.length > 0 ? "healthy" : "muted"}>
+              {t(msg`显示 ${filteredTasks.length} / ${stats.activeTaskCount} 条`)}
+            </StatusPill>
+          }
+        />
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <TaskFilterChip
+              label={t(msg`优先处理`)}
+              count={buildTaskFilterCount("focus", overviewQuery.data)}
+              active={taskFilter === "focus"}
+              onClick={() => setTaskFilter("focus")}
             />
-            <div className="mt-4 space-y-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-1 flex-col gap-3 lg:flex-row">
-                  <AdminPillTextField
-                    value={taskSearch}
-                    onChange={setTaskSearch}
-                    placeholder={t(msg`搜提醒标题、说明、分类或调度文案`)}
-                    className="w-full lg:max-w-sm"
-                  />
-                  <AdminPillSelectField
-                    value={taskFilter}
-                    onChange={(value) =>
-                      setTaskFilter(
-                        value === "all" || value === "hard" || value === "habit"
-                          ? value
-                          : "focus",
-                      )
+            <TaskFilterChip
+              label={t(msg`全部`)}
+              count={buildTaskFilterCount("all", overviewQuery.data)}
+              active={taskFilter === "all"}
+              onClick={() => setTaskFilter("all")}
+            />
+            <TaskFilterChip
+              label={t(msg`硬提醒`)}
+              count={buildTaskFilterCount("hard", overviewQuery.data)}
+              active={taskFilter === "hard"}
+              onClick={() => setTaskFilter("hard")}
+            />
+            <TaskFilterChip
+              label={t(msg`习惯`)}
+              count={buildTaskFilterCount("habit", overviewQuery.data)}
+              active={taskFilter === "habit"}
+              onClick={() => setTaskFilter("habit")}
+            />
+          </div>
+          <AdminPillTextField
+            value={taskSearch}
+            onChange={setTaskSearch}
+            placeholder={t(msg`搜提醒标题、说明、分类或调度文案`)}
+            className="w-full sm:max-w-sm"
+          />
+        </div>
+
+        <div className="mt-4">
+          {overviewQuery.data.activeTasks.length ? (
+            filteredTasks.length ? (
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+                <div className="space-y-4">
+                  {taskGroups.map((group) => (
+                    <section key={group.key} className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                            {group.label}
+                          </div>
+                          <div className="text-xs leading-5 text-[color:var(--text-muted)]">
+                            {group.description}
+                          </div>
+                        </div>
+                        <StatusPill tone={queueTone(group.key)}>
+                          {t(msg`${group.tasks.length} 条`)}
+                        </StatusPill>
+                      </div>
+                      <div className="space-y-3">
+                        {group.tasks.map((task) => (
+                          <TaskQueueListItem
+                            key={task.id}
+                            task={task}
+                            now={now}
+                            selected={selectedTask?.id === task.id}
+                            onSelect={() => setSelectedTaskId(task.id)}
+                            onComplete={() =>
+                              completeTaskMutation.mutate(task.id)
+                            }
+                            onSnoozeMinutes={() =>
+                              snoozeTaskMutation.mutate({
+                                taskId: task.id,
+                                payload: { minutes: 30 },
+                              })
+                            }
+                            onCancel={() =>
+                              cancelTaskMutation.mutate(task.id)
+                            }
+                            activeTaskAction={activeTaskAction}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+
+                {selectedTask ? (
+                  <TaskDetailPanel
+                    task={selectedTask}
+                    now={now}
+                    activeTaskAction={activeTaskAction}
+                    onComplete={() =>
+                      completeTaskMutation.mutate(selectedTask.id)
                     }
-                    className="w-full lg:w-[180px]"
-                  >
-                    <option value="focus">{t(msg`优先处理`)}</option>
-                    <option value="all">{t(msg`全部任务`)}</option>
-                    <option value="hard">{t(msg`只看硬提醒`)}</option>
-                    <option value="habit">{t(msg`只看习惯`)}</option>
-                  </AdminPillSelectField>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <TaskFilterChip
-                    label={t(msg`优先处理`)}
-                    count={buildTaskFilterCount("focus", overviewQuery.data)}
-                    active={taskFilter === "focus"}
-                    onClick={() => setTaskFilter("focus")}
+                    onSnoozeMinutes={() =>
+                      snoozeTaskMutation.mutate({
+                        taskId: selectedTask.id,
+                        payload: { minutes: 30 },
+                      })
+                    }
+                    onSnoozeTomorrow={() =>
+                      snoozeTaskMutation.mutate({
+                        taskId: selectedTask.id,
+                        payload: {
+                          until: buildTomorrowReminderIso(selectedTask),
+                        },
+                      })
+                    }
+                    onCancel={() =>
+                      cancelTaskMutation.mutate(selectedTask.id)
+                    }
                   />
-                  <TaskFilterChip
-                    label={t(msg`全部`)}
-                    count={buildTaskFilterCount("all", overviewQuery.data)}
-                    active={taskFilter === "all"}
-                    onClick={() => setTaskFilter("all")}
-                  />
-                  <TaskFilterChip
-                    label={t(msg`硬提醒`)}
-                    count={buildTaskFilterCount("hard", overviewQuery.data)}
-                    active={taskFilter === "hard"}
-                    onClick={() => setTaskFilter("hard")}
-                  />
-                  <TaskFilterChip
-                    label={t(msg`习惯`)}
-                    count={buildTaskFilterCount("habit", overviewQuery.data)}
-                    active={taskFilter === "habit"}
-                    onClick={() => setTaskFilter("habit")}
-                  />
-                </div>
-              </div>
-
-              {overviewQuery.data.activeTasks.length ? (
-                filteredTasks.length ? (
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-                    <div className="space-y-4">
-                      {taskGroups.map((group) => (
-                        <section key={group.key} className="space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-sm font-semibold text-[color:var(--text-primary)]">
-                                {group.label}
-                              </div>
-                              <div className="text-xs leading-5 text-[color:var(--text-muted)]">
-                                {group.description}
-                              </div>
-                            </div>
-                            <StatusPill tone={queueTone(group.key)}>
-                              {t(msg`${group.tasks.length} 条`)}
-                            </StatusPill>
-                          </div>
-                          <div className="space-y-3">
-                            {group.tasks.map((task) => (
-                              <TaskQueueListItem
-                                key={task.id}
-                                task={task}
-                                now={now}
-                                selected={selectedTask?.id === task.id}
-                                onSelect={() => setSelectedTaskId(task.id)}
-                              />
-                            ))}
-                          </div>
-                        </section>
-                      ))}
-                    </div>
-
-                    {selectedTask ? (
-                      <TaskDetailPanel
-                        task={selectedTask}
-                        now={now}
-                        activeTaskAction={activeTaskAction}
-                        onComplete={() =>
-                          completeTaskMutation.mutate(selectedTask.id)
-                        }
-                        onSnoozeMinutes={() =>
-                          snoozeTaskMutation.mutate({
-                            taskId: selectedTask.id,
-                            payload: { minutes: 30 },
-                          })
-                        }
-                        onSnoozeTomorrow={() =>
-                          snoozeTaskMutation.mutate({
-                            taskId: selectedTask.id,
-                            payload: {
-                              until: buildTomorrowReminderIso(selectedTask),
-                            },
-                          })
-                        }
-                        onCancel={() =>
-                          cancelTaskMutation.mutate(selectedTask.id)
-                        }
-                      />
-                    ) : (
-                      <AdminEmptyState
-                        title={t(msg`当前筛选下没有焦点提醒`)}
-                        description={t(msg`调整左侧筛选条件后，这里会展示一条可直接处理的焦点提醒。`)}
-                      />
-                    )}
-                  </div>
                 ) : (
                   <AdminEmptyState
-                    title={t(msg`没有匹配的提醒`)}
-                    description={t(msg`当前筛选和搜索条件下没有结果，建议清空关键字或切换到"全部任务"继续查看。`)}
+                    title={t(msg`当前筛选下没有焦点提醒`)}
+                    description={t(msg`调整左侧筛选条件后，这里会展示一条可直接处理的焦点提醒。`)}
                   />
-                )
-              ) : (
-                <AdminEmptyState
-                  title={t(msg`当前没有活跃提醒`)}
-                  description={t(msg`用户还没有交给小盯新的提醒事项，或者当前活跃提醒已经全部完成 / 删除。`)}
-                />
-              )}
-            </div>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader title={t(msg`值班摘要`)} />
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <AdminMiniPanel title={t(msg`当前风险`)} tone="soft">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {stats.overdueTaskCount > 0
-                    ? t(msg`${stats.overdueTaskCount} 条逾期`)
-                    : stats.dueSoonTaskCount > 0
-                      ? t(msg`${stats.dueSoonTaskCount} 条即将到点`)
-                      : stats.activeTaskCount > 0
-                        ? t(msg`队列稳定`)
-                        : t(msg`暂无活跃提醒`)}
-                </div>
-              </AdminMiniPanel>
-              <AdminMiniPanel title={t(msg`最近私聊出站`)} tone="soft">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {overviewQuery.data.recentMessages[0]
-                    ? formatDateTime(
-                        overviewQuery.data.recentMessages[0].createdAt,
-                      )
-                    : t(msg`暂无`)}
-                </div>
-              </AdminMiniPanel>
-              <AdminMiniPanel title={t(msg`最近完成`)} tone="soft">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {overviewQuery.data.recentCompletedTasks[0]?.lastCompletedAt
-                    ? formatDateTime(
-                        overviewQuery.data.recentCompletedTasks[0]
-                          .lastCompletedAt,
-                      )
-                    : t(msg`暂无`)}
-                </div>
-              </AdminMiniPanel>
-              <AdminMiniPanel title={t(msg`最近轻提醒发圈`)} tone="soft">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {overviewQuery.data.recentMoments[0]
-                    ? formatDateTime(
-                        overviewQuery.data.recentMoments[0].postedAt,
-                      )
-                    : t(msg`暂无`)}
-                </div>
-              </AdminMiniPanel>
-            </div>
-            <div className="mt-4 space-y-3">
-              {overviewQuery.data.recentMessages[0] ? (
-                <AdminSoftBox>
-                  {t(msg`最新私聊：`)}
-                  {truncateText(overviewQuery.data.recentMessages[0].text, 90)}
-                </AdminSoftBox>
-              ) : null}
-              {overviewQuery.data.recentMoments[0] ? (
-                <AdminSoftBox>
-                  {t(msg`最新发圈：`)}
-                  {truncateText(overviewQuery.data.recentMoments[0].text, 90)}
-                </AdminSoftBox>
-              ) : null}
-            </div>
-          </Card>
-
-          <ReminderRuntimeConfigPanel
-            draft={draft}
-            dirty={dirty}
-            activeTab={configTab}
-            onTabChange={setConfigTab}
-            onChange={setDraft}
-            onSave={() => saveMutation.mutate()}
-            savePending={saveMutation.isPending}
-            previewInput={parserPreviewInput}
-            onPreviewInputChange={setParserPreviewInput}
-            onRunPreview={() => {
-              if (!draft || !parserPreviewInput.trim()) {
-                return;
-              }
-              previewMutation.mutate({
-                message: parserPreviewInput.trim(),
-                rules: draft,
-              });
-            }}
-            previewPending={previewMutation.isPending}
-            previewResult={previewMutation.data ?? null}
-            previewError={previewError}
-          />
-
-          <Card className="bg-[color:var(--surface-console)]">
-            <AdminSectionHeader
-              title={t(msg`最近执行流水`)}
-              actions={
-                <StatusPill
-                  tone={recentActivity.length > 0 ? "healthy" : "muted"}
-                >
-                  {t(msg`${recentActivity.length} 条`)}
-                </StatusPill>
-              }
+                )}
+              </div>
+            ) : (
+              <AdminEmptyState
+                title={t(msg`没有匹配的提醒`)}
+                description={t(msg`当前筛选和搜索条件下没有结果，建议清空关键字或切换到"全部任务"继续查看。`)}
+              />
+            )
+          ) : (
+            <AdminEmptyState
+              title={t(msg`当前没有活跃提醒`)}
+              description={t(msg`用户还没有交给小盯新的提醒事项，或者当前活跃提醒已经全部完成 / 删除。`)}
             />
-            <div className="mt-4 space-y-3">
-              {recentActivity.length ? (
-                recentActivity.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                          {item.title}
-                        </div>
-                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {item.meta || formatDateTime(item.timestamp)}
-                        </div>
-                      </div>
-                      <StatusPill tone={item.tone}>{item.badge}</StatusPill>
+          )}
+        </div>
+      </Card>
+
+      <ReminderRuntimeConfigPanel
+        draft={draft}
+        dirty={dirty}
+        activeTab={configTab}
+        onTabChange={setConfigTab}
+        onChange={setDraft}
+        onSave={() => saveMutation.mutate()}
+        savePending={saveMutation.isPending}
+        previewInput={parserPreviewInput}
+        onPreviewInputChange={setParserPreviewInput}
+        onRunPreview={() => {
+          if (!draft || !parserPreviewInput.trim()) {
+            return;
+          }
+          previewMutation.mutate({
+            message: parserPreviewInput.trim(),
+            rules: draft,
+          });
+        }}
+        previewPending={previewMutation.isPending}
+        previewResult={previewMutation.data ?? null}
+        previewError={previewError}
+      />
+
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title={t(msg`最近执行流水`)}
+          actions={
+            <StatusPill tone={recentActivity.length > 0 ? "healthy" : "muted"}>
+              {t(msg`${recentActivity.length} 条`)}
+            </StatusPill>
+          }
+        />
+        <div className="mt-4 space-y-3">
+          {recentActivity.length ? (
+            recentActivity.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      {item.title}
                     </div>
-                    <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                      {item.description}
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {item.meta || formatDateTime(item.timestamp)}
                     </div>
                   </div>
-                ))
-              ) : (
-                <AdminEmptyState
-                  title={t(msg`还没有最近动作`)}
-                  description={t(msg`这里会汇总最近触发、完成、私聊出站和朋友圈轻提醒，方便运营快速回看刚刚发生了什么。`)}
-                />
-              )}
-            </div>
-          </Card>
+                  <StatusPill tone={item.tone}>{item.badge}</StatusPill>
+                </div>
+                <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                  {item.description}
+                </div>
+              </div>
+            ))
+          ) : (
+            <AdminEmptyState
+              title={t(msg`还没有最近动作`)}
+              description={t(msg`这里会汇总最近触发、完成、私聊出站和朋友圈轻提醒，方便运营快速回看刚刚发生了什么。`)}
+            />
+          )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

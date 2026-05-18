@@ -1,0 +1,19 @@
+{
+  "_comment": "本机或 CI override：把这个文件复制为 ios-shell.config.local.json 后填真实值。所有字段都可选，缺失则继承 ios-shell.config.json；env 仍可在最后覆盖。",
+  "marketingVersion": "1.0.0",
+  "buildNumber": 1,
+  "ios": {
+    "developmentTeam": "ABCDE12345",
+    "codeSignStyle": "Automatic",
+    "provisioningProfileSpecifier": "",
+    "codeSignIdentity": "",
+    "apsEnvironment": "development",
+    "associatedDomain": "",
+    "exportMethod": "development"
+  },
+  "runtime": {
+    "environment": "development",
+    "apiBaseUrl": "https://your-dev-host.example.com",
+    "socketBaseUrl": "https://your-dev-host.example.com"
+  }
+}

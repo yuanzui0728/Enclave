@@ -179,7 +179,9 @@ export class ChatBackgroundsService {
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, storedFileName), file.buffer);
 
-    const url = `${this.resolvePublicApiBaseUrl()}/api/chat/backgrounds/${storedFileName}`;
+    // 存相对 URL 而非快照 PUBLIC_API_BASE_URL：公网入口端口/协议变更后绝对 URL 会永远 404。
+    // 前端 contracts/client.ts normalizeAttachmentAssetUrl 渲染时按当前 apiBaseUrl absolutize。
+    const url = `/api/chat/backgrounds/${storedFileName}`;
 
     return {
       source: 'upload',
@@ -262,13 +264,6 @@ export class ChatBackgroundsService {
 
   private resolveLegacyBackgroundStorageDir() {
     return resolveApiPath('storage', 'chat-backgrounds');
-  }
-
-  private resolvePublicApiBaseUrl() {
-    return (
-      process.env.PUBLIC_API_BASE_URL?.trim() ||
-      `http://localhost:${process.env.PORT ?? 3000}`
-    ).replace(/\/+$/, '');
   }
 }
 

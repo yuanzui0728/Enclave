@@ -12,14 +12,24 @@ interface FarmMascotProps {
 
 export function FarmMascot({ state }: FarmMascotProps) {
   const nowMs = useFarmAdjustedNow();
-  const messages = useMemo(() => buildMessages(state, nowMs), [state, nowMs]);
+  // farm-clock-context 每秒推一次 nowMs，原来用 nowMs 做 useMemo 依赖
+  // → 每秒重跑 buildMessages（5 次 state.plots.filter + 1 次 reduce），
+  // 12 块田 ×5 filter ×60/min = 3600 操作/分钟全是浪费。messages 只在
+  // 小时段切换时才会变内容，按 5 分钟桶做依赖即可。
+  const timeBucket = Math.floor(nowMs / (5 * 60 * 1000));
+  const messages = useMemo(() => buildMessages(state, nowMs), [state, timeBucket]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cursor, setCursor] = useState(0);
   const message = messages[cursor % messages.length] ?? "";
 
   return (
     <button
       type="button"
-      className="farm-mascot group fixed right-4 top-20 z-30 flex items-end gap-2 lg:absolute lg:right-2 lg:top-2"
+      // 移动端 top-20 (80px) 会盖住 header + CoinDisplay 右侧的等级 pill；
+      // 隐界农场是独立页（不挂 /tabs 底部 nav），所以挪到右下不挡其它任何东西。
+      // 桌面端用 lg:absolute 钉在 FarmSky 右上角小按钮，需要显式 lg:bottom-auto
+      // 把上一行的 bottom 重置掉，否则同时设置 top+bottom 会被 absolute 拉伸成竖条。
+      className="farm-mascot group fixed right-4 z-30 flex items-end gap-2 lg:absolute lg:right-2 lg:top-2 lg:bottom-auto"
+      style={{ bottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
       onClick={() => setCursor((c) => c + 1)}
       title={t(msg`点我换一句`)}
     >
@@ -63,8 +73,13 @@ function buildMessages(state: FarmPlayerStateView, nowMs: number): string[] {
   ).length;
   const weedCount = state.plots.reduce((acc, p) => acc + (p.weeds || 0), 0);
   const bugCount = state.plots.reduce((acc, p) => acc + (p.bugs || 0), 0);
+  // weeklyStolenLog 同时记两边：玩家自己偷 NPC（thiefCharacterId='owner'）和 NPC
+  // 偷玩家（thiefCharacterId=NPC_id）。提醒"今天来顺过你的菜"显然只该说后者，
+  // 否则管家会冒出"我 今天来顺过你的菜"这种自言自语。
   const stolenRecently = state.weeklyStolenLog.filter(
-    (entry) => nowMs - entry.atMs < 12 * 3600 * 1000,
+    (entry) =>
+      entry.thiefCharacterId !== "owner" &&
+      nowMs - entry.atMs < 12 * 3600 * 1000,
   );
   const hour = new Date(nowMs).getHours();
 

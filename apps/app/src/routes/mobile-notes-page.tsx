@@ -22,6 +22,17 @@ import {
 
 import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+
+function buildScratchDraftId() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  return `note-draft-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
 import {
   createDesktopNoteDraft,
   readDesktopNoteDrafts,
@@ -82,9 +93,12 @@ export function MobileNotesPage() {
   );
 
   function handleBack() {
-    navigateBackOrFallback(() => {
-      void navigate({ to: "/tabs/chat" });
-    });
+    navigateBackOrFallback(
+      () => {
+        void navigate({ to: "/tabs/chat" });
+      },
+      "/tabs/chat",
+    );
   }
 
   function handleCreate() {
@@ -101,10 +115,14 @@ export function MobileNotesPage() {
   }
 
   function handleOpenNote(noteId: string) {
-    const draft = createDesktopNoteDraft({ noteId });
+    // 不预创建草稿：createDesktopNoteDraft({ noteId }) 会落地一条空 draft，
+    // 编辑器初始化拿到它后会锁 sessionKey，等服务端笔记到达时不再回填，
+    // 导致第一次进入空白、第二次才显示内容（mobile-note-editor-page.tsx:430-514）。
+    // 只生成 draftId 字符串塞进 hash，编辑器自己按 noteId 拉数据回填。
+    const draftId = buildScratchDraftId();
     const safeReturnPath = isDesktopOnlyPath(pathname) ? undefined : pathname;
     const nextHash = buildMobileNoteEditorRouteHash({
-      draftId: draft.draftId,
+      draftId,
       noteId,
       returnPath: safeReturnPath,
     });

@@ -923,6 +923,7 @@ export class SystemService {
       inferenceModelId: null,
       allowOwnerKeyOverride: true,
       modelRoutingNotes: '',
+      defaultVoiceReply: false,
       activityMode: 'auto',
       socialOpenness: 'normal',
       proactiveBrowseChance: 0.3,

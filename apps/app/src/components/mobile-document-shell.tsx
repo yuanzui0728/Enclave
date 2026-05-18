@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useNavigate } from "@tanstack/react-router";
@@ -7,9 +7,11 @@ import { AppPage, Button, InlineNotice } from "@yinjie/ui";
 
 const t = translateRuntimeMessage;
 import { navigateBackOrFallback } from "../lib/history-back";
+import { buildPublicShareUrl } from "../lib/share-url";
 import {
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { TabPageTopBar } from "./tab-page-top-bar";
@@ -40,15 +42,24 @@ export function MobileDocumentShell({
     onAction?: () => void;
   } | null>(null);
 
+  // 走查 R2：success notice 之前没有自动消失，「已打开系统分享面板。」/
+  // 「文档摘要已复制。」一旦出现就钉在页面上直到下次 setNotice 才换。其它
+  // profile/me 子页（profile-info-page 的复制 toast / mobile-favorites-page
+  // 的 setNotice）都做 1.6~2.4s 自动消失，这里跟齐。
+  // info（失败 + 重试按钮）一支挂着不动是有意的，用户需要点击 actionLabel 重试 /
+  // 「返回上一页」自行收掉；不参与自动消失。
+  useEffect(() => {
+    if (!notice || notice.tone !== "success") return;
+    const timer = window.setTimeout(() => setNotice(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   async function handleShareDocument() {
     const documentPath =
       typeof window === "undefined"
         ? ""
         : `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const documentUrl =
-      typeof window === "undefined" || !documentPath
-        ? title
-        : `${window.location.origin}${documentPath}`;
+    const documentUrl = documentPath ? buildPublicShareUrl(documentPath) : title;
     const documentSummary = [title, summary, documentUrl].join("\n\n");
 
     if (nativeMobileShareSupported) {
@@ -86,7 +97,9 @@ export function MobileDocumentShell({
     }
 
     try {
-      await navigator.clipboard.writeText(documentSummary);
+      if (!(await writeClipboardText(documentSummary))) {
+        throw new Error("clipboard copy failed");
+      }
       setNotice({
         tone: "success",
         message: nativeMobileShareSupported
@@ -115,16 +128,19 @@ export function MobileDocumentShell({
         leftActions={
           <Button
             onClick={() =>
-              navigateBackOrFallback(() => {
-                void navigate({
-                  to: isDesktopLayout ? "/desktop/settings" : "/profile/settings",
-                });
-              })
+              navigateBackOrFallback(
+                () => {
+                  void navigate({
+                    to: isDesktopLayout ? "/desktop/settings" : "/tabs/profile",
+                  });
+                },
+                isDesktopLayout ? "/desktop/settings" : "/tabs/profile",
+              )
             }
             variant="ghost"
             size="icon"
             className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
-            aria-label={t(msg`返回设置`)}
+            aria-label={isDesktopLayout ? t(msg`返回设置`) : t(msg`返回`)}
           >
             <ArrowLeft size={18} />
           </Button>
@@ -163,13 +179,18 @@ export function MobileDocumentShell({
                     <button
                       type="button"
                       onClick={() =>
-                        navigateBackOrFallback(() => {
-                          void navigate({
-                            to: isDesktopLayout
-                              ? "/desktop/settings"
-                              : "/profile/settings",
-                          });
-                        })
+                        navigateBackOrFallback(
+                          () => {
+                            void navigate({
+                              to: isDesktopLayout
+                                ? "/desktop/settings"
+                                : "/tabs/profile",
+                            });
+                          },
+                          isDesktopLayout
+                            ? "/desktop/settings"
+                            : "/tabs/profile",
+                        )
                       }
                       className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >

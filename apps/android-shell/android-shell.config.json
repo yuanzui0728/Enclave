@@ -6,7 +6,7 @@
   "allowCleartextTraffic": false,
   "runtime": {
     "environment": "production",
-    "apiBaseUrl": "",
-    "socketBaseUrl": ""
+    "apiBaseUrl": "https://1gw06751dd053.vicp.fun",
+    "socketBaseUrl": "https://1gw06751dd053.vicp.fun"
   }
 }

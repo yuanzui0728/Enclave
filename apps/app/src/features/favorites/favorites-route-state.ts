@@ -45,9 +45,20 @@ function normalizeCategory(value?: string | null): DesktopFavoritesCategory {
   return nextValue as DesktopFavoritesCategory;
 }
 
+// 老版本笔记直链是 /tabs/favorites#<noteId>，noteId 是 randomUUID() 出来的 UUID v4。
+// 之前只要 hash 不含 "=" 就当作 legacy noteId，结果用户手敲 /tabs/favorites#test
+// 也会被识别成笔记 → DesktopNotesWorkspace 拉一个不存在的 note 弹错误。
+// 现在严格匹配 UUID 才走 legacy 路径，其他 hash 直接交给 workspace 解析或忽略。
+const LEGACY_DESKTOP_NOTE_HASH_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function parseLegacyDesktopNoteEditorRouteState(hash: string) {
   const normalizedHash = normalizeHash(hash).trim();
-  if (!normalizedHash || normalizedHash.includes("=")) {
+  if (
+    !normalizedHash ||
+    normalizedHash.includes("=") ||
+    !LEGACY_DESKTOP_NOTE_HASH_PATTERN.test(normalizedHash)
+  ) {
     return null;
   }
 

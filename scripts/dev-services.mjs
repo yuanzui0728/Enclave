@@ -58,6 +58,48 @@ const services = {
     port: 5184,
     url: "http://127.0.0.1:5184/",
   },
+  // 公网 wiki (yinjieai.top) 走 vite preview (prod build)，避免 vite dev 按需编译首屏
+  // 200+ 源模块。启动顺序：vite build → vite preview --port 5184。
+  // 与 `wiki` 共用 5184 端口，互斥；切换时先 stop 另一边（参考 site / site-prod 模式）。
+  "wiki-prod": {
+    cwd: path.join(rootDir, "apps", "wiki"),
+    command: nodeBinary,
+    args: [
+      path.join(rootDir, "apps", "wiki", "node_modules", "vite", "bin", "vite.js"),
+      "preview",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "5184",
+      "--strictPort",
+    ],
+    env: {
+      NODE_ENV: "production",
+    },
+    port: 5184,
+    url: "http://127.0.0.1:5184/",
+    prestart() {
+      const result = spawnSync(
+        nodeBinary,
+        [path.join(rootDir, "apps", "wiki", "node_modules", "vite", "bin", "vite.js"), "build"],
+        {
+          cwd: path.join(rootDir, "apps", "wiki"),
+          env: { ...process.env, NODE_ENV: "production" },
+          shell: false,
+          stdio: "inherit",
+          windowsHide: true,
+        },
+      );
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.status !== 0) {
+        throw new Error(`wiki production build failed with exit code ${result.status ?? "unknown"}.`);
+      }
+    },
+  },
   "cloud-api": {
     cwd: rootDir,
     command: nodeBinary,

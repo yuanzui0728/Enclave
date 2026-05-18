@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
@@ -12,6 +19,7 @@ import {
   isPersistedGroupConversation,
 } from "../../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
+import { registerAndroidBackInterceptor } from "../../../runtime/android-back-button";
 
 export type DesktopMessageForwardPreviewItem = {
   id: string;
@@ -52,10 +60,35 @@ export function DesktopMessageForwardDialog({
 }: DesktopMessageForwardDialogProps) {
   const t = useRuntimeTranslator();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R3：和姊妹 picker / removal-picker / create-group-dialog / browser
+  // 一批 dialog 同款 keystroke 卡顿。filteredConversations 直接吃 searchTerm，
+  // 每次按键先做 [...conversations].sort() 再 filter；活跃用户 100+ 会话时
+  // 输入框可见 backlog。useDeferredValue 让 React 先把字打进输入框、过滤排
+  // 到下个 idle 帧。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [forwardMode, setForwardMode] =
     useState<DesktopMessageForwardMode>("separate");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const isMobile = variant ? variant === "mobile" : isCompactViewport;
+  const titleId = useId();
+  const descId = useId();
+  // 同步防双击锁——下面会话行 button 用 `disabled={pending}` 兜底，pending 是
+  // 父组件的 forwardMutation.isPending 经 React commit 才更新。同帧连点同一行
+  // 2 次会同时通过 disabled=false → 两次 onForward(conv, mode) → 父组件的
+  // forwardMutation.mutate 飞 2 次，目标群里收 2 条一模一样的转发消息。ref
+  // 同步赋值挡掉同帧第二次 click；pending 翻 true 后 disabled 接管常规 click，
+  // pending 翻回 false（mutation 完成 / 失败）时通过下方 useEffect 复位 ref。
+  const forwardSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      forwardSubmittingRef.current = false;
+    }
+  }, [pending]);
+  const handleForwardRowClick = (conversation: ConversationListItem) => {
+    if (forwardSubmittingRef.current || pending) return;
+    forwardSubmittingRef.current = true;
+    onForward(conversation, forwardMode);
+  };
 
   useEffect(() => {
     if (!open) {
@@ -87,29 +120,90 @@ export function DesktopMessageForwardDialog({
     return () => mediaQuery.removeEventListener("change", syncViewport);
   }, [variant]);
 
-  const filteredConversations = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-    const ordered = [...conversations].sort(
-      (left, right) =>
-        (parseTimestamp(right.lastActivityAt) ?? 0) -
-        (parseTimestamp(left.lastActivityAt) ?? 0),
-    );
-
-    if (!keyword) {
-      return ordered;
+  // 转发还在 pending 的时候不能用 Esc 强制关掉——服务端那一发已经在
+  // 飞，弹层一关 pending state 就消失，用户拿不到任何成功/失败反馈。
+  // 等 mutation 落地后由 onClose 自然处理。
+  //
+  // 走查电脑端群聊 R7（和 R5/R6 同款）：原版 `if (!open || pending) return`
+  // 直接不挂 listener，pending 期间 Esc 完全透传——workspace queueMicrotask
+  // 兜底跑 dismissSidePanel 把"聊天信息" / "查找记录"侧栏偷关掉。改成 pending
+  // 时仍挂 listener、消费 Esc 但不真关 dialog。
+  useEffect(() => {
+    if (!open) {
+      return;
     }
 
-    return ordered.filter((conversation) =>
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      // 转发弹层是 modal 层；Esc 应只关掉它，避免冒泡到 workspace
+      // dismissSidePanel 把背后的详情/查找记录侧栏也一并关掉。
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
+  // 第三轮 R3：mobile variant 漏接 Android 硬件 Back。单聊/群聊长按消息选
+  // 「转发」会拉起这个 dialog（mobile variant 复用同一组件），用户在 Android
+  // 按 hardware Back → 直接 history.back() 走出 /chat/$conv 整页，转发选择
+  // 状态丢失之外更糟：用户原本只想取消转发，结果跳回 chat-list 还要再点进
+  // 会话。和姊妹 sheet（mobile-message-action-sheet / quote-selection-sheet /
+  // mobile-message-reminder-sheet / mobile-details-action-sheet / 本文件 ESC
+  // 处理）对齐：pending 时不响应，让 mutation 落地。
+  useEffect(() => {
+    if (!open || pending) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [onClose, open, pending]);
+
+  // 走查 R3：把 sort 和 filter 拆开。原版 useMemo 把 [...conversations].sort()
+  // 也放在 deferredSearchTerm dep 内，每个 keystroke 都重排一次。conversations
+  // 本身只在 query refetch 才换引用，把 sort 单独 memoize 节省 N log N。
+  const orderedConversations = useMemo(
+    () =>
+      [...conversations].sort(
+        (left, right) =>
+          (parseTimestamp(right.lastActivityAt) ?? 0) -
+          (parseTimestamp(left.lastActivityAt) ?? 0),
+      ),
+    [conversations],
+  );
+  const filteredConversations = useMemo(() => {
+    const keyword = deferredSearchTerm.trim().toLowerCase();
+    if (!keyword) {
+      return orderedConversations;
+    }
+
+    return orderedConversations.filter((conversation) =>
       conversation.title.toLowerCase().includes(keyword),
     );
-  }, [conversations, searchTerm]);
+  }, [deferredSearchTerm, orderedConversations]);
 
   if (!open) {
     return null;
   }
 
   return (
+    // 走查新一轮 R12：和姊妹 confirm/text-edit dialog 同款 portal-shield。
+    // 转发弹层是从消息列表 / 多选「转发」打开，desktop 路径下背后通常有
+    // 「聊天信息」侧栏；用户在 dialog 里点搜索框 / 会话行时 workspace
+    // pointerdown capture 会把侧栏偷关。Esc 路径已 stopPropagation。
     <div
+      data-yj-portal-shield="desktop-message-forward-dialog"
       className={cn(
         "fixed inset-0 z-50",
         isMobile
@@ -130,7 +224,16 @@ export function DesktopMessageForwardDialog({
         />
       ) : null}
 
+      {/* 走查 R3：和 R2 confirm/text-edit、姊妹 feature-unavailable / mobile sheet
+          系列同款 a11y 缺漏——modal 但没挂 role="dialog" + aria-modal +
+          aria-labelledby / aria-describedby。单聊消息列表右键「转发」、桌面
+          多选「转发」都会弹这个 dialog；盲人用户屏幕阅读器只听到「关闭转发消息
+          弹层 按钮」+ 输入框 + 会话行，无从知道这是个转发对话框。补语义。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         className={cn(
           "relative flex min-w-0 flex-col overflow-hidden",
           isMobile
@@ -141,6 +244,8 @@ export function DesktopMessageForwardDialog({
         {isMobile ? (
           <MobileForwardHeader
             messageCount={messages.length}
+            titleId={titleId}
+            descId={descId}
             pending={pending}
             onClose={onClose}
           />
@@ -156,10 +261,16 @@ export function DesktopMessageForwardDialog({
         >
           {!isMobile ? (
             <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl lg:px-5 lg:py-5">
-              <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+              <div
+                id={titleId}
+                className="text-[18px] font-medium text-[color:var(--text-primary)]"
+              >
                 {t(msg`转发消息`)}
               </div>
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id={descId}
+                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {messages.length === 1
                   ? t(msg`把这条消息转发到最近会话。`)
                   : t(msg`把选中的 ${messages.length} 条消息转发到最近会话。`)}
@@ -321,7 +432,7 @@ export function DesktopMessageForwardDialog({
                     key={conversation.id}
                     type="button"
                     disabled={pending}
-                    onClick={() => onForward(conversation, forwardMode)}
+                    onClick={() => handleForwardRowClick(conversation)}
                     className={cn(
                       "flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60",
                       isMobile
@@ -449,10 +560,14 @@ function ForwardModeButton({
 
 function MobileForwardHeader({
   messageCount,
+  titleId,
+  descId,
   pending,
   onClose,
 }: {
   messageCount: number;
+  titleId?: string;
+  descId?: string;
   pending: boolean;
   onClose: () => void;
 }) {
@@ -469,10 +584,16 @@ function MobileForwardHeader({
           {t(msg`取消`)}
         </button>
         <div className="pointer-events-none absolute inset-x-12 text-center">
-          <div className="truncate text-[17px] font-medium text-[#111827]">
+          <div
+            id={titleId}
+            className="truncate text-[17px] font-medium text-[#111827]"
+          >
             {t(msg`转发给`)}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+          <div
+            id={descId}
+            className="mt-0.5 truncate text-[11px] text-[#8c8c8c]"
+          >
             {t(msg`已选 ${messageCount} 条消息`)}
           </div>
         </div>

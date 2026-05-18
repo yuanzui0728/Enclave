@@ -25,12 +25,13 @@ import { applyGeneratedImageContext } from './assistant-attachment-history';
 import {
   normalizeChatAttachmentDisplayName,
   guessChatAttachmentExtension,
-  resolveChatPublicApiBaseUrl,
   sanitizeChatAttachmentFileName,
 } from './chat-attachment-file.utils';
 import { resolvePrimaryChatAttachmentStorageDir } from './chat-attachment-storage';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
+import { WorldOwnerService } from '../auth/world-owner.service';
+import { FriendRemarkResolver } from '../social/friend-remark-resolver.service';
 import type {
   GroupMessage,
   ImageAttachment,
@@ -87,7 +88,25 @@ export class ReplyArtifactJobService {
     private readonly chatService: ChatService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
+    private readonly worldOwnerService: WorldOwnerService,
+    private readonly remarkResolver: FriendRemarkResolver,
   ) {}
+
+  private async resolveSenderRemark(
+    senderType: string | null | undefined,
+    senderId: string | null | undefined,
+    fallback: string,
+  ): Promise<string> {
+    if (senderType !== 'character' || !senderId) return fallback;
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const map = await this.remarkResolver.getOwnerRemarkMap(owner.id);
+    return this.remarkResolver.applyCharacterRemark(
+      senderType,
+      senderId,
+      fallback,
+      map,
+    );
+  }
 
   async scheduleConversationImageReplyJob(input: {
     conversationId: string;
@@ -392,9 +411,19 @@ export class ReplyArtifactJobService {
       });
       this.chatService.invalidateConversationHistory(job.threadId);
       await this.markJobCompleted(job.id, messageEntity.id);
+      const displaySenderName = await this.resolveSenderRemark(
+        messageEntity.senderType,
+        messageEntity.senderId,
+        messageEntity.senderName,
+      );
       this.chatGateway.emitThreadMessage(
         job.threadId,
-        this.toConversationMessage(messageEntity, attachment, job.characterAvatar),
+        this.toConversationMessage(
+          messageEntity,
+          attachment,
+          job.characterAvatar,
+          displaySenderName,
+        ),
       );
     } finally {
       this.chatGateway.emitTypingStop(job.threadId, job.characterId, 'image_generation');
@@ -413,53 +442,77 @@ export class ReplyArtifactJobService {
       return;
     }
 
-    const synthesized = await this.ai.synthesizeSpeech({
-      text: input.text,
-      conversationId: job.threadId,
-      characterId: job.characterId,
-      instructions: buildAssistantSpeechInstructions(job.characterName),
-    });
-
-    const latestContext = await this.validateGroupJob(job);
-    if (!latestContext) {
-      return;
-    }
-
-    const asset = await this.speechAssets.saveGeneratedSpeech(synthesized.buffer, {
-      mimeType: synthesized.mimeType,
-      fileExtension: synthesized.fileExtension,
-      baseName: `group-reply-${job.characterId}`,
-    });
-    const attachment: VoiceAttachment = {
-      kind: 'voice',
-      url: asset.audioUrl,
-      mimeType: asset.mimeType,
-      fileName: asset.fileName,
-      size: synthesized.buffer.length,
-      durationMs: synthesized.durationMs,
-      transcriptText: input.text,
-    };
-    const messageEntity = this.groupMessageRepo.create({
-      groupId: job.threadId,
-      senderId: job.characterId,
-      senderType: 'character',
-      senderName: job.characterName,
-      senderAvatar: job.characterAvatar ?? undefined,
-      text: input.text,
-      type: 'voice',
-      attachmentKind: attachment.kind,
-      attachmentPayload: JSON.stringify(attachment),
-    });
-    await this.groupMessageRepo.save(messageEntity);
-    await this.groupRepo.save({
-      ...latestContext.group,
-      lastActivityAt: messageEntity.createdAt ?? new Date(),
-    });
-    await this.markJobCompleted(job.id, messageEntity.id);
-    this.chatGateway.emitThreadMessage(
+    // 走查第四批 R1：原版完全没有 emitTypingStart/Stop（对比同文件 line 370/429
+    // processConversationImageJob、line 511/564 processGroupImageJob 都包了 typing
+    // emit + finally）。synthesizeSpeech 公网 TTS provider 一次往返常 5-15s；
+    // 这段时间群聊里**没有任何 typing 提示**，用户从"我刚发完一条消息"到
+    // "看到一条 voice 消息突然出现"中间一段是沉默——会以为 AI 没回。包一层
+    // try/finally 让 typing 持续显示直到 voice 落库 emit。
+    this.chatGateway.emitTypingStart(
       job.threadId,
-      this.toGroupMessage(messageEntity, attachment),
+      job.characterId,
+      'reply',
     );
+    try {
+      const synthesized = await this.ai.synthesizeSpeech({
+        text: input.text,
+        conversationId: job.threadId,
+        characterId: job.characterId,
+        instructions: buildAssistantSpeechInstructions(job.characterName),
+      });
+
+      const latestContext = await this.validateGroupJob(job);
+      if (!latestContext) {
+        return;
+      }
+
+      const asset = await this.speechAssets.saveGeneratedSpeech(synthesized.buffer, {
+        mimeType: synthesized.mimeType,
+        fileExtension: synthesized.fileExtension,
+        baseName: `group-reply-${job.characterId}`,
+      });
+      const attachment: VoiceAttachment = {
+        kind: 'voice',
+        url: asset.audioUrl,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+        size: synthesized.buffer.length,
+        durationMs: synthesized.durationMs,
+        transcriptText: input.text,
+      };
+      const messageEntity = this.groupMessageRepo.create({
+        groupId: job.threadId,
+        senderId: job.characterId,
+        senderType: 'character',
+        senderName: job.characterName,
+        senderAvatar: job.characterAvatar ?? undefined,
+        text: input.text,
+        type: 'voice',
+        attachmentKind: attachment.kind,
+        attachmentPayload: JSON.stringify(attachment),
+      });
+      await this.groupMessageRepo.save(messageEntity);
+      await this.groupRepo.save({
+        ...latestContext.group,
+        lastActivityAt: messageEntity.createdAt ?? new Date(),
+      });
+      await this.markJobCompleted(job.id, messageEntity.id);
+      const groupVoiceSenderName = await this.resolveSenderRemark(
+        messageEntity.senderType,
+        messageEntity.senderId,
+        messageEntity.senderName,
+      );
+      this.chatGateway.emitThreadMessage(
+        job.threadId,
+        this.toGroupMessage(messageEntity, attachment, groupVoiceSenderName),
+      );
+    } finally {
+      this.chatGateway.emitTypingStop(
+        job.threadId,
+        job.characterId,
+        'reply',
+      );
+    }
   }
 
   private async processGroupImageJob(job: ReplyArtifactJobEntity) {
@@ -517,9 +570,14 @@ export class ReplyArtifactJobService {
         lastActivityAt: messageEntity.createdAt ?? new Date(),
       });
       await this.markJobCompleted(job.id, messageEntity.id);
+      const groupImageSenderName = await this.resolveSenderRemark(
+        messageEntity.senderType,
+        messageEntity.senderId,
+        messageEntity.senderName,
+      );
       this.chatGateway.emitThreadMessage(
         job.threadId,
-        this.toGroupMessage(messageEntity, attachment),
+        this.toGroupMessage(messageEntity, attachment, groupImageSenderName),
       );
     } finally {
       this.chatGateway.emitTypingStop(job.threadId, job.characterId, 'image_generation');
@@ -651,9 +709,11 @@ export class ReplyArtifactJobService {
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, storedFileName), input.buffer);
 
+    // 存相对 URL 而非快照 PUBLIC_API_BASE_URL：公网入口端口/协议变更后绝对 URL 会永远 404。
+    // 前端 contracts/client.ts normalizeAttachmentAssetUrl 渲染时按当前 apiBaseUrl absolutize。
     return {
       kind: 'image',
-      url: `${resolveChatPublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+      url: `/api/chat/attachments/${storedFileName}`,
       mimeType: input.mimeType || 'application/octet-stream',
       fileName: displayName,
       size: input.buffer.length,
@@ -664,13 +724,14 @@ export class ReplyArtifactJobService {
     entity: MessageEntity,
     attachment: MessageAttachment,
     senderAvatar?: string | null,
+    displaySenderName?: string,
   ): Message {
     return {
       id: entity.id,
       conversationId: entity.conversationId,
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
-      senderName: entity.senderName,
+      senderName: displaySenderName ?? entity.senderName,
       senderAvatar: senderAvatar?.trim() || undefined,
       type: entity.type as
         | 'text'
@@ -692,13 +753,14 @@ export class ReplyArtifactJobService {
   private toGroupMessage(
     entity: GroupMessageEntity,
     attachment: MessageAttachment,
+    displaySenderName?: string,
   ): GroupMessage {
     return {
       id: entity.id,
       groupId: entity.groupId,
       senderId: entity.senderId,
       senderType: entity.senderType as 'user' | 'character' | 'system',
-      senderName: entity.senderName,
+      senderName: displaySenderName ?? entity.senderName,
       senderAvatar: entity.senderAvatar ?? undefined,
       text: entity.text,
       type: entity.type as

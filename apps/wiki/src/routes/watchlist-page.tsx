@@ -37,7 +37,13 @@ export function WatchlistPage() {
         description={t(msg`登录后即可关注词条并查看最新动态。`)}
       >
         <Card className="p-6 text-sm">
-          <Trans>请先登录。</Trans>
+          <Trans>
+            请先{" "}
+            <Link to="/login" className="font-medium underline">
+              登录
+            </Link>{" "}
+            后再使用此功能。
+          </Trans>
         </Card>
       </PageShell>
     );
@@ -79,7 +85,7 @@ export function WatchlistPage() {
                     params={{ characterId: entry.characterId }}
                     className="font-medium text-[color:var(--text-primary)] hover:underline"
                   >
-                    {entry.characterId}
+                    {entry.title || entry.characterId}
                   </Link>
                   {entry.isDeleted && (
                     <StatusPill>
@@ -93,7 +99,7 @@ export function WatchlistPage() {
                         : t(msg`完全保护`)}
                     </StatusPill>
                   )}
-                  <span className="ml-auto text-xs text-[color:var(--text-muted)]">
+                  <span className="ml-auto whitespace-nowrap text-xs text-[color:var(--text-muted)]">
                     <Trans>
                       自 {formatDate(entry.addedAt)}
                     </Trans>
@@ -136,7 +142,9 @@ export function WatchlistPage() {
                         params={{ characterId: item.characterId }}
                         className="font-medium hover:underline"
                       >
-                        {item.characterId}
+                        {item.title ||
+                          item.revision.contentSnapshot?.name ||
+                          item.characterId}
                       </Link>
                       <span className="ml-auto text-xs text-[color:var(--text-muted)]">
                         v{item.revision.version} ·{" "}
@@ -160,7 +168,7 @@ export function WatchlistPage() {
                         params={{ characterId: item.characterId }}
                         className="font-medium hover:underline"
                       >
-                        {item.characterId}
+                        {item.title || item.characterId}
                       </Link>
                       <span className="ml-auto text-xs text-[color:var(--text-muted)]">
                         {item.thread.lastReplyAt

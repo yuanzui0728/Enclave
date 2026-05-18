@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 
 type MobileDetailsActionSheetAction = {
   key: string;
@@ -29,6 +30,71 @@ export function MobileDetailsActionSheet({
   onClose,
 }: MobileDetailsActionSheetProps) {
   const t = translateRuntimeMessage;
+  const titleId = useId();
+  const descriptionId = useId();
+  // 走查新会话 R2：和姊妹 mobile-message-action-sheet.tsx（commit 30f58a286 R2）
+  // 同款修法——sheet 上每条 action 按钮在父组件那边都靠 `setXxxOpen(false)` 关
+  // sheet，但 React state 要等 commit 才能让 sheet 卸载——同帧 <16ms 第二次
+  // click 时 sheet 还在 DOM 里，第二次 onClick 照样跑。
+  // 群聊「群管理」sheet 4 个 action（添加成员 / 移除成员 / 编辑群公告 / 查看群
+  // 二维码）都是 `setOpen(false); void navigate({...})` 形态，同帧双击会推 2
+  // 条相同 history 项，用户点返回要按 2 次才能退出。danger sheet 的 confirm
+  // 按钮虽然父级有 dangerActionBusyRef 兜底，但加这层 internal guard 是冗余
+  // 防线（不冲突）。统一在 sheet 内部任何 action 点过就 guard 住所有后续 action。
+  const actionFiredRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      actionFiredRef.current = false;
+    }
+  }, [open]);
+  const guardAction = useCallback((handler: () => void) => {
+    return () => {
+      if (actionFiredRef.current) return;
+      actionFiredRef.current = true;
+      handler();
+    };
+  }, []);
+
+  // 原生壳硬件 Back 键：sheet 打开时先关 sheet，不让 BACK 同时 history.back
+  // 把用户从 chat-details / group-chat-details / group-member-picker 带回上
+  // 一级。和 mobile-message-action-sheet.tsx 对齐。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [open, onClose]);
+
+  // 走查 Round 1：sheet 打开时按 Esc 没反应——桌面 web / 模拟器 / 自动化都拍不
+  // 掉。这里加一个 keydown 监听，open 才挂，避免每次渲染都注册。
+  //
+  // 走查移动端群聊本会话 R7：和姊妹 sheet mobile-message-action-sheet R2 /
+  // mobile-mention-picker-sheet R6 / group-message-context-menu R7 一致补
+  // defaultPrevented 让位——本 sheet 经常作"群管理"父 sheet 套"退出群聊确认"
+  // 子 sheet 用（group-chat-details-page line 1203/1287），子 sheet 处理掉
+  // ESC 后 event.defaultPrevented=true，父 sheet 这里漏检会照样 onClose 把父
+  // sheet 也关掉。视觉表现是用户在确认 sheet 上按 ESC 直接连关 2 层、回到
+  // details 失去"我刚要退群"的上下文。对齐 3 个姊妹 sheet 的 defaultPrevented
+  // 守。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
 
   if (!open) {
     return null;
@@ -42,16 +108,34 @@ export function MobileDetailsActionSheet({
         aria-label={t(msg`关闭操作菜单`)}
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[18px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-1.5 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
+      {/* 走查 R(re)1：sheet 没有 role="dialog" / aria-modal / aria-labelledby，
+          屏幕阅读器（iOS VoiceOver / Android TalkBack）不会把它当 modal 念，
+          盲人用户从 character-detail 进来后听不到「音视频通话/加入黑名单/删除联系人」
+          这些 sheet 标题，只听到"按钮 取消"。和 desktop-chat-history-dialog 对齐补全。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[18px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-1.5 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+      >
         <div className="flex justify-center pb-1">
           <div className="h-1 w-9 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
 
         <div className="overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
           <div className="border-b border-[color:var(--border-subtle)] px-5 py-2.5 text-center">
-            <div className="text-[14px] font-medium text-[#111827]">{title}</div>
+            <div
+              id={titleId}
+              className="text-[14px] font-medium text-[#111827]"
+            >
+              {title}
+            </div>
             {description ? (
-              <div className="mt-0.5 text-[11px] leading-[18px] text-[#8c8c8c]">
+              <div
+                id={descriptionId}
+                className="mt-0.5 text-[11px] leading-[18px] text-[#8c8c8c]"
+              >
                 {description}
               </div>
             ) : null}
@@ -61,7 +145,7 @@ export function MobileDetailsActionSheet({
             <button
               key={action.key}
               type="button"
-              onClick={action.onClick}
+              onClick={guardAction(action.onClick)}
               disabled={action.disabled}
               className={`flex min-h-[48px] w-full flex-col items-center justify-center px-5 py-2 text-center transition active:bg-[color:var(--surface-card-hover)] ${
                 index > 0 ? "border-t border-[color:var(--border-subtle)]" : ""

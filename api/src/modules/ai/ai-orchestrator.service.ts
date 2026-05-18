@@ -48,6 +48,8 @@ import {
 } from '../inference/inference.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { MinimaxNativeClient } from './minimax-native.client';
+import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import {
   executeChatCompletion,
   type ChatCompletionTaskResult,
@@ -61,10 +63,15 @@ const MAX_DOCUMENT_EXTRACTED_TEXT_CHARS = 1800;
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'audio/mp4',
   'audio/x-m4a',
+  'audio/aac',
   'audio/mpeg',
+  'audio/mp3',
   'audio/ogg',
   'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
   'audio/webm',
+  'audio/flac',
   'video/mp4',
   'video/quicktime',
   'video/webm',
@@ -202,6 +209,7 @@ export class AiOrchestratorService {
     private readonly usageLedger: AiUsageLedgerService,
     private readonly momentGenerationContext: MomentGenerationContextService,
     private readonly subscription: SubscriptionService,
+    private readonly minimaxQuota: MinimaxQuotaService,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -697,6 +705,17 @@ export class AiOrchestratorService {
     return '';
   }
 
+  private isMinimaxTokenPlanExhausted(error: unknown) {
+    if (error instanceof AppError) {
+      const body = error.getResponse() as { code?: string } | undefined;
+      if (body?.code === 'MINIMAX_TOKEN_PLAN_EXHAUSTED') {
+        return true;
+      }
+    }
+    const msg = this.extractErrorMessage(error);
+    return /\b2056\b/.test(msg);
+  }
+
   private extractErrorStatus(error: unknown) {
     if (typeof error !== 'object' || !error || !('status' in error)) {
       return undefined;
@@ -796,7 +815,14 @@ export class AiOrchestratorService {
       try {
         return await request();
       } catch (error) {
-        if (attempt >= maxAttempts || !this.isTransientSpeechFailure(error)) {
+        // Token Plan 整体当日额度耗尽（2056）是硬性"已用完"，不是临时
+        // rate-limit；3 次指数 backoff 重试只是干烧 3.6s + 配额计数，
+        // 立刻抛出让上层走 fallback / markExhausted 才对。
+        if (
+          this.isMinimaxTokenPlanExhausted(error) ||
+          attempt >= maxAttempts ||
+          !this.isTransientSpeechFailure(error)
+        ) {
           throw error;
         }
 
@@ -2598,6 +2624,45 @@ export class AiOrchestratorService {
     }
   }
 
+  async generateWithMessages(options: {
+    messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+    usageContext: AiUsageContext;
+    maxTokens?: number;
+    temperature?: number;
+    fallback?: string;
+  }): Promise<string> {
+    await this.subscription.assertCanUseAi('text');
+    try {
+      const reminder = await this.worldLanguage.buildFinalReminder();
+      const messages = reminder
+        ? [
+            ...options.messages.slice(0, -1),
+            {
+              ...options.messages[options.messages.length - 1],
+              content: `${options.messages[options.messages.length - 1].content}\n\n${reminder}`,
+            },
+          ]
+        : options.messages;
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: options.usageContext,
+        characterId: options.usageContext.characterId,
+        label: 'messages generation',
+        request: (client, provider) =>
+          executeChatCompletion(client, {
+            model: provider.model,
+            messages,
+            max_tokens: options.maxTokens ?? 800,
+            temperature: options.temperature ?? 0.4,
+          }),
+      });
+
+      return sanitizeAiText(response.choices[0]?.message?.content ?? '');
+    } catch (error) {
+      this.logger.error('generateWithMessages error', error);
+      return options.fallback ?? '';
+    }
+  }
+
   async compressMemory(
     history: ChatMessage[],
     profile: PersonalityProfile,
@@ -2746,6 +2811,7 @@ export class AiOrchestratorService {
 
   private toSpeechTranscriptionException(error: unknown) {
     if (
+      error instanceof AppError ||
       error instanceof BadRequestException ||
       error instanceof BadGatewayException ||
       error instanceof ServiceUnavailableException
@@ -2772,6 +2838,7 @@ export class AiOrchestratorService {
 
   private toSpeechSynthesisException(error: unknown) {
     if (
+      error instanceof AppError ||
       error instanceof BadRequestException ||
       error instanceof BadGatewayException ||
       error instanceof ServiceUnavailableException
@@ -2798,6 +2865,7 @@ export class AiOrchestratorService {
 
   private toImageGenerationException(error: unknown) {
     if (
+      error instanceof AppError ||
       error instanceof BadRequestException ||
       error instanceof BadGatewayException ||
       error instanceof ServiceUnavailableException
@@ -3018,7 +3086,11 @@ export class AiOrchestratorService {
       });
     }
 
-    if (file.mimetype && !ACCEPTED_AUDIO_MIME_TYPES.has(file.mimetype)) {
+    const normalizedMimeType = file.mimetype
+      ?.split(';')[0]
+      .trim()
+      .toLowerCase();
+    if (normalizedMimeType && !ACCEPTED_AUDIO_MIME_TYPES.has(normalizedMimeType)) {
       throw new AppError('AI_TRANSCRIBE_FORMAT_INVALID', {
         legacyMessage: '当前录音格式暂不支持，请改用系统默认录音格式。',
       });
@@ -3045,6 +3117,11 @@ export class AiOrchestratorService {
       '当前实例未配置可用的 AI Key，暂时无法转写语音。',
     );
 
+    const [transcriptionLanguage, transcriptionPrompt] = await Promise.all([
+      this.worldLanguage.getTranscriptionLanguageCode(),
+      this.worldLanguage.getTranscriptionPrompt(),
+    ]);
+
     for (let index = 0; index < attempts.length; index += 1) {
       const attempt = attempts[index];
       const provider = attempt.provider;
@@ -3053,13 +3130,10 @@ export class AiOrchestratorService {
       }
 
       attemptedProvider = true;
-      const [transcriptionLanguage, transcriptionPrompt] = await Promise.all([
-        this.worldLanguage.getTranscriptionLanguageCode(),
-        this.worldLanguage.getTranscriptionPrompt(),
-      ]);
       const client = new OpenAI({
         apiKey: provider.transcriptionApiKey,
         baseURL: provider.transcriptionEndpoint,
+        maxRetries: 0,
       });
 
       try {
@@ -3185,40 +3259,74 @@ export class AiOrchestratorService {
 
       try {
         if (MinimaxNativeClient.isMinimaxEndpoint(provider.ttsEndpoint)) {
+          // 先 new client —— 它的 constructor 在 apiKey 缺失时会抛
+          // MINIMAX_API_KEY_MISSING；如果先 reserve 再 new，apiKey 缺失就会
+          // 抛在 reserve 之后但 try/release 块之外，留下永远没释放的配额。
           const minimax = new MinimaxNativeClient(
             provider.ttsEndpoint,
             provider.ttsApiKey,
           );
-          const result = await this.retrySpeechRequest(
-            'speech synthesis',
-            () =>
-              minimax.synthesizeSpeech({
-                model: provider.ttsModel,
-                text,
-                voiceId: voice,
-              }),
-          );
-          return {
-            buffer: result.buffer,
-            mimeType: result.mimeType,
-            fileExtension: 'mp3',
-            durationMs: Date.now() - startedAt,
-            provider: provider.ttsModel,
-            voice,
-          };
+          // Token Plan quota gate：仅对已在常量表登记的模型做配额扣减
+          // （目前是 speech-02-hd，11000/天）。未登记的 minimax TTS 模型
+          // 自然 bypass —— 不阻塞历史 provider 配置。
+          const quotaModel = provider.ttsModel;
+          const tracked = quotaModel in TOKEN_PLAN_DAILY_LIMITS;
+          if (tracked) {
+            const reserved = await this.minimaxQuota.tryReserve(quotaModel);
+            if (!reserved) {
+              throw new AppError('AI_TTS_QUOTA_EXHAUSTED', {
+                status: HttpStatus.TOO_MANY_REQUESTS,
+                legacyMessage: '今日语音合成额度已用完，请稍后再试。',
+              });
+            }
+          }
+          try {
+            const result = await this.retrySpeechRequest(
+              'speech synthesis',
+              () =>
+                minimax.synthesizeSpeech({
+                  model: provider.ttsModel,
+                  text,
+                  voiceId: voice,
+                }),
+            );
+            if (tracked) {
+              await this.minimaxQuota.commit(quotaModel);
+            }
+            return {
+              buffer: result.buffer,
+              mimeType: result.mimeType,
+              fileExtension: 'mp3',
+              durationMs: Date.now() - startedAt,
+              provider: provider.ttsModel,
+              voice,
+            };
+          } catch (innerErr) {
+            if (tracked) {
+              await this.minimaxQuota.release(quotaModel);
+              // 撞 2056（Token Plan 整体耗尽）就标死，避免本 tick 之后还反复重试
+              if (this.isMinimaxTokenPlanExhausted(innerErr)) {
+                await this.minimaxQuota.markExhaustedToday(quotaModel);
+              }
+            }
+            throw innerErr;
+          }
         }
         const client = this.createProviderClientFromEndpoint({
           endpoint: provider.ttsEndpoint,
           apiKey: provider.ttsApiKey,
         });
         const response = await this.retrySpeechRequest('speech synthesis', () =>
-          client.audio.speech.create({
-            model: provider.ttsModel,
-            voice,
-            input: text,
-            response_format: 'mp3',
-            instructions,
-          }),
+          client.audio.speech.create(
+            {
+              model: provider.ttsModel,
+              voice,
+              input: text,
+              response_format: 'mp3',
+              instructions,
+            },
+            { maxRetries: 0 },
+          ),
         );
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);

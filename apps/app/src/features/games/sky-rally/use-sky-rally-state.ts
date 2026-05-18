@@ -77,15 +77,21 @@ export function useSkyRallyState() {
     };
   }, [state]);
 
+  // 卸载时刷新最新 state；直接闭包 state + deps [] 会把 disk 回滚到 mount 时的初始 state。
+  const stateRef = useRef(state);
+  stateRef.current = state;
   useEffect(() => {
     return () => {
-      saveSkyRallyState(state);
+      saveSkyRallyState(stateRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 60ms tick = ~16Hz；reducer 在 idle 也会 JSON.parse(JSON.stringify(state)) 深拷贝
+  // 一份新 state 并触发 React re-render，每秒空跑 16 次。用户停在选赛道 / 结算页
+  // 不操作的时候这就是纯电量浪费。idle/ended 状态直接不 dispatch；status 由 ref 跟踪。
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (stateRef.current.status !== "racing") return;
       dispatch({ type: "tick", nowMs: Date.now() });
     }, 60);
     return () => window.clearInterval(id);

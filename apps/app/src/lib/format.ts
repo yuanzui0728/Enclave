@@ -1,12 +1,41 @@
 import { msg } from "@lingui/macro";
 import {
-  formatDateTime,
+  getActiveLocale,
   getJustNowLabel,
   getYesterdayLabel,
   translateRuntimeMessage,
 } from "@yinjie/i18n";
 
 const t = translateRuntimeMessage;
+
+// 走查电脑端朋友圈 R3：formatDateTime 内部 `new Intl.DateTimeFormat(locale, opts)`
+// 每次调用都重新构造一个 Intl 实例 —— V8 上 ~0.5-1ms。/tabs/moments 200 条
+// moment 首屏 × formatTimestamp 1 次/条 = 100-200ms 纯 CPU 烧在 toolbar /
+// feed 首挂上；conversation list、chat 消息列表、profile-moments 日期列等
+// 也踩同坑。整张 app 的 formatDateTime 调用走一层 (locale, options) 维度的
+// 缓存 —— 同 (locale, options) 组合二次起命中 Map.get 直接复用 Intl 实例，
+// 内存上界 = 4 locale × ~10 unique options 组合 ≈ 40 条 entry，可忽略。
+//
+// 由于 lib/format.ts 是 app 本地 lib（@yinjie/i18n 是跨 app 共享 package），
+// 缓存放这一层即可不影响 admin / cloud-console / wiki，更安全。
+const dateTimeFormatterCache = new Map<string, Intl.DateTimeFormat>();
+function formatDateTimeCached(
+  date: Date | number,
+  options: Intl.DateTimeFormatOptions,
+) {
+  const locale = getActiveLocale() ?? "zh-CN";
+  // JSON.stringify 在小 options 对象上是 1-2us，比 new Intl 便宜 3 个量级；
+  // 用它当 cache key 后缀。不同 key 顺序会算成不同 key，但 lib/format.ts
+  // 内所有调用方都是字面量对象、顺序稳定，不会出现等价 options 多 key 的
+  // 情况。即便出现，上限 ~40 仍然安全。
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let formatter = dateTimeFormatterCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, options);
+    dateTimeFormatterCache.set(key, formatter);
+  }
+  return formatter.format(date);
+}
 
 export function parseTimestamp(value?: string | null) {
   if (!value) {
@@ -31,7 +60,7 @@ export function formatTimestamp(value?: string | null) {
   }
 
   const date = new Date(timestamp);
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -58,13 +87,13 @@ export function formatConversationTimestamp(value?: string | null) {
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return formatDateTime(date, {
+    return formatDateTimeCached(date, {
       month: "numeric",
       day: "numeric",
     });
   }
 
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     year: "2-digit",
     month: "numeric",
     day: "numeric",
@@ -90,7 +119,7 @@ export function formatMessageTimestamp(value?: string | null) {
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return formatDateTime(date, {
+    return formatDateTimeCached(date, {
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
@@ -98,7 +127,7 @@ export function formatMessageTimestamp(value?: string | null) {
     });
   }
 
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -130,7 +159,7 @@ export function formatDesktopMessageTimestamp(value?: string | null) {
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return formatDateTime(date, {
+    return formatDateTimeCached(date, {
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
@@ -138,7 +167,7 @@ export function formatDesktopMessageTimestamp(value?: string | null) {
     });
   }
 
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -153,7 +182,7 @@ export function formatDetailedMessageTimestamp(value?: string | null) {
     return getJustNowLabel();
   }
 
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -177,14 +206,14 @@ function parseDateValue(value?: string | null) {
 }
 
 function formatTime(date: Date) {
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
 function formatWeekday(date: Date) {
-  return formatDateTime(date, {
+  return formatDateTimeCached(date, {
     weekday: "long",
   });
 }

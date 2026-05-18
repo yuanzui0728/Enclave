@@ -3,7 +3,7 @@ import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useNavigate } from "@tanstack/react-router";
 import { getMyCloudProfile, getWorldOwner, isApiRequestError } from "@yinjie/contracts";
-import { AppPage, AppSection, InlineNotice } from "@yinjie/ui";
+import { AppPage, AppSection } from "@yinjie/ui";
 
 const t = translateRuntimeMessage;
 import { readPersistedMobileWebRoute } from "../features/shell/mobile-web-route-persistence";
@@ -41,52 +41,99 @@ export function SplashPage() {
 
     let cancelled = false;
 
-    async function continueBoot() {
-      const runtimeContext = resolveAppRuntimeContext(
-        runtimeConfig.appPlatform,
-      );
-      if (
-        runtimeContext.hostRole === "host" ||
-        requiresRemoteServiceConfiguration()
-      ) {
-        if (!cancelled) {
-          void navigate({ to: "/welcome", replace: true });
-        }
-        return;
-      }
+    const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+    if (
+      runtimeContext.hostRole === "host" ||
+      requiresRemoteServiceConfiguration()
+    ) {
+      void navigate({ to: "/welcome", replace: true });
+      return () => {
+        cancelled = true;
+      };
+    }
 
-      // 校验 cloud session（纯本地，不发 HTTP），无效直接跳。
-      // 远程公网部署（vicp.fun / 公网 IP / 隧道）强制走 cloud 模式：
-      // 即使 worldAccessMode 还没被持久化设置，也不允许匿名直通本机 owner。
-      const isCloudMode =
-        runtimeConfig.worldAccessMode === "cloud" || isRemoteWebDeployment();
-      const cloudSession = isCloudMode
-        ? useCloudSessionStore.getState()
+    const isCloudMode =
+      runtimeConfig.worldAccessMode === "cloud" || isRemoteWebDeployment();
+    const cloudSession = isCloudMode
+      ? useCloudSessionStore.getState()
+      : null;
+
+    // 本地校验：cloud 模式必须有未过期 token；其它路径必须有 apiBaseUrl。
+    // 都是纯本地判断，不发 HTTP，不会卡。
+    if (
+      isCloudMode &&
+      (!runtimeConfig.apiBaseUrl ||
+        !cloudSession?.accessToken ||
+        isCloudSessionExpired(cloudSession.expiresAt))
+    ) {
+      clearCloudRuntimeSession();
+      void navigate({ to: "/welcome", replace: true });
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (!runtimeConfig.apiBaseUrl) {
+      void navigate({ to: "/welcome", replace: true });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 已 onboarded：立刻跳 chat / 上次路径，token + owner 验证降级为后台异步。
+    // 之前实现 await profile + owner（最长 8s 超时）才决定路由，公网 RTT
+    // 加 cloud-api 处理在网络略抖时就把 splash 显示拖到几秒——用户从地址栏
+    // 重新点进来一直看着 "欢迎回到你的世界"，体感就是"卡在欢迎页"。
+    const cachedOnboardingCompleted =
+      useWorldOwnerStore.getState().onboardingCompleted;
+    if (cachedOnboardingCompleted) {
+      const restoredRoute = isMobileWebRuntime(runtimeConfig.appPlatform)
+        ? readPersistedMobileWebRoute()
         : null;
-      if (
-        isCloudMode &&
-        (!runtimeConfig.apiBaseUrl ||
-          !cloudSession?.accessToken ||
-          isCloudSessionExpired(cloudSession.expiresAt))
-      ) {
-        clearCloudRuntimeSession();
-        if (!cancelled) {
-          void navigate({ to: "/welcome", replace: true });
-        }
-        return;
-      }
+      void navigate({
+        to: restoredRoute ?? "/tabs/chat",
+        replace: true,
+      });
 
-      if (!runtimeConfig.apiBaseUrl) {
-        if (!cancelled) {
-          void navigate({ to: "/welcome", replace: true });
-        }
-        return;
+      // 后台异步刷新 profile / owner。失败若是 401/403 再清 session 弹回
+      // /welcome；网络错误 / 5xx / 超时一律忽略，留着 7d session 不动
+      // ——cloud-api 一重启就被踢登录的老毛病不能复发。
+      // 注意：profile 401 处理不挂 cancelled —— splash 早已 unmount，但 token
+      // 失效是全局事件，必须把用户弹回 /welcome，不能因为 splash 退场就吃掉。
+      if (isCloudMode && cloudSession?.accessToken) {
+        void getMyCloudProfile(
+          cloudSession.accessToken,
+          runtimeConfig.cloudApiBaseUrl,
+        )
+          .then((profile) => {
+            if (!profile) return;
+            setCloudProfile(profile);
+          })
+          .catch((error) => {
+            if (
+              isApiRequestError(error) &&
+              (error.statusCode === 401 || error.statusCode === 403)
+            ) {
+              clearCloudRuntimeSession();
+              void navigate({ to: "/welcome", replace: true });
+            }
+          });
       }
+      void getWorldOwner(runtimeConfig.apiBaseUrl)
+        .then((owner) => {
+          if (!owner) return;
+          hydrateOwner(owner);
+        })
+        .catch(() => {
+          // 静默：owner 刷新失败不影响当前会话路径。
+        });
 
-      // 公网隧道下两次串行 RTT (~500ms × 2) 是首屏可见浪费的最后一段。
-      // getMyCloudProfile 走 /cloud/me/profile（cloud-api 3001），
-      // getWorldOwner 走 /api/world/owner（api 3000），完全不同 upstream，
-      // 用 allSettled 真并行 + 整体 8s 超时兜底。
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 没 onboarded 缓存：才需要等真实的 owner 接口（首次冷启 / 首次登录后立即开 app）
+    async function continueColdBoot() {
       const profilePromise =
         isCloudMode && cloudSession?.accessToken
           ? getMyCloudProfile(
@@ -94,7 +141,7 @@ export function SplashPage() {
               runtimeConfig.cloudApiBaseUrl,
             )
           : Promise.resolve(null);
-      const ownerPromise = getWorldOwner(runtimeConfig.apiBaseUrl);
+      const ownerPromise = getWorldOwner(runtimeConfig.apiBaseUrl as string);
       const timeoutPromise = new Promise<never>((_, reject) =>
         window.setTimeout(
           () => reject(new Error("splash-bootstrap-timeout")),
@@ -107,14 +154,8 @@ export function SplashPage() {
         timeoutPromise,
       ]).catch(() => null)) ?? [null, null];
 
-      if (cancelled) {
-        return;
-      }
+      if (cancelled) return;
 
-      // 只有 cloud-api 明确回 401/403 才说明 token 真的失效——必须重新登录。
-      // 网络错误 / 5xx / 超时是后端"暂时不可用"，绝不能借此清掉用户的 7d session：
-      // 历史上 splash 不区分两者，cloud-api 一重启就把所有还有效的 token 抹掉，
-      // 表现为"重启服务就要重新登陆"。
       const profileAuthExpired =
         isCloudMode &&
         profileResult?.status === "rejected" &&
@@ -132,16 +173,13 @@ export function SplashPage() {
         setCloudProfile(profileResult.value);
       }
 
-      // owner 拿到就用最新的；拿不到（超时 / 网络抖动 / api 重启）就回落到
-      // zustand 持久化里的旧 owner 状态——只用来决定路由 (onboardingCompleted)，
-      // 不动 cloud session。
       const owner =
         ownerResult?.status === "fulfilled" ? ownerResult.value : null;
       if (owner) {
         hydrateOwner(owner);
       }
 
-      const cachedOnboardingCompleted =
+      const onboardingCompletedNow =
         owner?.onboardingCompleted ??
         useWorldOwnerStore.getState().onboardingCompleted;
 
@@ -149,14 +187,14 @@ export function SplashPage() {
         ? readPersistedMobileWebRoute()
         : null;
       void navigate({
-        to: cachedOnboardingCompleted
+        to: onboardingCompletedNow
           ? restoredRoute ?? "/tabs/chat"
           : "/welcome",
         replace: true,
       });
     }
 
-    void continueBoot();
+    void continueColdBoot();
 
     return () => {
       cancelled = true;
@@ -173,50 +211,13 @@ export function SplashPage() {
 
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center">
-      <AppSection className="w-full max-w-md border-black/5 bg-white px-8 py-10 shadow-none">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#15803d]">
-          Beyond Reality
-        </div>
-        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#07c160,#34c759)] text-2xl font-semibold text-white shadow-none">
+      <AppSection className="w-full max-w-xs border-black/5 bg-white px-8 py-10 shadow-none">
+        <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,#07c160,#34c759)] text-xl font-semibold text-white shadow-none">
           {t(msg`隐界`)}
         </div>
-        <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-          {t(msg`欢迎回到你的世界`)}
-        </h1>
-        <p className="mt-4 text-sm leading-8 text-[color:var(--text-secondary)]">
-          {t(msg`这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。`)}
+        <p className="mt-6 text-sm leading-6 text-[color:var(--text-secondary)]">
+          {t(msg`加载中...`)}
         </p>
-
-        <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-              Step 1
-            </div>
-            <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              {t(msg`确认入口`)}
-            </div>
-          </div>
-          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-              Step 2
-            </div>
-            <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              {t(msg`同步世界主人`)}
-            </div>
-          </div>
-          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-              Step 3
-            </div>
-            <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              {t(msg`继续开启对话`)}
-            </div>
-          </div>
-        </div>
-
-        <InlineNotice className="mt-6 text-left" tone="info">
-          {t(msg`正在整理这次进入世界的路径，马上带你回到上次停留的地方。`)}
-        </InlineNotice>
       </AppSection>
     </AppPage>
   );

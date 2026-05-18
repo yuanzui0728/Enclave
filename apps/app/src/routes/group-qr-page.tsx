@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -36,9 +36,11 @@ import {
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { buildPublicShareUrl } from "../lib/share-url";
 import {
   createGroupInviteDeliveryBatchId,
   hydrateGroupInviteDeliveryFromNative,
+  isGroupInviteStorageKey,
   readGroupInviteDeliveryRecord,
   readGroupInviteDeliveryTargets,
   readGroupInviteReopenRecords,
@@ -54,10 +56,11 @@ import {
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp, parseTimestamp } from "../lib/format";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
@@ -172,23 +175,35 @@ export function GroupQrPage() {
     [groupId],
   );
 
+  // 走查 R2：三条 query 都没 staleTime（默认 0），每次进群二维码页都会
+  // 重新 GET /groups/$id + /members + /conversations。其中 conversations
+  // 影响最大——投递列表挂在它上面，用户每次回这页都触发整张会话列表 refetch
+  // （活跃用户 50+ 会话），公网隧道 RTT 600ms+ 看到列表闪烁。group-contacts-page
+  // 同 key 已用 staleTime: 15_000 + refetchOnWindowFocus: true，这里对齐：
+  // 1) 群/成员 query 加 15s staleTime 防止短时回访重拉；
+  // 2) conversations 加 staleTime + refetchOnWindowFocus 让从后台切前台时
+  //    能看到新加的会话出现在投递列表里。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
   const defaultGroupName = t(msg`隐界群聊`);
   const defaultGroupInviteLabel = t(msg`群聊邀请`);
   const fallbackGroupLabel = t(msg`群聊`);
   const fallbackCurrentGroupLabel = t(msg`当前群聊`);
-  const groupDisplayName = groupQuery.data?.name ?? defaultGroupName;
+  const groupDisplayName = groupQuery.data?.name || defaultGroupName;
 
   useEffect(() => {
     if (
@@ -218,11 +233,7 @@ export function GroupQrPage() {
   ]);
 
   const inviteLink = useMemo(() => {
-    if (typeof window === "undefined") {
-      return `/group/${groupId}`;
-    }
-
-    return new URL(`/group/${groupId}`, window.location.origin).toString();
+    return buildPublicShareUrl(`/group/${groupId}`);
   }, [groupId]);
   const inviteCode = `YJ-GROUP-${groupId.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
   const inviteText = useMemo(() => {
@@ -232,20 +243,45 @@ export function GroupQrPage() {
       t(msg`邀请码：${inviteCode}`),
     ].join("\n");
   }, [groupDisplayName, inviteCode, inviteLink, locale]);
+  // 走查新一轮 R1：originally subtitle="${members?.length ?? 0} 人群聊"——
+  // membersQuery.data 还在飞那几百 ms 内 SVG 邀请卡先生成一份"0 人群聊"，
+  // 等 count 到达再 rebuild 一次。用户点群二维码进来就能肉眼看见副标从
+  // "0 人群聊" 闪到真实 "N 人群聊"，截图分享出去也可能截到 0 那一帧。和
+  // group-chat-thread-panel 桌面 header 同款修法：loading 时退回中性
+  // "群邀请卡" 副标，等真值再换。deps 用 `memberCount`（number | undefined）
+  // 代替 `membersQuery.data?.length` (number)，避免 undefined 落进 ??0 的
+  // 那条路径漏判断。
+  const memberCount = membersQuery.data?.length;
+  // 走查移动端群聊 R1：和姊妹路径 mobile-group-call-screen.tsx「新 R1」(line 239-242)
+  // 同款修法——下方 JSX 里 `members={membersQuery.data?.map(item=>item.memberId) ?? []}`
+  // 每次 render 都 new 一个 array → GroupAvatarChip 拿到新 prop 引用、重新算
+  // hashSeed × 4 + 重新挂 4 个 <img>。本页 notice / deliveredConversation /
+  // deliveryTargets / reopenRecords / groupInviteStoreReady 五条 state 任意改变
+  // 都触发整页 re-render，公网隧道 RTT 下 sendToConversation / scheduleConversationsInvalidate
+  // 等动作连点几次能轻松跑出 10+ 次重渲染——每次都把 4 张邀请卡 thumbnail 丢
+  // 弃重挂。memberIds 锁住引用，群成员列表稳定时 GroupAvatarChip 完全跳过重
+  // 渲染。
+  const memberIdsForAvatar = useMemo(
+    () => membersQuery.data?.map((item) => item.memberId) ?? [],
+    [membersQuery.data],
+  );
   const qrSvgMarkup = useMemo(
     () =>
       buildInviteMatrixSvg({
         code: inviteCode,
         footerLabel: t(msg`群邀请卡`),
-        label: groupQuery.data?.name ?? defaultGroupInviteLabel,
-        subtitle: t(msg`${membersQuery.data?.length ?? 0} 人群聊`),
+        label: groupQuery.data?.name || defaultGroupInviteLabel,
+        subtitle:
+          memberCount !== undefined
+            ? t(msg`${memberCount} 人群聊`)
+            : t(msg`群邀请卡`),
       }),
     [
       defaultGroupInviteLabel,
       groupQuery.data?.name,
       inviteCode,
       locale,
-      membersQuery.data?.length,
+      memberCount,
     ],
   );
   const mobileLink = useMemo(
@@ -647,13 +683,24 @@ export function GroupQrPage() {
     const handleFocus = () => {
       void syncGroupInviteState();
     };
+    // 走查 新 R1：原版 storage handler 直接复用 handleFocus，OTHER tab 任何
+    // localStorage 写入都会触发 hydrate→读 3 个 storage key→setState×4，包括
+    // 主题切换、last viewed page、草稿等完全无关的写入。用 isGroupInviteStorageKey
+    // gate 一下，只在群邀请投递/记录/复登的 3 个 key 上才真同步；老 Safari 的
+    // localStorage.clear() 场景 key=null helper 也按全量同步对待。
+    const handleStorage = (event: StorageEvent) => {
+      if (!isGroupInviteStorageKey(event.key)) {
+        return;
+      }
+      void syncGroupInviteState();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorage);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [groupId, nativeDesktopGroupInvite]);
 
@@ -736,6 +783,27 @@ export function GroupQrPage() {
     });
   }
 
+  // 走查移动端群聊 R6：和姊妹路径 chat-details-page R1/R3 / group-chat-details
+  // 本会话 R2 / group-announcement 本会话 R5 同款修法——本页一连串 showNotice
+  // 成功文案（"群邀请入口已复制到手机。"/"已打开系统分享面板。"/"已把群邀请
+  // 发到 xxx。"等十几处）原版没 auto-dismiss，notice 一直挂在邀请卡上方直到
+  // 用户切 groupId / 离开页才消。danger 通常自带 secondaryAction（"返回上一页"
+  // 兜底），保留语义；只在无 actionLabel+onAction 且无 secondaryActionLabel+
+  // onSecondaryAction 时 3.5s 自动消（success 纯字符串路径）。
+  // 桌面分支 getMobileDangerBackAction() 返回 {}，danger notice 也会落进 auto-
+  // dismiss——桌面端 danger 没有兜底按钮，让它消失反而是预期（不阻塞用户操作）。
+  useEffect(() => {
+    if (
+      !notice ||
+      (notice.actionLabel && notice.onAction) ||
+      (notice.secondaryActionLabel && notice.onSecondaryAction)
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   const navigateToRouteStateReturn = () => {
     if (!safeReturnPath) {
       return false;
@@ -786,45 +854,43 @@ export function GroupQrPage() {
       unavailableMessage?: string;
     },
   ) {
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      if (retryOptions?.unavailableMessage) {
-        showRetryNotice(
-          retryOptions.unavailableMessage,
-          retryOptions.actionLabel,
-          retryOptions.onAction,
-        );
-        return;
-      }
-
-      showNotice(t(msg`当前环境暂不支持复制。`), "danger");
+    // 走查 Round 6：原版 if (!navigator.clipboard) → 返回"当前环境暂不支持
+    // 复制"。但 writeClipboardText 内部有 3 层兜底（原生 iOS UIPasteboard /
+    // Android shell 桥 → Clipboard API → execCommand），iOS WKWebView 里
+    // navigator.clipboard 通常 undefined，但原生桥能写。原版的 gate 把这条
+    // 路径堵死。删掉 gate，统一由 writeClipboardText 返回的 boolean 决定
+    // 后续 toast，并且仍保留 retryOptions.unavailableMessage 用于真的没桥
+    // 也没 API 的极端兜底（execCommand 失败）。
+    if (await writeClipboardText(value)) {
+      showNotice(successMessage);
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(value);
-      showNotice(successMessage);
-    } catch {
-      if (retryOptions) {
-        showRetryNotice(
-          t(msg`复制失败，请稍后重试。`),
-          retryOptions.actionLabel,
-          retryOptions.onAction,
-        );
-        return;
-      }
-
-      showNotice(t(msg`复制失败，请稍后重试。`), "danger");
+    if (retryOptions?.unavailableMessage) {
+      showRetryNotice(
+        retryOptions.unavailableMessage,
+        retryOptions.actionLabel,
+        retryOptions.onAction,
+      );
+      return;
     }
+
+    if (retryOptions) {
+      showRetryNotice(
+        t(msg`复制失败，请稍后重试。`),
+        retryOptions.actionLabel,
+        retryOptions.onAction,
+      );
+      return;
+    }
+
+    showNotice(t(msg`复制失败，请稍后重试。`), "danger");
   }
 
   async function downloadInviteCard() {
     const result = await saveGeneratedFile({
       contents: qrSvgMarkup,
-      fileName: `${groupQuery.data?.name ?? "group"}-invite-card.svg`,
+      fileName: `${groupQuery.data?.name || "group"}-invite-card.svg`,
       mimeType: "image/svg+xml;charset=utf-8",
       dialogTitle: t(msg`保存群邀请卡`),
       kindLabel: t(msg`群邀请卡`),
@@ -869,13 +935,12 @@ export function GroupQrPage() {
   }
 
   async function sendToMobile() {
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
+    // 走查 Round 6 同 copyText：去掉 navigator.clipboard 前置 gate，让
+    // writeClipboardText 自己走原生 iOS UIPasteboard / Android shell 桥 →
+    // Clipboard API → execCommand 兜底；只在三层兜底都失败时才弹 retry。
+    if (!(await writeClipboardText(mobileLink))) {
       showRetryNotice(
-        t(msg`当前环境暂不支持复制到手机。`),
+        t(msg`复制到手机失败，请稍后重试。`),
         t(msg`重试复制到手机`),
         () => {
           void sendToMobile();
@@ -883,14 +948,12 @@ export function GroupQrPage() {
       );
       return;
     }
-
     try {
-      await navigator.clipboard.writeText(mobileLink);
       pushMobileHandoffRecord({
         category: "group_invite",
-        label: t(msg`${groupQuery.data?.name ?? fallbackGroupLabel} 邀请`),
+        label: t(msg`${groupQuery.data?.name || fallbackGroupLabel} 邀请`),
         description: t(
-          msg`把 ${groupQuery.data?.name ?? fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,
+          msg`把 ${groupQuery.data?.name || fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,
         ),
         path: `/group/${groupId}`,
       });
@@ -918,13 +981,14 @@ export function GroupQrPage() {
       return;
     }
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
+    // 走查 Round 4：原版回退直接调 navigator.clipboard.writeText，但 iOS
+     // WKWebView 经常因为 user-gesture/permission 写不进，结果"已复制群邀请
+     // 文案"弹了但剪贴板是空的。换成 writeClipboardText —— 内部先走 iOS/Android
+     // shell 原生 UIPasteboard 桥，再 Clipboard API，再 execCommand 兜底。
+     // 同 copyText / sendToMobile 路径已经走这个 helper。
+    if (!(await writeClipboardText(inviteText))) {
       showRetryNotice(
-        t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+        t(msg`系统分享暂时不可用，请稍后重试。`),
         t(msg`重试分享`),
         () => {
           void shareInvite();
@@ -932,19 +996,7 @@ export function GroupQrPage() {
       );
       return;
     }
-
-    try {
-      await navigator.clipboard.writeText(inviteText);
-      showNotice(t(msg`系统分享暂时不可用，已复制群邀请文案。`));
-    } catch {
-      showRetryNotice(
-        t(msg`系统分享失败，请稍后重试。`),
-        t(msg`重试分享`),
-        () => {
-          void shareInvite();
-        },
-      );
-    }
+    showNotice(t(msg`系统分享暂时不可用，已复制群邀请文案。`));
   }
 
   async function shareInviteLink() {
@@ -1011,7 +1063,100 @@ export function GroupQrPage() {
     });
   }
 
+  // 同步防双击锁——下面 9 处「投递到会话」按钮全都用 `void sendToConversation(conv)`
+  // 触发，函数体里要 await sendGroupMessage / emitChatMessage（实际公网隧道约
+  // 600ms RTT）；按钮自身没有 disabled 状态，用户在第一次 click 还没回来之前
+  // 再戳一次同一行会再飞一份相同的群邀请文本到同一个会话——朋友收到 2 条
+  // 一模一样的"xxx 邀请你加入群聊"，体验很差。按 conversationId 维度上锁，
+  // finally 解锁；不同会话间不互相阻塞，用户可以连点不同行批量投。
+  const sendingConversationsRef = useRef<Set<string>>(new Set());
+  // 走查移动端群聊 R3：本页有 5+ 处「回到会话」按钮（currentReturnSourceConversation
+  // / activeDeliveredConversation / deliveryTarget batches / reopenRecord /
+  // relatedReturnConversations）都 `onClick={() => { void navigate({to:
+  // buildConversationOpenPath(conv)}) }}` 形态，没挂 disabled / 没同步 ref 守。
+  // 同帧 <16ms 双击同一行 push 2 条相同 history 项——用户从目标会话退回群邀请
+  // 页要按 2 次返回；移动端 yuanzui 群邀请走查最易踩到的浅层 bug。
+  // 用一个共享 ref 守住所有「回到会话」前进按钮（不同会话也不冲突，因为页面
+  // 跳出后会 unmount/remount 自动复位 ref），raf 后释放兜底 navigate 没真正
+  // 切走。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+  // 走查 R1：直聊分支 emitChatMessage 后 setTimeout 500ms 再 invalidate
+  // conversations（给 socket 服务端写入完成留窗口）。原版每次邀请都 schedule
+  // 一份独立 setTimeout，N 个会话连发就堆 N 个定时器，全在 ~500ms 内 fire →
+  // N 次 invalidate；react-query 对同一 queryKey 的并发 refetch dedup 但
+  // 已结束的会重新发——上传完成后排队再发 1-N 次 GET /conversations。更糟
+  // 的是 unmount 后定时器没清，仍然 fire 一次 invalidate 给其它已挂载页（多
+  // 一次公网 ~600ms RTT 的无用拉刷）。改成共享单 timer，新邀请重置 deadline；
+  // unmount 时清掉。
+  const pendingConversationsInvalidateTimerRef = useRef<number | null>(null);
+  const scheduleConversationsInvalidate = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (pendingConversationsInvalidateTimerRef.current !== null) {
+      window.clearTimeout(pendingConversationsInvalidateTimerRef.current);
+    }
+    pendingConversationsInvalidateTimerRef.current = window.setTimeout(() => {
+      pendingConversationsInvalidateTimerRef.current = null;
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    }, 500);
+  }, [baseUrl, queryClient]);
+  useEffect(() => {
+    return () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (pendingConversationsInvalidateTimerRef.current !== null) {
+        window.clearTimeout(pendingConversationsInvalidateTimerRef.current);
+        pendingConversationsInvalidateTimerRef.current = null;
+      }
+    };
+  }, []);
   async function sendToConversation(conversation: ConversationListItem) {
+    if (sendingConversationsRef.current.has(conversation.id)) {
+      return;
+    }
+    sendingConversationsRef.current.add(conversation.id);
+    try {
+      await doSendToConversation(conversation);
+    } catch (error) {
+      // 走查 R1：群投递分支里 await sendGroupMessage 抛错（公网隧道超时 /
+      // cloud token 失效重连 / 服务端 5xx）会一路冒到 caller 的 `void
+      // sendToConversation(...)`——void 不接 rejection，落到 window.
+      // unhandledrejection 污染 telemetry；用户也不会看到任何提示，按钮上
+      // 没有任何反馈，第二下又被同步锁拦住，看着像"卡住了"。catch 这里就地
+      // 翻成 danger notice，同时让上层 finally 正常解锁释放重试入口。
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : t(msg`发送群邀请失败，请稍后重试。`);
+      showNotice(
+        t(msg`未能把群邀请发到 ${conversation.title}：${message}`),
+        "danger",
+      );
+    } finally {
+      sendingConversationsRef.current.delete(conversation.id);
+    }
+  }
+
+  async function doSendToConversation(conversation: ConversationListItem) {
     const conversationPath = isPersistedGroupConversation(conversation)
       ? `/group/${conversation.id}`
       : `/chat/${conversation.id}`;
@@ -1037,7 +1182,11 @@ export function GroupQrPage() {
       );
       setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
       showNotice(t(msg`已把群邀请发到 ${conversation.title}。`));
-      await queryClient.invalidateQueries({
+      // 本会话 R1：和直聊分支 (line ~1101) 对齐 fire-and-forget。原本 await
+      // 让 sendingConversationsRef per-conversation 锁多撑 ~600ms 公网隧道
+      // RTT；这条 invalidate 是为「其它页面」拉刷 conversations，本页不
+      // 直接消费，await 没必要。
+      void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
       return;
@@ -1058,11 +1207,7 @@ export function GroupQrPage() {
       characterId,
       text: inviteMessage,
     });
-    window.setTimeout(() => {
-      void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    }, 500);
+    scheduleConversationsInvalidate();
     setDeliveredConversation(
       writeGroupInviteDeliveryRecord(groupId, {
         conversationId: conversation.id,
@@ -1205,16 +1350,22 @@ export function GroupQrPage() {
           >
             <GroupAvatarChip
               name={groupQuery.data.name}
-              members={membersQuery.data?.map((item) => item.memberId) ?? []}
+              members={memberIdsForAvatar}
               size="wechat"
             />
             <div className="min-w-0 flex-1">
               <div className="text-lg font-semibold text-[color:var(--text-primary)]">
                 {groupQuery.data.name}
               </div>
-              <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                {t(msg`${membersQuery.data?.length ?? 0} 人群聊`)}
-              </div>
+              {/* 走查新一轮 R1：原本 `${members?.length ?? 0} 人群聊`——和
+                  上方 qrSvgMarkup 同款 loading flicker：membersQuery 飞行中
+                  群邀请卡顶部副标先闪一帧"0 人群聊"再跳到真实数字。loading
+                  时压根不渲这行副标，等数到达。 */}
+              {memberCount !== undefined ? (
+                <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+                  {t(msg`${memberCount} 人群聊`)}
+                </div>
+              ) : null}
               <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                 {t(
                   msg`最近活跃 ${formatConversationTimestamp(groupQuery.data.lastActivityAt)}`,
@@ -1250,13 +1401,13 @@ export function GroupQrPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => {
+                  onClick={guardRowNavigation(() => {
                     void navigate({
                       to: buildConversationOpenPath(
                         currentReturnSourceConversation,
                       ),
                     });
-                  }}
+                  })}
                   className="shrink-0 rounded-full"
                 >
                   {t(msg`回到会话`)}
@@ -1412,13 +1563,13 @@ export function GroupQrPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: resolveConversationOpenPath(
                       activeDeliveredConversation.conversationPath,
                     ),
                   });
-                }}
+                })}
                 className="shrink-0 rounded-full"
               >
                 {t(msg`回到会话`)}
@@ -1495,13 +1646,13 @@ export function GroupQrPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => {
+                          onClick={guardRowNavigation(() => {
                             void navigate({
                               to: resolveConversationOpenPath(
                                 record.conversationPath,
                               ),
                             });
-                          }}
+                          })}
                           className="shrink-0 rounded-full"
                         >
                           {t(msg`回到会话`)}
@@ -1562,13 +1713,13 @@ export function GroupQrPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => {
+                      onClick={guardRowNavigation(() => {
                         void navigate({
                           to: resolveConversationOpenPath(
                             record.conversationPath,
                           ),
                         });
-                      }}
+                      })}
                       className="shrink-0 rounded-full"
                     >
                       {t(msg`回到会话`)}
@@ -2399,13 +2550,13 @@ export function GroupQrPage() {
               {currentReturnSourceConversation ? (
                 <Button
                   variant="ghost"
-                  onClick={() => {
+                  onClick={guardRowNavigation(() => {
                     void navigate({
                       to: buildConversationOpenPath(
                         currentReturnSourceConversation,
                       ),
                     });
-                  }}
+                  })}
                   className="rounded-full"
                 >
                   {t(msg`回到来源会话`)}
@@ -2444,13 +2595,21 @@ export function GroupQrPage() {
   return (
     <ChatDetailsShell
       title={t(msg`群二维码`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊邀请`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊邀请`)}
       onBack={() => {
-        void navigate({
-          to: "/group/$groupId/details",
-          params: { groupId },
-          ...(detailsRouteHash ? { hash: detailsRouteHash } : {}),
-        });
+        // 走查 R1：原版直接 navigate push 新 history 项，用户 [details → qr →
+        // 点返回] 后浏览器后退会落回 qr 死循环。和 background 页同口径用
+        // navigateBackOrFallback。
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/group/$groupId/details",
+              params: { groupId },
+              ...(detailsRouteHash ? { hash: detailsRouteHash } : {}),
+            });
+          },
+          `/group/${groupId}/details`,
+        );
       }}
     >
       <div className="space-y-3 px-3">{content}</div>

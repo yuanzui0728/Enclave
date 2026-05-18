@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { AppError } from '../../common/app-error.exception';
 import { UserEntity } from './user.entity';
 import { decryptUserApiKey, encryptUserApiKey } from './api-key-crypto';
 import type { AiKeyOverride } from '../ai/ai.types';
@@ -25,6 +26,79 @@ import {
   parseChatBackgroundAsset,
 } from '../chat/chat-background.utils';
 import { WelcomeMessageService } from './welcome-message.service';
+
+const MIN_OWNER_NAME_LENGTH = 2;
+// 与移动端 profile-info-name-page MAX=20 / signature MAX=30 对齐，但服务端给
+// 一点宽容（粘贴时多空格、不同前端版本）。avatar 接受 URL 或 base64 data URL，
+// 1MB 文件 → ~1.33MB base64，给 2MB 上限挡掉粘贴 10MB 大字符串 / 恶意客户端。
+// 之前完全没卡 → 同 phone 反复 PATCH 巨型 avatar 让 DB 行膨胀、每次 GET owner
+// 都把整坨拉回前端。
+const MAX_OWNER_NAME_LENGTH = 64;
+const MAX_OWNER_SIGNATURE_LENGTH = 300;
+const MAX_OWNER_AVATAR_LENGTH = 2 * 1024 * 1024;
+
+// username 内嵌 \r \n \t 等控制字符是脏数据：profile-page 头部 truncate 会让
+// "foo\nbar" 看成 "foo bar"，但下游某些 chat sender / moments author 会照原样
+// 渲染断行。前端 sanitize 已落，这里再兜一次，挡住老客户端 / curl 直调。
+const CONTROL_CHAR_REGEX = new RegExp('[\\u0000-\\u001f\\u007f-\\u009f]+', 'g');
+function sanitizeOwnerName(value: string): string {
+  return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// signature 也按单行存：前端 profile-info-signature-page.tsx 早就 sanitize
+// 把 \r\n\t 折成空格、压连续空白；profile-page / profile-info-page 都是单行
+// truncate / line-clamp-1 展示。但 R1 走查实测 curl 直 PATCH
+// `{"signature":"foo\nbar\n\n\tbaz"}` 服务端只 trim() 不剥换行，原样落库——
+// 下游 desktop-message-avatar-popover / desktop-friend-moments-workspace 等
+// 把 signature 渲染成原文（不带 truncate）的位置就会出现意外断行。同款 sanitize
+// 兜底，挡住老客户端 / curl 直调，跟 username 一致。
+function sanitizeOwnerSignature(value: string): string {
+  return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// 跟客户端 profile-info-avatar-page.tsx 的 MIN_AVATAR_DATA_URL_LENGTH 同步：
+// 短于 32 字符的 data URL（如 "data:image/x;," / "data:image/png;base64," 等）
+// 解码后没有像素内容，AvatarChip 加载会失败回 fallback——用户以为头像改好
+// 了 profile 里却是 initials，毫无线索可查。R2 走查实测 curl PATCH
+// `"data:image/x;,"` 服务端原样落库即印证。客户端 gate 同口径，但 curl /
+// 老客户端能绕过，所以这里再兜一次。
+const MIN_AVATAR_DATA_URL_LENGTH = 32;
+
+// avatar 字段允许的协议：http / https / data:image/*。其它（javascript: /
+// vbscript: / file: / ftp: / data:text/... 等）一律拒——即便 <img src> 不
+// 执行 javascript:，落库的脏值会被其它复用 owner.avatar 的组件（社交分享、
+// 第三方 webview、未来某个 <a href>）命中。
+function isSafeAvatarValue(value: string): boolean {
+  if (!value) return true; // 空 = 恢复默认，安全
+  if (/^data:image\//i.test(value)) {
+    // 短 / 空 data URL 落库后 <img> 加载失败回 fallback；客户端早就 gate，
+    // 这里同口径兜底防绕过。
+    return value.length >= MIN_AVATAR_DATA_URL_LENGTH;
+  }
+  const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(value);
+  if (!schemeMatch) {
+    // 无 scheme：可能是相对路径（/avatars/...）。允许 / 开头的同源相对路径，
+    // 拒绝裸 "abc" 这种垃圾输入。
+    // 新会话2 R1：除了字面 `//`，`/\`、`\/`、`\\` 都被 WHATWG URL parser 归
+    // 一成 `//` (即 scheme-relative 外链)，全部 reject。单个 `\` 开头会被归
+    // 一成 `/`，仍是同源路径所以放过。
+    if (/^[/\\][/\\]/.test(value)) return false;
+    return value.startsWith('/');
+  }
+  const scheme = schemeMatch[1]!.toLowerCase();
+  if (scheme !== 'http' && scheme !== 'https') return false;
+  // R2 走查实测 curl `"avatar":"http://"` 服务端 schemeMatch 通过原样落库——
+  // 客户端 `new URL("http://")` 一定抛 → blocked，但服务端只 sniff 前缀没
+  // 真正 parse。用 URL 构造器把 "http://" / "https:" 这种缺 host 的串挡掉，
+  // 跟客户端 checkAvatarUrlInput 同口径。
+  try {
+    const parsed = new URL(value);
+    if (!parsed.hostname) return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
 
 type UpdateWorldOwnerInput = {
   username?: string;
@@ -212,9 +286,85 @@ export class WorldOwnerService {
 
   async updateOwner(input: UpdateWorldOwnerInput): Promise<WorldOwnerProfile> {
     const owner = await this.getOwnerOrThrow();
-    const nextUsername = input.username?.trim();
+    // 类型守卫：controller 拿 `@Body() body: {...}` 是 TypeScript 编译期类型，
+    // 运行时不做校验。curl/老客户端/恶意请求发 `{"username":123}` 这种非字符串
+    // 直接走到下面 sanitizeOwnerName/Signature 的 `.replace(...)` 会 throw
+    // `value.replace is not a function` → 全局过滤器吐 500 + 内部错误堆栈，
+    // 信息泄漏（R3 走查实测）。这里提前判类型，统一抛清楚的 400。
+    if (input.username !== undefined && typeof input.username !== 'string') {
+      throw new AppError('WORLD_OWNER_NAME_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '世界主人昵称必须是字符串。',
+      });
+    }
+    if (input.avatar !== undefined && typeof input.avatar !== 'string') {
+      throw new AppError('WORLD_OWNER_AVATAR_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '头像必须是字符串（URL 或 data:image/ 数据）。',
+      });
+    }
+    if (input.signature !== undefined && typeof input.signature !== 'string') {
+      throw new AppError('WORLD_OWNER_SIGNATURE_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '个性签名必须是字符串。',
+      });
+    }
+    // username: 先 sanitize（剥控制字符 + 折叠空白）再校长度，跟前端
+    // profile-info-name-page 同款；这样 curl 直调 / 老客户端 PATCH
+    // "foo\nbar" 时落库的也是 "foo bar"，不会污染 chat sender 渲染。
+    const nextUsername =
+      input.username === undefined
+        ? undefined
+        : sanitizeOwnerName(input.username);
     const nextAvatar = input.avatar?.trim();
-    const nextSignature = input.signature?.trim();
+    const nextSignature =
+      input.signature === undefined
+        ? undefined
+        : sanitizeOwnerSignature(input.signature);
+
+    // 历史上前端只校验 trim() 非空，导致大量用户用单字 "w" 过 onboarding。
+    // 后端在这里兜底：写入 username 时必须 ≥ 2 个字符，过短直接拒绝。
+    if (nextUsername !== undefined && nextUsername.length < MIN_OWNER_NAME_LENGTH) {
+      throw new AppError('WORLD_OWNER_NAME_TOO_SHORT', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { minLength: MIN_OWNER_NAME_LENGTH },
+        legacyMessage: `世界主人昵称至少 ${MIN_OWNER_NAME_LENGTH} 个字。`,
+      });
+    }
+    if (nextUsername !== undefined && nextUsername.length > MAX_OWNER_NAME_LENGTH) {
+      throw new AppError('WORLD_OWNER_NAME_TOO_LONG', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { maxLength: MAX_OWNER_NAME_LENGTH },
+        legacyMessage: `世界主人昵称最多 ${MAX_OWNER_NAME_LENGTH} 个字符。`,
+      });
+    }
+    if (
+      nextSignature !== undefined &&
+      nextSignature.length > MAX_OWNER_SIGNATURE_LENGTH
+    ) {
+      throw new AppError('WORLD_OWNER_SIGNATURE_TOO_LONG', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { maxLength: MAX_OWNER_SIGNATURE_LENGTH },
+        legacyMessage: `个性签名最多 ${MAX_OWNER_SIGNATURE_LENGTH} 个字符。`,
+      });
+    }
+    if (
+      nextAvatar !== undefined &&
+      nextAvatar.length > MAX_OWNER_AVATAR_LENGTH
+    ) {
+      throw new AppError('WORLD_OWNER_AVATAR_TOO_LARGE', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { maxBytes: MAX_OWNER_AVATAR_LENGTH },
+        legacyMessage: '头像图片超过 2MB 上限，请压缩后再试。',
+      });
+    }
+    if (nextAvatar !== undefined && !isSafeAvatarValue(nextAvatar)) {
+      throw new AppError('WORLD_OWNER_AVATAR_UNSAFE_URL', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage:
+          '头像链接必须是 http/https 图片地址，或 data:image/ 开头的图片数据。',
+      });
+    }
 
     owner.username = nextUsername ?? owner.username;
     owner.avatar = nextAvatar ?? owner.avatar ?? '';

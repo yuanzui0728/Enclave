@@ -52,12 +52,21 @@ export function ConflictResolver({
   onCancel: () => void;
 }) {
   const t = translateRuntimeMessage;
+  // 三个 snapshot 的字段并集 —— 否则 mine 里新增的可选字段（如 personality /
+  // triggerScenes，serverCurrent 没有该 key）会被静默丢掉。
+  const allKeys = useMemo(() => {
+    const set = new Set<keyof WikiContentSnapshot>();
+    for (const obj of [serverCurrent, mine, base]) {
+      for (const k of Object.keys(obj) as (keyof WikiContentSnapshot)[]) {
+        set.add(k);
+      }
+    }
+    return Array.from(set);
+  }, [serverCurrent, mine, base]);
+
   const fields = useMemo(
-    () =>
-      (Object.keys(serverCurrent) as (keyof WikiContentSnapshot)[]).filter(
-        (k) => conflictingFields.includes(k as string),
-      ),
-    [serverCurrent, conflictingFields],
+    () => allKeys.filter((k) => conflictingFields.includes(k as string)),
+    [allKeys, conflictingFields],
   );
   const [picks, setPicks] = useState<Record<string, Side>>(() =>
     Object.fromEntries(fields.map((f) => [f, "mine"])),
@@ -65,7 +74,7 @@ export function ConflictResolver({
 
   function commit() {
     const merged: WikiContentSnapshot = { ...serverCurrent };
-    for (const f of Object.keys(serverCurrent) as (keyof WikiContentSnapshot)[]) {
+    for (const f of allKeys) {
       if (conflictingFields.includes(f as string)) {
         const side = picks[f as string] ?? "mine";
         const value = side === "server" ? serverCurrent[f] : mine[f];

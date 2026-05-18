@@ -1,7 +1,7 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import type { SearchHistoryItem } from "./search-types";
 
-const SEARCH_HISTORY_STORAGE_KEY = "yinjie.app.search-history";
+export const SEARCH_HISTORY_STORAGE_KEY = "yinjie.app.search-history";
 const SEARCH_HISTORY_LIMIT = 8;
 let searchHistoryNativeWriteQueue: Promise<void> = Promise.resolve();
 
@@ -106,9 +106,16 @@ export function pushSearchHistory(keyword: string) {
     return loadSearchHistory();
   }
 
+  // 搜索本身是 case-insensitive（normalizeSearchKeyword 走 toLowerCase），
+  // 所以"Apple"和"apple"会得到完全一样的结果。这里也按 lowercase 去重，
+  // 否则历史里能同时存"Apple"和"apple"两条 pill，删一条另一条还在，看着像
+  // 删了没生效。保留新输入的原大小写，让用户看到自己最近一次怎么打的。
+  const lowerCased = trimmedKeyword.toLowerCase();
   const nextHistory = [
     { keyword: trimmedKeyword, usedAt: Date.now() },
-    ...loadSearchHistory().filter((item) => item.keyword !== trimmedKeyword),
+    ...loadSearchHistory().filter(
+      (item) => item.keyword.toLowerCase() !== lowerCased,
+    ),
   ].slice(0, SEARCH_HISTORY_LIMIT);
 
   writeSearchHistory(nextHistory);

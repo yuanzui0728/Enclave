@@ -1,6 +1,8 @@
 // i18n-ignore-start: provider adapter — error/log strings only.
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SubscriptionService } from '../subscription/subscription.service';
+import { MinimaxUsageReporterService } from './minimax-usage-reporter.service';
 import {
   type MinimaxBaseResp,
   type MinimaxBinary,
@@ -31,6 +33,14 @@ const QUOTA_EXHAUSTED_CODES = new Set<number>([1008, 1042, 2056]);
 // 1002 触发 RPM 限流 / 2003 模型并发数超限 / 1004 鉴权(可能瞬时网络) /
 // 2062 token plan interactive-use concurrency 限流：可短期重试。
 const RETRIABLE_PROVIDER_CODES = new Set<number>([1002, 1004, 2003, 2062]);
+// 云控台遥测拆两列：
+// - rpm：RPM/模型并发/token plan 并发 → 真节流，短期可恢复
+// - quota：当日/当窗口额度耗尽 → 整天/小时内打过去就是浪费
+// 1008 余额不足、1004 鉴权都不是限流口径，刻意排除。
+const RPM_LIMITED_PROVIDER_CODES = new Set<number>([1002, 2003, 2062]);
+const QUOTA_LIMITED_PROVIDER_CODES = new Set<number>([1042, 2056]);
+
+export type MinimaxRateLimitKind = 'rpm' | 'quota' | null;
 
 // 注意：故意不在 fetch 完成后 clearTimeout。fetch 在收到 headers 时就 resolve，
 // 但 body 读取（response.text / arrayBuffer）是流式的，可能再卡几分钟。让 timer
@@ -61,31 +71,61 @@ export class MinimaxClientError extends Error {
 @Injectable()
 export class MinimaxClient {
   private readonly logger = new Logger(MinimaxClient.name);
-  private readonly apiKey: string;
+  // 同进程内的 token plan key 池。:3000 dev-watch 主进程读到根 .env 的
+  // MINIMAX_API_KEYS（多 key）；cloud-api 派的 world child 那边 cloud-api 显式
+  // delete 了 MINIMAX_API_KEYS、只注入单 MINIMAX_API_KEY——所以池子里就 1 个，
+  // 行为与改造前等价。同进程内多 key 时按轮询挑，避免单进程偏置某一把。
+  private readonly apiKeys: readonly string[];
   private readonly baseUrl: string;
+  private callCounter = 0;
 
-  constructor(config: ConfigService) {
-    this.apiKey = (config.get<string>('MINIMAX_API_KEY') ?? '').trim();
+  constructor(
+    config: ConfigService,
+    private readonly subscription: SubscriptionService,
+    @Optional()
+    private readonly usageReporter?: MinimaxUsageReporterService,
+  ) {
+    const rawKeys = config.get<string>('MINIMAX_API_KEYS');
+    const rawSingle = config.get<string>('MINIMAX_API_KEY');
+    const fromCsv = (rawKeys ?? '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+    const single = (rawSingle ?? '').trim();
+    this.apiKeys = fromCsv.length > 0 ? fromCsv : single ? [single] : [];
     this.baseUrl = (
       config.get<string>('MINIMAX_BASE_URL') ?? DEFAULT_BASE_URL
     )
       .replace(/\/+$/, '')
       // 路径都自带 /v1 前缀，base 末尾若也带 /v1 会拼成 /v1/v1/... → 404
       .replace(/\/v1$/, '');
-    if (!this.apiKey) {
+    if (this.apiKeys.length === 0) {
       this.logger.warn(
         'MINIMAX_API_KEY missing — token-plan video/music generation disabled',
+      );
+    } else if (this.apiKeys.length > 1) {
+      const fps = this.apiKeys.map((k) => k.slice(-4)).join(',');
+      this.logger.log(
+        `MinimaxClient using ${this.apiKeys.length} keys round-robin: [${fps}]`,
       );
     }
   }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey);
+    return this.apiKeys.length > 0;
+  }
+
+  private pickKey(): string {
+    // 轮询：第 1 把、第 2 把、第 1 把… 进程内调用序号 % 池大小。
+    // 单 key 池时永远返回同一把（与改造前等价）。
+    const idx = this.callCounter++ % this.apiKeys.length;
+    return this.apiKeys[idx];
   }
 
   async submitVideo(
     input: MinimaxVideoSubmitInput,
   ): Promise<MinimaxVideoSubmitResult> {
+    await this.subscription.assertCanUseAi('image');
     const body: Record<string, unknown> = {
       model: input.model,
       prompt: input.prompt,
@@ -156,6 +196,7 @@ export class MinimaxClient {
   }
 
   async generateImage(input: MinimaxImageInput): Promise<MinimaxImageResult> {
+    await this.subscription.assertCanUseAi('image');
     const body = {
       model: input.model,
       prompt: input.prompt,
@@ -182,6 +223,7 @@ export class MinimaxClient {
   }
 
   async generateMusic(input: MinimaxMusicInput): Promise<MinimaxMusicResult> {
+    await this.subscription.assertCanUseAi('audio');
     const body: Record<string, unknown> = {
       model: input.model,
       audio_setting: {
@@ -255,12 +297,20 @@ export class MinimaxClient {
   async generateLyrics(
     input: MinimaxLyricsInput,
   ): Promise<MinimaxLyricsResult> {
+    await this.subscription.assertCanUseAi('text');
+    // mode 是必填字段；缺它 minimax 一律回 2013 invalid params。
+    // 顶层字段：lyrics / song_title / style_tags（response 不再嵌在 data 里）。
     const response = await this.postJson<{
-      data?: { lyrics?: string };
+      lyrics?: string;
+      song_title?: string;
+      style_tags?: string;
       base_resp?: MinimaxBaseResp;
-    }>('/v1/lyrics_generation', { prompt: input.prompt });
+    }>('/v1/lyrics_generation', {
+      mode: input.mode ?? 'write_full_song',
+      prompt: input.prompt,
+    });
     this.assertSuccess(response.base_resp, 'lyrics generation');
-    const lyrics = response.data?.lyrics?.trim();
+    const lyrics = response.lyrics?.trim();
     if (!lyrics) {
       throw new MinimaxClientError(
         'MINIMAX_LYRICS_EMPTY',
@@ -268,7 +318,11 @@ export class MinimaxClient {
         true,
       );
     }
-    return { lyrics };
+    return {
+      lyrics,
+      songTitle: response.song_title?.trim() || undefined,
+      styleTags: response.style_tags?.trim() || undefined,
+    };
   }
 
   // MiniMax-M2.7 是 reasoning model：max_tokens 包含 reasoning_tokens，
@@ -280,6 +334,7 @@ export class MinimaxClient {
     maxTokens?: number;
     temperature?: number;
   }): Promise<{ content: string }> {
+    await this.subscription.assertCanUseAi('text');
     const body = {
       model: input.model ?? 'MiniMax-M2.7',
       messages: input.messages,
@@ -366,13 +421,14 @@ export class MinimaxClient {
     pathname: string,
     body?: unknown,
   ): Promise<T> {
-    if (!this.apiKey) {
+    if (this.apiKeys.length === 0) {
       throw new MinimaxClientError(
         'MINIMAX_API_KEY_MISSING',
         'MINIMAX_API_KEY not configured',
         false,
       );
     }
+    const apiKey = this.pickKey();
     const url = `${this.baseUrl}${pathname}`;
     let response: Response;
     let text: string;
@@ -382,7 +438,7 @@ export class MinimaxClient {
         {
           method,
           headers: {
-            Authorization: `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
           body: method === 'GET' ? undefined : JSON.stringify(body ?? {}),
@@ -402,10 +458,30 @@ export class MinimaxClient {
         true,
       );
     }
+    // 拿到 HTTP 响应才计 1 次调用；网络/超时不计（没真打到 provider）。
+    // 限流口径拆两列：
+    // - rpm：HTTP 429 || provider code ∈ RPM_LIMITED_PROVIDER_CODES
+    // - quota：provider code ∈ QUOTA_LIMITED_PROVIDER_CODES（1042/2056）
+    // 优先级 quota > rpm（同一次响应都有时把它归到 quota，更接近真问题）。
+    const providerCodeForTelemetry = tryExtractProviderCode(text);
+    let rateLimitKind: MinimaxRateLimitKind = null;
+    if (
+      providerCodeForTelemetry !== null &&
+      QUOTA_LIMITED_PROVIDER_CODES.has(providerCodeForTelemetry)
+    ) {
+      rateLimitKind = 'quota';
+    } else if (
+      response.status === 429 ||
+      (providerCodeForTelemetry !== null &&
+        RPM_LIMITED_PROVIDER_CODES.has(providerCodeForTelemetry))
+    ) {
+      rateLimitKind = 'rpm';
+    }
+    this.usageReporter?.recordCall(rateLimitKind);
     if (!response.ok) {
       // 优先解析 base_resp.status_code，确定性失败（如 1008 余额不足）
       // 不应被无脑标 retriable=true 触发指数退避重试。
-      const providerCode = tryExtractProviderCode(text);
+      const providerCode = providerCodeForTelemetry;
       if (providerCode !== null && QUOTA_EXHAUSTED_CODES.has(providerCode)) {
         this.logger.warn(
           `minimax quota exhausted url=${url} status=${response.status} provider_code=${providerCode}`,

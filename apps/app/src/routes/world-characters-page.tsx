@@ -10,7 +10,7 @@ import {
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Search, UserPlus } from "lucide-react";
+import { ArrowLeft, Search, UserPlus, X } from "lucide-react";
 import { getFriends, listCharacters } from "@yinjie/contracts";
 import {
   translateRuntimeMessage,
@@ -109,6 +109,9 @@ function MobileWorldCharactersPage() {
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    // 走查第七轮 R1：从 /tabs/contacts 进世界角色列表（"通讯录-世界角色"）
+    // 上一页 friend list 刚拉，这页又强制 refetch；跟 contacts-page 配齐 15s。
+    staleTime: 15_000,
   });
   const charactersQuery = useQuery({
     queryKey: ["app-characters", baseUrl],
@@ -161,10 +164,14 @@ function MobileWorldCharactersPage() {
   );
 
   useEffect(() => {
-    if (searchText !== routeState.keyword) {
-      setSearchText(routeState.keyword);
-    }
-  }, [routeState.keyword, searchText]);
+    // 仅在 URL hash 变化时把 keyword 同步回本地 state（如浏览器前进/后退）。
+    // 不能把 searchText 放进 deps —— 否则会和下面"searchText → URL"的 effect
+    // 形成 setState ↔ navigate 死循环，每次按键都触发
+    // "Maximum update depth exceeded"。functional setState 在值未变时会自然 bail out。
+    setSearchText((current) =>
+      current === routeState.keyword ? current : routeState.keyword,
+    );
+  }, [routeState.keyword]);
 
   useEffect(() => {
     if (normalizedSearchText || !sections.length) {
@@ -309,13 +316,16 @@ function MobileWorldCharactersPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             aria-label={t(msg`返回通讯录`)}
           >
@@ -343,8 +353,21 @@ function MobileWorldCharactersPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索世界角色`)}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // zoom-in，用户敲一下"搜索"立刻整页放大、回弹时还要双指捏才能回到
+              // 正常视窗。跟 mobile-add-friend-page 已修过的搜索框对齐。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
+            {searchText ? (
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                aria-label={t(msg`清空搜索`)}
+              >
+                <X size={13} />
+              </button>
+            ) : null}
           </label>
         </div>
       </TabPageTopBar>
@@ -444,15 +467,27 @@ function MobileWorldCharactersPage() {
                   : t(msg`稍后再回来看看，或者先去新的朋友里处理申请。`)
               }
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看新的朋友`)}
-                </Button>
+                normalizedSearchText ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={() => setSearchText("")}
+                  >
+                    {t(msg`清空搜索`)}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看新的朋友`)}
+                  </Button>
+                )
               }
             />
           </div>

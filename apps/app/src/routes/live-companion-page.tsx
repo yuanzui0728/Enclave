@@ -27,11 +27,13 @@ import {
   TextField,
   cn,
 } from "@yinjie/ui";
+import { writeClipboardText } from "../runtime/native-clipboard";
 
 type Translator = ReturnType<typeof useRuntimeTranslator>;
 import { AvatarChip } from "../components/avatar-chip";
 import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
+import { stripToolCallSyntax } from "../features/moments/moment-content";
 import {
   defaultLiveDraft,
   endLocalLiveSession,
@@ -216,28 +218,26 @@ export function LiveCompanionPage() {
     const path = "/discover/channels";
     const link = resolveMobileHandoffLink(path);
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setError(t(msg`当前环境暂不支持复制到手机。`));
+    // 走查 2026-05-18 R1：原早期 guard 只看 navigator.clipboard.writeText —— 但
+    // writeClipboardText 内部本来就有三级 fallback（native bridge → navigator
+    // .clipboard → execCommand）。在 iOS Capacitor 壳 / 部分 Safari WKWebView /
+    // 不暴露 navigator.clipboard 的桌面壳里 navigator.clipboard 缺席但 native
+    // bridge / execCommand 实际可用，guard 把这些环境硬卡死成"暂不支持"，用户
+    // 永远点不动「发准备到手机」/「发到手机继续」。直接按 writeClipboardText
+    // 的 boolean 返回兜底。
+    if (!(await writeClipboardText(link))) {
+      setError(t(msg`复制到手机失败，请稍后重试。`));
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(link);
-      pushMobileHandoffRecord({
-        category: "channel",
-        description: input.description,
-        label: input.label,
-        path,
-      });
-      setError(null);
-      setNotice(t(msg`${input.label} 已复制，可发到手机继续。`));
-    } catch {
-      setError(t(msg`复制到手机失败，请稍后重试。`));
-    }
+    pushMobileHandoffRecord({
+      category: "channel",
+      description: input.description,
+      label: input.label,
+      path,
+    });
+    setError(null);
+    setNotice(t(msg`${input.label} 已复制，可发到手机继续。`));
   }
 
   if (!isDesktopLayout) {
@@ -784,6 +784,13 @@ export function LiveCompanionPage() {
         </div>
       </div>
     </DesktopUtilityShell>
+      {/*
+        走查 2026-05-18 新会话 R2：原蒙板只有"功能开发中 / 敬请期待"两行字，没
+        任何出口按钮。用户从工作区顶栏的「直播伴侣」按钮点进来 → 满屏 z-50
+        backdrop blur 把下层 DesktopUtilityShell 全盖死 → 无回退路径：只能用
+        浏览器 Back / 桌面 shell 侧栏切走，体感「我点了直播伴侣进了死胡同」。
+        加一颗「返回视频号」Link 把用户送回 /tabs/channels，至少给个清晰出口。
+      */}
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
         <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-lg font-semibold text-[color:var(--text-primary)]">
@@ -792,6 +799,12 @@ export function LiveCompanionPage() {
           <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
             {t(msg`敬请期待`)}
           </div>
+          <Link
+            to="/tabs/channels"
+            className="mt-4 inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+          >
+            {t(msg`返回视频号`)}
+          </Link>
         </div>
       </div>
     </div>
@@ -905,7 +918,14 @@ function PostReferenceCard({
             {post.mediaType === "video" ? t(msg`短片`) : t(msg`内容卡片`)}
           </div>
           <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {post.text}
+            {/*
+              走查 2026-05-18 R2：原直接渲染 post.text —— AI 生成贴里夹的
+              <tool_call>...</tool_call> / [TOOL_CALL]/[/TOOL_CALL] 工具调用残留
+              会原样泄到「最近视频号内容」卡里看着像一坨 XML/JSON。视频号 home
+              卡 / 收藏列表 / desktop slide 都早就走 stripToolCallSyntax 了，这
+              里跟它对齐。
+            */}
+            {stripToolCallSyntax(post.text)}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={onUse} className="rounded-xl">
@@ -945,9 +965,11 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function createTopicFromPost(t: Translator, post: FeedPostListItem) {
-  return (
-    post.text.trim().slice(0, 24) || t(msg`${post.authorName} 的视频号内容`)
-  );
+  // 走查 2026-05-18 R2：原 slice 24 字直接吃 post.text —— 若帖正文以 <tool_
+  // 开头会截到"<tool_call>{\"name\":\"" 这类乱码当成 topic 草稿灌进 TextField，
+  // 用户回头编辑直播主题看到一行 AI 思考残留毫无意义。先 strip 再 slice。
+  const cleaned = stripToolCallSyntax(post.text).trim();
+  return cleaned.slice(0, 24) || t(msg`${post.authorName} 的视频号内容`);
 }
 
 function createCoverHookFromPost(t: Translator, post: FeedPostListItem) {

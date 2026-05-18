@@ -96,10 +96,16 @@ export interface MinimaxMusicQueryResult {
 
 export interface MinimaxLyricsInput {
   prompt: string;
+  // /v1/lyrics_generation 必填字段：'write_full_song' 让 minimax 输出完整歌曲
+  // （含 [Intro]/[Verse]/[Chorus]/[Bridge]/[Outro] 段落 + 标题 + 风格标签），
+  // 'edit' 用于在 existing lyrics 上微调。默认 write_full_song。
+  mode?: 'write_full_song' | 'edit';
 }
 
 export interface MinimaxLyricsResult {
   lyrics: string;
+  songTitle?: string;
+  styleTags?: string;
 }
 
 export interface MinimaxBinary {

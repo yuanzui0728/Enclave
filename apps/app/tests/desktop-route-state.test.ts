@@ -161,11 +161,18 @@ describe("desktop route state", () => {
       noteId: "note-1",
       returnTo: "/tabs/favorites#category=notes",
     });
-    expect(parseDesktopNoteEditorRouteHash("#legacy-note")).toEqual({
-      draftId: "legacy-note",
-      noteId: "legacy-note",
+    // 老链是 /tabs/favorites#<UUID>。Round 4 commit 7c7d424b 起严格匹配 UUID v4，
+    // 避免 #foo 这类用户手敲的 hash 也被认成 noteId 拉一个不存在的笔记。
+    // 用合法 UUID 表达"承认 legacy"分支。
+    expect(
+      parseDesktopNoteEditorRouteHash("#11111111-2222-4333-8444-555555555555"),
+    ).toEqual({
+      draftId: "11111111-2222-4333-8444-555555555555",
+      noteId: "11111111-2222-4333-8444-555555555555",
       returnTo: undefined,
     });
+    // 非 UUID hash 必须返回 null，避免误吃 /tabs/favorites#test 之类的输入。
+    expect(parseDesktopNoteEditorRouteHash("#legacy-note")).toBeNull();
   });
 
   it("matches desktop navigation for self-healing legacy paths", () => {

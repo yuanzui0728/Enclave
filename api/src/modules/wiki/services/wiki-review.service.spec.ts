@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { AppError } from '../../../common/app-error.exception';
 import { WikiReviewService } from './wiki-review.service';
 
 // Build a service instance with stubbed deps so we can drive private 3RR
@@ -37,6 +37,20 @@ function makeReviewService(opts: {
       userType: 'system',
     }),
   };
+  const fieldProtection = {
+    assertCanEditPaths: jest.fn().mockResolvedValue(undefined),
+  };
+  const characterRepo = {
+    findOne: jest.fn().mockResolvedValue({
+      id: 'char_x',
+      name: '',
+      avatar: '',
+      bio: '',
+      relationship: '',
+      relationshipType: '',
+      expertDomains: [],
+    }),
+  };
   const svc = new WikiReviewService(
     dataSource as never,
     revisionRepo as never,
@@ -47,44 +61,64 @@ function makeReviewService(opts: {
     roles as never,
     protection as never,
     systemUsers as never,
+    fieldProtection as never,
+    characterRepo as never,
   );
-  return { svc, revisionRepo, pageRepo, protection };
+  return { svc, revisionRepo, pageRepo, protection, fieldProtection };
+}
+
+// 取被抛 AppError 的 code，若不是 AppError 返回 'none'。
+async function expectThrownCode(promise: Promise<unknown>): Promise<string> {
+  try {
+    await promise;
+  } catch (err) {
+    if (err instanceof AppError) {
+      const body = err.getResponse() as { code?: string };
+      return body?.code ?? 'unknown';
+    }
+    return 'non-app-error';
+  }
+  return 'none';
 }
 
 describe('WikiReviewService.revert 3RR detection', () => {
   it('rejects when patroller has already reverted 3 times in 24h', async () => {
     const { svc } = makeReviewService({ revertCountIn24h: 3 });
-    await expect(
+    const code = await expectThrownCode(
       svc.revert(
         'char_x',
         { id: 'u_pat', role: 'patroller', username: 'p' } as never,
         { toRevisionId: 'rev_a', reason: 'test' },
       ),
-    ).rejects.toThrow(ForbiddenException);
+    );
+    expect(code).toBe('WIKI_FORBIDDEN');
   });
 
   it('admin is exempt from 3RR', async () => {
     const { svc, revisionRepo } = makeReviewService({ revertCountIn24h: 99 });
     revisionRepo.findOne.mockResolvedValue(null); // bail out at next step (404)
-    await expect(
+    const code = await expectThrownCode(
       svc.revert(
         'char_x',
         { id: 'u_admin', role: 'admin', username: 'a' } as never,
         { toRevisionId: 'rev_a', reason: 'test' },
       ),
-    ).rejects.not.toThrow(ForbiddenException);
+    );
+    // admin 走过 3RR，应在下一步 "目标版本不存在" 报 NOT_FOUND，而不是 FORBIDDEN
+    expect(code).toBe('WIKI_REVIEW_NOT_FOUND');
   });
 
   it('counts only revert operations in last 24h', async () => {
     const { svc, revisionRepo } = makeReviewService({ revertCountIn24h: 2 });
     revisionRepo.findOne.mockResolvedValue(null); // proceed past 3RR, bail at target lookup
-    await expect(
+    const code = await expectThrownCode(
       svc.revert(
         'char_x',
         { id: 'u_pat', role: 'patroller', username: 'p' } as never,
         { toRevisionId: 'rev_a', reason: 'test' },
       ),
-    ).rejects.not.toThrow(ForbiddenException);
+    );
+    expect(code).toBe('WIKI_REVIEW_NOT_FOUND');
     expect(revisionRepo.count).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({

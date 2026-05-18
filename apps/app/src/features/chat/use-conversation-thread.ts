@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -23,7 +23,14 @@ import {
   markThreadMessagesFailed,
   mergeDirectMessageWindow,
   upsertIncomingDirectMessage,
+  upsertServerMessageInCache,
 } from "./chat-message-delivery";
+import {
+  loadPendingDirectMessages,
+  reconcilePendingDirectMessages,
+  updatePendingDirectMessageStatus,
+  upsertPendingDirectMessage,
+} from "./pending-direct-message-store";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import {
   emitChatMessage,
@@ -31,11 +38,13 @@ import {
   joinConversationRoom,
   onChatError,
   onChatMessage,
+  onChatSocketConnect,
   onConversationUpdated,
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
 import { handleSocketSubscriptionExpiredError } from "../../lib/subscription-expired";
+import { getConversationDisplayTitle } from "../../lib/conversation-preview";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
@@ -48,7 +57,12 @@ export function useConversationThread(conversationId: string) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
-  const [messages, setMessages] = useState<DirectThreadMessage[]>([]);
+  // 用 lazy initial 把 sleeping/busy 角色那段 8-22s 延迟里"消息消失"的
+  // 乐观消息恢复出来——再进入聊天时不至于看到空白。组件 unmount 时模块级
+  // store 留着这些 pending 消息，等真消息（refetch 或 socket）回声后 dedup。
+  const [messages, setMessages] = useState<DirectThreadMessage[]>(() =>
+    loadPendingDirectMessages(conversationId),
+  );
   const [typingState, setTypingState] = useState<{
     characterId: string;
     stage?: TypingPayload["stage"];
@@ -56,7 +70,9 @@ export function useConversationThread(conversationId: string) {
     null,
   );
   const [socketError, setSocketError] = useState<string | null>(null);
-  const [conversationTitle, setConversationTitle] = useState("Conversation");
+  // 标题初始值留空：activeConversation 拉到之前先不显示，比闪一下英文 "Conversation"
+  // 在非英文用户那里好。conversationsQuery / onConversationUpdated 拿到数据后会立刻 set。
+  const [conversationTitle, setConversationTitle] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [initialUnreadCutoff, setInitialUnreadCutoff] = useState<string | null>(
@@ -73,6 +89,17 @@ export function useConversationThread(conversationId: string) {
     scrollHeight: number;
     scrollTop: number;
   } | null>(null);
+  // 进入聊天时 mark-read effect 的 deps 同一拍里会被 unreadSnapshotReady
+  // (false→true) 和 messagesQuery.data?.length (undefined→60) 各触发一次，
+  // 结果 POST /read + invalidate conversations 重复打两次（公网隧道
+  // RTT ~600ms × 2 + 三次 GET /conversations）。用 ref 记最近一次 mark
+  // 时的"末尾消息 id"——按 length dedup 会被「查看更多消息」(60→100) 误
+  // 触发多打一次 mark-read，按末尾 id 才能区分"新消息追加"和"历史前置"。
+  // conversationId 切换时随其他 state 一起重置；socket 撑长（AI 回声）时
+  // 末尾 id 变化仍会触发。
+  const lastMarkedReadNewestIdRef = useRef<string | null>(null);
+  // 同帧双击同一条 failed 消息的「重试」按钮锁，详见 retryMessage 内注释。
+  const retryingMessageIdsRef = useRef<Set<string>>(new Set());
 
   const messagesQuery = useQuery({
     queryKey: [
@@ -84,12 +111,22 @@ export function useConversationThread(conversationId: string) {
     queryFn: () =>
       getConversationMessages(conversationId, baseUrl, { limit: messageLimit }),
     enabled: Boolean(conversationId),
+    // 全局 staleTime=60s 让 useQuery 在 mount 时把 60s 内的旧 cache 当 fresh
+    // 不 refetch。聊天页面里 socket 漏一条（断网/切前后台/event drop）就会
+    // 显示不出新消息。强制每次挂载 refetch 一次，RTT 一次换正确性。
+    refetchOnMount: "always",
   });
 
+  // 走查 R5：本 hook 在桌面侧由 ConversationThreadPanel 调用——desktop-chat-
+  // workspace 同一个 baseUrl 已经把 app-conversations 拉热（15s staleTime +
+  // 60s polling）。这条 observer 没 staleTime → 进/切单聊都触发一次冗余
+  // GET /conversations（公网隧道 ~600ms）。对齐 workspace 同款 15s。
+  // 同样适用于 mobile 路径（chat-room-page 进入时 chat-list-page 刚拉过）。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(ownerId),
+    staleTime: 15_000,
   });
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
@@ -151,10 +188,38 @@ export function useConversationThread(conversationId: string) {
   );
 
   useEffect(() => {
-    setMessages((current) =>
-      mergeDirectMessageWindow(current, messagesQuery.data ?? []),
-    );
+    if (!messagesQuery.data) {
+      return;
+    }
+    // cache 是 server messages 的 source of truth。mergeDirectMessageWindow
+    // 只追加不删除，会让"清空聊天记录 / 撤回 / 删除消息"后 cache 缩水时，
+    // 本地 messages 还留着已经被清掉的消息 —— 用户在已清空的会话里继续看到
+    // 旧消息，直到切走再回来。这里改成：保留还没被服务端 echo 过的乐观消息
+    // (local_* id)，server 消息整体跟 cache 走；isMatchingOptimisticEcho
+    // 仍然能在 echo 到来时把 local_* 替换成 server 真消息。
+    //
+    // 取舍：mount refetch 在飞期间 socket 投递的新消息会被 GET 响应覆盖；
+    // 之前尝试过用 "createdAt > max(cache 最新, lastClearedAt)" 来保留这种
+    // race-arrival，但同样的判定会让"删除当前最新一条消息"也命中（删完后
+    // cache 最新变成第二新，被删的那条 createdAt 比它新 → 错误地留住）。
+    // 删消息是常见操作、race-arrival 在下一条 socket 来时会被自然带回，
+    // 这里就选简单更可靠的整体替换。
+    setMessages((current) => {
+      const pendingLocal = current.filter((message) =>
+        message.id.startsWith("local_"),
+      );
+      return mergeDirectMessageWindow(pendingLocal, messagesQuery.data!);
+    });
   }, [messagesQuery.data]);
+
+  // messages 里还活着的乐观消息（local_* id）才需要留在 store 里；被服务端
+  // 真消息 dedup 掉的就该从 store 移除，否则下次进入会重复出现。
+  useEffect(() => {
+    reconcilePendingDirectMessages(
+      conversationId,
+      messages.filter((message) => message.id.startsWith("local_")),
+    );
+  }, [conversationId, messages]);
 
   useEffect(() => {
     setMessageLimit(INITIAL_MESSAGE_LIMIT);
@@ -164,6 +229,7 @@ export function useConversationThread(conversationId: string) {
     setInitialUnreadCount(0);
     setInitialUnreadCutoff(null);
     setUnreadSnapshotReady(false);
+    lastMarkedReadNewestIdRef.current = null;
   }, [conversationId]);
 
   useEffect(() => {
@@ -172,8 +238,30 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
-    setConversationTitle(conversation.title);
-    setParticipants(conversation.participants.slice(0, 1));
+    // 第四轮 R4：服务端 normalizeLegacyConversationEntity 在 title 全部 fallback
+    // 失败时持久化字面量 "未知联系人" / "Direct conversation"。chat-list-page
+    // 行内会经 getConversationDisplayTitle 翻成当前 locale，但本 hook 直存原始
+    // string 流给 conversation-thread-panel 顶部 header + ChatMessageList
+    // threadContext.title + ChatMessageSearchPanel subtitle，全部对非中文 locale
+    // 用户暴露中文字面量「未知联系人」。统一在源头翻译。
+    setConversationTitle(getConversationDisplayTitle(conversation.title));
+    // conversationsQuery cache 每次刷新（60s 定时 / 窗口聚焦 / socket 消息
+    // invalidate）都拿到新的 activeConversation 对象引用，effect 重跑。
+    // 标题 string 用 setState 同值会被 React 跳过 re-render，但
+    // participants.slice(0, 1) 每次都是新数组——直接 setParticipants 进去
+    // 会触发整个 ConversationThreadPanel + ChatMessageList + ChatComposer
+    // 都跟着重渲染一遍，单聊里 participants[0] 角色 ID 永远不变。
+    // 内容相等时复用旧引用，跳过这条无意义的 re-render 链。
+    setParticipants((current) => {
+      const next = conversation.participants.slice(0, 1);
+      if (
+        current.length === next.length &&
+        current.every((id, index) => id === next[index])
+      ) {
+        return current;
+      }
+      return next;
+    });
   }, [activeConversation]);
 
   useEffect(() => {
@@ -196,23 +284,24 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
-    const markActiveConversationRead = async () => {
-      const readAt = new Date().toISOString();
-      syncActiveConversationReadState(readAt);
-
-      try {
-        await markConversationRead(conversationId, baseUrl);
-      } finally {
-        await queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        });
-      }
-    };
-
     setSocketError(null);
     setTypingState(null);
     joinConversationRoom({ conversationId });
-    void markActiveConversationRead();
+    // 走查新一轮 R3：socket disconnect+reconnect 后 server 端是全新的 Socket
+    // 实例，原先的 room 全部丢掉；client 这里只在 conversationId 变化时 emit
+    // 一次 join_conversation，重连后再没机会重 join。结果：网络抖一下 / 后台
+    // 切前台 / 公网隧道 token 续期 → 用户停在原会话上，AI 回复、撤回、
+    // conversation_updated 全部送不到，要等他手动切走再切回才恢复。监听 connect
+    // 事件（reconnect 也走这个）重新 emit join_conversation；socket.io 的 join
+    // 是 Set 幂等，重复 emit 无副作用。
+    const offConnect = onChatSocketConnect(() => {
+      joinConversationRoom({ conversationId });
+    });
+    // 这里不直接调 markConversationRead——下面 [messagesQuery.data?.length]
+    // 那个 effect 会在挂载和每次 cache 长度变化时统一触发一次。和
+    // group-chat-thread-panel 的写法对齐，避免角色连发 5 条消息就打 5 次
+    // markConversationRead + 5 次 conversations refetch（公网隧道 RTT ~600ms
+    // 下肉眼可见的卡顿）。
 
     const offMessage = onChatMessage((payload) => {
       if (
@@ -225,6 +314,17 @@ export function useConversationThread(conversationId: string) {
       setSocketError(null);
       setMessages((current) => upsertIncomingDirectMessage(current, payload));
       syncActiveConversationMessage(payload);
+      // 把消息直接写进 messages cache：本地 state 已经有新消息了，但 cache 没动；
+      // 用户离开再回来时 useQuery 会读 cache（移动端 staleTime=60s 内不 refetch），
+      // 看不到 AI 回复。直接 setQueriesData 把新消息合并进所有 messageLimit 变体
+      // 的 cache，下次挂载立刻就在，不依赖 refetch RTT。同时 cache 长度变化会
+      // 触发下面的 markRead effect 自动标已读，不在这里重复调。
+      queryClient.setQueriesData<Message[]>(
+        {
+          queryKey: ["app-conversation-messages", baseUrl, conversationId],
+        },
+        (current) => upsertServerMessageInCache(current, payload),
+      );
       if (isReminderConversation) {
         void invalidateReminderQueries();
       }
@@ -233,7 +333,6 @@ export function useConversationThread(conversationId: string) {
         setTypingState((current) =>
           current?.characterId === payload.senderId ? null : current,
         );
-        void markActiveConversationRead();
         return;
       }
 
@@ -243,12 +342,27 @@ export function useConversationThread(conversationId: string) {
     });
 
     const offTypingStart = onTypingStart((payload) => {
-      if (payload.conversationId === conversationId) {
-        setTypingState({
+      if (payload.conversationId !== conversationId) {
+        return;
+      }
+      // typing_start 在 AI 回复期间会按几秒一次的节奏持续 emit（reply 整段
+      // 加上 image_generation 阶段可能跨 30-60s）。同 characterId + 同 stage
+      // 时硬塞新对象 → ConversationThreadPanel + ChatMessageList +
+      // ChatComposer 跟着无效 re-render，长聊天 60+ 消息每次重渲染都是浪费。
+      // 内容相等时复用旧引用，跳过这条无意义的 re-render 链；watchdog 那个
+      // [typingState] effect 也跟着不会重挂 120s 定时器。
+      setTypingState((current) => {
+        if (
+          current?.characterId === payload.characterId &&
+          current?.stage === payload.stage
+        ) {
+          return current;
+        }
+        return {
           characterId: payload.characterId,
           stage: payload.stage,
-        });
-      }
+        };
+      });
     });
 
     const offTypingStop = onTypingStop((payload) => {
@@ -272,8 +386,25 @@ export function useConversationThread(conversationId: string) {
         return;
       }
 
-      setConversationTitle(payload.title);
-      setParticipants(payload.participants.slice(0, 1));
+      // R4：同上 activeConversation effect 的 sentinel 翻译。socket 推过来的
+      // payload.title 仍然可能是「未知联系人」字面量，必须经 normalize。
+      setConversationTitle(getConversationDisplayTitle(payload.title));
+      // 和上方 activeConversation 那个 effect (line 210-219) 同款 dedup ——
+      // socket 的 conversation_updated 在活跃聊天里频繁触发（每条新消息后端都
+      // 会 emit 一次更新 lastMessage/unreadCount），payload.participants.slice
+      // 每次都是新数组引用；不 dedup 会把整个 ConversationThreadPanel +
+      // ChatMessageList + ChatComposer re-render 链白跑一遍。单聊里
+      // participants[0] 角色 ID 永远不变，应该直接复用旧引用跳过 re-render。
+      setParticipants((current) => {
+        const next = payload.participants.slice(0, 1);
+        if (
+          current.length === next.length &&
+          current.every((id, index) => id === next[index])
+        ) {
+          return current;
+        }
+        return next;
+      });
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -281,11 +412,13 @@ export function useConversationThread(conversationId: string) {
 
     const offError = onChatError((payload) => {
       setMessages((current) => markThreadMessagesFailed(current));
+      updatePendingDirectMessageStatus(conversationId, null, "failed");
       handleSocketSubscriptionExpiredError(payload);
       setSocketError(payload.message);
     });
 
     return () => {
+      offConnect();
       offMessage();
       offTypingStart();
       offTypingStop();
@@ -300,6 +433,70 @@ export function useConversationThread(conversationId: string) {
     ownerId,
     queryClient,
     syncActiveConversationMessage,
+    unreadSnapshotReady,
+  ]);
+
+  // typing watchdog：服务端在 reply / image_generation 完成时一定会 emit
+  // typing_stop + 真消息，但移动端公网隧道偶发"socket 断开-重连"那几百 ms
+  // 里这两条事件都会 drop（server 当时认为还连着，往死 socket emit 后丢
+  // 包）。结果 UI 卡在「对方正在回复...」/「对方正在生成图片...」直到用户
+  // 切换会话再回来。120s 兜底——典型 reply <10s、image_generation 慢到
+  // 30-60s 也覆盖得住，真到 2 分钟还没消息就基本可以判定丢了。
+  useEffect(() => {
+    if (!typingState) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setTypingState(null);
+    }, 120_000);
+    return () => window.clearTimeout(timer);
+  }, [typingState]);
+
+  // 挂载 + 每次 messagesQuery cache "末尾消息" 变化时统一标已读一次。
+  // 和 group-chat-thread-panel 的处理一致；socket 收到 character 消息后
+  // setQueriesData 会撑高 cache + 换末尾 id，自动触发这里。
+  //
+  // dedup：data 尚未加载或为空时不打——避免和 unreadSnapshotReady 各触发
+  // 一次造成入口双 POST + 三次 GET /conversations。同一末尾 id 跳过——
+  // 「查看更多消息」(60→100, 前置历史) 末尾 id 不变，不再误打 mark-read。
+  useEffect(() => {
+    if (!conversationId || !unreadSnapshotReady) {
+      return;
+    }
+
+    const data = messagesQuery.data;
+    if (!data || data.length === 0) {
+      return;
+    }
+    const newestId = data[data.length - 1]?.id ?? null;
+    if (!newestId || lastMarkedReadNewestIdRef.current === newestId) {
+      return;
+    }
+    lastMarkedReadNewestIdRef.current = newestId;
+
+    const readAt = new Date().toISOString();
+    syncActiveConversationReadState(readAt);
+
+    // 走查 R1：原版 .finally 不分成败一律 invalidate ["app-conversations"]
+    // —— 但成功路径下 syncActiveConversationReadState 已经把 unreadCount=0 +
+    // lastReadAt 写进本地 cache，server 端 markConversationRead 做的就是同样
+    // 的事，invalidate 后跑 GET /conversations 拿回完全一样的数据，纯白 RTT。
+    // 末尾 id 变化触发器 (line 462 useEffect) 会在 socket 收到 AI 回复 / 用户
+    // 切回 chat 时反复跑，每次都白浪费 ~600ms 公网隧道 RTT；R1 走查统计单聊
+    // 8x GET /conversations 一半就是这里。其它通道（onConversationUpdated /
+    // onChatMessage 用户消息）已经按需 invalidate，缺少这条 paranoia 同步并
+    // 不会让 UI 落后。失败时仍然 invalidate 把乐观写回 server 真实值，避免
+    // 服务端拒绝时本地 cache 一直假装"已读"。
+    void markConversationRead(conversationId, baseUrl).catch(() => {
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    });
+  }, [
+    baseUrl,
+    conversationId,
+    messagesQuery.data,
+    queryClient,
     syncActiveConversationReadState,
     unreadSnapshotReady,
   ]);
@@ -349,6 +546,7 @@ export function useConversationThread(conversationId: string) {
     onMutate: (input: {
       payload: SendMessagePayload;
       retryMessageId?: string;
+      clearComposerDraft?: boolean;
     }) => {
       if (!ownerId) return { messageId: undefined };
 
@@ -360,6 +558,11 @@ export function useConversationThread(conversationId: string) {
         setMessages((current) =>
           markThreadMessageSending(current, input.retryMessageId!),
         );
+        updatePendingDirectMessageStatus(
+          conversationId,
+          [input.retryMessageId],
+          "sending",
+        );
       } else {
         const optimistic = buildOptimisticDirectMessage({
           payload: input.payload,
@@ -368,9 +571,29 @@ export function useConversationThread(conversationId: string) {
         });
         messageId = optimistic.id;
         setMessages((current) => [...current, optimistic]);
+        upsertPendingDirectMessage(conversationId, optimistic);
+        // thread 立刻显示之外，会话列表的 lastMessage 预览也要立刻同步——
+        // 等 socket echo（公网隧道一来回数百 ms）的话会有可见的"列表/聊天页
+        // 对不上"窗口。echo 到了 onChatMessage 里会再 sync 一次替成真消息。
+        syncActiveConversationMessage(optimistic);
       }
 
-      if (!input.retryMessageId && input.payload.type !== "sticker") {
+      // 走查 R1：原版「非 sticker 一律 setText("")」会把用户的 composer 草稿
+      // 误清。单聊发图/文件/语音/语音通话邀请/preset 文本 (`sendTextMessage`
+      // 带 overrideText) 都走这条 mutation，type !== "sticker" 命中后用户在
+      // composer 里已经打的字会被秒清。例：用户打到一半「看下这张图…」然后
+      // 点 + 选图，图片走 type=image 的 mutation onMutate → setText("")，
+      // composer 立刻空。同样路径：点 📞 打语音电话时面板 onPanelOpened
+      // 触发 sendTextMessage(call-invite override) → 同步清空草稿。
+      // 真正的 composer 清空时机由调用方（handleSubmit 等）显式决定——
+      // 群聊 group-chat-thread-panel 走的就是这个口径（handleSubmit 内
+      // setText("")）。这里改成：除了重试/sticker 之外，只在「调用方明确
+      // 要求清 composer」(clearComposerDraft=true) 时才清。
+      if (
+        !input.retryMessageId &&
+        input.payload.type !== "sticker" &&
+        input.clearComposerDraft
+      ) {
         setText("");
       }
 
@@ -379,14 +602,18 @@ export function useConversationThread(conversationId: string) {
     mutationFn: async (input: {
       payload: SendMessagePayload;
       retryMessageId?: string;
+      clearComposerDraft?: boolean;
     }) => {
       if (!ownerId) return;
 
       // Fail-fast：socket 断开时不要让消息卡在 sending。socket.io-client 在
       // 断开期间会 buffer emits 并在重连后 replay，但用户当下不知道，体感是
       // 「发了没动静」。直接抛错让 onError 把消息标 failed + 显示重试按钮。
+      // 错误文案必须可读 —— sendMutation.error.message 会原样塞进
+      // InlineNotice / ChatComposer 的 error 槽，原来 "socket-disconnected"
+      // 直接给用户看是技术字符串，不是中/英文提示。
       if (!getChatSocket().connected) {
-        throw new Error("socket-disconnected");
+        throw new Error(t(msg`网络暂时连不上，消息已保存，点重试可重新发送。`));
       }
       emitChatMessage(input.payload);
     },
@@ -396,10 +623,32 @@ export function useConversationThread(conversationId: string) {
       setMessages((current) =>
         markThreadMessagesFailed(current, [messageId]),
       );
+      updatePendingDirectMessageStatus(conversationId, [messageId], "failed");
     },
   });
 
-  const sendTextMessage = async (overrideText?: string) => {
+  // mutationFn 抛错（socket-disconnected 等）后 onError 已把消息标 failed，
+  // 调用方只是用 await 做顺序控制（追踪/滚动），不需要看到 rejection。
+  // 不吞会落到 unhandledrejection → 污染 telemetry errors 列表。
+  // sendMutation.mutateAsync 在 react-query 里是稳定的（mutation.mutateAsync ref
+  // 跨 render 不变），用 useCallback 把 runSendMutation 也固化，让 retryMessage
+  // 的 useCallback 真正能稳定下来。
+  const sendMutationAsync = sendMutation.mutateAsync;
+  const runSendMutation = useCallback(
+    async (input: Parameters<typeof sendMutationAsync>[0]) => {
+      try {
+        await sendMutationAsync(input);
+      } catch {
+        // onError 已处理
+      }
+    },
+    [sendMutationAsync],
+  );
+
+  const sendTextMessage = async (
+    overrideText?: string,
+    options?: { clearComposerDraft?: boolean },
+  ) => {
     const trimmed = (overrideText ?? text).trim();
     if (!trimmed || !ownerId) {
       return;
@@ -416,12 +665,17 @@ export function useConversationThread(conversationId: string) {
       throw new Error(t(msg`The target character is not ready yet.`));
     }
 
-    await sendMutation.mutateAsync({
+    await runSendMutation({
       payload: {
         conversationId,
         characterId: targetCharacterId,
         text: trimmed,
       },
+      // 走查 R1：单聊发文本时由「handleSubmit」明确传 clearComposerDraft=true
+      // 来清 composer；preset / call-invite / 其它 overrideText 调用方传 false
+      // (默认 undefined)，避免误清正在打字的用户。详见 sendMutation onMutate
+      // 头部注释。
+      clearComposerDraft: options?.clearComposerDraft === true,
     });
   };
 
@@ -444,7 +698,7 @@ export function useConversationThread(conversationId: string) {
       throw new Error(t(msg`The target character is not ready yet.`));
     }
 
-    await sendMutation.mutateAsync({
+    await runSendMutation({
       payload: {
         conversationId,
         characterId: targetCharacterId,
@@ -491,7 +745,7 @@ export function useConversationThread(conversationId: string) {
         throw new Error(t(msg`图片上传结果异常。`));
       }
 
-      await sendMutation.mutateAsync({
+      await runSendMutation({
         payload: {
           conversationId,
           characterId: targetCharacterId,
@@ -512,7 +766,7 @@ export function useConversationThread(conversationId: string) {
         throw new Error(t(msg`文件上传结果异常。`));
       }
 
-      await sendMutation.mutateAsync({
+      await runSendMutation({
         payload: {
           conversationId,
           characterId: targetCharacterId,
@@ -536,7 +790,7 @@ export function useConversationThread(conversationId: string) {
         throw new Error(t(msg`语音上传结果异常。`));
       }
 
-      await sendMutation.mutateAsync({
+      await runSendMutation({
         payload: {
           conversationId,
           characterId: targetCharacterId,
@@ -549,7 +803,7 @@ export function useConversationThread(conversationId: string) {
     }
 
     if (payload.type === "contact_card") {
-      await sendMutation.mutateAsync({
+      await runSendMutation({
         payload: {
           conversationId,
           characterId: targetCharacterId,
@@ -561,7 +815,7 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
-    await sendMutation.mutateAsync({
+    await runSendMutation({
       payload: {
         conversationId,
         characterId: targetCharacterId,
@@ -574,6 +828,16 @@ export function useConversationThread(conversationId: string) {
 
   const retryMessage = useCallback(
     async (messageId: string) => {
+      // 走查新一轮 R6：同帧双击同一条 failed 消息的「重试」按钮，
+      // markThreadMessageSending 还没 commit，下一次 click 仍看到
+      // localStatus === "failed" → 飞两份相同 emitChatMessage，对端
+      // 在 single 单聊里收到 2 条一模一样的用户消息（local_id 不同 →
+      // server echo 来时两条都被 dedup 各自匹配 local_id 也都过）。
+      // 群聊 group-chat-thread-panel `retryingMessageIdsRef` 同款修法
+      // （commit 593255ad）。
+      if (retryingMessageIdsRef.current.has(messageId)) {
+        return;
+      }
       if (!ownerId) {
         return;
       }
@@ -601,15 +865,23 @@ export function useConversationThread(conversationId: string) {
         throw new Error(t(msg`这条消息暂时无法重试发送。`));
       }
 
-      await sendMutation.mutateAsync({
-        payload,
-        retryMessageId: messageId,
-      });
+      retryingMessageIdsRef.current.add(messageId);
+      try {
+        await runSendMutation({
+          payload,
+          retryMessageId: messageId,
+        });
+      } finally {
+        retryingMessageIdsRef.current.delete(messageId);
+      }
     },
-    [conversationId, messages, ownerId, participants, sendMutation],
+    // sendMutation 整个对象每次 render 都换引用，不要塞进 deps —— retryMessage 会
+    // 跟着每次 render 重建，把它当作"稳定回调"挂在子组件 onClick 上的语义就破了。
+    // runSendMutation 已经被 useCallback 固化在稳定 mutateAsync 之上，足够。
+    [conversationId, messages, ownerId, participants, runSendMutation],
   );
 
-  const renderedMessages = useMemo(() => messages, [messages]);
+  const renderedMessages = messages;
 
   const loadOlderMessages = useCallback(async () => {
     if (messagesQuery.isFetching || !hasOlderMessages) {

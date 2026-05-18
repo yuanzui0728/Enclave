@@ -12,7 +12,9 @@ import { openExternalUrl } from "../runtime/external-url";
 import {
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
+import { buildPublicShareUrl } from "../lib/share-url";
 
 export function OfficialArticleViewer({
   article,
@@ -64,10 +66,7 @@ export function OfficialArticleViewer({
   );
 
   const articlePath = `/official-accounts/articles/${article.id}`;
-  const articleUrl =
-    typeof window === "undefined"
-      ? articlePath
-      : `${window.location.origin}${articlePath}`;
+  const articleUrl = buildPublicShareUrl(articlePath);
 
   function retryCopyLink() {
     void handleCopyLink({
@@ -103,7 +102,9 @@ export function OfficialArticleViewer({
     }
 
     try {
-      await navigator.clipboard.writeText(articleUrl);
+      if (!(await writeClipboardText(articleUrl))) {
+        throw new Error("clipboard copy failed");
+      }
       setShareNotice({
         message: nativeMobileShareSupported
           ? t(msg`系统分享暂时不可用，已复制文章链接。`)

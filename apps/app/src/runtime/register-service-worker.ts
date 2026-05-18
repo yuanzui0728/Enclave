@@ -17,6 +17,12 @@ function hasSwSupport(): boolean {
   return "serviceWorker" in navigator;
 }
 
+function isCapacitorNativeShell(): boolean {
+  if (typeof window === "undefined") return false;
+  const capacitor = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  return Boolean(capacitor?.isNativePlatform?.());
+}
+
 function killSwitchActive(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -98,7 +104,11 @@ function registerNow(): void {
 export function registerAppServiceWorker(): void {
   if (typeof window === "undefined") return;
   if (!hasSwSupport()) return;
-  if (window.location.protocol === "file:") return; // Capacitor 原生壳
+  // Capacitor 原生壳：iOS 用 capacitor:// 协议、Android 用 https://localhost/，
+  // protocol === "file:" 是 Cordova/legacy Capacitor 习惯，覆盖不到 7.x 之后的
+  // 任何 native 平台。直接走 Capacitor.isNativePlatform() 判断，保留 file:
+  // 兜底以防有人换 scheme 回 file:。
+  if (isCapacitorNativeShell() || window.location.protocol === "file:") return;
 
   if (killSwitchActive()) {
     runKillSwitch();

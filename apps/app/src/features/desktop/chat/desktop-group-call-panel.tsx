@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import type { GroupMember } from "@yinjie/contracts";
 import {
@@ -17,7 +17,7 @@ import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import type { DesktopChatCallKind } from "./desktop-chat-header-actions";
 import { formatDetailedMessageTimestamp } from "../../../lib/format";
-import { buildGroupCallSummaryLines } from "../../chat/group-call-message";
+import { buildGroupCallWorkspaceSummaryLines } from "../../chat/group-call-presentation";
 
 type DesktopGroupCallPanelProps = {
   kind: DesktopChatCallKind;
@@ -72,6 +72,22 @@ export function DesktopGroupCallPanel({
     buildInitialJoinedMemberIds(members),
   );
 
+  // 仅在群/通话类型切换时重置全部本地状态。原来把 `members` 列进 deps，
+  // 但 members 是 useQuery 的数组：每次 refetch 都换新引用（即便数据一样），
+  // 用户点了「拉某成员下线」之后下一次 30s 轮询会把 joinedMemberIds 全部
+  // 重置回初始集，操作消失。改成只在 groupId/kind 变更时重置。
+  //
+  // 走查电脑端群聊 R1：原版只在 [groupId, kind] 切换时 seed joinedMemberIds，
+  // useState 初始化也吃 props.members。如果用户切到新群后立刻点群通话按钮
+  // （public 隧道下 membersQuery ~600ms RTT 仍在飞），members 还是空数组——
+  // useState 给 []、本 effect 也 setJoinedMemberIds([])，ref 永远停在空集；
+  // members 真到达后下方 [members] effect 走的是"只修剪"路径，不再补 seed。
+  // 结果：通话面板顶部一直显示 "0/N 已加入"、workspaceSummary 跟着空着、
+  // hasSyncedStatus 永远不可能命中正确 active counts（lastPublishedCallCounts
+  // 起步 0/N，但实际从来没 broadcast 出去对的 counts，autoSync 1200ms 试一次
+  // 0/N 后被 attemptedSyncCountsRef 锁住），用户看不到任何成员加入态。改用
+  // ref 区分"已经用非空 members 完成首轮 seed"——首次拿到非空 members 时
+  // 自动补一次 seed，之后再 refetch 走"只修剪"。
   useEffect(() => {
     setMuted(false);
     setCameraEnabled(kind === "video");
@@ -79,20 +95,61 @@ export function DesktopGroupCallPanel({
     setStartedAt(new Date().toISOString());
     setPanelOpenedReported(false);
     setJoinedMemberIds(buildInitialJoinedMemberIds(members));
-  }, [groupId, kind, members]);
+    hasSeededJoinedMembersRef.current = members.length > 0;
+    // 走查 Round 7 配套：切群/切通话类型也要清掉"已尝试过 counts"的记忆，
+    // 否则上一组 counts 卡住下一组的首次自动同步。
+    attemptedSyncCountsRef.current = null;
+    // members 故意不进 deps：仅 groupId/kind 切换时初始化一次；后续 members
+    // refetch 不能踩用户已有的 join/leave 状态。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, kind]);
+
+  // members refetch 时只「修剪」已不存在的成员，避免引用变化但内容相同时
+  // 把用户已有的 join/leave 切换被覆盖。新成员不会自动 join——保持初始
+  // owner/user/前 3 个的启发式只在群/通话切换时生效。
+  //
+  // 走查电脑端群聊 R1 配套：未做过首轮 seed（mount 时 members 为空）时，
+  // members 首次到达要补 seed —— 否则 joinedMemberIds 永远空，所有"已加入"
+  // 元数据皆 0。
+  const hasSeededJoinedMembersRef = useRef(members.length > 0);
+  useEffect(() => {
+    if (!members.length) {
+      return;
+    }
+    if (!hasSeededJoinedMembersRef.current) {
+      hasSeededJoinedMembersRef.current = true;
+      setJoinedMemberIds(buildInitialJoinedMemberIds(members));
+      return;
+    }
+    setJoinedMemberIds((current) => {
+      const memberIdSet = new Set(members.map((member) => member.memberId));
+      const next = current.filter((id) => memberIdSet.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [members]);
 
   const activeMembers = useMemo(
     () => members.filter((member) => joinedMemberIds.includes(member.memberId)),
     [joinedMemberIds, members],
   );
   const visibleMembers = useMemo(() => members.slice(0, 8), [members]);
+  // 走查 R4：和 mobile-group-call-screen commit 948078bb2 同款问题——下面
+  // GroupAvatarChip 接收的 members={members.map(m=>m.memberId)} 原本写在 JSX
+  // 里，每次 render（toggleJoinedState、setStartedAt、1200ms attempted-sync
+  // useEffect 触发、members 30s 轮询 refetch 等）都 new 一份 array →
+  // GroupAvatarChip 拿到新 prop 引用、重新算 hashSeed × 4 + 重新挂 4 个 <img>。
+  // useMemo 锁住引用，群成员稳定时 chip 跳过重渲染。
+  const memberIdsForAvatar = useMemo(
+    () => members.map((member) => member.memberId),
+    [members],
+  );
   const callKindLabel = kind === "voice" ? t(msg`群语音`) : t(msg`群视频`);
   const activeCount = activeMembers.length;
   const waitingCount = Math.max(members.length - activeCount, 0);
   const hasSyncedStatus =
     lastSyncedCounts?.activeCount === activeCount &&
     lastSyncedCounts?.totalCount === members.length;
-  const workspaceSummaryLines = buildGroupCallSummaryLines({
+  const workspaceSummaryLines = buildGroupCallWorkspaceSummaryLines({
     kind,
     status: "ongoing",
     sourceLabel: t(msg`桌面端`),
@@ -105,8 +162,19 @@ export function DesktopGroupCallPanel({
       : null,
   });
 
+  // 走查电脑端群聊 R2：原版 mount 时直接打 onPanelOpened，把 (activeCount=0,
+  // totalCount=0) 报给 parent → parent sendCallInviteMutation 立刻发一条
+  // "ongoing 0/0 已加入" 群消息出去。R1 路径下 members 公网 RTT ~600ms 还在
+  // 飞时这条 0/0 已经投出，群里所有真实用户先看到"x 在群通话 0/0 已加入"
+  // 这种奇怪状态——auto-sync 1200ms 后才把 M/N 的正确状态发上来，第二条卡片
+  // 把 0/0 卡片覆盖，但群消息流里那条 0/0 残留。门控 members.length，等真有
+  // 数据再 broadcast。reported flag 同步推迟到真发出时翻 true。
   useEffect(() => {
     if (panelOpenedReported) {
+      return;
+    }
+
+    if (!members.length) {
       return;
     }
 
@@ -117,13 +185,54 @@ export function DesktopGroupCallPanel({
     });
   }, [activeCount, members.length, onPanelOpened, panelOpenedReported]);
 
+  // 走查 Round 7：原版 auto-sync 撞失败 retry-storm — 1200ms 触发
+  // onSendInviteNotice → parent mutateAsync 失败 → lastPublishedCallCounts
+  // 不更新 → hasSyncedStatus 仍 false → 下个 render 这个 effect 重新跑、再
+  // 拉 1200ms 定时器 → 每 1200ms 重发一条 "进行中" 邀请，群被 spam 一堆
+  // 重复 ongoing 卡片。用 ref 记录"本组 counts 已经尝试过"，同 counts 不
+  // 再重发；activeCount/totalCount 变了（成员加入/离开）才重新解锁。
+  //
+  // 走查电脑端群聊 R9（本轮新增）：parent group-chat-thread-panel 在 JSX 里
+  // inline 定义 onSendInviteNotice={(counts)=>{...mutateAsync...}}（line 1691），
+  // 每次 parent render 都换新函数引用。parent 在通话面板挂着的时候仍有
+  // groupQuery / membersQuery / messagesQuery 周期 refetch + typing socket /
+  // sendCallInviteMutation.isPending 变化等多路 re-render 触发——本 effect
+  // deps 里之前列了 onSendInviteNotice，于是 parent 每渲一次 → 本 effect
+  // cleanup（clearTimeout）+ re-schedule，1200ms 定时器永远在被重置；
+  // hasSyncedStatus=false 的情况下，"自动把最新 counts 同步到聊天消息流"
+  // 这条 path 在繁忙群里根本走不到，依赖用户手动点"同步最新状态"才能发出。
+  // 用 ref 锁住最新 callback 引用，effect deps 去掉 onSendInviteNotice，
+  // setTimeout 内部从 ref 取最新值——既不踩闭包过期、也不让 callback ref
+  // 变化触发 cleanup。同款 onPanelOpened 因为有 panelOpenedReported state
+  // gating（一旦发过就不再发），即便每 render 重跑也只 throw away，无副作用，
+  // 不需要这层包装；onEndCall 是用户点击触发，根本不在 useEffect 里。
+  const onSendInviteNoticeRef = useRef(onSendInviteNotice);
+  useEffect(() => {
+    onSendInviteNoticeRef.current = onSendInviteNotice;
+  }, [onSendInviteNotice]);
+  const attemptedSyncCountsRef = useRef<{
+    activeCount: number;
+    totalCount: number;
+  } | null>(null);
   useEffect(() => {
     if (inviteNoticePending || endNoticePending || hasSyncedStatus) {
       return;
     }
+    const last = attemptedSyncCountsRef.current;
+    if (
+      last &&
+      last.activeCount === activeCount &&
+      last.totalCount === members.length
+    ) {
+      return;
+    }
 
     const timer = window.setTimeout(() => {
-      onSendInviteNotice({
+      attemptedSyncCountsRef.current = {
+        activeCount,
+        totalCount: members.length,
+      };
+      onSendInviteNoticeRef.current({
         activeCount,
         totalCount: members.length,
       });
@@ -138,7 +247,6 @@ export function DesktopGroupCallPanel({
     hasSyncedStatus,
     inviteNoticePending,
     members.length,
-    onSendInviteNotice,
   ]);
 
   function toggleJoinedState(member: GroupMember) {
@@ -153,6 +261,72 @@ export function DesktopGroupCallPanel({
     );
   }
 
+  // 走查 R2：「同步最新状态」/「结束通话」两个按钮原本只靠
+  // disabled={inviteNoticePending}/disabled={endNoticePending} 兜双触发，但
+  // pending 是 React state 来自父级 sendCallInviteMutation.isPending，
+  // 要等 commit 才进 DOM。同帧连点两次都看到 pending=false → mutateAsync
+  // 飞两份 → 群里收到 2 条 "ongoing" 通知（或 2 条 "ended"）。和姊妹
+  // R3 (e457a1739 — DesktopMessageAvatarPopover) 同款 sync ref 锁。
+  const inviteSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!inviteNoticePending) {
+      inviteSubmittingRef.current = false;
+    }
+  }, [inviteNoticePending]);
+  const endSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!endNoticePending) {
+      endSubmittingRef.current = false;
+    }
+  }, [endNoticePending]);
+
+  const handleManualSync = () => {
+    if (inviteNoticePending || inviteSubmittingRef.current) {
+      return;
+    }
+    inviteSubmittingRef.current = true;
+    onSendInviteNotice({
+      activeCount,
+      totalCount: members.length,
+    });
+  };
+
+  const handleEndCall = () => {
+    if (endNoticePending || endSubmittingRef.current) {
+      return;
+    }
+    endSubmittingRef.current = true;
+    onEndCall({
+      activeCount,
+      totalCount: members.length,
+      durationMs: Math.max(Date.now() - new Date(startedAt).getTime(), 0),
+      startedAt,
+    });
+  };
+
+  // 走查电脑端群聊（新会话）R2：和姊妹电脑端单聊 R3（commit 5fbb61838 —
+  // handleDesktopCallAction / 历史记录 onOpenMessage 缺同帧双击 ref 守）
+  // / R4（commit 75acaa695 — 头像 popover 4 个 navigate 按钮）同款 pattern。
+  // 「到手机继续」按钮原版裸跑 `onClick={onOpenMobileHandoff}`——父级 inline
+  // (group-chat-thread-panel line 1688-1698) 是 `() => void navigate({
+  // to:"/desktop/mobile", hash:... })`，无任何 throttle。同帧 <16ms 双击
+  // 都通过 → tanstack-router push 2 条相同 /desktop/mobile?... history 项 →
+  // 用户从手机交接页返回还得多按 1 次返回；且 desktop-mobile-page mount
+  // 时 spawn QR + getMobileSession 走公网 RTT ~600ms，第 2 次也会重复发出。
+  // raf 解锁兜底 navigate 没真正切走的边界。「返回聊天」走 onClose（只是
+  // setDesktopCallPanelState(null) state-toggle），同帧 idempotent，无需保护。
+  const mobileHandoffFiredRef = useRef(false);
+  const handleOpenMobileHandoff = () => {
+    if (mobileHandoffFiredRef.current) return;
+    mobileHandoffFiredRef.current = true;
+    onOpenMobileHandoff();
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        mobileHandoffFiredRef.current = false;
+      });
+    }
+  };
+
   return (
     <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] p-5 shadow-[var(--shadow-card)]">
       <div className="flex min-w-0 flex-[1.08] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
@@ -165,7 +339,7 @@ export function DesktopGroupCallPanel({
             <div className="mt-4 flex items-center gap-4">
               <GroupAvatarChip
                 name={groupName}
-                members={members.map((member) => member.memberId)}
+                members={memberIdsForAvatar}
                 size="wechat"
               />
               <div className="min-w-0">
@@ -257,12 +431,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="primary"
-            onClick={() =>
-              onSendInviteNotice({
-                activeCount,
-                totalCount: members.length,
-              })
-            }
+            onClick={handleManualSync}
             disabled={inviteNoticePending}
             className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
@@ -276,7 +445,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={onOpenMobileHandoff}
+            onClick={handleOpenMobileHandoff}
             className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             <Smartphone size={16} />
@@ -285,17 +454,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={() =>
-              onEndCall({
-                activeCount,
-                totalCount: members.length,
-                durationMs: Math.max(
-                  Date.now() - new Date(startedAt).getTime(),
-                  0,
-                ),
-                startedAt,
-              })
-            }
+            onClick={handleEndCall}
             disabled={endNoticePending}
             className="rounded-[10px] border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.92)] text-[#d74b45] shadow-none hover:border-[rgba(220,38,38,0.2)] hover:bg-[rgba(254,226,226,0.96)]"
           >
@@ -348,14 +507,14 @@ export function DesktopGroupCallPanel({
               >
                 <div className="flex items-center gap-3">
                   <AvatarChip
-                    name={member.memberName ?? member.memberId}
+                    name={member.memberName || member.memberId}
                     src={member.memberAvatar}
                     size="wechat"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {member.memberName ?? member.memberId}
+                        {member.memberName || member.memberId}
                       </div>
                       <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                         {roleLabel}

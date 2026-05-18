@@ -27,6 +27,18 @@ type ThreadMessageLike = {
 export type DirectThreadMessage = Message & ChatLocalMessageState;
 export type GroupThreadMessage = GroupMessage & ChatLocalMessageState;
 
+// 走查 Round 3：原版 `local_${Date.now()}` 在同一毫秒内会撞 id；
+// mergeThreadMessageWindow / sortThreadMessages 用 Map<id, msg> 去重 → 同一
+// ms 内发出的两条本地消息只剩一条，UI 上"消息凭空消失"。粘贴/双击 send /
+// 连发表情都会复现。createdAt 维持 Date.now() 与时间戳排序一致，id 用
+// createdAt + 随机后缀避免碰撞。
+let optimisticLocalCounter = 0;
+function nextLocalMessageId(createdAt: string): string {
+  optimisticLocalCounter = (optimisticLocalCounter + 1) % 100000;
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `local_${createdAt}_${optimisticLocalCounter}_${suffix}`;
+}
+
 export function buildOptimisticDirectMessage(input: {
   payload: SendMessagePayload;
   ownerId: string;
@@ -34,6 +46,7 @@ export function buildOptimisticDirectMessage(input: {
 }): DirectThreadMessage {
   const { ownerId, payload, senderName } = input;
   const createdAt = String(Date.now());
+  const localId = nextLocalMessageId(createdAt);
 
   if (payload.type === "sticker") {
     const stickerLabel = sanitizeDisplayedChatText(payload.text ?? "").replace(
@@ -44,7 +57,7 @@ export function buildOptimisticDirectMessage(input: {
     const optimisticAttachment = payload.attachment;
 
     return {
-      id: `local_${createdAt}`,
+      id: localId,
       conversationId: payload.conversationId,
       senderType: "user",
       senderId: ownerId,
@@ -85,7 +98,7 @@ export function buildOptimisticDirectMessage(input: {
     payload.type === "note_card"
   ) {
     return {
-      id: `local_${createdAt}`,
+      id: localId,
       conversationId: payload.conversationId,
       senderType: "user",
       senderId: ownerId,
@@ -101,7 +114,7 @@ export function buildOptimisticDirectMessage(input: {
   }
 
   return {
-    id: `local_${createdAt}`,
+    id: localId,
     conversationId: payload.conversationId,
     senderType: "user",
     senderId: ownerId,
@@ -122,10 +135,11 @@ export function buildOptimisticGroupMessage(input: {
 }): GroupThreadMessage {
   const { groupId, ownerId, payload, senderAvatar, senderName } = input;
   const createdAt = String(Date.now());
+  const localId = nextLocalMessageId(createdAt);
   const messageType = payload.type ?? "text";
 
   return {
-    id: `local_${createdAt}`,
+    id: localId,
     groupId,
     senderId: ownerId?.trim() || "world-owner",
     senderType: payload.senderType ?? "user",
@@ -169,6 +183,41 @@ export function upsertIncomingGroupMessage(
   incoming: GroupMessage,
 ) {
   return upsertIncomingThreadMessage(current, incoming);
+}
+
+// 写入 react-query messages cache 用：cache 里只放 server 消息，没有 local_* 乐观
+// 消息，所以不需要 echo 匹配。仅做"同 id 替换 / 否则追加 + 按 createdAt 排序"。
+export function upsertServerMessageInCache<
+  TMessage extends ThreadMessageLike,
+>(cache: TMessage[] | undefined, incoming: TMessage): TMessage[] | undefined {
+  if (!cache) return cache;
+  const idx = cache.findIndex((m) => m.id === incoming.id);
+  if (idx >= 0) {
+    const next = [...cache];
+    next[idx] = incoming;
+    return next;
+  }
+  // 走查 R1：和姊妹函数 sortThreadMessages 同款 Schwartzian transform——原版
+  // comparator 每次都 parseTimestamp(a.createdAt) + parseTimestamp(b.createdAt)，
+  // N=200 条 cache + 1 incoming 的 sort 约 1500 次比较 × 2 parseTimestamp ≈ 3000
+  // 次 Date.parse。socket 单条 echo 是 hot path，活跃群每秒可能多次走这里。
+  // 先一次性 decorate 出 [ts, msg]，sort 只比 number，每条消息恰好 1 次 parseTimestamp。
+  return decorateAndSortByTimestamp([...cache, incoming]);
+}
+
+function decorateAndSortByTimestamp<TMessage extends ThreadMessageLike>(
+  messages: TMessage[],
+) {
+  const decorated: Array<[number, TMessage]> = new Array(messages.length);
+  for (let i = 0; i < messages.length; i += 1) {
+    decorated[i] = [parseTimestamp(messages[i]!.createdAt) ?? 0, messages[i]!];
+  }
+  decorated.sort((left, right) => left[0] - right[0]);
+  const sorted = new Array<TMessage>(decorated.length);
+  for (let i = 0; i < decorated.length; i += 1) {
+    sorted[i] = decorated[i]![1];
+  }
+  return sorted;
 }
 
 export function markThreadMessagesFailed<
@@ -401,23 +450,31 @@ export function buildGroupRetryPayload(
   return null;
 }
 
+// mergeThreadMessageWindow 在批量合并历史消息窗口（initial 60 / "查看更多消息"
+// 100/140/... / aroundMessageId window）时被调用，每次都拿 60+ 条 incoming 在循环
+// 里 upsert。原版 upsertIncomingThreadMessage 每次内部都 sortThreadMessages 一次
+// → 60 条 incoming 触发 60 次 Map+sort（每次都是 O(N log N) parseTimestamp 调用，
+// 长聊天滚到 200 条时 ≈ 656K parseTimestamp + Map.set 调用）；socket 单条消息
+// 进 cache 也会重跑这段。改成循环里只做 upsert（O(1) 替换 / O(N) 查找），最末
+// 统一 sortThreadMessages 一次。public 的 upsertIncomingThreadMessage 仍保持单
+// 次 sort 语义，让 socket onMessage 单条投递的 caller 不用关心顺序。
 function mergeThreadMessageWindow<
   TLocalMessage extends ThreadMessageLike & ChatLocalMessageState,
   TServerMessage extends ThreadMessageLike,
 >(current: TLocalMessage[], incoming: TServerMessage[]) {
-  let nextMessages = [...current];
+  let nextMessages: TLocalMessage[] = [...current];
 
   for (const message of incoming) {
-    nextMessages = upsertIncomingThreadMessage(nextMessages, message);
+    nextMessages = upsertIncomingThreadMessageWithoutSort(nextMessages, message);
   }
 
   return sortThreadMessages(nextMessages);
 }
 
-function upsertIncomingThreadMessage<
+function upsertIncomingThreadMessageWithoutSort<
   TLocalMessage extends ThreadMessageLike & ChatLocalMessageState,
   TServerMessage extends ThreadMessageLike,
->(current: TLocalMessage[] | undefined, incoming: TServerMessage) {
+>(current: TLocalMessage[] | undefined, incoming: TServerMessage): TLocalMessage[] {
   if (!current?.length) {
     return [incoming as unknown as TLocalMessage];
   }
@@ -426,7 +483,7 @@ function upsertIncomingThreadMessage<
   if (exactIndex >= 0) {
     const nextMessages = [...current];
     nextMessages[exactIndex] = incoming as unknown as TLocalMessage;
-    return sortThreadMessages(nextMessages);
+    return nextMessages;
   }
 
   const optimisticIndex = current.findIndex((message) =>
@@ -435,13 +492,19 @@ function upsertIncomingThreadMessage<
   if (optimisticIndex >= 0) {
     const nextMessages = [...current];
     nextMessages[optimisticIndex] = incoming as unknown as TLocalMessage;
-    return sortThreadMessages(nextMessages);
+    return nextMessages;
   }
 
-  return sortThreadMessages([
-    ...current,
-    incoming as unknown as TLocalMessage,
-  ]);
+  return [...current, incoming as unknown as TLocalMessage];
+}
+
+function upsertIncomingThreadMessage<
+  TLocalMessage extends ThreadMessageLike & ChatLocalMessageState,
+  TServerMessage extends ThreadMessageLike,
+>(current: TLocalMessage[] | undefined, incoming: TServerMessage) {
+  return sortThreadMessages(
+    upsertIncomingThreadMessageWithoutSort(current, incoming),
+  );
 }
 
 function replaceLocalThreadMessage<
@@ -468,11 +531,14 @@ function sortThreadMessages<
     deduped.set(message.id, message);
   }
 
-  return [...deduped.values()].sort(
-    (left, right) =>
-      (parseTimestamp(left.createdAt) ?? 0) -
-      (parseTimestamp(right.createdAt) ?? 0),
-  );
+  // 走查 R1：原版 comparator 内每次都 parseTimestamp(left.createdAt) +
+  // parseTimestamp(right.createdAt)，N=200 条消息每次 sort 约 1500 次比较 ×
+  // 2 parseTimestamp ≈ 3000 次 Date.parse。本函数是 mergeThreadMessageWindow
+  // 收尾 + upsertIncomingThreadMessage 每条 socket echo / replaceLocalThreadMessage
+  // 每次重试 echo 的 hot path，typing tick / AI 回声追加的高频 re-render
+  // 上叠出来。Schwartzian transform：先 decorate 一次性算 [ts, msg]，sort 只比
+  // number，每条消息恰好 1 次 parseTimestamp，省掉 log2(N)×2 倍重复解析。
+  return decorateAndSortByTimestamp([...deduped.values()]);
 }
 
 function isMatchingOptimisticEcho(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,7 @@ import {
 } from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const t = translateRuntimeMessage;
@@ -119,10 +119,31 @@ function MobileGroupChatEditPage({
       ? (groupQuery.data?.name ?? "")
       : (ownerMember?.memberName?.trim() ?? "");
   const [draft, setDraft] = useState("");
+  // 用户在输入框打字时，groupQuery / membersQuery 的异步到达不能把 draft 直接
+  // 覆盖回服务端值——慢网下用户可能已经输入半截，被这条 useEffect 吞掉只
+  // 剩服务端的旧名字 / 旧昵称。改成"只在第一次拿到加载完成的源数据时同步
+  // 一次"，之后用户控制 draft。
+  const draftInitializedRef = useRef(false);
+
+  // 走查 Round 2：name/nickname 模式切换、或在两个群 edit 页之间切（routeparam
+  // 改但组件不重挂），draftInitializedRef 仍为 true → 下方 seed-effect 直接
+  // return，输入框继续显示上一个上下文的值。与 group-chat-background-page
+  // 已实施的方案对齐，强制重置 ref + draft，等下一轮源数据到达再 seed。
+  useEffect(() => {
+    draftInitializedRef.current = false;
+    setDraft("");
+  }, [baseUrl, groupId, mode]);
 
   useEffect(() => {
+    if (draftInitializedRef.current) {
+      return;
+    }
+    if (mode === "name" ? groupQuery.isLoading : membersQuery.isLoading) {
+      return;
+    }
+    draftInitializedRef.current = true;
     setDraft(initialValue);
-  }, [initialValue]);
+  }, [groupQuery.isLoading, initialValue, membersQuery.isLoading, mode]);
 
   useEffect(() => {
     if (
@@ -153,18 +174,21 @@ function MobileGroupChatEditPage({
 
   const saveGroupNameMutation = useMutation({
     mutationFn: (name: string) => updateGroup(groupId, { name }, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 走查 R1：原本 await Promise.all(invalidateQueries) 才 navigate，
+      // 公网隧道 RTT ~600ms × 3 条 invalidate 排队等响应，用户点完保存
+      // 看着 spinner 多转 1-2s 才跳回详情页。invalidate 是给其它页面拉刷
+      // 用的（详情页也是 react-query 监听同 key 会自动重拉），fire-and-forget
+      // 让导航立刻发生即可。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
@@ -177,15 +201,14 @@ function MobileGroupChatEditPage({
   const saveNicknameMutation = useMutation({
     mutationFn: (nickname: string) =>
       updateGroupOwnerProfile(groupId, { nickname }, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 同上：fire-and-forget 不卡 navigate。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-members", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
@@ -202,6 +225,22 @@ function MobileGroupChatEditPage({
     saveMutation.isPending ||
     !trimmedDraft ||
     trimmedDraft === initialValue.trim();
+  // 同步防双击锁——下面「保存」按钮原本只靠 disabled=submitDisabled 兜底，
+  // 但 disabled 要等 React commit 才生效，同帧内连点 2 次会同时通过两次
+  // isPending=false → 两个 PATCH /groups/$id 同时飞出去（公网隧道 ~600ms RTT
+  // 下并不罕见）。和 mobile-moments-publish-page Round 6 同款修法：ref 同步
+  // 赋值挡掉同帧后续 click，onSettled 解锁。
+  const submittingRef = useRef(false);
+  const handleSave = () => {
+    if (submittingRef.current) return;
+    if (submitDisabled) return;
+    submittingRef.current = true;
+    saveMutation.mutate(trimmedDraft, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
+    });
+  };
 
   function openGroupDetails() {
     void navigate({
@@ -231,15 +270,20 @@ function MobileGroupChatEditPage({
     if (!trimmedDraft) {
       return;
     }
-
-    saveMutation.mutate(trimmedDraft);
+    handleSave();
   }
 
   return (
     <ChatDetailsShell
       title={mode === "name" ? t(msg`群聊名称`) : t(msg`我在本群的昵称`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊信息`)}
-      onBack={openGroupDetails}
+      subtitle={groupQuery.data?.name || t(msg`群聊信息`)}
+      onBack={() => {
+        // 走查 R1：openGroupDetails 直接 navigate({to: details}) push 一条新
+        // history 项，用户 [details → edit → 点返回] 后浏览器后退会落回 edit
+        // 死循环。和 group-chat-background-page 同口径用 navigateBackOrFallback：
+        // 能 history.back() 就 back，deep link / 跨域跳入兜不住时才 fresh navigate。
+        navigateBackOrFallback(openGroupDetails, `/group/${groupId}/details`);
+      }}
     >
       {groupQuery.isLoading ||
       (mode === "nickname" && membersQuery.isLoading) ? (
@@ -375,7 +419,13 @@ function MobileGroupChatEditPage({
         </div>
       ) : null}
 
-      {groupQuery.data ? (
+      {/* 走查 Round 2：nickname 模式下 groupQuery.data 先到、membersQuery 还在
+          loading 时，原版 {groupQuery.data ? <input /> : null} 会先把输入框露
+          出来。draftInit effect 此时仍 early-return（membersQuery.isLoading=
+          true），用户能打字 → 等 membersQuery 加载完成 effect 才触发
+          setDraft(initialValue) 把用户输入覆盖回服务端值。把表单门槛拉到"该
+          模式所需的全部 query 都 ready"，和 draftInit 守门口径一致。 */}
+      {groupQuery.data && (mode === "name" || !membersQuery.isLoading) ? (
         <>
           <ChatDetailsSection
             title={mode === "name" ? t(msg`新的群聊名称`) : t(msg`新的群昵称`)}
@@ -388,6 +438,26 @@ function MobileGroupChatEditPage({
                 placeholder={
                   mode === "name" ? t(msg`请输入群聊名称`) : t(msg`请输入我在本群的昵称`)
                 }
+                // 走查 R5：和姊妹页 R1-R4 同款 a11y 修法——上方 ChatDetailsSection
+                // 标题"新的群聊名称 / 新的群昵称"在视觉上是标签但没 htmlFor /
+                // aria-labelledby 关联，屏幕阅读器 focus 进来只能读 placeholder，
+                // 用户打字后多数 SR 就不再朗读。挂 aria-label 与 mode 标题一致。
+                aria-label={
+                  mode === "name" ? t(msg`群聊名称`) : t(msg`我在本群的昵称`)
+                }
+                // 走查 R5：原版只能点"保存"按钮提交；这里只是个单行输入框，
+                // 用户在键盘上按 Enter（包括 iOS / Android 软键盘的 Return /
+                // "完成"）是直觉行为。和姊妹页 group-announcement / chat-list
+                // 已有的 enterKeyHint=done 口径对齐——Enter 直接触发 handleSave，
+                // 不破 disabled 兜底（handleSave 里有 submitDisabled / 双击锁
+                // 守护）。enterKeyHint=done 让软键盘 Return 键长得像"完成"。
+                enterKeyHint="done"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSave();
+                  }
+                }}
                 className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
@@ -410,14 +480,7 @@ function MobileGroupChatEditPage({
               variant="primary"
               size="lg"
               disabled={submitDisabled}
-              onClick={() => {
-                if (mode === "name") {
-                  saveGroupNameMutation.mutate(trimmedDraft);
-                  return;
-                }
-
-                saveNicknameMutation.mutate(trimmedDraft);
-              }}
+              onClick={handleSave}
               className="h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存`)}

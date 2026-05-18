@@ -148,7 +148,15 @@ export function useKeyboardInset() {
       window.removeEventListener("pageshow", handleViewportChange);
       document.removeEventListener("visibilitychange", handleViewportChange);
     };
-  }, [updateInset]);
+    // 走查 Round 2：useEffectEvent 返回值每渲染都换新身份，按 React 19.2 文档
+    // 不应放进 effect deps。原来挂在 [updateInset] 里 → MobileShell 每次重渲
+    // (路由变 / TanStack Query 抖 / setKeyboardInset 自己) 都触发 effect 重跑：
+    // viewport/window/document 一圈 listener 全部 remove + add 一遍；同帧
+    // logcat 里能看到 Capacitor Keyboard 4 add + 4 remove 一组组刷，每秒
+    // 数轮，纯白烧主线程。updateInset 是 Effect Event，识别 latest props
+    // 但识别符稳定与否对副作用没意义。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (
@@ -198,7 +206,13 @@ export function useKeyboardInset() {
         void handle.remove();
       });
     };
-  }, [nativePlatform, updateInset]);
+    // 走查 Round 2：同上，updateInset (useEffectEvent) 不能进 deps。这条
+    // effect 还多挂了 [nativePlatform]，加上 updateInset 不稳定，cycle 更
+    // 短——Capacitor Keyboard.addListener 每次都开一个新的 RPC callback
+    // slot 同步给 native，最终原生 Java 端 EventEmitter 上挂着上百个孤儿
+    // listener。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nativePlatform]);
 
   return {
     keyboardInset,

@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MomentsService } from './moments.service';
 import { MomentsController } from './moments.controller';
+import { MomentImageBudgetService } from './moment-image-budget.service';
 import { MomentEntity } from './moment.entity';
 import { MomentPostEntity } from './moment-post.entity';
 import { MomentCommentEntity } from './moment-comment.entity';
@@ -10,6 +11,7 @@ import { AiModule } from '../ai/ai.module';
 import { CharactersModule } from '../characters/characters.module';
 import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
+import { FriendRemarkResolverModule } from '../social/friend-remark-resolver.module';
 import { FeedModule } from '../feed/feed.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
@@ -29,14 +31,15 @@ import { SystemConfigModule } from '../config/config.module';
     CharactersModule,
     AuthModule,
     SocialModule,
+    FriendRemarkResolverModule,
     FeedModule,
     forwardRef(() => CyberAvatarModule),
     ReminderRuntimeModule,
     MinimaxModule,
     SystemConfigModule,
   ],
-  providers: [MomentsService, MomentsMinimaxCallbacks],
+  providers: [MomentsService, MomentsMinimaxCallbacks, MomentImageBudgetService],
   controllers: [MomentsController],
-  exports: [MomentsService],
+  exports: [MomentsService, MomentImageBudgetService],
 })
 export class MomentsModule {}

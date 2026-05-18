@@ -135,7 +135,10 @@ export function CharactersWikiSyncSection({
       }),
   });
 
-  const items = previewQuery.data?.items ?? [];
+  const items = useMemo(
+    () => previewQuery.data?.items ?? [],
+    [previewQuery.data?.items],
+  );
 
   const applyMutation = useMutation({
     mutationFn: (items: WikiSyncApplyItemRequest[]) =>
@@ -188,19 +191,40 @@ export function CharactersWikiSyncSection({
     },
   });
 
-  const totalSelectedFields = useMemo(() => {
-    let n = 0;
-    for (const id of Object.keys(selection)) {
-      n += selection[id]!.contentFields.size + selection[id]!.recipePaths.size;
-    }
-    return n;
-  }, [selection]);
-
-  const totalSelectedRows = useMemo(
+  // 计数和应用都只看当前 items（按当前 filter / characterIdFilter 拉到的可见行）。
+  // 选中态本身按 characterId 保留，切回原 filter 时之前勾的字段不会丢；
+  // 但顶部"已选 X 个角色 / Y 项字段"与「应用所选」必须严格对齐可见集合，
+  // 否则用户在 drift 视图勾完切到 wiki_only 还会看到旧数字，容易误以为是当前视图。
+  const visibleSelections = useMemo(
     () =>
-      Object.values(selection).filter(
+      items
+        .map((it) => ({ item: it, sel: selection[it.characterId] }))
+        .filter(
+          (entry): entry is { item: WikiSyncPreviewItem; sel: SelectionState } =>
+            !!entry.sel &&
+            entry.sel.contentFields.size + entry.sel.recipePaths.size > 0,
+        ),
+    [items, selection],
+  );
+
+  const totalSelectedFields = useMemo(
+    () =>
+      visibleSelections.reduce(
+        (sum, { sel }) => sum + sel.contentFields.size + sel.recipePaths.size,
+        0,
+      ),
+    [visibleSelections],
+  );
+
+  const totalSelectedRows = visibleSelections.length;
+
+  // "清空所选"按钮兜底：哪怕当前视图看不到，只要内存里还有任何勾选都允许一键清理，
+  // 避免切回原 filter 才发现遗留勾选时无法直接清空。
+  const hasAnySelection = useMemo(
+    () =>
+      Object.values(selection).some(
         (s) => s.contentFields.size + s.recipePaths.size > 0,
-      ).length,
+      ),
     [selection],
   );
 
@@ -360,7 +384,7 @@ export function CharactersWikiSyncSection({
           <Button
             variant="ghost"
             onClick={clearAllSelection}
-            disabled={totalSelectedFields === 0}
+            disabled={!hasAnySelection}
           >
             {t(msg`清空所选`)}
           </Button>

@@ -112,4 +112,9 @@ export class CharacterEntity {
 
   @Column('text', { nullable: true })
   region?: string | null;
+
+  // 角色卡"默认用语音回复"：开启后所有 assistant 回复都会走 TTS
+  // 消耗 speech-02-hd token plan 配额。
+  @Column({ default: false })
+  defaultVoiceReply: boolean;
 }

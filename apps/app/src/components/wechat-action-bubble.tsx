@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import { Heart, MessageCircle, Share2, Star } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
 
@@ -49,6 +50,21 @@ export function WeChatActionBubble({
     setMounted(true);
   }, []);
 
+  // 走查 R1：父组件传 inline `onClose={() => setActionBubble(null)}` 进来 —
+  // discover-feed-page 任何 setState 都会换 onClose 身份，气泡 open 时
+  // 下面两条 useEffect 把 pointerdown/scroll/resize/keydown 4 条 listener
+  // + Android back interceptor 一齐 remove → re-add 一遍。父组件随便
+  // 抖一下（like mutate optimistic 写 cache 触发重渲、commentDrafts 改）
+  // 就让气泡的 effect 重跑，纯白烧。
+  // 用 ref pattern 把 onClose 锁稳（不是 useEffectEvent —— 后者在
+  // React 19.2 上行为有抖：portal 渲染的气泡里 effect-event 偶发把
+  // 气泡刚 mount 就在 commit-pass 里 self-close，导致用户根本看不到
+  // 气泡）。每次 render 把最新 onClose 写到 ref，effect 里读 ref.current。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // Close on outside tap, scroll, resize, or Escape.
   useEffect(() => {
     if (!open) return;
@@ -58,11 +74,11 @@ export function WeChatActionBubble({
       if (target && bubbleRef.current?.contains(target)) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     };
-    const handleScroll = () => onClose();
+    const handleScroll = () => onCloseRef.current();
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     };
 
     window.addEventListener("pointerdown", handlePointerDown, true);
@@ -75,7 +91,19 @@ export function WeChatActionBubble({
       window.removeEventListener("resize", handleScroll);
       window.removeEventListener("keydown", handleKey);
     };
-  }, [open, onClose]);
+  }, [open]);
+
+  // Android 硬件 Back：气泡打开时按 Back 应该收气泡而不是退整页。pointerdown /
+  // scroll / resize / ESC 四条都覆盖了，但 Android Back 自成一路（capacitor 桥
+  // 不会派 keydown），用户在小气泡上想"退一步"时整个 feed 页被弹掉很意外。
+  useEffect(() => {
+    if (!open) return;
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onCloseRef.current();
+      return true;
+    });
+  }, [open]);
 
   useLayoutEffect(() => {
     if (!open || !anchorRect || !bubbleRef.current) return;

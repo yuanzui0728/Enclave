@@ -24,6 +24,7 @@ import {
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
+import { useUsernameMap } from "../lib/use-username-map";
 
 export function AdminAbuseFiltersPage() {
   const t = translateRuntimeMessage;
@@ -36,6 +37,9 @@ export function AdminAbuseFiltersPage() {
     queryKey: ["wiki", "abuse-filter-hits"],
     queryFn: () => wikiApi.listAbuseFilterHits({ limit: 50 }),
   });
+  const { resolve: resolveUsername } = useUsernameMap(
+    (hitsQ.data ?? []).map((h) => h.userId),
+  );
   const toggleMut = useMutation({
     mutationFn: (input: { id: string; enabled: boolean }) =>
       wikiApi.updateAbuseFilter(input.id, { enabled: input.enabled }),
@@ -114,7 +118,7 @@ export function AdminAbuseFiltersPage() {
             >
               <div className="flex flex-wrap items-center gap-2">
                 <ActionPill action={h.actionTaken} />
-                <span className="font-mono text-xs">{h.userId}</span>
+                <span className="text-xs">{resolveUsername(h.userId)}</span>
                 <span className="text-xs text-[color:var(--text-muted)]">
                   {formatDateTime(h.createdAt)}
                 </span>
@@ -194,11 +198,17 @@ function FilterCard({
         <Button
           size="sm"
           variant={filter.enabled ? "secondary" : "primary"}
+          className="flex-1 sm:flex-none"
           onClick={() => onToggle(!filter.enabled)}
         >
           {filter.enabled ? t(msg`停用`) : t(msg`启用`)}
         </Button>
-        <Button size="sm" variant="danger" onClick={onDelete}>
+        <Button
+          size="sm"
+          variant="danger"
+          className="flex-1 sm:flex-none"
+          onClick={onDelete}
+        >
           <Trans>删除</Trans>
         </Button>
       </div>
@@ -250,6 +260,7 @@ function SeverityPill({
 }
 
 const DEFAULT_PATTERN_JSON = JSON.stringify(
+  // i18n-ignore-next-line: example regex shown to admins illustrating CJK match.
   { type: "regex", regex: "spam|垃圾", flags: "i" },
   null,
   2,
@@ -318,11 +329,16 @@ function CreateFilterForm({
 
   if (!open) {
     return (
-      <Card className="flex items-center justify-between p-3">
+      <Card className="flex flex-col items-stretch gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-[color:var(--text-muted)]">
           <Trans>新建过滤规则：name + pattern + 命中后动作。</Trans>
         </span>
-        <Button size="sm" variant="primary" onClick={() => setOpen(true)}>
+        <Button
+          size="sm"
+          variant="primary"
+          className="w-full sm:w-auto"
+          onClick={() => setOpen(true)}
+        >
           <Trans>+ 新建过滤器</Trans>
         </Button>
       </Card>
@@ -434,6 +450,7 @@ function CreateFilterForm({
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="primary"
+          className="w-full sm:w-auto"
           disabled={loading || !name.trim() || patternError !== null}
           onClick={submit}
         >

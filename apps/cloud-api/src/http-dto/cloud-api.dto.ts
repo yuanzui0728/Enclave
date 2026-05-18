@@ -125,6 +125,16 @@ function trimString({ value }: { value: unknown }) {
   return typeof value === "string" ? value.trim() : value;
 }
 
+// 给 @IsOptional() 字段用：客户端把空字符串当"没值"传过来时，@IsOptional 不
+// 认空字符串、@MinLength(1) 又会 400 把整个请求拒了——结果就是老客户端发
+// inviteCode:"" 时连注册都过不了。先把空字符串归一成 undefined，IsOptional
+// 才能正确跳过下游校验。
+function trimStringOptional({ value }: { value: unknown }) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function trimStringArray({ value }: { value: unknown }) {
   if (!Array.isArray(value)) {
     return value;
@@ -177,7 +187,7 @@ export class VerifyCodeDto {
   @Matches(CODE_PATTERN, { message: "code 格式不正确。" })
   code: string;
 
-  @Transform(trimString)
+  @Transform(trimStringOptional)
   @IsOptional()
   @IsString({ message: "inviteCode 必须是字符串。" })
   @MinLength(1, { message: "inviteCode 不能为空。" })
@@ -198,6 +208,21 @@ export class VerifyCodeDto {
   @IsString({ message: "clientReportedIp 必须是字符串。" })
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
+
+  // 前端探测的端类型：'web' | 'desktop' | 'android' | 'ios'。后端 classifyDeviceType
+  // 把它和 server-side User-Agent 一起归一为 mobile/desktop 落库。
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
+
+  // 仅注册时一并设置初始密码（老用户登录时即便带上也会被后端忽略）。
+  @IsOptional()
+  @IsString({ message: "setPasswordOnRegister 必须是字符串。" })
+  @MinLength(8, { message: "密码长度不能少于 8 位。" })
+  @MaxLength(32, { message: "密码长度不能超过 32 位。" })
+  setPasswordOnRegister?: string;
 }
 
 export class RedeemInviteDto {
@@ -229,7 +254,7 @@ export class VerifyEmailCodeDto {
   @Matches(CODE_PATTERN, { message: "code 格式不正确。" })
   code: string;
 
-  @Transform(trimString)
+  @Transform(trimStringOptional)
   @IsOptional()
   @IsString({ message: "inviteCode 必须是字符串。" })
   @MinLength(1, { message: "inviteCode 不能为空。" })
@@ -248,6 +273,65 @@ export class VerifyEmailCodeDto {
   @IsString({ message: "clientReportedIp 必须是字符串。" })
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
+
+  @IsOptional()
+  @IsString({ message: "setPasswordOnRegister 必须是字符串。" })
+  @MinLength(8, { message: "密码长度不能少于 8 位。" })
+  @MaxLength(32, { message: "密码长度不能超过 32 位。" })
+  setPasswordOnRegister?: string;
+}
+
+export class LoginWithPasswordDto {
+  @Transform(trimString)
+  @IsIn(["phone", "email"], { message: "identifierKind 必须是 phone 或 email。" })
+  identifierKind: "phone" | "email";
+
+  @Transform(trimString)
+  @IsString({ message: "identifier 必须是字符串。" })
+  @MinLength(1, { message: "identifier 不能为空。" })
+  @MaxLength(254, { message: "identifier 不能超过 254 个字符。" })
+  identifier: string;
+
+  @IsString({ message: "password 必须是字符串。" })
+  @MinLength(1, { message: "password 不能为空。" })
+  @MaxLength(64, { message: "password 不能超过 64 个字符。" })
+  password: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "deviceFingerprint 必须是字符串。" })
+  @MinLength(1, { message: "deviceFingerprint 不能为空。" })
+  @MaxLength(128, { message: "deviceFingerprint 不能超过 128 个字符。" })
+  deviceFingerprint?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientReportedIp 必须是字符串。" })
+  @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
+  clientReportedIp?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
+}
+
+export class ChangePasswordDto {
+  @Transform(trimString)
+  @Matches(CODE_PATTERN, { message: "code 格式不正确。" })
+  code: string;
+
+  @IsString({ message: "newPassword 必须是字符串。" })
+  @MinLength(8, { message: "密码长度不能少于 8 位。" })
+  @MaxLength(32, { message: "密码长度不能超过 32 位。" })
+  newPassword: string;
 }
 
 export class VerifyGoogleIdTokenDto {
@@ -257,7 +341,7 @@ export class VerifyGoogleIdTokenDto {
   @MaxLength(8192, { message: "idToken 不能超过 8192 个字符。" })
   idToken: string;
 
-  @Transform(trimString)
+  @Transform(trimStringOptional)
   @IsOptional()
   @IsString({ message: "inviteCode 必须是字符串。" })
   @MinLength(1, { message: "inviteCode 不能为空。" })
@@ -276,6 +360,12 @@ export class VerifyGoogleIdTokenDto {
   @IsString({ message: "clientReportedIp 必须是字符串。" })
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
 }
 
 export class CheckoutDto {
@@ -295,6 +385,13 @@ const SUBSCRIPTION_SOURCES = [
   "invite_reward",
   "admin_grant",
 ] as const;
+const CLOUD_USER_ORDER_BY = [
+  "expires",
+  "registered",
+  "lastLogin",
+  "lastChatMessage",
+] as const;
+const CLOUD_USER_ORDER_DIR = ["asc", "desc"] as const;
 
 export class ListCloudUsersDto {
   @Transform(trimString)
@@ -341,6 +438,21 @@ export class ListCloudUsersDto {
   @Min(1, { message: "pageSize 最小为 1。" })
   @Max(100, { message: "pageSize 最大为 100。" })
   pageSize?: number;
+
+  @Transform(parseBoolean)
+  @IsOptional()
+  @IsBoolean({ message: "includeTestAccounts 必须是布尔值。" })
+  includeTestAccounts?: boolean;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(CLOUD_USER_ORDER_BY, { message: "orderBy 不合法。" })
+  orderBy?: (typeof CLOUD_USER_ORDER_BY)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(CLOUD_USER_ORDER_DIR, { message: "orderDir 不合法。" })
+  orderDir?: (typeof CLOUD_USER_ORDER_DIR)[number];
 }
 
 export class GrantSubscriptionDto {
@@ -457,13 +569,15 @@ export class UpsertCloudConfigDto {
 }
 
 export class ListInviteRedemptionsDto {
-  @Transform(trimString)
+  @Transform(trimStringOptional)
   @IsOptional()
   @IsString({ message: "query 必须是字符串。" })
   @MaxLength(255, { message: "query 不能超过 255 个字符。" })
   query?: string;
 
-  @Transform(trimString)
+  // admin UI 清空状态下拉时常发 ?status=，trimStringOptional 把空串归一成
+  // undefined，@IsOptional 才能放行；否则 @IsIn 会卡空串 400。
+  @Transform(trimStringOptional)
   @IsOptional()
   @IsIn(INVITE_REDEMPTION_STATUSES, { message: "status 不合法。" })
   status?: (typeof INVITE_REDEMPTION_STATUSES)[number];
@@ -1263,6 +1377,11 @@ export class RuntimeCallbackDto {
   @IsOptional()
   @IsISO8601({ strict: true }, { message: "lastInteractiveAt 必须是合法 ISO 时间字符串。" })
   lastInteractiveAt?: string | null;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsISO8601({ strict: true }, { message: "lastUserMessageAt 必须是合法 ISO 时间字符串。" }) // i18n-ignore-line: nest validation error message
+  lastUserMessageAt?: string | null;
 }
 
 export class RuntimeFailureDto extends RuntimeCallbackDto {

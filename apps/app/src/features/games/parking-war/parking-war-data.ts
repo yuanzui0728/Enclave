@@ -1,65 +1,34 @@
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
-import type { CarSpec, CarTier, NpcOpponent } from "./parking-war-types";
+import type {
+  ParkingWarCarTier,
+  ParkingWarLotSurface,
+  ParkingWarRarity,
+} from "./parking-war-types";
 
 const t = translateRuntimeMessage;
 
-export const PLAYER_LOT_ID = "player";
-export const PLAYER_LOT_SIZE = 7;
-export const NPC_LOT_SIZE = 5;
-export const OFFLINE_CATCHUP_CAP_MS = 2 * 60 * 60 * 1000;
-export const PLAYER_FINE_RISK_PER_MINUTE = 0.05;
-export const PLAYER_GARAGE_LIMIT = 4;
-export const STARTING_BALANCE = 200;
-export const DAILY_BONUS_AMOUNT = 50;
-export const VISIT_LOG_LIMIT = 60;
+/**
+ * Stage 7 起：经济参数、NPC 列表、状态机全部在服务端
+ * (api/src/modules/games/parking-war/)。客户端这里只剩纯展示数据
+ * —— 调色板、显示名、SVG 喷漆色变量。
+ */
 
-export const CAR_SPECS: Record<CarTier, CarSpec> = {
-  starter: {
-    tier: "starter",
-    name: t(msg`代步车`),
-    emoji: "🚗",
-    ratePerMinute: 1,
-    unlockCost: 0,
-  },
-  family: {
-    tier: "family",
-    name: t(msg`家用车`),
-    emoji: "🚙",
-    ratePerMinute: 3,
-    unlockCost: 200,
-  },
-  business: {
-    tier: "business",
-    name: t(msg`商务车`),
-    emoji: "🚐",
-    ratePerMinute: 5,
-    unlockCost: 600,
-  },
-  performance: {
-    tier: "performance",
-    name: t(msg`性能车`),
-    emoji: "🏎️",
-    ratePerMinute: 9,
-    unlockCost: 1500,
-  },
-  luxury: {
-    tier: "luxury",
-    name: t(msg`豪华车`),
-    emoji: "🚘",
-    ratePerMinute: 15,
-    unlockCost: 4500,
-  },
-  super: {
-    tier: "super",
-    name: t(msg`超跑`),
-    emoji: "🏁",
-    ratePerMinute: 26,
-    unlockCost: 12000,
-  },
+export interface TierDisplay {
+  name: string;
+  emoji: string;
+}
+
+export const TIER_DISPLAY: Record<ParkingWarCarTier, TierDisplay> = {
+  starter: { name: t(msg`代步车`), emoji: "🚗" },
+  family: { name: t(msg`家用车`), emoji: "🚙" },
+  business: { name: t(msg`商务车`), emoji: "🚐" },
+  performance: { name: t(msg`性能车`), emoji: "🏎️" },
+  luxury: { name: t(msg`豪华车`), emoji: "🚘" },
+  super: { name: t(msg`超跑`), emoji: "🏁" },
 };
 
-export const CAR_TIER_ORDER: CarTier[] = [
+export const TIER_ORDER: ParkingWarCarTier[] = [
   "starter",
   "family",
   "business",
@@ -68,105 +37,85 @@ export const CAR_TIER_ORDER: CarTier[] = [
   "super",
 ];
 
-// NPC 对手取自隐界世界里既有的角色（fixed-world-character-presets / default-characters）。
-// 每个 NPC 的 welcomeQuote / 性格风格按其本身角色定位写，不照搬任何外部素材。
-// parkAggressiveness：每分钟主动来玩家车场的概率；fineRiskPerMinute：玩家车停他车场每分钟被贴条概率。
-export const NPC_OPPONENTS: NpcOpponent[] = [
-  {
-    id: "npc-axun",
-    name: t(msg`阿巡`),
-    worldCharacterId: "char-manual-axun",
-    blurb: t(msg`刷朋友圈刷到一半就来你这停一脚。`),
-    welcomeQuote: t(msg`你这车位真是真人停的吧，我先停一会儿。`),
-    carEmoji: "🚙",
-    carName: t(msg`阿巡的代步车`),
-    carRatePerMinute: 2,
-    fineRiskPerMinute: 0.04,
-    parkAggressiveness: 0.18,
-    startingBalance: 380,
-  },
-  {
-    id: "npc-lin-chen",
-    name: t(msg`林晨`),
-    worldCharacterId: "lin_chen_sleep_support",
-    blurb: t(msg`夜班结束顺路把车甩你这。`),
-    welcomeQuote: t(msg`我刚下班，让我在你这眯一下。`),
-    carEmoji: "🚐",
-    carName: t(msg`林晨的夜班车`),
-    carRatePerMinute: 3,
-    fineRiskPerMinute: 0.06,
-    parkAggressiveness: 0.14,
-    startingBalance: 520,
-  },
-  {
-    id: "npc-xu-zhe",
-    name: t(msg`徐喆`),
-    worldCharacterId: "xu_zhe_career_growth",
-    blurb: t(msg`通勤狂魔，车位嗅觉很灵。`),
-    welcomeQuote: t(msg`我对车位有 KPI，请允许我占一格。`),
-    carEmoji: "🚗",
-    carName: t(msg`徐喆的通勤车`),
-    carRatePerMinute: 4,
-    fineRiskPerMinute: 0.09,
-    parkAggressiveness: 0.22,
-    startingBalance: 880,
-  },
-  {
-    id: "npc-su-yu",
-    name: t(msg`苏雨`),
-    worldCharacterId: "su_yu_english_coach",
-    blurb: t(msg`上完课就往最近的空位钻。`),
-    welcomeQuote: t(msg`Excuse my parking, 我下节课五分钟就回来。`),
-    carEmoji: "🚕",
-    carName: t(msg`苏雨的小黄车`),
-    carRatePerMinute: 4,
-    fineRiskPerMinute: 0.05,
-    parkAggressiveness: 0.16,
-    startingBalance: 640,
-  },
-  {
-    id: "npc-zhou-ran",
-    name: t(msg`周冉`),
-    worldCharacterId: "zhou_ran_fitness_coach",
-    blurb: t(msg`撸完铁来加个油，顺便占位。`),
-    welcomeQuote: t(msg`我训练完路过，借个位喝两口水。`),
-    carEmoji: "🏎️",
-    carName: t(msg`周冉的性能车`),
-    carRatePerMinute: 7,
-    fineRiskPerMinute: 0.08,
-    parkAggressiveness: 0.20,
-    startingBalance: 1280,
-  },
-  {
-    id: "npc-lin-mian",
-    name: t(msg`林眠`),
-    worldCharacterId: "lin_mian_sleep_support",
-    blurb: t(msg`睡眠咨询师，停车也很轻。`),
-    welcomeQuote: t(msg`我把车放这小睡一会儿，别叫我。`),
-    carEmoji: "🚙",
-    carName: t(msg`林眠的安静车`),
-    carRatePerMinute: 5,
-    fineRiskPerMinute: 0.04,
-    parkAggressiveness: 0.10,
-    startingBalance: 460,
-  },
-  {
-    id: "npc-bar-expert",
-    name: t(msg`酒馆老板`),
-    worldCharacterId: "char-default-bar-expert",
-    blurb: t(msg`下半夜出没，车都贵。`),
-    welcomeQuote: t(msg`我打烊了路过，你这位置不错。`),
-    carEmoji: "🚘",
-    carName: t(msg`老板的豪华车`),
-    carRatePerMinute: 11,
-    fineRiskPerMinute: 0.10,
-    parkAggressiveness: 0.12,
-    startingBalance: 2400,
-  },
+export const RARITY_ORDER: ParkingWarRarity[] = [
+  "common",
+  "rare",
+  "epic",
+  "legend",
 ];
 
-const NPC_BY_ID = new Map(NPC_OPPONENTS.map((npc) => [npc.id, npc] as const));
+export const RARITY_DISPLAY: Record<
+  ParkingWarRarity,
+  { name: string; badgeClass: string; ringClass: string }
+> = {
+  common: {
+    name: t(msg`普通`),
+    badgeClass: "bg-zinc-200 text-zinc-700",
+    ringClass: "ring-zinc-300",
+  },
+  rare: {
+    name: t(msg`稀有`),
+    badgeClass: "bg-blue-100 text-blue-700",
+    ringClass: "ring-blue-300",
+  },
+  epic: {
+    name: t(msg`史诗`),
+    badgeClass: "bg-purple-100 text-purple-700",
+    ringClass: "ring-purple-400",
+  },
+  legend: {
+    name: t(msg`传说`),
+    badgeClass: "bg-amber-100 text-amber-700",
+    ringClass: "ring-amber-400",
+  },
+};
 
-export function getNpcById(npcId: string): NpcOpponent | null {
-  return NPC_BY_ID.get(npcId) ?? null;
+export const SURFACE_DISPLAY: Record<
+  ParkingWarLotSurface,
+  { name: string; bgClass: string; ringClass: string }
+> = {
+  concrete: {
+    name: t(msg`水泥地`),
+    bgClass: "bg-zinc-200",
+    ringClass: "ring-zinc-400",
+  },
+  grass: {
+    name: t(msg`草坪`),
+    bgClass: "bg-emerald-200",
+    ringClass: "ring-emerald-400",
+  },
+  asphalt: {
+    name: t(msg`沥青`),
+    bgClass: "bg-zinc-700 text-zinc-100",
+    ringClass: "ring-zinc-700",
+  },
+  vip: {
+    name: t(msg`VIP 镀金`),
+    bgClass: "bg-gradient-to-br from-amber-200 to-yellow-400",
+    ringClass: "ring-amber-500",
+  },
+};
+
+/** 喷漆色 — 3 档玩家可在车库里切换；SVG 的 currentColor 直接吃这个。 */
+export const PAINT_COLORS: Array<{ id: number; label: string; hex: string }> = [
+  { id: 0, label: t(msg`原色`), hex: "#6b7280" }, // zinc-500
+  { id: 1, label: t(msg`暗酒红`), hex: "#9f1239" }, // rose-800
+  { id: 2, label: t(msg`湖蓝`), hex: "#0e7490" }, // cyan-700
+];
+
+export function formatYuan(cents: number): string {
+  const yuan = cents / 100;
+  if (Math.abs(yuan) >= 10000) {
+    return `¥${(yuan / 10000).toFixed(1)}万`;
+  }
+  return `¥${yuan.toFixed(2)}`;
+}
+
+/** "5 分钟前 / 1 小时前" 这种相对时间，用于事件流。 */
+export function formatRelative(atMs: number, now: number): string {
+  const diffSec = Math.floor((now - atMs) / 1000);
+  if (diffSec < 60) return t(msg`刚刚`);
+  if (diffSec < 3600) return t(msg`${Math.floor(diffSec / 60)} 分钟前`);
+  if (diffSec < 86400) return t(msg`${Math.floor(diffSec / 3600)} 小时前`);
+  return t(msg`${Math.floor(diffSec / 86400)} 天前`);
 }

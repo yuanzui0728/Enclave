@@ -44,13 +44,17 @@ export function ForestTrainGame({
 }: ForestTrainGameProps) {
   const { state, actions } = useForestTrainState();
   const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(id);
-  }, []);
 
   const isRunning = state.status === "running";
   const isEnded = state.status === "ended";
+
+  // now 用来比 passengerVisibleUntilMs / 跑站可见窗——只有 running 才需要这个时钟，
+  // idle/ended 不再每 250ms 强重渲。
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(id);
+  }, [isRunning]);
   const containerCls =
     variant === "embedded"
       ? "rounded-[16px] bg-white"

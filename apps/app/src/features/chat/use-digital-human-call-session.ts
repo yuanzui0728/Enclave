@@ -15,6 +15,7 @@ import {
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
+import { resolveAppMediaUrl } from "../../lib/media-url";
 import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
@@ -92,7 +93,9 @@ export function useDigitalHumanCallSession({
     }
 
     audio.pause();
-    audio.src = audioUrl;
+    // 后端语音附件现在返回相对 URL（/api/chat/attachments/...），公网入口需要走
+    // /cloud/world-api 反代并附 cloud token；这里统一过 resolveAppMediaUrl 处理。
+    audio.src = resolveAppMediaUrl(audioUrl);
     audio.currentTime = 0;
     setPlayerError(null);
 
@@ -204,7 +207,12 @@ export function useDigitalHumanCallSession({
     }
 
     autoSubmitRecordingRef.current = false;
-    void turnMutation.mutateAsync();
+    // 用 mutate() 而不是 mutateAsync()——这里不 await 结果，错误已经在
+    // turnMutation onError (line 147) 里设了 sessionState/sessionError，
+    // 消费者通过 mutation.error / sessionError 读；mutateAsync() 的 promise
+    // 在 mutationFn 抛错时会 reject，`void` 不接 → 落 window.unhandledrejection
+    // 污染 telemetry。
+    turnMutation.mutate();
   }, [speech.recordedAudio, speech.status, turnMutation]);
 
   const endSession = useCallback(async () => {

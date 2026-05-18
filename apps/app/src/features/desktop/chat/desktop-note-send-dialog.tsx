@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import {
@@ -48,6 +48,19 @@ export function DesktopNoteSendDialog({
 }: DesktopNoteSendDialogProps) {
   const t = translateRuntimeMessage;
   const [searchTerm, setSearchTerm] = useState("");
+  const titleId = useId();
+  const descId = useId();
+  // 走查新一轮 R2：会话行按钮原本只靠 disabled={pending} 兜双击，pending 是
+  // 父组件 sendMutation.isPending 经 React commit 才进 DOM。同帧连点同一行 2 次
+  // 同时通过 disabled=false → 两次 onSend(conversation) → sendMutation 飞 2 次，
+  // 单聊走 emitChatMessage 直接给对端发 2 条一样的笔记卡片，群聊走 POST 也是
+  // 2 条。和 forward-dialog 的 forwardSubmittingRef 同款修法。
+  const sendSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      sendSubmittingRef.current = false;
+    }
+  }, [pending]);
 
   useEffect(() => {
     if (!open) {
@@ -57,29 +70,71 @@ export function DesktopNoteSendDialog({
     setSearchTerm("");
   }, [open]);
 
-  const filteredConversations = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-    const ordered = [...conversations].sort(
+  // 走查电脑端单聊新一轮 R1：和姊妹 desktop-message-forward-dialog
+  // (line 131-152) / desktop-create-group-dialog / desktop-chat-confirm-dialog
+  // / desktop-chat-text-edit-dialog 一票 dialog 同款 ESC 处理已修过，本
+  // note-send-dialog 完全没挂 keydown listener —— 用户从 composer「+ → 收藏
+  //  → 笔记」或者 notes-workspace 右键「发送给」打开本 dialog 时，按 Esc
+  // 不会关 dialog；workspace 那条 window keydown 兜底（queueMicrotask
+  // 检查 defaultPrevented）反而看到没人 preventDefault → 跑 dismissSidePanel
+  // 把背后的「聊天信息」侧栏一起关掉，dialog 自己还留在屏幕上。和 forward
+  // dialog 完全对齐：挂 listener，pending 期间也消费 Esc 防 dismiss 透传，
+  // 服务端那一发飞着的笔记 mutation 等落地后用户能再按 Esc 真关。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
+  // 之前 sort + filter 合在一个 useMemo 里，[conversations, searchTerm] 同时
+  // 是 deps：每次按键都重新 sort 一遍（O(N log N)），即使会话列表压根没动。
+  // 拆成两段：sort 只在 conversations 变化时做，按键时只做 filter。
+  const orderedConversations = useMemo(() => {
+    return [...conversations].sort(
       (left, right) =>
         (parseTimestamp(right.lastActivityAt) ?? 0) -
         (parseTimestamp(left.lastActivityAt) ?? 0),
     );
+  }, [conversations]);
 
+  const filteredConversations = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
     if (!keyword) {
-      return ordered;
+      return orderedConversations;
     }
-
-    return ordered.filter((conversation) =>
+    return orderedConversations.filter((conversation) =>
       conversation.title.toLowerCase().includes(keyword),
     );
-  }, [conversations, searchTerm]);
+  }, [orderedConversations, searchTerm]);
 
   if (!open || !note) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6">
+    // 走查新一轮 R12：和姊妹 forward dialog 同款 portal-shield。note-send
+    // 在桌面端 composer「+ → 收藏 → 笔记 → 发送」或者 notes-workspace 右键
+    // 「发送给」时打开，背后可能有「聊天信息」侧栏开着。用户在 dialog 内
+    // 点搜索框 / 会话行时 workspace pointerdown capture 偷关侧栏。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6"
+      data-yj-portal-shield="desktop-note-send-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭发送笔记弹层`)}
@@ -91,13 +146,30 @@ export function DesktopNoteSendDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R3：和姊妹 forward dialog 同款 a11y 修法——modal 但没挂
+          role="dialog" + aria-modal + aria-labelledby/aria-describedby。单聊
+          composer 「+ → 收藏 → 笔记」/ notes-workspace 右键「发送给」会弹这个
+          dialog；盲人屏幕阅读器只听到「关闭发送笔记弹层 按钮」+ 搜索框 + 会话行，
+          不知道是「发送笔记」对话框。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`发送笔记`)}
             </div>
-            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            <div
+              id={descId}
+              className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+            >
               {t(msg`把这条收藏笔记发到最近会话。`)}
             </div>
           </div>
@@ -138,6 +210,14 @@ export function DesktopNoteSendDialog({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索最近会话`)}
+                // 走查新一轮 R25：和姊妹 chat-history R24 / chat-files
+                // / forward-dialog / create-group / contacts add-friend
+                // 同款 a11y 修法——父 <label> 只包了 Search 图标 + TextField，
+                // 无文本子节点，等于 input 没有 accessible name。SR focus
+                // 进来只听到「编辑栏 搜索最近会话 空」（部分 SR 实现读
+                // placeholder、部分不读），盲人用户得自己摸 dialog 顶部
+                // 标题猜 scope，与 R23/R24 修法一致补 aria-label。
+                aria-label={t(msg`搜索最近会话`)}
                 disabled={pending}
                 className="h-10 rounded-[10px] border-[color:var(--border-faint)] bg-white pl-10 shadow-none"
               />
@@ -170,7 +250,13 @@ export function DesktopNoteSendDialog({
                     key={conversation.id}
                     type="button"
                     disabled={pending}
-                    onClick={() => onSend(conversation)}
+                    onClick={() => {
+                      if (sendSubmittingRef.current || pending) {
+                        return;
+                      }
+                      sendSubmittingRef.current = true;
+                      onSend(conversation);
+                    }}
                     className="flex w-full items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-soft)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -240,6 +326,8 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
           <img
             src={previewImage.url}
             alt={note.title}
+            decoding="async"
+            loading="lazy"
             className="h-full w-full object-cover"
           />
         </div>

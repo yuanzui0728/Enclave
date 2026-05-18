@@ -8,9 +8,15 @@ export type MobileFriendMomentsRouteState = {
 
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
+  // 走查 R1：和 channels-route-state R4 (b169dd7a) / character-detail-route-state /
+  // mobile-group-route-state 同款 open-redirect 修法。/friend-moments/:characterId
+  // 的 handleBack / status 按钮 navigate({ to: safeReturnPath })，浏览器 history
+  // replaceState 接受 "//host" 拼出 "https://evil.com" 跳走。攻击者诱导用户点
+  // /friend-moments/X#returnPath=//evil.com 进入角色朋友圈后按返回跳第三方站。
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

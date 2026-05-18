@@ -27,6 +27,20 @@ export function UserDetailPage() {
     enabled: Boolean(userId),
   });
 
+  // 详情页改动后既要刷新当前用户卡片（saas-user），也要刷新返回列表/顶部统计
+  // （saas-users 前缀同时覆盖列表与 stats）。原来只 invalidate detail 一项，
+  // 「Back to users」回去 Expires 列 / 顶部 memberUsers 卡片都是改前的旧值。
+  const invalidateUserViews = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["cloud-console", "saas-user", userId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["cloud-console", "saas-users"],
+      }),
+    ]);
+  };
+
   const grantMutation = useMutation({
     mutationFn: () =>
       cloudAdminApi.grantSubscription(userId, {
@@ -34,29 +48,23 @@ export function UserDetailPage() {
         source: "admin_grant",
         note: "Cloud console manual grant",
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    onSuccess: invalidateUserViews,
   });
 
   const banMutation = useMutation({
-    mutationFn: () => cloudAdminApi.banUser(userId, { reason: banReason || "manual-ban" }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    // banReason 是受控输入，admin 不小心敲了一串空格也算"填了"，`banReason ||`
+    // 兜不住会把 "   " 当 reason 发到后端入库。先 trim 再判，纯空白回落到
+    // "manual-ban"。
+    mutationFn: () =>
+      cloudAdminApi.banUser(userId, {
+        reason: banReason.trim() || "manual-ban",
+      }),
+    onSuccess: invalidateUserViews,
   });
 
   const unbanMutation = useMutation({
     mutationFn: () => cloudAdminApi.unbanUser(userId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    onSuccess: invalidateUserViews,
   });
 
   if (userQuery.isLoading) {
@@ -76,6 +84,10 @@ export function UserDetailPage() {
   }
 
   const user = userQuery.data;
+  // Google / email-only 注册的账号 phone 字段为空字符串，直接 {user.phone} 渲染
+  // 出空标题。按 phone → email → displayName 优先级兜底，永远展示一个可读身份。
+  const headingIdentity =
+    user.phone || user.email || user.displayName || t("(no identity)");
 
   return (
     <div className="space-y-4">
@@ -86,18 +98,25 @@ export function UserDetailPage() {
               {t("SaaS user")}
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              {user.phone}
+              {headingIdentity}
             </h2>
             <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
               {t("Account:")} {t(user.status)}
               <br />
               {t("Subscription:")} {t(user.subscriptionStatus)}
               <br />
-              {t("Current plan:")} {user.currentPlanCode || "-"}
+              {t("Current plan:")} {user.currentPlanCode ? t(user.currentPlanCode) : "-"}
               <br />
               {t("Expires at:")} {formatTimestamp(user.subscriptionExpiresAt)}
               <br />
               {t("Invite code:")} {user.inviteCode || "-"}
+              <br />
+              {t("Inviter:")}{" "}
+              {user.inviterPhone
+                ? user.redemptionAsInvitee
+                  ? `${user.inviterPhone} (${t(user.redemptionAsInvitee.status)}, ${formatTimestamp(user.redemptionAsInvitee.createdAt)})`
+                  : user.inviterPhone
+                : "-"}
               <br />
               {t("World status:")} {user.worldStatus ? t(user.worldStatus) : "-"}
               <br />
@@ -137,6 +156,10 @@ export function UserDetailPage() {
           </div>
           <div className="mt-3 flex gap-3">
             <input
+              type="number"
+              min={1}
+              max={3650}
+              step={1}
               value={grantDays}
               onChange={(event) => setGrantDays(event.target.value)}
               className="w-28 rounded-2xl border border-[color:var(--border-subtle)] px-3 py-2 text-sm"
@@ -144,12 +167,31 @@ export function UserDetailPage() {
             <Button
               variant="primary"
               className="rounded-2xl bg-[color:var(--brand-primary)] text-white"
-              disabled={grantMutation.isPending}
+              // 没校验 grantDays 时按下 → NaN/0/>3650 全透传到后端，撞 DTO
+              // 边界。前端先卡 [1, 3650] 整数，按钮直接不可点。
+              disabled={
+                grantMutation.isPending ||
+                !Number.isInteger(Number(grantDays)) ||
+                Number(grantDays) <= 0 ||
+                Number(grantDays) > 3650
+              }
               onClick={() => grantMutation.mutate()}
             >
               {t("Grant days")}
             </Button>
           </div>
+          {grantMutation.isError ? (
+            <InlineNotice tone="danger" className="mt-3">
+              {grantMutation.error instanceof Error
+                ? grantMutation.error.message
+                : t("Manual grant failed.")}
+            </InlineNotice>
+          ) : null}
+          {grantMutation.isSuccess ? (
+            <InlineNotice tone="muted" className="mt-3">
+              {t("Subscription granted.")}
+            </InlineNotice>
+          ) : null}
         </div>
 
         <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
@@ -172,7 +214,9 @@ export function UserDetailPage() {
               <Button
                 variant="secondary"
                 className="rounded-2xl border-[rgba(220,38,38,0.16)] text-[#b42318]"
-                disabled={banMutation.isPending || user.status === "banned"}
+                // 只允许在 active 上 Ban；archived/banned 都禁用。原来对 archived
+                // 也开放，会让一个"归档"账号被偷偷标成 banned。
+                disabled={banMutation.isPending || user.status !== "active"}
                 onClick={() => banMutation.mutate()}
               >
                 {t("Ban")}
@@ -180,12 +224,28 @@ export function UserDetailPage() {
               <Button
                 variant="secondary"
                 className="rounded-2xl"
-                disabled={unbanMutation.isPending || user.status === "active"}
+                // 只允许在 banned 上 Unban；archived 不能通过这里复活，否则会被
+                // 静默改成 active。
+                disabled={unbanMutation.isPending || user.status !== "banned"}
                 onClick={() => unbanMutation.mutate()}
               >
                 {t("Unban")}
               </Button>
             </div>
+            {banMutation.isError ? (
+              <InlineNotice tone="danger">
+                {banMutation.error instanceof Error
+                  ? banMutation.error.message
+                  : t("Failed to ban user.")}
+              </InlineNotice>
+            ) : null}
+            {unbanMutation.isError ? (
+              <InlineNotice tone="danger">
+                {unbanMutation.error instanceof Error
+                  ? unbanMutation.error.message
+                  : t("Failed to unban user.")}
+              </InlineNotice>
+            ) : null}
           </div>
         </div>
       </section>
@@ -205,7 +265,7 @@ export function UserDetailPage() {
                   {subscription.planName}
                 </div>
                 <div className="mt-1 text-[color:var(--text-secondary)]">
-                  {t(subscription.status)} | {subscription.source}
+                  {t(subscription.status)} | {t(subscription.source)}
                   <br />
                   {formatTimestamp(subscription.startsAt)} {"->"} {formatTimestamp(subscription.expiresAt)}
                   <br />

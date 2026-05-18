@@ -279,9 +279,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
+      // event.target 在 window-level 监听里可能不是 Element（例如 Document），
+      // 直接调用 .closest 会 TypeError；先 instanceof 守一下。
+      const target = event.target;
       if (
-        target?.closest(
+        target instanceof Element &&
+        target.closest(
           "input, textarea, select, [contenteditable='true'], [role='textbox']",
         )
       ) {

@@ -4,6 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminCloudController } from "./admin/admin-cloud.controller";
+import { WikiAdminController } from "./admin/wiki-admin.controller";
+import { WikiAdminProxyService } from "./admin/wiki-admin-proxy.service";
 import { CloudAlertNotifierService } from "./alerts/cloud-alert-notifier.service";
 import { AdminAuthController } from "./auth/admin-auth.controller";
 import { AdminAuthService } from "./auth/admin-auth.service";
@@ -31,11 +33,13 @@ import { RevenueSharingModule } from "./revenue-sharing/revenue-sharing.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { TelemetryModule } from "./telemetry/telemetry.module";
 import { TokenUsageModule } from "./token-usage/token-usage.module";
+import { IpRegionModule } from "./users/ip-region.module";
 import { UsersModule } from "./users/users.module";
 import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
 import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.service";
 import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
+import { WikiPublicModule } from "./wiki-public/wiki-public.module";
 
 @Module({
   imports: [
@@ -55,6 +59,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
       useFactory: (configService: ConfigService) => buildCloudTypeOrmOptions(configService),
     }),
     TypeOrmModule.forFeature([...cloudEntities]),
+    IpRegionModule,
     CloudAuthCoreModule,
     CloudConfigModule,
     SubscriptionModule,
@@ -65,12 +70,14 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     TelemetryModule,
     TokenUsageModule,
     WorldApiProxyModule,
+    WikiPublicModule,
   ],
   controllers: [
     AdminAuthController,
     CloudAuthController,
     CloudController,
     AdminCloudController,
+    WikiAdminController,
     WorldAccessController,
     WorldRuntimeController,
   ],
@@ -90,6 +97,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     CloudRuntimeConfigValidator,
     WorldLifecycleWorkerService,
     WorldRuntimeService,
+    WikiAdminProxyService,
   ],
 })
 export class AppModule {}

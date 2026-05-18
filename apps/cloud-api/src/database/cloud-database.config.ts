@@ -3,9 +3,12 @@ import type { DataSourceOptions } from "typeorm";
 import { ClientTelemetryDailyEntity } from "../entities/client-telemetry-daily.entity";
 import { ClientTelemetryEventEntity } from "../entities/client-telemetry-event.entity";
 import { CloudAdminSessionEntity } from "../entities/cloud-admin-session.entity";
+import { CloudMinimaxCallHourlyEntity } from "../entities/cloud-minimax-call-hourly.entity";
+import { CloudMinimaxQuotaExhaustionEntity } from "../entities/cloud-minimax-quota-exhaustion.entity";
 import { CloudConfigEntity } from "../entities/cloud-config.entity";
 import { CloudFeedbackEntity } from "../entities/cloud-feedback.entity";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
+import { CloudLoginAttemptEntity } from "../entities/cloud-login-attempt.entity";
 import { CloudTokenPricingCatalogEntity } from "../entities/cloud-token-pricing-catalog.entity";
 import { CloudTokenUsageBreakdownDailyEntity } from "../entities/cloud-token-usage-breakdown-daily.entity";
 import { CloudTokenUsageBudgetEntity } from "../entities/cloud-token-usage-budget.entity";
@@ -49,6 +52,16 @@ import { AddWorldIdToTelemetry1776656400000 } from "./migrations/1776656400000-a
 import { CreateCloudTokenUsageTables1776657000000 } from "./migrations/1776657000000-create-cloud-token-usage-tables";
 import { CreateCloudUserOAuthIdentities1776657600000 } from "./migrations/1776657600000-create-cloud-user-oauth-identities";
 import { AddCloudUserLastLoginIp1776658200000 } from "./migrations/1776658200000-add-cloud-user-last-login-ip";
+import { CreateCloudMinimaxCallHourly1778656680404 } from "./migrations/1778656680404-create-cloud-minimax-call-hourly";
+import { SplitMinimaxRateColumns1778660000000 } from "./migrations/1778660000000-split-minimax-rate-columns";
+import { AddCloudUserPassword1778660500000 } from "./migrations/1778660500000-add-cloud-user-password";
+import { AddCloudWorldLastUserMessageAt1778661000000 } from "./migrations/1778661000000-add-cloud-world-last-user-message-at";
+import { CreateCloudMinimaxQuotaExhaustion1778662000000 } from "./migrations/1778662000000-create-cloud-minimax-quota-exhaustion";
+import { FixAppPublicBaseUrlEnclaveai1778663000000 } from "./migrations/1778663000000-fix-app-public-base-url-enclaveai";
+import { AddInviteeRewardSubscriptionId1778664000000 } from "./migrations/1778664000000-add-invitee-reward-subscription-id";
+import { PartialUniqueInviteeRedemption1778665000000 } from "./migrations/1778665000000-partial-unique-invitee-redemption";
+import { AddCloudUserSessionInvalidAfter1778666000000 } from "./migrations/1778666000000-add-cloud-user-session-invalid-after";
+import { AddCloudUserLastLoginDeviceRegion1779000000000 } from "./migrations/1779000000000-add-cloud-user-last-login-device-region";
 import { resolveCloudDatabasePath } from "../config/cloud-runtime-config";
 
 type ConfigReader = {
@@ -67,6 +80,7 @@ export const cloudEntities = [
   WorldLifecycleJobEntity,
   CloudUserEntity,
   CloudUserOAuthIdentityEntity,
+  CloudLoginAttemptEntity,
   SubscriptionPlanEntity,
   UserSubscriptionEntity,
   InviteCodeEntity,
@@ -85,6 +99,8 @@ export const cloudEntities = [
   CloudTokenUsageBreakdownDailyEntity,
   CloudTokenUsageBudgetEntity,
   CloudTokenPricingCatalogEntity,
+  CloudMinimaxCallHourlyEntity,
+  CloudMinimaxQuotaExhaustionEntity,
 ] as const;
 
 export const cloudMigrations = [
@@ -108,6 +124,16 @@ export const cloudMigrations = [
   CreateCloudTokenUsageTables1776657000000,
   CreateCloudUserOAuthIdentities1776657600000,
   AddCloudUserLastLoginIp1776658200000,
+  CreateCloudMinimaxCallHourly1778656680404,
+  SplitMinimaxRateColumns1778660000000,
+  AddCloudUserPassword1778660500000,
+  AddCloudWorldLastUserMessageAt1778661000000,
+  CreateCloudMinimaxQuotaExhaustion1778662000000,
+  FixAppPublicBaseUrlEnclaveai1778663000000,
+  AddInviteeRewardSubscriptionId1778664000000,
+  PartialUniqueInviteeRedemption1778665000000,
+  AddCloudUserSessionInvalidAfter1778666000000,
+  AddCloudUserLastLoginDeviceRegion1779000000000,
 ];
 
 export function buildCloudDataSourceOptions(config: ConfigReader): DataSourceOptions {

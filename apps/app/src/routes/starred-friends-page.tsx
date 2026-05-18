@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
-import { getFriends, type FriendListItem } from "@yinjie/contracts";
+import { getFriends } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -19,6 +19,7 @@ import {
   parseMobileContactDirectoryRouteState,
 } from "../features/contacts/mobile-contact-directory-route-state";
 import {
+  compareStarredFriends,
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
@@ -99,9 +100,12 @@ function MobileStarredFriendsPage() {
     [safeReturnHash, safeReturnPath, searchText],
   );
 
+  // 新一轮走查：共享 contacts-page 同 cache key 的星标朋友页，配 staleTime
+  // 让短时间反复进出星标列表不重复 fetch。star/unstar mutation 仍显式 invalidate。
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
 
   const starredFriends = useMemo(
@@ -122,11 +126,16 @@ function MobileStarredFriendsPage() {
     );
   }, [normalizedSearchText, starredFriends]);
 
+  // 新一轮走查：同 tags-page，effect deps 不能含 searchText —— 否则
+  // setSearchText('h') 重渲染时本 effect 比较 'h' !== '' 又把 searchText 撤回
+  // 空，第二条 effect 同时把 URL navigate 到 'q=h'；下一帧 routeState.keyword
+  // 变 'h'、searchText 变 ''，两个 effect 互相再纠正一次，瞬间死循环 +
+  // 输入框可见闪烁。world-characters-page 已经踩过这个坑并修过，这里同步。
   useEffect(() => {
-    if (searchText !== routeState.keyword) {
-      setSearchText(routeState.keyword);
-    }
-  }, [routeState.keyword, searchText]);
+    setSearchText((current) =>
+      current === routeState.keyword ? current : routeState.keyword,
+    );
+  }, [routeState.keyword]);
 
   useEffect(() => {
     if (normalizedHash === (currentRouteHash ?? "")) {
@@ -196,13 +205,16 @@ function MobileStarredFriendsPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             aria-label={t(msg`返回通讯录`)}
           >
@@ -230,7 +242,9 @@ function MobileStarredFriendsPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索星标朋友`)}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -358,35 +372,6 @@ function MobileStarredFriendsPage() {
       </div>
     </AppPage>
   );
-}
-
-function compareStarredFriends(left: FriendListItem, right: FriendListItem) {
-  const starredAtDelta =
-    getSortableTimestamp(right.friendship.starredAt) -
-    getSortableTimestamp(left.friendship.starredAt);
-
-  if (starredAtDelta !== 0) {
-    return starredAtDelta;
-  }
-
-  const nameDiff = getFriendDisplayName(left).localeCompare(
-    getFriendDisplayName(right),
-    "zh-CN",
-  );
-  if (nameDiff !== 0) {
-    return nameDiff;
-  }
-
-  return left.character.id.localeCompare(right.character.id);
-}
-
-function getSortableTimestamp(value?: string) {
-  if (!value) {
-    return 0;
-  }
-
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : 0;
 }
 
 function MobileStarredFriendsStatusCard({

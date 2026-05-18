@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -22,6 +22,7 @@ import {
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
+  isGroupInviteStorageKey,
   resolveGroupInviteRouteContext,
 } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -164,16 +165,57 @@ export function GroupChatPage() {
     const handleFocus = () => {
       void syncRouteContext();
     };
+    // 走查新一次 R1：和姊妹页 group-qr-page.tsx 新 R1 同款问题——原版 storage
+    // handler 复用 handleFocus，OTHER tab 任何 localStorage 写入（主题、草稿、
+    // last viewed page 等等）都会触发 syncRouteContext → 内部 await
+    // hydrateGroupInviteDeliveryFromNative + 读 3 个 storage key + setRouteContext。
+    // 群聊页常驻打开，活跃用户其它 tab 一直在写无关 key，纯白消耗。用
+    // isGroupInviteStorageKey gate 一下，只在群邀请投递/记录/复登的 3 个 key
+    // 上才真同步；老 Safari 的 localStorage.clear() 场景 key=null 仍按全量
+    // 同步对待。
+    const handleStorage = (event: StorageEvent) => {
+      if (!isGroupInviteStorageKey(event.key)) {
+        return;
+      }
+      void syncRouteContext();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorage);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [groupId, search]);
 
+  // 走查移动端群聊 R1：和姊妹路径 chat-room-page.tsx「新会话 R2」(commit 2d0997d7d)
+  // 同款修法——callReturnNotice / safeRouteContext notice 的 actionLabel 按钮
+  // 都直接 inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // - callReturnNotice.onAction = setRouteCallReturnKind(null) + navigate({/group/$id,
+  //   search:?action=voice-message}) → 同帧双击「发语音继续」推 2 条相同 history
+  //   项（path 一致 + search 一致），用户从 voice-call 屏返回再点 callReturn 想
+  //   切回语音输入时，要按 2 次返回才能回到正常群聊页。
+  // - safeRouteContext.onAction = navigate({safeRouteContext.returnPath}) →
+  //   同帧双击「返回上一页」（game invite / group invite 进来时的）同款 2 次 push。
+  // 单一 noticeActionFiredRef 兜底两条 notice 入口，raf 后释放（兜底 navigate
+  // 没真正切走的边界）。
+  const noticeActionFiredRef = useRef(false);
+  const guardNoticeAction = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (noticeActionFiredRef.current) return;
+        noticeActionFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            noticeActionFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const callReturnNotice =
     routeCallReturnKind === null
       ? null
@@ -187,7 +229,7 @@ export function GroupChatPage() {
               : t(
                   msg`本轮群视频通话已结束。你可以继续在群里输入，也可以切回语音发送。`,
                 ),
-          onAction: () => {
+          onAction: guardNoticeAction(() => {
             setRouteCallReturnKind(null);
             void navigate({
               to: "/group/$groupId",
@@ -198,7 +240,7 @@ export function GroupChatPage() {
                 }) || undefined,
               hash,
             });
-          },
+          }),
           secondaryActionLabel: t(msg`继续打字`),
           onSecondaryAction: () => {
             setRouteCallReturnKind(null);
@@ -243,9 +285,9 @@ export function GroupChatPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
@@ -269,22 +311,31 @@ export function GroupChatPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
           onBack={() => {
-            navigateBackOrFallback(() => {
-              if (navigateToRouteStateReturn()) {
-                return;
-              }
+            const expectedPreviousPath =
+              (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+                ? routeState.returnPath
+                : undefined) ??
+              safeRouteContext?.returnPath ??
+              "/tabs/chat";
+            navigateBackOrFallback(
+              () => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
 
-              void navigate({
-                to: safeRouteContext?.returnPath ?? "/tabs/chat",
-              });
-            });
+                void navigate({
+                  to: safeRouteContext?.returnPath ?? "/tabs/chat",
+                });
+              },
+              expectedPreviousPath,
+            );
           }}
         />
       </div>

@@ -60,6 +60,7 @@ import { navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { searchStringToObject } from "../lib/route-search";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { recordSearchActivity } from "@yinjie/contracts";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 
@@ -140,12 +141,19 @@ export function SearchPage() {
       return;
     }
 
+    // 用户从搜索页打开结果（如 /character/$id）后，路由 pathname 已经离开
+    // /tabs/search；此时不能再 replace 回 /tabs/search，否则会把已经触发的目标
+    // 导航吞掉，表现为"点击搜索结果没反应"。
+    if (desktopPathMismatch) {
+      return;
+    }
+
     const routeStateApplied =
       searchText === routeState.keyword &&
       activeCategory === routeState.category &&
       committedSearchText === routeState.keyword;
 
-    if (syncingRouteStateRef.current && !desktopPathMismatch) {
+    if (syncingRouteStateRef.current) {
       if (!routeStateApplied) {
         return;
       }
@@ -154,7 +162,7 @@ export function SearchPage() {
     }
 
     const nextHash = currentSearchRouteHash;
-    if (!desktopPathMismatch && normalizedHash === (nextHash ?? "")) {
+    if (normalizedHash === (nextHash ?? "")) {
       return;
     }
 
@@ -224,6 +232,36 @@ export function SearchPage() {
     };
   }, [isDesktopLayout, nativeDesktopSearchHistory]);
 
+  // 后端 POST /search/history 这条端点存在并被 cyber-avatar /
+  // shake-discovery / need-discovery 三个 AI 推荐特性消费，但前端从
+  // 来没调过——这些 AI 看到的搜索行为永远是空的。在 commit / apply
+  // history 两个真正"用户主动定型一次搜索意图"的入口里 fire-and-
+  // forget 上报；失败默默吞掉（埋点，不影响主流程）。
+  //
+  // 走查 R5 真机：handleOpenResult 里也调 handleCommitSearch（"打开结果
+  // 也算定型一次搜索意图"），导致用户「打 '苏' → Enter → 点结果」一个
+  // 行为段上报两次相同 query。会在后端 owner_search_history_records 里
+  // 堆同 query 时间相邻的行，cyber-avatar 信号被同一意图重复加权。用 ref
+  // 记上一次刚 fire 出去的 query，相同 query 直接 short-circuit；下一个
+  // 不同 query 会自动重置（覆盖 ref）。
+  const lastRecordedQueryRef = useRef<string | null>(null);
+  function recordSearchActivityFireAndForget(query: string) {
+    if (!query) {
+      return;
+    }
+    if (lastRecordedQueryRef.current === query) {
+      return;
+    }
+    lastRecordedQueryRef.current = query;
+    void recordSearchActivity(
+      {
+        query,
+        source: isDesktopLayout ? "desktop-search" : "mobile-search",
+      },
+      runtimeConfig.apiBaseUrl,
+    ).catch(() => undefined);
+  }
+
   function handleCommitSearch(keyword: string) {
     const normalizedKeyword = keyword.trim();
     setSearchText(normalizedKeyword);
@@ -234,6 +272,7 @@ export function SearchPage() {
 
     if (normalizedKeyword) {
       setHistory(pushSearchHistory(normalizedKeyword));
+      recordSearchActivityFireAndForget(normalizedKeyword);
     }
   }
 
@@ -243,6 +282,7 @@ export function SearchPage() {
       setCommittedSearchText(keyword);
     }
     setHistory(pushSearchHistory(keyword));
+    recordSearchActivityFireAndForget(keyword.trim());
   }
 
   function handleRemoveHistory(keyword: string) {
@@ -381,6 +421,35 @@ export function SearchPage() {
     return navigationTarget;
   }
 
+  // 移动端不像桌面那样把 keyword / category 实时同步进 URL hash（避免
+  // 每次按键都 push 一条 history entry），URL 一直停在用户首次进入时的状态。
+  // 用户点结果跳过去后再按返回，搜索页就 remount 出 hash 里没 keyword 的
+  // 初始状态——输入框空白，要重新打一遍。这里在导航离开前用
+  // history.replaceState 把当前 keyword / category baked 进当前条目，
+  // 这样返回时 URL 仍带 q=...，组件 mount 后能从 hash 读回来恢复输入。
+  function persistSearchStateInUrlBeforeLeave() {
+    if (isDesktopLayout) {
+      return;
+    }
+
+    const trimmedKeyword = effectiveSearchText.trim();
+    if (!trimmedKeyword && activeCategory === "all") {
+      return;
+    }
+
+    const nextHash = buildSearchRouteHash({
+      category: activeCategory,
+      keyword: trimmedKeyword,
+      source: routeState.source,
+    });
+
+    const targetHash = nextHash ? `#${nextHash}` : "";
+    if (typeof window !== "undefined" && window.location.hash !== targetHash) {
+      const newUrl = `${window.location.pathname}${window.location.search}${targetHash}`;
+      window.history.replaceState(window.history.state, "", newUrl);
+    }
+  }
+
   function handleOpenResult(item: SearchResultItem) {
     const navigationTarget = applySearchNavigationContext(
       resolveSearchNavigationTarget(item, {
@@ -388,6 +457,7 @@ export function SearchPage() {
       }),
     );
     handleCommitSearch(effectiveSearchText);
+    persistSearchStateInUrlBeforeLeave();
     void navigate({
       to: navigationTarget.to as never,
       search: searchStringToObject(navigationTarget.search) as never,
@@ -405,6 +475,7 @@ export function SearchPage() {
         desktopLayout: isDesktopLayout,
       }),
     );
+    persistSearchStateInUrlBeforeLeave();
     void navigate({
       to: navigationTarget.to as never,
       search: searchStringToObject(navigationTarget.search) as never,
@@ -413,11 +484,14 @@ export function SearchPage() {
   }
 
   function handleBack() {
-    navigateBackOrFallback(() => {
-      void navigate({
-        to: routeState.source === "contacts" ? "/tabs/contacts" : "/tabs/chat",
-      });
-    });
+    const fallbackTarget =
+      routeState.source === "contacts" ? "/tabs/contacts" : "/tabs/chat";
+    navigateBackOrFallback(
+      () => {
+        void navigate({ to: fallbackTarget });
+      },
+      fallbackTarget,
+    );
   }
 
   if (isDesktopLayout) {
@@ -452,6 +526,7 @@ export function SearchPage() {
           onOpenQuickLink={handleOpenQuickLink}
           onOpenResult={handleOpenResult}
           onRemoveHistory={handleRemoveHistory}
+          onRetryLoad={retryLoad}
           recentFavorites={recentFavorites}
           recentMiniPrograms={recentMiniPrograms}
           scopeCounts={scopeCounts}
@@ -472,6 +547,12 @@ export function SearchPage() {
       groupedResults={groupedResults}
       hasKeyword={hasKeyword}
       history={history}
+      // searchText 是用户实时输入（受控 input 必须用它），effectiveSearchText 是
+      // useDeferredValue 过的副本，filter / 卡片实际渲染都跟它走。把 effective
+      // 单独传一份用于高亮 keyword：之前卡片用 searchText.trim() 当 keyword，
+      // 快速连打 "ab" 时 searchText 已是 "ab" 但 visibleResults 还是按 "a" 过出来的，
+      // 卡片文本只含 "a" 不含 "ab"，<mark> 高亮直接全部消失再回填，观感像"高亮丢了"。
+      highlightKeyword={effectiveSearchText}
       loading={loading}
       matchedCounts={matchedCounts}
       onApplyHistory={handleApplyHistory}

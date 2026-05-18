@@ -7,6 +7,7 @@ import { CharacterEntity } from '../../characters/character.entity';
 import { WorldOwnerService } from '../../auth/world-owner.service';
 import { FarmEventService } from './farm-event.service';
 import { FarmNpcService } from './farm-npc.service';
+import { FarmStateService } from './farm-state.service';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   ensurePlotsArray,
@@ -44,6 +45,7 @@ export class FarmNpcTickService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly npcService: FarmNpcService,
     private readonly eventService: FarmEventService,
+    private readonly stateService: FarmStateService,
   ) {}
 
   @Cron(FARM_NPC_TICK_CRON)
@@ -82,6 +84,10 @@ export class FarmNpcTickService {
     let incidentBroadcastCount = 0;
 
     const characterById = new Map(characters.map((c) => [c.id, c]));
+    // 玩家的稻草人：影响 NPC 偷菜后给玩家自家长虫的概率；稻草人在 = 一半。
+    const ownerHasScarecrow = await this.stateService.hasScarecrow(owner.id);
+    // 顺手给玩家自己的菜地长点杂草和（除非有稻草人的）害虫，让浇水/除草/杀虫/农药/稻草人都用得上。
+    await this.degradePlayerPlots(owner.id, ownerHasScarecrow);
 
     for (const character of characters) {
       const npc = await this.npcRepo.findOneBy({ characterId: character.id });
@@ -91,18 +97,31 @@ export class FarmNpcTickService {
 
       let mutated = false;
 
-      const harvested = this.harvestRipePlots(npc, character.id);
-      if (harvested > 0) {
-        harvestCount += harvested;
+      const harvestedByCrop = this.harvestRipePlots(npc, character.id);
+      const totalHarvested = Object.values(harvestedByCrop).reduce(
+        (acc, n) => acc + n,
+        0,
+      );
+      if (totalHarvested > 0) {
+        harvestCount += totalHarvested;
         mutated = true;
-        await this.eventService.recordEvent({
-          ownerId: owner.id,
-          kind: 'harvest',
-          actorType: 'character',
-          actorId: character.id,
-          actorName: character.name,
-          payload: { count: harvested },
-        });
+        // 一次 tick 可能同时收多块不同作物，按 crop 分别记一条事件——前端事件流和
+        // 邻居「近期动向」按 cropId 渲染中文作物名（"X 收了一茬（白菜）"），缺了
+        // cropId 就只剩 "X 收了一茬" 完全没信息量。
+        for (const [cropId, amount] of Object.entries(harvestedByCrop) as [
+          FarmCropId,
+          number,
+        ][]) {
+          await this.eventService.recordEvent({
+            ownerId: owner.id,
+            kind: 'harvest',
+            actorType: 'character',
+            actorId: character.id,
+            actorName: character.name,
+            cropId,
+            payload: { amount },
+          });
+        }
       }
 
       const planted = this.maybePlantNewCrop(npc, character);
@@ -164,13 +183,13 @@ export class FarmNpcTickService {
   private harvestRipePlots(
     npc: FarmNpcStateEntity,
     characterId: string,
-  ): number {
+  ): Partial<Record<FarmCropId, number>> {
     const now = Date.now();
     const plots = ensurePlotsArray(npc.plotsPayload, npc.plotCount).map((p) =>
       refreshPlotStage(p, now),
     );
     const warehouse = { ...(npc.warehousePayload ?? {}) };
-    let harvested = 0;
+    const perCropCount: Partial<Record<FarmCropId, number>> = {};
     for (let i = 0; i < plots.length; i += 1) {
       const plot = plots[i]!;
       if (
@@ -189,12 +208,13 @@ export class FarmNpcTickService {
       const coinsGained = amount * def.sellPrice;
       warehouse[plot.cropId] = (warehouse[plot.cropId] ?? 0) + amount;
       npc.coins += coinsGained;
+      npc.totalHarvested = (npc.totalHarvested ?? 0) + amount;
       plots[i] = createEmptyNpcPlot(i);
-      harvested += 1;
+      perCropCount[plot.cropId] = (perCropCount[plot.cropId] ?? 0) + 1;
     }
     npc.plotsPayload = plots;
     npc.warehousePayload = warehouse;
-    return harvested;
+    return perCropCount;
   }
 
   private maybePlantNewCrop(
@@ -264,8 +284,26 @@ export class FarmNpcTickService {
     const player = await this.playerRepo.findOneBy({ ownerId });
     if (!player) return noResult;
     const plots = ensurePlotsArray(player.plotsPayload, player.plotCount).map((p) => ({ ...p }));
+    // 多年生果树只有第一次成熟才让偷（避免一棵树被反复偷成空）。
     const ripe = findStealablePlot(plots, thief.id);
     if (!ripe) return noResult;
+    // 看家狗拦截：先掷一把骰子，挡住了就只写 steal_blocked 事件，菜地不动。
+    // 这里要先 save 一下"被狗赶走"的事件流让玩家看到，但实际状态没变。
+    const block = await this.stateService.tryBlockNpcSteal(player, Date.now());
+    if (block.blocked) {
+      await this.eventService.recordEvent({
+        ownerId,
+        kind: 'steal_blocked',
+        actorType: 'character',
+        actorId: thief.id,
+        actorName: thief.name,
+        targetType: 'owner',
+        targetId: FARM_PLAYER_ACTOR_ID,
+        targetName: '我',
+        payload: { dogLevel: block.dogLevel, dogEnergy: block.energy },
+      });
+      return noResult;
+    }
     const def = getCropDefinition(ripe.cropId!);
     const amount = Math.max(1, Math.floor((ripe.yieldOverride ?? def.yieldRange[0]) / 2));
     const coinsGained = amount * Math.max(1, Math.floor(def.sellPrice / 2));
@@ -292,6 +330,20 @@ export class FarmNpcTickService {
     thiefNpc.warehousePayload = thiefWarehouse;
     thiefNpc.coins += coinsGained;
 
+    // 先把 intimacy 跌一下，拿到真实的 delta（如果 thief 的 intimacy 已经 ≤2，
+    // -3 会被 Math.max(0, ...) 截掉），再用真实值写 'steal' 事件，避免事件流里
+    // "X 顺走了你家的菜 -3" 但实际只-1/-2/0 的对外撒谎。
+    const oldIntimacy = thief.intimacyLevel ?? 0;
+    const newIntimacy = await this.eventService.applyIntimacyChange(
+      ownerId,
+      thief.id,
+      thief.id,
+      -3,
+      'character',
+      thief.name,
+      { recordEvent: false },
+    );
+    const intimacyDelta = (newIntimacy ?? oldIntimacy) - oldIntimacy;
     await this.eventService.recordEvent({
       ownerId,
       kind: 'steal',
@@ -302,17 +354,9 @@ export class FarmNpcTickService {
       targetId: FARM_PLAYER_ACTOR_ID,
       targetName: '我',
       cropId: ripe.cropId,
-      intimacyDelta: -3,
+      intimacyDelta,
       payload: { plotIndex: ripe.index, amount, coinsGained },
     });
-    await this.eventService.applyIntimacyChange(
-      ownerId,
-      thief.id,
-      thief.id,
-      -3,
-      'character',
-      thief.name,
-    );
     const broadcasted = await this.eventService.maybeBroadcastIncident({
       ownerId,
       thief,
@@ -376,10 +420,43 @@ export class FarmNpcTickService {
     return { stolen: true, broadcasted };
   }
 
+  // 给玩家自己的菜地按概率长杂草和虫；有稻草人时虫概率减半。
+  // 农药免疫期内 bug 增长完全静默。
+  private async degradePlayerPlots(
+    ownerId: string,
+    hasScarecrow: boolean,
+  ): Promise<void> {
+    const player = await this.playerRepo.findOneBy({ ownerId });
+    if (!player) return;
+    const plots = ensurePlotsArray(player.plotsPayload, player.plotCount).map((p) => ({ ...p }));
+    let mutated = false;
+    const nowMs = Date.now();
+    const bugChance = hasScarecrow ? 0.015 : 0.03;
+    for (let i = 0; i < plots.length; i += 1) {
+      const plot = plots[i]!;
+      if (!plot.cropId) continue;
+      if (Math.random() < 0.05) {
+        plot.weeds = Math.min(3, plot.weeds + 1);
+        mutated = true;
+      }
+      const pesticideActive =
+        plot.pesticideUntilMs != null && nowMs < plot.pesticideUntilMs;
+      if (!pesticideActive && Math.random() < bugChance) {
+        plot.bugs = Math.min(3, plot.bugs + 1);
+        mutated = true;
+      }
+    }
+    if (mutated) {
+      player.plotsPayload = plots;
+      await this.playerRepo.save(player);
+    }
+  }
+
   private maybeMaintainPlots(npc: FarmNpcStateEntity): number {
     const diligence = (npc.moodPayload?.diligence ?? 50) / 100;
     const plots = ensurePlotsArray(npc.plotsPayload, npc.plotCount).map((p) => ({ ...p }));
     let mutated = 0;
+    const nowMs = Date.now();
     for (let i = 0; i < plots.length; i += 1) {
       const plot = plots[i]!;
       if (!plot.cropId) continue;
@@ -395,9 +472,13 @@ export class FarmNpcTickService {
         plot.watered = true;
         mutated += 1;
       }
-      // 偶发自然增加杂草/虫
+      // 偶发自然增加杂草/虫——但农药免疫期内不再随机长虫。
       if (Math.random() < 0.05) plot.weeds = Math.min(3, plot.weeds + 1);
-      if (Math.random() < 0.03) plot.bugs = Math.min(3, plot.bugs + 1);
+      const pesticideActive =
+        plot.pesticideUntilMs != null && nowMs < plot.pesticideUntilMs;
+      if (!pesticideActive && Math.random() < 0.03) {
+        plot.bugs = Math.min(3, plot.bugs + 1);
+      }
     }
     npc.plotsPayload = plots;
     return mutated;

@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enclave Wiki Tutorial · Complete Guide</title>
+<meta name="description" content="Official tutorial for the Enclave Wiki character platform: register, browse, search, write entries, AI generation, patrolling, admin tools — all in one page.">
+<style>
+  :root {
+    --brand-from: #ff6a8a;
+    --brand-to: #7c5cff;
+    --brand-gradient: linear-gradient(135deg, #ff6a8a 0%, #7c5cff 100%);
+    --text-primary: #1f1f2c;
+    --text-secondary: #4f4f63;
+    --text-muted: #8b8ba0;
+    --text-on-brand: #fff;
+    --surface-bg: #fafaff;
+    --surface-card: #fff;
+    --surface-soft: #f3f1ff;
+    --surface-code: #f5f6fa;
+    --border-subtle: #e6e4ef;
+    --shadow-soft: 0 4px 14px rgba(124, 92, 255, 0.08);
+    --shadow-card: 0 12px 30px rgba(124, 92, 255, 0.12);
+    --tip: #2d8a5c; --tip-bg: #ecf9f1;
+    --warn: #b9531c; --warn-bg: #fdf2e6;
+    --admin: #7c5cff; --admin-bg: #efeaff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text-primary: #ececf2; --text-secondary: #c4c4d4; --text-muted: #8b8ba0;
+      --surface-bg: #15151c; --surface-card: #1d1d27; --surface-soft: #25223a;
+      --surface-code: #1a1a23; --border-subtle: #2c2c3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+         color: var(--text-primary); background: var(--surface-bg); line-height: 1.7;
+         font-size: 16px; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand-to); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header.topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.92);
+                  backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-subtle); }
+  @media (prefers-color-scheme: dark) { header.topbar { background: rgba(21,21,28,.92); } }
+  .topbar-inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+                  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600;
+           color: var(--text-primary); text-decoration: none; }
+  .brand-logo { width: 32px; height: 32px; border-radius: 10px; background: var(--brand-gradient);
+                color: #fff; display: grid; place-items: center; font-weight: 700; box-shadow: var(--shadow-soft); }
+  .lang-switch { display: flex; gap: 4px; margin-left: auto; }
+  .lang-switch a { padding: 6px 10px; border-radius: 999px; font-size: 13px;
+                   color: var(--text-secondary); border: 1px solid transparent; }
+  .lang-switch a:hover { background: var(--surface-soft); text-decoration: none; }
+  .lang-switch a[aria-current="page"] { background: var(--brand-gradient); color: #fff; }
+  .back-btn { padding: 6px 14px; border-radius: 999px; font-size: 13px;
+              background: var(--surface-soft); color: var(--text-primary);
+              border: 1px solid var(--border-subtle); }
+  .back-btn:hover { text-decoration: none; background: var(--brand-gradient); color: #fff; border-color: transparent; }
+  .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px;
+            display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 40px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 16px; } }
+  aside.toc { position: sticky; top: 80px; align-self: start;
+              max-height: calc(100vh - 100px); overflow-y: auto; padding: 8px 0; font-size: 14px; }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; }
+  aside.toc li { margin: 2px 0; }
+  aside.toc a { display: block; padding: 6px 12px; border-radius: 8px;
+                color: var(--text-secondary); border-left: 3px solid transparent; }
+  aside.toc a:hover { background: var(--surface-soft); text-decoration: none; }
+  aside.toc a.active { background: var(--surface-soft); color: var(--text-primary);
+                        border-left-color: var(--brand-to); font-weight: 600; }
+  aside.toc .toc-mobile-toggle { display: none; }
+  @media (max-width: 900px) {
+    aside.toc { position: static; max-height: none; overflow: visible;
+                background: var(--surface-card); border: 1px solid var(--border-subtle);
+                border-radius: 12px; padding: 0; }
+    aside.toc ol { display: none; padding: 8px; }
+    aside.toc.open ol { display: block; }
+    aside.toc .toc-mobile-toggle { display: block; width: 100%; padding: 12px 16px;
+                                    background: none; border: none; text-align: left; cursor: pointer;
+                                    font-weight: 600; color: var(--text-primary); font-size: 15px; }
+    aside.toc .toc-mobile-toggle::after { content: " ▾"; color: var(--text-muted); }
+    aside.toc.open .toc-mobile-toggle::after { content: " ▴"; }
+  }
+  main { min-width: 0; }
+  main h1 { font-size: 36px; line-height: 1.3; margin: 0 0 8px;
+            background: var(--brand-gradient); -webkit-background-clip: text;
+            background-clip: text; -webkit-text-fill-color: transparent; }
+  main .subtitle { color: var(--text-muted); margin-bottom: 32px; font-size: 16px; }
+  main h2 { font-size: 26px; margin: 56px 0 12px; padding-top: 32px;
+            border-top: 1px solid var(--border-subtle); }
+  main h2 .num { display: inline-block; min-width: 36px; height: 36px; line-height: 36px;
+                 text-align: center; border-radius: 10px; background: var(--brand-gradient);
+                 color: #fff; font-size: 16px; margin-right: 10px; padding: 0 8px; vertical-align: middle; }
+  main h3 { font-size: 19px; margin: 32px 0 8px; }
+  main h4 { font-size: 16px; margin: 20px 0 6px; color: var(--text-secondary); }
+  main p { margin: 12px 0; color: var(--text-secondary); }
+  main ul, main ol { padding-left: 24px; color: var(--text-secondary); }
+  main li { margin: 6px 0; }
+  main strong { color: var(--text-primary); }
+  main code { background: var(--surface-code); padding: 2px 6px; border-radius: 4px;
+              font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13.5px; color: var(--brand-to); }
+  main pre { background: var(--surface-code); padding: 16px; border-radius: 10px;
+             overflow-x: auto; font-size: 13px; line-height: 1.55; border: 1px solid var(--border-subtle); }
+  main pre code { background: none; padding: 0; color: var(--text-primary); }
+  main table { width: 100%; border-collapse: collapse; margin: 16px 0;
+               background: var(--surface-card); border-radius: 10px; overflow: hidden;
+               box-shadow: var(--shadow-soft); }
+  main th, main td { padding: 10px 14px; text-align: left;
+                     border-bottom: 1px solid var(--border-subtle); font-size: 14.5px; }
+  main th { background: var(--surface-soft); font-weight: 600; color: var(--text-primary); }
+  main td { color: var(--text-secondary); }
+  main tr:last-child td { border-bottom: none; }
+  .callout { margin: 16px 0; padding: 14px 18px 14px 16px; border-radius: 10px;
+             border-left: 4px solid; font-size: 14.5px; line-height: 1.7; }
+  .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
+  .callout.tip { background: var(--tip-bg); border-left-color: var(--tip); color: var(--text-primary); }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn); color: var(--text-primary); }
+  .callout.admin { background: var(--admin-bg); border-left-color: var(--admin); color: var(--text-primary); }
+  .callout .label { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+  .callout.tip .label { color: var(--tip); } .callout.warn .label { color: var(--warn); }
+  .callout.admin .label { color: var(--admin); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+           gap: 14px; margin: 18px 0; }
+  .step { padding: 16px 18px; border-radius: 14px; background: var(--surface-card);
+          border: 1px solid var(--border-subtle); position: relative; overflow: hidden; }
+  .step::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--brand-gradient); }
+  .step .n { display: inline-block; width: 28px; height: 28px; line-height: 28px;
+             text-align: center; border-radius: 50%; background: var(--brand-gradient);
+             color: #fff; font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+  .step h4 { margin: 4px 0; color: var(--text-primary); font-size: 15px; }
+  .step p { font-size: 14px; margin: 6px 0 0; }
+  details.shot { margin: 16px 0; border: 1px solid var(--border-subtle); border-radius: 10px;
+                 background: var(--surface-card); overflow: hidden; }
+  details.shot > summary { cursor: pointer; padding: 10px 16px; font-size: 14px;
+                            color: var(--text-secondary); background: var(--surface-soft);
+                            list-style: none; user-select: none; }
+  details.shot > summary::before { content: "▶ "; font-size: 11px; }
+  details.shot[open] > summary::before { content: "▼ "; }
+  details.shot pre { margin: 0; border-radius: 0; border: none;
+                     border-top: 1px solid var(--border-subtle);
+                     background: var(--surface-card); font-size: 12.5px; }
+  .audience { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 8px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+          letter-spacing: 0.04em; text-transform: uppercase; }
+  .pill.user { background: #eef4ff; color: #2c5fc7; }
+  .pill.patroller { background: #fff3e0; color: #b97516; }
+  .pill.admin { background: var(--admin-bg); color: var(--admin); }
+  footer.foot { max-width: 1200px; margin: 0 auto; padding: 24px 20px;
+                border-top: 1px solid var(--border-subtle); color: var(--text-muted);
+                font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">
+      <span class="brand-logo">Y</span>
+      <span>Enclave Wiki · Tutorial</span>
+    </a>
+    <nav class="lang-switch" aria-label="Language">
+      <a href="tutorial-zh-CN.html">🇨🇳 中文</a>
+      <a href="tutorial-en-US.html" aria-current="page">🇺🇸 English</a>
+      <a href="tutorial-ja-JP.html">🇯🇵 日本語</a>
+      <a href="tutorial-ko-KR.html">🇰🇷 한국어</a>
+    </nav>
+    <a class="back-btn" href="/">← Back to platform</a>
+  </div>
+</header>
+
+<div class="layout">
+
+<aside class="toc" id="toc">
+  <button class="toc-mobile-toggle" type="button" aria-expanded="false">📖 Contents</button>
+  <ol>
+    <li><a href="#welcome">0. Welcome</a></li>
+    <li><a href="#quickstart">1. 5-minute quickstart</a></li>
+    <li><a href="#account">2. Sign up & sign in</a></li>
+    <li><a href="#browse">3. Browsing entries</a></li>
+    <li><a href="#search">4. Search</a></li>
+    <li><a href="#editing">5. Creating & editing entries</a></li>
+    <li><a href="#private">6. My private characters</a></li>
+    <li><a href="#history">7. History & diff</a></li>
+    <li><a href="#watch">8. Watchlist & recent changes</a></li>
+    <li><a href="#talk">9. Talk pages</a></li>
+    <li><a href="#report">10. Reporting content</a></li>
+    <li><a href="#roles">11. User roles & permissions</a></li>
+    <li><a href="#patroller">12. Patroller handbook</a></li>
+    <li><a href="#admin">13. Admin handbook</a></li>
+    <li><a href="#faq">14. FAQ</a></li>
+    <li><a href="#feedback">15. Feedback</a></li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>Enclave Wiki · Newcomer Tutorial</h1>
+<p class="subtitle">From sign-up and browsing to writing entries with AI assist, patrol review, and admin tooling — one page covers everything.</p>
+
+<section id="welcome">
+<h2><span class="num">0</span>Welcome</h2>
+
+<p><strong>Enclave Wiki</strong> is a collaborative encyclopedia for AI character creation. Anyone can browse, signed-in users can create and edit character entries — and what you write isn't just descriptive text, it's a structured <strong>character recipe</strong> that an AI uses to roleplay that character.</p>
+
+<p>Workflow-wise it works like Wikipedia:</p>
+<ul>
+  <li>All content is collaboratively editable, with full version history</li>
+  <li>Newcomers' edits enter a <strong>review queue</strong> first; patrollers approve them before they go public</li>
+  <li>You get diffs, reverts, page protection, and reporting — the standard collab toolkit</li>
+</ul>
+
+<p>What makes it different from Wikipedia is that <strong>each entry is the AI's "soul"</strong>. The fields you fill — name, bio, personality, expert domains, dialog scenes — get bundled into a structured recipe and fed to a large model. Entry quality directly determines AI behavior.</p>
+
+<div class="callout tip">
+  <span class="label">💡 Tip</span>
+  <p>Not sure where to start? Jump to the next section — <a href="#quickstart">"5-minute quickstart"</a> — and walk through it once. All the concepts will fall into place.</p>
+</div>
+</section>
+
+<section id="quickstart">
+<h2><span class="num">1</span>5-minute quickstart <span class="audience"><span class="pill user">User</span></span></h2>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><h4>Register</h4><p>Click "Register" top-right, choose username (≥2 chars) and password (≥6 chars). New accounts start at the <code>newcomer</code> tier.</p></div>
+  <div class="step"><span class="n">2</span><h4>Browse a character</h4><p>Back on the home page, click any card to open a character — see what a complete entry looks like.</p></div>
+  <div class="step"><span class="n">3</span><h4>Try search</h4><p>Top search bar, type a keyword, press Enter. Search covers name, relationship, bio, and personality fields.</p></div>
+  <div class="step"><span class="n">4</span><h4>Make a private character</h4><p>Sidebar → "My private characters" → "Create". Fill in a minimal version (name + bio + relationship), then click "AI generate" to fill the rest.</p></div>
+  <div class="step"><span class="n">5</span><h4>Submit a wiki edit</h4><p>Find a public entry, click "Edit", change a small detail, write a ≥10-character edit summary, submit. Wait for patroller review.</p></div>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 Tip</span>
+  <p>While you're a newcomer, every public-entry edit needs review. Once you've accumulated a track record and the system auto-promotes you to <code>autoconfirmed</code>, low-risk edits go live immediately.</p>
+</div>
+</section>
+
+<section id="account">
+<h2><span class="num">2</span>Sign up & sign in <span class="audience"><span class="pill user">User</span></span></h2>
+
+<h3>Register</h3>
+<p>Visit <code>/register</code> and provide:</p>
+<ul>
+  <li><strong>Username</strong>: at least 2 characters, public, used to attribute your edits</li>
+  <li><strong>Password</strong>: at least 6 characters, only visible to you</li>
+  <li><strong>Confirm password</strong>: must match</li>
+</ul>
+<p>After registering, your account starts at the newcomer tier (<code>newcomer</code>). You can edit immediately, but every public-entry edit enters the review queue.</p>
+
+<h3>Sign in</h3>
+<p>Visit <code>/login</code>. Two options:</p>
+<ul>
+  <li><strong>Username + password</strong>: standard</li>
+  <li><strong>Email code</strong>: a verification code is sent to your registered email; useful if you've forgotten your password</li>
+</ul>
+<p>If you visit a page that requires sign-in, you'll be redirected to <code>/login?redirect=...</code> and bounced back automatically after signing in.</p>
+
+<h3>Account settings</h3>
+<p>Click your username top-right → "Account settings". You can:</p>
+<ul>
+  <li>Change password (requires email-code confirmation)</li>
+  <li>View / verify / change your email</li>
+  <li>See your profile: current role tier (newcomer/autoconfirmed/patroller/admin), total edits, approved-edit count, reverted count, and when you were auto-confirmed</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ Note</span>
+  <p>Email is your only password-recovery channel. Bind it as soon as you register — without it, you can't recover a forgotten password without admin intervention.</p>
+</div>
+</section>
+
+<section id="browse">
+<h2><span class="num">3</span>Browsing entries <span class="audience"><span class="pill user">User</span></span></h2>
+
+<h3>Character directory (home page)</h3>
+<p>The home page <code>/</code> lists all public characters, sorted by popularity / recent activity. Each card shows the avatar, name, relationship type, and the first lines of the bio.</p>
+
+<h3>Anatomy of a character page</h3>
+<p>Click into a character to see:</p>
+<ul>
+  <li><strong>Header</strong>: avatar, name, relationship-type badge (friend / family / mentor / expert / custom), lifecycle badge (active / pending create / deleted / pending delete)</li>
+  <li><strong>Body tabs</strong>:
+    <ul>
+      <li>"Content": bio, personality, expert domains, trigger scenes, relationship description</li>
+      <li>"History": all revisions and diffs</li>
+      <li>"Talk": discussions related to the entry</li>
+    </ul>
+  </li>
+  <li><strong>Right-side actions</strong>: ⭐ Watch / unwatch, ✏️ Edit (sign-in required), 🗑️ Request delete (sign-in required), protection-status indicator</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII layout sketch of a character page</summary>
+<pre>
+┌──────────────────────────────────────────────────────────────┐
+│ [avatar]  Name ✨autoconfirmed             ⭐watch ✏️edit    │
+│           #friend  #active                                    │
+├──────────────────────────────────────────────────────────────┤
+│ [ Content ] [ History ] [ Talk ]                              │
+├──────────────────────────────────────────────────────────────┤
+│  Bio                                                          │
+│  ─────                                                        │
+│  …                                                            │
+│  Personality                                                  │
+│  ──────────                                                   │
+│  …                                                            │
+│  Relationship: my best friend                                │
+└──────────────────────────────────────────────────────────────┘
+</pre>
+</details>
+
+<h3>Stable vs current view</h3>
+<p>An entry can have two views:</p>
+<ul>
+  <li><strong>Stable</strong>: what everyone sees by default — the most recent approved revision</li>
+  <li><strong>Current</strong>: includes pending unreviewed edits — visible only to the editor and patrollers</li>
+</ul>
+<p>So: right after you edit you'll see your changes (current view), but other visitors still see the old stable version until your edit is approved.</p>
+</section>
+
+<section id="search">
+<h2><span class="num">4</span>Search <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>The top search box on every page leads to <code>/search?q=keyword</code>.</p>
+
+<h3>What's indexed</h3>
+<ul>
+  <li>Character name</li>
+  <li>Relationship description ("my best friend" etc.)</li>
+  <li>Bio</li>
+  <li>Personality</li>
+</ul>
+
+<h3>Result ranking</h3>
+<p>Results are sorted by relevance score, each with a 0–100 percentile shown. Click any result to open the character page.</p>
+
+<div class="callout tip">
+  <span class="label">💡 Tip</span>
+  <p>Search is open to unsigned-in visitors — perfect for "kick the tires" traffic.</p>
+</div>
+</section>
+
+<section id="editing">
+<h2><span class="num">5</span>Creating & editing entries <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>This is the heart of the wiki. All public characters are created and maintained through the same form.</p>
+
+<h3>5.1 Create a new entry</h3>
+<p>Sidebar → "Create character", or visit <code>/create</code>. The form has 6 sections:</p>
+
+<table>
+  <thead><tr><th>Section</th><th>Key fields</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① Basics</strong></td><td>Name, avatar, bio, relationship type, relationship description</td><td>Name and bio are mandatory; they're how others identify the character</td></tr>
+    <tr><td><strong>② Dialog style</strong></td><td>Speaking style, catchphrases, emotional tone</td><td>Determines the AI's voice</td></tr>
+    <tr><td><strong>③ Core logic</strong></td><td>Values, decision patterns, taboos</td><td>The character's "brain" — how they reason in edge cases</td></tr>
+    <tr><td><strong>④ Trigger scenes</strong></td><td>Typical openers, role-play setups</td><td>When this character should be summoned</td></tr>
+    <tr><td><strong>⑤ Memory</strong></td><td>Backstory, key experiences</td><td>What the character "remembers"</td></tr>
+    <tr><td><strong>⑥ Social params</strong></td><td>Expert domains, interaction preferences</td><td>Affects recommendation and search matching</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 AI one-click generation</h3>
+<p>Each section has an "AI generate" button at the top right that calls a large model to fill in empty fields.</p>
+
+<div class="callout tip">
+  <span class="label">💡 Recommended workflow</span>
+  <p>Fill <strong>name + bio + relationship</strong> manually first (your three anchor points), then click <strong>"Generate all"</strong> — the AI uses these anchors to fill every other empty field. By default it only fills empties, never overwrites what you've written.</p>
+</div>
+
+<p>Key parameters:</p>
+<ul>
+  <li><strong>Rate limit</strong>: 15 generations per user per hour (private characters and wiki edits share one bucket)</li>
+  <li><strong>"Optimize" mode</strong>: when enabled, the AI may overwrite existing content (not just empties); use it when you want a polish pass on what you wrote</li>
+  <li><strong>"Generate all" precondition</strong>: name + bio + relationship must be filled, or the button is greyed out</li>
+  <li><strong>Auto-draft</strong>: every AI run autosaves a draft so closing the page won't lose your work</li>
+</ul>
+
+<h3>5.3 Drafts</h3>
+<p>While you edit, the form auto-saves:</p>
+<ul>
+  <li>Browser-side: in real time (close the tab, come back, still there)</li>
+  <li>Server-side: when you click AI generate or save manually</li>
+  <li>Recover at <code>/my-drafts</code> → click a draft → resume editing via <code>?draftId=...</code></li>
+</ul>
+
+<h3>5.4 Submitting</h3>
+<p>Before the "Submit" button you must provide:</p>
+<ul>
+  <li><strong>Edit summary</strong>: a short note describing your change. <strong>≥10 characters</strong> is mandatory for high-risk edits (lifecycle, delete, revert)</li>
+  <li><strong>Mark as minor (isMinor)</strong>: tick this if it's just typo/format/whitespace — patrollers process minor edits faster</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ Edit-conflict detection</span>
+  <p>If someone else submitted an edit to the same entry while you were editing, you'll get a conflict prompt at submission. The system tracks <code>baseRevisionId</code> to detect this — you'll need to reopen the latest version and merge manually.</p>
+</div>
+
+<h3>5.5 What happens after submit</h3>
+<p>Depends on your role tier:</p>
+<table>
+  <thead><tr><th>Tier</th><th>Low-risk edits</th><th>High-risk edits</th></tr></thead>
+  <tbody>
+    <tr><td>newcomer</td><td>Enters review queue</td><td>Enters review queue</td></tr>
+    <tr><td>autoconfirmed</td><td>Goes live immediately</td><td>Enters review queue (still requires ≥10-char summary)</td></tr>
+    <tr><td>patroller / admin</td><td>Goes live immediately</td><td>Goes live immediately</td></tr>
+  </tbody>
+</table>
+
+<h3>5.6 Editing an existing entry</h3>
+<p>The ✏️ "Edit" button on a character page opens <code>/character/:id/edit</code>. The form is pre-filled with the latest revision (including pending fields, only visible to you); the rest of the flow matches creation.</p>
+</section>
+
+<section id="private">
+<h2><span class="num">6</span>My private characters <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>Alongside the public wiki, every signed-in user has a <strong>strictly private</strong> workspace: <strong>"My private characters"</strong> at <code>/my-characters</code>. You can freely create, experiment with, and back up characters here. Everything takes effect immediately — no review, no visibility to others, and they don't appear in search, character directory, or recommendations.</p>
+
+<h3>6.1 Differences vs wiki entries</h3>
+<table>
+  <thead><tr><th>Feature</th><th>Wiki entry</th><th>Private character</th></tr></thead>
+  <tbody>
+    <tr><td>Visibility</td><td>Public</td><td>You only</td></tr>
+    <tr><td>Review needed</td><td>Yes (for newcomers)</td><td>No</td></tr>
+    <tr><td>Version history</td><td>Full history + diff</td><td>None (only createdAt / updatedAt timestamps)</td></tr>
+    <tr><td>Patrol / revert</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Talk page</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Delete</td><td>Soft delete (restorable on request)</td><td>Hard delete (irreversible)</td></tr>
+    <tr><td>Form fields</td><td>Includes personality / editSummary / isMinor</td><td>No personality etc., leaner form</td></tr>
+    <tr><td>Use case</td><td>Building the public library</td><td>Personal creation / experimentation / backup</td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 Entry points</h3>
+<ul>
+  <li><strong>List</strong>: sidebar → "My private characters" (<code>/my-characters</code>)</li>
+  <li><strong>Create</strong>: top-right "✨ New character" → <code>/my-characters/new</code></li>
+  <li><strong>Edit</strong>: click any card in the list → <code>/my-characters/:id</code></li>
+  <li><strong>Import</strong>: top-right "📥 Import file" → pick a <code>.json</code></li>
+</ul>
+
+<h3>6.3 Form fields (6 sections)</h3>
+<table>
+  <thead><tr><th>Section</th><th>Key fields</th><th>Required?</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① Basics</strong></td><td>Name, avatar (emoji / URL), relationship description, relationship type, expert domains, bio</td><td>Name + relationship description required</td></tr>
+    <tr><td><strong>② Chat replies</strong></td><td>Chat-scene prompt</td><td>No (recommended)</td></tr>
+    <tr><td><strong>③ Core logic</strong></td><td>Core logic, forgetting curve (0–100, default 70, advanced)</td><td>No (recommended)</td></tr>
+    <tr><td><strong>④ Scene prompts</strong></td><td>Moments post, plaza post, video-channel post, moments comment, plaza comment, friend request / shake greeting, proactive reminder (7 in total)</td><td>No</td></tr>
+    <tr><td><strong>⑤ Memory prompts</strong></td><td>Recent memory, long-term memory (advanced)</td><td>No</td></tr>
+    <tr><td><strong>⑥ Social params</strong></td><td>Social openness (open / normal / private), proactive browse chance (0–1, default 0.3), intimacy seed (0–100, default 0)</td><td>Have defaults</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 Differences from the wiki edit form</span>
+  <p>Private characters have <strong>no personality / trigger scenes / editSummary / isMinor</strong> fields — leaner. There's also no <code>baseRevisionId</code> conflict detection (no version history, just a "last modified" timestamp).</p>
+</div>
+
+<h3>6.4 Field length limits</h3>
+<table>
+  <thead><tr><th>Field</th><th>Limit</th></tr></thead>
+  <tbody>
+    <tr><td>Name</td><td>80 chars</td></tr>
+    <tr><td>Avatar (emoji / URL)</td><td>2000 chars</td></tr>
+    <tr><td>Bio</td><td>2000 chars</td></tr>
+    <tr><td>Relationship description</td><td>200 chars</td></tr>
+    <tr><td>Relationship type</td><td>80 chars</td></tr>
+    <tr><td>Expert domain (each)</td><td>80 chars</td></tr>
+    <tr><td>Expert domain (total count)</td><td>50 items</td></tr>
+    <tr><td>recipe JSON / profile JSON</td><td>64 KB each</td></tr>
+  </tbody>
+</table>
+
+<h3>6.5 AI one-click generation</h3>
+<p>Each section has a <strong>✨ AI generate</strong> button at the top right; the page header also has <strong>✨ AI generate everything</strong>.</p>
+<ul>
+  <li><strong>5 sections you can generate</strong>: basics (avatar / expert domains / relationship type), core_logic (core logic / forgetting curve), chat, scenes (the 7 scene prompts), memory (recent / long-term)</li>
+  <li><strong>"Generate everything" precondition</strong>: <strong>name + bio + relationship</strong> — the three sacred fields — must be filled, or the backend rejects with 400</li>
+  <li><strong>Optimize mode</strong>: by default only fills empty fields, never overwrites; if a section already has content, clicking AI generate pops a confirmation dialog before overwriting</li>
+  <li><strong>While generating</strong>: that section's fields are disabled and show "✨ AI is generating…"</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ Rate limits</span>
+  <p>AI generation has its own quota: <strong>15 calls per user per hour</strong> (shared with wiki-entry editing). Over the limit returns <code>WIKI_AI_RATE_LIMITED</code> with the message "AI generation quota exhausted: 15/hour cap, retry in X seconds."</p>
+  <p>CRUD (create / update / delete / import) has a separate quota: <strong>60 calls per user per hour</strong>.</p>
+</div>
+
+<h3>6.6 Drafts</h3>
+<p>Only on the path "<strong>New page + Generate everything</strong>" does the backend autosave a draft to <code>character_drafts</code>:</p>
+<ul>
+  <li>Close the page or browser, come back later — find it in <a href="/my-drafts"><code>/my-drafts</code></a></li>
+  <li>Click the draft → it loads into the new-character page via <code>?draftId=...</code></li>
+  <li>If your editor has unsaved content when restoring, a confirm dialog asks whether to overwrite</li>
+</ul>
+
+<h3>6.7 JSON import / export</h3>
+<h4>Export</h4>
+<ul>
+  <li>"📤 Export" button on each list card / "📤 Export JSON" top-right of the edit page</li>
+  <li>Filename: character name (sanitized) + <code>.json</code></li>
+  <li>Schema: <code>"$schema": "yinjie-private-character/v1"</code></li>
+  <li>Included fields: name / avatar / bio / relationship / relationshipType / expertDomains / recipe / profile / social params + meta (exportedAt, exportedBy, version)</li>
+  <li><strong>Excluded</strong>: isOnline / isTemplate / sourceType / aiRelationships and other admin-only fields</li>
+</ul>
+
+<h4>Import</h4>
+<ul>
+  <li>Top-right "📥 Import file" → pick a <code>.json</code></li>
+  <li>File size cap: <strong>5 MB</strong></li>
+  <li><strong>Upsert by character name</strong>: matches an existing character → overwrite; new name → create</li>
+  <li>Toast distinguishes overwrite vs new: "Overwrote existing character: X" vs "Imported new character: X"</li>
+  <li>No batch import (one file = one character)</li>
+  <li>Schema-version mismatch / oversize fields → rejected with 400</li>
+</ul>
+
+<h3 id="private-app-import">6.8 Hooking it up to the Enclave app</h3>
+<p>On the wiki side, a private character is just a config file. <strong>To actually have an AI roleplay it and chat with you, you need to import it into the Enclave app</strong> (the runtime client). Full flow:</p>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><h4>Export from wiki</h4><p>On your private-character list or edit page, hit "📤 Export JSON" and download the <code>.json</code>.</p></div>
+  <div class="step"><span class="n">2</span><h4>Open the Enclave app</h4><p>Sign in on any client (mobile / desktop). Importing requires being signed in.</p></div>
+  <div class="step"><span class="n">3</span><h4>Open the import page</h4><p>Mobile: "Me" tab → "Import characters".<br>Desktop: no menu entry — visit <code>/profile/character-import</code> directly.</p></div>
+  <div class="step"><span class="n">4</span><h4>Upload the .json</h4><p>Pick the file you just downloaded (≤ 5 MB) → Submit. The backend hits <code>POST /characters/import-personal</code> to validate and persist.</p></div>
+  <div class="step"><span class="n">5</span><h4>Start chatting</h4><p>After a successful import, the character is auto-added as a friend and appears in "Contacts". Tap the character → character detail page → tap "Message" to start chatting.</p></div>
+</div>
+
+<div class="callout warn">
+  <span class="label">⚠️ No version sync</span>
+  <p>The wiki copy and the app copy are <strong>independent</strong>. If you edit the character on wiki later, the app won't update automatically; conversely, the memory / relationship progress your app conversations build up isn't visible on wiki.</p>
+  <p><strong>To sync</strong>: re-export from wiki and upload to the app's import page again. <strong>Overwrite-by-name only works for previously imported characters</strong> (<code>sourceType=private_import</code>); if a character with the same name came from a different source, the import is blocked with a conflict error.</p>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 Why "create on wiki, run in app"?</span>
+  <p>The app <strong>has no "create private character" UI</strong>. By design, wiki is the "complete character editor + AI assist", and the app is the "conversation runtime" — you create and edit on wiki, you run on app. This separation is the core reason private characters live on the wiki.</p>
+</div>
+
+<h3>6.9 Delete</h3>
+<div class="callout warn">
+  <span class="label">⚠️ Hard delete, irreversible</span>
+  <p>Deleting a private character is a <strong>real delete</strong> (unlike the wiki's soft delete) — once confirmed, it's gone from the database; there's no "request restore" flow. A confirm dialog appears: "Delete 'X'? This cannot be undone."</p>
+  <p>Need to keep something long-term? Hit "📤 Export JSON" to save locally first, then delete.</p>
+  <p><strong>Note</strong>: deleting on wiki <strong>does not</strong> affect copies already imported into the app (the two are independent) — to remove it from the app too, delete the contact in the app separately.</p>
+</div>
+
+<h3>6.10 Currently not supported</h3>
+<p>Knowing what private characters <strong>can't do</strong> avoids hunting for nonexistent buttons:</p>
+<ul>
+  <li>❌ <strong>Chatting with a character inside wiki</strong>: there's no chat UI on the wiki side — follow <a href="#private-app-import">6.8</a> to import into the app</li>
+  <li>❌ <strong>No sharing / collaboration</strong>: even logged-in, no other user can access your private characters' URLs</li>
+  <li>❌ <strong>No "publish to wiki" button</strong>: to promote a private character into a public entry, manually re-enter the key fields at <a href="/create">/create</a></li>
+  <li>❌ <strong>No version history</strong>: every save overwrites; you can't see what the previous version looked like</li>
+  <li>❌ <strong>No batch / sort / filter / search</strong>: list is reverse-chronological — many characters means scrolling</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 Recommended workflow</span>
+  <p>Private characters are your <strong>"draft sandbox"</strong>: experiment freely without review pressure or affecting others. Once a character is polished, copy the key fields (name, bio, relationship, the important prompts) into <a href="/create">"Create public entry"</a> and submit for review — that's currently the only path from private to public.</p>
+</div>
+</section>
+
+<section id="history">
+<h2><span class="num">7</span>History & diff <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>Every change to a public entry is permanently retained, and any past revision can be inspected.</p>
+
+<h3>History tab</h3>
+<p>Character page → "History" tab → reverse-chronological revision list. Each row shows:</p>
+<ul>
+  <li>Revision ID</li>
+  <li>Editor's username</li>
+  <li>Timestamp</li>
+  <li>Edit summary</li>
+  <li>Operation (create / edit / delete request / restore request / revert)</li>
+  <li>Risk level (low / medium / high)</li>
+  <li>Patrolled? Reviewed?</li>
+</ul>
+
+<h3>Diff comparison</h3>
+<p>Tick any two revisions → "Compare" → opens <code>/character/:id/diff?from=A&amp;to=B</code> with side-by-side rendering:</p>
+<ul>
+  <li>Which fields changed (diffFromParent)</li>
+  <li>Old vs new for each changed field</li>
+  <li>Recipe JSON structural diff (collapsible)</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII layout sketch of the diff page</summary>
+<pre>
+┌─────────────────────┬─────────────────────┐
+│ Old (v12)           │ New (v13)           │
+├─────────────────────┼─────────────────────┤
+│ Bio                 │ Bio                 │
+│ A gentle friend.    │ A gentle and        │
+│                     │ talkative friend.   │
+├─────────────────────┼─────────────────────┤
+│ Personality         │ Personality         │
+│ Introverted, quiet  │ Introverted, but    │
+│                     │ a great listener    │
+└─────────────────────┴─────────────────────┘
+</pre>
+</details>
+
+<p>Diff pages are open to everyone, no sign-in needed — transparent revision history is foundational to wiki collaboration.</p>
+</section>
+
+<section id="watch">
+<h2><span class="num">8</span>Watchlist & recent changes <span class="audience"><span class="pill user">User</span></span></h2>
+
+<h3>8.1 Watch</h3>
+<p>The ⭐ button on a character page toggles watch. Once watched:</p>
+<ul>
+  <li>New edits to that entry appear in your watchlist feed</li>
+  <li>You can configure per-character flags: edit-notifications (<code>notifyOnEdit</code>) and talk-notifications (<code>notifyOnTalk</code>)</li>
+</ul>
+
+<h3>8.2 My watchlist</h3>
+<p>Sidebar → "My watchlist" (<code>/watchlist</code>). Two-pane layout:</p>
+<ul>
+  <li><strong>Left</strong>: every character you watch, with an "unwatch" button per row; deleted characters get a <code>deleted</code> badge</li>
+  <li><strong>Right</strong>: aggregated activity feed — both edit revisions and new talk threads</li>
+</ul>
+
+<h3>8.3 Recent changes</h3>
+<p>Sidebar → "Recent changes" (<code>/recent-changes</code>) — site-wide timeline visible to everyone:</p>
+<ul>
+  <li>All revisions on all entries (not limited to your watch list)</li>
+  <li>Lifecycle requests (delete / restore) and reverts included</li>
+  <li>Each row shows risk level, operation type, and patrol status</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 For patrollers</span>
+  <p>Patrollers get an additional "show only unpatrolled" filter on this page — used for daily patrol work.</p>
+</div>
+</section>
+
+<section id="talk">
+<h2><span class="num">9</span>Talk pages <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>Every entry has its own talk page (like Wikipedia's "talk" tab) for discussing "how should we write this character" — not for chatting with the character.</p>
+
+<h3>Core actions</h3>
+<ul>
+  <li><strong>New thread</strong>: title + body, opens a new discussion</li>
+  <li><strong>Reply</strong>: any post can be replied to (nested via <code>parentPostId</code>)</li>
+  <li><strong>Delete your own posts</strong>: soft delete (record kept, content hidden)</li>
+  <li><strong>Report a post</strong>: see the <a href="#report">reporting section</a></li>
+</ul>
+
+<h3>Patroller actions</h3>
+<ul>
+  <li><strong>Lock thread (isLocked)</strong>: prevent further replies — useful when discussions get heated</li>
+  <li><strong>Mark resolved (isResolved)</strong>: indicates consensus has been reached</li>
+</ul>
+</section>
+
+<section id="report">
+<h2><span class="num">10</span>Reporting content <span class="audience"><span class="pill user">User</span></span></h2>
+
+<p>Any signed-in user can report problematic content. Three target types:</p>
+<ul>
+  <li><strong>Wiki revision</strong>: a specific edit introduced a problem (vandalism / false info / griefing)</li>
+  <li><strong>Talk post</strong>: harassment / spam in discussions</li>
+  <li><strong>Wiki page</strong>: the whole entry shouldn't exist (copyright / serious violation)</li>
+</ul>
+
+<h3>How to report</h3>
+<ol>
+  <li>Find the "🚩 Report" button next to the target content</li>
+  <li>Pick a reason (spam / false info / abuse / other)</li>
+  <li>Optionally add details (≤500 chars)</li>
+  <li>Submit</li>
+</ol>
+
+<p>Reports flow into the admin <a href="/admin/reports"><code>/admin/reports</code></a> queue for human handling. Three outcomes:</p>
+<ul>
+  <li><strong>Resolved</strong>: admin took action (delete / revert / block / etc.)</li>
+  <li><strong>Dismissed</strong>: admin found the report invalid</li>
+  <li><strong>Open</strong>: still pending</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ Note</span>
+  <p>Bad-faith reporting can itself be acted on — repeated invalid reports trigger admin attention.</p>
+</div>
+</section>
+
+<section id="roles">
+<h2><span class="num">11</span>User roles & permissions</h2>
+
+<p>The platform has 4 role tiers, low to high:</p>
+
+<table>
+  <thead><tr><th>Tier</th><th>Unlocked by</th><th>Permissions</th></tr></thead>
+  <tbody>
+    <tr><td><strong>newcomer</strong></td><td>Registration</td><td>Edit / create entries / post in talk / report.<br><strong>All public-entry edits enter the review queue.</strong></td></tr>
+    <tr><td><strong>autoconfirmed</strong></td><td>Auto-promoted by the system based on edit count and tenure</td><td>Low-risk edits go live immediately. High-risk (lifecycle changes etc.) still need review.</td></tr>
+    <tr><td><strong>patroller</strong></td><td>Granted manually by an admin</td><td>+ Access pending-review queue, approve / reject / request changes.<br>+ Mark patrols on Recent Changes.<br>+ Revert edits.<br>+ Lock / resolve talk threads.</td></tr>
+    <tr><td><strong>admin</strong></td><td>Granted manually by an existing admin</td><td>+ User role management, blocks, page protection, field protection.<br>+ Abuse-filter configuration.<br>+ Governance dashboard.<br>+ All forced operations.</td></tr>
+  </tbody>
+</table>
+
+<h3>How do I get to autoconfirmed?</h3>
+<p>The system promotes you automatically when these conditions are met (exact thresholds are site config):</p>
+<ul>
+  <li>Approved-edit count (<code>approvedEditCount</code>) ≥ threshold</li>
+  <li>Account age ≥ threshold</li>
+  <li>Reverted count (<code>revertedCount</code>) below threshold</li>
+</ul>
+<p>Once met, the system sets <code>autoconfirmedAt</code> and the upgrade is instant. You can see this timestamp in account settings.</p>
+</section>
+
+<section id="patroller">
+<h2><span class="num">12</span>Patroller handbook <span class="audience"><span class="pill patroller">Patroller</span></span></h2>
+
+<p>Patrollers are the platform's first line of quality defense. There are three kinds of work: reviewing pending edits, patrolling already-published edits, and reverting bad changes.</p>
+
+<h3>12.1 Pending-review queue</h3>
+<p>Sidebar → "Pending reviews" (<code>/pending-reviews</code>, visible only to patrollers and above).</p>
+
+<p><strong>Queue fields</strong>:</p>
+<ul>
+  <li>Submitter / submission time / target entry</li>
+  <li>Operation type (create / edit / delete / restore / revert)</li>
+  <li>Risk level (low / medium / high — high requires ≥10-char summary)</li>
+  <li>Revision kind (latest / pending / etc.)</li>
+  <li>Edit summary</li>
+  <li>Diff preview link</li>
+</ul>
+
+<p><strong>Actions</strong>:</p>
+<table>
+  <thead><tr><th>Action</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Approve</strong></td><td>Edit merges into stable; visible to all users</td></tr>
+    <tr><td><strong>Reject</strong></td><td>Edit is discarded; not auto-synced to latest (submitter must redo)</td></tr>
+    <tr><td><strong>Request changes</strong></td><td>Leave a note; submitter revises and resubmits</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 Patrol pace tip</span>
+  <p>Prioritize "high-risk + long edit summary" submissions (usually serious large changes). Low-risk small fixes can be batched through quickly.</p>
+</div>
+
+<h3>12.2 Patrol Recent Changes</h3>
+<p>"Patrol" and "approve" are <strong>two different things</strong>:</p>
+<ul>
+  <li><strong>Approval (review)</strong>: makes a pending edit go live — for newcomer submissions</li>
+  <li><strong>Patrol</strong>: marks an already-live edit as "I've seen it, it's fine" — for autoconfirmed submissions (these are already live but still need a sanity check)</li>
+</ul>
+
+<p>On <code>/recent-changes</code>, switch to "show only unpatrolled" and walk through. Click "Mark as patrolled" on any clean edit.</p>
+
+<h3>12.3 Revert</h3>
+<p>On the History tab, every past revision has a "Revert to this revision" button:</p>
+<ol>
+  <li>Click → modal asks for a revert reason</li>
+  <li>Submit → creates a new revision with <code>operation: "revert"</code> rolling content back to the target</li>
+  <li>If you're a patroller/admin, the new revision goes live immediately; otherwise it'd enter the review queue (though that path isn't exposed to non-patrollers in practice)</li>
+</ol>
+
+<div class="callout warn">
+  <span class="label">⚠️ Note</span>
+  <p>Reverts are recorded against the original submitter's <code>revertedCount</code> and affect future promotion. Only revert when you're confident the edit is malicious or harmful — for differences of opinion, use the talk page.</p>
+</div>
+</section>
+
+<section id="admin">
+<h2><span class="num">13</span>Admin handbook <span class="audience"><span class="pill admin">Admin</span></span></h2>
+
+<div class="callout admin">
+  <span class="label">🛡️ Admin only</span>
+  <p>All <code>/admin/*</code> pages return 404 to non-admin accounts.</p>
+</div>
+
+<h3>13.1 User & permission management</h3>
+<p>Visit <code>/admin/users</code>. Capabilities:</p>
+<ul>
+  <li>Browse the user list (username, type, role, registered date, edit stats)</li>
+  <li>Change any user's role tier (newcomer ↔ autoconfirmed ↔ patroller ↔ admin)</li>
+  <li>Inspect each user's stats: total edits, approved edits, reverted count, patrol count, last edit time, autoconfirmed-at</li>
+</ul>
+<p><strong>You can't change your own role tier</strong> (prevents accidentally locking yourself out).</p>
+
+<h3>13.2 Blocks</h3>
+<p>Visit <code>/admin/blocks</code>. Blocks prevent users from doing specific things:</p>
+<table>
+  <thead><tr><th>Scope</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>global</code></td><td>Site-wide silence: can't edit, post, or report</td></tr>
+    <tr><td><code>page</code></td><td>Can't edit a specified entry only</td></tr>
+    <tr><td><code>talk</code></td><td>Can't post in talk; editing still allowed</td></tr>
+  </tbody>
+</table>
+<p>Each block record holds: user / scope / reason / created-by / created-at / expires-at (<code>expiresAt</code>, optional — empty means permanent) / revoked-by / revoked-at. The list page splits "active" and "expired/revoked".</p>
+
+<h3>13.3 Page protection</h3>
+<p>Visit <code>/admin/protection</code>. Adds an editing barrier to a single entry:</p>
+
+<h4>Page-level protection</h4>
+<table>
+  <thead><tr><th>Level</th><th>Who can edit</th></tr></thead>
+  <tbody>
+    <tr><td><code>none</code></td><td>All signed-in users (default)</td></tr>
+    <tr><td><code>semi</code></td><td>Autoconfirmed and above — blocks newcomers</td></tr>
+    <tr><td><code>full</code></td><td>Patroller and above — trusted users only</td></tr>
+  </tbody>
+</table>
+
+<h4>Review policy</h4>
+<ul>
+  <li><code>open</code>: edits go live immediately, no forced review</li>
+  <li><code>pending_changes</code>: every edit is held pending approval</li>
+</ul>
+
+<h4>Field-level protection</h4>
+<p>Set the minimum role required to edit a specific field (e.g. <code>name</code>):</p>
+<pre><code>fieldPath: "name"
+minRoleToEdit: "patroller"</code></pre>
+<p>Useful for locking down vandal-prone fields (character name, relationship type) while keeping the rest collaboratively editable.</p>
+
+<p><strong>All protection changes are logged</strong>: oldLevel → newLevel, changed-by, reason, expires-at — fully traceable.</p>
+
+<h3>13.4 Reports queue</h3>
+<p>Visit <code>/admin/reports</code>. Handles user reports:</p>
+<ul>
+  <li>Grouped by status: open / resolved / dismissed</li>
+  <li>Each shows: reporter, target type (revision / post / page), reason, details, timestamp</li>
+  <li>Action: change status to resolved or dismissed (the actual remediation — delete, revert, block — happens in the other admin tools)</li>
+</ul>
+
+<h3>13.5 Abuse filters</h3>
+<p>Visit <code>/admin/abuse-filters</code>. Regex-based content interception rules:</p>
+
+<table>
+  <thead><tr><th>Field</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>name</strong></td><td>Rule name (admin-only)</td></tr>
+    <tr><td><strong>pattern</strong></td><td>Regular expression</td></tr>
+    <tr><td><strong>scope</strong></td><td>Where it applies (edits / talk / all)</td></tr>
+    <tr><td><strong>action</strong></td><td><code>flag</code> (mark for review) / <code>reject</code> (block submission) / <code>log</code> (record only)</td></tr>
+    <tr><td><strong>severity</strong></td><td>low / medium / high — affects prioritization</td></tr>
+  </tbody>
+</table>
+
+<p>The page also shows hit statistics: how many times each rule has fired, hit-user distribution, and the latest N hit details.</p>
+
+<div class="callout tip">
+  <span class="label">💡 Regex tip</span>
+  <p>Run new rules with <code>action: log</code> for a week to gauge hit scope, then promote to <code>flag</code> or <code>reject</code> once you've confirmed there are no false positives.</p>
+</div>
+
+<h3>13.6 Governance dashboard</h3>
+<p>Visit <code>/admin/wiki-stats</code>. One-stop overview:</p>
+<ul>
+  <li>Live counters: today's creates, this week's creates, pending-queue length</li>
+  <li>User-quality leaderboards: most-reverted, low-approval-rate, watch-list users</li>
+  <li>Daily trends: creates, approves, rejects, abuse-filter hits, autoconfirmed promotions</li>
+  <li>Filter performance: per-rule hit rate, false-positive rate (manual reversal count)</li>
+</ul>
+</section>
+
+<section id="faq">
+<h2><span class="num">14</span>FAQ</h2>
+
+<h3>Q: I submitted an edit — where did it go? Why is the page still old?</h3>
+<p>Newcomer edits enter a review queue. You see your own changes (the "current" view), but other visitors see the most recently approved "stable" version. Once a patroller approves your edit, everyone sees it. Check <code>/recent-changes</code> to confirm your submission landed.</p>
+
+<h3>Q: Why is the AI generate button greyed out?</h3>
+<p>Three possibilities:</p>
+<ul>
+  <li><strong>"Generate all"</strong> requires name + bio + relationship to be filled first</li>
+  <li><strong>You've used your hourly quota</strong> (15/user/hour, shared between private and wiki)</li>
+  <li><strong>Every field is already filled</strong> and you didn't enable optimize mode — by default the AI only fills empties</li>
+</ul>
+
+<h3>Q: Why am I seeing different content than someone else?</h3>
+<p>You're on the "current" view (with your or someone's pending edits); other visitors who haven't signed in or aren't part of the edit see the "stable" view (latest approved). This isolation is by design — unreviewed content isn't shown to the public.</p>
+
+<h3>Q: How do I get promoted to autoconfirmed?</h3>
+<p>Keep doing high-quality edits — the system auto-promotes you based on "approved-edit count + account age + low revert rate". No application needed. Account settings shows your current edit stats.</p>
+
+<h3>Q: Can others see my private characters?</h3>
+<p>No. Private characters appear only in your <code>/my-characters</code> list — even admins don't see them in the back-end. The only way to expose one is "sync to wiki".</p>
+
+<h3>Q: What if I hit an edit conflict?</h3>
+<p>The system catches it at submission and pops a warning. Easiest workflow: copy your draft to clipboard → close the edit page → reopen it (you'll get the latest version) → manually merge your changes back in → resubmit.</p>
+
+<h3>Q: I forgot my password — what now?</h3>
+<p>On the login page choose "Email code" — sign in that way, then change your password in account settings. This requires that you bound an email when registering. If you didn't, the account can't be self-recovered; contact an admin.</p>
+
+<h3>Q: Can I use the exported character JSON elsewhere?</h3>
+<p>Yes — the export is a complete recipe + content-snapshot in the platform's internal format. You can import it into any account on this platform. In theory other tools could consume it too, but they need to support this format.</p>
+
+<h3>Q: I was blocked — how do I appeal?</h3>
+<p>The block record shows the reason and the admin. See the <a href="#feedback">next section</a> for appeal channels.</p>
+</section>
+
+<section id="feedback">
+<h2><span class="num">15</span>Feedback</h2>
+
+<p>Hit a bug? Want to suggest something? Disagree with a moderation decision? Channels:</p>
+
+<ul>
+  <li><strong>On-site discussion</strong>: open a new thread on a relevant entry's talk page (good for content questions)</li>
+  <li><strong>Reports</strong>: use the 🚩 button for specific bad content</li>
+  <li><strong>Email / community</strong>: <em>contact details to be added by admins before public launch</em></li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 How to write good feedback</span>
+  <p>Include: <strong>specific page URL</strong>, <strong>what you did</strong>, <strong>what you expected</strong>, <strong>what actually happened</strong>, <strong>browser & OS</strong>. One report like that beats ten "doesn't work"s.</p>
+</div>
+
+<p style="margin-top: 48px; padding-top: 24px; border-top: 1px dashed var(--border-subtle); text-align: center; color: var(--text-muted); font-size: 14px;">
+  ✨ End of tutorial. Happy creating on Enclave Wiki.<br>
+  <a href="/" class="back-btn" style="display: inline-block; margin-top: 12px;">← Back to platform</a>
+</p>
+</section>
+
+</main>
+</div>
+
+<footer class="foot">
+  Enclave World Character Platform · Tutorial v1 ·
+  <a href="tutorial-zh-CN.html">中文</a> ·
+  <a href="tutorial-ja-JP.html">日本語</a> ·
+  <a href="tutorial-ko-KR.html">한국어</a>
+</footer>
+
+<script>
+  (function () {
+    var tocLinks = Array.from(document.querySelectorAll('aside.toc a[href^="#"]'));
+    var sections = tocLinks.map(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      return el ? { link: a, el: el } : null;
+    }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || sections.length === 0) return;
+    var visible = new Set();
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      });
+      var current = sections.find(function (s) { return visible.has(s.el.id); });
+      tocLinks.forEach(function (a) { a.classList.remove('active'); });
+      if (current) current.link.classList.add('active');
+    }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+    sections.forEach(function (s) { observer.observe(s.el); });
+  })();
+  (function () {
+    var toc = document.getElementById('toc'); if (!toc) return;
+    var btn = toc.querySelector('.toc-mobile-toggle'); if (!btn) return;
+    btn.addEventListener('click', function () {
+      var open = toc.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    toc.querySelectorAll('ol a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          toc.classList.remove('open'); btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>

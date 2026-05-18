@@ -52,13 +52,16 @@ function formatRemaining(ms: number) {
 export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGameProps) {
   const { state, actions } = useSkyRallyState();
   const [now, setNow] = useState(() => Date.now());
+  const isRacing = state.status === "racing";
 
+  // now 用来算门倒计时 / 跑道光位，只有 racing 才显示——idle/ended 不要再每 80ms
+  // setNow 把整个组件重渲一遍。
   useEffect(() => {
+    if (!isRacing) return;
     const id = window.setInterval(() => setNow(Date.now()), 80);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isRacing]);
 
-  const isRacing = state.status === "racing";
   const isEnded = state.status === "ended";
   const track = getTrack(state.currentTrackId);
   const containerCls =

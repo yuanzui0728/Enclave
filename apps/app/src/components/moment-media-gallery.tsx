@@ -1,4 +1,5 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import {
   type MomentAudioAsset,
@@ -13,6 +14,7 @@ import { cn } from "@yinjie/ui";
 import { formatMomentDurationLabel } from "../features/moments/moment-compose-media";
 import { AudioCard } from "./audio-card";
 import { resolveAppMediaUrl } from "../lib/media-url";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
 
@@ -32,13 +34,29 @@ type ViewerState =
       kind: "video";
     };
 
-export function MomentMediaGallery({
+// 新一轮走查 Round 1 (perf)：广场 / 朋友圈一屏 60 条 post 各挂一张
+// MomentMediaGallery，父页（discover-feed-page / moments-page）任何高频
+// state 切换（评论 bar 敲键 → setCommentDrafts、点赞 optimistic 写 cache、
+// pull-refresh 状态、inflightSet 进出）都触发整页重渲，60 张 gallery 跟
+// 着重跑 imageCount reduce + images filter + cellPx 一套常量 + map 出
+// WeChatGridCell。`contentType` 来源是 `resolveFeedMomentContentType(post.media)`
+// 每次现算，但返回的字符串字面量 React.memo 浅比时按值相等；`media`
+// 是 post.media 引用，cache 没变时 useInfiniteQuery 不会换；`variant`
+// 是字面量。三个 prop 都有引用稳定性，memo 命中率高。
+// 注意内部 viewerState 是组件内 useState；memo 不改 stateful 行为，
+// 用户当前打开的 image/video viewer 不会因为 memo 而丢失。
+function MomentMediaGalleryInner({
   contentType,
   media,
   variant = "desktop",
   stopPropagation = false,
 }: MomentMediaGalleryProps) {
   const [viewerState, setViewerState] = useState<ViewerState | null>(null);
+
+  const imageCount = media.reduce(
+    (count, asset) => (asset.kind === "image" ? count + 1 : count),
+    0,
+  );
 
   useEffect(() => {
     if (!viewerState) {
@@ -74,10 +92,14 @@ export function MomentMediaGallery({
             return current;
           }
 
+          // image viewer 的 index 走 images（filter 后的图片数组），不能用
+          // media.length —— 如果一条 moment 同时混着 audio/video（理论上历史
+          // 数据可能存在），按 ArrowRight 会把 index 推到 images 之外，
+          // activeImage = images[index] = undefined，viewer 渲染崩塌。
           return {
             kind: "image",
             index:
-              current.index < media.length - 1 ? current.index + 1 : current.index,
+              current.index < imageCount - 1 ? current.index + 1 : current.index,
           };
         });
       }
@@ -85,7 +107,19 @@ export function MomentMediaGallery({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [media.length, viewerState]);
+  }, [imageCount, viewerState]);
+
+  // Android 硬件 Back：在朋友圈点开大图全屏 viewer 后按 Back，先收 viewer 而不是
+  // 退掉整个朋友圈页。和 chat 系列 (38a65fa5 "图片/位置/笔记 viewer 接 Android
+  // Back，关 viewer 不退聊天页") 的修法保持一致。
+  useEffect(() => {
+    if (!viewerState) return;
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      setViewerState(null);
+      return true;
+    });
+  }, [viewerState]);
 
   if (!media.length) {
     return null;
@@ -166,6 +200,9 @@ export function MomentMediaGallery({
                 muted
                 playsInline
                 preload="metadata"
+                onError={() => {
+                  // codec/src 不支持时静默；外层已经有 Play 按钮和封面，UI 不会破
+                }}
               />
             )}
 
@@ -490,6 +527,8 @@ export function MomentMediaGallery({
   );
 }
 
+export const MomentMediaGallery = memo(MomentMediaGalleryInner);
+
 function MomentImageViewerOverlay({
   image,
   activeIndex,
@@ -509,13 +548,27 @@ function MomentImageViewerOverlay({
 }) {
   const isMobile = variant === "mobile";
 
-  return (
+  // 朋友圈页用 transform: translateY(...) 包裹整个内容做下拉刷新（moments-page.tsx
+  // ~1572 行）。一旦祖先有 transform / filter / perspective，CSS 规范里 fixed
+  // 定位的 containing block 就从 viewport 收缩到那个祖先 → 全屏 viewer 会落在帖子
+  // 卡片大小的盒子里而不是全屏。portal 到 document.body 跳出 transform 笼子。
+  const overlay = (
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.92)] backdrop-blur-sm">
+      {/* i18n-ignore-start: dev comment - 关闭层叠说明 */}
+      {/* 原本想用一个 `absolute inset-0 button` 当"点击任意空白关闭"层，但下面的
+          图片容器也是 `absolute inset-0`（没 z-index），按 CSS 默认 stack 后兄弟
+          靠 DOM 顺序：图片容器 DOM 在后 → 落在 close button 之上，把整层吃掉。
+          除了顶栏 X 按钮和左右翻页（z-10）以外，背景空白点击全部沉默。
+          直接把 onClick 挂到图片容器上：tap 图 / tap 背景空白都会冒泡到这层
+          触发 onClose，跟 WeChat 行为一致（长按图仍走原生 contextmenu，不受影响）。
+          底下 inset-0 那颗 button 保留只是给屏幕阅读器留一个可聚焦的"关闭"语义入口。 */}
+      {/* i18n-ignore-end */}
       <button
         type="button"
         onClick={onClose}
         className="absolute inset-0"
         aria-label={t(msg`关闭图片预览`)}
+        tabIndex={-1}
       />
       <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
         <button
@@ -537,7 +590,11 @@ function MomentImageViewerOverlay({
         <div className="w-10 shrink-0" aria-hidden="true" />
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]">
+      <div
+        className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
+        onClick={onClose}
+        role="presentation"
+      >
         <img
           src={resolveAppMediaUrl(image.url)}
           alt={image.fileName || t(msg`朋友圈图片`)}
@@ -565,6 +622,9 @@ function MomentImageViewerOverlay({
       ) : null}
     </div>
   );
+
+  if (typeof document === "undefined") return overlay;
+  return createPortal(overlay, document.body);
 }
 
 function MomentVideoViewerOverlay({
@@ -574,13 +634,56 @@ function MomentVideoViewerOverlay({
   video: MomentVideoAsset;
   onClose: () => void;
 }) {
-  return (
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [needsManualPlay, setNeedsManualPlay] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const promise = el.play();
+    if (promise && typeof promise.catch === "function") {
+      promise.catch(() => {
+        // iOS / 静音策略 / codec 不支持 → 回退到手动播放按钮
+        setNeedsManualPlay(true);
+      });
+    }
+    // 走查新一轮：viewer 关闭 / 朋友圈页 unmount 时 React 把 <video> 从 DOM
+    // 摘掉后 Chromium / Firefox 不会自动 pause —— 视频的音轨会在后台继续跑直
+    // 到刷新整页（实测桌面 Chrome 起音 → 关 viewer，音乐还在响）。和
+    // 51b8980a (视频号 ChannelVideoSurface) 同模式：unmount 走 cleanup 主动
+    // pause，避免「关掉看了还能听到」。
+    return () => {
+      el.pause();
+    };
+  }, []);
+
+  const handleManualPlay = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const el = videoRef.current;
+    if (!el) return;
+    const promise = el.play();
+    if (promise && typeof promise.catch === "function") {
+      promise.catch(() => {
+        // 仍失败时保持按钮可见，不再上报
+      });
+    }
+  };
+
+  // 同图片 viewer，朋友圈页 transform 祖先会把 fixed 困在 post 卡片里。portal 出去。
+  const overlay = (
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm">
+      {/* 跟图片 viewer 同样的层叠陷阱：absolute inset-0 close button 被下方的
+          视频容器（也是 absolute inset-0）盖住，背景空白点击全部沉默。差别在
+          于视频元素自带 controls，整层 onClick={onClose} 会导致点 controls 也
+          关掉 viewer。这里改成只接 currentTarget 直接命中：背景空白触发关闭，
+          点在 <video> 上的事件冒泡上来时 target!==currentTarget，不关。
+          底下 inset-0 button 保留作为屏幕阅读器入口。 */}
       <button
         type="button"
         onClick={onClose}
         className="absolute inset-0"
         aria-label={t(msg`关闭视频预览`)}
+        tabIndex={-1}
       />
       <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
         <div className="min-w-0">
@@ -603,18 +706,41 @@ function MomentVideoViewerOverlay({
         </button>
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]">
+      <div
+        className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
+        }}
+        role="presentation"
+      >
         <video
+          ref={videoRef}
           src={resolveAppMediaUrl(video.url)}
           poster={video.posterUrl ? resolveAppMediaUrl(video.posterUrl) : undefined}
           className="max-h-full max-w-full rounded-[20px] bg-black"
           controls
-          autoPlay
           playsInline
+          onError={() => setNeedsManualPlay(true)}
+          onPlay={() => setNeedsManualPlay(false)}
         />
+        {needsManualPlay ? (
+          <button
+            type="button"
+            onClick={handleManualPlay}
+            className="absolute inset-0 z-10 flex items-center justify-center bg-black/30"
+            aria-label={t(msg`播放视频`)}
+          >
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-black/68 text-white">
+              <Play size={28} className="translate-x-[2px] fill-current" />
+            </span>
+          </button>
+        ) : null}
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return overlay;
+  return createPortal(overlay, document.body);
 }
 
 function WeChatGridCell({

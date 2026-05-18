@@ -8,9 +8,9 @@ describe('wedding dress expert character', () => {
     expect(character).toMatchObject({
       name: '纱凝',
       relationshipType: 'expert',
-      sourceType: 'default_seed',
+      sourceType: 'preset_catalog',
       sourceKey: 'wedding_dress_expert',
-      deletionPolicy: 'protected',
+      deletionPolicy: 'archive_allowed',
       momentsFrequency: 0,
       feedFrequency: 0,
       currentActivity: 'working',

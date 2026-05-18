@@ -1,0 +1,157 @@
+{
+  "video_id": "wechat-channels-d3",
+  "topic": "群聊",
+  "duration_seconds": 60,
+  "group": {
+    "id": "group-d3-test",
+    "name": "测试群",
+    "member_count": 6,
+    "online_count": 5
+  },
+  "characters": [
+    {
+      "id": "char-d3-laozhang",
+      "name": "老张",
+      "avatar": "shared-assets/avatars/teacher-math-lu-heng.svg",
+      "personality": "嗜辣型，数学老师，直男气质，嘴硬"
+    },
+    {
+      "id": "char-d3-linchen",
+      "name": "林晨",
+      "avatar": "shared-assets/avatars/lin-chen-sleep-support.svg",
+      "personality": "怕辣型，文艺作家，肠胃不好"
+    },
+    {
+      "id": "char-d3-linxiao",
+      "name": "林骁",
+      "avatar": "shared-assets/avatars/lawyer-jianheng.svg",
+      "personality": "群主，律师，理性仲裁"
+    },
+    {
+      "id": "char-d3-axun",
+      "name": "阿巡",
+      "avatar": "shared-assets/avatars/moments-interactor-axun.svg",
+      "personality": "吐槽型，看热闹不嫌事大"
+    },
+    {
+      "id": "char-d3-suyan",
+      "name": "苏老师",
+      "avatar": "shared-assets/avatars/teacher-chinese-gu-yan.svg",
+      "personality": "温柔型，劝架"
+    },
+    {
+      "id": "char-d3-suyu",
+      "name": "苏语",
+      "avatar": "shared-assets/avatars/su-yu-english-coach.svg",
+      "personality": "陪伴型，外交辞令"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_d3_001",
+      "from": "char-d3-linxiao",
+      "from_name": "林骁",
+      "type": "vote",
+      "text": "今晚火锅！选辣度 👇",
+      "vote_options": ["清汤", "鸳鸯", "变态辣"],
+      "createdAt": "2026-05-13 18:32:00"
+    },
+    {
+      "id": "msg_d3_002",
+      "from": "char-d3-laozhang",
+      "from_name": "老张",
+      "text": "不点变态辣的都是叛徒。",
+      "createdAt": "2026-05-13 18:33:15"
+    },
+    {
+      "id": "msg_d3_003",
+      "from": "char-d3-linchen",
+      "from_name": "林晨",
+      "text": "上次让我吃，第二天我胃疼。",
+      "createdAt": "2026-05-13 18:33:42"
+    },
+    {
+      "id": "msg_d3_004",
+      "from": "char-d3-axun",
+      "from_name": "阿巡",
+      "text": "上次你不也喊辣？",
+      "createdAt": "2026-05-13 18:34:01"
+    },
+    {
+      "id": "msg_d3_005",
+      "from": "char-d3-laozhang",
+      "from_name": "老张",
+      "text": "娇气。",
+      "createdAt": "2026-05-13 18:34:33"
+    },
+    {
+      "id": "msg_d3_006",
+      "from": "system",
+      "type": "system",
+      "text": "林晨已退出群聊",
+      "createdAt": "2026-05-13 18:34:58"
+    },
+    {
+      "id": "msg_d3_007",
+      "from": "char-d3-suyan",
+      "from_name": "苏老师",
+      "text": "你们干嘛把人逼急了。",
+      "createdAt": "2026-05-13 18:35:21"
+    },
+    {
+      "id": "msg_d3_008",
+      "from": "char-d3-linxiao",
+      "from_name": "林骁",
+      "text": "我去拉一下。",
+      "createdAt": "2026-05-13 18:36:05"
+    },
+    {
+      "id": "msg_d3_009",
+      "from": "system",
+      "type": "system",
+      "text": "林骁邀请林晨加入了群聊",
+      "createdAt": "2026-05-13 18:44:33"
+    },
+    {
+      "id": "msg_d3_010",
+      "from": "char-d3-suyu",
+      "from_name": "苏语",
+      "text": "欢迎回来 :)",
+      "createdAt": "2026-05-13 18:45:12"
+    },
+    {
+      "id": "msg_d3_011",
+      "from": "system",
+      "type": "date_separator",
+      "text": "5 月 14 日 周二",
+      "createdAt": "2026-05-14 00:00:00"
+    },
+    {
+      "id": "msg_d3_012",
+      "from": "char-d3-laozhang",
+      "from_name": "老张",
+      "text": "昨天有点冲动，对不起。",
+      "createdAt": "2026-05-14 09:21:48"
+    },
+    {
+      "id": "msg_d3_013",
+      "from": "char-d3-linchen",
+      "from_name": "林晨",
+      "text": "没事，我也太较真了。",
+      "createdAt": "2026-05-14 09:23:15"
+    }
+  ],
+  "ui_hints": {
+    "user_avatar": "default-w-avatar.svg",
+    "user_name": "w",
+    "bubble_self_color": "#f97316",
+    "bubble_other_color": "#f1f1f1",
+    "system_message_color": "#9ca3af"
+  },
+  "notes_for_manus": [
+    "镜头 4 的 4 句对话顺序必须严格按：老张 → 林晨 → 老张娇气 → 系统退群",
+    "退群系统消息用灰底，但'已退出群聊'文字可以稍深一点（不是红色）— 视频号封面用红，但视频里保持克制",
+    "镜头 5 第二天的'对不起'消息必须显示日期分隔条'5 月 14 日'，让观众看到时间跨度",
+    "群聊总消息数显示'17 条新消息'是夸张说法，实际数据这里给 13 条，但镜头 2 的红字提示可以写'17'"
+  ]
+}

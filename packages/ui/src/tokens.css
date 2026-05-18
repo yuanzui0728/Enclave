@@ -168,7 +168,15 @@ body {
   color: var(--text-primary);
 }
 
-:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+/* 全局 focus 高亮：键盘可见焦点的兜底环。包进 @layer base 让 tailwind 的
+ * `focus-visible:shadow-none` 之类 utility 能正常覆盖——之前是 unlayered，
+ * 不论 specificity 都赢过 @layer utilities 的规则，导致组件级 opt-out 失效
+ * （现象：mobile 朋友圈 publish textarea autofocus 后吃一圈 3px 微信绿光，
+ * 哪怕 className 写了 focus-visible:shadow-none 也压不掉）。
+ */
+@layer base {
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
 }

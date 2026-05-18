@@ -1,6 +1,8 @@
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -60,7 +62,15 @@ export function DesktopCreateGroupDialog({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和移动端 create-group-page.tsx commit 456d91ecc 同款问题。
+  // filteredFriends 直接吃 searchTerm，yuanzui0728_5999 测号 70+ 好友时每个
+  // keystroke 都同步 toLowerCase + matchesFriendSearch(remarkName/region/
+  // source/tags 多路 haystack 各 lowercase 一次) + buildContactSections 分桶，
+  // 输入框肉眼可见 backlog。useDeferredValue 让 React 优先把字打进输入框、
+  // 过滤排到下个 idle 帧。和姊妹移动页 + 桌面同类页同口径。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [shareHistory, setShareHistory] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
@@ -75,10 +85,17 @@ export function DesktopCreateGroupDialog({
   const friendItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const messageItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // 走查新会话桌面端群聊 R2：原版用独立 cache key 「desktop-create-group-friends」，
+  // 不和其它入口（chat-details-panel / group-chat-thread-panel / message-avatar-
+  // popover / contacts-page 全部用「app-friends」)共享 cache。从群聊里点
+  //「发起群聊」/「添加成员」时，contacts/details 已经在 ~600ms 前刚拉过 friends，
+  // 这里又得在公网隧道再走一发 getFriends。统一到 "app-friends" key + staleTime
+  // 15s（和其它入口对齐），cache 复用 → 弹层立刻有数据。
   const friendsQuery = useQuery({
-    queryKey: ["desktop-create-group-friends", baseUrl],
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open,
+    staleTime: 15_000,
   });
   const shareableMessagesQuery = useQuery({
     queryKey: [
@@ -127,7 +144,7 @@ export function DesktopCreateGroupDialog({
     ? getFriendDisplayName(sourceFriend)
     : null;
   const filteredFriends = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return sortedFriendItems.filter((item) => {
       if (item.friendship.status === "removed") {
         return false;
@@ -139,7 +156,7 @@ export function DesktopCreateGroupDialog({
 
       return matchesFriendSearch(item, keyword);
     });
-  }, [searchTerm, sortedFriendItems]);
+  }, [deferredSearchTerm, sortedFriendItems]);
   const pinnedSourceFriend = useMemo(
     () =>
       sourceFriendId
@@ -264,9 +281,10 @@ export function DesktopCreateGroupDialog({
       return;
     }
 
-    window.requestAnimationFrame(() => {
+    const frameId = window.requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
+    return () => window.cancelAnimationFrame(frameId);
   }, [open]);
 
   useEffect(() => {
@@ -398,7 +416,18 @@ export function DesktopCreateGroupDialog({
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape" || createMutation.isPending) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      // 走查电脑端群聊 R6（和 R5 text-edit/confirm dialog 同款）：原版
+      // pending 时直接 early return 让 Esc 透传——workspace queueMicrotask
+      // 兜底看到 defaultPrevented=false 仍跑 dismissSidePanel 把背后的
+      //"聊天信息"侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关
+      // 弹窗倒把侧栏弄没了"。pending 期间仍消费 Esc 防 dismiss。
+      event.preventDefault();
+      event.stopPropagation();
+      if (createMutation.isPending) {
         return;
       }
 
@@ -407,6 +436,9 @@ export function DesktopCreateGroupDialog({
         return;
       }
 
+      // 该 dialog 多数情况下是从右侧"聊天信息"侧栏的"发起群聊"打开。
+      // Esc 关 dialog 时阻止冒泡，否则 workspace 的 dismissSidePanel 会
+      // 把背后的详情侧栏也关掉。
       onClose();
     }
 
@@ -456,11 +488,30 @@ export function DesktopCreateGroupDialog({
     );
   };
 
+  // 走查新一轮 R3：「完成」按钮 + Cmd/Ctrl+Enter 快捷键都只靠
+  // disabled/createMutation.isPending 兜双触发，isPending 是 React state
+  // 要等 commit 才进 DOM。同帧连点 / 同帧两次快捷键都能同时通过
+  // !isPending → createMutation.mutate() 飞两次 → 后端建出 2 个名字/成员
+  // 完全一样但 id 不同的群，消息列表里多冒出一个孤立群。
+  // 用 sync ref 锁同帧；onSuccess/onError 都会让 isPending 翻 false，
+  // useEffect 跟着复位 ref。
+  const createSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!createMutation.isPending) {
+      createSubmittingRef.current = false;
+    }
+  }, [createMutation.isPending]);
+
   const handleCreate = () => {
-    if (!selectedIds.length || createMutation.isPending) {
+    if (
+      !selectedIds.length ||
+      createMutation.isPending ||
+      createSubmittingRef.current
+    ) {
       return;
     }
 
+    createSubmittingRef.current = true;
     createMutation.mutate();
   };
 
@@ -687,7 +738,15 @@ export function DesktopCreateGroupDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
+    // 走查新一轮 R12：和姊妹 confirm/text-edit/forward dialog 同款
+    // portal-shield。create-group dialog 从 workspace「+」快捷菜单 /
+    // 详情侧栏「发起群聊」打开，背后通常有侧栏；用户在 dialog 内点
+    // 搜索框 / 联系人 row 时 workspace pointerdown capture 偷关侧栏，
+    // 用户点取消时回不到原详情视图。Esc 路径已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]"
+      data-yj-portal-shield="desktop-create-group-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭发起群聊弹层`)}
@@ -699,12 +758,23 @@ export function DesktopCreateGroupDialog({
         className="absolute inset-0"
       />
 
+      {/* 走查 R3：和姊妹 forward / note-send / confirm / text-edit 同款 a11y
+          缺漏——modal 但没挂 role="dialog" + aria-modal + aria-labelledby。
+          单聊里 + 菜单「发起群聊」/ 详情侧栏「发起群聊」会弹这个；盲人屏幕
+          阅读器只听到「关闭发起群聊弹层 按钮」+ 搜索框 + 联系人行，听不到
+          「选择联系人」title。补语义。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onKeyDown={handleDialogKeyDown}
       >
         <div className="relative border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-6 py-4 text-center">
-          <div className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">
+          <div
+            id={titleId}
+            className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
+          >
             {t(msg`选择联系人`)}
           </div>
           <button
@@ -735,6 +805,12 @@ export function DesktopCreateGroupDialog({
               onChange={(event) => setSearchTerm(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder={t(msg`搜索联系人`)}
+              // 走查 R5：和姊妹移动端 group-member-picker R3 / 桌面 chat-history
+              // R24 / chat-files / forward-dialog 同款 a11y 修法——父 label 只
+              // 含 Search 图标 + input，无文本子节点，等于 input 没有 accessible
+              // name。SR focus 进来只听到「编辑栏 搜索联系人 空」（placeholder
+              // 部分实现读、部分不读），盲人用户得自己摸 dialog 标题猜 scope。
+              aria-label={t(msg`搜索联系人`)}
               className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-10 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
             />
             {searchTerm.trim() ? (

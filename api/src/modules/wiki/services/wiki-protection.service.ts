@@ -10,6 +10,7 @@ import { WikiPageService } from './wiki-page.service';
 
 const VALID_LEVELS = new Set(['none', 'semi', 'full']);
 const VALID_REVIEW_POLICIES = new Set(['open', 'pending_changes']);
+const PROTECTION_REASON_MAX_LENGTH = 200;
 
 @Injectable()
 export class WikiProtectionService {
@@ -48,11 +49,36 @@ export class WikiProtectionService {
         legacyMessage: 'reviewPolicy 必须是 open / pending_changes',
       });
     }
+    // protectionReason 落进 character_pages.protectionReason 与
+    // wiki_protection_logs.reason 两处，无 DB 上限。跟 block.reason / role.reason
+    // 同样取 200 字上限，避免列表/卡片渲染时被 1MB 字符串撑出滚动条。
+    if (
+      typeof input.reason === 'string' &&
+      input.reason.length > PROTECTION_REASON_MAX_LENGTH
+    ) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        params: { detail: `reason 不能超过 ${PROTECTION_REASON_MAX_LENGTH} 个字符` },
+        legacyMessage: `reason 不能超过 ${PROTECTION_REASON_MAX_LENGTH} 个字符`,
+      });
+    }
     const page = await this.pages.getOrInitPage(characterId);
     const oldLevel = page.protectionLevel;
     const newLevel = input.level;
     const nextReviewPolicy = input.reviewPolicy ?? page.reviewPolicy;
-    const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
+    let expiresAt: Date | null = null;
+    if (input.expiresAt) {
+      const parsed = new Date(input.expiresAt);
+      if (Number.isNaN(parsed.getTime())) {
+        // 不挡的话 setProtection 静默把 expiresAt 落成 null（永久保护），
+        // admin 看返回的 protectionExpiresAt: null 才发现自己的日期格式被丢了。
+        // 跟 wiki-block.service 同样的 expiresAt 校验。
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          params: { detail: 'expiresAt 不是有效时间' },
+          legacyMessage: 'expiresAt 不是有效时间',
+        });
+      }
+      expiresAt = parsed;
+    }
 
     await this.dataSource.transaction(async (manager) => {
       await manager.update(

@@ -127,6 +127,7 @@ export class WorldAccessService {
           healthMessage: "世界已进入创建队列。",
           lastAccessedAt: now,
           lastInteractiveAt: null,
+          lastUserMessageAt: null,
           lastBootedAt: null,
           lastHeartbeatAt: null,
           lastSuspendedAt: null,
@@ -578,6 +579,7 @@ export class WorldAccessService {
     world.healthMessage = snapshot.displayStatus;
     world.lastAccessedAt = null;
     world.lastInteractiveAt = null;
+    world.lastUserMessageAt = null;
     world.lastBootedAt = null;
     world.lastHeartbeatAt = null;
     world.lastSuspendedAt = null;

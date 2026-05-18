@@ -18,13 +18,21 @@ import {
   type VendorFamilyPersonaDefinition,
 } from './inference-catalog.seed';
 import { MinimaxNativeClient } from '../ai/minimax-native.client';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { executeChatCompletion } from '../ai/chat-completion-stream.util';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
-const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
+const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const DEFAULT_PROVIDER_ID = 'provider_default';
+const MINIMAX_PROVIDER_ID = 'provider_minimax';
+const MINIMAX_PROVIDER_NAME = 'MiniMax Token Plan';
+const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimaxi.com/v1';
+const MINIMAX_DEFAULT_TEXT_MODEL = 'MiniMax-M2.7';
+const MINIMAX_DEFAULT_IMAGE_MODEL = 'image-01';
+const MINIMAX_DEFAULT_TTS_MODEL = 'speech-02-hd';
+const MINIMAX_DEFAULT_TTS_VOICE = 'male-qn-qingse';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TRANSCRIPTION_BYTES = 10 * 1024 * 1024;
@@ -304,11 +312,13 @@ export class InferenceService implements OnModuleInit {
     private readonly modelCatalogRepo: Repository<InferenceModelCatalogEntryEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly subscription: SubscriptionService,
   ) {}
 
   async onModuleInit() {
     await this.seedModelCatalog();
     await this.ensureDefaultProviderAccount();
+    await this.ensureMinimaxTokenPlanProvider();
     try {
       // 自动安装 12 个厂商家族角色（不再自动创建 30+ 个 model_persona 个体）；
       // 旧 installModelPersonas 仍保留供 admin 端按需调用，但默认不再触发，
@@ -821,6 +831,63 @@ export class InferenceService implements OnModuleInit {
     );
     await this.syncLegacyConfigFromDefaultAccount(created);
     return created;
+  }
+
+  // 新租户启动时把 MiniMax Token Plan 装成默认 provider，避免 onboarding 那几分钟
+  // 内的 chat/feed_comment_generate 撞到 provider_default 上的 gpt-4.1。
+  // 等价于 scripts/migrate-to-minimax-tokenplan.mjs 的运行时版本。
+  async ensureMinimaxTokenPlanProvider() {
+    const apiKey = this.config.get<string>('MINIMAX_API_KEY')?.trim();
+    if (!apiKey) {
+      return null;
+    }
+    const baseUrl =
+      this.config.get<string>('MINIMAX_BASE_URL')?.trim() ||
+      MINIMAX_DEFAULT_BASE_URL;
+    const endpoint = normalizeProviderEndpoint(
+      /\/v\d+$/.test(baseUrl) ? baseUrl : `${baseUrl.replace(/\/$/, '')}/v1`,
+    );
+
+    const existing = await this.providerRepo.findOneBy({
+      id: MINIMAX_PROVIDER_ID,
+    });
+    if (!existing) {
+      await this.providerRepo.save(
+        this.providerRepo.create({
+          id: MINIMAX_PROVIDER_ID,
+          name: MINIMAX_PROVIDER_NAME,
+          providerKind: 'openai_compatible',
+          endpoint,
+          defaultModelId: MINIMAX_DEFAULT_TEXT_MODEL,
+          apiKeyEncrypted: this.encodeSecret(apiKey),
+          mode: 'cloud',
+          apiStyle: 'openai-chat-completions',
+          ttsEndpoint: endpoint,
+          ttsModel: MINIMAX_DEFAULT_TTS_MODEL,
+          ttsApiKeyEncrypted: this.encodeSecret(apiKey),
+          ttsVoice: MINIMAX_DEFAULT_TTS_VOICE,
+          imageGenerationEndpoint: endpoint,
+          imageGenerationModel: MINIMAX_DEFAULT_IMAGE_MODEL,
+          imageGenerationApiKeyEncrypted: this.encodeSecret(apiKey),
+          isDefault: true,
+          isEnabled: true,
+          notes:
+            'Auto-installed by ensureMinimaxTokenPlanProvider. TTS model 名若被 Token Plan 拒绝(2061), 可改 ttsModel。',
+        }),
+      );
+      await this.providerRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isDefault: false })
+        .where('id != :id', { id: MINIMAX_PROVIDER_ID })
+        .andWhere('isDefault = :flag', { flag: true })
+        .execute();
+      this.logger.log(
+        `Installed ${MINIMAX_PROVIDER_NAME} as the default provider.`,
+      );
+    }
+
+    return this.providerRepo.findOneBy({ id: MINIMAX_PROVIDER_ID });
   }
 
   async listProviderAccounts() {
@@ -1818,6 +1885,9 @@ export class InferenceService implements OnModuleInit {
     const voice = provider.ttsVoice || DEFAULT_TTS_VOICE;
     let buffer: Buffer;
     if (MinimaxNativeClient.isMinimaxEndpoint(provider.ttsEndpoint)) {
+      // admin 诊断也消耗 token plan（speech-02-hd 11000/天）；非会员 world
+      // 不该靠诊断绕过 MinimaxClient 那道闸。
+      await this.subscription.assertCanUseAi('audio');
       const minimax = new MinimaxNativeClient(
         provider.ttsEndpoint,
         provider.ttsApiKey,
@@ -1892,6 +1962,8 @@ export class InferenceService implements OnModuleInit {
     if (
       MinimaxNativeClient.isMinimaxEndpoint(provider.imageGenerationEndpoint)
     ) {
+      // admin 诊断也走 minimax token plan；非会员 world 不该绕开会员闸。
+      await this.subscription.assertCanUseAi('image');
       const minimax = new MinimaxNativeClient(
         provider.imageGenerationEndpoint,
         provider.imageGenerationApiKey,

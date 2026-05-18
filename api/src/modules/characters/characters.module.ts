@@ -11,6 +11,7 @@ import { FriendshipEntity } from '../social/friendship.entity';
 import { AuthModule } from '../auth/auth.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { AdminGuard } from '../admin/admin.guard';
+import { PrivateCharacterRateLimitGuard } from './guards/private-character-rate-limit.guard';
 
 @Module({
   imports: [
@@ -24,8 +25,17 @@ import { AdminGuard } from '../admin/admin.guard';
       FriendshipEntity,
     ]),
   ],
-  providers: [CharactersService, CharacterBlueprintService, AdminGuard],
+  providers: [
+    CharactersService,
+    CharacterBlueprintService,
+    AdminGuard,
+    PrivateCharacterRateLimitGuard,
+  ],
   controllers: [CharactersController],
-  exports: [CharactersService, CharacterBlueprintService],
+  exports: [
+    CharactersService,
+    CharacterBlueprintService,
+    PrivateCharacterRateLimitGuard,
+  ],
 })
 export class CharactersModule {}

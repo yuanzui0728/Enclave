@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import {
@@ -31,8 +31,10 @@ import {
   CHAT_LOCATION_SCENES,
   buildLocationCardAttachment,
 } from "../features/chat/chat-location-scenes";
+import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import {
   buildFavoriteShareText,
+  computeDesktopFavoritesFingerprint,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   type DesktopFavoriteRecord,
@@ -57,12 +59,14 @@ type MobileChatPlusPanelProps = {
     attachment: LocationCardAttachment,
   ) => void | Promise<void>;
   onUnavailableAction?: (message: string) => void;
-  unavailableBackActionLabel?: string;
-  onUnavailableBack?: () => void;
   onUnavailableFallback?: (
     action: RootActionFallbackAction,
     source: RootAction["key"],
   ) => void | Promise<void>;
+  // 当前会话的对方 character id 集合。在单聊里，不该把"对方的名片"再推回给对方
+  // （包括"我自己"自聊：getFriends 把 self-character 也带进了好友列表，
+  // 选中后 ContactCardMessage 会渲染成"把你自己的名片发给你自己"，毫无意义）。
+  excludeCharacterIds?: readonly string[];
 };
 
 type PanelView = "root" | "favorites" | "contacts" | "locations";
@@ -205,9 +209,8 @@ export function MobileChatPlusPanel({
   onSelectContactCard,
   onSelectLocationCard,
   onUnavailableAction,
-  unavailableBackActionLabel,
-  onUnavailableBack,
   onUnavailableFallback,
+  excludeCharacterIds,
 }: MobileChatPlusPanelProps) {
   const t = useRuntimeTranslator();
   const runtimeConfig = useAppRuntimeConfig();
@@ -224,14 +227,21 @@ export function MobileChatPlusPanel({
   const activeRootPageRef = useRef(0);
 
   const friendsQuery = useQuery({
-    queryKey: ["app-chat-plus-friends", baseUrl],
+    // 用全局通用 key ["app-friends", baseUrl]——contacts-page / character-detail-page /
+    // create-group-page 等都吃这条；统一后好友 mutate（拉黑/解除/改备注）的
+    // invalidateQueries 会自动把这里的列表也刷掉，否则关掉黑名单后 + 面板里那位
+    // 还在，用户能继续给已黑联系人发名片。staleTime 也跟着复用全局缓存。
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open && activeView === "contacts",
+    staleTime: 30_000,
   });
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
     enabled: open && activeView === "favorites",
+    // 同上：收藏在 + 面板里只读，频繁开合不必每次都重抓。
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -271,11 +281,20 @@ export function MobileChatPlusPanel({
       return;
     }
 
-    setFavoriteRecords(
-      mergeDesktopFavoriteRecords(
-        favoritesQuery.data ?? [],
-        readDesktopFavorites(),
-      ),
+    // 走查新一轮 R3：favoritesQuery 后台 refetch（30s staleTime 之外）每次回来都
+    // 会重新合并 + setState 一份新数组，favoriteRecords 引用一换就把所有 favorite
+    // <button> 重 render。30s 内同一份云端数据 + 同一份 localStorage 多半内容
+    // 不变，先用 fingerprint（sourceId@collectedAt 轻量串）对比，相等就跳过
+    // setState 避免无意义重渲。
+    const nextRecords = mergeDesktopFavoriteRecords(
+      favoritesQuery.data ?? [],
+      readDesktopFavorites(),
+    );
+    setFavoriteRecords((current) =>
+      computeDesktopFavoritesFingerprint(current) ===
+      computeDesktopFavoritesFingerprint(nextRecords)
+        ? current
+        : nextRecords,
     );
   }, [activeView, favoritesQuery.data, open]);
 
@@ -285,10 +304,41 @@ export function MobileChatPlusPanel({
     }
   }, [activeView]);
 
-  const rootActionPages = buildRootActionPages({
-    hasVoiceCall: Boolean(onStartVoiceCall),
-    hasVideoCall: Boolean(onStartVideoCall),
-  });
+  // 父级 ChatComposer 任意 state（输入框聚焦、socket 重连、消息到达）都会触发
+  // 重渲；buildRootActionPages 每次 render 都跑两个 filter + 一次 chunk，
+  // 但 hasVoiceCall / hasVideoCall 在单次会话生命周期里其实是常量
+  // （callers 总是同步传 onStartVoiceCall / onStartVideoCall）。memo 掉省掉
+  // 这条每帧重排的小开销，更重要的是 rootActionPages 数组引用稳定后，下面
+  // pages.map 的 page 引用也稳定，里面 button 的 props identity 不会因为父级
+  // 重渲被打断。
+  const hasVoiceCall = Boolean(onStartVoiceCall);
+  const hasVideoCall = Boolean(onStartVideoCall);
+  const rootActionPages = useMemo(
+    () => buildRootActionPages({ hasVoiceCall, hasVideoCall }),
+    [hasVoiceCall, hasVideoCall],
+  );
+
+  // 父级 ChatComposer 每次 keystroke 都把 plus 面板带着重渲，excludeCharacterIds
+  // 数组也是单聊侧每次 render new 一个 [participants[0]]——不 memo 就每帧 new Set
+  // 再 filter 66 个好友一遍。memo 之后引用稳定，下面 friends.map 的 button 也能
+  // 配合 useMemo 后的 friends 数组拿到 stable identity。
+  // ※必须放在 `if (!open) return null` 之前，否则 rules-of-hooks 违例。
+  const excludeIdSet = useMemo(
+    () =>
+      excludeCharacterIds && excludeCharacterIds.length
+        ? new Set(excludeCharacterIds)
+        : null,
+    [excludeCharacterIds],
+  );
+  const friends = useMemo(
+    () =>
+      excludeIdSet
+        ? (friendsQuery.data ?? []).filter(
+            ({ character }) => !excludeIdSet.has(character.id),
+          )
+        : (friendsQuery.data ?? []),
+    [excludeIdSet, friendsQuery.data],
+  );
 
   if (!open) {
     return null;
@@ -297,7 +347,6 @@ export function MobileChatPlusPanel({
   const UnavailableIcon = unavailableAction?.icon;
   const unavailableFallbackAction = unavailableAction?.fallbackAction;
   const unavailableFallbackLabel = unavailableAction?.fallbackLabel;
-  const friends = friendsQuery.data ?? [];
   const showFriendsError = friendsQuery.isError && friends.length === 0;
   const showFavoritesError =
     favoritesQuery.isError && favoriteRecords.length === 0;
@@ -354,60 +403,56 @@ export function MobileChatPlusPanel({
                           ? undefined
                           : item.disabledLabel;
                     const Icon = item.icon;
-                    const handleClick = itemDisabled
-                      ? () => {
-                          setUnavailableAction(item);
-                          onUnavailableAction?.(
-                            item.unavailableDescription
-                              ? t(item.unavailableDescription)
-                              : t(msg`${t(item.label)} 暂未接入。`),
+                    // 走查 R1：原版是 9 层嵌套三元，每个 tile 每帧 new 6+ 个
+                    // 闭包候选 + 跟踪起来眼睛要瞎。归并成单条 dispatcher，可读
+                    // 性 + 闭包数减少；语义保持不变。
+                    const handleClick = () => {
+                      if (itemDisabled) {
+                        setUnavailableAction(item);
+                        onUnavailableAction?.(
+                          item.unavailableDescription
+                            ? t(item.unavailableDescription)
+                            : t(msg`${t(item.label)} 暂未接入。`),
+                        );
+                        return;
+                      }
+
+                      setUnavailableAction(null);
+                      switch (item.key) {
+                        case "album":
+                          onPickAlbum();
+                          return;
+                        case "camera":
+                          onPickCamera();
+                          return;
+                        case "file":
+                          onPickFile();
+                          return;
+                        case "favorite":
+                          setFavoriteRecords(
+                            mergeDesktopFavoriteRecords(
+                              favoritesQuery.data ?? [],
+                              readDesktopFavorites(),
+                            ),
                           );
-                        }
-                      : item.key === "album"
-                        ? () => {
-                            setUnavailableAction(null);
-                            onPickAlbum();
-                          }
-                        : item.key === "camera"
-                          ? () => {
-                              setUnavailableAction(null);
-                              onPickCamera();
-                            }
-                          : item.key === "favorite"
-                            ? () => {
-                                setUnavailableAction(null);
-                                setFavoriteRecords(
-                                  mergeDesktopFavoriteRecords(
-                                    favoritesQuery.data ?? [],
-                                    readDesktopFavorites(),
-                                  ),
-                                );
-                                setActiveView("favorites");
-                              }
-                            : item.key === "contact"
-                              ? () => {
-                                  setUnavailableAction(null);
-                                  setActiveView("contacts");
-                                }
-                              : item.key === "file"
-                                ? () => {
-                                    setUnavailableAction(null);
-                                    onPickFile();
-                                  }
-                                : item.key === "voice-call"
-                                  ? () => {
-                                      setUnavailableAction(null);
-                                      onStartVoiceCall?.();
-                                    }
-                                  : item.key === "video-call"
-                                    ? () => {
-                                        setUnavailableAction(null);
-                                        onStartVideoCall?.();
-                                      }
-                                  : () => {
-                                      setUnavailableAction(null);
-                                      setActiveView("locations");
-                                    };
+                          setActiveView("favorites");
+                          return;
+                        case "contact":
+                          setActiveView("contacts");
+                          return;
+                        case "location":
+                          setActiveView("locations");
+                          return;
+                        case "voice-call":
+                          onStartVoiceCall?.();
+                          return;
+                        case "video-call":
+                          onStartVideoCall?.();
+                          return;
+                        default:
+                          return;
+                      }
+                    };
 
                     return (
                       <button
@@ -514,18 +559,6 @@ export function MobileChatPlusPanel({
                     {t(unavailableFallbackLabel)}
                   </button>
                 ) : null}
-                {unavailableBackActionLabel && onUnavailableBack ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUnavailableAction(null);
-                      onUnavailableBack();
-                    }}
-                    className="mr-2 rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[color:var(--surface-card-hover)]"
-                  >
-                    {unavailableBackActionLabel}
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   onClick={() => setUnavailableAction(null)}
@@ -567,43 +600,61 @@ export function MobileChatPlusPanel({
           ) : null}
           {friends.length ? (
             <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
-              {friends.map(({ character }, index) => (
-                <button
-                  key={character.id}
-                  type="button"
-                  onClick={() =>
-                    void onSelectContactCard({
-                      kind: "contact_card",
-                      characterId: character.id,
-                      name: character.name,
-                      avatar: character.avatar,
-                      relationship: character.relationship,
-                      bio: character.bio ?? undefined,
-                    })
-                  }
-                  disabled={busy}
-                  className={cn(
-                    "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
-                    index > 0
-                      ? "border-t border-[color:var(--border-subtle)]"
-                      : undefined,
-                  )}
-                >
-                  <AvatarChip
-                    name={character.name}
-                    src={character.avatar}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] text-[color:var(--text-primary)]">
-                      {character.name}
+              {friends.map((item, index) => {
+                const { character, friendship } = item;
+                // 走查 R1：联系人列表跟通讯录 / 群成员选择 / 桌面拓展面板里都
+                // 是 remarkName > character.name 的显示规则，但 + 面板这里漏了
+                // friendship.remarkName，给了备注的好友（如 "林医生 → 健康顾问"）
+                // 在挑名片时只看到原名，跟其它入口对不上。
+                const displayName = getFriendDisplayName(item);
+                // 走查（第 3 次会话）R3：char-default-self 的 name 与 relationship
+                // 都是 "我自己"，picker 上两行都写 "我自己"，自聊以外的会话里
+                // 自己会被列出来看着很怪。subtitle 跟主名相同就藏掉那一行。
+                const rawSubtitle = friendship.remarkName?.trim()
+                  ? character.name
+                  : character.relationship || t(msg`世界联系人`);
+                const subtitle =
+                  rawSubtitle.trim() === displayName.trim() ? null : rawSubtitle;
+                return (
+                  <button
+                    key={character.id}
+                    type="button"
+                    onClick={() =>
+                      void onSelectContactCard({
+                        kind: "contact_card",
+                        characterId: character.id,
+                        name: character.name,
+                        avatar: character.avatar,
+                        relationship: character.relationship,
+                        bio: character.bio ?? undefined,
+                      })
+                    }
+                    disabled={busy}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+                      index > 0
+                        ? "border-t border-[color:var(--border-subtle)]"
+                        : undefined,
+                    )}
+                  >
+                    <AvatarChip
+                      name={displayName}
+                      src={character.avatar}
+                      size="wechat"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] text-[color:var(--text-primary)]">
+                        {displayName}
+                      </div>
+                      {subtitle ? (
+                        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                          {subtitle}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-                      {character.relationship || t(msg`世界联系人`)}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
           {!friendsQuery.isLoading && !showFriendsError && !friends.length ? (
@@ -641,45 +692,58 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {favoriteRecords.length ? (
+            // 走查 R3：title 是 flex row 第一子项，要带 min-w-0/flex-1 才能让
+            // truncate 真起作用；badge 加 shrink-0 防被长标题挤变形。
+            // 走查新一轮 R2：description 跟 title 一样时（笔记 favorite 几乎都是
+            // 这种），picker 第三行只是把 title 又写一遍——share text 那边已经
+            // 在 buildFavoriteShareText 去重了，这里 UI 上同步把那行藏掉。
             <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
-              {favoriteRecords.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() =>
-                    void onSelectFavoriteText(buildFavoriteShareText(item))
-                  }
-                  disabled={busy}
-                  className={cn(
-                    "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
-                    index > 0
-                      ? "border-t border-[color:var(--border-subtle)]"
-                      : undefined,
-                  )}
-                >
-                  <AvatarChip
-                    name={item.avatarName ?? item.title}
-                    src={item.avatarSrc}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="truncate text-[13px] text-[color:var(--text-primary)]">
-                        {item.title}
+              {favoriteRecords.map((item, index) => {
+                const trimmedTitle = item.title.trim();
+                const trimmedDescription = item.description.trim();
+                const hasDistinctDescription =
+                  trimmedDescription && trimmedDescription !== trimmedTitle;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() =>
+                      void onSelectFavoriteText(buildFavoriteShareText(item))
+                    }
+                    disabled={busy}
+                    className={cn(
+                      "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+                      index > 0
+                        ? "border-t border-[color:var(--border-subtle)]"
+                        : undefined,
+                    )}
+                  >
+                    <AvatarChip
+                      name={item.avatarName ?? item.title}
+                      src={item.avatarSrc}
+                      size="wechat"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-primary)]">
+                          {item.title}
+                        </div>
+                        <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
+                          {item.badge}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
-                        {item.badge}
-                      </span>
+                      <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
+                        {item.meta}
+                      </div>
+                      {hasDistinctDescription ? (
+                        <div className="mt-1.5 line-clamp-2 text-[11px] leading-[18px] text-[color:var(--text-secondary)]">
+                          {item.description}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
-                      {item.meta}
-                    </div>
-                    <div className="mt-1.5 line-clamp-2 text-[11px] leading-[18px] text-[color:var(--text-secondary)]">
-                      {item.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           ) : !favoritesQuery.isLoading && !showFavoritesError ? (
             <div className="px-4 py-8 text-center text-sm text-[color:var(--text-muted)]">

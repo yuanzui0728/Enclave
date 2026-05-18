@@ -1,6 +1,7 @@
-import { type CSSProperties, type MouseEventHandler } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEventHandler } from "react";
 import { Camera } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { resolveAppMediaUrl } from "../lib/media-url";
 
 const DEFAULT_COVER_GRADIENT =
   "linear-gradient(135deg,#5d7fa6 0%,#6f8caa 38%,#9aaec4 100%)";
@@ -103,18 +104,41 @@ function CoverAvatar({
   initial: string;
 }) {
   const trimmed = (src ?? "").trim();
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  if (trimmed) {
-    return (
-      <img
-        src={trimmed}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        className="h-16 w-16 rounded-[6px] border border-white/85 object-cover shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
-      />
-    );
+  useEffect(() => {
+    setLoadFailed(false);
+  }, [trimmed]);
+
+  // 角色头像在数据库里有三种形态：1) `/api/character-assets/...` 资源路径，
+  // 2) `http(s)://...` 远端 URL，3) 单个 emoji（库里 142 个角色里 80 个是
+  // 这种形态）。前两种当 <img> 渲染，emoji 当文字 glyph 渲染——
+  // 不能让 <img src="🧰"> 走 404 兜底破图。最终都失败再回退首字母方块。
+  if (trimmed && !loadFailed) {
+    if (isLikelyImageSource(trimmed)) {
+      return (
+        <img
+          src={resolveCoverAvatarSrc(trimmed)}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onError={() => setLoadFailed(true)}
+          className="h-16 w-16 rounded-[6px] border border-white/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] object-cover shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+        />
+      );
+    }
+
+    if (isEmojiAvatar(trimmed)) {
+      return (
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-[6px] border border-white/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] text-[34px] leading-none shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+          aria-label={alt}
+        >
+          <span aria-hidden="true">{trimmed}</span>
+        </div>
+      );
+    }
   }
 
   return (
@@ -122,4 +146,31 @@ function CoverAvatar({
       {initial}
     </div>
   );
+}
+
+const EMOJI_PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
+
+function isEmojiAvatar(value: string) {
+  if (!value || value.length > 12) return false;
+  return EMOJI_PICTOGRAPHIC.test(value);
+}
+
+function isLikelyImageSource(value: string) {
+  if (!value) return false;
+  return (
+    value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
+    value.startsWith("blob:") ||
+    /^https?:\/\//i.test(value) ||
+    /^data:image\//i.test(value) ||
+    /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
+  );
+}
+
+function resolveCoverAvatarSrc(value: string) {
+  // 与 AvatarChip 一致：`/api/...` 资源走 resolveAppMediaUrl，公网隧道下追加
+  // cloud-api token；其他形态原样返回。
+  if (!value.startsWith("/api/")) return value;
+  return resolveAppMediaUrl(value);
 }

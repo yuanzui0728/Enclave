@@ -8,7 +8,9 @@ const t = translateRuntimeMessage;
 import {
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { TabPageTopBar } from "./tab-page-top-bar";
 
 type MobileDiscoverToolShellProps = {
@@ -60,10 +62,7 @@ export function MobileDiscoverToolShell({
       typeof window === "undefined"
         ? ""
         : `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const toolUrl =
-      typeof window === "undefined" || !toolPath
-        ? undefined
-        : `${window.location.origin}${toolPath}`;
+    const toolUrl = toolPath ? buildPublicShareUrl(toolPath) : undefined;
     const shareText = toolUrl
       ? [shareTitle, shareSummary, toolUrl].join("\n\n")
       : [shareTitle, shareSummary].join("\n\n");
@@ -103,7 +102,9 @@ export function MobileDiscoverToolShell({
     }
 
     try {
-      await navigator.clipboard.writeText(shareText);
+      if (!(await writeClipboardText(shareText))) {
+        throw new Error("clipboard copy failed");
+      }
       setShareNotice({
         tone: "success",
         message: nativeMobileShareSupported
@@ -137,6 +138,7 @@ export function MobileDiscoverToolShell({
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={18} />
           </Button>

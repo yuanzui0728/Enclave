@@ -20,7 +20,7 @@ import {
 } from './minimax-job.types';
 import { MinimaxClient, MinimaxClientError } from './minimax.client';
 import { MinimaxAssetStorage } from './minimax-asset.storage';
-import { MinimaxQuotaService } from './minimax-quota.service';
+import { MinimaxQuotaService, shanghaiDateOf, todayInShanghai } from './minimax-quota.service';
 import type { MinimaxJobCallback } from './minimax-job.callbacks';
 import type { MinimaxVideoModel, MinimaxMusicModel } from './minimax.types';
 
@@ -266,6 +266,17 @@ export class MinimaxJobService {
     }
 
     if (job.status === 'pending') {
+      // Pre-flight：今天该 model 已被 minimax 服务端确认耗尽（前一个 job 撞过 2056），
+      // 直接 markFailed 不再提交。明天 0:00 (Shanghai) usageDate 翻新自然恢复。
+      // 否则同一队列里堆积的 pending job 会逐个撞一次 2056、白白吃 callCount + quotaLimitedCount。
+      if (await this.quota.isExhaustedToday(job.model)) {
+        await this.markFailed(
+          job,
+          'MINIMAX_QUOTA_EXHAUSTED',
+          `${job.model} daily quota exhausted; deferred until next Shanghai day`,
+        );
+        return;
+      }
       try {
         let firstFrameImageUrl: string | undefined =
           payload.firstFrameImageUrl ?? undefined;
@@ -325,7 +336,7 @@ export class MinimaxJobService {
               ) {
                 // 同 handleClientError 里的逻辑：image-01 服务端确认今日耗尽，
                 // 标本地不再 reserve，下次直接走 maybeDemoteFastToHd / 跳过。
-                this.quota.markExhaustedToday('image-01');
+                await this.quota.markExhaustedToday('image-01');
               }
               this.logger.warn(
                 `cover gen failed for job ${job.id}: ${(err as Error)?.message}`,
@@ -454,6 +465,15 @@ export class MinimaxJobService {
     }
 
     if (job.status === 'pending') {
+      // 同 video：今日已耗尽就直接失败，避免队列里残留 pending 接力撞 2056。
+      if (await this.quota.isExhaustedToday(job.model)) {
+        await this.markFailed(
+          job,
+          'MINIMAX_QUOTA_EXHAUSTED',
+          `${job.model} daily quota exhausted; deferred until next Shanghai day`,
+        );
+        return;
+      }
       try {
         const result = await this.client.generateMusic({
           model: job.model as MinimaxMusicModel,
@@ -675,7 +695,22 @@ export class MinimaxJobService {
       take: 5,
     });
     const maxAttempts = STALE_REQUEUE_MAX_ATTEMPTS[kind];
+    const shanghaiToday = todayInShanghai();
     for (const job of stale) {
+      // 跨日防御：昨天的 submitted 卡住的 job 不要在新一天 0:01 立刻翻 pending
+      // 重新打 provider — 一打就是新一天的配额，可能在几秒内把新预算烧光。
+      // 直接 markFailed 释放 reserved，留待用户/上游决策是否重发。
+      const lastDay = shanghaiDateOf(
+        job.lastAttemptAt ?? job.executeAfter ?? job.createdAt ?? new Date(),
+      );
+      if (lastDay !== shanghaiToday) {
+        await this.markFailed(
+          job,
+          'CROSS_DAY_ABANDONED',
+          `submitted ${kind} job spans Shanghai day boundary (last=${lastDay}, today=${shanghaiToday}); abandoned to protect new-day budget`,
+        );
+        continue;
+      }
       const nextAttempt = job.attemptCount + 1;
       if (nextAttempt >= maxAttempts) {
         await this.markFailed(
@@ -711,7 +746,7 @@ export class MinimaxJobService {
     // 真实 minimax 服务端确认本 model 今日额度已耗尽 → 标记，后续
     // tryReserve 直接返回 false，避免今天剩余 cron tick 继续打无效请求。
     if (e instanceof MinimaxClientError && code === 'MINIMAX_QUOTA_EXHAUSTED') {
-      this.quota.markExhaustedToday(job.model);
+      await this.quota.markExhaustedToday(job.model);
     }
     if (!retriable) {
       await this.markFailed(job, code, `${context}: ${message}`);

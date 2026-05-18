@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { AppError } from '../../../common/app-error.exception';
 import { WikiFieldProtectionService } from './wiki-field-protection.service';
 import type { WikiFieldProtectionEntity } from '../entities/wiki-field-protection.entity';
 
@@ -29,7 +29,7 @@ describe('WikiFieldProtectionService', () => {
         'char_x',
         ['prompting.coreLogic'],
       ),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(AppError);
   });
 
   it('allows autoconfirmed when rule says autoconfirmed', async () => {
@@ -68,7 +68,7 @@ describe('WikiFieldProtectionService', () => {
         'char_x',
         ['prompting.coreLogic'],
       ),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(AppError);
   });
 
   it('matches subpaths (changed = parent of protected)', async () => {
@@ -85,7 +85,7 @@ describe('WikiFieldProtectionService', () => {
         'char_x',
         ['prompting'], // higher-level path encompassing protected one
       ),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(AppError);
   });
 
   it('does nothing when no policies match', async () => {

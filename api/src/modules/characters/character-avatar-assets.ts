@@ -48,6 +48,44 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   teacher_research_librarian_tang_jian:
     'teacher-research-librarian-tang-jian.svg',
   teacher_science_lab_wei_zhiwei: 'teacher-science-lab-wei-zhiwei.svg',
+  companion_morning_warmth_an_he: 'companion-morning-warmth-an-he.svg',
+  companion_late_night_listener_ye_chi:
+    'companion-late-night-listener-ye-chi.svg',
+  companion_silent_presence_mu_ze: 'companion-silent-presence-mu-ze.svg',
+  intimate_companion_steady_male_shen_yan:
+    'intimate-companion-steady-male-shen-yan.svg',
+  intimate_companion_warm_female_lin_zhi_xia:
+    'intimate-companion-warm-female-lin-zhi-xia.svg',
+  intimate_companion_soulmate_chi_yi: 'intimate-companion-soulmate-chi-yi.svg',
+  dating_aide_direct_zhou_jin: 'dating-aide-direct-zhou-jin.svg',
+  dating_aide_gentle_signal_reader_he_ling:
+    'dating-aide-gentle-signal-reader-he-ling.svg',
+  dating_aide_data_driven_su_li: 'dating-aide-data-driven-su-li.svg',
+  lifestyle_writing_yan_shuo: 'lifestyle-writing-yan-shuo.svg',
+  lifestyle_styling_lu_zi: 'lifestyle-styling-lu-zi.svg',
+  lifestyle_travel_shen_cheng: 'lifestyle-travel-shen-cheng.svg',
+  family_parenting_han_sui: 'family-parenting-han-sui.svg',
+  family_pet_jiang_mu: 'family-pet-jiang-mu.svg',
+  wellness_meditation_jian_xi: 'wellness-meditation-jian-xi.svg',
+  gu_he_nutrition_coach: 'gu-he-nutrition-coach.svg',
+  qian_ning_money_buddy: 'qian-ning-money-buddy.svg',
+  shen_yi_cbt_coach: 'shen-yi-cbt-coach.svg',
+  jiang_an_interview_coach: 'jiang-an-interview-coach.svg',
+  // 2026-05-14 新增：10 个分类的日常生活搭子（autoSeed: false）
+  polyglot_tutor_lin_lan: 'polyglot-tutor-lin-lan.svg',
+  code_pair_debugger_gu_qi: 'code-pair-debugger-gu-qi.svg',
+  code_pair_companion_zhou_yu: 'code-pair-companion-zhou-yu.svg',
+  side_hustle_xhs_he_wei: 'side-hustle-xhs-he-wei.svg',
+  side_hustle_video_jiang_bai: 'side-hustle-video-jiang-bai.svg',
+  driving_buddy_lu_ping: 'driving-buddy-lu-ping.svg',
+  home_setup_an_meng: 'home-setup-an-meng.svg',
+  gadget_advisor_tang_li: 'gadget-advisor-tang-li.svg',
+  cessation_companion_qing_hai: 'cessation-companion-qing-hai.svg',
+  womens_health_cycle_shen_yue: 'womens-health-cycle-shen-yue.svg',
+  womens_health_ttc_su_ning: 'womens-health-ttc-su-ning.svg',
+  intergen_communication_he_ning: 'intergen-communication-he-ning.svg',
+  journaling_daily_mu_xu: 'journaling-daily-mu-xu.svg',
+  review_weekly_ruan_zhou: 'review-weekly-ruan-zhou.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =

@@ -52,8 +52,15 @@ export function DesktopOfficialMessageContextMenu({
   );
 
   return (
+    // 走查新一轮 R10：同 DesktopConversationContextMenu —— workspace 的
+    // pointerdown capture 兜底会在「点击落在非 thread / 非 side panel /
+    // 非 header / 非 shield 区域」时 dismissSidePanel。本 menu inline
+    // 渲染但不在那些保护区里，开着「聊天信息」侧栏时右键订阅号 / 服务号
+    // 弹菜单后点任意一项（打开订阅号消息 / 标记已读 / 消息免打扰 等），
+    // 都会先把背后侧栏关掉。补 data-yj-portal-shield。
     <div
       className="fixed inset-0 z-50"
+      data-yj-portal-shield="official-message-context-menu"
       onContextMenu={(event) => event.preventDefault()}
     >
       <button
@@ -63,7 +70,14 @@ export function DesktopOfficialMessageContextMenu({
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
+      {/* 走查新一轮 R8：右键订阅号收件箱 / 服务号会话弹的 context menu，
+          盲人屏幕阅读器只听到一串裸 button label「打开订阅号消息 / 打开公众号
+          目录 / 标记全部已读」浮空，不知道是「公众号消息菜单」。和 R6 给
+          DesktopConversationContextMenu / GroupMessageContextMenu 补的同款
+          a11y：补 role="menu" + aria-label 让 SR 知道这是个上下文菜单。 */}
       <div
+        role="menu"
+        aria-label={t(msg`公众号消息操作菜单`)}
         style={{ left, top }}
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
         onPointerDown={(event) => event.stopPropagation()}

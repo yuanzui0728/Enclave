@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -33,10 +33,15 @@ export function DesktopChatWindowPage() {
     () => parseDesktopChatWindowRouteHash(hash),
     [hash],
   );
+  // 走查 R3：standaloneWindow 是独立 Tauri 窗口，react-query cache 与主窗口
+  // 不共享，冷启动确实要拉一次。但用户从主窗口右键「在独立窗口打开聊天」
+  // 后再关掉重开（debugging / multi-monitor 工作流）时，给 15s staleTime
+  // 让此窗口自己的 cache 复用一下，避免每次 reopen 都 RTT。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(routeState),
+    staleTime: 15_000,
   });
   const activeConversation =
     routeState && conversationsQuery.data
@@ -45,7 +50,7 @@ export function DesktopChatWindowPage() {
         ) ?? null
       : null;
   const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
-  const headerTitle = activeConversation?.title ?? routeState?.title ?? t(msg`聊天`);
+  const headerTitle = activeConversation?.title || routeState?.title || t(msg`聊天`);
   const headerType =
     activeConversation?.type ?? routeState?.conversationType ?? "direct";
 
@@ -80,8 +85,37 @@ export function DesktopChatWindowPage() {
         return;
       }
 
-      event.preventDefault();
-      closeStandaloneWindow(fallbackPath);
+      // 走查新一轮 R27：原写法对 Esc 一刀切 closeStandaloneWindow，但本窗口
+      // 内还嵌着 ConversationThreadPanel + 各种 dialog（DesktopChatConfirmDialog
+      // / DesktopChatTextEditDialog / DesktopContactTextEditDialog / 转发弹层
+      // / 头像 popover / sticker panel / + 快捷菜单等），每个都注册了自己的
+      // window keydown Esc handler。stopPropagation 在 window 同元素 sibling
+      // listener 上不生效（MDN：需要 stopImmediatePropagation），结果用户：
+      // · 改备注 → 弹改备注 dialog → 按 Esc 想关 dialog → dialog 关掉同时
+      //   整个独立窗口被一起关掉，用户失去当前聊天上下文得手动重开。
+      // · 在 composer 里打到一半草稿 → 按 Esc 想清掉输入法或别的 sub UI →
+      //   整个窗口被关，未发的草稿一并丢失（textarea Esc 没 preventDefault，
+      //   直接命中本兜底）。
+      // 与姊妹 desktop-chat-workspace 的 dismissSidePanel 兜底（line 979）同
+      // 思路，推到 microtask + 检查 defaultPrevented：所有同步 sibling Esc
+      // listener 跑完后，如果有人 preventDefault 了（说明 sub UI 接走 Esc），
+      // 不再关窗。同时跳过 textarea / 输入框 focus 状态 —— Esc 在输入态对
+      // 用户来说大概率是"取消当前输入意图"而非"关窗"。
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest(
+          'input, textarea, [contenteditable="true"], [contenteditable=""], [role="textbox"]',
+        )
+      ) {
+        return;
+      }
+      queueMicrotask(() => {
+        if (event.defaultPrevented) {
+          return;
+        }
+        closeStandaloneWindow(fallbackPath);
+      });
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -133,6 +167,39 @@ export function DesktopChatWindowPage() {
       unlisten?.();
     };
   }, [nativeDesktopShell]);
+
+  // 走查新一轮 R30：原写法 `buildMessageReturnTo={(messageId) => ...}` 内联
+  // 箭头函数，每次 DesktopChatWindowPage render 都换引用。本组件挂着
+  // conversationsQuery 15s staleTime + onWindowFocus，独立窗口聚焦时 fetch 完
+  // 回来 → conversationsQuery.data 变 → 组件 re-render → buildMessageReturnTo
+  // 引用换。该函数沿 DesktopChatWorkspace → ConversationThreadPanel →
+  // ChatMessageList 路径作为 prop 传递，最后挂在 imageMessages useMemo
+  // （chat-message-list.tsx line 1817）的 deps 上。引用一变 → imageMessages
+  // 整体 filter + map 全部图片消息重跑（长聊天 60-100+ 条历史里 ≥10 张图时
+  // 这层 O(n) 是可见开销）→ standaloneViewerItems useMemo 跟着重算 →
+  // ImageMessage / image viewer 子树也跟着无效 re-render 一遍。
+  //
+  // 用 useCallback 把 closure 固化在真正的依赖（routeState.* / activeConversation
+  // 的 type & title）上，conversationsQuery 60s refetch 拿到内容相同但引用
+  // 不同的 conversation 时——title/type 都不变——回调引用稳住，下游 useMemo
+  // 整条链全部 hit cache。和姊妹 conversation-thread-panel R1 / R2 把
+  // messageListThreadContext / contactPickerExcludeIds 抽 useMemo 同思路。
+  const buildMessageReturnTo = useCallback(
+    (messageId: string) => {
+      if (!routeState) {
+        return undefined;
+      }
+      return buildDesktopChatWindowPath({
+        conversationId: routeState.conversationId,
+        conversationType:
+          activeConversation?.type ?? routeState.conversationType,
+        title: activeConversation?.title || routeState.title,
+        returnTo: routeState.returnTo,
+        highlightedMessageId: messageId,
+      });
+    },
+    [activeConversation?.type, activeConversation?.title, routeState],
+  );
 
   if (!routeState) {
     return (
@@ -227,16 +294,7 @@ export function DesktopChatWindowPage() {
         <DesktopChatWorkspace
           selectedConversationId={routeState.conversationId}
           highlightedMessageId={routeState.highlightedMessageId}
-          buildMessageReturnTo={(messageId) =>
-            buildDesktopChatWindowPath({
-              conversationId: routeState.conversationId,
-              conversationType:
-                activeConversation?.type ?? routeState.conversationType,
-              title: activeConversation?.title ?? routeState.title,
-              returnTo: routeState.returnTo,
-              highlightedMessageId: messageId,
-            })
-          }
+          buildMessageReturnTo={buildMessageReturnTo}
           standaloneWindow
         />
       </div>

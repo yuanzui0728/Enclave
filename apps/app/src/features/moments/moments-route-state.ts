@@ -10,9 +10,17 @@ export type DesktopMomentsRouteState = {
 
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
+  // 走查 R1：和 channels-route-state R4 (b169dd7a) / character-detail-route-state /
+  // mobile-group-route-state 同款 open-redirect 修法。浏览器 history.replaceState
+  // 接受 "//host" 形式 → 浏览器拼成 "https://evil.com"，攻击者诱导用户点
+  // /tabs/moments#returnPath=//evil.com 后按"返回上一页"就跳第三方站。
+  // 桌面 moments 用，但这条 desktop parse 路径也会被 mobile coerce 转回去
+  // （见 coerceToMobileFriendMomentsRouteHash 同模式），所以 desktop 这条
+  // normalize 也必须把 "//" 拦掉。
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

@@ -15,6 +15,7 @@ import {
   likeFeedPost,
   shake,
   triggerSceneFriendRequest,
+  unlikeFeedPost,
   type FeedComment,
   type FeedListResponse,
 } from "@yinjie/contracts";
@@ -210,8 +211,15 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
 ];
 
 export function DiscoverPage() {
-  const t = useRuntimeTranslator();
   const isDesktopLayout = useDesktopLayout();
+  if (isDesktopLayout) {
+    return <DesktopDiscoverWorkspace />;
+  }
+  return <MobileDiscoverHome />;
+}
+
+function DesktopDiscoverWorkspace() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -221,8 +229,7 @@ export function DiscoverPage() {
   });
   const desktopDiscoverPath = "/tabs/discover";
   const normalizedPathname = normalizePathname(pathname);
-  const desktopPathMismatch =
-    isDesktopLayout && normalizedPathname !== desktopDiscoverPath;
+  const desktopPathMismatch = normalizedPathname !== desktopDiscoverPath;
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const ownerUsername = useWorldOwnerStore((state) => state.username);
@@ -307,6 +314,11 @@ export function DiscoverPage() {
       await keepShakeSession(preview.id, baseUrl);
       return preview;
     },
+    onMutate: () => {
+      // 摇一摇要等 AI ~60s，期间按钮显示"正在寻找..."但 sceneMessage 还挂着上一次的
+      // 「X 已加入通讯录: Y」，用户看不出新一次到底有没有真的开始。统一清掉。
+      setSceneMessage(""); // i18n-ignore-line: clearing state
+    },
     onSuccess: async (result) => {
       if (!result) {
         setSceneMessage(t(msg`附近暂时没有新的相遇。`));
@@ -373,7 +385,17 @@ export function DiscoverPage() {
   });
 
   const likeFeedMutation = useMutation({
-    mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
+    // toggle：见 discover-feed-page 同名 mutation 注释——按住「已赞」按钮再点
+    // 必须真能取消，否则旧 POST-only 路径下后端 INSERT OR IGNORE 静默吞掉。
+    mutationFn: (postId: string) => {
+      const current = (feedQuery.data?.posts ?? []).find(
+        (post) => post.id === postId,
+      );
+      const alreadyLiked = current?.ownerState?.hasLiked ?? false;
+      return alreadyLiked
+        ? unlikeFeedPost(postId, baseUrl)
+        : likeFeedPost(postId, baseUrl);
+    },
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ["app-feed", baseUrl] });
       const snapshots = queryClient.getQueriesData<FeedListResponse>({
@@ -385,28 +407,31 @@ export function DiscoverPage() {
         }
         queryClient.setQueryData<FeedListResponse>(key, {
           ...data,
-          posts: data.posts.map((post) =>
-            post.id === postId && !post.ownerState?.hasLiked
-              ? {
-                  ...post,
-                  likeCount: post.likeCount + 1,
-                  ownerState: {
-                    ...(post.ownerState ?? {
-                      hasLiked: false,
-                      hasFavorited: false,
-                      isFollowingAuthor: false,
-                      isNotInterested: false,
-                      hasViewed: false,
-                      hasShared: false,
-                      lastViewedAt: null,
-                      watchProgressSeconds: null,
-                      completed: false,
-                    }),
-                    hasLiked: true,
-                  },
-                }
-              : post,
-          ),
+          posts: data.posts.map((post) => {
+            if (post.id !== postId) return post;
+            const alreadyLiked = post.ownerState?.hasLiked ?? false;
+            return {
+              ...post,
+              likeCount: Math.max(
+                0,
+                post.likeCount + (alreadyLiked ? -1 : 1),
+              ),
+              ownerState: {
+                ...(post.ownerState ?? {
+                  hasLiked: false,
+                  hasFavorited: false,
+                  isFollowingAuthor: false,
+                  isNotInterested: false,
+                  hasViewed: false,
+                  hasShared: false,
+                  lastViewedAt: null,
+                  watchProgressSeconds: null,
+                  completed: false,
+                }),
+                hasLiked: !alreadyLiked,
+              },
+            };
+          }),
         });
       });
       return { snapshots };
@@ -585,8 +610,18 @@ export function DiscoverPage() {
     setSuccessNotice("");
   }, [baseUrl, resetComposeDraft]);
 
+  // 一旦在桌面布局下落到 /tabs/discover 就锁定；之后用户从这里 navigate 到
+  // /character/$id 等兄弟路由时，TanStack 会先把 location.pathname 切走、
+  // 再 unmount 旧 page，期间这里的 useEffect 不能再 replace 回 /tabs/discover
+  // 把目标导航吞掉（与 chat-list/contacts/search 已踩过的同类坑）。
+  const desktopDiscoverPathStabilizedRef = useRef(false);
+
   useEffect(() => {
     if (!desktopPathMismatch) {
+      desktopDiscoverPathStabilizedRef.current = true;
+      return;
+    }
+    if (desktopDiscoverPathStabilizedRef.current) {
       return;
     }
 
@@ -595,7 +630,7 @@ export function DiscoverPage() {
       hash: hash || undefined,
       replace: true,
     });
-  }, [desktopDiscoverPath, desktopPathMismatch, hash, navigate]);
+  }, [desktopPathMismatch, hash, navigate]);
 
   useEffect(() => {
     if (!successNotice) {
@@ -630,12 +665,11 @@ export function DiscoverPage() {
     }
   }
 
-  if (isDesktopLayout) {
-    return (
-      <AppPage className="space-y-5 px-6 py-6">
-        <AppHeader
-          eyebrow={t(msg`发现`)}
-          title={t(msg`朋友圈给世界角色，广场给居民`)}
+  return (
+    <AppPage className="space-y-5 px-6 py-6">
+      <AppHeader
+        eyebrow={t(msg`发现`)}
+        title={t(msg`朋友圈给世界角色，广场给居民`)}
           description={t(
             msg`发现页把随机相遇、场景相遇和居民公开动态拆开排布，让桌面上的探索节奏更清晰，也把角色近况流和居民公开流分得更明白。`,
           )}
@@ -1089,65 +1123,11 @@ export function DiscoverPage() {
           }}
         />
       </AppPage>
-    );
-  }
-
-  return (
-    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
-      <TabPageTopBar title={t(msg`发现`)} titleAlign="center" />
-
-      <div className="pb-8">
-        <div className="px-3 pt-2">
-          <InlineNotice
-            tone="muted"
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
-          >
-            {t(msg`朋友圈、相遇、视频号和小程序都从这里继续打开。`)}
-          </InlineNotice>
-        </div>
-
-        <DiscoverMobileSection
-          title={t(msg`社交与动态`)}
-          items={socialDiscoverEntries}
-        />
-        <DiscoverMobileSection
-          title={t(msg`内容与服务`)}
-          items={contentDiscoverEntries}
-        />
-      </div>
-    </AppPage>
   );
 }
 
-function DiscoverMobileSection({
-  title,
-  items,
-}: {
-  title: string;
-  items: MobileDiscoverEntry[];
-}) {
-  return (
-    <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-      <div className="px-4 py-1 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
-        {title}
-      </div>
-      {items.map((item, index) => (
-        <DiscoverMobileEntryRow key={item.key} item={item} index={index} />
-      ))}
-    </section>
-  );
-}
-
-function DiscoverMobileEntryRow({
-  item,
-  index,
-}: {
-  item: MobileDiscoverEntry;
-  index: number;
-}) {
+function MobileDiscoverHome() {
   const t = useRuntimeTranslator();
-  const Icon = item.icon;
-  const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -1163,15 +1143,90 @@ function DiscoverMobileEntryRow({
       buildMobileDiscoverToolRouteHash({
         returnPath: routeState.returnPath,
         returnHash: routeState.returnHash,
-      }),
+      }) ?? "",
     [routeState.returnHash, routeState.returnPath],
   );
+
+  return (
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+      <TabPageTopBar title={t(msg`发现`)} titleAlign="center" />
+
+      <div className="pb-8">
+        <div className="px-3 pt-2">
+          <InlineNotice
+            tone="muted"
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          >
+            {t(msg`朋友圈、广场、相遇、视频号、游戏和小程序都从这里继续打开。`)}
+          </InlineNotice>
+        </div>
+
+        <DiscoverMobileSection
+          title={t(msg`社交与动态`)}
+          items={socialDiscoverEntries}
+          pathname={pathname}
+          currentRouteHash={currentRouteHash}
+        />
+        <DiscoverMobileSection
+          title={t(msg`内容与服务`)}
+          items={contentDiscoverEntries}
+          pathname={pathname}
+          currentRouteHash={currentRouteHash}
+        />
+      </div>
+    </AppPage>
+  );
+}
+
+function DiscoverMobileSection({
+  title,
+  items,
+  pathname,
+  currentRouteHash,
+}: {
+  title: string;
+  items: MobileDiscoverEntry[];
+  pathname: string;
+  currentRouteHash: string;
+}) {
+  return (
+    <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+      <div className="px-4 py-1 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
+        {title}
+      </div>
+      {items.map((item, index) => (
+        <DiscoverMobileEntryRow
+          key={item.key}
+          item={item}
+          index={index}
+          pathname={pathname}
+          currentRouteHash={currentRouteHash}
+        />
+      ))}
+    </section>
+  );
+}
+
+function DiscoverMobileEntryRow({
+  item,
+  index,
+  pathname,
+  currentRouteHash,
+}: {
+  item: MobileDiscoverEntry;
+  index: number;
+  pathname: string;
+  currentRouteHash: string;
+}) {
+  const t = useRuntimeTranslator();
+  const Icon = item.icon;
+  const navigate = useNavigate();
   const nextSearch = item.buildSearch?.({
-    hash: currentRouteHash ?? "",
+    hash: currentRouteHash,
     pathname,
   });
   const nextHash = item.buildHash?.({
-    hash: currentRouteHash ?? "",
+    hash: currentRouteHash,
     pathname,
   });
 

@@ -25,13 +25,15 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
+    // RFC 6750 §2.1：Bearer scheme 名是大小写不敏感（"Authorization: bearer xxx"
+    // 与 "Bearer xxx" 等价）。某些 SDK / 反代会改大小写，硬卡 'Bearer ' 会无故 401。
+    if (!header || !/^Bearer\s+/i.test(header)) {
       throw new AppError('AUTH_TOKEN_MISSING', {
         status: HttpStatus.UNAUTHORIZED,
         legacyMessage: '缺少访问令牌',
       });
     }
-    const token = header.slice(7).trim();
+    const token = header.replace(/^Bearer\s+/i, '').trim();
     if (!token) {
       throw new AppError('AUTH_TOKEN_MISSING', {
         status: HttpStatus.UNAUTHORIZED,

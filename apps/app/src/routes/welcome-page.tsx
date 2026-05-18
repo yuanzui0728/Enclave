@@ -15,6 +15,7 @@ import {
   DEFAULT_CORE_API_BASE_URL,
   getMyCloudWorldAccessSession,
   getWorldOwner,
+  loginCloudWithPassword,
   resolveMyCloudWorldAccess,
   sendCloudEmailCode,
   sendCloudPhoneCode,
@@ -46,6 +47,9 @@ type WelcomeTranslator = (message: WelcomeMessage) => string;
 
 const LOCAL_APP_DEV_PORT = "5180";
 const LOCAL_CORE_API_PORT = "3000";
+// 历史上只校验 trim() 非空，结果一大批新用户图省事敲个 "w" 就过 onboarding，
+// 世界主人昵称全是 "w"。这里要求 ≥ 2 个字符，逼用户真的写一个名字。
+const MIN_OWNER_NAME_LENGTH = 2;
 const WAITING_CLOUD_SESSION_STATUSES = new Set<WorldAccessSessionSummary["status"]>(["pending", "resolving", "waiting"]);
 const FAILURE_CLOUD_SESSION_STATUSES = new Set<WorldAccessSessionSummary["status"]>(["failed", "disabled", "expired"]);
 const WORLD_ACCESS_MESSAGE_MAP: Record<string, WelcomeMessage> = {
@@ -278,6 +282,9 @@ export function WelcomePage() {
   const [code, setCode] = useState("");
   const [accountType, setAccountType] = useState<"phone" | "email">("email");
   const [email, setEmail] = useState("");
+  const [authMethod, setAuthMethod] = useState<"code" | "password">("code");
+  const [password, setPassword] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
   const [cloudAccessToken, setCloudAccessToken] = useState(
     !isCloudSessionExpired(savedCloudExpiresAt) ? savedCloudAccessToken ?? "" : "",
   );
@@ -377,6 +384,19 @@ export function WelcomePage() {
       return;
     }
 
+    // cloud 模式下 getWorldOwner 走 /cloud/world-api 代理，缺 cloud access token
+    // 时 cloud-api 会 401 "Missing cloud access token."；这条 rejection 经过 await
+    // → promise chain 后偶发会逃出 .catch() 落到 unhandledrejection。直接在调用前
+    // 短路，不发请求。
+    if (
+      runtimeConfig.worldAccessMode === "cloud" &&
+      !cloudAccessToken
+    ) {
+      setReadyBaseUrl(null);
+      setOwnerSyncing(false);
+      return;
+    }
+
     let active = true;
     setOwnerSyncing(true);
 
@@ -419,6 +439,7 @@ export function WelcomePage() {
       active = false;
     };
   }, [
+    cloudAccessToken,
     hydrateOwner,
     navigate,
     onboardingCompleted,
@@ -650,6 +671,7 @@ export function WelcomePage() {
           inviteCode: inviteCodePayload,
           deviceFingerprint: getDeviceFingerprint(),
           clientReportedIp,
+          clientPlatform: runtimeConfig.appPlatform,
         },
         normalizedCloudApiBaseUrl || undefined,
       );
@@ -666,6 +688,7 @@ export function WelcomePage() {
         accessToken,
         expiresAt: verifyResult.expiresAt,
         phone: null,
+        email: verifyResult.email,
         profile: null,
       });
       verifySucceeded = true;
@@ -738,9 +761,15 @@ export function WelcomePage() {
       return;
     }
 
-    if (!cloudAccessToken && !code.trim()) {
-      setEntryError(t(msg`请输入验证码。`));
-      return;
+    if (!cloudAccessToken) {
+      if (authMethod === "code" && !code.trim()) {
+        setEntryError(t(msg`请输入验证码。`));
+        return;
+      }
+      if (authMethod === "password" && !password) {
+        setEntryError(t(msg`请输入密码。`));
+        return;
+      }
     }
 
     setIsContinuing(true);
@@ -758,7 +787,62 @@ export function WelcomePage() {
         const inviteCodePayload =
           authMode === "register" && inviteCode ? inviteCode : undefined;
         const clientReportedIp = (await detectClientPublicIp()) ?? undefined;
-        if (accountType === "email") {
+        // 注册时一并设置密码，仅在 code 通道 + register + 用户主动填写时启用。
+        const setPasswordOnRegister =
+          authMethod === "code" &&
+          authMode === "register" &&
+          registerPassword.trim()
+            ? registerPassword
+            : undefined;
+
+        if (authMethod === "password") {
+          const verifyResult = await loginCloudWithPassword(
+            {
+              identifierKind: accountType,
+              identifier:
+                accountType === "email"
+                  ? email.trim().toLowerCase()
+                  : phone.trim(),
+              password,
+              deviceFingerprint: getDeviceFingerprint(),
+              clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
+            },
+            normalizedCloudApiBaseUrl || undefined,
+          );
+          accessToken = verifyResult.accessToken;
+          const identityKey =
+            accountType === "email"
+              ? `email:${verifyResult.email ?? email.trim().toLowerCase()}`
+              : `phone:${verifyResult.phone}`;
+          await assertOwnerIdentity(identityKey, { queryClient });
+          if (accountType === "email") {
+            verifiedPhone = "";
+            const verifiedEmail =
+              verifyResult.email ?? email.trim().toLowerCase();
+            setEmail(verifiedEmail);
+            saveCloudSession({
+              accessToken: verifyResult.accessToken,
+              expiresAt: verifyResult.expiresAt,
+              phone: null,
+              email: verifiedEmail,
+              profile: null,
+            });
+          } else {
+            verifiedPhone = verifyResult.phone;
+            setPhone(verifyResult.phone);
+            saveCloudSession({
+              accessToken: verifyResult.accessToken,
+              expiresAt: verifyResult.expiresAt,
+              phone: verifyResult.phone,
+              email: null,
+              profile: null,
+            });
+          }
+          setCloudAccessToken(verifyResult.accessToken);
+          verifySucceeded = true;
+          track("login_success", { method: `${accountType}-password` });
+        } else if (accountType === "email") {
           const verifyResult = await verifyCloudEmailCode(
             {
               email: email.trim().toLowerCase(),
@@ -766,6 +850,8 @@ export function WelcomePage() {
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
               clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
+              setPasswordOnRegister,
             },
             normalizedCloudApiBaseUrl || undefined,
           );
@@ -780,6 +866,7 @@ export function WelcomePage() {
             accessToken: verifyResult.accessToken,
             expiresAt: verifyResult.expiresAt,
             phone: null,
+            email: verifyResult.email,
             profile: null,
           });
           verifySucceeded = true;
@@ -795,6 +882,8 @@ export function WelcomePage() {
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
               clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
+              setPasswordOnRegister,
             },
             normalizedCloudApiBaseUrl || undefined,
           );
@@ -810,6 +899,7 @@ export function WelcomePage() {
             accessToken: verifyResult.accessToken,
             expiresAt: verifyResult.expiresAt,
             phone: verifyResult.phone,
+            email: null,
             profile: null,
           });
           verifySucceeded = true;
@@ -882,6 +972,12 @@ export function WelcomePage() {
     const username = ownerName.trim();
     if (!username) {
       setOwnerError(t(msg`请输入世界主人的名字。`));
+      return;
+    }
+    if (username.length < MIN_OWNER_NAME_LENGTH) {
+      setOwnerError(
+        t(msg`名字至少 ${MIN_OWNER_NAME_LENGTH} 个字，请取一个真正的昵称。`),
+      );
       return;
     }
 
@@ -1014,50 +1110,121 @@ export function WelcomePage() {
             </label>
           )}
 
-          <div className="space-y-2">
-            <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-              {t(msg`验证码`)}
-            </span>
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <TextField
-                  value={code}
-                  onChange={(event) => {
-                    setCode(event.target.value);
-                    setEntryError("");
-                  }}
-                  placeholder={
-                    accountType === "phone"
-                      ? t(msg`请输入验证码（默认 123456 即可通过）`)
-                      : t(msg`请输入邮箱收到的 6 位验证码`)
-                  }
-                />
-              </div>
-              <Button
-                onClick={() =>
-                  accountType === "phone"
-                    ? sendCodeMutation.mutate()
-                    : sendEmailCodeMutation.mutate()
-                }
-                disabled={
-                  accountType === "phone"
-                    ? !phone.trim() || sendCodeMutation.isPending
-                    : !email.trim() || sendEmailCodeMutation.isPending
-                }
-                variant="secondary"
-                size="lg"
-                className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
-              >
-                {(
-                  accountType === "phone"
-                    ? sendCodeMutation.isPending
-                    : sendEmailCodeMutation.isPending
-                )
-                  ? t(msg`发送中...`)
-                  : t(msg`发送验证码`)}
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] p-1">
+            <Button
+              onClick={() => {
+                setAuthMethod("code");
+                setEntryError("");
+              }}
+              variant={authMethod === "code" ? "primary" : "ghost"}
+              size="md"
+              className={`flex-1 rounded-xl shadow-none ${
+                authMethod === "code"
+                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  : "bg-transparent hover:bg-transparent"
+              }`}
+            >
+              {t(msg`使用验证码登录`)}
+            </Button>
+            <Button
+              onClick={() => {
+                setAuthMethod("password");
+                // 密码登录与注册无关，强制切回 login 模式避免误传 inviteCode。
+                if (authMode !== "login") setAuthMode("login");
+                setEntryError("");
+              }}
+              variant={authMethod === "password" ? "primary" : "ghost"}
+              size="md"
+              className={`flex-1 rounded-xl shadow-none ${
+                authMethod === "password"
+                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  : "bg-transparent hover:bg-transparent"
+              }`}
+            >
+              {t(msg`使用密码登录`)}
+            </Button>
           </div>
+
+          {authMethod === "code" ? (
+            <div className="space-y-2">
+              <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                {t(msg`验证码`)}
+              </span>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <TextField
+                    value={code}
+                    onChange={(event) => {
+                      setCode(event.target.value);
+                      setEntryError("");
+                    }}
+                    placeholder={
+                      accountType === "phone"
+                        ? t(msg`请输入验证码（默认 123456 即可通过）`)
+                        : t(msg`请输入邮箱收到的 6 位验证码`)
+                    }
+                  />
+                </div>
+                <Button
+                  onClick={() =>
+                    accountType === "phone"
+                      ? sendCodeMutation.mutate()
+                      : sendEmailCodeMutation.mutate()
+                  }
+                  disabled={
+                    accountType === "phone"
+                      ? !phone.trim() || sendCodeMutation.isPending
+                      : !email.trim() || sendEmailCodeMutation.isPending
+                  }
+                  variant="secondary"
+                  size="lg"
+                  className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                >
+                  {(
+                    accountType === "phone"
+                      ? sendCodeMutation.isPending
+                      : sendEmailCodeMutation.isPending
+                  )
+                    ? t(msg`发送中...`)
+                    : t(msg`发送验证码`)}
+                </Button>
+              </div>
+              {authMode === "register" ? (
+                <label className="block space-y-2 pt-2">
+                  <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                    {t(msg`设置登录密码（选填）`)}
+                  </span>
+                  <TextField
+                    type="password"
+                    value={registerPassword}
+                    onChange={(event) => {
+                      setRegisterPassword(event.target.value);
+                      setEntryError("");
+                    }}
+                    placeholder={t(msg`8-32 位，任意字符（不含空格）`)}
+                  />
+                </label>
+              ) : null}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                {t(msg`密码`)}
+              </span>
+              <TextField
+                type="password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setEntryError("");
+                }}
+                placeholder={t(msg`请输入密码`)}
+              />
+              <span className="block pt-1 text-xs text-[color:var(--text-muted)]">
+                {t(msg`忘记密码？请用验证码登录后到设置页修改`)}
+              </span>
+            </div>
+          )}
 
           {showGoogleButton ? (
             <div className="space-y-3">
@@ -1256,10 +1423,14 @@ export function WelcomePage() {
                 void submitOwnerName();
               }
             }}
-            placeholder={t(msg`为这个世界设置主人的名字`)}
+            placeholder={t(msg`输入你希望被怎么称呼（至少 ${MIN_OWNER_NAME_LENGTH} 个字）`)}
             className="text-center text-base"
             autoFocus
           />
+
+          <p className="mt-2 text-center text-xs text-[color:var(--text-muted)]">
+            {t(msg`这是世界里所有 AI 朋友对你的称呼，名字至少 ${MIN_OWNER_NAME_LENGTH} 个字。`)}
+          </p>
 
           {ownerError ? (
             isDesktopLayout ? (
@@ -1298,7 +1469,10 @@ export function WelcomePage() {
             </Button>
             <Button
               onClick={() => void submitOwnerName()}
-              disabled={isContinuing || !ownerName.trim()}
+              disabled={
+                isContinuing ||
+                ownerName.trim().length < MIN_OWNER_NAME_LENGTH
+              }
               variant="primary"
               size="lg"
               className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
@@ -1407,7 +1581,7 @@ export function WelcomePage() {
         ) : null}
         {sendCodeMutation.isError && sendCodeMutation.error instanceof Error ? (
           isDesktopLayout ? (
-            <ErrorBlock message={sendCodeMutation.error.message} />
+            <ErrorBlock message={describeRequestError(sendCodeMutation.error)} />
           ) : (
             <MobileWelcomeNotice
               tone="danger"
@@ -1423,13 +1597,13 @@ export function WelcomePage() {
                 ) : undefined
               }
             >
-              {sendCodeMutation.error.message}
+              {describeRequestError(sendCodeMutation.error)}
             </MobileWelcomeNotice>
           )
         ) : null}
         {sendEmailCodeMutation.isError && sendEmailCodeMutation.error instanceof Error ? (
           isDesktopLayout ? (
-            <ErrorBlock message={sendEmailCodeMutation.error.message} />
+            <ErrorBlock message={describeRequestError(sendEmailCodeMutation.error)} />
           ) : (
             <MobileWelcomeNotice
               tone="danger"
@@ -1445,13 +1619,13 @@ export function WelcomePage() {
                 ) : undefined
               }
             >
-              {sendEmailCodeMutation.error.message}
+              {describeRequestError(sendEmailCodeMutation.error)}
             </MobileWelcomeNotice>
           )
         ) : null}
         {cloudAccessSessionQuery.isError && cloudAccessSessionQuery.error instanceof Error ? (
           isDesktopLayout ? (
-            <ErrorBlock message={cloudAccessSessionQuery.error.message} />
+            <ErrorBlock message={describeRequestError(cloudAccessSessionQuery.error)} />
           ) : (
             <MobileWelcomeNotice
               tone="danger"
@@ -1469,7 +1643,7 @@ export function WelcomePage() {
                 ) : undefined
               }
             >
-              {cloudAccessSessionQuery.error.message}
+              {describeRequestError(cloudAccessSessionQuery.error)}
             </MobileWelcomeNotice>
           )
         ) : null}

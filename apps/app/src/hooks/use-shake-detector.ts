@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 export type ShakePermissionState =
   | "unsupported"
@@ -32,6 +32,14 @@ export function useShakeDetector(options: UseShakeDetectorOptions) {
 
   const [permissionState, setPermissionState] =
     useState<ShakePermissionState>(detectInitialPermissionState);
+
+  // sensor 探测只需第一次成功就足以确认"传感器可用"，之后页面里 enabled 在
+  // shake mutation pending 期间会反复切换 false/true，effect 跟着 cleanup +
+  // 重跑，每跑一次都会重启 probeMs 兜底定时器；如果设备在 mutation 等 AI 的
+  // ~60s 内完全静止、浏览器节流停发 devicemotion，新一次 probe 拿不到 sample
+  // 就会把 permissionState 误判成 "unsupported"，UI 退回兜底 hero 文案。用 ref
+  // 跨 effect 重跑保留"已经见过传感器"这个事实，确认过就不再 probe。
+  const sensorConfirmedRef = useRef(false);
 
   const fireShake = useEffectEvent(() => {
     if (
@@ -86,14 +94,17 @@ export function useShakeDetector(options: UseShakeDetectorOptions) {
     let cooldownUntil = 0;
     let lastShakeAt = 0;
     let consecutiveCount = 0;
-    let sawAnyAccel = false;
+    let sawAnyAccel = sensorConfirmedRef.current;
 
     function handleMotion(event: DeviceMotionEvent) {
       const g = event.accelerationIncludingGravity;
       if (!g || g.x == null || g.y == null || g.z == null) {
         return;
       }
-      sawAnyAccel = true;
+      if (!sawAnyAccel) {
+        sawAnyAccel = true;
+        sensorConfirmedRef.current = true;
+      }
 
       const now = event.timeStamp || Date.now();
       const dt = now - lastTime;
@@ -125,16 +136,23 @@ export function useShakeDetector(options: UseShakeDetectorOptions) {
 
     window.addEventListener("devicemotion", handleMotion);
 
-    // 兜底：probeMs 内一次 accel sample 都没回，判定为传感器不可用
-    const probeTimer = window.setTimeout(() => {
-      if (!sawAnyAccel) {
-        setPermissionState("unsupported");
-      }
-    }, probeMs);
+    // 兜底：probeMs 内一次 accel sample 都没回，判定为传感器不可用。
+    // 但只在尚未确认过传感器的那一次 effect 跑里探测；后续 mutation 期间
+    // enabled 来回切，effect 重跑就不再探测，避免把已确认可用的传感器
+    // 误标成 unsupported。
+    const probeTimer = sensorConfirmedRef.current
+      ? null
+      : window.setTimeout(() => {
+          if (!sawAnyAccel) {
+            setPermissionState("unsupported");
+          }
+        }, probeMs);
 
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
-      window.clearTimeout(probeTimer);
+      if (probeTimer !== null) {
+        window.clearTimeout(probeTimer);
+      }
     };
   }, [enabled, permissionState, threshold, windowMs, minEvents, cooldownMs, probeMs]);
 

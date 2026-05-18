@@ -1,14 +1,21 @@
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { FARM_CROP_CATALOG, type FarmCropId } from "@yinjie/contracts";
 
 const t = translateRuntimeMessage;
-import { FarmClockProvider, useFarmClock } from "./farm-clock-context";
+import { FarmClockProvider, useSetFarmServerNow } from "./farm-clock-context";
 import { useFarmState } from "./use-farm-state";
+import { CheckinSheet } from "./components/checkin-sheet";
 import { CoinDisplay } from "./components/coin-display";
+import { DecorationLayer } from "./components/decoration-layer";
+import { DogHouse } from "./components/dog-house";
 import { EventLogPanel } from "./components/event-log-panel";
+import { FarmNotificationBanner } from "./components/farm-notification-banner";
+import { LeaderboardSheet } from "./components/leaderboard-sheet";
+import { QuestSheet } from "./components/quest-sheet";
+import { isFarmSfxMuted, setFarmSfxMuted } from "./audio/farm-sfx";
 import { FarmIsoGrid } from "./components/farm-iso-grid";
 import { FarmMascot } from "./components/farm-mascot";
 import { FarmSky } from "./components/farm-sky";
@@ -36,11 +43,35 @@ interface HarvestToast {
 
 function FarmPageInner() {
   const stateQuery = useFarmState();
-  const clock = useFarmClock();
+  const setServerNowMs = useSetFarmServerNow();
+  // farm 是独立路由，被 /discover/games 或 /tabs/games 拉起。
+  // 若调用方传了 returnPath（如 /discover/games），点 返回 就回到那里；
+  // 否则默认回 /tabs/games（游戏中心）——这样 /discover/games → farm → 返回
+  // 不会再走 /tabs/games 中转，避免 history.back 死循环回到 farm。
+  const navigate = useNavigate();
+  const locationSearch = useRouterState({
+    select: (state) => state.location.searchStr,
+  });
+  const customReturnTarget = useMemo(() => {
+    const search = locationSearch ?? "";
+    const params = new URLSearchParams(
+      search.startsWith("?") ? search.slice(1) : search,
+    );
+    const ret = params.get("returnPath")?.trim();
+    if (!ret || !ret.startsWith("/")) {
+      return null;
+    }
+    const retHash = params.get("returnHash")?.trim();
+    return { path: ret, hash: retHash || undefined };
+  }, [locationSearch]);
   const [selectedPlotIndex, setSelectedPlotIndex] = useState<number | null>(null);
   const [seedShopOpen, setSeedShopOpen] = useState(false);
   const [warehouseOpen, setWarehouseOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [questsOpen, setQuestsOpen] = useState(false);
   const [activeNeighborId, setActiveNeighborId] = useState<string | null>(null);
+  const [sfxMuted, setSfxMuted] = useState(() => isFarmSfxMuted());
   const [toast, setToast] = useState<HarvestToast | null>(null);
   const [pulse, setPulse] = useState<{
     plotIndex: number;
@@ -59,9 +90,9 @@ function FarmPageInner() {
 
   useEffect(() => {
     if (stateQuery.data?.serverNowMs) {
-      clock.setServerNowMs(stateQuery.data.serverNowMs);
+      setServerNowMs(stateQuery.data.serverNowMs);
     }
-  }, [stateQuery.data?.serverNowMs, clock]);
+  }, [stateQuery.data?.serverNowMs, setServerNowMs]);
 
   useEffect(() => {
     if (!toast) return;
@@ -123,19 +154,47 @@ function FarmPageInner() {
         style={{ paddingTop: "max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))" }}
       >
         <header className="flex items-center justify-between">
-          <Link
-            to="/tabs/games"
-            className="rounded-full px-2 py-1 text-xs text-stone-500 hover:bg-white/60"
-          >
-            ← {t(msg`返回`)}
-          </Link>
+          {customReturnTarget ? (
+            <button
+              type="button"
+              onClick={() =>
+                navigate({
+                  to: customReturnTarget.path,
+                  hash: customReturnTarget.hash,
+                })
+              }
+              className="rounded-full px-2 py-1 text-xs text-stone-500 hover:bg-white/60"
+            >
+              ← {t(msg`返回`)}
+            </button>
+          ) : (
+            <Link
+              to="/tabs/games"
+              search={{ game: "yinjie-farm" }}
+              className="rounded-full px-2 py-1 text-xs text-stone-500 hover:bg-white/60"
+            >
+              ← {t(msg`返回`)}
+            </Link>
+          )}
           <h1 className="flex-1 text-center text-lg font-semibold text-emerald-900">
             {t(msg`隐界农场`)}
           </h1>
-          <div className="w-12" />
+          <button
+            type="button"
+            onClick={() => {
+              const next = !sfxMuted;
+              setSfxMuted(next);
+              setFarmSfxMuted(next);
+            }}
+            title={sfxMuted ? t(msg`点开音效`) : t(msg`关掉音效`)}
+            className="w-12 rounded-full px-2 py-1 text-base text-stone-500 hover:bg-white/60"
+          >
+            {sfxMuted ? "🔇" : "🔊"}
+          </button>
         </header>
 
         <CoinDisplay state={state} />
+        <FarmNotificationBanner state={state} />
 
         <div className="grid gap-3 lg:grid-cols-3">
           <aside className="flex flex-col gap-3 lg:order-1">
@@ -159,6 +218,37 @@ function FarmPageInner() {
                 {t(msg`存货共`)} {warehouseTotal} {t(msg`个`)}
               </div>
             </button>
+            <button
+              type="button"
+              onClick={() => setLeaderboardOpen(true)}
+              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-rose-50/85"
+            >
+              <div className="font-medium text-rose-700">🏆 {t(msg`排行榜`)}</div>
+              <div className="mt-0.5 text-stone-500">
+                {t(msg`和邻居比一比`)}
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCheckinOpen(true)}
+              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-amber-50/85"
+            >
+              <div className="font-medium text-amber-800">📅 {t(msg`每日签到`)}</div>
+              <div className="mt-0.5 text-stone-500">
+                {t(msg`连签 7 天有大礼`)}
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuestsOpen(true)}
+              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-sky-50/85"
+            >
+              <div className="font-medium text-sky-700">📋 {t(msg`任务`)}</div>
+              <div className="mt-0.5 text-stone-500">
+                {t(msg`日常 + 成就`)}
+              </div>
+            </button>
+            <DogHouse state={state} />
             <p className="hidden rounded-2xl border border-white/60 bg-white/55 p-3 text-[11px] leading-relaxed text-stone-600 shadow-sm backdrop-blur-md lg:block">
               {t(msg`作物按真实小时数成熟。下线时世界角色仍在自己的田里忙活——回来时看到的状态是世界自治后的结果。`)}
             </p>
@@ -210,6 +300,8 @@ function FarmPageInner() {
         </div>
       )}
 
+      <DecorationLayer placements={state.placedDecorations ?? []} />
+
       <SeedShopSheet
         state={state}
         open={seedShopOpen}
@@ -220,6 +312,12 @@ function FarmPageInner() {
         open={warehouseOpen}
         onClose={() => setWarehouseOpen(false)}
       />
+      <LeaderboardSheet
+        open={leaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
+      />
+      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
+      <QuestSheet open={questsOpen} onClose={() => setQuestsOpen(false)} />
       <NeighborFarmModal
         characterId={activeNeighborId}
         onClose={() => setActiveNeighborId(null)}

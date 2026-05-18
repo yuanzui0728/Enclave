@@ -1,111 +1,153 @@
-import { lazy } from "react";
 import {
   createRootRoute,
   createRoute,
   createRouter,
+  Link,
 } from "@tanstack/react-router";
+import { msg } from "@lingui/macro";
+import { Trans } from "@lingui/react/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
+import { Button, Card } from "@yinjie/ui";
 import { RootLayout } from "./components/root-layout";
+import { lazyWithReload } from "./lib/lazy-with-reload";
+// 首屏路由：home-page 走静态 import 跟主 chunk 一起到，省一个 RTT。
+// 其它路由保留 lazy，按需加载。
+import { HomePage } from "./routes/home-page";
 
-const HomePage = lazy(async () => {
-  const mod = await import("./routes/home-page");
-  return { default: mod.HomePage };
-});
+// 默认 404 组件：tanstack-router 内置 fallback 是裸的英文 "Not Found"，
+// 公网访问者打错路径或点了过期链接看到一坨英文体验差。包成一张本地化卡片
+// + 回首页按钮。所有未注册路由（含 /admin/<错路径>）走这里。
+function WikiNotFound() {
+  const t = translateRuntimeMessage;
+  return (
+    <Card className="p-6 space-y-3">
+      <h1 className="text-lg font-semibold">
+        <Trans>页面不存在</Trans>
+      </h1>
+      <p className="text-sm text-[color:var(--text-muted)]">
+        <Trans>请检查链接是否正确，或回到首页继续浏览。</Trans>
+      </p>
+      <div>
+        <Link to="/">
+          <Button variant="primary" size="sm">
+            {t(msg`返回首页`)}
+          </Button>
+        </Link>
+      </div>
+    </Card>
+  );
+}
 
-const LoginPage = lazy(async () => {
+const LoginPage = lazyWithReload(async () => {
   const mod = await import("./routes/login-page");
   return { default: mod.LoginPage };
 });
 
-const RegisterPage = lazy(async () => {
+const RegisterPage = lazyWithReload(async () => {
   const mod = await import("./routes/register-page");
   return { default: mod.RegisterPage };
 });
 
-const CharacterPage = lazy(async () => {
+const CharacterPage = lazyWithReload(async () => {
   const mod = await import("./routes/character-page");
   return { default: mod.CharacterPage };
 });
 
-const CharacterDiffPage = lazy(async () => {
+const CharacterDiffPage = lazyWithReload(async () => {
   const mod = await import("./routes/character-diff-page");
   return { default: mod.CharacterDiffPage };
 });
 
-const CreateCharacterPage = lazy(async () => {
+const WorldCharacterEditPage = lazyWithReload(async () => {
+  const mod = await import("./routes/world-character-edit-page");
+  return { default: mod.WorldCharacterEditPage };
+});
+
+const CreateCharacterPage = lazyWithReload(async () => {
   const mod = await import("./routes/create-character-page");
   return { default: mod.CreateCharacterPage };
 });
 
-const MyCharactersPage = lazy(async () => {
+const MyCharactersPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-characters-page");
   return { default: mod.MyCharactersPage };
 });
 
-const MyCharacterCreatePage = lazy(async () => {
+const MyCharacterCreatePage = lazyWithReload(async () => {
   const mod = await import("./routes/my-character-edit-page");
   const Component = mod.MyCharacterEditPage;
   return { default: () => <Component mode="create" /> };
 });
 
-const MyCharacterEditPage = lazy(async () => {
+const MyCharacterEditPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-character-edit-page");
   const Component = mod.MyCharacterEditPage;
   return { default: () => <Component mode="edit" /> };
 });
 
-const PendingReviewsPage = lazy(async () => {
+const PendingReviewsPage = lazyWithReload(async () => {
   const mod = await import("./routes/pending-reviews-page");
   return { default: mod.PendingReviewsPage };
 });
 
-const RecentChangesPage = lazy(async () => {
+const RecentChangesPage = lazyWithReload(async () => {
   const mod = await import("./routes/recent-changes-page");
   return { default: mod.RecentChangesPage };
 });
 
-const AdminLayout = lazy(async () => {
+const AdminLayout = lazyWithReload(async () => {
   const mod = await import("./routes/admin-layout");
   return { default: mod.AdminLayout };
 });
 
-const AdminUsersPage = lazy(async () => {
+const AdminUsersPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-users-page");
   return { default: mod.AdminUsersPage };
 });
 
-const AdminBlocksPage = lazy(async () => {
+const AdminBlocksPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-blocks-page");
   return { default: mod.AdminBlocksPage };
 });
 
-const AdminProtectionPage = lazy(async () => {
+const AdminProtectionPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-protection-page");
   return { default: mod.AdminProtectionPage };
 });
 
-const WatchlistPage = lazy(async () => {
+const WatchlistPage = lazyWithReload(async () => {
   const mod = await import("./routes/watchlist-page");
   return { default: mod.WatchlistPage };
 });
 
-const SearchPage = lazy(async () => {
+const SearchPage = lazyWithReload(async () => {
   const mod = await import("./routes/search-page");
   return { default: mod.SearchPage };
 });
 
-const AdminReportsPage = lazy(async () => {
+const AdminReportsPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-reports-page");
   return { default: mod.AdminReportsPage };
 });
 
-const AdminAbuseFiltersPage = lazy(async () => {
+const AdminAbuseFiltersPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-abuse-filters-page");
   return { default: mod.AdminAbuseFiltersPage };
 });
 
-const AdminStatsPage = lazy(async () => {
+const AdminStatsPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-stats-page");
   return { default: mod.AdminStatsPage };
+});
+
+const AccountPage = lazyWithReload(async () => {
+  const mod = await import("./routes/account-page");
+  return { default: mod.AccountPage };
+});
+
+const MyDraftsPage = lazyWithReload(async () => {
+  const mod = await import("./routes/my-drafts-page");
+  return { default: mod.MyDraftsPage };
 });
 
 const rootRoute = createRootRoute({ component: RootLayout });
@@ -150,9 +192,19 @@ const characterDiffRoute = createRoute({
   component: CharacterDiffPage,
 });
 
+const worldCharacterEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/character/$characterId/edit",
+  component: WorldCharacterEditPage,
+});
+
 const createCharacterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/create",
+  validateSearch: (search: Record<string, unknown>): { draftId?: string } =>
+    typeof search.draftId === "string" && search.draftId.length > 0
+      ? { draftId: search.draftId }
+      : {},
   component: CreateCharacterPage,
 });
 
@@ -165,6 +217,10 @@ const myCharactersRoute = createRoute({
 const myCharacterCreateRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/my-characters/new",
+  validateSearch: (search: Record<string, unknown>): { draftId?: string } =>
+    typeof search.draftId === "string" && search.draftId.length > 0
+      ? { draftId: search.draftId }
+      : {},
   component: MyCharacterCreatePage,
 });
 
@@ -225,6 +281,18 @@ const searchRoute = createRoute({
   component: SearchPage,
 });
 
+const accountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/account",
+  component: AccountPage,
+});
+
+const myDraftsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-drafts",
+  component: MyDraftsPage,
+});
+
 const adminReportsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/reports",
@@ -249,6 +317,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   characterRoute,
   characterDiffRoute,
+  worldCharacterEditRoute,
   createCharacterRoute,
   myCharactersRoute,
   myCharacterCreateRoute,
@@ -265,9 +334,14 @@ const routeTree = rootRoute.addChildren([
   ]),
   watchlistRoute,
   searchRoute,
+  accountRoute,
+  myDraftsRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  defaultNotFoundComponent: WikiNotFound,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {

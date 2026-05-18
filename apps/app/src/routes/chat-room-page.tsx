@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -24,6 +24,7 @@ import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-cha
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
+  isGroupInviteStorageKey,
   resolveGroupInviteRouteContext,
 } from "../lib/group-invite-delivery";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -53,9 +54,16 @@ export function ChatRoomPage() {
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+  // 移动端走查 R2：本组件只用 conversationsQuery 判定「这是不是群聊会话」并
+  // redirect 到 /group/$groupId（mobile）或 /tabs/chat#... (desktop)。chat-list-page
+  // 进入前刚拉过 app-conversations（15s staleTime）；这条 observer 没 staleTime
+  // 就吃全局默认（mobile-web 60s / 其他 10s），desktop 路径下每进/切单聊都触发
+  // 一次冗余 GET /conversations。和 use-conversation-thread R5 / chat-details
+  // 第七轮 R2 一致对齐 15s。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
   const activeConversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
@@ -72,6 +80,23 @@ export function ChatRoomPage() {
   useEffect(() => {
     setRouteContext(resolveRouteContext(conversationId));
   }, [conversationId, search]);
+
+  // 新一轮 R1：chat-room-page 在路由参数 conversationId 变化时是「保留挂载、
+  // 只换 params」的——React 不重 mount 本组件（重 mount 的是子 ConversationThreadPanel
+  // 的 key={conversationId}）。所以 routeMobileShortcutAction / routeCallReturnKind
+  // 这两条「URL 一次性信号」state 会跨会话泄漏：
+  //   1) 在 conv A 通话结束 → URL 带 ?call-return=voice → setRouteCallReturnKind("voice")
+  //   2) 紧接着 6s 自动关闭计时器之前用户从 chat-details 名片分享 / Reminder /
+  //      Game invite 等路径跳到 /chat/B（path 同型，组件不卸）
+  //   3) routeCallReturnKind 还是 "voice"，B 顶部莫名其妙挂着「本轮语音通话已
+  //      结束。你可以直接继续输入...」notice
+  // routeMobileShortcutAction 同理：composer 快捷动作（如外部 deep link 强制
+  // 切语音输入）也会在 ConversationThreadPanel 处理之前的微秒级窗口里漏到下一个
+  // 会话。conversationId 变化时强制把两条 state 清零，避免错配。
+  useEffect(() => {
+    setRouteMobileShortcutAction(null);
+    setRouteCallReturnKind(null);
+  }, [conversationId]);
 
   useEffect(() => {
     if (isDesktopLayout) {
@@ -198,16 +223,57 @@ export function ChatRoomPage() {
     const handleFocus = () => {
       void syncRouteContext();
     };
+    // 走查新一轮 R1：和姊妹页 group-chat-page.tsx / group-qr-page.tsx 同款问题
+    // ——原版 storage handler 直接复用 handleFocus，OTHER tab 任何 localStorage
+    // 写入（主题、草稿、last viewed page 等等）都会触发 syncRouteContext →
+    // await hydrateGroupInviteDeliveryFromNative + 读 3 个 storage key +
+    // setRouteContext。单聊页常驻打开、用户其它 tab 一直在写无关 key，纯白
+    // 消耗。本路由只依赖群邀请投递/记录/复登 3 个 key（resolveRouteContext
+    // 走 url search + group-invite storage，不读其他 key），用
+    // isGroupInviteStorageKey gate 一下；老 Safari 的 localStorage.clear() 场景
+    // key=null 仍按全量同步对待。
+    const handleStorage = (event: StorageEvent) => {
+      if (!isGroupInviteStorageKey(event.key)) {
+        return;
+      }
+      void syncRouteContext();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorage);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [conversationId, search]);
 
+  // 走查新会话 R2：callReturnNotice / safeRouteContext notice 的 actionLabel 按钮
+  // 都直接 inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // - callReturnNotice.onAction = setRouteCallReturnKind(null) + navigate({/chat/$id,
+  //   search:?action=voice-message}) → 同帧双击「发语音继续」推 2 条相同 history
+  //   项（path 一致 + search 一致），用户从 voice-call 屏返回再点 callReturn 想
+  //   切回语音输入时，要按 2 次返回才能回到正常聊天页。
+  // - safeRouteContext.onAction = navigate({safeRouteContext.returnPath}) →
+  //   同帧双击「返回上一页」（game invite / group invite 进来时的）同款 2 次 push。
+  // 单一 noticeActionFiredRef 兜底两条 notice 入口，raf 后释放（兜底 navigate
+  // 没真正切走的边界）。
+  const noticeActionFiredRef = useRef(false);
+  const guardNoticeAction = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (noticeActionFiredRef.current) return;
+        noticeActionFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            noticeActionFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const callReturnNotice =
     routeCallReturnKind === null
       ? null
@@ -221,7 +287,7 @@ export function ChatRoomPage() {
               : t(
                   msg`本轮视频通话已结束。你可以直接继续输入，也可以切回语音发送。`,
                 ),
-          onAction: () => {
+          onAction: guardNoticeAction(() => {
             setRouteCallReturnKind(null);
             void navigate({
               to: "/chat/$conversationId",
@@ -232,7 +298,7 @@ export function ChatRoomPage() {
                 }) || undefined,
               hash,
             });
-          },
+          }),
           secondaryActionLabel: t(msg`继续打字`),
           onSecondaryAction: () => {
             setRouteCallReturnKind(null);
@@ -257,6 +323,59 @@ export function ChatRoomPage() {
     return true;
   }
 
+  // 走查本会话 R4：mobile 路径的 onBack 被 4 处消费——
+  // (1) MobileChatThreadHeader 顶部返回按钮（已经被 header 内 actionFiredRef 守住）
+  // (2) ConversationThreadPanel.renderStatusBackAction 在 messagesQuery error /
+  //     socketError 状态下显示的「返回上一页」按钮（onClick={onBack} 直接挂）
+  // (3) ChatMessageList errorActionLabel/onErrorAction 通过 setActionNotice 的
+  //     secondaryActionLabel 给收藏/撤回/分享等 mutation 的「重试」notice 当退路
+  // (4) ChatComposer 的 MobileComposerStatusRail 在 composerError / preset/sticker
+  //     send 失败时给的 onAction
+  // 后 3 处都没挂 guardAction，同帧 <16ms 双击全部直接走 navigateBackOrFallback →
+  // window.history.back() 跑 2 次 → 用户实际后退 2 页。第 1 次成功后页面 unmount
+  // 但 ref 是模块级 useRef，next mount 自动复位（新 conversationId 进来或下次切
+  // 回这个会话都会有新的 ref 实例）。一把同步锁兜底所有入口。
+  const backFiredRef = useRef(false);
+  const handleMobileBack = useCallback(() => {
+    if (backFiredRef.current) {
+      return;
+    }
+    backFiredRef.current = true;
+    const expectedPreviousPath =
+      (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+        ? routeState.returnPath
+        : undefined) ??
+      safeRouteContext?.returnPath ??
+      "/tabs/chat";
+    navigateBackOrFallback(
+      () => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({
+          to: safeRouteContext?.returnPath ?? "/tabs/chat",
+        });
+      },
+      expectedPreviousPath,
+    );
+    // 同步设回 false 不行（同帧立刻 reset 又能双击），但 window.history.back()
+    // 是同步触发 popstate 导致路由变化 → 本组件因 conversationId 离开当前 route
+    // tree 而 unmount → ref 自然作废。少数边界（back 没真的发生，比如 history
+    // 长度为 1 又走 onFallback navigate 没真切走）下，下一次 user 想再点要等
+    // 一帧——这里在 raf 后释放 ref 让兜底场景能恢复。
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        backFiredRef.current = false;
+      });
+    }
+  }, [
+    navigate,
+    routeState.returnPath,
+    routeState.returnHash,
+    safeRouteContext?.returnPath,
+  ]);
+
   if (isDesktopLayout) {
     return (
       <Suspense
@@ -277,9 +396,9 @@ export function ChatRoomPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
@@ -303,23 +422,13 @@ export function ChatRoomPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
-          onBack={() => {
-            navigateBackOrFallback(() => {
-              if (navigateToRouteStateReturn()) {
-                return;
-              }
-
-              void navigate({
-                to: safeRouteContext?.returnPath ?? "/tabs/chat",
-              });
-            });
-          }}
+          onBack={handleMobileBack}
         />
       </div>
     </AppPage>

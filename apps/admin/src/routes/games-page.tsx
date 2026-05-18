@@ -38,7 +38,6 @@ import {
   AdminDetailPanel,
   AdminDraftStatusPill,
   AdminEmptyState,
-  AdminMiniPanel,
   AdminPageHero,
   AdminTabs,
 } from "../components/admin-workbench";
@@ -358,14 +357,11 @@ export function GamesPage() {
       total: items.length,
       official: items.filter((item) => item.publisherKind === "platform_official")
         .length,
-      thirdParty: items.filter((item) => item.publisherKind === "third_party")
-        .length,
       character: items.filter((item) => item.publisherKind === "character_creator")
         .length,
       pending: items.filter((item) => item.reviewStatus === "pending_review")
         .length,
       unpublished: items.filter((item) => item.hasUnpublishedChanges).length,
-      published: items.filter((item) => item.visibilityScope !== "internal").length,
     };
   }, [gamesQuery.data]);
 
@@ -557,15 +553,7 @@ export function GamesPage() {
       <AdminPageHero
         eyebrow="Game Catalog Ops"
         title={t(msg`AI 游戏目录工作台`)}
-        description={t(msg`先看目录盘面，再处理待审核、待发布和前台编排。目录编辑、版本发布、首页策展和投稿入库拆成独立工作区，方便运营连续处理。`)}
-        badges={[
-          t(msg`${filteredMetrics.visible}/${metrics.total} 条目录已进入当前视图`),
-          metrics.pending > 0 ? t(msg`${metrics.pending} 款待审核`) : t(msg`审核队列已清空`),
-          metrics.unpublished > 0
-            ? t(msg`${metrics.unpublished} 款有未发布修改`)
-            : t(msg`当前目录已基本同步正式版本`),
-          activeSummary.title,
-        ]}
+        description={t(msg`目录编辑、版本发布、首页策展和投稿入库拆成 4 个独立工作区，左侧队列指标实时更新，右侧编辑器集中处理草稿。`)}
         actions={
           <>
             <Button
@@ -579,12 +567,6 @@ export function GamesPage() {
             </Button>
           </>
         }
-        metrics={[
-          { label: t(msg`目录总数`), value: String(metrics.total) },
-          { label: t(msg`待审核`), value: String(metrics.pending) },
-          { label: t(msg`待发布修改`), value: String(metrics.unpublished) },
-          { label: t(msg`正式可见`), value: String(metrics.published) },
-        ]}
       />
 
       {feedback ? <InlineNotice tone={feedback.tone}>{feedback.message}</InlineNotice> : null}
@@ -604,23 +586,16 @@ export function GamesPage() {
         <div className="grid gap-6 xl:grid-cols-[0.38fr_0.62fr]">
           <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
             <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,250,0.96))]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-[12px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-                    Queue View
-                  </div>
-                  <div className="mt-2 text-xl font-semibold text-[color:var(--text-primary)]">
-                    {t(msg`运营目录队列`)}
-                  </div>
-                  <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
-                    {t(msg`先筛出待处理目录，再进入右侧编辑或发布工作区。列表按待审核、待发布和更新时间排序。`)}
-                  </div>
+              <div>
+                <div className="text-[12px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                  Queue View
                 </div>
-                <StatusPill tone={filteredMetrics.actionRequired > 0 ? "warning" : "healthy"}>
-                  {filteredMetrics.actionRequired > 0
-                    ? t(msg`${filteredMetrics.actionRequired} 项待处理`)
-                    : t(msg`当前无阻塞项`)}
-                </StatusPill>
+                <div className="mt-2 text-xl font-semibold text-[color:var(--text-primary)]">
+                  {t(msg`运营目录队列`)}
+                </div>
+                <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+                  {t(msg`先筛出待处理目录，再进入右侧编辑或发布工作区。列表按待审核、待发布和更新时间排序。`)}
+                </div>
               </div>
 
               <div className="mt-5 space-y-3">
@@ -699,36 +674,6 @@ export function GamesPage() {
               />
             </div>
 
-            <AdminCallout
-              tone={filteredMetrics.actionRequired > 0 ? "warning" : "success"}
-              title={
-                filteredMetrics.actionRequired > 0
-                  ? t(msg`目录队列里还有待推进事项`)
-                  : t(msg`当前视图内的目录状态比较稳定`)
-              }
-              description={
-                filteredMetrics.actionRequired > 0
-                  ? t(msg`优先处理 ${filteredMetrics.pending} 个待审核目录，再发布 ${filteredMetrics.unpublished} 个未同步正式版本的修改。`)
-                  : t(msg`可以继续做新建草稿、版本发布，或切到策展区安排前台曝光。`)
-              }
-              actions={
-                <>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setQuickFilter("pending_review")}
-                  >
-                    {t(msg`查看待审核`)}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setQuickFilter("unpublished")}
-                  >
-                    {t(msg`查看待发布`)}
-                  </Button>
-                </>
-              }
-            />
-
             {!gamesQuery.isLoading && !filteredGames.length ? (
               <AdminEmptyState
                 title={t(msg`当前筛选下没有游戏`)}
@@ -782,9 +727,19 @@ export function GamesPage() {
                         {selectedGame.hasUnpublishedChanges ? (
                           <StatusPill tone="warning">{t(msg`待发布`)}</StatusPill>
                         ) : null}
+                        <StatusPill tone="muted">
+                          {`v${selectedGame.publishedVersion || 0}`}
+                        </StatusPill>
                       </>
                     ) : null}
                     {isCreating ? <StatusPill tone="muted">{t(msg`新草稿`)}</StatusPill> : null}
+                    {(isCreating || selectedGame) ? (
+                      <StatusPill tone={draftReady ? "healthy" : "warning"}>
+                        {draftReady
+                          ? t(msg`表单已齐备`)
+                          : t(msg`还缺 ${draftIssues.length} 项`)}
+                      </StatusPill>
+                    ) : null}
                   </div>
                   <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
                     {activeSummary.description}
@@ -828,56 +783,47 @@ export function GamesPage() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <AdminMiniPanel title={t(msg`当前工作区`)} tone="soft">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {workspaceTab === "catalog" ? t(msg`目录编辑`) : t(msg`版本发布`)}
+              {(() => {
+                const stripLabel = selectedGame
+                  ? summarizeNextActionLabel(selectedGame)
+                  : isCreating
+                    ? draftReady
+                      ? t(msg`点右上角创建草稿`)
+                      : t(msg`先补齐草稿字段`)
+                    : t(msg`先选中目录项`);
+                const stripHint = selectedGame
+                  ? null
+                  : isCreating
+                    ? draftReady
+                      ? null
+                      : t(msg`优先补齐：${draftIssues.slice(0, 3).join("、")}`)
+                    : t(msg`左侧队列按优先级排序，可直接进入处理。`);
+                const publishedHint = selectedGame?.lastPublishedAt
+                  ? t(msg`上次发布 ${formatTime(selectedGame.lastPublishedAt)}`)
+                  : null;
+                return (
+                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[14px] border border-[color:var(--border-faint)] bg-white/70 px-3.5 py-2.5 text-sm leading-6 text-[color:var(--text-secondary)]">
+                    <span className="text-[12px] font-medium uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {t(msg`下一步`)}
+                    </span>
+                    <span className="font-medium text-[color:var(--text-primary)]">
+                      {stripLabel}
+                    </span>
+                    {stripHint ? (
+                      <>
+                        <span className="text-[color:var(--text-muted)]">·</span>
+                        <span className="text-[color:var(--text-muted)]">{stripHint}</span>
+                      </>
+                    ) : null}
+                    {publishedHint ? (
+                      <>
+                        <span className="text-[color:var(--text-muted)]">·</span>
+                        <span className="text-[color:var(--text-muted)]">{publishedHint}</span>
+                      </>
+                    ) : null}
                   </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    {workspaceTab === "catalog"
-                      ? t(msg`维护资料、状态和前台标签。`)
-                      : t(msg`管理修订记录、正式发布和回滚。`)}
-                  </div>
-                </AdminMiniPanel>
-                <AdminMiniPanel title={t(msg`下一步建议`)} tone="soft">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {selectedGame
-                      ? summarizeNextActionLabel(selectedGame)
-                      : t(msg`先选中目录项`)}
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    {selectedGame
-                      ? summarizeGameNextStep(selectedGame)
-                      : t(msg`左侧队列按优先级排序，可直接进入处理。`)}
-                  </div>
-                </AdminMiniPanel>
-                <AdminMiniPanel title={t(msg`版本状态`)} tone="soft">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {selectedGame
-                      ? `v${selectedGame.publishedVersion || 0}`
-                      : isCreating
-                        ? t(msg`尚未发布`)
-                        : t(msg`未选择`)}
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    {selectedGame?.lastPublishedAt
-                      ? t(msg`上次发布于 ${formatTime(selectedGame.lastPublishedAt)}`)
-                      : t(msg`当前没有正式发布时间记录。`)}
-                  </div>
-                </AdminMiniPanel>
-                <AdminMiniPanel title={t(msg`表单完整度`)} tone="soft">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {draftReady ? t(msg`关键字段已齐备`) : t(msg`还缺 ${draftIssues.length} 项`)}
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    {draftReady
-                      ? isDraftDirty
-                        ? t(msg`可以保存后进入发布或策展流。`)
-                        : t(msg`表单内容已和当前草稿同步。`)
-                      : t(msg`优先补齐：${draftIssues.slice(0, 3).join("、")}`)}
-                  </div>
-                </AdminMiniPanel>
-              </div>
+                );
+              })()}
             </Card>
 
             {workspaceTab === "catalog" ? (
@@ -982,7 +928,7 @@ function CatalogEditorWorkspace({
 
       <div className="grid gap-6 xl:grid-cols-2">
         <AdminDetailPanel title={t(msg`基础资料`)}>
-          <div className="grid gap-4 2xl:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <EditorField
               label={t(msg`游戏 ID`)}
               value={draft.id}
@@ -1030,7 +976,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, slogan: value }))
               }
               placeholder={t(msg`例如 三分钟一局，把反应和协作压到最紧`)}
-              className="2xl:col-span-2"
+              className="md:col-span-2"
             />
             <EditorTextArea
               label={t(msg`游戏简介`)}
@@ -1039,13 +985,96 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, description: value }))
               }
               placeholder={t(msg`描述这款 AI 游戏的玩法、目标和回流价值`)}
-              className="2xl:col-span-2"
+              className="md:col-span-2"
+            />
+          </div>
+        </AdminDetailPanel>
+
+        <AdminDetailPanel title={t(msg`运营与审核`)}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <EditorSelect
+              label={t(msg`审核状态`)}
+              value={draft.reviewStatus}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  reviewStatus: value as AdminGameCatalogItem["reviewStatus"],
+                }))
+              }
+              options={REVIEW_OPTION_MESSAGES.map((opt) => ({
+                value: opt.value,
+                label: translateRuntimeMessage(opt.label),
+              }))}
+            />
+            <EditorSelect
+              label={t(msg`可见性`)}
+              value={draft.visibilityScope}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  visibilityScope: value as AdminGameCatalogItem["visibilityScope"],
+                }))
+              }
+              options={VISIBILITY_OPTION_MESSAGES.map((opt) => ({
+                value: opt.value,
+                label: t(opt.label),
+              }))}
+            />
+            <EditorSelect
+              label={t(msg`来源`)}
+              value={draft.publisherKind}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  publisherKind: value as AdminGameCatalogItem["publisherKind"],
+                }))
+              }
+              options={PUBLISHER_OPTION_MESSAGES.map((opt) => ({
+                value: opt.value,
+                label: translateRuntimeMessage(opt.label),
+              }))}
+            />
+            <EditorSelect
+              label={t(msg`生产方式`)}
+              value={draft.productionKind}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  productionKind: value as AdminGameCatalogItem["productionKind"],
+                }))
+              }
+              options={PRODUCTION_OPTION_MESSAGES.map((opt) => ({
+                value: opt.value,
+                label: translateRuntimeMessage(opt.label),
+              }))}
+            />
+            <EditorSelect
+              label={t(msg`运行方式`)}
+              value={draft.runtimeMode}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  runtimeMode: value as AdminGameCatalogItem["runtimeMode"],
+                }))
+              }
+              options={RUNTIME_OPTION_MESSAGES.map((opt) => ({
+                value: opt.value,
+                label: t(opt.label),
+              }))}
+            />
+            <EditorField
+              label={t(msg`排序权重`)}
+              value={draft.sortOrder}
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, sortOrder: value }))
+              }
+              type="number"
             />
           </div>
         </AdminDetailPanel>
 
         <AdminDetailPanel title={t(msg`前台定位`)}>
-          <div className="grid gap-4 2xl:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <EditorSelect
               label={t(msg`目录分类`)}
               value={draft.category}
@@ -1113,7 +1142,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, updateNote: value }))
               }
               placeholder={t(msg`例如 新增赛季对抗、优化新手引导`)}
-              className="2xl:col-span-2"
+              className="md:col-span-2"
             />
             <EditorTextArea
               label={t(msg`本局目标`)}
@@ -1122,96 +1151,13 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, sessionObjective: value }))
               }
               placeholder={t(msg`说明玩家本轮打开后应该做什么`)}
-              className="2xl:col-span-2"
-            />
-          </div>
-        </AdminDetailPanel>
-
-        <AdminDetailPanel title={t(msg`运营与审核`)}>
-          <div className="grid gap-4 2xl:grid-cols-2">
-            <EditorSelect
-              label={t(msg`来源`)}
-              value={draft.publisherKind}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  publisherKind: value as AdminGameCatalogItem["publisherKind"],
-                }))
-              }
-              options={PUBLISHER_OPTION_MESSAGES.map((opt) => ({
-                value: opt.value,
-                label: translateRuntimeMessage(opt.label),
-              }))}
-            />
-            <EditorSelect
-              label={t(msg`生产方式`)}
-              value={draft.productionKind}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  productionKind: value as AdminGameCatalogItem["productionKind"],
-                }))
-              }
-              options={PRODUCTION_OPTION_MESSAGES.map((opt) => ({
-                value: opt.value,
-                label: translateRuntimeMessage(opt.label),
-              }))}
-            />
-            <EditorSelect
-              label={t(msg`运行方式`)}
-              value={draft.runtimeMode}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  runtimeMode: value as AdminGameCatalogItem["runtimeMode"],
-                }))
-              }
-              options={RUNTIME_OPTION_MESSAGES.map((opt) => ({
-                value: opt.value,
-                label: t(opt.label),
-              }))}
-            />
-            <EditorSelect
-              label={t(msg`审核状态`)}
-              value={draft.reviewStatus}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  reviewStatus: value as AdminGameCatalogItem["reviewStatus"],
-                }))
-              }
-              options={REVIEW_OPTION_MESSAGES.map((opt) => ({
-                value: opt.value,
-                label: translateRuntimeMessage(opt.label),
-              }))}
-            />
-            <EditorSelect
-              label={t(msg`可见性`)}
-              value={draft.visibilityScope}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  visibilityScope: value as AdminGameCatalogItem["visibilityScope"],
-                }))
-              }
-              options={VISIBILITY_OPTION_MESSAGES.map((opt) => ({
-                value: opt.value,
-                label: t(opt.label),
-              }))}
-            />
-            <EditorField
-              label={t(msg`排序权重`)}
-              value={draft.sortOrder}
-              onChange={(value) =>
-                setDraft((current) => ({ ...current, sortOrder: value }))
-              }
-              type="number"
+              className="md:col-span-2"
             />
           </div>
         </AdminDetailPanel>
 
         <AdminDetailPanel title={t(msg`来源与标签`)}>
-          <div className="grid gap-4 2xl:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <EditorField
               label={t(msg`来源角色 ID`)}
               value={draft.sourceCharacterId}
@@ -1244,7 +1190,7 @@ function CatalogEditorWorkspace({
                 }))
               }
               placeholder={t(msg`用逗号或换行分隔，例如 AI 陪练，AI 剧情生成`)}
-              className="2xl:col-span-2"
+              className="md:col-span-2"
             />
             <EditorTextArea
               label={t(msg`标签`)}
@@ -1253,7 +1199,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, tagsText: value }))
               }
               placeholder={t(msg`用逗号或换行分隔，例如 组队，3 分钟，赛季`)}
-              className="2xl:col-span-2"
+              className="md:col-span-2"
             />
           </div>
         </AdminDetailPanel>

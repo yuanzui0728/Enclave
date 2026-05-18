@@ -169,7 +169,20 @@ export function recordAppNavigation(path: string) {
   );
 }
 
-export function canSafelyNavigateBack() {
+function getPathnameOnly(path: string) {
+  if (!path.startsWith("/")) {
+    return null;
+  }
+
+  try {
+    const url = new URL(path, "https://yinjie.app");
+    return normalizePathname(url.pathname);
+  } catch {
+    return null;
+  }
+}
+
+export function canSafelyNavigateBack(expectedPreviousPath?: string) {
   if (typeof window === "undefined" || window.history.length <= 1) {
     return false;
   }
@@ -182,14 +195,28 @@ export function canSafelyNavigateBack() {
     currentState?.currentPath === currentPath &&
     currentState.previousPath
   ) {
+    if (expectedPreviousPath) {
+      const expectedPathname = getPathnameOnly(expectedPreviousPath);
+      const previousPathname = getPathnameOnly(currentState.previousPath);
+      if (
+        !expectedPathname ||
+        !previousPathname ||
+        expectedPathname !== previousPathname
+      ) {
+        return false;
+      }
+    }
     return true;
   }
 
   return !currentState && hasSameOriginReferrer();
 }
 
-export function navigateBackOrFallback(onFallback: () => void) {
-  if (canSafelyNavigateBack()) {
+export function navigateBackOrFallback(
+  onFallback: () => void,
+  expectedPreviousPath?: string,
+) {
+  if (canSafelyNavigateBack(expectedPreviousPath)) {
     window.history.back();
     return;
   }

@@ -3,14 +3,20 @@
 // 多个页面（moments-page / friend-moments-page / profile-moments-page /
 // mobile-friend-moments-page）都有 likeMutation，但 onMutate 只在 moments-page
 // 里实现过。公网隧道 ~600ms RTT 下没有 optimistic 的页面，用户点心 → UI
-// 等 ~600ms 才反应；这个 helper 把"两个 cache key (app-moments 扁平 +
-// app-moments-paged 分页) 同步 toggle"的样板封装起来，5 行 + onSuccess
-// 就接上。
+// 等 ~600ms 才反应；这个 helper 把"多 cache key 同步 toggle"的样板封装起来，
+// 5 行 + onSuccess 就接上。
 //
-// 注意：对扁平 (Moment[]) 和分页 (InfiniteData<MomentsPageResponse>) 两种
-// 缓存形态都做同样的 toggle —— 某些页面只用其中一种，但 mutation onSuccess
-// 时两种都得 invalidate（参见原 moments-page invalidate 链），optimistic
-// 一致性也得跟着两套都更新，否则切页时偶发回滚到旧值。
+// 必须覆盖的四把 cache：
+//   - app-moments (扁平)：search index / 旧 component / 分享卡走这条
+//   - app-moments-paged (分页)：/tabs/moments 主数据源
+//   - app-moments-mine：/profile/moments 主数据源
+//   - app-moments-character[X]：/desktop/friend-moments/X 主数据源
+//
+// 走查 Round 1：之前只 sync 前两把 → /profile/moments 与
+// /desktop/friend-moments/X 的 likeMutation onSuccess 又故意省掉 invalidate
+// ("optimistic 已切对")，结果两个页面点心后 UI 完全不动，要刷新或离开重进
+// 才能看到 like 状态。跟 moments-page.tsx commentMutation 的 4-cache 同步
+// pattern 对齐。
 
 import { useCallback } from "react";
 import {
@@ -47,6 +53,12 @@ export function useOptimisticMomentLikeHandlers(input: {
         queryClient.cancelQueries({
           queryKey: ["app-moments-paged", baseUrl],
         }),
+        queryClient.cancelQueries({
+          queryKey: ["app-moments-mine", baseUrl],
+        }),
+        queryClient.cancelQueries({
+          queryKey: ["app-moments-character", baseUrl],
+        }),
       ]);
 
       const flatSnapshots = queryClient.getQueriesData<Moment[]>({
@@ -56,6 +68,12 @@ export function useOptimisticMomentLikeHandlers(input: {
         InfiniteData<MomentsPageResponse>
       >({
         queryKey: ["app-moments-paged", baseUrl],
+      });
+      const mineSnapshots = queryClient.getQueriesData<Moment[]>({
+        queryKey: ["app-moments-mine", baseUrl],
+      });
+      const characterSnapshots = queryClient.getQueriesData<Moment[]>({
+        queryKey: ["app-moments-character", baseUrl],
       });
 
       const toggleMomentLike = (moment: Moment): Moment => {
@@ -98,11 +116,21 @@ export function useOptimisticMomentLikeHandlers(input: {
           })),
         });
       });
+      mineSnapshots.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<Moment[]>(key, data.map(toggleMomentLike));
+      });
+      characterSnapshots.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<Moment[]>(key, data.map(toggleMomentLike));
+      });
 
       return {
         snapshots: [
           ...(flatSnapshots as unknown as Snapshot[]),
           ...(pagedSnapshots as unknown as Snapshot[]),
+          ...(mineSnapshots as unknown as Snapshot[]),
+          ...(characterSnapshots as unknown as Snapshot[]),
         ],
       };
     },
@@ -128,6 +156,12 @@ export function useOptimisticMomentLikeHandlers(input: {
         queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
         queryClient.invalidateQueries({
           queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-mine", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-character", baseUrl],
         }),
       ]),
     [baseUrl, queryClient],

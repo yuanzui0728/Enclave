@@ -62,12 +62,15 @@ export function createFriendDirectoryItems(
   items: FriendListItem[],
 ): FriendDirectoryItem[] {
   return sortDirectoryItems(
-    items.map((item) => ({
-      ...item,
-      displayName: getFriendDisplayName(item),
-      sortLabel: getFriendDisplayName(item),
-      indexLabel: getContactIndexLabel(getFriendDisplayName(item)),
-    })),
+    items.map((item) => {
+      const displayName = getFriendDisplayName(item);
+      return {
+        ...item,
+        displayName,
+        sortLabel: displayName,
+        indexLabel: getContactIndexLabel(displayName),
+      };
+    }),
   );
 }
 
@@ -199,6 +202,41 @@ export function getFriendDisplayName(
   item: Pick<FriendListItem, "character" | "friendship">,
 ) {
   return item.friendship.remarkName?.trim() || item.character.name;
+}
+
+// 星标列表的排序：最近设星标的排在前面，starredAt 缺失 / 同时间时回退到显示名 + id。
+// 桌面星标 sub-pane 和移动 starred-friends-page 共用，避免两端出现"同一份星标好友
+// 排序不一致"的怪事（用户把好友拉黑/再加回来后 starredAt 会刷新，顺序就会变）。
+export function compareStarredFriends(
+  left: FriendListItem,
+  right: FriendListItem,
+) {
+  const starredAtDelta =
+    getSortableTimestamp(right.friendship.starredAt) -
+    getSortableTimestamp(left.friendship.starredAt);
+
+  if (starredAtDelta !== 0) {
+    return starredAtDelta;
+  }
+
+  const nameDiff = getFriendDisplayName(left).localeCompare(
+    getFriendDisplayName(right),
+    "zh-CN",
+  );
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  return left.character.id.localeCompare(right.character.id);
+}
+
+function getSortableTimestamp(value?: string | null) {
+  if (!value) {
+    return 0;
+  }
+
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function sortDirectoryItems<

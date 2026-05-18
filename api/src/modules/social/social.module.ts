@@ -4,6 +4,7 @@ import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.en
 import { SocialService } from './social.service';
 import { SocialController } from './social.controller';
 import { ShakeDiscoveryService } from './shake-discovery.service';
+import { InitialMessageService } from './initial-message.service';
 import { FriendshipEntity } from './friendship.entity';
 import { FriendRequestEntity } from './friend-request.entity';
 import { AIRelationshipEntity } from './ai-relationship.entity';
@@ -58,7 +59,12 @@ import { MomentLikeEntity } from '../moments/moment-like.entity';
     SystemConfigModule,
     forwardRef(() => CyberAvatarModule),
   ],
-  providers: [SocialService, ShakeDiscoveryService, CharacterFriendshipService],
+  providers: [
+    SocialService,
+    ShakeDiscoveryService,
+    CharacterFriendshipService,
+    InitialMessageService,
+  ],
   controllers: [SocialController],
   exports: [SocialService, CharacterFriendshipService],
 })

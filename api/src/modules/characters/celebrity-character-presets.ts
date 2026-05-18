@@ -10,7 +10,15 @@ export type CelebrityCharacterPresetGroupKey =
   | 'business_and_investing'
   | 'public_expression'
   | 'relationships_and_emotions'
-  | 'health_and_wellness';
+  | 'health_and_wellness'
+  // 走查 R1：life-buddy / lifestyle-buddy preset 文件用了 'lifestyle_and_daily'
+  // / 'family_and_pets' 两个 group key，但联合类型从未补 — 之前 nest build
+  // 直接 11 处 TS2322 失败，api/dist 用的是旧产物（dist 里已经有这俩文件的
+  // 编译产物，说明历史上 build 过一次后类型再被收窄）。补回联合 + 给两个
+  // 兜底的 PRESET_GROUPS 占位（life-buddy autoSeed:false 不入 seed pool，
+  // 只在按需 spawn 走，不会真在 UI 列出来）。
+  | 'lifestyle_and_daily'
+  | 'family_and_pets';
 
 export interface CelebrityCharacterPresetGroup {
   key: CelebrityCharacterPresetGroupKey;
@@ -77,6 +85,18 @@ const PRESET_GROUPS: Record<
     label: '健康与训练',
     description: '偏训练执行、恢复管理、体能建立与长期健康习惯。',
     sortOrder: 27,
+  },
+  lifestyle_and_daily: {
+    key: 'lifestyle_and_daily',
+    label: '生活搭子',
+    description: '偏日常陪伴、习惯养成、生活节奏与小事决策。',
+    sortOrder: 50,
+  },
+  family_and_pets: {
+    key: 'family_and_pets',
+    label: '家人与宠物',
+    description: '偏家庭日常、亲子陪伴与宠物照护。',
+    sortOrder: 55,
   },
 };
 

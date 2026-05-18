@@ -2,9 +2,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type PropsWithChildren,
-  type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -22,6 +20,7 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { persistMobileWebRoute } from "../features/shell/mobile-web-route-persistence";
+import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import { recordAppNavigation } from "../lib/history-back";
 import { isMobileWebRuntime } from "../runtime/platform";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -51,22 +50,19 @@ export function MobileShell({ children }: PropsWithChildren) {
   const activeKeepAlivePath = KEEP_ALIVE_TAB_PATHS.has(pathname)
     ? pathname
     : null;
-  // 同一 Tab 内 search/hash 切换时，强制刷新缓存的 React 子树
-  const activeKeepAliveCacheKey = activeKeepAlivePath
-    ? `${activeKeepAlivePath}${search}${hash}`
-    : null;
   const runtimeConfig = useAppRuntimeConfig();
   const { reminders } = useMessageReminders();
-  const [cachedTabPages, setCachedTabPages] = useState<
-    Partial<
-      Record<(typeof tabs)[number]["to"], { cacheKey: string; node: ReactNode }>
-    >
-  >({});
 
+  // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
+  // mobile-ai-call-screen 共享 ["app-conversations", baseUrl]，其它 4 处都
+  // 对齐到 15s staleTime。本观察者裸跑 → 用户切 tab / 进/退聊天页时跨页面
+  // 都用同一 cache，原生壳 10s 默认 stale 跨页面切换很容易踩到，触发重复
+  // GET /conversations（公网隧道 ~600ms）。对齐 15s。
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
     queryFn: () => getConversations(runtimeConfig.apiBaseUrl),
     enabled: showTabs,
+    staleTime: 15_000,
   });
   const conversationList = useMemo(
     () => conversations ?? EMPTY_CONVERSATIONS,
@@ -87,17 +83,19 @@ export function MobileShell({ children }: PropsWithChildren) {
 
   const lastPersistedPathRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!isMobileWebRuntime(runtimeConfig.appPlatform)) {
-      return;
-    }
-
     const currentPath = `${pathname}${search}${hash}`;
     if (lastPersistedPathRef.current === currentPath) {
       return;
     }
     lastPersistedPathRef.current = currentPath;
+    // recordAppNavigation 喂给硬件 Back 键的 canSafelyNavigateBack；
+    // 原生壳（Capacitor android/ios）也要靠它判断"能不能 history.back"，
+    // 不只是 mobile web。所以无条件 record，但 persistMobileWebRoute 只
+    // 给 web 跑——后者是浏览器刷新场景下的路由恢复。
     recordAppNavigation(currentPath);
-    persistMobileWebRoute(currentPath);
+    if (isMobileWebRuntime(runtimeConfig.appPlatform)) {
+      persistMobileWebRoute(currentPath);
+    }
   }, [hash, pathname, runtimeConfig.appPlatform, search]);
 
   useEffect(() => {
@@ -110,49 +108,45 @@ export function MobileShell({ children }: PropsWithChildren) {
     };
   }, []);
 
+  const { keyboardInset } = useKeyboardInset();
   useEffect(() => {
-    if (!activeKeepAlivePath || !activeKeepAliveCacheKey) {
-      return;
-    }
+    const value = keyboardInset > 0 ? `${keyboardInset}px` : "0px";
+    document.documentElement.style.setProperty("--keyboard-inset", value);
+    return () => {
+      document.documentElement.style.removeProperty("--keyboard-inset");
+    };
+  }, [keyboardInset]);
 
-    setCachedTabPages((current) => {
-      const existing = current[activeKeepAlivePath];
-      if (existing && existing.cacheKey === activeKeepAliveCacheKey) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [activeKeepAlivePath]: {
-          cacheKey: activeKeepAliveCacheKey,
-          node: children,
-        },
-      };
-    });
-  }, [activeKeepAlivePath, activeKeepAliveCacheKey, children]);
 
   return (
-    <div className="yj-mobile-shell relative h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
+    // fixed inset-0 锚定 viewport：cold start 时 Capacitor WebView 短暂会把
+    // 100dvh 报为 0，h-dvh 容器 flex-col 会塌缩导致 shrink-0 的 <nav> 临时
+    // 浮到顶部。锚到 viewport 后 nav 永远贴底部，不再有 1-2s 双 tab 闪烁。
+    <div className="yj-mobile-shell fixed inset-0 overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
       <MobileReminderToastHost />
       <div className="flex h-full min-h-0 flex-col">
         <div className="relative min-h-0 flex-1">
-          {tabs.map(({ to }) => {
-            const cached = cachedTabPages[to];
-            const isActive = activeKeepAlivePath === to;
-            const page = isActive ? cached?.node ?? children : cached?.node;
-            if (!page) {
-              return null;
-            }
+          {/*
+            原 keep-alive 设计想把切走的 tab 内容留在 DOM 里做"切回即出现"，
+            实现是把 children（含 <Outlet/>）缓存进 cachedTabPages 然后渲染
+            多个 pane。但 Outlet 永远按当前 router context 渲染，缓存里的
+            元素引用复用进新 pane 后渲染的还是当前 URL 的路由组件——结果
+            就是切到 /tabs/contacts 时 /tabs/chat 那个 hidden pane 也渲染
+            ContactsPage，整页出现重复的 id=contact-section-a 等，
+            document.getElementById 命中的是 hidden pane 里的元素（height=0），
+            字母索引点击 scrollIntoView 失效。
 
-            return (
-              <MobileViewportPane key={to} active={isActive}>
-                {page}
-              </MobileViewportPane>
-            );
-          })}
-          {activeKeepAlivePath ? null : (
-            <MobileViewportPane active safeBottom>{children}</MobileViewportPane>
-          )}
+            keep-alive 既然真没在保存任何东西，干脆只渲染当前 active pane，
+            DOM 里只剩一份元素，scrollIntoView / focus / 其它 ID 查询都正常。
+            tab 间状态本来就走不到这一层（已走 React Query / zustand 存储）。
+          */}
+          <MobileViewportPane
+            key={activeKeepAlivePath ?? "non-tab"}
+            active
+            safeBottom={!activeKeepAlivePath}
+          >
+            {children}
+          </MobileViewportPane>
         </div>
         {showTabs ? (
           <nav

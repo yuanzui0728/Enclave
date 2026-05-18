@@ -20,6 +20,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useCloudSessionStore } from "../store/cloud-session-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const TITLE_MAX = 100;
@@ -47,6 +48,10 @@ export function ProfileFeedbackPage() {
   const cloudApiBaseUrl = runtimeConfig.cloudApiBaseUrl;
   const username = useWorldOwnerStore((state) => state.username);
   const signature = useWorldOwnerStore((state) => state.signature);
+  // 手机号登录走这一路；邮箱/Google 登录走 cloudEmail。两者互斥但都可能为空
+  // （未登录 cloud），交给 admin 凭 ownerName 兜底。
+  const cloudPhone = useCloudSessionStore((state) => state.phone);
+  const cloudEmail = useCloudSessionStore((state) => state.email);
 
   const [category, setCategory] = useState<CloudFeedbackCategory>("bug");
   const [title, setTitle] = useState("");
@@ -76,10 +81,21 @@ export function ProfileFeedbackPage() {
     [t],
   );
 
+  // 桌面布局先 render mobile 表单再被 effect 推到 /desktop/feedback 会有一帧闪烁，
+  // 跟其它 profile-info 子页一致：早 return null 让 redirect 一拍内完成。
+  // hooks 必须先全部声明完再 early return，否则布局切换时会触发
+  // "Rendered fewer hooks than expected" 崩溃。
+  if (isDesktopLayout) {
+    return null;
+  }
+
   const goBack = () =>
-    navigateBackOrFallback(() => {
-      void navigate({ to: "/tabs/profile" });
-    });
+    navigateBackOrFallback(
+      () => {
+        void navigate({ to: "/tabs/profile" });
+      },
+      "/tabs/profile",
+    );
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -109,6 +125,8 @@ export function ProfileFeedbackPage() {
           apiBaseUrl: runtimeConfig.apiBaseUrl || null,
           ownerName: username || null,
           ownerSignature: signature || null,
+          submitterPhone: cloudPhone || null,
+          submitterEmail: cloudEmail || null,
         },
         cloudApiBaseUrl || undefined,
       );
@@ -205,7 +223,10 @@ export function ProfileFeedbackPage() {
               if (notice?.tone === "danger") setNotice(null);
             }}
             placeholder={t(msg`一句话描述问题`)}
-            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#15803d]"
+            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // zoom-in；反馈页又是一句话标题 + 一大段详情两连敲，缩放完用户
+            // 还要双指捏才能回到原大小，几乎肯定会放弃。
+            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#15803d]"
           />
         </section>
 
@@ -227,7 +248,9 @@ export function ProfileFeedbackPage() {
               msg`说说你看到了什么、期望是什么，越具体越好，比如：在哪个页面、怎么复现、希望的结果`,
             )}
             rows={8}
-            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[14px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#15803d]"
+            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // zoom-in，详情这种长文本框 zoom 完用户基本看不到提交按钮。
+            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#15803d]"
           />
         </section>
 

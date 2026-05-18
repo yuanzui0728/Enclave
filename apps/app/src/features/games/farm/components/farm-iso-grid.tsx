@@ -1,4 +1,5 @@
 import type { FarmPlot } from "@yinjie/contracts";
+import { useFarmAdjustedNow } from "../farm-clock-context";
 import { FarmIsoTile } from "./farm-iso-tile";
 import type { PlotPulseKind } from "./plot-action-bar";
 
@@ -11,6 +12,11 @@ interface FarmIsoGridProps {
 
 export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGridProps) {
   const cols = plots.length <= 6 ? 3 : plots.length <= 9 ? 3 : 4;
+  // 之前用裸 Date.now() — FarmIsoGrid 没订阅 farm-clock-context，
+  // 所以只在 plots/pulse/selectedIndex 变化时才重算 ripeIndexesToPulse。
+  // 玩家进页面后一直挂着，一块田穿过成熟边界后，金黄发光要等他下次点田才会刷出来。
+  // 子 tile 已经按 useFarmAdjustedNow 每秒重渲染，父也跟着订阅 nowMs 让 pulse 实时更新。
+  const nowMs = useFarmAdjustedNow();
 
   // Limit how many ripe pulses run simultaneously to keep frame rate sane on mobile.
   const ripeIndexesToPulse = new Set<number>();
@@ -20,8 +26,8 @@ export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGr
     if (
       plot.cropId &&
       plot.maturedAt != null &&
-      Date.now() >= plot.maturedAt &&
-      Date.now() < plot.maturedAt + 24 * 3600 * 1000
+      nowMs >= plot.maturedAt &&
+      nowMs < plot.maturedAt + 24 * 3600 * 1000
     ) {
       ripeIndexesToPulse.add(i);
       pulseBudget -= 1;

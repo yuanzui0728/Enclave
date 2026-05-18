@@ -19,6 +19,7 @@ import { Heart, MapPin } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { MomentMediaGallery } from "./moment-media-gallery";
+import { stripToolCallSyntax } from "../features/moments/moment-content";
 
 const t = translateRuntimeMessage;
 
@@ -105,13 +106,20 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
   ) {
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const lastTapRef = useRef<number>(0);
-    const [floatingHeart, setFloatingHeart] = useState(false);
+    // 走查 R6：用计数器代替 boolean，每次双击 +1 — 这样：
+    //   1) useEffect dep 真的变了，重置 700ms 定时器（之前 setFloatingHeart(true)
+    //      在 floatingHeart 已经是 true 时是 no-op，原定时器照着第一次双击的时间
+    //      点走完，第二次双击的心跑了不到 700ms 就消失，体感"被吃掉"）；
+    //   2) 渲染时把计数器透到 <FloatingHeart key=> ——key 一变 React 卸载老节点
+    //      重挂，CSS keyframe animation 才真的能从头放一次（同 DOM 节点上同一
+    //      个 animation 名字不会自动重启）。
+    const [floatingHeartTick, setFloatingHeartTick] = useState(0);
 
     useEffect(() => {
-      if (!floatingHeart) return;
-      const timer = window.setTimeout(() => setFloatingHeart(false), 700);
+      if (!floatingHeartTick) return;
+      const timer = window.setTimeout(() => setFloatingHeartTick(0), 700);
       return () => window.clearTimeout(timer);
-    }, [floatingHeart]);
+    }, [floatingHeartTick]);
 
     const handleAreaPointerDown = (event: PointerEvent<HTMLDivElement>) => {
       const target = event.target as HTMLElement;
@@ -124,8 +132,15 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       if (now - lastTapRef.current < 280) {
         lastTapRef.current = 0;
         if (onDoubleTapLike && moment.canInteract) {
-          onDoubleTapLike();
-          setFloatingHeart(true);
+          // Instagram-style「双击点赞」语义：只加赞不取消。之前 onDoubleTapLike
+          // 直接走 toggleMomentLike（toggle 语义），用户在自己已经点过赞的帖子
+          // 上随手双击想看一下心跳动画 → 静默把赞取消了，列表里 likes 行少了
+          // 自己的名字，体感是"我啥都没做它怎么就把我赞没了"。已经点过的就只
+          // 放一下浮心反馈，不再 toggle；要取消用户得走 ⋯ 菜单的「取消」入口。
+          if (!liked) {
+            onDoubleTapLike();
+          }
+          setFloatingHeartTick((tick) => tick + 1);
         }
         return;
       }
@@ -140,18 +155,41 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       onOpenActionMenu(rect);
     };
 
-    const hasText = Boolean(moment.text.trim());
+    const displayText = stripToolCallSyntax(moment.text);
+    const hasText = Boolean(displayText);
     const hasMedia = moment.media.length > 0;
     const hasLikes = moment.likes.length > 0;
-    const hasComments = moment.comments.length > 0;
+    // 一遍过预计算每条评论的 cleanText + 同时建 authorId 反查表。之前 filter
+    // 阶段（line 154）跑一次 stripToolCallSyntax，render map 里（line 347）又
+    // 跑一次同样的 regex，50 条评论 ＝ 100 次正则；而且 commentAuthorById 还要
+    // 再循环一次 moment.comments。合三为一：
+    //   - visibleComments：保留 cleanText 非空的（filter 掉 [TOOL_CALL] / CoT
+    //     prose 残骸，否则 footer 会渲染空灰块）
+    //   - cleanTextById：渲染时直接读已算好的 cleanText
+    //   - commentAuthorById：reply-to 名字查表（O(1) 替代 O(N) find）
+    const cleanTextById = new Map<string, string>();
+    const commentAuthorById = new Map<string, string>();
+    const visibleComments: typeof moment.comments = [];
+    for (const c of moment.comments) {
+      commentAuthorById.set(c.id, c.authorName);
+      const cleanText = stripToolCallSyntax(c.text);
+      if (cleanText.trim().length === 0) continue;
+      cleanTextById.set(c.id, cleanText);
+      visibleComments.push(c);
+    }
+    const hasComments = visibleComments.length > 0;
     const showFooterBlock = hasLikes || hasComments;
 
     return (
       <article
         id={cardId}
         ref={ref}
+        // scroll-mt 给 hash 跳转用：moments-page useEffect 里走的是
+        // scrollIntoView({block:"start"})，但移动端顶上有 sticky TabPageTopBar
+        // (~56px)，对齐到 y=0 会把作者头连同前半段正文藏到顶栏底下。给文章
+        // 加 scroll-margin-top 让浏览器在 scrollIntoView 时把这点高度还回来。
         className={cn(
-          "flex w-full items-start gap-2.5",
+          "flex w-full items-start gap-2.5 scroll-mt-[72px]",
           flush ? "" : "px-4 pb-3.5 pt-3.5",
         )}
       >
@@ -199,7 +237,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               )}
               style={{ color: WECHAT_TEXT_COLOR }}
             >
-              {moment.text}
+              {displayText}
             </div>
           ) : null}
 
@@ -278,26 +316,37 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                     size={13}
                     className="mt-1 shrink-0 fill-[#576B95] text-[#576B95]"
                   />
-                  <div className="flex flex-wrap gap-x-1">
-                    {moment.likes.map((like, index) => (
-                      <span key={like.id ?? `${like.authorId}-${index}`}>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onLikeAuthorTap?.(like);
-                          }}
-                          className="text-left hover:opacity-80"
-                          style={{ color: WECHAT_LINK_COLOR }}
-                          data-no-doubletap
+                  <div className="flex min-w-0 flex-wrap gap-x-1">
+                    {moment.likes
+                      // 空名字（数据脏 / 角色被删）的 liker 不渲染：否则 button 是空的
+                      // 还残留一个 "," 在新行上。
+                      .filter((like) => (like.authorName ?? "").trim() !== "")
+                      .map((like, index, arr) => (
+                        <span
+                          key={like.id ?? `${like.authorId}-${index}`}
+                          className="inline-flex min-w-0 max-w-full items-baseline"
                         >
-                          {like.authorName}
-                        </button>
-                        {index < moment.likes.length - 1 ? (
-                          <span style={{ color: WECHAT_LINK_COLOR }}>,</span>
-                        ) : null}
-                      </span>
-                    ))}
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onLikeAuthorTap?.(like);
+                            }}
+                            // 群标题之类很长的 liker（"走查测试群讨论时，你们对某个方法问题
+                            // 有不同的理解" 那种）会按字宽 wrap，把后面挂的 "," 推到下一行
+                            // 形成「孤儿逗号」。max-w + truncate 把单条 liker 收敛到一行。
+                            className="max-w-[200px] truncate text-left align-baseline hover:opacity-80"
+                            style={{ color: WECHAT_LINK_COLOR }}
+                            data-no-doubletap
+                            title={like.authorName}
+                          >
+                            {like.authorName}
+                          </button>
+                          {index < arr.length - 1 ? (
+                            <span style={{ color: WECHAT_LINK_COLOR }}>,</span>
+                          ) : null}
+                        </span>
+                      ))}
                   </div>
                 </div>
               ) : null}
@@ -308,12 +357,14 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
 
               {hasComments ? (
                 <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
-                  {moment.comments.map((comment) => {
+                  {visibleComments.map((comment) => {
                     const replyToName = comment.replyToCommentId
-                      ? moment.comments.find(
-                          (item) => item.id === comment.replyToCommentId,
-                        )?.authorName ?? null
+                      ? commentAuthorById.get(comment.replyToCommentId) ?? null
                       : null;
+                    // 上一遍循环已算过 stripToolCallSyntax，这里直接读
+                    // ——visibleComments 是过完滤的，cleanTextById 必有该 key。
+                    const cleanCommentText =
+                      cleanTextById.get(comment.id) ?? comment.text;
                     return (
                       <button
                         key={comment.id}
@@ -326,18 +377,29 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                         style={{ color: WECHAT_TEXT_COLOR }}
                         data-no-doubletap
                       >
-                        <span style={{ color: WECHAT_LINK_COLOR }}>
+                        {/* 长名字（群标题／角色被改成超长 displayName）会按字宽
+                            wrap，把后面的「：评论正文」推到下一行甚至撞断句。
+                            inline-block + truncate 让单名字最多占一行，超出 …。 */}
+                        <span
+                          className="inline-block max-w-[160px] truncate align-bottom"
+                          style={{ color: WECHAT_LINK_COLOR }}
+                          title={comment.authorName}
+                        >
                           {comment.authorName}
                         </span>
                         {replyToName ? (
                           <>
                             <span> {t(msg`回复`)} </span>
-                            <span style={{ color: WECHAT_LINK_COLOR }}>
+                            <span
+                              className="inline-block max-w-[160px] truncate align-bottom"
+                              style={{ color: WECHAT_LINK_COLOR }}
+                              title={replyToName}
+                            >
                               {replyToName}
                             </span>
                           </>
                         ) : null}
-                        <span>：{comment.text}</span>
+                        <span>：{cleanCommentText}</span>
                       </button>
                     );
                   })}
@@ -346,7 +408,11 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
             </div>
           ) : null}
 
-          {floatingHeart ? <FloatingHeart liked={liked} /> : null}
+          {floatingHeartTick > 0 ? (
+            // key=tick 把节点重挂，让 keyframe 重头跑一遍；定时器 useEffect
+            // 同时被新 tick 重置。
+            <FloatingHeart key={floatingHeartTick} liked={liked} />
+          ) : null}
         </div>
       </article>
     );

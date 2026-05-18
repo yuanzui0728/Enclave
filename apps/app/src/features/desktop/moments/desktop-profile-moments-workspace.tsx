@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import {
   type Moment,
@@ -34,6 +34,12 @@ type DesktopProfileMomentsWorkspaceProps = {
   errors?: string[];
   imageDrafts: MomentImageDraft[];
   isLoading: boolean;
+  /** momentsQuery 首屏失败时的错误信息；moments=[] 时空态优先渲「重试读取」
+   *  而不是「发条朋友圈」误导 CTA。跟 desktop-moments-feed Round 2 同款修复。 */
+  loadErrorMessage?: string | null;
+  /** 首屏失败 + 空态时空态上的「重试读取」按钮回调；profile-moments-page
+   *  绑 momentsQuery.refetch。 */
+  onRetryLoad?: () => void;
   likeErrorMessage?: string | null;
   likePendingMomentId: string | null;
   moments: Moment[];
@@ -41,7 +47,12 @@ type DesktopProfileMomentsWorkspaceProps = {
   ownerId: string | null;
   ownerName: string;
   showCompose: boolean;
-  successNotice?: string;
+  /** 顶部状态条文案 + tone + 可选「重试」按钮。之前桌面只接收纯字符串走死的 success 样式，
+   * 点赞/评论/删除失败时也染成绿色，用户看着像操作成功了。 */
+  notice?: string;
+  noticeTone?: "success" | "info" | "danger";
+  noticeActionLabel?: string | null;
+  onNoticeAction?: (() => void) | null;
   text: string;
   videoDraft: MomentVideoDraft | null;
   isMomentFavorite: (momentId: string) => boolean;
@@ -82,6 +93,8 @@ export function DesktopProfileMomentsWorkspace({
   errors = [],
   imageDrafts,
   isLoading,
+  loadErrorMessage = null,
+  onRetryLoad,
   likeErrorMessage,
   likePendingMomentId,
   moments,
@@ -89,7 +102,10 @@ export function DesktopProfileMomentsWorkspace({
   ownerId,
   ownerName,
   showCompose,
-  successNotice,
+  notice,
+  noticeTone = "success",
+  noticeActionLabel = null,
+  onNoticeAction = null,
   text,
   videoDraft,
   isMomentFavorite,
@@ -114,6 +130,20 @@ export function DesktopProfileMomentsWorkspace({
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R4：跟 desktop-moments-workspace / desktop-friend-moments-workspace
+  // 同款 —— 切账户时 moments 列表整体翻新，旧 shareMomentId 找不到 →
+  // ShareCardModal cardKey=null 不渲；但状态仍在 → 切回旧账户又 find 回来
+  // 重新弹出"幽灵"分享卡。用 ownerId 当 reset 锚跟着账户切。
+  useEffect(() => {
+    setShareMomentId(null);
+  }, [ownerId]);
+  // 走查电脑端朋友圈 R1（本轮，新一轮）：和 desktop-moments-workspace 同款 ——
+  // 切账户时 /profile/moments 路由不卸载，scrollTop 保留上个账户读 mine feed
+  // 时的位置；新账户的 ownMoments 翻新后用户落在中段。scrollTo(0) 保证从
+  // header banner 开始重新读自己的朋友圈。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
+  }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;
@@ -142,6 +172,28 @@ export function DesktopProfileMomentsWorkspace({
     }
 
     if (!sortedMoments.length) {
+      // momentsQuery 首屏失败时之前永远渲「还没有发布过朋友圈 / 发条朋友圈」CTA，
+      // 把"读取我的朋友圈失败"包装成"你还没发过，去发一条吧"，用户被误导去
+      // 发动态——但实际是 server 抓不到，再发也填不进来。跟 desktop-moments-feed
+      // Round 2 (674f3dfa / desktop-feed-list) 同款：失败 + 0 条直接渲
+      // 「朋友圈暂时不可用 / 重试读取」。
+      if (loadErrorMessage) {
+        return (
+          <div className="mx-auto max-w-[560px] py-10">
+            <EmptyState
+              title={t(msg`朋友圈暂时不可用`)}
+              description={loadErrorMessage}
+              action={
+                onRetryLoad ? (
+                  <Button variant="primary" onClick={onRetryLoad}>
+                    {t(msg`重试读取`)}
+                  </Button>
+                ) : undefined
+              }
+            />
+          </div>
+        );
+      }
       return (
         <div className="mx-auto max-w-[560px] py-10">
           <EmptyState
@@ -237,6 +289,70 @@ export function DesktopProfileMomentsWorkspace({
             </div>
           </div>
 
+          {/* 走查 R5：notice / errors 之前嵌在 scrollViewportRef 内部 cover 之
+              下、moments 之上。用户滚到第 N 条 own moment 上 like / comment /
+              delete / share，成功 / 失败 toast 都触发在 cover 下方 —— 已经滚到
+              第 N 条的用户看不见，体感"我点了但没反应"。和 desktop-moments-workspace
+              的 toolbar 把 notice 挂在 scroll viewport *外* 的模式对齐：抽到
+              header bar 下、scroll viewport 上的独立条带里，跨页统一"无论滚到哪
+              toast 都看得到"。整段在四种来源都为空时整块不渲染（不留空白栏）。 */}
+          {notice ||
+          errors.length > 0 ||
+          (likeErrorMessage && !(notice && noticeTone === "danger")) ||
+          (commentErrorMessage && !(notice && noticeTone === "danger")) ||
+          (deleteErrorMessage && !(notice && noticeTone === "danger")) ? (
+            <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-6 py-3 backdrop-blur-xl">
+              <div className="mx-auto w-full max-w-[760px] space-y-3">
+                {notice ? (
+                  <InlineNotice
+                    tone={noticeTone}
+                    className="border-[color:var(--border-faint)] bg-white"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="min-w-0 flex-1">{notice}</span>
+                      {noticeActionLabel && onNoticeAction ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={onNoticeAction}
+                          className="shrink-0 border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                        >
+                          {noticeActionLabel}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </InlineNotice>
+                ) : null}
+
+                {errors.length > 0
+                  ? errors.map((message, index) => (
+                      <ErrorBlock
+                        key={`${message}-${index}`}
+                        message={message}
+                      />
+                    ))
+                  : null}
+
+                {/* profile-moments-page 失败时同时打开两路：notice.tone="danger" 红条 + 这里
+                    的 ErrorBlock。两条红条同文显示让用户感觉"系统连发两次错误"。先级
+                    danger notice：在屏时把 type-specific ErrorBlock 藏起来；notice 自清后
+                    ErrorBlock 仍可做持久指示。 */}
+                {likeErrorMessage && !(notice && noticeTone === "danger") ? (
+                  <ErrorBlock message={likeErrorMessage} />
+                ) : null}
+
+                {commentErrorMessage && !(notice && noticeTone === "danger") ? (
+                  <ErrorBlock message={commentErrorMessage} />
+                ) : null}
+
+                {deleteErrorMessage && !(notice && noticeTone === "danger") ? (
+                  <ErrorBlock message={deleteErrorMessage} />
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <div
             ref={scrollViewportRef}
             className="min-h-0 flex-1 overflow-auto"
@@ -264,43 +380,6 @@ export function DesktopProfileMomentsWorkspace({
             </section>
 
             <div className="mx-auto w-full max-w-[760px] px-7 pb-10 pt-12">
-              {successNotice ? (
-                <div className="mb-4">
-                  <InlineNotice
-                    tone="success"
-                    className="border-[color:var(--border-faint)] bg-white"
-                  >
-                    {successNotice}
-                  </InlineNotice>
-                </div>
-              ) : null}
-
-              {errors.length > 0 ? (
-                <div className="mb-4 space-y-3">
-                  {errors.map((message, index) => (
-                    <ErrorBlock key={`${message}-${index}`} message={message} />
-                  ))}
-                </div>
-              ) : null}
-
-              {likeErrorMessage ? (
-                <div className="mb-4">
-                  <ErrorBlock message={likeErrorMessage} />
-                </div>
-              ) : null}
-
-              {commentErrorMessage ? (
-                <div className="mb-4">
-                  <ErrorBlock message={commentErrorMessage} />
-                </div>
-              ) : null}
-
-              {deleteErrorMessage ? (
-                <div className="mb-4">
-                  <ErrorBlock message={deleteErrorMessage} />
-                </div>
-              ) : null}
-
               {renderFeedContent()}
             </div>
           </div>

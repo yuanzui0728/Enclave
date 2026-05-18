@@ -34,6 +34,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
     "@yinjie/contracts": "workspace:*",
+    "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.6.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -42,11 +43,13 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socks": "^2.8.8",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "undici": "^8.2.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.6",
     "@types/node": "^22.10.7",
     "@types/nodemailer": "^8.0.0",

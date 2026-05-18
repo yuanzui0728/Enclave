@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Patch } from '@nestjs/common';
 import { WorldService } from './world.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import type { ChatBackgroundAsset } from '../chat/chat-background.types';
@@ -7,6 +7,8 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 @Controller('world')
 export class WorldController {
+  private readonly logger = new Logger(WorldController.name);
+
   constructor(
     private readonly worldService: WorldService,
     private readonly worldOwnerService: WorldOwnerService,
@@ -51,23 +53,37 @@ export class WorldController {
       .map(([key]) => key);
 
     if (changedFields.length > 0) {
-      await this.cyberAvatar.captureSignal({
-        ownerId: owner.id,
-        signalType: 'owner_profile_update',
-        sourceSurface: 'world',
-        sourceEntityType: 'world_owner_profile',
-        sourceEntityId: owner.id,
-        dedupeKey: `owner-profile:${owner.id}:${Date.now()}`,
-        summaryText: `用户更新了自己的资料字段：${changedFields.join('、')}。`,
-        payload: {
-          changedFields,
-          username: body.username,
-          avatar: body.avatar,
-          signature: body.signature,
-          onboardingCompleted: body.onboardingCompleted,
-        },
-        occurredAt: new Date(),
-      });
+      // captureSignal 走 cyber-avatar 旁路（signal 表 + refreshProfileCounters
+      // 两次写 + rules / dedupe 查），DB busy / 偶发错误时会抛。之前直接
+      // await：owner 早已保存成功，但 signal 链路一抛，整个 PATCH 500 →
+      // 用户看到错误条以为"完成"失败、再点一次，重复落库 + 重复发 signal，
+      // 越点越糟。signal 是分析旁路，绝不能挡用户主路径——用 .catch 把它
+      // 降级成 server 日志而已。新一轮 R1 走查命中。
+      void this.cyberAvatar
+        .captureSignal({
+          ownerId: owner.id,
+          signalType: 'owner_profile_update',
+          sourceSurface: 'world',
+          sourceEntityType: 'world_owner_profile',
+          sourceEntityId: owner.id,
+          dedupeKey: `owner-profile:${owner.id}:${Date.now()}`,
+          summaryText: `用户更新了自己的资料字段：${changedFields.join('、')}。`,
+          payload: {
+            changedFields,
+            username: body.username,
+            avatar: body.avatar,
+            signature: body.signature,
+            onboardingCompleted: body.onboardingCompleted,
+          },
+          occurredAt: new Date(),
+        })
+        .catch((err) => {
+          this.logger.warn(
+            `captureSignal(owner_profile_update) failed for owner=${owner.id}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        });
     }
 
     return owner;

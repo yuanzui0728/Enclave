@@ -90,6 +90,16 @@ const TokenUsageWorldDetailPage = lazy(async () => {
   return { default: mod.TokenUsageWorldDetailPage };
 });
 
+const WikiUsersPage = lazy(async () => {
+  const mod = await import("./routes/wiki-users-page");
+  return { default: mod.WikiUsersPage };
+});
+
+const WikiUserDetailPage = lazy(async () => {
+  const mod = await import("./routes/wiki-user-detail-page");
+  return { default: mod.WikiUserDetailPage };
+});
+
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
@@ -194,6 +204,18 @@ const tokenUsageWorldDetailRoute = createRoute({
   component: TokenUsageWorldDetailPage,
 });
 
+const wikiUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/wiki-users",
+  component: WikiUsersPage,
+});
+
+const wikiUserDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/wiki-users/$userId",
+  component: WikiUserDetailPage,
+});
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   worldsRoute,
@@ -211,6 +233,8 @@ export const routeTree = rootRoute.addChildren([
   tokenUsageRoute,
   tokenUsageWorldDetailRoute,
   revenueSharingRoute,
+  wikiUsersRoute,
+  wikiUserDetailRoute,
 ]);
 
 type AppRouterOptions = {

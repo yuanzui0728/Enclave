@@ -51,6 +51,11 @@ const IslandConcertGame = lazy(async () => {
   return { default: mod.IslandConcertGame };
 });
 
+const TankWarGame = lazy(async () => {
+  const mod = await import("./tank-war/tank-war-game");
+  return { default: mod.TankWarGame };
+});
+
 export type EmbeddedGameProps = {
   variant?: "embedded" | "fullscreen";
   onExit?: () => void;
@@ -69,6 +74,7 @@ const EMBEDDED_GAME_COMPONENTS: Record<
   "pixel-arena": PixelArenaGame,
   "cloud-farm": CloudFarmGame,
   "island-concert": IslandConcertGame,
+  "tank-war": TankWarGame,
 };
 
 export function hasEmbeddedGame(gameId: string | null | undefined): boolean {

@@ -1,6 +1,6 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
-const RECENT_STICKERS_STORAGE_KEY = "yinjie.chat.recent-stickers";
+export const RECENT_STICKERS_STORAGE_KEY = "yinjie.chat.recent-stickers";
 const RECENT_STICKERS_LIMIT = 20;
 let recentStickersNativeWriteQueue: Promise<void> = Promise.resolve();
 

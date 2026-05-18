@@ -33,10 +33,19 @@ export function MomentShareCardModal({
     ? { ...moment, canInteract: false }
     : null;
 
+  // 主朋友圈页里"分享图卡"对所有 moment 都可点，包括角色发的。
+  // 之前 modalTitle 一律写"分享我的朋友圈"，分享角色 moment 时这句话明显不对。
+  // 按作者归属切换：自己发的 → "我的"；其它一律退化成中性的"分享朋友圈"。
+  const isOwnMoment = Boolean(
+    moment && ownerId && moment.authorType === "user" && moment.authorId === ownerId,
+  );
+
   return (
     <ShareCardModal
       cardKey={moment?.id ?? null}
-      modalTitle={t(msg`分享我的朋友圈`)}
+      modalTitle={
+        isOwnMoment ? t(msg`分享我的朋友圈`) : t(msg`分享朋友圈`)
+      }
       watermarkSubtitle={t(msg`${ownerDisplayName} 的 AI 朋友圈`)}
       bottomHint={t(
         msg`保存图片到相册，发到 X / 小红书 / 微博 让朋友看看你的 AI 世界`,

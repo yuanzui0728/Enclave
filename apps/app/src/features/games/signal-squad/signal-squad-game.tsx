@@ -58,15 +58,17 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
   const { state, actions } = useSignalSquadState();
   const [chooserOpen, setChooserOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-
-  // 让倒计时 / 冷却显示流畅地刷新
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 200);
-    return () => window.clearInterval(id);
-  }, []);
-
   const event = activeEvent(state);
   const isRunning = state.status === "running";
+
+  // 让倒计时 / 冷却显示流畅地刷新——只有 running 才需要这条 200ms 时钟，
+  // idle / victory / defeat / timeout 都不展示任何 now-相关 UI，省下空转重渲。
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = window.setInterval(() => setNow(Date.now()), 200);
+    return () => window.clearInterval(id);
+  }, [isRunning]);
+
   const isEnded =
     state.status === "victory" ||
     state.status === "defeat" ||

@@ -118,6 +118,23 @@ export function useMomentComposeDraft() {
       }
 
       const nextDrafts = await createMomentImageDrafts(pickedFiles);
+      // 二次校验：createMomentImageDrafts 之间用户可能已经走完另一边的「选择视频」
+      // 流程把 videoDraft 塞进来；此时再 setImageDrafts 会让 imageDrafts + videoDraft
+      // 同时存在，publish 时 buildMomentCreateRequest 只看 videoDraft 分支直接把图片
+      // 静默丢掉。先把刚 decode 出来的 preview URL release 再抛错。
+      if (videoDraftRef.current) {
+        releaseMomentImageDrafts(nextDrafts);
+        throw new Error(t(msg`当前不支持图片和视频混发。`));
+      }
+      // 同样的并发用户也可能在另一边并发添加图片把 remaining slot 吃光，二次卡
+      // 「9 张上限」避免 setImageDrafts 之后总数超 9。
+      if (
+        imageDraftsRef.current.length + nextDrafts.length >
+        MAX_IMAGE_COUNT
+      ) {
+        releaseMomentImageDrafts(nextDrafts);
+        throw new Error(t(msg`图片动态最多支持 ${MAX_IMAGE_COUNT} 张图片。`));
+      }
       setImageDrafts((current) => [...current, ...nextDrafts]);
     },
     async replaceVideoFile(file: File | null | undefined) {
@@ -132,6 +149,13 @@ export function useMomentComposeDraft() {
       }
 
       const nextDraft = await createMomentVideoDraft(file);
+      // 二次校验：createMomentVideoDraft 期间（视频元数据 + 封面生成可能要几秒）
+      // 用户可能从初始 110×110 入口已经走完图片选择把 imageDrafts 塞进来。此时再
+      // setVideoDraft 会让两者并存，publish 时只取 videoDraft 把图片静默丢掉。
+      if (imageDraftsRef.current.length > 0) {
+        releaseMomentVideoDraft(nextDraft);
+        throw new Error(t(msg`当前不支持图片和视频混发。`));
+      }
       setVideoDraft((current) => {
         releaseMomentVideoDraft(current);
         return nextDraft;
@@ -363,18 +387,33 @@ async function uploadMomentVideoDraft(
 }
 
 async function createMomentImageDrafts(files: File[]) {
+  // 走查电脑端朋友圈 R6：原先 for-of 串行 await createMomentImageDraft —— 每张
+  // 都走 URL.createObjectURL + Image() onload 解 width/height，单张 ~10-50ms。
+  // 用户一次性选 9 张时主线程被串行卡 ~450ms，文件选择对话框关闭到 preview 出
+  // 现这段时间用户看着像"卡死了"。改 Promise.allSettled 并发跑所有解码，总
+  // 耗时收敛到 ≈ 最慢一张（~50ms），快接近秒级。
+  //
+  // 用 allSettled 而不是 Promise.all 是因为要在任一失败时把已成功的 URL 全部
+  // 释放再抛错（不然 9 张里只 1 张坏，剩 8 张的 blob URL 全泄漏）。原串行版本
+  // 第一张失败后续不跑就抛错；并发版本所有解码都跑完才决定，等价于"宽容收尾"。
+  const results = await Promise.allSettled(files.map(createMomentImageDraft));
   const drafts: MomentImageDraft[] = [];
-
-  try {
-    for (const file of files) {
-      drafts.push(await createMomentImageDraft(file));
+  let firstError: Error | null = null;
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      drafts.push(result.value);
+    } else if (!firstError) {
+      firstError =
+        result.reason instanceof Error
+          ? result.reason
+          : new Error(String(result.reason));
     }
-
-    return drafts;
-  } catch (error) {
-    releaseMomentImageDrafts(drafts);
-    throw error;
   }
+  if (firstError) {
+    releaseMomentImageDrafts(drafts);
+    throw firstError;
+  }
+  return drafts;
 }
 
 async function createMomentImageDraft(file: File): Promise<MomentImageDraft> {
@@ -501,6 +540,10 @@ function readVideoMetadata(url: string) {
   });
 }
 
+// 封面用的最大边长——4K (3840x2160) 视频直接铺满 canvas 是 33MB RAM + 几 MB JPEG
+// blob，低内存机型可能 OOM。封面只是个缩略图，1280 足够清晰，把比例算回来即可。
+const MAX_POSTER_DIMENSION = 1280;
+
 async function buildMomentVideoPoster(
   url: string,
   width: number,
@@ -509,16 +552,24 @@ async function buildMomentVideoPoster(
   fileName: string,
 ) {
   try {
+    const longestSide = Math.max(width, height);
+    const scale =
+      longestSide > MAX_POSTER_DIMENSION
+        ? MAX_POSTER_DIMENSION / longestSide
+        : 1;
+    const posterWidth = Math.max(1, Math.round(width * scale));
+    const posterHeight = Math.max(1, Math.round(height * scale));
+
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = posterWidth;
+    canvas.height = posterHeight;
     const context = canvas.getContext("2d");
     if (!context) {
       return null;
     }
 
     const video = await createPosterCaptureVideo(url, durationMs);
-    context.drawImage(video, 0, 0, width, height);
+    context.drawImage(video, 0, 0, posterWidth, posterHeight);
     const blob = await canvasToBlob(canvas, {
       mimeType: "image/jpeg",
       quality: 0.88,

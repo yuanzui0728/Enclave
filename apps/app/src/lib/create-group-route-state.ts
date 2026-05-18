@@ -11,9 +11,17 @@ export type CreateGroupRouteState = {
   seedMemberIds: string[];
 };
 
+// 走查 R2：同 mobile-group-route-state 同款补"//"协议无关 URL 校验。原版
+// "/group/new#returnPath=//evil.com" 通过 startsWith("/")，create-group-page
+// 的 onSuccess / handleBack 直接 navigate({to:safeReturnPath})，落到浏览器
+// history.replaceState 上会拼出 "https://evil.com"，把用户带到第三方站。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
-  if (!nextValue || !nextValue.startsWith("/")) {
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    nextValue.startsWith("//")
+  ) {
     return undefined;
   }
 

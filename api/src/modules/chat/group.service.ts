@@ -39,6 +39,7 @@ import {
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import { ChatGateway } from './chat.gateway';
@@ -169,7 +170,33 @@ export class GroupService {
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const memberIds = dedupeIds(dto.memberIds);
+    // 走查 Round 新 R1：原版 `name: dto.name` 直接写进 DB，没 trim 也没校验，
+    // POST /groups {"name":""} / {"name":"   "} 都成功创建——会话列表 / 通讯录
+    // 群聊 / 群聊室 header / 群信息页 8 处全是裸渲染 group.name (?? 落不进 ""
+    // 这种 truthy-empty)，UI 上整条群行渲染成空白。mobile create-group-page
+    // 客户端有 `name.trim() || defaultGroupName` 兜底所以不触发，但任何一个
+    // 直连 API / 老版本客户端 / 未来的第三方客户端都会留下空名脏数据。
+    // 现在统一 trim + 400 reject，跟下面 memberIds 必须非空一个口径。
+    const trimmedName = dto.name?.trim();
+    if (!trimmedName) {
+      throw new AppError('GROUP_REQUIRES_NAME', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Group requires a non-empty name',
+      });
+    }
+    // 走查 Round 2：dedupe 之后再剔除 char-default-self —— 用户自身就是
+    // owner role=owner 这一条 member 行；如果把"我自己"也作为 character member 加进群，
+    // 你跟自己同时在群里、还能跟自己 @、自己回复自己。空 memberIds 同样不允许：
+    // 创建只剩 owner 一个真人 + 0 个角色的孤儿群在 UI 里看着像 crash。
+    const memberIds = dedupeIds(dto.memberIds).filter(
+      (id) => id !== SELF_CHARACTER_ID,
+    );
+    if (!memberIds.length) {
+      throw new AppError('GROUP_REQUIRES_AT_LEAST_ONE_MEMBER', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Group requires at least one character member',
+      });
+    }
 
     const characterProfiles = await Promise.all(
       memberIds.map(async (memberId) => {
@@ -191,7 +218,7 @@ export class GroupService {
         const memberRepo = manager.getRepository(GroupMemberEntity);
 
         const groupEntity = groupRepo.create({
-          name: dto.name,
+          name: trimmedName,
           creatorId: owner.id,
           creatorType: 'user',
           isHidden: false,
@@ -233,6 +260,15 @@ export class GroupService {
       },
     );
 
+    // 走查 Round 3：createGroup 整路都没 emitGroupConversationUpdated；
+    // 多端在线（web + iOS shell / 双端同账号）时另一端 chat-list 不会立刻
+    // 出现这条新群，要等 60s 兜底轮询才显示。同时 copySharedConversationMessages
+    // 之前是在 transaction 内调 emit 的，但 emitGroupConversationUpdated 内部
+    // 用的是 this.groupRepo（默认数据源，不是 manager），事务还没 commit 时
+    // 另一端 socket handler 立刻 getGroup 会读到 404 跳回兜底页。统一在
+    // transaction 之后 emit 一次，跟其它写操作（updateGroup/hideGroup 等）对齐。
+    await this.emitGroupConversationUpdated(group.id);
+
     this.logger.log(
       `Created group ${group.id} with ${memberIds.length + 1} members and ${sharedMessageCount} shared messages`,
     );
@@ -244,8 +280,47 @@ export class GroupService {
     dto: AddMemberDto,
   ): Promise<GroupMemberEntity> {
     await this.requireOwnedGroup(groupId);
+    // 走查 R2：原版没卡 memberId / memberType 必填——POST /groups/$id/members
+    // body={} 或 body 缺字段时，下面 findOne({ where: { memberId: undefined }})
+    // 会被 TypeORM 当成"只按 groupId 过滤"返回任意一条已存在成员（实测返回 owner
+    // 那一条 memberType=user），handler 直接 200 + 别人的成员行——调用方误以为
+    // 添加成功。前端 group-member-picker 不会发这种 body，但任何直连 API /
+    // 老客户端 / 第三方客户端用错请求时无明显报错最坏。补 400 让 callsite
+    // 主动暴露错误。
+    const trimmedMemberId = dto.memberId?.trim();
+    if (!trimmedMemberId) {
+      throw new AppError('GROUP_MEMBER_REQUIRES_ID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Group member requires a non-empty memberId',
+      });
+    }
+    if (dto.memberType !== 'character' && dto.memberType !== 'user') {
+      throw new AppError('GROUP_MEMBER_REQUIRES_TYPE', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage:
+          'Group member requires memberType of either "character" or "user"',
+      });
+    }
+    // 走查 R1：char-default-self（"我自己"自我镜像）本质就是用户自身，owner
+    // 已经以 memberType=user 在群里。前端 create-group-page / 群成员 picker /
+    // mention picker / group-chat-thread-panel 都已经按 SELF_CHARACTER_ID 过滤
+    // 渲染，但服务端这条路径漏掉——任何直连 API / 老版本客户端 / 第三方客户端
+    // 都能 POST 一条 memberType=character 的 SELF 进群，落库后用户在 mention
+    // picker / 通讯录里能看到"@我自己"，typing/AI reply 走 character 路径还会
+    // 在群里冒"我自己 正在回复..."——本质是用户在自言自语。yuanzui0728 实测
+    // 群 78a3d894-dd62-... 历史上就被加了这条 SELF 成员行，与前端各页注释一致。
+    // 和 createGroup R2 同口径，服务端硬挡：character 类型 SELF_CHARACTER_ID 直接 400。
+    if (
+      dto.memberType === 'character' &&
+      trimmedMemberId === SELF_CHARACTER_ID
+    ) {
+      throw new AppError('GROUP_CANNOT_ADD_SELF_AS_MEMBER', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Cannot add self mirror character as a group member',
+      });
+    }
     const existing = await this.memberRepo.findOne({
-      where: { groupId, memberId: dto.memberId },
+      where: { groupId, memberId: trimmedMemberId },
     });
 
     if (existing) {
@@ -253,10 +328,13 @@ export class GroupService {
       return existing;
     }
 
-    const resolvedMember = await this.resolveMemberProfile(dto);
+    const resolvedMember = await this.resolveMemberProfile({
+      ...dto,
+      memberId: trimmedMemberId,
+    });
     const member = this.memberRepo.create({
       groupId,
-      memberId: dto.memberId,
+      memberId: trimmedMemberId,
       memberType: dto.memberType,
       memberName: resolvedMember.memberName,
       memberAvatar: resolvedMember.memberAvatar,
@@ -264,14 +342,21 @@ export class GroupService {
     });
 
     await this.memberRepo.save(member);
-    this.logger.log(`Added member ${dto.memberId} to group ${groupId}`);
+    this.logger.log(`Added member ${trimmedMemberId} to group ${groupId}`);
     await this.emitGroupConversationUpdated(groupId);
     return member;
   }
 
-  async getGroup(groupId: string): Promise<Group | null> {
-    const group = await this.findAccessibleGroup(groupId);
-    return group ? this.toGroup(group) : null;
+  async getGroup(groupId: string): Promise<Group> {
+    // 必须 require：本服务其它 endpoint（getMembers / getMessages / getBackground
+    // 等）都走 requireAccessibleGroup → 群不存在抛 404；唯独本接口用
+    // findAccessibleGroup → null → NestJS 把 null 序列化成 200 + 空 body
+    // → 前端 request() 把空 body 当 undefined 返回 → React Query 抛
+    // "Query data cannot be undefined". 同时本接口不抛 404 也让前端的
+    // isMissingGroupError(groupQuery.error, groupId) 永远 false，得靠
+    // membersQuery 的 404 才能触发跳转兜底——多走一个 RTT。
+    const group = await this.requireAccessibleGroup(groupId);
+    return this.toGroup(group);
   }
 
   async listGroups(): Promise<Group[]> {
@@ -329,24 +414,34 @@ export class GroupService {
       order: { joinedAt: 'ASC' },
     });
 
-    return Promise.all(
-      members.map(async (member) => {
-        if (member.memberType !== 'character') {
-          return member;
-        }
-
-        const character = await this.characters.findById(member.memberId);
-        if (!character) {
-          return member;
-        }
-
-        return {
-          ...member,
-          memberName: member.memberName ?? character.name,
-          memberAvatar: member.memberAvatar ?? character.avatar ?? undefined,
-        };
-      }),
+    // 原版对每个 character 成员各 await 一次 characters.findById：50 人群 ×
+    // 每次 chat-list ↔ thread ↔ details ↔ picker ↔ call screen 切页都重打
+    // 一遍 useQuery → 50 次串行 SQL。改成单次 findManyByIds，整页 1 次。
+    const characterIds = members
+      .filter((member) => member.memberType === 'character')
+      .map((member) => member.memberId);
+    if (!characterIds.length) {
+      return members;
+    }
+    const characters = await this.characters.findManyByIds(characterIds);
+    const characterMap = new Map(
+      characters.map((character) => [character.id, character] as const),
     );
+
+    return members.map((member) => {
+      if (member.memberType !== 'character') {
+        return member;
+      }
+      const character = characterMap.get(member.memberId);
+      if (!character) {
+        return member;
+      }
+      return {
+        ...member,
+        memberName: member.memberName ?? character.name,
+        memberAvatar: member.memberAvatar ?? character.avatar ?? undefined,
+      };
+    });
   }
 
   async getMessages(
@@ -410,6 +505,17 @@ export class GroupService {
 
   async updateGroup(groupId: string, dto: UpdateGroupDto): Promise<Group> {
     const group = await this.requireOwnedGroup(groupId);
+    // 走查 Round 新 R1：原版 `name: nextName || group.name` 在 dto.name 显式传
+    // "" / 纯空白时沉默保留旧名——用户在群聊名称编辑页清空保存，原版返回 200
+    // + 同一份旧名 group，client 跳回 details 但名称没变，看着像"保存按钮不
+    // 响应"。和 createGroup 同口径：dto.name === undefined（partial update 没
+    // 想动）就跳过；显式传过来但 trim 为空就 400 让 client 报错给用户。
+    if (dto.name !== undefined && !dto.name.trim()) {
+      throw new AppError('GROUP_REQUIRES_NAME', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Group requires a non-empty name',
+      });
+    }
     const nextName = dto.name?.trim();
     const nextAnnouncement =
       dto.announcement === undefined
@@ -467,6 +573,11 @@ export class GroupService {
       pinnedAt: pinned ? new Date() : null,
     });
 
+    // 和本服务里其它写操作（updateGroup / updatePreferences / clearGroupMessages
+    // 等）对齐：isMuted / savedToContacts / showMemberNicknames 都走 updatePreferences
+    // → emit；唯独 setGroupPinned 不 emit → 多端在线时另一端的 chat-list 不会立刻
+    // 把这条群挪到置顶组，要等下次 invalidate refetch 才动，体感像没生效。
+    await this.emitGroupConversationUpdated(groupId);
     return this.toGroup(updated);
   }
 
@@ -632,6 +743,10 @@ export class GroupService {
       hiddenAt: new Date(),
     });
 
+    // 同其它写操作（updateGroup / updatePreferences / clearGroupMessages /
+    // setGroupPinned）对齐：不 emit 的话另一端 chat-list（web + iOS shell
+    // / 双端同账号）还会一直显示这条群，要等下一次 60s 兜底轮询才消失。
+    await this.emitGroupConversationUpdated(groupId);
     return this.toGroup(updated);
   }
 
@@ -641,6 +756,18 @@ export class GroupService {
   ): Promise<GroupMemberEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.requireOwnedGroup(groupId);
+    // 走查 R1：原版 `nickname.trim() || member.memberName` 在 PATCH 传空/纯
+    // 空白时沉默保留旧昵称——客户端 group-chat-edit-page 自己 disable 了空
+    // 提交，但任何直连 API / 老客户端 / 第三方客户端发空昵称时返回 200 +
+    // 同一份旧昵称，调用方看着像"保存按钮没响应"或"清空昵称被默默撤回"。
+    // 和 createGroup / updateGroup 的 GROUP_REQUIRES_NAME 同口径直接 400。
+    const trimmedNickname = nickname?.trim();
+    if (!trimmedNickname) {
+      throw new AppError('GROUP_REQUIRES_NICKNAME', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Group nickname cannot be empty',
+      });
+    }
     const member = await this.memberRepo.findOne({
       where: {
         groupId,
@@ -657,15 +784,52 @@ export class GroupService {
       });
     }
 
-    return this.memberRepo.save({
+    const saved = await this.memberRepo.save({
       ...member,
-      memberName: nickname.trim() || member.memberName,
+      memberName: trimmedNickname,
     });
+    // 走查 R1：和本服务其它写操作（updateGroup / updatePreferences / setGroupPinned
+    // / hideGroup / clearGroupMessages / addMember / removeMember）一致 emit
+    // conversation_updated。原本漏掉的话，多端在线（web + iOS shell / 双端同账号）
+    // 改完群昵称另一端的群信息页 / chat-list 会议项的 memberName 还显示旧值，
+    // 要等下次 60s 兜底轮询或用户手动 pull-to-refresh 才更新；socket 一推即同步。
+    await this.emitGroupConversationUpdated(groupId);
+    return saved;
   }
 
   async leaveGroup(groupId: string): Promise<{ success: true }> {
     const group = await this.requireOwnedGroup(groupId);
 
+    // delete 后 emitGroupConversationUpdated 拿不到 group 行 → 内部 early
+    // return，没事件发出。这里先在 delete 前抓住 members 直接调 gateway，
+    // 让另一端 chat-list 收到 conversation_updated → invalidate
+    // /conversations 列表 → 列表里没了这条群，自然从 UI 消失。不 emit 的话
+    // 多端在线时另一端要等到 60s 兜底轮询；期间用户点进去会撞 404 死页。
+    const membersBeforeDelete = await this.memberRepo.find({
+      where: { groupId: group.id },
+      order: { joinedAt: 'ASC' },
+    });
+    this.chatGateway.emitConversationUpdated({
+      id: group.id,
+      type: 'group',
+      title: group.name,
+      participants: membersBeforeDelete.map((member) => member.memberId),
+    });
+
+    // 走查第三批 R1：原版只删 members/messages/groups 三张表，遗漏
+    // group_reply_tasks。dataset 验证：解散群后 reply_tasks 表里仍残留
+    // 该群历史 70+ 条任务，groupId 已 dangling，worker 走 conversationHistory
+    // 时拉不到 messages/members，行为不定（abort / 抛错日志 / 不释放
+    // replyArtifactJobs slot）。先把 pending 任务 cancel（reason 走
+    // group_disbanded 让 worker / artifact job 各自走清理路径），再 delete
+    // 整张表的 dangling 行；TypeORM repo.delete 是单 statement，sqlite
+    // 没分布式事务概念，前后顺序按 reply_tasks → members → messages →
+    // group 依次清空保证就算中间步骤抛也只留下游脏数据可以被下一次走查
+    // 再清。
+    await this.groupReplyTaskService.deleteAllForGroup(
+      group.id,
+      'group_disbanded',
+    );
     await this.memberRepo.delete({ groupId: group.id });
     await this.messageRepo.delete({ groupId: group.id });
     await this.groupRepo.delete({ id: group.id });
@@ -807,17 +971,40 @@ export class GroupService {
     groupId: string,
     userMessage: GroupMessage,
   ): Promise<void> {
-    await this.requireAccessibleGroup(groupId);
-    const members = await this.memberRepo.find({
-      where: { groupId, memberType: 'character' },
-    });
+    const group = await this.requireAccessibleGroup(groupId);
+    const members = (
+      await this.memberRepo.find({
+        where: { groupId, memberType: 'character' },
+      })
+    )
+      // 走查 R3：addMember 已在 R1 起拦截 SELF_CHARACTER_ID 作为 character 入群，
+      // 但 yuanzui0728 等老账号在 R1 前建的群里历史落了 memberType=character 的
+      // char-default-self 行（实测群 78a3d894-dd62-... 修复前一直挂着 SELF 行）。
+      // 这里在 AI 选 actor 阶段再兜一层：planner.selectReplyActorsForTurn 会按
+      // 群成员里的 character 抽 reply actor，SELF 入选后用户在群里发完一条消息
+      // 会立刻看到 "我自己 正在回复..."、AI 用"我自己"角色身份回一条——本质是
+      // 用户在自言自语。先在 source 处过掉，运行时永远不再让 SELF 作为 reply
+      // actor，给历史脏数据留缓冲（用户可以手动从 群成员→移除 把 SELF 行清掉）。
+      .filter((member) => member.memberId !== SELF_CHARACTER_ID);
     if (!members.length) {
       return;
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
+    // 走查本会话 R2：原版 where 只看 groupId，没拿 lastClearedAt 卡 cutoff。
+    // 用户点过"清空聊天记录"后 group.lastClearedAt 已经写进去了，但本接口
+    // 仍然把 lastClearedAt 之前的群消息当 conversationHistory 喂给 AI（见
+    // group-reply-task.service.ts:451 conversationHistory → AI prompt），AI
+    // 用清空前的上下文回复用户。和单聊 chat.service.ts:1543 ensureConversationHistory
+    // 走 getVisibleMessageCutoff 过滤的口径完全对不上：单聊清空后 AI 真的会
+    // "忘"，群聊清空后 AI 还记得用户以为擦掉的对话。同时 planner 算
+    // recentSpeakerIds 也跟着用了陈旧数据，actor 轮换会偏向已经被清空的发言者。
+    // 用 buildGroupMessageWhere 一并加 since=lastClearedAt 兜底。
     const recentMessages = await this.messageRepo.find({
-      where: { groupId },
+      where: this.buildGroupMessageWhere(
+        groupId,
+        group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
+      ),
       order: { createdAt: 'DESC' },
       take: Math.max(
         runtimeRules.historyWindow.max,
@@ -1515,7 +1702,9 @@ export class GroupService {
 
     group.lastActivityAt = new Date();
     await groupRepo.save(group);
-    await this.emitGroupConversationUpdated(group.id);
+    // emit 已上提到 createGroup 调用方 transaction 之后；这里不再 emit 避免：
+    // (a) transaction 未 commit 时 emitGroupConversationUpdated 用默认数据源
+    //     查不到行造成 socket 静默丢失；(b) 同一次创建 fires 两次 emit。
     return selectedMessages.length;
   }
 

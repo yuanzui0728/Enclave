@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -14,6 +15,7 @@ import { ArrowLeft, Check, Search, X } from "lucide-react";
 import {
   createGroup,
   getFriends,
+  SELF_CHARACTER_ID,
   type FriendListItem,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -38,7 +40,7 @@ import {
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { parseCreateGroupRouteHash } from "../lib/create-group-route-state";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopCreateGroupDialog = lazy(async () => {
@@ -59,6 +61,12 @@ export function CreateGroupPage() {
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R1：filteredFriends 直接吃 searchTerm，好友 100+ 时每个 keystroke 都
+  // 同步 toLowerCase + filter + buildContactSections 一遍，输入框肉眼可见的卡
+  // 顿。和 group-contacts-page / contacts-page / favorites-page / search-page
+  // 同口径补 useDeferredValue，让 React 优先把字打进输入框、过滤排到下一个
+  // idle 帧。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const previousBaseUrlRef = useRef(baseUrl);
   const seededSelectionRef = useRef("");
   const safeReturnPath =
@@ -67,15 +75,27 @@ export function CreateGroupPage() {
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
 
+  // 走查 R1：原本用独立 cache key ["app-group-friends"]，结果跟 contacts-page /
+  // mobile-add-friend-page 同样的 getFriends() 数据各自维护一份缓存，用户从通讯录
+  // 点 + → 发起群聊 → 又重新拉一次 /api/social/friends。统一到 ["app-friends",
+  // baseUrl] 直接复用主页面的缓存；配 15s staleTime 跟兄弟页保持一致，bulk /
+  // accept-friend / character-detail 等 mutation 已经在显式 invalidate 这条 key。
   const friendsQuery = useQuery({
-    queryKey: ["app-group-friends", baseUrl],
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
 
+  // 走查 Round 2：char-default-self 是用户的自我镜像，本质就是你自己；createGroup
+  // 后端已经隐式加你（owner role=owner）进群，再让"我自己"作为 character member 也被加
+  // 进去会出现"你跟自己同时在群里"的诡异成员列表，且单独选自己一个能造出一条只有
+  // 群主一个真人 + 0 个角色的空群。统一在 UI 列表里把 self 过掉，避免用户能选到。
   const friendItems = useMemo(
     () =>
       (friendsQuery.data ?? []).filter(
-        (item) => item.friendship.status !== "removed",
+        (item) =>
+          item.friendship.status !== "removed" &&
+          item.character.id !== SELF_CHARACTER_ID,
       ),
     [friendsQuery.data],
   );
@@ -114,15 +134,18 @@ export function CreateGroupPage() {
         },
         baseUrl,
       ),
-    onSuccess: async (group) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: (group) => {
+      // 走查 R1：原本 await Promise.all(invalidateQueries) 才 navigate 进新群，
+      // 公网隧道 RTT ~600ms × 2 条 invalidate 阻塞导航，用户点完"确定建群"
+      // 看着 spinner 多转 ~1s 才进入群聊。invalidate 是给通讯录/会话列表拉刷
+      // 用的（目标页面 react-query 监听同 key 自动重拉），fire-and-forget
+      // 让导航立刻发生即可。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       const returnPath =
         safeReturnPath ??
         (routeState.source === "chat-details" && routeState.conversationId
@@ -144,6 +167,13 @@ export function CreateGroupPage() {
 
   const createMutationResetRef = useRef(createMutation.reset);
   createMutationResetRef.current = createMutation.reset;
+  // 同步防双击锁——下面 rightActions 的「确定」按钮原本只靠 disabled=
+  // createMutation.isPending 兜底，但 disabled 要等 React commit 才生效，
+  // 同帧内连点 2 次会同时通过两次 isPending=false → 两个 POST /groups 同时
+  // 飞出去，结果用户进的是第 2 个群（replace:true），第 1 个群残留在通讯录里
+  // 变成"幽灵群"。submittingRef ref 同步赋值，第一次 click 把它翻 true 之后
+  // 同帧的所有后续 click 都被早返兜住；onSettled 解锁，失败也能重试。
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (previousBaseUrlRef.current === baseUrl) {
@@ -194,8 +224,28 @@ export function CreateGroupPage() {
     sortedFriendItems.length,
   ]);
 
+  // 走查 R1：friendsQuery staleTime=15s 期间用户在另一 tab / 另一设备删了某个
+  // 好友 → 后台 refetch 进来后 friendship.status='removed' 被 friendItems filter
+  // 掉，selectedFriendMap 也丢掉这条；但 selectedIds 仍然攒着这个 stale id ——
+  // 横滚「已选联系人」里看不到（selectedFriends 已经按 selectedFriendMap.get
+  // 过滤），点「确定」时 createGroup 的 memberIds 里仍带它，后端要么静默剔除
+  // 要么 400，用户在 UI 上无任何方式取消这个隐形选择。selectedFriendMap 一旦
+  // 重建就 reconcile：丢掉 map 里不再存在的 id。friendsQuery.data 还没回来时
+  // (initial null) 不动 selectedIds，免得把 seed/已选当 stale 一刀切。
+  useEffect(() => {
+    if (!friendsQuery.data) {
+      return;
+    }
+    setSelectedIds((current) => {
+      if (current.every((id) => selectedFriendMap.has(id))) {
+        return current;
+      }
+      return current.filter((id) => selectedFriendMap.has(id));
+    });
+  }, [friendsQuery.data, selectedFriendMap]);
+
   const filteredFriends = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     if (!keyword) {
       return sortedFriendItems;
     }
@@ -203,67 +253,78 @@ export function CreateGroupPage() {
     return sortedFriendItems.filter((item) =>
       matchesFriendSearch(item, keyword),
     );
-  }, [searchTerm, sortedFriendItems]);
+  }, [deferredSearchTerm, sortedFriendItems]);
 
   const filteredSections = useMemo(
     () => buildContactSections(filteredFriends),
     [filteredFriends],
   );
 
+  // 走查 R1：handleBack 原本一律走 navigate({to: ...}) push 一条新 history
+  // 项。用户路径是 /tabs/contacts → 点 + → /group/new → 点返回 ⇒ history 变成
+  // [/tabs/contacts, /group/new, /tabs/contacts]，再按浏览器后退又落回
+  // /group/new 死循环。mobile-add-friend-page / friend-requests-page 都已统一
+  // 走 navigateBackOrFallback：能 history.back() 就 back，安全兜不住时再
+  // 用 fallback 里的 fresh navigate。这里把整段重写成同模式，每个 source
+  // 对应一条 fallback navigate。
   const handleBack = () => {
-    if (safeReturnPath) {
-      void navigate({
-        to: safeReturnPath,
-        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
-      });
-      return;
-    }
+    const performFallbackNavigate = () => {
+      if (safeReturnPath) {
+        void navigate({
+          to: safeReturnPath,
+          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        });
+        return;
+      }
 
-    if (isDesktopLayout && routeState.source === "chat-details" && routeState.conversationId) {
-      void navigate({
-        to: "/tabs/chat",
-        hash: buildDesktopChatRouteHash({
-          conversationId: routeState.conversationId,
-          panel: "details",
-        }),
-      });
-      return;
-    }
+      if (isDesktopLayout && routeState.source === "chat-details" && routeState.conversationId) {
+        void navigate({
+          to: "/tabs/chat",
+          hash: buildDesktopChatRouteHash({
+            conversationId: routeState.conversationId,
+            panel: "details",
+          }),
+        });
+        return;
+      }
 
-    if (routeState.source === "chat-details" && routeState.conversationId) {
-      void navigate({
-        to: "/chat/$conversationId/details",
-        params: { conversationId: routeState.conversationId },
-      });
-      return;
-    }
+      if (routeState.source === "chat-details" && routeState.conversationId) {
+        void navigate({
+          to: "/chat/$conversationId/details",
+          params: { conversationId: routeState.conversationId },
+        });
+        return;
+      }
 
-    if (routeState.source === "desktop-chat" && routeState.conversationId) {
-      void navigate({
-        to: buildDesktopChatThreadPath({
-          conversationId: routeState.conversationId,
-        }),
-      });
-      return;
-    }
+      if (routeState.source === "desktop-chat" && routeState.conversationId) {
+        void navigate({
+          to: buildDesktopChatThreadPath({
+            conversationId: routeState.conversationId,
+          }),
+        });
+        return;
+      }
 
-    if (isDesktopLayout && routeState.source === "group-contacts") {
-      void navigate({
-        to: "/tabs/contacts",
-        hash: buildDesktopContactsRouteHash({
-          pane: "groups",
-          showWorldCharacters: false,
-        }),
-      });
-      return;
-    }
+      if (isDesktopLayout && routeState.source === "group-contacts") {
+        void navigate({
+          to: "/tabs/contacts",
+          hash: buildDesktopContactsRouteHash({
+            pane: "groups",
+            showWorldCharacters: false,
+          }),
+        });
+        return;
+      }
 
-    if (routeState.source === "group-contacts") {
-      void navigate({ to: "/contacts/groups" });
-      return;
-    }
+      if (routeState.source === "group-contacts") {
+        void navigate({ to: "/contacts/groups" });
+        return;
+      }
 
-    void navigate({ to: "/tabs/chat" });
+      void navigate({ to: "/tabs/chat" });
+    };
+
+    navigateBackOrFallback(performFallbackNavigate, safeReturnPath);
   };
 
   const statusBackLabel = safeReturnPath
@@ -340,7 +401,16 @@ export function CreateGroupPage() {
         rightActions={
           <button
             type="button"
-            onClick={() => createMutation.mutate()}
+            onClick={() => {
+              if (submittingRef.current) return;
+              if (!selectedIds.length || createMutation.isPending) return;
+              submittingRef.current = true;
+              createMutation.mutate(undefined, {
+                onSettled: () => {
+                  submittingRef.current = false;
+                },
+              });
+            }}
             disabled={!selectedIds.length || createMutation.isPending}
             className={cn(
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
@@ -420,7 +490,24 @@ export function CreateGroupPage() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t(msg`搜索`)}
-              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R2：和姊妹页 chat-message-search-panel R1 / 桌面 R24 同款
+              // a11y 修法——父 label 没有文本子节点（仅 Search 图标 + input），
+              // placeholder 在 SR 上行为分裂，盲人用户 focus 进来听到"编辑栏
+              // 空"。挂 aria-label="搜索联系人" 把意图明确表达出来。
+              aria-label={t(msg`搜索联系人`)}
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 备注名 / 角色名 / 关系关键词常常是 ASCII（"wangxiaoming"、
+              // "zhang yang"）或者带英文姓名缩写，iOS 默认会句首大写 +
+              // autocorrect，用户敲"wang"被改成"Wang"或者"Want"，
+              // matchesFriendSearch 内部已 toLowerCase 所以 case 不致命，但
+              // autocorrect 把字直接改掉是真坑；同 mobile-search-workspace /
+              // mobile-add-friend 同款关掉。enterKeyHint=search 让软键盘的
+              // Return 键长得像"搜索"，跟"搜索结果列表"语义对齐。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
         </div>

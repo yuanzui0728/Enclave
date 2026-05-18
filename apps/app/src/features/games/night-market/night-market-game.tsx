@@ -57,13 +57,15 @@ export function NightMarketGame({
   const { state, actions } = useNightMarketState();
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 400);
-    return () => window.clearInterval(id);
-  }, []);
-
   const isRunning = state.status === "running";
   const isEnded = state.status === "ended";
+
+  // now 服务客流 / 升级冷却倒计时——只有 running 才需要，idle/ended 别再 400ms 重渲。
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = window.setInterval(() => setNow(Date.now()), 400);
+    return () => window.clearInterval(id);
+  }, [isRunning]);
   const containerCls =
     variant === "embedded"
       ? "rounded-[16px] bg-white"

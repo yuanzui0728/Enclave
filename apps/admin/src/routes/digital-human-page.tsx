@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSystemStatus } from "@yinjie/contracts";
@@ -18,10 +18,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
-import {
-  buildDigitalHumanAdminSummary,
-  formatDigitalHumanAdminMode,
-} from "../lib/digital-human-admin-summary";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 const MODE_KEY = "digital_human_provider_mode";
 const TEMPLATE_KEY = "digital_human_player_url_template";
@@ -98,6 +95,30 @@ function generateToken(): string {
     return crypto.randomUUID();
   }
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+type StatusPillTone = "ok" | "warn" | "muted";
+
+function StatusPill({
+  tone,
+  children,
+}: {
+  tone: StatusPillTone;
+  children: ReactNode;
+}) {
+  const toneClass =
+    tone === "ok"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : tone === "warn"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]";
+  return (
+    <span
+      className={`ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium normal-case tracking-normal ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function DigitalHumanPage() {
@@ -219,7 +240,26 @@ export function DigitalHumanPage() {
   };
 
   const isExternal = draft?.mode === "external_iframe";
-  const templateMissing = isExternal && !draft?.playerUrlTemplate.trim();
+  const templateFilled = Boolean(draft?.playerUrlTemplate.trim());
+  const tokenFilled = Boolean(draft?.callbackToken.trim());
+
+  const templatePill: { tone: StatusPillTone; label: string } = isExternal
+    ? templateFilled
+      ? { tone: "ok", label: t(msg`已配置`) }
+      : { tone: "warn", label: t(msg`外部模式必填`) }
+    : { tone: "muted", label: t(msg`当前模式不需要`) };
+
+  const tokenPill: { tone: StatusPillTone; label: string } = isExternal
+    ? tokenFilled
+      ? { tone: "ok", label: t(msg`已设置`) }
+      : { tone: "warn", label: t(msg`未设置`) }
+    : { tone: "muted", label: t(msg`当前模式不需要`) };
+
+  const paramsPill: { tone: StatusPillTone; label: string } = !paramsValidation.ok
+    ? { tone: "warn", label: t(msg`JSON 无效`) }
+    : paramsValidation.count > 0
+      ? { tone: "ok", label: t(msg`${paramsValidation.count} 个 key`) }
+      : { tone: "muted", label: t(msg`无参数`) };
 
   return (
     <div className="space-y-6">
@@ -230,26 +270,25 @@ export function DigitalHumanPage() {
           msg`选择数字人模式，配置外部播放器模板、回调 token 与扩展参数，让数字人状态从“模拟”切到真实 provider。`,
         )}
         badges={[
-          summary.ready ? t(msg`已就绪`) : t(msg`待配置`),
-          `${t(msg`当前模式`)}：${summary.modeLabel}`,
-        ]}
-        metrics={[
-          { label: t(msg`状态`), value: summary.statusLabel },
-          { label: t(msg`播放器模板`), value: summary.templateStatus },
-          { label: t(msg`回调 token`), value: summary.callbackTokenStatus },
-          { label: t(msg`扩展参数`), value: summary.paramsStatus },
+          `${summary.ready ? t(msg`已就绪`) : summary.statusLabel} · ${summary.modeLabel}`,
         ]}
       />
 
-      <AdminCallout
-        tone={summary.ready ? "success" : "warning"}
-        title={
-          summary.ready
-            ? t(msg`数字人 Provider 已可联调真实视频通话。`)
-            : t(msg`数字人 Provider 当前未就绪：${summary.statusLabel}`)
-        }
-        description={`${summary.description} ${summary.nextStep}`}
-      />
+      {summary.ready ? null : (
+        <AdminCallout
+          tone={
+            statusQuery.data?.digitalHumanGateway.mode === "external_iframe"
+              ? "warning"
+              : "info"
+          }
+          title={
+            statusQuery.data?.digitalHumanGateway.mode === "external_iframe"
+              ? t(msg`数字人 Provider 当前未就绪：${summary.statusLabel}`)
+              : t(msg`当前为模拟模式（${summary.modeLabel}），尚未启用真实数字人。`)
+          }
+          description={`${summary.description} ${summary.nextStep}`}
+        />
+      )}
 
       <Card>
         <AdminSectionHeader
@@ -301,51 +340,71 @@ export function DigitalHumanPage() {
               ]}
             />
 
-            <AdminTextField
-              label={t(msg`外部播放器 URL 模板`)}
-              value={draft.playerUrlTemplate}
-              onChange={(value) => update("playerUrlTemplate", value)}
-              placeholder={TEMPLATE_PLACEHOLDER}
-            />
-            <div className="-mt-3 text-[12px] leading-5 text-[color:var(--text-secondary)]">
-              {t(
-                msg`支持占位符：{sessionId} {conversationId} {characterId} {characterName} {callbackUrl} {callbackToken}，以及 providerParams 中的任意 key（如 {voice}）。仅外部 iframe 模式生效。`,
-              )}
-              {templateMissing ? (
-                <span className="ml-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-                  {t(msg`外部模式必填`)}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-end gap-3">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
                 <AdminTextField
-                  className="flex-1"
-                  label={t(msg`Provider 回调 token`)}
-                  value={draft.callbackToken}
-                  onChange={(value) => update("callbackToken", value)}
-                  placeholder={t(msg`留空则 provider-state 回调不会带鉴权`)}
+                  label={
+                    <span className="inline-flex items-center">
+                      <span>{t(msg`外部播放器 URL 模板`)}</span>
+                      <StatusPill tone={templatePill.tone}>
+                        {templatePill.label}
+                      </StatusPill>
+                    </span>
+                  }
+                  value={draft.playerUrlTemplate}
+                  onChange={(value) => update("playerUrlTemplate", value)}
+                  placeholder={TEMPLATE_PLACEHOLDER}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGenerateToken}
-                  className="mb-0"
-                >
-                  {t(msg`生成新 token`)}
-                </Button>
+                <div className="mt-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                  {t(
+                    msg`支持占位符：{sessionId} {conversationId} {characterId} {characterName} {callbackUrl} {callbackToken}，以及 providerParams 中的任意 key（如 {voice}）。仅外部 iframe 模式生效。`,
+                  )}
+                </div>
               </div>
-              <div className="text-[12px] leading-5 text-[color:var(--text-secondary)]">
-                {t(
-                  msg`provider 在回写 PATCH /api/chat/digital-human-calls/sessions/:id/provider-state 时需带上该 token，否则会被拒绝。`,
-                )}
+
+              <div>
+                <div className="flex items-end gap-3">
+                  <AdminTextField
+                    className="flex-1"
+                    label={
+                      <span className="inline-flex items-center">
+                        <span>{t(msg`Provider 回调 token`)}</span>
+                        <StatusPill tone={tokenPill.tone}>
+                          {tokenPill.label}
+                        </StatusPill>
+                      </span>
+                    }
+                    value={draft.callbackToken}
+                    onChange={(value) => update("callbackToken", value)}
+                    placeholder={t(msg`留空则 provider-state 回调不会带鉴权`)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGenerateToken}
+                    className="mb-0"
+                  >
+                    {t(msg`生成新 token`)}
+                  </Button>
+                </div>
+                <div className="mt-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                  {t(
+                    msg`provider 在回写 PATCH /api/chat/digital-human-calls/sessions/:id/provider-state 时需带上该 token，否则会被拒绝。`,
+                  )}
+                </div>
               </div>
             </div>
 
             <div>
               <AdminTextArea
-                label={t(msg`扩展参数（JSON 对象）`)}
+                label={
+                  <span className="inline-flex items-center">
+                    <span>{t(msg`扩展参数（JSON 对象）`)}</span>
+                    <StatusPill tone={paramsPill.tone}>
+                      {paramsPill.label}
+                    </StatusPill>
+                  </span>
+                }
                 value={draft.providerParams}
                 onChange={(value) => update("providerParams", value)}
                 placeholder={PARAMS_PLACEHOLDER}
@@ -360,7 +419,7 @@ export function DigitalHumanPage() {
                 </div>
               ) : paramsValidation.count > 0 ? (
                 <div className="mt-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
-                  {t(msg`已解析 ${paramsValidation.count} 个 key：`)}
+                  {t(msg`已解析 Key 列表：`)}
                   {paramsValidation.keys.join(" / ")}
                 </div>
               ) : null}
@@ -396,34 +455,15 @@ export function DigitalHumanPage() {
         ) : null}
       </Card>
 
-      <Card>
-        <AdminSectionHeader title={t(msg`实时网关快照`)} />
-        <div className="mt-4 space-y-3">
-          <AdminInfoRow
-            label={t(msg`模式`)}
-            value={formatDigitalHumanAdminMode(
-              statusQuery.data?.digitalHumanGateway.mode ?? "",
-            )}
-          />
+      <details className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 shadow-[var(--shadow-soft)]">
+        <summary className="cursor-pointer select-none text-sm font-medium text-[color:var(--text-secondary)]">
+          {t(msg`调试信息`)}
+        </summary>
+        <div className="mt-3 space-y-3">
           <AdminInfoRow
             label={t(msg`Provider`)}
             value={statusQuery.data?.digitalHumanGateway.provider ?? "—"}
           />
-          <AdminInfoRow label={t(msg`状态`)} value={summary.statusLabel} />
-          <AdminInfoRow
-            label={t(msg`播放器模板`)}
-            value={summary.templateStatus}
-          />
-          <AdminInfoRow
-            label={t(msg`回调 token`)}
-            value={summary.callbackTokenStatus}
-          />
-          <AdminInfoRow
-            label={t(msg`扩展参数`)}
-            value={summary.paramsDetail}
-          />
-        </div>
-        <div className="mt-4">
           <AdminCodeBlock
             value={
               statusQuery.data?.digitalHumanGateway.message ??
@@ -431,7 +471,7 @@ export function DigitalHumanPage() {
             }
           />
         </div>
-      </Card>
+      </details>
     </div>
   );
 }

@@ -109,7 +109,18 @@ export class AdminService {
   }
 
   async updateCharacter(id: string, data: Partial<CharacterEntity>) {
-    await this.characterRepo.update(id, data);
+    const existing = await this.characterRepo.findOneBy({ id });
+    const sanitized = { ...data };
+    if (
+      existing &&
+      sanitized.sourceType != null &&
+      sanitized.sourceType !== existing.sourceType
+    ) {
+      // 后台不允许改变历史角色的 sourceType（不同 sourceType 走的运行时分支不同，
+      // 例如 wechat_import / preset_catalog 强绑定 import 流程）
+      delete sanitized.sourceType;
+    }
+    await this.characterRepo.update(id, sanitized);
     return this.characterRepo.findOneBy({ id });
   }
 

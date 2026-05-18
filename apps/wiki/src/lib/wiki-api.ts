@@ -15,6 +15,23 @@ export class WikiApiError extends Error {
   }
 }
 
+// 区分 "session/JWT 已失效" 的 401 和 "业务输入校验失败" 的 401。
+// 前者要清 token + 跳 /login；后者（如验证码错、登录密码错）保持当前页让组件自己渲染错误。
+// 不识别的 code 默认按 session 失效处理，向后兼容老路径（如 cloud-console 没显式 code 的 401）。
+const SESSION_EXPIRED_CODES = new Set([
+  "AUTH_TOKEN_MISSING",
+  "AUTH_TOKEN_INVALID",
+  "AUTH_USER_NOT_FOUND",
+  "AUTH_JWT_SECRET_MISSING",
+]);
+
+function shouldClearSessionForCode(payload: unknown): boolean {
+  if (!payload || typeof payload !== "object") return true;
+  const code = (payload as { code?: unknown }).code;
+  if (typeof code !== "string" || code.length === 0) return true;
+  return SESSION_EXPIRED_CODES.has(code);
+}
+
 async function request<T>(
   path: string,
   init: RequestInit & { auth?: boolean } = {},
@@ -29,7 +46,20 @@ async function request<T>(
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  } catch (cause) {
+    // 离线 / DNS 解析挂掉 / dev server 没起 → fetch 直接抛 TypeError("Failed to fetch")，
+    // 浏览器各家文案还不一样（Chrome "Failed to fetch"、Firefox "NetworkError"、
+    // Safari "Load failed"）。直接抛上去，组件会把这串原文渲染到 InlineNotice，
+    // 用户看到一行英文不知道发生啥。包成一个本地化 WikiApiError，status=0 给调用方做区分。
+    throw new WikiApiError(
+      0,
+      null,
+      translateRuntimeMessage(msg`网络请求失败，请检查网络后重试。`),
+    );
+  }
   const text = await res.text();
   let payload: unknown = null;
   if (text) {
@@ -40,7 +70,7 @@ async function request<T>(
     }
   }
   if (!res.ok) {
-    if (res.status === 401) {
+    if (res.status === 401 && shouldClearSessionForCode(payload)) {
       clearSession();
       // 不在登录/注册流程上的页面，直接跳登录页避免假死。
       if (
@@ -52,10 +82,26 @@ async function request<T>(
         window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
       }
     }
-    const message =
-      (payload && typeof payload === "object" && "message" in payload
-        ? String((payload as { message: unknown }).message)
-        : null) ?? translateRuntimeMessage(msg`请求失败 (${res.status})`);
+    // NestJS 默认 404 把 "Cannot POST /api/...路径..." 这种全英文路由 dump 直接放在
+    // message 里，前端原样渲染就一坨英文（典型场景：UI 加了新功能但 API 还没部署）。
+    // 用 code === LEGACY_ERROR + message 以 "Cannot " 开头来识别这类路由级 404，
+    // 替成本地化的"功能暂不可用，请稍后重试。"。
+    const isStaleRoute =
+      res.status === 404 &&
+      payload &&
+      typeof payload === "object" &&
+      (payload as { code?: unknown }).code === "LEGACY_ERROR" &&
+      typeof (payload as { message?: unknown }).message === "string" &&
+      /^Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+/.test(
+        (payload as { message: string }).message,
+      );
+    const message = isStaleRoute
+      ? translateRuntimeMessage(
+          msg`该功能暂未上线（路径 ${res.status}），请稍后重试或刷新页面。`,
+        )
+      : ((payload && typeof payload === "object" && "message" in payload
+          ? String((payload as { message: unknown }).message)
+          : null) ?? translateRuntimeMessage(msg`请求失败 (${res.status})`));
     throw new WikiApiError(res.status, payload, message);
   }
   return payload as T;
@@ -70,6 +116,17 @@ export type AuthSession = {
     userType: string;
     avatar?: string;
   };
+};
+
+export type AuthProfile = {
+  id: string;
+  username: string;
+  role: string;
+  userType: string;
+  avatar?: string;
+  email: string | null;
+  emailVerifiedAt: string | null;
+  hasPassword: boolean;
 };
 
 export type WikiContentSnapshot = {
@@ -231,6 +288,8 @@ export type WikiTalkPost = {
 
 export type WatchlistEntry = {
   characterId: string;
+  // 来自 page.title，便于 UI 显示。空时回落到 characterId。
+  title: string;
   notifyOnEdit: boolean;
   notifyOnTalk: boolean;
   addedAt: string;
@@ -240,8 +299,8 @@ export type WatchlistEntry = {
 };
 
 export type WatchlistFeedItem =
-  | { kind: "revision"; characterId: string; revision: WikiRevisionSummary }
-  | { kind: "talk"; characterId: string; thread: WikiTalkThread };
+  | { kind: "revision"; characterId: string; title: string; revision: WikiRevisionSummary }
+  | { kind: "talk"; characterId: string; title: string; thread: WikiTalkThread };
 
 export type ModerationReport = {
   id: string;
@@ -300,12 +359,29 @@ export const wikiApi = {
     });
   },
   me() {
+    return request<AuthProfile>("/auth/me");
+  },
+  sendChangePasswordCode() {
     return request<{
-      id: string;
-      username: string;
-      role: string;
-      userType: string;
-    }>("/auth/me");
+      email: string;
+      expiresAt: string;
+      debugCode?: string | null;
+    }>("/auth/password/send-code", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  },
+  changePassword(code: string, newPassword: string) {
+    return request<{ ok: true }>("/auth/password/change", {
+      method: "POST",
+      body: JSON.stringify({ code, newPassword }),
+    });
+  },
+  changeUsername(username: string) {
+    return request<AuthSession>("/auth/username/change", {
+      method: "POST",
+      body: JSON.stringify({ username }),
+    });
   },
   listCharacters() {
     return request<CharacterListItem[]>("/wiki/pages", { auth: false });
@@ -431,6 +507,15 @@ export const wikiApi = {
   },
   listUsers() {
     return request<WikiUserRow[]>("/wiki/users");
+  },
+  // 批量把 userId 解析成 username/role 用于显示。recent-changes、pending-reviews、
+  // character-page 历史卡都得用这个把 editorUserId UUID 替换成用户名。
+  // 不要求 admin 权限；任何登录用户都可调用，返回的字段是非敏感的。
+  lookupUsers(ids: string[]) {
+    return request<Array<{ id: string; username: string; role: string }>>(
+      "/wiki/users/lookup",
+      { method: "POST", body: JSON.stringify({ ids }) },
+    );
   },
   setUserRole(
     userId: string,
@@ -818,6 +903,73 @@ export const wikiApi = {
       { method: "DELETE" },
     );
   },
+  /**
+   * AI 自动生成私有角色的字段。section 与 [[AiGenerateSection]] 类型完全一致：
+   * - 'basics' / 'core_logic' / 'chat' / 'scenes' / 'memory' 生成该 section 字段
+   * - 'all'：一次性生成上述 5 个非 sacred section 全部字段（顶部"一键生成"按钮用）。
+   *   需要 name + bio + relationship 三个 sacred 字段都已填好，否则后端返回 400。
+   * 返回值是只包含**当前为空字段**建议的 partial DTO（后端 normalizeAiOutput 已经过一道
+   * "用户已填的不返回"过滤；前端再过一道双保险）。
+   * 历史上还有 life / reasoning，2026-05-15 起从 wiki 编辑路径下线，详见 AiGenerateSection 注释。
+   */
+  generateMyCharacterFields(input: {
+    section: AiGenerateSection;
+    currentDraft: PrivateCharacterDto;
+    /**
+     * 优化模式：true 时后端 normalizer 解锁"目标为空才填"，让 AI 覆盖整节
+     * （sacred 字段 bio/personality/relationship 后端仍会兜底保留）。
+     * 仅前端确认弹窗后才传 true；默认 false 维持旧"只填空"语义。
+     */
+    optimize?: boolean;
+    /**
+     * 仅在「新建」场景传 true：后端在 section='all' AI 生成完成后会把
+     * 用户已填 + AI 输出 merge 写入 character_drafts。即便用户在生成中
+     * 关 tab，后端也会落库，下次进 /my-drafts 仍能看到。
+     */
+    persistAsDraft?: boolean;
+  }) {
+    return request<AiGeneratedDraft>("/wiki/my-characters/ai-generate", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  /**
+   * AI 生成角色字段（与 generateMyCharacterFields 走同一套 service，但路由是
+   * 世界角色编辑可用的通用入口；rate-limit 桶按 user.id 共享，所以两个入口共
+   * 用同一份 15/h 配额）。世界角色 / 私有角色编辑器需要不同 URL 主要是为了
+   * 让请求语义可追踪：私有 → /wiki/my-characters/ai-generate；世界 → /wiki/
+   * ai-generate-character-fields。
+   */
+  generateCharacterFields(input: {
+    section: AiGenerateSection;
+    currentDraft: PrivateCharacterDto;
+    optimize?: boolean;
+    /**
+     * 仅在「新建」场景传 true。同 generateMyCharacterFields 的 persistAsDraft，
+     * 但落库 kind='world'。
+     */
+    persistAsDraft?: boolean;
+  }) {
+    return request<AiGeneratedDraft>("/wiki/ai-generate-character-fields", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  /** 列出当前用户的所有草稿，按 updatedAt 倒序。 */
+  listMyDrafts() {
+    return request<MyDraftSummary[]>("/wiki/my-drafts");
+  },
+  /** 取一份完整草稿（含 payload）用于恢复表单。 */
+  getDraft(id: string) {
+    return request<MyDraftDetail>(`/wiki/my-drafts/${encodeURIComponent(id)}`);
+  },
+  /** 删除一份草稿；他人 / 不存在的 id 返回 404。 */
+  async deleteDraft(id: string): Promise<void> {
+    await request<{ success: true }>(
+      `/wiki/my-drafts/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+  },
   /** 触发浏览器下载 export bundle 文件。 */
   async exportMyCharacter(id: string, fallbackName: string): Promise<void> {
     const token = getToken();
@@ -828,7 +980,24 @@ export const wikiApi = {
       },
     );
     if (!res.ok) {
-      throw new WikiApiError(res.status, null, `导出失败 (${res.status})`);
+      // 401 → 走和 request() 一致的清 session + 跳登录流程，避免用户停在
+      // 一个看不懂的"导出失败 (401)"上。
+      if (res.status === 401) {
+        clearSession();
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login") &&
+          !window.location.pathname.startsWith("/register")
+        ) {
+          const redirect = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+        }
+      }
+      throw new WikiApiError(
+        res.status,
+        null,
+        translateRuntimeMessage(msg`导出失败 (${res.status})`),
+      );
     }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -842,21 +1011,81 @@ export const wikiApi = {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    // 不要同步 revoke：Safari / iOS 上 a.click() 异步派发下载，立即 revoke
+    // 会让下载在真正开始前失效。延迟到下一帧已足够 Chrome / Firefox /
+    // Safari 全平台稳定下载。
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  },
+  /**
+   * 上传一张图片作为头像。返回 `/api/wiki/avatars/<file>` 站内 URL，调用方再把
+   * 这个 URL 写到 PrivateCharacterDto.avatar 上即可（isSafeAvatarValue 允许 `/` 开头）。
+   */
+  async uploadAvatar(file: File): Promise<{ url: string }> {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/wiki/avatars`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    });
+    const text = await res.text();
+    let payload: unknown = null;
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = text;
+      }
+    }
+    if (!res.ok) {
+      if (res.status === 401) {
+        clearSession();
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login") &&
+          !window.location.pathname.startsWith("/register")
+        ) {
+          const redirect = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+        }
+      }
+      const message =
+        (payload && typeof payload === "object" && "message" in payload
+          ? String((payload as { message: unknown }).message)
+          : null) ??
+        translateRuntimeMessage(msg`头像上传失败 (${res.status})`);
+      throw new WikiApiError(res.status, payload, message);
+    }
+    return payload as { url: string };
   },
   /** 上传一个 JSON 文件，按 name upsert 到当前用户的私有角色。 */
   async importMyCharacter(
     file: File,
   ): Promise<{ record: PrivateCharacterRecord; overwrote: boolean }> {
+    // 防御性：bundle 实际只有几十 KB，超过 5 MB 几乎一定是选错文件。
+    // 在 file.text() 之前 reject，避免把 GB 级内容读到浏览器内存把页面卡死。
+    const MAX_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      const sizeMb = (file.size / 1024 / 1024).toFixed(1);
+      throw new WikiApiError(
+        400,
+        null,
+        translateRuntimeMessage(
+          msg`文件太大（${sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。`,
+        ),
+      );
+    }
     const text = await file.text();
     let payload: unknown;
     try {
       payload = JSON.parse(text);
     } catch (err) {
+      const reason = (err as Error).message;
       throw new WikiApiError(
         400,
         null,
-        `JSON 解析失败：${(err as Error).message}`,
+        translateRuntimeMessage(msg`JSON 解析失败：${reason}`),
       );
     }
     return request<{ record: PrivateCharacterRecord; overwrote: boolean }>(
@@ -882,6 +1111,18 @@ export type PrivateCharacterRecord = {
   triggerScenes?: string[] | null;
   recipe?: CharacterBlueprintRecipe | null;
   profile?: unknown | null;
+  // —— 2026-05-15 起：和隐界后台 character editor 一一对应的字段 ——
+  isOnline?: boolean;
+  onlineMode?: string;
+  activityMode?: string;
+  currentActivity?: string | null;
+  sourceType?: string;
+  sourceKey?: string | null;
+  deletionPolicy?: string;
+  isTemplate?: boolean;
+  socialOpenness?: string;
+  proactiveBrowseChance?: number;
+  intimacyLevel?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -894,9 +1135,67 @@ export type PrivateCharacterDto = {
   relationship?: string;
   relationshipType?: string;
   expertDomains?: string[];
-  triggerScenes?: string[] | null;
   recipe?: CharacterBlueprintRecipe | null;
   profile?: unknown | null;
+  // —— admin 对齐字段（不含 isOnline / isTemplate / sourceType / sourceKey /
+  // deletionPolicy / 生活策略整组 / aiRelationships —— 这些都是 admin-only，
+  // wiki 不接受写入） ——
+  socialOpenness?: string;
+  proactiveBrowseChance?: number;
+  intimacyLevel?: number;
+};
+
+/**
+ * 6 个 AI 生成 section：5 个分 section + 1 个 'all' 一次性全部。
+ * 命名严格对齐 apps/admin/src/routes/character-editor-page.tsx 的 TABS 数组
+ * （basics / core_logic / chat / scenes / memory）。
+ * 与后端 api/src/modules/wiki/services/wiki-private-character-ai.prompts.ts 的
+ * SectionKey 同义。
+ *
+ * 注：social_params / life 不进 AI 生成范围 ——
+ * - social_params：admin 也是手填
+ * - life：已于 2026-05-15 验收时被整组从 wiki UI 移除
+ * reasoning 同样早已移除（admin TABS 没有 reasoning tab）。
+ */
+export type AiGenerateSection =
+  | "basics"
+  | "core_logic"
+  | "chat"
+  | "scenes"
+  | "memory"
+  | "all";
+
+/** 我的草稿：character_drafts 表的列表项（不含 payload，列表轻量）。 */
+export type MyDraftSummary = {
+  id: string;
+  kind: "private" | "world";
+  /** 草稿当时的角色 name；未填时为空字符串，列表用 fallback "未命名草稿"。 */
+  name: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** 单份草稿详情，含 payload —— 用于跳回创建页 hydrate 表单。 */
+export type MyDraftDetail = MyDraftSummary & {
+  payload: PrivateCharacterDto;
+};
+
+/** AI 生成返回的 partial draft；只包含**当前为空**字段的建议。 */
+export type AiGeneratedDraft = {
+  bio?: string;
+  personality?: string;
+  relationship?: string;
+  relationshipType?: string;
+  expertDomains?: string[];
+  // life / lifeStrategy / triggerScenes 都随 2026-05-15「生活策略」下线被移除。
+  recipe?: {
+    identity?: Partial<CharacterBlueprintRecipe["identity"]>;
+    expertise?: Partial<CharacterBlueprintRecipe["expertise"]>;
+    tone?: Partial<CharacterBlueprintRecipe["tone"]>;
+    prompting?: Partial<CharacterBlueprintRecipe["prompting"]>;
+    memorySeed?: Partial<CharacterBlueprintRecipe["memorySeed"]>;
+  };
 };
 
 export type FieldProtection = {

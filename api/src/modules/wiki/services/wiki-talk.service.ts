@@ -4,10 +4,17 @@ import { AppError } from '../../../common/app-error.exception';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import type { AuthenticatedUser } from '../../auth/jwt-auth.guard';
+import { CharacterPageEntity } from '../entities/character-page.entity';
 import { WikiTalkPostEntity } from '../entities/wiki-talk-post.entity';
 import { WikiTalkThreadEntity } from '../entities/wiki-talk-thread.entity';
 import { rankOf } from '../guards/wiki-role.guard';
 import { WikiBlockService } from './wiki-block.service';
+
+// Body 是 SQLite TEXT，没有 DB 层长度限制 —— 不挡的话用户能 POST 1MB+ 的
+// post 撑爆讨论页/页面 hydration 体积。Wiki MediaWiki 同类阈值在 ~64K，这里取
+// 10K（约 5000 中文字 / 10000 英文字），常规讨论 + 引用差不多够用。Title
+// 已经在下面挡了 200，body 单独定。
+const MAX_TALK_BODY_LENGTH = 10000;
 
 @Injectable()
 export class WikiTalkService {
@@ -18,6 +25,8 @@ export class WikiTalkService {
     private readonly threadRepo: Repository<WikiTalkThreadEntity>,
     @InjectRepository(WikiTalkPostEntity)
     private readonly postRepo: Repository<WikiTalkPostEntity>,
+    @InjectRepository(CharacterPageEntity)
+    private readonly pageRepo: Repository<CharacterPageEntity>,
     private readonly blocks: WikiBlockService,
   ) {}
 
@@ -51,9 +60,31 @@ export class WikiTalkService {
     user: AuthenticatedUser,
     input: { title: string; body: string },
   ): Promise<{ thread: WikiTalkThreadEntity; firstPost: WikiTalkPostEntity }> {
+    // 词条必须存在再允许开讨论；否则任何字符串都能作为 characterId 开 thread，
+    // 列表渲染出无法点击的孤儿 thread（2026-05-16 R2 走查发现，和 wiki_watchlist
+    // 同类问题）。
+    const page = await this.pageRepo.findOne({ where: { characterId } });
+    if (!page) {
+      throw new AppError('WIKI_PAGE_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: `角色 ${characterId} 不存在`,
+      });
+    }
+    // 已删除的 page 不允许开新讨论 —— 旧 thread 还能读以保留历史，但
+    // 新 thread 让"已删除"卡片底下不停冒新讨论，UX 上很怪。R4 走查发现。
+    if (page.isDeleted) {
+      throw new AppError('WIKI_FORBIDDEN', {
+        status: HttpStatus.FORBIDDEN,
+        params: { reason: '该词条已被删除，无法开新讨论' },
+        legacyMessage: '该词条已被删除，无法开新讨论',
+      });
+    }
     await this.assertCanTalk(user, characterId);
-    const title = (input.title ?? '').trim();
-    const body = (input.body ?? '').trim();
+    // typeof 守：客户端传 {"title":{"a":1}} 时 (x ?? '').trim() 会抛 TypeError → 500。
+    const title =
+      typeof input.title === 'string' ? input.title.trim() : '';
+    const body =
+      typeof input.body === 'string' ? input.body.trim() : '';
     if (!title) throw new AppError('WIKI_TALK_INVALID_STATE', {
         params: { detail: '标题不能为空' },
         legacyMessage: '标题不能为空',
@@ -66,6 +97,12 @@ export class WikiTalkService {
       throw new AppError('WIKI_TALK_INVALID_STATE', {
         params: { detail: '标题最长 200 字' },
         legacyMessage: '标题最长 200 字',
+      });
+    }
+    if (body.length > MAX_TALK_BODY_LENGTH) {
+      throw new AppError('WIKI_TALK_INVALID_STATE', {
+        params: { detail: `内容最长 ${MAX_TALK_BODY_LENGTH} 字` },
+        legacyMessage: `内容最长 ${MAX_TALK_BODY_LENGTH} 字`,
       });
     }
 
@@ -105,11 +142,19 @@ export class WikiTalkService {
       });
     }
     await this.assertCanTalk(user, thread.characterId);
-    const body = (input.body ?? '').trim();
+    // typeof 守，避免非字符串 body 触发 (x ?? '').trim() → 500。
+    const body =
+      typeof input.body === 'string' ? input.body.trim() : '';
     if (!body) throw new AppError('WIKI_TALK_INVALID_STATE', {
         params: { detail: '回复内容不能为空' },
         legacyMessage: '回复内容不能为空',
       });
+    if (body.length > MAX_TALK_BODY_LENGTH) {
+      throw new AppError('WIKI_TALK_INVALID_STATE', {
+        params: { detail: `回复内容最长 ${MAX_TALK_BODY_LENGTH} 字` },
+        legacyMessage: `回复内容最长 ${MAX_TALK_BODY_LENGTH} 字`,
+      });
+    }
     if (input.parentPostId) {
       const parent = await this.postRepo.findOne({
         where: { id: input.parentPostId },

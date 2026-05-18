@@ -1,8 +1,11 @@
+import { msg } from "@lingui/macro";
 import { useNavigate } from "@tanstack/react-router";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
 import { useSubscriptionExpiredDialogStore } from "../../store/subscription-expired-dialog-store";
 
 export function SubscriptionExpiredDialogHost() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const open = useSubscriptionExpiredDialogStore((state) => state.open);
   const message = useSubscriptionExpiredDialogStore((state) => state.message);
@@ -15,15 +18,15 @@ export function SubscriptionExpiredDialogHost() {
     return null;
   }
 
-  const title = meta?.copy.expiredTitle || "Membership required";
+  const title = meta?.copy.expiredTitle || t(msg`需要会员才能继续`);
   const detail = meta?.copy.expiredHint || message;
-  const actionLabel = meta?.copy.expiredCta || "Open membership center";
+  const actionLabel = meta?.copy.expiredCta || t(msg`去开通会员`);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-4 sm:items-center">
       <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
         <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
-          AI access
+          {t(msg`AI 访问权限`)}
         </div>
         <h2 className="mt-3 text-2xl font-semibold text-[color:var(--text-primary)]">
           {title}
@@ -38,7 +41,7 @@ export function SubscriptionExpiredDialogHost() {
         ) : null}
         {meta?.expiredAt ? (
           <p className="mt-2 text-xs text-[color:var(--text-muted)]">
-            Expired at: {new Date(meta.expiredAt).toLocaleString()}
+            {t(msg`到期时间：${new Date(meta.expiredAt).toLocaleString()}`)}
           </p>
         ) : null}
         {meta?.copy.checkoutContactInfo ? (
@@ -54,7 +57,7 @@ export function SubscriptionExpiredDialogHost() {
             className="flex-1 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f5f5] shadow-none"
             onClick={() => closeDialog()}
           >
-            Later
+            {t(msg`稍后再说`)}
           </Button>
           <Button
             variant="primary"

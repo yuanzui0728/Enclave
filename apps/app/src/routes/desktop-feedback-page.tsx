@@ -41,6 +41,7 @@ import { formatTimestamp } from "../lib/format";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useCloudSessionStore } from "../store/cloud-session-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 
@@ -113,6 +114,9 @@ export function DesktopFeedbackPage() {
   const nativeDesktopFeedback = runtimeConfig.appPlatform === "desktop";
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerSignature = useWorldOwnerStore((state) => state.signature);
+  // cloud 登录身份带过去，邮箱用户走 cloudEmail，手机号用户走 cloudPhone。
+  const cloudPhone = useCloudSessionStore((state) => state.phone);
+  const cloudEmail = useCloudSessionStore((state) => state.email);
   const baseUrl = runtimeConfig.apiBaseUrl;
   const cloudApiBaseUrl = runtimeConfig.cloudApiBaseUrl;
   const worldOwnerLabel = t(msg`世界主人`);
@@ -391,7 +395,7 @@ export function DesktopFeedbackPage() {
             ) : null}
           </InlineNotice>
         ) : null}
-        {error ? <InlineNotice tone="info">{error}</InlineNotice> : null}
+        {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
         {systemStatusQuery.isError &&
         systemStatusQuery.error instanceof Error ? (
           <div className="mt-4">
@@ -652,6 +656,8 @@ export function DesktopFeedbackPage() {
           apiBaseUrl: baseUrl || null,
           ownerName: ownerName || null,
           ownerSignature: ownerSignature || null,
+          submitterPhone: cloudPhone || null,
+          submitterEmail: cloudEmail || null,
         },
         cloudApiBaseUrl || undefined,
       );
@@ -693,13 +699,16 @@ export function DesktopFeedbackPage() {
   }
 
   function buildFeedbackPackage() {
+    // 用原始 label 拼 "优先级：高"，避免 resolvePriorityLabel 拼出的 "优先级：高优先级"。
+    const priorityOption = priorityOptions.find(
+      (item) => item.id === draft.priority,
+    );
+    const priorityRawLabel = priorityOption?.label ?? t(msg`未标记`);
     return [
       t(
         msg`反馈分类：${resolveCategoryLabel(draft.category, categoryOptions, t)}`,
       ),
-      t(
-        msg`优先级：${resolvePriorityLabel(draft.priority, priorityOptions, t)}`,
-      ),
+      t(msg`优先级：${priorityRawLabel}`),
       t(msg`标题：${draft.title.trim() || t(msg`未填写`)}`),
       t(msg`问题描述：${draft.detail.trim() || t(msg`未填写`)}`),
       t(msg`复现步骤：${draft.reproduction.trim() || t(msg`未填写`)}`),

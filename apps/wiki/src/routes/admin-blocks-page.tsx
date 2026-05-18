@@ -139,6 +139,7 @@ export function AdminBlocksPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="danger"
+            className="w-full sm:w-auto"
             disabled={
               !form.userId ||
               !form.reason.trim() ||
@@ -226,7 +227,7 @@ function BlockRow({
     !block.revokedAt &&
     (!block.expiresAt || new Date(block.expiresAt) > new Date());
   return (
-    <li className="flex items-start gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)]">
+    <li className="flex flex-col items-start gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)] sm:flex-row">
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="text-[color:var(--text-primary)]">
@@ -265,6 +266,7 @@ function BlockRow({
         <Button
           size="sm"
           variant="secondary"
+          className="w-full shrink-0 sm:w-auto"
           disabled={revoking}
           onClick={onRevoke}
         >

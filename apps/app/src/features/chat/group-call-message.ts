@@ -121,6 +121,19 @@ export function buildGroupCallInviteMessage(
 }
 
 export function parseDirectCallInviteMessage(text: string) {
+  // 提前 prefix 校验避免每条消息都 split+map+filter —— ChatMessageList 渲染每
+  // 条消息时都跑这条 parse（call invite 卡片识别 + group/sharedHistory 同形
+  // pattern 各一份），长聊天 100+ 消息 × 4 个 parse × 每次 typing tick re-render
+  // 在 hot path 上叠出来。call-invite 消息一定以 "[语音通话]" / "[视频通话]"
+  // 起头（buildDirectCallInviteMessage 写的固定 join），用 startsWith 早退
+  // 99% 不命中的情况，留下来的少数命中 path 仍走原 lines[0] 严格校验。
+  if (
+    !text.startsWith(DIRECT_VOICE_CALL_PREFIX) &&
+    !text.startsWith(DIRECT_VIDEO_CALL_PREFIX)
+  ) {
+    return null;
+  }
+
   const lines = text
     .split("\n")
     .map((line) => line.trim())
@@ -134,6 +147,7 @@ export function parseDirectCallInviteMessage(text: string) {
   }
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
+  const recordedAt = parseCallInviteTimestampValue(lines[3]);
   const durationLabel = parseCallInviteDuration(lines[timestampLabel ? 4 : 3]);
   const sourceLabel = parseCallInviteSource(
     lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
@@ -152,6 +166,7 @@ export function parseDirectCallInviteMessage(text: string) {
     title: lines[1] || "当前聊天",
     connectionStatus: parseDirectCallStatus(lines[2]),
     timestampLabel,
+    recordedAt,
     durationLabel,
     source,
     sourceLabel,
@@ -161,6 +176,7 @@ export function parseDirectCallInviteMessage(text: string) {
     title: string;
     connectionStatus: DirectCallInviteStatus | null;
     timestampLabel: string | null;
+    recordedAt: string | null;
     durationLabel: string | null;
     source: DirectCallInviteSource | null;
     sourceLabel: string | null;
@@ -169,6 +185,15 @@ export function parseDirectCallInviteMessage(text: string) {
 }
 
 export function parseGroupCallInviteMessage(text: string) {
+  // 同 parseDirectCallInviteMessage 的早退优化：渲染列表里每条消息都会被
+  // 试着 parse 一遍，先用 startsWith 把非候选挡掉。
+  if (
+    !text.startsWith(GROUP_VOICE_CALL_PREFIX) &&
+    !text.startsWith(GROUP_VIDEO_CALL_PREFIX)
+  ) {
+    return null;
+  }
+
   const lines = text
     .split("\n")
     .map((line) => line.trim())

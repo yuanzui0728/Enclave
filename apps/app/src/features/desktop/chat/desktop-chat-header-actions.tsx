@@ -38,9 +38,24 @@ export function DesktopChatHeaderActions({
         setCallMenuOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      // 通话菜单在 desktopHeaderActionsRef 内，开它不会触发 workspace
+      // pointerdown 的 dismissSidePanel；按 Esc 时若不 stopPropagation，
+      // workspace 那条 window keydown 会顺手把背后的「聊天信息」侧栏也关掉。
+      event.preventDefault();
+      event.stopPropagation();
+      setCallMenuOpen(false);
+    }
 
     window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [callMenuOpen]);
 
   return (
@@ -63,12 +78,24 @@ export function DesktopChatHeaderActions({
           tone="neutral"
           label={t(msg`通话`)}
           onClick={() => setCallMenuOpen((current) => !current)}
+          ariaHaspopup="menu"
+          ariaExpanded={callMenuOpen}
         >
           <Phone size={16} />
         </DesktopChatHeaderButton>
 
         {callMenuOpen ? (
-          <div className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
+          // 走查新一轮 R16：和 R6（会话/消息 context menu）/ R8（官号 context menu
+          // 与「+」快捷菜单）同款 a11y 缺漏——这个「通话」下拉是单聊聊天头部最常
+          // 用的入口（语音 / 视频），但下拉只是个裸 div，盲人屏幕阅读器打开时
+          // 只听到「语音通话 按钮」「视频通话 按钮」两段悬空，没有上下文说明
+          // 它们属于「通话操作菜单」。补 role="menu" + aria-label，和姊妹菜单
+          // 修法一致。
+          <div
+            role="menu"
+            aria-label={t(msg`通话操作菜单`)}
+            className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
+          >
             <CallMenuButton
               label={t(msg`语音通话`)}
               icon={
@@ -115,12 +142,16 @@ function DesktopChatHeaderButton({
   children,
   label,
   onClick,
+  ariaHaspopup,
+  ariaExpanded,
 }: {
   active?: boolean;
   tone?: "neutral" | "brand";
   children: ReactNode;
   label: string;
   onClick: () => void;
+  ariaHaspopup?: "menu";
+  ariaExpanded?: boolean;
 }) {
   return (
     <button
@@ -128,6 +159,8 @@ function DesktopChatHeaderButton({
       onClick={onClick}
       aria-label={label}
       title={label}
+      aria-haspopup={ariaHaspopup}
+      aria-expanded={ariaExpanded}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color,box-shadow] duration-150",
         active && tone === "brand"

@@ -4,9 +4,19 @@ export type CharacterDetailRouteState = {
   returnHash?: string;
 };
 
+// 走查 新 R3：和 mobile-group-route-state / create-group-route-state /
+// mobile-group-call-route-state 同款修法。character-detail-page 在 移动端
+// 通讯录-群聊/群信息 点群成员头像时被打开，returnPath 会被用作"返回上一页"
+// navigate target，浏览器 history.replaceState 接受 "//host" 会拼成
+// "https://evil.com" —— 攻击者只需要诱导用户点一条 /character/x#returnPath=//evil.com
+// 的链接即可在 character detail 页"返回"按钮后跳到第三方站。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
-  if (!nextValue || !nextValue.startsWith("/")) {
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    nextValue.startsWith("//")
+  ) {
     return undefined;
   }
 

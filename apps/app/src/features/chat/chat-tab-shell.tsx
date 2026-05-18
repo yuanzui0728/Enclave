@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { parseDesktopChatRouteHash } from "./chat-route-state";
 import { DesktopChatWorkspace } from "./chat-workspace-shell";
 
@@ -6,7 +7,12 @@ export type ChatTabShellProps = {
 };
 
 export function ChatTabShell({ hash }: ChatTabShellProps) {
-  const routeState = parseDesktopChatRouteHash(hash);
+  // hash 只有真改时才重新解析；上面父组件 useRouterState 一旦其它字段
+  // 触发 re-render 也会把同一份 hash 再传一遍，避免每次都 URLSearchParams。
+  const routeState = useMemo(
+    () => parseDesktopChatRouteHash(hash),
+    [hash],
+  );
 
   return (
     <DesktopChatWorkspace

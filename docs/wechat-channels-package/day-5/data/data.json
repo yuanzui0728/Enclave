@@ -1,0 +1,94 @@
+{
+  "video_id": "wechat-channels-d5",
+  "topic": "视频号元梗",
+  "duration_seconds": 75,
+  "characters": [
+    {
+      "id": "char-d5-axun",
+      "name": "阿巡",
+      "avatar": "shared-assets/avatars/moments-interactor-axun.svg",
+      "personality": "外向 + 沙雕双重身份（D5 演 2 个视频）"
+    },
+    {
+      "id": "char-d5-linchen",
+      "name": "林晨",
+      "avatar": "shared-assets/avatars/lin-chen-sleep-support.svg",
+      "personality": "文艺型，雨景与音乐贴主角"
+    }
+  ],
+  "videos": [
+    {
+      "id": "video_d5_001",
+      "author": "char-d5-axun",
+      "author_name": "阿巡",
+      "personality_tag": "外向",
+      "content_type": "自拍",
+      "caption": "今天好嗨 🎉 #日常",
+      "video_description": "阿巡自拍跳舞的 5 秒短视频，节奏感强",
+      "bgm_style": "迪斯科 / 快节奏 / 130 BPM",
+      "bgm_color_waveform": "#f97316",
+      "likes": 234,
+      "comments_count": 12,
+      "shares": 5,
+      "createdAt": "2026-05-13 17:00:00"
+    },
+    {
+      "id": "video_d5_002",
+      "author": "char-d5-linchen",
+      "author_name": "林晨",
+      "personality_tag": "文艺",
+      "content_type": "窗外雨景",
+      "caption": "窗外又下雨了，写不下去。",
+      "video_description": "林晨的书桌窗外，雨在玻璃上流动 10 秒长镜头",
+      "bgm_style": "氛围音 / 慢节奏 / 65 BPM / 钢琴+雨声",
+      "bgm_color_waveform": "#60a5fa",
+      "likes": 89,
+      "comments_count": 23,
+      "shares": 31,
+      "createdAt": "2026-05-13 21:42:00"
+    },
+    {
+      "id": "video_d5_003",
+      "author": "char-d5-axun",
+      "author_name": "阿巡",
+      "personality_tag": "沙雕",
+      "content_type": "猫视频",
+      "caption": "我家猫今天又翻车了。",
+      "video_description": "猫从沙发跳起来失败摔下来 3 秒鬼畜剪辑",
+      "bgm_style": "鬼畜电子 / 锯齿合成器 / 150 BPM",
+      "bgm_color_waveform": "#fbbf24",
+      "likes": 521,
+      "comments_count": 67,
+      "shares": 18,
+      "createdAt": "2026-05-13 19:14:00"
+    }
+  ],
+  "music_post": {
+    "id": "music_d5_001",
+    "author": "char-d5-linchen",
+    "author_name": "林晨",
+    "song_title": "雨季",
+    "story": "今天写不下去的时候听见外面下雨，就写了这首",
+    "lyrics_cards": [
+      "雨季又来了 / 我的纸还白着",
+      "你的窗也亮着吗 / 我们一起写吧",
+      "今晚的雨 / 是给我们一个人的"
+    ],
+    "bgm_style": "钢琴+人声 / 抒情 / 70 BPM",
+    "likes": 156,
+    "createdAt": "2026-05-13 22:00:00"
+  },
+  "ui_hints": {
+    "user_avatar": "default-w-avatar.svg",
+    "user_name": "w",
+    "video_action_bar_color": "#ffffff",
+    "video_caption_color": "#ffffff",
+    "bgm_waveform_height": "60px"
+  },
+  "notes_for_manus": [
+    "3 段嵌入式 BGM 不需要真实音乐，可以用 CC0 库找近似风格的 10 秒片段",
+    "BGM 波形可视化用 #f97316 / #60a5fa / #fbbf24 三色对应 3 种性格",
+    "音乐贴 lyrics_cards 是左右滑动的卡片，每张占满屏幕，3 张共构成沉浸式体验",
+    "镜头里出现的'平台 logo' 必须打码 + 灰显，不能清晰露出"
+  ]
+}

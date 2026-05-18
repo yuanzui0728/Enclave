@@ -7,6 +7,12 @@ import {
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { PUBLIC_SHARE_ORIGIN } from "../lib/share-url";
+import {
+  isNativeMobileBridgeAvailable,
+  shareFileWithNativeShell,
+} from "../runtime/mobile-bridge";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 // qrcode (~70KB) + html-to-image (~30KB) 是分享卡片专用的重依赖。
 // 静态 import 会让它们被 vendor-misc chunk 吃掉，模块预加载链路一并拉，公网
@@ -16,8 +22,8 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 const t = translateRuntimeMessage;
 
 // 水印里的 QR 与文案都指向 site 主域名。
-// 不读 env，因为 app 客户端的 SITE_URL 没有现成常量，且这个值固定。
-const SITE_URL = "https://www.enclave.top";
+const SITE_URL = PUBLIC_SHARE_ORIGIN;
+const SITE_HOST = SITE_URL.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 
 // QR 是 site URL 编码出来的 data URL，整个 app 生命周期都不变。
 // 第一次生成后挂在模块作用域，后续 modal 打开直接读 — 不再每次重新生成。
@@ -117,10 +123,25 @@ export function ShareCardModal({
   // 截图等 qrReady 后再开始，避免先无 QR 截一次、QR 到了再重截一次。
   const [qrReady, setQrReady] = useState(false);
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // 区分两类失败：
+  //   - generationError：截图阶段失败，没有图可看，需要用大块红字占据预览区
+  //   - saveError：导出已成功、保存/分享时挂了，必须保留图片可见，用户才能
+  //     按文案「长按图片手动保存」走兜底路径。之前共用一个 error state →
+  //     保存失败时把图片替换成红字，文案让用户去长按图片但图片已经没了。
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // QR 是模块级缓存的 promise，第一次生成、之后所有 modal 共享。失败时取 null。
+  // 新一轮走查 R2 (perf)：原本 deps=[] —— 父组件（FeedPostShareCardModal /
+  // MomentShareCardModal）无脑 mount ShareCardModal、传 cardKey={post?.id ??
+  // null}，cardKey 为 null 时整个 modal 走 L260 早返 null 不渲，但本 effect
+  // mount 时就 fire 一遍 → 触发 getQrDataUrl() → 第一次拉 lazy import 把
+  // qrcode (~70KB) 整个 chunk 拽下来。即使用户从来不点「生成分享图卡」按钮，
+  // 进 /discover/feed / /moments / /friend-moments / /profile 这些挂分享 modal
+  // 的页面首屏就吃掉这次网络。改成 gate 在 cardKey 上：用户真打开 modal 才
+  // 触发 QR 生成，qrPromise 模块级缓存仍保证同 session 内只拉一次。
   useEffect(() => {
+    if (!cardKey) return;
     let cancelled = false;
     getQrDataUrl().then((url) => {
       if (cancelled) return;
@@ -130,13 +151,14 @@ export function ShareCardModal({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [cardKey]);
 
   // 截图触发：每次换 cardKey 重做。等 QR 准备好（避免水印缺图）后再画。
   useEffect(() => {
     if (!cardKey || !qrReady) return;
     setPngDataUrl(null);
-    setError(null);
+    setGenerationError(null);
+    setSaveError(null);
     let cancelled = false;
 
     const run = async () => {
@@ -201,7 +223,7 @@ export function ShareCardModal({
       } catch (err) {
         console.error("[share-card] export failed", err);
         if (!cancelled) {
-          setError(t(msg`图片生成失败，请稍后重试`));
+          setGenerationError(t(msg`图片生成失败，请稍后重试`));
         }
       }
     };
@@ -212,15 +234,39 @@ export function ShareCardModal({
     };
   }, [cardKey, qrReady]);
 
+  // 第二次走查 R3 (perf)：caller (MomentShareCardModal / FeedPostShareCardModal)
+  // 都把 onClose={() => setX(null)} inline 箭头透下来。父组件 (MobileMomentsView
+  // 等) 在 share modal 打开期间凡 notice 2.4s 定时器收尾 / commentMutation
+  // pending 翻动 / pullState 抖 → 整页 re-render → onClose 身份换 → 下面两条
+  // useEffect 把 keydown listener + Android back interceptor unregister + register
+  // 一遍。和 WeChatCommentBar / WeChatActionBubble / MobileMomentsView 的
+  // cleanup-storm 同模式：ref 钉最新 onClose，effect 只在 cardKey 翻转时跑。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // ESC 关闭 — 必须放在任何条件 return 之前以遵守 hooks 规则
   useEffect(() => {
     if (!cardKey) return;
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [cardKey, onClose]);
+  }, [cardKey]);
+
+  // Android 硬件 Back：分享卡 modal 打开时按 Back 应该收 modal 而不是退掉
+  // 整个广场/朋友圈页 —— modal 已经 body.overflow=hidden 屏蔽了底层交互，
+  // 用户视觉上"在 modal 里"，Back 自然语义就是收 modal。
+  useEffect(() => {
+    if (!cardKey) return;
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onCloseRef.current();
+      return true;
+    });
+  }, [cardKey]);
 
   // body 滚动锁 — modal 打开时背景不能滚动（手机上特别重要，否则手指滑动
   // 会同时滚动底层页面）。
@@ -237,9 +283,25 @@ export function ShareCardModal({
 
   const handleSaveOrShare = async () => {
     if (!pngDataUrl) return;
+    setSaveError(null);
     const fileName = `${filenamePrefix}-${cardKey}.png`;
 
     try {
+      // iOS / Android 原生壳：走 UIActivityViewController / Android 系统分享，
+      // 拿到的 PNG 可以直达微信、相册、邮件等任意目标。
+      if (isNativeMobileBridgeAvailable()) {
+        const blob = await fetch(pngDataUrl).then((r) => r.blob());
+        const result = await shareFileWithNativeShell({
+          blob,
+          fileName,
+          mimeType: "image/png",
+          title: modalTitle,
+        });
+        if (result.shared) {
+          return;
+        }
+      }
+
       if (
         typeof navigator !== "undefined" &&
         "canShare" in navigator &&
@@ -274,7 +336,7 @@ export function ShareCardModal({
       a.remove();
     } catch (err) {
       console.error("[share-card] save failed", err);
-      setError(t(msg`保存失败，请长按图片手动保存`));
+      setSaveError(t(msg`保存失败，请长按图片手动保存`));
     }
   };
 
@@ -349,7 +411,7 @@ export function ShareCardModal({
                 {watermarkSubtitle}
               </div>
               <div style={{ fontSize: 12, color: "#9A9A9A", marginTop: 2 }}>
-                {t(msg`enclave.top · 浏览器即开即用`)}
+                {SITE_HOST} · {t(msg`浏览器即开即用`)}
               </div>
             </div>
           </div>
@@ -373,14 +435,25 @@ export function ShareCardModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto bg-[#F2F2F2] p-3">
-          {error ? (
-            <div className="py-12 text-center text-sm text-red-500">{error}</div>
-          ) : pngDataUrl ? (
-            <img
-              src={pngDataUrl}
-              alt={t(msg`分享图卡预览`)}
-              className="w-full rounded-md shadow-sm"
-            />
+          {pngDataUrl ? (
+            <>
+              {saveError ? (
+                // 保存/分享失败时，让红条挂在图片**上方**而不是替换掉图片——
+                // 文案是「请长按图片手动保存」，前提是图片还在视口里可被长按。
+                <div className="mb-2 rounded-md bg-red-50 px-3 py-2 text-center text-[12px] text-red-600">
+                  {saveError}
+                </div>
+              ) : null}
+              <img
+                src={pngDataUrl}
+                alt={t(msg`分享图卡预览`)}
+                className="w-full rounded-md shadow-sm"
+              />
+            </>
+          ) : generationError ? (
+            <div className="py-12 text-center text-sm text-red-500">
+              {generationError}
+            </div>
           ) : (
             <div className="py-12 text-center text-sm text-gray-500">
               {t(msg`生成图片中…`)}

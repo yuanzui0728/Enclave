@@ -36,13 +36,9 @@ function formatRemaining(ms: number) {
 export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) {
   const { state, actions } = useCatInnState();
   const [picker, setPicker] = useState<{ room: RoomKind; slot: number } | null>(null);
-
-  // Force re-render once a second for the timer label
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = window.setInterval(() => setTick((v) => v + 1), 1000);
-    return () => window.clearInterval(id);
-  }, []);
+  // 注意：以前这里还有一条 1Hz setTick 强制重渲，目的是更新 "剩余时间"——
+  // 但 use-cat-inn-state 的 1Hz state tick 本来就会推进 remainingMs 触发重渲，
+  // 这条 setTick 是纯空转，已删除。
 
   const isRunning = state.status === "running";
   const isEnded = state.status === "ended";

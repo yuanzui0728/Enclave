@@ -21,6 +21,7 @@ import { WorldOwnerService } from '../auth/world-owner.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
+import { CharacterEntity } from '../characters/character.entity';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
@@ -29,6 +30,10 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { SelfAgentService } from '../self-agent/self-agent.service';
 import { FriendshipEntity } from '../social/friendship.entity';
+import {
+  FriendRemarkResolver,
+  type FriendRemarkMap,
+} from '../social/friend-remark-resolver.service';
 import { ConversationEntity } from './conversation.entity';
 import {
   filterUserFacingConversations,
@@ -65,7 +70,6 @@ import {
 import {
   guessChatAttachmentExtension,
   normalizeChatAttachmentDisplayName,
-  resolveChatPublicApiBaseUrl,
   sanitizeChatAttachmentFileName,
 } from './chat-attachment-file.utils';
 import {
@@ -196,7 +200,13 @@ export class ChatService {
     private groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(FriendshipEntity)
     private friendshipRepo: Repository<FriendshipEntity>,
+    private readonly remarkResolver: FriendRemarkResolver,
   ) {}
+
+  private async getRemarkMapForCurrentOwner(): Promise<FriendRemarkMap> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    return this.remarkResolver.getOwnerRemarkMap(owner.id);
+  }
 
   async getOrCreateConversation(
     characterId: string,
@@ -262,6 +272,7 @@ export class ChatService {
     (Conversation & { lastMessage?: Message; unreadCount: number })[]
   > {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const remarkMap = await this.remarkResolver.getOwnerRemarkMap(owner.id);
     const convs = filterUserFacingConversations(
       await this.convRepo.find({
         where: { ownerId: owner.id, isHidden: false },
@@ -283,26 +294,92 @@ export class ChatService {
       lastMessage?: Message;
       unreadCount: number;
     })[] = [];
-    for (const rawConversation of convs) {
-      const conv =
-        await this.normalizeLegacyConversationEntity(rawConversation);
-      const cutoff = this.getVisibleMessageCutoff(conv);
-      const lastMsgEntity = await this.msgRepo.findOne({
-        where: this.buildMessageWhere(conv.id, cutoff),
-        order: { createdAt: 'DESC' },
-      });
+
+    const convDetails = await Promise.all(
+      convs.map(async (rawConversation) => {
+        const conv =
+          await this.normalizeLegacyConversationEntity(rawConversation);
+        const cutoff = this.getVisibleMessageCutoff(conv);
+        const unreadCutoff = this.getUnreadCutoff(conv);
+        const [lastMsgEntity, unreadCount] = await Promise.all([
+          this.msgRepo.findOne({
+            where: this.buildMessageWhere(conv.id, cutoff),
+            order: { createdAt: 'DESC' },
+          }),
+          this.msgRepo.count({
+            where: this.buildMessageWhere(conv.id, unreadCutoff, {
+              senderType: 'character',
+            }),
+          }),
+        ]);
+        return { conv, lastMsgEntity, unreadCount };
+      }),
+    );
+
+    const groupMemberships = await this.groupMemberRepo.find({
+      where: {
+        memberId: owner.id,
+        memberType: 'user',
+      },
+    });
+    const groupIds = [...new Set(groupMemberships.map((item) => item.groupId))];
+    const groups = groupIds.length
+      ? await this.groupRepo.find({
+          where: { id: In(groupIds), isHidden: false },
+        })
+      : [];
+
+    const groupDetails = await Promise.all(
+      groups.map(async (group) => {
+        const unreadCutoff = this.getGroupUnreadCutoff(group);
+        const [members, lastGroupMessage, unreadCount] = await Promise.all([
+          this.groupMemberRepo.find({
+            where: { groupId: group.id },
+            order: { joinedAt: 'ASC' },
+          }),
+          this.groupMessageRepo.findOne({
+            where: group.lastClearedAt
+              ? {
+                  groupId: group.id,
+                  createdAt: MoreThan(group.lastClearedAt),
+                }
+              : { groupId: group.id },
+            order: { createdAt: 'DESC' },
+          }),
+          this.groupMessageRepo.count({
+            where: this.buildGroupMessageWhere(group.id, unreadCutoff, {
+              senderType: 'character',
+            }),
+          }),
+        ]);
+        return { group, members, lastGroupMessage, unreadCount };
+      }),
+    );
+
+    const characterIdsForAvatars: string[] = [];
+    for (const { conv, lastMsgEntity } of convDetails) {
+      const directCharId = conv.participants?.[0]?.trim();
+      if (directCharId) characterIdsForAvatars.push(directCharId);
+      if (lastMsgEntity?.senderType === 'character' && lastMsgEntity.senderId) {
+        characterIdsForAvatars.push(lastMsgEntity.senderId);
+      }
+    }
+    const avatarMap =
+      await this.resolveCharacterAvatarMap(characterIdsForAvatars);
+
+    for (const { conv, lastMsgEntity, unreadCount } of convDetails) {
       const lastMessage = lastMsgEntity
-        ? await this.serializeMessage(lastMsgEntity)
+        ? this.serializeMessageWithAvatarMap(
+            lastMsgEntity,
+            remarkMap,
+            avatarMap,
+          )
         : undefined;
-
-      const unreadCutoff = this.getUnreadCutoff(conv);
-      const unreadCount = await this.msgRepo.count({
-        where: this.buildMessageWhere(conv.id, unreadCutoff, {
-          senderType: 'character',
-        }),
-      });
-
-      const serialized = await this.serializeConversation(conv);
+      const serialized = this.serializeConversationWithAvatarMap(
+        conv,
+        remarkMap,
+        avatarMap,
+      );
       const directCharacterId =
         serialized.type === 'direct'
           ? serialized.participants?.[0]
@@ -319,42 +396,14 @@ export class ChatService {
       });
     }
 
-    const groupMemberships = await this.groupMemberRepo.find({
-      where: {
-        memberId: owner.id,
-        memberType: 'user',
-      },
-    });
-    const groupIds = [...new Set(groupMemberships.map((item) => item.groupId))];
-    const groups = groupIds.length
-      ? await this.groupRepo.find({
-          where: { id: In(groupIds), isHidden: false },
-        })
-      : [];
-
-    for (const group of groups) {
-      const members = await this.groupMemberRepo.find({
-        where: { groupId: group.id },
-        order: { joinedAt: 'ASC' },
-      });
-      const lastGroupMessage = await this.groupMessageRepo.findOne({
-        where: group.lastClearedAt
-          ? {
-              groupId: group.id,
-              createdAt: MoreThan(group.lastClearedAt),
-            }
-          : { groupId: group.id },
-        order: { createdAt: 'DESC' },
-      });
-      const unreadCutoff = this.getGroupUnreadCutoff(group);
-      const unreadCount = await this.groupMessageRepo.count({
-        where: this.buildGroupMessageWhere(group.id, unreadCutoff, {
-          senderType: 'character',
-        }),
-      });
-
+    for (const { group, members, lastGroupMessage, unreadCount } of groupDetails) {
       result.push({
-        ...this.groupToConversation(group, members, lastGroupMessage),
+        ...this.groupToConversation(
+          group,
+          members,
+          lastGroupMessage,
+          remarkMap,
+        ),
         unreadCount,
       });
     }
@@ -651,9 +700,30 @@ export class ChatService {
     return searchVisibleMessages(messages, query);
   }
 
-  async getCharacterActivity(charId: string): Promise<string | undefined> {
-    const char = await this.characters.findById(charId);
-    return char?.currentActivity;
+  // 给 chat.gateway.emitConversationFailure 用：reply 生成失败时需要把"刚刚
+  // 落库的那条用户消息"重新 emit 一次，让客户端把 local_* 乐观消息 dedup 替
+  // 掉，否则会一直停在 sending 状态。原版走 getMessages(convId) 拉全表后
+  // [...messages].reverse().find(senderType==='user')，长聊天 1000+ 条时这里
+  // 是纯浪费。直接 findOne ORDER BY createdAt DESC LIMIT 1 + senderType='user'
+  // + visibility cutoff 后再 serialize 一条出来。
+  async getLastUserMessage(
+    conversationId: string,
+  ): Promise<Message | undefined> {
+    const conversation = await this.requireOwnedConversation(conversationId);
+    const entity = await this.msgRepo.findOne({
+      where: this.buildMessageWhere(
+        conversationId,
+        this.getVisibleMessageCutoff(conversation),
+        {
+          senderType: 'user',
+        },
+      ),
+      order: { createdAt: 'DESC' },
+    });
+    if (!entity) {
+      return undefined;
+    }
+    return this.serializeMessage(entity);
   }
 
   async saveUploadedAttachment(
@@ -677,10 +747,12 @@ export class ChatService {
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, storedFileName), file.buffer);
 
+    // 存相对 URL 而非快照 PUBLIC_API_BASE_URL：公网入口端口/协议变更后绝对 URL 会永远 404。
+    // 前端 contracts/client.ts normalizeAttachmentAssetUrl 渲染时按当前 apiBaseUrl absolutize。
     if (isImage) {
       return {
         kind: 'image',
-        url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+        url: `/api/chat/attachments/${storedFileName}`,
         mimeType: normalizedMimeType,
         fileName: displayName,
         size: file.size,
@@ -692,7 +764,7 @@ export class ChatService {
     if (isVoice) {
       return {
         kind: 'voice',
-        url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+        url: `/api/chat/attachments/${storedFileName}`,
         mimeType: normalizedMimeType,
         fileName: displayName,
         size: file.size,
@@ -702,7 +774,7 @@ export class ChatService {
 
     return {
       kind: 'file',
-      url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+      url: `/api/chat/attachments/${storedFileName}`,
       mimeType: normalizedMimeType,
       fileName: displayName,
       size: file.size,
@@ -1059,6 +1131,8 @@ export class ChatService {
         : { handled: false };
     const replyModalities = await this.planAssistantReplyModalities({
       characterId: charId,
+      // 复用上面行 1031 已经 findById 的 character，避免再来一次 PK lookup
+      character: charEntity ?? null,
       message: {
         type: resolvedInput.type,
         text: resolvedInput.text,
@@ -1281,12 +1355,25 @@ export class ChatService {
 
   private async planAssistantReplyModalities(input: {
     characterId: string;
+    character?: CharacterEntity | null;
     message: AssistantReplyTargetMessage;
   }): Promise<AssistantReplyModalitiesPlan> {
-    const wantsVoice =
+    // 先看 message 本身有没有触发 voice/image 的信号，没有再查角色卡的
+    // "默认用语音回复" 开关 —— 避免给每条普通消息加一次 PK lookup。
+    // 调用方如果已经查过 character 可以直接传进来复用。
+    let wantsVoice =
       shouldCreateVoiceReplyFromAttachment(input.message) ||
       shouldCreateVoiceReplyFromText(input.message.text);
     const requestedImagePrompt = extractRequestedImagePrompt(input.message);
+    if (!wantsVoice) {
+      const character =
+        input.character !== undefined
+          ? input.character
+          : await this.characters.findById(input.characterId);
+      if (character?.defaultVoiceReply === true) {
+        wantsVoice = true;
+      }
+    }
     if (!wantsVoice && !requestedImagePrompt) {
       return {
         includeVoice: false,
@@ -1663,12 +1750,19 @@ export class ChatService {
     await this.convRepo.save(conversation);
   }
 
-  private _entityToConversation(entity: ConversationEntity): Conversation {
+  private _entityToConversation(
+    entity: ConversationEntity,
+    remarkMap?: FriendRemarkMap,
+  ): Conversation {
+    const primaryCharacterId = entity.participants?.[0];
+    const remarkedTitle = primaryCharacterId
+      ? remarkMap?.get(primaryCharacterId)
+      : undefined;
     return {
       id: entity.id,
       type: 'direct',
       source: 'conversation',
-      title: entity.title,
+      title: remarkedTitle || entity.title,
       avatar: undefined,
       participants: entity.participants,
       messages: [],
@@ -1696,10 +1790,19 @@ export class ChatService {
     ];
     const primaryCharacterId = normalizedParticipants[0];
     const normalizedTitle = entity.title?.trim() ?? '';
+    // 历史上一批被孤立的 direct 会话 title 直接落了 character id（角色已删
+    // 但 conversation 没被清掉），桌面消息列表会渲染出 "char-preset-..." 这
+    // 种原始 id 给用户看。把"title === primaryCharacterId"也算成 legacy 形
+    // 态，再次进入下面的 fallback 流程，从 character 表 / system "你已添加
+    // 了 X" 消息里捞回真实姓名；都没有就降级到「未知联系人」而不是原始 id。
+    const titleIsRawCharacterId = Boolean(
+      primaryCharacterId && normalizedTitle === primaryCharacterId,
+    );
     const needsNormalization =
       entity.type !== 'direct' ||
       normalizedParticipants.length !== 1 ||
-      !normalizedTitle;
+      !normalizedTitle ||
+      titleIsRawCharacterId;
 
     if (!needsNormalization) {
       return entity;
@@ -1708,11 +1811,15 @@ export class ChatService {
     const primaryCharacter = primaryCharacterId
       ? await this.characters.findById(primaryCharacterId)
       : null;
+    const fallbackFromMessage = primaryCharacterId
+      ? await this.resolveDirectTitleFromMessages(entity.id, primaryCharacterId)
+      : null;
+    const usableExistingTitle = titleIsRawCharacterId ? '' : normalizedTitle;
     const nextTitle =
       primaryCharacter?.name?.trim() ||
-      normalizedTitle ||
-      primaryCharacterId ||
-      'Direct conversation';
+      usableExistingTitle ||
+      fallbackFromMessage ||
+      (primaryCharacterId ? '未知联系人' : 'Direct conversation');
 
     this.conversationHistory.delete(entity.id);
 
@@ -1724,13 +1831,51 @@ export class ChatService {
     });
   }
 
-  private _entityToMessage(entity: MessageEntity): Message {
+  /**
+   * 从历史消息里捞角色的人类可读名：character 自己发过的最近一条消息里
+   * senderName 是当时落库的角色名；character 已删但系统 "你已添加了 X" 提示
+   * 也能把 X 抠出来兜底。两个都没有就返回 null。
+   */
+  private async resolveDirectTitleFromMessages(
+    conversationId: string,
+    characterId: string,
+  ): Promise<string | null> {
+    const characterMessage = await this.msgRepo.findOne({
+      where: { conversationId, senderType: 'character', senderId: characterId },
+      order: { createdAt: 'DESC' },
+    });
+    const characterName = characterMessage?.senderName?.trim();
+    if (characterName && characterName !== characterId) {
+      return characterName;
+    }
+    const systemMessage = await this.msgRepo.findOne({
+      where: { conversationId, senderType: 'system' },
+      order: { createdAt: 'ASC' },
+    });
+    const fromSystem = systemMessage?.text?.match(/你已添加了(.+?)[，,。.\s]*现在/);
+    if (fromSystem?.[1]) {
+      const trimmed = fromSystem[1].trim();
+      if (trimmed && trimmed !== characterId) {
+        return trimmed;
+      }
+    }
+    return null;
+  }
+
+  private _entityToMessage(
+    entity: MessageEntity,
+    remarkMap?: FriendRemarkMap,
+  ): Message {
+    const remarkedSenderName =
+      entity.senderType === 'character'
+        ? remarkMap?.get(entity.senderId)
+        : undefined;
     return {
       id: entity.id,
       conversationId: entity.conversationId,
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
-      senderName: entity.senderName,
+      senderName: remarkedSenderName || entity.senderName,
       senderAvatar: undefined,
       type: entity.type as
         | 'text'
@@ -1757,9 +1902,14 @@ export class ChatService {
     group: GroupEntity,
     members: GroupMemberEntity[],
     lastMessageEntity?: GroupMessageEntity | null,
+    remarkMap?: FriendRemarkMap,
   ): Conversation & { lastMessage?: Message } {
     const lastMessage = lastMessageEntity
-      ? this.groupMessageToConversationMessage(group.id, lastMessageEntity)
+      ? this.groupMessageToConversationMessage(
+          group.id,
+          lastMessageEntity,
+          remarkMap,
+        )
       : undefined;
 
     return {
@@ -1789,8 +1939,11 @@ export class ChatService {
 
   private async serializeConversation(
     entity: ConversationEntity,
+    remarkMap?: FriendRemarkMap,
   ): Promise<Conversation> {
-    const conversation = this._entityToConversation(entity);
+    const effectiveMap =
+      remarkMap ?? (await this.getRemarkMapForCurrentOwner());
+    const conversation = this._entityToConversation(entity, effectiveMap);
     const characterId = conversation.participants[0]?.trim();
     if (!characterId) {
       return conversation;
@@ -1807,14 +1960,51 @@ export class ChatService {
     };
   }
 
-  private async serializeMessages(
-    entities: MessageEntity[],
-  ): Promise<Message[]> {
-    return Promise.all(entities.map((entity) => this.serializeMessage(entity)));
+  private serializeConversationWithAvatarMap(
+    entity: ConversationEntity,
+    remarkMap: FriendRemarkMap,
+    avatarMap: Map<string, string>,
+  ): Conversation {
+    const conversation = this._entityToConversation(entity, remarkMap);
+    const characterId = conversation.participants[0]?.trim();
+    if (!characterId) return conversation;
+    const avatar = avatarMap.get(characterId);
+    return avatar ? { ...conversation, avatar } : conversation;
   }
 
-  private async serializeMessage(entity: MessageEntity): Promise<Message> {
-    const message = this._entityToMessage(entity);
+  private serializeMessageWithAvatarMap(
+    entity: MessageEntity,
+    remarkMap: FriendRemarkMap,
+    avatarMap: Map<string, string>,
+  ): Message {
+    const message = this._entityToMessage(entity, remarkMap);
+    if (message.senderType !== 'character') return message;
+    const avatar = avatarMap.get(message.senderId?.trim() ?? '');
+    return avatar ? { ...message, senderAvatar: avatar } : message;
+  }
+
+  private async serializeMessages(
+    entities: MessageEntity[],
+    remarkMap?: FriendRemarkMap,
+  ): Promise<Message[]> {
+    const effectiveMap =
+      remarkMap ?? (await this.getRemarkMapForCurrentOwner());
+    const characterIds = entities
+      .filter((entity) => entity.senderType === 'character')
+      .map((entity) => entity.senderId);
+    const avatarMap = await this.resolveCharacterAvatarMap(characterIds);
+    return entities.map((entity) =>
+      this.serializeMessageWithAvatarMap(entity, effectiveMap, avatarMap),
+    );
+  }
+
+  private async serializeMessage(
+    entity: MessageEntity,
+    remarkMap?: FriendRemarkMap,
+  ): Promise<Message> {
+    const effectiveMap =
+      remarkMap ?? (await this.getRemarkMapForCurrentOwner());
+    const message = this._entityToMessage(entity, effectiveMap);
     if (message.senderType !== 'character') {
       return message;
     }
@@ -1840,6 +2030,20 @@ export class ChatService {
     return character?.avatar?.trim() || undefined;
   }
 
+  private async resolveCharacterAvatarMap(
+    characterIds: (string | null | undefined)[],
+  ): Promise<Map<string, string>> {
+    const characters = await this.characters.findManyByIds(
+      characterIds.filter((id): id is string => !!id?.trim()),
+    );
+    const map = new Map<string, string>();
+    for (const character of characters) {
+      const avatar = character.avatar?.trim();
+      if (avatar) map.set(character.id, avatar);
+    }
+    return map;
+  }
+
   private resolveStrongReminderDurationHours(durationHours?: number) {
     if (
       !Number.isFinite(durationHours) ||
@@ -1855,13 +2059,18 @@ export class ChatService {
   private groupMessageToConversationMessage(
     conversationId: string,
     entity: GroupMessageEntity,
+    remarkMap?: FriendRemarkMap,
   ): Message {
+    const remarkedSenderName =
+      entity.senderType === 'character'
+        ? remarkMap?.get(entity.senderId)
+        : undefined;
     return {
       id: entity.id,
       conversationId,
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
-      senderName: entity.senderName,
+      senderName: remarkedSenderName || entity.senderName,
       type: entity.type as
         | 'text'
         | 'system'
@@ -2312,10 +2521,6 @@ export class ChatService {
 
   private resolveAttachmentStorageDir(): string {
     return resolvePrimaryChatAttachmentStorageDir();
-  }
-
-  private resolvePublicApiBaseUrl(): string {
-    return resolveChatPublicApiBaseUrl();
   }
 }
 

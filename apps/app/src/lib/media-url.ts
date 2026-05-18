@@ -1,4 +1,7 @@
-import { resolveAppCoreApiBaseUrl } from "./runtime-config";
+import {
+  resolveAppCloudApiBaseUrl,
+  resolveAppCoreApiBaseUrl,
+} from "./runtime-config";
 import {
   isCloudSessionExpired,
   useCloudSessionStore,
@@ -16,11 +19,27 @@ import {
 // 注意：contracts 客户端的 normalizeMomentMediaAsset 会把后端返回的相对路径
 // 提前 absolutize 成 ${apiBaseUrl}${url}。所以这里收到的可能本来就是绝对 URL，
 // 必须在那种形态也追加 token，不能简单依据 `/^https?:/` 直接 bail out。
+
+// wiki 头像物理上只在 cloud-api 给 wiki-owner 账号 spawn 的 world child 的磁盘上
+// （data/accounts/<wiki-owner>/wiki-avatars/）。如果还按 `/api/wiki/avatars/<file>`
+// 走 /cloud/world-api 反代，cloud-api 会按当前用户的 token 路由到他自己的 world
+// child，那个 child 没有这个目录 → 全量 404（实测 24h 650+ 次 resource_error）。
+// cloud-api 在 /cloud/public/wiki-avatars/<file> 提供了公共静态路由直接服务
+// wiki-owner 磁盘文件，不走 per-user-world 反代；这里把存量数据库里历史的
+// `/api/wiki/avatars/...` 字符串透明重写到新路径，避免做存量迁移。
+const WIKI_AVATAR_LEGACY_PREFIX = "/api/wiki/avatars/";
+const WIKI_AVATAR_PUBLIC_PREFIX = "/cloud/public/wiki-avatars/";
+
+function rewriteWikiAvatarPath(url: string): string {
+  if (!url.startsWith(WIKI_AVATAR_LEGACY_PREFIX)) return url;
+  return WIKI_AVATAR_PUBLIC_PREFIX + url.slice(WIKI_AVATAR_LEGACY_PREFIX.length);
+}
+
 export function resolveAppMediaUrl(
   maybeRelative: string | null | undefined,
 ): string {
   if (!maybeRelative) return "";
-  const url = maybeRelative.trim();
+  const url = rewriteWikiAvatarPath(maybeRelative.trim());
   if (!url) return "";
   if (/^(?:blob:|data:)/i.test(url)) return url;
 
@@ -29,7 +48,15 @@ export function resolveAppMediaUrl(
     absolute = url;
   } else if (url.startsWith("/")) {
     try {
-      const base = resolveAppCoreApiBaseUrl();
+      // `/cloud/*` 走的是 cloud-api 自己（不带 /cloud/world-api 反代前缀），
+      // 比如公共 wiki avatar 路由 /cloud/public/wiki-avatars/<file>。其他 `/api/*`
+      // 媒体路径都走 core-api（公网部署下 = ${origin}/cloud/world-api 反代）。
+      const base = url.startsWith("/cloud/")
+        ? resolveAppCloudApiBaseUrl()
+        : resolveAppCoreApiBaseUrl();
+      if (!base) {
+        return url;
+      }
       absolute = `${base.replace(/\/+$/, "")}${url}`;
     } catch {
       return url;

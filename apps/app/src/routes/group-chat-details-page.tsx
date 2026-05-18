@@ -1,4 +1,11 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -15,13 +22,14 @@ import {
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
+import { useGroupBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import {
   buildMobileGroupRouteHash,
@@ -31,10 +39,11 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupInviteReturnSearch } from "../lib/group-invite-delivery";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 
 export function GroupChatDetailsPage() {
   const { groupId } = useParams({ from: "/group/$groupId/details" });
@@ -58,6 +67,13 @@ export function GroupChatDetailsPage() {
 
 function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const t = translateRuntimeMessage;
+  // 走查新一轮 R1：本文件 t = translateRuntimeMessage 是模块级 stable ref，
+  // 下方 groupSummary useMemo 把 t 列进 deps 但 locale 切换时 t 引用不变 →
+  // 用户切语言后，分享出去的标题/正文仍是切换前的旧 locale（实测 zh→en 切换
+  // 后点"分享群聊"，复制出来的还是中文"XX 群聊 / N 人群聊"）。和本文件 R3
+  // 修过的 addMemberLabel/removeMemberLabel 提到外面同口径——把 locale 拉进
+  // useMemo deps，让 share summary 跟随当前语言重算。
+  const { locale } = useAppLocale();
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
@@ -81,7 +97,37 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const [dangerSheetAction, setDangerSheetAction] = useState<
     "hide" | "clear" | "leave" | null
   >(null);
-  const ownerQuery = useDefaultChatBackground();
+  // 这一行展示的是「这个群当前实际生效的背景」——可能继承全局默认，也可能是
+  // group-chat-background-page 单独保存过的 custom 背景，必须用 group 维度的
+  // background query 取 effectiveBackground，否则覆盖后这里还是显示全局默认，
+  // 和点进去能看到的实际不符。
+  const backgroundQuery = useGroupBackground(groupId);
+  // 走查移动端群聊 R2：和姊妹 chat-details-page R3（commit cdc13e28a）同款问
+  // 题——本页 9 处「点行进二级页」按钮（成员九宫格 character 头像 / 添加 /
+  // 移除 / 全部群成员 / 群聊名称 / 群公告 / 群二维码 / 查找聊天记录 / 聊天
+  // 背景 / 我在本群的昵称 / 群语音 / 群视频）全部走 `onClick={() => { void
+  // navigate({ to: ... }) }}` 形态、没挂 disabled / 没同步 ref 守。同帧 <16ms
+  // 双击任一行都让 tanstack-router push 2 条相同 history 项 → 用户从二级页
+  // 返回还要按 2 次返回才能回到 details；ChatSettingRow / ChatMemberGrid
+  // tile 内 onClick 没有任何 throttle，每个 tap 都直冲 navigate。
+  // 用一个共享 ref 守住所有前进按钮：第一次成功后 page unmount，第二次根本
+  // 不该再飞；raf 复位兜底 navigate 没真正切走的边界（比如成员页 fallback）。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const groupRouteHash = useMemo(
     () =>
       buildMobileGroupRouteHash({
@@ -194,6 +240,28 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     setDangerSheetAction(null);
   }, [groupId]);
 
+  // 走查移动端群聊 R2：和姊妹路径 chat-details-page.tsx 走查 R1（commit
+  // 92247a693）同款修法——本页一连串 mutation onSuccess 调 showNotice("群聊已
+  // 置顶。"/"已开启消息免打扰。"/"群聊记录已清空。"/"群消息已开启强提醒。" 等）
+  // 原版没 auto-dismiss，notice 一直挂在 details 顶部直到用户切设置 / groupId
+  // 切换 / 离开页才消。单聊版同位置已经按 chat-list / chat-list-page 口径对齐
+  // 3.5s 自动消。本页 notice 形态比单聊简单（只有 showBackAction 一个 secondary
+  // action，没单聊那条 secondaryActionLabel 分支），但口径一致：只要挂着可点
+  // 的 primary action 或 secondary back action 就不自动消，给用户时间点。
+  // showBackAction=true 时 InlineNoticeActionButton 是用户唯一可继续的入口
+  // （404/退群失败兜底），auto-dismiss 把它秒走会让用户卡在不可恢复状态。
+  useEffect(() => {
+    if (
+      !notice ||
+      (notice.actionLabel && notice.onAction) ||
+      notice.showBackAction
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (
       groupQuery.isLoading ||
@@ -224,19 +292,32 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const pinMutation = useMutation({
     mutationFn: (pinned: boolean) =>
       setGroupPinned(groupId, { pinned }, baseUrl),
-    onSuccess: async (_, pinned) => {
+    onSuccess: (_, pinned) => {
+      // 走查 R4：原本 await Promise.all 3 条 invalidate 才 resolve；
+      // pinSubmittingRef 依赖 pinMutation.isPending 翻 false 才解锁（line 665-667），
+      // await 链下 isPending 一直拉着，公网隧道 RTT ~600ms × 3 ≈ 1.8s 内用户都
+      // 没法再点 toggle。fire-and-forget：notice 已经发了，cache 让目标页自己拉。
       showNotice(pinned ? t(msg`群聊已置顶。`) : t(msg`群聊已取消置顶。`));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+    // 失败时 toggle 不会被 invalidate 拉回 → UI 看着没动，没提示。和单聊
+    // chat-details-page 同步加 onError。
+    onError: (error, pinned) => {
+      showNotice(
+        error instanceof Error && error.message
+          ? error.message
+          : pinned
+            ? t(msg`置顶失败，请稍后再试。`)
+            : t(msg`取消置顶失败，请稍后再试。`),
+      );
     },
   });
 
@@ -271,83 +352,129 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                       : t(msg`关闭了群公告通知。`)
                     : t(msg`群聊设置已更新。`);
 
+      // 走查 R4：同 pinMutation 改法。preferencesMutation.isPending 控制 6 个
+      // 偏好 toggle 的 sync ref（line 670-678），await 链下解锁延迟用户连续切
+      // 偏好的间隔被强制拉长 ~1.8s。fire-and-forget。
       showNotice(nextNotice);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+    onError: (error) => {
+      showNotice(
+        error instanceof Error && error.message
+          ? error.message
+          : t(msg`群聊设置更新失败，请稍后再试。`),
+      );
     },
   });
 
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(groupId, baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
+      // 走查 R4：同 pin/preferences 改法。clearMutation.isPending 进入 busy 求和
+      // （line 644），await 链下整个详情页所有按钮都被 disable，公网隧道 ~1.8s
+      // 体感卡顿。fire-and-forget 让 UI 立刻响应；活跃群聊页面的 messages cache
+      // 由当前清群操作的服务端 emit 路径自动同步。
       showNotice(t(msg`群聊记录已清空。`));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-messages", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+    onError: (error) => {
+      showNotice(
+        error instanceof Error && error.message
+          ? error.message
+          : t(msg`清空群聊记录失败，请稍后再试。`),
+      );
     },
   });
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveGroup(groupId, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 本会话 R1：原版 await Promise.all 5 条 invalidate 才 navigate——5 条
+      // 中只有 app-conversations / app-contact-groups 在 navigate 目的地用得
+      // 上，其它 3 条（group / group-members / group-messages）是当前已卸载
+      // 页面的旧 cache，等不等都没意义。await 链下用户点"确认退出"后整页要
+      // 多卡 ~600ms 公网隧道 RTT 才会跳走。fire-and-forget 即可：服务端
+      // leaveGroup 已经触发 emit_conversation_updated，chat-list 那条 socket
+      // 订阅会自己 invalidate。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-members", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-messages", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       if (navigateToRouteStateReturn({ replace: true })) {
         return;
       }
 
       void navigate({ to: "/tabs/chat", replace: true });
     },
+    onError: (error) => {
+      showNotice(
+        error instanceof Error && error.message
+          ? error.message
+          : t(msg`退出群聊失败，请稍后再试。`),
+      );
+    },
   });
 
   const hideMutation = useMutation({
     mutationFn: () => hideGroup(groupId, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 走查 Round 3：hideGroup 完成后 group-contacts-page 已经靠 socket
+      // conversationUpdated 触发 invalidate；但 socket 断开 / cloud token
+      // 失效那几百 ms 落到 hideGroup 后，事件投递不过来，contacts/groups
+      // 列表会继续显示这条群（visibleGroups 过滤 isHidden=true 拿不到新
+      // 的 isHidden 值）。和 pin/preferences/leave 几条同源对齐，显式
+      // invalidate 一遍 app-contact-groups。
+      // 本会话 R1：和 leaveMutation 同款，原本 await 这 3 条让用户多等
+      // ~600ms 才跳走。fire-and-forget 即可，socket 路径 + invalidate 双保
+      // 险，进 /tabs/chat 后 conversationsQuery 会自然刷新。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       if (navigateToRouteStateReturn({ replace: true })) {
         return;
       }
 
       void navigate({ to: "/tabs/chat", replace: true });
+    },
+    onError: (error) => {
+      showNotice(
+        error instanceof Error && error.message
+          ? error.message
+          : t(msg`隐藏群聊失败，请稍后再试。`),
+      );
     },
   });
 
@@ -363,28 +490,33 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   );
   const totalMemberCount = membersQuery.data?.length ?? 0;
   const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
+  // 走查新一轮 R1：原版只看 group 数据就拼分享文本，membersQuery 还在飞时
+  // totalMemberCount=0 → 分享出去的摘要写着 "${group.name} 群聊\n0 人群聊"。
+  // 慢网下 groupQuery 先回（毫秒级 cache 命中）但 membersQuery 还没回时
+  // 用户已经点"分享群聊"，对方收到的就是 "0 人群聊" 摘要。等 membersQuery
+  // 到达后再生成 share summary，rightActions 顶部那颗分享按钮自然也在
+  // groupSummary 没准备好时隐藏。
   const groupSummary = useMemo(() => {
     const group = groupQuery.data;
-    if (!group) {
+    if (!group || !membersQuery.data) {
       return null;
     }
 
     const groupPath = `/group/${groupId}`;
-    const groupUrl =
-      typeof window === "undefined"
-        ? groupPath
-        : `${window.location.origin}${groupPath}`;
+    const groupUrl = buildPublicShareUrl(groupPath);
 
     return {
       title: t(msg`${group.name} 群聊`),
       text: [
         t(msg`${group.name} 群聊`),
-        t(msg`${totalMemberCount} 人群聊`),
+        t(msg`${membersQuery.data.length} 人群聊`),
         groupUrl,
       ].join("\n"),
       url: groupUrl,
     };
-  }, [groupId, groupQuery.data, t, totalMemberCount]);
+    // locale 进 deps — t 是 stable ref，单独依赖 t 无法在切语言时触发重算。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, groupQuery.data, locale, membersQuery.data]);
 
   async function handleShareGroup() {
     if (!groupSummary) {
@@ -453,41 +585,75 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     }
   }
 
+  // 把"添加"/"移除"这两条本地化标签提到 useMemo 外面算：本文件用的是
+  // translateRuntimeMessage 直引用而不是 useRuntimeTranslator 钩子，所以
+  // useMemo 的 deps 里加 t 也是 stable ref——locale 切换后 deps 不会变，
+  // 缓存的 "添加" / "移除" 仍是上个语言。提到外面后每次 render 直接读 t()
+  // 拿到当前 locale 文案，再走 string deps 触发 useMemo 重算。
+  const addMemberLabel = t(msg`添加`);
+  const removeMemberLabel = t(msg`移除`);
   const memberItems = useMemo(() => {
     const members = (membersQuery.data ?? []).slice(0, visibleMemberCount);
 
     return [
       ...members.map((member) => ({
         key: member.id,
-        label: member.memberName ?? member.memberId,
+        label: member.memberName || member.memberId,
         src: member.memberAvatar,
+        // 点群成员头像：character → 打开角色资料页；自己（user 类型 owner）
+        // 不挂 onClick 走 ChatMemberGrid 的 button 默认 no-op，避免 deadlink
+        // 跳到 /character/owner-uuid（不是角色）报 404。桌面端
+        // desktop-chat-details-panel.tsx 已经按 memberType 分支处理过，
+        // 移动端原本完全没挂 onClick 整个 grid 哑掉。
+        onClick:
+          member.memberType === "character"
+            ? guardRowNavigation(() => {
+                void navigate({
+                  to: "/character/$characterId",
+                  params: { characterId: member.memberId },
+                  hash: buildCharacterDetailRouteHash({
+                    returnPath: `/group/${groupId}/details`,
+                    returnHash: groupRouteHash,
+                  }),
+                });
+              })
+            : undefined,
       })),
       {
         key: "add",
-        label: t(msg`添加`),
+        label: addMemberLabel,
         kind: "add" as const,
-        onClick: () => {
+        onClick: guardRowNavigation(() => {
           void navigate({
             to: "/group/$groupId/members/add",
             params: { groupId },
             ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
-        },
+        }),
       },
       {
         key: "remove",
-        label: t(msg`移除`),
+        label: removeMemberLabel,
         kind: "remove" as const,
-        onClick: () => {
+        onClick: guardRowNavigation(() => {
           void navigate({
             to: "/group/$groupId/members/remove",
             params: { groupId },
             ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
-        },
+        }),
       },
     ];
-  }, [groupId, groupRouteHash, membersQuery.data, navigate, visibleMemberCount]);
+  }, [
+    addMemberLabel,
+    groupId,
+    groupRouteHash,
+    guardRowNavigation,
+    membersQuery.data,
+    navigate,
+    removeMemberLabel,
+    visibleMemberCount,
+  ]);
 
   const hasCollapsedMembers = totalMemberCount > COLLAPSED_MEMBER_PREVIEW_COUNT;
   const dangerSheetConfig =
@@ -527,6 +693,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             }
           : null;
 
+  // 同步防双击锁——下面 danger sheet「隐藏聊天 / 清空聊天记录 / 删除并退出」
+  // 确认按钮虽然 disabled={busy} 兜底但 busy = mutations.isPending 是 React
+  // state 经 commit 才生效。同帧双击 → 两个 mutate 同时飞，第二个的服务端
+  // 响应往往是 404 / 失败 → setNotice 显示"退出群聊失败"覆盖掉第一个成功
+  // 路径的"已退出群聊"，用户以为操作失败其实早就成功了。
+  const dangerActionBusyRef = useRef(false);
   const busy =
     pinMutation.isPending ||
     preferencesMutation.isPending ||
@@ -534,22 +706,106 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     leaveMutation.isPending ||
     hideMutation.isPending;
 
+  // 走查新会话 R1：和姊妹 chat-details-page R2（commit 2d6d33d57）/ 桌面单聊
+  // R29（commit 01dcc31c6）同款修法——下面 7 条 ChatSettingRow（置顶聊天 /
+  // 消息免打扰 / @我仍通知 / @所有人仍通知 / 群公告仍通知 / 保存到通讯录 /
+  // 显示群成员昵称）原本只裸跑 `xxxMutation.mutate(...)`，既没挂 disabled={busy}
+  // 也没 sync ref 锁。同帧 <16ms 第二次 click 都看到 isPending=false →
+  // mutation.mutate 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本
+  // 闪两次。preferencesMutation 多个偏好 key 共享一个 mutation，逐 key sync
+  // ref 兜同帧 double-tap；isPending 翻 false 后 useEffect 复位 6 个偏好 ref，
+  // pinMutation.isPending 单独复位 pinSubmittingRef。
+  const pinSubmittingRef = useRef(false);
+  const mutedSubmittingRef = useRef(false);
+  const notifyAtMeSubmittingRef = useRef(false);
+  const notifyAtAllSubmittingRef = useRef(false);
+  const notifyAnnouncementSubmittingRef = useRef(false);
+  const savedToContactsSubmittingRef = useRef(false);
+  const showMemberNicknamesSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!preferencesMutation.isPending) {
+      mutedSubmittingRef.current = false;
+      notifyAtMeSubmittingRef.current = false;
+      notifyAtAllSubmittingRef.current = false;
+      notifyAnnouncementSubmittingRef.current = false;
+      savedToContactsSubmittingRef.current = false;
+      showMemberNicknamesSubmittingRef.current = false;
+    }
+  }, [preferencesMutation.isPending]);
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleToggleMuted = (next: boolean) => {
+    if (mutedSubmittingRef.current) {
+      return;
+    }
+    mutedSubmittingRef.current = true;
+    preferencesMutation.mutate({ isMuted: next });
+  };
+  const handleToggleNotifyAtMe = (next: boolean) => {
+    if (notifyAtMeSubmittingRef.current) {
+      return;
+    }
+    notifyAtMeSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAtMe: next });
+  };
+  const handleToggleNotifyAtAll = (next: boolean) => {
+    if (notifyAtAllSubmittingRef.current) {
+      return;
+    }
+    notifyAtAllSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAtAll: next });
+  };
+  const handleToggleNotifyAnnouncement = (next: boolean) => {
+    if (notifyAnnouncementSubmittingRef.current) {
+      return;
+    }
+    notifyAnnouncementSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAnnouncement: next });
+  };
+  const handleToggleSavedToContacts = (next: boolean) => {
+    if (savedToContactsSubmittingRef.current) {
+      return;
+    }
+    savedToContactsSubmittingRef.current = true;
+    preferencesMutation.mutate({ savedToContacts: next });
+  };
+  const handleToggleShowMemberNicknames = (next: boolean) => {
+    if (showMemberNicknamesSubmittingRef.current) {
+      return;
+    }
+    showMemberNicknamesSubmittingRef.current = true;
+    preferencesMutation.mutate({ showMemberNicknames: next });
+  };
+
   return (
     <ChatDetailsShell
-      title={groupQuery.data?.name ?? t(msg`群聊信息`)}
+      title={groupQuery.data?.name || t(msg`群聊信息`)}
       subtitle={
         membersQuery.data
           ? t(msg`${membersQuery.data.length} 人群聊`)
           : t(msg`群聊信息`)
       }
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({
-            to: "/group/$groupId",
-            params: { groupId },
-            ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-          });
-        });
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/group/$groupId",
+              params: { groupId },
+              ...(groupRouteHash ? { hash: groupRouteHash } : {}),
+            });
+          },
+          `/group/${groupId}`,
+        );
       }}
       rightActions={
         groupSummary ? (
@@ -692,66 +948,66 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`群聊名称`)}
                 value={groupQuery.data.name}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/edit/name",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`群公告`)}
                 value={groupQuery.data.announcement?.trim() || t(msg`暂无`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`群二维码`)}
                 value={t(msg`查看邀请卡`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/qr",
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
+                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`查找聊天记录`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/search",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`聊天背景`)}
                 value={getChatBackgroundLabel(
-                  ownerQuery.data?.defaultChatBackground,
+                  backgroundQuery.data?.effectiveBackground,
                 )}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/background",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
             </div>
           </ChatDetailsSection>
@@ -762,9 +1018,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`消息免打扰`)}
                 variant="wechat"
                 checked={groupQuery.data.isMuted}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({ isMuted: checked });
-                }}
+                disabled={busy}
+                onToggle={handleToggleMuted}
               />
               {groupQuery.data.isMuted ? (
                 <>
@@ -772,27 +1027,22 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     label={t(msg`@我仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtMe}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({ notifyOnAtMe: checked });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAtMe}
                   />
                   <ChatSettingRow
                     label={t(msg`@所有人仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtAll}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({ notifyOnAtAll: checked });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAtAll}
                   />
                   <ChatSettingRow
                     label={t(msg`群公告仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAnnouncement}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({
-                        notifyOnAnnouncement: checked,
-                      });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAnnouncement}
                   />
                 </>
               ) : null}
@@ -800,37 +1050,34 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`置顶聊天`)}
                 variant="wechat"
                 checked={groupQuery.data.isPinned}
-                onToggle={(checked) => pinMutation.mutate(checked)}
+                disabled={busy}
+                onToggle={handleTogglePin}
               />
               <ChatSettingRow
                 label={t(msg`保存到通讯录`)}
                 variant="wechat"
                 checked={groupQuery.data.savedToContacts}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({ savedToContacts: checked });
-                }}
+                disabled={busy}
+                onToggle={handleToggleSavedToContacts}
               />
               <ChatSettingRow
                 label={t(msg`我在本群的昵称`)}
-                value={ownerMember?.memberName ?? t(msg`未设置`)}
+                value={ownerMember?.memberName || t(msg`未设置`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/edit/nickname",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`显示群成员昵称`)}
                 variant="wechat"
                 checked={groupQuery.data.showMemberNicknames}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({
-                    showMemberNicknames: checked,
-                  });
-                }}
+                disabled={busy}
+                onToggle={handleToggleShowMemberNicknames}
               />
             </div>
           </ChatDetailsSection>
@@ -839,7 +1086,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             variant="wechat"
             voiceValue={t(msg`群语音`)}
             videoValue={t(msg`群视频`)}
-            onSelectKind={(kind) => {
+            onSelectKind={guardRowNavigation((kind: "voice" | "video") => {
               void navigate({
                 to:
                   kind === "voice"
@@ -848,7 +1095,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 params: { groupId },
                 ...(groupRouteHash ? { hash: groupRouteHash } : {}),
               });
-            }}
+            })}
           />
 
           <ChatDetailsSection title={t(msg`危险操作`)} variant="wechat">
@@ -1028,7 +1275,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
+                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
@@ -1052,8 +1299,21 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                       danger: dangerSheetConfig.confirmDanger,
                       disabled: busy,
                       onClick: () => {
+                        if (dangerActionBusyRef.current || busy) {
+                          return;
+                        }
+                        dangerActionBusyRef.current = true;
                         setDangerSheetAction(null);
-                        dangerSheetConfig.onConfirm();
+                        try {
+                          dangerSheetConfig.onConfirm();
+                        } finally {
+                          // hide/clear/leave mutation 走完后 busy 会翻回 false
+                          // —— 用 setTimeout 0 把锁丢到下个 task，覆盖完同帧
+                          // 合成 click 后立刻解锁，不影响后续重试。
+                          window.setTimeout(() => {
+                            dangerActionBusyRef.current = false;
+                          }, 0);
+                        }
                       },
                     },
                   ]

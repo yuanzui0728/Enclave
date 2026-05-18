@@ -13,6 +13,7 @@ import { WikiBlockEntity } from '../entities/wiki-block.entity';
 import { WikiProtectionService } from './wiki-protection.service';
 
 const ROLES = ['newcomer', 'autoconfirmed', 'patroller', 'admin'] as const;
+const MAX_REASON_LENGTH = 200;
 type WikiRole = (typeof ROLES)[number];
 
 @Injectable()
@@ -84,11 +85,30 @@ export class WikiRoleService {
     targetUserId: string,
     actor: AuthenticatedUser,
     input: { role: WikiRole; reason?: string },
-  ): Promise<UserEntity> {
+  ): Promise<{
+    id: string;
+    username: string;
+    role: string;
+    userType: string;
+    roleGrantedAt: Date | null;
+    roleGrantedBy: string | null;
+  }> {
     if (!ROLES.includes(input.role)) {
       throw new AppError('WIKI_VALIDATION_FAILED', {
         params: { detail: 'role 必须是 newcomer / autoconfirmed / patroller / admin' },
         legacyMessage: 'role 必须是 newcomer / autoconfirmed / patroller / admin',
+      });
+    }
+    // reason 会拼到 user.roleGrantedBy 落库展示，必须有长度上限 —— 否则
+    // 任何 admin 都能用 5KB+ 字符串撑爆这一列，admin-users 列表里渲染会卡。
+    // typeof 守一下：客户端传 {} / [] 时直接当空字符串，不要走到 .trim() 抛 500。
+    const trimmedReason =
+      typeof input.reason === 'string' ? input.reason.trim() : '';
+    if (trimmedReason.length > MAX_REASON_LENGTH) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { detail: `reason 不能超过 ${MAX_REASON_LENGTH} 个字符` },
+        legacyMessage: `reason 不能超过 ${MAX_REASON_LENGTH} 个字符`,
       });
     }
     const user = await this.userRepo.findOne({ where: { id: targetUserId } });
@@ -104,7 +124,13 @@ export class WikiRoleService {
       });
     }
     if (user.role === 'admin' && input.role !== 'admin') {
-      const adminCount = await this.userRepo.count({ where: { role: 'admin' } });
+      // 只数真实 wiki_member admin —— __system_wiki_admin_sync__ /
+      // __system_wiki_antivandal_bot__ 这俩 system bot 也是 admin，
+      // 但它们不是 wiki_member、不能被 demote、也不在登录路径上。把它们算进总数会
+      // 让唯一的 wiki_member admin 仍能 demote 自己，事后没人能 promote 回来。
+      const adminCount = await this.userRepo.count({
+        where: { role: 'admin', userType: 'wiki_member' },
+      });
       if (adminCount <= 1) {
         throw new AppError('WIKI_FORBIDDEN', {
         status: HttpStatus.FORBIDDEN,
@@ -116,13 +142,44 @@ export class WikiRoleService {
     user.role = input.role;
     user.roleGrantedAt = new Date();
     user.roleGrantedBy = `admin:${actor.username}${
-      input.reason ? `:${input.reason}` : ''
+      trimmedReason ? `:${trimmedReason}` : ''
     }`;
     await this.userRepo.save(user);
     this.logger.log(
       `manual role change: ${user.username} → ${input.role} by ${actor.username}`,
     );
-    return user;
+    // 不要 return user 原始 entity —— TypeORM 会把 passwordHash / email 一起序列化
+    // 走 HTTP 出去，admin 哪怕只是改个角色也会拿到所有用户的 bcrypt hash 和邮箱。
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      userType: user.userType,
+      roleGrantedAt: user.roleGrantedAt,
+      roleGrantedBy: user.roleGrantedBy ?? null,
+    };
+  }
+
+  // 解析 userId → 公开展示信息（username / role）。recent-changes、pending-reviews、
+  // character-page 的修订卡都需要把 editorUserId UUID 换成可读用户名展示。
+  // 仅返回非敏感字段；email / passwordHash 等不下发。
+  async lookupPublic(ids: string[]): Promise<
+    Array<{ id: string; username: string; role: string }>
+  > {
+    const dedup = Array.from(new Set(ids.filter((s) => typeof s === 'string' && s.length > 0)));
+    if (dedup.length === 0) return [];
+    if (dedup.length > 200) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { detail: '一次最多解析 200 个 userId' },
+        legacyMessage: '一次最多解析 200 个 userId',
+      });
+    }
+    const users = await this.userRepo.find({
+      where: dedup.map((id) => ({ id })),
+      select: ['id', 'username', 'role'],
+    });
+    return users.map((u) => ({ id: u.id, username: u.username, role: u.role }));
   }
 
   async listUsers(): Promise<

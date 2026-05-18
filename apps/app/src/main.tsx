@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
+import { isCurrentOriginLocalLike, track } from "@yinjie/analytics";
 import {
   AppLocaleProvider,
   readPersistedLocale,
@@ -9,6 +10,7 @@ import {
   type SupportedLocale,
 } from "@yinjie/i18n";
 import { setWorldLanguage } from "@yinjie/contracts";
+import { TelemetryErrorBoundary } from "@yinjie/ui";
 import "@yinjie/ui/tokens.css";
 import "./index.css";
 import { BootstrapScreen } from "./components/bootstrap-screen";
@@ -28,8 +30,14 @@ import {
 import { NativeLocaleSync } from "./runtime/native-locale-sync";
 import { BackendLocaleSync } from "./runtime/backend-locale-sync";
 import { registerAppServiceWorker } from "./runtime/register-service-worker";
-import { bootstrapAndroid } from "./runtime/adapters/android";
-import { bootstrapIos } from "./runtime/adapters/ios";
+import {
+  bootstrapAndroid,
+  bootstrapAndroidPushTokenAfterHydrate,
+} from "./runtime/adapters/android";
+import {
+  bootstrapIos,
+  bootstrapIosPushTokenAfterHydrate,
+} from "./runtime/adapters/ios";
 import { router } from "./router";
 import {
   hydrateCloudSessionStore,
@@ -56,6 +64,32 @@ function shouldRecoverFromStaleAssets() {
   }
 }
 
+function isCapacitorNativeShell() {
+  if (typeof window === "undefined") return false;
+  const capacitor = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  return Boolean(capacitor?.isNativePlatform?.());
+}
+
+function recoverFromStaleAssets() {
+  if (!shouldRecoverFromStaleAssets()) {
+    return;
+  }
+
+  // Capacitor 原生壳的 chunk 全打包在 .ipa / .apk 里，理论上不会 "stale"，
+  // 但万一 OS/WKWebView 缓存抽风触发了 dynamic import 失败，window.location
+  // .reload() 在深路径下会变成灾难：当前 URL 形如 capacitor://localhost/
+  // tabs/chat，Capacitor router 的 SPA fallback 把 index.html 内容塞回去，
+  // 但 document URL 还停在 /tabs/chat —— index.html 里的 ./assets/xxx.js
+  // 相对 URL 解到 /tabs/assets/xxx.js，router 看 .js 后缀直接 404，整个 app
+  // 加载不出来，用户只能强杀重开。改成跳回根再载入即可避开。
+  if (isCapacitorNativeShell()) {
+    window.location.replace("/");
+    return;
+  }
+
+  window.location.reload();
+}
+
 function installStaleAssetRecovery() {
   if (typeof window === "undefined") {
     return;
@@ -63,11 +97,7 @@ function installStaleAssetRecovery() {
 
   window.addEventListener("vite:preloadError", (event) => {
     event.preventDefault();
-    if (!shouldRecoverFromStaleAssets()) {
-      return;
-    }
-
-    window.location.reload();
+    recoverFromStaleAssets();
   });
 
   window.addEventListener("error", (event) => {
@@ -79,11 +109,7 @@ function installStaleAssetRecovery() {
       return;
     }
 
-    if (!shouldRecoverFromStaleAssets()) {
-      return;
-    }
-
-    window.location.reload();
+    recoverFromStaleAssets();
   });
 }
 
@@ -93,6 +119,15 @@ async function bootstrap() {
   void bootstrapIos();
   void bootstrapAndroid();
   const runtimeConfig = await hydrateNativeRuntimeConfig();
+  // 走查 R5：APNs / FCM push token 的初次 sync 必须在 hydrate 之后跑。bootstrap*
+  // 是 void fire-and-forget 在 hydrate 之前起跑的，原来在 bootstrap* 内部直接
+  // void syncIosPushToken() 会跟 hydrate 抢跑 —— sync 内部 resolveAppCoreApiBaseUrl
+  // 拿不到 apiBaseUrl → throw → catch → reason "network-error" 静默丢，device
+  // token 这次没 POST 到 cloud-api，要等下次 owner 变化 / token 轮换才能补报。
+  // listener 是 config-free 的留在 bootstrap* 里挂上；初次 sync 拆到这里，确
+  // 保 hydrate 跑完 runtimeConfig.apiBaseUrl 一定有值。
+  void bootstrapIosPushTokenAfterHydrate();
+  void bootstrapAndroidPushTokenAfterHydrate();
   const cloudSession = await hydrateCloudSessionStore();
   // 身份哨兵：electronic 客户端持久化的"已登录用户身份"跟 hydrate 出来的 cloud
   // session 不一致时（比如旧版本切号没清干净、用户跨版本登录、手动改过
@@ -143,34 +178,52 @@ async function bootstrap() {
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <AppLocaleProvider
-        surface="app"
-        fallback={<BootstrapScreen />}
-        initialLocale={initialLocale ?? null}
-        onLocaleChange={handleLocaleChange}
-        preferredLocales={preferredLocales}
-        // 公网隧道下 i18n 主 catalog ~106KB gzipped、过隧道 0.3-1s。原本 catalog
-        // 没回来时整棵 React 树都被 fallback=<BootstrapScreen /> 卡住。renderBe
-        // foreReady=true 让 children 立即渲染，catalog 到位再无缝替换：源 ID
-        // 是中文，zh-CN 用户视觉无差别；en/ja/ko 用户首屏看到 ~0.3-1s 中文
-        // flash 然后切回目标语言，是可接受的代价。
-        renderBeforeReady
+      <TelemetryErrorBoundary
+        onError={(error, info) => {
+          // 开发态过滤：dev 端口（5183/5186）下 HMR 重挂 AppLocaleProvider 时
+          // children 短暂拿到 null context 会触发 useAppLocale throw；过去 3 天
+          // 这一通道贡献了 95 条 react_render_error，全部来自 127.0.0.1 origin。
+          // SDK 的 auto-capture 走 window error/rejection 通道有 origin 过滤，
+          // ErrorBoundary 是独立通道必须自己挡一下。
+          if (isCurrentOriginLocalLike()) return;
+          const err = error instanceof Error ? error : null;
+          track("react_render_error", {
+            message: err?.message ?? String(error).slice(0, 1000),
+            name: err?.name ?? null,
+            stack: err?.stack?.slice(0, 2000) ?? null,
+            componentStack: info.componentStack?.slice(0, 2000) ?? null,
+          });
+        }}
       >
-        <NativeLocaleSync
-          syncDesktopLocaleOnMount={Boolean(explicitWebLocalePreference)}
-        />
-        <BackendLocaleSync
-          hasExplicitWebLocalePreference={Boolean(explicitWebLocalePreference)}
-        />
-        <QueryClientProvider client={queryClient}>
-          {/* GoogleOAuthProvider 已下移到 routes/welcome-page.tsx 内仅包裹
-              GoogleLogin 组件 — 唯一用 GoogleLogin 的地方。这样首屏不再
-              拉 @react-oauth/google 包 (~25-35KB)，登录页第一次访问时才拉。 */}
-          <Suspense fallback={<BootstrapScreen />}>
-            <RouterProvider router={router} />
-          </Suspense>
-        </QueryClientProvider>
-      </AppLocaleProvider>
+        <AppLocaleProvider
+          surface="app"
+          fallback={<BootstrapScreen />}
+          initialLocale={initialLocale ?? null}
+          onLocaleChange={handleLocaleChange}
+          preferredLocales={preferredLocales}
+          // 公网隧道下 i18n 主 catalog ~106KB gzipped、过隧道 0.3-1s。原本 catalog
+          // 没回来时整棵 React 树都被 fallback=<BootstrapScreen /> 卡住。renderBe
+          // foreReady=true 让 children 立即渲染，catalog 到位再无缝替换：源 ID
+          // 是中文，zh-CN 用户视觉无差别；en/ja/ko 用户首屏看到 ~0.3-1s 中文
+          // flash 然后切回目标语言，是可接受的代价。
+          renderBeforeReady
+        >
+          <NativeLocaleSync
+            syncDesktopLocaleOnMount={Boolean(explicitWebLocalePreference)}
+          />
+          <BackendLocaleSync
+            hasExplicitWebLocalePreference={Boolean(explicitWebLocalePreference)}
+          />
+          <QueryClientProvider client={queryClient}>
+            {/* GoogleOAuthProvider 已下移到 routes/welcome-page.tsx 内仅包裹
+                GoogleLogin 组件 — 唯一用 GoogleLogin 的地方。这样首屏不再
+                拉 @react-oauth/google 包 (~25-35KB)，登录页第一次访问时才拉。 */}
+            <Suspense fallback={<BootstrapScreen />}>
+              <RouterProvider router={router} />
+            </Suspense>
+          </QueryClientProvider>
+        </AppLocaleProvider>
+      </TelemetryErrorBoundary>
     </React.StrictMode>,
   );
 

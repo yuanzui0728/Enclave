@@ -17,7 +17,7 @@ import {
   getSystemStatus,
   type VoiceCallTurnResult,
 } from "@yinjie/contracts";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { translateRuntimeMessage, useRuntimeTranslator } from "@yinjie/i18n";
 import { translateCharacterActivity } from "../../lib/character-i18n";
 import {
   AppPage,
@@ -43,6 +43,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { buildDirectCallInviteMessage } from "./group-call-message";
 import { emitChatMessage } from "../../lib/socket";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { openAppSettings } from "../../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
@@ -67,7 +68,14 @@ type MobileAiCallScreenProps = {
 };
 
 export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
-  const t = translateRuntimeMessage;
+  // 用 useRuntimeTranslator() 而不是 translateRuntimeMessage——下面四处
+  // useMemo (statusLabel / statusHint / userBubblePlaceholder /
+  // assistantBubblePlaceholder) 在 body 里都直接调 t(msg`...`)，但 deps 都
+  // 没列 t。translateRuntimeMessage 是全局稳定 fn，把它当 dep 也不会因
+  // locale 切换而换引用，useMemo 会卡在上个 locale 的翻译。
+  // useRuntimeTranslator 用 useCallback 把 activationVersion+locale 串进 deps，
+  // 拿到的 t 引用在 locale 切换时换，下方 useMemo 加上 t dep 就能跟着重算。
+  const t = useRuntimeTranslator();
   const { conversationId } = useParams({
     strict: false,
   }) as {
@@ -125,25 +133,43 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     return true;
   };
 
+  // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
+  // mobile-shell 共享 ["app-conversations", baseUrl]，其它 4 处都对齐到 15s
+  // staleTime。本观察者裸跑 → 进 call 屏前用户必然走过 chat-room（同样 15s
+  // 内才进的通话），原生壳 10s 默认 stale 时间一过就会再发一次 GET /conversations
+  // （公网隧道 ~600ms）。对齐 15s 复用主缓存。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
+  // 走查 R2（第 2 轮）：cache key 跟 use-digital-human-entry-guard /
+  // desktop-direct-call-panel 对齐到 app-system-status；进 call 屏前用户必然
+  // 走过 chat-details 的 useDigitalHumanEntryGuard，那条已经把数据拉热并按
+  // 30s staleTime 缓存住——本观察者补同款 staleTime 复用主缓存，省掉每次入
+  // 通话页又拉一次 system-status。
   const systemStatusQuery = useQuery({
     queryKey: ["app-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
     enabled: Boolean(baseUrl),
     retry: false,
+    staleTime: 30_000,
   });
   const conversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
   );
   const characterId =
     conversation?.type === "direct" ? conversation.participants[0] : undefined;
+  // 走查 R3（第 3 轮）：和 chat-details / desktop-chat-details-panel /
+  // desktop-direct-call-panel / desktop-message-avatar-popover 共享同一 queryKey
+  // "app-character"，其它 4 处对齐到 15s staleTime；进 call 屏前用户必然先看
+  // 过 chat-room/chat-details，那一拨 GET /characters/$id 还在 cache 里。补
+  // staleTime 复用主缓存，省掉进通话页又拉一次。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId ?? "", baseUrl),
     enabled: Boolean(characterId),
+    staleTime: 15_000,
   });
   const sendCallStatusMessage = useCallback(
     async (status: "waiting" | "connected" | "ended", durationMs?: number) => {
@@ -445,6 +471,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     lastAssistantText,
     playbackSettling,
     speech.status,
+    t,
   ]);
   const statusHint = useMemo(() => {
     if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
@@ -521,6 +548,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     lastAssistantText,
     playbackSettling,
     speech.status,
+    t,
   ]);
 
   const releaseRecordButtonPointer = (
@@ -631,6 +659,36 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
   };
 
+  // 第三轮 R2：原版没接 Android Back 拦截。call 屏只有屏幕上的「PhoneOff /
+  // 返回」走 handleBack()，里面做 4 件关键事：
+  //   1) sendCallStatusMessage("ended") → 聊天里挂出「通话已结束」卡片，否则
+  //      会话最后一条永远停在「通话中…」
+  //   2) digitalHumanCall.endSession() → 关后端 ws/server 数字人会话，否则
+  //      session 留挂直到超时
+  //   3) cameraEnabled=false → 视频通话退出时关掉本地摄像头流（虽然
+  //      use-self-camera-preview 内有 unmount 兜底，但顺序更早 / 更确定）
+  //   4) replace:true navigate to /chat/$conversationId?call-return=... →
+  //      回到聊天屏并触发 ChatRoomPage L162 那条 callReturn 信号
+  // 用户在 Android 按 hardware Back 直接走 history.back()，以上 4 件全部
+  // 漏掉。leavingScreen 时也不再触发（beginLeaving 的 false 早 return）。
+  // 和姊妹 chat-voice-call / chat-video-call / chat-room-page 早期就走的
+  // registerAndroidBackInterceptor 一致兜底。
+  useEffect(() => {
+    if (isDesktopLayout || leavingScreen) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      void handleBack();
+      return true;
+    });
+    return unregister;
+    // handleBack 闭包 deps 极多 (sendCallStatusMessage / digitalHumanCall /
+    // activeCall / navigate / resolvedConversationId / mode / hash ...)，
+    // 拿当前渲染版本就够——beginLeaving 已经保证幂等。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesktopLayout, leavingScreen]);
+
   const renderBackToChatAction = () => (
     <InlineNoticeActionButton
       label={t(msg`返回聊天`)}
@@ -672,6 +730,24 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     activeCall.stopReplyPlayback();
     try {
       await digitalHumanCall.endSession();
+
+      // 走查第一轮 R2：和姊妹 handleBack (line 626-633) 同款问题——本入口
+      // 「改用语音通话」是 video 数字人 session 出错时的 recovery 出口，
+      // beginLeaving + endSession 都做了，唯独漏挂 sendCallStatusMessage("ended")。
+      // useEffect line 982 在 video mount 时已经发过 "waiting" 卡片，replace
+      // 走到 voice-call 后 mobile-ai-call-screen 重 mount 又会发一条 "waiting"
+      // voice 卡片 → 用户消息时间线里上一条 video「通话中…」永远不会被 close
+      // 成「通话已结束」，只能等用户回头进 chat 看时一脸懵。和 handleBack 同款
+      // 守门：waiting 发过且 ended 没发过才发 ended，避免重发 + 兼容已 ended
+      // 路径。
+      if (
+        conversation?.type === "direct" &&
+        waitingNoticeSentRef.current &&
+        !endedNoticeSentRef.current
+      ) {
+        endedNoticeSentRef.current = true;
+        await sendCallStatusMessage("ended");
+      }
     } finally {
       void navigate({
         to: "/chat/$conversationId/voice-call",
@@ -894,7 +970,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
 
     return t(msg`按住底部按钮，说出你想对 TA 说的话。`);
-  }, [callPhase, isVideoMode]);
+  }, [callPhase, isVideoMode, t]);
   const assistantBubblePlaceholder = useMemo(() => {
     if (callPhase === "error") {
       return t(msg`这一轮的回复暂时没有顺利回来，恢复后会继续显示在这里。`);
@@ -919,7 +995,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     return isVideoMode
       ? t(msg`数字人的回复会先显示在这里，再通过语音自动播报。`)
       : t(msg`TA 的回复会在这里显示，并自动播报给你听。`);
-  }, [callPhase, isVideoMode]);
+  }, [callPhase, isVideoMode, t]);
 
   useEffect(() => {
     if (

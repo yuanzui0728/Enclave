@@ -194,33 +194,11 @@ export function useSearchQuickLinks(
       });
   }, [isDesktopLayout, miniProgramSearchState]);
 
-  const miniProgramMatches = useMemo(() => {
-    if (!normalizedKeyword) {
-      return [] as SearchQuickLink[];
-    }
-
-    return miniProgramEntries
-      .filter((item) => matchesMiniProgramKeyword(item, normalizedKeyword))
-      .sort((left, right) => {
-        const rightScore = getMiniProgramMatchScore(
-          right,
-          miniProgramSearchState,
-        );
-        const leftScore = getMiniProgramMatchScore(
-          left,
-          miniProgramSearchState,
-        );
-        if (leftScore !== rightScore) {
-          return rightScore - leftScore;
-        }
-
-        return left.name.localeCompare(right.name, "zh-CN"); // i18n-ignore-line
-      })
-      .slice(0, 4)
-      .map((item) =>
-        buildMiniProgramQuickLink(item, miniProgramSearchState, isDesktopLayout),
-      );
-  }, [isDesktopLayout, miniProgramSearchState, normalizedKeyword]);
+  // 走查 R1：之前还有一份 `miniProgramMatches`（按 keyword 过 miniProgramEntries
+  // 后取前 4 条），desktop-search-launcher / mobile-search-workspace / use-search-index
+  // 全代码库无一个消费者——但仍然每次 keyword 变就 filter+sort+slice+map 一遍，
+  // 顺便把 buildMiniProgramQuickLink 跑 4 次。直接删掉；要恢复"小程序快速命中"
+  // 时复用 miniProgramSearchResults（按完整索引出，category=miniPrograms）。
 
   return {
     favoriteMatches,
@@ -231,7 +209,6 @@ export function useSearchQuickLinks(
         : null,
     favoritesLoading: favoritesQuery.isLoading,
     mergedFavorites,
-    miniProgramMatches,
     miniProgramSearchResults,
     recentFavorites,
     recentMiniPrograms,
@@ -363,24 +340,6 @@ function buildMiniProgramSearchResult(
     avatarName: miniProgram.name,
     sortTime: getMiniProgramMatchScore(miniProgram, state),
   };
-}
-
-function matchesMiniProgramKeyword(
-  miniProgram: MiniProgramEntry,
-  keyword: string,
-) {
-  return [
-    miniProgram.name,
-    miniProgram.slogan,
-    miniProgram.description,
-    miniProgram.developer,
-    miniProgram.deckLabel,
-    miniProgram.openHint,
-    ...miniProgram.tags,
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(keyword);
 }
 
 function getMiniProgramMatchScore(

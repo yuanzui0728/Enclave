@@ -12,11 +12,16 @@ export type MobileGroupCallRouteState = {
   returnHash?: string;
 };
 
+// 走查 新 R2：和 mobile-group-route-state / create-group-route-state 同款补
+// "//evil.com" 协议无关 URL 拦截——群语音/视频通话页（voice-call / video-call）
+// 解析 hash 时 returnPath 会用作"返回上一页" navigate target，浏览器
+// history.replaceState 接受 "//host" 会拼成 "https://evil.com"。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

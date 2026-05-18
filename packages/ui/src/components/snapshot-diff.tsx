@@ -99,13 +99,13 @@ export function SnapshotDiff({
             <div className="font-medium text-[var(--text-muted)] pt-1">
               {resolvedFieldLabels[k] ?? k}
             </div>
-            <div className="rounded border border-[var(--border-subtle)] bg-[rgba(254,226,226,0.35)] px-2 py-1 whitespace-pre-wrap break-words">
+            <div className="rounded border border-[var(--border-subtle)] bg-[rgba(254,226,226,0.35)] px-2 py-1 whitespace-pre-wrap break-all">
               <span className="text-[10px] uppercase text-[var(--text-muted)] mr-1">
                 {oldLabel}
               </span>
               {beforeVal}
             </div>
-            <div className="rounded border border-[var(--border-subtle)] bg-[rgba(220,252,231,0.45)] px-2 py-1 whitespace-pre-wrap break-words">
+            <div className="rounded border border-[var(--border-subtle)] bg-[rgba(220,252,231,0.45)] px-2 py-1 whitespace-pre-wrap break-all">
               <span className="text-[10px] uppercase text-[var(--text-muted)] mr-1">
                 {newLabel}
               </span>

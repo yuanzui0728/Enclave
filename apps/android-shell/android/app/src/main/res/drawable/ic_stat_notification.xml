@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 5+ 把通知栏小图标全部 mask 成只看 alpha 通道的纯白 silhouette。
+    用 R.mipmap.ic_launcher 当 smallIcon 会被剥成不带形状的白方块（launcher
+    PNG 是全不透明的彩色图，alpha 通道是整片满铺）。这条 vector 跟
+    apps/site/public/brand/logo.svg 里的「Y / 隐」字形对齐，是 alpha-only 的
+    路径，被 mask 之后保留可识别的品牌轮廓。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,4 L9,4 L12,10 L15,4 L19,4 L13.5,15 L13.5,21 L10.5,21 L10.5,15 Z" />
+</vector>

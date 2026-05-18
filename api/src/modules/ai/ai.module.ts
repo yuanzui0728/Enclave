@@ -16,12 +16,14 @@ import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { InferenceModule } from '../inference/inference.module';
+import { MinimaxModule } from '../minimax/minimax.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
   imports: [
     SystemConfigModule,
     InferenceModule,
+    MinimaxModule,
     SubscriptionModule,
     forwardRef(() => WorldModule),
     TypeOrmModule.forFeature([

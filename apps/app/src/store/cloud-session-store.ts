@@ -15,6 +15,9 @@ export type CloudSessionSnapshot = {
   accessToken: string | null;
   expiresAt: string | null;
   phone: string | null;
+  // 邮箱 / Google 登录路径要把邮箱回写进来，否则 mobile 反馈面板
+  // 拿不到真实联系方式，admin 控制台只剩世界主人名可以认人。
+  email: string | null;
   profile: CloudProfileResponse | null;
 };
 
@@ -30,6 +33,7 @@ const emptySnapshot: CloudSessionSnapshot = {
   accessToken: null,
   expiresAt: null,
   phone: null,
+  email: null,
   profile: null,
 };
 
@@ -52,6 +56,7 @@ export const useCloudSessionStore = create<CloudSessionState>()(
           accessToken: input.accessToken?.trim() || null,
           expiresAt: input.expiresAt?.trim() || null,
           phone: input.phone?.trim() || null,
+          email: input.email?.trim().toLowerCase() || null,
           profile: input.profile ?? null,
         }),
       setProfile: (profile) => set({ profile }),
@@ -68,6 +73,7 @@ export const useCloudSessionStore = create<CloudSessionState>()(
         accessToken: state.accessToken,
         expiresAt: state.expiresAt,
         phone: state.phone,
+        email: state.email,
         profile: state.profile,
       }),
       skipHydration: true,
@@ -114,6 +120,7 @@ export async function refreshCloudSessionIfNeeded(
         accessToken: result.accessToken,
         expiresAt: result.expiresAt,
         phone: state.phone,
+        email: state.email,
         profile: state.profile,
       });
       return true;

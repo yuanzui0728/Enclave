@@ -16,7 +16,6 @@ import {
   AdminDraftStatusPill,
   AdminEmptyState,
   AdminInfoRows,
-  AdminMetaText,
   AdminPageHero,
   AdminRecordCard,
   AdminSectionHeader,
@@ -97,7 +96,6 @@ export function FollowupRuntimePage() {
     const inProgressRecommendationCount = recentRecommendations.filter(
       isInProgressRecommendation,
     ).length;
-    const latestRun = overviewQuery.data?.recentRuns[0] ?? null;
 
     return [
       {
@@ -118,10 +116,6 @@ export function FollowupRuntimePage() {
       {
         label: t(msg`已成好友`),
         value: overviewQuery.data?.stats.friendAddedCount ?? 0,
-      },
-      {
-        label: t(msg`最近运行`),
-        value: latestRun ? labelFromRunStatus(latestRun.status) : t(msg`无记录`),
       },
     ];
   }, [overviewQuery.data]);
@@ -206,9 +200,7 @@ export function FollowupRuntimePage() {
     if (!draft) {
       return [];
     }
-
     const latestRun = overviewQuery.data?.recentRuns[0] ?? null;
-
     return [
       {
         label: t(msg`调度状态`),
@@ -216,11 +208,16 @@ export function FollowupRuntimePage() {
       },
       {
         label: t(msg`执行模式`),
-        value: labelFromExecutionMode(draft.executionMode),
+        value:
+          draft.executionMode === "dry_run"
+            ? t(msg`只记录候选，不发消息`)
+            : t(msg`直接发我自己消息 + 名片`),
       },
       {
         label: t(msg`自动补好友申请`),
-        value: draft.autoSendFriendRequestToNotFriend ? t(msg`开启`) : t(msg`关闭`),
+        value: draft.autoSendFriendRequestToNotFriend
+          ? t(msg`开启`)
+          : t(msg`关闭`),
       },
       {
         label: t(msg`扫描节奏`),
@@ -322,7 +319,7 @@ export function FollowupRuntimePage() {
         <ErrorBlock message={runMutation.error.message} />
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr,1fr]">
         <AdminCallout
           title={attentionSummary.title}
           description={attentionSummary.description}
@@ -341,9 +338,6 @@ export function FollowupRuntimePage() {
               </StatusPill>
             }
           />
-          <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {t(msg`先处理眼前需要判断和推进的事项，再回看最近运行是否稳定。`)}
-          </div>
           <AdminTabs
             className="mt-4"
             tabs={[
@@ -376,14 +370,6 @@ export function FollowupRuntimePage() {
             title={t(msg`规则编辑`)}
             actions={<AdminDraftStatusPill ready dirty={dirty} />}
           />
-          <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {t(msg`先调调度门槛，再调候选权重，Prompt 和文案放到最后处理，避免一次改太多变量。`)}
-          </div>
-          {dirty ? (
-            <AdminSoftBox className="mt-4 text-xs leading-5">
-              {t(msg`当前页面存在未保存草稿。执行调度仍会使用服务端旧规则，保存后才会切到新配置。`)}
-            </AdminSoftBox>
-          ) : null}
           <AdminTabs
             className="mt-4"
             tabs={[
@@ -454,20 +440,15 @@ function OpenLoopWorkbench({
 
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <AdminMetaText>
-          {t(msg`先看仍需要运营判断的线索，再看已经推荐出去的条目。`)}
-        </AdminMetaText>
-        <AdminSubTabs
-          tabs={[
-            { key: "attention", label: t(msg`待判断 ${buckets.attention.length}`) },
-            { key: "recommended", label: t(msg`已推荐 ${buckets.recommended.length}`) },
-            { key: "closed", label: t(msg`已结束 ${buckets.closed.length}`) },
-          ]}
-          activeKey={scope}
-          onChange={(value) => setScope(value as OpenLoopScope)}
-        />
-      </div>
+      <AdminSubTabs
+        tabs={[
+          { key: "attention", label: t(msg`待判断 ${buckets.attention.length}`) },
+          { key: "recommended", label: t(msg`已推荐 ${buckets.recommended.length}`) },
+          { key: "closed", label: t(msg`已结束 ${buckets.closed.length}`) },
+        ]}
+        activeKey={scope}
+        onChange={(value) => setScope(value as OpenLoopScope)}
+      />
 
       {!visibleLoops.length ? (
         <AdminEmptyState
@@ -541,17 +522,7 @@ function OpenLoopDetail({
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <ScoreCard
-          label={t(msg`紧急度`)}
-          score={loop.urgencyScore}
-          description={t(msg`越高越值得优先回捞。`)}
-        />
-        <ScoreCard
-          label={t(msg`已收口感`)}
-          score={loop.closureScore}
-          description={t(msg`越高说明更像已经接住。`)}
-        />
+      <div className="grid gap-3 md:grid-cols-2">
         <ScoreCard
           label={t(msg`Handoff 需要度`)}
           score={loop.handoffNeedScore}
@@ -561,6 +532,32 @@ function OpenLoopDetail({
               ? "healthy"
               : "warning"
           }
+        />
+        <AdminValueCard
+          label={t(msg`是否过线`)}
+          value={
+            <StatusPill
+              tone={
+                loop.handoffNeedScore >= rules.minHandoffNeedScore
+                  ? "healthy"
+                  : "warning"
+              }
+            >
+              {loop.handoffNeedScore >= rules.minHandoffNeedScore
+                ? t(msg`已达阈值`)
+                : t(msg`未达阈值`)}
+            </StatusPill>
+          }
+        />
+        <ScoreCard
+          label={t(msg`紧急度`)}
+          score={loop.urgencyScore}
+          description={t(msg`越高越值得优先回捞。`)}
+        />
+        <ScoreCard
+          label={t(msg`已收口感`)}
+          score={loop.closureScore}
+          description={t(msg`越高说明更像已经接住。`)}
         />
       </div>
 
@@ -576,36 +573,35 @@ function OpenLoopDetail({
             value: loop.sourceThreadTitle || loop.sourceThreadId,
           },
           {
-            label: t(msg`来源角色数`),
-            value: t(msg`${loop.sourceCharacterIds.length} 个`),
-          },
-          {
             label: t(msg`最近提及`),
             value: formatDateTime(loop.lastMentionedAt),
           },
-          {
-            label: t(msg`最近推荐`),
-            value: loop.recommendedAt ? formatDateTime(loop.recommendedAt) : t(msg`未推荐`),
-          },
-          {
-            label: t(msg`主题键`),
-            value: loop.topicKey,
-          },
+          ...(loop.recommendedAt
+            ? [
+                {
+                  label: t(msg`最近推荐`),
+                  value: formatDateTime(loop.recommendedAt),
+                },
+              ]
+            : []),
+          ...(loop.domainHints.length
+            ? [
+                {
+                  label: t(msg`领域提示`),
+                  value: (
+                    <span className="flex flex-wrap justify-end gap-1.5">
+                      {loop.domainHints.map((hint) => (
+                        <StatusPill key={hint} tone="muted">
+                          {hint}
+                        </StatusPill>
+                      ))}
+                    </span>
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
-
-      {loop.domainHints.length ? (
-        <Card className="bg-[color:var(--surface-console)]">
-          <AdminSectionHeader title={t(msg`领域提示`)} />
-          <div className="mt-4 flex flex-wrap gap-2">
-            {loop.domainHints.map((hint) => (
-              <StatusPill key={hint} tone="muted">
-                {hint}
-              </StatusPill>
-            ))}
-          </div>
-        </Card>
-      ) : null}
     </div>
   );
 }
@@ -652,23 +648,18 @@ function RecommendationWorkbench({
 
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <AdminMetaText>
-          {t(msg`这里重点看"推荐发出去之后卡在哪一步"。`)}
-        </AdminMetaText>
-        <AdminSubTabs
-          tabs={[
-            {
-              key: "in_progress",
-              label: t(msg`推进中 ${buckets.in_progress.length}`),
-            },
-            { key: "converted", label: t(msg`已转化 ${buckets.converted.length}`) },
-            { key: "closed", label: t(msg`已结束 ${buckets.closed.length}`) },
-          ]}
-          activeKey={scope}
-          onChange={(value) => setScope(value as RecommendationScope)}
-        />
-      </div>
+      <AdminSubTabs
+        tabs={[
+          {
+            key: "in_progress",
+            label: t(msg`推进中 ${buckets.in_progress.length}`),
+          },
+          { key: "converted", label: t(msg`已转化 ${buckets.converted.length}`) },
+          { key: "closed", label: t(msg`已结束 ${buckets.closed.length}`) },
+        ]}
+        activeKey={scope}
+        onChange={(value) => setScope(value as RecommendationScope)}
+      />
 
       {!visibleRecommendations.length ? (
         <AdminEmptyState
@@ -717,27 +708,30 @@ function RecommendationDetail({
 }) {
   const t = translateRuntimeMessage;
   const stage = describeRecommendation(recommendation);
-  const timeline = [
-    t(msg`创建推荐：${formatDateTime(recommendation.createdAt)}`),
+  const timelineRows = [
+    { label: t(msg`创建推荐`), value: formatDateTime(recommendation.createdAt) },
     recommendation.openedAt
-      ? t(msg`已打开推荐：${formatDateTime(recommendation.openedAt)}`)
+      ? { label: t(msg`已打开推荐`), value: formatDateTime(recommendation.openedAt) }
       : null,
     recommendation.friendRequestStartedAt
-      ? t(msg`已发起好友申请：${formatDateTime(recommendation.friendRequestStartedAt)}`)
+      ? {
+          label: t(msg`已发起好友申请`),
+          value: formatDateTime(recommendation.friendRequestStartedAt),
+        }
       : null,
     recommendation.friendAddedAt
-      ? t(msg`已成为好友：${formatDateTime(recommendation.friendAddedAt)}`)
+      ? { label: t(msg`已成为好友`), value: formatDateTime(recommendation.friendAddedAt) }
       : null,
     recommendation.chatStartedAt
-      ? t(msg`已开始聊天：${formatDateTime(recommendation.chatStartedAt)}`)
+      ? { label: t(msg`已开始聊天`), value: formatDateTime(recommendation.chatStartedAt) }
       : null,
     recommendation.resolvedAt
-      ? t(msg`已完成闭环：${formatDateTime(recommendation.resolvedAt)}`)
+      ? { label: t(msg`已完成闭环`), value: formatDateTime(recommendation.resolvedAt) }
       : null,
     recommendation.dismissedAt
-      ? t(msg`已忽略：${formatDateTime(recommendation.dismissedAt)}`)
+      ? { label: t(msg`已忽略`), value: formatDateTime(recommendation.dismissedAt) }
       : null,
-  ].filter((item): item is string => Boolean(item));
+  ].filter((row): row is { label: string; value: string } => Boolean(row));
 
   return (
     <div className="space-y-4">
@@ -777,14 +771,14 @@ function RecommendationDetail({
             label: t(msg`推荐人`),
             value: recommendation.recommenderCharacterName,
           },
-          {
-            label: t(msg`关系状态`),
-            value: labelFromRelationshipState(recommendation.relationshipState),
-          },
-          {
-            label: t(msg`角色定位`),
-            value: recommendation.targetCharacterRelationship || t(msg`未设置`),
-          },
+          ...(recommendation.targetCharacterRelationship
+            ? [
+                {
+                  label: t(msg`角色定位`),
+                  value: recommendation.targetCharacterRelationship,
+                },
+              ]
+            : []),
           {
             label: t(msg`来源线程`),
             value: recommendation.sourceThreadTitle || recommendation.sourceThreadId,
@@ -793,23 +787,18 @@ function RecommendationDetail({
             label: t(msg`最近更新`),
             value: formatDateTime(recommendation.updatedAt),
           },
-          {
-            label: t(msg`消息线程`),
-            value: recommendation.messageConversationId || t(msg`未写入`),
-          },
+          ...(recommendation.messageConversationId
+            ? [
+                {
+                  label: t(msg`消息线程`),
+                  value: recommendation.messageConversationId,
+                },
+              ]
+            : []),
         ]}
       />
 
-      <Card className="bg-[color:var(--surface-console)]">
-        <AdminSectionHeader title={t(msg`关键时间点`)} />
-        <div className="mt-4 space-y-2">
-          {timeline.map((item) => (
-            <AdminSoftBox key={item} className="text-xs leading-5">
-              {item}
-            </AdminSoftBox>
-          ))}
-        </div>
-      </Card>
+      <AdminInfoRows title={t(msg`关键时间点`)} rows={timelineRows} />
     </div>
   );
 }
@@ -847,20 +836,15 @@ function RunWorkbench({ runs }: { runs: FollowupRunRecord[] }) {
 
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <AdminMetaText>
-          {t(msg`运行记录用于判断这轮调度是"没信号"，还是"真异常"。`)}
-        </AdminMetaText>
-        <AdminSubTabs
-          tabs={[
-            { key: "attention", label: t(msg`待排查 ${buckets.attention.length}`) },
-            { key: "healthy", label: t(msg`成功 ${buckets.healthy.length}`) },
-            { key: "all", label: t(msg`全部 ${buckets.all.length}`) },
-          ]}
-          activeKey={scope}
-          onChange={(value) => setScope(value as RunScope)}
-        />
-      </div>
+      <AdminSubTabs
+        tabs={[
+          { key: "attention", label: t(msg`待排查 ${buckets.attention.length}`) },
+          { key: "healthy", label: t(msg`成功 ${buckets.healthy.length}`) },
+          { key: "all", label: t(msg`全部 ${buckets.all.length}`) },
+        ]}
+        activeKey={scope}
+        onChange={(value) => setScope(value as RunScope)}
+      />
 
       {!visibleRuns.length ? (
         <AdminEmptyState
@@ -929,21 +913,6 @@ function RunDetail({ run }: { run: FollowupRunRecord }) {
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <AdminValueCard
-          label={t(msg`候选`)}
-          value={t(msg`${run.candidateLoopCount} 条`)}
-        />
-        <AdminValueCard
-          label={t(msg`选中`)}
-          value={t(msg`${run.selectedLoopCount} 条`)}
-        />
-        <AdminValueCard
-          label={t(msg`发出`)}
-          value={t(msg`${run.emittedRecommendationCount} 条`)}
-        />
-      </div>
-
       <AdminInfoRows
         title={t(msg`运行上下文`)}
         rows={[
@@ -955,26 +924,9 @@ function RunDetail({ run }: { run: FollowupRunRecord }) {
             label: t(msg`开始时间`),
             value: formatDateTime(run.startedAt),
           },
-          {
-            label: t(msg`结束时间`),
-            value: run.finishedAt ? formatDateTime(run.finishedAt) : t(msg`未写入`),
-          },
-          {
-            label: t(msg`扫描起点`),
-            value: run.sourceWindowStartedAt
-              ? formatDateTime(run.sourceWindowStartedAt)
-              : t(msg`未写入`),
-          },
-          {
-            label: t(msg`扫描终点`),
-            value: run.sourceWindowEndedAt
-              ? formatDateTime(run.sourceWindowEndedAt)
-              : t(msg`未写入`),
-          },
-          {
-            label: t(msg`记录更新时间`),
-            value: formatDateTime(run.updatedAt),
-          },
+          ...(run.finishedAt
+            ? [{ label: t(msg`结束时间`), value: formatDateTime(run.finishedAt) }]
+            : []),
         ]}
       />
 
@@ -1188,10 +1140,6 @@ function WeightConfigSection({
   const t = translateRuntimeMessage;
   return (
     <div className="mt-6 space-y-4">
-      <AdminSoftBox className="text-xs leading-5">
-        {t(msg`权重负责"推荐给谁"的排序。先调大方向，再微调惩罚项，避免一次把所有候选顺序打乱。`)}
-      </AdminSoftBox>
-
       <ConfigGroup
         title={t(msg`推荐打分权重`)}
         description={t(msg`正向项负责把更合适的人推上来，惩罚项负责压住重复推荐和关系冲突。`)}
@@ -1309,10 +1257,6 @@ function CopyConfigSection({
   const t = translateRuntimeMessage;
   return (
     <div className="mt-6 space-y-4">
-      <AdminSoftBox className="text-xs leading-5">
-        {t(msg`只有在门槛和权重稳定后，再改 Prompt 与文案。否则很难判断是"策略问题"还是"表达问题"。`)}
-      </AdminSoftBox>
-
       <ConfigGroup
         title={t(msg`Prompt 模板`)}
         description={t(msg`这些提示词决定 open loop 提取、我自己消息、好友申请招呼语和申请后通知的生成方式。`)}
@@ -1721,11 +1665,6 @@ function formatDateTime(value?: string | null) {
 
 function formatScore(value: number) {
   return value.toFixed(2);
-}
-
-function labelFromExecutionMode(mode: FollowupRuntimeRules["executionMode"]) {
-  const t = translateRuntimeMessage;
-  return mode === "dry_run" ? t(msg`只记录候选`) : t(msg`直接发消息`);
 }
 
 function labelFromThreadType(type: FollowupOpenLoopRecord["sourceThreadType"]) {

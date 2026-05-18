@@ -515,7 +515,7 @@ export function GameCurationWorkbench({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <MetricCard label={t(msg`主推位`)} value={String(metrics.featured)} />
         <MetricCard label={t(msg`发现货架`)} value={String(metrics.shelves)} />
         <MetricCard label={t(msg`活动卡`)} value={String(metrics.events)} />
@@ -1066,7 +1066,7 @@ export function GameCurationWorkbench({
                       />
                     </div>
 
-                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <label className="block">
                         <FieldLabel>{t(msg`关联游戏`)}</FieldLabel>
                         <SelectField
@@ -1236,7 +1236,7 @@ export function GameCurationWorkbench({
                     />
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <InlineEditorField
                       label="Eyebrow"
                       value={story.eyebrow}
@@ -1278,7 +1278,7 @@ export function GameCurationWorkbench({
                     />
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-4">
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <label className="block">
                       <FieldLabel>{t(msg`内容类型`)}</FieldLabel>
                       <SelectField

@@ -129,6 +129,8 @@ export interface CheckoutResponse {
   hint: string;
 }
 
+export type CloudUserDeviceType = "mobile" | "desktop";
+
 export interface CloudUserSummary {
   id: string;
   phone: string;
@@ -146,7 +148,25 @@ export interface CloudUserSummary {
   lastLoginIp: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  // 末次登录设备类型（前端 clientPlatform + server-side UA 归一后落库）。
+  // null = 该用户末次登录在该字段上线之前，等下次登录自动写入。
+  lastLoginDeviceType: CloudUserDeviceType | null;
+  // 末次登录 IP 经 IpRegionService 解析后的省/州（国内中文，海外 provider 原文）。
+  lastLoginRegion: string | null;
+  // ISO-3166-1 alpha-2，可空。供「国内 vs 海外」聚合 / 国旗图标用。
+  lastLoginCountryCode: string | null;
+  // 该用户在 client_telemetry_events 里最近一条 eventName='chat_message_sent'
+  // 的 occurredAt。null = 注册以来从没发过消息。运营用来判断"会员到底有没有
+  // 在用"，比单看 lastLoginAt 更准（登录可能只是 token 刷新）。
+  lastChatMessageAt: string | null;
 }
+
+export type CloudUserListOrderBy =
+  | "expires"
+  | "registered"
+  | "lastLogin"
+  | "lastChatMessage";
+export type CloudUserListOrderDir = "asc" | "desc";
 
 export interface CloudUserListQuery {
   query?: string;
@@ -157,6 +177,13 @@ export interface CloudUserListQuery {
   registeredTo?: string;
   page?: number;
   pageSize?: number;
+  // 默认 undefined / false：服务端隐藏 smoke / e2e / Twilio 测试号。运营临时
+  // 需要看测试账号时传 true 放开。
+  includeTestAccounts?: boolean;
+  // 全局排序：后端在 LIMIT 之前 ORDER BY，避免"只排当前页 20 条"的错觉。
+  // 默认 registered/desc，保持与原行为一致。
+  orderBy?: CloudUserListOrderBy;
+  orderDir?: CloudUserListOrderDir;
 }
 
 export interface CloudUserListResponse {
@@ -165,6 +192,27 @@ export interface CloudUserListResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+// 列表顶部"用户总数 / 会员用户数"卡片。口径永远是生产用户（剔除 +E.164、11
+// 位裸号、smoke/example 邮箱），跟列表当前筛选器无关——不管 ops 怎么搜怎么
+// 筛，数字始终是真实总量。
+export interface CloudUserStats {
+  totalUsers: number;
+  memberUsers: number;
+}
+
+// 用户分布饼图数据。地区维度 top 10 + "其他"聚合（避免长尾国家压扁饼图）；
+// 设备维度永远三档：mobile / desktop / unknown（lastLoginDeviceType 为空）。
+// 口径与 CloudUserStats 一致，剔除测试号。
+export interface CloudUserDistributionBucket {
+  label: string;
+  count: number;
+}
+
+export interface CloudUserDistribution {
+  byRegion: CloudUserDistributionBucket[];
+  byDevice: CloudUserDistributionBucket[];
 }
 
 export interface CloudUserDetail extends CloudUserSummary {

@@ -7,7 +7,7 @@ import {
   selectSquad,
   startRound,
   tick,
-  useSyncSkill,
+  applySyncSkill,
 } from "./signal-squad-engine";
 import {
   loadSignalSquadState,
@@ -40,7 +40,7 @@ function reducer(state: SignalSquadState, action: Action): SignalSquadState {
     case "respond":
       return respondToEvent(next, action.squadmateId, action.nowMs);
     case "use-sync":
-      return useSyncSkill(next, action.nowMs);
+      return applySyncSkill(next, action.nowMs);
     case "exit":
       return exitToIdle(next, action.nowMs);
   }
@@ -78,15 +78,23 @@ export function useSignalSquadState() {
     };
   }, [state]);
 
+  // 卸载时把最新 state 刷盘。原来直接闭包了 `state`，但 deps 是 []，
+  // 闭包永远停在 mount 时的初始 state；切换 / 退出游戏会把 disk 回滚到
+  // 进入页面那一刻的 state，丢失本轮所有进度。用 ref 把最新 state 暴露给
+  // cleanup。
+  const stateRef = useRef(state);
+  stateRef.current = state;
   useEffect(() => {
     return () => {
-      saveSignalSquadState(state);
+      saveSignalSquadState(stateRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // idle / victory / defeat / timeout 时 reducer 仍会 cloneState 深拷贝 + re-render，
+  // 但实际没有事件推进；停在阵容选择 / 结算页就是纯空转。只 running 才 tick。
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (stateRef.current.status !== "running") return;
       dispatch({ type: "tick", nowMs: Date.now() });
     }, 250);
     return () => window.clearInterval(id);

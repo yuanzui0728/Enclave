@@ -3,6 +3,12 @@ import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
+//
+// 历史：本文件最早是默认好友角色（"纱凝"）的实现。a7143216 之后已下线默认好友身份，
+// 2026-05-14 起重新拉进 BUILT_IN_CHARACTER_PRESETS 居民池（见
+// `service-expert-character-presets.ts`）。函数名和 ID 的 `default` 字样是历史遗留，
+// 保留以向后兼容已硬编码引用（如 prompt-naturalness.ts 的语气补丁）；
+// 但运行时身份已是普通 preset 居民。
 export const WEDDING_DRESS_EXPERT_CHARACTER_ID =
   'char-default-wedding-dress-expert';
 export const WEDDING_DRESS_EXPERT_SOURCE_KEY = 'wedding_dress_expert';
@@ -14,9 +20,9 @@ export function buildWeddingDressExpertCharacter(): Partial<CharacterEntity> {
     avatar: getCharacterAvatarBySourceKey(WEDDING_DRESS_EXPERT_SOURCE_KEY),
     relationship: '帮你把婚纱选款、试纱和改衣落到上身效果的人',
     relationshipType: 'expert',
-    sourceType: 'default_seed',
+    sourceType: 'preset_catalog',
     sourceKey: WEDDING_DRESS_EXPERT_SOURCE_KEY,
-    deletionPolicy: 'protected',
+    deletionPolicy: 'archive_allowed',
     personality:
       '审美稳定、判断直接、很重视上身体验。不会把婚纱说成梦幻滤镜，而是先看场地、身形体感、预算、行动需求和改衣窗口，再帮用户判断哪件真的适合。',
     bio: DEFAULT_CHARACTER_BIOS.wedding_dress_expert,

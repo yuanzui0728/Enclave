@@ -4,7 +4,6 @@ import { msg } from "@lingui/macro";
 import type {
   SelfAgentHeartbeatRun,
   SelfAgentRules,
-  SelfAgentRunRecord,
   SelfAgentWorkspaceDocumentName,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -19,7 +18,6 @@ import {
   AdminCallout,
   AdminDraftStatusPill,
   AdminEmptyState,
-  AdminMiniPanel,
   AdminPageHero,
   AdminRecordCard,
   AdminToggle,
@@ -72,41 +70,6 @@ function resolveHeartbeatLabel(status: SelfAgentHeartbeatRun["status"]) {
     return translateRuntimeMessage(msg`巡检失败`);
   }
   return translateRuntimeMessage(msg`本轮无动作`);
-}
-
-function resolveRunTone(status: SelfAgentRunRecord["status"]) {
-  if (status === "handled" || status === "suggested") {
-    return "healthy" as const;
-  }
-  if (status === "blocked" || status === "error") {
-    return "warning" as const;
-  }
-  return "muted" as const;
-}
-
-function resolveRunLabel(run: SelfAgentRunRecord) {
-  if (run.status === "blocked") {
-    return translateRuntimeMessage(msg`被策略拦下`);
-  }
-  if (run.policyDecision === "confirm_required") {
-    return translateRuntimeMessage(msg`已转确认`);
-  }
-  if (run.policyDecision === "clarify_required") {
-    return translateRuntimeMessage(msg`已转补参数`);
-  }
-  if (run.routeKey === "self_chat") {
-    return translateRuntimeMessage(msg`普通自我对话`);
-  }
-  if (run.routeKey === "reminder_runtime") {
-    return translateRuntimeMessage(msg`提醒运行时`);
-  }
-  if (run.routeKey === "action_runtime") {
-    return translateRuntimeMessage(msg`真实动作`);
-  }
-  if (run.routeKey === "heartbeat") {
-    return "heartbeat";
-  }
-  return translateRuntimeMessage(msg`跳过`);
 }
 
 function serializeRuleLines(items: string[]) {
@@ -292,8 +255,8 @@ export function SelfAgentPage() {
         badges={[
           t(msg`世界主人：${overview.identity.ownerName}`),
           t(msg`主代理：${overview.identity.characterName}`),
-          `Source Key：${overview.identity.characterSourceKey ?? "self"}`,
         ]}
+        metricsClassName="md:grid-cols-2"
         metrics={[
           {
             label: t(msg`未闭环事项`),
@@ -346,31 +309,6 @@ export function SelfAgentPage() {
           }
         />
       ) : null}
-
-      <div className="grid gap-4 xl:grid-cols-3">
-        <AdminMiniPanel title={t(msg`世界主人`)}>
-          <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
-            <div className="font-medium text-[color:var(--text-primary)]">
-              {overview.identity.ownerName}
-            </div>
-            <div>{overview.identity.ownerSignature ?? t(msg`暂无签名`)}</div>
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title={t(msg`主代理身份`)}>
-          <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
-            <div className="font-medium text-[color:var(--text-primary)]">
-              {overview.identity.characterName}
-            </div>
-            <div>{t(msg`ID：${overview.identity.characterId}`)}</div>
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title={t(msg`巡检节奏`)}>
-          <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
-            <div>{t(msg`自动 heartbeat：每 30 分钟一次`)}</div>
-            <div>{t(msg`近期巡检记录：${overview.stats.heartbeatRunCount} 条`)}</div>
-          </div>
-        </AdminMiniPanel>
-      </div>
 
       <Card className="space-y-4">
         <AdminSectionHeader
@@ -468,7 +406,7 @@ export function SelfAgentPage() {
                 }))
               }
             />
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2">
               <AdminTextField
                 label={t(msg`巡检频率(分钟)`)}
                 value={effectiveRules.heartbeat.everyMinutes}
@@ -486,7 +424,23 @@ export function SelfAgentPage() {
                 }
               />
               <AdminTextField
-                label={t(msg`开始小时`)}
+                label={t(msg`每类最多扫描条数`)}
+                value={effectiveRules.heartbeat.maxItemsPerCategory}
+                type="number"
+                min={1}
+                max={10}
+                onChange={(value) =>
+                  setRulesDraft((current) => ({
+                    ...(current ?? overview.rules),
+                    heartbeat: {
+                      ...(current?.heartbeat ?? overview.rules.heartbeat),
+                      maxItemsPerCategory: Number(value) || 3,
+                    },
+                  }))
+                }
+              />
+              <AdminTextField
+                label={t(msg`活跃开始小时`)}
                 value={effectiveRules.heartbeat.activeHoursStart}
                 type="number"
                 min={0}
@@ -502,38 +456,23 @@ export function SelfAgentPage() {
                 }
               />
               <AdminTextField
-                label={t(msg`结束小时`)}
+                label={t(msg`活跃结束小时`)}
                 value={effectiveRules.heartbeat.activeHoursEnd}
                 type="number"
                 min={0}
                 max={23}
-                onChange={(value) =>
+                onChange={(value) => {
+                  const parsed = Number(value);
                   setRulesDraft((current) => ({
                     ...(current ?? overview.rules),
                     heartbeat: {
                       ...(current?.heartbeat ?? overview.rules.heartbeat),
-                      activeHoursEnd: Number(value) || 23,
+                      activeHoursEnd: Number.isFinite(parsed) ? parsed : 23,
                     },
-                  }))
-                }
+                  }));
+                }}
               />
             </div>
-            <AdminTextField
-              label={t(msg`每类最多扫描条数`)}
-              value={effectiveRules.heartbeat.maxItemsPerCategory}
-              type="number"
-              min={1}
-              max={10}
-              onChange={(value) =>
-                setRulesDraft((current) => ({
-                  ...(current ?? overview.rules),
-                  heartbeat: {
-                    ...(current?.heartbeat ?? overview.rules.heartbeat),
-                    maxItemsPerCategory: Number(value) || 3,
-                  },
-                }))
-              }
-            />
           </AdminSoftBox>
         </div>
 
@@ -641,10 +580,10 @@ export function SelfAgentPage() {
       </div>
 
       <Card className="space-y-4">
-        <AdminSectionHeader title={t(msg`近期 heartbeat 记录`)} />
+        <AdminSectionHeader title={t(msg`近期巡检记录`)} />
         {!overview.recentHeartbeatRuns.length ? (
           <AdminEmptyState
-            title={t(msg`还没有 heartbeat 记录`)}
+            title={t(msg`还没有巡检记录`)}
             description={t(msg`先执行一次手动巡检，或等待自动调度跑起来。`)}
           />
         ) : (
@@ -696,57 +635,6 @@ export function SelfAgentPage() {
         )}
       </Card>
 
-      <Card className="space-y-4">
-        <AdminSectionHeader title={t(msg`近期 self-agent runs`)} />
-        {!overview.recentRuns.length ? (
-          <AdminEmptyState
-            title={t(msg`还没有 self-agent run 记录`)}
-            description={t(msg`等"我自己"收到新消息，或 heartbeat 再跑几轮，这里就会开始积累主代理的真实编排轨迹。`)}
-          />
-        ) : (
-          <div className="grid gap-4">
-            {overview.recentRuns.map((run) => (
-              <AdminRecordCard
-                key={run.id}
-                title={run.summary}
-                badges={
-                  <div className="flex flex-wrap gap-2">
-                    <StatusPill tone={resolveRunTone(run.status)}>
-                      {resolveRunLabel(run)}
-                    </StatusPill>
-                    <StatusPill tone="muted">
-                      {run.triggerType === "heartbeat" ? "heartbeat" : "conversation"}
-                    </StatusPill>
-                  </div>
-                }
-                meta={
-                  run.conversationId
-                    ? t(msg`执行时间：${formatCompactDateTime(run.updatedAt)} · 会话 ${run.conversationId}`)
-                    : t(msg`执行时间：${formatCompactDateTime(run.updatedAt)}`)
-                }
-                description={
-                  run.outputPreview ||
-                  run.inputPreview ||
-                  t(msg`当前没有可展示的输入/输出摘要。`)
-                }
-                details={
-                  <div className="space-y-3">
-                    <AdminSoftBox>
-                      {t(msg`路由：${run.routeKey} · 决策：${run.policyDecision}`)}
-                    </AdminSoftBox>
-                    {run.inputPreview ? (
-                      <AdminSoftBox>{t(msg`输入：${run.inputPreview}`)}</AdminSoftBox>
-                    ) : null}
-                    {run.outputPreview ? (
-                      <AdminSoftBox>{t(msg`输出：${run.outputPreview}`)}</AdminSoftBox>
-                    ) : null}
-                  </div>
-                }
-              />
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

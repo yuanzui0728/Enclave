@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -31,7 +38,13 @@ export function DesktopGroupMemberRemovalPicker({
   onConfirm,
 }: DesktopGroupMemberRemovalPickerProps) {
   const t = translateRuntimeMessage;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和姊妹 picker 同款问题；虽然群成员通常 ≤ 50 比好友册小，但每次
+  // keystroke 仍同步 toLowerCase × name/subtitle 两路再 filter，慢机上仍
+  // 能看到输入框微小卡顿。和 desktop-create-group-dialog / picker 同口径
+  // 走 useDeferredValue。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -44,7 +57,7 @@ export function DesktopGroupMemberRemovalPicker({
   }, [groupName, open]);
 
   const filteredMembers = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return removableMembers.filter((member) => {
       if (!keyword) {
         return true;
@@ -55,7 +68,7 @@ export function DesktopGroupMemberRemovalPicker({
         member.subtitle.toLowerCase().includes(keyword)
       );
     });
-  }, [removableMembers, searchTerm]);
+  }, [deferredSearchTerm, removableMembers]);
 
   const selectedMembers = useMemo(() => {
     const selectedIdSet = new Set(selectedIds);
@@ -70,12 +83,69 @@ export function DesktopGroupMemberRemovalPicker({
     );
   };
 
+  // 走查桌面端群聊 R1：和 desktop-create-group-dialog R3 / desktop-group-member-picker
+  // 同款问题，但 remove 路径比 add 严重——parent removeMembersMutation 用
+  // Promise.all 并发 DELETE，server 端 removeMember 对"已删除成员"硬抛
+  // CHAT_GROUP_MEMBER_NOT_FOUND（add 是幂等返回 existing）。同帧双击 → 第一组
+  // DELETE 成功，第二组 DELETE 全部 404 → addMembersMutation/removeMembersMutation
+  // 的 error 落回侧栏顶部，用户看到"红条 + 群里其实成员都没了"的矛盾态。
+  // sync ref 锁同帧；pending 翻 false 后 useEffect 自动复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
+
+  const handleConfirm = () => {
+    if (!selectedIds.length || pending || submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    onConfirm(selectedIds);
+  };
+
+  // 走查桌面端群聊 R4：和 desktop-group-member-picker 对齐，补 Escape 关闭。
+  // stopPropagation 避免冒泡触发外层 workspace dismissSidePanel 把背后
+  //「聊天信息」侧栏一并关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      // 走查电脑端群聊 R6（和 R5 同款）：pending 时仍要消费 Esc，否则
+      // workspace queueMicrotask 兜底跑 dismissSidePanel 把背后的"聊天信息"
+      // 侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关 dialog
+      // 倒把侧栏弄没了"。
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
   if (!open) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 picker / browser / confirm / text-edit / forward 一批
+    // dialog 同款 portal-shield 缺漏。从「聊天信息」→「成员浏览」→「移除」
+    // 打开，inline 渲染在 workspace 根 div 下，无 shield → workspace
+    // onPointerDownCapture 在 rightPanelMode=details 时点 dialog 内任意非
+    // sidePanel/header/thread 节点都会 dismissSidePanel；操作完回不到详情侧栏。
+    // Esc 路径 R4 已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-removal-picker"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭移除群成员弹层`)}
@@ -87,10 +157,22 @@ export function DesktopGroupMemberRemovalPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 picker / browser / confirm / text-edit / forward 一批
+          a11y 修过的 dialog 同款缺漏——modal 但 panel 既没挂 role="dialog" +
+          aria-modal 也没挂 aria-labelledby。盲人屏幕阅读器只听到「关闭移除群
+          成员弹层 按钮」+ 搜索框 + 成员行，听不到「移除群成员」title。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`移除群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -107,6 +189,10 @@ export function DesktopGroupMemberRemovalPicker({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索群成员`)}
+                // 走查 R5：父 label 只含 Search 图标 + input，没文本子节点，
+                // SR 进来只听到「编辑栏 搜索群成员 空」分裂行为。和姊妹
+                // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
+                aria-label={t(msg`搜索群成员`)}
                 className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
@@ -229,7 +315,7 @@ export function DesktopGroupMemberRemovalPicker({
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => onConfirm(selectedIds)}
+                onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
                 className="rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
               >

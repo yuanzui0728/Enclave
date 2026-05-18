@@ -21,6 +21,7 @@ export * from "./components/setup-status-card";
 export * from "./components/setup-step-list";
 export * from "./components/status-pill";
 export * from "./components/tag-badge";
+export * from "./components/telemetry-error-boundary";
 export * from "./components/text-area-field";
 export * from "./components/text-field";
 export * from "./components/toggle-chip";

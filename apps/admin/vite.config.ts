@@ -27,6 +27,10 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5181,
+    // strictPort: 端口被占时直接报错退出，而不是悄悄 +1。历史上一次 nginx-app-web
+    // 抢了 5180 → app vite 漂到 5181 → admin 漂到 5182 → cloud-console 漂到 5183，
+    // "进入后台" 按钮的 fallback URL http://127.0.0.1:5181 反而打到了 app vite。
+    strictPort: true,
     // Admin 后台所有真实接口都走 main-api（3000）和 cloud-api（3001）。
     // 没有代理时 /api/admin/* 会被 vite SPA fallback 吞掉返回 index.html，
     // 浏览器侧表现为 "Failed to fetch" / JSON 解析失败。

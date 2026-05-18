@@ -52,20 +52,25 @@ export function OfficialAccountServicePage() {
       <OfficialAccountServiceThread
         accountId={accountId}
         onBack={() => {
-          navigateBackOrFallback(() => {
-            if (
-              routeState.returnPath &&
-              !isDesktopOnlyPath(routeState.returnPath)
-            ) {
-              void navigate({
-                to: routeState.returnPath,
-                ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
-              });
-              return;
-            }
+          navigateBackOrFallback(
+            () => {
+              if (
+                routeState.returnPath &&
+                !isDesktopOnlyPath(routeState.returnPath)
+              ) {
+                void navigate({
+                  to: routeState.returnPath,
+                  ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+                });
+                return;
+              }
 
-            void navigate({ to: "/tabs/chat" });
-          });
+              void navigate({ to: "/tabs/chat" });
+            },
+            (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+              ? routeState.returnPath
+              : undefined) ?? "/tabs/chat",
+          );
         }}
       />
     </AppPage>

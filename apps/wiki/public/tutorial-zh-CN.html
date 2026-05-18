@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐界 Wiki 新手教程 · 完整指南</title>
+<meta name="description" content="隐界世界角色管理平台（Wiki）官方教程：从注册、浏览、搜索，到创建词条、AI 一键生成、巡查审核、管理员后台，一篇看完。">
+<style>
+  :root {
+    --brand-from: #ff6a8a;
+    --brand-to: #7c5cff;
+    --brand-gradient: linear-gradient(135deg, #ff6a8a 0%, #7c5cff 100%);
+    --text-primary: #1f1f2c;
+    --text-secondary: #4f4f63;
+    --text-muted: #8b8ba0;
+    --text-on-brand: #fff;
+    --surface-bg: #fafaff;
+    --surface-card: #fff;
+    --surface-soft: #f3f1ff;
+    --surface-code: #f5f6fa;
+    --border-subtle: #e6e4ef;
+    --shadow-soft: 0 4px 14px rgba(124, 92, 255, 0.08);
+    --shadow-card: 0 12px 30px rgba(124, 92, 255, 0.12);
+    --tip: #2d8a5c;
+    --tip-bg: #ecf9f1;
+    --warn: #b9531c;
+    --warn-bg: #fdf2e6;
+    --admin: #7c5cff;
+    --admin-bg: #efeaff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text-primary: #ececf2;
+      --text-secondary: #c4c4d4;
+      --text-muted: #8b8ba0;
+      --surface-bg: #15151c;
+      --surface-card: #1d1d27;
+      --surface-soft: #25223a;
+      --surface-code: #1a1a23;
+      --border-subtle: #2c2c3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text-primary);
+    background: var(--surface-bg);
+    line-height: 1.75;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--brand-to); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ===== Top bar ===== */
+  header.topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  @media (prefers-color-scheme: dark) {
+    header.topbar { background: rgba(21, 21, 28, 0.92); }
+  }
+  .topbar-inner {
+    max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 600; color: var(--text-primary); text-decoration: none;
+  }
+  .brand-logo {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--brand-gradient); color: #fff;
+    display: grid; place-items: center; font-weight: 700;
+    box-shadow: var(--shadow-soft);
+  }
+  .lang-switch { display: flex; gap: 4px; margin-left: auto; }
+  .lang-switch a {
+    padding: 6px 10px; border-radius: 999px; font-size: 13px;
+    color: var(--text-secondary); border: 1px solid transparent;
+  }
+  .lang-switch a:hover { background: var(--surface-soft); text-decoration: none; }
+  .lang-switch a[aria-current="page"] {
+    background: var(--brand-gradient); color: #fff; border-color: transparent;
+  }
+  .back-btn {
+    padding: 6px 14px; border-radius: 999px; font-size: 13px;
+    background: var(--surface-soft); color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+  }
+  .back-btn:hover { text-decoration: none; background: var(--brand-gradient); color: #fff; border-color: transparent; }
+
+  /* ===== Layout ===== */
+  .layout {
+    max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px;
+    display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 16px; }
+  }
+
+  /* ===== TOC ===== */
+  aside.toc {
+    position: sticky; top: 80px; align-self: start;
+    max-height: calc(100vh - 100px); overflow-y: auto;
+    padding: 8px 0; font-size: 14px;
+  }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; }
+  aside.toc li { margin: 2px 0; }
+  aside.toc a {
+    display: block; padding: 6px 12px; border-radius: 8px;
+    color: var(--text-secondary); border-left: 3px solid transparent;
+  }
+  aside.toc a:hover { background: var(--surface-soft); text-decoration: none; }
+  aside.toc a.active {
+    background: var(--surface-soft); color: var(--text-primary);
+    border-left-color: var(--brand-to); font-weight: 600;
+  }
+  aside.toc .toc-mobile-toggle { display: none; }
+  @media (max-width: 900px) {
+    aside.toc {
+      position: static; max-height: none; overflow: visible;
+      background: var(--surface-card); border: 1px solid var(--border-subtle);
+      border-radius: 12px; padding: 0;
+    }
+    aside.toc ol { display: none; padding: 8px; }
+    aside.toc.open ol { display: block; }
+    aside.toc .toc-mobile-toggle {
+      display: block; width: 100%; padding: 12px 16px;
+      background: none; border: none; text-align: left; cursor: pointer;
+      font-weight: 600; color: var(--text-primary); font-size: 15px;
+    }
+    aside.toc .toc-mobile-toggle::after { content: " ▾"; color: var(--text-muted); }
+    aside.toc.open .toc-mobile-toggle::after { content: " ▴"; }
+  }
+
+  /* ===== Main content ===== */
+  main { min-width: 0; }
+  main h1 {
+    font-size: 36px; line-height: 1.3; margin: 0 0 8px;
+    background: var(--brand-gradient); -webkit-background-clip: text;
+    background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  main .subtitle { color: var(--text-muted); margin-bottom: 32px; font-size: 16px; }
+  main h2 {
+    font-size: 26px; margin: 56px 0 12px; padding-top: 8px;
+    border-top: 1px solid var(--border-subtle); padding-top: 32px;
+  }
+  main h2 .num {
+    display: inline-block; min-width: 36px; height: 36px;
+    line-height: 36px; text-align: center; border-radius: 10px;
+    background: var(--brand-gradient); color: #fff; font-size: 16px;
+    margin-right: 10px; padding: 0 8px; vertical-align: middle;
+  }
+  main h3 { font-size: 19px; margin: 32px 0 8px; }
+  main h4 { font-size: 16px; margin: 20px 0 6px; color: var(--text-secondary); }
+  main p { margin: 12px 0; color: var(--text-secondary); }
+  main ul, main ol { padding-left: 24px; color: var(--text-secondary); }
+  main li { margin: 6px 0; }
+  main strong { color: var(--text-primary); }
+  main code {
+    background: var(--surface-code); padding: 2px 6px; border-radius: 4px;
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+    font-size: 13.5px; color: var(--brand-to);
+  }
+  main pre {
+    background: var(--surface-code); padding: 16px; border-radius: 10px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    border: 1px solid var(--border-subtle);
+  }
+  main pre code { background: none; padding: 0; color: var(--text-primary); }
+  main table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--surface-card); border-radius: 10px; overflow: hidden;
+    box-shadow: var(--shadow-soft);
+  }
+  main th, main td {
+    padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-subtle);
+    font-size: 14.5px;
+  }
+  main th { background: var(--surface-soft); font-weight: 600; color: var(--text-primary); }
+  main td { color: var(--text-secondary); }
+  main tr:last-child td { border-bottom: none; }
+
+  /* Callouts */
+  .callout {
+    margin: 16px 0; padding: 14px 18px 14px 16px;
+    border-radius: 10px; border-left: 4px solid;
+    font-size: 14.5px; line-height: 1.7;
+  }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.tip { background: var(--tip-bg); border-left-color: var(--tip); color: var(--text-primary); }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn); color: var(--text-primary); }
+  .callout.admin { background: var(--admin-bg); border-left-color: var(--admin); color: var(--text-primary); }
+  .callout .label { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+  .callout.tip .label { color: var(--tip); }
+  .callout.warn .label { color: var(--warn); }
+  .callout.admin .label { color: var(--admin); }
+
+  /* Step cards */
+  .steps {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin: 18px 0;
+  }
+  .step {
+    padding: 16px 18px; border-radius: 14px; background: var(--surface-card);
+    border: 1px solid var(--border-subtle); position: relative; overflow: hidden;
+  }
+  .step::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--brand-gradient);
+  }
+  .step .n {
+    display: inline-block; width: 28px; height: 28px; line-height: 28px;
+    text-align: center; border-radius: 50%; background: var(--brand-gradient);
+    color: #fff; font-weight: 700; font-size: 13px; margin-bottom: 8px;
+  }
+  .step h4 { margin: 4px 0; color: var(--text-primary); font-size: 15px; }
+  .step p { font-size: 14px; margin: 6px 0 0; }
+
+  /* ASCII screenshot box */
+  details.shot {
+    margin: 16px 0; border: 1px solid var(--border-subtle); border-radius: 10px;
+    background: var(--surface-card); overflow: hidden;
+  }
+  details.shot > summary {
+    cursor: pointer; padding: 10px 16px; font-size: 14px; color: var(--text-secondary);
+    background: var(--surface-soft); list-style: none;
+    user-select: none;
+  }
+  details.shot > summary::before { content: "▶ "; font-size: 11px; }
+  details.shot[open] > summary::before { content: "▼ "; }
+  details.shot pre {
+    margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border-subtle);
+    background: var(--surface-card); font-size: 12.5px;
+  }
+
+  /* Audience pills */
+  .audience { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 8px; }
+  .pill {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .pill.user { background: #eef4ff; color: #2c5fc7; }
+  .pill.patroller { background: #fff3e0; color: #b97516; }
+  .pill.admin { background: var(--admin-bg); color: var(--admin); }
+
+  /* Footer */
+  footer.foot {
+    max-width: 1200px; margin: 0 auto; padding: 24px 20px;
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-muted); font-size: 13px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">
+      <span class="brand-logo">隐</span>
+      <span>隐界 Wiki · 教程</span>
+    </a>
+    <nav class="lang-switch" aria-label="Language">
+      <a href="tutorial-zh-CN.html" aria-current="page">🇨🇳 中文</a>
+      <a href="tutorial-en-US.html">🇺🇸 English</a>
+      <a href="tutorial-ja-JP.html">🇯🇵 日本語</a>
+      <a href="tutorial-ko-KR.html">🇰🇷 한국어</a>
+    </nav>
+    <a class="back-btn" href="/">← 返回平台</a>
+  </div>
+</header>
+
+<div class="layout">
+
+<aside class="toc" id="toc">
+  <button class="toc-mobile-toggle" type="button" aria-expanded="false">📖 目录</button>
+  <ol>
+    <li><a href="#welcome">0. 欢迎</a></li>
+    <li><a href="#quickstart">1. 5 分钟快速上手</a></li>
+    <li><a href="#account">2. 注册与登录</a></li>
+    <li><a href="#browse">3. 浏览角色词条</a></li>
+    <li><a href="#search">4. 搜索</a></li>
+    <li><a href="#editing">5. 创建与编辑词条</a></li>
+    <li><a href="#private">6. 我的私有角色</a></li>
+    <li><a href="#history">7. 历史与差异</a></li>
+    <li><a href="#watch">8. 关注列表 & 最近修改</a></li>
+    <li><a href="#talk">9. 讨论页（Talk）</a></li>
+    <li><a href="#report">10. 举报内容</a></li>
+    <li><a href="#roles">11. 用户角色与权限</a></li>
+    <li><a href="#patroller">12. 巡查员手册</a></li>
+    <li><a href="#admin">13. 管理员手册</a></li>
+    <li><a href="#faq">14. 常见问题（FAQ）</a></li>
+    <li><a href="#feedback">15. 反馈与问题报告</a></li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>隐界 Wiki 新手教程</h1>
+<p class="subtitle">一篇看完：从注册、浏览、写词条、AI 一键生成，到巡查审核、管理员后台 — 全功能完整指南。</p>
+
+<!-- ============== 0. 欢迎 ============== -->
+<section id="welcome">
+<h2><span class="num">0</span>欢迎</h2>
+
+<p><strong>隐界 Wiki</strong>（"隐界世界角色管理平台"）是一个面向 AI 角色创作的协作百科。任何人都可以浏览，注册账号后可以创建和编辑角色词条 — 你写的角色不只是文字描述，而是一份能被 AI 直接用来"扮演"的<strong>角色蓝图（recipe）</strong>。</p>
+
+<p>它在工作流上和维基百科很像：</p>
+<ul>
+  <li>所有内容都可以协作编辑，每次改动都留下版本历史</li>
+  <li>新用户的编辑会先进入<strong>审核队列</strong>，由"巡查员"批准后才公开生效</li>
+  <li>有差异比对（diff）、回退（revert）、保护（protection）、举报（report）等成熟的协作机制</li>
+</ul>
+
+<p>但它和维基百科不同的地方是 — <strong>词条本身就是 AI 的"灵魂"</strong>。你填写的姓名、简介、性格、专长领域、对话场景这些字段，会被打包成一份结构化的"recipe"喂给大模型，让 AI 用这个角色身份和用户对话。所以词条质量直接决定 AI 表现。</p>
+
+<div class="callout tip">
+  <span class="label">💡 小贴士</span>
+  <p>不知道从哪开始？跳到下一节<a href="#quickstart">「5 分钟快速上手」</a>，跟着做一遍，所有概念会自然清晰。</p>
+</div>
+</section>
+
+<!-- ============== 1. 快速上手 ============== -->
+<section id="quickstart">
+<h2><span class="num">1</span>5 分钟快速上手 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<div class="steps">
+  <div class="step">
+    <span class="n">1</span>
+    <h4>注册账号</h4>
+    <p>点击右上角「注册」，填用户名（≥2 字）和密码（≥6 字）。新账号默认是 <code>newcomer</code> 阶。</p>
+  </div>
+  <div class="step">
+    <span class="n">2</span>
+    <h4>浏览一个角色</h4>
+    <p>回到首页，点任意角色卡片进入详情页，看看一个完整词条长什么样。</p>
+  </div>
+  <div class="step">
+    <span class="n">3</span>
+    <h4>试试搜索</h4>
+    <p>顶部搜索框输关键词回车，搜索范围覆盖名字、关系、简介、性格四个字段。</p>
+  </div>
+  <div class="step">
+    <span class="n">4</span>
+    <h4>创建私有角色</h4>
+    <p>左侧导航 → "我的私有角色" → "创建"，填一个最简版（名字 + 简介 + 关系），点 AI 一键生成补完其它字段。</p>
+  </div>
+  <div class="step">
+    <span class="n">5</span>
+    <h4>提交一次词条编辑</h4>
+    <p>找一个公开词条，点"编辑"，改一个小细节，写≥10 字的编辑说明（editSummary），提交。等巡查员审核。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 小贴士</span>
+  <p>新手期间所有公开词条编辑都要审核。当你累积一定编辑量并被自动确认后（变成 <code>autoconfirmed</code>），低风险编辑会自动生效，不再排队。</p>
+</div>
+</section>
+
+<!-- ============== 2. 注册与登录 ============== -->
+<section id="account">
+<h2><span class="num">2</span>注册与登录 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<h3>注册</h3>
+<p>访问 <code>/register</code>，填写：</p>
+<ul>
+  <li><strong>用户名</strong>：至少 2 个字符，公开可见，用于署名编辑历史</li>
+  <li><strong>密码</strong>：至少 6 个字符，仅本人可见</li>
+  <li><strong>确认密码</strong>：两次输入要一致</li>
+</ul>
+<p>注册成功后，账号自动进入新人阶（<code>newcomer</code>），可以立刻开始编辑，但所有公开词条编辑会先进入审核队列。</p>
+
+<h3>登录</h3>
+<p>访问 <code>/login</code>，支持两种方式：</p>
+<ul>
+  <li><strong>用户名 + 密码</strong>：标准方式</li>
+  <li><strong>邮箱验证码</strong>：把验证码发到你绑定的邮箱，输入即可登录（适合忘记密码时使用）</li>
+</ul>
+<p>如果你访问需要登录的页面但还没登录，会被跳回 <code>/login?redirect=...</code>，登录成功后自动回到原页。</p>
+
+<h3>账户设置</h3>
+<p>登录后，点右上角你的用户名 → "账户设置"，可以：</p>
+<ul>
+  <li>修改密码（需要邮箱验证码确认）</li>
+  <li>查看 / 验证 / 修改邮箱</li>
+  <li>查看自己的资料：当前角色阶（newcomer/autoconfirmed/patroller/admin）、累计编辑数、被批准编辑数、被回退次数、被自动确认的时间</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>邮箱是找回密码的唯一渠道，注册后请尽快绑定。一旦忘记密码且没绑邮箱，账号无法自助找回。</p>
+</div>
+</section>
+
+<!-- ============== 3. 浏览 ============== -->
+<section id="browse">
+<h2><span class="num">3</span>浏览角色词条 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<h3>角色目录（首页）</h3>
+<p>首页 <code>/</code> 列出所有公开角色，按受欢迎度 / 最近活跃排序。每张卡片显示头像、名字、关系类型、简介开头几句。</p>
+
+<h3>角色页结构</h3>
+<p>点开一个角色，你会看到：</p>
+<ul>
+  <li><strong>头部信息</strong>：头像、名字、关系类型徽章（朋友 / 家人 / 导师 / 专家 / 自定义）、生命周期状态徽章（活跃 / 待审核创建 / 已删除 / 待删除）</li>
+  <li><strong>正文标签页</strong>：
+    <ul>
+      <li>"内容"：简介、性格、专长领域、触发场景、关系描述</li>
+      <li>"历史"：所有版本和差异比对</li>
+      <li>"讨论"：本词条相关的讨论帖</li>
+    </ul>
+  </li>
+  <li><strong>右侧操作</strong>：⭐ 关注 / 取消关注、✏️ 编辑（需登录）、🗑️ 申请删除（需登录）、保护状态指示</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII 框图：角色页大致布局</summary>
+<pre>
+┌──────────────────────────────────────────────────────────────┐
+│ [头像]  角色名 ✨autoconfirmed                  ⭐关注 ✏️编辑 │
+│         #朋友   #活跃                                         │
+├──────────────────────────────────────────────────────────────┤
+│ [ 内容 ] [ 历史 ] [ 讨论 ]                                    │
+├──────────────────────────────────────────────────────────────┤
+│  简介 / Bio                                                   │
+│  ─────────────                                                │
+│  ……                                                           │
+│  性格                                                         │
+│  ─────                                                        │
+│  ……                                                           │
+│  关系描述：我最好的朋友                                       │
+└──────────────────────────────────────────────────────────────┘
+</pre>
+</details>
+
+<h3>稳定版 vs 当前版（stable / current）</h3>
+<p>同一个词条可能有两个视图：</p>
+<ul>
+  <li><strong>稳定版（stable）</strong>：所有人默认看到的版本 — 最近一次被审核通过的内容</li>
+  <li><strong>当前版（current）</strong>：包含尚未审核的待发布编辑 — 只有作者本人和巡查员能看到</li>
+</ul>
+<p>这意味着：你编辑后立刻去看页面会看到自己的修改（current），但其他访客在审核通过前还是看到旧的稳定版。</p>
+</section>
+
+<!-- ============== 4. 搜索 ============== -->
+<section id="search">
+<h2><span class="num">4</span>搜索 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>顶部任意页面都有搜索框，回车跳转到 <code>/search?q=关键词</code>。</p>
+
+<h3>搜索范围</h3>
+<p>后端做了全文索引，覆盖以下字段：</p>
+<ul>
+  <li>角色名字</li>
+  <li>关系描述（"我最好的朋友"等）</li>
+  <li>简介（bio）</li>
+  <li>性格（personality）</li>
+</ul>
+
+<h3>结果排序</h3>
+<p>结果按相关度评分排序，每个结果显示一个 0–100 的相关度百分位。点击任一结果跳到角色页。</p>
+
+<div class="callout tip">
+  <span class="label">💡 小贴士</span>
+  <p>未登录用户也能搜索 — 这是一个对外公开的功能，可以放心做"试试看"流量。</p>
+</div>
+</section>
+
+<!-- ============== 5. 创建与编辑 ============== -->
+<section id="editing">
+<h2><span class="num">5</span>创建与编辑词条 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>这是 Wiki 的核心。所有公开角色都通过这套表单创建和维护。</p>
+
+<h3>5.1 创建一个新词条</h3>
+<p>左侧导航 → "创建角色"，或直接访问 <code>/create</code>。表单分 6 个区段：</p>
+
+<table>
+  <thead><tr><th>区段</th><th>关键字段</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① 基本信息</strong></td><td>名字、头像、简介、关系类型、关系描述</td><td>名字和简介必填，是其他人识别这个角色的基本依据</td></tr>
+    <tr><td><strong>② 对话风格</strong></td><td>说话方式、口头禅、情绪基调</td><td>决定 AI 用什么语气说话</td></tr>
+    <tr><td><strong>③ 核心逻辑</strong></td><td>价值观、决策模式、禁忌</td><td>角色的"大脑" — 遇到分歧时该怎么想</td></tr>
+    <tr><td><strong>④ 触发场景</strong></td><td>典型对话开场、扮演场景</td><td>什么场合下这个角色会被召唤</td></tr>
+    <tr><td><strong>⑤ 记忆设置</strong></td><td>背景故事、关键经历</td><td>角色"记得"什么、不知道什么</td></tr>
+    <tr><td><strong>⑥ 社交参数</strong></td><td>专长领域、互动偏好</td><td>影响推荐和搜索匹配</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 AI 一键生成</h3>
+<p>每个区段右上角都有「AI 生成」按钮。它会调用大模型帮你补全空字段。</p>
+
+<div class="callout tip">
+  <span class="label">💡 用法</span>
+  <p>最佳工作流：先手填 <strong>名字 + 简介 + 关系描述</strong>（3 个核心锚点），然后选 <strong>"生成全部"</strong> — AI 会基于这 3 个锚点把其它所有空字段补出来。生成结果只填空字段，不会覆盖你已写的。</p>
+</div>
+
+<p>关键参数：</p>
+<ul>
+  <li><strong>速率限制</strong>：每个用户每小时 15 次生成（私有角色 + Wiki 编辑共享同一个配额桶）</li>
+  <li><strong>"优化模式"（optimize）</strong>：勾上后允许覆盖已有内容（不只是补空），用于"我已经写了但想要 AI 帮我润色一遍"的场景</li>
+  <li><strong>"生成全部"前提</strong>：必须先填 name + bio + relationship 三项，否则按钮变灰</li>
+  <li><strong>草稿持久化</strong>：每次 AI 生成都会自动存一份草稿，关页面再回来不会丢</li>
+</ul>
+
+<h3>5.3 草稿系统</h3>
+<p>编辑过程中，表单会自动保存草稿：</p>
+<ul>
+  <li>本地浏览器：实时存（关浏览器再开还在）</li>
+  <li>服务器：在你点 AI 生成或主动保存时存档</li>
+  <li>恢复方法：回到 <a href="/my-drafts"><code>/my-drafts</code></a> → 点对应草稿 → 回到带 <code>?draftId=...</code> 的编辑页继续</li>
+</ul>
+
+<h3>5.4 提交编辑</h3>
+<p>表单底部点「提交」前，需要写：</p>
+<ul>
+  <li><strong>编辑说明（editSummary）</strong>：简短描述你改了什么，<strong>≥10 字</strong>是高风险编辑（涉及生命周期、删除、回退）的硬性要求</li>
+  <li><strong>是否标记为小修订（isMinor）</strong>：勾上代表"只是排版/错字/格式微调"，巡查员审核会更快</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 编辑冲突检测</span>
+  <p>如果你打开编辑页期间，别人已经修改并提交了同一个词条，你提交时会触发冲突 — 系统会提示你重新打开最新版手动合并。这通过 <code>baseRevisionId</code> 实现。</p>
+</div>
+
+<h3>5.5 提交后会发生什么</h3>
+<p>取决于你的角色阶：</p>
+<table>
+  <thead><tr><th>角色阶</th><th>低风险编辑</th><th>高风险编辑</th></tr></thead>
+  <tbody>
+    <tr><td>newcomer</td><td>进入审核队列</td><td>进入审核队列</td></tr>
+    <tr><td>autoconfirmed</td><td>自动生效</td><td>进入审核队列（仍要≥10 字 editSummary）</td></tr>
+    <tr><td>patroller / admin</td><td>自动生效</td><td>自动生效</td></tr>
+  </tbody>
+</table>
+
+<h3>5.6 编辑已有词条</h3>
+<p>词条页右侧 ✏️「编辑」按钮 → 跳到 <code>/character/:id/edit</code>，表单会预填当前最新版（包括尚未审核的字段，仅你自己可见），其它流程与创建一致。</p>
+</section>
+
+<!-- ============== 6. 我的私有角色 ============== -->
+<section id="private">
+<h2><span class="num">6</span>我的私有角色 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>除了公开 Wiki 词条，每个登录用户还有一片<strong>仅自己可见</strong>的私有空间：<strong>「我的私有角色」</strong>（<code>/my-characters</code>）。这里你可以自由创作、试验、备份角色，所有操作即时生效，不需要审核、不会被别人看到、也不会出现在搜索 / 角色目录 / 推荐列表里。</p>
+
+<h3>6.1 和 Wiki 词条的区别</h3>
+<table>
+  <thead><tr><th>特性</th><th>Wiki 词条</th><th>私有角色</th></tr></thead>
+  <tbody>
+    <tr><td>可见性</td><td>所有人可见</td><td>仅本人</td></tr>
+    <tr><td>需审核</td><td>新人需审核</td><td>不需要</td></tr>
+    <tr><td>版本历史</td><td>有完整历史 + diff</td><td>无（只有 createdAt / updatedAt 时间戳）</td></tr>
+    <tr><td>巡查 / 回退</td><td>有</td><td>无</td></tr>
+    <tr><td>讨论页</td><td>有</td><td>无</td></tr>
+    <tr><td>删除</td><td>软删除（可申请恢复）</td><td>硬删除（不可撤销）</td></tr>
+    <tr><td>表单字段</td><td>含 personality / editSummary / isMinor</td><td>无 personality 等字段，更精简</td></tr>
+    <tr><td>用途</td><td>构建公共角色库</td><td>个人创作 / 试验 / 备份</td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 入口</h3>
+<ul>
+  <li><strong>列表</strong>：左侧导航 → 「我的私有角色」（<code>/my-characters</code>）</li>
+  <li><strong>新建</strong>：列表右上角「✨ 新建角色」 → <code>/my-characters/new</code></li>
+  <li><strong>编辑</strong>：列表里点任意角色卡片 → <code>/my-characters/:id</code></li>
+  <li><strong>导入</strong>：列表右上角「📥 导入文件」 → 选 <code>.json</code> 文件</li>
+</ul>
+
+<h3>6.3 表单字段（6 区段）</h3>
+<table>
+  <thead><tr><th>区段</th><th>主要字段</th><th>必填？</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① 基础信息</strong></td><td>名称、头像（emoji / URL）、关系描述、关系类型、擅长领域、简介</td><td>名称 + 关系描述 必填</td></tr>
+    <tr><td><strong>② 聊天回复</strong></td><td>聊天场景提示词</td><td>否（推荐填）</td></tr>
+    <tr><td><strong>③ 底层逻辑</strong></td><td>底层逻辑、遗忘曲线（0-100，默认 70，高级）</td><td>否（推荐填）</td></tr>
+    <tr><td><strong>④ 场景提示词</strong></td><td>朋友圈发帖、广场发帖、视频号发帖、朋友圈评论、广场评论、好友请求 / 摇一摇问候、主动提醒（共 7 个）</td><td>否</td></tr>
+    <tr><td><strong>⑤ 记忆提示词</strong></td><td>近期记忆、长期记忆（高级）</td><td>否</td></tr>
+    <tr><td><strong>⑥ 社交参数</strong></td><td>社交开放度（open / normal / private）、主动浏览概率（0-1，默认 0.3）、亲密度种子（0-100，默认 0）</td><td>有默认值</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 与 Wiki 词条表单的差异</span>
+  <p>私有角色<strong>没有 personality / 触发场景 / editSummary / isMinor</strong> 等字段，表单更轻；也没有 <code>baseRevisionId</code> 冲突检测（因为没有版本历史，只有"上次修改时间"）。</p>
+</div>
+
+<h3>6.4 字段长度上限</h3>
+<table>
+  <thead><tr><th>字段</th><th>上限</th></tr></thead>
+  <tbody>
+    <tr><td>名称</td><td>80 字</td></tr>
+    <tr><td>头像（emoji / URL）</td><td>2000 字</td></tr>
+    <tr><td>简介</td><td>2000 字</td></tr>
+    <tr><td>关系描述</td><td>200 字</td></tr>
+    <tr><td>关系类型</td><td>80 字</td></tr>
+    <tr><td>擅长领域 单项</td><td>80 字</td></tr>
+    <tr><td>擅长领域 总数</td><td>50 项</td></tr>
+    <tr><td>recipe JSON / profile JSON</td><td>各 64 KB</td></tr>
+  </tbody>
+</table>
+
+<h3>6.5 AI 一键生成</h3>
+<p>每个区段右上角都有 <strong>✨ AI 生成</strong> 按钮可单独生成；顶部还有 <strong>✨ AI 一键生成全部</strong>。</p>
+<ul>
+  <li><strong>可生成的 5 个 section</strong>：basics（头像 / 擅长领域 / 关系类型）、core_logic（底层逻辑 / 遗忘曲线）、chat、scenes（7 个场景 prompt）、memory（近期 / 长期记忆）</li>
+  <li><strong>"一键全部" 前提</strong>：必须先填好 <strong>name + bio + relationship</strong> 三项 sacred 字段，否则后端 400 拒绝</li>
+  <li><strong>optimize 模式</strong>：默认只补空字段，不覆盖已填内容；当某 section 已经有内容时点 AI 生成会弹二次确认对话框，确认后才覆盖</li>
+  <li><strong>生成中</strong>：该区段所有字段被禁用（disabled），显示「✨ AI 正在生成…」</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 速率限制</span>
+  <p>AI 生成单独配额：<strong>每用户每小时 15 次</strong>（与 Wiki 词条编辑共享同一桶）。超限返回 <code>WIKI_AI_RATE_LIMITED</code>，提示「AI 生成额度用完：每小时上限 15 次，X 秒后再试」。</p>
+  <p>CRUD（创建 / 修改 / 删除 / 导入）独立配额：<strong>每用户每小时 60 次</strong>。</p>
+</div>
+
+<h3>6.6 草稿系统</h3>
+<p>仅在<strong>「新建页 + 一键生成全部」</strong>这条路径上，后端会自动落库一份草稿到 <code>character_drafts</code>：</p>
+<ul>
+  <li>关闭页面或浏览器再回来，去 <a href="/my-drafts"><code>/my-drafts</code></a> 列表能找到</li>
+  <li>点列表里的草稿 → 用 <code>?draftId=...</code> 参数恢复到新建页继续填</li>
+  <li>恢复时如果当前编辑器有未保存内容，会弹 confirm 提示要不要覆盖</li>
+</ul>
+
+<h3>6.7 JSON 导入 / 导出</h3>
+<h4>导出</h4>
+<ul>
+  <li>列表里每个卡片的「📤 导出」按钮 / 编辑页右上角「📤 导出 JSON」</li>
+  <li>下载文件名：角色名（去掉非法字符）+ <code>.json</code></li>
+  <li>schema：<code>"$schema": "yinjie-private-character/v1"</code></li>
+  <li>包含字段：name / avatar / bio / relationship / relationshipType / expertDomains / recipe / profile / 社交参数 + meta（exportedAt、exportedBy、version）</li>
+  <li><strong>不包含</strong>：isOnline / isTemplate / sourceType / aiRelationships 等管理员相关字段</li>
+</ul>
+
+<h4>导入</h4>
+<ul>
+  <li>列表右上角「📥 导入文件」选 <code>.json</code></li>
+  <li>文件大小上限 <strong>5 MB</strong></li>
+  <li><strong>按角色名 upsert</strong>：与已有角色同名 → 覆盖；不同名 → 新建</li>
+  <li>提示文案区分覆盖 / 新建：「已覆盖同名角色：X」 vs 「已导入新角色：X」</li>
+  <li>不支持批量（一个文件 = 一个角色）</li>
+  <li>schema 版本不匹配 / 字段超长 → 直接 400 拒绝</li>
+</ul>
+
+<h3 id="private-app-import">6.8 接入隐界 app 实际使用</h3>
+<p>私有角色在 wiki 这边只是「配置文件」。<strong>要让 AI 真的扮演这个角色和你对话，需要把它导入到隐界 app</strong>（前端壳）。完整流程：</p>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><h4>wiki 端导出</h4><p>在私有角色列表 / 编辑页点「📤 导出 JSON」，下载 <code>.json</code> 文件。</p></div>
+  <div class="step"><span class="n">2</span><h4>打开隐界 app</h4><p>登录任意端（手机 / 桌面）。导入功能需要登录账号。</p></div>
+  <div class="step"><span class="n">3</span><h4>进入导入页</h4><p>移动端：「我」标签 → 「导入角色」。<br>桌面端：菜单无入口，直接访问 <code>/profile/character-import</code>。</p></div>
+  <div class="step"><span class="n">4</span><h4>上传 .json</h4><p>选刚下载的文件（≤ 5 MB）→ 提交。后端调 <code>POST /characters/import-personal</code> 校验并落库。</p></div>
+  <div class="step"><span class="n">5</span><h4>开始对话</h4><p>导入成功后角色自动加为好友，出现在「通讯录」。点角色 → 进入角色详情页 → 点「发消息」即可开聊。</p></div>
+</div>
+
+<div class="callout warn">
+  <span class="label">⚠️ 没有版本同步</span>
+  <p>wiki 和 app 这两边是<strong>独立副本</strong>。wiki 改了角色配置，app 那边不会自动更新；app 那边对话产生的记忆 / 关系进度，wiki 也看不到。</p>
+  <p><strong>要同步</strong>：重新「📤 导出 JSON」→ 再次去 app 导入页上传。<strong>同名覆盖只对之前导入的角色生效</strong>（<code>sourceType=private_import</code>）；和其它来源同名时不能覆盖，会报冲突。</p>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 为什么是 wiki 创建、app 运行？</span>
+  <p>app 端<strong>没有「创建私有角色」UI</strong>。设计上 wiki 是"完整的角色编辑环境 + AI 辅助生成"，app 是"对话运行时" — 创建编辑用 wiki，运行用 app，工作流分离。这也是 wiki 私有角色存在的核心价值。</p>
+</div>
+
+<h3>6.9 删除</h3>
+<div class="callout warn">
+  <span class="label">⚠️ 硬删除，不可恢复</span>
+  <p>私有角色的删除是<strong>真删</strong>（区别 Wiki 词条的软删除）— 一旦确认，数据从数据库直接消失，没有"申请恢复"流程。删除前会弹「确认删除『X』？此操作无法撤销。」二次确认。</p>
+  <p>需要长期保留？先「📤 导出 JSON」存到本地，再删。</p>
+  <p><strong>注意</strong>：wiki 这边删除<strong>不会</strong>影响已经导入到 app 的副本（两边独立）— 如果不想 app 那边继续出现，得在 app 通讯录里另外删一次。</p>
+</div>
+
+<h3>6.10 当前不支持</h3>
+<p>了解一下私有角色目前<strong>做不到</strong>的事，避免找不到入口困惑：</p>
+<ul>
+  <li>❌ <strong>在 wiki 里直接和角色聊天</strong>：wiki 没有对话 UI，必须按 <a href="#private-app-import">6.8</a> 流程导入到 app 才能用</li>
+  <li>❌ <strong>不能分享 / 协作</strong>：链接对其他用户登录后也访问不到</li>
+  <li>❌ <strong>没有「一键发布到 Wiki」</strong>：要把私有角色变成公开词条，得自己去 <a href="/create">/create</a> 重新填一份</li>
+  <li>❌ <strong>没有版本历史</strong>：每次保存都是直接覆盖，看不到上一版长什么样</li>
+  <li>❌ <strong>没有批量 / 排序 / 筛选 / 搜索</strong>：列表按时间倒序展示，多了只能滚动找</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 推荐工作流</span>
+  <p>私有角色是你的<strong>"草稿场"</strong>：自由试错、不怕被审、不影响别人。等一个角色打磨满意了，把核心字段（名字、简介、关系、几个关键 prompt）抄到 <a href="/create">「创建公开词条」</a> 页面提交审核 — 这是目前从私有变公开的唯一路径。</p>
+</div>
+</section>
+
+<!-- ============== 7. 历史与差异 ============== -->
+<section id="history">
+<h2><span class="num">7</span>历史与差异 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>每个公开词条的所有改动都被永久保留，可以追溯到任意一个版本。</p>
+
+<h3>历史标签页</h3>
+<p>词条页 → 「历史」标签 → 显示一个时间倒序的版本列表，每行包括：</p>
+<ul>
+  <li>修订号（revisionId）</li>
+  <li>编辑者用户名</li>
+  <li>时间戳</li>
+  <li>编辑说明（editSummary）</li>
+  <li>操作类型（创建 / 编辑 / 申请删除 / 申请恢复 / 回退）</li>
+  <li>风险等级（低 / 中 / 高）</li>
+  <li>是否已巡查、是否已审核</li>
+</ul>
+
+<h3>差异比对（diff）</h3>
+<p>勾选任意两个版本 → 「比较」 → 跳转到 <code>/character/:id/diff?from=A&amp;to=B</code>，左右并排显示：</p>
+<ul>
+  <li>哪些字段变了（diffFromParent）</li>
+  <li>每个改动字段的"旧 vs 新"对照</li>
+  <li>recipe JSON 结构化差异（折叠展开式）</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII 框图：diff 页大致布局</summary>
+<pre>
+┌─────────────────────┬─────────────────────┐
+│ 旧版（v12）         │ 新版（v13）         │
+├─────────────────────┼─────────────────────┤
+│ 简介                │ 简介                │
+│ 一个温柔的朋友。   │ 一个温柔且健谈的朋  │
+│                     │ 友。               │
+├─────────────────────┼─────────────────────┤
+│ 性格                │ 性格                │
+│ 内向、安静         │ 内向但善于倾听     │
+└─────────────────────┴─────────────────────┘
+</pre>
+</details>
+
+<p>diff 页对所有人开放，无需登录 — 透明的修订史是 Wiki 协作的基石。</p>
+</section>
+
+<!-- ============== 8. 关注 + 最近修改 ============== -->
+<section id="watch">
+<h2><span class="num">8</span>关注列表 & 最近修改 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<h3>8.1 关注（Watch）</h3>
+<p>角色页右上角的 ⭐ 按钮，点一下加入关注，再点一下取消。关注后：</p>
+<ul>
+  <li>该词条的新编辑会出现在你的"我的观察列表"里</li>
+  <li>你可以单独配置：编辑通知开关（<code>notifyOnEdit</code>）、讨论通知开关（<code>notifyOnTalk</code>）</li>
+</ul>
+
+<h3>8.2 我的观察列表</h3>
+<p>左侧导航 → "我的观察列表"（<code>/watchlist</code>）。两栏布局：</p>
+<ul>
+  <li><strong>左侧</strong>：你关注的所有角色，每行有"取消关注"按钮，已删除的角色会带 <code>已删除</code> 徽章</li>
+  <li><strong>右侧</strong>：所有关注角色的最近活动聚合 feed — 既有编辑修订，也有讨论新帖</li>
+</ul>
+
+<h3>8.3 最近修改（Recent Changes）</h3>
+<p>左侧导航 → "最近修改"（<code>/recent-changes</code>）— 全站维度的时间线，所有人都能看：</p>
+<ul>
+  <li>所有词条的所有修订（不限关注范围）</li>
+  <li>包含生命周期请求（删除 / 恢复）和回退操作</li>
+  <li>每行显示风险等级、操作类型、是否已巡查</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 给巡查员</span>
+  <p>巡查员视角下"最近修改"页有额外的"只看未巡查"筛选 — 用于做日常巡查工作。</p>
+</div>
+</section>
+
+<!-- ============== 9. 讨论 ============== -->
+<section id="talk">
+<h2><span class="num">9</span>讨论页（Talk） <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>每个词条都有一个独立讨论页，类似维基百科的"talk page"，用于讨论"这个角色应该怎么写"，而不是和角色聊天。</p>
+
+<h3>核心操作</h3>
+<ul>
+  <li><strong>新建讨论帖</strong>：标题 + 正文，开启一个新话题</li>
+  <li><strong>回复</strong>：在任意帖子下回复（支持嵌套，<code>parentPostId</code>）</li>
+  <li><strong>删除自己的帖</strong>：软删除（保留记录但不显示内容）</li>
+  <li><strong>举报帖</strong>：见<a href="#report">举报章节</a></li>
+</ul>
+
+<h3>巡查员可做</h3>
+<ul>
+  <li><strong>锁定话题（isLocked）</strong>：禁止新回复，用于已经吵起来的讨论</li>
+  <li><strong>标记已解决（isResolved）</strong>：表示这个话题已经达成共识</li>
+</ul>
+</section>
+
+<!-- ============== 10. 举报 ============== -->
+<section id="report">
+<h2><span class="num">10</span>举报内容 <span class="audience"><span class="pill user">普通用户</span></span></h2>
+
+<p>任何登录用户都可以举报有问题的内容。举报对象有三种：</p>
+<ul>
+  <li><strong>词条修订（wiki_revision）</strong>：某次编辑引入了问题（恶意改动 / 虚假信息 / 恶搞）</li>
+  <li><strong>讨论帖（wiki_talk_post）</strong>：讨论里出现了人身攻击 / 垃圾信息</li>
+  <li><strong>整个词条页（wiki_page）</strong>：整个角色就不该存在（侵权 / 严重违规）</li>
+</ul>
+
+<h3>举报方式</h3>
+<ol>
+  <li>找到目标内容旁的「🚩 举报」按钮</li>
+  <li>选择理由（垃圾 / 虚假 / 滥用 / 其它）</li>
+  <li>可选填写"详情"（≤500 字）</li>
+  <li>提交</li>
+</ol>
+
+<p>举报会自动进入管理员的「举报队列」（<code>/admin/reports</code>），等待人工处置。结果有三种：</p>
+<ul>
+  <li><strong>已解决（resolved）</strong>：管理员处理了（删帖 / 回退 / 封禁等）</li>
+  <li><strong>已驳回（dismissed）</strong>：管理员认为举报不成立</li>
+  <li><strong>开放中（open）</strong>：等待处置</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>恶意举报本身也可能被处置 — 重复无效举报会触发管理员关注。</p>
+</div>
+</section>
+
+<!-- ============== 11. 角色与权限 ============== -->
+<section id="roles">
+<h2><span class="num">11</span>用户角色与权限</h2>
+
+<p>平台有 4 阶权限，从低到高：</p>
+
+<table>
+  <thead><tr><th>阶</th><th>解锁条件</th><th>权限</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>newcomer</strong><br>（新人）</td>
+      <td>注册即得</td>
+      <td>编辑 / 创建词条 / 发讨论 / 举报。<br><strong>所有公开词条编辑都进入审核队列。</strong></td>
+    </tr>
+    <tr>
+      <td><strong>autoconfirmed</strong><br>（已确认）</td>
+      <td>由系统按累计编辑数和时间自动晋升</td>
+      <td>低风险编辑自动生效，跳过审核。高风险（生命周期变更等）仍要审核。</td>
+    </tr>
+    <tr>
+      <td><strong>patroller</strong><br>（巡查员）</td>
+      <td>由管理员手动授予</td>
+      <td>+ 进入待审编辑队列、批准 / 驳回 / 请求修改。<br>+ 在"最近修改"标记巡查（patrol）。<br>+ 回退编辑（revert）。<br>+ 锁定 / 解决讨论话题。</td>
+    </tr>
+    <tr>
+      <td><strong>admin</strong><br>（管理员）</td>
+      <td>由现任管理员手动授予</td>
+      <td>+ 用户角色管理、封禁、页面保护、字段保护。<br>+ 反破坏过滤器配置。<br>+ 治理仪表盘。<br>+ 所有强制操作。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>怎么升级到 autoconfirmed？</h3>
+<p>系统按以下条件自动晋升（具体阈值由站点配置）：</p>
+<ul>
+  <li>累计批准编辑数（<code>approvedEditCount</code>）达到下限</li>
+  <li>账号注册时长达到下限</li>
+  <li>被回退次数（<code>revertedCount</code>）保持低于阈值</li>
+</ul>
+<p>满足条件后会被自动设置 <code>autoconfirmedAt</code> 时间戳，立刻生效。可以在「账户设置」里查到这个时间。</p>
+</section>
+
+<!-- ============== 12. 巡查员手册 ============== -->
+<section id="patroller">
+<h2><span class="num">12</span>巡查员手册 <span class="audience"><span class="pill patroller">巡查员</span></span></h2>
+
+<p>巡查员是平台日常质量的第一道防线。你将处理三类工作：审核待发布编辑、巡查已发布编辑、回退坏改动。</p>
+
+<h3>12.1 待审编辑队列</h3>
+<p>左侧导航 → "待审编辑"（<code>/pending-reviews</code>，仅巡查员及以上可见）。</p>
+
+<p><strong>队列字段</strong>：</p>
+<ul>
+  <li>提交人 / 提交时间 / 目标词条</li>
+  <li>操作类型（创建 / 编辑 / 删除 / 恢复 / 回退）</li>
+  <li>风险等级（低 / 中 / 高 — 高风险要求 ≥10 字 editSummary）</li>
+  <li>修订种类（最新 / 待挂起 / 等等）</li>
+  <li>编辑说明（editSummary）</li>
+  <li>差异预览链接</li>
+</ul>
+
+<p><strong>处置选项</strong>：</p>
+<table>
+  <thead><tr><th>操作</th><th>效果</th></tr></thead>
+  <tbody>
+    <tr><td><strong>批准（approve）</strong></td><td>编辑合入稳定版，对所有用户可见</td></tr>
+    <tr><td><strong>驳回（reject）</strong></td><td>编辑被丢弃，不会自动同步到最新（提交人需重新编辑）</td></tr>
+    <tr><td><strong>请求修改（request changes）</strong></td><td>留言说明，让提交人改后再交</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 巡查节奏建议</span>
+  <p>优先处理"高风险 + 长 editSummary"的提交（一般是认真的大改）；低风险小修可以批量快速过。</p>
+</div>
+
+<h3>12.2 巡查"最近修改"（Patrol）</h3>
+<p>"巡查"和"批准"是<strong>两件不同的事</strong>：</p>
+<ul>
+  <li><strong>批准（review approval）</strong>：让待发布编辑生效 — 适用于 newcomer 提交</li>
+  <li><strong>巡查（patrol）</strong>：标记一条已生效编辑"我看过了，没问题" — 适用于 autoconfirmed 提交（这些编辑已经自动生效，但仍需要被人扫一眼）</li>
+</ul>
+
+<p>在 <code>/recent-changes</code> 切换到"只看未巡查"过滤器，逐条扫，看到 OK 的点「标记已巡查」。</p>
+
+<h3>12.3 回退（Revert）</h3>
+<p>在词条「历史」标签页，任一过去版本旁有「回退到此版本」按钮：</p>
+<ol>
+  <li>点击 → 弹窗要求填回退理由</li>
+  <li>提交 → 创建一条新修订（<code>operation: "revert"</code>），把内容回退到目标版本</li>
+  <li>如果你是巡查员/管理员，新修订自动生效；如果你不是（理论上无此入口），新修订会进审核队列</li>
+</ol>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>回退会被记入提交人的 <code>revertedCount</code> 计数，影响其后续晋升。请在确认是恶意 / 有害编辑时才回退；只是观点不同应该走讨论页。</p>
+</div>
+</section>
+
+<!-- ============== 13. 管理员手册 ============== -->
+<section id="admin">
+<h2><span class="num">13</span>管理员手册 <span class="audience"><span class="pill admin">管理员</span></span></h2>
+
+<div class="callout admin">
+  <span class="label">🛡️ 仅管理员可见</span>
+  <p>本节所有 <code>/admin/*</code> 页面对非管理员账号 404。</p>
+</div>
+
+<h3>13.1 用户与权限管理</h3>
+<p>访问 <code>/admin/users</code>。功能：</p>
+<ul>
+  <li>查看全站用户列表（用户名、类型、角色、注册时间、编辑统计）</li>
+  <li>修改任意用户的角色阶（newcomer ↔ autoconfirmed ↔ patroller ↔ admin）</li>
+  <li>查看每个用户的：累计编辑数、被批准数、被回退数、巡查数、最后编辑时间、被自动确认时间</li>
+</ul>
+<p><strong>不能改自己的角色阶</strong>（避免误操作把自己降权锁出后台）。</p>
+
+<h3>13.2 封禁（Block）</h3>
+<p>访问 <code>/admin/blocks</code>。封禁可以阻止用户做特定操作：</p>
+<table>
+  <thead><tr><th>scope</th><th>效果</th></tr></thead>
+  <tbody>
+    <tr><td><code>global</code></td><td>整站禁言：不能编辑、不能发讨论、不能举报</td></tr>
+    <tr><td><code>page</code></td><td>仅禁止对指定词条编辑</td></tr>
+    <tr><td><code>talk</code></td><td>仅禁止发讨论（仍可编辑）</td></tr>
+  </tbody>
+</table>
+<p>每条封禁记录字段：用户 / scope / 理由 / 创建人 / 创建时间 / 过期时间（<code>expiresAt</code>，可选 — 不填代表永久）/ 撤销人 / 撤销时间。</p>
+<p>列表分"生效中"和"已过期 / 已撤销"两栏。</p>
+
+<h3>13.3 页面保护（Protection）</h3>
+<p>访问 <code>/admin/protection</code>。给单个词条加一道编辑门槛：</p>
+
+<h4>页面级保护（page-level）</h4>
+<table>
+  <thead><tr><th>level</th><th>谁能编辑</th></tr></thead>
+  <tbody>
+    <tr><td><code>none</code></td><td>所有登录用户（默认）</td></tr>
+    <tr><td><code>semi</code></td><td>autoconfirmed 及以上 — 阻止新人</td></tr>
+    <tr><td><code>full</code></td><td>patroller 及以上 — 仅信任用户</td></tr>
+  </tbody>
+</table>
+
+<h4>审核策略（reviewPolicy）</h4>
+<ul>
+  <li><code>open</code>：编辑直接生效，不强制走待审核</li>
+  <li><code>pending_changes</code>：编辑都先挂起，等批准</li>
+</ul>
+
+<h4>字段级保护（field-level）</h4>
+<p>对页面内某个具体字段（如 <code>name</code>）单独设置最低编辑角色：</p>
+<pre><code>fieldPath: "name"
+minRoleToEdit: "patroller"</code></pre>
+<p>用法：把易被恶意修改的字段（角色名、关系类型）单独锁住，让普通用户改不了，但其它字段照常协作。</p>
+
+<p><strong>所有保护变更都有日志</strong>：oldLevel → newLevel + 改动人 + 理由 + 过期时间，可追溯。</p>
+
+<h3>13.4 举报队列</h3>
+<p>访问 <code>/admin/reports</code>。处置用户举报：</p>
+<ul>
+  <li>按状态分组：开放中（open） / 已解决（resolved） / 已驳回（dismissed）</li>
+  <li>每条显示：举报人、对象类型（修订 / 帖 / 页）、理由、详情、时间</li>
+  <li>处置：把状态改为 resolved 或 dismissed（具体处置动作 — 删除、回退、封禁 — 在其他后台分别完成）</li>
+</ul>
+
+<h3>13.5 反破坏过滤器（Abuse Filter）</h3>
+<p>访问 <code>/admin/abuse-filters</code>。基于正则的内容拦截规则：</p>
+
+<table>
+  <thead><tr><th>字段</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>name</strong></td><td>规则名（仅后台可见）</td></tr>
+    <tr><td><strong>pattern</strong></td><td>正则表达式</td></tr>
+    <tr><td><strong>scope</strong></td><td>作用范围（编辑 / 讨论 / 全部）</td></tr>
+    <tr><td><strong>action</strong></td><td><code>flag</code>（标记后续人工审）/ <code>reject</code>（直接拒绝提交）/ <code>log</code>（仅记录）</td></tr>
+    <tr><td><strong>severity</strong></td><td>low / medium / high — 影响后续优先级排序</td></tr>
+  </tbody>
+</table>
+
+<p>页面同时显示规则的命中统计：每条规则被触发了多少次、命中的用户分布、最近 N 次命中详情。</p>
+
+<div class="callout tip">
+  <span class="label">💡 写正则的建议</span>
+  <p>先用 <code>action: log</code> 跑一周看命中范围，确认无误杀再切到 <code>flag</code> 或 <code>reject</code>。</p>
+</div>
+
+<h3>13.6 治理仪表盘（Stats）</h3>
+<p>访问 <code>/admin/wiki-stats</code>。一站式概览：</p>
+<ul>
+  <li>实时计数器：今日新建、本周新建、待审队列长度</li>
+  <li>用户质量榜：被回退最多用户、低批准率用户、待重点关注用户</li>
+  <li>每日趋势：创建数、批准数、驳回数、过滤器命中数、自动确认晋升数</li>
+  <li>过滤器表现：每条规则命中率、误杀率（被人工撤销的次数）</li>
+</ul>
+</section>
+
+<!-- ============== 14. FAQ ============== -->
+<section id="faq">
+<h2><span class="num">14</span>常见问题（FAQ）</h2>
+
+<h3>Q：我提交的编辑去哪了？为什么页面还是旧的？</h3>
+<p>新人编辑都进入审核队列。你自己看页面会看到自己的修改（"current"视图），但其他访客看到的是上次审核通过的"stable"版本。等巡查员批准后，所有人就都能看到了。可以在<code>/recent-changes</code>查到自己的提交记录。</p>
+
+<h3>Q：为什么 AI 一键生成按钮变灰了？</h3>
+<p>三种可能：</p>
+<ul>
+  <li><strong>"生成全部"</strong>需要先填 name + bio + relationship 三项基本信息</li>
+  <li><strong>当前小时配额已用完</strong>（每用户 15 次/小时，私有 + Wiki 共享桶）</li>
+  <li><strong>所有字段已填</strong>且未勾"优化模式" — AI 默认只补空</li>
+</ul>
+
+<h3>Q：为什么我看到的内容和别人不同？</h3>
+<p>你正在看"current"视图（包含你或别人的待审改动），其他未登录或未参与编辑的人看的是"stable"视图（最近审核版）。这是设计上的隔离 — 未审核内容不向公众展示。</p>
+
+<h3>Q：怎么升级到 autoconfirmed？</h3>
+<p>持续做高质量编辑 — 系统会按"累计被批准编辑数 + 注册时长 + 低回退率"自动晋升，不需要申请。在「账户设置」可以看到自己的当前编辑统计。</p>
+
+<h3>Q：私有角色会被别人看到吗？</h3>
+<p>不会。私有角色只在你自己的 <code>/my-characters</code> 列表里出现，连管理员后台也不会展示。除非你主动用「同步到 Wiki」上传公开。</p>
+
+<h3>Q：编辑冲突怎么办？</h3>
+<p>系统会在你提交时检测到，弹窗提示。最简单的处理：复制你的草稿到剪贴板 → 关闭当前编辑页 → 重新打开编辑页（这次拿到最新版）→ 把你的改动手动合并进去 → 再提交。</p>
+
+<h3>Q：忘了密码怎么办？</h3>
+<p>登录页选"邮箱验证码"方式登录 → 进去后到「账户设置」改密码。前提是注册时已绑定邮箱。如果没绑邮箱，账号无法自助找回，需要联系管理员。</p>
+
+<h3>Q：导出的角色 JSON 能在别处用吗？</h3>
+<p>可以。导出格式是 platform-internal 的完整 recipe + content snapshot，能直接导入到本平台另一个账号。理论上也能用作其它兼容工具的输入，但需要对方支持本格式。</p>
+
+<h3>Q：被封禁了怎么申诉？</h3>
+<p>封禁记录会显示理由和封禁人。申诉途径见<a href="#feedback">下一节</a>。</p>
+</section>
+
+<!-- ============== 15. 反馈 ============== -->
+<section id="feedback">
+<h2><span class="num">15</span>反馈与问题报告</h2>
+
+<p>遇到 bug、想提建议、对管理决定有异议？以下是反馈渠道：</p>
+
+<ul>
+  <li><strong>站内讨论</strong>：开一个词条的讨论页发帖（适合内容相关问题）</li>
+  <li><strong>举报</strong>：违规内容用 🚩 举报按钮（适合具体内容问题）</li>
+  <li><strong>邮件 / 社群</strong>：<em>发布前请管理员补充对外联系方式</em></li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 写好反馈的小窍门</span>
+  <p>带上：<strong>具体页面 URL</strong>、<strong>你做了什么</strong>、<strong>预期发生什么</strong>、<strong>实际发生什么</strong>、<strong>浏览器和操作系统</strong>。一条这样的反馈比 10 条"不能用"有用得多。</p>
+</div>
+
+<p style="margin-top: 48px; padding-top: 24px; border-top: 1px dashed var(--border-subtle); text-align: center; color: var(--text-muted); font-size: 14px;">
+  ✨ 教程到此结束。祝你在隐界 Wiki 创作顺利。<br>
+  <a href="/" class="back-btn" style="display: inline-block; margin-top: 12px;">← 返回平台开始体验</a>
+</p>
+</section>
+
+</main>
+</div>
+
+<footer class="foot">
+  隐界世界角色管理平台 · 教程 v1 ·
+  <a href="tutorial-en-US.html">English</a> ·
+  <a href="tutorial-ja-JP.html">日本語</a> ·
+  <a href="tutorial-ko-KR.html">한국어</a>
+</footer>
+
+<script>
+  // TOC active section highlighting
+  (function () {
+    var tocLinks = Array.from(document.querySelectorAll('aside.toc a[href^="#"]'));
+    var sections = tocLinks
+      .map(function (a) {
+        var id = a.getAttribute('href').slice(1);
+        var el = document.getElementById(id);
+        return el ? { link: a, el: el } : null;
+      })
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || sections.length === 0) return;
+
+    var visible = new Set();
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
+        });
+        // Highlight first visible (top-most) section
+        var current = sections.find(function (s) { return visible.has(s.el.id); });
+        tocLinks.forEach(function (a) { a.classList.remove('active'); });
+        if (current) current.link.classList.add('active');
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+    );
+    sections.forEach(function (s) { observer.observe(s.el); });
+  })();
+
+  // Mobile TOC toggle
+  (function () {
+    var toc = document.getElementById('toc');
+    if (!toc) return;
+    var btn = toc.querySelector('.toc-mobile-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var open = toc.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    // Close TOC after clicking a link on mobile
+    toc.querySelectorAll('ol a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          toc.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

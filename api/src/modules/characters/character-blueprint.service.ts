@@ -1250,24 +1250,45 @@ export class CharacterBlueprintService {
     character: CharacterEntity,
     recipe: CharacterBlueprintRecipeValue,
   ): CharacterEntity {
-    character.name = recipe.identity.name.trim();
-    character.relationship = recipe.identity.relationship.trim();
-    character.relationshipType = recipe.identity.relationshipType.trim();
-    character.avatar = recipe.identity.avatar.trim();
-    character.bio = recipe.identity.bio.trim();
-    character.expertDomains = recipe.expertise.expertDomains.length
-      ? recipe.expertise.expertDomains
-          .map((item) => item.trim())
-          .filter(Boolean)
+    // wiki 在保存私有角色前会 stripRejectedRecipeFields() 砍掉 tone 整段、
+    // identity.occupation/background/motivation/worldview/region、
+    // expertise.expertiseDescription/knowledgeLimits/refusalStyle、
+    // memorySeed.memorySummary/coreMemory/recentSummarySeed。
+    // 用户导出 → app 端 import-personal → 这里再用 buildProfileFromRecipe
+    // 拿到的就是被砍过的 recipe；旧版直接 recipe.tone.coreDirective.trim()
+    // 会抛 "Cannot read properties of undefined" → import 路径吞掉异常
+    // → 新角色落库时 profile={}，导致后续对话 system_prompt 全空、AI 回复失败。
+    // 用 ts() / arr() 兜默认值，让被砍字段都视作空，不再抛。
+    const ts = (value: unknown) =>
+      typeof value === 'string' ? value.trim() : '';
+    const arr = (value: unknown): string[] =>
+      Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string')
+        : [];
+    const tone = (recipe.tone ?? {}) as Partial<
+      NonNullable<CharacterBlueprintRecipeValue['tone']>
+    >;
+    const identity = recipe.identity ?? ({} as typeof recipe.identity);
+    const expertise = recipe.expertise ?? ({} as typeof recipe.expertise);
+    const memorySeed =
+      recipe.memorySeed ?? ({} as typeof recipe.memorySeed);
+    character.name = ts(identity.name);
+    character.relationship = ts(identity.relationship);
+    character.relationshipType = ts(identity.relationshipType);
+    character.avatar = ts(identity.avatar);
+    character.bio = ts(identity.bio);
+    const expertDomainsRaw = arr(expertise.expertDomains);
+    character.expertDomains = expertDomainsRaw.length
+      ? expertDomainsRaw.map((item) => item.trim()).filter(Boolean)
       : ['general'];
     character.activityFrequency =
-      recipe.lifeStrategy.activityFrequency.trim() || 'normal';
+      ts(recipe.lifeStrategy.activityFrequency) || 'normal';
     character.momentsFrequency = recipe.lifeStrategy.momentsFrequency;
     character.feedFrequency = recipe.lifeStrategy.feedFrequency;
     character.activeHoursStart =
       recipe.lifeStrategy.activeHoursStart ?? undefined;
     character.activeHoursEnd = recipe.lifeStrategy.activeHoursEnd ?? undefined;
-    character.triggerScenes = recipe.lifeStrategy.triggerScenes
+    character.triggerScenes = arr(recipe.lifeStrategy.triggerScenes)
       .map((item) => item.trim())
       .filter(Boolean);
     character.isTemplate = recipe.publishMapping.isTemplate;
@@ -1282,52 +1303,49 @@ export class CharacterBlueprintService {
       name: character.name,
       relationship: character.relationship,
       expertDomains: [...character.expertDomains],
-      coreLogic: recipe.prompting.coreLogic.trim(),
+      coreLogic: ts(recipe.prompting?.coreLogic),
       scenePrompts: {
         ...createEmptyScenePrompts(),
         ...Object.fromEntries(
-          Object.entries(recipe.prompting.scenePrompts).map(([key, value]) => [
-            key,
-            value.trim(),
-          ]),
+          Object.entries(recipe.prompting?.scenePrompts ?? {}).map(
+            ([key, value]) => [key, ts(value)],
+          ),
         ),
       },
-      coreDirective: (recipe.tone.coreDirective ?? '').trim(),
-      basePrompt: recipe.tone.basePrompt.trim(),
-      systemPrompt: recipe.tone.systemPrompt.trim(),
-      memorySummary: recipe.memorySeed.memorySummary.trim(),
+      coreDirective: ts(tone.coreDirective),
+      basePrompt: ts(tone.basePrompt),
+      systemPrompt: ts(tone.systemPrompt),
+      memorySummary: ts(memorySeed.memorySummary),
       traits: {
-        speechPatterns: recipe.tone.speechPatterns
+        speechPatterns: arr(tone.speechPatterns)
           .map((item) => item.trim())
           .filter(Boolean),
-        catchphrases: recipe.tone.catchphrases
+        catchphrases: arr(tone.catchphrases)
           .map((item) => item.trim())
           .filter(Boolean),
-        topicsOfInterest: recipe.tone.topicsOfInterest
+        topicsOfInterest: arr(tone.topicsOfInterest)
           .map((item) => item.trim())
           .filter(Boolean),
-        emotionalTone: recipe.tone.emotionalTone.trim() || 'grounded',
-        responseLength: normalizeResponseLength(
-          recipe.tone.responseLength.trim(),
-        ),
-        emojiUsage: normalizeEmojiUsage(recipe.tone.emojiUsage.trim()),
+        emotionalTone: ts(tone.emotionalTone) || 'grounded',
+        responseLength: normalizeResponseLength(ts(tone.responseLength)),
+        emojiUsage: normalizeEmojiUsage(ts(tone.emojiUsage)),
       },
       identity: {
-        occupation: recipe.identity.occupation.trim(),
-        background: recipe.identity.background.trim(),
-        motivation: recipe.identity.motivation.trim(),
-        worldview: recipe.identity.worldview.trim(),
+        occupation: ts(identity.occupation),
+        background: ts(identity.background),
+        motivation: ts(identity.motivation),
+        worldview: ts(identity.worldview),
       },
       behavioralPatterns: {
-        workStyle: recipe.tone.workStyle.trim(),
-        socialStyle: recipe.tone.socialStyle.trim(),
-        taboos: recipe.tone.taboos.map((item) => item.trim()).filter(Boolean),
-        quirks: recipe.tone.quirks.map((item) => item.trim()).filter(Boolean),
+        workStyle: ts(tone.workStyle),
+        socialStyle: ts(tone.socialStyle),
+        taboos: arr(tone.taboos).map((item) => item.trim()).filter(Boolean),
+        quirks: arr(tone.quirks).map((item) => item.trim()).filter(Boolean),
       },
       cognitiveBoundaries: {
-        expertiseDescription: recipe.expertise.expertiseDescription.trim(),
-        knowledgeLimits: recipe.expertise.knowledgeLimits.trim(),
-        refusalStyle: recipe.expertise.refusalStyle.trim(),
+        expertiseDescription: ts(expertise.expertiseDescription),
+        knowledgeLimits: ts(expertise.knowledgeLimits),
+        refusalStyle: ts(expertise.refusalStyle),
       },
       reasoningConfig: {
         enableCoT: recipe.reasoning.enableCoT,
@@ -1335,14 +1353,14 @@ export class CharacterBlueprintService {
         enableRouting: recipe.reasoning.enableRouting,
       },
       memory: {
-        coreMemory: recipe.memorySeed.coreMemory.trim(),
-        recentSummary: recipe.memorySeed.recentSummarySeed.trim(),
+        coreMemory: ts(memorySeed.coreMemory),
+        recentSummary: ts(memorySeed.recentSummarySeed),
         forgettingCurve: Math.min(
-          Math.max(Math.round(recipe.memorySeed.forgettingCurve), 0),
+          Math.max(Math.round(memorySeed.forgettingCurve ?? 70), 0),
           100,
         ),
-        recentSummaryPrompt: recipe.memorySeed.recentSummaryPrompt.trim(),
-        coreMemoryPrompt: recipe.memorySeed.coreMemoryPrompt.trim(),
+        recentSummaryPrompt: ts(memorySeed.recentSummaryPrompt),
+        coreMemoryPrompt: ts(memorySeed.coreMemoryPrompt),
       },
     };
 

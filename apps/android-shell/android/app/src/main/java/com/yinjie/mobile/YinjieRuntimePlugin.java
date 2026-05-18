@@ -70,6 +70,19 @@ public class YinjieRuntimePlugin extends Plugin {
                     "yinjie.socket_base_url"
                 )
             );
+            // 原生壳 origin 是 https://localhost，cloud-api 没有真实同源后端，
+            // setCloudApiBaseUrlProvider 在 Capacitor 壳里只认 runtimeConfig.cloudApiBaseUrl，
+            // 这里漏读会让 worlds 列表 / cloud session refresh 全部返回 null 不发请求。
+            putIfPresent(
+                result,
+                "cloudApiBaseUrl",
+                readRuntimeValue(
+                    bundledRuntimeConfig,
+                    "cloudApiBaseUrl",
+                    metaData,
+                    "yinjie.cloud_api_base_url"
+                )
+            );
             putIfPresent(
                 result,
                 "environment",

@@ -20,6 +20,8 @@ import {
   type WikiTalkThread,
 } from "../lib/wiki-api";
 import { formatDateTime } from "../lib/format";
+import { useUsernameMap } from "../lib/use-username-map";
+import { ReportButton } from "./report-button";
 
 export function TalkPanel({ characterId }: { characterId: string }) {
   const t = translateRuntimeMessage;
@@ -31,6 +33,7 @@ export function TalkPanel({ characterId }: { characterId: string }) {
   });
   const [openThreadId, setOpenThreadId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
+  // i18n-ignore-next-line: empty form state, not translatable copy.
   const [draft, setDraft] = useState({ title: "", body: "" });
 
   const newThreadMut = useMutation({
@@ -40,6 +43,7 @@ export function TalkPanel({ characterId }: { characterId: string }) {
         queryKey: ["wiki", "talk", characterId, "threads"],
       });
       setShowNew(false);
+      // i18n-ignore-next-line: empty form state, not translatable copy.
       setDraft({ title: "", body: "" });
       setOpenThreadId(res.thread.id);
     },
@@ -87,6 +91,7 @@ export function TalkPanel({ characterId }: { characterId: string }) {
           </label>
           <Button
             variant="primary"
+            className="w-full sm:w-auto"
             disabled={
               !draft.title.trim() || !draft.body.trim() || newThreadMut.isPending
             }
@@ -140,9 +145,9 @@ function ThreadCard({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex w-full items-center gap-2 text-left"
+        className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 text-left"
       >
-        <span className="font-medium">{thread.title}</span>
+        <span className="break-all font-medium">{thread.title}</span>
         {thread.isLocked && (
           <StatusPill>
             <Trans>已锁定</Trans>
@@ -153,7 +158,7 @@ function ThreadCard({
             <Trans>已解决</Trans>
           </StatusPill>
         )}
-        <span className="text-xs text-[var(--text-muted)] ml-auto">
+        <span className="ml-auto whitespace-nowrap text-xs text-[var(--text-muted)]">
           <Trans>
             {thread.postCount} 条 · 最近{" "}
             {thread.lastReplyAt
@@ -212,6 +217,9 @@ function ThreadDetail({
   });
 
   const isPatroller = hasRole(user, "patroller");
+  const { resolve: resolveAuthor } = useUsernameMap(
+    (postsQ.data ?? []).map((p) => p.authorId),
+  );
 
   return (
     <div className="mt-3 space-y-2 border-t border-[var(--border-subtle)] pt-3">
@@ -239,6 +247,7 @@ function ThreadDetail({
       )}
       <PostTree
         posts={postsQ.data ?? []}
+        resolveAuthor={resolveAuthor}
         onReply={(postId) => setReplyTo(postId)}
         onDelete={(postId) => {
           if (window.confirm(t(msg`确认删除这条回复？删除后会标记为「已删除」。`))) {
@@ -272,6 +281,7 @@ function ThreadDetail({
           <Button
             size="sm"
             variant="primary"
+            className="w-full sm:w-auto"
             disabled={!reply.trim() || replyMut.isPending}
             onClick={() => replyMut.mutate()}
           >
@@ -288,6 +298,7 @@ function ThreadDetail({
 
 function PostTree({
   posts,
+  resolveAuthor,
   onReply,
   onDelete,
   canDelete,
@@ -295,6 +306,7 @@ function PostTree({
   depth = 0,
 }: {
   posts: WikiTalkPost[];
+  resolveAuthor: (id: string) => string;
   onReply: (id: string) => void;
   onDelete: (id: string) => void;
   canDelete: (post: WikiTalkPost) => boolean;
@@ -304,19 +316,29 @@ function PostTree({
   if (depth > 12) return null;
   const children = posts.filter((p) => (p.parentPostId ?? null) === parentId);
   if (children.length === 0) return null;
+  // 移动端窄屏：每级缩进只给 8px（封顶 4 级 = 32px）。≥640px 桌面回 16px ×6。
+  const isNarrow =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 640px)").matches;
+  const indentPx = isNarrow
+    ? Math.min(depth, 4) * 8
+    : Math.min(depth, 6) * 16;
   return (
     <ul className="space-y-2">
       {children.map((post) => (
         <li
           key={post.id}
-          className="text-sm border-l-2 border-[var(--border-subtle)] pl-3"
-          style={{ marginInlineStart: Math.min(depth, 6) * 16 }}
+          className="border-l-2 border-[var(--border-subtle)] pl-2 text-sm sm:pl-3"
+          style={{ marginInlineStart: indentPx }}
         >
-          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
             <strong className="text-[var(--text-primary)]">
-              {post.authorId.slice(0, 8)}
+              {resolveAuthor(post.authorId)}
             </strong>
-            <span>{formatDateTime(post.createdAt)}</span>
+            <span className="whitespace-nowrap">
+              {formatDateTime(post.createdAt)}
+            </span>
             {post.deletedAt && (
               <StatusPill>
                 <Trans>已删除</Trans>
@@ -326,15 +348,16 @@ function PostTree({
               <>
                 <button
                   type="button"
-                  className="underline ml-auto hover:text-[var(--text-primary)]"
+                  className="ml-auto inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--text-primary)]"
                   onClick={() => onReply(post.id)}
                 >
                   <Trans>回复</Trans>
                 </button>
+                <ReportButton targetType="wiki_talk_post" targetId={post.id} />
                 {canDelete(post) && (
                   <button
                     type="button"
-                    className="underline hover:text-[var(--state-danger-text)]"
+                    className="inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--state-danger-text)]"
                     onClick={() => onDelete(post.id)}
                   >
                     <Trans>删除</Trans>
@@ -343,9 +366,10 @@ function PostTree({
               </>
             )}
           </div>
-          <div className="mt-1 whitespace-pre-wrap">{post.body}</div>
+          <div className="mt-1 whitespace-pre-wrap break-words">{post.body}</div>
           <PostTree
             posts={posts}
+            resolveAuthor={resolveAuthor}
             onReply={onReply}
             onDelete={onDelete}
             canDelete={canDelete}

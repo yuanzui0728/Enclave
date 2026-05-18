@@ -340,6 +340,8 @@ export function DesktopSubscriptionWorkspace({
                     <img
                       src={delivery.article.coverImage}
                       alt={delivery.article.title}
+                      loading="lazy"
+                      decoding="async"
                       className="h-14 w-14 shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
                     />
                   ) : (

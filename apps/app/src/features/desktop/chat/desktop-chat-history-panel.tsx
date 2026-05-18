@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import {
   getGroupMembers,
   searchConversationMessages,
@@ -105,7 +109,7 @@ export function DesktopChatHistoryPanel({
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") {
+      if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
 
@@ -146,8 +150,18 @@ export function DesktopChatHistoryPanel({
       onClose();
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // 走查电脑端单聊新一轮 R5：本 panel 在 dialog 变体下嵌在 DesktopChatHistoryDialog
+    // 里。原版用默认 bubble phase 挂 window keydown，DesktopChatHistoryDialog 自
+    // 己的 Esc onClose handler 在父级先挂上（先于 panel 子组件 mount），同一阶段
+    // listener 按 attach 顺序触发 → dialog handler 先跑、检查 defaultPrevented=
+    // false → preventDefault + onClose 关掉整个查找记录弹层；panel handler 后
+    // 跑、setSelectorView(null) 等 state 落在正在 unmount 的组件上等于 no-op。
+    // 用户期望：先关选择器/筛选，再次按 Esc 才关弹层。改用 capture phase 让
+    // panel 在 dialog 之前先看到事件，preventDefault 后 dialog handler 命中
+    // defaultPrevented=true 早返不关；filter/selector 都用完再让 dialog 关。
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, true);
   }, [
     activeCategory,
     customDate,
@@ -159,27 +173,48 @@ export function DesktopChatHistoryPanel({
     senderId,
   ]);
 
+  // 走查新会话桌面端群聊 R3：和「发起群聊」/「添加成员」 R2 同款问题——这里
+  // 原本用独立 cache key 「desktop-chat-search-members」存群成员，不复用
+  // group-chat-thread-panel / desktop-chat-details-panel / desktop-message-
+  // avatar-popover 早已加载好的 "app-group-members" cache。「查找聊天记录」从
+  // 群聊「聊天信息」或顶部搜索按钮触发时，群成员上一次几百 ms 前刚拉过，这里
+  // 又得在公网隧道（~600ms RTT）走一发 getGroupMembers。统一到 "app-group-members"
+  // key，sender 筛选 picker 立刻能渲染候选；staleTime 保持 30s（沿用其它入口的
+  // 「群成员变更不频繁」节奏）。
   const membersQuery = useQuery({
-    queryKey: ["desktop-chat-search-members", baseUrl, conversation.id],
+    queryKey: ["app-group-members", baseUrl, conversation.id],
     queryFn: () => getGroupMembers(conversation.id, baseUrl),
     enabled: isGroupConversation,
     staleTime: 30_000,
   });
 
-  const senderOptions = buildSenderOptions(membersQuery.data ?? []);
-  const selectedSender =
-    senderOptions.find((option) => option.id === senderId) ?? null;
-  const visibleSenderOptions = senderOptions.filter((option) =>
-    option.label.toLowerCase().includes(memberKeyword.trim().toLowerCase()),
+  const senderOptions = useMemo(
+    () => buildSenderOptions(membersQuery.data ?? []),
+    [membersQuery.data],
   );
-  const dateRange = resolveDateRange(quickDateFilter, customDate);
+  const selectedSender = useMemo(
+    () => senderOptions.find((option) => option.id === senderId) ?? null,
+    [senderOptions, senderId],
+  );
+  const visibleSenderOptions = useMemo(() => {
+    const keyword = memberKeyword.trim().toLowerCase();
+    if (!keyword) {
+      return senderOptions;
+    }
+    return senderOptions.filter((option) =>
+      option.label.toLowerCase().includes(keyword),
+    );
+  }, [senderOptions, memberKeyword]);
+  const dateRange = useMemo(
+    () => resolveDateRange(quickDateFilter, customDate),
+    [quickDateFilter, customDate],
+  );
   const hasDateFilter = Boolean(dateRange.dateFrom) || Boolean(dateRange.dateTo);
   const hasSearchRequest =
     Boolean(debouncedKeyword) ||
     activeCategory !== "all" ||
     Boolean(senderId) ||
-    Boolean(dateRange.dateFrom) ||
-    Boolean(dateRange.dateTo);
+    hasDateFilter;
   const searchQueryEnabled = true;
 
   const resultsQuery = useInfiniteQuery({
@@ -195,6 +230,14 @@ export function DesktopChatHistoryPanel({
     ],
     initialPageParam: undefined as string | undefined,
     enabled: searchQueryEnabled,
+    // 走查 R21：和姊妹 features/search/use-search-index.ts 已修过的同款 — 用户
+    // 在「查找聊天记录」侧栏多打一个字 / 切 category chip / 切 sender / 切日期，
+    // queryKey 8 个字段中任意一个变 → useInfiniteQuery.data 退回 undefined →
+    // 下方 resultItems flatMap 出空数组 → 整片结果区瞬时清空（empty state /
+    // 「正在搜索...」闪一下）→ 新数据回填。拼音输入法选字阶段尤其抖，每秒
+    // 多次 keystroke 都打断列表。keepPreviousData 把上一次命中条目保留在屏幕
+    // 上、用 staleness 暗示用户结果在追赶。
+    placeholderData: keepPreviousData,
     queryFn: ({ pageParam }) => {
       const payload = {
         keyword: debouncedKeyword || undefined,
@@ -215,20 +258,35 @@ export function DesktopChatHistoryPanel({
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
 
-  const resultItems =
-    resultsQuery.data?.pages.flatMap((page) => page.items) ?? [];
-  const resultSections = buildResultSections(resultItems);
+  const resultItems = useMemo(
+    () => resultsQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [resultsQuery.data],
+  );
+  const resultSections = useMemo(
+    () => buildResultSections(resultItems),
+    [resultItems],
+  );
   const totalResults = resultsQuery.data?.pages[0]?.total ?? resultItems.length;
 
   const showResultsView = true;
   const openedFromDetails = Boolean(onBackToDetails);
-  const emptyStateCopy = buildEmptyStateCopy({
-    keyword: debouncedKeyword,
-    activeCategory,
-    selectedSenderLabel: selectedSender?.label,
-    quickDateFilter,
-    customDate,
-  });
+  const emptyStateCopy = useMemo(
+    () =>
+      buildEmptyStateCopy({
+        keyword: debouncedKeyword,
+        activeCategory,
+        selectedSenderLabel: selectedSender?.label,
+        quickDateFilter,
+        customDate,
+      }),
+    [
+      debouncedKeyword,
+      activeCategory,
+      selectedSender?.label,
+      quickDateFilter,
+      customDate,
+    ],
+  );
 
   function focusSearchInput(moveCaretToEnd = false) {
     window.requestAnimationFrame(() => {
@@ -281,6 +339,14 @@ export function DesktopChatHistoryPanel({
               setSelectorView(null);
             }}
             placeholder={t(msg`搜索`)}
+            // 走查 R24：「查找聊天记录」面板搜索框只有 placeholder="搜索"，没
+            // 挂 aria-label / aria-labelledby。父 label 没有文本子节点（只有
+            // Search 图标 + input），等于一个没有 accessible name 的输入框。
+            // 屏幕阅读器 focus 进来只听到"编辑栏 搜索 空"（placeholder 部分 SR
+            // 实现会读、部分不会，行为分裂）。盲人用户进来不知道是搜索什么的
+            // 输入框，得自己摸索周围 chip / 区域才能猜出来。和姊妹 R17 / R23
+            // 同款 a11y 修法，挂 aria-label 把意图明确表达出来。
+            aria-label={t(msg`搜索聊天记录`)}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
           {keyword ? (
@@ -372,7 +438,7 @@ export function DesktopChatHistoryPanel({
           />
           {isGroupConversation ? (
             <DesktopSearchTabButton
-              label={selectedSender?.label ?? t(msg`群成员`)}
+              label={selectedSender?.label || t(msg`群成员`)}
               active={selectorView === "sender" || Boolean(senderId)}
               withCaret
               onClick={() =>
@@ -506,6 +572,11 @@ export function DesktopChatHistoryPanel({
                 value={memberKeyword}
                 onChange={(event) => setMemberKeyword(event.target.value)}
                 placeholder={t(msg`搜索群成员`)}
+                // 走查 R5：和顶部「搜索聊天记录」R24 同款 a11y——父 label 只含
+                // Search 图标 + input，无文本子节点，SR 听到「编辑栏 搜索群成员
+                // 空」分裂行为。这块是群聊「查找聊天记录」按发言人筛选时的
+                // 成员搜索框，专属群聊路径。
+                aria-label={t(msg`搜索群成员`)}
                 className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
@@ -1211,8 +1282,29 @@ function buildSearchPreview(item: ChatMessageSearchItem, keyword: string) {
   }
 
   const radius = 18;
-  const previewStart = Math.max(0, start - radius);
-  const previewEnd = Math.min(text.length, start + keyword.length + radius);
+  let previewStart = Math.max(0, start - radius);
+  let previewEnd = Math.min(text.length, start + keyword.length + radius);
+  // 走查新一轮：start - radius / start + keyword.length + radius 是任意
+  // 整数偏移，可能落在 UTF-16 surrogate pair 的高/低代理之间。emoji（如
+  // 😀 / 🌹）/ 古汉字 / 一些 CJK 扩展区都是 4 字节字符占两个 UTF-16 code
+  // unit；如果 previewStart 落在低代理上、或 previewEnd 落在高代理上，
+  // text.slice 会切出残缺的代理项，渲染成 □ / ? / 黑色菱形问号。这条
+  // helper 用在「查找聊天记录」结果卡片预览，命中关键词附近一旦有 emoji
+  // 就破。把切点往外推到下一个完整 code point 边界，宁可多带两个字符
+  // 也别把表情切坏。同款 bug 见 234f5e76f（PreviewAvatar fallback 把
+  // surrogate pair 砍半）。
+  if (previewStart > 0 && previewStart < text.length) {
+    const code = text.charCodeAt(previewStart);
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      previewStart -= 1;
+    }
+  }
+  if (previewEnd > 0 && previewEnd < text.length) {
+    const code = text.charCodeAt(previewEnd - 1);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      previewEnd += 1;
+    }
+  }
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;

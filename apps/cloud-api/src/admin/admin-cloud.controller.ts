@@ -330,6 +330,11 @@ export class AdminCloudController {
     return this.cloudService.getWorldBootstrapConfig(id);
   }
 
+  @Get("worlds/:id/admin-bootstrap")
+  getWorldAdminBootstrap(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.cloudService.getWorldAdminBootstrap(id);
+  }
+
   @Get("worlds/:id/runtime-status")
   getWorldRuntimeStatus(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldRuntimeStatus(id);

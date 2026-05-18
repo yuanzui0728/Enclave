@@ -35,7 +35,9 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -136,10 +138,7 @@ function MobileOfficialAccountArticlePage({
     ? `official-article-${article.id}`
     : null;
   const articlePath = `/official-accounts/articles/${articleId}`;
-  const articleUrl =
-    typeof window === "undefined"
-      ? articlePath
-      : `${window.location.origin}${articlePath}`;
+  const articleUrl = buildPublicShareUrl(articlePath);
   const safeReturnPath =
     routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
       ? routeState.returnPath
@@ -243,7 +242,9 @@ function MobileOfficialAccountArticlePage({
     }
 
     try {
-      await navigator.clipboard.writeText(articleUrl);
+      if (!(await writeClipboardText(articleUrl))) {
+        throw new Error("clipboard copy failed");
+      }
       setShareNotice({
         message: nativeMobileShareSupported
           ? t(msg`系统分享暂时不可用，已复制文章链接。`)
@@ -305,21 +306,29 @@ function MobileOfficialAccountArticlePage({
         leftActions={
           <Button
             onClick={() => {
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              const expectedPreviousPath =
+                safeReturnPath ??
+                (article?.account.id
+                  ? `/official-accounts/${article.account.id}`
+                  : "/contacts/official-accounts");
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                if (article?.account.id) {
-                  void navigate({
-                    to: "/official-accounts/$accountId",
-                    params: { accountId: article.account.id },
-                  });
-                  return;
-                }
+                  if (article?.account.id) {
+                    void navigate({
+                      to: "/official-accounts/$accountId",
+                      params: { accountId: article.account.id },
+                    });
+                    return;
+                  }
 
-                void navigate({ to: "/contacts/official-accounts" });
-              });
+                  void navigate({ to: "/contacts/official-accounts" });
+                },
+                expectedPreviousPath,
+              );
             }}
             variant="ghost"
             size="icon"

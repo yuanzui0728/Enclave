@@ -15,6 +15,7 @@ import { ModerationModule } from './modules/moderation/moderation.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { GamesModule } from './modules/games/games.module';
 import { FarmModule } from './modules/games/farm/farm.module';
+import { ParkingWarModule } from './modules/games/parking-war/parking-war.module';
 import { OfficialAccountsModule } from './modules/official-accounts/official-accounts.module';
 import { WorldModule } from './modules/world/world.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
@@ -33,6 +34,8 @@ import { MinimaxModule } from './modules/minimax/minimax.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
 import { WikiModule } from './modules/wiki/wiki.module';
+import { PushModule } from './modules/push/push.module';
+import { PushTokenEntity } from './modules/push/push-token.entity';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -60,6 +63,8 @@ import { MinimaxQuotaEntity } from './modules/minimax/minimax-quota.entity';
 import { MinimaxJobEntity } from './modules/minimax/minimax-job.entity';
 import { MediaInsightJobEntity } from './modules/chat/media-insight-job.entity';
 import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
+import { FavoriteEntity } from './modules/chat/favorite.entity';
+import { FavoriteNoteEntity } from './modules/chat/favorite-note.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
 import { FeedPostLikeEntity } from './modules/feed/feed-post-like.entity';
@@ -72,6 +77,12 @@ import { GameSubmissionEntity } from './modules/games/game-submission.entity';
 import { FarmPlayerStateEntity } from './modules/games/farm/entities/farm-player-state.entity';
 import { FarmNpcStateEntity } from './modules/games/farm/entities/farm-npc-state.entity';
 import { FarmEventLogEntity } from './modules/games/farm/entities/farm-event-log.entity';
+import { FarmCheckinEntity } from './modules/games/farm/entities/farm-checkin.entity';
+import { FarmQuestProgressEntity } from './modules/games/farm/entities/farm-quest-progress.entity';
+import { ParkingWarPlayerStateEntity } from './modules/games/parking-war/entities/parking-war-player-state.entity';
+import { ParkingWarNpcStateEntity } from './modules/games/parking-war/entities/parking-war-npc-state.entity';
+import { ParkingWarOccupancyEntity } from './modules/games/parking-war/entities/parking-war-occupancy.entity';
+import { ParkingWarEventLogEntity } from './modules/games/parking-war/entities/parking-war-event-log.entity';
 import { WorldContextEntity } from './modules/world/world-context.entity';
 import { NarrativeArcEntity } from './modules/narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from './modules/analytics/ai-behavior-log.entity';
@@ -113,6 +124,8 @@ import { WikiProtectionLogEntity } from './modules/wiki/entities/wiki-protection
 import { WikiTalkThreadEntity } from './modules/wiki/entities/wiki-talk-thread.entity';
 import { WikiTalkPostEntity } from './modules/wiki/entities/wiki-talk-post.entity';
 import { WikiWatchlistEntity } from './modules/wiki/entities/wiki-watchlist.entity';
+import { UserPrivateCharacterEntity } from './modules/wiki/entities/user-private-character.entity';
+import { CharacterDraftEntity } from './modules/wiki/entities/character-draft.entity';
 import { WikiFieldProtectionEntity } from './modules/wiki/entities/wiki-field-protection.entity';
 import { AbuseFilterEntity } from './modules/wiki/entities/abuse-filter.entity';
 import { AbuseFilterHitEntity } from './modules/wiki/entities/abuse-filter-hit.entity';
@@ -174,6 +187,8 @@ import {
           MinimaxJobEntity,
           MediaInsightJobEntity,
           ChatCustomStickerEntity,
+          FavoriteEntity,
+          FavoriteNoteEntity,
           FeedPostEntity,
           FeedCommentEntity,
           FeedPostLikeEntity,
@@ -186,6 +201,12 @@ import {
           FarmPlayerStateEntity,
           FarmNpcStateEntity,
           FarmEventLogEntity,
+          FarmCheckinEntity,
+          FarmQuestProgressEntity,
+          ParkingWarPlayerStateEntity,
+          ParkingWarNpcStateEntity,
+          ParkingWarOccupancyEntity,
+          ParkingWarEventLogEntity,
           WorldContextEntity,
           NarrativeArcEntity,
           AIBehaviorLogEntity,
@@ -227,9 +248,12 @@ import {
           WikiTalkThreadEntity,
           WikiTalkPostEntity,
           WikiWatchlistEntity,
+          UserPrivateCharacterEntity,
+          CharacterDraftEntity,
           WikiFieldProtectionEntity,
           AbuseFilterEntity,
           AbuseFilterHitEntity,
+          PushTokenEntity,
         ],
         synchronize: true,
       }),
@@ -245,6 +269,7 @@ import {
     FeedModule,
     GamesModule,
     FarmModule,
+    ParkingWarModule,
     OfficialAccountsModule,
     WorldModule,
     SchedulerModule,
@@ -262,6 +287,7 @@ import {
     CloudRuntimeModule,
     SystemModule,
     WikiModule,
+    PushModule,
   ],
   providers: [
     {

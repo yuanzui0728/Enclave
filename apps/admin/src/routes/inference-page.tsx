@@ -17,7 +17,6 @@ import {
 } from "@yinjie/ui";
 import {
   AdminActionFeedback,
-  AdminCallout,
   AdminDraftStatusPill,
   AdminErrorState,
   AdminPageHero,
@@ -294,7 +293,7 @@ function matchesCapability(
 function resolveCapabilityTags(entry: InferenceModelCatalogEntry) {
   const tags = [
     `${entry.vendor} / ${entry.providerFamily}`,
-    t(REGION_LABELS[entry.region]),
+    translateRuntimeMessage(REGION_LABELS[entry.region]),
   ];
 
   if (entry.supportsText) {
@@ -561,27 +560,6 @@ export function InferencePage() {
     },
   });
 
-  const installMutation = useMutation({
-    mutationFn: (forceUpdateExisting: boolean) =>
-      adminApi.installModelPersonas({
-        providerAccountId: bulkProviderId || undefined,
-        forceUpdateExisting,
-      }),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["admin-inference-overview"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["admin-characters"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["admin-characters-crud"],
-        }),
-      ]);
-    },
-  });
-
   const installFamilyMutation = useMutation({
     mutationFn: (forceUpdateExisting: boolean) =>
       adminApi.installVendorFamilyPersonas({ forceUpdateExisting }),
@@ -652,39 +630,6 @@ export function InferencePage() {
   const canInstallSelected = selectedModelIds.length > 0 && canRunBulkAction;
   const canRebindSelected = selectedModelIds.length > 0 && canRunBulkAction;
 
-  const overviewLead = useMemo(() => {
-    if (!defaultProviderAccount) {
-      return {
-        tone: "warning" as const,
-        title: t(msg`先创建默认 Provider`),
-        description:
-          t(msg`当前还没有默认路由。先创建一个可用账户，再做模型人格安装和角色换绑。`),
-      };
-    }
-
-    if (!defaultProviderAccount.isEnabled) {
-      return {
-        tone: "warning" as const,
-        title: t(msg`默认路由已停用`),
-        description: t(msg`${defaultProviderAccount.name} 当前被停用。先恢复默认账户，再做后续批量动作。`),
-      };
-    }
-
-    if (!defaultProviderAccount.hasApiKey) {
-      return {
-        tone: "warning" as const,
-        title: t(msg`默认路由缺少主 Key`),
-        description: t(msg`${defaultProviderAccount.name} 还没有主 API Key。建议先补 Key 并做连通性测试。`),
-      };
-    }
-
-    return {
-      tone: "success" as const,
-      title: t(msg`默认路由可用`),
-      description: t(msg`${defaultProviderAccount.name} 正在承接默认模型 ${defaultProviderAccount.defaultModelId}。可以继续维护 Provider，或进入模型人格工作区做批量安装和换绑。`),
-    };
-  }, [defaultProviderAccount]);
-
   const bulkTargetNotice = useMemo(() => {
     if (!bulkProviderAccount) {
       return {
@@ -749,7 +694,8 @@ export function InferencePage() {
         metrics={[
           { label: t(msg`Provider 账户`), value: providerAccounts.length },
           { label: t(msg`启用中账户`), value: enabledProviderCount },
-          { label: t(msg`模型目录`), value: modelCatalog.length },
+          { label: t(msg`活跃模型`), value: activeModelCount },
+          { label: t(msg`支持 reasoning`), value: reasoningModelCount },
           {
             label: t(msg`模型人格角色`),
             value: roleBindingSummary?.modelPersonaCharacters ?? 0,
@@ -799,13 +745,6 @@ export function InferencePage() {
             testMutation.data.success ? t(msg`连通性测试成功`) : t(msg`连通性测试失败`)
           }
           description={testMutation.data.message}
-        />
-      ) : null}
-      {installMutation.data ? (
-        <AdminActionFeedback
-          tone="success"
-          title={t(msg`全量模型人格处理完成`)}
-          description={t(msg`新增 ${installMutation.data.installedCount} 个，更新 ${installMutation.data.updatedCount} 个，跳过 ${installMutation.data.skippedCount} 个。`)}
         />
       ) : null}
       {installSelectedMutation.data ? (
@@ -862,14 +801,6 @@ export function InferencePage() {
           retryLabel={t(msg`清除错误`)}
         />
       ) : null}
-      {installMutation.isError && installMutation.error instanceof Error ? (
-        <AdminErrorState
-          title={t(msg`批量安装模型人格失败`)}
-          detail={installMutation.error.message}
-          onRetry={() => installMutation.reset()}
-          retryLabel={t(msg`清除错误`)}
-        />
-      ) : null}
       {installSelectedMutation.isError &&
       installSelectedMutation.error instanceof Error ? (
         <AdminErrorState
@@ -904,193 +835,110 @@ export function InferencePage() {
       />
 
       {workspaceTab === "overview" ? (
-        <div className="space-y-6">
-          <AdminCallout
-            tone={overviewLead.tone}
-            title={overviewLead.title}
-            description={overviewLead.description}
-            actions={
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setWorkspaceTab("providers");
-                    setSelectedProviderId(defaultProviderAccount?.id ?? "new");
-                  }}
-                >{t(msg`维护 Provider`)}</Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setWorkspaceTab("models")}
-                >{t(msg`去做模型人格批量处理`)}</Button>
-              </>
-            }
-          />
-
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <Card className="bg-[color:var(--surface-console)]">
-              <AdminSectionHeader
-                title={t(msg`默认路由`)}
-                actions={
-                  defaultProviderAccount ? (
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill
-                        tone={
-                          defaultProviderAccount.isEnabled
-                            ? "healthy"
-                            : "warning"
-                        }
-                      >
-                        {defaultProviderAccount.isEnabled ? t(msg`启用中`) : t(msg`已停用`)}
-                      </StatusPill>
-                      <StatusPill
-                        tone={
-                          defaultProviderAccount.hasApiKey
-                            ? "healthy"
-                            : "warning"
-                        }
-                      >
-                        {defaultProviderAccount.hasApiKey
-                          ? t(msg`Key 已配置`)
-                          : t(msg`缺少 Key`)}
-                      </StatusPill>
-                    </div>
-                  ) : (
-                    <StatusPill tone="warning">{t(msg`未设置默认路由`)}</StatusPill>
-                  )
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <Card className="bg-[color:var(--surface-console)]">
+            <AdminSectionHeader
+              title={t(msg`默认路由`)}
+              actions={
+                defaultProviderAccount ? (
+                  <div className="flex flex-wrap gap-2">
+                    <StatusPill
+                      tone={
+                        defaultProviderAccount.isEnabled
+                          ? "healthy"
+                          : "warning"
+                      }
+                    >
+                      {defaultProviderAccount.isEnabled ? t(msg`启用中`) : t(msg`已停用`)}
+                    </StatusPill>
+                    <StatusPill
+                      tone={
+                        defaultProviderAccount.hasApiKey
+                          ? "healthy"
+                          : "warning"
+                      }
+                    >
+                      {defaultProviderAccount.hasApiKey
+                        ? t(msg`Key 已配置`)
+                        : t(msg`缺少 Key`)}
+                    </StatusPill>
+                  </div>
+                ) : (
+                  <StatusPill tone="warning">{t(msg`未设置默认路由`)}</StatusPill>
+                )
+              }
+            />
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <AdminValueCard
+                label={t(msg`默认 Provider`)}
+                value={defaultProviderAccount?.name ?? t(msg`未设置`)}
+              />
+              <AdminValueCard
+                label={t(msg`默认模型`)}
+                value={defaultProviderAccount?.defaultModelId ?? t(msg`未设置`)}
+              />
+              <AdminValueCard
+                label={t(msg`接口地址`)}
+                value={
+                  defaultProviderAccount
+                    ? getEndpointLabel(defaultProviderAccount.endpoint)
+                    : t(msg`未设置`)
                 }
               />
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <AdminValueCard
-                  label={t(msg`默认 Provider`)}
-                  value={defaultProviderAccount?.name ?? t(msg`未设置`)}
-                />
-                <AdminValueCard
-                  label={t(msg`默认模型`)}
-                  value={defaultProviderAccount?.defaultModelId ?? t(msg`未设置`)}
-                />
-                <AdminValueCard
-                  label={t(msg`接口地址`)}
-                  value={
-                    defaultProviderAccount
-                      ? getEndpointLabel(defaultProviderAccount.endpoint)
-                      : t(msg`未设置`)
+              <AdminValueCard
+                label={t(msg`最近更新时间`)}
+                value={formatDateTime(defaultProviderAccount?.updatedAt)}
+              />
+            </div>
+            <AdminSoftBox className="mt-4">
+              {t(msg`默认账户会继续兼容旧版 /system/provider。切默认时，旧链路也会一起切换。`)}
+            </AdminSoftBox>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <AdminSectionHeader
+              title={t(msg`角色绑定概况`)}
+              actions={
+                <StatusPill
+                  tone={
+                    (roleBindingSummary?.boundCharacters ?? 0) > 0
+                      ? "healthy"
+                      : "muted"
                   }
-                />
-                <AdminValueCard
-                  label={t(msg`最近更新时间`)}
-                  value={formatDateTime(defaultProviderAccount?.updatedAt)}
-                />
-              </div>
-              <AdminSoftBox className="mt-4">
-                {t(msg`默认账户会继续兼容旧版 /system/provider。切默认时，旧链路也会一起切换。`)}
-              </AdminSoftBox>
-            </Card>
-
-            <Card className="bg-[color:var(--surface-console)]">
-              <AdminSectionHeader title={t(msg`快捷操作`)} />
-              <div className="mt-4 grid gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setWorkspaceTab("providers");
-                    setSelectedProviderId(defaultProviderAccount?.id ?? "new");
-                  }}
-                  className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
                 >
-                  <div className="font-semibold text-[color:var(--text-primary)]">{t(msg`维护默认 Provider`)}</div>
-                  <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                    {t(msg`直接进入账户编辑，做保存、测试和设默认。`)}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setWorkspaceTab("providers");
-                    setSelectedProviderId("new");
-                  }}
-                  className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
-                >
-                  <div className="font-semibold text-[color:var(--text-primary)]">{t(msg`新建一个额外 Provider`)}</div>
-                  <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                    {t(msg`录入新账户，不影响当前默认路由。`)}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWorkspaceTab("models")}
-                  className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
-                >
-                  <div className="font-semibold text-[color:var(--text-primary)]">{t(msg`批量处理模型人格`)}</div>
-                  <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                    {t(msg`先选目标 Provider，再安装、覆盖刷新或换绑。`)}
-                  </div>
-                </button>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-3">
-            <Card className="bg-[color:var(--surface-console)]">
-              <AdminSectionHeader title={t(msg`Provider 池概况`)} />
-              <div className="mt-4 grid gap-3">
-                <AdminValueCard
-                  label={t(msg`账户总数`)}
-                  value={providerAccounts.length}
-                />
-                <AdminValueCard
-                  label={t(msg`启用中`)}
-                  value={t(msg`${enabledProviderCount} 个`)}
-                />
-                <AdminValueCard
-                  label={t(msg`已配置主 Key`)}
-                  value={t(msg`${providerWithApiKeyCount} 个`)}
-                />
-              </div>
-            </Card>
-
-            <Card className="bg-[color:var(--surface-console)]">
-              <AdminSectionHeader title={t(msg`模型目录概况`)} />
-              <div className="mt-4 grid gap-3">
-                <AdminValueCard label={t(msg`目录总数`)} value={modelCatalog.length} />
-                <AdminValueCard
-                  label={t(msg`活跃模型`)}
-                  value={t(msg`${activeModelCount} 个`)}
-                />
-                <AdminValueCard
-                  label={t(msg`预览模型`)}
-                  value={t(msg`${previewModelCount} 个`)}
-                />
-                <AdminValueCard
-                  label={t(msg`支持 reasoning`)}
-                  value={t(msg`${reasoningModelCount} 个`)}
-                />
-              </div>
-            </Card>
-
-            <Card className="bg-[color:var(--surface-console)]">
-              <AdminSectionHeader title={t(msg`角色绑定概况`)} />
-              <div className="mt-4 grid gap-3">
-                <AdminValueCard
-                  label={t(msg`角色总数`)}
-                  value={roleBindingSummary?.totalCharacters ?? 0}
-                />
-                <AdminValueCard
-                  label={t(msg`已绑定模型路由`)}
-                  value={roleBindingSummary?.boundCharacters ?? 0}
-                />
-                <AdminValueCard
-                  label={t(msg`模型人格角色`)}
-                  value={roleBindingSummary?.modelPersonaCharacters ?? 0}
-                />
-                <AdminValueCard
-                  label={t(msg`当前批量目标`)}
-                  value={bulkProviderAccount?.name ?? t(msg`未选择`)}
-                />
-              </div>
-            </Card>
-          </div>
+                  {t(msg`绑定率`)}{" "}
+                  {roleBindingSummary && roleBindingSummary.totalCharacters > 0
+                    ? `${Math.round(
+                        (roleBindingSummary.boundCharacters /
+                          roleBindingSummary.totalCharacters) *
+                          100,
+                      )}%`
+                    : "—"}
+                </StatusPill>
+              }
+            />
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <AdminValueCard
+                label={t(msg`角色总数`)}
+                value={roleBindingSummary?.totalCharacters ?? 0}
+              />
+              <AdminValueCard
+                label={t(msg`已绑定模型路由`)}
+                value={roleBindingSummary?.boundCharacters ?? 0}
+              />
+              <AdminValueCard
+                label={t(msg`模型人格角色`)}
+                value={roleBindingSummary?.modelPersonaCharacters ?? 0}
+              />
+              <AdminValueCard
+                label={t(msg`已配置主 Key 账户`)}
+                value={t(msg`${providerWithApiKeyCount} 个`)}
+              />
+            </div>
+            <AdminSoftBox className="mt-4">
+              {t(msg`Hero 顶栏已经汇总账户与模型总数；这里只看与角色挂接相关的运营状态。`)}
+            </AdminSoftBox>
+          </Card>
         </div>
       ) : null}
 
@@ -1147,7 +995,18 @@ export function InferencePage() {
           <Card className="bg-[color:var(--surface-console)]">
             <AdminSectionHeader
               title={
-                selectedProviderId === "new" ? t(msg`新建 Provider`) : t(msg`编辑 Provider`)
+                <div className="flex flex-col">
+                  <span>
+                    {selectedProviderId === "new"
+                      ? t(msg`新建 Provider`)
+                      : t(msg`编辑 Provider`)}
+                  </span>
+                  {selectedProviderId !== "new" && selectedAccount?.updatedAt ? (
+                    <span className="mt-1 text-xs font-normal text-[color:var(--text-tertiary)]">
+                      {t(msg`最近更新`)} {formatDateTime(selectedAccount.updatedAt)}
+                    </span>
+                  ) : null}
+                </div>
               }
               actions={
                 <div className="flex flex-wrap gap-2">
@@ -1184,11 +1043,7 @@ export function InferencePage() {
               }
             />
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <AdminValueCard
-                label={t(msg`状态`)}
-                value={(providerDraft.isEnabled ?? true) ? t(msg`启用中`) : t(msg`停用中`)}
-              />
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
               <AdminValueCard
                 label={t(msg`主 Key`)}
                 value={
@@ -1224,10 +1079,6 @@ export function InferencePage() {
                     : t(msg`未配置`)
                 }
               />
-              <AdminValueCard
-                label={t(msg`最近更新时间`)}
-                value={formatDateTime(selectedAccount?.updatedAt)}
-              />
             </div>
 
             {selectedProviderId === "new" ? (
@@ -1249,29 +1100,35 @@ export function InferencePage() {
                     {t(msg`一键运行会写入最新快照，系统状态页只按这份真实诊断结果展示多模态就绪状态。`)}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => runAllDiagnosticMutation.mutate()}
-                    disabled={
-                      selectedProviderId === "new" ||
-                      diagnosticMutation.isPending ||
-                      runAllDiagnosticMutation.isPending
-                    }
-                  >
-                    {runAllDiagnosticMutation.isPending
-                      ? t(msg`全量诊断中...`)
-                      : t(msg`运行全部诊断`)}
-                  </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => runAllDiagnosticMutation.mutate()}
+                  disabled={
+                    selectedProviderId === "new" ||
+                    diagnosticMutation.isPending ||
+                    runAllDiagnosticMutation.isPending
+                  }
+                >
+                  {runAllDiagnosticMutation.isPending
+                    ? t(msg`全量诊断中...`)
+                    : t(msg`运行全部诊断`)}
+                </Button>
+              </div>
+              <details className="group rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-xs">
+                <summary className="cursor-pointer list-none select-none text-[color:var(--text-secondary)] [&::-webkit-details-marker]:hidden">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="transition group-open:rotate-90">▸</span>
+                    {t(msg`按能力单独诊断`)}
+                  </span>
+                </summary>
+                <div className="mt-3 flex flex-wrap gap-2">
                   {DIAGNOSTIC_CAPABILITIES.map((item) => (
                     <Button
                       key={item.capability}
                       variant="secondary"
                       size="sm"
-                      onClick={() =>
-                        diagnosticMutation.mutate(item.capability)
-                      }
+                      onClick={() => diagnosticMutation.mutate(item.capability)}
                       disabled={
                         selectedProviderId === "new" ||
                         diagnosticMutation.isPending ||
@@ -1288,7 +1145,7 @@ export function InferencePage() {
                     </Button>
                   ))}
                 </div>
-              </div>
+              </details>
               {selectedProviderId === "new" ? (
                 <InlineNotice tone="warning">
                   {t(msg`请先保存 Provider 账户，再进行真实通道诊断。`)}
@@ -1328,7 +1185,7 @@ export function InferencePage() {
               ) : (
                 <AdminSoftBox>{t(msg`尚未保存真实诊断快照。`)}</AdminSoftBox>
               )}
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 {(multimodalOverviewQuery.data?.capabilityMatrix ?? []).map(
                   (item) => (
                     <div
@@ -1738,29 +1595,31 @@ export function InferencePage() {
               }
             />
 
-            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto_auto]">
+            <div className="mt-4 space-y-3">
               <Field
                 label={t(msg`搜索模型 / 角色名 / 厂商`)}
                 value={modelSearch}
                 onChange={setModelSearch}
               />
-              <SelectField
-                label={t(msg`状态`)}
-                value={modelStatusFilter}
-                onChange={(value) =>
-                  setModelStatusFilter(value as ModelStatusFilter)
-                }
-                options={MODEL_STATUS_FILTER_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
-              />
-              <SelectField
-                label={t(msg`能力`)}
-                value={modelCapabilityFilter}
-                onChange={(value) =>
-                  setModelCapabilityFilter(value as ModelCapabilityFilter)
-                }
-                options={MODEL_CAPABILITY_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
-              />
-              <div className="flex items-end">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SelectField
+                  label={t(msg`状态`)}
+                  value={modelStatusFilter}
+                  onChange={(value) =>
+                    setModelStatusFilter(value as ModelStatusFilter)
+                  }
+                  options={MODEL_STATUS_FILTER_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
+                />
+                <SelectField
+                  label={t(msg`能力`)}
+                  value={modelCapabilityFilter}
+                  onChange={(value) =>
+                    setModelCapabilityFilter(value as ModelCapabilityFilter)
+                  }
+                  options={MODEL_CAPABILITY_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
+                />
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1772,8 +1631,6 @@ export function InferencePage() {
                     ? t(msg`取消当前筛选`)
                     : t(msg`选中当前筛选`)}
                 </Button>
-              </div>
-              <div className="flex items-end">
                 <Button
                   variant="secondary"
                   size="sm"

@@ -474,7 +474,7 @@ export function GameSubmissionWorkbench({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <MetricCard label={t(msg`投稿总数`)} value={String(metrics.total)} />
         <MetricCard label={t(msg`待审核`)} value={String(metrics.pending)} />
         <MetricCard label={t(msg`已入库草稿`)} value={String(metrics.imported)} />
@@ -756,7 +756,7 @@ export function GameSubmissionWorkbench({
                       </label>
 
                       {selectedCharacter ? (
-                        <div className="grid gap-3 md:grid-cols-3">
+                        <div className="grid gap-3 md:grid-cols-2">
                           <SummaryField label={t(msg`角色名`)} value={selectedCharacter.name} />
                           <SummaryField
                             label={t(msg`关系`)}

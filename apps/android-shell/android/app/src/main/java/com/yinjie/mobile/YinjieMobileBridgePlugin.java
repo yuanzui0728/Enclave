@@ -2,6 +2,8 @@ package com.yinjie.mobile;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.Context;
@@ -61,6 +63,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
     private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
     private static final String CHANNEL_ID = YinjieNotificationChannels.MESSAGES_CHANNEL_ID;
     private Uri pendingCameraCaptureUri;
+    // Round 34：cancel 分支里要删的是 cacheDir 里那个实际文件，captureUri 是
+    // FileProvider 包出来的 content:// URI（getPath() 不是真实路径），按 scheme
+    // 判 "file" 永远进不到清理；把真实 File 引用拽出来，cancel 时直接 delete。
+    private File pendingCameraCaptureFile;
 
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
@@ -70,8 +76,11 @@ public class YinjieMobileBridgePlugin extends Plugin {
             return;
         }
 
+        // 不要无脑 addCategory(BROWSABLE)：浏览器的 filter 同时声明 DEFAULT + BROWSABLE
+        // 是「我能接 web 跳转」，但 dialer / mail / sms 的 filter 只声明 DEFAULT，
+        // 一旦 intent 里带上 BROWSABLE，tel:/mailto:/sms: 都会 ActivityNotFoundException，
+        // 公众号文章里的电话 / 邮箱 / 短信链接全部静默打不开。
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        intent.addCategory(Intent.CATEGORY_BROWSABLE);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         try {
@@ -102,6 +111,20 @@ public class YinjieMobileBridgePlugin extends Plugin {
         String text = normalize(call.getString("text"));
         String url = normalize(call.getString("url"));
 
+        // navigator.share / native bridge 的 title 是「主题 / subject」语义，不是
+        // 正文。Round 13 当时把 title 顺手拼到 EXTRA_TEXT 头部本意是给聊天 app
+        // 兜底，可所有主要 caller 都已经把 title 又拼进了 text 里 ——
+        //   official-article-viewer: text=`${accountName}\n${article.title}`
+        //   official-account-article-page: text=`${article.account.name}\n${article.title}`
+        //   mobile-document-shell:    text=[title, summary, documentUrl].join('\n\n')
+        //   mini-programs-page:       text=`${miniProgram.name}\n${link}` + title=`${name} 入口`
+        //   games-page:               text=`${game.name}\n${link}` + title=`${name} 入口`
+        // 结果分享到微信 / WhatsApp / Line / Telegram 时正文里标题完整出现两遍，
+        // 分享到 Mail 还会再叠一遍 EXTRA_SUBJECT，总共出现三次（subject + 拼接
+        // 进来的 title + 拼接进来的 text 里那一份）。iOS 壳 Round 38 已经把同款
+        // 路径修过：title 只走 setValue(forKey:"subject") 落到邮件主题，activityItems
+        // 只放 text + url；caller 负责把要给聊天 app 看的内容自己拼进 text。
+        // Android 这边保持同一契约，title 不再 prepend 到 EXTRA_TEXT。
         StringBuilder payload = new StringBuilder();
         if (text != null) {
             payload.append(text);
@@ -122,6 +145,8 @@ public class YinjieMobileBridgePlugin extends Plugin {
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT, payload.toString());
         if (title != null) {
+            // 邮件 app 走 EXTRA_SUBJECT 把 title 落到「邮件主题」一栏；聊天 app
+            // 忽略这条 extra，只看 EXTRA_TEXT，所以 title 不会出现两遍。
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
         }
 
@@ -261,7 +286,20 @@ public class YinjieMobileBridgePlugin extends Plugin {
 
     @PluginMethod
     public void captureImage(PluginCall call) {
-        if (getPermissionState("camera") != PermissionState.GRANTED) {
+        PermissionState cameraState = getPermissionState("camera");
+        if (cameraState == PermissionState.DENIED) {
+            // 用户之前点过「拒绝」（Android 11+ 多次拒绝后系统标 PROMPT_NEVER_AGAIN
+            // → DENIED）；再 requestPermissionForAlias 不会弹任何系统 dialog，回调里
+            // 同样拿到 DENIED，跟 captureImageResult 里「用户点取消」完全没法区分。
+            // iOS 壳 Round 25 已经统一用 PERMISSION_DENIED code，这里照搬。
+            call.reject(
+                "camera permission denied — open Settings to grant access",
+                "PERMISSION_DENIED"
+            );
+            return;
+        }
+
+        if (cameraState != PermissionState.GRANTED) {
             requestPermissionForAlias("camera", call, "cameraPermissionResult");
             return;
         }
@@ -285,13 +323,23 @@ public class YinjieMobileBridgePlugin extends Plugin {
         }
 
         Intent data = result.getData();
+        int dataFlags = data.getFlags();
         if (data.getClipData() != null) {
             for (int index = 0; index < data.getClipData().getItemCount(); index += 1) {
                 Uri uri = data.getClipData().getItemAt(index).getUri();
+                // pickFileResult 早就调 persistReadPermission，pickImagesResult
+                // 这条路径漏了。ACTION_OPEN_DOCUMENT 给的 content:// URI 默认
+                // 只在调用方 process 存活期间可读；用户选完图后切到后台 / 系统
+                // 因为内存压力回收 activity，回前台时 webview 加载 webPath 预览
+                // 或上传组件 fetch() 这条 URI 都会拿到 SecurityException，
+                // 选好的图静默变灰 / 上传失败。
+                persistReadPermission(uri, dataFlags);
                 assets.put(buildAsset(uri));
             }
         } else if (data.getData() != null) {
-            assets.put(buildAsset(data.getData()));
+            Uri uri = data.getData();
+            persistReadPermission(uri, dataFlags);
+            assets.put(buildAsset(uri));
         }
 
         call.resolve(response);
@@ -334,7 +382,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
         }
 
         if (getPermissionState("camera") != PermissionState.GRANTED) {
-            call.reject("camera permission is not granted");
+            call.reject(
+                "camera permission denied — open Settings to grant access",
+                "PERMISSION_DENIED"
+            );
             return;
         }
 
@@ -347,7 +398,9 @@ public class YinjieMobileBridgePlugin extends Plugin {
         response.put("asset", JSObject.NULL);
 
         Uri capturedUri = pendingCameraCaptureUri;
+        File capturedFile = pendingCameraCaptureFile;
         pendingCameraCaptureUri = null;
+        pendingCameraCaptureFile = null;
 
         if (call == null) {
             return;
@@ -358,11 +411,12 @@ public class YinjieMobileBridgePlugin extends Plugin {
             result.getResultCode() != Activity.RESULT_OK ||
             capturedUri == null
         ) {
-            if (capturedUri != null && "file".equalsIgnoreCase(capturedUri.getScheme())) {
-                File cleanupFile = new File(capturedUri.getPath());
-                if (cleanupFile.exists()) {
-                    cleanupFile.delete();
-                }
+            // Round 34：旧实现按 capturedUri.getScheme()=="file" 删，但
+            // FileProvider URI 永远是 content://，这条 cleanup 进不到，每次
+            // 用户取消相机就会在 cacheDir 里留一个 yinjie-camera-xxxx.jpg
+            // 0-byte / 空白文件。这里直接拿 pendingCameraCaptureFile 删。
+            if (capturedFile != null && capturedFile.exists()) {
+                capturedFile.delete();
             }
             call.resolve(response);
             return;
@@ -389,9 +443,15 @@ public class YinjieMobileBridgePlugin extends Plugin {
 
     @PluginMethod
     public void requestNotificationPermission(PluginCall call) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || getPermissionState("notifications") == PermissionState.GRANTED) {
+        // pre-Tiramisu 没 runtime permission，但用户可能已经在系统设置里关掉了
+        // 应用通知；之前直接 return "granted"，JS 拿到 granted 去 notify 系统照样
+        // 静默丢消息。复用 readNotificationPermissionState 拿真实状态（areNotificationsEnabled
+        // + permission 两层）。Tiramisu+ 在 permission=GRANTED 时也走这条直接返回真实状态，
+        // 不再二次弹系统授权 dialog。
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+            || getPermissionState("notifications") == PermissionState.GRANTED) {
             JSObject result = new JSObject();
-            result.put("state", "granted");
+            result.put("state", readNotificationPermissionState());
             call.resolve(result);
             return;
         }
@@ -426,8 +486,13 @@ public class YinjieMobileBridgePlugin extends Plugin {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        // 跟 getNotificationPermissionState (Round 12) 对齐：
+        //   - pre-Tiramisu 没 runtime permission，但 areNotificationsEnabled()
+        //     在用户关掉通知时返 false；当前实现只判 T+ permission 等于跳过这层
+        //     检查直接 notify()，系统静默丢消息，JS 收到 resolve() 以为弹了。
+        //   - T+ 也可能 permission=GRANTED + areNotificationsEnabled=false（用户
+        //     在 Settings 关掉了整个 channel / app 通知），同样静默掉消息。
+        if (!"granted".equals(readNotificationPermissionState())) {
             call.reject("notification permission is not granted");
             return;
         }
@@ -453,7 +518,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            // 跟 YinjieFirebaseMessagingService Round 24 对齐：launcher PNG 当
+            // smallIcon 在 Android 5+ 会被 mask 成白方块，必须给 alpha-only 矢量。
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setColor(ContextCompat.getColor(getContext(), R.color.notification_accent))
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
@@ -502,33 +570,49 @@ public class YinjieMobileBridgePlugin extends Plugin {
             return;
         }
 
+        File captureFile;
         Uri captureUri;
         try {
-            captureUri = createTemporaryImageUri();
+            captureFile = createTemporaryImageFile();
+            captureUri = FileProvider.getUriForFile(
+                getContext(),
+                getContext().getPackageName() + ".fileprovider",
+                captureFile
+            );
         } catch (IOException exception) {
             call.reject("failed to prepare camera capture", exception);
             return;
         }
 
         pendingCameraCaptureUri = captureUri;
+        pendingCameraCaptureFile = captureFile;
         intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUri);
+        // Round 33：FLAG_GRANT_READ/WRITE_URI_PERMISSION 按 Android 文档只对
+        // intent.getData() 那条 URI 生效，**不会**自动传递给 extras 里的
+        // EXTRA_OUTPUT URI。Pixel / AOSP 上的 AOSP Camera 因为 FileProvider
+        // 设了 grantUriPermissions=true 还能宽松放行，但 Xiaomi MIUI /
+        // Huawei EMUI / OnePlus OxygenOS / 红米 / Vivo OriginOS 这几家的
+        // 自带相机在 ContentResolver.openOutputStream(EXTRA_OUTPUT URI) 时
+        // 拿 SecurityException（"Permission Denial: writing FileProvider"），
+        // 相机界面看着拍完了，回 captureImageResult RESULT_OK，但 captureUri
+        // 文件是 0 byte 空文件 / 根本没创建。buildAsset 跟着把空 webPath
+        // 喂给前端，朋友圈 / 头像上传一张白图、聊天图框转圈最后空缩略图。
+        // 修法：把 captureUri 也塞进 ClipData，grant flag 走 ClipData 这条
+        // path 就能落到 EXTRA_OUTPUT URI 上（Android 5+ 起的标准做法）。
+        intent.setClipData(
+            ClipData.newUri(getContext().getContentResolver(), "yinjie-camera", captureUri)
+        );
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
         startActivityForResult(call, intent, "captureImageResult");
     }
 
-    private Uri createTemporaryImageUri() throws IOException {
-        File imageFile = File.createTempFile(
+    private File createTemporaryImageFile() throws IOException {
+        return File.createTempFile(
             "yinjie-camera-",
             ".jpg",
             getContext().getCacheDir()
-        );
-
-        return FileProvider.getUriForFile(
-            getContext(),
-            getContext().getPackageName() + ".fileprovider",
-            imageFile
         );
     }
 
@@ -663,11 +747,39 @@ public class YinjieMobileBridgePlugin extends Plugin {
     }
 
     private String readNotificationPermissionState() {
+        // areNotificationsEnabled 反映用户在系统设置 → 应用 → 通知里的「总开关」，
+        // 一旦用户主动关掉，就算 Android 13+ runtime permission 还停留在 GRANTED，
+        // showLocalNotification 也是静默丢掉不弹任何东西。pre-Tiramisu 没 runtime
+        // permission，全靠这条开关来定 granted/denied。
+        NotificationManagerCompat manager =
+            NotificationManagerCompat.from(getContext());
+        boolean notificationsEnabled = manager.areNotificationsEnabled();
+
+        // Round 30：Android 8+ 的通知系统是 channel 粒度的，用户可以在
+        // 系统设置 → 应用 → 通知 → 「隐界消息」单独关掉这条 channel
+        // （IMPORTANCE_NONE），整条 app 通知总开关却仍开着。这种状态下
+        // areNotificationsEnabled() 返 true、runtime permission 也是 GRANTED，
+        // 但所有走 yinjie_messages channel 的 notify() —— 包括 FCM 推送和
+        // showLocalNotification 本地提醒 —— 都被系统层静默丢弃，JS 收到
+        // resolve() 还以为弹了，「打开通知」引导也压根不弹（state="granted"）。
+        // 把 channel-level 的 disable 状态合并进 effective enabled。
+        if (notificationsEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel =
+                manager.getNotificationChannel(CHANNEL_ID);
+            if (channel != null
+                && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                notificationsEnabled = false;
+            }
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return "granted";
+            return notificationsEnabled ? "granted" : "denied";
         }
 
         PermissionState permissionState = getPermissionState("notifications");
+        if (permissionState == PermissionState.GRANTED && !notificationsEnabled) {
+            return "denied";
+        }
         return permissionState != null ? permissionState.toString() : "unknown";
     }
 
@@ -723,11 +835,32 @@ public class YinjieMobileBridgePlugin extends Plugin {
             return;
         }
 
-        String kind = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_KIND));
-        String route = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_ROUTE));
-        String conversationId = normalizeStatic(intent.getStringExtra(EXTRA_CONVERSATION_ID));
-        String groupId = normalizeStatic(intent.getStringExtra(EXTRA_GROUP_ID));
-        String source = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_SOURCE));
+        // FCM 在 app 处于 background 时，对带 notification 字段的 message 走
+        // 系统通知栏，根本不进 onMessageReceived；用户点击后系统直接拉起
+        // launcher activity，把 data payload 当 intent extras 透传。这条路径上
+        // 我们 applyLaunchTargetExtras 写的 yinjie_* 前缀 key 全没有，只有
+        // 后端原样发的 conversationId / groupId / route / kind。两套 key 都
+        // 试一下，否则 background 收推送点开会回首页而不是目标会话。
+        String kind = firstNonNull(
+            normalizeStatic(intent.getStringExtra(EXTRA_TARGET_KIND)),
+            normalizeStatic(intent.getStringExtra("kind"))
+        );
+        String route = firstNonNull(
+            normalizeStatic(intent.getStringExtra(EXTRA_TARGET_ROUTE)),
+            normalizeStatic(intent.getStringExtra("route"))
+        );
+        String conversationId = firstNonNull(
+            normalizeStatic(intent.getStringExtra(EXTRA_CONVERSATION_ID)),
+            normalizeStatic(intent.getStringExtra("conversationId"))
+        );
+        String groupId = firstNonNull(
+            normalizeStatic(intent.getStringExtra(EXTRA_GROUP_ID)),
+            normalizeStatic(intent.getStringExtra("groupId"))
+        );
+        String source = firstNonNull(
+            normalizeStatic(intent.getStringExtra(EXTRA_TARGET_SOURCE)),
+            normalizeStatic(intent.getStringExtra("source"))
+        );
 
         if (kind == null) {
             if (conversationId != null) {
@@ -774,5 +907,9 @@ public class YinjieMobileBridgePlugin extends Plugin {
 
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static String firstNonNull(String primary, String fallback) {
+        return primary != null ? primary : fallback;
     }
 }

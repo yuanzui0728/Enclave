@@ -5,7 +5,6 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
-import { clearCloudRuntimeSession } from "../../lib/cloud-session";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -52,10 +51,19 @@ export function DesktopRuntimeGuard() {
       !isMobileRuntime &&
       !hasDesktopRuntimeControl &&
       !needsRemoteConfiguration,
-    retry: false,
-    // 5s 探活在公网隧道下没必要：用户重新聚焦窗口时再校一次就够了，
-    // 加 30s 兜底防止后台切回时仍是旧 cache。
-    refetchInterval: 30_000,
+    // 一次性网络抖动不该立刻判定后端死了，先 retry 一次再说。
+    retry: 1,
+    // 成功时 30s 兜底；失败时分段退避，避免某个 world child 长时间不可用时
+    // 一个会话每分钟灌 20 条 502/503 telemetry（历史最高 1 session × 10min 出
+    // 过 293 条）。前 3 次失败保持 3s 让 cloud-api / world-api 的 2-5s 重启
+    // 窗口尽快被探到恢复；之后退到 10s，再之后 30s。
+    refetchInterval: (query) => {
+      if (query.state.status !== "error") return 30_000;
+      const failures = query.state.fetchFailureCount;
+      if (failures <= 3) return 3_000;
+      if (failures <= 10) return 10_000;
+      return 30_000;
+    },
     refetchOnWindowFocus: true,
   });
 
@@ -143,25 +151,16 @@ export function DesktopRuntimeGuard() {
       remoteCoreApiHealthy === false ||
       remoteStatusMalformed);
 
-  // 远程世界后端掉线时，不再用"暂时无法进入隐界 / 再试一次"挡用户——直接清掉
-  // 云会话并踢回 /welcome。welcome 页的重新登录会让 cloud-api 拉起对应世界的
-  // 后端，所以从用户视角看"重新登录"=自动恢复。桌面壳路径仍走原来的本地重试
-  // 兜底，因为那里是本地 Core API，没有"重新登录触发拉起"的语义。
-  const shouldBootToWelcome =
-    !isMobileRuntime && remoteUnavailable && !onEntryRoute;
-  const bootingToWelcomeRef = useRef(false);
-  useEffect(() => {
-    if (!shouldBootToWelcome) {
-      bootingToWelcomeRef.current = false;
-      return;
-    }
-    if (bootingToWelcomeRef.current) {
-      return;
-    }
-    bootingToWelcomeRef.current = true;
-    clearCloudRuntimeSession();
-    void navigate({ to: "/welcome", replace: true });
-  }, [navigate, shouldBootToWelcome]);
+  // 历史上这里会在 remoteUnavailable 时主动 clearCloudRuntimeSession() + 跳
+  // /welcome，理由是"重新登录顺便把 world 后端拉起来"。但：
+  //   1) LPP onModuleInit 已经在 cloud-api 重启时通过 port-health probe 主动
+  //      reattach/respawn 孤儿 child，根本不需要"用户重登"来触发；
+  //   2) JWT 跨重启稳定（CLOUD_JWT_SECRET 或默认密钥），TTL 7d 还很远；
+  //   3) cloud-api / world api 重启窗口（2-5s）会让反代连失若干次，但这是个
+  //      可恢复的瞬时状态，前端只该 retry，不该清持久化 session。
+  // 现在统一策略：探活失败一律只渲染下面的"暂时无法进入隐界 / 再试一次"覆盖层，
+  // 探活成功后覆盖层自动消失，**云会话原封不动**。真到 7d 过期，splash 拿到
+  // cloud profile 401 才走清会话路径（splash-page.tsx 已是正确处理）。
 
   if (isMobileRuntime) {
     return null;
@@ -176,10 +175,6 @@ export function DesktopRuntimeGuard() {
     onEntryRoute &&
     runtimeContext.capabilities.canConfigureRemoteService
   ) {
-    return null;
-  }
-
-  if (shouldBootToWelcome) {
     return null;
   }
 

@@ -7,6 +7,7 @@ import {
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
+import { resolveAppMediaUrl } from "../../lib/media-url";
 import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
@@ -65,7 +66,9 @@ export function useVoiceCallSession({
     }
 
     audio.pause();
-    audio.src = audioUrl;
+    // 后端语音附件现在返回相对 URL（/api/chat/attachments/...），公网入口需要走
+    // /cloud/world-api 反代并附 cloud token；这里统一过 resolveAppMediaUrl 处理。
+    audio.src = resolveAppMediaUrl(audioUrl);
     audio.currentTime = 0;
     setPlayerError(null);
 
@@ -166,7 +169,13 @@ export function useVoiceCallSession({
     }
 
     autoSubmitRecordingRef.current = false;
-    void turnMutation.mutateAsync();
+    // 用 mutate() 而不是 mutateAsync()——这里不 await 结果，mutation.error 已经
+    // 被 useMutation 内部捕获并通过 mutation.error 暴露给消费者
+    // (mobile-ai-call-screen 在 line 730 读它显示「重试」状态条)；
+    // mutateAsync() 的 promise 在 mutationFn 抛错时会 reject，`void` 不接
+    // → 落 window.unhandledrejection 污染 telemetry（公网隧道 5xx / cloud token
+    // 过期重连时 createVoiceCallTurn 偶发 4xx/5xx，每次都会触发）。
+    turnMutation.mutate();
   }, [speech.recordedAudio, speech.status, turnMutation]);
 
   useEffect(() => {

@@ -46,7 +46,7 @@ export function ReportButton({
     return (
       <button
         type="button"
-        className={`underline text-xs hover:text-[var(--state-danger-text)] ${className ?? ""}`}
+        className={`inline-flex min-h-[32px] items-center rounded-md px-2 py-1 text-xs underline hover:text-[var(--state-danger-text)] ${className ?? ""}`}
         onClick={() => {
           reportMut.reset();
           setOpen(true);

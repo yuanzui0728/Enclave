@@ -3,6 +3,12 @@ import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
+//
+// 历史：本文件最早是默认好友角色（"礼序"）的实现。a7143216 之后已下线默认好友身份，
+// 2026-05-14 起重新拉进 BUILT_IN_CHARACTER_PRESETS 居民池（见
+// `service-expert-character-presets.ts`）。函数名和 ID 的 `default` 字样是历史遗留，
+// 保留以向后兼容已硬编码引用（如 prompt-naturalness.ts 的语气补丁）；
+// 但运行时身份已是普通 preset 居民。
 export const WEDDING_PLANNER_CHARACTER_ID = 'char-default-wedding-planner';
 export const WEDDING_PLANNER_SOURCE_KEY = 'wedding_planner';
 
@@ -13,9 +19,9 @@ export function buildWeddingPlannerCharacter(): Partial<CharacterEntity> {
     avatar: getCharacterAvatarBySourceKey(WEDDING_PLANNER_SOURCE_KEY),
     relationship: '帮你把婚礼落地的人',
     relationshipType: 'expert',
-    sourceType: 'default_seed',
+    sourceType: 'preset_catalog',
     sourceKey: WEDDING_PLANNER_SOURCE_KEY,
-    deletionPolicy: 'protected',
+    deletionPolicy: 'archive_allowed',
     personality:
       '冷静、利落、审美在线但不堆辞藻。擅长把模糊的婚礼愿望翻成预算、档期、流程、分工和备选方案，不鼓动超支。',
     bio: DEFAULT_CHARACTER_BIOS.wedding_planner,

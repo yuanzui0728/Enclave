@@ -31,6 +31,7 @@ import { normalizePathname } from "../lib/normalize-pathname";
 import { searchStringToObject } from "../lib/route-search";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
+import { writeClipboardText } from "../runtime/native-clipboard";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
@@ -413,7 +414,9 @@ export function MiniProgramsPage() {
       }
 
       try {
-        await navigator.clipboard.writeText(link);
+        if (!(await writeClipboardText(link))) {
+          throw new Error("clipboard copy failed");
+        }
         setNoticeTone("success");
         setNoticeActionState(null);
         setSuccessNotice(t(msg`系统分享暂时不可用，已复制入口链接。`));
@@ -450,7 +453,9 @@ export function MiniProgramsPage() {
       }
 
       try {
-        await navigator.clipboard.writeText(link);
+        if (!(await writeClipboardText(link))) {
+          throw new Error("clipboard copy failed");
+        }
         setNoticeTone("success");
         setNoticeActionState(null);
         setSuccessNotice(t(msg`入口链接已复制。`));
@@ -486,7 +491,9 @@ export function MiniProgramsPage() {
     }
 
     try {
-      await navigator.clipboard.writeText(link);
+      if (!(await writeClipboardText(link))) {
+        throw new Error("clipboard copy failed");
+      }
       pushMobileHandoffRecord({
         category: "mini_program",
         description: `${t(msg`把`)} ${miniProgram?.name ?? t(msg`小程序`)} ${t(msg`的当前工作台发到手机继续，保留最近使用和本地待办上下文。`)}`,

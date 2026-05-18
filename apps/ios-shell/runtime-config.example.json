@@ -1,6 +1,7 @@
 {
   "apiBaseUrl": "https://api.example.yinjie.app",
   "socketBaseUrl": "https://api.example.yinjie.app",
+  "cloudApiBaseUrl": "https://cloud.example.yinjie.app",
   "environment": "production",
   "publicAppName": "Yinjie"
 }

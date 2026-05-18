@@ -17,6 +17,7 @@ import type {
   CloudWaitingSessionSyncTaskListResponse,
   CloudWorldAlertSummary,
   CloudWorldDriftSummary,
+  CloudWorldAdminBootstrap,
   CloudWorldBootstrapConfig,
   CloudWorldInstanceFleetItem,
   CloudWorldLifecycleJobAggregateSummary,
@@ -29,8 +30,10 @@ import type {
   CloudApiErrorResponse,
   CloudConfigEntry,
   CloudUserDetail,
+  CloudUserDistribution,
   CloudUserListQuery,
   CloudUserListResponse,
+  CloudUserStats,
   BanCloudUserRequest,
   GrantSubscriptionRequest,
   IssueCloudAdminAccessTokenResponse,
@@ -70,6 +73,7 @@ import type {
   RevokeCloudAdminSessionsByIdResponse,
   SubscriptionPlanSummary,
   SubscriptionRecordSummary,
+  MinimaxHourlyTelemetryResponse,
   TelemetryApiHealthResponse,
   TelemetryAppId,
   TelemetryErrorsResponse,
@@ -79,11 +83,16 @@ import type {
   TelemetryTimeseriesResponse,
   TelemetryTopEventsResponse,
   TelemetryTopWorldsResponse,
+  TelemetryTopWorldsSortDir,
+  TelemetryTopWorldsSortKey,
   TelemetryWorldRow,
   UpdateRevenueSharingPolicyRequest,
   UpsertCloudConfigRequest,
   UpsertRevenuePayeeRequest,
   UpsertSubscriptionPlanRequest,
+  WikiUserListQuery,
+  WikiUserListResponse,
+  WikiUserPrivateCharacterListResponse,
   WorldLifecycleJobSummary,
 } from "@yinjie/contracts";
 import {
@@ -983,6 +992,11 @@ export const cloudAdminApi = {
       `/worlds/${worldId}/bootstrap-config`,
     ),
 
+  getWorldAdminBootstrap: (worldId: string) =>
+    adminFetch<CloudWorldAdminBootstrap>(
+      `/worlds/${worldId}/admin-bootstrap`,
+    ),
+
   getWorldRuntimeStatus: (worldId: string) =>
     adminFetch<CloudWorldRuntimeStatusSummary>(
       `/worlds/${worldId}/runtime-status`,
@@ -1245,10 +1259,28 @@ export const cloudAdminApi = {
         registeredTo: query?.registeredTo,
         page: query?.page,
         pageSize: query?.pageSize,
+        includeTestAccounts: query?.includeTestAccounts,
+        orderBy: query?.orderBy,
+        orderDir: query?.orderDir,
       })}`,
     ),
 
   getCloudUser: (id: string) => adminFetch<CloudUserDetail>(`/users/${id}`),
+
+  getCloudUserStats: () => adminFetch<CloudUserStats>("/users/stats"),
+
+  getCloudUserDistribution: () =>
+    adminFetch<CloudUserDistribution>("/users/distribution"),
+
+  lookupIpRegion: (ip: string) =>
+    adminFetch<{
+      ip: string;
+      countryCode: string | null;
+      country: string | null;
+      region: string | null;
+      city: string | null;
+      source: "ip-api.com" | "ipinfo.io" | "cache" | "unresolved";
+    }>(`/ip-region/${encodeURIComponent(ip)}`),
 
   grantSubscription: (id: string, payload: GrantSubscriptionRequest) =>
     adminFetch<SubscriptionRecordSummary>(`/users/${id}/subscriptions`, {
@@ -1430,14 +1462,33 @@ export const cloudAdminApi = {
       `/telemetry/errors${buildQueryString({ range, appId, worldId })}`,
     ),
 
-  getTelemetryTopWorlds: (range: TelemetryRange) =>
+  getTelemetryTopWorlds: (
+    range: TelemetryRange,
+    params?: {
+      page?: number;
+      pageSize?: number;
+      sortBy?: TelemetryTopWorldsSortKey;
+      sortDir?: TelemetryTopWorldsSortDir;
+    },
+  ) =>
     adminFetch<TelemetryTopWorldsResponse>(
-      `/telemetry/top-worlds${buildQueryString({ range })}`,
+      `/telemetry/top-worlds${buildQueryString({
+        range,
+        page: params?.page,
+        pageSize: params?.pageSize,
+        sortBy: params?.sortBy,
+        sortDir: params?.sortDir,
+      })}`,
     ),
 
   listTelemetryWorlds: (range: TelemetryRange) =>
     adminFetch<TelemetryWorldRow[]>(
       `/telemetry/worlds${buildQueryString({ range })}`,
+    ),
+
+  getTelemetryMinimaxHourly: (range: TelemetryRange, worldId?: string) =>
+    adminFetch<MinimaxHourlyTelemetryResponse>(
+      `/telemetry/minimax-hourly${buildQueryString({ range, worldId })}`,
     ),
 
   getCloudTokenUsageOverview: (filters?: { from?: string; to?: string }) =>
@@ -1546,5 +1597,19 @@ export const cloudAdminApi = {
     adminFetch<CloudTokenPricingSyncResult>(
       "/token-usage/pricing/sync-n1n",
       { method: "POST" },
+    ),
+
+  listWikiUsers: (query?: WikiUserListQuery) =>
+    adminFetch<WikiUserListResponse>(
+      `/wiki/users${buildQueryString({
+        q: query?.q,
+        page: query?.page,
+        pageSize: query?.pageSize,
+      })}`,
+    ),
+
+  listWikiUserPrivateCharacters: (userId: string) =>
+    adminFetch<WikiUserPrivateCharacterListResponse>(
+      `/wiki/users/${encodeURIComponent(userId)}/private-characters`,
     ),
 };

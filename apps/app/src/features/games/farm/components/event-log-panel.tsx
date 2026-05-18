@@ -86,6 +86,20 @@ function summarize(event: FarmEventView): string {
       return `${event.actorName} ${t(msg`的小道消息已派发`)}`;
     case "intimacy_change":
       return `${event.actorName} ${t(msg`与对方好感度变化`)} ${event.intimacyDelta ?? ""}`;
+    case "fertilize":
+      return `${event.actorName} ${t(msg`施了肥`)}${cropName ? "（" + cropName + "）" : ""}`;
+    case "pesticide":
+      return `${event.actorName} ${t(msg`喷了农药`)}${cropName ? "（" + cropName + "）" : ""}`;
+    case "uproot":
+      return `${event.actorName} ${t(msg`铲掉了`)} ${cropName || t(msg`作物`)}`;
+    case "dog_buy":
+      return `${event.actorName} ${t(msg`买了一条看家狗`)}`;
+    case "dog_upgrade":
+      return `${event.actorName} ${t(msg`升级了看家狗 Lv.`)}${(event.payload?.level as number) ?? "?"}`;
+    case "dog_feed":
+      return `${event.actorName} ${t(msg`喂了狗`)}`;
+    case "decorate":
+      return `${event.actorName} ${t(msg`摆了一件装饰`)}`;
     default:
       return `${event.actorName} ${event.kind}`;
   }

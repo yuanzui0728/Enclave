@@ -3,8 +3,8 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import type { AiMessagePart, PersonalityProfile } from '../ai/ai.types';
 import { pickThemeAndStyle } from './music-theme-catalog';
@@ -17,6 +17,10 @@ import { MomentLikeEntity } from './moment-like.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
+import {
+  FriendRemarkResolver,
+  type FriendRemarkMap,
+} from '../social/friend-remark-resolver.service';
 import {
   NPC_USER_POST_NEUTRAL_INTIMACY,
   npcIntimacyMultiplier,
@@ -48,9 +52,65 @@ import { MinimaxJobService } from '../minimax/minimax-job.service';
 import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 import { MinimaxClient, MinimaxClientError } from '../minimax/minimax.client';
 import { MinimaxAssetStorage } from '../minimax/minimax-asset.storage';
+import { MomentImageBudgetService } from './moment-image-budget.service';
+import { composeMomentImagePrompt } from './moment-image-prompt';
 import { WorldLanguageService } from '../config/world-language.service';
 import type { MinimaxJobEntity } from '../minimax/minimax-job.entity';
 import type { CharacterEntity } from '../characters/character.entity';
+
+// minimax Token Plan 在 lyrics 端点撞 2056 时抛此错，调用方应当跳过整条音乐 moment
+// （chat / music / video 共享同一池子，做下去全是浪费）。
+class MusicQuotaExhaustedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MusicQuotaExhaustedError';
+  }
+}
+
+// 朋友圈正文 / 评论的服务端硬上限。前端 maxLength 是软约束（粘贴长字符串被
+// 截断），但 curl / 第三方端可以绕过；服务端再卡一层避免 DB 爆 + 列表死渲染。
+// 数值参照微信：正文 ~2000 字符（含媒体时其实更短，这里给统一上限），评论 ~500。
+const MAX_MOMENT_TEXT_LENGTH = 2000;
+const MAX_COMMENT_TEXT_LENGTH = 500;
+
+// 朋友圈 media[].url 白名单：合法上传通过 POST /api/moments/media 一律返回相对路径
+// `/api/moments/media/<fileName>`（见 saveUploadedMedia）。任何不匹配此模式的 URL —
+// 无论是 `http://evil/track.gif` 还是其他相对路径——都不能在 createUserMoment
+// 落库。否则 frontend 渲染时 <img src="https://evil/..."> 会把 user IP / 公网隧道
+// token / Cookie 全部泄露到第三方域名（实际真机走查 Round 1 验证：直接 POST 一个
+// SSRF 测试 URL 成功落库返回 200，前端会发起对 evil.example.com 的请求）。
+// 字段：url / thumbnailUrl / posterUrl / livePhoto.motionUrl 都走这个白名单。
+const MOMENT_MEDIA_URL_PREFIX = '/api/moments/media/';
+function assertMomentMediaUrl(value: string | null | undefined, field: string): void {
+  if (value === null || value === undefined || value === '') return;
+  if (!value.startsWith(MOMENT_MEDIA_URL_PREFIX)) {
+    throw new AppError('MOMENTS_MEDIA_URL_INVALID', {
+      params: { field },
+      legacyMessage: `朋友圈媒体 ${field} 必须来自上传接口。`,
+    });
+  }
+  // 阻止 path traversal：尽管 normalizeMomentMediaFileName 在读取时会再卡一道，
+  // 落库阶段就拦掉更保险——`/api/moments/media/../../etc/passwd` 这种 fileName
+  // 会被 path.normalize 卷回上层目录。fileName 不允许包含 `..` / `/` / `\`。
+  const fileName = value.slice(MOMENT_MEDIA_URL_PREFIX.length);
+  if (!fileName || /[\\/]|\.\.|^\.+$/.test(fileName)) {
+    throw new AppError('MOMENTS_MEDIA_URL_INVALID', {
+      params: { field },
+      legacyMessage: `朋友圈媒体 ${field} 文件名非法。`,
+    });
+  }
+}
+
+// trim 后再剥掉零宽字符（U+200B–U+200D / U+FEFF / U+2060）和**内部空白**。
+// 用来判定 text 是不是"视觉为空"——纯 ZWS / ZWS+内部空格混排的正文/评论会让
+// 卡片渲染出一行空白，但 likes/comments footer 依然挂着，看着像幽灵帖。
+// wiki 的 isNameVisuallyEmpty 只剥 ZWS 不剥内部空白，对 "  ​​   ​   " 这种
+// 漏判；这里也把 \s 剥掉，保证 "可见字符总数 = 0" 时拒收。
+function isMomentTextVisuallyEmpty(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return true;
+  return trimmed.replace(/[​-‍﻿⁠\s]/g, '').length === 0;
+}
 
 export interface MomentInteraction {
   characterId: string;
@@ -83,10 +143,23 @@ export interface Moment {
 
 type MomentAvatarContext = {
   ownerAvatar: string;
+  ownerUsername: string;
   ownerId: string;
   visibleCharacterIds: Set<string>;
   ownerFriendCharacterIds: Set<string>;
+  // 走查新 R1：朋友资料 → 朋友权限管理 → 「我不看 TA 的朋友圈」开关勾掉的
+  // characterId 集合。canOwnerViewPost 把 author 在这个集合里的 post 一并
+  // 隐掉。之前这个开关存到 friendship.momentsHiddenFromMe，但 moments 服务
+  // 完全没读它，UI toggle 等于 dead flag。
+  momentsHiddenFromMeCharacterIds: Set<string>;
   characterAvatarById: Map<string, string>;
+  // 走查 R2：和 ownerUsername 重映射对称——角色被改名后，历史 moment_post /
+  // moment_like / moment_comment 的 authorName 字段仍是写入快照那一刻的旧名字。
+  // 已有的 applyCharacterRemark 只能用 owner 主动设的备注覆盖；没设备注的角色
+  // 改名后所有历史互动都挂着旧名字。把当前角色的 displayName/name 也带进
+  // context，resolveMomentAuthorName 在没有 remark 时优先用 entity 当前名。
+  characterNameById: Map<string, string>;
+  remarkMap: FriendRemarkMap;
 };
 
 @Injectable()
@@ -107,6 +180,8 @@ export class MomentsService implements OnModuleInit {
     private readonly minimaxClient: MinimaxClient,
     private readonly minimaxStorage: MinimaxAssetStorage,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly remarkResolver: FriendRemarkResolver,
+    private readonly imageBudget: MomentImageBudgetService,
     @InjectRepository(MomentEntity)
     private momentRepo: Repository<MomentEntity>,
     @InjectRepository(MomentPostEntity)
@@ -115,13 +190,69 @@ export class MomentsService implements OnModuleInit {
     private commentRepo: Repository<MomentCommentEntity>,
     @InjectRepository(MomentLikeEntity)
     private likeRepo: Repository<MomentLikeEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit() {
+    // 索引先建好再做后续清理：参考 feed.service 同模式。toggleLike 在
+    // findOneBy → save 两步之间存在并发窗口，慢网+客户端连续点击或后台
+    // schedule 任务并发到达，能让同一对 (postId, authorId) 落两行 like，
+    // likeCount 漂移、UI 把"自己"算成点了两次。给 moment_likes 建
+    // UNIQUE(postId, authorId) 在 DB 层兜底；entity 装饰器 unique 是
+    // 陷阱（synchronize 早于 onModuleInit，老库重复行卡死整个 child），
+    // 走 runtime DELETE+CREATE INDEX 幂等路径。
+    // moment_posts 的 (authorId, postedAt) 复合索引让"我的朋友圈"、
+    // friend-moments/$id 等 ownerOnly / characterAuthorId 路径不再
+    // 退化成全表扫描。
+    await this.ensureMomentUniqueIndexes();
     await this.backfillMomentAuthorAvatars();
     await this.backfillUserMomentVisibilityToFriends();
     await this.backfillCharacterMomentsToFeed();
     await this.cleanupLegacyDemoMomentPosts();
+  }
+
+  private async ensureMomentUniqueIndexes(): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      // 1. 去重 moment_likes：每对 (postId, authorId) 只保留 createdAt 最早一行
+      await queryRunner.query(`
+        DELETE FROM moment_likes
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM moment_likes GROUP BY postId, authorId
+        )
+      `);
+      await queryRunner.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uniq_moment_likes_post_author
+        ON moment_likes(postId, authorId)
+      `);
+      // 2. 用 like 表实际行数把 likeCount 拉回真值，修复历史漂移
+      await queryRunner.query(`
+        UPDATE moment_posts
+        SET likeCount = COALESCE((
+          SELECT COUNT(*) FROM moment_likes WHERE moment_likes.postId = moment_posts.id
+        ), 0)
+      `);
+      // 3. commentCount 同理重算（rare race，但既然在跑就一起对齐）
+      await queryRunner.query(`
+        UPDATE moment_posts
+        SET commentCount = COALESCE((
+          SELECT COUNT(*) FROM moment_comments WHERE moment_comments.postId = moment_posts.id
+        ), 0)
+      `);
+      // 4. authorId+postedAt 复合索引：ownerOnly / characterAuthorId 路径走索引
+      await queryRunner.query(`
+        CREATE INDEX IF NOT EXISTS idx_moment_posts_author_postedAt
+        ON moment_posts(authorId, postedAt)
+      `);
+    } catch (error) {
+      this.logger.error(
+        `ensureMomentUniqueIndexes failed: ${(error as Error).message}`,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // 跟 feed.service 的 cleanupLegacyDemoChannelPosts 对称：May 9 切真生成之前
@@ -206,31 +337,77 @@ export class MomentsService implements OnModuleInit {
   async getFeed(input: {
     page?: number;
     limit?: number;
-  }): Promise<{ items: Moment[]; total: number; hasMore: boolean }>;
+    ownerOnly?: boolean;
+    characterAuthorId?: string;
+  }): Promise<{ items: Moment[]; total: number; hasMore: boolean } | Moment[]>;
   async getFeed(
-    input?: { page?: number; limit?: number },
+    input?: {
+      page?: number;
+      limit?: number;
+      ownerOnly?: boolean;
+      characterAuthorId?: string;
+    },
   ): Promise<Moment[] | { items: Moment[]; total: number; hasMore: boolean }> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const avatarContext = await this.buildMomentAvatarContext({
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
+      ownerUsername: owner.username,
     });
-    const posts = await this.postRepo.find({ order: { postedAt: 'DESC' } });
+    // ownerOnly：移动端"我的朋友圈"页用。直接在 DB 层 where 掉非主人 post，
+    // 不再把 248+ 条全部拉回 Node 端 filter 一遍——典型 world owner 自己只发
+    // 个位数条，省掉 ~95% 网络 + JSON 序列化开销。
+    //
+    // characterAuthorId：移动端 friend-moments 页用（/friend-moments/$id）。
+    // 之前进单个角色朋友圈页要拉全表 110 条 ~724KB 再客户端 filter 出该角色的
+    // 几条；改成 DB 层 where authorType='character' AND authorId=id 一次性收敛。
+    // 还要走一遍 canOwnerViewPost（如果该 char 不是好友/被屏蔽，仍然 0 条返回）。
+    const trimmedCharId = input?.characterAuthorId?.trim();
+    // 走查 R1：postedAt 是秒级精度，同 1 秒发 2 条（NPC tick + 用户手动 / 两条
+    // schedule 出来的 ai post）只按 postedAt DESC 排序在 SQLite 下顺序未定，
+    // 翻页 slice 会把同时戳的两条在不同请求看到不同顺序。加 id DESC 做
+    // tiebreaker —— id 是 uuid，DESC 序虽然没语义但稳定，保证翻页一致。
+    const stableOrder = {
+      postedAt: 'DESC' as const,
+      id: 'DESC' as const,
+    };
+    const baseFindOptions = input?.ownerOnly
+      ? {
+          where: { authorType: 'user', authorId: owner.id },
+          order: stableOrder,
+        }
+      : trimmedCharId
+        ? {
+            where: { authorType: 'character', authorId: trimmedCharId },
+            order: stableOrder,
+          }
+        : { order: stableOrder };
+    const posts = await this.postRepo.find(baseFindOptions);
     const visiblePosts = posts.filter((post) =>
       this.canOwnerViewPost(
         post,
         avatarContext.visibleCharacterIds,
         avatarContext.ownerFriendCharacterIds,
+        avatarContext.momentsHiddenFromMeCharacterIds,
       ),
     );
 
-    if (!input) {
+    const hasPagination =
+      input && (input.page !== undefined || input.limit !== undefined);
+    if (!hasPagination) {
       return this._batchEnrichPosts(visiblePosts, avatarContext);
     }
 
-    const page = Math.max(1, Math.floor(input.page ?? 1));
-    const rawLimit = Math.floor(input.limit ?? 20);
-    const limit = Math.min(50, Math.max(1, rawLimit));
+    // 走 Number.isFinite 守 NaN：?page=abc / ?limit=abc 这种乱传不应该悄悄返回
+    // 空列表，应当兜回默认页（page=1, limit=20）让 UI 还能正常加载。
+    const rawPage = Number(input!.page);
+    const page = Number.isFinite(rawPage)
+      ? Math.max(1, Math.floor(rawPage))
+      : 1;
+    const rawLimit = Number(input!.limit);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(50, Math.max(1, Math.floor(rawLimit)))
+      : 20;
     const start = (page - 1) * limit;
     const pageSlice = visiblePosts.slice(start, start + limit);
     const items = await this._batchEnrichPosts(pageSlice, avatarContext);
@@ -246,6 +423,7 @@ export class MomentsService implements OnModuleInit {
     const avatarContext = await this.buildMomentAvatarContext({
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
+      ownerUsername: owner.username,
     });
     const post = await this.postRepo.findOneBy({ id: postId });
     if (
@@ -254,6 +432,7 @@ export class MomentsService implements OnModuleInit {
         post,
         avatarContext.visibleCharacterIds,
         avatarContext.ownerFriendCharacterIds,
+        avatarContext.momentsHiddenFromMeCharacterIds,
       )
     )
       return null;
@@ -270,14 +449,49 @@ export class MomentsService implements OnModuleInit {
   ): Promise<MomentCommentEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.assertOwnerCanInteractWithPost(postId);
+    // 前端 WeChatCommentBar 已经用 value.trim().length>0 拦过空提交，但 curl /
+    // 第三方客户端直接 POST 仍能写入空字符串或纯空白，DB 里会出现"w："这种渲染
+    // 不出正文的脏评论。在服务端再拦一次，统一入口。
+    // trim 后再判 ZWS：之前能写一条纯零宽字符的评论，footer 上挂个 "w：" 但
+    // 正文区是空——视觉跟空评论一样，但走 "empty" 校验是通过的。
+    const trimmedText = typeof text === 'string' ? text.trim() : '';
+    if (!trimmedText || isMomentTextVisuallyEmpty(trimmedText)) {
+      // 用复数前缀 MOMENTS_* 跟 contracts errors.ts 白名单 + error-translate.ts
+      // i18n 字典对齐——单数前缀 MOMENT_* 不在 contracts AppErrorCode union 里，
+      // 前端 i18n 字典查不到只能 fall through 到 legacyMessage（永远是中文），
+      // 非 zh-CN locale 用户拿不到本地化错误。
+      throw new AppError('MOMENTS_COMMENT_EMPTY', {
+        legacyMessage: '评论内容不能为空。',
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
+    if (trimmedText.length > MAX_COMMENT_TEXT_LENGTH) {
+      throw new AppError('MOMENTS_COMMENT_TOO_LONG', {
+        params: { max: MAX_COMMENT_TEXT_LENGTH },
+        legacyMessage: `评论最多 ${MAX_COMMENT_TEXT_LENGTH} 字。`,
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
+    // 校验 replyToCommentId 必须属于同一条 moment —— 否则 UI 找不到目标只能退化成
+    // 普通评论展示，但 replyToAuthorId 还留着，语义错乱。
+    const replyToCommentId = replyTo?.replyToCommentId?.trim() || null;
+    if (replyToCommentId) {
+      const target = await this.commentRepo.findOneBy({ id: replyToCommentId });
+      if (!target || target.postId !== postId) {
+        throw new AppError('MOMENTS_COMMENT_REPLY_TARGET_INVALID', {
+          legacyMessage: '被回复的评论不存在或已被删除。',
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
+    }
     return this.addComment(
       postId,
       owner.id,
       owner.username?.trim() || 'You',
       owner.avatar ?? '',
-      text,
+      trimmedText,
       'user',
-      replyTo,
+      { ...replyTo, replyToCommentId },
     );
   }
 
@@ -306,7 +520,13 @@ export class MomentsService implements OnModuleInit {
     },
   ): Promise<MomentCommentEntity> {
     const replyToCommentId = replyTo?.replyToCommentId?.trim() || null;
-    let replyToAuthorId = replyTo?.replyToAuthorId?.trim() || null;
+    // replyToAuthorId 必须有 replyToCommentId 才有意义——只有 reply-to-author 没有
+    // reply-to-comment 是脏数据（前端绝不该这么发，但 curl / 第三方客户端能伪造）。
+    // DB 里留着这种半残状态会让 visibleComments 上 reply 显示半残「回复 X：正文」
+    // 但点过去找不到原评论的目标。trim 后纯空白也归零。
+    let replyToAuthorId = replyToCommentId
+      ? replyTo?.replyToAuthorId?.trim() || null
+      : null;
     if (replyToCommentId && !replyToAuthorId) {
       const target = await this.commentRepo.findOneBy({ id: replyToCommentId });
       replyToAuthorId = target?.authorId ?? null;
@@ -321,8 +541,19 @@ export class MomentsService implements OnModuleInit {
       replyToCommentId,
       replyToAuthorId,
     });
-    const saved = await this.commentRepo.save(comment);
-    await this.postRepo.increment({ id: postId }, 'commentCount', 1);
+    // 走查 R1：save + increment 之间崩溃（进程被 kill / DB busy timeout）会让
+    // 评论已写入但 commentCount 永远 -1，onModuleInit 的 recount 要等下次重启
+    // 才修。包成 transaction：commentCount 跟评论一起成功 / 一起回滚。
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const persisted = await manager.save(MomentCommentEntity, comment);
+      await manager.increment(
+        MomentPostEntity,
+        { id: postId },
+        'commentCount',
+        1,
+      );
+      return persisted;
+    });
     // 朋友圈评论的 AI 回复链：
     // - 用户评论 / 其他角色评论 → 安排世界角色去回复
     // - 已经是「回复」的评论本身不再触发新回复，避免无限套娃
@@ -347,8 +578,13 @@ export class MomentsService implements OnModuleInit {
   ): Promise<{ liked: boolean }> {
     const existing = await this.likeRepo.findOneBy({ postId, authorId });
     if (existing) {
-      await this.likeRepo.delete(existing.id);
-      await this.postRepo.decrement({ id: postId }, 'likeCount', 1);
+      // 并发窗口里 findOneBy 双方都看到 existing → 双方都跑 delete + decrement，
+      // likeCount 会减成 -1 再被 onModuleInit recount 拉回。delete().affected 拿到
+      // 真实删了多少行，只有真正赢得这次删除的那一次才扣 count。
+      const result = await this.likeRepo.delete(existing.id);
+      if ((result.affected ?? 0) > 0) {
+        await this.postRepo.decrement({ id: postId }, 'likeCount', 1);
+      }
       return { liked: false };
     }
     const like = this.likeRepo.create({
@@ -358,7 +594,23 @@ export class MomentsService implements OnModuleInit {
       authorAvatar,
       authorType,
     });
-    await this.likeRepo.save(like);
+    try {
+      await this.likeRepo.save(like);
+    } catch (error) {
+      // uniq_moment_likes_post_author 撞了：并发两路 toggleLike 都看到没有
+      // existing 然后同时 save，DB 层兜底唯一索引把第二路 abort。语义上
+      // 这次 toggle 实际"已经"被另一路完成（liked=true），UI 也已 optimistic
+      // 切到 liked 状态，再退一步反而把 UI 和 DB 弄反。直接当成成功返回。
+      const message = (error as Error).message?.toLowerCase() ?? '';
+      if (
+        message.includes('uniq_moment_likes_post_author') ||
+        message.includes('unique constraint') ||
+        message.includes('sqlite_constraint')
+      ) {
+        return { liked: true };
+      }
+      throw error;
+    }
     await this.postRepo.increment({ id: postId }, 'likeCount', 1);
     return { liked: true };
   }
@@ -367,20 +619,26 @@ export class MomentsService implements OnModuleInit {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post) {
-      throw new AppError('MOMENT_NOT_FOUND', {
+      // 同上：复数前缀对齐 contracts errors.ts + i18n 字典；单数前缀走不进 i18n。
+      throw new AppError('MOMENTS_NOT_FOUND', {
         legacyMessage: '该朋友圈不存在或已被删除。',
         status: HttpStatus.NOT_FOUND,
       });
     }
     if (post.authorType !== 'user' || post.authorId !== owner.id) {
-      throw new AppError('MOMENT_DELETE_FORBIDDEN', {
+      throw new AppError('MOMENTS_DELETE_FORBIDDEN', {
         legacyMessage: '只能删除自己发布的朋友圈。',
         status: HttpStatus.FORBIDDEN,
       });
     }
-    await this.commentRepo.delete({ postId });
-    await this.likeRepo.delete({ postId });
-    await this.postRepo.delete(postId);
+    // 走查 R1：三条独立 delete 之间没有事务保护——中间一条崩了会留下孤儿
+    // moment_comments / moment_likes 永远查不到也删不掉，磁盘累积。包成一次
+    // transaction：要么整组删，要么一行不删。
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(MomentCommentEntity, { postId });
+      await manager.delete(MomentLikeEntity, { postId });
+      await manager.delete(MomentPostEntity, postId);
+    });
     return { success: true, id: postId };
   }
 
@@ -421,6 +679,24 @@ export class MomentsService implements OnModuleInit {
         }));
       if (!text) return null;
 
+      // 尝试为这条朋友圈配 1 张 AI 方图。受 3 层约束控制（任一失败都安全
+      // fallback 为纯文本，不影响发帖本身）：
+      //   1) MomentImageBudgetService —— 全 world 日上限 100 + world 内角色
+      //      动态优先级均分
+      //   2) MinimaxQuotaService.image-01 三态配额 —— 单 key 当日 120 张总额
+      //   3) MiniMax API 实时熔断 —— 1042 / 2056 撞墙时 release 后 fallback
+      //
+      // 跳过：提醒角色发的"晚安/喝水/番茄钟"类系统消息（reminderMoment）。
+      // 这种文案配 AI 图无意义还会破坏体验，也白烧 100/天的有限名额。
+      const imageMedia = reminderMoment
+        ? null
+        : await this.tryGenerateMomentImage(
+            char.id,
+            char.name,
+            text,
+            profile,
+          );
+
       const post = this.postRepo.create({
         authorId: characterId,
         authorName: char.name,
@@ -428,8 +704,8 @@ export class MomentsService implements OnModuleInit {
         authorType: 'character',
         visibility: this.deriveDefaultVisibility(char.socialOpenness),
         text,
-        contentType: 'text',
-        mediaPayload: this.serializeMomentMedia([]),
+        contentType: imageMedia ? 'image_album' : 'text',
+        mediaPayload: this.serializeMomentMedia(imageMedia ? [imageMedia] : []),
         // 把时间戳推到过去 0-15 分钟随机点，避免 cron tick 把分钟卡在 00/15/30/45。
         postedAt: this.jitterPastTimestamp(15 * 60 * 1000),
         generationKind: profile.realWorldContext?.realityMomentBrief
@@ -462,6 +738,53 @@ export class MomentsService implements OnModuleInit {
     }
   }
 
+  // 尝试为某条角色朋友圈生成 1 张 AI 配图。任何一步失败都返回 null，让调用方
+  // 安全回退为纯文本 post。三态 image-01 quota 在异常路径上必须 release，
+  // 否则 reserved 不归零会让今日剩余配额计数虚高。
+  async tryGenerateMomentImage(
+    characterId: string,
+    characterName: string,
+    postText: string,
+    profile: PersonalityProfile,
+  ): Promise<MomentImageAsset | null> {
+    if (!this.minimaxClient.isConfigured()) return null;
+
+    const allowed = await this.imageBudget.tryAllocate(characterId);
+    if (!allowed) return null;
+
+    const reserved = await this.minimaxQuota.tryReserve('image-01');
+    if (!reserved) return null;
+
+    try {
+      const image = await this.minimaxClient.generateImage({
+        model: 'image-01',
+        prompt: composeMomentImagePrompt(characterName, postText, profile),
+        aspectRatio: '1:1',
+      });
+      const persisted = await this.minimaxStorage.persist({
+        buffer: image.buffer,
+        mimeType: image.mimeType,
+        kind: 'image',
+        suffix: '-moment',
+      });
+      await this.minimaxQuota.commit('image-01');
+      return {
+        id: randomUUID(),
+        kind: 'image',
+        url: persisted.publicUrl,
+        mimeType: image.mimeType,
+        fileName: persisted.fileName,
+        size: persisted.size,
+      };
+    } catch (err) {
+      await this.minimaxQuota.release('image-01');
+      this.logger.warn(
+        `moment image gen failed for character ${characterId}: ${(err as Error)?.message}`,
+      );
+      return null;
+    }
+  }
+
   async generateAllMoments(): Promise<Moment[]> {
     const chars = await this.characters.findAllVisibleToOwner();
     const results: Moment[] = [];
@@ -490,6 +813,19 @@ export class MomentsService implements OnModuleInit {
       });
     }
 
+    // 走查 R3：空文件直接通过。CDP 实测之前 size=0 的 .png 也能 200 落盘，
+    // 列表里再渲染时浏览器 decode 失败 → "破图"图标。前端 publish 路径不会
+    // 主动发 0 字节（pickImageFiles 拿到 File 也是 > 0 字节），但第三方
+    // curl / 移动端 picker 偶尔 cancel-after-select / SD 卡掉链能拿到空 File。
+    // 多一行兜底，让 422 在上传那一刻就拒掉，避免列表里展示挂掉的图。
+    // file.size 和 buffer.length 都校验：multer 在某些边界下两者不一致。
+    if (file.size <= 0 || !file.buffer || file.buffer.length === 0) {
+      throw new AppError('MOMENTS_MEDIA_REQUIRED', {
+        legacyMessage: '上传的朋友圈媒体为空，请重新选择。',
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
+
     const displayName = normalizeMomentMediaDisplayName(
       file.originalname,
       isImage ? 'moment-image' : 'moment-video',
@@ -504,12 +840,18 @@ export class MomentsService implements OnModuleInit {
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, storedFileName), file.buffer);
 
+    // 关键：存相对 URL（`/api/moments/media/...`）而非拼了 PUBLIC_API_BASE_URL 的绝对 URL。
+    // 历史 bug：上传时把当时的公网入口（含端口、含已废弃域名）固化到 mediaPayload 里，
+    // 之后入口换端口/换协议（http→https 或 port migration），这些老帖的 URL 就永远 404。
+    // minimax-asset.storage.ts 之前因为同一类 bug 已经改成相对路径，moments 这条上传通道
+    // 漏了。前端 contracts/client.ts 的 normalizeAttachmentAssetUrl 会在渲染时基于当前
+    // apiBaseUrl + /cloud/world-api 反代前缀正确 absolutize。
     if (isImage) {
       const asset: MomentImageAsset = {
         id: storedFileName,
         kind: 'image',
-        url: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
-        thumbnailUrl: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
+        url: `/api/moments/media/${storedFileName}`,
+        thumbnailUrl: `/api/moments/media/${storedFileName}`,
         mimeType: normalizedMimeType,
         fileName: displayName,
         size: file.size,
@@ -522,7 +864,7 @@ export class MomentsService implements OnModuleInit {
     const asset: MomentVideoAsset = {
       id: storedFileName,
       kind: 'video',
-      url: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
+      url: `/api/moments/media/${storedFileName}`,
       mimeType: normalizedMimeType,
       fileName: displayName,
       size: file.size,
@@ -540,9 +882,12 @@ export class MomentsService implements OnModuleInit {
   normalizeMomentMediaFileName(fileName: string): string {
     const normalized = path.basename(fileName).trim();
     if (!normalized) {
+      // legacyMessage 是非 i18n 客户端 / 直接 curl 调用的兜底显示文案；本仓库其它
+      // 所有 MOMENTS_* 错误都用中文，单独这条用英文走的是「Moment media not found」
+      // 会跨 locale 漏出，跟项目"中文兜底 + 前端再翻译"的约定不一致。
       throw new AppError('MOMENTS_MEDIA_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Moment media not found',
+        legacyMessage: '朋友圈媒体不存在。',
       });
     }
 
@@ -862,13 +1207,19 @@ export class MomentsService implements OnModuleInit {
     post: MomentPostEntity,
     visibleCharacterIds: Set<string>,
     ownerFriendCharacterIds?: Set<string>,
+    momentsHiddenFromMeCharacterIds?: Set<string>,
   ): boolean {
     if (post.authorType !== 'character') return true;
     if (!visibleCharacterIds.has(post.authorId)) return false;
     if (post.visibility === 'private') return false;
     // 朋友圈是「好友圈」语义：未加好友的角色无论是 public 还是 friends 都不在这里露出。
     // （想看所有角色的动态请去广场页面，那里走 feed.service 的查询，不受这个门控约束。）
-    return !!ownerFriendCharacterIds?.has(post.authorId);
+    if (!ownerFriendCharacterIds?.has(post.authorId)) return false;
+    // 走查新 R1：用户在朋友权限里关掉了"看 TA 的朋友圈"
+    // (friendship.momentsHiddenFromMe=true) 就完整把 TA 的 moment 过滤掉。
+    // 此前这个开关只存了 DB，没有任何路径会读，是个 dead UI。
+    if (momentsHiddenFromMeCharacterIds?.has(post.authorId)) return false;
+    return true;
   }
 
   private canOwnerInteractWithPost(
@@ -889,24 +1240,40 @@ export class MomentsService implements OnModuleInit {
     postId: string,
   ): Promise<MomentPostEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const [visibleCharacterIds, ownerFriendCharacterIds] = await Promise.all([
+    const [
+      visibleCharacterIds,
+      ownerFriendCharacterIds,
+      momentsHiddenFromMeCharacterIds,
+    ] = await Promise.all([
       this.getVisibleCharacterIdSet(),
       this.characters.getActiveFriendCharacterIdSet(owner.id),
+      this.remarkResolver.getMomentsHiddenFromMeCharacterIds(owner.id),
     ]);
     const post = await this.postRepo.findOneBy({ id: postId });
     if (
       !post ||
-      !this.canOwnerViewPost(post, visibleCharacterIds, ownerFriendCharacterIds)
+      !this.canOwnerViewPost(
+        post,
+        visibleCharacterIds,
+        ownerFriendCharacterIds,
+        momentsHiddenFromMeCharacterIds,
+      )
     ) {
+      // 之前用 'Moment not found' 英文兜底，对齐 deleteOwnerPost 的中文兜底；
+      // 老/非 i18n 客户端拿到 curl message 不会再出英文文案，跟其它 MOMENTS_*
+      // 错误的中文风格一致。
       throw new AppError('MOMENTS_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Moment not found',
+        legacyMessage: '该朋友圈不存在或已被删除。',
       });
     }
     if (!this.canOwnerInteractWithPost(post, ownerFriendCharacterIds, owner.id)) {
+      // 补句末句号，跟同模块其它 legacyMessage（如「评论内容不能为空。」）的
+      // 标点风格对齐——前端 toast 拼接时不会出现「需先加为好友才能互动 朋友圈
+      // 互动已更新。」这种半句缺标点。
       throw new AppError('MOMENTS_NOT_FRIEND', {
         status: HttpStatus.FORBIDDEN,
-        legacyMessage: '需先加为好友才能互动',
+        legacyMessage: '需先加为好友才能互动。',
       });
     }
     return post;
@@ -1023,7 +1390,17 @@ export class MomentsService implements OnModuleInit {
     return {
       id: post.id,
       authorId: post.authorId,
-      authorName: post.authorName,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        post.authorType,
+        post.authorId,
+        this.resolveMomentAuthorName(
+          post.authorType,
+          post.authorId,
+          post.authorName,
+          resolvedAvatarContext,
+        ),
+        resolvedAvatarContext.remarkMap,
+      ),
       authorAvatar: this.resolveMomentAuthorAvatar(
         post.authorType,
         post.authorId,
@@ -1046,21 +1423,17 @@ export class MomentsService implements OnModuleInit {
       commentCount: serializedComments.length,
       likes: serializedLikes,
       comments: serializedComments,
-      interactions: [
-        ...serializedLikes.map((like) => ({
-          characterId: like.authorId,
-          characterName: like.authorName,
-          type: 'like' as const,
-          createdAt: like.createdAt,
-        })),
-        ...serializedComments.map((comment) => ({
-          characterId: comment.authorId,
-          characterName: comment.authorName,
-          type: 'comment' as const,
-          commentText: comment.text,
-          createdAt: comment.createdAt,
-        })),
-      ],
+      // 走查 R1：interactions 字段是 likes + comments 的扁平+带类型标签复刻视图。
+      // grep 整个 monorepo（apps/app、apps/wiki、apps/admin、apps/site、所有 spec
+      // 和 script）找消费者：0 个客户端在读 moment.interactions，唯一引用只剩
+      // legacy MomentEntity（'moments' 表 21 行老数据，never queried by service）
+      // + contracts 类型定义本身。但每条帖子的 interactions 字段大小约 =
+      // likes 行数 × ~60 + 评论行数 × ~80 bytes：实测一条 54 评论帖单独占 9.8KB，
+      // 而 page=1 limit=20 整页拉到 145KB 里 interactions 占 30-50KB。
+      // 修法：保留 contract 字段（避免破坏向后兼容、type-check），server 始终
+      // emit []，省掉 JSON 序列化 + 网络传输 + 客户端 parse 三段开销。哪天真有
+      // 消费者要回填的时候再 inline 一次性恢复。
+      interactions: [],
     };
   }
 
@@ -1070,6 +1443,17 @@ export class MomentsService implements OnModuleInit {
   ): MomentLikeEntity {
     return {
       ...like,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        like.authorType,
+        like.authorId,
+        this.resolveMomentAuthorName(
+          like.authorType,
+          like.authorId,
+          like.authorName,
+          avatarContext,
+        ),
+        avatarContext.remarkMap,
+      ),
       authorAvatar: this.resolveMomentAuthorAvatar(
         like.authorType,
         like.authorId,
@@ -1085,6 +1469,17 @@ export class MomentsService implements OnModuleInit {
   ): MomentCommentEntity {
     return {
       ...comment,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        comment.authorType,
+        comment.authorId,
+        this.resolveMomentAuthorName(
+          comment.authorType,
+          comment.authorId,
+          comment.authorName,
+          avatarContext,
+        ),
+        avatarContext.remarkMap,
+      ),
       authorAvatar: this.resolveMomentAuthorAvatar(
         comment.authorType,
         comment.authorId,
@@ -1097,7 +1492,12 @@ export class MomentsService implements OnModuleInit {
   private async buildMomentAvatarContext(input?: {
     ownerId?: string;
     ownerAvatar?: string | null;
+    ownerUsername?: string | null;
   }): Promise<MomentAvatarContext> {
+    // ownerUsername 没显式传时，必须从 owner 表实时查；
+    // 不能从入参拼的 partial owner（只有 id/avatar）里漏出旧 username，
+    // 否则 serializeMoment 会把旧名字回灌给前端 — 这正是改名后历史朋友圈
+    // 还显示旧名字的根因。
     const owner =
       input?.ownerId === undefined
         ? await this.worldOwnerService.getOwnerOrThrow()
@@ -1105,21 +1505,53 @@ export class MomentsService implements OnModuleInit {
             id: input.ownerId,
             avatar: input.ownerAvatar ?? '',
           };
-    const [visibleCharacters, ownerFriendCharacterIds] = await Promise.all([
+    // 走查第六轮 R1：getOwnerRemarkMap + getMomentsHiddenFromMeCharacterIds
+    // 之前是两条独立 SQL 跑同一张 friendships 表、同 ownerId。每次 /moments
+    // /moments?character / getPost / assertOwnerCanInteractWithPost 入口都
+    // 走这里，热路径双倍 round-trip。合并成 getOwnerRemarkAndMomentsContext
+    // 一次 select 后在 JS 里 fan-out，砍掉一半的 friendship 读。
+    const [
+      visibleCharacters,
+      ownerFriendCharacterIds,
+      { remarkMap, momentsHiddenFromMeCharacterIds },
+    ] = await Promise.all([
       this.characters.findAllVisibleToOwner(owner.id),
       this.characters.getActiveFriendCharacterIdSet(owner.id),
+      this.remarkResolver.getOwnerRemarkAndMomentsContext(owner.id),
     ]);
 
+    let ownerUsername =
+      input?.ownerUsername === undefined
+        ? null
+        : (input.ownerUsername ?? '').trim() || '';
+    if (ownerUsername === null) {
+      ownerUsername =
+        'username' in owner
+          ? (owner.username ?? '').trim()
+          : ((await this.worldOwnerService.getOwnerOrThrow()).username ?? '')
+              .trim();
+    }
     return {
       ownerAvatar: owner.avatar?.trim() || '',
+      ownerUsername,
       ownerId: owner.id,
       visibleCharacterIds: new Set(
         visibleCharacters.map((character) => character.id),
       ),
       ownerFriendCharacterIds,
+      momentsHiddenFromMeCharacterIds,
       characterAvatarById: new Map(
         visibleCharacters.map((character) => [character.id, character.avatar]),
       ),
+      characterNameById: new Map(
+        // 角色没填 name 时（极少）退回空串，resolveMomentAuthorName 会自动
+        // fallthrough 到 currentName 快照——比强行返回空名字安全。
+        visibleCharacters.map((character) => [
+          character.id,
+          (character.name ?? '').trim(),
+        ]),
+      ),
+      remarkMap,
     };
   }
 
@@ -1144,6 +1576,39 @@ export class MomentsService implements OnModuleInit {
     }
 
     return currentAvatar ?? '';
+  }
+
+  // 跟 resolveMomentAuthorAvatar 对称：moment_post / moment_comment / moment_like
+  // 的 authorName 也是在写入那一刻拍快照。世界主人在「我」→「名字」改名后，
+  // 历史的 post.authorName / like.authorName / comment.authorName 仍是旧名字，
+  // 朋友圈页跟数据看起来好像没改名。这里在序列化时按当前 owner.username
+  // 覆盖。
+  //
+  // 走查 R2 补：character 路径之前完全依赖快照 + applyCharacterRemark 二选一，
+  // 角色被改名但 owner 没设备注时，所有历史 like/comment 还挂旧名字。这跟
+  // owner rename 是对称的 UX hole；优先用 characterNameById（entity 当前名）
+  // 覆盖，applyCharacterRemark 在外层 wrapper 里仍然有最高优先级——remark
+  // 永远 win over 当前名，跟之前语义一致。
+  private resolveMomentAuthorName(
+    authorType: string | null | undefined,
+    authorId: string | null | undefined,
+    currentName: string | null | undefined,
+    avatarContext: MomentAvatarContext,
+  ) {
+    if (
+      authorType === 'user' &&
+      authorId === avatarContext.ownerId &&
+      avatarContext.ownerUsername
+    ) {
+      return avatarContext.ownerUsername;
+    }
+    if (authorType === 'character' && authorId) {
+      const liveName = avatarContext.characterNameById.get(authorId);
+      if (liveName) {
+        return liveName;
+      }
+    }
+    return currentName ?? '';
   }
 
   private async backfillCharacterMomentsToFeed() {
@@ -1286,14 +1751,46 @@ export class MomentsService implements OnModuleInit {
     const location = input.location?.trim() || undefined;
     const media = this.normalizeMomentMediaInput(input.media);
     const inferredContentType = this.inferMomentContentType(media);
-    const contentType = this.normalizeMomentContentType(
-      input.contentType ?? inferredContentType,
-    );
+    // normalizeMomentContentType 把任何不识别的值（如 'image'、空串、拼错的
+    // 'video_clip' 等）静默压成 'text'。和 `?? inferredContentType` 顺序结合
+    // 后果是：客户端发 contentType='image' + 10 张图 → 压成 'text' →
+    // assertMomentMediaMatchesContentType 抛 MOMENTS_TEXT_NO_MEDIA「纯文本
+    // 朋友圈不能附带图片或视频」，错误指向完全反了，第三方/curl 调用者根本
+    // 调不出来。
+    // 走查 R2：input.contentType 给了但不在白名单里 → 当成"客户端没给"，
+    // 走 inferredContentType。前端官方 client 永远发的是 contract 里的合法值，
+    // 这个 fallback 只影响第三方 / 老 client / 拼写错误用例，行为更宽容。
+    // input.contentType 明确给 'text'（仍在白名单内）+ media>0 的检测路径
+    // 不受影响——normalize 那里就直接返回 'text'，下面 assertMatch 照样抛
+    // MOMENTS_TEXT_NO_MEDIA（合理：明确要求 text 却带媒体 = 客户端语义冲突）。
+    const KNOWN_TYPES: ReadonlySet<MomentContentType> = new Set([
+      'text',
+      'image_album',
+      'video',
+      'live_photo',
+      'audio_card',
+    ]);
+    const explicitContentType =
+      typeof input.contentType === 'string' &&
+      KNOWN_TYPES.has(input.contentType as MomentContentType)
+        ? (input.contentType as MomentContentType)
+        : undefined;
+    const contentType = explicitContentType ?? inferredContentType;
     const visibility = this.normalizeUserMomentVisibility(input.visibility);
 
-    if (!text && media.length === 0) {
+    // 视觉为空（纯空白 / 纯 ZWS）且没附媒体 → 拒收。trim 后纯零宽字符在
+    // `!text` 判定里是 truthy，会落库成一条无正文 + 无媒体的"幽灵帖"，列表
+    // 卡片里只剩头像/时间，看起来像渲染挂了。
+    if (media.length === 0 && (!text || isMomentTextVisuallyEmpty(text))) {
       throw new AppError('MOMENTS_EMPTY', {
         legacyMessage: '朋友圈内容和媒体不能同时为空。',
+      });
+    }
+
+    if (text.length > MAX_MOMENT_TEXT_LENGTH) {
+      throw new AppError('MOMENTS_TEXT_TOO_LONG', {
+        params: { max: MAX_MOMENT_TEXT_LENGTH },
+        legacyMessage: `朋友圈正文最多 ${MAX_MOMENT_TEXT_LENGTH} 字。`,
       });
     }
 
@@ -1332,11 +1829,16 @@ export class MomentsService implements OnModuleInit {
     index: number,
   ): MomentMediaAsset {
     if (asset.kind === 'video') {
+      const url = asset.url?.trim() || '';
+      const posterUrl = asset.posterUrl?.trim() || undefined;
+      // 阻止 SSRF：url / posterUrl 必须命中 /api/moments/media/ 白名单。
+      assertMomentMediaUrl(url, 'video.url');
+      assertMomentMediaUrl(posterUrl, 'video.posterUrl');
       return {
         id: asset.id?.trim() || `moment-video-${index + 1}`,
         kind: 'video',
-        url: asset.url?.trim() || '',
-        posterUrl: asset.posterUrl?.trim() || undefined,
+        url,
+        posterUrl,
         mimeType: asset.mimeType?.trim() || 'video/mp4',
         fileName: asset.fileName?.trim() || `video-${index + 1}`,
         size: Math.max(0, Math.round(asset.size ?? 0)),
@@ -1347,11 +1849,15 @@ export class MomentsService implements OnModuleInit {
     }
 
     if (asset.kind === 'audio') {
+      const url = asset.url?.trim() || '';
+      const posterUrl = asset.posterUrl?.trim() || undefined;
+      assertMomentMediaUrl(url, 'audio.url');
+      assertMomentMediaUrl(posterUrl, 'audio.posterUrl');
       return {
         id: asset.id?.trim() || `moment-audio-${index + 1}`,
         kind: 'audio',
-        url: asset.url?.trim() || '',
-        posterUrl: asset.posterUrl?.trim() || undefined,
+        url,
+        posterUrl,
         mimeType: asset.mimeType?.trim() || 'audio/mpeg',
         fileName: asset.fileName?.trim() || `audio-${index + 1}`,
         size: Math.max(0, Math.round(asset.size ?? 0)),
@@ -1361,12 +1867,17 @@ export class MomentsService implements OnModuleInit {
       };
     }
 
+    const url = asset.url?.trim() || '';
+    const thumbnailUrl = asset.thumbnailUrl?.trim() || url || undefined;
+    const motionUrl = asset.livePhoto?.motionUrl?.trim() || undefined;
+    assertMomentMediaUrl(url, 'image.url');
+    assertMomentMediaUrl(thumbnailUrl, 'image.thumbnailUrl');
+    assertMomentMediaUrl(motionUrl, 'image.livePhoto.motionUrl');
     return {
       id: asset.id?.trim() || `moment-image-${index + 1}`,
       kind: 'image',
-      url: asset.url?.trim() || '',
-      thumbnailUrl:
-        asset.thumbnailUrl?.trim() || asset.url?.trim() || undefined,
+      url,
+      thumbnailUrl,
       mimeType: asset.mimeType?.trim() || 'image/jpeg',
       fileName: asset.fileName?.trim() || `image-${index + 1}`,
       size: Math.max(0, Math.round(asset.size ?? 0)),
@@ -1375,7 +1886,7 @@ export class MomentsService implements OnModuleInit {
       livePhoto: asset.livePhoto?.enabled
         ? {
             enabled: true,
-            motionUrl: asset.livePhoto.motionUrl?.trim() || undefined,
+            motionUrl,
           }
         : undefined,
     };
@@ -1630,13 +2141,6 @@ export class MomentsService implements OnModuleInit {
     return resolvePrimaryMomentMediaStorageDir();
   }
 
-  private resolvePublicApiBaseUrl(): string {
-    return (
-      process.env.PUBLIC_API_BASE_URL?.trim() ||
-      `http://localhost:${process.env.PORT ?? 3000}`
-    ).replace(/\/+$/, '');
-  }
-
   /**
    * NPC 自主巡查：让 manual_admin 角色主动浏览近期朋友圈、按 intimacy/兴趣点赞或评论。
    * 与 scheduleCharacterInteractions（被动反应）互补，确保即使无新帖也有持续社交活动。
@@ -1690,8 +2194,11 @@ export class MomentsService implements OnModuleInit {
     }
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const ownerFriendCharacterIds =
-      await this.characters.getActiveFriendCharacterIdSet(owner.id);
+    const [ownerFriendCharacterIds, momentsHiddenFromThemCharacterIds] =
+      await Promise.all([
+        this.characters.getActiveFriendCharacterIdSet(owner.id),
+        this.remarkResolver.getMomentsHiddenFromThemCharacterIds(owner.id),
+      ]);
 
     for (const char of activeCandidates) {
       // 朋友圈是「好友圈」语义：非好友角色不会主动到任何朋友圈里露脸。
@@ -1705,8 +2212,22 @@ export class MomentsService implements OnModuleInit {
 
       participantCount += 1;
 
+      // 走查 R2 复检：朋友权限页"TA 看不到我的朋友圈"开关一直是 dead flag——
+      // 此时 npc tick 仍把用户最新 moment 推给这位 char 当候选，char 会
+      // 点赞 / 评论，用户看到通知就知道开关白勾了。把 hiddenFromThem 的 char
+      // 在看到 user authorType 的 post 时直接过滤掉，他俩之间的 user→char
+      // 朋友圈链路就切干净了（char→user 方向由 momentsHiddenFromMe 兜底）。
+      const hideUserPostsFromThisChar =
+        momentsHiddenFromThemCharacterIds.has(char.id);
+
       const candidatePosts = recentPosts.filter(
-        (post) => post.authorId !== char.id,
+        (post) =>
+          post.authorId !== char.id &&
+          !(
+            hideUserPostsFromThisChar &&
+            post.authorType === 'user' &&
+            post.authorId === owner.id
+          ),
       );
       if (candidatePosts.length === 0) continue;
 
@@ -1847,8 +2368,10 @@ export class MomentsService implements OnModuleInit {
   //   失败会自动 fall through 到 Tier 2，保留入口以备 minimax 修好该端点
   // Tier 2: MiniMax /v1/text/chatcompletion_v2 + MiniMax-M2.7（tokenplan 主推 LLM）
   //   这就是"tokenplan 里 minimax 正常的 llm"，确认可用
-  // Tier 3: ai.generatePlainText —— AiOrchestrator 走默认 chat provider（通常是 n1n）
-  // Tier 4: 本地 composeMusicLyrics 模板
+  // Tier 3: 本地 composeMusicLyrics 模板
+  //   注意：过去这里曾用 ai.generatePlainText 走通用 LLM（会被
+  //   AiOrchestrator 兜底到 n1n.ai）。2026-05-13 撤掉——minimax 容量耗尽时
+  //   每首歌都打一次 n1n 既贵又破坏"歌词全程留在 minimax tokenplan 内"的约束。
   // 前提：调用方 scheduleMinimaxMusicMoment 已经验证音乐配额非空。
   private async generateLyricsOrFallback(
     characterId: string,
@@ -1883,17 +2406,29 @@ export class MomentsService implements OnModuleInit {
           return result.lyrics;
         } catch (err) {
           await this.minimaxQuota.release('lyrics');
-          // 服务端确认今日 lyrics 额度耗尽 → 标本地不再 reserve，剩余 cron tick 全跳过
+          // 服务端 2056 = Token Plan Max 当日整体耗尽：lyrics / chat / music 共享同一池子。
+          // 既然 music 也满了，做歌词等于白调 n1n —— 同时标记 music-2.6 / music-2.5
+          // exhausted，并抛 skip 错让 scheduleMinimaxMusicMoment 整条放弃。
           if (
             err instanceof MinimaxClientError &&
             err.code === 'MINIMAX_QUOTA_EXHAUSTED'
           ) {
-            this.minimaxQuota.markExhaustedToday('lyrics');
+            await this.minimaxQuota.markExhaustedToday('lyrics');
+            await this.minimaxQuota.markExhaustedToday('music-2.6');
+            await this.minimaxQuota.markExhaustedToday('music-2.5');
+            throw new MusicQuotaExhaustedError(
+              `token plan exhausted via lyrics 2056; skip music moment for ${characterName}`,
+            );
           }
           this.logger.warn(
             `minimax lyrics endpoint failed, falling back to minimax LLM: ${(err as Error)?.message}`,
           );
         }
+      } else if (await this.minimaxQuota.isExhaustedToday('lyrics')) {
+        // 之前已经撞过 2056 被本地标死 → 同 token plan 的 music 也用不了，整条放弃。
+        throw new MusicQuotaExhaustedError(
+          `lyrics quota already exhausted today; skip music moment for ${characterName}`,
+        );
       } else {
         this.logger.debug(
           'minimax lyrics quota exhausted, falling back to minimax LLM',
@@ -1902,59 +2437,49 @@ export class MomentsService implements OnModuleInit {
     }
 
     // Tier 2: minimax chatcompletion_v2 + MiniMax-M2.7（tokenplan LLM）
+    // 接入 quota service：撞 2056 后 markExhaustedToday，后续 tick 秒进 Tier3。
     if (this.minimaxClient.isConfigured()) {
-      try {
-        const result = await this.minimaxClient.chatCompletion({
-          model: 'MiniMax-M2.7',
-          messages: [{ role: 'user', content: prompt }],
-          maxTokens: 2000,
-          temperature: 0.9,
-        });
-        const cleaned = ensureVerseChorus(result.content);
-        if (cleaned) {
-          this.logger.log(
-            `lyrics via minimax LLM (M2.7) for ${characterName} [theme=${theme}]`,
+      const m27Reserved = await this.minimaxQuota.tryReserve('MiniMax-M2.7');
+      if (!m27Reserved) {
+        this.logger.debug(
+          'minimax M2.7 lyrics tier skipped (exhausted/pacing), falling to generic LLM',
+        );
+      } else {
+        try {
+          const result = await this.minimaxClient.chatCompletion({
+            model: 'MiniMax-M2.7',
+            messages: [{ role: 'user', content: prompt }],
+            maxTokens: 2000,
+            temperature: 0.9,
+          });
+          await this.minimaxQuota.commit('MiniMax-M2.7');
+          const cleaned = ensureVerseChorus(result.content);
+          if (cleaned) {
+            this.logger.log(
+              `lyrics via minimax LLM (M2.7) for ${characterName} [theme=${theme}]`,
+            );
+            return cleaned;
+          }
+        } catch (err) {
+          await this.minimaxQuota.release('MiniMax-M2.7');
+          if (
+            err instanceof MinimaxClientError &&
+            err.code === 'MINIMAX_QUOTA_EXHAUSTED'
+          ) {
+            // M2.7 chat 也走同 Token Plan，2056 一旦发生今天就不要再试了。
+            await this.minimaxQuota.markExhaustedToday('MiniMax-M2.7');
+          }
+          this.logger.warn(
+            `minimax LLM lyrics failed, falling back to generic LLM: ${(err as Error)?.message}`,
           );
-          return cleaned;
         }
-      } catch (err) {
-        this.logger.warn(
-          `minimax LLM lyrics failed, falling back to generic LLM: ${(err as Error)?.message}`,
-        );
       }
     }
 
-    // Tier 3: 通用 LLM（orchestrator 路由，通常落到 n1n）
-    try {
-      const text = await this.ai.generatePlainText({
-        prompt,
-        usageContext: {
-          surface: 'app',
-          scene: 'minimax_music_lyrics_fallback',
-          scopeType: 'character',
-          scopeId: characterId,
-          scopeLabel: characterName,
-          characterId,
-          characterName,
-        },
-        maxTokens: 600,
-        temperature: 0.9,
-        fallback: localFallback,
-      });
-      const cleaned = ensureVerseChorus(text);
-      if (cleaned) {
-        this.logger.log(
-          `lyrics via generic LLM fallback for ${characterName} [theme=${theme}]`,
-        );
-        return cleaned;
-      }
-    } catch (err) {
-      this.logger.warn(
-        `generic LLM lyrics fallback failed: ${(err as Error)?.message}`,
-      );
-    }
-
-    // Tier 4: 本地模板
+    // Tier 3: 本地模板（不再走 ai.generatePlainText，避免 orchestrator 兜底到 n1n）
+    this.logger.log(
+      `lyrics via local template for ${characterName} [theme=${theme}]`,
+    );
     return localFallback;
   }
 
@@ -1981,12 +2506,23 @@ export class MomentsService implements OnModuleInit {
     const { theme: seedTheme } = pickThemeAndStyle(char.id);
     const seedText = `${char.name} 此刻心境与「${seedTheme}」相关，请围绕这一画面展开。`;
 
-    const lyrics = await this.generateLyricsOrFallback(
-      char.id,
-      char.name,
-      profile,
-      seedText,
-    );
+    let lyrics: string;
+    try {
+      lyrics = await this.generateLyricsOrFallback(
+        char.id,
+        char.name,
+        profile,
+        seedText,
+      );
+    } catch (err) {
+      if (err instanceof MusicQuotaExhaustedError) {
+        this.logger.log(
+          `skip music moment for ${char.name}: ${err.message}`,
+        );
+        return null;
+      }
+      throw err;
+    }
     const job = await this.minimaxJobs.enqueueMusicJob({
       model: 'music-2.6',
       prompt: composeMusicPrompt(char.name, seedText),

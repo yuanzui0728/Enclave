@@ -127,11 +127,20 @@ importers:
       '@capacitor/android':
         specifier: ^7.1.1
         version: 7.6.1(@capacitor/core@7.6.1)
+      '@capacitor/app':
+        specifier: ^7.1.0
+        version: 7.1.2(@capacitor/core@7.6.1)
       '@capacitor/core':
         specifier: ^7.1.1
         version: 7.6.1
       '@capacitor/keyboard':
         specifier: ^7.0.6
+        version: 7.0.6(@capacitor/core@7.6.1)
+      '@capacitor/splash-screen':
+        specifier: ^7.0.2
+        version: 7.0.5(@capacitor/core@7.6.1)
+      '@capacitor/status-bar':
+        specifier: ^7.0.1
         version: 7.0.6(@capacitor/core@7.6.1)
     devDependencies:
       '@capacitor/cli':
@@ -140,6 +149,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@capacitor/app':
+        specifier: ^7.1.0
+        version: 7.1.2(@capacitor/core@7.6.1)
       '@capacitor/core':
         specifier: ^7.1.1
         version: 7.6.1
@@ -312,6 +324,9 @@ importers:
       '@yinjie/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       better-sqlite3:
         specifier: ^12.6.2
         version: 12.8.0
@@ -339,6 +354,9 @@ importers:
       typeorm:
         specifier: ^0.3.28
         version: 0.3.28(better-sqlite3@12.8.0)(ts-node@10.9.2)
+      undici:
+        specifier: ^8.2.0
+        version: 8.2.0
     devDependencies:
       '@nestjs/cli':
         specifier: ^11.0.0
@@ -346,6 +364,9 @@ importers:
       '@nestjs/schematics':
         specifier: ^11.0.0
         version: 11.0.10(chokidar@4.0.3)(typescript@5.9.3)
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -4452,6 +4473,10 @@ packages:
       '@babel/types': 7.29.0
     dev: true
 
+  /@types/bcryptjs@2.4.6:
+    resolution: {integrity: sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==}
+    dev: true
+
   /@types/body-parser@1.19.6:
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
     dependencies:
@@ -5279,6 +5304,10 @@ packages:
     resolution: {integrity: sha512-BL2sTuHOdy0YT1lYieUxTw/QMtPBC3pmlJC6xk8BBYVv6vcw3SGdKemQ+Xsx9ik2F/lYDO9tqsFQH1r9PFuHKw==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  /bcryptjs@2.4.3:
+    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
+    dev: false
 
   /better-sqlite3@12.8.0:
     resolution: {integrity: sha512-RxD2Vd96sQDjQr20kdP+F+dK/1OUNiVOl200vKBZY8u0vTwysfolF6Hq+3ZK2+h8My9YvZhHsF+RSGZW2VYrPQ==}
@@ -9844,6 +9873,11 @@ packages:
 
   /undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  /undici@8.2.0:
+    resolution: {integrity: sha512-Z+4Hx9GE26Lh9Upwfnc8C7SsrpBPGaM/Gm6kMFtiG7c+5IvQKlXi/t+9x9DrrCh29cww5TSP9YdVaBcnLDs5fQ==}
+    engines: {node: '>=22.19.0'}
+    dev: false
 
   /unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}

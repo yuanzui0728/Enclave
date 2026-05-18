@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -9,11 +10,12 @@ import {
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator, translateRuntimeMessage } from "@yinjie/i18n";
 import { useNavigate } from "@tanstack/react-router";
-import type {
-  FeedChannelAuthorProfile,
-  FeedChannelHomeSection,
-  FeedComment,
-  FeedPostListItem,
+import {
+  SELF_CHARACTER_ID,
+  type FeedChannelAuthorProfile,
+  type FeedChannelHomeSection,
+  type FeedComment,
+  type FeedPostListItem,
 } from "@yinjie/contracts";
 import {
   Button,
@@ -28,6 +30,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  ImageOff,
   MessageCircleMore,
   RadioTower,
   RefreshCcw,
@@ -37,11 +40,15 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { AudioCard } from "../../../components/audio-card";
 import { ChannelsForwardPicker } from "../../../components/channels-forward-picker";
 import { EmptyState } from "../../../components/empty-state";
+import {
+  getChannelsEmptyState,
+  getChannelsSectionBadge,
+} from "../../channels/channels-section-badge";
+import { stripToolCallSyntax } from "../../moments/moment-content";
 import { formatTimestamp } from "../../../lib/format";
 import { resolveAppMediaUrl } from "../../../lib/media-url";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -66,10 +73,27 @@ type DesktopChannelsWorkspaceProps = {
   errorMessage?: string | null;
   isLoading: boolean;
   likePendingPostId: string | null;
+  // 走查 2026-05-17 R1：原桌面 workspace 只接 likePending，关注/收藏完全没有
+  // pending 锁。channels-page 早就计算了 followPendingAuthorId / favoritePendingPostId
+  // 给移动端用，桌面端这两个按钮在 mutation 飞行期允许 rapid click，导致
+  // follow → unfollow → follow 三条并发请求落库时按谁先回来谁先生效，最终状态
+  // 跟用户最后一次点击意图对不上（同移动端 R1 已修过的同款问题）。补上 prop
+  // 透传，按钮按 mutation 锁。
+  favoritePendingPostId: string | null;
+  followPendingAuthorId: string | null;
   posts: FeedPostListItem[];
+  refreshPending?: boolean;
   routeSelectedAuthorId?: string | null;
   routeSelectedPostId?: string | null;
   successNotice?: string;
+  // 走查 2026-05-18 R4（本轮）：parent channels-page 的 noticeTone 在 mobile
+  // InlineNotice 上用对了 tone={noticeTone}，但 desktop workspace 上一直硬编
+  // 码 tone="success"——半数以上的 notice 路径 setNoticeTone("info") 是给失败
+  // 兜底的（"点赞失败：xxx" / "需先加为好友才能互动" / "稍等，已经在直播流
+  // 中" 等等，channels-page L310/459/511/570/649/821/922/1072/1112），全部在
+  // desktop 上渲成绿色 success 体感，明显误导。把 tone 透下来按 parent 给的
+  // 渲染。
+  successNoticeTone?: "success" | "info";
   isPostFavorite: (postId: string) => boolean;
   onCloseAuthor: () => void;
   onCancelCommentReply: () => void;
@@ -83,6 +107,13 @@ type DesktopChannelsWorkspaceProps = {
   onReplyToComment: (comment: FeedComment) => void;
   onSectionChange: (section: FeedChannelHomeSection) => void;
   onSelectedPostChange: (postId: string | null) => void;
+  // 走查 2026-05-18 新会话 R3：把"当前哪条 post 的评论抽屉是开的"上报给
+  // channels-page，用来 gate desktopCommentsQuery 的 enable/key —— 之前 query
+  // 跟着 desktopSelectedPostId 走，用户每滑过一条 slide 就会 fetch 一次 comments
+  // （公网隧道 200-500ms RTT × N slide），但 90% slide 用户根本不点 chat 图标。
+  // 抽屉是 workspace 本地状态，channels-page 拿不到；通过这个回调把开关信号
+  // 透给父级，让 query 只在抽屉真打开时才发请求。
+  onDrawerOpenChange?: (postId: string | null) => void;
   onToggleAuthorFollow: (authorId: string, following: boolean) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
   onViewPost: (postId: string) => void;
@@ -111,10 +142,14 @@ export function DesktopChannelsWorkspace({
   errorMessage,
   isLoading,
   likePendingPostId,
+  favoritePendingPostId,
+  followPendingAuthorId,
   posts,
+  refreshPending = false,
   routeSelectedAuthorId = null,
   routeSelectedPostId = null,
   successNotice,
+  successNoticeTone = "success",
   isPostFavorite,
   onCloseAuthor,
   onCancelCommentReply,
@@ -128,6 +163,7 @@ export function DesktopChannelsWorkspace({
   onReplyToComment,
   onSectionChange,
   onSelectedPostChange,
+  onDrawerOpenChange,
   onToggleAuthorFollow,
   onToggleFavorite,
   onViewPost,
@@ -137,7 +173,6 @@ export function DesktopChannelsWorkspace({
   const t = useRuntimeTranslator();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const queryClient = useQueryClient();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   // 视频号转发面板：null = 关闭。点 Share 按钮 → 设当前帖摘要。
   const [forwardPickerPost, setForwardPickerPost] = useState<{
@@ -148,6 +183,48 @@ export function DesktopChannelsWorkspace({
   const [commentDrawerPostId, setCommentDrawerPostId] = useState<string | null>(
     null,
   );
+  // 视频号的静音状态提升到 workspace：一旦用户在某一条 unmute，再滚到下一条仍保持
+  // 取消静音，对齐移动端 / 微信视频号 / 抖音的体验；否则每张 slide 都是独立 ChannelVideoPlayer
+  // 实例，会从默认 muted=true 重新开始，导致来回切静音。
+  const [unmuted, setUnmuted] = useState(false);
+  const toggleUnmuted = useCallback(() => {
+    setUnmuted((current) => !current);
+  }, []);
+
+  // 走查 2026-05-18 新会话 R1：channels-page 在 baseUrl 切换（用户换账号）时
+  // 已经清掉自己那份 forwardPickerPost / commentDrafts / notice（line 1162-
+  // 1181），但 DesktopChannelsWorkspace 不在 React tree 上 unmount，自己这份
+  // forwardPickerPost / forwardNotice / commentDrawerPostId 没人重置。结果用
+  // 户在 A 账号打开转发面板挑好友、半途切到 B 账号 → picker 还开着 + postId
+  // 仍是 A 世界的 uuid → 点好友落地 B 世界的 API 立刻 FEED_POST_NOT_FOUND，
+  // 错误通过 picker 兜底文案翻成"这条视频号已经不在了"——但用户视角是「我刚
+  // 进新账号点了下转发就报视频号丢了」，错得没头没脑。同步把 channels-page
+  // 那条 baseUrl change reset 镜像到 workspace 这份本地状态上：picker / notice
+  // / 评论 drawer 一律清零，让新账号干净落地。unmuted / selectedPostId 不动
+  // —— unmuted 是用户跨账号一致的偏好；selectedPostId 上面 effect L195-204
+  // 已经按新 posts 兜底了。
+  const previousBaseUrlRef = useRef(baseUrl);
+  // 走查 2026-05-18 新会话 R2：picker 打开时 baseUrl 钉到 ref —— forward
+  // mutation 是 picker 内部的 useMutation，picker 因 R5-1 reset 被 unmount
+  // 后 mutationFn 仍然在 flight（fetch 不会因组件卸载自动取消），完成时
+  // handlePick 的 try 分支照样 await 落地 → 调 onForwarded?.(...) → workspace
+  // 的 setForwardNotice("已转发给 X") 在新账户 UI 上冒出来，体感「我刚切到
+  // B 啥都没干怎么有转发通知」。失败路径 onForwardFailed 同款问题。
+  // 用 ref 捕获 picker 打开时的 baseUrl，下面 onForwarded / onForwardFailed
+  // 比对当前 baseUrl 早返：跨账户的"上一个账户"的转发不冒到当前账户。
+  // ref 清空时机：baseUrl change（上面那条 effect）会顺手清；onClose 不清
+  //（同账户内手动关 picker 后 mutation 落地仍想给确认）。
+  const forwardPickerBaseUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousBaseUrlRef.current === baseUrl) {
+      return;
+    }
+    previousBaseUrlRef.current = baseUrl;
+    setForwardPickerPost(null);
+    setForwardNotice(null);
+    setCommentDrawerPostId(null);
+    forwardPickerBaseUrlRef.current = null;
+  }, [baseUrl]);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef(new Map<string, HTMLDivElement>());
@@ -162,22 +239,136 @@ export function DesktopChannelsWorkspace({
     [],
   );
 
+  // 走查 2026-05-18 新会话 R1：channels-page 把所有 mutation 回调 (onLike /
+  // onShare / onToggleAuthorFollow / onToggleFavorite / onOpenAuthor 等) 用
+  // 内联箭头穿到 DesktopChannelsWorkspace —— 父级每 render（包括频繁的乐观
+  // 更新和 IntersectionObserver setSelectedPostId）都换 callback identity。
+  // 配合下方 posts.map 里的二级内联箭头 `onLike={() => onLike(post.id)}`，
+  // 即使每条 slide 的 post / isActive / pending 属性都没变，每次父 re-render
+  // 也把 20 张 slide 全推一遍 → ChannelMediaSurface / ChannelVideoPlayer 跟着
+  // 重渲（虽然 effect deps 没变所以视频不会重启，但 DOM diff 仍然过一遍）。
+  // 用 latest-ref 兜稳定 identity 的回调，下面 React.memo(ChannelFeedSlide)
+  // 才有意义 —— 只有真正属性变化的那条 slide 会重渲。
+  const handlerRefs = useRef({
+    onLike,
+    onOpenAuthor,
+    onToggleAuthorFollow,
+    onToggleFavorite,
+    baseUrl,
+  });
+  handlerRefs.current = {
+    onLike,
+    onOpenAuthor,
+    onToggleAuthorFollow,
+    onToggleFavorite,
+    baseUrl,
+  };
+  const handleSlideLike = useCallback((postId: string) => {
+    handlerRefs.current.onLike(postId);
+  }, []);
+  const handleSlideOpenAuthor = useCallback((authorId: string) => {
+    handlerRefs.current.onOpenAuthor(authorId);
+  }, []);
+  const handleSlideToggleCommentDrawer = useCallback((postId: string) => {
+    setCommentDrawerPostId((current) =>
+      current === postId ? null : postId,
+    );
+  }, []);
+  const handleSlideShare = useCallback((post: FeedPostListItem) => {
+    // 走查 2026-05-17 R2：移动端 handleSharePost 早就用 stripToolCallSyntax
+    // 把 <tool_call> / [TOOL_CALL] 这类残留过滤掉再当转发面板顶部摘要；
+    // 桌面这里一直拿原文，AI 生成贴里夹的工具调用语法会原样塞进
+    // 转发预览，看着像乱码。和移动端对齐一道清洗。
+    //
+    // 走查 2026-05-18 新会话续轮 R1：mobile handleSharePost（channels-page
+    // L1630-1647）早就加了 fallback 链 cleanText → post.title → "视频号动态"
+    // —— audio 帖（mediaType=audio）后端 createOwnerPost 走 audio 路径时 text
+    // 不强制，post.text 经常是空串；纯 AI thinking-prose 帖也会被 strip 抠成
+    // 空。原 desktop 代码直接拼 `${author}：${cleanText}` 让 picker 顶部摘要
+    // 变成「李白：」一个孤零零的全角冒号悬空，体感「要转发的内容是不是残缺了」。
+    // 桌面跟移动端对齐 fallback 链；用 translateRuntimeMessage 而非 t hook，
+    // 是因为下方 useCallback([]) 不该把 t 拽进 deps。
+    const cleanText = stripToolCallSyntax(post.text ?? "").trim();
+    const titleOrText =
+      cleanText ||
+      post.title?.trim() ||
+      translateRuntimeMessage(msg`视频号动态`);
+    // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl 供下方 onForwarded
+    // / onForwardFailed 比对（跨账户的转发完成不冒到新账户）。
+    forwardPickerBaseUrlRef.current = handlerRefs.current.baseUrl ?? null;
+    setForwardPickerPost({
+      id: post.id,
+      excerpt: `${post.authorName}：${titleOrText}`.slice(0, 80),
+    });
+  }, []);
+  const handleSlideToggleAuthorFollow = useCallback((post: FeedPostListItem) => {
+    handlerRefs.current.onToggleAuthorFollow(
+      post.authorId,
+      Boolean(post.ownerState?.isFollowingAuthor),
+    );
+  }, []);
+  const handleSlideToggleFavorite = useCallback((post: FeedPostListItem) => {
+    handlerRefs.current.onToggleFavorite(post);
+  }, []);
+  // 同款 hoist：原来 sectionBadge 在 posts.map 里每条 slide 都跑一次
+  // getChannelsSectionBadge(activeSection, t) — 同 section 下结果完全一样，
+  // 20 张 slide 浪费 20 次 switch + 20 次 t() 翻译查表。提到外面只算一次。
+  const sectionBadge = useMemo(
+    () => getChannelsSectionBadge(activeSection, t),
+    [activeSection, t],
+  );
+
+  // 走查 2026-05-18 新会话（本轮 R1）：原 effect 直接 setSelectedPostId(routeSel
+  // ectedPostId) 是 OK 的，但跟下面那条 effect 在同一 commit 里都看见旧 select
+  // edPostId 的闭包：那条用非 functional 写法 setSelectedPostId(posts[0]?.id)
+  // 又覆盖回来 → 实际 selectedPostId 落到 posts[0] 而不是 routeSelectedPostId。
+  // 这条用 functional 防 stale closure：c 是 React 队列里上一条 setState 翻新
+  // 过的 current，不再被覆盖。
   useEffect(() => {
     setSelectedPostId((current) =>
       current === routeSelectedPostId ? current : routeSelectedPostId,
     );
   }, [routeSelectedPostId]);
 
+  // 走查 2026-05-18 新会话（本轮 R1）：原写法用闭包里捕到的 selectedPostId 判
+  // `!selectedPostId || !posts.some(...)` 然后 setSelectedPostId(posts[0]?.id)
+  // ——但在工作区刚刚 mount 那一帧（baseUrl 切账户 / deep-link 入场 → desktop
+  // RoutePostPending 翻 false 之后 workspace 重新挂上）这条 effect 跟上面那条
+  // [routeSelectedPostId] effect 在同一个 commit 里都看见 selectedPostId=null
+  // 的闭包：上面 setSelectedPostId(routeSel='real-id')，本 effect 看见闭包还是
+  // null 就再 setSelectedPostId(posts[0].id)，最后一次 wins → routeSel 被覆盖
+  // 成 posts[0]。Effect 345 再把这个 posts[0] 回报上去 → channels-page Effect
+  // C navigate URL='post=posts[0]' → 下一帧 URL/state 跨 commit 又 swap，整个
+  // 链子 25 次 commit 后 React 抛 "Maximum update depth"，CatchBoundary 兜底
+  // 整页崩。
+  // 改用 functional setState：闭包不再读 stale selectedPostId，由 React 在执
+  // 行队列里拿到上一条 setState 翻新过的 current 值。上面 effect 已经把 c 设到
+  // routeSel='real-id' 时，posts.some(id===real-id) 大部分时候是 true（包括
+  // 走 desktopMissingRoutePostId 单独拉回 prepend 那条），functional 返回
+  // current 不动；只有真没有命中 posts（home 列表里完全没这条 + missing
+  // RoutePostQuery 也跑空）时才兜 posts[0]。
   useEffect(() => {
     if (!posts.length) {
       setSelectedPostId(null);
+      onSelectedPostChangeRef.current(null);
       return;
     }
 
-    if (!selectedPostId || !posts.some((post) => post.id === selectedPostId)) {
-      setSelectedPostId(posts[0]?.id ?? null);
-    }
-  }, [posts, selectedPostId]);
+    setSelectedPostId((current) => {
+      if (current && posts.some((post) => post.id === current)) {
+        return current;
+      }
+      const fallback = posts[0]?.id ?? null;
+      // 兜底切换走 ref，避免 setState updater 里直接调 prop（updater 必须 pure）。
+      // 用 microtask 触发，确保在本次 commit 后再 fire（channels-page Effect on
+      // routeSelectedPostId 那边按 URL 同步 desktopSelectedPostId 已经先跑过；这里
+      // 是 workspace 内的"我选 posts[0] 不是 routeSel"的 echo）。
+      if (fallback !== current) {
+        Promise.resolve().then(() => onSelectedPostChangeRef.current(fallback));
+      }
+      return fallback;
+    });
+  }, [posts]);
 
   const selectedPost =
     posts.find((post) => post.id === selectedPostId) ?? posts[0] ?? null;
@@ -186,15 +377,41 @@ export function DesktopChannelsWorkspace({
     : -1;
   const authorPanelVisible = Boolean(routeSelectedAuthorId);
 
-  useEffect(() => {
-    onSelectedPostChange(selectedPost?.id ?? null);
+  // 走查 2026-05-18 新会话（本轮 R1）：原 effect 每次 selectedPost?.id 变都把
+  // 值 echo 回 channels-page。问题是 useEffect 的闭包捕到的 selectedPost.id 经
+  // 常是上一帧的 stale 值（Effect 321 这一帧 setSelectedPostId 只是排队，本 effect
+  // 在同 commit 跑时拿的还是旧闭包）。channels-page 收到 stale id → desktop
+  // SelectedPostId 跟 URL 真理之源不一致 → URL-sync effect 拿这条 stale state 把
+  // URL 又写回上一帧，下一帧 routeSelectedPostId 跟 desktopSelectedPostId 跨帧
+  // swap → 死循环 → "Maximum update depth"。
+  // 修法：彻底改成事件驱动 echo（不再用 useEffect 监听 selectedPost.id）：
+  //   - 用户滚 slide 改变 selectedPostId → IntersectionObserver 那边的回调里同帧
+  //     调 onSelectedPostChange，闭包是当时刚算出来的最新 postId 不会 stale。
+  //   - Effect 327 兜 posts[0] / 无 posts 兜 null 时，回调读最新 ref 同帧 echo。
+  //   - 路由同步那条（Effect 321）不需要 echo —— channels-page 那边 Effect on
+  //     [routeSelectedPostId] 已经从 URL 同步过 desktopSelectedPostId 了，本来
+  //     就一致，再 echo 一次反而把 stale 旧值反向覆盖回去。
+  // ref 在 render 每次同步刷成最新，IntersectionObserver / Effect 327 的 echo
+  // 调用都通过 ref 拿当下最新的 onSelectedPostChange 身份，避免 effect deps 化成
+  // 没必要的频繁 re-fire。
+  const onSelectedPostChangeRef = useRef(onSelectedPostChange);
+  onSelectedPostChangeRef.current = onSelectedPostChange;
 
-    if (!selectedPost?.id) {
+  // 走查 2026-05-17 新会话 R1：原 useEffect 在 selectedPost.id 一变就立刻 POST
+  // /feed/:id/view，鼠标滚轮快速滚过 5-10 张 slide 时一秒就能打掉 5-10 次没人
+  // 真在看的"观看"——后端 viewFeedPost 每条都做 owner-interaction findOneBy +
+  // 落库 + （首次）viewCount/watchCount 自增，纯浪费 RTT。和移动端
+  // MobileChannelsViewport 同款，加 600ms 防抖：停留够久才算 view，扫过的卡不发。
+  useEffect(() => {
+    const postId = selectedPost?.id;
+    if (!postId) {
       return;
     }
-
-    onViewPost(selectedPost.id);
-  }, [onSelectedPostChange, onViewPost, selectedPost?.id]);
+    const timer = window.setTimeout(() => {
+      onViewPost(postId);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [onViewPost, selectedPost?.id]);
 
   // Close the comment drawer whenever the active post changes
   useEffect(() => {
@@ -203,11 +420,29 @@ export function DesktopChannelsWorkspace({
     );
   }, [selectedPost?.id]);
 
+  // 走查 2026-05-18 新会话 R3：drawer open 状态上报 channels-page —— 父级用
+  // 来 gate desktopCommentsQuery（之前 query 跟着 desktopSelectedPostId 走，
+  // 每滑过一张 slide 都 fetch comments 一次浪费 RTT）。fire-and-forget：
+  // onDrawerOpenChange 是 channels-page 的 setState setter，identity 稳定，
+  // 不会让这个 effect 重复跑。
+  useEffect(() => {
+    onDrawerOpenChange?.(commentDrawerPostId);
+  }, [commentDrawerPostId, onDrawerOpenChange]);
+
+  // 走查 2026-05-17 新会话 R2：原依赖整个 posts 数组——每次 ChannelsPage 上
+  // 的 like/favorite/follow 乐观更新让 React Query setQueryData 返回新数组，
+  // 这条 effect 就把 IntersectionObserver 整张拆掉重建，下一帧再重新 observe
+  // 当前所有 slide。lots of churn for nothing：slide id 集合没变，重建毫无意义。
+  // 用 id 拼成的稳定 key 代替——只有真正插/删 slide 时才重建 observer。
+  const slideIdsKey = useMemo(
+    () => posts.map((post) => post.id).join(","),
+    [posts],
+  );
   // IntersectionObserver: keep selectedPostId in sync with whichever slide
   // is currently filling the viewport.
   useEffect(() => {
     const root = scrollContainerRef.current;
-    if (!root || posts.length === 0) {
+    if (!root || slideIdsKey.length === 0) {
       return;
     }
 
@@ -222,7 +457,17 @@ export function DesktopChannelsWorkspace({
 
         const postId = (visible.target as HTMLElement).dataset.postId;
         if (postId) {
-          setSelectedPostId(postId);
+          setSelectedPostId((current) => {
+            if (current === postId) {
+              return current;
+            }
+            // 走查 2026-05-18 新会话（本轮 R1）：观察者真切到新 slide 时，事件
+            // 驱动 echo 给 channels-page（替原来的 useEffect on [selectedPost?.id]
+            // 中转 echo —— 那条会捕到 stale 闭包让 URL ping-pong）。同帧调避免
+            // commit 后异步漂移；ref 解锁回调最新 identity。
+            onSelectedPostChangeRef.current(postId);
+            return postId;
+          });
         }
       },
       { root, threshold: [0.6] },
@@ -230,22 +475,54 @@ export function DesktopChannelsWorkspace({
 
     slideRefs.current.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
-  }, [posts]);
+  }, [slideIdsKey]);
 
-  // When routeSelectedPostId changes (e.g. opened via #post=xxx),
-  // scroll the matching slide into view.
+  // 走查 2026-05-17 新会话 R2：原依赖 [routeSelectedPostId, posts]——每次
+  // 用户在桌面端点赞 / 收藏 / 关注 → ChannelsPage setQueryData → posts 是新
+  // 数组 → 这条 effect 又 fire → scrollIntoView(routeSelectedPostId) 把用户拽
+  // 回最初进入 channels 时的那条 slide。用户已经滑了几屏到第 5 张，一点赞就
+  // 被甩回第 1 张，体感「这个页面在跟我抢滚动控制权」。和移动端 R 同款思路：
+  // 用 scrolledRouteIdRef 记录"这个 route id 我已经滚到过了"，posts 后续变化
+  // 不重滚；只在 routeSelectedPostId 变 / 或目标 post 首次出现在 posts 里时
+  // 尝试一次。
+  const scrolledRouteIdRef = useRef<string | null>(null);
+  const hasRouteTargetInPosts = routeSelectedPostId
+    ? posts.some((post) => post.id === routeSelectedPostId)
+    : false;
   useEffect(() => {
     if (!routeSelectedPostId) {
+      scrolledRouteIdRef.current = null;
+      return;
+    }
+    if (scrolledRouteIdRef.current === routeSelectedPostId) {
+      return;
+    }
+    if (!hasRouteTargetInPosts) {
       return;
     }
 
     const node = slideRefs.current.get(routeSelectedPostId);
     if (node) {
       node.scrollIntoView({ behavior: "auto", block: "start" });
+      scrolledRouteIdRef.current = routeSelectedPostId;
     }
-  }, [routeSelectedPostId, posts]);
+  }, [routeSelectedPostId, hasRouteTargetInPosts]);
 
   // Esc closes whichever overlay is on top (drawer first, then author panel).
+  //
+  // 走查 2026-05-18 R3（本轮）：onCloseAuthor 来自父级 channels-page 的 regular
+  // function declaration（`function closeChannelAuthor() {...}`，不是 useCall
+  // back），每次 channels-page re-render 都换 identity。视频号 home 主体在视
+  // 频播放期间有大量 query 更新（home refetch / decorations refetch / 每 600ms
+  // viewFeedPost mutation 完成）触发 channels-page re-render → workspace 也
+  // 一道 re-render → 这条 effect deps 看到新 onCloseAuthor → cleanup 旧
+  // keydown listener + add 新 listener。drawer 或 author 一旦打开，user 静坐
+  // 不动也会持续装卸 listener（实测每秒 4-8 次），listener 装卸本身廉价但
+  // 在 React 18 strict-mode dev 下能放大成抖动 + 极端时与 native keypress
+  // 错峰丢键。latest-ref 锁稳：deps 只挂 drawer / author 状态，listener 内部
+  // 读 ref.current。
+  const onCloseAuthorRef = useRef(onCloseAuthor);
+  onCloseAuthorRef.current = onCloseAuthor;
   useEffect(() => {
     if (!commentDrawerPostId && !authorPanelVisible) {
       return;
@@ -259,13 +536,13 @@ export function DesktopChannelsWorkspace({
       if (commentDrawerPostId) {
         setCommentDrawerPostId(null);
       } else if (authorPanelVisible) {
-        onCloseAuthor();
+        onCloseAuthorRef.current();
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [authorPanelVisible, commentDrawerPostId, onCloseAuthor]);
+  }, [authorPanelVisible, commentDrawerPostId]);
 
   const scrollToOffset = useCallback((delta: number) => {
     const container = scrollContainerRef.current;
@@ -292,7 +569,7 @@ export function DesktopChannelsWorkspace({
   }, [scrollToOffset]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
+    <div className="relative flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
           <div className="flex h-full items-stretch gap-7">
@@ -324,9 +601,14 @@ export function DesktopChannelsWorkspace({
             })}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={onRefresh}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onRefresh}
+              disabled={refreshPending}
+            >
               <RefreshCcw size={14} />
-              {t(msg`换一批`)}
+              {refreshPending ? t(msg`生成中...`) : t(msg`换一批`)}
             </Button>
             <Button
               variant="primary"
@@ -341,20 +623,45 @@ export function DesktopChannelsWorkspace({
           </div>
         </div>
 
-        {successNotice || errorMessage ? (
-          <div className="space-y-2 border-t border-[color:var(--border-faint)] bg-white/76 px-6 py-2">
-            {successNotice ? (
+      </div>
+
+      {/*
+        走查 2026-05-18 新会话 R2：notice / errorMessage 原来作为 header 的
+        flex 子节点，每次 like / favorite / follow / comment / share 触发的
+        2.4s notice 都把 header 高度从 56px 撑到 ~100px、content flex-1 同时
+        缩水 → snap-y 容器整体下移 → 当前 slide 顶 / 底被裁切，下条 slide 也
+        相应跳一下。视频号 home 每分钟正常会有 5-10 次 notice，等于每分钟看
+        见 5-10 次「页面突然抖一下」。改用 absolute 浮在 header 下面、覆在
+        content 顶部 —— header 永远 h-14 固定不动，snap 容器也不再重排；视
+        觉上 notice 还是从 header 边缘冒出，对齐 backdrop-blur 没掉。
+
+        走查 2026-05-18 新会话 R4：z-index 必须高过 comment drawer (z-30) 和
+        author overlay (z-40)，否则小视口（laptop 13" ~720px）上 drawer 容易
+        竖向覆掉 notice 的 y=56..106 那一段；用户在 drawer 里发完评论想看
+        「评论已发送」的 success notice，只看见 drawer 自己——drawer 里没有
+        success state，体感「按了发送，到底成没成？」。用 z-50 让 notice
+        始终浮在 drawer / author overlay 之上（forward picker z-110 是全屏
+        modal，用户在 picker 内时本来就不需要看 notice，让它盖掉无妨）。
+      */}
+      {successNotice || errorMessage ? (
+        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-white/92 px-6 py-2 backdrop-blur-xl">
+          {successNotice ? (
+            <div className="pointer-events-auto">
               <InlineNotice
-                tone="success"
+                tone={successNoticeTone}
                 className="border-[color:var(--border-faint)] bg-white"
               >
                 {successNotice}
               </InlineNotice>
-            ) : null}
-            {errorMessage ? <ErrorBlock message={errorMessage} /> : null}
-          </div>
-        ) : null}
-      </div>
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className="pointer-events-auto">
+              <ErrorBlock message={errorMessage} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="relative min-h-0 flex-1 overflow-hidden bg-[#101013]">
         {isLoading ? (
@@ -365,10 +672,51 @@ export function DesktopChannelsWorkspace({
 
         {!isLoading && !posts.length ? (
           <div className="flex h-full items-center justify-center">
-            <EmptyState
-              title={t(msg`视频号还没有内容`)}
-              description={t(msg`暂时还没有可看的内容。`)}
-            />
+            {(() => {
+              // 按当前 tab 给"为什么空"的具体原因——尤其 关注 / 直播 这种
+              // 经常空的 tab，通用文案没有信息量。
+              //
+              // 走查 2026-05-18 R1：原 EmptyState 只渲文字，没 CTA。用户在
+              // 朋友 / 关注 / 直播 三个常空 tab 落到空态后唯一可触发的入口
+              // 是顶部的「换一批」——而那条按钮在非推荐 tab 上点了 generate
+              // 后内容只会落到推荐流，本 tab 还是空，体感「按了没效果」。
+              // 移动端 MobileChannelsStatusCard 在空态卡里给了同款 CTA
+              // （channels-page.tsx L1837-1862）：following/friends/live 显
+              // "去推荐看看" 切 tab，recommended 显「换一批」触发 generate。
+              // 桌面 workspace 对齐，避免用户进空 tab 无所适从。
+              const empty = getChannelsEmptyState(activeSection, t);
+              const isSpecialTab =
+                activeSection === "following" ||
+                activeSection === "friends" ||
+                activeSection === "live";
+              return (
+                <EmptyState
+                  title={empty.title}
+                  description={empty.description}
+                  action={
+                    isSpecialTab ? (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => onSectionChange("recommended")}
+                      >
+                        {t(msg`去推荐看看`)}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={onRefresh}
+                        disabled={refreshPending}
+                      >
+                        <RefreshCcw size={14} />
+                        {refreshPending ? t(msg`生成中...`) : t(msg`换一批`)}
+                      </Button>
+                    )
+                  }
+                />
+              );
+            })()}
           </div>
         ) : null}
 
@@ -383,32 +731,20 @@ export function DesktopChannelsWorkspace({
                   key={post.id}
                   post={post}
                   isActive={post.id === selectedPost?.id}
+                  sectionBadge={sectionBadge}
                   registerSlide={registerSlide}
                   isFavorite={isPostFavorite(post.id)}
                   likePending={likePendingPostId === post.id}
-                  onLike={() => onLike(post.id)}
-                  onOpenAuthor={() => onOpenAuthor(post.authorId)}
-                  onShare={() =>
-                    setForwardPickerPost({
-                      id: post.id,
-                      excerpt: `${post.authorName}：${post.text ?? ""}`.slice(
-                        0,
-                        80,
-                      ),
-                    })
-                  }
-                  onToggleAuthorFollow={() =>
-                    onToggleAuthorFollow(
-                      post.authorId,
-                      Boolean(post.ownerState?.isFollowingAuthor),
-                    )
-                  }
-                  onToggleCommentDrawer={() =>
-                    setCommentDrawerPostId((current) =>
-                      current === post.id ? null : post.id,
-                    )
-                  }
-                  onToggleFavorite={() => onToggleFavorite(post)}
+                  favoritePending={favoritePendingPostId === post.id}
+                  followPending={followPendingAuthorId === post.authorId}
+                  unmuted={unmuted}
+                  onToggleUnmuted={toggleUnmuted}
+                  onLike={handleSlideLike}
+                  onOpenAuthor={handleSlideOpenAuthor}
+                  onShare={handleSlideShare}
+                  onToggleAuthorFollow={handleSlideToggleAuthorFollow}
+                  onToggleCommentDrawer={handleSlideToggleCommentDrawer}
+                  onToggleFavorite={handleSlideToggleFavorite}
                 />
               ))}
             </div>
@@ -451,6 +787,14 @@ export function DesktopChannelsWorkspace({
             errorMessage={authorProfileErrorMessage}
             isLoading={authorProfileLoading}
             profile={authorProfile}
+            // 走查 2026-05-17 R1：overlay 上的 +关注 / 已关注 按钮没有 pending
+            // 锁，rapid click 同样会让 toggle mutation 串行竞态。把 followPendingAuthorId
+            // 透过来，按当前展示的作者 id 锁按钮。
+            followPending={
+              followPendingAuthorId !== null &&
+              routeSelectedAuthorId !== null &&
+              followPendingAuthorId === routeSelectedAuthorId
+            }
             selectedPostId={selectedPost?.id ?? null}
             onClose={onCloseAuthor}
             onOpenPost={onOpenAuthorPost}
@@ -466,11 +810,48 @@ export function DesktopChannelsWorkspace({
         baseUrl={baseUrl}
         onClose={() => setForwardPickerPost(null)}
         onForwarded={(target) => {
+          // 走查 2026-05-18 新会话 R2：mid-flight 切账户守卫 — 上一行 effect
+          // 在 baseUrl change 时已经把 forwardPickerBaseUrlRef 清成 null。若
+          // 当前 baseUrl 跟 picker 打开时不一致（中途切了账户），说明这条
+          // forward 是上一个账户的事，不该在新账户冒「已转发给 X」通知。
+          if (
+            forwardPickerBaseUrlRef.current !== null &&
+            forwardPickerBaseUrlRef.current !== baseUrl
+          ) {
+            return;
+          }
+          if (forwardPickerBaseUrlRef.current === null) {
+            // 已经切账户：picker 被 baseUrl effect unmount，但 mutation 仍 in
+            // flight 落地走到这里。skip 同上。
+            return;
+          }
           setForwardNotice(t(msg`已转发给 ${target.name}。`));
-          // 让 channels-home 数据刷新出新的 shareCount
-          void queryClient.invalidateQueries({
-            queryKey: ["app-channels-home", baseUrl],
-          });
+          // 走查 2026-05-17 R1：原注释说要刷"shareCount"——但桌面端工作区
+          // 没有任何地方显示 post.shareCount / ownerState.hasShared，移动端同
+          // 流程已经在 channels-page.tsx 移除了同款 invalidate。这里也跟着
+          // 去掉，避免每次转发后白白拉一次 home 列表。
+        }}
+        onForwardFailed={(input) => {
+          // 走查 2026-05-17 新会话 R3：picker 在 mutation pending 时不挡关闭，
+          // 用户点完好友立刻关 picker → picker 内的红条已经不渲染。移动端在
+          // channels-page 上有 onForwardFailed → page 级 notice 兜底，桌面端
+          // 一直没接，等于失败被静默吞。借现成的 forwardNotice channel 兜
+          // 出来——成功是绿色文案，失败也用同一条 notice 通道把错误顶出来，
+          // 不让用户「按了转发什么都没发生」。
+          //
+          // 走查 2026-05-18 新会话 R2：mid-flight 切账户守卫同 onForwarded。
+          if (
+            forwardPickerBaseUrlRef.current !== null &&
+            forwardPickerBaseUrlRef.current !== baseUrl
+          ) {
+            return;
+          }
+          if (forwardPickerBaseUrlRef.current === null) {
+            return;
+          }
+          setForwardNotice(
+            t(msg`转发给 ${input.targetName} 失败：${input.message}`),
+          );
         }}
       />
       {forwardNotice ? (
@@ -485,6 +866,15 @@ export function DesktopChannelsWorkspace({
 
 /**
  * 顶部短暂浮现的转发成功提示——3 秒自动消失。
+ *
+ * 走查 2026-05-18 R1：原 effect deps 是 [onDismiss]，但 onDismiss 是父级
+ * DesktopChannelsWorkspace 里 `() => setForwardNotice(null)` 内联箭头，每次父
+ * re-render 都换 identity。视频号工作区里鼠标滚动切 slide → IntersectionObserver
+ * → setSelectedPostId → 父 re-render → ForwardNotice 拿到新 onDismiss →
+ * useEffect cleanup 清旧 timer 再起新 3s timer。用户转发完一直滑 slide 时
+ * notice 永远不消失，最后还得手动等用户停下来才能 fire。
+ * 用 ref 缓存最新 onDismiss，effect 只依赖 message —— message 改变才重置
+ * timer，父 re-render 跟 timer 解耦。
  */
 function ForwardNotice({
   message,
@@ -493,10 +883,12 @@ function ForwardNotice({
   message: string;
   onDismiss: () => void;
 }) {
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
   useEffect(() => {
-    const timer = window.setTimeout(onDismiss, 3000);
+    const timer = window.setTimeout(() => onDismissRef.current(), 3000);
     return () => window.clearTimeout(timer);
-  }, [onDismiss]);
+  }, [message]);
   return (
     <div className="fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full bg-[rgba(17,24,39,0.92)] px-4 py-2 text-[13px] text-white shadow-lg">
       {message}
@@ -506,6 +898,7 @@ function ForwardNotice({
 
 function ChannelActionButton({
   active = false,
+  ariaLabel,
   icon,
   label,
   pending = false,
@@ -513,6 +906,9 @@ function ChannelActionButton({
   onClick,
 }: {
   active?: boolean;
+  // 可视 label 只是计数数字（"17"、"29"），屏读出来就一个数字毫无上下文。
+  // 调用方传 ariaLabel 才能让屏读读出"点赞，当前 17 赞"这种完整意图。
+  ariaLabel?: string;
   icon: ReactNode;
   label: string;
   pending?: boolean;
@@ -524,6 +920,7 @@ function ChannelActionButton({
     <button
       type="button"
       aria-pressed={active}
+      aria-label={ariaLabel}
       disabled={pending}
       onClick={onClick}
       className={cn(
@@ -566,15 +963,32 @@ function ChannelActionButton({
 function ChannelMediaSurface({
   post,
   isActive,
+  unmuted,
+  onToggleUnmuted,
 }: {
   post: FeedPostListItem;
   isActive: boolean;
+  unmuted: boolean;
+  onToggleUnmuted: () => void;
 }) {
   const t = useRuntimeTranslator();
   const audioAsset = post.media?.find((asset) => asset.kind === "audio");
   const videoAsset = post.media?.find((asset) => asset.kind === "video");
 
-  if (post.mediaType === "audio" && (audioAsset || post.mediaUrl)) {
+  // 走查 2026-05-18 R2（本轮）：原来 audio/video 两个分支的 gate 和 URL 解析
+  // 用了不同的 fallback 操作符——gate 用 `||`（truthy 检查），URL 用 `??`
+  // （nullish-only）。contracts 里 FeedMediaAsset.url 是 `string` 必填，但没
+  // 约束非空，server 偶发会落空字符串（minimax 拉取失败 + 后端没 cleanupBroken
+  // ChannelPosts 跑过 / 异步 LPP 子端口未确认 url 时）。
+  //   - video 分支：`videoAsset?.url || post.mediaUrl` 让 gate 取到 mediaUrl
+  //     真值，但 url prop 用 `??` 留下 videoAsset.url=""，<ChannelVideoPlayer>
+  //     拿到空字符串 → `isActive && url` 永远 false → 永远黑屏不播 + 不报错
+  //     （用户看到自己发的视频卡，封面有，点了取消静音也没反应）。
+  //   - audio 分支：gate 检查 audioAsset 对象本体存在（不看 url），url prop 同
+  //     样 `??` 让空字符串穿过 → AudioCard 拿到空 url → play 失败静默。
+  // 统一改成"先把可播 url 算出来，再用它当 gate"，逻辑零分歧。
+  const audioPlaybackUrl = audioAsset?.url || post.mediaUrl || "";
+  if (post.mediaType === "audio" && audioPlaybackUrl) {
     const backgroundCover = resolveAppMediaUrl(
       audioAsset?.posterUrl ?? post.coverUrl ?? undefined,
     );
@@ -582,37 +996,106 @@ function ChannelMediaSurface({
       <div className="relative flex flex-1 items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-6">
         {backgroundCover ? (
           // 浮在背景里的封面图（半透明），给音乐贴一些视觉氛围
-          <img
+          //
+          // 走查 2026-05-18 R1：原 <img> 既无 lazy 也无 onError 兜底。20 张
+          // audio slide 一起 eager 拉公网封面，首屏并发十几张 minimax-cover 浪
+          // 费带宽 + 公网隧道 RTT；单张 cover 404（minimax 资源被回收 / cloud-
+          // api 反代 401 边界）时浏览器原生破图占位会盖在沉浸式播放区上方，
+          // 透着 opacity-30 还隐约能看到。和移动端 ChannelAudioPictorial / 桌
+          // 面 ChannelFallbackImage 的修法一致：active 卡 eager，其余 lazy；
+          // onError 直接把封面隐掉，让纯渐变背景兜底（卡顶角已经有"音乐"标签，
+          // 不需要 Music2 占位图标重复打）。decoding=async 避免大图同步解码卡
+          // 主线程。
+          <BackgroundCoverImage
             src={backgroundCover}
             alt={post.title ?? ""}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
+            isActive={isActive}
           />
         ) : null}
         <div className="relative">
           <AudioCard
-            url={audioAsset?.url ?? post.mediaUrl ?? ""}
+            url={audioPlaybackUrl}
             posterUrl={audioAsset?.posterUrl ?? post.coverUrl ?? undefined}
             title={
               audioAsset?.title ?? post.title ?? `${post.authorName}·${t(msg`音乐`)}`
             }
             durationMs={audioAsset?.durationMs ?? post.durationMs ?? undefined}
             variant="feed"
+            isActive={isActive}
           />
         </div>
       </div>
     );
   }
 
-  if (post.mediaType === "video" && (videoAsset?.url || post.mediaUrl)) {
+  const videoPlaybackUrl = videoAsset?.url || post.mediaUrl || "";
+  if (post.mediaType === "video" && videoPlaybackUrl) {
     const resolvedPoster = resolveAppMediaUrl(
       videoAsset?.posterUrl ?? post.coverUrl ?? undefined,
     );
     return (
       <ChannelVideoPlayer
-        url={resolveAppMediaUrl(videoAsset?.url ?? post.mediaUrl ?? "")}
+        url={resolveAppMediaUrl(videoPlaybackUrl)}
         posterUrl={resolvedPoster || undefined}
         isActive={isActive}
+        unmuted={unmuted}
+        onToggleUnmuted={onToggleUnmuted}
       />
+    );
+  }
+
+  // 走查 2026-05-17 R2：mediaType='image' / 'text' 这两种 server 实际会返回但
+  // 桌面 surface 一直直接 fall through 到下面"暂无可播放内容"——前端 contracts
+  // 里 FeedMediaType 包含 image 且 isPostMediaPlayable 对非视频/音频统一放行，
+  // 移动端 MobileChannelMediaSurface 已经按 image 渲成多图 pictorial 占位。
+  // 桌面 surface 至少把 cover/首图 当成静态背景显示出来，别让作者发了图集 / 仅
+  // 文字的视频号直接黑屏。
+  const imageAssets = (post.media ?? []).filter(
+    (asset): asset is Extract<typeof asset, { kind: "image" }> =>
+      asset.kind === "image",
+  );
+  // 走查 2026-05-18 R5（本轮）：跟 R2 的 audio/video gate 同坑——原 `??` 让
+  // 空字符串 `""` 穿过 fallback。post.coverUrl 偶发是 `""`（minimax 封面拉
+  // 失败时后端落空 url、character_override fallback 路径未填、cleanupBroken
+  // ChannelPosts 还没扫到），fallbackImage 落 `""` → ChannelFallbackImage 渲
+  // <img src=""> → Chrome/Firefox 视为 broken-image 但又不触发 onError（空
+  // src 不发请求），用户看到原生 broken-image 占位永远不会被 setFailed(true)
+  // 切到友好兜底文案，体感「这个帖子坏了」+ 透着沉浸式深背景里隐约可见。
+  // 改用 `||` 让空字符串走下一个 fallback。同理下面 mediaUrl fallback。
+  const fallbackImage =
+    post.coverUrl || imageAssets[0]?.url || post.mediaUrl || null;
+  if (fallbackImage) {
+    return (
+      <ChannelFallbackImage
+        src={fallbackImage}
+        alt={post.title ?? post.authorName}
+        isActive={isActive}
+      />
+    );
+  }
+
+  // 走查 R1（本轮）：和 mobile MobileChannelMediaSurface 同款修法——
+  // 纯 mediaType='text' 帖（无 coverUrl / mediaUrl / image media）历来直接
+  // fall through 到下方"暂无可播放内容"黑屏，用户在桌面工作区主区看到自己写
+  // 的文字帖完全空白，体感「内容丢了」。把 title + text 渲到暗色卡上至少把
+  // 文字显示出来；正文走 stripToolCallSyntax 过 AI 思考残留。
+  const textContent = stripToolCallSyntax(post.text ?? "");
+  if (post.title?.trim() || textContent.trim()) {
+    return (
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-10">
+        <div className="max-w-[28rem] text-center text-white">
+          {post.title?.trim() ? (
+            <div className="text-[24px] font-semibold leading-[1.6]">
+              {post.title}
+            </div>
+          ) : null}
+          {textContent.trim() && textContent !== post.title ? (
+            <div className="mt-3 text-[15px] leading-[1.7] text-white/82 line-clamp-[10]">
+              {textContent}
+            </div>
+          ) : null}
+        </div>
+      </div>
     );
   }
 
@@ -630,29 +1113,136 @@ function ChannelMediaSurface({
   );
 }
 
+// 走查 2026-05-18 R1：audio 帖背景封面（opacity-30 blur 的氛围层）—— 单张
+// 失败不该用 Music2 替换（卡内层已经有 AudioCard 显示 cover），失败就直接隐
+// 掉让渐变背景兜底。active 卡 eager、其余 lazy 避免 20 张并发拉公网封面。
+function BackgroundCoverImage({
+  src,
+  alt,
+  isActive,
+}: {
+  src: string;
+  alt: string;
+  isActive: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  // 走查 2026-05-18 新会话 R3：用户停在同一条 audio slide 不动时，若 home
+  // refetch 拉回了新的 coverUrl（minimax 资源轮换 / 后端 cleanupBrokenChannel
+  // Posts 修复了原本 404 的那张），src prop 切到新 URL —— 但 BackgroundCoverImage
+  // 是同一个 React 实例（key 在外层 ChannelFeedSlide 上按 post.id），useState
+  // 的 failed 在旧 src 失败时设过 true，新 src 进来仍按 failed=true 直接 return
+  // null，用户永远看不到新封面。同步加 useEffect 在 src 变化时清 failed，给
+  // 新 URL 一次尝试机会。
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+  if (failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading={isActive ? "eager" : "lazy"}
+      decoding="async"
+      onError={() => setFailed(true)}
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
+    />
+  );
+}
+
+// 走查 2026-05-17 新会话 R4：ChannelMediaSurface 的图集 / 文字帖兜底 cover——
+// 原直接挂 <img src=...>，没 onError 兜底 + 没 lazy 标签。
+//  - 失败时浏览器原生 broken-image 占位盖在沉浸式播放区，体感「卡片坏了」
+//  - 非 active 卡也 eager 拉图，10+ 张图集 slide 一起 load 浪费首屏带宽
+// 加 onError 切到渐变兜底（和 mobile ChannelAudioPictorial 同款），lazy
+// 仅在 active 时 eager。
+function ChannelFallbackImage({
+  src,
+  alt,
+  isActive,
+}: {
+  src: string;
+  alt: string;
+  isActive: boolean;
+}) {
+  const t = useRuntimeTranslator();
+  const [failed, setFailed] = useState(false);
+  // 走查 2026-05-18 新会话 R3：跟 BackgroundCoverImage 同款 — src prop 换
+  // 新 URL 时清 failed，给新 URL 一次尝试。否则 home refetch 拉回新 coverUrl
+  // 用户在原 slide 看到的永远是「封面暂时无法显示」占位。
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+  return (
+    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
+      {failed ? (
+        // 走查 2026-05-18 R1（本轮）：ChannelFallbackImage 用于 mediaType
+        // 'image' / 'text' 帖的兜底封面（参 ChannelMediaSurface L948-955）——
+        // 原图标用 Music2 是错的，这两类帖都不是音乐；用户图集 / 文字帖封面
+        // 404 时却看到一个音乐符号 + "封面暂时无法显示"，体感「这帖是音乐还
+        // 是图片到底」。换成更贴语义的 ImageOff。
+        <div className="flex flex-col items-center gap-2 text-white/70">
+          <ImageOff size={48} className="text-white/40" />
+          <div className="text-[12px]">{t(msg`封面暂时无法显示`)}</div>
+        </div>
+      ) : (
+        <img
+          src={resolveAppMediaUrl(src)}
+          alt={alt}
+          loading={isActive ? "eager" : "lazy"}
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+    </div>
+  );
+}
+
 function ChannelVideoPlayer({
   url,
   posterUrl,
   isActive,
+  unmuted,
+  onToggleUnmuted,
 }: {
   url: string;
   posterUrl?: string;
   isActive: boolean;
+  unmuted: boolean;
+  onToggleUnmuted: () => void;
 }) {
   const t = useRuntimeTranslator();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [muted, setMuted] = useState(true);
 
   // React 的 muted prop 是异步设到 DOM 上的，浏览器评估 autoplay 时可能还没 muted →
   // autoplay 被策略拦截。用 callback ref 在 React 把 element 挂到 DOM 之前就把
   // muted 同步到 IDL 属性上。参考 facebook/react#10389。
-  const setVideoNode = (node: HTMLVideoElement | null) => {
+  //
+  // 走查 2026-05-18 新会话 R1：必须 useCallback 包稳定身份——否则每次父
+  // re-render（IntersectionObserver 切 selectedPostId / like / favorite /
+  // comment / forwardNotice 出现 / 用户切 section 等等）这个 callback ref
+  // 都换 identity，React 按 callback-ref 协议先 detach(null) 再 attach(node)，
+  // 内部 `node.muted = true` 就把视频强行打回静音。下面的 unmuted-effect 依
+  // 赖 [unmuted, isActive]，这两个没变就不会重跑，结果用户解锁后第一次父级
+  // re-render 就把声音吃掉，再点静音按钮 toggle unmuted 也救不回（unmuted 仍
+  // true，effect 不 fire）。stable identity 让 React 不再 detach/attach，
+  // 只在真正 mount / key 切换（url 变）/ unmount 时跑一次。
+  const setVideoNode = useCallback((node: HTMLVideoElement | null) => {
     videoRef.current = node;
     if (node) {
+      // 初始挂载阶段强制 muted=true 以确保 autoplay 不被策略拦；下面的 effect 会在
+      // 用户已 unmute 的情况下再切回 unmuted。
       node.muted = true;
       node.defaultMuted = true;
     }
-  };
+  }, []);
+
+  // 走查 2026-05-17 新会话 R1：跟移动端 ChannelVideoSurface 同坑——解锁后 play()
+  // 失败一律 muted-retry 会把 video.muted 卡死，而 unmuted state 仍 true 不会触发
+  // 下面的 unmuted-effect 重置 muted，结果用户看到画面渲好却永远没声音、点了静音
+  // 按钮也救不回。用 ref 缓存最新 unmuted，仅在没解锁过时才走 muted 兜底。
+  const unmutedRef = useRef(unmuted);
+  unmutedRef.current = unmuted;
 
   // 进入视口的 slide 自动播放，离开的暂停。
   useEffect(() => {
@@ -661,17 +1251,26 @@ function ChannelVideoPlayer({
       return;
     }
 
-    if (isActive) {
+    if (isActive && url) {
       const playResult = video.play();
       if (playResult && typeof playResult.catch === "function") {
         playResult.catch(() => {
-          // 自动播放被阻断时静默失败；用户点击切换静音会再次触发 play。
+          if (!unmutedRef.current) {
+            video.muted = true;
+            video.play().catch(() => undefined);
+          }
         });
       }
     } else {
       video.pause();
       video.currentTime = 0;
+      // 走查 2026-05-17 新会话 R1：同移动端 ChannelVideoSurface R1——pause 不释
+      // 放浏览器已下载的 video buffer。video 单条 ~1-2MB，10+ 张 slide 全曾激活
+      // 一遍累计能挂十几 MB 在 channels 页直到用户离开。load() 强制重置 media
+      // element 释放缓冲；无 src 时只触发 emptied 事件、不发请求，安全。
+      video.load();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, url]);
 
   useEffect(() => {
@@ -679,74 +1278,128 @@ function ChannelVideoPlayer({
     if (!video) {
       return;
     }
-    video.muted = muted;
-    if (!muted && isActive) {
+    video.muted = !unmuted;
+    if (unmuted && isActive) {
       const playResult = video.play();
       if (playResult && typeof playResult.catch === "function") {
         playResult.catch(() => {
           // 取消静音后若浏览器仍阻断，回退到静音继续播放。
-          setMuted(true);
+          video.muted = true;
         });
       }
     }
-  }, [muted, isActive]);
+  }, [unmuted, isActive]);
 
+  // 走查 2026-05-17 新会话 R1：跟移动端 ChannelVideoSurface R3 / ChannelAudio
+  // Pictorial R3 同款——组件 unmount 时主动 pause。React 把 <video> 从 DOM 摘掉
+  // 后 Chromium / Firefox 不会自动 pause，音轨会一直 loop 到刷新整页。用户在
+  // active 卡上点「减少推荐」/ 切到别的 section 导致 slide 整张 unmount 时尤其
+  // 明显——画面没了但声音还在。cleanup 时现读 videoRef.current（React unmount
+  // 顺序：先跑 effect cleanup 再 unmount 子树，此时 ref 仍指向最新元素）。
+  useEffect(() => {
+    return () => {
+      videoRef.current?.pause();
+    };
+  }, []);
+
+  // 走查 2026-05-17 新会话 R1：tab 切到后台时主动 pause，回前台按切走前状态恢
+  // 复——desktop Chrome 默认背景标签里 HTML5 video 不会自动暂停，视频号 BGM
+  // 会一直跟着用户去别的标签里响。和移动端 R 同款。
+  useEffect(() => {
+    if (!isActive || !url) return;
+    const video = videoRef.current;
+    if (!video) return;
+    let wasPlayingBeforeHide = false;
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        wasPlayingBeforeHide = !video.paused;
+        if (wasPlayingBeforeHide) video.pause();
+      } else if (wasPlayingBeforeHide) {
+        video.play().catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [isActive, url]);
+
+  // 走查 2026-05-17 新会话 R1：原 src/preload 一律挂在每张 slide 上——10 张视
+  // 频 slide 一起 preload="auto"，公网隧道下首屏并发 10+ 个 ~MB 级 minimax 视
+  // 频拉取，离开 channels 页时全 ERR_ABORTED 纯浪费带宽。和移动端 ChannelVideo
+  // Surface 同款：仅 active 卡挂 src + preload="auto"，其它卡 src 留空 / preload
+  // ="none"，由 isActive 翻转 + 上面 effect 的 .play() 触发。poster 始终可见
+  // 保持视觉。
   return (
     <>
       <video
         ref={setVideoNode}
         // key 让 src 变化时强制重建 video element，避免上一个视频的 buffered range 干扰
-        key={url}
-        src={url}
+        key={`video:${url}`}
+        src={isActive && url ? url : undefined}
         poster={posterUrl}
         autoPlay
         muted
         loop
         playsInline
-        preload="auto"
-        onClick={() => setMuted((current) => !current)}
+        preload={isActive ? "auto" : "none"}
+        onClick={onToggleUnmuted}
         className="absolute inset-0 h-full w-full cursor-pointer bg-black object-contain"
       />
       <button
         type="button"
-        aria-label={muted ? t(msg`取消静音`) : t(msg`静音`)}
-        aria-pressed={!muted}
+        aria-label={unmuted ? t(msg`静音`) : t(msg`取消静音`)}
+        aria-pressed={unmuted}
         onClick={(event) => {
           event.stopPropagation();
-          setMuted((current) => !current);
+          onToggleUnmuted();
         }}
         className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/22 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65"
       >
-        {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        {unmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
       </button>
     </>
   );
 }
 
-function ChannelFeedSlide({
+// 走查 2026-05-18 新会话 R1：memo + post-aware callbacks，让稳定 props 的
+// slide 在父 re-render 时直接跳过 reconciliation。回调签名改成接 post / postId
+// / authorId，使外层只暴露 latest-ref 包过的稳定 handler；slide 内的 onClick
+// 内联箭头每次重渲都会换 identity，但 slide 本身被 memo 挡住后根本不重渲。
+const ChannelFeedSlide = memo(function ChannelFeedSlide({
   post,
   isActive,
+  sectionBadge,
   registerSlide,
   isFavorite,
   likePending,
+  favoritePending,
+  followPending,
+  unmuted,
   onLike,
   onOpenAuthor,
   onShare,
   onToggleAuthorFollow,
   onToggleCommentDrawer,
   onToggleFavorite,
+  onToggleUnmuted,
 }: {
   post: FeedPostListItem;
   isActive: boolean;
+  sectionBadge: string;
   registerSlide: (postId: string, node: HTMLDivElement | null) => void;
   isFavorite: boolean;
   likePending: boolean;
-  onLike: () => void;
-  onOpenAuthor: () => void;
-  onShare: () => void;
-  onToggleAuthorFollow: () => void;
-  onToggleCommentDrawer: () => void;
-  onToggleFavorite: () => void;
+  favoritePending: boolean;
+  followPending: boolean;
+  unmuted: boolean;
+  onLike: (postId: string) => void;
+  onOpenAuthor: (authorId: string) => void;
+  onShare: (post: FeedPostListItem) => void;
+  onToggleAuthorFollow: (post: FeedPostListItem) => void;
+  onToggleCommentDrawer: (postId: string) => void;
+  onToggleFavorite: (post: FeedPostListItem) => void;
+  onToggleUnmuted: () => void;
 }) {
   const t = useRuntimeTranslator();
   return (
@@ -757,16 +1410,21 @@ function ChannelFeedSlide({
     >
       <div className="flex max-h-full items-end gap-4">
         <article className="relative flex aspect-[9/16] h-[min(82vh,800px)] flex-shrink-0 overflow-hidden rounded-[20px] bg-[#0d0e12] shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-          <ChannelMediaSurface post={post} isActive={isActive} />
+          <ChannelMediaSurface
+            post={post}
+            isActive={isActive}
+            unmuted={unmuted}
+            onToggleUnmuted={onToggleUnmuted}
+          />
           <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[rgba(15,23,42,0.68)] px-2.5 py-1 text-[11px] font-medium text-white">
-            {t(msg`视频号推荐`)}
+            {sectionBadge}
           </div>
 
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(0,0,0,0.82)] via-[rgba(0,0,0,0.36)] to-transparent px-5 pb-5 pt-14">
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={onOpenAuthor}
+                onClick={() => onOpenAuthor(post.authorId)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
                 <AvatarChip
@@ -784,31 +1442,54 @@ function ChannelFeedSlide({
                   </div>
                 </div>
               </button>
-              <button
-                type="button"
-                onClick={onToggleAuthorFollow}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[12px] transition",
-                  post.ownerState?.isFollowingAuthor
-                    ? "border border-white/28 bg-transparent text-white/85 hover:bg-white/10"
-                    : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
-                )}
-              >
-                {post.ownerState?.isFollowingAuthor
-                  ? t(msg`已关注`)
-                  : t(msg`+ 关注`)}
-              </button>
+              {post.authorId !== SELF_CHARACTER_ID &&
+              post.authorType !== "user" ? (
+                // 「我自己」是用户自己的代理角色，不让用户关注 / 取消关注自己——
+                // 后端 followChannelAuthor 也对 owner.id===authorId 做了 no-op，
+                // 但 char-default-self 是角色而非 owner，会真插一行 follow 记录，
+                // 视觉上落到 "已关注" / 点了又能 "+ 关注"，徒增困惑。
+                //
+                // 走查 R2（本轮）：authorType==='user' 是 owner 自己发的视频号 post
+                // （自己也可发 surface='channels'）。这条 follow 按钮真点了 server
+                // 端 owner.id 分支 no-op，按钮永远停在 "+ 关注"，看着像点不动。
+                <button
+                  type="button"
+                  onClick={() => onToggleAuthorFollow(post)}
+                  disabled={followPending}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-70",
+                    post.ownerState?.isFollowingAuthor
+                      ? "border border-white/28 bg-transparent text-white/85 hover:bg-white/10"
+                      : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
+                  )}
+                >
+                  {followPending
+                    ? t(msg`处理中...`)
+                    : post.ownerState?.isFollowingAuthor
+                      ? t(msg`已关注`)
+                      : t(msg`+ 关注`)}
+                </button>
+              ) : null}
             </div>
             {post.title ? (
               <div className="mt-3 line-clamp-2 text-[15px] font-semibold text-white">
                 {post.title}
               </div>
             ) : null}
-            {post.text ? (
-              <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-white/82">
-                {post.text}
-              </div>
-            ) : null}
+            {(() => {
+              // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，
+              // 标题和正文重复出现没意义；只在两者不一致时才渲染正文。和移动端
+              // MobileChannelsCard 里的处理保持一致。
+              const cleanText = stripToolCallSyntax(post.text ?? "");
+              if (!cleanText || cleanText === post.title) {
+                return null;
+              }
+              return (
+                <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-white/82">
+                  {cleanText}
+                </div>
+              );
+            })()}
             {post.topicTags?.length ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {post.topicTags.slice(0, 4).map((tag) => (
@@ -829,34 +1510,70 @@ function ChannelFeedSlide({
             surface="dark"
             icon={<ThumbsUp size={18} />}
             label={`${post.likeCount}`}
+            ariaLabel={
+              post.ownerState?.hasLiked
+                ? t(msg`已点赞，当前 ${post.likeCount} 赞`)
+                : t(msg`点赞，当前 ${post.likeCount} 赞`)
+            }
             active={Boolean(post.ownerState?.hasLiked)}
             pending={likePending}
-            onClick={onLike}
+            onClick={() => onLike(post.id)}
           />
           <ChannelActionButton
             surface="dark"
             icon={<MessageCircleMore size={18} />}
             label={`${post.commentCount}`}
-            onClick={onToggleCommentDrawer}
+            ariaLabel={t(msg`打开评论，当前 ${post.commentCount} 条`)}
+            onClick={() => onToggleCommentDrawer(post.id)}
           />
           <ChannelActionButton
             surface="dark"
             icon={<Share2 size={18} />}
             label={t(msg`转发`)}
-            onClick={onShare}
+            // 走查 2026-05-18 新会话 R1：原 ariaLabel 缺席，按钮 visible label
+            // 只是「转发」，但旁边的点赞 / 评论按钮 ariaLabel 都带「当前 N 条」
+            // 给屏读上下文。这条对齐：点击会触发转发面板，告知"对哪条 post"
+            // 转发也无意义（picker 自己会显示标题）；这里强调它是会打开面板
+            // 的入口，避免屏读用户当成 toggle 误按。
+            ariaLabel={t(msg`转发到聊天`)}
+            onClick={() => onShare(post)}
           />
           <ChannelActionButton
             surface="dark"
-            icon={<Bookmark size={18} />}
-            label={isFavorite ? t(msg`已收藏`) : t(msg`收藏`)}
+            icon={
+              // 走查 2026-05-17 R1：原图标无论 active 与否都是空心 Bookmark，
+              // 仅外圈边框换色——夜色背景下绿色 border 跟未收藏态白边几乎区分不
+              // 出来。配合 hasLiked 用 fill-current 加强已激活语义。
+              <Bookmark
+                size={18}
+                className={isFavorite ? "fill-current" : undefined}
+              />
+            }
+            label={
+              favoritePending
+                ? t(msg`处理中`)
+                : isFavorite
+                  ? t(msg`已收藏`)
+                  : t(msg`收藏`)
+            }
+            // 走查 2026-05-18 新会话 R1：原 ariaLabel 缺席。aria-pressed 已经
+            // 告知 toggle 状态，但屏读用户没办法知道当前 toggle 的语义对象是
+            // 「这条视频号」。点赞按钮里给了 ariaLabel="点赞，当前 N 赞"，收藏
+            // 按钮按同款思路补「已收藏 / 收藏这条视频号」。
+            ariaLabel={
+              isFavorite
+                ? t(msg`已收藏这条视频号`)
+                : t(msg`收藏这条视频号`)
+            }
             active={isFavorite}
-            onClick={onToggleFavorite}
+            pending={favoritePending}
+            onClick={() => onToggleFavorite(post)}
           />
         </div>
       </div>
     </div>
   );
-}
+});
 
 function ChannelCommentsDrawer({
   comments,
@@ -925,6 +1642,7 @@ function ChannelCommentsDrawer({
           ) : null}
           <DesktopChannelCommentsPanel
             comments={comments}
+            commentsHasError={Boolean(commentsErrorMessage)}
             commentsLoading={commentsLoading}
             draft={draft}
             likePendingCommentId={likePendingCommentId}
@@ -946,6 +1664,7 @@ function ChannelCommentsDrawer({
 function ChannelAuthorOverlay({
   authorId,
   errorMessage,
+  followPending,
   isLoading,
   profile,
   selectedPostId,
@@ -955,6 +1674,7 @@ function ChannelAuthorOverlay({
 }: {
   authorId: string | null;
   errorMessage?: string | null;
+  followPending: boolean;
   isLoading: boolean;
   profile: FeedChannelAuthorProfile | null;
   selectedPostId: string | null;
@@ -975,6 +1695,7 @@ function ChannelAuthorOverlay({
         <DesktopChannelAuthorPanel
           authorId={authorId}
           errorMessage={errorMessage}
+          followPending={followPending}
           isLoading={isLoading}
           profile={profile}
           selectedPostId={selectedPostId}
@@ -1026,6 +1747,7 @@ function FeedNavArrows({
 function DesktopChannelAuthorPanel({
   authorId,
   errorMessage,
+  followPending,
   isLoading,
   profile,
   selectedPostId,
@@ -1035,6 +1757,7 @@ function DesktopChannelAuthorPanel({
 }: {
   authorId: string | null;
   errorMessage?: string | null;
+  followPending: boolean;
   isLoading: boolean;
   profile: FeedChannelAuthorProfile | null;
   selectedPostId: string | null;
@@ -1124,28 +1847,34 @@ function DesktopChannelAuthorPanel({
           </div>
 
           <div className="mt-4 flex gap-2">
-            <Button
-              variant={profile.isFollowing ? "secondary" : "primary"}
-              size="sm"
-              onClick={() =>
-                onToggleFollow(profile.authorId, profile.isFollowing)
-              }
-              className={
-                profile.isFollowing
-                  ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                  : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-              }
-            >
-              {profile.isFollowing ? t(msg`已关注`) : t(msg`+关注`)}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!selectedPostId}
-              onClick={onClose}
-            >
-              {t(msg`当前内容`)}
-            </Button>
+            {/* 走查 R2（本轮）：authorType==='user' 时也是 owner 自己（server 端
+                followChannelAuthor 对 owner.id no-op，按钮永远停在 +关注 不动）。
+                跟移动端作者主页 + home 卡片 R2 改法对齐。 */}
+            {profile.authorId !== SELF_CHARACTER_ID &&
+            profile.authorType !== "user" ? (
+              <Button
+                variant={profile.isFollowing ? "secondary" : "primary"}
+                size="sm"
+                disabled={followPending}
+                onClick={() =>
+                  onToggleFollow(profile.authorId, profile.isFollowing)
+                }
+                className={
+                  profile.isFollowing
+                    ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                }
+              >
+                {followPending
+                  ? t(msg`处理中...`)
+                  : profile.isFollowing
+                    ? t(msg`已关注`)
+                    : t(msg`+关注`)}
+              </Button>
+            ) : null}
+            {/* 原来这里还有一个 "当前内容" 按钮 onClick={onClose}，跟头部的
+                "回到内容" 完全是同一件事——只是 disabled 多挡了 selectedPostId
+                null 这条边界。两个按钮跳同一个 close 操作没意义，删一个。 */}
           </div>
 
           <div className="mt-5">
@@ -1178,13 +1907,25 @@ function DesktopChannelAuthorPanel({
                             : t(msg`动态`)}
                       </span>
                     </div>
-                    <div className="mt-2 line-clamp-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {post.text}
-                    </div>
+                    {(() => {
+                      // audio post 后端常把 title 和 text 都填成 "X·音乐"，
+                      // recent posts list 里 title 已经在上面渲染了一遍，再渲染
+                      // 一遍 text 就是重复——和 slide overlay / mobile card 那两处
+                      // 一样处理。
+                      const cleanText = stripToolCallSyntax(post.text ?? "");
+                      if (!cleanText || cleanText === post.title) {
+                        return null;
+                      }
+                      return (
+                        <div className="mt-2 line-clamp-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {cleanText}
+                        </div>
+                      );
+                    })()}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
                       <span>{formatTimestamp(post.createdAt)}</span>
                       <span>·</span>
-                      <span>{formatChannelMeta(post)}</span>
+                      <span>{formatChannelMeta(post, { includeTopicTag: true })}</span>
                       {selectedPostId === post.id ? (
                         <>
                           <span>·</span>
@@ -1215,7 +1956,18 @@ function DesktopChannelAuthorPanel({
   );
 }
 
-function formatChannelMeta(post: FeedPostListItem) {
+// 走查 R1（本轮）：原一律 `pieces.push(\`#${topicTags[0]}\`)` 在 slide overlay
+// （ChannelFeedSlide L1054）和 author overlay 的 recent posts 列表（L1527）都生效。
+// slide overlay 紧跟着就把 topicTags 渲成一排彩色 pill chip（L1107-1118），meta
+// 行已经写了 "... · #音乐" 又重复出现一次 "#音乐" pill，体感像「同一个 tag 出现
+// 两次」；author overlay 的 recent posts 列表没渲 pill，meta 行带 #tag 是必要的。
+// 移动端 formatChannelMeta 早就只在没 pill 的位置加 tag（mobile channels-page.tsx
+// L4002 注释明确说"不要拼 topicTags，上面已经渲成 chip 了"）。给一个 includeTag
+// 开关让两个 call site 各按需要决定。
+function formatChannelMeta(
+  post: FeedPostListItem,
+  options?: { includeTopicTag?: boolean },
+) {
   const viewCount = post.viewCount ?? 0;
   const pieces = [translateRuntimeMessage(msg`${viewCount} 播放`)];
 
@@ -1224,7 +1976,7 @@ function formatChannelMeta(post: FeedPostListItem) {
     pieces.push(translateRuntimeMessage(msg`${seconds} 秒`));
   }
 
-  if (post.topicTags?.length) {
+  if (options?.includeTopicTag && post.topicTags?.length) {
     pieces.push(`#${post.topicTags[0]}`);
   }
 
@@ -1233,6 +1985,7 @@ function formatChannelMeta(post: FeedPostListItem) {
 
 function DesktopChannelCommentsPanel({
   comments,
+  commentsHasError,
   commentsLoading,
   draft,
   likePendingCommentId,
@@ -1246,6 +1999,7 @@ function DesktopChannelCommentsPanel({
   onSubmit,
 }: {
   comments: FeedComment[];
+  commentsHasError: boolean;
   commentsLoading: boolean;
   draft: string;
   likePendingCommentId: string | null;
@@ -1265,6 +2019,64 @@ function DesktopChannelCommentsPanel({
 }) {
   const t = useRuntimeTranslator();
   const selectedPostId = selectedPost?.id ?? null;
+  // 走查 2026-05-17 R3：移动端 R5 早就按 canInteract 把非好友帖的「回复 / 赞 /
+  // textarea / 发送」按钮全部 disable，桌面侧一直没接——用户读完评论按"发送"
+  // → ChannelsPage.submitComment 走 ensureCommentPostCanInteract → setNotice
+  // 提示「需先加为好友才能互动」。这条 notice 走 successNotice prop 渲在 workspace
+  // 顶端，被 z-30 抽屉部分遮住后用户多半看不到，体感「按了发送什么都没发生」。
+  // 在评论 panel 内部也按 canInteract 把所有 mutation 入口锁死，并贴一行黄色
+  // 提示告知用户为什么不能动。
+  const cannotInteract = selectedPost?.canInteract === false;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  // 走查 2026-05-18 R2（本轮）：评论 input 同步双击锁。原 send 路径只 guard
+  // `submitPending` （即 react-query commentMutation.isPending），但 isPending
+  // 是 mutation 启动后下一次 render 才回 true 的异步 state。用户在 keyboard
+  // 上连按两次 Enter (典型间隔 <16ms) 或鼠标快速双击「发送」时，两次
+  // onSubmit() 同步进入 → submitComment() 同步进入 → commentMutation.mutate()
+  // 同步入栈两次 → onMutate 顺序 fire 两次（cache 乐观 +2）→ 两个 POST 落地
+  // 同一段文本插两条一模一样的评论。
+  // 同移动端 wechat-comment-bar / mobile-feed-publish-page 的 submittingRef
+  // 思路：ref 同步赋值，第一次 Enter 翻 true 后同帧内的 click/Enter 全部早返；
+  // submitPending 下沿（mutation settle）时释放，允许下条评论发送。
+  // 切 post / 切 reply target 时也释放（用户从一条切到另一条理论上是新意图）。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!submitPending) {
+      submittingRef.current = false;
+    }
+  }, [submitPending]);
+  useEffect(() => {
+    submittingRef.current = false;
+  }, [selectedPostId, replyTarget?.commentId]);
+  const handleSubmit = () => {
+    if (submittingRef.current) return;
+    if (
+      !selectedPost ||
+      cannotInteract ||
+      !draft.trim() ||
+      submitPending
+    )
+      return;
+    submittingRef.current = true;
+    onSubmit();
+  };
+  // 打开评论抽屉 / 点 "回复 X" 时，把焦点送到 input——和移动端 sheet 的处理
+  // 一致（commit 2090+），用户开了抽屉就能直接敲字。
+  //
+  // 走查 2026-05-18 新会话 R4：mobile 那边 R1（channels-page L4087-4097）
+  // 早就发现并修过：post.canInteract === false 时 input 是 disabled，对 dis
+  // abled element 调 .focus() 是 no-op —— 但 sequential focus navigation 会
+  // 把焦点甩到 drawer 内下一个可聚焦元素，也就是头部「关闭评论」那颗 X
+  // button。用户想滚评论列表按 Space → 触发 X.click() → drawer 直接关掉。
+  // 桌面 drawer 一直漏，cannotInteract 时跳过 focus 让用户主动点击的位置
+  // 保留焦点。
+  useEffect(() => {
+    if (!selectedPostId) return;
+    if (cannotInteract) return;
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }, [cannotInteract, selectedPostId, replyTarget?.commentId]);
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
     comments.forEach((comment) => {
@@ -1272,16 +2084,34 @@ function DesktopChannelCommentsPanel({
     });
     return map;
   }, [comments]);
+  // 走查 2026-05-18 R3（本轮）：移动端 R5（channels-page L4287-4305）早就
+  // 加了"空文本评论过滤"——feed_comments 库里偶尔混入纯 AI thinking-prose
+  // 评论（实测 yuanzui0728 库 eb9c88ce 帖等就有 1019 字 CoT 漏出），
+  // stripToolCallSyntax 把整段抠成空串，DesktopThreadCommentCard 内只在
+  // body 区用 cleanText，外层 "作者名 + 时间戳 + 回复 X：" + 底部点赞/回复
+  // 按钮全照常渲，结果用户看到一条「头有作者尾有按钮、中间空白」的鬼影
+  // 卡，体感「这条评论坏了」+ 卡间距还把真实评论顶下去。
+  // 桌面 drawer 一直漏，按 mobile 同款思路在 thread 构建前先 filter 掉空
+  // cleanText 的评论；threading 自然 re-root 残留的 orphan reply（root 空
+  // 被过滤掉时它的子回复变成自己的 root，replyToAuthorName 走后端 lookup
+  // 还能显示「回复 X：」上下文）。
+  const renderableComments = useMemo(
+    () =>
+      comments.filter((comment) => stripToolCallSyntax(comment.text).length > 0),
+    [comments],
+  );
   const commentThreads = useMemo(() => {
-    const commentMap = new Map(comments.map((comment) => [comment.id, comment]));
-    const rootComments = comments.filter(
+    const commentMap = new Map(
+      renderableComments.map((comment) => [comment.id, comment]),
+    );
+    const rootComments = renderableComments.filter(
       (comment) =>
         !comment.parentCommentId ||
         !commentMap.has(comment.parentCommentId),
     );
     const repliesByRoot = new Map<string, FeedComment[]>();
 
-    comments.forEach((comment) => {
+    renderableComments.forEach((comment) => {
       if (!comment.parentCommentId || !commentMap.has(comment.parentCommentId)) {
         return;
       }
@@ -1295,7 +2125,7 @@ function DesktopChannelCommentsPanel({
       rootComment,
       replies: repliesByRoot.get(rootComment.id) ?? [],
     }));
-  }, [comments]);
+  }, [renderableComments]);
   const threadIdsWithReplies = useMemo(
     () =>
       commentThreads
@@ -1406,6 +2236,79 @@ function DesktopChannelCommentsPanel({
     });
   }, [commentThreads, replyTarget, selectedPostId, threadIdsWithReplies]);
 
+  // 走查 2026-05-18 新会话 R2：视频号评论 server 端按 createdAt ASC 返
+  // （最老在最上），桌面 drawer panel max-h-[420px] overflow-auto 一直
+  // 没自动滚 —— yuanzui0728 这条 post 已经积了 142 条评论：用户点 chat
+  // 图标打开 drawer 第一眼看到的是 5 天前最早的根评论，要手动滚到底才看到
+  // 最新对话；自己刚发的评论也是 append 到列表末尾，count +1 但视口里看
+  // 不到，体感「按了发送，到底成没成？」。Mobile 那边早就（commentDr -
+  // R1/R4）按 first-open + growth-if-near-bottom 兜了，desktop drawer 一直
+  // 漏。补一份精简版：首次拿到 comments 落底，后续 growth 时若用户仍贴底
+  // 才跟随；用户主动上滑读老评论时尊重位置（AI 1-5min 后自动回复落地
+  // 不该把他甩到底）。
+  const threadsScrollRef = useRef<HTMLDivElement | null>(null);
+  const previousCommentCountRef = useRef(0);
+  const hasAutoScrolledOnOpenRef = useRef(false);
+  const userNearBottomRef = useRef(true);
+  // post 切换（drawer 关再开 / 切换到另一条 post 的 drawer）时重置 first-
+  // scroll 标志，让新 post 也享受落底默认。
+  useEffect(() => {
+    hasAutoScrolledOnOpenRef.current = false;
+    previousCommentCountRef.current = 0;
+    userNearBottomRef.current = true;
+  }, [selectedPostId]);
+  // 走查 2026-05-18 R1（本轮）：原 effect deps 只有 [selectedPostId]，但
+  // 打开 drawer 的第一帧 commentsLoading=true / commentThreads.length=0，
+  // 下方 `{commentThreads.length ? <div ref={threadsScrollRef}> ...}` 那个
+  // 滚动容器根本没挂载，threadsScrollRef.current 是 null → effect early
+  // return → 没装 scroll listener。后续 comments 到了 threads 容器 mount
+  // 上，ref 才赋值，但 selectedPostId 没变 → effect 不会再跑 → listener 永
+  // 远没装上 → userNearBottomRef 一直停在初始 true → 1-5 分钟后 AI 自动回
+  // 复落地 growth 时 useEffect 判定 isNearBottom=true 把用户从他主动上滑
+  // 读老评论的位置硬甩回最底。把 commentThreads.length 也加进 deps：threads
+  // 容器一 mount 立刻装 listener；容器卸载（切 post 或清空）也清掉旧 listener。
+  const hasCommentThreads = commentThreads.length > 0;
+  useEffect(() => {
+    const node = threadsScrollRef.current;
+    if (!node) return;
+    const update = () => {
+      userNearBottomRef.current =
+        node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+    };
+    update();
+    node.addEventListener("scroll", update, { passive: true });
+    return () => node.removeEventListener("scroll", update);
+  }, [selectedPostId, hasCommentThreads]);
+  useEffect(() => {
+    if (!selectedPostId) return;
+    if (commentsLoading && !comments.length) return;
+    if (!comments.length) {
+      previousCommentCountRef.current = 0;
+      return;
+    }
+    const node = threadsScrollRef.current;
+    if (!node) return;
+    const previousCount = previousCommentCountRef.current;
+    const growth = comments.length > previousCount;
+    const isNearBottom = userNearBottomRef.current;
+    const shouldScroll =
+      !hasAutoScrolledOnOpenRef.current || (growth && isNearBottom);
+    if (shouldScroll) {
+      hasAutoScrolledOnOpenRef.current = true;
+      previousCommentCountRef.current = comments.length;
+      window.requestAnimationFrame(() => {
+        const target = threadsScrollRef.current;
+        if (!target) return;
+        target.scrollTop = target.scrollHeight;
+        // 程序滚到底后显式同步 ref —— 短滚动 / 浏览器节流时 scroll 事件
+        // 不一定 fire，下一次 effect 又会拿 stale false。
+        userNearBottomRef.current = true;
+      });
+    } else if (comments.length !== previousCount) {
+      previousCommentCountRef.current = comments.length;
+    }
+  }, [comments.length, commentsLoading, selectedPostId]);
+
   return (
     <div className="mt-3 space-y-3">
       {commentsLoading && !comments.length ? (
@@ -1413,7 +2316,13 @@ function DesktopChannelCommentsPanel({
           {t(msg`正在读取评论...`)}
         </div>
       ) : null}
-      {!commentsLoading && !comments.length ? (
+      {/*
+        走查 2026-05-17 R5：原条件只看 !commentsLoading && !comments.length，
+        commentsErrorMessage 设值时（ChannelCommentsDrawer 顶部已经渲了红色
+        ErrorBlock），这条空态卡也会同时冒出来。用户既看到错误又看到「还没
+        有评论」，矛盾且会让人以为真的没人评论（同移动端 R1 修复同款问题）。
+      */}
+      {!commentsLoading && !comments.length && !commentsHasError ? (
         <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
           {t(msg`这条内容还没有评论，你可以先开口。`)}
         </div>
@@ -1442,7 +2351,10 @@ function DesktopChannelCommentsPanel({
         </div>
       ) : null}
       {commentThreads.length ? (
-        <div className="max-h-[420px] space-y-3 overflow-auto pr-1">
+        <div
+          ref={threadsScrollRef}
+          className="max-h-[420px] space-y-3 overflow-auto pr-1"
+        >
           {commentThreads.map(({ replies, rootComment }) => (
             <div
               key={rootComment.id}
@@ -1451,6 +2363,7 @@ function DesktopChannelCommentsPanel({
               <DesktopThreadCommentCard
                 comment={rootComment}
                 active={replyTarget?.commentId === rootComment.id}
+                cannotInteract={cannotInteract}
                 commentAuthorNameMap={commentAuthorNameMap}
                 compact={false}
                 likePendingCommentId={likePendingCommentId}
@@ -1459,6 +2372,7 @@ function DesktopChannelCommentsPanel({
               />
               {replies.length ? (
                 <DesktopCommentThreadReplies
+                  cannotInteract={cannotInteract}
                   collapsed={collapsedThreadIds.includes(rootComment.id)}
                   replies={replies}
                   replyTarget={replyTarget}
@@ -1481,6 +2395,11 @@ function DesktopChannelCommentsPanel({
       ) : null}
 
       <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
+        {cannotInteract ? (
+          <div className="mb-3 rounded-[12px] bg-[rgba(234,179,8,0.10)] px-3 py-2 text-[11px] leading-[1.35rem] text-[#854d0e]">
+            {t(msg`需先加为好友才能互动。`)}
+          </div>
+        ) : null}
         {replyTarget ? (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
             <div className="truncate">
@@ -1497,23 +2416,45 @@ function DesktopChannelCommentsPanel({
         ) : null}
         <div className="flex items-center gap-2">
           <TextField
+            ref={inputRef}
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
+            // Enter 直接发——评论 input 是单行 TextField，不存在多行换行，没必要
+            // 强迫用户手离开键盘去点"发送"。IME composing 时回车是确认候选词，
+            // 别误判成发送。
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              if (event.shiftKey) return;
+              if (
+                (event.nativeEvent as { isComposing?: boolean }).isComposing
+              ) {
+                return;
+              }
+              event.preventDefault();
+              handleSubmit();
+            }}
             placeholder={
-              replyTarget
-                ? t(msg`回复 ${replyTarget.authorName}...`)
-                : selectedPost
-                  ? t(msg`写下你对这条视频号内容的评论...`)
-                  : t(msg`先选择一条内容`)
+              cannotInteract
+                ? t(msg`需先加为好友才能评论`)
+                : replyTarget
+                  ? t(msg`回复 ${replyTarget.authorName}...`)
+                  : selectedPost
+                    ? t(msg`写下你对这条视频号内容的评论...`)
+                    : t(msg`先选择一条内容`)
             }
-            disabled={!selectedPost}
+            disabled={!selectedPost || cannotInteract}
             className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
           />
           <Button
             variant="primary"
             size="sm"
-            disabled={!selectedPost || !draft.trim() || submitPending}
-            onClick={onSubmit}
+            disabled={
+              !selectedPost ||
+              cannotInteract ||
+              !draft.trim() ||
+              submitPending
+            }
+            onClick={handleSubmit}
             className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
           >
             {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
@@ -1525,6 +2466,7 @@ function DesktopChannelCommentsPanel({
 }
 
 function DesktopCommentThreadReplies({
+  cannotInteract,
   collapsed,
   commentAuthorNameMap,
   likePendingCommentId,
@@ -1534,6 +2476,7 @@ function DesktopCommentThreadReplies({
   replies,
   replyTarget,
 }: {
+  cannotInteract: boolean;
   collapsed: boolean;
   commentAuthorNameMap: Map<string, string>;
   likePendingCommentId: string | null;
@@ -1550,6 +2493,18 @@ function DesktopCommentThreadReplies({
 }) {
   const t = useRuntimeTranslator();
   const latestReply = replies[replies.length - 1] ?? null;
+  // 走查 2026-05-18 R1（本轮）：collapsed 状态下"楼中楼"折起来后下面那块儿
+  // 预览，原 `${authorName}：${latestReply.text}` 直接拿 raw text 渲到 DOM——
+  // 视频号 AI 角色（gpt-4.1 / claude）回复偶尔把 <tool_call>…</tool_call>
+  // 或 [TOOL_CALL] 这种工具调用残留漏到 comment.text 里（feed_comments 库里
+  // 实测有 1019 字 CoT 漏出），collapsed 预览没 stripToolCallSyntax 也没
+  // line-clamp，把整段 XML/JSON 原样塞进高度 ~24px 的预览块 → 块本身
+  // overflow 撑成 200+px 把线程卡撑高 + 下方 main 评论被挤出可视区。
+  // 同步对齐 DesktopThreadCommentCard 的 cleanText 处理：先 strip 再 clamp
+  // 到 2 行。空文本时（被 strip 抠成空串）不渲 authorName: 这条 ghost row。
+  const latestReplyCleanText = latestReply
+    ? stripToolCallSyntax(latestReply.text)
+    : "";
 
   return (
     <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
@@ -1570,13 +2525,13 @@ function DesktopCommentThreadReplies({
       </button>
       {collapsed ? (
         <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-[11px] leading-6 text-[color:var(--text-secondary)]">
-          {latestReply ? (
-            <>
+          {latestReply && latestReplyCleanText ? (
+            <div className="line-clamp-2">
               <span className="font-medium text-[color:var(--text-primary)]">
                 {latestReply.authorName}
               </span>
-              {`：${latestReply.text}`}
-            </>
+              {`：${latestReplyCleanText}`}
+            </div>
           ) : (
             t(msg`这个线程里还有跟帖。`)
           )}
@@ -1588,6 +2543,7 @@ function DesktopCommentThreadReplies({
               key={comment.id}
               comment={comment}
               active={replyTarget?.commentId === comment.id}
+              cannotInteract={cannotInteract}
               commentAuthorNameMap={commentAuthorNameMap}
               compact
               likePendingCommentId={likePendingCommentId}
@@ -1603,6 +2559,7 @@ function DesktopCommentThreadReplies({
 
 function DesktopThreadCommentCard({
   active,
+  cannotInteract,
   comment,
   commentAuthorNameMap,
   compact,
@@ -1611,6 +2568,7 @@ function DesktopThreadCommentCard({
   onReplyToComment,
 }: {
   active: boolean;
+  cannotInteract: boolean;
   comment: FeedComment;
   commentAuthorNameMap: Map<string, string>;
   compact: boolean;
@@ -1619,9 +2577,18 @@ function DesktopThreadCommentCard({
   onReplyToComment: (comment: FeedComment) => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-17 R3：原代码只看本地 commentAuthorNameMap——它只覆盖当前
+  // 分页展示的评论。被回复的根评论若在分页之外 / 已删 / 已隐藏，map 是空，
+  // "回复 X" 整段就漏掉了。移动端 R3 早就改成「优先吃后端 serializeComment
+  // 给的 replyToAuthorName」，桌面这里也对齐。
   const replyTargetName = comment.replyToCommentId
-    ? commentAuthorNameMap.get(comment.replyToCommentId) ?? null
+    ? (comment.replyToAuthorName ??
+        commentAuthorNameMap.get(comment.replyToCommentId) ??
+        null)
     : null;
+  // 走查 2026-05-17 R3：评论正文同样跑 stripToolCallSyntax，避免 AI 角色 CoT
+  // 漏出的 <tool_call> / [TOOL_CALL] 标签原样在评论楼里显示一段 XML/JSON。
+  const cleanText = stripToolCallSyntax(comment.text);
 
   return (
     <div
@@ -1677,28 +2644,31 @@ function DesktopThreadCommentCard({
                 {"："}
               </span>
             ) : null}
-            {comment.text}
+            {cleanText}
           </div>
           <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
             <button
               type="button"
+              disabled={cannotInteract}
               onClick={() => onReplyToComment(comment)}
-              className="transition hover:text-[color:var(--text-primary)]"
+              className="transition hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t(msg`回复`)}
             </button>
             <button
               type="button"
               disabled={
+                cannotInteract ||
                 comment.likedByOwner ||
                 likePendingCommentId === comment.id
               }
               onClick={() => onLikeComment(comment)}
               className={cn(
-                "inline-flex items-center gap-1 transition",
+                "inline-flex items-center gap-1 transition disabled:cursor-not-allowed",
                 comment.likedByOwner
                   ? "text-[color:var(--brand-primary)]"
                   : "hover:text-[color:var(--text-primary)]",
+                cannotInteract && !comment.likedByOwner ? "opacity-50" : null,
               )}
             >
               <ThumbsUp size={12} />

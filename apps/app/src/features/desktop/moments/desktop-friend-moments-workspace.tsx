@@ -36,6 +36,11 @@ type DesktopFriendMomentsWorkspaceProps = {
   imageDrafts: MomentImageDraft[];
   isBlocked?: boolean;
   isLoading: boolean;
+  /** momentsQuery 首屏失败时的错误信息；moments=[] 且未被拉黑时空态优先渲
+   *  「重试读取」而不是「还没有发表朋友圈」误导文案。 */
+  loadErrorMessage?: string | null;
+  /** 「重试读取」按钮回调；friend-moments-page 绑 momentsQuery.refetch。 */
+  onRetryLoad?: () => void;
   likeErrorMessage?: string | null;
   likePendingMomentId: string | null;
   moments: Moment[];
@@ -45,7 +50,11 @@ type DesktopFriendMomentsWorkspaceProps = {
   scrollToMomentId?: string | null;
   showCompose: boolean;
   signature: string;
-  successNotice?: string;
+  /** 顶部状态条文案 + tone + 可选「重试」按钮。 */
+  notice?: string;
+  noticeTone?: "success" | "info" | "danger";
+  noticeActionLabel?: string | null;
+  onNoticeAction?: (() => void) | null;
   text: string;
   videoDraft: MomentVideoDraft | null;
   isMomentFavorite: (momentId: string) => boolean;
@@ -92,6 +101,8 @@ export function DesktopFriendMomentsWorkspace({
   imageDrafts,
   isBlocked = false,
   isLoading,
+  loadErrorMessage = null,
+  onRetryLoad,
   likeErrorMessage,
   likePendingMomentId,
   moments,
@@ -101,7 +112,10 @@ export function DesktopFriendMomentsWorkspace({
   scrollToMomentId = null,
   showCompose,
   signature,
-  successNotice,
+  notice,
+  noticeTone = "success",
+  noticeActionLabel = null,
+  onNoticeAction = null,
   text,
   videoDraft,
   isMomentFavorite,
@@ -129,6 +143,32 @@ export function DesktopFriendMomentsWorkspace({
   const profileActionAriaLabel = t(msg`查看 ${displayName} 的资料`);
 
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R4：跟 desktop-moments-workspace 同款 ——
+  // mobile moments-page 早就按 baseUrl 清 shareMomentId，桌面 3 个 workspace
+  // 都漏。本页是「角色朋友圈」专门页：character 切换或账户切换都会让 moments
+  // 列表整体翻新，旧 shareMomentId 找不到了 → 切回旧角色又 find 回来 → 分享
+  // 卡片"幽灵"重新弹出。ownerId + character.id 一起当 reset 锚跟着 baseUrl /
+  // characterId 切。
+  //
+  // 走查电脑端朋友圈 R4（本轮）：之前注释说"character 切换由父 page 的
+  // [characterId] reset 已经把 commentDrafts 等都清了"——但父 page reset 的是
+  // *页面* state（commentDrafts / desktopReplyTarget / commentSubmitArgsRef
+  // / notice），shareMomentId 是 workspace 自己的 useState，父 page 触不到。
+  // friend-moments-page 不会按 characterId 卸载 workspace（没传 key），所以
+  // workspace 实例延续，shareMomentId 持续挂着。CDP 实测复现：A 角色页打开
+  // share modal → 切到 B → 再切回 A → ghost share card 重新弹出。把
+  // character.id 加进 deps 兜住跨角色场景。
+  useEffect(() => {
+    setShareMomentId(null);
+  }, [ownerId, character.id]);
+  // 走查电脑端朋友圈 R1（本轮，新一轮）：和 desktop-moments-workspace 同款 ——
+  // 切账户 (ownerId 变) 或 desktopAvatarPopover 切到另一个角色 (character.id 变)
+  // 时，friend-moments-page 不卸载 DesktopFriendMomentsWorkspace，scrollTop 仍
+  // 是上个角色读到第 N 条的位置；新角色的 moments 翻新后用户落在新页中段或空白
+  // 区。和 lastScrolledIdRef 复位思路对齐，scrollTo(0) 保证从顶部开始读。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
+  }, [ownerId, character.id]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;
@@ -151,15 +191,20 @@ export function DesktopFriendMomentsWorkspace({
   );
   const latestMoment = sortedMoments[0] ?? null;
 
+  // 每个 scrollToMomentId 只滚一次。之前依赖 [scrollToMomentId, sortedMoments]，
+  // 点赞/评论时 sortedMoments 重算 → effect 重跑 → 用户被强制滚回该帖。
+  const lastScrolledIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!scrollToMomentId || typeof document === "undefined") {
       return;
     }
-
+    if (lastScrolledIdRef.current === scrollToMomentId) {
+      return;
+    }
     if (!sortedMoments.some((moment) => moment.id === scrollToMomentId)) {
       return;
     }
-
+    lastScrolledIdRef.current = scrollToMomentId;
     const frame = window.requestAnimationFrame(() => {
       document
         .getElementById(`desktop-moment-post-${scrollToMomentId}`)
@@ -167,6 +212,11 @@ export function DesktopFriendMomentsWorkspace({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [scrollToMomentId, sortedMoments]);
+  useEffect(() => {
+    if (!scrollToMomentId) {
+      lastScrolledIdRef.current = null;
+    }
+  }, [scrollToMomentId]);
 
   function openProfilePopover(
     anchorElement: HTMLButtonElement,
@@ -194,6 +244,28 @@ export function DesktopFriendMomentsWorkspace({
     }
 
     if (!sortedMoments.length) {
+      // momentsQuery 首屏失败时之前永远渲「TA 还没有发表朋友圈」，把"读取
+      // 角色朋友圈失败"包装成"这个角色暂时没发"，用户被误导以为是空帐户。
+      // 跟 desktop-moments-feed Round 2 (674f3dfa / desktop-feed-list) 同款：
+      // 失败 + 未被拉黑 + 0 条直接渲「朋友圈暂时不可用 / 重试读取」。
+      // isBlocked 路径自己有专门文案，不被错误态覆盖。
+      if (loadErrorMessage && !isBlocked) {
+        return (
+          <div className="mx-auto max-w-[560px] py-10">
+            <EmptyState
+              title={t(msg`朋友圈暂时不可用`)}
+              description={loadErrorMessage}
+              action={
+                onRetryLoad ? (
+                  <Button variant="primary" onClick={onRetryLoad}>
+                    {t(msg`重试读取`)}
+                  </Button>
+                ) : undefined
+              }
+            />
+          </div>
+        );
+      }
       return (
         <div className="mx-auto max-w-[560px] py-10">
           <EmptyState
@@ -356,42 +428,70 @@ export function DesktopFriendMomentsWorkspace({
             </div>
           </div>
 
+          {/* 走查 R5：notice / errors 之前嵌在 scrollViewportRef 内部 .mx-auto 的
+              顶部。用户滚到第 N 条 moment 上 like / comment / delete / share，
+              成功 / 失败 toast 都触发在最顶端 —— 已经滚到第 N 条的用户看不见，
+              体感"我点了但没反应"。和 desktop-moments-workspace 的 toolbar 把
+              notice 挂在 scroll viewport *外* 的模式对齐：抽到 header 下、scroll
+              viewport 上的独立条带里，跨页统一"无论滚到哪 toast 都看得到"。
+              整段在三种来源都为空时整块不渲染（不留空白栏）。 */}
+          {notice ||
+          errors.length > 0 ||
+          (likeErrorMessage && !(notice && noticeTone === "danger")) ||
+          (commentErrorMessage && !(notice && noticeTone === "danger")) ? (
+            <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-6 py-3 backdrop-blur-xl">
+              <div className="mx-auto w-full max-w-[760px] space-y-3">
+                {notice ? (
+                  <InlineNotice
+                    tone={noticeTone}
+                    className="border-[color:var(--border-faint)] bg-white"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="min-w-0 flex-1">{notice}</span>
+                      {noticeActionLabel && onNoticeAction ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={onNoticeAction}
+                          className="shrink-0 border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                        >
+                          {noticeActionLabel}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </InlineNotice>
+                ) : null}
+
+                {errors.length > 0
+                  ? errors.map((message, index) => (
+                      <ErrorBlock
+                        key={`${message}-${index}`}
+                        message={message}
+                      />
+                    ))
+                  : null}
+
+                {/* danger notice 在屏时 mutation 错误已经在顶部红条 + 「重试...」按钮覆盖了，
+                    下面再渲染同文 ErrorBlock 会变两条红条同屏；跟 toolbar / profile workspace
+                    的 Round 3 修复对齐：danger notice 期间藏 type-specific ErrorBlock，
+                    notice 2.4s 自清后 ErrorBlock 再现做持久指示。 */}
+                {likeErrorMessage && !(notice && noticeTone === "danger") ? (
+                  <ErrorBlock message={likeErrorMessage} />
+                ) : null}
+
+                {commentErrorMessage && !(notice && noticeTone === "danger") ? (
+                  <ErrorBlock message={commentErrorMessage} />
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <div
             ref={scrollViewportRef}
             className="min-h-0 flex-1 overflow-auto px-7 py-6"
           >
             <div className="mx-auto w-full max-w-[760px]">
-              {successNotice ? (
-                <div className="mb-4">
-                  <InlineNotice
-                    tone="success"
-                    className="border-[color:var(--border-faint)] bg-white"
-                  >
-                    {successNotice}
-                  </InlineNotice>
-                </div>
-              ) : null}
-
-              {errors.length > 0 ? (
-                <div className="mb-4 space-y-3">
-                  {errors.map((message, index) => (
-                    <ErrorBlock key={`${message}-${index}`} message={message} />
-                  ))}
-                </div>
-              ) : null}
-
-              {likeErrorMessage ? (
-                <div className="mb-4">
-                  <ErrorBlock message={likeErrorMessage} />
-                </div>
-              ) : null}
-
-              {commentErrorMessage ? (
-                <div className="mb-4">
-                  <ErrorBlock message={commentErrorMessage} />
-                </div>
-              ) : null}
-
               {renderFeedContent()}
             </div>
           </div>
@@ -423,7 +523,7 @@ export function DesktopFriendMomentsWorkspace({
         moment={shareMoment}
         liked={shareLiked}
         ownerId={ownerId ?? null}
-        ownerDisplayName={displayName}
+        ownerDisplayName={ownerUsername?.trim() || t(msg`世界主人`)}
         onClose={() => setShareMomentId(null)}
       />
     </div>

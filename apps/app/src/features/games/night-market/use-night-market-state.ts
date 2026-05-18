@@ -88,15 +88,20 @@ export function useNightMarketState() {
     };
   }, [state]);
 
+  // 卸载时刷新最新 state；直接闭包 state + deps [] 会把 disk 回滚到 mount 时的初始 state。
+  const stateRef = useRef(state);
+  stateRef.current = state;
   useEffect(() => {
     return () => {
-      saveNightMarketState(state);
+      saveNightMarketState(stateRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // tick reducer 在 idle/ended 也会 cloneState (JSON 深拷) + setState 触发重渲。
+  // 用户停在选品 / 结算页就是纯空转，只 running 才需要 500ms 推进客流。
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (stateRef.current.status !== "running") return;
       dispatch({ type: "tick", nowMs: Date.now() });
     }, 500);
     return () => window.clearInterval(id);

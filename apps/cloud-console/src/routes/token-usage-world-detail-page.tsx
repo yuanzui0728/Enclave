@@ -5,6 +5,15 @@ import type {
   TokenUsageBreakdownItem,
   TokenUsageBreakdownResponse,
 } from "@yinjie/contracts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { CloudAdminErrorBlock } from "../components/cloud-admin-error-block";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import { useCloudConsoleText } from "../lib/cloud-console-i18n";
@@ -76,7 +85,8 @@ export function TokenUsageWorldDetailPage() {
     ? pickDimension(breakdown, dimension)
     : [];
 
-  const dailyTotals = (dailyQuery.data ?? []).reduce(
+  const dailyRows = dailyQuery.data ?? [];
+  const dailyTotals = dailyRows.reduce(
     (acc, row) => ({
       tokens: acc.tokens + row.totalTokens,
       cost: acc.cost + row.estimatedCost,
@@ -100,11 +110,11 @@ export function TokenUsageWorldDetailPage() {
             <h1 className="mt-1 text-2xl font-semibold text-[color:var(--text-primary)]">
               {worldId}
             </h1>
-            <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
-              {t(
-                "Drill into one world's LLM token consumption by character, model, scene, and conversation.",
-              )}
-            </p>
+            {dailyRows.length > 0 && (
+              <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
+                {t("Request count")}: {formatNumber(dailyTotals.requests)}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {(["7d", "30d", "90d"] as const).map((option) => (
@@ -126,21 +136,90 @@ export function TokenUsageWorldDetailPage() {
       </section>
 
       <section className={SECTION}>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <SmallStat
-            label={t("Total tokens")}
-            value={formatNumber(dailyTotals.tokens)}
-          />
-          <SmallStat
-            label={t("Estimated cost")}
-            value={formatCost(dailyTotals.cost, currency)}
-          />
-          <SmallStat
-            label={t("Request count")}
-            value={formatNumber(dailyTotals.requests)}
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {dailyQuery.isLoading ? (
+            Array.from({ length: 2 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-24 animate-pulse rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)]"
+              />
+            ))
+          ) : (
+            <>
+              <SmallStat
+                label={t("Estimated cost")}
+                value={formatCost(dailyTotals.cost, currency)}
+              />
+              <SmallStat
+                label={t("Total tokens")}
+                value={formatNumber(dailyTotals.tokens)}
+              />
+            </>
+          )}
         </div>
       </section>
+
+      {dailyRows.length > 0 && (
+        <section className={SECTION}>
+          <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+            {t("Daily trends")}
+          </div>
+          <div className="mt-3" style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer>
+              <LineChart
+                data={dailyRows.map((row) => ({
+                  date: row.bucketDate,
+                  totalTokens: row.totalTokens,
+                  estimatedCost: Math.round(row.estimatedCost * 100) / 100,
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
+                <YAxis
+                  yAxisId="tokens"
+                  stroke="#64748b"
+                  fontSize={11}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  yAxisId="cost"
+                  orientation="right"
+                  stroke="#64748b"
+                  fontSize={11}
+                />
+                <Tooltip
+                  formatter={(value, name) => {
+                    const num = Number(value);
+                    if (!Number.isFinite(num)) return String(value);
+                    if (name === t("Estimated cost")) {
+                      return formatCost(num, currency);
+                    }
+                    return formatNumber(num);
+                  }}
+                />
+                <Line
+                  yAxisId="tokens"
+                  type="monotone"
+                  dataKey="totalTokens"
+                  name={t("Total tokens")}
+                  stroke="#0ea5e9"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="cost"
+                  type="monotone"
+                  dataKey="estimatedCost"
+                  name={t("Estimated cost")}
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       <section className={SECTION}>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -291,9 +370,9 @@ function BreakdownTable({
 
 function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3">
+    <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
+      <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
         {value}
       </div>
     </div>

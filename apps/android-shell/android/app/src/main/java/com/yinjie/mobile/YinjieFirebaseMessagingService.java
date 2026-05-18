@@ -53,38 +53,76 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
         String title = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getTitle() : null;
         String body = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getBody() : null;
 
+        // Round 35：不能用 Map.getOrDefault —— 这条是 Java 8 default 方法，
+        // Android API 24 (N) 才把它加到平台 Map / HashMap 上。minSdk=23
+        // 包括 Android 6.0 Marshmallow，那一档系统的 Map / HashMap 都没这
+        // 个方法，bytecode 跑到这里会抛 NoSuchMethodError，FCM service 进程
+        // 直接崩，Android 6.0 用户**整个 FCM 通道死锁**，任何推送都不弹。
+        // 没启 coreLibraryDesugaring 也救不回（项目 build.gradle 没配）。
+        // 手写「get → null/empty 检查 → fallback」，全 API level 安全。
         if (title == null || title.trim().isEmpty()) {
-            title = remoteMessage.getData().getOrDefault(
-                "title",
-                getString(R.string.notification_default_title)
-            );
+            String dataTitle = remoteMessage.getData().get("title");
+            title = (dataTitle == null || dataTitle.trim().isEmpty())
+                ? getString(R.string.notification_default_title)
+                : dataTitle;
         }
         if (body == null || body.trim().isEmpty()) {
-            body = remoteMessage.getData().getOrDefault(
-                "body",
-                getString(R.string.notification_default_body)
-            );
+            String dataBody = remoteMessage.getData().get("body");
+            body = (dataBody == null || dataBody.trim().isEmpty())
+                ? getString(R.string.notification_default_body)
+                : dataBody;
         }
 
         Intent launchIntent = new Intent(this, MainActivity.class);
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         applyLaunchTargetExtras(launchIntent, remoteMessage);
+        // 每条推送用不同的 requestCode：写死 1001 + FLAG_UPDATE_CURRENT 会让
+        // 通知栏里所有同包推送共享同一个 PendingIntent，后来的 extras 把先到的
+        // 那条 intent 覆盖掉，用户点旧通知会被路由到新会话。
+        int requestCode = buildPendingIntentRequestCode(remoteMessage);
         PendingIntent contentIntent = PendingIntent.getActivity(
             this,
-            1001,
+            requestCode,
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            // 不能用 R.mipmap.ic_launcher：那是彩色 launcher PNG，Android 5+ 把
+            // 状态栏小图标全部 mask 成只看 alpha 的纯白 silhouette，launcher 整张
+            // 不透明会被剥成毫无形状的白方块。ic_stat_notification 是 alpha-only
+            // 的 Y 字形矢量，mask 之后仍然能看到 Yinjie 的 logo 轮廓。
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setColor(ContextCompat.getColor(this, R.color.notification_accent))
             .setContentTitle(title)
             .setContentText(body)
+            // showLocalNotification 给本地推送加了 BigTextStyle，FCM 走的这条
+            // 一直没加。聊天推送 body 超过 ~40 字时会在通知栏里硬截断，用户
+            // 在通知栏长按 / 下拉也展不开。本地 / 推送两条 builder 拉齐 style。
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(contentIntent);
 
-        NotificationManagerCompat.from(this).notify((int) System.currentTimeMillis(), builder.build());
+        NotificationManagerCompat.from(this).notify(requestCode, builder.build());
+    }
+
+    private int buildPendingIntentRequestCode(RemoteMessage remoteMessage) {
+        if (remoteMessage != null && remoteMessage.getData() != null) {
+            String conversationId = normalize(remoteMessage.getData().get("conversationId"));
+            if (conversationId != null) {
+                return ("conversation:" + conversationId).hashCode();
+            }
+            String groupId = normalize(remoteMessage.getData().get("groupId"));
+            if (groupId != null) {
+                return ("group:" + groupId).hashCode();
+            }
+            String route = normalize(remoteMessage.getData().get("route"));
+            if (route != null) {
+                return ("route:" + route).hashCode();
+            }
+        }
+        return (int) System.currentTimeMillis();
     }
 
     private void applyLaunchTargetExtras(Intent intent, RemoteMessage remoteMessage) {

@@ -10,6 +10,7 @@ import {
 } from "@yinjie/ui";
 import { wikiApi } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
+import { useUsernameMap } from "../lib/use-username-map";
 
 export function AdminStatsPage() {
   const t = translateRuntimeMessage;
@@ -25,6 +26,9 @@ export function AdminStatsPage() {
     queryKey: ["wiki", "stats", "filters"],
     queryFn: () => wikiApi.wikiStatsAbuseFilters(),
   });
+  const { resolve: resolveUsername } = useUsernameMap(
+    (topQ.data ?? []).map((u) => u.userId),
+  );
 
   return (
     <PageShell
@@ -85,7 +89,7 @@ export function AdminStatsPage() {
               key={u.userId}
               className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-sm shadow-[var(--shadow-soft)]"
             >
-              <span className="font-mono text-xs">{u.userId}</span>
+              <span className="text-xs">{resolveUsername(u.userId)}</span>
               <span className="text-xs text-[color:var(--text-muted)]">
                 edits {u.editCount} · approved {u.approvedEditCount}
               </span>

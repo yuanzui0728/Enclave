@@ -10,7 +10,16 @@
   </array>
   <key>keychain-access-groups</key>
   <array>
-    <string>$(AppIdentifierPrefix)com.yinjie.ios</string>
+    <!-- Round 45：用 $(PRODUCT_BUNDLE_IDENTIFIER) 让 Xcode 在 build 时按当前
+         configuration 的真实 bundle id 替换，不要写死 com.yinjie.ios。fork
+         出去的项目跟 Round 30 (Info.plist) 是同款问题：写死会让 keychain
+         group 跟实际 bundle id 漂移 —— SecItemAdd 没指定 access group 时 iOS
+         拿数组里第一条当默认组，于是 fork 用户的 session token 全落到名为
+         "XXXTEAMID.com.yinjie.ios" 的组里（跟他们 app 的自然组 "XXXTEAMID.
+         <their-bundle>" 完全无关），同 Apple Developer 团队下任何一个声明了
+         这条 group 的兄弟 app 都能读，App Store 隐私审查也会注意到这条访问
+         组名跟 bundle id 不一致。-->
+    <string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
   </array>
 </dict>
 </plist>

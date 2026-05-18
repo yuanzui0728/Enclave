@@ -44,6 +44,18 @@ export type WikiPageView = {
   exists: boolean;
 };
 
+type ListPagesRow = {
+  id: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  relationship: string;
+  relationshipType: string;
+  sourceType: string;
+  lifecycleStatus: string;
+  protectionLevel: string;
+};
+
 @Injectable()
 export class WikiPageService {
   constructor(
@@ -55,6 +67,16 @@ export class WikiPageService {
     private readonly revisionRepo: Repository<CharacterRevisionEntity>,
     private readonly blueprints: CharacterBlueprintService,
   ) {}
+
+  // listPages 是 wiki 首页唯一阻塞 API，三次全表扫 + 内存 sort。
+  // 加 60s TTL 进程内缓存：冷启动一次后，二次访问 RTT 从几百 ms 降到 <10 ms。
+  // 写路径都要主动 invalidate；TTL 是兜底，最坏陈旧 60s 可接受。
+  private static readonly LIST_PAGES_TTL_MS = 60_000;
+  private listPagesCache: { value: ListPagesRow[]; expiresAt: number } | null = null;
+
+  invalidateListPagesCache(): void {
+    this.listPagesCache = null;
+  }
 
   async getOrInitPage(characterId: string): Promise<CharacterPageEntity> {
     let page = await this.pageRepo.findOne({ where: { characterId } });
@@ -81,7 +103,9 @@ export class WikiPageService {
       editCount: 0,
       isDeleted: false,
     });
-    return this.pageRepo.save(page);
+    const saved = await this.pageRepo.save(page);
+    this.invalidateListPagesCache();
+    return saved;
   }
 
   async getPageView(
@@ -205,19 +229,17 @@ export class WikiPageService {
     };
   }
 
-  async listPages(): Promise<
-    Array<{
-      id: string;
-      name: string;
-      avatar: string;
-      bio: string;
-      relationship: string;
-      relationshipType: string;
-      sourceType: string;
-      lifecycleStatus: string;
-      protectionLevel: string;
-    }>
-  > {
+  async listPages(): Promise<ListPagesRow[]> {
+    const now = Date.now();
+    if (this.listPagesCache && this.listPagesCache.expiresAt > now) {
+      return this.listPagesCache.value;
+    }
+    const value = await this.computeListPages();
+    this.listPagesCache = { value, expiresAt: now + WikiPageService.LIST_PAGES_TTL_MS };
+    return value;
+  }
+
+  private async computeListPages(): Promise<ListPagesRow[]> {
     const characters = await this.characterRepo.find({ order: { name: 'ASC' } });
     const pages = await this.pageRepo.find();
     const pendingRevisions = await this.revisionRepo.find({
@@ -263,10 +285,35 @@ export class WikiPageService {
     return rows.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
   }
 
+  /**
+   * 验词条存在：要么 characters 表里有，要么 wiki page 有（被 wiki 创建出来的而非 world 同步过来的词条
+   * 在 characters 表里可能没有对应行，但有 page）。任一存在即视为有效。
+   */
+  private async assertCharacterIdExists(characterId: string): Promise<void> {
+    if (!characterId) {
+      throw new AppError('WIKI_PAGE_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '词条不存在',
+      });
+    }
+    const [hasCharacter, hasPage] = await Promise.all([
+      this.characterRepo.count({ where: { id: characterId } }),
+      this.pageRepo.count({ where: { characterId } }),
+    ]);
+    if (hasCharacter === 0 && hasPage === 0) {
+      throw new AppError('WIKI_PAGE_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: `角色 ${characterId} 不存在`,
+      });
+    }
+  }
+
   async getHistory(
     characterId: string,
     limit = 50,
   ): Promise<CharacterRevisionEntity[]> {
+    // 词条不存在直接 404，否则 `[]` 让前端"以为这只是没历史"，掩盖 typo 之类的拼错 id。
+    await this.assertCharacterIdExists(characterId);
     return this.revisionRepo.find({
       where: { characterId },
       order: { version: 'DESC' },
@@ -315,6 +362,7 @@ export class WikiPageService {
   }
 
   async getPending(characterId: string): Promise<CharacterRevisionEntity[]> {
+    await this.assertCharacterIdExists(characterId);
     return this.revisionRepo.find({
       where: { characterId, status: 'pending' },
       order: { createdAt: 'DESC' },
@@ -323,6 +371,14 @@ export class WikiPageService {
   }
 
   async getDiff(characterId: string, fromId: string, toId: string) {
+    // 没传 from/to → getRevisionOrThrow('') 进了 typeorm 的 where:{id:''} 又被解释成"无 where"，
+    // 命中表里第一行 revision 返回 200，让人误以为是合法 diff。直接 400 截断。
+    if (!fromId || !toId) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        params: { detail: 'diff 需要 from 和 to 两个 revisionId' },
+        legacyMessage: 'diff 需要 from 和 to 两个 revisionId',
+      });
+    }
     const [from, to] = await Promise.all([
       this.getRevisionOrThrow(fromId),
       this.getRevisionOrThrow(toId),
@@ -353,7 +409,10 @@ export class WikiPageService {
   > {
     const q = query.trim();
     if (!q) return [];
-    const like = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+    // 用 '!' 作 ESCAPE 字符而不是 '\\'。TypeORM 把 SQL 片段里的反斜杠再 escape 一次，
+    // 实际跑到 SQLite 的是 ESCAPE '\\\\'（两字符）→ "ESCAPE expression must be a single
+    // character"。改成 '!' 后两边都不需要再过 backslash quoting。
+    const like = `%${q.replace(/[%_!]/g, (m) => `!${m}`)}%`;
     const rows = await this.characterRepo
       .createQueryBuilder('c')
       .leftJoin(
@@ -363,7 +422,7 @@ export class WikiPageService {
       )
       .where('(p.isDeleted = 0 OR p.isDeleted IS NULL)')
       .andWhere(
-        '(c.name LIKE :like ESCAPE \'\\\' OR c.bio LIKE :like ESCAPE \'\\\' OR c.personality LIKE :like ESCAPE \'\\\' OR c.expertDomains LIKE :like ESCAPE \'\\\')',
+        "(c.name LIKE :like ESCAPE '!' OR c.bio LIKE :like ESCAPE '!' OR c.relationship LIKE :like ESCAPE '!' OR c.personality LIKE :like ESCAPE '!' OR c.expertDomains LIKE :like ESCAPE '!')",
         { like },
       )
       .select([
@@ -389,9 +448,10 @@ export class WikiPageService {
       .map((r) => {
         let score = 0;
         if (r.name?.toLowerCase().includes(lower)) score += 10;
+        if (r.relationship?.toLowerCase().includes(lower)) score += 6;
+        if (r.expertDomains?.toLowerCase().includes(lower)) score += 5;
         if (r.bio?.toLowerCase().includes(lower)) score += 3;
         if (r.personality?.toLowerCase().includes(lower)) score += 2;
-        if (r.expertDomains?.toLowerCase().includes(lower)) score += 5;
         return {
           characterId: r.id,
           name: r.name,
@@ -419,6 +479,7 @@ export class WikiPageService {
         deletedBy: isDeleted ? actorId : null,
       },
     );
+    this.invalidateListPagesCache();
     return (await this.pageRepo.findOne({ where: { characterId } }))!;
   }
 }

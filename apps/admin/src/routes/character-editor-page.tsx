@@ -6,6 +6,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   createCharacter,
   getCharacter,
+  isCustomRelationshipType,
   updateCharacter,
   type Character,
   type CharacterDraft,
@@ -60,6 +61,9 @@ const emptyCharacterDraft: CharacterDraft = {
   activeHoursStart: 8,
   activeHoursEnd: 23,
   intimacyLevel: 0,
+  socialOpenness: "normal",
+  proactiveBrowseChance: 0.3,
+  aiRelationships: [],
   triggerScenes: [],
   profile: {
     characterId: "",
@@ -247,6 +251,57 @@ function listToCsv(items?: string[] | null) {
   return items?.join(", ") ?? "";
 }
 
+function clampInt(
+  value: number | null | undefined,
+  fallback: number,
+  min: number,
+  max?: number,
+) {
+  const n = Number.isFinite(value) ? Math.trunc(value as number) : fallback;
+  const lower = Math.max(min, n);
+  return max == null ? lower : Math.min(max, lower);
+}
+
+function clampFloat(
+  value: number | null | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const n = Number.isFinite(value) ? (value as number) : fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+function formatSourceType(
+  value: CharacterDraft["sourceType"] | undefined,
+  t: typeof translateRuntimeMessage,
+): string {
+  switch (value) {
+    case "default_seed":
+      return t(msg`默认种子`);
+    case "preset_catalog":
+      return t(msg`预设目录`);
+    case "manual_admin":
+      return t(msg`后台手建`);
+    case "need_generated":
+      return t(msg`需求生成`);
+    case "shake_generated":
+      return t(msg`摇一摇生成`);
+    case "ai_generated":
+      return t(msg`AI 生成`);
+    case "wiki_contributed":
+      return t(msg`Wiki 投稿`);
+    case "wechat_import":
+      return t(msg`微信导入`);
+    case "model_persona":
+      return t(msg`模型人设`);
+    case "private_import":
+      return t(msg`私有导入`);
+    default:
+      return value ?? t(msg`未知`);
+  }
+}
+
 export function CharacterEditorPage() {
   const t = translateRuntimeMessage;
   const TABS = [
@@ -257,6 +312,7 @@ export function CharacterEditorPage() {
     { key: "scenes", label: t(msg`场景提示词`) },
     { key: "memory", label: t(msg`记忆提示词`) },
     { key: "life", label: t(msg`生活策略`) },
+    { key: "social_params", label: t(msg`社交参数`) },
   ];
   const { characterId } = useParams({ from: "/characters/$characterId" });
   const isNew = characterId === "new";
@@ -406,7 +462,17 @@ export function CharacterEditorPage() {
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
   const providerAccounts = inferenceOverviewQuery.data?.providerAccounts ?? [];
   const modelCatalog = inferenceOverviewQuery.data?.modelCatalog ?? [];
-  const canSave = Boolean(draft.name?.trim() && draft.relationship?.trim());
+  // 选了「自定义」关系类型但没填字符串（或停留在字面 "custom" 哨兵值）→ 禁止保存
+  const relationshipTypeValid = (() => {
+    const v = draft.relationshipType ?? "";
+    if (!isCustomRelationshipType(v)) return true;
+    return v !== "" && v !== "custom";
+  })();
+  const canSave = Boolean(
+    draft.name?.trim() &&
+      draft.relationship?.trim() &&
+      relationshipTypeValid,
+  );
 
   return (
     <div className="space-y-6">
@@ -451,7 +517,9 @@ export function CharacterEditorPage() {
       ) : null}
       {!canSave ? (
         <InlineNotice tone="warning">
-          {t(msg`保存角色前，名称和关系描述为必填项。`)}
+          {!relationshipTypeValid
+            ? t(msg`选择「自定义」关系类型时需要填入具体值（≤ 15 字）。`)
+            : t(msg`保存角色前，名称和关系描述为必填项。`)}
         </InlineNotice>
       ) : null}
       {saveMutation.isError && saveMutation.error instanceof Error ? (
@@ -553,23 +621,54 @@ export function CharacterEditorPage() {
                 setDraft((current) => ({ ...current, relationship: value }))
               }
             />
-            <SelectField
-              label={t(msg`关系类型`)}
-              value={draft.relationshipType ?? "expert"}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  relationshipType: value as Character["relationshipType"],
-                }))
-              }
-              options={[
-                { value: "family", label: t(msg`家人`) },
-                { value: "friend", label: t(msg`朋友`) },
-                { value: "expert", label: t(msg`专家`) },
-                { value: "mentor", label: t(msg`导师`) },
-                { value: "custom", label: t(msg`自定义`) },
-              ]}
-            />
+            <div className="space-y-2">
+              <SelectField
+                label={t(msg`关系类型`)}
+                value={
+                  isCustomRelationshipType(draft.relationshipType ?? "expert")
+                    ? "custom"
+                    : draft.relationshipType ?? "expert"
+                }
+                onChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    // 选「自定义」清空 relationshipType，等用户在下方输入框填具体值
+                    relationshipType:
+                      value === "custom"
+                        ? ("" as Character["relationshipType"])
+                        : (value as Character["relationshipType"]),
+                  }))
+                }
+                options={[
+                  ...(draft.relationshipType === "self"
+                    ? [{ value: "self", label: t(msg`自己`) }]
+                    : []),
+                  { value: "family", label: t(msg`家人`) },
+                  { value: "friend", label: t(msg`朋友`) },
+                  { value: "expert", label: t(msg`专家`) },
+                  { value: "mentor", label: t(msg`导师`) },
+                  { value: "custom", label: t(msg`自定义`) },
+                ]}
+              />
+              {isCustomRelationshipType(draft.relationshipType ?? "expert") && (
+                <Field
+                  label={t(msg`自定义关系类型`)}
+                  placeholder={t(msg`例如 师傅 / 房东 / 邻居`)}
+                  maxLength={15}
+                  value={
+                    draft.relationshipType === "custom"
+                      ? ""
+                      : draft.relationshipType ?? ""
+                  }
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      relationshipType: value as Character["relationshipType"],
+                    }))
+                  }
+                />
+              )}
+            </div>
             <Field
               label={t(msg`擅长领域`)}
               value={listToCsv(draft.expertDomains)}
@@ -605,6 +704,47 @@ export function CharacterEditorPage() {
               }
             />
           </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="text-xs text-[color:var(--text-secondary)]">
+                {t(msg`源类型 (只读)`)}
+              </div>
+              <div className="rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]">
+                {formatSourceType(draft.sourceType, t)}
+              </div>
+            </div>
+            <Field
+              label={t(msg`源标识 sourceKey`)}
+              placeholder={t(msg`如 preset_companion_an_he（可空）`)}
+              value={draft.sourceKey ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  sourceKey: value.trim() || null,
+                }))
+              }
+            />
+            <SelectField
+              label={t(msg`删除策略`)}
+              value={draft.deletionPolicy ?? "archive_allowed"}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  deletionPolicy:
+                    value as NonNullable<CharacterDraft["deletionPolicy"]>,
+                }))
+              }
+              options={[
+                { value: "archive_allowed", label: t(msg`可归档`) },
+                { value: "protected", label: t(msg`受保护`) },
+              ]}
+            />
+          </div>
+          {draft.deletionPolicy === "protected" ? (
+            <InlineNotice className="mt-3" tone="warning">
+              {t(msg`「受保护」角色无法经 admin 删除接口删除，需直接操作数据库。请确认这是你想要的行为。`)}
+            </InlineNotice>
+          ) : null}
         </Card>
       ) : null}
 
@@ -1090,6 +1230,156 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
+      {/* Tab: 社交参数 */}
+      {activeTab === "social_params" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>{t(msg`社交参数`)}</SectionHeading>
+          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            {t(msg`这一组是角色在朋友圈、跟其他角色互动、自治浏览时用到的字段。注意：亲密度与关系网会在运行时被自动调节。`)}
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <SelectField
+              label={t(msg`社交开放度`)}
+              value={draft.socialOpenness ?? "normal"}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  socialOpenness: value as "open" | "normal" | "private",
+                }))
+              }
+              options={[
+                { value: "open", label: t(msg`open 公开`) },
+                { value: "normal", label: t(msg`normal 普通`) },
+                { value: "private", label: t(msg`private 仅好友`) },
+              ]}
+            />
+            <Field
+              label={t(msg`主动浏览概率 (0–1)`)}
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              placeholder="0.3"
+              value={String(draft.proactiveBrowseChance ?? 0.3)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  proactiveBrowseChance: Number(value) || 0,
+                }))
+              }
+            />
+            <Field
+              label={t(msg`亲密度种子 (0–100)`)}
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              placeholder="0"
+              value={String(draft.intimacyLevel ?? 0)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  intimacyLevel: Number(value) || 0,
+                }))
+              }
+            />
+          </div>
+          <InlineNotice className="mt-4" tone="warning">
+            {t(msg`亲密度（intimacyLevel）会被 farm-state 与 social 服务根据真实互动自动改写，此处编辑仅作为初始种子值。`)}
+          </InlineNotice>
+
+          <div className="mt-6">
+            <SectionHeading>{t(msg`AI 关系网（aiRelationships）`)}</SectionHeading>
+            <InlineNotice className="mt-2" tone="muted">
+              {t(msg`仅在角色首次入库时由 character-friendship 服务 seed 进 character_friendships 表，后续以朋友表为准；现编辑只对新角色或重 seed 场景生效。`)}
+            </InlineNotice>
+            <div className="mt-3 space-y-3">
+              {(draft.aiRelationships ?? []).map((rel, index) => (
+                <div
+                  key={index}
+                  className="grid gap-3 rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3 md:grid-cols-[1fr,1fr,1fr,auto]"
+                >
+                  <Field
+                    label={t(msg`目标角色 ID`)}
+                    value={rel.characterId}
+                    onChange={(value) =>
+                      setDraft((current) => {
+                        const list = [...(current.aiRelationships ?? [])];
+                        list[index] = { ...list[index], characterId: value };
+                        return { ...current, aiRelationships: list };
+                      })
+                    }
+                  />
+                  <Field
+                    label={t(msg`关系类型`)}
+                    placeholder={t(msg`如 friend / family / mentor`)}
+                    value={rel.relationshipType}
+                    onChange={(value) =>
+                      setDraft((current) => {
+                        const list = [...(current.aiRelationships ?? [])];
+                        list[index] = {
+                          ...list[index],
+                          relationshipType: value,
+                        };
+                        return { ...current, aiRelationships: list };
+                      })
+                    }
+                  />
+                  <Field
+                    label={t(msg`强度 (0–1)`)}
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    placeholder="0.5"
+                    value={String(rel.strength)}
+                    onChange={(value) =>
+                      setDraft((current) => {
+                        const list = [...(current.aiRelationships ?? [])];
+                        list[index] = {
+                          ...list[index],
+                          strength: Number(value) || 0,
+                        };
+                        return { ...current, aiRelationships: list };
+                      })
+                    }
+                  />
+                  <div className="flex items-end">
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        setDraft((current) => ({
+                          ...current,
+                          aiRelationships: (
+                            current.aiRelationships ?? []
+                          ).filter((_, i) => i !== index),
+                        }))
+                      }
+                    >
+                      {t(msg`删除`)}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setDraft((current) => ({
+                    ...current,
+                    aiRelationships: [
+                      ...(current.aiRelationships ?? []),
+                      { characterId: "", relationshipType: "friend", strength: 0.5 },
+                    ],
+                  }))
+                }
+              >
+                {t(msg`+ 添加关系`)}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {/* Tab: 推理 */}
       {activeTab === "reasoning" ? (
         <Card className="bg-[color:var(--surface-console)]">
@@ -1188,6 +1478,11 @@ function normalizeDraft(
     ? draft.expertDomains
     : ["general"];
 
+  const activeHoursStart = clampInt(draft.activeHoursStart, 8, 0, 23);
+  const activeHoursEndRaw = clampInt(draft.activeHoursEnd, 23, 0, 23);
+  // 活跃结束小时若小于开始小时，向上抬到开始小时（区间退化为空也比反向更容易理解）
+  const activeHoursEnd = Math.max(activeHoursStart, activeHoursEndRaw);
+
   return {
     ...draft,
     id: normalizedId,
@@ -1201,10 +1496,20 @@ function normalizeDraft(
     activityMode: draft.activityMode ?? "auto",
     currentActivity: draft.currentActivity ?? "free",
     activityFrequency: draft.activityFrequency ?? "normal",
-    momentsFrequency: draft.momentsFrequency ?? 1,
-    feedFrequency: draft.feedFrequency ?? 1,
-    activeHoursStart: draft.activeHoursStart ?? 8,
-    activeHoursEnd: draft.activeHoursEnd ?? 23,
+    momentsFrequency: clampInt(draft.momentsFrequency, 1, 0),
+    feedFrequency: clampInt(draft.feedFrequency, 1, 0),
+    activeHoursStart,
+    activeHoursEnd,
+    intimacyLevel: clampInt(draft.intimacyLevel, 0, 0, 100),
+    socialOpenness: draft.socialOpenness ?? "normal",
+    proactiveBrowseChance: clampFloat(draft.proactiveBrowseChance, 0.3, 0, 1),
+    aiRelationships: (draft.aiRelationships ?? [])
+      .map((rel) => ({
+        characterId: rel.characterId?.trim() ?? "",
+        relationshipType: rel.relationshipType?.trim() || "friend",
+        strength: clampFloat(rel.strength, 0.5, 0, 1),
+      }))
+      .filter((rel) => rel.characterId.length > 0),
     modelRoutingMode: draft.modelRoutingMode ?? "inherit_default",
     inferenceProviderAccountId:
       draft.inferenceProviderAccountId?.trim() || null,
@@ -1236,7 +1541,7 @@ function normalizeDraft(
       memory: {
         coreMemory: profile.memory?.coreMemory?.trim() ?? "",
         recentSummary: profile.memory?.recentSummary?.trim() ?? "",
-        forgettingCurve: profile.memory?.forgettingCurve ?? 70,
+        forgettingCurve: clampInt(profile.memory?.forgettingCurve, 70, 0, 100),
         recentSummaryPrompt: profile.memory?.recentSummaryPrompt?.trim() ?? "",
         coreMemoryPrompt: profile.memory?.coreMemoryPrompt?.trim() ?? "",
       },

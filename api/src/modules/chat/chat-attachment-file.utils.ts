@@ -75,10 +75,3 @@ export function normalizeChatAttachmentDisplayName(
 
   return `${nameWithoutExtension}${extension}`;
 }
-
-export function resolveChatPublicApiBaseUrl() {
-  return (
-    process.env.PUBLIC_API_BASE_URL?.trim() ||
-    `http://localhost:${process.env.PORT ?? 3000}`
-  ).replace(/\/+$/, '');
-}

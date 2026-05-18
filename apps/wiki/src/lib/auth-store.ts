@@ -54,6 +54,19 @@ function notify(): void {
   for (const cb of listeners) cb();
 }
 
+// 跨 tab 同步：浏览器 storage 事件只在「其他 tab 改了 localStorage」时触发，
+// 同 tab 的 setSession/clearSession 走上面的 notify()。两条路径合起来才能让
+// 「tab A 改名 / 登出」也立刻反映在 tab B 上 —— 不然 tab B 的 useAuth 拿的
+// 还是旧 cache，UI 一直停在旧 username（changeUsername 这条新流程下尤其
+// 明显，用户在改名 tab 操作后切回另一个 tab，名字没变会以为没生效）。
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === TOKEN_KEY || event.key === USER_KEY || event.key === null) {
+      notify();
+    }
+  });
+}
+
 export const ROLE_RANK: Record<string, number> = {
   newcomer: 0,
   autoconfirmed: 1,

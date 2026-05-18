@@ -31,6 +31,9 @@ export class FarmNpcStateEntity {
   @Column({ type: 'integer', default: 1 })
   level: number;
 
+  @Column({ type: 'integer', default: 0 })
+  totalHarvested: number;
+
   @Column({ type: 'integer', default: FARM_DEFAULT_NPC_PLOT_COUNT })
   plotCount: number;
 

@@ -1412,6 +1412,8 @@ function DesktopOfficialFeedArticleRow({
           <img
             src={item.article.coverImage}
             alt={item.article.title}
+            loading="lazy"
+            decoding="async"
             className="h-[5.5rem] w-[5.5rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
           />
         ) : (

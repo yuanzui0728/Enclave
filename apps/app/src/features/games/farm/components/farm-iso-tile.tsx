@@ -5,6 +5,7 @@ import { useFarmAdjustedNow } from "../farm-clock-context";
 
 const t = translateRuntimeMessage;
 import { formatRemainingMs, getStageEmoji } from "../crop-presentation";
+import { CropStageSvg } from "../svg/crop-stage-svg";
 import type { PlotPulseKind } from "./plot-action-bar";
 
 export interface FarmIsoTileProps {
@@ -20,6 +21,9 @@ const PULSE_EMOJI: Record<PlotPulseKind, string> = {
   water: "💧",
   weed: "🌿",
   debug: "🐛",
+  fertilize: "💩",
+  pesticide: "🧴",
+  uproot: "🪓",
   harvest: "🪙",
 };
 
@@ -66,7 +70,11 @@ export function FarmIsoTile({
 
       <span className="farm-iso-tile__content">
         <span className="farm-iso-tile__crop">
-          {getStageEmoji(stage, plot.cropId)}
+          {plot.cropId ? (
+            <CropStageSvg cropId={plot.cropId} stage={stage} size={40} />
+          ) : (
+            getStageEmoji(stage, plot.cropId)
+          )}
         </span>
 
         {plot.cropId && (
@@ -82,6 +90,13 @@ export function FarmIsoTile({
           {plot.weeds > 0 && <span title={t(msg`杂草`)}>🌿</span>}
           {plot.bugs > 0 && <span title={t(msg`害虫`)}>🐛</span>}
           {plot.watered && !isRipe && <span title={t(msg`已浇水`)}>💧</span>}
+          {plot.fertilized && !isRipe && (
+            <span title={t(msg`已施肥`)} className="text-amber-600">💩</span>
+          )}
+          {plot.pesticideUntilMs != null &&
+            nowMs < plot.pesticideUntilMs && (
+              <span title={t(msg`农药生效中`)} className="text-lime-600">🧴</span>
+            )}
           {(plot.stolenBy?.length ?? 0) > 0 && (
             <span title={t(msg`被偷过`)} className="text-rose-500">⚠️</span>
           )}

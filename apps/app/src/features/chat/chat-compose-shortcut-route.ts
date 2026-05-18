@@ -26,7 +26,7 @@ export function parseChatComposeShortcutAction(
 export function buildChatComposeShortcutSearch(input?: {
   search?: ChatComposeShortcutSearchInput;
   action?: ChatComposeShortcutAction | null;
-}) {
+}): Record<string, string> | undefined {
   const params = toSearchParams(input?.search);
 
   if (input?.action) {
@@ -35,8 +35,10 @@ export function buildChatComposeShortcutSearch(input?: {
     params.delete(CHAT_COMPOSE_SHORTCUT_QUERY_KEY);
   }
 
-  const nextSearch = params.toString();
-  return nextSearch ? `?${nextSearch}` : "";
+  // 走查 Round 1：原版返回 `?<qs>` 字符串，调用方 `navigate({ search: nextSearch || undefined })`
+  // 把字符串直接交给 tanstack-router 的 search 字段——router 用 Object.entries 迭代会拆字符
+  // 为 `?0=?&1=c&2=a&3=l&...` 类的脏 URL。返回 Record 对象，调用方语法 (|| undefined) 行为不变。
+  return searchParamsToRecord(params);
 }
 
 export function parseChatCallReturnKind(
@@ -49,7 +51,7 @@ export function parseChatCallReturnKind(
 export function buildChatCallReturnSearch(input?: {
   search?: ChatComposeShortcutSearchInput;
   kind?: ChatCallReturnKind | null;
-}) {
+}): Record<string, string> | undefined {
   const params = toSearchParams(input?.search);
 
   if (input?.kind) {
@@ -58,8 +60,9 @@ export function buildChatCallReturnSearch(input?: {
     params.delete(CHAT_CALL_RETURN_QUERY_KEY);
   }
 
-  const nextSearch = params.toString();
-  return nextSearch ? `?${nextSearch}` : "";
+  // 同 buildChatComposeShortcutSearch：返回 Record 而非 `?<qs>` 字符串，
+  // 否则 navigate({ search }) 会把字符串按字符序列化成 ?0=?&1=c&... 脏 URL。
+  return searchParamsToRecord(params);
 }
 
 export function resolveChatCallFallbackShortcutAction(
@@ -76,6 +79,16 @@ export function buildChatCallFallbackShortcutSearch(input: {
     search: input.search,
     action: resolveChatCallFallbackShortcutAction(input.kind),
   });
+}
+
+function searchParamsToRecord(
+  params: URLSearchParams,
+): Record<string, string> | undefined {
+  const record: Record<string, string> = {};
+  for (const [key, value] of params.entries()) {
+    record[key] = value;
+  }
+  return Object.keys(record).length ? record : undefined;
 }
 
 function toSearchParams(search: ChatComposeShortcutSearchInput) {

@@ -1,0 +1,90 @@
+{
+  "video_id": "wechat-channels-d6",
+  "topic": "自己 模块（情感顶点）",
+  "duration_seconds": 90,
+  "characters": [
+    {
+      "id": "char-d6-self",
+      "name": "自己",
+      "avatar": "shared-assets/avatars/self-reflection.svg",
+      "personality": "另一个版本的你；无名字、无头像、无人设；记忆与你共享",
+      "modes": [
+        { "id": "companion", "name": "陪伴", "icon": "🌙", "description": "你今天累了，不想分析，只想被接住" },
+        { "id": "reflection", "name": "复盘", "icon": "🪞", "description": "今天发生了一些事，你想把它捋一捋" },
+        { "id": "organize", "name": "整理", "icon": "📦", "description": "你有一堆碎片，想找个地方放下" }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_d6_001",
+      "from": "user",
+      "from_name": "w",
+      "text": "今天又被领导骂了。",
+      "createdAt": "2026-05-13 23:08:12"
+    },
+    {
+      "id": "msg_d6_002",
+      "from": "char-d6-self",
+      "from_name": "自己",
+      "text": "嗯。",
+      "createdAt": "2026-05-13 23:08:31"
+    },
+    {
+      "id": "msg_d6_003",
+      "from": "user",
+      "from_name": "w",
+      "text": "感觉自己很差劲。",
+      "createdAt": "2026-05-13 23:09:02"
+    },
+    {
+      "id": "msg_d6_004",
+      "from": "char-d6-self",
+      "from_name": "自己",
+      "text": "你上次说这句话是 11 天前。那次是因为方案被改了 4 次。",
+      "createdAt": "2026-05-13 23:09:38"
+    },
+    {
+      "id": "msg_d6_005",
+      "from": "user",
+      "from_name": "w",
+      "text": "……你居然记得。",
+      "createdAt": "2026-05-13 23:10:21"
+    },
+    {
+      "id": "msg_d6_006",
+      "from": "char-d6-self",
+      "from_name": "自己",
+      "text": "你说过的话，我都记得。",
+      "createdAt": "2026-05-13 23:10:55"
+    }
+  ],
+  "fake_chatgpt_answer": {
+    "user_question": "今天又被领导骂了",
+    "ai_response_bullets": [
+      "首先，理解你的情绪很重要",
+      "其次，可以尝试沟通",
+      "再次，建立边界",
+      "另外，自我关怀",
+      "最后，必要时寻求帮助"
+    ],
+    "highlighted_phrase": "你应该"
+  },
+  "ui_hints": {
+    "user_avatar": "default-w-avatar.svg",
+    "user_name": "w",
+    "self_module_title": "自己",
+    "self_module_subtitle": "另一个版本的你",
+    "bubble_self_color": "#f97316",
+    "bubble_other_color": "#f1f1f1",
+    "background_color": "#ffffff"
+  },
+  "notes_for_manus": [
+    "镜头 5 的 6 句对话是 D6 的情感顶点，每句气泡必须停留 2.5-3 秒，不要赶",
+    "第 2 条 AI 回复'嗯。'的气泡要做得明显短（只有一个字+句号），让观众感到'真实克制'",
+    "第 4 条 AI 长消息要在镜头里完整显示，不能截断 — 字号必要时缩小以全部入框",
+    "第 6 条'你说过的话，我都记得' 必须用 88px 橙色字幕强调",
+    "ChatGPT 仿真截图：界面右上角 logo 必须模糊或换成通用'AI 助手'图标，避免侵权",
+    "'自己' 模块顶部 title bar 只显示'自己'两字，不要头像、不要绿色在线圆点"
+  ]
+}

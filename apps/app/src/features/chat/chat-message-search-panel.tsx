@@ -1,5 +1,12 @@
 import { msg } from "@lingui/macro";
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   FileText,
   Image as ImageIcon,
@@ -168,6 +175,13 @@ export function ChatMessageSearchPanel({
   const [specificDate, setSpecificDate] = useState("");
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
+  const keywordInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 进入「查找聊天记录」时直接 focus 关键词输入框——跟全局搜一搜
+  // (mobile-search-workspace) 行为一致，少一次戳屏幕的动作。
+  useEffect(() => {
+    keywordInputRef.current?.focus();
+  }, []);
   const searchDateFilters = useMemo(() => getSearchDateFilters(), [locale]);
   const searchMessageTypeFilters = useMemo(
     () => getSearchMessageTypeFilters(),
@@ -180,7 +194,15 @@ export function ChatMessageSearchPanel({
     [reminders],
   );
 
-  const trimmedKeyword = keyword.trim().toLowerCase();
+  // 本会话 R1：keyword 是 input 受控值，立刻 setState；但下面 indexedMessages
+  // .filter() + categoryCounts 全表跑一遍 + resultSections 重建是这条 hot path
+  // 里最贵的一段——典型群聊 100+ 条 × 每个 keystroke 全跑一遍，活跃用户慢机
+  // 上能感觉到输入框卡顿。和 group-contacts / contacts / create-group / 群
+  // member-picker 同口径 useDeferredValue：input value 仍走 raw keyword 保持
+  // 响应，过滤/分类/分段排到下一个 idle 帧。空态条件渲染（line 690+）会跟着
+  // 短暂延后一帧，不影响正确性。
+  const deferredKeyword = useDeferredValue(keyword);
+  const trimmedKeyword = deferredKeyword.trim().toLowerCase();
   const indexedMessages = useMemo(
     () =>
       [...filterSearchableChatMessages(messages ?? [], localMessageActionState)]
@@ -195,10 +217,36 @@ export function ChatMessageSearchPanel({
     [localMessageActionState, locale, messages, reminderMap],
   );
 
+  // 走查 R1：原版 senderKey 用 senderName 去重——但用户改"我在本群的昵称"
+  // 后，老消息落库的 senderName 还是旧名（yz），新消息 senderName 是新名
+  // (w)。同一个 senderId 在 dropdown 里冒出"w"和"yz"两条 chip，选"w"
+  // 时拉不到 senderName="yz" 的历史；连后端 Character 改名的群成员也会被
+  // 撕成两份。统一改用 senderId 去重，label 取该 id 最近一条消息的
+  // senderName。空/missing senderId 一律落到 UNKNOWN_SENDER_FILTER。
+  const senderOptions = useMemo(() => {
+    if (!enableSenderFilter) {
+      return [];
+    }
+
+    // 已经按 createdAt desc 排好序了，第一条命中的就是最近一条
+    const idToLabel = new Map<string, string>();
+    for (const item of indexedMessages) {
+      const senderId = item.message.senderId?.trim() || UNKNOWN_SENDER_FILTER;
+      if (idToLabel.has(senderId)) {
+        continue;
+      }
+      const label = item.message.senderName?.trim() || "";
+      idToLabel.set(senderId, label);
+    }
+    return Array.from(idToLabel.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((left, right) => compareByLocale(left.label, right.label));
+  }, [enableSenderFilter, indexedMessages]);
+
   const matchedMessages = useMemo(() => {
     return indexedMessages.filter((item) => {
       const senderKey =
-        item.message.senderName?.trim() || UNKNOWN_SENDER_FILTER;
+        item.message.senderId?.trim() || UNKNOWN_SENDER_FILTER;
 
       if (
         enableSenderFilter &&
@@ -241,19 +289,6 @@ export function ChatMessageSearchPanel({
     specificDate,
     trimmedKeyword,
   ]);
-  const senderOptions = useMemo(() => {
-    if (!enableSenderFilter) {
-      return [];
-    }
-
-    return Array.from(
-      new Set(
-        indexedMessages.map(
-          (item) => item.message.senderName?.trim() || UNKNOWN_SENDER_FILTER,
-        ),
-      ),
-    ).sort((left, right) => compareByLocale(left, right));
-  }, [enableSenderFilter, indexedMessages]);
   const availableMessageTypeFilters = useMemo(() => {
     const counts = indexedMessages.reduce<
       Record<Exclude<SearchMessageTypeFilter, "all">, number>
@@ -310,13 +345,27 @@ export function ChatMessageSearchPanel({
     () => buildSearchResultSections(visibleResults),
     [locale, visibleResults],
   );
-  const reminderCount = indexedMessages.filter((item) =>
-    Boolean(item.reminderAt),
-  ).length;
+  // 走查 R5：keyword/filter/sender 每改一次都触发本组件 re-render，原版每帧都
+  // 对 indexedMessages 全表跑一遍 filter——本页常态下 100+ 条群聊记录 ×
+  // 每个 keystroke 重算一次，输入框打字时这条 hot path 累出来不小。memoize 一
+  // 下，只有 indexedMessages 引用变化（local 撤回/隐藏 / messages prop 变 /
+  // reminders 变）才重算。
+  const reminderCount = useMemo(
+    () =>
+      indexedMessages.filter((item) => Boolean(item.reminderAt)).length,
+    [indexedMessages],
+  );
   const isKeywordSearch = Boolean(trimmedKeyword);
   const isPartialResult = results.length > visibleResults.length;
+  // senderFilter 现在存的是 senderId（或 UNKNOWN_SENDER_FILTER），label 要
+  // 反查 senderOptions；找不到说明对应 sender 的消息被 local-action 过滤掉
+  // 了（撤回/隐藏），保留 senderFilter 状态但显示 unknownSenderLabel 兜底，
+  // 不让筛选条上裸 uuid 漏给用户。
   const senderFilterDisplayLabel =
-    senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter;
+    senderFilter === UNKNOWN_SENDER_FILTER
+      ? unknownSenderLabel
+      : senderOptions.find((option) => option.id === senderFilter)?.label?.trim() ||
+        unknownSenderLabel;
   const activeFilterLabels = useMemo(() => {
     const labels: string[] = [];
 
@@ -389,11 +438,35 @@ export function ChatMessageSearchPanel({
               className="shrink-0 text-[color:var(--text-dim)]"
             />
             <input
+              ref={keywordInputRef}
               type="search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder={t(msg`搜索`)}
-              className="min-w-0 flex-1 bg-transparent text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 移动端走查 R1：和桌面端 R24（chat-history-panel）同款 a11y 修法
+              // —— 父 label 没有文本子节点（仅 Search 图标 + input），placeholder
+              // 在 SR 实现上行为分裂、用户开始打字后多数 SR 直接不再朗读，盲人
+              // 用户进来听到"编辑栏 空"，得靠摸索周围 chip / 区域才能猜出来是
+              // 搜什么的。挂 aria-label="搜索聊天记录" 把意图明确表达出来；
+              // 本面板同时给单聊 (chat-message-search-page) 和群聊
+              // (group-message-search-page) 路径用，一处修复双端受益。
+              aria-label={t(msg`搜索聊天记录`)}
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              // 这是查找聊天记录的输入框，进来就 auto focus（line 175-177）—
+              // 字号偏小直接触发 zoom，整页搜索 panel 抖一下。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和兄弟搜索框 group-contacts-page / group-member-picker-page
+              // / create-group-page 同款补四件套。单聊/群聊"查找聊天记录"是 ChatMessageSearchPanel
+              // 共用 panel，搜的多半是聊天里出现过的 ASCII / 英文片段（"discord"、
+              // "URL"、"teamA"、"http"），iOS 默认句首大写 + autocorrect 会把
+              // "discord" 改成 "Discord"、"teamA" 改 "Team"——下游 searchableText
+              // toLowerCase 兜 case，但 autocorrect 直接改掉字符是真坑，用户键
+              // 入英文/拼音找不到记忆里那条历史消息。enterKeyHint=search 让
+              // 软键盘 Return 键长得像"搜索"。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -497,7 +570,8 @@ export function ChatMessageSearchPanel({
                     setDateFilter("all");
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none"
+                // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+                className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none"
               />
             </label>
             {enableSenderFilter ? (
@@ -508,14 +582,16 @@ export function ChatMessageSearchPanel({
                 <select
                   value={senderFilter}
                   onChange={(event) => setSenderFilter(event.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none"
+                  // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
+                  // 对 select 同样适用。
+                  className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none"
                 >
                   <option value="all">{t(msg`全部成员`)}</option>
-                  {senderOptions.map((senderKey) => (
-                    <option key={senderKey} value={senderKey}>
-                      {senderKey === UNKNOWN_SENDER_FILTER
+                  {senderOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.id === UNKNOWN_SENDER_FILTER
                         ? unknownSenderLabel
-                        : senderKey}
+                        : option.label || unknownSenderLabel}
                     </option>
                   ))}
                 </select>
@@ -582,6 +658,11 @@ export function ChatMessageSearchPanel({
             </div>
           ) : null}
 
+          {/* 分类浏览那一列在 0 条消息时 4 个分类全是 0/全部消息/图片与视频/...，
+              点了也只会跳到空列表，留着只是徒增信息密度——直接和上面的空态卡片
+              二选一。下面那些按筛选器分支的空态都自带 indexedMessages.length>0
+              的 guard，不会跟空消息打架。 */}
+          {indexedMessages.length ? (
           <ChatDetailsSection title={t(msg`分类浏览`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               {searchCategories.map((category) => {
@@ -639,6 +720,7 @@ export function ChatMessageSearchPanel({
               })}
             </div>
           </ChatDetailsSection>
+          ) : null}
 
           {!trimmedKeyword &&
           indexedMessages.length > 0 &&
@@ -1049,21 +1131,40 @@ function buildResultSectionTitle(
 
 function renderHighlightedText(text: string, keyword: string) {
   const normalized = text.toLowerCase();
-  const start = normalized.indexOf(keyword);
-  if (start === -1) {
+  if (normalized.indexOf(keyword) === -1) {
     return text;
   }
 
-  const end = start + keyword.length;
-  return (
-    <>
-      {text.slice(0, start)}
-      <mark className="rounded-[4px] bg-[rgba(250,204,21,0.28)] px-0.5 text-current">
-        {text.slice(start, end)}
-      </mark>
-      {text.slice(end)}
-    </>
-  );
+  // 跟 search-utils 的 renderHighlightedText 同步——多次命中全染色，
+  // 不留下半路变黑的"高亮 bug"观感。
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  while (cursor <= text.length) {
+    const matchStart = normalized.indexOf(keyword, cursor);
+    if (matchStart === -1) {
+      if (cursor < text.length) {
+        parts.push(text.slice(cursor));
+      }
+      break;
+    }
+
+    if (matchStart > cursor) {
+      parts.push(text.slice(cursor, matchStart));
+    }
+
+    const matchEnd = matchStart + keyword.length;
+    parts.push(
+      <mark
+        key={`m-${matchStart}`}
+        className="rounded-[4px] bg-[rgba(250,204,21,0.28)] px-0.5 text-current"
+      >
+        {text.slice(matchStart, matchEnd)}
+      </mark>,
+    );
+    cursor = matchEnd;
+  }
+
+  return <>{parts}</>;
 }
 
 function buildSearchPreview(text: string, keyword: string) {

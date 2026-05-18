@@ -20,22 +20,31 @@ export const WIKI_CONTENT_FIELDS = [
 export type WikiContentField = (typeof WIKI_CONTENT_FIELDS)[number];
 
 /**
- * D 类（运行时态）+ E 类（平台/账户）字段：永远不允许通过 wiki 通道写入。
- * 来自 CharacterEntity，详情见 plan 字段归属决策表。
+ * 永远不允许通过 wiki 通道写入的字段：
+ * - 5 个 model routing 字段：wiki 用户不能选自己的推理账户/模型
+ * - 5 个 admin-only 系统字段：isOnline / isTemplate / sourceType / sourceKey /
+ *   deletionPolicy（2026-05-15 短暂放开过，验收时确认仍是 admin-only）
+ * - 3 个生活策略调度字段：onlineMode / activityMode / currentActivity
+ *   （2026-05-15 整组「生活策略」从 wiki 下线，admin / preset 才该管这块）
+ * - aiRelationships：wiki 用户没有便利的"挑别的角色"入口，2026-05-15 验收时
+ *   也确认从 wiki 编辑页移除；character-friendship 服务自己 seed 即可
+ * - 2 个真正的纯运行时态：currentStatus / lastActiveAt 由 world 内部 tick 更新
+ *
+ * 注：socialOpenness / proactiveBrowseChance / intimacyLevel 这 3 个字段
+ * wiki 私有角色编辑页可以填，对应 admin character editor 的「社交参数」tab。
  */
 export const WIKI_REJECTED_FIELDS = [
-  'isOnline',
-  'onlineMode',
-  'activityMode',
   'currentStatus',
-  'currentActivity',
   'lastActiveAt',
-  'intimacyLevel',
-  'aiRelationships',
+  'isOnline',
+  'isTemplate',
   'sourceType',
   'sourceKey',
   'deletionPolicy',
-  'isTemplate',
+  'onlineMode',
+  'activityMode',
+  'currentActivity',
+  'aiRelationships',
   'modelRoutingMode',
   'inferenceProviderAccountId',
   'inferenceModelId',
@@ -60,6 +69,41 @@ export const WIKI_RECIPE_ROOT_PATHS = [
   'realityLink',
 ] as const;
 
+/**
+ * trim 后再剥掉零宽字符（U+200B-U+200D / U+FEFF / U+2060）。
+ * 用来判定 name 是否"视觉上为空"——纯 ZWS 名字会让 wiki 列表 / 角色卡片
+ * 出现空白行且不可点。私有角色服务里已有同名 helper（2026-05-15 v2 走查加的），
+ * 这里把同一份逻辑提到 wiki.types.ts，供 create / edit / submitRecipeEdit
+ * 三条 wiki 页路径共享。
+ */
+export function isNameVisuallyEmpty(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return true;
+  return trimmed.replace(/[​-‍﻿⁠]/g, '').length === 0;
+}
+
+/**
+ * 三条 wiki 页写入路径（createPage / submit 内容路径 / submitRecipeEdit）的
+ * 统一 name 校验。所有 wiki 写入都该最终落地到一个非空、视觉非空的 name，
+ * 不允许 ""、纯空白、或纯 ZWS。
+ */
+export function assertWikiNameNotVisuallyEmpty(raw: string): void {
+  if (isNameVisuallyEmpty(raw)) {
+    throw new AppError('WIKI_VALIDATION_FAILED', {
+      params: { detail: 'name 不能为空' },
+      legacyMessage: 'name 不能为空',
+    });
+  }
+}
+
+// 用 String() 把任何值（包括 {} / [] / function）兜成 string 是 dangerous 默认：
+// {"name":{"a":1}} 会被转成 "[object Object]"，绕过下面的 assertWikiNameNotVisuallyEmpty
+// 直接落进 character.name 列。2026-05-16 走查实测：admin 一次 POST /wiki/pages/:id/edits
+// 就把目标角色的 name 改成 "[object Object]"。改用 typeof 守，非字符串当空字符串处理。
+function asTrimmedString(v: unknown): string {
+  return typeof v === 'string' ? v.trim() : '';
+}
+
 export function pickWikiContent(input: Record<string, unknown>): WikiContentSnapshot {
   const rejected = WIKI_REJECTED_FIELDS.filter((key) => input[key] !== undefined);
   if (rejected.length > 0) {
@@ -70,21 +114,27 @@ export function pickWikiContent(input: Record<string, unknown>): WikiContentSnap
   }
   return {
     schemaVersion: WIKI_CONTENT_SCHEMA_VERSION,
-    name: String(input.name ?? '').trim(),
-    avatar: String(input.avatar ?? '').trim(),
-    bio: String(input.bio ?? '').trim(),
+    name: asTrimmedString(input.name),
+    avatar: asTrimmedString(input.avatar),
+    bio: asTrimmedString(input.bio),
     personality:
       input.personality === undefined || input.personality === null
         ? undefined
-        : String(input.personality),
+        : typeof input.personality === 'string'
+          ? input.personality
+          : '',
     expertDomains: Array.isArray(input.expertDomains)
-      ? (input.expertDomains as unknown[]).map((v) => String(v))
+      ? (input.expertDomains as unknown[]).map((v) =>
+          typeof v === 'string' ? v : '',
+        )
       : [],
     triggerScenes: Array.isArray(input.triggerScenes)
-      ? (input.triggerScenes as unknown[]).map((v) => String(v))
+      ? (input.triggerScenes as unknown[]).map((v) =>
+          typeof v === 'string' ? v : '',
+        )
       : undefined,
-    relationship: String(input.relationship ?? '').trim(),
-    relationshipType: String(input.relationshipType ?? '').trim(),
+    relationship: asTrimmedString(input.relationship),
+    relationshipType: asTrimmedString(input.relationshipType),
   };
 }
 
@@ -408,6 +458,56 @@ export function diffPaths(left: unknown, right: unknown, prefix = ''): string[] 
   return result;
 }
 
+/**
+ * "视觉为空"——把 undefined / null / "" / [] / {} 都当作"没填"。
+ * 走查发现 newcomer 通过编辑器只改 bio 时也会 403：因为旧 revision 的
+ * recipeSnapshot.memorySeed = {} 没有 coreMemory 这个 key（schema 后加的），
+ * 编辑器 hydrate 出来的 form 把所有 string field 兜底成 ""，diffPaths 把
+ * undefined → "" 当变更，结果触到 memorySeed.coreMemory 的字段保护 → 403。
+ * 用户没真正改这个字段，只是 schema drift 造成的"幽灵变更"。
+ */
+function isBlankRecipeValue(v: unknown): boolean {
+  if (v === undefined || v === null || v === '') return true;
+  if (Array.isArray(v) && v.length === 0) return true;
+  if (
+    typeof v === 'object' &&
+    v !== null &&
+    Object.keys(v as Record<string, unknown>).length === 0
+  )
+    return true;
+  return false;
+}
+
+function getPathFromObject(obj: unknown, path: string): unknown {
+  if (obj === null || typeof obj !== 'object') return undefined;
+  let cur: unknown = obj;
+  for (const seg of path.split('.')) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string, unknown>)[seg];
+  }
+  return cur;
+}
+
+/**
+ * 过滤 diffPaths 出来的"幽灵变更"——before / after 在该 path 上都是 blank
+ * （undefined / null / "" / [] / {}）的视为没改。
+ * recipe schema 历史上加过 memorySeed.recentSummaryPrompt / coreMemoryPrompt /
+ * realityLink 等新字段，旧 revision 的 recipeSnapshot 不含这些 key；form 输出
+ * 时会把它们兜底成 ""，必须在 changed 里过滤掉，否则 newcomer 改个 bio 都过
+ * 不去 field-protection。
+ */
+export function filterPhantomBlankPaths(
+  before: unknown,
+  after: unknown,
+  paths: string[],
+): string[] {
+  return paths.filter((path) => {
+    const b = getPathFromObject(before, path);
+    const a = getPathFromObject(after, path);
+    return !(isBlankRecipeValue(b) && isBlankRecipeValue(a));
+  });
+}
+
 export function hasPathOverlap(left: string[], right: string[]): boolean {
   return left.some((leftPath) =>
     right.some(
@@ -493,7 +593,10 @@ export function assertWikiEditSummary(input: {
     input.riskLevel === 'high' ||
     input.revisionKind === 'lifecycle';
   if (!required) return;
-  const trimmed = (input.summary ?? '').trim();
+  // typeof 守：客户端传 {"editSummary":{"a":1}} / [...] 时 (x ?? '').trim()
+  // 直接抛 TypeError → 500 漏出 stack ((input.summary ?? "").trim is not a function)。
+  // 非字符串当空字符串处理，下面的"至少 10 字"会接住。
+  const trimmed = typeof input.summary === 'string' ? input.summary.trim() : '';
   if (trimmed.length < 10) {
     throw new AppError('WIKI_VALIDATION_FAILED', {
         params: { detail: '该编辑需提供至少 10 字编辑摘要' },

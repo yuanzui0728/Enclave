@@ -39,6 +39,8 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { SelfAgentModule } from '../self-agent/self-agent.module';
 import { ConversationEntity } from './conversation.entity';
+import { FavoriteEntity } from './favorite.entity';
+import { FavoriteNoteEntity } from './favorite-note.entity';
 import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
@@ -50,6 +52,7 @@ import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
+import { FriendRemarkResolverModule } from '../social/friend-remark-resolver.module';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
 import { DocumentExtractionService } from './document-extraction.service';
@@ -67,6 +70,7 @@ import { EventsModule } from '../events/events.module';
     ReminderRuntimeModule,
     SelfAgentModule,
     EventsModule,
+    FriendRemarkResolverModule,
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,
@@ -79,6 +83,8 @@ import { EventsModule } from '../events/events.module';
       ChatCustomStickerEntity,
       CharacterEntity,
       FriendshipEntity,
+      FavoriteEntity,
+      FavoriteNoteEntity,
     ]),
   ],
   providers: [

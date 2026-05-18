@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="ja-JP">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enclave Wiki チュートリアル · 完全ガイド</title>
+<meta name="description" content="Enclave Wiki キャラクター管理プラットフォームの公式チュートリアル。登録・閲覧・検索・記事作成・AI 生成・巡回・管理者機能まで一気通貫で解説。">
+<style>
+  :root {
+    --brand-from: #ff6a8a; --brand-to: #7c5cff;
+    --brand-gradient: linear-gradient(135deg, #ff6a8a 0%, #7c5cff 100%);
+    --text-primary: #1f1f2c; --text-secondary: #4f4f63; --text-muted: #8b8ba0;
+    --text-on-brand: #fff; --surface-bg: #fafaff; --surface-card: #fff;
+    --surface-soft: #f3f1ff; --surface-code: #f5f6fa; --border-subtle: #e6e4ef;
+    --shadow-soft: 0 4px 14px rgba(124, 92, 255, 0.08);
+    --shadow-card: 0 12px 30px rgba(124, 92, 255, 0.12);
+    --tip: #2d8a5c; --tip-bg: #ecf9f1;
+    --warn: #b9531c; --warn-bg: #fdf2e6;
+    --admin: #7c5cff; --admin-bg: #efeaff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --text-primary: #ececf2; --text-secondary: #c4c4d4; --text-muted: #8b8ba0;
+            --surface-bg: #15151c; --surface-card: #1d1d27; --surface-soft: #25223a;
+            --surface-code: #1a1a23; --border-subtle: #2c2c3a; }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+         color: var(--text-primary); background: var(--surface-bg); line-height: 1.8;
+         font-size: 16px; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand-to); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header.topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.92);
+                  backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-subtle); }
+  @media (prefers-color-scheme: dark) { header.topbar { background: rgba(21,21,28,.92); } }
+  .topbar-inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+                  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600;
+           color: var(--text-primary); text-decoration: none; }
+  .brand-logo { width: 32px; height: 32px; border-radius: 10px; background: var(--brand-gradient);
+                color: #fff; display: grid; place-items: center; font-weight: 700; box-shadow: var(--shadow-soft); }
+  .lang-switch { display: flex; gap: 4px; margin-left: auto; }
+  .lang-switch a { padding: 6px 10px; border-radius: 999px; font-size: 13px;
+                   color: var(--text-secondary); border: 1px solid transparent; }
+  .lang-switch a:hover { background: var(--surface-soft); text-decoration: none; }
+  .lang-switch a[aria-current="page"] { background: var(--brand-gradient); color: #fff; }
+  .back-btn { padding: 6px 14px; border-radius: 999px; font-size: 13px;
+              background: var(--surface-soft); color: var(--text-primary);
+              border: 1px solid var(--border-subtle); }
+  .back-btn:hover { text-decoration: none; background: var(--brand-gradient); color: #fff; border-color: transparent; }
+  .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px;
+            display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 40px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 16px; } }
+  aside.toc { position: sticky; top: 80px; align-self: start;
+              max-height: calc(100vh - 100px); overflow-y: auto; padding: 8px 0; font-size: 14px; }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; }
+  aside.toc li { margin: 2px 0; }
+  aside.toc a { display: block; padding: 6px 12px; border-radius: 8px;
+                color: var(--text-secondary); border-left: 3px solid transparent; }
+  aside.toc a:hover { background: var(--surface-soft); text-decoration: none; }
+  aside.toc a.active { background: var(--surface-soft); color: var(--text-primary);
+                        border-left-color: var(--brand-to); font-weight: 600; }
+  aside.toc .toc-mobile-toggle { display: none; }
+  @media (max-width: 900px) {
+    aside.toc { position: static; max-height: none; overflow: visible;
+                background: var(--surface-card); border: 1px solid var(--border-subtle);
+                border-radius: 12px; padding: 0; }
+    aside.toc ol { display: none; padding: 8px; }
+    aside.toc.open ol { display: block; }
+    aside.toc .toc-mobile-toggle { display: block; width: 100%; padding: 12px 16px;
+                                    background: none; border: none; text-align: left; cursor: pointer;
+                                    font-weight: 600; color: var(--text-primary); font-size: 15px; }
+    aside.toc .toc-mobile-toggle::after { content: " ▾"; color: var(--text-muted); }
+    aside.toc.open .toc-mobile-toggle::after { content: " ▴"; }
+  }
+  main { min-width: 0; }
+  main h1 { font-size: 36px; line-height: 1.3; margin: 0 0 8px;
+            background: var(--brand-gradient); -webkit-background-clip: text;
+            background-clip: text; -webkit-text-fill-color: transparent; }
+  main .subtitle { color: var(--text-muted); margin-bottom: 32px; font-size: 16px; }
+  main h2 { font-size: 26px; margin: 56px 0 12px; padding-top: 32px;
+            border-top: 1px solid var(--border-subtle); }
+  main h2 .num { display: inline-block; min-width: 36px; height: 36px; line-height: 36px;
+                 text-align: center; border-radius: 10px; background: var(--brand-gradient);
+                 color: #fff; font-size: 16px; margin-right: 10px; padding: 0 8px; vertical-align: middle; }
+  main h3 { font-size: 19px; margin: 32px 0 8px; }
+  main h4 { font-size: 16px; margin: 20px 0 6px; color: var(--text-secondary); }
+  main p { margin: 12px 0; color: var(--text-secondary); }
+  main ul, main ol { padding-left: 24px; color: var(--text-secondary); }
+  main li { margin: 6px 0; }
+  main strong { color: var(--text-primary); }
+  main code { background: var(--surface-code); padding: 2px 6px; border-radius: 4px;
+              font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13.5px; color: var(--brand-to); }
+  main pre { background: var(--surface-code); padding: 16px; border-radius: 10px;
+             overflow-x: auto; font-size: 13px; line-height: 1.55; border: 1px solid var(--border-subtle); }
+  main pre code { background: none; padding: 0; color: var(--text-primary); }
+  main table { width: 100%; border-collapse: collapse; margin: 16px 0;
+               background: var(--surface-card); border-radius: 10px; overflow: hidden;
+               box-shadow: var(--shadow-soft); }
+  main th, main td { padding: 10px 14px; text-align: left;
+                     border-bottom: 1px solid var(--border-subtle); font-size: 14.5px; }
+  main th { background: var(--surface-soft); font-weight: 600; color: var(--text-primary); }
+  main td { color: var(--text-secondary); }
+  main tr:last-child td { border-bottom: none; }
+  .callout { margin: 16px 0; padding: 14px 18px 14px 16px; border-radius: 10px;
+             border-left: 4px solid; font-size: 14.5px; line-height: 1.7; }
+  .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
+  .callout.tip { background: var(--tip-bg); border-left-color: var(--tip); color: var(--text-primary); }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn); color: var(--text-primary); }
+  .callout.admin { background: var(--admin-bg); border-left-color: var(--admin); color: var(--text-primary); }
+  .callout .label { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+  .callout.tip .label { color: var(--tip); } .callout.warn .label { color: var(--warn); }
+  .callout.admin .label { color: var(--admin); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+           gap: 14px; margin: 18px 0; }
+  .step { padding: 16px 18px; border-radius: 14px; background: var(--surface-card);
+          border: 1px solid var(--border-subtle); position: relative; overflow: hidden; }
+  .step::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--brand-gradient); }
+  .step .n { display: inline-block; width: 28px; height: 28px; line-height: 28px;
+             text-align: center; border-radius: 50%; background: var(--brand-gradient);
+             color: #fff; font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+  .step h4 { margin: 4px 0; color: var(--text-primary); font-size: 15px; }
+  .step p { font-size: 14px; margin: 6px 0 0; }
+  details.shot { margin: 16px 0; border: 1px solid var(--border-subtle); border-radius: 10px;
+                 background: var(--surface-card); overflow: hidden; }
+  details.shot > summary { cursor: pointer; padding: 10px 16px; font-size: 14px;
+                            color: var(--text-secondary); background: var(--surface-soft);
+                            list-style: none; user-select: none; }
+  details.shot > summary::before { content: "▶ "; font-size: 11px; }
+  details.shot[open] > summary::before { content: "▼ "; }
+  details.shot pre { margin: 0; border-radius: 0; border: none;
+                     border-top: 1px solid var(--border-subtle);
+                     background: var(--surface-card); font-size: 12.5px; }
+  .audience { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 8px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+          letter-spacing: 0.04em; }
+  .pill.user { background: #eef4ff; color: #2c5fc7; }
+  .pill.patroller { background: #fff3e0; color: #b97516; }
+  .pill.admin { background: var(--admin-bg); color: var(--admin); }
+  footer.foot { max-width: 1200px; margin: 0 auto; padding: 24px 20px;
+                border-top: 1px solid var(--border-subtle); color: var(--text-muted);
+                font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">
+      <span class="brand-logo">隠</span>
+      <span>Enclave Wiki · チュートリアル</span>
+    </a>
+    <nav class="lang-switch" aria-label="Language">
+      <a href="tutorial-zh-CN.html">🇨🇳 中文</a>
+      <a href="tutorial-en-US.html">🇺🇸 English</a>
+      <a href="tutorial-ja-JP.html" aria-current="page">🇯🇵 日本語</a>
+      <a href="tutorial-ko-KR.html">🇰🇷 한국어</a>
+    </nav>
+    <a class="back-btn" href="/">← プラットフォームに戻る</a>
+  </div>
+</header>
+
+<div class="layout">
+
+<aside class="toc" id="toc">
+  <button class="toc-mobile-toggle" type="button" aria-expanded="false">📖 目次</button>
+  <ol>
+    <li><a href="#welcome">0. ようこそ</a></li>
+    <li><a href="#quickstart">1. 5 分でクイックスタート</a></li>
+    <li><a href="#account">2. 登録とサインイン</a></li>
+    <li><a href="#browse">3. 記事を閲覧する</a></li>
+    <li><a href="#search">4. 検索</a></li>
+    <li><a href="#editing">5. 記事の作成と編集</a></li>
+    <li><a href="#private">6. マイプライベートキャラクター</a></li>
+    <li><a href="#history">7. 履歴と差分</a></li>
+    <li><a href="#watch">8. ウォッチリストと最近の更新</a></li>
+    <li><a href="#talk">9. ノートページ（Talk）</a></li>
+    <li><a href="#report">10. コンテンツの通報</a></li>
+    <li><a href="#roles">11. 利用者ロールと権限</a></li>
+    <li><a href="#patroller">12. 巡回員ハンドブック</a></li>
+    <li><a href="#admin">13. 管理者ハンドブック</a></li>
+    <li><a href="#faq">14. よくある質問（FAQ）</a></li>
+    <li><a href="#feedback">15. フィードバック</a></li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>Enclave Wiki ・ 入門チュートリアル</h1>
+<p class="subtitle">登録・閲覧から、AI を活用した記事作成、巡回審査、管理者機能まで — このページ一枚で全機能を解説します。</p>
+
+<section id="welcome">
+<h2><span class="num">0</span>ようこそ</h2>
+
+<p><strong>Enclave Wiki</strong> は AI キャラクター制作のための共同編集型百科事典です。誰でも閲覧でき、登録すればキャラクター記事を作成・編集できます。あなたが書く内容は単なる説明文ではなく、AI がそのキャラクターを「演じる」ために直接利用する構造化された<strong>キャラクターレシピ</strong>です。</p>
+
+<p>運用面ではウィキペディアによく似ています:</p>
+<ul>
+  <li>すべての記事が共同編集可能で、編集ごとに完全な履歴が残ります</li>
+  <li>新規利用者の編集はまず<strong>審査キュー</strong>に入り、巡回員が承認してから公開されます</li>
+  <li>差分（diff）、差し戻し（revert）、保護（protection）、通報（report）など、共同編集の標準ツールが揃っています</li>
+</ul>
+
+<p>ウィキペディアと違うのは、<strong>記事そのものが AI の「魂」</strong>であることです。あなたが入力する名前、紹介、性格、専門分野、対話シーンなどのフィールドは構造化されたレシピとしてまとめられ、大規模言語モデルへ渡されます。記事の品質が AI の振る舞いを直接決定します。</p>
+
+<div class="callout tip">
+  <span class="label">💡 ヒント</span>
+  <p>どこから始めればいいか分からない方は、次の節 <a href="#quickstart">「5 分でクイックスタート」</a> から手を動かしてみてください。すべての概念が自然に繋がります。</p>
+</div>
+</section>
+
+<section id="quickstart">
+<h2><span class="num">1</span>5 分でクイックスタート <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><h4>アカウント登録</h4><p>右上の「登録」をクリックし、ユーザー名（2 文字以上）とパスワード（6 文字以上）を入力。新規アカウントは <code>newcomer</code> 階層から始まります。</p></div>
+  <div class="step"><span class="n">2</span><h4>キャラクターを閲覧</h4><p>ホームに戻り、好きなカードをクリック。完成された記事のレイアウトが分かります。</p></div>
+  <div class="step"><span class="n">3</span><h4>検索を試す</h4><p>上部の検索ボックスにキーワードを入れて Enter。名前・関係・紹介・性格の 4 フィールドを横断検索します。</p></div>
+  <div class="step"><span class="n">4</span><h4>プライベートキャラを作る</h4><p>サイドバー → 「マイプライベートキャラクター」 → 「作成」。最小構成（名前 + 紹介 + 関係）を入れて、AI 生成ボタンで残りを補完。</p></div>
+  <div class="step"><span class="n">5</span><h4>記事を編集してみる</h4><p>公開記事を開き「編集」をクリックして小さな修正を加え、10 文字以上の編集要約を書いて送信。巡回員の審査を待ちます。</p></div>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 ヒント</span>
+  <p>新規利用者の間は、公開記事の編集はすべて審査されます。一定量の編集を重ねて自動で <code>autoconfirmed</code> に昇格すると、低リスクの編集はすぐに反映されるようになります。</p>
+</div>
+</section>
+
+<section id="account">
+<h2><span class="num">2</span>登録とサインイン <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<h3>登録</h3>
+<p><code>/register</code> を開いて入力:</p>
+<ul>
+  <li><strong>ユーザー名</strong>: 2 文字以上、公開され編集者として表示されます</li>
+  <li><strong>パスワード</strong>: 6 文字以上、本人のみ閲覧可</li>
+  <li><strong>パスワード確認</strong>: 上と同一</li>
+</ul>
+<p>登録後はアカウントが新規利用者階層（<code>newcomer</code>）になります。すぐに編集を開始できますが、公開記事の編集は審査キューを通ります。</p>
+
+<h3>サインイン</h3>
+<p><code>/login</code> から二通りで:</p>
+<ul>
+  <li><strong>ユーザー名 + パスワード</strong>: 標準的な方法</li>
+  <li><strong>メール認証コード</strong>: 登録メールに認証コードが届きます。パスワードを忘れたときに便利</li>
+</ul>
+<p>サインインが必要なページに未ログインでアクセスすると <code>/login?redirect=...</code> にリダイレクトされ、サインイン後に自動で元のページへ戻ります。</p>
+
+<h3>アカウント設定</h3>
+<p>右上のユーザー名 → 「アカウント設定」で:</p>
+<ul>
+  <li>パスワード変更（メール認証コードによる確認が必要）</li>
+  <li>メールアドレスの確認・変更</li>
+  <li>プロフィール情報の確認: 現在のロール（newcomer/autoconfirmed/patroller/admin）、累計編集数、承認済み編集数、差し戻し回数、自動承認日時</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>パスワード復旧の唯一の手段がメールです。登録後すぐに紐付けてください。メール未紐付けでパスワードを忘れた場合は管理者対応が必要になります。</p>
+</div>
+</section>
+
+<section id="browse">
+<h2><span class="num">3</span>記事を閲覧する <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<h3>キャラクター一覧（ホーム）</h3>
+<p>ホーム <code>/</code> には公開キャラクターがすべて表示され、人気順 / 最近の活動順に並びます。各カードはアバター、名前、関係タイプ、紹介の冒頭を表示します。</p>
+
+<h3>キャラクターページの構成</h3>
+<p>カードを開くと:</p>
+<ul>
+  <li><strong>ヘッダー</strong>: アバター、名前、関係タイプバッジ（友達 / 家族 / 師匠 / 専門家 / カスタム）、ライフサイクルバッジ（active / pending create / deleted / pending delete）</li>
+  <li><strong>本文タブ</strong>:
+    <ul>
+      <li>「内容」: 紹介、性格、専門分野、トリガーシーン、関係説明</li>
+      <li>「履歴」: 全リビジョンと差分</li>
+      <li>「ノート」: この記事に関する議論スレッド</li>
+    </ul>
+  </li>
+  <li><strong>右側アクション</strong>: ⭐ ウォッチ / 解除、✏️ 編集（要ログイン）、🗑️ 削除申請（要ログイン）、保護状態の表示</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII 概略図: キャラクターページの大まかなレイアウト</summary>
+<pre>
+┌──────────────────────────────────────────────────────────────┐
+│ [アバター]  名前 ✨autoconfirmed       ⭐ウォッチ ✏️編集    │
+│             #友達  #active                                    │
+├──────────────────────────────────────────────────────────────┤
+│ [ 内容 ] [ 履歴 ] [ ノート ]                                   │
+├──────────────────────────────────────────────────────────────┤
+│  紹介                                                         │
+│  ─────                                                        │
+│  ……                                                           │
+│  性格                                                         │
+│  ─────                                                        │
+│  ……                                                           │
+│  関係: 一番の親友                                             │
+└──────────────────────────────────────────────────────────────┘
+</pre>
+</details>
+
+<h3>安定版 vs 現行版（stable / current）</h3>
+<p>同じ記事でも 2 つのビューが存在することがあります:</p>
+<ul>
+  <li><strong>安定版（stable）</strong>: すべての利用者が既定で見るバージョン — 直近に承認された内容</li>
+  <li><strong>現行版（current）</strong>: 未承認の編集も含むバージョン — 編集者本人と巡回員のみ閲覧可</li>
+</ul>
+<p>つまり、編集後に自分でページを見ると変更が反映されて見えますが（current）、他の閲覧者には承認まで旧 stable 版が表示されます。</p>
+</section>
+
+<section id="search">
+<h2><span class="num">4</span>検索 <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>各ページ上部の検索ボックスで Enter すると <code>/search?q=キーワード</code> に遷移します。</p>
+
+<h3>検索対象</h3>
+<p>バックエンドは以下のフィールドを全文インデックス化しています:</p>
+<ul>
+  <li>キャラクター名</li>
+  <li>関係説明（「一番の親友」など）</li>
+  <li>紹介（bio）</li>
+  <li>性格（personality）</li>
+</ul>
+
+<h3>並び順</h3>
+<p>関連度スコア順。各結果に 0–100 の関連度パーセンタイルが表示されます。クリックでキャラクターページへ。</p>
+
+<div class="callout tip">
+  <span class="label">💡 ヒント</span>
+  <p>未ログインでも検索可能 — 公開機能なのでお試しトラフィックに使えます。</p>
+</div>
+</section>
+
+<section id="editing">
+<h2><span class="num">5</span>記事の作成と編集 <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>本 Wiki の中核機能です。すべての公開キャラクターはこの共通フォームで作成・更新されます。</p>
+
+<h3>5.1 新しい記事を作成</h3>
+<p>サイドバー → 「キャラクター作成」、または <code>/create</code>。フォームは 6 セクション:</p>
+
+<table>
+  <thead><tr><th>セクション</th><th>主なフィールド</th><th>備考</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① 基本情報</strong></td><td>名前、アバター、紹介、関係タイプ、関係説明</td><td>名前と紹介は必須。他者識別の基本となります</td></tr>
+    <tr><td><strong>② 対話スタイル</strong></td><td>話し方、口癖、感情のトーン</td><td>AI の話し方を決定</td></tr>
+    <tr><td><strong>③ コアロジック</strong></td><td>価値観、判断パターン、タブー</td><td>キャラの「脳」 — 葛藤時の思考</td></tr>
+    <tr><td><strong>④ トリガーシーン</strong></td><td>典型的な対話の開始、ロールプレイ場面</td><td>このキャラを召喚する場面</td></tr>
+    <tr><td><strong>⑤ 記憶設定</strong></td><td>背景、重要な経験</td><td>キャラクターが「覚えている」こと</td></tr>
+    <tr><td><strong>⑥ ソーシャル設定</strong></td><td>専門分野、対話の好み</td><td>レコメンドと検索マッチに影響</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 AI ワンクリック生成</h3>
+<p>各セクション右上に「AI 生成」ボタン。空フィールドを大規模モデルが補完します。</p>
+
+<div class="callout tip">
+  <span class="label">💡 推奨ワークフロー</span>
+  <p>まず <strong>名前 + 紹介 + 関係説明</strong>（3 つのアンカー）を手で入力 → <strong>「すべて生成」</strong> をクリック。AI がこの 3 点を基に他の空フィールドを埋めます。既に書いた内容は上書きされず、空のみが補完されます。</p>
+</div>
+
+<p>主なパラメータ:</p>
+<ul>
+  <li><strong>レート制限</strong>: 利用者ごとに 1 時間あたり 15 回（プライベート + Wiki 編集で共通バケット）</li>
+  <li><strong>「最適化」モード（optimize）</strong>: ON にすると既存内容も上書き可能。「書いたけど AI に推敲してほしい」場面で使用</li>
+  <li><strong>「すべて生成」の前提条件</strong>: name + bio + relationship が入力済みでないとボタンが無効</li>
+  <li><strong>下書き自動保存</strong>: 生成のたびに下書きが残るので、ページを閉じても失われない</li>
+</ul>
+
+<h3>5.3 下書きシステム</h3>
+<p>編集中、フォームは自動保存されます:</p>
+<ul>
+  <li>ブラウザ側: リアルタイム（閉じて戻ってきても残る）</li>
+  <li>サーバー側: AI 生成または手動保存時にスナップショット</li>
+  <li>復旧手順: <a href="/my-drafts"><code>/my-drafts</code></a> → 該当下書きをクリック → <code>?draftId=...</code> 付き編集ページへ復帰</li>
+</ul>
+
+<h3>5.4 編集を送信する</h3>
+<p>「送信」ボタンの前に必須:</p>
+<ul>
+  <li><strong>編集要約（editSummary）</strong>: 何を変更したかの簡潔な説明。<strong>10 文字以上</strong>がライフサイクル変更などの高リスク編集では必須</li>
+  <li><strong>マイナー編集（isMinor）</strong>: タイポ・整形などの軽微変更ならチェック。巡回員の処理が早くなります</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 編集競合の検出</span>
+  <p>編集中に他の人が同じ記事を更新・送信した場合、送信時に競合が検出されます。<code>baseRevisionId</code> によって判定され、最新版を開き直して手動マージすることになります。</p>
+</div>
+
+<h3>5.5 送信後の挙動</h3>
+<p>あなたのロールに依存:</p>
+<table>
+  <thead><tr><th>ロール</th><th>低リスク編集</th><th>高リスク編集</th></tr></thead>
+  <tbody>
+    <tr><td>newcomer</td><td>審査キューへ</td><td>審査キューへ</td></tr>
+    <tr><td>autoconfirmed</td><td>即座に反映</td><td>審査キューへ（10 文字以上の要約は依然必須）</td></tr>
+    <tr><td>patroller / admin</td><td>即座に反映</td><td>即座に反映</td></tr>
+  </tbody>
+</table>
+
+<h3>5.6 既存記事を編集する</h3>
+<p>記事ページ右側の ✏️「編集」ボタン → <code>/character/:id/edit</code>。フォームには最新版（未審査フィールドを含む、本人のみ表示）がプリセットされ、それ以外は作成と同じ流れです。</p>
+</section>
+
+<section id="private">
+<h2><span class="num">6</span>マイプライベートキャラクター <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>公開 Wiki 記事とは別に、ログインユーザーには<strong>本人のみ閲覧可能</strong>な専用スペース<strong>「マイプライベートキャラクター」</strong>（<code>/my-characters</code>）があります。自由に作成・実験・バックアップでき、すべての操作は即時反映されます。審査不要で、他人には見られず、検索 / キャラクター一覧 / 推薦リストにも表示されません。</p>
+
+<h3>6.1 Wiki 記事との違い</h3>
+<table>
+  <thead><tr><th>特性</th><th>Wiki 記事</th><th>プライベートキャラ</th></tr></thead>
+  <tbody>
+    <tr><td>公開範囲</td><td>全員</td><td>本人のみ</td></tr>
+    <tr><td>審査の要否</td><td>新規利用者は要審査</td><td>不要</td></tr>
+    <tr><td>バージョン履歴</td><td>完全な履歴 + diff</td><td>なし（createdAt / updatedAt のみ）</td></tr>
+    <tr><td>巡回 / 差し戻し</td><td>あり</td><td>なし</td></tr>
+    <tr><td>ノートページ</td><td>あり</td><td>なし</td></tr>
+    <tr><td>削除</td><td>ソフト削除（復旧申請可）</td><td>ハード削除（取り消し不可）</td></tr>
+    <tr><td>フォーム項目</td><td>personality / editSummary / isMinor を含む</td><td>personality 等なし、より軽量</td></tr>
+    <tr><td>用途</td><td>公共ライブラリ構築</td><td>個人創作 / 試行錯誤 / バックアップ</td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 入口</h3>
+<ul>
+  <li><strong>一覧</strong>: サイドバー → 「マイプライベートキャラクター」（<code>/my-characters</code>）</li>
+  <li><strong>新規作成</strong>: 一覧右上「✨ 新規作成」 → <code>/my-characters/new</code></li>
+  <li><strong>編集</strong>: 一覧で任意のカードをクリック → <code>/my-characters/:id</code></li>
+  <li><strong>インポート</strong>: 一覧右上「📥 ファイルをインポート」 → <code>.json</code> を選択</li>
+</ul>
+
+<h3>6.3 フォーム項目（6 セクション）</h3>
+<table>
+  <thead><tr><th>セクション</th><th>主な項目</th><th>必須？</th></tr></thead>
+  <tbody>
+    <tr><td><strong>① 基本情報</strong></td><td>名前、アバター（emoji / URL）、関係説明、関係タイプ、専門分野、紹介</td><td>名前 + 関係説明 必須</td></tr>
+    <tr><td><strong>② 対話返信</strong></td><td>対話シーンプロンプト</td><td>任意（推奨）</td></tr>
+    <tr><td><strong>③ コアロジック</strong></td><td>コアロジック、忘却曲線（0–100、既定 70、上級）</td><td>任意（推奨）</td></tr>
+    <tr><td><strong>④ シーンプロンプト</strong></td><td>モーメンツ投稿、広場投稿、動画チャンネル投稿、モーメンツコメント、広場コメント、フレンド申請 / シェイク挨拶、能動リマインド（計 7 種）</td><td>任意</td></tr>
+    <tr><td><strong>⑤ 記憶プロンプト</strong></td><td>近期記憶、長期記憶（上級）</td><td>任意</td></tr>
+    <tr><td><strong>⑥ ソーシャルパラメータ</strong></td><td>ソーシャル開放度（open / normal / private）、能動閲覧確率（0–1、既定 0.3）、親密度シード（0–100、既定 0）</td><td>既定値あり</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 Wiki 編集フォームとの違い</span>
+  <p>プライベートキャラには <strong>personality / トリガーシーン / editSummary / isMinor</strong> の項目がなく、よりシンプル。バージョン履歴がないため <code>baseRevisionId</code> による競合検出もありません（「最終更新時刻」のみ）。</p>
+</div>
+
+<h3>6.4 文字数・件数の上限</h3>
+<table>
+  <thead><tr><th>項目</th><th>上限</th></tr></thead>
+  <tbody>
+    <tr><td>名前</td><td>80 文字</td></tr>
+    <tr><td>アバター（emoji / URL）</td><td>2000 文字</td></tr>
+    <tr><td>紹介</td><td>2000 文字</td></tr>
+    <tr><td>関係説明</td><td>200 文字</td></tr>
+    <tr><td>関係タイプ</td><td>80 文字</td></tr>
+    <tr><td>専門分野（1 件あたり）</td><td>80 文字</td></tr>
+    <tr><td>専門分野（合計件数）</td><td>50 件</td></tr>
+    <tr><td>recipe JSON / profile JSON</td><td>各 64 KB</td></tr>
+  </tbody>
+</table>
+
+<h3>6.5 AI ワンクリック生成</h3>
+<p>各セクション右上に <strong>✨ AI 生成</strong> ボタン、ページ上部に <strong>✨ AI ですべて生成</strong> ボタン。</p>
+<ul>
+  <li><strong>生成可能な 5 セクション</strong>: basics（アバター / 専門分野 / 関係タイプ）、core_logic（コアロジック / 忘却曲線）、chat、scenes（7 種のシーンプロンプト）、memory（近期 / 長期記憶）</li>
+  <li><strong>「すべて生成」の前提条件</strong>: <strong>name + bio + relationship</strong> の 3 つの sacred 項目を必ず先に入力。未入力ならバックエンドが 400 で拒否</li>
+  <li><strong>optimize モード</strong>: 既定では空欄のみ補完し、既存内容は上書きしない。すでに内容のあるセクションで AI 生成を押すと確認ダイアログが表示され、確定後に上書き</li>
+  <li><strong>生成中</strong>: 該当セクションの全項目が disabled 状態となり「✨ AI が生成中…」と表示</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ レート制限</span>
+  <p>AI 生成は専用枠：<strong>利用者ごとに 1 時間 15 回</strong>（Wiki 記事編集と同じバケットを共有）。超過時は <code>WIKI_AI_RATE_LIMITED</code> を返し、「AI 生成枠を使い切りました：1 時間あたり 15 回まで、X 秒後に再試行」と表示。</p>
+  <p>CRUD（作成 / 更新 / 削除 / インポート）は別枠：<strong>利用者ごとに 1 時間 60 回</strong>。</p>
+</div>
+
+<h3>6.6 下書きシステム</h3>
+<p><strong>「新規ページ + すべて生成」</strong>のパス上でのみ、バックエンドが <code>character_drafts</code> に下書きを自動保存します：</p>
+<ul>
+  <li>ページやブラウザを閉じて戻ってきても <a href="/my-drafts"><code>/my-drafts</code></a> に残る</li>
+  <li>下書きをクリック → <code>?draftId=...</code> 付きで新規作成ページに復元</li>
+  <li>復元時にエディタに未保存の内容があると、上書き確認ダイアログが表示</li>
+</ul>
+
+<h3>6.7 JSON インポート / エクスポート</h3>
+<h4>エクスポート</h4>
+<ul>
+  <li>一覧の各カード「📤 エクスポート」 / 編集ページ右上「📤 JSON エクスポート」</li>
+  <li>ファイル名：キャラ名（不正文字を置換）+ <code>.json</code></li>
+  <li>スキーマ：<code>"$schema": "yinjie-private-character/v1"</code></li>
+  <li>含まれる項目：name / avatar / bio / relationship / relationshipType / expertDomains / recipe / profile / ソーシャルパラメータ + meta（exportedAt、exportedBy、version）</li>
+  <li><strong>含まれない</strong>：isOnline / isTemplate / sourceType / aiRelationships など管理者専用項目</li>
+</ul>
+
+<h4>インポート</h4>
+<ul>
+  <li>一覧右上「📥 ファイルをインポート」で <code>.json</code> を選択</li>
+  <li>ファイルサイズ上限：<strong>5 MB</strong></li>
+  <li><strong>キャラ名で upsert</strong>：既存キャラと同名 → 上書き、別名 → 新規作成</li>
+  <li>トーストで上書き / 新規を区別：「同名キャラを上書きしました：X」 vs 「新規キャラをインポートしました：X」</li>
+  <li>一括インポート不可（1 ファイル = 1 キャラ）</li>
+  <li>スキーマバージョン不一致 / 項目超過 → 400 で拒否</li>
+</ul>
+
+<h3 id="private-app-import">6.8 隠界 app に取り込んで実際に使う</h3>
+<p>wiki 上のプライベートキャラは「設定ファイル」に過ぎません。<strong>AI に実際に演じさせて対話するには、隠界 app（実行クライアント）にインポートする必要があります</strong>。手順：</p>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><h4>wiki でエクスポート</h4><p>プライベートキャラ一覧 / 編集ページで「📤 JSON エクスポート」をクリックし <code>.json</code> をダウンロード。</p></div>
+  <div class="step"><span class="n">2</span><h4>隠界 app を開く</h4><p>任意のクライアント（モバイル / デスクトップ）でログイン。インポートにはログインが必要。</p></div>
+  <div class="step"><span class="n">3</span><h4>インポートページへ</h4><p>モバイル：「自分」タブ → 「キャラクターをインポート」。<br>デスクトップ：メニュー入口なし、直接 <code>/profile/character-import</code> にアクセス。</p></div>
+  <div class="step"><span class="n">4</span><h4>.json をアップロード</h4><p>ダウンロードしたファイル（≤ 5 MB）を選択 → 送信。バックエンドが <code>POST /characters/import-personal</code> で検証・保存。</p></div>
+  <div class="step"><span class="n">5</span><h4>対話を開始</h4><p>インポート成功後、キャラは自動でフレンドに追加され「連絡先」に表示。連絡先でキャラをタップ → キャラ詳細ページ → 「メッセージ」をタップで対話開始。</p></div>
+</div>
+
+<div class="callout warn">
+  <span class="label">⚠️ バージョン同期なし</span>
+  <p>wiki 側と app 側は<strong>独立したコピー</strong>です。wiki でキャラ設定を変更しても app は自動更新されず、app の対話で蓄積された記憶 / 関係進展は wiki からは見えません。</p>
+  <p><strong>同期するには</strong>：wiki から再エクスポート → app のインポートページで再アップロード。<strong>同名上書きは過去にインポートしたキャラ限定</strong>（<code>sourceType=private_import</code>）— 別ソース由来の同名キャラは衝突エラーで上書きできません。</p>
+</div>
+
+<div class="callout tip">
+  <span class="label">💡 なぜ「wiki で作って app で動かす」？</span>
+  <p>app には<strong>「プライベートキャラ作成」UI がありません</strong>。設計上、wiki は「完全なキャラクター編集環境 + AI 補助」、app は「対話ランタイム」— 作成・編集は wiki、実行は app。この分離が wiki にプライベートキャラ機能が存在する核心的な理由です。</p>
+</div>
+
+<h3>6.9 削除</h3>
+<div class="callout warn">
+  <span class="label">⚠️ ハード削除、復旧不可</span>
+  <p>プライベートキャラの削除は<strong>本物の削除</strong>（Wiki 記事のソフト削除と異なる）— 確定すると DB から完全に消え、「復旧申請」フローはありません。削除前に「『X』を削除しますか？この操作は取り消せません。」の確認ダイアログが表示されます。</p>
+  <p>長期保存したい場合は、先に「📤 JSON エクスポート」でローカル保存してから削除。</p>
+  <p><strong>注意</strong>：wiki 側で削除しても、すでに app にインポートされたコピーには<strong>影響しません</strong>（両者は独立）— app 側でも消したい場合は連絡先から別途削除してください。</p>
+</div>
+
+<h3>6.10 現時点で未対応</h3>
+<p>プライベートキャラで現在<strong>できないこと</strong>を把握しておくと、入口探しで困りません：</p>
+<ul>
+  <li>❌ <strong>wiki 内で直接キャラと対話できない</strong>：wiki 側に対話 UI はありません — <a href="#private-app-import">6.8</a> に従い app へインポートしてください</li>
+  <li>❌ <strong>共有 / 共同編集ができない</strong>：他利用者にはログインしていてもアクセス不可</li>
+  <li>❌ <strong>「Wiki に一括公開」機能はない</strong>：プライベートキャラを公開記事にするには <a href="/create">/create</a> で手動再入力</li>
+  <li>❌ <strong>バージョン履歴がない</strong>：保存ごとに上書きされ、以前の版は見られない</li>
+  <li>❌ <strong>一括 / 並べ替え / フィルタ / 検索なし</strong>：一覧は時系列降順、多くなったらスクロールで探す</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 推奨ワークフロー</span>
+  <p>プライベートキャラはあなたの<strong>「下書き場」</strong>：審査を気にせず自由に試行でき、他人にも影響しません。気に入ったキャラができたら、主要項目（名前、紹介、関係、重要なプロンプト）を <a href="/create">「公開記事を作成」</a> に書き写して審査提出 — 現在のところ、これが私 → 公の唯一の経路です。</p>
+</div>
+</section>
+
+<section id="history">
+<h2><span class="num">7</span>履歴と差分 <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>公開記事のすべての変更は永続的に保持され、任意のバージョンを参照できます。</p>
+
+<h3>履歴タブ</h3>
+<p>記事ページ → 「履歴」タブ → 時系列降順のリビジョン一覧。各行には:</p>
+<ul>
+  <li>リビジョン ID</li>
+  <li>編集者ユーザー名</li>
+  <li>タイムスタンプ</li>
+  <li>編集要約</li>
+  <li>操作種別（作成 / 編集 / 削除申請 / 復旧申請 / 差し戻し）</li>
+  <li>リスクレベル（低 / 中 / 高）</li>
+  <li>巡回済みか / 審査済みか</li>
+</ul>
+
+<h3>差分（diff）の比較</h3>
+<p>任意の 2 リビジョンを選択 → 「比較」 → <code>/character/:id/diff?from=A&amp;to=B</code> に遷移し並列表示:</p>
+<ul>
+  <li>変更されたフィールド（diffFromParent）</li>
+  <li>各変更フィールドの旧 vs 新</li>
+  <li>recipe JSON の構造化差分（折りたたみ表示）</li>
+</ul>
+
+<details class="shot">
+  <summary>📐 ASCII 概略図: 差分ページのレイアウト</summary>
+<pre>
+┌─────────────────────┬─────────────────────┐
+│ 旧版（v12）          │ 新版（v13）          │
+├─────────────────────┼─────────────────────┤
+│ 紹介                 │ 紹介                 │
+│ 優しい友達。         │ 優しくおしゃべりな   │
+│                      │ 友達。               │
+├─────────────────────┼─────────────────────┤
+│ 性格                 │ 性格                 │
+│ 内向的、静か         │ 内向的だが聞き上手   │
+└─────────────────────┴─────────────────────┘
+</pre>
+</details>
+
+<p>差分ページはログイン不要で誰でも閲覧可能 — 透明な改訂履歴が Wiki 共同編集の基盤です。</p>
+</section>
+
+<section id="watch">
+<h2><span class="num">8</span>ウォッチリストと最近の更新 <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<h3>8.1 ウォッチ</h3>
+<p>キャラクターページ右上の ⭐ ボタンでウォッチを切替。ウォッチ後:</p>
+<ul>
+  <li>その記事の新編集が「マイウォッチリスト」に流れます</li>
+  <li>キャラごとに通知設定が可能: 編集通知（<code>notifyOnEdit</code>）、ノート通知（<code>notifyOnTalk</code>）</li>
+</ul>
+
+<h3>8.2 マイウォッチリスト</h3>
+<p>サイドバー → 「マイウォッチリスト」（<code>/watchlist</code>）。2 ペイン構成:</p>
+<ul>
+  <li><strong>左</strong>: ウォッチ中の全キャラ。各行に「解除」ボタン。削除済みには <code>削除済み</code> バッジ</li>
+  <li><strong>右</strong>: 集約活動フィード — 編集とノート新着を時系列で</li>
+</ul>
+
+<h3>8.3 最近の更新（Recent Changes）</h3>
+<p>サイドバー → 「最近の更新」（<code>/recent-changes</code>）— サイト全体のタイムラインで誰でも閲覧可:</p>
+<ul>
+  <li>全記事の全リビジョン（ウォッチ範囲外も含む）</li>
+  <li>ライフサイクル申請（削除 / 復旧）と差し戻しも含む</li>
+  <li>各行にリスクレベル、操作種別、巡回状況を表示</li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 巡回員向け</span>
+  <p>巡回員視点では「未巡回のみ」フィルタが追加されます — 日々の巡回作業で使用します。</p>
+</div>
+</section>
+
+<section id="talk">
+<h2><span class="num">9</span>ノートページ（Talk） <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>各記事には独立したノートページがあり、Wikipedia の「talk page」のように、「このキャラクターをどう書くべきか」を議論する場所です（キャラと話す場ではありません）。</p>
+
+<h3>主な操作</h3>
+<ul>
+  <li><strong>新規スレッド</strong>: タイトル + 本文で新しい話題を開始</li>
+  <li><strong>返信</strong>: 任意の投稿に返信（<code>parentPostId</code> でネスト）</li>
+  <li><strong>自分の投稿の削除</strong>: ソフト削除（記録は残るが内容は非表示）</li>
+  <li><strong>投稿の通報</strong>: <a href="#report">通報の節</a> を参照</li>
+</ul>
+
+<h3>巡回員ができること</h3>
+<ul>
+  <li><strong>スレッドのロック（isLocked）</strong>: 新たな返信を禁止 — 議論が荒れ気味のときに</li>
+  <li><strong>解決済みマーク（isResolved）</strong>: 合意に到達した話題</li>
+</ul>
+</section>
+
+<section id="report">
+<h2><span class="num">10</span>コンテンツの通報 <span class="audience"><span class="pill user">利用者</span></span></h2>
+
+<p>ログイン中の利用者なら誰でも問題のあるコンテンツを通報できます。対象は 3 種類:</p>
+<ul>
+  <li><strong>記事リビジョン（wiki_revision）</strong>: ある編集が問題を生じた（荒らし / 虚偽情報 / イタズラ）</li>
+  <li><strong>ノート投稿（wiki_talk_post）</strong>: 議論内の人格攻撃・スパム</li>
+  <li><strong>記事ページ（wiki_page）</strong>: そもそも存在すべきでない（著作権侵害 / 重大違反）</li>
+</ul>
+
+<h3>通報手順</h3>
+<ol>
+  <li>対象の隣にある「🚩 通報」ボタンをクリック</li>
+  <li>理由を選択（スパム / 虚偽 / 悪質 / その他）</li>
+  <li>任意で詳細を記入（500 文字以下）</li>
+  <li>送信</li>
+</ol>
+
+<p>通報は管理者の <a href="/admin/reports"><code>/admin/reports</code></a> キューに自動で入り、人間が処理します。結果は 3 種類:</p>
+<ul>
+  <li><strong>解決済み（resolved）</strong>: 管理者が対処（削除 / 差し戻し / 封禁など）</li>
+  <li><strong>却下（dismissed）</strong>: 通報が成立しないと判断</li>
+  <li><strong>未処理（open）</strong>: 処理待ち</li>
+</ul>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>悪意ある通報も処置の対象になります — 無効な通報を繰り返すと管理者の注意を引きます。</p>
+</div>
+</section>
+
+<section id="roles">
+<h2><span class="num">11</span>利用者ロールと権限</h2>
+
+<p>プラットフォームには 4 段階のロールがあります（下から上へ）:</p>
+
+<table>
+  <thead><tr><th>ロール</th><th>解放条件</th><th>権限</th></tr></thead>
+  <tbody>
+    <tr><td><strong>newcomer</strong><br>（新規利用者）</td><td>登録時</td><td>記事の編集 / 作成 / ノート投稿 / 通報。<br><strong>公開記事の編集はすべて審査キューへ。</strong></td></tr>
+    <tr><td><strong>autoconfirmed</strong><br>（自動承認済み）</td><td>編集数と期間に応じて自動昇格</td><td>低リスク編集は即時反映。高リスク（ライフサイクル変更等）は依然要審査。</td></tr>
+    <tr><td><strong>patroller</strong><br>（巡回員）</td><td>管理者が手動付与</td><td>+ 審査キュー入場、承認 / 却下 / 修正要請。<br>+ 「最近の更新」で巡回マーク。<br>+ 編集の差し戻し。<br>+ ノートのロック / 解決マーク。</td></tr>
+    <tr><td><strong>admin</strong><br>（管理者）</td><td>現任管理者が手動付与</td><td>+ ロール管理、封禁、ページ保護、フィールド保護。<br>+ 反破壊フィルタの設定。<br>+ ガバナンスダッシュボード。<br>+ 全強制操作。</td></tr>
+  </tbody>
+</table>
+
+<h3>autoconfirmed への昇格条件</h3>
+<p>システムは以下を満たすと自動的に昇格させます（しきい値はサイト設定）:</p>
+<ul>
+  <li>承認済み編集数（<code>approvedEditCount</code>）が下限以上</li>
+  <li>登録からの期間が下限以上</li>
+  <li>差し戻し回数（<code>revertedCount</code>）が上限以下</li>
+</ul>
+<p>条件を満たすと <code>autoconfirmedAt</code> タイムスタンプが付与され即時反映。アカウント設定で確認できます。</p>
+</section>
+
+<section id="patroller">
+<h2><span class="num">12</span>巡回員ハンドブック <span class="audience"><span class="pill patroller">巡回員</span></span></h2>
+
+<p>巡回員はプラットフォーム品質の第一線です。仕事は 3 種類: 未公開編集の審査、公開済み編集の巡回、悪い変更の差し戻し。</p>
+
+<h3>12.1 審査キュー</h3>
+<p>サイドバー → 「審査待ち編集」（<code>/pending-reviews</code>、巡回員以上のみ表示）。</p>
+
+<p><strong>キュー項目</strong>:</p>
+<ul>
+  <li>送信者 / 送信時刻 / 対象記事</li>
+  <li>操作種別（作成 / 編集 / 削除 / 復旧 / 差し戻し）</li>
+  <li>リスクレベル（低 / 中 / 高 — 高は要約 10 文字以上）</li>
+  <li>リビジョン種別</li>
+  <li>編集要約</li>
+  <li>差分プレビューリンク</li>
+</ul>
+
+<p><strong>処置オプション</strong>:</p>
+<table>
+  <thead><tr><th>操作</th><th>効果</th></tr></thead>
+  <tbody>
+    <tr><td><strong>承認（approve）</strong></td><td>編集が安定版にマージされ全利用者に公開</td></tr>
+    <tr><td><strong>却下（reject）</strong></td><td>編集を破棄。最新版には自動同期されず（送信者は再編集が必要）</td></tr>
+    <tr><td><strong>修正要請（request changes）</strong></td><td>コメントを残し送信者に修正依頼</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <span class="label">💡 巡回ペースのコツ</span>
+  <p>「高リスク + 長い編集要約」を優先的に処理（多くは真剣な大改訂）。低リスクの小修正はバッチで素早く通すのが効率的。</p>
+</div>
+
+<h3>12.2 「最近の更新」の巡回</h3>
+<p>「巡回」と「承認」は<strong>別物</strong>です:</p>
+<ul>
+  <li><strong>承認（review approval）</strong>: 未公開編集を反映 — newcomer の送信向け</li>
+  <li><strong>巡回（patrol）</strong>: 既に反映済みの編集を「確認した、問題なし」とマーク — autoconfirmed の送信向け</li>
+</ul>
+
+<p><code>/recent-changes</code> で「未巡回のみ」フィルタに切替え、上から順に確認、問題なしなら「巡回済みにマーク」。</p>
+
+<h3>12.3 差し戻し（Revert）</h3>
+<p>履歴タブで過去のリビジョン横にある「このリビジョンに戻す」ボタン:</p>
+<ol>
+  <li>クリック → 差し戻し理由の入力モーダル</li>
+  <li>送信 → 新しいリビジョンを作成（<code>operation: "revert"</code>）し対象まで戻す</li>
+  <li>巡回員/管理者なら即時反映、そうでなければ審査キュー（実際には非巡回員にこのパスは公開されていません）</li>
+</ol>
+
+<div class="callout warn">
+  <span class="label">⚠️ 注意</span>
+  <p>差し戻しは送信者の <code>revertedCount</code> に加算され、後の昇格に影響します。明らかに悪意・有害な編集にのみ実行してください。意見の相違ならノートページで議論を。</p>
+</div>
+</section>
+
+<section id="admin">
+<h2><span class="num">13</span>管理者ハンドブック <span class="audience"><span class="pill admin">管理者</span></span></h2>
+
+<div class="callout admin">
+  <span class="label">🛡️ 管理者専用</span>
+  <p>本節の <code>/admin/*</code> ページは管理者以外には 404 を返します。</p>
+</div>
+
+<h3>13.1 利用者と権限管理</h3>
+<p><code>/admin/users</code> にアクセス。機能:</p>
+<ul>
+  <li>全サイトの利用者一覧（ユーザー名、種別、ロール、登録日、編集統計）</li>
+  <li>任意の利用者のロール変更（newcomer ↔ autoconfirmed ↔ patroller ↔ admin）</li>
+  <li>各利用者の累計編集数、承認済み数、差し戻し数、巡回数、最終編集時刻、自動承認時刻を表示</li>
+</ul>
+<p><strong>自分のロールは変更不可</strong>（誤操作で自分を後台から閉め出すのを防ぐ）。</p>
+
+<h3>13.2 封禁（Block）</h3>
+<p><code>/admin/blocks</code> にアクセス。利用者の特定操作を阻止:</p>
+<table>
+  <thead><tr><th>scope</th><th>効果</th></tr></thead>
+  <tbody>
+    <tr><td><code>global</code></td><td>サイト全体で発言禁止: 編集 / ノート / 通報すべて不可</td></tr>
+    <tr><td><code>page</code></td><td>指定記事の編集のみ禁止</td></tr>
+    <tr><td><code>talk</code></td><td>ノート投稿のみ禁止（編集は可）</td></tr>
+  </tbody>
+</table>
+<p>各封禁レコード: 利用者 / scope / 理由 / 作成者 / 作成時刻 / 期限（<code>expiresAt</code>、空なら永続）/ 解除者 / 解除時刻。一覧は「有効中」と「期限切れ / 解除済み」に分割表示。</p>
+
+<h3>13.3 ページ保護（Protection）</h3>
+<p><code>/admin/protection</code> にアクセス。単一記事に編集ハードルを追加:</p>
+
+<h4>ページレベル保護</h4>
+<table>
+  <thead><tr><th>level</th><th>編集可能なロール</th></tr></thead>
+  <tbody>
+    <tr><td><code>none</code></td><td>全ログイン利用者（既定）</td></tr>
+    <tr><td><code>semi</code></td><td>autoconfirmed 以上 — 新規利用者をブロック</td></tr>
+    <tr><td><code>full</code></td><td>patroller 以上 — 信頼利用者のみ</td></tr>
+  </tbody>
+</table>
+
+<h4>審査ポリシー（reviewPolicy）</h4>
+<ul>
+  <li><code>open</code>: 編集を即時反映、強制審査なし</li>
+  <li><code>pending_changes</code>: すべての編集を保留し承認を要する</li>
+</ul>
+
+<h4>フィールドレベル保護</h4>
+<p>記事内の特定フィールド（例: <code>name</code>）に最低編集ロールを個別設定:</p>
+<pre><code>fieldPath: "name"
+minRoleToEdit: "patroller"</code></pre>
+<p>用途: 荒らされやすいフィールド（キャラ名、関係タイプ）のみロックし、他は通常通り共同編集を維持。</p>
+
+<p><strong>すべての保護変更はログ化</strong>: oldLevel → newLevel + 変更者 + 理由 + 期限、追跡可能。</p>
+
+<h3>13.4 通報キュー</h3>
+<p><code>/admin/reports</code> にアクセス。利用者通報の処置:</p>
+<ul>
+  <li>状態別グループ表示: 未処理（open）/ 解決済み（resolved）/ 却下（dismissed）</li>
+  <li>各レコード: 通報者、対象種別（リビジョン / 投稿 / ページ）、理由、詳細、時刻</li>
+  <li>処置: 状態を resolved または dismissed に変更（具体的な処置 — 削除、差し戻し、封禁 — は他の管理画面で別途実施）</li>
+</ul>
+
+<h3>13.5 反破壊フィルタ（Abuse Filter）</h3>
+<p><code>/admin/abuse-filters</code> にアクセス。正規表現ベースのコンテンツ遮断ルール:</p>
+
+<table>
+  <thead><tr><th>項目</th><th>説明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>name</strong></td><td>ルール名（管理画面のみ表示）</td></tr>
+    <tr><td><strong>pattern</strong></td><td>正規表現</td></tr>
+    <tr><td><strong>scope</strong></td><td>適用範囲（編集 / ノート / 全部）</td></tr>
+    <tr><td><strong>action</strong></td><td><code>flag</code>（後の人手審査）/ <code>reject</code>（送信を拒否）/ <code>log</code>（記録のみ）</td></tr>
+    <tr><td><strong>severity</strong></td><td>low / medium / high — 後続優先順位に影響</td></tr>
+  </tbody>
+</table>
+
+<p>ヒット統計も同画面に表示: 各ルールの発動回数、ヒット利用者の分布、直近 N 件のヒット詳細。</p>
+
+<div class="callout tip">
+  <span class="label">💡 正規表現のコツ</span>
+  <p>新ルールはまず <code>action: log</code> で 1 週間運用し誤検知を確認、問題なければ <code>flag</code> や <code>reject</code> へ昇格。</p>
+</div>
+
+<h3>13.6 ガバナンスダッシュボード</h3>
+<p><code>/admin/wiki-stats</code> にアクセス。一元的な概観:</p>
+<ul>
+  <li>リアルタイムカウンタ: 当日新規、今週新規、審査キュー長</li>
+  <li>利用者品質ランキング: 差し戻し最多、低承認率、要注意利用者</li>
+  <li>日次トレンド: 作成数、承認数、却下数、フィルタヒット数、自動承認昇格数</li>
+  <li>フィルタ性能: 各ルールのヒット率、誤検知率（人手で取消された件数）</li>
+</ul>
+</section>
+
+<section id="faq">
+<h2><span class="num">14</span>よくある質問（FAQ）</h2>
+
+<h3>Q: 送信した編集はどこ？なぜページが古いまま？</h3>
+<p>新規利用者の編集は審査キューに入ります。あなた自身は変更を見られますが（current ビュー）、他の閲覧者には承認済みの stable 版が表示されます。巡回員が承認すれば全員に反映。<code>/recent-changes</code> で送信記録を確認できます。</p>
+
+<h3>Q: AI 生成ボタンが灰色になっています</h3>
+<p>3 つの可能性:</p>
+<ul>
+  <li><strong>「すべて生成」</strong>には name + bio + relationship の入力が必要</li>
+  <li><strong>当時間の枠を使い切った</strong>（利用者ごと 15 回/時、プライベートと Wiki 共有）</li>
+  <li><strong>全フィールドが既に入力済み</strong>で、最適化モード未選択 — 既定では空のみ補完</li>
+</ul>
+
+<h3>Q: 私と他人で見える内容が違うのはなぜ？</h3>
+<p>あなたは current ビュー（自身または他人の未審査変更を含む）を見ており、未ログインまたは編集に関与しない人は stable ビュー（最近承認版）を見ています。仕様上の分離 — 未審査内容を公開しない設計です。</p>
+
+<h3>Q: autoconfirmed への昇格方法は？</h3>
+<p>高品質な編集を継続するだけ — システムが「承認済み編集数 + 登録期間 + 低差し戻し率」で自動昇格。申請不要。アカウント設定で現編集統計が確認できます。</p>
+
+<h3>Q: プライベートキャラは他人に見えますか？</h3>
+<p>見えません。プライベートキャラは <code>/my-characters</code> にのみ表示され、管理者後台にも出ません。「Wiki に同期」を能動的に行わない限り公開されません。</p>
+
+<h3>Q: 編集競合が起きたら？</h3>
+<p>送信時にシステムが検出してダイアログを表示。最も簡単な対処: 下書きをクリップボードにコピー → 編集ページを閉じる → 再度開く（最新版を取得）→ 自分の変更を手動マージ → 再送信。</p>
+
+<h3>Q: パスワードを忘れたら？</h3>
+<p>ログイン画面で「メール認証コード」を選択 → サインイン後にアカウント設定でパスワード変更。ただし登録時にメール紐付け済みであることが前提。未紐付けの場合は自助復旧不可、管理者連絡が必要。</p>
+
+<h3>Q: エクスポートしたキャラ JSON は別の場所で使える？</h3>
+<p>使えます。エクスポートはプラットフォーム内部形式の完全な recipe + コンテンツスナップショットで、本プラットフォームの別アカウントへ直接インポート可能。理論上は他ツールにも入力できますが、本形式に対応している必要あり。</p>
+
+<h3>Q: 封禁されたら異議申し立ては？</h3>
+<p>封禁レコードに理由と封禁者が表示されます。申立て窓口は<a href="#feedback">次節</a>を参照。</p>
+</section>
+
+<section id="feedback">
+<h2><span class="num">15</span>フィードバック</h2>
+
+<p>バグ発見、提案、運営判断への異議など。窓口:</p>
+
+<ul>
+  <li><strong>サイト内議論</strong>: 関連記事のノートページに新規スレッドを開く（コンテンツに関する問題向け）</li>
+  <li><strong>通報</strong>: 違反コンテンツは 🚩 通報ボタン（具体的なコンテンツ問題向け）</li>
+  <li><strong>メール / コミュニティ</strong>: <em>公開前に管理者が対外連絡先を補足</em></li>
+</ul>
+
+<div class="callout tip">
+  <span class="label">💡 良いフィードバックを書くコツ</span>
+  <p>含めると有用: <strong>具体的なページ URL</strong>、<strong>何をしたか</strong>、<strong>何が起こると期待したか</strong>、<strong>実際に何が起こったか</strong>、<strong>ブラウザと OS</strong>。これだけ書かれた 1 件は「動かない」10 件より遙かに役立ちます。</p>
+</div>
+
+<p style="margin-top: 48px; padding-top: 24px; border-top: 1px dashed var(--border-subtle); text-align: center; color: var(--text-muted); font-size: 14px;">
+  ✨ チュートリアル終了。Enclave Wiki での創作を楽しんでください。<br>
+  <a href="/" class="back-btn" style="display: inline-block; margin-top: 12px;">← プラットフォームに戻る</a>
+</p>
+</section>
+
+</main>
+</div>
+
+<footer class="foot">
+  Enclave World キャラクター管理プラットフォーム · チュートリアル v1 ·
+  <a href="tutorial-zh-CN.html">中文</a> ·
+  <a href="tutorial-en-US.html">English</a> ·
+  <a href="tutorial-ko-KR.html">한국어</a>
+</footer>
+
+<script>
+  (function () {
+    var tocLinks = Array.from(document.querySelectorAll('aside.toc a[href^="#"]'));
+    var sections = tocLinks.map(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      return el ? { link: a, el: el } : null;
+    }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || sections.length === 0) return;
+    var visible = new Set();
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      });
+      var current = sections.find(function (s) { return visible.has(s.el.id); });
+      tocLinks.forEach(function (a) { a.classList.remove('active'); });
+      if (current) current.link.classList.add('active');
+    }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+    sections.forEach(function (s) { observer.observe(s.el); });
+  })();
+  (function () {
+    var toc = document.getElementById('toc'); if (!toc) return;
+    var btn = toc.querySelector('.toc-mobile-toggle'); if (!btn) return;
+    btn.addEventListener('click', function () {
+      var open = toc.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    toc.querySelectorAll('ol a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          toc.classList.remove('open'); btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>

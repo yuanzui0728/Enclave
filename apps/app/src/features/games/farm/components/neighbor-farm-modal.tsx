@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import type { FarmCropId, FarmPlot } from "@yinjie/contracts";
 
 const t = translateRuntimeMessage;
 import { FARM_CROP_CATALOG } from "@yinjie/contracts";
+import { AvatarChip } from "../../../../components/avatar-chip";
 import { translateExpertDomains } from "../../../../lib/character-i18n";
 import {
   useFarmNeighborDetail,
@@ -12,6 +13,8 @@ import {
 } from "../use-farm-state";
 import { useFarmAdjustedNow } from "../farm-clock-context";
 import { formatRemainingMs, getStageEmoji } from "../crop-presentation";
+import { GiftSheet } from "./gift-sheet";
+import { playStealSwoosh } from "../audio/farm-sfx";
 
 interface NeighborFarmModalProps {
   characterId: string | null;
@@ -36,6 +39,35 @@ export function NeighborFarmModal({
   const nowMs = useFarmAdjustedNow();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<StealToast | null>(null);
+  const [giftOpen, setGiftOpen] = useState(false);
+
+  // 跟着 toast.expiresAt 走带 cleanup 的定时器；之前用裸 setTimeout，关掉模态或快连
+  // 偷两次会留下野定时器，要么把后一个 toast 提前抹掉，要么对已卸载组件 setState。
+  useEffect(() => {
+    if (!toast) return;
+    const remaining = toast.expiresAt - Date.now();
+    if (remaining <= 0) {
+      setToast(null);
+      return;
+    }
+    const timer = window.setTimeout(() => setToast(null), remaining);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    // 走查新一轮 R7：早返 `if (!characterId) return null` 原本在 useEffect 之前，
+    // 5 个上方 hook 永远跑 + 后面 2 个 useEffect 在 characterId 为 null 时被
+    // skip → characterId 由 null 翻成有值时 React 看到「上轮 5 个 hook，本轮
+    // 7 个 hook」，throw `Rendered more hooks than during the previous render`，
+    // 真机上点邻居农场首次会让 React tree 直接崩，需要刷新整页才能恢复。
+    // 把 useEffect 全部提到早返之前，里面用 characterId 决定是否真的挂监听。
+    if (!characterId) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose, characterId]);
 
   if (!characterId) return null;
 
@@ -46,12 +78,12 @@ export function NeighborFarmModal({
       { characterId: characterId!, plotIndex: plot.index },
       {
         onSuccess: (result) => {
+          playStealSwoosh();
           setToast({
             ...result.stolen,
             characterName: detailQuery.data!.characterName,
             expiresAt: Date.now() + 3500,
           });
-          window.setTimeout(() => setToast(null), 3500);
         },
         onError: (err) => setErrorMsg((err as Error).message),
       },
@@ -59,8 +91,14 @@ export function NeighborFarmModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/40 sm:items-center">
-      <div className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/40 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {detailQuery.isLoading && (
           <div className="flex items-center justify-center py-12 text-sm text-stone-400">
             {t(msg`正在串门……`)}
@@ -75,20 +113,11 @@ export function NeighborFarmModal({
           <>
             <header className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 overflow-hidden rounded-full bg-stone-200">
-                  {detailQuery.data.characterAvatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={detailQuery.data.characterAvatar}
-                      alt={detailQuery.data.characterName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-xs text-stone-500">
-                      {detailQuery.data.characterName.slice(0, 1)}
-                    </span>
-                  )}
-                </div>
+                <AvatarChip
+                  name={detailQuery.data.characterName}
+                  src={detailQuery.data.characterAvatar}
+                  size="sm"
+                />
                 <div>
                   <div className="text-sm font-semibold">
                     {detailQuery.data.characterName} {t(msg`的农场`)}
@@ -103,13 +132,22 @@ export function NeighborFarmModal({
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
-              >
-                {t(msg`关闭`)}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setGiftOpen(true)}
+                  className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700 hover:bg-amber-200"
+                >
+                  🎁 {t(msg`送礼`)}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
+                >
+                  {t(msg`关闭`)}
+                </button>
+              </div>
             </header>
 
             {errorMsg && (
@@ -220,6 +258,11 @@ export function NeighborFarmModal({
           🪙+{toast.coinsGained} · {toast.characterName} {t(msg`好感`)}{toast.intimacyDelta}
         </div>
       )}
+      <GiftSheet
+        neighbor={detailQuery.data ?? null}
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+      />
     </div>
   );
 }
@@ -254,6 +297,14 @@ function renderEventSummary(event: {
       return `${event.actorName} ${t(msg`升级了`)}`;
     case "intimacy_change":
       return t(msg`好感度变化`);
+    case "fertilize":
+      return `${event.actorName} ${t(msg`施了肥`)}`;
+    case "pesticide":
+      return `${event.actorName} ${t(msg`喷了农药`)}`;
+    case "uproot":
+      return `${event.actorName} ${t(msg`铲掉了作物`)}`;
+    case "decorate":
+      return `${event.actorName} ${t(msg`摆了一件装饰`)}`;
     default:
       return event.kind;
   }

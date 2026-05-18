@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { LessThan, MoreThan, Repository } from 'typeorm';
 import { CharacterRevisionEntity } from '../entities/character-revision.entity';
 import { CharacterPageEntity } from '../entities/character-page.entity';
 import { AbuseFilterHitEntity } from '../entities/abuse-filter-hit.entity';
@@ -57,7 +57,9 @@ export class WikiAntivandalBotService {
     let actions = 0;
     for (const rev of recents) {
       if (actions >= SAFETY_LIMIT_PER_RUN) {
-        this.logger.error(
+        // 安全上限只是"本次扫够了，下次再来"，不是 incident。用 warn 别把
+        // 巡查 cron 的正常上限通报当成 ERROR 灌满 err.log。
+        this.logger.warn(
           `antivandal bot reached safety limit (${SAFETY_LIMIT_PER_RUN}); halting sweep`,
         );
         break;
@@ -80,28 +82,44 @@ export class WikiAntivandalBotService {
   private async evaluate(
     rev: CharacterRevisionEntity,
   ): Promise<string | null> {
+    // soft_delete / restore 是生命周期修订，contentSnapshot 故意被压成
+    // {name:'', bio:reason, expertDomains:[], ...} 作为标记，并不是 content
+    // vandalism。早先 evaluate 不看 operation 一律按 content rule 跑，
+    // 导致合法 soft_delete 被 critical_field_cleared 命中后 bot revert 到上
+    // 一个 approved，把已经"应删除"的 page 又翻回 active；rapid_repeated_edits
+    // 同理也会把生命周期改动当成"高频内容编辑"撤回。这两个操作本身已经走
+    // wiki review 的 high-risk patroller 通道，不需要 antivandal 复审。
+    if (rev.operation === 'soft_delete' || rev.operation === 'restore') {
+      return null;
+    }
     // Rule 1: critical content fields cleared (bio/personality/name shrunk to <5 chars)
+    // 必须"同字段对比"——之前用 OR 跨字段，结果 personality 一直为空的角色，
+    // 只要 parent.bio>50 或 parent.name>5（绝大多数 wiki 词条都是），随便编辑
+    // 别的字段都会触发 critical_field_cleared 把合法 edit revert 掉。
     const c = rev.contentSnapshot;
-    if (
-      (typeof c.name === 'string' && c.name.trim().length < 2) ||
-      (typeof c.bio === 'string' && c.bio.trim().length < 5) ||
-      (typeof c.personality === 'string' && c.personality.trim().length < 5)
-    ) {
-      // Look up parent to confirm we're shrinking from > 50 to < 5
-      if (rev.parentRevisionId) {
-        const parent = await this.revisionRepo.findOne({
-          where: { id: rev.parentRevisionId },
-        });
-        if (parent) {
-          const before = parent.contentSnapshot;
-          if (
-            (typeof before.bio === 'string' && before.bio.length > 50) ||
-            (typeof before.personality === 'string' &&
-              before.personality.length > 50) ||
-            (typeof before.name === 'string' && before.name.length > 5)
-          ) {
-            return 'critical_field_cleared';
-          }
+    if (rev.parentRevisionId) {
+      const parent = await this.revisionRepo.findOne({
+        where: { id: rev.parentRevisionId },
+      });
+      if (parent) {
+        const before = parent.contentSnapshot;
+        const shrunkName =
+          typeof c.name === 'string' &&
+          c.name.trim().length < 2 &&
+          typeof before.name === 'string' &&
+          before.name.length > 5;
+        const shrunkBio =
+          typeof c.bio === 'string' &&
+          c.bio.trim().length < 5 &&
+          typeof before.bio === 'string' &&
+          before.bio.length > 50;
+        const shrunkPersonality =
+          typeof c.personality === 'string' &&
+          c.personality.trim().length < 5 &&
+          typeof before.personality === 'string' &&
+          before.personality.length > 50;
+        if (shrunkName || shrunkBio || shrunkPersonality) {
+          return 'critical_field_cleared';
         }
       }
     }
@@ -137,13 +155,17 @@ export class WikiAntivandalBotService {
         return true;
       }
       if (rev.status === 'approved') {
-        // Find the previous approved revision to revert to
+        // 找上一条 approved revision：以前用 version-1，但 version 序列可能因
+        // rejected/superseded/reverted 状态而存在断号——一旦 v-1 不是 approved
+        // 就 skip，破坏者那条恶意 revision 留在线上不会被回退。
+        // 改成 "version < rev.version AND status='approved' 取最大 version"。
         const previous = await this.revisionRepo.findOne({
           where: {
             characterId: rev.characterId,
             status: 'approved',
-            version: rev.version - 1,
+            version: LessThan(rev.version),
           },
+          order: { version: 'DESC' },
         });
         if (!previous) {
           this.logger.warn(

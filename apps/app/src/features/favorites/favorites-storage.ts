@@ -8,7 +8,7 @@ const t = translateRuntimeMessage;
 export type DesktopFavoriteCategory = FavoriteCategory;
 export type DesktopFavoriteRecord = FavoriteRecord;
 
-const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
+export const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
 let desktopFavoritesNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
@@ -37,7 +37,13 @@ function normalizeDesktopFavorites(value: unknown) {
         typeof item.badge === "string" &&
         typeof item.collectedAt === "string",
     )
-    .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
+    .sort((left, right) =>
+      right.collectedAt < left.collectedAt
+        ? -1
+        : right.collectedAt > left.collectedAt
+          ? 1
+          : 0,
+    );
 }
 
 function parseDesktopFavorites(raw: string | null | undefined) {
@@ -90,7 +96,20 @@ function writeDesktopFavorites(
   }
 
   if (favorites.length) {
-    storage.setItem(DESKTOP_FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    try {
+      storage.setItem(DESKTOP_FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    } catch (error) {
+      // localStorage 满（典型 5-10MB）时 setItem 抛 QuotaExceededError，
+      // 之前未捕获，会顺着 upsertDesktopFavorite 冒到 React 点击 handler 里
+      // 让组件崩。这里降级：原子 native 同步还能继续，仅本地 web 存储未持久化。
+      // 不主动驱逐，避免一次写入把用户辛苦收藏的旧内容也吞了。
+      if (typeof console !== 'undefined') {
+        console.warn(
+          'Failed to persist desktop favorites to localStorage',
+          error,
+        );
+      }
+    }
   } else {
     storage.removeItem(DESKTOP_FAVORITES_STORAGE_KEY);
   }
@@ -182,11 +201,48 @@ export function removeDesktopFavorite(sourceId: string) {
   return nextFavorites;
 }
 
-export function buildFavoriteShareText(item: DesktopFavoriteRecord) {
-  const lines = [t(msg`[收藏] ${item.title}`)];
+/**
+ * 走查 2026-05-18 R2：用于「乐观取消收藏 → 网络失败 → 把原记录放回去」的兜底
+ * 路径。原 channels-page onError 走 upsertDesktopFavorite(restored) 把
+ * collectedAt 字段 destructure 扔掉，重写为 now → favorite 在"我 → 收藏"列表里
+ * 神秘跳到顶部（按 collectedAt DESC 排序）。restore 路径完整保留 collectedAt，
+ * favorite 留在原本的位置。
+ */
+export function restoreDesktopFavorite(record: DesktopFavoriteRecord) {
+  const current = readDesktopFavorites();
+  const nextFavorites = [
+    record,
+    ...current.filter((item) => item.sourceId !== record.sourceId),
+  ];
+  // normalizeDesktopFavorites 在 readDesktopFavorites 内部按 collectedAt DESC
+  // 排序——这里 prepend 是为了去重 + 触发后续 write 时 normalize 用同款 sort
+  // 把 record 落回正确位置（不依赖 prepend 的"最新"假设）。
+  writeDesktopFavorites(
+    [...nextFavorites].sort((left, right) =>
+      right.collectedAt < left.collectedAt
+        ? -1
+        : right.collectedAt > left.collectedAt
+          ? 1
+          : 0,
+    ),
+  );
+  return nextFavorites;
+}
 
-  if (item.description.trim()) {
-    lines.push(item.description.trim());
+export function buildFavoriteShareText(item: DesktopFavoriteRecord) {
+  const title = item.title.trim();
+  const description = item.description.trim();
+  const lines = [t(msg`[收藏] ${title || item.title}`)];
+
+  // 走查 R2：现网 yuanzui0728 的 10 条收藏里 8 条都是 description === title
+  // （笔记类纯文本 favorite 默认把 title 复用进 description），share text 第二行
+  //  把 title 又写一遍肉眼像 bug：
+  //    [收藏] R5 重要内容：明天 14:00 团队评审
+  //    R5 重要内容：明天 14:00 团队评审   ← 重复
+  //    来自 笔记
+  //    5月17日 10:55
+  if (description && description !== title) {
+    lines.push(description);
   }
 
   lines.push(t(msg`来自 ${item.badge}`));
@@ -206,10 +262,32 @@ export function mergeDesktopFavoriteRecords(
     remoteFavorites.map((favorite) => favorite.sourceId),
   );
 
+  // ISO-8601 字符串本身就字典序可比，不必走 localeCompare 的 Collator 路径。
   return [
     ...remoteFavorites,
     ...localFavorites.filter(
       (favorite) => !remoteSourceIdSet.has(favorite.sourceId),
     ),
-  ].sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
+  ].sort((left, right) =>
+    right.collectedAt < left.collectedAt
+      ? -1
+      : right.collectedAt > left.collectedAt
+        ? 1
+        : 0,
+  );
+}
+
+// Tauri 桌面 focus/visibilitychange 上 setFavorites 的兜底比较器。
+// 之前是 JSON.stringify(700 项) === JSON.stringify(700 项)，每次 focus 都新建 ~700KB
+// 字符串。改成 sourceId + collectedAt 的轻量指纹：长度不同直接返回 false，
+// 否则按下标拼一个紧凑串，跳过 title/description/avatar 等大字段。
+export function computeDesktopFavoritesFingerprint(
+  favorites: DesktopFavoriteRecord[],
+) {
+  if (favorites.length === 0) return "0|";
+  let fingerprint = `${favorites.length}|`;
+  for (const item of favorites) {
+    fingerprint += `${item.sourceId}@${item.collectedAt};`;
+  }
+  return fingerprint;
 }

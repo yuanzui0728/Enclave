@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>隐界 Wiki Tutorial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<noscript><meta http-equiv="refresh" content="0;url=tutorial-zh-CN.html"></noscript>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         display: grid; place-items: center; min-height: 100vh; margin: 0;
+         color: #4f4f63; background: #fafaff; }
+  .box { text-align: center; }
+  .links a { display: inline-block; margin: 6px 8px; padding: 8px 16px;
+             border-radius: 999px; background: #f3f1ff; color: #1f1f2c;
+             text-decoration: none; font-size: 14px; }
+  .links a:hover { background: linear-gradient(135deg, #ff6a8a, #7c5cff); color: #fff; }
+</style>
+</head>
+<body>
+<div class="box">
+  <p id="msg">Loading tutorial…</p>
+  <div class="links">
+    <a href="tutorial-zh-CN.html">🇨🇳 中文</a>
+    <a href="tutorial-en-US.html">🇺🇸 English</a>
+    <a href="tutorial-ja-JP.html">🇯🇵 日本語</a>
+    <a href="tutorial-ko-KR.html">🇰🇷 한국어</a>
+  </div>
+</div>
+<script>
+  (function () {
+    var supported = ["zh-CN", "en-US", "ja-JP", "ko-KR"];
+    function pick(lang) {
+      if (!lang) return null;
+      var n = String(lang).replace("_", "-");
+      for (var i = 0; i < supported.length; i++) {
+        if (n === supported[i]) return supported[i];
+      }
+      var prefix = n.split("-")[0].toLowerCase();
+      var map = { zh: "zh-CN", en: "en-US", ja: "ja-JP", ko: "ko-KR" };
+      return map[prefix] || null;
+    }
+    // 1) URL ?lang=  2) localStorage yinjie-i18n-locale:wiki  3) navigator.language
+    var fromQuery = (location.search.match(/[?&]lang=([^&]+)/) || [])[1];
+    var fromStorage = null;
+    try { fromStorage = localStorage.getItem("yinjie-i18n-locale:wiki"); } catch (e) {}
+    var match = pick(fromQuery) || pick(fromStorage) || pick(navigator.language) || "zh-CN";
+    location.replace("tutorial-" + match + ".html");
+  })();
+</script>
+</body>
+</html>

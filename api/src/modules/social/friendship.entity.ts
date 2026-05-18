@@ -1,7 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 @Entity('friendships')
+@Index(['ownerId'])
+@Index(['ownerId', 'characterId'])
 export class FriendshipEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

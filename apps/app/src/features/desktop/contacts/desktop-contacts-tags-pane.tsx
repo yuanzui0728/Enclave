@@ -28,6 +28,7 @@ import {
 import { buildDesktopChatThreadPath } from "../chat/desktop-chat-route-state";
 import { buildContactTagGroups } from "../../contacts/contact-tag-groups";
 import { ContactDetailPane } from "../../contacts/contact-detail-pane";
+import { DesktopContactPaneEmptyState } from "../../contacts/desktop-contact-profile-blocks";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
 import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
@@ -178,6 +179,10 @@ export function DesktopContactsTagsPane() {
         variables.blocked ? t(msg`已移出黑名单。`) : t(msg`已加入黑名单。`),
       );
       await Promise.all([
+        // 同 contacts-page.tsx：拉黑后服务端把 friendship.status 改成 'blocked'，
+        // 不 invalidate app-friends 的话标签 pane 里这位"已黑"联系人仍然挂在
+        // 原 tag 下面像普通好友一样可点。
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
         queryClient.invalidateQueries({
           queryKey: ["app-contacts-blocked", baseUrl],
         }),
@@ -283,16 +288,42 @@ export function DesktopContactsTagsPane() {
   );
 
   useEffect(() => {
+    // 这条 effect 只用来响应「外部把路由改了」（比如浏览器后退）→ 把状态拉到
+    // 路由值。两种情况要主动跳过、把决定权交给后面的 auto-fill effect，否则
+    // 两边来回拉锯炸 "Maximum update depth exceeded"：
+    //  (a) 路由里 tag 为空 —— auto-fill 想选第一个，强行回填 null 会抹掉它。
+    //  (b) 路由里 tag 当前已经不在 tagGroups（搜索把它过滤掉了 / 标签被删了）
+    //      —— auto-fill 想换一个 fallback，强行回填会立刻又把状态拽回 stale
+    //      路由值。
+    if (!routeSelectedTag) {
+      return;
+    }
+    if (!tagGroups.some((group) => group.tag === routeSelectedTag)) {
+      return;
+    }
     setSelectedTag((current) =>
       current === routeSelectedTag ? current : routeSelectedTag,
     );
-  }, [routeSelectedTag]);
+  }, [routeSelectedTag, tagGroups]);
 
   useEffect(() => {
+    // 同上：路由里 characterId 为空、或不在任何当前 tagGroup 里，都不回填。
+    if (!routeSelectedCharacterId) {
+      return;
+    }
+    if (
+      !tagGroups.some((group) =>
+        group.items.some(
+          (item) => item.character.id === routeSelectedCharacterId,
+        ),
+      )
+    ) {
+      return;
+    }
     setSelectedCharacterId((current) =>
       current === routeSelectedCharacterId ? current : routeSelectedCharacterId,
     );
-  }, [routeSelectedCharacterId]);
+  }, [routeSelectedCharacterId, tagGroups]);
 
   useEffect(() => {
     if (
@@ -537,6 +568,23 @@ export function DesktopContactsTagsPane() {
         <ContactDetailPane
           character={selectedFriend?.character ?? null}
           friendship={selectedFriend?.friendship ?? null}
+          // 0 个标签 / 关键词搜不到时，默认空态会指"从左侧通讯录选择好友"，
+          // 但用户此时在标签 sub-pane，左侧 sub-list 里就是空的——指错地方了。
+          // 给一个跟当前 pane 对齐的提示。
+          emptyState={
+            <DesktopContactPaneEmptyState
+              title={
+                tagGroups.length === 0
+                  ? t(msg`还没有联系人标签`)
+                  : t(msg`选一个标签里的联系人`)
+              }
+              description={
+                tagGroups.length === 0
+                  ? t(msg`先在联系人资料里给好友补上标签，标签页会自动聚合。`)
+                  : t(msg`从中间标签和联系人列表里选一个，这里会显示资料和管理操作。`)
+              }
+            />
+          }
           commonGroups={commonGroups}
           onOpenGroup={(groupId) => {
             void navigate({

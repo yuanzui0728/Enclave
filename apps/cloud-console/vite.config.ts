@@ -27,5 +27,7 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5182,
+    // 端口被占直接报错，避免悄悄 +1 后 "进入后台" 等跳转 URL 落到错的服务上。
+    strictPort: true,
   },
 });

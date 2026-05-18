@@ -407,7 +407,11 @@ export function respondToEvent(
   return state;
 }
 
-export function useSyncSkill(
+// 名字曾叫 useSyncSkill —— 它是个 *纯* reducer-style 函数（activate sync skill
+// 这个动作），不是 React Hook，但 react-hooks/rules-of-hooks 把它的名字 prefix
+// 误判成 hook，并对调用方 reducer 报 "called in function 'reducer'"。改名跟周
+// 围 applyXxx / respondToXxx 同款，规避误报、和别的纯函数保持语义一致。
+export function applySyncSkill(
   state: SignalSquadState,
   nowMs: number,
 ): SignalSquadState {

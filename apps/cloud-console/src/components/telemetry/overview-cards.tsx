@@ -14,16 +14,16 @@ export function TelemetryOverviewCards({ data }: { data: TelemetryOverviewRespon
   ];
 
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {cards.map((c) => (
         <li
           key={c.label}
-          className="rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-4 py-4 shadow-sm"
+          className="rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-5 shadow-sm"
         >
           <div className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">
             {c.label}
           </div>
-          <div className="mt-1.5 text-2xl font-bold text-(--text-primary)">
+          <div className="mt-2 text-3xl font-bold text-(--text-primary)">
             {c.value}
           </div>
         </li>

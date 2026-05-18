@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
@@ -15,7 +15,9 @@ import {
   Star,
   Trash2,
   UserRound,
+  Volume2,
 } from "lucide-react";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
 
@@ -32,6 +34,8 @@ type GroupMessageContextMenuProps = {
   reminderLabel?: string;
   onCopyText: () => void;
   onCopySender?: () => void;
+  onSpeakAloud?: () => void;
+  speakAloudLabel?: string;
   onToggleFavorite?: () => void;
   favoriteLabel?: string;
   onAddToStickers?: () => void;
@@ -48,6 +52,12 @@ type GroupMessageContextMenuProps = {
 
 const MENU_WIDTH = 196;
 const VIEWPORT_PADDING = 12;
+// MenuDivider 实际渲染高度（my-1 上下 4px + border-t 1px ≈ 9px）。
+// 不算 divider 时，靠近视口底部右键群消息最多裁掉下面 2 行可见动作
+// （撤回/删除最常被裁，因为它们在最底端），用户被迫挪到屏幕中部
+// 再右键。和姊妹 desktop-conversation-context-menu R—（MENU_DIVIDER_HEIGHT）
+// 同款修法。
+const MENU_DIVIDER_HEIGHT = 9;
 
 export function GroupMessageContextMenu({
   x,
@@ -62,6 +72,8 @@ export function GroupMessageContextMenu({
   reminderLabel = t(msg`提醒`),
   onCopyText,
   onCopySender,
+  onSpeakAloud,
+  speakAloudLabel = t(msg`朗读`),
   onToggleFavorite,
   favoriteLabel = t(msg`收藏`),
   onAddToStickers,
@@ -87,13 +99,32 @@ export function GroupMessageContextMenu({
     Number(Boolean(onMultiSelect)) +
     Number(Boolean(onSetReminder)) +
     Number(Boolean(onCopySender)) +
+    Number(Boolean(onSpeakAloud)) +
     Number(Boolean(onToggleFavorite)) +
     Number(Boolean(onAddToStickers)) +
     Number(Boolean(onOpenAttachment)) +
     Number(Boolean(onSaveAttachment)) +
     Number(Boolean(onRecall)) +
     Number(Boolean(onDelete));
-  const menuHeight = actionCount * 42 + 16;
+  // 和 JSX 里 2 处 MenuDivider 的渲染条件保持一致：
+  //   1) onReply || onQuoteSelection || onForward || onMultiSelect 后 1 条
+  //   2) onSetReminder || onToggleFavorite || onAddToStickers || onOpenAttachment || onSaveAttachment 后 1 条
+  // 漏掉这两条 divider，靠近视口底部右键消息时 top 计算把菜单顶得太低，撤回/
+  // 删除会被裁出可视区，用户得把鼠标挪到屏幕中部再右键。
+  const dividerCount =
+    Number(
+      Boolean(onReply || onQuoteSelection || onForward || onMultiSelect),
+    ) +
+    Number(
+      Boolean(
+        onSetReminder ||
+          onToggleFavorite ||
+          onAddToStickers ||
+          onOpenAttachment ||
+          onSaveAttachment,
+      ),
+    );
+  const menuHeight = actionCount * 42 + dividerCount * MENU_DIVIDER_HEIGHT + 16;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
   const viewportHeight =
@@ -107,6 +138,38 @@ export function GroupMessageContextMenu({
     Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
   );
 
+  // 走查新一轮 R1：长按消息冒出的这个上下文菜单是用 `contextMenuState ? <Menu .../>
+  // : null` 条件挂载的（chat-message-list 内）——挂上后没注册 Android 硬件 Back
+  // 拦截。Android 用户长按消息 → 菜单弹出 → 按 BACK 不是关菜单而是触发 webview
+  // history.back 把人从群聊页弹回 chat-list；菜单 backdrop 同时被销毁，看着就
+  // 是"按一次返回直接被弹出聊天页"。和 mobile-mention-picker-sheet /
+  // mobile-message-action-sheet / message-quote-selection-sheet 同口径，挂载
+  // 期间拦 BACK 改派给 onClose。
+  useEffect(() => {
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [onClose]);
+
+  // 走查 R7：和姊妹 sheet（mobile-message-action-sheet R2 等）同款 ESC 兜底
+  // —— 桌面/平板/外接键盘右键消息弹的 context menu 上拍 ESC 没反应，只能点
+  // backdrop 才能关。本菜单同时挂在桌面 right-click（chat-message-list 桌面
+  // 分支）和移动长按路径上，桌面侧用户体感差异最大。defaultPrevented 时让位。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50"
@@ -119,7 +182,13 @@ export function GroupMessageContextMenu({
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
+      {/* 走查 R6：右键消息弹的 context menu，盲人屏幕阅读器原本只听到一串
+          按钮 label（「回复」「转发」「撤回」等）浮空，没有上下文。和姊妹
+          desktop-conversation-context-menu 同款 a11y 修法，补 role="menu"
+          + aria-label 让 SR 知道这是个消息菜单。 */}
       <div
+        role="menu"
+        aria-label={t(msg`消息操作菜单`)}
         style={{ left, top }}
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white py-1.5 shadow-[var(--shadow-overlay)]"
         onPointerDown={(event) => event.stopPropagation()}
@@ -162,6 +231,13 @@ export function GroupMessageContextMenu({
             label={t(msg`复制发送者`)}
             icon={<UserRound size={15} />}
             onClick={onCopySender}
+          />
+        ) : null}
+        {onSpeakAloud ? (
+          <ContextMenuButton
+            label={speakAloudLabel}
+            icon={<Volume2 size={15} />}
+            onClick={onSpeakAloud}
           />
         ) : null}
         {onReply || onQuoteSelection || onForward || onMultiSelect ? (

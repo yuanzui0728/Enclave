@@ -1,20 +1,24 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { CharactersService } from '../characters/characters.service';
 import { SystemConfigService } from '../config/config.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
+import { FavoriteEntity } from './favorite.entity';
+import { FavoriteNoteEntity } from './favorite-note.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import type { MessageAttachment } from './chat.types';
 import { MessageEntity } from './message.entity';
 import { describeAttachmentForDisplay } from './attachment-semantic-text';
+import { FriendRemarkResolver } from '../social/friend-remark-resolver.service';
 
 export interface FavoriteRecord {
   id: string;
@@ -103,10 +107,16 @@ const FAVORITE_NOTE_SOURCE_ID_PREFIX = 'favorite-note-';
 const MAX_FAVORITES = 500;
 const MAX_FAVORITE_NOTES = 200;
 const MAX_FAVORITE_NOTE_TAGS = 8;
+// 走查 R1 抓到没人卡 contentHtml 大小，写 1MB 也照样存。SQLite 单 TEXT 默认上限
+// 1GB，不挡的话堆 200 条 1MB 笔记 = 200MB DB，肉眼难发现。512KB 给富文本 +
+// 内嵌 base64 小图留足空间，超出就 400。
+const MAX_FAVORITE_NOTE_HTML_BYTES = 512 * 1024;
 const chatReplyPrefixPattern = /^\[\[chat_reply:([^\]]+)\]\]\n?/;
 
 @Injectable()
-export class FavoritesService {
+export class FavoritesService implements OnModuleInit {
+  private readonly logger = new Logger(FavoritesService.name);
+
   constructor(
     @InjectRepository(ConversationEntity)
     private readonly conversationRepo: Repository<ConversationEntity>,
@@ -118,10 +128,169 @@ export class FavoritesService {
     private readonly groupMemberRepo: Repository<GroupMemberEntity>,
     @InjectRepository(GroupMessageEntity)
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
+    @InjectRepository(FavoriteEntity)
+    private readonly favoriteRepo: Repository<FavoriteEntity>,
+    @InjectRepository(FavoriteNoteEntity)
+    private readonly favoriteNoteRepo: Repository<FavoriteNoteEntity>,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly systemConfigService: SystemConfigService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly remarkResolver: FriendRemarkResolver,
+    private readonly characters: CharactersService,
   ) {}
+
+  async onModuleInit() {
+    // 把旧版 system_config 里的 JSON blob 一次性搬到行级表里。幂等：迁移完成后
+    // 旧 key 写入会被清空，下次启动看到 raw=null 直接跳过。
+    await this.migrateFavoritesFromConfig();
+    await this.migrateFavoriteNotesFromConfig();
+    // 老版本 buildConversationMessageFavorite 没顺着 senderId 拉头像，存的
+    // 直聊消息收藏 avatarSrc 全是 null。一次性补一下，避免桌面收藏卡都显示成
+    // 名字占位渐变。
+    await this.backfillDirectMessageFavoriteAvatars();
+  }
+
+  private async backfillDirectMessageFavoriteAvatars(): Promise<void> {
+    try {
+      const rows = await this.favoriteRepo.find({
+        where: { category: 'messages' },
+      });
+      const missing = rows.filter(
+        (row) => !row.avatarSrc && row.to.startsWith('/chat/'),
+      );
+      if (!missing.length) return;
+
+      const avatarCache = new Map<string, string | undefined>();
+      const resolveAvatarForConversation = async (
+        conversationId: string,
+      ): Promise<string | undefined> => {
+        if (avatarCache.has(conversationId)) {
+          return avatarCache.get(conversationId);
+        }
+        const conversation = await this.conversationRepo.findOneBy({
+          id: conversationId,
+        });
+        const characterId = conversation?.participants?.[0];
+        const avatar = await this.resolveCharacterAvatar(characterId);
+        avatarCache.set(conversationId, avatar);
+        return avatar;
+      };
+
+      let patched = 0;
+      for (const row of missing) {
+        // to 格式: /chat/<conversationId>#chat-message-<messageId>
+        const match = row.to.match(/^\/chat\/([^#]+)/);
+        const conversationId = match?.[1]?.trim();
+        if (!conversationId) continue;
+        const avatar = await resolveAvatarForConversation(conversationId);
+        if (!avatar) continue;
+        await this.favoriteRepo.update(
+          { sourceId: row.sourceId },
+          { avatarSrc: avatar },
+        );
+        patched += 1;
+      }
+      if (patched > 0) {
+        this.logger.log(
+          `backfilled avatarSrc on ${patched} direct-message favorites`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `backfillDirectMessageFavoriteAvatars failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async migrateFavoritesFromConfig(): Promise<void> {
+    try {
+      const raw = await this.systemConfigService.getConfig(
+        FAVORITES_CONFIG_KEY,
+      );
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        await this.systemConfigService.setConfig(FAVORITES_CONFIG_KEY, '');
+        return;
+      }
+      const records = parsed.filter(isFavoriteRecord) as FavoriteRecord[];
+      for (const record of records) {
+        await this.favoriteRepo.upsert(
+          {
+            sourceId: record.sourceId,
+            recordId: record.id,
+            category: record.category,
+            title: record.title,
+            description: record.description,
+            meta: record.meta,
+            to: record.to,
+            badge: record.badge,
+            avatarName: record.avatarName ?? null,
+            avatarSrc: record.avatarSrc ?? null,
+            collectedAt: record.collectedAt,
+          },
+          ['sourceId'],
+        );
+      }
+      // 清空旧 key，避免下次启动重复迁移；用空字符串而非 delete，因为
+      // SystemConfigService 没有 delete 方法。
+      await this.systemConfigService.setConfig(FAVORITES_CONFIG_KEY, '');
+      this.logger.log(
+        `migrated ${records.length} favorites from system_config to chat_favorites`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `migrateFavoritesFromConfig failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async migrateFavoriteNotesFromConfig(): Promise<void> {
+    try {
+      const raw = await this.systemConfigService.getConfig(
+        FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
+      );
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        await this.systemConfigService.setConfig(
+          FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
+          '',
+        );
+        return;
+      }
+      const notes = parsed
+        .filter(isFavoriteNoteDocument)
+        .map((item) => normalizeFavoriteNoteDocument(item));
+      for (const note of notes) {
+        await this.favoriteNoteRepo.upsert(
+          {
+            id: note.id,
+            title: note.title,
+            excerpt: note.excerpt,
+            contentHtml: note.contentHtml,
+            contentText: note.contentText,
+            tags: note.tags,
+            assets: note.assets,
+            createdAt: note.createdAt,
+            updatedAt: note.updatedAt,
+          },
+          ['id'],
+        );
+      }
+      await this.systemConfigService.setConfig(
+        FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
+        '',
+      );
+      this.logger.log(
+        `migrated ${notes.length} favorite notes from system_config to chat_favorite_notes`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `migrateFavoriteNotesFromConfig failed: ${(error as Error).message}`,
+      );
+    }
+  }
 
   async listFavorites(): Promise<FavoriteRecord[]> {
     const [favorites, notes] = await Promise.all([
@@ -140,7 +309,16 @@ export class FavoritesService {
   async createMessageFavorite(
     input: CreateMessageFavoriteInput,
   ): Promise<FavoriteRecord> {
-    if (!input.threadId.trim() || !input.messageId.trim()) {
+    // 之前空 body 直接走 input.threadId.trim() → "Cannot read properties of
+    // undefined (reading 'trim')" 弹 500。改用可选链 + 字符串守卫，把所有缺字段
+    // 的请求都收敛成 CHAT_FAVORITE_PARAMS_REQUIRED 4xx。
+    if (
+      typeof input?.threadId !== 'string' ||
+      !input.threadId.trim() ||
+      typeof input?.messageId !== 'string' ||
+      !input.messageId.trim() ||
+      (input.threadType !== 'direct' && input.threadType !== 'group')
+    ) {
       throw new AppError('CHAT_FAVORITE_PARAMS_REQUIRED', {
         legacyMessage: '收藏消息缺少必要参数。',
       });
@@ -150,13 +328,23 @@ export class FavoritesService {
       input.threadType === 'group'
         ? await this.buildGroupMessageFavorite(input)
         : await this.buildConversationMessageFavorite(input);
-    const current = await this.readFavorites();
-    const nextFavorites = [
-      favorite,
-      ...current.filter((item) => item.sourceId !== favorite.sourceId),
-    ].slice(0, MAX_FAVORITES);
-
-    await this.writeFavorites(nextFavorites);
+    await this.favoriteRepo.upsert(
+      {
+        sourceId: favorite.sourceId,
+        recordId: favorite.id,
+        category: favorite.category,
+        title: favorite.title,
+        description: favorite.description,
+        meta: favorite.meta,
+        to: favorite.to,
+        badge: favorite.badge,
+        avatarName: favorite.avatarName ?? null,
+        avatarSrc: favorite.avatarSrc ?? null,
+        collectedAt: favorite.collectedAt,
+      },
+      ['sourceId'],
+    );
+    await this.trimFavoritesIfNeeded();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.captureFavoriteAction(owner.id, {
       sourceEntityType: 'favorite_message',
@@ -187,15 +375,7 @@ export class FavoritesService {
       return this.removeFavoriteNote(noteId);
     }
 
-    const current = await this.readFavorites();
-    const nextFavorites = current.filter(
-      (item) => item.sourceId !== normalizedSourceId,
-    );
-
-    if (nextFavorites.length !== current.length) {
-      await this.writeFavorites(nextFavorites);
-    }
-
+    await this.favoriteRepo.delete({ sourceId: normalizedSourceId });
     return { success: true as const };
   }
 
@@ -212,6 +392,18 @@ export class FavoritesService {
   async createFavoriteNote(
     input: UpsertFavoriteNoteInput,
   ): Promise<FavoriteNoteDocument> {
+    // sanitizeFavoriteNoteHtml 内部 value.trim() 在 contentHtml=undefined/null
+    // 时直接抛 → 500。POST {} / {"contentHtml":null} 这种都该 4xx，先在这里收一遍。
+    if (typeof input?.contentHtml !== 'string') {
+      throw new AppError('CHAT_NOTE_CONTENT_REQUIRED', {
+        legacyMessage: '笔记内容不能为空。',
+      });
+    }
+    if (Buffer.byteLength(input.contentHtml, 'utf8') > MAX_FAVORITE_NOTE_HTML_BYTES) {
+      throw new AppError('CHAT_NOTE_CONTENT_TOO_LARGE', {
+        legacyMessage: '笔记内容过大，请拆分后再保存。',
+      });
+    }
     const timestamp = new Date().toISOString();
     const note = buildFavoriteNoteDocument({
       id: randomUUID(),
@@ -219,12 +411,27 @@ export class FavoritesService {
       updatedAt: timestamp,
       input,
     });
-    const nextNotes = [note, ...(await this.readFavoriteNoteDocuments())].slice(
-      0,
-      MAX_FAVORITE_NOTES,
-    );
+    // FE handleSave 已经挡了空保存（contentText.trim() && assets.length 都为
+    // 空 → 弹"先写点内容"），但直接调 API 还能塞 contentHtml="<p></p>" 的
+    // 空笔记，污染 chat_favorite_notes。跟 FE 同标准：正文或附件至少要有一个。
+    if (!isFavoriteNoteSubstantive(note)) {
+      throw new AppError('CHAT_NOTE_CONTENT_REQUIRED', {
+        legacyMessage: '笔记内容不能为空。',
+      });
+    }
+    await this.favoriteNoteRepo.insert({
+      id: note.id,
+      title: note.title,
+      excerpt: note.excerpt,
+      contentHtml: note.contentHtml,
+      contentText: note.contentText,
+      tags: note.tags,
+      assets: note.assets,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+    });
+    await this.trimFavoriteNotesIfNeeded();
 
-    await this.writeFavoriteNoteDocuments(nextNotes);
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.captureFavoriteAction(owner.id, {
       sourceEntityType: 'favorite_note',
@@ -252,6 +459,17 @@ export class FavoritesService {
         legacyMessage: '笔记标识不能为空。',
       });
     }
+    // 跟 createFavoriteNote 对齐：contentHtml 缺字段 → 4xx 而不是 500。
+    if (typeof input?.contentHtml !== 'string') {
+      throw new AppError('CHAT_NOTE_CONTENT_REQUIRED', {
+        legacyMessage: '笔记内容不能为空。',
+      });
+    }
+    if (Buffer.byteLength(input.contentHtml, 'utf8') > MAX_FAVORITE_NOTE_HTML_BYTES) {
+      throw new AppError('CHAT_NOTE_CONTENT_TOO_LARGE', {
+        legacyMessage: '笔记内容过大，请拆分后再保存。',
+      });
+    }
 
     const existing = await this.getFavoriteNoteOrThrow(normalizedId);
     const nextNote = buildFavoriteNoteDocument({
@@ -260,12 +478,24 @@ export class FavoritesService {
       updatedAt: new Date().toISOString(),
       input,
     });
-    const nextNotes = (await this.readFavoriteNoteDocuments())
-      .map((note) => (note.id === normalizedId ? nextNote : note))
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-      .slice(0, MAX_FAVORITE_NOTES);
-
-    await this.writeFavoriteNoteDocuments(nextNotes);
+    // 跟 createFavoriteNote 对齐：用 update 把整条笔记清空也算"空笔记"，拒收。
+    if (!isFavoriteNoteSubstantive(nextNote)) {
+      throw new AppError('CHAT_NOTE_CONTENT_REQUIRED', {
+        legacyMessage: '笔记内容不能为空。',
+      });
+    }
+    await this.favoriteNoteRepo.update(
+      { id: normalizedId },
+      {
+        title: nextNote.title,
+        excerpt: nextNote.excerpt,
+        contentHtml: nextNote.contentHtml,
+        contentText: nextNote.contentText,
+        tags: nextNote.tags,
+        assets: nextNote.assets,
+        updatedAt: nextNote.updatedAt,
+      },
+    );
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.captureFavoriteAction(owner.id, {
       sourceEntityType: 'favorite_note',
@@ -291,13 +521,14 @@ export class FavoritesService {
       });
     }
 
-    const current = await this.readFavoriteNoteDocuments();
-    const removedNote =
-      current.find((note) => note.id === normalizedId) ?? null;
-    const nextNotes = current.filter((note) => note.id !== normalizedId);
-
-    if (nextNotes.length !== current.length) {
-      await this.writeFavoriteNoteDocuments(nextNotes);
+    const removedRow = await this.favoriteNoteRepo.findOneBy({
+      id: normalizedId,
+    });
+    const removedNote = removedRow
+      ? this.rowToFavoriteNoteDocument(removedRow)
+      : null;
+    if (removedNote) {
+      await this.favoriteNoteRepo.delete({ id: normalizedId });
     }
 
     if (removedNote) {
@@ -348,13 +579,26 @@ export class FavoritesService {
       });
     }
 
+    const remarkMap = await this.remarkResolver.getOwnerRemarkMap(owner.id);
+    // 直聊里 messages 表没有 senderAvatar 列（不像 group_messages 有），
+    // 顺着 senderId 去 characters 拉一下，避免收藏卡显示成名字占位渐变。
+    const senderAvatar =
+      message.senderType === 'character'
+        ? await this.resolveCharacterAvatar(message.senderId)
+        : undefined;
     return this.buildFavoriteRecord({
       badge: '聊天消息',
       threadPath: `/chat/${conversation.id}#chat-message-${message.id}`,
       snapshot: {
         id: message.id,
         senderType: message.senderType as 'user' | 'character' | 'system',
-        senderName: message.senderName,
+        senderName: this.remarkResolver.applyCharacterRemark(
+          message.senderType,
+          message.senderId,
+          message.senderName,
+          remarkMap,
+        ),
+        senderAvatar,
         text: message.text,
         type: message.type as FavoriteMessageSnapshot['type'],
         attachment: this.parseAttachment(
@@ -365,6 +609,13 @@ export class FavoritesService {
       },
       emptySenderLabel: '对方',
     });
+  }
+
+  private async resolveCharacterAvatar(characterId?: string | null) {
+    const normalized = characterId?.trim();
+    if (!normalized) return undefined;
+    const character = await this.characters.findById(normalized);
+    return character?.avatar?.trim() || undefined;
   }
 
   private async buildGroupMessageFavorite(
@@ -407,13 +658,19 @@ export class FavoritesService {
       });
     }
 
+    const remarkMap = await this.remarkResolver.getOwnerRemarkMap(owner.id);
     return this.buildFavoriteRecord({
       badge: '群聊消息',
       threadPath: `/group/${group.id}#chat-message-${message.id}`,
       snapshot: {
         id: message.id,
         senderType: message.senderType as 'user' | 'character' | 'system',
-        senderName: message.senderName,
+        senderName: this.remarkResolver.applyCharacterRemark(
+          message.senderType,
+          message.senderId,
+          message.senderName,
+          remarkMap,
+        ),
         senderAvatar: message.senderAvatar ?? undefined,
         text: message.text,
         type: message.type as FavoriteMessageSnapshot['type'],
@@ -527,11 +784,8 @@ export class FavoritesService {
       });
     }
 
-    const note = (await this.readFavoriteNoteDocuments()).find(
-      (item) => item.id === normalizedId,
-    );
-
-    if (!note) {
+    const row = await this.favoriteNoteRepo.findOneBy({ id: normalizedId });
+    if (!row) {
       throw new AppError('CHAT_NOTE_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
         params: { noteId: normalizedId },
@@ -539,68 +793,91 @@ export class FavoritesService {
       });
     }
 
-    return note;
+    return this.rowToFavoriteNoteDocument(row);
   }
 
   private async readFavorites(): Promise<FavoriteRecord[]> {
-    const raw = await this.systemConfigService.getConfig(FAVORITES_CONFIG_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as FavoriteRecord[];
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed
-        .filter(isFavoriteRecord)
-        .sort((left, right) =>
-          right.collectedAt.localeCompare(left.collectedAt),
-        )
-        .slice(0, MAX_FAVORITES);
-    } catch {
-      return [];
-    }
-  }
-
-  private async writeFavorites(favorites: FavoriteRecord[]) {
-    await this.systemConfigService.setConfig(
-      FAVORITES_CONFIG_KEY,
-      JSON.stringify(favorites),
-    );
+    const rows = await this.favoriteRepo.find({
+      order: { collectedAt: 'DESC' },
+      take: MAX_FAVORITES,
+    });
+    return rows.map((row) => this.rowToFavoriteRecord(row));
   }
 
   private async readFavoriteNoteDocuments(): Promise<FavoriteNoteDocument[]> {
-    const raw = await this.systemConfigService.getConfig(
-      FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
-    );
-    if (!raw) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as FavoriteNoteDocument[];
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed
-        .filter(isFavoriteNoteDocument)
-        .map((item) => normalizeFavoriteNoteDocument(item))
-        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-        .slice(0, MAX_FAVORITE_NOTES);
-    } catch {
-      return [];
-    }
+    const rows = await this.favoriteNoteRepo.find({
+      order: { updatedAt: 'DESC' },
+      take: MAX_FAVORITE_NOTES,
+    });
+    return rows.map((row) => this.rowToFavoriteNoteDocument(row));
   }
 
-  private async writeFavoriteNoteDocuments(notes: FavoriteNoteDocument[]) {
-    await this.systemConfigService.setConfig(
-      FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
-      JSON.stringify(notes),
-    );
+  private rowToFavoriteRecord(row: FavoriteEntity): FavoriteRecord {
+    return {
+      id: row.recordId,
+      sourceId: row.sourceId,
+      category: row.category as FavoriteRecord['category'],
+      title: row.title,
+      description: row.description,
+      meta: row.meta,
+      to: row.to,
+      badge: row.badge,
+      avatarName: row.avatarName ?? undefined,
+      avatarSrc: row.avatarSrc ?? undefined,
+      collectedAt: row.collectedAt,
+    };
+  }
+
+  private rowToFavoriteNoteDocument(
+    row: FavoriteNoteEntity,
+  ): FavoriteNoteDocument {
+    // 跑一遍 normalize 以兜底旧数据里可能不规范的 tag/asset 形状
+    return normalizeFavoriteNoteDocument({
+      id: row.id,
+      title: row.title,
+      excerpt: row.excerpt,
+      contentHtml: row.contentHtml,
+      contentText: row.contentText,
+      tags: Array.isArray(row.tags) ? row.tags : [],
+      assets: Array.isArray(row.assets) ? (row.assets as FavoriteNoteAsset[]) : [],
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
+  }
+
+  private async trimFavoritesIfNeeded(): Promise<void> {
+    const total = await this.favoriteRepo.count();
+    if (total <= MAX_FAVORITES) return;
+    // SQLite 不支持 DELETE … ORDER BY … LIMIT，先取要保留的 sourceId，再 NOT IN
+    const keep = await this.favoriteRepo.find({
+      select: ['sourceId'],
+      order: { collectedAt: 'DESC' },
+      take: MAX_FAVORITES,
+    });
+    const keepIds = keep.map((row) => row.sourceId);
+    if (keepIds.length === 0) return;
+    await this.favoriteRepo
+      .createQueryBuilder()
+      .delete()
+      .where('sourceId NOT IN (:...keepIds)', { keepIds })
+      .execute();
+  }
+
+  private async trimFavoriteNotesIfNeeded(): Promise<void> {
+    const total = await this.favoriteNoteRepo.count();
+    if (total <= MAX_FAVORITE_NOTES) return;
+    const keep = await this.favoriteNoteRepo.find({
+      select: ['id'],
+      order: { updatedAt: 'DESC' },
+      take: MAX_FAVORITE_NOTES,
+    });
+    const keepIds = keep.map((row) => row.id);
+    if (keepIds.length === 0) return;
+    await this.favoriteNoteRepo
+      .createQueryBuilder()
+      .delete()
+      .where('id NOT IN (:...keepIds)', { keepIds })
+      .execute();
   }
 
   private async captureFavoriteAction(
@@ -720,17 +997,43 @@ function normalizeFavoriteNoteDocument(
   });
 }
 
+// 收藏笔记的 contentHtml 在 chat-message-list 里走 dangerouslySetInnerHTML，
+// 必须挡住 javascript:/vbscript:/data:text 等危险协议，再连 <iframe>/<object>/
+// <svg> 等 XSS 通道一并去掉。走查 R1 抓到 <a href="javascript:..."> 没被洗，
+// 在 message 里点开会执行。
+const DANGEROUS_URL_PROTOCOL =
+  /^\s*(?:javascript|vbscript|data:(?:text|application))/i;
+const DANGEROUS_HTML_TAGS =
+  /<\/?(?:iframe|object|embed|style|link|meta|form|input|base|svg|frame|frameset|applet)\b[^>]*>/gi;
+
 function sanitizeFavoriteNoteHtml(value: string) {
   const normalized = value.trim();
   if (!normalized) {
     return '';
   }
 
-  return normalized
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+  let html = normalized;
+  // <script>...</script>（兜底，DANGEROUS_HTML_TAGS 不覆盖闭合块内文本）
+  html = html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<\/?script\b[^>]*>/gi, '');
+  // 直接危险的标签
+  html = html.replace(DANGEROUS_HTML_TAGS, '');
+  // 三种引号形态的 on* 事件 attr
+  html = html.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
+  html = html.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
+  html = html.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+  // href/src/xlink:href 里的危险协议改成 # —— 三种引号形态分别匹配
+  html = html.replace(
+    /(\s(?:href|src|xlink:href)\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+    (match, attr, doubleQuoted, singleQuoted, unquoted) => {
+      const url = doubleQuoted ?? singleQuoted ?? unquoted ?? '';
+      if (DANGEROUS_URL_PROTOCOL.test(url)) {
+        return `${attr}"#"`;
+      }
+      return match;
+    },
+  );
+  return html;
 }
 
 function normalizeFavoriteNoteContentText(
@@ -773,6 +1076,11 @@ function buildFavoriteNotePresentation(contentText: string) {
   };
 }
 
+// 单个 tag 最长。走查 R3 抓到 tags=['x'*1000] 也能进库，UI 上一个 tag 撑爆
+// 整行。32 字符给 #中文长标签 + 英文短词都够用，超出截断不报错（跟 dedupe
+// 保持"宽松接受"的语义）。
+const MAX_FAVORITE_NOTE_TAG_CHARS = 32;
+
 function normalizeFavoriteNoteTags(value: string[] | undefined) {
   if (!Array.isArray(value)) {
     return [];
@@ -780,7 +1088,7 @@ function normalizeFavoriteNoteTags(value: string[] | undefined) {
 
   const seen = new Set<string>();
   return value
-    .map((tag) => tag.trim())
+    .map((tag) => tag.trim().slice(0, MAX_FAVORITE_NOTE_TAG_CHARS))
     .filter(Boolean)
     .filter((tag) => {
       if (seen.has(tag)) {
@@ -804,22 +1112,41 @@ function normalizeFavoriteNoteAssets(value: FavoriteNoteAsset[] | undefined) {
       id: asset.id,
       kind: asset.kind,
       fileName: asset.fileName.trim(),
-      url: asset.url.trim(),
+      // 走查 R1 抓到 asset.url 接受 "javascript:..."。笔记发到聊天里
+      // chat-message-list 把 asset.url 直接喂 <a href> / <img src>，对方点
+      // 链接就 XSS。这里凡命中危险协议整条 asset 丢掉（下方 fileName/url
+      // 截断兜底），合法 http(s)/相对路径不受影响。
+      url: sanitizeFavoriteAssetUrl(asset.url.trim()),
       mimeType: asset.mimeType?.trim() || undefined,
-      sizeBytes:
-        typeof asset.sizeBytes === 'number' && Number.isFinite(asset.sizeBytes)
-          ? asset.sizeBytes
-          : undefined,
-      width:
-        typeof asset.width === 'number' && Number.isFinite(asset.width)
-          ? asset.width
-          : undefined,
-      height:
-        typeof asset.height === 'number' && Number.isFinite(asset.height)
-          ? asset.height
-          : undefined,
+      // 之前只挡 NaN/Infinity，不挡负数和 1e308。负数当尺寸 + 巨大数都没意义，
+      // 一律收敛成 undefined，避免 UI 端再 max-h-{height}px 渲染出问题。
+      sizeBytes: clampNonNegativeNumber(asset.sizeBytes),
+      width: clampNonNegativeNumber(asset.width),
+      height: clampNonNegativeNumber(asset.height),
     }))
     .filter((asset) => asset.fileName && asset.url);
+}
+
+function sanitizeFavoriteAssetUrl(value: string) {
+  if (DANGEROUS_URL_PROTOCOL.test(value)) {
+    return '';
+  }
+  return value;
+}
+
+// asset 的 sizeBytes/width/height 在 normalizeFavoriteNoteAssets 里之前只挡
+// NaN/Infinity。负数 + 1e308 这种合法 Number.isFinite() 但语义没意义，全部
+// 收敛成 undefined。安全上限按 Number.MAX_SAFE_INTEGER 兜底防止溢出。
+function clampNonNegativeNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  if (value < 0) return undefined;
+  if (value > Number.MAX_SAFE_INTEGER) return undefined;
+  return value;
+}
+
+// 跟 FE handleSave 的 hasContent 同标准：只看正文或附件，标签单独不能成笔记。
+function isFavoriteNoteSubstantive(note: FavoriteNoteDocument): boolean {
+  return Boolean(note.contentText.trim()) || note.assets.length > 0;
 }
 
 function isFavoriteRecord(value: unknown): value is FavoriteRecord {

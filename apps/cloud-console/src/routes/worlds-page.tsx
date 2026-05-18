@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type {
   CloudInstancePowerState,
+  CloudWorldAdminBootstrap,
   CloudWorldAttentionItem,
   CloudWorldInstanceFleetItem,
 } from "@yinjie/contracts";
@@ -17,6 +18,7 @@ import {
 } from "../components/cloud-admin-error-block";
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
 import { useConsoleNotice } from "../components/console-notice";
+import { Pager } from "../components/pager";
 import { WorldLifecycleActionButtons } from "../components/world-lifecycle-action-buttons";
 import { copyTextToClipboard } from "../lib/clipboard";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
@@ -62,37 +64,6 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-function getAttentionTone(severity: CloudWorldAttentionItem["severity"]) {
-  switch (severity) {
-    case "critical":
-      return "border-rose-300/60 bg-rose-50 text-rose-700";
-    case "warning":
-      return "border-amber-300/50 bg-amber-50 text-amber-700";
-    case "info":
-    default:
-      return "border-sky-300/50 bg-sky-50 text-sky-700";
-  }
-}
-
-function getAttentionLabel(item: CloudWorldAttentionItem) {
-  switch (item.reason) {
-    case "failed_world":
-      return translateCloudConsoleTextForActiveLocale("Failed");
-    case "provider_error":
-      return translateCloudConsoleTextForActiveLocale("Provider error");
-    case "deployment_drift":
-      return translateCloudConsoleTextForActiveLocale("Runtime drift");
-    case "sleep_drift":
-      return translateCloudConsoleTextForActiveLocale("Sleep drift");
-    case "heartbeat_stale":
-      return translateCloudConsoleTextForActiveLocale("Heartbeat stale");
-    case "recovery_queued":
-      return translateCloudConsoleTextForActiveLocale("Recovery queued");
-    default:
-      return translateCloudConsoleTextForActiveLocale("Attention");
-  }
-}
-
 function getHealthBucket(status?: string | null): HealthFilter {
   const normalized = status?.trim().toLowerCase();
   if (!normalized || normalized === "unknown") {
@@ -102,17 +73,6 @@ function getHealthBucket(status?: string | null): HealthFilter {
     return "healthy";
   }
   return "unhealthy";
-}
-
-function getHealthTone(status?: string | null) {
-  const bucket = getHealthBucket(status);
-  if (bucket === "healthy") {
-    return "border-emerald-300/50 bg-emerald-50 text-emerald-700";
-  }
-  if (bucket === "unhealthy") {
-    return "border-amber-300/50 bg-amber-50 text-amber-700";
-  }
-  return "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]";
 }
 
 function formatPowerStateLabel(value: CloudInstancePowerState) {
@@ -204,7 +164,6 @@ function matchesInstanceFleetQuery(
   item: CloudWorldInstanceFleetItem,
   query: string,
   providerLabelByKey: Map<string, string>,
-  attention: CloudWorldAttentionItem | null | undefined,
 ) {
   return includesNormalizedQuery(
     [
@@ -213,24 +172,15 @@ function matchesInstanceFleetQuery(
       item.world.phone,
       item.world.email,
       item.world.ownerDisplayName,
-      item.world.status,
-      item.world.healthStatus,
-      item.world.apiBaseUrl,
-      item.world.adminUrl,
       resolveProviderKey(item),
       resolveProviderLabel(item, providerLabelByKey),
       item.instance?.providerInstanceId,
-      item.instance?.providerVolumeId,
-      item.instance?.providerSnapshotId,
       item.instance?.name,
       item.instance?.region,
       item.instance?.zone,
       item.instance?.privateIp,
       item.instance?.publicIp,
       item.instance?.powerState,
-      attention?.message,
-      attention?.reason,
-      attention?.severity,
     ],
     query,
   );
@@ -242,6 +192,29 @@ type QuickActionConfirmState = {
   action: ConfirmableWorldLifecycleAction;
 };
 
+type WorldsSortField = "lastAccessedAt" | "lastUserMessageAt";
+type WorldsSortDirection = "asc" | "desc";
+type WorldsSortState = {
+  field: WorldsSortField;
+  direction: WorldsSortDirection;
+} | null;
+
+function compareNullableDateString(
+  left: string | null | undefined,
+  right: string | null | undefined,
+  direction: WorldsSortDirection,
+): number {
+  // 始终把 null/undefined 排在最后，避免"未登录过"的世界混进顶部抢眼位置
+  const leftTime = left ? Date.parse(left) : Number.NaN;
+  const rightTime = right ? Date.parse(right) : Number.NaN;
+  const leftMissing = Number.isNaN(leftTime);
+  const rightMissing = Number.isNaN(rightTime);
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  return direction === "asc" ? leftTime - rightTime : rightTime - leftTime;
+}
+
 export function WorldsPage() {
   const t = useCloudConsoleText();
   const { locale } = useAppLocale();
@@ -251,6 +224,19 @@ export function WorldsPage() {
   const { showNotice } = useConsoleNotice();
   const [confirmAction, setConfirmAction] =
     useState<QuickActionConfirmState | null>(null);
+  const [page, setPage] = useState(1);
+  const [sortState, setSortState] = useState<WorldsSortState>(null);
+  // 「进入后台」是按 worldId 跨行并发的：用户可以同时点开 A、B 两个 world 的
+  // admin。可 react-query useMutation 是单例 —— enterAdminMutation.variables/
+  // isPending 只跟得上最后一次 mutate()，先点的 A 在 B 触发后立刻丢失 pending
+  // UI，按钮重新可点 → 同帧双击 / 切换之间再点回 A 会让同一个 world 弹两个
+  // admin tab + 多打一次 /admin/cloud/worlds/:id/bootstrap。改用 Set 自己记
+  // per-world inflight，跟 quickActionMutation 共用的 isPending 全局锁是两套
+  // 互不冲突的反双击机制。
+  const [enterAdminInFlight, setEnterAdminInFlight] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const pageSize = 20;
   const statusFilter = filters.status;
   const providerFilter = filters.provider;
   const powerStateFilter = filters.powerState;
@@ -259,6 +245,10 @@ export function WorldsPage() {
   const queryFilter = filters.query;
 
   function updateFilters(next: Partial<WorldsRouteSearch>) {
+    // 任何 filter 变化都把页码拉回第 1 页，否则用户在第 5 页改筛选条件可能
+    // 落到不相关的子集深处；useEffect 里的 clamp 只在 totalPages 缩到当前页之
+    // 外时才会触发
+    setPage(1);
     void navigate({
       replace: true,
       search: (previous) => buildWorldsRouteSearch({ ...previous, ...next }),
@@ -274,9 +264,11 @@ export function WorldsPage() {
     const copied = await copyTextToClipboard(absolutePermalink);
 
     showNotice(
-      copied
-        ? "Worlds permalink copied."
-        : "Clipboard copy failed in this environment.",
+      t(
+        copied
+          ? "Worlds permalink copied."
+          : "Clipboard copy failed in this environment.",
+      ),
       copied ? "success" : "danger",
     );
   }
@@ -374,12 +366,7 @@ export function WorldsPage() {
         return false;
       }
 
-      return matchesInstanceFleetQuery(
-        item,
-        queryFilter,
-        providerLabelByKey,
-        attention,
-      );
+      return matchesInstanceFleetQuery(item, queryFilter, providerLabelByKey);
     });
   }, [
     attentionByWorldId,
@@ -404,6 +391,83 @@ export function WorldsPage() {
         .length,
     };
   }, [attentionByWorldId, filteredInstanceFleet]);
+
+  const sortedInstanceFleet = useMemo(() => {
+    if (!sortState) {
+      return filteredInstanceFleet;
+    }
+    const next = [...filteredInstanceFleet];
+    if (sortState.field === "lastAccessedAt") {
+      next.sort((left, right) =>
+        compareNullableDateString(
+          left.world.lastAccessedAt,
+          right.world.lastAccessedAt,
+          sortState.direction,
+        ),
+      );
+    } else if (sortState.field === "lastUserMessageAt") {
+      next.sort((left, right) =>
+        compareNullableDateString(
+          left.world.lastUserMessageAt,
+          right.world.lastUserMessageAt,
+          sortState.direction,
+        ),
+      );
+    }
+    return next;
+  }, [filteredInstanceFleet, sortState]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedInstanceFleet.length / pageSize),
+  );
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const pagedInstanceFleet = useMemo(
+    () =>
+      sortedInstanceFleet.slice(
+        (safePage - 1) * pageSize,
+        safePage * pageSize,
+      ),
+    [sortedInstanceFleet, safePage, pageSize],
+  );
+
+  function toggleSort(field: WorldsSortField) {
+    setPage(1);
+    setSortState((current) => {
+      if (!current || current.field !== field) {
+        return { field, direction: "desc" };
+      }
+      if (current.direction === "desc") {
+        return { field, direction: "asc" };
+      }
+      return null;
+    });
+  }
+
+  // 过滤条件变化导致总页数缩小到当前页之外时，把页码拉回最后一页，保持显示稳定
+  useEffect(() => {
+    if (page !== safePage) {
+      setPage(safePage);
+    }
+  }, [page, safePage]);
+
+  // permalink 可能带过时的 provider key（provider 被改名/删除，或用户手写错
+  // URL），下游 filter 直接相等比较会静默把全列表过滤为空。这里跟「全部 provider
+  // 注册表」(providersQuery) 对比，而不是和当前可见 instance 派生出的
+  // providerOptions 对比 —— 后者只反映「当前 statusFilter 下还有实例的 provider」，
+  // 当用户开着 status=creating + provider=local-process 但当下没有 creating 实例时，
+  // providerOptions 是空集，会把合法的 provider 选择当作脏数据一并清掉。
+  useEffect(() => {
+    if (providerFilter === "all") return;
+    if (!providersQuery.data) return;
+    const knownKeys = new Set<string>([
+      UNASSIGNED_PROVIDER_FILTER,
+      ...providersQuery.data.map((provider) => provider.key),
+    ]);
+    if (!knownKeys.has(providerFilter)) {
+      updateFilters({ provider: "all" });
+    }
+  }, [providerFilter, providersQuery.data]);
 
   const quickActionMutation = useMutation({
     mutationFn: (input: { worldId: string; action: WorldLifecycleAction }) =>
@@ -436,6 +500,89 @@ export function WorldsPage() {
       showCloudAdminErrorNotice(showNotice, error);
     },
   });
+
+  const enterAdminMutation = useMutation({
+    mutationFn: (worldId: string) =>
+      cloudAdminApi.getWorldAdminBootstrap(worldId),
+    onError: (error) => {
+      showCloudAdminErrorNotice(showNotice, error);
+    },
+  });
+
+  function buildAdminBootstrapUrl(bootstrap: CloudWorldAdminBootstrap): string {
+    const payload = JSON.stringify({
+      apiBaseUrl: bootstrap.apiBaseUrl,
+      adminSecret: bootstrap.adminSecret,
+      cloudWorldId: bootstrap.worldId,
+      cloudEmail: bootstrap.email ?? undefined,
+    });
+    // btoa 只认 Latin-1；payload 含中文/emoji（email 带中文标签等）会抛
+    // InvalidCharacterError。统一 UTF-8 bytes → base64url。
+    const utf8Bytes = new TextEncoder().encode(payload);
+    let binary = "";
+    for (const byte of utf8Bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    const encoded = window
+      .btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    return `${bootstrap.adminFrontendBaseUrl.replace(/\/+$/, "")}/#yinjie-bootstrap=${encoded}`;
+  }
+
+  function handleEnterAdminClick(worldId: string) {
+    if (typeof window === "undefined") {
+      return;
+    }
+    // 已经在为这个 world 拉 bootstrap：直接 noop。不靠 react-query 的全局
+    // isPending/variables —— 那个只跟得上最后一次 mutate，跨行点击就会丢锁。
+    if (enterAdminInFlight.has(worldId)) {
+      return;
+    }
+    setEnterAdminInFlight((prev) => {
+      const next = new Set(prev);
+      next.add(worldId);
+      return next;
+    });
+    // 同步在 click handler 里占住 about:blank，避免 fetch 异步 resolve 后
+    // user activation 窗口过期被 popup blocker 拦。OAuth 跳转走的也是这个套路。
+    // noopener 会丢掉 window 引用，没法 redirect，所以这里不加；admin 是我们
+    // 自家应用，opener 反向攻击面可控。
+    const placeholder = window.open("about:blank", "_blank");
+    enterAdminMutation.mutate(worldId, {
+      onSuccess: (bootstrap) => {
+        const url = buildAdminBootstrapUrl(bootstrap);
+        if (placeholder && !placeholder.closed) {
+          // replace 而不是赋 href，避免在新 tab 的历史里留下 about:blank 一栏，
+          // 操作员点"后退"就会回到空白页。
+          placeholder.location.replace(url);
+          return;
+        }
+        // placeholder 被关或一开始就被拦，最后再试一次正常 open
+        const retry = window.open(url, "_blank", "noopener,noreferrer");
+        if (!retry) {
+          showNotice(
+            t(
+              "Browser blocked the popup. Allow popups for this site and retry.",
+            ),
+            "danger",
+          );
+        }
+      },
+      onError: () => {
+        placeholder?.close();
+      },
+      onSettled: () => {
+        setEnterAdminInFlight((prev) => {
+          if (!prev.has(worldId)) return prev;
+          const next = new Set(prev);
+          next.delete(worldId);
+          return next;
+        });
+      },
+    });
+  }
   const activeConfirm = confirmAction
     ? createWorldActionConfirmationCopy(
         confirmAction.action,
@@ -453,8 +600,9 @@ export function WorldsPage() {
               {t("Managed worlds")}
             </div>
             <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-              Each phone owns exactly one world. New users provision a fresh
-              instance, while returning users wake their previous one.
+              {t(
+                "Each phone owns exactly one world. New users provision a fresh instance, while returning users wake their previous one.",
+              )}
             </div>
           </div>
 
@@ -494,7 +642,7 @@ export function WorldsPage() {
                 updateFilters({ query: event.target.value })
               }
               placeholder={t(
-                "world id, phone, email, name, provider, or endpoint",
+                "world id, phone, email, name, or provider",
               )}
               className="w-full rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)]"
             />
@@ -607,32 +755,61 @@ export function WorldsPage() {
           </div>
         ) : null}
 
+        {driftSummaryQuery.isError &&
+        driftSummaryQuery.error instanceof Error ? (
+          <div className="mt-4">
+            <CloudAdminErrorBlock error={driftSummaryQuery.error} />
+          </div>
+        ) : null}
+
         <div className="mt-5 overflow-x-auto rounded-2xl border border-[color:var(--border-faint)]">
-          <table className="min-w-[96rem] border-collapse text-left text-sm">
+          <table className="min-w-[64rem] border-collapse text-left text-sm">
             <thead className="bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]">
               <tr>
                 <th className="px-4 py-3">{t("World")}</th>
-                <th className="px-4 py-3">{t("Status")}</th>
-                <th className="px-4 py-3">{t("Provider")}</th>
-                <th className="px-4 py-3">{t("Instance")}</th>
                 <th className="px-4 py-3">{t("Power")}</th>
-                <th className="px-4 py-3">{t("Attention")}</th>
-                <th className="px-4 py-3">{t("Health")}</th>
-                <th className="px-4 py-3">{t("Access")}</th>
-                <th className="px-4 py-3">{t("Heartbeat")}</th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("lastAccessedAt")}
+                    className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
+                    aria-label={t("Sort by last login")}
+                  >
+                    <span>{t("Last login")}</span>
+                    <span aria-hidden="true" className="text-[10px]">
+                      {sortState?.field === "lastAccessedAt"
+                        ? sortState.direction === "desc"
+                          ? "▼"
+                          : "▲"
+                        : "↕"}
+                    </span>
+                  </button>
+                </th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("lastUserMessageAt")}
+                    className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
+                    aria-label={t("Sort by last user message")}
+                  >
+                    <span>{t("Last user message")}</span>
+                    <span aria-hidden="true" className="text-[10px]">
+                      {sortState?.field === "lastUserMessageAt"
+                        ? sortState.direction === "desc"
+                          ? "▼"
+                          : "▲"
+                        : "↕"}
+                    </span>
+                  </button>
+                </th>
+                <th className="px-4 py-3">{t("Membership registered")}</th>
+                <th className="px-4 py-3">{t("Membership expires")}</th>
                 <th className="px-4 py-3">{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredInstanceFleet.map((item) => {
-                const attention = attentionByWorldId.get(item.world.id) ?? null;
+              {pagedInstanceFleet.map((item) => {
                 const powerState = resolvePowerState(item);
-                const providerLabel = resolveProviderLabel(
-                  item,
-                  providerLabelByKey,
-                );
-                const lastHeartbeatAt =
-                  item.instance?.lastHeartbeatAt ?? item.world.lastHeartbeatAt;
 
                 return (
                   <tr
@@ -656,28 +833,6 @@ export function WorldsPage() {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-                      {item.world.status}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-[color:var(--text-primary)]">
-                        {providerLabel}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {resolveProviderKey(item) || "No provider key"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-[color:var(--text-primary)]">
-                        {item.instance?.name ?? "No instance attached"}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                        {item.instance?.publicIp ??
-                          item.instance?.privateIp ??
-                          item.instance?.providerInstanceId ??
-                          "No IP / provider instance id"}
-                      </div>
-                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getPowerStateTone(powerState)}`}
@@ -685,75 +840,70 @@ export function WorldsPage() {
                         {formatPowerStateLabel(powerState)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      {attention ? (
-                        <div className="space-y-1">
-                          <span
-                            className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getAttentionTone(attention.severity)}`}
-                          >
-                            {getAttentionLabel(attention)}
-                          </span>
-                          <div className="max-w-[16rem] text-xs text-[color:var(--text-secondary)]">
-                            {attention.message}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-[color:var(--text-secondary)]">
-                          {t("Healthy")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getHealthTone(item.world.healthStatus)}`}
-                      >
-                        {item.world.healthStatus ?? "unknown"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="max-w-[16rem] truncate text-[color:var(--text-secondary)]">
-                        API: {item.world.apiBaseUrl ?? t("Not set")}
-                      </div>
-                      <div className="mt-1 max-w-[16rem] truncate text-xs text-[color:var(--text-muted)]">
-                        Admin: {item.world.adminUrl ?? t("Not set")}
-                      </div>
+                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                      {formatDateTime(item.world.lastAccessedAt)}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      <div>{formatDateTime(lastHeartbeatAt)}</div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {t("Last interactive")}: {formatDateTime(item.world.lastInteractiveAt)}
-                      </div>
+                      {formatDateTime(item.world.lastUserMessageAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                      {formatDateTime(item.world.userCreatedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                      {formatDateTime(item.world.subscriptionExpiresAt)}
                     </td>
                     <td className="px-4 py-3">
-                      <WorldLifecycleActionButtons
-                        actions={listAllowedWorldActions(
-                          item.world.status,
-                          WORLDS_PAGE_ACTIONS,
-                        )}
-                        world={item.world}
-                        pendingAction={
-                          quickActionMutation.isPending &&
-                          quickActionMutation.variables?.worldId === item.world.id
-                            ? quickActionMutation.variables.action
-                            : null
-                        }
-                        disabled={quickActionMutation.isPending}
-                        onAction={(action) => {
-                          if (requiresWorldActionConfirmation(action)) {
-                            setConfirmAction({
+                      <div className="flex flex-col gap-2">
+                        <WorldLifecycleActionButtons
+                          actions={listAllowedWorldActions(
+                            item.world.status,
+                            WORLDS_PAGE_ACTIONS,
+                          )}
+                          world={item.world}
+                          pendingAction={
+                            quickActionMutation.isPending &&
+                            quickActionMutation.variables?.worldId === item.world.id
+                              ? quickActionMutation.variables.action
+                              : null
+                          }
+                          disabled={quickActionMutation.isPending}
+                          onAction={(action) => {
+                            if (requiresWorldActionConfirmation(action)) {
+                              setConfirmAction({
+                                worldId: item.world.id,
+                                worldName: item.world.name,
+                                action,
+                              });
+                              return;
+                            }
+
+                            quickActionMutation.mutate({
                               worldId: item.world.id,
-                              worldName: item.world.name,
                               action,
                             });
-                            return;
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={
+                            !item.world.apiBaseUrl ||
+                            enterAdminInFlight.has(item.world.id)
                           }
-
-                          quickActionMutation.mutate({
-                            worldId: item.world.id,
-                            action,
-                          });
-                        }}
-                      />
+                          title={
+                            !item.world.apiBaseUrl
+                              ? t(
+                                  "World is sleeping. Wake it up before entering admin.",
+                                )
+                              : undefined
+                          }
+                          onClick={() => handleEnterAdminClick(item.world.id)}
+                          className="self-start rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)] disabled:opacity-60"
+                        >
+                          {enterAdminInFlight.has(item.world.id)
+                            ? t("Opening admin…")
+                            : t("Enter admin")}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -779,6 +929,19 @@ export function WorldsPage() {
           !filteredInstanceFleet.length ? (
             <div className="p-4 text-sm text-[color:var(--text-muted)]">
               {t("No instance rows match the current filter set.")}
+            </div>
+          ) : null}
+
+          {filteredInstanceFleet.length > pageSize ? (
+            <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              <div>
+                {filteredInstanceFleet.length} {t("entries")}
+              </div>
+              <Pager
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
             </div>
           ) : null}
         </div>

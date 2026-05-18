@@ -162,7 +162,18 @@ export function useLocalChatMessageActionState() {
         return;
       }
 
-      setState(nextState);
+      // 用 updatedAt 当 cheap hash：buildWritableState 每次写都会刷一遍 ISO
+      // 串，没动过就一定相同。focus/visibility/storage/CHANGE_EVENT 回访时
+      // readLocalChatMessageActionState 每次都 JSON.parse 出一个新对象引用 —
+      // 不做这一层 bail-out，下游（chat-list / desktop workspace 整列会话卡
+      // 片 / use-message-reminders / search-index）每次 cmd-tab 回前台都跟
+      // 着 state 引用变白白重渲染一轮。
+      setState((current) => {
+        if (current.updatedAt === nextState.updatedAt) {
+          return current;
+        }
+        return nextState;
+      });
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -175,16 +186,34 @@ export function useLocalChatMessageActionState() {
     const handleSync = () => {
       void syncState();
     };
+    // 走查新一轮 R8：和 chat-room-page / group-chat-page / group-qr-page R1
+    // 同款 storage event 漏 gate 问题——本 hook 是被 chat-list-page /
+    // chat-message-list / use-message-reminders / desktop workspace / search-index
+    // 等 5+ 个 surface 同时挂着的全局 hook，原版 storage 监听对任何 OTHER tab
+    // 的 localStorage 写入（主题、草稿、last viewed page、收藏 fingerprint、
+    // 视频号关注等等）都触发 syncState → desktop 走 hydrateFromNative 拍 IPC、
+    // 移动端走 readLocalChatMessageActionState 全量 JSON.parse storage。下游
+    // 虽然有 updatedAt 兜底跳 setState，但 IPC + JSON.parse 是无谓硬开销，
+    // 同一份 storage 在活跃 multi-tab 用户那里每秒可能被打数十次。
+    // 用 STORAGE_KEY gate 一下：只在自己关心的 yinjie-chat-local-message-actions
+    // key 上才同步；老 Safari 的 localStorage.clear() (event.key=null) 仍按
+    // 全量同步对待，避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== STORAGE_KEY) {
+        return;
+      }
+      void syncState();
+    };
 
     window.addEventListener("focus", handleSync);
-    window.addEventListener("storage", handleSync);
+    window.addEventListener("storage", handleStorageSync);
     window.addEventListener(CHANGE_EVENT, handleSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleSync);
-      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("storage", handleStorageSync);
       window.removeEventListener(CHANGE_EVENT, handleSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
@@ -222,7 +251,21 @@ function writeState(
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // 走查新一轮 R4：本地隐藏/撤回/提醒状态被群聊 + 单聊的消息长按菜单
+  // 「删除」/「撤回」/「提醒」共用，hideLocalChatMessage / markLocalChat* /
+  // setChatMessageReminder 全部走这里。setItem 在配额满 / Safari iOS 隐私
+  // 模式都抛——React 17+ 合成事件 handler 抛错不会崩组件树但会冒到
+  // window.onerror 污染 telemetry，更糟糕的是 dispatchEvent(CHANGE_EVENT)
+  // 永远不会发出，订阅 CHANGE_EVENT 的全部 useLocalChatMessageActionState
+  // 都拿不到本次更新，UI 上 "删除" / "撤回" 操作看着没反应。
+  // 同 R2/R3 修法：setItem 裹 try/catch 静默降级；CHANGE_EVENT 仍然 dispatch
+  // 让 hook 订阅方至少能读到最新 in-memory state（同帧内被 readState 读到
+  // 上一个 localStorage 落库值——下次写成功再覆盖即可）。
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // 配额满 / Safari 隐私模式 —— 静默降级
+  }
   if (options?.syncNative !== false) {
     queueNativeLocalChatMessageActionStateWrite(state);
   }

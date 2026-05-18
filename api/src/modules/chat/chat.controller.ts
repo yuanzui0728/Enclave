@@ -19,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { AppError } from '../../common/app-error.exception';
 import { SystemConfigService } from '../config/config.service';
+import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import {
   FavoritesService,
@@ -36,11 +37,13 @@ import {
 } from './message-reminders.service';
 import type {
   ContactCardAttachment,
+  Conversation,
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
   NoteCardAttachment,
   StickerAttachment,
+  VoiceAttachment,
 } from './chat.types';
 
 @Controller('conversations')
@@ -48,6 +51,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly groupService: GroupService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   @Get()
@@ -99,67 +103,128 @@ export class ChatController {
   }
 
   @Post(':conversationId/messages/:messageId/recall')
-  recallMessage(
+  async recallMessage(
     @Param('conversationId') conversationId: string,
     @Param('messageId') messageId: string,
   ) {
-    return this.chatService.recallConversationMessage(
+    const recalled = await this.chatService.recallConversationMessage(
       conversationId,
       messageId,
     );
+    // 走查 R4：和 group.service.recallOwnerMessage line 697 对齐。原版单聊撤回
+    // 走 REST API 完事，不发任何 socket 事件；同账号多端在线（web + iOS shell
+    // / 双 tab）时只有触发撤回的那一端能看到「消息变成 系统-你撤回了一条消息」，
+    // 另一端要等 socket 没事件、conversations 60s 兜底轮询拉到 lastMessage 改了
+    // 才会 invalidate messages 重拉。再次 emit new_message 让另一端 onChatMessage
+    // upsertIncomingDirectMessage exact-id 替换为 system 撤回消息，UI 即时同步。
+    this.chatGateway.emitThreadMessage(conversationId, recalled);
+    return recalled;
   }
 
   @Delete(':conversationId/messages/:messageId')
-  deleteMessage(
+  async deleteMessage(
     @Param('conversationId') conversationId: string,
     @Param('messageId') messageId: string,
   ) {
-    return this.chatService.deleteConversationMessage(
+    const result = await this.chatService.deleteConversationMessage(
       conversationId,
       messageId,
     );
+    // 走查 R4：和 group.service.deleteMessage line 733 对齐。原版单聊删除消息
+    // 走 REST 完事不 emit；多端在线时另一端 chat-list 的 lastMessage 预览 / 未读
+    // 角标要等 60s 兜底轮询；尤其删的是会话最后一条消息时另一端 chat-list 上
+    // 仍显示已删消息内容 ≤60s。emit conversation_updated 让另一端立刻
+    // invalidate ["app-conversations"] 重拉新 lastMessage。client onChatMessage
+    // 路径没有「message_deleted」事件，删一条非最后消息的话另一端 thread 内
+    // 仍要等下次进会话 refetch 才会同步（和 group 同名行为一致）。
+    await this.emitDirectConversationUpdatedIfNeeded(conversationId);
+    return result;
   }
 
   @Post(':id/read')
-  markRead(@Param('id') id: string) {
-    return this.chatService.markConversationRead(id);
+  async markRead(@Param('id') id: string) {
+    await this.chatService.markConversationRead(id);
+    // 走查 R5：和 group 写操作 emit conversation_updated 同步。原版单聊点
+    // 「标为已读」/在 chat 页面进入触发的 markRead 走 REST 不 emit，多端在线
+    // 时另一端 chat-list 的未读小红点要等 60s 兜底轮询才消掉。其它写操作
+    // (markUnread/pin/mute/strongReminder/hide/clear) 同款修法，单独抽
+    // emitDirectConversationUpdatedIfNeeded helper 集中处理。
+    await this.emitDirectConversationUpdatedIfNeeded(id);
   }
 
   @Post(':id/unread')
-  markUnread(@Param('id') id: string) {
-    return this.chatService.markConversationUnread(id);
+  async markUnread(@Param('id') id: string) {
+    const conversation = await this.chatService.markConversationUnread(id);
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
   }
 
   @Post(':id/pin')
-  setPinned(@Param('id') id: string, @Body() body: { pinned: boolean }) {
-    return this.chatService.setConversationPinned(id, body.pinned);
+  async setPinned(@Param('id') id: string, @Body() body: { pinned: boolean }) {
+    const conversation = await this.chatService.setConversationPinned(
+      id,
+      body.pinned,
+    );
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
   }
 
   @Post(':id/mute')
-  setMuted(@Param('id') id: string, @Body() body: { muted: boolean }) {
-    return this.chatService.setConversationMuted(id, body.muted);
+  async setMuted(@Param('id') id: string, @Body() body: { muted: boolean }) {
+    const conversation = await this.chatService.setConversationMuted(
+      id,
+      body.muted,
+    );
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
   }
 
   @Post(':id/strong-reminder')
-  setStrongReminder(
+  async setStrongReminder(
     @Param('id') id: string,
     @Body() body: { enabled: boolean; durationHours?: number },
   ) {
-    return this.chatService.setConversationStrongReminder(
+    const conversation = await this.chatService.setConversationStrongReminder(
       id,
       body.enabled,
       body.durationHours,
     );
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
   }
 
   @Post(':id/hide')
-  hideConversation(@Param('id') id: string) {
-    return this.chatService.hideConversation(id);
+  async hideConversation(@Param('id') id: string) {
+    const conversation = await this.chatService.hideConversation(id);
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
   }
 
   @Post(':id/clear')
-  clearConversation(@Param('id') id: string) {
-    return this.chatService.clearConversationHistory(id);
+  async clearConversation(@Param('id') id: string) {
+    const conversation = await this.chatService.clearConversationHistory(id);
+    this.emitConversationUpdateIfDirect(conversation);
+    return conversation;
+  }
+
+  private emitConversationUpdateIfDirect(conversation: Conversation) {
+    if (conversation.type !== 'direct') {
+      return;
+    }
+    this.chatGateway.emitConversationUpdated({
+      id: conversation.id,
+      type: 'direct',
+      title: conversation.title,
+      participants: conversation.participants,
+    });
+  }
+
+  private async emitDirectConversationUpdatedIfNeeded(conversationId: string) {
+    const conversation = await this.chatService.getConversation(conversationId);
+    if (!conversation) {
+      return;
+    }
+    this.emitConversationUpdateIfDirect(conversation);
   }
 }
 
@@ -783,6 +848,12 @@ export class GroupController {
   async sendGroupMessage(
     @Param('id') id: string,
     @Body()
+    // 走查 Round 2：原版漏掉 `voice` 这条 union 分支——group.service 的
+    // SendGroupMessageInput 与 contracts SendGroupMessageRequest 两边都有
+    // voice，但 controller 的 @Body() 类型把它收窄成 never，前端发语音消息时
+    // body.type === 'voice' 在 TS 视角下不可达。运行时 ValidationPipe / nestjs
+    // 不做 union narrowing 所以还能 work，但任何 future class-validator 收紧
+    // 都会把语音消息整条拦掉；先把类型补齐。
     body:
       | { type?: 'text'; text: string }
       | {
@@ -794,6 +865,11 @@ export class GroupController {
           type: 'file';
           text?: string;
           attachment: FileAttachment;
+        }
+      | {
+          type: 'voice';
+          text?: string;
+          attachment: VoiceAttachment;
         }
       | {
           type: 'contact_card';

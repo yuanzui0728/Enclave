@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -8,8 +9,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getBlockedCharacters,
   getCharacter,
@@ -71,6 +72,13 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
   const { anchorElement, onClose } = props;
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
+  // 走查电脑端朋友圈 R1：popover 跨页复用 ——「我的朋友圈」/「朋友圈」按钮在
+  // 当前页就是目标页时（/profile/moments 自己点自己头像 popover）应当藏起来，
+  // 避免「navigate 到当前 path 等于无操作」的体感"我点了但什么也没发生"。
+  const currentPathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username);
@@ -106,30 +114,41 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
   const momentsReturnHash = navigationContext?.momentsReturnHash ?? defaultReturnHash;
   const hideMomentsAction = Boolean(navigationContext?.hideMomentsAction);
 
+  // 走查 R1：桌面 avatar popover 在「单聊消息列表点对方头像 / 群里点任一
+  // 头像」时挂载，6 份 cache 全部没 staleTime——上层 workspace / details
+  // panel 大概率刚拉过这些数据。公网 RTT ~600ms × 6 并发即"点头像后头像
+  // 卡片空白几百毫秒"。对齐 desktop-chat-details-panel.tsx 同款 15s/30s。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
     enabled: !isOwner && Boolean(characterId),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: !isOwner,
+    staleTime: 15_000,
   });
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
     enabled: !isOwner && Boolean(characterId),
+    staleTime: 15_000,
   });
   const blockedQuery = useQuery({
-    queryKey: ["app-chat-avatar-card-blocked", baseUrl],
+    // 与 desktop-chat-workspace 的拉黑列表共用同一份 cache，否则桌面端
+    // 每次点开头像 popover 都会再发一次相同的 getBlockedCharacters 请求。
+    queryKey: ["app-chat-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: !isOwner && Boolean(characterId),
+    staleTime: 30_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: !isOwner,
+    staleTime: 15_000,
   });
   const groupMembersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, threadContext?.id],
@@ -138,6 +157,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       !isOwner &&
       threadContext?.type === "group" &&
       Boolean(threadContext.id),
+    staleTime: 15_000,
   });
 
   const startChatMutation = useMutation({
@@ -148,7 +168,14 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
 
       return getOrCreateConversation({ characterId }, baseUrl);
     },
-    onSuccess: (conversation) => {
+    onSuccess: async (conversation) => {
+      // 新会话刚由后端创建，conversations cache 里还没有它。直接 navigate
+      // 过去时 workspace 的 selectedConversationExists 判定为 false，会立刻
+      // navigateToChatWorkspace replace 把用户踢回 /tabs/chat 根路由。
+      // 等一次 invalidate 后再跳，新 conversation 已落进 cache。
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       onClose();
       void navigate({
         to: buildDesktopChatThreadPath({
@@ -157,6 +184,53 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       });
     },
   });
+
+  // 走查桌面端群聊 R3：和 desktop-create-group-dialog R3 / desktop-group-member-picker
+  // R1 / desktop-chat-confirm-dialog R4 同款问题——「发消息」按钮只靠
+  // `disabled={startChatMutation.isPending || ...}`，isPending 是 useMutation
+  // React state，要等 commit 才进 DOM。在群里点角色头像 → popover → 同帧
+  // 双击「发消息」会同时通过 disabled=false → startChatMutation.mutate() 飞
+  // 两次。getOrCreateConversation 服务端虽幂等（按 characterId 查再创建），
+  // 第二次仍打公网 RTT ~600ms；两路 onSuccess 同时跑两份 invalidateQueries +
+  // 两次 navigate，第二次 navigate 在 close 之后跑容易在 react-router 中卡到
+  // 已被 unmount 的 popover state 上（onClose 已经把 popover 拆掉）。
+  const startChatSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!startChatMutation.isPending) {
+      startChatSubmittingRef.current = false;
+    }
+  }, [startChatMutation.isPending]);
+  const handleStartChat = () => {
+    if (startChatMutation.isPending || startChatSubmittingRef.current) {
+      return;
+    }
+    startChatSubmittingRef.current = true;
+    startChatMutation.mutate();
+  };
+
+  // 走查 R4：popover 底部按钮区（查看资料 / 打开设置 / 朋友圈 / 我的朋友圈 /
+  // 添加好友）都是 `() => { onClose(); void navigate(...) }` 形态。onClose
+  // 走 React state 要等 commit 才把 popover 拆掉，同帧 <16ms 双击同一个按钮
+  // 都进入 → push 2 条完全相同的二级页 history 项 + 二级页 mount 时拉的
+  // network/cache 跑两次（character-detail / friend-moments 这种公网隧道
+  // ~600ms RTT 重复值得避免）。和姊妹 handleStartChat sync ref 同款思路，
+  // 但这条同时覆盖多条 navigate 出口，用 raf 复位的 row-navigation guard。
+  const popoverNavigateFiredRef = useRef(false);
+  const guardPopoverNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (popoverNavigateFiredRef.current) return;
+        popoverNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            popoverNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
 
   const character = isOwner ? null : characterQuery.data;
   const friendship =
@@ -309,9 +383,15 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       onClose();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
+      if (event.key !== "Escape") {
+        return;
       }
+      // popover 是浮在最上层的；Esc 应该只关掉 popover，不要继续冒泡到
+      // workspace 的 dismissSidePanel(window keydown)，避免一下 Esc 同时把
+      // 聊天信息/查找记录侧栏也关掉。
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
     };
     const handleViewportChange = () => {
       if (!document.body.contains(anchorElement)) {
@@ -347,6 +427,28 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     <div
       ref={cardRef}
       style={style}
+      // 走查新一轮 R1：popover 通过 createPortal 渲染到 document.body，
+      // 不在 desktop-chat-workspace 的 threadSectionRef DOM 子树里。
+      // workspace 的 onPointerDownCapture 和 document pointerdown(capture)
+      // 兜底逻辑都靠 ref.contains(target) 判断「点击是否落在 thread 区」，
+      // portal 出来的 popover DOM 不在那条链上 → 用户点 popover 卡片任意
+      // 空白处（不是按钮 / 非可关闭区域）的瞬间 workspace 就把背后的
+      // 「聊天信息」侧栏 dismiss 掉。给 popover 卡片打 data-yj-portal-shield
+      // 标记，workspace 那边 closest() 一查就跳过 dismiss。
+      data-yj-portal-shield="avatar-popover"
+      // 走查 R5：popover 行为 modal-like（Esc 关 / backdrop pointerdown 关），
+      // 但没挂 role + aria-label，盲人屏幕阅读器只听到一堆 button label 和
+      // 资料行 text，无从知道这是个浮起的「{displayName} 资料卡片」。和姊妹
+      // R2~R3 修过的 dialog 系列同款补语义：role="dialog" + aria-modal +
+      // aria-label 直接挂当前角色名 + 类型；不用 aria-labelledby（卡片内的
+      // 标题节点本身是 truncate 的，外部传过来的 displayName 字段更完整）。
+      role="dialog"
+      aria-modal="true"
+      aria-label={
+        isOwner
+          ? t(msg`${displayName} 的资料卡片`)
+          : t(msg`${displayName} 的角色资料卡片`)
+      }
       className="w-[320px] rounded-[18px] border border-[rgba(0,0,0,0.08)] bg-[rgba(255,255,255,0.98)] shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl"
     >
       <div
@@ -358,8 +460,8 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       >
         <div className="flex items-start gap-3 px-4 py-4">
           <AvatarChip
-            name={isOwner ? ownerName ?? t(msg`世界主人`) : character?.name ?? fallbackName}
-            src={isOwner ? ownerAvatar : character?.avatar ?? fallbackAvatar}
+            name={isOwner ? ownerName || t(msg`世界主人`) : character?.name || fallbackName}
+            src={isOwner ? ownerAvatar : character?.avatar || fallbackAvatar}
             size="xl"
           />
           <div className="min-w-0 flex-1">
@@ -414,6 +516,15 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         groupMembersQuery.error instanceof Error ? (
           <ErrorBlock message={groupMembersQuery.error.message} />
         ) : null}
+        {/* 点「发消息」→ getOrCreateConversation 失败时，原来 mutation 没
+            onError、JSX 里也没渲染 startChatMutation.error，按钮短暂 pending
+            后又恢复 enabled，用户完全不知道刚才那一下失败了，会反复点。
+            把这条 error 也挂到现有 ErrorBlock 列表里。 */}
+        {!isOwner &&
+        startChatMutation.isError &&
+        startChatMutation.error instanceof Error ? (
+          <ErrorBlock message={startChatMutation.error.message} />
+        ) : null}
 
         {!isOwner && !characterQuery.isError && characterQuery.isLoading ? (
           <div className="rounded-[14px] bg-[rgba(247,247,247,0.9)] px-3 py-2 text-[12px] text-[color:var(--text-muted)]">
@@ -441,7 +552,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
           variant="secondary"
           size="sm"
           className="rounded-full"
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               onClose();
               if (isOwner) {
                 void navigate({ to: "/desktop/settings" });
@@ -456,7 +567,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                   returnHash: profileReturnHash,
                 }),
               });
-            }}
+            })}
           >
             {isOwner ? t(msg`打开设置`) : t(msg`查看资料`)}
           </Button>
@@ -466,7 +577,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             size="sm"
             className="rounded-full"
             disabled={!characterId}
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               onClose();
               void navigate({
                 to: "/desktop/friend-moments/$characterId",
@@ -477,11 +588,34 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                   returnHash: momentsReturnHash,
                 }),
               });
-            }}
+            })}
           >
             {t(msg`朋友圈`)}
           </Button>
         )}
+        {isOwner && !hideMomentsAction && currentPathname !== "/profile/moments" ? (
+          // 走查电脑端朋友圈 R1：之前 owner-kind popover 只挂「打开设置」一个动作，
+          // /tabs/moments 上点自己头像 → popover 弹出来 → 想去「我的朋友圈」却没
+          // 入口（aria-label 上 fallback 写的是「查看 yz 的朋友圈」更显得空头承诺）。
+          // 移动端 moments-page onAuthorTap 对 own moment 直接 navigate /profile/moments，
+          // 桌面这里靠 popover 是因为 desktop owner 还想接「打开设置」，但 owner kind
+          // 同时也应当像 character kind 一样给「朋友圈」入口才对得起 aria-label。
+          // 已经在 /profile/moments 时把按钮藏起来——/profile/moments 也会接 like 行
+          // owner liker，popover 弹自己头像，留个按钮跳回自己等于 no-op，体感"点了
+          // 没反应"。和 character kind hideMomentsAction 同思路（只是这里靠 path
+          // 自检比起靠 callsite 透传更稳）。
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
+            onClick={guardPopoverNavigation(() => {
+              onClose();
+              void navigate({ to: "/profile/moments" });
+            })}
+          >
+            {t(msg`我的朋友圈`)}
+          </Button>
+        ) : null}
         {isOwner ? null : (
           <Button
             variant="primary"
@@ -492,13 +626,13 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               (!isFriend && hasPendingFriendRequest) ||
               isBlocked
             }
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               if (!isFriend) {
                 onClose();
                 void navigate({
                   to: "/desktop/add-friend",
                   hash: buildDesktopAddFriendRouteHash({
-                    keyword: character?.name ?? fallbackName,
+                    keyword: character?.name || fallbackName,
                     characterId,
                     openCompose: true,
                   }),
@@ -506,8 +640,8 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                 return;
               }
 
-              startChatMutation.mutate();
-            }}
+              handleStartChat();
+            })}
           >
             {isBlocked
               ? t(msg`已拉黑`)

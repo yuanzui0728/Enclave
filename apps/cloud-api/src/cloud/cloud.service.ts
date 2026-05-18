@@ -20,6 +20,7 @@ import type {
   CloudComputeProviderSummary,
   CloudWorldAttentionItem,
   CloudWorldAttentionEscalationReason,
+  CloudWorldAdminBootstrap,
   CloudWorldBootstrapConfig,
   CloudWorldDeploymentState,
   CloudWorldDriftSummary,
@@ -39,6 +40,10 @@ import type {
 } from "@yinjie/contracts";
 import { randomUUID } from "node:crypto";
 import { Brackets, EntityManager, In, Repository } from "typeorm";
+import {
+  resolveAdminFrontendBaseUrl,
+  resolveWorldAdminSecret,
+} from "../admin/admin-bootstrap-resolver";
 import { PhoneAuthService } from "../auth/phone-auth.service";
 import { createCloudWorldSlug } from "../cloud-world-slug";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
@@ -980,6 +985,49 @@ export class CloudService {
     return buildWorldBootstrapConfig(preparedWorld, this.configService);
   }
 
+  async getWorldAdminBootstrap(
+    worldId: string,
+  ): Promise<CloudWorldAdminBootstrap> {
+    const world = await this.requireWorld(worldId);
+    const user = world.phone
+      ? await this.userRepo.findOne({ where: { phone: world.phone } })
+      : null;
+
+    const apiBaseUrl = world.apiBaseUrl?.trim();
+    if (!apiBaseUrl) {
+      throw new BadRequestException(
+        `World ${world.id} has no apiBaseUrl yet; start the world before opening its admin.`,
+      );
+    }
+
+    const adminFrontendBaseUrl = resolveAdminFrontendBaseUrl(
+      world,
+      this.configService,
+    );
+    if (!adminFrontendBaseUrl) {
+      throw new BadRequestException(
+        "Admin frontend base URL is not configured. Set CLOUD_ADMIN_FRONTEND_BASE_URL or populate cloud_worlds.adminUrl.",
+      );
+    }
+
+    const adminSecret = resolveWorldAdminSecret(this.configService);
+    if (!adminSecret) {
+      throw new BadRequestException(
+        "ADMIN_SECRET is not configured on the cloud platform (checked process.env and api/.env).",
+      );
+    }
+
+    return {
+      worldId: world.id,
+      worldName: world.name,
+      phone: world.phone,
+      email: user?.email ?? null,
+      adminFrontendBaseUrl,
+      apiBaseUrl,
+      adminSecret,
+    };
+  }
+
   async getWorldRuntimeStatus(
     worldId: string,
   ): Promise<CloudWorldRuntimeStatusSummary> {
@@ -1214,6 +1262,7 @@ export class CloudService {
         healthMessage: null,
         lastAccessedAt: null,
         lastInteractiveAt: null,
+        lastUserMessageAt: null,
         lastBootedAt: null,
         lastHeartbeatAt: null,
         lastSuspendedAt: null,
@@ -1295,6 +1344,7 @@ export class CloudService {
       failureMessage: world.failureMessage,
       lastAccessedAt: world.lastAccessedAt?.toISOString() ?? null,
       lastInteractiveAt: world.lastInteractiveAt?.toISOString() ?? null,
+      lastUserMessageAt: world.lastUserMessageAt?.toISOString() ?? null,
       lastBootedAt: world.lastBootedAt?.toISOString() ?? null,
       lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
       lastSuspendedAt: world.lastSuspendedAt?.toISOString() ?? null,
@@ -2055,6 +2105,7 @@ export class CloudService {
     world.failureMessage = state.failureReason;
     world.lastAccessedAt = null;
     world.lastInteractiveAt = null;
+    world.lastUserMessageAt = null;
     world.lastBootedAt = null;
     world.lastHeartbeatAt = null;
     world.lastSuspendedAt = null;

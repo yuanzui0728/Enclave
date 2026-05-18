@@ -105,7 +105,51 @@ export function describeAttachmentForDisplay(
     return semanticText;
   }
 
-  return `${fallbackLabel} · ${semanticText}`;
+  // 走查 R1：location_card / contact_card / note_card / feed_post_card 的
+  // semanticText 都以 attachment 的 primary identifier（title / name）开头，
+  // 而 fallbackLabel 又是 `${kind} · ${primary}`，直接拼会重复一次。
+  // 例：`位置 · 公园` + ` · ` + `公园，树荫…` → `位置 · 公园 · 公园，树荫…`。
+  // 把 semanticText 里的 primary 前缀剥掉，得到 `位置 · 公园 · 树荫…`。
+  const detail = stripSemanticPrimaryPrefix(semanticText, attachment);
+  if (!detail) {
+    return fallbackLabel;
+  }
+  return `${fallbackLabel} · ${detail}`;
+}
+
+function stripSemanticPrimaryPrefix(
+  semanticText: string,
+  attachment: MessageAttachment,
+): string {
+  const primary = getAttachmentPrimaryIdentifier(attachment);
+  if (!primary) {
+    return semanticText;
+  }
+  if (semanticText === primary) {
+    return '';
+  }
+  const prefix = `${primary}，`;
+  if (semanticText.startsWith(prefix)) {
+    return semanticText.slice(prefix.length);
+  }
+  return semanticText;
+}
+
+function getAttachmentPrimaryIdentifier(
+  attachment: MessageAttachment,
+): string {
+  if (attachment.kind === 'contact_card') {
+    return attachment.name;
+  }
+  if (
+    attachment.kind === 'location_card' ||
+    attachment.kind === 'note_card'
+  ) {
+    return attachment.title;
+  }
+  // feed_post_card 的 fallback 用 `title || authorName`，而 semanticText 起
+  // 头是 `${authorName} 的视频号`——并非严格前缀重复，先不夹这个 kind。
+  return '';
 }
 
 export function resolveAttachmentSemanticText(

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import {
   BellOff,
@@ -36,6 +36,9 @@ type DesktopConversationContextMenuProps = {
 const MENU_WIDTH = 196;
 const MENU_ITEM_HEIGHT = 42;
 const MENU_VERTICAL_PADDING = 16;
+// MenuDivider 实际渲染高度（my-1 上下 4px + border-t 1px ≈ 9px）。
+// 不算 divider 时，靠近视口底部右键最多会裁掉一行可见动作。
+const MENU_DIVIDER_HEIGHT = 9;
 const VIEWPORT_PADDING = 12;
 
 export function DesktopConversationContextMenu({
@@ -66,7 +69,17 @@ export function DesktopConversationContextMenu({
     Number(Boolean(showMarkUnread && onMarkUnread)) +
     Number(Boolean(onHide)) +
     Number(Boolean(onDelete));
-  const menuHeight = actionCount * MENU_ITEM_HEIGHT + MENU_VERTICAL_PADDING;
+  // 实际渲染里的 MenuDivider 数量：onOpenWindow 后 1 条；有已读/未读项时
+  // 1 条；onHide || onDelete 时 1 条。和 JSX 里的条件保持一致，免得贴底
+  // 右键裁掉下面一行。
+  const dividerCount =
+    Number(Boolean(onOpenWindow)) +
+    Number(Boolean((showMarkRead && onMarkRead) || (showMarkUnread && onMarkUnread))) +
+    Number(Boolean(onHide || onDelete));
+  const menuHeight =
+    actionCount * MENU_ITEM_HEIGHT +
+    dividerCount * MENU_DIVIDER_HEIGHT +
+    MENU_VERTICAL_PADDING;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
   const viewportHeight =
@@ -80,9 +93,38 @@ export function DesktopConversationContextMenu({
     Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
   );
 
+  // 走查 R3：和姊妹 group-message-context-menu R7 (19d5f2dd0) 同款 ESC 兜底。
+  // 桌面端右键会话弹的菜单上拍 ESC 没反应，只能点 backdrop 才能关；外接键盘
+  // 用户体感差异最大。defaultPrevented 时让位；stopPropagation 避免冒泡触发
+  // 外层 workspace dismissSidePanel 把背后的「聊天信息」侧栏一并关掉（菜单
+  // 容器有 portal-shield 但 window keydown 走的是全局监听，不经过子树）。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
+    // 走查新一轮 R10：DesktopChatWorkspace 的 onPointerDownCapture（line 589）
+    // 和 document pointerdown(capture) 兜底（line 987）会在「点击不落在
+    // sidePanelRef / desktopHeaderActionsRef / threadSectionRef / 任意带
+    // data-yj-portal-shield 的子树」时 dismissSidePanel。本 context menu
+    // inline 渲染在 workspace 根 div 子树里、不在 threadSectionRef，也没有
+    // shield —— 用户开着「聊天信息」侧栏、右键另一段会话弹出菜单后点任意一项
+    // （置顶 / 免打扰 / 标已读 / 在独立窗口打开 等），pointerdown capture
+    // 阶段先跑 → dismissSidePanel() → 用户当前会话的详情侧栏被偷偷关掉，
+    // 然后才轮到 button click 真正执行操作。和 avatar popover R1 同款修法
+    // （popover 走 portal 也是用 data-yj-portal-shield 解决的）。
     <div
       className="fixed inset-0 z-50"
+      data-yj-portal-shield="conversation-context-menu"
       onContextMenu={(event) => event.preventDefault()}
     >
       <button
@@ -92,7 +134,15 @@ export function DesktopConversationContextMenu({
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
+      {/* 走查 R6：右键会话弹的 context menu，盲人屏幕阅读器原本只听到一串
+          button label「在独立窗口打开 / 置顶聊天 / 消息免打扰 / ...」浮空，
+          不知道是「会话菜单」。和姊妹 dialog 系列 R2~R5 修过的 a11y 同款方向，
+          补 role="menu" + aria-label 让 SR 知道这是个上下文菜单；按钮虽然没
+          挂 role="menuitem"（普通 <button> 在 menu 里 SR 也能识别），让 menu
+          容器有正确角色已经能让"上下文"清楚。 */}
       <div
+        role="menu"
+        aria-label={t(msg`会话操作菜单`)}
         style={{ left, top }}
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
         onPointerDown={(event) => event.stopPropagation()}

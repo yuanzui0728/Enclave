@@ -32,6 +32,7 @@ import {
   useCallback,
   useEffect,
   useEffectEvent,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -52,6 +53,8 @@ import { MobileMentionPickerSheet } from "../features/chat/mobile-mention-picker
 import { useSpeechInput } from "../features/chat/use-speech-input";
 import {
   buildFavoriteShareText,
+  computeDesktopFavoritesFingerprint,
+  DESKTOP_FAVORITES_STORAGE_KEY,
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
@@ -61,6 +64,7 @@ import {
   hydrateRecentStickersFromNative,
   loadRecentStickers,
   pushRecentSticker,
+  RECENT_STICKERS_STORAGE_KEY,
 } from "../features/chat/stickers/recent-stickers";
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -80,6 +84,7 @@ import {
   isChatMentionPrefixBoundary,
   isChatMentionTokenCharacter,
 } from "../lib/chat-text";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 type ChatComposerProps = {
   value: string;
@@ -103,6 +108,15 @@ type ChatComposerProps = {
   mentionCandidates?: Array<{
     id: string;
     name: string;
+    // 走查电脑端群聊 R3：name 用于 picker 展示，可能是用户的好友 remark name
+    // （"小明"）。但实际插入到 message text 的 token 要走 server 端能匹配的
+    // 名字——api/src/modules/chat/group-reply-planner.service.ts line 64-68
+    // 的 aliases 只看 [member.memberName(群内昵称), character.name(角色原名)]，
+    // 不知道用户本地 friend.remarkName。如果按 name 插入 `@小明`，server 算
+    // isExplicitTarget=false → 该角色拿不到 mention 加权 → 不一定回复。
+    // mentionName 由调用方在 name ≠ 服务端可匹配名时显式提供：picker 仍按
+    // name 展示，applyMentionCandidate 走 mentionName ?? name 插入。
+    mentionName?: string;
     subtitle?: string;
     avatar?: string | null;
   }>;
@@ -118,6 +132,10 @@ type ChatComposerProps = {
   onMobileShortcutHandled?: () => void;
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
+  // 当前会话里不该出现在"+面板/选择名片"里的 character id 集合。单聊里至少要排
+  // 掉对方自己（包括"我自己"自聊场景下的 self-character），不然用户会看到"把对方
+  // 的名片再发给对方"这种没意义的入口。
+  contactPickerExcludeIds?: readonly string[];
   onCancelReply?: () => void;
   onChange: (value: string) => void;
   onSubmit: () => void;
@@ -210,6 +228,10 @@ const SCREENSHOT_ANNOTATION_PALETTE = [
 }>;
 
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
+// 走查第二批 R1：和 api/chat.controller.ts:238 CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES
+// 对齐。applyGenericFileDraft 前端校验上限，避免 100MB 大文件被一路 fetch 到
+// server 才被 Multer 413 拒掉。
+const CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS = [1, 0.92, 0.84, 0.76];
 const CHAT_ATTACHMENT_IMAGE_EXPORT_CANDIDATES = [
   { mimeType: "image/png", extension: "png" },
@@ -314,6 +336,7 @@ export function ChatComposer({
   onMobileShortcutHandled,
   onStartVoiceCall,
   onStartVideoCall,
+  contactPickerExcludeIds,
   onCancelReply,
   onChange,
   onSubmit,
@@ -379,6 +402,16 @@ export function ChatComposer({
   ] = useState(false);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  // 同步防双击锁——下面 4 条 send 链路（handleSendAttachment / handleSendDraftAttachment
+  // / sendRecordedVoice / handleSendPresetText / handleSendSticker）都用
+  // setAttachmentBusy(true) 当 disabled 兜底，但 attachmentBusy 是 React state，
+  // 同帧连点 2 次任意一个发送按钮都能同时通过 disabled=false → 双倍上传 + 双倍
+  // 发送。最严重的是 MobileChatAttachmentPreview「发送图片」连点 2 次：
+  // handleSendDraftAttachment 的 for-loop 持同一份 currentDraft.items，
+  // 一份 9 张图被上传 18 次、发送 18 次到群里。和 Round 1-4 同款修法：ref
+  // 同步赋值不走 React render，第一次 click 把它翻 true 之后同帧后续 click
+  // 都被早返；onSettled / finally 解锁。
+  const sendBusyRef = useRef(false);
   const [mobilePlusNotice, setMobilePlusNotice] =
     useState<MobilePlusNoticeState | null>(null);
   const [activeStickerPackId, setActiveStickerPackId] = useState("featured");
@@ -481,6 +514,19 @@ export function ChatComposer({
 
     return normalized
       .sort((left, right) => {
+        // 走查 Round 1：原版只按 startsWith + locale 排，"mention-all"
+        // (所有人) 在中文 locale 下 sō < zhāng/lín 一类按拼音排会被压到列
+        // 表尾部，和 WeChat 习惯（@ 默认 "所有人" 置顶可一键选中）不一致。
+        // 空 query 时把 mention-all 强制顶端；有 query 时按 startsWith 命中
+        // 优先，命中相同再 locale。
+        if (!query) {
+          if (left.id === "mention-all" && right.id !== "mention-all") {
+            return -1;
+          }
+          if (right.id === "mention-all" && left.id !== "mention-all") {
+            return 1;
+          }
+        }
         const leftStartsWith = left.name.toLowerCase().startsWith(query);
         const rightStartsWith = right.name.toLowerCase().startsWith(query);
         if (leftStartsWith === rightStartsWith) {
@@ -489,13 +535,21 @@ export function ChatComposer({
         return leftStartsWith ? -1 : 1;
       })
       .slice(0, 6);
-  }, [activeMention, mentionCandidates, t]);
+    // 这里 t 不在 body 里调用：filtering + sorting 都不渲染本地化文案，
+    // 候选项的 name/subtitle 由调用方 (group-chat-thread-panel 的
+    // mentionCandidates) 算好后传进来。漏掉 t 不会导致 stale string。
+  }, [activeMention, mentionCandidates]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
+  // 走查 R4：和 chat-message-list.favoritesQuery (R7 配的 30s) 同 queryKey
+  // 共享 cache。原本裸跑（默认 desktop 10s / mobile-web 60s），用户在桌面单聊
+  // 多次开合「+ → 收藏」面板时 ≥10s 就要 GET /favorites 再来一次（公网隧道
+  // ~600ms RTT）。和兄弟入口对齐 30s——收藏只读，频繁开合不必重抓。
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
     enabled:
       isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
+    staleTime: 30_000,
   });
 
   const getActiveInput = useCallback(
@@ -791,6 +845,22 @@ export function ChatComposer({
     closeMobileSpeechSheet();
   }, [closeMobileSpeechSheet, showSpeechEntry]);
 
+  // 卸载时 revoke 还挂着的图片附件预览 URL。原写法只在每次 set 新 draft
+  // 前 revoke 上一份，对「贴图但没发送就切会话/退页」这种场景，外层 key
+  // 变化把整个 composer 一起 unmount 掉时，旧 draft.items[*].previewUrl
+  // 永远不会被 revoke，多张图反复来回切聊天会渐进式堆积 blob:URL 引用。
+  // 用 ref 拿最新 draft，避免每次 state 变都跑一次双重 revoke。
+  const attachmentDraftCleanupRef = useRef<AttachmentDraft | null>(null);
+  attachmentDraftCleanupRef.current = attachmentDraft;
+  const desktopScreenshotDraftCleanupRef = useRef<ImageDraft | null>(null);
+  desktopScreenshotDraftCleanupRef.current = desktopScreenshotDraft;
+  useEffect(() => {
+    return () => {
+      releaseAttachmentDraft(attachmentDraftCleanupRef.current);
+      releaseImageDraft(desktopScreenshotDraftCleanupRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (isDesktop || typeof document === "undefined") {
       return;
@@ -892,10 +962,41 @@ export function ChatComposer({
         setStickerPanelOpen(false);
       }
     };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // 不 preventDefault：desktop-chat-workspace 那条 window keydown
+        // microtask 兜底（line 919）会接着跑 dismissSidePanel —— 桌面单聊
+        // 开着「聊天信息」侧栏然后点表情按钮打开 sticker panel，按 Esc 会
+        // 同时把 panel 和背后的侧栏一起关掉。和 image viewer / contextMenu
+        // 同款修法。
+        event.preventDefault();
+        setStickerPanelOpen(false);
+      }
+    };
 
     window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isDesktop, stickerPanelOpen]);
+
+  // 原生壳硬件 Back：移动端 sticker / plus 面板展开时按 BACK 应当先收起面
+  // 板（returnMobileComposerToText 把模式切回 "text"），而不是直接
+  // history.back 退出聊天页。mobile-speech-input-sheet 自带 BACK 拦截，
+  // mobileMentionPickerSheet 也已经接过，这里只覆盖 sticker / plus。
+  useEffect(() => {
+    if (isDesktop || (!stickerPanelOpen && !plusPanelOpen)) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      returnMobileComposerToText({ focusInput: false });
+      return true;
+    });
+    return unregister;
+  }, [isDesktop, plusPanelOpen, returnMobileComposerToText, stickerPanelOpen]);
 
   useEffect(() => {
     if (!isDesktop || !nativeDesktopRecentStickers) {
@@ -927,17 +1028,30 @@ export function ChatComposer({
 
       void syncRecentStickers();
     };
+    // 走查 R1：原版 storage 监听对任何 OTHER tab 的 localStorage 写入都触发
+    // syncRecentStickers → 拍 hydrateRecentStickersFromNative 的 Tauri invoke
+    // IPC + JSON.parse + setState；composer 在每段单聊 / 群聊里都挂着，多 tab
+    // 时主题切换 / 草稿落盘 / 已读标记等 OTHER tab 写 localStorage 都会无意义
+    // 地把这条 IPC 打一遍。和 local-chat-message-actions / chat-message-list
+    // 同款 STORAGE_KEY gate；event.key=null 是 Safari localStorage.clear()，
+    // 仍按全量同步对待避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== RECENT_STICKERS_STORAGE_KEY) {
+        return;
+      }
+      void syncRecentStickers();
+    };
 
     void syncRecentStickers();
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isDesktop, nativeDesktopRecentStickers]);
@@ -952,9 +1066,21 @@ export function ChatComposer({
         setDesktopPlusMenuOpen(false);
       }
     };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // 同 sticker panel：不 preventDefault 的话 dismissSidePanel
+        // microtask 会接着跑把背后的「聊天信息」侧栏一起关掉。
+        event.preventDefault();
+        setDesktopPlusMenuOpen(false);
+      }
+    };
 
     window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [desktopPlusMenuOpen, isDesktop]);
 
   useEffect(() => {
@@ -1000,7 +1126,10 @@ export function ChatComposer({
           favoritesQuery.data ?? [],
           readDesktopFavorites(),
         );
-        return JSON.stringify(current) === JSON.stringify(nextRecords)
+        // 跟 favorites-page 一致：focus/visibilitychange + storage 事件触发频繁，
+        // JSON.stringify(700 项) 换成 sourceId+collectedAt 指纹。
+        return computeDesktopFavoritesFingerprint(current) ===
+          computeDesktopFavoritesFingerprint(nextRecords)
           ? current
           : nextRecords;
       });
@@ -1016,15 +1145,26 @@ export function ChatComposer({
 
       void syncDesktopFavoriteRecords();
     };
+    // 走查 R1：composer 的「+ → 收藏」面板开着时 storage 监听也吃 OTHER tab
+    // 任何 localStorage 写入，触发 hydrateDesktopFavoritesFromNative IPC +
+    // readDesktopFavorites JSON.parse 整份收藏列表。和上方 recent stickers 同款
+    // gate：只在 DESKTOP_FAVORITES_STORAGE_KEY 上同步；event.key=null（Safari
+    // localStorage.clear()）仍全量同步避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== DESKTOP_FAVORITES_STORAGE_KEY) {
+        return;
+      }
+      void syncDesktopFavoriteRecords();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [
@@ -1035,17 +1175,25 @@ export function ChatComposer({
     nativeDesktopFavorites,
   ]);
 
-  useEffect(() => {
-    return () => {
-      releaseAttachmentDraft(attachmentDraft);
-    };
-  }, [attachmentDraft]);
-
-  useEffect(() => {
-    return () => {
-      releaseImageDraft(desktopScreenshotDraft);
-    };
-  }, [desktopScreenshotDraft]);
+  // 走查 R1（新一轮）：这两条 useEffect 看起来是为了在 draft 变更或 unmount
+  // 时 revoke blob URL，但 closure 捕获的是 OLD draft —— React 在切到 NEW 之前
+  // 先跑 OLD cleanup → releaseAttachmentDraft(OLD) 会把 OLD draft 里所有 items
+  // 的 previewUrl 全 revoke 一遍。
+  //
+  // 在「整 draft 替换」路径（applyImageDraftFiles / applyGenericFileDraft /
+  // captureDesktopScreenshot / handleCancelAttachmentDraft 等）调用方已经手动
+  // releaseAttachmentDraft(attachmentDraft) 再 set 新 draft，effect 这里再跑
+  // 一遍只是双重 revoke（idempotent，无害）。
+  //
+  // 但「部分移除」路径——handleRemoveDraftImage 从 5 张里删第 3 张、
+  // trimSentImageDraftItems 发出后保留未发的——只 revoke 移走的那一张，剩余
+  // 的 items 仍要继续渲染。effect cleanup 拿 OLD draft（5 张）跑一次完整
+  // release → 把还要继续显示的 #1/#2/#4/#5 也 revoke 掉，缩略图 src 变成无效
+  // blob:URL，浏览器某些时机（滚出 viewport 再回 / 切窗口 / 点全屏预览）就
+  // 加载失败白屏。
+  //
+  // 卸载场景由上面 853-862 那对 ref + `[]`-deps effect 兜底，per-state 清理
+  // 由各调用方自己 explicit revoke 完成，这两条 deps effect 删掉。
 
   const handleCloseDesktopScreenshotEditor = useEffectEvent(() => {
     closeDesktopScreenshotEditor();
@@ -1147,12 +1295,23 @@ export function ChatComposer({
     );
   }, [filteredMentionCandidates.length, mentionPickerOpen]);
 
+  // 走查本会话 R1：原版两个分支都 setMobileMentionDismissed(false) — if 语句
+  // 是死代码 / 注释也丢失。更严重的是：activeMention 是 useMemo 每次 keystroke
+  // 都新建对象（findActiveMentionToken 返回新 object，deps 含 inputCursor +
+  // value），所以"@ 上下文里再多打一个字"也算 ref change。结果：群聊 / 单聊
+  // 移动端用户在 @ 候选浮层弹出后按 Android BACK / 点 backdrop 关掉它，
+  // setMobileMentionDismissed(true) 那一帧确实关上了；下一个 keystroke 因为
+  // activeMention 重算成新 object 又把 dismissed 拨回 false → 浮层立刻回弹。
+  // 用户没法在同一个 @ 上下文里"先关掉浮层、继续敲字"。改成"按 @ 起点 dedup"——
+  // 同一个 @ 上下文 (相同 activeMention.start) 内保留用户的 dismiss 意图；只
+  // 有真的换 @ 上下文（start 变了 / @ 没了）才 reset，给新 @ fresh 显示机会。
+  const lastMentionStartRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!activeMention) {
-      setMobileMentionDismissed(false);
+    const nextStart = activeMention ? activeMention.start : null;
+    if (lastMentionStartRef.current === nextStart) {
       return;
     }
-
+    lastMentionStartRef.current = nextStart;
     setMobileMentionDismissed(false);
   }, [activeMention]);
 
@@ -1241,9 +1400,32 @@ export function ChatComposer({
     if (!onSendSticker) {
       return;
     }
+    // sticker panel 不在 send 链路上 dim/禁用 sticker tile，连点同一个 sticker
+    // 2 次会走 2 次 onSendSticker → 群里冒出 2 张一样的 sticker 消息（不同
+    // id 不被 dedup）。同帧后续 click 走 sendBusyRef 早返。
+    if (sendBusyRef.current) {
+      return;
+    }
 
+    sendBusyRef.current = true;
     setAttachmentError(null);
-    await onSendSticker(sticker);
+    // parent onSendSticker 走 sendStickerMessage → 在 resolveTargetCharacterId
+    // 拿不到 char id（角色被删 / participants 还没回，conversationId 也不是
+    // direct_ 前缀）会 throw；caller 是 handleStickerPanelSelect 里
+    // void handleSendSticker(...) 形态 → 漏 catch 直接落 unhandledrejection。
+    // 和 handleSendAttachment 的 try/catch + setAttachmentError 对齐。
+    try {
+      await onSendSticker(sticker);
+    } catch (stickerError) {
+      setAttachmentError(
+        stickerError instanceof Error
+          ? stickerError.message
+          : t(msg`表情发送失败，请稍后再试。`),
+      );
+      return;
+    } finally {
+      sendBusyRef.current = false;
+    }
     setRecentStickers(
       pushRecentSticker({
         sourceType: sticker.sourceType,
@@ -1278,8 +1460,39 @@ export function ChatComposer({
     void handleSendSticker(sticker);
   };
 
+  // 走查 R2：pickAlbum / pickCamera / pickFile 三个 + 面板入口都只看 React state
+  // `attachmentBusy` 兜双触发——但 attachmentBusy 在 picker 阶段 (打开系统 file
+  // dialog / iOS PHPicker / Android DocumentsContract) 根本没置 true（true 只
+  // 出现在选完图开始 upload 之后），所以即使非同帧的快速二连点也会让两次
+  // pickXxx 全跑到 `albumInputRef.current?.click()` / `void pickXxxWithNativeShell()`：
+  // · Web: HTMLInputElement.click() 触发系统文件对话框两次堆叠，第二次会让第
+  //   一次的 dialog 重画或被 OS 视为新的并发请求，部分 Chromium 版本直接刷掉
+  //   pending selection；playwright 实测同帧双击 input.click() 被调 2 次。
+  // · 原生壳 (iOS PHPicker / Android intent)：pickImagesWithNativeShell 没有
+  //   去重，第二次 invoke 让原生层弹两次 picker 堆叠，第一次的 result Promise
+  //   被第二次的 PHPicker dismiss 当 cancel 解决 → assets=[] → 用户体感"选了
+  //   没反应"。
+  // 加一把同帧 raf 守，第一次成功后立刻置 true，下一帧自然释放让 retry/cancel
+  // 路径还能正常工作。各 picker 共享同一把锁——同一时刻 UI 只能开一个原生
+  // picker，逻辑上等价。
+  const pickerOpeningRef = useRef(false);
+  const acquirePickerLock = () => {
+    if (pickerOpeningRef.current) {
+      return false;
+    }
+    pickerOpeningRef.current = true;
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        pickerOpeningRef.current = false;
+      });
+    } else {
+      pickerOpeningRef.current = false;
+    }
+    return true;
+  };
+
   const pickAlbum = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
@@ -1296,7 +1509,7 @@ export function ChatComposer({
   };
 
   const pickCamera = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
@@ -1345,7 +1558,12 @@ export function ChatComposer({
   });
 
   const pickAlbumWithNativeShell = useEffectEvent(async () => {
-    const assets = await pickImagesWithNativeShell(true);
+    // 把 MAX_ALBUM_IMAGE_COUNT 透给原生层：PHPicker UI 直接禁掉第 10 张的勾选，
+    // 而不是让用户能勾 N 张然后 Swift 全部 HEIC→JPEG 转码写 tmp 再被 slice(0, 9)
+    // 丢掉 N-9 张副本，导致 tmp 暴涨。Swift 端 limit 缺失会兜底 9，但显式传更稳。
+    const assets = await pickImagesWithNativeShell(true, {
+      limit: MAX_ALBUM_IMAGE_COUNT,
+    });
     if (!assets.length) {
       return;
     }
@@ -1367,7 +1585,7 @@ export function ChatComposer({
   });
 
   const pickFile = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
@@ -1414,8 +1632,19 @@ export function ChatComposer({
     }
   });
 
+  // 走查新一轮 R6：captureDesktopScreenshot 兜底走 attachmentBusy React state
+  // 「相机」相邻入口（toolbar 截图按钮 + Ctrl/⌘+Shift+S 全局快捷）+ 同帧
+  // <16ms double-click，两次 invoke 都看到 attachmentBusy=false 进入 →
+  // navigator.mediaDevices.getDisplayMedia 弹出系统屏幕选择器 2 次堆叠（macOS
+  // / Windows / Tauri 都是 OS-level prompt，用户得分别在 2 个 dialog 上点取消，
+  // 取消第一个后第二个还停留）。叠 sync ref 锁挡掉同帧后续 invoke，finally
+  // 解锁（stream cleanup 自带 finally，复用同一 try/finally）。
+  const screenshotCaptureBusyRef = useRef(false);
   const captureDesktopScreenshot = useCallback(async () => {
     if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+    if (screenshotCaptureBusyRef.current) {
       return;
     }
 
@@ -1429,6 +1658,7 @@ export function ChatComposer({
       return;
     }
 
+    screenshotCaptureBusyRef.current = true;
     let stream: MediaStream | null = null;
 
     try {
@@ -1508,6 +1738,7 @@ export function ChatComposer({
       );
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
+      screenshotCaptureBusyRef.current = false;
     }
   }, [
     attachmentBusy,
@@ -1516,6 +1747,9 @@ export function ChatComposer({
     desktopScreenshotDraft,
     isDesktop,
     onSendAttachment,
+    // 截图失败 fallback 文案 t(msg`截图失败，请稍后再试。`) 漏 dep：locale
+    // 切换后这条 callback 用的是上次 render 的 t，弹出来是旧语言的"截图失败"。
+    t,
   ]);
 
   const activateMobileSpeechFallback = () => {
@@ -1575,35 +1809,69 @@ export function ChatComposer({
   ]);
 
   const handleImageSelection = async (fileList: FileList | null) => {
-    const files = [...(fileList ?? [])].slice(0, MAX_ALBUM_IMAGE_COUNT);
+    const allFiles = [...(fileList ?? [])];
+    const files = allFiles.slice(0, MAX_ALBUM_IMAGE_COUNT);
     if (!files.length) {
       return;
+    }
+
+    // 走查第二批 R1：iOS/Android 走原生 picker 时 limit 已经在 PHPicker UI 层兜住
+    // （line 1518-1522），但 Web 浏览器 input[type=file] multiple 和拖拽/粘贴
+    // 路径都直接 slice(0, 9) 静默丢弃 — 用户选 12 张以为全部进来，发出去只看
+    // 到 9 张，会以为 app 漏发或后台吃了。给用户一个明确截断提示。
+    if (allFiles.length > MAX_ALBUM_IMAGE_COUNT) {
+      setAttachmentError(
+        t(
+          msg`一次最多发送 ${MAX_ALBUM_IMAGE_COUNT} 张图片，已为您保留前 ${MAX_ALBUM_IMAGE_COUNT} 张。`,
+        ),
+      );
     }
 
     await applyImageDraftFiles(files);
   };
 
   const applyImageDraftFiles = async (files: File[]) => {
-    try {
-      const draftItems = await Promise.all(
-        files.map((file) => createImageDraft(file)),
-      );
-      releaseAttachmentDraft(attachmentDraft);
-      setAttachmentError(null);
-      setMobilePlusNotice(null);
+    // Promise.all 在第一张图 reject 时就抛，已经 resolve 的若干张 ImageDraft
+    // 里的 blob: previewUrl 拿不到引用也 revoke 不掉 —— 用户从相册选 9 张里
+    // 第 5 张坏（readImageDimensions 解码失败）就会泄漏前 4 张的 blob。改成
+    // allSettled 把成功的拿出来；失败时把已 resolve 的 previewUrl 显式释放。
+    const results = await Promise.allSettled(
+      files.map((file) => createImageDraft(file)),
+    );
+    const drafts: ImageDraft[] = [];
+    let firstError: unknown = null;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        drafts.push(result.value);
+      } else if (!firstError) {
+        firstError = result.reason;
+      }
+    }
+    if (firstError) {
+      for (const draft of drafts) {
+        URL.revokeObjectURL(draft.previewUrl);
+      }
+      // 必须关掉 + 面板，否则 mobileComposerStatus 在 plusPanelOpen 时 return
+      // null，attachmentError 永远不会被 status rail 显示出来 —— 用户从相册
+      // 选了几张图，其中有损坏的，看上去就是"啥也没发生"。
       setPlusPanelOpen(false);
       setDesktopPlusMenuOpen(false);
-      setAttachmentDraft({
-        kind: "images",
-        items: draftItems,
-      });
-    } catch (fileError) {
       setAttachmentError(
-        fileError instanceof Error
-          ? fileError.message
+        firstError instanceof Error
+          ? firstError.message
           : t(msg`读取图片失败，请换一张再试。`),
       );
+      return;
     }
+    releaseAttachmentDraft(attachmentDraft);
+    setAttachmentError(null);
+    setMobilePlusNotice(null);
+    setPlusPanelOpen(false);
+    setDesktopPlusMenuOpen(false);
+    setAttachmentDraft({
+      kind: "images",
+      items: drafts,
+    });
   };
 
   const handleGenericFileSelection = (fileList: FileList | null) => {
@@ -1616,6 +1884,25 @@ export function ChatComposer({
   };
 
   const applyGenericFileDraft = (file: File) => {
+    // 走查第二批 R1：服务端 chat-attachments Multer 上限是 32MB（chat.controller.ts:248
+    // CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES）。原本前端不校验，用户拖一个 100MB 视频
+    // 上来，applyGenericFileDraft 直接 setAttachmentDraft 入草稿；点发送后 fetch
+    // 把 100MB body upload，公网隧道几十秒拉满才被 server Multer 拒成 413/500，
+    // UI 一直显示 spinner 体验极差。前端就地按 server limit 卡，提示中文。
+    if (file.size > CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES) {
+      releaseAttachmentDraft(attachmentDraft);
+      setAttachmentDraft(null);
+      setMobilePlusNotice(null);
+      setPlusPanelOpen(false);
+      setDesktopPlusMenuOpen(false);
+      setAttachmentError(
+        t(
+          msg`文件大小不能超过 ${Math.round(CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES / 1024 / 1024)} MB，请压缩后再发送。`,
+        ),
+      );
+      return;
+    }
+
     releaseAttachmentDraft(attachmentDraft);
 
     setAttachmentError(null);
@@ -1662,8 +1949,12 @@ export function ChatComposer({
       return;
     }
 
-    const droppedFiles = extractClipboardFiles(event.dataTransfer);
-    if (!droppedFiles.length) {
+    // 浏览器安全：dragenter/dragover 期间 DataTransfer.files 是空、
+    // items[i].getAsFile() 返回 null，只有 drop 才能读真文件。原写法用
+    // extractClipboardFiles 检测会永远拿到 []，于是 drop overlay
+    // 「松开鼠标发送图片或文件」从来没出现过——只看 kind/types 即可探到
+    // 这是 file drag。
+    if (!hasDraggableFiles(event.dataTransfer)) {
       return;
     }
 
@@ -1677,8 +1968,7 @@ export function ChatComposer({
       return;
     }
 
-    const droppedFiles = extractClipboardFiles(event.dataTransfer);
-    if (!droppedFiles.length) {
+    if (!hasDraggableFiles(event.dataTransfer)) {
       return;
     }
 
@@ -2252,10 +2542,28 @@ export function ChatComposer({
     };
   };
 
+  // 走查新一轮 R5：截图编辑器 6 个 action（发送/复制/保存 × 原图/裁剪）兜底
+  // 都靠 `attachmentBusy` React state，setAttachmentBusy(true) 要等 commit 才
+  // 进 DOM。同帧 <16ms double-click 任一按钮，或键盘快捷（Enter / Cmd+S / Cmd+C
+  // 等）同帧双触发：
+  // · 发送路径：handleSendAttachment 内部 sendBusyRef 早返第二次，但
+  //   buildDesktopScreenshotResult（canvas 渲染 + Blob 编码，~50ms CPU）已经
+  //   白跑一遍
+  // · 保存路径：saveLocalFile 走 Tauri 弹 2 个保存对话框堆叠（webview 阻塞
+  //   型 dialog 被 spawn 两次）
+  // · 复制路径：navigator.clipboard.write 跑两次，clipboard 内容被同一份图片
+  //   覆盖 2 次，无副作用但浪费 CPU
+  // ref 同步锁挡掉同帧 double-click；6 个 handler 共用同一 ref（同时只能跑
+  // 一个截图 action，符合截图编辑器顺序操作语义）。
+  const screenshotActionBusyRef = useRef(false);
   const handleSendDesktopScreenshot = async (mode: "original" | "cropped") => {
     if (!desktopScreenshotDraft || !onSendAttachment || attachmentBusy) {
       return;
     }
+    if (screenshotActionBusyRef.current) {
+      return;
+    }
+    screenshotActionBusyRef.current = true;
 
     try {
       const imagePayload = await buildDesktopScreenshotResult(mode);
@@ -2280,11 +2588,16 @@ export function ChatComposer({
           ? screenshotError.message
           : t(msg`截图处理失败，请稍后再试。`),
       );
+    } finally {
+      screenshotActionBusyRef.current = false;
     }
   };
 
   const handleCopyDesktopScreenshot = async (mode: "original" | "cropped") => {
     if (!desktopScreenshotDraft || attachmentBusy) {
+      return;
+    }
+    if (screenshotActionBusyRef.current) {
       return;
     }
 
@@ -2297,6 +2610,7 @@ export function ChatComposer({
       return;
     }
 
+    screenshotActionBusyRef.current = true;
     try {
       const imagePayload = await buildDesktopScreenshotResult(mode);
       if (!imagePayload) {
@@ -2322,6 +2636,8 @@ export function ChatComposer({
           ? copyError.message
           : t(msg`复制截图失败，请稍后再试。`),
       );
+    } finally {
+      screenshotActionBusyRef.current = false;
     }
   };
 
@@ -2329,6 +2645,10 @@ export function ChatComposer({
     if (!desktopScreenshotDraft || attachmentBusy) {
       return;
     }
+    if (screenshotActionBusyRef.current) {
+      return;
+    }
+    screenshotActionBusyRef.current = true;
 
     setAttachmentBusy(true);
     setAttachmentError(null);
@@ -2387,6 +2707,7 @@ export function ChatComposer({
       );
     } finally {
       setAttachmentBusy(false);
+      screenshotActionBusyRef.current = false;
     }
   };
 
@@ -2481,6 +2802,7 @@ export function ChatComposer({
   const applyMentionCandidate = (candidate: {
     id: string;
     name: string;
+    mentionName?: string;
     subtitle?: string;
     avatar?: string | null;
   }) => {
@@ -2488,7 +2810,25 @@ export function ChatComposer({
       return;
     }
 
-    const mentionText = `@${candidate.name} `;
+    // 走查 R6：「mention-all」候选 name 走 t(msg`所有人`) → 用户语言不同会
+    // 插出 `@Everyone` / `@전체` / `@全員`，但 api/src/modules/chat/chat-text.utils.ts
+    // summarizeChatMentions 写死 `mentions.includes('@所有人')` 检测 @all——
+    // 非中文用户点了「@所有人」候选，AI 那条群通话/通知里 hasMentionAll 永远
+    // false，notifyOnAtAll 用户收不到 @all 提示。展示文案保留本地化，但实际
+    // 插入到 message text 的协议 token 强制走 `@所有人`，与服务端契约对齐。
+    //
+    // 走查电脑端群聊 R3：同样的 client/server 协议契约——picker 展示给用户的
+    // candidate.name 可能是用户本地 friend.remarkName（"小明"），但 server
+    // 端 group-reply-planner aliases 只看 [member.memberName, character.name]，
+    // 不知道 remark。如果原样按 name 插入 `@小明`，server isExplicitTarget=false
+    // → 角色拿不到 mention 加权 → 不一定回复。优先 mentionName（调用方在
+    // name ≠ 服务端可匹配名时显式提供，比如群成员的 in-group nickname），
+    // 没提供再回退 name。和 mention-all 的"展示本地化、token 走协议"同思路。
+    const insertedName =
+      candidate.id === "mention-all"
+        ? "所有人" // i18n-ignore-line: protocol marker, server matches literal Chinese text
+        : (candidate.mentionName ?? candidate.name);
+    const mentionText = `@${insertedName} `;
     const nextValue = `${value.slice(0, activeMention.start)}${mentionText}${value.slice(activeMention.end)}`;
     onChange(nextValue);
     setMentionActiveIndex(0);
@@ -2590,7 +2930,11 @@ export function ChatComposer({
     if (!onSendAttachment) {
       return false;
     }
+    if (sendBusyRef.current) {
+      return false;
+    }
 
+    sendBusyRef.current = true;
     setAttachmentBusy(true);
     setAttachmentError(null);
     setMobilePlusNotice(null);
@@ -2613,6 +2957,7 @@ export function ChatComposer({
       );
       return false;
     } finally {
+      sendBusyRef.current = false;
       setAttachmentBusy(false);
     }
   };
@@ -2621,9 +2966,13 @@ export function ChatComposer({
     if (!attachmentDraft || !onSendAttachment) {
       return;
     }
+    if (sendBusyRef.current) {
+      return;
+    }
 
     const currentDraft = attachmentDraft;
     if (currentDraft.kind === "images") {
+      sendBusyRef.current = true;
       setAttachmentBusy(true);
       setAttachmentError(null);
       let sentCount = 0;
@@ -2655,6 +3004,7 @@ export function ChatComposer({
             : t(msg`图片发送失败，请稍后再试。`),
         );
       } finally {
+        sendBusyRef.current = false;
         setAttachmentBusy(false);
       }
 
@@ -2683,7 +3033,11 @@ export function ChatComposer({
     if (!normalized) {
       return false;
     }
+    if (sendBusyRef.current) {
+      return false;
+    }
 
+    sendBusyRef.current = true;
     setAttachmentBusy(true);
     setAttachmentError(null);
     setMobilePlusNotice(null);
@@ -2704,6 +3058,7 @@ export function ChatComposer({
       );
       return false;
     } finally {
+      sendBusyRef.current = false;
       setAttachmentBusy(false);
     }
   };
@@ -3063,6 +3418,14 @@ export function ChatComposer({
                 <textarea
                   ref={desktopInputRef}
                   rows={desktopEditorExpanded ? 9 : 3}
+                  // 走查 R23：和 chat-list-page b45435c2 / 姊妹 search input 已经
+                  // 补过 aria-label 的同款 a11y 缺漏——桌面单聊主输入框没有 label
+                  // 或 aria-label 关联，只有 placeholder。屏幕阅读器（NVDA / JAWS）
+                  // 对 placeholder 的支持不一致，多数实现在用户开始打字后就不再
+                  // 朗读，盲人用户 focus 进来根本不知道这是消息输入框。和 placeholder
+                  // 同样用上层（conversation-thread-panel）传下来的"输入消息"/
+                  // "直接说：明早8点提醒我吃药"（reminder 会话）文案即可。
+                  aria-label={placeholder}
                   value={value}
                   onChange={(event) => {
                     onChange(event.target.value);
@@ -3322,7 +3685,20 @@ export function ChatComposer({
                     onKeyUp={syncInputCursor}
                     onSelect={syncInputCursor}
                     placeholder={placeholder}
-                    className="min-h-[34px] max-h-[96px] flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-[20px] text-[#111827] outline-none placeholder:text-[#a3a3a3]"
+                    // 走查移动端/群聊 R9：和桌面 R23 同款 a11y 修法——R23 当时把
+                    // 移动 textarea 显式留给后续轮次（"移动 textarea (line 3542)
+                    // 暂不动以保持 scope 最小"）。移动端 SR（iOS VoiceOver / Android
+                    // TalkBack）对 placeholder 的支持也分裂：开始打字后多数实现就
+                    // 不再朗读，盲人用户 focus 进来听到 "编辑栏 空" 不知道是消息
+                    // 输入框。复用上层透下来的 placeholder 文案（"输入消息" 或
+                    // reminder 会话的 "直接说：明早8点提醒我吃药"），群聊路径同样
+                    // 受益（mentionCandidates 通过 chat-composer 入口共享同条 textarea）。
+                    aria-label={placeholder}
+                    // text-[16px]: iOS Safari < 16px 字号会在 focus 时强制
+                    // viewport zoom-in（导致整页布局抖一下 + 退出 focus 后
+                    // 不会自动 zoom 回去）。这里聊天 composer 是 web 移动端
+                    // 用户最常 focus 的输入框，必须 ≥16px。
+                    className="min-h-[34px] max-h-[96px] flex-1 resize-none bg-transparent py-1.5 text-[16px] leading-[22px] text-[#111827] outline-none placeholder:text-[#a3a3a3]"
                   />
                 </div>
               )}
@@ -3422,9 +3798,8 @@ export function ChatComposer({
               setAttachmentError(null);
               setMobilePlusNotice({ message });
             }}
-            unavailableBackActionLabel={errorActionLabel}
-            onUnavailableBack={onErrorAction ?? undefined}
             onUnavailableFallback={handleUnavailableFallback}
+            excludeCharacterIds={contactPickerExcludeIds}
           />
         ) : null}
         {!isDesktop && mobileComposerStatus ? (
@@ -3973,6 +4348,14 @@ function DesktopScreenshotEditor({
   selectedTextValue: string;
 }) {
   const t = useRuntimeTranslator();
+  // R4 走查：截图编辑器是个全屏 modal（fixed inset-0 + backdrop + Esc 关），
+  // 但 panel 既没挂 role="dialog" + aria-modal，也没把「截图预览」标题 /
+  // 「拖拽框选裁剪范围…」描述用 aria-labelledby/aria-describedby 关联。
+  // 桌面单聊点 composer 工具栏「截图」按钮就进这里，盲人屏幕阅读器只听到
+  // 一串裸 button label 浮空，不知道是个对话框、不知道标题、不知道做什么。
+  // 和 confirm-dialog / text-edit-dialog 系列 R2~R5 修过的 a11y 同款方向。
+  const titleId = useId();
+  const descId = useId();
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
@@ -4536,11 +4919,19 @@ function DesktopScreenshotEditor({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.52)] p-6 backdrop-blur-sm">
-      <div className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[16px] font-medium">{t(msg`截图预览`)}</div>
-            <div className="mt-1 text-[12px] text-white/58">
+            <div id={titleId} className="text-[16px] font-medium">
+              {t(msg`截图预览`)}
+            </div>
+            <div id={descId} className="mt-1 text-[12px] text-white/58">
               {t(msg`拖拽框选裁剪范围，不框选时会按原图发送。`)}
             </div>
           </div>
@@ -4656,6 +5047,12 @@ function DesktopScreenshotEditor({
                       onSelectedTextChange(event.target.value)
                     }
                     placeholder={t(msg`输入标注文字`)}
+                    // 走查新一轮 R25：和姊妹截图编辑器 R18 dialog 语义 / 桌面单聊
+                    // composer R23 同款 a11y 缺漏——截图标注 textbox 没挂 label
+                    // 关联，只有 placeholder。SR focus 进来听到「编辑栏 输入
+                    // 标注文字 空」（部分实现读 placeholder、部分不读）。补
+                    // aria-label 跟选中的工具上下文（"文字" tool）对齐。
+                    aria-label={t(msg`输入标注文字`)}
                     className="ml-2 h-9 min-w-[180px] rounded-[10px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
                   />
                 ) : null}
@@ -6132,7 +6529,10 @@ async function createEditedScreenshotPayload(
   const sourceHeight = crop
     ? Math.max(1, Math.round(crop.height * height))
     : height;
-  const image = await loadImageElement(draft.previewUrl);
+  const image = await loadImageElement(
+    draft.previewUrl,
+    translateRuntimeMessage(msg`截图解析失败，请重新截图。`),
+  );
   const canvas = document.createElement("canvas");
   canvas.width = sourceWidth;
   canvas.height = sourceHeight;
@@ -6542,13 +6942,18 @@ function buildEditedScreenshotFileName(
   return `${normalized.slice(0, extensionIndex)}${suffix || "-edited"}.png`;
 }
 
-function loadImageElement(url: string) {
+function loadImageElement(url: string, errorMessage?: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () =>
       reject(
-        new Error(translateRuntimeMessage(msg`截图解析失败，请重新截图。`)),
+        new Error(
+          // 默认沿用 createImageDraft 内 readImageDimensions onerror 同一条
+          // "图片解析失败，请换一张再试。"——已经有 en/ja/ko 翻译，不引新 string。
+          errorMessage ??
+            translateRuntimeMessage(msg`图片解析失败，请换一张再试。`),
+        ),
       );
     image.src = url;
   });
@@ -6738,6 +7143,28 @@ function extractClipboardFiles(clipboardData: DataTransfer | null) {
   }
 
   return [...clipboardData.files];
+}
+
+// 用于 dragenter/dragover：drop 之前拿不到真文件，只能通过 kind/types
+// 探测是不是文件 drag。注意 types 在 Chromium 上是大写 "Files"，标准
+// DataTransfer.types 用大写 "Files"，DataTransferItemList.kind 用小写
+// "file"——两条都查一下兼容性更稳。
+function hasDraggableFiles(dataTransfer: DataTransfer | null) {
+  if (!dataTransfer) {
+    return false;
+  }
+
+  if (dataTransfer.types && dataTransfer.types.includes("Files")) {
+    return true;
+  }
+
+  for (const item of dataTransfer.items) {
+    if (item.kind === "file") {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function findActiveMentionToken(value: string, cursor: number) {

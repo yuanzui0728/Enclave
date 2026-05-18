@@ -190,6 +190,7 @@ function MobileSubscriptionInboxPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
+            aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={17} />
           </Button>

@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +41,7 @@ import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type UploadTarget = "default" | "group";
@@ -57,7 +57,6 @@ export function GroupChatBackgroundPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploadTarget, setUploadTarget] = useState<UploadTarget>("default");
   const [defaultDraft, setDefaultDraft] = useState<ChatBackgroundAsset | null>(
@@ -98,19 +97,58 @@ export function GroupChatBackgroundPage() {
   });
   const backgroundQuery = useGroupBackground(groupId);
 
+  // 走查 Round 4：原版每次 backgroundQuery.data 变化都把 draft 三连冲掉。
+  // useGroupBackground 在 window-focus / 切换前后台时会 refetch；用户上传完
+  // 还没点保存就切到后台/最小化再回来，refetch 命中老服务器 data，effect 把
+  // 用户的上传 draft 覆盖回旧值——白上传一次。同 edit/announcement 页路数：
+  // 只在第一次拿到服务端值时 seed，之后用户控制 draft；如果用户点了
+  // saveDefault/saveGroup/clearDefault/clearGroup 把服务端值改写了，
+  // 那些 onSuccess 里手动 setDefault/setGroup 也会显式 reset 这个 ref。
+  const draftInitializedRef = useRef(false);
   useEffect(() => {
     if (!backgroundQuery.data) {
       return;
     }
-
+    if (draftInitializedRef.current) {
+      return;
+    }
+    draftInitializedRef.current = true;
     setDefaultDraft(backgroundQuery.data.defaultBackground ?? null);
     setGroupMode(backgroundQuery.data.mode);
     setGroupDraft(backgroundQuery.data.conversationBackground ?? null);
   }, [backgroundQuery.data]);
+  // groupId 切换（同账号切到另一群）必须强制 re-seed，否则下一群的 draft
+  // 还是上一群的；和上面那条 effect 配对。
+  // 走查 R1：仅 reset ref 不够——还得把 defaultDraft/groupMode/groupDraft 三个
+  // state 也回归到 initial（null/inherit/null），否则 backgroundQuery.data 还在
+  // 飞那几百 ms 内界面会先用 A 群的 draft 渲染 B 群的预览，包括 PresetGrid 上
+  // 高亮的也是上一群的选中项。uploadMutation 的取消挂起单独放在另一个 effect
+  // 里（声明顺序在它之下）。
+  useEffect(() => {
+    draftInitializedRef.current = false;
+    setDefaultDraft(null);
+    setGroupMode("inherit");
+    setGroupDraft(null);
+  }, [baseUrl, groupId]);
 
   useEffect(() => {
     setNotice(null);
   }, [groupId]);
+
+  // 走查移动端群聊 R1：和姊妹路径 chat-background-page.tsx 走查 R2（commit
+  // c16fa822e）同款修法——本页 setNotice("背景图已上传，记得保存当前设置。") /
+  // setNotice("默认背景图已保存。") / setNotice("当前群聊背景已保存。") 等 8
+  // 处 success 文案没 auto-dismiss，notice 一直挂在背景预览上方直到用户离开
+  // 页面或切到下一群（[groupId] effect 重置）。单聊版同位置已经按 chat-list /
+  // chat-details 口径对齐 3.5s 自动消，本页漏修。pageError 走 mutation.error
+  // 单独渲染，不经 notice 状态，无需顾及。
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
@@ -156,6 +194,23 @@ export function GroupChatBackgroundPage() {
     },
   });
 
+  // 走查 R1：切群时取消挂起的 upload onSuccess 副作用——A 群上传 mutation 在
+  // 飞、用户切到 B 群、A 的 upload 回来 onSuccess 会 setDefaultDraft / setGroupDraft
+  // 把 B 群预览覆盖成 A 群上传的图。reset() 把 mutation 状态拨回 idle，等同丢弃
+  // in-flight 结果（compressChatBackgroundImage / uploadChatBackground 已经发出
+  // 的网络请求不取消，但成功后 onSuccess 不再触发）。
+  const uploadMutationResetRef = useRef(uploadMutation.reset);
+  uploadMutationResetRef.current = uploadMutation.reset;
+  useEffect(() => {
+    uploadMutationResetRef.current();
+  }, [baseUrl, groupId]);
+
+  // 走查 R3：四个 mutation 的 onSuccess 原本都 await invalidateQueries 才
+  // resolve；runningMutationRef 共用锁在 onSettled 才释放（line 295），等于
+  // 用户点完"保存"按钮要等 invalidate 全部返回才能再次操作（公网隧道 RTT
+  // 600ms × N 条），busy 状态多撑 1-2s。setNotice 已经在 await 前发了，剩下
+  // invalidate 是给其它页面拉刷用的，fire-and-forget 即可。和 R1 announcement/
+  // edit/create 三个页面同口径修法。
   const saveDefaultMutation = useMutation({
     mutationFn: async () => {
       if (!defaultDraft) {
@@ -164,29 +219,25 @@ export function GroupChatBackgroundPage() {
 
       return setWorldOwnerChatBackground({ background: defaultDraft }, baseUrl);
     },
-    onSuccess: async (owner) => {
+    onSuccess: (owner) => {
       setDefaultDraft(owner.defaultChatBackground ?? null);
       setNotice(t(msg`默认背景图已保存。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-background", baseUrl, groupId],
-        }),
-      ]);
+      void queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-background", baseUrl, groupId],
+      });
     },
   });
 
   const clearDefaultMutation = useMutation({
     mutationFn: () => clearWorldOwnerChatBackground(baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
       setDefaultDraft(null);
       setNotice(t(msg`默认背景图已恢复系统背景。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-background", baseUrl, groupId],
-        }),
-      ]);
+      void queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-background", baseUrl, groupId],
+      });
     },
   });
 
@@ -210,7 +261,7 @@ export function GroupChatBackgroundPage() {
         baseUrl,
       );
     },
-    onSuccess: async (settings) => {
+    onSuccess: (settings) => {
       setGroupMode(settings.mode);
       setGroupDraft(settings.conversationBackground ?? null);
       setNotice(
@@ -218,7 +269,7 @@ export function GroupChatBackgroundPage() {
           ? t(msg`当前群聊背景已保存。`)
           : t(msg`当前群聊已恢复跟随默认背景。`),
       );
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["app-group-background", baseUrl, groupId],
       });
     },
@@ -226,11 +277,11 @@ export function GroupChatBackgroundPage() {
 
   const clearGroupMutation = useMutation({
     mutationFn: () => clearGroupBackground(groupId, baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
       setGroupMode("inherit");
       setGroupDraft(null);
       setNotice(t(msg`当前群聊已恢复跟随默认背景。`));
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["app-group-background", baseUrl, groupId],
       });
     },
@@ -244,6 +295,35 @@ export function GroupChatBackgroundPage() {
     clearDefaultMutation.isPending ||
     saveGroupMutation.isPending ||
     clearGroupMutation.isPending;
+  // 同步防双击锁——下面 4 个保存/清除按钮都是 `() => xxxMutation.mutate()`
+  // 直裸触发，busy=isPending sum 要等 React commit 才生效。同帧连点 2 次会
+  // 同时通过 busy=false → 两份 PATCH 同时飞（公网隧道 RTT 下不罕见），
+  // 服务端虽然幂等但 UI 上 setNotice 会被后到的 onSuccess 反复写一遍。
+  // 4 个 mutation 共用一把锁——任意一个 in-flight 时其它的也禁用，对齐
+  // busy 的语义。
+  const runningMutationRef = useRef(false);
+  const guard = (run: () => void) => () => {
+    if (runningMutationRef.current) return;
+    if (busy) return;
+    runningMutationRef.current = true;
+    run();
+  };
+  // 用 onSettled 解锁；4 个 mutation 共用一把锁
+  const releaseLock = () => {
+    runningMutationRef.current = false;
+  };
+  const runSaveDefault = guard(() =>
+    saveDefaultMutation.mutate(undefined, { onSettled: releaseLock }),
+  );
+  const runClearDefault = guard(() =>
+    clearDefaultMutation.mutate(undefined, { onSettled: releaseLock }),
+  );
+  const runSaveGroup = guard(() =>
+    saveGroupMutation.mutate(undefined, { onSettled: releaseLock }),
+  );
+  const runClearGroup = guard(() =>
+    clearGroupMutation.mutate(undefined, { onSettled: releaseLock }),
+  );
   const pageError =
     (uploadMutation.error instanceof Error && uploadMutation.error.message) ||
     (saveDefaultMutation.error instanceof Error &&
@@ -256,9 +336,20 @@ export function GroupChatBackgroundPage() {
       clearGroupMutation.error.message) ||
     null;
 
-  const openPicker = (target: UploadTarget) => {
+  const openPicker = async (target: UploadTarget) => {
     setUploadTarget(target);
-    fileInputRef.current?.click();
+    const files = await pickImageFiles({ multiple: false });
+    const file = files[0];
+    if (!file) {
+      return;
+    }
+    // 用 mutate() 而不是 mutateAsync()——对齐单聊 chat-background-page 同款修法：
+    // caller 是 onClick={() => openPicker(...)} fire-and-forget，没人接 rejection；
+    // uploadMutation.error 已通过 pageError (line 291-301) 渲染在页面上，业务上
+    // 不需要 await。改成 mutate() 后 rejection 不再外泄到 window.unhandledrejection
+    // （公网隧道 / cloud token 过期重连时 compressChatBackgroundImage 后端 5xx /
+    // 上传 4xx 会抛，每次都污染 telemetry）。
+    uploadMutation.mutate({ file });
   };
 
   const navigateToRouteStateReturn = () => {
@@ -310,17 +401,6 @@ export function GroupChatBackgroundPage() {
     setGroupMode("custom");
     setGroupDraft(background);
     setNotice(t(msg`当前群聊背景已切到新预览，保存后生效。`));
-  };
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.currentTarget.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    await uploadMutation.mutateAsync({ file });
   };
 
   const content = (
@@ -509,7 +589,7 @@ export function GroupChatBackgroundPage() {
               <Button
                 variant="primary"
                 disabled={busy || !defaultDraft}
-                onClick={() => saveDefaultMutation.mutate()}
+                onClick={runSaveDefault}
                 className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 {t(msg`保存默认背景`)}
@@ -517,7 +597,7 @@ export function GroupChatBackgroundPage() {
               <Button
                 variant="ghost"
                 disabled={busy}
-                onClick={() => clearDefaultMutation.mutate()}
+                onClick={runClearDefault}
                 className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 {t(msg`恢复系统背景`)}
@@ -573,7 +653,7 @@ export function GroupChatBackgroundPage() {
                   <Button
                     variant="ghost"
                     disabled={busy}
-                    onClick={() => clearGroupMutation.mutate()}
+                    onClick={runClearGroup}
                     className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
                   >
                     {t(msg`跟随默认背景`)}
@@ -596,7 +676,7 @@ export function GroupChatBackgroundPage() {
               <Button
                 variant="primary"
                 disabled={busy || (groupMode === "custom" && !groupDraft)}
-                onClick={() => saveGroupMutation.mutate()}
+                onClick={runSaveGroup}
                 className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 {groupMode === "custom"
@@ -608,13 +688,6 @@ export function GroupChatBackgroundPage() {
         </>
       ) : null}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => void handleFileChange(event)}
-      />
     </>
   );
 
@@ -628,7 +701,7 @@ export function GroupChatBackgroundPage() {
                 {t(msg`群聊背景`)}
               </div>
               <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                {groupQuery.data?.name ?? t(msg`群聊背景`)}
+                {groupQuery.data?.name || t(msg`群聊背景`)}
               </div>
             </div>
             <Button
@@ -670,16 +743,19 @@ export function GroupChatBackgroundPage() {
 
   return (
     <ChatDetailsShell
-      title={groupQuery.data?.name ?? t(msg`群聊背景`)}
+      title={groupQuery.data?.name || t(msg`群聊背景`)}
       subtitle={t(msg`默认背景和群聊专属背景`)}
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({
-            to: "/group/$groupId/details",
-            params: { groupId },
-            ...(currentRouteHash ? { hash: currentRouteHash } : {}),
-          });
-        });
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/group/$groupId/details",
+              params: { groupId },
+              ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+            });
+          },
+          `/group/${groupId}/details`,
+        );
       }}
     >
       <div className="space-y-3 px-3">{content}</div>

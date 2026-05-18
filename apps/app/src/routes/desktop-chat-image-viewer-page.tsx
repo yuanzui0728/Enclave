@@ -189,40 +189,58 @@ export function DesktopChatImageViewerPage() {
     return true;
   }, []);
 
+  // 走查新一轮 R2：handleImageSave 是 fire-and-forget，无任何同步锁。两条路径
+  // 都会触发它：
+  // · 顶栏「保存」按钮 onClick
+  // · Cmd/Ctrl+S 键盘快捷（line 下方 keydown handler）
+  // 同帧 <16ms double-click 同一按钮，或按住 Cmd 然后连按两下 S，saveRemoteFile
+  // 走 Tauri/native 实现时弹出 2 个文件保存对话框堆叠（webview 阻塞型 dialog 在
+  // Tauri 里被 spawn 两次），web fallback 走 anchor download 也会触发 2 次下载
+  // （文件名后缀 -1 / 浏览器去重表现不稳）。和姊妹 chat-message-list R4 / R5
+  // 同款 sync ref 锁；按 url 上锁，不同图片互不影响（连切前/后图各自保存合法）。
+  const savingImageUrlsRef = useRef<Set<string>>(new Set());
   const handleImageSave = useCallback((input: { url: string; fileName: string }) => {
+    if (savingImageUrlsRef.current.has(input.url)) {
+      return;
+    }
+    savingImageUrlsRef.current.add(input.url);
     void saveRemoteFile({
       url: input.url,
       fileName: input.fileName,
       kind: "image",
       dialogTitle: t(msg`保存图片`),
-    }).then((result) => {
-      if (result.status === "cancelled") {
-        return;
-      }
+    })
+      .then((result) => {
+        if (result.status === "cancelled") {
+          return;
+        }
 
-      const canRevealSavedFile =
-        result.status === "saved" && Boolean(result.savedPath?.trim());
-      const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+        const canRevealSavedFile =
+          result.status === "saved" && Boolean(result.savedPath?.trim());
+        const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
 
-      setSaveNotice({
-        message: result.message,
-        tone: result.status === "failed" ? "danger" : "success",
-        actionLabel: canRevealSavedFile ? t(msg`打开位置`) : undefined,
-        onAction:
-          savedPath
-            ? () => {
-                void revealSavedFile(savedPath).then((revealed) => {
-                  setSaveNotice({
-                    message: revealed
-                      ? t(msg`已打开所在位置。`)
-                      : t(msg`打开所在位置失败，请稍后再试。`),
-                    tone: revealed ? "success" : "danger",
+        setSaveNotice({
+          message: result.message,
+          tone: result.status === "failed" ? "danger" : "success",
+          actionLabel: canRevealSavedFile ? t(msg`打开位置`) : undefined,
+          onAction:
+            savedPath
+              ? () => {
+                  void revealSavedFile(savedPath).then((revealed) => {
+                    setSaveNotice({
+                      message: revealed
+                        ? t(msg`已打开所在位置。`)
+                        : t(msg`打开所在位置失败，请稍后再试。`),
+                      tone: revealed ? "success" : "danger",
+                    });
                   });
-                });
-              }
-            : undefined,
+                }
+              : undefined,
+        });
+      })
+      .finally(() => {
+        savingImageUrlsRef.current.delete(input.url);
       });
-    });
   }, []);
 
   const navigateToItem = useCallback(

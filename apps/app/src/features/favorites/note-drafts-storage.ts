@@ -97,7 +97,14 @@ function parseDesktopNoteDraftRecords(raw: string | null | undefined) {
     return parsed
       .map((item) => normalizeDesktopNoteDraftRecord(item))
       .filter((item): item is DesktopNoteDraftRecord => Boolean(item))
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+      // ISO 字符串走原生字典序，跟 favorites-storage / note-editor-helpers 对齐。
+      .sort((left, right) =>
+        right.updatedAt < left.updatedAt
+          ? -1
+          : right.updatedAt > left.updatedAt
+            ? 1
+            : 0,
+      );
   } catch {
     return [] as DesktopNoteDraftRecord[];
   }
@@ -110,7 +117,22 @@ function writeDesktopNoteDraftRecords(records: DesktopNoteDraftRecord[]) {
   }
 
   if (records.length) {
-    storage.setItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY, JSON.stringify(records));
+    try {
+      storage.setItem(
+        DESKTOP_NOTE_DRAFTS_STORAGE_KEY,
+        JSON.stringify(records),
+      );
+    } catch (error) {
+      // 跟 favorites-storage 一致：localStorage 满 → 默默吃掉异常，避免每
+      // 180ms 自动保存草稿一旦超额就把编辑器 onInput 整个 crash。下一次写
+      // 入若用户已经手动腾出空间又会成功。
+      if (typeof console !== 'undefined') {
+        console.warn(
+          'Failed to persist desktop note drafts to localStorage',
+          error,
+        );
+      }
+    }
   } else {
     storage.removeItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY);
   }

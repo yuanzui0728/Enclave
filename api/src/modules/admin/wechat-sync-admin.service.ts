@@ -793,6 +793,7 @@ export class WechatSyncAdminService {
       inferenceModelId: null,
       allowOwnerKeyOverride: true,
       modelRoutingNotes: '',
+      defaultVoiceReply: false,
       activityMode: 'auto',
       socialOpenness: 'normal',
       proactiveBrowseChance: 0.3,

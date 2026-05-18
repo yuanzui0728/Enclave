@@ -184,6 +184,11 @@ const ProfileSettingsLanguagePage = lazy(async () => {
   return { default: mod.ProfileSettingsLanguagePage };
 });
 
+const ProfileSettingsAccountSecurityPage = lazy(async () => {
+  const mod = await import("./routes/profile-settings-account-security-page");
+  return { default: mod.ProfileSettingsAccountSecurityPage };
+});
+
 const ProfileInfoPage = lazy(async () => {
   const mod = await import("./routes/profile-info-page");
   return { default: mod.ProfileInfoPage };
@@ -877,6 +882,13 @@ const profileSettingsLanguageRoute = createRoute({
   component: ProfileSettingsLanguagePage,
 });
 
+const profileSettingsAccountSecurityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/settings/account-security",
+  beforeLoad: requireWorldReady,
+  component: ProfileSettingsAccountSecurityPage,
+});
+
 const profileInfoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/info",
@@ -1113,6 +1125,7 @@ const routeTree = rootRoute.addChildren([
   discoverMiniProgramsRoute,
   profileSettingsRoute,
   profileSettingsLanguageRoute,
+  profileSettingsAccountSecurityRoute,
   profileInfoRoute,
   profileInfoNameRoute,
   profileInfoSignatureRoute,

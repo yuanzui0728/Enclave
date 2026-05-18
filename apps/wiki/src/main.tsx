@@ -2,9 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { init as initAnalytics } from "@yinjie/analytics";
+import {
+  init as initAnalytics,
+  isCurrentOriginLocalLike,
+  track,
+} from "@yinjie/analytics";
 import { AppLocaleProvider } from "@yinjie/i18n";
-import { LoadingBlock } from "@yinjie/ui";
+import { LoadingBlock, TelemetryErrorBoundary } from "@yinjie/ui";
 import "@yinjie/ui/tokens.css";
 import "./index.css";
 import { queryClient } from "./lib/query-client";
@@ -19,13 +23,28 @@ if (typeof window !== "undefined") {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AppLocaleProvider
-      surface="wiki"
-      fallback={<LoadingBlock className="m-6" />}
+    <TelemetryErrorBoundary
+      onError={(error, info) => {
+        // dev origin（vite 5184）下 HMR 重挂会触发与 app 端相同的 useAppLocale
+        // throw 等抖动；只让生产 origin 上的渲染错误进入 telemetry。
+        if (isCurrentOriginLocalLike()) return;
+        const err = error instanceof Error ? error : null;
+        track("react_render_error", {
+          message: err?.message ?? String(error).slice(0, 1000),
+          name: err?.name ?? null,
+          stack: err?.stack?.slice(0, 2000) ?? null,
+          componentStack: info.componentStack?.slice(0, 2000) ?? null,
+        });
+      }}
     >
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </AppLocaleProvider>
+      <AppLocaleProvider
+        surface="wiki"
+        fallback={<LoadingBlock className="m-6" label="加载中..." />}
+      >
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </AppLocaleProvider>
+    </TelemetryErrorBoundary>
   </React.StrictMode>,
 );

@@ -53,6 +53,14 @@ export function buildGroupRelaySummaryMessage(
 }
 
 export function parseGroupRelaySummaryMessage(text: string) {
+  // ChatMessageList 渲染每条消息都会试着把它解析成 group-relay 卡片 —— 长聊
+  // 天 100+ 消息 × 每次 typing tick re-render 都跑一遍 split+map+filter，对
+  // 不命中的绝大多数消息（普通文本/图片/语音）纯属浪费。先用 prefix 早退，
+  // 命中再 split 走原 lines[0] 校验。
+  if (!text.startsWith(`${GROUP_RELAY_MESSAGE_PREFIX} `)) {
+    return null;
+  }
+
   const lines = text
     .split("\n")
     .map((line) => line.trim())

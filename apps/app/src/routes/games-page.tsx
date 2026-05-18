@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -108,6 +108,11 @@ export function GamesPage() {
     message: string;
     onAction: () => void;
   } | null>(null);
+  // hasLaunchedThisSession / embeddedSlotRef 必须放在所有早 return（isDesktopLayout
+  // 分支、!selectedGame 分支）之前，否则视口在桌面↔移动之间切换会触发
+  // "Rendered more/fewer hooks than during the previous render" 整页崩。
+  const [hasLaunchedThisSession, setHasLaunchedThisSession] = useState(false);
+  const embeddedSlotRef = useRef<HTMLDivElement | null>(null);
   const normalizedPathname = normalizePathname(pathname);
   const isDesktopGamesRoute =
     normalizedPathname === "/tabs/games" ||
@@ -201,6 +206,13 @@ export function GamesPage() {
       return;
     }
 
+    // 同样的 yinjie-farm 跨路由抢路问题：桌面端 banner click 也走
+    // navigate(/tabs/games/yinjie-farm)，再被这里 replace 回 /tabs/games?game=yinjie-farm
+    // farm 进不去。
+    if (selectedGameId === "yinjie-farm") {
+      return;
+    }
+
     const nextSearch = buildMobileGamesRouteSearch({
       gameId: selectedGameId,
       inviteId:
@@ -245,6 +257,16 @@ export function GamesPage() {
       return;
     }
 
+    // yinjie-farm 走独立路由 /tabs/games/yinjie-farm，handleLaunchGame 里已经
+    // 显式 navigate 过去；这里 selectedGameId 变成 yinjie-farm 时若也用 replace
+    // 写回 /discover/games?game=yinjie-farm，会跟前面 push 抢路 —— 用户从
+    // ?game=signal-squad 点 banner 时，最后 URL 落在 /discover/games 而不是
+    // /tabs/games/yinjie-farm，farm 永远拉不起来。yinjie-farm 在移动端 URL 里
+    // 没意义（slot 不渲染、navigate 已接管），直接跳过同步。
+    if (selectedGameId === "yinjie-farm") {
+      return;
+    }
+
     const nextSearch = buildMobileGamesRouteSearch({
       gameId: selectedGameId,
       inviteId:
@@ -277,21 +299,91 @@ export function GamesPage() {
     selectedGameId,
   ]);
 
-  const featuredGames = resolveGames(gameCenterFeaturedGameIds);
+  // featuredGames 是模块静态常量 + 一次 getGameCenterGame 查表，模块加载后不变；
+  // 但 recentGames 依赖每次 storage 同步过来的 recentGameIds，所以放进 useMemo。
+  const featuredGames = useMemo(
+    () => resolveGames(gameCenterFeaturedGameIds),
+    [],
+  );
+  const recentGames = useMemo(() => resolveGames(recentGameIds), [recentGameIds]);
   const selectedGame =
     getGameCenterGame(selectedGameId) ?? featuredGames[0] ?? gameCenterGames[0];
-  const recentGames = resolveGames(recentGameIds);
   const myGames =
     recentGames.length > 0 ? recentGames : featuredGames.slice(0, 6);
   const bannerGame = featuredGames[0] ?? selectedGame;
-  const featuredRest = featuredGames.slice(1);
+  // 当「我的游戏」改用 recents 接管时，featured[0]（隐界农场）也得在「精选小游戏」里露面，
+  // 否则它会从整张移动端列表上消失。
+  const featuredRest =
+    recentGames.length > 0 ? featuredGames : featuredGames.slice(1);
+  // 移动端不像 desktop 有 preview pane——embedded slot 是 inline 的"正在玩"
+  // 区块，跟 selectedGameId（被点选 / 被预览的那个游戏）无关。
+  // 原来要求 activeGameId === selectedGame.id：用户点另一行卡片本体
+  // （onSelect 而不是绿色"开始"）会让 selectedGameId 改掉，正在玩的
+  // embedded 游戏被悄悄 unmount——这是 bug。
+  // 但单纯改成 hasEmbeddedGame(activeGameId) 又有副作用：disk 上 activeGameId
+  // 可能是上次会话的尾巴 / fixture default ("signal-squad")，新用户一进来
+  // 就被自动塞个 embedded slot 进来，跟 invite 链路 (`?invite=...`) 也对不上
+  // （URL 里说要去 night-market 邀约页，slot 却预热 signal-squad）。
+  // 折中：本次 mount 内用户没有显式 launch 过，就尊重 OLD 等式逻辑；
+  // 一旦 launchGame 过一次，slot 就完全跟 activeGameId 走，跟 selectedGameId
+  // 解耦——这样 tap 另一行卡片本体不会再把游戏视觉上踢飞。
+  const isEmbeddedActive = hasEmbeddedGame(activeGameId)
+    && (hasLaunchedThisSession || activeGameId === (selectedGame?.id ?? ""));
+  // gameCenterFriendActivities 是模块常量，过滤结果也是常量。
+  const friendActivities = useMemo(
+    () =>
+      gameCenterFriendActivities.filter((activity) =>
+        Boolean(getGameCenterGame(activity.gameId)),
+      ),
+    [],
+  );
+  // 嵌入式游戏 slot 渲染在 Banner 与「好友在玩」之间——用户从更深的列表
+  // （热门 / 新游）点「开始」时，slot 在屏幕外，看不到任何反馈。
+  // 检测到 embedded 激活且 slot 不在视口内时，把它滚到 viewport 顶部一点。
+  useEffect(() => {
+    if (!isEmbeddedActive || isDesktopLayout) {
+      return;
+    }
+    const node = embeddedSlotRef.current;
+    if (!node) {
+      return;
+    }
+    // 用 rAF 避开同一帧的 layout，等 slot 真正挂到 DOM 之后再 scroll。
+    const id = window.requestAnimationFrame(() => {
+      const rect = node.getBoundingClientRect();
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      // 已经完全在视口内就不滚，避免抢用户当前阅读位置。
+      if (rect.top >= 0 && rect.bottom <= viewportHeight) {
+        return;
+      }
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [isEmbeddedActive, activeGameId, isDesktopLayout]);
 
   function handleLaunchGame(gameId: string) {
     const game = getGameCenterGame(gameId);
     launchGame(gameId);
     setSelectedGameId(gameId);
+    setHasLaunchedThisSession(true);
     if (gameId === "yinjie-farm") {
-      void navigate({ to: "/tabs/games/yinjie-farm" });
+      // farm 是独立路由 /tabs/games/yinjie-farm。
+      // 用 safeReturnPath（用户真正的来源）；若没有，从 /discover/games 进
+      //   farm 时 fallback 到 /tabs/discover，避免 farm → 返回 → /tabs/games
+      //   → 返回 → history.back 又跳回 farm 形成死循环。
+      const farmReturnPath =
+        safeReturnPath ??
+        (normalizedPathname === "/discover/games" ? "/tabs/discover" : undefined);
+      void navigate({
+        to: "/tabs/games/yinjie-farm",
+        search: farmReturnPath
+          ? {
+              returnPath: farmReturnPath,
+              ...(safeReturnHash ? { returnHash: safeReturnHash } : {}),
+            }
+          : undefined,
+      });
       return;
     }
     if (hasEmbeddedGame(gameId)) {
@@ -301,7 +393,7 @@ export function GamesPage() {
     setNoticeTone("success");
     const launchedName = game?.name ?? t(msg`该游戏`);
     setSuccessNotice(
-      t(msg`${launchedName} 已加入最近玩过。首期先以游戏中心内容工作区承接，后续再接小游戏容器。`),
+      t(msg`${launchedName} 已加入最近玩过，正在准备入口。`),
     );
   }
 
@@ -479,7 +571,7 @@ export function GamesPage() {
   if (!selectedGame) {
     return (
       <AppPage className="space-y-0 px-0 pb-0 pt-0">
-        {/* 暂时隐藏「功能开发中」蒙板 */} // i18n-ignore-line
+        {/* 暂时隐藏「功能开发中」蒙板 i18n-ignore-line */}
       </AppPage>
     );
   }
@@ -515,11 +607,6 @@ export function GamesPage() {
   }
 
   const statusBackLabel = safeReturnPath ? t(msg`返回上一页`) : null;
-  const isEmbeddedActive =
-    activeGameId === selectedGame.id && hasEmbeddedGame(activeGameId);
-  const friendActivities = gameCenterFriendActivities.filter((activity) =>
-    Boolean(getGameCenterGame(activity.gameId)),
-  );
 
   function handleSelectAndLaunch(gameId: string) {
     setSelectedGameId(gameId);
@@ -538,6 +625,7 @@ export function GamesPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
+            aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={17} />
           </Button>
@@ -611,11 +699,19 @@ export function GamesPage() {
         ) : null}
 
         {isEmbeddedActive && activeGameId ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
+          <div
+            ref={embeddedSlotRef}
+            className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3"
+          >
             <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)]">
               <EmbeddedGameSlot
                 gameId={activeGameId}
                 onExit={dismissActiveGame}
+                fallback={
+                  <div className="flex h-48 items-center justify-center text-[12px] text-[color:var(--text-muted)]">
+                    {t(msg`正在准备游戏…`)}
+                  </div>
+                }
               />
             </div>
           </div>
@@ -636,7 +732,10 @@ export function GamesPage() {
                     invited={Boolean(
                       friendInviteStatusByActivityId[activity.id],
                     )}
-                    onSelect={() => setSelectedGameId(game.id)}
+                    // 之前点 row 主体只 setSelectedGameId（移动端没 preview pane，
+                    // 视觉上 = 死按钮）；移动端这里改成"加入 ta 的局"——直接拉起
+                    // 朋友正在玩的游戏，跟 GameListRow body tap 一致。
+                    onSelect={() => handleSelectAndLaunch(game.id)}
                     onInvite={() => handleInviteFriend(activity.id)}
                   />
                 );
@@ -654,7 +753,6 @@ export function GamesPage() {
                   key={`featured-${game.id}`}
                   game={game}
                   onLaunch={() => handleSelectAndLaunch(game.id)}
-                  onSelect={() => setSelectedGameId(game.id)}
                 />
               ))}
             </ul>
@@ -672,7 +770,6 @@ export function GamesPage() {
                   key={`hot-${entry.gameId}`}
                   game={game}
                   onLaunch={() => handleSelectAndLaunch(game.id)}
-                  onSelect={() => setSelectedGameId(game.id)}
                 />
               );
             })}
@@ -690,7 +787,6 @@ export function GamesPage() {
                   key={`new-${entry.gameId}`}
                   game={game}
                   onLaunch={() => handleSelectAndLaunch(game.id)}
-                  onSelect={() => setSelectedGameId(game.id)}
                 />
               );
             })}
@@ -710,10 +806,13 @@ function SectionHeader({
   trailing?: string;
   onTrailingClick?: () => void;
 }) {
+  // 只有同时给了 trailing 文案 + onTrailingClick 才渲染「更多」按钮，
+  // 避免页面上有看上去可点的「更多」实则点了没反应的死按钮。
+  const showTrailingAction = Boolean(trailing && onTrailingClick);
   return (
     <div className="flex items-center justify-between px-4 pb-2 pt-4 text-[14px] font-medium text-[color:var(--text-primary)]">
       <span>{title}</span>
-      {trailing ? (
+      {showTrailingAction ? (
         <button
           type="button"
           onClick={onTrailingClick}
@@ -741,7 +840,10 @@ function GameAvatar({
       : size === "lg"
         ? "h-14 w-14 rounded-[14px] text-[20px]"
         : "h-[52px] w-[52px] rounded-[14px] text-[18px]";
-  const initial = [...game.name][0] ?? "?";
+  // 用 game.id 的首字符做 avatar，跟 locale 无关。早前用 [...game.name][0]
+  // 在非中文 locale 也会撞到中文（gameCenterGames 在模块加载时就把
+  // t(msg`...`) 求好值并冻住，locale 后续切换不会重译）。
+  const initial = (game.id[0] ?? "?").toUpperCase();
   return (
     <div
       className={cn(

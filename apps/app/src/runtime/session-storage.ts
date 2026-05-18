@@ -41,6 +41,12 @@ function createStateStorage(): StateStorage {
       if (isNativeSecureStorageAvailable()) {
         return setSecureStorageItem(name, value).then((storedSecurely) => {
           if (storedSecurely) {
+            // 写 Keychain 成功后顺手清掉同名 localStorage / memory 旧拷贝。
+            // 老版本 app 装在同台设备过、或者上一次 secure 不可用临时落到
+            // localStorage，都会留下副本——如果不清，getItem 在某次 keychain
+            // 读失败时就会回退读到陈年遗留状态（旧 owner / 旧 session token）。
+            getLocalStorage()?.removeItem(name);
+            memoryStorage.delete(name);
             return;
           }
 
@@ -66,6 +72,11 @@ function createStateStorage(): StateStorage {
       if (isNativeSecureStorageAvailable()) {
         return removeSecureStorageItem(name).then((removedSecurely) => {
           if (removedSecurely) {
+            // 删 Keychain 成功也必须清 localStorage / memory 旧拷贝，否则
+            // 「登出」之后 secure storage 没了，回退读路径还在 localStorage
+            // 里读得到旧 token，等于没删干净。
+            getLocalStorage()?.removeItem(name);
+            memoryStorage.delete(name);
             return;
           }
 

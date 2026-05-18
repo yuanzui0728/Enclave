@@ -286,6 +286,11 @@ export function CharacterRuntimePage() {
                       {item.includedInWindow ? t(msg`进入窗口`) : t(msg`仅可见`)}
                     </StatusPill>
                     <StatusPill tone="muted">{item.type}</StatusPill>
+                    {item.senderRemark ? (
+                      <StatusPill tone="muted">
+                        {t(msg`备注`)} ← {item.senderRemark.from}
+                      </StatusPill>
+                    ) : null}
                   </>
                 }
                 meta={formatDateTime(item.createdAt)}

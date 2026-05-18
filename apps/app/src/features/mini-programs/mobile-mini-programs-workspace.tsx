@@ -141,7 +141,9 @@ export function MobileMiniProgramsWorkspace({
               value={searchText}
               onChange={(event) => onSearchTextChange(event.target.value)}
               placeholder={t(msg`搜索小程序、服务或场景`)}
-              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[13px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.22)] focus:bg-white"
+              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // zoom-in。
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.22)] focus:bg-white"
             />
             {searchText ? (
               <button

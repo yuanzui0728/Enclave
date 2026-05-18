@@ -32,7 +32,7 @@ export function CharacterDiffPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Link
           to="/character/$characterId"
           params={{ characterId: data.to.characterId }}
@@ -40,7 +40,7 @@ export function CharacterDiffPage() {
         >
           <Trans>返回词条</Trans>
         </Link>
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-lg font-semibold sm:text-xl">
           <Trans>v{data.from.version} 对比 v{data.to.version}</Trans>
         </h1>
         <StatusPill>{data.to.operation}</StatusPill>

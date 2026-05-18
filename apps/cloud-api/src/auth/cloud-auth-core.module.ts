@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { CloudLoginAttemptEntity } from "../entities/cloud-login-attempt.entity";
 import { CloudUserOAuthIdentityEntity } from "../entities/cloud-user-oauth-identity.entity";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { EmailVerificationSessionEntity } from "../entities/email-verification-session.entity";
@@ -10,6 +11,7 @@ import { EmailAuthService } from "./email-auth.service";
 import { GoogleAuthService } from "./google-auth.service";
 import { MockEmailProviderService } from "./mock-email-provider.service";
 import { MockSmsProviderService } from "./mock-sms-provider.service";
+import { PasswordAuthService } from "./password-auth.service";
 import { PhoneAuthService } from "./phone-auth.service";
 import { ServiceTokenGuard } from "./service-token.guard";
 
@@ -21,12 +23,14 @@ import { ServiceTokenGuard } from "./service-token.guard";
       EmailVerificationSessionEntity,
       CloudUserEntity,
       CloudUserOAuthIdentityEntity,
+      CloudLoginAttemptEntity,
     ]),
   ],
   providers: [
     PhoneAuthService,
     EmailAuthService,
     GoogleAuthService,
+    PasswordAuthService,
     CloudMailService,
     MockSmsProviderService,
     MockEmailProviderService,
@@ -37,6 +41,7 @@ import { ServiceTokenGuard } from "./service-token.guard";
     PhoneAuthService,
     EmailAuthService,
     GoogleAuthService,
+    PasswordAuthService,
     CloudMailService,
     MockSmsProviderService,
     MockEmailProviderService,

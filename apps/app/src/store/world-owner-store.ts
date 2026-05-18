@@ -1,12 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { msg } from "@lingui/macro";
-import { translateRuntimeMessage } from "@yinjie/i18n";
 import type { WorldOwner } from "@yinjie/contracts";
 import defaultOwnerAvatar from "../assets/default-owner-avatar.svg";
 import { createSessionStateStorage } from "../runtime/session-storage";
-
-const t = translateRuntimeMessage;
 
 type WorldOwnerState = {
   id: string | null;
@@ -36,7 +32,13 @@ type WorldOwnerState = {
 };
 
 const defaultAvatar = defaultOwnerAvatar;
-const defaultSignature = t(msg`在现实之外，进入另一片世界。`);
+// signature 一开始是「在现实之外，进入另一片世界。」这种诗意 placeholder，
+// 但它直接占用 state.signature 字段，下游 profile-page / profile-info-page
+// 「signature?.trim() || 兜底」逻辑会把它当成「用户已经填了签名」展示出去 —
+// 在新用户 cold start、welcome 还没 hydrate API 那一小段时间，「我」页面就
+// 给人看到一行根本不是用户写的诗。把 state 用空字符串当 default，需要诗意
+// 兜底的页面（如 desktop-message-avatar-popover）自己在 render 层提供 fallback。
+const DEFAULT_SIGNATURE = "";
 
 function resolveOwnerAvatar(avatar?: string | null) {
   return avatar && avatar.trim() ? avatar : defaultAvatar;
@@ -49,7 +51,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       username: null,
       onboardingCompleted: false,
       avatar: resolveOwnerAvatar(),
-      signature: defaultSignature,
+      signature: DEFAULT_SIGNATURE,
       hasCustomApiKey: false,
       customApiBase: null,
       createdAt: null,
@@ -59,7 +61,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           username: owner.username,
           onboardingCompleted: owner.onboardingCompleted,
           avatar: resolveOwnerAvatar(owner.avatar),
-          signature: owner.signature ?? defaultSignature,
+          signature: owner.signature ?? DEFAULT_SIGNATURE,
           hasCustomApiKey: owner.hasCustomApiKey,
           customApiBase: owner.customApiBase ?? null,
           createdAt: owner.createdAt,
@@ -92,7 +94,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           username: null,
           onboardingCompleted: false,
           avatar: resolveOwnerAvatar(),
-          signature: defaultSignature,
+          signature: DEFAULT_SIGNATURE,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,
@@ -103,7 +105,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           username: null,
           onboardingCompleted: false,
           avatar: resolveOwnerAvatar(),
-          signature: defaultSignature,
+          signature: DEFAULT_SIGNATURE,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,

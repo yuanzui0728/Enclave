@@ -24,9 +24,11 @@ import { WikiRoleService } from './wiki-role.service';
 import {
   WIKI_CONTENT_FIELDS,
   assertWikiEditSummary,
+  assertWikiNameNotVisuallyEmpty,
   createDefaultWikiRecipe,
   diffFields,
   diffPaths,
+  filterPhantomBlankPaths,
   hasPathOverlap,
   isHighRiskRecipeChange,
   mergeContentSnapshot,
@@ -83,6 +85,10 @@ export class WikiEditService {
     user: AuthenticatedUser,
     input: SubmitEditInput,
   ): Promise<SubmitEditResult> {
+    // submit / createPage / requestLifecycle / syncFromCharacter 都会改 listPages
+    // 输出（新增 pending revision、改 page status、改 character 基本信息）。统一入口
+    // invalidate，避免编辑者刷首页看到 60s 内的陈旧自有改动。
+    this.pages.invalidateListPagesCache();
     if (input.recipeSnapshot) {
       return this.submitRecipeEdit(characterId, user, input);
     }
@@ -106,10 +112,17 @@ export class WikiEditService {
         legacyMessage: '角色不存在',
       });
 
-    const before: WikiContentSnapshot = page.currentRevisionId
-      ? (await this.revisionRepo.findOne({
+    // 历史上 page.currentRevisionId 指向被 soft-delete / 物理删除的 revision
+    // 时，`(await findOne(...))!.contentSnapshot` 会在 null 上读属性 → 500
+    // 把 stack 漏出去。findOne 返回 null 时回退到 character snapshot，与全新
+    // page（无 currentRevisionId）走同一条路径。
+    const currentRevision = page.currentRevisionId
+      ? await this.revisionRepo.findOne({
           where: { id: page.currentRevisionId },
-        }))!.contentSnapshot
+        })
+      : null;
+    const before: WikiContentSnapshot = currentRevision
+      ? currentRevision.contentSnapshot
       : snapshotFromCharacter(character as unknown as Record<string, unknown>);
 
     // Reject malformed bodies that would silently blank fields. Missing keys
@@ -146,12 +159,10 @@ export class WikiEditService {
         submittedPick as Record<string, unknown>
       )[field];
     }
-    if (!submitted.name.trim()) {
-      throw new AppError('WIKI_VALIDATION_FAILED', {
-        params: { detail: 'name 不能为空' },
-        legacyMessage: 'name 不能为空',
-      });
-    }
+    // 不能用 trim() 单独判断空——纯零宽字符 (U+200B-U+200D / U+FEFF / U+2060)
+    // 不会被 trim 干掉，会让 wiki 列表/卡片显示空白行且不可点（私有角色 2026-05-15
+    // v2 走查时同一类型坑已经修过，这里复用统一 helper）。
+    assertWikiNameNotVisuallyEmpty(submitted.name);
     let after = submitted;
     let changed = diffFields(before, after);
     let changeSource = 'edit';
@@ -214,16 +225,15 @@ export class WikiEditService {
     if (abuse.action === 'tag_high_risk') {
       autoApprove = false;
     }
-    const lastVersion = await this.revisionRepo
-      .createQueryBuilder('r')
-      .where('r.characterId = :id', { id: characterId })
-      .select('MAX(r.version)', 'max')
-      .getRawOne<{ max: number | null }>();
-    const nextVersion = (lastVersion?.max ?? 0) + 1;
+    const contentRiskLevel = abuse.action === 'tag_high_risk' ? 'high' : 'low';
+
+    // 字段级保护：content 路径同样要查。否则 admin 在面板里设字段保护（fieldPath
+    // 落在内容字段上）就完全无效。recipe 路径在下面 submitRecipeEdit 里已有。
+    await this.fieldProtection.assertCanEditPaths(user, characterId, changed);
 
     const result = await this.dataSource.transaction(async (manager) => {
-      const contentRiskLevel =
-        abuse.action === 'tag_high_risk' ? 'high' : 'low';
+      const nextVersion =
+        (await this.getLastVersion(characterId, manager)) + 1;
       const contentDiff: Record<string, unknown> = { changed };
       if (abuse.hits.length > 0) {
         contentDiff.abuseFilterHits = abuse.hits.map((h) => h.filterName);
@@ -237,7 +247,7 @@ export class WikiEditService {
         diffFromParent: contentDiff,
         editorUserId: user.id,
         editorRoleAtTime: user.role,
-        editSummary: (input.editSummary ?? '').slice(0, 500),
+        editSummary: (typeof input.editSummary === 'string' ? input.editSummary : '').slice(0, 500),
         status: autoApprove ? 'approved' : 'pending',
         revisionKind: 'content',
         operation: 'edit',
@@ -254,11 +264,16 @@ export class WikiEditService {
           characterId,
           submitterId: user.id,
           operation: 'edit',
-          riskLevel: 'low',
+          riskLevel: contentRiskLevel,
           decision: null,
-          priority: 0,
+          priority: contentRiskLevel === 'high' ? 5 : 0,
         });
         await manager.save(submission);
+        await manager.update(
+          CharacterPageEntity,
+          { characterId },
+          { latestRevisionId: savedRev.id },
+        );
       } else {
         await manager.update(
           CharacterPageEntity,
@@ -268,35 +283,20 @@ export class WikiEditService {
             latestRevisionId: savedRev.id,
             title: after.name,
             lifecycleStatus: 'active',
-            editCount: page.editCount + 1,
           },
         );
         await this.applySnapshotToCharacter(manager, characterId, after);
       }
 
-      const profile =
-        (await manager.findOne(UserWikiProfileEntity, {
-          where: { userId: user.id },
-        })) ??
-        manager.create(UserWikiProfileEntity, {
-          userId: user.id,
-          editCount: 0,
-          approvedEditCount: 0,
-          revertedCount: 0,
-          patrolledCount: 0,
-        });
-      profile.editCount += 1;
-      profile.lastEditAt = new Date();
-      if (autoApprove) profile.approvedEditCount += 1;
-      await manager.save(profile);
+      // editCount 用原子自增，避免并发提交把同一 page.editCount 读到再 +1 丢更新。
+      await manager.increment(
+        CharacterPageEntity,
+        { characterId },
+        'editCount',
+        1,
+      );
 
-      if (!autoApprove) {
-        await manager.update(
-          CharacterPageEntity,
-          { characterId },
-          { latestRevisionId: savedRev.id, editCount: page.editCount + 1 },
-        );
-      }
+      await this.bumpProfile(manager, user.id, autoApprove);
 
       return savedRev;
     });
@@ -323,36 +323,27 @@ export class WikiEditService {
       editSummary?: string | null;
     },
   ): Promise<SubmitEditResult & { characterId: string }> {
+    this.pages.invalidateListPagesCache();
     const characterId = this.resolveNewCharacterId(input.characterId);
     await this.blocks.assertCanEdit(user, characterId);
-    const existing = await this.characterRepo.findOne({ where: { id: characterId } });
-    if (existing) {
-      throw new AppError('WIKI_VALIDATION_FAILED', {
-        params: { detail: '角色 ID 已存在' },
-        legacyMessage: '角色 ID 已存在',
-      });
-    }
-    const existingPage = await this.pageRepo.findOne({ where: { characterId } });
-    if (existingPage) {
-      const detail =
-        existingPage.lifecycleStatus === 'pending_create'
-          ? '该角色已有待审创建请求'
-          : '词条已存在';
-      throw new AppError('WIKI_VALIDATION_FAILED', {
-        params: { detail },
-        legacyMessage: detail,
-      });
-    }
 
     const seedInput =
       input.recipeSnapshot ??
       input.contentSnapshot ??
       ({} as Record<string, unknown>);
+    // 在 normalize 把缺失字段补成 '未命名角色' 之前，先校验用户实际**提交了**一个
+    // 视觉非空的 name。否则 curl 一打 `{}` 或 `{"contentSnapshot":{"name":""}}`
+    // 就能起一条名为「未命名角色」的占位词条，patroller 队列 / 列表里全是垃圾。
+    const seededName = extractSeedName(seedInput);
+    assertWikiNameNotVisuallyEmpty(seededName);
     const recipe = normalizeWikiRecipe(
       seedInput,
       createDefaultWikiRecipe(seedInput),
     );
     const content = snapshotFromRecipe(recipe);
+    // 二次兜底：normalize 完之后 content.name 仍可能因 trim 后是空（兜底进 fallback
+    // 的极端 case，例如 seedInput.name=' '）—— assert 一次确保 DB 落下来一定非空。
+    assertWikiNameNotVisuallyEmpty(content.name);
     this.assertEditSummary({
       operation: 'create',
       riskLevel: 'high',
@@ -371,24 +362,45 @@ export class WikiEditService {
     // patroller-only); but persist hits for visibility.
     const autoApprove = rankOf(user.role) >= rankOf('patroller');
     const revision = await this.dataSource.transaction(async (manager) => {
-      const page =
-        existingPage ??
-        manager.create(CharacterPageEntity, {
-          characterId,
-          title: content.name,
-          currentRevisionId: null,
-          latestRevisionId: null,
-          lifecycleStatus: 'pending_create',
-          reviewPolicy: 'open',
-          protectionLevel: 'none',
-          isPatrolled: false,
-          watcherCount: 0,
-          editCount: 0,
-          isDeleted: false,
+      // 存在性检查放进 tx，避免两个并发 createPage 同时通过预检后写出两条 v=1。
+      // CharacterPageEntity.characterId 是主键，第二个 INSERT 自然失败；revision 表
+      // 也有 (characterId, version) unique，双重兜底。
+      const existing = await manager.findOne(CharacterEntity, {
+        where: { id: characterId },
+      });
+      if (existing) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          params: { detail: '角色 ID 已存在' },
+          legacyMessage: '角色 ID 已存在',
         });
-      page.title = content.name;
-      page.lifecycleStatus = autoApprove ? 'active' : 'pending_create';
-      page.isDeleted = false;
+      }
+      const existingPage = await manager.findOne(CharacterPageEntity, {
+        where: { characterId },
+      });
+      if (existingPage) {
+        const detail =
+          existingPage.lifecycleStatus === 'pending_create'
+            ? '该角色已有待审创建请求'
+            : '词条已存在';
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          params: { detail },
+          legacyMessage: detail,
+        });
+      }
+
+      const page = manager.create(CharacterPageEntity, {
+        characterId,
+        title: content.name,
+        currentRevisionId: null,
+        latestRevisionId: null,
+        lifecycleStatus: autoApprove ? 'active' : 'pending_create',
+        reviewPolicy: 'open',
+        protectionLevel: 'none',
+        isPatrolled: false,
+        watcherCount: 0,
+        editCount: 0,
+        isDeleted: false,
+      });
       await manager.save(page);
 
       const created = manager.create(CharacterRevisionEntity, {
@@ -401,7 +413,7 @@ export class WikiEditService {
         diffFromParent: { changed: ['__create__'] },
         editorUserId: user.id,
         editorRoleAtTime: user.role,
-        editSummary: (input.editSummary ?? '创建角色词条').slice(0, 500),
+        editSummary: (typeof input.editSummary === 'string' && input.editSummary ? input.editSummary : '创建角色词条').slice(0, 500),
         status: autoApprove ? 'approved' : 'pending',
         revisionKind: 'recipe',
         operation: 'create',
@@ -439,8 +451,37 @@ export class WikiEditService {
     });
 
     if (autoApprove) {
-      await this.applyApprovedRevision(revision, user.id);
-      void this.roles.checkPromotion(user.id).catch(() => undefined);
+      try {
+        await this.applyApprovedRevision(revision, user.id);
+        // createCharacterFromRecipe 会为空 expertDomains 注入 ['general']、把
+        // 空字符串 personality 落库成 NULL 等 runtime 默认值，导致刚 create
+        // 完 wiki-page.service 的 computeDrift 立刻把 v1 标成 admin_override
+        // 弹"角色已被管理员后台直接修改"banner。重新基于落库后的 character +
+        // published recipe snapshot 回写 v1，使 drift=0 直到用户/admin 真的
+        // 在 wiki 之外改了 runtime。
+        await this.resyncCreateRevisionToRuntime(revision.id, characterId);
+        void this.roles.checkPromotion(user.id).catch(() => undefined);
+      } catch (err) {
+        // 把页降回 pending_create，让用户的创建请求进入审核队列而不是消失。
+        await this.rollbackAutoApproval({
+          revisionId: revision.id,
+          characterId,
+          submitterId: user.id,
+          operation: 'create',
+          riskLevel: 'high',
+          priority: 10,
+          previousPage: {
+            currentRevisionId: null,
+            latestRevisionId: revision.id,
+            lifecycleStatus: 'pending_create',
+            title: content.name,
+            isDeleted: false,
+            deletedAt: null,
+            deletedBy: null,
+          },
+        }).catch(() => undefined);
+        throw err;
+      }
     }
 
     return {
@@ -453,15 +494,58 @@ export class WikiEditService {
     };
   }
 
+  private async resyncCreateRevisionToRuntime(
+    revisionId: string,
+    characterId: string,
+  ): Promise<void> {
+    const character = await this.characterRepo.findOne({ where: { id: characterId } });
+    if (!character) return;
+    const liveContent = snapshotFromCharacter(
+      character as unknown as Record<string, unknown>,
+    );
+    let publishedRecipe: CharacterBlueprintRecipeValue | null = null;
+    try {
+      const factory = await this.blueprints.getFactorySnapshot(characterId);
+      publishedRecipe = factory.blueprint.publishedRecipe ?? null;
+    } catch {
+      publishedRecipe = null;
+    }
+    await this.revisionRepo.update(
+      { id: revisionId },
+      {
+        contentSnapshot: liveContent,
+        ...(publishedRecipe ? { recipeSnapshot: publishedRecipe } : {}),
+      },
+    );
+    this.pages.invalidateListPagesCache();
+  }
+
   async requestLifecycle(
     characterId: string,
     user: AuthenticatedUser,
     operation: 'soft_delete' | 'restore',
     reason?: string | null,
   ): Promise<SubmitEditResult> {
+    this.pages.invalidateListPagesCache();
     await this.blocks.assertCanEdit(user, characterId);
     const page = await this.pages.getOrInitPage(characterId);
     this.assertProtection(page.protectionLevel, user.role);
+    // 防止"重复 lifecycle"——已经 deleted 还能再 delete、active 还能再 restore，
+    // 会在 history 里堆出冗余 v9/v10 同操作 lifecycle 修订，2026-05-16 走查发现。
+    if (operation === 'soft_delete' && page.lifecycleStatus === 'deleted') {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { detail: '该角色已是删除状态，无需再次删除' },
+        legacyMessage: '该角色已是删除状态，无需再次删除',
+      });
+    }
+    if (operation === 'restore' && page.lifecycleStatus === 'active') {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { detail: '该角色未处于删除状态，无需恢复' },
+        legacyMessage: '该角色未处于删除状态，无需恢复',
+      });
+    }
     this.assertEditSummary({
       operation,
       riskLevel: 'high',
@@ -491,11 +575,12 @@ export class WikiEditService {
       currentRevision?.contentSnapshot ??
       snapshotFromCharacter(character as unknown as Record<string, unknown>);
     const autoApprove = rankOf(user.role) >= rankOf('patroller');
-    const lastVersion = await this.getLastVersion(characterId);
     const revision = await this.dataSource.transaction(async (manager) => {
+      const nextVersion =
+        (await this.getLastVersion(characterId, manager)) + 1;
       const created = manager.create(CharacterRevisionEntity, {
         characterId,
-        version: lastVersion + 1,
+        version: nextVersion,
         parentRevisionId: page.currentRevisionId ?? null,
         baseRevisionId: page.currentRevisionId ?? null,
         contentSnapshot: content,
@@ -529,15 +614,42 @@ export class WikiEditService {
       await manager.update(
         CharacterPageEntity,
         { characterId },
-        { latestRevisionId: saved.id, editCount: page.editCount + 1 },
+        { latestRevisionId: saved.id },
+      );
+      await manager.increment(
+        CharacterPageEntity,
+        { characterId },
+        'editCount',
+        1,
       );
       await this.bumpProfile(manager, user.id, autoApprove);
       return saved;
     });
 
     if (autoApprove) {
-      await this.applyApprovedRevision(revision, user.id);
-      void this.roles.checkPromotion(user.id).catch(() => undefined);
+      try {
+        await this.applyApprovedRevision(revision, user.id);
+        void this.roles.checkPromotion(user.id).catch(() => undefined);
+      } catch (err) {
+        await this.rollbackAutoApproval({
+          revisionId: revision.id,
+          characterId,
+          submitterId: user.id,
+          operation,
+          riskLevel: 'high',
+          priority: 20,
+          previousPage: {
+            currentRevisionId: page.currentRevisionId ?? null,
+            latestRevisionId: page.latestRevisionId ?? null,
+            lifecycleStatus: page.lifecycleStatus,
+            title: page.title ?? null,
+            isDeleted: page.isDeleted,
+            deletedAt: page.deletedAt ?? null,
+            deletedBy: page.deletedBy ?? null,
+          },
+        }).catch(() => undefined);
+        throw err;
+      }
     }
 
     return {
@@ -561,6 +673,7 @@ export class WikiEditService {
     characterId: string,
     actor: AuthenticatedUser,
   ): Promise<SubmitEditResult> {
+    this.pages.invalidateListPagesCache();
     if (rankOf(actor.role) < rankOf('patroller')) {
       throw new AppError('WIKI_FORBIDDEN', {
         status: HttpStatus.FORBIDDEN,
@@ -584,11 +697,12 @@ export class WikiEditService {
       factorySnapshot.blueprint.publishedRecipe ??
       factorySnapshot.blueprint.draftRecipe ??
       null;
-    const lastVersion = await this.getLastVersion(characterId);
     const saved = await this.dataSource.transaction(async (manager) => {
+      const nextVersion =
+        (await this.getLastVersion(characterId, manager)) + 1;
       const created = manager.create(CharacterRevisionEntity, {
         characterId,
-        version: lastVersion + 1,
+        version: nextVersion,
         parentRevisionId: page.currentRevisionId ?? null,
         baseRevisionId: page.currentRevisionId ?? null,
         contentSnapshot: liveContent,
@@ -615,8 +729,13 @@ export class WikiEditService {
           title: liveContent.name,
           currentRevisionId: savedRev.id,
           latestRevisionId: savedRev.id,
-          editCount: page.editCount + 1,
         },
+      );
+      await manager.increment(
+        CharacterPageEntity,
+        { characterId },
+        'editCount',
+        1,
       );
       return savedRev;
     });
@@ -632,6 +751,10 @@ export class WikiEditService {
     revision: CharacterRevisionEntity,
     actorId: string,
   ): Promise<void> {
+    // 这个方法所有成功分支都会改 page/character/blueprint。统一在入口失效一次
+    // listPages 缓存，比在 4 个 pageRepo.update 后各加一行更省事；提前失效只代价
+    // 一次 cache miss，无功能副作用。
+    this.pages.invalidateListPagesCache();
     const latestRevisionId = await this.resolveLatestRevisionId(revision);
     if (revision.operation === 'create') {
       if (!revision.recipeSnapshot) {
@@ -768,7 +891,11 @@ export class WikiEditService {
     const beforeContent =
       currentRevision?.contentSnapshot ??
       snapshotFromCharacter(character as unknown as Record<string, unknown>);
-    let changed = diffPaths(beforeRecipe, afterRecipe);
+    let changed = filterPhantomBlankPaths(
+      beforeRecipe,
+      afterRecipe,
+      diffPaths(beforeRecipe, afterRecipe),
+    );
     let changeSource = 'edit';
 
     if (
@@ -789,8 +916,16 @@ export class WikiEditService {
         input.recipeSnapshot ?? {},
         baseRev.recipeSnapshot,
       );
-      const userChanged = diffPaths(baseRev.recipeSnapshot, submittedRecipe);
-      const concurrentChanged = diffPaths(baseRev.recipeSnapshot, beforeRecipe);
+      const userChanged = filterPhantomBlankPaths(
+        baseRev.recipeSnapshot,
+        submittedRecipe,
+        diffPaths(baseRev.recipeSnapshot, submittedRecipe),
+      );
+      const concurrentChanged = filterPhantomBlankPaths(
+        baseRev.recipeSnapshot,
+        beforeRecipe,
+        diffPaths(baseRev.recipeSnapshot, beforeRecipe),
+      );
       const overlap = userChanged.filter((path) =>
         hasPathOverlap([path], concurrentChanged),
       );
@@ -805,7 +940,11 @@ export class WikiEditService {
         });
       }
       afterRecipe = mergeValueByPaths(beforeRecipe, submittedRecipe, userChanged);
-      changed = diffPaths(beforeRecipe, afterRecipe);
+      changed = filterPhantomBlankPaths(
+        beforeRecipe,
+        afterRecipe,
+        diffPaths(beforeRecipe, afterRecipe),
+      );
       changeSource = 'merge';
     }
 
@@ -817,6 +956,10 @@ export class WikiEditService {
     }
     await this.fieldProtection.assertCanEditPaths(user, characterId, changed);
     const afterContent = snapshotFromRecipe(afterRecipe);
+    // recipe 路径同样要拒"视觉为空"的 identity.name——前面 normalizeWikiRecipe
+    // 在 source.identity.name='' 时**不会**回退到 base.identity.name（str()
+    // 只有非字符串才走 fallback），所以恶意客户端能把已发布角色 name 清空。
+    assertWikiNameNotVisuallyEmpty(afterContent.name);
 
     const riskReport = isHighRiskRecipeChange(changed);
     let riskLevel = riskReport.highRisk ? 'high' : 'low';
@@ -843,8 +986,9 @@ export class WikiEditService {
         ? false
         : rankOf(user.role) >= rankOf('patroller') ||
           (riskLevel === 'low' && rankOf(user.role) >= rankOf('autoconfirmed'));
-    const lastVersion = await this.getLastVersion(characterId);
     const revision = await this.dataSource.transaction(async (manager) => {
+      const nextVersion =
+        (await this.getLastVersion(characterId, manager)) + 1;
       const recipeDiff: Record<string, unknown> = { changed };
       if (riskReport.highRisk) {
         recipeDiff.highRiskReasons = riskReport.reasons;
@@ -854,7 +998,7 @@ export class WikiEditService {
       }
       const created = manager.create(CharacterRevisionEntity, {
         characterId,
-        version: lastVersion + 1,
+        version: nextVersion,
         parentRevisionId: page.currentRevisionId ?? null,
         baseRevisionId: input.baseRevisionId ?? page.currentRevisionId ?? null,
         contentSnapshot: afterContent,
@@ -862,7 +1006,7 @@ export class WikiEditService {
         diffFromParent: recipeDiff,
         editorUserId: user.id,
         editorRoleAtTime: user.role,
-        editSummary: (input.editSummary ?? '').slice(0, 500),
+        editSummary: (typeof input.editSummary === 'string' ? input.editSummary : '').slice(0, 500),
         status: autoApprove ? 'approved' : 'pending',
         revisionKind: 'recipe',
         operation: 'edit',
@@ -890,17 +1034,47 @@ export class WikiEditService {
         { characterId },
         {
           title: afterContent.name,
+          // autoApprove 时把 currentRevisionId 立刻在事务内切到新 revision，
+          // 跟 applyApprovedRevision 里 pageRepo.update 形成幂等（重复写同一个 id）。
+          // 这样事务一旦提交，view 端立刻看到正确 stable 版本。
+          ...(autoApprove ? { currentRevisionId: saved.id } : {}),
           latestRevisionId: saved.id,
-          editCount: page.editCount + 1,
         },
+      );
+      await manager.increment(
+        CharacterPageEntity,
+        { characterId },
+        'editCount',
+        1,
       );
       await this.bumpProfile(manager, user.id, autoApprove);
       return saved;
     });
 
     if (autoApprove) {
-      await this.applyApprovedRevision(revision, user.id);
-      void this.roles.checkPromotion(user.id).catch(() => undefined);
+      try {
+        await this.applyApprovedRevision(revision, user.id);
+        void this.roles.checkPromotion(user.id).catch(() => undefined);
+      } catch (err) {
+        await this.rollbackAutoApproval({
+          revisionId: revision.id,
+          characterId,
+          submitterId: user.id,
+          operation: 'edit',
+          riskLevel,
+          priority: riskLevel === 'high' ? 5 : 0,
+          previousPage: {
+            currentRevisionId: page.currentRevisionId ?? null,
+            latestRevisionId: page.latestRevisionId ?? null,
+            lifecycleStatus: page.lifecycleStatus,
+            title: page.title ?? null,
+            isDeleted: page.isDeleted,
+            deletedAt: page.deletedAt ?? null,
+            deletedBy: page.deletedBy ?? null,
+          },
+        }).catch(() => undefined);
+        throw err;
+      }
     }
 
     return {
@@ -928,8 +1102,14 @@ export class WikiEditService {
     await manager.update(CharacterEntity, { id: characterId }, patch);
   }
 
-  private async getLastVersion(characterId: string): Promise<number> {
-    const lastVersion = await this.revisionRepo
+  private async getLastVersion(
+    characterId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const repo = manager
+      ? manager.getRepository(CharacterRevisionEntity)
+      : this.revisionRepo;
+    const lastVersion = await repo
       .createQueryBuilder('r')
       .where('r.characterId = :id', { id: characterId })
       .select('MAX(r.version)', 'max')
@@ -952,6 +1132,86 @@ export class WikiEditService {
     return latest && latest.version > revision.version
       ? page.latestRevisionId
       : revision.id;
+  }
+
+  /**
+   * autoApprove 走 "事务内写 revision=approved + page.currentRevisionId 切到新 →
+   * 事务外调 applyApprovedRevision（写 character / publish blueprint）" 两段式。
+   * 第二段失败时调此函数补偿：
+   *   1. revision 状态降回 pending；
+   *   2. page 回到 autoApprove 前的快照（若是 createPage，则保持页存在但 lifecycle=pending_create）；
+   *   3. 作者 profile.approvedEditCount -= 1（编辑总数 editCount 保留——动作发生过）；
+   *   4. 若没 submission 行就补一条，让用户的修改进入审核队列而不是消失。
+   *
+   * 与 wiki-review.service.ts:rollbackRuntimeApproval 同思路，只是触发场景不同
+   *（这里是首次提交者直接 autoApprove，那个是审核员二次审批）。
+   */
+  private async rollbackAutoApproval(input: {
+    revisionId: string;
+    characterId: string;
+    submitterId: string;
+    operation: string;
+    riskLevel: string;
+    priority: number;
+    previousPage: {
+      currentRevisionId: string | null;
+      latestRevisionId: string | null;
+      lifecycleStatus: string;
+      title: string | null;
+      isDeleted: boolean;
+      deletedAt: Date | null;
+      deletedBy: string | null;
+    };
+  }): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(
+        CharacterRevisionEntity,
+        { id: input.revisionId },
+        {
+          status: 'pending',
+          isPatrolled: false,
+          patrolledBy: null,
+          patrolledAt: null,
+        },
+      );
+      await manager.update(
+        CharacterPageEntity,
+        { characterId: input.characterId },
+        {
+          currentRevisionId: input.previousPage.currentRevisionId,
+          latestRevisionId:
+            input.previousPage.latestRevisionId ?? input.revisionId,
+          lifecycleStatus: input.previousPage.lifecycleStatus,
+          title: input.previousPage.title,
+          isDeleted: input.previousPage.isDeleted,
+          deletedAt: input.previousPage.deletedAt,
+          deletedBy: input.previousPage.deletedBy,
+        },
+      );
+      const existingSubmission = await manager.findOne(EditSubmissionEntity, {
+        where: { revisionId: input.revisionId },
+      });
+      if (!existingSubmission) {
+        await manager.save(
+          manager.create(EditSubmissionEntity, {
+            revisionId: input.revisionId,
+            characterId: input.characterId,
+            submitterId: input.submitterId,
+            operation: input.operation,
+            riskLevel: input.riskLevel,
+            priority: input.priority,
+            decision: null,
+          }),
+        );
+      }
+      const profile = await manager.findOne(UserWikiProfileEntity, {
+        where: { userId: input.submitterId },
+      });
+      if (profile && profile.approvedEditCount > 0) {
+        profile.approvedEditCount -= 1;
+        await manager.save(profile);
+      }
+    });
   }
 
   private async bumpProfile(
@@ -1024,5 +1284,25 @@ export class WikiEditService {
       });
     }
   }
+}
+
+/**
+ * 从 createPage seed payload 里"挖"出用户实际提交的 name —— 不能交给
+ * normalizeWikiRecipe / createDefaultWikiRecipe 之后再判，那一层会把缺失的 name
+ * 兜底成 '未命名角色'，使空 body 创建一个占位词条。两个可能位置：
+ *   1. seedInput.name（即 contentSnapshot 顶层）
+ *   2. seedInput.identity.name（即 recipeSnapshot 嵌套）
+ */
+function extractSeedName(seedInput: Record<string, unknown>): string {
+  if (typeof seedInput.name === 'string') return seedInput.name;
+  const identity = (seedInput as { identity?: unknown }).identity;
+  if (
+    identity &&
+    typeof identity === 'object' &&
+    typeof (identity as { name?: unknown }).name === 'string'
+  ) {
+    return (identity as { name: string }).name;
+  }
+  return '';
 }
 // i18n-ignore-end

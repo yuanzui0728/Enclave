@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
+import { CharactersService } from '../characters/characters.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -23,6 +24,7 @@ export class GroupReplyOrchestratorService {
   constructor(
     private readonly ai: AiOrchestratorService,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly characters: CharactersService,
   ) {}
 
   async generateTaskReply(input: {
@@ -191,11 +193,18 @@ export class GroupReplyOrchestratorService {
     characterId: string;
     promptText: string;
   }): Promise<AssistantReplyModalitiesPlan> {
-    const wantsVoice = shouldCreateVoiceReplyFromText(input.promptText);
+    // 先看 prompt 本身有没有触发 voice 关键词；没有再查角色卡的"默认用语音回复"
+    let wantsVoice = shouldCreateVoiceReplyFromText(input.promptText);
     const requestedImagePrompt = extractRequestedImagePrompt({
       type: 'text',
       text: input.promptText,
     });
+    if (!wantsVoice) {
+      const character = await this.characters.findById(input.characterId);
+      if (character?.defaultVoiceReply === true) {
+        wantsVoice = true;
+      }
+    }
     if (!wantsVoice && !requestedImagePrompt) {
       return {
         includeVoice: false,

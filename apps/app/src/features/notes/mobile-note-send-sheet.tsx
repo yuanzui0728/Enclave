@@ -11,6 +11,7 @@ import {
   isPersistedGroupConversation,
 } from "../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 import type { NoteSendDialogNote } from "../favorites/note-editor-helpers";
 
 type MobileNoteSendSheetProps = {
@@ -43,6 +44,21 @@ export function MobileNoteSendSheet({
     }
     setSearchTerm("");
   }, [open]);
+
+  // 原生壳硬件 Back 键：sheet 打开时先关 sheet，不让 BACK 同时 history.back
+  // 把用户从笔记编辑页带回上一级。pending 中（消息正在发送）不拦，避免
+  // 中途打断。
+  useEffect(() => {
+    if (!open || pending) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
+  }, [open, onClose, pending]);
 
   const filteredConversations = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -79,7 +95,12 @@ export function MobileNoteSendSheet({
       <div
         className={cn(
           "relative flex max-h-[88vh] min-h-0 flex-col rounded-t-[22px] bg-white shadow-[0_-12px_32px_rgba(15,23,42,0.16)]",
-          "pb-[calc(env(safe-area-inset-bottom,0px))]",
+          // pb 接 --keyboard-inset：sheet 里有「搜索最近会话」TextField，iOS
+          // WKWebView 上聚焦后软键盘弹起会盖住底部「会以笔记卡片形式出现…/
+          // 取消」action 栏 —— 跟 mobile-add-friend 的 SendSheet 一样要用
+          // max(safe-area, --keyboard-inset)（mobile-shell.useKeyboardInset
+          // 写入根 :root）抬高 sheet 底，保证 cancel 永远高于键盘。
+          "pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px)))]",
         )}
       >
         <div className="mt-2 flex justify-center">
@@ -117,7 +138,8 @@ export function MobileNoteSendSheet({
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t(msg`搜索最近会话`)}
               disabled={pending}
-              className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-9 text-[13px] shadow-none"
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-9 text-[16px] shadow-none"
             />
           </label>
         </div>

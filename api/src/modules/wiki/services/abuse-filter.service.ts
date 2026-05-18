@@ -46,6 +46,113 @@ const ACTION_ORDER: Record<AbuseFilterAction | 'pass', number> = {
   block: 4,
 };
 
+const VALID_ACTIONS: AbuseFilterAction[] = [
+  'log',
+  'warn',
+  'block',
+  'tag_high_risk',
+];
+const VALID_SCOPES: AbuseFilterScope[] = ['content', 'recipe', 'all'];
+const VALID_SEVERITIES = ['low', 'medium', 'high'] as const;
+
+// 校验 createFilter / updateFilter 传入的 pattern 形状。pattern 列是 simple-json，
+// TypeORM 不会兜底类型检查；如果接受了字符串或缺 type 的对象，filter 入库后
+// evaluatePattern() 的 switch 全都落到 default 永不命中——脏数据。
+function assertValidFilterPattern(pattern: unknown): asserts pattern is AbuseFilterPattern {
+  if (!pattern || typeof pattern !== 'object') {
+    throw new AppError('WIKI_VALIDATION_FAILED', {
+      status: HttpStatus.BAD_REQUEST,
+      params: { detail: 'pattern 必须是对象，含 type 字段' },
+      legacyMessage: 'pattern 必须是对象，含 type 字段',
+    });
+  }
+  const type = (pattern as { type?: unknown }).type;
+  switch (type) {
+    case 'regex': {
+      const regex = (pattern as { regex?: unknown }).regex;
+      if (typeof regex !== 'string' || regex.length === 0) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'regex pattern 缺少 regex 字段' },
+          legacyMessage: 'regex pattern 缺少 regex 字段',
+        });
+      }
+      try {
+        new RegExp(regex, (pattern as { flags?: string }).flags ?? '');
+      } catch (err) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: `regex 非法：${(err as Error).message}` },
+          legacyMessage: `regex 非法：${(err as Error).message}`,
+        });
+      }
+      return;
+    }
+    case 'shrink': {
+      const field = (pattern as { field?: unknown }).field;
+      const threshold = (pattern as { threshold?: unknown }).threshold;
+      if (typeof field !== 'string' || !field) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'shrink pattern 缺少 field' },
+          legacyMessage: 'shrink pattern 缺少 field',
+        });
+      }
+      if (typeof threshold !== 'number' || threshold <= 0 || threshold > 1) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'shrink pattern.threshold 必须 (0,1]' },
+          legacyMessage: 'shrink pattern.threshold 必须 (0,1]',
+        });
+      }
+      return;
+    }
+    case 'frequency': {
+      const w = (pattern as { windowSec?: unknown }).windowSec;
+      const m = (pattern as { maxEdits?: unknown }).maxEdits;
+      if (typeof w !== 'number' || w <= 0 || typeof m !== 'number' || m <= 0) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'frequency pattern 需正数 windowSec / maxEdits' },
+          legacyMessage: 'frequency pattern 需正数 windowSec / maxEdits',
+        });
+      }
+      return;
+    }
+    case 'link_flood': {
+      const t = (pattern as { threshold?: unknown }).threshold;
+      if (typeof t !== 'number' || t <= 0) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'link_flood pattern.threshold 必须 > 0' },
+          legacyMessage: 'link_flood pattern.threshold 必须 > 0',
+        });
+      }
+      return;
+    }
+    case 'keyword_list': {
+      const kws = (pattern as { keywords?: unknown }).keywords;
+      if (!Array.isArray(kws) || kws.length === 0 || kws.some((k) => typeof k !== 'string' || !k)) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'keyword_list pattern 需 keywords: string[]' },
+          legacyMessage: 'keyword_list pattern 需 keywords: string[]',
+        });
+      }
+      return;
+    }
+    default:
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: {
+          detail: 'pattern.type 必须是 regex / shrink / frequency / link_flood / keyword_list',
+        },
+        legacyMessage:
+          'pattern.type 必须是 regex / shrink / frequency / link_flood / keyword_list',
+      });
+  }
+}
+
 const DEFAULT_REGEX_FIELDS = [
   'content.name',
   'content.bio',
@@ -261,6 +368,7 @@ export class AbuseFilterService implements OnModuleInit {
       | 'severity'
     > & { createdBy?: string | null },
   ): Promise<AbuseFilterEntity> {
+    this.assertValidFilterShape(input);
     const created = this.filterRepo.create(input);
     const saved = await this.filterRepo.save(created);
     await this.refreshCache();
@@ -271,9 +379,69 @@ export class AbuseFilterService implements OnModuleInit {
     id: string,
     patch: Partial<AbuseFilterEntity>,
   ): Promise<AbuseFilterEntity> {
+    this.assertValidFilterShape(patch, { partial: true });
     await this.filterRepo.update({ id }, patch);
     await this.refreshCache();
     return this.getFilter(id);
+  }
+
+  // 校验 action / scope / severity / pattern 都是合法枚举。partial=true 时
+  // 允许字段缺省（PATCH 半更新场景）。
+  private assertValidFilterShape(
+    input: Partial<
+      Pick<
+        AbuseFilterEntity,
+        'name' | 'pattern' | 'scope' | 'action' | 'severity'
+      >
+    >,
+    opts: { partial?: boolean } = {},
+  ): void {
+    const { partial } = opts;
+    if (!partial) {
+      // typeof 守：客户端传 {"name":{"a":1}} 时 (x ?? '').trim() 抛 TypeError → 500。
+      const name =
+        typeof input.name === 'string' ? input.name.trim() : '';
+      if (!name) {
+        throw new AppError('WIKI_VALIDATION_FAILED', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { detail: 'name 不能为空' },
+          legacyMessage: 'name 不能为空',
+        });
+      }
+    }
+    if (input.action !== undefined && !VALID_ACTIONS.includes(input.action)) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: {
+          detail: `action 必须是 ${VALID_ACTIONS.join(' / ')}`,
+        },
+        legacyMessage: `action 必须是 ${VALID_ACTIONS.join(' / ')}`,
+      });
+    }
+    if (input.scope !== undefined && !VALID_SCOPES.includes(input.scope)) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: {
+          detail: `scope 必须是 ${VALID_SCOPES.join(' / ')}`,
+        },
+        legacyMessage: `scope 必须是 ${VALID_SCOPES.join(' / ')}`,
+      });
+    }
+    if (
+      input.severity !== undefined &&
+      !(VALID_SEVERITIES as readonly string[]).includes(input.severity)
+    ) {
+      throw new AppError('WIKI_VALIDATION_FAILED', {
+        status: HttpStatus.BAD_REQUEST,
+        params: {
+          detail: `severity 必须是 ${VALID_SEVERITIES.join(' / ')}`,
+        },
+        legacyMessage: `severity 必须是 ${VALID_SEVERITIES.join(' / ')}`,
+      });
+    }
+    if (!partial || input.pattern !== undefined) {
+      assertValidFilterPattern(input.pattern);
+    }
   }
 
   async deleteFilter(id: string): Promise<void> {

@@ -1,0 +1,91 @@
+{
+  "video_id": "wechat-channels-d2",
+  "topic": "朋友圈",
+  "duration_seconds": 75,
+  "characters": [
+    {
+      "id": "char-d2-suyan",
+      "name": "苏老师",
+      "avatar": "shared-assets/avatars/teacher-chinese-gu-yan.svg",
+      "personality": "温柔型，语文老师，话不多但贴心"
+    },
+    {
+      "id": "char-d2-axun",
+      "name": "阿巡",
+      "avatar": "shared-assets/avatars/moments-interactor-axun.svg",
+      "personality": "吐槽型，嘴硬心软"
+    },
+    {
+      "id": "char-d2-linchen",
+      "name": "林晨",
+      "avatar": "shared-assets/avatars/lin-chen-sleep-support.svg",
+      "personality": "共情型，深夜活跃的写作者"
+    },
+    {
+      "id": "char-d2-suyu",
+      "name": "苏语",
+      "avatar": "shared-assets/avatars/su-yu-english-coach.svg",
+      "personality": "陪伴型，英语老师，温柔主动"
+    }
+  ],
+  "moments": [
+    {
+      "id": "moment_d2_001",
+      "author": "user",
+      "author_name": "w",
+      "content": "今天有点累。",
+      "createdAt": "2026-05-13 23:05:00",
+      "comments": [
+        {
+          "from": "char-d2-suyan",
+          "from_name": "苏老师",
+          "text": "辛苦了，喝点热的。",
+          "createdAt": "2026-05-13 23:06:15"
+        },
+        {
+          "from": "char-d2-axun",
+          "from_name": "阿巡",
+          "text": "活该，让你早睡你不听。",
+          "createdAt": "2026-05-13 23:07:32"
+        },
+        {
+          "from": "char-d2-linchen",
+          "from_name": "林晨",
+          "text": "我懂，今天我也累。",
+          "createdAt": "2026-05-13 23:08:01"
+        },
+        {
+          "from": "char-d2-suyu",
+          "from_name": "苏语",
+          "text": "需要陪你聊聊吗？",
+          "createdAt": "2026-05-13 23:09:48"
+        }
+      ],
+      "likes": [
+        "char-d2-suyan",
+        "char-d2-linchen"
+      ]
+    }
+  ],
+  "fake_interview_answers": [
+    "好像，半年前了吧。",
+    "想不起来了",
+    "应该一年多了",
+    "上次还是大学",
+    "不记得了"
+  ],
+  "ui_hints": {
+    "user_avatar": "default-w-avatar.svg",
+    "user_name": "w",
+    "bubble_self_color": "#f97316",
+    "bubble_other_color": "#f1f1f1",
+    "moment_card_color": "#ffffff"
+  },
+  "notes_for_manus": [
+    "镜头 5 的 4 条评论必须严格按顺序：苏老师 → 阿巡 → 林晨 → 苏语",
+    "每条评论之间隔 1.5 秒，给观众时间读",
+    "评论里的标点必须保留中文标点（。，）不能改成英文",
+    "镜头 1 的微信朋友圈仿真截图，请用纯灰色卡片+假数据合成，避免侵权",
+    "镜头 3 屏蔽弹窗，关键不是真实模仿微信 UI，而是表达'我屏蔽了 3 类人'的概念，可以用 abstract 风格"
+  ]
+}

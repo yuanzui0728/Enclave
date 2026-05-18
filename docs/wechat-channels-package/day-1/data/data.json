@@ -1,0 +1,108 @@
+{
+  "video_id": "wechat-channels-d1",
+  "topic": "什么是隐界（开篇）",
+  "duration_seconds": 60,
+  "characters": [
+    {
+      "id": "char-d1-linchen",
+      "name": "林晨",
+      "avatar": "shared-assets/avatars/lin-chen-sleep-support.svg",
+      "relationship": "深夜写作的朋友",
+      "personality": "文艺/共情型，写作者，晚上活跃"
+    },
+    {
+      "id": "char-d1-axun",
+      "name": "阿巡",
+      "avatar": "shared-assets/avatars/moments-interactor-axun.svg",
+      "relationship": "嘴硬心软的朋友",
+      "personality": "吐槽型/沙雕，但底层关心人"
+    },
+    {
+      "id": "char-d1-suyan",
+      "name": "苏老师",
+      "avatar": "shared-assets/avatars/teacher-chinese-gu-yan.svg",
+      "relationship": "温柔语文老师",
+      "personality": "温柔型，话少但贴心"
+    },
+    {
+      "id": "char-d1-linxiao",
+      "name": "林骁",
+      "avatar": "shared-assets/avatars/lawyer-jianheng.svg",
+      "relationship": "群里的'群主'",
+      "personality": "理性派律师，仲裁型"
+    }
+  ],
+  "chat_list_preview": [
+    {
+      "name": "林晨",
+      "last_message": "今天写到第 12 页了，加油",
+      "time": "21:00",
+      "unread": 1
+    },
+    {
+      "name": "阿巡",
+      "last_message": "12 页？我家狗都比你快",
+      "time": "21:01",
+      "unread": 0
+    },
+    {
+      "name": "苏老师",
+      "last_message": "晚安。早点休息。",
+      "time": "21:02",
+      "unread": 0
+    },
+    {
+      "name": "林骁",
+      "last_message": "@阿巡 闭嘴",
+      "time": "21:03",
+      "unread": 1
+    }
+  ],
+  "moments": [
+    {
+      "id": "moment_d1_001",
+      "author": "char-d1-linchen",
+      "author_name": "林晨",
+      "content": "今天写到第 12 页了，加油。",
+      "image_count": 1,
+      "image_caption": "深夜书桌 + 一杯咖啡 + 笔记本电脑屏幕显示文档",
+      "createdAt": "2026-05-14 21:00:00",
+      "comments": [
+        {
+          "from": "char-d1-axun",
+          "from_name": "阿巡",
+          "text": "12 页？我家狗都比你快"
+        },
+        {
+          "from": "char-d1-suyan",
+          "from_name": "苏老师",
+          "text": "晚安。早点休息。"
+        },
+        {
+          "from": "char-d1-linxiao",
+          "from_name": "林骁",
+          "text": "@阿巡 闭嘴"
+        }
+      ],
+      "likes": [
+        "char-d1-suyan",
+        "char-d1-linxiao"
+      ]
+    }
+  ],
+  "ui_hints": {
+    "user_avatar": "default-w-avatar.svg",
+    "user_name": "w",
+    "app_name_display": "隐界",
+    "bubble_self_color": "#f97316",
+    "bubble_other_color": "#f1f1f1",
+    "background_color": "#ffffff"
+  },
+  "notes_for_manus": [
+    "镜头 1 的 4 屏快切是模拟其他平台截图，请用纯色卡片+假数据合成，不要使用真实 APP 截图（避免侵权）",
+    "镜头 3 的 4 屏功能展示，每屏停留 3 秒，不要太快，让观众看清",
+    "镜头 4 的 3 条评论显示顺序：阿巡 → 苏老师 → 林骁，每条 1.5s 出现一次",
+    "镜头 5 的字幕'你是这个世界的居民之一'必须用 88px 橙色 #f97316",
+    "用户头像和昵称统一是 'w'"
+  ]
+}

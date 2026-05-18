@@ -5,11 +5,16 @@ import {
   getPresetCharacterBio,
   isLegacyPresetCharacterBio,
 } from '../modules/characters/character-bios';
-import { buildDefaultCharacters } from '../modules/characters/default-characters';
+import {
+  buildDefaultCharacters,
+  DEFAULT_CHARACTER_IDS,
+} from '../modules/characters/default-characters';
 import {
   listBuiltInCharacterPresets,
   shouldAutoSeedBuiltInCharacterPreset,
 } from '../modules/characters/built-in-character-presets';
+
+const DEFAULT_CHARACTER_ID_SET = new Set<string>(DEFAULT_CHARACTER_IDS);
 
 const SEED_CHARACTERS = buildDefaultCharacters().map((character) => ({
   ...character,
@@ -79,7 +84,12 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     if (existing.sourceKey !== preset.presetKey) {
       patch.sourceKey = preset.presetKey;
     }
-    if (existing.deletionPolicy !== 'archive_allowed') {
+    // 在 DEFAULT_CHARACTER_IDS 内的预设角色保留 'protected'（和老牌默认好友一致），
+    // 不要被这条 preset auto-seed 修补又拽回 archive_allowed。
+    if (
+      !DEFAULT_CHARACTER_ID_SET.has(existing.id) &&
+      existing.deletionPolicy !== 'archive_allowed'
+    ) {
       patch.deletionPolicy = 'archive_allowed';
     }
     if (existing.isTemplate !== false) {

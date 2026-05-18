@@ -223,6 +223,13 @@ export class MinimaxNativeClient {
         legacyMessage: `当前 Token Plan 不支持该模型：${msg}`,
       });
     }
+    if (resp.status_code === 2056) {
+      // Token Plan 整体当日额度耗尽（lyrics / chat / music / tts 共享同一池子）
+      throw new AppError('MINIMAX_TOKEN_PLAN_EXHAUSTED', {
+        status: HttpStatus.TOO_MANY_REQUESTS,
+        legacyMessage: `MiniMax Token Plan 当日额度已用完：${msg}`,
+      });
+    }
     if (resp.status_code === 2013) {
       throw new AppError('AI_REQUEST_INVALID_PARAMS', {
         status: HttpStatus.BAD_REQUEST,

@@ -30,6 +30,7 @@ import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { CharactersService } from '../characters/characters.service';
 import { MomentsService } from '../moments/moments.service';
@@ -204,8 +205,9 @@ export class SchedulerService {
     );
   }
 
-  // 在线状态刷新：10min→30min（DB-only，频率宽松）。
-  @Cron('*/30 * * * *')
+  // 在线状态刷新：handler 内只看 hour bucket，hour 内调几次结果完全一样 →
+  // 改为每小时 :05 跑一次。:05 错开整点 burst。
+  @Cron('5 * * * *')
   async updateAiActiveStatus() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -215,8 +217,9 @@ export class SchedulerService {
     );
   }
 
-  // 朋友圈调度：15min→30min（NPC 朋友圈 LLM 重型）。
-  @Cron('*/30 * * * *')
+  // 朋友圈调度：恢复原 */15 频率，但起点错到 :07/:22/:37/:52，避免和
+  // npcAutonomyTick (:13/:28/:43/:58) 共撞 minimax 网关。
+  @Cron('7-59/15 * * * *')
   async checkMomentSchedule() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -377,8 +380,10 @@ export class SchedulerService {
     );
   }
 
-  // 待回应的 feed 反馈：5min→15min（NPC 评论回复 LLM 重型）。
-  @Cron('*/15 * * * *')
+  // 广场 NPC autonomy tick：恢复原 */5 频率，但起点错到 :01/:06/:11/...，
+  // 与 cyber-avatar incremental scan (:04/:09/...) 错开 3min，避免两条
+  // 5min cron 同分钟撞 minimax。
+  @Cron('1-59/5 * * * *')
   async processPendingFeedReactions() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -388,8 +393,9 @@ export class SchedulerService {
     );
   }
 
-  // 视频号生成调度：20min→1h（每次 burst 容易把 minimax video 配额打空）。
-  @Cron('0 * * * *')
+  // 视频号生成调度：video quota 2/天 — hourly 99% 是空跑。改成每天 4 次（在
+  // 用户活跃时段尝试），handler 内还有 activeHoursStart/End 双重过滤。
+  @Cron('8 9,13,17,21 * * *')
   async checkChannelsSchedule() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -400,10 +406,10 @@ export class SchedulerService {
   }
 
   /**
-   * 视频号角色主动转发：30min→1h，进一步降低私聊推送频次。
-   * 服务内仍保留「每角色每天 1 条 / 每 owner 每天 3 条」上限作为最后兜底。
+   * 视频号角色主动转发：服务内本就有「每角色每天 1 条 / 每 owner 每天 3 条」
+   * 硬上限，hourly 调度大多数 tick 都空跑。改成每 3 小时 1 次，配 :11 错开整点。
    */
-  @Cron('0 0 * * * *')
+  @Cron('11 */3 * * *')
   async runChannelProactiveForward() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -471,8 +477,10 @@ export class SchedulerService {
     };
   }
 
-  // NPC 自主行为 tick：15min→30min（LLM 重型，单 tick 跑很多角色）。
-  @Cron('*/30 * * * *')
+  // 朋友圈 NPC autonomy tick：恢复原 */15 频率，起点错到 :13/:28/:43/:58，
+  // 与 checkMomentSchedule (:07/:22/:37/:52) 错开 6min — 两条 15min cron
+  // 不再同分钟集中调 LLM。
+  @Cron('13-59/15 * * * *')
   async npcAutonomyTick() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
     await this.runScheduledJob(
@@ -513,6 +521,12 @@ export class SchedulerService {
     try {
       await this.executeTrackedJob(jobId, handler);
     } catch (error) {
+      // 会员到期：MinimaxClient 闸抛 402，cron 静默早退即可。
+      // 22 个 cron × N 个到期 world × 频繁 tick 走 logger.error 会把日志刷爆。
+      if (error instanceof SubscriptionExpiredException) {
+        this.logger.debug(`${errorMessage}: subscription expired, cron skipped`);
+        return;
+      }
       this.logger.error(
         errorMessage,
         error instanceof Error ? error.stack : String(error),
@@ -1069,6 +1083,8 @@ export class SchedulerService {
     let music = 0;
     let video = 0;
 
+    // availableToday 内部已经短路 exhaustedAt → 撞过 2056 后返回 0，无需另查
+    // isExhaustedToday，省 2 次 DB 查询。
     const musicAvailable =
       (await this.minimaxQuota.availableToday('music-2.6')) > 0 ||
       (await this.minimaxQuota.availableToday('music-2.5')) > 0;
@@ -1274,7 +1290,9 @@ export class SchedulerService {
     const scenes = runtimeRules.sceneFriendRequestScenes;
     const scene = scenes[Math.floor(Math.random() * scenes.length)];
     const { request: req } =
-      await this.socialService.triggerSceneFriendRequest(scene);
+      await this.socialService.triggerSceneFriendRequest(scene, {
+        caller: 'scheduler',
+      });
     if (!req) {
       return {
         summary: renderTemplate(
@@ -1890,12 +1908,36 @@ export class SchedulerService {
         }));
       if (!text) return null;
 
+      // 尝试为这条朋友圈配 1 张 AI 方图。3 层约束：world 内角色动态优先级均分
+      // → image-01 三态配额 → API 实时熔断；任何一步失败都安全回退为纯文本。
+      //
+      // 跳过：
+      //   - 提醒角色（reminderMoment）：晚安/喝水/番茄钟类系统消息，配图无意义
+      //   - 新闻简报（options.generationKind）：内容是真实新闻摘要，AI 图会
+      //     乱编画面误导
+      //   - 外部预设文案（options.text）：调用方传入固定文案的特殊路径，
+      //     这种 call site 通常不希望被自动加图
+      const isSpecialMomentKind =
+        Boolean(reminderMoment) ||
+        Boolean(options?.text) ||
+        Boolean(options?.generationKind);
+      const imageMedia = isSpecialMomentKind
+        ? null
+        : await this.momentsService.tryGenerateMomentImage(
+            char.id,
+            char.name,
+            text,
+            runtimeProfile,
+          );
+
       const post = this.momentPostRepo.create({
         authorId: char.id,
         authorName: char.name,
         authorAvatar: char.avatar,
         authorType: 'character',
         text,
+        contentType: imageMedia ? 'image_album' : 'text',
+        mediaPayload: imageMedia ? JSON.stringify([imageMedia]) : undefined,
         generationKind:
           options?.generationKind ??
           (runtimeProfile.realWorldContext?.realityMomentBrief

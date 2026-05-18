@@ -9,9 +9,15 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import { ChildProcess, spawn } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import {
+  createCipheriv,
+  createHash,
+  randomBytes,
+  randomUUID,
+} from "node:crypto";
 import { existsSync, mkdirSync, openSync } from "node:fs";
 import path from "node:path";
+import BetterSqlite3 from "better-sqlite3";
 import { Repository } from "typeorm";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
@@ -39,6 +45,22 @@ type RunningChild = {
   child: ChildProcess | null;
   startedAt: Date;
 };
+
+// world.apiBaseUrl 形如 http://127.0.0.1:3011 — 抽出端口号，给 allocatePort 兜底使用。
+// 非 127.0.0.1 / 解析失败 / 没端口都返回 null（远端 URL 不影响本地端口分配）。
+function parsePortFromApiBaseUrl(apiBaseUrl: string | null | undefined): number | null {
+  if (!apiBaseUrl) return null;
+  try {
+    const parsed = new URL(apiBaseUrl);
+    if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") {
+      return null;
+    }
+    const port = parseInt(parsed.port, 10);
+    return Number.isFinite(port) && port > 0 ? port : null;
+  } catch {
+    return null;
+  }
+}
 
 function findRepoRoot(start: string): string {
   let dir = start;
@@ -93,6 +115,8 @@ export class LocalProcessComputeProviderService
     private readonly configService: ConfigService,
     @InjectRepository(CloudInstanceEntity)
     private readonly instanceRepo: Repository<CloudInstanceEntity>,
+    @InjectRepository(CloudWorldEntity)
+    private readonly worldRepo: Repository<CloudWorldEntity>,
     private readonly minimaxQuotaDispatcher: MinimaxQuotaDispatcherService,
   ) {
     const configured = parseInt(
@@ -248,7 +272,11 @@ export class LocalProcessComputeProviderService
   ): Promise<WorldInstancePowerTransitionResult> {
     const existing = this.running.get(world.id);
     if (existing && this.isAlive(existing)) {
-      return { powerState: "running", providerSnapshotId: null };
+      return {
+        powerState: "running",
+        providerSnapshotId: null,
+        apiBaseUrl: `http://127.0.0.1:${existing.port}`,
+      };
     }
 
     // 先信任持久化的 port — 大部分时候它是空的（创建时就停了）或仍然属于本 world。
@@ -297,7 +325,11 @@ export class LocalProcessComputeProviderService
       accountDir,
     };
 
-    return { powerState: "running", providerSnapshotId: null };
+    return {
+      powerState: "running",
+      providerSnapshotId: null,
+      apiBaseUrl: `http://127.0.0.1:${port}`,
+    };
   }
 
   async stopInstance(
@@ -309,7 +341,9 @@ export class LocalProcessComputeProviderService
       this.running.delete(world.id);
       this.terminateChild(state);
     }
-    return { powerState: "stopped", providerSnapshotId: null };
+    // child 已死，apiBaseUrl 不能继续指着这个被释放的端口——下次别的 world
+    // 复用同一个端口时就会串台（见 worlds-page "Enter admin" 的 bootstrap 路径）。
+    return { powerState: "stopped", providerSnapshotId: null, apiBaseUrl: null };
   }
 
   async inspectInstance(
@@ -381,6 +415,23 @@ export class LocalProcessComputeProviderService
         `allocatePort: failed to scan persisted ports, falling back to in-memory only: ${(err as Error).message}`,
       );
     }
+    // 防御：world.apiBaseUrl 也可能挂着尚未清掉的端口（历史上 sleep 不清 apiBaseUrl，
+    // 导致两条 world 记录指向同一个 child，云控制台"进入后台"会串台）。即使现在
+    // 已经在 sleep/stop 时清了，旧数据 + 其他 provider 写入路径也可能留下脏值，
+    // 这里再扫一遍兜底。
+    try {
+      const allWorlds = await this.worldRepo.find({
+        select: ["apiBaseUrl"],
+      });
+      for (const w of allWorlds) {
+        const p = parsePortFromApiBaseUrl(w.apiBaseUrl);
+        if (p) used.add(p);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `allocatePort: failed to scan world apiBaseUrls: ${(err as Error).message}`,
+      );
+    }
     let port = this.basePort;
     while (used.has(port)) {
       port += 1;
@@ -425,17 +476,146 @@ export class LocalProcessComputeProviderService
     }
   }
 
+  // 把 cloud-api 算出的 minimax key 写进 world DB 的 inference_provider_accounts.
+  // 文本生成走 inference.service → providerRepo.findOneBy，读 DB 而不是 env；
+  // 不同步会一直用最初 seed 的那把固定单 key（历史问题：所有 world 都被灌成
+  // process.env.MINIMAX_API_KEY 兜底值）。
+  //
+  // 行为：
+  //   - row 不存在（provider_minimax 还没被 seed）→ 静默跳过，不创建
+  //   - row 已经是同一把 key → 不写（避免无谓改 updatedAt 和触发 WAL 写）
+  //   - 加密 secret 没设置 → fallback 到 plain:<key>（与 api 的 encodeSecret 一致）
+  //
+  // 在 spawn child **之前**调用，此时 child 不持库；后续 child 启动后再读 DB
+  // 拿到的就是新 key。已运行的 child 改库后下次 findOneBy 就能读到（TypeORM
+  // 那条路径无内存缓存）。
+  private syncProviderMinimaxKey(
+    accountDir: string,
+    targetKey: string,
+    worldId: string,
+  ): void {
+    const dbPath = path.join(accountDir, "database.sqlite");
+    if (!existsSync(dbPath)) {
+      return;
+    }
+    let db: BetterSqlite3.Database | null = null;
+    try {
+      db = new BetterSqlite3(dbPath);
+      const hasTable = db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='inference_provider_accounts'",
+        )
+        .get();
+      if (!hasTable) return;
+      const row = db
+        .prepare(
+          "SELECT apiKeyEncrypted, ttsApiKeyEncrypted, imageGenerationApiKeyEncrypted FROM inference_provider_accounts WHERE id = 'provider_minimax'",
+        )
+        .get() as
+        | {
+            apiKeyEncrypted: string | null;
+            ttsApiKeyEncrypted: string | null;
+            imageGenerationApiKeyEncrypted: string | null;
+          }
+        | undefined;
+      if (!row) return;
+
+      const decode = (stored: string | null) => {
+        if (!stored) return "";
+        const t = stored.trim();
+        if (t.startsWith("plain:")) return t.slice(6).trim();
+        // enc:<envelope> 无法在不持有 secret 时解；保守视为不同，触发改写。
+        // legacy bare value 直接当明文比对。
+        if (t.startsWith("enc:")) return "__enc_opaque__";
+        return t;
+      };
+
+      const needApi = decode(row.apiKeyEncrypted) !== targetKey;
+      const needTts = decode(row.ttsApiKeyEncrypted) !== targetKey;
+      const needImg = decode(row.imageGenerationApiKeyEncrypted) !== targetKey;
+      if (!needApi && !needTts && !needImg) {
+        return;
+      }
+
+      const sets: string[] = [];
+      const params: Record<string, string> = {
+        now: new Date().toISOString(),
+      };
+      if (needApi) {
+        sets.push("apiKeyEncrypted = @apiEnc");
+        params.apiEnc = this.encodeMinimaxSecret(targetKey);
+      }
+      if (needTts) {
+        sets.push("ttsApiKeyEncrypted = @ttsEnc");
+        params.ttsEnc = this.encodeMinimaxSecret(targetKey);
+      }
+      if (needImg) {
+        sets.push("imageGenerationApiKeyEncrypted = @imgEnc");
+        params.imgEnc = this.encodeMinimaxSecret(targetKey);
+      }
+      sets.push("updatedAt = @now");
+      db.prepare(
+        `UPDATE inference_provider_accounts SET ${sets.join(", ")} WHERE id = 'provider_minimax'`,
+      ).run(params);
+      this.logger.log(
+        `synced provider_minimax apiKey for world=${worldId} → …${targetKey.slice(-4)} cols=[${[
+          needApi ? "api" : null,
+          needTts ? "tts" : null,
+          needImg ? "img" : null,
+        ]
+          .filter(Boolean)
+          .join(",")}]`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `syncProviderMinimaxKey failed for world=${worldId}: ${(err as Error)?.message}`,
+      );
+    } finally {
+      db?.close();
+    }
+  }
+
+  // 与 api/src/modules/inference/inference.service.ts:encodeSecret + api-key-crypto.ts
+  // 对齐：有 USER_API_KEY_ENCRYPTION_SECRET → AES-256-GCM；没有 → plain:。
+  private encodeMinimaxSecret(value: string): string {
+    const secret = process.env.USER_API_KEY_ENCRYPTION_SECRET?.trim();
+    if (!secret) {
+      return `plain:${value}`;
+    }
+    try {
+      const key = createHash("sha256").update(secret).digest();
+      const iv = randomBytes(12);
+      const cipher = createCipheriv("aes-256-gcm", key, iv);
+      const encrypted = Buffer.concat([
+        cipher.update(value, "utf8"),
+        cipher.final(),
+      ]);
+      const tag = cipher.getAuthTag();
+      const envelope = JSON.stringify({
+        v: 1,
+        iv: iv.toString("base64"),
+        tag: tag.toString("base64"),
+        value: encrypted.toString("base64"),
+      });
+      return `enc:${envelope}`;
+    } catch {
+      return `plain:${value}`;
+    }
+  }
+
   private isAlive(state: RunningChild) {
     if (state.child) {
       if (!state.child.pid) return false;
       if (state.child.exitCode !== null) return false;
       return this.isPidAlive(state.child.pid);
     }
-    // reattach 来的 state.pid 是从 launchConfig 拿到的，可能是上一次失败 spawn
-    // 留下的死 pid（端口实际被原孤儿占着，但我们没法分辨真实 listen pid）。
-    // 这里信 in-memory 登记本身，让 inspectInstance 的 pingHealth 在每次反代
-    // 请求前再判端口活否；spawn 失败时 child.on('exit') 会自己清掉登记。
-    return true;
+    // reattach 来的 state.pid 是从 launchConfig 拿到的，正常情况下是真实 listening pid
+    // （onModuleInit 走 pingHealth 校验过 worldId）。如果 pid 已经死了，必须如实返回
+    // false，让 inspectInstance 落到 stopped/missing 分支并触发 reconcile 的 recovery
+    // 任务，否则外部 SIGTERM 之后 cloud-api 会以为它还活着、永远等心跳，被卡住的
+    // world 永远不会被重 spawn。
+    if (!state.pid) return false;
+    return this.isPidAlive(state.pid);
   }
 
   private async spawnChild(
@@ -473,6 +653,10 @@ export class LocalProcessComputeProviderService
     const minimaxAlloc = pickMinimaxKey(world.id, minimaxPool);
     if (minimaxAlloc) {
       env.MINIMAX_API_KEY = minimaxAlloc.key;
+      // 同步把 world 自己 DB 里 inference_provider_accounts.apiKey 改成本次分配的 key。
+      // 文本生成走 inference.service → providerRepo.findOneBy，读的是 DB 而不是 env，
+      // 不同步就会一直用最初 seed 的那把单 key（参考 scripts/migrate-to-minimax-tokenplan.mjs）。
+      this.syncProviderMinimaxKey(accountDir, minimaxAlloc.key, world.id);
     }
     // 安全：child 只该看到自己分到的那个 key，整个池只属于 cloud-api 层。
     // 不删的话 ...process.env 会把全部 CSV 池泄露给 child env（/proc/PID/environ 可见）。
@@ -490,6 +674,10 @@ export class LocalProcessComputeProviderService
       env.MINIMAX_DAILY_LIMIT_MUSIC_25 = String(share.music25);
       env.MINIMAX_DAILY_LIMIT_IMAGE_01 = String(share.image01);
       env.MINIMAX_DAILY_LIMIT_LYRICS = String(share.lyrics);
+      env.MINIMAX_DAILY_LIMIT_SPEECH_HD = String(share.speechHd);
+      // "世界角色朋友圈自动配图"专用日上限（用途配额，仍占 image01 总额，
+      // 但额外做"每个 world 不超过这个数"的限制，详见 MomentImageBudgetService）。
+      env.FEED_IMAGE_WORLD_DAILY_SHARE = String(share.feedImage);
     } catch (err) {
       this.logger.warn(
         `compute minimax daily share failed for world=${world.id}: ${(err as Error)?.message}; child uses fallback limits`,

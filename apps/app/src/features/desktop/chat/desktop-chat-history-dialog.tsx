@@ -51,11 +51,18 @@ export function DesktopChatHistoryDialog({
   }
 
   return (
+    // 走查 R1：和姊妹 confirm/text-edit/forward/create-group/note-send/picker
+    // 一批 dialog 同款 portal-shield 缺漏。该 dialog 从「聊天信息」→「查找
+    // 聊天记录」打开，inline 渲染在 workspace 根 div 下，无 shield → workspace
+    // onPointerDownCapture 在 rightPanelMode=details 时点 dialog 内任意非
+    // sidePanel/header/thread 节点都会偷关侧栏；用户在 dialog 内点过滤芯片 /
+    // 关键词 / 消息行后，期望返回详情侧栏继续操作但发现侧栏已被关掉。
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-4 backdrop-blur-[3px] sm:p-6",
         className,
       )}
+      data-yj-portal-shield="desktop-chat-history-dialog"
     >
       <button
         type="button"

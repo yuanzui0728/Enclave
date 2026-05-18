@@ -8,11 +8,17 @@ export type MobileGroupRouteState = {
 
 const HIGHLIGHT_HASH_PREFIX = "chat-message-";
 
+// 走查 R2：原版只校验 "startsWith('/')"，协议无关 URL "//evil.com" 也满足这条；
+// TanStack navigate({to:"//..."}) 虽然多数情况下匹不到任何已注册路由会落空，
+// 但浏览器 history.replaceState/pushState 直接接受"//host"会让地址栏拼出
+// "https://evil.com"——一次"返回上一页"把用户带到第三方站。同 favorites 的
+// note-window-route-state R-sanitizeReturnTo 校验补 "!startsWith('//')"。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

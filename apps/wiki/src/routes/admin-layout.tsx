@@ -28,7 +28,17 @@ export function AdminLayout() {
           <Trans>需要管理员权限</Trans>
         </h1>
         <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-          <Trans>仅管理员可访问此区域。请用管理员账号登录后再试。</Trans>
+          {user ? (
+            <Trans>仅管理员可访问此区域。当前账号权限不足。</Trans>
+          ) : (
+            <Trans>
+              仅管理员可访问此区域。请先{" "}
+              <Link to="/login" className="font-medium underline">
+                登录
+              </Link>{" "}
+              管理员账号。
+            </Trans>
+          )}
         </p>
       </Card>
     );

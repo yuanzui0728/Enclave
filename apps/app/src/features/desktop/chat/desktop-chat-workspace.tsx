@@ -1,11 +1,13 @@
 import {
   Suspense,
   lazy,
+  memo,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type DragEvent as ReactDragEvent,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type MouseEvent,
@@ -52,7 +54,10 @@ import {
   updateOfficialAccountPreferences,
   updateGroupPreferences,
   type ConversationListItem,
+  type GroupMessage,
+  type Message,
 } from "@yinjie/contracts";
+import { upsertServerMessageInCache } from "../../chat/chat-message-delivery";
 import {
   ErrorBlock,
   InlineNotice,
@@ -280,6 +285,7 @@ export function DesktopChatWorkspace({
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
   const sidePanelRef = useRef<HTMLElement | null>(null);
   const desktopHeaderActionsRef = useRef<HTMLDivElement | null>(null);
+  const threadSectionRef = useRef<HTMLElement | null>(null);
   const handledRouteCallActionKeyRef = useRef<string | null>(null);
   const desktopSearchLauncher = useDesktopSearchLauncher({
     keyword: searchTerm,
@@ -333,6 +339,11 @@ export function DesktopChatWorkspace({
     queryKey: ["app-chat-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(ownerId),
+    // 切到聊天 tab / 重 mount workspace 时不必每次都重拉黑名单——这份
+    // 数据日常几乎不变（拉黑/解除是稀有操作，触发时都会主动 invalidate）。
+    // 公网隧道 RTT ~600ms，省一次是一次。与 desktop-message-avatar-popover
+    // / desktop-chat-details-panel 的 30s 对齐。
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -341,10 +352,24 @@ export function DesktopChatWorkspace({
         queryKey: ["app-conversations", baseUrl],
       });
     });
-    const offMessage = onChatMessage(() => {
+    const offMessage = onChatMessage((payload) => {
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+      // 直接把新消息写进对应会话的 messages cache：staleTime 内 useQuery 会先
+      // 返回旧 cache 再后台 refetch，用户切到该会话先看不到新消息。setQueriesData
+      // 直接合并进所有 messageLimit 变体的 cache，切到 chat-room 立刻就在。
+      if ("conversationId" in payload) {
+        queryClient.setQueriesData<Message[]>(
+          { queryKey: ["app-conversation-messages", baseUrl, payload.conversationId] },
+          (current) => upsertServerMessageInCache(current, payload),
+        );
+      } else if ("groupId" in payload) {
+        queryClient.setQueriesData<GroupMessage[]>(
+          { queryKey: ["app-group-messages", baseUrl, payload.groupId] },
+          (current) => upsertServerMessageInCache(current, payload),
+        );
+      }
     });
     return () => {
       offUpdated();
@@ -487,6 +512,11 @@ export function DesktopChatWorkspace({
     subscriptionInboxActive,
   ]);
 
+  // 多处 useEffect 用 activeConversation 整对象当 deps，conversationsQuery
+  // 每 60s 轮询都给一个新引用，effect 跟着 cleanup → re-run，纯白用功。把 id
+  // 提出来用，下游 effect 的 deps 改成稳定字符串。
+  const activeConversationId = activeConversation?.id ?? null;
+
   const buildCurrentChatRouteHash = useCallback(
     (
       overrides: Partial<
@@ -512,11 +542,11 @@ export function DesktopChatWorkspace({
                   accountId: selectedServiceAccountId,
                   articleId: selectedOfficialArticleId,
                 }
-              : activeConversation
+              : activeConversationId
                 ? {
-                    conversationId: activeConversation.id,
+                    conversationId: activeConversationId,
                     messageId:
-                      activeConversation.id === selectedConversationId
+                      activeConversationId === selectedConversationId
                         ? highlightedMessageId
                         : undefined,
                   }
@@ -537,7 +567,7 @@ export function DesktopChatWorkspace({
       });
     },
     [
-      activeConversation,
+      activeConversationId,
       highlightedMessageId,
       selectedConversationId,
       selectedOfficialAccountId,
@@ -572,6 +602,28 @@ export function DesktopChatWorkspace({
       }
 
       if (desktopHeaderActionsRef.current?.contains(target)) {
+        return;
+      }
+
+      // 不要把 thread 区（消息列表 / composer / 图片预览等）当成"点击外部"。
+      // 详情侧栏开着时给中间 section 加了 xl:pr-[352px]，pointerdown 阶段
+      // dismiss 一关 panel 整栏 padding 立刻消失，composer 右半边（含发送按钮）
+      // 整体往右移；用户原 mousedown 落点上的 DOM 节点已经换走，pointerup
+      // 命中不到原按钮，click 根本不 fire。结果就是「点了发送但没发出去 +
+      // 侧栏被偷偷关掉」。thread 区交互的 dismiss 由 Esc / 关闭按钮 / 切会话
+      // 各自处理，pointer 兜底只覆盖左侧会话列表 / 头像菜单这种远端区域。
+      if (threadSectionRef.current?.contains(target)) {
+        return;
+      }
+
+      // 走查新一轮 R1：avatar popover 等通过 createPortal 渲染到 document.body
+      // 的浮层不在 threadSectionRef DOM 子树里——用户点 popover 卡片任意空白
+      // 处时这里 dismiss 会把背后的「聊天信息」侧栏一起关掉。popover 自己打了
+      // data-yj-portal-shield 标记，closest 命中就跳过 dismiss。
+      if (
+        target instanceof Element &&
+        target.closest('[data-yj-portal-shield]')
+      ) {
         return;
       }
 
@@ -638,7 +690,7 @@ export function DesktopChatWorkspace({
 
   useEffect(() => {
     if (
-      !activeConversation ||
+      !activeConversationId ||
       subscriptionInboxActive ||
       officialAccountsActive ||
       serviceConversationActive
@@ -652,7 +704,7 @@ export function DesktopChatWorkspace({
       return;
     }
   }, [
-    activeConversation,
+    activeConversationId,
     closeRightPanel,
     officialAccountsActive,
     serviceConversationActive,
@@ -660,9 +712,19 @@ export function DesktopChatWorkspace({
     subscriptionInboxActive,
   ]);
 
+  // 这里只依赖会话 id，不要把 activeConversation 整对象塞进去。
+  // conversationsQuery 每 60s 轮询 / onWindowFocus / socket 推消息时都会拿到
+  // 新的 conversation 对象引用，整 effect 会跟着重跑：
+  //   - setDetailsActionRequest 用 Date.now() 现刷 token →
+  //     DesktopChatDetailsPanel 那个 [actionRequest] effect 把 member-search /
+  //     announcement / nickname 等动作再回放一次（已经在编辑的弹层被重新打开）
+  //   - setHistoryPanelFocusKey(Date.now()) → DesktopChatHistoryPanel 那个
+  //     [focusRequestKey] effect 把搜索框 focus + select 再来一遍，用户在
+  //     查找记录里搜到一半时，下一次轮询会把已经输入的关键词全选高亮，
+  //     下一个按键直接覆盖掉
   useEffect(() => {
     if (
-      !activeConversation ||
+      !activeConversationId ||
       !selectedSidePanelMode ||
       subscriptionInboxActive ||
       officialAccountsActive ||
@@ -685,7 +747,7 @@ export function DesktopChatWorkspace({
       setHistoryPanelFocusKey(Date.now());
     }
   }, [
-    activeConversation,
+    activeConversationId,
     officialAccountsActive,
     selectedDetailsAction,
     selectedSidePanelMode,
@@ -703,8 +765,8 @@ export function DesktopChatWorkspace({
     if (
       !selectedCallAction ||
       !selectedConversationId ||
-      !activeConversation ||
-      activeConversation.id !== selectedConversationId ||
+      !activeConversationId ||
+      activeConversationId !== selectedConversationId ||
       subscriptionInboxActive ||
       officialAccountsActive ||
       serviceConversationActive
@@ -732,7 +794,7 @@ export function DesktopChatWorkspace({
       replace: true,
     });
   }, [
-    activeConversation,
+    activeConversationId,
     buildCurrentChatRouteHash,
     navigateToChatWorkspace,
     officialAccountsActive,
@@ -747,13 +809,13 @@ export function DesktopChatWorkspace({
   useEffect(() => {
     if (
       !desktopCallRequest ||
-      activeConversation?.id === desktopCallRequest.conversationId
+      activeConversationId === desktopCallRequest.conversationId
     ) {
       return;
     }
 
     setDesktopCallRequest(null);
-  }, [activeConversation, desktopCallRequest]);
+  }, [activeConversationId, desktopCallRequest]);
 
   useEffect(() => {
     if (!notice) {
@@ -770,14 +832,27 @@ export function DesktopChatWorkspace({
     }
 
     const closeMenu = () => setConversationContextMenu(null);
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // 不 preventDefault：下面那条 dismissSidePanel 用 window keydown +
+        // queueMicrotask 兜底（line 919），defaultPrevented = false 就接着跑。
+        // 用户在桌面单聊开着「聊天信息」侧栏然后右键会话列表里的另一段会话
+        // 打开 contextMenu，按 Esc 会同时把 contextMenu 和背后的侧栏一起关
+        // 掉。和 image viewer / chat-message-list contextMenu 同款修法。
+        event.preventDefault();
+        closeMenu();
+      }
+    };
     window.addEventListener("pointerdown", closeMenu);
     window.addEventListener("resize", closeMenu);
     window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("pointerdown", closeMenu);
       window.removeEventListener("resize", closeMenu);
       window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [conversationContextMenu]);
 
@@ -787,14 +862,24 @@ export function DesktopChatWorkspace({
     }
 
     const closeMenu = () => setOfficialMessageContextMenu(null);
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // 跟上面 conversationContextMenu 同款：不 preventDefault 会让
+        // dismissSidePanel 兜底把背后的「聊天信息」侧栏一起关掉。
+        event.preventDefault();
+        closeMenu();
+      }
+    };
     window.addEventListener("pointerdown", closeMenu);
     window.addEventListener("resize", closeMenu);
     window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("pointerdown", closeMenu);
       window.removeEventListener("resize", closeMenu);
       window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [officialMessageContextMenu]);
 
@@ -816,6 +901,11 @@ export function DesktopChatWorkspace({
         return;
       }
 
+      // 跟其他 contextMenu Esc 同款：不 preventDefault 的话下面那条
+      // dismissSidePanel microtask 兜底会接着跑。用户在桌面单聊开着「聊天
+      // 信息」侧栏然后点 + 按钮打开 quick menu (发起群聊/添加朋友/新建笔记)，
+      // 按 Esc 会同时把 menu 和背后的侧栏一起关掉。
+      event.preventDefault();
       closeMenu();
     };
 
@@ -848,6 +938,23 @@ export function DesktopChatWorkspace({
         return;
       }
 
+      // 同 handleWorkspacePointerDownCapture：thread 区交互（消息列表 /
+      // composer / 图片预览等）不算"点击外部"——否则 details 侧栏开着时
+      // 点发送按钮会先 dismiss 让 section padding 收回去，composer 整栏右
+      // 移，原 mousedown 落点上的 DOM 已经换人，click 不 fire，消息没发出。
+      if (threadSectionRef.current?.contains(target)) {
+        return;
+      }
+
+      // 同 handleWorkspacePointerDownCapture：portal 浮层 (avatar popover 等)
+      // 不在 threadSectionRef 子树里，用 data-yj-portal-shield 跳过 dismiss。
+      if (
+        target instanceof Element &&
+        target.closest('[data-yj-portal-shield]')
+      ) {
+        return;
+      }
+
       dismissSidePanel();
     };
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -855,7 +962,26 @@ export function DesktopChatWorkspace({
         return;
       }
 
-      dismissSidePanel();
+      // 这条 window keydown 是 details 侧栏开着时的「按 Esc 关侧栏」兜底。
+      // 问题是 confirm/text-edit/forward/create-group 这些 dialog 的 Esc
+      // handler 也都挂在 window 上 —— stopPropagation 在「同元素同事件」上
+      // 不会阻断后续 sibling listener（MDN：use stopImmediatePropagation
+      // for that）。worskpace effect 在 rightPanelMode 变 details 时挂上，
+      // 早于 dialog 挂载；所以 Esc 时 workspace 先 fire，dismissSidePanel
+      // 直接把侧栏关了，然后 dialog 再 fire 把弹窗也关了 —— 用户看到的是
+      // "Esc 同时把弹窗和背后的侧栏都关掉"。Round 5/6/7 给 dialog Esc 补
+      // stopPropagation 在 popover（document/bubble，在 window 之前）那条
+      // 路径上有效，但 window/bubble 同元素 sibling 上根本拦不住。
+      //
+      // 把真正的 dismissSidePanel 推到 microtask：所有同步 keydown
+      // listener 跑完后，如果还没人 preventDefault 这次 Esc（说明确实没有
+      // modal/dialog 接走它），才真的关侧栏。
+      queueMicrotask(() => {
+        if (event.defaultPrevented) {
+          return;
+        }
+        dismissSidePanel();
+      });
     };
 
     document.addEventListener("pointerdown", handlePointerDown, true);
@@ -868,7 +994,9 @@ export function DesktopChatWorkspace({
   }, [dismissSidePanel, rightPanelMode]);
 
   useEffect(() => {
-    const hasActiveThread = Boolean(activeConversation);
+    // 只依赖 id：activeConversation 整对象每次 conversationsQuery 轮询都换
+    // 引用，把 effect 拖去 cleanup → re-attach window keydown，纯白用功。
+    const hasActiveThread = Boolean(activeConversationId);
     if (
       !hasActiveThread ||
       subscriptionInboxActive ||
@@ -877,6 +1005,16 @@ export function DesktopChatWorkspace({
     ) {
       return;
     }
+
+    // 「发起群聊」/「确认隐藏/清空/退群」对话框打开时不能再被 Cmd+F 抢
+    // 走聚焦——用户按 Cmd+F 是希望在 dialog 内（如群聊搜索成员）触发
+    // 浏览器原生 Find，或者就让按键穿透；不应该弹出右栏「聊天记录」遮住
+    // 当前 dialog。
+    const dialogActive =
+      Boolean(createGroupDialogState) ||
+      Boolean(conversationDangerAction) ||
+      Boolean(conversationContextMenu) ||
+      Boolean(officialMessageContextMenu);
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (
@@ -890,7 +1028,30 @@ export function DesktopChatWorkspace({
         return;
       }
 
+      if (dialogActive) {
+        return;
+      }
+
       if (isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+
+      // 走查电脑端群聊 R8：dialogActive 只追踪 workspace 顶层 state 上挂的
+      // 4 个 dialog；侧栏内嵌的 dialog（DesktopGroupMemberPicker /
+      // DesktopGroupMemberRemovalPicker / DesktopGroupMemberBrowserDialog /
+      // DesktopChatTextEditDialog / DesktopMessageForwardDialog 等）是
+      // GroupChatDetailsPanel / 子组件自己的 useState，外面看不到。用户开着
+      // 这些 dialog 按 Cmd+F → workspace 把 rightPanelMode 改成 "history" →
+      // details panel unmount → 这些子 dialog 也跟着 unmount，用户当前的
+      // 选成员/编辑名/转发流程被冲掉，右栏切到"查找聊天记录"。这些 dialog
+      // 都挂了 role="dialog" aria-modal="true"（之前的 a11y 走查 R1 给一批
+      // dialog 补齐过），DOM 查询能识别。注意不能查 [data-yj-portal-shield]
+      // ——workspace 自己的搜索框 / quick-menu 容器也用这个 attr 但是常驻
+      // 元素，永远命中。
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector('[role="dialog"][aria-modal="true"]')
+      ) {
         return;
       }
 
@@ -901,8 +1062,12 @@ export function DesktopChatWorkspace({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    activeConversation,
+    activeConversationId,
+    conversationContextMenu,
+    conversationDangerAction,
+    createGroupDialogState,
     officialAccountsActive,
+    officialMessageContextMenu,
     serviceConversationActive,
     subscriptionInboxActive,
   ]);
@@ -1036,6 +1201,34 @@ export function DesktopChatWorkspace({
       );
     },
   });
+
+  // 走查新一轮 R31：和 details-panel R29 (commit 01dcc31c6) 同款 — 会话右键
+  // context menu 的「置顶 / 免打扰 / 标已读 / 标未读」4 个 toggle action 只挂
+  // disabled={busy=conversationActionMutation.isPending}，busy 走 React state
+  // 要等 commit 才生效。menu 在 pending 期间不会自动关（仅 hide/clear/leave
+  // 走 danger 流程时手动 setConversationContextMenu(null)），同帧 <16ms double-
+  // click 都看到 disabled=false → mutate 飞 2 次，公网隧道 RTT 双倍消耗 +
+  // onSuccess 让 conversations / group-messages 缓存被重 invalidate 一次。
+  // 叠 sync ref 锁兜同帧 double-tap，pending 翻 false 后 useEffect 复位。
+  const conversationActionSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!conversationActionMutation.isPending) {
+      conversationActionSubmittingRef.current = false;
+    }
+  }, [conversationActionMutation.isPending]);
+  const guardedMutateConversationAction = useCallback(
+    (variables: {
+      action: "pin" | "mute" | "read" | "unread" | "hide" | "clear" | "delete" | "leave";
+      conversation: ConversationListItem;
+    }) => {
+      if (conversationActionSubmittingRef.current) {
+        return;
+      }
+      conversationActionSubmittingRef.current = true;
+      conversationActionMutation.mutate(variables);
+    },
+    [conversationActionMutation],
+  );
 
   const activeConversationDangerConfirm = useMemo(() => {
     if (!conversationDangerAction) {
@@ -1175,7 +1368,57 @@ export function DesktopChatWorkspace({
     },
   });
 
+  // 走查新一轮 R31：和上面 conversationActionMutation 同款 — 公众号消息
+  // context menu 的「标记全部已读 / 标记已读 / 消息免打扰」3 个 action 同样
+  // 只挂 disabled={isPending}，菜单不自动关，同帧 double-click 漏。
+  const officialMessageActionSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!officialMessageActionMutation.isPending) {
+      officialMessageActionSubmittingRef.current = false;
+    }
+  }, [officialMessageActionMutation.isPending]);
+  const guardedMutateOfficialMessageAction = useCallback(
+    (
+      action:
+        | { kind: "subscription-read" }
+        | {
+            kind: "service-read";
+            conversation: OfficialAccountServiceConversationSummary;
+          }
+        | {
+            kind: "service-mute";
+            conversation: OfficialAccountServiceConversationSummary;
+          },
+    ) => {
+      if (officialMessageActionSubmittingRef.current) {
+        return;
+      }
+      officialMessageActionSubmittingRef.current = true;
+      officialMessageActionMutation.mutate(action);
+    },
+    [officialMessageActionMutation],
+  );
+
+  // 走查 R1：「+」快捷菜单点 action 后只走 setIsQuickMenuOpen(false) 关菜单——
+  // React state 要等 commit 才把 menu DOM 撤掉，同帧 <16ms double-click 都能
+  // 命中 handleQuickAction。「新建笔记」分支 createDesktopNoteDraft() 不带任
+  // 何 noteId/draftId hint，dedup 短路 (existing) 永远 miss → 两次同帧双击
+  // 各 buildDraftId() 落 2 条 UUID 不同的草稿到 localStorage：一条被 navigate
+  // 带去 /tabs/favorites 打开编辑器，另一条无主孤悬在草稿列表里。用户结束这次
+  // 编辑回到 favorites 看到莫名其妙多出一条空草稿，得手动清。「发起群聊」/
+  // 「添加朋友」两条同款双击下场：群聊弹层 setState 幂等问题不大，但 navigate
+  // 也会被打两次，tanstack router 在同 hash 上重复 push 倒不至于多帧。统一
+  // 用 requestAnimationFrame 兜同帧锁，下一帧自动复位让用户后续点击照常生效。
+  const quickActionFiredRef = useRef(false);
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
+    if (quickActionFiredRef.current) {
+      return;
+    }
+    quickActionFiredRef.current = true;
+    requestAnimationFrame(() => {
+      quickActionFiredRef.current = false;
+    });
+
     setIsQuickMenuOpen(false);
     setNotice(null);
 
@@ -1312,136 +1555,169 @@ export function DesktopChatWorkspace({
     desktopSearchLauncher.openSearch();
   }
 
-  function handleDesktopCallAction(kind: DesktopChatCallKind) {
-    if (!activeConversation) {
-      setNotice(t(msg`当前会话暂时不可用，请回到消息列表再试一次。`));
-      return;
-    }
+  // 走查 R3：handleDesktopCallAction / 历史记录弹层 onOpenMessage 都靠
+  // `void navigate(...)` 直冲，同帧 <16ms 双击：
+  // · header 通话菜单「语音通话/视频通话」CallMenuButton onClick = setCallMenuOpen(false)
+  //   + onSelectCall(kind) → handleDesktopCallAction → push 2 条 /desktop/mobile 历史
+  //   项（call handoff 入口），用户从手机端回到桌面要按 2 次 Back。
+  // · 查找记录弹层 result row「定位到聊天位置」按钮 onClick = onOpenMessage(id) →
+  //   workspace setRightPanelMode(null) + navigate(threadPath) push 2 条相同 thread
+  //   history，highlight 滚动也会拉两次 RAF。
+  // 共享 rowNavigateFiredRef + raf 复位，和姊妹 chat-details-page guardRowNavigation
+  // / 本文件 quickActionFiredRef 同款。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
 
-    void navigate({
-      to: "/desktop/mobile",
-      hash: buildDesktopMobileCallHandoffHash({
-        kind,
-        conversationId: activeConversation.id,
-        conversationType: getConversationThreadType(activeConversation),
-        title: activeConversation.title,
-      }),
-    });
-  }
-
-  useEffect(() => {
-    if (
-      !activeConversation ||
-      selectedServiceAccountId ||
-      subscriptionInboxActive ||
-      officialAccountsActive
-    ) {
-      return;
-    }
-
-    function handleKeyDown(event: globalThis.KeyboardEvent) {
-      if (event.defaultPrevented) {
+  const handleDesktopCallAction = guardRowNavigation(
+    (kind: DesktopChatCallKind) => {
+      if (!activeConversation) {
+        setNotice(t(msg`当前会话暂时不可用，请回到消息列表再试一次。`));
         return;
       }
 
-      if (event.altKey || event.shiftKey) {
-        return;
-      }
-
-      if (!event.ctrlKey && !event.metaKey) {
-        return;
-      }
-
-      if (event.key.toLowerCase() !== "f") {
-        return;
-      }
-
-      event.preventDefault();
-      setRightPanelMode("history");
-      setHistoryPanelCanReturnToDetails(false);
-      setHistoryPanelFocusKey(Date.now());
-      setDetailsActionRequest(null);
-      navigateToChatWorkspace({
-        hash: buildCurrentChatRouteHash({
-          panel: "history",
-          detailsAction: undefined,
+      void navigate({
+        to: "/desktop/mobile",
+        hash: buildDesktopMobileCallHandoffHash({
+          kind,
+          conversationId: activeConversation.id,
+          conversationType: getConversationThreadType(activeConversation),
+          title: activeConversation.title,
         }),
-        replace: true,
       });
+    },
+  );
+
+  const handleConversationContextMenu = useCallback(
+    (
+      event: MouseEvent<HTMLElement>,
+      conversation: ConversationListItem,
+    ) => {
+      event.preventDefault();
+      setOfficialMessageContextMenu(null);
+      setConversationContextMenu({
+        conversation,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    [],
+  );
+
+  const handleSubscriptionContextMenu = useCallback(
+    (
+      event: MouseEvent<HTMLElement>,
+      summary: OfficialAccountSubscriptionInboxSummary,
+    ) => {
+      event.preventDefault();
+      setConversationContextMenu(null);
+      setOfficialMessageContextMenu({
+        kind: "subscription",
+        summary,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    [],
+  );
+
+  const handleServiceConversationContextMenu = useCallback(
+    (
+      event: MouseEvent<HTMLElement>,
+      conversation: OfficialAccountServiceConversationSummary,
+    ) => {
+      event.preventDefault();
+      setConversationContextMenu(null);
+      setOfficialMessageContextMenu({
+        kind: "service",
+        conversation,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    [],
+  );
+
+  // DesktopMessageEntryCard 是 memo 的，但内联拼对象会让每次 workspace 重渲染
+  // （搜索框输入、reminders tick、conversationsQuery 60s refresh 等）都把所有
+  // 会话卡片重渲染一遍。把这条 prop 抽出来 useMemo，保持引用稳定。
+  const officialMessageContextMenuProp = useMemo(() => {
+    if (officialMessageContextMenu?.kind === "subscription") {
+      return { kind: "subscription" as const };
     }
+    if (officialMessageContextMenu?.kind === "service") {
+      return {
+        kind: "service" as const,
+        accountId: officialMessageContextMenu.conversation.accountId,
+      };
+    }
+    return null;
+  }, [officialMessageContextMenu]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    activeConversation,
-    buildCurrentChatRouteHash,
-    navigateToChatWorkspace,
-    officialAccountsActive,
-    selectedServiceAccountId,
-    subscriptionInboxActive,
-  ]);
-
-  function handleConversationContextMenu(
-    event: MouseEvent<HTMLElement>,
-    conversation: ConversationListItem,
-  ) {
-    event.preventDefault();
-    setOfficialMessageContextMenu(null);
-    setConversationContextMenu({
-      conversation,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  }
-
-  function handleSubscriptionContextMenu(
-    event: MouseEvent<HTMLElement>,
-    summary: OfficialAccountSubscriptionInboxSummary,
-  ) {
-    event.preventDefault();
-    setConversationContextMenu(null);
-    setOfficialMessageContextMenu({
-      kind: "subscription",
-      summary,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  }
-
-  function handleServiceConversationContextMenu(
-    event: MouseEvent<HTMLElement>,
-    conversation: OfficialAccountServiceConversationSummary,
-  ) {
-    event.preventDefault();
-    setConversationContextMenu(null);
-    setOfficialMessageContextMenu({
-      kind: "service",
-      conversation,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  }
-
+  // 走查新一轮 R7：context menu「在独立窗口打开」无任何同步锁，第一次
+  // setConversationContextMenu(null) 走 React state，菜单不会立即从 DOM
+  // 移走 — 同帧 <16ms double-click 都进入 handleOpenConversationWindow。
+  // openDesktopStandaloneWindow 内部按 windowLabel 查重，但两次并发执行
+  // 都先后跑 WebviewWindow.getByLabel：第一次 getByLabel→undefined→new
+  // WebviewWindow 还在 Tauri 内部 settle 期间，第二次 getByLabel 也拿不到
+  // → 也尝试 new WebviewWindow(same label) → Tauri 返回「window already
+  // exists」走 tauri://error → 这条 Promise resolve 出 false → 用户看到
+  // 「浏览器阻止了新窗口，请检查弹窗权限」红色 notice，但第一次明明成功了。
+  // 按 conversationId 上锁（连续右键 2 段不同会话打开窗口是合法用法）。
+  const openingWindowConversationIdsRef = useRef<Set<string>>(new Set());
   async function handleOpenConversationWindow(
     conversation: ConversationListItem,
   ) {
-    const opened = await openDesktopChatWindow({
-      conversationId: conversation.id,
-      conversationType: getConversationThreadType(conversation),
-      title: conversation.title,
-      returnTo: buildDesktopChatThreadPath({
+    if (openingWindowConversationIdsRef.current.has(conversation.id)) {
+      return;
+    }
+    openingWindowConversationIdsRef.current.add(conversation.id);
+    try {
+      const opened = await openDesktopChatWindow({
         conversationId: conversation.id,
-      }),
-    });
+        conversationType: getConversationThreadType(conversation),
+        title: conversation.title,
+        returnTo: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
+      });
 
-    setConversationContextMenu(null);
-    setNotice(
-      opened
-        ? t(msg`已在独立窗口打开聊天。`)
-        : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
-    );
+      setConversationContextMenu(null);
+      setNotice(
+        opened
+          ? t(msg`已在独立窗口打开聊天。`)
+          : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
+      );
+    } finally {
+      openingWindowConversationIdsRef.current.delete(conversation.id);
+    }
   }
 
+  // 走查新一轮 R7：消息提醒 section「清空已通知」/ 类似分组清空按钮 onClick
+  // 是 `void handleClearReminderGroup(status, messageIds)`，handleClearReminderGroup
+  // 无任何同步锁。clearReminders 内部 Promise.allSettled 跑 N 个 DELETE，第一次
+  // 跑完后所有 reminders 都已经从 server 端删掉；同帧 double-click 起飞的第二
+  // 次 handleClearReminderGroup 拿着同一份 messageIds，clearReminder(messageId)
+  // 闭包里读到的 reminderMap 是上一次 render 的快照（localReminders state 没
+  // 提交），仍然找到 reminder → mutateAsync(sourceId) 命中 server 已删的资源
+  // → 404 → Promise.allSettled rejected → clearReminders throw → catch 分支
+  // setNotice 写「清空失败」红色 notice 覆盖前一次的「已清空 N 条提醒」绿色
+  // notice，但 server 端早就成功。和姊妹 chat-message-list R6 handleClearReminder
+  // 同款 false-failure 修法，按 status 上锁（不同 status 分组互不影响）。
+  const clearingReminderStatusRef = useRef<Set<ChatReminderStatus>>(new Set());
   async function handleClearReminderGroup(
     status: ChatReminderStatus,
     messageIds: string[],
@@ -1449,6 +1725,11 @@ export function DesktopChatWorkspace({
     if (!isChatReminderGroupClearable(status)) {
       return;
     }
+
+    if (clearingReminderStatusRef.current.has(status)) {
+      return;
+    }
+    clearingReminderStatusRef.current.add(status);
 
     try {
       await clearReminders(messageIds);
@@ -1459,21 +1740,66 @@ export function DesktopChatWorkspace({
           ? error.message
           : getChatReminderGroupClearErrorMessage(status),
       );
+    } finally {
+      clearingReminderStatusRef.current.delete(status);
     }
   }
+
+  // 兜底拦掉 drop：composer 自己有完整的拖拽附件流程，但用户把文件拖出
+  // composer、drop 到会话列表 / 消息列表 / 侧栏这些没 drop 处理的区域时，
+  // 浏览器默认行为是「把文件 URL 当导航跑」—— 整页跳走打开本地文件，所有
+  // 未发完的消息和状态全没了。这里在 workspace 根上 preventDefault 兜底，
+  // composer 内部 drop 不受影响（composer onDragOver/onDrop 仍然在 React
+  // 事件冒泡前被调用，attachment 流程照常）。
+  const handleWorkspaceDragOver = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (!event.dataTransfer.types.includes("Files")) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "none";
+    },
+    [],
+  );
+  const handleWorkspaceDrop = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (!event.dataTransfer.types.includes("Files")) {
+        return;
+      }
+      event.preventDefault();
+    },
+    [],
+  );
 
   return (
     <div
       className="relative flex h-full min-h-0"
       onPointerDownCapture={handleWorkspacePointerDownCapture}
+      onDragOver={handleWorkspaceDragOver}
+      onDrop={handleWorkspaceDrop}
     >
       {standaloneWindow ? null : (
         <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
+              {/* 走查新一轮 R13：和 R11 quickMenu 同款思路。聊天列表顶部的
+                  搜索框 + 展开的 DesktopSearchDropdownPanel 都在 chat list 子树
+                  里、不在 threadSectionRef / sidePanelRef / desktopHeaderActionsRef
+                  保护区。用户开着「聊天信息」侧栏想点搜索框「随手搜一下」时，
+                  pointerdown capture 兜底先 dismissSidePanel —— 还没开始打字
+                  当前会话的详情侧栏就已经被偷关。搜索结果点击导航走 React Router，
+                  会通过 workspace 自己的 useEffect 链根据新 routeState 处理侧栏，
+                  不依赖这个 dismiss。所以给搜索容器加 shield 安全。 */}
               <div
                 ref={desktopSearchLauncher.containerRef}
                 className="relative min-w-0 flex-1"
+                data-yj-portal-shield="desktop-chat-search-launcher"
               >
                 <TextField
                   value={searchTerm}
@@ -1528,18 +1854,44 @@ export function DesktopChatWorkspace({
                   />
                 ) : null}
               </div>
-              <div ref={quickMenuRef} className="relative shrink-0">
+              {/* 走查新一轮 R11：「+」快捷按钮 + 展开的下拉菜单都在 chat list
+                  里，不在 threadSectionRef / sidePanelRef / desktopHeaderActionsRef
+                  保护区，开着「聊天信息」侧栏点 + 按钮的瞬间 workspace
+                  pointerdown capture 兜底就 dismissSidePanel —— 用户原意只是
+                  打开快捷菜单（发起群聊 / 添加朋友 / 新建笔记），结果当前会话
+                  的详情侧栏被偷偷关掉，发起群聊弹框出来后用户回头发现侧栏没了。
+                  对发起群聊这条尤其坑：用户点取消时已经回不到原来的浏览状态。
+                  和 R10 给 conversation / official context menu 同款思路：
+                  整段 quickMenu wrapper（含按钮 + dropdown）挂 portal-shield。 */}
+              <div
+                ref={quickMenuRef}
+                className="relative shrink-0"
+                data-yj-portal-shield="desktop-chat-quick-menu"
+              >
                 <button
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
                   className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
-                  aria-label={t(msg`打开快捷菜单`)}
+                  aria-label={
+                    isQuickMenuOpen ? t(msg`关闭快捷菜单`) : t(msg`打开快捷菜单`)
+                  }
+                  aria-haspopup="menu"
+                  aria-expanded={isQuickMenuOpen}
                 >
                   <Plus size={17} strokeWidth={2.2} />
                 </button>
 
                 {isQuickMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[var(--shadow-overlay)]">
+                  // 走查新一轮 R8：和 R6 / 官号 context menu 同款 a11y——「+」
+                  // 按钮已经挂了 aria-label，但展开后的浮层是个裸 div，盲人
+                  // 屏幕阅读器只听到一串「发起群聊 / 添加朋友 / 新建笔记」
+                  // button label 浮空，不知道是「快捷菜单」。补 role="menu" +
+                  // aria-label 让 SR 知道是上下文菜单。
+                  <div
+                    role="menu"
+                    aria-label={t(msg`快捷操作菜单`)}
+                    className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[var(--shadow-overlay)]"
+                  >
                     {desktopQuickActionItems.map((item) => {
                       const Icon = item.icon;
 
@@ -1589,7 +1941,19 @@ export function DesktopChatWorkspace({
 
             <div className="space-y-1">
               {filteredReminderEntries.length ? (
-                <section className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none">
+                // 走查新一轮 R14：和 R11 quickMenu / R13 搜索容器同款。消息提醒
+                // section（展开 / 收起 / 清空已通知 / 单条「完成」按钮）这些动作
+                // 都是 in-place mutate state，不导航。但 section 在 chat list 子树
+                // 里、不在保护区，开着「聊天信息」侧栏的用户点提醒上的「完成」按钮
+                // 想关掉一条提醒时，pointerdown capture 把背后的详情侧栏一起偷关。
+                // 提醒卡的「打开」按钮才是 navigate（onOpen 走 chatReminderNavigation
+                // → 切会话），那条配合 dismiss 是合理的；但 React Router 路由变化
+                // 后 workspace 会经 useEffect 链自然处理侧栏，不依赖这条 dismiss。
+                // 给整个 reminder section 加 shield 是安全的。
+                <section
+                  data-yj-portal-shield="desktop-chat-reminder-section"
+                  className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none"
+                >
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
                     <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
@@ -1742,17 +2106,7 @@ export function DesktopChatWorkspace({
                   conversationContextMenuId={
                     conversationContextMenu?.conversation.id
                   }
-                  officialMessageContextMenu={
-                    officialMessageContextMenu?.kind === "subscription"
-                      ? { kind: "subscription" }
-                      : officialMessageContextMenu?.kind === "service"
-                        ? {
-                            kind: "service",
-                            accountId:
-                              officialMessageContextMenu.conversation.accountId,
-                          }
-                        : null
-                  }
+                  officialMessageContextMenu={officialMessageContextMenuProp}
                   onConversationContextMenu={handleConversationContextMenu}
                   onSubscriptionContextMenu={handleSubscriptionContextMenu}
                   onServiceConversationContextMenu={
@@ -1766,7 +2120,19 @@ export function DesktopChatWorkspace({
         </section>
       )}
 
-      <section className="min-w-0 flex-1">
+      {/* 详情侧栏开着时给中间这一栏加上 352px 右内边距：DesktopChatSidePanel
+          走 absolute（top-[64px] right-0 w-[352px] xl:flex），不占 flex 空间，
+          没这层 padding 的话用户消息和 composer 右半部分（含发送按钮）会被
+          panel 整块盖住——1440 屏实测用户气泡 (1075~1324) 整条都掉进 aside
+          (1066~1418) 区域里看不见，发送按钮也躲在 panel 后面点不到。查找记录
+          走中央弹窗，不进这条 padding。 */}
+      <section
+        ref={threadSectionRef}
+        className={cn(
+          "min-w-0 flex-1",
+          rightPanelMode === "details" ? "xl:pr-[352px]" : "",
+        )}
+      >
         {officialAccountsActive ? (
           <Suspense fallback={null}>
           <DesktopOfficialAccountsWorkspace
@@ -2044,7 +2410,7 @@ export function DesktopChatWorkspace({
                 }
               : undefined
           }
-          onOpenMessage={(messageId) => {
+          onOpenMessage={guardRowNavigation((messageId: string) => {
             setRightPanelMode(null);
             setHistoryPanelCanReturnToDetails(false);
 
@@ -2054,7 +2420,7 @@ export function DesktopChatWorkspace({
                 messageId,
               }),
             });
-          }}
+          })}
         />
       ) : null}
 
@@ -2078,13 +2444,13 @@ export function DesktopChatWorkspace({
           busy={conversationActionMutation.isPending}
           onClose={() => setConversationContextMenu(null)}
           onTogglePinned={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "pin",
               conversation: conversationContextMenu.conversation,
             })
           }
           onToggleMuted={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "mute",
               conversation: conversationContextMenu.conversation,
             })
@@ -2095,13 +2461,13 @@ export function DesktopChatWorkspace({
             )
           }
           onMarkRead={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "read",
               conversation: conversationContextMenu.conversation,
             })
           }
           onMarkUnread={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "unread",
               conversation: conversationContextMenu.conversation,
             })
@@ -2210,7 +2576,7 @@ export function DesktopChatWorkspace({
                         dividerBefore: true,
                         disabled: officialMessageActionMutation.isPending,
                         onClick: () => {
-                          officialMessageActionMutation.mutate({
+                          guardedMutateOfficialMessageAction({
                             kind: "subscription-read",
                           });
                         },
@@ -2269,7 +2635,7 @@ export function DesktopChatWorkspace({
                         dividerBefore: true,
                         disabled: officialMessageActionMutation.isPending,
                         onClick: () => {
-                          officialMessageActionMutation.mutate({
+                          guardedMutateOfficialMessageAction({
                             kind: "service-read",
                             conversation:
                               officialMessageContextMenu.conversation,
@@ -2291,7 +2657,7 @@ export function DesktopChatWorkspace({
                       officialMessageContextMenu.conversation.unreadCount === 0,
                     disabled: officialMessageActionMutation.isPending,
                     onClick: () => {
-                      officialMessageActionMutation.mutate({
+                      guardedMutateOfficialMessageAction({
                         kind: "service-mute",
                         conversation: officialMessageContextMenu.conversation,
                       });
@@ -2316,7 +2682,7 @@ export function DesktopChatWorkspace({
             return;
           }
 
-          conversationActionMutation.mutate({
+          guardedMutateConversationAction({
             action: conversationDangerAction.action,
             conversation: conversationDangerAction.conversation,
           });
@@ -2326,7 +2692,7 @@ export function DesktopChatWorkspace({
   );
 }
 
-function DesktopMessageEntryCard({
+const DesktopMessageEntryCard = memo(function DesktopMessageEntryCard({
   entry,
   activeConversationId,
   officialAccountsActive,
@@ -2472,7 +2838,7 @@ function DesktopMessageEntryCard({
   }
 
   return (
-    <ConversationCard
+    <ConversationCardLink
       active={entry.conversation.id === activeConversationId}
       conversation={entry.conversation}
       localMessageActionState={localMessageActionState}
@@ -2480,7 +2846,7 @@ function DesktopMessageEntryCard({
       onContextMenu={onConversationContextMenu}
     />
   );
-}
+});
 
 function DesktopReminderCard({
   active,
@@ -2566,34 +2932,7 @@ function DesktopReminderCard({
   );
 }
 
-function ConversationCard({
-  active,
-  conversation,
-  localMessageActionState,
-  contextMenuOpen,
-  onContextMenu,
-}: {
-  active: boolean;
-  conversation: ConversationListItem;
-  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
-  contextMenuOpen: boolean;
-  onContextMenu: (
-    event: MouseEvent<HTMLElement>,
-    conversation: ConversationListItem,
-  ) => void;
-}) {
-  return (
-    <ConversationCardLink
-      active={active}
-      conversation={conversation}
-      localMessageActionState={localMessageActionState}
-      contextMenuOpen={contextMenuOpen}
-      onContextMenu={onContextMenu}
-    />
-  );
-}
-
-function ConversationCardLink({
+const ConversationCardLink = memo(function ConversationCardLink({
   active,
   conversation,
   localMessageActionState,
@@ -2699,10 +3038,22 @@ function ConversationCardLink({
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 />
               ) : (
-                <div className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white">
-                  {conversation.unreadCount > 99
-                    ? "99+"
-                    : conversation.unreadCount}
+                // 走查新一轮 R3：muted 变体已挂 aria-label「${count} 条未读
+                // 消息」（line 上方），非 muted 变体只渲染数字 / "99+" 裸 text。
+                // SR 走到会话卡片，逐字朗读完会话名 + lastMessage + 时间戳后只
+                // 听到一句「5」/「99+」——无上下文，盲人用户得自己猜这个数字
+                // 是什么。补 aria-label 把语义补齐，inner span 用 aria-hidden
+                // 隔离视觉数字避免某些 SR 实现把 aria-label + 子文本重复念两遍。
+                // 和姊妹 official-message-entry-row 同款问题，下方一并修。
+                <div
+                  className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white"
+                  aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
+                >
+                  <span aria-hidden="true">
+                    {conversation.unreadCount > 99
+                      ? "99+"
+                      : conversation.unreadCount}
+                  </span>
                 </div>
               )
             ) : null}
@@ -2711,22 +3062,6 @@ function ConversationCardLink({
       </div>
     </>
   );
-
-  if (isPersistedGroupConversation(conversation)) {
-    return (
-      <Link
-        to={
-          buildDesktopChatThreadPath({
-            conversationId: conversation.id,
-          }) as never
-        }
-        className={className}
-        onContextMenu={(event) => onContextMenu(event, conversation)}
-      >
-        {content}
-      </Link>
-    );
-  }
 
   return (
     <Link
@@ -2741,7 +3076,7 @@ function ConversationCardLink({
       {content}
     </Link>
   );
-}
+});
 
 function buildConversationActionNotice(
   action:

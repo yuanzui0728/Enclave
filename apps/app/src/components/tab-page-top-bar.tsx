@@ -59,7 +59,14 @@ export function TabPageTopBar({
     }
 
     return () => observer.disconnect();
-  }, [leftActions, rightActions, titleAlign]);
+    // 不要把 leftActions / rightActions 放进依赖——它们是 inline JSX，
+    // 每次父组件 render 引用都换，effect 跟着重跑、re-attach observer，
+    // observer 初始 fire → setState → 又 render → 又跑 effect……即便有
+    // currentInset === nextInset 守卫，也会被 React 的 "Maximum update
+    // depth exceeded" 兜底拍掉（channels-page 上稳定复现）。observer 真正
+    // 观察的是上面 `<div ref={leftActionsRef}>` 这个固定容器，children
+    // 换不换都不影响——容器自己 resize 时 observer 已经会触发。
+  }, [titleAlign]);
 
   return (
     <div

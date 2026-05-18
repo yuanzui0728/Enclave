@@ -31,6 +31,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last 7 days": "近 7 天",
     "Last 30 days": "近 30 天",
     "Last 90 days": "近 90 天",
+    "days": "天",
     "Worlds": "世界列表",
     "Budget": "预算",
     "Pricing": "定价",
@@ -113,6 +114,13 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "当前环境无法复制到剪贴板。",
     "Waiting sync task action failed.": "等待同步任务操作失败。",
     "Admin sessions permalink copied.": "管理会话固定链接已复制。",
+    "Worlds permalink copied.": "世界列表固定链接已复制。",
+    "Enter admin": "进入后台",
+    "Opening admin…": "正在打开后台…",
+    "World is sleeping. Wake it up before entering admin.":
+      "世界处于休眠状态，请先唤醒后再进入后台。",
+    "Browser blocked the popup. Allow popups for this site and retry.":
+      "浏览器拦截了弹窗。请在本站允许弹窗后重试。",
 
     "Downloaded admin session audit snapshot for": "已下载管理会话审计快照：",
     "Downloaded focused source snapshot for": "已下载聚焦来源快照：",
@@ -287,6 +295,13 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     entries: "条",
     Previous: "上一页",
     Next: "下一页",
+    "First page": "首页",
+    "Last page": "末页",
+    "Jump to page": "跳至",
+    Go: "跳转",
+    "This page is empty. Use the pager to jump back.":
+      "本页无数据，请通过分页器跳回。",
+    "{total} total": "共 {total} 条",
     "Handler note": "处理备注",
     "Internal note for this feedback. Saved when you change status.":
       "针对该反馈的内部备注，切换状态时一并保存。",
@@ -300,6 +315,18 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "注册 IP",
     "Last login": "上次登录时间",
     "Last login IP": "当前 IP",
+    "Last chat": "上次发言时间", // i18n-ignore-line: runtime dict value
+    "Real users": "用户总数（不含测试号）", // i18n-ignore-line: runtime dict value
+    "Member users": "会员用户数（订阅有效）", // i18n-ignore-line: runtime dict value
+    Device: "上次登录设备",
+    "Region distribution": "地区分布",
+    "Device distribution": "设备分布",
+    "No data yet.": "暂无数据",
+    "Sort by last login": "按上次登录时间排序",
+    "Last user message": "上次用户消息时间", // i18n-ignore-line: runtime dict value
+    "Sort by last user message": "按上次用户消息时间排序", // i18n-ignore-line: runtime dict value
+    "Membership expires": "会员到期时间",
+    "Membership registered": "会员注册时间",
     Owner: "世界主人",
     "Owner signature": "世界主人签名",
     "App platform": "运行平台",
@@ -343,6 +370,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     mobile: "移动端",
     wechat: "微信",
     "(no phone)": "（无手机号）",
+    "(no email)": "（无邮箱）",
     "Code:": "邀请码：",
     "Status:": "状态：",
     "IP:": "IP：",
@@ -364,6 +392,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Client telemetry, PV/UV, API health and frontend errors.":
       "客户端埋点上报、PV/UV、API 健康度与前端错误。",
     "Page views (by app)": "页面浏览（按端分组）",
+    "Page views": "页面浏览",
     "Failed to load overview": "加载概览失败",
     "Failed to load line chart": "加载折线失败",
     "Failed to load events": "加载事件失败",
@@ -391,6 +420,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     Telemetry: "遥测",
     Path: "路径",
     Calls: "调用次数",
+    "MiniMax calls & rate-limit (hourly)": "MiniMax 调用与限流（按小时）",
+    "RPM/Concurrency limited": "RPM/并发受限",
+    "Quota exhausted": "配额耗尽",
+    "Failed to load MiniMax usage": "加载 MiniMax 用量失败",
     Success: "成功率",
     p50: "p50",
     p95: "p95",
@@ -641,6 +674,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last 7 days": "直近 7 日間",
     "Last 30 days": "直近 30 日間",
     "Last 90 days": "直近 90 日間",
+    "days": "日間",
     "Worlds": "ワールド一覧",
     "Budget": "予算",
     "Pricing": "料金",
@@ -837,6 +871,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "待機同期タスク操作に失敗しました。",
     "Admin sessions permalink copied.":
       "管理セッションの固定リンクをコピーしました。",
+    "Worlds permalink copied.": "ワールド一覧の固定リンクをコピーしました。",
     sourceKey: "ソースキー",
     riskLevel: "リスクレベル",
     riskSignals: "リスクシグナル",
@@ -917,6 +952,13 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     entries: "件",
     Previous: "前へ",
     Next: "次へ",
+    "First page": "最初",
+    "Last page": "最後",
+    "Jump to page": "ページへジャンプ",
+    Go: "移動",
+    "This page is empty. Use the pager to jump back.":
+      "このページにデータはありません。ページャーで前のページに戻ってください。",
+    "{total} total": "全 {total} 件",
     "Handler note": "対応メモ",
     "Internal note for this feedback. Saved when you change status.":
       "このフィードバックに対する社内メモ。ステータス変更時に保存されます。",
@@ -930,6 +972,18 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "登録 IP",
     "Last login": "最終ログイン日時",
     "Last login IP": "現在の IP",
+    "Last chat": "最終発言日時", // i18n-ignore-line: runtime dict value
+    "Real users": "実ユーザー数（テスト除外）", // i18n-ignore-line: runtime dict value
+    "Member users": "有効サブスクユーザー数", // i18n-ignore-line: runtime dict value
+    Device: "最終ログイン端末",
+    "Region distribution": "地域分布",
+    "Device distribution": "端末分布",
+    "No data yet.": "データがまだありません",
+    "Sort by last login": "最終ログイン日時で並び替え",
+    "Last user message": "最終ユーザーメッセージ日時", // i18n-ignore-line: runtime dict value
+    "Sort by last user message": "最終ユーザーメッセージ日時で並び替え", // i18n-ignore-line: runtime dict value
+    "Membership expires": "会員有効期限",
+    "Membership registered": "会員登録日時",
     Owner: "ワールドオーナー",
     "Owner signature": "オーナーの署名",
     "App platform": "実行プラットフォーム",
@@ -994,6 +1048,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Client telemetry, PV/UV, API health and frontend errors.":
       "クライアント計測（PV/UV）、API ヘルス、フロントエンドエラー。",
     "Page views (by app)": "ページビュー（アプリ別）",
+    "Page views": "ページビュー",
     "Failed to load overview": "概要の読み込みに失敗しました",
     "Failed to load line chart": "折れ線グラフの読み込みに失敗しました",
     "Failed to load events": "イベントの読み込みに失敗しました",
@@ -1025,6 +1080,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     Telemetry: "テレメトリ",
     Path: "パス",
     Calls: "呼び出し数",
+    "MiniMax calls & rate-limit (hourly)": "MiniMax 呼び出しとレート制限（毎時）",
+    "RPM/Concurrency limited": "RPM/同時実行制限",
+    "Quota exhausted": "クォータ枯渇",
+    "Failed to load MiniMax usage": "MiniMax 使用量の読み込みに失敗しました",
     Success: "成功率",
     p50: "p50",
     p95: "p95",
@@ -1281,6 +1340,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last 7 days": "최근 7일",
     "Last 30 days": "최근 30일",
     "Last 90 days": "최근 90일",
+    "days": "일",
     "Worlds": "월드 목록",
     "Budget": "예산",
     "Pricing": "단가",
@@ -1473,6 +1533,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "대기 동기화 작업 동작에 실패했습니다.",
     "Admin sessions permalink copied.":
       "관리자 세션 고정 링크를 복사했습니다.",
+    "Worlds permalink copied.": "월드 목록 고정 링크를 복사했습니다.",
     sourceKey: "소스 키",
     riskLevel: "위험 수준",
     riskSignals: "위험 신호",
@@ -1553,6 +1614,13 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     entries: "건",
     Previous: "이전",
     Next: "다음",
+    "First page": "처음",
+    "Last page": "마지막",
+    "Jump to page": "페이지 이동",
+    Go: "이동",
+    "This page is empty. Use the pager to jump back.":
+      "이 페이지에는 데이터가 없습니다. 페이지네이션으로 이전 페이지로 돌아가세요.",
+    "{total} total": "총 {total}개",
     "Handler note": "처리 메모",
     "Internal note for this feedback. Saved when you change status.":
       "이 피드백에 대한 내부 메모입니다. 상태 변경 시 함께 저장됩니다.",
@@ -1566,6 +1634,18 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "가입 IP",
     "Last login": "마지막 로그인 시각",
     "Last login IP": "현재 IP",
+    "Last chat": "마지막 발언 시각", // i18n-ignore-line: runtime dict value
+    "Real users": "실제 사용자 수(테스트 제외)", // i18n-ignore-line: runtime dict value
+    "Member users": "유효 구독 사용자 수", // i18n-ignore-line: runtime dict value
+    Device: "마지막 로그인 단말",
+    "Region distribution": "지역 분포",
+    "Device distribution": "단말 분포",
+    "No data yet.": "데이터가 없습니다.",
+    "Sort by last login": "마지막 로그인 시각으로 정렬",
+    "Last user message": "마지막 사용자 메시지 시각",
+    "Sort by last user message": "마지막 사용자 메시지 시각으로 정렬",
+    "Membership expires": "멤버십 만료 시각",
+    "Membership registered": "멤버십 가입 시각",
     Owner: "월드 오너",
     "Owner signature": "오너 서명",
     "App platform": "실행 플랫폼",
@@ -1630,6 +1710,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Client telemetry, PV/UV, API health and frontend errors.":
       "클라이언트 텔레메트리(PV/UV), API 상태 및 프런트엔드 오류.",
     "Page views (by app)": "페이지 조회수(앱별)",
+    "Page views": "페이지 조회수",
     "Failed to load overview": "개요를 불러오지 못했습니다",
     "Failed to load line chart": "라인 차트를 불러오지 못했습니다",
     "Failed to load events": "이벤트를 불러오지 못했습니다",
@@ -1661,6 +1742,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     Telemetry: "텔레메트리",
     Path: "경로",
     Calls: "호출 수",
+    "MiniMax calls & rate-limit (hourly)": "MiniMax 호출 및 레이트 리밋(시간별)",
+    "RPM/Concurrency limited": "RPM/동시성 제한",
+    "Quota exhausted": "쿼터 소진",
+    "Failed to load MiniMax usage": "MiniMax 사용량 로드 실패",
     Success: "성공률",
     p50: "p50",
     p95: "p95",

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { ChevronRight } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -7,7 +7,16 @@ import { AvatarChip } from "../../components/avatar-chip";
 
 const t = translateRuntimeMessage;
 
-export function DesktopContactPaneEmptyState() {
+export function DesktopContactPaneEmptyState({
+  title,
+  description,
+}: {
+  /** 默认是"选择联系人"。星标/标签 sub-pane 应该传上下文化的标题，
+   *  否则在 0 starred / 0 tags 时右侧仍然指向"左侧通讯录"，跟用户实际所在的
+   *  子 pane 不对应。 */
+  title?: string;
+  description?: string;
+} = {}) {
   return (
     <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
       <div className="flex max-w-sm flex-col items-center text-center">
@@ -15,10 +24,11 @@ export function DesktopContactPaneEmptyState() {
           ···
         </div>
         <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
-          {t(msg`选择联系人`)}
+          {title ?? t(msg`选择联系人`)}
         </div>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-          {t(msg`从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。`)}
+          {description ??
+            t(msg`从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。`)}
         </p>
       </div>
     </div>
@@ -28,12 +38,25 @@ export function DesktopContactPaneEmptyState() {
 export function DesktopContactProfileShell({
   children,
   className,
+  scrollResetKey,
 }: {
   children: ReactNode;
   className?: string;
+  /** 切到不同联系人时把右侧详情滚动回顶；不传则保留滚动位置（兼容老调用方）。
+   *  ContactDetailPane 会传 character.id，因此 A → B 切换时 B 的详情从顶部开始
+   *  看，不会停在上一位联系人「删除联系人」那一行。 */
+  scrollResetKey?: string | null;
 }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (scrollResetKey === undefined) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = 0;
+  }, [scrollResetKey]);
+
   return (
-    <div className="h-full overflow-auto bg-[#f5f5f5]">
+    <div ref={scrollRef} className="h-full overflow-auto bg-[#f5f5f5]">
       <div
         className={cn(
           "mx-auto w-full max-w-[560px] bg-[#f5f5f5] px-6 py-10",

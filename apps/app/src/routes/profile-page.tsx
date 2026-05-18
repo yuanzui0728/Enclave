@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookText,
   Camera,
@@ -18,12 +18,13 @@ import { AppPage, cn } from "@yinjie/ui";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { DesktopChatConfirmDialog } from "../features/desktop/chat/desktop-chat-confirm-dialog";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
   clearCloudRuntimeSession,
   shouldShowCloudAccountControls,
 } from "../lib/cloud-session";
-import { normalizePathname } from "../lib/normalize-pathname";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useCloudSessionStore } from "../store/cloud-session-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -32,15 +33,20 @@ export function ProfilePage() {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
-  const search = useRouterState({
-    select: (state) => state.location.searchStr,
-  });
-  const hash = useRouterState({
-    select: (state) => state.location.hash,
-  });
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  // 退出登录 confirm dialog 打开时 Back 键只关 dialog，不让默认 chain
+  // 走到根 tab 双击退出 toast（Me tab 是根 tab）。
+  useEffect(() => {
+    if (!logoutConfirmOpen) {
+      return;
+    }
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      setLogoutConfirmOpen(false);
+      return true;
+    });
+  }, [logoutConfirmOpen]);
   const username = useWorldOwnerStore((state) => state.username);
   const ownerId = useWorldOwnerStore((state) => state.id);
   const avatar = useWorldOwnerStore((state) => state.avatar);
@@ -48,10 +54,6 @@ export function ProfilePage() {
   const cloudAccessToken = useCloudSessionStore((state) => state.accessToken);
   const cloudPhone = useCloudSessionStore((state) => state.phone);
   const runtimeConfig = useAppRuntimeConfig();
-  const desktopProfilePath = "/tabs/profile";
-  const normalizedPathname = normalizePathname(pathname);
-  const desktopPathMismatch =
-    isDesktopLayout && normalizedPathname !== desktopProfilePath;
   const settingsPath = isDesktopLayout
     ? "/desktop/settings"
     : "/profile/settings";
@@ -66,30 +68,17 @@ export function ProfilePage() {
       worldOwnerId: ownerId,
     });
 
+  // 走查 R1：本组件挂在 path="/tabs/profile" 上，desktopProfilePath 跟当前路由
+  // 是同一条。原本 useRouterState 订阅 pathname/search/hash 配合 desktopPathMismatch
+  // 判 "isDesktopLayout && 路径不是 /tabs/profile" 然后跳回同样的 /tabs/profile —
+  // 但 isDesktopLayout=true 时上面分支已经 navigate(/desktop/settings) + 早 return
+  // null 了，第二支永远跑不到。三个 useRouterState 等于让组件订阅整个 router
+  // location，路由每变都白 re-render 一次，删掉省一份订阅成本。
   useEffect(() => {
     if (isDesktopLayout) {
       void navigate({ to: "/desktop/settings", replace: true });
-      return;
     }
-
-    if (!desktopPathMismatch) {
-      return;
-    }
-
-    void navigate({
-      to: desktopProfilePath,
-      search: search || undefined,
-      hash: hash || undefined,
-      replace: true,
-    });
-  }, [
-    desktopPathMismatch,
-    desktopProfilePath,
-    hash,
-    isDesktopLayout,
-    navigate,
-    search,
-  ]);
+  }, [isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
     return null;
@@ -105,9 +94,6 @@ export function ProfilePage() {
             to={settingsPath as never}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
             aria-label={t(msg`打开设置`)}
-            onClick={() => {
-              void navigate({ to: settingsPath });
-            }}
           >
             <Settings size={17} />
           </Link>
@@ -117,21 +103,35 @@ export function ProfilePage() {
       <div className="pb-8">
         <Link
           to="/profile/info"
-          className="mt-1 flex items-center gap-2.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+          // active:bg：mobile tap 按压反馈，跟 profile-settings 行同款（line 334 / 359）。
+          // 之前只有 hover:bg，桌面鼠标悬停有反馈，但移动端 tap 一下整个头像区
+          // 没有任何视觉响应——明显感受到「我按了，但 app 没回应」，才能看到目标
+          // 页面打开。
+          className="mt-1 flex items-center gap-2.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)] active:bg-[color:var(--surface-card-hover)]"
         >
           <AvatarChip
-            name={username ?? t(msg`世界主人`)}
+            name={username?.trim() || t(msg`世界主人`)}
             src={avatar}
             size="lg"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
-                {username ?? t(msg`世界主人`)}
+                {username?.trim() || t(msg`世界主人`)}
               </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.25 py-0.5 text-[8px] font-medium tracking-[0.04em] text-[#15803d]">
-                {t(msg`世界主人`)}
-              </div>
+              {username?.trim() ? (
+                // 走查 R1：gate 用裸 username 时遇 legacy username = "   "（全空白），
+                // 名字行 trim 后回落到 t("世界主人") fallback，chip 仍然显示 t("世界主人")
+                // → 同一行出现两个相同字样，视觉上像 chip bug。改成 username?.trim() 跟
+                // 名字行的 fallback 判定口径对齐：只有真的有名字才显示 chip。
+                // shrink-0 + whitespace-nowrap：用户起了 20 字超长 username 时
+                // 父 flex 会把 chip 一起压缩，原本是单行的「世界主人」chip 会被
+                // 挤成「世界 / 主人」两行，视觉破。这里把 chip 钉成不可压缩 +
+                // 文字不许换行，让 username 这一侧 truncate 让出空间。
+                <div className="shrink-0 whitespace-nowrap rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#15803d]">
+                  {t(msg`世界主人`)}
+                </div>
+              ) : null}
             </div>
             <div className="mt-0.5 line-clamp-1 text-[11px] text-[color:var(--text-secondary)]">
               {signature?.trim() || t(msg`查看与编辑个人资料`)}
@@ -162,13 +162,11 @@ export function ProfilePage() {
         </ProfileEntryGroup>
 
         <ProfileEntryGroup className="mt-3">
-          <ProfileActionEntry
+          <ProfileEntry
             icon={Camera}
             iconClassName="bg-[rgba(168,85,247,0.12)] text-[#7e22ce]"
             label={t(msg`朋友圈`)}
-            onClick={() => {
-              void navigate({ to: "/profile/moments" });
-            }}
+            to="/profile/moments"
           />
         </ProfileEntryGroup>
 
@@ -225,14 +223,27 @@ export function ProfilePage() {
               icon={LogOut}
               iconClassName="bg-[rgba(220,38,38,0.10)] text-[#b42318]"
               label={t(msg`退出登录`)}
-              onClick={() => {
-                clearCloudRuntimeSession();
-                void navigate({ to: "/welcome", replace: true });
-              }}
+              onClick={() => setLogoutConfirmOpen(true)}
             />
           </ProfileEntryGroup>
         ) : null}
       </div>
+
+      <DesktopChatConfirmDialog
+        open={logoutConfirmOpen}
+        title={t(msg`确认退出登录？`)}
+        description={t(
+          msg`退出后会回到世界入口，下次需要重新登录云账号。`,
+        )}
+        confirmLabel={t(msg`退出登录`)}
+        danger
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={() => {
+          setLogoutConfirmOpen(false);
+          clearCloudRuntimeSession();
+          void navigate({ to: "/welcome", replace: true });
+        }}
+      />
     </AppPage>
   );
 }
@@ -270,7 +281,9 @@ function ProfileEntry({
   return (
     <Link
       to={to as never}
-      className="flex items-center gap-2.5 px-4 py-2.75 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      // active:bg 同步加上，移动端 tap「设置/收藏/朋友圈/会员中心/...」时
+      // 有按压反馈，跟 profile-settings 行同款。
+      className="flex items-center gap-2.5 px-4 py-2.75 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)] active:bg-[color:var(--surface-card-hover)]"
     >
       <div
         className={cn(
@@ -306,7 +319,8 @@ function ProfileActionEntry({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-4 py-2.75 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      // 「退出登录」按钮也补 active:bg；mobile tap 这条 danger 行时有按压反馈。
+      className="flex w-full items-center gap-2.5 px-4 py-2.75 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)] active:bg-[color:var(--surface-card-hover)]"
     >
       <div
         className={cn(

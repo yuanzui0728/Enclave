@@ -22,7 +22,6 @@ import {
 } from "../../components/chat-message-list";
 import {
   encodeChatReplyText,
-  sanitizeDisplayedChatText,
   type ChatReplyMetadata,
 } from "../../lib/chat-text";
 import { resolveMessageSemanticPreview } from "../../lib/message-attachment-semantic";
@@ -35,7 +34,6 @@ import { DesktopDirectCallPanel } from "./direct-call-panel-shell";
 import { type DesktopChatCallAction } from "../desktop/chat/desktop-chat-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
-import { DigitalHumanEntryNotice } from "./digital-human-entry-notice";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import {
   buildDirectCallInviteMessage,
@@ -48,7 +46,6 @@ import { findFirstUnreadMessageId } from "./chat-unread-marker";
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
-import { useDigitalHumanEntryGuard } from "./use-digital-human-entry-guard";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
 import { REMINDER_CHARACTER_ID } from "@yinjie/contracts";
 import {
@@ -186,11 +183,13 @@ export function ConversationThreadPanel({
     ) : null;
   const highlightedWindowRequestRef = useRef<string | null>(null);
   const handledDesktopCallRequestTokenRef = useRef<number | null>(null);
-  const { entryNotice, clearEntryNotice, guardVideoEntry, resetEntryGuard } =
-    useDigitalHumanEntryGuard({
-      baseUrl,
-      enabled: conversationType === "direct",
-    });
+  // 走查新一轮 R5：单聊「发送」按钮 + Enter / Cmd-Enter 快捷键都只靠
+  // `disabled={composerPending}` 兜双触发，composerPending = sendMutation.isPending
+  // 经 React commit 才进 DOM。同帧连点 / 同帧两次 Enter 都能同时通过 → 两份
+  // sendTextMessage 跑下来 onMutate 各自 push 不同 local id 的 optimistic 消息 →
+  // emitChatMessage 飞两次 → 对端连收 2 条一模一样的用户消息。和群聊
+  // group-chat-thread-panel `sendingTextRef`（commit 56ed67e4）同款修法。
+  const sendingTextRef = useRef(false);
   const {
     ref: scrollAnchorRef,
     isAtBottom,
@@ -208,16 +207,25 @@ export function ConversationThreadPanel({
     conversationType === "direct" && participants[0] === REMINDER_CHARACTER_ID;
   const subtitle =
     conversationType === "group"
-      ? t(msg`${participants.length || 0} 人群聊`)
+      ? t(msg`${participants.length} 人群聊`)
       : typingState?.stage === "image_generation"
         ? t(msg`对方正在生成图片...`)
         : typingState
           ? t(msg`对方正在回复...`)
-        : undefined;
+          : undefined;
 
-  const hasHighlightedMessage = renderedMessages.some(
-    (message) => message.id === highlightedMessageId,
-  );
+  // 走查电脑端单聊新一轮 R1：原版无 highlightedMessageId 时也 .some 全表扫
+  // renderedMessages 找 `m.id === undefined`，全程必然 false 但走完整条 O(n)。
+  // 长聊 200+ 条历史叠 typing tick / socket / state 一改就 re-render，每帧
+  // 200 次字符串比较纯白用功。绝大多数会话进来没有 highlight（只在「查找
+  // 聊天记录」/ 「消息提醒」点结果跳转时才有 highlightedMessageId），常驻
+  // 短路成 false，让下游 useEffect 的 hasHighlightedMessage dep 也稳住 false
+  // 引用避免无意义重跑。
+  const hasHighlightedMessage = highlightedMessageId
+    ? renderedMessages.some(
+        (message) => message.id === highlightedMessageId,
+      )
+    : false;
   const unreadMarkerMessageId = useMemo(
     () =>
       findFirstUnreadMessageId(
@@ -226,6 +234,27 @@ export function ConversationThreadPanel({
         initialUnreadCount > 0,
       ),
     [initialUnreadCount, initialUnreadCutoff, renderedMessages],
+  );
+  // 走查 R2：原版直接在 JSX 里 `[participants[0]]`，每次 render 都 new 一个数组 →
+  // MobileChatPlusPanel 里 useMemo(excludeIdSet) 的 dep 跟着每帧失效 → 每帧
+  // new Set + filter 66 个好友。这条 useMemo 把数组引用稳定下来。
+  const contactPickerExcludeIds = useMemo<readonly string[] | undefined>(
+    () => (participants[0] ? [participants[0]] : undefined),
+    [participants],
+  );
+  // 走查新一轮 R1：原版直接在 JSX 里 `threadContext={{ id, type, title }}` 每次
+  // render 都 new 一个对象 → ChatMessageList 内 imageMessages useMemo（line 1768）
+  // 把 threadContext 整对象作 dep，每个父帧失效 → 每帧 filter(visibleMessages)
+  // 找出所有图片消息再 map 一遍，长聊滚到 100+ 条历史里有 30 张图时这层 O(n)
+  // 每个 typing tick / 任何 state 变化都白跑一次；standaloneViewerItems 跟着
+  // 重算。和 contactPickerExcludeIds R2 同款修法，把引用稳定下来。
+  const messageListThreadContext = useMemo(
+    () => ({
+      id: conversationId,
+      type: "direct" as const,
+      title: conversationTitle,
+    }),
+    [conversationId, conversationTitle],
   );
   const replyPreview = replyDraft
     ? {
@@ -321,17 +350,49 @@ export function ConversationThreadPanel({
   };
 
   const handleSubmit = async () => {
-    await sendTextMessage(
-      replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
-    );
-    track("chat_message_sent", {
-      conversationKind: "direct",
-      kind: "text",
-      hasReply: Boolean(replyDraft),
-      textLength: text.length,
-    });
-    scrollToBottom("smooth");
-    setReplyDraft(null);
+    // onSubmit prop 上挂的是 `() => void handleSubmit()` 形态的 fire-and-forget。
+    // sendTextMessage 在 resolveTargetCharacterId 拿不到 char id（角色被删/
+    // participants 还没回 + conversationId 不是 direct_ 前缀）会同步 throw
+    // "目标角色还没准备好"——这条 throw 发生在 runSendMutation 之前，外层吞
+    // mutation error 的 try/catch 兜不到，rejection 一路冒到 window.unhandled
+    // rejection 污染 telemetry。
+    if (sendingTextRef.current) {
+      return;
+    }
+    if (!text.trim()) {
+      return;
+    }
+    sendingTextRef.current = true;
+    const submittedTextLength = text.length;
+    try {
+      try {
+        await sendTextMessage(
+          replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
+          // 走查 R1：明确告诉 use-conversation-thread 这次是「用户从 composer
+          // 真按了发送」，可以把 composer 清掉。preset / 通话邀请 / 附件等
+          // 走同一个 mutation 但 overrideText 用法不一样，那些路径不传这个
+          // flag → 用户在 composer 里没发完的草稿不会被秒清。
+          { clearComposerDraft: true },
+        );
+      } catch (sendError) {
+        setSocketError(
+          sendError instanceof Error
+            ? sendError.message
+            : t(msg`发送失败，请稍后再试。`),
+        );
+        return;
+      }
+      track("chat_message_sent", {
+        conversationKind: "direct",
+        kind: "text",
+        hasReply: Boolean(replyDraft),
+        textLength: submittedTextLength,
+      });
+      scrollToBottom("smooth");
+      setReplyDraft(null);
+    } finally {
+      sendingTextRef.current = false;
+    }
   };
 
   const handleSendPresetText = async (presetText: string) => {
@@ -378,6 +439,17 @@ export function ConversationThreadPanel({
     setReplyDraft(null);
   };
 
+  // 走查新会话 R1：mobile 单聊「拨打通话」有两条入口——
+  //   1) MobileChatThreadHeader 顶部「语音通话/视频通话」icon → 走 startDirectCall，
+  //      header 内部有 actionFiredRef 守住同帧双击。
+  //   2) ChatComposer 的 + 面板 (MobileChatPlusPanel) 里的 voice-call/video-call
+  //      tile → 通过 onStartVoiceCall/onStartVideoCall props 传进来，原版直接
+  //      inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // 入口 2 同帧 <16ms 双击就 push 2 条相同 history 项，用户从 call 屏返回还要
+  // 按 2 次返回才能回到聊天。把 onStartVoiceCall/onStartVideoCall 改成统一走
+  // startDirectCall，再给 startDirectCall（mobile 路径）补 sync ref 锁；header
+  // 路径不动（header 的 guardAction 已经兜了），多一层无副作用。
+  const startDirectCallFiredRef = useRef(false);
   const startDirectCall = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
       setDesktopCallPanelState({
@@ -387,6 +459,10 @@ export function ConversationThreadPanel({
       return;
     }
 
+    if (startDirectCallFiredRef.current) {
+      return;
+    }
+    startDirectCallFiredRef.current = true;
     void navigate({
       to:
         kind === "voice"
@@ -396,23 +472,48 @@ export function ConversationThreadPanel({
       ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
     });
     onDesktopCallAction?.(kind);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        startDirectCallFiredRef.current = false;
+      });
+    }
   };
 
   const [callUnavailableKind, setCallUnavailableKind] =
     useState<DesktopChatCallKind | null>(null);
-  const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
-    setCallUnavailableKind(kind);
-  };
+  // 必须 useCallback：下方 useEffect deps 用了它，不固化每次 render 都换引用 →
+  // effect 每个 render 都跑一遍（token guard 是兜底，不是节流）。
+  const handleDesktopCallAction = useCallback(
+    (kind: DesktopChatCallKind) => {
+      setCallUnavailableKind(kind);
+    },
+    [],
+  );
 
-  const handleDismissRouteContextNotice = () => {
+  // 容器挂载后 useScrollAnchor 的 useLayoutEffect 会同步把 scrollTop 顶
+  // 到 scrollHeight（首次加载消息时一定会跑），scroll 事件就跟着触发
+  // onScrollCapture。如果不区分是不是用户手势，notice 在 callReturn /
+  // game-invite / group-invite 场景刚显示就被 mount 自身的 auto-scroll
+  // 干掉，用户根本没机会看到。isAtBottomRef.current 在 mount auto-scroll
+  // 内被 scrollToBottom 同步写 true，stays true 直到用户真手势把列表拖出
+  // 贴底窗口 → 此时再 dismiss 才是用户意图。
+  const handleScrollDismissRouteContextNotice = () => {
+    if (scrollAnchor.isAtBottomRef.current) {
+      return;
+    }
+    routeContextNotice?.onDismiss?.();
+  };
+  // 上一版本把 scroll-guard 一起套到 composer onChange 上 —— 用户在贴底状态
+  // 下打字时 isAtBottomRef === true，typing 也走不到 onDismiss。打字属于
+  // 明确的用户意图（"我要继续聊"），照常 dismiss，不走 guard。
+  const handleTypingDismissRouteContextNotice = () => {
     routeContextNotice?.onDismiss?.();
   };
 
   useEffect(() => {
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
-    resetEntryGuard();
-  }, [conversationId, resetEntryGuard]);
+  }, [conversationId]);
 
   useEffect(() => {
     if (isDesktop || !routeMobileShortcutAction) {
@@ -487,13 +588,13 @@ export function ConversationThreadPanel({
                     key: "voice-call",
                     icon: Phone,
                     label: t(msg`语音通话`),
-                    onClick: () => handleDesktopCallAction("voice"),
+                    onClick: () => startDirectCall("voice"),
                   },
                   {
                     key: "video-call",
                     icon: Video,
                     label: t(msg`视频通话`),
-                    onClick: () => handleDesktopCallAction("video"),
+                    onClick: () => startDirectCall("video"),
                   },
                 ]
               : undefined
@@ -569,35 +670,6 @@ export function ConversationThreadPanel({
           </InlineNotice>
         </div>
       ) : null}
-      {entryNotice ? (
-        <div
-          className={
-            isDesktop
-              ? "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3"
-              : "border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1"
-          }
-        >
-          <DigitalHumanEntryNotice
-            tone={entryNotice.tone}
-            message={entryNotice.message}
-            continueLabel={entryNotice.continueLabel}
-            onDismiss={() => {
-              resetEntryGuard();
-            }}
-            voiceLabel={entryNotice.voiceLabel}
-            onContinue={() => {
-              resetEntryGuard();
-              startDirectCall("video");
-            }}
-            onSwitchToVoice={() => {
-              resetEntryGuard();
-              startDirectCall("voice");
-            }}
-            compact={!isDesktop}
-          />
-        </div>
-      ) : null}
-
       <div
         className={`relative flex-1 overflow-hidden ${
           isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
@@ -673,9 +745,12 @@ export function ConversationThreadPanel({
             className={
               isDesktop
                 ? "relative flex h-full flex-col space-y-4 overflow-auto px-7 py-5"
-                : "relative flex h-full flex-col overflow-auto px-3 py-3.5"
+                : // overscroll-contain：web 移动端 iOS Safari 在聊天滚动到顶/
+                  // 底继续拖时不再把滚动冒泡给外层 mobile-shell viewport pane，
+                  // 避免误触发"页面整体下拽 / 顶部导航条收放"的浏览器手势。
+                  "relative flex h-full flex-col overflow-auto overscroll-contain px-3 py-3.5"
             }
-            onScrollCapture={handleDismissRouteContextNotice}
+            onScrollCapture={handleScrollDismissRouteContextNotice}
           >
             {messagesQuery.isLoading ? (
               isDesktop ? (
@@ -717,31 +792,16 @@ export function ConversationThreadPanel({
                 </InlineNotice>
               )
             ) : null}
-            {sendMutation.isError && sendMutation.error instanceof Error ? (
-              isDesktop ? (
-                <ErrorBlock message={sendMutation.error.message} />
-              ) : (
-                <InlineNotice
-                  tone="danger"
-                  className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 flex-1">
-                      {sendMutation.error.message}
-                    </span>
-                    {renderStatusBackAction()}
-                  </div>
-                </InlineNotice>
-              )
-            ) : null}
+            {/* sendMutation.error 由 ChatComposer 的 error prop（→ MobileComposerStatusRail
+                / desktopComposerStatus）渲染在 composer 上方紧贴输入框那一栏，
+                这里再叠一张同样文案、同样 tone="danger" 的 InlineNotice 在消息列表
+                顶部纯属重复——同一个错误用户会同时在屏幕两端看到，且消息列表那张
+                没有「重试发送」按钮，反而像个孤立的错误条。删掉，composer 内置的
+                那个能跟着输入框走、还能挂"返回上一页"action。 */}
 
             <ChatMessageList
               messages={renderedMessages}
-              threadContext={{
-                id: conversationId,
-                type: "direct",
-                title: conversationTitle,
-              }}
+              threadContext={messageListThreadContext}
               buildMessageReturnTo={buildMessageReturnTo}
               groupMode={conversationType === "group"}
               variant={isDesktop ? "desktop" : "mobile"}
@@ -756,7 +816,14 @@ export function ConversationThreadPanel({
               onReplyMessage={handleReplyMessage}
               onRetryMessage={(message) => retryMessage(message.id)}
               onOpenDirectCallInvite={(input) => {
-                handleDesktopCallAction(input.kind);
+                // mobile 有真实的 /voice-call & /video-call 路由；之前一刀切
+                // 走 handleDesktopCallAction 让移动端用户点"通话开始/结束"卡片
+                // 也吃到桌面端那张"功能开发中"对话框，明明能拨却报开发中。
+                if (isDesktop) {
+                  handleDesktopCallAction(input.kind);
+                  return;
+                }
+                startDirectCall(input.kind);
               }}
               onSelectionModeChange={setSelectionModeActive}
               errorActionLabel={
@@ -826,7 +893,7 @@ export function ConversationThreadPanel({
               enabled: runtimeConfig.appPlatform !== "desktop",
             }}
             onChange={(value) => {
-              handleDismissRouteContextNotice();
+              handleTypingDismissRouteContextNotice();
               if (socketError) {
                 setSocketError(null);
               }
@@ -854,24 +921,9 @@ export function ConversationThreadPanel({
             onMobileShortcutHandled={() => {
               setMobileShortcutRequest(null);
             }}
-            onStartVoiceCall={() => {
-              void navigate({
-                to: "/chat/$conversationId/voice-call",
-                params: { conversationId },
-                ...(currentMobileRouteHash
-                  ? { hash: currentMobileRouteHash }
-                  : {}),
-              });
-            }}
-            onStartVideoCall={() => {
-              void navigate({
-                to: "/chat/$conversationId/video-call",
-                params: { conversationId },
-                ...(currentMobileRouteHash
-                  ? { hash: currentMobileRouteHash }
-                  : {}),
-              });
-            }}
+            onStartVoiceCall={() => startDirectCall("voice")}
+            onStartVideoCall={() => startDirectCall("video")}
+            contactPickerExcludeIds={contactPickerExcludeIds}
             replyPreview={replyPreview}
             onCancelReply={() => setReplyDraft(null)}
             onSubmit={() => void handleSubmit()}

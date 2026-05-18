@@ -74,9 +74,15 @@ export function DesktopUtilityShell({
       </section>
 
       {aside ? (
+        // 之前是 `hidden ... xl:flex`（≥1280px 才出 aside），跟 Tauri 桌面壳
+        // tauri.conf.json minWidth=1100 冲突——用户把窗口缩到 1100-1279 这区
+        // 间 aside 整块消失，favorites 的"打开内容/打开笔记/取消收藏"按钮全
+        // 部躲在 aside 里，narrow desktop 用户压根操作不了一条收藏。改成 desktop
+        // layout (≥960) 内一直出，content area 在 1024 时还有 ~424px，列表
+        // 依然可读，但所有操作入口都可达。
         <aside
           className={cn(
-            "hidden w-[320px] shrink-0 border-l border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] xl:flex xl:flex-col",
+            "flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]",
             asideClassName,
           )}
         >

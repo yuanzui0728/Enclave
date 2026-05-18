@@ -24,6 +24,10 @@ export type ProvisionWorldInstanceResult = {
 export type WorldInstancePowerTransitionResult = {
   powerState: string;
   providerSnapshotId?: string | null;
+  // startInstance 后可能因端口被占而重分配；返回 apiBaseUrl 让 lifecycle worker
+  // 把 world.apiBaseUrl 同步到真实落地的 URL，避免不同 world 的记录指着同一个 child。
+  apiBaseUrl?: string | null;
+  adminUrl?: string | null;
 };
 
 export type InspectWorldInstanceResult = {

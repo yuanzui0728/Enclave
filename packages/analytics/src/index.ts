@@ -1,5 +1,6 @@
 import type { TelemetryEventInput, TelemetryEventType } from "@yinjie/contracts";
 import { ensureAnonId } from "./anon-id";
+import { attachAutoCapture } from "./auto-capture";
 import { newSessionId } from "./session";
 import {
   clearPending,
@@ -138,7 +139,14 @@ export function init(options: InitOptions): void {
   }
 
   if (merged.enableAutoCapture) {
-    void import("./auto-capture").then((m) => m.attachAutoCapture()).catch(() => {});
+    // 同步挂监听 —— 用 dynamic import 会让 window.error/unhandledrejection
+    // 监听到 init() 返回之后才装上，期间触发的浏览器级报错全部丢失。
+    // auto-capture 体积只有几 KB，无 split 价值。
+    try {
+      attachAutoCapture();
+    } catch {
+      // never let observer init affect business code
+    }
   }
   if (merged.enableAutoPageView) {
     void import("./auto-page-view").then((m) => m.attachAutoPageView()).catch(() => {});
@@ -432,3 +440,9 @@ function installLifecycleHandlers(): void {
 }
 
 export type { InitOptions } from "./types";
+export {
+  extractFirstUrlFromStack,
+  isCurrentOriginLocalLike,
+  isLocalLikeHostname,
+  isLocalLikeUrl,
+} from "./runtime-environment";

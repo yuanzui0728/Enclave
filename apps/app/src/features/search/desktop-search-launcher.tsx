@@ -17,6 +17,7 @@ import {
   getFriends,
   listOfficialAccounts,
   listCharacters,
+  recordSearchActivity,
   searchConversationMessages,
   searchGroupMessages,
 } from "@yinjie/contracts";
@@ -61,6 +62,7 @@ import {
   hydrateSearchHistoryFromNative,
   loadSearchHistory,
   pushSearchHistory,
+  SEARCH_HISTORY_STORAGE_KEY,
 } from "./search-history";
 import { buildSearchPreview, renderHighlightedText } from "./search-utils";
 import type { SearchHistoryItem } from "./search-types";
@@ -136,6 +138,8 @@ type LauncherCategoryConfig = {
 function buildSearchLauncherHistoryActionId(keyword: string) {
   return `history-${keyword}`;
 }
+
+const REMOTE_SEARCH_DEBOUNCE_MS = 280;
 
 function buildDesktopOfficialAccountSearchPath(
   accountId: string,
@@ -235,13 +239,27 @@ export function useDesktopSearchLauncher({
 
       void syncSearchHistory();
     };
+    // 走查 R2（新一轮）：和姊妹 chat-message-list R1 / detailedTimestamp 同款 —
+    // 原版 storage 监听直接复用 handleFocus 不 gate key，多 tab 时主题切换 /
+    // 草稿落盘 / 收藏指纹更新 / 任何 OTHER tab 写 localStorage 都触发
+    // syncSearchHistory → desktop shell 拍一次 hydrateSearchHistoryFromNative
+    // 的 Tauri invoke IPC + JSON.parse 整份 search-history。本 launcher 同时
+    // 挂在 desktop-chat-workspace 和 contacts-workspace-shell 两个入口，单聊
+    // 工作区只要打开搜索框就开始无效抖动。按 SEARCH_HISTORY_STORAGE_KEY gate；
+    // event.key=null 是 Safari localStorage.clear()，按全量处理避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== SEARCH_HISTORY_STORAGE_KEY) {
+        return;
+      }
+      void syncSearchHistory();
+    };
 
     void syncSearchHistory();
 
     window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
@@ -249,7 +267,7 @@ export function useDesktopSearchLauncher({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isOpen, nativeDesktopSearchHistory]);
@@ -259,6 +277,12 @@ export function useDesktopSearchLauncher({
 
     if (normalizedKeyword) {
       setHistory(pushSearchHistory(normalizedKeyword));
+      // 跟 search-page.handleCommitSearch 对齐——把搜索行为上报到
+      // cyber-avatar / shake-discovery / need-discovery 的信号源。
+      void recordSearchActivity(
+        { query: normalizedKeyword, source: "desktop-launcher" },
+        runtimeConfig.apiBaseUrl,
+      ).catch(() => undefined);
     }
 
     setIsOpen(false);
@@ -327,6 +351,22 @@ export function DesktopSearchDropdownPanel({
   const localMessageActionState = useLocalChatMessageActionState();
   const trimmedKeyword = keyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
+  // 消息全文搜索是对**全部会话**并行打 HTTP（searchConversationMessages
+  // / searchGroupMessages），每按一个键就是一整轮 fan-out。N=50 会话 +
+  // 用户每秒打 4 个字 = 200 个并发请求/秒，公网隧道 RTT 600ms 会瞬间被
+  // 排满。本地命中（friends / world characters / favorites / 会话标题）
+  // 都是同步 filter，仍然用即时的 normalizedKeyword 给出实时反馈；只把
+  // 远程的消息搜索 debounce 一下即可。和 desktop-chat-history-panel
+  // 自己的搜索框 SEARCH_DEBOUNCE_MS=280 对齐。
+  const [debouncedRemoteKeyword, setDebouncedRemoteKeyword] = useState(
+    normalizedKeyword,
+  );
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedRemoteKeyword(normalizedKeyword);
+    }, REMOTE_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [normalizedKeyword]);
   const currentSearchRouteHash = useMemo(
     () =>
       buildSearchRouteHash({
@@ -444,11 +484,11 @@ export function DesktopSearchDropdownPanel({
       "desktop-search-launcher-message-matches",
       baseUrl,
       conversationsSearchKey,
-      normalizedKeyword,
+      debouncedRemoteKeyword,
     ],
     enabled:
       shouldLoadSuggestions &&
-      Boolean(normalizedKeyword) &&
+      Boolean(debouncedRemoteKeyword) &&
       conversations.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
@@ -458,7 +498,7 @@ export function DesktopSearchDropdownPanel({
             ? await searchGroupMessages(
                 conversation.id,
                 {
-                  keyword: normalizedKeyword,
+                  keyword: debouncedRemoteKeyword,
                   limit: 3,
                 },
                 baseUrl,
@@ -466,7 +506,7 @@ export function DesktopSearchDropdownPanel({
             : await searchConversationMessages(
                 conversation.id,
                 {
-                  keyword: normalizedKeyword,
+                  keyword: debouncedRemoteKeyword,
                   limit: 3,
                 },
                 baseUrl,

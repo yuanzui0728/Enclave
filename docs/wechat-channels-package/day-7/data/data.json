@@ -1,0 +1,130 @@
+{
+  "video_id": "wechat-channels-d7",
+  "topic": "开源 + 回顾收官",
+  "duration_seconds": 90,
+  "fake_competitor_platforms": [
+    {
+      "display_name": "Open__",
+      "real_name": "OpenAI",
+      "icon_hint": "OpenAI logo 但 'AI' 二字打模糊",
+      "data_storage": "OpenAI 服务器",
+      "color": "#10a37f"
+    },
+    {
+      "display_name": "Character__",
+      "real_name": "Character AI",
+      "icon_hint": "Character AI logo 但 'AI' 模糊",
+      "data_storage": "Character AI 数据库",
+      "color": "#000000"
+    },
+    {
+      "display_name": "Re____",
+      "real_name": "Replika",
+      "icon_hint": "Replika 字样部分字符模糊",
+      "data_storage": "Replika 云端",
+      "color": "#ff6b6b"
+    }
+  ],
+  "yinjie_features": [
+    {
+      "id": "feature_1",
+      "icon": "👤",
+      "title": "一人一实例",
+      "subtitle": "你拥有完全独立的世界",
+      "color": "#f97316"
+    },
+    {
+      "id": "feature_2",
+      "icon": "📂",
+      "title": "数据存在你手里",
+      "subtitle": "本地 / 你自己的 VPS",
+      "color": "#f97316"
+    },
+    {
+      "id": "feature_3",
+      "icon": "🔓",
+      "title": "代码全部开源",
+      "subtitle": "可审计、可 fork、可自部署",
+      "color": "#f97316"
+    },
+    {
+      "id": "feature_4",
+      "icon": "🐳",
+      "title": "Docker 一键启动",
+      "subtitle": "一行命令 5 分钟跑起来",
+      "color": "#f97316"
+    },
+    {
+      "id": "feature_5",
+      "icon": "💻",
+      "title": "接本地大模型",
+      "subtitle": "Ollama / LM Studio 离线运行",
+      "color": "#f97316"
+    }
+  ],
+  "recap_episodes": [
+    {
+      "day": "D1",
+      "topic": "什么是隐界",
+      "highlight_quote": "你不是这个世界的用户，你是这个世界的居民之一",
+      "frame_source": "day-1/output/d1_video.mp4#t=0:50"
+    },
+    {
+      "day": "D2",
+      "topic": "朋友圈",
+      "highlight_quote": "4 个 AI 朋友，用 4 种语气把我接住了",
+      "frame_source": "day-2/output/d2_video.mp4#t=0:50"
+    },
+    {
+      "day": "D3",
+      "topic": "群聊",
+      "highlight_quote": "6 个互相认识、互相记得的朋友",
+      "frame_source": "day-3/output/d3_video.mp4#t=0:32"
+    },
+    {
+      "day": "D4",
+      "topic": "AI 居民的一天",
+      "highlight_quote": "你说人类为什么要发明袜子",
+      "frame_source": "day-4/output/d4_video.mp4#t=0:55"
+    },
+    {
+      "day": "D5",
+      "topic": "视频号",
+      "highlight_quote": "听一耳朵就能猜出这是谁拍的",
+      "frame_source": "day-5/output/d5_video.mp4#t=0:55"
+    },
+    {
+      "day": "D6",
+      "topic": "自己 模块",
+      "highlight_quote": "你说过的话，我都记得",
+      "frame_source": "day-6/output/d6_video.mp4#t=1:08"
+    }
+  ],
+  "giveaway": {
+    "rule": "留言告诉我这 7 天里 D-N 最打动你 + 简短理由",
+    "draw_date": "2026-05-28",
+    "winners_count": 3,
+    "prizes": [
+      "隐界实例预装（含 12 个精选角色）",
+      "创始人 1v1 答疑 30 分钟"
+    ],
+    "selection_criteria": [
+      "内容真诚（不是模板话术）",
+      "故事感强（有具体场景）",
+      "选不同的 D（鼓励差异化）"
+    ]
+  },
+  "promise_text": "我们没办法承诺这个产品永远不出 bug。但我们可以承诺：你的数据，永远只属于你。",
+  "ui_hints": {
+    "background_color": "#fef7ed",
+    "highlight_color": "#f97316",
+    "text_color": "#1a1a1a"
+  },
+  "notes_for_manus": [
+    "镜头 2 的 3 个平台 logo 必须打码 40-50%，让观众猜得到但看不清，绝对不能清晰露出 OpenAI / Character / Replika 的清晰 logo",
+    "镜头 3 的 GitHub 截图：可以用 README 的顶部部分（隐界仓库 README 已写好），但 github.com 字样必须打码",
+    "镜头 4 的 5 个特性 icon 用纯色 SVG 风格，配色统一橙色 #f97316",
+    "镜头 5 的 D1-D6 回顾镜头，必须在 D1-D6 视频生产完成后才能制作 D7（依赖关系）",
+    "镜头 6 的承诺文案'你的数据，永远只属于你' 是全片最重音，必须 88px 橙字 + 停留 3 秒"
+  ]
+}

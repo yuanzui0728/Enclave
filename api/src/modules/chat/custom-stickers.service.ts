@@ -325,7 +325,9 @@ export class CustomStickersService {
       fileName: displayName,
       storageFileName: storedFileName,
       mimeType: normalizedMimeType,
-      url: `${this.resolvePublicApiBaseUrl()}${CUSTOM_STICKER_ASSET_ROUTE}${storedFileName}`,
+      // 存相对 URL 而非快照 PUBLIC_API_BASE_URL：公网入口端口/协议变更后绝对 URL 会永远 404。
+      // 前端 contracts/client.ts normalizeAttachmentAssetUrl 渲染时按当前 apiBaseUrl absolutize。
+      url: `${CUSTOM_STICKER_ASSET_ROUTE}${storedFileName}`,
       sizeBytes: input.sizeBytes,
       width: normalizeOptionalDimension(input.width),
       height: normalizeOptionalDimension(input.height),
@@ -607,13 +609,6 @@ export class CustomStickersService {
 
   private resolveLegacyCustomStickerStorageDir(): string {
     return resolveApiPath('storage', 'chat-stickers');
-  }
-
-  private resolvePublicApiBaseUrl(): string {
-    return (
-      process.env.PUBLIC_API_BASE_URL?.trim() ||
-      `http://localhost:${process.env.PORT ?? 3000}`
-    ).replace(/\/+$/, '');
   }
 
   private assertUploadableStickerMimeType(mimeType: string) {

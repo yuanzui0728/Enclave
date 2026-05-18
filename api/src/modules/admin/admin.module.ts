@@ -32,6 +32,7 @@ import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialModule } from '../social/social.module';
+import { FriendRemarkResolverModule } from '../social/friend-remark-resolver.module';
 import { WechatSyncAdminService } from './wechat-sync-admin.service';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
@@ -43,7 +44,11 @@ import { SelfAgentModule } from '../self-agent/self-agent.module';
 import { WikiModule } from '../wiki/wiki.module';
 import { CharacterPageEntity } from '../wiki/entities/character-page.entity';
 import { CharacterRevisionEntity } from '../wiki/entities/character-revision.entity';
+import { UserWikiProfileEntity } from '../wiki/entities/user-wiki-profile.entity';
+import { UserPrivateCharacterEntity } from '../wiki/entities/user-private-character.entity';
 import { WikiSyncAdminService } from './wiki-sync-admin.service';
+import { WikiUsersAdminService } from './wiki-users-admin.service';
+import { WikiUsersAdminController } from './wiki-users-admin.controller';
 import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
 
 @Module({
@@ -56,6 +61,7 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     SystemConfigModule,
     SchedulerModule,
     SocialModule,
+    FriendRemarkResolverModule,
     FeedModule,
     ActionRuntimeModule,
     forwardRef(() => CyberAvatarModule),
@@ -86,6 +92,8 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
       FriendshipEntity,
       CharacterPageEntity,
       CharacterRevisionEntity,
+      UserWikiProfileEntity,
+      UserPrivateCharacterEntity,
     ]),
   ],
   providers: [
@@ -94,8 +102,13 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     ChatRecordsAdminService,
     WechatSyncAdminService,
     WikiSyncAdminService,
+    WikiUsersAdminService,
     AdminGuard,
   ],
-  controllers: [AdminController, ChatRecordsAdminController],
+  controllers: [
+    AdminController,
+    ChatRecordsAdminController,
+    WikiUsersAdminController,
+  ],
 })
 export class AdminModule {}

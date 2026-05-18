@@ -10,8 +10,8 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { FeedPostEntity } from './feed-post.entity';
 import { FeedCommentEntity } from './feed-comment.entity';
 import { FeedPostLikeEntity } from './feed-post-like.entity';
@@ -23,6 +23,10 @@ import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
+import {
+  FriendRemarkResolver,
+  type FriendRemarkMap,
+} from '../social/friend-remark-resolver.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import type {
   MomentImageAsset,
@@ -73,6 +77,7 @@ type FeedAvatarContext = {
   visibleCharacterIds: Set<string>;
   ownerFriendCharacterIds: Set<string>;
   characterAvatarById: Map<string, string>;
+  remarkMap: FriendRemarkMap;
 };
 
 type FeedListItem = ReturnType<FeedService['serializePost']> & {
@@ -86,6 +91,25 @@ const CHANNEL_HOME_SECTION_LABELS: Record<FeedChannelHomeSection, string> = {
   live: '直播',
 };
 
+// 走查 R1（本轮）：客户端只发 4 个白名单 section，但 curl/反代/旧缓存链路里
+// 任意脏字符串都会落进 input.section——TS enum 是编译期，运行时 service 把它
+// 透回 `activeSection: 'galaxy'`，而前端拿到的 sectionLabels 只认识 4 个 key，
+// 未来如果哪个 UI 真的把 activeSection 喂回 sections.find 之类的逻辑会拿到
+// undefined。统一在 service 入口 normalize，未知值兜底回 recommended。
+function normalizeChannelHomeSection(
+  raw: unknown,
+): FeedChannelHomeSection {
+  if (
+    raw === 'recommended' ||
+    raw === 'friends' ||
+    raw === 'following' ||
+    raw === 'live'
+  ) {
+    return raw;
+  }
+  return 'recommended';
+}
+
 const CHANNEL_VIDEO_TOPIC_TAGS = ['AI世界', '隐界'];
 const CHANNEL_VIDEO_ASPECT_RATIO = 9 / 16;
 
@@ -97,6 +121,49 @@ const MAX_FEED_VIDEO_DURATION_MS = 5 * 60 * 1000;
 const FEED_DEAD_MEDIA_HOSTS = new Set<string>([
   'commondatastorage.googleapis.com',
 ]);
+
+// 广场评论的服务端硬上限。前端 WeChatCommentBar 有 maxLength=500 的软约束，
+// 但 curl / 第三方端可以绕过，会在 commentsPreview / 全量评论里写出空字符串
+// 或超长字符串。和 moments.service.ts 的 MOMENT_COMMENT_TOO_LONG 对齐。
+const MAX_FEED_COMMENT_TEXT_LENGTH = 500;
+
+// 走查 R1：getComments 一次性兜底上限。前端「查看全部 N 条评论」展开本就
+// 是用户主动行为；后端在角色密集互动 / 长寿命 post 上能堆出上千条评论，无
+// take SELECT * + serialize 全跑会卡。500 是经验值，覆盖绝大多数真实贴；
+// 超过时只渲最近 500 条（按时间倒取），前端 commentCount 字段还是从 post 拿。
+const MAX_FEED_COMMENT_FETCH_LIMIT = 500;
+
+// R2 走查：广场正文也要硬上限。前端 mobile-feed-publish-page 的 textarea
+// 之前完全没卡 maxLength，curl / 第三方端无限制能往 post.text 写几 MB；AI 角色
+// 走 character 路径生成 post 时偶发 CoT 漏文（gpt-4.1 等非推理模型把整段思考
+// prose 当正文吐出来），同样落库无上限。任一情况都会让 SocialPostCard 的
+// whitespace-pre-wrap 把卡片撑到一屏多，列表滚动卡顿。对齐 moments 2000 字。
+const MAX_FEED_TEXT_LENGTH = 2000;
+
+// 走查 R1：getFeed 入参 clamp。前端固定 limit=20，但 curl / 反代 / 旧缓存能塞
+// ?limit=abc → Number(NaN) → TypeORM 抛 500，或 ?limit=999999 → 拉全表。
+// 100 是经验上限：moments 全屏 ~20，3 屏滚动一次性最多预期 60，给 100 留 buffer
+// 仍能挡住爆量；page < 1 兜回 1（.skip(负数) TypeORM 沉默跳过，但显式归一让下游
+// 行为可预测）。
+const MAX_FEED_PAGE_LIMIT = 100;
+function clampFeedPaginationPage(raw: unknown): number {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 1) return 1;
+  return Math.floor(value);
+}
+function clampFeedPaginationLimit(raw: unknown): number {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 1) return 20;
+  return Math.min(Math.floor(value), MAX_FEED_PAGE_LIMIT);
+}
+
+// 视觉为空：trim 后去掉零宽字符（U+200B–U+200D / U+FEFF / U+2060）和内部空白。
+// 防止"w：（空白）"这种 footer 仍在但正文空的鬼影评论。和 moments 一致。
+function isFeedCommentTextVisuallyEmpty(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return true;
+  return trimmed.replace(/[​-‍﻿⁠\s]/g, '').length === 0;
+}
 
 // 角色主动转发时附带短评的清洗：去掉换行 / 引号 / 末尾省略号，强制 ≤ 24 字。
 function sanitizeForwardQuip(raw: string | undefined | null): string {
@@ -140,12 +207,99 @@ export class FeedService implements OnModuleInit {
     private readonly chatService: ChatService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
+    private readonly remarkResolver: FriendRemarkResolver,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit() {
+    // 索引必须先建好，再做后续清理；否则 toggleLike / createPostInteraction 一旦在
+    // 启动后被调，仍可能撞上历史重复行。dedupe + create unique index 是幂等的。
+    await this.ensureFeedUniqueIndexes();
     await this.backfillFeedAuthorAvatars();
     await this.cleanupBrokenChannelPosts();
     await this.cleanupLegacyDemoChannelPosts();
+  }
+
+  // 修复历史 race condition 留下的重复 like / interaction 行，并补上 unique index
+  // 防止再次发生。同时基于 like 表实际行数把 likeCount/favoriteCount 重算一遍，
+  // 把之前漂移的计数拉回真值。线上重启时跑一次即可，幂等。
+  private async ensureFeedUniqueIndexes(): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      // 1. 去重 feed_post_likes：每对 (postId, authorId) 只保留 createdAt 最早一行
+      await queryRunner.query(`
+        DELETE FROM feed_post_likes
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM feed_post_likes GROUP BY postId, authorId
+        )
+      `);
+      await queryRunner.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uniq_feed_post_likes_post_author
+        ON feed_post_likes(postId, authorId)
+      `);
+
+      // 2. 去重 user_feed_interactions：toggle 类型（like / favorite / view /
+      //    not_interested）每组 (userId, postId, type) 只保留最早一行；event 类型
+      //    （share / forward_to_chat / comment_like）允许多行——同一篇帖子可以多次
+      //    分享、转发到不同好友、点赞不同评论。
+      await queryRunner.query(`
+        DELETE FROM user_feed_interactions
+        WHERE type IN ('like', 'favorite', 'view', 'not_interested')
+          AND id NOT IN (
+            SELECT MIN(id) FROM user_feed_interactions
+            WHERE type IN ('like', 'favorite', 'view', 'not_interested')
+            GROUP BY userId, postId, type
+          )
+      `);
+      // 历史上建过非 partial 的 unique 索引，先 drop 掉再换成 partial 版本。
+      await queryRunner.query(`
+        DROP INDEX IF EXISTS uniq_user_feed_interactions_owner_post_type
+      `);
+      await queryRunner.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uniq_user_feed_interactions_toggle
+        ON user_feed_interactions(userId, postId, type)
+        WHERE type IN ('like', 'favorite', 'view', 'not_interested')
+      `);
+
+      // 3. 用 like 表实际行数重算 likeCount；同理用 type='favorite' 重算 favoriteCount
+      // 走查 R2（本轮）：原 SQL 只数 feed_post_likes —— 但 likeOwnerPost（用户点赞）
+      // 走的是 createPostInteraction → user_feed_interactions(type='like') + likeCount++，
+      // feed_post_likes 那张表只被 toggleLike（AI 角色点赞）写。于是每次 cloud-api
+      // 重启跑 ensureFeedUniqueIndexes，所有用户自己的赞被这条 UPDATE 静默抹掉
+      // 一次：likeCount 重置成 feed_post_likes 单表 COUNT（纯 AI 数量），UI 里仍
+      // hasLiked=true 但卡上"X 赞"少了用户自己的 +1，体感像「我点过的赞被吞」。
+      // 验证：yuanzui 库里 post 4f836b6c-... ufi_count=1（用户已 like）/ pl_count=14
+      //  / likeCount=14——用户的 +1 应该让 likeCount=15，但它跟 pl_count 一致，
+      //  说明上次启动把用户的赞抹掉了。
+      // 两张表语义不重叠（user → ufi、character → pl），直接求和即可，没有重复
+      // 计数风险。
+      await queryRunner.query(`
+        UPDATE feed_posts
+        SET likeCount = COALESCE((
+          SELECT COUNT(*) FROM feed_post_likes WHERE feed_post_likes.postId = feed_posts.id
+        ), 0) + COALESCE((
+          SELECT COUNT(*) FROM user_feed_interactions
+          WHERE user_feed_interactions.postId = feed_posts.id
+            AND user_feed_interactions.type = 'like'
+        ), 0)
+      `);
+      await queryRunner.query(`
+        UPDATE feed_posts
+        SET favoriteCount = COALESCE((
+          SELECT COUNT(*) FROM user_feed_interactions
+          WHERE user_feed_interactions.postId = feed_posts.id
+            AND user_feed_interactions.type = 'favorite'
+        ), 0)
+      `);
+    } catch (error) {
+      this.logger.error(
+        `ensureFeedUniqueIndexes failed: ${(error as Error).message}`,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async getFeed(
@@ -153,6 +307,19 @@ export class FeedService implements OnModuleInit {
     limit = 20,
     surface: FeedSurface = 'feed',
   ): Promise<{ posts: FeedListItem[]; total: number }> {
+    // 走查 R1：controller 把 `Number(query)` 直接灌进来 — ?limit=abc → NaN，
+    // TypeORM .take(NaN) 抛 "Provided skip value is not a number" → 500；
+    // ?limit=999999 → 无上限 DoS（前端硬编码 20，但 curl / 反代缓存能绕过）。
+    // 服务端自己再 clamp 一次，[1, 100] 兜底；page < 1 同样兜回 1（旧 .skip(
+    // 负数) TypeORM 会忽略，但显式归一更可预测）。
+    page = clampFeedPaginationPage(page);
+    limit = clampFeedPaginationLimit(limit);
+    // 走查 R3：controller @Query surface 是 TS-only enum。?surface=asdf 实测
+    // 落到下面的 else 分支被当 channels 处理 — 用户 hit 广场 URL 但拿到的是
+    // 视频号数据，体感是「广场动态忽然全变视频卡片」。白名单兜回 'feed'。
+    if (surface !== 'feed' && surface !== 'channels') {
+      surface = 'feed';
+    }
     if (surface === 'channels') {
       await this.ensureChannelSeedData();
       await this.topUpChannelsIfNeeded();
@@ -204,6 +371,8 @@ export class FeedService implements OnModuleInit {
     };
   }
 
+  // 首屏关键路径：只算 posts + ownerState，不算 authors/liveEntries/sectionCounts/commentsPreview。
+  // 后四样是"装饰"，通过 getChannelHomeDecorations 走第二个并行请求拿，不卡首条视频渲染。
   async getChannelHome(input?: {
     section?: FeedChannelHomeSection;
     page?: number;
@@ -217,40 +386,102 @@ export class FeedService implements OnModuleInit {
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
     });
-    const section = input?.section ?? 'recommended';
-    const page = input?.page ?? 1;
-    const limit = input?.limit ?? 20;
+    const section = normalizeChannelHomeSection(input?.section);
+    const page = clampFeedPaginationPage(input?.page ?? 1);
+    const limit = clampFeedPaginationLimit(input?.limit ?? 20);
 
+    const postsForSection = await this.getVisibleChannelPosts(
+      owner.id,
+      section,
+    );
+    const pagedPosts = paginate(postsForSection, page, limit);
+
+    const ownerStateMap = await this.buildOwnerStateMap(pagedPosts, owner.id);
+
+    return {
+      // 装饰位 sections.count 由 /decorations 接口回填；首屏先返回结构占位 0。
+      sections: (
+        Object.keys(CHANNEL_HOME_SECTION_LABELS) as FeedChannelHomeSection[]
+      ).map((key) => ({
+        key,
+        label: CHANNEL_HOME_SECTION_LABELS[key],
+        count: 0,
+      })),
+      activeSection: section,
+      posts: pagedPosts.map((post) => ({
+        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
+        commentsPreview: [],
+      })),
+      authors: [],
+      liveEntries: [],
+      total: postsForSection.length,
+    };
+  }
+
+  async getChannelHomeDecorations(input?: {
+    section?: FeedChannelHomeSection;
+    page?: number;
+    limit?: number;
+  }) {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
+    const section = normalizeChannelHomeSection(input?.section);
+    const page = clampFeedPaginationPage(input?.page ?? 1);
+    const limit = clampFeedPaginationLimit(input?.limit ?? 20);
+
+    // 走查 2026-05-17 新会话 R5：原代码当 section !== 'recommended' 时调用
+    // getVisibleChannelPosts 两次——两次都重复跑同样 5 个 IO（posts + blocked
+    // + notInterested + followed + friends），仅最后一道 section filter 不同。
+    // 拿 allVisiblePosts 后按需在内存里 re-filter 出 sectionFiltered，避免重复
+    // SELECT * + 重复 owner social 4 项查询。
+    //
+    // 走查 R1（本轮）：上一轮 R5 把"重拉全表"省下来了，但 filterChannelPostsBySection
+    // 在 friends/following section 上仍各自现查一次 followRepo.find / getFriendCharacterIds，
+    // 而紧跟在后面的 buildChannelSectionCounts 又把两份都拉一遍——其中一份是
+    // 重复 IO。把 follow/friend 这两份小数据在外层 Promise.all 一次性拉到，
+    // filter 与 count 两边都吃同一份，friends/following section 的 decorations
+    // 接口少 1 个 DB 查询（公网下省一次 RTT 等价 5-15ms）。
     const allVisiblePosts = await this.getVisibleChannelPosts(
       owner.id,
       'recommended',
     );
-    const postsForSection =
-      section === 'recommended'
-        ? allVisiblePosts
-        : await this.getVisibleChannelPosts(owner.id, section);
+    const [followedAuthorIds, friendCharacterIds] = await Promise.all([
+      this.followRepo
+        .find({ where: { ownerId: owner.id } })
+        .then((rows) => new Set(rows.map((row) => row.authorId))),
+      this.socialService
+        .getFriendCharacterIds(owner.id)
+        .then((ids) => new Set(ids)),
+    ]);
+    const postsForSection = this.filterChannelPostsBySectionWithSets(
+      allVisiblePosts,
+      section,
+      followedAuthorIds,
+      friendCharacterIds,
+    );
     const pagedPosts = paginate(postsForSection, page, limit);
 
-    const [
-      commentsPreviewMap,
-      ownerStateMap,
-      authors,
-      liveEntries,
-      sectionCounts,
-    ] = await Promise.all([
+    const sectionCounts = this.computeChannelSectionCounts(
+      allVisiblePosts,
+      followedAuthorIds,
+      friendCharacterIds,
+    );
+
+    const [commentsPreviewMap, authors, liveEntries] = await Promise.all([
       this.buildCommentsPreviewMap(
         pagedPosts.map((post) => post.id),
         owner.id,
         avatarContext,
       ),
-      this.buildOwnerStateMap(pagedPosts, owner.id),
       this.buildChannelAuthorSummaries(
         allVisiblePosts,
         owner.id,
         avatarContext,
       ),
       this.buildLiveEntries(allVisiblePosts, avatarContext),
-      this.buildChannelSectionCounts(allVisiblePosts, owner.id),
     ]);
 
     return {
@@ -262,13 +493,10 @@ export class FeedService implements OnModuleInit {
         count: sectionCounts[key] ?? 0,
       })),
       activeSection: section,
-      posts: pagedPosts.map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
-        commentsPreview: commentsPreviewMap.get(post.id) ?? [],
-      })),
       authors,
       liveEntries,
-      total: postsForSection.length,
+      // postId → 最近 3 条评论；前端按 postId 合并到 posts[].commentsPreview 上。
+      commentsPreviewByPostId: Object.fromEntries(commentsPreviewMap.entries()),
     };
   }
 
@@ -278,9 +506,57 @@ export class FeedService implements OnModuleInit {
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
     });
-    const authorPosts = (
-      await this.getVisibleChannelPosts(owner.id, 'recommended')
-    ).filter((post) => post.authorId === authorId);
+    // 走查 2026-05-17 新会话 R3：原实现先 `getVisibleChannelPosts('recommended')`
+    // 把全站所有视频号 post（最大 1000+ 行）拉到内存再 .filter(post.authorId===
+    // authorId)——单作者主页要 SELECT * + 5 个并行 owner/social 查询，浪费明显。
+    // 改成只拉这位作者的 post，按需做 blocked / not_interested / visible / media
+    // 可播放 这四道过滤，逻辑等价但 IO 量与作者贴数成线性，不再被全站规模放大。
+    const authorPostsRaw = await this.postRepo.find({
+      where: {
+        authorId,
+        surface: 'channels',
+        publishStatus: 'published',
+      },
+      order: { recommendationScore: 'DESC', createdAt: 'DESC' },
+    });
+    const [
+      visibleCharacterIds,
+      blockedCharacterIdSet,
+      notInterestedPostIdSet,
+    ] = await Promise.all([
+      this.getVisibleCharacterIdSet(owner.id),
+      this.socialService
+        .getBlockedCharacterIds(owner.id)
+        .then((ids) => new Set(ids)),
+      // notInterested 只查这一批 post——比全表扫小。
+      authorPostsRaw.length === 0
+        ? Promise.resolve(new Set<string>())
+        : this.interactionRepo
+            .find({
+              where: {
+                ownerId: owner.id,
+                type: 'not_interested',
+                postId: In(authorPostsRaw.map((p) => p.id)),
+              },
+            })
+            .then((items) => new Set(items.map((item) => item.postId))),
+    ]);
+    const authorPosts = authorPostsRaw.filter((post) => {
+      if (post.authorType === 'character') {
+        if (!visibleCharacterIds.has(post.authorId)) return false;
+        if (blockedCharacterIdSet.has(post.authorId)) return false;
+        if (post.visibility === 'private') return false;
+        if (
+          post.visibility === 'friends' &&
+          !avatarContext.ownerFriendCharacterIds.has(post.authorId)
+        ) {
+          return false;
+        }
+      }
+      if (notInterestedPostIdSet.has(post.id)) return false;
+      if (!this.isPostMediaPlayable(post)) return false;
+      return true;
+    });
     const latestPost =
       authorPosts[0] ??
       (await this.postRepo.findOne({
@@ -289,9 +565,14 @@ export class FeedService implements OnModuleInit {
       }));
 
     if (!latestPost) {
+      // 走查 R1 同款修法：channel-author-page 错误条直接吃 error.message，i18n
+      // 字典 hit 不到的语言会原样飘英文。`error-translate.ts` 已经按 code 译过
+      // 「视频号作者不存在。」，但 channel-author-page 现在显示的是 legacyMessage。
+      // 这里直接出中文跟 FEED_POST_NOT_FOUND（line 4097）/ FEED_FORWARD_TARGET_REQUIRED
+      // 对齐。
       throw new AppError('FEED_CHANNEL_AUTHOR_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Channel author not found',
+        legacyMessage: '视频号作者不存在或已被删除。',
       });
     }
 
@@ -310,7 +591,12 @@ export class FeedService implements OnModuleInit {
 
     return {
       authorId: latestPost.authorId,
-      authorName: latestPost.authorName,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        latestPost.authorType,
+        latestPost.authorId,
+        latestPost.authorName,
+        avatarContext.remarkMap,
+      ),
       authorAvatar: this.resolveFeedAuthorAvatar(
         latestPost.authorType,
         latestPost.authorId,
@@ -359,22 +645,47 @@ export class FeedService implements OnModuleInit {
         ownerId: owner.id,
         ownerAvatar: owner.avatar,
       }));
-    const comments = await this.commentRepo.find({
+    // 走查 R1：旧实现 .find() 无 take，单条 post 累积 N 万条评论时（角色密集
+    // 反应 + 用户长期堆 reply）一次性 SELECT *、序列化 + 排序 + reply-map
+    // 全跑一遍 → 内存峰值 + 响应巨慢。前端「查看全部 N 条评论」展开本身就
+    // 是低频操作，硬上限 MAX_FEED_COMMENT_FETCH_LIMIT 兜底；超过时取最近
+    // 的一批（按 createdAt DESC 取 limit 再倒回 ASC），并在响应里通过 .length
+    // 让前端能感知（DB 实际数还是从 commentCount 字段读，老 cache 不变）。
+    const rawComments = await this.commentRepo.find({
       where: { postId, status: 'published' },
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
+      take: MAX_FEED_COMMENT_FETCH_LIMIT,
     });
+    const comments = rawComments.reverse();
     const likedCommentIds = await this.buildLikedCommentIdSet(
       comments.map((comment) => comment.id),
       owner.id,
     );
+    const replyAuthorNameMap = this.buildReplyAuthorNameMap(comments);
 
     return comments.map((comment) =>
       this.serializeComment(
         comment,
         likedCommentIds.has(comment.id),
         resolvedAvatarContext,
+        replyAuthorNameMap,
       ),
     );
+  }
+
+  // commentId → authorName 反查表，给 serializeComment 注入 replyToAuthorName。
+  // 用全量评论数组构建（commentsPreview 也是先 fetch 全量再 slice(-3)，所以
+  // 这里能覆盖到 preview 截掉的那部分根评论）。
+  private buildReplyAuthorNameMap(
+    comments: FeedCommentEntity[],
+  ): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const comment of comments) {
+      if (comment.authorName) {
+        map.set(comment.id, comment.authorName);
+      }
+    }
+    return map;
   }
 
   async createOwnerPost(
@@ -390,9 +701,19 @@ export class FeedService implements OnModuleInit {
       topicTags?: string[];
       surface?: FeedSurface;
     },
-  ): Promise<FeedPostEntity> {
+  ): Promise<ReturnType<FeedService['serializePost']>> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    return this.createPost({
+    // 走查 R3：controller @Body surface 是 TS-only 'feed' | 'channels'，运行时
+    // any。curl `{"surface":"asdf"}` 会创建一条 surface='asdf' 的 post，既不
+    // 进 feed (WHERE surface='feed') 也不进 channels (WHERE surface='channels')
+    // → 永久变孤儿数据，占库不可见，老 user 看不到自己刚发的内容会困惑。
+    // 白名单兜底为 'feed'（与下游 createPost 的 default 对齐），让脏 enum
+    // 不污染 DB。
+    const normalizedSurface: FeedSurface =
+      options?.surface === 'feed' || options?.surface === 'channels'
+        ? options.surface
+        : 'feed';
+    const post = await this.createPost({
       authorAvatar: owner.avatar ?? '',
       authorId: owner.id,
       authorName: owner.username?.trim() || 'You',
@@ -406,9 +727,19 @@ export class FeedService implements OnModuleInit {
       aspectRatio: options?.aspectRatio,
       topicTags: options?.topicTags,
       sourceKind: 'owner_upload',
-      surface: options?.surface,
+      surface: normalizedSurface,
       text: text ?? '',
     });
+    // 必须串行化成 DTO 再返回：前端 createFeedPost 把响应直接 prepend 到广场
+    // 缓存里做 optimistic insert，需要 media[] / canInteract / ownerState 这些
+    // 字段。返回原始 entity 会让刚发布的卡片缺动作菜单和媒体，要等 invalidate
+    // 重新拉 list 才能愈合。
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
+    const ownerStateMap = await this.buildOwnerStateMap([post], owner.id);
+    return this.serializePost(post, ownerStateMap.get(post.id), avatarContext);
   }
 
   async createPost(input: {
@@ -547,6 +878,7 @@ export class FeedService implements OnModuleInit {
     text: string,
   ): Promise<ReturnType<FeedService['serializeComment']>> {
     await this.assertOwnerCanInteractWithPost(postId);
+    const trimmedText = this.assertCommentText(text);
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const comment = await this.addComment({
       postId,
@@ -554,9 +886,31 @@ export class FeedService implements OnModuleInit {
       authorName: owner.username?.trim() || 'You',
       authorAvatar: owner.avatar ?? '',
       authorType: 'user',
-      text,
+      text: trimmedText,
     });
     return this.serializeComment(comment, false);
+  }
+
+  // 服务端兜底校验：拒绝空 / 视觉为空 / 超长评论。前端 WeChatCommentBar 已经卡了，
+  // 但 curl/第三方端能绕过；同时 AI 生成路径也通过这里走，万一 LLM 吐出空串
+  // 就别让它落库变 "w：" 鬼影评论。统一返回 trim 过的安全文本。
+  private assertCommentText(raw: unknown): string {
+    const text = typeof raw === 'string' ? raw : '';
+    const trimmed = text.trim();
+    if (!trimmed || isFeedCommentTextVisuallyEmpty(trimmed)) {
+      throw new AppError('FEED_COMMENT_EMPTY', {
+        legacyMessage: '评论内容不能为空。',
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
+    if (trimmed.length > MAX_FEED_COMMENT_TEXT_LENGTH) {
+      throw new AppError('FEED_COMMENT_TOO_LONG', {
+        params: { max: MAX_FEED_COMMENT_TEXT_LENGTH },
+        legacyMessage: `评论最多 ${MAX_FEED_COMMENT_TEXT_LENGTH} 字。`,
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
+    return trimmed;
   }
 
   async addComment(input: {
@@ -654,13 +1008,17 @@ export class FeedService implements OnModuleInit {
     const parentComment = await this.commentRepo.findOneBy({ id: commentId });
 
     if (!parentComment) {
+      // R1 走查：mobile 广场动态评论列表展开后用户点回复，那条评论刚好被
+      // 别的端 / AI 后续动作删掉时，旧 'Comment not found' 英文飘到前端
+      // InlineNotice。改成 moments-service replyToComment 同款中文。
       throw new AppError('FEED_COMMENT_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Comment not found',
+        legacyMessage: '评论不存在或已被删除。',
       });
     }
 
     await this.assertOwnerCanInteractWithPost(parentComment.postId);
+    const trimmedText = this.assertCommentText(text);
 
     const reply = await this.addComment({
       postId: parentComment.postId,
@@ -668,13 +1026,18 @@ export class FeedService implements OnModuleInit {
       authorName: owner.username?.trim() || 'You',
       authorAvatar: owner.avatar ?? '',
       authorType: 'user',
-      text,
+      text: trimmedText,
       parentCommentId: parentComment.parentCommentId ?? parentComment.id,
       replyToCommentId: parentComment.id,
       replyToAuthorId: parentComment.authorId,
     });
 
-    return this.serializeComment(reply, false);
+    // 单条 reply 的反查表只需要 parent 一行就够了，让返回的 DTO 带上 replyToAuthorName。
+    const replyAuthorNameMap = new Map<string, string>();
+    if (parentComment.authorName) {
+      replyAuthorNameMap.set(parentComment.id, parentComment.authorName);
+    }
+    return this.serializeComment(reply, false, undefined, replyAuthorNameMap);
   }
 
   async likeOwnerPost(postId: string): Promise<void> {
@@ -686,6 +1049,22 @@ export class FeedService implements OnModuleInit {
       type: 'like',
       incrementColumn: 'likeCount',
     });
+  }
+
+  async unlikeOwnerPost(postId: string): Promise<void> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const existing = await this.interactionRepo.findOneBy({
+      ownerId: owner.id,
+      postId,
+      type: 'like',
+    });
+
+    if (!existing) {
+      return;
+    }
+
+    await this.interactionRepo.delete(existing.id);
+    await this.decrementPostCounter(postId, 'likeCount');
   }
 
   async favoriteOwnerPost(postId: string): Promise<void> {
@@ -721,11 +1100,23 @@ export class FeedService implements OnModuleInit {
   ): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.assertPostExists(postId);
+    // 走查 R3：controller @Body 的 enum 是 TS-only，运行时是 any。curl 实测可
+    // 以送 `channel=<script>...`、`channel=999`、`channel=null`（字符串）等等，
+    // 任意脏字符串都会落进 user_feed_interactions.payload + cyberAvatar
+    // captureSignal 的 summaryText。signal 文本最终能流向后续 LLM prompt /
+    // analytics 报表，留着脏字符串会污染下游。白名单兜底为 'unknown'。
+    const normalizedChannel: 'native' | 'copy' | 'system' | 'unknown' =
+      channel === 'native' ||
+      channel === 'copy' ||
+      channel === 'system' ||
+      channel === 'unknown'
+        ? channel
+        : 'unknown';
     const interaction = this.interactionRepo.create({
       ownerId: owner.id,
       postId,
       type: 'share',
-      payload: channel ? { channel } : null,
+      payload: { channel: normalizedChannel },
     });
     await this.interactionRepo.save(interaction);
     void this.cyberAvatar.captureSignal({
@@ -735,11 +1126,11 @@ export class FeedService implements OnModuleInit {
       sourceEntityType: 'feed_interaction',
       sourceEntityId: interaction.id,
       dedupeKey: `feed_interaction:${interaction.id}`,
-      summaryText: `分享动态到 ${channel ?? 'unknown'}`,
+      summaryText: `分享动态到 ${normalizedChannel}`,
       payload: {
         postId,
         type: 'share',
-        channel: channel ?? 'unknown',
+        channel: normalizedChannel,
       },
       occurredAt: interaction.createdAt ?? new Date(),
     });
@@ -764,23 +1155,27 @@ export class FeedService implements OnModuleInit {
     targetCharacterId: string;
     note?: string;
   }): Promise<{ messageId: string; conversationId: string }> {
+    // 走查 R2（本轮）：之前所有 forward 路径 throw 的 AppError 都用英文 legacyMessage。
+    // channels-forward-picker 当前按 code switch 翻译，所以正常 UI 路径不会暴露
+    // 英文。但任何非 picker 路径（debug 面板、内部调用、未来新 caller）拿到的
+    // error.message 仍是英文。同款 R1 修法保持一致：所有 legacyMessage 出中文。
     const post = await this.postRepo.findOneBy({ id: input.postId });
     if (!post) {
       throw new AppError('FEED_POST_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Feed post not found',
+        legacyMessage: '该动态不存在或已被删除。',
       });
     }
     if (post.surface !== 'channels') {
       throw new AppError('FEED_FORWARD_NOT_CHANNELS', {
         status: HttpStatus.BAD_REQUEST,
-        legacyMessage: 'Only channels posts can be forwarded',
+        legacyMessage: '只支持转发视频号帖子。',
       });
     }
     if (post.publishStatus !== 'published') {
       throw new AppError('FEED_POST_NOT_PUBLISHED', {
         status: HttpStatus.BAD_REQUEST,
-        legacyMessage: 'Cannot forward an unpublished post',
+        legacyMessage: '帖子尚未发布，稍后再试。',
       });
     }
     if (
@@ -789,7 +1184,7 @@ export class FeedService implements OnModuleInit {
     ) {
       throw new AppError('FEED_FORWARD_MEDIA_BROKEN', {
         status: HttpStatus.BAD_REQUEST,
-        legacyMessage: 'Post media is not playable',
+        legacyMessage: '这条视频号还没有可播放的视频/音频，无法转发。',
       });
     }
 
@@ -810,7 +1205,7 @@ export class FeedService implements OnModuleInit {
     if (!targetCharacter) {
       throw new AppError('FEED_FORWARD_TARGET_REQUIRED', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Target character not found',
+        legacyMessage: '这位好友已不在通讯录，请换一位再试。',
       });
     }
 
@@ -821,6 +1216,8 @@ export class FeedService implements OnModuleInit {
     const conversationId = conv.id;
 
     const primaryUrl = this.resolvePrimaryFeedMediaUrl(post);
+    const posterUrl = this.resolvePrimaryFeedPosterUrl(post);
+    const durationMs = this.resolvePrimaryFeedDurationMs(post);
     const attachment: FeedPostCardAttachment = {
       kind: 'feed_post_card',
       postId: post.id,
@@ -830,9 +1227,9 @@ export class FeedService implements OnModuleInit {
       title: post.title ?? undefined,
       excerpt: (post.text ?? '').slice(0, 160),
       mediaType: post.mediaType as FeedPostCardAttachment['mediaType'],
-      coverUrl: post.coverUrl ?? undefined,
+      coverUrl: posterUrl ?? undefined,
       primaryMediaUrl: primaryUrl ?? undefined,
-      durationMs: post.durationMs ?? undefined,
+      durationMs: durationMs ?? undefined,
       surface: 'channels',
     };
 
@@ -905,13 +1302,22 @@ export class FeedService implements OnModuleInit {
     body: { targetCharacterId: string; note?: string },
   ): Promise<{ messageId: string; conversationId: string }> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const targetCharacterId = body.targetCharacterId?.trim();
+    // 走查 R4：旧 `body.targetCharacterId?.trim()` 假设 string。curl 实测 `{
+    // "targetCharacterId":123}` / `[1,2]` 直接抛 "trim is not a function" →
+    // 500。同款问题前两轮在 createPost 改过。typeof 兜底 + 友好中文 legacy
+    // Message（旧 'targetCharacterId is required' 英文飘到前端 InlineNotice 跟
+    // 其他错误条不齐整）。note 同样兜回 undefined 防 .trim 链路抛。
+    const rawTarget = body?.targetCharacterId;
+    const targetCharacterId =
+      typeof rawTarget === 'string' ? rawTarget.trim() : '';
     if (!targetCharacterId) {
       throw new AppError('FEED_FORWARD_TARGET_REQUIRED', {
         status: HttpStatus.BAD_REQUEST,
-        legacyMessage: 'targetCharacterId is required',
+        legacyMessage: '请选择要转发到的好友。',
       });
     }
+    const rawNote = body?.note;
+    const note = typeof rawNote === 'string' ? rawNote : undefined;
     return this.forwardChannelPostToChat({
       actorType: 'user',
       actorId: owner.id,
@@ -919,7 +1325,7 @@ export class FeedService implements OnModuleInit {
       actorAvatar: owner.avatar ?? undefined,
       postId,
       targetCharacterId,
-      note: body.note,
+      note,
     });
   }
 
@@ -941,6 +1347,58 @@ export class FeedService implements OnModuleInit {
     return post.mediaUrl?.trim() || null;
   }
 
+  // 视频/音频帖的 cover image 落在 mediaPayload[i].posterUrl 里，post.coverUrl
+  // 经常为 null（音乐帖更是 100% null，MiniMax 不回写 coverUrl 字段）。转发到聊天
+  // 时如果直接拿 post.coverUrl，feed_post_card 卡片就没有缩略图，对方看到一片
+  // 灰色「视频号·xxx」占位。serializePost 已经做了同样 fallback，这里独立解析
+  // 是因为 forwardChannelPostToChat 在 entity 层组装 attachment，没走 serializePost。
+  private resolvePrimaryFeedPosterUrl(post: FeedPostEntity): string | null {
+    if (post.coverUrl?.trim()) return post.coverUrl.trim();
+    try {
+      const arr = JSON.parse(post.mediaPayload ?? '[]') as Array<{
+        kind?: string;
+        posterUrl?: string;
+        thumbnailUrl?: string;
+        url?: string;
+      }>;
+      for (const a of Array.isArray(arr) ? arr : []) {
+        if (a?.kind === post.mediaType) {
+          const candidate =
+            a.posterUrl?.trim() ||
+            (a.kind === 'image' ? a.thumbnailUrl?.trim() || a.url?.trim() : '');
+          if (candidate) return candidate;
+        }
+      }
+    } catch {
+      /* fallthrough */
+    }
+    return null;
+  }
+
+  // 同 resolvePrimaryFeedPosterUrl：post.durationMs 在音乐帖里普遍为 null，
+  // 真实时长落在 mediaPayload[i].durationMs。转发卡 / 聊天预览要拿到才能渲染。
+  private resolvePrimaryFeedDurationMs(post: FeedPostEntity): number | null {
+    if (typeof post.durationMs === 'number') return post.durationMs;
+    try {
+      const arr = JSON.parse(post.mediaPayload ?? '[]') as Array<{
+        kind?: string;
+        durationMs?: number;
+      }>;
+      for (const a of Array.isArray(arr) ? arr : []) {
+        if (
+          a?.kind === post.mediaType &&
+          typeof a.durationMs === 'number' &&
+          Number.isFinite(a.durationMs)
+        ) {
+          return a.durationMs;
+        }
+      }
+    } catch {
+      /* fallthrough */
+    }
+    return null;
+  }
+
   async viewOwnerPost(
     postId: string,
     payload?: { progressSeconds?: number; completed?: boolean },
@@ -954,11 +1412,24 @@ export class FeedService implements OnModuleInit {
       type: 'view',
     });
 
+    // 走查 R1（本轮）：原来 `typeof === 'number'` 不挡 NaN / Infinity / 负数 /
+    // 巨值。NaN 走下方 Math.max(prev, NaN) = NaN → `NaN || null` 把已有的
+    // watchProgressSeconds 整段抹成 null（用户在某条音乐听到 30s，被 buggy /
+    // 老 client 发个 NaN 后服务端记录就丢成 0）。Infinity 序列化到 SQLite JSON
+    // 是 `null`、读出来也异常。这里统一过 `Number.isFinite` + 非负 + 64 位整
+    // 数上限（30 天秒数远小于 2.6e6，2^31 给得很宽）。无效值降级到 null，跟原
+    // "客户端没传" 等价处理，绝不让脏数据冲掉已经积累的合法进度。
+    const SAFE_PROGRESS_SECONDS_MAX = 2_592_000; // 30 days
+    const rawProgress = payload?.progressSeconds;
+    const sanitizedProgress =
+      typeof rawProgress === 'number' &&
+      Number.isFinite(rawProgress) &&
+      rawProgress >= 0
+        ? Math.min(Math.floor(rawProgress), SAFE_PROGRESS_SECONDS_MAX)
+        : null;
+
     const nextPayload = {
-      progressSeconds:
-        typeof payload?.progressSeconds === 'number'
-          ? payload.progressSeconds
-          : null,
+      progressSeconds: sanitizedProgress,
       completed: Boolean(payload?.completed),
     };
 
@@ -1030,9 +1501,13 @@ export class FeedService implements OnModuleInit {
     const comment = await this.commentRepo.findOneBy({ id: commentId });
 
     if (!comment) {
+      // 走查新一轮 R3：legacyMessage 之前是英文 "Comment not found"，移动端
+      // 点赞「查看全部」展开的评论时刚好被别端 / AI 删掉就会蹦出来，跟
+      // replyToComment 已经统一过的中文「评论不存在或已被删除。」不齐整，
+      // 用户视感是"突然冒一条不会说中文的错误"。对齐 replyToComment 文案。
       throw new AppError('FEED_COMMENT_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Comment not found',
+        legacyMessage: '评论不存在或已被删除。',
       });
     }
 
@@ -1446,22 +1921,40 @@ export class FeedService implements OnModuleInit {
     authorAvatar: string,
     authorType = 'user',
   ): Promise<{ liked: boolean }> {
-    const existing = await this.likeRepo.findOneBy({ postId, authorId });
-    if (existing) {
-      await this.likeRepo.delete(existing.id);
-      await this.postRepo.decrement({ id: postId }, 'likeCount', 1);
-      return { liked: false };
-    }
-    const like = this.likeRepo.create({
-      postId,
-      authorId,
-      authorName,
-      authorAvatar,
-      authorType,
+    // 两次连续点击 / 多端同时点：必须靠 unique(postId, authorId) + 事务来保证
+    // likeCount 不漂移。INSERT 走 ON CONFLICT DO NOTHING 取消重复插入，
+    // 计数器仅在 INSERT/DELETE 真正影响 1 行时才加减。
+    return this.dataSource.transaction(async (manager) => {
+      const likeRepo = manager.getRepository(FeedPostLikeEntity);
+      const postRepo = manager.getRepository(FeedPostEntity);
+
+      const existing = await likeRepo.findOneBy({ postId, authorId });
+      if (existing) {
+        const deletion = await likeRepo.delete({ id: existing.id });
+        if (deletion.affected && deletion.affected > 0) {
+          await postRepo.decrement({ id: postId }, 'likeCount', 1);
+        }
+        return { liked: false };
+      }
+
+      // R1 走查：上面的 `existing` 预检已经吃掉了双击/重试 ——
+      // 走到这里只可能是 (postId, authorId) 真的没行。orIgnore 仅兜并发 race
+      // （两个 toggleLike 同时通过预检都尝试 insert），race 命中时 unique 索引会
+      // 静默 drop 掉 loser 的行。旧代码因为 TypeORM `identifiers` 在 IGNORE 被
+      // 跳过时仍回填 client-side uuid 让 `inserted` 永真，loser 还是 +1 likeCount。
+      // better-sqlite3 的 `result.raw` 实测也拿不到 changes，没法靠它判定。
+      // 简化路径：预检过了就直接 increment；并发 race 残留的瞬时偏移由下次
+      // ensureFeedUniqueIndexes 按 like 表实际行数把 likeCount 重算回真值兜底。
+      await likeRepo
+        .createQueryBuilder()
+        .insert()
+        .into(FeedPostLikeEntity)
+        .values({ postId, authorId, authorName, authorAvatar, authorType })
+        .orIgnore()
+        .execute();
+      await postRepo.increment({ id: postId }, 'likeCount', 1);
+      return { liked: true };
     });
-    await this.likeRepo.save(like);
-    await this.postRepo.increment({ id: postId }, 'likeCount', 1);
-    return { liked: true };
   }
 
   private jitterPastTimestamp(maxMs: number): Date {
@@ -2145,16 +2638,26 @@ export class FeedService implements OnModuleInit {
         forwarded: 0,
       };
     }
-    const blockedSet = new Set(
-      await this.socialService.getBlockedCharacterIds(owner.id),
-    );
+    const [blockedIds, chatOnlyHiddenIds] = await Promise.all([
+      this.socialService.getBlockedCharacterIds(owner.id),
+      // 走查再再 R2：channel_proactive_forward 决定哪位角色"主动"把视频号
+      // 帖子转发到 owner 的会话里。「仅聊天的朋友」(`chatOnly=true`) 的 UI
+      // 描述是「TA 不会出现在朋友圈、动态等场景」——视频号转发明显属于
+      // "动态"的语义边界内（用户没主动订阅，就是 TA 一厢情愿往会话推内容），
+      // 把这部分 char 也排除掉。复用 getMomentsHiddenFromThemCharacterIds，
+      // 那条已经把 chatOnly 一起 OR 进去了。
+      this.remarkResolver.getMomentsHiddenFromThemCharacterIds(owner.id),
+    ]);
+    const blockedSet = new Set(blockedIds);
     const allCharacters = await this.characters.findAllVisibleToOwner(owner.id);
     const characterById = new Map(allCharacters.map((c) => [c.id, c]));
     const friendCharacters = friendCharacterIds
       .map((id) => characterById.get(id))
       .filter(
         (c): c is (typeof allCharacters)[number] =>
-          Boolean(c) && !blockedSet.has(c!.id),
+          Boolean(c) &&
+          !blockedSet.has(c!.id) &&
+          !chatOnlyHiddenIds.has(c!.id),
       );
 
     let llmCallsRemaining = MAX_LLM_CALLS_PER_TICK;
@@ -2304,12 +2807,69 @@ export class FeedService implements OnModuleInit {
       return new Map<string, ReturnType<FeedService['serializeComment']>[]>();
     }
 
-    const comments = await this.commentRepo.find({
-      where: { postId: In(postIds), status: 'published' },
-      order: { createdAt: 'ASC' },
-    });
+    // 走查 2026-05-18 R1：原实现 `find({ where: { postId: In(postIds), status:
+    // 'published' } })` 把每条 post 的全部 published 评论拉到内存里再 slice(-3)
+    // —— 视频号 home 19 张卡 × 平均 ~30 条评论 ≈ 570 行 JSON parse + serializeComment
+    // 跑一遍，最终只保留 60 条进 commentsPreviewByPostId。热门帖（e5800bb1 已有
+    // 146 条）单条就贡献 146 - 3 = 143 行白拉。decorations 接口每次 home 进入都
+    // 跑一遍，浪费 DB IO + 内存峰值。
+    // 用 SQL 窗函数把"每 postId 取最新 3 条"下放到 DB 层：
+    //   ROW_NUMBER() OVER (PARTITION BY postId ORDER BY createdAt DESC) <= 3
+    // SQLite 3.25+ / MySQL 8+ 都支持。这样行数从"全量"降到"19 × 3 = 57"，
+    // serializeComment / likedCommentIdSet 也只跑这 57 条。
+    // 用 ORM 的 hydration 路径而不是 getRawMany，避免手撸 row → entity 转换
+    // 漏字段 / Date 解析错（之前 getRawMany 返回的 row 字段名与预期不一致直接
+    // 撞 createdAt undefined → Invalid Date → serializeComment.toISOString 抛
+    // RangeError）。QueryBuilder 用子查询限定 id 范围，hydration 由 TypeORM
+    // 自己跑，跟原 commentRepo.find 路径行为一致。
+    const previewComments = await this.commentRepo
+      .createQueryBuilder('c')
+      .where(
+        `c.id IN (
+          SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "createdAt" DESC) AS rn
+            FROM feed_comments
+            WHERE "postId" IN (:...postIds) AND "status" = 'published'
+          ) AS ranked
+          WHERE rn <= 3
+        )`,
+        { postIds },
+      )
+      .orderBy('c.postId', 'ASC')
+      .addOrderBy('c.createdAt', 'ASC')
+      .getMany();
+
+    // preview 评论里若有 reply → 被回复的根评论可能不在 preview 里（被 slice
+    // 截掉），用一次额外 IN 查询补回需要的 authorName，确保 serializeComment
+    // 能渲出"回复 X：..."前缀。bounded by 3 × postIds = ~57 行 max。
+    const previewIdSet = new Set(previewComments.map((c) => c.id));
+    const missingParentIds = Array.from(
+      new Set(
+        previewComments
+          .map((c) => c.replyToCommentId)
+          .filter(
+            (id): id is string => typeof id === 'string' && !previewIdSet.has(id),
+          ),
+      ),
+    );
+    const parentComments = missingParentIds.length
+      ? await this.commentRepo.find({
+          where: { id: In(missingParentIds) },
+          select: ['id', 'authorName'],
+        })
+      : [];
+
+    const replyAuthorNameMap = this.buildReplyAuthorNameMap([
+      ...previewComments,
+      ...parentComments.map((c) => {
+        const entity = new FeedCommentEntity();
+        entity.id = c.id;
+        entity.authorName = c.authorName;
+        return entity;
+      }),
+    ]);
     const likedCommentIds = await this.buildLikedCommentIdSet(
-      comments.map((comment) => comment.id),
+      previewComments.map((comment) => comment.id),
       ownerId,
     );
     const commentMap = new Map<
@@ -2317,16 +2877,17 @@ export class FeedService implements OnModuleInit {
       ReturnType<FeedService['serializeComment']>[]
     >();
 
-    for (const comment of comments) {
+    for (const comment of previewComments) {
       const currentComments = commentMap.get(comment.postId) ?? [];
       currentComments.push(
         this.serializeComment(
           comment,
           likedCommentIds.has(comment.id),
           avatarContext,
+          replyAuthorNameMap,
         ),
       );
-      commentMap.set(comment.postId, currentComments.slice(-3));
+      commentMap.set(comment.postId, currentComments);
     }
 
     return commentMap;
@@ -2409,14 +2970,29 @@ export class FeedService implements OnModuleInit {
       return new Set<string>();
     }
 
-    const interactions = await this.interactionRepo.find({
-      where: { ownerId, type: 'comment_like' },
-    });
+    // 走查 R3 perf：原实现 `find({ where: { ownerId, type: 'comment_like' } })`
+    // 拉用户**全部**评论点赞历史，再用 `commentIds.includes()` 在内存里挑——
+    // 老用户广场刷一遍下来每行 commentLike 都拉、O(interactions × commentIds)
+    // 内存扫一次。常逛广场 + 群活跃的账号实测 5000+ commentLike 行，每翻一页
+    // 读 5000 行 JSON parse + 60 次 includes = 上百 ms 直接挂在 getFeed 关键路径。
+    // 改成 SQL 层 json_extract(payload, '$.commentId') IN (:commentIds)，只拉
+    // 本页评论真被点过的几行，命中量从"用户全量"降到"本页"。
+    // simple-json 列底层是 TEXT 存 JSON 字符串，SQLite/MySQL 都有 json_extract。
+    const interactions = await this.interactionRepo
+      .createQueryBuilder('interaction')
+      .where('interaction.userId = :ownerId', { ownerId })
+      .andWhere("interaction.type = 'comment_like'")
+      .andWhere(
+        "json_extract(interaction.payload, '$.commentId') IN (:...commentIds)",
+        { commentIds },
+      )
+      .getMany();
 
+    const commentIdSet = new Set(commentIds);
     return new Set(
       interactions
         .map((item) => String(item.payload?.commentId ?? '').trim())
-        .filter((item) => item && commentIds.includes(item)),
+        .filter((item) => item && commentIdSet.has(item)),
     );
   }
 
@@ -2478,7 +3054,12 @@ export class FeedService implements OnModuleInit {
                 post.authorAvatar,
                 avatarContext,
               ),
-        authorName: post.authorName,
+        authorName: this.remarkResolver.applyCharacterRemark(
+          post.authorType,
+          post.authorId,
+          post.authorName,
+          avatarContext?.remarkMap,
+        ),
         authorType: post.authorType,
         latestCreatedAt: post.createdAt,
         postCount: 1,
@@ -2513,25 +3094,33 @@ export class FeedService implements OnModuleInit {
           (post.topicTags ?? []).some((tag) => tag.includes('直播')),
       )
       .slice(0, 6)
-      .map((post) => ({
-        id: `live-${post.id}`,
-        postId: post.id,
-        title: post.title?.trim() || `${post.authorName} 的视频号直播`,
-        authorId: post.authorId,
-        authorName: post.authorName,
-        authorAvatar:
-          avatarContext === undefined
-            ? post.authorAvatar
-            : this.resolveFeedAuthorAvatar(
-                post.authorType,
-                post.authorId,
-                post.authorAvatar,
-                avatarContext,
-              ),
-        startedAt: post.createdAt.toISOString(),
-        status: 'replay' as const,
-        coverUrl: post.coverUrl ?? null,
-      }));
+      .map((post) => {
+        const displayAuthorName = this.remarkResolver.applyCharacterRemark(
+          post.authorType,
+          post.authorId,
+          post.authorName,
+          avatarContext?.remarkMap,
+        );
+        return {
+          id: `live-${post.id}`,
+          postId: post.id,
+          title: post.title?.trim() || `${displayAuthorName} 的视频号直播`,
+          authorId: post.authorId,
+          authorName: displayAuthorName,
+          authorAvatar:
+            avatarContext === undefined
+              ? post.authorAvatar
+              : this.resolveFeedAuthorAvatar(
+                  post.authorType,
+                  post.authorId,
+                  post.authorAvatar,
+                  avatarContext,
+                ),
+          startedAt: post.createdAt.toISOString(),
+          status: 'replay' as const,
+          coverUrl: post.coverUrl ?? null,
+        };
+      });
   }
 
   private async buildChannelSectionCounts(
@@ -2546,7 +3135,21 @@ export class FeedService implements OnModuleInit {
         .getFriendCharacterIds(ownerId)
         .then((ids) => new Set(ids)),
     ]);
+    return this.computeChannelSectionCounts(
+      posts,
+      followedAuthorIds,
+      friendCharacterIds,
+    );
+  }
 
+  // 走查 R1（本轮）：纯内存计算版本，让 getChannelHomeDecorations 把
+  // followedAuthorIds + friendCharacterIds 在外层取一次后同时喂给
+  // filterChannelPostsBySectionWithSets 和 sectionCounts，避免一次 RTT 重复 IO。
+  private computeChannelSectionCounts(
+    posts: FeedPostEntity[],
+    followedAuthorIds: Set<string>,
+    friendCharacterIds: Set<string>,
+  ): Record<FeedChannelHomeSection, number> {
     return {
       recommended: posts.length,
       friends: posts.filter((post) => friendCharacterIds.has(post.authorId))
@@ -2559,6 +3162,33 @@ export class FeedService implements OnModuleInit {
           (post.topicTags ?? []).some((tag) => tag.includes('直播')),
       ).length,
     };
+  }
+
+  // 走查 R1（本轮）：filterChannelPostsBySection 的纯内存版本——基于已经在外层
+  // 取好的 follow/friend 两份集合直接过滤，避免 decorations 接口在 friends/following
+  // section 上再额外拉一次 followRepo.find / getFriendCharacterIds。
+  private filterChannelPostsBySectionWithSets(
+    basePosts: FeedPostEntity[],
+    section: FeedChannelHomeSection,
+    followedAuthorIds: Set<string>,
+    friendCharacterIds: Set<string>,
+  ): FeedPostEntity[] {
+    if (section === 'recommended') return basePosts;
+    if (section === 'live') {
+      return basePosts.filter(
+        (post) =>
+          post.sourceKind === 'live_clip' ||
+          (post.topicTags ?? []).some((tag) => tag.includes('直播')),
+      );
+    }
+    if (section === 'friends') {
+      return basePosts.filter((post) => friendCharacterIds.has(post.authorId));
+    }
+    if (section === 'following') {
+      return basePosts.filter((post) => followedAuthorIds.has(post.authorId));
+    }
+    // 走查 R1（本轮）：未知 section 输入（curl ?section=galaxy 等）兜底当 recommended。
+    return basePosts;
   }
 
   // 视频号死链/无 URL 的视频/音频帖直接不展示。
@@ -2748,6 +3378,42 @@ export class FeedService implements OnModuleInit {
     return { posts, total };
   }
 
+  // 走查 2026-05-17 新会话 R5：在 allVisiblePosts （已经按 recommended 过过的
+  // baseline）之上按需补一道 friends/following/live section 过滤——只查 friends
+  // / followed 这两份小数据，不重新拉全表 + 5 个 IO。仅供 getChannelHomeDecorations
+  // 在 section!=='recommended' 时调用，等价于 getVisibleChannelPosts(section)
+  // 但省掉重复 IO。
+  private async filterChannelPostsBySection(
+    basePosts: FeedPostEntity[],
+    ownerId: string,
+    section: FeedChannelHomeSection,
+  ): Promise<FeedPostEntity[]> {
+    if (section === 'recommended') return basePosts;
+    if (section === 'live') {
+      return basePosts.filter(
+        (post) =>
+          post.sourceKind === 'live_clip' ||
+          (post.topicTags ?? []).some((tag) => tag.includes('直播')),
+      );
+    }
+    const [followedAuthorIds, friendIds] = await Promise.all([
+      section === 'following'
+        ? this.followRepo
+            .find({ where: { ownerId } })
+            .then((items) => new Set(items.map((item) => item.authorId)))
+        : Promise.resolve(new Set<string>()),
+      section === 'friends'
+        ? this.socialService
+            .getFriendCharacterIds(ownerId)
+            .then((ids) => new Set(ids))
+        : Promise.resolve(new Set<string>()),
+    ]);
+    if (section === 'friends') {
+      return basePosts.filter((post) => friendIds.has(post.authorId));
+    }
+    return basePosts.filter((post) => followedAuthorIds.has(post.authorId));
+  }
+
   private async getVisibleChannelPosts(
     ownerId: string,
     section: FeedChannelHomeSection,
@@ -2812,6 +3478,7 @@ export class FeedService implements OnModuleInit {
       order: { createdAt: 'DESC' },
     });
 
+    const remarkMap = await this.remarkResolver.getOwnerRemarkMap(owner.id);
     if (latestPost) {
       const character =
         latestPost.authorType === 'character'
@@ -2819,7 +3486,12 @@ export class FeedService implements OnModuleInit {
           : null;
       return {
         authorId: latestPost.authorId,
-        authorName: latestPost.authorName,
+        authorName: this.remarkResolver.applyCharacterRemark(
+          latestPost.authorType,
+          latestPost.authorId,
+          latestPost.authorName,
+          remarkMap,
+        ),
         authorAvatar:
           character?.avatar ??
           (latestPost.authorId === owner.id && owner.avatar
@@ -2833,7 +3505,7 @@ export class FeedService implements OnModuleInit {
     if (character) {
       return {
         authorId: character.id,
-        authorName: character.name,
+        authorName: remarkMap.get(character.id) ?? character.name,
         authorAvatar: character.avatar,
         authorType: 'character',
       };
@@ -2850,7 +3522,7 @@ export class FeedService implements OnModuleInit {
 
     throw new AppError('FEED_CHANNEL_AUTHOR_NOT_FOUND', {
       status: HttpStatus.NOT_FOUND,
-      legacyMessage: 'Channel author not found',
+      legacyMessage: '视频号作者不存在或已被删除。',
     });
   }
 
@@ -2879,17 +3551,48 @@ export class FeedService implements OnModuleInit {
     aspectRatio?: number;
     publishStatus?: 'draft' | 'published' | 'hidden' | 'deleted';
   }) {
-    const text = input.text.trim();
+    // 走查 R1：controller 把 `body.text` 不验证类型直接灌进来；curl 发
+    // `{"text": 123}` / `{"text": {"a":1}}` / `{"text": [1,2]}` 时 `.trim()` 抛
+    // "input.text.trim is not a function" → 500（实测过）。前端 textarea 必出
+    // string，但 curl / 第三方端 / 旧缓存能塞别的；兜回 ""，让下面 FEED_EMPTY
+    // 校验路径自然报 400。assertCommentText 已经用同款 typeof 兜过，这条对齐。
+    const rawText = typeof input.text === 'string' ? input.text : '';
+    const text = rawText.trim();
+    // 走查新一轮 R2：text 那条已经按 typeof 兜过，但同一个 normalize 里 title /
+    // mediaUrl / coverUrl 仍然直接 `input.X?.trim()` —— 可选链只挡 null/undefined，
+    // 数字 / 数组 / 对象上 .trim 不是函数，curl 发 `{"text":"ok","title":123}` /
+    // `{"coverUrl":[1,2]}` / `{"mediaUrl":{"x":1}}` 都直接 500，legacyMessage
+    // 把 "input.title?.trim is not a function" 这条裸 JS 错飘到前端 InlineNotice
+    // 上。统一兜回 undefined 让下游 `|| null / || mediaUrl` 兜底分支走稳。
+    const title =
+      typeof input.title === 'string' ? input.title : undefined;
+    const inputMediaUrl =
+      typeof input.mediaUrl === 'string' ? input.mediaUrl : undefined;
+    const inputCoverUrl =
+      typeof input.coverUrl === 'string' ? input.coverUrl : undefined;
     const explicitMedia = this.normalizeFeedMediaInput(input.media);
     const media =
       explicitMedia.length > 0
         ? explicitMedia
-        : this.buildFeedMediaFromLegacyInput(input);
+        : this.buildFeedMediaFromLegacyInput({
+            ...input,
+            mediaUrl: inputMediaUrl,
+            coverUrl: inputCoverUrl,
+          });
     const mediaType = this.inferFeedMediaType(media, input.mediaType);
 
     if (!text && media.length === 0 && input.publishStatus !== 'draft') {
       throw new AppError('FEED_EMPTY', {
         legacyMessage: '动态内容和媒体不能同时为空。',
+      });
+    }
+
+    // R2 走查：广场正文硬上限。前端 textarea 没卡 maxLength；AI 角色 CoT 漏文
+    // 也走这条；draft 暂不卡（保存草稿期间用户可能粘很长一段后再删）。
+    if (input.publishStatus !== 'draft' && text.length > MAX_FEED_TEXT_LENGTH) {
+      throw new AppError('FEED_TEXT_TOO_LONG', {
+        params: { max: MAX_FEED_TEXT_LENGTH },
+        legacyMessage: `广场动态正文最多 ${MAX_FEED_TEXT_LENGTH} 字。`,
       });
     }
 
@@ -2900,7 +3603,7 @@ export class FeedService implements OnModuleInit {
 
     return {
       text,
-      title: input.title?.trim() || null,
+      title: title?.trim() || null,
       media,
       mediaType,
       mediaUrl: primaryMedia?.url || undefined,
@@ -3217,7 +3920,12 @@ export class FeedService implements OnModuleInit {
     return {
       id: post.id,
       authorId: post.authorId,
-      authorName: post.authorName,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        post.authorType,
+        post.authorId,
+        post.authorName,
+        avatarContext?.remarkMap,
+      ),
       authorAvatar:
         avatarContext === undefined
           ? post.authorAvatar
@@ -3240,7 +3948,7 @@ export class FeedService implements OnModuleInit {
       mediaUrl: post.mediaUrl ?? primaryMedia?.url,
       coverUrl:
         post.coverUrl ??
-        (primaryMedia?.kind === 'video'
+        (primaryMedia?.kind === 'video' || primaryMedia?.kind === 'audio'
           ? (primaryMedia.posterUrl ?? null)
           : primaryMedia?.kind === 'image'
             ? (primaryMedia.thumbnailUrl ?? primaryMedia.url)
@@ -3252,7 +3960,7 @@ export class FeedService implements OnModuleInit {
       ),
       durationMs:
         post.durationMs ??
-        (primaryMedia?.kind === 'video'
+        (primaryMedia?.kind === 'video' || primaryMedia?.kind === 'audio'
           ? (primaryMedia.durationMs ?? null)
           : null),
       aspectRatio:
@@ -3292,12 +4000,34 @@ export class FeedService implements OnModuleInit {
     comment: FeedCommentEntity,
     likedByOwner: boolean,
     avatarContext?: FeedAvatarContext,
+    // commentId → authorName 反查表。commentsPreview / 全量评论列表批量序列化时
+    // 把整个 post 的评论传进来，单条 reply 创建后也可以临时灌一项。让"回复 X"
+    // 在 preview 只截了最后 3 条、被回复的根评论已超出窗口时仍能渲出来。
+    replyAuthorNameMap?: Map<string, string>,
   ) {
+    const replyToAuthorName =
+      comment.replyToCommentId &&
+      replyAuthorNameMap?.get(comment.replyToCommentId)
+        ? this.remarkResolver.applyCharacterRemark(
+            // 回复目标可能是 user 也可能是 character，但 remark 只对 character 生效；
+            // 这里把 'character' 传进去对 user 名字是 no-op，所以可以无脑过一遍。
+            'character',
+            comment.replyToAuthorId ?? '',
+            replyAuthorNameMap.get(comment.replyToCommentId)!,
+            avatarContext?.remarkMap,
+          )
+        : null;
+
     return {
       id: comment.id,
       postId: comment.postId,
       authorId: comment.authorId,
-      authorName: comment.authorName,
+      authorName: this.remarkResolver.applyCharacterRemark(
+        comment.authorType,
+        comment.authorId,
+        comment.authorName,
+        avatarContext?.remarkMap,
+      ),
       authorAvatar:
         avatarContext === undefined
           ? comment.authorAvatar
@@ -3312,6 +4042,7 @@ export class FeedService implements OnModuleInit {
       parentCommentId: comment.parentCommentId ?? null,
       replyToCommentId: comment.replyToCommentId ?? null,
       replyToAuthorId: comment.replyToAuthorId ?? null,
+      replyToAuthorName,
       likeCount: comment.likeCount,
       status: comment.status as 'published' | 'hidden' | 'deleted',
       likedByOwner,
@@ -3330,10 +4061,12 @@ export class FeedService implements OnModuleInit {
             id: input.ownerId,
             avatar: input.ownerAvatar ?? '',
           };
-    const [visibleCharacters, ownerFriendCharacterIds] = await Promise.all([
-      this.characters.findAllVisibleToOwner(owner.id),
-      this.characters.getActiveFriendCharacterIdSet(owner.id),
-    ]);
+    const [visibleCharacters, ownerFriendCharacterIds, remarkMap] =
+      await Promise.all([
+        this.characters.findAllVisibleToOwner(owner.id),
+        this.characters.getActiveFriendCharacterIdSet(owner.id),
+        this.remarkResolver.getOwnerRemarkMap(owner.id),
+      ]);
 
     return {
       ownerAvatar: owner.avatar?.trim() || '',
@@ -3345,6 +4078,7 @@ export class FeedService implements OnModuleInit {
       characterAvatarById: new Map(
         visibleCharacters.map((character) => [character.id, character.avatar]),
       ),
+      remarkMap,
     };
   }
 
@@ -3446,24 +4180,62 @@ export class FeedService implements OnModuleInit {
     payload?: Record<string, unknown> | null;
   }) {
     await this.assertPostExists(input.postId);
-    const existing = await this.interactionRepo.findOneBy({
-      ownerId: input.ownerId,
-      postId: input.postId,
-      type: input.type,
-    });
 
-    if (existing) {
-      return;
-    }
+    // 用 unique(userId, postId, type) + INSERT OR IGNORE 保证幂等：
+    // 双击 / 多端同时点收藏，不会重复插行也不会让 favoriteCount 漂移。
+    //
+    // R1 走查：TypeORM 的 `result.identifiers` 在 SQLite INSERT OR IGNORE 命中
+    // unique 约束被静默跳过时，仍把 entity 自带的 client-side uuid 当成
+    // `identifiers[0].id` 返回 —— 旧代码 `didInsert` 永远为 true，导致客户端 retry
+    // 同一次 POST /feed/:id/like、或网络抖动让请求重发时，DB 行数仍然只 1 行
+    // 但 likeCount 每次都 +1。复现：fresh post 连发 3 次 POST /like → DB 1 行 /
+    // likeCount=3。better-sqlite3 的 `result.raw` 也不稳定（实测同样回包 changes
+    // 不可靠）。改成预查一次：toggle 类（like / favorite）本就语义上是「已存在
+    // 就别再加」，提前 findOneBy 后已存在就直接 no-op，counter 完全不动。
+    // 仅剩的并发 race（两个 transaction 同时通过预查，都尝试 insert）会留下
+    // 「DB 行数 1 / counter +2」的瞬时偏移，由下次 ensureFeedUniqueIndexes 启动时
+    // 按 like 表实际行数把 likeCount/favoriteCount 重算回真值兜底。
+    const inserted = await this.dataSource.transaction(async (manager) => {
+      const interactionRepo = manager.getRepository(UserFeedInteractionEntity);
+      const postRepo = manager.getRepository(FeedPostEntity);
 
-    await this.interactionRepo.save(
-      this.interactionRepo.create({
+      const existing = await interactionRepo.findOneBy({
+        ownerId: input.ownerId,
+        postId: input.postId,
+        type: input.type,
+      });
+      if (existing) {
+        return false;
+      }
+
+      const entity = interactionRepo.create({
         ownerId: input.ownerId,
         postId: input.postId,
         type: input.type,
         payload: input.payload ?? null,
-      }),
-    );
+      });
+      // values 拒绝把 simple-json 的 Record 当成嵌套 entity；用 as any 绕过该校验。
+      await interactionRepo
+        .createQueryBuilder()
+        .insert()
+        .into(UserFeedInteractionEntity)
+        .values(entity as never)
+        .orIgnore()
+        .execute();
+      if (input.incrementColumn) {
+        await postRepo.increment(
+          { id: input.postId },
+          input.incrementColumn,
+          1,
+        );
+      }
+      return true;
+    });
+
+    if (!inserted) {
+      return;
+    }
+
     void this.cyberAvatar.captureSignal({
       ownerId: input.ownerId,
       signalType: 'feed_interaction',
@@ -3478,22 +4250,19 @@ export class FeedService implements OnModuleInit {
         payload: input.payload ?? null,
       },
     });
-
-    if (input.incrementColumn) {
-      await this.postRepo.increment(
-        { id: input.postId },
-        input.incrementColumn,
-        1,
-      );
-    }
   }
 
   private async assertPostExists(postId: string) {
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post || post.publishStatus === 'deleted') {
+      // R1 走查：assertPostExists 是 mobile 广场动态 like/comment/reply 全部
+      // 入口的兜底；旧 'Feed post not found' 英文文案在「角色发完帖立刻被
+      // 主人手动删 / moderation」这种小概率窗口里会原样飘到前端 InlineNotice。
+      // 前端走 error.message 兜底显示，i18n 字典 hit 不到的语言（中文 fallback
+      // 路径）就会看到英文，跟 moments-service 同款修法改成中文 legacyMessage。
       throw new AppError('FEED_POST_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'Feed post not found',
+        legacyMessage: '该动态不存在或已被删除。',
       });
     }
     return post;
@@ -3533,16 +4302,26 @@ export class FeedService implements OnModuleInit {
       .getOne();
   }
 
-  private async decrementPostCounter(postId: string, key: 'favoriteCount') {
-    const post = await this.postRepo.findOneBy({ id: postId });
-    if (!post) {
-      return;
-    }
-
-    const currentValue = Number(post[key] ?? 0);
-    await this.postRepo.update(postId, {
-      [key]: currentValue > 0 ? currentValue - 1 : 0,
-    });
+  private async decrementPostCounter(
+    postId: string,
+    key: 'favoriteCount' | 'likeCount',
+  ) {
+    // 走查 R1：旧实现是 findOneBy + 内存里 `currentValue > 0 ? -1 : 0` + update —
+    // 经典 TOCTOU。两条并发 unlike（mid-flight 用户连点 / 桌面端两 row 同时
+    // 取消赞）都能读到 currentValue=1 → 都写回 0，但实际只有一行 interaction
+    // 被 deleted；下一次自然 refetch 时 likeCount 仍是 0 / DB interaction 0 行
+    // → 对得上。但反过来 like + unlike 撞包时：unlike 读到 0 → 写 0；like 后
+    // 到 → INSERT IGNORE 命中 unique 跳过 / counter 不动 → 用户看 hasLiked=true
+    // 但 likeCount=0 永久卡住，除非 ensureFeedUniqueIndexes 启动重算。
+    // 改成单条 SQL 原子 update：CASE 表达式直接在 DB 里做 clamp，绕开 read。
+    await this.postRepo
+      .createQueryBuilder()
+      .update(FeedPostEntity)
+      .set({
+        [key]: () => `CASE WHEN "${key}" > 0 THEN "${key}" - 1 ELSE 0 END`,
+      })
+      .where('id = :id', { id: postId })
+      .execute();
   }
 
 }
@@ -3674,8 +4453,16 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-function normalizeTags(tags?: string[] | null) {
-  const normalized = (tags ?? [])
+function normalizeTags(tags?: unknown) {
+  // 走查新一轮 R2：controller `body.topicTags` 是 TS-only string[]，运行时
+  // 是 any。curl 发 `{"topicTags":"foo"}` / `{"topicTags":[123,{}]}` 时旧
+  // 实现 `(tags ?? []).map(item => item.trim())` 抛 "(tags ?? []).map is
+  // not a function" / "item.trim is not a function" → 500，legacyMessage
+  // 把裸 JS 栈飘到前端 InlineNotice 上。前置 Array.isArray + per-item
+  // typeof guard，让无效输入悄悄退化成空，与 R1 给 text 同款兜底。
+  if (!Array.isArray(tags)) return null;
+  const normalized = tags
+    .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 8);

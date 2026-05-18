@@ -23,7 +23,7 @@ export function buildOfficialAccountFavoriteRecord(
       account.description ||
       account.recentArticle?.title ||
       t(msg`查看公众号资料与最近文章。`),
-    meta: t(msg`${account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`)} · @${account.handle}`),
+    meta: `@${account.handle}`,
     to: `/official-accounts/${account.id}`,
     badge: account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`),
     avatarName: account.name,

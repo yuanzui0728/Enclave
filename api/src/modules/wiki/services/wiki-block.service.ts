@@ -40,7 +40,11 @@ export class WikiBlockService {
         legacyMessage: 'scope=page 必须给 targetCharacterId',
       });
     }
-    if (!input.reason?.trim()) {
+    // typeof 守：客户端传 {"reason":{"a":1}} / [...] 时 input.reason?.trim() 抛
+    // TypeError → 500 把原始 stack 漏出去。非字符串当空字符串处理，下面的"必须填理由"接住。
+    const reasonText =
+      typeof input.reason === 'string' ? input.reason.trim() : '';
+    if (!reasonText) {
       throw new AppError('WIKI_BLOCK_INVALID_STATE', {
         params: { detail: '封禁必须填写理由' },
         legacyMessage: '封禁必须填写理由',
@@ -71,7 +75,7 @@ export class WikiBlockService {
       scope: input.scope,
       targetCharacterId:
         input.scope === 'page' ? input.targetCharacterId : null,
-      reason: input.reason.trim(),
+      reason: reasonText,
       createdBy: actor.id,
       expiresAt,
     });

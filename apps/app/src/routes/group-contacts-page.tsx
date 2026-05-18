@@ -1,10 +1,19 @@
-import { Suspense, lazy, useMemo, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { onChatMessage, onConversationUpdated } from "../lib/socket";
 import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
-import { getGroups, type Group } from "@yinjie/contracts";
+import { getConversations, getGroups, type Group } from "@yinjie/contracts";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
@@ -69,33 +78,125 @@ function MobileGroupContactsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
+  // 走查 Round 8：搜索框直接拿 searchText 喂 filter，长群表（用户加过 50+ 群
+  // 时）连续敲字每个 keystroke 都打一次同步 toLowerCase + filter，输入框肉眼可
+  // 见的卡顿。和 contacts-page / favorites-page / search-page 同口径补
+  // useDeferredValue，让 React 优先把字打进输入框、过滤排到下一个 idle 帧。
+  const deferredSearchText = useDeferredValue(searchText);
   const routeState = useMemo(() => parseMobileGroupRouteState(hash), [hash]);
   const safeReturnPath =
     routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
       ? routeState.returnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  // 群聊列表页不需要 highlightedMessageId（那是 /group/\$id 聊天页用的）。
+  // 不要把它带到 currentRouteHash 里，避免 deep-link 进来时把它泄到子页 returnHash。
   const currentRouteHash = useMemo(
     () =>
       buildMobileGroupRouteHash({
-        highlightedMessageId: routeState.highlightedMessageId,
         returnPath: safeReturnPath,
         returnHash: safeReturnHash,
       }),
-    [
-      routeState.highlightedMessageId,
-      safeReturnHash,
-      safeReturnPath,
-    ],
+    [safeReturnHash, safeReturnPath],
   );
 
+  const queryClient = useQueryClient();
+  // 走查 Round 8：
+  // 1) 没设 staleTime → 默认 0，每次进页都会立刻 refetch /groups 一次。父级
+  //    /tabs/contacts 的 contactGroupsQuery 已经用 staleTime:30_000 同 key 在
+  //    缓存里，新页一挂载又强制打一次。和父级对齐到 30s。
+  // 2) 这页过去只靠 socket onConversationUpdated/onChatMessage 触发 invalidate，
+  //    但 cloud-api gateway 的这两个事件都是房间级 emit（client 必须 emit
+  //    join_conversation 才会收到），而 /contacts/groups 自己从不 join 任何
+  //    group room——chat-list-page 旁边那条 comment 早就点过这个坑。结果就是
+  //    用户刚装/重启 app、socket 还没 join 任何房间时，从后台切回前台、群
+  //    被改名 / 被另一端 hide / 被另一端 leave 后这里看到的还是旧数据。补
+  //    refetchOnWindowFocus 兜底，跟 chat-list-page 同口径。
   const groupsQuery = useQuery({
     queryKey: ["app-contact-groups", baseUrl],
     queryFn: () => getGroups(baseUrl),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
+  // 走查 R3：本页的群行用 `<GroupAvatarChip name={group.name} />` 单 seed 渲染，
+  // 而 chat-list 的群行用 `members={conversation.participants}` 四 seed 渲染——
+  // 同一个群在「消息」tab 和「通讯录/群聊」tab 看到的 2×2 马赛克完全不一样，
+  // 切 tab 时肉眼可见的"是不是进错了群"。toGroup 后端 DTO 没带 participants
+  // 字段（getGroups 仅返回 Group 元数据），改后端会动太多调用方；客户端这里
+  // 借 conversations cache 找同 id 的会话 → 拿 participants → 喂给 chip，参与
+  // 者列表与 chat-list 完全对齐。conversations 是 chat-list / 群通话页 / 群信息
+  // 页都在用的共享 cache，进通讯录前用户大概率刚停过 chat-list，命中率高；
+  // 即使冷启 cache 没命中，落回单 seed 渲染（之前的行为），同时本页这次的
+  // useQuery 也会顺手把 cache 填上，下次稳态就一致了。
+  // 走查 R1：原本没设 staleTime，每次进群聊列表都会立刻 refetch /conversations
+  // 一次——本页只用 conversations 来取 participants 给 GroupAvatarChip，对新鲜度
+  // 要求不高（即便落后几十秒，群头像 seed 也只是 4 个名字的 hash）。和兄弟页
+  // contacts-page (15s) / chat-list (10s) 同口径加 15s staleTime，避免每次从
+  // /tabs/chat 切回来都把全量 conversations 当场再拉一遍。
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
+  });
+  const groupParticipantsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const conversation of conversationsQuery.data ?? []) {
+      if (isPersistedGroupConversation(conversation)) {
+        map.set(conversation.id, conversation.participants);
+      }
+    }
+    return map;
+  }, [conversationsQuery.data]);
 
-  const filteredGroups = useFilteredGroups(groupsQuery.data ?? [], searchText);
-  const hasSearchText = searchText.trim().length > 0;
+  // 走查 Round 5：群被 AI 回复触发 touchGroupActivity → isHidden=false 翻回
+  // 可见时，chat-list 通过 socket onChatMessage/onConversationUpdated 立即拉
+  // 刷新；但通讯录页只裸 useQuery 没订阅 socket，要等用户离开再回来才看到
+  // 这条群。这里订阅同样的两个事件 invalidate 自己的 cache key，对齐
+  // chat-list-page 的口径。
+  // 走查 Round 6：onChatMessage / onConversationUpdated 都同时分发单聊 + 群
+  // 聊事件，原版两条都无条件 invalidate，活跃单聊用户每条消息和每次单聊
+  // 更新都把 /groups 强制 refetch 一遍。按 payload 维度过滤——onChatMessage
+  // 看 groupId、onConversationUpdated 看 type === "group"。
+  useEffect(() => {
+    const offUpdated = onConversationUpdated((payload) => {
+      if (payload.type !== "group") {
+        return;
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+    });
+    const offMessage = onChatMessage((payload) => {
+      if (!("groupId" in payload)) {
+        return;
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+    });
+    return () => {
+      offUpdated();
+      offMessage();
+    };
+  }, [baseUrl, queryClient]);
+
+  // 走查 Round 3：getGroups 后端 listGroups 不过滤 isHidden，被 hideGroup 隐藏
+  // 的群当前会和正常群混在通讯录里——和 hide 的语义不符（hide=暂时从入口摘掉，
+  // 收到新消息再重新冒出来；通讯录是"长期入口"，hide 期间不应该有）。客户端先
+  // 滤一遍 isHidden=true，避免改后端 listGroups 影响别处。
+  const visibleGroups = useMemo(
+    () => (groupsQuery.data ?? []).filter((group) => !group.isHidden),
+    [groupsQuery.data],
+  );
+  const filteredGroups = useFilteredGroups(visibleGroups, deferredSearchText);
+  // 走查 Round 9：filteredGroups 是按 deferredSearchText 算的，但 hasSearchText
+  // 早先跟 searchText 走——清空搜索框那一帧，searchText 已经 "" 但
+  // deferredSearchText 还是上一个关键字，filteredGroups 还是 0 条。这时空态判定
+  // `!filteredGroups.length` 命中、但 hasSearchText=false，落到了「还没有群聊 /
+  // 发起群聊」分支：用户明明只是清空搜索、群也都在，却闪一下「群被清空、要不要
+  // 发起新群」的引导，肉眼可见的误导。让 hasSearchText 也跟 deferredSearchText
+  // 同步，空态文案永远跟当前列表口径一致。
+  const hasSearchText = deferredSearchText.trim().length > 0;
 
   function navigateToRouteStateReturn() {
     if (!safeReturnPath) {
@@ -134,13 +235,16 @@ function MobileGroupContactsPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
-              navigateBackOrFallback(() => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
+              navigateBackOrFallback(
+                () => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
 
-                void navigate({ to: "/tabs/contacts" });
-              })
+                  void navigate({ to: "/tabs/contacts" });
+                },
+                safeReturnPath ?? "/tabs/contacts",
+              )
             }
             aria-label={t(msg`返回通讯录`)}
           >
@@ -177,7 +281,23 @@ function MobileGroupContactsPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索群聊`)}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R8：和姊妹页 R1-R3 同款 a11y 修法——父 label 没有文本子节点
+              // （仅 Search 图标 + input），placeholder 在 SR 上行为分裂，盲人
+              // 用户 focus 进来听到"编辑栏 空"。挂 aria-label="搜索群聊"。
+              aria-label={t(msg`搜索群聊`)}
+              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in；
+              // 和 group-member-picker / create-group 等其他群相关搜索框对齐。
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和姊妹页 create-group-page R1 / group-member-picker-page
+              // R1 同款。群名常是 ASCII / 英文（"TeamA"、"discord"），iOS 默认
+              // 句首大写 + autocorrect 会把"teamA"改成"TeamA"或"Team"，
+              // useFilteredGroups 内部 toLowerCase 所以 case 不致命，但
+              // autocorrect 把字直接改掉是真坑。enterKeyHint=search 让软键盘
+              // 的 Return 键长得像"搜索"。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
         </div>
@@ -238,23 +358,34 @@ function MobileGroupContactsPage() {
                   : t(msg`先发起一个新的群聊，建好后就会出现在这里。`)
               }
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={() => {
-                    void navigate({
-                      to: "/group/new",
-                      hash: buildCreateGroupRouteHash({
-                        source: "group-contacts",
-                        returnPath: pathname,
-                        returnHash: currentRouteHash || undefined,
-                      }),
-                    });
-                  }}
-                >
-                  {t(msg`发起群聊`)}
-                </Button>
+                hasSearchText ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={() => setSearchText("")}
+                  >
+                    {t(msg`清除搜索`)}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={() => {
+                      void navigate({
+                        to: "/group/new",
+                        hash: buildCreateGroupRouteHash({
+                          source: "group-contacts",
+                          returnPath: pathname,
+                          returnHash: currentRouteHash || undefined,
+                        }),
+                      });
+                    }}
+                  >
+                    {t(msg`发起群聊`)}
+                  </Button>
+                )
               }
             />
           </div>
@@ -276,14 +407,23 @@ function MobileGroupContactsPage() {
                     }),
                   });
                 }}
+                // 走查 Round 9：本页是和 contacts-page 主页、chat-list、
+                // world-characters 同口径的"长列表行"——用户加过 30/50+ 群时屏外
+                // 的 row 仍然被强制 layout/paint。隔壁页面早就靠 yj-list-item-virtual
+                // 把 content-visibility:auto + contain-intrinsic-size 接上，唯独
+                // 本页一直裸跑（typical 群行 ≈ 68px，挂在 64px 这一档下没问题）。
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                  "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                   index > 0
                     ? "border-t border-[color:var(--border-faint)]"
                     : undefined,
                 )}
               >
-                <GroupAvatarChip name={group.name} size="wechat" />
+                <GroupAvatarChip
+                  name={group.name}
+                  members={groupParticipantsMap.get(group.id)}
+                  size="wechat"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1 truncate text-[14px] text-[color:var(--text-primary)]">
@@ -295,6 +435,13 @@ function MobileGroupContactsPage() {
                       )}
                     </div>
                   </div>
+                  {!group.savedToContacts ? (
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
+                      <span className="inline-flex items-center rounded-full bg-[rgba(15,23,42,0.04)] px-1.5 py-0.5 text-[9px] text-[color:var(--text-muted)]">
+                        {t(msg`未保存到通讯录`)}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </button>
             ))}

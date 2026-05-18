@@ -1,0 +1,227 @@
+name: iOS Release
+
+# 触发：
+#   1. push tag app-v* （正式版本）
+#   2. workflow_dispatch（手动触发，可指定 marketingVersion / buildNumber / exportMethod
+#      / uploadTestFlight；不指定则用 ios-shell.config.json 的默认值）
+on:
+  push:
+    tags:
+      - 'app-v*'
+  workflow_dispatch:
+    inputs:
+      marketingVersion:
+        description: 'Marketing version (CFBundleShortVersionString) — 留空走 ios-shell.config.json'
+        required: false
+        type: string
+      buildNumber:
+        description: 'Build number (CFBundleVersion) — 留空用 github.run_number'
+        required: false
+        type: string
+      exportMethod:
+        description: 'Export method'
+        required: false
+        type: choice
+        default: 'release-testing'
+        options:
+          - release-testing
+          - app-store-connect
+          - debugging
+          - enterprise
+      uploadTestFlight:
+        description: 'export 完后是否自动上传 TestFlight（需要 IOS_APPSTORE_* secrets）'
+        type: boolean
+        default: false
+
+jobs:
+  build-ios-ipa:
+    name: Build iOS IPA
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    env:
+      # build-ios-ipa.mjs 的 requirePickConfigured 把 env 当第一优先级，secret
+      # 缺失则下面 "Validate required signing secrets" step 自检会先 fail。
+      # CI 走环境变量这条路而不是 ios-shell.config.local.json，是为了不让仓库
+      # 里 commit 一份带真实 Team ID / Bundle ID 的本地配置文件。
+      YINJIE_IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+      YINJIE_IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      YINJIE_IOS_CODE_SIGN_STYLE: 'Manual'
+      YINJIE_IOS_PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+      YINJIE_IOS_CODE_SIGN_IDENTITY: ${{ secrets.IOS_CODE_SIGN_IDENTITY }}
+      YINJIE_IOS_APS_ENVIRONMENT: ${{ secrets.IOS_APS_ENVIRONMENT }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Show toolchain versions
+        run: |
+          set -eux
+          node -v
+          pnpm -v
+          xcodebuild -version
+          pod --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate required signing secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          for var in IOS_DISTRIBUTION_CERT_BASE64 IOS_DISTRIBUTION_CERT_PASSWORD \
+                     IOS_PROVISIONING_PROFILE_BASE64 IOS_PROVISIONING_PROFILE_NAME \
+                     IOS_DEVELOPMENT_TEAM IOS_CODE_SIGN_IDENTITY \
+                     IOS_KEYCHAIN_PASSWORD IOS_BUNDLE_IDENTIFIER \
+                     IOS_APS_ENVIRONMENT; do
+            value="${!var:-}"
+            if [ -z "$value" ]; then
+              echo "::error::Missing required secret: $var"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "Configure these via Settings → Secrets and variables → Actions; see docs/ios-ci-secrets.md"
+            exit 1
+          fi
+        env:
+          IOS_DISTRIBUTION_CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          IOS_DISTRIBUTION_CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          IOS_CODE_SIGN_IDENTITY: ${{ secrets.IOS_CODE_SIGN_IDENTITY }}
+          IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_APS_ENVIRONMENT: ${{ secrets.IOS_APS_ENVIRONMENT }}
+
+      - name: Set up signing keychain
+        env:
+          CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/yinjie-ios-build.keychain-db"
+          CERT_PATH="$RUNNER_TEMP/yinjie-distribution.p12"
+          echo "$CERT_BASE64" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          # 新 keychain 加入 search list（保留原有的 login.keychain）
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/[\" ]//g' | tr '\n' ' ')
+
+          rm -f "$CERT_PATH"
+          security find-identity -p codesigning -v "$KEYCHAIN_PATH"
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          PROFILE_PATH="$PROFILES_DIR/yinjie-ios-distribution.mobileprovision"
+          echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          # 打印 profile 关键信息以便排查（不会泄露 cert）
+          security cms -D -i "$PROFILE_PATH" \
+            | plutil -extract Name xml1 -o - - 2>/dev/null \
+            | xmllint --xpath "//string/text()" - || true
+          echo
+          security cms -D -i "$PROFILE_PATH" \
+            | plutil -extract UUID xml1 -o - - 2>/dev/null \
+            | xmllint --xpath "//string/text()" - || true
+          echo
+
+      - name: Stage App Store Connect API key (optional TestFlight upload)
+        if: ${{ inputs.uploadTestFlight }}
+        env:
+          API_KEY_BASE64: ${{ secrets.IOS_APPSTORE_API_KEY_BASE64 }}
+          API_KEY_ID: ${{ secrets.IOS_APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.IOS_APPSTORE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${API_KEY_BASE64:-}" ] || [ -z "${API_KEY_ID:-}" ] || [ -z "${API_ISSUER_ID:-}" ]; then
+            echo "::error::uploadTestFlight=true 但 IOS_APPSTORE_API_KEY_BASE64 / _ID / _ISSUER_ID 没配齐"
+            exit 1
+          fi
+          API_KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
+          echo "$API_KEY_BASE64" | base64 --decode > "$API_KEY_PATH"
+          {
+            echo "YINJIE_IOS_APPSTORE_API_KEY_ID=$API_KEY_ID"
+            echo "YINJIE_IOS_APPSTORE_API_ISSUER_ID=$API_ISSUER_ID"
+            echo "YINJIE_IOS_APPSTORE_API_KEY_PATH=$API_KEY_PATH"
+          } >> "$GITHUB_ENV"
+
+      - name: Resolve marketingVersion / buildNumber
+        run: |
+          set -euo pipefail
+          INPUT_VERSION='${{ inputs.marketingVersion }}'
+          INPUT_BUILD='${{ inputs.buildNumber }}'
+          if [ -z "$INPUT_VERSION" ]; then
+            # 真机走查：tag push (refs/tags/app-vX.Y.Z) 触发时优先从 tag 名提取
+            # marketing version。老实现直接 fallback 到 ios-shell.config.json
+            # 里硬编码的 1.0.0 —— 用户 git push tag app-v1.0.1 之后看到 workflow
+            # 跑成功了，下载 IPA 装到真机一查 CFBundleShortVersionString 还是
+            # 1.0.0，App Store Connect 也认成「重传 1.0.0」直接 reject。
+            REF='${{ github.ref }}'
+            if [[ "$REF" == refs/tags/app-v* ]]; then
+              TAG_VERSION="${REF#refs/tags/app-v}"
+              if [[ "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+                INPUT_VERSION="$TAG_VERSION"
+                echo "info  derived marketingVersion=$INPUT_VERSION from tag $REF"
+              else
+                echo "::warning::tag $REF does not match app-vX.Y or app-vX.Y.Z; falling back to ios-shell.config.json"
+              fi
+            fi
+          fi
+          if [ -z "$INPUT_VERSION" ]; then
+            INPUT_VERSION=$(node -e "console.log(require('./apps/ios-shell/ios-shell.config.json').marketingVersion ?? '1.0.0')")
+          fi
+          if [ -z "$INPUT_BUILD" ]; then
+            INPUT_BUILD="${{ github.run_number }}"
+          fi
+          {
+            echo "YINJIE_IOS_MARKETING_VERSION=$INPUT_VERSION"
+            echo "YINJIE_IOS_BUILD_NUMBER=$INPUT_BUILD"
+            echo "YINJIE_IOS_EXPORT_METHOD=${{ inputs.exportMethod || 'release-testing' }}"
+          } >> "$GITHUB_ENV"
+          echo "Building marketingVersion=$INPUT_VERSION buildNumber=$INPUT_BUILD method=${{ inputs.exportMethod || 'release-testing' }}"
+
+      - name: Build IPA via ipa:release
+        run: pnpm --dir apps/ios-shell run ipa:release
+
+      - name: Upload IPA artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yinjie-ios-ipa-${{ github.run_number }}
+          path: apps/ios-shell/build/ios/Export/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload xcarchive (failure debug)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yinjie-ios-xcarchive-${{ github.run_number }}
+          path: apps/ios-shell/build/ios/App.xcarchive
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          set +e
+          security delete-keychain "$RUNNER_TEMP/yinjie-ios-build.keychain-db" 2>/dev/null
+          rm -f "$RUNNER_TEMP/AuthKey_"*.p8 2>/dev/null
+          true

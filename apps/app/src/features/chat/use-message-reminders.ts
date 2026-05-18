@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -21,6 +21,15 @@ import {
 } from "./local-chat-message-actions";
 
 type SetMessageReminderInput = CreateMessageReminderRequest;
+
+// 模块级互斥，跨 hook 实例共享。一次 mobile 渲染树通常同时有 4 处 useMessageReminders
+// (mobile-shell / chat-list-page / chat-message-list / mobile-reminder-toast-host)，
+// 每个实例自己的 useRef 互不知情；任意一个有"本地遗留 reminder 没同步过来"时，
+// 4 个实例的 migration effect 在同一 tick 里都看到 ref.current === false → 4 份
+// 并发的 createMessageReminder 同时往 server 灌同一个 messageId，server 端没幂等
+// 就会得到 4 条重复记录，下次 refetch 用户看到同一个提醒列了 4 行。
+// 改成 module-level let，谁先抢到谁去 migrate，其他实例等下一轮。
+let migrationInFlight = false;
 
 function buildLegacyReminderRecord(
   reminder: LocalChatMessageReminderRecord,
@@ -61,7 +70,6 @@ export function useMessageReminders() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const { reminders: localReminders } = useLocalChatMessageActionState();
-  const migrationInFlightRef = useRef(false);
 
   const remindersQuery = useQuery({
     queryKey: ["app-message-reminders", baseUrl],
@@ -70,6 +78,16 @@ export function useMessageReminders() {
     // 提醒清单很少在 10s 内连续变更：30s + 切回窗口时刷新已经够用。
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
+    // 走查 R3：useMessageReminders 被 mobile-shell（常驻）+ mobile-reminder-toast-host
+    // （常驻）+ chat-message-list（每个单聊/群聊页都挂）+ chat-list-page 多处订阅，
+    // 没 staleTime → react-query 默认 stale=0：用户每进 / 切一段单聊都让
+    // chat-message-list 的 observer mount，立刻 background refetch 一次
+    // GET /message-reminders（公网隧道 ~600ms）。refetchInterval=30s 已经保证
+    // 30s 内一次定时刷新，mount 触发的重发本身就是浪费。补 staleTime 复用
+    // 现有 cache。createReminderMutation / removeReminderMutation /
+    // markNotifiedMutation 全部走 setQueryData 同步更新，30s 内 stale 也不
+    // 会让用户看到过期数据。
+    staleTime: 30_000,
   });
 
   const createReminderMutation = useMutation({
@@ -144,7 +162,7 @@ export function useMessageReminders() {
       !baseUrl ||
       !remindersQuery.isSuccess ||
       !localReminders.length ||
-      migrationInFlightRef.current
+      migrationInFlight
     ) {
       return;
     }
@@ -168,7 +186,7 @@ export function useMessageReminders() {
       return;
     }
 
-    migrationInFlightRef.current = true;
+    migrationInFlight = true;
     void Promise.allSettled(
       pendingMigrationReminders.map((reminder) =>
         createMessageReminder(
@@ -220,7 +238,7 @@ export function useMessageReminders() {
           failedMessageIds.has(reminder.messageId),
         ),
       );
-      migrationInFlightRef.current = false;
+      migrationInFlight = false;
     });
   }, [
     baseUrl,

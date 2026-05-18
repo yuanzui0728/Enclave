@@ -8,25 +8,14 @@ import {
   BAR_EXPERT_CHARACTER_ID,
   buildBarExpertCharacter,
 } from './bar-expert-character';
+import { BUILT_IN_CHARACTER_PRESETS } from './built-in-character-presets';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { buildDoctorCharacter, DOCTOR_CHARACTER_ID } from './doctor-character';
-import {
-  buildHotelExpertCharacter,
-  HOTEL_EXPERT_CHARACTER_ID,
-} from './hotel-expert-character';
 import { buildLawyerCharacter, LAWYER_CHARACTER_ID } from './lawyer-character';
 import {
   buildReminderCharacter,
   REMINDER_CHARACTER_ID,
 } from './reminder-character';
-import {
-  buildWeddingPlannerCharacter,
-  WEDDING_PLANNER_CHARACTER_ID,
-} from './wedding-planner-character';
-import {
-  buildWeddingDressExpertCharacter,
-  WEDDING_DRESS_EXPERT_CHARACTER_ID,
-} from './wedding-dress-expert-character';
 import {
   buildWorldNewsDeskCharacter,
   WORLD_NEWS_DESK_CHARACTER_ID,
@@ -34,18 +23,83 @@ import {
 
 export const SELF_CHARACTER_ID = 'char-default-self';
 
-export const DEFAULT_CHARACTER_IDS = [
+/**
+ * 默认好友 ≠ 一种独立的角色，而是"居民里被钉为出厂就自动建 friendship"的子集。
+ *
+ * 完整的三层模型见 `built-in-character-presets.ts` 顶部。本文件做两件事：
+ *   1. `buildDefaultCharacters()` 返回 7 个原生默认角色（自身在独立文件里实现，
+ *      seed 时直接落 characters 表且 deletionPolicy='protected'）。
+ *   2. `ADDITIONAL_DEFAULT_PRESET_KEYS` 从 BUILT_IN 居民池里挑出来 6 个，再钉成
+ *      默认好友。挑出来的角色定义不在这里，只引用 presetKey。
+ *
+ * 最终所有 13 个 ID 由 `DEFAULT_CHARACTER_IDS` 导出，由 social.service.ts 的
+ * `ensureDefaultFriendships()` 写入 friendships 表。
+ *
+ * ⚠️ 加默认好友的代价远比想象大：
+ *   `ensureDefaultFriendships()` 不只在新 world 启动时跑，`getFriends()` /
+ *   `getFriendCharacterIds()` 每次被调用都会顺手把缺失的默认好友补回来
+ *   （以 status='friend' 直接落 friendships 表，不经用户同意）。
+ *   所以**加一个默认好友 = 所有现有 + 未来 world 下次刷好友列表时通讯录都多一格**。
+ *   只在"普适刚需"角色上用这个方案；细分领域请只加进居民池（BUILT_IN）。
+ *   想下线默认好友更麻烦：从这个数组里移除只是停止再补，已经建好的 friendship
+ *   还得另外迁移。
+ */
+
+// 这些是 2026-05-13 起新加入“默认好友”的预设角色：
+// 林晨 / 林眠（睡眠 + 情绪陪伴）、顾棠（谈判）、灯塔（安全把关）、鹿栀（关系观察）、简宁（恋爱顾问）。
+// 它们本身在 BUILT_IN_CHARACTER_PRESETS 里以 preset_catalog 形式存在，
+// 这里只是把它们一并钉为“新用户默认好友”。
+const ADDITIONAL_DEFAULT_PRESET_KEYS = [
+  'lin_chen_sleep_support',
+  'lin_mian_sleep_support',
+  'council_negotiation_agent_gu_tang',
+  'council_safety_gatekeeper_deng_ta',
+  'council_relationship_observer_lu_zhi',
+  'jian_ning_relationship_expert',
+] as const;
+
+function pickDefaultPresetCharacter(
+  presetKey: string,
+): Partial<CharacterEntity> {
+  const preset = BUILT_IN_CHARACTER_PRESETS.find(
+    (item) => item.presetKey === presetKey,
+  );
+  if (!preset) {
+    throw new Error(
+      `Default preset character not found in BUILT_IN_CHARACTER_PRESETS: ${presetKey}`,
+    );
+  }
+  // 与其他默认角色（self / 行动助理 / 林医生 …）保持一致：deletionPolicy='protected'
+  // 让 admin UI 的 isProtectedCharacter 和 import-by-name 覆盖检查同步识别这 6 个
+  // 为不可删除/不可覆盖。sourceType 仍保留 preset_catalog，让 listCelebrityPresets
+  // 把它们识别为"已安装的预设角色"。
+  return {
+    ...preset.character,
+    deletionPolicy: 'protected',
+  };
+}
+
+const ADDITIONAL_DEFAULT_PRESET_CHARACTERS: Partial<CharacterEntity>[] =
+  ADDITIONAL_DEFAULT_PRESET_KEYS.map(pickDefaultPresetCharacter);
+
+const ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS: string[] =
+  ADDITIONAL_DEFAULT_PRESET_CHARACTERS.map((character) => {
+    if (!character.id) {
+      throw new Error('Default preset character is missing an id');
+    }
+    return character.id;
+  });
+
+export const DEFAULT_CHARACTER_IDS: readonly string[] = [
   SELF_CHARACTER_ID,
   ACTION_OPERATOR_CHARACTER_ID,
   BAR_EXPERT_CHARACTER_ID,
   DOCTOR_CHARACTER_ID,
-  HOTEL_EXPERT_CHARACTER_ID,
   LAWYER_CHARACTER_ID,
   REMINDER_CHARACTER_ID,
-  WEDDING_PLANNER_CHARACTER_ID,
-  WEDDING_DRESS_EXPERT_CHARACTER_ID,
   WORLD_NEWS_DESK_CHARACTER_ID,
-] as const;
+  ...ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS,
+];
 
 export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
   return [
@@ -244,12 +298,10 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
     buildActionOperatorCharacter(),
     buildBarExpertCharacter(),
     buildDoctorCharacter(),
-    buildHotelExpertCharacter(),
     buildLawyerCharacter(),
     buildReminderCharacter(),
-    buildWeddingPlannerCharacter(),
-    buildWeddingDressExpertCharacter(),
     buildWorldNewsDeskCharacter(),
+    ...ADDITIONAL_DEFAULT_PRESET_CHARACTERS,
   ];
 }
 // i18n-ignore-end

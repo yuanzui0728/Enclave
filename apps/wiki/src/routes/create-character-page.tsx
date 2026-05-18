@@ -1,85 +1,64 @@
-import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+/**
+ * 世界角色创建页（/create）—— thin parent。
+ *
+ * 和 world-character-edit-page.tsx 同构，只是：
+ * - mode='create'（CharacterEditForm 把保存按钮文案换成创建态）
+ * - 没有现有 page 要 hydrate；可选地接受一个 characterId 输入框（路径名）
+ * - onSave 调 wikiApi.createPage（不是 submitEdit）
+ * - 成功后跳到新创建的角色页
+ */
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
-import { useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CharacterBlueprintRecipe } from "@yinjie/contracts";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
-  AppSection,
   Button,
   Card,
   InlineNotice,
-  TextAreaField,
   TextField,
 } from "@yinjie/ui";
 import { useAuth } from "../lib/use-auth";
-import { wikiApi, type WikiContentSnapshot } from "../lib/wiki-api";
-import { LogicEditor, mergeContentIntoRecipe } from "./character-page";
+import {
+  wikiApi,
+  WikiApiError,
+  type PrivateCharacterDto,
+} from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
-
-function splitList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+import { CharacterEditForm } from "../components/character-edit-form";
+import { dtoToWikiEdit } from "../lib/world-character-dto-mapping";
+import {
+  clearEditSession,
+  getEditSession,
+} from "../lib/my-character-edit-session";
+import { hasMeaningfulDraftSnapshot } from "../lib/draft-snapshot-utils";
 
 export function CreateCharacterPage() {
   const t = useRuntimeTranslator();
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [characterId, setCharacterId] = useState("");
-  const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState("");
-  // 默认值仅在用户未填写时生效；切换语言时依然展示首次渲染时的字面量。
-  const [relationship, setRelationship] = useState(() =>
-    t(msg`世界角色`),
-  );
-  const [relationshipType, setRelationshipType] = useState("custom");
-  const [bio, setBio] = useState("");
-  const [personality, setPersonality] = useState("");
-  const [expertDomains, setExpertDomains] = useState("general");
-  const [triggerScenes, setTriggerScenes] = useState("");
-  const [summary, setSummary] = useState("");
-  const [recipeText, setRecipeText] = useState("");
-  const [recipeDraft, setRecipeDraft] = useState<CharacterBlueprintRecipe>(() =>
-    buildDefaultRecipe(),
-  );
+  const search = useSearch({ from: "/create" }) as { draftId?: string };
+  const draftId = search.draftId;
 
-  const recipeJsonError = useMemo(() => {
-    if (!recipeText.trim()) return null;
-    try {
-      JSON.parse(recipeText);
-      return null;
-    } catch (err) {
-      return (err as Error).message;
-    }
-  }, [recipeText]);
+  const sessionKey = "world:new";
+
+  // 路径名（可选）：用户可以指定 character id（URL slug），留空让后端生成。
+  // editSummary 同 edit 流：≥10 字必填，wiki 后端 assertWikiEditSummary 创建
+  // 操作强制要求。
+  const [characterId, setCharacterId] = useState("");
+  const [editSummary, setEditSummary] = useState("");
 
   const createMut = useMutation({
-    mutationFn: () => {
-      const contentSnapshot: WikiContentSnapshot = {
-        name: name.trim(),
-        avatar: avatar.trim(),
-        bio: bio.trim(),
-        personality: personality.trim(),
-        expertDomains: splitList(expertDomains),
-        triggerScenes: splitList(triggerScenes),
-        relationship: relationship.trim(),
-        relationshipType: relationshipType.trim(),
-      };
-      const recipeSnapshot = recipeText.trim()
-        ? (JSON.parse(recipeText) as CharacterBlueprintRecipe)
-        : mergeContentIntoRecipe(recipeDraft, contentSnapshot);
+    mutationFn: async (dto: PrivateCharacterDto) => {
+      const { contentSnapshot, recipeSnapshot } = dtoToWikiEdit(dto);
       return wikiApi.createPage({
         characterId: characterId.trim() || null,
         contentSnapshot,
         recipeSnapshot,
-        editSummary: summary.trim() || t(msg`由当前贡献者初始化创建的角色词条`),
+        editSummary: editSummary.trim(),
       });
     },
     onSuccess: (res) => {
@@ -91,248 +70,207 @@ export function CreateCharacterPage() {
     },
   });
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    createMut.mutate();
-  }
+  // 草稿恢复：?draftId 命中时拉草稿、根据需要确认覆盖、清掉旧 session snapshot。
+  // initialDto 跟着 draft 走，hydrationToken 用 draft:<id> 触发 form 重 hydrate。
+  const draftQ = useQuery({
+    queryKey: ["wiki", "draft", draftId],
+    queryFn: () => wikiApi.getDraft(draftId!),
+    enabled: !!user && !!draftId,
+  });
+
+  const [draftRestoreCancelled, setDraftRestoreCancelled] = useState(false);
+
+  useEffect(() => {
+    if (!draftId || !draftQ.data) return;
+    if (draftRestoreCancelled) return;
+    const existing = getEditSession(sessionKey).formSnapshot;
+    if (hasMeaningfulDraftSnapshot(existing)) {
+      const ok = window.confirm(
+        t(msg`当前页面有未保存的内容，恢复草稿会覆盖。继续吗？`),
+      );
+      if (!ok) {
+        setDraftRestoreCancelled(true);
+        void navigate({ to: "/create", search: {} });
+        return;
+      }
+    }
+    clearEditSession(sessionKey);
+  }, [draftId, draftQ.data, draftRestoreCancelled, navigate, sessionKey, t]);
 
   if (!user) {
     return (
       <PageShell eyebrow={t(msg`编辑`)} title={t(msg`创建世界角色`)}>
         <Card className="p-6 text-sm">
-          <Trans>请先登录后再创建角色。</Trans>
+          <Trans>
+            请先{" "}
+            <Link to="/login" className="font-medium underline">
+              登录
+            </Link>{" "}
+            后再创建角色。
+          </Trans>
         </Card>
       </PageShell>
     );
   }
+
+  const headerActions = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={() => void navigate({ to: "/" })}
+    >
+      <Trans>← 返回首页</Trans>
+    </Button>
+  );
+
+  const summaryTrimmed = editSummary.trim();
+  const summaryTooShort = summaryTrimmed.length < 10;
+  const summaryWarning = summaryTooShort
+    ? t(msg`创建摘要至少 10 字（创建操作评审要求）`)
+    : null;
+
+  const footerSlot = (
+    <div className="space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
+      <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-dim)]">
+        <Trans>提交评审</Trans>
+      </div>
+      <FormRow
+        label={t(msg`角色 ID（可选）`)}
+        hint={t(
+          msg`留空由系统生成。设了之后会作为 URL 路径，例如 /character/night-archivist`,
+        )}
+      >
+        <TextField
+          value={characterId}
+          onChange={(e) => setCharacterId(e.target.value)}
+          placeholder={t(msg`例如 night-archivist`)}
+        />
+      </FormRow>
+      <FormRow
+        label={t(msg`创建摘要`)}
+        required
+        hint={t(msg`≥10 字。说明这个角色为什么值得加入`)}
+      >
+        <TextField
+          value={editSummary}
+          onChange={(e) => setEditSummary(e.target.value)}
+          placeholder={t(
+            msg`例如：补一个心理咨询师角色，专擅深夜叙事疏导，文风克制`,
+          )}
+          maxLength={500}
+        />
+        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+          {summaryTrimmed.length}/500
+          {summaryTooShort && summaryTrimmed.length > 0 && (
+            <span className="ml-2 text-[color:var(--state-warning-text)]">
+              <Trans>至少需要 10 字</Trans>
+            </span>
+          )}
+        </div>
+      </FormRow>
+      <p className="text-xs text-[color:var(--text-muted)]">
+        <Trans>
+          新角色会先进入待创建队列，patroller 通过后才会发布到运行时角色注册表。
+        </Trans>
+      </p>
+    </div>
+  );
 
   return (
     <PageShell
       eyebrow={t(msg`编辑`)}
       title={t(msg`创建世界角色`)}
       description={t(
-        msg`新角色会先进入待创建队列；巡查员通过后才会发布到运行时角色注册表。`,
+        msg`和私有角色 / 世界角色编辑器同一套体验；保存后角色会作为 wiki 待创建稿提交，patroller 通过后才发布。`,
       )}
+      actions={headerActions}
     >
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <AppSection className="space-y-4">
-          <h2 className="text-base font-semibold">
-            <Trans>基础信息</Trans>
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormRow label={t(msg`角色 ID`)} hint={t(msg`可选；留空由系统生成`)}>
-              <TextField
-                value={characterId}
-                onChange={(event) => setCharacterId(event.target.value)}
-                placeholder={t(msg`例如 night-archivist`)}
-              />
-            </FormRow>
-            <FormRow label={t(msg`名称`)} required>
-              <TextField
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </FormRow>
-            <FormRow label={t(msg`头像 URL`)} className="md:col-span-2">
-              <TextField
-                value={avatar}
-                onChange={(event) => setAvatar(event.target.value)}
-              />
-            </FormRow>
-            <FormRow label={t(msg`关系描述`)} required>
-              <TextField
-                required
-                value={relationship}
-                onChange={(event) => setRelationship(event.target.value)}
-              />
-            </FormRow>
-            <FormRow label={t(msg`关系类型`)} required>
-              <TextField
-                required
-                value={relationshipType}
-                onChange={(event) =>
-                  setRelationshipType(event.target.value)
-                }
-              />
-            </FormRow>
-          </div>
-          <FormRow label={t(msg`角色简介`)} required>
-            <TextAreaField
-              required
-              rows={4}
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-            />
-          </FormRow>
-          <FormRow label={t(msg`性格 / 语气`)}>
-            <TextAreaField
-              rows={3}
-              value={personality}
-              onChange={(event) => setPersonality(event.target.value)}
-            />
-          </FormRow>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormRow label={t(msg`专长领域`)} hint={t(msg`逗号分隔`)}>
-              <TextField
-                value={expertDomains}
-                onChange={(event) => setExpertDomains(event.target.value)}
-              />
-            </FormRow>
-            <FormRow label={t(msg`触发场景`)} hint={t(msg`逗号分隔`)}>
-              <TextField
-                value={triggerScenes}
-                onChange={(event) => setTriggerScenes(event.target.value)}
-              />
-            </FormRow>
-          </div>
-          <FormRow
-            label={t(msg`创建摘要`)}
-            required
-            hint={t(msg`≥10 字。说明这个角色为什么值得加入`)}
+      {createMut.isError && (
+        <InlineNotice tone="danger" className="mb-3">
+          {createMut.error instanceof WikiApiError
+            ? createMut.error.message
+            : (createMut.error as Error).message}
+        </InlineNotice>
+      )}
+      {draftId && draftQ.data && (
+        <InlineNotice tone="info" className="mb-3">
+          <Trans>
+            已从草稿「{draftQ.data.name || t(msg`未命名草稿`)}」恢复。
+          </Trans>{" "}
+          <button
+            type="button"
+            className="ml-2 font-medium underline"
+            onClick={() => {
+              clearEditSession(sessionKey);
+              void navigate({ to: "/create", search: {} });
+            }}
           >
-            <TextField
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              maxLength={500}
-            />
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              {summary.trim().length}/500
-              {summary.trim().length > 0 && summary.trim().length < 10 && (
-                <span className="ml-2 text-[color:var(--state-warning-text)]">
-                  <Trans>至少需要 10 字</Trans>
-                </span>
-              )}
-            </div>
-          </FormRow>
-        </AppSection>
-
-        <LogicEditor recipe={recipeDraft} onChange={setRecipeDraft} />
-
-        <AppSection className="space-y-3">
-          <h2 className="text-base font-semibold">
-            <Trans>高级：直接贴 recipe JSON（可选）</Trans>
-          </h2>
-          <p className="text-xs text-[color:var(--text-muted)]">
-            <Trans>
-              填写后会忽略上方分节字段，直接用此 JSON 提交。留空则按上方字段生成默认逻辑。
-            </Trans>
-          </p>
-          <TextAreaField
-            rows={8}
-            value={recipeText}
-            onChange={(event) => setRecipeText(event.target.value)}
-            placeholder={t(msg`留空则按上方档案字段生成默认角色逻辑`)}
-          />
-          {recipeJsonError && (
-            <InlineNotice tone="danger">
-              <Trans>高级 recipe JSON 格式无效：</Trans>{" "}
-              <span className="font-mono text-xs">{recipeJsonError}</span>
-            </InlineNotice>
-          )}
-        </AppSection>
-
-        {createMut.isError && (
-          <InlineNotice tone="danger">
-            {(createMut.error as Error).message}
+            <Trans>清空表单</Trans>
+          </button>
+        </InlineNotice>
+      )}
+      {/*
+        draftQ.isError 只在 retry 用尽后才转 true；中间 paused / pending+fetchFailureCount>0
+        的状态下 isError 仍是 false，警告条不会渲染，用户看到的还是空白创建页 + 残留的
+        ?draftId=xxx —— 这正是这个修复想避免的"silent"。所以这里同时看 fetchFailureCount
+        作为兜底信号：只要至少 fetch 失败过一次且没拿到 data，就提示"草稿不存在"。
+      */}
+      {draftId &&
+        !draftQ.data &&
+        (draftQ.isError || draftQ.failureCount > 0) && (
+          <InlineNotice tone="warning" className="mb-3">
+            <Trans>该草稿已不存在（可能已被删除），按空白表单继续。</Trans>{" "}
+            <button
+              type="button"
+              className="ml-2 font-medium underline"
+              onClick={() => void navigate({ to: "/create", search: {} })}
+            >
+              <Trans>清掉 URL 中的 draftId</Trans>
+            </button>
           </InlineNotice>
         )}
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={
-              createMut.isPending ||
-              name.trim().length === 0 ||
-              summary.trim().length < 10 ||
-              recipeJsonError !== null
-            }
-          >
-            {createMut.isPending ? t(msg`提交中...`) : t(msg`✨ 提交创建`)}
-          </Button>
-        </div>
-      </form>
+      <CharacterEditForm
+        mode="create"
+        scope="world"
+        sessionKey={sessionKey}
+        initialDto={draftId ? draftQ.data?.payload ?? null : null}
+        // draftId 命中时，必须等 draftQ.data 真的拿到再切到 `draft:<id>` token —
+        // 否则 form 第一次会用 initialDto=null 锁住 hydratedTokenRef，等 query
+        // 完成 token 不变就不再重 hydrate，导致草稿恢复后 name 输入框是空的。
+        hydrationToken={
+          draftId
+            ? draftQ.data
+              ? `draft:${draftId}`
+              : `draft-loading:${draftId}`
+            : "new"
+        }
+        generator={(input) =>
+          wikiApi.generateCharacterFields({ ...input, persistAsDraft: true })
+        }
+        onSave={async (dto) => {
+          await createMut.mutateAsync(dto);
+        }}
+        isSavePending={createMut.isPending}
+        saveError={
+          createMut.isError
+            ? createMut.error instanceof WikiApiError
+              ? createMut.error.message
+              : (createMut.error as Error).message
+            : null
+        }
+        saveButtonLabel={{
+          create: <Trans>✨ 提交创建</Trans>,
+          edit: <Trans>提交</Trans>,
+          pending: <Trans>提交中…</Trans>,
+        }}
+        saveFooterHint={{
+          create: <Trans>提交后进 patroller 审核队列</Trans>,
+          edit: <Trans>提交后进评审队列</Trans>,
+        }}
+        footerSlot={footerSlot}
+        extraSaveDisabledReason={summaryWarning}
+      />
     </PageShell>
   );
-}
-
-function buildDefaultRecipe(): CharacterBlueprintRecipe {
-  // identity.name / relationship 这里给空串占位；提交前 mergeContentIntoRecipe
-  // 会用表单中的实际值覆盖，所以默认值不会被用户看到，无需国际化。
-  return {
-    identity: {
-      name: "",
-      relationship: "",
-      relationshipType: "custom",
-      avatar: "",
-      bio: "",
-      occupation: "",
-      background: "",
-      motivation: "",
-      worldview: "",
-    },
-    expertise: {
-      expertDomains: ["general"],
-      expertiseDescription: "",
-      knowledgeLimits: "",
-      refusalStyle: "",
-    },
-    tone: {
-      speechPatterns: [],
-      catchphrases: [],
-      topicsOfInterest: [],
-      emotionalTone: "grounded",
-      responseLength: "medium",
-      emojiUsage: "occasional",
-      workStyle: "",
-      socialStyle: "",
-      taboos: [],
-      quirks: [],
-      coreDirective: "",
-      basePrompt: "",
-      systemPrompt: "",
-    },
-    prompting: {
-      coreLogic: "",
-      scenePrompts: {
-        chat: "",
-        moments_post: "",
-        moments_comment: "",
-        feed_post: "",
-        channel_post: "",
-        feed_comment: "",
-        greeting: "",
-        proactive: "",
-      },
-    },
-    memorySeed: {
-      memorySummary: "",
-      coreMemory: "",
-      recentSummarySeed: "",
-      forgettingCurve: 70,
-      recentSummaryPrompt: "",
-      coreMemoryPrompt: "",
-    },
-    reasoning: {
-      enableCoT: true,
-      enableReflection: true,
-      enableRouting: true,
-    },
-    lifeStrategy: {
-      activityFrequency: "normal",
-      momentsFrequency: 1,
-      feedFrequency: 1,
-      activeHoursStart: 8,
-      activeHoursEnd: 23,
-      triggerScenes: [],
-    },
-    publishMapping: {
-      isTemplate: false,
-      onlineModeDefault: "auto",
-      activityModeDefault: "auto",
-      initialOnline: false,
-      initialActivity: "free",
-    },
-    realityLink: null,
-  };
 }

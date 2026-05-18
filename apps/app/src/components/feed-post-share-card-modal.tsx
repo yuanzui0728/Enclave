@@ -4,6 +4,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AvatarChip } from "./avatar-chip";
 import { MomentMediaGallery } from "./moment-media-gallery";
 import { ShareCardModal } from "./share-card-modal";
+import { stripToolCallSyntax } from "../features/moments/moment-content";
 
 const t = translateRuntimeMessage;
 
@@ -48,7 +49,7 @@ export function FeedPostShareCardModal({
  * 不接受互动 props — 纯静态展示。
  */
 function FeedPostExportCard({ post }: { post: FeedPost }) {
-  const trimmedText = post.text.trim();
+  const trimmedText = stripToolCallSyntax(post.text);
   const trimmedTitle = post.title?.trim() ?? "";
   const tags = (post.topicTags ?? []).filter((tag) => tag.trim());
   const isUserAuthor = post.authorType === "user";
@@ -169,10 +170,16 @@ function FeedPostExportCard({ post }: { post: FeedPost }) {
 
 function resolveContentType(
   post: FeedPost,
-): "text" | "image_album" | "video" {
+): "text" | "image_album" | "video" | "audio_card" {
+  // 走查新 Round 3：minimax 音乐生成的广场动态 mediaType="audio"，旧版三个
+  // 早返回里只覆盖 video/image，第四条 media.some 也只查 video/image，audio
+  // 直接漏到 return "text"。下游 MomentMediaGallery 见 contentType==="text"
+  // 把整个 media 区域吞掉——分享图卡只剩文字标题，看不出这是一条音乐分享。
+  if (post.mediaType === "audio") return "audio_card";
   if (post.mediaType === "video") return "video";
   if (post.mediaType === "image") return "image_album";
   // mediaType=text 但有 media 时按媒体推断（生产数据偶有不一致）
+  if (post.media.some((asset) => asset.kind === "audio")) return "audio_card";
   if (post.media.some((asset) => asset.kind === "video")) return "video";
   if (post.media.some((asset) => asset.kind === "image")) return "image_album";
   return "text";

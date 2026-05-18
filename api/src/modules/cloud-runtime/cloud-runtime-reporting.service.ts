@@ -5,6 +5,8 @@ import { In, Repository } from 'typeorm';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
+import { GroupMessageEntity } from '../chat/group-message.entity';
+import { MessageEntity } from '../chat/message.entity';
 import { CharacterRevisionEntity } from '../wiki/entities/character-revision.entity';
 import { EditSubmissionEntity } from '../wiki/entities/edit-submission.entity';
 
@@ -16,6 +18,7 @@ type RuntimeReportPayload = {
   healthMessage?: string | null;
   reportedAt?: string | null;
   lastInteractiveAt?: string | null;
+  lastUserMessageAt?: string | null;
 };
 
 type RevenueUsageEventPayload = {
@@ -75,6 +78,10 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
     private readonly conversationRepo: Repository<ConversationEntity>,
     @InjectRepository(GroupEntity)
     private readonly groupRepo: Repository<GroupEntity>,
+    @InjectRepository(MessageEntity)
+    private readonly messageRepo: Repository<MessageEntity>,
+    @InjectRepository(GroupMessageEntity)
+    private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(CharacterRevisionEntity)
     private readonly characterRevisionRepo: Repository<CharacterRevisionEntity>,
     @InjectRepository(EditSubmissionEntity)
@@ -113,9 +120,13 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
 
     this.reporting = true;
     try {
-      const latestInteractiveAt = await this.resolveLatestInteractiveAt();
+      const [latestInteractiveAt, latestUserMessageAt] = await Promise.all([
+        this.resolveLatestInteractiveAt(),
+        this.resolveLatestUserMessageAt(),
+      ]);
       const reportedAt = new Date().toISOString();
       const lastInteractiveIso = latestInteractiveAt?.toISOString() ?? null;
+      const lastUserMessageIso = latestUserMessageAt?.toISOString() ?? null;
 
       const basePayload: RuntimeReportPayload = {
         apiBaseUrl: config.publicApiBaseUrl,
@@ -124,6 +135,7 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
         healthMessage: 'World runtime heartbeat is healthy.',
         reportedAt,
         lastInteractiveAt: lastInteractiveIso,
+        lastUserMessageAt: lastUserMessageIso,
       };
 
       if (!this.bootstrapReported) {
@@ -160,14 +172,19 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
       this.buildContributionRevenueEvents(),
     ]);
 
-    if (usageEvents.length) {
-      await this.postRevenueSignal(config, 'usage-events', {
-        events: usageEvents,
-      });
+    // cloud-api 单批最多 100 条（ReportRevenueUsageEventsDto.events @ArrayMaxSize(100)）。
+    // contribution-events 一条 revision 会展开 1-3 个事件（editor + 可能的 logic_publish +
+    // 可能的 reviewer），100 个 revision 能轻松冲到 ~300，会被云端 400 拒掉整批。
+    // 这里强制分批，每批不超 100。
+    const MAX_EVENTS_PER_BATCH = 100;
+    for (let i = 0; i < usageEvents.length; i += MAX_EVENTS_PER_BATCH) {
+      const chunk = usageEvents.slice(i, i + MAX_EVENTS_PER_BATCH);
+      await this.postRevenueSignal(config, 'usage-events', { events: chunk });
     }
-    if (contributionEvents.length) {
+    for (let i = 0; i < contributionEvents.length; i += MAX_EVENTS_PER_BATCH) {
+      const chunk = contributionEvents.slice(i, i + MAX_EVENTS_PER_BATCH);
       await this.postRevenueSignal(config, 'contribution-events', {
-        events: contributionEvents,
+        events: chunk,
       });
     }
   }
@@ -354,6 +371,37 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
     return candidates.reduce((latest, current) =>
       current.getTime() > latest.getTime() ? current : latest,
     );
+  }
+
+  private async resolveLatestUserMessageAt(): Promise<Date | null> {
+    try {
+      const [message, groupMessage] = await Promise.all([
+        this.messageRepo.findOne({
+          where: { senderType: 'user' },
+          order: { createdAt: 'DESC' },
+        }),
+        this.groupMessageRepo.findOne({
+          where: { senderType: 'user' },
+          order: { createdAt: 'DESC' },
+        }),
+      ]);
+
+      const candidates = [message?.createdAt, groupMessage?.createdAt].filter(
+        (value): value is Date => Boolean(value),
+      );
+
+      if (!candidates.length) {
+        return null;
+      }
+
+      return candidates.reduce((latest, current) =>
+        current.getTime() > latest.getTime() ? current : latest,
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to resolve latest user message: ${message}`);
+      return null;
+    }
   }
 
   private async postRuntimeSignal(

@@ -101,6 +101,7 @@ export class FarmEventService {
     delta: number,
     actorType: FarmActorType = 'character',
     actorName?: string,
+    options: { recordEvent?: boolean } = {},
   ): Promise<number | null> {
     if (!Number.isFinite(delta) || delta === 0) return null;
     const target = await this.charactersService.findById(targetCharacterId);
@@ -110,18 +111,23 @@ export class FarmEventService {
     if (newLevel === oldLevel) return oldLevel;
     target.intimacyLevel = newLevel;
     await this.charactersService.upsert(target);
-    await this.recordEvent({
-      ownerId,
-      kind: 'intimacy_change',
-      actorType,
-      actorId: sourceCharacterId ?? 'system',
-      actorName: actorName ?? SYSTEM_ACTOR_NAME,
-      targetType: 'character',
-      targetId: targetCharacterId,
-      targetName: target.name,
-      intimacyDelta: newLevel - oldLevel,
-      payload: { oldLevel, newLevel },
-    });
+    // 偷菜场景调用方已经写了一条带 intimacyDelta 的 'steal' 事件，再写 intimacy_change
+    // 在事件流里就是两条说同一件事的日志（"X 顺走了你家的菜" + "X 与对方好感度变化 -3"），
+    // 给 recordEvent: false 让调用方按需关掉。
+    if (options.recordEvent !== false) {
+      await this.recordEvent({
+        ownerId,
+        kind: 'intimacy_change',
+        actorType,
+        actorId: sourceCharacterId ?? 'system',
+        actorName: actorName ?? SYSTEM_ACTOR_NAME,
+        targetType: 'character',
+        targetId: targetCharacterId,
+        targetName: target.name,
+        intimacyDelta: newLevel - oldLevel,
+        payload: { oldLevel, newLevel },
+      });
+    }
     return newLevel;
   }
 

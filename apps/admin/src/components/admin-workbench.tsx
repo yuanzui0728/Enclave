@@ -43,10 +43,11 @@ type AdminActionFeedbackTone = "busy" | "success" | "warning" | "info";
 type AdminPageHeroProps = {
   eyebrow: ReactNode;
   title: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   badges?: ReactNode[];
   actions?: ReactNode;
   metrics?: Array<{ label: ReactNode; value: ReactNode }>;
+  metricsClassName?: string;
   className?: string;
 };
 
@@ -76,6 +77,7 @@ export function AdminPageHero({
   badges,
   actions,
   metrics,
+  metricsClassName,
   className,
 }: AdminPageHeroProps) {
   return (
@@ -89,7 +91,9 @@ export function AdminPageHero({
         <div className="max-w-2xl">
           <div className="text-[12px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">{eyebrow}</div>
           <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</p>
+          {description ? (
+            <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</p>
+          ) : null}
           {badges?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {badges.map((badge, index) => (
@@ -102,7 +106,12 @@ export function AdminPageHero({
       </div>
 
       {metrics?.length ? (
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div
+          className={cn(
+            "mt-6 grid gap-3",
+            metricsClassName ?? "md:grid-cols-2 xl:grid-cols-4",
+          )}
+        >
           {metrics.map((item, index) => (
             <MetricCard key={index} label={item.label} value={item.value} />
           ))}
@@ -213,7 +222,7 @@ export function AdminCallout({
   className,
 }: {
   title: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   tone?: AdminCalloutTone;
   actions?: ReactNode;
   className?: string;
@@ -235,7 +244,9 @@ export function AdminCallout({
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="text-sm font-semibold text-[color:var(--text-primary)]">{title}</div>
-          <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+          {description ? (
+            <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+          ) : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
       </div>
@@ -945,6 +956,8 @@ export function AdminTextField({
   type = "text",
   min,
   max,
+  step,
+  maxLength,
   list,
   disabled,
   className,
@@ -956,6 +969,8 @@ export function AdminTextField({
   type?: string;
   min?: number;
   max?: number;
+  step?: number | string;
+  maxLength?: number;
   list?: string;
   disabled?: boolean;
   className?: string;
@@ -972,6 +987,8 @@ export function AdminTextField({
         type={type}
         min={min}
         max={max}
+        step={step}
+        maxLength={maxLength}
         list={list}
         disabled={disabled}
       />

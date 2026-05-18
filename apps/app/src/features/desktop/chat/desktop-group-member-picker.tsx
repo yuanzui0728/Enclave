@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
@@ -33,13 +40,27 @@ export function DesktopGroupMemberPicker({
   const t = translateRuntimeMessage;
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和移动端 group-member-picker-page 同款问题。availableFriends
+  // 每个 keystroke 同步 toLowerCase + matchesFriendSearch（remarkName/region/
+  // source/tags 几路 haystack 各 lowercase 一遍），yuanzui0728_5999 测号
+  // 70+ 好友输入框肉眼可见 backlog。useDeferredValue 让 React 先把字打进
+  // 输入框，过滤排到下个 idle 帧。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // 走查新会话桌面端群聊 R2：和 desktop-create-group-dialog 同款问题——原版
+  // 用独立 cache key 「desktop-group-member-picker-friends」，不复用其它路径
+  // 已加载的 "app-friends" cache（contacts/chat-details/group-chat-thread-panel
+  // / message-avatar-popover 全部用 "app-friends"）。「添加成员」弹层是从群聊
+  // 详情侧栏触发，那一侧 friendsQuery 几百 ms 前刚拉过新数据，这里又走一发
+  // getFriends。统一 cache key + staleTime 15s（与其它入口对齐）。
   const friendsQuery = useQuery({
-    queryKey: ["desktop-group-member-picker-friends", baseUrl],
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open,
+    staleTime: 15_000,
   });
 
   useEffect(() => {
@@ -57,7 +78,7 @@ export function DesktopGroupMemberPicker({
   );
 
   const availableFriends = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return (friendsQuery.data ?? []).filter(({ character, friendship }) => {
       if (existingMemberIdSet.has(character.id)) {
         return false;
@@ -73,7 +94,7 @@ export function DesktopGroupMemberPicker({
 
       return matchesFriendSearch({ character, friendship }, keyword);
     });
-  }, [existingMemberIdSet, friendsQuery.data, searchTerm]);
+  }, [deferredSearchTerm, existingMemberIdSet, friendsQuery.data]);
 
   const selectedFriends = useMemo(() => {
     const selectedSet = new Set(selectedIds);
@@ -90,12 +111,73 @@ export function DesktopGroupMemberPicker({
     );
   };
 
+  // 走查桌面端群聊 R1：和 desktop-create-group-dialog R3 同款问题。
+  // "加入群聊" 按钮只靠 `disabled={pending}`，pending 是来自父组件 React state
+  // 的 `addMembersMutation.isPending`，要等 commit 才进 DOM。同帧连点两次都看到
+  // pending=false → onConfirm 飞两份 → parent addMembersMutation.mutate(memberIds)
+  // 跑两遍，sequential `for await addGroupMember` 把同样的 N 个成员循环 POST 一遍。
+  // 服务端虽对"已存在成员"幂等返回 existing 不重复插行，但公网隧道 RTT ~600ms × N
+  // 白来一遍。sync ref 锁同帧；pending 翻 false（success 或 error）后 useEffect
+  // 自动复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
+
+  const handleConfirm = () => {
+    if (!selectedIds.length || pending || submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    onConfirm(selectedIds);
+  };
+
+  // 走查桌面端群聊 R4：和 DesktopGroupMemberBrowserDialog / DesktopCreateGroupDialog
+  // 对齐口径，补 Escape 关闭。原版只有 X / 背板点击能关。pending 时不关，
+  // stopPropagation 避免冒泡到外层 workspace 的 dismissSidePanel 把背后的
+  //「聊天信息」侧栏一并关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      // 走查电脑端群聊 R6（和 R5 同款）：pending 时仍要消费 Esc，否则
+      // workspace queueMicrotask 兜底跑 dismissSidePanel 把背后的"聊天信息"
+      // 侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关 dialog
+      // 倒把侧栏弄没了"。
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
   if (!open) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 confirm/text-edit/forward/create-group/note-send 一批
+    // dialog 同款 portal-shield 缺漏。该 picker 从「聊天信息」侧栏「+ 添加成员」
+    // 打开，workspace 在 rightPanelMode=details 时挂的 onPointerDownCapture
+    // 兜底在「点击不落在 thread/header/sidePanel/shield 子树」时 dismissSidePanel
+    // —— picker inline 渲染在 workspace 根 div 下，无 shield → 用户在 dialog
+    // 内点搜索框 / 联系人行 / 取消 / X / 背板 时 pointerdown capture 先把
+    // 背后的「聊天信息」侧栏偷关，操作完回不到侧栏继续。Esc 路径 R4 时已
+    // stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-picker"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭添加群成员弹层`)}
@@ -107,10 +189,23 @@ export function DesktopGroupMemberPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative flex max-h-[85vh] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 confirm/text-edit/forward/create-group/note-send 一批
+          a11y 修过的 dialog 同款缺漏——modal 但 panel 既没挂 role="dialog"
+          + aria-modal 也没挂 aria-labelledby。盲人屏幕阅读器只听到「关闭添加
+          群成员弹层 按钮」+ 搜索框 + 联系人行，听不到「添加群成员」title。
+          补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[85vh] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`添加群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -127,6 +222,10 @@ export function DesktopGroupMemberPicker({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索联系人`)}
+                // 走查 R5：父 label 只含 Search 图标 + input，没文本子节点，
+                // SR 进来只听到「编辑栏 搜索联系人 空」分裂行为。和姊妹
+                // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
+                aria-label={t(msg`搜索联系人`)}
                 className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
@@ -303,7 +402,7 @@ export function DesktopGroupMemberPicker({
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => onConfirm(selectedIds)}
+                onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
                 className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
               >

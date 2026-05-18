@@ -14,13 +14,20 @@ export type AdminRuntimeState = {
 
 const listeners = new Set<() => void>();
 
+// 用 sessionStorage 而不是 localStorage：admin 运行时（apiBaseUrl/cloudWorldId/...）
+// 是"哪个云世界的后台"的 per-tab 状态。云控制台同时点开两个世界的"进入后台"会
+// 各自打开一个 tab，每个 tab 通过 hash bootstrap 写入自己那个世界的 apiBaseUrl。
+// localStorage 跨 tab 共享 → 后来的 tab 会覆盖前一个 tab 的值；前一个 tab 一旦刷新
+// （hash 早就被 replaceState 抹掉以防 secret 泄露），就只能从 storage 读到对方
+// 的 apiBaseUrl，再次串台。sessionStorage 按 tab 隔离，同 tab 内刷新仍能保留状态，
+// 跨 tab 完全独立。
 function getStorage() {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    return window.localStorage;
+    return window.sessionStorage;
   } catch {
     return null;
   }

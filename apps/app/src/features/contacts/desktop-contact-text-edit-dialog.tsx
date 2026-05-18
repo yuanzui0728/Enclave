@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
-import { Button, TextField } from "@yinjie/ui";
+import { Button, ErrorBlock, TextField } from "@yinjie/ui";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 
 type DesktopContactTextEditDialogProps = {
@@ -13,6 +13,10 @@ type DesktopContactTextEditDialogProps = {
   submitLabel?: ReactNode;
   closeLabel?: string;
   pending?: boolean;
+  /** 上一次 onConfirm 抛错时的提示。模板用法：把外部 mutation.error.message
+   *  传进来，弹层内部把它渲染在确认按钮上方——保存失败时弹层不关，外面 section
+   *  里的 ErrorBlock 会被弹层 backdrop 遮住，用户根本看不到失败原因。 */
+  error?: ReactNode;
   onClose: () => void;
   onConfirm: (value: string) => void;
 };
@@ -26,19 +30,58 @@ export function DesktopContactTextEditDialog({
   submitLabel,
   closeLabel,
   pending = false,
+  error = null,
   onClose,
   onConfirm,
 }: DesktopContactTextEditDialogProps) {
   const t = translateRuntimeMessage;
   const [draft, setDraft] = useState(initialValue);
+  const titleId = useId();
+  const descId = useId();
+  // 走查新一轮 R26：和姊妹 desktop-chat-text-edit-dialog R2 / confirm-dialog
+  // R4 同款问题——「保存」按钮 / form submit 都只靠 `disabled={confirmDisabled}`
+  // 兜双触发，confirmDisabled = pending || draft 未变；pending 是 parent
+  // updateProfileMutation.isPending 经 React commit 才进 DOM。用户开着「聊天
+  // 信息」侧栏改备注 / 标签时同帧双 Enter / 双击「保存」会同时通过 disabled
+  // = false → parent updateProfileMutation.mutateAsync 飞 2 次，公网隧道
+  // RTT 600ms × 2 浪费一次 PATCH /friends/{id}/profile + 两次 invalidate
+  // app-friends 串行打断。加 sync ref 锁同帧；pending 翻 false（success /
+  // error）后 useEffect 复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
 
+  // 走查电脑端单聊 R3：和姊妹 desktop-chat-text-edit-dialog R4 同款问题。
+  // 原 effect deps=[initialValue, open]，凡 parent 重传 initialValue 都会
+  // setDraft(initialValue) 覆盖用户当前正在编辑的内容。DirectChatDetailsPanel
+  // 同时挂着 useEffect 把 friendship.remarkName / tags 同步进 profileForm，
+  // friendsQuery 60s 轮询 / socket 改备注（多设备同步）/ pending 期间 user
+  // 自己改完落库 invalidate 都让 friendship 重新换引用 → profileForm 跟着
+  // 换 → dialog initialValue 跟着换 → 本 effect 跑 setDraft(initialValue)
+  // 把用户输入到一半的草稿冲掉。改成"用户改过没"作 gate：用户敲过键盘后
+  // hasUserEditedRef=true，后续 initialValue 变化跳过 setDraft；用户没碰过
+  // 时 initialValue 变化允许 sync（兜底 dialog 打开瞬间 friendship 还没回
+  // 来 remarkName=""，等 600ms RTT 拉到 server 值时仍能填上）。close 时 ref
+  // 回 false 下次重开重新 seed。
+  const hasUserEditedRef = useRef(false);
   useEffect(() => {
     if (!open) {
+      hasUserEditedRef.current = false;
       return;
     }
 
+    if (hasUserEditedRef.current) {
+      return;
+    }
     setDraft(initialValue);
   }, [initialValue, open]);
+  const handleDraftChange = (value: string) => {
+    hasUserEditedRef.current = true;
+    setDraft(value);
+  };
 
   useEffect(() => {
     if (!open) {
@@ -50,7 +93,11 @@ export function DesktopContactTextEditDialog({
         return;
       }
 
+      // 弹窗是 modal 层；只 preventDefault 不 stopPropagation 的话，Esc
+      // 会继续冒泡到 desktop-chat-workspace 的 dismissSidePanel window
+      // keydown，一下 Esc 把背后的「聊天信息」侧栏也一起关掉。
       event.preventDefault();
+      event.stopPropagation();
       onClose();
     };
 
@@ -69,7 +116,14 @@ export function DesktopContactTextEditDialog({
   const effectiveCloseLabel = closeLabel ?? t(msg`关闭弹层`);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查新一轮 R12 (单聊路径下复用)：本 dialog 也被 desktop-chat-details-panel
+    // 用于编辑联系人备注 / 标签。和姊妹 confirm/text-edit dialog 同款，缺
+    // portal-shield → 用户在 dialog 内点输入框 / 取消 / X / backdrop 时
+    // workspace pointerdown capture 把背后的「聊天信息」侧栏偷关掉。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-contact-text-edit-dialog"
+    >
       <button
         type="button"
         aria-label={effectiveCloseLabel}
@@ -81,24 +135,40 @@ export function DesktopContactTextEditDialog({
         className="absolute inset-0"
       />
 
+      {/* 走查新一轮 R26：和姊妹 desktop-chat-text-edit-dialog / confirm-dialog
+          R2 同款 a11y 缺漏——modal 但既没挂 role="dialog" + aria-modal，也没挂
+          aria-labelledby / aria-describedby。单聊「聊天信息」改备注/标签 + 联系人
+          详情改备注 都会弹这个 dialog；盲人用户屏幕阅读器只听到「关闭弹层 按钮」
+          + 输入框，听不到 title「设置备注」/ description「备注名会优先显示...」。
+          title/description 通过 useId 挂稳定 id，打开瞬间 SR 把两段都念出来。 */}
       <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
         className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
-          if (confirmDisabled) {
+          if (confirmDisabled || submittingRef.current) {
             return;
           }
-
+          submittingRef.current = true;
           onConfirm(normalizedDraft);
         }}
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[17px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[17px] font-medium text-[color:var(--text-primary)]"
+            >
               {title}
             </div>
             {description ? (
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id={descId}
+                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {description}
               </div>
             ) : null}
@@ -118,7 +188,7 @@ export function DesktopContactTextEditDialog({
           <TextField
             autoFocus
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => handleDraftChange(event.target.value)}
             placeholder={placeholder}
             disabled={pending}
             className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
@@ -128,6 +198,8 @@ export function DesktopContactTextEditDialog({
             <span>{t(msg`支持留空保存`)}</span>
             <span>{t(msg`${normalizedDraft.length} 字`)}</span>
           </div>
+
+          {error ? <ErrorBlock message={error} /> : null}
 
           <div className="flex items-center justify-end gap-3">
             <Button

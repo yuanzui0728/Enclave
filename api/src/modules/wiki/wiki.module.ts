@@ -19,6 +19,8 @@ import { WikiTalkThreadEntity } from './entities/wiki-talk-thread.entity';
 import { WikiTalkPostEntity } from './entities/wiki-talk-post.entity';
 import { WikiWatchlistEntity } from './entities/wiki-watchlist.entity';
 import { UserPrivateCharacterEntity } from './entities/user-private-character.entity';
+import { CharacterDraftEntity } from './entities/character-draft.entity';
+import { WikiAiGenerateRateLimitGuard } from './guards/wiki-ai-generate-rate-limit.guard';
 import { WikiRateLimitGuard } from './guards/wiki-rate-limit.guard';
 import { WikiRoleGuard } from './guards/wiki-role.guard';
 import { AbuseFilterService } from './services/abuse-filter.service';
@@ -38,6 +40,8 @@ import { WikiRoleService } from './services/wiki-role.service';
 import { WikiTalkService } from './services/wiki-talk.service';
 import { WikiWatchlistService } from './services/wiki-watchlist.service';
 import { WikiPrivateCharacterService } from './services/wiki-private-character.service';
+import { WikiPrivateCharacterAiService } from './services/wiki-private-character-ai.service';
+import { WikiPrivateCharacterCleanupService } from './services/wiki-private-character-cleanup.service';
 import { WikiReportService } from './services/wiki-report.service';
 import { WikiPageController } from './controllers/wiki-page.controller';
 import { WikiReviewController } from './controllers/wiki-review.controller';
@@ -50,6 +54,11 @@ import { WikiWatchlistController } from './controllers/wiki-watchlist.controller
 import { WikiPrivateCharacterController } from './controllers/wiki-private-character.controller';
 import { WikiSoftDeleteController } from './controllers/wiki-soft-delete.controller';
 import { WikiReportController } from './controllers/wiki-report.controller';
+import { WikiAvatarController } from './controllers/wiki-avatar.controller';
+import { WikiAvatarService } from './services/wiki-avatar.service';
+import { WikiAiGenerateController } from './controllers/wiki-ai-generate.controller';
+import { CharacterDraftController } from './controllers/character-draft.controller';
+import { CharacterDraftService } from './services/character-draft.service';
 
 @Module({
   imports: [
@@ -73,6 +82,7 @@ import { WikiReportController } from './controllers/wiki-report.controller';
       AbuseFilterHitEntity,
       WikiFieldProtectionEntity,
       UserPrivateCharacterEntity,
+      CharacterDraftEntity,
     ]),
   ],
   controllers: [
@@ -90,6 +100,9 @@ import { WikiReportController } from './controllers/wiki-report.controller';
     WikiFieldProtectionController,
     WikiStatsController,
     WikiPrivateCharacterController,
+    WikiAvatarController,
+    WikiAiGenerateController,
+    CharacterDraftController,
   ],
   providers: [
     WikiPageService,
@@ -107,8 +120,13 @@ import { WikiReportController } from './controllers/wiki-report.controller';
     WikiAntivandalBotService,
     WikiStatsService,
     WikiPrivateCharacterService,
+    WikiPrivateCharacterAiService,
+    WikiPrivateCharacterCleanupService,
+    WikiAvatarService,
+    CharacterDraftService,
     WikiRoleGuard,
     WikiRateLimitGuard,
+    WikiAiGenerateRateLimitGuard,
   ],
   exports: [
     WikiPageService,
@@ -123,6 +141,7 @@ import { WikiReportController } from './controllers/wiki-report.controller';
     AbuseFilterService,
     WikiFieldProtectionService,
     WikiSystemUserService,
+    WikiPrivateCharacterService,
   ],
 })
 export class WikiModule {}

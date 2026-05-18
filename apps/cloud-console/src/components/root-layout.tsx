@@ -52,6 +52,24 @@ function getRouteMeta(pathname: string): RouteMeta {
     };
   }
 
+  if (pathname.startsWith("/wiki-users/")) {
+    return {
+      eyebrow: "Wiki operations",
+      title: "Wiki user detail",
+      detail:
+        "Inspect one wiki user's private characters, full recipe / profile / trigger scenes.",
+    };
+  }
+
+  if (pathname.startsWith("/wiki-users")) {
+    return {
+      eyebrow: "Wiki operations",
+      title: "Wiki users",
+      detail:
+        "Review wiki account roles, edit stats, registered emails, and private character counts.",
+    };
+  }
+
   if (pathname.startsWith("/subscription-plans")) {
     return {
       eyebrow: "SaaS operations",
@@ -309,6 +327,25 @@ function RootLayoutContent() {
           <NavLinkContent
             label={t("Users")}
             hint={t("Accounts and expiry")}
+          />
+        </Link>
+      ),
+    },
+    {
+      key: "wiki-users",
+      content: (
+        <Link
+          to="/wiki-users"
+          className={
+            pathname.startsWith("/wiki-users") ? NAV_LINK_ACTIVE : NAV_LINK
+          }
+          aria-current={
+            pathname.startsWith("/wiki-users") ? "page" : undefined
+          }
+        >
+          <NavLinkContent
+            label={t("Wiki users")}
+            hint={t("Roles and private characters")}
           />
         </Link>
       ),

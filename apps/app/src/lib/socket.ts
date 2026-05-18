@@ -16,6 +16,24 @@ import { isCloudSessionExpired, useCloudSessionStore } from "../store/cloud-sess
 let socket: Socket | null = null;
 let activeSocketBaseUrl: string | null = null;
 let runtimeConfigListenerAttached = false;
+// 走查 R2：joinConversationRoom 调用方分布在 thread-panel / chat-message-list /
+// note-editor / qr-page / strong-reminder-host / desktop-notes 等十余处，每处
+// 自己挂 onChatSocketConnect 在 reconnect 时重 join 自己那一个 conversation。
+// chat-list-page 本身从不 join 任何 room，依赖"曾打开过的 thread panel 把房间
+// 留在 server-side socket 上"才能收 conversation_updated/new-message 即时刷新
+// （chat-list-page.tsx 811-813 注释明确这一点）。
+//
+// 但 socket disconnect+reconnect 时 server 端 Socket 实例是全新的，所有
+// 历史房间都被忘掉；只有 currently mounted thread panel 的 onConnect 会重
+// emit join。一旦用户当前停在 chat-list 或别的非聊天页（活跃移动用户经常这样：
+// 看完一条消息退回列表挂着），网络抖一下 / 后台切前台 / cloud token 续期 →
+// 整个消息列表所有会话全部失联，直到逐个点开聊天才恢复实时刷新；用户体感是
+// "微信里有消息但列表不动"。
+//
+// 解决：socket.ts 自己维护一个会话 room 集合，joinConversationRoom 自动入集；
+// 每次 socket 'connect' 事件（含 reconnect）都把整个集合 re-emit 出去。
+// socket.io 的 join 是 Set 幂等，per-component 重复 emit 无副作用。
+const joinedConversationRooms = new Set<string>();
 
 function socketBaseUrl() {
   return resolveAppSocketBaseUrl();
@@ -85,6 +103,15 @@ export function getChatSocket() {
     ...(token ? { auth: { token }, query: { token } } : {}),
   });
 
+  // 走查 R2：所有历史 join 过的 conversation room 在 socket 'connect' 时全量重 emit
+  // 一遍，不依赖 thread panel 等 caller 各自维护重 join。chat-list 在断网期间
+  // 仍能收到所有历史房间的 conversation_updated/new-message。
+  socket.on('connect', () => {
+    for (const conversationId of joinedConversationRooms) {
+      socket?.emit(CHAT_EVENTS.joinConversation, { conversationId });
+    }
+  });
+
   // 服务端 buildId 仅记录在 localStorage 中供调试；自动 reload 已下线，
   // dev 环境 nest watch 频繁热重启会让客户端死循环 reload，
   // 现在改为用户手动刷新。
@@ -128,9 +155,15 @@ export function disconnectChatSocket() {
   socket.disconnect();
   socket = null;
   activeSocketBaseUrl = null;
+  // 切换 socket baseUrl（切租户 / 切环境）后旧 session 的房间集合不该带过去：
+  // 新 socket 对应新 server-side socket-id，重 emit 旧房间也只是冗余。
+  joinedConversationRooms.clear();
 }
 
 export function joinConversationRoom(payload: JoinConversationPayload) {
+  // 入集 + 立刻 emit；非 connected 时 socket.io-client 会内部 buffer，握手成
+  // 功后自动 flush。下次重连由顶部 'connect' 自动 re-join，不用 caller 再守。
+  joinedConversationRooms.add(payload.conversationId);
   getChatSocket().emit(CHAT_EVENTS.joinConversation, payload);
 }
 
@@ -160,6 +193,17 @@ export function onConversationUpdated(handler: (payload: ConversationUpdatedPayl
   const active = getChatSocket();
   active.on(CHAT_EVENTS.conversationUpdated, handler);
   return () => active.off(CHAT_EVENTS.conversationUpdated, handler);
+}
+
+// socket.io-client 重连时 server 不知道该 socket 之前 join 了哪些 room
+// （server 端 Socket 实例每次都是新的）；调用方需要在 connect 事件里重新
+// emit join_conversation 才能继续收到 newMessage / typing / conversation_updated。
+// fire 时机：socket 从断开变成连上时（包括 reconnect）；如果 socket 已经
+// 连上时挂 listener，本次不会触发，下次重连才触发——这正是我们想要的。
+export function onChatSocketConnect(handler: () => void) {
+  const active = getChatSocket();
+  active.on('connect', handler);
+  return () => active.off('connect', handler);
 }
 
 export function onChatError(handler: (payload: ChatErrorPayload) => void) {

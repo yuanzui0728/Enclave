@@ -1,8 +1,11 @@
 import { cn } from "@yinjie/ui";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   getMiniProgramToneStyle,
   type MiniProgramEntry,
 } from "./mini-programs-data";
+
+const t = translateRuntimeMessage;
 
 type MiniProgramGlyphProps = {
   miniProgram: MiniProgramEntry;
@@ -36,7 +39,7 @@ export function MiniProgramGlyph({
         className,
       )}
     >
-      {getGlyphLabel(miniProgram.name)}
+      {getGlyphLabel(t(miniProgram.nameMessage))}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { hasRole } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi, type WikiRevisionSummary } from "../lib/wiki-api";
+import { useUsernameMap } from "../lib/use-username-map";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
 
@@ -35,6 +36,10 @@ export function RecentChangesPage() {
       void qc.invalidateQueries({ queryKey: ["wiki", "recent-changes"] });
     },
   });
+
+  const { resolve: resolveUsername } = useUsernameMap(
+    (listQ.data ?? []).map((r) => r.editorUserId),
+  );
 
   return (
     <PageShell
@@ -76,6 +81,7 @@ export function RecentChangesPage() {
             <ChangeRow
               key={rev.id}
               rev={rev}
+              editorName={resolveUsername(rev.editorUserId)}
               isPatroller={isPatroller}
               onPatrol={() => patrolMut.mutate(rev.id)}
               patrolling={patrolMut.isPending}
@@ -89,11 +95,13 @@ export function RecentChangesPage() {
 
 function ChangeRow({
   rev,
+  editorName,
   isPatroller,
   onPatrol,
   patrolling,
 }: {
   rev: WikiRevisionSummary;
+  editorName: string;
   isPatroller: boolean;
   onPatrol: () => void;
   patrolling: boolean;
@@ -110,7 +118,7 @@ function ChangeRow({
             params={{ characterId: rev.characterId }}
             className="truncate font-medium text-[color:var(--text-primary)] hover:underline"
           >
-            {rev.characterId}
+            {rev.contentSnapshot?.name || rev.characterId}
           </Link>
           <StatusPill>{rev.status}</StatusPill>
           <StatusPill>{rev.operation}</StatusPill>
@@ -138,15 +146,15 @@ function ChangeRow({
         </div>
         <div className="text-xs text-[color:var(--text-muted)]">
           <Trans>
-            {rev.editorUserId}（{rev.editorRoleAtTime}） ·{" "}
+            {editorName}（{rev.editorRoleAtTime}） ·{" "}
             {formatDateTime(rev.createdAt)}
           </Trans>
         </div>
         {rev.editSummary && (
-          <div className="text-sm leading-6">{rev.editSummary}</div>
+          <div className="break-words text-sm leading-6">{rev.editSummary}</div>
         )}
         {rev.diffFromParent?.changed && (
-          <div className="text-xs text-[color:var(--text-muted)]">
+          <div className="break-words text-xs text-[color:var(--text-muted)]">
             <Trans>字段：{rev.diffFromParent.changed.join(", ")}</Trans>
           </div>
         )}
@@ -155,6 +163,7 @@ function ChangeRow({
         <Button
           size="sm"
           variant="primary"
+          className="shrink-0"
           disabled={patrolling}
           onClick={onPatrol}
         >

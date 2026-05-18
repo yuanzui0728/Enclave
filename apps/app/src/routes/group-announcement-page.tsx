@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -15,7 +15,8 @@ import {
 } from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import { isDesktopOnlyPath } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -76,14 +77,53 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     queryFn: () => getGroup(groupId, baseUrl),
   });
   const [draft, setDraft] = useState("");
+  // 公告 textarea 字数往往比群名长，慢网下用户更可能在 groupQuery 落地前
+  // 就已经开始打字 + socket conversationUpdated 还会触发 group refetch
+  // → 上一版每次 announcement 改变都 setDraft 覆盖，正在编辑的内容被吞。
+  // 只在首次拿到 group 数据时同步一次，之后用户控制 draft。
+  const draftInitializedRef = useRef(false);
 
   useEffect(() => {
+    if (draftInitializedRef.current) {
+      return;
+    }
+    if (groupQuery.isLoading) {
+      return;
+    }
+    draftInitializedRef.current = true;
     setDraft(groupQuery.data?.announcement ?? "");
-  }, [groupQuery.data?.announcement]);
+  }, [groupQuery.data?.announcement, groupQuery.isLoading]);
 
+  // 走查 Round 2：tanstack-router 在 /group/A/announcement → /group/B/announcement
+  // 这种只换 param 的跳转下不重挂载组件，draftInitializedRef.current 仍为
+  // true，下方 seed-effect 会 early-return，textarea 一直显示上一群 A 的公
+  // 告。和 group-chat-background-page 已经做过的处理对齐，把 ref/draft 都
+  // 重置一遍，等下一次 group/B 数据到达再 seed。
   useEffect(() => {
     setNotice(null);
-  }, [groupId]);
+    draftInitializedRef.current = false;
+    setDraft("");
+  }, [baseUrl, groupId]);
+
+  // 走查移动端群聊 R5：和姊妹路径 chat-background-page R2（c16fa822e）/
+  // group-chat-background-page 本会话 R1 / group-chat-details 本会话 R2 同款
+  // 修法——setNotice 一串成功/提示文案（"已打开系统分享面板。"/"群公告已复制。"/
+  // "当前还没有可分享的群公告。"等）原版没 auto-dismiss，notice 一直挂在
+  // ChatDetailsShell 顶部直到用户切 groupId 或离开页才消。
+  //
+  // tone="success" 走的是 line 418 纯文案分支，无 action 按钮兜底，停留在
+  // 屏幕上是干扰；tone="info" + actionLabel/onAction 时（重试分享/复制）用户
+  // 可能要点 action，不能秒消。无 actionLabel 的 info（"当前还没有可分享的
+  // 群公告。"）只渲染一条返回按钮——返回按钮独立于 notice 状态，notice 消
+  // 了不影响用户操作，3.5s 后清理 visual 噪音。和姊妹页 chat-details R3 口径
+  // 对齐。
+  useEffect(() => {
+    if (!notice || (notice.actionLabel && notice.onAction)) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (
@@ -148,9 +188,26 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     void groupQuery.refetch();
   };
 
+  // 同步防双击锁——下面「保存群公告」按钮原本只靠 disabled=isPending 兜底，
+  // 但 disabled 要等 React commit 才生效，同帧内连点 2 次会同时通过两次
+  // isPending=false → 两个 PATCH /groups/$id 同时飞出去；服务端虽然幂等
+  // 但白白多打一份请求 + 一份 invalidate，公网隧道 RTT 600ms 下尤其浪费。
+  // ref 同步赋值挡掉同帧后续 click，onSettled 解锁。
+  const submittingRef = useRef(false);
+  const triggerSave = () => {
+    if (submittingRef.current) return;
+    if (saveMutation.isPending) return;
+    submittingRef.current = true;
+    saveMutation.mutate(undefined, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
+    });
+  };
+
   const handleRetrySave = () => {
     setNotice(null);
-    saveMutation.mutate();
+    triggerSave();
   };
 
   async function handleShareAnnouncement() {
@@ -165,10 +222,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     }
 
     const groupPath = `/group/${groupId}/announcement`;
-    const groupUrl =
-      typeof window === "undefined"
-        ? groupPath
-        : `${window.location.origin}${groupPath}`;
+    const groupUrl = buildPublicShareUrl(groupPath);
     const announcementTitle = t(msg`${group.name} 群公告`);
     const summary = [announcementTitle, announcement, groupUrl].join("\n\n");
 
@@ -239,18 +293,22 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
         { announcement: draft.trim() ? draft.trim() : null },
         baseUrl,
       ),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 走查 R1：原本 await Promise.all(invalidateQueries) 才 navigate，
+      // 公网隧道 RTT ~600ms × 3 条 invalidate 都要等服务端重新返回
+      // groups/contact-groups/conversations 才放行导航，用户点完"保存"
+      // 看着 spinner 多转 1-2s 才跳回详情页。invalidate 是给其它页面
+      // 拉刷用的（详情页自己也是 react-query 监听同 key 会自动重拉），
+      // 完全可以 fire-and-forget，导航马上发生。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
@@ -263,13 +321,24 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
   return (
     <ChatDetailsShell
       title={t(msg`群公告`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊信息`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊信息`)}
       onBack={() => {
-        void navigate({
-          to: "/group/$groupId/details",
-          params: { groupId },
-          ...(currentRouteHash ? { hash: currentRouteHash } : {}),
-        });
+        // 走查 R1：原版直接 navigate({to: details}) 会 push 一条新 history 项，
+        // 用户 [details → announcement → 点返回] 后 history 变成
+        // [details, announcement, details]，再按浏览器后退又落回 announcement
+        // 死循环。和 group-chat-background-page 已实施的方案对齐，用
+        // navigateBackOrFallback：能 history.back() 就 back，安全兜不住时
+        // (deep link / 跨域跳入) 才 fresh navigate。
+        navigateBackOrFallback(
+          () => {
+            void navigate({
+              to: "/group/$groupId/details",
+              params: { groupId },
+              ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+            });
+          },
+          `/group/${groupId}/details`,
+        );
       }}
       rightActions={
         groupQuery.data ? (
@@ -446,7 +515,15 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder={t(msg`写一条群公告，群成员会在聊天页看到它。`)}
                 rows={8}
-                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[15px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
+                // 走查 R4：和姊妹页 R1-R3 同款 a11y 修法——textarea 上方 section
+                // 标题"群公告"虽然渲染在视觉上方，但和这个 textarea 之间没有
+                // htmlFor / aria-labelledby 关联，屏幕阅读器 focus 进来只有
+                // placeholder 可读，多数 SR 实现开始打字后就不再朗读。挂
+                // aria-label="群公告" 明确表达意图，跟父 ChatDetailsSection
+                // 的标题一致。
+                aria-label={t(msg`群公告`)}
+                // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
                 <span>{t(msg`留空后保存，会清空当前群公告。`)}</span>
@@ -465,9 +542,13 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
               type="button"
               variant="primary"
               size="lg"
-              disabled={saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-              className="h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              disabled={
+                saveMutation.isPending ||
+                draft.trim() ===
+                  (groupQuery.data.announcement?.trim() ?? "")
+              }
+              onClick={triggerSave}
+              className="h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存群公告`)}
             </Button>
