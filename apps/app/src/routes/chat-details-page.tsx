@@ -154,10 +154,19 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   // mutation 成功提示在原版里没 auto-dismiss——setNotice 后会一直挂在
   // 页面顶部直到用户下一次切设置或离开 details。chat-list-page R1（commit
   // 见 listing notice useEffect）已经给过同款 3.5s auto-dismiss，本页跟着对齐。
-  // notice 带 actionLabel/onAction (强提醒被系统通知拒绝时让用户「去设置」)
-  // 时不能 dismiss——隐掉就再也没机会点 action，所以只 dismiss 纯文本 notice。
+  //
+  // 新一轮 R3：原版判定只看 primary actionLabel/onAction，漏了「web 移动端
+  // 强提醒权限被拒」这条 notice (`strongReminderMutation.onSuccess` 内
+  // nativeMobileShareSupported=false 分支) —— 它的 actionLabel/onAction 全是
+  // undefined，只挂 secondaryActionLabel="返回上一页"，会被错误 dismiss 走
+  // 用户唯一可点的返回按钮。改成「任一组 action（primary or secondary）有
+  // 完整 label+handler」就不 dismiss。
   useEffect(() => {
-    if (!notice || (notice.actionLabel && notice.onAction)) {
+    if (
+      !notice ||
+      (notice.actionLabel && notice.onAction) ||
+      (notice.secondaryActionLabel && notice.onSecondaryAction)
+    ) {
       return;
     }
     const timer = window.setTimeout(() => setNotice(null), 3500);
