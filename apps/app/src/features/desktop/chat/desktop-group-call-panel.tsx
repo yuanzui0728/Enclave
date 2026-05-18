@@ -304,6 +304,29 @@ export function DesktopGroupCallPanel({
     });
   };
 
+  // 走查电脑端群聊（新会话）R2：和姊妹电脑端单聊 R3（commit 5fbb61838 —
+  // handleDesktopCallAction / 历史记录 onOpenMessage 缺同帧双击 ref 守）
+  // / R4（commit 75acaa695 — 头像 popover 4 个 navigate 按钮）同款 pattern。
+  // 「到手机继续」按钮原版裸跑 `onClick={onOpenMobileHandoff}`——父级 inline
+  // (group-chat-thread-panel line 1688-1698) 是 `() => void navigate({
+  // to:"/desktop/mobile", hash:... })`，无任何 throttle。同帧 <16ms 双击
+  // 都通过 → tanstack-router push 2 条相同 /desktop/mobile?... history 项 →
+  // 用户从手机交接页返回还得多按 1 次返回；且 desktop-mobile-page mount
+  // 时 spawn QR + getMobileSession 走公网 RTT ~600ms，第 2 次也会重复发出。
+  // raf 解锁兜底 navigate 没真正切走的边界。「返回聊天」走 onClose（只是
+  // setDesktopCallPanelState(null) state-toggle），同帧 idempotent，无需保护。
+  const mobileHandoffFiredRef = useRef(false);
+  const handleOpenMobileHandoff = () => {
+    if (mobileHandoffFiredRef.current) return;
+    mobileHandoffFiredRef.current = true;
+    onOpenMobileHandoff();
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        mobileHandoffFiredRef.current = false;
+      });
+    }
+  };
+
   return (
     <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] p-5 shadow-[var(--shadow-card)]">
       <div className="flex min-w-0 flex-[1.08] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
@@ -422,7 +445,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={onOpenMobileHandoff}
+            onClick={handleOpenMobileHandoff}
             className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             <Smartphone size={16} />
