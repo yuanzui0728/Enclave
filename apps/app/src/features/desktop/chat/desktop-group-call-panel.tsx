@@ -162,8 +162,19 @@ export function DesktopGroupCallPanel({
       : null,
   });
 
+  // 走查电脑端群聊 R2：原版 mount 时直接打 onPanelOpened，把 (activeCount=0,
+  // totalCount=0) 报给 parent → parent sendCallInviteMutation 立刻发一条
+  // "ongoing 0/0 已加入" 群消息出去。R1 路径下 members 公网 RTT ~600ms 还在
+  // 飞时这条 0/0 已经投出，群里所有真实用户先看到"x 在群通话 0/0 已加入"
+  // 这种奇怪状态——auto-sync 1200ms 后才把 M/N 的正确状态发上来，第二条卡片
+  // 把 0/0 卡片覆盖，但群消息流里那条 0/0 残留。门控 members.length，等真有
+  // 数据再 broadcast。reported flag 同步推迟到真发出时翻 true。
   useEffect(() => {
     if (panelOpenedReported) {
+      return;
+    }
+
+    if (!members.length) {
       return;
     }
 
