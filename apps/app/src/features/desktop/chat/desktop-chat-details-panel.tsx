@@ -2355,11 +2355,18 @@ function DesktopGroupMemberBrowserDialog({
       return;
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape" || pending) {
+      if (event.key !== "Escape") {
         return;
       }
+      // 走查电脑端群聊 R7（和 R5/R6 同款）：pending 时仍要消费 Esc，否则
+      // workspace queueMicrotask 兜底跑 dismissSidePanel 把背后的"聊天信息"
+      // 侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关 dialog
+      // 倒把侧栏弄没了"。
       event.preventDefault();
       event.stopPropagation();
+      if (pending) {
+        return;
+      }
       onClose();
     }
     window.addEventListener("keydown", handleKeyDown);

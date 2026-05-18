@@ -123,8 +123,13 @@ export function DesktopMessageForwardDialog({
   // 转发还在 pending 的时候不能用 Esc 强制关掉——服务端那一发已经在
   // 飞，弹层一关 pending state 就消失，用户拿不到任何成功/失败反馈。
   // 等 mutation 落地后由 onClose 自然处理。
+  //
+  // 走查电脑端群聊 R7（和 R5/R6 同款）：原版 `if (!open || pending) return`
+  // 直接不挂 listener，pending 期间 Esc 完全透传——workspace queueMicrotask
+  // 兜底跑 dismissSidePanel 把"聊天信息" / "查找记录"侧栏偷关掉。改成 pending
+  // 时仍挂 listener、消费 Esc 但不真关 dialog。
   useEffect(() => {
-    if (!open || pending) {
+    if (!open) {
       return;
     }
 
@@ -136,6 +141,9 @@ export function DesktopMessageForwardDialog({
       // dismissSidePanel 把背后的详情/查找记录侧栏也一并关掉。
       event.preventDefault();
       event.stopPropagation();
+      if (pending) {
+        return;
+      }
       onClose();
     };
 
