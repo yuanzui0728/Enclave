@@ -1673,7 +1673,41 @@ export function ChannelsPage() {
       return;
     }
 
+    // 走查 2026-05-18 新一轮 R1：移动端原来只 setActiveSection，URL 不管，靠
+    // 下面 line 1431-1509 的 URL 同步 effect 兜——但 R5 fix（fb6fc7a41）加了
+    // `urlSection !== activeSection 早返` 来防 URL → state → URL 死循环，副作
+    // 用是 state → URL 这条路径也被同款早返堵死：用户点「朋友」tab 时
+    //   render: activeSection="friends", urlSection="recommended"（URL 还没动）
+    //   → URL sync effect 早返 → URL 一直停在 /tabs/channels（无 hash）。
+    // 后果：
+    //   - 刷新整页 → activeSection 用 routeState.section ?? "recommended" 初始
+    //     化 → 回到「推荐」tab，用户切的「朋友」选择丢；
+    //   - 把 URL 复制给朋友 / 截图分享 → 收到的人看到的是默认推荐，链接没传递
+    //     上下文；
+    //   - 浏览器后退 / 前进 → 历史里没记录过用户在「朋友」tab 待过，行为不可预测。
+    // R5 的诊断是对的（URL/state ping-pong 死循环），但治法太重，把 click 路径
+    // 也牺牲了。
+    //
+    // 对齐 desktop click handler 模式：click 时主动 navigate 把 URL 一步到位写
+    // 对，URL sync effect 此时再跑一遍 urlSection==activeSection（都是新值）→
+    // nextHash 等于当前 hash → 自然 no-op。R5 早返保护 URL→state 路径不变。
+    //
+    // hash 保留 routeSelectedPostId + safeReturn{Path,Hash} —— 切 tab 不应该把
+    // 用户之前带过来的 returnPath / 锚点 post 也丢掉；section 用新值。注意
+    // post 可能不在新 section 里（如 yz 在 recommended 切到 friends 时锚点 post
+    // 不见了），但 hasRouteTargetInPosts effect 早返，scroll-to-post 自然不跑，
+    // 不会出错；URL hash 残留 post= 只在用户后退时仍能定位回去。
     setActiveSection(section);
+    void navigate({
+      to: normalizedPathname,
+      hash: buildDesktopChannelsRouteHash({
+        postId: routeSelectedPostId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+        section,
+      }),
+      replace: true,
+    });
   }
 
   function openChannelAuthor(
