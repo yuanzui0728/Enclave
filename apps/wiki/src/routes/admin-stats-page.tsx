@@ -11,6 +11,7 @@ import {
 import { wikiApi } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { useUsernameMap } from "../lib/use-username-map";
+import { abuseFilterActionLabel } from "../lib/revision-labels";
 
 export function AdminStatsPage() {
   const t = translateRuntimeMessage;
@@ -134,7 +135,11 @@ export function AdminStatsPage() {
             >
               <span className="font-medium">{filter.name}</span>
               <span className="text-xs text-[color:var(--text-muted)]">
-                <Trans>动作：{filter.action}</Trans>
+                {/* 原写法把 filter.action 英文枚举（block/tag_high_risk/
+                    warn/log）直接拼到 "动作：" 后面；admin/abuse-filters 那侧
+                    早就翻译成"拦截/标高风险/警告/记录"。统一调用本地化映射，
+                    治理仪表盘里看着是"动作：标高风险"，不是"动作：tag_high_risk"。 */}
+                <Trans>动作：{abuseFilterActionLabel(filter.action)}</Trans>
               </span>
               <span className="ml-auto">
                 <Trans>近 7 天 {recentHits} 命中</Trans>

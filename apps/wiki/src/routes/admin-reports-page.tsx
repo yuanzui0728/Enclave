@@ -16,6 +16,10 @@ import { wikiApi, type ModerationReport } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
+import {
+  reportStatusLabel,
+  reportTargetLabel,
+} from "../lib/revision-labels";
 
 export function AdminReportsPage() {
   const t = translateRuntimeMessage;
@@ -142,9 +146,14 @@ function ReportCard({
   return (
     <div className="space-y-2 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)]">
       <div className="flex flex-wrap items-center gap-2">
-        <StatusPill>{report.targetType}</StatusPill>
+        {/* 原写法 <StatusPill>{report.targetType}</StatusPill> 渲染英文枚举
+            "wiki_page" / "wiki_revision" / "wiki_talk_post"，跟 status 同样
+            裸串 "open" / "resolved" / "dismissed"。tabs 头上已经把这些 enum
+            翻译成"未处理 / 已处理 / 已驳回"，列表里却要管理员对照英文，
+            统一走本地化映射。 */}
+        <StatusPill>{reportTargetLabel(report.targetType)}</StatusPill>
         <code className="text-xs">{report.targetId.slice(0, 12)}…</code>
-        <StatusPill>{report.status}</StatusPill>
+        <StatusPill>{reportStatusLabel(report.status)}</StatusPill>
         <span className="ml-auto text-xs text-[color:var(--text-muted)]">
           <Trans>
             举报人 {ownerLabel} · {formatDateTime(report.createdAt)}

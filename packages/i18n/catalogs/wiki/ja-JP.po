@@ -545,7 +545,7 @@ msgstr "入力済みの項目も AI に修正させる場合は「最適化」�
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
 #: apps/wiki/src/routes/character-page.tsx:245
-#: apps/wiki/src/routes/character-page.tsx:826
+#: apps/wiki/src/routes/character-page.tsx:832
 msgid "取消"
 msgstr "キャンセル"
 
@@ -758,7 +758,7 @@ msgstr "送信しました。管理者が対応します。"
 #: apps/wiki/src/routes/account-page.tsx:360
 #: apps/wiki/src/routes/account-page.tsx:466
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
-#: apps/wiki/src/routes/admin-blocks-page.tsx:172
+#: apps/wiki/src/routes/admin-blocks-page.tsx:173
 #: apps/wiki/src/routes/character-page.tsx:235
 msgid "提交中..."
 msgstr "送信中..."
@@ -869,10 +869,10 @@ msgstr "審査待ち編集"
 
 #: apps/wiki/src/components/root-layout.tsx:117
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:62
-#: apps/wiki/src/routes/admin-blocks-page.tsx:71
+#: apps/wiki/src/routes/admin-blocks-page.tsx:72
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
-#: apps/wiki/src/routes/admin-reports-page.tsx:44
-#: apps/wiki/src/routes/admin-stats-page.tsx:35
+#: apps/wiki/src/routes/admin-reports-page.tsx:48
+#: apps/wiki/src/routes/admin-stats-page.tsx:36
 #: apps/wiki/src/routes/admin-users-page.tsx:54
 msgid "管理"
 msgstr "管理"
@@ -896,7 +896,7 @@ msgstr "ページ保護"
 
 #: apps/wiki/src/components/root-layout.tsx:139
 #: apps/wiki/src/routes/admin-layout.tsx:14
-#: apps/wiki/src/routes/admin-reports-page.tsx:45
+#: apps/wiki/src/routes/admin-reports-page.tsx:49
 msgid "举报队列"
 msgstr "通報キュー"
 
@@ -908,7 +908,7 @@ msgstr "不正対策フィルター"
 
 #: apps/wiki/src/components/root-layout.tsx:151
 #: apps/wiki/src/routes/admin-layout.tsx:16
-#: apps/wiki/src/routes/admin-stats-page.tsx:36
+#: apps/wiki/src/routes/admin-stats-page.tsx:37
 msgid "治理仪表盘"
 msgstr "ガバナンスダッシュボード"
 
@@ -1045,11 +1045,11 @@ msgstr "（クリックして描画）"
 msgid "改后（当前编辑）"
 msgstr "変更後（現在の編集）"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:117
+#: apps/wiki/src/components/scene-prompt-preview.tsx:123
 msgid "改后"
 msgstr "変更後"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:124
+#: apps/wiki/src/components/scene-prompt-preview.tsx:130
 msgid "改前"
 msgstr "変更前"
 
@@ -1185,7 +1185,8 @@ msgid "已通过"
 msgstr "承認済み"
 
 #: apps/wiki/src/lib/revision-labels.ts:16
-#: apps/wiki/src/routes/admin-reports-page.tsx:39
+#: apps/wiki/src/lib/revision-labels.ts:54
+#: apps/wiki/src/routes/admin-reports-page.tsx:43
 msgid "已驳回"
 msgstr "却下済"
 
@@ -1241,6 +1242,65 @@ msgstr "移行"
 #: apps/wiki/src/lib/revision-labels.ts:40
 msgid "导入"
 msgstr "インポート"
+
+#: apps/wiki/src/lib/revision-labels.ts:46
+msgid "词条"
+msgstr "ページ"
+
+#: apps/wiki/src/lib/revision-labels.ts:47
+msgid "修订"
+msgstr "改訂"
+
+#: apps/wiki/src/lib/revision-labels.ts:48
+msgid "讨论回复"
+msgstr "ディスカッション返信"
+
+#: apps/wiki/src/lib/revision-labels.ts:52
+#: apps/wiki/src/routes/admin-reports-page.tsx:41
+msgid "未处理"
+msgstr "未処理"
+
+#: apps/wiki/src/lib/revision-labels.ts:53
+#: apps/wiki/src/routes/admin-reports-page.tsx:42
+msgid "已处理"
+msgstr "対応済"
+
+#: apps/wiki/src/lib/revision-labels.ts:58
+#: apps/wiki/src/routes/admin-blocks-page.tsx:110
+msgid "全站"
+msgstr "サイト全体"
+
+#: apps/wiki/src/lib/revision-labels.ts:59
+#: apps/wiki/src/routes/admin-blocks-page.tsx:111
+msgid "单条目"
+msgstr "個別エントリ"
+
+#: apps/wiki/src/lib/revision-labels.ts:60
+#: apps/wiki/src/routes/admin-blocks-page.tsx:112
+#: apps/wiki/src/routes/character-page.tsx:119
+#: apps/wiki/src/routes/watchlist-page.tsx:164
+msgid "讨论"
+msgstr "トーク"
+
+#: apps/wiki/src/lib/revision-labels.ts:66
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:229
+msgid "拦截"
+msgstr "ブロック"
+
+#: apps/wiki/src/lib/revision-labels.ts:67
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:231
+msgid "标高风险"
+msgstr "高リスクとしてタグ"
+
+#: apps/wiki/src/lib/revision-labels.ts:68
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
+msgid "警告"
+msgstr "警告"
+
+#: apps/wiki/src/lib/revision-labels.ts:69
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:234
+msgid "记录"
+msgstr "ログ"
 
 #: apps/wiki/src/lib/wiki-api.ts:60
 msgid "网络请求失败，请检查网络后重试。"
@@ -1500,22 +1560,6 @@ msgstr "無効化"
 msgid "启用"
 msgstr "有効化"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:229
-msgid "拦截"
-msgstr "ブロック"
-
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:231
-msgid "标高风险"
-msgstr "高リスクとしてタグ"
-
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
-msgid "警告"
-msgstr "警告"
-
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:234
-msgid "记录"
-msgstr "ログ"
-
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:264
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:438
 msgid "高"
@@ -1623,121 +1667,107 @@ msgstr "regex / shrink / frequency / link_flood / keyword_list などをサポ�
 msgid "提交并启用"
 msgstr "送信して有効化"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:58
+#: apps/wiki/src/routes/admin-blocks-page.tsx:59
 msgid "封禁已添加，列表已刷新。"
 msgstr "ブロックを追加しました。一覧を更新しました。"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:72
+#: apps/wiki/src/routes/admin-blocks-page.tsx:73
 msgid "封禁管理"
 msgstr "ブロック管理"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:74
+#: apps/wiki/src/routes/admin-blocks-page.tsx:75
 msgid "对违规用户进行全站、单条目或讨论范围的封禁，可设置到期时间或永久。已撤销/到期的记录可勾选展示。"
 msgstr "違反ユーザーをサイト全体・個別エントリ・トーク範囲でブロック。有効期限または永久を設定可能。撤回・期限切れの記録は表示切替可。"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:79
+#: apps/wiki/src/routes/admin-blocks-page.tsx:80
 msgid "新增封禁"
 msgstr "ブロックを追加"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:82
+#: apps/wiki/src/routes/admin-blocks-page.tsx:83
 msgid "目标用户"
 msgstr "対象ユーザー"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:88
+#: apps/wiki/src/routes/admin-blocks-page.tsx:89
 msgid "— 选择用户 —"
 msgstr "— ユーザーを選択 —"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:98
+#: apps/wiki/src/routes/admin-blocks-page.tsx:99
 msgid "范围"
 msgstr "範囲"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:109
-msgid "全站"
-msgstr "サイト全体"
-
-#: apps/wiki/src/routes/admin-blocks-page.tsx:110
-msgid "单条目"
-msgstr "個別エントリ"
-
-#: apps/wiki/src/routes/admin-blocks-page.tsx:111
-#: apps/wiki/src/routes/character-page.tsx:119
-#: apps/wiki/src/routes/watchlist-page.tsx:164
-msgid "讨论"
-msgstr "トーク"
-
-#: apps/wiki/src/routes/admin-blocks-page.tsx:115
+#: apps/wiki/src/routes/admin-blocks-page.tsx:116
 msgid "条目 ID"
 msgstr "エントリ ID"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:121
+#: apps/wiki/src/routes/admin-blocks-page.tsx:122
 msgid "例如：char-celebrity-andrej-karpathy"
 msgstr "例：char-celebrity-andrej-karpathy"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:125
+#: apps/wiki/src/routes/admin-blocks-page.tsx:126
 #: apps/wiki/src/routes/admin-protection-page.tsx:205
 msgid "原因"
 msgstr "理由"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:129
+#: apps/wiki/src/routes/admin-blocks-page.tsx:130
 msgid "说明为什么对此用户/范围执行封禁"
 msgstr "このユーザー／範囲をブロックする理由を記入"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:133
+#: apps/wiki/src/routes/admin-blocks-page.tsx:134
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "到期时间"
 msgstr "期限"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:134
+#: apps/wiki/src/routes/admin-blocks-page.tsx:135
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "可选；留空 = 永久"
 msgstr "任意。空欄 = 永久"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:172
+#: apps/wiki/src/routes/admin-blocks-page.tsx:173
 msgid "提交封禁"
 msgstr "ブロックを送信"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:192
+#: apps/wiki/src/routes/admin-blocks-page.tsx:193
 msgid "封禁列表"
 msgstr "ブロック一覧"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:200
+#: apps/wiki/src/routes/admin-blocks-page.tsx:201
 msgid "含已撤销 / 已到期"
 msgstr "撤回済 / 期限切れも含む"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:213
+#: apps/wiki/src/routes/admin-blocks-page.tsx:214
 msgid "没有相关封禁记录。"
 msgstr "該当するブロック記録はありません。"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:255
+#: apps/wiki/src/routes/admin-blocks-page.tsx:259
 msgid "生效中"
 msgstr "有効中"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:259
+#: apps/wiki/src/routes/admin-blocks-page.tsx:263
 msgid "已撤销"
 msgstr "撤回済"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:263
+#: apps/wiki/src/routes/admin-blocks-page.tsx:267
 msgid "已到期"
 msgstr "期限切れ"
 
 #. placeholder {0}: formatDateTime(block.createdAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:274
+#: apps/wiki/src/routes/admin-blocks-page.tsx:278
 msgid "创建于 {0}"
 msgstr "作成日時 {0}"
 
 #. placeholder {0}: formatDateTime(block.expiresAt)
 #. placeholder {0}: formatDateTime(row.expiresAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:276
+#: apps/wiki/src/routes/admin-blocks-page.tsx:280
 #: apps/wiki/src/routes/admin-protection-page.tsx:255
 msgid "到期 {0}"
 msgstr "{0} に期限切れ"
 
 #. placeholder {0}: formatDateTime(block.revokedAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:278
+#: apps/wiki/src/routes/admin-blocks-page.tsx:282
 msgid "撤销于 {0}"
 msgstr "撤回日時 {0}"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:289
+#: apps/wiki/src/routes/admin-blocks-page.tsx:293
 msgid "撤销"
 msgstr "撤回"
 
@@ -1846,110 +1876,102 @@ msgstr "記録はありません。"
 msgid "{0} · 由 {1}"
 msgstr "{0} · {1} による"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:37
-msgid "未处理"
-msgstr "未処理"
-
-#: apps/wiki/src/routes/admin-reports-page.tsx:38
-msgid "已处理"
-msgstr "対応済"
-
-#: apps/wiki/src/routes/admin-reports-page.tsx:47
+#: apps/wiki/src/routes/admin-reports-page.tsx:51
 msgid "社区举报的内容会先进入\"未处理\"状态。逐条审核后选择已处理或驳回。"
 msgstr "コミュニティ通報はまず「未処理」へ。各件を審査して「対応済」か「却下」に振り分けます。"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:53
+#: apps/wiki/src/routes/admin-reports-page.tsx:57
 msgid "载入中…"
 msgstr "読み込み中…"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:63
+#: apps/wiki/src/routes/admin-reports-page.tsx:67
 msgid "举报状态筛选"
 msgstr "通報ステータスフィルター"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:92
+#: apps/wiki/src/routes/admin-reports-page.tsx:96
 msgid "当前分类下暂无举报。"
 msgstr "このカテゴリの通報はありません。"
 
 #. placeholder {0}: formatDateTime(report.createdAt)
-#: apps/wiki/src/routes/admin-reports-page.tsx:149
+#: apps/wiki/src/routes/admin-reports-page.tsx:158
 msgid "举报人 {ownerLabel} · {0}"
 msgstr "報告者 {ownerLabel} · {0}"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:167
+#: apps/wiki/src/routes/admin-reports-page.tsx:176
 msgid "打开词条"
 msgstr "エントリを開く"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:179
+#: apps/wiki/src/routes/admin-reports-page.tsx:188
 msgid "标记已处理"
 msgstr "対応済にする"
 
-#: apps/wiki/src/routes/admin-reports-page.tsx:188
+#: apps/wiki/src/routes/admin-reports-page.tsx:197
 #: apps/wiki/src/routes/pending-reviews-page.tsx:349
 msgid "驳回"
 msgstr "却下"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:38
+#: apps/wiki/src/routes/admin-stats-page.tsx:39
 msgid "日度新建/审核数据、被回滚最多的用户、过滤器近 7 天命中量。"
 msgstr "日次の新規／審査数、リバート最多ユーザー、過去 7 日のフィルターヒット件数。"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:48
+#: apps/wiki/src/routes/admin-stats-page.tsx:49
 msgid "今日新建词条"
 msgstr "本日の新規エントリ"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:52
+#: apps/wiki/src/routes/admin-stats-page.tsx:53
 msgid "近 7 天新建词条"
 msgstr "過去 7 日の新規エントリ"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:56
+#: apps/wiki/src/routes/admin-stats-page.tsx:57
 msgid "待审队列长度"
 msgstr "審査待ち件数"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:60
+#: apps/wiki/src/routes/admin-stats-page.tsx:61
 msgid "今日通过审核"
 msgstr "本日承認"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:64
+#: apps/wiki/src/routes/admin-stats-page.tsx:65
 msgid "今日驳回"
 msgstr "本日却下"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:68
+#: apps/wiki/src/routes/admin-stats-page.tsx:69
 msgid "今日反破坏命中"
 msgstr "本日の不正検知件数"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:72
+#: apps/wiki/src/routes/admin-stats-page.tsx:73
 msgid "本周新晋自动确认"
 msgstr "今週自動確認に昇格"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:80
+#: apps/wiki/src/routes/admin-stats-page.tsx:81
 msgid "被回滚最多的用户（top 20）"
 msgstr "リバート最多ユーザー（上位 20）"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:90
-#: apps/wiki/src/routes/admin-stats-page.tsx:127
+#: apps/wiki/src/routes/admin-stats-page.tsx:91
+#: apps/wiki/src/routes/admin-stats-page.tsx:128
 msgid "无记录"
 msgstr "記録なし"
 
 #. placeholder {0}: u.editCount
 #. placeholder {1}: u.approvedEditCount
-#: apps/wiki/src/routes/admin-stats-page.tsx:100
+#: apps/wiki/src/routes/admin-stats-page.tsx:101
 msgid "编辑 {0} · 通过 {1}"
 msgstr "編集 {0} · 承認 {1}"
 
 #. placeholder {0}: u.revertedCount
-#: apps/wiki/src/routes/admin-stats-page.tsx:111
+#: apps/wiki/src/routes/admin-stats-page.tsx:112
 msgid "回滚 {0}"
 msgstr "ロールバック {0}"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:120
+#: apps/wiki/src/routes/admin-stats-page.tsx:121
 msgid "过滤器命中（近 7 天）"
 msgstr "フィルターヒット（過去 7 日）"
 
-#. placeholder {0}: filter.action
-#: apps/wiki/src/routes/admin-stats-page.tsx:137
+#. placeholder {0}: abuseFilterActionLabel(filter.action)
+#: apps/wiki/src/routes/admin-stats-page.tsx:142
 msgid "动作：{0}"
 msgstr "アクション: {0}"
 
-#: apps/wiki/src/routes/admin-stats-page.tsx:140
+#: apps/wiki/src/routes/admin-stats-page.tsx:145
 msgid "近 7 天 {recentHits} 命中"
 msgstr "過去 7 日 {recentHits} 件ヒット"
 
@@ -2013,7 +2035,8 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} vs v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:49
-#: apps/wiki/src/routes/character-page.tsx:722
+#: apps/wiki/src/routes/character-page.tsx:426
+#: apps/wiki/src/routes/character-page.tsx:728
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
 #: apps/wiki/src/routes/pending-reviews-page.tsx:249
 #: apps/wiki/src/routes/recent-changes-page.tsx:140
@@ -2054,12 +2077,12 @@ msgid "版本切换"
 msgstr "バージョン切替"
 
 #: apps/wiki/src/routes/character-page.tsx:172
-#: apps/wiki/src/routes/character-page.tsx:425
+#: apps/wiki/src/routes/character-page.tsx:431
 msgid "稳定版"
 msgstr "安定版"
 
 #: apps/wiki/src/routes/character-page.tsx:185
-#: apps/wiki/src/routes/character-page.tsx:425
+#: apps/wiki/src/routes/character-page.tsx:431
 msgid "最新版"
 msgstr "最新"
 
@@ -2136,130 +2159,135 @@ msgstr "アクティブ時間帯"
 msgid "有 {0} 个待审版本，最新为："
 msgstr "{0} 件の審査待ち版があります。最新："
 
+#: apps/wiki/src/routes/character-page.tsx:427
+#: apps/wiki/src/routes/pending-reviews-page.tsx:135
+msgid "低风险"
+msgstr "低リスク"
+
 #. placeholder {0}: view.currentRevision.version
 #. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:428
+#: apps/wiki/src/routes/character-page.tsx:434
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · {1} が {2} に送信"
 
-#: apps/wiki/src/routes/character-page.tsx:430
+#: apps/wiki/src/routes/character-page.tsx:436
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "wiki 版がまだありません（バックエンドの生データを表示）"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:434
+#: apps/wiki/src/routes/character-page.tsx:440
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "安定版 v{0} / 最新版 v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:556
+#: apps/wiki/src/routes/character-page.tsx:562
 msgid "请先 <0>登录</0> 后再编辑。"
 msgstr "編集する前に<0>サインイン</0>してください。"
 
 #. placeholder {0}: user.role
-#: apps/wiki/src/routes/character-page.tsx:570
+#: apps/wiki/src/routes/character-page.tsx:576
 msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 msgstr "現在のあなたの権限は <0>{0}</0> です。エディタはプライベートキャラクターと同じ 6 セクション構成に統一され、独立したページとして開きます。コンテンツ項目とキャラクターロジックの変更は引き続き同じバージョン管理・競合検出・巡回審査の経路を通ります。"
 
 #. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:578
+#: apps/wiki/src/routes/character-page.tsx:584
 #: apps/wiki/src/routes/world-character-edit-page.tsx:249
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ 既に審査待ちの v{0} があります。送信すると編集競合が発生する可能性があります。"
 
-#: apps/wiki/src/routes/character-page.tsx:590
+#: apps/wiki/src/routes/character-page.tsx:596
 msgid "✨ 打开编辑器"
 msgstr "✨ エディタを開く"
 
-#: apps/wiki/src/routes/character-page.tsx:593
+#: apps/wiki/src/routes/character-page.tsx:599
 msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 msgstr "エディタは AI ワンクリック生成およびページ遷移をまたぐ下書きに対応しています。"
 
-#: apps/wiki/src/routes/character-page.tsx:651
+#: apps/wiki/src/routes/character-page.tsx:657
 msgid "还没有任何编辑记录。"
 msgstr "編集履歴はまだありません。"
 
-#: apps/wiki/src/routes/character-page.tsx:732
+#: apps/wiki/src/routes/character-page.tsx:738
 msgid "当前版本"
 msgstr "現在の版"
 
-#: apps/wiki/src/routes/character-page.tsx:737
+#: apps/wiki/src/routes/character-page.tsx:743
 #: apps/wiki/src/routes/recent-changes-page.tsx:150
 msgid "待巡查"
 msgstr "未巡回"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:747
+#: apps/wiki/src/routes/character-page.tsx:753
 #: apps/wiki/src/routes/recent-changes-page.tsx:170
 msgid "字段：{0}"
 msgstr "フィールド：{0}"
 
-#: apps/wiki/src/routes/character-page.tsx:755
+#: apps/wiki/src/routes/character-page.tsx:761
 msgid "收起对比"
 msgstr "差分を閉じる"
 
-#: apps/wiki/src/routes/character-page.tsx:755
+#: apps/wiki/src/routes/character-page.tsx:761
 msgid "查看对比"
 msgstr "差分を表示"
 
-#: apps/wiki/src/routes/character-page.tsx:764
+#: apps/wiki/src/routes/character-page.tsx:770
 msgid "独立对比"
 msgstr "別画面で比較"
 
-#: apps/wiki/src/routes/character-page.tsx:773
+#: apps/wiki/src/routes/character-page.tsx:779
 msgid "回滚到此版本"
 msgstr "この版へロールバック"
 
-#: apps/wiki/src/routes/character-page.tsx:787
+#: apps/wiki/src/routes/character-page.tsx:793
 #: apps/wiki/src/routes/pending-reviews-page.tsx:291
 msgid "查看角色逻辑快照"
 msgstr "キャラクターロジックのスナップショットを表示"
 
-#: apps/wiki/src/routes/character-page.tsx:800
+#: apps/wiki/src/routes/character-page.tsx:806
 msgid "回滚原因（必填）"
 msgstr "ロールバック理由（必須）"
 
-#: apps/wiki/src/routes/character-page.tsx:805
+#: apps/wiki/src/routes/character-page.tsx:811
 msgid "例如：v3 涉及破坏性内容"
 msgstr "例：v3 が破壊的な内容を含む"
 
-#: apps/wiki/src/routes/character-page.tsx:819
+#: apps/wiki/src/routes/character-page.tsx:825
 msgid "回滚中..."
 msgstr "ロールバック中..."
 
-#: apps/wiki/src/routes/character-page.tsx:819
+#: apps/wiki/src/routes/character-page.tsx:825
 msgid "确认回滚"
 msgstr "ロールバック確定"
 
-#: apps/wiki/src/routes/character-page.tsx:861
+#: apps/wiki/src/routes/character-page.tsx:867
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ キャラクターが管理者によって直接変更されました"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:864
+#: apps/wiki/src/routes/character-page.tsx:870
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "wiki の現行バージョンとランタイムのキャラクターデータに {totalDrift} 件の差分があります（source: {0}）。右のボタンをクリックすると、現在の値を新しい版として wiki 履歴に記録できます。"
 
-#: apps/wiki/src/routes/character-page.tsx:871
+#: apps/wiki/src/routes/character-page.tsx:877
 msgid "内容字段："
 msgstr "コンテンツフィールド："
 
-#: apps/wiki/src/routes/character-page.tsx:877
+#: apps/wiki/src/routes/character-page.tsx:883
 msgid "逻辑字段："
 msgstr "ロジックフィールド："
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:881
+#: apps/wiki/src/routes/character-page.tsx:887
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:894
+#: apps/wiki/src/routes/character-page.tsx:900
 msgid "同步中..."
 msgstr "同期中..."
 
-#: apps/wiki/src/routes/character-page.tsx:894
+#: apps/wiki/src/routes/character-page.tsx:900
 msgid "纳入 wiki 历史"
 msgstr "wiki 履歴に取り込む"
 
@@ -2727,10 +2755,6 @@ msgstr "操作"
 #: apps/wiki/src/routes/pending-reviews-page.tsx:130
 msgid "风险"
 msgstr "リスク"
-
-#: apps/wiki/src/routes/pending-reviews-page.tsx:135
-msgid "低风险"
-msgstr "低リスク"
 
 #: apps/wiki/src/routes/pending-reviews-page.tsx:148
 msgid "没有符合筛选条件的待审项。试试清空筛选。"

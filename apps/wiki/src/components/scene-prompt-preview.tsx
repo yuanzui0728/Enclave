@@ -111,7 +111,13 @@ export function ScenePromptPreview({
         </div>
       </div>
       {(previewMut.isError || baselineMut.isError) && (
-        <ul className="text-xs text-[var(--state-danger-text)] space-y-0.5">
+        // 渲染失败时这两条错误是用户重要的反馈（密码错 / 服务超时 / 角色不
+        // 存在），原写法只是普通 <ul>，SR 完全静默。挂 role=alert 让屏读把
+        // "改后: xxx 失败" 主动念出来；和邻居 ErrorBlock role=alert 对齐。
+        <ul
+          role="alert"
+          className="text-xs text-[var(--state-danger-text)] space-y-0.5"
+        >
           {previewMut.isError && (
             <li>
               <Trans>改后</Trans>

@@ -18,6 +18,7 @@ import { wikiApi, type WikiBlockRow } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
+import { blockScopeLabel } from "../lib/revision-labels";
 
 const EMPTY_BLOCK_FORM = {
   userId: "",
@@ -249,7 +250,10 @@ function BlockRow({
           <strong className="text-[color:var(--text-primary)]">
             {username}
           </strong>
-          <StatusPill>{block.scope}</StatusPill>
+          {/* 原写法裸渲染 block.scope = "global" / "page" / "talk"，跟创建
+              新封禁的下拉里 "全站 / 单条目 / 讨论" 翻译不一致；现在统一走
+              本地化映射。 */}
+          <StatusPill>{blockScopeLabel(block.scope)}</StatusPill>
           {isActive ? (
             <StatusPill>
               <Trans>生效中</Trans>

@@ -40,6 +40,35 @@ const CHANGE_SOURCE_LABELS: Record<string, MessageDescriptor> = {
   import: msg`导入`,
 };
 
+// admin/reports / admin/blocks 卡片用：targetType / reportStatus / blockScope
+// 同样从后端拿英文字面量，原写法都裸渲染。
+const REPORT_TARGET_LABELS: Record<string, MessageDescriptor> = {
+  wiki_page: msg`词条`,
+  wiki_revision: msg`修订`,
+  wiki_talk_post: msg`讨论回复`,
+};
+
+const REPORT_STATUS_LABELS: Record<string, MessageDescriptor> = {
+  open: msg`未处理`,
+  resolved: msg`已处理`,
+  dismissed: msg`已驳回`,
+};
+
+const BLOCK_SCOPE_LABELS: Record<string, MessageDescriptor> = {
+  global: msg`全站`,
+  page: msg`单条目`,
+  talk: msg`讨论`,
+};
+
+// admin-abuse-filters 卡片用 ActionPill 自带本地化；admin-stats 的"过滤器
+// 命中（近 7 天）"列表却直接拼 `动作：{filter.action}` 渲染英文枚举。
+const ABUSE_FILTER_ACTION_LABELS: Record<string, MessageDescriptor> = {
+  block: msg`拦截`,
+  tag_high_risk: msg`标高风险`,
+  warn: msg`警告`,
+  log: msg`记录`,
+};
+
 function lookup(
   map: Record<string, MessageDescriptor>,
   value: string | null | undefined,
@@ -57,3 +86,11 @@ export const revisionKindLabel = (v: string | null | undefined) =>
   lookup(REVISION_KIND_LABELS, v);
 export const revisionChangeSourceLabel = (v: string | null | undefined) =>
   lookup(CHANGE_SOURCE_LABELS, v);
+export const reportTargetLabel = (v: string | null | undefined) =>
+  lookup(REPORT_TARGET_LABELS, v);
+export const reportStatusLabel = (v: string | null | undefined) =>
+  lookup(REPORT_STATUS_LABELS, v);
+export const blockScopeLabel = (v: string | null | undefined) =>
+  lookup(BLOCK_SCOPE_LABELS, v);
+export const abuseFilterActionLabel = (v: string | null | undefined) =>
+  lookup(ABUSE_FILTER_ACTION_LABELS, v);

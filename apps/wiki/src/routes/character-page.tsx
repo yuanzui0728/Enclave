@@ -418,7 +418,13 @@ function ReadView({ view }: { view: WikiPageView }) {
             有 {view.pendingRevisions.length} 个待审版本，最新为：
           </Trans>
           <strong className="mx-1">v{view.pendingRevision.version}</strong>
-          {view.pendingRevision.operation} / {view.pendingRevision.riskLevel}
+          {/* 原写法直接拼 view.pendingRevision.operation/riskLevel 渲染英文枚
+              举（"create / high" / "soft_delete / low"），跟邻居 "有 N 个待审
+              版本" 中英混排。统一走本地化映射。 */}
+          {revisionOperationLabel(view.pendingRevision.operation)} ·{" "}
+          {view.pendingRevision.riskLevel === "high"
+            ? t(msg`高风险`)
+            : t(msg`低风险`)}
         </InlineNotice>
       )}
       <footer className="text-xs text-[var(--text-muted)] pt-3 border-t border-[var(--border-subtle)]">
