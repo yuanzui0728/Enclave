@@ -1,0 +1,281 @@
+name: desktop-macos-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_mode:
+        description: "Build one target or both macOS targets"
+        required: true
+        default: "single"
+        type: choice
+        options:
+          - single
+          - both
+      target:
+        description: "Rust target triple when target_mode=single"
+        required: true
+        default: "aarch64-apple-darwin"
+        type: choice
+        options:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+      upload_to_release:
+        description: "Upload bundles to a GitHub Release"
+        required: true
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "desktop-v*"
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+      upload_to_release: ${{ steps.targets.outputs.upload_to_release }}
+      version: ${{ steps.meta.outputs.version }}
+      expected_tag: ${{ steps.meta.outputs.expected_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve macOS target matrix
+        id: targets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            TARGETS='["aarch64-apple-darwin","x86_64-apple-darwin"]'
+            UPLOAD="true"
+          elif [[ "${{ github.event.inputs.target_mode }}" == "both" ]]; then
+            TARGETS='["aarch64-apple-darwin","x86_64-apple-darwin"]'
+            UPLOAD="${{ github.event.inputs.upload_to_release }}"
+          else
+            TARGETS='["${{ github.event.inputs.target }}"]'
+            UPLOAD="${{ github.event.inputs.upload_to_release }}"
+          fi
+
+          echo "targets=$TARGETS" >> "$GITHUB_OUTPUT"
+          echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
+          echo "Resolved targets: $TARGETS"
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: bash ./.github/scripts/resolve-desktop-release-meta.sh placeholder-target
+
+  build-macos:
+    needs: prepare-matrix
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.prepare-matrix.outputs.targets) }}
+    env:
+      CI: true
+      YINJIE_DESKTOP_TARGET_TRIPLE: ${{ matrix.target }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo-target/yinjie-desktop
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck workspace
+        run: pnpm typecheck
+
+      - name: Build shared frontend packages
+        run: pnpm build
+
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: bash ./.github/scripts/resolve-desktop-release-meta.sh "$YINJIE_DESKTOP_TARGET_TRIPLE"
+
+      - name: Desktop shell audit
+        # 跑既有 audit:desktop-shell:static — 校验 web 端 invokeCommand 与 Tauri
+        # registered command 一致 / capability windows ↔ standalone window
+        # prefixes 一致 / 4 lproj InfoPlist.strings 翻译完整。任一不通过直接
+        # fail，避免到 cargo build 才发现配置漂移。
+        working-directory: apps/desktop
+        run: node ./scripts/audit-desktop-shell.mjs --skip-web-audit && node ./scripts/audit-desktop-text.mjs
+
+      - name: Cargo fmt check (Rust shell)
+        # rustfmt 是 mac/win 双端 desktop shell 唯一的 Rust 静态门禁；clippy
+        # 受 Linux/mac 系统库可用性影响留给本地 / 后续单独 step。fmt 不过直
+        # 接 fail —— 在 Linux 上跑 cargo fmt 不需要 macOS SDK，节省 macOS
+        # runner 时间。
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --all -- --check
+
+      - name: Setup macOS signing
+        shell: bash
+        run: bash ./.github/scripts/setup-macos-signing.sh
+
+      - name: Build desktop bundle
+        working-directory: apps/desktop
+        run: node ./scripts/run-tauri.mjs build --target $YINJIE_DESKTOP_TARGET_TRIPLE
+
+      - name: Collect artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_DIR="apps/desktop/src-tauri/target/${YINJIE_DESKTOP_TARGET_TRIPLE}/release/bundle"
+          if [ ! -d "$ARTIFACT_DIR" ]; then
+            echo "Expected bundle directory $ARTIFACT_DIR was not produced." >&2
+            exit 1
+          fi
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
+          find "$ARTIFACT_DIR" -maxdepth 3 -type f
+
+      - name: Collect diagnostics bundle
+        if: ${{ always() }}
+        id: diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_DIR="apps/desktop/src-tauri/target/${YINJIE_DESKTOP_TARGET_TRIPLE}/ci-diagnostics"
+          bash ./.github/scripts/collect-macos-diagnostics.sh "$YINJIE_DESKTOP_TARGET_TRIPLE" "$DIAG_DIR"
+          echo "diagnostics_dir=$DIAG_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "## macOS Desktop Build"
+            echo ""
+            echo "- version: \`${{ steps.release_meta.outputs.version }}\`"
+            echo "- expected tag: \`${{ steps.release_meta.outputs.expected_tag }}\`"
+            echo "- release mode: \`${{ steps.release_meta.outputs.release_mode }}\`"
+            echo "- target: \`$YINJIE_DESKTOP_TARGET_TRIPLE\`"
+            echo "- signed secrets present: \`${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_SIGNING_IDENTITY != '' }}\`"
+            echo "- notarization key present: \`${{ secrets.APPLE_API_KEY != '' && secrets.APPLE_API_ISSUER != '' }}\`"
+            echo ""
+            echo "### Bundle Files"
+            find "${{ steps.artifacts.outputs.artifact_dir }}" -maxdepth 3 -type f | sed 's/^/- /'
+            echo ""
+            echo "### Diagnostics Bundle"
+            echo "- path: \`${{ steps.diagnostics.outputs.diagnostics_dir }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.release_meta.outputs.artifact_prefix }}
+          path: ${{ steps.artifacts.outputs.artifact_dir }}
+          if-no-files-found: error
+
+      - name: Upload diagnostics artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.release_meta.outputs.diagnostics_artifact }}
+          path: ${{ steps.diagnostics.outputs.diagnostics_dir }}
+          if-no-files-found: error
+
+      - name: Upload release assets
+        if: ${{ needs.prepare-matrix.outputs.upload_to_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.artifacts.outputs.artifact_dir }}/**/*.app.tar.gz
+            ${{ steps.artifacts.outputs.artifact_dir }}/**/*.dmg
+            ${{ steps.artifacts.outputs.artifact_dir }}/**/*.sig
+
+      - name: Cleanup macOS signing
+        if: ${{ always() }}
+        shell: bash
+        run: bash ./.github/scripts/cleanup-macos-signing.sh
+
+  release-manifest:
+    needs:
+      - prepare-matrix
+      - build-macos
+    runs-on: ubuntu-latest
+    if: ${{ always() && needs.prepare-matrix.result == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate release manifest
+        shell: bash
+        run: |
+          mkdir -p .release
+          bash ./.github/scripts/generate-desktop-release-manifest.sh \
+            "${{ needs.prepare-matrix.outputs.version }}" \
+            "${{ needs.prepare-matrix.outputs.expected_tag }}" \
+            '${{ needs.prepare-matrix.outputs.targets }}' \
+            ".release/macos-release-manifest.md"
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: yinjie-desktop-release-manifest-${{ needs.prepare-matrix.outputs.version }}
+          path: .release/macos-release-manifest.md
+          if-no-files-found: error
+
+  release-notes:
+    needs:
+      - prepare-matrix
+      - build-macos
+    runs-on: ubuntu-latest
+    if: ${{ always() && needs.prepare-matrix.result == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate release notes
+        shell: bash
+        run: |
+          mkdir -p .release
+          bash ./.github/scripts/generate-desktop-release-notes.sh \
+            "${{ needs.prepare-matrix.outputs.version }}" \
+            "${{ needs.prepare-matrix.outputs.expected_tag }}" \
+            '${{ needs.prepare-matrix.outputs.targets }}' \
+            ".release/macos-release-notes.md"
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: yinjie-desktop-release-notes-${{ needs.prepare-matrix.outputs.version }}
+          path: .release/macos-release-notes.md
+          if-no-files-found: error
