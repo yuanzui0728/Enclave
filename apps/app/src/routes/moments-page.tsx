@@ -311,7 +311,69 @@ export function MomentsPage() {
         videoDraft: input.videoDraft,
         baseUrl,
       }),
-    onSuccess: (newMoment, input) => {
+    onMutate: () => {
+      // 走查电脑端朋友圈 R3（新一轮）：跟 friend-moments-page / profile-moments-page
+      // 同款 mid-flight 切账户 guard 漏掉了。react-query v5 的 useMutation callbacks
+      // 走的是「调用时点的最近一次 setOptions」——也就是 mutation 完成时跑的
+      // onSuccess 是当前 render 的闭包。慢网下用户在 A 账户发完一条，~5s 内还没
+      // 回 → 顶栏切 B 账户：onSuccess 跑回来时闭包里的 baseUrl 已经是 B 的了，
+      // setQueryData([..., baseUrl=B], ...) 把 A 账户的 newMoment 写进 B 的 paged /
+      // flat / mine 三把 cache → B 的 /tabs/moments 顶部突然冒出来一条不属于 B
+      // 的帖子；invalidate 也落到 B，触发一次 GET /api/moments?page=1 顺手把那条
+      // 错位 prepend 又清掉，但中间几百 ms 是脏数据。setNotice("朋友圈已发布。")
+      // 也跑到 B，体感"我没发啊怎么冒成功 toast"。和上下面 like/comment/delete
+      // mutation 的 mutationBaseUrl 守卫统一模板。
+      return { mutationBaseUrl: baseUrl };
+    },
+    onSuccess: (newMoment, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      // cache 写到 mutation 触发时刻的 baseUrl（OLD = A 账户）—— 切回 A 时第一帧
+      // 就能看到刚发的；不要污染 B 账户的 cache。和 friend-moments-page /
+      // profile-moments-page createMutation 同模板。
+      queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
+        ["app-moments-paged", mutationBaseUrl],
+        (current) =>
+          current && current.pages.length > 0
+            ? {
+                pages: [
+                  {
+                    ...current.pages[0]!,
+                    items: [newMoment, ...current.pages[0]!.items],
+                    // 走查 R1：pages[0].total 也要 +1，否则 toolbar 的「已加载 X / 共 Y 条动态」
+                    // 在 invalidate refetch (~600ms+) 落地前会显示陈旧的 Y——用户发完一条
+                    // 立刻看 "已加载 21 / 共 126 条" 而不是 127，体感像「我发了但总数没动」。
+                    total: (current.pages[0]!.total ?? 0) + 1,
+                  },
+                ],
+                pageParams: current.pageParams.slice(0, 1),
+              }
+            : current,
+      );
+      queryClient.setQueryData<Moment[]>(["app-moments", mutationBaseUrl], (current) =>
+        current ? [newMoment, ...current] : current,
+      );
+      // "我的朋友圈"页绑 mine cache，发布同步过去否则跳过去要等下次 refetch。
+      queryClient.setQueryData<Moment[]>(
+        ["app-moments-mine", mutationBaseUrl],
+        (current) => (current ? [newMoment, ...current] : current),
+      );
+      // 后台 invalidate 也落到 OLD baseUrl ——profile/friend-moments-page、
+      // search-index 等共享 cache 的页面也得跟新（落到 A 账户的 cache 上）。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", mutationBaseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments", mutationBaseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-mine", mutationBaseUrl],
+      });
+      // 切账户后剩下的 draft reset / toast 都属于当前页面的 UI 反馈——用户已经
+      // 切到 B 了不该让他看到 A 的「朋友圈已发布」绿条。和 friend-moments-page
+      // / profile-moments-page 同模板。
+      if (mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       const draftStillMatchesPublish =
         composeDraft.text === input.text &&
         composeDraft.imageDrafts === input.imageDrafts &&
@@ -324,45 +386,6 @@ export function MomentsPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈已发布。`));
-      // 立刻把新发布的 moment prepend 到 paged 头部并把已加载的多页砍回 1 页 ——
-      // 之前 fire-and-forget invalidate 后 600ms+ 才更新 UI，用户感受到"得刷新才能看到"。
-      // 走查 R1：pages[0].total 也要 +1，否则 toolbar 的「已加载 X / 共 Y 条动态」
-      // 在 invalidate refetch (~600ms+) 落地前会显示陈旧的 Y——用户发完一条
-      // 立刻看 "已加载 21 / 共 126 条" 而不是 127，体感像「我发了但总数没动」。
-      queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
-        ["app-moments-paged", baseUrl],
-        (current) =>
-          current && current.pages.length > 0
-            ? {
-                pages: [
-                  {
-                    ...current.pages[0]!,
-                    items: [newMoment, ...current.pages[0]!.items],
-                    total: (current.pages[0]!.total ?? 0) + 1,
-                  },
-                ],
-                pageParams: current.pageParams.slice(0, 1),
-              }
-            : current,
-      );
-      queryClient.setQueryData<Moment[]>(["app-moments", baseUrl], (current) =>
-        current ? [newMoment, ...current] : current,
-      );
-      // "我的朋友圈"页绑 mine cache，发布同步过去否则跳过去要等下次 refetch。
-      queryClient.setQueryData<Moment[]>(
-        ["app-moments-mine", baseUrl],
-        (current) => (current ? [newMoment, ...current] : current),
-      );
-      // 后台 invalidate 让其它共享 cache 的页面（profile/friend-moments-page、search-index 等）也同步
-      void queryClient.invalidateQueries({
-        queryKey: ["app-moments-paged", baseUrl],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["app-moments-mine", baseUrl],
-      });
     },
   });
 
