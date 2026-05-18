@@ -5852,12 +5852,23 @@ function ContactCardMessage({
   // 页退回群聊要按 2 次返回。同对 markFollowupRecommendationOpened 这种 POST
   // 也会重复打两份。每张卡独立 guard，第一次成功后页面 unmount re-mount 时
   // ref 自动复位。本组件单聊 / 群聊共享，单聊路径同样受益。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 设置后永不复位，假设第一次点击
+  // 必然导致页面 navigate / 卡片随页面 unmount。但桌面 friend 分支 onOpen → 父
+  // 级 openAttachment 走 getOrCreateConversation，网络抖 / 4xx 时 catch 弹 toast，
+  // 但 card 仍 mounted、ref 仍 true → 用户拿到红色错误想点卡片重试时直接被锁
+  // 死（catch 分支不知道怎么通知 card 释放 ref）。短 setTimeout 复位足以挡同帧
+  // <16ms 双击又允许后续手动重试，跟下方 NoteCardMessage / FeedPostCardMessage
+  // 一致。
   const openFiredRef = useRef(false);
   const handleOpen = onOpen
     ? () => {
         if (openFiredRef.current) return;
         openFiredRef.current = true;
         onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
       }
     : undefined;
   const card = (
@@ -5955,12 +5966,22 @@ function NoteCardMessage({
   // 移动端 setNoteViewerMessageId 是 state setter 同值 bailout 天然幂等，但
   // 桌面端走 navigate({to:"/tabs/favorites", hash:buildDesktopNoteWindowRouteHash...})
   // 没挂 guard，桌面同帧双击笔记卡会 push 2 条 history。本组件单聊 / 群聊共享。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 设置后永不复位。移动端 onOpen
+  // 走 setNoteViewerMessageId 开 NoteViewerOverlay → 卡片仍挂在消息流里没 unmount
+  // → 用户关掉 overlay 再点同张笔记卡时被 ref=true 锁死，再也点不开了。桌面端
+  // friend / add-friend 链路也有类似的「navigate 失败但 card 仍 mounted」陷阱。
+  // 短 setTimeout 复位足以挡同帧 <16ms 双击又允许后续手动重试，跟 ContactCardMessage
+  // / FeedPostCardMessage 一致。
   const openFiredRef = useRef(false);
   const handleOpen = onOpen
     ? () => {
         if (openFiredRef.current) return;
         openFiredRef.current = true;
         onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
       }
     : undefined;
   // 拉最新笔记数据让缩略图跟原笔记编辑实时同步；笔记被删除时静默回退 snapshot，
@@ -6107,12 +6128,21 @@ function FeedPostCardMessage({
   // 桌面, hash:buildDesktopChannelsRouteHash...}) 形态，没挂 disabled / 没
   // 同步 ref 守。同帧 <16ms 双击群里某条视频号卡 push 2 条相同 history 项—
   // 用户从视频号页退回群聊要按 2 次返回。本组件单聊 / 群聊共享。
+  //
+  // 走查电脑端单聊新一轮 R6：原版 openFiredRef 永不复位 — 假设第一次点击
+  // 必然让页面 unmount。但用户从视频号页用 browser back 回到聊天后，原视频号
+  // 卡可能因为 cache 命中直接复用（chat-message-list 不一定 remount）→ ref
+  // 仍 true → 点同张卡进不去视频号。短 setTimeout 复位跟 ContactCardMessage /
+  // NoteCardMessage 一致。
   const openFiredRef = useRef(false);
   const handleOpen = onOpen
     ? () => {
         if (openFiredRef.current) return;
         openFiredRef.current = true;
         onOpen();
+        window.setTimeout(() => {
+          openFiredRef.current = false;
+        }, 500);
       }
     : undefined;
   // 走查 2026-05-17 新会话 R5：attachment.excerpt 由 server forwardChannelPost
