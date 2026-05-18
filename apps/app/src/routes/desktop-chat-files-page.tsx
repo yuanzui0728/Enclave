@@ -753,7 +753,15 @@ export function DesktopChatFilesPage() {
       >
         <div className="space-y-3 p-4">
           {actionNotice ? (
+            // 走查电脑端群聊 R86：和姊妹 desktop-chat-workspace notice（line ~1961）
+            // / GroupChatDetailsPanel R40 同款修法——actionNotice 是 2200ms 或
+            // 5000ms 自动消失的 transient toast（line 201-210 useEffect），用来
+            // 反馈收藏 / 转发 / 删除附件 等操作结果。原版裸 InlineNotice 没 role /
+            // aria-live，盲人 SR 完全感知不到这条短暂状态反馈。polite 不抢断 SR
+            // 当前朗读，几秒内消失也来得及读完一条 toast。
             <InlineNotice
+              role="status"
+              aria-live="polite"
               className="flex items-center justify-between gap-3 text-xs"
               tone={actionNotice.tone}
             >
