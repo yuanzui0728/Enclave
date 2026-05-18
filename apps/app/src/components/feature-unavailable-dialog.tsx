@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -24,22 +24,36 @@ export function FeatureUnavailableDialog({
   const resolvedConfirmLabel = confirmLabel ?? t(msg`我知道了`);
   const titleId = useId();
   const descId = useId();
+  // 走查 2026-05-18 移动端群聊 R6：和姊妹 sheet/dialog mobile-message-reminder-
+  // sheet R3 / mobile-mention-picker-sheet R3 / group-message-context-menu R4 /
+  // mobile-details-action-sheet R5 同款修法——下方 Esc/Back 两个 effect 原本
+  // 把 onClose 列进 deps。本 dialog 被 group-chat-thread-panel.tsx / conversation-
+  // thread-panel.tsx 用作"群语音/视频通话开发中"提示弹层，调用方都是 inline
+  // arrow `onClose={() => setCallUnavailableKind(null)}`。dialog 弹起来后只要
+  // 父级 typing tick / socket echo / setMessages 任意 re-render，就会让两条
+  // effect 拆装一次 native back interceptor + window keydown listener。镜像
+  // onCloseRef，deps 收紧到 [open]。
+  // 顺手对齐 ESC defaultPrevented 检查——和 4 个姊妹 sheet 同口径，让位嵌套子
+  // 模态的 ESC 语义。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
+      if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
+  }, [open]);
 
   // 原生壳硬件 Back 键：dialog 打开时拦掉，关 dialog 不退页（场景：聊天页
   // 里点不可用的语音/视频通话按钮弹出"功能开发中"对话框，BACK 应当先关掉
@@ -50,11 +64,11 @@ export function FeatureUnavailableDialog({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [onClose, open]);
+  }, [open]);
 
   if (!open) {
     return null;
