@@ -420,13 +420,20 @@ export function DesktopFriendMomentsWorkspace({
             </div>
           </div>
 
-          <div
-            ref={scrollViewportRef}
-            className="min-h-0 flex-1 overflow-auto px-7 py-6"
-          >
-            <div className="mx-auto w-full max-w-[760px]">
-              {notice ? (
-                <div className="mb-4">
+          {/* 走查 R5：notice / errors 之前嵌在 scrollViewportRef 内部 .mx-auto 的
+              顶部。用户滚到第 N 条 moment 上 like / comment / delete / share，
+              成功 / 失败 toast 都触发在最顶端 —— 已经滚到第 N 条的用户看不见，
+              体感"我点了但没反应"。和 desktop-moments-workspace 的 toolbar 把
+              notice 挂在 scroll viewport *外* 的模式对齐：抽到 header 下、scroll
+              viewport 上的独立条带里，跨页统一"无论滚到哪 toast 都看得到"。
+              整段在三种来源都为空时整块不渲染（不留空白栏）。 */}
+          {notice ||
+          errors.length > 0 ||
+          (likeErrorMessage && !(notice && noticeTone === "danger")) ||
+          (commentErrorMessage && !(notice && noticeTone === "danger")) ? (
+            <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-6 py-3 backdrop-blur-xl">
+              <div className="mx-auto w-full max-w-[760px] space-y-3">
+                {notice ? (
                   <InlineNotice
                     tone={noticeTone}
                     className="border-[color:var(--border-faint)] bg-white"
@@ -446,33 +453,37 @@ export function DesktopFriendMomentsWorkspace({
                       ) : null}
                     </div>
                   </InlineNotice>
-                </div>
-              ) : null}
+                ) : null}
 
-              {errors.length > 0 ? (
-                <div className="mb-4 space-y-3">
-                  {errors.map((message, index) => (
-                    <ErrorBlock key={`${message}-${index}`} message={message} />
-                  ))}
-                </div>
-              ) : null}
+                {errors.length > 0
+                  ? errors.map((message, index) => (
+                      <ErrorBlock
+                        key={`${message}-${index}`}
+                        message={message}
+                      />
+                    ))
+                  : null}
 
-              {/* danger notice 在屏时 mutation 错误已经在顶部红条 + 「重试...」按钮覆盖了，
-                  下面再渲染同文 ErrorBlock 会变两条红条同屏；跟 toolbar / profile workspace
-                  的 Round 3 修复对齐：danger notice 期间藏 type-specific ErrorBlock，
-                  notice 2.4s 自清后 ErrorBlock 再现做持久指示。 */}
-              {likeErrorMessage && !(notice && noticeTone === "danger") ? (
-                <div className="mb-4">
+                {/* danger notice 在屏时 mutation 错误已经在顶部红条 + 「重试...」按钮覆盖了，
+                    下面再渲染同文 ErrorBlock 会变两条红条同屏；跟 toolbar / profile workspace
+                    的 Round 3 修复对齐：danger notice 期间藏 type-specific ErrorBlock，
+                    notice 2.4s 自清后 ErrorBlock 再现做持久指示。 */}
+                {likeErrorMessage && !(notice && noticeTone === "danger") ? (
                   <ErrorBlock message={likeErrorMessage} />
-                </div>
-              ) : null}
+                ) : null}
 
-              {commentErrorMessage && !(notice && noticeTone === "danger") ? (
-                <div className="mb-4">
+                {commentErrorMessage && !(notice && noticeTone === "danger") ? (
                   <ErrorBlock message={commentErrorMessage} />
-                </div>
-              ) : null}
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
+          <div
+            ref={scrollViewportRef}
+            className="min-h-0 flex-1 overflow-auto px-7 py-6"
+          >
+            <div className="mx-auto w-full max-w-[760px]">
               {renderFeedContent()}
             </div>
           </div>
