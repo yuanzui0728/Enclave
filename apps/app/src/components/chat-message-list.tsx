@@ -7753,6 +7753,17 @@ function ImageViewerOverlay({
         onClick={onClose}
         className="absolute inset-0 cursor-default"
         aria-label={translateRuntimeMessage(msg`关闭图片查看器`)}
+        // 走查电脑端单聊 R115：和姊妹 R107-R114 dialog / menu / viewer backdrop
+        // 同款 —— chat-message-list 全屏 ImageViewerOverlay 的 backdrop
+        // <button> (absolute inset-0) 视觉不可见、纯 mouse"点击背景关闭"
+        // affordance，但 DOM 顺序排在 viewer 子树第一位。用户在单聊消息列表
+        // 点 image 消息打开 viewer 后按 Tab 切顶栏「保存/在独立窗口打开/打印/
+        // 关闭」/ 左右切张按钮，焦点先落到这张不可见 backdrop → 看不到任何
+        // focus ring → 再按 Enter viewer 秒关。Esc keydown 已挂 (line 7680-
+        // 7693 mobile 分支)；桌面侧 viewer 内部 Esc 处理通过 ChatMessageList
+        // 父级 contextMenu close 路径覆盖。挂 tabIndex={-1} 把 backdrop 从
+        // Tab 序列移出；同时 onClick 鼠标点击关闭路径不受影响。
+        tabIndex={-1}
       />
 
       {isDesktop ? (
