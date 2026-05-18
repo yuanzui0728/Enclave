@@ -43,6 +43,26 @@ export function MobileMentionPickerSheet({
     return unregister;
   }, [open, onClose]);
 
+  // 走查 R6：和姊妹 sheet mobile-message-action-sheet 走查 R2 /
+  // mobile-message-reminder-sheet / message-quote-selection-sheet 同款 ESC
+  // 兜底——群聊里打 @ 弹出 mention picker 时，桌面 web / 外接键盘用户拍 ESC
+  // 没反应，只能点 backdrop / 取消按钮。defaultPrevented 时让位（嵌套子模态
+  // 自己的 ESC 语义不被偷掉）。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) {
     return null;
   }
