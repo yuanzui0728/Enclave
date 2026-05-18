@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { getGroupMembers, type Group } from "@yinjie/contracts";
@@ -237,6 +237,37 @@ function DesktopGroupDetailCard({
   const t = useRuntimeTranslator();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  // 走查电脑端群聊 R4：和姊妹 DirectChatDetailsPanel R2（commit 34f317955）/
+  // GroupChatDetailsPanel R1（commit bf7e3914b — 本会话上一轮）/ 电脑端单聊
+  // 通话按钮 R3（commit 5fbb61838）同款 pattern。「进入群聊」/「群聊信息」
+  // 两个按钮分别裸跑 `onClick={() => onOpenGroup(group.id)}` /
+  // `onClick={() => onOpenGroupDetails(group.id)}`，父级 contacts-page line
+  // 2340-2355 inline 是 `() => void navigate({to: buildDesktopChatThreadPath(...)
+  // 或 hash: details})`，无任何 throttle。同帧 <16ms 双击都通过 →
+  // tanstack-router push 2 条相同 history 项 → 用户从群聊页返回还要按 2 次
+  // 返回才回到通讯录 group pane；GroupChatThreadPanel mount 时发 group /
+  // members / messages 3 路公网 RTT（~600ms × 3），第 2 次也会重复发出。
+  // raf 释放兜底"navigate 没真正切走"边界。
+  const navigateFiredRef = useRef(false);
+  const guardNavigate = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (navigateFiredRef.current) return;
+        navigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            navigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+  const handleOpenGroup = guardNavigate(() => onOpenGroup(group.id));
+  const handleOpenGroupDetails = guardNavigate(() =>
+    onOpenGroupDetails(group.id),
+  );
   const membersQuery = useQuery({
     queryKey: ["app-contacts-group-members", baseUrl, group.id],
     queryFn: () => getGroupMembers(group.id, baseUrl),
@@ -314,7 +345,7 @@ function DesktopGroupDetailCard({
         <Button
           type="button"
           className="flex-1 rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-          onClick={() => onOpenGroup(group.id)}
+          onClick={handleOpenGroup}
         >
           {t(msg`进入群聊`)}
         </Button>
@@ -322,7 +353,7 @@ function DesktopGroupDetailCard({
           type="button"
           variant="secondary"
           className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-          onClick={() => onOpenGroupDetails(group.id)}
+          onClick={handleOpenGroupDetails}
         >
           {t(msg`群聊信息`)}
         </Button>
