@@ -1895,7 +1895,12 @@ export function GroupChatThreadPanel({
           >
             {groupQuery.isError && groupQuery.error instanceof Error ? (
               isDesktop ? (
+                // R67：和姊妹 R51 / R53 同款 —— 群聊 desktop 分支的
+                // groupQuery / membersQuery ErrorBlock 都裸 <div>，没 role。
+                // group / members 是群聊页面读取群基本信息和成员列表的核心
+                // cache，server 4xx/5xx 时盲人 SR 在空白群聊里完全没反馈。
                 <ErrorBlock
+                  role="alert"
                   className="mb-3"
                   message={groupQuery.error.message}
                 />
@@ -1912,6 +1917,7 @@ export function GroupChatThreadPanel({
             {membersQuery.isError && membersQuery.error instanceof Error ? (
               isDesktop ? (
                 <ErrorBlock
+                  role="alert"
                   className="mb-3"
                   message={membersQuery.error.message}
                 />
