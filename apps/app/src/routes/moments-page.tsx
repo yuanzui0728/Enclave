@@ -1100,6 +1100,16 @@ export function MomentsPage() {
     setActionBubble(null);
     setCommentBarTarget(null);
     setDesktopReplyTarget(null);
+    // 走查电脑端朋友圈 R1（新一轮）：desktopAvatarPopover 之前只在 [hash, pathname]
+    // 翻转时清（行 209-211），切账户时 baseUrl 变了但 hash/pathname 不动，旧账户
+    // 打开的角色头像 popover / 我自己头像 popover 仍然挂着；lazy 加载的
+    // DesktopMessageAvatarPopover 内部 query 已经按新 baseUrl 拉，但 anchorRect
+    // 还指着旧账户 cache 里的卡片位置（账户切换后 visibleMoments 整体翻新，旧锚
+    // 元素早被 unmount），popover 飘在屏幕一角；characterId 是旧账户的 ID，新
+    // 账户根本不存在，弹出来全是「角色不存在」或裸 loading。和 actionBubble /
+    // commentBarTarget 同模式一起清。friend-moments-page / profile-moments-page
+    // 同 bug 一并修。
+    setDesktopAvatarPopover(null);
     // 走查新一轮 R4：旧 baseUrl 的失败 mutation 状态也得清。like/comment/delete
     // mutation 失败后 isError=true、error/variables 都保留在 mutation 状态里；
     // mid-flight 的 baseUrl-guard 只拦了 onError/onSuccess 的副作用回调，没把

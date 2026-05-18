@@ -654,6 +654,12 @@ export function FriendMomentsPage() {
     // 还挂着上一个角色帖子的 reply 状态，textarea placeholder 显示错误的目标）。
     commentSubmitArgsRef.current = {};
     setDesktopReplyTarget(null);
+    // 走查电脑端朋友圈 R1（新一轮）：desktopAvatarPopover 之前只在 [characterId,
+    // hash, pathname] 翻转时清（行 150-152），但切账户 baseUrl 变了 characterId
+    // /hash/pathname 都不动 → 旧账户挂着的角色 / 用户 popover 仍然飘在屏幕上，
+    // anchorRect 指着旧账户已 unmount 的卡片位置。和 moments-page / profile-moments-page
+    // 同款 bug 一并修。
+    setDesktopAvatarPopover(null);
     // 走查新一轮 R4：旧 baseUrl/characterId 的失败 mutation 状态也得清。
     // workspace 的 likeErrorMessage / commentErrorMessage / composeErrorMessage 都
     // 由 `mutation.isError ? resolveMomentsErrorMessage(mutation.error) : null`

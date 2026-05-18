@@ -774,6 +774,14 @@ export function ProfileMomentsPage() {
     setDesktopReplyTarget(null);
     setCommentDrafts({});
     setShareMomentId(null);
+    // 走查电脑端朋友圈 R1（新一轮）：desktopAvatarPopover 之前完全没有清理路径
+    // —— 这页根本没有专门按 hash/pathname 翻转清弹层的 useEffect（moments-page
+    // / friend-moments-page 还有那一支，profile-moments-page 直接漏）。切账户后
+    // baseUrl 变了，旧账户挂着的 liker popover 仍然飘在屏幕上，anchorRect 指着
+    // 旧账户已 unmount 的卡片位置；popover 内部 lazy 加载的 query 按新 baseUrl
+    // 拉 characterId（旧账户的角色 id），新账户根本没那个角色 → 404 或裸 loading
+    // 卡住，跟 moments-page / friend-moments-page 同款 bug 一并修。
+    setDesktopAvatarPopover(null);
     // mid-flight 评论 args 也清——onSuccess/onError 会清自己那条，但切账户时
     // 如果还有 mid-flight，旧 args 会残留在内存，长期跑就是泄漏。
     commentSubmitArgsRef.current = {};
