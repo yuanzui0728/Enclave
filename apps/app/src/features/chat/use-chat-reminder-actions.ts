@@ -31,6 +31,18 @@ export function useChatReminderActions({
   // / chat-message-list 撤回/删除 同款 sync ref 锁；按 messageId 分锁，
   // 不同提醒互不影响。
   const completingMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查电脑端群聊 R3：openReminder 原版无双击锁。DesktopReminderCard 内
+  // 「开」按钮 onClick={() => onOpen(entry)} → openReminder(entry) →
+  // navigateToReminder(entry)（desktop-chat-workspace inline 是
+  // `void navigate(buildChatReminderNavigation(entry, {desktopLayout: true}))`）
+  // 直接发 push history。同帧 <16ms 双击都通过 → 2 条相同 /tabs/chat?... history
+  // 项 → 用户从被定位的群消息回到提醒卡片需要按 2 次返回；group reminder 的
+  // 定位逻辑还要走 useGroupBackground + getGroupMessages around-message 公网
+  // RTT，第 2 次也会重复发出。和姊妹 completeReminder 一样按 messageId 分锁
+  // 同时给一个 raf 释放兜底"navigate 没真正切走"的边界（disabled / 同会话
+  // 内 hash-update）。不同 reminder 互不影响——用户连续点两条不同提醒是合法
+  // 操作。
+  const openingMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!localNotice || !autoClearLocalNoticeMs) {
@@ -45,9 +57,20 @@ export function useChatReminderActions({
   }, [autoClearLocalNoticeMs, localNotice]);
 
   function openReminder(entry: ChatReminderEntry) {
+    if (openingMessageIdsRef.current.has(entry.messageId)) {
+      return;
+    }
+    openingMessageIdsRef.current.add(entry.messageId);
     onNoticeChange?.(null);
     setLocalNotice(null);
     navigateToReminder(entry);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        openingMessageIdsRef.current.delete(entry.messageId);
+      });
+    } else {
+      openingMessageIdsRef.current.delete(entry.messageId);
+    }
   }
 
   async function completeReminder(entry: ChatReminderEntry) {
