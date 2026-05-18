@@ -2279,7 +2279,12 @@ export function ChannelsPage() {
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                aria-pressed={selected}
+                // 走查 2026-05-18 [本轮] R1：原来同时挂 aria-selected + aria-pressed
+                // —— aria-pressed 是 button 角色（toggle 按钮）的状态属性，role="tab"
+                // 的标准状态属性是 aria-selected。两者并存非标准：NVDA / 部分 SR 会
+                // 把两个状态都念出来，用户听到「推荐 tab selected pressed」之类双重
+                // 状态声明，体感"这控件是 tab 还是按钮？"。aria-pressed 移除，保留
+                // aria-selected。
                 onClick={() => handleSectionChange(section.key)}
                 className={cn(
                   "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
@@ -3071,8 +3076,25 @@ function ChannelAudioPictorial({
       suppressNextClickRef.current = true;
       handleTap();
     }
-    // swipeHandledRef / movedBeyondTapRef 不在这里清——下面 onClick 还要看；
-    // 都改在 touchStart 重置。
+    // 走查 2026-05-18 [本轮] R2：原注释说「不在这里清，下面 onClick 还要看；都改在
+    // touchStart 重置」—— 但这只覆盖「下一次交互是 touch」的场景。混合设备（iPad
+    // + 外接鼠标 / Surface / 带触屏的 Chromebook / 桌面浏览器触屏 emulator）下，
+    // 用户在 touch swipe / 竖向 scroll 之后切去鼠标点同一张卡：
+    //   1) handleTouchEnd 写入 swipeHandledRef=true / movedBeyondTapRef=true
+    //      （走 wasSwipe / movedBeyondTap 分支不进 handleTap）
+    //   2) 浏览器合成 click 在 touchend 同帧 fire → handleClick 读到 swipeHandledRef
+    //      或 movedBeyondTapRef = true → 正确 return 吞掉。
+    //   3) （之后没有 touchstart）用户拿鼠标点视频号卡 → handleClick 仍然读到
+    //      swipeHandledRef = true（永远停在上次 touch 留下的值）→ return → 鼠标
+    //      tap 被静默吞掉，audio 不切 play/pause，体感「鼠标按下完全没反应」。
+    //      要再 touch 一次（重置 ref）才能恢复鼠标交互。
+    // 用 rAF 延后清空：紧跟着的合成 click 在当前 / 下一帧前先 fire 看到 stale=true
+    // 拦掉；rAF callback 跑完后 refs=false，后续真鼠标 click（典型间隔 >> 1 帧）
+    // 落到 fresh=false 路径正常 handleTap。
+    window.requestAnimationFrame(() => {
+      swipeHandledRef.current = false;
+      movedBeyondTapRef.current = false;
+    });
   };
   // 桌面鼠标场景兜底：触屏 touchend 后浏览器仍会合成 click，但 swipe
   // 期间 click 多数浏览器会自动取消；这里只为非触屏鼠标点击服务。

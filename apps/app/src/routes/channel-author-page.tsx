@@ -720,7 +720,11 @@ export function ChannelAuthorPage() {
                         type="button"
                         role="tab"
                         aria-selected={selected}
-                        aria-pressed={selected}
+                        // 走查 2026-05-18 [本轮] R1：跟 channels-page section tab
+                        // 同款 a11y 修复 —— role="tab" 的标准状态属性是
+                        // aria-selected，aria-pressed 是 role=button toggle 用的；
+                        // 同时挂会让 NVDA / 部分 SR 念出「tab selected pressed」
+                        // 双重状态声明，用户体感「这控件是 tab 还是按钮」。
                         onClick={() => changeCollection(tab.key)}
                         className={cn(
                           "relative shrink-0 px-4 py-3 text-[14px] transition",
