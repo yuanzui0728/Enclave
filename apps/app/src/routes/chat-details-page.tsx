@@ -430,6 +430,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   }, [
     conversation,
     conversationId,
+    displayedConversationTitle,
     friendship?.remarkName,
     isFriend,
     t,
