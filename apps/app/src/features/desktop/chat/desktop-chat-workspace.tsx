@@ -2361,7 +2361,12 @@ export function DesktopChatWorkspace({
         <DesktopChatSidePanel
           panelRef={sidePanelRef}
           mode={rightPanelMode}
-          title={activeConversation.title}
+          title={
+            activeConversation.title ||
+            (isPersistedGroupConversation(activeConversation)
+              ? t(msg`群聊`)
+              : t(msg`聊天`))
+          }
           subtitle={t(msg`聊天信息`)}
           detailsVariant={
             isPersistedGroupConversation(activeConversation)
