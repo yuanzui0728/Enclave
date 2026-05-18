@@ -1244,7 +1244,21 @@ export function ChannelsPage() {
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout || normalizedPathname !== "/discover/channels") {
+    if (isDesktopLayout) {
+      return;
+    }
+    // 走查 2026-05-18（本轮）R1：原来只 sync `/discover/channels` 的 hash——
+    // 但移动端用户从其它入口（deep link / refresh / 应用首启动后 router 直接落到
+    // `/tabs/channels`）落在 `/tabs/channels` 时，下面的 navigate 不跑，切 tab
+    // 后 URL 里 section= 没变；用户刷新或者把 link 发给朋友会丢 tab 上下文。实测
+    // playwright 在 `/tabs/channels` 点「朋友」tab 后 URL 一直停在 `/tabs/channels`，
+    // 没追上 hash 里的 section=friends。对齐 desktop effect（line 1204）把
+    // 所有 channels 路径都纳入 sync，path 用当前 pathname 不强切。
+    const isChannelsPath =
+      normalizedPathname === "/discover/channels" ||
+      normalizedPathname === "/tabs/channels" ||
+      normalizedPathname === "/channels";
+    if (!isChannelsPath) {
       return;
     }
 
@@ -1267,8 +1281,13 @@ export function ChannelsPage() {
       return;
     }
 
+    // 走查 R1（本轮）：to 用当前 pathname（不强切到 /discover/channels）——切到
+    // 别的 path 会让整个 ChannelsPage 实例 unmount / remount，commentDrafts /
+    // forwardPickerPost / activePostId 等本地状态全丢，体感像「点 tab 把整个页
+    // 面 reset 了一次」。原来只跑 `/discover/channels` 不会撞这条，扩展支持
+    // `/tabs/channels` / `/channels` 必须用 pathname 才能保持原 instance。
     void navigate({
-      to: "/discover/channels",
+      to: normalizedPathname,
       hash: nextHash,
       replace: true,
     });
