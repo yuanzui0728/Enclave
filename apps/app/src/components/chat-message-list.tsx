@@ -3740,11 +3740,24 @@ export function ChatMessageList({
         const groupRelaySummary = parseGroupRelaySummaryMessage(displayText);
         const sharedHistorySummary =
           parseSharedHistorySummaryMessage(t, displayText);
-        const timestampLabel = detailedTimestampMode
-          ? formatDetailedMessageTimestamp(message.createdAt)
-          : isDesktop
-            ? formatDesktopMessageTimestamp(message.createdAt)
-            : formatMessageTimestamp(message.createdAt);
+        // 走查电脑端单聊 R81：timestampLabel 在 visibleMessages.map 每条都跑，
+        // 但 grep 全文只在两处 `showTimestamp ? <MessageTimestampDivider
+        // label={timestampLabel} /> : null` 用到——showTimestamp 由
+        // shouldShowMessageTimestamp 按"上一条 5 分钟+ 没说话"才返 true，活跃
+        // 单聊 100+ 条消息里通常只 5-10 条命中，剩 90+ 都白跑一遍
+        // formatDesktop/Detailed/MessageTimestamp（每发一次都要 parseDate + new
+        // Date()x2 + isSameDay/isInSameWeek + formatDateTimeCached）。chat-message-list
+        // 在 typing tick / socket echo / setMessages / mutation pending 翻转
+        // 每帧 re-render，省掉这层 wasted work 性价比高。和姊妹 R78 timestamp
+        // toggle 闭包优化方向一致。空字符串占位仅为保持类型，showTimestamp=false
+        // 时这个值永远进不到 <MessageTimestampDivider /> 渲染。
+        const timestampLabel = showTimestamp
+          ? detailedTimestampMode
+            ? formatDetailedMessageTimestamp(message.createdAt)
+            : isDesktop
+              ? formatDesktopMessageTimestamp(message.createdAt)
+              : formatMessageTimestamp(message.createdAt)
+          : "";
 
         if (isSystem || isRecalled) {
           return (
