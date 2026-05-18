@@ -580,6 +580,16 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     const pendingSync = inFlightSyncPromiseRef.current;
     if (pendingSync) {
       await pendingSync;
+      // 走查新一轮 R1：用户在 syncStatusMutation 飞行中连点 2 次「结束通话」
+      // —— 入口 leavingScreenRef 检查是 await 之前做的，两次 click 同时
+      // 看到 ref=false，都 await 同一个 pendingSync。await 落地后 Call 1
+      // 继续把 ref 翻 true、发 endStatusMutation；Call 2 没有 await 后
+      // 的 re-check，照样进 endStatusMutation —— 群里冒出 2 条相同
+      // 「群通话已结束」。disabled 跑的是 isPending state，commit 前
+      // 双 click 都通过。重新读 ref 再次 guard，第二次 call 在这里 noop。
+      if (leavingScreenRef.current || leavingScreen) {
+        return;
+      }
     }
 
     leavingScreenRef.current = true;
