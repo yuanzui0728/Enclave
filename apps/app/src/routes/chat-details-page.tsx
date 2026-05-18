@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -129,6 +129,15 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const [dangerSheetAction, setDangerSheetAction] = useState<
     "hide" | "clear" | "report" | "block" | null
   >(null);
+  // 走查 R2：和 desktop-chat-confirm-dialog 新一轮 R4 (commit 2e6b12b34) 同款问题
+  // ——「清空聊天记录 / 隐藏聊天 / 提交投诉 / 加入黑名单」确认按钮只靠 disabled={busy}
+  // 兜双触发，busy 是 mutation.isPending 经 React commit 才进 DOM。同帧连点 2 次
+  // 都能同时通过 disabled=false → onConfirm 触发 mutate 2 次：
+  // · hide / clear 走幂等 DELETE/POST，server 接 2 次浪费 RTT；
+  // · report 非幂等 → 后台直接堆 2 份重复 moderation report；
+  // · block 第二次拿到「已在黑名单」error 反过来把第一次成功的 notice 覆盖成失败提示。
+  // 加 sync ref 锁；busy 翻回 false 由 useEffect 复位。
+  const dangerConfirmSubmittingRef = useRef(false);
   const { entryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
       baseUrl,
@@ -762,6 +771,19 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     clearMutation.isPending ||
     reportMutation.isPending ||
     blockMutation.isPending;
+  // 配 dangerConfirmSubmittingRef：mutation 全部 settled 后把 ref 翻回去，
+  // 让下一次 dangerSheetAction 进来能正常 confirm；和 desktop confirm-dialog
+  // useEffect [pending] 复位思路一致。
+  const dangerMutationsPending =
+    hideMutation.isPending ||
+    clearMutation.isPending ||
+    reportMutation.isPending ||
+    blockMutation.isPending;
+  useEffect(() => {
+    if (!dangerMutationsPending) {
+      dangerConfirmSubmittingRef.current = false;
+    }
+  }, [dangerMutationsPending]);
 
   useEffect(() => {
     if (!strongReminderActive) {
@@ -1349,6 +1371,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                       danger: dangerSheetConfig.confirmDanger,
                       disabled: busy,
                       onClick: () => {
+                        // sync ref 锁：同帧双击都会跑到这里但 second 一定看到
+                        // dangerConfirmSubmittingRef.current === true 直接 return；
+                        // dangerMutationsPending useEffect 在 settled 后把 ref 翻回。
+                        if (
+                          dangerConfirmSubmittingRef.current ||
+                          dangerMutationsPending
+                        ) {
+                          return;
+                        }
+                        dangerConfirmSubmittingRef.current = true;
                         setDangerSheetAction(null);
                         dangerSheetConfig.onConfirm();
                       },
