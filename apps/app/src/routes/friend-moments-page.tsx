@@ -27,7 +27,7 @@ import {
   type MomentsPageResponse,
 } from "@yinjie/contracts";
 import { translateAppErrorCode } from "../lib/error-translate";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 
 // 走查电脑端 R1：和 moments-page / profile-moments-page 同款 i18n 一致性兜底。
 // 之前页面里 likeMutation / commentMutation 的 onError 已经走 translateAppErrorCode，
@@ -73,8 +73,6 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-const t = translateRuntimeMessage;
-
 const DesktopFriendMomentsWorkspace = lazy(async () => {
   const mod =
     await import("../features/desktop/moments/desktop-friend-moments-workspace");
@@ -87,6 +85,17 @@ const DesktopMessageAvatarPopover = lazy(async () => {
 });
 
 export function FriendMomentsPage() {
+  // 走查 R2：之前用 module-level `const t = translateRuntimeMessage`，叫的是直接
+  // 函数而不是 hook —— 不订阅 useAppLocale context。结果：用户在
+  // /desktop/friend-moments/X 上挂着的时候去设置页切语言（zh-CN → en-US 等），
+  // workspace 子组件因为 useRuntimeTranslator 订阅 context 会自动 re-render
+  // 拿到新语言文案，**但本 page 自己**（errors[] 推的 4 条 query 错误文案、
+  // displayName 的「角色朋友圈」fallback、character 不存在时的「无法打开这位
+  // 角色的朋友圈 / 角色资料不存在 / 返回上一页 / 去朋友圈主页」整张卡片）
+  // 都不会 re-render，文案卡在旧 locale 上，直到下次 query refetch / 导航
+  // 触发 page 重渲才换。和 moments-page / profile-moments-page 一致改成
+  // hook 调用，订阅 context 同步 locale。
+  const t = useRuntimeTranslator();
   const { characterId } = useParams({
     from: "/desktop/friend-moments/$characterId",
   });
