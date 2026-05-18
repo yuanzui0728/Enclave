@@ -931,6 +931,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   // (b) 叠 sync ref 锁兜同帧 double-tap，两者复位由 useEffect [isPending] 触发。
   const muteSubmittingRef = useRef(false);
   const pinSubmittingRef = useRef(false);
+  // 走查本会话 R1：兄弟 toggle「消息免打扰 / 置顶聊天」R2 都补了 disabled+sync ref
+  // 双保险，独「强提醒」原版只裸挂 disabled={busy}——同帧双击 React state 没 commit
+  // 之前 disabled 还是 false，两次 strongReminderMutation.mutate(true) 全飞出去：
+  // POST /strong-reminder 双发 + requestNotificationPermission/syncNativePushToken
+  // 联动也跑两轮。和 mute/pin 对齐补 sync ref 锁；mutation settled 后 useEffect
+  // [isPending] 复位。
+  const strongReminderSubmittingRef = useRef(false);
   useEffect(() => {
     if (!muteMutation.isPending) {
       muteSubmittingRef.current = false;
@@ -941,6 +948,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       pinSubmittingRef.current = false;
     }
   }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!strongReminderMutation.isPending) {
+      strongReminderSubmittingRef.current = false;
+    }
+  }, [strongReminderMutation.isPending]);
   const handleToggleMute = (next: boolean) => {
     if (muteSubmittingRef.current) {
       return;
@@ -954,6 +966,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     }
     pinSubmittingRef.current = true;
     pinMutation.mutate(next);
+  };
+  const handleToggleStrongReminder = (next: boolean) => {
+    if (strongReminderSubmittingRef.current) {
+      return;
+    }
+    strongReminderSubmittingRef.current = true;
+    strongReminderMutation.mutate(next);
   };
 
   return (
@@ -1211,7 +1230,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 variant="wechat"
                 checked={strongReminderActive}
                 disabled={busy}
-                onToggle={(checked) => strongReminderMutation.mutate(checked)}
+                onToggle={handleToggleStrongReminder}
               />
             </div>
           </ChatDetailsSection>
