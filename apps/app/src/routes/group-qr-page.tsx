@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -1024,6 +1024,40 @@ export function GroupQrPage() {
   // 一模一样的"xxx 邀请你加入群聊"，体验很差。按 conversationId 维度上锁，
   // finally 解锁；不同会话间不互相阻塞，用户可以连点不同行批量投。
   const sendingConversationsRef = useRef<Set<string>>(new Set());
+  // 走查 R1：直聊分支 emitChatMessage 后 setTimeout 500ms 再 invalidate
+  // conversations（给 socket 服务端写入完成留窗口）。原版每次邀请都 schedule
+  // 一份独立 setTimeout，N 个会话连发就堆 N 个定时器，全在 ~500ms 内 fire →
+  // N 次 invalidate；react-query 对同一 queryKey 的并发 refetch dedup 但
+  // 已结束的会重新发——上传完成后排队再发 1-N 次 GET /conversations。更糟
+  // 的是 unmount 后定时器没清，仍然 fire 一次 invalidate 给其它已挂载页（多
+  // 一次公网 ~600ms RTT 的无用拉刷）。改成共享单 timer，新邀请重置 deadline；
+  // unmount 时清掉。
+  const pendingConversationsInvalidateTimerRef = useRef<number | null>(null);
+  const scheduleConversationsInvalidate = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (pendingConversationsInvalidateTimerRef.current !== null) {
+      window.clearTimeout(pendingConversationsInvalidateTimerRef.current);
+    }
+    pendingConversationsInvalidateTimerRef.current = window.setTimeout(() => {
+      pendingConversationsInvalidateTimerRef.current = null;
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    }, 500);
+  }, [baseUrl, queryClient]);
+  useEffect(() => {
+    return () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (pendingConversationsInvalidateTimerRef.current !== null) {
+        window.clearTimeout(pendingConversationsInvalidateTimerRef.current);
+        pendingConversationsInvalidateTimerRef.current = null;
+      }
+    };
+  }, []);
   async function sendToConversation(conversation: ConversationListItem) {
     if (sendingConversationsRef.current.has(conversation.id)) {
       return;
@@ -1102,11 +1136,7 @@ export function GroupQrPage() {
       characterId,
       text: inviteMessage,
     });
-    window.setTimeout(() => {
-      void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    }, 500);
+    scheduleConversationsInvalidate();
     setDeliveredConversation(
       writeGroupInviteDeliveryRecord(groupId, {
         conversationId: conversation.id,

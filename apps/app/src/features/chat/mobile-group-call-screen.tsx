@@ -531,10 +531,21 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     });
   };
 
+  // 走查 R1：3 个错误态分支 (groupQuery 失败 / membersQuery 失败 / groupQuery.data
+  // 为 null) 的「重试读取」按钮原本都裸跑 onClick={handleRetryLoad}，按钮自身
+  // 也没 disabled 守护——慢网下用户对着 ErrorBlock 多点 2-3 次重试，每次同时
+  // 触发 groupQuery + membersQuery 两条 refetch，公网隧道 ~600ms RTT × 4-6 条
+  // 同时飞，后端短时压力翻倍。useQuery 内部对同一 queryKey 的并发 refetch 会
+  // dedup，但 isFetching=true 时 refetch() 不会被复用而是仍然排队再发一次。
+  // 进入前先看 isFetching；下方按钮 disabled 同步收口，让用户视觉上知道在转。
   const handleRetryLoad = () => {
+    if (groupQuery.isFetching || membersQuery.isFetching) {
+      return;
+    }
     void groupQuery.refetch();
     void membersQuery.refetch();
   };
+  const retryLoadDisabled = groupQuery.isFetching || membersQuery.isFetching;
 
   const renderBackToGroupAction = () => (
     <InlineNoticeActionButton
@@ -666,9 +677,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               <div className="flex flex-wrap justify-center gap-2">
                 <MobileCallActionButton
                   onClick={handleRetryLoad}
+                  disabled={retryLoadDisabled}
                   className="min-w-[132px]"
                 >
-                  {t(msg`重试读取`)}
+                  {retryLoadDisabled ? t(msg`正在重试...`) : t(msg`重试读取`)}
                 </MobileCallActionButton>
                 <MobileCallActionButton
                   onClick={handleBack}
@@ -704,9 +716,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               <div className="flex flex-wrap justify-center gap-2">
                 <MobileCallActionButton
                   onClick={handleRetryLoad}
+                  disabled={retryLoadDisabled}
                   className="min-w-[132px]"
                 >
-                  {t(msg`重试读取`)}
+                  {retryLoadDisabled ? t(msg`正在重试...`) : t(msg`重试读取`)}
                 </MobileCallActionButton>
                 <MobileCallActionButton
                   onClick={handleBack}
@@ -755,9 +768,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               <div className="flex flex-wrap justify-center gap-2">
                 <MobileCallActionButton
                   onClick={handleRetryLoad}
+                  disabled={retryLoadDisabled}
                   className="min-w-[132px]"
                 >
-                  {t(msg`重试读取`)}
+                  {retryLoadDisabled ? t(msg`正在重试...`) : t(msg`重试读取`)}
                 </MobileCallActionButton>
                 <MobileCallActionButton
                   onClick={handleBack}
