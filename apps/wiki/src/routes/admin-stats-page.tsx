@@ -80,6 +80,12 @@ export function AdminStatsPage() {
           <Trans>被回滚最多的用户（top 20）</Trans>
         </h2>
         {topQ.isLoading && <LoadingBlock />}
+        {/* 原写法 topQ / filterQ 任何错误都被吃掉：没有 ErrorBlock，列表静默
+            为空，跟"真的没数据"长得一模一样。admin 想 debug 拿不到 message
+            只能开 devtools。同 dailyQ 的处理路径补一份。 */}
+        {topQ.isError && (
+          <ErrorBlock message={(topQ.error as Error).message} />
+        )}
         {topQ.data?.length === 0 && (
           <PanelEmpty message={t(msg`无记录`)} />
         )}
@@ -114,6 +120,9 @@ export function AdminStatsPage() {
           <Trans>过滤器命中（近 7 天）</Trans>
         </h2>
         {filterQ.isLoading && <LoadingBlock />}
+        {filterQ.isError && (
+          <ErrorBlock message={(filterQ.error as Error).message} />
+        )}
         {filterQ.data?.length === 0 && (
           <PanelEmpty message={t(msg`无记录`)} />
         )}

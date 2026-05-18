@@ -1994,6 +1994,13 @@ export function StickerPanel({
               onKeyDown={handleSearchInputKeyDown}
               placeholder={searchInputPlaceholder}
               title={searchInputTitle}
+              // 走查 R79：原版只有 placeholder + title，没显式 aria-label。
+              // placeholder 在用户开始打字后多数 SR 不再朗读，title 是 visual
+              // tooltip 而不是 accessible name。盲人用户 focus 进来只听到
+              // 「编辑栏」+ placeholder 一次，之后失去字段意图。补 aria-label
+              // 用稳定的「搜索表情」（管理模式 / Esc 提示等条件 placeholder
+              // 文案是 visual hint，不属于核心字段语义）。
+              aria-label={t(msg`搜索表情`)}
               // mobile: text-[16px] 防 iOS Safari focus 时 viewport zoom-in；
               // desktop 沿用 13px 紧凑布局。
               className={`w-full border-none bg-transparent text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] ${

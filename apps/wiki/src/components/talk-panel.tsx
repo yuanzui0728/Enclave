@@ -237,9 +237,14 @@ function ThreadDetail({
     <div className="mt-3 space-y-2 border-t border-[var(--border-subtle)] pt-3">
       {isPatroller && (
         <div className="flex gap-2 text-xs">
+          {/* 原写法两个 flagsMut 按钮没有 disabled，patroller 点"锁定"后回包
+              还没回来 thread.isLocked 仍是 false，再点一下就会发第二个 mutation
+              （并且和"标记已解决"也能跨调，两个 mutation 互相覆盖 thread row）。
+              加 isPending 守门 + 错误兜底 InlineNotice，避免误操作和静默失败。 */}
           <Button
             size="sm"
             variant="ghost"
+            disabled={flagsMut.isPending}
             onClick={() => flagsMut.mutate({ isLocked: !thread.isLocked })}
           >
             {thread.isLocked ? t(msg`解锁`) : t(msg`锁定`)}
@@ -247,11 +252,18 @@ function ThreadDetail({
           <Button
             size="sm"
             variant="ghost"
+            disabled={flagsMut.isPending}
             onClick={() => flagsMut.mutate({ isResolved: !thread.isResolved })}
           >
             {thread.isResolved ? t(msg`标记未解决`) : t(msg`标记已解决`)}
           </Button>
         </div>
+      )}
+      {flagsMut.isError && (
+        <ErrorBlock message={(flagsMut.error as Error).message} />
+      )}
+      {deleteMut.isError && (
+        <ErrorBlock message={(deleteMut.error as Error).message} />
       )}
       {postsQ.isLoading && <LoadingBlock />}
       {postsQ.isError && (
@@ -263,6 +275,10 @@ function ThreadDetail({
         isNarrow={isNarrow}
         onReply={(postId) => setReplyTo(postId)}
         onDelete={(postId) => {
+          // deleteMut.isPending 时 onDelete 不再触发新一次 confirm + mutate ——
+          // 多条回复在 200ms 内连点会并发删除，每条都触发 invalidate + refetch
+          // 三遍。带个简单 guard。
+          if (deleteMut.isPending) return;
           if (window.confirm(t(msg`确认删除这条回复？删除后会标记为「已删除」。`))) {
             deleteMut.mutate(postId);
           }

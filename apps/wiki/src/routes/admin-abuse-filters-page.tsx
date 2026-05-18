@@ -66,7 +66,11 @@ export function AdminAbuseFiltersPage() {
       )}
     >
       <CreateFilterForm
-        onCreate={(input) => createMut.mutate(input)}
+        // 用 mutateAsync 把 promise 透传到 child；child 等 promise resolve
+        // 才 reset 表单 + 关闭面板。原写法 mutate() 触发即立刻 reset+close，
+        // 后续 API 失败时表单已被清空 + 折回，用户看到 InlineNotice 但要从
+        // 0 重打名字/描述/JSON pattern——典型的"失败丢稿"。
+        onCreate={(input) => createMut.mutateAsync(input)}
         loading={createMut.isPending}
         error={
           createMut.isError ? (createMut.error as Error).message : null
@@ -282,7 +286,7 @@ function CreateFilterForm({
   loading,
   error,
 }: {
-  onCreate: (input: CreateFilterInput) => void;
+  onCreate: (input: CreateFilterInput) => Promise<unknown>;
   loading: boolean;
   error: string | null;
 }) {
@@ -320,20 +324,27 @@ function CreateFilterForm({
     setPatternText(DEFAULT_PATTERN_JSON);
   }
 
-  function submit() {
+  async function submit() {
     if (patternError) return;
     if (!name.trim()) return;
-    onCreate({
-      name: name.trim(),
-      description: description.trim() || undefined,
-      enabled,
-      scope,
-      action,
-      severity,
-      pattern: JSON.parse(patternText) as CreateFilterInput["pattern"],
-    });
-    reset();
-    setOpen(false);
+    try {
+      await onCreate({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        enabled,
+        scope,
+        action,
+        severity,
+        pattern: JSON.parse(patternText) as CreateFilterInput["pattern"],
+      });
+      // 成功才清/折表单；失败时保留输入，让管理员对照 InlineNotice 改 pattern
+      // / name / scope，不用从头再敲一份 JSON。
+      reset();
+      setOpen(false);
+    } catch {
+      // 父组件 useMutation 的 error 已通过 props.error 渲染到 InlineNotice，
+      // 这里吞掉 reject 避免 react 报 "unhandled rejection"。
+    }
   }
 
   if (!open) {
