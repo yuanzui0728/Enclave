@@ -728,7 +728,15 @@ function DirectChatDetailsPanel({
 
   return (
     <div className="space-y-2 bg-[#f5f5f5] px-3 pb-6 pt-3">
-      {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+      {notice ? (
+        // R40：和姊妹 R36/R37/R39 workspace / message-list / composer notice
+        // 同款—— 详情侧栏 (单聊) 顶部 notice 是 2400ms 自动消失的 transient
+        // toast（line 224 setTimeout），反馈置顶 / 免打扰 / 星标 / 清空记录 /
+        // 投诉 / 加入黑名单等操作结果。tone="success" 全部走 polite。
+        <InlineNotice role="status" aria-live="polite" tone="success">
+          {notice}
+        </InlineNotice>
+      ) : null}
       {characterQuery.isError && characterQuery.error instanceof Error ? (
         <ErrorBlock message={characterQuery.error.message} />
       ) : null}
@@ -1899,8 +1907,13 @@ function GroupChatDetailsPanel({
   return (
     <div className="space-y-2.5 bg-[#ededed] px-0 pb-6 pt-3">
       {notice ? (
+        // R40：和上面单聊详情侧栏同款—— 群聊详情侧栏顶部 notice 也是 2400ms
+        // 自动消失的 transient toast（line 1270 setTimeout），反馈置顶 / 免打扰 /
+        // 群昵称变更 / 群公告 / 移除成员 / 解散群聊等操作结果。
         <div className="px-3">
-          <InlineNotice tone="success">{notice}</InlineNotice>
+          <InlineNotice role="status" aria-live="polite" tone="success">
+            {notice}
+          </InlineNotice>
         </div>
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
