@@ -704,7 +704,13 @@ export function useConversationThread(conversationId: string) {
         characterId: targetCharacterId,
         type: "sticker",
         // i18n-ignore-next-line: protocol marker for sticker text payload
-        text: overrideText ?? t(msg`[表情包] ${sticker.label ?? sticker.stickerId}`),
+        // 走查 R7：sticker.label 在 StickerAttachment 上是 `string | undefined`，
+        // CreateCustomStickerFromMessageRequest 的 label 也是 optional —— 用户
+        // 创建自定义贴纸不填 label 时偶发以空串落库（旧版 reminder 卡 / 老 wiki
+        // import 的 customSticker.label === "" 路径都见过）。`??` 只防 null/
+        // undefined 不防空串，conversation 列表预览会显示「[表情包] 」+ 空白。
+        // 改用 `||` 让空串也命中 stickerId fallback。
+        text: overrideText ?? t(msg`[表情包] ${sticker.label || sticker.stickerId}`),
         sticker: {
           sourceType: sticker.sourceType,
           packId: sticker.packId,
