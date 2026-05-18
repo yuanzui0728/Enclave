@@ -2327,11 +2327,21 @@ export function ChatMessageList({
     }
   };
 
+  // 走查新一轮 R3：和姊妹 chat-image-viewer-page R2 同款 — saveAttachmentFile
+  // 是 fire-and-forget，无任何同步锁。从 context menu「保存附件」/ mobile action
+  // sheet 双触发，saveRemoteFile 走 Tauri 弹 2 个文件保存对话框堆叠；web fallback
+  // 走 anchor download 触发 2 次下载。按 url 上锁，finally 解锁，不同附件互不
+  // 影响。
+  const savingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const saveAttachmentFile = (input: {
     url: string;
     fileName: string;
     kind: "image" | "file";
   }) => {
+    if (savingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    savingAttachmentUrlsRef.current.add(input.url);
     const retryLabel =
       input.kind === "image" ? t(msg`重试保存图片`) : t(msg`重试保存文件`);
 
@@ -2341,7 +2351,11 @@ export function ChatMessageList({
       kind: input.kind,
       dialogTitle:
         input.kind === "image" ? t(msg`保存图片`) : t(msg`保存文件`),
-    }).then((result) => {
+    })
+      .finally(() => {
+        savingAttachmentUrlsRef.current.delete(input.url);
+      })
+      .then((result) => {
       if (result.status === "cancelled") {
         return;
       }
