@@ -64,37 +64,6 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-function getAttentionTone(severity: CloudWorldAttentionItem["severity"]) {
-  switch (severity) {
-    case "critical":
-      return "border-rose-300/60 bg-rose-50 text-rose-700";
-    case "warning":
-      return "border-amber-300/50 bg-amber-50 text-amber-700";
-    case "info":
-    default:
-      return "border-sky-300/50 bg-sky-50 text-sky-700";
-  }
-}
-
-function getAttentionLabel(item: CloudWorldAttentionItem) {
-  switch (item.reason) {
-    case "failed_world":
-      return translateCloudConsoleTextForActiveLocale("Failed");
-    case "provider_error":
-      return translateCloudConsoleTextForActiveLocale("Provider error");
-    case "deployment_drift":
-      return translateCloudConsoleTextForActiveLocale("Runtime drift");
-    case "sleep_drift":
-      return translateCloudConsoleTextForActiveLocale("Sleep drift");
-    case "heartbeat_stale":
-      return translateCloudConsoleTextForActiveLocale("Heartbeat stale");
-    case "recovery_queued":
-      return translateCloudConsoleTextForActiveLocale("Recovery queued");
-    default:
-      return translateCloudConsoleTextForActiveLocale("Attention");
-  }
-}
-
 function getHealthBucket(status?: string | null): HealthFilter {
   const normalized = status?.trim().toLowerCase();
   if (!normalized || normalized === "unknown") {
@@ -104,17 +73,6 @@ function getHealthBucket(status?: string | null): HealthFilter {
     return "healthy";
   }
   return "unhealthy";
-}
-
-function getHealthTone(status?: string | null) {
-  const bucket = getHealthBucket(status);
-  if (bucket === "healthy") {
-    return "border-emerald-300/50 bg-emerald-50 text-emerald-700";
-  }
-  if (bucket === "unhealthy") {
-    return "border-amber-300/50 bg-amber-50 text-amber-700";
-  }
-  return "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]";
 }
 
 function formatPowerStateLabel(value: CloudInstancePowerState) {
@@ -206,7 +164,6 @@ function matchesInstanceFleetQuery(
   item: CloudWorldInstanceFleetItem,
   query: string,
   providerLabelByKey: Map<string, string>,
-  attention: CloudWorldAttentionItem | null | undefined,
 ) {
   return includesNormalizedQuery(
     [
@@ -215,24 +172,15 @@ function matchesInstanceFleetQuery(
       item.world.phone,
       item.world.email,
       item.world.ownerDisplayName,
-      item.world.status,
-      item.world.healthStatus,
-      item.world.apiBaseUrl,
-      item.world.adminUrl,
       resolveProviderKey(item),
       resolveProviderLabel(item, providerLabelByKey),
       item.instance?.providerInstanceId,
-      item.instance?.providerVolumeId,
-      item.instance?.providerSnapshotId,
       item.instance?.name,
       item.instance?.region,
       item.instance?.zone,
       item.instance?.privateIp,
       item.instance?.publicIp,
       item.instance?.powerState,
-      attention?.message,
-      attention?.reason,
-      attention?.severity,
     ],
     query,
   );
@@ -406,12 +354,7 @@ export function WorldsPage() {
         return false;
       }
 
-      return matchesInstanceFleetQuery(
-        item,
-        queryFilter,
-        providerLabelByKey,
-        attention,
-      );
+      return matchesInstanceFleetQuery(item, queryFilter, providerLabelByKey);
     });
   }, [
     attentionByWorldId,
@@ -495,6 +438,18 @@ export function WorldsPage() {
       setPage(safePage);
     }
   }, [page, safePage]);
+
+  // permalink 可能带过时的 provider key（provider 被改名/删除，或用户手写错
+  // URL），下游 filter 直接相等比较会静默把全列表过滤为空。等 providerOptions
+  // 加载完后若发现当前选中的 key 不在可选项里，悄悄回落到 "all"，URL 同步改写。
+  useEffect(() => {
+    if (providerFilter === "all") return;
+    if (!instanceFleetQuery.data) return;
+    const knownKeys = new Set(providerOptions.map((option) => option.key));
+    if (!knownKeys.has(providerFilter)) {
+      updateFilters({ provider: "all" });
+    }
+  }, [providerFilter, providerOptions, instanceFleetQuery.data]);
 
   const quickActionMutation = useMutation({
     mutationFn: (input: { worldId: string; action: WorldLifecycleAction }) =>
@@ -648,7 +603,7 @@ export function WorldsPage() {
                 updateFilters({ query: event.target.value })
               }
               placeholder={t(
-                "world id, phone, email, name, provider, or endpoint",
+                "world id, phone, email, name, or provider",
               )}
               className="w-full rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)]"
             />
@@ -761,16 +716,19 @@ export function WorldsPage() {
           </div>
         ) : null}
 
+        {driftSummaryQuery.isError &&
+        driftSummaryQuery.error instanceof Error ? (
+          <div className="mt-4">
+            <CloudAdminErrorBlock error={driftSummaryQuery.error} />
+          </div>
+        ) : null}
+
         <div className="mt-5 overflow-x-auto rounded-2xl border border-[color:var(--border-faint)]">
-          <table className="min-w-[72rem] border-collapse text-left text-sm">
+          <table className="min-w-[64rem] border-collapse text-left text-sm">
             <thead className="bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]">
               <tr>
                 <th className="px-4 py-3">{t("World")}</th>
-                <th className="px-4 py-3">{t("Status")}</th>
                 <th className="px-4 py-3">{t("Power")}</th>
-                <th className="px-4 py-3">{t("Attention")}</th>
-                <th className="px-4 py-3">{t("Health")}</th>
-                <th className="px-4 py-3">{t("Access")}</th>
                 <th className="px-4 py-3">
                   <button
                     type="button"
@@ -805,16 +763,14 @@ export function WorldsPage() {
                     </span>
                   </button>
                 </th>
-                <th className="px-4 py-3">{t("Heartbeat")}</th>
+                <th className="px-4 py-3">{t("Membership registered")}</th>
+                <th className="px-4 py-3">{t("Membership expires")}</th>
                 <th className="px-4 py-3">{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
               {pagedInstanceFleet.map((item) => {
-                const attention = attentionByWorldId.get(item.world.id) ?? null;
                 const powerState = resolvePowerState(item);
-                const lastHeartbeatAt =
-                  item.instance?.lastHeartbeatAt ?? item.world.lastHeartbeatAt;
 
                 return (
                   <tr
@@ -838,48 +794,12 @@ export function WorldsPage() {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
-                      {item.world.status}
-                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getPowerStateTone(powerState)}`}
                       >
                         {formatPowerStateLabel(powerState)}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {attention ? (
-                        <div className="space-y-1">
-                          <span
-                            className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getAttentionTone(attention.severity)}`}
-                          >
-                            {getAttentionLabel(attention)}
-                          </span>
-                          <div className="max-w-[16rem] text-xs text-[color:var(--text-secondary)]">
-                            {attention.message}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-[color:var(--text-secondary)]">
-                          {t("Healthy")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getHealthTone(item.world.healthStatus)}`}
-                      >
-                        {item.world.healthStatus ?? "unknown"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="max-w-[16rem] truncate text-[color:var(--text-secondary)]">
-                        API: {item.world.apiBaseUrl ?? t("Not set")}
-                      </div>
-                      <div className="mt-1 max-w-[16rem] truncate text-xs text-[color:var(--text-muted)]">
-                        Admin: {item.world.adminUrl ?? t("Not set")}
-                      </div>
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
                       {formatDateTime(item.world.lastAccessedAt)}
@@ -888,10 +808,10 @@ export function WorldsPage() {
                       {formatDateTime(item.world.lastUserMessageAt)}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      <div>{formatDateTime(lastHeartbeatAt)}</div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {t("Last interactive")}: {formatDateTime(item.world.lastInteractiveAt)}
-                      </div>
+                      {formatDateTime(item.world.userCreatedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                      {formatDateTime(item.world.subscriptionExpiresAt)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-2">

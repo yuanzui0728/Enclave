@@ -216,11 +216,16 @@ export function createWorldActionConfirmationCopy(
   world: Pick<CloudWorldSummary, "name">,
   locale?: string | null,
 ) {
+  // 标题里的 worldName 由 formatCloudConsole...Title() 渲染，它对 undefined locale
+  // 默认回退到 getCurrentCloudConsoleLocale()。而 description/confirmLabel 走的是
+  // selectCloudConsoleText(locale, ...)，undefined 直接回退 en-US。两条路径对齐到
+  // "locale 没传就当 en-US"，避免出现「中文标题 + 英文描述」的混搭。
+  const resolvedLocale = locale ?? "en-US";
   switch (action) {
     case "suspend":
       return {
-        title: formatCloudConsoleSuspendWorldTitle(world.name, locale),
-        description: selectCloudConsoleText(locale, {
+        title: formatCloudConsoleSuspendWorldTitle(world.name, resolvedLocale),
+        description: selectCloudConsoleText(resolvedLocale, {
           "en-US":
             "The world will move toward sleeping state and active sessions may need to reconnect after it wakes again.",
           "zh-CN":
@@ -230,20 +235,23 @@ export function createWorldActionConfirmationCopy(
           "ko-KR":
             "월드는 절전 상태로 전환되며, 다시 깨어난 후 활성 세션은 재연결이 필요할 수 있습니다.",
         }),
-        confirmLabel: selectCloudConsoleText(locale, {
+        confirmLabel: selectCloudConsoleText(resolvedLocale, {
           "en-US": "Suspend world",
           "zh-CN": "挂起世界",
           "ja-JP": "ワールドを一時停止",
           "ko-KR": "월드 일시 중지",
         }),
-        pendingLabel: createWorldActionPendingLabel(action, locale),
+        pendingLabel: createWorldActionPendingLabel(action, resolvedLocale),
         danger: true,
       };
     case "retry":
     default:
       return {
-        title: formatCloudConsoleRetryWorldRecoveryTitle(world.name, locale),
-        description: selectCloudConsoleText(locale, {
+        title: formatCloudConsoleRetryWorldRecoveryTitle(
+          world.name,
+          resolvedLocale,
+        ),
+        description: selectCloudConsoleText(resolvedLocale, {
           "en-US":
             "This will queue a new recovery action and clear the current failure state for the world.",
           "zh-CN":
@@ -253,13 +261,13 @@ export function createWorldActionConfirmationCopy(
           "ko-KR":
             "새 복구 작업을 큐에 추가하고 월드의 현재 실패 상태를 초기화합니다.",
         }),
-        confirmLabel: selectCloudConsoleText(locale, {
+        confirmLabel: selectCloudConsoleText(resolvedLocale, {
           "en-US": "Retry recovery",
           "zh-CN": "重试恢复",
           "ja-JP": "復旧を再試行",
           "ko-KR": "복구 재시도",
         }),
-        pendingLabel: createWorldActionPendingLabel(action, locale),
+        pendingLabel: createWorldActionPendingLabel(action, resolvedLocale),
         danger: true,
       };
   }

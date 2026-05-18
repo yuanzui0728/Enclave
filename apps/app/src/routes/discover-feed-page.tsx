@@ -1905,11 +1905,26 @@ export function DiscoverFeedPage() {
   if (isDesktopLayout) {
     const errors: string[] = [];
 
-    if (feedQuery.isError && feedQuery.error instanceof Error) {
-      errors.push(feedQuery.error.message);
-    }
-
-    if (blockedQuery.isError && blockedQuery.error instanceof Error) {
+    // 走查新一轮 R2：和 mobile R1 (上方 L2272-2274) 同坑——后台 refetch（window
+    // focus / staleTime 过期）失败时 feedQuery.isError=true 但 cache 仍有上次
+    // 成功的 feedPosts，列表正常渲染；旧版无脑把 error.message 推进 errors →
+    // DesktopFeedToolbar 顶上挂一条「广场动态暂时不可用」红条，跟下方还在滚
+    // 的 60+ 条 post 同框，用户视感是"平台说不可用但内容在跑"。
+    // feedQuery 错误本身已经由 DesktopFeedList 的 feedErrorMessage 空态承接
+    // （posts.length===0 → 渲染「广场动态暂时不可用 + 重试读取」EmptyState；
+    // 见 desktop-feed-list L158-174）。toolbar 这条 errors 数组从此专门负责
+    // 跟 feed 主流量「无关但仍要让用户知道」的失败，例如 blockedQuery 首次
+    // 拿名单失败。feedQuery 错误不再推这里，避免和空态卡重复露出同一条文案。
+    //
+    // blockedQuery 同样 transient——staleTime=5min 过期后 refetch 失败 → 红条
+    // 挂顶；用户上次已经拿到屏蔽名单（blockedQuery.data 非 undefined）时按旧
+    // 名单兜底完全够用，没必要把这条后台错误推到 toolbar 增加噪音。仅在「从
+    // 来没拿到过名单」（首次失败）时才推 error.message。
+    if (
+      blockedQuery.isError &&
+      blockedQuery.error instanceof Error &&
+      blockedQuery.data === undefined
+    ) {
       errors.push(blockedQuery.error.message);
     }
 
