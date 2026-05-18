@@ -389,7 +389,19 @@ export function DesktopChatHistoryPage() {
               <ErrorBlock role="alert" message={conversationsQuery.error.message} />
             ) : null}
 
-            <div className="space-y-1">
+            {/* 走查电脑端群聊 R99：和姊妹 R93 chat-files-page 左列同款修法——
+                「聊天记录」页（群聊「聊天信息」→「查找聊天记录」入口）左列
+                按会话切换的 N 个 button 是 mutually exclusive 筛选选择，原版
+                只用 brand 绿底 + 边框视觉差表达 active。盲人 SR 走过去听到
+                N 段裸 button label「群A / 单聊B / ...」浮空，听不出当前正在
+                看哪个会话的历史；conversations.length 活跃用户能到几十。
+                radiogroup + radio + aria-checked 让 SR 朗读"按钮 已选中 /
+                未选中"并按箭头键导航。 */}
+            <div
+              role="radiogroup"
+              aria-label={t(msg`选择会话`)}
+              className="space-y-1"
+            >
               {conversations.map((conversation) => {
                 const displayTitle = getConversationDisplayTitle(
                   conversation.title,
@@ -398,6 +410,8 @@ export function DesktopChatHistoryPage() {
                 <button
                   key={conversation.id}
                   type="button"
+                  role="radio"
+                  aria-checked={conversation.id === selectedConversationId}
                   onClick={() => setSelectedConversationId(conversation.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[12px] border px-3 py-2.5 text-left transition",
