@@ -178,6 +178,29 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     },
   });
 
+  // 走查桌面端群聊 R3：和 desktop-create-group-dialog R3 / desktop-group-member-picker
+  // R1 / desktop-chat-confirm-dialog R4 同款问题——「发消息」按钮只靠
+  // `disabled={startChatMutation.isPending || ...}`，isPending 是 useMutation
+  // React state，要等 commit 才进 DOM。在群里点角色头像 → popover → 同帧
+  // 双击「发消息」会同时通过 disabled=false → startChatMutation.mutate() 飞
+  // 两次。getOrCreateConversation 服务端虽幂等（按 characterId 查再创建），
+  // 第二次仍打公网 RTT ~600ms；两路 onSuccess 同时跑两份 invalidateQueries +
+  // 两次 navigate，第二次 navigate 在 close 之后跑容易在 react-router 中卡到
+  // 已被 unmount 的 popover state 上（onClose 已经把 popover 拆掉）。
+  const startChatSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!startChatMutation.isPending) {
+      startChatSubmittingRef.current = false;
+    }
+  }, [startChatMutation.isPending]);
+  const handleStartChat = () => {
+    if (startChatMutation.isPending || startChatSubmittingRef.current) {
+      return;
+    }
+    startChatSubmittingRef.current = true;
+    startChatMutation.mutate();
+  };
+
   const character = isOwner ? null : characterQuery.data;
   const friendship =
     (friendsQuery.data ?? []).find((item) => item.character.id === characterId)
@@ -550,7 +573,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                 return;
               }
 
-              startChatMutation.mutate();
+              handleStartChat();
             }}
           >
             {isBlocked
