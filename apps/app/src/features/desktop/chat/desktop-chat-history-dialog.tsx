@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { ChevronLeft, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
@@ -30,6 +30,18 @@ export function DesktopChatHistoryDialog({
 }: DesktopChatHistoryDialogProps) {
   const t = translateRuntimeMessage;
 
+  // R11：和姊妹 desktop-chat-confirm-dialog / desktop-chat-text-edit-dialog
+  // R11 / 移动端 R3 (c422bc945) 同款 —— workspace 用 inline arrow `onClose=
+  // {() => setRightPanelMode(null)}` 传进来，每次 workspace 重渲染（60s 轮询
+  // / search 输入 / socket / reminders tick）都换 ref → effect 拆 + 装
+  // window keydown 一次。本 dialog 是「查找聊天记录」，展开期间用户在 panel
+  // 内打字搜索，workspace conversationsQuery 还在 background refetch，每个字
+  // 都触发一次无效拆装。ref 镜像 onClose，deps 收紧到 [open]。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
@@ -40,12 +52,12 @@ export function DesktopChatHistoryDialog({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
+  }, [open]);
 
   if (!open) {
     return null;

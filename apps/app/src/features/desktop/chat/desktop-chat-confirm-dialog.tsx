@@ -47,6 +47,19 @@ export function DesktopChatConfirmDialog({
     }
   }, [pending]);
 
+  // R11：和姊妹移动端 R3 (c422bc945 — strong-reminder host / 3 sheet onClose
+  // 每帧拆装) 同款 perf 问题。原版 deps=[onClose, open, pending]，调用方
+  // workspace / details-panel 几乎全是 inline arrow `onClose={() => setX(null)}`
+  // —— parent 每次重渲染（60s 轮询 / 搜索框打字 / socket 推消息 / reminders
+  // tick）都换 onClose ref → 本 effect 在 open=true 时拆 + 装 window keydown
+  // listener 一次，open=false 时 early-return 但仍跑一遍 deps 比对。改用 ref
+  // 镜像 onClose，effect deps 收紧到 [open, pending] —— 用户在确认弹层期间
+  // workspace 后台轮询不再无效拆装事件 listener。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
@@ -70,12 +83,12 @@ export function DesktopChatConfirmDialog({
       // 弹窗是 modal 层，Esc 关掉自己就够了；不 stopPropagation 的话
       // workspace 那条 dismissSidePanel 的 window keydown 会接着跑，
       // 一下 Esc 既把确认弹窗关了又把背后的详情侧栏一起关了。
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   if (!open) {
     return null;

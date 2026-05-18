@@ -129,6 +129,18 @@ export function DesktopMessageForwardDialog({
   // 直接不挂 listener，pending 期间 Esc 完全透传——workspace queueMicrotask
   // 兜底跑 dismissSidePanel 把"聊天信息" / "查找记录"侧栏偷关掉。改成 pending
   // 时仍挂 listener、消费 Esc 但不真关 dialog。
+  //
+  // R11：和姊妹 desktop-chat-confirm-dialog R11 / 移动端 R3 (c422bc945) 同款
+  // —— inline arrow onClose 让 effect 在 parent 每次重渲染时拆装 keydown +
+  // Android back interceptor。转发弹层是 ChatMessageList 长按"转发"调出，
+  // chat-message-list 父帧每次 typing tick / socket / 消息 cache 变化都重渲，
+  // pending 期间又频繁变 false→true→false，每帧 listener 全部拆装。ref 镜像
+  // onClose 后两条 effect deps 都收紧。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
@@ -145,12 +157,12 @@ export function DesktopMessageForwardDialog({
       if (pending) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 第三轮 R3：mobile variant 漏接 Android 硬件 Back。单聊/群聊长按消息选
   // 「转发」会拉起这个 dialog（mobile variant 复用同一组件），用户在 Android
@@ -165,11 +177,11 @@ export function DesktopMessageForwardDialog({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 走查 R3：把 sort 和 filter 拆开。原版 useMemo 把 [...conversations].sort()
   // 也放在 deferredSearchTerm dep 内，每个 keystroke 都重排一次。conversations

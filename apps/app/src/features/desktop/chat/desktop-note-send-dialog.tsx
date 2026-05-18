@@ -81,6 +81,17 @@ export function DesktopNoteSendDialog({
   // 把背后的「聊天信息」侧栏一起关掉，dialog 自己还留在屏幕上。和 forward
   // dialog 完全对齐：挂 listener，pending 期间也消费 Esc 防 dismiss 透传，
   // 服务端那一发飞着的笔记 mutation 等落地后用户能再按 Esc 真关。
+  // R11：和姊妹 desktop-chat-confirm-dialog / desktop-chat-text-edit-dialog /
+  // desktop-message-forward-dialog R11 / 移动端 R3 (c422bc945) 同款 —— 调用方
+  // composer / notes-workspace 用 inline arrow `onClose={() => setX(null)}`
+  // 传进来，parent 每次重渲染都换 ref → effect 在 open=true 时反复拆装
+  // window keydown listener。pending 期间又频繁 false→true→false 推动 deps
+  // 变化。ref 镜像 onClose，effect deps 收紧到 [open, pending]。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
@@ -95,12 +106,12 @@ export function DesktopNoteSendDialog({
       if (pending) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 之前 sort + filter 合在一个 useMemo 里，[conversations, searchTerm] 同时
   // 是 deps：每次按键都重新 sort 一遍（O(N log N)），即使会话列表压根没动。

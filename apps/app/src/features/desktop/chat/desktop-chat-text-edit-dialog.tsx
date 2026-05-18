@@ -70,6 +70,17 @@ export function DesktopChatTextEditDialog({
     setDraft(value);
   };
 
+  // R11：和姊妹 desktop-chat-confirm-dialog R11 / 移动端 R3 (c422bc945) 同款
+  // —— inline arrow onClose 让 effect 在 parent 每次重渲染时拆装 keydown
+  // listener。本 dialog 是「聊天信息」改备注 / 标签时的编辑器，details panel
+  // 内 conversationsQuery / characterQuery / friendsQuery 都 15s staleTime
+  // refetch，弹层显示期间至少跑 3 份 polling → 每帧 onClose 引用换 → 拆装
+  // listener。ref 镜像 onClose，deps 收紧到 [open, pending]。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
@@ -93,12 +104,12 @@ export function DesktopChatTextEditDialog({
       }
       // 与 desktop-chat-confirm-dialog 同：Esc 关弹窗就够了，再让它冒泡到
       // workspace 的 dismissSidePanel 会同时关掉背后的详情侧栏。
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 走查桌面端群聊 R2：和 DesktopChatConfirmDialog R4 同款问题——「保存」按钮
   // / Enter 提交都只靠 `disabled={confirmDisabled}`，confirmDisabled 含
