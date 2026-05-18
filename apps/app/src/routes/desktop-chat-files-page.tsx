@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -354,17 +354,32 @@ export function DesktopChatFilesPage() {
     [searchableAttachmentRows],
   );
 
+  // 走查新一轮 R2：原 useMemo 把 .sort + 双 .filter + searchText 全压在一个
+  // dep 上。baseAttachmentRows 可能上千项（用户在「全部会话」视图下、几十个
+  // 对话各自最近百条消息平 flat 出来），每个 keystroke：
+  // · filter chip 没变、conversation 没切的情况下 baseAttachmentRows 完全不变
+  // · sort 跟 searchText 没关系，但还是被拖着重跑（parseTimestamp 两次×N，
+  //   500 项 ~10k 次 parse + ~5ms sort）
+  // 排序拆到只依赖 baseAttachmentRows 的独立 useMemo，下游 filter 沿用稳定
+  // 顺序；searchText 走 useDeferredValue，让输入框先把字打进去、filter 在
+  // 下个 idle 帧跑，长列表搜索时 backlog 体感明显改善。和姊妹 forward-dialog
+  // R3 / note-send-dialog 同款 deferred + 拆 sort/filter 思路。
+  const sortedBaseAttachmentRows = useMemo(
+    () =>
+      [...baseAttachmentRows].sort(
+        (left, right) =>
+          (parseTimestamp(right.createdAt) ?? 0) -
+          (parseTimestamp(left.createdAt) ?? 0),
+      ),
+    [baseAttachmentRows],
+  );
+  const deferredSearchText = useDeferredValue(searchText);
   const attachmentRows = useMemo(
     () =>
-      baseAttachmentRows
+      sortedBaseAttachmentRows
         .filter((item) => matchesAttachmentFilter(item, filter))
-        .filter((item) => matchesAttachmentSearch(item, searchText))
-        .sort(
-          (left, right) =>
-            (parseTimestamp(right.createdAt) ?? 0) -
-            (parseTimestamp(left.createdAt) ?? 0),
-        ),
-    [baseAttachmentRows, filter, searchText],
+        .filter((item) => matchesAttachmentSearch(item, deferredSearchText)),
+    [sortedBaseAttachmentRows, filter, deferredSearchText],
   );
   const imageRows = useMemo(
     () => attachmentRows.filter(isImageAttachmentRow),
