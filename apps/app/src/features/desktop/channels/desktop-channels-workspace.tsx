@@ -1614,12 +1614,31 @@ function ChannelCommentsDrawer({
   onSubmit: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-18 新会话 R7（本轮）：drawer 视觉上是 modal 浮层（pointer-
+  // events-auto 卡 + Esc 关），但裸 <div> 没有 dialog 语义 → VoiceOver / TalkBack
+  // 焦点 / 阅读顺序仍把它当成普通内容的一部分，跟同套 ChannelsForwardPicker
+  // R1（已修，在该组件 line 112）犯的同款问题。SR 用户进 drawer 后看不出"现
+  // 在在评论面板里"，关闭按钮也只是普通 button。补 role="dialog" + aria-
+  // modal="true" + aria-labelledby 指向顶部「评论 N」标题，让 SR 进 drawer 时
+  // 立刻播报"评论 N 对话框"，跟移动端 sheet / forward picker 体验对齐。
+  // 注：完整的 focus trap + 离场归还焦点跟 ChannelsForwardPicker 走的是同套
+  // requestAnimationFrame + ref 协议，本轮先把语义补全，trap 留给后续 round
+  // 处理（drawer 内只有 textarea / 1 个发送 / 1 个关闭 / 评论列表里的赞和回
+  // 复按钮，已经远好于 picker；用户实际 Tab 漏出的概率比 picker 低，但仍存在）。
   return (
     <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center px-6">
-      <div className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="channels-comments-drawer-title"
+        className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
+      >
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
           <div>
-            <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id="channels-comments-drawer-title"
+              className="text-[14px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`评论 ${selectedPost.commentCount}`)}
             </div>
             <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
@@ -1685,6 +1704,11 @@ function ChannelAuthorOverlay({
   onToggleFollow: (authorId: string, following: boolean) => void;
 }) {
   const t = useRuntimeTranslator();
+  // R7（同 ChannelCommentsDrawer 同款修法）：author overlay 视觉上是 modal
+  // （半透明 backdrop + Esc 关 + 居中 card），但裸 <div> 没有 dialog 语义。
+  // 同时 backdrop button 上有 aria-label="关闭作者主页"，但 SR 进 overlay 时
+  // 没有任何方式知道"现在在作者主页面板里"。补 role/aria-modal/aria-
+  // labelledby 指向 DesktopChannelAuthorPanel 顶部的"作者主页"标题。
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.55)] p-8 backdrop-blur-sm">
       <button
@@ -1693,7 +1717,12 @@ function ChannelAuthorOverlay({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[24px] bg-white shadow-[var(--shadow-overlay)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="channels-author-overlay-title"
+        className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[24px] bg-white shadow-[var(--shadow-overlay)]"
+      >
         <DesktopChannelAuthorPanel
           authorId={authorId}
           errorMessage={errorMessage}
@@ -1781,7 +1810,10 @@ function DesktopChannelAuthorPanel({
     <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          <div
+            id="channels-author-overlay-title"
+            className="text-sm font-medium text-[color:var(--text-primary)]"
+          >
             {t(msg`作者主页`)}
           </div>
         </div>
