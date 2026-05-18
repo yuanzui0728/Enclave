@@ -4320,6 +4320,18 @@ function DesktopAttachmentDraftBar({
                   // composer 顶部一打开就全在视口内，lazy 反而触发额外的
                   // intersection observer。
                   decoding="async"
+                  // 走查电脑端单聊 R104：和姊妹 R94 ImageMessage / R97 chat-files
+                  // / R98 NoteCardMessage / R99 FeedPostCardMessage 同款。
+                  // composer 顶部「待发送图片」缩略图栏紧贴 textarea，用户在
+                  // 多选 5-9 张图后想点 textarea 调整草稿时，鼠标 mousedown 落
+                  // 在缩略图上 → 浏览器默认 draggable=true → 拖出阈值距离触发
+                  // HTML5 native drag (blob:URL.createObjectURL 出来的 blob URL)
+                  // → drop 在隔壁 textarea 上时浏览器把 blob URL 当 text 插入
+                  // 用户草稿（"blob:https://1gw06751dd053.vicp.fun/xxxxx-uuid"
+                  // 一长串），消息发出去对方看到一段 blob URL 拼草稿正文。
+                  // 同时 mousedown→drag start 后右上角 X (onRemoveImage) 的
+                  // 点击判定也会被打断。
+                  draggable={false}
                   className="h-full w-full object-cover"
                 />
                 {onRemoveImage ? (
