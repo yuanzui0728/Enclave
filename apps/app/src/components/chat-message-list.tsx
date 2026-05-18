@@ -3713,6 +3713,21 @@ export function ChatMessageList({
         const isSharedHistoryMessage = importedSharedMessageIdSet.has(
           message.id,
         );
+        // 走查电脑端群聊 R76：avatar 行渲染处下方两次 resolveCharacterAvatarAction(
+        // message, isDesktop, selectionMode, threadContext?.type) 调用 —— 一次决定
+        // 包不包 <button>（条件渲染门控）、一次在 onClick 内部分流 popover vs
+        // navigate。函数本身是 pure（canOpenDesktopAvatarPopover + 几路字段判空），
+        // 但群聊里 100+ 条 character 消息 × 每次父帧 re-render（typing tick / socket
+        // echo / setMessages / mutation pending 翻转）会跑 200+ 次重复函数调用。
+        // 提到 row scope 算一次，行内复用。isUser 时不调用——保持原条件链。
+        const avatarAction = !isUser
+          ? resolveCharacterAvatarAction(
+              message,
+              isDesktop,
+              selectionMode,
+              threadContext?.type,
+            )
+          : null;
         const reminderRecord = messageReminderMap.get(message.id);
         const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
@@ -3858,21 +3873,10 @@ export function ChatMessageList({
                   />
                 ) : null}
                 {!isUser ? (
-                  resolveCharacterAvatarAction(
-                    message,
-                    isDesktop,
-                    selectionMode,
-                    threadContext?.type,
-                  ) ? (
+                  avatarAction ? (
                     <button
                       type="button"
                       onClick={(event) => {
-                        const avatarAction = resolveCharacterAvatarAction(
-                          message,
-                          isDesktop,
-                          selectionMode,
-                          threadContext?.type,
-                        );
                         if (avatarAction === "desktop-popover") {
                           handleDesktopAvatarClick(event, message);
                           return;
