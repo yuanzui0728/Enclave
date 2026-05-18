@@ -73,6 +73,22 @@ export function buildDesktopChatImageViewerPath(
     : DESKTOP_CHAT_IMAGE_VIEWER_PATH;
 }
 
+// 走查新一轮 R9：和 desktop-chat-window-route-state R7 (commit 51ea5160e) 同款
+// "//evil.com" 协议无关 URL 拦截。/desktop/chat-image-viewer 的 returnTo 会被
+// focusReturnTargetWindow → window.location.assign / window.opener.location.assign
+// 当导航 URL；下游 resolveChatImageViewerReturnPath 把 shouldValidate=false（即
+// conversationsQuery 还在 loading / error 时）的分支直接透传不做校验——攻击
+// URL 加载阶段用户点「回到消息页」就被带去外站。在 parse 层先做一层基线
+// sanitize：必须 "/" 打头且不是 "//"，否则丢弃。下游的 conversationPathSet
+// 严格校验仍然保留。
+function sanitizeReturnTo(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed || !trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return undefined;
+  }
+  return trimmed;
+}
+
 export function parseDesktopChatImageViewerRouteHash(hash: string) {
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   if (!normalizedHash) {
@@ -87,7 +103,7 @@ export function parseDesktopChatImageViewerRouteHash(hash: string) {
   }
 
   const meta = params.get("meta")?.trim();
-  const returnTo = params.get("returnTo")?.trim();
+  const returnTo = sanitizeReturnTo(params.get("returnTo"));
   const sessionId = params.get("session")?.trim();
   const activeId = params.get("active")?.trim();
   const printToken = params.get("print")?.trim();
@@ -451,7 +467,11 @@ function normalizeSessionItems(input: unknown) {
       imageUrl: item.imageUrl.trim(),
       title: item.title.trim(),
       meta: item.meta?.trim() || undefined,
-      returnTo: item.returnTo?.trim() || undefined,
+      // 同 R9 parseDesktopChatImageViewerRouteHash：localStorage 里的 session
+      // items returnTo 同路径会走 focusReturnTargetWindow → window.location.assign，
+      // 同款 "//evil.com" 协议无关 URL 拦截。共享存储或别的 tab 写过坏值时这里
+      // 拦下。
+      returnTo: sanitizeReturnTo(item.returnTo),
     }));
 }
 
