@@ -461,7 +461,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         <div className="flex items-start gap-3 px-4 py-4">
           <AvatarChip
             name={isOwner ? ownerName || t(msg`世界主人`) : character?.name || fallbackName}
-            src={isOwner ? ownerAvatar : character?.avatar ?? fallbackAvatar}
+            src={isOwner ? ownerAvatar : character?.avatar || fallbackAvatar}
             size="xl"
           />
           <div className="min-w-0 flex-1">

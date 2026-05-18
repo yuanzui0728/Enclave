@@ -54,13 +54,34 @@ export function DesktopContactTextEditDialog({
     }
   }, [pending]);
 
+  // 走查电脑端单聊 R3：和姊妹 desktop-chat-text-edit-dialog R4 同款问题。
+  // 原 effect deps=[initialValue, open]，凡 parent 重传 initialValue 都会
+  // setDraft(initialValue) 覆盖用户当前正在编辑的内容。DirectChatDetailsPanel
+  // 同时挂着 useEffect 把 friendship.remarkName / tags 同步进 profileForm，
+  // friendsQuery 60s 轮询 / socket 改备注（多设备同步）/ pending 期间 user
+  // 自己改完落库 invalidate 都让 friendship 重新换引用 → profileForm 跟着
+  // 换 → dialog initialValue 跟着换 → 本 effect 跑 setDraft(initialValue)
+  // 把用户输入到一半的草稿冲掉。改成"用户改过没"作 gate：用户敲过键盘后
+  // hasUserEditedRef=true，后续 initialValue 变化跳过 setDraft；用户没碰过
+  // 时 initialValue 变化允许 sync（兜底 dialog 打开瞬间 friendship 还没回
+  // 来 remarkName=""，等 600ms RTT 拉到 server 值时仍能填上）。close 时 ref
+  // 回 false 下次重开重新 seed。
+  const hasUserEditedRef = useRef(false);
   useEffect(() => {
     if (!open) {
+      hasUserEditedRef.current = false;
       return;
     }
 
+    if (hasUserEditedRef.current) {
+      return;
+    }
     setDraft(initialValue);
   }, [initialValue, open]);
+  const handleDraftChange = (value: string) => {
+    hasUserEditedRef.current = true;
+    setDraft(value);
+  };
 
   useEffect(() => {
     if (!open) {
@@ -167,7 +188,7 @@ export function DesktopContactTextEditDialog({
           <TextField
             autoFocus
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => handleDraftChange(event.target.value)}
             placeholder={placeholder}
             disabled={pending}
             className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
