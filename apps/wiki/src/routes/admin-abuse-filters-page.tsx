@@ -124,7 +124,9 @@ export function AdminAbuseFiltersPage() {
                 </span>
                 {h.characterId && (
                   <span className="text-xs">
-                    on <span className="font-mono">{h.characterId}</span>
+                    <Trans>
+                      命中于 <span className="font-mono">{h.characterId}</span>
+                    </Trans>
                   </span>
                 )}
                 <span className="ml-auto text-xs text-[color:var(--text-muted)]">
@@ -167,7 +169,7 @@ function FilterCard({
         <ActionPill action={filter.action} />
         <SeverityPill severity={filter.severity} />
         <span className="text-xs text-[color:var(--text-muted)]">
-          scope: {filter.scope}
+          <Trans>范围：{filter.scope}</Trans>
         </span>
         {!filter.enabled && (
           <StatusPill>
@@ -188,7 +190,7 @@ function FilterCard({
       )}
       <details className="text-xs">
         <summary className="cursor-pointer text-[color:var(--text-muted)]">
-          DSL pattern
+          <Trans>DSL 匹配模式</Trans>
         </summary>
         <pre className="mt-1 overflow-x-auto rounded bg-[rgba(0,0,0,0.04)] p-2">
           {JSON.stringify(filter.pattern, null, 2)}
@@ -246,15 +248,22 @@ function SeverityPill({
 }: {
   severity: "low" | "medium" | "high";
 }) {
+  const t = translateRuntimeMessage;
   const tone =
     severity === "high"
       ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
       : severity === "medium"
         ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
         : "bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]";
+  const label =
+    severity === "high"
+      ? t(msg`高`)
+      : severity === "medium"
+        ? t(msg`中`)
+        : t(msg`低`);
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>
-      {severity}
+      {label}
     </span>
   );
 }

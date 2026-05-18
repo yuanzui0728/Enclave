@@ -186,11 +186,22 @@ export function MyDraftsPage() {
 
       {items.length > 0 && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* 全部/私有/Wiki 公开 chips 是互斥过滤同一份草稿列表的筛选条 ——
+              视觉对应"当前选中态"，原写法没有 aria-pressed/aria-selected，SR
+              三个 chip 听上去完全一样，盲用用户不知道当前过滤的是哪个。和
+              character-page tabs / admin-reports 状态切换条统一改成 tablist
+              + tab + aria-selected。 */}
+          <div
+            role="tablist"
+            aria-label={t(msg`草稿类型筛选`)}
+            className="flex flex-wrap items-center gap-2"
+          >
             {filterChips.map((c) => (
               <button
                 key={c.key}
                 type="button"
+                role="tab"
+                aria-selected={kindFilter === c.key}
                 onClick={() => setKindFilter(c.key)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   kindFilter === c.key
