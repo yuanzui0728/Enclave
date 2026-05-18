@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -220,6 +220,7 @@ function ThreadDetail({
   const { resolve: resolveAuthor } = useUsernameMap(
     (postsQ.data ?? []).map((p) => p.authorId),
   );
+  const isNarrow = useIsNarrowViewport();
 
   return (
     <div className="mt-3 space-y-2 border-t border-[var(--border-subtle)] pt-3">
@@ -248,6 +249,7 @@ function ThreadDetail({
       <PostTree
         posts={postsQ.data ?? []}
         resolveAuthor={resolveAuthor}
+        isNarrow={isNarrow}
         onReply={(postId) => setReplyTo(postId)}
         onDelete={(postId) => {
           if (window.confirm(t(msg`确认删除这条回复？删除后会标记为「已删除」。`))) {
@@ -296,6 +298,33 @@ function ThreadDetail({
   );
 }
 
+function useIsNarrowViewport(): boolean {
+  // 在 PostTree 内部 inline 算 isNarrow 有两个问题：
+  // 1) 递归每层都重新 evaluate matchMedia，50 层楼中楼 = 50 次 MQL 构造，废 GC。
+  // 2) 窄→宽窗口拖动时 indent 不更新，要等下一次状态变化才重新算 → 用户体感
+  //    "缩进卡住"。把 isNarrow 提到一个 hook 里，addListener 订阅 change 事件，
+  //    递归的 PostTree 通过 prop 共享同一份值，resize 时立刻刷新 indent。
+  const [narrow, setNarrow] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (typeof window.matchMedia !== "function") return false;
+    return window.matchMedia("(max-width: 640px)").matches;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia("(max-width: 640px)");
+    const onChange = (event: MediaQueryListEvent) => setNarrow(event.matches);
+    // 老 Safari 没 addEventListener('change')，回落到 addListener
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    }
+    mql.addListener(onChange);
+    return () => mql.removeListener(onChange);
+  }, []);
+  return narrow;
+}
+
 function PostTree({
   posts,
   resolveAuthor,
@@ -304,6 +333,7 @@ function PostTree({
   canDelete,
   parentId = null,
   depth = 0,
+  isNarrow,
 }: {
   posts: WikiTalkPost[];
   resolveAuthor: (id: string) => string;
@@ -312,15 +342,14 @@ function PostTree({
   canDelete: (post: WikiTalkPost) => boolean;
   parentId?: string | null;
   depth?: number;
+  isNarrow?: boolean;
 }) {
   if (depth > 12) return null;
   const children = posts.filter((p) => (p.parentPostId ?? null) === parentId);
   if (children.length === 0) return null;
   // 移动端窄屏：每级缩进只给 8px（封顶 4 级 = 32px）。≥640px 桌面回 16px ×6。
-  const isNarrow =
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 640px)").matches;
+  // isNarrow 由顶层 ThreadDetail 通过 useIsNarrowViewport 算好向下传，避免递归
+  // 重复 matchMedia 调用 + 让窗口 resize 时缩进同步更新。
   const indentPx = isNarrow
     ? Math.min(depth, 4) * 8
     : Math.min(depth, 6) * 16;
@@ -383,6 +412,7 @@ function PostTree({
           <PostTree
             posts={posts}
             resolveAuthor={resolveAuthor}
+            isNarrow={isNarrow}
             onReply={onReply}
             onDelete={onDelete}
             canDelete={canDelete}
