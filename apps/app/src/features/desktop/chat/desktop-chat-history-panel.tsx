@@ -329,6 +329,14 @@ export function DesktopChatHistoryPanel({
               setSelectorView(null);
             }}
             placeholder={t(msg`搜索`)}
+            // 走查 R24：「查找聊天记录」面板搜索框只有 placeholder="搜索"，没
+            // 挂 aria-label / aria-labelledby。父 label 没有文本子节点（只有
+            // Search 图标 + input），等于一个没有 accessible name 的输入框。
+            // 屏幕阅读器 focus 进来只听到"编辑栏 搜索 空"（placeholder 部分 SR
+            // 实现会读、部分不会，行为分裂）。盲人用户进来不知道是搜索什么的
+            // 输入框，得自己摸索周围 chip / 区域才能猜出来。和姊妹 R17 / R23
+            // 同款 a11y 修法，挂 aria-label 把意图明确表达出来。
+            aria-label={t(msg`搜索聊天记录`)}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
           {keyword ? (
