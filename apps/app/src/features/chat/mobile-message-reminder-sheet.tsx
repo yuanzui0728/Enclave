@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -34,6 +34,32 @@ export function MobileMessageReminderSheet({
 }: MobileMessageReminderSheetProps) {
   const isDesktop = variant === "desktop";
   const titleId = useId();
+  // 走查 2026-05-18 移动端群聊 R2：和姊妹 sheet mobile-message-action-sheet R2
+  // (commit 30f58a286) / mobile-mention-picker-sheet R1 (commit 46dee9a87) 同款
+  // 问题——下面 option 行 onClick 直接落到父组件的 handleSelectReminder，sheet
+  // 关闭走 setReminderTargetMessage(null) 走 React state 必须 commit 才让 sheet
+  // 卸载。同帧 <16ms 第二次 tap：sheet 还在 DOM、按钮仍可点 → setReminder mutation
+  // 跑 2 次（同 messageId + 同 remindAt），服务端落 2 条独立 reminder 记录 →
+  // 用户到点会被同一条消息提醒 2 次。actionFiredRef 同步赋值，第一次 tap 后所有
+  // 后续 tap 直接 noop；open 切回 true 时复位。「取消」按钮不走 guard（与
+  // mobile-message-action-sheet 同款选择，cancel 是预期可重复行为）。
+  const actionFiredRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      actionFiredRef.current = false;
+    }
+  }, [open]);
+  const guardSelect = useCallback(
+    (handler: () => void) => {
+      return () => {
+        if (actionFiredRef.current) return;
+        actionFiredRef.current = true;
+        handler();
+      };
+    },
+    [],
+  );
+
   // 走查 R3：原版 back/Esc 两个 effect deps 里都带 `onClose`，调用方
   // chat-message-list 是直接 `onClose={() => setReminderTargetMessage(null)}`
   // inline arrow，每次父帧重渲染就是新引用 → effect 拆装：
@@ -149,7 +175,7 @@ export function MobileMessageReminderSheet({
             <button
               key={option.id}
               type="button"
-              onClick={() => onSelect(option)}
+              onClick={guardSelect(() => onSelect(option))}
               className={
                 isDesktop
                   ? "flex w-full items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-2.5 text-left transition hover:bg-[color:var(--surface-console)] last:border-b-0"
