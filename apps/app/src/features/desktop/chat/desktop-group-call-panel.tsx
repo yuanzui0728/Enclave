@@ -218,6 +218,19 @@ export function DesktopGroupCallPanel({
     if (inviteNoticePending || endNoticePending || hasSyncedStatus) {
       return;
     }
+    // 走查电脑端群聊 R12：和上方 panelOpenedReported effect line 172-186 同款守。
+    // 原版 panelOpenedReported 已经在 R2 加了 `if (!members.length) return;`
+    // 防"0/0 已加入"群消息提前出，但本 auto-sync effect 漏配——当 membersQuery
+    // 错误（公网隧道短抖 / cloud token 续期窗口 / 群被服务端清空成员）members
+    // 永远是空数组，hasSyncedStatus 永远 false（lastSyncedCounts=null != 0/0），
+    // 1200ms 定时器无条件 fire → onSendInviteNoticeRef 走 sendCallInviteMutation
+    // 发出一条 status=ongoing activeCount=0 totalCount=0 的群通话邀请消息，群
+    // 里其他真实用户看到「x 在群通话 0/0 已加入」的奇怪卡片。开 panel 后用
+    // 户立刻退出 / 短暂打开就关 / membersQuery 还没回 1200ms 已经到都能命中。
+    // 加 members.length 守，与 panelOpenedReported 口径对齐。
+    if (!members.length) {
+      return;
+    }
     const last = attemptedSyncCountsRef.current;
     if (
       last &&
@@ -282,6 +295,14 @@ export function DesktopGroupCallPanel({
 
   const handleManualSync = () => {
     if (inviteNoticePending || inviteSubmittingRef.current) {
+      return;
+    }
+    // 走查电脑端群聊 R12 配套：同手动「同步最新状态」也要守 members.length。
+    // 用户点这个按钮通常是 panel 已经显示出来后，但 membersQuery 错误态下
+    // panel 顶部「${activeCount}/${members.length} 已加入」徽章会显示 "0/0"，
+    // 这时用户出于困惑点一下「同步最新状态」就把 0/0 ongoing 邀请打到群里。
+    // 静默 no-op 比发 0/0 安全，inviteSubmittingRef 也不能锁掉用户后续重试。
+    if (!members.length) {
       return;
     }
     inviteSubmittingRef.current = true;

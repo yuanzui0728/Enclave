@@ -312,9 +312,21 @@ function ReadView({ view }: { view: WikiPageView }) {
           <h1 className="text-xl font-semibold leading-tight sm:text-2xl">
             {c.name}
           </h1>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
-            {c.relationship} · {c.relationshipType}
-          </div>
+          {(() => {
+            // 历史/导入角色 relationship 或 relationshipType 任一为空时，原本固定
+            // 渲染 "X · Y"，会出现 " · friend" 或 "朋友 · " 这种孤立分隔符。
+            // home-page 卡片同位置已经走条件拼接，详情页对齐避免割裂感。
+            const rel =
+              c.relationship && c.relationshipType
+                ? `${c.relationship} · ${c.relationshipType}`
+                : c.relationship || c.relationshipType || "";
+            if (!rel) return null;
+            return (
+              <div className="mt-1 text-sm text-[var(--text-muted)]">
+                {rel}
+              </div>
+            );
+          })()}
         </div>
       </header>
       <Section label={t(msg`简介`)}>{c.bio || "—"}</Section>
@@ -403,12 +415,15 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
   const base =
     "h-14 w-14 shrink-0 rounded-2xl bg-[color:var(--surface-soft)] sm:h-16 sm:w-16 md:h-20 md:w-20";
 
+  // 三个分支统一标 decorative：紧挨着的 <h1>{c.name}</h1> 已经是 SR 主要可
+  // 访问名；img alt={name} / role="img" aria-label={name} / 渐变首字母方块
+  // 都会让 SR 在 h1 之外再读一遍角色名，对 emoji avatar 还会读 "image, 🎓"。
   if (trimmed && !loadFailed) {
     if (isLikelyAvatarImageSource(trimmed)) {
       return (
         <img
           src={trimmed}
-          alt={name}
+          alt=""
           // 详情页只有一张大头像；解码 async 让首屏文字先出来，避免大 SVG
           // decode 阻塞 main thread。
           decoding="async"
@@ -420,11 +435,10 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
     if (isEmojiAvatar(trimmed)) {
       return (
         <div
-          role="img"
-          aria-label={name}
+          aria-hidden="true"
           className={`${base} grid place-items-center text-3xl leading-none sm:text-4xl md:text-5xl`}
         >
-          <span aria-hidden="true">{trimmed}</span>
+          {trimmed}
         </div>
       );
     }
@@ -434,6 +448,7 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
   const initial = name ? Array.from(name)[0] : "?";
   return (
     <div
+      aria-hidden="true"
       className={`${base.replace("bg-[color:var(--surface-soft)]", "bg-[image:var(--brand-gradient)]")} grid place-items-center text-2xl font-semibold text-[color:var(--text-on-brand)] md:text-3xl`}
     >
       {initial}
@@ -450,6 +465,14 @@ function isEmojiAvatar(value: string) {
 
 function isLikelyAvatarImageSource(value: string) {
   if (!value) return false;
+  // 协议相对 URL（"//evil.example/icon.png"）以 `/` 起头会被当成同源绝对路径
+  // 误放过；浏览器实际向 evil.example 发请求，等于让任意写入 avatar 的用户
+  // 把所有访客 IP / UA 泄给外部域名。
+  // 反斜杠在 WHATWG URL parser 里被当成正斜杠 ("/\evil/x" → "//evil/x" →
+  // 协议相对 → http://evil/x)，同样的攻击路径要一起堵。HTTP 图片 URL 没有
+  // 任何合法使用反斜杠的场景，整串带 `\` 一律拒。
+  if (value.startsWith("//")) return false;
+  if (value.includes("\\")) return false;
   return (
     value.startsWith("/") ||
     value.startsWith("./") ||

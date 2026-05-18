@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -97,6 +97,20 @@ export function HomePage() {
     return () => window.clearTimeout(id);
   }, []);
 
+  // 服务端按 name.localeCompare('zh-Hans-CN') 排序，但下划线在该排序下 < 中
+  // 文 / 英文字母 → 21 个 `_xxx_smoke_*` / `_test_*` 测试 import 始终排在最
+  // 前面，公网访客打开目录第一眼就是一堆乱码名。前端做一次稳定二级排序：
+  // 名字以 `_` 开头的下沉到末尾，其它保持服务端 zh 拼音序不变。
+  const sortedCharacters = useMemo(() => {
+    if (!charactersQ.data) return charactersQ.data;
+    const isLeadingUnderscore = (c: { name?: string | null }) =>
+      typeof c.name === "string" && c.name.startsWith("_");
+    return [...charactersQ.data].sort((a, b) => {
+      const ua = isLeadingUnderscore(a) ? 1 : 0;
+      const ub = isLeadingUnderscore(b) ? 1 : 0;
+      return ua - ub;
+    });
+  }, [charactersQ.data]);
   const total = charactersQ.data?.length ?? 0;
 
   return (
@@ -164,9 +178,9 @@ export function HomePage() {
           }
         />
       )}
-      {charactersQ.data && charactersQ.data.length > 0 && (
+      {sortedCharacters && sortedCharacters.length > 0 && (
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {charactersQ.data.map((c) => (
+          {sortedCharacters.map((c) => (
             <li key={c.id}>
               <Link
                 to="/character/$characterId"
@@ -280,12 +294,16 @@ function Avatar({ name, url }: { name: string; url?: string }) {
     setLoadFailed(false);
   }, [trimmed]);
 
+  // 所有 avatar 分支都标 decorative：每张卡的 <a> 里已有 <h2>{name}</h2>，
+  // 屏读把链接整体读出来时会把 h2 文本作为可访问名称。若 avatar 自带 alt /
+  // aria-label / 单字母 glyph，SR 会再读一遍 "name, name" 或 "_, name"，对
+  // 用 name 起头是 `_` 的测试角色尤其碍事（前后 21 张卡读 "下划线"）。
   if (trimmed && !loadFailed) {
     if (isLikelyImageSource(trimmed)) {
       return (
         <img
           src={trimmed}
-          alt={name}
+          alt=""
           // 首屏 273 张卡片，eager fetch 全部头像会让 chromium 把 connection
           // pool 占满 + 阻塞 css/json。lazy + async 让浏览器只在 viewport
           // 附近才发请求；DOMContentLoaded 提速 ~3-4x。
@@ -299,11 +317,10 @@ function Avatar({ name, url }: { name: string; url?: string }) {
     if (isEmojiAvatar(trimmed)) {
       return (
         <div
-          role="img"
-          aria-label={name}
+          aria-hidden="true"
           className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[color:var(--surface-soft)] text-2xl leading-none md:h-12 md:w-12 md:text-3xl"
         >
-          <span aria-hidden="true">{trimmed}</span>
+          {trimmed}
         </div>
       );
     }
@@ -312,7 +329,10 @@ function Avatar({ name, url }: { name: string; url?: string }) {
   // 渲染成 "?" 方块。Array.from 按 code point 切，至少保证字形完整。
   const initial = name ? Array.from(name)[0] : "?";
   return (
-    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[image:var(--brand-gradient)] text-base font-semibold text-[color:var(--text-on-brand)] md:h-12 md:w-12">
+    <div
+      aria-hidden="true"
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[image:var(--brand-gradient)] text-base font-semibold text-[color:var(--text-on-brand)] md:h-12 md:w-12"
+    >
       {initial}
     </div>
   );
@@ -327,6 +347,14 @@ function isEmojiAvatar(value: string) {
 
 function isLikelyImageSource(value: string) {
   if (!value) return false;
+  // 协议相对 URL（"//evil.example/icon.png"）以 `/` 起头会被当成同源绝对路径
+  // 误放过；浏览器实际向 evil.example 发请求，等于让任意写入 avatar 的用户
+  // 把所有访客 IP / UA 泄给外部域名。
+  // 反斜杠在 WHATWG URL parser 里被当成正斜杠 ("/\evil/x" → "//evil/x" →
+  // 协议相对 → http://evil/x)，同样的攻击路径要一起堵。HTTP 图片 URL 没有
+  // 任何合法使用反斜杠的场景，整串带 `\` 一律拒。
+  if (value.startsWith("//")) return false;
+  if (value.includes("\\")) return false;
   return (
     value.startsWith("/") ||
     value.startsWith("./") ||

@@ -252,8 +252,16 @@ export function RootLayout() {
             to="/"
             className="flex min-w-0 items-center gap-2 text-base font-semibold sm:text-lg"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[image:var(--brand-gradient)] text-base text-[color:var(--text-on-brand)] shadow-[var(--shadow-card)]">
-              <Trans>隐</Trans>
+            {/* 头像方块只是装饰：紧挨着的 span 已经把 "隐界世界角色管理平台" /
+                "隐界角色管理" 给出 SR 可访问名。原本 <Trans>隐</Trans> 会让屏读
+                先念一遍翻译版的"隐"再念全名，整条链接读出来像 "Yin / Enclave
+                Yinjie shijie jiaose guanli pingtai"。整块 aria-hidden 让 SR 只读
+                全称。 */}
+            <span
+              aria-hidden="true"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[image:var(--brand-gradient)] text-base text-[color:var(--text-on-brand)] shadow-[var(--shadow-card)]"
+            >
+              隐
             </span>
             <span className="hidden truncate sm:inline">
               <Trans>隐界世界角色管理平台</Trans>
