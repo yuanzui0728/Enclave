@@ -428,11 +428,17 @@ export function LiveCompanionPage() {
             {error}
           </InlineNotice>
         ) : null}
+        {/*
+          走查 2026-05-18 新会话（本会话）R9：跟 desktop workspace R8 同款 — 这两条
+          ErrorBlock 是 statusQuery / channelsQuery 读取失败时显示，但裸 <div> 没 role。
+          盲用用户进直播伴侣页面命中 cloud-api 短暂宕掉时只看到背景静态卡，听不到
+          "实例状态读取失败"。挂 role="alert"，aria-live=assertive 立即播报。
+        */}
         {statusQuery.isError && statusQuery.error instanceof Error ? (
-          <ErrorBlock message={statusQuery.error.message} />
+          <ErrorBlock message={statusQuery.error.message} role="alert" />
         ) : null}
         {channelsQuery.isError && channelsQuery.error instanceof Error ? (
-          <ErrorBlock message={channelsQuery.error.message} />
+          <ErrorBlock message={channelsQuery.error.message} role="alert" />
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
