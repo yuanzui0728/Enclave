@@ -410,6 +410,17 @@ export function DesktopCreateGroupDialog({
     });
   }, []);
 
+  // 走查电脑端群聊 R11（和姊妹 desktop 单聊 R11 commit 7f2669731 / 群聊 R11
+  // 3 个 member dialog 同款）：原 deps=[clearSearch, isPending, onClose, open,
+  // searchTerm]，onClose 是 workspace inline arrow（`onClose={() =>
+  // setCreateGroupDialogState(null)}`），父 workspace 60s conversations 轮询 +
+  // window focus refetch + chat-message-list typing tick + mutation pending
+  // false→true→false 等多路 re-render，每次 onClose 换新引用 → 拆装一次 keydown
+  // listener。clearSearch 是稳定 useCallback([])，无影响；searchTerm 仅在用户
+  // 真打字时变（rare），保留在 deps 不影响。ref 镜像 onClose、deps 收紧只去
+  // onClose 这一项。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) {
       return;
@@ -439,12 +450,12 @@ export function DesktopCreateGroupDialog({
       // 该 dialog 多数情况下是从右侧"聊天信息"侧栏的"发起群聊"打开。
       // Esc 关 dialog 时阻止冒泡，否则 workspace 的 dismissSidePanel 会
       // 把背后的详情侧栏也关掉。
-      onClose();
+      onCloseRef.current();
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clearSearch, createMutation.isPending, onClose, open, searchTerm]);
+  }, [clearSearch, createMutation.isPending, open, searchTerm]);
 
   const toggleSelection = (characterId: string) => {
     setSelectedIds((current) =>
