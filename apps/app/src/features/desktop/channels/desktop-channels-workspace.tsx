@@ -186,6 +186,17 @@ export function DesktopChannelsWorkspace({
   // —— unmuted 是用户跨账号一致的偏好；selectedPostId 上面 effect L195-204
   // 已经按新 posts 兜底了。
   const previousBaseUrlRef = useRef(baseUrl);
+  // 走查 2026-05-18 新会话 R2：picker 打开时 baseUrl 钉到 ref —— forward
+  // mutation 是 picker 内部的 useMutation，picker 因 R5-1 reset 被 unmount
+  // 后 mutationFn 仍然在 flight（fetch 不会因组件卸载自动取消），完成时
+  // handlePick 的 try 分支照样 await 落地 → 调 onForwarded?.(...) → workspace
+  // 的 setForwardNotice("已转发给 X") 在新账户 UI 上冒出来，体感「我刚切到
+  // B 啥都没干怎么有转发通知」。失败路径 onForwardFailed 同款问题。
+  // 用 ref 捕获 picker 打开时的 baseUrl，下面 onForwarded / onForwardFailed
+  // 比对当前 baseUrl 早返：跨账户的"上一个账户"的转发不冒到当前账户。
+  // ref 清空时机：baseUrl change（上面那条 effect）会顺手清；onClose 不清
+  //（同账户内手动关 picker 后 mutation 落地仍想给确认）。
+  const forwardPickerBaseUrlRef = useRef<string | null>(null);
   useEffect(() => {
     if (previousBaseUrlRef.current === baseUrl) {
       return;
@@ -194,6 +205,7 @@ export function DesktopChannelsWorkspace({
     setForwardPickerPost(null);
     setForwardNotice(null);
     setCommentDrawerPostId(null);
+    forwardPickerBaseUrlRef.current = null;
   }, [baseUrl]);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -529,6 +541,10 @@ export function DesktopChannelsWorkspace({
                     // 桌面这里一直拿原文，AI 生成贴里夹的工具调用语法会原样塞进
                     // 转发预览，看着像乱码。和移动端对齐一道清洗。
                     const cleanText = stripToolCallSyntax(post.text ?? "");
+                    // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl
+                    // 供下方 onForwarded / onForwardFailed 比对（跨账户的转
+                    // 发完成不冒到新账户）。
+                    forwardPickerBaseUrlRef.current = baseUrl;
                     setForwardPickerPost({
                       id: post.id,
                       excerpt: `${post.authorName}：${cleanText}`.slice(0, 80),
@@ -611,6 +627,21 @@ export function DesktopChannelsWorkspace({
         baseUrl={baseUrl}
         onClose={() => setForwardPickerPost(null)}
         onForwarded={(target) => {
+          // 走查 2026-05-18 新会话 R2：mid-flight 切账户守卫 — 上一行 effect
+          // 在 baseUrl change 时已经把 forwardPickerBaseUrlRef 清成 null。若
+          // 当前 baseUrl 跟 picker 打开时不一致（中途切了账户），说明这条
+          // forward 是上一个账户的事，不该在新账户冒「已转发给 X」通知。
+          if (
+            forwardPickerBaseUrlRef.current !== null &&
+            forwardPickerBaseUrlRef.current !== baseUrl
+          ) {
+            return;
+          }
+          if (forwardPickerBaseUrlRef.current === null) {
+            // 已经切账户：picker 被 baseUrl effect unmount，但 mutation 仍 in
+            // flight 落地走到这里。skip 同上。
+            return;
+          }
           setForwardNotice(t(msg`已转发给 ${target.name}。`));
           // 走查 2026-05-17 R1：原注释说要刷"shareCount"——但桌面端工作区
           // 没有任何地方显示 post.shareCount / ownerState.hasShared，移动端同
@@ -624,6 +655,17 @@ export function DesktopChannelsWorkspace({
           // 一直没接，等于失败被静默吞。借现成的 forwardNotice channel 兜
           // 出来——成功是绿色文案，失败也用同一条 notice 通道把错误顶出来，
           // 不让用户「按了转发什么都没发生」。
+          //
+          // 走查 2026-05-18 新会话 R2：mid-flight 切账户守卫同 onForwarded。
+          if (
+            forwardPickerBaseUrlRef.current !== null &&
+            forwardPickerBaseUrlRef.current !== baseUrl
+          ) {
+            return;
+          }
+          if (forwardPickerBaseUrlRef.current === null) {
+            return;
+          }
           setForwardNotice(
             t(msg`转发给 ${input.targetName} 失败：${input.message}`),
           );
