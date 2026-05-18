@@ -6642,6 +6642,29 @@ function GroupCallInviteMessage({
   invite: ReturnType<typeof parseGroupCallInviteMessage>;
   onOpen?: () => void;
 }) {
+  // 走查新一轮 R4：和 MobileChatThreadHeader R1（commit 222ec0680）/
+  // MobileDetailsActionSheet R2（commit bb1f6bf63）同款修法——本卡片底部的
+  // 「加入通话 / 查看通话工作台 / 续呼桌面端」可点击 button 的 onClick 在父级
+  // chat-message-list.tsx 那里全部都是 `void navigate({to:"/group/$id/voice-call"
+  // 或 video-call"})` 形态（移动端路径，line ~3802-3824 onOpenGroupCallInvite），
+  // 没挂 disabled / 没同步 ref 守。同帧 <16ms 双击群通话卡 push 2 条相同
+  // history 项—用户点返回要按 2 次才能从通话页退回群聊。
+  //
+  // 桌面端 onOpen 是 setDesktopCallPanelState(input)，setState 同值 bailout，
+  // 双击行为天然幂等不受影响，但 guard 加在卡级别多挂一道防线不冲突。
+  //
+  // 每张卡独立 guard：用户依次点 A 卡再点 B 卡（不同通话邀请）时不互相影响，
+  // 只挡同一张卡的 same-frame double tap。第一次成功后 mobile 路径页面 unmount
+  // re-mount 时 ref 自动复位。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
+
   if (!invite) {
     return null;
   }
@@ -6815,14 +6838,14 @@ function GroupCallInviteMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={footerCopy.ariaLabel}
     >
