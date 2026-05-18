@@ -32,6 +32,7 @@ import {
   useCallback,
   useEffect,
   useEffectEvent,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -4193,6 +4194,14 @@ function DesktopScreenshotEditor({
   selectedTextValue: string;
 }) {
   const t = useRuntimeTranslator();
+  // R4 走查：截图编辑器是个全屏 modal（fixed inset-0 + backdrop + Esc 关），
+  // 但 panel 既没挂 role="dialog" + aria-modal，也没把「截图预览」标题 /
+  // 「拖拽框选裁剪范围…」描述用 aria-labelledby/aria-describedby 关联。
+  // 桌面单聊点 composer 工具栏「截图」按钮就进这里，盲人屏幕阅读器只听到
+  // 一串裸 button label 浮空，不知道是个对话框、不知道标题、不知道做什么。
+  // 和 confirm-dialog / text-edit-dialog 系列 R2~R5 修过的 a11y 同款方向。
+  const titleId = useId();
+  const descId = useId();
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
@@ -4756,11 +4765,19 @@ function DesktopScreenshotEditor({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.52)] p-6 backdrop-blur-sm">
-      <div className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[16px] font-medium">{t(msg`截图预览`)}</div>
-            <div className="mt-1 text-[12px] text-white/58">
+            <div id={titleId} className="text-[16px] font-medium">
+              {t(msg`截图预览`)}
+            </div>
+            <div id={descId} className="mt-1 text-[12px] text-white/58">
               {t(msg`拖拽框选裁剪范围，不框选时会按原图发送。`)}
             </div>
           </div>
