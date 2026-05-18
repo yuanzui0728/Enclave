@@ -106,6 +106,12 @@ type DesktopChannelsWorkspaceProps = {
   onOpenAuthor: (authorId: string) => void;
   onOpenAuthorPost: (postId: string, authorId: string) => void;
   onRefresh: () => void;
+  // 走查 2026-05-19 第五轮 R3：home 读失败时让用户能重试。mobile MobileChannels
+  // StatusCard 早就给了「重试读取」按钮（channels-page.tsx L2678-2698），desktop
+  // workspace 一直只把 errorMessage 渲成 ErrorBlock 无 retry，用户只能刷新整页或
+  // 切 section 才能再触发 channelsQuery —— 公网隧道一次 transient 500 / network
+  // 断也卡死视频号入口。补可选回调；undefined 时按原行为不渲按钮。
+  onRetryLoad?: () => void;
   onReplyToComment: (comment: FeedComment) => void;
   onSectionChange: (section: FeedChannelHomeSection) => void;
   onSelectedPostChange: (postId: string | null) => void;
@@ -161,6 +167,7 @@ export function DesktopChannelsWorkspace({
   onOpenAuthor,
   onOpenAuthorPost,
   onRefresh,
+  onRetryLoad,
   onReplyToComment,
   onSectionChange,
   onSelectedPostChange,
@@ -784,8 +791,26 @@ export function DesktopChannelsWorkspace({
               {/* R8 续：errorMessage 是 home / decorations 读取失败这种"整页性"
                   错误，desktop workspace 用 ErrorBlock 渲红色卡。同样裸 <div>，
                   没 role —— SR 用户进 channels 命中读取失败时听不到错误反馈，
-                  视觉用户能看到红条但盲用用户摸不到。挂 role="alert" 立刻播报。 */}
-              <ErrorBlock message={errorMessage} role="alert" />
+                  视觉用户能看到红条但盲用用户摸不到。挂 role="alert" 立刻播报。
+                  走查 2026-05-19 第五轮 R3：以前红条只有一行错误文字，没有重试
+                  按钮。mobile MobileChannelsStatusCard 早就给了「重试读取」按
+                  钮（channels-page.tsx L2678-2698）。补 Button 作为 ErrorBlock
+                  children；onRetryLoad 没传时不显示按钮（向后兼容）。 */}
+              <ErrorBlock message={errorMessage} role="alert">
+                {onRetryLoad ? (
+                  <div className="mt-2 flex">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onRetryLoad}
+                      className="rounded-full bg-white"
+                    >
+                      <RefreshCcw size={13} />
+                      {t(msg`重试读取`)}
+                    </Button>
+                  </div>
+                ) : null}
+              </ErrorBlock>
             </div>
           ) : null}
         </div>

@@ -2449,6 +2449,10 @@ export function ChannelsPage() {
             desktopGenerateSubmittingRef.current = true;
             generateMutation.mutate();
           }}
+          // 走查 2026-05-19 第五轮 R3：desktop workspace 顶部 errorMessage（home
+          // 读失败）原来没 retry 按钮，对齐 mobile MobileChannelsStatusCard 的
+          // 「重试读取」（L2678-2698）补一份；handleRetryLoad 已经存在（L1847）。
+          onRetryLoad={handleRetryLoad}
           refreshPending={generateMutation.isPending}
           comments={desktopCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
           commentsErrorMessage={desktopCommentPanelErrorMessage}
