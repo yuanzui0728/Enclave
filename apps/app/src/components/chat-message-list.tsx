@@ -7983,6 +7983,14 @@ function LocationViewerOverlay({
         onClick={onClose}
         className="absolute inset-0 cursor-default"
         aria-label={translateRuntimeMessage(msg`关闭位置查看器`)}
+        // 走查电脑端单聊 R116：和姊妹 R115 ImageViewerOverlay / R107-R114 dialog
+        // 系列 backdrop 同款 —— 单聊位置卡片打开的全屏 LocationViewerOverlay
+        // 的 backdrop <button> (absolute inset-0) 视觉不可见、纯 mouse"点击
+        // 背景关闭"affordance，但 DOM 顺序排在 viewer 子树第一位。用户点位置
+        // 消息打开 viewer 后按 Tab 切「关闭 / 定位到消息 / 分享或复制」按钮，
+        // 焦点先落到这张不可见 backdrop → 看不到 focus → 再按 Enter viewer
+        // 秒关。Esc keydown 已挂；onClick 鼠标点击关闭路径不受影响。
+        tabIndex={-1}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.12),rgba(15,23,42,0.72))]" />
       <div className="relative flex h-full flex-col">
