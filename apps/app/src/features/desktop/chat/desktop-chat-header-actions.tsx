@@ -204,6 +204,9 @@ function CallMenuButton({
   return (
     <button
       type="button"
+      // R63：和姊妹 R62 同款 —— 父容器 role="menu" 时合法子元素必须是
+      // menuitem，否则 VoiceOver/JAWS menu 模式跳过这些 button。
+      role="menuitem"
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >

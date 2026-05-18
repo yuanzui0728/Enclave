@@ -1925,6 +1925,9 @@ export function DesktopChatWorkspace({
                         <button
                           key={item.key}
                           type="button"
+                          // R63 续：父 role="menu" 需要 menuitem 子元素，
+                          // 否则 VoiceOver / JAWS menu 模式跳过这些 button。
+                          role="menuitem"
                           onClick={() => handleQuickAction(item.key)}
                           className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
                         >

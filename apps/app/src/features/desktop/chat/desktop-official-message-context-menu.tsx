@@ -115,6 +115,8 @@ function ContextMenuButton({
   return (
     <button
       type="button"
+      // R63 续：和姊妹 R62 同款——父 role="menu" 需要 menuitem 子元素。
+      role="menuitem"
       onClick={onClick}
       disabled={disabled}
       className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition ${
