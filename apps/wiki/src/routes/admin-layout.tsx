@@ -46,7 +46,15 @@ export function AdminLayout() {
 
   return (
     <div className="space-y-5">
-      <div className="overflow-x-auto rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1.5 shadow-[var(--shadow-soft)]">
+      {/* 这一条是管理后台内的二级导航（6 个 URL 互斥），不是 in-page tab ——
+          每个 Link 进的是独立 URL，所以 aria-current="page" 是对的。但外层
+          直接 <div><ul>... 没有 nav landmark，SR 用户只能听到一长串 link，
+          找不到"管理后台导航"这个区域。包成 <nav aria-label> 让 SR 跳转到
+          导航更顺畅。 */}
+      <nav
+        aria-label={t(msg`管理后台导航`)}
+        className="overflow-x-auto rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1.5 shadow-[var(--shadow-soft)]"
+      >
         <ul className="flex min-w-max items-center gap-1">
           {ADMIN_TABS.map((tab) => {
             const active =
@@ -68,7 +76,7 @@ export function AdminLayout() {
             );
           })}
         </ul>
-      </div>
+      </nav>
       <Outlet />
     </div>
   );

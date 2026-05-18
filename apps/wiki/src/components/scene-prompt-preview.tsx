@@ -61,7 +61,11 @@ export function ScenePromptPreview({
         <strong className="text-sm">
           <Trans>Prompt 预览</Trans>
         </strong>
+        {/* 这个 select 紧挨 "Prompt 预览" 标签但没有 label 关联也没有
+            aria-label：盲用用户 tab 进来只听到 "combobox, chat" 不知道
+            选的是什么维度。补 aria-label 让 SR 念出"场景选择"。 */}
         <select
+          aria-label={t(msg`Prompt 预览场景`)}
           className="border rounded px-2 py-1 text-xs bg-white"
           value={scene}
           onChange={(e) => setScene(e.target.value)}

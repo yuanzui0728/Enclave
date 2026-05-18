@@ -2313,13 +2313,25 @@ function CharacterAvatarPreview({
       <img
         src={trimmed}
         alt=""
+        // 详情头像只有一张，async decode 让首屏文字更早可见。
+        decoding="async"
         className={`shrink-0 rounded-2xl object-cover ${dim}`}
         onError={() => setImgFailed(true)}
       />
     );
   }
-  const display =
-    trimmed.length > 0 ? trimmed.slice(0, 2) : name.slice(0, 1) || "🪞";
+  // 头像 fallback 顺序：emoji / 短字面量 > 名字首字 > 🪞。注意 trimmed 是个
+  // URL（imgFailed=true 走到这里）时不要 slice(0,2) 出 "ht" / "/a"，那是
+  // bug，应该回到名字首字。Array.from 按 code point 切，避免表情代理对被切半。
+  const trimmedIsUrlLike =
+    /^https?:\/\//i.test(trimmed) ||
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("data:");
+  const display = trimmedIsUrlLike
+    ? Array.from(name)[0] || "🪞"
+    : trimmed.length > 0
+      ? trimmed.slice(0, 2)
+      : Array.from(name)[0] || "🪞";
   return (
     <div
       className={`grid shrink-0 place-items-center rounded-2xl bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)] ${dim}`}
