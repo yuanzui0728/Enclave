@@ -1992,7 +1992,30 @@ export function ChatMessageList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeImage, activeImageIndex, imageMessages, isDesktop]);
 
+  // 走查桌面端单聊新一轮 R5：和姊妹 addingToStickerMessageIdsRef R4 /
+  // recallingMessageIdsRef / deletingMessageIdsRef 同款 — handleToggleFavorite
+  // 无任何同步双击锁，context menu 「收藏消息」/「取消收藏」 onClick 调用后
+  // setContextMenuState(null) 走 React state 异步；同帧 <16ms double-click 仍
+  // 命中菜单按钮 → 2 次 handleToggleFavorite 都在闭包里看到 collected=false
+  // → 2 次 POST /favorites（add 路径）或 2 次 DELETE /favorites（remove 路径）。
+  // remove 路径尤其坑：第 2 次 DELETE 在 server 端 sourceId 已经删掉 → 404 →
+  // catch 把 favoriteSourceIds rollback（line 下方 set + setActionNotice），
+  // UI 显示"收藏失败"和一条「依然标着收藏」的消息，用户得 refresh 才知真状态。
+  // 按 messageId 上锁，finally 解锁；不同消息互不影响（连续右键 2 条不同消息
+  // 收藏是合法用法）。
+  const togglingFavoriteMessageIdsRef = useRef<Set<string>>(new Set());
   const handleToggleFavorite = async (message: ChatRenderableMessage) => {
+    if (togglingFavoriteMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    togglingFavoriteMessageIdsRef.current.add(message.id);
+    try {
+      await runToggleFavorite(message);
+    } finally {
+      togglingFavoriteMessageIdsRef.current.delete(message.id);
+    }
+  };
+  const runToggleFavorite = async (message: ChatRenderableMessage) => {
     const sourceId = buildFavoriteSourceId(message.id);
     const collected = favoriteSourceIds.includes(sourceId);
 
