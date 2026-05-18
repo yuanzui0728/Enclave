@@ -811,20 +811,29 @@ function DesktopSearchResultRow({
   debouncedKeyword: string;
   onOpenMessage: (messageId: string) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const metaLabel = buildSearchResultMeta(item);
   const previewText = buildSearchPreview(item, debouncedKeyword);
 
+  // 走查电脑端单聊 R86：原版用 useState(hovered) + onMouseEnter/Leave，hover
+  // 时把右上角时间戳换成「定位到聊天位置」绿色 button——纯鼠标 hover 才能触发
+  // onOpenMessage。带来三组问题：
+  //   1) a11y：键盘 Tab 走过来时 button 根本不在 DOM（hovered=false），盲人 SR
+  //      用户在虚拟光标模式下也扫不到这条 action；触屏笔电没有 hover 态，永远
+  //      触发不了「定位到聊天位置」整条搜索结果列表 dead。
+  //   2) perf：每条 result row 一份 useState，N 条结果在用户 mouseover 列表
+  //      时会触发 N 次 re-render（每次 enter/leave 都 setState）；hover 切换
+  //      时 button 还要先重新挂 DOM 再触发布局——120Hz 笔电上能感到一丝抖。
+  //   3) 设计一致性：姊妹 mobile chat-message-search-panel (line 877-934)
+  //      整条 row 就是 <button>，点哪都能 navigate；桌面端为什么独门弄个
+  //      hover-only action 没有 issue 记录，纯历史包袱。
+  // 改成：整行 <button> + 时间戳常驻 + 用 CSS group-hover 切左侧高亮边和底色，
+  // 完全去掉 useState，键盘 / 触屏 / SR / 鼠标用户都能直接触发定位。
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className={cn(
-        "block w-full border-l-2 px-4 py-3 transition-[background-color,border-color] duration-150",
-        hovered
-          ? "border-l-[rgba(7,193,96,0.28)] bg-[#f3f9f4]"
-          : "border-l-transparent",
-      )}
+    <button
+      type="button"
+      onClick={() => onOpenMessage(item.messageId)}
+      aria-label={t(msg`定位到 ${item.senderName || t(msg`消息`)} 的这条消息`)}
+      className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[rgba(7,193,96,0.28)] hover:bg-[#f3f9f4] focus-visible:border-l-[rgba(7,193,96,0.28)] focus-visible:bg-[#f3f9f4] focus-visible:outline-none"
     >
       <div className="flex gap-3">
         <span
@@ -851,19 +860,9 @@ function DesktopSearchResultRow({
                 {resolveSearchResultBadgeLabel(item)}
               </span>
             </div>
-            {hovered ? (
-              <button
-                type="button"
-                onClick={() => onOpenMessage(item.messageId)}
-                className="flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[color:var(--brand-primary)] px-2.5 text-[11px] font-medium text-white shadow-[0_1px_2px_rgba(7,193,96,0.25)] transition hover:opacity-95"
-              >
-                {t(msg`定位到聊天位置`)}
-              </button>
-            ) : (
-              <div className="shrink-0 text-[10px] tabular-nums text-[color:var(--text-dim)]">
-                {formatMessageTimestamp(item.createdAt)}
-              </div>
-            )}
+            <div className="shrink-0 text-[10px] tabular-nums text-[color:var(--text-dim)]">
+              {formatMessageTimestamp(item.createdAt)}
+            </div>
           </div>
 
           {metaLabel ? (
@@ -877,7 +876,7 @@ function DesktopSearchResultRow({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
