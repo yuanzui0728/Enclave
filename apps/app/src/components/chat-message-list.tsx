@@ -7575,6 +7575,22 @@ function StickerMessage({
     setLoadFailed(false);
   }, [url]);
 
+  // 走查电脑端单聊 R83：和姊妹 ImageMessage R82 同款问题——StickerMessage
+  // 里 inline style 每帧 new 一个 4-key 对象。单聊聊天里 sticker 消息常见
+  // （特别是连发表情包场景）和姊妹 R82 同款 hot path：chat-message-list 父
+  // 帧重渲 → 列里每条 sticker re-render → inline style new → React prop
+  // ref 不等 → DOM style 属性 diff/set 即便值没动。memo 把 stickerStyle
+  // 引用稳住，dep 只有 maxSize（desktop 单聊固定 160，移动端 124）。
+  const stickerStyle = useMemo(
+    () => ({
+      width: `${maxSize}px`,
+      height: `${maxSize}px`,
+      maxWidth: `${maxSize}px`,
+      maxHeight: `${maxSize}px`,
+    }),
+    [maxSize],
+  );
+
   if (loadFailed) {
     return (
       <div className="flex h-24 w-24 items-center justify-center rounded-[22px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
@@ -7594,12 +7610,7 @@ function StickerMessage({
       onError={() => setLoadFailed(true)}
       onLoad={onMediaReady}
       className="rounded-[18px] bg-white/70 object-contain shadow-none"
-      style={{
-        width: `${maxSize}px`,
-        height: `${maxSize}px`,
-        maxWidth: `${maxSize}px`,
-        maxHeight: `${maxSize}px`,
-      }}
+      style={stickerStyle}
     />
   );
 }
