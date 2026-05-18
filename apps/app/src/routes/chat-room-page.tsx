@@ -248,6 +248,32 @@ export function ChatRoomPage() {
     };
   }, [conversationId, search]);
 
+  // 走查新会话 R2：callReturnNotice / safeRouteContext notice 的 actionLabel 按钮
+  // 都直接 inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // - callReturnNotice.onAction = setRouteCallReturnKind(null) + navigate({/chat/$id,
+  //   search:?action=voice-message}) → 同帧双击「发语音继续」推 2 条相同 history
+  //   项（path 一致 + search 一致），用户从 voice-call 屏返回再点 callReturn 想
+  //   切回语音输入时，要按 2 次返回才能回到正常聊天页。
+  // - safeRouteContext.onAction = navigate({safeRouteContext.returnPath}) →
+  //   同帧双击「返回上一页」（game invite / group invite 进来时的）同款 2 次 push。
+  // 单一 noticeActionFiredRef 兜底两条 notice 入口，raf 后释放（兜底 navigate
+  // 没真正切走的边界）。
+  const noticeActionFiredRef = useRef(false);
+  const guardNoticeAction = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (noticeActionFiredRef.current) return;
+        noticeActionFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            noticeActionFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const callReturnNotice =
     routeCallReturnKind === null
       ? null
@@ -261,7 +287,7 @@ export function ChatRoomPage() {
               : t(
                   msg`本轮视频通话已结束。你可以直接继续输入，也可以切回语音发送。`,
                 ),
-          onAction: () => {
+          onAction: guardNoticeAction(() => {
             setRouteCallReturnKind(null);
             void navigate({
               to: "/chat/$conversationId",
@@ -272,7 +298,7 @@ export function ChatRoomPage() {
                 }) || undefined,
               hash,
             });
-          },
+          }),
           secondaryActionLabel: t(msg`继续打字`),
           onSecondaryAction: () => {
             setRouteCallReturnKind(null);
@@ -370,9 +396,9 @@ export function ChatRoomPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
@@ -396,9 +422,9 @@ export function ChatRoomPage() {
               ? {
                   actionLabel: safeRouteContext.actionLabel,
                   description: safeRouteContext.description,
-                  onAction: () => {
+                  onAction: guardNoticeAction(() => {
                     void navigate({ to: safeRouteContext.returnPath });
-                  },
+                  }),
                 }
               : undefined)
           }
