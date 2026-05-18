@@ -186,13 +186,56 @@ export function LiveCompanionPage() {
     };
   }, [nativeDesktopLiveCompanion]);
 
+  // 走查 2026-05-18 新会话（本会话）R6：原 effect 每次 draft state 变都同步调
+  // writeLiveDraft(draft) — 用户在标题 / 主题 / 封面钩子三个 TextField 键入时
+  // 每个 keystroke 触发：
+  //   1) writeLiveDraft 内部先 readLocalLiveCompanionStore → getItem ×2（draft
+  //      key + history key）拿到 history 跟当前 draft 合并；
+  //   2) writeLiveCompanionStoreToLocal 把整 store 写回 → setItem ×2（draft 和
+  //      history 即便 history 没变也会被 JSON.stringify 再写一次，因为 hasLive
+  //      DraftChanges 检查后 history.length 总是触发 setItem 路径）；
+  //   3) queueNativeLiveCompanionStoreWrite 推 Tauri invoke 调 desktop_write_
+  //      live_companion_store —— 进 Promise chain 串行执行不会爆栈，但 IPC 仍要
+  //      ~10ms 跑过 JNI / IPC 桥。
+  // 实测用户在标题输入框按 8 字/秒打字，effect 每秒触发 8 次 = 32 个 localStorage
+  // 操作 + 8 次 native bridge invoke。每次 storage I/O ~0.5-1ms，光持久化就吃
+  // 16-32ms/秒，typing latency 在低端 Chromebook / Android tablet 上肉眼可见。
+  //
+  // 解决：把持久化扔到 setTimeout 防抖 ~400ms，typing burst 结束后再写。再加
+  // 一条 unmount-flush effect 兜"用户打完字立刻切走"那种 <400ms 内 unmount /
+  // isDesktopLayout 翻 false / liveStoreReady 翻 false 的边界（避免丢未保存
+  // 改动）。同 mobile-feed-publish-page 的 textarea draft 防抖 R 同款思路。
+  //
+  // draftRef 跟着 render 同步刷新 — unmount-flush 闭包通过它读最新 draft，
+  // 不依赖 [draft] dep 触发 cleanup（那样每个 keystroke 又跑一次 flush 抵消
+  // 防抖）。
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   useEffect(() => {
     if (!isDesktopLayout || !liveStoreReady) {
       return;
     }
-
-    writeLiveDraft(draft);
+    const timer = window.setTimeout(() => {
+      writeLiveDraft(draft);
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [draft, isDesktopLayout, liveStoreReady]);
+  // unmount-flush：只挂 [isDesktopLayout, liveStoreReady]，cleanup 不依赖 draft
+  // → 用户单次 keystroke 不会触发本 effect 的 cleanup → 防抖正常生效。仅在
+  // - 整页 unmount（router 切走 / app 关）
+  // - isDesktopLayout 翻 false（用户切到 mobile 布局 → LiveCompanionPage 早返
+  //   渲 DesktopLayoutRequiredState，但实际上 isDesktopLayout 在 hook 里没翻
+  //   过来时 cleanup 也跑一次保险）
+  // - liveStoreReady 翻 false（理论不发生，native hydrate 单向 → true）
+  // 三种边界时把最新 draft 同步落盘。
+  useEffect(() => {
+    if (!isDesktopLayout || !liveStoreReady) {
+      return;
+    }
+    return () => {
+      writeLiveDraft(draftRef.current);
+    };
+  }, [isDesktopLayout, liveStoreReady]);
 
   useEffect(() => {
     if (!notice) {
