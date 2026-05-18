@@ -81,6 +81,13 @@ export function DesktopChatHistoryDialog({
         type="button"
         aria-label={t(msg`关闭查找聊天记录弹层`)}
         onClick={onClose}
+        // 走查电脑端单聊 R108：和姊妹 R107 DesktopChatConfirmDialog 同款 ——
+        // backdrop button (absolute inset-0) 视觉不可见、纯 mouse "点击背景关闭"
+        // affordance，但 DOM 顺序排在 dialog 子树第一位，键盘用户从「聊天信息」
+        // 侧栏 / chat header 「查找聊天记录」按钮打开 dialog 后按 Tab，焦点
+        // 先落到这张不可见 backdrop → 看不到 focus ring → 再按 Enter 把弹层
+        // 秒关。Esc keydown 已挂 (line 41-60)，键盘用户走 Esc 关弹层即可。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
