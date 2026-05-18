@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -34,23 +34,30 @@ export function MobileMessageReminderSheet({
 }: MobileMessageReminderSheetProps) {
   const isDesktop = variant === "desktop";
   const titleId = useId();
+  // 走查 R3：原版 back/Esc 两个 effect deps 里都带 `onClose`，调用方
+  // chat-message-list 是直接 `onClose={() => setReminderTargetMessage(null)}`
+  // inline arrow，每次父帧重渲染就是新引用 → effect 拆装：
+  // - back 拦截：registerAndroidBackInterceptor → unregister（操作的是 native
+  //   bridge 注册表）；ChatMessageList 长聊里 typing tick / socket echo /
+  //   setQueriesData 每次都会重 render，sheet 还开着的时候每帧拆装一次原生注册。
+  // - Esc：window.removeEventListener / addEventListener("keydown") 每帧拆装。
+  // 把 onClose 镜像到 ref，effect 内通过 ref 读，deps 只留 [isDesktop, open]
+  // / [open]，让 sheet 开着期间只挂一次。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
-  // 把用户从聊天页带回 chat list。和 mobile-message-action-sheet.tsx 对齐。
   useEffect(() => {
     if (!open || isDesktop) {
       return;
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [isDesktop, open, onClose]);
+  }, [isDesktop, open]);
 
-  // 桌面键盘 Esc：desktop variant 是带 backdrop 的模态，Esc 关闭符合
-  // 桌面用户预期。和同文件下 message-quote-selection-sheet 的处理对齐。
   useEffect(() => {
     if (!open) {
       return;
@@ -61,12 +68,12 @@ export function MobileMessageReminderSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
+  }, [open]);
 
   if (!open) {
     return null;

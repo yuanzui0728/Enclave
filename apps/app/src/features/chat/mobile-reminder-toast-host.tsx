@@ -94,14 +94,34 @@ export function MobileReminderToastHost() {
     onCompleteReminder: clearReminder,
   });
 
+  // 走查 R3：dueReminders 来自 useChatReminderEntries，内部按 nowTimestamp
+  // (1 分钟 ticker) + conversationsQuery (15s staleTime + window focus) refetch
+  // 各 useMemo，每次都返回新数组引用 —— 即使 reminder 列表内容完全没变。原版
+  // effect 把整个 dueReminders 当 dep，每分钟跑一遍 setDismissedMessageIds
+  // filter（内容相等时早返不会触发实际 state 更新，但每个 tick 都跑 .filter +
+  // .some 嵌套 O(N*M)）。改成 dep 用稳定的 id 串，效果一致，每 minute tick 不
+  // 再跑这条逻辑。和 conversation-strong-reminder-host R3 同款收 deps 的修法。
+  const dueReminderIdSignature = useMemo(
+    () =>
+      dueReminders
+        .map((reminder) => reminder.messageId)
+        .join("|"),
+    [dueReminders],
+  );
   useEffect(() => {
     setDismissedMessageIds((current) => {
-      const next = current.filter((item) =>
-        dueReminders.some((reminder) => reminder.messageId === item),
+      if (current.length === 0) {
+        return current;
+      }
+      const activeMessageIds = new Set(
+        dueReminderIdSignature ? dueReminderIdSignature.split("|") : [],
       );
+      const next = current.filter((item) => activeMessageIds.has(item));
       return next.length === current.length ? current : next;
     });
-  }, [dueReminders]);
+    // dueReminderIdSignature changes only when the id set actually changes
+    // (not on identity churn from nowTimestamp / refetch).
+  }, [dueReminderIdSignature]);
 
   useEffect(() => {
     if (typeof document === "undefined") {

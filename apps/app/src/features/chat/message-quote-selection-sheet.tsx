@@ -50,25 +50,26 @@ export function MessageQuoteSelectionSheet({
     return () => window.clearTimeout(timer);
   }, [open, messageText]);
 
-  // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
-  // 把用户从聊天页带回 chat list（移动端形态），desktop 形态注册没副作用。
-  // 和 mobile-message-action-sheet.tsx 对齐。
+  // 走查 R3：onClose 是父组件 inline arrow，每个父帧新引用 → 原写法 effect 每
+  // 帧 unregister + register Android back interceptor / removeEventListener +
+  // addEventListener("keydown") 一遍。和 mobile-message-action-sheet /
+  // mobile-message-reminder-sheet R3 同款修法 —— ref 镜像 onClose，让 deps
+  // 收紧到 [open] / [isDesktop, open]。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open || isDesktop) {
       return;
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [isDesktop, onClose, open]);
+  }, [isDesktop, open]);
 
-  // 桌面键盘 Esc：sheet 是 modal 风格（带半透明 backdrop），按 Esc 关闭符合
-  // 桌面用户对模态的预期。原写法只接了原生壳 Back 拦截，桌面用户只能点
-  // 「取消」或点 backdrop 关，跟同一文件下被 fix 过的会话/消息右键菜单
-  // 和确认弹层不一致。
   useEffect(() => {
     if (!open) {
       return;
@@ -79,12 +80,12 @@ export function MessageQuoteSelectionSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
+  }, [open]);
 
   if (!open) {
     return null;

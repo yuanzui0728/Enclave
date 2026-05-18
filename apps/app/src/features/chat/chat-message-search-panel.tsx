@@ -413,9 +413,14 @@ export function ChatMessageSearchPanel({
   const activeCategoryMeta =
     searchCategories.find((item) => item.id === activeCategory) ??
     searchCategories[0];
-  const emptySenderResultTitle = `${t(
-    msg`没有来自 ${senderFilterDisplayLabel} 的`,
-  )}${activeCategoryMeta.shortLabel}`;
+  // 走查 R3：原版把 t(msg`没有来自 ${name} 的`) 和 activeCategoryMeta.shortLabel
+  // (从 t(msg`图片与视频`) / t(msg`文件`) / t(msg`链接`) 来的) 用模板字符串生硬
+  // 拼接，i18n 后丢失语法连接：英语得 "No results from X" + "Photos & Videos"
+  // 没动词没介词，日韩则把"的"原样吐出来。整句改成单条 msg 让翻译者拿到完整
+  // 句子，category 作为占位参数注入。
+  const emptySenderResultTitle = t(
+    msg`没有来自 ${senderFilterDisplayLabel} 的${activeCategoryMeta.shortLabel}`,
+  );
   const resetFilters = () => {
     setKeyword("");
     setSenderFilter("all");

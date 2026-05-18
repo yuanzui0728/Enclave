@@ -125,14 +125,20 @@ export function MobileMessageActionSheet({
   // 不是用户连点，是 touchend 自动派发的合成 click。给关闭路径加 same 350ms
   // 时间 guard：用户主动 Cancel/backdrop 的真实 tap（开 sheet 后 >350ms）照常
   // 关；ghost-click 一律拦掉。
+  // 走查 R3：onClose 是父组件传进来的 inline arrow（ChatMessageList 长聊里
+  // typing tick / socket echo / setQueriesData 每帧 re-render，每次新引用）。
+  // 把 onClose 镜像到 ref；guardClose useCallback / back 拦截 effect /
+  // keydown effect 不再每帧重建。和 mobile-message-reminder-sheet R3 同款修法。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const guardClose = useCallback(() => {
     const now =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     if (now - openedAtRef.current < GHOST_CLICK_GUARD_MS) {
       return;
     }
-    onClose();
-  }, [onClose]);
+    onCloseRef.current();
+  }, []);
 
   // 原生壳硬件 Back 键打开时优先关 sheet，不让 BACK 同时 history.back 把
   // 用户从聊天页带回 chat list。
@@ -142,11 +148,11 @@ export function MobileMessageActionSheet({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [open, onClose]);
+  }, [open]);
 
   // 走查 R2：和姊妹 sheet mobile-message-reminder-sheet / message-quote-
   // selection-sheet / mobile-details-action-sheet 对齐——长按消息冒出来的
@@ -163,11 +169,11 @@ export function MobileMessageActionSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;

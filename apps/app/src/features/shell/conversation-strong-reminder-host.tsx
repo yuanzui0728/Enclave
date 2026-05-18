@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
@@ -61,11 +61,42 @@ export function ConversationStrongReminderHost() {
     [directConversations],
   );
 
+  // 走查 R3：原版 directConversations 每次 conversationsQuery refetch（30s 定时 +
+  // window-focus + socket 推 invalidate）都返回新数组 → forEach 把所有 direct
+  // 会话的 joinConversationRoom 全 emit 一遍。服务端 socket.io rooms 是 Set，
+  // 重复 join 幂等不出错，但用户有 60+ direct 会话时每 30s 在 socket 上吐 60
+  // 条 join_conversation。改成 ref 记已 join 过的 conversation id，只对新增的
+  // 会话 emit。退出会话 / 删除会话不主动 leave（用户回来时 conversationsQuery
+  // 再次出现会重 join；服务端 disconnect 时整 socket 房间被清理）。
+  const joinedConversationIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     directConversations.forEach((conversation) => {
+      if (joinedConversationIdsRef.current.has(conversation.id)) {
+        return;
+      }
+      joinedConversationIdsRef.current.add(conversation.id);
       joinConversationRoom({ conversationId: conversation.id });
     });
   }, [directConversations]);
+
+  // 走查 R3：原版 onChatMessage 监听 deps 里有 conversationMap —— refetch 每 30s
+  // 换 Map 引用 → offMessage + 重新 onChatMessage，每分钟拆装两次 socket listener。
+  // 用 ref 镜像所有"读 React state"的值，effect 只挂一次，handler 内部走 ref
+  // 拿最新值。
+  const strongReminderStateRef = useRef({
+    conversationMap,
+    isDesktopLayout,
+    normalizedPathname,
+    pathname,
+    desktopRouteConversationId: desktopRouteState.conversationId,
+  });
+  strongReminderStateRef.current = {
+    conversationMap,
+    isDesktopLayout,
+    normalizedPathname,
+    pathname,
+    desktopRouteConversationId: desktopRouteState.conversationId,
+  };
 
   useEffect(() => {
     const offMessage = onChatMessage((payload) => {
@@ -73,7 +104,15 @@ export function ConversationStrongReminderHost() {
         return;
       }
 
-      const conversation = conversationMap.get(payload.conversationId);
+      const {
+        conversationMap: latestMap,
+        isDesktopLayout: latestIsDesktop,
+        normalizedPathname: latestNormalizedPathname,
+        pathname: latestPathname,
+        desktopRouteConversationId: latestDesktopRouteConversationId,
+      } = strongReminderStateRef.current;
+
+      const conversation = latestMap.get(payload.conversationId);
       if (
         !conversation ||
         payload.senderType !== "character" ||
@@ -82,10 +121,10 @@ export function ConversationStrongReminderHost() {
         return;
       }
 
-      const inActiveConversation = isDesktopLayout
-        ? normalizedPathname === "/tabs/chat" &&
-          desktopRouteState.conversationId === conversation.id
-        : pathname === `/chat/${conversation.id}`;
+      const inActiveConversation = latestIsDesktop
+        ? latestNormalizedPathname === "/tabs/chat" &&
+          latestDesktopRouteConversationId === conversation.id
+        : latestPathname === `/chat/${conversation.id}`;
       if (
         inActiveConversation &&
         typeof document !== "undefined" &&
@@ -102,7 +141,7 @@ export function ConversationStrongReminderHost() {
         // 通知中心 / Mac 任务栏看到 raw「未知联系人」字面量。
         title: t(msg`强提醒 · ${getConversationDisplayTitle(conversation.title)}`),
         body: describeStrongReminderMessage(message),
-        route: isDesktopLayout
+        route: latestIsDesktop
           ? buildDesktopChatThreadPath({
               conversationId: conversation.id,
               messageId: message.id,
@@ -116,13 +155,7 @@ export function ConversationStrongReminderHost() {
     return () => {
       offMessage();
     };
-  }, [
-    conversationMap,
-    desktopRouteState.conversationId,
-    isDesktopLayout,
-    normalizedPathname,
-    pathname,
-  ]);
+  }, []);
 
   return null;
 }
