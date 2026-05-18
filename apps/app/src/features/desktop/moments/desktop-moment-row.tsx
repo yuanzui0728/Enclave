@@ -181,12 +181,26 @@ function DesktopMomentRowInner({
   // replyTargetComment.text 也每帧 strip 一次。和 wechat-moment-card.tsx 行
   // 162-179 mobile 早就走的 cleanTextById 预计算同模式，按 moment.comments 引用
   // 变化做缓存 key，typing 期间 row 重渲只读 Map.get 不再扫正则。
-  const cleanCommentTextById = useMemo(() => {
+  //
+  // 走查 R8（本轮）：strip 后空文本的评论必须从渲染列表里整条砍掉，跟 mobile
+  // wechat-moment-card.tsx 行 172-179 visibleComments 同模式。原版 desktop 走
+  // 「comment.map → cleanText = (cleanCommentTextById.get(c.id) ?? c.text)」
+  // 后直接渲染 CommentLine —— 一旦 cleanText 是空字符串，UI 上就冒一行
+  // 「Mary：」后面什么都没有的孤儿评论（AI 角色把 [TOOL_CALL] / 一段 CoT
+  // prose 当评论发出来 → stripToolCallSyntax → 空），用户读到「Mary：__空__」
+  // 完全不懂在评什么。mobile 同源 bug 早就修了，desktop 漏。同时把 visible 评
+  // 论的真实数量算出来，footer 头部「N 条」按 visible 计数显示，避免
+  // server-side commentCount=50 但渲染只剩 48 的肉眼可见错位。
+  const { cleanCommentTextById, visibleComments } = useMemo(() => {
     const map = new Map<string, string>();
+    const visible: MomentComment[] = [];
     for (const c of moment.comments) {
-      map.set(c.id, stripToolCallSyntax(c.text));
+      const cleanText = stripToolCallSyntax(c.text);
+      map.set(c.id, cleanText);
+      if (cleanText.trim().length === 0) continue;
+      visible.push(c);
     }
-    return map;
+    return { cleanCommentTextById: map, visibleComments: visible };
   }, [moment.comments]);
 
   function lookupReplyToName(comment: MomentComment) {
@@ -446,13 +460,18 @@ function DesktopMomentRowInner({
                 {t(msg`评论`)}
               </div>
               <span className="text-[11px] text-[color:var(--text-muted)]">
-                {t(msg`${moment.commentCount} 条`)}
+                {/* 走查 R8：用 visibleComments.length 而不是 server-side
+                    moment.commentCount —— 后者把空胶水帖评论也算进去，
+                    渲染列表已经按 visibleComments 过滤掉空 cleanText 后，
+                    header 文案再显示 commentCount 会出现「50 条」但下面
+                    只渲染 48 条的肉眼可见错位。 */}
+                {t(msg`${visibleComments.length} 条`)}
               </span>
             </div>
 
-            {moment.comments.length > 0 ? (
+            {visibleComments.length > 0 ? (
               <div className="mt-3 space-y-1.5">
-                {moment.comments.map((comment) => {
+                {visibleComments.map((comment) => {
                   const replyToName = lookupReplyToName(comment);
                   const isActiveReply =
                     activeReply?.commentId === comment.id;
