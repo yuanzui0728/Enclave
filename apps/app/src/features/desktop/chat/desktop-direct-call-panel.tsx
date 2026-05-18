@@ -356,7 +356,25 @@ export function DesktopDirectCallPanel({
     activeCall.stopRecordingTurn();
   };
 
+  // 走查电脑端单聊 R2：handleEndCall 上面（line 407-447）已经因为「同帧双击
+  // 发出 2 条『通话已结束』消息」加过 sync ref 锁，handleClose 走的是「返回
+  // 聊天」/「切回聊天」两个 secondary 按钮，没挂任何同步锁。视频通话场景
+  // 双击任一按钮：
+  // · click 1: stopReplyPlayback (sync) → await digitalHumanCall.endSession()
+  //   （网络请求 ~600ms RTT）→ onClose()
+  // · click 2（<16ms 同帧）: stopReplyPlayback → 第 2 次 endSession() 并发飞
+  //   到服务端（useDigitalHumanCallSession line 224 检查的是 sessionRef.current
+  //   的 status，React state 还没 commit 所以仍是 "active" → 进入网络分支） →
+  //   onClose() 第 2 次
+  // 同步 ref 挡掉同帧第 2 次进入，省一发公网 RTT；onClose 走 React state 幂等
+  // 不必管，但 endSession 重复打服务端值得避免。
+  const closeSubmittingRef = useRef(false);
   const handleClose = async () => {
+    if (closeSubmittingRef.current) {
+      return;
+    }
+    closeSubmittingRef.current = true;
+
     activeCall.stopReplyPlayback();
     if (isVideoMode) {
       await digitalHumanCall.endSession().catch(() => {});
