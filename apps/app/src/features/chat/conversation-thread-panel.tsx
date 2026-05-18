@@ -214,9 +214,18 @@ export function ConversationThreadPanel({
           ? t(msg`对方正在回复...`)
           : undefined;
 
-  const hasHighlightedMessage = renderedMessages.some(
-    (message) => message.id === highlightedMessageId,
-  );
+  // 走查电脑端单聊新一轮 R1：原版无 highlightedMessageId 时也 .some 全表扫
+  // renderedMessages 找 `m.id === undefined`，全程必然 false 但走完整条 O(n)。
+  // 长聊 200+ 条历史叠 typing tick / socket / state 一改就 re-render，每帧
+  // 200 次字符串比较纯白用功。绝大多数会话进来没有 highlight（只在「查找
+  // 聊天记录」/ 「消息提醒」点结果跳转时才有 highlightedMessageId），常驻
+  // 短路成 false，让下游 useEffect 的 hasHighlightedMessage dep 也稳住 false
+  // 引用避免无意义重跑。
+  const hasHighlightedMessage = highlightedMessageId
+    ? renderedMessages.some(
+        (message) => message.id === highlightedMessageId,
+      )
+    : false;
   const unreadMarkerMessageId = useMemo(
     () =>
       findFirstUnreadMessageId(
