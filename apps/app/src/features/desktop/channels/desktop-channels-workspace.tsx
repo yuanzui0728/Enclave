@@ -295,7 +295,7 @@ export function DesktopChannelsWorkspace({
       translateRuntimeMessage(msg`视频号动态`);
     // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl 供下方 onForwarded
     // / onForwardFailed 比对（跨账户的转发完成不冒到新账户）。
-    forwardPickerBaseUrlRef.current = handlerRefs.current.baseUrl;
+    forwardPickerBaseUrlRef.current = handlerRefs.current.baseUrl ?? null;
     setForwardPickerPost({
       id: post.id,
       excerpt: `${post.authorName}：${titleOrText}`.slice(0, 80),

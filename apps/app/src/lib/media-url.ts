@@ -54,6 +54,9 @@ export function resolveAppMediaUrl(
       const base = url.startsWith("/cloud/")
         ? resolveAppCloudApiBaseUrl()
         : resolveAppCoreApiBaseUrl();
+      if (!base) {
+        return url;
+      }
       absolute = `${base.replace(/\/+$/, "")}${url}`;
     } catch {
       return url;

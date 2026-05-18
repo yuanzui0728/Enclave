@@ -1801,7 +1801,10 @@ export function ChannelsPage() {
     // 面 reset 了一次」。原来只跑 `/discover/channels` 不会撞这条，扩展支持
     // `/tabs/channels` / `/channels` 必须用 pathname 才能保持原 instance。
     void navigate({
-      to: normalizedPathname,
+      to:
+        normalizedPathname === "/channels"
+          ? "/tabs/channels"
+          : normalizedPathname,
       hash: nextHash,
       replace: true,
     });
@@ -2008,7 +2011,10 @@ export function ChannelsPage() {
     // 不会出错；URL hash 残留 post= 只在用户后退时仍能定位回去。
     setActiveSection(section);
     void navigate({
-      to: normalizedPathname,
+      to:
+        normalizedPathname === "/channels"
+          ? "/tabs/channels"
+          : normalizedPathname,
       hash: buildDesktopChannelsRouteHash({
         postId: routeSelectedPostId,
         returnPath: safeReturnPath,
