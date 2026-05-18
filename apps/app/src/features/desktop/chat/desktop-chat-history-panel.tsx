@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import {
   getGroupMembers,
   searchConversationMessages,
@@ -216,6 +220,14 @@ export function DesktopChatHistoryPanel({
     ],
     initialPageParam: undefined as string | undefined,
     enabled: searchQueryEnabled,
+    // 走查 R21：和姊妹 features/search/use-search-index.ts 已修过的同款 — 用户
+    // 在「查找聊天记录」侧栏多打一个字 / 切 category chip / 切 sender / 切日期，
+    // queryKey 8 个字段中任意一个变 → useInfiniteQuery.data 退回 undefined →
+    // 下方 resultItems flatMap 出空数组 → 整片结果区瞬时清空（empty state /
+    // 「正在搜索...」闪一下）→ 新数据回填。拼音输入法选字阶段尤其抖，每秒
+    // 多次 keystroke 都打断列表。keepPreviousData 把上一次命中条目保留在屏幕
+    // 上、用 staleness 暗示用户结果在追赶。
+    placeholderData: keepPreviousData,
     queryFn: ({ pageParam }) => {
       const payload = {
         keyword: debouncedKeyword || undefined,
