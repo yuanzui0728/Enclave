@@ -5756,6 +5756,22 @@ function ContactCardMessage({
 }) {
   const isDesktop = variant === "desktop";
   const recommendation = attachment.recommendationMetadata;
+  // 走查新一轮 R6：和 GroupCallInviteMessage R4 / GroupRelaySummaryMessage R5
+  // 同款修法——本联系人名片底部的 button onClick 父级 chat-message-list 走
+  // openAttachment → navigate({to:"/character/$id" / "/desktop/add-friend"
+  // / "/tabs/chat" / ...}) 形态，没挂 disabled / 没同步 ref 守。同帧 <16ms
+  // 双击群里某条联系人名片 push 2 条相同 history 项—用户从角色资料页 / 添加朋友
+  // 页退回群聊要按 2 次返回。同对 markFollowupRecommendationOpened 这种 POST
+  // 也会重复打两份。每张卡独立 guard，第一次成功后页面 unmount re-mount 时
+  // ref 自动复位。本组件单聊 / 群聊共享，单聊路径同样受益。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
   const card = (
     <div
       className={`bg-white shadow-none ${
@@ -5818,14 +5834,14 @@ function ContactCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(msg`查看名片`)} ${attachment.name}`}
     >
@@ -5846,6 +5862,19 @@ function NoteCardMessage({
   const isDesktop = variant === "desktop";
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  // 走查新一轮 R6：和 ContactCardMessage 同源——onOpen → openAttachment 走
+  // navigate({to:"/tabs/favorites" 桌面 / setNoteViewerMessageId 移动}) 形态。
+  // 移动端 setNoteViewerMessageId 是 state setter 同值 bailout 天然幂等，但
+  // 桌面端走 navigate({to:"/tabs/favorites", hash:buildDesktopNoteWindowRouteHash...})
+  // 没挂 guard，桌面同帧双击笔记卡会 push 2 条 history。本组件单聊 / 群聊共享。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
   // 拉最新笔记数据让缩略图跟原笔记编辑实时同步；笔记被删除时静默回退 snapshot，
   // 不在历史气泡上突然标红。
   const noteQuery = useQuery({
@@ -5936,14 +5965,14 @@ function NoteCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(variant === "desktop" ? msg`打开笔记` : msg`查看笔记摘要`)} ${title}`}
     >
@@ -5971,6 +6000,19 @@ function FeedPostCardMessage({
   const cover = attachment.coverUrl
     ? resolveAppMediaUrl(attachment.coverUrl)
     : null;
+  // 走查新一轮 R6：和 ContactCardMessage / NoteCardMessage 同源——onOpen →
+  // openAttachment 走 navigate({to:"/discover/channels" 移动 / "/tabs/channels"
+  // 桌面, hash:buildDesktopChannelsRouteHash...}) 形态，没挂 disabled / 没
+  // 同步 ref 守。同帧 <16ms 双击群里某条视频号卡 push 2 条相同 history 项—
+  // 用户从视频号页退回群聊要按 2 次返回。本组件单聊 / 群聊共享。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
   // 走查 2026-05-17 新会话 R5：attachment.excerpt 由 server forwardChannelPost
   // ToChat 写入，直接是 post.text.slice(0,160)，没过 stripToolCallSyntax。
   // AI 生成的视频号偶发把 <tool_call>...</tool_call> / [TOOL_CALL] 等当成
@@ -6050,14 +6092,14 @@ function FeedPostCardMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(msg`打开视频号`)} ${attachment.authorName}`}
     >
