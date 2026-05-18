@@ -30,6 +30,12 @@ import { ReportButton } from "../components/report-button";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
+import {
+  revisionChangeSourceLabel,
+  revisionKindLabel,
+  revisionOperationLabel,
+  revisionStatusLabel,
+} from "../lib/revision-labels";
 
 type Tab = "read" | "edit" | "history" | "talk";
 
@@ -702,10 +708,14 @@ function RevisionCard({
           <span className="text-xs text-[var(--text-muted)]">
             {formatDateTime(rev.createdAt)}
           </span>
-          <StatusPill>{rev.status}</StatusPill>
-          <StatusPill>{rev.operation}</StatusPill>
+          {/* 原写法 4 处 <StatusPill>{rev.<enum>}</StatusPill> 裸渲染英文后端
+              字面量；中文 UI 的历史 tab 上排出"approved create recipe edit"
+              和邻居 "高风险" "当前版本" "待巡查" 中英混排。统一走
+              revisionLabels.ts 的本地化映射。 */}
+          <StatusPill>{revisionStatusLabel(rev.status)}</StatusPill>
+          <StatusPill>{revisionOperationLabel(rev.operation)}</StatusPill>
           {rev.revisionKind !== "content" && (
-            <StatusPill>{rev.revisionKind}</StatusPill>
+            <StatusPill>{revisionKindLabel(rev.revisionKind)}</StatusPill>
           )}
           {rev.riskLevel === "high" && (
             <StatusPill>
@@ -713,7 +723,9 @@ function RevisionCard({
             </StatusPill>
           )}
           {rev.changeSource !== "edit" && (
-            <StatusPill>{rev.changeSource}</StatusPill>
+            <StatusPill>
+              {revisionChangeSourceLabel(rev.changeSource)}
+            </StatusPill>
           )}
           {isCurrent && (
             <StatusPill>

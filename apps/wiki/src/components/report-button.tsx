@@ -67,13 +67,19 @@ export function ReportButton({
   }
   return (
     <div className="mt-2 p-2 border border-[var(--border-subtle)] rounded space-y-2 text-xs bg-white">
+      {/* 两个 TextField 都没套 FormRow，只靠 placeholder 给 SR 用户当 label
+          —— Safari/JAWS 不会把 placeholder 当 accessible name，进表单只听到
+          "edit text"。每次举报会有两条裸 input 出现在 talk 回复行或修订卡
+          下面，aria-label 必须各自显式给。 */}
       <TextField
+        aria-label={t(msg`举报原因`)}
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder={t(msg`原因（必填，例：辱骂 / 虚假信息）`)}
         maxLength={200}
       />
       <TextField
+        aria-label={t(msg`举报补充说明`)}
         value={details}
         onChange={(e) => setDetails(e.target.value)}
         placeholder={t(msg`补充说明（可选）`)}
@@ -83,7 +89,15 @@ export function ReportButton({
         <ErrorBlock role="alert" message={(reportMut.error as Error).message} />
       )}
       {reportMut.isSuccess && (
-        <div className="text-[var(--state-success-text,#0a7d4f)]">
+        // 原写法只是普通 div：用户提交完 SR 完全静默，仅 2.5s 后表单自己消失，
+        // 视障用户体感是"什么也没发生"，容易再点一次造成重复举报。挂
+        // role=status + aria-live=polite，让屏读把"已提交，管理员将处理。"
+        // 念出来；和 ErrorBlock role=alert 那侧形成成功 / 失败对称反馈。
+        <div
+          role="status"
+          aria-live="polite"
+          className="text-[var(--state-success-text,#0a7d4f)]"
+        >
           <Trans>已提交，管理员将处理。</Trans>
         </div>
       )}

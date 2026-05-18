@@ -23,6 +23,10 @@ import { SnapshotDiff } from "../components/snapshot-diff";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
+import {
+  revisionKindLabel,
+  revisionOperationLabel,
+} from "../lib/revision-labels";
 
 export function PendingReviewsPage() {
   const t = translateRuntimeMessage;
@@ -235,8 +239,11 @@ function ReviewCard({
           {rev.contentSnapshot?.name || rev.characterId}
         </Link>
         <StatusPill>v{rev.version}</StatusPill>
-        <StatusPill>{rev.operation}</StatusPill>
-        <StatusPill>{rev.revisionKind}</StatusPill>
+        {/* 原写法裸渲染 rev.operation / rev.revisionKind 后端英文枚举，待审
+            队列中文界面里夹一行 "create recipe" 跟筛选下拉 "创建 / 逻辑"
+            完全对不上号；改走和筛选下拉相同的本地化映射。 */}
+        <StatusPill>{revisionOperationLabel(rev.operation)}</StatusPill>
+        <StatusPill>{revisionKindLabel(rev.revisionKind)}</StatusPill>
         {isHigh && (
           <StatusPill>
             <Trans>高风险</Trans>

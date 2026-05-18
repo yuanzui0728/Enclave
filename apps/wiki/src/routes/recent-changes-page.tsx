@@ -17,6 +17,12 @@ import { wikiApi, type WikiRevisionSummary } from "../lib/wiki-api";
 import { useUsernameMap } from "../lib/use-username-map";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
+import {
+  revisionChangeSourceLabel,
+  revisionKindLabel,
+  revisionOperationLabel,
+  revisionStatusLabel,
+} from "../lib/revision-labels";
 
 export function RecentChangesPage() {
   const t = translateRuntimeMessage;
@@ -120,10 +126,14 @@ function ChangeRow({
           >
             {rev.contentSnapshot?.name || rev.characterId}
           </Link>
-          <StatusPill>{rev.status}</StatusPill>
-          <StatusPill>{rev.operation}</StatusPill>
+          {/* 原写法 <StatusPill>{rev.status}</StatusPill> 等 4 处裸渲染后端
+              英文枚举（"approved" / "create" / "recipe" / "system"），跟同行
+              的 "高风险" "待巡查" 中文标签夹在一起读起来像 i18n 漏译。统一
+              走 revisionLabels.ts 的本地化映射。 */}
+          <StatusPill>{revisionStatusLabel(rev.status)}</StatusPill>
+          <StatusPill>{revisionOperationLabel(rev.operation)}</StatusPill>
           {rev.revisionKind !== "content" && (
-            <StatusPill>{rev.revisionKind}</StatusPill>
+            <StatusPill>{revisionKindLabel(rev.revisionKind)}</StatusPill>
           )}
           {rev.riskLevel === "high" && (
             <StatusPill>
@@ -131,7 +141,9 @@ function ChangeRow({
             </StatusPill>
           )}
           {rev.changeSource !== "edit" && (
-            <StatusPill>{rev.changeSource}</StatusPill>
+            <StatusPill>
+              {revisionChangeSourceLabel(rev.changeSource)}
+            </StatusPill>
           )}
           {!rev.isPatrolled && rev.status === "approved" && (
             <span className="rounded-full bg-[color:var(--state-warning-bg)] px-2 py-0.5 text-xs text-[color:var(--state-warning-text)]">
