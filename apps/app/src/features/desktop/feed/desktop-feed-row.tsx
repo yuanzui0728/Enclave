@@ -514,7 +514,14 @@ function DesktopFeedRowInner({
               <button
                 type="button"
                 onClick={handleLoadFullComments}
-                className="mt-3 text-[12px] font-medium text-[color:var(--brand-primary)]"
+                /* 走查新一轮 R1：detailLoading 时按钮文案换成"正在读取..."但
+                   没 disabled，视感是「可点 / 点了无反应」，键盘 Tab+Enter 用
+                   户更难分辨是按钮失效还是请求还在飞。workspace 内
+                   handleLoadFullComments 撞到同一 postId 已经做 no-op 早返，
+                   这里只需补 disabled 给 UI 反馈和无障碍语义；error 状态保持
+                   可点（=「重试读取全部评论」）。 */
+                disabled={detailLoading}
+                className="mt-3 text-[12px] font-medium text-[color:var(--brand-primary)] disabled:cursor-default disabled:opacity-60"
               >
                 {detailLoading
                   ? t(msg`正在读取...`)

@@ -335,6 +335,26 @@ export function DesktopFeedWorkspace({
       behavior: "smooth",
     });
   }, []);
+  // 走查新一轮 R1：点 toolbar「刷新」时 page 的 onRefresh 会先把 cache 砍回 page 1
+  // 再 refetch —— 列表从 ~80 条 (auto-prefetch 三页 + 用户滚出来的额外页) 一下子
+  // 缩成 20 条，但 scrollViewportRef.scrollTop 仍停在 ~2000px 处。用户视感是「点
+  // 完刷新页面变空白 + 自己也不知道滚回顶部就能看到新内容」。和 mobile 端下拉
+  // 刷新天然贴顶不同，desktop refresh 按钮可以在任何滚动位置触发。包一层让
+  // 刷新同步触发 backToTop，保持「刷新 = 看到顶部最新」的直觉。
+  const handleRefresh = useCallback(() => {
+    handleBackToTop();
+    onRefresh();
+  }, [handleBackToTop, onRefresh]);
+  // 走查新一轮 R2：cloud-console 切账户时 baseUrl 翻新，DesktopFeedWorkspace 同
+  // 实例继续挂着，scrollViewportRef.scrollTop 留在旧账户读到第 N 条的位置；新账
+  // 户 feedQuery 重 fetch（首屏 20 条 + auto-prefetch 至多 60 条），scrollHeight
+  // 短暂变小被 browser clamp 再变大，用户落到新账户列表中段 / 偶尔落在 Loading
+  // 下方的空白区。和 desktop-moments-workspace L172-174 已经做过的同款修复对齐
+  // (该处 dep=[ownerId])；feed workspace 拿不到 ownerId 但 baseUrl 跟账户一一
+  // 对应，依赖 baseUrl 同效。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
+  }, [baseUrl]);
 
   return (
     <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
@@ -352,7 +372,7 @@ export function DesktopFeedWorkspace({
             onOpenCompose={handleOpenCompose}
             onRetryComment={onRetryComment}
             onRetryLike={onRetryLike}
-            onRefresh={onRefresh}
+            onRefresh={handleRefresh}
           />
 
           <div
@@ -381,7 +401,7 @@ export function DesktopFeedWorkspace({
                 isFetchNextPageError={isFetchNextPageError}
                 onRetryNextPage={onRetryNextPage}
                 feedErrorMessage={feedErrorMessage}
-                onRetryFeed={onRefresh}
+                onRetryFeed={handleRefresh}
                 likePendingPostIds={likePendingPostIds}
                 posts={posts}
                 isPostFavorite={isPostFavorite}
