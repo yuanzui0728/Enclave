@@ -50,7 +50,7 @@ export function DesktopChatWindowPage() {
         ) ?? null
       : null;
   const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
-  const headerTitle = activeConversation?.title ?? routeState?.title ?? t(msg`聊天`);
+  const headerTitle = activeConversation?.title || routeState?.title || t(msg`聊天`);
   const headerType =
     activeConversation?.type ?? routeState?.conversationType ?? "direct";
 
@@ -193,7 +193,7 @@ export function DesktopChatWindowPage() {
         conversationId: routeState.conversationId,
         conversationType:
           activeConversation?.type ?? routeState.conversationType,
-        title: activeConversation?.title ?? routeState.title,
+        title: activeConversation?.title || routeState.title,
         returnTo: routeState.returnTo,
         highlightedMessageId: messageId,
       });
