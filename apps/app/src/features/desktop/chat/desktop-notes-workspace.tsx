@@ -1346,7 +1346,7 @@ export function DesktopNotesWorkspace({
 }
 
 function ToolbarButton({
-  active = false,
+  active,
   children,
   label,
   onClick,
@@ -1356,19 +1356,28 @@ function ToolbarButton({
   label: string;
   onClick: () => void;
 }) {
+  // 走查 R30：唯一传 active 的调用方是 line 1199 标签 toggle（active=
+  // {tagEditorOpen} → 点同按钮反转），是真正的 toggle button。其它
+  // ToolbarButton（附件 / 粗体 / 斜体 / 下划线 / 列表 / 待办）是 command
+  // button，按下立刻执行命令、没有持续 toggle 状态——给它们挂 aria-pressed
+  // 会误导 SR 把它们当 toggle。所以这里只在 active !== undefined 时emit
+  // aria-pressed；命令式按钮按 active 为 undefined 走，渲染没有 aria-pressed
+  // 保留普通 button 语义。
+  const isToggle = active !== undefined;
   return (
     <button
       type="button"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
+      aria-pressed={isToggle ? active : undefined}
+      aria-label={label}
+      title={label}
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[13px] transition",
         active
           ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
-      aria-label={label}
-      title={label}
     >
       {children}
       <span>{label}</span>
