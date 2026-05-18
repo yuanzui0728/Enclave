@@ -27,6 +27,20 @@ export function UserDetailPage() {
     enabled: Boolean(userId),
   });
 
+  // 详情页改动后既要刷新当前用户卡片（saas-user），也要刷新返回列表/顶部统计
+  // （saas-users 前缀同时覆盖列表与 stats）。原来只 invalidate detail 一项，
+  // 「Back to users」回去 Expires 列 / 顶部 memberUsers 卡片都是改前的旧值。
+  const invalidateUserViews = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["cloud-console", "saas-user", userId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["cloud-console", "saas-users"],
+      }),
+    ]);
+  };
+
   const grantMutation = useMutation({
     mutationFn: () =>
       cloudAdminApi.grantSubscription(userId, {
@@ -34,29 +48,17 @@ export function UserDetailPage() {
         source: "admin_grant",
         note: "Cloud console manual grant",
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    onSuccess: invalidateUserViews,
   });
 
   const banMutation = useMutation({
     mutationFn: () => cloudAdminApi.banUser(userId, { reason: banReason || "manual-ban" }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    onSuccess: invalidateUserViews,
   });
 
   const unbanMutation = useMutation({
     mutationFn: () => cloudAdminApi.unbanUser(userId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["cloud-console", "saas-user", userId],
-      });
-    },
+    onSuccess: invalidateUserViews,
   });
 
   if (userQuery.isLoading) {
