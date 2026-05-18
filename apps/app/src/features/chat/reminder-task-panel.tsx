@@ -228,7 +228,12 @@ export function ReminderTaskPanel({
         {expanded ? (
           <>
             {notice ? (
+              // R56：notice 是 2200ms 自动消失 (line 62 setTimeout) 的
+              // transient toast，反馈「完成 / 延后 / 删除」mutation 结果。
+              // success → polite，danger → assertive 立刻打断。
               <InlineNotice
+                role={notice.tone === "success" ? "status" : "alert"}
+                aria-live={notice.tone === "success" ? "polite" : "assertive"}
                 tone={notice.tone === "success" ? "success" : "danger"}
                 className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
               >
@@ -237,7 +242,11 @@ export function ReminderTaskPanel({
             ) : null}
 
             {error ? (
+              // R56 续：error 是 reminderTasksQuery 读取失败兜底，盲人
+              // 在展开区里只看到「正在同步」消失却不知道为什么列表是空的。
               <InlineNotice
+                role="alert"
+                aria-live="assertive"
                 tone="danger"
                 className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
               >
