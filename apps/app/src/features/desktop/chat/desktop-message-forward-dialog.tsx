@@ -377,6 +377,14 @@ export function DesktopMessageForwardDialog({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索最近会话`)}
+                // 走查电脑端单聊新一轮 R3：和姊妹 chat-history R24 / chat-files
+                // R25 / note-send-dialog R25 / create-group / contacts add-friend
+                // 一批 dialog 已修过的同款 a11y 缺漏——父 <label> 只包了 Search
+                // 图标 + TextField，无文本子节点 → input 没有 accessible name。
+                // SR focus 进来只听到「编辑栏 搜索最近会话 空」（部分 SR
+                // 实现读 placeholder、部分不读），盲人用户从消息长按「转发」
+                // 进来不知道这个输入框是搜什么 scope。和上方同款挂 aria-label。
+                aria-label={t(msg`搜索最近会话`)}
                 disabled={pending}
                 className={cn(
                   "pl-10",
