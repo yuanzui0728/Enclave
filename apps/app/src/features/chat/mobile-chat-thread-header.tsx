@@ -26,8 +26,13 @@ export function MobileChatThreadHeader({
   moreLabel = t(msg`更多操作`),
   actions = [],
 }: MobileChatThreadHeaderProps) {
-  const titleLeftInset = 46;
-  const titleRightInset = 46 + actions.length * 46;
+  // 走查 R1：原 46 没匹配真实 button 槽位（h-10 w-10 = 40px 配 gap-2 = 8px →
+  // 每个 button 实际占 48px），actions.length=2 时旧公式 138 比真实右簇宽度
+  // 144 短 6px，title 用 truncate 撑满 inset 区时右边缘会和 Phone/Video icon
+  // 重叠。改成 48 * (button 数 + 1 个外边距) 让 absolute 居中标题贴合实际
+  // button 占位；左侧 back 槽位同款 48。
+  const titleLeftInset = 48;
+  const titleRightInset = 48 * (actions.length + 1);
 
   return (
     <header className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2 py-1.5">
