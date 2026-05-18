@@ -464,6 +464,19 @@ function DesktopFeedRowInner({
                       tabIndex={0}
                       onClick={openReply}
                       onKeyDown={(event) => {
+                        // 走查新一轮 R1：内嵌的"作者名 / 被回复名"按钮被键盘
+                        // 用户 Tab 到上面后按 Enter / Space 想打开头像 popover
+                        // ——这条 keydown 会冒到外层 role="button" 上，原本无脑
+                        // preventDefault() + openReply()，inner <button> 的默认
+                        // "Enter → 合成 click" 被 cancel 掉，键盘用户永远点不
+                        // 开作者资料；同时 openReply 一并被误触发，用户视感
+                        // 是"按 Enter 看资料却跳进回复模式"。鼠标点击路径上
+                        // inner button onClick 已经 stopPropagation()，所以这
+                        // 一条只影响键盘。gate 在 target===currentTarget 上让
+                        // outer 只处理"焦点真在 div 自己上"的 Enter / Space。
+                        if (event.target !== event.currentTarget) {
+                          return;
+                        }
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           openReply();

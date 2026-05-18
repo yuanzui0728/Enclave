@@ -311,6 +311,16 @@ export function DesktopFeedWorkspace({
         void detailQueryRefetch();
         return;
       }
+      // 走查新一轮 R1：在 setSelectedPostId 之前把 scrolledForPostIdRef
+      // 钉到 postId，抑制下面的 scrollIntoView effect 这一次执行。用户
+      // 点「查看全部 N 条评论」时这条 row 本来就在视口里——他只是想看
+      // 评论展开，把行强滚到 viewport 顶端会把按钮位置 + 阅读位置一并
+      // 顶飞（block:"start" 配 ~360px 的 row 高度直接把滚动条往上推
+      // 半屏），是与深链 #post= 从首屏外滑到目标完全不同的语义。
+      // 深链路径仍正常 scroll：routeSelectedPostId 改变会先走上面 line
+      // 189-193 的 setSelectedPostId(current => routeSelectedPostId)，
+      // 那条不经手这里，scrolledForPostIdRef 保持 null → scroll 照旧。
+      scrolledForPostIdRef.current = postId;
       setSelectedPostId(postId);
     },
     [detailQueryRefetch],
