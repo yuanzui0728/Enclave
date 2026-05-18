@@ -198,11 +198,20 @@ export function MobileReminderToastHost() {
   const isFocusedThreadSubRoute =
     /^\/(?:chat|group)\/[^/]+\/.+$/.test(normalizedPathname);
   const isFocusedCreationRoute = normalizedPathname === "/group/new";
+  // 新一轮走查 R1：/contacts/groups（通讯录 → 群聊列表）跟 /tabs/chat 形态
+  // 一样——长列表 + sticky 顶部搜索框 + 每行可点击进群——reminder toast
+  // y=104..249 把列表前 2-3 行整行盖死（实测 391×844 屏首行群聊 y=104..172
+  // 完全消失，第二行只露半截 y=172..240）。/tabs/chat 已经在 hide 名单里
+  // 因为本来就有 inline reminder，/contacts/groups 没 inline 入口，但用户
+  // 既然已经在 /tabs/contacts 看过 toast、再点进群聊列表是要"挑一个群进去"
+  // 的专注流程，沿同一思路一起隐藏，避免首屏 1/3 列表被盖。
+  const isGroupListRoute = normalizedPathname === "/contacts/groups";
   const shouldHideActiveReminder =
     !activeReminder ||
     normalizedPathname === "/tabs/chat" ||
     isFocusedThreadSubRoute ||
     isFocusedCreationRoute ||
+    isGroupListRoute ||
     (() => {
       const activePath = buildChatReminderPath(activeReminder);
       const activeHash = `#${buildChatReminderHashValue(activeReminder.messageId)}`;
