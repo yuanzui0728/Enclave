@@ -109,6 +109,92 @@ export function ChannelsForwardPicker({
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
+  // 走查 2026-05-18 新会话 R1（移动端视频号转发 picker）：picker 已挂
+  // role="dialog" aria-modal="true"，但 aria-modal 在 ARIA 标记的 <div> 上
+  // 浏览器并不会自动 trap focus（只对 <dialog>.showModal() 生效）—— 用户用
+  // 键盘从视频号卡上「分享」按钮按 Tab → 焦点直接漏到下面的「减少推荐」/
+  // 作者头像 / 已关注 等 background button 上（CDP 实测 3 次 Tab 全在 dialog
+  // 外），既导致键盘用户无法用 Tab 选目标好友，又让 SR 用户的「modal 内部」
+  // 语义破口。视觉上 backdrop 是 click-trap，键盘用户被 backdrop 视觉骗了
+  // 但实际焦点在 backdrop 下面跑。
+  // 标准 a11y modal 焦点管理：
+  //   1) 打开瞬间把焦点移入 dialog（先取消按钮——比 X 角更显眼且语义清晰）
+  //   2) Tab 抵达 dialog 内最后一个 focusable 时下一次 Tab cycle 回第一个
+  //   3) Shift+Tab 抵达第一个时 cycle 到最后一个
+  //   4) 关闭时把焦点还给「打开 picker 的」原 trigger button
+  // 同款问题在 share-card-modal / mobile-channels-comments-sheet 都存在
+  // （后者部分缓解——open 时 .focus() textarea 把焦点拉进去——但 Tab cycle
+  // 仍能漏出），本次专攻视频号路径只修这一处，其它入口后续审计另起 commit。
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    // 记下打开前的焦点，关闭时归还。null check：picker 是 page-level 渲染，
+    // 多数情况下都有 activeElement，但 SSR / iframe / fresh mount 时可能为
+    // null/body —— 归还时跳过即可。
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    // 移动 focus 进 dialog：优先「取消」按钮（dialog 内的「取消」是最常用退出
+    // 路径，键盘用户先看到它会更顺）。rAF 等到 Suspense / 入场动画稳定后再
+    // .focus()，避开「focus 落到将被卸载元素」的 race。
+    const focusTimer = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const cancelBtn = dialog.querySelector<HTMLButtonElement>(
+        "button:not([disabled])",
+      );
+      if (cancelBtn) cancelBtn.focus();
+      else dialog.focus();
+    });
+    return () => {
+      window.cancelAnimationFrame(focusTimer);
+      const prev = previouslyFocusedRef.current;
+      previouslyFocusedRef.current = null;
+      if (prev && document.contains(prev)) {
+        // 等下一帧再把焦点还回去——picker 销毁触发的 React commit 跟焦点
+        // 转移同帧时浏览器偶发把焦点丢到 body；rAF 让 commit 落定。
+        window.requestAnimationFrame(() => prev.focus());
+      }
+    };
+  }, [open]);
+  // Tab cycling trap：监听 keydown，截断 Tab 在 dialog 外 / 边界处的跨界，
+  // 强制循环到首尾。不依赖第三方 focus-trap 库，本组件自己挡。
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      // 焦点已经飘出 dialog（用户点了 backdrop button 或之前在外面）→
+      // Tab 一次拉回 dialog 内首元素；Shift+Tab 拉到末元素。
+      if (!active || !dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      // 在 dialog 内部，处理首尾循环。
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
+
   // 走查 2026-05-17 新会话 R4：Android 硬件 Back 键 — picker 打开时按 Back
   // 应该收 picker 而不是退掉整个视频号页。和 wechat-comment-bar /
   // share-card-modal / mobile-channels-comments-sheet 同款拦截：preventDefault
@@ -239,9 +325,14 @@ export function ChannelsForwardPicker({
         卡片 / action rail。aria-labelledby 指向"转发到聊天"标题。
       */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="channels-forward-picker-title"
+        // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential tab 序列里 ——
+        // 焦点 trap 兜底用：无 focusable child（极端 loading 态）时也能把焦点
+        // 拉进来不漏。
+        tabIndex={-1}
         className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)] sm:rounded-[20px]"
       >
         <div className="flex items-center justify-between px-5 pb-2 pt-5">
