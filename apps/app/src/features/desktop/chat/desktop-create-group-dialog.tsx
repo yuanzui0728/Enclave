@@ -97,6 +97,14 @@ export function DesktopCreateGroupDialog({
     enabled: open,
     staleTime: 15_000,
   });
+  // 走查电脑端群聊 R98：和姊妹 R97 / friendsQuery 同款修法——本 query 是
+  // 「发起群聊」弹层「分享聊天内容」分支拉源对话最近 100 条消息（用于挑哪
+  // 些消息要带进新群）。dedicated cache key "desktop-create-group-shareable-
+  // messages" 不和其它路径共享，但开关弹层 / 切「分享聊天内容」开关 / 切
+  // 源 conversation 都会触发 enabled 转换 → mount + refetchOnMount(stale)
+  // 走完整 RTT。用户犹豫一下关掉重开（"算了再选一遍要分享哪几条"是常见
+  // 行为），公网隧道 ~600ms 又拉一次。15s 内的 reopen 复用 cache，体感
+  // 立刻有数据，避免每次都看到 LoadingBlock。
   const shareableMessagesQuery = useQuery({
     queryKey: [
       "desktop-create-group-shareable-messages",
@@ -108,6 +116,7 @@ export function DesktopCreateGroupDialog({
         limit: MAX_SHARED_MESSAGE_COUNT,
       }),
     enabled: open && Boolean(conversationId),
+    staleTime: 15_000,
   });
 
   const friendItems = useMemo(
