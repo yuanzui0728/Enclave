@@ -181,6 +181,13 @@ export function ChannelsPage() {
     mutationBaseUrlRef.current = baseUrl;
   }, [baseUrl]);
 
+  // 走查 2026-05-18 新会话（本轮 R1）：state↔URL 双向 sync 防 ping-pong loop —
+  // URL-sync effect 真正 navigate 之前把 desktopSelectedPostId 钉到这条 ref，
+  // 下面 Effect on [baseUrl, routeSelectedPostId] 通过这条 ref 识别「URL 这帧
+  // 的变化是我自己写出去的」，跳过反向 setDesktopSelectedPostId，避免值 swap
+  // 死循环。详见下面 routeSelectedPostId effect 里的长注释。
+  const urlSelfSyncEchoPostIdRef = useRef<string | null | undefined>(undefined);
+
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
     queryFn: () =>
@@ -1397,6 +1404,59 @@ export function ChannelsPage() {
   ]);
   const desktopRoutePostPending =
     Boolean(desktopMissingRoutePostId) && desktopMissingRoutePostQuery.isLoading;
+  // 走查 2026-05-18 新会话（本轮 R1）：deep-link 到一条"不存在"的 post（
+  // 同事链接已删 / typo 的 postId / 老链接对应 post 已被 cleanupBroken 清掉）。
+  // 原流程是 desktopMissingRoutePostQuery 跑回 null / 报错 → desktopRoutePost
+  // Pending 翻回 false → workspace 终于 mount —— 但 URL 里那个 ghost postId 没
+  // 被任何人清掉，下面的 Effect A（line 1665）每次 routeSelectedPostId 变就把
+  // desktopSelectedPostId 强同步成 ghost id；workspace 的 Effect 327 又把 selected
+  // 兜回 posts[0].id 上报回来；Effect C（line 1699）的 URL sync 拿着 desktopSel
+  // ='posts[0].id' 但闭包里 normalizedHash 还是上一帧的 'post=ghost'，每个新 commit
+  // navigate 写 URL → 下一帧 Effect A 读到 URL 又写 desktopSel='ghost' → ping-pong
+  // 死循环，React 25 次后抛 "Maximum update depth exceeded"，整个 channels-page
+  // 被 CatchBoundary 兜下来。bash 走查 2026-05-18 R1 用 history.replaceState 设
+  // /tabs/channels#post=does-not-exist-xxx 100% 复现。
+  // 修法：query 落空后立刻把 URL 里 ghost postId 清掉（保留 section），让用户落
+  // 回当前 tab 推荐流首条；不需要 toast 提示，因为 ghost link 不存在多数是链接
+  // 失效情景，跟"打开 404 页面再回首页"体感一致即可。
+  const desktopRoutePostMissingNotFoundRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+    if (!desktopMissingRoutePostId) {
+      return;
+    }
+    if (desktopMissingRoutePostQuery.isLoading) {
+      return;
+    }
+    const data = desktopMissingRoutePostQuery.data;
+    const isError = desktopMissingRoutePostQuery.isError;
+    if (!isError && data) {
+      return;
+    }
+    // 同一条 ghost id 只清一次 URL —— 避免清完后 router 状态还没把 hash 落进 useRouter
+    // State 时 effect 多次连发 navigate({replace:true})。
+    if (desktopRoutePostMissingNotFoundRef.current === desktopMissingRoutePostId) {
+      return;
+    }
+    desktopRoutePostMissingNotFoundRef.current = desktopMissingRoutePostId;
+    void navigate({
+      to: "/tabs/channels",
+      hash: buildDesktopChannelsRouteHash({
+        section: activeSection,
+      }),
+      replace: true,
+    });
+  }, [
+    activeSection,
+    desktopMissingRoutePostId,
+    desktopMissingRoutePostQuery.data,
+    desktopMissingRoutePostQuery.isError,
+    desktopMissingRoutePostQuery.isLoading,
+    isDesktopLayout,
+    navigate,
+  ]);
   const desktopSelectedPost = useMemo(
     () =>
       desktopWorkspacePosts.find((post) => post.id === desktopSelectedPostId) ??
@@ -1662,7 +1722,30 @@ export function ChannelsPage() {
       setForwardPickerPost(null);
     }
 
-    setDesktopSelectedPostId(routeSelectedPostId);
+    // 走查 2026-05-18 新会话（本轮 R1）：urlSelfSyncEchoPostIdRef 兜「URL 这次
+    // 变化是不是我下面 URL-sync effect 自己写出去的」—— 是的话不要把 URL 反向
+    // 同步进 desktopSelectedPostId，否则跟 URL-sync 互相把对方在闭包里捕到的
+    // 旧值再 commit 一次，跨 commit 两端值 swap → "Maximum update depth"。
+    // 复现：deep-link 进一条不存在的 post（has=#post=does-not-exist-xxx）时
+    //   render N: routeSel='ghost', desktopSel='real'（workspace 兜 posts[0] 上报回来）
+    //     - 本 effect 闭包看到 routeSel='ghost' → 计划写 desktopSel='ghost'
+    //     - URL-sync effect 闭包看到 desktopSel='real' → 计划 navigate URL='post=real'
+    //   commit 完：desktopSel='ghost'，URL='post=real'，routeSel=>'real'
+    //   render N+1: routeSel='real', desktopSel='ghost'（值 swap 了）
+    //     - 本 effect 写 desktopSel='real'；URL-sync 写 URL='post=ghost'
+    //   每次 commit 25 次 React 抛 Maximum update depth，CatchBoundary 兜底整页崩。
+    // ref 在 URL-sync 真正发 navigate 时记下当时 desktopSelectedPostId；本 effect
+    // 检测到 routeSel 跟上次自己派出去的 ID 一致 → 「这条 URL 变化是我自己
+    // 写的回声」，跳过 setDesktopSelectedPostId 以避免覆盖。仍然要清 reply /
+    // drawer 等 auxiliary state（用户切到另一条 post 就应该清掉之前的草稿）。
+    if (
+      urlSelfSyncEchoPostIdRef.current !== undefined &&
+      urlSelfSyncEchoPostIdRef.current === routeSelectedPostId
+    ) {
+      urlSelfSyncEchoPostIdRef.current = undefined;
+    } else {
+      setDesktopSelectedPostId(routeSelectedPostId);
+    }
     setDesktopReplyTarget(null);
     // 走查 2026-05-18 新会话 R3：drawer 状态也清 — workspace 的 R5-1 reset
     // 会在 baseUrl 切换时 setCommentDrawerPostId(null)，但那是 workspace 本地
@@ -1720,6 +1803,11 @@ export function ChannelsPage() {
       return;
     }
 
+    // 走查 2026-05-18 新会话（本轮 R1）：把这次要写到 URL 上的 postId 钉到 ref
+    // 上 —— 等 router 把 URL 变化推回 routeSelectedPostId 时，上面那条 effect
+    // 用这条 ref 识别「URL 这帧的变化是我自己写出去的」就跳过反向写 desktop
+    // SelectedPostId。避免 state ↔ URL 互推 swap → Maximum update depth loop。
+    urlSelfSyncEchoPostIdRef.current = desktopSelectedPostId;
     void navigate({
       to: "/tabs/channels",
       hash: nextHash,
