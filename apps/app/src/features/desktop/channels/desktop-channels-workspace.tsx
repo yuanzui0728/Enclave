@@ -2293,11 +2293,27 @@ function DesktopChannelAuthorPanel({
                         {post.title?.trim() || t(msg`查看这条内容`)}
                       </div>
                       <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                        {/*
+                          走查 2026-05-19 第七轮 R3：原来只分 "直播回放" / "视频"
+                          / "动态" 三类，audio (mediaType="audio") 跟 image
+                          (mediaType="image") 跟 text 全落到 "动态" 通用文案。
+                          mobile MobileChannelsCard L4586-4592 早就分了 短片 /
+                          音乐 / 图集 / 内容卡片 四档。yuanzui0728 库里推荐流 80%
+                          是 audio 帖（minimax generate 走 audio path），作者主
+                          页 recent posts 一栏全标 "动态"，体感"看不出这条是听
+                          的还是看的"。desktop 对齐 mobile 的 4 档划分，audio →
+                          "音乐"、image → "图集"、其它（含 text）→ "动态"；
+                          live_clip 仍最高优先级保持。
+                        */}
                         {post.sourceKind === "live_clip"
                           ? t(msg`直播回放`)
                           : post.mediaType === "video"
                             ? t(msg`视频`)
-                            : t(msg`动态`)}
+                            : post.mediaType === "audio"
+                              ? t(msg`音乐`)
+                              : post.mediaType === "image"
+                                ? t(msg`图集`)
+                                : t(msg`动态`)}
                       </span>
                     </div>
                     {(() => {
