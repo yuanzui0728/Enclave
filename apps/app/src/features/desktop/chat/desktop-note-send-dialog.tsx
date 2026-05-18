@@ -179,6 +179,14 @@ export function DesktopNoteSendDialog({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索最近会话`)}
+                // 走查新一轮 R25：和姊妹 chat-history R24 / chat-files
+                // / forward-dialog / create-group / contacts add-friend
+                // 同款 a11y 修法——父 <label> 只包了 Search 图标 + TextField，
+                // 无文本子节点，等于 input 没有 accessible name。SR focus
+                // 进来只听到「编辑栏 搜索最近会话 空」（部分 SR 实现读
+                // placeholder、部分不读），盲人用户得自己摸 dialog 顶部
+                // 标题猜 scope，与 R23/R24 修法一致补 aria-label。
+                aria-label={t(msg`搜索最近会话`)}
                 disabled={pending}
                 className="h-10 rounded-[10px] border-[color:var(--border-faint)] bg-white pl-10 shadow-none"
               />

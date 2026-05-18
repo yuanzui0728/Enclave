@@ -511,6 +511,14 @@ export function DesktopChatFilesPage() {
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder={t(msg`搜索文件名或消息内容`)}
+                // 走查新一轮 R25：和姊妹 chat-history R24 / forward-dialog
+                // / create-group / contacts add-friend 同款 a11y 修法——
+                // TextField 外层只有 section 标题文本，没有 <label>
+                // / aria-labelledby 把标题和输入框绑起来。SR focus 进来
+                // 只听到「编辑栏 搜索文件名或消息内容 空」（部分 SR
+                // 实现读 placeholder、部分不读），盲人用户从 sidebar
+                // 进来不知道这个输入框是搜什么的。
+                aria-label={t(msg`搜索聊天文件`)}
                 className="mt-4 h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
               />
             </div>

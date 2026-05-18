@@ -4910,6 +4910,12 @@ function DesktopScreenshotEditor({
                       onSelectedTextChange(event.target.value)
                     }
                     placeholder={t(msg`输入标注文字`)}
+                    // 走查新一轮 R25：和姊妹截图编辑器 R18 dialog 语义 / 桌面单聊
+                    // composer R23 同款 a11y 缺漏——截图标注 textbox 没挂 label
+                    // 关联，只有 placeholder。SR focus 进来听到「编辑栏 输入
+                    // 标注文字 空」（部分实现读 placeholder、部分不读）。补
+                    // aria-label 跟选中的工具上下文（"文字" tool）对齐。
+                    aria-label={t(msg`输入标注文字`)}
                     className="ml-2 h-9 min-w-[180px] rounded-[10px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
                   />
                 ) : null}
