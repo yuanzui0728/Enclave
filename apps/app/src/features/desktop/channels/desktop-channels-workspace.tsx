@@ -1985,6 +1985,46 @@ function ChannelAuthorOverlay({
       }
     };
   }, []);
+  // 走查 2026-05-19 第五轮 R5：focus trap — author overlay 视觉上 modal 但
+  // aria-modal=true 在 <div> 上浏览器不自动 trap focus（只有 <dialog>.showModal()
+  // 才行）。用户 Tab 过 8 个 focusable（backdrop close 按钮 → 「回到内容」→
+  // 「+关注」→ recent posts × 5）后下一次 Tab 漏到 modal 外的 header section
+  // tabs / refresh / 直播伴侣按钮上（虽然视觉被 0.55 backdrop 半盖但仍可聚焦），
+  // 键盘用户体感"我刚刚在 modal 里怎么 Tab 跳到顶部去了"。同款 ChannelsForward
+  // Picker 早就（L198-229）做了 Tab cycling，author-overlay 一直漏。
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      // 焦点已经飘出 dialog（用户 Tab 跑出 modal）→ Tab 一次拉回 dialog 内首
+      // 元素；Shift+Tab 拉到末元素。
+      if (!active || !dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      // 在 dialog 内部，处理首尾循环。
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.55)] p-8 backdrop-blur-sm">
       <button
@@ -1994,9 +2034,13 @@ function ChannelAuthorOverlay({
         className="absolute inset-0"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="channels-author-overlay-title"
+        // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序列里 ——
+        // focus trap 兜底：极端无 focusable child 时也能把焦点拉进来不漏。
+        tabIndex={-1}
         className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[24px] bg-white shadow-[var(--shadow-overlay)]"
       >
         <DesktopChannelAuthorPanel
