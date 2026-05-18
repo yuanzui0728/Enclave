@@ -318,22 +318,57 @@ export function DesktopChannelsWorkspace({
     [activeSection, t],
   );
 
+  // 走查 2026-05-18 新会话（本轮 R1）：原 effect 直接 setSelectedPostId(routeSel
+  // ectedPostId) 是 OK 的，但跟下面那条 effect 在同一 commit 里都看见旧 select
+  // edPostId 的闭包：那条用非 functional 写法 setSelectedPostId(posts[0]?.id)
+  // 又覆盖回来 → 实际 selectedPostId 落到 posts[0] 而不是 routeSelectedPostId。
+  // 这条用 functional 防 stale closure：c 是 React 队列里上一条 setState 翻新
+  // 过的 current，不再被覆盖。
   useEffect(() => {
     setSelectedPostId((current) =>
       current === routeSelectedPostId ? current : routeSelectedPostId,
     );
   }, [routeSelectedPostId]);
 
+  // 走查 2026-05-18 新会话（本轮 R1）：原写法用闭包里捕到的 selectedPostId 判
+  // `!selectedPostId || !posts.some(...)` 然后 setSelectedPostId(posts[0]?.id)
+  // ——但在工作区刚刚 mount 那一帧（baseUrl 切账户 / deep-link 入场 → desktop
+  // RoutePostPending 翻 false 之后 workspace 重新挂上）这条 effect 跟上面那条
+  // [routeSelectedPostId] effect 在同一个 commit 里都看见 selectedPostId=null
+  // 的闭包：上面 setSelectedPostId(routeSel='real-id')，本 effect 看见闭包还是
+  // null 就再 setSelectedPostId(posts[0].id)，最后一次 wins → routeSel 被覆盖
+  // 成 posts[0]。Effect 345 再把这个 posts[0] 回报上去 → channels-page Effect
+  // C navigate URL='post=posts[0]' → 下一帧 URL/state 跨 commit 又 swap，整个
+  // 链子 25 次 commit 后 React 抛 "Maximum update depth"，CatchBoundary 兜底
+  // 整页崩。
+  // 改用 functional setState：闭包不再读 stale selectedPostId，由 React 在执
+  // 行队列里拿到上一条 setState 翻新过的 current 值。上面 effect 已经把 c 设到
+  // routeSel='real-id' 时，posts.some(id===real-id) 大部分时候是 true（包括
+  // 走 desktopMissingRoutePostId 单独拉回 prepend 那条），functional 返回
+  // current 不动；只有真没有命中 posts（home 列表里完全没这条 + missing
+  // RoutePostQuery 也跑空）时才兜 posts[0]。
   useEffect(() => {
     if (!posts.length) {
       setSelectedPostId(null);
+      onSelectedPostChangeRef.current(null);
       return;
     }
 
-    if (!selectedPostId || !posts.some((post) => post.id === selectedPostId)) {
-      setSelectedPostId(posts[0]?.id ?? null);
-    }
-  }, [posts, selectedPostId]);
+    setSelectedPostId((current) => {
+      if (current && posts.some((post) => post.id === current)) {
+        return current;
+      }
+      const fallback = posts[0]?.id ?? null;
+      // 兜底切换走 ref，避免 setState updater 里直接调 prop（updater 必须 pure）。
+      // 用 microtask 触发，确保在本次 commit 后再 fire（channels-page Effect on
+      // routeSelectedPostId 那边按 URL 同步 desktopSelectedPostId 已经先跑过；这里
+      // 是 workspace 内的"我选 posts[0] 不是 routeSel"的 echo）。
+      if (fallback !== current) {
+        Promise.resolve().then(() => onSelectedPostChangeRef.current(fallback));
+      }
+      return fallback;
+    });
+  }, [posts]);
 
   const selectedPost =
     posts.find((post) => post.id === selectedPostId) ?? posts[0] ?? null;
@@ -342,9 +377,25 @@ export function DesktopChannelsWorkspace({
     : -1;
   const authorPanelVisible = Boolean(routeSelectedAuthorId);
 
-  useEffect(() => {
-    onSelectedPostChange(selectedPost?.id ?? null);
-  }, [onSelectedPostChange, selectedPost?.id]);
+  // 走查 2026-05-18 新会话（本轮 R1）：原 effect 每次 selectedPost?.id 变都把
+  // 值 echo 回 channels-page。问题是 useEffect 的闭包捕到的 selectedPost.id 经
+  // 常是上一帧的 stale 值（Effect 321 这一帧 setSelectedPostId 只是排队，本 effect
+  // 在同 commit 跑时拿的还是旧闭包）。channels-page 收到 stale id → desktop
+  // SelectedPostId 跟 URL 真理之源不一致 → URL-sync effect 拿这条 stale state 把
+  // URL 又写回上一帧，下一帧 routeSelectedPostId 跟 desktopSelectedPostId 跨帧
+  // swap → 死循环 → "Maximum update depth"。
+  // 修法：彻底改成事件驱动 echo（不再用 useEffect 监听 selectedPost.id）：
+  //   - 用户滚 slide 改变 selectedPostId → IntersectionObserver 那边的回调里同帧
+  //     调 onSelectedPostChange，闭包是当时刚算出来的最新 postId 不会 stale。
+  //   - Effect 327 兜 posts[0] / 无 posts 兜 null 时，回调读最新 ref 同帧 echo。
+  //   - 路由同步那条（Effect 321）不需要 echo —— channels-page 那边 Effect on
+  //     [routeSelectedPostId] 已经从 URL 同步过 desktopSelectedPostId 了，本来
+  //     就一致，再 echo 一次反而把 stale 旧值反向覆盖回去。
+  // ref 在 render 每次同步刷成最新，IntersectionObserver / Effect 327 的 echo
+  // 调用都通过 ref 拿当下最新的 onSelectedPostChange 身份，避免 effect deps 化成
+  // 没必要的频繁 re-fire。
+  const onSelectedPostChangeRef = useRef(onSelectedPostChange);
+  onSelectedPostChangeRef.current = onSelectedPostChange;
 
   // 走查 2026-05-17 新会话 R1：原 useEffect 在 selectedPost.id 一变就立刻 POST
   // /feed/:id/view，鼠标滚轮快速滚过 5-10 张 slide 时一秒就能打掉 5-10 次没人
@@ -406,7 +457,17 @@ export function DesktopChannelsWorkspace({
 
         const postId = (visible.target as HTMLElement).dataset.postId;
         if (postId) {
-          setSelectedPostId(postId);
+          setSelectedPostId((current) => {
+            if (current === postId) {
+              return current;
+            }
+            // 走查 2026-05-18 新会话（本轮 R1）：观察者真切到新 slide 时，事件
+            // 驱动 echo 给 channels-page（替原来的 useEffect on [selectedPost?.id]
+            // 中转 echo —— 那条会捕到 stale 闭包让 URL ping-pong）。同帧调避免
+            // commit 后异步漂移；ref 解锁回调最新 identity。
+            onSelectedPostChangeRef.current(postId);
+            return postId;
+          });
         }
       },
       { root, threshold: [0.6] },
