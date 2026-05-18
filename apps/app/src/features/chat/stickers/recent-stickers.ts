@@ -52,9 +52,15 @@ function readRecentStickersFromLocal() {
     return [] as RecentStickerItem[];
   }
 
-  return parseRecentStickerItems(
-    window.localStorage.getItem(RECENT_STICKERS_STORAGE_KEY),
-  );
+  try {
+    return parseRecentStickerItems(
+      window.localStorage.getItem(RECENT_STICKERS_STORAGE_KEY),
+    );
+  } catch {
+    // Safari ITP / iOS 私密模式 localStorage 访问偶发抛 SecurityError；正常
+    // privacy + 配额超限场景统一吞错给空表，让外层的发送流程继续。
+    return [] as RecentStickerItem[];
+  }
 }
 
 function getLatestRecentStickerTimestamp(items: RecentStickerItem[]) {
@@ -91,13 +97,24 @@ function writeRecentStickers(
     return items;
   }
 
-  if (items.length) {
-    window.localStorage.setItem(
-      RECENT_STICKERS_STORAGE_KEY,
-      JSON.stringify(items),
-    );
-  } else {
-    window.localStorage.removeItem(RECENT_STICKERS_STORAGE_KEY);
+  // 走查 R4：原版 setItem / removeItem 没 try/catch。Safari iOS 私密模式 +
+  // 配额超限（用户已经塞了 5MB+ 在 localStorage 上）会抛同步异常，把外层
+  // 调用 (chat-composer.tsx pushRecentSticker → emitChatMessage 之前) 炸掉。
+  // 用户视角：选了表情、消息也发了…然后下一个动作没反应，因为整个 click
+  // handler 已经在 setItem 那里栈展开了。和 local-chat-message-actions.ts
+  // 已经做的 try/catch 模式对齐。
+  try {
+    if (items.length) {
+      window.localStorage.setItem(
+        RECENT_STICKERS_STORAGE_KEY,
+        JSON.stringify(items),
+      );
+    } else {
+      window.localStorage.removeItem(RECENT_STICKERS_STORAGE_KEY);
+    }
+  } catch {
+    // recent stickers 是"最近用过"的便利缓存，写不进去对功能没有致命影响——
+    // 用户下次重启 / 再选时 list 重新积累；不要让本地存储错误阻塞发送主路径。
   }
 
   if (options?.syncNative !== false) {
