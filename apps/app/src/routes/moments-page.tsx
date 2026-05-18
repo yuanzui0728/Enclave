@@ -1641,6 +1641,23 @@ export function MomentsPage() {
             setRefreshPending(true);
             const refreshBaseUrl = baseUrl;
             const key = ["app-moments-paged", refreshBaseUrl];
+            // 走查电脑端朋友圈 R2：在「刷新前 auto-prefetch 中途某页失败」时记账。
+            // 我们这条 onRefresh 用 setQueryData 在 page 1 in-place 覆盖（避免
+            // multi-page refetch 把整列表砍回 1 页带来的视觉抖动），但 react-query
+            // 的 isFetchNextPageError 标志仅在新一次 fetchNextPage / refetch 启动时
+            // 才被 query.fetch 内部清成 false——setQueryData 完全绕开 Query 实例的
+            // fetch 路径，所以 isError 一直挂着。后果：auto-prefetch useEffect 行
+            // 250-265 的 gate `!momentsIsFetchNextPageError` 永远 false，链路死锁，
+            // 用户读着 errors[] 红条「点击刷新重试」+「已加载 80 / 共 240」却怎么
+            // 刷新都填不进剩下那 160 条。
+            //
+            // 修法：refresh 成功且原来处于 fetchNextPageError 态时主动调一次
+            // fetchNextPage()。react-query 在 fetch 开始时把 error / isError 一起
+            // 置 null/false，isFetchNextPageError 跟着归零 → useEffect 重跑且能进，
+            // 自动续链。失败的话保留新 error 给红条覆盖更新，跟"用户手动重试"语义
+            // 一致。snapshot 一次 isFetchNextPageError 拍下 click 那一刻的态，避免
+            // 闭包内被 react-query 异步刷掉。
+            const shouldRetryPrefetch = momentsIsFetchNextPageError;
             void Promise.all([
               getMomentsPage({ page: 1, limit: 20 }, refreshBaseUrl)
                 .then((freshFirstPage) => {
@@ -1656,6 +1673,18 @@ export function MomentsPage() {
                       };
                     },
                   );
+                  // 续链：见上方注释。mid-flight 切账户后这里的 momentsFetchNextPage
+                  // 闭包仍指着 OLD 账户的 query observer（onRefresh 闭包里的 baseUrl
+                  // 就是 OLD），fetchNextPage 写回 OLD 账户的 cache，行为正确——OLD
+                  // 账户用户切回去时第一帧就能看到续上的页。fetch 自身失败不再额外
+                  // 弹 toast：错误已经会通过新的 isFetchNextPageError 落到 toolbar
+                  // errors[] 红条做持久指示，跟 auto-prefetch 失败一致。
+                  if (
+                    shouldRetryPrefetch &&
+                    refreshBaseUrl === mutationBaseUrlRef.current
+                  ) {
+                    void momentsFetchNextPage();
+                  }
                 })
                 .catch((error: unknown) => {
                   // mid-flight 切账户：A 的刷新失败不该弹到 B 账户的 notice 通道。
