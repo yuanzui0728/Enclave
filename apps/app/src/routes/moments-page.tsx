@@ -1100,6 +1100,21 @@ export function MomentsPage() {
     setActionBubble(null);
     setCommentBarTarget(null);
     setDesktopReplyTarget(null);
+    // 走查新一轮 R4：旧 baseUrl 的失败 mutation 状态也得清。like/comment/delete
+    // mutation 失败后 isError=true、error/variables 都保留在 mutation 状态里；
+    // mid-flight 的 baseUrl-guard 只拦了 onError/onSuccess 的副作用回调，没把
+    // mutation 自身的 isError 标志重置。toolbar 的「点赞失败/评论失败/删除失败」
+    // ErrorBlock 是 `mutation.isError && !(notice && noticeTone==='danger')` 串
+    // 出来的——切账户后 notice 被上面 setNotice('') 清掉，但 mutation.isError
+    // 还挂着，2.4s notice 倒计时本来就过期了的话第一帧就能看到「评论失败：在
+    // A 账户那条 moment 上的失败原文」挂在 B 账户的 toolbar 上。createMutation
+    // 同理——切账户后用户重开 compose 面板会先看到旧账户那次发布失败的红条。
+    // mutation.reset() 只清状态不取消 in-flight；in-flight 后续 onError/onSuccess
+    // 还有 baseUrl-guard 拦住，安全。
+    likeMutation.reset();
+    commentMutation.reset();
+    deleteMutation.reset();
+    createMutation.reset();
     // 待发评论 args：onError/onSuccess 会清掉自己那条，但如果切账户时还有
     // mid-flight，旧 args 残留在内存。每次切账户都会堆，长期跑就是泄漏；
     // 顺手 wipe 防御。

@@ -777,6 +777,17 @@ export function ProfileMomentsPage() {
     // mid-flight 评论 args 也清——onSuccess/onError 会清自己那条，但切账户时
     // 如果还有 mid-flight，旧 args 会残留在内存，长期跑就是泄漏。
     commentSubmitArgsRef.current = {};
+    // 走查新一轮 R4：旧 baseUrl 的失败 mutation 状态也得清。workspace 的
+    // likeErrorMessage / commentErrorMessage / deleteErrorMessage / composeErrorMessage
+    // 都串 `mutation.isError ? resolveMomentsErrorMessage(mutation.error) : null` ——
+    // 切账户后 notice 自清后第一帧就会冒「评论失败：在 A 账户那条 moment 上的
+    // 失败原文」挂在 B 账户工作区顶部，文案完全跟新账户对不上。mutation.reset()
+    // 只清状态、不取消 in-flight；后续 onError/onSuccess 还有 baseUrl-guard 拦住
+    // 副作用，安全。和 moments-page / friend-moments-page 同模板。
+    likeMutation.reset();
+    commentMutation.reset();
+    deleteMutation.reset();
+    createMutation.reset();
   }, [baseUrl]);
 
   // 从 /discover/moments/publish 走 returnPath=/profile/moments 回到本页时，

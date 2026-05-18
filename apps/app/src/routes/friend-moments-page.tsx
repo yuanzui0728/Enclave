@@ -654,6 +654,18 @@ export function FriendMomentsPage() {
     // 还挂着上一个角色帖子的 reply 状态，textarea placeholder 显示错误的目标）。
     commentSubmitArgsRef.current = {};
     setDesktopReplyTarget(null);
+    // 走查新一轮 R4：旧 baseUrl/characterId 的失败 mutation 状态也得清。
+    // workspace 的 likeErrorMessage / commentErrorMessage / composeErrorMessage 都
+    // 由 `mutation.isError ? resolveMomentsErrorMessage(mutation.error) : null`
+    // 串出来的——切角色 / 切账户后 notice 上面已经 setNotice(null) 清掉，但
+    // mutation.isError 还挂着，2.4s notice 倒计时本来就过期了的话第一帧就能看到
+    // 旧角色那条失败的红色 ErrorBlock 挂在新角色页 toolbar 顶部，文案完全跟新角色
+    // 对不上（"评论失败：moment ID 不存在"）。mutation.reset() 只清状态、不取消
+    // in-flight；后续 onError/onSuccess 还有 baseUrl-guard 拦住副作用，安全。
+    // 和 mobile-add-friend-page (R3) / discover-feed-page 同模式。
+    likeMutation.reset();
+    commentMutation.reset();
+    createMutation.reset();
   }, [baseUrl, characterId, resetComposeDraft]);
 
   useEffect(() => {
