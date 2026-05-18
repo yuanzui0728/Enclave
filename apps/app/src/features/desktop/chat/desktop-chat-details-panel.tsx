@@ -1291,8 +1291,18 @@ function GroupChatDetailsPanel({
     // 已经用 Promise.all 并发 DELETE，add 路径维持串行没有特殊理由（server
     // 端 addMember 对重复成员幂等返回 existing，相互之间无序）。对齐 remove
     // 路径，并发起 N 路 POST，5 个成员从 3s 降到 ~600ms。
+    //
+    // 新一轮走查 R2：和姊妹 chat-message-list R1 (commit 279cd8f41 — 多选收藏
+    // Promise.all 失败一条全批 throw) 同款 partial-success 修法。原版 Promise.all
+    // 一条 addGroupMember 抛错就整段 await throw（公网 timeout / cloud token 续期
+    // 都可能），但前 K 条已经成功落库——server 端已加 K 个成员、frontend 显示
+    // ErrorBlock 但 notice 没说成功了几个。用户重选同样 N 个再试 → 前 K 个 server
+    // 端幂等返回 existing 不报错（add 是幂等的）→ 但用户其实不知道刚才已经成功
+    // K 个。改成 Promise.allSettled：全失败时仍 throw 触发 ErrorBlock 兜底，
+    // 部分成功时 onSuccess 给出"已添加 N 位；剩余 M 位添加失败：reason"，让用户
+    // 基于真实状态决定要不要继续操作。
     mutationFn: async (memberIds: string[]) => {
-      await Promise.all(
+      const results = await Promise.allSettled(
         memberIds.map((memberId) =>
           addGroupMember(
             conversation.id,
@@ -1304,13 +1314,47 @@ function GroupChatDetailsPanel({
           ),
         ),
       );
+      const succeededIds: string[] = [];
+      const failures: Array<{ memberId: string; error: unknown }> = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          succeededIds.push(memberIds[index]!);
+        } else {
+          failures.push({
+            memberId: memberIds[index]!,
+            error: result.reason,
+          });
+        }
+      });
+      if (succeededIds.length === 0 && failures.length > 0) {
+        throw failures[0]!.error;
+      }
+      return { succeededIds, failures };
     },
-    onSuccess: async (_, memberIds) => {
-      setNotice(
-        memberIds.length === 1
-          ? t(msg`已添加 1 位群成员。`)
-          : t(msg`已添加 ${memberIds.length} 位群成员。`),
-      );
+    onSuccess: async (result) => {
+      const { succeededIds, failures } = result;
+      if (failures.length === 0) {
+        setNotice(
+          succeededIds.length === 1
+            ? t(msg`已添加 1 位群成员。`)
+            : t(msg`已添加 ${succeededIds.length} 位群成员。`),
+        );
+      } else {
+        const firstError = failures[0]!.error;
+        const errorMessage =
+          firstError instanceof Error && firstError.message
+            ? firstError.message
+            : "";
+        setNotice(
+          errorMessage
+            ? t(
+                msg`已添加 ${succeededIds.length} 位；剩余 ${failures.length} 位添加失败：${errorMessage}`,
+              )
+            : t(
+                msg`已添加 ${succeededIds.length} 位；剩余 ${failures.length} 位添加失败，请稍后再试。`,
+              ),
+        );
+      }
       setMemberPickerOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({
@@ -1345,19 +1389,63 @@ function GroupChatDetailsPanel({
   });
 
   const removeMembersMutation = useMutation({
+    // 新一轮走查 R2：和姊妹 chat-message-list R1 (commit 279cd8f41) / 上方
+    // addMembersMutation 同款 partial-success 修法。原版 Promise.all 一条
+    // removeGroupMember 抛错就整段 throw——remove 路径比 add 路径更敏感，
+    // server 端对"已删除成员"硬抛 CHAT_GROUP_MEMBER_NOT_FOUND（add 是幂等
+    // 返回 existing），但偏偏 picker 的同帧 double-click 由 picker R1 的
+    // sync ref 拦掉了，所以这条 path 现在主要是公网 timeout 部分失败：选 5 个
+    // 移除、中间 1 个超时 → 前 K 个其实已经从群里 DELETE 成功、UI 却只显示
+    // "移除失败"红条 → 用户再选剩下重试，前 K 个 server 端返回 NOT_FOUND
+    // 又"移除失败"。Promise.allSettled 部分成功时给出"已移除 N 位；剩余 M 位
+    // 移除失败：reason"，全失败时仍 throw 触发 ErrorBlock。
     mutationFn: async (memberIds: string[]) => {
-      await Promise.all(
+      const results = await Promise.allSettled(
         memberIds.map((memberId) =>
           removeGroupMember(conversation.id, memberId, baseUrl),
         ),
       );
+      const succeededIds: string[] = [];
+      const failures: Array<{ memberId: string; error: unknown }> = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          succeededIds.push(memberIds[index]!);
+        } else {
+          failures.push({
+            memberId: memberIds[index]!,
+            error: result.reason,
+          });
+        }
+      });
+      if (succeededIds.length === 0 && failures.length > 0) {
+        throw failures[0]!.error;
+      }
+      return { succeededIds, failures };
     },
-    onSuccess: async (_, memberIds) => {
-      setNotice(
-        memberIds.length === 1
-          ? t(msg`已移除 1 位群成员。`)
-          : t(msg`已移除 ${memberIds.length} 位群成员。`),
-      );
+    onSuccess: async (result) => {
+      const { succeededIds, failures } = result;
+      if (failures.length === 0) {
+        setNotice(
+          succeededIds.length === 1
+            ? t(msg`已移除 1 位群成员。`)
+            : t(msg`已移除 ${succeededIds.length} 位群成员。`),
+        );
+      } else {
+        const firstError = failures[0]!.error;
+        const errorMessage =
+          firstError instanceof Error && firstError.message
+            ? firstError.message
+            : "";
+        setNotice(
+          errorMessage
+            ? t(
+                msg`已移除 ${succeededIds.length} 位；剩余 ${failures.length} 位移除失败：${errorMessage}`,
+              )
+            : t(
+                msg`已移除 ${succeededIds.length} 位；剩余 ${failures.length} 位移除失败，请稍后再试。`,
+              ),
+        );
+      }
       setMemberPickerOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({
