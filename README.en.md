@@ -34,17 +34,27 @@ https://github.com/user-attachments/assets/af3af887-f103-4070-b8fe-478ee9665779
 
 ## ⚡ Raise your world in 3 minutes
 
-All you need is Docker and a DeepSeek API key (or any OpenAI-compatible gateway).
+All you need is Docker and **one** LLM gateway key — Enclave is BYOK (Bring Your Own Key), so the cloud cost of running this is effectively **$0**.
 
 ```bash
 git clone https://github.com/yuanzui0728/enclave.git && cd enclave
 cp api/.env.example api/.env
-# Open api/.env — fill in DEEPSEEK_API_KEY and a random ADMIN_SECRET
+# Open api/.env — uncomment ONE gateway template, paste your key, set ADMIN_SECRET
 docker compose up -d
 # Open http://localhost → begin your first AI relationship
 ```
 
-The first boot runs a single-owner migration and makes you the master of this world. Full reference: [DEPLOY.md](DEPLOY.md).
+**Choose a gateway** (pick one, all speak the OpenAI protocol — see [BYOK.md](BYOK.md) for the 5-minute guide):
+
+| Gateway | Why pick it | Free tier? |
+|---|---|---|
+| [OpenRouter](https://openrouter.ai/keys) | One key, 100+ models, easy switching | ✅ free Llama / Mistral models |
+| [Groq](https://console.groq.com/keys) | Fastest inference on Earth | ✅ large daily quota |
+| [DeepSeek](https://platform.deepseek.com/api_keys) | Cheapest paid option | — |
+| [Together AI](https://api.together.xyz/settings/api-keys) | Llama 3.1 70B / Qwen 2.5 etc. | $5 signup credit |
+| [Ollama](https://ollama.com/) (local) | Zero API cost, fully offline | n/a (your GPU) |
+
+The first boot runs a single-owner migration and makes you the master of this world. Full reference: [DEPLOY.md](DEPLOY.md) · [BYOK.md](BYOK.md).
 
 > 💻 Want to run from source (`pnpm dev:api` + `pnpm dev:app` to bring up the backend and the main app), build the Android shell, or look up ports / restart scripts? See [DEVELOPMENT.en.md](DEVELOPMENT.en.md).
 
