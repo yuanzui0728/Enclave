@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AvatarChip } from "../../components/avatar-chip";
@@ -34,6 +34,33 @@ export function MobileMentionPickerSheet({
   onSelect,
 }: MobileMentionPickerSheetProps) {
   const headingId = useId();
+  // 走查 2026-05-18 移动端群聊 R1：和姊妹 sheet mobile-message-action-sheet R2
+  // (commit 30f58a286) / message-quote-selection-sheet R2 / mobile-details-action-
+  // sheet 新会话 R2 同款问题——onSelect 直接落到父组件的 applyMentionCandidate
+  // 走 onChange(...) 改 composer text + setPendingSelection，sheet 关闭靠父组件
+  // setMobileMentionDismissed(true) 走 React state 必须 commit 才让 sheet 卸载。
+  // 同帧 <16ms 第二次 tap：sheet 还在 DOM 里、ActionButton 仍可点 → applyMentionCandidate
+  // 跑 2 遍 → composer text 里同一个 `@xxx ` token 被插 2 次，用户看到
+  // "@小明 @小明 "；server 收到带双 @ 的消息会按 2 个 mention 加权同一角色，
+  // 群通话/通知里 hasMentionTarget 计数也偏。actionFiredRef 同步赋值，第一次
+  // tap 后所有后续 tap 直接 noop；open 切回 true 时复位。
+  const actionFiredRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      actionFiredRef.current = false;
+    }
+  }, [open]);
+  const guardSelect = useCallback(
+    (handler: () => void) => {
+      return () => {
+        if (actionFiredRef.current) return;
+        actionFiredRef.current = true;
+        handler();
+      };
+    },
+    [],
+  );
+
   // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
   // 把用户从群聊页带回 chat list。和 mobile-message-action-sheet.tsx 对齐。
   useEffect(() => {
@@ -114,7 +141,7 @@ export function MobileMentionPickerSheet({
             <button
               key={candidate.id}
               type="button"
-              onClick={() => onSelect(candidate)}
+              onClick={guardSelect(() => onSelect(candidate))}
               className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition active:bg-[color:var(--surface-card-hover)] ${
                 index > 0
                   ? "border-t border-[color:var(--border-subtle)]"
