@@ -684,6 +684,22 @@ export function DesktopChannelsWorkspace({
             <div className="pointer-events-auto">
               <InlineNotice
                 tone={successNoticeTone}
+                // 走查 2026-05-18 新会话（本会话）R8：跟 mobile channels-page L2594
+                // 的 R1 修复（commit 2d9cc82e6）同款 — InlineNotice 是裸 <div>，
+                // 没有 role / aria-live。视频号 desktop workspace 顶部 toast 在
+                // like / favorite / follow / 不感兴趣 / 转发 / 评论 / 评论赞 / 换
+                // 一批 mutation onSuccess/onError 后冒出，但 desktop 这条 InlineNotice
+                // 一直没挂 role，VoiceOver / TalkBack 完全收不到——同款 toast 在
+                // mobile 早就 R1 修过，desktop 漏掉了同套修复。
+                // tone===danger / warning（失败 / 阻塞约束）走 role="alert" →
+                // aria-live=assertive 立刻打断当前播报；info / success / muted 走
+                // role="status" → aria-live=polite 排队播报。
+                role={
+                  successNoticeTone === "danger" ||
+                  successNoticeTone === "warning"
+                    ? "alert"
+                    : "status"
+                }
                 className="border-[color:var(--border-faint)] bg-white"
               >
                 {successNotice}
@@ -692,7 +708,11 @@ export function DesktopChannelsWorkspace({
           ) : null}
           {errorMessage ? (
             <div className="pointer-events-auto">
-              <ErrorBlock message={errorMessage} />
+              {/* R8 续：errorMessage 是 home / decorations 读取失败这种"整页性"
+                  错误，desktop workspace 用 ErrorBlock 渲红色卡。同样裸 <div>，
+                  没 role —— SR 用户进 channels 命中读取失败时听不到错误反馈，
+                  视觉用户能看到红条但盲用用户摸不到。挂 role="alert" 立刻播报。 */}
+              <ErrorBlock message={errorMessage} role="alert" />
             </div>
           ) : null}
         </div>
