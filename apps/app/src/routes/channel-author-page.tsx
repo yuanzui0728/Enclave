@@ -175,13 +175,15 @@ export function ChannelAuthorPage() {
         mutationAuthorId,
       ]);
       if (previous) {
-        const wasFollowing = previous.isFollowing;
+        // 走查 2026-05-18 R1（新一轮）：optimistic flip 同样按 input.following
+        // 走（pre-optimistic 真值）—— 跟上面 mutationFn 一致，杜绝 cache 已
+        // 经被别处改成 optimistic 后再次 onMutate 时读到错误起点的可能。
         queryClient.setQueryData(
           ["app-channel-author", mutationBaseUrl, mutationAuthorId],
           {
             ...previous,
-            isFollowing: !wasFollowing,
-            followerCount: wasFollowing
+            isFollowing: !input.following,
+            followerCount: input.following
               ? Math.max(0, previous.followerCount - 1)
               : previous.followerCount + 1,
           },
