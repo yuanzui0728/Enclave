@@ -573,7 +573,15 @@ export function DesktopChatImageViewerPage() {
 
       {saveNotice ? (
         <div className="yj-desktop-image-print-hidden px-5 pt-3">
+          {/* 走查电脑端群聊 R87：和姊妹 desktop-chat-files-page actionNotice R86 /
+              workspace notice R36 / GroupChatDetailsPanel R40 同款修法——saveNotice
+              是 2200ms / 5000ms 自动消失的 transient toast（line 393-402），
+              反馈"已保存到 xxx" / "保存失败" / "已收藏" 等。群聊里点图片消息进
+              本图片查看器，盲人 SR 用户保存/收藏后听不到任何反馈。polite 不抢断
+              SR 当前朗读，几秒内消失也来得及读完一条 toast。 */}
           <InlineNotice
+            role="status"
+            aria-live="polite"
             className="flex items-center justify-between gap-3 text-xs"
             tone={saveNotice.tone}
           >
