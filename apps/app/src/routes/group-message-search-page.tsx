@@ -1,8 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { getGroup, getGroupMessages } from "@yinjie/contracts";
+import {
+  getFriends,
+  getGroup,
+  getGroupMembers,
+  getGroupMessages,
+} from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
 import {
@@ -69,6 +74,50 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
     queryFn: () => getGroupMessages(groupId, baseUrl),
     staleTime: 15_000,
   });
+  // 新一轮走查 R2：search panel 直接渲染 message.senderName，落库的 senderName
+  // 是 send-time character.name 快照——同一个 character 老消息落 "阿巡" 新消息
+  // 落 "走查词条_177886..." 时搜索结果里冒出两个名字，用户根本认不出搜到的
+  // 是同一个角色。和 [[group-chat-thread-panel]] 新一轮 R1 同思路：按
+  // memberName / friend.remarkName 用 group_members + friends 反查统一覆盖。
+  const membersQuery = useQuery({
+    queryKey: ["app-group-members", baseUrl, groupId],
+    queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
+  });
+  const friendsQuery = useQuery({
+    queryKey: ["app-friends", baseUrl],
+    queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
+  });
+  const senderNameByCharacterId = useMemo<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    const friendByCharacterId = new Map(
+      (friendsQuery.data ?? []).map(
+        (item) => [item.character.id, item] as const,
+      ),
+    );
+    for (const member of membersQuery.data ?? []) {
+      if (member.memberType !== "character") continue;
+      const friend = friendByCharacterId.get(member.memberId);
+      const remarkName = friend?.friendship.remarkName?.trim();
+      const memberName = member.memberName?.trim();
+      const characterName = friend?.character.name;
+      const resolved = remarkName || memberName || characterName;
+      if (resolved) map.set(member.memberId, resolved);
+    }
+    return map;
+  }, [friendsQuery.data, membersQuery.data]);
+  const messagesForSearch = useMemo(() => {
+    const list = messagesQuery.data;
+    if (!list || senderNameByCharacterId.size === 0) return list;
+    return list.map((message) => {
+      if (message.senderType !== "character") return message;
+      const resolved = senderNameByCharacterId.get(message.senderId);
+      return resolved && resolved !== message.senderName
+        ? { ...message, senderName: resolved }
+        : message;
+    });
+  }, [messagesQuery.data, senderNameByCharacterId]);
 
   useEffect(() => {
     if (
@@ -100,7 +149,7 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
   return (
     <ChatMessageSearchPanel
       subtitle={groupQuery.data?.name || t(msg`群聊`)}
-      messages={messagesQuery.data}
+      messages={messagesForSearch}
       enableSenderFilter
       isLoading={messagesQuery.isLoading}
       error={
