@@ -89,15 +89,23 @@ export function DesktopContactTextEditDialog({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || pending) {
+      if (event.key !== "Escape") {
         return;
       }
 
-      // 弹窗是 modal 层；只 preventDefault 不 stopPropagation 的话，Esc
-      // 会继续冒泡到 desktop-chat-workspace 的 dismissSidePanel window
-      // keydown，一下 Esc 把背后的「聊天信息」侧栏也一起关掉。
+      // 走查电脑端单聊 R4：和姊妹 desktop-chat-text-edit-dialog / confirm-dialog
+      // 电脑端群聊 R5/R6 同款修过的——原版 pending 时直接 `event.key !== "Escape"
+      // || pending` 早 return 让 Esc 透传，workspace queueMicrotask 兜底
+      // (line 979-984) 看到 defaultPrevented=false 仍跑 dismissSidePanel 把
+      //「聊天信息」侧栏偷关掉，本 dialog 因为 pending 不会真关，用户看到的是
+      //「按 Esc 没关 dialog 倒把侧栏弄没了」。pending 期间仍 preventDefault +
+      // stopPropagation 把 Esc 消费掉，让 workspace 不去 dismiss；mutation
+      // 落地后用户可以再按 Esc 真关。
       event.preventDefault();
       event.stopPropagation();
+      if (pending) {
+        return;
+      }
       onClose();
     };
 
