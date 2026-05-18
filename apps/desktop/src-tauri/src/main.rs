@@ -209,10 +209,7 @@ fn resolve_desktop_locale(app: &tauri::AppHandle) -> ResolvedDesktopLocale {
         };
     }
 
-    if let Some(locale) = system_locale
-        .as_deref()
-        .and_then(resolve_supported_locale)
-    {
+    if let Some(locale) = system_locale.as_deref().and_then(resolve_supported_locale) {
         return ResolvedDesktopLocale {
             locale,
             system_locale,
@@ -620,10 +617,7 @@ fn main() {
         .expect("error while running yinjie desktop");
 }
 
-fn setup_app_menu(
-    app: &mut tauri::App,
-    locale: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_app_menu(app: &mut tauri::App, locale: &str) -> Result<(), Box<dyn std::error::Error>> {
     use tauri::menu::AboutMetadata;
 
     let app_title = desktop_text(locale, DesktopTextKey::AppTitle);
@@ -672,10 +666,7 @@ fn setup_app_menu(
     Ok(())
 }
 
-fn setup_system_tray(
-    app: &mut tauri::App,
-    locale: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_system_tray(app: &mut tauri::App, locale: &str) -> Result<(), Box<dyn std::error::Error>> {
     let tray_menu = MenuBuilder::new(app)
         .text(
             TRAY_MENU_SHOW_ID,
@@ -852,9 +843,17 @@ fn desktop_core_api_status(app: tauri::AppHandle) -> Result<DesktopCoreApiStatus
         message: if configured_base_url.is_empty() {
             desktop_text(locale, DesktopTextKey::RemoteUnconfigured).to_string()
         } else if reachable {
-            desktop_format_url(locale, DesktopTextKey::RemoteResponded, &configured_base_url)
+            desktop_format_url(
+                locale,
+                DesktopTextKey::RemoteResponded,
+                &configured_base_url,
+            )
         } else {
-            desktop_format_url(locale, DesktopTextKey::RemoteUnreachable, &configured_base_url)
+            desktop_format_url(
+                locale,
+                DesktopTextKey::RemoteUnreachable,
+                &configured_base_url,
+            )
         },
         command: String::new(),
         command_source: "remote".to_string(),
@@ -896,7 +895,11 @@ fn desktop_runtime_diagnostics(app: tauri::AppHandle) -> Result<DesktopRuntimeDi
         } else if reachable {
             desktop_format_url(locale, DesktopTextKey::RemoteCanReach, &configured_base_url)
         } else {
-            desktop_format_url(locale, DesktopTextKey::RemoteCannotReach, &configured_base_url)
+            desktop_format_url(
+                locale,
+                DesktopTextKey::RemoteCannotReach,
+                &configured_base_url,
+            )
         },
     })
 }
@@ -912,9 +915,17 @@ fn probe_core_api_health(app: tauri::AppHandle) -> DesktopOperationResult {
         message: if configured_base_url.is_empty() {
             desktop_text(locale, DesktopTextKey::RemoteUnconfigured).to_string()
         } else if reachable {
-            desktop_format_url(locale, DesktopTextKey::RemoteResponded, &configured_base_url)
+            desktop_format_url(
+                locale,
+                DesktopTextKey::RemoteResponded,
+                &configured_base_url,
+            )
         } else {
-            desktop_format_url(locale, DesktopTextKey::RemoteDidNotRespond, &configured_base_url)
+            desktop_format_url(
+                locale,
+                DesktopTextKey::RemoteDidNotRespond,
+                &configured_base_url,
+            )
         },
     }
 }
@@ -1156,9 +1167,8 @@ async fn desktop_read_chat_image_viewer_sessions_store(
                 Ok(DesktopTextStoreReadResult {
                     exists: false,
                     contents: None,
-                    message:
-                        "Desktop chat image viewer sessions store has not been created yet."
-                            .to_string(),
+                    message: "Desktop chat image viewer sessions store has not been created yet."
+                        .to_string(),
                 })
             }
             Err(error) => Err(error.to_string()),
@@ -1576,10 +1586,7 @@ async fn desktop_write_lock_store(
 
         Ok(DesktopOperationResult {
             success: true,
-            message: format!(
-                "Saved desktop lock store to {}",
-                target_file_path.display()
-            ),
+            message: format!("Saved desktop lock store to {}", target_file_path.display()),
         })
     })
     .await
@@ -1776,8 +1783,7 @@ async fn desktop_read_recent_stickers_store(
                 Ok(DesktopTextStoreReadResult {
                     exists: false,
                     contents: None,
-                    message: "Desktop recent stickers store has not been created yet."
-                        .to_string(),
+                    message: "Desktop recent stickers store has not been created yet.".to_string(),
                 })
             }
             Err(error) => Err(error.to_string()),
@@ -1833,8 +1839,7 @@ async fn desktop_read_runtime_config_store(
                 Ok(DesktopTextStoreReadResult {
                     exists: false,
                     contents: None,
-                    message: "Desktop runtime config store has not been created yet."
-                        .to_string(),
+                    message: "Desktop runtime config store has not been created yet.".to_string(),
                 })
             }
             Err(error) => Err(error.to_string()),
@@ -1890,8 +1895,7 @@ async fn desktop_read_search_history_store(
                 Ok(DesktopTextStoreReadResult {
                     exists: false,
                     contents: None,
-                    message: "Desktop search history store has not been created yet."
-                        .to_string(),
+                    message: "Desktop search history store has not been created yet.".to_string(),
                 })
             }
             Err(error) => Err(error.to_string()),
