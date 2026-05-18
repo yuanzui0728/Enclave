@@ -3284,6 +3284,19 @@ function StickerButton({
               : "h-16 w-16 rounded-[16px] object-contain"
           }
           loading="lazy"
+          // 走查电脑端单聊 R105：和姊妹 R94 ImageMessage / R97 chat-files / R98
+          // NoteCardMessage / R99 FeedPostCardMessage / R104 attachment draft
+          // 同款 — sticker 单元格整张是 <button type="button" onClick={onSelect}>
+          // (line 3265-3299)，里面这张 64×64（或 compact 48×48）<img> 默认
+          // draggable=true。yuanzui 在电脑端单聊"开 sticker panel → 浏览 panel
+          // 网格 → 点一张表情发出去"是高频操作：mousedown 落在 <img> 上 → 拖
+          // 出阈值距离 → 浏览器启动 HTML5 native drag (sticker URL) → drag
+          // start 后 mouseup 不触发 click → "点表情没发出去"用户得再点一次。
+          // 同时拖出的表情 URL 会被释放到桌面 / 隔壁 textarea：drop 在 textarea
+          // 时浏览器把 sticker URL 当 text 插入草稿，发出去对方收到一段图片链接
+          // 当文字；drop 到桌面则触发"下载这张表情到桌面"。和兄弟 sticker
+          // 同款 draggable={false} 防御。
+          draggable={false}
         />
         {!compact ? (
           <span
