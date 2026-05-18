@@ -1,4 +1,11 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -95,6 +102,32 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   // background query 取 effectiveBackground，否则覆盖后这里还是显示全局默认，
   // 和点进去能看到的实际不符。
   const backgroundQuery = useGroupBackground(groupId);
+  // 走查移动端群聊 R2：和姊妹 chat-details-page R3（commit cdc13e28a）同款问
+  // 题——本页 9 处「点行进二级页」按钮（成员九宫格 character 头像 / 添加 /
+  // 移除 / 全部群成员 / 群聊名称 / 群公告 / 群二维码 / 查找聊天记录 / 聊天
+  // 背景 / 我在本群的昵称 / 群语音 / 群视频）全部走 `onClick={() => { void
+  // navigate({ to: ... }) }}` 形态、没挂 disabled / 没同步 ref 守。同帧 <16ms
+  // 双击任一行都让 tanstack-router push 2 条相同 history 项 → 用户从二级页
+  // 返回还要按 2 次返回才能回到 details；ChatSettingRow / ChatMemberGrid
+  // tile 内 onClick 没有任何 throttle，每个 tap 都直冲 navigate。
+  // 用一个共享 ref 守住所有前进按钮：第一次成功后 page unmount，第二次根本
+  // 不该再飞；raf 复位兜底 navigate 没真正切走的边界（比如成员页 fallback）。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const groupRouteHash = useMemo(
     () =>
       buildMobileGroupRouteHash({
@@ -552,7 +585,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         // 移动端原本完全没挂 onClick 整个 grid 哑掉。
         onClick:
           member.memberType === "character"
-            ? () => {
+            ? guardRowNavigation(() => {
                 void navigate({
                   to: "/character/$characterId",
                   params: { characterId: member.memberId },
@@ -561,38 +594,39 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     returnHash: groupRouteHash,
                   }),
                 });
-              }
+              })
             : undefined,
       })),
       {
         key: "add",
         label: addMemberLabel,
         kind: "add" as const,
-        onClick: () => {
+        onClick: guardRowNavigation(() => {
           void navigate({
             to: "/group/$groupId/members/add",
             params: { groupId },
             ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
-        },
+        }),
       },
       {
         key: "remove",
         label: removeMemberLabel,
         kind: "remove" as const,
-        onClick: () => {
+        onClick: guardRowNavigation(() => {
           void navigate({
             to: "/group/$groupId/members/remove",
             params: { groupId },
             ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
-        },
+        }),
       },
     ];
   }, [
     addMemberLabel,
     groupId,
     groupRouteHash,
+    guardRowNavigation,
     membersQuery.data,
     navigate,
     removeMemberLabel,
@@ -892,31 +926,31 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`群聊名称`)}
                 value={groupQuery.data.name}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/edit/name",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`群公告`)}
                 value={groupQuery.data.announcement?.trim() || t(msg`暂无`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`群二维码`)}
                 value={t(msg`查看邀请卡`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/qr",
                     params: { groupId },
@@ -926,18 +960,18 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`查找聊天记录`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/search",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`聊天背景`)}
@@ -945,13 +979,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   backgroundQuery.data?.effectiveBackground,
                 )}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/background",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
             </div>
           </ChatDetailsSection>
@@ -1008,13 +1042,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`我在本群的昵称`)}
                 value={ownerMember?.memberName ?? t(msg`未设置`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/group/$groupId/edit/nickname",
                     params: { groupId },
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
-                }}
+                })}
               />
               <ChatSettingRow
                 label={t(msg`显示群成员昵称`)}
@@ -1030,7 +1064,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             variant="wechat"
             voiceValue={t(msg`群语音`)}
             videoValue={t(msg`群视频`)}
-            onSelectKind={(kind) => {
+            onSelectKind={guardRowNavigation((kind: "voice" | "video") => {
               void navigate({
                 to:
                   kind === "voice"
@@ -1039,7 +1073,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 params: { groupId },
                 ...(groupRouteHash ? { hash: groupRouteHash } : {}),
               });
-            }}
+            })}
           />
 
           <ChatDetailsSection title={t(msg`危险操作`)} variant="wechat">
