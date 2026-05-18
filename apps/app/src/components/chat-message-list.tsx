@@ -6274,6 +6274,15 @@ function NoteCardMessage({
             alt={title}
             loading="lazy"
             decoding="async"
+            // 走查电脑端单聊 R98：和姊妹 R94 ImageMessage / R97 chat-files 缩略
+            // 同款 — NoteCardMessage 整张卡片包在 <button onClick={handleOpen}>
+            // (line 6340-6347) 当作"点击打开笔记"入口，但里面这张 cover <img>
+            // 默认 draggable=true。用户在单聊列表里按住笔记卡封面想点击查看：
+            // mousedown→拖出阈值距离触发 HTML5 native drag (图片 URL) → drag
+            // start 后 mouseup 不再 fire click，"打开笔记"被 silently 丢；同
+            // 时拖出的封面被释放到桌面/其它窗口的可放下区域，意外触发"下载这
+            // 张封面图到桌面"——用户体感"点笔记没反应、桌面莫名多张图"。
+            draggable={false}
             className="h-full w-full object-cover"
           />
         </div>
