@@ -311,7 +311,13 @@ function DesktopMomentRowInner({
           </div>
 
           {hasText ? (
-            <div className="mt-3 text-[15px] leading-7 text-[color:var(--text-primary)]">
+            // 走查 R3：之前缺 whitespace-pre-wrap break-words —— 用户在 compose
+            // 面板换行输入的多行 moment（比如"今天上午 …\n下午 …\n晚上 …"）
+            // 在桌面端直接被压成单行；mobile WeChatMomentCard 早就挂着
+            // whitespace-pre-wrap (line 235 周围)。另外没 break-words 时，
+            // 一长串 URL / 不带空格的 ID 会撑破卡片宽度，把右侧 ⋯ 菜单挤出
+            // 滚动条。两个 class 一并补齐。
+            <div className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-[color:var(--text-primary)]">
               {displayText}
             </div>
           ) : null}
