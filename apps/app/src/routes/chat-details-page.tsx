@@ -414,7 +414,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     displayedConversationTitle ||
     t(msg`对方`);
   const contactProfileSubtitle = friendship?.remarkName?.trim()
-    ? t(msg`昵称：${targetCharacter?.name ?? t(msg`未设置`)}`)
+    ? t(msg`昵称：${targetCharacter?.name || t(msg`未设置`)}`)
     : targetCharacter?.relationship?.trim() ||
       (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
   const contactIdentifier = targetCharacterId
