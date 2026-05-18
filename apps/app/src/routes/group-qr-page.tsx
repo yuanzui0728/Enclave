@@ -252,6 +252,19 @@ export function GroupQrPage() {
   // 代替 `membersQuery.data?.length` (number)，避免 undefined 落进 ??0 的
   // 那条路径漏判断。
   const memberCount = membersQuery.data?.length;
+  // 走查移动端群聊 R1：和姊妹路径 mobile-group-call-screen.tsx「新 R1」(line 239-242)
+  // 同款修法——下方 JSX 里 `members={membersQuery.data?.map(item=>item.memberId) ?? []}`
+  // 每次 render 都 new 一个 array → GroupAvatarChip 拿到新 prop 引用、重新算
+  // hashSeed × 4 + 重新挂 4 个 <img>。本页 notice / deliveredConversation /
+  // deliveryTargets / reopenRecords / groupInviteStoreReady 五条 state 任意改变
+  // 都触发整页 re-render，公网隧道 RTT 下 sendToConversation / scheduleConversationsInvalidate
+  // 等动作连点几次能轻松跑出 10+ 次重渲染——每次都把 4 张邀请卡 thumbnail 丢
+  // 弃重挂。memberIds 锁住引用，群成员列表稳定时 GroupAvatarChip 完全跳过重
+  // 渲染。
+  const memberIdsForAvatar = useMemo(
+    () => membersQuery.data?.map((item) => item.memberId) ?? [],
+    [membersQuery.data],
+  );
   const qrSvgMarkup = useMemo(
     () =>
       buildInviteMatrixSvg({
@@ -1291,7 +1304,7 @@ export function GroupQrPage() {
           >
             <GroupAvatarChip
               name={groupQuery.data.name}
-              members={membersQuery.data?.map((item) => item.memberId) ?? []}
+              members={memberIdsForAvatar}
               size="wechat"
             />
             <div className="min-w-0 flex-1">
