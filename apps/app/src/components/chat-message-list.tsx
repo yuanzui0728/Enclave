@@ -489,6 +489,19 @@ export function ChatMessageList({
   // submittingRef) 一样补一把同步 ref 锁，retry-path 的 `void handleSelectReminder
   // (option)` 也走同一把锁。
   const selectingReminderRef = useRef(false);
+  // 走查本会话 R1：share{Location,Contact,Note}Summary 全部无双击锁。最危险的入口
+  // 是 LocationViewerOverlay / NoteViewerOverlay 上的「系统分享 / 复制位置(笔记)」
+  // ViewerActionButton：onClick 直接调 shareXxxSummary，没有任何 disabled / sync ref。
+  // 同帧 <16ms double-tap：iOS 原生壳上 shareWithNativeShell 触发 UIActivityController
+  // 两次——第二次在第一个 modal 还在堆栈上时会被系统竞争拒掉或落到 sad path，
+  // 让"系统分享暂时不可用"覆盖掉刚刚正常打开的分享。web mobile 落 clipboard
+  // 分支时 navigator.clipboard.writeText 跑两遍 + setActionNotice 闪 2 次同文案。
+  // shareLocationSummary / shareNoteSummary 的真实曝光面在两个 ViewerOverlay 的
+  // share 按钮上；shareContactSummary 走 saveAttachment 入口（mobile-message-action-
+  // sheet 自带 actionFiredRef），但 retry 通知 onAction 双击同样飞 2 次。
+  // 三个函数共用一把 ref：UI 一次只能开一个 viewer overlay，互斥安全，retry 同
+  // 一把锁顺带覆盖。和 chat-details-page shareContactSubmittingRef 同款修法。
+  const sharingAttachmentSummaryRef = useRef(false);
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
   // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
   // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
@@ -1423,185 +1436,209 @@ export function ChatMessageList({
   const shareLocationSummary = async (
     attachment: Extract<MessageAttachment, { kind: "location_card" }>,
   ) => {
-    const summary = buildLocationAttachmentSummary(attachment);
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`位置内容已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: attachment.title,
-      text: summary,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareLocationSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制位置内容。`),
-        tone: "success",
+      const summary = buildLocationAttachmentSummary(attachment);
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`位置内容已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: attachment.title,
+        text: summary,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareLocationSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareLocationSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制位置内容。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareLocationSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
   const shareContactSummary = async (
     attachment: Extract<MessageAttachment, { kind: "contact_card" }>,
   ) => {
-    const profilePath = `/character/${attachment.characterId}`;
-    const profileUrl = buildPublicShareUrl(profilePath);
-    const summary = buildContactAttachmentSummary(attachment, profileUrl);
-
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`名片摘要已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: t(msg`${attachment.name} 的隐界名片`),
-      text: summary,
-      url: profileUrl,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareContactSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制名片摘要。`),
-        tone: "success",
+      const profilePath = `/character/${attachment.characterId}`;
+      const profileUrl = buildPublicShareUrl(profilePath);
+      const summary = buildContactAttachmentSummary(attachment, profileUrl);
+
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`名片摘要已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: t(msg`${attachment.name} 的隐界名片`),
+        text: summary,
+        url: profileUrl,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareContactSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareContactSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制名片摘要。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareContactSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
   const shareNoteSummary = async (
     attachment: Extract<MessageAttachment, { kind: "note_card" }>,
   ) => {
-    const summary = buildNoteAttachmentSummary(attachment);
-
-    if (!isNativeMobileShareSurface()) {
-      await copyToClipboard(summary, t(msg`笔记摘要已复制。`));
+    if (sharingAttachmentSummaryRef.current) {
       return;
     }
-
-    const shared = await shareWithNativeShell({
-      title: attachment.title,
-      text: summary,
-    });
-
-    if (shared) {
-      setActionNotice({
-        message: t(msg`已打开系统分享面板。`),
-        tone: "success",
-      });
-      return;
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setActionNotice({
-        message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareNoteSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
-      return;
-    }
-
+    sharingAttachmentSummaryRef.current = true;
     try {
-      await navigator.clipboard.writeText(summary);
-      setActionNotice({
-        message: t(msg`系统分享暂时不可用，已复制笔记摘要。`),
-        tone: "success",
+      const summary = buildNoteAttachmentSummary(attachment);
+
+      if (!isNativeMobileShareSurface()) {
+        await copyToClipboard(summary, t(msg`笔记摘要已复制。`));
+        return;
+      }
+
+      const shared = await shareWithNativeShell({
+        title: attachment.title,
+        text: summary,
       });
-    } catch {
-      setActionNotice({
-        message: t(msg`系统分享失败，请稍后重试。`),
-        tone: "danger",
-        actionLabel: t(msg`重试分享`),
-        onAction: () => {
-          void shareNoteSummary(attachment);
-        },
-        secondaryActionLabel: errorActionLabel ?? undefined,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+
+      if (shared) {
+        setActionNotice({
+          message: t(msg`已打开系统分享面板。`),
+          tone: "success",
+        });
+        return;
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setActionNotice({
+          message: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareNoteSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setActionNotice({
+          message: t(msg`系统分享暂时不可用，已复制笔记摘要。`),
+          tone: "success",
+        });
+      } catch {
+        setActionNotice({
+          message: t(msg`系统分享失败，请稍后重试。`),
+          tone: "danger",
+          actionLabel: t(msg`重试分享`),
+          onAction: () => {
+            void shareNoteSummary(attachment);
+          },
+          secondaryActionLabel: errorActionLabel ?? undefined,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
+    } finally {
+      sharingAttachmentSummaryRef.current = false;
     }
   };
 
