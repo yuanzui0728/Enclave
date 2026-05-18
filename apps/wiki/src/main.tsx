@@ -2,7 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { init as initAnalytics, track } from "@yinjie/analytics";
+import {
+  init as initAnalytics,
+  isCurrentOriginLocalLike,
+  track,
+} from "@yinjie/analytics";
 import { AppLocaleProvider } from "@yinjie/i18n";
 import { LoadingBlock, TelemetryErrorBoundary } from "@yinjie/ui";
 import "@yinjie/ui/tokens.css";
@@ -21,6 +25,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <TelemetryErrorBoundary
       onError={(error, info) => {
+        // dev origin（vite 5184）下 HMR 重挂会触发与 app 端相同的 useAppLocale
+        // throw 等抖动；只让生产 origin 上的渲染错误进入 telemetry。
+        if (isCurrentOriginLocalLike()) return;
         const err = error instanceof Error ? error : null;
         track("react_render_error", {
           message: err?.message ?? String(error).slice(0, 1000),

@@ -1,6 +1,6 @@
 "use client";
 
-import { track } from "@yinjie/analytics";
+import { isCurrentOriginLocalLike, track } from "@yinjie/analytics";
 import { useEffect } from "react";
 
 // Next.js 把 root layout 的渲染错误转交给这个组件（取代整棵 html）。
@@ -13,6 +13,9 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    // dev origin（next dev / localhost）下 HMR 抖动出的渲染错误不入 telemetry，
+    // 与 app/wiki 的 ErrorBoundary 同策略。
+    if (isCurrentOriginLocalLike()) return;
     track("react_render_error", {
       message: error.message ?? null,
       name: error.name ?? null,

@@ -1,4 +1,9 @@
 import { _emitTyped, isInitialized } from "./index";
+import {
+  extractFirstUrlFromStack,
+  isCurrentOriginLocalLike,
+  isLocalLikeUrl,
+} from "./runtime-environment";
 
 let attached = false;
 
@@ -67,6 +72,12 @@ function shouldDropUnhandled(
 ): boolean {
   if (isAbortLikeError(reason, message)) return true;
   if (stack && EXTENSION_STACK_PATTERN.test(stack)) return true;
+  // dev / 内网 origin 上的报错：开发者本机 vite HMR、LAN 测试机、Tauri/Capacitor
+  // shell 的 localhost origin 等。这些都不是生产用户能复现的真实事件，混进来
+  // 只会把真错误淹没。stack 的第一行 URL 用来 attribute（topmost frame 才能
+  // 代表"代码来自哪里"，而不是 location.hostname —— 公网 origin 加载了内网
+  // 资源跑出来的错应该当生产看待）。
+  if (isLocalLikeUrl(extractFirstUrlFromStack(stack))) return true;
 
   // ApiRequestError：服务端响应 4xx/5xx 已经被 apiCallObserver 记成 api_call，
   // 业务侧也有 apiRequestErrorHandler 全局通道；落到 unhandled_rejection 是双重上报。
@@ -94,6 +105,13 @@ function shouldDropFrontendError(event: ErrorEvent): boolean {
   const stack = (event.error as Error | undefined)?.stack;
   if (stack && EXTENSION_STACK_PATTERN.test(stack)) return true;
   if (event.filename && EXTENSION_STACK_PATTERN.test(event.filename)) return true;
+  // dev / 内网 origin（HMR `?t=...` 频繁出 useAppLocale/closest 之类的临时
+  // 错，全是开发者本机的）：filename 是 dev origin 就 drop；filename 为空时
+  // 退化到 stack 顶帧。
+  if (event.filename && isLocalLikeUrl(event.filename)) return true;
+  if (!event.filename && isLocalLikeUrl(extractFirstUrlFromStack(stack ?? null))) {
+    return true;
+  }
   return false;
 }
 
@@ -132,6 +150,11 @@ function buildResourceErrorProps(
   if (EXTENSION_STACK_PATTERN.test(url)) return null;
   // data: / blob: 失败信息不全且大多是预期失败，忽略
   if (url.startsWith("data:") || url.startsWith("blob:")) return null;
+  // 内网 / 本机资源 URL（如 http://192.168.x.x:3000/... 是开发者把 dev API
+  // 序列化进了 store；切到公网后必然 404）。这些都是开发态噪声，不是
+  // 生产事件，drop 掉避免淹没真信号——历史上 24h 累计 3650 条 LAN-IP
+  // resource_error 把 wiki avatar 404 这种生产 bug 淹得几乎看不见。
+  if (isLocalLikeUrl(url)) return null;
   return {
     tag,
     url: url.slice(0, 1000),

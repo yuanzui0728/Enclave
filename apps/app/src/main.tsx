@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { track } from "@yinjie/analytics";
+import { isCurrentOriginLocalLike, track } from "@yinjie/analytics";
 import {
   AppLocaleProvider,
   readPersistedLocale,
@@ -180,6 +180,12 @@ async function bootstrap() {
     <React.StrictMode>
       <TelemetryErrorBoundary
         onError={(error, info) => {
+          // 开发态过滤：dev 端口（5183/5186）下 HMR 重挂 AppLocaleProvider 时
+          // children 短暂拿到 null context 会触发 useAppLocale throw；过去 3 天
+          // 这一通道贡献了 95 条 react_render_error，全部来自 127.0.0.1 origin。
+          // SDK 的 auto-capture 走 window error/rejection 通道有 origin 过滤，
+          // ErrorBoundary 是独立通道必须自己挡一下。
+          if (isCurrentOriginLocalLike()) return;
           const err = error instanceof Error ? error : null;
           track("react_render_error", {
             message: err?.message ?? String(error).slice(0, 1000),

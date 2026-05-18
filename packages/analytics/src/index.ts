@@ -440,3 +440,9 @@ function installLifecycleHandlers(): void {
 }
 
 export type { InitOptions } from "./types";
+export {
+  extractFirstUrlFromStack,
+  isCurrentOriginLocalLike,
+  isLocalLikeHostname,
+  isLocalLikeUrl,
+} from "./runtime-environment";

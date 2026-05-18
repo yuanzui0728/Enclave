@@ -1,3 +1,4 @@
+import { isLocalLikeHostname } from "@yinjie/analytics";
 import {
   DEFAULT_CLOUD_API_BASE_URL,
   resolveCloudApiBaseUrl,
@@ -45,21 +46,8 @@ function isInsideCapacitorShell() {
 // - 远程公网域名（vicp.fun / 公网 IP / 隧道）：必须走 cloud-api 的多租户反代入口
 //   ${origin}/cloud/world-api，由 cloud-api 凭 cloud access token 路由到对应账号 child；
 //   否则匿名访问会直通本机的共享 owner db，等同于把本地数据公开。
-function isLocalLikeHostname(hostname: string) {
-  if (!hostname) return true;
-  if (hostname === "localhost" || hostname === "::1") return true;
-  if (hostname.startsWith("127.")) return true;
-  if (hostname.startsWith("10.") || hostname.startsWith("192.168.")) return true;
-  // RFC1918 172.16.0.0/12
-  const m172 = /^172\.(\d+)\./.exec(hostname);
-  if (m172) {
-    const second = Number(m172[1]);
-    if (second >= 16 && second <= 31) return true;
-  }
-  // *.local / *.lan / *.internal 视作内网
-  if (/\.(local|lan|internal)$/i.test(hostname)) return true;
-  return false;
-}
+// 判断逻辑共享自 @yinjie/analytics/runtime-environment，telemetry SDK 也用它
+// 把 dev/LAN 噪声从生产事件里剥掉，单源避免漂移。
 
 function isRemoteWebOrigin() {
   if (typeof window === "undefined") return false;
