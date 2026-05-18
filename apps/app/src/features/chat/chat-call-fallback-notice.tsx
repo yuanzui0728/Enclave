@@ -92,6 +92,12 @@ export function ChatCallFallbackNotice({
 
   return (
     <InlineNotice
+      // R58：ChatCallFallbackNotice 在用户点 voice/video 通话按钮后才挂出
+      // （chat-call-fallback-section 里 activeKind && onPrimaryAction 条件
+      // 渲染），告诉用户"通话暂未开放，先用语音消息替代"。盲人 SR 必须
+      // 听到这条文案才理解为什么按钮按了没拨号。polite 不抢断 SR。
+      role="status"
+      aria-live="polite"
       tone="info"
       className={cn(
         "rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
