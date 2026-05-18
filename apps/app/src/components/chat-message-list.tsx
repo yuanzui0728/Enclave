@@ -4052,14 +4052,14 @@ export function ChatMessageList({
                       aria-label={t(msg`查看${ownerName?.trim() || t(msg`我的`)}资料`)}
                     >
                       <AvatarChip
-                        name={ownerName ?? t(msg`我`)}
+                        name={ownerName || t(msg`我`)}
                         src={ownerAvatar}
                         size={isDesktop ? "wechat" : "sm"}
                       />
                     </button>
                   ) : (
                     <AvatarChip
-                      name={ownerName ?? t(msg`我`)}
+                      name={ownerName || t(msg`我`)}
                       src={ownerAvatar}
                       size={isDesktop ? "wechat" : "sm"}
                     />
