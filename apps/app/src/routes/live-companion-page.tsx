@@ -1064,7 +1064,17 @@ function PostReferenceCard({
   //      "X·音乐" 时只显示 title，避免重复行）；
   //   3) title 和 cleanText 都空时显示「（无标题/无正文）」灰字占位，让用户
   //      仍能识别这是一条 post 而不是 "卡渲染坏了"。
-  const cleanText = stripToolCallSyntax(post.text ?? "");
+  // 走查 2026-05-18 第二轮 R11：原裸调 stripToolCallSyntax(post.text ?? "")，
+  // 每次 PostReferenceCard render 都跑 4 个 regex replace + 1 个 CoT-detection
+  // long regex。LiveCompanionPage 顶部 8 张 PostReferenceCard 共 8 次/帧；
+  // 每次 setDraft (title/topic/coverHook TextField 键入) 触发 LiveCompanionPage
+  // re-render（R6 防抖落盘但 state 即刻翻），8 字/秒 → 64 regex/秒纯浪费 typing
+  // latency。useMemo([post.text]) 锁住，只在 post.text 真换（feed refetch 拉回
+  // 新 post）时重算。同 desktop workspace R9/R10 套路。
+  const cleanText = useMemo(
+    () => stripToolCallSyntax(post.text ?? ""),
+    [post.text],
+  );
   const hasTitle = Boolean(post.title?.trim());
   const showBody = Boolean(cleanText && cleanText !== post.title);
   return (
