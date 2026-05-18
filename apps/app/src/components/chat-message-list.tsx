@@ -5978,7 +5978,21 @@ function NoteCardMessage({
   const excerpt = noteDocument?.excerpt?.trim() || attachment.excerpt || "";
   const tags = noteDocument?.tags?.length ? noteDocument.tags : attachment.tags;
   const assets = noteDocument?.assets ?? attachment.assets;
-  const previewImage = assets.find((asset) => asset.kind === "image");
+  // 走查新一轮 R1：本卡缩略 <img> 之前直接拿 previewImage.url 塞 <img src=...>。
+  // 后端 normalizeFavoriteNoteAssets / R1/R3 已经在写入侧拦 javascript: 等危险
+  // 协议，但 (1) cloud 多租户 / 公网隧道场景下 URL 形如 "/api/..." 相对路径，
+  // 浏览器按 document.origin 解析会拼到 app origin 而不是 world-api 那条 URL，
+  // 缩略图 404；NoteViewerOverlay 已经在 resolveNotePreviewImageUrl 里走
+  // isSafeFavoriteAssetUrl + resolveAttachmentUrl 双关，气泡缩略卡漏到一致性
+  // 之外。(2) /api/... 在 cloud world-api 反代下还需要追加 token，复用同 helper。
+  // 用 resolveAppMediaUrl 兜底（同 FeedPostCardMessage cover R5 同款），保证
+  // 不再裸用相对 URL。
+  const previewImage = assets.find(
+    (asset) => asset.kind === "image" && isSafeFavoriteAssetUrl(asset.url),
+  );
+  const previewImageSrc = previewImage?.url
+    ? resolveAppMediaUrl(previewImage.url)
+    : null;
   const fileCount = assets.filter((asset) => asset.kind === "file").length;
   const card = (
     <div
@@ -5988,10 +6002,10 @@ function NoteCardMessage({
           : "w-[220px] rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
     >
-      {previewImage?.url ? (
+      {previewImageSrc ? (
         <div className={isDesktop ? "h-[104px]" : "h-[92px]"}>
           <img
-            src={previewImage.url}
+            src={previewImageSrc}
             alt={title}
             loading="lazy"
             decoding="async"
