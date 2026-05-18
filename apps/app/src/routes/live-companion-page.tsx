@@ -916,6 +916,23 @@ function PostReferenceCard({
   post: FeedPostListItem;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-18 新会话（本会话）R4：PostReferenceCard 历来只渲染 post.text
+  // 不渲染 post.title — 用户在「最近视频号内容」里挑直播参考时，第一眼看到的
+  // 是作者 + 时间戳 + 内容卡片标签 + 一段截到 line-clamp-3 的正文，但视频号
+  // home 真正用来区分帖子的是 title（slide overlay L1517 / channels card /
+  // 作者最近内容列表都把 title 放在第一行加粗，正文是 secondary）。这里反过
+  // 来，title 完全不可见，三条音乐贴的 text 全是「X·音乐」用户根本分不出谁
+  // 是谁。
+  // 三点修复（跟 desktop slide overlay / mobile channels card / author recent
+  // posts L1517-1534 已经成熟的 dedupe 模板对齐）：
+  //   1) title 优先渲在卡顶（font-semibold，作为主要识别字段）；
+  //   2) cleanText 仅在「非空 且 不等于 title」时才渲（音乐贴 title==text==
+  //      "X·音乐" 时只显示 title，避免重复行）；
+  //   3) title 和 cleanText 都空时显示「（无标题/无正文）」灰字占位，让用户
+  //      仍能识别这是一条 post 而不是 "卡渲染坏了"。
+  const cleanText = stripToolCallSyntax(post.text ?? "");
+  const hasTitle = Boolean(post.title?.trim());
+  const showBody = Boolean(cleanText && cleanText !== post.title);
   return (
     <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
@@ -932,16 +949,25 @@ function PostReferenceCard({
             {formatTimestamp(post.createdAt)} ·{" "}
             {post.mediaType === "video" ? t(msg`短片`) : t(msg`内容卡片`)}
           </div>
-          <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {/*
-              走查 2026-05-18 R2：原直接渲染 post.text —— AI 生成贴里夹的
-              <tool_call>...</tool_call> / [TOOL_CALL]/[/TOOL_CALL] 工具调用残留
-              会原样泄到「最近视频号内容」卡里看着像一坨 XML/JSON。视频号 home
-              卡 / 收藏列表 / desktop slide 都早就走 stripToolCallSyntax 了，这
-              里跟它对齐。
-            */}
-            {stripToolCallSyntax(post.text)}
-          </div>
+          {hasTitle ? (
+            <div className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-[color:var(--text-primary)]">
+              {post.title}
+            </div>
+          ) : null}
+          {showBody ? (
+            // 走查 2026-05-18 R2（前轮）：post.text 走 stripToolCallSyntax — AI
+            // 生成贴里夹的 <tool_call>…</tool_call> / [TOOL_CALL]/[/TOOL_CALL]
+            // 工具调用残留会原样泄到「最近视频号内容」卡里看着像一坨 XML/JSON。
+            // 跟 channels home / 收藏列表 / desktop slide 对齐。
+            <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+              {cleanText}
+            </div>
+          ) : null}
+          {!hasTitle && !showBody ? (
+            <div className="mt-2 text-sm leading-6 text-[color:var(--text-dim)]">
+              {t(msg`（无标题 / 无正文）`)}
+            </div>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={onUse} className="rounded-xl">
               <Sparkles size={14} />
