@@ -91,9 +91,17 @@ export function GroupChatBackgroundPage() {
     [groupId],
   );
 
+  // 走查电脑端群聊 R91：和单聊侧 R95/R96 同款问题——本页 groupQuery 没设
+  // staleTime（默认 0），桌面 layout 下「聊天信息 → 聊天背景」是常用入口，
+  // 用户在 desktop 工作区点入此页时 thread-panel 的同 key app-group 1s 前
+  // 才刚 fetch 过（thread-panel 已带 staleTime: 15_000），但本页 mount 立刻
+  // 触发同 key 的冗余 RTT、用户从 thread-panel 切过来还要等 group 数据回
+  // 来才能渲染 ChatDetailsShell 标题。和 thread-panel / member-picker /
+  // qr-page / message-search 一批 app-group query 对齐 staleTime: 15_000。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const backgroundQuery = useGroupBackground(groupId);
 
