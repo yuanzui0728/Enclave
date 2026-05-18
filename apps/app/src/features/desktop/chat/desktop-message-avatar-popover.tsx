@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -206,6 +207,30 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     startChatSubmittingRef.current = true;
     startChatMutation.mutate();
   };
+
+  // 走查 R4：popover 底部按钮区（查看资料 / 打开设置 / 朋友圈 / 我的朋友圈 /
+  // 添加好友）都是 `() => { onClose(); void navigate(...) }` 形态。onClose
+  // 走 React state 要等 commit 才把 popover 拆掉，同帧 <16ms 双击同一个按钮
+  // 都进入 → push 2 条完全相同的二级页 history 项 + 二级页 mount 时拉的
+  // network/cache 跑两次（character-detail / friend-moments 这种公网隧道
+  // ~600ms RTT 重复值得避免）。和姊妹 handleStartChat sync ref 同款思路，
+  // 但这条同时覆盖多条 navigate 出口，用 raf 复位的 row-navigation guard。
+  const popoverNavigateFiredRef = useRef(false);
+  const guardPopoverNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (popoverNavigateFiredRef.current) return;
+        popoverNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            popoverNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
 
   const character = isOwner ? null : characterQuery.data;
   const friendship =
@@ -527,7 +552,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
           variant="secondary"
           size="sm"
           className="rounded-full"
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               onClose();
               if (isOwner) {
                 void navigate({ to: "/desktop/settings" });
@@ -542,7 +567,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                   returnHash: profileReturnHash,
                 }),
               });
-            }}
+            })}
           >
             {isOwner ? t(msg`打开设置`) : t(msg`查看资料`)}
           </Button>
@@ -552,7 +577,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             size="sm"
             className="rounded-full"
             disabled={!characterId}
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               onClose();
               void navigate({
                 to: "/desktop/friend-moments/$characterId",
@@ -563,7 +588,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
                   returnHash: momentsReturnHash,
                 }),
               });
-            }}
+            })}
           >
             {t(msg`朋友圈`)}
           </Button>
@@ -583,10 +608,10 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             variant="secondary"
             size="sm"
             className="rounded-full"
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               onClose();
               void navigate({ to: "/profile/moments" });
-            }}
+            })}
           >
             {t(msg`我的朋友圈`)}
           </Button>
@@ -601,7 +626,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               (!isFriend && hasPendingFriendRequest) ||
               isBlocked
             }
-            onClick={() => {
+            onClick={guardPopoverNavigation(() => {
               if (!isFriend) {
                 onClose();
                 void navigate({
@@ -616,7 +641,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               }
 
               handleStartChat();
-            }}
+            })}
           >
             {isBlocked
               ? t(msg`已拉黑`)
