@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -227,6 +228,72 @@ export function DesktopChannelsWorkspace({
       }
     },
     [],
+  );
+
+  // 走查 2026-05-18 新会话 R1：channels-page 把所有 mutation 回调 (onLike /
+  // onShare / onToggleAuthorFollow / onToggleFavorite / onOpenAuthor 等) 用
+  // 内联箭头穿到 DesktopChannelsWorkspace —— 父级每 render（包括频繁的乐观
+  // 更新和 IntersectionObserver setSelectedPostId）都换 callback identity。
+  // 配合下方 posts.map 里的二级内联箭头 `onLike={() => onLike(post.id)}`，
+  // 即使每条 slide 的 post / isActive / pending 属性都没变，每次父 re-render
+  // 也把 20 张 slide 全推一遍 → ChannelMediaSurface / ChannelVideoPlayer 跟着
+  // 重渲（虽然 effect deps 没变所以视频不会重启，但 DOM diff 仍然过一遍）。
+  // 用 latest-ref 兜稳定 identity 的回调，下面 React.memo(ChannelFeedSlide)
+  // 才有意义 —— 只有真正属性变化的那条 slide 会重渲。
+  const handlerRefs = useRef({
+    onLike,
+    onOpenAuthor,
+    onToggleAuthorFollow,
+    onToggleFavorite,
+    baseUrl,
+  });
+  handlerRefs.current = {
+    onLike,
+    onOpenAuthor,
+    onToggleAuthorFollow,
+    onToggleFavorite,
+    baseUrl,
+  };
+  const handleSlideLike = useCallback((postId: string) => {
+    handlerRefs.current.onLike(postId);
+  }, []);
+  const handleSlideOpenAuthor = useCallback((authorId: string) => {
+    handlerRefs.current.onOpenAuthor(authorId);
+  }, []);
+  const handleSlideToggleCommentDrawer = useCallback((postId: string) => {
+    setCommentDrawerPostId((current) =>
+      current === postId ? null : postId,
+    );
+  }, []);
+  const handleSlideShare = useCallback((post: FeedPostListItem) => {
+    // 走查 2026-05-17 R2：移动端 handleSharePost 早就用 stripToolCallSyntax
+    // 把 <tool_call> / [TOOL_CALL] 这类残留过滤掉再当转发面板顶部摘要；
+    // 桌面这里一直拿原文，AI 生成贴里夹的工具调用语法会原样塞进
+    // 转发预览，看着像乱码。和移动端对齐一道清洗。
+    const cleanText = stripToolCallSyntax(post.text ?? "");
+    // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl 供下方 onForwarded
+    // / onForwardFailed 比对（跨账户的转发完成不冒到新账户）。
+    forwardPickerBaseUrlRef.current = handlerRefs.current.baseUrl;
+    setForwardPickerPost({
+      id: post.id,
+      excerpt: `${post.authorName}：${cleanText}`.slice(0, 80),
+    });
+  }, []);
+  const handleSlideToggleAuthorFollow = useCallback((post: FeedPostListItem) => {
+    handlerRefs.current.onToggleAuthorFollow(
+      post.authorId,
+      Boolean(post.ownerState?.isFollowingAuthor),
+    );
+  }, []);
+  const handleSlideToggleFavorite = useCallback((post: FeedPostListItem) => {
+    handlerRefs.current.onToggleFavorite(post);
+  }, []);
+  // 同款 hoist：原来 sectionBadge 在 posts.map 里每条 slide 都跑一次
+  // getChannelsSectionBadge(activeSection, t) — 同 section 下结果完全一样，
+  // 20 张 slide 浪费 20 次 switch + 20 次 t() 翻译查表。提到外面只算一次。
+  const sectionBadge = useMemo(
+    () => getChannelsSectionBadge(activeSection, t),
+    [activeSection, t],
   );
 
   useEffect(() => {
@@ -542,7 +609,7 @@ export function DesktopChannelsWorkspace({
                   key={post.id}
                   post={post}
                   isActive={post.id === selectedPost?.id}
-                  sectionBadge={getChannelsSectionBadge(activeSection, t)}
+                  sectionBadge={sectionBadge}
                   registerSlide={registerSlide}
                   isFavorite={isPostFavorite(post.id)}
                   likePending={likePendingPostId === post.id}
@@ -550,35 +617,12 @@ export function DesktopChannelsWorkspace({
                   followPending={followPendingAuthorId === post.authorId}
                   unmuted={unmuted}
                   onToggleUnmuted={toggleUnmuted}
-                  onLike={() => onLike(post.id)}
-                  onOpenAuthor={() => onOpenAuthor(post.authorId)}
-                  onShare={() => {
-                    // 走查 2026-05-17 R2：移动端 handleSharePost 早就用 stripToolCallSyntax
-                    // 把 <tool_call> / [TOOL_CALL] 这类残留过滤掉再当转发面板顶部摘要；
-                    // 桌面这里一直拿原文，AI 生成贴里夹的工具调用语法会原样塞进
-                    // 转发预览，看着像乱码。和移动端对齐一道清洗。
-                    const cleanText = stripToolCallSyntax(post.text ?? "");
-                    // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl
-                    // 供下方 onForwarded / onForwardFailed 比对（跨账户的转
-                    // 发完成不冒到新账户）。
-                    forwardPickerBaseUrlRef.current = baseUrl;
-                    setForwardPickerPost({
-                      id: post.id,
-                      excerpt: `${post.authorName}：${cleanText}`.slice(0, 80),
-                    });
-                  }}
-                  onToggleAuthorFollow={() =>
-                    onToggleAuthorFollow(
-                      post.authorId,
-                      Boolean(post.ownerState?.isFollowingAuthor),
-                    )
-                  }
-                  onToggleCommentDrawer={() =>
-                    setCommentDrawerPostId((current) =>
-                      current === post.id ? null : post.id,
-                    )
-                  }
-                  onToggleFavorite={() => onToggleFavorite(post)}
+                  onLike={handleSlideLike}
+                  onOpenAuthor={handleSlideOpenAuthor}
+                  onShare={handleSlideShare}
+                  onToggleAuthorFollow={handleSlideToggleAuthorFollow}
+                  onToggleCommentDrawer={handleSlideToggleCommentDrawer}
+                  onToggleFavorite={handleSlideToggleFavorite}
                 />
               ))}
             </div>
@@ -1024,7 +1068,17 @@ function ChannelVideoPlayer({
   // React 的 muted prop 是异步设到 DOM 上的，浏览器评估 autoplay 时可能还没 muted →
   // autoplay 被策略拦截。用 callback ref 在 React 把 element 挂到 DOM 之前就把
   // muted 同步到 IDL 属性上。参考 facebook/react#10389。
-  const setVideoNode = (node: HTMLVideoElement | null) => {
+  //
+  // 走查 2026-05-18 新会话 R1：必须 useCallback 包稳定身份——否则每次父
+  // re-render（IntersectionObserver 切 selectedPostId / like / favorite /
+  // comment / forwardNotice 出现 / 用户切 section 等等）这个 callback ref
+  // 都换 identity，React 按 callback-ref 协议先 detach(null) 再 attach(node)，
+  // 内部 `node.muted = true` 就把视频强行打回静音。下面的 unmuted-effect 依
+  // 赖 [unmuted, isActive]，这两个没变就不会重跑，结果用户解锁后第一次父级
+  // re-render 就把声音吃掉，再点静音按钮 toggle unmuted 也救不回（unmuted 仍
+  // true，effect 不 fire）。stable identity 让 React 不再 detach/attach，
+  // 只在真正 mount / key 切换（url 变）/ unmount 时跑一次。
+  const setVideoNode = useCallback((node: HTMLVideoElement | null) => {
     videoRef.current = node;
     if (node) {
       // 初始挂载阶段强制 muted=true 以确保 autoplay 不被策略拦；下面的 effect 会在
@@ -1032,7 +1086,7 @@ function ChannelVideoPlayer({
       node.muted = true;
       node.defaultMuted = true;
     }
-  };
+  }, []);
 
   // 走查 2026-05-17 新会话 R1：跟移动端 ChannelVideoSurface 同坑——解锁后 play()
   // 失败一律 muted-retry 会把 video.muted 卡死，而 unmuted state 仍 true 不会触发
@@ -1159,7 +1213,11 @@ function ChannelVideoPlayer({
   );
 }
 
-function ChannelFeedSlide({
+// 走查 2026-05-18 新会话 R1：memo + post-aware callbacks，让稳定 props 的
+// slide 在父 re-render 时直接跳过 reconciliation。回调签名改成接 post / postId
+// / authorId，使外层只暴露 latest-ref 包过的稳定 handler；slide 内的 onClick
+// 内联箭头每次重渲都会换 identity，但 slide 本身被 memo 挡住后根本不重渲。
+const ChannelFeedSlide = memo(function ChannelFeedSlide({
   post,
   isActive,
   sectionBadge,
@@ -1186,12 +1244,12 @@ function ChannelFeedSlide({
   favoritePending: boolean;
   followPending: boolean;
   unmuted: boolean;
-  onLike: () => void;
-  onOpenAuthor: () => void;
-  onShare: () => void;
-  onToggleAuthorFollow: () => void;
-  onToggleCommentDrawer: () => void;
-  onToggleFavorite: () => void;
+  onLike: (postId: string) => void;
+  onOpenAuthor: (authorId: string) => void;
+  onShare: (post: FeedPostListItem) => void;
+  onToggleAuthorFollow: (post: FeedPostListItem) => void;
+  onToggleCommentDrawer: (postId: string) => void;
+  onToggleFavorite: (post: FeedPostListItem) => void;
   onToggleUnmuted: () => void;
 }) {
   const t = useRuntimeTranslator();
@@ -1217,7 +1275,7 @@ function ChannelFeedSlide({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={onOpenAuthor}
+                onClick={() => onOpenAuthor(post.authorId)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
                 <AvatarChip
@@ -1247,7 +1305,7 @@ function ChannelFeedSlide({
                 // 端 owner.id 分支 no-op，按钮永远停在 "+ 关注"，看着像点不动。
                 <button
                   type="button"
-                  onClick={onToggleAuthorFollow}
+                  onClick={() => onToggleAuthorFollow(post)}
                   disabled={followPending}
                   className={cn(
                     "rounded-full px-3 py-1 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-70",
@@ -1310,14 +1368,14 @@ function ChannelFeedSlide({
             }
             active={Boolean(post.ownerState?.hasLiked)}
             pending={likePending}
-            onClick={onLike}
+            onClick={() => onLike(post.id)}
           />
           <ChannelActionButton
             surface="dark"
             icon={<MessageCircleMore size={18} />}
             label={`${post.commentCount}`}
             ariaLabel={t(msg`打开评论，当前 ${post.commentCount} 条`)}
-            onClick={onToggleCommentDrawer}
+            onClick={() => onToggleCommentDrawer(post.id)}
           />
           <ChannelActionButton
             surface="dark"
@@ -1329,7 +1387,7 @@ function ChannelFeedSlide({
             // 转发也无意义（picker 自己会显示标题）；这里强调它是会打开面板
             // 的入口，避免屏读用户当成 toggle 误按。
             ariaLabel={t(msg`转发到聊天`)}
-            onClick={onShare}
+            onClick={() => onShare(post)}
           />
           <ChannelActionButton
             surface="dark"
@@ -1360,13 +1418,13 @@ function ChannelFeedSlide({
             }
             active={isFavorite}
             pending={favoritePending}
-            onClick={onToggleFavorite}
+            onClick={() => onToggleFavorite(post)}
           />
         </div>
       </div>
     </div>
   );
-}
+});
 
 function ChannelCommentsDrawer({
   comments,
