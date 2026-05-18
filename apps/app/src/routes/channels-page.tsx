@@ -44,6 +44,7 @@ import {
   unfollowChannelAuthor,
   unlikeFeedPost,
   viewFeedPost,
+  type FeedChannelAuthorProfile,
   type FeedChannelHomeResponse,
   type FeedChannelHomeSection,
   type FeedComment,
@@ -686,9 +687,19 @@ export function ChannelsPage() {
     // 里都还停在 "已关注"，比 点赞 慢得多。把同作者所有 post 的 ownerState
     // 一起翻——既覆盖 关注 tab，也覆盖 推荐 / 朋友 tab 上同一作者的 post。
     onMutate: async (input) => {
-      await queryClient.cancelQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ["app-channels-home", baseUrl],
+        }),
+        // 走查 2026-05-18 新会话 R3：原来只 cancel home，但 desktop 的作者
+        // overlay 上「+关注」按钮直接读 app-channel-author cache 里的 profile
+        // .isFollowing —— 不在这条 onMutate 的 optimistic 范围里。改完 onMutate
+        // 跟着加 cancel + optimistic flip 后，author cache 也要先 cancel 避免
+        // 飞行中的 refetch 把刚翻好的 optimistic 状态覆盖回旧值。
+        queryClient.cancelQueries({
+          queryKey: ["app-channel-author", baseUrl, input.authorId],
+        }),
+      ]);
       // 同 likeMutation：per-author 记录失败前的所有相关 post，回滚也只动这些。
       const previousEntries: Array<{
         key: readonly unknown[];
@@ -731,7 +742,40 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries, mutationBaseUrl: baseUrl };
+      // 走查 2026-05-18 新会话 R3：原来 followMutation 完全不动 app-channel-
+      // author cache —— 用户在 desktop 作者 overlay 点 +关注：
+      //   1) optimistic 翻 home cache 里同作者所有 post 的 isFollowingAuthor=true
+      //      → slide 上「+关注」按钮立刻翻"已关注"
+      //   2) followPending 设为 authorId，overlay 按钮 disabled+"处理中..."
+      //   3) mutation 成功，followPending 清空
+      //   4) overlay 按钮恢复读 profile.isFollowing —— cache 完全没动，仍然
+      //      是 false → 按钮翻回 "+关注"，用户体感「点了没生效」
+      //   5) 用户再点 → 同一条 mutation 又跑一次（POST follow 是 idempotent
+      //      的所以不会破数据，但白白多 2-5 RTT 公网隧道 + 跟服务器对话两次
+      //      只是为了证明已经关注过的事；commentCount/followerCount UI 也跟
+      //      着按钮闪烁）
+      // 同步给 author cache 做 optimistic：isFollowing 翻 + followerCount±1，
+      // 跟 home cache 同款 per-author 行为。previousProfile 留存给 onError 回滚。
+      const previousProfile =
+        queryClient.getQueryData<FeedChannelAuthorProfile>([
+          "app-channel-author",
+          baseUrl,
+          input.authorId,
+        ]);
+      if (previousProfile) {
+        queryClient.setQueryData<FeedChannelAuthorProfile>(
+          ["app-channel-author", baseUrl, input.authorId],
+          {
+            ...previousProfile,
+            isFollowing: !input.following,
+            followerCount: Math.max(
+              0,
+              previousProfile.followerCount + (input.following ? -1 : 1),
+            ),
+          },
+        );
+      }
+      return { previousEntries, previousProfile, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       context?.previousEntries.forEach(({ key, previousPosts }) => {
@@ -747,6 +791,29 @@ export function ChannelsPage() {
           ),
         });
       });
+      // 走查 2026-05-18 新会话 R3：author cache 也回滚。取当前 cache 做底
+      // —— 用户在 follow 飞行期间可能已经把 overlay 关掉、再打开 / 重新拉
+      // refetch，cache 已经是 server 真值；硬覆盖回 previousProfile 反而把
+      // 服务器返的新数据冲掉。只在仍是同一 cache identity 时还原 isFollowing
+      // / followerCount 两个 mutation 改过的字段。
+      if (context?.previousProfile) {
+        const currentProfile =
+          queryClient.getQueryData<FeedChannelAuthorProfile>([
+            "app-channel-author",
+            context.mutationBaseUrl,
+            input.authorId,
+          ]);
+        if (currentProfile) {
+          queryClient.setQueryData<FeedChannelAuthorProfile>(
+            ["app-channel-author", context.mutationBaseUrl, input.authorId],
+            {
+              ...currentProfile,
+              isFollowing: context.previousProfile.isFollowing,
+              followerCount: context.previousProfile.followerCount,
+            },
+          );
+        }
+      }
       // mid-flight 切账户：失败 toast 不冒到新账户。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
@@ -782,6 +849,12 @@ export function ChannelsPage() {
       // 关注/取消关注影响 关注/朋友 tab 的 sections.count。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
+      });
+      // 走查 2026-05-18 新会话 R3：author profile cache 也 invalidate ——
+      // optimistic 已经把 isFollowing / followerCount 翻过来了，server 真值
+      // 兜底一次防止极端情况下 drift（譬如别处也改了 followerCount）。
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channel-author", mutationBaseUrl, input.authorId],
       });
     },
   });
