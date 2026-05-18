@@ -1580,8 +1580,19 @@ export function ChatComposer({
     }
   });
 
+  // 走查新一轮 R6：captureDesktopScreenshot 兜底走 attachmentBusy React state
+  // 「相机」相邻入口（toolbar 截图按钮 + Ctrl/⌘+Shift+S 全局快捷）+ 同帧
+  // <16ms double-click，两次 invoke 都看到 attachmentBusy=false 进入 →
+  // navigator.mediaDevices.getDisplayMedia 弹出系统屏幕选择器 2 次堆叠（macOS
+  // / Windows / Tauri 都是 OS-level prompt，用户得分别在 2 个 dialog 上点取消，
+  // 取消第一个后第二个还停留）。叠 sync ref 锁挡掉同帧后续 invoke，finally
+  // 解锁（stream cleanup 自带 finally，复用同一 try/finally）。
+  const screenshotCaptureBusyRef = useRef(false);
   const captureDesktopScreenshot = useCallback(async () => {
     if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+    if (screenshotCaptureBusyRef.current) {
       return;
     }
 
@@ -1595,6 +1606,7 @@ export function ChatComposer({
       return;
     }
 
+    screenshotCaptureBusyRef.current = true;
     let stream: MediaStream | null = null;
 
     try {
@@ -1674,6 +1686,7 @@ export function ChatComposer({
       );
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
+      screenshotCaptureBusyRef.current = false;
     }
   }, [
     attachmentBusy,
