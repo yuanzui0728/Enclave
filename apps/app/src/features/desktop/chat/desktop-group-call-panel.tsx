@@ -107,6 +107,16 @@ export function DesktopGroupCallPanel({
     [joinedMemberIds, members],
   );
   const visibleMembers = useMemo(() => members.slice(0, 8), [members]);
+  // 走查 R4：和 mobile-group-call-screen commit 948078bb2 同款问题——下面
+  // GroupAvatarChip 接收的 members={members.map(m=>m.memberId)} 原本写在 JSX
+  // 里，每次 render（toggleJoinedState、setStartedAt、1200ms attempted-sync
+  // useEffect 触发、members 30s 轮询 refetch 等）都 new 一份 array →
+  // GroupAvatarChip 拿到新 prop 引用、重新算 hashSeed × 4 + 重新挂 4 个 <img>。
+  // useMemo 锁住引用，群成员稳定时 chip 跳过重渲染。
+  const memberIdsForAvatar = useMemo(
+    () => members.map((member) => member.memberId),
+    [members],
+  );
   const callKindLabel = kind === "voice" ? t(msg`群语音`) : t(msg`群视频`);
   const activeCount = activeMembers.length;
   const waitingCount = Math.max(members.length - activeCount, 0);
@@ -208,7 +218,7 @@ export function DesktopGroupCallPanel({
             <div className="mt-4 flex items-center gap-4">
               <GroupAvatarChip
                 name={groupName}
-                members={members.map((member) => member.memberId)}
+                members={memberIdsForAvatar}
                 size="wechat"
               />
               <div className="min-w-0">
