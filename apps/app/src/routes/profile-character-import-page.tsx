@@ -311,8 +311,17 @@ export function ProfileCharacterImportPage() {
           </li>
         </ol>
 
-        {/* 文件投放区 / 预览区 */}
-        {!preview && (
+        {/* 文件投放区 / 预览区。
+            新一轮 R1：原条件只看 !preview，但 confirmImport 成功末尾会
+            setPreview(null) 让 preview 清空，于是导入成功后页面同时渲染
+            「空的 drop zone」+「success 卡」。移动端 375 宽视口里这是
+            ~490px 的纵向堆叠，视觉上空 drop zone 顶在 success 卡上面像是
+            「咦，让我再放点东西？」——成功反馈和"再导入"动作打架。
+            同时让 SuccessCard 的「再导入一个」沦为"关掉成功提示"按钮，没真实
+            语义。改成 success 状态时隐藏 drop zone：只展示 success 卡，
+            用户点「再导入一个」（clearSelection 把 result=null）后 drop zone
+            自然回来 —— 该按钮终于有真正的 next-step 意义。 */}
+        {!preview && result?.kind !== "success" && (
           <div
             onDragOver={(e) => {
               e.preventDefault();
