@@ -1312,7 +1312,15 @@ export function GroupQrPage() {
         )
       ) : null}
       {notice ? (
+        // 走查电脑端群聊 R89：和姊妹 chat-message-list R37 / R86/R87/R88 一批
+        // transient toast 同款修法——「群二维码」页（群聊「聊天信息」→「群二维码」
+        // 入口）的 notice 是 3500ms 自动消失的反馈（或带 action 的持续提示），
+        // 反馈"已发起接龙投递"/"分享失败"等。原版裸 InlineNotice 没 role / aria-live。
+        // danger tone 用 assertive 抢断（接龙投递失败/未来续作失败要立刻知道），
+        // 其它 tone 走 polite 不抢断 SR 当前朗读。
         <InlineNotice
+          role={notice.tone === "danger" ? "alert" : "status"}
+          aria-live={notice.tone === "danger" ? "assertive" : "polite"}
           className={cn(
             "flex items-center justify-between gap-3",
             !isDesktopLayout &&
