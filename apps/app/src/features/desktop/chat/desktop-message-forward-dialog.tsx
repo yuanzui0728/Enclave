@@ -19,6 +19,7 @@ import {
   isPersistedGroupConversation,
 } from "../../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
+import { registerAndroidBackInterceptor } from "../../../runtime/android-back-button";
 
 export type DesktopMessageForwardPreviewItem = {
   id: string;
@@ -140,6 +141,25 @@ export function DesktopMessageForwardDialog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
+  // 第三轮 R3：mobile variant 漏接 Android 硬件 Back。单聊/群聊长按消息选
+  // 「转发」会拉起这个 dialog（mobile variant 复用同一组件），用户在 Android
+  // 按 hardware Back → 直接 history.back() 走出 /chat/$conv 整页，转发选择
+  // 状态丢失之外更糟：用户原本只想取消转发，结果跳回 chat-list 还要再点进
+  // 会话。和姊妹 sheet（mobile-message-action-sheet / quote-selection-sheet /
+  // mobile-message-reminder-sheet / mobile-details-action-sheet / 本文件 ESC
+  // 处理）对齐：pending 时不响应，让 mutation 落地。
+  useEffect(() => {
+    if (!open || pending) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+    return unregister;
   }, [onClose, open, pending]);
 
   // 走查 R3：把 sort 和 filter 拆开。原版 useMemo 把 [...conversations].sort()
