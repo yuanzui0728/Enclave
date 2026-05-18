@@ -36,6 +36,10 @@ const signingPropertiesPath = resolve(
   "android-signing.local.properties",
 );
 const androidBuildGradlePath = resolve(androidProjectDir, "app/build.gradle");
+const androidGoogleServicesPath = resolve(
+  androidProjectDir,
+  "app/google-services.json",
+);
 const androidManifestPath = resolve(
   androidProjectDir,
   "app/src/main/AndroidManifest.xml",
@@ -1360,6 +1364,26 @@ if (command === "doctor") {
   if (activeShellConfig?.allowCleartextTraffic) {
     console.log(
       "note  allowCleartextTraffic is enabled; use only for local or explicitly trusted environments",
+    );
+  }
+
+  // 新一轮模拟器走查 Round 5：google-services.json 缺失时 build.gradle 会
+  // 静默跳过 google-services plugin（apply plugin 写在 try/catch 里读 file
+  // 内容），FCM SDK 仍能编译进去，但 onNewToken 永远不触发，FirebaseApp
+  // 也没有 default instance → 推送消息到达手机后 SDK 静默 drop，调用
+  // YinjieMobileBridge.getPushToken 永远返 null。release 安装上去看着
+  // 一切正常，等到运营 push 才发现整端没有任何接收能力。
+  // doctor 之前完全没声明这个 file 的存在，新接手的开发者复制 README
+  // 跑 release 完全意识不到推送被关掉。
+  //
+  // 这里只 note（不 missing / 不阻断 exit code），跟「跳过 FCM 暂时打包」
+  // 的当前 ship 策略保持兼容；等到 Firebase 项目就位 + json 落到位，
+  // 这条 note 自动变成 ok。
+  if (existsSync(androidGoogleServicesPath)) {
+    console.log("ok  android/app/google-services.json");
+  } else {
+    console.log(
+      "note  android/app/google-services.json not found; FCM plugin is silently skipped (build.gradle conditional). Push notifications won't work until you drop a real google-services.json from the Firebase Console.",
     );
   }
 

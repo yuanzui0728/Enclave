@@ -61,8 +61,10 @@ captures/
 .externalNativeBuild
 .cxx/
 
-# Google Services (e.g. APIs or Firebase)
-# google-services.json
+# Google Services (e.g. APIs or Firebase) — see apps/android-shell/README.md
+# "Ship Status" / "启用 FCM 三步"; never commit (contains Firebase project
+# api key + OAuth client ids; rotating these is a console-level pain).
+google-services.json
 
 # Freeline
 freeline.py

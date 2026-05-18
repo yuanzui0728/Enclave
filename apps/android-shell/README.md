@@ -2,6 +2,29 @@
 
 This package hosts the Capacitor-based Android container for `apps/app`.
 
+## Ship Status (2026-05-18)
+
+- ✅ **Debug APK** — `pnpm android:apk` 一键产出 `apps/android-shell/android/app/build/outputs/apk/debug/app-debug.apk`，emulator (API 36) 装上能开能登录能切语言。
+- ✅ **Release APK / AAB（已签名）** — `pnpm android:bundle:release` 产出 `app-release.aab` + `gradlew assembleRelease` 产出 `app-release.apk`（均已用 `apps/android-shell/.cache/keystores/yinjie-upload.jks` 签名）。release APK 装到 emulator 上 R8 minify + shrinkResources 后所有 plugin 仍能反射调用（Round 4 修过 proguard rules）。
+- ⚠️ **FCM 推送 — 暂未启用**。`apps/android-shell/android/app/google-services.json` 缺失，`build.gradle` 里 `apply plugin: 'com.google.gms.google-services'` 是 try/catch 兜底，缺 json 时静默跳过，包能照常打出来但推送 silently 不工作（`getPushToken` 永远返 null）。`pnpm android:doctor` 末尾会打一条 `note` 提醒，**不阻断 build**。
+- ⚠️ **真机走查未做**。当前能动到的只有 Linux 上的 Android Emulator（API 36, x86_64, Google APIs Play Store, KVM）。真机才能挖出来的盲点见 [docs/emulator-blind-spots.md](./docs/emulator-blind-spots.md)。
+
+历史上跑过 38 轮**真机走查**（R1..R36 + 新一轮 R1..R2）；本会话补了
+**模拟器走查 R3..R5**（cloudApiBaseUrl tracked 默认 / proguard rules /
+doctor 加 google-services 提示）。
+
+### 启用 FCM 三步
+
+1. Firebase Console → 建项目 / 选 existing → 「Add app → Android」
+   填 `applicationId = com.yinjie.mobile`（与 `android-shell.config.json`
+   的 `appId` 完全一致），SHA-1 可选；
+2. 下载 `google-services.json` → 放到
+   `apps/android-shell/android/app/google-services.json`
+   （已在 `.gitignore` 里，**不要 commit**）；
+3. `pnpm android:doctor` 看到 `ok  android/app/google-services.json` 即可，
+   重新 `pnpm android:bundle:release` 打包，FCM service 自动 wire 上，
+   `YinjieMobileBridge.getPushToken()` 第一次开 app 就能拿到非空 token。
+
 ## Commands
 
 - `pnpm android:run`
@@ -137,3 +160,14 @@ Expected `YinjieRuntime` locale methods:
 The web layer will gracefully fall back when the bridge is not wired yet, but Android release builds should eventually connect these methods to platform-native implementations.
 
 Push payload examples and field rules are documented in `docs/release/mobile-push-payload-contract.md`.
+
+## Emulator vs 真机走查盲点
+
+历史上 R1..R36 跑的都是真机走查。本会话「新一轮 R3..R5」补的是
+Linux 上 Android Emulator (API 36, x86_64, KVM) 跑出来的问题，覆盖
+WebView / Activity / Permission / Locale / Manifest / R8 minify 层。
+
+**模拟器一律测不到的真机盲区**（FCM 真链路 / OEM 自带相机 / SIM 拨号 /
+Pre-API-25 兼容 / OEM 键盘默认 / 生物识别 / 运营商 4G）见
+[docs/emulator-blind-spots.md](./docs/emulator-blind-spots.md)，
+是下一轮真机走查的入口清单。
