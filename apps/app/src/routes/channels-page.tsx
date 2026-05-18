@@ -197,6 +197,10 @@ export function ChannelsPage() {
   const desktopLikeSubmittingRef = useRef(false);
   const desktopFavoriteSubmittingRef = useRef(false);
   const desktopFollowSubmittingRef = useRef(false);
+  // R6 续：「换一批」按钮（generateMutation）同款 — 同帧 3 次点击触发 3 条
+  // POST /channels/generate（实测）。一次生成 ~3-5 秒 LPP 端口，重复触发把队列
+  // 撑爆。同一套 ref + useEffect [isPending] 复位。
+  const desktopGenerateSubmittingRef = useRef(false);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -1668,6 +1672,11 @@ export function ChannelsPage() {
       desktopFollowSubmittingRef.current = false;
     }
   }, [followMutation.isPending]);
+  useEffect(() => {
+    if (!generateMutation.isPending) {
+      desktopGenerateSubmittingRef.current = false;
+    }
+  }, [generateMutation.isPending]);
 
   // useCallback 必要：onViewPost 作为 prop 进 DesktopChannelsWorkspace 的 useEffect 依赖，
   // 内联箭头函数会导致 effect 在父组件每次 re-render 都重跑，狂刷 viewFeedPost。
@@ -2309,7 +2318,13 @@ export function ChannelsPage() {
               hasLiked: Boolean(post?.ownerState?.hasLiked),
             });
           }}
-          onRefresh={() => generateMutation.mutate()}
+          onRefresh={() => {
+            // R6: sync ref 锁同帧双击。disabled={refreshPending} 是 React state
+            // 反推，同帧 3 次连点会触发 3 条 generate POST 把 LPP 队列撑爆。
+            if (desktopGenerateSubmittingRef.current) return;
+            desktopGenerateSubmittingRef.current = true;
+            generateMutation.mutate();
+          }}
           refreshPending={generateMutation.isPending}
           comments={desktopCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
           commentsErrorMessage={desktopCommentPanelErrorMessage}
