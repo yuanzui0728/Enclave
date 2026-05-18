@@ -67,6 +67,8 @@ import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import {
+  DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
+  DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
   hydrateDetailedTimestampModeFromNative,
   readDetailedTimestampModeEnabled,
   writeDetailedTimestampModeEnabled,
@@ -88,6 +90,7 @@ import type {
 } from "../features/chat/message-forward-dialog-shell";
 import type { DesktopChatImageViewerSessionItem } from "../features/chat/chat-image-viewer-route-state";
 import {
+  DESKTOP_FAVORITES_STORAGE_KEY,
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
@@ -717,17 +720,34 @@ export function ChatMessageList({
 
       void syncDetailedTimestampMode();
     };
+    // 走查 R1：原版 storage 监听对任何 OTHER tab 的 localStorage 写入都触发
+    // syncDetailedTimestampMode → 拍 hydrateDetailedTimestampModeFromNative
+    // 的 Tauri invoke IPC + setState；和 local-chat-message-actions / chat-room-page
+    // 同款 storage event 漏 gate 问题。chat-message-list 在单聊 / 群聊都挂着，
+    // 多 tab 时主题切换 / 草稿落盘 / 收藏指纹更新等等都会无意义地把这条 invoke
+    // 打一遍。按 STORAGE_KEY gate：只在 chat-detailed-timestamp-mode 自己那两个
+    // key 上同步；event.key=null 是 Safari localStorage.clear()，仍按全量同步对待。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (
+        event.key !== null &&
+        event.key !== DETAILED_TIMESTAMP_MODE_STORAGE_KEY &&
+        event.key !== DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY
+      ) {
+        return;
+      }
+      void syncDetailedTimestampMode();
+    };
 
     void syncDetailedTimestampMode();
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isDesktop, nativeDesktopDetailedTimestampMode]);
@@ -860,15 +880,27 @@ export function ChatMessageList({
 
       void syncDesktopFavorites();
     };
+    // 走查 R1：和上方 detailedTimestamp 同款 storage event 漏 gate。
+    // chat-message-list 在所有单聊 / 群聊里都挂着，多 tab 时主题 / 草稿 / 已读
+    // 标记等 OTHER tab 写 localStorage 都触发 syncDesktopFavorites →
+    // hydrateDesktopFavoritesFromNative 拍 Tauri invoke IPC + readDesktopFavorites
+    // JSON.parse 整份收藏列表。按 DESKTOP_FAVORITES_STORAGE_KEY gate，event.key=null
+    // (Safari localStorage.clear()) 仍按全量同步处理避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== DESKTOP_FAVORITES_STORAGE_KEY) {
+        return;
+      }
+      void syncDesktopFavorites();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [

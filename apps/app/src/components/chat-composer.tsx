@@ -53,6 +53,7 @@ import { useSpeechInput } from "../features/chat/use-speech-input";
 import {
   buildFavoriteShareText,
   computeDesktopFavoritesFingerprint,
+  DESKTOP_FAVORITES_STORAGE_KEY,
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
@@ -62,6 +63,7 @@ import {
   hydrateRecentStickersFromNative,
   loadRecentStickers,
   pushRecentSticker,
+  RECENT_STICKERS_STORAGE_KEY,
 } from "../features/chat/stickers/recent-stickers";
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -1007,17 +1009,30 @@ export function ChatComposer({
 
       void syncRecentStickers();
     };
+    // 走查 R1：原版 storage 监听对任何 OTHER tab 的 localStorage 写入都触发
+    // syncRecentStickers → 拍 hydrateRecentStickersFromNative 的 Tauri invoke
+    // IPC + JSON.parse + setState；composer 在每段单聊 / 群聊里都挂着，多 tab
+    // 时主题切换 / 草稿落盘 / 已读标记等 OTHER tab 写 localStorage 都会无意义
+    // 地把这条 IPC 打一遍。和 local-chat-message-actions / chat-message-list
+    // 同款 STORAGE_KEY gate；event.key=null 是 Safari localStorage.clear()，
+    // 仍按全量同步对待避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== RECENT_STICKERS_STORAGE_KEY) {
+        return;
+      }
+      void syncRecentStickers();
+    };
 
     void syncRecentStickers();
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isDesktop, nativeDesktopRecentStickers]);
@@ -1111,15 +1126,26 @@ export function ChatComposer({
 
       void syncDesktopFavoriteRecords();
     };
+    // 走查 R1：composer 的「+ → 收藏」面板开着时 storage 监听也吃 OTHER tab
+    // 任何 localStorage 写入，触发 hydrateDesktopFavoritesFromNative IPC +
+    // readDesktopFavorites JSON.parse 整份收藏列表。和上方 recent stickers 同款
+    // gate：只在 DESKTOP_FAVORITES_STORAGE_KEY 上同步；event.key=null（Safari
+    // localStorage.clear()）仍全量同步避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== DESKTOP_FAVORITES_STORAGE_KEY) {
+        return;
+      }
+      void syncDesktopFavoriteRecords();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [

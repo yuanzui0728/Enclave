@@ -8,7 +8,7 @@ const t = translateRuntimeMessage;
 export type DesktopFavoriteCategory = FavoriteCategory;
 export type DesktopFavoriteRecord = FavoriteRecord;
 
-const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
+export const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
 let desktopFavoritesNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {

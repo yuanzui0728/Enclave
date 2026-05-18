@@ -5,8 +5,8 @@ export type DetailedTimestampModeState = {
   updatedAt: string | null;
 };
 
-const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
-const DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY =
+export const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
+export const DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY =
   "chat-detailed-timestamp-mode-updated-at";
 const defaultState: DetailedTimestampModeState = {
   enabled: false,
