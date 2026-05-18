@@ -505,6 +505,17 @@ export function ChatMessageList({
   // 见下方 openAttachment file 分支注释 — 按 messageId 互斥同一个文件气泡的同帧
   // 双击，不同消息互不影响（用户连续点 2 个文件气泡是合法用法）。
   const openingFileMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查移动端群聊 R1：和姊妹路径 cdc13e28a「chat-details 6 处「点行进二级页」
+  // 缺同帧双击 ref 守」同款问题——下方 handleMobileCharacterAvatarClick (line
+  // ~1721) 点 character 头像走 `void navigate({to:"/character/$characterId"})`
+  // 无 disabled / 无同步 ref 守。本组件被 resolveCharacterAvatarAction R1（line
+  // ~4665-4672）特意补成「移动端群聊里头像点开走 mobile-profile」之后，群聊
+  // 里同帧 <16ms 双击同一个 character 头像 push 2 条相同 history 项—用户从
+  // 角色资料页退回群聊要按 2 次返回。按 characterId 上锁，不同 character 不
+  // 影响（连点 2 张不同头像合法）；500ms timeout 复位免得页面 unmount → remount
+  // 同一 character 头像点不进去（chat-message-list 在 thread-panel 内常驻不一
+  // 定 remount）。
+  const openingCharacterProfileIdsRef = useRef<Set<string>>(new Set());
   // 走查电脑端单聊新一轮 R2：contact_card desktop 分支 onClick → openAttachment 走
   // `void getOrCreateConversation(...).then(navigate).catch(...)`，无任何同步锁。
   // 同帧 <16ms double-click 同一张 ContactCardMessage 气泡都进入 →
@@ -1727,6 +1738,19 @@ export function ChatMessageList({
     if (!characterId) {
       return;
     }
+
+    // 走查移动端群聊 R1：同帧双击 ref 守。resolveCharacterAvatarAction 在群聊
+    // 里也会走 mobile-profile 路径（line ~4665-4672 R1 已经把死链补好），双击
+    // 同一头像 push 2 条相同 history，用户从 /character/$id 退回群聊要按 2 次
+    // 返回。按 characterId 上锁；500ms timeout 复位让 unmount→remount 后仍可
+    // 点；不同头像互不阻塞。
+    if (openingCharacterProfileIdsRef.current.has(characterId)) {
+      return;
+    }
+    openingCharacterProfileIdsRef.current.add(characterId);
+    window.setTimeout(() => {
+      openingCharacterProfileIdsRef.current.delete(characterId);
+    }, 500);
 
     void navigate({
       to: "/character/$characterId",
