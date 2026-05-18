@@ -917,7 +917,7 @@ function ForwardNotice({
 }
 
 function ChannelActionButton({
-  active = false,
+  active,
   ariaLabel,
   icon,
   label,
@@ -925,6 +925,9 @@ function ChannelActionButton({
   surface = "light",
   onClick,
 }: {
+  // active===undefined 时本按钮不是 toggle（评论/转发只是动作入口，没有"已按下"
+  // 状态），SR 不应该听到"未按下"。active===true|false 时是 toggle（赞/收藏），
+  // aria-pressed 反映当前状态。
   active?: boolean;
   // 可视 label 只是计数数字（"17"、"29"），屏读出来就一个数字毫无上下文。
   // 调用方传 ariaLabel 才能让屏读读出"点赞，当前 17 赞"这种完整意图。
@@ -936,10 +939,15 @@ function ChannelActionButton({
   onClick: () => void;
 }) {
   const isDark = surface === "dark";
+  // 走查 2026-05-18 新会话 R5（本轮）：原 `active = false` 默认让评论 / 转发
+  // 两颗非 toggle 按钮也挂了 aria-pressed="false"，VoiceOver / TalkBack 读出
+  // "未按下，评论"/"未按下，转发"——把一次性动作误报成可切换状态。把 aria-
+  // pressed 改成只在调用方显式传 active 时输出（赞 / 收藏才传），评论 / 转发
+  // 落空不挂 aria-pressed，对齐 WCAG 4.1.2 角色语义。
   return (
     <button
       type="button"
-      aria-pressed={active}
+      aria-pressed={typeof active === "boolean" ? active : undefined}
       aria-label={ariaLabel}
       disabled={pending}
       onClick={onClick}
