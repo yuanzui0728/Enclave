@@ -833,18 +833,41 @@ export function GroupChatThreadPanel({
       ),
     [friendsQuery.data],
   );
+  // 新一轮走查 R1：原 resolveCharacterDisplayName 先看 friend，命中就用
+  // friend.friendship.remarkName || friend.character.name —— 后者拿的是
+  // character 当前 name，character 在另一台设备 / 后台被改名 / 测试落库
+  // 改成「走查词条_177886...」时，同一个角色：
+  //   - 群详情 / picker 走 [[group-member-picker-page]] R3 修法用 memberName 显示 "阿巡"
+  //   - 但群聊消息冒泡 senderName 依然走这里读 friend.character.name 显示 "走查词条_..."
+  // 实测同一个角色（char-manual-axun）老消息 senderName 落库 "阿巡" 新消息落
+  // "走查词条_..."，群里看自己的对话上下文 5 条消息冒出 3 个不同 sender 名，
+  // 完全分不清谁在说话。groupMembers 已经在面板里查了一份，按 characterId 反查
+  // memberName（joinedAt 时落，等价"群昵称"，最稳）作首选；remarkName 用户主动
+  // 设的备注还在前面；character.name / messages.senderName 仅在前两者都没有时
+  // 回退。
+  const memberNameByCharacterId = useMemo<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const member of membersQuery.data ?? []) {
+      if (member.memberType !== "character") continue;
+      const name = member.memberName?.trim();
+      if (name) map.set(member.memberId, name);
+    }
+    return map;
+  }, [membersQuery.data]);
   const resolveCharacterDisplayName = useCallback(
     (characterId?: string | null, fallbackName?: string | null) => {
       if (characterId) {
         const friend = friendMap.get(characterId);
-        if (friend) {
-          return getFriendDisplayName(friend);
-        }
+        const remarkName = friend?.friendship.remarkName?.trim();
+        if (remarkName) return remarkName;
+        const memberName = memberNameByCharacterId.get(characterId);
+        if (memberName) return memberName;
+        if (friend?.character.name) return friend.character.name;
       }
 
       return fallbackName?.trim() || t(msg`群成员`);
     },
-    [friendMap, t],
+    [friendMap, memberNameByCharacterId, t],
   );
   const renderableMessages = useMemo(
     () =>
