@@ -70,9 +70,16 @@ function MobileChatMessageSearchPage({
     staleTime: 15_000,
   });
 
+  // 新一轮 R4：缺 staleTime 让本观察者每次进/退/再进搜索页都立刻 background
+  // refetch 一次 GET /messages（全量、不带 limit）—— 移动端/桌面默认
+  // staleTime=60s/10s 但搜索页是从 chat-details「查找聊天记录」二级入口进，
+  // 用户经常前后翻找；socket / use-conversation-thread / chat-message-list /
+  // chat-call-session 多处已经把新增消息 setQueriesData 同步到本 cache，
+  // staleTime: 15s 期间不会让搜索结果落后。和兄弟 conversationsQuery 同款 15s。
   const messagesQuery = useQuery({
     queryKey: ["app-conversation-messages", baseUrl, conversationId],
     queryFn: () => getConversationMessages(conversationId, baseUrl),
+    staleTime: 15_000,
   });
 
   const conversation =
