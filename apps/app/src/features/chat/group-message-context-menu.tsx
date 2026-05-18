@@ -52,6 +52,12 @@ type GroupMessageContextMenuProps = {
 
 const MENU_WIDTH = 196;
 const VIEWPORT_PADDING = 12;
+// MenuDivider 实际渲染高度（my-1 上下 4px + border-t 1px ≈ 9px）。
+// 不算 divider 时，靠近视口底部右键群消息最多裁掉下面 2 行可见动作
+// （撤回/删除最常被裁，因为它们在最底端），用户被迫挪到屏幕中部
+// 再右键。和姊妹 desktop-conversation-context-menu R—（MENU_DIVIDER_HEIGHT）
+// 同款修法。
+const MENU_DIVIDER_HEIGHT = 9;
 
 export function GroupMessageContextMenu({
   x,
@@ -100,7 +106,25 @@ export function GroupMessageContextMenu({
     Number(Boolean(onSaveAttachment)) +
     Number(Boolean(onRecall)) +
     Number(Boolean(onDelete));
-  const menuHeight = actionCount * 42 + 16;
+  // 和 JSX 里 2 处 MenuDivider 的渲染条件保持一致：
+  //   1) onReply || onQuoteSelection || onForward || onMultiSelect 后 1 条
+  //   2) onSetReminder || onToggleFavorite || onAddToStickers || onOpenAttachment || onSaveAttachment 后 1 条
+  // 漏掉这两条 divider，靠近视口底部右键消息时 top 计算把菜单顶得太低，撤回/
+  // 删除会被裁出可视区，用户得把鼠标挪到屏幕中部再右键。
+  const dividerCount =
+    Number(
+      Boolean(onReply || onQuoteSelection || onForward || onMultiSelect),
+    ) +
+    Number(
+      Boolean(
+        onSetReminder ||
+          onToggleFavorite ||
+          onAddToStickers ||
+          onOpenAttachment ||
+          onSaveAttachment,
+      ),
+    );
+  const menuHeight = actionCount * 42 + dividerCount * MENU_DIVIDER_HEIGHT + 16;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
   const viewportHeight =
