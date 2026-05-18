@@ -1871,23 +1871,79 @@ function ChannelCommentsDrawer({
   onSubmit: () => void;
 }) {
   const t = useRuntimeTranslator();
-  // 走查 2026-05-18 新会话 R7（本轮）：drawer 视觉上是 modal 浮层（pointer-
-  // events-auto 卡 + Esc 关），但裸 <div> 没有 dialog 语义 → VoiceOver / TalkBack
-  // 焦点 / 阅读顺序仍把它当成普通内容的一部分，跟同套 ChannelsForwardPicker
-  // R1（已修，在该组件 line 112）犯的同款问题。SR 用户进 drawer 后看不出"现
-  // 在在评论面板里"，关闭按钮也只是普通 button。补 role="dialog" + aria-
-  // modal="true" + aria-labelledby 指向顶部「评论 N」标题，让 SR 进 drawer 时
-  // 立刻播报"评论 N 对话框"，跟移动端 sheet / forward picker 体验对齐。
-  // 注：完整的 focus trap + 离场归还焦点跟 ChannelsForwardPicker 走的是同套
-  // requestAnimationFrame + ref 协议，本轮先把语义补全，trap 留给后续 round
-  // 处理（drawer 内只有 textarea / 1 个发送 / 1 个关闭 / 评论列表里的赞和回
-  // 复按钮，已经远好于 picker；用户实际 Tab 漏出的概率比 picker 低，但仍存在）。
+  // 走查 2026-05-18 新会话 R7：drawer 视觉上是 modal 浮层（pointer-events-auto
+  // 卡 + Esc 关），但裸 <div> 没有 dialog 语义。R7 已补 role="dialog" + aria-
+  // modal="true" + aria-labelledby。
+  //
+  // 走查 2026-05-19 第七轮 R5：把 R7 deferred 的 focus restore + Tab trap 补
+  // 上。drawer 内有 ~10+ focusable（关闭 X / 评论卡每张赞+回复 / 「楼中楼」
+  // 展开/收起 / textarea / 发送），原来 Tab 越过最后一个 focusable 会漏到底
+  // 层 slide 上的 ChannelActionButton / 作者头像，违反 modal Tab 应循环的语
+  // 义；同款 ChannelsForwardPicker R1 / ChannelAuthorOverlay 第五轮 R4-R5 已
+  // 经做过同套修法，drawer 一直漏。
+  //
+  // 1) previouslyFocusedRef 记下打开瞬间的焦点（典型场景：用户点 slide 上的
+  //    chat 图标按钮触发 onToggleCommentDrawer，那颗按钮就是 prev focus），
+  //    drawer 离场时 rAF 等 React commit 落定后归还。
+  // 2) Tab cycling trap：监听 document keydown，焦点漏到 dialog 外时拉回；
+  //    在首尾循环。Shift+Tab 同款。
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    return () => {
+      const prev = previouslyFocusedRef.current;
+      previouslyFocusedRef.current = null;
+      if (prev && document.contains(prev)) {
+        window.requestAnimationFrame(() => prev.focus());
+      }
+    };
+  }, []);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
   return (
     <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center px-6">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="channels-comments-drawer-title"
+        // R5 续：tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序
+        // 列里 —— focus trap 兜底：极端无 focusable child 时也能把焦点拉进来
+        // 不漏。
+        tabIndex={-1}
         className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
       >
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
