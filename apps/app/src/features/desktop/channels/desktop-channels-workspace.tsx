@@ -1887,6 +1887,15 @@ function ChannelCommentsDrawer({
   //    drawer 离场时 rAF 等 React commit 落定后归还。
   // 2) Tab cycling trap：监听 document keydown，焦点漏到 dialog 外时拉回；
   //    在首尾循环。Shift+Tab 同款。
+  //
+  // 走查 2026-05-19 第七轮 R6：focus 归还走 preventScroll:true —— drawer 会被
+  // workspace 的 L427-431 effect 在 selectedPost?.id 改变时自动关掉（用户鼠标
+  // 滚轮滚到新 slide 触发 IntersectionObserver setSelectedPostId）。auto-close
+  // 时 prev focus 仍然指向打开 drawer 的"旧 slide chat-icon 按钮"，该按钮已经
+  // 滚出视口；裸 .focus() 默认 scrollIntoView 会把页面甩回旧 slide，用户体感
+  // "我刚刚明明滚到下一条，怎么自己又跳回去了"。preventScroll 让 viewport 保持
+  // 在用户滚到的位置；focus 设到 hidden 元素本身仍然 a11y-correct（Tab 继续从
+  // 那里前进，DOM 顺序最终走到当前可见 slide 的 focusable）。
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -1900,7 +1909,9 @@ function ChannelCommentsDrawer({
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
       if (prev && document.contains(prev)) {
-        window.requestAnimationFrame(() => prev.focus());
+        window.requestAnimationFrame(() =>
+          prev.focus({ preventScroll: true }),
+        );
       }
     };
   }, []);
@@ -2052,7 +2063,17 @@ function ChannelAuthorOverlay({
       if (prev && document.contains(prev)) {
         // rAF 等到 overlay unmount commit 落定 — 同 frame 调 .focus() 时浏览器
         // 偶发把焦点丢到 body（commit 还在跑 cleanup）。
-        window.requestAnimationFrame(() => prev.focus());
+        //
+        // 走查 2026-05-19 第七轮 R6：preventScroll:true —— 用户在 overlay 内点
+        // recent posts 列表里的"非当前"post 时，URL 改 postId 让 workspace
+        // selectedPostId 变化、L508-529 scrolledRouteIdRef effect 把视口滚到新
+        // slide，但 overlay 仍打开（authorId 没动）。等用户最终关 overlay 时
+        // prev 仍指向"原始"slide 的作者按钮 —— 那条 slide 早就滚出视口。裸
+        // .focus() 默认 scrollIntoView 会把页面甩回去。preventScroll 让 view
+        // port 保持在新 slide 不抖；focus 仍 a11y-correct。
+        window.requestAnimationFrame(() =>
+          prev.focus({ preventScroll: true }),
+        );
       }
     };
   }, []);

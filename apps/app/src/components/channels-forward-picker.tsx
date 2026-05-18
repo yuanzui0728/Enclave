@@ -189,7 +189,18 @@ export function ChannelsForwardPicker({
       if (prev && document.contains(prev)) {
         // 等下一帧再把焦点还回去——picker 销毁触发的 React commit 跟焦点
         // 转移同帧时浏览器偶发把焦点丢到 body；rAF 让 commit 落定。
-        window.requestAnimationFrame(() => prev.focus());
+        //
+        // 走查 2026-05-19 第七轮 R6（desktop channels）：preventScroll:true ——
+        // picker 关闭路径有多种（手动 cancel / Esc / Android-back / mid-flight
+        // 切账户 baseUrl reset / pickFinishUI auto-close），其中 baseUrl reset
+        // / mid-flight 切账户的情况下 prev focus 可能是上一个账户里 home / chat
+        // 的某颗按钮，DOM 仍在但视口可能因账户切换重渲已经不一样位置；裸
+        // .focus() scrollIntoView 跳到看起来"凭空冒出来"的位置。preventScroll
+        // 让 viewport 保持稳定。同款 R6 在 desktop ChannelCommentsDrawer /
+        // ChannelAuthorOverlay 一起加。
+        window.requestAnimationFrame(() =>
+          prev.focus({ preventScroll: true }),
+        );
       }
     };
   }, [open]);
