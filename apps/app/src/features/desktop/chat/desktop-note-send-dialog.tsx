@@ -70,6 +70,37 @@ export function DesktopNoteSendDialog({
     setSearchTerm("");
   }, [open]);
 
+  // 走查电脑端单聊新一轮 R1：和姊妹 desktop-message-forward-dialog
+  // (line 131-152) / desktop-create-group-dialog / desktop-chat-confirm-dialog
+  // / desktop-chat-text-edit-dialog 一票 dialog 同款 ESC 处理已修过，本
+  // note-send-dialog 完全没挂 keydown listener —— 用户从 composer「+ → 收藏
+  //  → 笔记」或者 notes-workspace 右键「发送给」打开本 dialog 时，按 Esc
+  // 不会关 dialog；workspace 那条 window keydown 兜底（queueMicrotask
+  // 检查 defaultPrevented）反而看到没人 preventDefault → 跑 dismissSidePanel
+  // 把背后的「聊天信息」侧栏一起关掉，dialog 自己还留在屏幕上。和 forward
+  // dialog 完全对齐：挂 listener，pending 期间也消费 Esc 防 dismiss 透传，
+  // 服务端那一发飞着的笔记 mutation 等落地后用户能再按 Esc 真关。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
   // 之前 sort + filter 合在一个 useMemo 里，[conversations, searchTerm] 同时
   // 是 deps：每次按键都重新 sort 一遍（O(N log N)），即使会话列表压根没动。
   // 拆成两段：sort 只在 conversations 变化时做，按键时只做 filter。
