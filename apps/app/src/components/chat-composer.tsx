@@ -4074,7 +4074,7 @@ function DesktopFavoritePicker({
 function DesktopToolbarButton({
   icon,
   label,
-  active = false,
+  active,
   disabled = false,
   title,
   onClick,
@@ -4086,12 +4086,19 @@ function DesktopToolbarButton({
   title?: string;
   onClick: () => void;
 }) {
+  // R34：表情 / 收藏 / 语音输入 是 toggle button（点同按钮反转 panel 显示），
+  // 图片 / 文件 / 截图 是 command button（点了立刻执行单次动作，不维持
+  // pressed 状态）。和 desktop-notes-workspace R30 ToolbarButton 同款分流——
+  // 调用方传了 active 视为 toggle 渲染 aria-pressed；没传走 undefined 不输出
+  // aria-pressed 保留 command button 语义。
+  const isToggle = active !== undefined;
   return (
     <button
       type="button"
       disabled={disabled}
       title={title ?? label}
       aria-label={label}
+      aria-pressed={isToggle ? active : undefined}
       onClick={onClick}
       className={cn(
         "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[10px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
