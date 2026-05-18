@@ -8,11 +8,12 @@ import type {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CloudUserDetail,
   CloudUserListResponse,
+  CloudUserStats,
   CloudUserStatus,
   CloudUserSummary,
   SubscriptionStatus,
 } from "@yinjie/contracts";
-import { Between, Brackets, In, Repository } from "typeorm";
+import { Between, Brackets, In, Repository, type SelectQueryBuilder } from "typeorm";
 import { EmailAuthService } from "../auth/email-auth.service";
 import {
   GoogleAuthService,
@@ -346,21 +347,7 @@ export class UsersService implements OnModuleInit {
     if (!query.includeTestAccounts) {
       // 默认隐藏 smoke / e2e / Twilio / 演示号，让"用户"tab 干净。运营临时排查
       // 需要看测试账号时 UI 上勾选 includeTestAccounts=true 即可放回来。
-      builder.andWhere(
-        new Brackets((qb) => {
-          // phone 白名单：要么没填（纯 email/Google 注册），要么是 14 位 9 开头
-          // 的生产 hash。两者都不是 → 测试号。
-          qb.where(
-            "user.phone IS NULL OR (LENGTH(user.phone) = 14 AND user.phone GLOB '9*')",
-          );
-          TEST_ACCOUNT_EMAIL_PATTERNS.forEach((pattern, idx) => {
-            qb.andWhere(
-              `(user.email IS NULL OR user.email NOT LIKE :testEmailPattern${idx})`,
-              { [`testEmailPattern${idx}`]: pattern },
-            );
-          });
-        }),
-      );
+      this.applyProductionUserFilter(builder);
     }
     if (query.query) {
       // 生产 phone 是 14 位 hash，运营记不住；同一行又有 email/displayName 显式
@@ -600,6 +587,51 @@ export class UsersService implements OnModuleInit {
       // "2026-05-18 03:31:59.441" 这种空格分隔被前端 new Date 在 Safari 上 NaN。
       lastChatMessageAt: normalizeSqliteIsoTimestamp(lastChat?.lastChatAt ?? null),
     };
+  }
+
+  // 顶部"用户总数 / 会员用户数"卡片。口径固定为生产用户（永远剔除测试账号），
+  // 不受当前列表筛选器影响——运营随便切 status/subscriptionStatus/搜索，看到的
+  // 卡片数字依然是真实总量。
+  async getUserStatsAdmin(): Promise<CloudUserStats> {
+    const baseBuilder = this.userRepo.createQueryBuilder("user");
+    this.applyProductionUserFilter(baseBuilder);
+    const totalUsers = await baseBuilder.getCount();
+
+    // 会员定义跟列表 subscriptionStatus=active 完全同口径：当下存在 status=active
+    // 且未过期的订阅行。这样卡片 + 列表筛选选 active 时数字必然一致。
+    const memberBuilder = baseBuilder.clone();
+    const now = new Date();
+    memberBuilder.andWhere(
+      `EXISTS (SELECT 1 FROM "user_subscriptions" "subStatus"
+        WHERE "subStatus"."userId" = "user"."id"
+          AND "subStatus"."status" = 'active'
+          AND "subStatus"."startsAt" <= :subStatusNow
+          AND "subStatus"."expiresAt" > :subStatusNow)`,
+      { subStatusNow: now },
+    );
+    const memberUsers = await memberBuilder.getCount();
+
+    return { totalUsers, memberUsers };
+  }
+
+  private applyProductionUserFilter(
+    builder: SelectQueryBuilder<CloudUserEntity>,
+  ) {
+    builder.andWhere(
+      new Brackets((qb) => {
+        // phone 白名单：要么没填（纯 email/Google 注册），要么是 14 位 9 开头
+        // 的生产 hash。两者都不是 → 测试号（"+"E.164 / 11 位裸号 / 演示号）。
+        qb.where(
+          "user.phone IS NULL OR (LENGTH(user.phone) = 14 AND user.phone GLOB '9*')",
+        );
+        TEST_ACCOUNT_EMAIL_PATTERNS.forEach((pattern, idx) => {
+          qb.andWhere(
+            `(user.email IS NULL OR user.email NOT LIKE :testEmailPattern${idx})`,
+            { [`testEmailPattern${idx}`]: pattern },
+          );
+        });
+      }),
+    );
   }
 
   private async resolveInviterPhoneByCodeId(codeId: string) {

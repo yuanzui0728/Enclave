@@ -137,6 +137,15 @@ export function UsersPage() {
 
   const items = usersQuery.data?.items ?? [];
 
+  // 顶部统计卡片：口径固定为生产用户，跟当前列表筛选器解耦——ops 切搜索 /
+  // 状态 / 订阅状态都不会影响这两个数字。staleTime 拉到 30s，避免每次切筛选
+  // 都重 fetch。
+  const statsQuery = useQuery({
+    queryKey: ["cloud-console", "saas-users", "stats"],
+    queryFn: () => cloudAdminApi.getCloudUserStats(),
+    staleTime: 30_000,
+  });
+
   function toggleSort(field: SortField) {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -149,8 +158,35 @@ export function UsersPage() {
     setPage(1);
   }
 
+  const statsItems: { label: string; value: string }[] = [
+    {
+      label: t("Real users"),
+      value: statsQuery.data ? String(statsQuery.data.totalUsers) : "—",
+    },
+    {
+      label: t("Member users"),
+      value: statsQuery.data ? String(statsQuery.data.memberUsers) : "—",
+    },
+  ];
+
   return (
     <SurfaceCard className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {statsItems.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-[color:var(--border-faint)] bg-white px-4 py-3"
+          >
+            <div className="text-xs text-[color:var(--text-muted)]">
+              {stat.label}
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-[color:var(--text-primary)] tabular-nums">
+              {stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-3 md:grid-cols-4">
         <input
           value={query}

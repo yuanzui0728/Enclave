@@ -185,6 +185,14 @@ export interface CloudUserListResponse {
   totalPages: number;
 }
 
+// 列表顶部"用户总数 / 会员用户数"卡片。口径永远是生产用户（剔除 +E.164、11
+// 位裸号、smoke/example 邮箱），跟列表当前筛选器无关——不管 ops 怎么搜怎么
+// 筛，数字始终是真实总量。
+export interface CloudUserStats {
+  totalUsers: number;
+  memberUsers: number;
+}
+
 export interface CloudUserDetail extends CloudUserSummary {
   subscriptions: SubscriptionRecordSummary[];
   redemptionsAsInviter: InviteRedemptionSummary[];

@@ -13,6 +13,7 @@ import {
 import type {
   CloudUserDetail,
   CloudUserListResponse,
+  CloudUserStats,
   SubscriptionRecordSummary,
 } from "@yinjie/contracts";
 import { AdminGuard, type AdminRequest } from "../auth/admin.guard";
@@ -47,6 +48,14 @@ export class UsersAdminController {
       orderBy: query.orderBy,
       orderDir: query.orderDir,
     });
+  }
+
+  // stats 必须声明在 :id 之前，否则 GET /admin/cloud/users/stats 会先撞 :id
+  // 拿到 id="stats" 走进 detail()，404 返"用户不存在"。Nest 的 path-to-regexp
+  // 路由排队按声明顺序匹配。
+  @Get("stats")
+  async stats(): Promise<CloudUserStats> {
+    return this.users.getUserStatsAdmin();
   }
 
   @Get(":id")

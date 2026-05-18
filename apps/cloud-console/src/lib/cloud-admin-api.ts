@@ -32,6 +32,7 @@ import type {
   CloudUserDetail,
   CloudUserListQuery,
   CloudUserListResponse,
+  CloudUserStats,
   BanCloudUserRequest,
   GrantSubscriptionRequest,
   IssueCloudAdminAccessTokenResponse,
@@ -1264,6 +1265,8 @@ export const cloudAdminApi = {
     ),
 
   getCloudUser: (id: string) => adminFetch<CloudUserDetail>(`/users/${id}`),
+
+  getCloudUserStats: () => adminFetch<CloudUserStats>("/users/stats"),
 
   lookupIpRegion: (ip: string) =>
     adminFetch<{
