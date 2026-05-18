@@ -3095,6 +3095,16 @@ export function StickerPanel({
                           alt={tab.label}
                           className="h-full w-full object-cover"
                           loading="lazy"
+                          // 走查电脑端单聊 R106：和姊妹 R105 sticker 单元格 / R94
+                          // ImageMessage 同款 — 整张 tab 是 <button onClick=>
+                          // {() => onPackChange(tab.id)}>（line 3060-3080）当
+                          // "切换 sticker 包"按钮，里面这张 cover sticker 默
+                          // 认 draggable=true。用户在 sticker panel 底部 pack
+                          // 切换栏点 tab 时 mousedown+轻微 drag 会触发 HTML5
+                          // native drag → click 不 fire → tab 没切；同时拖出
+                          // 的 cover 表情 URL 会被释放到隔壁 textarea / 桌面，
+                          // 体感"点 tab 没反应、桌面莫名多张图"。
+                          draggable={false}
                         />
                       ) : (
                         <span>{tab.badgeText ?? tab.label.slice(0, 1)}</span>
