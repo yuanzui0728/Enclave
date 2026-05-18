@@ -784,7 +784,7 @@ msgid "浏览"
 msgstr "浏览"
 
 #: apps/wiki/src/components/root-layout.tsx:54
-#: apps/wiki/src/routes/home-page.tsx:52
+#: apps/wiki/src/routes/home-page.tsx:104
 msgid "角色目录"
 msgstr "角色目录"
 
@@ -1129,7 +1129,7 @@ msgstr "回复"
 
 #: apps/wiki/src/components/talk-panel.tsx:344
 #: apps/wiki/src/routes/character-page.tsx:109
-#: apps/wiki/src/routes/home-page.tsx:178
+#: apps/wiki/src/routes/home-page.tsx:232
 #: apps/wiki/src/routes/my-characters-page.tsx:65
 #: apps/wiki/src/routes/watchlist-page.tsx:92
 msgid "已删除"
@@ -1154,38 +1154,43 @@ msgid "网络请求失败，请检查网络后重试。"
 msgstr "网络请求失败，请检查网络后重试。"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:100
+#: apps/wiki/src/lib/wiki-api.ts:106
 msgid "该功能暂未上线（路径 {0}），请稍后重试或刷新页面。"
 msgstr "该功能暂未上线（路径 {0}），请稍后重试或刷新页面。"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:104
+#: apps/wiki/src/lib/wiki-api.ts:110
+msgid "服务暂时不可用 ({0})，请稍后重试。"
+msgstr "服务暂时不可用 ({0})，请稍后重试。"
+
+#. placeholder {0}: res.status
+#: apps/wiki/src/lib/wiki-api.ts:114
 msgid "请求失败 ({0})"
 msgstr "请求失败 ({0})"
 
-#: apps/wiki/src/lib/wiki-api.ts:667
+#: apps/wiki/src/lib/wiki-api.ts:677
 msgid "管理员直接删除词条"
 msgstr "管理员直接删除词条"
 
-#: apps/wiki/src/lib/wiki-api.ts:678
+#: apps/wiki/src/lib/wiki-api.ts:688
 msgid "管理员直接恢复词条"
 msgstr "管理员直接恢复词条"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:999
+#: apps/wiki/src/lib/wiki-api.ts:1009
 msgid "导出失败 ({0})"
 msgstr "导出失败 ({0})"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:1057
+#: apps/wiki/src/lib/wiki-api.ts:1067
 msgid "头像上传失败 ({0})"
 msgstr "头像上传失败 ({0})"
 
-#: apps/wiki/src/lib/wiki-api.ts:1075
+#: apps/wiki/src/lib/wiki-api.ts:1085
 msgid "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
 msgstr "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
 
-#: apps/wiki/src/lib/wiki-api.ts:1088
+#: apps/wiki/src/lib/wiki-api.ts:1098
 msgid "JSON 解析失败：{reason}"
 msgstr "JSON 解析失败：{reason}"
 
@@ -1653,14 +1658,14 @@ msgstr "无保护"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:129
 #: apps/wiki/src/routes/character-page.tsx:295
-#: apps/wiki/src/routes/home-page.tsx:185
+#: apps/wiki/src/routes/home-page.tsx:239
 #: apps/wiki/src/routes/watchlist-page.tsx:98
 msgid "半保护"
 msgstr "半保护"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:130
 #: apps/wiki/src/routes/character-page.tsx:295
-#: apps/wiki/src/routes/home-page.tsx:186
+#: apps/wiki/src/routes/home-page.tsx:240
 #: apps/wiki/src/routes/watchlist-page.tsx:99
 msgid "完全保护"
 msgstr "完全保护"
@@ -1887,7 +1892,7 @@ msgid "历史"
 msgstr "历史"
 
 #: apps/wiki/src/routes/character-page.tsx:114
-#: apps/wiki/src/routes/home-page.tsx:176
+#: apps/wiki/src/routes/home-page.tsx:230
 msgid "待创建"
 msgstr "待创建"
 
@@ -2224,48 +2229,48 @@ msgstr "提交后进 patroller 审核队列"
 msgid "提交后进评审队列"
 msgstr "提交后进评审队列"
 
-#: apps/wiki/src/routes/home-page.tsx:53
+#: apps/wiki/src/routes/home-page.tsx:105
 msgid "所有角色词条"
 msgstr "所有角色词条"
 
-#: apps/wiki/src/routes/home-page.tsx:55
+#: apps/wiki/src/routes/home-page.tsx:107
 msgid "按维基百科模式管理世界角色：任何登录用户都能创建角色、编辑画像和运行逻辑、申请删除或恢复；高风险改动进入巡查队列，通过后才发布到角色运行时。"
 msgstr "按维基百科模式管理世界角色：任何登录用户都能创建角色、编辑画像和运行逻辑、申请删除或恢复；高风险改动进入巡查队列，通过后才发布到角色运行时。"
 
-#: apps/wiki/src/routes/home-page.tsx:63
+#: apps/wiki/src/routes/home-page.tsx:115
 #: apps/wiki/src/routes/my-character-edit-page.tsx:357
 msgid "✨ 创建角色"
 msgstr "✨ 创建角色"
 
-#: apps/wiki/src/routes/home-page.tsx:70
+#: apps/wiki/src/routes/home-page.tsx:122
 msgid "登录后参与编辑"
 msgstr "登录后参与编辑"
 
-#: apps/wiki/src/routes/home-page.tsx:85
+#: apps/wiki/src/routes/home-page.tsx:137
 msgid "共 {total} 个词条"
 msgstr "共 {total} 个词条"
 
-#: apps/wiki/src/routes/home-page.tsx:89
+#: apps/wiki/src/routes/home-page.tsx:141
 msgid "点击进入查看 / 编辑 / 历史 / 讨论"
 msgstr "点击进入查看 / 编辑 / 历史 / 讨论"
 
-#: apps/wiki/src/routes/home-page.tsx:97
+#: apps/wiki/src/routes/home-page.tsx:149
 msgid "正在加载词条…"
 msgstr "正在加载词条…"
 
-#: apps/wiki/src/routes/home-page.tsx:110
+#: apps/wiki/src/routes/home-page.tsx:162
 msgid "还没有任何角色词条。点右上方\"✨ 创建角色\"开始第一个。"
 msgstr "还没有任何角色词条。点右上方\"✨ 创建角色\"开始第一个。"
 
-#: apps/wiki/src/routes/home-page.tsx:111
+#: apps/wiki/src/routes/home-page.tsx:163
 msgid "还没有任何角色词条。登录后即可创建第一个。"
 msgstr "还没有任何角色词条。登录后即可创建第一个。"
 
-#: apps/wiki/src/routes/home-page.tsx:191
+#: apps/wiki/src/routes/home-page.tsx:245
 msgid "社区创建"
 msgstr "社区创建"
 
-#: apps/wiki/src/routes/home-page.tsx:205
+#: apps/wiki/src/routes/home-page.tsx:261
 msgid "（暂无简介）"
 msgstr "（暂无简介）"
 

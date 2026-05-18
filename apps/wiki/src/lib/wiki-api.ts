@@ -95,13 +95,23 @@ async function request<T>(
       /^Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+/.test(
         (payload as { message: string }).message,
       );
+    // 5xx 服务器错误：NestJS / Node 默认抛 "Internal Server Error"、"Bad Gateway"
+    // 这种全英文 message，前端原样渲染会把"Internal Server Error"塞到 ErrorBlock
+    // 给用户看。生产环境用户看不懂；同时也不应该把后端 stack/堆栈语义往前端漏。
+    // 5xx 一律替成本地化兜底；底层 payload 仍然挂在 WikiApiError 上供 console
+    // 调试，不丢信息。
+    const isServerError = res.status >= 500 && res.status < 600;
     const message = isStaleRoute
       ? translateRuntimeMessage(
           msg`该功能暂未上线（路径 ${res.status}），请稍后重试或刷新页面。`,
         )
-      : ((payload && typeof payload === "object" && "message" in payload
-          ? String((payload as { message: unknown }).message)
-          : null) ?? translateRuntimeMessage(msg`请求失败 (${res.status})`));
+      : isServerError
+        ? translateRuntimeMessage(
+            msg`服务暂时不可用 (${res.status})，请稍后重试。`,
+          )
+        : ((payload && typeof payload === "object" && "message" in payload
+            ? String((payload as { message: unknown }).message)
+            : null) ?? translateRuntimeMessage(msg`请求失败 (${res.status})`));
     throw new WikiApiError(res.status, payload, message);
   }
   return payload as T;

@@ -71,6 +71,32 @@ export function HomePage() {
     };
   }, []);
 
+  // 角色目录是用户的入口，下一步几乎必然进某张卡。character-page 是
+  // lazyWithReload chunk（~7KB gzipped），cold click→h1 实测 376ms 里
+  // 有 ~30-50ms 是这个 chunk 的网络往返 + parse。home 进来后 idle 时
+  // 预拉，第一次点卡 click→navigate 直接走内存里的 module；命中后
+  // 整体降到 ~200ms。requestIdleCallback 不阻塞首屏；不支持的浏览器
+  // 走 setTimeout 200ms 兜底——比 home 首屏渲染稍后，肯定来得及。
+  useEffect(() => {
+    const preloadChunk = () => {
+      void import("./character-page");
+    };
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    };
+    if (typeof w.requestIdleCallback === "function") {
+      const handle = w.requestIdleCallback(preloadChunk, { timeout: 1500 });
+      return () => {
+        const w2 = window as typeof window & {
+          cancelIdleCallback?: (id: number) => void;
+        };
+        w2.cancelIdleCallback?.(handle);
+      };
+    }
+    const id = window.setTimeout(preloadChunk, 200);
+    return () => window.clearTimeout(id);
+  }, []);
+
   const total = charactersQ.data?.length ?? 0;
 
   return (
