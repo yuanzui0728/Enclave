@@ -85,8 +85,37 @@ export function DesktopChatWindowPage() {
         return;
       }
 
-      event.preventDefault();
-      closeStandaloneWindow(fallbackPath);
+      // 走查新一轮 R27：原写法对 Esc 一刀切 closeStandaloneWindow，但本窗口
+      // 内还嵌着 ConversationThreadPanel + 各种 dialog（DesktopChatConfirmDialog
+      // / DesktopChatTextEditDialog / DesktopContactTextEditDialog / 转发弹层
+      // / 头像 popover / sticker panel / + 快捷菜单等），每个都注册了自己的
+      // window keydown Esc handler。stopPropagation 在 window 同元素 sibling
+      // listener 上不生效（MDN：需要 stopImmediatePropagation），结果用户：
+      // · 改备注 → 弹改备注 dialog → 按 Esc 想关 dialog → dialog 关掉同时
+      //   整个独立窗口被一起关掉，用户失去当前聊天上下文得手动重开。
+      // · 在 composer 里打到一半草稿 → 按 Esc 想清掉输入法或别的 sub UI →
+      //   整个窗口被关，未发的草稿一并丢失（textarea Esc 没 preventDefault，
+      //   直接命中本兜底）。
+      // 与姊妹 desktop-chat-workspace 的 dismissSidePanel 兜底（line 979）同
+      // 思路，推到 microtask + 检查 defaultPrevented：所有同步 sibling Esc
+      // listener 跑完后，如果有人 preventDefault 了（说明 sub UI 接走 Esc），
+      // 不再关窗。同时跳过 textarea / 输入框 focus 状态 —— Esc 在输入态对
+      // 用户来说大概率是"取消当前输入意图"而非"关窗"。
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest(
+          'input, textarea, [contenteditable="true"], [contenteditable=""], [role="textbox"]',
+        )
+      ) {
+        return;
+      }
+      queueMicrotask(() => {
+        if (event.defaultPrevented) {
+          return;
+        }
+        closeStandaloneWindow(fallbackPath);
+      });
     };
 
     window.addEventListener("keydown", handleKeyDown);
