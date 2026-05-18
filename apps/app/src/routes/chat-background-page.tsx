@@ -121,6 +121,20 @@ export function ChatBackgroundPage() {
     setNotice(null);
   }, [conversationId]);
 
+  // 走查 R2：和 chat-details-page R1 同款问题——「背景图已上传，记得保存当前
+  // 设置。」「默认背景图已保存。」「当前聊天背景已切到新预览，保存后生效。」
+  // 这一串 setNotice 调用之后没 auto-dismiss，notice 文本一直挂在背景预览
+  // 上方，直到用户离开页面或换 conversationId。chat-list-page / chat-details
+  // 都对齐 3.5s auto-dismiss，本页只用纯字符串 notice，没有 actionLabel 分支
+  // 要兜，直接 dismiss 即可。pageError 走 mutation.error 渲染，不经 notice 状态。
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
       return;

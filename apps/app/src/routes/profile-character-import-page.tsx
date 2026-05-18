@@ -3,6 +3,7 @@ import { msg } from "@lingui/macro";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   FileJson,
@@ -32,7 +33,12 @@ type Result =
       // 误导用户以为又是好友。
       friendshipStatus: string;
     }
-  | { kind: "danger"; message: string };
+  | { kind: "danger"; message: string }
+  // 走查 R1：多文件拖入"只取第一个"这种非阻塞提示原本走 danger（红色）卡，
+  // 视觉上等同于"导入失败"——实际上 preview 已经成功就位，用户接着点
+  // 「导入到我的世界」即可。新增 warning 类型走 amber 色，与 FilePreviewCard
+  // 里 schema 缺失的提醒同档。
+  | { kind: "warning"; message: string };
 
 type FilePreview = {
   fileName: string;
@@ -163,10 +169,11 @@ export function ProfileCharacterImportPage() {
       payload: p,
     });
     // readId 在每个 await 后已经校过；如果到这里 readId 仍是最新，再把
-    // postReadWarning（如多文件拖入提示）作为 danger 卡叠加显示——和
-    // preview 共存，提醒用户但不阻塞导入。
+    // postReadWarning（如多文件拖入提示）作为 warning 卡叠加显示——preview
+    // 已经就位、用户可以继续点导入，所以走 amber 警告色而不是红色 danger，
+    // 避免视觉上像"导入失败了"。
     if (postReadWarning && readId === latestReadIdRef.current) {
-      setResult({ kind: "danger", message: postReadWarning });
+      setResult({ kind: "warning", message: postReadWarning });
     }
   }
 
@@ -376,6 +383,12 @@ export function ProfileCharacterImportPage() {
         {result?.kind === "danger" && (
           <div className="flex items-start gap-3 rounded-2xl bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[13px] text-[#b42318]">
             <X size={16} className="mt-0.5 shrink-0" />
+            <div>{result.message}</div>
+          </div>
+        )}
+        {result?.kind === "warning" && (
+          <div className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[#92400e]">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
           </div>
         )}
