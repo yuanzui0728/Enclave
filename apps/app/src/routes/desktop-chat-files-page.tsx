@@ -821,6 +821,15 @@ export function DesktopChatFilesPage() {
                             // R84/R87/R92 一批 sticker/preview/viewer 已挂的
                             // 同款修法补 decoding="async"。
                             decoding="async"
+                            // 走查电脑端单聊 R97：和姊妹 R94 ImageMessage 同款。
+                            // 这张 <img> 被包在 <button onClick={() =>
+                            // setViewerAttachmentId(item.id)}> 当作"点击进 viewer"
+                            // 入口，默认 draggable=true 让用户在文件页按住缩略图
+                            // 想点开预览时 mousedown→拖出阈值距离触发 HTML5
+                            // native drag → mouseup 不再 fire click，"点开预览"
+                            // 被 silently 丢；同时拖出的图片会被释放到桌面/其它
+                            // 窗口可放下区域，意外触发"下载这张图到桌面"。
+                            draggable={false}
                           />
                           <div className="absolute inset-x-0 bottom-0 border-t border-white/12 bg-black/36 px-2 py-1.5 text-left text-[10px] text-white">
                             {t(msg`点击预览`)}
