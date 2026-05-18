@@ -928,14 +928,24 @@ export function DiscoverFeedPage() {
   // 上切语言（系统设置 → 语言或语言切换器），visiblePosts 引用不变 → memo 不
   // 重算 → 卡片底部 summary 和顶上时间戳还是旧语言。把 t 加进 deps：t 由
   // useRuntimeTranslator 出，identity 仅在 [activationVersion, locale] 翻动时换。
+  // 新会话 R3 (perf)：processedPosts / processedCommentsByPostId 只在 mobile
+  // JSX 那条 visiblePosts.map(...) 路径里读 (L2306 / L2428)，desktop 早返到
+  // DesktopFeedWorkspace (L1894) 后这两份结果完全不消费。但 useMemo 不知道
+  // 这一点，每次 visiblePosts 引用换 (like/comment optimistic / blocked /
+  // refetch) 都白跑：60 条 post × (stripToolCallSyntax + getFeedSummaryText
+  // + formatTimestamp) ≈ 60 个新 Intl.DateTimeFormat (~1-3ms 每个 = 60-180ms
+  // 单次)，桌面用户每次互动都吃这份成本却看不见对应输出。加 isDesktopLayout
+  // gate short-circuit，移动端逻辑完全不动；t 仍留 deps 防 mobile 切语言后
+  // 卡片底部 summary / 时间戳还停留旧语言。
   const processedPosts = useMemo(() => {
+    if (isDesktopLayout) return [];
     return visiblePosts.map((post) => {
       const displayText = stripToolCallSyntax(post.text);
       const summaryText = displayText ? "" : getFeedSummaryText(post);
       const formattedCreatedAt = formatTimestamp(post.createdAt);
       return { post, displayText, summaryText, formattedCreatedAt };
     });
-  }, [visiblePosts, t]);
+  }, [isDesktopLayout, visiblePosts, t]);
   const processedCommentsByPostId = useMemo(() => {
     const result = new Map<
       string,
@@ -944,6 +954,7 @@ export function DiscoverFeedPage() {
         byId: Map<string, FeedComment>;
       }
     >();
+    if (isDesktopLayout) return result;
     for (const post of visiblePosts) {
       const expanded = fullCommentsByPostId[post.id] ?? null;
       const source = expanded ?? post.commentsPreview;
@@ -959,7 +970,7 @@ export function DiscoverFeedPage() {
       result.set(post.id, { comments: cleaned, byId });
     }
     return result;
-  }, [visiblePosts, fullCommentsByPostId]);
+  }, [isDesktopLayout, visiblePosts, fullCommentsByPostId]);
   // 收藏命中查每条 row 一次走 includes：100 条 post × 50 个收藏 ≈ O(N×M)
   // 数组扫，每次 page render 都重做。落成 Set + useCallback 一举两得 ——
   // 查询 O(1)，闭包引用稳定不再让 workspace 因为 isPostFavorite prop 变天
