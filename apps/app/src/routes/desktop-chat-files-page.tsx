@@ -464,26 +464,56 @@ export function DesktopChatFilesPage() {
     });
   };
 
+  // 走查电脑端单聊新一轮 R4：和 handleAttachmentSave R3 同款 — handleAttachmentOpen
+  // 是 fire-and-forget，无任何同步锁。聊天文件页列表行「打开附件」按钮 + 大图
+  // 查看器三处都直接调用，同帧 <16ms double-click openExternalUrl 走 OS 默认 app
+  // 时被 spawn 两次，桌面会看到「图片预览器」/ 系统 default 文件管理器在前台被
+  // 顶起两次（macOS Preview / Windows Photos 是 single-instance 的，第二次刷
+  // 一下窗口；Linux 取决于桌面环境）。按 url 上锁。
+  const openingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const handleAttachmentOpen = (input: {
     url: string;
     kind: "image" | "file";
   }) => {
-    void openExternalUrl(input.url).then((opened) => {
-      setActionNotice({
-        message:
-          input.kind === "image"
-            ? opened
-              ? t(msg`已打开图片。`)
-              : t(msg`图片打开失败，请稍后再试。`)
-            : opened
-              ? t(msg`已打开附件。`)
-              : t(msg`附件打开失败，请稍后再试。`),
-        tone: opened ? "success" : "danger",
+    if (openingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    openingAttachmentUrlsRef.current.add(input.url);
+    void openExternalUrl(input.url)
+      .then((opened) => {
+        setActionNotice({
+          message:
+            input.kind === "image"
+              ? opened
+                ? t(msg`已打开图片。`)
+                : t(msg`图片打开失败，请稍后再试。`)
+              : opened
+                ? t(msg`已打开附件。`)
+                : t(msg`附件打开失败，请稍后再试。`),
+          tone: opened ? "success" : "danger",
+        });
+      })
+      .finally(() => {
+        openingAttachmentUrlsRef.current.delete(input.url);
       });
-    });
   };
 
+  // 走查电脑端单聊新一轮 R4：和姊妹 chat-message-list R3（图片预览 onOpenInWindow）
+  // / R7（会话「在独立窗口打开」commit 2a0fc8632）同款 — 聊天文件页大图查看
+  // 器「在独立窗口打开」按钮 onClick 走 handleOpenInWindow，无任何同步锁，
+  // 也没 .catch（dynamic import + 跨窗口 IPC 拉失败时 rejection 直接落 window.
+  // unhandledrejection 污染 telemetry）。同帧 <16ms double-click：
+  // · 第一次 getByLabel → undefined → new WebviewWindow 在 Tauri settle 中
+  // · 第二次 getByLabel 也 undefined → 也 new WebviewWindow(same label) →
+  //   Tauri 返回「window already exists」→ tauri://error → finish(false)
+  // · 用户：第一次窗口已成功打开 + 又看到「浏览器阻止了新窗口」红色 notice
+  // 按 attachment id 上锁，finally 解锁；不同图片互不影响。
+  const openingWindowAttachmentIdsRef = useRef<Set<string>>(new Set());
   const handleOpenInWindow = (item: ImageAttachmentRow) => {
+    if (openingWindowAttachmentIdsRef.current.has(item.id)) {
+      return;
+    }
+    openingWindowAttachmentIdsRef.current.add(item.id);
     void openDesktopChatImageViewerWindow({
       imageUrl: item.attachment.url,
       title: item.attachment.fileName,
@@ -491,14 +521,24 @@ export function DesktopChatFilesPage() {
       returnTo: buildAttachmentMessagePath(item),
       items: standaloneViewerItems,
       activeId: item.id,
-    }).then((opened) => {
-      setActionNotice({
-        message: opened
-          ? t(msg`已在独立窗口打开图片。`)
-          : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
-        tone: opened ? "success" : "danger",
+    })
+      .then((opened) => {
+        setActionNotice({
+          message: opened
+            ? t(msg`已在独立窗口打开图片。`)
+            : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
+          tone: opened ? "success" : "danger",
+        });
+      })
+      .catch(() => {
+        setActionNotice({
+          message: t(msg`打开独立窗口失败，请稍后再试。`),
+          tone: "danger",
+        });
+      })
+      .finally(() => {
+        openingWindowAttachmentIdsRef.current.delete(item.id);
       });
-    });
   };
 
   if (!isDesktopLayout) {
