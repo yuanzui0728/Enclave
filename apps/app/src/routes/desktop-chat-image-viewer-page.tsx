@@ -60,10 +60,18 @@ export function DesktopChatImageViewerPage() {
     () => parseDesktopChatImageViewerRouteHash(hash),
     [hash],
   );
+  // 走查电脑端单聊 R96：和姊妹 desktop-chat-window-page R3 同款——独立 Tauri
+  // 窗口 react-query cache 与主窗口不共享，冷启动确实要拉一次。但用户从主窗
+  // 口点「在独立窗口打开图片」后再关掉重开（多图浏览 / multi-monitor 工作流）
+  // 时，给 15s staleTime 让此窗口自己的 cache 复用一下，避免每次 reopen 都
+  // RTT 一次 getConversations（公网隧道 ~600ms）。conversationPathSet 仅用于
+  // 校验 returnTo 合法性，15s 内对话集合变化忽略不会让用户实际看到坏的 returnTo
+  // —— 真正的会话切换走主窗口路径会刷新。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(routeState),
+    staleTime: 15_000,
   });
   const shouldValidateReturnPaths =
     !conversationsQuery.isLoading && !conversationsQuery.isError;
