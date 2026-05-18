@@ -1620,6 +1620,18 @@ export function DesktopChatWorkspace({
     );
   }
 
+  // 走查新一轮 R7：消息提醒 section「清空已通知」/ 类似分组清空按钮 onClick
+  // 是 `void handleClearReminderGroup(status, messageIds)`，handleClearReminderGroup
+  // 无任何同步锁。clearReminders 内部 Promise.allSettled 跑 N 个 DELETE，第一次
+  // 跑完后所有 reminders 都已经从 server 端删掉；同帧 double-click 起飞的第二
+  // 次 handleClearReminderGroup 拿着同一份 messageIds，clearReminder(messageId)
+  // 闭包里读到的 reminderMap 是上一次 render 的快照（localReminders state 没
+  // 提交），仍然找到 reminder → mutateAsync(sourceId) 命中 server 已删的资源
+  // → 404 → Promise.allSettled rejected → clearReminders throw → catch 分支
+  // setNotice 写「清空失败」红色 notice 覆盖前一次的「已清空 N 条提醒」绿色
+  // notice，但 server 端早就成功。和姊妹 chat-message-list R6 handleClearReminder
+  // 同款 false-failure 修法，按 status 上锁（不同 status 分组互不影响）。
+  const clearingReminderStatusRef = useRef<Set<ChatReminderStatus>>(new Set());
   async function handleClearReminderGroup(
     status: ChatReminderStatus,
     messageIds: string[],
@@ -1627,6 +1639,11 @@ export function DesktopChatWorkspace({
     if (!isChatReminderGroupClearable(status)) {
       return;
     }
+
+    if (clearingReminderStatusRef.current.has(status)) {
+      return;
+    }
+    clearingReminderStatusRef.current.add(status);
 
     try {
       await clearReminders(messageIds);
@@ -1637,6 +1654,8 @@ export function DesktopChatWorkspace({
           ? error.message
           : getChatReminderGroupClearErrorMessage(status),
       );
+    } finally {
+      clearingReminderStatusRef.current.delete(status);
     }
   }
 
