@@ -1397,6 +1397,46 @@ function GroupChatDetailsPanel({
     },
   });
 
+  // 新一轮走查 R1：和姊妹单聊 R29（commit 01dcc31c6）/ 移动端 R2（2d6d33d57）
+  // 同款修法——「聊天信息」侧栏一共 7 个群聊 toggle 行（消息免打扰 / @我仍通知
+  // / @所有人仍通知 / 群公告仍通知 / 置顶聊天 / 保存到通讯录 / 显示群成员昵称）
+  // 都只挂了 `disabled={busy}`，busy = mutation.isPending 是 React state 要等
+  // commit 才进 DOM。同帧 <16ms 第二次 click 都看到 disabled=false → mutation.
+  // mutate 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本闪两次
+  // （比如「已开启群消息免打扰」连刷两遍）。叠 sync ref 锁兜同帧 double-tap，
+  // pending 翻 false 后 useEffect 复位。preferencesMutation 被 6 个 toggle 共用，
+  // 共一把 ref 锁——同帧切两个不同偏好的极端 case 也被挡掉，但用户单击一个
+  // toggle 后 RTT 内换另一个 toggle（人类反应时间 >100ms）走的是 disabled
+  // 路径，正常通过。
+  const pinSubmittingRef = useRef(false);
+  const preferencesSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!preferencesMutation.isPending) {
+      preferencesSubmittingRef.current = false;
+    }
+  }, [preferencesMutation.isPending]);
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleTogglePreferences = (
+    payload: Parameters<typeof preferencesMutation.mutate>[0],
+  ) => {
+    if (preferencesSubmittingRef.current) {
+      return;
+    }
+    preferencesSubmittingRef.current = true;
+    preferencesMutation.mutate(payload);
+  };
+
   const ownerMember = useMemo(
     () =>
       (membersQuery.data ?? []).find(
@@ -1707,7 +1747,7 @@ function GroupChatDetailsPanel({
           checked={isMuted}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ isMuted: checked })
+            handleTogglePreferences({ isMuted: checked })
           }
         />
         {isMuted ? (
@@ -1717,7 +1757,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAtMe ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({ notifyOnAtMe: checked })
+                handleTogglePreferences({ notifyOnAtMe: checked })
               }
             />
             <DesktopWechatGroupRow
@@ -1725,7 +1765,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAtAll ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({ notifyOnAtAll: checked })
+                handleTogglePreferences({ notifyOnAtAll: checked })
               }
             />
             <DesktopWechatGroupRow
@@ -1733,7 +1773,7 @@ function GroupChatDetailsPanel({
               checked={group?.notifyOnAnnouncement ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
-                preferencesMutation.mutate({
+                handleTogglePreferences({
                   notifyOnAnnouncement: checked,
                 })
               }
@@ -1744,14 +1784,14 @@ function GroupChatDetailsPanel({
           label={t(msg`置顶聊天`)}
           checked={group?.isPinned ?? conversation.isPinned}
           disabled={busy || !group}
-          onToggle={(checked) => pinMutation.mutate(checked)}
+          onToggle={(checked) => handleTogglePin(checked)}
         />
         <DesktopWechatGroupRow
           label={t(msg`保存到通讯录`)}
           checked={group?.savedToContacts ?? false}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ savedToContacts: checked })
+            handleTogglePreferences({ savedToContacts: checked })
           }
         />
         <DesktopWechatGroupRow
@@ -1765,7 +1805,7 @@ function GroupChatDetailsPanel({
           checked={group?.showMemberNicknames ?? true}
           disabled={busy || !group}
           onToggle={(checked) =>
-            preferencesMutation.mutate({ showMemberNicknames: checked })
+            handleTogglePreferences({ showMemberNicknames: checked })
           }
         />
         <DesktopWechatGroupRow
