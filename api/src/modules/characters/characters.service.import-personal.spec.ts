@@ -566,14 +566,23 @@ describe('CharactersService.importPersonalCharacter', () => {
 
   // 新会话 R1：avatar 不能是 // 开头的 scheme-relative URL（浏览器按当前协议
   // 解析成 https://evil/x → 跟踪像素 / 隐私探针 / 内网 SSRF）。
-  it('rejects scheme-relative avatar URL like //evil/x.png', async () => {
+  // 新会话2 R1 扩展：还要堵 /\、\/、\\ 三个 backslash 变体（WHATWG URL parser
+  // 全部归一化成 //）。
+  it('rejects scheme-relative avatar URL variants', async () => {
     const { svc } = makeService({ existing: null });
-    await expect(
-      svc.importPersonalCharacter({
-        name: 'NRRejSchemeRel',
-        avatar: '//evil.example/x.png',
-      }),
-    ).rejects.toThrow(/avatar/);
+    for (const bad of [
+      '//evil.example/x.png',
+      '/\\evil.example/x.png',
+      '\\/evil.example/x.png',
+      '\\\\evil.example/x.png',
+    ]) {
+      await expect(
+        svc.importPersonalCharacter({
+          name: 'NRRejSchemeRel_' + Buffer.from(bad).toString('hex').slice(0, 6),
+          avatar: bad,
+        }),
+      ).rejects.toThrow(/avatar/);
+    }
   });
 
   // 新会话 R1：bio / personality 接受 NULL byte / DEL / BIDI override 等不可见

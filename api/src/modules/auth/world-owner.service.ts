@@ -79,7 +79,11 @@ function isSafeAvatarValue(value: string): boolean {
   if (!schemeMatch) {
     // 无 scheme：可能是相对路径（/avatars/...）。允许 / 开头的同源相对路径，
     // 拒绝裸 "abc" 这种垃圾输入。
-    return value.startsWith('/') && !value.startsWith('//');
+    // 新会话2 R1：除了字面 `//`，`/\`、`\/`、`\\` 都被 WHATWG URL parser 归
+    // 一成 `//` (即 scheme-relative 外链)，全部 reject。单个 `\` 开头会被归
+    // 一成 `/`，仍是同源路径所以放过。
+    if (/^[/\\][/\\]/.test(value)) return false;
+    return value.startsWith('/');
   }
   const scheme = schemeMatch[1]!.toLowerCase();
   if (scheme !== 'http' && scheme !== 'https') return false;

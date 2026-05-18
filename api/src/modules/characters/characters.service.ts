@@ -1252,14 +1252,22 @@ const PRIVATE_CHARACTER_FIELD_LIMITS = {
  * 新会话 R1：原 `value.startsWith('/')` 把 `//evil.example/x.png` 当站内路径
  * 放过。但 `<img src="//evil/x">` 浏览器按当前页面协议解析成 `https://evil/x`
  * —— 这是 scheme-relative URL，允许恶意 bundle 内嵌任意第三方 host 的 image
- * （跟踪像素 / 隐私探针 / 内网 SSRF）。改成"以 `/` 开头但下一个字符不是 `/`
- * 才认作站内路径"，把 `//...` 路由到 scheme 校验分支，跟 javascript:/data:
- * 一档 reject。
+ * （跟踪像素 / 隐私探针 / 内网 SSRF）。
+ *
+ * 新会话2 R1：只 reject 字面量 `//` 还不够。WHATWG URL parser 把开头任意 2 个
+ * 「斜杠类」字符（`/`、`\` 两两组合）都规范化成 `//` —— 验证：
+ *   new URL("/\\evil/x",  "https://yinjie.app/p") → https://evil/x  (external!)
+ *   new URL("\\/evil/x",  "...")                 → https://evil/x  (external!)
+ *   new URL("\\\\evil/x", "...")                 → https://evil/x  (external!)
+ *   new URL("\\evil/x",   "...")                 → https://yinjie.app/evil/x  (OK)
+ * 所以 reject 规则要扩成"前两个字符是任意 `/` 或 `\`"。单个 `\` 开头会被 URL
+ * parser 归一成 `/`，仍是同源路径，可放过。
  */
+const SCHEME_RELATIVE_AVATAR_RE = /^[/\\][/\\]/;
 function isSafeAvatarValueBackend(raw: string): boolean {
   const value = raw.trim();
   if (!value) return true;
-  if (value.startsWith('//')) return false;
+  if (SCHEME_RELATIVE_AVATAR_RE.test(value)) return false;
   if (value.startsWith('/')) return true;
   if (!value.includes(':')) return true;
   const lc = value.toLowerCase();
