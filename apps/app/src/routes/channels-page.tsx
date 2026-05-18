@@ -2449,6 +2449,23 @@ function ChannelAudioPictorial({
         : [];
   const [imageIndex, setImageIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  // 走查 2026-05-18 新一轮 R2：rapid scroll 通过 N 张卡时每张 active 闪一下
+  // → src 立即被设成 mp3 URL → 浏览器开始下载 → 200ms 后 src 被移除 →
+  // 下载被 ERR_ABORTED 取消。实测快速滑过 4 张卡产生 4 次 partial download，
+  // 公网隧道下浪费 ~25KB/张 × 4 = ~100KB 流量；每张 audio 元素还要走 pause +
+  // load() 释放周期一次。
+  // 引入 250ms 防抖：active=true 后停留 250ms 才视为「真的在这条卡上」，
+  // 这时才让 <audio src=...> 接 URL；active=false 立即视为离开（pause+reset）。
+  // 250ms 覆盖典型快速滑动（snap-mandatory 切卡 ~150-300ms），慢扫 / 用户
+  // 停留观看（>250ms）的常规路径完全不受影响。
+  const [mediaActive, setMediaActive] = useState(false);
+  useEffect(() => {
+    if (active) {
+      const timer = window.setTimeout(() => setMediaActive(true), 250);
+      return () => window.clearTimeout(timer);
+    }
+    setMediaActive(false);
+  }, [active]);
   // 走查 R1 新一轮：cover/poster img 失败时之前没兜底，浏览器原生 broken-image
   // 占位会盖在沉浸式播放区——音频还在播但视觉是一张破图，体感"卡片坏了"。
   // 维护被标记失败的图片 url 集合；渲染时把这些 url 替换成渐变 Music2 占位。
@@ -2485,7 +2502,9 @@ function ChannelAudioPictorial({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (active && audioUrl) {
+    // 用 mediaActive（debounced active）控制播放/释放，跳过 fast scroll 里的
+    // 短暂 active 窗口；JSX 里的 src/preload 也跟着 mediaActive 走，保持一致。
+    if (mediaActive && audioUrl) {
       audio.muted = !userUnmuted;
       const promise = audio.play();
       if (promise && typeof promise.catch === "function") {
@@ -2518,7 +2537,7 @@ function ChannelAudioPictorial({
       audio.load();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, audioUrl]);
+  }, [mediaActive, audioUrl]);
 
   // mute 切换仅同步 audio.muted，不重新 play
   useEffect(() => {
@@ -2790,15 +2809,17 @@ function ChannelAudioPictorial({
       ) : null}
 
       {/* 隐藏音频元素：实际播放走 useEffect 控制。
-          仅 active 卡挂 src + preload metadata；其它卡 src 留空避免 25+ 卡
+          仅 mediaActive 卡挂 src + preload metadata；其它卡 src 留空避免 25+ 卡
           一起触发 mp3 metadata 拉取（实测一次 /discover/channels 进入会并发
           27 条 minimax-music.mp3，离开时全 ERR_ABORTED，纯浪费带宽与公网隧道
-          RTT，移动端公网下首屏会卡顿）。 */}
+          RTT，移动端公网下首屏会卡顿）。
+          走查 2026-05-18 新一轮 R2：src/preload 跟着 mediaActive（debounced
+          active）走，rapid scroll 通过卡时不再触发 partial download → 流量降。 */}
       <audio
         ref={audioRef}
-        src={active && audioUrl ? resolveAppMediaUrl(audioUrl) : undefined}
+        src={mediaActive && audioUrl ? resolveAppMediaUrl(audioUrl) : undefined}
         loop
-        preload={active ? "metadata" : "none"}
+        preload={mediaActive ? "metadata" : "none"}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         className="hidden"
@@ -2831,6 +2852,18 @@ function ChannelVideoSurface({
   const t = useRuntimeTranslator();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  // 走查 2026-05-18 新一轮 R2：跟 ChannelAudioPictorial 同款 mediaActive 防抖。
+  // 视频体积比音频还大（5s 720p ≈ 1-2MB），rapid scroll 误触发 partial download
+  // 的浪费更明显（4 张视频卡快滑 ≈ 100-300KB 公网流量打水漂）。250ms 防抖
+  // 让短暂闪过的卡跳过 src 设置，settled 后才走 preload=auto + play()。
+  const [mediaActive, setMediaActive] = useState(false);
+  useEffect(() => {
+    if (active) {
+      const timer = window.setTimeout(() => setMediaActive(true), 250);
+      return () => window.clearTimeout(timer);
+    }
+    setMediaActive(false);
+  }, [active]);
 
   // 同 audio：userUnmuted 不当依赖，避免用户暂停后被强制 replay。
   // 走查 新一轮 R3：跟 ChannelAudioPictorial 同坑——已解锁后 play() 失败
@@ -2840,7 +2873,7 @@ function ChannelVideoSurface({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (active && videoUrl) {
+    if (mediaActive && videoUrl) {
       video.muted = !userUnmuted;
       const promise = video.play();
       if (promise && typeof promise.catch === "function") {
@@ -2860,7 +2893,7 @@ function ChannelVideoSurface({
       video.load();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, videoUrl]);
+  }, [mediaActive, videoUrl]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -2937,17 +2970,19 @@ function ChannelVideoSurface({
       tabIndex={0}
       aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
     >
-      {/* 仅 active 卡挂 src；其它卡只显 poster，避免页面挂 N 个 <video>
-          自动拉 metadata（每条几百 KB）。视频源切换由 active 翻转 + 上面
-          useEffect 的 .play() 触发，poster 始终可见保持视觉。 */}
+      {/* 仅 mediaActive 卡挂 src；其它卡只显 poster，避免页面挂 N 个 <video>
+          自动拉 metadata（每条几百 KB）。视频源切换由 mediaActive 翻转 + 上面
+          useEffect 的 .play() 触发，poster 始终可见保持视觉。
+          走查 2026-05-18 新一轮 R2：src/preload 跟着 mediaActive（debounced
+          active）走，rapid scroll 通过卡时不再触发视频 partial download。 */}
       <video
         ref={videoRef}
         key={`video:${videoUrl ?? ""}`}
-        src={active && videoUrl ? resolveAppMediaUrl(videoUrl) : undefined}
+        src={mediaActive && videoUrl ? resolveAppMediaUrl(videoUrl) : undefined}
         poster={posterUrl ? resolveAppMediaUrl(posterUrl) : undefined}
         playsInline
         loop
-        preload={active ? "auto" : "none"}
+        preload={mediaActive ? "auto" : "none"}
         controls={false}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
