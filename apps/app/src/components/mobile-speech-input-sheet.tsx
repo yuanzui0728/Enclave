@@ -125,6 +125,26 @@ export function MobileSpeechInputSheet({
     return unregister;
   }, [holding, onClose, open]);
 
+  // 新一轮 R2：和姊妹 sheet（mobile-message-action-sheet R3 / mobile-message-
+  // reminder-sheet / message-quote-selection-sheet / mobile-details-action-sheet）
+  // 对齐——本 sheet 只接了 Android Back，没挂 ESC。外接键盘 / Bluetooth 键盘
+  // 用户 (Android Pixel + Folio / iPad Magic Keyboard / 模拟器全是这场景) 关不
+  // 掉只能点 X。holding 时（用户正按住录音）不响应 ESC，跟 Android Back 同语义。
+  useEffect(() => {
+    if (!open || holding) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [holding, onClose, open]);
+
   if (!open) {
     return null;
   }
