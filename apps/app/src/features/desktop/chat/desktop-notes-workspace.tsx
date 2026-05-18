@@ -64,6 +64,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { resolveDesktopWindowReturnTarget } from "../../../lib/desktop-window-return-target";
 import { navigateBackOrFallback } from "../../../lib/history-back";
@@ -350,7 +351,9 @@ export function DesktopNotesWorkspace({
         });
       }
 
-      return conversation.title;
+      // R5：notice 文案 `${conversationTitle} 的聊天记录已...` 直接读这里返回的
+      // 值，server-side sentinel 不翻 → 非中文 locale 用户看到 raw「未知联系人」。
+      return getConversationDisplayTitle(conversation.title);
     },
     onSuccess: async (conversationTitle) => {
       setSendDialogNote(null);

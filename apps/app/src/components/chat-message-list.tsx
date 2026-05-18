@@ -113,6 +113,7 @@ import {
   sanitizeDisplayedChatText,
   splitChatTextSegments,
 } from "../lib/chat-text";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   formatDesktopMessageTimestamp,
@@ -1000,7 +1001,7 @@ export function ChatMessageList({
       const messageQueue = forwardMessages ?? [];
       if (!messageQueue.length) {
         return {
-          conversationTitle: conversation.title,
+          conversationTitle: getConversationDisplayTitle(conversation.title),
           count: 0,
           mode,
         };
@@ -1015,7 +1016,7 @@ export function ChatMessageList({
         });
 
         return {
-          conversationTitle: conversation.title,
+          conversationTitle: getConversationDisplayTitle(conversation.title),
           count: messageQueue.length,
           mode,
         };
@@ -1031,7 +1032,7 @@ export function ChatMessageList({
       }
 
       return {
-        conversationTitle: conversation.title,
+        conversationTitle: getConversationDisplayTitle(conversation.title),
         count: messageQueue.length,
         mode,
       };
