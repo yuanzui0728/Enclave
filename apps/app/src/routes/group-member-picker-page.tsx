@@ -417,12 +417,20 @@ function MobileGroupMemberPickerPage({
     },
     onSuccess: async () => {
       setRemoveConfirmOpen(false);
+      // 走查 R3：和姊妹页 pin/preferences/leave 同口径——本页 add/remove 成员
+      // 都会改变 listGroups 返回的 memberCount，contacts-page / group-contacts-page
+      // 的 ["app-contact-groups"] cache（30s staleTime）不会自动跟上，用户从本
+      // 页 navigate 回 details → 退到 /contacts/groups 时人数仍是旧值。把这条
+      // 也 invalidate，确保所有 cohort 看到最新成员数。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-members", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
