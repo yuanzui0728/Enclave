@@ -471,10 +471,29 @@ export function ConversationThreadPanel({
     }
   };
 
+  // 走查电脑端单聊 R85：和上方 handleSubmit (line 443-460) 内层 try/catch 同款
+  // 兜底——sendTextMessage / sendStickerMessage / sendAttachmentMessage 在
+  // resolveTargetCharacterId 拿不到 char id（角色被删 / participants 还没回 +
+  // conversationId 不是 direct_ 前缀的边界态）会同步 throw "目标角色还没准备好"，
+  // 这条 throw 在 runSendMutation 之前发生、跳过 react-query 的 onError，runSend
+  // 那层 try/catch 兜不到。这三个 handler 调用方都是 `() => void handleSendXxx(...)`
+  // fire-and-forget 形态（composer 的 onSendPreset / onSendSticker / onSendAttachment
+  // 都走 void）→ 拒绝一路冒到 window.unhandledrejection 污染 telemetry，用户
+  // UI 上 silent fail（按了表情/preset 没消息冒出来，也没 toast）。
+  // 和 handleSubmit 一致用 setSocketError 把"目标角色还没准备好"也展示给用户。
   const handleSendPresetText = async (presetText: string) => {
-    await sendTextMessage(
-      replyDraft ? encodeChatReplyText(presetText, replyDraft) : presetText,
-    );
+    try {
+      await sendTextMessage(
+        replyDraft ? encodeChatReplyText(presetText, replyDraft) : presetText,
+      );
+    } catch (sendError) {
+      setSocketError(
+        sendError instanceof Error
+          ? sendError.message
+          : t(msg`发送失败，请稍后再试。`),
+      );
+      return;
+    }
     track("chat_message_sent", {
       conversationKind: "direct",
       kind: "preset",
@@ -485,10 +504,19 @@ export function ConversationThreadPanel({
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
-    await sendStickerMessage(
-      sticker,
-      replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
-    );
+    try {
+      await sendStickerMessage(
+        sticker,
+        replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
+      );
+    } catch (sendError) {
+      setSocketError(
+        sendError instanceof Error
+          ? sendError.message
+          : t(msg`发送失败，请稍后再试。`),
+      );
+      return;
+    }
     track("chat_message_sent", {
       conversationKind: "direct",
       kind: "sticker",
@@ -501,10 +529,19 @@ export function ConversationThreadPanel({
   const handleSendAttachment = async (
     payload: ChatComposerAttachmentPayload,
   ) => {
-    await sendAttachmentMessage(
-      payload,
-      replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
-    );
+    try {
+      await sendAttachmentMessage(
+        payload,
+        replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
+      );
+    } catch (sendError) {
+      setSocketError(
+        sendError instanceof Error
+          ? sendError.message
+          : t(msg`发送失败，请稍后再试。`),
+      );
+      return;
+    }
     track("chat_message_sent", {
       conversationKind: "direct",
       kind: "attachment",
