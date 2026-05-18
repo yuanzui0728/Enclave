@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -297,6 +297,59 @@ export function ChatRoomPage() {
     return true;
   }
 
+  // 走查本会话 R4：mobile 路径的 onBack 被 4 处消费——
+  // (1) MobileChatThreadHeader 顶部返回按钮（已经被 header 内 actionFiredRef 守住）
+  // (2) ConversationThreadPanel.renderStatusBackAction 在 messagesQuery error /
+  //     socketError 状态下显示的「返回上一页」按钮（onClick={onBack} 直接挂）
+  // (3) ChatMessageList errorActionLabel/onErrorAction 通过 setActionNotice 的
+  //     secondaryActionLabel 给收藏/撤回/分享等 mutation 的「重试」notice 当退路
+  // (4) ChatComposer 的 MobileComposerStatusRail 在 composerError / preset/sticker
+  //     send 失败时给的 onAction
+  // 后 3 处都没挂 guardAction，同帧 <16ms 双击全部直接走 navigateBackOrFallback →
+  // window.history.back() 跑 2 次 → 用户实际后退 2 页。第 1 次成功后页面 unmount
+  // 但 ref 是模块级 useRef，next mount 自动复位（新 conversationId 进来或下次切
+  // 回这个会话都会有新的 ref 实例）。一把同步锁兜底所有入口。
+  const backFiredRef = useRef(false);
+  const handleMobileBack = useCallback(() => {
+    if (backFiredRef.current) {
+      return;
+    }
+    backFiredRef.current = true;
+    const expectedPreviousPath =
+      (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+        ? routeState.returnPath
+        : undefined) ??
+      safeRouteContext?.returnPath ??
+      "/tabs/chat";
+    navigateBackOrFallback(
+      () => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({
+          to: safeRouteContext?.returnPath ?? "/tabs/chat",
+        });
+      },
+      expectedPreviousPath,
+    );
+    // 同步设回 false 不行（同帧立刻 reset 又能双击），但 window.history.back()
+    // 是同步触发 popstate 导致路由变化 → 本组件因 conversationId 离开当前 route
+    // tree 而 unmount → ref 自然作废。少数边界（back 没真的发生，比如 history
+    // 长度为 1 又走 onFallback navigate 没真切走）下，下一次 user 想再点要等
+    // 一帧——这里在 raf 后释放 ref 让兜底场景能恢复。
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        backFiredRef.current = false;
+      });
+    }
+  }, [
+    navigate,
+    routeState.returnPath,
+    routeState.returnHash,
+    safeRouteContext?.returnPath,
+  ]);
+
   if (isDesktopLayout) {
     return (
       <Suspense
@@ -349,26 +402,7 @@ export function ChatRoomPage() {
                 }
               : undefined)
           }
-          onBack={() => {
-            const expectedPreviousPath =
-              (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-                ? routeState.returnPath
-                : undefined) ??
-              safeRouteContext?.returnPath ??
-              "/tabs/chat";
-            navigateBackOrFallback(
-              () => {
-                if (navigateToRouteStateReturn()) {
-                  return;
-                }
-
-                void navigate({
-                  to: safeRouteContext?.returnPath ?? "/tabs/chat",
-                });
-              },
-              expectedPreviousPath,
-            );
-          }}
+          onBack={handleMobileBack}
         />
       </div>
     </AppPage>
