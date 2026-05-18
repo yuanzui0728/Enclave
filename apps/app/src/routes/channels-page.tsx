@@ -239,9 +239,22 @@ export function ChannelsPage() {
         ? unlikeFeedPost(input.postId, baseUrl)
         : likeFeedPost(input.postId, baseUrl),
     onMutate: async (input) => {
-      await queryClient.cancelQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ["app-channels-home", baseUrl],
+        }),
+        // 走查 2026-05-18 新会话 R2（本轮）：desktop 用户走 deep-link 进一条不
+        // 在 home 推荐流的 post，post 是 desktopMissingRoutePostQuery 单独拉回
+        // 来 prepend 到 desktopWorkspacePosts 的 ——
+        // ["app-feed-post", baseUrl, postId] 单独缓存。原来 likeMutation
+        // onMutate 只 cancel + setQueryData app-channels-home，那条 deep-link
+        // post 的 cache 完全没动 → 用户在那条 slide 上点 like，optimistic 落不
+        // 到 UI（slide 一直显示旧 hasLiked），mutation 成功后 setNotice 冒「视
+        // 频号互动已更新」绿条但 ❤️ 图标没填充，体感「点了没生效」。
+        queryClient.cancelQueries({
+          queryKey: ["app-feed-post", baseUrl, input.postId],
+        }),
+      ]);
       const previousEntries: Array<{
         key: readonly unknown[];
         previousPost: FeedPostListItem | null;
@@ -284,7 +297,41 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries, mutationBaseUrl: baseUrl };
+      // 走查 2026-05-18 新会话 R2（续）：把同款 optimistic 也落到 app-feed-post
+      // 那条 cache 上，desktopWorkspacePosts useMemo 会因 routePost 数据变化重
+      // 算、把更新后的 routePost 喂回去 → slide 上的 like 状态翻对。
+      const previousRoutePost =
+        queryClient.getQueryData<FeedPostWithComments>([
+          "app-feed-post",
+          baseUrl,
+          input.postId,
+        ]) ?? null;
+      if (previousRoutePost) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", baseUrl, input.postId],
+          {
+            ...previousRoutePost,
+            likeCount: input.hasLiked
+              ? Math.max(0, previousRoutePost.likeCount - 1)
+              : previousRoutePost.likeCount + 1,
+            ownerState: {
+              ...(previousRoutePost.ownerState ?? {
+                hasLiked: false,
+                hasFavorited: false,
+                isFollowingAuthor: false,
+                isNotInterested: false,
+                hasViewed: false,
+                hasShared: false,
+                lastViewedAt: null,
+                watchProgressSeconds: null,
+                completed: false,
+              }),
+              hasLiked: !input.hasLiked,
+            },
+          },
+        );
+      }
+      return { previousEntries, previousRoutePost, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       // 只回滚被点的这条 post——拿当前缓存（已经包含后来的乐观更新）做底，
@@ -301,6 +348,13 @@ export function ChannelsPage() {
           ),
         });
       });
+      // R2 续：route post cache 同步回滚到失败前的 likeCount/hasLiked。
+      if (context?.previousRoutePost && context.mutationBaseUrl) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", context.mutationBaseUrl, input.postId],
+          context.previousRoutePost,
+        );
+      }
       // mid-flight 切账户：这条点赞失败属于上一个账户，新账户不该冒红条。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
