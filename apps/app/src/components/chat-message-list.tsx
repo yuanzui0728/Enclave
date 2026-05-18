@@ -6230,7 +6230,11 @@ function FeedPostCardMessage({
         <div className={isDesktop ? "h-[140px]" : "h-[124px]"}>
           <img
             src={cover}
-            alt={attachment.title ?? attachment.authorName}
+            alt={
+              attachment.title?.trim() ||
+              attachment.authorName?.trim() ||
+              mediaLabel
+            }
             loading="lazy"
             decoding="async"
             onError={() => setCoverFailed(true)}
