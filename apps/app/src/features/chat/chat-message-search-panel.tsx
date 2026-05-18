@@ -447,6 +447,18 @@ export function ChatMessageSearchPanel({
               // 这是查找聊天记录的输入框，进来就 auto focus（line 175-177）—
               // 字号偏小直接触发 zoom，整页搜索 panel 抖一下。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和兄弟搜索框 group-contacts-page / group-member-picker-page
+              // / create-group-page 同款补四件套。单聊/群聊"查找聊天记录"是 ChatMessageSearchPanel
+              // 共用 panel，搜的多半是聊天里出现过的 ASCII / 英文片段（"discord"、
+              // "URL"、"teamA"、"http"），iOS 默认句首大写 + autocorrect 会把
+              // "discord" 改成 "Discord"、"teamA" 改 "Team"——下游 searchableText
+              // toLowerCase 兜 case，但 autocorrect 直接改掉字符是真坑，用户键
+              // 入英文/拼音找不到记忆里那条历史消息。enterKeyHint=search 让
+              // 软键盘 Return 键长得像"搜索"。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
