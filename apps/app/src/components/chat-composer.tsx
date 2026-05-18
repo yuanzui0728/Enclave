@@ -228,6 +228,10 @@ const SCREENSHOT_ANNOTATION_PALETTE = [
 }>;
 
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
+// 走查第二批 R1：和 api/chat.controller.ts:238 CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES
+// 对齐。applyGenericFileDraft 前端校验上限，避免 100MB 大文件被一路 fetch 到
+// server 才被 Multer 413 拒掉。
+const CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS = [1, 0.92, 0.84, 0.76];
 const CHAT_ATTACHMENT_IMAGE_EXPORT_CANDIDATES = [
   { mimeType: "image/png", extension: "png" },
@@ -1766,9 +1770,22 @@ export function ChatComposer({
   ]);
 
   const handleImageSelection = async (fileList: FileList | null) => {
-    const files = [...(fileList ?? [])].slice(0, MAX_ALBUM_IMAGE_COUNT);
+    const allFiles = [...(fileList ?? [])];
+    const files = allFiles.slice(0, MAX_ALBUM_IMAGE_COUNT);
     if (!files.length) {
       return;
+    }
+
+    // 走查第二批 R1：iOS/Android 走原生 picker 时 limit 已经在 PHPicker UI 层兜住
+    // （line 1518-1522），但 Web 浏览器 input[type=file] multiple 和拖拽/粘贴
+    // 路径都直接 slice(0, 9) 静默丢弃 — 用户选 12 张以为全部进来，发出去只看
+    // 到 9 张，会以为 app 漏发或后台吃了。给用户一个明确截断提示。
+    if (allFiles.length > MAX_ALBUM_IMAGE_COUNT) {
+      setAttachmentError(
+        t(
+          msg`一次最多发送 ${MAX_ALBUM_IMAGE_COUNT} 张图片，已为您保留前 ${MAX_ALBUM_IMAGE_COUNT} 张。`,
+        ),
+      );
     }
 
     await applyImageDraftFiles(files);
@@ -1828,6 +1845,25 @@ export function ChatComposer({
   };
 
   const applyGenericFileDraft = (file: File) => {
+    // 走查第二批 R1：服务端 chat-attachments Multer 上限是 32MB（chat.controller.ts:248
+    // CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES）。原本前端不校验，用户拖一个 100MB 视频
+    // 上来，applyGenericFileDraft 直接 setAttachmentDraft 入草稿；点发送后 fetch
+    // 把 100MB body upload，公网隧道几十秒拉满才被 server Multer 拒成 413/500，
+    // UI 一直显示 spinner 体验极差。前端就地按 server limit 卡，提示中文。
+    if (file.size > CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES) {
+      releaseAttachmentDraft(attachmentDraft);
+      setAttachmentDraft(null);
+      setMobilePlusNotice(null);
+      setPlusPanelOpen(false);
+      setDesktopPlusMenuOpen(false);
+      setAttachmentError(
+        t(
+          msg`文件大小不能超过 ${Math.round(CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES / 1024 / 1024)} MB，请压缩后再发送。`,
+        ),
+      );
+      return;
+    }
+
     releaseAttachmentDraft(attachmentDraft);
 
     setAttachmentError(null);
