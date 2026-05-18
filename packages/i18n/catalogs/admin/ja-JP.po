@@ -182,7 +182,7 @@ msgid "当前查看"
 msgstr "現在表示中"
 
 #: apps/admin/src/components/admin-workbench.tsx:937
-#: apps/admin/src/routes/real-world-sync-page.tsx:83
+#: apps/admin/src/routes/real-world-sync-page.tsx:89
 msgid "生效中"
 msgstr "有効中"
 
@@ -331,7 +331,8 @@ msgstr "本番環境を復元"
 #: apps/admin/src/routes/followup-runtime-page.tsx:302
 #: apps/admin/src/routes/games-page.tsx:777
 #: apps/admin/src/routes/inference-page.tsx:1028
-#: apps/admin/src/routes/real-world-sync-page.tsx:1569
+#: apps/admin/src/routes/real-world-sync-page.tsx:1710
+#: apps/admin/src/routes/real-world-sync-page.tsx:2073
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1777
 #: apps/admin/src/routes/reminder-runtime-page.tsx:2172
 #: apps/admin/src/routes/reply-logic-page.tsx:1160
@@ -1277,7 +1278,7 @@ msgstr "状態"
 
 #: apps/admin/src/components/game-submission-workbench.tsx:566
 #: apps/admin/src/routes/action-runtime-page.tsx:2163
-#: apps/admin/src/routes/real-world-sync-page.tsx:1418
+#: apps/admin/src/routes/real-world-sync-page.tsx:1513
 msgid "更新时间"
 msgstr "更新時間"
 
@@ -1789,6 +1790,9 @@ msgstr "設定済み"
 #: apps/admin/src/routes/inference-page.tsx:1070
 #: apps/admin/src/routes/inference-page.tsx:1079
 #: apps/admin/src/routes/inference-page.tsx:1223
+#: apps/admin/src/routes/real-world-sync-page.tsx:1417
+#: apps/admin/src/routes/real-world-sync-page.tsx:1466
+#: apps/admin/src/routes/real-world-sync-page.tsx:1473
 #: apps/admin/src/routes/reminder-runtime-page.tsx:224
 msgid "未配置"
 msgstr "未設定"
@@ -1895,7 +1899,7 @@ msgstr "なし"
 
 #: apps/admin/src/lib/format.ts:14
 #: apps/admin/src/routes/need-discovery-page.tsx:2092
-#: apps/admin/src/routes/real-world-sync-page.tsx:1410
+#: apps/admin/src/routes/real-world-sync-page.tsx:1505
 #: apps/admin/src/routes/reply-logic-page.tsx:5204
 #: apps/admin/src/routes/token-usage-page.tsx:1205
 msgid "未记录"
@@ -2086,7 +2090,7 @@ msgstr "管理コンソール"
 
 #: apps/admin/src/lib/route-breadcrumb.ts:207
 #: apps/admin/src/routes/followup-runtime-page.tsx:334
-#: apps/admin/src/routes/real-world-sync-page.tsx:1143
+#: apps/admin/src/routes/real-world-sync-page.tsx:1166
 msgid "运营工作台"
 msgstr "運用ワークスペース"
 
@@ -2262,14 +2266,15 @@ msgid "已就绪连接器"
 msgstr "準備完了のコネクタ"
 
 #: apps/admin/src/routes/action-runtime-page.tsx:690
-#: apps/admin/src/routes/real-world-sync-page.tsx:922
+#: apps/admin/src/routes/real-world-sync-page.tsx:928
 msgid "刷新概览"
 msgstr "概要を更新"
 
 #: apps/admin/src/routes/action-runtime-page.tsx:697
 #: apps/admin/src/routes/character-factory-page.tsx:288
 #: apps/admin/src/routes/cyber-avatar-page.tsx:605
-#: apps/admin/src/routes/real-world-sync-page.tsx:1561
+#: apps/admin/src/routes/real-world-sync-page.tsx:1702
+#: apps/admin/src/routes/real-world-sync-page.tsx:2066
 #: apps/admin/src/routes/reply-logic-page.tsx:1125
 msgid "重置草稿"
 msgstr "ドラフトをリセット"
@@ -2362,9 +2367,10 @@ msgstr "パラメータ補充待ち"
 #: apps/admin/src/routes/action-runtime-page.tsx:824
 #: apps/admin/src/routes/cyber-avatar-page.tsx:1109
 #: apps/admin/src/routes/dashboard-page.tsx:1850
-#: apps/admin/src/routes/real-world-sync-page.tsx:1162
-#: apps/admin/src/routes/real-world-sync-page.tsx:1166
-#: apps/admin/src/routes/real-world-sync-page.tsx:1415
+#: apps/admin/src/routes/real-world-sync-page.tsx:1203
+#: apps/admin/src/routes/real-world-sync-page.tsx:1207
+#: apps/admin/src/routes/real-world-sync-page.tsx:1215
+#: apps/admin/src/routes/real-world-sync-page.tsx:1510
 #: apps/admin/src/routes/reminder-runtime-page.tsx:2264
 #: apps/admin/src/routes/reminder-runtime-page.tsx:2372
 msgid "{0} 条"
@@ -3229,8 +3235,8 @@ msgstr "成功しました"
 #: apps/admin/src/routes/followup-runtime-page.tsx:1747
 #: apps/admin/src/routes/need-discovery-page.tsx:1297
 #: apps/admin/src/routes/need-discovery-page.tsx:3326
-#: apps/admin/src/routes/real-world-sync-page.tsx:71
-#: apps/admin/src/routes/real-world-sync-page.tsx:85
+#: apps/admin/src/routes/real-world-sync-page.tsx:77
+#: apps/admin/src/routes/real-world-sync-page.tsx:91
 #: apps/admin/src/routes/reply-logic-page.tsx:1859
 #: apps/admin/src/routes/reply-logic-page.tsx:1902
 #: apps/admin/src/routes/reply-logic-page.tsx:1962
@@ -3255,7 +3261,7 @@ msgstr "キャンセル済み"
 #: apps/admin/src/routes/action-runtime-page.tsx:2490
 #: apps/admin/src/routes/evals-page.tsx:1490
 #: apps/admin/src/routes/evals-page.tsx:1539
-#: apps/admin/src/routes/real-world-sync-page.tsx:69
+#: apps/admin/src/routes/real-world-sync-page.tsx:75
 msgid "执行中"
 msgstr "実行中"
 
@@ -3267,7 +3273,7 @@ msgstr "実行中"
 #: apps/admin/src/routes/need-discovery-page.tsx:90
 #: apps/admin/src/routes/need-discovery-page.tsx:1297
 #: apps/admin/src/routes/need-discovery-page.tsx:3360
-#: apps/admin/src/routes/real-world-sync-page.tsx:82
+#: apps/admin/src/routes/real-world-sync-page.tsx:88
 msgid "草稿"
 msgstr "下書き"
 
@@ -3381,7 +3387,7 @@ msgstr "基本ロジック"
 
 #: apps/admin/src/routes/character-editor-page.tsx:311
 #: apps/admin/src/routes/character-editor-page.tsx:894
-#: apps/admin/src/routes/real-world-sync-page.tsx:106
+#: apps/admin/src/routes/real-world-sync-page.tsx:112
 #: apps/admin/src/routes/reply-logic-page.tsx:1022
 msgid "聊天回复"
 msgstr "チャット返信"
@@ -3822,7 +3828,7 @@ msgstr "トリガー: キャラクターが友達申請またはシェイクマ�
 #: apps/admin/src/routes/character-factory-page.tsx:96
 #: apps/admin/src/routes/character-runtime-page.tsx:191
 #: apps/admin/src/routes/character-runtime-page.tsx:394
-#: apps/admin/src/routes/real-world-sync-page.tsx:113
+#: apps/admin/src/routes/real-world-sync-page.tsx:119
 #: apps/admin/src/routes/reply-logic-page.tsx:1100
 msgid "主动提醒"
 msgstr "自発的なリマインド"
@@ -4521,7 +4527,7 @@ msgstr "ここではランタイムの `Character` フィールドがどのレ�
 
 #: apps/admin/src/routes/character-factory-page.tsx:1312
 #: apps/admin/src/routes/character-factory-page.tsx:1551
-#: apps/admin/src/routes/real-world-sync-page.tsx:517
+#: apps/admin/src/routes/real-world-sync-page.tsx:523
 msgid "已发布"
 msgstr "公開済み"
 
@@ -4623,7 +4629,7 @@ msgstr "配信ステータス"
 #: apps/admin/src/routes/games-page.tsx:541
 #: apps/admin/src/routes/games-page.tsx:670
 #: apps/admin/src/routes/games-page.tsx:728
-#: apps/admin/src/routes/real-world-sync-page.tsx:517
+#: apps/admin/src/routes/real-world-sync-page.tsx:523
 msgid "待发布"
 msgstr "公開待ち"
 
@@ -4911,7 +4917,7 @@ msgstr "すぐに返信"
 #: apps/admin/src/routes/evals-page.tsx:2756
 #: apps/admin/src/routes/followup-runtime-page.tsx:1745
 #: apps/admin/src/routes/need-discovery-page.tsx:3328
-#: apps/admin/src/routes/real-world-sync-page.tsx:70
+#: apps/admin/src/routes/real-world-sync-page.tsx:76
 #: apps/admin/src/routes/token-usage-page.tsx:1228
 msgid "成功"
 msgstr "成功"
@@ -4932,7 +4938,6 @@ msgid "朋友圈"
 msgstr "フレンドフィード"
 
 #: apps/admin/src/routes/character-runtime-page.tsx:390
-#: apps/admin/src/routes/chat-records-page.tsx:637
 #: apps/admin/src/routes/cyber-avatar-page.tsx:169
 #: apps/admin/src/routes/cyber-avatar-page.tsx:183
 msgid "视频号"
@@ -5111,8 +5116,10 @@ msgid "关系分布"
 msgstr "関係分布"
 
 #. placeholder {0}: item.count
+#. placeholder {0}: overview.stats.activeDigests
 #: apps/admin/src/routes/characters-page.tsx:455
 #: apps/admin/src/routes/characters-page.tsx:468
+#: apps/admin/src/routes/real-world-sync-page.tsx:1199
 msgid "{0} 个角色"
 msgstr "{0} 個のキャラクター"
 
@@ -5647,7 +5654,7 @@ msgid "语音"
 msgstr "音声"
 
 #: apps/admin/src/routes/chat-records-page.tsx:43
-#: apps/admin/src/routes/chat-records-page.tsx:623
+#: apps/admin/src/routes/chat-records-page.tsx:612
 msgid "表情"
 msgstr "絵文字"
 
@@ -5711,8 +5718,8 @@ msgid "命中 {searchedTotal} 条 · 点击跳到上下文"
 msgstr ""
 
 #: apps/admin/src/routes/chat-records-page.tsx:340
-#: apps/admin/src/routes/chat-records-page.tsx:585
-#: apps/admin/src/routes/chat-records-page.tsx:650
+#: apps/admin/src/routes/chat-records-page.tsx:581
+#: apps/admin/src/routes/chat-records-page.tsx:631
 msgid "空消息"
 msgstr "空のメッセージ"
 
@@ -5750,10 +5757,6 @@ msgstr "現在"
 msgid "未标注关系"
 msgstr "関係未ラベル"
 
-#: apps/admin/src/routes/chat-records-page.tsx:438
-msgid "7 天"
-msgstr ""
-
 #: apps/admin/src/routes/chat-records-page.tsx:447
 msgid "可见"
 msgstr "表示可能"
@@ -5774,63 +5777,31 @@ msgstr "非表示済み"
 msgid "含清空前历史"
 msgstr "クリア前の履歴を含む"
 
-#: apps/admin/src/routes/chat-records-page.tsx:567
+#: apps/admin/src/routes/chat-records-page.tsx:563
 msgid "命中"
 msgstr "ヒット"
 
-#: apps/admin/src/routes/chat-records-page.tsx:585
+#: apps/admin/src/routes/chat-records-page.tsx:581
 msgid "无额外文本描述"
 msgstr "追加のテキスト説明なし"
 
-#: apps/admin/src/routes/chat-records-page.tsx:616
-msgid "未命名图片"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:618
-msgid "未命名语音"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:619
-msgid "未命名文件"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:623
-msgid "未命名表情"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:626
-#: apps/admin/src/routes/chat-records-page.tsx:665
+#: apps/admin/src/routes/chat-records-page.tsx:615
+#: apps/admin/src/routes/chat-records-page.tsx:646
 #: apps/admin/src/routes/reply-logic-page.tsx:5263
 msgid "名片"
 msgstr "名刺"
 
-#: apps/admin/src/routes/chat-records-page.tsx:626
-msgid "未命名联系人"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:629
-#: apps/admin/src/routes/chat-records-page.tsx:668
+#: apps/admin/src/routes/chat-records-page.tsx:618
+#: apps/admin/src/routes/chat-records-page.tsx:649
 msgid "位置"
 msgstr "位置"
 
-#: apps/admin/src/routes/chat-records-page.tsx:629
-msgid "未命名地点"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:636
-msgid "视频号帖子"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:639
-#: apps/admin/src/routes/chat-records-page.tsx:671
+#: apps/admin/src/routes/chat-records-page.tsx:620
+#: apps/admin/src/routes/chat-records-page.tsx:652
 msgid "笔记"
 msgstr "ノート"
 
-#: apps/admin/src/routes/chat-records-page.tsx:639
-msgid "无标题"
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:645
+#: apps/admin/src/routes/chat-records-page.tsx:626
 msgid "暂无消息"
 msgstr "メッセージなし"
 
@@ -5844,7 +5815,7 @@ msgstr "実行エビデンス"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:67
 #: apps/admin/src/routes/followup-runtime-page.tsx:346
-#: apps/admin/src/routes/real-world-sync-page.tsx:1374
+#: apps/admin/src/routes/real-world-sync-page.tsx:1436
 msgid "运行记录"
 msgstr "実行記録"
 
@@ -6006,7 +5977,7 @@ msgid "广场动态"
 msgstr "広場タイムライン"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:152
-#: apps/admin/src/routes/real-world-sync-page.tsx:110
+#: apps/admin/src/routes/real-world-sync-page.tsx:116
 msgid "视频号内容"
 msgstr "ビデオ号コンテンツ"
 
@@ -6571,7 +6542,7 @@ msgid "处理信号 {0} 条{1}"
 msgstr "シグナル {0} 件を処理{1}"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:1250
-#: apps/admin/src/routes/real-world-sync-page.tsx:1527
+#: apps/admin/src/routes/real-world-sync-page.tsx:1668
 msgid "还没有运行记录"
 msgstr "実行記録はまだありません"
 
@@ -6824,12 +6795,12 @@ msgid "同步周期(小时)"
 msgstr "同期周期（時間）"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:1935
-#: apps/admin/src/routes/real-world-sync-page.tsx:1707
+#: apps/admin/src/routes/real-world-sync-page.tsx:1842
 msgid "Google News 语言"
 msgstr "Google News 言語"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:1951
-#: apps/admin/src/routes/real-world-sync-page.tsx:1724
+#: apps/admin/src/routes/real-world-sync-page.tsx:1859
 msgid "Google News 地区"
 msgstr "Google News 地域"
 
@@ -7317,7 +7288,7 @@ msgstr "継続可能"
 
 #: apps/admin/src/routes/dashboard-page.tsx:676
 #: apps/admin/src/routes/games-page.tsx:537
-#: apps/admin/src/routes/real-world-sync-page.tsx:1078
+#: apps/admin/src/routes/real-world-sync-page.tsx:1084
 msgid "待处理"
 msgstr "未処理"
 
@@ -9691,8 +9662,8 @@ msgstr "キュー待ち"
 
 #: apps/admin/src/routes/evals-page.tsx:2764
 #: apps/admin/src/routes/followup-runtime-page.tsx:1715
-#: apps/admin/src/routes/real-world-sync-page.tsx:363
-#: apps/admin/src/routes/real-world-sync-page.tsx:1308
+#: apps/admin/src/routes/real-world-sync-page.tsx:369
+#: apps/admin/src/routes/real-world-sync-page.tsx:1356
 #: apps/admin/src/routes/reply-logic-page.tsx:4709
 msgid "已完成"
 msgstr "完了"
@@ -9867,6 +9838,7 @@ msgstr ""
 
 #: apps/admin/src/routes/followup-runtime-page.tsx:220
 #: apps/admin/src/routes/real-world-sync-page.tsx:50
+#: apps/admin/src/routes/real-world-sync-page.tsx:69
 msgid "关闭"
 msgstr "閉じる"
 
@@ -10116,8 +10088,8 @@ msgstr "無視しました"
 #. placeholder {1}: formatCompactTime( selectedCharacterSummary.latestRunAt, )
 #. placeholder {1}: recommendation.sourceThreadTitle || recommendation.sourceThreadId
 #: apps/admin/src/routes/followup-runtime-page.tsx:756
-#: apps/admin/src/routes/real-world-sync-page.tsx:1069
-#: apps/admin/src/routes/real-world-sync-page.tsx:1351
+#: apps/admin/src/routes/real-world-sync-page.tsx:1075
+#: apps/admin/src/routes/real-world-sync-page.tsx:1409
 msgid "{0} · {1}"
 msgstr "{0} ・ {1}"
 
@@ -10160,7 +10132,7 @@ msgstr "成功 {0}"
 #. placeholder {0}: buckets.all.length
 #. placeholder {0}: sortedCharacters.length
 #: apps/admin/src/routes/followup-runtime-page.tsx:843
-#: apps/admin/src/routes/real-world-sync-page.tsx:1034
+#: apps/admin/src/routes/real-world-sync-page.tsx:1040
 msgid "全部 {0}"
 msgstr "すべての {0}"
 
@@ -10313,7 +10285,7 @@ msgid "近期已推荐惩罚"
 msgstr "最近推奨されたペナルティ"
 
 #: apps/admin/src/routes/followup-runtime-page.tsx:1261
-#: apps/admin/src/routes/real-world-sync-page.tsx:1581
+#: apps/admin/src/routes/real-world-sync-page.tsx:1722
 msgid "Prompt 模板"
 msgstr "Prompt テンプレート"
 
@@ -11373,13 +11345,13 @@ msgid "批量动作"
 msgstr "一括アクション"
 
 #: apps/admin/src/routes/inference-page.tsx:1478
+msgid "目标已选择"
+msgstr "ターゲット選択済み"
+
+#: apps/admin/src/routes/inference-page.tsx:1478
 #: apps/admin/src/routes/reply-logic-page.tsx:559
 msgid "未选择目标"
 msgstr "ターゲット未選択"
-
-#: apps/admin/src/routes/inference-page.tsx:1478
-msgid "目标已选择"
-msgstr "ターゲット選択済み"
 
 #: apps/admin/src/routes/inference-page.tsx:1485
 msgid "目标 Provider"
@@ -11398,7 +11370,7 @@ msgstr "選択中のモデル"
 #. placeholder {0}: selectedModelIds.length
 #: apps/admin/src/routes/inference-page.tsx:1497
 #: apps/admin/src/routes/inference-page.tsx:1501
-#: apps/admin/src/routes/real-world-sync-page.tsx:1174
+#: apps/admin/src/routes/real-world-sync-page.tsx:1219
 msgid "{0} 个"
 msgstr "{0} 件"
 
@@ -11421,7 +11393,7 @@ msgstr "選択したモデル人格をインストール"
 
 #: apps/admin/src/routes/inference-page.tsx:1535
 #: apps/admin/src/routes/inference-page.tsx:1571
-#: apps/admin/src/routes/real-world-sync-page.tsx:922
+#: apps/admin/src/routes/real-world-sync-page.tsx:928
 msgid "刷新中..."
 msgstr "更新中..."
 
@@ -11816,6 +11788,12 @@ msgid "当前候选池"
 msgstr ""
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1080
+#: apps/admin/src/routes/need-discovery-page.tsx:1286
+#: apps/admin/src/routes/need-discovery-page.tsx:1315
+msgid "当前候选"
+msgstr "現在の候補"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1080
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1278
 #: apps/admin/src/routes/need-discovery-page.tsx:1289
@@ -11829,12 +11807,6 @@ msgstr ""
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "件"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1080
-#: apps/admin/src/routes/need-discovery-page.tsx:1286
-#: apps/admin/src/routes/need-discovery-page.tsx:1315
-msgid "当前候选"
-msgstr "現在の候補"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
@@ -11998,7 +11970,7 @@ msgid "从左侧选择一条运行记录后，这里会展示完整摘要和窗�
 msgstr "左側で実行記録を選択すると、完全なサマリーとウィンドウ情報がここに表示されます。"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1709
-#: apps/admin/src/routes/real-world-sync-page.tsx:1414
+#: apps/admin/src/routes/real-world-sync-page.tsx:1509
 msgid "信号数"
 msgstr "シグナル数"
 
@@ -12705,147 +12677,155 @@ msgstr "履歴スナップショット"
 msgid "虚构或私域主体"
 msgstr "架空またはプライベートドメインの主体"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:72
+#: apps/admin/src/routes/real-world-sync-page.tsx:70
+msgid "可选"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:71
+msgid "强制每日一条"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:78
 msgid "部分成功"
 msgstr "部分的に成功"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:76
+#: apps/admin/src/routes/real-world-sync-page.tsx:82
 msgid "信号采集"
 msgstr "シグナル収集"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:77
+#: apps/admin/src/routes/real-world-sync-page.tsx:83
 msgid "Digest 生成"
 msgstr "Digest 生成"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:78
+#: apps/admin/src/routes/real-world-sync-page.tsx:84
 msgid "人工重跑"
 msgstr "手動再実行"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:84
+#: apps/admin/src/routes/real-world-sync-page.tsx:90
 msgid "已替换"
 msgstr "置換済み"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:89
+#: apps/admin/src/routes/real-world-sync-page.tsx:95
 msgid "已采纳"
 msgstr "採用済み"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:90
+#: apps/admin/src/routes/real-world-sync-page.tsx:96
 msgid "低可信过滤"
 msgstr "低信頼度フィルタ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:91
+#: apps/admin/src/routes/real-world-sync-page.tsx:97
 msgid "身份不匹配"
 msgstr "身元不一致"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:92
+#: apps/admin/src/routes/real-world-sync-page.tsx:98
 msgid "重复过滤"
 msgstr "重複フィルタ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:93
+#: apps/admin/src/routes/real-world-sync-page.tsx:99
 msgid "人工排除"
 msgstr "手動除外"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:97
+#: apps/admin/src/routes/real-world-sync-page.tsx:103
 msgid "新闻报道"
 msgstr "ニュース報道"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:98
+#: apps/admin/src/routes/real-world-sync-page.tsx:104
 msgid "官方发声"
 msgstr "公式発信"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:99
+#: apps/admin/src/routes/real-world-sync-page.tsx:105
 msgid "采访"
 msgstr "インタビュー"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:100
+#: apps/admin/src/routes/real-world-sync-page.tsx:106
 msgid "公开露面"
 msgstr "公の場での露出"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:101
+#: apps/admin/src/routes/real-world-sync-page.tsx:107
 msgid "产品发布"
 msgstr "製品リリース"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:102
+#: apps/admin/src/routes/real-world-sync-page.tsx:108
 msgid "其他"
 msgstr "その他"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:107
+#: apps/admin/src/routes/real-world-sync-page.tsx:113
 msgid "朋友圈发文"
 msgstr "モーメンツ投稿"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:108
+#: apps/admin/src/routes/real-world-sync-page.tsx:114
 msgid "朋友圈评论"
 msgstr "モーメンツコメント"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:109
+#: apps/admin/src/routes/real-world-sync-page.tsx:115
 msgid "广场动态发文"
 msgstr "広場への投稿"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:111
+#: apps/admin/src/routes/real-world-sync-page.tsx:117
 msgid "广场评论"
 msgstr "広場のコメント"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:112
+#: apps/admin/src/routes/real-world-sync-page.tsx:118
 msgid "好友请求问候"
 msgstr "友達リクエスト挨拶"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:117
+#: apps/admin/src/routes/real-world-sync-page.tsx:123
 msgid "早报"
 msgstr "朝刊"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:118
+#: apps/admin/src/routes/real-world-sync-page.tsx:124
 msgid "午报"
 msgstr "昼報"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:119
+#: apps/admin/src/routes/real-world-sync-page.tsx:125
 msgid "晚报"
 msgstr "夜報"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:223
+#: apps/admin/src/routes/real-world-sync-page.tsx:229
 msgid "未发布"
 msgstr "未公開"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:307
+#: apps/admin/src/routes/real-world-sync-page.tsx:313
 msgid "Live 未生效"
 msgstr "Live が未反映"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:310
+#: apps/admin/src/routes/real-world-sync-page.tsx:316
 msgid "最近同步失败"
 msgstr "最近の同期失敗"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:317
+#: apps/admin/src/routes/real-world-sync-page.tsx:323
 msgid "今日未发圈"
 msgstr "本日モーメンツ未投稿"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:324
+#: apps/admin/src/routes/real-world-sync-page.tsx:330
 msgid "今日待播报"
 msgstr "本日の配信予定"
 
 #. placeholder {0}: formatBulletinSlots(item.todayBulletinSlots, t)
-#: apps/admin/src/routes/real-world-sync-page.tsx:361
+#: apps/admin/src/routes/real-world-sync-page.tsx:367
 msgid "界闻进度 {0}"
 msgstr "界聞進捗 {0}"
 
 #. placeholder {0}: item.todayAcceptedSignalCount
 #. placeholder {1}: item.hasRealityLinkedMomentToday ? t(msg`已完成`) : t(msg`未完成`)
-#: apps/admin/src/routes/real-world-sync-page.tsx:362
+#: apps/admin/src/routes/real-world-sync-page.tsx:368
 msgid "今日采纳 {0} 条 · 发圈 {1}"
 msgstr "本日採用 {0} 件 · モーメンツ投稿 {1}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:363
+#: apps/admin/src/routes/real-world-sync-page.tsx:369
 msgid "未完成"
 msgstr "未完了"
 
 #. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
 #. placeholder {1}: formatCompactTime(item.latestRunAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:367
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
 msgid "最近 {0} · {1}"
 msgstr "最近 {0} · {1}"
 
 #. placeholder {0}: item.latestRunStatus
 #. placeholder {0}: previewResult.action
 #. placeholder {0}: previewResult.parsedTask.category
-#: apps/admin/src/routes/real-world-sync-page.tsx:367
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
 #: apps/admin/src/routes/reminder-runtime-page.tsx:388
 #: apps/admin/src/routes/reminder-runtime-page.tsx:391
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1623
@@ -12855,652 +12835,726 @@ msgstr "最近 {0} · {1}"
 msgid "{0}"
 msgstr "{0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:368
+#: apps/admin/src/routes/real-world-sync-page.tsx:374
 msgid "最近暂无执行记录"
 msgstr "最近の実行記録はありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:410
+#: apps/admin/src/routes/real-world-sync-page.tsx:416
 msgid "{liveWithoutDigestCount} 个 Live 角色还没有生效中的 digest"
 msgstr "{liveWithoutDigestCount} 個の Live キャラクターにまだ有効な digest がありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:414
+#: apps/admin/src/routes/real-world-sync-page.tsx:420
 msgid "最近 {failedRunsCount} 次同步失败，需要回看抓取或模板"
 msgstr "最近 {failedRunsCount} 回の同期に失敗、取得またはテンプレートの見直しが必要"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:417
+#: apps/admin/src/routes/real-world-sync-page.tsx:423
 msgid "还有 {partialRunsCount} 次部分成功的运行值得复盘"
 msgstr "あと {partialRunsCount} 件の部分成功の実行が振り返る価値があります"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:420
+#: apps/admin/src/routes/real-world-sync-page.tsx:426
 msgid "{missingMomentCount} 个角色今天还没有形成现实发圈结果"
 msgstr "{missingMomentCount} 個のキャラクターは今日まだ実世界のモーメント投稿結果がありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:426
+#: apps/admin/src/routes/real-world-sync-page.tsx:432
 msgid "当前联动节奏稳定"
 msgstr "現在の連携ペースは安定しています"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:427
+#: apps/admin/src/routes/real-world-sync-page.tsx:433
 msgid "Live 角色都有生效 digest，最近没有失败运行。建议按左侧角色队列做抽检，重点回看今天新增信号和界闻补发情况。"
 msgstr "Live ロールはすべて digest が反映済みで、直近に失敗した実行はありません。左側のロールキューに沿って抜き取り検査を行い、本日追加された信号と界聞の再配信状況を重点的に確認してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:436
+#: apps/admin/src/routes/real-world-sync-page.tsx:442
 msgid "当前有待处理项"
 msgstr "現在未処理項目があります"
 
 #. placeholder {0}: messages.join("；")
-#: apps/admin/src/routes/real-world-sync-page.tsx:437
+#: apps/admin/src/routes/real-world-sync-page.tsx:443
 msgid "{0}。建议先从左侧待处理角色开始，再决定是否调整全局规则。"
 msgstr "{0}。まず左側の未処理キャラクターから着手し、その後グローバルルールを調整するか判断してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:465
+#: apps/admin/src/routes/real-world-sync-page.tsx:471
 msgid "抓取调试"
 msgstr "クロールデバッグ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:470
+#: apps/admin/src/routes/real-world-sync-page.tsx:476
 msgid "正文摘录"
 msgstr "本文抜粋"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:483
+#: apps/admin/src/routes/real-world-sync-page.tsx:489
 msgid "打开解析后的文章"
 msgstr "解析済み記事を開く"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:536
+#: apps/admin/src/routes/real-world-sync-page.tsx:542
 msgid "当前没有可展示的 Scene Patch"
 msgstr "現在表示可能な Scene Patch はありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:537
+#: apps/admin/src/routes/real-world-sync-page.tsx:543
 msgid "这轮 digest 没有向聊天、发圈或主动提醒写入额外场景覆盖。"
 msgstr "今回のdigestでは、チャット、モーメンツ投稿、能動的リマインダーへの追加シーンカバレッジは書き込まれませんでした。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:582
-#: apps/admin/src/routes/real-world-sync-page.tsx:1263
+#: apps/admin/src/routes/real-world-sync-page.tsx:588
+#: apps/admin/src/routes/real-world-sync-page.tsx:1241
 msgid "暂无概况"
 msgstr "概況なし"
 
 #. placeholder {0}: formatScore(signal.credibilityScore)
-#: apps/admin/src/routes/real-world-sync-page.tsx:587
+#: apps/admin/src/routes/real-world-sync-page.tsx:593
 msgid "可信度 {0}"
 msgstr "信頼度 {0}"
 
 #. placeholder {0}: formatScore(signal.relevanceScore)
-#: apps/admin/src/routes/real-world-sync-page.tsx:590
+#: apps/admin/src/routes/real-world-sync-page.tsx:596
 msgid "相关性 {0}"
 msgstr "関連性 {0}"
 
 #. placeholder {0}: formatScore(signal.identityMatchScore)
-#: apps/admin/src/routes/real-world-sync-page.tsx:593
+#: apps/admin/src/routes/real-world-sync-page.tsx:599
 msgid "身份匹配 {0}"
 msgstr "身元一致 {0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:604
+#: apps/admin/src/routes/real-world-sync-page.tsx:610
 msgid "打开原始来源"
 msgstr "元のソースを開く"
 
 #. placeholder {0}: formatCompactTime(run.startedAt)
 #. placeholder {1}: run.finishedAt ? t(msg` · 结束 ${formatCompactTime(run.finishedAt)}`) : ""
-#: apps/admin/src/routes/real-world-sync-page.tsx:637
+#: apps/admin/src/routes/real-world-sync-page.tsx:643
 msgid "开始 {0}{1}"
 msgstr "{0}{1} を開始"
 
 #. placeholder {0}: formatCompactTime(run.finishedAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:638
+#: apps/admin/src/routes/real-world-sync-page.tsx:644
 msgid " · 结束 {0}"
 msgstr " ・ 終了 {0}"
 
 #. placeholder {0}: run.acceptedSignalCount
 #. placeholder {1}: run.filteredSignalCount
 #. placeholder {2}: run.searchQuery ? t(msg` · 查询 ${run.searchQuery}`) : ""
-#: apps/admin/src/routes/real-world-sync-page.tsx:640
+#: apps/admin/src/routes/real-world-sync-page.tsx:646
 msgid "采纳 {0} 条，过滤 {1} 条{2}"
 msgstr "{0}件採用、{1}件フィルタ{2}"
 
 #. placeholder {0}: run.searchQuery
-#: apps/admin/src/routes/real-world-sync-page.tsx:641
+#: apps/admin/src/routes/real-world-sync-page.tsx:647
 msgid " · 查询 {0}"
 msgstr " ・ クエリ {0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:646
+#: apps/admin/src/routes/real-world-sync-page.tsx:652
 msgid "本轮错误"
 msgstr "このラウンドのエラー"
 
 #. placeholder {0}: digest.signalIds.length
 #. placeholder {1}: digest.appliedAt ? t(msg` · 应用时间 ${formatCompactTime(digest.appliedAt)}`) : ""
-#: apps/admin/src/routes/real-world-sync-page.tsx:673
+#: apps/admin/src/routes/real-world-sync-page.tsx:679
 msgid "信号 {0} 条{1}"
 msgstr "シグナル {0} 件{1}"
 
 #. placeholder {0}: formatCompactTime(digest.appliedAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:675
+#: apps/admin/src/routes/real-world-sync-page.tsx:681
 msgid " · 应用时间 {0}"
 msgstr " ・ 適用時刻 {0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:682
+#: apps/admin/src/routes/real-world-sync-page.tsx:688
 msgid "发圈锚点："
 msgstr "モーメンツ投稿アンカー："
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:850
+#: apps/admin/src/routes/real-world-sync-page.tsx:856
 msgid "正在读取真实世界联动..."
 msgstr "現実世界連携を読み込み中..."
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:860
+#: apps/admin/src/routes/real-world-sync-page.tsx:866
 msgid "真实世界联动暂不可用"
 msgstr "リアルワールド連携は現在利用できません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:861
+#: apps/admin/src/routes/real-world-sync-page.tsx:867
 msgid "后端 real-world-sync 模块还没成功返回概览数据。"
 msgstr "バックエンドの real-world-sync モジュールはまだ概要データを正常に返していません。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:900
+#: apps/admin/src/routes/real-world-sync-page.tsx:906
 msgid "现实联动运营工作台"
 msgstr "現実連動運営ワークベンチ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:901
+#: apps/admin/src/routes/real-world-sync-page.tsx:907
 msgid "把外部现实信号、Digest 生效、界闻补发和发圈结果收敛到同一条值班路径里。运营先看今日节奏和待处理角色，再决定是否调全局规则。"
 msgstr "外部の現実シグナル、Digest の有効化、界聞の再配信、モーメンツ投稿結果を同じ当番パスに集約します。運営はまず今日のペースと未処理のロールを確認してから、グローバルルールを調整するか判断します。"
 
 #. placeholder {0}: bulletinDeskCharacter?.characterName ?? t(msg`界闻`)
-#: apps/admin/src/routes/real-world-sync-page.tsx:903
+#: apps/admin/src/routes/real-world-sync-page.tsx:909
 msgid "专属播报角色：{0}"
 msgstr "専属アナウンス役: {0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:903
-#: apps/admin/src/routes/real-world-sync-page.tsx:989
-#: apps/admin/src/routes/real-world-sync-page.tsx:1081
+#: apps/admin/src/routes/real-world-sync-page.tsx:909
+#: apps/admin/src/routes/real-world-sync-page.tsx:995
+#: apps/admin/src/routes/real-world-sync-page.tsx:1087
 msgid "界闻"
 msgstr "界聞"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:904
+#: apps/admin/src/routes/real-world-sync-page.tsx:910
 msgid "覆盖角色：已启用现实联动角色"
 msgstr "ロール上書き：現実連動ロールが有効"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:907
+#: apps/admin/src/routes/real-world-sync-page.tsx:913
 msgid "已启用角色"
 msgstr "有効化されたキャラクター"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:908
+#: apps/admin/src/routes/real-world-sync-page.tsx:914
 msgid "Live 生效角色"
 msgstr "Live 反映中のロール"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:909
+#: apps/admin/src/routes/real-world-sync-page.tsx:915
+#: apps/admin/src/routes/real-world-sync-page.tsx:1198
 msgid "生效中 Digest"
 msgstr "有効な Digest"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:910
+#: apps/admin/src/routes/real-world-sync-page.tsx:916
 msgid "今日信号数"
 msgstr "本日のシグナル数"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:930
+#: apps/admin/src/routes/real-world-sync-page.tsx:936
 msgid "全量同步中..."
 msgstr "全量同期中..."
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:931
+#: apps/admin/src/routes/real-world-sync-page.tsx:937
 msgid "全量立即同步"
 msgstr "全量即時同期"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:942
+#: apps/admin/src/routes/real-world-sync-page.tsx:948
 msgid "查看全局规则"
 msgstr "グローバルルールを表示"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:943
+#: apps/admin/src/routes/real-world-sync-page.tsx:949
 msgid "回到运营工作台"
 msgstr "運用ワークベンチに戻る"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:952
+#: apps/admin/src/routes/real-world-sync-page.tsx:958
 msgid "正在保存 Reality Sync 规则"
 msgstr "Reality Syncルールを保存中"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:953
+#: apps/admin/src/routes/real-world-sync-page.tsx:959
 msgid "新的默认采集窗口、来源过滤和提示词模板正在写入后台配置。"
 msgstr "新しいデフォルト収集ウィンドウ、ソースフィルター、プロンプトテンプレートがバックエンド構成に書き込まれています。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:959
+#: apps/admin/src/routes/real-world-sync-page.tsx:965
 msgid "Reality Sync 规则已保存"
 msgstr "Reality Sync ルールを保存しました"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:960
+#: apps/admin/src/routes/real-world-sync-page.tsx:966
 msgid "新的默认搜索窗口、信号阈值和概况模板已经写入后台配置。"
 msgstr "新しいデフォルト検索ウィンドウ、シグナル閾値、概要テンプレートがバックエンド構成に書き込まれました。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:966
+#: apps/admin/src/routes/real-world-sync-page.tsx:972
 msgid "Reality Sync 正在执行"
 msgstr "Reality Sync 実行中"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:969
+#: apps/admin/src/routes/real-world-sync-page.tsx:975
 msgid "正在同步 {currentRunTargetName}，完成后会自动刷新角色详情和概览。"
 msgstr "{currentRunTargetName} を同期中、完了後にキャラクター詳細と概要が自動的に更新されます。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:970
+#: apps/admin/src/routes/real-world-sync-page.tsx:976
 msgid "正在触发全量 Reality Sync，完成后会自动刷新概览。"
 msgstr "全量 Reality Sync を実行中、完了後に概要が自動的に更新されます。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:977
+#: apps/admin/src/routes/real-world-sync-page.tsx:983
 msgid "Reality Sync 已执行"
 msgstr "Reality Sync を実行しました"
 
 #. placeholder {0}: runMutation.data.successCount
 #. placeholder {1}: runMutation.data.failedCount
-#: apps/admin/src/routes/real-world-sync-page.tsx:978
+#: apps/admin/src/routes/real-world-sync-page.tsx:984
 msgid "成功 {0} 个，失败 {1} 个。"
 msgstr "成功 {0} 件、失敗 {1} 件。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:984
+#: apps/admin/src/routes/real-world-sync-page.tsx:990
 msgid "界闻补发中"
 msgstr "界聞再送信中"
 
 #. placeholder {0}: publishBulletinMutation.variables ? t(BULLETIN_SLOT_LABELS[publishBulletinMutation.variables]) : t(msg`界闻`)
-#: apps/admin/src/routes/real-world-sync-page.tsx:986
+#: apps/admin/src/routes/real-world-sync-page.tsx:992
 msgid "正在补发{0}，完成后会自动刷新今日播报状态。"
 msgstr "{0} を再送信中、完了後に本日の配信状況が自動的に更新されます。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:999
+#: apps/admin/src/routes/real-world-sync-page.tsx:1005
 msgid "界闻更新已发出"
 msgstr "界聞更新は送信済み"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1000
+#: apps/admin/src/routes/real-world-sync-page.tsx:1006
 msgid "界闻这轮没重复发"
 msgstr "界聞は今回繰り返し送信していません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1020
+#: apps/admin/src/routes/real-world-sync-page.tsx:1026
 msgid "角色队列"
 msgstr "キャラクターキュー"
 
 #. placeholder {0}: attentionCharacters.length
-#: apps/admin/src/routes/real-world-sync-page.tsx:1026
+#: apps/admin/src/routes/real-world-sync-page.tsx:1032
 msgid "{0} 个待处理"
 msgstr "{0} 件未処理"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1027
+#: apps/admin/src/routes/real-world-sync-page.tsx:1033
 msgid "全部平稳"
 msgstr "すべて安定"
 
 #. placeholder {0}: attentionCharacters.length
-#: apps/admin/src/routes/real-world-sync-page.tsx:1037
+#: apps/admin/src/routes/real-world-sync-page.tsx:1043
 msgid "待处理 {0}"
 msgstr "処理待ち {0}"
 
 #. placeholder {0}: sortedCharacters.filter((item) => item.isWorldNewsDesk) .length
-#: apps/admin/src/routes/real-world-sync-page.tsx:1041
+#: apps/admin/src/routes/real-world-sync-page.tsx:1047
 msgid "界闻 {0}"
 msgstr "界聞 {0}"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1053
+#: apps/admin/src/routes/real-world-sync-page.tsx:1059
 msgid "搜索角色"
 msgstr "ロールを検索"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1056
+#: apps/admin/src/routes/real-world-sync-page.tsx:1062
 msgid "角色名 / 主体名称"
 msgstr "ロール名 / 主体名"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1100
+#: apps/admin/src/routes/real-world-sync-page.tsx:1106
 msgid "没有匹配的角色"
 msgstr "一致するキャラクターがありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1101
+#: apps/admin/src/routes/real-world-sync-page.tsx:1107
 msgid "换一个筛选条件，或者回到\"全部角色\"查看完整队列。"
 msgstr "別のフィルタ条件に切り替えるか、「全ロール」に戻して完全なキューを確認してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1127
+#: apps/admin/src/routes/real-world-sync-page.tsx:1115
+msgid "排查提示"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1116
+msgid "值班顺序"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1120
+msgid "先看左侧标记为\"待处理\"的角色，优先处理 Live 未生效和最近失败的同步。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1123
+msgid "界闻角色先确认三段播报进度，再决定是否补发早报 / 午报 / 晚报。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1126
+msgid "只有在问题跨角色重复出现时，再切到\"全局规则\"改 Provider、阈值或 Prompt。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1150
 msgid "聚焦待处理角色"
 msgstr "フォーカス待機ロール"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1135
+#: apps/admin/src/routes/real-world-sync-page.tsx:1158
 msgid "检查全局规则"
 msgstr "グローバルルールを確認"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1146
+#: apps/admin/src/routes/real-world-sync-page.tsx:1169
 msgid "全局规则 *"
 msgstr "グローバルルール *"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1146
-#: apps/admin/src/routes/real-world-sync-page.tsx:1551
+#: apps/admin/src/routes/real-world-sync-page.tsx:1169
+#: apps/admin/src/routes/real-world-sync-page.tsx:1692
 msgid "全局规则"
 msgstr "グローバルルール"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1156
+#: apps/admin/src/routes/real-world-sync-page.tsx:1180
 msgid "今日值班面板"
 msgstr "本日の当番パネル"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1161
+#: apps/admin/src/routes/real-world-sync-page.tsx:1188
+msgid "需要人工跟进"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1189
+msgid "当前运行平稳"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1202
 msgid "今日现实发圈"
 msgstr "本日の現実モーメンツ投稿"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1165
+#: apps/admin/src/routes/real-world-sync-page.tsx:1206
 msgid "今日新闻更新"
 msgstr "本日のニュース更新"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1169
+#: apps/admin/src/routes/real-world-sync-page.tsx:1210
 msgid "最近失败运行"
 msgstr "最近の失敗実行"
 
 #. placeholder {0}: recentRiskRuns.filter((run) => run.status === "failed").length
 #. placeholder {0}: task.completionCount
-#: apps/admin/src/routes/real-world-sync-page.tsx:1170
+#: apps/admin/src/routes/real-world-sync-page.tsx:1211
 #: apps/admin/src/routes/reminder-runtime-page.tsx:747
 msgid "{0} 次"
 msgstr "{0} 回"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1173
+#: apps/admin/src/routes/real-world-sync-page.tsx:1214
+msgid "今日已采纳信号"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1218
 msgid "待处理角色"
 msgstr "処理待ちキャラクター"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1179
+#: apps/admin/src/routes/real-world-sync-page.tsx:1223
+msgid "最新采纳信号"
+msgstr "最新の採用シグナル"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1248
+msgid "今天还没有采纳信号"
+msgstr "本日まだ採用シグナルがありません"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1249
+msgid "先执行同步，或者回看 Provider 和来源过滤规则。"
+msgstr "まず同期を実行するか、Provider とソースフィルタールールを見直してください。"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1257
 msgid "三段界闻"
 msgstr "三段界聞"
 
 #. placeholder {0}: bulletinDeskCharacter.characterName
 #. placeholder {1}: formatBulletinSlots( bulletinDeskCharacter.todayBulletinSlots, t, )
-#: apps/admin/src/routes/real-world-sync-page.tsx:1182
+#: apps/admin/src/routes/real-world-sync-page.tsx:1260
 msgid "当前界闻角色：{0}。今天已完成 {1}。"
 msgstr "現在の界聞ロール：{0}。本日 {1} 件完了しました。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1186
+#: apps/admin/src/routes/real-world-sync-page.tsx:1264
 msgid "当前还没有启用界闻角色。"
 msgstr "現在まだ有効化された界聞ロールはありません。"
 
 #. placeholder {0}: t(BULLETIN_SLOT_LABELS[slot])
-#: apps/admin/src/routes/real-world-sync-page.tsx:1207
+#: apps/admin/src/routes/real-world-sync-page.tsx:1285
+#: apps/admin/src/routes/real-world-sync-page.tsx:1576
 msgid "补发{0}中..."
 msgstr "{0}を再送中..."
 
 #. placeholder {0}: t(BULLETIN_SLOT_LABELS[slot])
-#: apps/admin/src/routes/real-world-sync-page.tsx:1208
+#: apps/admin/src/routes/real-world-sync-page.tsx:1286
+#: apps/admin/src/routes/real-world-sync-page.tsx:1577
 msgid "补发{0}"
 msgstr "{0}を再送"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1215
+#: apps/admin/src/routes/real-world-sync-page.tsx:1293
 msgid "暂无界闻角色"
 msgstr "界聞ロールなし"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1216
+#: apps/admin/src/routes/real-world-sync-page.tsx:1294
 msgid "先在角色工厂启用现实联动，并设置一位承担三段播报的角色。"
 msgstr "まずキャラクター工房でリアル連動を有効化し、三段階の通知を担うキャラクターを設定してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1222
+#: apps/admin/src/routes/real-world-sync-page.tsx:1300
 msgid "最近异常"
 msgstr "最近の異常"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1223
+#: apps/admin/src/routes/real-world-sync-page.tsx:1301
 msgid "优先回看失败或部分成功的运行，避免 digest 未生效。"
 msgstr "失敗または部分的に成功した実行を優先的に振り返り、digest が無効になることを避けてください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1239
+#: apps/admin/src/routes/real-world-sync-page.tsx:1317
 msgid "最近没有异常运行"
 msgstr "最近異常な実行はありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1240
+#: apps/admin/src/routes/real-world-sync-page.tsx:1318
 msgid "最近几轮同步都没有失败或部分成功。"
 msgstr "最近の同期はすべて失敗や部分的成功はありません。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1245
-msgid "最新采纳信号"
-msgstr "最新の採用シグナル"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1270
-msgid "今天还没有采纳信号"
-msgstr "本日まだ採用シグナルがありません"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1271
-msgid "先执行同步，或者回看 Provider 和来源过滤规则。"
-msgstr "まず同期を実行するか、Provider とソースフィルタールールを見直してください。"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1280
+#: apps/admin/src/routes/real-world-sync-page.tsx:1328
 msgid "正在读取角色现实概况..."
 msgstr "キャラクターの現実概況を読み込み中..."
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1289
+#: apps/admin/src/routes/real-world-sync-page.tsx:1337
 msgid "角色工作台"
 msgstr "キャラクターワークベンチ"
 
 #. placeholder {0}: formatBulletinSlots( detail.todayBulletinSlots, t, )
-#: apps/admin/src/routes/real-world-sync-page.tsx:1302
+#: apps/admin/src/routes/real-world-sync-page.tsx:1350
 msgid "界闻角色，今日播报进度：{0}。"
 msgstr "界聞ロール、本日の配信進捗：{0}。"
 
 #. placeholder {0}: selectedCharacterSummary.todayAcceptedSignalCount
 #. placeholder {1}: detail.hasRealityLinkedMomentToday ? t(msg`已完成`) : t(msg`还未完成`)
-#: apps/admin/src/routes/real-world-sync-page.tsx:1306
+#: apps/admin/src/routes/real-world-sync-page.tsx:1354
 msgid "今日采纳 {0} 条信号，现实发圈 {1}。"
 msgstr "本日 {0} 件のシグナルを採用、現実モーメンツ投稿 {1}。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1309
+#: apps/admin/src/routes/real-world-sync-page.tsx:1357
 msgid "还未完成"
 msgstr "未完了"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1323
+#: apps/admin/src/routes/real-world-sync-page.tsx:1371
 msgid "Digest 生效中"
 msgstr "Digest 反映中"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1325
+#: apps/admin/src/routes/real-world-sync-page.tsx:1373
 msgid "Digest 未生效"
 msgstr "Digest が未反映"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1334
+#: apps/admin/src/routes/real-world-sync-page.tsx:1382
 #: apps/admin/src/routes/token-usage-page.tsx:2232
 msgid "同步中..."
 msgstr "同期中..."
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1335
+#: apps/admin/src/routes/real-world-sync-page.tsx:1383
 msgid "立即同步"
 msgstr "今すぐ同期"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1341
+#: apps/admin/src/routes/real-world-sync-page.tsx:1389
 msgid "配置角色"
 msgstr "ロール設定"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1348
+#: apps/admin/src/routes/real-world-sync-page.tsx:1396
+msgid "现实发圈策略"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1406
 msgid "最近同步"
 msgstr "最近の同期"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1354
+#: apps/admin/src/routes/real-world-sync-page.tsx:1412
 msgid "暂无记录"
 msgstr "記録なし"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1358
+#: apps/admin/src/routes/real-world-sync-page.tsx:1416
+msgid "查询模板"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1420
 msgid "今日状态"
 msgstr "本日のステータス"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1363
+#: apps/admin/src/routes/real-world-sync-page.tsx:1425
 msgid "现实发圈已完成"
 msgstr "現実モーメント投稿完了"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1364
+#: apps/admin/src/routes/real-world-sync-page.tsx:1426
 msgid "现实发圈待生成"
 msgstr "現実モーメント投稿待ち生成"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1372
+#: apps/admin/src/routes/real-world-sync-page.tsx:1434
 msgid "当前 Digest"
 msgstr "現在のDigest"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1373
+#: apps/admin/src/routes/real-world-sync-page.tsx:1435
 msgid "信号明细"
 msgstr "シグナル詳細"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1384
-msgid "当前生效结果"
-msgstr "現在有効な結果"
+#: apps/admin/src/routes/real-world-sync-page.tsx:1447
+#: apps/admin/src/routes/reply-logic-page.tsx:757
+msgid "角色配置"
+msgstr "キャラクター設定"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1388
-msgid "今日现实概况"
-msgstr "本日の現実概況"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1396
-msgid "Digest 状态"
-msgstr "Digest ステータス"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1404
-msgid "应用模式"
-msgstr "アプリモード"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1426
-msgid "行为摘要："
-msgstr "行動サマリー："
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1432
-msgid "立场变化："
-msgstr "立場の変化："
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1438
-msgid "现实发圈锚点"
-msgstr "現実モーメント投稿アンカー"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1448
-msgid "当前还没有生效中的现实概况"
-msgstr "現在まだ有効な現実概要はありません"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1449
-msgid "该角色还没跑出 live digest，或者当前处于 shadow / disabled 模式。"
-msgstr "このキャラクターはまだ live digest を生成していないか、現在 shadow / disabled モードです。"
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1456
-msgid "场景补丁"
+#: apps/admin/src/routes/real-world-sync-page.tsx:1450
+msgid "主体名称"
 msgstr ""
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1461
-msgid "全局叠加"
+#: apps/admin/src/routes/real-world-sync-page.tsx:1454
+msgid "主体类型"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1462
+msgid "别名"
 msgstr ""
 
 #: apps/admin/src/routes/real-world-sync-page.tsx:1470
+msgid "手动 steering"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1479
+msgid "当前生效结果"
+msgstr "現在有効な結果"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1483
+msgid "今日现实概况"
+msgstr "本日の現実概況"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1491
+msgid "Digest 状态"
+msgstr "Digest ステータス"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1499
+msgid "应用模式"
+msgstr "アプリモード"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1521
+msgid "行为摘要："
+msgstr "行動サマリー："
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1527
+msgid "立场变化："
+msgstr "立場の変化："
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1533
+msgid "现实发圈锚点"
+msgstr "現実モーメント投稿アンカー"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1543
+msgid "当前还没有生效中的现实概况"
+msgstr "現在まだ有効な現実概要はありません"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1544
+msgid "该角色还没跑出 live digest，或者当前处于 shadow / disabled 模式。"
+msgstr "このキャラクターはまだ live digest を生成していないか、現在 shadow / disabled モードです。"
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1552
+msgid "界闻三段更新"
+msgstr ""
+
+#. placeholder {0}: formatBulletinSlots( detail.todayBulletinSlots, t, )
+#: apps/admin/src/routes/real-world-sync-page.tsx:1555
+msgid "今天已完成：{0}。调度窗口为 07:30-09:30、11:30-13:30、18:30-21:00，同一时段当天只发一次。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1601
 msgid "最近 Digest 记录"
 msgstr "最近の Digest 記録"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1484
+#: apps/admin/src/routes/real-world-sync-page.tsx:1615
 msgid "还没有历史 Digest"
 msgstr "履歴Digestはまだありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1485
+#: apps/admin/src/routes/real-world-sync-page.tsx:1616
 msgid "需要先有一次成功的 digest 生成，历史记录才会出现在这里。"
 msgstr "成功したdigest生成が一度必要であり、履歴はここに表示されます。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1510
+#: apps/admin/src/routes/real-world-sync-page.tsx:1626
+msgid "信号排查"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1628
+msgid "这里保留最近采集到的现实信号、归一化摘要和抓取调试快照。先看状态与三项分数，再决定是调来源过滤、阈值还是 Prompt。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1646
 msgid "最近没有信号"
 msgstr "最近シグナルなし"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1511
+#: apps/admin/src/routes/real-world-sync-page.tsx:1647
 msgid "先执行同步，或者检查该角色是否真的启用了现实联动。"
 msgstr "まず同期を実行するか、そのキャラクターが本当にリアル連動を有効化しているかを確認してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1528
+#: apps/admin/src/routes/real-world-sync-page.tsx:1656
+msgid "运行回看"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1658
+msgid "一轮运行会经历信号采集、digest 生成和人工重跑几种状态。异常时优先看查询词、采纳/过滤数量和错误信息。"
+msgstr ""
+
+#: apps/admin/src/routes/real-world-sync-page.tsx:1669
 msgid "当前角色还没有执行过现实联动。"
 msgstr "現在のロールはまだ現実連携を実行したことがありません。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1538
+#: apps/admin/src/routes/real-world-sync-page.tsx:1679
 msgid "还没有启用真实世界联动的角色"
 msgstr "リアルワールド連携を有効にしたキャラクターはまだありません"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1539
+#: apps/admin/src/routes/real-world-sync-page.tsx:1680
 msgid "先去角色工厂打开\"真实世界链接\"，再回来观察每日现实概况和现实发圈。"
 msgstr "まずキャラクター工房で「リアルワールド連携」を開いてから、日次の現実サマリーと現実のモーメントを確認します。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1542
+#: apps/admin/src/routes/real-world-sync-page.tsx:1683
 msgid "前往角色工厂"
 msgstr "キャラクターファクトリーへ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1570
+#: apps/admin/src/routes/real-world-sync-page.tsx:1711
+#: apps/admin/src/routes/real-world-sync-page.tsx:2073
 msgid "保存全局规则"
 msgstr "グローバルルールを保存"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1579
+#: apps/admin/src/routes/real-world-sync-page.tsx:1720
 msgid "采集策略"
 msgstr "収集戦略"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1580
+#: apps/admin/src/routes/real-world-sync-page.tsx:1721
 msgid "来源过滤"
 msgstr "ソースフィルタ"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1591
+#: apps/admin/src/routes/real-world-sync-page.tsx:1732
 msgid "默认 Provider 行为"
 msgstr "デフォルト Provider の動作"
 
 #. placeholder {0}: PROVIDER_MODE_LABELS[rulesDraft.providerMode] ? t(PROVIDER_MODE_LABELS[rulesDraft.providerMode]) : rulesDraft.providerMode
-#: apps/admin/src/routes/real-world-sync-page.tsx:1594
+#: apps/admin/src/routes/real-world-sync-page.tsx:1735
 msgid "当前默认 Provider 为 {0}。普通公众人物会先按这里采集；界闻角色仍固定优先走专用 RSS 聚合。"
 msgstr "現在のデフォルト Provider は {0} です。一般的な著名人はまずここから収集されます。界聞キャラクターは引き続き専用 RSS 集約を優先的に使用します。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1602
-msgid "默认采集行为"
-msgstr ""
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1605
+#: apps/admin/src/routes/real-world-sync-page.tsx:1745
 msgid "默认采集 Provider"
 msgstr "デフォルトの収集 Provider"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1630
+#: apps/admin/src/routes/real-world-sync-page.tsx:1770
 msgid "默认语言区域"
 msgstr "デフォルトのロケール"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1644
+#: apps/admin/src/routes/real-world-sync-page.tsx:1784
 msgid "回溯小时"
 msgstr "遡及時間"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1663
+#: apps/admin/src/routes/real-world-sync-page.tsx:1803
 msgid "每轮最多信号"
 msgstr "ラウンドごとの最大シグナル数"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1682
+#: apps/admin/src/routes/real-world-sync-page.tsx:1822
 msgid "最低可信阈值"
 msgstr "最低信頼閾値"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1704
-msgid "Google News 适配"
-msgstr ""
-
-#: apps/admin/src/routes/real-world-sync-page.tsx:1741
+#: apps/admin/src/routes/real-world-sync-page.tsx:1876
 msgid "Google News CEID"
 msgstr "Google News CEID"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1758
+#: apps/admin/src/routes/real-world-sync-page.tsx:1893
 msgid "Google News 拉取上限"
 msgstr "Google News 取得上限"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1780
+#: apps/admin/src/routes/real-world-sync-page.tsx:1915
 msgid "无结果时回退 Mock"
 msgstr "結果がない時 Mock にフォールバック"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1799
+#: apps/admin/src/routes/real-world-sync-page.tsx:1934
 msgid "开启回退"
 msgstr "フォールバックを有効化"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1800
+#: apps/admin/src/routes/real-world-sync-page.tsx:1935
 msgid "仅保留真实结果"
 msgstr "実結果のみ保持"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1811
+#: apps/admin/src/routes/real-world-sync-page.tsx:1945
 msgid "来源过滤建议"
 msgstr "ソースフィルタの推奨"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1813
+#: apps/admin/src/routes/real-world-sync-page.tsx:1947
 msgid "白名单用于保留可信媒体或官方源，黑名单用于提前拦截低质站点。多个来源使用逗号分隔。"
 msgstr "ホワイトリストは信頼できるメディアまたは公式ソースを保持するために使用され、ブラックリストは低品質サイトを事前にブロックするために使用されます。複数のソースはカンマで区切ります。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1817
+#: apps/admin/src/routes/real-world-sync-page.tsx:1951
 msgid "默认白名单来源"
 msgstr "デフォルトのホワイトリストソース"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1831
+#: apps/admin/src/routes/real-world-sync-page.tsx:1965
 msgid "默认黑名单来源"
 msgstr "デフォルトのブラックリストソース"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1851
+#: apps/admin/src/routes/real-world-sync-page.tsx:1985
 msgid "Prompt 调整原则"
 msgstr "Prompt 調整原則"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1853
+#: apps/admin/src/routes/real-world-sync-page.tsx:1987
 msgid "只有当同类问题跨角色重复出现时，再动这里的全局 Prompt；单角色异常优先回角色配置或具体抓取证据。"
 msgstr "同種の問題が役割を跨いで繰り返し発生する場合のみ、ここのグローバル Prompt を変更してください。単一役割の異常は役割設定または具体的な取得エビデンスを優先してください。"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1856
+#: apps/admin/src/routes/real-world-sync-page.tsx:1990
 msgid "信号归一化提示词"
 msgstr "シグナル正規化プロンプト"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1873
+#: apps/admin/src/routes/real-world-sync-page.tsx:2007
 msgid "每日概况提示词"
 msgstr "日次概況プロンプト"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1890
+#: apps/admin/src/routes/real-world-sync-page.tsx:2024
 msgid "Scene Patch 提示词"
 msgstr "Scene Patch プロンプト"
 
-#: apps/admin/src/routes/real-world-sync-page.tsx:1907
+#: apps/admin/src/routes/real-world-sync-page.tsx:2041
 msgid "现实发圈提示词"
 msgstr "現実モーメント投稿プロンプト"
 
@@ -14544,10 +14598,6 @@ msgstr "セッション内でキャラクターを設定"
 #: apps/admin/src/routes/reply-logic-page.tsx:752
 msgid "这里改的是实体字段和 profile 配置对象。本页不会实时重算草稿提示词，保存后会刷新「快照」Tab，看到真实生效结果。"
 msgstr ""
-
-#: apps/admin/src/routes/reply-logic-page.tsx:757
-msgid "角色配置"
-msgstr "キャラクター設定"
 
 #: apps/admin/src/routes/reply-logic-page.tsx:775
 msgid "正在加载角色配置..."
