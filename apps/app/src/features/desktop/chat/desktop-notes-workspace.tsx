@@ -1246,6 +1246,12 @@ export function DesktopNotesWorkspace({
                   handleTagCommit();
                 }}
                 placeholder={t(msg`输入标签后回车`)}
+                // 走查 R77：笔记编辑器底部的「标签」入口点开后这个 input
+                // 只挂 placeholder，没显式 label。SR (NVDA/JAWS) focus 进来
+                // 只听到「编辑栏」加 placeholder 漂在工具栏旁，盲人用户
+                // 不知道当前 input 是干嘛的——前面已有「标签」工具栏按钮
+                // 但 input 自己没 label 关联。补 aria-label="添加标签"。
+                aria-label={t(msg`添加标签`)}
                 className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[13px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
               />
               <Button
