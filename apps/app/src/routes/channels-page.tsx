@@ -1768,22 +1768,6 @@ export function ChannelsPage() {
   const pendingFollowAuthorId = followMutation.isPending
     ? (followMutation.variables?.authorId ?? null)
     : null;
-  // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
-  useEffect(() => {
-    if (!likeMutation.isPending) {
-      desktopLikeSubmittingRef.current = false;
-    }
-  }, [likeMutation.isPending]);
-  useEffect(() => {
-    if (!favoriteMutation.isPending) {
-      desktopFavoriteSubmittingRef.current = false;
-    }
-  }, [favoriteMutation.isPending]);
-  useEffect(() => {
-    if (!followMutation.isPending) {
-      desktopFollowSubmittingRef.current = false;
-    }
-  }, [followMutation.isPending]);
   const pendingCommentPostId = commentMutation.isPending
     ? (commentMutation.variables?.postId ?? null)
     : null;
@@ -1791,6 +1775,11 @@ export function ChannelsPage() {
     ? (likeCommentMutation.variables?.commentId ?? null)
     : null;
   // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
+  // 走查 2026-05-18 第三轮 R1：这 3 条 effect 历史上重复写了两份（第一份在
+  // pendingCommentPostId / pendingLikeCommentId 计算上方，第二份在下方），完全
+  // 同 body 同 deps。React 把 6 个 fiber slot 全跑一遍 + isPending 翻 false 时
+  // 2 次写同一 ref（cheap 但浪费）。把上面那份去掉，留下方一份完整集合（like/
+  // favorite/follow + generate + likeComment）。
   useEffect(() => {
     if (!likeMutation.isPending) {
       desktopLikeSubmittingRef.current = false;

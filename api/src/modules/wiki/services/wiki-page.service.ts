@@ -247,10 +247,23 @@ export class WikiPageService {
       order: { createdAt: 'DESC' },
     });
     const pageMap = new Map(pages.map((page) => [page.characterId, page]));
+    // private_import 是用户从 app 端 import 的私有角色（每个真实用户都会带一批
+    // 测试 / smoke 数据），不属于公开 wiki 内容。原写法把所有 characters 表行
+    // 都喂给 listPages，130/273 行变成了 `_xxx_smoke_*` 的乱码占位，公网访客
+    // 打开 wiki 首页第一眼是测试数据。这里在 character 维度直接过滤掉。
+    // 例外：如果该 private 角色已经被显式提到 wiki 维护（currentRevisionId !=
+    // null），说明用户主动把它公开化了，保留。
     const rows = characters
       .filter((character) => {
         const page = pageMap.get(character.id);
-        return !page?.isDeleted && page?.lifecycleStatus !== 'deleted';
+        if (page?.isDeleted || page?.lifecycleStatus === 'deleted') return false;
+        if (
+          character.sourceType === 'private_import' &&
+          !page?.currentRevisionId
+        ) {
+          return false;
+        }
+        return true;
       })
       .map((character) => {
         const page = pageMap.get(character.id);
@@ -342,9 +355,18 @@ export class WikiPageService {
         'p',
         'p.characterId = r.characterId',
       )
+      // 同 listPages / search 的口径：私有 import 不参与公开动态时间线。
+      // 私有角色（character.sourceType='private_import'）通常只在用户自己的
+      // app 端被改，但若有人误把它公开化（page.currentRevisionId != null），
+      // 就允许出现。LEFT JOIN characters 避免吞掉只在 wiki 端创建、characters
+      // 表暂时还没行的 wiki_contributed pending_create 流程。
+      .leftJoin(CharacterEntity, 'c', 'c.id = r.characterId')
       .where(
         '((p.isDeleted = 0 OR p.isDeleted IS NULL) OR r.operation IN (:...lifecycleOps))',
         { lifecycleOps: ['soft_delete', 'restore'] },
+      )
+      .andWhere(
+        "(c.sourceType IS NULL OR c.sourceType != 'private_import' OR p.currentRevisionId IS NOT NULL)",
       )
       .orderBy('r.createdAt', 'DESC')
       .take(limit);
@@ -421,6 +443,13 @@ export class WikiPageService {
         'p.characterId = c.id',
       )
       .where('(p.isDeleted = 0 OR p.isDeleted IS NULL)')
+      // 同 listPages 的口径：私有 import 不参与公开 wiki 搜索，否则用户搜
+      // "smoke" / "测试" 会把所有人的私有测试数据全捞出来。已被显式 wiki
+      // 化（page.currentRevisionId != null）的 private 行保留，让用户能搜到
+      // 自己主动公开的内容。
+      .andWhere(
+        "(c.sourceType != 'private_import' OR p.currentRevisionId IS NOT NULL)",
+      )
       .andWhere(
         "(c.name LIKE :like ESCAPE '!' OR c.bio LIKE :like ESCAPE '!' OR c.relationship LIKE :like ESCAPE '!' OR c.personality LIKE :like ESCAPE '!' OR c.expertDomains LIKE :like ESCAPE '!')",
         { like },

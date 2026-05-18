@@ -1,3 +1,4 @@
+import { useReducer } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,14 @@ export function AdminUsersPage() {
     }) => wikiApi.setUserRole(input.userId, input.role, input.reason),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["wiki", "users"] }),
   });
+  // confirm 取消后必须强制 re-render，否则 React 受控 <select> 不会把 DOM
+  // 上用户已经选中的"错"值回滚到 state value（React 只在 commit 时调
+  // updateWrapper 同步 DOM；onChange 里 return 不改 state → 不 commit →
+  // 不同步 → 视觉停留在新值但 mutation 没发，用户以为已生效但其实没改，
+  // 跟"鼠标滚轮误触"二次防御本意正好相反）。bump 一个 dummy reducer
+  // counter，触发整页 re-render 即可。
+  const [rerenderTick, forceRerender] = useReducer((n: number) => n + 1, 0);
+  void rerenderTick;
 
   return (
     <PageShell
@@ -140,13 +149,12 @@ export function AdminUsersPage() {
                               ),
                             );
                             if (!ok) {
-                              // select 在 React controlled 模式下回滚到 u.role
-                              // 不需要做任何事（DOM value 由 React 控制，state
-                              // 没改 → 重渲染就回到原值）；但浏览器实际 DOM 已
-                              // 显示新值，所以强行触发一次 form re-render：直接
-                              // setQueryData 即可（无网络往返）。最简单的：什么
-                              // 都不做，依赖 React 下一次 render，因为 select 的
-                              // value 是受控的，下次 render 会回到 u.role。
+                              // 必须显式 forceRerender —— 受控 <select> 的
+                              // value 同步只在 React commit 时发生。onChange
+                              // 不改 state 直接 return 等于不 commit，DOM 上
+                              // 用户已经选好的"错"值会一直挂着直到下次外部
+                              // 状态变化，给人"取消但选项已经改了"的错觉。
+                              forceRerender();
                               return;
                             }
                           }
