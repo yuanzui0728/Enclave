@@ -477,13 +477,21 @@ export function useConversationThread(conversationId: string) {
     const readAt = new Date().toISOString();
     syncActiveConversationReadState(readAt);
 
-    void markConversationRead(conversationId, baseUrl)
-      .catch(() => {})
-      .finally(() => {
-        void queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        });
+    // 走查 R1：原版 .finally 不分成败一律 invalidate ["app-conversations"]
+    // —— 但成功路径下 syncActiveConversationReadState 已经把 unreadCount=0 +
+    // lastReadAt 写进本地 cache，server 端 markConversationRead 做的就是同样
+    // 的事，invalidate 后跑 GET /conversations 拿回完全一样的数据，纯白 RTT。
+    // 末尾 id 变化触发器 (line 462 useEffect) 会在 socket 收到 AI 回复 / 用户
+    // 切回 chat 时反复跑，每次都白浪费 ~600ms 公网隧道 RTT；R1 走查统计单聊
+    // 8x GET /conversations 一半就是这里。其它通道（onConversationUpdated /
+    // onChatMessage 用户消息）已经按需 invalidate，缺少这条 paranoia 同步并
+    // 不会让 UI 落后。失败时仍然 invalidate 把乐观写回 server 真实值，避免
+    // 服务端拒绝时本地 cache 一直假装"已读"。
+    void markConversationRead(conversationId, baseUrl).catch(() => {
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
       });
+    });
   }, [
     baseUrl,
     conversationId,
