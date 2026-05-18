@@ -37,6 +37,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -351,6 +352,19 @@ export function ChatComposer({
   const baseUrl = speechInput?.baseUrl ?? runtimeConfig.apiBaseUrl;
   const { keyboardInset, keyboardOpen } = useKeyboardInset();
   const isDesktop = variant === "desktop";
+  // 走查 R74：composer 外层 div style 之前 inline new 对象，每个 keystroke
+  // 都换新引用。memo 让桌面端常驻 "0.75rem"、移动端 keyboard 闭合时
+  // "0.5rem"、键盘弹起时 ${keyboardInset}px 各自稳定。
+  const composerOuterStyle = useMemo<CSSProperties>(
+    () => ({
+      paddingBottom: keyboardOpen
+        ? `${keyboardInset}px`
+        : isDesktop
+          ? "0.75rem"
+          : "0.5rem",
+    }),
+    [isDesktop, keyboardInset, keyboardOpen],
+  );
   const nativeMobileShellSupported = isNativeMobileShareSurface({
     isDesktopLayout: isDesktop,
   });
@@ -3353,13 +3367,12 @@ export function ChatComposer({
             ? "relative isolate z-30 border-t border-black/6 bg-[#ededed] px-3.5 py-3"
             : "border-t border-black/6 bg-[#f7f7f7] px-2 pb-2 pt-1"
         }
-        style={{
-          paddingBottom: keyboardOpen
-            ? `${keyboardInset}px`
-            : isDesktop
-              ? "0.75rem"
-              : "0.5rem",
-        }}
+        // 走查 R74：原版每次 render new 一个 {paddingBottom:...} 对象。
+        // composer 在用户每个 keystroke 都 re-render（value state 变），
+        // 桌面端 keyboardOpen/Inset 永远稳定 → paddingBottom 字符串恒为
+        // "0.75rem" 但对象引用换新，给 React 触发一次 style DOM 重设。
+        // memo 到真正会变的三个值。
+        style={composerOuterStyle}
         onDragEnter={handleDesktopDragEnter}
         onDragOver={handleDesktopDragOver}
         onDragLeave={handleDesktopDragLeave}
