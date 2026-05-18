@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -230,16 +230,38 @@ export function DesktopChatHistoryPage() {
   const mayHaveEarlierMessages =
     rawMessageCount > 0 && rawMessageCount >= historyLimit;
 
+  // 走查电脑端群聊 R6：和姊妹 desktop-chat-files-page R5（commit cf5e1606c）/
+  // DesktopGroupDetailCard R4（commit 165ca9815）同款 pattern。聊天记录页
+  //「定位到原消息」按钮 line 484-493 inline onClick → navigateToHistoryMessage
+  //（selectedConversation, item.id）→ 直接 push /tabs/chat?...messageId=...
+  // 无任何 throttle。同帧 <16ms 双击都通过 → 2 条相同 history 项 → 用户从
+  // 被定位的群消息返回历史页要按 2 次返回；群消息 around-message 窗口拉取
+  // 走 getGroupMessages 公网 RTT（~600ms），thread panel 内 highlightedMessageId
+  // 触发的 anchor-window fetch 第 2 次也会重复发出。按 messageId 分锁（不同
+  // 历史行同帧连点是合法操作），raf 释放兜底 disabled / 同会话内 hash-update
+  // 边界。
+  const navigatingHistoryMessageIdsRef = useRef<Set<string>>(new Set());
   const navigateToHistoryMessage = (
     conversation: ConversationListItem,
     messageId: string,
   ) => {
+    if (navigatingHistoryMessageIdsRef.current.has(messageId)) {
+      return;
+    }
+    navigatingHistoryMessageIdsRef.current.add(messageId);
     void navigate({
       to: buildDesktopChatThreadPath({
         conversationId: conversation.id,
         messageId,
       }),
     });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        navigatingHistoryMessageIdsRef.current.delete(messageId);
+      });
+    } else {
+      navigatingHistoryMessageIdsRef.current.delete(messageId);
+    }
   };
 
   useEffect(() => {
