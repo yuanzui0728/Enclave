@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getChatReminderActionErrorMessage,
   getChatReminderActionNotice,
@@ -22,6 +22,15 @@ export function useChatReminderActions({
   onCompleteReminder,
 }: UseChatReminderActionsOptions) {
   const [localNotice, setLocalNotice] = useState<string | null>(null);
+  // 第四轮 R2：completeReminder 原版无双击锁，chat-list 提醒分组里每条
+  // 「完成」/「我办了」按钮 + mobile-reminder-toast-host 顶部 toast 的「我办了」
+  // 都用 onClick={() => void completeReminder(entry)} 形态接进来。同帧第二次
+  // click 走到 onCompleteReminder（→ clearReminder → removeReminderMutation
+  // .mutateAsync）就会让同一 sourceId 走 DELETE 两次，第二次 404；catch 分支
+  // 把刚刚成功的「已完成」蓝条覆盖成「完成失败」红条。和 chat-list-page R1
+  // / chat-message-list 撤回/删除 同款 sync ref 锁；按 messageId 分锁，
+  // 不同提醒互不影响。
+  const completingMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!localNotice || !autoClearLocalNoticeMs) {
@@ -42,6 +51,10 @@ export function useChatReminderActions({
   }
 
   async function completeReminder(entry: ChatReminderEntry) {
+    if (completingMessageIdsRef.current.has(entry.messageId)) {
+      return;
+    }
+    completingMessageIdsRef.current.add(entry.messageId);
     const noticeMessage = getChatReminderActionNotice(entry);
 
     try {
@@ -56,6 +69,8 @@ export function useChatReminderActions({
           : getChatReminderActionErrorMessage(entry);
       onNoticeChange?.(message);
       setLocalNotice(message);
+    } finally {
+      completingMessageIdsRef.current.delete(entry.messageId);
     }
   }
 
