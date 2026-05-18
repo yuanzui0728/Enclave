@@ -405,6 +405,19 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       // 「聊天信息」侧栏 dismiss 掉。给 popover 卡片打 data-yj-portal-shield
       // 标记，workspace 那边 closest() 一查就跳过 dismiss。
       data-yj-portal-shield="avatar-popover"
+      // 走查 R5：popover 行为 modal-like（Esc 关 / backdrop pointerdown 关），
+      // 但没挂 role + aria-label，盲人屏幕阅读器只听到一堆 button label 和
+      // 资料行 text，无从知道这是个浮起的「{displayName} 资料卡片」。和姊妹
+      // R2~R3 修过的 dialog 系列同款补语义：role="dialog" + aria-modal +
+      // aria-label 直接挂当前角色名 + 类型；不用 aria-labelledby（卡片内的
+      // 标题节点本身是 truncate 的，外部传过来的 displayName 字段更完整）。
+      role="dialog"
+      aria-modal="true"
+      aria-label={
+        isOwner
+          ? t(msg`${displayName} 的资料卡片`)
+          : t(msg`${displayName} 的角色资料卡片`)
+      }
       className="w-[320px] rounded-[18px] border border-[rgba(0,0,0,0.08)] bg-[rgba(255,255,255,0.98)] shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl"
     >
       <div
