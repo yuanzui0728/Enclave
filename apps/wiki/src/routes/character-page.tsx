@@ -409,6 +409,9 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
         <img
           src={trimmed}
           alt={name}
+          // 详情页只有一张大头像；解码 async 让首屏文字先出来，避免大 SVG
+          // decode 阻塞 main thread。
+          decoding="async"
           onError={() => setLoadFailed(true)}
           className={`${base} object-cover`}
         />
@@ -417,6 +420,7 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
     if (isEmojiAvatar(trimmed)) {
       return (
         <div
+          role="img"
           aria-label={name}
           className={`${base} grid place-items-center text-3xl leading-none sm:text-4xl md:text-5xl`}
         >
@@ -425,7 +429,9 @@ function ReadViewAvatar({ name, src }: { name: string; src?: string | null }) {
       );
     }
   }
-  const initial = name?.[0] ?? "?";
+  // name?.[0] 取的是 UTF-16 code unit，遇到表情 / 扩展平面汉字会切半个代理对。
+  // Array.from 按 code point 切，保证字形完整。
+  const initial = name ? Array.from(name)[0] : "?";
   return (
     <div
       className={`${base.replace("bg-[color:var(--surface-soft)]", "bg-[image:var(--brand-gradient)]")} grid place-items-center text-2xl font-semibold text-[color:var(--text-on-brand)] md:text-3xl`}
