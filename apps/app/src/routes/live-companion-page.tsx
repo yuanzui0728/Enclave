@@ -934,27 +934,51 @@ function SelectorCard({
   options: Array<{ id: string; label: string }>;
   value: string;
 }) {
+  // 走查 2026-05-18 第二轮（本会话）R4：SelectorCard 是 mode（solo/product/
+  // story）和 quality（standard/hd/ultra）的 N 选 1 选择器 —— 视觉上 chip 行排
+  // 列，语义上是 radio group。原裸 <button type="button"> 让 SR 用户听到的是
+  // "单人控台 button"/"产品讲解 button"/"剧情陪看 button" 三个独立 button，没
+  // 有"selected/未 selected"提示，更没有 group 标签告知"这是 3 选 1"。盲用用户
+  // 完全摸不到当前选了哪个。同款问题对齐 channel-author-page L713 collection
+  // tabs / desktop workspace section tabs（已通过 R3 改 role=tab + aria-selected）
+  // —— 但本组件是真正的 radio 语义（互斥单选），用 role=radiogroup + role=radio
+  // + aria-checked 比 tab 更准（tab 仅用于切换 panel 视图）。
+  // labelId 把 label text 关联到 radiogroup 的 aria-labelledby，SR 念出 "直播
+  // 模式 radiogroup" + 子项 "单人控台 radio selected"。
+  const labelId = `selector-card-${label.replace(/\s+/g, "-")}`;
   return (
     <div>
-      <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
+      <div
+        id={labelId}
+        className="mb-2 text-xs font-medium text-[color:var(--text-muted)]"
+      >
         {label}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {options.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onChange(item.id)}
-            className={cn(
-              "rounded-xl border px-3 py-2 text-xs font-medium transition",
-              value === item.id
-                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white",
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div
+        className="flex flex-wrap gap-2"
+        role="radiogroup"
+        aria-labelledby={labelId}
+      >
+        {options.map((item) => {
+          const selected = value === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(item.id)}
+              className={cn(
+                "rounded-xl border px-3 py-2 text-xs font-medium transition",
+                selected
+                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white",
+              )}
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -972,9 +996,16 @@ function ToggleCard({
   onChange: (checked: boolean) => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-18 第二轮（本会话）R4：ToggleCard 是 "同步评论控台"/"自动标记
+  // 切片" 这种 on/off 开关 —— 视觉上整张卡是 button，文字 + 右上角 "开启/关闭"
+  // 状态 chip。原 <button> 没挂 aria-pressed，SR 用户听到 "同步评论控台 button"
+  // 但不知道当前是 on 还是 off，只能通过下方 description 文字推断。aria-pressed
+  // 是 toggle button 的标准状态属性，对齐 channels 视频号 like / favorite /
+  // follow / mute 按钮历来挂的 aria-pressed 语义。
   return (
     <button
       type="button"
+      aria-pressed={checked}
       onClick={() => onChange(!checked)}
       className={cn(
         "rounded-[18px] border px-4 py-4 text-left transition",
