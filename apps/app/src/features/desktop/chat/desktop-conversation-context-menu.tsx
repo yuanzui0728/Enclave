@@ -105,7 +105,15 @@ export function DesktopConversationContextMenu({
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
+      {/* 走查 R6：右键会话弹的 context menu，盲人屏幕阅读器原本只听到一串
+          button label「在独立窗口打开 / 置顶聊天 / 消息免打扰 / ...」浮空，
+          不知道是「会话菜单」。和姊妹 dialog 系列 R2~R5 修过的 a11y 同款方向，
+          补 role="menu" + aria-label 让 SR 知道这是个上下文菜单；按钮虽然没
+          挂 role="menuitem"（普通 <button> 在 menu 里 SR 也能识别），让 menu
+          容器有正确角色已经能让"上下文"清楚。 */}
       <div
+        role="menu"
+        aria-label={t(msg`会话操作菜单`)}
         style={{ left, top }}
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
         onPointerDown={(event) => event.stopPropagation()}

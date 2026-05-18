@@ -142,7 +142,13 @@ export function GroupMessageContextMenu({
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
+      {/* 走查 R6：右键消息弹的 context menu，盲人屏幕阅读器原本只听到一串
+          按钮 label（「回复」「转发」「撤回」等）浮空，没有上下文。和姊妹
+          desktop-conversation-context-menu 同款 a11y 修法，补 role="menu"
+          + aria-label 让 SR 知道这是个消息菜单。 */}
       <div
+        role="menu"
+        aria-label={t(msg`消息操作菜单`)}
         style={{ left, top }}
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white py-1.5 shadow-[var(--shadow-overlay)]"
         onPointerDown={(event) => event.stopPropagation()}
