@@ -443,6 +443,14 @@ export function ChatMessageSearchPanel({
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder={t(msg`搜索`)}
+              // 移动端走查 R1：和桌面端 R24（chat-history-panel）同款 a11y 修法
+              // —— 父 label 没有文本子节点（仅 Search 图标 + input），placeholder
+              // 在 SR 实现上行为分裂、用户开始打字后多数 SR 直接不再朗读，盲人
+              // 用户进来听到"编辑栏 空"，得靠摸索周围 chip / 区域才能猜出来是
+              // 搜什么的。挂 aria-label="搜索聊天记录" 把意图明确表达出来；
+              // 本面板同时给单聊 (chat-message-search-page) 和群聊
+              // (group-message-search-page) 路径用，一处修复双端受益。
+              aria-label={t(msg`搜索聊天记录`)}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // 这是查找聊天记录的输入框，进来就 auto focus（line 175-177）—
               // 字号偏小直接触发 zoom，整页搜索 panel 抖一下。
