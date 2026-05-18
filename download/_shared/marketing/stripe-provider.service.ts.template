@@ -1,0 +1,110 @@
+import { Injectable, Logger } from "@nestjs/common";
+
+/**
+ * StripeProviderService — Cloud SaaS payment provider (Week 9+ of the 90-day plan).
+ *
+ * **Status: SKELETON ONLY.** This service is intentionally not wired into the
+ * SubscriptionModule until the founder has:
+ *   1. Chosen the merchant-of-record (Stripe Atlas vs Lemon Squeezy — see
+ *      `download/_shared/marketing/stripe-vs-lemonsqueezy-decision.md`)
+ *   2. Registered the corresponding business entity / account
+ *   3. Set the env vars listed below
+ *
+ * When ready to activate:
+ *   - Add `provide: StripeProviderService, useClass: StripeProviderService` to
+ *     `subscription.module.ts` providers
+ *   - Add `npm i stripe @types/stripe` (or `npm i @lemonsqueezy/lemonsqueezy.js`
+ *     if the LSQ path is chosen)
+ *   - Replace the throw-bodies below with real SDK calls
+ *   - Register the webhook route in `subscription-client.controller.ts`
+ *
+ * The existing `UserSubscriptionEntity` + `SubscriptionPlanEntity` + invite-code
+ * flow do NOT need changes — this provider is purely the "convert intent to
+ * paid status" layer. Once it returns success, the existing SubscriptionService
+ * handles plan attribution, expiry, and renewal scheduling.
+ *
+ * Required env vars (do not set these until activation):
+ *   STRIPE_SECRET_KEY            — sk_test_… or sk_live_…
+ *   STRIPE_WEBHOOK_SECRET        — whsec_… for signature verification
+ *   STRIPE_PRICE_CLOUD_MONTHLY   — price_… for the $14.99/mo plan
+ *   STRIPE_SUCCESS_URL           — where Stripe Checkout redirects on success
+ *   STRIPE_CANCEL_URL            — where Stripe Checkout redirects on cancel
+ *
+ * Or, for the Lemon Squeezy variant:
+ *   LSQ_API_KEY                  — Lemon Squeezy API key
+ *   LSQ_STORE_ID                 — store identifier
+ *   LSQ_PRODUCT_VARIANT_MONTHLY  — monthly plan variant id
+ *   LSQ_WEBHOOK_SECRET           — for signature verification
+ */
+@Injectable()
+export class StripeProviderService {
+  private readonly logger = new Logger(StripeProviderService.name);
+  private readonly isConfigured: boolean;
+
+  constructor() {
+    this.isConfigured = Boolean(
+      process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_CLOUD_MONTHLY,
+    );
+    if (!this.isConfigured) {
+      this.logger.warn(
+        "Stripe provider not configured — Cloud SaaS payment flow is disabled. " +
+          "Set STRIPE_SECRET_KEY + STRIPE_PRICE_CLOUD_MONTHLY to enable.",
+      );
+    }
+  }
+
+  /**
+   * Create a Stripe Checkout Session for a given user + plan.
+   * Called by the client controller when a user clicks "Subscribe" in the UI.
+   *
+   * @returns a URL the client should redirect the browser to
+   */
+  async createCheckoutSession(_params: {
+    userId: string;
+    userEmail: string;
+    planCode: string;
+  }): Promise<{ url: string; sessionId: string }> {
+    this.assertConfigured();
+    // TODO(week-9): replace with stripe.checkout.sessions.create({...})
+    throw new Error("StripeProviderService.createCheckoutSession not yet implemented");
+  }
+
+  /**
+   * Verify and process a Stripe webhook event.
+   * Called by the webhook controller after Stripe's signature header is validated.
+   *
+   * @returns whether the SubscriptionService should be informed of a status change
+   */
+  async handleWebhookEvent(_rawBody: Buffer, _signature: string): Promise<{
+    handled: boolean;
+    eventType?: string;
+    userId?: string;
+    newStatus?: "active" | "past_due" | "canceled";
+  }> {
+    this.assertConfigured();
+    // TODO(week-9): construct event via stripe.webhooks.constructEvent + signature
+    // TODO(week-9): switch on event.type → checkout.session.completed,
+    //               invoice.paid, customer.subscription.deleted, etc.
+    throw new Error("StripeProviderService.handleWebhookEvent not yet implemented");
+  }
+
+  /**
+   * Cancel a user's active subscription at period-end.
+   * Called by client controller when a user requests cancellation.
+   */
+  async cancelSubscriptionAtPeriodEnd(_userId: string): Promise<{
+    cancelAt: Date;
+  }> {
+    this.assertConfigured();
+    // TODO(week-9): stripe.subscriptions.update(id, { cancel_at_period_end: true })
+    throw new Error("StripeProviderService.cancelSubscriptionAtPeriodEnd not yet implemented");
+  }
+
+  private assertConfigured(): void {
+    if (!this.isConfigured) {
+      throw new Error(
+        "Stripe provider not configured. See stripe-provider.service.ts header for env vars.",
+      );
+    }
+  }
+}

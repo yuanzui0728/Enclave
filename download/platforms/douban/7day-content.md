@@ -869,7 +869,7 @@ D4 / D5 那两天我同步发了小组帖。带来的注册数是 D3 / D6 这种
 ### 配图素材库
 - 产品官方海报：`/home/ps/claude/yinjie-app/apps/site/public/brand/poster-private-world-zh-CN-1080x1350.png`
 - 产品截图全集：`/home/ps/claude/yinjie-app/docs/screenshots/`
-- 角色截图：`/home/ps/claude/yinjie-app/docs/characters/`
+- 角色截图：`/home/ps/claude/yinjie-app/download/_shared/characters-research/`
 
 ### 文案金句库（备用，每天可灵活穿插）
 - "我们不做另一个世界，是给你的现实多一个维度"

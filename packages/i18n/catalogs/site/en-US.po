@@ -75,7 +75,7 @@ msgstr "Open it in your browser, or grab the desktop build for a deeper experien
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:29
-#: apps/site/src/app/[locale]/page.tsx:29
+#: apps/site/src/app/[locale]/page.tsx:30
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
 msgid "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。"
@@ -83,7 +83,7 @@ msgstr "Private AI residents, moments, group chats and calls — open it in your
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
-#: apps/site/src/app/[locale]/page.tsx:28
+#: apps/site/src/app/[locale]/page.tsx:29
 msgid "隐界 · 一个属于你的 AI 虚拟世界"
 msgstr "Enclave · A private AI world of your own"
 
@@ -486,6 +486,71 @@ msgstr "Home"
 #: apps/site/src/components/breadcrumb-nav.tsx:34
 msgid "面包屑导航"
 msgstr "Breadcrumb"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:14
+msgid "两条路，任你选"
+msgstr "Two paths. Pick yours."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:15
+msgid "立即自部署，或等待 Cloud 托管版上线 —— 同一个 Enclave，不同的入口。"
+msgstr "Self-host today, or wait for Cloud Hosted — the same Enclave, two ways in."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:18
+msgid "现在可用"
+msgstr "Available today"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:19
+msgid "自部署（BYOK）"
+msgstr "Self-host (BYOK)"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:20
+msgid "用 Docker 在自己的机器上 5 分钟跑起来，自带 LLM key。"
+msgstr "Run it on your machine with Docker in 5 minutes. Bring your own LLM key."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:23
+msgid "MIT 开源，数据全部在你机器上"
+msgstr "MIT-licensed, your data stays on your box"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:24
+msgid "OpenRouter / Groq / DeepSeek / Ollama 任选"
+msgstr "OpenRouter / Groq / DeepSeek / Ollama — pick one"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:25
+msgid "最低 $0/月（用免费 LLM 网关）"
+msgstr "As low as $0/month (using free LLM tiers)"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:26
+msgid "GitHub 仓库"
+msgstr "GitHub repo"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:27
+msgid "BYOK 5 分钟指南"
+msgstr "5-minute BYOK guide"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:28
+msgid "即将开放"
+msgstr "Coming soon"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:29
+msgid "Cloud 托管版"
+msgstr "Cloud Hosted"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:30
+msgid "不想自己装 Docker？我们帮你托管 —— 加入 waitlist，前 50 名优先开放。"
+msgstr "Don't want to wrestle with Docker? We'll host it for you. Join the waitlist — first 50 get in."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/capability-grid.tsx:11

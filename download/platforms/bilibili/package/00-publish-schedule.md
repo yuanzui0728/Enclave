@@ -111,7 +111,7 @@ Day 2-7 的钩子之后、章节 1 之前（约 0:15-0:25），加一句"昨天�
 ## 8. 7 天后的事
 
 **Day 7 + 1 天**（即第 8 天）：
-- UP 主写一份 retro，落到项目仓库 `docs/marketing/bilibili-week1-retro.md`
+- UP 主写一份 retro，落到项目仓库 `download/_shared/marketing/bilibili-week1-retro.md`
 - 看哪集播放最高、哪集完播最高（不一定是同一集）、Star/粉丝/issue 增长归因
 - 决定是否做"第 2 周"（如有，将另出交付包）
 

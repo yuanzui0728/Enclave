@@ -570,7 +570,7 @@ A: **enclaveai.top**，浏览器打开，3 秒进。这是作者搭的体验世�
 **跨平台导流建议**：
 - TapTap Day 1 / 4 / 7 主帖发布后 24h 内，可在微信公众号 / V2EX 同一天的内容评论区互相 @；TapTap 自己**不要**主动暴露其他平台账号（避免被判定为多平台引流号）
 - B 站 + 抖音的视频内容可以在 TapTap Day 4 主帖的评论区由小号"我之前看一个 UP 主讲过这个"形式提及，**不要在主帖里放 B 站链接**
-- 七天结束后写一份 `docs/marketing/taptap-week1-retro.md`，统计：主帖播放量 / 评论数 / 私信咨询数 / enclaveai.top 流量来源 / 30 人内测名额报名数 / 是否触发限流
+- 七天结束后写一份 `download/_shared/marketing/taptap-week1-retro.md`，统计：主帖播放量 / 评论数 / 私信咨询数 / enclaveai.top 流量来源 / 30 人内测名额报名数 / 是否触发限流
 
 ---
 

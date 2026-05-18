@@ -75,7 +75,7 @@ msgstr "ブラウザですぐに利用でき、本格利用にはデスクトッ
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:29
-#: apps/site/src/app/[locale]/page.tsx:29
+#: apps/site/src/app/[locale]/page.tsx:30
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
 msgid "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。"
@@ -83,7 +83,7 @@ msgstr "プライベートな AI 住人、モーメンツ、グループチャ�
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
-#: apps/site/src/app/[locale]/page.tsx:28
+#: apps/site/src/app/[locale]/page.tsx:29
 msgid "隐界 · 一个属于你的 AI 虚拟世界"
 msgstr "隐界 · あなただけの AI バーチャルワールド"
 
@@ -486,6 +486,71 @@ msgstr "ホーム"
 #: apps/site/src/components/breadcrumb-nav.tsx:34
 msgid "面包屑导航"
 msgstr "パンくずリスト"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:14
+msgid "两条路，任你选"
+msgstr "2 つの道、自由に選ぼう"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:15
+msgid "立即自部署，或等待 Cloud 托管版上线 —— 同一个 Enclave，不同的入口。"
+msgstr "今すぐセルフホストするか、Cloud ホスティング版の公開を待つか — 同じ Enclave、2 つの入口。"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:18
+msgid "现在可用"
+msgstr "今すぐ使える"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:19
+msgid "自部署（BYOK）"
+msgstr "セルフホスト（BYOK）"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:20
+msgid "用 Docker 在自己的机器上 5 分钟跑起来，自带 LLM key。"
+msgstr "Docker で自分のマシンに 5 分で起動。LLM キーは自分で用意。"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:23
+msgid "MIT 开源，数据全部在你机器上"
+msgstr "MIT ライセンス、データは全部あなたのマシンに"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:24
+msgid "OpenRouter / Groq / DeepSeek / Ollama 任选"
+msgstr "OpenRouter / Groq / DeepSeek / Ollama から選択"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:25
+msgid "最低 $0/月（用免费 LLM 网关）"
+msgstr "最安 $0/月（無料 LLM ゲートウェイ利用時）"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:26
+msgid "GitHub 仓库"
+msgstr "GitHub リポジトリ"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:27
+msgid "BYOK 5 分钟指南"
+msgstr "5 分で読める BYOK ガイド"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:28
+msgid "即将开放"
+msgstr "近日公開"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:29
+msgid "Cloud 托管版"
+msgstr "Cloud ホスティング版"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/byok-and-cloud-section.tsx:30
+msgid "不想自己装 Docker？我们帮你托管 —— 加入 waitlist，前 50 名优先开放。"
+msgstr "Docker は触りたくない？私たちがホスティングします — waitlist にご登録ください。先着 50 名様。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/capability-grid.tsx:11

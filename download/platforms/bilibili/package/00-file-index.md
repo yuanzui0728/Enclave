@@ -7,7 +7,7 @@
 ## 顶层文档（5）
 
 ```
-docs/bilibili-package/
+download/platforms/bilibili/package/
 ├── README.md                       # 给 manus 的交付说明（必读）
 ├── 00-series-context.md            # 项目背景、调性、词典
 ├── 00-visual-style.md              # 7 集统一视觉规范
@@ -75,7 +75,7 @@ shared-assets/
 ## 完整目录树
 
 ```
-docs/bilibili-package/
+download/platforms/bilibili/package/
 ├── README.md
 ├── 00-series-context.md
 ├── 00-visual-style.md
@@ -122,7 +122,7 @@ tar -czf bilibili-package-v1.tar.gz bilibili-package/
 ### 方案 C：推到 GitHub 私有仓库
 
 ```bash
-cd docs/bilibili-package
+cd download/platforms/bilibili/package
 git init
 git add -A
 git commit -m "Initial delivery"

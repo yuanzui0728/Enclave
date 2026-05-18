@@ -9,6 +9,7 @@ import {
   pageUrl,
 } from "@/lib/seo-metadata";
 import { HeroSection } from "@/components/hero-section";
+import { BYOKAndCloudSection } from "@/components/byok-and-cloud-section";
 import { CapabilityGrid } from "@/components/capability-grid";
 import { MultiPlatformCarousel } from "@/components/multi-platform-carousel";
 import { OnePersonWorld } from "@/components/one-person-world";
@@ -58,6 +59,7 @@ export default async function HomePage({
     <>
       <HomeJsonLd locale={safeLocale} />
       <HeroSection locale={safeLocale} />
+      <BYOKAndCloudSection locale={safeLocale} />
       <CapabilityGrid locale={safeLocale} />
       {/* 折叠下方组件用 Suspense 让 Next.js 走 streaming HTML，首屏 Hero+Capability
           能提前 flush，后端 i18n/数据并行渲染。Suspense 完成后整页仍是完整 HTML，

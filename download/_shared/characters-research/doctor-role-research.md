@@ -387,7 +387,7 @@
 
 如果下一步进入实现，建议按现有内建角色结构落以下文件：
 
-- 新增 `docs/characters/doctor-role-research.md`
+- 新增 `download/_shared/characters-research/doctor-role-research.md`
 - 新增 `api/src/modules/characters/doctor-character.ts`
 - 修改 `api/src/modules/characters/character-bios.ts`
 - 修改 `api/src/modules/characters/default-characters.ts`
