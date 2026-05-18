@@ -150,6 +150,25 @@ export function ChannelsPage() {
     excerpt: string;
   } | null>(null);
   const previousBaseUrlRef = useRef(baseUrl);
+  // 走查 2026-05-18 新会话 R1：跟 moments-page R3 同款 mid-flight 切账户守卫。
+  // react-query v5 useMutation 完成时走的 onSuccess/onError 是当前 render 的闭包
+  // —— 公网隧道慢网下用户在 A 账户点完赞 / 评论 / 收藏 / 关注 / 不感兴趣 /
+  // 评论赞 / 换一批 后 RTT 200-500ms 没回 → 顶栏切 B 账户 → callback 跑回来
+  // 时闭包 baseUrl 已是 B：
+  //   - setNotice("视频号互动已更新")/"已收藏"/"已关注"等成功 toast 跑到 B，
+  //     体感「我在 B 啥都没动怎么冒成功 toast」；
+  //   - invalidateQueries({queryKey:[...home, baseUrl=B]}) 把 B 账户的 home/
+  //     decorations/feed-comments cache 标 stale → 触发 B 的不必要 refetch；
+  //     该被 invalidate 的 A 反而漏掉，A 那条 home 一直是乐观状态（点赞 ＋1）
+  //     直到下次回 A 进入 channels 主动 refetch。
+  // 模板：onMutate 把当时 baseUrl 钉进 context.mutationBaseUrl；onSuccess/
+  // onError 比对 mutationBaseUrlRef.current 早返用户可见 toast，invalidate 改
+  // 走 mutationBaseUrl（确保落 A 的 cache）。cache 写位置（setQueryData / 回
+  // 滚 previousEntries 里的 key）已经是 onMutate 时点闭包的旧 baseUrl，正确。
+  const mutationBaseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    mutationBaseUrlRef.current = baseUrl;
+  }, [baseUrl]);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -239,11 +258,12 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries };
+      return { previousEntries, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       // 只回滚被点的这条 post——拿当前缓存（已经包含后来的乐观更新）做底，
-      // 仅把 input.postId 还原成失败前那条。
+      // 仅把 input.postId 还原成失败前那条。previousEntries 里的 key 已经
+      // 是 onMutate 时点闭包的旧 baseUrl（A 账户），rollback 落 A 的 cache 正确。
       context?.previousEntries.forEach(({ key, previousPost }) => {
         const current =
           queryClient.getQueryData<FeedChannelHomeResponse>(key);
@@ -255,6 +275,10 @@ export function ChannelsPage() {
           ),
         });
       });
+      // mid-flight 切账户：这条点赞失败属于上一个账户，新账户不该冒红条。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       // 失败时给一行 info 通知；不要把单条点赞失败升级成"视频号暂时不可用"
       // 大状态卡——home 列表其实还能用。
       setNoticeTone("info");
@@ -266,7 +290,11 @@ export function ChannelsPage() {
           : t(msg`点赞失败，请稍后重试。`),
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, _input, context) => {
+      // mid-flight 切账户：成功 toast 落到新账户没意义。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -344,56 +372,63 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries };
+      return { previousEntries, mutationBaseUrl: baseUrl };
     },
-    onSuccess: (_, input) => {
-      // 走查 R1：原来无条件把 commentDrafts[postId] 清空——但 textarea 在 mutation
-      // 飞行期没 disabled，用户提交完会接着打下一条评论。RTT 落地时 onSuccess 把
-      // 「正在打的下一条」也一起抹掉，用户辛苦敲的内容凭空消失。只在当前草稿仍
-      // 等于刚发出去的文本（用户没继续输入）时才清空；否则保留草稿。
-      const sentText = input.text;
-      setCommentDrafts((current) => {
-        if ((current[input.postId] ?? "") !== sentText) {
+    onSuccess: (_, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      // mid-flight 切账户：清 draft / reply target / notice 都不该跑到新账户。
+      // 但 decorations / feed-comments invalidate 仍要落原账户（A），让用户回 A
+      // 时新评论能正确反映。
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        // 走查 R1：原来无条件把 commentDrafts[postId] 清空——但 textarea 在 mutation
+        // 飞行期没 disabled，用户提交完会接着打下一条评论。RTT 落地时 onSuccess 把
+        // 「正在打的下一条」也一起抹掉，用户辛苦敲的内容凭空消失。只在当前草稿仍
+        // 等于刚发出去的文本（用户没继续输入）时才清空；否则保留草稿。
+        const sentText = input.text;
+        setCommentDrafts((current) => {
+          if ((current[input.postId] ?? "") !== sentText) {
+            return current;
+          }
+          return { ...current, [input.postId]: "" };
+        });
+        // 走查 R3：原来只按 postId 抹 replyTarget——但用户提交回复 A 后还没
+        // 收到 RTT 就先按了评论 B 的「回复」按钮，replyTarget 已经被替换成 B；
+        // mutation 落地把 current.postId === input.postId 当真，把刚换上的 B 也
+        // 一起清掉，用户的「我下一步要回 B」意图丢失。改成「sent target 跟当前
+        // target 完全相同」才清；用户已经切到别的评论 / 退回到顶层评论时不动。
+        // input.replyTarget 为 null（顶层评论）时，原 replyTarget 必为 null
+        // （顶层评论提交不会经过 setMobileReplyTarget），不需要再做事。
+        const sentTarget = input.replyTarget ?? null;
+        setMobileReplyTarget((current) => {
+          if (!current || !sentTarget) return current;
+          if (
+            current.postId === sentTarget.postId &&
+            current.commentId === sentTarget.commentId
+          ) {
+            return null;
+          }
           return current;
-        }
-        return { ...current, [input.postId]: "" };
-      });
-      // 走查 R3：原来只按 postId 抹 replyTarget——但用户提交回复 A 后还没
-      // 收到 RTT 就先按了评论 B 的「回复」按钮，replyTarget 已经被替换成 B；
-      // mutation 落地把 current.postId === input.postId 当真，把刚换上的 B 也
-      // 一起清掉，用户的「我下一步要回 B」意图丢失。改成「sent target 跟当前
-      // target 完全相同」才清；用户已经切到别的评论 / 退回到顶层评论时不动。
-      // input.replyTarget 为 null（顶层评论）时，原 replyTarget 必为 null
-      // （顶层评论提交不会经过 setMobileReplyTarget），不需要再做事。
-      const sentTarget = input.replyTarget ?? null;
-      setMobileReplyTarget((current) => {
-        if (!current || !sentTarget) return current;
-        if (
-          current.postId === sentTarget.postId &&
-          current.commentId === sentTarget.commentId
-        ) {
-          return null;
-        }
-        return current;
-      });
-      setDesktopReplyTarget((current) => {
-        if (!current || !sentTarget) return current;
-        if (
-          current.postId === sentTarget.postId &&
-          current.commentId === sentTarget.commentId
-        ) {
-          return null;
-        }
-        return current;
-      });
-      setNoticeTone("success");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(
-        input.replyTarget
-          ? t(msg`视频号回复已发送。`)
-          : t(msg`视频号评论已发送。`),
-      );
+        });
+        setDesktopReplyTarget((current) => {
+          if (!current || !sentTarget) return current;
+          if (
+            current.postId === sentTarget.postId &&
+            current.commentId === sentTarget.commentId
+          ) {
+            return null;
+          }
+          return current;
+        });
+        setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        setNotice(
+          input.replyTarget
+            ? t(msg`视频号回复已发送。`)
+            : t(msg`视频号评论已发送。`),
+        );
+      }
       // fire-and-forget：await 会让"发送"按钮一直 disabled。
       // 走查 R1（本轮）：原来连 home 也一起 invalidate，注释说要"刷 commentCount"——
       // 但 commentCount 已经在 onMutate 里 per-post +1 乐观更新过了，server 那一
@@ -403,11 +438,14 @@ export function ChannelsPage() {
       // 同样适用这里。decorations 仍然需要——commentsPreview 卡底"最近评论"要把
       // 刚发的这条加进去；feed-comments 当然要 invalidate（评论 sheet 当前打开列表）。
       // 同步去掉 home invalidate，省掉每次评论附带的全量重拉。
+      // 走查 2026-05-18 新会话 R1：invalidate 落 mutationBaseUrl 而非闭包 baseUrl ——
+      // 切账户后 baseUrl 是 B，但这条评论是 A 的，标 B 的 cache stale 触发 B
+      // 不必要的 refetch + A 的 cache 永远不刷新。
       void queryClient.invalidateQueries({
-        queryKey: ["app-channels-home-decorations", baseUrl],
+        queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["app-feed-comments", baseUrl, input.postId],
+        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
     // 走查 R7: 失败兜底。原来没 onError，错误只通过 mobileCommentSheetErrorMessage
@@ -430,6 +468,10 @@ export function ChannelsPage() {
           ),
         });
       });
+      // mid-flight 切账户：失败 toast 落到新账户没意义。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -441,28 +483,49 @@ export function ChannelsPage() {
   });
   const generateMutation = useMutation({
     mutationFn: () => generateChannelPost(baseUrl),
-    onSuccess: async (data) => {
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      if (!data) {
-        // 后端跳过生成（MiniMax key 未配 / 视频额度今日用完 / 没有可发帖的角色）
-        // 时统一返回 null。原来文案是"额度今日已用完, 明天再试"，但 key 未配 /
-        // 没有可发帖的角色 时根本不是额度问题，"明天再试"会误导用户白等一天。
-        // 改成中性"现在没法生成"，不锁死重试时间。
-        setNoticeTone("info");
-        setNotice(t(msg`现在没法生成新内容，稍后再试看看。`));
+    onMutate: () => {
+      // 走查 2026-05-18 新会话 R1：mid-flight 守卫 — 用户在 A 账户点「换一批」，
+      // 生成 ~3-5s 期间切到 B 账户：onSuccess 跑回时闭包 baseUrl 已是 B，「新
+      // 视频号正在生成中」notice + invalidate B 的 home 都跑到 B，B 用户莫名
+      // 看见"正在生成"以为自己刚点了什么；invalidate B 的 home 也会触发 B 的
+      // 不必要 refetch。改成 onMutate 钉住 mutationBaseUrl，onSuccess 比对 ref
+      // 早返 notice + invalidate 落 A。
+      return { mutationBaseUrl: baseUrl };
+    },
+    onSuccess: async (data, _input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        if (!data) {
+          // 后端跳过生成（MiniMax key 未配 / 视频额度今日用完 / 没有可发帖的角色）
+          // 时统一返回 null。原来文案是"额度今日已用完, 明天再试"，但 key 未配 /
+          // 没有可发帖的角色 时根本不是额度问题，"明天再试"会误导用户白等一天。
+          // 改成中性"现在没法生成"，不锁死重试时间。
+          setNoticeTone("info");
+          setNotice(t(msg`现在没法生成新内容，稍后再试看看。`));
+          return;
+        }
+        setNoticeTone("success");
+        // 后端只是把 draft 写进 DB + 异步排队 MiniMax 出视频，要等 callback
+        // 才会落到 publishStatus='published'。home 这次 refetch 通常看不到。
+        // 把文案从 "已生成" 改成 "正在生成"，对齐真实状态。
+        setNotice(t(msg`新视频号正在生成中，几分钟后刷新看看。`));
+      }
+      // invalidate 仍要落 A 账户 — generate 失败返 null 时也应该至少试一次
+      // refetch（其它账户的 user/会话可能改了 home），但仅 data 非 null 才必要。
+      if (data) {
+        await queryClient.invalidateQueries({
+          queryKey: ["app-channels-home", mutationBaseUrl],
+        });
+      }
+    },
+    onError: (err, _input, context) => {
+      // mid-flight 切账户：失败 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      setNoticeTone("success");
-      // 后端只是把 draft 写进 DB + 异步排队 MiniMax 出视频，要等 callback
-      // 才会落到 publishStatus='published'。home 这次 refetch 通常看不到。
-      // 把文案从 "已生成" 改成 "正在生成"，对齐真实状态。
-      setNotice(t(msg`新视频号正在生成中，几分钟后刷新看看。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
-    },
-    onError: (err) => {
       // 网络/服务端错误不要冒到顶层的 errorMessage——那会让整个 home
       // 切到 "视频号暂时不可用" 状态卡，但实际推荐流仍然能拉到。改成
       // info 风格的轻量通知，2.4s 自动消失。
@@ -529,7 +592,7 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries };
+      return { previousEntries, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       context?.previousEntries.forEach(({ key, previousPost }) => {
@@ -543,6 +606,10 @@ export function ChannelsPage() {
           ),
         });
       });
+      // mid-flight 切账户：失败 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -552,7 +619,11 @@ export function ChannelsPage() {
           : t(msg`收藏失败，请稍后重试。`),
       );
     },
-    onSuccess: (_, input) => {
+    onSuccess: (_, input, context) => {
+      // mid-flight 切账户：成功 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -625,7 +696,7 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries };
+      return { previousEntries, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       context?.previousEntries.forEach(({ key, previousPosts }) => {
@@ -641,6 +712,10 @@ export function ChannelsPage() {
           ),
         });
       });
+      // mid-flight 切账户：失败 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -650,21 +725,28 @@ export function ChannelsPage() {
           : t(msg`关注失败，请稍后重试。`),
       );
     },
-    onSuccess: async (_, input) => {
-      setNoticeTone("success");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(
-        input.following
-          ? t(msg`已取消关注。`)
-          : t(msg`已关注该视频号作者。`),
-      );
+    onSuccess: async (_, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        setNotice(
+          input.following
+            ? t(msg`已取消关注。`)
+            : t(msg`已关注该视频号作者。`),
+        );
+      }
+      // invalidate 落 mutationBaseUrl（A 账户）—— 标 B 的 cache stale 是错的：
+      // 这次 follow 是给 A 加的，B 该 follow 列表完全不动；且 invalidate B 还
+      // 会触发 B 不必要的 refetch。
       await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home", baseUrl],
+        queryKey: ["app-channels-home", mutationBaseUrl],
       });
       // 关注/取消关注影响 关注/朋友 tab 的 sections.count。
       await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home-decorations", baseUrl],
+        queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
     },
   });
@@ -692,7 +774,7 @@ export function ChannelsPage() {
           posts: data.posts.filter((post) => post.id !== postId),
         });
       });
-      return { previousEntries };
+      return { previousEntries, mutationBaseUrl: baseUrl };
     },
     onError: (error, _postId, context) => {
       // 回滚：失败时把 post 还原回去。这里整张 home 还原是安全的——
@@ -701,6 +783,10 @@ export function ChannelsPage() {
       context?.previousEntries.forEach(({ key, previousData }) => {
         queryClient.setQueryData(key, previousData);
       });
+      // mid-flight 切账户：失败 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -710,17 +796,23 @@ export function ChannelsPage() {
           : t(msg`减少推荐失败，请稍后重试。`),
       );
     },
-    onSuccess: async () => {
-      setNoticeTone("success");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(t(msg`这类内容会减少推荐。`));
+    onSuccess: async (_data, _postId, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        setNotice(t(msg`这类内容会减少推荐。`));
+      }
+      // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错（hidePost
+      // 只动 A 的 home），且 B 会做不必要的 refetch。
       await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home", baseUrl],
+        queryKey: ["app-channels-home", mutationBaseUrl],
       });
       // 隐藏帖子影响 sections.count / 作者位 / 直播位。
       await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home-decorations", baseUrl],
+        queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
     },
   });
@@ -783,21 +875,29 @@ export function ChannelsPage() {
         });
       });
 
-      return { previousFullComments, previousDecorationsEntries };
+      return {
+        previousFullComments,
+        previousDecorationsEntries,
+        mutationBaseUrl: baseUrl,
+      };
     },
     onError: (error, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       // 走查 R4：原回滚把 previousFullComments 整体 setQueryData 回去——
       // 但用户连点 A → B 两条评论的点赞，B 的 onMutate 在 A 之后已经把 B 也
       // 翻成 liked；如果 A 失败时直接整张快照覆盖回去，B 的 optimistic 翻动
       // 也被一起抹掉，下一帧 invalidate 才补回 B 的真值，中间用户会看到 B
       // 突然变回未赞又再变回已赞，体感像"我又被打回去了"。改成只回滚当前 input
       // 这一条评论，其它评论按当前 cache（含后续乐观更新）继续保留。
+      //
+      // 走查 2026-05-18 新会话 R1：cache key 落 mutationBaseUrl，确保回滚是
+      // 改的"评论当初点赞那个账户的 cache"，不是切到的新账户。
       if (context) {
         const previousFullComment = context.previousFullComments?.find(
           (c) => c.id === input.commentId,
         );
         queryClient.setQueryData<FeedComment[]>(
-          ["app-feed-comments", baseUrl, input.postId],
+          ["app-feed-comments", mutationBaseUrl, input.postId],
           (current) => {
             if (!current) return current;
             return current.map((c) =>
@@ -830,6 +930,10 @@ export function ChannelsPage() {
           });
         });
       }
+      // mid-flight 切账户：失败 toast 不冒到新账户。
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
       // 走查 R8: 跟 commentMutation 一样的兜底——用户点赞完后立刻关 sheet，
       // mutation 失败时 mobileCommentSheetErrorMessage 已经不渲染了，optimistic
       // 翻回去用户也不知道为啥，加 page 级 notice 兜底。
@@ -842,19 +946,25 @@ export function ChannelsPage() {
           : t(msg`评论点赞失败，请稍后重试。`),
       );
     },
-    onSuccess: (_, input) => {
-      setNoticeTone("success");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(t(msg`评论互动已更新。`));
+    onSuccess: (_, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        setNotice(t(msg`评论互动已更新。`));
+      }
       // fire-and-forget：await 会让 like-comment 按钮一直 disabled。
       // optimistic 已经翻了 likedByOwner/likeCount，invalidate 让 server 真值兜底
       // 一次（防止极端情况下两边 state drift）。
+      // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错；A 才是这条
+      // 评论点赞实际发生的账户。
       void queryClient.invalidateQueries({
-        queryKey: ["app-channels-home-decorations", baseUrl],
+        queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["app-feed-comments", baseUrl, input.postId],
+        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
   });
@@ -3740,10 +3850,21 @@ function MobileChannelCommentsSheet({
       return;
     }
 
+    // 走查 2026-05-18 第三会话 R1：原来无脑 textareaRef.focus()，但非好友帖
+    // (post.canInteract === false) 走 line ~4080 把 textarea disabled 掉。disabled
+    // input 调 .focus() 是 no-op（浏览器不会把焦点放上去），但 sequential focus
+    // navigation 会让焦点甩到 sheet 内下一个可聚焦元素——右上角"关闭评论面板"
+    // 那颗 X button。实测（playwright /discover/channels 非好友帖打开评论 sheet）
+    // document.activeElement 落到 BUTTON，用户按 Space 想滚评论列表 → 触发 X.click()
+    // → sheet 直接关掉。非好友 sheet 还允许用户读评论，autofocus 反成关闭陷阱。
+    // cannotInteract 时跳过 focus，让焦点留在用户主动点击的那个 comment 按钮上。
+    if (post?.canInteract === false) {
+      return;
+    }
     window.requestAnimationFrame(() => {
       textareaRef.current?.focus();
     });
-  }, [open, replyTarget?.commentId]);
+  }, [open, post?.canInteract, replyTarget?.commentId]);
 
   // 视频号评论按 createdAt ASC 排（最老的在最上面，回复链路顺着对话读起来才连贯），
   // 但 yuanzui0728 这条 post 已经积了 142 条评论：用户打开评论面板第一眼看到的
