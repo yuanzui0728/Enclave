@@ -62,6 +62,7 @@ import {
   hydrateSearchHistoryFromNative,
   loadSearchHistory,
   pushSearchHistory,
+  SEARCH_HISTORY_STORAGE_KEY,
 } from "./search-history";
 import { buildSearchPreview, renderHighlightedText } from "./search-utils";
 import type { SearchHistoryItem } from "./search-types";
@@ -238,13 +239,27 @@ export function useDesktopSearchLauncher({
 
       void syncSearchHistory();
     };
+    // 走查 R2（新一轮）：和姊妹 chat-message-list R1 / detailedTimestamp 同款 —
+    // 原版 storage 监听直接复用 handleFocus 不 gate key，多 tab 时主题切换 /
+    // 草稿落盘 / 收藏指纹更新 / 任何 OTHER tab 写 localStorage 都触发
+    // syncSearchHistory → desktop shell 拍一次 hydrateSearchHistoryFromNative
+    // 的 Tauri invoke IPC + JSON.parse 整份 search-history。本 launcher 同时
+    // 挂在 desktop-chat-workspace 和 contacts-workspace-shell 两个入口，单聊
+    // 工作区只要打开搜索框就开始无效抖动。按 SEARCH_HISTORY_STORAGE_KEY gate；
+    // event.key=null 是 Safari localStorage.clear()，按全量处理避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== SEARCH_HISTORY_STORAGE_KEY) {
+        return;
+      }
+      void syncSearchHistory();
+    };
 
     void syncSearchHistory();
 
     window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
@@ -252,7 +267,7 @@ export function useDesktopSearchLauncher({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isOpen, nativeDesktopSearchHistory]);

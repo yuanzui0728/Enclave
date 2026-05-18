@@ -1,7 +1,7 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import type { SearchHistoryItem } from "./search-types";
 
-const SEARCH_HISTORY_STORAGE_KEY = "yinjie.app.search-history";
+export const SEARCH_HISTORY_STORAGE_KEY = "yinjie.app.search-history";
 const SEARCH_HISTORY_LIMIT = 8;
 let searchHistoryNativeWriteQueue: Promise<void> = Promise.resolve();
 
