@@ -159,8 +159,16 @@ export function DesktopChatHistoryPanel({
     senderId,
   ]);
 
+  // 走查新会话桌面端群聊 R3：和「发起群聊」/「添加成员」 R2 同款问题——这里
+  // 原本用独立 cache key 「desktop-chat-search-members」存群成员，不复用
+  // group-chat-thread-panel / desktop-chat-details-panel / desktop-message-
+  // avatar-popover 早已加载好的 "app-group-members" cache。「查找聊天记录」从
+  // 群聊「聊天信息」或顶部搜索按钮触发时，群成员上一次几百 ms 前刚拉过，这里
+  // 又得在公网隧道（~600ms RTT）走一发 getGroupMembers。统一到 "app-group-members"
+  // key，sender 筛选 picker 立刻能渲染候选；staleTime 保持 30s（沿用其它入口的
+  // 「群成员变更不频繁」节奏）。
   const membersQuery = useQuery({
-    queryKey: ["desktop-chat-search-members", baseUrl, conversation.id],
+    queryKey: ["app-group-members", baseUrl, conversation.id],
     queryFn: () => getGroupMembers(conversation.id, baseUrl),
     enabled: isGroupConversation,
     staleTime: 30_000,
