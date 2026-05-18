@@ -1258,6 +1258,14 @@ function DesktopChatFilesImageViewer({
         type="button"
         aria-label={t(msg`关闭图片预览`)}
         onClick={onClose}
+        // 走查电脑端单聊 R114：和姊妹 R107-R113 dialog/menu backdrop 同款 ——
+        // 聊天文件页内置图片 viewer 的 backdrop <button> (absolute inset-0)
+        // 视觉不可见、纯 mouse"点击背景关闭"affordance，但 DOM 顺序排在 viewer
+        // 子树第一位。用户点缩略图打开 viewer 后按 Tab 切顶栏「新窗口打开/保
+        // 存图片」/ 左右切张按钮，焦点先落到这张不可见 backdrop → 看不到任何
+        // focus ring → 再按 Enter viewer 秒关。Esc keydown 已挂 (line 1231-
+        // 1251)，键盘用户走 Esc 关 viewer。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
