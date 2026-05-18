@@ -81,9 +81,22 @@ export function MobileMessageActionSheet({
   // 取消按钮和 backdrop 不走 ActionButton，单独由父组件 setMobileActionMessage
   // null 处理；用户连点 cancel 是预期可重复行为）。
   const actionFiredRef = useRef(false);
+  // 走查 2026-05-18 移动端群聊 R4：原 actionFiredRef 只挡了"同帧二连点"，但漏掉
+  // 长按打开 sheet 的「ghost-click」——手指从消息上松开时浏览器在 touchend 后
+  // 自动派发 click 事件，落点是手指最后停留的屏幕坐标。如果 sheet 在 380ms 时
+  // 弹出来时正好把某个 action 按钮渲染在手指坐标下方，touchend 一释放就触发
+  // 那个 action（实测：长按 cy=548 的消息 → 380ms 弹 sheet → 「提醒」按钮恰在
+  // y=496..540 → 释放手指直接触发「设为提醒」，用户根本没主动点"提醒"）。
+  // 加一道时间 guard：sheet 开起来后头 350ms 拦掉所有 ActionButton 触发，
+  // 等长按 ghost-click 派发窗口（移动 Safari ~300ms / Chrome ~250ms）过去之后
+  // 再放行用户的真实点击。比仿"指针位置变化才放行"实现简单且足够稳。
+  const openedAtRef = useRef(0);
+  const GHOST_CLICK_GUARD_MS = 350;
   useEffect(() => {
     if (open) {
       actionFiredRef.current = false;
+      openedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
     }
   }, [open]);
   const guardAction = useCallback(
@@ -91,6 +104,11 @@ export function MobileMessageActionSheet({
       if (!handler) return undefined;
       return () => {
         if (actionFiredRef.current) return;
+        const now =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        if (now - openedAtRef.current < GHOST_CLICK_GUARD_MS) {
+          return;
+        }
         actionFiredRef.current = true;
         handler();
       };
