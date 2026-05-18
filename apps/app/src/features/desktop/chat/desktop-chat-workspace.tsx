@@ -1692,7 +1692,16 @@ export function DesktopChatWorkspace({
                 </button>
 
                 {isQuickMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[var(--shadow-overlay)]">
+                  // 走查新一轮 R8：和 R6 / 官号 context menu 同款 a11y——「+」
+                  // 按钮已经挂了 aria-label，但展开后的浮层是个裸 div，盲人
+                  // 屏幕阅读器只听到一串「发起群聊 / 添加朋友 / 新建笔记」
+                  // button label 浮空，不知道是「快捷菜单」。补 role="menu" +
+                  // aria-label 让 SR 知道是上下文菜单。
+                  <div
+                    role="menu"
+                    aria-label={t(msg`快捷操作菜单`)}
+                    className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[var(--shadow-overlay)]"
+                  >
                     {desktopQuickActionItems.map((item) => {
                       const Icon = item.icon;
 
