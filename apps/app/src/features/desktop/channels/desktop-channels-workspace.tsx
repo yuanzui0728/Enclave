@@ -592,14 +592,29 @@ export function DesktopChannelsWorkspace({
     <div className="relative flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
-          <div className="flex h-full items-stretch gap-7">
+          {/*
+            走查 2026-05-18 新会话（本会话）R3：原 section tabs（推荐 / 朋友 / 关注
+            / 直播）裸 <button> + aria-pressed，但这 4 颗按钮是 tab —— 它们互斥切
+            换页面视图，不是独立 toggle。WAI-ARIA：aria-pressed 是 role=button
+            toggle 状态属性（已点赞/已收藏这种），role=tab 的标准状态属性是
+            aria-selected。原写法 NVDA / 部分 SR 会把按钮误念成 "推荐 pressed"，
+            盲用用户体感"这控件是按钮还是 tab"。同 mobile 那边 channels-page L2562
+            的 R1 修复 + channel-author-page L713 的 R1 修复对齐：外层 role=
+            tablist + aria-label，内层 role=tab + aria-selected。
+          */}
+          <div
+            className="flex h-full items-stretch gap-7"
+            role="tablist"
+            aria-label={t(msg`视频号分组`)}
+          >
             {sections.map((section) => {
               const active = activeSection === section.key;
               return (
                 <button
                   key={section.key}
                   type="button"
-                  aria-pressed={active}
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => onSectionChange(section.key)}
                   className="relative flex h-full items-center text-[14px] outline-none"
                 >
