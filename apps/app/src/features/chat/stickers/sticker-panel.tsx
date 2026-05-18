@@ -3016,7 +3016,18 @@ export function StickerPanel({
           )}
         </div>
 
+        {/* 走查电脑端群聊 R15：sticker pack 切换 tab 行——「最近 / 推荐 / 自定义 /
+            各表情包」是 mutually exclusive 切换，原版只用绿/棕底色 + 阴影做 active
+            视觉区分。盲人 SR 走过去只听到一串裸 label "最近 / 推荐 / 微信经典 / ..."
+            听不出当前激活的是哪个 pack；群聊里频繁切表情包发图，SR 用户每次切换
+            后失去定位。和姊妹 R29 群成员浏览 filter tabs / R26 转发模式 chooser /
+            R27 日期 chip / R31 查找聊天记录 tab 同款修法：外层 div role="tablist"
+            + aria-label，每个 tab role="tab" + aria-selected。aria-selected 对
+            role="tab" 是 AT 标准 toggle 表达，比裸 aria-pressed 更准。tab 上的
+            cover 图 alt 已经是 tab label，不重复 announce。 */}
         <div
+          role="tablist"
+          aria-label={t(msg`表情包切换`)}
           className={
             isMobile
               ? "flex gap-1.5 overflow-x-auto border-t border-[color:var(--border-subtle)] bg-white/78 px-3 py-2"
@@ -3029,6 +3040,8 @@ export function StickerPanel({
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={active}
                 onClick={() => {
                   setKeyword("");
                   setSearchKeyword("");
