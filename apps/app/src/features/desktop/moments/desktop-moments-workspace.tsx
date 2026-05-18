@@ -41,7 +41,6 @@ type DesktopMomentsWorkspaceProps = {
    * 只是「已加载」，不能当总数显示。null 表示还没拿到首页响应。
    */
   totalCount?: number | null;
-  isFullyLoaded?: boolean;
   /** 走查 R3：后端给了 N 条 moment 但前端 visibleMoments 全被屏蔽过滤掉时，
    *  desktop-moments-feed 改走「正在寻找未屏蔽的动态」/「朋友圈都被你屏蔽了」
    *  分支，不再误导用户去发朋友圈。和 mobile MomentsView 同模板。 */
@@ -113,7 +112,6 @@ export function DesktopMomentsWorkspace({
   likePendingMomentId,
   moments,
   totalCount = null,
-  isFullyLoaded = true,
   hasFilteredOutMoments = false,
   hasNextPage = false,
   onOpenContacts,
@@ -161,6 +159,18 @@ export function DesktopMomentsWorkspace({
   // 用 ownerId 当 reset 锚（每次切账户都换），跟着 [ownerId] 翻转一次即可。
   useEffect(() => {
     setShareMomentId(null);
+  }, [ownerId]);
+  // 走查电脑端朋友圈 R1（本轮，新一轮）：cloud-console 切账户时 baseUrl 翻新但
+  // /tabs/moments 路由不卸载——DesktopMomentsWorkspace 同一实例继续挂着，
+  // scrollViewportRef 的 scrollTop 保留旧账户读到第 N 条时的位置；新账户的
+  // visibleMoments 重 fetch（首屏 ~20 条 + auto-prefetch 串到 ~240 条），中间
+  // scrollHeight 短暂变小被 browser clamp 又变大，用户落在新账户列表中段、
+  // 偶尔甚至落在 LoadingBlock 下方的空白区。和 mobileScrollSnappedRouteIdRef
+  // 在 moments-page 切账户时复位的思路对齐，把 scrollViewportRef.scrollTo(0)
+  // 一并加上，确保切账户后新账户的朋友圈从顶部开始读。本轮三个 workspace
+  // (main / friend / profile) 一起修。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
   }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
@@ -216,7 +226,6 @@ export function DesktopMomentsWorkspace({
             onNoticeAction={onNoticeAction}
             loadedCount={moments.length}
             totalCount={totalCount}
-            isFullyLoaded={isFullyLoaded}
             onBackToTop={() => {
               scrollViewportRef.current?.scrollTo({
                 top: 0,

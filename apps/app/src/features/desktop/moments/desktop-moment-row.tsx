@@ -297,7 +297,22 @@ function DesktopMomentRowInner({
 
         <div className="min-w-0 flex-1">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            {/* 走查电脑端朋友圈 R1（本轮）：右上角 ⋯ 菜单按钮是 absolute right-3 top-3
+                + h-8 w-8，正好压在 article px-4 + content (min-w-0 flex-1) 的右上
+                28px 范围里。当 moment 是用户/角色自己发的（onDelete || onShare → 渲
+                菜单按钮）且作者名较长（10+ 字符）或 i18n 把"角色"badge 翻译成更长
+                的"NPC Character"等英文时，badge 会沉到 ⋯ 按钮底下被遮 ~28px。CDP
+                实测 7+ 字符的中文用户名加上「角色」badge 已经卡在被遮边缘。给
+                name+badge 行 + 时间戳行加 pr-9 (36px) 留出菜单按钮宽度（32px）
+                + 几像素安全距离；只在菜单实际渲染时加，避免没有菜单时浪费右侧
+                可视空间。其他行（text body / media gallery / comments）在菜单
+                按钮 y 范围之外，不受影响，保持全宽显示。 */}
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                (onDelete || onShare) && "pr-9",
+              )}
+            >
               {canSelectAuthor ? (
                 <button
                   type="button"

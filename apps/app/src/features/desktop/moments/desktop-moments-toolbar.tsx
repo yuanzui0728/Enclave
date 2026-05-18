@@ -23,8 +23,6 @@ type DesktopMomentsToolbarProps = {
   loadedCount: number;
   /** 服务端 MomentsPageResponse.total。null = 首页还没拿到 */
   totalCount?: number | null;
-  /** auto-prefetch 已经把所有页拉完。完成后只显示「共 N 条」 */
-  isFullyLoaded?: boolean;
   onBackToTop: () => void;
   onOpenCompose: () => void;
   onRefresh: () => void;
@@ -44,7 +42,6 @@ export function DesktopMomentsToolbar({
   onNoticeAction,
   loadedCount,
   totalCount = null,
-  isFullyLoaded = true,
   onBackToTop,
   onOpenCompose,
   onRefresh,
@@ -96,11 +93,22 @@ export function DesktopMomentsToolbar({
             首屏 momentsQuery 没回前（~600ms 公网 RTT）+ mutation 错误打开 notice 前
             的常见态下，标题行和 notice/ErrorBlock 之间硬塞一道空隙；count 出现后
             空隙又消失，体感"toolbar 高度抖一下"。把 mt-4 容器一并 gate 掉，文案
-            没渲染时不留 margin。 */}
+            没渲染时不留 margin。
+
+            走查电脑端朋友圈 R1（本轮，新一轮）：之前 delta 文案被 `!isFullyLoaded`
+            额外 gate 掉 —— auto-prefetch 跑完后（hasNextPage=false → isFullyLoaded=true）
+            就退回 "共 loadedCount 条"。问题：服务端 total=161 但全部被屏蔽角色 /
+            tool-call 空胶水帖过滤掉 → loadedCount=0，用户看到 "共 0 条动态"，下面
+            EmptyState 写 "朋友圈都被你屏蔽了"，counter 跟 EmptyState 对不上 ——
+            "0 条" 让人以为这世界一条朋友圈都没有，不是 "161 条全被你屏蔽"。
+            把 `!isFullyLoaded` gate 去掉：只要 totalCount > loadedCount（不管 prefetch
+            是否跑完）就显示 "已加载 X / 共 Y"，跑完 + 全部 visible 时才退回 "共 X"。
+            EmptyState 那边已经按 hasFilteredOutMoments 切到 "朋友圈都被你屏蔽了"
+            兜住语义。 */}
         {totalCount === null && loadedCount === 0 ? null : (
           <div className="mt-4 flex items-center justify-end">
             <div className="text-[12px] text-[color:var(--text-muted)]">
-              {!isFullyLoaded && totalCount !== null && totalCount > loadedCount
+              {totalCount !== null && totalCount > loadedCount
                 ? t(msg`已加载 ${loadedCount} / 共 ${totalCount} 条动态`)
                 : t(msg`共 ${loadedCount} 条动态`)}
             </div>

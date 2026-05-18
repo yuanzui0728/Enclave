@@ -137,6 +137,13 @@ export function DesktopProfileMomentsWorkspace({
   useEffect(() => {
     setShareMomentId(null);
   }, [ownerId]);
+  // 走查电脑端朋友圈 R1（本轮，新一轮）：和 desktop-moments-workspace 同款 ——
+  // 切账户时 /profile/moments 路由不卸载，scrollTop 保留上个账户读 mine feed
+  // 时的位置；新账户的 ownMoments 翻新后用户落在中段。scrollTo(0) 保证从
+  // header banner 开始重新读自己的朋友圈。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
+  }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;

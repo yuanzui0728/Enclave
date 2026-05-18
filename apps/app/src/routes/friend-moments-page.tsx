@@ -57,6 +57,7 @@ import {
   parseDesktopFriendMomentsRouteState,
 } from "../features/moments/friend-moments-route-state";
 import { coerceToMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
+import { buildDesktopMomentsRouteHash } from "../features/moments/moments-route-state";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { getMomentSummaryText } from "../features/moments/moment-content";
 import {
@@ -288,7 +289,26 @@ export function FriendMomentsPage() {
         composeDraft.reset();
         setShowCompose(false);
       }
-      setNotice({ tone: "success", message: t(msg`朋友圈已发布。`) });
+      // 走查电脑端朋友圈 R1（本轮，新一轮）：友圈 friend-moments 页对应单个
+      // character 的 cache (app-moments-character[X])，server 已经按 characterId
+      // 过滤掉用户自己发的 —— 用户在这个页面点「发朋友圈」、发布成功后只更新
+      // flat / paged / mine 三套全局 cache，本页面 friendMoments 列表里看不到
+      // 这条新帖子。如果只 setNotice("朋友圈已发布")，用户看着绿条但页面没动，
+      // 体感像「发出去了？怎么没看见？」。给一条「前往朋友圈查看」操作按钮，
+      // 跳到 /tabs/moments + 携带 momentId hash 让 desktop-moments-workspace
+      // scroll snap 到刚发的那条。和 mobile-moments-publish 走完返回主页的
+      // 语义对齐。
+      setNotice({
+        tone: "success",
+        message: t(msg`朋友圈已发布，已直接发到主朋友圈。`),
+        actionLabel: t(msg`前往查看`),
+        action: () => {
+          void navigate({
+            to: "/tabs/moments",
+            hash: buildDesktopMomentsRouteHash({ momentId: newMoment.id }),
+          });
+        },
+      });
     },
   });
   const optimisticLike = useOptimisticMomentLikeHandlers({

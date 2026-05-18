@@ -161,6 +161,14 @@ export function DesktopFriendMomentsWorkspace({
   useEffect(() => {
     setShareMomentId(null);
   }, [ownerId, character.id]);
+  // 走查电脑端朋友圈 R1（本轮，新一轮）：和 desktop-moments-workspace 同款 ——
+  // 切账户 (ownerId 变) 或 desktopAvatarPopover 切到另一个角色 (character.id 变)
+  // 时，friend-moments-page 不卸载 DesktopFriendMomentsWorkspace，scrollTop 仍
+  // 是上个角色读到第 N 条的位置；新角色的 moments 翻新后用户落在新页中段或空白
+  // 区。和 lastScrolledIdRef 复位思路对齐，scrollTo(0) 保证从顶部开始读。
+  useEffect(() => {
+    scrollViewportRef.current?.scrollTo({ top: 0 });
+  }, [ownerId, character.id]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;
