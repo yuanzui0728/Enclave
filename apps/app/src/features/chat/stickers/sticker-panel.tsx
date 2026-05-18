@@ -2092,6 +2092,16 @@ export function StickerPanel({
                         }
                         className="h-8 w-8 object-contain"
                         loading="lazy"
+                        // 走查电脑端单聊 R120：和姊妹 R105/R106/R119 同款 — sticker
+                        // panel 顶部"搜索结果当前命中"提示条里 32×32 大缩略 <img>
+                        // 默认 draggable=true。用户在 sticker 搜索框打字筛选时这
+                        // 块预览条会出现，焦点还在 textarea / 搜索框上。鼠标顺
+                        // 手悬停想点击发送，mousedown 落在 <img> 上 → 拖出阈值
+                        // → 浏览器启动 HTML5 native drag (sticker URL)。drop 到
+                        // 隔壁 chat textarea 即把 sticker URL 当文本插草稿，下条
+                        // 消息发出去对方收到图片链接当文字；drop 到桌面则触发
+                        // "下载这张表情到桌面"。
+                        draggable={false}
                       />
                     </div>
                     <div className="min-w-0">
@@ -2147,6 +2157,9 @@ export function StickerPanel({
                               }
                               className="h-4 w-4 rounded-[6px] object-contain"
                               loading="lazy"
+                              // 走查电脑端单聊 R120：同款 — section lead 16×16
+                              // 微缩 <img> 也漏 draggable={false}。
+                              draggable={false}
                             />
                             <span className="truncate">
                               {searchGroupLeadLabel}
@@ -2178,6 +2191,9 @@ export function StickerPanel({
                               }
                               className="h-4 w-4 rounded-[6px] object-contain"
                               loading="lazy"
+                              // 走查电脑端单聊 R120：同款 — 第一条结果 16×16 微缩
+                              // <img> 也漏 draggable={false}。
+                              draggable={false}
                             />
                             <span className="truncate">
                               {searchDefaultSendLabel}
