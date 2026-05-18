@@ -2006,7 +2006,12 @@ export function ChannelsPage() {
             badge={t(msg`视频号`)}
             title={
               activeSection === "following"
-                ? t(msg`还没关注任何视频号`)
+                ? // 走查 2026-05-18 新一轮 R3：原文案 "还没关注任何视频号" 假设
+                  // 用户 0 个关注，但用户在关注 tab 把所有关注作者的帖都「减少
+                  // 推荐」掉时也会落到这条空态——明明在关注、文案却说「没关注」，
+                  // 体感「我刚才关注的人去哪了？」。改成中性「关注的视频号暂时
+                  // 没有新内容」，0 关注 / 0 可见两种场景都讲得通。
+                  t(msg`关注的视频号暂时没有新内容`)
                 : activeSection === "friends"
                   ? t(msg`朋友还没有视频号动态`)
                   : activeSection === "live"
