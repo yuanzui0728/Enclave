@@ -53,6 +53,7 @@ import { WeChatMomentCard } from "../components/wechat-moment-card";
 import { WeChatMomentsCover } from "../components/wechat-moments-cover";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import {
+  hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -98,6 +99,7 @@ export function ProfileMomentsPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const ownerId = useWorldOwnerStore((state) => state.id);
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
@@ -816,6 +818,51 @@ export function ProfileMomentsPage() {
       readDesktopFavorites().map((item) => item.sourceId),
     );
   }, [isDesktopLayout]);
+
+  // 走查新一轮 R7：跟 moments-page / friend-moments-page 同款 ——
+  // Tauri 桌面版收藏放在 native 存储（不只是 localStorage）；mount 时
+  // readDesktopFavorites() 只读 localStorage 缓存，page 长期挂着时若别的窗口
+  // / 系统菜单 / 收藏面板改了 native，本页看不到更新。focus / visibilitychange
+  // 监听跟其它两个 moments 页对齐——回到本窗口或 tab 切回前台时再 hydrate 一次
+  // 把 native → localStorage → state 串通。enabled 双 gate：必须 desktop layout
+  // 且 Tauri 平台才挂；浏览器走 noop。
+  useEffect(() => {
+    if (!isDesktopLayout || !nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavoriteSourceIds() {
+      const next = (await hydrateDesktopFavoritesFromNative()).map(
+        (item) => item.sourceId,
+      );
+      if (cancelled) {
+        return;
+      }
+      setFavoriteSourceIds((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFavoriteSourceIds();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      void syncFavoriteSourceIds();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isDesktopLayout, nativeDesktopFavorites]);
 
   const { containerRef, state: pullState } = usePullToRefresh({
     onRefresh: async () => {
