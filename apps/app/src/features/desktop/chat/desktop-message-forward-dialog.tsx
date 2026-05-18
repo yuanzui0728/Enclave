@@ -359,7 +359,19 @@ export function DesktopMessageForwardDialog({
               isMobile ? "border-black/5 px-3 py-2.5" : "bg-white/72 px-4 py-3 lg:px-6",
             )}
           >
-            <div className="flex items-center gap-2">
+            {/* 走查 R26：和姊妹 profile-settings-desktop 发送消息快捷键 chooser /
+                profile-settings-language-page / contacts blocks 一批已用过的
+                role="radiogroup" + role="radio" + aria-checked 模式同款。
+                逐条 / 合并是 mutually exclusive 模式选择 —— 视觉上只用绿底 +
+                绿边表示当前选中，原版 ForwardModeButton 是裸 <button>，盲人屏
+                幕阅读器 Tab 走过去只听到「逐条转发」「合并转发」两条 button 文字
+                + description，听不出当前选了哪一个；按了不同按钮也只能靠 label
+                变化（描述文本是稳定的）来推断，体验比直接 aria-checked 一致差。 */}
+            <div
+              role="radiogroup"
+              aria-label={t(msg`转发模式`)}
+              className="flex items-center gap-2"
+            >
               <ForwardModeButton
                 active={forwardMode === "separate"}
                 disabled={pending || !supportsSeparateMode}
@@ -564,6 +576,8 @@ function ForwardModeButton({
   return (
     <button
       type="button"
+      role="radio"
+      aria-checked={active}
       disabled={disabled}
       onClick={onClick}
       className={cn(
