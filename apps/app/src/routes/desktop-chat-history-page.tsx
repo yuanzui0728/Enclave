@@ -298,7 +298,14 @@ export function DesktopChatHistoryPage() {
       title={t(msg`聊天记录`)}
       subtitle={
         selectedConversation
-          ? t(msg`${selectedConversation.title} · 已加载 ${historyRows.length} 条`)
+          ? // 走查电脑端单聊 R91：和 R90 desktop-chat-files-page 同款——subtitle
+            // 直接拼 selectedConversation.title，没经 getConversationDisplayTitle
+            // 翻 sentinel。direct 会话在 normalizeLegacyConversationEntity 全部
+            // fallback 失败时落字面量「未知联系人」/「Direct conversation」，
+            // 非中文 locale 用户切到 en/ja/ko 后顶栏副标继续显示中文。本文件
+            // line 198 toast / line 372 sidebar 行都已走 getConversationDisplayTitle，
+            // 只有页面顶栏 subtitle 漏。
+            t(msg`${getConversationDisplayTitle(selectedConversation.title)} · 已加载 ${historyRows.length} 条`)
           : t(msg`按会话查看、展开和清理最近聊天记录`)
       }
       toolbar={
