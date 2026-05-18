@@ -161,6 +161,12 @@ export function MessageQuoteSelectionSheet({
             onKeyUp={updateSelection}
             onPointerUp={updateSelection}
             spellCheck={false}
+            // 走查 R10：和姊妹页 R1-R9 同款 a11y 修法——上方"原消息"小标题
+            // 视觉上是 label，但和这个 readonly textarea 之间没有 htmlFor /
+            // aria-labelledby 关联，屏幕阅读器 focus 进来听不到上下文。挂
+            // aria-label="原消息内容" 让 SR 知道这块是被引用的原文。本 sheet
+            // 同时给单聊 / 群聊"部分引用"路径用，一处修复双路径受益。
+            aria-label={t(msg`原消息内容`)}
             className={`w-full resize-none bg-transparent text-[color:var(--text-primary)] outline-none ${
               isDesktop
                 ? "min-h-[164px] text-[15px] leading-7"
