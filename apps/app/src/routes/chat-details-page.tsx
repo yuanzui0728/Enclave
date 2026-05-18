@@ -405,9 +405,15 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   );
   const friendship = friendRecord?.friendship ?? null;
   const isFriend = Boolean(friendship);
-  const isBlocked = (blockedQuery.data ?? []).some(
-    (item) => item.characterId === targetCharacterId,
-  );
+  // 走查 R1：原版 blockedQuery 还在 isLoading 时 `data ?? []` 让 isBlocked
+  // 默认 false。打开 details 时第一帧 list 里黑名单状态全部按"未拉黑"绘制 →
+  // 用户点「加入黑名单」→ 弹 dangerSheet → 确认 → server 返回「已在黑名单」
+  // 走 onError 弹 notice。表面是黑名单服务异常，实际是本地状态滞后。判定
+  // 时 fallback 给 null 让 .some 反应"未知"，配合下方 actions disabled 内
+  // 加 isBlocked === null 让按钮在 loading 期间灰掉。
+  const isBlocked = blockedQuery.data
+    ? blockedQuery.data.some((item) => item.characterId === targetCharacterId)
+    : null;
   const contactDisplayName =
     friendship?.remarkName?.trim() ||
     targetCharacter?.name ||
@@ -1349,7 +1355,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               <ChatSettingRow
                 label={t(msg`更多聊天操作`)}
                 value={
-                  isBlocked
+                  // 走查 R1：isBlocked 在 blockedQuery 加载完成前是 null，标签
+                  // 保持完整的"隐藏/清空/投诉/拉黑"以免在 loading 期间收缩到
+                  // "无拉黑选项"再扩出来；只有 true 时才隐藏拉黑入口。
+                  isBlocked === true
                     ? t(msg`隐藏 / 清空 / 投诉`)
                     : t(msg`隐藏 / 清空 / 投诉 / 拉黑`)
                 }
@@ -1509,12 +1518,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               },
               {
                 key: "block",
-                label: isBlocked ? t(msg`已加入黑名单`) : t(msg`加入黑名单`),
-                description: isBlocked
+                // isBlocked 在 blockedQuery 加载完成前是 null，按"未拉黑"显示
+                // 文案，但 disabled 同时加 `isBlocked !== false` —— loading 期间
+                // (null) 也 disabled，避免用户在状态未知时点击 → server 返回
+                // 「已在黑名单」误以为黑名单功能出错。
+                label: isBlocked === true ? t(msg`已加入黑名单`) : t(msg`加入黑名单`),
+                description: isBlocked === true
                   ? t(msg`当前已经处于黑名单中`)
                   : t(msg`不再接收该角色后续互动`),
                 danger: true,
-                disabled: busy || isBlocked || !targetCharacterId,
+                disabled: busy || isBlocked !== false || !targetCharacterId,
                 onClick: () => {
                   setManagementSheetOpen(false);
                   setDangerSheetAction("block");

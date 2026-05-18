@@ -449,6 +449,14 @@ export function ChatMessageList({
   // 飘红，UI 上则跑到 setActionNotice("批量删除失败...") 让用户以为操作没
   // 成功——其实第一轮已经全删了。ref 同步赋值挡掉同帧第二次 click。
   const selectionActionBusyRef = useRef(false);
+  // 走查 R1：「查看更多消息」按钮 disabled={loadingOlderMessages} 走的是父
+  // state（use-conversation-thread 里 messagesQuery.isFetching && loadMoreRequestRef
+  // !== null），React 要 commit 才进 DOM。同帧 <16ms 双击 → 两次 onClick 都看到
+  // disabled=false → 飞两份 loadOlderMessages → setMessageLimit 加两次 HISTORY_PAGE_SIZE
+  // (40+40=80 条) → 单次拉 80 条历史。短不一定觉察，长聊跨页时 RTT 翻倍 +
+  // 列表预算 scrollTop 偏移计算错位（loadMoreRequestRef 只记录 1 次的 scrollHeight，
+  // 第 2 次进来 ref 还在 → 跳过、但拉的数据量已经 ×2）。ref 同步锁。
+  const loadingOlderMessagesRef = useRef(false);
   // 走查 R3：单条消息「撤回 / 删除」按钮在 context menu / mobile action sheet
   // 上原本只有 setContextMenuState(null) / setMobileActionMessage(null) 关弹
   // 层，但 sheet/menu 关闭是 React state，要等 commit 才生效，同帧第二次
@@ -1992,39 +2000,60 @@ export function ChatMessageList({
     (unreadMarkerCount > 0
       ? t(msg`以下是 ${unreadMarkerCount} 条新消息`)
       : t(msg`以下是新消息`));
-  const activeImageIndex = viewerMessageId
-    ? imageMessages.findIndex((message) => message.id === viewerMessageId)
-    : -1;
-  const activeImage =
-    activeImageIndex >= 0 ? imageMessages[activeImageIndex] : null;
-  const activeLocationMessage = locationViewerMessageId
-    ? visibleMessages.find((message) => message.id === locationViewerMessageId)
-    : null;
-  const activeLocation =
-    activeLocationMessage?.type === "location_card" &&
-    activeLocationMessage.attachment?.kind === "location_card" &&
-    !recalledMessageIdSet.has(activeLocationMessage.id)
-      ? {
-          id: activeLocationMessage.id,
-          attachment: activeLocationMessage.attachment,
-        }
+  // 走查 R1：原版 activeImage / activeLocation / activeNote 都在 render body
+  // 里裸算，每次父帧（typing tick / socket tick / setQueriesData）都 new 一个
+  // `{ id, attachment, previewImageUrl }` 引用塞给 ImageViewerOverlay /
+  // NoteViewerOverlay / LocationViewerOverlay → React.memo 的子组件全部失效，
+  // 长聊浏览图片 / 笔记 / 位置时 viewer 跟着每帧白 re-render。useMemo 锁定到
+  // 真实变化的 dep（viewerMessageId / locationViewerMessageId / noteViewerMessageId
+  // + 它们 lookup 依赖的 messages/recalled set）。
+  const activeImageIndex = useMemo(
+    () =>
+      viewerMessageId
+        ? imageMessages.findIndex((message) => message.id === viewerMessageId)
+        : -1,
+    [imageMessages, viewerMessageId],
+  );
+  const activeImage = useMemo(
+    () => (activeImageIndex >= 0 ? imageMessages[activeImageIndex] : null),
+    [activeImageIndex, imageMessages],
+  );
+  const activeLocation = useMemo(() => {
+    const message = locationViewerMessageId
+      ? visibleMessages.find((m) => m.id === locationViewerMessageId)
       : null;
-  const activeNoteMessage = noteViewerMessageId
-    ? visibleMessages.find((message) => message.id === noteViewerMessageId)
-    : null;
-  const activeNote =
-    activeNoteMessage?.type === "note_card" &&
-    activeNoteMessage.attachment?.kind === "note_card" &&
-    !recalledMessageIdSet.has(activeNoteMessage.id)
-      ? {
-          id: activeNoteMessage.id,
-          attachment: activeNoteMessage.attachment,
-          previewImageUrl: resolveNotePreviewImageUrl(
-            activeNoteMessage.attachment,
-            resolveAttachmentUrl,
-          ),
-        }
+    if (
+      message?.type !== "location_card" ||
+      message.attachment?.kind !== "location_card" ||
+      recalledMessageIdSet.has(message.id)
+    ) {
+      return null;
+    }
+    return {
+      id: message.id,
+      attachment: message.attachment,
+    };
+  }, [locationViewerMessageId, recalledMessageIdSet, visibleMessages]);
+  const activeNote = useMemo(() => {
+    const message = noteViewerMessageId
+      ? visibleMessages.find((m) => m.id === noteViewerMessageId)
       : null;
+    if (
+      message?.type !== "note_card" ||
+      message.attachment?.kind !== "note_card" ||
+      recalledMessageIdSet.has(message.id)
+    ) {
+      return null;
+    }
+    return {
+      id: message.id,
+      attachment: message.attachment,
+      previewImageUrl: resolveNotePreviewImageUrl(
+        message.attachment,
+        resolveAttachmentUrl,
+      ),
+    };
+  }, [noteViewerMessageId, recalledMessageIdSet, resolveAttachmentUrl, visibleMessages]);
 
   const openImageByIndex = (nextIndex: number) => {
     const target = imageMessages[nextIndex];
@@ -2656,7 +2685,20 @@ export function ChatMessageList({
     }
   };
 
-  const reminderOptions = buildReminderOptions(t, new Date());
+  // 走查 R1：原版每次 render 都 `buildReminderOptions(t, new Date())` —— sheet 没开
+  // 也照样跑：3 个 `new Date()` + 3 次 `Intl` formatReminderSummary + 一个新数组引用
+  // 飞进 <MobileMessageReminderSheet options={...}>。ChatMessageList 在长聊 200+
+  // 消息里每个 socket tick / typing tick / setQueriesData 都会 re-render，纯白用功。
+  // 同时 `new Date()` 每次都比上一次多几 ms，20:00:00.000 的「今晚 / 明晚 20:00」
+  // label 边界会在那一帧上抖一下。
+  // 改成 useMemo，sheet 关着的时候返回稳定空数组；sheet 一开 reminderTargetMessage
+  // 变化 → 重算一次拿到"刚开始那一刻的 now"作为 base。
+  const reminderSheetTargetMessageId = reminderTargetMessage?.id ?? null;
+  const reminderOptions = useMemo(
+    () =>
+      reminderSheetTargetMessageId ? buildReminderOptions(t, new Date()) : EMPTY_REMINDER_OPTIONS,
+    [reminderSheetTargetMessageId, t],
+  );
 
   const handleSetReminder = (message: ChatRenderableMessage) => {
     setReminderTargetMessage(message);
@@ -3456,7 +3498,18 @@ export function ChatMessageList({
         <div className="flex justify-center">
           <button
             type="button"
-            onClick={() => onLoadOlderMessages?.()}
+            onClick={() => {
+              if (loadingOlderMessagesRef.current) return;
+              loadingOlderMessagesRef.current = true;
+              onLoadOlderMessages?.();
+              if (typeof window !== "undefined") {
+                window.requestAnimationFrame(() => {
+                  loadingOlderMessagesRef.current = false;
+                });
+              } else {
+                loadingOlderMessagesRef.current = false;
+              }
+            }}
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
@@ -4660,7 +4713,7 @@ export function ChatMessageList({
           <DesktopMessageForwardDialog
             open
             messages={forwardPreviewItems}
-            conversations={forwardConversationsQuery.data ?? []}
+            conversations={forwardConversationsQuery.data ?? EMPTY_FORWARD_CONVERSATIONS}
             supportsSeparateMode={forwardMessages.every(canForwardMessage)}
             variant={variant}
             loading={forwardConversationsQuery.isLoading}
@@ -4996,6 +5049,12 @@ function buildRecalledMessageNotice(
       : message.senderName?.trim() || t(msg`对方`);
   return t(msg`${actor}撤回了一条消息`);
 }
+
+const EMPTY_REMINDER_OPTIONS: MobileMessageReminderOption[] = [];
+// 走查 R1：DesktopMessageForwardDialog 的 conversations prop 之前每次 render new
+// 个 `[]`，loading / undefined transient 期间命中无数次，子组件 memo 失效。
+// 模块级常量稳定 reference，所有 render 共享。
+const EMPTY_FORWARD_CONVERSATIONS: ConversationListItem[] = [];
 
 function buildReminderOptions(
   t: Translator,

@@ -461,6 +461,15 @@ export function ChatComposer({
     enabled: showSpeechEntry,
     mode: isDesktop ? "dictation" : "voice",
   });
+  // 走查 R1：useSpeechInput 每次 render 返回新对象字面量。下方 setMobileComposerMode
+  // useCallback 之前直接把 `speech` 整对象塞进 deps → callback 每帧重建 →
+  // returnMobileComposerToText（dep 含 setMobileComposerMode）跟着每帧重建 →
+  // line 989-999 的 Android-back 拦截 useEffect 跟着每帧 unregister/re-register
+  // back handler，用户每打一个字都重新挂一次拦截器。speech.cancel 已是
+  // useEffectEvent 稳定函数；speech.status 是字符串，依赖它是必要的。用 ref
+  // 镜像 speech，callback 内通过 ref 读 status / cancel，把 speech 从 deps 摘掉。
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
   const speechSupported = showSpeechEntry && speech.supported;
   const speechDisabledReason =
     showSpeechEntry && !speechSupported
@@ -628,8 +637,9 @@ export function ChatComposer({
         return;
       }
 
-      if (speech.status !== "idle") {
-        speech.cancel();
+      // 通过 speechRef 读最新 status / cancel，避免把整个 speech 对象拖进 deps。
+      if (speechRef.current.status !== "idle") {
+        speechRef.current.cancel();
       }
       closeMobileSpeechSheet();
       setStickerPanelOpen(nextMode === "sticker");
@@ -655,7 +665,6 @@ export function ChatComposer({
       onSendAttachment,
       onSendSticker,
       showSpeechEntry,
-      speech,
     ],
   );
 
@@ -1440,6 +1449,17 @@ export function ChatComposer({
 
   const handleStickerPanelSelect = (sticker: StickerAttachment) => {
     if (sticker.sourceType === "builtin" && sticker.label) {
+      // 走查 R1：builtin sticker（自带表情如 [微笑]）走的是 insertTextAtCursor
+      // 文本插入路径，不经过 onSendSticker mutation，原版没有任何同步锁。同帧
+      // 双击同一个 tile：insertTextAtCursor 跑 2 次 → 输入框显示「[微笑][微笑]」；
+      // pushRecentSticker 也跑 2 次 → localStorage 写 2 次同一份 recent 列表
+      // （第二次有 dedup 不会多塞但仍是无效 IO）。复用 sendBusyRef，让 builtin
+      // 路径和非 builtin 共享同一把同帧锁；handleSendSticker 已经按 sendBusyRef
+      // 走，这里只在 builtin 分支额外兜一帧。
+      if (sendBusyRef.current) {
+        return;
+      }
+      sendBusyRef.current = true;
       insertTextAtCursor(`[${sticker.label}]`);
       setRecentStickers(
         pushRecentSticker({
@@ -1453,6 +1473,13 @@ export function ChatComposer({
         focusInput();
       } else {
         returnMobileComposerToText({ focusInput: true });
+      }
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          sendBusyRef.current = false;
+        });
+      } else {
+        sendBusyRef.current = false;
       }
       return;
     }
@@ -3238,7 +3265,12 @@ export function ChatComposer({
             kind={attachmentDraft.kind}
             fileName={
               attachmentDraft.kind === "images"
-                ? (attachmentDraft.items[0]?.fileName ?? "image")
+                ? // 走查 R1：`?? "image"` 只防 null/undefined 不防空串。createImageDraft
+                  // 当前用 `file.name || "image"` 保护，但任何上游路径若以 fileName=""
+                  // 进来（例如 native PHPicker 返回的临时 asset），preview header 会
+                  // 显示空白。改成 `||` 让空串也命中 fallback，和 sticker label /
+                  // conversation.title 那批 sentinel fallback 同款修法。
+                  (attachmentDraft.items[0]?.fileName || "image")
                 : attachmentDraft.fileName
             }
             imagePreviews={
