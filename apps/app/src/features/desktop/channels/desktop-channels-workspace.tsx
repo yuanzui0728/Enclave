@@ -2520,7 +2520,16 @@ function DesktopChannelCommentsPanel({
   return (
     <div className="mt-3 space-y-3">
       {commentsLoading && !comments.length ? (
-        <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+        // 走查 2026-05-18 第二轮 R7：同 R5 / R6 同款 — 评论 drawer 内 "正在读
+        // 取评论..." loading 卡裸 <div>，SR 用户打开 drawer 时只听到 dialog
+        // 标题 "评论 N"，然后听不到 loading 反馈。yuanzui0728 那条积了 142 条
+        // 评论的 post 公网隧道 500-800ms 全量 listFeedComments，SR 用户体感
+        // "drawer 打开了但里面空着"。挂 role="status" + aria-live=polite 让 SR
+        // 知道在等评论数据。
+        <div
+          role="status"
+          className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]"
+        >
           {t(msg`正在读取评论...`)}
         </div>
       ) : null}
