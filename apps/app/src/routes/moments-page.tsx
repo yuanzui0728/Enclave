@@ -1043,9 +1043,19 @@ export function MomentsPage() {
       to: "/desktop/friend-moments/$characterId",
       params: { characterId: targetMoment.authorId },
       hash: buildDesktopFriendMomentsRouteHash({
+        // 新一轮 R10：source=moments + returnPath/returnHash 已经能把"返回上一页"
+        // 带回 /tabs/moments，但 returnHash 之前是 buildDesktopMomentsRouteHash({})
+        // 空 hash，用户从角色页返回后 momentsQuery 拉回来 routeSelectedMomentId
+        // 是 null，没有 scroll-snap target，整页落回顶部。原本在 /tabs/moments
+        // 上滚到第 50 条点角色头像 → 看完角色朋友圈点返回 → 又得从第 1 条开始
+        // 找。把 targetMoment.id 当 momentId 串进 return hash，回来后
+        // desktop-moments-workspace 的 scroll effect 自然把视口 snap 回那条。
+        momentId: targetMoment.id,
         source: "moments",
         returnPath: desktopMomentsPath,
-        returnHash: buildDesktopMomentsRouteHash({}),
+        returnHash: buildDesktopMomentsRouteHash({
+          momentId: targetMoment.id,
+        }),
       }),
     });
   }
