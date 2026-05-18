@@ -111,7 +111,15 @@ function writeDesktopFavorites(
       }
     }
   } else {
-    storage.removeItem(DESKTOP_FAVORITES_STORAGE_KEY);
+    // R23：和姊妹 note-drafts-storage R20 同款—— Safari iOS 隐私模式 / 浏览器
+    // 禁用 storage 时 removeItem 也可能抛 SecurityError。本路径在用户清空收藏
+    // 时跑（favorites.length=0 这条 else）。抛了会让 chat-composer 收藏面板
+    // refresh 链路 throw。静默降级。
+    try {
+      storage.removeItem(DESKTOP_FAVORITES_STORAGE_KEY);
+    } catch {
+      // 静默
+    }
   }
 
   if (options?.syncNative !== false) {
