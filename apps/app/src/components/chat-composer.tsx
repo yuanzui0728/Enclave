@@ -4309,6 +4309,17 @@ function DesktopAttachmentDraftBar({
                 <img
                   src={item.previewUrl}
                   alt={item.fileName}
+                  // 走查电脑端单聊 R87：DesktopAttachmentDraftBar 渲染 1-N 张
+                  // 待发送图片缩略图，previewUrl 是 URL.createObjectURL 出来
+                  // 的原图 blob —— 浏览器默认同步在主线程把原图 decode + 缩到
+                  // 14×14 显示。yuanzui0728 在 desktop composer 一次 album 选
+                  // 5-9 张相机原图（每张 3-5MB），整组 decode 的几十 ms 主线程
+                  // 阻塞会让 composer 整栏弹出动画 / 按键输入掉帧。挂
+                  // decoding="async"，浏览器走 off-thread decode；缩略图先空，
+                  // decode 完淡入，主线程不抢。lazy 不挂——这些缩略图在
+                  // composer 顶部一打开就全在视口内，lazy 反而触发额外的
+                  // intersection observer。
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
                 {onRemoveImage ? (
