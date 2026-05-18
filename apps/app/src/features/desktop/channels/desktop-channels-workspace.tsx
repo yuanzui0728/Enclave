@@ -426,6 +426,20 @@ export function DesktopChannelsWorkspace({
   }, [routeSelectedPostId, hasRouteTargetInPosts]);
 
   // Esc closes whichever overlay is on top (drawer first, then author panel).
+  //
+  // 走查 2026-05-18 R3（本轮）：onCloseAuthor 来自父级 channels-page 的 regular
+  // function declaration（`function closeChannelAuthor() {...}`，不是 useCall
+  // back），每次 channels-page re-render 都换 identity。视频号 home 主体在视
+  // 频播放期间有大量 query 更新（home refetch / decorations refetch / 每 600ms
+  // viewFeedPost mutation 完成）触发 channels-page re-render → workspace 也
+  // 一道 re-render → 这条 effect deps 看到新 onCloseAuthor → cleanup 旧
+  // keydown listener + add 新 listener。drawer 或 author 一旦打开，user 静坐
+  // 不动也会持续装卸 listener（实测每秒 4-8 次），listener 装卸本身廉价但
+  // 在 React 18 strict-mode dev 下能放大成抖动 + 极端时与 native keypress
+  // 错峰丢键。latest-ref 锁稳：deps 只挂 drawer / author 状态，listener 内部
+  // 读 ref.current。
+  const onCloseAuthorRef = useRef(onCloseAuthor);
+  onCloseAuthorRef.current = onCloseAuthor;
   useEffect(() => {
     if (!commentDrawerPostId && !authorPanelVisible) {
       return;
@@ -439,13 +453,13 @@ export function DesktopChannelsWorkspace({
       if (commentDrawerPostId) {
         setCommentDrawerPostId(null);
       } else if (authorPanelVisible) {
-        onCloseAuthor();
+        onCloseAuthorRef.current();
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [authorPanelVisible, commentDrawerPostId, onCloseAuthor]);
+  }, [authorPanelVisible, commentDrawerPostId]);
 
   const scrollToOffset = useCallback((delta: number) => {
     const container = scrollContainerRef.current;
@@ -1979,16 +1993,34 @@ function DesktopChannelCommentsPanel({
     });
     return map;
   }, [comments]);
+  // 走查 2026-05-18 R3（本轮）：移动端 R5（channels-page L4287-4305）早就
+  // 加了"空文本评论过滤"——feed_comments 库里偶尔混入纯 AI thinking-prose
+  // 评论（实测 yuanzui0728 库 eb9c88ce 帖等就有 1019 字 CoT 漏出），
+  // stripToolCallSyntax 把整段抠成空串，DesktopThreadCommentCard 内只在
+  // body 区用 cleanText，外层 "作者名 + 时间戳 + 回复 X：" + 底部点赞/回复
+  // 按钮全照常渲，结果用户看到一条「头有作者尾有按钮、中间空白」的鬼影
+  // 卡，体感「这条评论坏了」+ 卡间距还把真实评论顶下去。
+  // 桌面 drawer 一直漏，按 mobile 同款思路在 thread 构建前先 filter 掉空
+  // cleanText 的评论；threading 自然 re-root 残留的 orphan reply（root 空
+  // 被过滤掉时它的子回复变成自己的 root，replyToAuthorName 走后端 lookup
+  // 还能显示「回复 X：」上下文）。
+  const renderableComments = useMemo(
+    () =>
+      comments.filter((comment) => stripToolCallSyntax(comment.text).length > 0),
+    [comments],
+  );
   const commentThreads = useMemo(() => {
-    const commentMap = new Map(comments.map((comment) => [comment.id, comment]));
-    const rootComments = comments.filter(
+    const commentMap = new Map(
+      renderableComments.map((comment) => [comment.id, comment]),
+    );
+    const rootComments = renderableComments.filter(
       (comment) =>
         !comment.parentCommentId ||
         !commentMap.has(comment.parentCommentId),
     );
     const repliesByRoot = new Map<string, FeedComment[]>();
 
-    comments.forEach((comment) => {
+    renderableComments.forEach((comment) => {
       if (!comment.parentCommentId || !commentMap.has(comment.parentCommentId)) {
         return;
       }
@@ -2002,7 +2034,7 @@ function DesktopChannelCommentsPanel({
       rootComment,
       replies: repliesByRoot.get(rootComment.id) ?? [],
     }));
-  }, [comments]);
+  }, [renderableComments]);
   const threadIdsWithReplies = useMemo(
     () =>
       commentThreads
