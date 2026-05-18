@@ -103,6 +103,11 @@ export function OfficialMessageEntryRow({
                   aria-label={t(msg`${unreadCount} 条未读消息`)}
                 />
               ) : (
+                // 走查桌面端单聊 新一轮 R3：和姊妹 desktop-chat-workspace 同
+                // 款 — muted 变体已挂 aria-label，非 muted 变体的 unreadCount
+                // 是裸 text。SR 走到「订阅号 / 服务号」入口行只听到一句「99+」
+                // 没有上下文。补 aria-label，inner span aria-hidden 隔离视觉
+                // 数字。本组件同时被桌面端和移动端 chat-list 复用，两边一起修。
                 <div
                   className={cn(
                     "flex items-center justify-center rounded-full bg-[#fa5151] text-center text-white",
@@ -111,8 +116,11 @@ export function OfficialMessageEntryRow({
                       : "min-h-[18px] min-w-[18px] px-1 text-[11px] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                     unreadCount > 9 ? "min-w-[22px]" : undefined,
                   )}
+                  aria-label={t(msg`${unreadCount} 条未读消息`)}
                 >
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  <span aria-hidden="true">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
                 </div>
               )
             ) : null}

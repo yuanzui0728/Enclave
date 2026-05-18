@@ -2933,10 +2933,22 @@ const ConversationCardLink = memo(function ConversationCardLink({
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 />
               ) : (
-                <div className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white">
-                  {conversation.unreadCount > 99
-                    ? "99+"
-                    : conversation.unreadCount}
+                // 走查新一轮 R3：muted 变体已挂 aria-label「${count} 条未读
+                // 消息」（line 上方），非 muted 变体只渲染数字 / "99+" 裸 text。
+                // SR 走到会话卡片，逐字朗读完会话名 + lastMessage + 时间戳后只
+                // 听到一句「5」/「99+」——无上下文，盲人用户得自己猜这个数字
+                // 是什么。补 aria-label 把语义补齐，inner span 用 aria-hidden
+                // 隔离视觉数字避免某些 SR 实现把 aria-label + 子文本重复念两遍。
+                // 和姊妹 official-message-entry-row 同款问题，下方一并修。
+                <div
+                  className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white"
+                  aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
+                >
+                  <span aria-hidden="true">
+                    {conversation.unreadCount > 99
+                      ? "99+"
+                      : conversation.unreadCount}
+                  </span>
                 </div>
               )
             ) : null}
