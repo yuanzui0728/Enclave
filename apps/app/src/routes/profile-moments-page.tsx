@@ -124,9 +124,17 @@ export function ProfileMomentsPage() {
   // 想清弹层状态时引用不到 setShareMomentId。提到组件顶部 useState 区，
   // 桌面分支不用就一直是 null；mobile 分支引用同一份 setter。
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R2：和 friend-moments-page / moments-page notice 通道对齐 ——
+  // 之前 profile-moments-page 的 notice 只有 tone/message，danger 红条没法挂
+  // 「重试点赞」「重试删除」按钮。点赞失败 / 删除失败时用户只能盯着红条 2.4s
+  // 自清，要重试得自己再去戳一遍头像 → 重新对到那张被回滚的 moment → 再点心
+  // / 再开 ⋯ 菜单 / 再 confirm，体感比其它两个朋友圈页差一截。补 actionLabel/action
+  // 字段，下方 likeMutation / deleteMutation onError 顺便接上重试 closure。
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "danger";
     message: string;
+    actionLabel?: string | null;
+    action?: (() => void) | null;
   } | null>(null);
   const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<
     | {
@@ -236,9 +244,20 @@ export function ProfileMomentsPage() {
       ) {
         return;
       }
+      // 走查电脑端 R2：和 moments-page / friend-moments-page 同款 ——
+      // 1) translateAppErrorCode 优先走 i18n 字典命中本地化文案，miss 才退到
+      //    describeRequestError 的网络/401/403 兜底；之前直接 describeRequestError
+      //    会把 server AppError 的 legacyMessage（中文）原样塞给非 zh-CN 用户。
+      // 2) 失败 toast 挂「重试点赞」按钮，下方 desktop 入口已经把 actionLabel/action
+      //    透传到 notice 通道，用户不用自己找回那条被回滚的 moment 再戳一遍。
+      const localized =
+        (isApiRequestError(error) ? translateAppErrorCode(error) : null) ??
+        describeRequestError(error, t(msg`点赞失败，请稍后重试。`));
       setNotice({
         tone: "danger",
-        message: describeRequestError(error, t(msg`点赞失败，请稍后重试。`)),
+        message: localized,
+        actionLabel: t(msg`重试点赞`),
+        action: () => likeMutation.mutate(momentId),
       });
     },
     onSuccess: (_data, _momentId, context) => {
@@ -466,12 +485,18 @@ export function ProfileMomentsPage() {
     },
     onError: (error, momentId, context) => {
       delete commentSubmitArgsRef.current[momentId];
+      // 走查电脑端 R2：和上面 likeMutation onError 同款 ——
+      // 先走 translateAppErrorCode 命中 i18n 字典；miss 才退回 describeRequestError
+      // 的网络/401/403 兜底。之前直接 describeRequestError 会把 server AppError 的
+      // legacyMessage（中文）原样塞给非 zh-CN 用户。评论失败不放「重试」按钮 ——
+      // commentBar / desktopReplyTarget 已经被恢复，用户直接在评论框点「发送」即可
+      // （和 moments-page commentMutation onError 同模式）。
+      const localized =
+        (isApiRequestError(error) ? translateAppErrorCode(error) : null) ??
+        describeRequestError(error, t(msg`评论失败，请稍后重试。`));
       if (!context || context.skipped) {
         setCommentBarTarget(null);
-        setNotice({
-          tone: "danger",
-          message: describeRequestError(error, t(msg`评论失败，请稍后重试。`)),
-        });
+        setNotice({ tone: "danger", message: localized });
         return;
       }
       // mid-flight 切账户：旧账户的失败不要在新账户里 reopen 一个指着别的
@@ -502,10 +527,7 @@ export function ProfileMomentsPage() {
         setDesktopReplyTarget(context.savedDesktopReply);
       }
       setCommentBarTarget(null);
-      setNotice({
-        tone: "danger",
-        message: describeRequestError(error, t(msg`评论失败，请稍后重试。`)),
-      });
+      setNotice({ tone: "danger", message: localized });
     },
   });
 
@@ -637,7 +659,7 @@ export function ProfileMomentsPage() {
       });
       return { snapshots, pagedSnapshots, mutationBaseUrl: baseUrl };
     },
-    onError: (error, _momentId, context) => {
+    onError: (error, momentId, context) => {
       // mid-flight 切账户：旧账户的失败不该在新账户里弹「删除失败」红条 ——
       // 用户已经看不到原 moment 了。cache 回滚也跳过（旧 baseUrl 的 cache 用户已
       // 经看不到了）。和 moments-page / mobile-friend-moments-page 同模板。
@@ -653,9 +675,17 @@ export function ProfileMomentsPage() {
       context?.pagedSnapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
+      // 走查电脑端 R2：同 likeMutation onError ——
+      // translateAppErrorCode 走 i18n 字典优先；挂「重试删除」按钮，省得用户
+      // 重新开 ⋯ 菜单 + confirm 一遍。
+      const localized =
+        (isApiRequestError(error) ? translateAppErrorCode(error) : null) ??
+        describeRequestError(error, t(msg`删除失败，请稍后重试。`));
       setNotice({
         tone: "danger",
-        message: describeRequestError(error, t(msg`删除失败，请稍后重试。`)),
+        message: localized,
+        actionLabel: t(msg`重试删除`),
+        action: () => deleteMutation.mutate(momentId),
       });
     },
     onSuccess: (_data, _momentId, context) => {
@@ -868,6 +898,12 @@ export function ProfileMomentsPage() {
           showCompose={showCompose}
           notice={notice?.message}
           noticeTone={notice?.tone}
+          // 走查电脑端 R2：danger notice 上的「重试点赞 / 重试删除」按钮
+          // —— workspace InlineNotice 早就支持这两条 prop，profile-moments-page
+          // 之前从来没传过，所以 desktop 上 like/delete 失败用户没重试入口；
+          // 现在和 friend-moments-page 同模板把 actionLabel / action 透下去。
+          noticeActionLabel={notice?.actionLabel ?? null}
+          onNoticeAction={notice?.action ?? null}
           text={composeDraft.text}
           videoDraft={composeDraft.videoDraft}
           isMomentFavorite={(momentId) =>
