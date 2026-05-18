@@ -4190,7 +4190,25 @@ function MobileChannelCommentsSheet({
   // 时若在 8s 窗口内视为「这是我自己刚发的评论」强制滚到底，盖过 isNearBottom
   // 的保守判定；超出窗口或 errorMessage 出现（submit 失败）则清掉，不污染后
   // 续的 AI 回复滚动行为。
+  //
+  // 走查 2026-05-18 新会话 R1：原 timestamp 只在 send 按钮 onClick 里同步 set，
+  // 「重试发送评论」路径走的是 ChannelsPage 顶部的 mobileCommentSheetRetryAction
+  // 而不是这个 onClick —— submit 失败 → errorMessage effect 把 timestamp 清成
+  // null → 用户 10s 后才点重试 → mutate 飞 → onSuccess invalidate → comments
+  // refetch growth → userJustSubmitted = (null !== null && …) = false → 用户读
+  // 老评论时若不贴底 shouldAutoScroll=false → 重试发出的评论留在底部，用户根本
+  // 看不见，比 R4 修之前更怪（明明刚点了"重试"）。
+  // 改成跟着 submitPending 的 false→true 跳变 set timestamp —— send 按钮、retry
+  // 路径都会让 commentMutation 的 isPending 从 false 翻 true，两条路径共享同款
+  // userJustSubmitted 8s 窗口保护，无须在 ChannelsPage 那条 retry 链路里另插一脚。
   const submitInitiatedAtRef = useRef<number | null>(null);
+  const previousSubmitPendingRef = useRef(false);
+  useEffect(() => {
+    if (submitPending && !previousSubmitPendingRef.current) {
+      submitInitiatedAtRef.current = Date.now();
+    }
+    previousSubmitPendingRef.current = submitPending;
+  }, [submitPending]);
 
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -4723,13 +4741,11 @@ function MobileChannelCommentsSheet({
                 submitPending ||
                 post?.canInteract === false
               }
-              onClick={() => {
-                // 走查 2026-05-18 R4：钉住「我自己刚提交」时间戳，给上方
-                // growth 自动滚动 effect 用——只在 submit 后 8s 窗口内的
-                // growth 强制滚到底，避免读老评论时被 AI 自动回复甩走。
-                submitInitiatedAtRef.current = Date.now();
-                onSubmit();
-              }}
+              onClick={onSubmit}
+              // submitInitiatedAtRef 的钉值已经迁到 submitPending false→true effect
+              // 那条上，原 send 按钮 onClick 里手 set 的同款 timestamp 改去掉 —— retry
+              // 路径走的是 ChannelsPage 那条 retry button，不经过这里，所以单点 set
+              // 漏了 retry。effect 覆盖两条路径，单一来源。
               className="mb-1 h-10 rounded-full bg-[#07c160] px-4 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
             >
               {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
