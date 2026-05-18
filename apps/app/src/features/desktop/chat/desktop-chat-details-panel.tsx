@@ -1807,7 +1807,18 @@ function GroupChatDetailsPanel({
           title: t(msg`修改群聊名称`),
           description: t(msg`新的名称会同步显示在聊天页和群成员列表里。`),
           placeholder: t(msg`请输入群聊名称`),
-          initialValue: group?.name ?? conversation.title,
+          // 走查电脑端群聊 R9：本文件 7 处兜底（line 1218 / 1736 / 1927 / 2079 /
+          // 2087 / 2096 / 2134）都用 `group?.name || conversation.title`——`??`
+          // 仅在 group.name 为 null/undefined 时落到 conversation.title，空串
+          // group.name 不会兜回。server-side updateGroup / createGroup 已经
+          // GROUP_REQUIRES_NAME 硬挡空串，但本行口径和"群聊详情侧栏 title
+          // 行/侧栏标题/picker title"几处显式不一致——下游 DesktopChatTextEditDialog
+          // 里 hasUserEditedRef 兜过 initialValue 漂移问题，但 confirmDisabled =
+          // `normalizedDraft === normalizedInitialValue` 直接吃这个 initialValue，
+          // 如果未来出现存量空 name 数据（旧库迁移 / 第三方客户端绕过验证），
+          // 编辑器会把空串当 baseline，用户键入和会话列表显示一致的名称仍
+          // 命中 disabled，"保存"按钮变灰。统一到 || 和其它入口口径一致。
+          initialValue: group?.name || conversation.title,
           multiline: false,
           emptyAllowed: false,
           pending: updateGroupMutation.isPending,
