@@ -439,6 +439,17 @@ export function ConversationThreadPanel({
     setReplyDraft(null);
   };
 
+  // 走查新会话 R1：mobile 单聊「拨打通话」有两条入口——
+  //   1) MobileChatThreadHeader 顶部「语音通话/视频通话」icon → 走 startDirectCall，
+  //      header 内部有 actionFiredRef 守住同帧双击。
+  //   2) ChatComposer 的 + 面板 (MobileChatPlusPanel) 里的 voice-call/video-call
+  //      tile → 通过 onStartVoiceCall/onStartVideoCall props 传进来，原版直接
+  //      inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // 入口 2 同帧 <16ms 双击就 push 2 条相同 history 项，用户从 call 屏返回还要
+  // 按 2 次返回才能回到聊天。把 onStartVoiceCall/onStartVideoCall 改成统一走
+  // startDirectCall，再给 startDirectCall（mobile 路径）补 sync ref 锁；header
+  // 路径不动（header 的 guardAction 已经兜了），多一层无副作用。
+  const startDirectCallFiredRef = useRef(false);
   const startDirectCall = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
       setDesktopCallPanelState({
@@ -448,6 +459,10 @@ export function ConversationThreadPanel({
       return;
     }
 
+    if (startDirectCallFiredRef.current) {
+      return;
+    }
+    startDirectCallFiredRef.current = true;
     void navigate({
       to:
         kind === "voice"
@@ -457,6 +472,11 @@ export function ConversationThreadPanel({
       ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
     });
     onDesktopCallAction?.(kind);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        startDirectCallFiredRef.current = false;
+      });
+    }
   };
 
   const [callUnavailableKind, setCallUnavailableKind] =
@@ -901,24 +921,8 @@ export function ConversationThreadPanel({
             onMobileShortcutHandled={() => {
               setMobileShortcutRequest(null);
             }}
-            onStartVoiceCall={() => {
-              void navigate({
-                to: "/chat/$conversationId/voice-call",
-                params: { conversationId },
-                ...(currentMobileRouteHash
-                  ? { hash: currentMobileRouteHash }
-                  : {}),
-              });
-            }}
-            onStartVideoCall={() => {
-              void navigate({
-                to: "/chat/$conversationId/video-call",
-                params: { conversationId },
-                ...(currentMobileRouteHash
-                  ? { hash: currentMobileRouteHash }
-                  : {}),
-              });
-            }}
+            onStartVoiceCall={() => startDirectCall("voice")}
+            onStartVideoCall={() => startDirectCall("video")}
             contactPickerExcludeIds={contactPickerExcludeIds}
             replyPreview={replyPreview}
             onCancelReply={() => setReplyDraft(null)}
