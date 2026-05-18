@@ -123,11 +123,32 @@ export function buildSearchPreview(text: string, keyword: string) {
   }
 
   const contextRadius = 20;
-  const previewStart = Math.max(0, start - contextRadius);
-  const previewEnd = Math.min(
+  let previewStart = Math.max(0, start - contextRadius);
+  let previewEnd = Math.min(
     text.length,
     start + keyword.length + contextRadius,
   );
+  // 走查新一轮：start ± contextRadius 是任意整数偏移，会落在 UTF-16
+  // surrogate pair 的高/低代理之间。emoji（😀 🌹）/ CJK 扩展区 4 字节
+  // 字符占两个 code unit；slice 端点落进代理对中间 → 切出残缺代理项
+  // 渲染成 □ / ? / 黑色菱形问号。本 helper 用在桌面顶部全局搜索 /
+  // mobile useSearchIndex 的消息预览（apps/app/src/routes/search-page.tsx +
+  // features/search/desktop-search-launcher.tsx），命中关键词附近一旦
+  // 有 emoji 就破。和 desktop-chat-history-panel buildSearchPreview
+  // R15 / PreviewAvatar fallback 234f5e76f 同款修法。把切点往外推到下
+  // 一个完整 code point 边界，宁可多带一个字符也别把表情切坏。
+  if (previewStart > 0 && previewStart < text.length) {
+    const code = text.charCodeAt(previewStart);
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      previewStart -= 1;
+    }
+  }
+  if (previewEnd > 0 && previewEnd < text.length) {
+    const code = text.charCodeAt(previewEnd - 1);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      previewEnd += 1;
+    }
+  }
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
