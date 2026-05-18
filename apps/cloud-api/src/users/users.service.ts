@@ -621,8 +621,13 @@ export class UsersService implements OnModuleInit {
       new Brackets((qb) => {
         // phone 白名单：要么没填（纯 email/Google 注册），要么是 14 位 9 开头
         // 的生产 hash。两者都不是 → 测试号（"+"E.164 / 11 位裸号 / 演示号）。
+        //
+        // 必须用最外层 () 把这条 OR 包住——SQL 里 AND 优先级高于 OR，TypeORM
+        // 把 `qb.where("A OR B").andWhere("C").andWhere("D")` 拼成
+        // `A OR B AND C AND D`，会被解释成 `A OR (B AND C AND D)`：phone IS
+        // NULL 的 e2e-test@example.com 直接短路绕开整段 email 黑名单。
         qb.where(
-          "user.phone IS NULL OR (LENGTH(user.phone) = 14 AND user.phone GLOB '9*')",
+          "(user.phone IS NULL OR (LENGTH(user.phone) = 14 AND user.phone GLOB '9*'))",
         );
         TEST_ACCOUNT_EMAIL_PATTERNS.forEach((pattern, idx) => {
           qb.andWhere(
