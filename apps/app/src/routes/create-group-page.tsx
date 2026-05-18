@@ -487,6 +487,11 @@ export function CreateGroupPage() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t(msg`搜索`)}
+              // 走查 R2：和姊妹页 chat-message-search-panel R1 / 桌面 R24 同款
+              // a11y 修法——父 label 没有文本子节点（仅 Search 图标 + input），
+              // placeholder 在 SR 上行为分裂，盲人用户 focus 进来听到"编辑栏
+              // 空"。挂 aria-label="搜索联系人" 把意图明确表达出来。
+              aria-label={t(msg`搜索联系人`)}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               // 备注名 / 角色名 / 关系关键词常常是 ASCII（"wangxiaoming"、
