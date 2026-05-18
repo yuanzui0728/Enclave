@@ -28,6 +28,20 @@ import {
 } from "@yinjie/contracts";
 import { translateAppErrorCode } from "../lib/error-translate";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+
+// 走查电脑端 R1：和 moments-page / profile-moments-page 同款 i18n 一致性兜底。
+// 之前页面里 likeMutation / commentMutation 的 onError 已经走 translateAppErrorCode，
+// 但传给 DesktopFriendMomentsWorkspace 的 loadErrorMessage / commentErrorMessage /
+// composeErrorMessage / likeErrorMessage / errors[] 全是直拼 raw error.message，
+// server 的 legacyMessage 永远是中文 ——非 zh-CN locale 用户拿到的就是裸中文，
+// 跟同一屏 notice 通道里的本地化 toast 风格也不一致。统一走它。
+function resolveMomentsErrorMessage(error: unknown): string | null {
+  if (!(error instanceof Error)) return null;
+  if (isApiRequestError(error)) {
+    return translateAppErrorCode(error) ?? error.message;
+  }
+  return error.message;
+}
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
@@ -798,17 +812,39 @@ export function FriendMomentsPage() {
   }
 
   const errors: string[] = [];
-  if (characterQuery.isError && characterQuery.error instanceof Error) {
-    errors.push(characterQuery.error.message);
+  // 走查电脑端 R1：4 把 query 失败的 ErrorBlock 文案统一走 resolveMomentsErrorMessage
+  // —— server legacyMessage 中文兜底，非 zh-CN locale 用户终于能看到本地化文案。
+  const characterErrorMessage = resolveMomentsErrorMessage(
+    characterQuery.error,
+  );
+  if (characterQuery.isError && characterErrorMessage) {
+    errors.push(characterErrorMessage);
   }
-  if (friendsQuery.isError && friendsQuery.error instanceof Error) {
-    errors.push(friendsQuery.error.message);
+  const friendsErrorMessage = resolveMomentsErrorMessage(friendsQuery.error);
+  if (friendsQuery.isError && friendsErrorMessage) {
+    errors.push(friendsErrorMessage);
   }
-  if (momentsQuery.isError && momentsQuery.error instanceof Error) {
-    errors.push(momentsQuery.error.message);
+  const momentsLoadErrorMessage = resolveMomentsErrorMessage(
+    momentsQuery.error,
+  );
+  // 走查电脑端 R3：momentsQuery 失败 + 列表 0 条时，下方
+  // DesktopFriendMomentsWorkspace renderFeedContent 已经走「朋友圈暂时不可用 /
+  // 重试读取」EmptyState（loadErrorMessage 路径）；此处再 push 到顶部 errors[]
+  // ErrorBlock 就是同一段错误同屏两条红框（一窄一空态卡），用户读着像"系统
+  // 连发两次错误"。和 moments-page.tsx 行 1371-1383 的 `visibleMoments.length > 0`
+  // gate 同模板：仅在已经有 friendMoments 可渲染时才把 query error 推到 toolbar
+  // 错误条（那时 EmptyState 不出现，toolbar 错误条做持久指示）；0 条让位给
+  // EmptyState 的「重试读取」按钮。
+  if (
+    momentsQuery.isError &&
+    momentsLoadErrorMessage &&
+    friendMoments.length > 0
+  ) {
+    errors.push(momentsLoadErrorMessage);
   }
-  if (blockedQuery.isError && blockedQuery.error instanceof Error) {
-    errors.push(blockedQuery.error.message);
+  const blockedErrorMessage = resolveMomentsErrorMessage(blockedQuery.error);
+  if (blockedQuery.isError && blockedErrorMessage) {
+    errors.push(blockedErrorMessage);
   }
 
   if (!character && (characterQuery.isLoading || friendsQuery.isLoading)) {
@@ -869,15 +905,15 @@ export function FriendMomentsPage() {
         character={character}
         commentDrafts={commentDrafts}
         commentErrorMessage={
-          commentMutation.isError && commentMutation.error instanceof Error
-            ? commentMutation.error.message
+          commentMutation.isError
+            ? resolveMomentsErrorMessage(commentMutation.error)
             : null
         }
         commentPendingMomentId={pendingCommentMomentId}
         composeErrorMessage={
           composeDraft.mediaError ??
-          (createMutation.isError && createMutation.error instanceof Error
-            ? createMutation.error.message
+          (createMutation.isError
+            ? resolveMomentsErrorMessage(createMutation.error)
             : null)
         }
         createPending={createMutation.isPending}
@@ -888,16 +924,14 @@ export function FriendMomentsPage() {
         isLoading={momentsQuery.isLoading}
         // 首屏失败 + 未被拉黑 + 0 条时空态优先渲「重试读取」（feed Round 2 同款）。
         loadErrorMessage={
-          momentsQuery.isError && momentsQuery.error instanceof Error
-            ? momentsQuery.error.message
-            : null
+          momentsQuery.isError ? momentsLoadErrorMessage : null
         }
         onRetryLoad={() => {
           void momentsQuery.refetch();
         }}
         likeErrorMessage={
-          likeMutation.isError && likeMutation.error instanceof Error
-            ? likeMutation.error.message
+          likeMutation.isError
+            ? resolveMomentsErrorMessage(likeMutation.error)
             : null
         }
         likePendingMomentId={pendingLikeMomentId}

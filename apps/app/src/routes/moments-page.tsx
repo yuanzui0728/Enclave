@@ -1463,7 +1463,16 @@ export function MomentsPage() {
           // 让 EmptyState 切到「正在寻找未屏蔽的动态」/「朋友圈都被你屏蔽了 /
           // 打开通讯录」，跟 mobile 同模板，不再把"全被你拉黑了"误导成"还很安静"。
           hasFilteredOutMoments={hasFilteredOutMoments}
-          hasNextPage={momentsHasNextPage}
+          // 走查电脑端 R1：传 momentsHasNextPage 必须去掉 fetchNextPageError 态。
+          // 否则 auto-prefetch 中途某页失败 + 已加载全是被屏蔽角色时，
+          // desktop-moments-feed 的 EmptyState 会永远停在「正在寻找未屏蔽的动态」
+          // ——但其实 prefetch useEffect 在 isFetchNextPageError 时就已停摆，
+          // 用户永远等不到下一页（toolbar 的 errors[] 有红条提示，但中间大空态
+          // 仍误导成"还在加载"）。和 mobile 行 2415 同模板：
+          // `hasNextPage && !fetchNextPageError ? "正在寻找..." : "都被屏蔽了"`。
+          hasNextPage={
+            momentsHasNextPage && !momentsIsFetchNextPageError
+          }
           onOpenContacts={() => {
             void navigate({ to: "/tabs/contacts" });
           }}

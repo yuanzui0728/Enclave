@@ -810,7 +810,12 @@ export function ProfileMomentsPage() {
 
   if (isDesktopLayout) {
     const desktopErrors: string[] = [];
-    if (momentsQuery.isError) {
+    // 走查电脑端 R3：momentsQuery 失败 + 列表 0 条时，下方 renderFeedContent 走
+    // 「朋友圈暂时不可用 / 重试读取」EmptyState（loadErrorMessage 路径）；此处再
+    // push 到 desktopErrors[] ErrorBlock 就是同一段错误同屏两条红框。和
+    // moments-page.tsx 行 1371-1383 / friend-moments-page R3 同模板：仅在已经
+    // 有 ownMoments 可渲染时才推到 toolbar 错误条，否则让位给 EmptyState。
+    if (momentsQuery.isError && ownMoments.length > 0) {
       const localized = resolveMomentsErrorMessage(momentsQuery.error);
       if (localized) {
         desktopErrors.push(localized);
