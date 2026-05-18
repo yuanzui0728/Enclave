@@ -5,6 +5,7 @@ import type {
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { buildDesktopChatRouteHash } from "./chat-route-state";
+import { getConversationDisplayTitle } from "../../lib/conversation-preview";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
 
 const t = translateRuntimeMessage;
@@ -59,15 +60,24 @@ export function buildChatReminderEntries(
     .map((item) => {
       const conversation = conversationMap.get(item.threadId);
       const remindTimestamp = parseTimestamp(item.remindAt) ?? 0;
+      // R9：reminder 卡片 title 走 conversation?.title 或 item.threadTitle 当
+      // fallback。两边数据源最终来自服务端持久化的 ConversationEntity.title——
+      // direct 会话 fallback 全失败时被 normalizeLegacyConversationEntity 写入
+      // 字面量「未知联系人」/「Direct conversation」。桌面提醒卡片 / 移动 reminder
+      // entry / OS 通知 title 一路渲染 entry.title raw，en-US/ja-JP/ko-KR
+      // 用户在「待办」分组里看到中文 sentinel 字面量。和 ConversationCardLink /
+      // DirectChatDetailsPanel 同款翻一遍 sentinel。filterChatReminderEntries
+      // 的 entry.title.toLowerCase() 搜索匹配也跟着自动修好。
+      const resolvedTitle =
+        getConversationDisplayTitle(conversation?.title ?? "") ||
+        getConversationDisplayTitle(item.threadTitle?.trim() ?? "") ||
+        (item.threadType === "group" ? t(msg`群聊`) : t(msg`聊天`));
 
       return {
         messageId: item.messageId,
         threadId: item.threadId,
         threadType: item.threadType,
-        title:
-          conversation?.title ||
-          item.threadTitle?.trim() ||
-          (item.threadType === "group" ? t(msg`群聊`) : t(msg`聊天`)),
+        title: resolvedTitle,
         avatar: conversation?.avatar,
         previewText: item.previewText?.trim() || t(msg`聊天消息`),
         remindAt: item.remindAt,
