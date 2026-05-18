@@ -77,6 +77,7 @@ import {
   useConversationBackground,
   useGroupBackground,
 } from "../../chat/backgrounds/use-conversation-background";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatTimestamp } from "../../../lib/format";
@@ -304,7 +305,15 @@ function DirectChatDetailsPanel({
     [conversationsQuery.data, targetCharacterId],
   );
   const remarkName = friendship?.remarkName?.trim() ?? "";
-  const displayName = remarkName || targetCharacter?.name || conversation.title;
+  // R7：targetCharacter.name 缺失时 fallback 到 conversation.title——后者可能是
+  // 服务端持久化的 legacy sentinel「未知联系人」/「Direct conversation」。和
+  // ConversationCardLink / 独立窗口 header 同款，翻一遍 sentinel 保证非中文
+  // locale 用户在 details 头部 / 昵称行不看到 raw 字面量。
+  const conversationDisplayTitle = getConversationDisplayTitle(
+    conversation.title,
+  );
+  const displayName =
+    remarkName || targetCharacter?.name || conversationDisplayTitle;
   const signature =
     targetCharacter?.currentStatus?.trim() ||
     translateCharacterBio(t, targetCharacter?.bio) ||
@@ -316,7 +325,7 @@ function DirectChatDetailsPanel({
     : undefined;
   const relationshipSummary = isFriend
     ? remarkName
-      ? t(msg`昵称：${targetCharacter?.name || conversation.title}`)
+      ? t(msg`昵称：${targetCharacter?.name || conversationDisplayTitle}`)
       : targetCharacter?.relationship || t(msg`联系人`)
     : targetCharacter?.relationship || t(msg`世界角色`);
   const backgroundLabel = getChatBackgroundLabel(
@@ -766,7 +775,7 @@ function DirectChatDetailsPanel({
 
       <DesktopContactProfileHeader
         avatar={targetCharacter?.avatar}
-        name={targetCharacter?.name || conversation.title}
+        name={targetCharacter?.name || conversationDisplayTitle}
         displayName={displayName}
         subline={relationshipSummary}
         compact
@@ -804,7 +813,7 @@ function DirectChatDetailsPanel({
                 />
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name || conversation.title}
+                  value={targetCharacter?.name || conversationDisplayTitle}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`个性签名`)}
@@ -848,7 +857,7 @@ function DirectChatDetailsPanel({
               <>
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name || conversation.title}
+                  value={targetCharacter?.name || conversationDisplayTitle}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`身份`)}
