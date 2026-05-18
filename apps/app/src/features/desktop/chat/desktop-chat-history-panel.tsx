@@ -109,7 +109,7 @@ export function DesktopChatHistoryPanel({
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") {
+      if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
 
@@ -150,8 +150,18 @@ export function DesktopChatHistoryPanel({
       onClose();
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // 走查电脑端单聊新一轮 R5：本 panel 在 dialog 变体下嵌在 DesktopChatHistoryDialog
+    // 里。原版用默认 bubble phase 挂 window keydown，DesktopChatHistoryDialog 自
+    // 己的 Esc onClose handler 在父级先挂上（先于 panel 子组件 mount），同一阶段
+    // listener 按 attach 顺序触发 → dialog handler 先跑、检查 defaultPrevented=
+    // false → preventDefault + onClose 关掉整个查找记录弹层；panel handler 后
+    // 跑、setSelectorView(null) 等 state 落在正在 unmount 的组件上等于 no-op。
+    // 用户期望：先关选择器/筛选，再次按 Esc 才关弹层。改用 capture phase 让
+    // panel 在 dialog 之前先看到事件，preventDefault 后 dialog handler 命中
+    // defaultPrevented=true 早返不关；filter/selector 都用完再让 dialog 关。
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, true);
   }, [
     activeCategory,
     customDate,
