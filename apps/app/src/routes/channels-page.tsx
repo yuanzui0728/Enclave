@@ -551,7 +551,7 @@ export function ChannelsPage() {
         mutationBaseUrl: baseUrl,
       };
     },
-    onSuccess: (_, input, context) => {
+    onSuccess: (createdComment, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       // mid-flight 切账户：清 draft / reply target / notice 都不该跑到新账户。
       // 但 decorations / feed-comments invalidate 仍要落原账户（A），让用户回 A
@@ -618,11 +618,30 @@ export function ChannelsPage() {
       // 走查 2026-05-18 新会话 R1：invalidate 落 mutationBaseUrl 而非闭包 baseUrl ——
       // 切账户后 baseUrl 是 B，但这条评论是 A 的，标 B 的 cache stale 触发 B
       // 不必要的 refetch + A 的 cache 永远不刷新。
+      //
+      // 走查 2026-05-18 新会话 R2（本轮）：原来无脑 invalidate app-feed-comments
+      // 触发 listFeedComments 全量 refetch (server 拿 MAX_FEED_COMMENT_FETCH_LIMIT
+      // ~100 条 → 全部 serialize + reply-author-map + likedCommentIds → ~10-30KB
+      // JSON，公网隧道 RTT 200-500ms)，但 addFeedComment / replyFeedComment 本身
+      // 就返了 createdComment 对象。yuanzui0728 那条积了 142 条评论的 post 上发
+      // 评论：用户按发送 → toast "评论已发送" → commentCount +1 → drawer 列表却
+      // 卡 200-500ms 才显示新评论（refetch 完成那一刻才 append），体感「评论卡
+      // 住没渲」+「我刚发的去哪了」。直接 setQueryData 把 createdComment 推到
+      // 缓存末尾（server 按 createdAt ASC，新评论必为最新一条），drawer 那条
+      // auto-scroll-on-growth effect 立刻把视口落到底部显示新评论 —— 0 RTT 完成
+      // 「发送 → 看到」闭环。同款思路下 decorations 仍走 invalidate（commentsPreview
+      // 那里要重算 top-3 + replyAuthorNameMap，不便就地手算）。
+      queryClient.setQueryData<FeedComment[]>(
+        ["app-feed-comments", mutationBaseUrl, input.postId],
+        (current) => {
+          if (!current) return current;
+          // 防重：万一 server 返回同 id 的评论（极罕见的 retry / race），先去掉再 push。
+          const dedup = current.filter((c) => c.id !== createdComment.id);
+          return [...dedup, createdComment];
+        },
+      );
       void queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
     // 走查 R7: 失败兜底。原来没 onError，错误只通过 mobileCommentSheetErrorMessage
