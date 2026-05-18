@@ -2425,10 +2425,6 @@ export function ChannelsPage() {
           sections={channelSections}
           successNotice={notice}
           successNoticeTone={noticeTone}
-          isPostFavorite={(postId) =>
-            desktopWorkspacePosts.find((post) => post.id === postId)
-              ?.ownerState?.hasFavorited ?? false
-          }
           onCommentChange={updateCommentDraft}
           onCommentSubmit={(postId) =>
             submitComment(postId, { replyTarget: desktopReplyTarget })
