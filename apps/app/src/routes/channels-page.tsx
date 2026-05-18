@@ -2467,6 +2467,23 @@ export function ChannelsPage() {
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
+            // 走查 2026-05-18 新会话 R1：InlineNotice 包的是裸 <div>，没有任何
+            // role / aria-live。视频号 home 里 like / 收藏 / 关注 / 减少推荐 /
+            // 转发 mutation onSuccess 走 setNotice 在这个位置冒一行 toast，
+            // 视觉用户能立刻看到，但 SR 用户没有任何反馈 —— CDP 实测点完赞
+            // 整页 aria-live region 数 = 0，VoiceOver / TalkBack 不会自动播报
+            // "已点赞这条视频号" / "已转发给 X" / "减少推荐失败：xxx"，体感
+            // "我按了按钮但什么都没发生"。
+            // tone===danger / warning（视频号转发失败 / 评论提交失败这类阻塞
+            // 错误）走 role="alert" → aria-live=assertive 立刻打断当前播报；
+            // info / success / muted 走 role="status" → aria-live=polite
+            // 排队播报，不打断用户当前阅读流。InlineNotice 是裸 props spread
+            // 到 div，直接挂 role 走标准 ARIA 路径，不需要改基础组件。
+            role={
+              noticeTone === "danger" || noticeTone === "warning"
+                ? "alert"
+                : "status"
+            }
           >
             {noticeTone === "info" &&
             (Boolean(noticeAction && noticeActionLabel) ||
@@ -5014,6 +5031,12 @@ function MobileChannelCommentsSheet({
           {errorMessage ? (
             <InlineNotice
               tone="warning"
+              // 走查 2026-05-18 新会话 R1：sheet 内的错误条 —— "评论提交失败"
+              // / "网络错误，请重试" 这类是用户主动操作后的阻塞错误，挂
+              // role="alert" 让 SR aria-live=assertive 立刻打断当前播报。
+              // 上面 page-level notice 走 role="status" polite，二者错位
+              // 不冲突。
+              role="alert"
               className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
             >
               <div className="flex items-center justify-between gap-2">
