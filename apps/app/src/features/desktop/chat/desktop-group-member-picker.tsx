@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
@@ -33,6 +33,7 @@ export function DesktopGroupMemberPicker({
   const t = translateRuntimeMessage;
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -145,7 +146,18 @@ export function DesktopGroupMemberPicker({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 confirm/text-edit/forward/create-group/note-send 一批
+    // dialog 同款 portal-shield 缺漏。该 picker 从「聊天信息」侧栏「+ 添加成员」
+    // 打开，workspace 在 rightPanelMode=details 时挂的 onPointerDownCapture
+    // 兜底在「点击不落在 thread/header/sidePanel/shield 子树」时 dismissSidePanel
+    // —— picker inline 渲染在 workspace 根 div 下，无 shield → 用户在 dialog
+    // 内点搜索框 / 联系人行 / 取消 / X / 背板 时 pointerdown capture 先把
+    // 背后的「聊天信息」侧栏偷关，操作完回不到侧栏继续。Esc 路径 R4 时已
+    // stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-picker"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭添加群成员弹层`)}
@@ -157,10 +169,23 @@ export function DesktopGroupMemberPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative flex max-h-[85vh] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 confirm/text-edit/forward/create-group/note-send 一批
+          a11y 修过的 dialog 同款缺漏——modal 但 panel 既没挂 role="dialog"
+          + aria-modal 也没挂 aria-labelledby。盲人屏幕阅读器只听到「关闭添加
+          群成员弹层 按钮」+ 搜索框 + 联系人行，听不到「添加群成员」title。
+          补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[85vh] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`添加群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">

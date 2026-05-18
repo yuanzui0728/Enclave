@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -31,6 +31,7 @@ export function DesktopGroupMemberRemovalPicker({
   onConfirm,
 }: DesktopGroupMemberRemovalPickerProps) {
   const t = translateRuntimeMessage;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -116,7 +117,16 @@ export function DesktopGroupMemberRemovalPicker({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 picker / browser / confirm / text-edit / forward 一批
+    // dialog 同款 portal-shield 缺漏。从「聊天信息」→「成员浏览」→「移除」
+    // 打开，inline 渲染在 workspace 根 div 下，无 shield → workspace
+    // onPointerDownCapture 在 rightPanelMode=details 时点 dialog 内任意非
+    // sidePanel/header/thread 节点都会 dismissSidePanel；操作完回不到详情侧栏。
+    // Esc 路径 R4 已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-removal-picker"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭移除群成员弹层`)}
@@ -128,10 +138,22 @@ export function DesktopGroupMemberRemovalPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 picker / browser / confirm / text-edit / forward 一批
+          a11y 修过的 dialog 同款缺漏——modal 但 panel 既没挂 role="dialog" +
+          aria-modal 也没挂 aria-labelledby。盲人屏幕阅读器只听到「关闭移除群
+          成员弹层 按钮」+ 搜索框 + 成员行，听不到「移除群成员」title。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`移除群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">

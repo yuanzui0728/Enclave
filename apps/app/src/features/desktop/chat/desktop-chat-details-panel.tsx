@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -2089,6 +2090,7 @@ function DesktopGroupMemberBrowserDialog({
   ) => void;
 }) {
   const t = translateRuntimeMessage;
+  const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -2316,7 +2318,16 @@ function DesktopGroupMemberBrowserDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查 R1：和姊妹 picker / removal-picker / confirm / text-edit / forward
+    // 一批 dialog 同款 portal-shield 缺漏。「聊天信息」→「群成员 N 人」打开
+    // 这个浏览 dialog，inline 渲染在 workspace 根 div 下，无 shield → workspace
+    // onPointerDownCapture 在 rightPanelMode=details 时点 dialog 内任意非
+    // sidePanel/header/thread 节点都会偷关侧栏；用户点 X / 关闭 / 选择成员
+    // 后回不到原详情侧栏。Esc 路径 R1 已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-group-member-browser-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭群成员列表`)}
@@ -2328,10 +2339,22 @@ function DesktopGroupMemberBrowserDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R1：和姊妹 a11y 修过的 dialog 系列同款缺漏——modal 但 panel 既
+          没挂 role="dialog" + aria-modal 也没挂 aria-labelledby。盲人屏幕阅读
+          器只听到「关闭群成员列表 按钮」+ 搜索框 + 成员行，听不到「群成员」
+          title。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div>
-            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[16px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
