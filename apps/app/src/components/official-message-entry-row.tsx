@@ -43,6 +43,15 @@ export function OfficialMessageEntryRow({
       type="button"
       onClick={onClick}
       onContextMenu={onContextMenu}
+      // R24：和姊妹 R22 ConversationCardLink (desktop-chat-workspace 3122) 同款
+      // 缺漏 —— OfficialAccountsEntryCard / SubscriptionInboxCard /
+      // OfficialServiceConversationCard 三张入口卡全都走本 row 渲染，桌面端
+      // workspace 用 active 表达"当前正在右侧显示"，但只有视觉绿边框 +
+      // 白底，盲人屏幕阅读器 Tab 走到「公众号 / 订阅号消息 / 某服务号」按钮
+      // 上只能听到 title + preview + 未读数，听不出哪一行是当前页。补
+      // aria-current="page"，和会话卡片对齐。本组件 mobile 走默认 active=false
+      // 渲染 undefined 无副作用。
+      aria-current={active ? "page" : undefined}
       className={cn(
         isDesktop
           ? active
