@@ -840,6 +840,17 @@ export function ChannelsPage() {
         queryClient.cancelQueries({
           queryKey: ["app-channel-author", baseUrl, input.authorId],
         }),
+        // 走查 2026-05-18 新会话 R5（本轮）：跟 R2/R3/R4 同款 —— follow 也要
+        // 把 desktop 深链 post 的 app-feed-post cache 翻 isFollowingAuthor。
+        // 不然用户在 deep-link post 的 slide 上点「+关注」：home 没那条 post，
+        // 翻不动，slide 上「+关注」按钮永远停在原状态。
+        // 注意 follow 是 per-author 的，但 app-feed-post cache 是 per-post 的，
+        // 同一作者下没在 home 缓存的所有 deep-link post 都得翻。不过实际同时
+        // 缓存的 deep-link post 通常只有 1 条（用户当前查看的那条），扫一遍
+        // ["app-feed-post", baseUrl] 命名空间下所有 cache 找匹配 authorId 即可。
+        queryClient.cancelQueries({
+          queryKey: ["app-feed-post", baseUrl],
+        }),
       ]);
       // 同 likeMutation：per-author 记录失败前的所有相关 post，回滚也只动这些。
       const previousEntries: Array<{
@@ -916,7 +927,42 @@ export function ChannelsPage() {
           },
         );
       }
-      return { previousEntries, previousProfile, mutationBaseUrl: baseUrl };
+      // R5 续：扫 app-feed-post 命名空间下所有缓存的 post（通常只有当前 deep-
+      // link 那 1 条），匹配作者的把 isFollowingAuthor 翻。
+      const routePostSnapshots = queryClient.getQueriesData<FeedPostWithComments>({
+        queryKey: ["app-feed-post", baseUrl],
+      });
+      const previousRoutePosts: Array<{
+        key: readonly unknown[];
+        previousRoutePost: FeedPostWithComments;
+      }> = [];
+      routePostSnapshots.forEach(([key, data]) => {
+        if (!data || data.authorId !== input.authorId) return;
+        previousRoutePosts.push({ key, previousRoutePost: data });
+        queryClient.setQueryData<FeedPostWithComments>(key, {
+          ...data,
+          ownerState: {
+            ...(data.ownerState ?? {
+              hasLiked: false,
+              hasFavorited: false,
+              isFollowingAuthor: false,
+              isNotInterested: false,
+              hasViewed: false,
+              hasShared: false,
+              lastViewedAt: null,
+              watchProgressSeconds: null,
+              completed: false,
+            }),
+            isFollowingAuthor: !input.following,
+          },
+        });
+      });
+      return {
+        previousEntries,
+        previousProfile,
+        previousRoutePosts,
+        mutationBaseUrl: baseUrl,
+      };
     },
     onError: (error, input, context) => {
       context?.previousEntries.forEach(({ key, previousPosts }) => {
@@ -955,6 +1001,32 @@ export function ChannelsPage() {
           );
         }
       }
+      // R5 续：route post cache 同步回滚 isFollowingAuthor。同 likeMutation 的
+      // per-post 回滚思路：取当前 cache 做底再还原被改的字段，不硬覆盖整个对
+      // 象 —— 飞行期间用户可能已经在那条 deep-link post 上 like/favorite，
+      // 整对象回滚会把这些一起冲掉。
+      context?.previousRoutePosts?.forEach(({ key, previousRoutePost }) => {
+        const current = queryClient.getQueryData<FeedPostWithComments>(key);
+        if (!current) return;
+        queryClient.setQueryData<FeedPostWithComments>(key, {
+          ...current,
+          ownerState: {
+            ...(current.ownerState ?? {
+              hasLiked: false,
+              hasFavorited: false,
+              isFollowingAuthor: false,
+              isNotInterested: false,
+              hasViewed: false,
+              hasShared: false,
+              lastViewedAt: null,
+              watchProgressSeconds: null,
+              completed: false,
+            }),
+            isFollowingAuthor:
+              previousRoutePost.ownerState?.isFollowingAuthor ?? false,
+          },
+        });
+      });
       // mid-flight 切账户：失败 toast 不冒到新账户。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
