@@ -263,22 +263,35 @@ export function GroupChatThreadPanel({
   // 按 messageId 上锁，不同 failed 消息互不影响。
   const retryingMessageIdsRef = useRef<Set<string>>(new Set());
 
+  // 走查新会话桌面端群聊 R5：这 4 条共享 cache 全裸跑默认 staleTime（desktop
+  // 10s / mobile-web 60s）。桌面端用户在同一段时间里频繁切群聊（聊天列表点
+  // 不同群、左侧群通讯录跳转、右键打开独立窗口），thread panel 每次 remount
+  // 都会 refetch 这 4 条——即便 desktop-chat-workspace 的 conversations / 旁边
+  // chat-details-panel 的 app-group / app-group-members / app-friends 在
+  // 几百 ms 前刚拉过（那几处都已经按 15s 对齐）。本面板裸跑 10s 比兄弟观察者
+  // 的 15s 短，cache 数据明明还新鲜本观察者却判定过期 → 触发额外 4 路 fetch
+  // 公网隧道 ~600ms RTT 累计 ~2.4s 的"切群空白"。统一到 15s，messagesQuery
+  // 因为正确性已经强制 refetchOnMount: "always"，不受影响。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
 
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    staleTime: 15_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
 
   const messagesQuery = useQuery({
