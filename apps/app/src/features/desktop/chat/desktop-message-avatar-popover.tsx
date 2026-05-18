@@ -365,9 +365,21 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     subtitle,
   ]);
 
+  // R12：和 R11 一票 dialog 同款 perf 修法。chat-message-list 父帧每次
+  // typing tick / socket / message cache 变化都重渲，inline arrow
+  // `onClose={() => setDesktopAvatarPopover(null)}` 引用换 → 本 effect 在
+  // anchorElement 不变的情况下也跟着拆装 4 个 listener（document pointerdown
+  // / document keydown / window resize / window scroll）一次。activeConversation
+  // 在长聊里 typing 触发频率几秒一次，这条 listener thrash 是肉眼可见的卡顿。
+  // ref 镜像 onClose，deps 收紧到 [anchorElement]。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!anchorElement) {
-      onClose();
+      onCloseRef.current();
       return;
     }
 
@@ -380,7 +392,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         return;
       }
 
-      onClose();
+      onCloseRef.current();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
@@ -391,11 +403,11 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       // 聊天信息/查找记录侧栏也关掉。
       event.preventDefault();
       event.stopPropagation();
-      onClose();
+      onCloseRef.current();
     };
     const handleViewportChange = () => {
       if (!document.body.contains(anchorElement)) {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -417,7 +429,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);
     };
-  }, [anchorElement, onClose]);
+  }, [anchorElement]);
 
   if (!anchorElement || typeof document === "undefined") {
     return null;

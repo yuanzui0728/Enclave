@@ -7769,6 +7769,17 @@ function LocationViewerOverlay({
   const isDesktop = variant === "desktop";
   const nativeMobileShareSupported = !isDesktop && isNativeMobileShareSurface();
 
+  // R12：和 R11 dialog onClose / desktop-message-avatar-popover R12 同款 perf
+  // 修法。chat-message-list 父帧每次 typing tick / socket / message cache 变化
+  // 都重渲，inline arrow `onClose={() => setLocationViewer(null)}` 引用换 →
+  // 两个 effect 在 mount 期间反复拆装 Android back interceptor + window keydown
+  // 一次。位置查看器在长聊里展示期间可能跨几十秒，足够踩多轮 typing tick。
+  // ref 镜像 onClose，effect deps 收紧。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // 原生壳硬件 Back：位置查看器打开时 BACK 关查看器，不退聊天页。
   useEffect(() => {
     if (isDesktop) {
@@ -7776,11 +7787,11 @@ function LocationViewerOverlay({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [isDesktop, onClose]);
+  }, [isDesktop]);
 
   // 桌面键盘 Esc：位置查看器是 fixed inset-0 全屏模态，desktop 用户
   // 不该只能点 ✕ 或 backdrop 关。和 image viewer 父级的 Esc 处理对齐。
@@ -7790,12 +7801,12 @@ function LocationViewerOverlay({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
@@ -7916,6 +7927,15 @@ function NoteViewerOverlay({
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
+  // R12：和 LocationViewerOverlay R12 同款 perf 修法 —— inline arrow onClose
+  // 让 effect 在父帧重渲染（typing tick / socket / message cache）时拆装
+  // Android back interceptor + window keydown。actionMenuOpen 是真正会改变
+  // 拦截器行为的 state，保留在 deps；onClose 改 ref 镜像。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // 原生壳硬件 Back：笔记卡片查看器打开时 BACK 优先关 action 子菜单 → 再
   // 关查看器，最后再退聊天页。
   useEffect(() => {
@@ -7926,11 +7946,11 @@ function NoteViewerOverlay({
         return true;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [actionMenuOpen, onClose]);
+  }, [actionMenuOpen]);
 
   // 桌面键盘 Esc：笔记查看器同样是 fixed inset-0 全屏模态，Esc 先关
   // action 子菜单，再关查看器。和原生壳 Back 拦截器的 fallback 顺序对齐。
@@ -7944,12 +7964,12 @@ function NoteViewerOverlay({
         setActionMenuOpen(false);
         return;
       }
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [actionMenuOpen, onClose]);
+  }, [actionMenuOpen]);
   // 走查 R2：上方 NoteCardAttachment（消息气泡里的笔记缩略卡）已经把
   // 同 queryKey 的 noteQuery 设了 staleTime: 30_000；这条「全屏查看器」
   // 没设 → 用户在聊天里点缩略卡打开查看器时，react-query 看到 observer

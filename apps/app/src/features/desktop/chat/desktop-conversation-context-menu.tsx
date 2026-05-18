@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import {
   BellOff,
@@ -98,6 +98,16 @@ export function DesktopConversationContextMenu({
   // 用户体感差异最大。defaultPrevented 时让位；stopPropagation 避免冒泡触发
   // 外层 workspace dismissSidePanel 把背后的「聊天信息」侧栏一并关掉（菜单
   // 容器有 portal-shield 但 window keydown 走的是全局监听，不经过子树）。
+  //
+  // R12：和 R11 dialog onClose / desktop-message-avatar-popover R12 同款
+  // perf 修法。workspace 用 inline arrow `onClose={() => setConversationContextMenu
+  // (null)}` 传进来，菜单展开期间 workspace 60s 轮询 / typing tick / socket
+  // 推消息每次都换 onClose ref → 拆装 window keydown 一次。ref 镜像 onClose，
+  // effect 改成挂载时挂一次。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) {
@@ -105,11 +115,11 @@ export function DesktopConversationContextMenu({
       }
       event.preventDefault();
       event.stopPropagation();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   return (
     // 走查新一轮 R10：DesktopChatWorkspace 的 onPointerDownCapture（line 589）
