@@ -94,8 +94,19 @@ export function DesktopConversationContextMenu({
   );
 
   return (
+    // 走查新一轮 R10：DesktopChatWorkspace 的 onPointerDownCapture（line 589）
+    // 和 document pointerdown(capture) 兜底（line 987）会在「点击不落在
+    // sidePanelRef / desktopHeaderActionsRef / threadSectionRef / 任意带
+    // data-yj-portal-shield 的子树」时 dismissSidePanel。本 context menu
+    // inline 渲染在 workspace 根 div 子树里、不在 threadSectionRef，也没有
+    // shield —— 用户开着「聊天信息」侧栏、右键另一段会话弹出菜单后点任意一项
+    // （置顶 / 免打扰 / 标已读 / 在独立窗口打开 等），pointerdown capture
+    // 阶段先跑 → dismissSidePanel() → 用户当前会话的详情侧栏被偷偷关掉，
+    // 然后才轮到 button click 真正执行操作。和 avatar popover R1 同款修法
+    // （popover 走 portal 也是用 data-yj-portal-shield 解决的）。
     <div
       className="fixed inset-0 z-50"
+      data-yj-portal-shield="conversation-context-menu"
       onContextMenu={(event) => event.preventDefault()}
     >
       <button

@@ -52,8 +52,15 @@ export function DesktopOfficialMessageContextMenu({
   );
 
   return (
+    // 走查新一轮 R10：同 DesktopConversationContextMenu —— workspace 的
+    // pointerdown capture 兜底会在「点击落在非 thread / 非 side panel /
+    // 非 header / 非 shield 区域」时 dismissSidePanel。本 menu inline
+    // 渲染但不在那些保护区里，开着「聊天信息」侧栏时右键订阅号 / 服务号
+    // 弹菜单后点任意一项（打开订阅号消息 / 标记已读 / 消息免打扰 等），
+    // 都会先把背后侧栏关掉。补 data-yj-portal-shield。
     <div
       className="fixed inset-0 z-50"
+      data-yj-portal-shield="official-message-context-menu"
       onContextMenu={(event) => event.preventDefault()}
     >
       <button
