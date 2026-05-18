@@ -2766,11 +2766,21 @@ function DesktopGroupMemberBrowserDialog({
               </label>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
+                {/* 走查 R29：和姊妹 R26 转发模式 / R27 日期 / R28 发言人 chip 同款——
+                    群成员浏览 dialog 顶部的 filter tabs（全部 / 群主 / 管理员 /
+                    角色）是 mutually exclusive，原版只用绿底 + 绿边视觉差。盲人
+                    SR 走过去听到 4-5 段裸 button label + count 听不出选了哪个。 */}
+                <div
+                  role="radiogroup"
+                  aria-label={t(msg`成员筛选`)}
+                  className="flex flex-wrap gap-2"
+                >
                   {filterTabs.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
+                      role="radio"
+                      aria-checked={activeFilter === tab.id}
                       onClick={() => setActiveFilter(tab.id)}
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs transition",
