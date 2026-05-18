@@ -1,4 +1,4 @@
-import { useEffect, useId, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
@@ -32,6 +32,28 @@ export function MobileDetailsActionSheet({
   const t = translateRuntimeMessage;
   const titleId = useId();
   const descriptionId = useId();
+  // 走查新会话 R2：和姊妹 mobile-message-action-sheet.tsx（commit 30f58a286 R2）
+  // 同款修法——sheet 上每条 action 按钮在父组件那边都靠 `setXxxOpen(false)` 关
+  // sheet，但 React state 要等 commit 才能让 sheet 卸载——同帧 <16ms 第二次
+  // click 时 sheet 还在 DOM 里，第二次 onClick 照样跑。
+  // 群聊「群管理」sheet 4 个 action（添加成员 / 移除成员 / 编辑群公告 / 查看群
+  // 二维码）都是 `setOpen(false); void navigate({...})` 形态，同帧双击会推 2
+  // 条相同 history 项，用户点返回要按 2 次才能退出。danger sheet 的 confirm
+  // 按钮虽然父级有 dangerActionBusyRef 兜底，但加这层 internal guard 是冗余
+  // 防线（不冲突）。统一在 sheet 内部任何 action 点过就 guard 住所有后续 action。
+  const actionFiredRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      actionFiredRef.current = false;
+    }
+  }, [open]);
+  const guardAction = useCallback((handler: () => void) => {
+    return () => {
+      if (actionFiredRef.current) return;
+      actionFiredRef.current = true;
+      handler();
+    };
+  }, []);
 
   // 原生壳硬件 Back 键：sheet 打开时先关 sheet，不让 BACK 同时 history.back
   // 把用户从 chat-details / group-chat-details / group-member-picker 带回上
@@ -113,7 +135,7 @@ export function MobileDetailsActionSheet({
             <button
               key={action.key}
               type="button"
-              onClick={action.onClick}
+              onClick={guardAction(action.onClick)}
               disabled={action.disabled}
               className={`flex min-h-[48px] w-full flex-col items-center justify-center px-5 py-2 text-center transition active:bg-[color:var(--surface-card-hover)] ${
                 index > 0 ? "border-t border-[color:var(--border-subtle)]" : ""
