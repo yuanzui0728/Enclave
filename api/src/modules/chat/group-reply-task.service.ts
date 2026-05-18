@@ -191,6 +191,17 @@ export class GroupReplyTaskService {
     );
   }
 
+  // 走查第三批 R1：群解散时一并清空全部 reply task（含已完成/失败/取消的归档行）。
+  // cancelPendingTasksForGroup 只对 status='pending' 做软取消，groupId 被解散
+  // 后那批 pending 也会因为缺源消息而 noop，但 cancelled/completed/failed 历史
+  // 行仍带 groupId — 已经 dangling，留着没用。先 cancel 在飞的 artifact slot，
+  // 然后 delete 整组。
+  async deleteAllForGroup(groupId: string, reason: string) {
+    await this.cancelPendingTasksForGroup(groupId, reason);
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, reason);
+    await this.taskRepo.delete({ groupId });
+  }
+
   async retryTask(taskId: string) {
     const task = await this.taskRepo.findOneBy({ id: taskId });
     if (!task) {

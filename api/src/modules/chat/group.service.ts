@@ -816,6 +816,20 @@ export class GroupService {
       participants: membersBeforeDelete.map((member) => member.memberId),
     });
 
+    // 走查第三批 R1：原版只删 members/messages/groups 三张表，遗漏
+    // group_reply_tasks。dataset 验证：解散群后 reply_tasks 表里仍残留
+    // 该群历史 70+ 条任务，groupId 已 dangling，worker 走 conversationHistory
+    // 时拉不到 messages/members，行为不定（abort / 抛错日志 / 不释放
+    // replyArtifactJobs slot）。先把 pending 任务 cancel（reason 走
+    // group_disbanded 让 worker / artifact job 各自走清理路径），再 delete
+    // 整张表的 dangling 行；TypeORM repo.delete 是单 statement，sqlite
+    // 没分布式事务概念，前后顺序按 reply_tasks → members → messages →
+    // group 依次清空保证就算中间步骤抛也只留下游脏数据可以被下一次走查
+    // 再清。
+    await this.groupReplyTaskService.deleteAllForGroup(
+      group.id,
+      'group_disbanded',
+    );
     await this.memberRepo.delete({ groupId: group.id });
     await this.messageRepo.delete({ groupId: group.id });
     await this.groupRepo.delete({ id: group.id });
