@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-wang-cuifang" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fef3c7" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+    <radialGradient id="glow-wang-cuifang" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(772 212) rotate(126) scale(520)">
+      <stop stop-color="rgba(255, 240, 200, 0.5)" />
+      <stop offset="1" stop-color="rgba(255, 240, 200, 0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-wang-cuifang)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-wang-cuifang)" />
+  <circle cx="780" cy="220" r="170" fill="rgba(255, 255, 255, 0.10)" />
+  <circle cx="240" cy="820" r="150" fill="rgba(146, 64, 14, 0.10)" />
+  <!-- 豆浆碗 main bowl -->
+  <ellipse cx="512" cy="640" rx="280" ry="48" fill="rgba(255,255,255,0.30)" />
+  <path d="M232 640 Q 232 820 410 870 Q 512 890 614 870 Q 792 820 792 640 Z" fill="#ffffff" stroke="#92400e" stroke-width="14" />
+  <ellipse cx="512" cy="640" rx="260" ry="36" fill="#fef3c7" />
+  <!-- 蒸汽 steam -->
+  <path d="M420 540 Q 410 470 440 410 Q 470 350 440 280" stroke="rgba(255,255,255,0.85)" stroke-width="22" stroke-linecap="round" fill="none" />
+  <path d="M512 540 Q 502 460 532 400 Q 562 340 522 270" stroke="rgba(255,255,255,0.85)" stroke-width="22" stroke-linecap="round" fill="none" />
+  <path d="M604 540 Q 594 470 624 410 Q 654 350 624 280" stroke="rgba(255,255,255,0.85)" stroke-width="22" stroke-linecap="round" fill="none" />
+  <!-- 心形小点 small heart on bowl -->
+  <path d="M510 700 C 490 686 470 696 480 720 C 488 738 510 750 510 750 C 510 750 532 738 540 720 C 550 696 530 686 510 700 Z" fill="#f97316" />
+</svg>

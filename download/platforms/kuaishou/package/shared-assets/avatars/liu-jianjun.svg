@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-liu-jianjun" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f2937" />
+      <stop offset="1" stop-color="#facc15" />
+    </linearGradient>
+    <radialGradient id="glow-liu-jianjun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(252 808) rotate(-50) scale(500)">
+      <stop stop-color="rgba(250, 204, 21, 0.4)" />
+      <stop offset="1" stop-color="rgba(250, 204, 21, 0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-liu-jianjun)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-liu-jianjun)" />
+  <circle cx="800" cy="220" r="160" fill="rgba(255, 255, 255, 0.06)" />
+  <circle cx="220" cy="800" r="180" fill="rgba(250, 204, 21, 0.10)" />
+  <!-- 安全帽 safety helmet -->
+  <path d="M280 580 C 280 380 380 270 512 270 C 644 270 744 380 744 580 Z" fill="#facc15" stroke="#1f2937" stroke-width="16" />
+  <rect x="260" y="580" width="504" height="56" rx="20" fill="#facc15" stroke="#1f2937" stroke-width="16" />
+  <!-- 帽顶横线 top stripes -->
+  <path d="M512 270 L 512 580" stroke="#1f2937" stroke-width="10" />
+  <path d="M396 290 L 396 580" stroke="rgba(31,41,55,0.4)" stroke-width="6" />
+  <path d="M628 290 L 628 580" stroke="rgba(31,41,55,0.4)" stroke-width="6" />
+  <!-- 厂徽 logo dot -->
+  <circle cx="512" cy="430" r="46" fill="#f97316" stroke="#1f2937" stroke-width="10" />
+  <text x="512" y="448" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="#ffffff">L</text>
+  <!-- 帽檐反光 highlight -->
+  <ellipse cx="430" cy="608" rx="60" ry="6" fill="rgba(255,255,255,0.55)" />
+</svg>

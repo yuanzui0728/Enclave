@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  1v1 聊天页 mockup
+  尺寸：1080×1920
+  用途：D3 / D6 / D7 都用到 1v1 聊天页
+  显示样例：D6 镜头 4 - 老周对话 + 一条灰色未读语音条
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <rect width="1080" height="1920" fill="#fef7ed" />
+
+  <!-- 状态栏 -->
+  <rect x="0" y="0" width="1080" height="84" fill="#ffffff" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">18:36</text>
+
+  <!-- 顶部导航栏 -->
+  <rect x="0" y="84" width="1080" height="140" fill="#ffffff" />
+  <line x1="0" y1="224" x2="1080" y2="224" stroke="#f1f1f1" stroke-width="2" />
+  <path d="M58 154 L 28 178 L 58 202" stroke="#1a0f05" stroke-width="6" stroke-linecap="round" fill="none" />
+  <text x="540" y="172" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="38" font-weight="600" fill="#1a0f05">老周</text>
+  <text x="540" y="208" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">在线 · 苏北方言</text>
+  <!-- 在线小绿点 -->
+  <circle cx="430" cy="166" r="8" fill="#10b981" />
+
+  <!-- 时间分隔条 -->
+  <rect x="420" y="280" width="240" height="40" rx="20" fill="rgba(122,100,84,0.12)" />
+  <text x="540" y="310" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">今天 18:34</text>
+
+  <!-- 老周历史消息（左侧）-->
+  <circle cx="76" cy="400" r="46" fill="url(#avatar-laozhou-1v1)" />
+  <defs>
+    <linearGradient id="avatar-laozhou-1v1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e293b" />
+      <stop offset="1" stop-color="#92400e" />
+    </linearGradient>
+  </defs>
+  <rect x="148" y="364" width="640" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="416" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">你那昆山下雨没？</text>
+
+  <rect x="148" y="468" width="780" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="520" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">这边淋得稀里哗啦的。</text>
+
+  <!-- 用户回复（右侧 - 橙色气泡）-->
+  <rect x="380" y="600" width="616" height="84" rx="20" fill="#f97316" />
+  <text x="956" y="652" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="32" fill="#ffffff">没事我蹲阳台抽根烟。</text>
+  <circle cx="1004" cy="630" r="46" fill="#1a0f05" />
+  <text x="1004" y="642" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="36" font-weight="600" fill="#ffffff">磊</text>
+
+  <!-- 老周回复 -->
+  <circle cx="76" cy="730" r="46" fill="url(#avatar-laozhou-1v1)" />
+  <rect x="148" y="694" width="500" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="746" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">抽就抽，别想太多。</text>
+
+  <!-- ⭐ D6 镜头 4 核心：当天 18:34 老周发的语音条 -->
+  <circle cx="76" cy="900" r="46" fill="url(#avatar-laozhou-1v1)" />
+  <rect x="148" y="864" width="480" height="120" rx="20" fill="#fef7ed" stroke="#f97316" stroke-width="3" />
+  <!-- 红点（未读标志）-->
+  <circle cx="640" cy="884" r="14" fill="#e63946" />
+  <!-- 语音波形图标 -->
+  <path d="M180 924 L 180 924 M 180 924 Q 180 896 196 896 Q 212 896 212 924 Q 212 952 196 952 Q 180 952 180 924 Z" fill="#f97316" />
+  <rect x="220" y="912" width="6" height="24" rx="3" fill="#f97316" />
+  <rect x="234" y="906" width="6" height="36" rx="3" fill="#f97316" />
+  <rect x="248" y="912" width="6" height="24" rx="3" fill="#f97316" />
+  <rect x="262" y="918" width="6" height="12" rx="3" fill="#f97316" />
+  <rect x="276" y="906" width="6" height="36" rx="3" fill="#f97316" />
+  <rect x="290" y="912" width="6" height="24" rx="3" fill="#f97316" />
+  <rect x="304" y="906" width="6" height="36" rx="3" fill="#f97316" />
+  <rect x="318" y="918" width="6" height="12" rx="3" fill="#f97316" />
+  <text x="540" y="936" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">12"</text>
+
+  <!-- "未读"标签 -->
+  <text x="148" y="1024" font-family="PingFang SC, sans-serif" font-size="24" fill="#e63946">● 1 条未读语音</text>
+
+  <!-- 输入栏 -->
+  <rect x="0" y="1780" width="1080" height="140" fill="#ffffff" />
+  <line x1="0" y1="1780" x2="1080" y2="1780" stroke="#f1f1f1" stroke-width="2" />
+  <!-- 语音/键盘切换 -->
+  <circle cx="80" cy="1850" r="32" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="80" y="1862" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">🎤</text>
+  <rect x="140" y="1820" width="780" height="80" rx="40" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="1872" font-family="PingFang SC, sans-serif" font-size="30" fill="#bfae9e">说点什么...</text>
+  <circle cx="980" cy="1850" r="32" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="980" y="1862" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">+</text>
+</svg>

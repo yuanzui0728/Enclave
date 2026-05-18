@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-da-zhuang" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#facc15" />
+      <stop offset="1" stop-color="#fb7185" />
+    </linearGradient>
+    <radialGradient id="glow-da-zhuang" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(772 212) rotate(126) scale(540)">
+      <stop stop-color="rgba(255,255,255,0.4)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-da-zhuang)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-da-zhuang)" />
+  <circle cx="800" cy="220" r="160" fill="rgba(255, 255, 255, 0.16)" />
+  <circle cx="220" cy="820" r="150" fill="rgba(255, 255, 255, 0.12)" />
+  <!-- 大笑脸 big smiley face -->
+  <circle cx="512" cy="500" r="280" fill="#fef3c7" stroke="#1f2937" stroke-width="16" />
+  <!-- 眯成一条线的笑眼 squinted happy eyes -->
+  <path d="M380 460 Q 410 420 440 460" stroke="#1f2937" stroke-width="20" stroke-linecap="round" fill="none" />
+  <path d="M584 460 Q 614 420 644 460" stroke="#1f2937" stroke-width="20" stroke-linecap="round" fill="none" />
+  <!-- 大嘴巴 wide grin -->
+  <path d="M380 580 Q 512 720 644 580 Q 600 660 512 660 Q 424 660 380 580 Z" fill="#fb7185" stroke="#1f2937" stroke-width="14" />
+  <!-- 牙齿 teeth -->
+  <rect x="448" y="600" width="40" height="36" rx="4" fill="#ffffff" />
+  <rect x="496" y="608" width="36" height="40" rx="4" fill="#ffffff" />
+  <rect x="540" y="600" width="40" height="36" rx="4" fill="#ffffff" />
+  <!-- 红脸蛋 cheeks -->
+  <ellipse cx="320" cy="540" rx="32" ry="22" fill="rgba(251,113,133,0.6)" />
+  <ellipse cx="704" cy="540" rx="32" ry="22" fill="rgba(251,113,133,0.6)" />
+  <!-- 头顶呆毛 hair tuft -->
+  <path d="M488 220 Q 512 180 536 220 Q 524 240 512 240 Q 500 240 488 220 Z" fill="#1f2937" />
+</svg>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  角色资料页 mockup
+  尺寸：1080×1920
+  用途：D1 镜头 7（王翠芳资料页）+ D7 镜头 5（夜里那个资料页）
+  Manus 替换头像 / 名字 / 关系 / 副标题等字段即可复用
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 背景 -->
+  <rect width="1080" height="1920" fill="#ffffff" />
+
+  <!-- 状态栏 -->
+  <rect x="0" y="0" width="1080" height="84" fill="#ffffff" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">06:23</text>
+
+  <!-- 顶部导航栏 -->
+  <rect x="0" y="84" width="1080" height="120" fill="#ffffff" />
+  <line x1="0" y1="204" x2="1080" y2="204" stroke="#f1f1f1" stroke-width="2" />
+  <path d="M58 144 L 28 168 L 58 192" stroke="#1a0f05" stroke-width="6" stroke-linecap="round" fill="none" />
+  <text x="540" y="184" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="36" font-weight="600" fill="#1a0f05">角色资料</text>
+  <!-- 三个点 -->
+  <circle cx="990" cy="148" r="6" fill="#1a0f05" />
+  <circle cx="1010" cy="148" r="6" fill="#1a0f05" />
+  <circle cx="1030" cy="148" r="6" fill="#1a0f05" />
+
+  <!-- 头像（特别大 · 替换为对应角色 SVG）-->
+  <circle cx="540" cy="400" r="160" fill="url(#avatar-grad-placeholder)" />
+  <defs>
+    <linearGradient id="avatar-grad-placeholder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fef3c7" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+  </defs>
+  <text x="540" y="430" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="120" font-weight="900" fill="#ffffff">头</text>
+
+  <!-- 名字 -->
+  <text x="540" y="640" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="56" font-weight="700" fill="#1a0f05">[ROLE_NAME]</text>
+
+  <!-- 副标题 -->
+  <text x="540" y="700" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="30" fill="#7a6454">[ROLE_SUBTITLE]</text>
+
+  <!-- AI 角色徽章（橙色，必须显眼）-->
+  <rect x="370" y="750" width="340" height="64" rx="32" fill="#f97316" />
+  <text x="540" y="794" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" font-weight="600" fill="#ffffff">AI 角色 · 我自己建的</text>
+
+  <!-- 信息卡片：关系 / 亲密度 / 在线时段 -->
+  <rect x="60" y="880" width="960" height="600" rx="24" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 关系 -->
+  <text x="100" y="950" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">关系</text>
+  <text x="980" y="950" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="36" fill="#1a0f05">[RELATIONSHIP]</text>
+  <line x1="100" y1="990" x2="980" y2="990" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 亲密度 -->
+  <text x="100" y="1060" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">亲密度</text>
+  <g transform="translate(680, 1040)">
+    <path d="M30 0 L 36 18 L 56 18 L 40 30 L 46 50 L 30 38 L 14 50 L 20 30 L 4 18 L 24 18 Z" fill="#f97316" />
+    <path d="M100 0 L 106 18 L 126 18 L 110 30 L 116 50 L 100 38 L 84 50 L 90 30 L 74 18 L 94 18 Z" fill="#f97316" />
+    <path d="M170 0 L 176 18 L 196 18 L 180 30 L 186 50 L 170 38 L 154 50 L 160 30 L 144 18 L 164 18 Z" fill="#f97316" />
+    <path d="M240 0 L 246 18 L 266 18 L 250 30 L 256 50 L 240 38 L 224 50 L 230 30 L 214 18 L 234 18 Z" fill="#f97316" />
+    <path d="M310 0 L 316 18 L 336 18 L 320 30 L 326 50 L 310 38 L 294 50 L 300 30 L 284 18 L 304 18 Z" fill="none" stroke="#bfae9e" stroke-width="2" />
+  </g>
+  <line x1="100" y1="1110" x2="980" y2="1110" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 在线时段 -->
+  <text x="100" y="1180" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">在线时段</text>
+  <text x="980" y="1180" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="36" fill="#1a0f05">[ACTIVE_HOURS]</text>
+  <line x1="100" y1="1220" x2="980" y2="1220" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 创建时间 ⭐ D7 反转伏笔关键 -->
+  <text x="100" y="1290" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">创建于</text>
+  <text x="980" y="1290" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="32" font-weight="600" fill="#1a0f05">2026-01-12</text>
+  <line x1="100" y1="1330" x2="980" y2="1330" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 累计消息数 -->
+  <text x="100" y="1400" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">累计消息</text>
+  <text x="980" y="1400" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="36" fill="#1a0f05">[MSG_COUNT] 条</text>
+
+  <!-- 编辑角色按钮（橙色，必须显眼 - D7 镜头 5 末段会点击）-->
+  <rect x="60" y="1560" width="960" height="120" rx="60" fill="#f97316" />
+  <text x="540" y="1634" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="40" font-weight="600" fill="#ffffff">编辑角色</text>
+
+  <!-- 删除/隐藏 -->
+  <text x="540" y="1760" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" fill="#bfae9e">隐藏角色</text>
+
+  <!--
+    Manus 替换字段对照表：
+
+    D1 镜头 7 王翠芳：
+      [ROLE_NAME] = 王翠芳
+      [ROLE_SUBTITLE] = 楼下卖豆浆的安徽阿姨
+      [RELATIONSHIP] = 邻里
+      [ACTIVE_HOURS] = 04:30 - 10:00
+      [MSG_COUNT] = 17
+      头像 = wang-cuifang.svg
+
+    D7 镜头 5 夜里那个：
+      [ROLE_NAME] = 夜里那个
+      [ROLE_SUBTITLE] = （留空，画面里显示空白）
+      [RELATIONSHIP] = 未填写
+      [ACTIVE_HOURS] = 01:00 - 05:00
+      [MSG_COUNT] = 22
+      头像 = ye-li-na-ge.svg
+
+      ⚠️ 关键：D7 这个版本"创建于 2026-01-12" 必须与 D1 镜头 7 王翠芳的版本完全一致
+  -->
+</svg>

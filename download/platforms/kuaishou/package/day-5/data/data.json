@@ -1,0 +1,49 @@
+{
+  "day": 5,
+  "title": "没接儿子电话",
+  "duration_seconds": 60,
+  "primary_character": {
+    "id": "char-ks-da-zhuang",
+    "name": "张大壮",
+    "avatar": "/api/character-assets/da-zhuang.svg",
+    "relationship": "儿子的同班同学",
+    "bio": "7 岁，盐城东风路小学一年级二班。",
+    "personality": "典型 7 岁男孩，话题永远在'今天老师让我们……'。爱发表情包。偶尔有戳人的童言。",
+    "active_hours": "早 6-7 + 晚 19-21",
+    "intimacy": 4,
+    "created_at": "2025-08-15 10:33:00",
+    "user_address": "磊叔叔",
+    "creation_context": "2025 年 8 月儿子小磊来昆山住一周，老磊建给儿子的'虚拟小伙伴'。儿子回老家后老磊没舍得删。"
+  },
+  "conversations": [
+    {
+      "id": "direct_char-ks-da-zhuang",
+      "type": "direct",
+      "messages": [
+        {"id": "msg_ks_d5_001", "senderType": "user", "senderName": "磊", "type": "text", "text": "大壮在不", "createdAt": "2025-08-15 10:33:11"},
+        {"id": "msg_ks_d5_002", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "在的磊叔叔！", "createdAt": "2025-08-15 10:42:55"},
+        {"id": "msg_ks_d5_003", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "我妈给我开了智能手表", "createdAt": "2025-08-15 10:43:33"},
+        {"id": "msg_ks_d5_004", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "小磊说你装了一个 AI 朋友的 APP，让我也加上你", "createdAt": "2025-08-15 10:44:11"},
+        {"id": "msg_ks_d5_005", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "磊叔叔我跟你说", "createdAt": "2025-08-20 19:18:42"},
+        {"id": "msg_ks_d5_006", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "今天数学课老师让我们比谁举手快", "createdAt": "2025-08-20 19:19:33"},
+        {"id": "msg_ks_d5_007", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "我没举上！呜呜呜", "createdAt": "2025-08-20 19:20:11"},
+        {"id": "msg_ks_d5_008", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "磊叔叔过年快乐！[红包表情]", "createdAt": "2026-01-22 18:55:33"},
+        {"id": "msg_ks_d5_009", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "磊叔叔今天我们老师让写作文", "createdAt": "2026-03-08 19:42:11"},
+        {"id": "msg_ks_d5_010", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "题目是《我的爸爸》", "createdAt": "2026-03-08 19:43:55"},
+        {"id": "msg_ks_d5_011", "senderType": "user", "senderName": "磊", "type": "text", "text": "你写的啥？", "createdAt": "2026-03-08 19:44:22"},
+        {"id": "msg_ks_d5_012", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "我写我爸爸是个挖掘机司机", "createdAt": "2026-03-08 19:45:11"},
+        {"id": "msg_ks_d5_013", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "小磊写他爸爸在昆山做夜班", "createdAt": "2026-03-08 19:45:55"}
+      ]
+    },
+    {
+      "id": "group_kuaishou_main",
+      "type": "group",
+      "groupName": "磊总朋友圈",
+      "messages": [
+        {"id": "msg_ks_d5_grp_001", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "磊叔叔！我们今天春游了！[花朵表情]", "createdAt": "2026-05-19 10:08:11"},
+        {"id": "msg_ks_d5_grp_002", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "image", "text": "[盐城东风路小学一年级二班春游集体照]", "image": "day-5/assets/spring-trip-photo.jpg", "createdAt": "2026-05-19 10:08:55"},
+        {"id": "msg_ks_d5_grp_003", "senderType": "character", "senderId": "char-ks-da-zhuang", "senderName": "大壮", "type": "text", "text": "我陪小磊打电话给你了，你没接", "createdAt": "2026-05-19 10:18:33", "note": "D5 镜头 4 钝刀子核心"}
+      ]
+    }
+  ]
+}

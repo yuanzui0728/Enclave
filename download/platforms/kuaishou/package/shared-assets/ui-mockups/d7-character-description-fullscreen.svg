@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  D7 镜头 7 全屏特写：角色描述字段放大占满画面
+  尺寸：1080×1920
+  用途：D7 镜头 7（1:06-1:22）整个视频的核心爆点画面
+  字幕"三十二岁 / 在昆山做夜班 / 想家但不打电话 / 嘴硬心软的男的"按时间轴 1:06-1:22 同步浮现
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 纯白背景（D7 揭示的视觉反差，与前面的暗色场景形成对比）-->
+  <rect width="1080" height="1920" fill="#ffffff" />
+
+  <!-- 角色描述字段标题 -->
+  <text x="540" y="660" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="48" font-weight="600" fill="#7a6454">角色描述</text>
+
+  <!-- 字段框（橙色边框强调）-->
+  <rect x="60" y="720" width="960" height="600" rx="32" fill="#fef7ed" stroke="#f97316" stroke-width="6" />
+
+  <!-- ⭐ 核心文本（特别加大字号，让镜头特写时清晰可读）-->
+  <text x="540" y="900" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="76" font-weight="500" fill="#1a0f05">一个 32 岁、</text>
+  <text x="540" y="1020" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="76" font-weight="500" fill="#1a0f05">在昆山做夜班、</text>
+  <text x="540" y="1140" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="76" font-weight="500" fill="#1a0f05">想家但不打电话、</text>
+  <text x="540" y="1260" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="76" font-weight="600" fill="#f97316">嘴硬心软的男的。</text>
+
+  <!--
+    Manus 落地说明：
+    1. 这个 SVG 是 D7 镜头 7 的"屏幕里的画面"参考
+    2. 在 AE 里：可以把这个 SVG 作为视频前景层，与"老磊看屏幕的手"实拍合成
+    3. 字幕（"三十二岁"等）按 script.md 的时间轴用 AE 文字层逐句浮现，叠加在这个 SVG 上方
+    4. 文字内容必须一字不差与 character-bible 一致
+  -->
+</svg>

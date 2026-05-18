@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-ye-li-na-ge" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a" />
+      <stop offset="0.6" stop-color="#1e293b" />
+      <stop offset="1" stop-color="#334155" />
+    </linearGradient>
+    <radialGradient id="glow-ye-li-na-ge" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 480) rotate(0) scale(360)">
+      <stop stop-color="rgba(249, 115, 22, 0.18)" />
+      <stop offset="1" stop-color="rgba(249, 115, 22, 0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-ye-li-na-ge)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-ye-li-na-ge)" />
+  <!-- 满天星 stars (small and scattered) -->
+  <circle cx="180" cy="220" r="3" fill="#ffffff" opacity="0.6" />
+  <circle cx="280" cy="160" r="4" fill="#ffffff" opacity="0.7" />
+  <circle cx="780" cy="180" r="3" fill="#ffffff" opacity="0.5" />
+  <circle cx="860" cy="280" r="4" fill="#ffffff" opacity="0.6" />
+  <circle cx="160" cy="780" r="3" fill="#ffffff" opacity="0.4" />
+  <circle cx="900" cy="820" r="3" fill="#ffffff" opacity="0.5" />
+  <circle cx="120" cy="500" r="2" fill="#ffffff" opacity="0.4" />
+  <circle cx="940" cy="540" r="2" fill="#ffffff" opacity="0.4" />
+  <!-- 中央人形剪影 silhouette of a person from behind -->
+  <!-- 头 head -->
+  <ellipse cx="512" cy="380" rx="98" ry="112" fill="#000000" />
+  <!-- 肩膀躯干 shoulders + torso -->
+  <path d="M280 760 Q 280 640 360 580 Q 440 540 512 540 Q 584 540 664 580 Q 744 640 744 760 L 744 870 L 280 870 Z" fill="#000000" />
+  <!-- 微弱橙色边缘光 faint orange rim light -->
+  <ellipse cx="512" cy="380" rx="98" ry="112" fill="none" stroke="rgba(249,115,22,0.35)" stroke-width="3" />
+  <path d="M280 760 Q 280 640 360 580 Q 440 540 512 540 Q 584 540 664 580 Q 744 640 744 760" fill="none" stroke="rgba(249,115,22,0.35)" stroke-width="3" />
+  <!-- 胸口微光（暗示心跳/呼吸） chest glow -->
+  <circle cx="512" cy="700" r="32" fill="rgba(249,115,22,0.22)" />
+  <circle cx="512" cy="700" r="14" fill="rgba(249,115,22,0.45)" />
+</svg>

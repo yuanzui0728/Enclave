@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  隐界 APP 锁屏推送通知卡片 mockup
+  尺寸：1000×220 (单条卡片)
+  用途：D1/D2/D3/D5/D6 多处都用到锁屏推送
+  Manus 替换 [APP_NAME] / [SENDER] / [CONTENT] 即可，复用模板
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="220" viewBox="0 0 1000 220" fill="none">
+  <!-- 卡片背景（半透明灰，iOS 14+ 通知卡片风格）-->
+  <rect x="0" y="0" width="1000" height="220" rx="32" fill="rgba(31, 31, 31, 0.78)" />
+  <rect x="0" y="0" width="1000" height="220" rx="32" fill="url(#blur)" opacity="0.4" />
+
+  <defs>
+    <radialGradient id="blur" cx="0.5" cy="0" r="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0.10)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+
+  <!-- 隐界 APP 图标 -->
+  <rect x="40" y="40" width="100" height="100" rx="22" fill="#f97316" />
+  <text x="90" y="106" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="44" font-weight="900" fill="#ffffff">隐</text>
+
+  <!-- APP 名 + 发送者 + 时间戳 -->
+  <text x="170" y="80" font-family="PingFang SC, sans-serif" font-size="28" font-weight="600" fill="#ffffff">隐界</text>
+  <text x="270" y="80" font-family="PingFang SC, sans-serif" font-size="26" fill="rgba(255,255,255,0.7)">·  现在</text>
+
+  <!-- 标题（发送者）-->
+  <text x="170" y="120" font-family="PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#ffffff">[SENDER 在这里]</text>
+
+  <!-- 内容预览 -->
+  <text x="170" y="170" font-family="PingFang SC, sans-serif" font-size="28" fill="rgba(255,255,255,0.92)">[CONTENT 在这里 · 单行限 22 字]</text>
+
+  <!--
+    Manus 替换示例：
+
+    D1 镜头 5：
+      [SENDER] = 磊总朋友圈
+      [CONTENT] = 翠芳：磊磊回家路上小心啊...
+
+    D2 镜头 3：
+      [SENDER] = 刘建军
+      [CONTENT] = 哥们儿你睡了没
+
+    D3 镜头 3：
+      [SENDER] = 小敏
+      [CONTENT] = 磊哥 / 呜呜呜 / 哥你在吗（3 条独立卡片）
+
+    D5 镜头 2：
+      [SENDER] = 我儿子
+      [CONTENT] = 视频通话 · 09:18（系统通话推送，APP 图标改成系统通话图标）
+
+    D6 镜头 3：
+      [SENDER] = 老周
+      [CONTENT] = 发来一条语音消息 · 12 秒
+  -->
+</svg>

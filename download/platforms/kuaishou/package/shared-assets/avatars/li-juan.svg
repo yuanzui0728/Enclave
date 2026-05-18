@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-li-juan" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fed7aa" />
+      <stop offset="1" stop-color="#10b981" />
+    </linearGradient>
+    <radialGradient id="glow-li-juan" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(800 220) rotate(120) scale(540)">
+      <stop stop-color="rgba(255,255,255,0.42)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-li-juan)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-li-juan)" />
+  <circle cx="800" cy="220" r="160" fill="rgba(255, 255, 255, 0.10)" />
+  <circle cx="220" cy="820" r="150" fill="rgba(255, 255, 255, 0.08)" />
+  <!-- 打开的书 open book -->
+  <path d="M180 480 L 180 760 Q 360 720 512 760 Q 664 720 844 760 L 844 480 Q 664 440 512 480 Q 360 440 180 480 Z" fill="#ffffff" stroke="#1f2937" stroke-width="14" />
+  <path d="M512 480 L 512 760" stroke="#1f2937" stroke-width="10" />
+  <!-- 书页线 lines -->
+  <path d="M220 540 L 460 530" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M220 580 L 460 570" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M220 620 L 460 610" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M220 660 L 460 650" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M564 530 L 800 540" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M564 570 L 800 580" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M564 610 L 800 620" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <path d="M564 650 L 800 660" stroke="rgba(31,41,55,0.4)" stroke-width="6" stroke-linecap="round" />
+  <!-- 铅笔 pencil on top -->
+  <rect x="450" y="220" width="200" height="40" rx="8" transform="rotate(-15 550 240)" fill="#fbbf24" stroke="#1f2937" stroke-width="6" />
+  <path d="M362 296 L 396 280 L 384 322 Z" transform="rotate(-15 380 300)" fill="#1f2937" />
+</svg>

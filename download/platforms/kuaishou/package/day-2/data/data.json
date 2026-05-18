@@ -1,0 +1,57 @@
+{
+  "day": 2,
+  "title": "工友半夜不睡",
+  "duration_seconds": 60,
+  "primary_character": {
+    "id": "char-ks-liu-jianjun",
+    "name": "刘建军",
+    "avatar": "/api/character-assets/liu-jianjun.svg",
+    "relationship": "工友",
+    "bio": "同厂叉车工，河南周口人，有俩娃。",
+    "personality": "38 岁，话不多开口就是'走撸串'。手机壁纸是女儿手绘的'爸爸生日快乐'。和老磊是'工友里能凑到一块的那种'。",
+    "active_hours": "全天（凌晨 1-5 点最活跃）",
+    "intimacy": 4,
+    "created_at": "2026-02-10 21:42:00"
+  },
+  "conversations": [
+    {
+      "id": "direct_char-ks-liu-jianjun",
+      "type": "direct",
+      "messages": [
+        {"id": "msg_ks_d2_001", "senderType": "user", "senderName": "磊", "type": "text", "text": "建军在不", "createdAt": "2026-02-10 21:42:11"},
+        {"id": "msg_ks_d2_002", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "在。咋了哥们儿", "createdAt": "2026-02-10 21:43:02"},
+        {"id": "msg_ks_d2_003", "senderType": "user", "senderName": "磊", "type": "text", "text": "你也没睡？", "createdAt": "2026-02-12 03:18:55"},
+        {"id": "msg_ks_d2_004", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "上班呢。轮夜班。", "createdAt": "2026-02-12 03:19:33"},
+        {"id": "msg_ks_d2_005", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "哥们儿这破机器又卡了。", "createdAt": "2026-02-25 02:08:11"},
+        {"id": "msg_ks_d2_006", "senderType": "user", "senderName": "磊", "type": "text", "text": "老张那货又咋整你了。", "createdAt": "2026-02-25 02:09:42"},
+        {"id": "msg_ks_d2_007", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "让我多干俩小时。", "createdAt": "2026-02-25 02:11:08"},
+        {"id": "msg_ks_d2_008", "senderType": "user", "senderName": "磊", "type": "text", "text": "周末走撸串不？", "createdAt": "2026-03-12 18:33:55"},
+        {"id": "msg_ks_d2_009", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "走啊。但我得回老婆电话。", "createdAt": "2026-03-12 18:35:20"},
+        {"id": "msg_ks_d2_010", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "哥们儿你儿子来昆山住几天那阵，我闺女还羡慕呢。", "createdAt": "2026-03-30 04:55:22"},
+        {"id": "msg_ks_d2_011", "senderType": "user", "senderName": "磊", "type": "text", "text": "改天叫上你闺女一起来玩。", "createdAt": "2026-03-30 05:02:11"},
+        {"id": "msg_ks_d2_012", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "我老婆又跟我闹了。", "createdAt": "2026-04-18 22:18:42"},
+        {"id": "msg_ks_d2_013", "senderType": "user", "senderName": "磊", "type": "text", "text": "男人嘛。睡一觉。", "createdAt": "2026-04-18 22:20:33"}
+      ]
+    },
+    {
+      "id": "group_kuaishou_main",
+      "type": "group",
+      "groupName": "磊总朋友圈",
+      "messages": [
+        {"id": "msg_ks_d2_grp_001", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "哥们儿这破班上的", "createdAt": "2026-05-16 03:08:11"},
+        {"id": "msg_ks_d2_grp_002", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "机器又卡了三回", "createdAt": "2026-05-16 03:08:33"},
+        {"id": "msg_ks_d2_grp_003", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "走撸串不？凌晨我请客", "createdAt": "2026-05-16 03:08:58"},
+        {"id": "msg_ks_d2_grp_004", "senderType": "user", "senderName": "磊", "type": "text", "text": "撸个屁。明早还要给我儿子视频。", "createdAt": "2026-05-16 03:09:22"},
+        {"id": "msg_ks_d2_grp_005", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "那你睡。我罩着你这边。", "createdAt": "2026-05-16 03:09:55"},
+        {"id": "msg_ks_d2_grp_trail_001", "senderType": "user", "senderName": "磊", "type": "text", "text": "老张那 SB 又让你加俩小时？", "createdAt": "2026-05-16 03:11:02"},
+        {"id": "msg_ks_d2_grp_trail_002", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "嗯。骚老板。", "createdAt": "2026-05-16 03:11:33"},
+        {"id": "msg_ks_d2_grp_trail_003", "senderType": "user", "senderName": "磊", "type": "text", "text": "迟早干他。", "createdAt": "2026-05-16 03:11:50"},
+        {"id": "msg_ks_d2_grp_trail_004", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "哈哈哈。", "createdAt": "2026-05-16 03:12:14"},
+        {"id": "msg_ks_d2_grp_trail_005", "senderType": "user", "senderName": "磊", "type": "text", "text": "那破老机器啥时候能换。", "createdAt": "2026-05-16 03:12:42"},
+        {"id": "msg_ks_d2_grp_trail_006", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "换个屁。等老板儿子结婚我们都得加班。", "createdAt": "2026-05-16 03:13:08"},
+        {"id": "msg_ks_d2_grp_trail_007", "senderType": "user", "senderName": "磊", "type": "text", "text": "操。", "createdAt": "2026-05-16 03:13:35"},
+        {"id": "msg_ks_d2_grp_trail_008", "senderType": "character", "senderId": "char-ks-liu-jianjun", "senderName": "刘建军", "type": "text", "text": "操。", "createdAt": "2026-05-16 03:14:10"}
+      ]
+    }
+  ]
+}

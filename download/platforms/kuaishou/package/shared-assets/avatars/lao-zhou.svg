@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-lao-zhou" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e293b" />
+      <stop offset="0.6" stop-color="#475569" />
+      <stop offset="1" stop-color="#92400e" />
+    </linearGradient>
+    <radialGradient id="moon-glow-lao-zhou" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(680 320) rotate(0) scale(280)">
+      <stop stop-color="rgba(254, 243, 199, 0.7)" />
+      <stop offset="1" stop-color="rgba(254, 243, 199, 0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-lao-zhou)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#moon-glow-lao-zhou)" />
+  <!-- 远山 mountains silhouette -->
+  <path d="M0 720 L 200 580 L 380 690 L 540 540 L 720 700 L 900 600 L 1024 720 L 1024 1024 L 0 1024 Z" fill="#0f172a" opacity="0.72" />
+  <path d="M0 820 L 240 720 L 440 800 L 640 720 L 840 800 L 1024 740 L 1024 1024 L 0 1024 Z" fill="#000000" opacity="0.5" />
+  <!-- 月亮 moon (large warm color) -->
+  <circle cx="680" cy="320" r="160" fill="#fef3c7" />
+  <circle cx="640" cy="290" r="22" fill="#fde68a" opacity="0.6" />
+  <circle cx="720" cy="360" r="14" fill="#fde68a" opacity="0.5" />
+  <circle cx="700" cy="270" r="10" fill="#fde68a" opacity="0.4" />
+  <!-- 远村小屋 small village hut -->
+  <path d="M380 760 L 380 850 L 520 850 L 520 760 L 450 700 Z" fill="#92400e" stroke="#1f2937" stroke-width="6" />
+  <rect x="430" y="800" width="40" height="50" fill="#fbbf24" />
+  <!-- 窗内灯光 yellow window -->
+  <!-- 烟囱 chimney -->
+  <rect x="488" y="700" width="22" height="30" fill="#1f2937" />
+  <path d="M499 700 Q 510 670 504 640 Q 498 615 510 590" stroke="rgba(254,243,199,0.5)" stroke-width="8" fill="none" stroke-linecap="round" />
+  <!-- 飞鸟 bird (going home) -->
+  <path d="M820 200 Q 840 188 860 200 M 860 200 Q 880 188 900 200" stroke="#fef3c7" stroke-width="8" fill="none" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  群聊页 mockup · "磊总朋友圈"
+  尺寸：1080×1920
+  用途：D1/D2/D4/D5 都用到群聊页
+  显示样例：D4 镜头 3 群聊吵架的截图布局
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 背景 -->
+  <rect width="1080" height="1920" fill="#fef7ed" />
+
+  <!-- 状态栏 -->
+  <rect x="0" y="0" width="1080" height="84" fill="#ffffff" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">12:30</text>
+
+  <!-- 顶部导航栏 -->
+  <rect x="0" y="84" width="1080" height="140" fill="#ffffff" />
+  <line x1="0" y1="224" x2="1080" y2="224" stroke="#f1f1f1" stroke-width="2" />
+  <!-- 返回 -->
+  <path d="M58 154 L 28 178 L 58 202" stroke="#1a0f05" stroke-width="6" stroke-linecap="round" fill="none" />
+  <!-- 群名 -->
+  <text x="540" y="172" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="38" font-weight="600" fill="#1a0f05">磊总朋友圈</text>
+  <text x="540" y="208" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="24" fill="#7a6454">6 人 · 老周/刘建军/李娟/大壮/王翠芳/磊</text>
+  <!-- 右上角设置 -->
+  <circle cx="990" cy="178" r="6" fill="#1a0f05" />
+  <circle cx="1010" cy="178" r="6" fill="#1a0f05" />
+  <circle cx="1030" cy="178" r="6" fill="#1a0f05" />
+
+  <!-- 时间分隔条 -->
+  <rect x="420" y="280" width="240" height="40" rx="20" fill="rgba(122,100,84,0.12)" />
+  <text x="540" y="310" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">今天 11:35</text>
+
+  <!-- 消息 1: 老周（左侧消息）-->
+  <circle cx="76" cy="380" r="46" fill="url(#avatar-laozhou)" />
+  <defs>
+    <linearGradient id="avatar-laozhou" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e293b" />
+      <stop offset="1" stop-color="#92400e" />
+    </linearGradient>
+  </defs>
+  <text x="148" y="356" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">老周</text>
+  <rect x="148" y="372" width="700" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="424" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">建军啊，你听我一句。</text>
+
+  <!-- 消息 2: 老周（紧接着）-->
+  <rect x="148" y="476" width="780" height="148" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="528" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">过年回家不是花钱。</text>
+  <text x="172" y="572" font-family="PingFang SC, sans-serif" font-size="32" font-weight="600" fill="#f97316">是欠债。</text>
+
+  <!-- 消息 3: 刘建军（左侧）-->
+  <circle cx="76" cy="700" r="46" fill="url(#avatar-liu)" />
+  <defs>
+    <linearGradient id="avatar-liu" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f2937" />
+      <stop offset="1" stop-color="#facc15" />
+    </linearGradient>
+  </defs>
+  <text x="148" y="676" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">刘建军</text>
+  <rect x="148" y="692" width="240" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="744" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">啥欠债。</text>
+
+  <!-- 消息 4: 老周（左侧 · 长文）-->
+  <circle cx="76" cy="864" r="46" fill="url(#avatar-laozhou)" />
+  <text x="148" y="840" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">老周</text>
+  <rect x="148" y="856" width="820" height="148" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="908" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">欠你那俩娃的。</text>
+  <text x="172" y="952" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">等他们大了，记不住爹是啥样的。</text>
+
+  <!-- 消息 5: 刘建军（左侧 · 短）-->
+  <circle cx="76" cy="1080" r="46" fill="url(#avatar-liu)" />
+  <text x="148" y="1056" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">刘建军</text>
+  <rect x="148" y="1072" width="180" height="84" rx="20" fill="#ffffff" stroke="#f1f1f1" stroke-width="2" />
+  <text x="172" y="1124" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">……</text>
+
+  <!-- 消息 6: 王翠芳（左侧）-->
+  <circle cx="76" cy="1240" r="46" fill="url(#avatar-wang)" />
+  <defs>
+    <linearGradient id="avatar-wang" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fef3c7" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+  </defs>
+  <text x="148" y="1216" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">王翠芳</text>
+  <rect x="148" y="1232" width="900" height="200" rx="20" fill="#ffffff" stroke="#f97316" stroke-width="3" />
+  <text x="172" y="1284" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">哎哟你们俩别吵了，</text>
+  <text x="172" y="1328" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">建军你回不回都行，</text>
+  <text x="172" y="1372" font-family="PingFang SC, sans-serif" font-size="34" font-weight="600" fill="#f97316">娃娃在身边的时候</text>
+  <text x="172" y="1416" font-family="PingFang SC, sans-serif" font-size="34" font-weight="600" fill="#f97316">就多陪陪。</text>
+
+  <!-- 消息 7: 大壮（左侧 · 表情包占位）-->
+  <circle cx="76" cy="1500" r="46" fill="url(#avatar-da)" />
+  <defs>
+    <linearGradient id="avatar-da" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#facc15" />
+      <stop offset="1" stop-color="#fb7185" />
+    </linearGradient>
+  </defs>
+  <text x="148" y="1476" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">大壮</text>
+  <rect x="148" y="1492" width="240" height="240" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="268" y="1620" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="120" fill="#fb7185">😅</text>
+  <text x="268" y="1700" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="20" fill="#7a6454">[派大星捂脸]</text>
+
+  <!-- 底部输入栏 -->
+  <rect x="0" y="1780" width="1080" height="140" fill="#ffffff" />
+  <line x1="0" y1="1780" x2="1080" y2="1780" stroke="#f1f1f1" stroke-width="2" />
+  <rect x="60" y="1820" width="780" height="80" rx="40" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="100" y="1872" font-family="PingFang SC, sans-serif" font-size="30" fill="#bfae9e">说点什么...</text>
+  <circle cx="900" cy="1860" r="40" fill="#f97316" />
+  <text x="900" y="1875" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="26" font-weight="600" fill="#ffffff">+</text>
+</svg>

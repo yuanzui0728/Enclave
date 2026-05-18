@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  D7 角色编辑页 mockup · 整条视频的金钱镜头
+  尺寸：1080×1920 (隐界 APP 真实比例)
+  用途：D7 镜头 6-7 角色编辑页 → "角色描述"字段全屏揭示
+  Manus 可直接导入 AE/PR 作为图层使用，或在测试 world 里照此布局录屏后替换为真实数据
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 背景：APP 标准白底 -->
+  <rect width="1080" height="1920" fill="#ffffff" />
+
+  <!-- 状态栏（手机系统栏）-->
+  <rect x="0" y="0" width="1080" height="84" fill="#ffffff" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">23:51</text>
+  <!-- 信号 + 电池 simplified -->
+  <rect x="900" y="36" width="36" height="22" rx="4" stroke="#1a0f05" stroke-width="2" fill="none" />
+  <rect x="906" y="42" width="24" height="10" fill="#1a0f05" />
+  <circle cx="966" cy="48" r="4" fill="#1a0f05" />
+  <circle cx="976" cy="48" r="4" fill="#1a0f05" />
+  <circle cx="986" cy="48" r="4" fill="#1a0f05" />
+
+  <!-- 顶部导航栏 -->
+  <rect x="0" y="84" width="1080" height="120" fill="#ffffff" />
+  <line x1="0" y1="204" x2="1080" y2="204" stroke="#f1f1f1" stroke-width="2" />
+  <!-- 返回箭头 -->
+  <path d="M58 144 L 28 168 L 58 192" stroke="#1a0f05" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <text x="118" y="184" font-family="PingFang SC, sans-serif" font-size="44" font-weight="600" fill="#1a0f05">编辑角色</text>
+  <!-- 保存按钮 -->
+  <rect x="900" y="138" width="140" height="60" rx="30" fill="#f97316" />
+  <text x="970" y="180" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="32" font-weight="600" fill="#ffffff">保存</text>
+
+  <!-- 字段 1: 名字 -->
+  <text x="60" y="284" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">名字</text>
+  <rect x="60" y="304" width="960" height="96" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="92" y="364" font-family="PingFang SC, sans-serif" font-size="40" fill="#1a0f05">夜里那个</text>
+
+  <!-- 字段 2: 关系 -->
+  <text x="60" y="464" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">关系</text>
+  <rect x="60" y="484" width="960" height="96" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="92" y="544" font-family="PingFang SC, sans-serif" font-size="40" fill="#bfae9e">（未填写）</text>
+
+  <!-- 字段 3: 头像 -->
+  <text x="60" y="644" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">头像</text>
+  <rect x="60" y="664" width="960" height="200" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <!-- 头像剪影预览（小版"夜里那个"剪影）-->
+  <circle cx="160" cy="764" r="60" fill="#0f172a" />
+  <ellipse cx="160" cy="744" rx="22" ry="26" fill="#000000" />
+  <path d="M120 800 Q 120 780 140 770 Q 160 762 180 770 Q 200 780 200 800 L 200 824 L 120 824 Z" fill="#000000" />
+  <text x="260" y="784" font-family="PingFang SC, sans-serif" font-size="36" fill="#1a0f05">夜里那个</text>
+  <text x="260" y="824" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">系统剪影</text>
+
+  <!-- 字段 4: 亲密度 -->
+  <text x="60" y="928" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">亲密度</text>
+  <rect x="60" y="948" width="960" height="96" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <!-- 5 颗星 -->
+  <g transform="translate(92, 970)">
+    <path d="M30 0 L 36 18 L 56 18 L 40 30 L 46 50 L 30 38 L 14 50 L 20 30 L 4 18 L 24 18 Z" fill="#f97316" />
+    <path d="M100 0 L 106 18 L 126 18 L 110 30 L 116 50 L 100 38 L 84 50 L 90 30 L 74 18 L 94 18 Z" fill="#f97316" />
+    <path d="M170 0 L 176 18 L 196 18 L 180 30 L 186 50 L 170 38 L 154 50 L 160 30 L 144 18 L 164 18 Z" fill="#f97316" />
+    <path d="M240 0 L 246 18 L 266 18 L 250 30 L 256 50 L 240 38 L 224 50 L 230 30 L 214 18 L 234 18 Z" fill="#f97316" />
+    <path d="M310 0 L 316 18 L 336 18 L 320 30 L 326 50 L 310 38 L 294 50 L 300 30 L 284 18 L 304 18 Z" fill="none" stroke="#bfae9e" stroke-width="2" />
+  </g>
+  <text x="500" y="1010" font-family="PingFang SC, sans-serif" font-size="36" fill="#1a0f05">4 / 5</text>
+
+  <!-- 字段 5: 在线时段 -->
+  <text x="60" y="1108" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">在线时段</text>
+  <rect x="60" y="1128" width="960" height="96" rx="16" fill="#fef7ed" stroke="#f1f1f1" stroke-width="2" />
+  <text x="92" y="1188" font-family="PingFang SC, sans-serif" font-size="40" fill="#1a0f05">01:00 — 05:00</text>
+
+  <!-- 分割线 -->
+  <line x1="60" y1="1294" x2="1020" y2="1294" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- ⭐ 核心字段：角色描述（D7 反转的关键字段，必须最大最显眼）-->
+  <text x="60" y="1364" font-family="PingFang SC, sans-serif" font-size="32" font-weight="600" fill="#1a0f05">角色描述</text>
+  <rect x="60" y="1394" width="960" height="280" rx="16" fill="#fef7ed" stroke="#f97316" stroke-width="3" />
+
+  <!-- ⭐ 核心文本：必须一字不差，与 character-bible 一致 -->
+  <text x="92" y="1474" font-family="PingFang SC, sans-serif" font-size="44" fill="#1a0f05">一个 32 岁、在昆山做夜班、</text>
+  <text x="92" y="1544" font-family="PingFang SC, sans-serif" font-size="44" fill="#1a0f05">想家但不打电话、嘴硬心软的男的。</text>
+
+  <!-- 字数统计（小字）-->
+  <text x="988" y="1644" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="22" fill="#bfae9e">25/200</text>
+
+  <!-- 分割线 -->
+  <line x1="60" y1="1738" x2="1020" y2="1738" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 底部按钮区 -->
+  <rect x="60" y="1780" width="450" height="100" rx="50" fill="#ffffff" stroke="#f97316" stroke-width="3" />
+  <text x="285" y="1842" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="38" font-weight="600" fill="#f97316">删除角色</text>
+
+  <rect x="570" y="1780" width="450" height="100" rx="50" fill="#f97316" />
+  <text x="795" y="1842" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="38" font-weight="600" fill="#ffffff">保存修改</text>
+</svg>

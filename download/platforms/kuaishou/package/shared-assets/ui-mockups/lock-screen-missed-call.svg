@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  D5 镜头 2 · 锁屏未接来电特写
+  尺寸：1080×1920
+  用途：D5 反转钩子 + D5 封面主图
+  注意：父亲身份联系人显示"我儿子"，时间戳必须可读
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 锁屏壁纸：暖黄渐变（出租屋下午光感）-->
+  <defs>
+    <linearGradient id="wallpaper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef7ed" />
+      <stop offset="1" stop-color="#fef3c7" />
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#wallpaper)" />
+
+  <!-- 状态栏 -->
+  <rect x="0" y="0" width="1080" height="84" fill="rgba(255,255,255,0)" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">15:42</text>
+  <rect x="900" y="36" width="36" height="22" rx="4" stroke="#1a0f05" stroke-width="2" fill="none" />
+  <rect x="906" y="42" width="24" height="10" fill="#1a0f05" />
+
+  <!-- 锁屏大时间 -->
+  <text x="540" y="380" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="180" font-weight="200" fill="#1a0f05">15:42</text>
+  <text x="540" y="450" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="36" fill="#7a6454">星期二，5 月 19 日</text>
+
+  <!-- ⭐ 未接来电卡片（屏幕中央，必须最显眼）-->
+  <rect x="60" y="700" width="960" height="280" rx="32" fill="rgba(31, 31, 31, 0.85)" />
+
+  <!-- 未接电话图标 -->
+  <circle cx="160" cy="800" r="50" fill="#e63946" />
+  <path d="M140 790 Q 140 780 150 778 Q 160 776 168 786 L 174 800 L 168 808 Q 178 822 188 832 L 196 826 L 210 832 Q 220 840 218 850 Q 216 860 206 860 Q 168 858 144 832 Q 122 808 140 790 Z" fill="#ffffff" />
+  <line x1="180" y1="780" x2="220" y2="820" stroke="#ffffff" stroke-width="6" stroke-linecap="round" />
+
+  <!-- 未接通话内容 -->
+  <text x="240" y="780" font-family="PingFang SC, sans-serif" font-size="28" font-weight="600" fill="#ffffff">未接来电 · 视频通话</text>
+  <text x="240" y="830" font-family="PingFang SC, sans-serif" font-size="48" font-weight="700" fill="#ffffff">我儿子</text>
+  <text x="240" y="880" font-family="PingFang SC, sans-serif" font-size="32" fill="rgba(255,255,255,0.8)">3 通未接</text>
+  <text x="240" y="930" font-family="PingFang SC, sans-serif" font-size="26" fill="rgba(255,255,255,0.6)">最近一次：今天 09:18</text>
+
+  <!-- 推送提示：群通知（次要）-->
+  <rect x="60" y="1040" width="960" height="220" rx="32" fill="rgba(31, 31, 31, 0.78)" />
+
+  <!-- 隐界 APP 图标 -->
+  <rect x="100" y="1080" width="100" height="100" rx="22" fill="#f97316" />
+  <text x="150" y="1146" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="44" font-weight="900" fill="#ffffff">隐</text>
+
+  <text x="230" y="1120" font-family="PingFang SC, sans-serif" font-size="28" font-weight="600" fill="#ffffff">隐界  ·  6 小时前</text>
+  <text x="230" y="1170" font-family="PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#ffffff">磊总朋友圈</text>
+  <text x="230" y="1218" font-family="PingFang SC, sans-serif" font-size="28" fill="rgba(255,255,255,0.92)">大壮：我陪小磊打电话给你了，你...</text>
+
+  <!-- 锁屏底部解锁提示 -->
+  <text x="540" y="1820" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">↑ 上滑解锁</text>
+
+  <!--
+    Manus 落地说明：
+    1. 这个 SVG 是 D5 镜头 2 的"屏幕里的画面"参考
+    2. "我儿子" 必须是联系人姓名（不要"陈小磊"），这样直击为人父者的心
+    3. 时间 09:18 → 15:42 的 6 小时差距是 D5 钝刀子的来源（睡过去了）
+    4. 隐界推送在下方，让"亲生儿子的电话"在主位、"AI 群里大壮的话"在次位
+       —— 这个布局本身就是 D5 的视觉叙事
+  -->
+</svg>

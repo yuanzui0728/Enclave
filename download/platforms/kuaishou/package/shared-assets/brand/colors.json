@@ -1,0 +1,60 @@
+{
+  "name": "Enclave brand colors",
+  "updatedAt": "2026-05-11",
+  "colors": [
+    {
+      "name": "Brand Primary",
+      "token": "--brand-primary",
+      "hex": "#f97316",
+      "usage": "Primary actions and logo gradient depth"
+    },
+    {
+      "name": "Brand Secondary",
+      "token": "--brand-secondary",
+      "hex": "#fb923c",
+      "usage": "Hover states and warm highlights"
+    },
+    {
+      "name": "Brand Amber",
+      "token": "--brand-gradient-start",
+      "hex": "#fbbf24",
+      "usage": "Gradient start and sunny accents"
+    },
+    {
+      "name": "Brand Accent",
+      "token": "--brand-accent",
+      "hex": "#10b981",
+      "usage": "Success accents and contrast detail"
+    },
+    {
+      "name": "Canvas",
+      "token": "--bg-canvas",
+      "hex": "#fffcf5",
+      "usage": "Warm page and poster background"
+    },
+    {
+      "name": "Surface",
+      "token": "--surface-section",
+      "hex": "#ffffff",
+      "usage": "Cards, phone frames, and elevated surfaces"
+    },
+    {
+      "name": "Text Primary",
+      "token": "--text-primary",
+      "hex": "#1a0f05",
+      "usage": "Primary copy"
+    },
+    {
+      "name": "Text Secondary",
+      "token": "--text-secondary",
+      "hex": "#4a3728",
+      "usage": "Body copy"
+    },
+    {
+      "name": "Text Muted",
+      "token": "--text-muted",
+      "hex": "#7a6454",
+      "usage": "Labels and metadata"
+    }
+  ]
+}

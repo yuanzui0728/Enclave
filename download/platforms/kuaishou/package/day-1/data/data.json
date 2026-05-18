@@ -1,0 +1,219 @@
+{
+  "day": 1,
+  "title": "凌晨 5 点的豆浆",
+  "duration_seconds": 75,
+  "primary_character": {
+    "id": "char-ks-wang-cuifang",
+    "name": "王翠芳",
+    "avatar": "/api/character-assets/wang-cuifang.svg",
+    "relationship": "楼下卖豆浆的安徽阿姨",
+    "bio": "管你但不烦你，记账本上有你每月喝多少豆浆。",
+    "personality": "52 岁安徽阜阳人，在江苏昆山开了 6 年早点铺。爱用'哎哟''你这孩子''慢点喝'。会在群里突然甩一句'我侄女在上海当律师'让人破防。",
+    "active_hours": "04:30-10:00 + 16:00-18:00",
+    "intimacy": 4,
+    "created_at": "2026-01-12 06:18:00"
+  },
+  "conversations": [
+    {
+      "id": "direct_char-ks-wang-cuifang",
+      "type": "direct",
+      "messages": [
+        {
+          "id": "msg_ks_d1_001",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "嗯",
+          "createdAt": "2026-01-12 06:18:44"
+        },
+        {
+          "id": "msg_ks_d1_002",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "哎哟你这孩子，刚才豆浆袋是不是没拎稳？我看你手抖了一下。",
+          "createdAt": "2026-01-12 06:19:02"
+        },
+        {
+          "id": "msg_ks_d1_003",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "今儿大雾，骑车慢点。",
+          "createdAt": "2026-01-15 05:42:11"
+        },
+        {
+          "id": "msg_ks_d1_004",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "阿姨我有点感冒。",
+          "createdAt": "2026-01-22 06:03:55"
+        },
+        {
+          "id": "msg_ks_d1_005",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "那你今儿别喝凉的，我给你换热豆浆，多搁点姜。",
+          "createdAt": "2026-01-22 06:04:30"
+        },
+        {
+          "id": "msg_ks_d1_006",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "春节了，你回去不？",
+          "createdAt": "2026-02-04 05:55:18"
+        },
+        {
+          "id": "msg_ks_d1_007",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "回。年三十的高铁。",
+          "createdAt": "2026-02-04 14:22:09"
+        },
+        {
+          "id": "msg_ks_d1_008",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "路上安全。回来给我带点你们盐城的盐水鸭，我没吃过。",
+          "createdAt": "2026-02-04 14:25:33"
+        },
+        {
+          "id": "msg_ks_d1_009",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "阿姨我回来了。",
+          "createdAt": "2026-02-18 06:11:47"
+        },
+        {
+          "id": "msg_ks_d1_010",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "哎哟回来了好。盐水鸭就别带了，太麻烦你了。",
+          "createdAt": "2026-02-18 06:12:02"
+        },
+        {
+          "id": "msg_ks_d1_011",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "今儿是妇女节，我儿子早上给我打电话了。",
+          "createdAt": "2026-03-08 05:33:21"
+        },
+        {
+          "id": "msg_ks_d1_012",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "阿姨节日快乐。",
+          "createdAt": "2026-03-08 05:35:14"
+        },
+        {
+          "id": "msg_ks_d1_013",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "你这孩子。",
+          "createdAt": "2026-03-08 05:36:00"
+        },
+        {
+          "id": "msg_ks_d1_014",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "你这两天眼袋越来越深了，少看点手机。",
+          "createdAt": "2026-04-19 06:08:42"
+        },
+        {
+          "id": "msg_ks_d1_015",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "嗯。",
+          "createdAt": "2026-05-02 05:49:11"
+        },
+        {
+          "id": "msg_ks_d1_016",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "嗯啥，我在跟你说事。",
+          "createdAt": "2026-05-02 05:50:33"
+        },
+        {
+          "id": "msg_ks_d1_017",
+          "senderType": "user",
+          "senderId": "user-magnetkun-w",
+          "senderName": "磊",
+          "type": "text",
+          "text": "阿姨儿童节我儿子要来昆山玩一周。",
+          "createdAt": "2026-05-08 06:14:55"
+        },
+        {
+          "id": "msg_ks_d1_018",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "哎哟好啊好啊，到时候带过来吃豆浆，我请客。",
+          "createdAt": "2026-05-08 06:15:42"
+        }
+      ]
+    },
+    {
+      "id": "group_kuaishou_main",
+      "type": "group",
+      "groupName": "磊总朋友圈",
+      "members": [
+        "user-magnetkun-w",
+        "char-ks-wang-cuifang",
+        "char-ks-liu-jianjun",
+        "char-ks-li-juan",
+        "char-ks-da-zhuang",
+        "char-ks-lao-zhou"
+      ],
+      "messages": [
+        {
+          "id": "msg_ks_d1_grp_001",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "磊磊回家路上小心啊，今儿雾大。",
+          "createdAt": "2026-05-15 05:01:23"
+        },
+        {
+          "id": "msg_ks_d1_grp_002",
+          "senderType": "character",
+          "senderId": "char-ks-wang-cuifang",
+          "senderName": "王翠芳",
+          "type": "text",
+          "text": "豆浆给你留台子上了，温的。",
+          "createdAt": "2026-05-15 05:01:35"
+        }
+      ]
+    }
+  ]
+}

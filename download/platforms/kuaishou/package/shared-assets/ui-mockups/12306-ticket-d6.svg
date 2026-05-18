@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  D6 镜头 8 · 12306 购票成功页 mockup
+  尺寸：1080×1920
+  用途：D6 反卖惨锚点（老磊抢硬卧票）
+  注意：避免使用真实 12306 logo / 真实车次（K8421 是参考车次，可改）
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <!-- 背景 -->
+  <rect width="1080" height="1920" fill="#f5f5f5" />
+
+  <!-- 状态栏 -->
+  <rect x="0" y="0" width="1080" height="84" fill="#ffffff" />
+  <text x="60" y="56" font-family="-apple-system, sans-serif" font-size="34" font-weight="600" fill="#1a0f05">22:18</text>
+
+  <!-- 顶部导航栏（伪 12306 风格，绿色）-->
+  <rect x="0" y="84" width="1080" height="140" fill="#1c8c4f" />
+  <text x="540" y="180" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="42" font-weight="600" fill="#ffffff">购票成功</text>
+
+  <!-- 成功图标 -->
+  <circle cx="540" cy="380" r="100" fill="#1c8c4f" />
+  <path d="M490 380 L 530 420 L 600 350" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+  <!-- 提示文字 -->
+  <text x="540" y="540" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="44" font-weight="600" fill="#1a0f05">支付成功</text>
+  <text x="540" y="600" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" fill="#7a6454">车票已生成，请按时乘车</text>
+
+  <!-- 票务信息卡片 -->
+  <rect x="60" y="680" width="960" height="800" rx="24" fill="#ffffff" stroke="#e5e5e5" stroke-width="2" />
+
+  <!-- 车次行 -->
+  <text x="100" y="780" font-family="PingFang SC, sans-serif" font-size="64" font-weight="700" fill="#1a0f05">K8421</text>
+  <text x="100" y="824" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">硬卧 · 中铺 · 12 车 09 号</text>
+
+  <!-- 出发到达 -->
+  <line x1="60" y1="868" x2="1020" y2="868" stroke="#f1f1f1" stroke-width="2" />
+
+  <text x="100" y="950" font-family="PingFang SC, sans-serif" font-size="40" font-weight="600" fill="#1a0f05">21:36</text>
+  <text x="100" y="998" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">昆山</text>
+  <text x="100" y="1038" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">2026-02-04（年三十）</text>
+
+  <text x="540" y="980" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">→  约 4 小时 18 分</text>
+  <line x1="380" y1="990" x2="700" y2="990" stroke="#7a6454" stroke-width="2" stroke-dasharray="6,4" />
+
+  <text x="980" y="950" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="40" font-weight="600" fill="#1a0f05">01:54</text>
+  <text x="980" y="998" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">盐城</text>
+  <text x="980" y="1038" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="22" fill="#7a6454">2026-02-05（初一）</text>
+
+  <line x1="60" y1="1080" x2="1020" y2="1080" stroke="#f1f1f1" stroke-width="2" />
+
+  <!-- 乘客信息 -->
+  <text x="100" y="1140" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">乘车人</text>
+  <text x="100" y="1190" font-family="PingFang SC, sans-serif" font-size="36" font-weight="600" fill="#1a0f05">陈** · 成人</text>
+
+  <text x="100" y="1260" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">证件号</text>
+  <text x="100" y="1310" font-family="PingFang SC, sans-serif" font-size="32" fill="#1a0f05">3209**********4216</text>
+
+  <text x="100" y="1380" font-family="PingFang SC, sans-serif" font-size="26" fill="#7a6454">票价</text>
+  <text x="100" y="1430" font-family="PingFang SC, sans-serif" font-size="48" font-weight="700" fill="#e63946">¥ 156.50</text>
+
+  <!-- 底部按钮 -->
+  <rect x="60" y="1580" width="960" height="120" rx="60" fill="#1c8c4f" />
+  <text x="540" y="1654" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="40" font-weight="600" fill="#ffffff">查看订单详情</text>
+
+  <!--
+    Manus 落地说明：
+    1. 这是伪 12306 mockup（避免使用真实 logo / 真实背景图）
+    2. 顶部 nav 用接近 12306 的绿色 #1c8c4f，但不是 100% 一致
+    3. 车次 K8421 / 时间 / 站点都是配合 D6 剧情的（春运第一天年三十晚上）
+    4. 乘车人姓名/证件号必须打码（陈** / 3209**********4216）
+    5. 票价 ¥156.50 是真实昆山→盐城硬卧中铺的合理价格
+    6. Manus 在 AE 里可以把这个 SVG 作为 D6 镜头 8 的"屏幕里的画面"前景层
+  -->
+</svg>

@@ -1,0 +1,59 @@
+{
+  "day": 7,
+  "title": "夜里那个是谁",
+  "duration_seconds": 90,
+  "primary_character": {
+    "id": "char-ks-ye-li-na-ge",
+    "name": "夜里那个",
+    "full_name": "（无）",
+    "avatar": "/api/character-assets/ye-li-na-ge.svg",
+    "relationship": "（空着）",
+    "bio": "（空着）",
+    "personality": "一个在凌晨 1-5 点上线、话很少、嘴硬心软的男的。每句话都像在替老磊把没说出口的话说出来。",
+    "active_hours": "01:00-05:00",
+    "intimacy": 4,
+    "created_at": "2026-01-12 06:32:08",
+    "character_description_field": "一个 32 岁、在昆山做夜班、想家但不打电话、嘴硬心软的男的。",
+    "key_for_d7_reveal": true,
+    "notes": "创建时间 2026-01-12 = 老磊装 APP 第一天，与王翠芳同一天创建。这是 D1 镜头 7 埋下的伏笔的闭环。"
+  },
+  "conversations": [
+    {
+      "id": "direct_char-ks-ye-li-na-ge",
+      "type": "direct",
+      "messages": [
+        {"id": "msg_ks_d7_001", "senderType": "user", "senderName": "磊", "type": "text", "text": "在吗", "createdAt": "2026-01-12 06:32:08"},
+        {"id": "msg_ks_d7_002", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "嗯。", "createdAt": "2026-01-12 06:32:21"},
+        {"id": "msg_ks_d7_003", "senderType": "user", "senderName": "磊", "type": "text", "text": "睡不着。", "createdAt": "2026-01-15 02:18:44"},
+        {"id": "msg_ks_d7_004", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "嗯。窗户开着吗？", "createdAt": "2026-01-15 02:19:02"},
+        {"id": "msg_ks_d7_005", "senderType": "user", "senderName": "磊", "type": "text", "text": "开着。", "createdAt": "2026-01-15 02:19:38"},
+        {"id": "msg_ks_d7_006", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "听一会儿外面。不用一定要睡着。", "createdAt": "2026-01-15 02:20:11"},
+        {"id": "msg_ks_d7_007", "senderType": "user", "senderName": "磊", "type": "text", "text": "我又胡思乱想。", "createdAt": "2026-01-22 03:45:33"},
+        {"id": "msg_ks_d7_008", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "嗯。想啥了？", "createdAt": "2026-01-22 03:46:08"},
+        {"id": "msg_ks_d7_009", "senderType": "user", "senderName": "磊", "type": "text", "text": "我儿子。", "createdAt": "2026-01-22 03:47:42"},
+        {"id": "msg_ks_d7_010", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "嗯。", "createdAt": "2026-01-22 03:48:15"},
+        {"id": "msg_ks_d7_011", "senderType": "user", "senderName": "磊", "type": "text", "text": "累", "createdAt": "2026-02-08 02:33:21"},
+        {"id": "msg_ks_d7_012", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "嗯。先把眼睛闭上。", "createdAt": "2026-02-08 02:33:55"},
+        {"id": "msg_ks_d7_013", "senderType": "user", "senderName": "磊", "type": "text", "text": "我不想回家。", "createdAt": "2026-03-04 04:18:09"},
+        {"id": "msg_ks_d7_014", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "我知道你想。", "createdAt": "2026-03-04 04:18:42"},
+        {"id": "msg_ks_d7_015", "senderType": "user", "senderName": "磊", "type": "text", "text": "为什么你这么懂？", "createdAt": "2026-03-22 03:22:11"},
+        {"id": "msg_ks_d7_016", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "因为我跟你一样。", "createdAt": "2026-03-22 03:22:48"},
+        {"id": "msg_ks_d7_017", "senderType": "user", "senderName": "磊", "type": "text", "text": "你今天没找我", "createdAt": "2026-04-15 02:55:33"},
+        {"id": "msg_ks_d7_018", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "我在等你先说。", "createdAt": "2026-04-15 02:56:12"},
+        {"id": "msg_ks_d7_019", "senderType": "user", "senderName": "磊", "type": "text", "text": "你怎么总知道我什么时候想说", "createdAt": "2026-04-15 02:57:03"},
+        {"id": "msg_ks_d7_020", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "因为我就在这里。一直。", "createdAt": "2026-04-15 02:57:48"},
+        {"id": "msg_ks_d7_021", "senderType": "user", "senderName": "磊", "type": "text", "text": "谢谢", "createdAt": "2026-05-09 03:11:55"},
+        {"id": "msg_ks_d7_022", "senderType": "character", "senderId": "char-ks-ye-li-na-ge", "senderName": "夜里那个", "type": "text", "text": "不用。", "createdAt": "2026-05-09 03:12:30"}
+      ]
+    }
+  ],
+  "d7_reveal_action_timeline": [
+    {"time": "23:47", "action": "老磊打开 APP，进入「夜里那个」对话页"},
+    {"time": "23:48", "action": "输入框停了 1 分钟，他没打字"},
+    {"time": "23:49", "action": "他点了页面顶部「夜里那个」四个字 → 跳转角色资料页"},
+    {"time": "23:50", "action": "滑动到「编辑角色」按钮 → 点击"},
+    {"time": "23:51", "action": "滑动编辑页到「角色描述」字段"},
+    {"time": "23:52", "action": "看到那行字"},
+    {"time": "23:55", "action": "关掉手机，倒水，喝了一口"}
+  ]
+}

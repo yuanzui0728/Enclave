@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-xiao-min" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fb7185" />
+      <stop offset="1" stop-color="#fbbf24" />
+    </linearGradient>
+    <radialGradient id="glow-xiao-min" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(772 212) rotate(126) scale(560)">
+      <stop stop-color="rgba(255,255,255,0.4)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-xiao-min)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-xiao-min)" />
+  <circle cx="800" cy="220" r="160" fill="rgba(255, 255, 255, 0.12)" />
+  <circle cx="240" cy="800" r="150" fill="rgba(255, 255, 255, 0.08)" />
+  <!-- 手机外框 phone frame -->
+  <rect x="332" y="200" width="360" height="624" rx="56" fill="#ffffff" stroke="#1f2937" stroke-width="14" />
+  <rect x="358" y="262" width="308" height="500" rx="20" fill="#fef3c7" />
+  <!-- 听筒小点 -->
+  <rect x="476" y="226" width="72" height="14" rx="7" fill="#1f2937" />
+  <!-- 哭脸 sad face -->
+  <circle cx="448" cy="450" r="20" fill="#1f2937" />
+  <circle cx="576" cy="450" r="20" fill="#1f2937" />
+  <!-- 泪滴 -->
+  <path d="M448 480 Q 448 540 432 580 Q 416 540 416 510 Q 432 490 448 480 Z" fill="#3b82f6" />
+  <path d="M576 480 Q 576 540 592 580 Q 608 540 608 510 Q 592 490 576 480 Z" fill="#3b82f6" />
+  <!-- 撇嘴 -->
+  <path d="M450 600 Q 512 570 574 600" stroke="#1f2937" stroke-width="12" stroke-linecap="round" fill="none" />
+  <!-- 心形对话气泡 chat heart bubble -->
+  <path d="M210 660 C 180 630 144 660 168 700 C 184 728 220 756 220 756 C 220 756 256 728 272 700 C 296 660 260 630 230 660 Z" fill="#fb7185" stroke="#ffffff" stroke-width="6" />
+</svg>
