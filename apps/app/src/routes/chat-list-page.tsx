@@ -929,6 +929,15 @@ function MobileChatListPage() {
     setNoticeInfo(t(msg`已撤销删除。`));
   }
 
+  // 第四轮 R1：「清空全部」按钮只挂 onClick={() => void handleClearReminderGroup(...)}，
+  // 无任何双击兜底。clearReminders 内部 Promise.allSettled 一组 mutateAsync 出去，
+  // 同帧第二次 click 也照样把同一份 messageIds 再打一遍 → server 端第二批拿到
+  // 404（第一批已经把 reminder 删干净），clearReminders 把 rejected 抛出来 →
+  // 本函数 catch 走 setNoticeError，把刚刚成功的「已清除 N 条提醒」蓝条覆盖成
+  // 红色失败提示，用户以为没生效。和 chat-message-list 撤回/删除
+  // / chat-details 危险操作的 sync ref 锁同款修法；status 区分锁，让"逾期"和
+  // "已通知"两组互不影响。
+  const clearReminderGroupBusyRef = useRef<Set<string>>(new Set());
   async function handleClearReminderGroup(
     status: "pending" | "due" | "notified",
     messageIds: string[],
@@ -936,7 +945,11 @@ function MobileChatListPage() {
     if (!isChatReminderGroupClearable(status)) {
       return;
     }
+    if (clearReminderGroupBusyRef.current.has(status)) {
+      return;
+    }
 
+    clearReminderGroupBusyRef.current.add(status);
     try {
       await clearReminders(messageIds);
       setNoticeInfo(getChatReminderGroupClearNotice(status, messageIds.length));
@@ -946,6 +959,8 @@ function MobileChatListPage() {
           ? error.message
           : getChatReminderGroupClearErrorMessage(status),
       );
+    } finally {
+      clearReminderGroupBusyRef.current.delete(status);
     }
   }
 
