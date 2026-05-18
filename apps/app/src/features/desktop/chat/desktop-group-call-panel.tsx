@@ -428,7 +428,11 @@ export function DesktopGroupCallPanel({
             ) : null}
           </div>
 
-          <div className="mt-4">
+          {/* R43：和姊妹 R42 single-call panel 同款—— group call 面板的状态
+              summary lines + 同步提示，盲人 SR 在通话中条件切换（成员加入 / 退出 /
+              静音状态翻转 / 邀请待同步）时需要 audible 反馈。polite 不抢断 SR
+              当前 transcript / 用户说话。 */}
+          <div role="status" aria-live="polite" className="mt-4">
             <div className="space-y-3">
               {workspaceSummaryLines.map((line) => (
                 <InlineNotice key={line} tone="info">
@@ -438,7 +442,7 @@ export function DesktopGroupCallPanel({
             </div>
           </div>
           {!hasSyncedStatus ? (
-            <div className="mt-3">
+            <div role="status" aria-live="polite" className="mt-3">
               <InlineNotice tone="warning">
                 {inviteNoticePending
                   ? t(msg`正在把最新成员状态同步到聊天消息流。`)
