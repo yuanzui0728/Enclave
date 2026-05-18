@@ -479,17 +479,28 @@ export function DesktopChatHistoryPage() {
       }
     >
       <div className="p-5">
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        {/* 走查电脑端单聊 R102：和姊妹 desktop-chat-workspace R50 / desktop-chat-
+            files-page R83 一批 ErrorBlock/InlineNotice a11y 修法同款 —— 本页
+            notice (clearMutation 成功后回放"已清空 N 条" / "撤销"等)、ErrorBlock
+            (messagesQuery / clearMutation 失败) 都是裸 <div>，盲人 SR 进入
+            "聊天记录" page 触发清空 / 网络 4xx 时听不到任何反馈。一并补上：
+            notice → role="status" + aria-live="polite"；ErrorBlock → role="alert" 让
+            SR 立刻播报失败原因。 */}
+        {notice ? (
+          <InlineNotice role="status" aria-live="polite" tone="success">
+            {notice}
+          </InlineNotice>
+        ) : null}
 
         <div className="mt-4 space-y-2.5">
           {messagesQuery.isLoading ? (
             <LoadingBlock label={t(msg`正在读取聊天记录...`)} />
           ) : null}
           {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-            <ErrorBlock message={messagesQuery.error.message} />
+            <ErrorBlock role="alert" message={messagesQuery.error.message} />
           ) : null}
           {clearMutation.isError && clearMutation.error instanceof Error ? (
-            <ErrorBlock message={clearMutation.error.message} />
+            <ErrorBlock role="alert" message={clearMutation.error.message} />
           ) : null}
 
           {!selectedConversation ? (
