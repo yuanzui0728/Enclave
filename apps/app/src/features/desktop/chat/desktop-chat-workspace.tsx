@@ -1681,7 +1681,20 @@ export function DesktopChatWorkspace({
                   />
                 ) : null}
               </div>
-              <div ref={quickMenuRef} className="relative shrink-0">
+              {/* 走查新一轮 R11：「+」快捷按钮 + 展开的下拉菜单都在 chat list
+                  里，不在 threadSectionRef / sidePanelRef / desktopHeaderActionsRef
+                  保护区，开着「聊天信息」侧栏点 + 按钮的瞬间 workspace
+                  pointerdown capture 兜底就 dismissSidePanel —— 用户原意只是
+                  打开快捷菜单（发起群聊 / 添加朋友 / 新建笔记），结果当前会话
+                  的详情侧栏被偷偷关掉，发起群聊弹框出来后用户回头发现侧栏没了。
+                  对发起群聊这条尤其坑：用户点取消时已经回不到原来的浏览状态。
+                  和 R10 给 conversation / official context menu 同款思路：
+                  整段 quickMenu wrapper（含按钮 + dropdown）挂 portal-shield。 */}
+              <div
+                ref={quickMenuRef}
+                className="relative shrink-0"
+                data-yj-portal-shield="desktop-chat-quick-menu"
+              >
                 <button
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
