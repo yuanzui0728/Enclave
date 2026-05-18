@@ -380,9 +380,13 @@ export function DesktopChatHistoryPage() {
             {conversationsQuery.isLoading ? (
               <LoadingBlock label={t(msg`正在读取会话...`)} />
             ) : null}
+            {/* 走查电脑端单聊 R103：和 R102 同款补漏 —— 这条 ErrorBlock 是
+                左侧会话列表加载失败时的反馈（app-conversations 公网隧道首次拉
+                4xx/5xx），盲人 SR 进"聊天记录"页只听到"正在读取会话..."消失却
+                听不到错误原因。一并挂 role="alert"。 */}
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
-              <ErrorBlock message={conversationsQuery.error.message} />
+              <ErrorBlock role="alert" message={conversationsQuery.error.message} />
             ) : null}
 
             <div className="space-y-1">
