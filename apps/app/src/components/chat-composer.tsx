@@ -108,6 +108,15 @@ type ChatComposerProps = {
   mentionCandidates?: Array<{
     id: string;
     name: string;
+    // 走查电脑端群聊 R3：name 用于 picker 展示，可能是用户的好友 remark name
+    // （"小明"）。但实际插入到 message text 的 token 要走 server 端能匹配的
+    // 名字——api/src/modules/chat/group-reply-planner.service.ts line 64-68
+    // 的 aliases 只看 [member.memberName(群内昵称), character.name(角色原名)]，
+    // 不知道用户本地 friend.remarkName。如果按 name 插入 `@小明`，server 算
+    // isExplicitTarget=false → 该角色拿不到 mention 加权 → 不一定回复。
+    // mentionName 由调用方在 name ≠ 服务端可匹配名时显式提供：picker 仍按
+    // name 展示，applyMentionCandidate 走 mentionName ?? name 插入。
+    mentionName?: string;
     subtitle?: string;
     avatar?: string | null;
   }>;
@@ -2718,6 +2727,7 @@ export function ChatComposer({
   const applyMentionCandidate = (candidate: {
     id: string;
     name: string;
+    mentionName?: string;
     subtitle?: string;
     avatar?: string | null;
   }) => {
@@ -2731,10 +2741,18 @@ export function ChatComposer({
     // 非中文用户点了「@所有人」候选，AI 那条群通话/通知里 hasMentionAll 永远
     // false，notifyOnAtAll 用户收不到 @all 提示。展示文案保留本地化，但实际
     // 插入到 message text 的协议 token 强制走 `@所有人`，与服务端契约对齐。
+    //
+    // 走查电脑端群聊 R3：同样的 client/server 协议契约——picker 展示给用户的
+    // candidate.name 可能是用户本地 friend.remarkName（"小明"），但 server
+    // 端 group-reply-planner aliases 只看 [member.memberName, character.name]，
+    // 不知道 remark。如果原样按 name 插入 `@小明`，server isExplicitTarget=false
+    // → 角色拿不到 mention 加权 → 不一定回复。优先 mentionName（调用方在
+    // name ≠ 服务端可匹配名时显式提供，比如群成员的 in-group nickname），
+    // 没提供再回退 name。和 mention-all 的"展示本地化、token 走协议"同思路。
     const insertedName =
       candidate.id === "mention-all"
         ? "所有人" // i18n-ignore-line: protocol marker, server matches literal Chinese text
-        : candidate.name;
+        : (candidate.mentionName ?? candidate.name);
     const mentionText = `@${insertedName} `;
     const nextValue = `${value.slice(0, activeMention.start)}${mentionText}${value.slice(activeMention.end)}`;
     onChange(nextValue);

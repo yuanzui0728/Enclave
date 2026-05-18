@@ -9,6 +9,11 @@ const t = translateRuntimeMessage;
 type MentionCandidate = {
   id: string;
   name: string;
+  // 走查电脑端群聊 R3：和 chat-composer.tsx mentionCandidates 同款字段——picker
+  // 展示用 name（可能是 friend.remarkName），实际插入 token 由 chat-composer
+  // 的 applyMentionCandidate 走 mentionName ?? name。本组件只负责展示和回调，
+  // 转出的 candidate 透传 mentionName 给上游。
+  mentionName?: string;
   subtitle?: string;
   avatar?: string | null;
 };

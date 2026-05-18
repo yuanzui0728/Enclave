@@ -1271,6 +1271,7 @@ export function GroupChatThreadPanel({
     const candidates: Array<{
       id: string;
       name: string;
+      mentionName?: string;
       subtitle?: string;
       avatar?: string | null;
     }> = [
@@ -1309,9 +1310,16 @@ export function GroupChatThreadPanel({
       const displayName = resolveCharacterDisplayName(member.memberId, rawName);
       const roleLabel =
         member.role === "admin" ? t(msg`管理员`) : t(msg`群成员`);
+      // 走查电脑端群聊 R3：picker 展示用 displayName（含 friend.remarkName "小明"
+      // 的话用户期望看到这个），但插入到 message text 的 mention token 走 rawName
+      // ——server 端 group-reply-planner.service.ts line 64-68 的 aliases 只看
+      // [member.memberName, character.name]，rawName 是 member.memberName 的去
+      // 空值兜底，能被服务端 isExplicitTarget 命中。displayName === rawName 时
+      // mentionName 不挂，applyMentionCandidate 自然 fallback 到 name。
       candidates.push({
         id: member.memberId,
         name: displayName,
+        mentionName: displayName !== rawName ? rawName : undefined,
         subtitle:
           displayName !== rawName
             ? t(msg`昵称：${rawName} · ${roleLabel}`)
