@@ -4136,7 +4136,13 @@ function DesktopComposerStatusStrip({
   onSecondaryAction?: () => void;
 }) {
   return (
+    // R39：和姊妹 R36/R37/R38 同款—— composer status strip 是用户在桌面单聊发送
+    // 消息 / 附件 / 语音过程中显示的状态条（发送中 / 失败 / 已撤回 等），原版
+    // 普通 div SR 完全感知不到。danger tone 用 role="alert"+assertive 抢断；
+    // success/muted 走 status+polite。
     <div
+      role={tone === "danger" ? "alert" : "status"}
+      aria-live={tone === "danger" ? "assertive" : "polite"}
       className={cn(
         "flex min-w-0 flex-1 items-center gap-2 rounded-[11px] border px-2.5 py-1.5 text-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
         tone === "danger"
