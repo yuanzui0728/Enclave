@@ -1555,22 +1555,51 @@ export function DesktopChatWorkspace({
     desktopSearchLauncher.openSearch();
   }
 
-  function handleDesktopCallAction(kind: DesktopChatCallKind) {
-    if (!activeConversation) {
-      setNotice(t(msg`当前会话暂时不可用，请回到消息列表再试一次。`));
-      return;
-    }
+  // 走查 R3：handleDesktopCallAction / 历史记录弹层 onOpenMessage 都靠
+  // `void navigate(...)` 直冲，同帧 <16ms 双击：
+  // · header 通话菜单「语音通话/视频通话」CallMenuButton onClick = setCallMenuOpen(false)
+  //   + onSelectCall(kind) → handleDesktopCallAction → push 2 条 /desktop/mobile 历史
+  //   项（call handoff 入口），用户从手机端回到桌面要按 2 次 Back。
+  // · 查找记录弹层 result row「定位到聊天位置」按钮 onClick = onOpenMessage(id) →
+  //   workspace setRightPanelMode(null) + navigate(threadPath) push 2 条相同 thread
+  //   history，highlight 滚动也会拉两次 RAF。
+  // 共享 rowNavigateFiredRef + raf 复位，和姊妹 chat-details-page guardRowNavigation
+  // / 本文件 quickActionFiredRef 同款。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
 
-    void navigate({
-      to: "/desktop/mobile",
-      hash: buildDesktopMobileCallHandoffHash({
-        kind,
-        conversationId: activeConversation.id,
-        conversationType: getConversationThreadType(activeConversation),
-        title: activeConversation.title,
-      }),
-    });
-  }
+  const handleDesktopCallAction = guardRowNavigation(
+    (kind: DesktopChatCallKind) => {
+      if (!activeConversation) {
+        setNotice(t(msg`当前会话暂时不可用，请回到消息列表再试一次。`));
+        return;
+      }
+
+      void navigate({
+        to: "/desktop/mobile",
+        hash: buildDesktopMobileCallHandoffHash({
+          kind,
+          conversationId: activeConversation.id,
+          conversationType: getConversationThreadType(activeConversation),
+          title: activeConversation.title,
+        }),
+      });
+    },
+  );
 
   const handleConversationContextMenu = useCallback(
     (
@@ -2381,7 +2410,7 @@ export function DesktopChatWorkspace({
                 }
               : undefined
           }
-          onOpenMessage={(messageId) => {
+          onOpenMessage={guardRowNavigation((messageId: string) => {
             setRightPanelMode(null);
             setHistoryPanelCanReturnToDetails(false);
 
@@ -2391,7 +2420,7 @@ export function DesktopChatWorkspace({
                 messageId,
               }),
             });
-          }}
+          })}
         />
       ) : null}
 
