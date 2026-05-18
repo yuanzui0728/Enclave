@@ -510,40 +510,63 @@ export function ChatComposer({
     }
 
     const query = activeMention.query.trim().toLowerCase();
-    const normalized = mentionCandidates.filter((candidate) => {
-      if (!query) {
-        return true;
+    // 走查 R72：原版每次 filter callback 跑 2 次 toLowerCase（name + subtitle），
+    // sort 比较器又跑 2 次 toLowerCase（左右 startsWith）。50 人群 + 4 字 query =
+    // 50 × 4 × (2 filter + 2 × log2(50) sort) ≈ 2600 toLowerCase / 字。
+    // 一次性预计算每个 candidate 的 lowerName / lowerSubtitle / startsWith bool，
+    // filter 和 sort 复用，避免 hot path（@ picker 每键击都重算）上的重复字符串
+    // 操作。同时把 sort 的 startsWith 提前算成 bool，避免在 O(N log N) 比较里
+    // 反复重算。
+    const normalized: Array<{
+      candidate: (typeof mentionCandidates)[number];
+      lowerName: string;
+      startsWith: boolean;
+    }> = [];
+    for (const candidate of mentionCandidates) {
+      const lowerName = candidate.name.toLowerCase();
+      if (query) {
+        const lowerSubtitle = (candidate.subtitle ?? "").toLowerCase();
+        if (
+          !lowerName.includes(query) &&
+          !lowerSubtitle.includes(query)
+        ) {
+          continue;
+        }
       }
+      normalized.push({
+        candidate,
+        lowerName,
+        startsWith: query ? lowerName.startsWith(query) : false,
+      });
+    }
 
-      return (
-        candidate.name.toLowerCase().includes(query) ||
-        (candidate.subtitle ?? "").toLowerCase().includes(query)
-      );
+    normalized.sort((left, right) => {
+      // 走查 Round 1：原版只按 startsWith + locale 排，"mention-all"
+      // (所有人) 在中文 locale 下 sō < zhāng/lín 一类按拼音排会被压到列
+      // 表尾部，和 WeChat 习惯（@ 默认 "所有人" 置顶可一键选中）不一致。
+      // 空 query 时把 mention-all 强制顶端；有 query 时按 startsWith 命中
+      // 优先，命中相同再 locale。
+      if (!query) {
+        if (
+          left.candidate.id === "mention-all" &&
+          right.candidate.id !== "mention-all"
+        ) {
+          return -1;
+        }
+        if (
+          right.candidate.id === "mention-all" &&
+          left.candidate.id !== "mention-all"
+        ) {
+          return 1;
+        }
+      }
+      if (left.startsWith === right.startsWith) {
+        return compareByLocale(left.candidate.name, right.candidate.name);
+      }
+      return left.startsWith ? -1 : 1;
     });
 
-    return normalized
-      .sort((left, right) => {
-        // 走查 Round 1：原版只按 startsWith + locale 排，"mention-all"
-        // (所有人) 在中文 locale 下 sō < zhāng/lín 一类按拼音排会被压到列
-        // 表尾部，和 WeChat 习惯（@ 默认 "所有人" 置顶可一键选中）不一致。
-        // 空 query 时把 mention-all 强制顶端；有 query 时按 startsWith 命中
-        // 优先，命中相同再 locale。
-        if (!query) {
-          if (left.id === "mention-all" && right.id !== "mention-all") {
-            return -1;
-          }
-          if (right.id === "mention-all" && left.id !== "mention-all") {
-            return 1;
-          }
-        }
-        const leftStartsWith = left.name.toLowerCase().startsWith(query);
-        const rightStartsWith = right.name.toLowerCase().startsWith(query);
-        if (leftStartsWith === rightStartsWith) {
-          return compareByLocale(left.name, right.name);
-        }
-        return leftStartsWith ? -1 : 1;
-      })
-      .slice(0, 6);
+    return normalized.slice(0, 6).map((entry) => entry.candidate);
     // 这里 t 不在 body 里调用：filtering + sorting 都不渲染本地化文案，
     // 候选项的 name/subtitle 由调用方 (group-chat-thread-panel 的
     // mentionCandidates) 算好后传进来。漏掉 t 不会导致 stale string。
