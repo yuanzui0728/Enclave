@@ -1834,6 +1834,14 @@ export function DesktopChatWorkspace({
                   onFocus={() => desktopSearchLauncher.setIsOpen(true)}
                   onKeyDown={handleSearchFieldKeyDown}
                   placeholder={t(msg`搜索`)}
+                  // 走查 R75：原版只有 placeholder=「搜索」单字，SR (NVDA/JAWS)
+                  // 多数实现在用户开始打字后就不再朗读 placeholder。盲人用户
+                  // focus 进来只听到「编辑栏 搜索 空」或「编辑栏」，不知道
+                  // 这是搜索什么（联系人？聊天记录？全部？）。本字段是 chat
+                  // workspace 顶栏的全局搜索，open 后弹 DesktopSearchDropdownPanel
+                  // 覆盖聊天/联系人/收藏多个 scope。和姊妹搜索框 R23/R24
+                  // 同款补 aria-label 让意图明确。
+                  aria-label={t(msg`搜索聊天和联系人`)}
                   className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
                 />
                 <button
