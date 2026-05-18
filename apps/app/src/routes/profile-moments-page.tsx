@@ -1129,6 +1129,20 @@ export function ProfileMomentsPage() {
                 characterId={desktopAvatarPopover.characterId}
                 fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
                 fallbackName={desktopAvatarPopover.fallbackName}
+                // 走查新一轮 R8：之前完全没传 navigationContext —— popover 里
+                // 「查看资料」/「朋友圈」按钮调 buildCharacterDetailRouteHash /
+                // buildDesktopFriendMomentsRouteHash 时 returnPath 走默认值
+                // "/tabs/chat"（见 desktop-message-avatar-popover.tsx 行 104-107
+                // fallback）。结果用户在 /profile/moments 点 liker 头像 → 看资料
+                // → 资料页"返回上一页"跳 /tabs/chat 而不是 /profile/moments，
+                // 用户上下文丢失。和 moments-page / friend-moments-page 同模式
+                // 把 /profile/moments 当 returnPath 传下去。本页没有 hash 携带
+                // momentId，returnHash 留 undefined（popover fallback 也是
+                // undefined）。
+                navigationContext={{
+                  momentsReturnPath: "/profile/moments",
+                  profileReturnPath: "/profile/moments",
+                }}
                 onClose={() => setDesktopAvatarPopover(null)}
               />
             ) : (
