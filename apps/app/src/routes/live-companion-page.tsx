@@ -784,6 +784,13 @@ export function LiveCompanionPage() {
         </div>
       </div>
     </DesktopUtilityShell>
+      {/*
+        走查 2026-05-18 新会话 R2：原蒙板只有"功能开发中 / 敬请期待"两行字，没
+        任何出口按钮。用户从工作区顶栏的「直播伴侣」按钮点进来 → 满屏 z-50
+        backdrop blur 把下层 DesktopUtilityShell 全盖死 → 无回退路径：只能用
+        浏览器 Back / 桌面 shell 侧栏切走，体感「我点了直播伴侣进了死胡同」。
+        加一颗「返回视频号」Link 把用户送回 /tabs/channels，至少给个清晰出口。
+      */}
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
         <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-lg font-semibold text-[color:var(--text-primary)]">
@@ -792,6 +799,12 @@ export function LiveCompanionPage() {
           <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
             {t(msg`敬请期待`)}
           </div>
+          <Link
+            to="/tabs/channels"
+            className="mt-4 inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+          >
+            {t(msg`返回视频号`)}
+          </Link>
         </div>
       </div>
     </div>
