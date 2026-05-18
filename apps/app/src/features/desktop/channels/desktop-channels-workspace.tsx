@@ -879,6 +879,16 @@ function BackgroundCoverImage({
   isActive: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  // 走查 2026-05-18 新会话 R3：用户停在同一条 audio slide 不动时，若 home
+  // refetch 拉回了新的 coverUrl（minimax 资源轮换 / 后端 cleanupBrokenChannel
+  // Posts 修复了原本 404 的那张），src prop 切到新 URL —— 但 BackgroundCoverImage
+  // 是同一个 React 实例（key 在外层 ChannelFeedSlide 上按 post.id），useState
+  // 的 failed 在旧 src 失败时设过 true，新 src 进来仍按 failed=true 直接 return
+  // null，用户永远看不到新封面。同步加 useEffect 在 src 变化时清 failed，给
+  // 新 URL 一次尝试机会。
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
   if (failed) return null;
   return (
     <img
@@ -909,6 +919,12 @@ function ChannelFallbackImage({
 }) {
   const t = useRuntimeTranslator();
   const [failed, setFailed] = useState(false);
+  // 走查 2026-05-18 新会话 R3：跟 BackgroundCoverImage 同款 — src prop 换
+  // 新 URL 时清 failed，给新 URL 一次尝试。否则 home refetch 拉回新 coverUrl
+  // 用户在原 slide 看到的永远是「封面暂时无法显示」占位。
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
       {failed ? (
