@@ -509,7 +509,14 @@ export function GroupChatBackgroundPage() {
         )
       ) : null}
       {notice ? (
+        // 走查电脑端群聊 R90：和姊妹 R86/R88/R89 一批 transient toast 同款修法——
+        // 「群聊背景」页（群聊「聊天信息」→「聊天背景」入口）的 notice 是 3500ms
+        // 自动消失的反馈（line ~146-151 useEffect），始终 tone="success"，反馈
+        //「已应用背景」/「已恢复默认」等。原版裸 InlineNotice 没 role / aria-live，
+        // 盲人 SR 完全感知不到这条短暂反馈。polite 不抢断 SR 当前朗读。
         <InlineNotice
+          role="status"
+          aria-live="polite"
           tone="success"
           className={
             isDesktopLayout
