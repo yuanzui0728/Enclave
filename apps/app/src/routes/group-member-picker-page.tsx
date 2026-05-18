@@ -610,6 +610,12 @@ function MobileGroupMemberPickerPage({
               placeholder={
                 mode === "add" ? t(msg`搜索联系人`) : t(msg`搜索群成员`)
               }
+              // 走查 R3：和姊妹页 chat-message-search-panel R1 / create-group-page
+              // R2 同款 a11y 修法——父 label 没有文本子节点，placeholder 行为
+              // 在 SR 上分裂。挂 aria-label 把当前 mode 的意图明确表达。
+              aria-label={
+                mode === "add" ? t(msg`搜索联系人`) : t(msg`搜索群成员`)
+              }
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               // 走查 R1：和姊妹页 create-group-page R1 同款修法。备注名/角色名
