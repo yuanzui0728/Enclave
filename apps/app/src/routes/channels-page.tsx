@@ -2473,6 +2473,23 @@ export function ChannelsPage() {
             // R6: sync ref 锁同帧双击。disabled={refreshPending} 是 React state
             // 反推，同帧 3 次连点会触发 3 条 generate POST 把 LPP 队列撑爆。
             if (desktopGenerateSubmittingRef.current) return;
+            // 走查 2026-05-19 第七轮 R4：generateChannelPost 走 characters
+            // .findAllVisibleToOwner 随机角色出一条 audio，永远落到「推荐」
+            // 流——不会自动产生关注 / 朋友的视频号 / 直播。原 desktop 顶部
+            // 「换一批」按钮在 friends/following/live tab 上点了也只 generate，
+            // 不切 section —— 用户停在 friends 看着空态，notice 说"生成中...
+            // 几分钟后刷新看看" 但回头还是空（新 post 在 recommended），体感
+            // "按了没用"。mobile 顶部 refresh button L2596-2602 早就先切到
+            // recommended 再 generate；同款空态 CTA workspace L862 那条也已
+            // 经分流 isSpecialTab → "去推荐看看" 切 tab + recommended →
+            // "换一批" generate。顶部按钮跟它们对齐。
+            if (
+              activeSection === "following" ||
+              activeSection === "friends" ||
+              activeSection === "live"
+            ) {
+              handleSectionChange("recommended");
+            }
             desktopGenerateSubmittingRef.current = true;
             generateMutation.mutate();
           }}
