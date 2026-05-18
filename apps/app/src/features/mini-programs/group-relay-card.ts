@@ -1,6 +1,7 @@
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
+  formatDateTimeCached,
   formatMessageTimestamp,
   parseTimestamp,
 } from "../../lib/format";
@@ -44,13 +45,19 @@ export function resolveGroupRelayPublishRangeLabel(summary: GroupRelaySummary) {
     startedAt.getDate() === endedAt.getDate();
 
   if (sameDay) {
-    return `${formatMessageTimestamp(summary.timestampLabel)} - ${new Intl.DateTimeFormat(
-      "zh-CN",
+    // 走查 R68：原版硬编 `new Intl.DateTimeFormat("zh-CN", ...)`——en-US /
+    // ja-JP / ko-KR locale 用户在群聊里看到「群接龙」回填范围卡片时，起始
+    // 时间走 formatMessageTimestamp（按 runtime locale），结束时间却走 zh-CN
+    // 输出（"12:34" 还好，"上午/下午 12 时" 类 zh-CN 长格式更明显）。改走
+    // formatDateTimeCached——内部 getActiveLocale() 接 i18n runtime，cache 也
+    // 命中。和姊妹 lib/format.ts 已加 cache 的 formatter 完全一致。
+    return `${formatMessageTimestamp(summary.timestampLabel)} - ${formatDateTimeCached(
+      endedAt,
       {
         hour: "2-digit",
         minute: "2-digit",
       },
-    ).format(endedAt)}`;
+    )}`;
   }
 
   return `${formatMessageTimestamp(summary.timestampLabel)} - ${formatMessageTimestamp(summary.publishedAtLabel)}`;
