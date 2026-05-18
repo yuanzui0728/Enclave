@@ -5764,7 +5764,12 @@ function DesktopScreenshotEditor({
             </div>
 
             {notice ? (
+              // R38：和姊妹 R36/R37 同款—— desktop screenshot 编辑器顶部 notice
+              // 用 setDesktopScreenshotNotice 状态控制（截断 / 失败 / 提示），
+              // SR 完全感知不到。tone="info" 走 polite，等 SR 念完当前内容补一段。
               <InlineNotice
+                role="status"
+                aria-live="polite"
                 className="flex items-center justify-between gap-3 border-white/10 bg-white/8 text-xs text-white"
                 tone="info"
               >
@@ -5779,7 +5784,11 @@ function DesktopScreenshotEditor({
               </InlineNotice>
             ) : null}
             {error ? (
+              // R38：screenshot 编辑器 error 是 tone="danger"，截图保存 / 上传 /
+              // 编辑失败时 SR 必须立刻知道。assertive 抢断。
               <InlineNotice
+                role="alert"
+                aria-live="assertive"
                 className="border-white/10 bg-white/8 text-xs text-white"
                 tone="danger"
               >
