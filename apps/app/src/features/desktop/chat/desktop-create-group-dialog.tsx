@@ -805,6 +805,14 @@ export function DesktopCreateGroupDialog({
             onClose();
           }
         }}
+        // 走查电脑端单聊 R112：和姊妹 R107-R111 同款 —— 发起群聊 dialog 的
+        // backdrop <button> (absolute inset-0) 视觉不可见、纯 mouse"点击背景
+        // 关闭"affordance，但 DOM 顺序在 dialog 子树第一位。用户在单聊 +
+        // 菜单「发起群聊」/「聊天信息」侧栏「发起群聊」/ 头像 popover「发起
+        // 群聊」打开 dialog 后按 Tab → 焦点先落到这张不可见 backdrop → 再按
+        // Enter dialog 秒关，已勾选的联系人 + 已分享的消息一并丢失。Esc
+        // keydown 已挂 (line 449-469)，键盘用户走 Esc 关 dialog。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
