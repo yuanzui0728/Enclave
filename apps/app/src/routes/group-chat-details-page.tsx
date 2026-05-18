@@ -240,6 +240,28 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     setDangerSheetAction(null);
   }, [groupId]);
 
+  // 走查移动端群聊 R2：和姊妹路径 chat-details-page.tsx 走查 R1（commit
+  // 92247a693）同款修法——本页一连串 mutation onSuccess 调 showNotice("群聊已
+  // 置顶。"/"已开启消息免打扰。"/"群聊记录已清空。"/"群消息已开启强提醒。" 等）
+  // 原版没 auto-dismiss，notice 一直挂在 details 顶部直到用户切设置 / groupId
+  // 切换 / 离开页才消。单聊版同位置已经按 chat-list / chat-list-page 口径对齐
+  // 3.5s 自动消。本页 notice 形态比单聊简单（只有 showBackAction 一个 secondary
+  // action，没单聊那条 secondaryActionLabel 分支），但口径一致：只要挂着可点
+  // 的 primary action 或 secondary back action 就不自动消，给用户时间点。
+  // showBackAction=true 时 InlineNoticeActionButton 是用户唯一可继续的入口
+  // （404/退群失败兜底），auto-dismiss 把它秒走会让用户卡在不可恢复状态。
+  useEffect(() => {
+    if (
+      !notice ||
+      (notice.actionLabel && notice.onAction) ||
+      notice.showBackAction
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (
       groupQuery.isLoading ||
