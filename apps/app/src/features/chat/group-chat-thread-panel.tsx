@@ -1629,8 +1629,22 @@ export function GroupChatThreadPanel({
                     }
                   : null
               }
-              inviteNoticePending={sendCallInviteMutation.isPending}
-              endNoticePending={sendCallInviteMutation.isPending}
+              // 走查电脑端群聊新一轮 R1：原版两个 prop 同时绑 sendCallInviteMutation
+              // .isPending，但 mutation 既负责"开始/同步在席"也负责"结束通话"两类
+              // 调用——用户点「结束通话」→ endNoticePending=true（"结束中..."），
+              // 同时 inviteNoticePending 也跟着翻 true → "同步最新状态"按钮显示
+              // "同步中..."、下方 InlineNotice 误显示「正在把最新成员状态同步到
+              // 聊天消息流。」，和用户实际意图相反。反过来点「同步」时「结束通话」
+              // 按钮也短暂显示「结束中...」。用 mutation.variables.status 区分
+              // ongoing / ended 两类 intent，互不串扰。
+              inviteNoticePending={
+                sendCallInviteMutation.isPending &&
+                sendCallInviteMutation.variables?.status === "ongoing"
+              }
+              endNoticePending={
+                sendCallInviteMutation.isPending &&
+                sendCallInviteMutation.variables?.status === "ended"
+              }
               onClose={() => setDesktopCallPanelState(null)}
               onPanelOpened={(counts) => {
                 // 走查 Round 5：mutateAsync().then() 没接 .catch()，群通话邀请
