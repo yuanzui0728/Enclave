@@ -676,7 +676,7 @@ export class LocalProcessComputeProviderService
       env.MINIMAX_DAILY_LIMIT_LYRICS = String(share.lyrics);
       env.MINIMAX_DAILY_LIMIT_SPEECH_HD = String(share.speechHd);
       // "世界角色朋友圈自动配图"专用日上限（用途配额，仍占 image01 总额，
-      // 但额外做"每个 world 不超过这个数"的限制，详见 FeedImageBudgetService）。
+      // 但额外做"每个 world 不超过这个数"的限制，详见 MomentImageBudgetService）。
       env.FEED_IMAGE_WORLD_DAILY_SHARE = String(share.feedImage);
     } catch (err) {
       this.logger.warn(
