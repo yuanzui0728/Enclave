@@ -286,7 +286,7 @@ function DesktopGroupDetailCard({
         <GroupAvatarChip
           name={group.name}
           members={previewMembers
-            .map((member) => member.memberName ?? member.memberId)
+            .map((member) => member.memberName || member.memberId)
             .filter(Boolean)}
           size="wechat"
         />
@@ -320,7 +320,7 @@ function DesktopGroupDetailCard({
                 size="sm"
               />
               <span className="w-full truncate text-center text-[11px] text-[color:var(--text-muted)]">
-                {member.memberName ?? "—"}
+                {member.memberName || "—"}
               </span>
             </div>
           ))}

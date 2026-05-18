@@ -598,7 +598,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     return [
       ...members.map((member) => ({
         key: member.id,
-        label: member.memberName ?? member.memberId,
+        label: member.memberName || member.memberId,
         src: member.memberAvatar,
         // 点群成员头像：character → 打开角色资料页；自己（user 类型 owner）
         // 不挂 onClick 走 ChatMemberGrid 的 button 默认 no-op，避免 deadlink

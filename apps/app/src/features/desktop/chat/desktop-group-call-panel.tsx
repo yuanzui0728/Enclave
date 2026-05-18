@@ -507,14 +507,14 @@ export function DesktopGroupCallPanel({
               >
                 <div className="flex items-center gap-3">
                   <AvatarChip
-                    name={member.memberName ?? member.memberId}
+                    name={member.memberName || member.memberId}
                     src={member.memberAvatar}
                     size="wechat"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {member.memberName ?? member.memberId}
+                        {member.memberName || member.memberId}
                       </div>
                       <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                         {roleLabel}
