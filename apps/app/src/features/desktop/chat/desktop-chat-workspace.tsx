@@ -1399,7 +1399,26 @@ export function DesktopChatWorkspace({
     [officialMessageActionMutation],
   );
 
+  // 走查 R1：「+」快捷菜单点 action 后只走 setIsQuickMenuOpen(false) 关菜单——
+  // React state 要等 commit 才把 menu DOM 撤掉，同帧 <16ms double-click 都能
+  // 命中 handleQuickAction。「新建笔记」分支 createDesktopNoteDraft() 不带任
+  // 何 noteId/draftId hint，dedup 短路 (existing) 永远 miss → 两次同帧双击
+  // 各 buildDraftId() 落 2 条 UUID 不同的草稿到 localStorage：一条被 navigate
+  // 带去 /tabs/favorites 打开编辑器，另一条无主孤悬在草稿列表里。用户结束这次
+  // 编辑回到 favorites 看到莫名其妙多出一条空草稿，得手动清。「发起群聊」/
+  // 「添加朋友」两条同款双击下场：群聊弹层 setState 幂等问题不大，但 navigate
+  // 也会被打两次，tanstack router 在同 hash 上重复 push 倒不至于多帧。统一
+  // 用 requestAnimationFrame 兜同帧锁，下一帧自动复位让用户后续点击照常生效。
+  const quickActionFiredRef = useRef(false);
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
+    if (quickActionFiredRef.current) {
+      return;
+    }
+    quickActionFiredRef.current = true;
+    requestAnimationFrame(() => {
+      quickActionFiredRef.current = false;
+    });
+
     setIsQuickMenuOpen(false);
     setNotice(null);
 
