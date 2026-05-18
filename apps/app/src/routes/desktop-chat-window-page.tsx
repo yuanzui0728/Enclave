@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -168,6 +168,39 @@ export function DesktopChatWindowPage() {
     };
   }, [nativeDesktopShell]);
 
+  // 走查新一轮 R30：原写法 `buildMessageReturnTo={(messageId) => ...}` 内联
+  // 箭头函数，每次 DesktopChatWindowPage render 都换引用。本组件挂着
+  // conversationsQuery 15s staleTime + onWindowFocus，独立窗口聚焦时 fetch 完
+  // 回来 → conversationsQuery.data 变 → 组件 re-render → buildMessageReturnTo
+  // 引用换。该函数沿 DesktopChatWorkspace → ConversationThreadPanel →
+  // ChatMessageList 路径作为 prop 传递，最后挂在 imageMessages useMemo
+  // （chat-message-list.tsx line 1817）的 deps 上。引用一变 → imageMessages
+  // 整体 filter + map 全部图片消息重跑（长聊天 60-100+ 条历史里 ≥10 张图时
+  // 这层 O(n) 是可见开销）→ standaloneViewerItems useMemo 跟着重算 →
+  // ImageMessage / image viewer 子树也跟着无效 re-render 一遍。
+  //
+  // 用 useCallback 把 closure 固化在真正的依赖（routeState.* / activeConversation
+  // 的 type & title）上，conversationsQuery 60s refetch 拿到内容相同但引用
+  // 不同的 conversation 时——title/type 都不变——回调引用稳住，下游 useMemo
+  // 整条链全部 hit cache。和姊妹 conversation-thread-panel R1 / R2 把
+  // messageListThreadContext / contactPickerExcludeIds 抽 useMemo 同思路。
+  const buildMessageReturnTo = useCallback(
+    (messageId: string) => {
+      if (!routeState) {
+        return undefined;
+      }
+      return buildDesktopChatWindowPath({
+        conversationId: routeState.conversationId,
+        conversationType:
+          activeConversation?.type ?? routeState.conversationType,
+        title: activeConversation?.title ?? routeState.title,
+        returnTo: routeState.returnTo,
+        highlightedMessageId: messageId,
+      });
+    },
+    [activeConversation?.type, activeConversation?.title, routeState],
+  );
+
   if (!routeState) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
@@ -261,16 +294,7 @@ export function DesktopChatWindowPage() {
         <DesktopChatWorkspace
           selectedConversationId={routeState.conversationId}
           highlightedMessageId={routeState.highlightedMessageId}
-          buildMessageReturnTo={(messageId) =>
-            buildDesktopChatWindowPath({
-              conversationId: routeState.conversationId,
-              conversationType:
-                activeConversation?.type ?? routeState.conversationType,
-              title: activeConversation?.title ?? routeState.title,
-              returnTo: routeState.returnTo,
-              highlightedMessageId: messageId,
-            })
-          }
+          buildMessageReturnTo={buildMessageReturnTo}
           standaloneWindow
         />
       </div>
