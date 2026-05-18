@@ -254,7 +254,20 @@ export function ProfileCharacterImportPage() {
   }
 
   return (
-    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+    <AppPage
+      className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0"
+      // 第三波 R1：preview / success 卡显示时 drop zone 是 unmounted 的，桌面
+      // 用户（直接访问 /profile/character-import 走移动布局）顺手在页面的其它
+      // 区域（步骤说明 ol、success 卡、底部 padding 等）松开拖入的文件，浏览器
+      // default = 跳转打开那个 file:// URL —— preview / 进行中的 import / 整页
+      // state 全丢。AppPage 自己只是裸 div 没装全局 drag preventDefault，整个 app
+      // 也没在 root 装；那就在这一页装：dragOver/drop 一律 preventDefault，
+      // 把"丢错位置"变成静默 no-op。dropzone 内部 onDragOver/onDrop 仍然第一
+      // 个 fire（捕获到子元素就先跑），冒泡到 AppPage 时 preventDefault 已经
+      // 是 no-op，正常 readFile 不受影响。
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
+    >
       <TabPageTopBar
         title={t(msg`导入角色`)}
         titleAlign="center"
