@@ -143,6 +143,16 @@ export function DesktopFriendMomentsWorkspace({
   const profileActionAriaLabel = t(msg`查看 ${displayName} 的资料`);
 
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R4：跟 desktop-moments-workspace 同款 ——
+  // mobile moments-page 早就按 baseUrl 清 shareMomentId，桌面 3 个 workspace
+  // 都漏。本页是「角色朋友圈」专门页：character 切换或账户切换都会让 moments
+  // 列表整体翻新，旧 shareMomentId 找不到了 → 切回旧角色又 find 回来 → 分享
+  // 卡片"幽灵"重新弹出。ownerId 当 reset 锚跟着账户切，character 切换由父
+  // page 的 [characterId] reset 已经把 commentDrafts 等都清了；这里只补
+  // ownerId 一支兜住跨账户。
+  useEffect(() => {
+    setShareMomentId(null);
+  }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;

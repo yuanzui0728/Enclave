@@ -152,6 +152,16 @@ export function DesktopMomentsWorkspace({
 
   // 「分享图卡」目标 — 只存 id，moments 后续刷新时预览图也跟着新。
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R4：mobile 路径 (moments-page.tsx 行 2118-2120) 早就在
+  // baseUrl 变化时把 shareMomentId 清掉了；桌面这套 3 个 workspace 都漏。
+  // 后果：用户在账户 A 开着分享卡片，切到 B（同窗口 / Tauri 桌面 / 浏览器同
+  // 标签换世界），B 的 moments 里找不到 A 那条 → ShareCardModal cardKey=null
+  // 不渲染但 shareMomentId 状态仍是 A 的 id；用户再切回 A，A 的 moments 把
+  // 那条 find 回来 → 分享卡片"幽灵"重新弹出，体感是"我没点为啥又冒出来"。
+  // 用 ownerId 当 reset 锚（每次切账户都换），跟着 [ownerId] 翻转一次即可。
+  useEffect(() => {
+    setShareMomentId(null);
+  }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;

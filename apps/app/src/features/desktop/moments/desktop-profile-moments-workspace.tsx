@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import {
   type Moment,
@@ -130,6 +130,13 @@ export function DesktopProfileMomentsWorkspace({
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const [shareMomentId, setShareMomentId] = useState<string | null>(null);
+  // 走查电脑端 R4：跟 desktop-moments-workspace / desktop-friend-moments-workspace
+  // 同款 —— 切账户时 moments 列表整体翻新，旧 shareMomentId 找不到 →
+  // ShareCardModal cardKey=null 不渲；但状态仍在 → 切回旧账户又 find 回来
+  // 重新弹出"幽灵"分享卡。用 ownerId 当 reset 锚跟着账户切。
+  useEffect(() => {
+    setShareMomentId(null);
+  }, [ownerId]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;

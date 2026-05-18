@@ -113,6 +113,26 @@ export function DesktopGroupMemberPicker({
     onConfirm(selectedIds);
   };
 
+  // 走查桌面端群聊 R4：和 DesktopGroupMemberBrowserDialog / DesktopCreateGroupDialog
+  // 对齐口径，补 Escape 关闭。原版只有 X / 背板点击能关。pending 时不关，
+  // stopPropagation 避免冒泡到外层 workspace 的 dismissSidePanel 把背后的
+  //「聊天信息」侧栏一并关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || pending) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
   if (!open) {
     return null;
   }

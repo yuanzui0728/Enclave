@@ -92,6 +92,25 @@ export function DesktopGroupMemberRemovalPicker({
     onConfirm(selectedIds);
   };
 
+  // 走查桌面端群聊 R4：和 desktop-group-member-picker 对齐，补 Escape 关闭。
+  // stopPropagation 避免冒泡触发外层 workspace dismissSidePanel 把背后
+  //「聊天信息」侧栏一并关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || pending) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
   if (!open) {
     return null;
   }
