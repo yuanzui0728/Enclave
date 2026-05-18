@@ -387,18 +387,33 @@ async function uploadMomentVideoDraft(
 }
 
 async function createMomentImageDrafts(files: File[]) {
+  // 走查电脑端朋友圈 R6：原先 for-of 串行 await createMomentImageDraft —— 每张
+  // 都走 URL.createObjectURL + Image() onload 解 width/height，单张 ~10-50ms。
+  // 用户一次性选 9 张时主线程被串行卡 ~450ms，文件选择对话框关闭到 preview 出
+  // 现这段时间用户看着像"卡死了"。改 Promise.allSettled 并发跑所有解码，总
+  // 耗时收敛到 ≈ 最慢一张（~50ms），快接近秒级。
+  //
+  // 用 allSettled 而不是 Promise.all 是因为要在任一失败时把已成功的 URL 全部
+  // 释放再抛错（不然 9 张里只 1 张坏，剩 8 张的 blob URL 全泄漏）。原串行版本
+  // 第一张失败后续不跑就抛错；并发版本所有解码都跑完才决定，等价于"宽容收尾"。
+  const results = await Promise.allSettled(files.map(createMomentImageDraft));
   const drafts: MomentImageDraft[] = [];
-
-  try {
-    for (const file of files) {
-      drafts.push(await createMomentImageDraft(file));
+  let firstError: Error | null = null;
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      drafts.push(result.value);
+    } else if (!firstError) {
+      firstError =
+        result.reason instanceof Error
+          ? result.reason
+          : new Error(String(result.reason));
     }
-
-    return drafts;
-  } catch (error) {
-    releaseMomentImageDrafts(drafts);
-    throw error;
   }
+  if (firstError) {
+    releaseMomentImageDrafts(drafts);
+    throw firstError;
+  }
+  return drafts;
 }
 
 async function createMomentImageDraft(file: File): Promise<MomentImageDraft> {
