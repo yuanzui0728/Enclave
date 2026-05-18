@@ -502,6 +502,9 @@ export function ChatMessageList({
   // 三个函数共用一把 ref：UI 一次只能开一个 viewer overlay，互斥安全，retry 同
   // 一把锁顺带覆盖。和 chat-details-page shareContactSubmittingRef 同款修法。
   const sharingAttachmentSummaryRef = useRef(false);
+  // 见下方 openAttachment file 分支注释 — 按 messageId 互斥同一个文件气泡的同帧
+  // 双击，不同消息互不影响（用户连续点 2 个文件气泡是合法用法）。
+  const openingFileMessageIdsRef = useRef<Set<string>>(new Set());
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
   // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
   // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
@@ -2300,6 +2303,18 @@ export function ChatMessageList({
     }
 
     if (attachment.kind === "file") {
+      // 走查本会话 R2：和姊妹 savingAttachmentUrlsRef R3 同款 — openRemoteFile
+      // 是 fire-and-forget，无任何同步锁。FileAttachmentMessage 是个 <button>，
+      // 点 file 气泡 onClick={() => openAttachment(message)}，同帧双击同一个文件
+      // 气泡时同步走两次 openRemoteFile：iOS 原生壳上 UIDocumentInteractionController
+      // 弹两次（系统会拒掉第二次或先 dismiss 当前的）；web fallback anchor.click
+      // 触发两次下载。按 messageId 上锁，finally 解锁（不论 opened/false 都解锁
+      // 让用户能立刻重试），retry-notice 的 onAction 不走这个锁（重试是用户明确
+      // 单次意图，复用同样的 openFileAttachment closure 不再重新读 ref）。
+      if (openingFileMessageIdsRef.current.has(message.id)) {
+        return;
+      }
+      openingFileMessageIdsRef.current.add(message.id);
       const openFileAttachment = () =>
         openRemoteFile({
           url: resolveAttachmentUrl(attachment.url),
@@ -2323,7 +2338,11 @@ export function ChatMessageList({
         });
       };
 
-      void openFileAttachment().then(showFileOpenResult);
+      void openFileAttachment()
+        .finally(() => {
+          openingFileMessageIdsRef.current.delete(message.id);
+        })
+        .then(showFileOpenResult);
     }
   };
 
