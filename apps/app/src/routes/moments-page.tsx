@@ -326,6 +326,9 @@ export function MomentsPage() {
       setNotice(t(msg`朋友圈已发布。`));
       // 立刻把新发布的 moment prepend 到 paged 头部并把已加载的多页砍回 1 页 ——
       // 之前 fire-and-forget invalidate 后 600ms+ 才更新 UI，用户感受到"得刷新才能看到"。
+      // 走查 R1：pages[0].total 也要 +1，否则 toolbar 的「已加载 X / 共 Y 条动态」
+      // 在 invalidate refetch (~600ms+) 落地前会显示陈旧的 Y——用户发完一条
+      // 立刻看 "已加载 21 / 共 126 条" 而不是 127，体感像「我发了但总数没动」。
       queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
         ["app-moments-paged", baseUrl],
         (current) =>
@@ -335,6 +338,7 @@ export function MomentsPage() {
                   {
                     ...current.pages[0]!,
                     items: [newMoment, ...current.pages[0]!.items],
+                    total: (current.pages[0]!.total ?? 0) + 1,
                   },
                 ],
                 pageParams: current.pageParams.slice(0, 1),
@@ -785,11 +789,18 @@ export function MomentsPage() {
       });
       pagedSnapshots.forEach(([key, data]) => {
         if (!data) return;
+        // 走查 R1：删除时 pages[0].total 也要 -1，否则 toolbar 「已加载 X / 共 Y」
+        // 在 invalidate refetch (~600ms+) 落地前会显示陈旧的 Y——用户删完一条
+        // 立刻看 "已加载 99 / 共 126" 而不是 125，体感像「删了但总数没动」。
+        // 仅 pages[0] 上下移 —— total 是服务端跨页累计值，不属于任何具体一页。
         queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(key, {
           ...data,
-          pages: data.pages.map((page) => ({
+          pages: data.pages.map((page, index) => ({
             ...page,
             items: page.items.filter((item) => item.id !== momentId),
+            ...(index === 0
+              ? { total: Math.max(0, (page.total ?? 0) - 1) }
+              : {}),
           })),
         });
       });
