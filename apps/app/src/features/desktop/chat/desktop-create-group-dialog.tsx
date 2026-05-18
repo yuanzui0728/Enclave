@@ -128,6 +128,19 @@ export function DesktopCreateGroupDialog({
       ),
     [sortedFriendItems],
   );
+  // 走查 R66：和姊妹 desktop-group-member-picker R66 / desktop-group-member-
+  // removal-picker R66 同款修法。下方 renderFriendRow / shareableMessages map
+  // 内 selectedIds.includes / selectedMessageIds.includes 都是 O(K) 线性扫，
+  // 70+ 好友 × 多选时每次父帧 re-render（query refetch / mutation pending /
+  // shareHistory toggle / preset chip click 等）热路径 N × K 次比较。Set 一份
+  // 复用。selectedFriends 走 selectedIds 顺序保留 → 在 selectedIdSet 上 .has()
+  // 不能保序，仍按 selectedIds 顺序 map 出 directory items。
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedMessageIdSet = useMemo(
+    () => new Set(selectedMessageIds),
+    [selectedMessageIds],
+  );
+
   const selectedFriends = useMemo(
     () =>
       selectedIds
@@ -671,7 +684,7 @@ export function DesktopCreateGroupDialog({
         ? item.character.name
         : null;
     const isSourceFriend = item.character.id === sourceFriendId;
-    const checked = selectedIds.includes(item.character.id);
+    const checked = selectedIdSet.has(item.character.id);
     const focused =
       friendPositionMap.get(item.character.id) === focusedFriendIndex;
 
@@ -1097,9 +1110,7 @@ export function DesktopCreateGroupDialog({
                       </div>
                       <div>
                         {section.items.map((message) => {
-                          const checked = selectedMessageIds.includes(
-                            message.id,
-                          );
+                          const checked = selectedMessageIdSet.has(message.id);
                           const focused =
                             shareableMessagePositionMap.get(message.id) ===
                             focusedMessageIndex;
