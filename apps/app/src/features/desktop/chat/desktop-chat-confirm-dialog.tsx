@@ -117,6 +117,16 @@ export function DesktopChatConfirmDialog({
             onClose();
           }
         }}
+        // 走查电脑端单聊 R107：本 backdrop 是 absolute inset-0 全屏覆盖、纯
+        // mouse"点击背景关闭"affordance，视觉上不可见。原本没挂 tabIndex
+        // → 它是本 dialog 子树里的第一个 focusable button，用户从「聊天信息」
+        // 侧栏点「删除聊天 / 清空记录 / 加入黑名单 / 提交投诉」打开 dialog
+        // 后按 Tab，焦点直接落到这张不可见的 backdrop 上 → 用户看不到任何
+        // focus ring 也找不到光标，再按 Enter 就被意外触发 onClose 关掉了
+        // dialog。键盘用户已经有 Esc keydown 路径关 dialog，无需 Tab 可达
+        // 这条 backdrop。tabIndex={-1} 把它从 Tab 序列移出去；mouse 点击
+        // 路径 (onClick) 不受影响。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
