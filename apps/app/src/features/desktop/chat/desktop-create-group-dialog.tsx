@@ -896,14 +896,18 @@ export function DesktopCreateGroupDialog({
               label={t(msg`正在读取联系人...`)}
             />
           ) : null}
+          {/* R49：发起群聊 dialog 3 个 ErrorBlock 全部裸 <div>，没 role —
+              friendsQuery / createMutation 失败时盲人 SR 完全静默。
+              createMutation 尤其坑：用户选好成员点「创建群聊」后按钮短暂
+              pending 又恢复 enabled，没反馈 → 反复点同一按钮。挂 role="alert"。 */}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
             <div className="px-4 py-3">
-              <ErrorBlock message={friendsQuery.error.message} />
+              <ErrorBlock role="alert" message={friendsQuery.error.message} />
             </div>
           ) : null}
           {createMutation.isError && createMutation.error instanceof Error ? (
             <div className="px-4 py-3">
-              <ErrorBlock message={createMutation.error.message} />
+              <ErrorBlock role="alert" message={createMutation.error.message} />
             </div>
           ) : null}
 
@@ -1005,7 +1009,11 @@ export function DesktopCreateGroupDialog({
             ) : null}
             {shareableMessagesQuery.isError &&
             shareableMessagesQuery.error instanceof Error ? (
-              <ErrorBlock message={shareableMessagesQuery.error.message} />
+              // R49 续：shareableMessages 读取失败时盲人不知道列表为何空。
+              <ErrorBlock
+                role="alert"
+                message={shareableMessagesQuery.error.message}
+              />
             ) : null}
             {!shareableMessagesQuery.isLoading &&
             !shareableMessagesQuery.isError &&
