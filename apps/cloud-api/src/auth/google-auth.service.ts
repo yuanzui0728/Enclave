@@ -16,7 +16,9 @@ import { Repository } from "typeorm";
 import { resolveGoogleOAuthClientId } from "../config/cloud-runtime-config";
 import { CloudUserOAuthIdentityEntity } from "../entities/cloud-user-oauth-identity.entity";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
+import { IpRegionService } from "../users/ip-region.service";
 import { issueCloudClientAccessToken } from "./cloud-client-token";
+import { classifyDeviceType } from "./device-type";
 import { synthesizePhoneFromEmail } from "./email-auth.service";
 
 export type GoogleVerifyExtras = {
@@ -49,6 +51,7 @@ export class GoogleAuthService {
     private readonly identityRepo: Repository<CloudUserOAuthIdentityEntity>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly ipRegion: IpRegionService,
   ) {}
 
   registerPostVerifyHook(
@@ -108,8 +111,10 @@ export class GoogleAuthService {
     }
 
     if (!user) {
-      // Fallback：hook 未注册时仍尽力查找/创建本地身份，保证登录链路不断。
-      user = await this.fallbackEnsureUser(profile, synthPhone);
+      // Fallback：hook 未注册或抛错时仍尽力查找/创建本地身份，保证登录链路不断。
+      // 把 extras 透传过去，让 fallback 也能写 device / region — 否则
+      // hook 偶发失败时这次登录会丢掉这两项数据。
+      user = await this.fallbackEnsureUser(profile, synthPhone, extras);
     }
 
     if (user.status !== "active") {
@@ -170,8 +175,10 @@ export class GoogleAuthService {
   private async fallbackEnsureUser(
     profile: GoogleVerifiedProfile,
     synthPhone: string,
+    extras: GoogleVerifyExtras = {},
   ): Promise<CloudUserEntity> {
     const now = new Date();
+    const device = classifyDeviceType(extras.clientPlatform, extras.userAgent);
     let user = await this.userRepo.findOne({ where: { email: profile.email } });
     if (!user) {
       user = this.userRepo.create({
@@ -181,19 +188,47 @@ export class GoogleAuthService {
         displayName: profile.displayName,
         firstLoginAt: now,
         lastLoginAt: now,
+        registrationIp: extras.ip ?? null,
+        lastLoginIp: extras.ip ?? null,
+        lastLoginDeviceType: device,
       });
       user = await this.userRepo.save(user);
     } else {
       user.lastLoginAt = now;
+      if (extras.ip) user.lastLoginIp = extras.ip;
       if (!user.phone) user.phone = synthPhone;
       if (!user.emailVerifiedAt) user.emailVerifiedAt = now;
       if (!user.displayName && profile.displayName) {
         user.displayName = profile.displayName;
       }
+      if (device) user.lastLoginDeviceType = device;
       user = await this.userRepo.save(user);
     }
     await this.upsertIdentity(user.id, profile);
+    // Region 走异步：fallback 路径已经偏离正常流，IpRegion 5s × 2 provider 阻塞
+    // 不值。fire-and-forget 让登录响应立返，几百 ms 后 UPDATE 写入。
+    if (extras.ip) {
+      void this.resolveAndUpdateLastLoginRegion(user.id, extras.ip);
+    }
     return user;
+  }
+
+  // 把 lastLoginRegion / lastLoginCountryCode 的解析挪到登录响应之后异步执行。
+  // 7d 缓存命中 ≈ 零延迟；未命中 5s × 2 provider 也不挡用户。解析失败保留旧值。
+  private async resolveAndUpdateLastLoginRegion(userId: string, ip: string) {
+    try {
+      const lookup = await this.ipRegion.resolve(ip);
+      const patch: Partial<CloudUserEntity> = {};
+      if (lookup.region) patch.lastLoginRegion = lookup.region;
+      if (lookup.countryCode) patch.lastLoginCountryCode = lookup.countryCode;
+      if (Object.keys(patch).length > 0) {
+        await this.userRepo.update(userId, patch);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `lastLoginRegion async resolve failed for user=${userId} ip=${ip}: ${(error as Error).message}`,
+      );
+    }
   }
 
   async upsertIdentity(userId: string, profile: GoogleVerifiedProfile) {

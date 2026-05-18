@@ -1371,6 +1371,45 @@ export function GroupChatThreadPanel({
     [],
   );
 
+  // 走查移动端群聊 R1：和姊妹路径 conversation-thread-panel.tsx「新会话 R1」
+  // (startDirectCallFiredRef line 442-480) 同款修法——mobile 群「拨打通话」有
+  // 两条入口：
+  //   1) MobileChatThreadHeader 顶部「语音/视频通话」icon → 走 navigate，header
+  //      内部有 actionFiredRef 守住同帧双击（commit 222ec0680）。
+  //   2) ChatComposer 的 + 面板 (MobileChatPlusPanel) 里的 voice-call/video-call
+  //      tile → 通过 onStartVoiceCall/onStartVideoCall props 传进来，下方 JSX
+  //      原本直接 inline `void navigate({...})`，没挂 disabled / 没同步 ref 守。
+  // 入口 2 同帧 <16ms 双击就 push 2 条相同 history 项，用户从 call 屏返回还要
+  // 按 2 次返回才能回到群聊。把 onStartVoiceCall/onStartVideoCall 改成统一走
+  // startGroupCall，给它补 sync ref 锁；header 路径不受影响（header 的 guardAction
+  // 已经兜了），多一层无副作用。rAF 复位让 mount 内 navigate 完毕（page unmount
+  // 前的窗口）后还能开下一轮通话（罕见但保留语义一致）。
+  const startGroupCallFiredRef = useRef(false);
+  const startGroupCall = useCallback(
+    (kind: DesktopChatCallKind) => {
+      if (startGroupCallFiredRef.current) {
+        return;
+      }
+      startGroupCallFiredRef.current = true;
+      void navigate({
+        to:
+          kind === "voice"
+            ? "/group/$groupId/voice-call"
+            : "/group/$groupId/video-call",
+        params: { groupId },
+        ...(currentMobileGroupRouteHash
+          ? { hash: currentMobileGroupRouteHash }
+          : {}),
+      });
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          startGroupCallFiredRef.current = false;
+        });
+      }
+    },
+    [currentMobileGroupRouteHash, groupId, navigate],
+  );
+
   useEffect(() => {
     if (!isDesktop || !desktopCallRequest) {
       return;
@@ -1926,24 +1965,8 @@ export function GroupChatThreadPanel({
           }}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
-          onStartVoiceCall={() => {
-            void navigate({
-              to: "/group/$groupId/voice-call",
-              params: { groupId },
-              ...(currentMobileGroupRouteHash
-                ? { hash: currentMobileGroupRouteHash }
-                : {}),
-            });
-          }}
-          onStartVideoCall={() => {
-            void navigate({
-              to: "/group/$groupId/video-call",
-              params: { groupId },
-              ...(currentMobileGroupRouteHash
-                ? { hash: currentMobileGroupRouteHash }
-                : {}),
-            });
-          }}
+          onStartVoiceCall={() => startGroupCall("voice")}
+          onStartVideoCall={() => startGroupCall("video")}
           onSubmit={() => void handleSubmit()}
         />
       ) : null}

@@ -208,12 +208,16 @@ export function UsersPage() {
         <DistributionPieCard
           title={t("Region distribution")}
           data={distributionQuery.data?.byRegion}
+          isLoading={distributionQuery.isLoading}
           emptyLabel={t("No data yet.")}
+          loadingLabel={t("Loading…")}
         />
         <DistributionPieCard
           title={t("Device distribution")}
           data={distributionQuery.data?.byDevice}
+          isLoading={distributionQuery.isLoading}
           emptyLabel={t("No data yet.")}
+          loadingLabel={t("Loading…")}
           formatLabel={deviceLabelFormatter}
         />
       </div>
@@ -293,13 +297,13 @@ export function UsersPage() {
           {/* table-fixed + 显式宽度：避免排序切换、IP 异步解析导致列宽抖动 */}
           <table className="w-full table-fixed divide-y divide-[color:var(--border-faint)] text-sm">
             <colgroup>
-              <col className="w-[16%]" />
+              <col className="w-[15%]" />
               <col className="w-[10%]" />
               <col className="w-[10%]" />
               <col className="w-[10%]" />
-              <col className="w-[11%]" />
               <col className="w-[10%]" />
-              <col className="w-[8%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
               <col className="w-[11%]" />
               <col className="w-[14%]" />
             </colgroup>

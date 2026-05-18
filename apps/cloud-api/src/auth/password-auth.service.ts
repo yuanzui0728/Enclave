@@ -88,17 +88,13 @@ export class PasswordAuthService {
     if (extras.ip) user.lastLoginIp = extras.ip;
     const device = classifyDeviceType(extras.clientPlatform, extras.userAgent);
     if (device) user.lastLoginDeviceType = device;
-    if (extras.ip) {
-      // IpRegionService 内部 5s 超时 + 7d 缓存命中后零延迟；解析失败保留旧值。
-      try {
-        const region = await this.ipRegionService.resolve(extras.ip);
-        if (region.region) user.lastLoginRegion = region.region;
-        if (region.countryCode) user.lastLoginCountryCode = region.countryCode;
-      } catch {
-        // 忽略解析失败，不阻塞登录。
-      }
-    }
     await this.userRepo.save(user);
+    // Region 解析挪到登录响应之后异步执行：IpRegionService 内部 5s × 2 provider
+    // 直接 await 会让首次/未缓存 IP 登录卡顿。fire-and-forget 让用户立刻拿到
+    // accessToken，几百 ms 后再 UPDATE lastLoginRegion / lastLoginCountryCode。
+    if (extras.ip) {
+      void this.resolveAndUpdateLastLoginRegion(user.id, extras.ip);
+    }
 
     const synthPhone = user.phone
       ? user.phone
@@ -240,6 +236,27 @@ export class PasswordAuthService {
       await this.attemptRepo.save(attempt);
     } catch {
       // attempt 表写入失败不阻塞主流程。
+    }
+  }
+
+  // 异步解析 IP region 并更新 cloud_users.lastLoginRegion / lastLoginCountryCode。
+  // 在 saveUser 之后用 void 调用，登录响应不等它。解析失败不写回避免覆盖旧值。
+  private async resolveAndUpdateLastLoginRegion(userId: string, ip: string) {
+    try {
+      const lookup = await this.ipRegionService.resolve(ip);
+      const patch: Partial<CloudUserEntity> = {};
+      if (lookup.region) patch.lastLoginRegion = lookup.region;
+      if (lookup.countryCode) patch.lastLoginCountryCode = lookup.countryCode;
+      if (Object.keys(patch).length > 0) {
+        await this.userRepo.update(userId, patch);
+      }
+    } catch (error) {
+      const message = (error as Error).message;
+      // 走日志而不是 throw：用户已经登录成功，region 仅供分析用。
+      // 不引入 Logger 依赖以维持现有构造签名，console.warn 已足够。
+      console.warn(
+        `[password-auth] lastLoginRegion async resolve failed user=${userId} ip=${ip}: ${message}`,
+      );
     }
   }
 }

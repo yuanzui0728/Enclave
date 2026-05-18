@@ -26,6 +26,8 @@ export function DistributionPieCard(props: {
   title: string;
   data: CloudUserDistributionBucket[] | undefined;
   emptyLabel: string;
+  loadingLabel: string;
+  isLoading?: boolean;
   formatLabel?: (raw: string) => string;
   height?: number;
 }) {
@@ -36,6 +38,9 @@ export function DistributionPieCard(props: {
       value: b.count,
     }));
   const total = data.reduce((acc, d) => acc + d.value, 0);
+  // 首次加载时 props.data 是 undefined，与「真的没数据」要区分开——后者
+  // 显示 emptyLabel，前者显示 loadingLabel 避免误导运营「分布图是空的」。
+  const isLoading = props.isLoading && !props.data;
 
   return (
     <div className="rounded-2xl border border-(--border-subtle) bg-(--surface-card) p-4 shadow-sm">
@@ -49,7 +54,11 @@ export function DistributionPieCard(props: {
           </div>
         ) : null}
       </div>
-      {data.length === 0 ? (
+      {isLoading ? (
+        <div className="flex h-[220px] items-center justify-center text-sm text-(--text-muted)">
+          {props.loadingLabel}
+        </div>
+      ) : data.length === 0 ? (
         <div className="flex h-[220px] items-center justify-center text-sm text-(--text-muted)">
           {props.emptyLabel}
         </div>

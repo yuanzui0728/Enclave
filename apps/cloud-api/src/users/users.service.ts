@@ -87,18 +87,23 @@ export class UsersService implements OnModuleInit {
     private readonly ipRegion: IpRegionService,
   ) {}
 
-  // 把 ip 解析为 region + countryCode。失败/空 IP 返回 null/null，调用方
-  // 用 ?? 兜底保留旧值即可，不阻塞主流程。同步 await：IpRegionService 命中
-  // 7d 缓存几乎零延迟，未命中 5s 超时；多花的这点登录耗时换取列表/图表实时性。
-  private async resolveRegionSafe(
-    ip: string | null | undefined,
-  ): Promise<{ region: string | null; countryCode: string | null }> {
-    if (!ip) return { region: null, countryCode: null };
+  // 异步解析 IP region 并更新 cloud_users.lastLoginRegion / lastLoginCountryCode。
+  // 登录路径用 void 调用，不阻塞响应：IpRegionService 5s × 2 provider 在首次/
+  // 未缓存 IP 时会拖慢登录，cache 命中 7d 后又零延迟。fire-and-forget 让
+  // 用户立刻拿到 accessToken；几百 ms 内后台再写入。解析失败保留旧值。
+  private async resolveAndUpdateLastLoginRegion(userId: string, ip: string) {
     try {
-      const r = await this.ipRegion.resolve(ip);
-      return { region: r.region ?? null, countryCode: r.countryCode ?? null };
-    } catch {
-      return { region: null, countryCode: null };
+      const lookup = await this.ipRegion.resolve(ip);
+      const patch: Partial<CloudUserEntity> = {};
+      if (lookup.region) patch.lastLoginRegion = lookup.region;
+      if (lookup.countryCode) patch.lastLoginCountryCode = lookup.countryCode;
+      if (Object.keys(patch).length > 0) {
+        await this.userRepo.update(userId, patch);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `lastLoginRegion async resolve failed user=${userId} ip=${ip}: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -156,7 +161,6 @@ export class UsersService implements OnModuleInit {
   async ensureUser(phone: string, context: EnsureUserContext = {}) {
     const now = new Date();
     const device = classifyDeviceType(context.clientPlatform, context.userAgent);
-    const { region, countryCode } = await this.resolveRegionSafe(context.ip);
     let user = await this.userRepo.findOne({ where: { phone } });
     let isNewUser = false;
 
@@ -170,8 +174,6 @@ export class UsersService implements OnModuleInit {
         lastLoginIp: context.ip ?? null,
         registrationDeviceFingerprint: context.deviceFingerprint ?? null,
         lastLoginDeviceType: device,
-        lastLoginRegion: region,
-        lastLoginCountryCode: countryCode,
       });
       user = await this.userRepo.save(user);
     } else {
@@ -182,9 +184,12 @@ export class UsersService implements OnModuleInit {
         user.registrationDeviceFingerprint = context.deviceFingerprint;
       }
       if (device) user.lastLoginDeviceType = device;
-      if (region) user.lastLoginRegion = region;
-      if (countryCode) user.lastLoginCountryCode = countryCode;
       user = await this.userRepo.save(user);
+    }
+
+    // Region 异步写入，不阻塞登录响应。见 resolveAndUpdateLastLoginRegion 注释。
+    if (context.ip) {
+      void this.resolveAndUpdateLastLoginRegion(user.id, context.ip);
     }
 
     if (isNewUser && context.setPasswordOnRegister) {
@@ -252,7 +257,6 @@ export class UsersService implements OnModuleInit {
   ) {
     const now = new Date();
     const device = classifyDeviceType(context.clientPlatform, context.userAgent);
-    const { region, countryCode } = await this.resolveRegionSafe(context.ip);
     let user = await this.userRepo.findOne({ where: { email } });
     let isNewUser = false;
 
@@ -268,8 +272,6 @@ export class UsersService implements OnModuleInit {
         lastLoginIp: context.ip ?? null,
         registrationDeviceFingerprint: context.deviceFingerprint ?? null,
         lastLoginDeviceType: device,
-        lastLoginRegion: region,
-        lastLoginCountryCode: countryCode,
       });
       user = await this.userRepo.save(user);
     } else {
@@ -282,9 +284,12 @@ export class UsersService implements OnModuleInit {
         user.registrationDeviceFingerprint = context.deviceFingerprint;
       }
       if (device) user.lastLoginDeviceType = device;
-      if (region) user.lastLoginRegion = region;
-      if (countryCode) user.lastLoginCountryCode = countryCode;
       user = await this.userRepo.save(user);
+    }
+
+    // Region 异步写入，不阻塞登录响应。
+    if (context.ip) {
+      void this.resolveAndUpdateLastLoginRegion(user.id, context.ip);
     }
 
     if (isNewUser && context.setPasswordOnRegister) {
