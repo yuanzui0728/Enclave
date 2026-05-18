@@ -62,7 +62,7 @@ import {
   type SendMessagePayload,
   uploadCustomSticker,
 } from "@yinjie/contracts";
-import { getActiveLocale, translateRuntimeMessage, useRuntimeTranslator } from "@yinjie/i18n";
+import { translateRuntimeMessage, useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { InlineNoticeActionButton } from "./inline-notice-action-button";
@@ -116,6 +116,7 @@ import {
 import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
+  formatDateTimeCached,
   formatDesktopMessageTimestamp,
   formatDetailedMessageTimestamp,
   formatMessageTimestamp,
@@ -5149,7 +5150,13 @@ function formatReminderSummary(t: Translator, remindAt: string) {
     tomorrow.getMonth() === date.getMonth() &&
     tomorrow.getDate() === date.getDate();
 
-  const timeLabel = date.toLocaleTimeString(getActiveLocale(), {
+  // 走查 R9：之前直接 date.toLocaleTimeString / toLocaleDateString 每次构造新
+  // Intl 实例。本函数在 reminder badge 渲染处被消息列表 render hot path 反复
+  // 调用（每条带 reminder 的消息 × 每个 typing tick / socket echo / state 变化），
+  // 长聊里几条 reminder 每帧白烧 5-10ms。改用 lib/format.ts 的 formatDateTimeCached
+  // —— 同 (locale, options) 组合命中 Map.get 复用 Intl 实例，整页 Intl 实例上
+  // 限 ~40 条，可忽略。
+  const timeLabel = formatDateTimeCached(date, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -5163,7 +5170,7 @@ function formatReminderSummary(t: Translator, remindAt: string) {
     return t(msg`明天 ${timeLabel}`);
   }
 
-  const dateLabel = date.toLocaleDateString(getActiveLocale(), {
+  const dateLabel = formatDateTimeCached(date, {
     month: "numeric",
     day: "numeric",
   });

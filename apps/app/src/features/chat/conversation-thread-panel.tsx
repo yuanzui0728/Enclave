@@ -264,6 +264,55 @@ export function ConversationThreadPanel({
       }
     : null;
 
+  // 走查 R9：mobile 单聊主路径之前没有任何 aria-live 区域，TalkBack / VoiceOver
+  // 用户开着这个聊天页时 AI 回复来了听不到——只能主动把焦点重新移到列表才能发现
+  // 新内容。同 actionNotice (chat-message-list aria-live) 的语义，给"对端新消息"
+  // 加一条 polite 公告，仅广播 mount 之后到达的真消息（不要把进入聊天时既有的
+  // 历史一次性念出来）。短描述用 resolveMessageSemanticPreview 拿 30 字以内的
+  // 摘要 + sender 称呼，避免长消息读半天。
+  const characterIncomingAnnouncerSeenIdRef = useRef<string | null>(null);
+  const characterIncomingAnnouncerMountedRef = useRef(false);
+  const [characterIncomingAnnouncement, setCharacterIncomingAnnouncement] =
+    useState("");
+
+  useEffect(() => {
+    characterIncomingAnnouncerMountedRef.current = false;
+    characterIncomingAnnouncerSeenIdRef.current = null;
+    setCharacterIncomingAnnouncement("");
+  }, [conversationId]);
+
+  useEffect(() => {
+    const latestCharacterMessage = [...renderedMessages]
+      .reverse()
+      .find((message) => message.senderType === "character");
+    if (!latestCharacterMessage) {
+      // 把"基线 id"标稳：下一条真的 AI 回复才会触发 announcer。
+      characterIncomingAnnouncerMountedRef.current = true;
+      return;
+    }
+    if (!characterIncomingAnnouncerMountedRef.current) {
+      characterIncomingAnnouncerMountedRef.current = true;
+      characterIncomingAnnouncerSeenIdRef.current = latestCharacterMessage.id;
+      return;
+    }
+    if (
+      characterIncomingAnnouncerSeenIdRef.current === latestCharacterMessage.id
+    ) {
+      return;
+    }
+    characterIncomingAnnouncerSeenIdRef.current = latestCharacterMessage.id;
+    const senderName =
+      latestCharacterMessage.senderName?.trim() ||
+      conversationTitle ||
+      t(msg`对方`);
+    const preview =
+      resolveMessageSemanticPreview(latestCharacterMessage, {
+        maxChars: 60,
+        bracketedFallback: true,
+      }) || t(msg`新消息`);
+    setCharacterIncomingAnnouncement(t(msg`${senderName}：${preview}`));
+  }, [conversationId, conversationTitle, renderedMessages]);
+
   useThreadEntryScrollToBottom({
     threadKey: conversationId,
     ready: !messagesQuery.isLoading && unreadSnapshotReady,
@@ -670,6 +719,16 @@ export function ConversationThreadPanel({
           </InlineNotice>
         </div>
       ) : null}
+      {/* 走查 R9：屏幕阅读器（VoiceOver / TalkBack）对端新消息的播报通道。
+          visually-hidden 但 aria-live="polite" 让 SR 在 idle 时朗读最新一条 AI
+          回复的"角色名：内容摘要"。aria-atomic 防止 SR 只念差量（替换 vs 追加） */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="pointer-events-none sr-only"
+      >
+        {characterIncomingAnnouncement}
+      </div>
       <div
         className={`relative flex-1 overflow-hidden ${
           isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"

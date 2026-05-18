@@ -19,7 +19,12 @@ const t = translateRuntimeMessage;
 // 由于 lib/format.ts 是 app 本地 lib（@yinjie/i18n 是跨 app 共享 package），
 // 缓存放这一层即可不影响 admin / cloud-console / wiki，更安全。
 const dateTimeFormatterCache = new Map<string, Intl.DateTimeFormat>();
-function formatDateTimeCached(
+// 走查 R9：导出 formatDateTimeCached 让 chat-message-list 的 formatReminderSummary
+// 也能复用缓存。原 toLocaleTimeString / toLocaleDateString 直接调用 V8 每次内部
+// 都重建 Intl 实例（~0.5-1ms / 调用）；reminder badge 渲染在消息列表的 render
+// hot path 里，每个 typing tick / setQueriesData 都跑一遍，长聊几条带 reminder
+// 的消息每帧白烧 5-10ms。
+export function formatDateTimeCached(
   date: Date | number,
   options: Intl.DateTimeFormatOptions,
 ) {
