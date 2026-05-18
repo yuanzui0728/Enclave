@@ -223,12 +223,19 @@ export function ProfileCharacterImportPage() {
       setPreview(null);
       // 通讯录 / 角色列表用 react-query 缓存，staleTime 10-60s 内不会重新拉。
       // 不显式 invalidate，用户立刻点"去通讯录"可能看不到新导入的角色。
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-characters", baseUrl],
-        }),
-      ]);
+      //
+      // 新会话3 R1 perf：原 await Promise.all 让 submitting=true 在 invalidate
+      // 期间多卡 100-500ms（contacts query 若已经在背景里挂载，refetch 完成
+      // 才 resolve），用户没法接着再导入下一个角色。但 invalidateQueries 的
+      // "标 stale"语义是同步执行的——refetch 是 async 副作用，对"用户接下来
+      // 点去通讯录看到新数据"没影响（页面 mount 时 useQuery 看到 stale 自然
+      // refetch）。改成 void fire-and-forget。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-friends", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-characters", baseUrl],
+      });
     } catch (err) {
       setResult({
         kind: "danger",
