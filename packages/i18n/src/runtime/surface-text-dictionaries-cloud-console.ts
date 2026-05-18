@@ -952,6 +952,8 @@ const cloudConsoleText: LocaleDictionary = {
     "Search phone": "電話番号で検索",
     "Search phone or email": "電話番号 / メール / 表示名で検索",
     "Search phone or code": "電話番号または招待コードで検索",
+    "Include test accounts (smoke / e2e / Twilio)":
+      "テストアカウント (smoke / e2e / Twilio) を含める",
     "Loading SaaS users...": "SaaS ユーザーを読み込み中...",
     "Failed to load users.": "ユーザーの読み込みに失敗しました。",
     "No cloud users matched the current filters.":
@@ -1659,6 +1661,8 @@ const cloudConsoleText: LocaleDictionary = {
     "Search phone": "전화번호 검색",
     "Search phone or email": "전화번호 / 이메일 / 표시 이름 검색",
     "Search phone or code": "전화번호 또는 초대 코드 검색",
+    "Include test accounts (smoke / e2e / Twilio)":
+      "테스트 계정 (smoke / e2e / Twilio) 포함",
     "Loading SaaS users...": "SaaS 사용자를 로드하는 중...",
     "Failed to load users.": "사용자 로드에 실패했습니다.",
     "No cloud users matched the current filters.":

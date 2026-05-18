@@ -52,7 +52,13 @@ export function UserDetailPage() {
   });
 
   const banMutation = useMutation({
-    mutationFn: () => cloudAdminApi.banUser(userId, { reason: banReason || "manual-ban" }),
+    // banReason 是受控输入，admin 不小心敲了一串空格也算"填了"，`banReason ||`
+    // 兜不住会把 "   " 当 reason 发到后端入库。先 trim 再判，纯空白回落到
+    // "manual-ban"。
+    mutationFn: () =>
+      cloudAdminApi.banUser(userId, {
+        reason: banReason.trim() || "manual-ban",
+      }),
     onSuccess: invalidateUserViews,
   });
 
