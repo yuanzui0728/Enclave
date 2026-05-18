@@ -885,11 +885,25 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 onConfirm: () => blockMutation.mutate(),
               }
             : null;
+  // 第四轮 R5：「保存到通讯录」按钮 disabled 原版只看 isFriend/targetCharacterId，
+  // 没看 busy。同帧双击 → saveToContactsMutation.mutate() 触发两次：
+  // sendFriendRequest 第二次撞已存在 friendship 抛 ALREADY_FRIEND，onError 把
+  // 第一次「已添加到通讯录」蓝条覆盖成「添加通讯录失败」橙警告条。
+  // disabled 加 busy 在视觉上挡，但 React state 要等 commit，同帧两次 click
+  // 都通过。再叠一层 sync ref 锁兜底；mutation settle 后由 useEffect [busy]
+  // 复位（参考 dangerConfirmSubmittingRef 同款 setup line 140 / 779-784）。
+  const saveToContactsSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!saveToContactsMutation.isPending) {
+      saveToContactsSubmittingRef.current = false;
+    }
+  }, [saveToContactsMutation.isPending]);
   const handleSaveToContacts = () => {
-    if (!targetCharacterId) {
+    if (!targetCharacterId || saveToContactsSubmittingRef.current) {
       return;
     }
 
+    saveToContactsSubmittingRef.current = true;
     saveToContactsMutation.mutate();
   };
 
@@ -1180,7 +1194,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 label={t(msg`保存到通讯录`)}
                 value={isFriend ? t(msg`已添加`) : undefined}
                 variant="wechat"
-                disabled={isFriend || !targetCharacterId}
+                disabled={isFriend || !targetCharacterId || busy}
                 onClick={handleSaveToContacts}
               />
               <ChatSettingRow
