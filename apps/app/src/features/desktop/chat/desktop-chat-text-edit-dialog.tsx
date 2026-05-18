@@ -164,6 +164,12 @@ export function DesktopChatTextEditDialog({
             onClose();
           }
         }}
+        // 走查电脑端单聊 R109：和姊妹 R107/R108 同款 —— backdrop <button>
+        // (absolute inset-0) 视觉不可见、纯 mouse"点击背景关闭"affordance，
+        // 但 DOM 顺序在 dialog 子树第一位。用户从「聊天信息」侧栏改备注 / 标签
+        // 打开 dialog 后按 Tab → 焦点先落到这张不可见 backdrop → 再按 Enter
+        // dialog 秒关 / 用户半途打的备注被丢。Esc keydown 已挂，键盘用户走 Esc。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
