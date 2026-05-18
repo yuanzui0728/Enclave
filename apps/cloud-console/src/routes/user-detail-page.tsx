@@ -99,7 +99,7 @@ export function UserDetailPage() {
               <br />
               {t("Subscription:")} {t(user.subscriptionStatus)}
               <br />
-              {t("Current plan:")} {user.currentPlanCode || "-"}
+              {t("Current plan:")} {user.currentPlanCode ? t(user.currentPlanCode) : "-"}
               <br />
               {t("Expires at:")} {formatTimestamp(user.subscriptionExpiresAt)}
               <br />
@@ -257,7 +257,7 @@ export function UserDetailPage() {
                   {subscription.planName}
                 </div>
                 <div className="mt-1 text-[color:var(--text-secondary)]">
-                  {t(subscription.status)} | {subscription.source}
+                  {t(subscription.status)} | {t(subscription.source)}
                   <br />
                   {formatTimestamp(subscription.startsAt)} {"->"} {formatTimestamp(subscription.expiresAt)}
                   <br />
