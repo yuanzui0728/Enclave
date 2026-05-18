@@ -1008,7 +1008,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
 
   return (
     <ChatDetailsShell
-      title={displayedConversationTitle ?? t(msg`聊天信息`)}
+      title={displayedConversationTitle || t(msg`聊天信息`)}
       onBack={guardBackAction(() => {
         navigateBackOrFallback(
           () => {
@@ -1442,7 +1442,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             open={managementSheetOpen}
             title={t(msg`聊天管理`)}
             description={t(
-              msg`对 ${targetCharacter?.name ?? displayedConversationTitle ?? t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
+              msg`对 ${targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
             )}
             onClose={() => setManagementSheetOpen(false)}
             actions={[
