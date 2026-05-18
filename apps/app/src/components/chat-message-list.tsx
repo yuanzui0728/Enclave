@@ -1203,6 +1203,17 @@ export function ChatMessageList({
     });
   };
 
+  // 走查桌面端单聊新一轮 R4：和姊妹 recallingMessageIdsRef / deletingMessageIdsRef
+  // R3 同款修法。「添加到表情」context menu 项 onClick 只是
+  // `addToStickerMutation.mutate(message); setContextMenuState(null);`，
+  // setContextMenuState(null) 是 React state 要等 commit 才把菜单从 DOM 移
+  // 走；同帧 <16ms double-click 仍命中菜单按钮 → mutate 飞 2 次 → 同一条
+  // 消息的图片被 prepareRemoteCustomStickerUpload + POST /custom-stickers 跑
+  // 2 遍，用户的自定义表情库冒出 2 张完全一样的 sticker（server 落库以新生
+  // 成 stickerId 为主键，没有按 source 去重）。按 messageId 上锁，onSettled
+  // 解锁，不同消息互不影响（用户连续右键 2 条不同消息「添加到表情」是合法
+  // 用法，不应被锁住）。
+  const addingToStickerMessageIdsRef = useRef<Set<string>>(new Set());
   const addToStickerMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
       const source = resolveCustomStickerUploadSource(
@@ -1242,13 +1253,24 @@ export function ChatMessageList({
         tone: "danger",
         actionLabel: t(msg`继续添加到表情`),
         onAction: () => {
-          addToStickerMutation.mutate(message);
+          triggerAddToStickerMessage(message);
         },
         secondaryActionLabel: errorActionLabel,
         onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
+  const triggerAddToStickerMessage = (message: ChatRenderableMessage) => {
+    if (addingToStickerMessageIdsRef.current.has(message.id)) {
+      return;
+    }
+    addingToStickerMessageIdsRef.current.add(message.id);
+    addToStickerMutation.mutate(message, {
+      onSettled: () => {
+        addingToStickerMessageIdsRef.current.delete(message.id);
+      },
+    });
+  };
 
   const copyToClipboard = async (text: string, successMessage: string) => {
     if (
@@ -3954,7 +3976,7 @@ export function ChatMessageList({
           onAddToStickers={
             canAddMessageToStickers(contextMenuState.message)
               ? () => {
-                  addToStickerMutation.mutate(contextMenuState.message);
+                  triggerAddToStickerMessage(contextMenuState.message);
                   setContextMenuState(null);
                 }
               : undefined
