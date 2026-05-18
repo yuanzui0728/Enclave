@@ -436,11 +436,25 @@ export function ChannelsPage() {
     // mutationFn 仍会抛错走 onError 显示 toast。
     onMutate: async (input) => {
       if (!input.text.trim()) {
-        return { previousEntries: [], mutationBaseUrl: baseUrl };
+        return {
+          previousEntries: [],
+          previousRoutePost: null,
+          mutationBaseUrl: baseUrl,
+        };
       }
-      await queryClient.cancelQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
+      // 走查 2026-05-18 新会话 R4（本轮）：跟 likeMutation R2 / favoriteMutation
+      // R3 同款 —— desktop 深链 post 走 app-feed-post cache，commentMutation 也
+      // 漏更新 commentCount 落不到那条 slide 的「N 条评论」小角标，用户在 deep-
+      // link post 上发评论后看到 setNotice「评论已发送」但右栏角标数字不动 +
+      // drawer 头部「评论 N」也不变，体感「发了吗？」。
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ["app-channels-home", baseUrl],
+        }),
+        queryClient.cancelQueries({
+          queryKey: ["app-feed-post", baseUrl, input.postId],
+        }),
+      ]);
       const previousEntries: Array<{
         key: readonly unknown[];
         previousPost: FeedPostListItem | null;
@@ -462,7 +476,26 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries, mutationBaseUrl: baseUrl };
+      const previousRoutePost =
+        queryClient.getQueryData<FeedPostWithComments>([
+          "app-feed-post",
+          baseUrl,
+          input.postId,
+        ]) ?? null;
+      if (previousRoutePost) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", baseUrl, input.postId],
+          {
+            ...previousRoutePost,
+            commentCount: previousRoutePost.commentCount + 1,
+          },
+        );
+      }
+      return {
+        previousEntries,
+        previousRoutePost,
+        mutationBaseUrl: baseUrl,
+      };
     },
     onSuccess: (_, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
@@ -558,6 +591,13 @@ export function ChannelsPage() {
           ),
         });
       });
+      // R4 续：route post cache 同步回滚 commentCount。
+      if (context?.previousRoutePost && context.mutationBaseUrl) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", context.mutationBaseUrl, input.postId],
+          context.previousRoutePost,
+        );
+      }
       // mid-flight 切账户：失败 toast 落到新账户没意义。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
