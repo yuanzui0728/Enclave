@@ -167,6 +167,14 @@ export function DesktopGroupMemberRemovalPicker({
             onClose();
           }
         }}
+        // 走查电脑端群聊 R102：和姊妹 R101 (group-member-picker) / R107-R113 一批
+        // 同款 —— 移除群成员 picker 的 backdrop <button> (absolute inset-0) 视觉
+        // 不可见、纯 mouse"点击背景关闭"affordance，但 DOM 顺序在 dialog 子树
+        // 第一位。用户从「聊天信息」侧栏「- 移除成员」打开 picker 后按 Tab →
+        // 焦点先落到这张不可见 backdrop → 再按 Enter dialog 秒关，已勾选的待
+        // 移除成员一并丢失（删群比加群更危险，意外关闭 + 重新挑选 → 用户更易
+        // 误移除）。Esc keydown 已挂，键盘用户走 Esc 关 picker。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
