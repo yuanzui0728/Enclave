@@ -526,11 +526,16 @@ export function ChatComposer({
     // mentionCandidates) 算好后传进来。漏掉 t 不会导致 stale string。
   }, [activeMention, mentionCandidates]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
+  // 走查 R4：和 chat-message-list.favoritesQuery (R7 配的 30s) 同 queryKey
+  // 共享 cache。原本裸跑（默认 desktop 10s / mobile-web 60s），用户在桌面单聊
+  // 多次开合「+ → 收藏」面板时 ≥10s 就要 GET /favorites 再来一次（公网隧道
+  // ~600ms RTT）。和兄弟入口对齐 30s——收藏只读，频繁开合不必重抓。
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
     enabled:
       isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
+    staleTime: 30_000,
   });
 
   const getActiveInput = useCallback(
