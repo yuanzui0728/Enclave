@@ -1258,8 +1258,18 @@ export function DesktopNotesWorkspace({
 
       <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
         {notice ? (
+          // R41：和姊妹 R36~R40 同款 transient notice 修法——笔记编辑器的 notice
+          // 是 2600ms 自动消失的 toast（line 537 setTimeout），反馈保存 / 发送 /
+          // 删除 / 草稿恢复 / 附件上传等结果。tone="danger" 抢断、tone="success"
+          // 不抢断。
           <div className="mx-auto mb-4 w-full max-w-[840px]">
-            <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+            <InlineNotice
+              role={notice.tone === "danger" ? "alert" : "status"}
+              aria-live={notice.tone === "danger" ? "assertive" : "polite"}
+              tone={notice.tone}
+            >
+              {notice.message}
+            </InlineNotice>
           </div>
         ) : null}
 
