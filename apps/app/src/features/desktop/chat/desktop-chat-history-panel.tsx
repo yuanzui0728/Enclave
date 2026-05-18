@@ -1247,8 +1247,29 @@ function buildSearchPreview(item: ChatMessageSearchItem, keyword: string) {
   }
 
   const radius = 18;
-  const previewStart = Math.max(0, start - radius);
-  const previewEnd = Math.min(text.length, start + keyword.length + radius);
+  let previewStart = Math.max(0, start - radius);
+  let previewEnd = Math.min(text.length, start + keyword.length + radius);
+  // 走查新一轮：start - radius / start + keyword.length + radius 是任意
+  // 整数偏移，可能落在 UTF-16 surrogate pair 的高/低代理之间。emoji（如
+  // 😀 / 🌹）/ 古汉字 / 一些 CJK 扩展区都是 4 字节字符占两个 UTF-16 code
+  // unit；如果 previewStart 落在低代理上、或 previewEnd 落在高代理上，
+  // text.slice 会切出残缺的代理项，渲染成 □ / ? / 黑色菱形问号。这条
+  // helper 用在「查找聊天记录」结果卡片预览，命中关键词附近一旦有 emoji
+  // 就破。把切点往外推到下一个完整 code point 边界，宁可多带两个字符
+  // 也别把表情切坏。同款 bug 见 234f5e76f（PreviewAvatar fallback 把
+  // surrogate pair 砍半）。
+  if (previewStart > 0 && previewStart < text.length) {
+    const code = text.charCodeAt(previewStart);
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      previewStart -= 1;
+    }
+  }
+  if (previewEnd > 0 && previewEnd < text.length) {
+    const code = text.charCodeAt(previewEnd - 1);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      previewEnd += 1;
+    }
+  }
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
