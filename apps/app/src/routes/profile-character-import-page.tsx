@@ -618,7 +618,18 @@ function PreviewAvatar({ avatar, name }: { avatar: string; name: string }) {
       />
     );
   }
-  const display = trimmed.length > 0 ? trimmed.slice(0, 2) : name.slice(0, 1);
+  // 走查 R3：trimmed/name 都可能以 emoji 起头（wiki 私有角色 avatar 常用 emoji
+  // 单字 + 名字也可能取 "🤖小助手" 这种 emoji 前缀）。slice(0,1) / slice(0,2)
+  // 走 UTF-16 code unit，会把 surrogate pair 砍半留 lone surrogate → 渲染成
+  // 方块替换字符。改成走 iterator（Array.from），按 code point 切片。
+  // - avatar 有值：取首 2 个 code point（兼容 "AB" 两字、单 emoji 都展示
+  //   全字）；
+  // - avatar 空：从 name 取首 1 个 code point；
+  // - 实在啥都没有：留给下面 || "🪞" 兜底。
+  const display =
+    trimmed.length > 0
+      ? Array.from(trimmed).slice(0, 2).join("")
+      : Array.from(name)[0] ?? "";
   return (
     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[rgba(139,92,246,0.12)] text-lg text-[#7c3aed]">
       {display || "🪞"}
