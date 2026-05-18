@@ -1016,12 +1016,21 @@ export function DesktopCreateGroupDialog({
                       msg`已选择 ${selectedMessageIds.length} / ${Math.min(MAX_SHARED_MESSAGE_COUNT, shareableMessages.length)} 条`,
                     )}
                   </div>
+                  {/* 走查 R33：preset chip「最近 N 条」+「全选」+「清空」是
+                      shareable 消息批量选择的快捷预设。前面的 chip + 全选都通过
+                      recentPresetSelectionState / allShareableMessagesSelected 表达
+                      当前 selectedMessageIds 是否正好匹配这条预设，原版只用绿底
+                      视觉差区分 active。盲人 SR 走过去听到「最近 5 条 / 最近 10
+                      条 / 最近 20 条 / 全选」一串裸 label，无法识别当前选择正好
+                      匹配哪条预设。补 aria-pressed = 是否匹配此预设。清空按钮
+                      不挂——它是命令式 action（点了变 0），不属于 toggle 类。 */}
                   <div className="flex flex-wrap items-center gap-2 text-[12px]">
                     {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
                       <button
                         key={count}
                         type="button"
                         onClick={() => selectRecentMessages(count)}
+                        aria-pressed={recentPresetSelectionState.get(count) ?? false}
                         className={cn(
                           "rounded-full border px-2.5 py-1 transition",
                           recentPresetSelectionState.get(count)
@@ -1039,6 +1048,7 @@ export function DesktopCreateGroupDialog({
                           shareableMessages.map((message) => message.id),
                         )
                       }
+                      aria-pressed={allShareableMessagesSelected}
                       className={cn(
                         "rounded-full border px-2.5 py-1 transition",
                         allShareableMessagesSelected
