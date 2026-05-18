@@ -2568,6 +2568,26 @@ function DesktopGroupMemberBrowserDialog({
     }),
     [t],
   );
+  // 走查电脑端群聊 R73：和 roleLabels 同款思路——下方 filteredMembers.map 内
+  // 每行 t(msg`世界主人` / `角色`) + t(msg`Enter 或点击查看我的资料` /
+  // `Enter 或点击查看资料`) 两组静态文案。dialog 一打开搜索关键字每次
+  // keystroke 都会 deferredSearchTerm 变化触发整段 dialog 重渲，30 人群 ×
+  // 4 个 t() 调用 / 行 = 120 次 translateRuntimeMessage Map 查表/keystroke。
+  // 静态常量，t 不变就稳定，提到 useMemo 让 JSX 走对象属性读取。
+  const memberTypeLabels = useMemo(
+    () => ({
+      user: t(msg`世界主人`),
+      character: t(msg`角色`),
+    }),
+    [t],
+  );
+  const navigationHints = useMemo(
+    () => ({
+      user: t(msg`Enter 或点击查看我的资料`),
+      character: t(msg`Enter 或点击查看资料`),
+    }),
+    [t],
+  );
   const filteredMembers = useMemo(() => {
     const keyword = deferredSearchTerm.trim().toLowerCase();
     return members.filter((member) => {
@@ -2873,12 +2893,14 @@ function DesktopGroupMemberBrowserDialog({
                   ? resolveDisplayName(member)
                   : (member.memberName || member.memberId);
                 const rawName = member.memberName?.trim() || member.memberId;
+                // 走查电脑端群聊 R73：复用上方 roleLabels useMemo（line ~2563）。
+                // 原版每行 3 个 t() 调用 — keystroke 30 人 × 3 = 90 次 Map 查表。
                 const roleLabel =
                   member.role === "owner"
-                    ? t(msg`群主`)
+                    ? roleLabels.owner
                     : member.role === "admin"
-                      ? t(msg`管理员`)
-                      : t(msg`群成员`);
+                      ? roleLabels.admin
+                      : roleLabels.member;
                 const canViewProfile =
                   member.memberType === "character" ||
                   member.memberType === "user";
@@ -2952,8 +2974,8 @@ function DesktopGroupMemberBrowserDialog({
                           )}
                         >
                           {member.memberType === "user"
-                            ? t(msg`世界主人`)
-                            : t(msg`角色`)}
+                            ? memberTypeLabels.user
+                            : memberTypeLabels.character}
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
@@ -2965,8 +2987,8 @@ function DesktopGroupMemberBrowserDialog({
                         ) : null}
                         <span>
                           {member.memberType === "user"
-                            ? t(msg`Enter 或点击查看我的资料`)
-                            : t(msg`Enter 或点击查看资料`)}
+                            ? navigationHints.user
+                            : navigationHints.character}
                         </span>
                         <span className="text-black/10">·</span>
                         <span>{t(msg`加入于 ${formatTimestamp(member.joinedAt)}`)}</span>
