@@ -46,6 +46,17 @@ export function CharacterPage() {
     queryKey: ["wiki", "page", characterId, viewMode],
     queryFn: () => wikiApi.getPage(characterId, viewMode),
   });
+  // TanStack Router 同 path 不同 :characterId 不重新挂载组件，state 会沿用上一
+  // 角色的 tab / viewMode / lifecycle 表单态。直接 pushState（或回退/前进栈穿
+  // 越）从 /character/A（讨论 tab + 打开了删除理由）跳到 /character/B 时，B
+  // 会被迫停在"讨论 + 红色删除卡"上，跟用户预期"打开 B 看简介"不一致。
+  // 监听 characterId 变化重置回 read + stable + 关掉 lifecycle 表单。
+  useEffect(() => {
+    setTab("read");
+    setViewMode("stable");
+    setShowLifecycleForm(false);
+    setLifecycleReason("");
+  }, [characterId]);
   const viewerCanSeeCurrent = pageQ.data?.viewerCanSeeCurrent ?? false;
   useEffect(() => {
     if (!viewerCanSeeCurrent && viewMode === "current") setViewMode("stable");
@@ -203,7 +214,7 @@ export function CharacterPage() {
             />
           </label>
           {softDeleteMut.isError && (
-            <ErrorBlock message={(softDeleteMut.error as Error).message} />
+            <ErrorBlock role="alert" message={(softDeleteMut.error as Error).message} />
           )}
           <div className="flex gap-2">
             <Button
@@ -261,7 +272,7 @@ export function CharacterPage() {
       )}
 
       {pageQ.isLoading && <LoadingBlock />}
-      {pageQ.isError && <ErrorBlock message={(pageQ.error as Error).message} />}
+      {pageQ.isError && <ErrorBlock role="alert" message={(pageQ.error as Error).message} />}
       {pageQ.data && tab === "read" && <ReadView view={pageQ.data} />}
       {pageQ.data && tab === "edit" && (
         <EditView characterId={characterId} view={pageQ.data} />
@@ -623,7 +634,7 @@ function HistoryView({
 
   if (historyQ.isLoading) return <LoadingBlock />;
   if (historyQ.isError)
-    return <ErrorBlock message={(historyQ.error as Error).message} />;
+    return <ErrorBlock role="alert" message={(historyQ.error as Error).message} />;
 
   const canRevert = hasRole(user, "patroller");
   return (
@@ -650,7 +661,7 @@ function HistoryView({
         />
       ))}
       {revertMut.isError && (
-        <ErrorBlock message={(revertMut.error as Error).message} />
+        <ErrorBlock role="alert" message={(revertMut.error as Error).message} />
       )}
     </div>
   );

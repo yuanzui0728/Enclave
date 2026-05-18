@@ -100,14 +100,14 @@ export function TalkPanel({ characterId }: { characterId: string }) {
             {newThreadMut.isPending ? t(msg`发布中...`) : t(msg`发布`)}
           </Button>
           {newThreadMut.isError && (
-            <ErrorBlock message={(newThreadMut.error as Error).message} />
+            <ErrorBlock role="alert" message={(newThreadMut.error as Error).message} />
           )}
         </Card>
       )}
 
       {threadsQ.isLoading && <LoadingBlock />}
       {threadsQ.isError && (
-        <ErrorBlock message={(threadsQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(threadsQ.error as Error).message} />
       )}
       {threadsQ.data?.length === 0 && (
         <Card className="p-4 text-sm text-[var(--text-muted)]">
@@ -260,14 +260,14 @@ function ThreadDetail({
         </div>
       )}
       {flagsMut.isError && (
-        <ErrorBlock message={(flagsMut.error as Error).message} />
+        <ErrorBlock role="alert" message={(flagsMut.error as Error).message} />
       )}
       {deleteMut.isError && (
-        <ErrorBlock message={(deleteMut.error as Error).message} />
+        <ErrorBlock role="alert" message={(deleteMut.error as Error).message} />
       )}
       {postsQ.isLoading && <LoadingBlock />}
       {postsQ.isError && (
-        <ErrorBlock message={(postsQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(postsQ.error as Error).message} />
       )}
       <PostTree
         posts={postsQ.data ?? []}
@@ -317,7 +317,7 @@ function ThreadDetail({
             {replyMut.isPending ? t(msg`回复中...`) : t(msg`回复`)}
           </Button>
           {replyMut.isError && (
-            <ErrorBlock message={(replyMut.error as Error).message} />
+            <ErrorBlock role="alert" message={(replyMut.error as Error).message} />
           )}
         </div>
       )}

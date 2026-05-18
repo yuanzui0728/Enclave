@@ -80,7 +80,7 @@ export function ReportButton({
         maxLength={500}
       />
       {reportMut.isError && (
-        <ErrorBlock message={(reportMut.error as Error).message} />
+        <ErrorBlock role="alert" message={(reportMut.error as Error).message} />
       )}
       {reportMut.isSuccess && (
         <div className="text-[var(--state-success-text,#0a7d4f)]">

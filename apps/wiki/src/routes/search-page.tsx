@@ -38,7 +38,7 @@ export function SearchPage() {
       )}
       {resultsQ.isLoading && <LoadingBlock />}
       {resultsQ.isError && (
-        <ErrorBlock message={(resultsQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(resultsQ.error as Error).message} />
       )}
       {query && resultsQ.data?.length === 0 && (
         <PanelEmpty

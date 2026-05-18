@@ -135,7 +135,7 @@ export function PendingReviewsPage() {
       </div>
       {pendingQ.isLoading && <LoadingBlock />}
       {pendingQ.isError && (
-        <ErrorBlock message={(pendingQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(pendingQ.error as Error).message} />
       )}
       {!pendingQ.isLoading && items.length === 0 && (
         <PanelEmpty

@@ -167,7 +167,7 @@ export function HomePage() {
 
       {charactersQ.isLoading && <LoadingBlock />}
       {charactersQ.isError && (
-        <ErrorBlock message={(charactersQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(charactersQ.error as Error).message} />
       )}
       {charactersQ.data && charactersQ.data.length === 0 && (
         <PanelEmpty

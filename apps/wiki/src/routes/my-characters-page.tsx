@@ -157,7 +157,7 @@ export function MyCharactersPage() {
 
       {listQ.isLoading && <LoadingBlock />}
       {listQ.isError && (
-        <ErrorBlock message={(listQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(listQ.error as Error).message} />
       )}
 
       {!listQ.isLoading && !listQ.isError && items.length === 0 && (

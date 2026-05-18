@@ -64,7 +64,7 @@ export function WatchlistPage() {
           </h2>
           {listQ.isLoading && <LoadingBlock />}
           {listQ.isError && (
-            <ErrorBlock message={(listQ.error as Error).message} />
+            <ErrorBlock role="alert" message={(listQ.error as Error).message} />
           )}
           {listQ.data?.length === 0 && (
             <PanelEmpty
@@ -116,7 +116,7 @@ export function WatchlistPage() {
           </h2>
           {feedQ.isLoading && <LoadingBlock />}
           {feedQ.isError && (
-            <ErrorBlock message={(feedQ.error as Error).message} />
+            <ErrorBlock role="alert" message={(feedQ.error as Error).message} />
           )}
           {feedQ.data?.length === 0 && (
             <PanelEmpty message={t(msg`观察的词条暂无更新。`)} />

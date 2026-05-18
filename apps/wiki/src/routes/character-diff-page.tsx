@@ -25,7 +25,7 @@ export function CharacterDiffPage() {
   }
   if (diffQ.isLoading) return <LoadingBlock />;
   if (diffQ.isError)
-    return <ErrorBlock message={(diffQ.error as Error).message} />;
+    return <ErrorBlock role="alert" message={(diffQ.error as Error).message} />;
 
   const data = diffQ.data;
   if (!data) return null;

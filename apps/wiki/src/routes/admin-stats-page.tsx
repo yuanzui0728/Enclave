@@ -40,7 +40,7 @@ export function AdminStatsPage() {
     >
       {dailyQ.isLoading && <LoadingBlock />}
       {dailyQ.isError && (
-        <ErrorBlock message={(dailyQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(dailyQ.error as Error).message} />
       )}
       {dailyQ.data && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -84,7 +84,7 @@ export function AdminStatsPage() {
             为空，跟"真的没数据"长得一模一样。admin 想 debug 拿不到 message
             只能开 devtools。同 dailyQ 的处理路径补一份。 */}
         {topQ.isError && (
-          <ErrorBlock message={(topQ.error as Error).message} />
+          <ErrorBlock role="alert" message={(topQ.error as Error).message} />
         )}
         {topQ.data?.length === 0 && (
           <PanelEmpty message={t(msg`无记录`)} />
@@ -121,7 +121,7 @@ export function AdminStatsPage() {
         </h2>
         {filterQ.isLoading && <LoadingBlock />}
         {filterQ.isError && (
-          <ErrorBlock message={(filterQ.error as Error).message} />
+          <ErrorBlock role="alert" message={(filterQ.error as Error).message} />
         )}
         {filterQ.data?.length === 0 && (
           <PanelEmpty message={t(msg`无记录`)} />

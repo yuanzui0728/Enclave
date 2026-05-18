@@ -64,7 +64,7 @@ export function RecentChangesPage() {
     >
       {listQ.isLoading && <LoadingBlock />}
       {listQ.isError && (
-        <ErrorBlock message={(listQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(listQ.error as Error).message} />
       )}
       {listQ.data && listQ.data.length === 0 && (
         <PanelEmpty

@@ -202,7 +202,7 @@ export function AdminBlocksPage() {
       </div>
       {blocksQ.isLoading && <LoadingBlock />}
       {blocksQ.isError && (
-        <ErrorBlock message={(blocksQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(blocksQ.error as Error).message} />
       )}
       {revokeMut.isError && (
         <InlineNotice tone="danger">

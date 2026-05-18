@@ -79,7 +79,7 @@ export function AdminAbuseFiltersPage() {
 
       {filtersQ.isLoading && <LoadingBlock />}
       {filtersQ.isError && (
-        <ErrorBlock message={(filtersQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(filtersQ.error as Error).message} />
       )}
       <ul className="space-y-2">
         {filtersQ.data?.map((f) => (

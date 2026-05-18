@@ -86,7 +86,7 @@ export function AdminReportsPage() {
     >
       {reportsQ.isLoading && <LoadingBlock />}
       {reportsQ.isError && (
-        <ErrorBlock message={(reportsQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(reportsQ.error as Error).message} />
       )}
       {reportsQ.data?.length === 0 && (
         <PanelEmpty message={t(msg`当前分类下暂无举报。`)} />

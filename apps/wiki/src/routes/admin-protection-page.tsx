@@ -126,7 +126,7 @@ export function AdminProtectionPage() {
         <>
           {pageQ.isLoading && <LoadingBlock />}
           {pageQ.isError && (
-            <ErrorBlock message={(pageQ.error as Error).message} />
+            <ErrorBlock role="alert" message={(pageQ.error as Error).message} />
           )}
           {pageQ.data && (
             <AppSection className="space-y-4">

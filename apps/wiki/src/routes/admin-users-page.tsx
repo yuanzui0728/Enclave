@@ -63,7 +63,7 @@ export function AdminUsersPage() {
     >
       {usersQ.isLoading && <LoadingBlock />}
       {usersQ.isError && (
-        <ErrorBlock message={(usersQ.error as Error).message} />
+        <ErrorBlock role="alert" message={(usersQ.error as Error).message} />
       )}
       {setRoleMut.isError && (
         <InlineNotice tone="danger">

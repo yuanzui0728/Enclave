@@ -151,7 +151,7 @@ export function MyDraftsPage() {
       )}
 
       {listQ.isLoading && <LoadingBlock />}
-      {listQ.isError && <ErrorBlock message={(listQ.error as Error).message} />}
+      {listQ.isError && <ErrorBlock role="alert" message={(listQ.error as Error).message} />}
 
       {!listQ.isLoading && !listQ.isError && items.length === 0 && (
         <Card className="space-y-4 px-6 py-10 text-center">
