@@ -3112,6 +3112,14 @@ const ConversationCardLink = memo(function ConversationCardLink({
         }) as never
       }
       className={className}
+      // R22：桌面会话列表的 active 态只靠 className 视觉边框区分（白底 + 绿色
+      // 边框 + soft shadow），盲人屏幕阅读器 Tab 走到列表里逐项朗读会话名 +
+      // lastMessage + 时间戳，但听不到"这条是当前正在右侧显示的会话"。
+      // SR 通过 aria-current 才能在 link 列表里识别"当前页/项"，否则盲人用户
+      // 切回会话列表用方向键浏览时根本不知道焦点是不是已经回到了原来那条。
+      // 和姊妹移动端 chat-list-page 一致（mobile 走 active style + aria-current
+      // 都已有）；桌面端单聊这条入口长期缺。
+      aria-current={active ? "page" : undefined}
       onContextMenu={(event) => onContextMenu(event, conversation)}
     >
       {content}
