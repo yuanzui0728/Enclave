@@ -501,12 +501,27 @@ export function ChannelsPage() {
       // 漏更新 commentCount 落不到那条 slide 的「N 条评论」小角标，用户在 deep-
       // link post 上发评论后看到 setNotice「评论已发送」但右栏角标数字不动 +
       // drawer 头部「评论 N」也不变，体感「发了吗？」。
+      //
+      // 走查 2026-05-18 新会话 R6（本轮）：app-feed-comments 也得 cancel —— R2
+      // 把 onSuccess 改成直接 setQueryData push 新评论代替 invalidate 全量
+      // refetch，但如果用户在 drawer 刚开（initial listFeedComments fetch 在飞
+      // ~RTT）就立刻打字 Enter（input 已 auto-focus，公网 200-500ms RTT 内来
+      // 得及），mutationFn 可能比 initial fetch 先回，onSuccess push 之后
+      // initial fetch 才落地 → tanstack-query 用旧 list 覆盖掉刚 push 的新评论
+      // → 用户在 drawer 看不到自己刚发的（commentCount +1 但列表里没那条），
+      // 体感「评论丢了」。cancel 掉 initial fetch 避免覆盖；onSuccess 的 push
+      // 改成「没 cache 就创建 [createdComment]」让 cache 不为 undefined（同样
+      // 配 enabled=true 的情况下 tanstack 不会立刻 re-trigger 一个新 fetch 把
+      // 旧 list 又拉回来）。
       await Promise.all([
         queryClient.cancelQueries({
           queryKey: ["app-channels-home", baseUrl],
         }),
         queryClient.cancelQueries({
           queryKey: ["app-feed-post", baseUrl, input.postId],
+        }),
+        queryClient.cancelQueries({
+          queryKey: ["app-feed-comments", baseUrl, input.postId],
         }),
       ]);
       const previousEntries: Array<{
@@ -631,15 +646,34 @@ export function ChannelsPage() {
       // auto-scroll-on-growth effect 立刻把视口落到底部显示新评论 —— 0 RTT 完成
       // 「发送 → 看到」闭环。同款思路下 decorations 仍走 invalidate（commentsPreview
       // 那里要重算 top-3 + replyAuthorNameMap，不便就地手算）。
-      queryClient.setQueryData<FeedComment[]>(
-        ["app-feed-comments", mutationBaseUrl, input.postId],
-        (current) => {
-          if (!current) return current;
-          // 防重：万一 server 返回同 id 的评论（极罕见的 retry / race），先去掉再 push。
-          const dedup = current.filter((c) => c.id !== createdComment.id);
-          return [...dedup, createdComment];
-        },
-      );
+      // R6: cache 为 undefined 说明 drawer initial fetch 已被上面 cancelQueries
+      // 砍掉（或者根本没 fetch 过）—— 此时不要 push 单条 list（会让用户在
+      // drawer 里"只看到自己刚发的一条评论"，丢失 142 条历史），让下方
+      // invalidate 触发 fresh refetch 拿全量（新评论已落库会一并回来）。
+      // cache 有数组的常规路径才 push（覆盖上面 R2 主诉求：drawer 已开稳定
+      // 一段时间，cache 完整，直接 push 省掉全量 refetch）。
+      const existingCommentsCache = queryClient.getQueryData<FeedComment[]>([
+        "app-feed-comments",
+        mutationBaseUrl,
+        input.postId,
+      ]);
+      if (existingCommentsCache && existingCommentsCache.length > 0) {
+        queryClient.setQueryData<FeedComment[]>(
+          ["app-feed-comments", mutationBaseUrl, input.postId],
+          (current) => {
+            if (!current) return current;
+            // 防重：万一 server 返回同 id 的评论（极罕见的 retry / race），先去掉再 push。
+            const dedup = current.filter((c) => c.id !== createdComment.id);
+            return [...dedup, createdComment];
+          },
+        );
+      } else {
+        // 初始 fetch 还没回（被 cancel）/ 从未 fetch 过：让 invalidate 触发
+        // fresh refetch 拿全量。server 端新评论已落库，refetch 必带回。
+        void queryClient.invalidateQueries({
+          queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
+        });
+      }
       void queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
