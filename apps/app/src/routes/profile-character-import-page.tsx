@@ -243,6 +243,18 @@ export function ProfileCharacterImportPage() {
       void queryClient.invalidateQueries({
         queryKey: ["app-characters", baseUrl],
       });
+      // 第四波 R1：channels-forward-picker（朋友圈 → 转发到聊天）走的是
+      // 独立 query key ["channels-forward-friends", baseUrl] + staleTime 30s
+      // （components/channels-forward-picker.tsx:71），目的是「弹窗才拉」
+      // 不被无关页面重渲触发。代价是任何朋友列表的 mutation 都没把它一起
+      // invalidate：grep 过整个 apps/app/src，全站只有它自己在用这个 key。
+      // 用户刚 import 完一个角色，30s 内打开 forward picker 看到的还是
+      // 缓存里的旧列表，新角色凭空消失，要等 staleTime 过去或退出 picker
+      // 重开才会出现。这里跟着 app-friends 一起 invalidate，picker 下一次
+      // 打开就拉到新角色。
+      void queryClient.invalidateQueries({
+        queryKey: ["channels-forward-friends", baseUrl],
+      });
     } catch (err) {
       setResult({
         kind: "danger",
