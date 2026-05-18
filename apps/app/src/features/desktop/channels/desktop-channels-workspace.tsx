@@ -525,6 +525,20 @@ export function DesktopChannelsWorkspace({
   // 读 ref.current。
   const onCloseAuthorRef = useRef(onCloseAuthor);
   onCloseAuthorRef.current = onCloseAuthor;
+  // 走查 2026-05-18 新会话 R1（本轮）：原 Esc handler 监听 [authorPanelVisible,
+  // commentDrawerPostId]，但当 ChannelsForwardPicker 浮在最上层（z-110，比
+  // drawer z-30 / author z-40 高）时，picker 内部 L98-110 注册了自己一份 Esc
+  // 监听器。两个 window-level keydown 都不调 stopPropagation，按一次 Esc 同
+  // 时触发：workspace 这边把 drawer / author 关掉，picker 那边把自己关掉
+  // —— 用户只想收 picker，结果连底下的评论 drawer / 作者主页一道被甩掉，
+  // 体感「我刚刚是不是不小心碰到了什么键」。drawer 是可以跟 picker 共存的
+  // （drawer 外层 pointer-events-none，user 仍能点到 slide action rail 的
+  // 「转发」按钮把 picker 调出来），所以这条共存路径不少见。
+  // 修法：workspace 的 Esc handler 当 forwardPickerPost 存在时直接 bail，
+  // 把 Esc 完全让给 picker；picker 关掉后下一次 Esc 才回到 drawer / author
+  // 的关闭逻辑。
+  const forwardPickerOpenRef = useRef(false);
+  forwardPickerOpenRef.current = Boolean(forwardPickerPost);
   useEffect(() => {
     if (!commentDrawerPostId && !authorPanelVisible) {
       return;
@@ -532,6 +546,10 @@ export function DesktopChannelsWorkspace({
 
     const handler = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
+        return;
+      }
+      // R1 续：forward picker 在最上层时把 Esc 让给它独家处理。
+      if (forwardPickerOpenRef.current) {
         return;
       }
       event.preventDefault();
