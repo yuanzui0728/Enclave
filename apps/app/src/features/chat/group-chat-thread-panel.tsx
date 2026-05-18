@@ -861,9 +861,17 @@ export function GroupChatThreadPanel({
       ),
     [messages, resolveCharacterDisplayName],
   );
-  const hasHighlightedMessage = messages.some(
-    (message) => message.id === highlightedMessageId,
-  );
+  // 走查移动端群聊 R1：和姊妹路径 conversation-thread-panel.tsx「电脑端单聊
+  // R1」(commit c230f9ae0) 同款修法——原版无 highlightedMessageId 时也 .some
+  // 全表扫 messages 找 `m.id === undefined`，全程必然 false 但走完整条 O(n)。
+  // 长群 200+ 条历史叠 typing tick / socket echo / state 一改就 re-render，
+  // 每帧 200 次字符串比较纯白用功。绝大多数会话进来没有 highlight（只在
+  // 「查找聊天记录」/ 「消息提醒」/ 「群公告点击」跳转时才有 highlightedMessageId），
+  // 常驻短路成 false，让下游 useEffect 的 hasHighlightedMessage dep 也稳住
+  // false 引用避免无意义重跑。
+  const hasHighlightedMessage = highlightedMessageId
+    ? messages.some((message) => message.id === highlightedMessageId)
+    : false;
   const unreadMarkerMessageId = useMemo(
     () =>
       findFirstUnreadMessageId(
