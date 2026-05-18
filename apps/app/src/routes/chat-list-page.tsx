@@ -897,8 +897,21 @@ function MobileChatListPage() {
     setNotice(null);
 
     const currentPending = pendingHideRef.current;
-    if (currentPending) {
+    // 第四轮 R3：同一会话被连点两次「删除」时，原版会把 currentPending（其实
+    // 就是它自己）立刻 commitPendingHideConversation 提交 → server DELETE，再
+    // 重新 setTimeout(5s) 调度同一条 → 5s 后再 DELETE 一次 → 第二次走 404
+    // catch 路径，把刚刚的「聊天已从列表移除」覆盖成「聊天移除失败」红条，
+    // 用户以为没生效但其实早删了。同帧双击时 visibleConversations.filter 还
+    // 没 commit，"删除"按钮仍可点中（行还没消失）。
+    // 仅当 currentPending 不是同一条会话时才 commit（保留"先 A 再 B"的快速
+    // 切换语义），同一条直接 no-op 保留已挂的 5s undo 窗口。
+    if (
+      currentPending &&
+      currentPending.conversationId !== conversation.id
+    ) {
       void commitPendingHideConversation(currentPending, false);
+    } else if (currentPending) {
+      return;
     }
 
     const nextPending: PendingHideConversation = {
