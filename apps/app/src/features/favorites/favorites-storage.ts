@@ -127,7 +127,17 @@ export function readDesktopFavorites() {
     return [] as DesktopFavoriteRecord[];
   }
 
-  return parseDesktopFavorites(storage.getItem(DESKTOP_FAVORITES_STORAGE_KEY));
+  // R19：和 R17/R18 同款 —— Safari iOS 隐私模式 / 部分浏览器禁用 storage 时
+  // getItem 本身可能抛 SecurityError。chat-composer 「+ → 收藏」面板打开时通过
+  // line 1107/1135 直接调本函数；抛错会让 composer hydration effect 整个崩，
+  // 用户在桌面单聊点 + 看收藏列表整页空白且没法继续打字。
+  let raw: string | null;
+  try {
+    raw = storage.getItem(DESKTOP_FAVORITES_STORAGE_KEY);
+  } catch {
+    return [] as DesktopFavoriteRecord[];
+  }
+  return parseDesktopFavorites(raw);
 }
 
 export async function hydrateDesktopFavoritesFromNative() {
