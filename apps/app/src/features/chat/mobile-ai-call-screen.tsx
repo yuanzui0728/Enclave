@@ -43,6 +43,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { buildDirectCallInviteMessage } from "./group-call-message";
 import { emitChatMessage } from "../../lib/socket";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { openAppSettings } from "../../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
@@ -657,6 +658,36 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       void characterQuery.refetch();
     }
   };
+
+  // 第三轮 R2：原版没接 Android Back 拦截。call 屏只有屏幕上的「PhoneOff /
+  // 返回」走 handleBack()，里面做 4 件关键事：
+  //   1) sendCallStatusMessage("ended") → 聊天里挂出「通话已结束」卡片，否则
+  //      会话最后一条永远停在「通话中…」
+  //   2) digitalHumanCall.endSession() → 关后端 ws/server 数字人会话，否则
+  //      session 留挂直到超时
+  //   3) cameraEnabled=false → 视频通话退出时关掉本地摄像头流（虽然
+  //      use-self-camera-preview 内有 unmount 兜底，但顺序更早 / 更确定）
+  //   4) replace:true navigate to /chat/$conversationId?call-return=... →
+  //      回到聊天屏并触发 ChatRoomPage L162 那条 callReturn 信号
+  // 用户在 Android 按 hardware Back 直接走 history.back()，以上 4 件全部
+  // 漏掉。leavingScreen 时也不再触发（beginLeaving 的 false 早 return）。
+  // 和姊妹 chat-voice-call / chat-video-call / chat-room-page 早期就走的
+  // registerAndroidBackInterceptor 一致兜底。
+  useEffect(() => {
+    if (isDesktopLayout || leavingScreen) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      void handleBack();
+      return true;
+    });
+    return unregister;
+    // handleBack 闭包 deps 极多 (sendCallStatusMessage / digitalHumanCall /
+    // activeCall / navigate / resolvedConversationId / mode / hash ...)，
+    // 拿当前渲染版本就够——beginLeaving 已经保证幂等。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesktopLayout, leavingScreen]);
 
   const renderBackToChatAction = () => (
     <InlineNoticeActionButton
