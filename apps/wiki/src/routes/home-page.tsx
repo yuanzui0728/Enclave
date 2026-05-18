@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   Button,
@@ -19,6 +19,7 @@ export function HomePage() {
   const t = translateRuntimeMessage;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const charactersQ = useQuery({
     queryKey: ["wiki", "characters"],
     queryFn: () => wikiApi.listCharacters(),
@@ -26,6 +27,23 @@ export function HomePage() {
     // 切 home / character 详情时每次都触发 273 行的网络往返 + JSON parse。
     staleTime: 30_000,
   });
+
+  // hover / focus 时预拉角色详情，命中后 click→render 直接走 cache 不等网络。
+  // 用 Set 记录已预拉的 id，避免反复 hover 同一张卡反复触发 prefetch。
+  // staleTime 60s 跟服务端 etag 304 配合：30s 内重复访问同一角色完全零开销。
+  const prefetchedRef = useRef<Set<string>>(new Set());
+  const prefetchPage = useCallback(
+    (characterId: string) => {
+      if (prefetchedRef.current.has(characterId)) return;
+      prefetchedRef.current.add(characterId);
+      void qc.prefetchQuery({
+        queryKey: ["wiki", "page", characterId, "stable"],
+        queryFn: () => wikiApi.getPage(characterId, "stable"),
+        staleTime: 60_000,
+      });
+    },
+    [qc],
+  );
 
   const total = charactersQ.data?.length ?? 0;
 
@@ -84,7 +102,16 @@ export function HomePage() {
               <Link
                 to="/character/$characterId"
                 params={{ characterId: c.id }}
-                className="group flex h-full flex-col gap-2 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+                onMouseEnter={() => prefetchPage(c.id)}
+                onFocus={() => prefetchPage(c.id)}
+                onTouchStart={() => prefetchPage(c.id)}
+                // shadow-[var(--shadow-soft)] 在 @layer utilities，覆盖了全局
+                // @layer base `:focus-visible { box-shadow: var(--shadow-focus) }`，
+                // 导致 keyboard 用户 Tab 过 273 个卡片完全看不到焦点。
+                // Tailwind 4 里 outline-2 只写 width 不写 style，碰上全局 base
+                // 的 outline:none 仍然 0px solid 不可见；直接用 arbitrary value
+                // 一次性写满 width+style+color，让 utility 一条规则压住 base。
+                className="group flex h-full flex-col gap-2 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:[outline:2px_solid_var(--brand-primary)] focus-visible:[outline-offset:2px]"
               >
                 <div className="flex items-start gap-3">
                   <Avatar name={c.name} url={c.avatar ?? undefined} />

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-family-parenting-han-sui-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E08A8A" />
+      <stop offset="1" stop-color="#F7D6CE" />
+    </linearGradient>
+    <radialGradient id="glow-family-parenting-han-sui-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(252, 226, 222, 0.55)" />
+      <stop offset="1" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-family-parenting-han-sui-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.32)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-family-parenting-han-sui-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-family-parenting-han-sui-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(252, 226, 222, 0.10)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(252, 226, 222, 0.16)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-family-parenting-han-sui-svg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <circle cx="412" cy="372" r="92" fill="rgba(255, 255, 255, 0.36)" />
+  <path d="M 320 478 Q 412 562 504 478 L 504 568 Q 504 612 460 612 L 364 612 Q 320 612 320 568 Z" fill="rgba(255, 255, 255, 0.32)" />
+  <circle cx="620" cy="412" r="60" fill="rgba(255, 255, 255, 0.30)" />
+  <path d="M 548 488 Q 620 542 692 488 L 692 552 Q 692 588 656 588 L 584 588 Q 548 588 548 552 Z" fill="rgba(255, 255, 255, 0.26)" />
+  <text x="512" y="800" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif" font-size="200" font-weight="600" fill="#FFFFFF" letter-spacing="-8">穗</text>
+</svg>
