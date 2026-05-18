@@ -2485,6 +2485,18 @@ function ChannelAudioPictorial({
     if (movedBeyondTapRef.current) return;
     handleTap();
   };
+  // 走查 2026-05-18 新一轮 R1：role="button" + tabIndex=0 把媒体面板纳入了键盘
+  // tab 序列，aria-label 也告知 SR 这是"播放/暂停按钮"，但原代码只挂了 onClick
+  // ——键盘 Enter/Space 不 fire onClick（合成 click event.detail === 0 还被
+  // handleClick 主动忽略掉），desktop 移动视口下用键盘 tab 到这里再按 Space/
+  // Enter 完全无反应，role 承诺的"按钮"行为对键盘用户失效。
+  // 显式拦 Enter/Space 直接走 handleTap（跳过 click 合成那一圈），并阻止
+  // Space 默认滚动行为。
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    handleTap();
+  };
 
   const currentImage = displayImages[imageIndex];
   const currentImageFailed = currentImage
@@ -2498,6 +2510,7 @@ function ChannelAudioPictorial({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
@@ -2722,10 +2735,19 @@ function ChannelVideoSurface({
     }
   };
 
+  // 走查 2026-05-18 新一轮 R1：跟 ChannelAudioPictorial 同款键盘 a11y 修复——
+  // role="button" + tabIndex=0 但只挂 onClick，Enter/Space 触发不了 play/pause。
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    handleTap();
+  };
+
   return (
     <div
       className="relative h-full min-h-[calc(100dvh-12rem)] w-full bg-black"
       onClick={handleTap}
+      onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
