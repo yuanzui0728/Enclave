@@ -580,44 +580,48 @@ msgstr "오른쪽 항목을 채우면, AI가 보는 당신의 캐릭터가 여�
 msgid "AI 眼里的你的角色 ↑"
 msgstr "AI가 보는 당신의 캐릭터 ↑"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2066
+#: apps/wiki/src/components/character-edit-form.tsx:2067
+msgid "角色编辑章节跳转"
+msgstr "캐릭터 편집 섹션 이동"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2070
 msgid "章节"
 msgstr "섹션"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2092
+#: apps/wiki/src/components/character-edit-form.tsx:2096
 msgid "↓ 跳到保存"
 msgstr "↓ 저장으로 이동"
 
 #. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
-#: apps/wiki/src/components/character-edit-form.tsx:2204
+#: apps/wiki/src/components/character-edit-form.tsx:2208
 msgid "图片太大（{0} MB），上限 4 MB。"
 msgstr "이미지가 너무 큽니다 ({0} MB). 최대 4 MB 입니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2214
+#: apps/wiki/src/components/character-edit-form.tsx:2218
 msgid "只支持 PNG / JPG / WebP / GIF。"
 msgstr "PNG / JPG / WebP / GIF 형식만 지원합니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2223
+#: apps/wiki/src/components/character-edit-form.tsx:2227
 msgid "头像上传失败，请稍后再试"
 msgstr "아바타 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2260
+#: apps/wiki/src/components/character-edit-form.tsx:2264
 msgid "上传中…"
 msgstr "업로드 중…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2262
+#: apps/wiki/src/components/character-edit-form.tsx:2266
 msgid "上传图片"
 msgstr "이미지 업로드"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2273
+#: apps/wiki/src/components/character-edit-form.tsx:2277
 msgid "清除"
 msgstr "지우기"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2358
+#: apps/wiki/src/components/character-edit-form.tsx:2362
 msgid "AI 正在生成「{sectionLabel}」…"
 msgstr "AI가 \"{sectionLabel}\" 생성 중…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2364
+#: apps/wiki/src/components/character-edit-form.tsx:2368
 msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
 msgstr "폼이 잠겨 있습니다. 목록으로 돌아가도 됩니다. 돌아오면 결과가 자동으로 채워집니다."
 
@@ -757,7 +761,7 @@ msgstr "제출되었습니다. 관리자가 처리합니다."
 #: apps/wiki/src/components/report-button.tsx:111
 #: apps/wiki/src/routes/account-page.tsx:360
 #: apps/wiki/src/routes/account-page.tsx:466
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
 #: apps/wiki/src/routes/character-page.tsx:235
 msgid "提交中..."
@@ -868,7 +872,7 @@ msgid "待审编辑"
 msgstr "검토 대기 편집"
 
 #: apps/wiki/src/components/root-layout.tsx:117
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:62
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
 #: apps/wiki/src/routes/admin-blocks-page.tsx:72
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
 #: apps/wiki/src/routes/admin-reports-page.tsx:48
@@ -901,7 +905,7 @@ msgid "举报队列"
 msgstr "신고 대기열"
 
 #: apps/wiki/src/components/root-layout.tsx:145
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:64
 #: apps/wiki/src/routes/admin-layout.tsx:15
 msgid "反破坏过滤器"
 msgstr "어뷰즈 방지 필터"
@@ -987,6 +991,10 @@ msgstr "계정 설정"
 #: apps/wiki/src/components/root-layout.tsx:536
 msgid "退出"
 msgstr "로그아웃"
+
+#: apps/wiki/src/components/root-layout.tsx:556
+msgid "主导航"
+msgstr "주요 네비게이션"
 
 #: apps/wiki/src/components/scene-prompt-preview.tsx:12
 msgid "聊天"
@@ -1159,7 +1167,7 @@ msgstr "삭제됨"
 
 #: apps/wiki/src/components/talk-panel.tsx:434
 #: apps/wiki/src/lib/revision-labels.ts:24
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:218
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:222
 #: apps/wiki/src/routes/pending-reviews-page.tsx:114
 msgid "删除"
 msgstr "삭제"
@@ -1283,22 +1291,22 @@ msgid "讨论"
 msgstr "토크"
 
 #: apps/wiki/src/lib/revision-labels.ts:66
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:229
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
 msgid "拦截"
 msgstr "차단"
 
 #: apps/wiki/src/lib/revision-labels.ts:67
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:231
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:235
 msgid "标高风险"
 msgstr "고위험 태그"
 
 #: apps/wiki/src/lib/revision-labels.ts:68
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:237
 msgid "警告"
 msgstr "경고"
 
 #: apps/wiki/src/lib/revision-labels.ts:69
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:234
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:238
 msgid "记录"
 msgstr "로그"
 
@@ -1502,168 +1510,168 @@ msgstr "사용자 이름은 32자를 초과할 수 없습니다."
 msgid "保存新用户名"
 msgstr "새 사용자 이름 저장"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:65
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:66
 msgid "每次 wiki 写入都会按规则匹配；命中后可触发记录、警告、强制人工审核或直接拦截。"
 msgstr "wiki 쓰기마다 규칙과 매칭됩니다. 적중 시 로그, 경고, 수동 검토, 직접 차단을 트리거할 수 있습니다."
 
 #. placeholder {0}: f.name
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:93
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:94
 msgid "删除规则 {0}？"
 msgstr "{0} 규칙을 삭제할까요?"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:103
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:104
 msgid "暂无过滤规则。可使用上方\"+ 新建过滤器\"快速添加一条；模块启动也会自动种入预置规则。"
 msgstr "필터 규칙이 없습니다. 상단 \"+ 새 필터\"로 추가하세요. 모듈 시작 시 기본 규칙도 자동 등록됩니다."
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:111
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:112
 msgid "最近命中（50 条）"
 msgstr "최근 적중 (50건)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:115
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:116
 msgid "尚无命中记录。"
 msgstr "적중 기록이 없습니다."
 
 #. placeholder {0}: h.characterId
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:131
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:132
 msgid "命中于 <0>{0}</0>"
 msgstr "대상 <0>{0}</0>"
 
 #. placeholder {0}: filter.scope
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:176
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
 msgid "范围：{0}"
 msgstr "범위: {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
 msgid "已停用"
 msgstr "비활성"
 
 #. placeholder {0}: filter.hitCount
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:188
 msgid "命中 {0} 次"
 msgstr "{0}회 적중"
 
 #. placeholder {0}: formatDateTime(filter.lastHitAt)
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:186
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:190
 msgid "最近 {0}"
 msgstr "최근 {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:197
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:201
 msgid "DSL 匹配模式"
 msgstr "DSL 일치 패턴"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
 msgid "停用"
 msgstr "비활성화"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:445
 msgid "启用"
 msgstr "활성화"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:264
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:438
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:268
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:442
 msgid "高"
 msgstr "높음"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:266
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:437
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:270
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
 msgid "中"
 msgstr "중간"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:267
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:436
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:271
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:440
 msgid "低"
 msgstr "낮음"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:309
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:313
 msgid "pattern 必须是含有 type 字段的 JSON 对象"
 msgstr "pattern은 type 필드를 포함한 JSON 객체여야 합니다"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:354
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:358
 msgid "新建过滤规则：name + pattern + 命中后动作。"
 msgstr "새 규칙 작성: name + pattern + 매치 동작."
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:362
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:366
 msgid "+ 新建过滤器"
 msgstr "+ 새 필터"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:372
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:376
 msgid "新建过滤器"
 msgstr "새 필터"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:383
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
 msgid "关闭"
 msgstr "닫기"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
 msgid "规则名称"
 msgstr "규칙 이름"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:395
 msgid "例如：明显广告关键字"
 msgstr "예: 명백한 광고 키워드"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:394
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
 msgid "描述"
 msgstr "설명"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:402
 msgid "简短说明命中条件与目的"
 msgstr "매치 조건과 목적을 간단히 설명"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:401
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:405
 msgid "扫描范围 (scope)"
 msgstr "검사 범위 (scope)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:407
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:411
 msgid "全部 (all)"
 msgstr "전체 (all)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:408
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
 msgid "仅档案 (content)"
 msgstr "프로필만 (content)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:409
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:413
 msgid "仅角色逻辑 (recipe)"
 msgstr "캐릭터 로직만 (recipe)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:416
 msgid "命中后动作 (action)"
 msgstr "매치 시 동작 (action)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:420
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:424
 msgid "记录 (log)"
 msgstr "로그 (log)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:421
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
 msgid "警告 (warn)"
 msgstr "경고 (warn)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:423
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:427
 msgid "标高风险 (tag_high_risk)"
 msgstr "고위험 태깅 (tag_high_risk)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:429
 msgid "拦截 (block)"
 msgstr "차단 (block)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:428
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:432
 msgid "严重等级"
 msgstr "심각도"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:448
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:452
 msgid "创建后立即生效"
 msgstr "생성 후 즉시 적용"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:453
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:457
 msgid "Pattern (JSON)"
 msgstr "Pattern (JSON)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:455
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:459
 msgid "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 msgstr "regex / shrink / frequency / link_flood / keyword_list 등 타입 지원, type 필드 필수"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 msgid "提交并启用"
 msgstr "제출 및 활성화"
 
@@ -2020,21 +2028,21 @@ msgstr "wiki 멤버"
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "\"{0}\"의 역할을 {1}에서 {2}(으)로 변경하시겠습니까? 해당 사용자는 즉시 권한을 잃습니다."
 
-#: apps/wiki/src/routes/character-diff-page.tsx:21
+#: apps/wiki/src/routes/character-diff-page.tsx:22
 msgid "缺少对比版本参数。"
 msgstr "비교 버전 파라미터가 부족합니다."
 
-#: apps/wiki/src/routes/character-diff-page.tsx:41
+#: apps/wiki/src/routes/character-diff-page.tsx:42
 msgid "返回词条"
 msgstr "항목으로 돌아가기"
 
 #. placeholder {0}: data.from.version
 #. placeholder {1}: data.to.version
-#: apps/wiki/src/routes/character-diff-page.tsx:44
+#: apps/wiki/src/routes/character-diff-page.tsx:45
 msgid "v{0} 对比 v{1}"
 msgstr "v{0} vs v{1}"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:49
+#: apps/wiki/src/routes/character-diff-page.tsx:54
 #: apps/wiki/src/routes/character-page.tsx:426
 #: apps/wiki/src/routes/character-page.tsx:728
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
@@ -2043,11 +2051,11 @@ msgstr "v{0} vs v{1}"
 msgid "高风险"
 msgstr "고위험"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:63
+#: apps/wiki/src/routes/character-diff-page.tsx:68
 msgid "旧角色逻辑"
 msgstr "이전 캐릭터 로직"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:71
+#: apps/wiki/src/routes/character-diff-page.tsx:76
 msgid "新角色逻辑"
 msgstr "새 캐릭터 로직"
 

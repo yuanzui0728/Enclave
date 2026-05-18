@@ -550,7 +550,10 @@ function NavList({
 }) {
   const t = translateRuntimeMessage;
   return (
-    <nav className="space-y-5">
+    // 整个 wiki 后台已经有 root-layout 顶栏导航 + 角色编辑章节跳转 + admin
+    // 二级 tab，盲用用户的 SR 在"跳到下一个导航 landmark"时听到三个无名
+    // "navigation"，区分不出来。给主侧栏 nav 显式 aria-label。
+    <nav aria-label={t(msg`主导航`)} className="space-y-5">
       {groups.map((group) => {
         const groupTitle = t(group.title);
         return (

@@ -580,44 +580,48 @@ msgstr "Fill in the fields and you'll see here exactly how the AI views your cha
 msgid "AI 眼里的你的角色 ↑"
 msgstr "How the AI sees your character ↑"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2066
+#: apps/wiki/src/components/character-edit-form.tsx:2067
+msgid "角色编辑章节跳转"
+msgstr "Character editor section jumps"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2070
 msgid "章节"
 msgstr "Sections"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2092
+#: apps/wiki/src/components/character-edit-form.tsx:2096
 msgid "↓ 跳到保存"
 msgstr "↓ Jump to save"
 
 #. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
-#: apps/wiki/src/components/character-edit-form.tsx:2204
+#: apps/wiki/src/components/character-edit-form.tsx:2208
 msgid "图片太大（{0} MB），上限 4 MB。"
 msgstr "Image too large ({0} MB) — limit is 4 MB."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2214
+#: apps/wiki/src/components/character-edit-form.tsx:2218
 msgid "只支持 PNG / JPG / WebP / GIF。"
 msgstr "Only PNG / JPG / WebP / GIF are supported."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2223
+#: apps/wiki/src/components/character-edit-form.tsx:2227
 msgid "头像上传失败，请稍后再试"
 msgstr "Avatar upload failed. Please try again later."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2260
+#: apps/wiki/src/components/character-edit-form.tsx:2264
 msgid "上传中…"
 msgstr "Uploading…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2262
+#: apps/wiki/src/components/character-edit-form.tsx:2266
 msgid "上传图片"
 msgstr "Upload image"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2273
+#: apps/wiki/src/components/character-edit-form.tsx:2277
 msgid "清除"
 msgstr "Clear"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2358
+#: apps/wiki/src/components/character-edit-form.tsx:2362
 msgid "AI 正在生成「{sectionLabel}」…"
 msgstr "AI is generating \"{sectionLabel}\"…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2364
+#: apps/wiki/src/components/character-edit-form.tsx:2368
 msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
 msgstr "Form is locked. You can return to the list — results will auto-fill when you come back."
 
@@ -757,7 +761,7 @@ msgstr "Submitted; admins will handle it."
 #: apps/wiki/src/components/report-button.tsx:111
 #: apps/wiki/src/routes/account-page.tsx:360
 #: apps/wiki/src/routes/account-page.tsx:466
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
 #: apps/wiki/src/routes/character-page.tsx:235
 msgid "提交中..."
@@ -868,7 +872,7 @@ msgid "待审编辑"
 msgstr "Pending reviews"
 
 #: apps/wiki/src/components/root-layout.tsx:117
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:62
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
 #: apps/wiki/src/routes/admin-blocks-page.tsx:72
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
 #: apps/wiki/src/routes/admin-reports-page.tsx:48
@@ -901,7 +905,7 @@ msgid "举报队列"
 msgstr "Report queue"
 
 #: apps/wiki/src/components/root-layout.tsx:145
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:64
 #: apps/wiki/src/routes/admin-layout.tsx:15
 msgid "反破坏过滤器"
 msgstr "Anti-abuse filters"
@@ -987,6 +991,10 @@ msgstr "Account Settings"
 #: apps/wiki/src/components/root-layout.tsx:536
 msgid "退出"
 msgstr "Sign out"
+
+#: apps/wiki/src/components/root-layout.tsx:556
+msgid "主导航"
+msgstr "Main navigation"
 
 #: apps/wiki/src/components/scene-prompt-preview.tsx:12
 msgid "聊天"
@@ -1159,7 +1167,7 @@ msgstr "Deleted"
 
 #: apps/wiki/src/components/talk-panel.tsx:434
 #: apps/wiki/src/lib/revision-labels.ts:24
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:218
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:222
 #: apps/wiki/src/routes/pending-reviews-page.tsx:114
 msgid "删除"
 msgstr "Delete"
@@ -1283,22 +1291,22 @@ msgid "讨论"
 msgstr "Talk"
 
 #: apps/wiki/src/lib/revision-labels.ts:66
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:229
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
 msgid "拦截"
 msgstr "Block"
 
 #: apps/wiki/src/lib/revision-labels.ts:67
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:231
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:235
 msgid "标高风险"
 msgstr "Tag high-risk"
 
 #: apps/wiki/src/lib/revision-labels.ts:68
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:237
 msgid "警告"
 msgstr "Warn"
 
 #: apps/wiki/src/lib/revision-labels.ts:69
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:234
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:238
 msgid "记录"
 msgstr "Log"
 
@@ -1502,168 +1510,168 @@ msgstr "Username cannot exceed 32 characters."
 msgid "保存新用户名"
 msgstr "Save new username"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:65
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:66
 msgid "每次 wiki 写入都会按规则匹配；命中后可触发记录、警告、强制人工审核或直接拦截。"
 msgstr "Every wiki write is matched against these rules; a hit can log, warn, force human review, or block outright."
 
 #. placeholder {0}: f.name
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:93
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:94
 msgid "删除规则 {0}？"
 msgstr "Delete rule {0}?"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:103
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:104
 msgid "暂无过滤规则。可使用上方\"+ 新建过滤器\"快速添加一条；模块启动也会自动种入预置规则。"
 msgstr "No filter rules yet. Use \"+ New filter\" above to add one; the module also seeds built-in rules on startup."
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:111
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:112
 msgid "最近命中（50 条）"
 msgstr "Recent hits (50)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:115
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:116
 msgid "尚无命中记录。"
 msgstr "No hits yet."
 
 #. placeholder {0}: h.characterId
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:131
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:132
 msgid "命中于 <0>{0}</0>"
 msgstr "on <0>{0}</0>"
 
 #. placeholder {0}: filter.scope
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:176
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
 msgid "范围：{0}"
 msgstr "scope: {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
 msgid "已停用"
 msgstr "Disabled"
 
 #. placeholder {0}: filter.hitCount
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:188
 msgid "命中 {0} 次"
 msgstr "{0} hits"
 
 #. placeholder {0}: formatDateTime(filter.lastHitAt)
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:186
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:190
 msgid "最近 {0}"
 msgstr "last {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:197
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:201
 msgid "DSL 匹配模式"
 msgstr "DSL match pattern"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
 msgid "停用"
 msgstr "Disable"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:445
 msgid "启用"
 msgstr "Enable"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:264
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:438
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:268
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:442
 msgid "高"
 msgstr "High"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:266
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:437
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:270
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
 msgid "中"
 msgstr "Medium"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:267
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:436
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:271
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:440
 msgid "低"
 msgstr "Low"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:309
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:313
 msgid "pattern 必须是含有 type 字段的 JSON 对象"
 msgstr "pattern must be a JSON object that contains a type field"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:354
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:358
 msgid "新建过滤规则：name + pattern + 命中后动作。"
 msgstr "Create a new rule: name + pattern + on-hit action."
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:362
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:366
 msgid "+ 新建过滤器"
 msgstr "+ New filter"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:372
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:376
 msgid "新建过滤器"
 msgstr "New filter"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:383
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
 msgid "关闭"
 msgstr "Close"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
 msgid "规则名称"
 msgstr "Rule name"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:395
 msgid "例如：明显广告关键字"
 msgstr "e.g. obvious ad keywords"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:394
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
 msgid "描述"
 msgstr "Description"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:402
 msgid "简短说明命中条件与目的"
 msgstr "Briefly describe the hit condition and intent"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:401
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:405
 msgid "扫描范围 (scope)"
 msgstr "Scope (scope)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:407
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:411
 msgid "全部 (all)"
 msgstr "All (all)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:408
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
 msgid "仅档案 (content)"
 msgstr "Content only (content)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:409
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:413
 msgid "仅角色逻辑 (recipe)"
 msgstr "Recipe only (recipe)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:416
 msgid "命中后动作 (action)"
 msgstr "Action on hit (action)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:420
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:424
 msgid "记录 (log)"
 msgstr "Log (log)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:421
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
 msgid "警告 (warn)"
 msgstr "Warn (warn)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:423
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:427
 msgid "标高风险 (tag_high_risk)"
 msgstr "Tag high risk (tag_high_risk)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:429
 msgid "拦截 (block)"
 msgstr "Block (block)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:428
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:432
 msgid "严重等级"
 msgstr "Severity"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:448
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:452
 msgid "创建后立即生效"
 msgstr "Take effect immediately after creation"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:453
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:457
 msgid "Pattern (JSON)"
 msgstr "Pattern (JSON)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:455
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:459
 msgid "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 msgstr "Supports regex / shrink / frequency / link_flood / keyword_list types; must include the type field"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 msgid "提交并启用"
 msgstr "Submit and enable"
 
@@ -2020,21 +2028,21 @@ msgstr "wiki member"
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "Change \"{0}\"'s role from {1} to {2}? They will immediately lose those permissions."
 
-#: apps/wiki/src/routes/character-diff-page.tsx:21
+#: apps/wiki/src/routes/character-diff-page.tsx:22
 msgid "缺少对比版本参数。"
 msgstr "Missing comparison version parameters."
 
-#: apps/wiki/src/routes/character-diff-page.tsx:41
+#: apps/wiki/src/routes/character-diff-page.tsx:42
 msgid "返回词条"
 msgstr "Back to entry"
 
 #. placeholder {0}: data.from.version
 #. placeholder {1}: data.to.version
-#: apps/wiki/src/routes/character-diff-page.tsx:44
+#: apps/wiki/src/routes/character-diff-page.tsx:45
 msgid "v{0} 对比 v{1}"
 msgstr "v{0} compared to v{1}"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:49
+#: apps/wiki/src/routes/character-diff-page.tsx:54
 #: apps/wiki/src/routes/character-page.tsx:426
 #: apps/wiki/src/routes/character-page.tsx:728
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
@@ -2043,11 +2051,11 @@ msgstr "v{0} compared to v{1}"
 msgid "高风险"
 msgstr "High risk"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:63
+#: apps/wiki/src/routes/character-diff-page.tsx:68
 msgid "旧角色逻辑"
 msgstr "Old character logic"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:71
+#: apps/wiki/src/routes/character-diff-page.tsx:76
 msgid "新角色逻辑"
 msgstr "New character logic"
 

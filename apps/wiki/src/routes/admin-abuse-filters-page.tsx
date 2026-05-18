@@ -25,6 +25,7 @@ import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
+import { revisionOperationLabel } from "../lib/revision-labels";
 
 export function AdminAbuseFiltersPage() {
   const t = translateRuntimeMessage;
@@ -134,7 +135,10 @@ export function AdminAbuseFiltersPage() {
                   </span>
                 )}
                 <span className="ml-auto text-xs text-[color:var(--text-muted)]">
-                  {h.operation}
+                  {/* 原写法直接显示 h.operation 英文枚举（create/edit/
+                      soft_delete）—— hit log 一栏跟同行 "命中于 xxx" 中文夹
+                      杂排出 "create" / "edit"。统一走本地化映射。 */}
+                  {revisionOperationLabel(h.operation)}
                 </span>
               </div>
               <div className="mt-1 break-all text-xs text-[color:var(--text-muted)]">

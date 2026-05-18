@@ -580,44 +580,48 @@ msgstr "右の項目を埋めると、AI が見るあなたのキャラがここ
 msgid "AI 眼里的你的角色 ↑"
 msgstr "AI から見たあなたのキャラ ↑"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2066
+#: apps/wiki/src/components/character-edit-form.tsx:2067
+msgid "角色编辑章节跳转"
+msgstr "キャラクター編集セクションへ"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2070
 msgid "章节"
 msgstr "セクション"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2092
+#: apps/wiki/src/components/character-edit-form.tsx:2096
 msgid "↓ 跳到保存"
 msgstr "↓ 保存へジャンプ"
 
 #. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
-#: apps/wiki/src/components/character-edit-form.tsx:2204
+#: apps/wiki/src/components/character-edit-form.tsx:2208
 msgid "图片太大（{0} MB），上限 4 MB。"
 msgstr "画像サイズが大きすぎます ({0} MB)。上限は 4 MB です。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2214
+#: apps/wiki/src/components/character-edit-form.tsx:2218
 msgid "只支持 PNG / JPG / WebP / GIF。"
 msgstr "PNG / JPG / WebP / GIF のみ対応しています。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2223
+#: apps/wiki/src/components/character-edit-form.tsx:2227
 msgid "头像上传失败，请稍后再试"
 msgstr "アバターのアップロードに失敗しました。後ほど再試行してください。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2260
+#: apps/wiki/src/components/character-edit-form.tsx:2264
 msgid "上传中…"
 msgstr "アップロード中…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2262
+#: apps/wiki/src/components/character-edit-form.tsx:2266
 msgid "上传图片"
 msgstr "画像をアップロード"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2273
+#: apps/wiki/src/components/character-edit-form.tsx:2277
 msgid "清除"
 msgstr "クリア"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2358
+#: apps/wiki/src/components/character-edit-form.tsx:2362
 msgid "AI 正在生成「{sectionLabel}」…"
 msgstr "AI が「{sectionLabel}」を生成中…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2364
+#: apps/wiki/src/components/character-edit-form.tsx:2368
 msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
 msgstr "フォームはロック中。リストに戻っても問題ありません。戻ってきたら結果が自動で入力されます。"
 
@@ -757,7 +761,7 @@ msgstr "送信しました。管理者が対応します。"
 #: apps/wiki/src/components/report-button.tsx:111
 #: apps/wiki/src/routes/account-page.tsx:360
 #: apps/wiki/src/routes/account-page.tsx:466
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
 #: apps/wiki/src/routes/character-page.tsx:235
 msgid "提交中..."
@@ -868,7 +872,7 @@ msgid "待审编辑"
 msgstr "審査待ち編集"
 
 #: apps/wiki/src/components/root-layout.tsx:117
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:62
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
 #: apps/wiki/src/routes/admin-blocks-page.tsx:72
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
 #: apps/wiki/src/routes/admin-reports-page.tsx:48
@@ -901,7 +905,7 @@ msgid "举报队列"
 msgstr "通報キュー"
 
 #: apps/wiki/src/components/root-layout.tsx:145
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:64
 #: apps/wiki/src/routes/admin-layout.tsx:15
 msgid "反破坏过滤器"
 msgstr "不正対策フィルター"
@@ -987,6 +991,10 @@ msgstr "アカウント設定"
 #: apps/wiki/src/components/root-layout.tsx:536
 msgid "退出"
 msgstr "サインアウト"
+
+#: apps/wiki/src/components/root-layout.tsx:556
+msgid "主导航"
+msgstr "メインナビゲーション"
 
 #: apps/wiki/src/components/scene-prompt-preview.tsx:12
 msgid "聊天"
@@ -1159,7 +1167,7 @@ msgstr "削除済"
 
 #: apps/wiki/src/components/talk-panel.tsx:434
 #: apps/wiki/src/lib/revision-labels.ts:24
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:218
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:222
 #: apps/wiki/src/routes/pending-reviews-page.tsx:114
 msgid "删除"
 msgstr "削除"
@@ -1283,22 +1291,22 @@ msgid "讨论"
 msgstr "トーク"
 
 #: apps/wiki/src/lib/revision-labels.ts:66
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:229
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
 msgid "拦截"
 msgstr "ブロック"
 
 #: apps/wiki/src/lib/revision-labels.ts:67
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:231
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:235
 msgid "标高风险"
 msgstr "高リスクとしてタグ"
 
 #: apps/wiki/src/lib/revision-labels.ts:68
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:233
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:237
 msgid "警告"
 msgstr "警告"
 
 #: apps/wiki/src/lib/revision-labels.ts:69
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:234
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:238
 msgid "记录"
 msgstr "ログ"
 
@@ -1502,168 +1510,168 @@ msgstr "ユーザー名は 32 文字を超えることはできません。"
 msgid "保存新用户名"
 msgstr "新しいユーザー名を保存"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:65
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:66
 msgid "每次 wiki 写入都会按规则匹配；命中后可触发记录、警告、强制人工审核或直接拦截。"
 msgstr "wiki 書き込みのたびにルールと照合され、ヒット時はログ・警告・人手審査・ブロックを発動できます。"
 
 #. placeholder {0}: f.name
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:93
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:94
 msgid "删除规则 {0}？"
 msgstr "ルール {0} を削除しますか？"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:103
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:104
 msgid "暂无过滤规则。可使用上方\"+ 新建过滤器\"快速添加一条；模块启动也会自动种入预置规则。"
 msgstr "フィルタルールはまだありません。上部の「+ フィルタ追加」から作成できます。モジュール起動時にプリセットルールも自動投入されます。"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:111
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:112
 msgid "最近命中（50 条）"
 msgstr "最近のヒット（50 件）"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:115
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:116
 msgid "尚无命中记录。"
 msgstr "ヒット記録はまだありません。"
 
 #. placeholder {0}: h.characterId
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:131
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:132
 msgid "命中于 <0>{0}</0>"
 msgstr "対象 <0>{0}</0>"
 
 #. placeholder {0}: filter.scope
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:176
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
 msgid "范围：{0}"
 msgstr "範囲: {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:180
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
 msgid "已停用"
 msgstr "無効"
 
 #. placeholder {0}: filter.hitCount
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:184
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:188
 msgid "命中 {0} 次"
 msgstr "{0} 回ヒット"
 
 #. placeholder {0}: formatDateTime(filter.lastHitAt)
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:186
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:190
 msgid "最近 {0}"
 msgstr "最終 {0}"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:197
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:201
 msgid "DSL 匹配模式"
 msgstr "DSL マッチパターン"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
 msgid "停用"
 msgstr "無効化"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:210
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:214
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:445
 msgid "启用"
 msgstr "有効化"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:264
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:438
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:268
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:442
 msgid "高"
 msgstr "高"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:266
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:437
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:270
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:441
 msgid "中"
 msgstr "中程度"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:267
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:436
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:271
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:440
 msgid "低"
 msgstr "低"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:309
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:313
 msgid "pattern 必须是含有 type 字段的 JSON 对象"
 msgstr "pattern は type フィールドを含む JSON オブジェクトでなければなりません"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:354
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:358
 msgid "新建过滤规则：name + pattern + 命中后动作。"
 msgstr "新規フィルタルール：name + pattern + ヒット時の動作。"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:362
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:366
 msgid "+ 新建过滤器"
 msgstr "+ フィルタ追加"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:372
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:376
 msgid "新建过滤器"
 msgstr "フィルタを追加"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:383
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
 msgid "关闭"
 msgstr "閉じる"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:387
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
 msgid "规则名称"
 msgstr "ルール名"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:391
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:395
 msgid "例如：明显广告关键字"
 msgstr "例：明らかな広告キーワード"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:394
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
 msgid "描述"
 msgstr "説明"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:398
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:402
 msgid "简短说明命中条件与目的"
 msgstr "ヒット条件と目的を簡単に説明"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:401
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:405
 msgid "扫描范围 (scope)"
 msgstr "スキャン範囲 (scope)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:407
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:411
 msgid "全部 (all)"
 msgstr "すべて (all)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:408
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
 msgid "仅档案 (content)"
 msgstr "プロフィールのみ (content)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:409
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:413
 msgid "仅角色逻辑 (recipe)"
 msgstr "キャラクターロジックのみ (recipe)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:412
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:416
 msgid "命中后动作 (action)"
 msgstr "ヒット時の動作 (action)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:420
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:424
 msgid "记录 (log)"
 msgstr "記録 (log)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:421
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
 msgid "警告 (warn)"
 msgstr "警告 (warn)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:423
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:427
 msgid "标高风险 (tag_high_risk)"
 msgstr "高リスクタグ付け (tag_high_risk)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:425
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:429
 msgid "拦截 (block)"
 msgstr "ブロック (block)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:428
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:432
 msgid "严重等级"
 msgstr "深刻度"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:448
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:452
 msgid "创建后立即生效"
 msgstr "作成直後に有効化"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:453
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:457
 msgid "Pattern (JSON)"
 msgstr "Pattern (JSON)"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:455
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:459
 msgid "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 msgstr "regex / shrink / frequency / link_flood / keyword_list などをサポート。type フィールドが必須です"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:477
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
 msgid "提交并启用"
 msgstr "送信して有効化"
 
@@ -2020,21 +2028,21 @@ msgstr "wiki メンバー"
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "「{0}」のロールを {1} から {2} に変更しますか？該当ユーザーは直ちに該当権限を失います。"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:21
+#: apps/wiki/src/routes/character-diff-page.tsx:22
 msgid "缺少对比版本参数。"
 msgstr "比較バージョンのパラメータが不足しています。"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:41
+#: apps/wiki/src/routes/character-diff-page.tsx:42
 msgid "返回词条"
 msgstr "エントリへ戻る"
 
 #. placeholder {0}: data.from.version
 #. placeholder {1}: data.to.version
-#: apps/wiki/src/routes/character-diff-page.tsx:44
+#: apps/wiki/src/routes/character-diff-page.tsx:45
 msgid "v{0} 对比 v{1}"
 msgstr "v{0} vs v{1}"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:49
+#: apps/wiki/src/routes/character-diff-page.tsx:54
 #: apps/wiki/src/routes/character-page.tsx:426
 #: apps/wiki/src/routes/character-page.tsx:728
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
@@ -2043,11 +2051,11 @@ msgstr "v{0} vs v{1}"
 msgid "高风险"
 msgstr "高リスク"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:63
+#: apps/wiki/src/routes/character-diff-page.tsx:68
 msgid "旧角色逻辑"
 msgstr "旧キャラクターロジック"
 
-#: apps/wiki/src/routes/character-diff-page.tsx:71
+#: apps/wiki/src/routes/character-diff-page.tsx:76
 msgid "新角色逻辑"
 msgstr "新キャラクターロジック"
 

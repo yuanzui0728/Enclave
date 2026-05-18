@@ -2060,7 +2060,11 @@ function PreviewCard({
 function SectionNav({ saveDisabled }: { saveDisabled: boolean }) {
   const t = useRuntimeTranslator();
   return (
-    <nav className="hidden lg:block">
+    // 整个编辑器页面已经有 root-layout 主侧栏 nav + admin-layout 顶部 tab nav；
+    // 这里又一个无名 nav 让 NVDA 用户在"跳过到导航"时听到 3 个相同的
+    // "navigation"，没有区分能力。加 aria-label 让 SR 念出"角色编辑章节
+    // 跳转"。
+    <nav aria-label={t(msg`角色编辑章节跳转`)} className="hidden lg:block">
       <div className="sticky top-20 space-y-2">
         <p className="px-3 text-[10px] uppercase tracking-wide text-[color:var(--text-dim)]">
           <Trans>章节</Trans>

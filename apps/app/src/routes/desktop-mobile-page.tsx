@@ -1111,22 +1111,28 @@ export function DesktopMobilePage() {
           </section>
         ) : null}
 
+        {/* 走查电脑端群聊 R85：和姊妹 R83/R84 一批 ErrorBlock 同款 a11y——
+            「到手机继续」页是群通话面板「到手机继续」按钮的目标页（也是单聊
+            handoff 入口），4 处 ErrorBlock 都裸跑没 role / aria-live。盲人 SR
+            打开本页若 conversations / officialAccounts / officialHandoffArticle /
+            systemStatus 任一失败，会看到 loading 消失但听不到错误反馈，进不
+            到下一步操作。挂 role="alert"。 */}
         {conversationsQuery.isError &&
         conversationsQuery.error instanceof Error ? (
-          <ErrorBlock message={conversationsQuery.error.message} />
+          <ErrorBlock role="alert" message={conversationsQuery.error.message} />
         ) : null}
         {officialAccountsQuery.isError &&
         officialAccountsQuery.error instanceof Error ? (
-          <ErrorBlock message={officialAccountsQuery.error.message} />
+          <ErrorBlock role="alert" message={officialAccountsQuery.error.message} />
         ) : null}
         {officialHandoffArticleQuery.isError &&
         !officialHandoffArticleMissing &&
         officialHandoffArticleQuery.error instanceof Error ? (
-          <ErrorBlock message={officialHandoffArticleQuery.error.message} />
+          <ErrorBlock role="alert" message={officialHandoffArticleQuery.error.message} />
         ) : null}
         {systemStatusQuery.isError &&
         systemStatusQuery.error instanceof Error ? (
-          <ErrorBlock message={systemStatusQuery.error.message} />
+          <ErrorBlock role="alert" message={systemStatusQuery.error.message} />
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">

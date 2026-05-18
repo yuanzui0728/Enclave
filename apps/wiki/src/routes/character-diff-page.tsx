@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, ErrorBlock, LoadingBlock, StatusPill } from "@yinjie/ui";
 import { SnapshotDiff } from "../components/snapshot-diff";
 import { wikiApi } from "../lib/wiki-api";
+import { revisionOperationLabel } from "../lib/revision-labels";
 
 export function CharacterDiffPage() {
   const search = useSearch({ from: "/character/$characterId/diff" });
@@ -43,7 +44,11 @@ export function CharacterDiffPage() {
         <h1 className="text-lg font-semibold sm:text-xl">
           <Trans>v{data.from.version} 对比 v{data.to.version}</Trans>
         </h1>
-        <StatusPill>{data.to.operation}</StatusPill>
+        {/* 原写法裸渲染 data.to.operation 后端英文枚举（create/soft_delete/
+            revert...）；diff 页面顶部标题已经是 "v3 对比 v4" 全中文，紧跟一个
+            "soft_delete" 英文 pill 显得没翻译完。走和历史 tab 一致的本地化
+            映射。 */}
+        <StatusPill>{revisionOperationLabel(data.to.operation)}</StatusPill>
         {data.to.riskLevel === "high" && (
           <StatusPill>
             <Trans>高风险</Trans>
