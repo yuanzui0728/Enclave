@@ -505,6 +505,16 @@ export function ChatMessageList({
   // 见下方 openAttachment file 分支注释 — 按 messageId 互斥同一个文件气泡的同帧
   // 双击，不同消息互不影响（用户连续点 2 个文件气泡是合法用法）。
   const openingFileMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查电脑端单聊新一轮 R2：contact_card desktop 分支 onClick → openAttachment 走
+  // `void getOrCreateConversation(...).then(navigate).catch(...)`，无任何同步锁。
+  // 同帧 <16ms double-click 同一张 ContactCardMessage 气泡都进入 →
+  // getOrCreateConversation 飞 2 次（服务端按 characterId 查再创建虽幂等，但公网
+  // 隧道 RTT ~600ms × 2 + markFollowupRecommendationOpened / chat-started 各打 2
+  // 次浪费 telemetry）。note_card desktop 分支同款 — buildDesktopNoteWindowRouteHashOnDemand
+  // 异步走 dynamic import + createDesktopNoteDraft，双击会跑 2 遍 import + 2 次
+  // navigate。和 openingFileMessageIdsRef 同思路按 messageId 上锁，不同消息互不
+  // 影响（用户连续点 2 张不同的名片/笔记卡片是合法用法）。
+  const openingAttachmentMessageIdsRef = useRef<Set<string>>(new Set());
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
   // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
   // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
@@ -2181,6 +2191,14 @@ export function ChatMessageList({
       }
 
       if (variant === "desktop") {
+        // 走查电脑端单聊新一轮 R2：同帧 double-click 同一张 ContactCardMessage
+        // 气泡会让下面 getOrCreateConversation / buildDesktopAddFriendRouteHashOnDemand
+        // 跑 2 次。按 messageId 上锁，finally 解锁。
+        if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+          return;
+        }
+        openingAttachmentMessageIdsRef.current.add(message.id);
+
         if (attachment.recommendationMetadata?.relationshipState === "friend") {
           void getOrCreateConversation(
             { characterId: attachment.characterId },
@@ -2211,6 +2229,9 @@ export function ChatMessageList({
                     : t(msg`打开聊天失败，请稍后重试。`),
                 tone: "danger",
               });
+            })
+            .finally(() => {
+              openingAttachmentMessageIdsRef.current.delete(message.id);
             });
           return;
         }
@@ -2233,6 +2254,9 @@ export function ChatMessageList({
               message: t(msg`打开添加朋友页失败，请稍后重试。`),
               tone: "danger",
             });
+          })
+          .finally(() => {
+            openingAttachmentMessageIdsRef.current.delete(message.id);
           });
         return;
       }
@@ -2256,6 +2280,13 @@ export function ChatMessageList({
 
     if (attachment.kind === "note_card") {
       if (variant === "desktop") {
+        // 走查电脑端单聊新一轮 R2：和 contact_card desktop 同款 — 同帧 double-
+        // click NoteCardMessage 气泡让 buildDesktopNoteWindowRouteHashOnDemand
+        // 跑 2 次（dynamic import + createDesktopNoteDraft）+ navigate 2 次。
+        if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+          return;
+        }
+        openingAttachmentMessageIdsRef.current.add(message.id);
         void buildDesktopNoteWindowRouteHashOnDemand({
           noteId: attachment.noteId,
           returnTo:
@@ -2274,6 +2305,9 @@ export function ChatMessageList({
               message: t(msg`打开笔记失败，请稍后重试。`),
               tone: "danger",
             });
+          })
+          .finally(() => {
+            openingAttachmentMessageIdsRef.current.delete(message.id);
           });
         return;
       }
