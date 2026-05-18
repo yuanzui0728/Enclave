@@ -3239,6 +3239,17 @@ function renderConversationPreviewText(text: string): ReactNode {
           src={segment.src}
           alt={segment.label}
           draggable={false}
+          // 走查电脑端单聊 R84：和姊妹 chat-message-list renderTextWithMentions
+          // (line 5830-5839) 同款 — 那边 sticker <img> 早已挂 loading="lazy"
+          // + decoding="async"，本会话列表 preview 里的 builtin sticker
+          // emoji 漏挂。chat list 一进入桌面 workspace 通常渲染 50+ 会话，
+          // 每条 lastMessage preview 都跑一遍 splitChatTextSegments，命中
+          // builtin sticker 的（"在吗 [微笑]" / "[偷笑] 看下这张图" 等）
+          // 全部 eager 加载——虽然 sticker assets 是 Vite bundle 同源、单
+          // 文件小，但首屏 N 个 <img> 同时进 decode 队列、抢主线程，列表
+          // 渲染稍卡。和 chat-message-list 那边对齐补两个 attr。
+          loading="lazy"
+          decoding="async"
           className="inline-block h-5 w-5 align-[-0.35em] object-contain"
         />
       );
