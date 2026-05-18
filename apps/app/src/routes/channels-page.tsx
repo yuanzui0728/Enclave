@@ -1274,10 +1274,21 @@ export function ChannelsPage() {
       }
       // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错（hidePost
       // 只动 A 的 home），且 B 会做不必要的 refetch。
+      //
+      // 走查 2026-05-18 新会话 R8（本轮）：active 'recommended' tab 已经被
+      // onMutate 里 posts.filter 抠掉了这条 post，refetch 重拉一遍只为拿同样
+      // 的"少了这条"列表，纯浪费 ~35KB JSON。但 inactive 'friends' / 'following'
+      // / 'live' tab cache 必须标 stale —— 用户「减少推荐」的可能是某位朋友
+      // 的 post，朋友 tab 的 cache 还含这条，下次切过去会看到，体感「我刚说
+      // 不感兴趣怎么还在」。用 refetchType: 'none' 砍掉所有 section 的 active
+      // refetch，标 stale 让下次切 tab 自动 fresh refetch。
+      // decorations 不能 'none'：sections.count 在头部 4 个 tab badge 是 active
+      // query 衍生数据，「不感兴趣」一条朋友帖后「朋友 tab 计数 5→4」必须立
+      // 即可见。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", mutationBaseUrl],
+        refetchType: "none",
       });
-      // 隐藏帖子影响 sections.count / 作者位 / 直播位。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
