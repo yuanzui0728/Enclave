@@ -1183,6 +1183,34 @@ export function DesktopChatWorkspace({
     },
   });
 
+  // 走查新一轮 R31：和 details-panel R29 (commit 01dcc31c6) 同款 — 会话右键
+  // context menu 的「置顶 / 免打扰 / 标已读 / 标未读」4 个 toggle action 只挂
+  // disabled={busy=conversationActionMutation.isPending}，busy 走 React state
+  // 要等 commit 才生效。menu 在 pending 期间不会自动关（仅 hide/clear/leave
+  // 走 danger 流程时手动 setConversationContextMenu(null)），同帧 <16ms double-
+  // click 都看到 disabled=false → mutate 飞 2 次，公网隧道 RTT 双倍消耗 +
+  // onSuccess 让 conversations / group-messages 缓存被重 invalidate 一次。
+  // 叠 sync ref 锁兜同帧 double-tap，pending 翻 false 后 useEffect 复位。
+  const conversationActionSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!conversationActionMutation.isPending) {
+      conversationActionSubmittingRef.current = false;
+    }
+  }, [conversationActionMutation.isPending]);
+  const guardedMutateConversationAction = useCallback(
+    (variables: {
+      action: "pin" | "mute" | "read" | "unread" | "hide" | "clear" | "delete" | "leave";
+      conversation: ConversationListItem;
+    }) => {
+      if (conversationActionSubmittingRef.current) {
+        return;
+      }
+      conversationActionSubmittingRef.current = true;
+      conversationActionMutation.mutate(variables);
+    },
+    [conversationActionMutation],
+  );
+
   const activeConversationDangerConfirm = useMemo(() => {
     if (!conversationDangerAction) {
       return null;
@@ -1320,6 +1348,37 @@ export function DesktopChatWorkspace({
       );
     },
   });
+
+  // 走查新一轮 R31：和上面 conversationActionMutation 同款 — 公众号消息
+  // context menu 的「标记全部已读 / 标记已读 / 消息免打扰」3 个 action 同样
+  // 只挂 disabled={isPending}，菜单不自动关，同帧 double-click 漏。
+  const officialMessageActionSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!officialMessageActionMutation.isPending) {
+      officialMessageActionSubmittingRef.current = false;
+    }
+  }, [officialMessageActionMutation.isPending]);
+  const guardedMutateOfficialMessageAction = useCallback(
+    (
+      action:
+        | { kind: "subscription-read" }
+        | {
+            kind: "service-read";
+            conversation: OfficialAccountServiceConversationSummary;
+          }
+        | {
+            kind: "service-mute";
+            conversation: OfficialAccountServiceConversationSummary;
+          },
+    ) => {
+      if (officialMessageActionSubmittingRef.current) {
+        return;
+      }
+      officialMessageActionSubmittingRef.current = true;
+      officialMessageActionMutation.mutate(action);
+    },
+    [officialMessageActionMutation],
+  );
 
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
     setIsQuickMenuOpen(false);
@@ -2280,13 +2339,13 @@ export function DesktopChatWorkspace({
           busy={conversationActionMutation.isPending}
           onClose={() => setConversationContextMenu(null)}
           onTogglePinned={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "pin",
               conversation: conversationContextMenu.conversation,
             })
           }
           onToggleMuted={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "mute",
               conversation: conversationContextMenu.conversation,
             })
@@ -2297,13 +2356,13 @@ export function DesktopChatWorkspace({
             )
           }
           onMarkRead={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "read",
               conversation: conversationContextMenu.conversation,
             })
           }
           onMarkUnread={() =>
-            conversationActionMutation.mutate({
+            guardedMutateConversationAction({
               action: "unread",
               conversation: conversationContextMenu.conversation,
             })
@@ -2412,7 +2471,7 @@ export function DesktopChatWorkspace({
                         dividerBefore: true,
                         disabled: officialMessageActionMutation.isPending,
                         onClick: () => {
-                          officialMessageActionMutation.mutate({
+                          guardedMutateOfficialMessageAction({
                             kind: "subscription-read",
                           });
                         },
@@ -2471,7 +2530,7 @@ export function DesktopChatWorkspace({
                         dividerBefore: true,
                         disabled: officialMessageActionMutation.isPending,
                         onClick: () => {
-                          officialMessageActionMutation.mutate({
+                          guardedMutateOfficialMessageAction({
                             kind: "service-read",
                             conversation:
                               officialMessageContextMenu.conversation,
@@ -2493,7 +2552,7 @@ export function DesktopChatWorkspace({
                       officialMessageContextMenu.conversation.unreadCount === 0,
                     disabled: officialMessageActionMutation.isPending,
                     onClick: () => {
-                      officialMessageActionMutation.mutate({
+                      guardedMutateOfficialMessageAction({
                         kind: "service-mute",
                         conversation: officialMessageContextMenu.conversation,
                       });
@@ -2518,7 +2577,7 @@ export function DesktopChatWorkspace({
             return;
           }
 
-          conversationActionMutation.mutate({
+          guardedMutateConversationAction({
             action: conversationDangerAction.action,
             conversation: conversationDangerAction.conversation,
           });
