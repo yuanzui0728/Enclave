@@ -1957,6 +1957,34 @@ function ChannelAuthorOverlay({
   // 同时 backdrop button 上有 aria-label="关闭作者主页"，但 SR 进 overlay 时
   // 没有任何方式知道"现在在作者主页面板里"。补 role/aria-modal/aria-
   // labelledby 指向 DesktopChannelAuthorPanel 顶部的"作者主页"标题。
+  //
+  // 走查 2026-05-19 第五轮 R4：a11y modal 关闭归还焦点漏掉了。author overlay
+  // 视觉上是 modal 但没有 focus 管理 —— 用户点 slide 头部作者按钮 → overlay
+  // 打开 → 看完关掉（Esc / 「回到内容」/ backdrop 点击）→ focus 落到 body
+  // （overlay 内 button 被卸载或 backdrop button 一闪即逝），SR / 键盘用户失
+  // 去位置。同款 ChannelsForwardPicker 早就（line 161-195）做了「打开瞬间钉
+  // 住 activeElement，关闭时 rAF 归还」的 focus-restore；author-overlay 一直
+  // 漏。补一份精简版（不挂 focus trap—— overlay 内 Tab 顺序 backdrop button
+  // → 「回到内容」/「+关注」/ recent posts 列表 → 实际焦点不容易漏出 modal，
+  // 留到后续 round 处理）。
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    return () => {
+      const prev = previouslyFocusedRef.current;
+      previouslyFocusedRef.current = null;
+      if (prev && document.contains(prev)) {
+        // rAF 等到 overlay unmount commit 落定 — 同 frame 调 .focus() 时浏览器
+        // 偶发把焦点丢到 body（commit 还在跑 cleanup）。
+        window.requestAnimationFrame(() => prev.focus());
+      }
+    };
+  }, []);
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.55)] p-8 backdrop-blur-sm">
       <button
