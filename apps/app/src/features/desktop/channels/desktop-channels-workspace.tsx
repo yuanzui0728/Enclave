@@ -607,6 +607,65 @@ export function DesktopChannelsWorkspace({
     scrollToOffset(container.clientHeight);
   }, [scrollToOffset]);
 
+  // 走查 2026-05-19 第五轮 R1：视频号工作区原来只能用鼠标滚轮 / Tab+Enter 到右
+  // 下角箭头按钮来切换 slide。键盘用户每滑一条都要先 Tab 数次到 FeedNavArrows
+  // 再按 Enter，对齐抖音 / Bilibili / YouTube 全屏纵向视频流的标准键盘体感
+  // （ArrowUp/Down + PageUp/Down），桌面 channels 一直漏。补 window-level 监听：
+  //   - Arrow/PageDown → 下一条；Arrow/PageUp → 上一条；Home/End 兜首尾
+  //   - 任一 modal 打开（drawer / author overlay / forward picker）→ bail，
+  //     让键盘焦点留给 modal（modal 内 Esc/Tab 各自有处理）
+  //   - focus 在输入元素（INPUT/TEXTAREA/contenteditable）→ bail，不抢评论
+  //     textarea / TextField 光标移动
+  //   - 修饰键 Ctrl/Cmd/Alt 按下 → bail，留给浏览器原生快捷键
+  // handlePrev/Next 走 ref → 稳定 identity，依赖 modal 状态 + 这两条 fn。
+  const handlePrevRef = useRef(handlePrev);
+  handlePrevRef.current = handlePrev;
+  const handleNextRef = useRef(handleNext);
+  handleNextRef.current = handleNext;
+  useEffect(() => {
+    if (commentDrawerPostId || authorPanelVisible || forwardPickerPost) {
+      return;
+    }
+    const handler = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+      }
+      if (
+        event.key === "ArrowDown" ||
+        event.key === "PageDown" ||
+        event.key === " " // Space 是浏览器默认的向下滚一屏，桌面 channels 用 snap 容器，
+        // 直接走 handleNext 让 snap 落到下一条；shiftKey+Space 走向上对齐浏览器约定。
+      ) {
+        if (event.key === " " && event.shiftKey) {
+          event.preventDefault();
+          handlePrevRef.current();
+          return;
+        }
+        event.preventDefault();
+        handleNextRef.current();
+        return;
+      }
+      if (event.key === "ArrowUp" || event.key === "PageUp") {
+        event.preventDefault();
+        handlePrevRef.current();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [authorPanelVisible, commentDrawerPostId, forwardPickerPost]);
+
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
