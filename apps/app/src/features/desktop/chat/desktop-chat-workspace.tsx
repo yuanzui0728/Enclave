@@ -1773,7 +1773,19 @@ export function DesktopChatWorkspace({
 
             <div className="space-y-1">
               {filteredReminderEntries.length ? (
-                <section className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none">
+                // 走查新一轮 R14：和 R11 quickMenu / R13 搜索容器同款。消息提醒
+                // section（展开 / 收起 / 清空已通知 / 单条「完成」按钮）这些动作
+                // 都是 in-place mutate state，不导航。但 section 在 chat list 子树
+                // 里、不在保护区，开着「聊天信息」侧栏的用户点提醒上的「完成」按钮
+                // 想关掉一条提醒时，pointerdown capture 把背后的详情侧栏一起偷关。
+                // 提醒卡的「打开」按钮才是 navigate（onOpen 走 chatReminderNavigation
+                // → 切会话），那条配合 dismiss 是合理的；但 React Router 路由变化
+                // 后 workspace 会经 useEffect 链自然处理侧栏，不依赖这条 dismiss。
+                // 给整个 reminder section 加 shield 是安全的。
+                <section
+                  data-yj-portal-shield="desktop-chat-reminder-section"
+                  className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none"
+                >
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
                     <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
