@@ -724,7 +724,15 @@ export function DesktopChannelsWorkspace({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-[#101013]">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
-            <LoadingBlock label={t(msg`正在读取视频号内容...`)} />
+            {/* 走查 2026-05-18 第二轮 R5：LoadingBlock 是裸 <div>，没 role/aria-
+                live。视频号 home 首次打开 / "换一批" 后 / baseUrl 切换重拉时整
+                屏渲 "正在读取视频号内容..." 几百毫秒～几秒，盲用用户视觉上看
+                不到 loading dot 动画，听不到任何反馈，体感"页面卡死"。挂 role=
+                "status"（aria-live=polite）让 SR 进入 loading 态时排队播报。 */}
+            <LoadingBlock
+              role="status"
+              label={t(msg`正在读取视频号内容...`)}
+            />
           </div>
         ) : null}
 
@@ -1974,7 +1982,9 @@ function DesktopChannelAuthorPanel({
 
       {isLoading ? (
         <div className="mt-4">
-          <LoadingBlock label={t(msg`正在读取作者主页...`)} />
+          {/* R5：作者 overlay 打开时 SR 进入 modal 没听到 "正在读取作者主页"
+              loading 反馈。挂 role="status" 让 SR 知道 modal 在等数据。 */}
+          <LoadingBlock role="status" label={t(msg`正在读取作者主页...`)} />
         </div>
       ) : null}
 

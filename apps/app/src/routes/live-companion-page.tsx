@@ -678,7 +678,9 @@ export function LiveCompanionPage() {
               </div>
               <div className="mt-4">
                 {statusQuery.isLoading ? (
-                  <LoadingBlock label={t(msg`正在读取状态...`)} />
+                  // R5：cloud-api 慢响应时 SR 用户进入直播伴侣页听不到 "正在
+                  // 读取状态..." loading 反馈。挂 role="status" + aria-live=polite。
+                  <LoadingBlock role="status" label={t(msg`正在读取状态...`)} />
                 ) : (
                   <div className="space-y-3">
                     <StatusRow
@@ -739,7 +741,11 @@ export function LiveCompanionPage() {
 
             <div className="mt-4 space-y-3">
               {channelsQuery.isLoading ? (
-                <LoadingBlock label={t(msg`正在读取视频号内容...`)} />
+                // R5：getFeed surface=channels 慢响应时 SR 用户听不到反馈。
+                <LoadingBlock
+                  role="status"
+                  label={t(msg`正在读取视频号内容...`)}
+                />
               ) : recentPosts.length ? (
                 recentPosts.map((post) => (
                   <PostReferenceCard
