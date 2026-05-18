@@ -434,7 +434,10 @@ export function DesktopMessageForwardDialog({
             )}
           >
             {loading ? <LoadingBlock label={t(msg`正在读取最近会话...`)} /> : null}
-            {error ? <ErrorBlock message={error} /> : null}
+            {/* R48：转发弹层 error 是 conversations 读取失败（fetch
+                /recent + /messages 任一 4xx/5xx，或网络中断），盲人用户
+                打开转发面板等空白看不到错误。挂 role="alert"。 */}
+            {error ? <ErrorBlock role="alert" message={error} /> : null}
             {!loading && !error && !conversations.length ? (
               <EmptyState
                 title={t(msg`还没有可转发的最近会话`)}

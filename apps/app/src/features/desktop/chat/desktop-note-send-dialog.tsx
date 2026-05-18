@@ -241,7 +241,9 @@ export function DesktopNoteSendDialog({
 
           <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
             {loading ? <LoadingBlock label={t(msg`正在读取最近会话...`)} /> : null}
-            {error ? <ErrorBlock message={error} /> : null}
+            {/* R48 续：笔记发送弹层 error 同款，conversations 读取失败时
+                盲人用户在空白面板下没反馈。挂 role="alert"。 */}
+            {error ? <ErrorBlock role="alert" message={error} /> : null}
             {!loading && !error && !conversations.length ? (
               <EmptyState
                 title={t(msg`还没有可发送的最近会话`)}
