@@ -105,6 +105,26 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     setDraft("");
   }, [baseUrl, groupId]);
 
+  // 走查移动端群聊 R5：和姊妹路径 chat-background-page R2（c16fa822e）/
+  // group-chat-background-page 本会话 R1 / group-chat-details 本会话 R2 同款
+  // 修法——setNotice 一串成功/提示文案（"已打开系统分享面板。"/"群公告已复制。"/
+  // "当前还没有可分享的群公告。"等）原版没 auto-dismiss，notice 一直挂在
+  // ChatDetailsShell 顶部直到用户切 groupId 或离开页才消。
+  //
+  // tone="success" 走的是 line 418 纯文案分支，无 action 按钮兜底，停留在
+  // 屏幕上是干扰；tone="info" + actionLabel/onAction 时（重试分享/复制）用户
+  // 可能要点 action，不能秒消。无 actionLabel 的 info（"当前还没有可分享的
+  // 群公告。"）只渲染一条返回按钮——返回按钮独立于 notice 状态，notice 消
+  // 了不影响用户操作，3.5s 后清理 visual 噪音。和姊妹页 chat-details R3 口径
+  // 对齐。
+  useEffect(() => {
+    if (!notice || (notice.actionLabel && notice.onAction)) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (
       groupQuery.isLoading ||
