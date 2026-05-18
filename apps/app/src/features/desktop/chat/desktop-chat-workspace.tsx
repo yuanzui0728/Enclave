@@ -1940,7 +1940,16 @@ export function DesktopChatWorkspace({
               </div>
             </div>
             {notice ? (
+              // R36：notice 是 2400ms 自动消失的 transient toast（line 826
+              // useEffect 设的 setTimeout），用来反馈右键 / quick-menu 操作结果
+              // （置顶 / 标已读 / 删除 / 清空 / 退出群聊 等）。原版只是 div，
+              // 盲人 SR 完全感知不到这条短暂的状态反馈，操作完没有 audible
+              // 信号。补 role="status" + aria-live="polite"，让 SR 在 notice
+              // 渲染时朗读一遍；polite 不抢 SR 当前正在朗读的内容，2.4s 内
+              // 消失也来得及念完一条 toast。
               <InlineNotice
+                role="status"
+                aria-live="polite"
                 className="mt-3 border-[color:var(--border-faint)] bg-white text-xs"
                 tone="info"
               >
