@@ -645,6 +645,87 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     leaveMutation.isPending ||
     hideMutation.isPending;
 
+  // 走查新会话 R1：和姊妹 chat-details-page R2（commit 2d6d33d57）/ 桌面单聊
+  // R29（commit 01dcc31c6）同款修法——下面 7 条 ChatSettingRow（置顶聊天 /
+  // 消息免打扰 / @我仍通知 / @所有人仍通知 / 群公告仍通知 / 保存到通讯录 /
+  // 显示群成员昵称）原本只裸跑 `xxxMutation.mutate(...)`，既没挂 disabled={busy}
+  // 也没 sync ref 锁。同帧 <16ms 第二次 click 都看到 isPending=false →
+  // mutation.mutate 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本
+  // 闪两次。preferencesMutation 多个偏好 key 共享一个 mutation，逐 key sync
+  // ref 兜同帧 double-tap；isPending 翻 false 后 useEffect 复位 6 个偏好 ref，
+  // pinMutation.isPending 单独复位 pinSubmittingRef。
+  const pinSubmittingRef = useRef(false);
+  const mutedSubmittingRef = useRef(false);
+  const notifyAtMeSubmittingRef = useRef(false);
+  const notifyAtAllSubmittingRef = useRef(false);
+  const notifyAnnouncementSubmittingRef = useRef(false);
+  const savedToContactsSubmittingRef = useRef(false);
+  const showMemberNicknamesSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!preferencesMutation.isPending) {
+      mutedSubmittingRef.current = false;
+      notifyAtMeSubmittingRef.current = false;
+      notifyAtAllSubmittingRef.current = false;
+      notifyAnnouncementSubmittingRef.current = false;
+      savedToContactsSubmittingRef.current = false;
+      showMemberNicknamesSubmittingRef.current = false;
+    }
+  }, [preferencesMutation.isPending]);
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleToggleMuted = (next: boolean) => {
+    if (mutedSubmittingRef.current) {
+      return;
+    }
+    mutedSubmittingRef.current = true;
+    preferencesMutation.mutate({ isMuted: next });
+  };
+  const handleToggleNotifyAtMe = (next: boolean) => {
+    if (notifyAtMeSubmittingRef.current) {
+      return;
+    }
+    notifyAtMeSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAtMe: next });
+  };
+  const handleToggleNotifyAtAll = (next: boolean) => {
+    if (notifyAtAllSubmittingRef.current) {
+      return;
+    }
+    notifyAtAllSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAtAll: next });
+  };
+  const handleToggleNotifyAnnouncement = (next: boolean) => {
+    if (notifyAnnouncementSubmittingRef.current) {
+      return;
+    }
+    notifyAnnouncementSubmittingRef.current = true;
+    preferencesMutation.mutate({ notifyOnAnnouncement: next });
+  };
+  const handleToggleSavedToContacts = (next: boolean) => {
+    if (savedToContactsSubmittingRef.current) {
+      return;
+    }
+    savedToContactsSubmittingRef.current = true;
+    preferencesMutation.mutate({ savedToContacts: next });
+  };
+  const handleToggleShowMemberNicknames = (next: boolean) => {
+    if (showMemberNicknamesSubmittingRef.current) {
+      return;
+    }
+    showMemberNicknamesSubmittingRef.current = true;
+    preferencesMutation.mutate({ showMemberNicknames: next });
+  };
+
   return (
     <ChatDetailsShell
       title={groupQuery.data?.name ?? t(msg`群聊信息`)}
@@ -876,9 +957,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`消息免打扰`)}
                 variant="wechat"
                 checked={groupQuery.data.isMuted}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({ isMuted: checked });
-                }}
+                disabled={busy}
+                onToggle={handleToggleMuted}
               />
               {groupQuery.data.isMuted ? (
                 <>
@@ -886,27 +966,22 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     label={t(msg`@我仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtMe}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({ notifyOnAtMe: checked });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAtMe}
                   />
                   <ChatSettingRow
                     label={t(msg`@所有人仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtAll}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({ notifyOnAtAll: checked });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAtAll}
                   />
                   <ChatSettingRow
                     label={t(msg`群公告仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAnnouncement}
-                    onToggle={(checked) => {
-                      preferencesMutation.mutate({
-                        notifyOnAnnouncement: checked,
-                      });
-                    }}
+                    disabled={busy}
+                    onToggle={handleToggleNotifyAnnouncement}
                   />
                 </>
               ) : null}
@@ -914,15 +989,15 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`置顶聊天`)}
                 variant="wechat"
                 checked={groupQuery.data.isPinned}
-                onToggle={(checked) => pinMutation.mutate(checked)}
+                disabled={busy}
+                onToggle={handleTogglePin}
               />
               <ChatSettingRow
                 label={t(msg`保存到通讯录`)}
                 variant="wechat"
                 checked={groupQuery.data.savedToContacts}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({ savedToContacts: checked });
-                }}
+                disabled={busy}
+                onToggle={handleToggleSavedToContacts}
               />
               <ChatSettingRow
                 label={t(msg`我在本群的昵称`)}
@@ -940,11 +1015,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 label={t(msg`显示群成员昵称`)}
                 variant="wechat"
                 checked={groupQuery.data.showMemberNicknames}
-                onToggle={(checked) => {
-                  preferencesMutation.mutate({
-                    showMemberNicknames: checked,
-                  });
-                }}
+                disabled={busy}
+                onToggle={handleToggleShowMemberNicknames}
               />
             </div>
           </ChatDetailsSection>
