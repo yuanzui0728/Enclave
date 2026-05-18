@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -269,6 +270,59 @@ export function ChatBackgroundPage() {
     clearDefaultMutation.isPending ||
     saveConversationMutation.isPending ||
     clearConversationMutation.isPending;
+
+  // 走查 R3：原版「保存默认背景 / 恢复系统背景 / 保存当前聊天背景 / 跟随默认
+  // 背景 / 保存当前聊天设置」5 个 button 全部只靠 disabled={busy} 兜双击，
+  // playwright 实测三连点「保存默认背景」落 3 份 PATCH /world/owner/chat-
+  // background + 3 份 GET /conversations/$id/background 联动 invalidate（公网
+  // RTT 6×~600ms 浪费）。同帧 <16ms 第二次 click 即使 disabled={busy} 也兜不住
+  // ——React state 要等 commit。和 chat-details muteSubmittingRef / pinSubmittingRef
+  // 同款修法，给 4 条 save/clear mutation 全部加 sync ref 锁，复位由 useEffect
+  // [isPending] 触发。
+  const saveDefaultSubmittingRef = useRef(false);
+  const clearDefaultSubmittingRef = useRef(false);
+  const saveConversationSubmittingRef = useRef(false);
+  const clearConversationSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!saveDefaultMutation.isPending) {
+      saveDefaultSubmittingRef.current = false;
+    }
+  }, [saveDefaultMutation.isPending]);
+  useEffect(() => {
+    if (!clearDefaultMutation.isPending) {
+      clearDefaultSubmittingRef.current = false;
+    }
+  }, [clearDefaultMutation.isPending]);
+  useEffect(() => {
+    if (!saveConversationMutation.isPending) {
+      saveConversationSubmittingRef.current = false;
+    }
+  }, [saveConversationMutation.isPending]);
+  useEffect(() => {
+    if (!clearConversationMutation.isPending) {
+      clearConversationSubmittingRef.current = false;
+    }
+  }, [clearConversationMutation.isPending]);
+  const handleSaveDefault = () => {
+    if (saveDefaultSubmittingRef.current) return;
+    saveDefaultSubmittingRef.current = true;
+    saveDefaultMutation.mutate();
+  };
+  const handleClearDefault = () => {
+    if (clearDefaultSubmittingRef.current) return;
+    clearDefaultSubmittingRef.current = true;
+    clearDefaultMutation.mutate();
+  };
+  const handleSaveConversation = () => {
+    if (saveConversationSubmittingRef.current) return;
+    saveConversationSubmittingRef.current = true;
+    saveConversationMutation.mutate();
+  };
+  const handleClearConversation = () => {
+    if (clearConversationSubmittingRef.current) return;
+    clearConversationSubmittingRef.current = true;
+    clearConversationMutation.mutate();
+  };
   const pageError =
     (uploadMutation.error instanceof Error && uploadMutation.error.message) ||
     (saveDefaultMutation.error instanceof Error &&
@@ -529,14 +583,14 @@ export function ChatBackgroundPage() {
               <Button
                 variant="primary"
                 disabled={busy || !defaultDraft}
-                onClick={() => saveDefaultMutation.mutate()}
+                onClick={handleSaveDefault}
               >
                 {t(msg`保存默认背景`)}
               </Button>
               <Button
                 variant="ghost"
                 disabled={busy}
-                onClick={() => clearDefaultMutation.mutate()}
+                onClick={handleClearDefault}
               >
                 {t(msg`恢复系统背景`)}
               </Button>
@@ -595,14 +649,14 @@ export function ChatBackgroundPage() {
                   <Button
                     variant="primary"
                     disabled={busy || !conversationDraft}
-                    onClick={() => saveConversationMutation.mutate()}
+                    onClick={handleSaveConversation}
                   >
                     {t(msg`保存当前聊天背景`)}
                   </Button>
                   <Button
                     variant="ghost"
                     disabled={busy}
-                    onClick={() => clearConversationMutation.mutate()}
+                    onClick={handleClearConversation}
                   >
                     {t(msg`跟随默认背景`)}
                   </Button>
@@ -621,7 +675,7 @@ export function ChatBackgroundPage() {
                 <Button
                   variant="primary"
                   disabled={busy}
-                  onClick={() => saveConversationMutation.mutate()}
+                  onClick={handleSaveConversation}
                 >
                   {t(msg`保存当前聊天设置`)}
                 </Button>
