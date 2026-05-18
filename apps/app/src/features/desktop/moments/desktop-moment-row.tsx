@@ -361,8 +361,13 @@ function DesktopMomentRowInner({
 
           <div className="mt-3 flex items-center justify-between gap-4">
             <div className="text-[12px] text-[color:var(--text-muted)]">
-              {moment.likeCount > 0 || moment.commentCount > 0
-                ? t(msg`${moment.likeCount} 赞 · ${moment.commentCount} 评论`)
+              {/* 走查 R9：action 行的 "X 赞 · Y 评论" 摘要与下方 comment 头部
+                  「N 条」用同一份 visible 计数，避免摘要写 50 评论、下面只展
+                  开 48 条的可见错位（R8 已把渲染列表过滤到 visibleComments）。
+                  likeCount 仍用 server 值——点赞列表没有「strip 后空内容」
+                  的过滤需求，optimisticLike onMutate 已与 moment.likes 同步。 */}
+              {moment.likeCount > 0 || visibleComments.length > 0
+                ? t(msg`${moment.likeCount} 赞 · ${visibleComments.length} 评论`)
                 : t(msg`还没有互动`)}
             </div>
             <div className="flex items-center gap-2">
