@@ -61,6 +61,20 @@ export function MobileMentionPickerSheet({
     [],
   );
 
+  // 走查 2026-05-18 移动端群聊 R3：和姊妹 sheet mobile-message-reminder-sheet R3
+  // / message-quote-selection-sheet R3 同款修法——下方 back/Esc 两个 effect 原本
+  // 把 onClose 列进 deps，但调用方 chat-composer 是直接 `onClose={() =>
+  // setMobileMentionDismissed(true)}` inline arrow，chat-composer 在群聊输入框
+  // 打字时每个 keystroke / mentionActiveIndex 变化 / mention candidate filter
+  // 都会 re-render，新的 onClose 引用让两个 effect 每帧拆装：
+  // - back 拦截：registerAndroidBackInterceptor → unregister 操作 native bridge
+  //   注册表，打 @ 选人那几秒里 keystroke 每帧都拆装一次原生注册。
+  // - Esc：window.removeEventListener / addEventListener("keydown") 每帧拆装。
+  // 把 onClose 镜像到 ref，effect 内通过 ref 读，deps 只留 [open]，sheet 开着
+  // 期间只挂一次。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
   // 把用户从群聊页带回 chat list。和 mobile-message-action-sheet.tsx 对齐。
   useEffect(() => {
@@ -69,11 +83,11 @@ export function MobileMentionPickerSheet({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [open, onClose]);
+  }, [open]);
 
   // 走查 R6：和姊妹 sheet mobile-message-action-sheet 走查 R2 /
   // mobile-message-reminder-sheet / message-quote-selection-sheet 同款 ESC
@@ -89,11 +103,11 @@ export function MobileMentionPickerSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;
