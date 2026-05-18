@@ -520,6 +520,16 @@ export function DesktopGroupCallPanel({
                 type="button"
                 onClick={() => toggleJoinedState(member)}
                 disabled={member.memberType === "user"}
+                // 走查电脑端群聊 R13：和姊妹 CallControlButton 同款修法——成员
+                // 席位 tile 是 toggle button（点击在「已加入」「待加入」之间切换
+                // joinedMemberIds），原版只用绿底/灰底 + 内嵌「已加入 / 待加入」
+                // 文字 chip 做视觉区分。盲人 SR 走过去只听到「${memberName} 群
+                // 成员 ${roleLabel}」+ 描述行，不知道该成员当前是否已加入。补
+                // aria-pressed = joined 让 SR 朗读「按下 / 未按下」。user 类型
+                // 成员（世界主人）button 本身 disabled，aria-pressed 在 disabled
+                // 按钮上 SR 仍朗读但配合"始终保留在通话控制台"描述行不冲突；
+                // 留挂便于群里多个 user 成员（理论上可能）的边界一致。
+                aria-pressed={joined}
                 className={cn(
                   "rounded-[12px] border px-4 py-4 text-left transition",
                   joined
@@ -631,6 +641,14 @@ function CallControlButton({
     <button
       type="button"
       onClick={onClick}
+      // 走查电脑端群聊 R13：和姊妹 R34 composer 桌面工具栏 toggle / R32 时间戳
+      // divider toggle 同款修法——Mic/Camera/Speaker 这 3 个 control button
+      // 都是按 active 表达持续状态的 toggle，原版只有绿底色 + 文案双 fallback
+      //（"静音麦克风" ↔ "解除静音"）做视觉区分。盲人 SR 走过去只听到当前
+      // label，但 label 文本翻转 ≠ button 的语义状态——SR 用户在群通话面板上
+      // 按 Tab 浏览时不能识别"当前麦克风/扬声器/摄像头处于开还是关"。补
+      // aria-pressed = active，让 SR 朗读"button 已按下/未按下"。
+      aria-pressed={active}
       className={cn(
         "inline-flex h-10 items-center gap-2 rounded-[10px] border px-4 text-sm transition",
         active
