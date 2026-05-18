@@ -139,6 +139,22 @@ export function AudioCard({
   const resolvedAudioUrl = resolveAppMediaUrl(url);
   const resolvedPosterUrl = posterUrl ? resolveAppMediaUrl(posterUrl) : undefined;
 
+  // 走查 2026-05-19 第五轮 R6：AudioCard 的 64×64 封面 <img> 历来 eager + 无
+  // onError —— channels workspace 一次性挂 20 张 audio slide 时 20 张封面全
+  // 并发拉公网公网隧道（每张 10-50KB，累计 ~200KB-1MB 浪费首屏带宽），同时
+  // 单张 cover 404（minimax 资源回收 / cloud-api 反代 401 边界）时浏览器原
+  // 生 broken-image 占位糊在播放区里看着像"卡坏了"。同 BackgroundCoverImage
+  // / ChannelFallbackImage / AvatarChip 已经用熟的 lazy + onError + decoding
+  // 模板：isActive 明确为 true 时 eager（保证当前 slide 立刻可见）；其它情
+  // 况（active=false / undefined）lazy 让浏览器按需拉取；onError 切换到 ♫
+  // fallback；decoding=async 避免主线程同步解码大图。
+  const [coverFailed, setCoverFailed] = useState(false);
+  // posterUrl 换新（home refetch / 切角色 / 切 moment 等）时清 failed，给
+  // 新 URL 一次尝试。同 BackgroundCoverImage 新会话 R3 修复。
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [resolvedPosterUrl]);
+
   return (
     <div
       className={cn(
@@ -148,10 +164,13 @@ export function AudioCard({
       onClick={(event) => event.stopPropagation()}
     >
       <div className="relative h-16 w-16 flex-none overflow-hidden rounded-xl bg-zinc-800">
-        {resolvedPosterUrl ? (
+        {resolvedPosterUrl && !coverFailed ? (
           <img
             src={resolvedPosterUrl}
             alt={title ?? "music cover"}
+            loading={isActive === true ? "eager" : "lazy"}
+            decoding="async"
+            onError={() => setCoverFailed(true)}
             className="h-full w-full object-cover"
           />
         ) : (
