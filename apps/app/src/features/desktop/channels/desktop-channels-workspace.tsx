@@ -1755,7 +1755,13 @@ function ChannelCommentsDrawer({
 
         <div className="flex-1 overflow-auto px-4 pb-4 pt-2">
           {commentsErrorMessage ? (
-            <div className="mt-3">
+            // 走查 2026-05-18 新会话 R11：跟 desktop workspace R8 / live-companion
+            // R9 / forward-picker R10 同款 — drawer 内部的 commentsErrorMessage
+            // ErrorBlock 也是裸 <div> 没 role。用户点开 drawer 时若 listFeedComments
+            // / commentMutation / likeCommentMutation 错（公网隧道断 / 服务端 500）
+            // SR 用户只看到 drawer 标题"评论 N"但听不到"评论读取失败"，体感「评
+            // 论怎么不出来」。挂 role="alert" 立即播报错误。
+            <div className="mt-3" role="alert">
               <ErrorBlock message={commentsErrorMessage} />
             </div>
           ) : null}
