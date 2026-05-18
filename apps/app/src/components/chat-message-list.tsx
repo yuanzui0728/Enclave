@@ -6350,6 +6350,24 @@ function GroupRelaySummaryMessage({
   summary: ReturnType<typeof parseGroupRelaySummaryMessage>;
   onOpen?: () => void;
 }) {
+  // 走查新一轮 R5：和姊妹卡片 GroupCallInviteMessage 新一轮 R4（commit
+  // 61ef3043e）同款修法——本群接龙汇总卡 onOpen 父级（chat-message-list.tsx
+  // line ~3878）走 `void navigate({to:"/discover/mini-programs", search:...})`，
+  // 没挂 disabled / 没同步 ref 守。同帧 <16ms 双击群接龙卡 push 2 条相同
+  // history 项，用户从迷你程序退回群聊要按 2 次返回。
+  //
+  // 每张卡独立 guard：用户点 A 卡再点 B 卡（不同 relay summary）不互相影响，
+  // 只挡同一张卡的 same-frame double tap。第一次成功后页面 unmount re-mount
+  // 时 ref 自动复位。
+  const openFiredRef = useRef(false);
+  const handleOpen = onOpen
+    ? () => {
+        if (openFiredRef.current) return;
+        openFiredRef.current = true;
+        onOpen();
+      }
+    : undefined;
+
   if (!summary) {
     return null;
   }
@@ -6513,14 +6531,14 @@ function GroupRelaySummaryMessage({
     </div>
   );
 
-  if (!onOpen) {
+  if (!handleOpen) {
     return card;
   }
 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={handleOpen}
       className="text-left transition hover:opacity-95"
       aria-label={ctaCopy.ariaLabel}
     >
