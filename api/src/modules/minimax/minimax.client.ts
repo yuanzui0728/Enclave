@@ -1,6 +1,7 @@
 // i18n-ignore-start: provider adapter — error/log strings only.
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { MinimaxUsageReporterService } from './minimax-usage-reporter.service';
 import {
   type MinimaxBaseResp,
@@ -80,6 +81,7 @@ export class MinimaxClient {
 
   constructor(
     config: ConfigService,
+    private readonly subscription: SubscriptionService,
     @Optional()
     private readonly usageReporter?: MinimaxUsageReporterService,
   ) {
@@ -123,6 +125,7 @@ export class MinimaxClient {
   async submitVideo(
     input: MinimaxVideoSubmitInput,
   ): Promise<MinimaxVideoSubmitResult> {
+    await this.subscription.assertCanUseAi('image');
     const body: Record<string, unknown> = {
       model: input.model,
       prompt: input.prompt,
@@ -193,6 +196,7 @@ export class MinimaxClient {
   }
 
   async generateImage(input: MinimaxImageInput): Promise<MinimaxImageResult> {
+    await this.subscription.assertCanUseAi('image');
     const body = {
       model: input.model,
       prompt: input.prompt,
@@ -219,6 +223,7 @@ export class MinimaxClient {
   }
 
   async generateMusic(input: MinimaxMusicInput): Promise<MinimaxMusicResult> {
+    await this.subscription.assertCanUseAi('audio');
     const body: Record<string, unknown> = {
       model: input.model,
       audio_setting: {
@@ -292,6 +297,7 @@ export class MinimaxClient {
   async generateLyrics(
     input: MinimaxLyricsInput,
   ): Promise<MinimaxLyricsResult> {
+    await this.subscription.assertCanUseAi('text');
     // mode 是必填字段；缺它 minimax 一律回 2013 invalid params。
     // 顶层字段：lyrics / song_title / style_tags（response 不再嵌在 data 里）。
     const response = await this.postJson<{
@@ -328,6 +334,7 @@ export class MinimaxClient {
     maxTokens?: number;
     temperature?: number;
   }): Promise<{ content: string }> {
+    await this.subscription.assertCanUseAi('text');
     const body = {
       model: input.model ?? 'MiniMax-M2.7',
       messages: input.messages,

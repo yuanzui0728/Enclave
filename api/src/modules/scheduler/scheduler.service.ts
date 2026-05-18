@@ -30,6 +30,7 @@ import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { CharactersService } from '../characters/characters.service';
 import { MomentsService } from '../moments/moments.service';
@@ -520,6 +521,12 @@ export class SchedulerService {
     try {
       await this.executeTrackedJob(jobId, handler);
     } catch (error) {
+      // 会员到期：MinimaxClient 闸抛 402，cron 静默早退即可。
+      // 22 个 cron × N 个到期 world × 频繁 tick 走 logger.error 会把日志刷爆。
+      if (error instanceof SubscriptionExpiredException) {
+        this.logger.debug(`${errorMessage}: subscription expired, cron skipped`);
+        return;
+      }
       this.logger.error(
         errorMessage,
         error instanceof Error ? error.stack : String(error),
