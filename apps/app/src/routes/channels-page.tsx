@@ -4176,6 +4176,20 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                   // rapid click 会让 follow / unfollow 同时在路上，状态可能跟最后一次
                   // 点击意图对不上；锁到 mutation 落地。
                   disabled={followPending}
+                  // 走查 2026-05-18 新会话 R3：跟点赞 / 收藏 ActionRailButton 同款
+                  // —— 它们都是 toggle 按钮，挂 aria-pressed 让 VoiceOver / TalkBack
+                  // 念出"已选 / 未选"。本按钮也是 +关注 ↔ 已关注 二态 toggle，但
+                  // 一直没挂 aria-pressed —— 视觉用户看 +关注 绿底 vs 已关注 灰底
+                  // 一眼能识别状态，但 SR 用户只能靠"+关注"/"已关注"两段中文文本
+                  // 自己分辨，没有标准 toggle 语义，无法在"按钮聚焦时"由 SR 自动
+                  // 播报 pressed 状态。aria-label 同时把"作者名"和动作放上去，比
+                  // 单看"+关注"两字更准确（"+关注 唐安"）。
+                  aria-pressed={Boolean(post.ownerState?.isFollowingAuthor)}
+                  aria-label={
+                    post.ownerState?.isFollowingAuthor
+                      ? t(msg`已关注 ${post.authorName}，点击取消关注`)
+                      : t(msg`关注 ${post.authorName}`)
+                  }
                   className={cn(
                     "rounded-full px-2.5 py-1 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
