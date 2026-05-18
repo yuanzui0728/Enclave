@@ -94,7 +94,7 @@ export function DesktopChatHistoryDialog({
               {t(msg`查找聊天记录`)}
             </span>
             <span className="px-1.5 text-[color:var(--text-dim)]">·</span>
-            <span className="truncate">{conversation.title}</span>
+            <span className="truncate">{conversation.title || t(msg`当前聊天`)}</span>
           </div>
 
           <button
