@@ -30,8 +30,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  ImageOff,
   MessageCircleMore,
-  Music2,
   RadioTower,
   RefreshCcw,
   Share2,
@@ -1056,8 +1056,13 @@ function ChannelFallbackImage({
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
       {failed ? (
+        // 走查 2026-05-18 R1（本轮）：ChannelFallbackImage 用于 mediaType
+        // 'image' / 'text' 帖的兜底封面（参 ChannelMediaSurface L948-955）——
+        // 原图标用 Music2 是错的，这两类帖都不是音乐；用户图集 / 文字帖封面
+        // 404 时却看到一个音乐符号 + "封面暂时无法显示"，体感「这帖是音乐还
+        // 是图片到底」。换成更贴语义的 ImageOff。
         <div className="flex flex-col items-center gap-2 text-white/70">
-          <Music2 size={48} className="text-white/40" />
+          <ImageOff size={48} className="text-white/40" />
           <div className="text-[12px]">{t(msg`封面暂时无法显示`)}</div>
         </div>
       ) : (
@@ -2083,6 +2088,17 @@ function DesktopChannelCommentsPanel({
     previousCommentCountRef.current = 0;
     userNearBottomRef.current = true;
   }, [selectedPostId]);
+  // 走查 2026-05-18 R1（本轮）：原 effect deps 只有 [selectedPostId]，但
+  // 打开 drawer 的第一帧 commentsLoading=true / commentThreads.length=0，
+  // 下方 `{commentThreads.length ? <div ref={threadsScrollRef}> ...}` 那个
+  // 滚动容器根本没挂载，threadsScrollRef.current 是 null → effect early
+  // return → 没装 scroll listener。后续 comments 到了 threads 容器 mount
+  // 上，ref 才赋值，但 selectedPostId 没变 → effect 不会再跑 → listener 永
+  // 远没装上 → userNearBottomRef 一直停在初始 true → 1-5 分钟后 AI 自动回
+  // 复落地 growth 时 useEffect 判定 isNearBottom=true 把用户从他主动上滑
+  // 读老评论的位置硬甩回最底。把 commentThreads.length 也加进 deps：threads
+  // 容器一 mount 立刻装 listener；容器卸载（切 post 或清空）也清掉旧 listener。
+  const hasCommentThreads = commentThreads.length > 0;
   useEffect(() => {
     const node = threadsScrollRef.current;
     if (!node) return;
@@ -2093,7 +2109,7 @@ function DesktopChannelCommentsPanel({
     update();
     node.addEventListener("scroll", update, { passive: true });
     return () => node.removeEventListener("scroll", update);
-  }, [selectedPostId]);
+  }, [selectedPostId, hasCommentThreads]);
   useEffect(() => {
     if (!selectedPostId) return;
     if (commentsLoading && !comments.length) return;
@@ -2315,6 +2331,18 @@ function DesktopCommentThreadReplies({
 }) {
   const t = useRuntimeTranslator();
   const latestReply = replies[replies.length - 1] ?? null;
+  // 走查 2026-05-18 R1（本轮）：collapsed 状态下"楼中楼"折起来后下面那块儿
+  // 预览，原 `${authorName}：${latestReply.text}` 直接拿 raw text 渲到 DOM——
+  // 视频号 AI 角色（gpt-4.1 / claude）回复偶尔把 <tool_call>…</tool_call>
+  // 或 [TOOL_CALL] 这种工具调用残留漏到 comment.text 里（feed_comments 库里
+  // 实测有 1019 字 CoT 漏出），collapsed 预览没 stripToolCallSyntax 也没
+  // line-clamp，把整段 XML/JSON 原样塞进高度 ~24px 的预览块 → 块本身
+  // overflow 撑成 200+px 把线程卡撑高 + 下方 main 评论被挤出可视区。
+  // 同步对齐 DesktopThreadCommentCard 的 cleanText 处理：先 strip 再 clamp
+  // 到 2 行。空文本时（被 strip 抠成空串）不渲 authorName: 这条 ghost row。
+  const latestReplyCleanText = latestReply
+    ? stripToolCallSyntax(latestReply.text)
+    : "";
 
   return (
     <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
@@ -2335,13 +2363,13 @@ function DesktopCommentThreadReplies({
       </button>
       {collapsed ? (
         <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-[11px] leading-6 text-[color:var(--text-secondary)]">
-          {latestReply ? (
-            <>
+          {latestReply && latestReplyCleanText ? (
+            <div className="line-clamp-2">
               <span className="font-medium text-[color:var(--text-primary)]">
                 {latestReply.authorName}
               </span>
-              {`：${latestReply.text}`}
-            </>
+              {`：${latestReplyCleanText}`}
+            </div>
           ) : (
             t(msg`这个线程里还有跟帖。`)
           )}
