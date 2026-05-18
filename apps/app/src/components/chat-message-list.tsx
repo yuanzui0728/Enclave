@@ -7229,9 +7229,18 @@ function GroupCallInviteMessage({
               value={`${invite.activeCount.current}/${invite.activeCount.total}`}
               variant={variant}
             />
+            {/* 走查 R69：原版 `${count} ${msg\`人\`}` 把数字和「人」拆成
+                两段独立翻译，Lingui 翻译条目只有孤零零一个「人」字。en-US 翻译
+                条最多翻成 "people"——展示成 "5 people" 看着像 zh→en 直译，但
+                ja-JP 期望「5人」紧贴、fr-FR 期望 "5 personnes" 复数变格、不同
+                locale 的"个数 + 单位"语序也不一样。整段塞进一条 templated
+                message 让翻译者写完整短语，姊妹 chat-message-list 中"已加入
+                ${count} 位"等都是这种用法。 */}
             <ResultCardMetric
               label={translateRuntimeMessage(msg`待加入`)}
-              value={`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} ${translateRuntimeMessage(msg`人`)}`}
+              value={translateRuntimeMessage(
+                msg`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} 人`,
+              )}
               variant={variant}
             />
           </div>
