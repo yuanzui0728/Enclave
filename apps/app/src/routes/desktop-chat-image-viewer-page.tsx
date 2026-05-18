@@ -593,6 +593,22 @@ export function DesktopChatImageViewerPage() {
           ref={imageElementRef}
           src={activeItem.imageUrl}
           alt={activeItem.title}
+          // 走查电脑端单聊 R92：和姊妹 R88 chat-message-list 内全屏 viewer
+          // <img> 同款修法。这是「在独立窗口打开图片」开出来的 standalone
+          // window 主 <img>，src 是消息原图 (常见 1-5MB 手机直出)。
+          // 1) decoding="async"——浏览器默认同步在主线程 decode 才渲染，独
+          //    立窗口打开瞬间整页冻 100-300ms（用户从 chat 消息列表 / 文件页
+          //    点「在独立窗口打开」会有可见的"窗口黑屏几百 ms 再出图"）。
+          //    自动打印路径 (line 380-389) 已经在等 image load 事件，async
+          //    decode 不影响 onload 时机。
+          // 2) draggable={false}——viewer 顶栏「保存图片」走 saveRemoteFile，
+          //    用户在 viewer 里按住图想缩放 / 拖到 chrome 下载位置时浏览器
+          //    默认会触发 HTML5 native drag (图片 URL)，drag start 后顶栏
+          //    按钮的 click 不 fire；ArrowLeft/Right 键盘导航也在 image 上
+          //    focus 时被 drag handler 拦掉。和姊妹 chat-message-list R88
+          //    / chat-composer 5407 / sticker-img 一批已挂的同款。
+          decoding="async"
+          draggable={false}
           className="max-h-full max-w-full rounded-[14px] object-contain shadow-[0_20px_64px_rgba(0,0,0,0.34)]"
         />
       </div>
