@@ -783,6 +783,27 @@ export function GroupQrPage() {
     });
   }
 
+  // 走查移动端群聊 R6：和姊妹路径 chat-details-page R1/R3 / group-chat-details
+  // 本会话 R2 / group-announcement 本会话 R5 同款修法——本页一连串 showNotice
+  // 成功文案（"群邀请入口已复制到手机。"/"已打开系统分享面板。"/"已把群邀请
+  // 发到 xxx。"等十几处）原版没 auto-dismiss，notice 一直挂在邀请卡上方直到
+  // 用户切 groupId / 离开页才消。danger 通常自带 secondaryAction（"返回上一页"
+  // 兜底），保留语义；只在无 actionLabel+onAction 且无 secondaryActionLabel+
+  // onSecondaryAction 时 3.5s 自动消（success 纯字符串路径）。
+  // 桌面分支 getMobileDangerBackAction() 返回 {}，danger notice 也会落进 auto-
+  // dismiss——桌面端 danger 没有兜底按钮，让它消失反而是预期（不阻塞用户操作）。
+  useEffect(() => {
+    if (
+      !notice ||
+      (notice.actionLabel && notice.onAction) ||
+      (notice.secondaryActionLabel && notice.onSecondaryAction)
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   const navigateToRouteStateReturn = () => {
     if (!safeReturnPath) {
       return false;
