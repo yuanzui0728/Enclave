@@ -122,10 +122,16 @@ export function MyCharactersPage() {
       )}
       actions={
         <>
+          {/* 隐藏 file input：靠"导入文件"按钮通过 ref click 触发。display:none
+              已经把它排除 SR 焦点树，但 axe / wave 等 a11y 扫描工具看到
+              <input type="file"> 没 label 还是会扔个 "form-field-multiple-
+              labels" warning，给个显式 aria-label + tabIndex=-1 双保险。 */}
           <input
             ref={fileInputRef}
             type="file"
             accept="application/json,.json"
+            aria-label={t(msg`选择要导入的私有角色 JSON 文件`)}
+            tabIndex={-1}
             className="hidden"
             onChange={handleFileChange}
           />

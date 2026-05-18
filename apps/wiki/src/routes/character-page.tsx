@@ -88,6 +88,15 @@ export function CharacterPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* sr-only h1：原本 h1 只存在于 ReadView 内部的 Card 里，切到"编辑/
+          历史/讨论"任一 tab 时 ReadView unmount，整个 character-page 就没
+          h1 了。盲用 SR 用户按"H 跳到下一个标题"会跳出页面，体感是"换 tab
+          页面没有标题了"。挂一个永久存在的 sr-only h1 把角色名/兜底
+          characterId 念出来，4 个 tab 切换时 SR 跳标题不再丢失定位。读 tab
+          的可视化 h1 demote 成 h2，保证全局只剩这一颗 h1。 */}
+      <h1 className="sr-only">
+        {pageQ.data?.content?.name ?? characterId}
+      </h1>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         {/* 阅读/编辑/历史/讨论是同 URL 下互斥切换视图的 tab —— 不是 nav 链接，所
             以 TabButton 原本的 aria-current="page" 是错的（page 这个值只用于
@@ -343,9 +352,12 @@ function ReadView({ view }: { view: WikiPageView }) {
       <header className="flex items-start gap-3 sm:gap-4">
         <ReadViewAvatar name={c.name} src={c.avatar} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold leading-tight sm:text-2xl">
+          {/* 原本是 h1，但 character-page 外层已经挂了一个 sr-only h1 给所有
+              4 个 tab 共享，避免 h1 在 tab 切换时消失。这里降级到 h2 维持视
+              觉但避免页面双 h1 违反 WCAG 单 h1 原则。 */}
+          <h2 className="text-xl font-semibold leading-tight sm:text-2xl">
             {c.name}
-          </h1>
+          </h2>
           {(() => {
             // 历史/导入角色 relationship 或 relationshipType 任一为空时，原本固定
             // 渲染 "X · Y"，会出现 " · friend" 或 "朋友 · " 这种孤立分隔符。

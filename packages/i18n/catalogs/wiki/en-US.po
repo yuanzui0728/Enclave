@@ -200,7 +200,7 @@ msgstr "coding, music, psychology"
 #: apps/wiki/src/components/character-edit-form.tsx:2001
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
-#: apps/wiki/src/routes/character-page.tsx:366
+#: apps/wiki/src/routes/character-page.tsx:378
 msgid "简介"
 msgstr "Bio"
 
@@ -544,8 +544,8 @@ msgstr "If you also want the AI to revise the fields you've already filled in, t
 #: apps/wiki/src/components/conflict-resolver.tsx:162
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
-#: apps/wiki/src/routes/character-page.tsx:245
-#: apps/wiki/src/routes/character-page.tsx:832
+#: apps/wiki/src/routes/character-page.tsx:254
+#: apps/wiki/src/routes/character-page.tsx:844
 msgid "取消"
 msgstr "Cancel"
 
@@ -627,19 +627,19 @@ msgstr "Form is locked. You can return to the list — results will auto-fill wh
 
 #: apps/wiki/src/components/conflict-resolver.tsx:13
 #: apps/wiki/src/components/snapshot-diff.tsx:19
-#: apps/wiki/src/routes/character-page.tsx:368
+#: apps/wiki/src/routes/character-page.tsx:380
 msgid "性格"
 msgstr "Personality"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:14
 #: apps/wiki/src/components/snapshot-diff.tsx:20
-#: apps/wiki/src/routes/character-page.tsx:371
+#: apps/wiki/src/routes/character-page.tsx:383
 msgid "专长领域"
 msgstr "Expert domains"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:15
 #: apps/wiki/src/components/snapshot-diff.tsx:21
-#: apps/wiki/src/routes/character-page.tsx:380
+#: apps/wiki/src/routes/character-page.tsx:392
 msgid "触发场景"
 msgstr "Trigger scenes"
 
@@ -763,7 +763,7 @@ msgstr "Submitted; admins will handle it."
 #: apps/wiki/src/routes/account-page.tsx:480
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
-#: apps/wiki/src/routes/character-page.tsx:235
+#: apps/wiki/src/routes/character-page.tsx:244
 msgid "提交中..."
 msgstr "Submitting..."
 
@@ -825,7 +825,7 @@ msgstr "Search"
 #: apps/wiki/src/components/root-layout.tsx:76
 #: apps/wiki/src/lib/revision-labels.ts:23
 #: apps/wiki/src/lib/revision-labels.ts:37
-#: apps/wiki/src/routes/character-page.tsx:109
+#: apps/wiki/src/routes/character-page.tsx:118
 #: apps/wiki/src/routes/create-character-page.tsx:102
 #: apps/wiki/src/routes/create-character-page.tsx:182
 #: apps/wiki/src/routes/pending-reviews-page.tsx:113
@@ -1163,7 +1163,7 @@ msgid "回复"
 msgstr "Reply"
 
 #: apps/wiki/src/components/talk-panel.tsx:415
-#: apps/wiki/src/routes/character-page.tsx:135
+#: apps/wiki/src/routes/character-page.tsx:144
 #: apps/wiki/src/routes/home-page.tsx:246
 #: apps/wiki/src/routes/my-characters-page.tsx:65
 #: apps/wiki/src/routes/watchlist-page.tsx:92
@@ -1290,7 +1290,7 @@ msgstr "Single entry"
 
 #: apps/wiki/src/lib/revision-labels.ts:60
 #: apps/wiki/src/routes/admin-blocks-page.tsx:112
-#: apps/wiki/src/routes/character-page.tsx:119
+#: apps/wiki/src/routes/character-page.tsx:128
 #: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
 msgstr "Talk"
@@ -1822,14 +1822,14 @@ msgid "无保护"
 msgstr "None"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:141
-#: apps/wiki/src/routes/character-page.tsx:329
+#: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:253
 #: apps/wiki/src/routes/watchlist-page.tsx:98
 msgid "半保护"
 msgstr "Semi-protected"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:142
-#: apps/wiki/src/routes/character-page.tsx:329
+#: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:254
 #: apps/wiki/src/routes/watchlist-page.tsx:99
 msgid "完全保护"
@@ -2048,8 +2048,8 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} compared to v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:54
-#: apps/wiki/src/routes/character-page.tsx:426
-#: apps/wiki/src/routes/character-page.tsx:728
+#: apps/wiki/src/routes/character-page.tsx:438
+#: apps/wiki/src/routes/character-page.tsx:740
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
 #: apps/wiki/src/routes/pending-reviews-page.tsx:249
 #: apps/wiki/src/routes/recent-changes-page.tsx:140
@@ -2064,115 +2064,115 @@ msgstr "Old character logic"
 msgid "新角色逻辑"
 msgstr "New character logic"
 
-#: apps/wiki/src/routes/character-page.tsx:99
+#: apps/wiki/src/routes/character-page.tsx:108
 msgid "角色页板块切换"
 msgstr "Character page sections"
 
-#: apps/wiki/src/routes/character-page.tsx:103
+#: apps/wiki/src/routes/character-page.tsx:112
 msgid "阅读"
 msgstr "Read"
 
-#: apps/wiki/src/routes/character-page.tsx:116
+#: apps/wiki/src/routes/character-page.tsx:125
 msgid "历史"
 msgstr "History"
 
-#: apps/wiki/src/routes/character-page.tsx:140
+#: apps/wiki/src/routes/character-page.tsx:149
 #: apps/wiki/src/routes/home-page.tsx:244
 msgid "待创建"
 msgstr "Pending creation"
 
-#: apps/wiki/src/routes/character-page.tsx:145
+#: apps/wiki/src/routes/character-page.tsx:154
 msgid "有待审版本"
 msgstr "Has pending revision"
 
-#: apps/wiki/src/routes/character-page.tsx:158
+#: apps/wiki/src/routes/character-page.tsx:167
 msgid "版本切换"
 msgstr "Switch version"
 
-#: apps/wiki/src/routes/character-page.tsx:172
-#: apps/wiki/src/routes/character-page.tsx:431
+#: apps/wiki/src/routes/character-page.tsx:181
+#: apps/wiki/src/routes/character-page.tsx:443
 msgid "稳定版"
 msgstr "Stable"
 
-#: apps/wiki/src/routes/character-page.tsx:185
-#: apps/wiki/src/routes/character-page.tsx:431
+#: apps/wiki/src/routes/character-page.tsx:194
+#: apps/wiki/src/routes/character-page.tsx:443
 msgid "最新版"
 msgstr "Latest"
 
-#: apps/wiki/src/routes/character-page.tsx:200
+#: apps/wiki/src/routes/character-page.tsx:209
 msgid "申请恢复"
 msgstr "Request restore"
 
-#: apps/wiki/src/routes/character-page.tsx:200
+#: apps/wiki/src/routes/character-page.tsx:209
 msgid "申请删除"
 msgstr "Request deletion"
 
-#: apps/wiki/src/routes/character-page.tsx:209
+#: apps/wiki/src/routes/character-page.tsx:218
 msgid "恢复理由"
 msgstr "Restore reason"
 
-#: apps/wiki/src/routes/character-page.tsx:209
+#: apps/wiki/src/routes/character-page.tsx:218
 msgid "删除理由"
 msgstr "Deletion reason"
 
-#: apps/wiki/src/routes/character-page.tsx:217
+#: apps/wiki/src/routes/character-page.tsx:226
 msgid "说明为什么这个角色词条应恢复"
 msgstr "Explain why this character entry should be restored"
 
-#: apps/wiki/src/routes/character-page.tsx:218
+#: apps/wiki/src/routes/character-page.tsx:227
 msgid "说明为什么这个角色词条应归档为红链"
 msgstr "Explain why this character entry should be archived as a red link"
 
-#: apps/wiki/src/routes/character-page.tsx:237
+#: apps/wiki/src/routes/character-page.tsx:246
 msgid "提交恢复申请"
 msgstr "Submit restore request"
 
-#: apps/wiki/src/routes/character-page.tsx:238
+#: apps/wiki/src/routes/character-page.tsx:247
 msgid "提交删除申请"
 msgstr "Submit deletion request"
 
-#: apps/wiki/src/routes/character-page.tsx:254
+#: apps/wiki/src/routes/character-page.tsx:263
 msgid "此词条已被软删除（红链）。"
 msgstr "This entry is soft-deleted (red link)."
 
-#: apps/wiki/src/routes/character-page.tsx:256
+#: apps/wiki/src/routes/character-page.tsx:265
 msgid "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 msgstr "Restoration also goes through the edit review flow; the underlying character data is kept so runtime references stay consistent."
 
-#: apps/wiki/src/routes/character-page.tsx:264
+#: apps/wiki/src/routes/character-page.tsx:273
 msgid "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 msgstr "This character is still in the pending-creation queue. Once a patroller approves the creation revision, it lands in the runtime character registry."
 
-#: apps/wiki/src/routes/character-page.tsx:390
+#: apps/wiki/src/routes/character-page.tsx:402
 msgid "核心逻辑"
 msgstr "Core logic"
 
-#: apps/wiki/src/routes/character-page.tsx:394
+#: apps/wiki/src/routes/character-page.tsx:406
 msgid "聊天 Prompt"
 msgstr "Chat prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:397
+#: apps/wiki/src/routes/character-page.tsx:409
 msgid "主动触达 Prompt"
 msgstr "Proactive outreach prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:402
+#: apps/wiki/src/routes/character-page.tsx:414
 msgid "发圈频率"
 msgstr "Moments frequency"
 
-#: apps/wiki/src/routes/character-page.tsx:405
+#: apps/wiki/src/routes/character-page.tsx:417
 msgid "广场频率"
 msgstr "Feed frequency"
 
-#: apps/wiki/src/routes/character-page.tsx:408
+#: apps/wiki/src/routes/character-page.tsx:420
 msgid "活跃时段"
 msgstr "Active hours"
 
 #. placeholder {0}: view.pendingRevisions.length
-#: apps/wiki/src/routes/character-page.tsx:417
+#: apps/wiki/src/routes/character-page.tsx:429
 msgid "有 {0} 个待审版本，最新为："
 msgstr "{0} pending revisions, latest is:"
 
-#: apps/wiki/src/routes/character-page.tsx:427
+#: apps/wiki/src/routes/character-page.tsx:439
 #: apps/wiki/src/routes/pending-reviews-page.tsx:135
 msgid "低风险"
 msgstr "Low risk"
@@ -2180,127 +2180,127 @@ msgstr "Low risk"
 #. placeholder {0}: view.currentRevision.version
 #. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:434
+#: apps/wiki/src/routes/character-page.tsx:446
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · submitted by {1} on {2}"
 
-#: apps/wiki/src/routes/character-page.tsx:436
+#: apps/wiki/src/routes/character-page.tsx:448
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "No wiki revision yet (showing the underlying backend data)"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:440
+#: apps/wiki/src/routes/character-page.tsx:452
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "Stable v{0} / Latest v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:562
+#: apps/wiki/src/routes/character-page.tsx:574
 msgid "请先 <0>登录</0> 后再编辑。"
 msgstr "Please <0>sign in</0> before editing."
 
 #. placeholder {0}: user.role
-#: apps/wiki/src/routes/character-page.tsx:576
+#: apps/wiki/src/routes/character-page.tsx:588
 msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 msgstr "Your current role is <0>{0}</0>. The editor has been unified into the same 6-section experience as private characters and now opens on its own page. Content and character-logic changes still go through the same version, conflict-detection, and patrol review pipeline."
 
 #. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:584
+#: apps/wiki/src/routes/character-page.tsx:596
 #: apps/wiki/src/routes/world-character-edit-page.tsx:249
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ Pending revision v{0} already exists. Submitting may cause an edit conflict."
 
-#: apps/wiki/src/routes/character-page.tsx:596
+#: apps/wiki/src/routes/character-page.tsx:608
 msgid "✨ 打开编辑器"
 msgstr "✨ Open editor"
 
-#: apps/wiki/src/routes/character-page.tsx:599
+#: apps/wiki/src/routes/character-page.tsx:611
 msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 msgstr "The editor supports one-click AI generation and cross-navigation drafts."
 
-#: apps/wiki/src/routes/character-page.tsx:657
+#: apps/wiki/src/routes/character-page.tsx:669
 msgid "还没有任何编辑记录。"
 msgstr "No edit history yet."
 
-#: apps/wiki/src/routes/character-page.tsx:738
+#: apps/wiki/src/routes/character-page.tsx:750
 msgid "当前版本"
 msgstr "Current version"
 
-#: apps/wiki/src/routes/character-page.tsx:743
+#: apps/wiki/src/routes/character-page.tsx:755
 #: apps/wiki/src/routes/recent-changes-page.tsx:150
 msgid "待巡查"
 msgstr "Unpatrolled"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:753
+#: apps/wiki/src/routes/character-page.tsx:765
 #: apps/wiki/src/routes/recent-changes-page.tsx:170
 msgid "字段：{0}"
 msgstr "Fields: {0}"
 
-#: apps/wiki/src/routes/character-page.tsx:761
+#: apps/wiki/src/routes/character-page.tsx:773
 msgid "收起对比"
 msgstr "Hide diff"
 
-#: apps/wiki/src/routes/character-page.tsx:761
+#: apps/wiki/src/routes/character-page.tsx:773
 msgid "查看对比"
 msgstr "View diff"
 
-#: apps/wiki/src/routes/character-page.tsx:770
+#: apps/wiki/src/routes/character-page.tsx:782
 msgid "独立对比"
 msgstr "Standalone diff"
 
-#: apps/wiki/src/routes/character-page.tsx:779
+#: apps/wiki/src/routes/character-page.tsx:791
 msgid "回滚到此版本"
 msgstr "Revert to this version"
 
-#: apps/wiki/src/routes/character-page.tsx:793
+#: apps/wiki/src/routes/character-page.tsx:805
 #: apps/wiki/src/routes/pending-reviews-page.tsx:291
 msgid "查看角色逻辑快照"
 msgstr "View character logic snapshot"
 
-#: apps/wiki/src/routes/character-page.tsx:806
+#: apps/wiki/src/routes/character-page.tsx:818
 msgid "回滚原因（必填）"
 msgstr "Revert reason (required)"
 
-#: apps/wiki/src/routes/character-page.tsx:811
+#: apps/wiki/src/routes/character-page.tsx:823
 msgid "例如：v3 涉及破坏性内容"
 msgstr "e.g. v3 contains vandalism"
 
-#: apps/wiki/src/routes/character-page.tsx:825
+#: apps/wiki/src/routes/character-page.tsx:837
 msgid "回滚中..."
 msgstr "Reverting..."
 
-#: apps/wiki/src/routes/character-page.tsx:825
+#: apps/wiki/src/routes/character-page.tsx:837
 msgid "确认回滚"
 msgstr "Confirm revert"
 
-#: apps/wiki/src/routes/character-page.tsx:867
+#: apps/wiki/src/routes/character-page.tsx:879
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ Character was modified directly by an administrator backend"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:870
+#: apps/wiki/src/routes/character-page.tsx:882
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "Wiki current version differs from the runtime character data in {totalDrift} fields (source: {0}). Click the button on the right to record the current runtime values as a new wiki revision."
 
-#: apps/wiki/src/routes/character-page.tsx:877
+#: apps/wiki/src/routes/character-page.tsx:889
 msgid "内容字段："
 msgstr "Content fields:"
 
-#: apps/wiki/src/routes/character-page.tsx:883
+#: apps/wiki/src/routes/character-page.tsx:895
 msgid "逻辑字段："
 msgstr "Logic fields:"
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:887
+#: apps/wiki/src/routes/character-page.tsx:899
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:900
+#: apps/wiki/src/routes/character-page.tsx:912
 msgid "同步中..."
 msgstr "Syncing..."
 
-#: apps/wiki/src/routes/character-page.tsx:900
+#: apps/wiki/src/routes/character-page.tsx:912
 msgid "纳入 wiki 历史"
 msgstr "Record in wiki history"
 
@@ -2521,7 +2521,7 @@ msgstr "Sign in / register"
 #. placeholder {0}: recordQ.data.name
 #. placeholder {0}: row.name
 #: apps/wiki/src/routes/my-character-edit-page.tsx:151
-#: apps/wiki/src/routes/my-characters-page.tsx:224
+#: apps/wiki/src/routes/my-characters-page.tsx:230
 msgid "确认删除「{0}」？此操作无法撤销。"
 msgstr "Delete \"{0}\"? This action cannot be undone."
 
@@ -2555,7 +2555,7 @@ msgid "← 返回列表"
 msgstr "← Back to list"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:214
-#: apps/wiki/src/routes/my-characters-page.tsx:305
+#: apps/wiki/src/routes/my-characters-page.tsx:311
 msgid "导出中…"
 msgstr "Exporting…"
 
@@ -2564,7 +2564,7 @@ msgid "📤 导出 JSON"
 msgstr "📤 Export JSON"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:226
-#: apps/wiki/src/routes/my-characters-page.tsx:314
+#: apps/wiki/src/routes/my-characters-page.tsx:320
 #: apps/wiki/src/routes/my-drafts-page.tsx:306
 msgid "🗑 删除"
 msgstr "🗑 Delete"
@@ -2615,54 +2615,58 @@ msgstr "Sign in to create and manage characters that belong only to you."
 msgid "这里的角色不会出现在公开词条目录，也不走巡查审核流。你可以创建、编辑、导出 JSON，或上传一个 JSON 文件覆盖同名角色。导出的 JSON 文件可在 app 端直接导入到你的世界。"
 msgstr "Characters here don't appear in the public catalog and don't go through patrol review. You can create, edit, export JSON, or upload a JSON file to overwrite a same-named character. Exported JSON files can be imported directly into your world from the app."
 
-#: apps/wiki/src/routes/my-characters-page.tsx:139
-#: apps/wiki/src/routes/my-characters-page.tsx:197
+#: apps/wiki/src/routes/my-characters-page.tsx:133
+msgid "选择要导入的私有角色 JSON 文件"
+msgstr "Choose a private character JSON file to import"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:145
+#: apps/wiki/src/routes/my-characters-page.tsx:203
 msgid "导入中…"
 msgstr "Importing…"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:141
+#: apps/wiki/src/routes/my-characters-page.tsx:147
 msgid "📥 导入文件"
 msgstr "📥 Import file"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:149
+#: apps/wiki/src/routes/my-characters-page.tsx:155
 msgid "✨ 新建角色"
 msgstr "✨ New character"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:175
+#: apps/wiki/src/routes/my-characters-page.tsx:181
 msgid "还没有任何私有角色"
 msgstr "No private characters yet"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:178
+#: apps/wiki/src/routes/my-characters-page.tsx:184
 msgid "从零创建一个完全属于你自己的角色，或者上传一份从其它世界导出的 JSON 文件来快速开始。"
 msgstr "Create a character entirely your own from scratch, or upload a JSON file exported from another world to start quickly."
 
-#: apps/wiki/src/routes/my-characters-page.tsx:189
+#: apps/wiki/src/routes/my-characters-page.tsx:195
 msgid "✨ 新建第一个角色"
 msgstr "✨ Create the first one"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:199
+#: apps/wiki/src/routes/my-characters-page.tsx:205
 msgid "📥 导入 JSON 文件"
 msgstr "📥 Import JSON file"
 
 #. placeholder {0}: items.length
-#: apps/wiki/src/routes/my-characters-page.tsx:210
+#: apps/wiki/src/routes/my-characters-page.tsx:216
 msgid "共 {0} 个角色"
 msgstr "{0} characters in total"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:270
+#: apps/wiki/src/routes/my-characters-page.tsx:276
 #: apps/wiki/src/routes/my-drafts-page.tsx:285
 msgid "更新于"
 msgstr "Updated"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:302
+#: apps/wiki/src/routes/my-characters-page.tsx:308
 msgid "导出此角色 JSON"
 msgstr "Export this character's JSON"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:305
+#: apps/wiki/src/routes/my-characters-page.tsx:311
 msgid "📤 导出"
 msgstr "📤 Export"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:311
+#: apps/wiki/src/routes/my-characters-page.tsx:317
 msgid "删除此角色"
 msgstr "Delete this character"
 

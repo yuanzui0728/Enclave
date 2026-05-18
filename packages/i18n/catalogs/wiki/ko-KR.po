@@ -200,7 +200,7 @@ msgstr "프로그래밍, 음악, 심리학"
 #: apps/wiki/src/components/character-edit-form.tsx:2001
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
-#: apps/wiki/src/routes/character-page.tsx:366
+#: apps/wiki/src/routes/character-page.tsx:378
 msgid "简介"
 msgstr "소개"
 
@@ -544,8 +544,8 @@ msgstr "이미 입력한 필드까지 AI 가 수정하도록 하려면 \"최적�
 #: apps/wiki/src/components/conflict-resolver.tsx:162
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
-#: apps/wiki/src/routes/character-page.tsx:245
-#: apps/wiki/src/routes/character-page.tsx:832
+#: apps/wiki/src/routes/character-page.tsx:254
+#: apps/wiki/src/routes/character-page.tsx:844
 msgid "取消"
 msgstr "취소"
 
@@ -627,19 +627,19 @@ msgstr "폼이 잠겨 있습니다. 목록으로 돌아가도 됩니다. 돌아�
 
 #: apps/wiki/src/components/conflict-resolver.tsx:13
 #: apps/wiki/src/components/snapshot-diff.tsx:19
-#: apps/wiki/src/routes/character-page.tsx:368
+#: apps/wiki/src/routes/character-page.tsx:380
 msgid "性格"
 msgstr "성격"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:14
 #: apps/wiki/src/components/snapshot-diff.tsx:20
-#: apps/wiki/src/routes/character-page.tsx:371
+#: apps/wiki/src/routes/character-page.tsx:383
 msgid "专长领域"
 msgstr "전문 분야"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:15
 #: apps/wiki/src/components/snapshot-diff.tsx:21
-#: apps/wiki/src/routes/character-page.tsx:380
+#: apps/wiki/src/routes/character-page.tsx:392
 msgid "触发场景"
 msgstr "트리거 시나리오"
 
@@ -763,7 +763,7 @@ msgstr "제출되었습니다. 관리자가 처리합니다."
 #: apps/wiki/src/routes/account-page.tsx:480
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
-#: apps/wiki/src/routes/character-page.tsx:235
+#: apps/wiki/src/routes/character-page.tsx:244
 msgid "提交中..."
 msgstr "제출 중..."
 
@@ -825,7 +825,7 @@ msgstr "검색"
 #: apps/wiki/src/components/root-layout.tsx:76
 #: apps/wiki/src/lib/revision-labels.ts:23
 #: apps/wiki/src/lib/revision-labels.ts:37
-#: apps/wiki/src/routes/character-page.tsx:109
+#: apps/wiki/src/routes/character-page.tsx:118
 #: apps/wiki/src/routes/create-character-page.tsx:102
 #: apps/wiki/src/routes/create-character-page.tsx:182
 #: apps/wiki/src/routes/pending-reviews-page.tsx:113
@@ -1163,7 +1163,7 @@ msgid "回复"
 msgstr "답글"
 
 #: apps/wiki/src/components/talk-panel.tsx:415
-#: apps/wiki/src/routes/character-page.tsx:135
+#: apps/wiki/src/routes/character-page.tsx:144
 #: apps/wiki/src/routes/home-page.tsx:246
 #: apps/wiki/src/routes/my-characters-page.tsx:65
 #: apps/wiki/src/routes/watchlist-page.tsx:92
@@ -1290,7 +1290,7 @@ msgstr "단일 항목"
 
 #: apps/wiki/src/lib/revision-labels.ts:60
 #: apps/wiki/src/routes/admin-blocks-page.tsx:112
-#: apps/wiki/src/routes/character-page.tsx:119
+#: apps/wiki/src/routes/character-page.tsx:128
 #: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
 msgstr "토크"
@@ -1822,14 +1822,14 @@ msgid "无保护"
 msgstr "없음"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:141
-#: apps/wiki/src/routes/character-page.tsx:329
+#: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:253
 #: apps/wiki/src/routes/watchlist-page.tsx:98
 msgid "半保护"
 msgstr "반보호"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:142
-#: apps/wiki/src/routes/character-page.tsx:329
+#: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:254
 #: apps/wiki/src/routes/watchlist-page.tsx:99
 msgid "完全保护"
@@ -2048,8 +2048,8 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} vs v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:54
-#: apps/wiki/src/routes/character-page.tsx:426
-#: apps/wiki/src/routes/character-page.tsx:728
+#: apps/wiki/src/routes/character-page.tsx:438
+#: apps/wiki/src/routes/character-page.tsx:740
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
 #: apps/wiki/src/routes/pending-reviews-page.tsx:249
 #: apps/wiki/src/routes/recent-changes-page.tsx:140
@@ -2064,115 +2064,115 @@ msgstr "이전 캐릭터 로직"
 msgid "新角色逻辑"
 msgstr "새 캐릭터 로직"
 
-#: apps/wiki/src/routes/character-page.tsx:99
+#: apps/wiki/src/routes/character-page.tsx:108
 msgid "角色页板块切换"
 msgstr "캐릭터 페이지 섹션"
 
-#: apps/wiki/src/routes/character-page.tsx:103
+#: apps/wiki/src/routes/character-page.tsx:112
 msgid "阅读"
 msgstr "읽기"
 
-#: apps/wiki/src/routes/character-page.tsx:116
+#: apps/wiki/src/routes/character-page.tsx:125
 msgid "历史"
 msgstr "이력"
 
-#: apps/wiki/src/routes/character-page.tsx:140
+#: apps/wiki/src/routes/character-page.tsx:149
 #: apps/wiki/src/routes/home-page.tsx:244
 msgid "待创建"
 msgstr "생성 대기"
 
-#: apps/wiki/src/routes/character-page.tsx:145
+#: apps/wiki/src/routes/character-page.tsx:154
 msgid "有待审版本"
 msgstr "검토 대기 버전 있음"
 
-#: apps/wiki/src/routes/character-page.tsx:158
+#: apps/wiki/src/routes/character-page.tsx:167
 msgid "版本切换"
 msgstr "버전 전환"
 
-#: apps/wiki/src/routes/character-page.tsx:172
-#: apps/wiki/src/routes/character-page.tsx:431
+#: apps/wiki/src/routes/character-page.tsx:181
+#: apps/wiki/src/routes/character-page.tsx:443
 msgid "稳定版"
 msgstr "안정"
 
-#: apps/wiki/src/routes/character-page.tsx:185
-#: apps/wiki/src/routes/character-page.tsx:431
+#: apps/wiki/src/routes/character-page.tsx:194
+#: apps/wiki/src/routes/character-page.tsx:443
 msgid "最新版"
 msgstr "최신"
 
-#: apps/wiki/src/routes/character-page.tsx:200
+#: apps/wiki/src/routes/character-page.tsx:209
 msgid "申请恢复"
 msgstr "복원 요청"
 
-#: apps/wiki/src/routes/character-page.tsx:200
+#: apps/wiki/src/routes/character-page.tsx:209
 msgid "申请删除"
 msgstr "삭제 요청"
 
-#: apps/wiki/src/routes/character-page.tsx:209
+#: apps/wiki/src/routes/character-page.tsx:218
 msgid "恢复理由"
 msgstr "복원 사유"
 
-#: apps/wiki/src/routes/character-page.tsx:209
+#: apps/wiki/src/routes/character-page.tsx:218
 msgid "删除理由"
 msgstr "삭제 사유"
 
-#: apps/wiki/src/routes/character-page.tsx:217
+#: apps/wiki/src/routes/character-page.tsx:226
 msgid "说明为什么这个角色词条应恢复"
 msgstr "이 캐릭터 항목을 복원해야 하는 이유를 설명하세요"
 
-#: apps/wiki/src/routes/character-page.tsx:218
+#: apps/wiki/src/routes/character-page.tsx:227
 msgid "说明为什么这个角色词条应归档为红链"
 msgstr "이 캐릭터 항목을 red link로 보관해야 하는 이유를 설명하세요"
 
-#: apps/wiki/src/routes/character-page.tsx:237
+#: apps/wiki/src/routes/character-page.tsx:246
 msgid "提交恢复申请"
 msgstr "복원 요청 제출"
 
-#: apps/wiki/src/routes/character-page.tsx:238
+#: apps/wiki/src/routes/character-page.tsx:247
 msgid "提交删除申请"
 msgstr "삭제 요청 제출"
 
-#: apps/wiki/src/routes/character-page.tsx:254
+#: apps/wiki/src/routes/character-page.tsx:263
 msgid "此词条已被软删除（红链）。"
 msgstr "이 항목은 소프트 삭제되었습니다 (red link)."
 
-#: apps/wiki/src/routes/character-page.tsx:256
+#: apps/wiki/src/routes/character-page.tsx:265
 msgid "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 msgstr "복원도 편집 검토 흐름으로 제출됩니다. 런타임 참조 일관성을 위해 내부 캐릭터 데이터는 유지됩니다."
 
-#: apps/wiki/src/routes/character-page.tsx:264
+#: apps/wiki/src/routes/character-page.tsx:273
 msgid "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 msgstr "이 캐릭터는 아직 생성 대기열에 있습니다. 순찰원이 생성 버전을 승인하면 런타임 캐릭터 레지스트리에 반영됩니다."
 
-#: apps/wiki/src/routes/character-page.tsx:390
+#: apps/wiki/src/routes/character-page.tsx:402
 msgid "核心逻辑"
 msgstr "코어 로직"
 
-#: apps/wiki/src/routes/character-page.tsx:394
+#: apps/wiki/src/routes/character-page.tsx:406
 msgid "聊天 Prompt"
 msgstr "채팅 프롬프트"
 
-#: apps/wiki/src/routes/character-page.tsx:397
+#: apps/wiki/src/routes/character-page.tsx:409
 msgid "主动触达 Prompt"
 msgstr "능동 접근 프롬프트"
 
-#: apps/wiki/src/routes/character-page.tsx:402
+#: apps/wiki/src/routes/character-page.tsx:414
 msgid "发圈频率"
 msgstr "모먼트 빈도"
 
-#: apps/wiki/src/routes/character-page.tsx:405
+#: apps/wiki/src/routes/character-page.tsx:417
 msgid "广场频率"
 msgstr "피드 빈도"
 
-#: apps/wiki/src/routes/character-page.tsx:408
+#: apps/wiki/src/routes/character-page.tsx:420
 msgid "活跃时段"
 msgstr "활동 시간대"
 
 #. placeholder {0}: view.pendingRevisions.length
-#: apps/wiki/src/routes/character-page.tsx:417
+#: apps/wiki/src/routes/character-page.tsx:429
 msgid "有 {0} 个待审版本，最新为："
 msgstr "{0}개의 검토 대기 버전이 있습니다. 최신:"
 
-#: apps/wiki/src/routes/character-page.tsx:427
+#: apps/wiki/src/routes/character-page.tsx:439
 #: apps/wiki/src/routes/pending-reviews-page.tsx:135
 msgid "低风险"
 msgstr "저위험"
@@ -2180,127 +2180,127 @@ msgstr "저위험"
 #. placeholder {0}: view.currentRevision.version
 #. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:434
+#: apps/wiki/src/routes/character-page.tsx:446
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · {1} 가 {2} 에 제출"
 
-#: apps/wiki/src/routes/character-page.tsx:436
+#: apps/wiki/src/routes/character-page.tsx:448
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "wiki 버전이 없습니다 (백엔드 원본 데이터 표시)"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:440
+#: apps/wiki/src/routes/character-page.tsx:452
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "안정 v{0} / 최신 v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:562
+#: apps/wiki/src/routes/character-page.tsx:574
 msgid "请先 <0>登录</0> 后再编辑。"
 msgstr "편집하기 전에 <0>로그인</0>해 주세요."
 
 #. placeholder {0}: user.role
-#: apps/wiki/src/routes/character-page.tsx:576
+#: apps/wiki/src/routes/character-page.tsx:588
 msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 msgstr "현재 권한은 <0>{0}</0> 입니다. 편집기는 비공개 캐릭터와 동일한 6 섹션 구성으로 통합되어 별도 페이지로 열립니다. 콘텐츠 필드 및 캐릭터 로직 변경은 여전히 동일한 버전 관리·충돌 감지·순찰 검토 파이프라인을 거칩니다."
 
 #. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:584
+#: apps/wiki/src/routes/character-page.tsx:596
 #: apps/wiki/src/routes/world-character-edit-page.tsx:249
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ 이미 검토 대기 중인 v{0}이 있습니다. 계속 제출하면 편집 충돌이 발생할 수 있습니다."
 
-#: apps/wiki/src/routes/character-page.tsx:596
+#: apps/wiki/src/routes/character-page.tsx:608
 msgid "✨ 打开编辑器"
 msgstr "✨ 편집기 열기"
 
-#: apps/wiki/src/routes/character-page.tsx:599
+#: apps/wiki/src/routes/character-page.tsx:611
 msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 msgstr "편집기는 AI 원클릭 생성 및 페이지 이동 간 초안을 모두 지원합니다."
 
-#: apps/wiki/src/routes/character-page.tsx:657
+#: apps/wiki/src/routes/character-page.tsx:669
 msgid "还没有任何编辑记录。"
 msgstr "편집 이력이 없습니다."
 
-#: apps/wiki/src/routes/character-page.tsx:738
+#: apps/wiki/src/routes/character-page.tsx:750
 msgid "当前版本"
 msgstr "현재 버전"
 
-#: apps/wiki/src/routes/character-page.tsx:743
+#: apps/wiki/src/routes/character-page.tsx:755
 #: apps/wiki/src/routes/recent-changes-page.tsx:150
 msgid "待巡查"
 msgstr "미순찰"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:753
+#: apps/wiki/src/routes/character-page.tsx:765
 #: apps/wiki/src/routes/recent-changes-page.tsx:170
 msgid "字段：{0}"
 msgstr "필드: {0}"
 
-#: apps/wiki/src/routes/character-page.tsx:761
+#: apps/wiki/src/routes/character-page.tsx:773
 msgid "收起对比"
 msgstr "비교 닫기"
 
-#: apps/wiki/src/routes/character-page.tsx:761
+#: apps/wiki/src/routes/character-page.tsx:773
 msgid "查看对比"
 msgstr "비교 보기"
 
-#: apps/wiki/src/routes/character-page.tsx:770
+#: apps/wiki/src/routes/character-page.tsx:782
 msgid "独立对比"
 msgstr "단독 비교"
 
-#: apps/wiki/src/routes/character-page.tsx:779
+#: apps/wiki/src/routes/character-page.tsx:791
 msgid "回滚到此版本"
 msgstr "이 버전으로 롤백"
 
-#: apps/wiki/src/routes/character-page.tsx:793
+#: apps/wiki/src/routes/character-page.tsx:805
 #: apps/wiki/src/routes/pending-reviews-page.tsx:291
 msgid "查看角色逻辑快照"
 msgstr "캐릭터 로직 스냅샷 보기"
 
-#: apps/wiki/src/routes/character-page.tsx:806
+#: apps/wiki/src/routes/character-page.tsx:818
 msgid "回滚原因（必填）"
 msgstr "롤백 사유 (필수)"
 
-#: apps/wiki/src/routes/character-page.tsx:811
+#: apps/wiki/src/routes/character-page.tsx:823
 msgid "例如：v3 涉及破坏性内容"
 msgstr "예: v3가 파괴적 콘텐츠 포함"
 
-#: apps/wiki/src/routes/character-page.tsx:825
+#: apps/wiki/src/routes/character-page.tsx:837
 msgid "回滚中..."
 msgstr "롤백 중..."
 
-#: apps/wiki/src/routes/character-page.tsx:825
+#: apps/wiki/src/routes/character-page.tsx:837
 msgid "确认回滚"
 msgstr "롤백 확정"
 
-#: apps/wiki/src/routes/character-page.tsx:867
+#: apps/wiki/src/routes/character-page.tsx:879
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ 캐릭터가 관리자에 의해 직접 수정되었습니다"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:870
+#: apps/wiki/src/routes/character-page.tsx:882
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "wiki 현재 버전과 런타임 캐릭터 데이터에 {totalDrift}개 차이가 있습니다 (source: {0}). 오른쪽 버튼을 클릭하면 현재 값을 새 버전으로 wiki 이력에 기록합니다."
 
-#: apps/wiki/src/routes/character-page.tsx:877
+#: apps/wiki/src/routes/character-page.tsx:889
 msgid "内容字段："
 msgstr "콘텐츠 필드:"
 
-#: apps/wiki/src/routes/character-page.tsx:883
+#: apps/wiki/src/routes/character-page.tsx:895
 msgid "逻辑字段："
 msgstr "로직 필드:"
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:887
+#: apps/wiki/src/routes/character-page.tsx:899
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:900
+#: apps/wiki/src/routes/character-page.tsx:912
 msgid "同步中..."
 msgstr "동기화 중..."
 
-#: apps/wiki/src/routes/character-page.tsx:900
+#: apps/wiki/src/routes/character-page.tsx:912
 msgid "纳入 wiki 历史"
 msgstr "wiki 이력에 반영"
 
@@ -2521,7 +2521,7 @@ msgstr "로그인 / 가입"
 #. placeholder {0}: recordQ.data.name
 #. placeholder {0}: row.name
 #: apps/wiki/src/routes/my-character-edit-page.tsx:151
-#: apps/wiki/src/routes/my-characters-page.tsx:224
+#: apps/wiki/src/routes/my-characters-page.tsx:230
 msgid "确认删除「{0}」？此操作无法撤销。"
 msgstr "\"{0}\"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -2555,7 +2555,7 @@ msgid "← 返回列表"
 msgstr "← 목록으로"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:214
-#: apps/wiki/src/routes/my-characters-page.tsx:305
+#: apps/wiki/src/routes/my-characters-page.tsx:311
 msgid "导出中…"
 msgstr "내보내는 중…"
 
@@ -2564,7 +2564,7 @@ msgid "📤 导出 JSON"
 msgstr "📤 JSON 내보내기"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:226
-#: apps/wiki/src/routes/my-characters-page.tsx:314
+#: apps/wiki/src/routes/my-characters-page.tsx:320
 #: apps/wiki/src/routes/my-drafts-page.tsx:306
 msgid "🗑 删除"
 msgstr "🗑 삭제"
@@ -2615,54 +2615,58 @@ msgstr "로그인하면 당신만의 캐릭터를 만들고 관리할 수 있습
 msgid "这里的角色不会出现在公开词条目录，也不走巡查审核流。你可以创建、编辑、导出 JSON，或上传一个 JSON 文件覆盖同名角色。导出的 JSON 文件可在 app 端直接导入到你的世界。"
 msgstr "여기 캐릭터는 공개 항목 목록에 나타나지 않으며 순찰 심사도 거치지 않습니다. 만들기·편집·JSON 내보내기, 또는 JSON 파일을 업로드해 같은 이름의 캐릭터를 덮어쓸 수 있습니다. 내보낸 JSON 파일은 앱에서 당신의 월드로 직접 가져올 수 있습니다."
 
-#: apps/wiki/src/routes/my-characters-page.tsx:139
-#: apps/wiki/src/routes/my-characters-page.tsx:197
+#: apps/wiki/src/routes/my-characters-page.tsx:133
+msgid "选择要导入的私有角色 JSON 文件"
+msgstr "가져올 프라이빗 캐릭터 JSON 파일 선택"
+
+#: apps/wiki/src/routes/my-characters-page.tsx:145
+#: apps/wiki/src/routes/my-characters-page.tsx:203
 msgid "导入中…"
 msgstr "가져오는 중…"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:141
+#: apps/wiki/src/routes/my-characters-page.tsx:147
 msgid "📥 导入文件"
 msgstr "📥 파일 가져오기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:149
+#: apps/wiki/src/routes/my-characters-page.tsx:155
 msgid "✨ 新建角色"
 msgstr "✨ 새 캐릭터"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:175
+#: apps/wiki/src/routes/my-characters-page.tsx:181
 msgid "还没有任何私有角色"
 msgstr "아직 비공개 캐릭터가 없습니다"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:178
+#: apps/wiki/src/routes/my-characters-page.tsx:184
 msgid "从零创建一个完全属于你自己的角色，或者上传一份从其它世界导出的 JSON 文件来快速开始。"
 msgstr "처음부터 완전히 당신만의 캐릭터를 만들거나, 다른 월드에서 내보낸 JSON 파일을 업로드해 빠르게 시작할 수 있습니다."
 
-#: apps/wiki/src/routes/my-characters-page.tsx:189
+#: apps/wiki/src/routes/my-characters-page.tsx:195
 msgid "✨ 新建第一个角色"
 msgstr "✨ 첫 캐릭터 만들기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:199
+#: apps/wiki/src/routes/my-characters-page.tsx:205
 msgid "📥 导入 JSON 文件"
 msgstr "📥 JSON 파일 가져오기"
 
 #. placeholder {0}: items.length
-#: apps/wiki/src/routes/my-characters-page.tsx:210
+#: apps/wiki/src/routes/my-characters-page.tsx:216
 msgid "共 {0} 个角色"
 msgstr "총 {0}명의 캐릭터"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:270
+#: apps/wiki/src/routes/my-characters-page.tsx:276
 #: apps/wiki/src/routes/my-drafts-page.tsx:285
 msgid "更新于"
 msgstr "업데이트"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:302
+#: apps/wiki/src/routes/my-characters-page.tsx:308
 msgid "导出此角色 JSON"
 msgstr "이 캐릭터의 JSON 내보내기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:305
+#: apps/wiki/src/routes/my-characters-page.tsx:311
 msgid "📤 导出"
 msgstr "📤 내보내기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:311
+#: apps/wiki/src/routes/my-characters-page.tsx:317
 msgid "删除此角色"
 msgstr "이 캐릭터 삭제"
 
