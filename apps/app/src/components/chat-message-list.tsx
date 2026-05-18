@@ -2112,13 +2112,27 @@ export function ChatMessageList({
       });
   };
 
+  // R16：和 R12/R13 onClose ref 镜像同款 perf 修法 —— imageMessages 是 useMemo
+  // 但 deps 含 visibleMessages，新消息（哪怕不是图片）都让 visibleMessages 换
+  // 引用 → imageMessages 换引用 → 本 effect 拆装 window keydown。用户在图片
+  // 查看器里看图时聊天里 typing tick / socket 推非图消息 / 任何 query refetch
+  // 都触发一次 listener 拆装。activeImageIndex 也会随用户翻图实时变化，叠加
+  // 起来 hot path 上是可见的开销。改用 ref 镜像 activeImageIndex + imageMessages，
+  // effect 改成挂载时挂一次（仅依赖 isDesktop / activeImage 二态切换）。
+  const activeImageIndexRef = useRef(activeImageIndex);
+  const imageMessagesRef = useRef(imageMessages);
+  useEffect(() => {
+    activeImageIndexRef.current = activeImageIndex;
+    imageMessagesRef.current = imageMessages;
+  });
+
   useEffect(() => {
     if (!isDesktop || !activeImage) {
       return;
     }
 
     const openImageFromKeyboard = (nextIndex: number) => {
-      const target = imageMessages[nextIndex];
+      const target = imageMessagesRef.current[nextIndex];
       if (!target) {
         return;
       }
@@ -2140,21 +2154,26 @@ export function ChatMessageList({
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        openImageFromKeyboard(Math.max(activeImageIndex - 1, 0));
+        openImageFromKeyboard(
+          Math.max(activeImageIndexRef.current - 1, 0),
+        );
         return;
       }
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
         openImageFromKeyboard(
-          Math.min(activeImageIndex + 1, imageMessages.length - 1),
+          Math.min(
+            activeImageIndexRef.current + 1,
+            imageMessagesRef.current.length - 1,
+          ),
         );
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeImage, activeImageIndex, imageMessages, isDesktop]);
+  }, [activeImage, isDesktop]);
 
   // 走查桌面端单聊新一轮 R5：和姊妹 addingToStickerMessageIdsRef R4 /
   // recallingMessageIdsRef / deletingMessageIdsRef 同款 — handleToggleFavorite
