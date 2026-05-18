@@ -277,6 +277,21 @@ export function summarizeChatMentions(text: string): ChatMentionSummary {
 }
 
 function sanitizeAssistantText(text: string): string {
+  // 走查 R71：原版每条 character 消息 render 都跑 6 个 regex.replace 全文扫一遍。
+  // ChatMessageList 在长会话 200+ 消息 × 每次 typing tick / socket echo / mutation
+  // isPending 翻转 / setQueriesData 都 re-render 一次，每条消息的 displayText 经
+  // sanitizeDisplayedChatText → 这里被算一遍。绝大多数 AI 回复不含 <thought>/
+  // <internal_reasoning> 块、不带 [Speaker]: 前缀、也没有 3+ 连续换行，6 个 regex
+  // 全部 miss。早退用 indexOf 探测必要的触发字符：
+  // - 4 个 <thought>/</internal_reasoning> 系列模式都需要 "<"
+  // - internalSpeakerPrefixPattern 是 ^\[...\]: 多行模式，需要 "["
+  // - \n{3,} 需要至少 3 个换行；探测 "\n\n\n" 子串
+  // 任一存在才走完整 regex 链；否则只 trim()。
+  if (text.indexOf("<") < 0 && text.indexOf("[") < 0 && text.indexOf("\n\n\n") < 0) {
+    // 普通文本 hot path，直接 trim 等价于全链跑完的输出（无可消除内容）。
+    const trimmed = text.trim();
+    return trimmed === text ? text : trimmed;
+  }
   return text
     .replace(internalReasoningBlockPattern, "")
     .replace(thoughtBlockPattern, "")
