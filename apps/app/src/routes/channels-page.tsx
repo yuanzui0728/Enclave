@@ -1354,10 +1354,19 @@ export function ChannelsPage() {
     // 卡片正文那边都用 stripToolCallSyntax 过滤了 <tool_call> / <bracket> 残留；
     // 转发面板顶部的摘要也要过一遍，不然某些 AI 生成贴的原文里夹的工具调用语法
     // 会原样塞进转发预览，看着像乱码。
-    const cleanText = stripToolCallSyntax(post.text ?? "");
+    //
+    // 走查 2026-05-18 R3：原 excerpt 直接拼 `${author}：${cleanText}`，但音乐
+    // 帖（mediaType=audio）的 post.text 经常是空串——后端 createOwnerPost 走
+    // audio 路径时 text 不强制——导致 picker 顶部摘要变成「李白：」一个孤零零
+    // 的全角冒号悬空，用户体感「这是不是要转发的内容残缺了」。fallback 链：
+    //   cleanText → post.title → "视频号动态"
+    // 保证 picker 摘要永远有可读内容。
+    const cleanText = stripToolCallSyntax(post.text ?? "").trim();
+    const titleOrText =
+      cleanText || post.title?.trim() || t(msg`视频号动态`);
     setForwardPickerPost({
       id: post.id,
-      excerpt: `${post.authorName}：${cleanText}`.slice(0, 80),
+      excerpt: `${post.authorName}：${titleOrText}`.slice(0, 80),
     });
   }
 
@@ -3997,11 +4006,25 @@ function MobileChannelCommentsSheet({
             空态卡——用户既看到错误又看到"没有评论"的引导，矛盾且会让人以为
             真的没人评论。"评论读失败"和"真没人评论"在 UI 上必须二选一：有 error
             就只显示错误条+重试按钮，别再叠一行误导性空态。
+
+            走查 2026-05-18 R3：再加一道防线——commentCount > 0 但 comments
+            还没到位（decorations preview 也没该 post）的情况：placeholderData
+            返回 EMPTY_COMMENT_PREVIEW（长度 0），同时 react-query 已经把 data
+            置为 placeholder → isLoading=false。原条件只判 isLoading + comments
+            长度，会错把「真数据 fetch 中、commentCount=143」当成「真的没人评论」。
+            按 post.commentCount 兜一层：> 0 时改显「正在读取最近评论」，避免
+            「143 条评论的帖子打开却看到「还没有评论，先发第一句」」的撞数据矛盾。
           */}
           {!isLoading && !comments.length && !errorMessage ? (
-            <div className="rounded-[16px] border border-dashed border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] leading-6 text-[#6b7280]">
-              {t(msg`还没有评论，先发第一句。`)}
-            </div>
+            (post?.commentCount ?? 0) > 0 ? (
+              <div className="rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] text-[#6b7280]">
+                {t(msg`正在读取最近评论...`)}
+              </div>
+            ) : (
+              <div className="rounded-[16px] border border-dashed border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] leading-6 text-[#6b7280]">
+                {t(msg`还没有评论，先发第一句。`)}
+              </div>
+            )
           ) : null}
           {commentsListNode}
         </div>
