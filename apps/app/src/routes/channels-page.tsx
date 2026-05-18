@@ -3824,6 +3824,19 @@ function MobileChannelCommentsSheet({
     return () => node.removeEventListener("scroll", updateNearBottom);
   }, [open]);
 
+  // 走查 2026-05-18 R4：原 growth 自动滚动只在「用户当前贴底」时跟随，意图是
+  // 保护正在读老评论时被 AI 自动回复（1-5 分钟后到位）打断。但同一规则也把
+  // 「用户自己刚提交评论」的场景一起卡住：用户滑到 sheet 顶部读老评论 → 在
+  // 底部 textarea 敲字（textarea sticky bottom，不动列表 scrollTop）→ 提交 →
+  // mutation invalidate → refetch 把新评论 append 到底 → 用户已经滚远，
+  // userNearBottomRef=false → shouldAutoScroll=false → 用户没看到自己刚发
+  // 的评论，体感「我按了发送，到底成没成？」。
+  // 用 submitInitiatedAtRef 记录最近一次主动 submit 的时间戳，growth 落地
+  // 时若在 8s 窗口内视为「这是我自己刚发的评论」强制滚到底，盖过 isNearBottom
+  // 的保守判定；超出窗口或 errorMessage 出现（submit 失败）则清掉，不污染后
+  // 续的 AI 回复滚动行为。
+  const submitInitiatedAtRef = useRef<number | null>(null);
+
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
     comments.forEach((comment) => {
@@ -3898,12 +3911,23 @@ function MobileChannelCommentsSheet({
 
   // Sheet 关闭时重置自动滚动 flag，下次再打开重新跑一次。previousCommentCountRef
   // 也复位以便下次打开时不会把首次 0→N 数据到位误判成"用户刚刚发了一条评论"。
+  // submitInitiatedAtRef 也清，避免「用户提交后立刻关 sheet → 几分钟后回来」时
+  // AI 回复增长落地被误判成「我的提交刚到」强制滚到底。
   useEffect(() => {
     if (!open) {
       hasAutoScrolledRef.current = false;
       previousCommentCountRef.current = 0;
+      submitInitiatedAtRef.current = null;
     }
   }, [open]);
+
+  // submit 失败时（errorMessage 出现）也清掉 submit 时间戳：mutation 已失败，
+  // 不会有 growth 落地，留着会污染下一次 AI 自动回复到位时的滚动判断。
+  useEffect(() => {
+    if (errorMessage) {
+      submitInitiatedAtRef.current = null;
+    }
+  }, [errorMessage]);
 
   useEffect(() => {
     if (!open) {
@@ -3960,8 +3984,17 @@ function MobileChannelCommentsSheet({
     // DOM。新评论 append 后 DOM scrollHeight 已经涨上去而 scrollTop 没动，
     // 这里如果用 DOM 算会立即判成"用户已上滑"，把贴底状态错杀。
     const isNearBottom = userNearBottomRef.current;
+    // 走查 2026-05-18 R4：「我自己刚提交评论」窗口期内强制滚到底——盖过
+    // isNearBottom 的"读老评论保护"。submit 落地走 invalidate→refetch，从
+    // 用户点发送到 comments 数组真增长通常 300-1500ms（公网隧道）；给 8s
+    // 兜底窗口覆盖慢网。窗口外的 growth（AI 自动回复，1-5min 后到位）
+    // 仍按 isNearBottom 决定，尊重用户阅读位置。
+    const submittedAt = submitInitiatedAtRef.current;
+    const userJustSubmitted =
+      submittedAt != null && Date.now() - submittedAt < 8000;
     const shouldAutoScroll =
-      !hasAutoScrolledRef.current || (growth && isNearBottom);
+      !hasAutoScrolledRef.current ||
+      (growth && (isNearBottom || userJustSubmitted));
     if (shouldAutoScroll) {
       // 走查 R3（新一轮）：mobileCommentsQuery 用 decorations 里 ≤3 条 commentsPreview
       // 作 placeholderData，sheet 首次打开会先拿到 placeholder（comments.length 很小）。
@@ -3986,6 +4019,11 @@ function MobileChannelCommentsSheet({
         // scroll 事件不一定 fire，下一次 effect 又会拿到 stale 的 false。
         userNearBottomRef.current = true;
       });
+      // 「我自己刚提交」窗口期内 growth 已经被滚到底，消费掉时间戳，避免
+      // 后续 AI 回复仍在 8s 窗口内时被误判成同一次 submit。
+      if (growth && userJustSubmitted) {
+        submitInitiatedAtRef.current = null;
+      }
     } else {
       previousCommentCountRef.current = comments.length;
     }
@@ -4316,7 +4354,13 @@ function MobileChannelCommentsSheet({
                 submitPending ||
                 post?.canInteract === false
               }
-              onClick={onSubmit}
+              onClick={() => {
+                // 走查 2026-05-18 R4：钉住「我自己刚提交」时间戳，给上方
+                // growth 自动滚动 effect 用——只在 submit 后 8s 窗口内的
+                // growth 强制滚到底，避免读老评论时被 AI 自动回复甩走。
+                submitInitiatedAtRef.current = Date.now();
+                onSubmit();
+              }}
               className="mb-1 h-10 rounded-full bg-[#07c160] px-4 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
             >
               {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
