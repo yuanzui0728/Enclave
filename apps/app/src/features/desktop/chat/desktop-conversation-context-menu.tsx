@@ -245,6 +245,13 @@ function ContextMenuButton({
   return (
     <button
       type="button"
+      // R62：之前 R6 把外层容器挂了 role="menu" + aria-label="会话操作菜单"，
+      // 但注释里说"普通 button 在 menu 里 SR 也能识别"是不准的——按 ARIA
+      // spec role="menu" 的合法子元素必须是 menuitem / menuitemradio /
+      // menuitemcheckbox，否则部分 SR（VoiceOver、JAWS 严格模式）在 menu
+      // 导航模式下会跳过这些 button、或读不出"菜单项"上下文。补 role="menuitem"
+      // 让所有 SR 都能在 menu 中用箭头键导航并正确朗读。
+      role="menuitem"
       onClick={onClick}
       disabled={disabled}
       className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition ${
