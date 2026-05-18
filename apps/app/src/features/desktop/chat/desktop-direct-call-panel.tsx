@@ -121,8 +121,13 @@ export function DesktopDirectCallPanel({
   // 走查 R2：systemStatus 在视频通话面板开启时拉一次判断 digital human gateway
   // 是否可用，5-10s 内开关同一面板不必再拉。retry=false 故意保留——网关挂掉
   // 时这条请求自身会立刻 fail，没必要再重试。
+  // 走查 R2（第 2 轮）：原独立 key ["desktop-direct-call-system-status", ...]
+  // 跟 use-digital-human-entry-guard / mobile-ai-call-screen 三处独立 cache，
+  // 同一 baseUrl 的 GET /system-status 被分别拉三次。统一到 app-system-status，
+  // 三处共享同一份 cache + 30s staleTime；用 enabled gate 保留"web + video"
+  // 的请求触发条件不变，cache hit 时不会再触发 fetch。
   const systemStatusQuery = useQuery({
-    queryKey: ["desktop-direct-call-system-status", runtimeConfig.apiBaseUrl],
+    queryKey: ["app-system-status", runtimeConfig.apiBaseUrl],
     queryFn: () => getSystemStatus(runtimeConfig.apiBaseUrl),
     enabled:
       runtimeConfig.appPlatform === "web" &&

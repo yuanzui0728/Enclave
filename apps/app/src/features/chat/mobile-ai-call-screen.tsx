@@ -136,11 +136,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
   });
+  // 走查 R2（第 2 轮）：cache key 跟 use-digital-human-entry-guard /
+  // desktop-direct-call-panel 对齐到 app-system-status；进 call 屏前用户必然
+  // 走过 chat-details 的 useDigitalHumanEntryGuard，那条已经把数据拉热并按
+  // 30s staleTime 缓存住——本观察者补同款 staleTime 复用主缓存，省掉每次入
+  // 通话页又拉一次 system-status。
   const systemStatusQuery = useQuery({
     queryKey: ["app-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
     enabled: Boolean(baseUrl),
     retry: false,
+    staleTime: 30_000,
   });
   const conversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
