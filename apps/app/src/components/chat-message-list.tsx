@@ -6441,6 +6441,15 @@ function FeedPostCardMessage({
             loading="lazy"
             decoding="async"
             onError={() => setCoverFailed(true)}
+            // 走查电脑端单聊 R99：和姊妹 R94 ImageMessage / R97 chat-files / R98
+            // NoteCardMessage 同款 — FeedPostCardMessage 整张卡片包在
+            // <button onClick={handleOpen}> (line 6480-6488) 当作"点击打开视频
+            // 号详情"入口，但里面这张 cover <img>（视频号 minimax 封面，1-3MB
+            // 短视频首帧）默认 draggable=true。用户在单聊里按住视频号卡封面
+            // 想点击：mousedown→拖出阈值→ HTML5 native drag → mouseup 不
+            // 触发 click，"进视频号详情"被 silently 吞；同时拖出的封面被释放
+            // 到桌面/其它窗口，意外触发"下载封面到桌面"。
+            draggable={false}
             className="h-full w-full object-cover"
           />
         </div>
