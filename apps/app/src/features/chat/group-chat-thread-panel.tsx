@@ -1885,7 +1885,9 @@ export function GroupChatThreadPanel({
             ) : null}
             {messagesQuery.isError && messagesQuery.error instanceof Error ? (
               isDesktop ? (
-                <ErrorBlock message={messagesQuery.error.message} />
+                // R53：和姊妹 R51 单聊 messagesQuery 同款 —— 群聊 desktop
+                // 分支裸 <ErrorBlock>，盲人 SR 在空白群消息列表里无反馈。
+                <ErrorBlock role="alert" message={messagesQuery.error.message} />
               ) : (
                 <MobileGroupThreadStatusCard
                   badge={t(msg`消息`)}
