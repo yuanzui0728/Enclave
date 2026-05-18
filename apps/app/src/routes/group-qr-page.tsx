@@ -1049,6 +1049,31 @@ export function GroupQrPage() {
   // 一模一样的"xxx 邀请你加入群聊"，体验很差。按 conversationId 维度上锁，
   // finally 解锁；不同会话间不互相阻塞，用户可以连点不同行批量投。
   const sendingConversationsRef = useRef<Set<string>>(new Set());
+  // 走查移动端群聊 R3：本页有 5+ 处「回到会话」按钮（currentReturnSourceConversation
+  // / activeDeliveredConversation / deliveryTarget batches / reopenRecord /
+  // relatedReturnConversations）都 `onClick={() => { void navigate({to:
+  // buildConversationOpenPath(conv)}) }}` 形态，没挂 disabled / 没同步 ref 守。
+  // 同帧 <16ms 双击同一行 push 2 条相同 history 项——用户从目标会话退回群邀请
+  // 页要按 2 次返回；移动端 yuanzui 群邀请走查最易踩到的浅层 bug。
+  // 用一个共享 ref 守住所有「回到会话」前进按钮（不同会话也不冲突，因为页面
+  // 跳出后会 unmount/remount 自动复位 ref），raf 后释放兜底 navigate 没真正
+  // 切走。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   // 走查 R1：直聊分支 emitChatMessage 后 setTimeout 500ms 再 invalidate
   // conversations（给 socket 服务端写入完成留窗口）。原版每次邀请都 schedule
   // 一份独立 setTimeout，N 个会话连发就堆 N 个定时器，全在 ~500ms 内 fire →
@@ -1355,13 +1380,13 @@ export function GroupQrPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => {
+                  onClick={guardRowNavigation(() => {
                     void navigate({
                       to: buildConversationOpenPath(
                         currentReturnSourceConversation,
                       ),
                     });
-                  }}
+                  })}
                   className="shrink-0 rounded-full"
                 >
                   {t(msg`回到会话`)}
@@ -1517,13 +1542,13 @@ export function GroupQrPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: resolveConversationOpenPath(
                       activeDeliveredConversation.conversationPath,
                     ),
                   });
-                }}
+                })}
                 className="shrink-0 rounded-full"
               >
                 {t(msg`回到会话`)}
@@ -1600,13 +1625,13 @@ export function GroupQrPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => {
+                          onClick={guardRowNavigation(() => {
                             void navigate({
                               to: resolveConversationOpenPath(
                                 record.conversationPath,
                               ),
                             });
-                          }}
+                          })}
                           className="shrink-0 rounded-full"
                         >
                           {t(msg`回到会话`)}
@@ -1667,13 +1692,13 @@ export function GroupQrPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => {
+                      onClick={guardRowNavigation(() => {
                         void navigate({
                           to: resolveConversationOpenPath(
                             record.conversationPath,
                           ),
                         });
-                      }}
+                      })}
                       className="shrink-0 rounded-full"
                     >
                       {t(msg`回到会话`)}
@@ -2504,13 +2529,13 @@ export function GroupQrPage() {
               {currentReturnSourceConversation ? (
                 <Button
                   variant="ghost"
-                  onClick={() => {
+                  onClick={guardRowNavigation(() => {
                     void navigate({
                       to: buildConversationOpenPath(
                         currentReturnSourceConversation,
                       ),
                     });
-                  }}
+                  })}
                   className="rounded-full"
                 >
                   {t(msg`回到来源会话`)}
