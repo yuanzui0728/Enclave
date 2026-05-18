@@ -255,6 +255,17 @@ export function ProfileCharacterImportPage() {
       void queryClient.invalidateQueries({
         queryKey: ["channels-forward-friends", baseUrl],
       });
+      // 第四波 R2：overwrote=true 路径下后端按 name 复用旧 character id，
+      // avatar/bio/personality/recipe/profile 全换。但 character-detail-page
+      // 的 query ["app-character", baseUrl, characterId] staleTime=15s，
+      // 用户如果刚刚在角色详情页看过这位、退出来重新 import 一份新 bundle，
+      // 再回到详情页（15s 内）展示的还是 import 前的 avatar/bio——肉眼以为
+      // import 没生效。带着 res.character.id 精准 invalidate 这一条；新建
+      // 路径下这条 key 本来就没缓存，invalidate 也是 no-op 不会产生多余
+      // refetch。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-character", baseUrl, res.character.id],
+      });
     } catch (err) {
       setResult({
         kind: "danger",
