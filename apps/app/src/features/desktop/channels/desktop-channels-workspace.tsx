@@ -980,8 +980,16 @@ function ChannelMediaSurface({
     (asset): asset is Extract<typeof asset, { kind: "image" }> =>
       asset.kind === "image",
   );
+  // 走查 2026-05-18 R5（本轮）：跟 R2 的 audio/video gate 同坑——原 `??` 让
+  // 空字符串 `""` 穿过 fallback。post.coverUrl 偶发是 `""`（minimax 封面拉
+  // 失败时后端落空 url、character_override fallback 路径未填、cleanupBroken
+  // ChannelPosts 还没扫到），fallbackImage 落 `""` → ChannelFallbackImage 渲
+  // <img src=""> → Chrome/Firefox 视为 broken-image 但又不触发 onError（空
+  // src 不发请求），用户看到原生 broken-image 占位永远不会被 setFailed(true)
+  // 切到友好兜底文案，体感「这个帖子坏了」+ 透着沉浸式深背景里隐约可见。
+  // 改用 `||` 让空字符串走下一个 fallback。同理下面 mediaUrl fallback。
   const fallbackImage =
-    post.coverUrl ?? imageAssets[0]?.url ?? post.mediaUrl ?? null;
+    post.coverUrl || imageAssets[0]?.url || post.mediaUrl || null;
   if (fallbackImage) {
     return (
       <ChannelFallbackImage
