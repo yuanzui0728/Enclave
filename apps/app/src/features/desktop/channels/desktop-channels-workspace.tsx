@@ -1898,12 +1898,21 @@ function DesktopChannelCommentsPanel({
   const inputRef = useRef<HTMLInputElement | null>(null);
   // 打开评论抽屉 / 点 "回复 X" 时，把焦点送到 input——和移动端 sheet 的处理
   // 一致（commit 2090+），用户开了抽屉就能直接敲字。
+  //
+  // 走查 2026-05-18 新会话 R4：mobile 那边 R1（channels-page L4087-4097）
+  // 早就发现并修过：post.canInteract === false 时 input 是 disabled，对 dis
+  // abled element 调 .focus() 是 no-op —— 但 sequential focus navigation 会
+  // 把焦点甩到 drawer 内下一个可聚焦元素，也就是头部「关闭评论」那颗 X
+  // button。用户想滚评论列表按 Space → 触发 X.click() → drawer 直接关掉。
+  // 桌面 drawer 一直漏，cannotInteract 时跳过 focus 让用户主动点击的位置
+  // 保留焦点。
   useEffect(() => {
     if (!selectedPostId) return;
+    if (cannotInteract) return;
     window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
-  }, [selectedPostId, replyTarget?.commentId]);
+  }, [cannotInteract, selectedPostId, replyTarget?.commentId]);
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
     comments.forEach((comment) => {
