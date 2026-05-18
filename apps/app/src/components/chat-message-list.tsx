@@ -3852,7 +3852,15 @@ export function ChatMessageList({
                   message.attachment?.kind === "sticker" ? (
                     <StickerMessage
                       url={message.attachment.url}
-                      label={message.attachment.label ?? displayText}
+                      // 走查 2026-05-18 移动端单聊 R10：和 R7 / R9 同款 ?? vs || 漏防 ——
+                      // StickerAttachment.label 是 `string | undefined`，自定义贴纸 / 老
+                      // wiki import 偶发以空串落库。?? 只防 null/undefined，让 label === ""
+                      // 的 sticker bubble 拿到 alt="" → 屏幕阅读器把它当 decorative image
+                      // 整张跳过，盲人用户聊天里听不到对方发了什么贴纸；同时 StickerMessage
+                      // load-failed fallback 走 `label || [表情包]` 已经用 || 兜底，但上游
+                      // 这里继续吐空串就让 displayText（消息文本 "[表情包] xxx"）的有用
+                      // 信息丢了。改 || 让空串也落到 displayText fallback。
+                      label={message.attachment.label || displayText}
                       maxSize={isDesktop ? 160 : 124}
                       onMediaReady={onMediaReady}
                     />
