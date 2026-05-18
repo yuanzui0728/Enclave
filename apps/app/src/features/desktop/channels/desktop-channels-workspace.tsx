@@ -537,9 +537,17 @@ export function DesktopChannelsWorkspace({
         见 5-10 次「页面突然抖一下」。改用 absolute 浮在 header 下面、覆在
         content 顶部 —— header 永远 h-14 固定不动，snap 容器也不再重排；视
         觉上 notice 还是从 header 边缘冒出，对齐 backdrop-blur 没掉。
+
+        走查 2026-05-18 新会话 R4：z-index 必须高过 comment drawer (z-30) 和
+        author overlay (z-40)，否则小视口（laptop 13" ~720px）上 drawer 容易
+        竖向覆掉 notice 的 y=56..106 那一段；用户在 drawer 里发完评论想看
+        「评论已发送」的 success notice，只看见 drawer 自己——drawer 里没有
+        success state，体感「按了发送，到底成没成？」。用 z-50 让 notice
+        始终浮在 drawer / author overlay 之上（forward picker z-110 是全屏
+        modal，用户在 picker 内时本来就不需要看 notice，让它盖掉无妨）。
       */}
       {successNotice || errorMessage ? (
-        <div className="pointer-events-none absolute left-0 right-0 top-14 z-20 space-y-2 border-b border-[color:var(--border-faint)] bg-white/92 px-6 py-2 backdrop-blur-xl">
+        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-white/92 px-6 py-2 backdrop-blur-xl">
           {successNotice ? (
             <div className="pointer-events-auto">
               <InlineNotice
