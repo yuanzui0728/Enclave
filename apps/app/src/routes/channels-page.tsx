@@ -2183,7 +2183,16 @@ export function ChannelsPage() {
         postExcerpt={forwardPickerPost?.excerpt}
         baseUrl={baseUrl}
         onClose={() => setForwardPickerPost(null)}
-        onForwarded={(target) => {
+        onForwarded={(target, context) => {
+          // 走查 2026-05-18 新一轮 R2：mid-flight 切账户 guard —— forward 真正
+          // 跑在 A 账户上，慢网 RTT 期间用户切到 B 后这条 success toast 不该
+          // 冒到 B 用户视野里（"我刚来 B 怎么收到了转发成功提示"）。picker 把
+          // 开始 forward 时的 baseUrl 传回来，比对当前 mutationBaseUrlRef，跨
+          // 账户时静默吞掉 toast。同 like/comment/favorite/follow 等 mutation 的
+          // mid-flight 守卫一脉相承。
+          if (context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+            return;
+          }
           setNoticeTone("success");
           setNoticeActionLabel(null);
           setNoticeAction(null);
@@ -2200,6 +2209,13 @@ export function ChannelsPage() {
         onForwardFailed={(input) => {
           // 走查 R9：picker 在 mutation pending 时不挡关闭，用户点完好友
           // 立刻关 picker，失败时 picker 内的红条已经不渲染，page 级 notice 兜底。
+          //
+          // 走查 2026-05-18 新一轮 R2：同款 mid-flight 切账户 guard ——失败 toast
+          // 不冒到新账户。picker 内 errorMessage 已经在 baseUrl 变化时关闭随 picker
+          // 一起被吞，page 级别这里也要补上。
+          if (input.mutationBaseUrl !== mutationBaseUrlRef.current) {
+            return;
+          }
           setNoticeTone("info");
           setNoticeActionLabel(null);
           setNoticeAction(null);

@@ -20,17 +20,27 @@ type ChannelsForwardPickerProps = {
   postExcerpt?: string;
   baseUrl?: string;
   onClose: () => void;
-  /** 通知 channels-page 刷 toast + bump shareCount。 */
-  onForwarded?: (target: { characterId: string; name: string }) => void;
+  /**
+   * 通知 channels-page 刷 toast + bump shareCount。
+   * mutationBaseUrl 是开始 forward 那一刻 picker 拿到的 baseUrl，channels-page
+   * 用它做 mid-flight 切账户 guard：若用户在 200-500ms RTT 期间切到 B 账户，
+   * 这条 forward 仍属于 A，"已转发给 X" toast 不应该冒到 B 用户眼前。
+   */
+  onForwarded?: (
+    target: { characterId: string; name: string },
+    context: { mutationBaseUrl: string | undefined },
+  ) => void;
   /**
    * 转发失败兜底回调：用户点完好友马上点 取消/backdrop 关 picker，picker 内
    * 的 errorMessage 已经不渲染了；让 channels-page 知道这次失败，在 page 级
-   * 显示一行 notice，避免静默吞错。
+   * 显示一行 notice，避免静默吞错。同样带 mutationBaseUrl，让 channels-page
+   * 做 mid-flight guard。
    */
   onForwardFailed?: (input: {
     targetCharacterId: string;
     targetName: string;
     message: string;
+    mutationBaseUrl: string | undefined;
   }) => void;
 };
 
@@ -141,14 +151,24 @@ export function ChannelsForwardPicker({
     // 走查 R3（本轮）：抓住开始 forward 这一刻的 postId，await 期间用户可能
     // 关 picker / 重开为其他 post（latestPostIdRef 反映 props 实时值）。
     const initialPostId = postId;
+    // 走查 2026-05-18 新一轮 R2：同步抓 baseUrl —— mutation 完成时把它传给
+    // channels-page 的 onForwarded/onForwardFailed，让 page 端按"这次 forward
+    // 是给哪个账户做的"决定要不要冒 toast。否则慢网（公网隧道 200-500ms RTT）
+    // 下用户切账户后 B 视图会冒出"已转发给 X"/"转发给 X 失败"——B 用户莫名
+    // 其妙以为自己做了什么。forwardMutation 没有 onMutate context 链可用（picker
+    // 用的是 mutateAsync 不依赖 context），直接在 handlePick 闭包里抓。
+    const initialBaseUrl = baseUrl;
     try {
       await forwardMutation.mutateAsync({
         targetCharacterId: target.character.id,
       });
-      onForwarded?.({
-        characterId: target.character.id,
-        name: target.character.name,
-      });
+      onForwarded?.(
+        {
+          characterId: target.character.id,
+          name: target.character.name,
+        },
+        { mutationBaseUrl: initialBaseUrl },
+      );
       // 只在 picker 仍然停在同一条 post 时主动关闭——用户已经切换到别的 post
       // 时 onClose 等于强关人家刚开的新 picker。
       if (latestPostIdRef.current === initialPostId) {
@@ -190,10 +210,12 @@ export function ChannelsForwardPicker({
       setErrorMessage(translatedMessage);
       // 走查 R9：picker 可能已经被用户手动关了（onClose 不挡 mutation pending），
       // 这种情况下 errorMessage 不会被渲染。让 channels-page 兜底 page 级 notice。
+      // mutationBaseUrl 带回去，让 channels-page 做 mid-flight 切账户 guard。
       onForwardFailed?.({
         targetCharacterId: target.character.id,
         targetName: target.character.name,
         message: translatedMessage,
+        mutationBaseUrl: initialBaseUrl,
       });
     }
   }
