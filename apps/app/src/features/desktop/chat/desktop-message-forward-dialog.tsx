@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
@@ -52,6 +59,12 @@ export function DesktopMessageForwardDialog({
 }: DesktopMessageForwardDialogProps) {
   const t = useRuntimeTranslator();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R3：和姊妹 picker / removal-picker / create-group-dialog / browser
+  // 一批 dialog 同款 keystroke 卡顿。filteredConversations 直接吃 searchTerm，
+  // 每次按键先做 [...conversations].sort() 再 filter；活跃用户 100+ 会话时
+  // 输入框可见 backlog。useDeferredValue 让 React 先把字打进输入框、过滤排
+  // 到下个 idle 帧。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [forwardMode, setForwardMode] =
     useState<DesktopMessageForwardMode>("separate");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
@@ -129,22 +142,28 @@ export function DesktopMessageForwardDialog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, open, pending]);
 
+  // 走查 R3：把 sort 和 filter 拆开。原版 useMemo 把 [...conversations].sort()
+  // 也放在 deferredSearchTerm dep 内，每个 keystroke 都重排一次。conversations
+  // 本身只在 query refetch 才换引用，把 sort 单独 memoize 节省 N log N。
+  const orderedConversations = useMemo(
+    () =>
+      [...conversations].sort(
+        (left, right) =>
+          (parseTimestamp(right.lastActivityAt) ?? 0) -
+          (parseTimestamp(left.lastActivityAt) ?? 0),
+      ),
+    [conversations],
+  );
   const filteredConversations = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-    const ordered = [...conversations].sort(
-      (left, right) =>
-        (parseTimestamp(right.lastActivityAt) ?? 0) -
-        (parseTimestamp(left.lastActivityAt) ?? 0),
-    );
-
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     if (!keyword) {
-      return ordered;
+      return orderedConversations;
     }
 
-    return ordered.filter((conversation) =>
+    return orderedConversations.filter((conversation) =>
       conversation.title.toLowerCase().includes(keyword),
     );
-  }, [conversations, searchTerm]);
+  }, [deferredSearchTerm, orderedConversations]);
 
   if (!open) {
     return null;
