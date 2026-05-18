@@ -203,7 +203,7 @@ export function GroupQrPage() {
   const defaultGroupInviteLabel = t(msg`群聊邀请`);
   const fallbackGroupLabel = t(msg`群聊`);
   const fallbackCurrentGroupLabel = t(msg`当前群聊`);
-  const groupDisplayName = groupQuery.data?.name ?? defaultGroupName;
+  const groupDisplayName = groupQuery.data?.name || defaultGroupName;
 
   useEffect(() => {
     if (
@@ -270,7 +270,7 @@ export function GroupQrPage() {
       buildInviteMatrixSvg({
         code: inviteCode,
         footerLabel: t(msg`群邀请卡`),
-        label: groupQuery.data?.name ?? defaultGroupInviteLabel,
+        label: groupQuery.data?.name || defaultGroupInviteLabel,
         subtitle:
           memberCount !== undefined
             ? t(msg`${memberCount} 人群聊`)
@@ -890,7 +890,7 @@ export function GroupQrPage() {
   async function downloadInviteCard() {
     const result = await saveGeneratedFile({
       contents: qrSvgMarkup,
-      fileName: `${groupQuery.data?.name ?? "group"}-invite-card.svg`,
+      fileName: `${groupQuery.data?.name || "group"}-invite-card.svg`,
       mimeType: "image/svg+xml;charset=utf-8",
       dialogTitle: t(msg`保存群邀请卡`),
       kindLabel: t(msg`群邀请卡`),
@@ -951,9 +951,9 @@ export function GroupQrPage() {
     try {
       pushMobileHandoffRecord({
         category: "group_invite",
-        label: t(msg`${groupQuery.data?.name ?? fallbackGroupLabel} 邀请`),
+        label: t(msg`${groupQuery.data?.name || fallbackGroupLabel} 邀请`),
         description: t(
-          msg`把 ${groupQuery.data?.name ?? fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,
+          msg`把 ${groupQuery.data?.name || fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,
         ),
         path: `/group/${groupId}`,
       });
