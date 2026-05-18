@@ -2459,37 +2459,56 @@ export function ChatMessageList({
     setReminderTargetMessage(message);
   };
 
+  // 走查桌面端单聊新一轮 R6：和 R5 togglingFavoriteMessageIdsRef 同款问题。
+  // handleClearReminder 无任何同步锁，handleToggleReminder 根据
+  // messageReminderMap.has(message.id) 分发到 clearReminder / openPicker —
+  // map 在 await clearReminder 飞行期间还没翻 false（本地缓存 + server 推送）。
+  // 同帧 <16ms double-click「取消提醒」context menu 项：
+  // · click 1: messageReminderMap.has=true → handleClearReminder → DELETE
+  // · click 2: messageReminderMap.has 仍 true（state 未提交）→ 又 handleClearReminder
+  //   → 第 2 次 DELETE /reminders 命中 server 已删的 sourceId → 404 → catch →
+  //   setActionNotice 「取消提醒失败」红色 notice，但 server 端已成功取消。
+  // 用户得 refresh 才看见真实状态。按 messageId 上锁。
+  const clearingReminderMessageIdsRef = useRef<Set<string>>(new Set());
   const handleClearReminder = async (messageId: string) => {
     // clearReminder 走的是 removeReminderMutation.mutateAsync —— 公网隧道
     // 偶发超时 / cloud token 重连那几百 ms 都会 reject。caller 是
     // void handleClearReminder(...) fire-and-forget，漏 try/catch 整条
     // rejection 直接落 unhandledrejection 污染 telemetry，用户那边还看不到
     // 任何 toast，以为操作生效了。
-    try {
-      await clearReminder(messageId);
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`取消提醒失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续取消提醒`),
-        onAction: () => {
-          void handleClearReminder(messageId);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+    if (clearingReminderMessageIdsRef.current.has(messageId)) {
       return;
     }
-    setReminderTargetMessage((current) =>
-      current?.id === messageId ? null : current,
-    );
-    setActionNotice({
-      message: t(msg`已取消这条消息的提醒。`),
-      tone: "success",
-    });
+    clearingReminderMessageIdsRef.current.add(messageId);
+    try {
+      try {
+        await clearReminder(messageId);
+      } catch (error) {
+        setActionNotice({
+          message:
+            error instanceof Error
+              ? error.message
+              : t(msg`取消提醒失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续取消提醒`),
+          onAction: () => {
+            void handleClearReminder(messageId);
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+        return;
+      }
+      setReminderTargetMessage((current) =>
+        current?.id === messageId ? null : current,
+      );
+      setActionNotice({
+        message: t(msg`已取消这条消息的提醒。`),
+        tone: "success",
+      });
+    } finally {
+      clearingReminderMessageIdsRef.current.delete(messageId);
+    }
   };
 
   const handleToggleReminder = (message: ChatRenderableMessage) => {
