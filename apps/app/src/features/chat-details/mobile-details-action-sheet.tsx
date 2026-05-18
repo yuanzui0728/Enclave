@@ -72,15 +72,25 @@ export function MobileDetailsActionSheet({
 
   // 走查 Round 1：sheet 打开时按 Esc 没反应——桌面 web / 模拟器 / 自动化都拍不
   // 掉。这里加一个 keydown 监听，open 才挂，避免每次渲染都注册。
+  //
+  // 走查移动端群聊本会话 R7：和姊妹 sheet mobile-message-action-sheet R2 /
+  // mobile-mention-picker-sheet R6 / group-message-context-menu R7 一致补
+  // defaultPrevented 让位——本 sheet 经常作"群管理"父 sheet 套"退出群聊确认"
+  // 子 sheet 用（group-chat-details-page line 1203/1287），子 sheet 处理掉
+  // ESC 后 event.defaultPrevented=true，父 sheet 这里漏检会照样 onClose 把父
+  // sheet 也关掉。视觉表现是用户在确认 sheet 上按 ESC 直接连关 2 层、回到
+  // details 失去"我刚要退群"的上下文。对齐 3 个姊妹 sheet 的 defaultPrevented
+  // 守。
   useEffect(() => {
     if (!open) {
       return;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
       }
+      event.preventDefault();
+      onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
