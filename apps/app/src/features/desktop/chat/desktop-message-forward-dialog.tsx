@@ -590,12 +590,10 @@ function ForwardModeButton({
           : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]",
       )}
     >
-      <span
-        className={cn(
-          "text-[13px] font-medium",
-          active ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-primary)]",
-        )}
-      >
+      {/* 走查电脑端群聊 R82：原版 `active ? text-primary : text-primary` 两条
+          分支同色，是历史 cn 三元留下的 dead conditional —— cn 仍走一次条件
+          展开 + 字符串合并。直接取常量 text-primary，少一次 cn 调用 / 每帧。 */}
+      <span className="text-[13px] font-medium text-[color:var(--text-primary)]">
         {label}
       </span>
       <span className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
