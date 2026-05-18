@@ -240,7 +240,17 @@ export function resolveAttachmentSemanticText(
     );
   }
 
-  return truncateSemanticText(attachment.label ?? attachment.stickerId, maxChars);
+  // 走查 2026-05-18 移动端单聊 R9：和 use-conversation-thread R7（commit 154b556fe）
+  // 同款 ?? vs || 漏防——StickerAttachment.label 在 schema 上是 `string | undefined`，
+  // 用户自定义贴纸不填 label 时偶发以空串落库（旧版 reminder 卡 / 老 wiki import
+  // 的 customSticker.label === ""）。?? 只防 null/undefined 不防空串 → 表情贴纸
+  // 在「chat-list 最后消息预览 / reply 引用预览 / 全局搜索 supportText /
+  // conversation-strong-reminder / forward dialog preview」上全部漏到空白文案。
+  // stickerId 是必填非空 string，永远有兜底；改 || 让空串也命中。
+  return truncateSemanticText(
+    attachment.label || attachment.stickerId,
+    maxChars,
+  );
 }
 
 function resolveGeneratedAttachmentHistoryText(attachment?: MessageAttachment) {
@@ -295,9 +305,14 @@ function buildAttachmentFallbackLabel(
     return buildNamedFallbackLabel(t(msg`视频号`), detail, bracketed);
   }
 
+  // 走查 2026-05-18 移动端单聊 R9：同上 resolveAttachmentSemanticText sticker 分支
+  // 的 ?? 漏防——这条 fallback label 给「最后消息预览空串补占位」用，原 `??`
+  // 让 label === "" 的自定义贴纸直接吐出 "[表情] "（detail 空串经
+  // buildNamedFallbackLabel 的 normalizedDetail trim 为 falsy 走纯 bracket 分支），
+  // 视觉上没炸但其实 detail 已经被吃掉。改 || 让空串也命中 stickerId fallback。
   return buildNamedFallbackLabel(
     t(msg`表情`),
-    attachment.label ?? attachment.stickerId,
+    attachment.label || attachment.stickerId,
     bracketed,
   );
 }
