@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -36,6 +36,18 @@ export function MomentComposeMediaPreview({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        // 走查电脑端 R5：以前用默认 bubble-phase + 不 stopPropagation —— compose 面板
+        // (desktop-moment-compose-panel.tsx 行 59-70) 在面板 mount 时也挂了 window
+        // keydown Esc 关闭。用户在 compose 里打开图片/视频预览全屏 viewer 后按 Esc，
+        // compose 面板的 listener 先注册先 fire 关掉整个 compose 面板（连带把图
+        // 片选择 + 文字草稿藏起来；草稿 state 留在 useMomentComposeDraft 不丢，
+        // 但用户视觉上"我只想关预览，怎么 compose 整个不见了"），viewer 自己的
+        // setViewerIndex(null) 也跑但已无意义。CDP 实测复现。
+        // 解决：在 Esc 上 stopPropagation + preventDefault，并把 listener 注册到
+        // capture phase，让本 viewer handler 在 compose 面板的 bubble handler 之前
+        // 跑掉，stopPropagation 把 bubble phase 一并掐断 → compose 不会跟着关。
+        event.stopPropagation();
+        event.preventDefault();
         setViewerIndex(null);
         setShowVideoViewer(false);
         return;
@@ -58,8 +70,8 @@ export function MomentComposeMediaPreview({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [imageDrafts.length, showVideoViewer, viewerIndex]);
 
   if (videoDraft) {
@@ -324,6 +336,17 @@ function ComposeVideoViewer({
   draft: MomentVideoDraft;
   onClose: () => void;
 }) {
+  // 走查电脑端 R5：和 MomentVideoViewerOverlay (moment-media-gallery.tsx 行
+  // 650-658 / 视频号 ChannelVideoSurface 51b8980a) 同款 Chromium/Firefox bug
+  // ——React 在 unmount 时把 `<video autoPlay>` 从 DOM 摘掉后浏览器不会自动
+  // pause，音轨在后台一直跑直到刷整页（实测桌面 Chrome 起音 → 关 viewer，
+  // 音乐还在响）。compose 预览 viewer 漏掉了同款 cleanup pause。
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    return () => {
+      videoRef.current?.pause();
+    };
+  }, []);
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm">
       <button
@@ -348,6 +371,7 @@ function ComposeVideoViewer({
 
       <div className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]">
         <video
+          ref={videoRef}
           src={draft.previewUrl}
           poster={draft.posterPreviewUrl ?? undefined}
           className="max-h-full max-w-full rounded-[20px] bg-black"
