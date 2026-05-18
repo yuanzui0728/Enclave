@@ -892,6 +892,13 @@ export function DesktopChannelsWorkspace({
       {forwardNotice ? (
         <ForwardNotice
           message={forwardNotice}
+          // 走查 2026-05-18 新会话（本会话）R7：forwardNotice 这条 toast 可以是
+          // 成功（"已转发给 X 已转发"）也可以是失败（"转发给 X 失败：xxx"），
+          // 同一个 state 跑两种语义。SR 用户读 toast 的关键是 role/aria-live，
+          // success 走 status (polite)，failure 走 alert (assertive)。文案前缀
+          // 已经足够稳定（mobile 端从来都按"... 失败"判断 danger），用 startsWith
+          // 区分；后续如果文案翻译变这里要同步。
+          tone={forwardNotice.includes("失败") ? "danger" : "success"}
           onDismiss={() => setForwardNotice(null)}
         />
       ) : null}
@@ -913,9 +920,14 @@ export function DesktopChannelsWorkspace({
  */
 function ForwardNotice({
   message,
+  tone = "success",
   onDismiss,
 }: {
   message: string;
+  // R7：tone 决定 ARIA role —— success 走 status (polite，不打断当前播报)，
+  // danger 走 alert (assertive，立即打断告知失败)。SR 用户能立刻知道转发到底
+  // 成没成。视觉变体也跟着变 — 失败用红色背景对齐 InlineNotice danger tone。
+  tone?: "success" | "danger";
   onDismiss: () => void;
 }) {
   const onDismissRef = useRef(onDismiss);
@@ -924,8 +936,19 @@ function ForwardNotice({
     const timer = window.setTimeout(() => onDismissRef.current(), 3000);
     return () => window.clearTimeout(timer);
   }, [message]);
+  // R7：原 toast 一律 rgba(17,24,39,0.92) 深色背景 + 白字，可视用户没办法立刻
+  // 区分成功 / 失败（都是黑底白字）。danger 改红底白字，对齐其它 danger toast。
+  const isDanger = tone === "danger";
   return (
-    <div className="fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full bg-[rgba(17,24,39,0.92)] px-4 py-2 text-[13px] text-white shadow-lg">
+    <div
+      role={isDanger ? "alert" : "status"}
+      className={cn(
+        "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[13px] text-white shadow-lg",
+        isDanger
+          ? "bg-[rgba(185,28,28,0.94)]"
+          : "bg-[rgba(17,24,39,0.92)]",
+      )}
+    >
       {message}
     </div>
   );
