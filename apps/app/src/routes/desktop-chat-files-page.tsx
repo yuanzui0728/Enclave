@@ -627,11 +627,25 @@ export function DesktopChatFilesPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 border-b border-[color:var(--border-faint)] px-4 py-3">
+            {/* 走查电脑端群聊 R92：和姊妹 chat-history R27 日期 chip / R28 sender
+                chip / message-forward-dialog R26 转发模式 chooser 一批同款修
+                法——「聊天文件」页（群聊「聊天信息」→「聊天文件」入口）顶部
+                3 个 chip「全部 / 图片 / 文件」是 mutually exclusive 筛选选择，
+                原版只用 brand 绿底 + 微 shadow 表达 active。盲人 SR 走过去听
+                到 3 段裸 button label「全部 / 图片 / 文件」浮空，听不出当前
+                选中哪一档。radiogroup + radio + aria-checked 让 SR 朗读
+                「按钮 已选中 / 未选中」并按箭头键导航。 */}
+            <div
+              role="radiogroup"
+              aria-label={t(msg`附件类型`)}
+              className="flex items-center gap-2 border-b border-[color:var(--border-faint)] px-4 py-3"
+            >
               {(["all", "image", "file"] as FileFilter[]).map((item) => (
                 <button
                   key={item}
                   type="button"
+                  role="radio"
+                  aria-checked={filter === item}
                   onClick={() => setFilter(item)}
                   className={cn(
                     "rounded-[10px] border px-3 py-1.5 text-xs transition",
