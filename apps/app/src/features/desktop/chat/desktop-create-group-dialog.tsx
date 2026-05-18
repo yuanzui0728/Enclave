@@ -744,22 +744,39 @@ export function DesktopCreateGroupDialog({
     );
   };
 
+  // 走查电脑端群聊 R75：原版这两条计算放在 `if (!open) return null;` 后但
+  // 在 JSX 之前，每次 dialog 重渲都跑（搜索关键字 keystroke / selectedIds
+  // 变化 / shareHistory toggle / focusedFriendIndex 键盘导航 / mutation
+  // pending 翻转都触发整个 dialog 重渲）。recentPresetSelectionState 还
+  // 在每帧 new Map + 3 路 .slice + .map + areSameIds 比对（3 个 preset
+  // count）= 3 个数组分配 / 帧。最大的浪费：这两个值只在 `conversationId &&
+  // shareHistory` 块（line ~985）里用，shareHistory=false 时整段渲染路径
+  // 都不读 → 白白计算。提到 useMemo 锁住引用 + 用 selectedMessageIds /
+  // shareableMessages 作 deps；shareHistory=false 时仍 build 但 React.memo
+  // 不会作 prop 比对（这俩是局部变量），useMemo 同 deps 直接返回旧引用。
+  const allShareableMessagesSelected = useMemo(
+    () =>
+      shareableMessages.length > 0 &&
+      selectedMessageIds.length === shareableMessages.length,
+    [selectedMessageIds.length, shareableMessages.length],
+  );
+  const recentPresetSelectionState = useMemo(
+    () =>
+      new Map(
+        SHARE_HISTORY_PRESET_COUNTS.map((count) => [
+          count,
+          areSameIds(
+            selectedMessageIds,
+            shareableMessages.slice(-count).map((message) => message.id),
+          ),
+        ]),
+      ),
+    [selectedMessageIds, shareableMessages],
+  );
+
   if (!open) {
     return null;
   }
-
-  const allShareableMessagesSelected =
-    shareableMessages.length > 0 &&
-    selectedMessageIds.length === shareableMessages.length;
-  const recentPresetSelectionState = new Map(
-    SHARE_HISTORY_PRESET_COUNTS.map((count) => [
-      count,
-      areSameIds(
-        selectedMessageIds,
-        shareableMessages.slice(-count).map((message) => message.id),
-      ),
-    ]),
-  );
 
   return (
     // 走查新一轮 R12：和姊妹 confirm/text-edit/forward dialog 同款
