@@ -572,6 +572,14 @@ export function ChatMessageList({
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
     readDetailedTimestampModeEnabled(),
   );
+  // 走查 R78：messages.map 内每条命中 showTimestamp 的消息都 inline arrow
+  // `() => setDetailedTimestampMode((c) => !c)` 给 MessageTimestampDivider
+  // 的 onToggle —— 长聊 200+ 消息里通常会跨多个时间戳分割，每次 typing
+  // tick / socket / state 任一 re-render 都重新分配 N 个相同语义的闭包
+  // 引用 + 阻挡未来 React.memo 优化生效。useCallback 一次性稳定下来。
+  const handleToggleDetailedTimestampMode = useCallback(() => {
+    setDetailedTimestampMode((current) => !current);
+  }, []);
   const resolveAttachmentUrl = useCallback(
     (url: string) => resolveRuntimeAttachmentUrl(url, baseUrl),
     [baseUrl],
@@ -3741,9 +3749,7 @@ export function ChatMessageList({
                   isDesktop={isDesktop}
                   label={timestampLabel}
                   detailedTimestampMode={detailedTimestampMode}
-                  onToggle={() =>
-                    setDetailedTimestampMode((current) => !current)
-                  }
+                  onToggle={handleToggleDetailedTimestampMode}
                 />
               ) : null}
               {sharedHistorySummary && !isRecalled && !isServerSideRecalled ? (
@@ -3793,7 +3799,7 @@ export function ChatMessageList({
                 isDesktop={isDesktop}
                 label={timestampLabel}
                 detailedTimestampMode={detailedTimestampMode}
-                onToggle={() => setDetailedTimestampMode((current) => !current)}
+                onToggle={handleToggleDetailedTimestampMode}
               />
             ) : null}
             <div
