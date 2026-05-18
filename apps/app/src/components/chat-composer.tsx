@@ -1963,8 +1963,23 @@ export function ChatComposer({
       file.type.startsWith("image/"),
     );
 
+    // R15：和 handleImageSelection (line 1849) 同款问题——所有 image 粘贴 / 拖入
+    // 路径在 imageFiles.length > MAX_ALBUM_IMAGE_COUNT (10) 时一律静默 slice(0, 10)，
+    // 用户复制 12 张以为全发了、发完才发现只到了 10 张。给一个明确截断 notice。
+    const truncatedImageCount = Math.max(
+      0,
+      imageFiles.length - MAX_ALBUM_IMAGE_COUNT,
+    );
+
     if (imageFiles.length === pastedFiles.length) {
       await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      if (truncatedImageCount > 0) {
+        setAttachmentError(
+          t(
+            msg`一次最多发送 ${MAX_ALBUM_IMAGE_COUNT} 张图片，已为您保留前 ${MAX_ALBUM_IMAGE_COUNT} 张。`,
+          ),
+        );
+      }
       return;
     }
 
@@ -1980,9 +1995,13 @@ export function ChatComposer({
       const skippedNonImageCount = pastedFiles.length - imageFiles.length;
       await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
       setAttachmentError(
-        t(
-          msg`粘贴里包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独粘贴一次。`,
-        ),
+        truncatedImageCount > 0
+          ? t(
+              msg`粘贴里包含 ${skippedNonImageCount} 个非图片文件、${truncatedImageCount} 张超额图片，已只放入前 ${MAX_ALBUM_IMAGE_COUNT} 张图片。`,
+            )
+          : t(
+              msg`粘贴里包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独粘贴一次。`,
+            ),
       );
       return;
     }
@@ -2065,8 +2084,21 @@ export function ChatComposer({
     const imageFiles = droppedFiles.filter((file) =>
       file.type.startsWith("image/"),
     );
+    // R15：handleDesktopPaste 同款——拖入超过 MAX_ALBUM_IMAGE_COUNT 张图也要给截断 notice。
+    const truncatedImageCount = Math.max(
+      0,
+      imageFiles.length - MAX_ALBUM_IMAGE_COUNT,
+    );
+
     if (imageFiles.length === droppedFiles.length) {
       await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      if (truncatedImageCount > 0) {
+        setAttachmentError(
+          t(
+            msg`一次最多发送 ${MAX_ALBUM_IMAGE_COUNT} 张图片，已为您保留前 ${MAX_ALBUM_IMAGE_COUNT} 张。`,
+          ),
+        );
+      }
       return;
     }
 
@@ -2077,9 +2109,13 @@ export function ChatComposer({
       const skippedNonImageCount = droppedFiles.length - imageFiles.length;
       await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
       setAttachmentError(
-        t(
-          msg`这次拖入包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独拖一次。`,
-        ),
+        truncatedImageCount > 0
+          ? t(
+              msg`这次拖入包含 ${skippedNonImageCount} 个非图片文件、${truncatedImageCount} 张超额图片，已只放入前 ${MAX_ALBUM_IMAGE_COUNT} 张图片。`,
+            )
+          : t(
+              msg`这次拖入包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独拖一次。`,
+            ),
       );
       return;
     }
