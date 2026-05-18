@@ -73,12 +73,29 @@ export function HomePage() {
       }
     >
       <div className="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">
-        <span>
-          <Trans>共 {total} 个词条</Trans>
-        </span>
-        <span className="opacity-50">·</span>
-        <span>
-          <Trans>点击进入查看 / 编辑 / 历史 / 讨论</Trans>
+        {/* 加载阶段 total=0 → fetch 完跳 273，"共 X 个词条" 宽度从 6 字
+            变 8 字，把右边 "·" + 点击提示一起往右推 16px，单次 CLS 0.066
+            （Web Vitals 把整页 CLS 顶到 0.084 — Good 但临界）。等数据落定
+            再渲染计数；同时给整行 min-h，避免上方 description ↔ 卡片 grid
+            之间出现 20px 高度差导致下方 footer/content 二次跳动。 */}
+        <span className="inline-flex min-h-5 items-center gap-2">
+          {charactersQ.data ? (
+            <>
+              <span>
+                <Trans>共 {total} 个词条</Trans>
+              </span>
+              <span className="opacity-50">·</span>
+              <span>
+                <Trans>点击进入查看 / 编辑 / 历史 / 讨论</Trans>
+              </span>
+            </>
+          ) : (
+            // 用 t(msg) 而不是 <Trans>：<Trans> 的新 message 没在
+            // packages/i18n/catalogs/wiki/*.po 里抽取过，会在 console 抛
+            // "Uncompiled message detected"；t(msg) 走 translateRuntimeMessage，
+            // 没翻译就回落原文，无运行时警告。
+            t(msg`正在加载词条…`)
+          )}
         </span>
       </div>
 
@@ -117,13 +134,16 @@ export function HomePage() {
                   <Avatar name={c.name} url={c.avatar ?? undefined} />
                   <div className="min-w-0 flex-1">
                     {/* truncate 后用户看不到完整名字，加 title 走原生 tooltip 兜底。
-                        最长见过 80x'x' 的测试角色，不加 title 完全没法辨识。 */}
-                    <div
+                        最长见过 80x'x' 的测试角色，不加 title 完全没法辨识。
+                        语义上用 h2：PageShell 给整页 h1，每张卡是 wiki 词条，
+                        screen reader 用户能用 H 键逐张跳。className 把 h2 浏览器
+                        默认 size/margin 全压回 text-base，视觉不变。 */}
+                    <h2
                       title={c.name}
-                      className="truncate text-base font-semibold text-[color:var(--text-primary)] group-hover:underline"
+                      className="m-0 truncate text-base font-semibold text-[color:var(--text-primary)] group-hover:underline"
                     >
                       {c.name}
-                    </div>
+                    </h2>
                     {(() => {
                       // 个别测试 / 历史角色 relationship 为空（API 不会过滤），
                       // 直接拼会渲染出 " · friend" 的前导分隔符。两端都给走判断。
@@ -173,9 +193,20 @@ export function HomePage() {
                     )}
                   </div>
                 )}
-                <p className="line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                  {c.bio || t(msg`（暂无简介）`)}
-                </p>
+                {/* 96/273 张卡片 bio 为空，原本用同样字色/字重渲染 "(暂无简介)"
+                    导致快速浏览时眼睛要在 35% 占位文案上停顿。空 bio 给斜体
+                    扫视时大脑能直接跳过；颜色仍用 text-secondary 保证 14px 字
+                    在 white card 上对比度 >= WCAG AA 4.5（用 text-muted+
+                    opacity-70 会跌到 2.97 不合规）。 */}
+                {c.bio ? (
+                  <p className="line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                    {c.bio}
+                  </p>
+                ) : (
+                  <p className="line-clamp-3 text-sm italic leading-6 text-[color:var(--text-secondary)]">
+                    {t(msg`（暂无简介）`)}
+                  </p>
+                )}
               </Link>
             </li>
           ))}

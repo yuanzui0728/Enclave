@@ -275,6 +275,9 @@ export function RootLayout() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={t(msg`搜索角色词条…（回车）`)}
+                // aria-label：placeholder 在 screen reader 里不可靠（部分浏览器
+                // 焦点后就吃掉只读"edit"），加显式 aria-label 给屏读用户。
+                aria-label={t(msg`搜索角色词条`)}
                 className="h-10 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] pl-9 pr-3 text-sm shadow-[var(--shadow-soft)] outline-none focus:border-[color:var(--brand-primary)]"
               />
             </div>
@@ -367,6 +370,7 @@ export function RootLayout() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={t(msg`搜索词条…`)}
+                aria-label={t(msg`搜索角色词条`)}
                 className="h-10 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] pl-9 pr-3 text-sm shadow-[var(--shadow-soft)] outline-none focus:border-[color:var(--brand-primary)]"
               />
             </div>
