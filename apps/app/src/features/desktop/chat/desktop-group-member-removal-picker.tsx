@@ -108,6 +108,12 @@ export function DesktopGroupMemberRemovalPicker({
   // 走查桌面端群聊 R4：和 desktop-group-member-picker 对齐，补 Escape 关闭。
   // stopPropagation 避免冒泡触发外层 workspace dismissSidePanel 把背后
   //「聊天信息」侧栏一并关掉。
+  //
+  // 走查电脑端群聊 R11：和姊妹 desktop-group-member-picker R11 同款 perf——父
+  // GroupChatDetailsPanel inline `onClose={() => setMemberPickerOpen(false)}`，
+  // 每父 re-render 都换新引用拆装一次 listener。ref 镜像、deps 收紧。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) {
       return;
@@ -125,11 +131,11 @@ export function DesktopGroupMemberRemovalPicker({
       if (pending) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   if (!open) {
     return null;

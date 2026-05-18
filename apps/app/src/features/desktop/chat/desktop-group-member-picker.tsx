@@ -138,6 +138,20 @@ export function DesktopGroupMemberPicker({
   // 对齐口径，补 Escape 关闭。原版只有 X / 背板点击能关。pending 时不关，
   // stopPropagation 避免冒泡到外层 workspace 的 dismissSidePanel 把背后的
   //「聊天信息」侧栏一并关掉。
+  //
+  // 走查电脑端群聊 R11：和姊妹电脑端单聊 R11（commit 7f2669731 — 5 个 dialog
+  // 的 onClose 每帧拆装）/ 移动端 R3 (c422bc945) 同款 perf。原版 deps=[onClose,
+  // open, pending] 但父 GroupChatDetailsPanel 在 chat-details-panel.tsx 用
+  // `onClose={() => setMemberPickerOpen(false)}` inline arrow 传 —— details
+  // 面板挂 5 份 query 15s polling（character/friends/friend-requests/conversations/
+  // blocked）+ 父 workspace 60s conversations 轮询 + window focus refetch +
+  // chat-message-list 父帧 typing tick / socket 推消息 / message cache 变化 +
+  // pending 期间 isPending false→true→false，每个 parent re-render 都让 onClose
+  // 换新引用 → 拆 removeEventListener + addEventListener 一次。dialog 显示
+  // 期间至少跑 3-5 份 background polling，连续多分钟可见的耗时。
+  // ref 镜像 onClose，deps 收紧到 [open, pending]。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) {
       return;
@@ -155,11 +169,11 @@ export function DesktopGroupMemberPicker({
       if (pending) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   if (!open) {
     return null;

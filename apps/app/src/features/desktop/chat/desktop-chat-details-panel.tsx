@@ -2461,6 +2461,13 @@ function DesktopGroupMemberBrowserDialog({
   // 都支持 Escape，独这个 dialog 漏掉。补 ESC 与现有 X 等价，pending 时禁用。
   // stopPropagation 避免冒泡触发外层 desktop-chat-workspace 的 dismissSidePanel
   // 把背后的"聊天信息"侧栏一起关掉。
+  //
+  // 走查电脑端群聊 R11：和姊妹 desktop-group-member-picker / removal-picker R11
+  // 同款 perf——父 GroupChatDetailsPanel inline `onClose={() => {
+  // setMemberBrowserOpen(false); setMemberBrowserAutoFocusSearch(false); }}`，
+  // 每父 re-render 都换新引用拆装一次 listener。ref 镜像、deps 收紧。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) {
       return;
@@ -2478,11 +2485,11 @@ function DesktopGroupMemberBrowserDialog({
       if (pending) {
         return;
       }
-      onClose();
+      onCloseRef.current();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 走查桌面端群聊 R1：原版 3 路 useMemo 各自跑一遍 members.filter，3 倍 O(N)
   // 比较。N 通常 5-30 但 dialog 一打开各种 dep 变化（searchTerm / activeFilter
