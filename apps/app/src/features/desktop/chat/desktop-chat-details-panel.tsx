@@ -737,30 +737,38 @@ function DirectChatDetailsPanel({
           {notice}
         </InlineNotice>
       ) : null}
+      {/* R45：单聊详情侧栏 13 个 query / mutation ErrorBlock 全部裸 <div>，没
+          role / aria-live。和姊妹 R8 视频号 desktop workspace 同款修复 —— 失败
+          路径 SR 完全静默：用户点 pin / mute / clear / hide / report / block
+          按钮、server 返 4xx/5xx，盲人用户只能反复点同一个按钮（toggle 视觉
+          没翻，他们以为没点中）。挂 role="alert" 让 SR 立刻播报。 */}
       {characterQuery.isError && characterQuery.error instanceof Error ? (
-        <ErrorBlock message={characterQuery.error.message} />
+        <ErrorBlock role="alert" message={characterQuery.error.message} />
       ) : null}
       {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-        <ErrorBlock message={friendsQuery.error.message} />
+        <ErrorBlock role="alert" message={friendsQuery.error.message} />
       ) : null}
       {friendRequestsQuery.isError &&
       friendRequestsQuery.error instanceof Error ? (
-        <ErrorBlock message={friendRequestsQuery.error.message} />
+        <ErrorBlock role="alert" message={friendRequestsQuery.error.message} />
       ) : null}
       {conversationsQuery.isError &&
       conversationsQuery.error instanceof Error ? (
-        <ErrorBlock message={conversationsQuery.error.message} />
+        <ErrorBlock role="alert" message={conversationsQuery.error.message} />
       ) : null}
       {blockedQuery.isError && blockedQuery.error instanceof Error ? (
-        <ErrorBlock message={blockedQuery.error.message} />
+        <ErrorBlock role="alert" message={blockedQuery.error.message} />
       ) : null}
       {setStarredMutation.isError &&
       setStarredMutation.error instanceof Error ? (
-        <ErrorBlock message={setStarredMutation.error.message} />
+        <ErrorBlock role="alert" message={setStarredMutation.error.message} />
       ) : null}
       {updateProfileMutation.isError &&
       updateProfileMutation.error instanceof Error ? (
-        <ErrorBlock message={updateProfileMutation.error.message} />
+        <ErrorBlock
+          role="alert"
+          message={updateProfileMutation.error.message}
+        />
       ) : null}
       {/* 走查新一轮 R1：pin / mute / clear / hide / report / block 6 个 mutation
           都只挂了 onSuccess，错误路径完全静默 — server 返 4xx/5xx 时用户在 UI
@@ -768,22 +776,22 @@ function DirectChatDetailsPanel({
           props 没翻，按钮视觉上没变化，用户以为没点中）。和姊妹 setStarred /
           updateProfile 同款，把 isError 接入 ErrorBlock 列表。 */}
       {pinMutation.isError && pinMutation.error instanceof Error ? (
-        <ErrorBlock message={pinMutation.error.message} />
+        <ErrorBlock role="alert" message={pinMutation.error.message} />
       ) : null}
       {muteMutation.isError && muteMutation.error instanceof Error ? (
-        <ErrorBlock message={muteMutation.error.message} />
+        <ErrorBlock role="alert" message={muteMutation.error.message} />
       ) : null}
       {clearMutation.isError && clearMutation.error instanceof Error ? (
-        <ErrorBlock message={clearMutation.error.message} />
+        <ErrorBlock role="alert" message={clearMutation.error.message} />
       ) : null}
       {hideMutation.isError && hideMutation.error instanceof Error ? (
-        <ErrorBlock message={hideMutation.error.message} />
+        <ErrorBlock role="alert" message={hideMutation.error.message} />
       ) : null}
       {reportMutation.isError && reportMutation.error instanceof Error ? (
-        <ErrorBlock message={reportMutation.error.message} />
+        <ErrorBlock role="alert" message={reportMutation.error.message} />
       ) : null}
       {blockMutation.isError && blockMutation.error instanceof Error ? (
-        <ErrorBlock message={blockMutation.error.message} />
+        <ErrorBlock role="alert" message={blockMutation.error.message} />
       ) : null}
 
       <DesktopContactProfileHeader
@@ -1916,26 +1924,34 @@ function GroupChatDetailsPanel({
           </InlineNotice>
         </div>
       ) : null}
+      {/* R45 续：群聊详情侧栏 10 个 query / mutation ErrorBlock 同款裸 <div>，
+          没 role / aria-live；server 返错时 SR 用户感知不到。挂 role="alert"。 */}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={groupQuery.error.message} />
+          <ErrorBlock role="alert" message={groupQuery.error.message} />
         </div>
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={membersQuery.error.message} />
+          <ErrorBlock role="alert" message={membersQuery.error.message} />
         </div>
       ) : null}
       {addMembersMutation.isError &&
       addMembersMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={addMembersMutation.error.message} />
+          <ErrorBlock
+            role="alert"
+            message={addMembersMutation.error.message}
+          />
         </div>
       ) : null}
       {removeMembersMutation.isError &&
       removeMembersMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={removeMembersMutation.error.message} />
+          <ErrorBlock
+            role="alert"
+            message={removeMembersMutation.error.message}
+          />
         </div>
       ) : null}
 
@@ -2081,34 +2097,43 @@ function GroupChatDetailsPanel({
       {updateGroupMutation.isError &&
       updateGroupMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={updateGroupMutation.error.message} />
+          <ErrorBlock
+            role="alert"
+            message={updateGroupMutation.error.message}
+          />
         </div>
       ) : null}
       {pinMutation.isError && pinMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={pinMutation.error.message} />
+          <ErrorBlock role="alert" message={pinMutation.error.message} />
         </div>
       ) : null}
       {preferencesMutation.isError &&
       preferencesMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={preferencesMutation.error.message} />
+          <ErrorBlock
+            role="alert"
+            message={preferencesMutation.error.message}
+          />
         </div>
       ) : null}
       {updateNicknameMutation.isError &&
       updateNicknameMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={updateNicknameMutation.error.message} />
+          <ErrorBlock
+            role="alert"
+            message={updateNicknameMutation.error.message}
+          />
         </div>
       ) : null}
       {clearMutation.isError && clearMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={clearMutation.error.message} />
+          <ErrorBlock role="alert" message={clearMutation.error.message} />
         </div>
       ) : null}
       {leaveMutation.isError && leaveMutation.error instanceof Error ? (
         <div className="px-3">
-          <ErrorBlock message={leaveMutation.error.message} />
+          <ErrorBlock role="alert" message={leaveMutation.error.message} />
         </div>
       ) : null}
 
