@@ -47,22 +47,28 @@ export function DesktopChatTextEditDialog({
   // initialValue 跟着换引用 / 字符串值。极端时序：用户开「群聊名称」编辑，
   // 刚打"新群名 v2"还没确认，后台 groupQuery 拉到一份 canonical group.name
   // → parent 重传 initialValue=group.name → 本 effect 跑 setDraft(group.name)
-  // → 用户的草稿被清掉。改成只在 open 由 false→true 转 true 时 seed 一次
-  // draft，open 期间忽略 initialValue 变化；close 时 ref 回 false，下次开
-  // editor 时重新 seed。
-  const seededForCurrentOpenRef = useRef(false);
+  // → 用户的草稿被清掉。
+  //
+  // 改成"用户改过没"作 gate：用户敲过键盘后 hasUserEditedRef=true，后续
+  // initialValue 变化跳过 setDraft；用户没碰过时 initialValue 变化允许 sync
+  // （兜底 panel 打开瞬间数据还没回来 initialValue=""，等 600ms RTT 拉到
+  // "Andy" 时仍能填上）。close 时 ref 回 false，下次重开重新 seed。
+  const hasUserEditedRef = useRef(false);
   useEffect(() => {
     if (!open) {
-      seededForCurrentOpenRef.current = false;
+      hasUserEditedRef.current = false;
       return;
     }
 
-    if (seededForCurrentOpenRef.current) {
+    if (hasUserEditedRef.current) {
       return;
     }
-    seededForCurrentOpenRef.current = true;
     setDraft(initialValue);
   }, [initialValue, open]);
+  const handleDraftChange = (value: string) => {
+    hasUserEditedRef.current = true;
+    setDraft(value);
+  };
 
   useEffect(() => {
     if (!open) {
@@ -193,7 +199,7 @@ export function DesktopChatTextEditDialog({
             <TextAreaField
               autoFocus
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => handleDraftChange(event.target.value)}
               placeholder={placeholder}
               rows={6}
               disabled={pending}
@@ -203,7 +209,7 @@ export function DesktopChatTextEditDialog({
             <TextField
               autoFocus
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => handleDraftChange(event.target.value)}
               placeholder={placeholder}
               disabled={pending}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
