@@ -1455,9 +1455,29 @@ export function ChannelsPage() {
     // routeSelectedPostId 也变 null → scroll-to-route 永远跑不到。
     // 对齐桌面 effect（line 1204）把 "URL 没 section" 视同 "recommended"。
     const urlSection = routeState.section ?? "recommended";
-    const sectionMatches = urlSection === activeSection;
+    // 走查 2026-05-18 新一轮 R5：原来这条只把 sectionMatches 用作"是否带 postId"，
+    // 不管 urlSection !== activeSection 仍照走 navigate({section: activeSection})——
+    // 跟 desktop 同名 effect 早就有的「state 还没追平 URL 就 return」保护漏了。
+    // 实测复现：用户从 #section=friends 通过任何方式（深链 / 应用内 push）切到
+    // #section=recommended 那一帧：
+    //   render-1: activeSection="friends"（旧 state）, URL "section=recommended"
+    //     - section sync effect 排队 setActiveSection("recommended")
+    //     - 本 effect 用 stale "friends" build nextHash → "section=friends" → navigate 把
+    //       URL 写回 "friends"（把用户的"切到 recommended"操作覆盖掉）
+    //   render-2: activeSection="recommended"（刚 set 完）, URL "section=friends"
+    //     - section sync effect setActiveSection("friends")
+    //     - 本 effect build nextHash → "section=recommended" → navigate 把 URL 写回 "recommended"
+    // → 两条 effect 像乒乓球一样把 state / URL 反复弹来弹去，React 检测到 setState
+    //   在 commitHookEffectListMount 里超过最大深度 → "Maximum update depth exceeded"
+    //   → 整段 MobileChannelsViewport 被 error boundary 接住销毁，视频号页崩了。
+    // 对齐 desktop effect（line 1398-1400）：state 还没追平 URL（urlSection !==
+    // activeSection）时直接 return，让 section sync effect 先把 state 同步过去；
+    // 等下一帧 activeSection === urlSection 时本 effect 才会跑 build/navigate。
+    if (urlSection !== activeSection) {
+      return;
+    }
     const nextHash = buildDesktopChannelsRouteHash({
-      postId: sectionMatches ? routeSelectedPostId : undefined,
+      postId: routeSelectedPostId,
       returnPath: safeReturnPath,
       returnHash: safeReturnHash,
       section: activeSection,
