@@ -100,6 +100,21 @@ export function useConversationThread(conversationId: string) {
   const lastMarkedReadNewestIdRef = useRef<string | null>(null);
   // 同帧双击同一条 failed 消息的「重试」按钮锁，详见 retryMessage 内注释。
   const retryingMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查 R2：loadAnchorWindow 是 async fetch，公网隧道 RTT 数百 ms。
+  // ConversationThreadPanel 用 `key={conversationId}` 重 mount，用户切会话期间
+  // hook unmount —— 但 in-flight getConversationMessages 仍跑到 resolve 才执行
+  // setMessages / setLoadingAnchorWindow。React 18 dev 控制台弹 "Can't perform
+  // a state update on an unmounted component"，prod 静默丢 setState 但污染
+  // telemetry。挂个 mountedRef，在 finally / setter 前 gate；同时给老 in-flight
+  // 的 fetch 不必 abort（react-query 内置 cancel 给 useQuery 用，本路径直接
+  // 调底层 fetch helper，没有 abort 入口，让它结束自然丢结果即可）。
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const messagesQuery = useQuery({
     queryKey: [
@@ -552,6 +567,24 @@ export function useConversationThread(conversationId: string) {
 
       setSocketError(null);
 
+      // 走查 R2：onMutate 把 optimistic 写进 app-conversations.lastMessage
+      // (syncActiveConversationMessage)，原版 onError 只翻 messages state 里
+      // 那条的 localStatus=failed，conversations 缓存里 lastMessage 留在
+      // optimistic 上。后果：用户在 socket 离线 / 网络抖动 / fail-fast 抛错
+      // 时点了发送 → composer 看到红色「发送失败」，但返回 /tabs/chat 看到
+      // 会话最后一条预览还是那段失败的文字，到下一条真实消息回声 / 60s 定时
+      // refetch 才会替换。等于在 chat-list 里挂着"幽灵消息"。
+      // 修法：snapshot 当前 conversation 的 lastMessage / lastActivityAt /
+      // updatedAt，挂在 mutation context 里；onError 用 snapshot 还原；onSuccess
+      // 路径走 socket echo 自然替换，不动 snapshot。
+      let previousConversationSnapshot:
+        | {
+            lastMessage: ConversationListItem["lastMessage"];
+            lastActivityAt: ConversationListItem["lastActivityAt"];
+            updatedAt: ConversationListItem["updatedAt"];
+          }
+        | null = null;
+
       let messageId: string | undefined;
       if (input.retryMessageId) {
         messageId = input.retryMessageId;
@@ -575,6 +608,19 @@ export function useConversationThread(conversationId: string) {
         // thread 立刻显示之外，会话列表的 lastMessage 预览也要立刻同步——
         // 等 socket echo（公网隧道一来回数百 ms）的话会有可见的"列表/聊天页
         // 对不上"窗口。echo 到了 onChatMessage 里会再 sync 一次替成真消息。
+        const conversationsCache = queryClient.getQueryData<
+          ConversationListItem[]
+        >(["app-conversations", baseUrl]);
+        const previousEntry = conversationsCache?.find(
+          (item) => item.id === conversationId,
+        );
+        if (previousEntry) {
+          previousConversationSnapshot = {
+            lastMessage: previousEntry.lastMessage,
+            lastActivityAt: previousEntry.lastActivityAt,
+            updatedAt: previousEntry.updatedAt,
+          };
+        }
         syncActiveConversationMessage(optimistic);
       }
 
@@ -597,7 +643,7 @@ export function useConversationThread(conversationId: string) {
         setText("");
       }
 
-      return { messageId };
+      return { messageId, previousConversationSnapshot };
     },
     mutationFn: async (input: {
       payload: SendMessagePayload;
@@ -619,11 +665,32 @@ export function useConversationThread(conversationId: string) {
     },
     onError: (_err, _variables, context) => {
       const messageId = context?.messageId;
-      if (!messageId) return;
-      setMessages((current) =>
-        markThreadMessagesFailed(current, [messageId]),
-      );
-      updatePendingDirectMessageStatus(conversationId, [messageId], "failed");
+      if (messageId) {
+        setMessages((current) =>
+          markThreadMessagesFailed(current, [messageId]),
+        );
+        updatePendingDirectMessageStatus(conversationId, [messageId], "failed");
+      }
+      // 走查 R2：把 onMutate snapshot 的 lastMessage / lastActivityAt /
+      // updatedAt 还原回 conversations cache，避免 chat-list 行预览长期挂着
+      // 失败的文本直到下一条真消息或 60s refetch。retry 路径 snapshot 为 null
+      // —— 该条消息原本已是 lastMessage（之前 send 失败留下的），retry 失败时
+      // 维持现状即可，不需要恢复到更早的状态。
+      if (context?.previousConversationSnapshot) {
+        const snapshot = context.previousConversationSnapshot;
+        syncConversationListCache((current) =>
+          current.map((item) =>
+            item.id === conversationId
+              ? {
+                  ...item,
+                  lastMessage: snapshot.lastMessage,
+                  lastActivityAt: snapshot.lastActivityAt,
+                  updatedAt: snapshot.updatedAt,
+                }
+              : item,
+          ),
+        );
+      }
     },
   });
 
@@ -928,6 +995,10 @@ export function useConversationThread(conversationId: string) {
             after: 24,
           },
         );
+        // hook 已经 unmount（用户在 fetch 期间切会话）：丢掉结果，别打到死组件上。
+        if (!mountedRef.current) {
+          return false;
+        }
         if (!windowMessages.length) {
           return false;
         }
@@ -942,7 +1013,9 @@ export function useConversationThread(conversationId: string) {
       } catch {
         return false;
       } finally {
-        setLoadingAnchorWindow(false);
+        if (mountedRef.current) {
+          setLoadingAnchorWindow(false);
+        }
       }
     },
     [baseUrl, conversationId, loadingAnchorWindow, suppressNextPendingCount],

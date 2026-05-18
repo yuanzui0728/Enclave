@@ -24,7 +24,11 @@ export function MobileChatScrollBottomButton({
       className="flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white/96 px-3 pl-2.5 text-[12px] text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.12)] backdrop-blur active:bg-[color:var(--surface-card-hover)]"
       aria-label={
         pendingCount > 0
-          ? t(msg`查看 ${pendingCount} 条新消息`)
+          ? // 走查 R2：原版 aria-label 用裸 pendingCount，pendingCount=250 时屏幕
+            // 阅读器念「查看 250 条新消息」，但视觉上 badge 走 badgeLabel cap 成
+            // "99+"——VoiceOver / TalkBack 用户听到的数字和看见的不一致。统一用
+            // badgeLabel cap 后的值。
+            t(msg`查看 ${badgeLabel ?? pendingCount} 条新消息`)
           : t(msg`回到底部`)
       }
     >

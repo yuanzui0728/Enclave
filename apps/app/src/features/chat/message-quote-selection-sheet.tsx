@@ -27,13 +27,22 @@ export function MessageQuoteSelectionSheet({
   const [selectedText, setSelectedText] = useState("");
   const isDesktop = variant === "desktop";
   const titleId = useId();
+  // 走查 R2：「引用所选文字」按钮 onClick 只看 React state selectedText 兜
+  // 双触发，sheet 关闭由父组件 setQuoteSelectionMessage(null) 走 state 更新，
+  // 必须等 React commit 才让 sheet 卸载。同帧 <16ms 双击：第二次 click 时
+  // sheet 还在 DOM、selectedText 还非空 → onConfirm 调用 2 次 → handleReply
+  // 飞两次 → setActionNotice("已带入所选文字") 闪两次（虽然内容相同视觉看不
+  // 出来）、analytics 双埋点。同 mount sync ref，open 切换时复位。
+  const confirmingRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
       setSelectedText("");
+      confirmingRef.current = false;
       return;
     }
 
+    confirmingRef.current = false;
     const timer = window.setTimeout(() => {
       textareaRef.current?.focus();
     }, 40);
@@ -212,9 +221,10 @@ export function MessageQuoteSelectionSheet({
           <Button
             type="button"
             onClick={() => {
-              if (selectedText) {
-                onConfirm(selectedText);
-              }
+              if (confirmingRef.current) return;
+              if (!selectedText) return;
+              confirmingRef.current = true;
+              onConfirm(selectedText);
             }}
             disabled={!selectedText}
             className={

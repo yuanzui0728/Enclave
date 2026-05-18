@@ -200,46 +200,61 @@ export function useMessageReminders() {
           baseUrl,
         ),
       ),
-    ).then((results) => {
-      const migratedRecords: MessageReminderRecord[] = [];
-      const failedMessageIds = new Set<string>();
+    ).then(
+      (results) => {
+        // 走查 R2：原版 migrationInFlight = false 是 .then 回调里最后一行，期间
+        // 任一同步操作（queryClient.setQueryData 内部 selector / localStorage
+        // 写入 replaceLocalChatMessageReminders → QuotaExceededError / Safari
+        // ITP 私密模式 storage 不可用）throw 都会让 reset 步骤跳过 → 模块级标
+        // 志卡死 true，整页会话期再也跑不了本地 reminder → server 的迁移。
+        // 用 try/finally 兜住整个 success path 内的 throw，让 flag 一定释放。
+        try {
+          const migratedRecords: MessageReminderRecord[] = [];
+          const failedMessageIds = new Set<string>();
 
-      results.forEach((result, index) => {
-        const reminder = pendingMigrationReminders[index];
-        if (result.status === "fulfilled") {
-          migratedRecords.push(result.value);
-          return;
-        }
-
-        failedMessageIds.add(reminder.messageId);
-      });
-
-      queryClient.setQueryData<MessageReminderRecord[]>(
-        ["app-message-reminders", baseUrl],
-        (current = []) => {
-          const next = [...current];
-          migratedRecords.forEach((record) => {
-            const existingIndex = next.findIndex(
-              (item) => item.sourceId === record.sourceId,
-            );
-            if (existingIndex >= 0) {
-              next[existingIndex] = record;
+          results.forEach((result, index) => {
+            const reminder = pendingMigrationReminders[index];
+            if (result.status === "fulfilled") {
+              migratedRecords.push(result.value);
               return;
             }
 
-            next.unshift(record);
+            failedMessageIds.add(reminder.messageId);
           });
-          return next;
-        },
-      );
 
-      replaceLocalChatMessageReminders(
-        remainingLocalReminders.filter((reminder) =>
-          failedMessageIds.has(reminder.messageId),
-        ),
-      );
-      migrationInFlight = false;
-    });
+          queryClient.setQueryData<MessageReminderRecord[]>(
+            ["app-message-reminders", baseUrl],
+            (current = []) => {
+              const next = [...current];
+              migratedRecords.forEach((record) => {
+                const existingIndex = next.findIndex(
+                  (item) => item.sourceId === record.sourceId,
+                );
+                if (existingIndex >= 0) {
+                  next[existingIndex] = record;
+                  return;
+                }
+
+                next.unshift(record);
+              });
+              return next;
+            },
+          );
+
+          replaceLocalChatMessageReminders(
+            remainingLocalReminders.filter((reminder) =>
+              failedMessageIds.has(reminder.messageId),
+            ),
+          );
+        } finally {
+          migrationInFlight = false;
+        }
+      },
+      () => {
+        // Promise.allSettled 本身不会 reject，但加一层兜底防回调以外的异常路径。
+        migrationInFlight = false;
+      },
+    );
   }, [
     baseUrl,
     localReminders,
