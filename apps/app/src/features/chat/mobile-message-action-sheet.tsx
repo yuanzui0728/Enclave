@@ -115,6 +115,24 @@ export function MobileMessageActionSheet({
     },
     [],
   );
+  // 走查 2026-05-18 移动端单聊 R8：上面 R4 给「action 按钮」补了 ghost-click
+  // 时间 guard，但 backdrop close button + 底部「取消」按钮的 onClick={onClose}
+  // 没走 guardAction —— 长按消息冒 sheet 的 ghost-click 落点若不在 action 槽位
+  // 而在 backdrop（用户长按的消息处于上半屏 → ghost-click 在屏中部 → 击中
+  // 「absolute inset-0」backdrop）或 Cancel（长按贴近屏底消息 → ghost-click
+  // 落到底部 Cancel）就会把刚弹起来的 sheet 直接关掉，用户得长按第二次才能
+  // 真正操作。R4 注释说"用户连点 cancel 是预期可重复行为"——但 ghost-click
+  // 不是用户连点，是 touchend 自动派发的合成 click。给关闭路径加 same 350ms
+  // 时间 guard：用户主动 Cancel/backdrop 的真实 tap（开 sheet 后 >350ms）照常
+  // 关；ghost-click 一律拦掉。
+  const guardClose = useCallback(() => {
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - openedAtRef.current < GHOST_CLICK_GUARD_MS) {
+      return;
+    }
+    onClose();
+  }, [onClose]);
 
   // 原生壳硬件 Back 键打开时优先关 sheet，不让 BACK 同时 history.back 把
   // 用户从聊天页带回 chat list。
@@ -161,7 +179,7 @@ export function MobileMessageActionSheet({
         type="button"
         className="absolute inset-0"
         aria-label={t(msg`关闭消息操作菜单`)}
-        onClick={onClose}
+        onClick={guardClose}
       />
       {/* 走查新一轮 R2：长按群消息冒出来的这个底部操作 sheet 没挂 role="dialog"
           + aria-modal + aria-labelledby——和 mobile-details-action-sheet R(re)1
@@ -259,7 +277,7 @@ export function MobileMessageActionSheet({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={guardClose}
           className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {t(msg`取消`)}
