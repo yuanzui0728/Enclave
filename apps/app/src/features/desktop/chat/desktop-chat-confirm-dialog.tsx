@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -30,6 +30,8 @@ export function DesktopChatConfirmDialog({
   const t = useRuntimeTranslator();
   const resolvedConfirmLabel = confirmLabel ?? t(msg`确认`);
   const resolvedPendingLabel = pendingLabel ?? t(msg`处理中...`);
+  const titleId = useId();
+  const descId = useId();
   // 走查新一轮 R4：确认按钮只靠 disabled={pending} 兜双触发，pending 是父组件
   // mutation.isPending 经 React commit 才更新 DOM。同帧连点「删除聊天 / 清空记录 /
   // 删除并退出 / 加入黑名单」按钮 2 次都能同时通过 disabled=false → parent
@@ -84,13 +86,32 @@ export function DesktopChatConfirmDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[520px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R2：和姊妹 feature-unavailable-dialog / mobile-message-reminder-sheet
+          等修过的 a11y 同款缺漏——modal 但没挂 role="dialog" + aria-modal +
+          aria-labelledby / aria-describedby。单聊「聊天信息」→「删除聊天 / 清空
+          聊天记录 / 加入黑名单 / 提交投诉」都会弹这个 dialog；workspace 右键
+          会话「删除聊天 / 清空记录 / 删除并退出」也走这个。盲人用户屏幕阅读器
+          打开时只听到 confirm / cancel button label，听不到 title / description。
+          补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative w-full max-w-[520px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {title}
             </div>
-            <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]">
+            <div
+              id={descId}
+              className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]"
+            >
               {description}
             </div>
           </div>

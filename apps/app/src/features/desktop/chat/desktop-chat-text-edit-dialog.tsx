@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { Button, TextAreaField, TextField } from "@yinjie/ui";
@@ -35,6 +35,8 @@ export function DesktopChatTextEditDialog({
 }: DesktopChatTextEditDialogProps) {
   const t = translateRuntimeMessage;
   const [draft, setDraft] = useState(initialValue);
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
     if (!open) {
@@ -113,7 +115,19 @@ export function DesktopChatTextEditDialog({
         className="absolute inset-0"
       />
 
+      {/* 走查 R2：和姊妹 feature-unavailable-dialog / mobile-message-reminder-sheet
+          等修过的 a11y 缺漏同款——这是个 modal（backdrop 关闭 / 屏幕居中 /
+          Esc 关），但 panel 既没挂 role="dialog" + aria-modal，也没挂
+          aria-labelledby / aria-describedby。单聊「聊天信息」改备注/标签时
+          会弹这个 dialog，盲人用户屏幕阅读器只听到「关闭提示 按钮」+ 输入框，
+          听不到 title 「设置备注」/ description「备注名会优先显示在聊天信息
+          和通讯录里」。补 dialog 语义；title/description 通过 useId 挂出
+          稳定 id，打开瞬间 SR 把两段都念出来。 */}
       <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
         className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
@@ -122,11 +136,17 @@ export function DesktopChatTextEditDialog({
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {title}
             </div>
             {description ? (
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id={descId}
+                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {description}
               </div>
             ) : null}
