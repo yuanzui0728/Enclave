@@ -900,8 +900,13 @@ function DriftBanner({
           {syncMut.isPending ? t(msg`同步中...`) : t(msg`纳入 wiki 历史`)}
         </Button>
       </div>
+      {/* "纳入 wiki 历史" mutation 失败时只是一段普通 <p>，SR 完全静默；
+          补 role=alert 让屏读把后端错误念出来。 */}
       {syncMut.isError && (
-        <p className="mt-2 text-xs text-[var(--state-danger-text)]">
+        <p
+          role="alert"
+          className="mt-2 text-xs text-[var(--state-danger-text)]"
+        >
           {(syncMut.error as Error).message}
         </p>
       )}

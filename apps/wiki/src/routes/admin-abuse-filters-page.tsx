@@ -470,7 +470,11 @@ function CreateFilterForm({
           </div>
         )}
       </FormRow>
-      {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+      {error && (
+        <InlineNotice tone="danger" role="alert">
+          {error}
+        </InlineNotice>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="primary"

@@ -335,20 +335,29 @@ function ChangePasswordPanel({
           />
         </FormRow>
 
+        {/* 三处密码校验提示 - mismatch / edge-whitespace - 都是用户键入触发
+            的实时反馈，需要 SR 念出来。role=alert 让"两次输入的新密码不一
+            致"主动播报，否则视障用户必须等 submit 按钮置灰才知道哪里错。
+            edge-whitespace 是 warning 而非 error，role=status 不打断阅读
+            但仍能播报。 */}
         {passwordMismatch && (
-          <InlineNotice tone="danger">
+          <InlineNotice tone="danger" role="alert">
             <Trans>两次输入的新密码不一致。</Trans>
           </InlineNotice>
         )}
         {passwordHasEdgeWhitespace && (
-          <InlineNotice tone="warning">
+          <InlineNotice tone="warning" role="status">
             <Trans>
               新密码包含开头或结尾的空白字符（来自粘贴/自动填充？）。下次登录时也必须带上，否则会登录失败 —— 请确认这是你想要的。
             </Trans>
           </InlineNotice>
         )}
         {info && <InlineNotice tone="info">{tReactive(info)}</InlineNotice>}
-        {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+        {error && (
+          <InlineNotice tone="danger" role="alert">
+            {error}
+          </InlineNotice>
+        )}
 
         <Button
           type="submit"
@@ -439,23 +448,28 @@ function ChangeUsernamePanel({
           />
         </FormRow>
 
+        {/* 用户名校验三档实时反馈，同款 role=alert 让 SR 即时通报。 */}
         {invalidChar && (
-          <InlineNotice tone="danger">
+          <InlineNotice tone="danger" role="alert">
             <Trans>用户名不能包含 @ 字符（保留给邮箱登录）。</Trans>
           </InlineNotice>
         )}
         {tooShort && (
-          <InlineNotice tone="danger">
+          <InlineNotice tone="danger" role="alert">
             <Trans>用户名至少 2 个字符。</Trans>
           </InlineNotice>
         )}
         {tooLong && (
-          <InlineNotice tone="danger">
+          <InlineNotice tone="danger" role="alert">
             <Trans>用户名不能超过 32 个字符。</Trans>
           </InlineNotice>
         )}
         {info && <InlineNotice tone="info">{tReactive(info)}</InlineNotice>}
-        {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+        {error && (
+          <InlineNotice tone="danger" role="alert">
+            {error}
+          </InlineNotice>
+        )}
 
         <Button
           type="submit"

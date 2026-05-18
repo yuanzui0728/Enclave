@@ -1038,7 +1038,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
           )}
           {aiError && (
             <div className="mb-3">
-              <InlineNotice tone="danger">{aiError}</InlineNotice>
+              <InlineNotice tone="danger" role="alert">{aiError}</InlineNotice>
             </div>
           )}
           {aiFlash && aiFlash.section === "all" && (
@@ -1637,16 +1637,22 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
               {/* 父组件插槽：世界角色 editSummary + isMinor */}
               {footerSlot}
 
+              {/* 保存表单时三类失败 InlineNotice — avatar 上传 / submit /
+                  AI 生成 —— 都是用户主动触发后的反馈，必须挂 role=alert 让
+                  SR 念出"头像上传失败/保存失败/AI 生成失败 + 原因"。
+                  savedFlash 走 role=status 因为是积极反馈，aiQuotaExhausted
+                  内部已有 role=alert（顶部一份）所以这里 silentAria 保持
+                  单播报。 */}
               {avatarError && (
-                <InlineNotice tone="danger">{avatarError}</InlineNotice>
+                <InlineNotice tone="danger" role="alert">{avatarError}</InlineNotice>
               )}
               {(submitErrorOverride || saveError) && (
-                <InlineNotice tone="danger">
+                <InlineNotice tone="danger" role="alert">
                   {submitErrorOverride ?? saveError}
                 </InlineNotice>
               )}
               {savedFlash && (
-                <InlineNotice tone="success">
+                <InlineNotice tone="success" role="status">
                   {savedFlashMessage ?? <Trans>已保存 ✓</Trans>}
                 </InlineNotice>
               )}
@@ -1659,7 +1665,9 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                   silentAria
                 />
               )}
-              {aiError && <InlineNotice tone="danger">{aiError}</InlineNotice>}
+              {aiError && (
+                <InlineNotice tone="danger" role="alert">{aiError}</InlineNotice>
+              )}
               {aiFlash && (
                 <InlineNotice tone="success">
                   {aiFlash.optimize ? (
@@ -2280,7 +2288,13 @@ function AvatarUploadField({
           </div>
         </div>
       </div>
-      {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+      {/* AvatarUploadField 自身的本地 error 状态（图片太大 / 类型不支持 /
+          上传失败），用户刚刚点了"上传图片"，需要 SR 即时反馈。 */}
+      {error && (
+        <InlineNotice tone="danger" role="alert">
+          {error}
+        </InlineNotice>
+      )}
     </div>
   );
 }

@@ -186,8 +186,10 @@ export function CreateCharacterPage() {
       )}
       actions={headerActions}
     >
+      {/* 创建世界角色失败时（命名冲突 / 校验失败 / 服务超时）需要 SR 主动
+          播报，否则用户长按提交后只看到一闪而过的红条。 */}
       {createMut.isError && (
-        <InlineNotice tone="danger" className="mb-3">
+        <InlineNotice tone="danger" role="alert" className="mb-3">
           {createMut.error instanceof WikiApiError
             ? createMut.error.message
             : (createMut.error as Error).message}

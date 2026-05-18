@@ -34,32 +34,32 @@ msgstr "사용자 지정"
 
 #: apps/wiki/src/components/character-edit-form.tsx:74
 #: apps/wiki/src/components/character-edit-form.tsx:1096
-#: apps/wiki/src/components/character-edit-form.tsx:1785
+#: apps/wiki/src/components/character-edit-form.tsx:1793
 msgid "基础信息"
 msgstr "기본 정보"
 
 #: apps/wiki/src/components/character-edit-form.tsx:75
 #: apps/wiki/src/components/character-edit-form.tsx:1238
-#: apps/wiki/src/components/character-edit-form.tsx:1789
+#: apps/wiki/src/components/character-edit-form.tsx:1797
 msgid "聊天回复"
 msgstr "채팅 응답"
 
 #: apps/wiki/src/components/character-edit-form.tsx:76
 #: apps/wiki/src/components/character-edit-form.tsx:1290
 #: apps/wiki/src/components/character-edit-form.tsx:1314
-#: apps/wiki/src/components/character-edit-form.tsx:1787
+#: apps/wiki/src/components/character-edit-form.tsx:1795
 msgid "底层逻辑"
 msgstr "코어 로직"
 
 #: apps/wiki/src/components/character-edit-form.tsx:77
 #: apps/wiki/src/components/character-edit-form.tsx:1360
-#: apps/wiki/src/components/character-edit-form.tsx:1791
+#: apps/wiki/src/components/character-edit-form.tsx:1799
 msgid "场景提示词"
 msgstr "시나리오 프롬프트"
 
 #: apps/wiki/src/components/character-edit-form.tsx:78
 #: apps/wiki/src/components/character-edit-form.tsx:1509
-#: apps/wiki/src/components/character-edit-form.tsx:1793
+#: apps/wiki/src/components/character-edit-form.tsx:1801
 msgid "记忆提示词"
 msgstr "메모리 프롬프트"
 
@@ -88,7 +88,7 @@ msgstr "로드 중…"
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
 #. placeholder {1}: aiFlash.count
 #: apps/wiki/src/components/character-edit-form.tsx:1049
-#: apps/wiki/src/components/character-edit-form.tsx:1667
+#: apps/wiki/src/components/character-edit-form.tsx:1675
 msgid "✨ 已优化「{0}」共 {1} 个字段"
 msgstr "✨ \"{0}\"에서 {1}개 필드를 최적화했습니다"
 
@@ -114,8 +114,8 @@ msgid "✨ AI 正在生成基础信息（含头像 emoji、专长领域），完
 msgstr "✨ AI 가 기본 정보(아바타 이모지, 전문 분야 포함)를 생성 중입니다. 완료될 때까지 이 섹션의 필드는 잠겨 있습니다."
 
 #: apps/wiki/src/components/character-edit-form.tsx:1122
-#: apps/wiki/src/components/character-edit-form.tsx:1948
-#: apps/wiki/src/components/character-edit-form.tsx:1991
+#: apps/wiki/src/components/character-edit-form.tsx:1956
+#: apps/wiki/src/components/character-edit-form.tsx:1999
 #: apps/wiki/src/components/conflict-resolver.tsx:10
 #: apps/wiki/src/components/snapshot-diff.tsx:16
 msgid "名称"
@@ -140,8 +140,8 @@ msgid "在角色卡片和列表里展示，不直接进 AI 提示词"
 msgstr "캐릭터 카드와 목록에 표시; AI 프롬프트에 직접 들어가지 않음"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1145
-#: apps/wiki/src/components/character-edit-form.tsx:1949
-#: apps/wiki/src/components/character-edit-form.tsx:1992
+#: apps/wiki/src/components/character-edit-form.tsx:1957
+#: apps/wiki/src/components/character-edit-form.tsx:2000
 #: apps/wiki/src/components/conflict-resolver.tsx:16
 #: apps/wiki/src/components/snapshot-diff.tsx:22
 msgid "关系描述"
@@ -196,8 +196,8 @@ msgid "编程, 音乐, 心理学"
 msgstr "프로그래밍, 음악, 심리학"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1205
-#: apps/wiki/src/components/character-edit-form.tsx:1950
-#: apps/wiki/src/components/character-edit-form.tsx:1993
+#: apps/wiki/src/components/character-edit-form.tsx:1958
+#: apps/wiki/src/components/character-edit-form.tsx:2001
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
 #: apps/wiki/src/routes/character-page.tsx:366
@@ -484,63 +484,63 @@ msgstr "친밀도는 \"초기값\"일 뿐입니다. 운영이 시작되면 캐�
 msgid "世界角色的社交参数由 admin 管理，wiki 评审通道不会写入这三个字段；这里展示的是当前默认值，无法通过本表单提交修改。"
 msgstr "월드 캐릭터의 소셜 매개변수는 admin 이 관리하며 wiki 검수 채널로는 이 세 필드가 기록되지 않습니다. 여기 표시되는 값은 현재 기본값이며, 본 폼을 통해 변경을 제출할 수 없습니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:1650
+#: apps/wiki/src/components/character-edit-form.tsx:1656
 msgid "已保存 ✓"
 msgstr "저장됨 ✓"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
-#: apps/wiki/src/components/character-edit-form.tsx:1672
+#: apps/wiki/src/components/character-edit-form.tsx:1680
 msgid "✨ AI 优化「{0}」未返回不同内容（已保留你的填写）"
 msgstr "✨ AI가 \"{0}\" 최적화에서 다른 내용을 반환하지 않아 입력을 그대로 유지했습니다"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
 #. placeholder {1}: aiFlash.count
-#: apps/wiki/src/components/character-edit-form.tsx:1678
+#: apps/wiki/src/components/character-edit-form.tsx:1686
 msgid "✨ 已为「{0}」补全 {1} 个字段"
 msgstr "✨ \"{0}\"에 {1}개 필드를 채웠습니다"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
-#: apps/wiki/src/components/character-edit-form.tsx:1683
+#: apps/wiki/src/components/character-edit-form.tsx:1691
 msgid "✨ 「{0}」没有空字段需要补全"
 msgstr "✨ \"{0}\"에는 채울 빈 필드가 없습니다"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1689
+#: apps/wiki/src/components/character-edit-form.tsx:1697
 msgid "· 已自动保存为草稿（可在「我的草稿」找回）"
 msgstr "· 초안으로 자동 저장되었습니다(\"내 초안\"에서 복원 가능)"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1719
+#: apps/wiki/src/components/character-edit-form.tsx:1727
 msgid "请填写「名称」才能保存"
 msgstr "\"이름\"을 입력해야 저장할 수 있습니다"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1795
+#: apps/wiki/src/components/character-edit-form.tsx:1803
 msgid "整个角色"
 msgstr "캐릭터 전체"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1837
+#: apps/wiki/src/components/character-edit-form.tsx:1845
 msgid "全部内容已填满"
 msgstr "모든 섹션이 입력 완료"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1839
+#: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "「{sectionLabel}」已填满"
 msgstr "\"{sectionLabel}\"이(가) 모두 입력됨"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1846
+#: apps/wiki/src/components/character-edit-form.tsx:1854
 msgid "AI 一键生成可以补的字段都已填好——再点不会有任何\"补空\"效果。"
 msgstr "AI 원클릭 생성이 채울 수 있는 필드는 모두 입력 완료——다시 눌러도 \"빈칸 채우기\" 효과는 없습니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:1851
+#: apps/wiki/src/components/character-edit-form.tsx:1859
 msgid "如果想让 AI 把整角色\"优化\"一遍，会用新生成的内容覆盖大部分字段 （sacred 3 字段——名称、关系、简介——始终保留）。是否进行优化？"
 msgstr "AI 가 캐릭터 전체를 \"최적화\"하면 대부분의 필드가 새로 생성된 내용으로 덮어쓰여집니다(신성한 3개 필드 — 이름·관계·소개 — 는 항상 보존됩니다). 최적화를 진행할까요?"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1860
+#: apps/wiki/src/components/character-edit-form.tsx:1868
 msgid "本节字段已经全部填写。AI 生成（默认）只会填补空字段，不会 改动已填的内容。"
 msgstr "이 섹션의 필드가 모두 입력되었습니다. AI 생성(기본)은 빈 필드만 채우며 기존 내용은 변경하지 않습니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:1866
+#: apps/wiki/src/components/character-edit-form.tsx:1874
 msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
 msgstr "이미 입력한 필드까지 AI 가 수정하도록 하려면 \"최적화\" 작업이 됩니다 — 새로 생성된 내용으로 섹션 전체가 덮어쓰여집니다(신성한 3개 필드 — 이름·관계·소개 — 는 항상 보존됩니다). 최적화를 진행할까요?"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1876
+#: apps/wiki/src/components/character-edit-form.tsx:1884
 #: apps/wiki/src/components/conflict-resolver.tsx:162
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
@@ -549,79 +549,79 @@ msgstr "이미 입력한 필드까지 AI 가 수정하도록 하려면 \"최적�
 msgid "取消"
 msgstr "취소"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1879
+#: apps/wiki/src/components/character-edit-form.tsx:1887
 msgid "✨ 开始优化"
 msgstr "✨ 최적화 시작"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1961
-#: apps/wiki/src/components/character-edit-form.tsx:2004
+#: apps/wiki/src/components/character-edit-form.tsx:1969
+#: apps/wiki/src/components/character-edit-form.tsx:2012
 msgid "生成中…"
 msgstr "생성 중…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1961
+#: apps/wiki/src/components/character-edit-form.tsx:1969
 msgid "✨ AI 生成本节"
 msgstr "✨ AI로 이 섹션 채우기"
 
 #. placeholder {0}: missing.join("、")
-#: apps/wiki/src/components/character-edit-form.tsx:1965
-#: apps/wiki/src/components/character-edit-form.tsx:2011
+#: apps/wiki/src/components/character-edit-form.tsx:1973
+#: apps/wiki/src/components/character-edit-form.tsx:2019
 msgid "还需填写：{0}（点上方按钮可跳到第一个未填）"
 msgstr "미입력: {0} (버튼을 누르면 첫 빈칸으로 이동합니다)"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2006
+#: apps/wiki/src/components/character-edit-form.tsx:2014
 msgid "✨ AI 一键生成全部"
 msgstr "✨ AI로 전체 생성"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2049
+#: apps/wiki/src/components/character-edit-form.tsx:2057
 msgid "把右侧字段填上，这里会同步展示 AI 看到的你的角色"
 msgstr "오른쪽 항목을 채우면, AI가 보는 당신의 캐릭터가 여기에 동기화되어 표시됩니다"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2053
+#: apps/wiki/src/components/character-edit-form.tsx:2061
 msgid "AI 眼里的你的角色 ↑"
 msgstr "AI가 보는 당신의 캐릭터 ↑"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2067
+#: apps/wiki/src/components/character-edit-form.tsx:2075
 msgid "角色编辑章节跳转"
 msgstr "캐릭터 편집 섹션 이동"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2070
+#: apps/wiki/src/components/character-edit-form.tsx:2078
 msgid "章节"
 msgstr "섹션"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2096
+#: apps/wiki/src/components/character-edit-form.tsx:2104
 msgid "↓ 跳到保存"
 msgstr "↓ 저장으로 이동"
 
 #. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
-#: apps/wiki/src/components/character-edit-form.tsx:2208
+#: apps/wiki/src/components/character-edit-form.tsx:2216
 msgid "图片太大（{0} MB），上限 4 MB。"
 msgstr "이미지가 너무 큽니다 ({0} MB). 최대 4 MB 입니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2218
+#: apps/wiki/src/components/character-edit-form.tsx:2226
 msgid "只支持 PNG / JPG / WebP / GIF。"
 msgstr "PNG / JPG / WebP / GIF 형식만 지원합니다."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2227
+#: apps/wiki/src/components/character-edit-form.tsx:2235
 msgid "头像上传失败，请稍后再试"
 msgstr "아바타 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/wiki/src/components/character-edit-form.tsx:2264
+#: apps/wiki/src/components/character-edit-form.tsx:2272
 msgid "上传中…"
 msgstr "업로드 중…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2266
+#: apps/wiki/src/components/character-edit-form.tsx:2274
 msgid "上传图片"
 msgstr "이미지 업로드"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2277
+#: apps/wiki/src/components/character-edit-form.tsx:2285
 msgid "清除"
 msgstr "지우기"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2362
+#: apps/wiki/src/components/character-edit-form.tsx:2376
 msgid "AI 正在生成「{sectionLabel}」…"
 msgstr "AI가 \"{sectionLabel}\" 생성 중…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2368
+#: apps/wiki/src/components/character-edit-form.tsx:2382
 msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
 msgstr "폼이 잠겨 있습니다. 목록으로 돌아가도 됩니다. 돌아오면 결과가 자동으로 채워집니다."
 
@@ -697,7 +697,7 @@ msgstr "WeChat"
 
 #: apps/wiki/src/components/quota-exhausted-notice.tsx:133
 #: apps/wiki/src/routes/account-page.tsx:120
-#: apps/wiki/src/routes/login-page.tsx:225
+#: apps/wiki/src/routes/login-page.tsx:229
 msgid "邮箱"
 msgstr "이메일"
 
@@ -759,9 +759,9 @@ msgid "已提交，管理员将处理。"
 msgstr "제출되었습니다. 관리자가 처리합니다."
 
 #: apps/wiki/src/components/report-button.tsx:111
-#: apps/wiki/src/routes/account-page.tsx:360
-#: apps/wiki/src/routes/account-page.tsx:466
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
+#: apps/wiki/src/routes/account-page.tsx:369
+#: apps/wiki/src/routes/account-page.tsx:480
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
 #: apps/wiki/src/routes/admin-blocks-page.tsx:173
 #: apps/wiki/src/routes/character-page.tsx:235
 msgid "提交中..."
@@ -957,15 +957,15 @@ msgstr "튜토리얼"
 #: apps/wiki/src/components/root-layout.tsx:344
 #: apps/wiki/src/components/root-layout.tsx:362
 #: apps/wiki/src/routes/login-page.tsx:41
-#: apps/wiki/src/routes/login-page.tsx:151
-#: apps/wiki/src/routes/register-page.tsx:112
+#: apps/wiki/src/routes/login-page.tsx:155
+#: apps/wiki/src/routes/register-page.tsx:124
 msgid "登录"
 msgstr "로그인"
 
 #: apps/wiki/src/components/root-layout.tsx:359
-#: apps/wiki/src/routes/admin-users-page.tsx:86
+#: apps/wiki/src/routes/admin-users-page.tsx:88
 #: apps/wiki/src/routes/register-page.tsx:52
-#: apps/wiki/src/routes/register-page.tsx:103
+#: apps/wiki/src/routes/register-page.tsx:115
 msgid "注册"
 msgstr "가입"
 
@@ -982,17 +982,22 @@ msgstr "내비게이션 닫기"
 msgid "隐界世界角色管理平台 · 任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效"
 msgstr "은계 월드 캐릭터 관리 플랫폼 · 로그인한 모든 사용자가 캐릭터 생성, 편집, 라이프사이클 변경을 제출할 수 있으며 순찰원의 검토를 거쳐 적용됩니다"
 
-#: apps/wiki/src/components/root-layout.tsx:524
+#. placeholder {0}: user.username
+#: apps/wiki/src/components/root-layout.tsx:480
+msgid "{0} 账户菜单"
+msgstr "{0} 계정 메뉴"
+
+#: apps/wiki/src/components/root-layout.tsx:528
 #: apps/wiki/src/routes/account-page.tsx:54
 #: apps/wiki/src/routes/account-page.tsx:69
 msgid "账户设置"
 msgstr "계정 설정"
 
-#: apps/wiki/src/components/root-layout.tsx:536
+#: apps/wiki/src/components/root-layout.tsx:540
 msgid "退出"
 msgstr "로그아웃"
 
-#: apps/wiki/src/components/root-layout.tsx:556
+#: apps/wiki/src/components/root-layout.tsx:560
 msgid "主导航"
 msgstr "주요 네비게이션"
 
@@ -1403,7 +1408,7 @@ msgstr "현재 계정에 이메일이 등록되지 않아 이메일 인증 코�
 
 #. placeholder {0}: result.debugCode
 #: apps/wiki/src/routes/account-page.tsx:242
-#: apps/wiki/src/routes/login-page.tsx:198
+#: apps/wiki/src/routes/login-page.tsx:202
 msgid "开发模式：验证码已打印到服务端日志（debug={0}）"
 msgstr "개발 모드: 인증 코드가 서버 로그에 출력됨 (debug={0})"
 
@@ -1429,22 +1434,22 @@ msgid "邮箱验证码"
 msgstr "이메일 인증 코드"
 
 #: apps/wiki/src/routes/account-page.tsx:289
-#: apps/wiki/src/routes/login-page.tsx:236
+#: apps/wiki/src/routes/login-page.tsx:240
 msgid "6 位数字，10 分钟内有效"
 msgstr "6자리 숫자, 10분간 유효"
 
 #: apps/wiki/src/routes/account-page.tsx:308
-#: apps/wiki/src/routes/login-page.tsx:255
+#: apps/wiki/src/routes/login-page.tsx:259
 msgid "{cooldown}s 后重发"
 msgstr "{cooldown}초 후 재전송"
 
 #: apps/wiki/src/routes/account-page.tsx:310
-#: apps/wiki/src/routes/login-page.tsx:257
+#: apps/wiki/src/routes/login-page.tsx:261
 msgid "发送中..."
 msgstr "전송 중..."
 
 #: apps/wiki/src/routes/account-page.tsx:311
-#: apps/wiki/src/routes/login-page.tsx:258
+#: apps/wiki/src/routes/login-page.tsx:262
 msgid "发送验证码"
 msgstr "인증코드 전송"
 
@@ -1460,53 +1465,53 @@ msgstr "6자 이상"
 msgid "确认新密码"
 msgstr "새 비밀번호 확인"
 
-#: apps/wiki/src/routes/account-page.tsx:340
+#: apps/wiki/src/routes/account-page.tsx:345
 msgid "两次输入的新密码不一致。"
 msgstr "두 번 입력한 새 비밀번호가 일치하지 않습니다."
 
-#: apps/wiki/src/routes/account-page.tsx:345
+#: apps/wiki/src/routes/account-page.tsx:350
 msgid "新密码包含开头或结尾的空白字符（来自粘贴/自动填充？）。下次登录时也必须带上，否则会登录失败 —— 请确认这是你想要的。"
 msgstr "새 비밀번호에 시작 또는 끝의 공백 문자가 포함되어 있습니다(붙여넣기/자동 채우기?). 다음 로그인 시에도 입력해야 하며, 그렇지 않으면 로그인이 실패합니다 — 의도한 것이 맞는지 확인하세요."
 
-#: apps/wiki/src/routes/account-page.tsx:362
+#: apps/wiki/src/routes/account-page.tsx:371
 msgid "确认修改密码"
 msgstr "비밀번호 변경 확인"
 
-#: apps/wiki/src/routes/account-page.tsx:363
+#: apps/wiki/src/routes/account-page.tsx:372
 msgid "确认设置密码"
 msgstr "비밀번호 설정 확인"
 
 #. placeholder {0}: session.user.username
-#: apps/wiki/src/routes/account-page.tsx:407
+#: apps/wiki/src/routes/account-page.tsx:416
 msgid "用户名已更新为 {0}。"
 msgstr "사용자 이름이 {0}(으)로 업데이트되었습니다."
 
 #. placeholder {0}: profile.username
-#: apps/wiki/src/routes/account-page.tsx:419
+#: apps/wiki/src/routes/account-page.tsx:428
 msgid "当前用户名：<0>{0}</0>。修改后旧用户名立即释放，登录可用新用户名或绑定邮箱。"
 msgstr "현재 사용자 이름: <0>{0}</0>. 변경 후 이전 사용자 이름은 즉시 해제되며, 새 사용자 이름 또는 연결된 이메일로 로그인할 수 있습니다."
 
-#: apps/wiki/src/routes/account-page.tsx:429
+#: apps/wiki/src/routes/account-page.tsx:438
 msgid "新用户名"
 msgstr "새 사용자 이름"
 
-#: apps/wiki/src/routes/account-page.tsx:430
+#: apps/wiki/src/routes/account-page.tsx:439
 msgid "2-32 个字符，不能包含 @"
 msgstr "2-32자, @ 포함 불가"
 
-#: apps/wiki/src/routes/account-page.tsx:444
+#: apps/wiki/src/routes/account-page.tsx:454
 msgid "用户名不能包含 @ 字符（保留给邮箱登录）。"
 msgstr "사용자 이름에 @ 문자를 포함할 수 없습니다(이메일 로그인용으로 예약됨)."
 
-#: apps/wiki/src/routes/account-page.tsx:449
+#: apps/wiki/src/routes/account-page.tsx:459
 msgid "用户名至少 2 个字符。"
 msgstr "사용자 이름은 최소 2자 이상이어야 합니다."
 
-#: apps/wiki/src/routes/account-page.tsx:454
+#: apps/wiki/src/routes/account-page.tsx:464
 msgid "用户名不能超过 32 个字符。"
 msgstr "사용자 이름은 32자를 초과할 수 없습니다."
 
-#: apps/wiki/src/routes/account-page.tsx:466
+#: apps/wiki/src/routes/account-page.tsx:480
 msgid "保存新用户名"
 msgstr "새 사용자 이름 저장"
 
@@ -1671,7 +1676,7 @@ msgstr "Pattern (JSON)"
 msgid "支持 regex / shrink / frequency / link_flood / keyword_list 等类型，必须含 type 字段"
 msgstr "regex / shrink / frequency / link_flood / keyword_list 등 타입 지원, type 필드 필수"
 
-#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:481
+#: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
 msgid "提交并启用"
 msgstr "제출 및 활성화"
 
@@ -1734,48 +1739,48 @@ msgstr "선택 사항. 비워두면 영구"
 msgid "提交封禁"
 msgstr "차단 제출"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:193
+#: apps/wiki/src/routes/admin-blocks-page.tsx:198
 msgid "封禁列表"
 msgstr "차단 목록"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:201
+#: apps/wiki/src/routes/admin-blocks-page.tsx:206
 msgid "含已撤销 / 已到期"
 msgstr "철회/만료 포함"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:214
+#: apps/wiki/src/routes/admin-blocks-page.tsx:222
 msgid "没有相关封禁记录。"
 msgstr "관련 차단 기록이 없습니다."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:259
+#: apps/wiki/src/routes/admin-blocks-page.tsx:267
 msgid "生效中"
 msgstr "활성"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:263
+#: apps/wiki/src/routes/admin-blocks-page.tsx:271
 msgid "已撤销"
 msgstr "철회됨"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:267
+#: apps/wiki/src/routes/admin-blocks-page.tsx:275
 msgid "已到期"
 msgstr "만료됨"
 
 #. placeholder {0}: formatDateTime(block.createdAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:278
+#: apps/wiki/src/routes/admin-blocks-page.tsx:286
 msgid "创建于 {0}"
 msgstr "생성 {0}"
 
 #. placeholder {0}: formatDateTime(block.expiresAt)
 #. placeholder {0}: formatDateTime(row.expiresAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:280
-#: apps/wiki/src/routes/admin-protection-page.tsx:255
+#: apps/wiki/src/routes/admin-blocks-page.tsx:288
+#: apps/wiki/src/routes/admin-protection-page.tsx:261
 msgid "到期 {0}"
 msgstr "만료 {0}"
 
 #. placeholder {0}: formatDateTime(block.revokedAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:282
+#: apps/wiki/src/routes/admin-blocks-page.tsx:290
 msgid "撤销于 {0}"
 msgstr "{0} 에 철회"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:293
+#: apps/wiki/src/routes/admin-blocks-page.tsx:301
 msgid "撤销"
 msgstr "철회"
 
@@ -1870,17 +1875,17 @@ msgstr "저장 중..."
 msgid "应用保护级别"
 msgstr "보호 등급 적용"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:234
+#: apps/wiki/src/routes/admin-protection-page.tsx:240
 msgid "变更历史"
 msgstr "변경 이력"
 
-#: apps/wiki/src/routes/admin-protection-page.tsx:238
+#: apps/wiki/src/routes/admin-protection-page.tsx:244
 msgid "暂无记录。"
 msgstr "기록이 없습니다."
 
 #. placeholder {0}: formatDateTime(row.createdAt)
 #. placeholder {1}: resolveUsername(row.changedBy)
-#: apps/wiki/src/routes/admin-protection-page.tsx:250
+#: apps/wiki/src/routes/admin-protection-page.tsx:256
 msgid "{0} · 由 {1}"
 msgstr "{0} · {1} 작성"
 
@@ -1992,39 +1997,39 @@ msgstr "사용자 및 권한 ({0})"
 msgid "设置用户的 wiki 角色：新人 / 自动确认 / 巡查员 / 管理员。无法修改自己的角色。"
 msgstr "사용자의 wiki 역할 설정: 신규 / 자동확인 / 순찰원 / 관리자. 본인 역할은 변경 불가."
 
-#: apps/wiki/src/routes/admin-users-page.tsx:80
+#: apps/wiki/src/routes/admin-users-page.tsx:82
 msgid "用户"
 msgstr "사용자"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:83
+#: apps/wiki/src/routes/admin-users-page.tsx:85
 #: apps/wiki/src/routes/pending-reviews-page.tsx:119
 msgid "类型"
 msgstr "유형"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:89
+#: apps/wiki/src/routes/admin-users-page.tsx:91
 msgid "角色"
 msgstr "역할"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:92
+#: apps/wiki/src/routes/admin-users-page.tsx:94
 msgid "编辑/通过/被回滚/巡查"
 msgstr "편집 / 승인 / 롤백 / 순찰"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:95
+#: apps/wiki/src/routes/admin-users-page.tsx:97
 msgid "设置角色"
 msgstr "역할 설정"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:111
+#: apps/wiki/src/routes/admin-users-page.tsx:113
 msgid "世界主"
 msgstr "월드 오너"
 
-#: apps/wiki/src/routes/admin-users-page.tsx:115
+#: apps/wiki/src/routes/admin-users-page.tsx:117
 msgid "wiki 成员"
 msgstr "wiki 멤버"
 
 #. placeholder {0}: u.username
 #. placeholder {1}: roleLabel(u.role)
 #. placeholder {2}: roleLabel(next)
-#: apps/wiki/src/routes/admin-users-page.tsx:148
+#: apps/wiki/src/routes/admin-users-page.tsx:150
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "\"{0}\"의 역할을 {1}에서 {2}(으)로 변경하시겠습니까? 해당 사용자는 즉시 권한을 잃습니다."
 
@@ -2365,52 +2370,52 @@ msgid "和私有角色 / 世界角色编辑器同一套体验；保存后角色�
 msgstr "비공개 캐릭터 / 월드 캐릭터 편집기와 동일한 경험입니다. 저장하면 wiki 의 생성 대기 초안으로 제출되며 patroller 의 승인 후에야 공개됩니다."
 
 #. placeholder {0}: draftQ.data.name || t(msg`未命名草稿`)
-#: apps/wiki/src/routes/create-character-page.tsx:198
-#: apps/wiki/src/routes/my-character-edit-page.tsx:294
+#: apps/wiki/src/routes/create-character-page.tsx:200
+#: apps/wiki/src/routes/my-character-edit-page.tsx:296
 msgid "已从草稿「{0}」恢复。"
 msgstr "초안 \"{0}\" 에서 복원했습니다."
 
-#: apps/wiki/src/routes/create-character-page.tsx:199
-#: apps/wiki/src/routes/my-character-edit-page.tsx:295
+#: apps/wiki/src/routes/create-character-page.tsx:201
+#: apps/wiki/src/routes/my-character-edit-page.tsx:297
 #: apps/wiki/src/routes/my-drafts-page.tsx:119
-#: apps/wiki/src/routes/my-drafts-page.tsx:257
+#: apps/wiki/src/routes/my-drafts-page.tsx:265
 msgid "未命名草稿"
 msgstr "제목 없는 초안"
 
-#: apps/wiki/src/routes/create-character-page.tsx:209
-#: apps/wiki/src/routes/my-character-edit-page.tsx:305
+#: apps/wiki/src/routes/create-character-page.tsx:211
+#: apps/wiki/src/routes/my-character-edit-page.tsx:307
 msgid "清空表单"
 msgstr "폼 초기화"
 
-#: apps/wiki/src/routes/create-character-page.tsx:223
-#: apps/wiki/src/routes/my-character-edit-page.tsx:319
+#: apps/wiki/src/routes/create-character-page.tsx:225
+#: apps/wiki/src/routes/my-character-edit-page.tsx:321
 msgid "该草稿已不存在（可能已被删除），按空白表单继续。"
 msgstr "이 초안이 더 이상 존재하지 않습니다(삭제되었을 수 있음). 빈 폼으로 계속 진행합니다."
 
-#: apps/wiki/src/routes/create-character-page.tsx:229
-#: apps/wiki/src/routes/my-character-edit-page.tsx:327
+#: apps/wiki/src/routes/create-character-page.tsx:231
+#: apps/wiki/src/routes/my-character-edit-page.tsx:329
 msgid "清掉 URL 中的 draftId"
 msgstr "URL 에서 draftId 제거"
 
-#: apps/wiki/src/routes/create-character-page.tsx:263
+#: apps/wiki/src/routes/create-character-page.tsx:265
 msgid "✨ 提交创建"
 msgstr "✨ 생성 제출"
 
-#: apps/wiki/src/routes/create-character-page.tsx:264
+#: apps/wiki/src/routes/create-character-page.tsx:266
 msgid "提交"
 msgstr "제출"
 
-#: apps/wiki/src/routes/create-character-page.tsx:265
+#: apps/wiki/src/routes/create-character-page.tsx:267
 #: apps/wiki/src/routes/world-character-edit-page.tsx:276
 msgid "提交中…"
 msgstr "제출 중…"
 
-#: apps/wiki/src/routes/create-character-page.tsx:268
+#: apps/wiki/src/routes/create-character-page.tsx:270
 #: apps/wiki/src/routes/world-character-edit-page.tsx:279
 msgid "提交后进 patroller 审核队列"
 msgstr "제출 후 patroller 검수 대기열에 들어갑니다."
 
-#: apps/wiki/src/routes/create-character-page.tsx:269
+#: apps/wiki/src/routes/create-character-page.tsx:271
 msgid "提交后进评审队列"
 msgstr "제출 후 검수 대기열에 들어갑니다."
 
@@ -2423,7 +2428,7 @@ msgid "按维基百科模式管理世界角色：任何登录用户都能创建�
 msgstr "위키피디아 방식으로 월드 캐릭터를 관리: 로그인한 사용자는 누구나 캐릭터를 만들고 프로필과 런타임 로직을 편집하며 삭제/복원을 요청할 수 있습니다. 고위험 변경은 순찰 대기열에 들어가 승인 후 캐릭터 런타임에 배포됩니다."
 
 #: apps/wiki/src/routes/home-page.tsx:129
-#: apps/wiki/src/routes/my-character-edit-page.tsx:357
+#: apps/wiki/src/routes/my-character-edit-page.tsx:359
 msgid "✨ 创建角色"
 msgstr "✨ 캐릭터 생성"
 
@@ -2492,31 +2497,31 @@ msgstr "둘 다 로그인에 사용할 수 있습니다. @가 포함되면 이�
 msgid "密码"
 msgstr "비밀번호"
 
-#: apps/wiki/src/routes/login-page.tsx:151
-#: apps/wiki/src/routes/login-page.tsx:270
+#: apps/wiki/src/routes/login-page.tsx:155
+#: apps/wiki/src/routes/login-page.tsx:278
 msgid "登录中..."
 msgstr "로그인 중..."
 
-#: apps/wiki/src/routes/login-page.tsx:199
+#: apps/wiki/src/routes/login-page.tsx:203
 msgid "验证码已发送，请查收邮箱（含垃圾邮件箱）。"
 msgstr "인증 코드를 전송했습니다. 이메일 (스팸함 포함)을 확인하세요."
 
-#: apps/wiki/src/routes/login-page.tsx:233
+#: apps/wiki/src/routes/login-page.tsx:237
 msgid "you@example.com"
 msgstr "you@example.com"
 
-#: apps/wiki/src/routes/login-page.tsx:236
+#: apps/wiki/src/routes/login-page.tsx:240
 msgid "验证码"
 msgstr "인증 코드"
 
-#: apps/wiki/src/routes/login-page.tsx:270
+#: apps/wiki/src/routes/login-page.tsx:278
 msgid "登录 / 注册"
 msgstr "로그인 / 가입"
 
 #. placeholder {0}: recordQ.data.name
 #. placeholder {0}: row.name
 #: apps/wiki/src/routes/my-character-edit-page.tsx:151
-#: apps/wiki/src/routes/my-characters-page.tsx:217
+#: apps/wiki/src/routes/my-characters-page.tsx:224
 msgid "确认删除「{0}」？此操作无法撤销。"
 msgstr "\"{0}\"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -2550,7 +2555,7 @@ msgid "← 返回列表"
 msgstr "← 목록으로"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:214
-#: apps/wiki/src/routes/my-characters-page.tsx:298
+#: apps/wiki/src/routes/my-characters-page.tsx:305
 msgid "导出中…"
 msgstr "내보내는 중…"
 
@@ -2559,8 +2564,8 @@ msgid "📤 导出 JSON"
 msgstr "📤 JSON 내보내기"
 
 #: apps/wiki/src/routes/my-character-edit-page.tsx:226
-#: apps/wiki/src/routes/my-characters-page.tsx:307
-#: apps/wiki/src/routes/my-drafts-page.tsx:298
+#: apps/wiki/src/routes/my-characters-page.tsx:314
+#: apps/wiki/src/routes/my-drafts-page.tsx:306
 msgid "🗑 删除"
 msgstr "🗑 삭제"
 
@@ -2576,19 +2581,19 @@ msgstr "비공개 캐릭터 편집"
 msgid "这里保存的内容仅你可见。同名再导入会覆盖。点击「导出」下载 JSON，可在 app 端导入到你的世界。模块布局完全对齐隐界后台。"
 msgstr "여기에 저장한 내용은 본인에게만 표시됩니다. 같은 이름으로 다시 가져오면 덮어쓰여집니다. \"내보내기\"를 클릭하면 JSON 을 다운로드할 수 있고, 앱에서 자신의 월드로 가져올 수 있습니다. 모듈 레이아웃은 Enclave 관리자 페이지와 완전히 일치합니다."
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:358
+#: apps/wiki/src/routes/my-character-edit-page.tsx:360
 msgid "💾 保存修改"
 msgstr "💾 변경 사항 저장"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:359
+#: apps/wiki/src/routes/my-character-edit-page.tsx:361
 msgid "保存中…"
 msgstr "저장 중…"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:362
+#: apps/wiki/src/routes/my-character-edit-page.tsx:364
 msgid "保存后会跳到编辑页继续完善"
 msgstr "저장 후 편집 페이지로 이동하여 계속 다듬을 수 있습니다"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:363
+#: apps/wiki/src/routes/my-character-edit-page.tsx:365
 msgid "同名再导入会覆盖此角色"
 msgstr "같은 이름으로 다시 가져오면 이 캐릭터를 덮어씁니다"
 
@@ -2611,7 +2616,7 @@ msgid "这里的角色不会出现在公开词条目录，也不走巡查审核�
 msgstr "여기 캐릭터는 공개 항목 목록에 나타나지 않으며 순찰 심사도 거치지 않습니다. 만들기·편집·JSON 내보내기, 또는 JSON 파일을 업로드해 같은 이름의 캐릭터를 덮어쓸 수 있습니다. 내보낸 JSON 파일은 앱에서 당신의 월드로 직접 가져올 수 있습니다."
 
 #: apps/wiki/src/routes/my-characters-page.tsx:139
-#: apps/wiki/src/routes/my-characters-page.tsx:190
+#: apps/wiki/src/routes/my-characters-page.tsx:197
 msgid "导入中…"
 msgstr "가져오는 중…"
 
@@ -2623,41 +2628,41 @@ msgstr "📥 파일 가져오기"
 msgid "✨ 新建角色"
 msgstr "✨ 새 캐릭터"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:168
+#: apps/wiki/src/routes/my-characters-page.tsx:175
 msgid "还没有任何私有角色"
 msgstr "아직 비공개 캐릭터가 없습니다"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:171
+#: apps/wiki/src/routes/my-characters-page.tsx:178
 msgid "从零创建一个完全属于你自己的角色，或者上传一份从其它世界导出的 JSON 文件来快速开始。"
 msgstr "처음부터 완전히 당신만의 캐릭터를 만들거나, 다른 월드에서 내보낸 JSON 파일을 업로드해 빠르게 시작할 수 있습니다."
 
-#: apps/wiki/src/routes/my-characters-page.tsx:182
+#: apps/wiki/src/routes/my-characters-page.tsx:189
 msgid "✨ 新建第一个角色"
 msgstr "✨ 첫 캐릭터 만들기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:192
+#: apps/wiki/src/routes/my-characters-page.tsx:199
 msgid "📥 导入 JSON 文件"
 msgstr "📥 JSON 파일 가져오기"
 
 #. placeholder {0}: items.length
-#: apps/wiki/src/routes/my-characters-page.tsx:203
+#: apps/wiki/src/routes/my-characters-page.tsx:210
 msgid "共 {0} 个角色"
 msgstr "총 {0}명의 캐릭터"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:263
-#: apps/wiki/src/routes/my-drafts-page.tsx:277
+#: apps/wiki/src/routes/my-characters-page.tsx:270
+#: apps/wiki/src/routes/my-drafts-page.tsx:285
 msgid "更新于"
 msgstr "업데이트"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:295
+#: apps/wiki/src/routes/my-characters-page.tsx:302
 msgid "导出此角色 JSON"
 msgstr "이 캐릭터의 JSON 내보내기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:298
+#: apps/wiki/src/routes/my-characters-page.tsx:305
 msgid "📤 导出"
 msgstr "📤 내보내기"
 
-#: apps/wiki/src/routes/my-characters-page.tsx:304
+#: apps/wiki/src/routes/my-characters-page.tsx:311
 msgid "删除此角色"
 msgstr "이 캐릭터 삭제"
 
@@ -2685,7 +2690,7 @@ msgid "全部"
 msgstr "전체"
 
 #: apps/wiki/src/routes/my-drafts-page.tsx:136
-#: apps/wiki/src/routes/my-drafts-page.tsx:272
+#: apps/wiki/src/routes/my-drafts-page.tsx:280
 msgid "Wiki 公开"
 msgstr "Wiki 공개"
 
@@ -2693,43 +2698,43 @@ msgstr "Wiki 공개"
 msgid "点「AI 一键生成全部」后，无论你是否离开页面，生成完的内容都会自动保存到这里。仅你自己可见。"
 msgstr "\"✨ AI 원클릭 전체 생성\" 을 클릭하면 페이지를 떠나도 생성된 내용이 여기에 자동 저장됩니다. 본인만 볼 수 있습니다."
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:161
+#: apps/wiki/src/routes/my-drafts-page.tsx:169
 msgid "还没有任何草稿"
 msgstr "아직 초안이 없습니다"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:164
+#: apps/wiki/src/routes/my-drafts-page.tsx:172
 msgid "在「新建私有角色」或「创建 wiki 角色」页填好基础字段后，点顶部的「✨ AI 一键生成全部」，AI 跑完后会自动保存一份草稿到这里。"
 msgstr "\"새 비공개 캐릭터\" 또는 \"wiki 캐릭터 생성\" 페이지에서 기본 정보를 입력한 뒤 상단의 \"✨ AI 원클릭 전체 생성\" 을 클릭하면 AI 완료 후 초안이 여기에 자동 저장됩니다."
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:175
+#: apps/wiki/src/routes/my-drafts-page.tsx:183
 msgid "✨ 新建私有角色"
 msgstr "✨ 새 비공개 캐릭터"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:181
+#: apps/wiki/src/routes/my-drafts-page.tsx:189
 msgid "创建 wiki 角色"
 msgstr "wiki 캐릭터 생성"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:196
+#: apps/wiki/src/routes/my-drafts-page.tsx:204
 msgid "草稿类型筛选"
 msgstr "초안 유형 필터"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:222
+#: apps/wiki/src/routes/my-drafts-page.tsx:230
 msgid "当前筛选下没有草稿。"
 msgstr "현재 필터에 해당하는 초안이 없습니다."
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:270
+#: apps/wiki/src/routes/my-drafts-page.tsx:278
 msgid "私有"
 msgstr "비공개"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:279
+#: apps/wiki/src/routes/my-drafts-page.tsx:287
 msgid "由 AI 一键生成自动保存"
 msgstr "AI 원클릭 생성으로 자동 저장됨"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:289
+#: apps/wiki/src/routes/my-drafts-page.tsx:297
 msgid "恢复编辑"
 msgstr "편집 복원"
 
-#: apps/wiki/src/routes/my-drafts-page.tsx:298
+#: apps/wiki/src/routes/my-drafts-page.tsx:306
 msgid "删除中…"
 msgstr "삭제 중…"
 
@@ -2882,11 +2887,11 @@ msgstr "두 번의 입력이 일치하지 않습니다"
 msgid "再输一次以确认"
 msgstr "확인을 위해 다시 입력"
 
-#: apps/wiki/src/routes/register-page.tsx:103
+#: apps/wiki/src/routes/register-page.tsx:115
 msgid "注册中..."
 msgstr "가입 중..."
 
-#: apps/wiki/src/routes/register-page.tsx:107
+#: apps/wiki/src/routes/register-page.tsx:119
 msgid "已有账号？"
 msgstr "이미 계정이 있나요?"
 

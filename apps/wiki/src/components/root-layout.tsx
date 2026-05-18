@@ -473,7 +473,11 @@ function UserMenu({
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={user.username}
+        // 原写法 aria-label 只塞 user.username，SR 用户听到 "yuanzui0728_5999,
+        // menu" 不知道这个 menu 是干什么的（账户菜单？通知菜单？切语言？）。
+        // 显式说明这是"账户菜单"，并把用户名嵌进去做区分（如果同页有多个
+        // 用户菜单触发器）。
+        aria-label={t(msg`${user.username} 账户菜单`)}
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-white p-1 text-left text-xs leading-tight transition-colors hover:bg-[color:var(--surface-card-hover)] sm:px-3 sm:py-1.5"
       >

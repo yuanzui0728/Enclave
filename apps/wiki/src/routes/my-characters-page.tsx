@@ -151,8 +151,15 @@ export function MyCharactersPage() {
         </>
       }
     >
+      {/* 导入/导出/删除操作的成败反馈：tone=danger 走 role=alert 立即播报，
+          tone=success 走 role=status 不打断阅读但仍可被听到。 */}
       {notice && (
-        <InlineNotice tone={notice.tone}>{notice.text}</InlineNotice>
+        <InlineNotice
+          tone={notice.tone}
+          role={notice.tone === "danger" ? "alert" : "status"}
+        >
+          {notice.text}
+        </InlineNotice>
       )}
 
       {listQ.isLoading && <LoadingBlock />}

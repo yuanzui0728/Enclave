@@ -65,8 +65,10 @@ export function AdminUsersPage() {
       {usersQ.isError && (
         <ErrorBlock role="alert" message={(usersQ.error as Error).message} />
       )}
+      {/* 改用户角色失败（权限不足 / 服务超时 / 用户不存在）SR 必须播报；
+          原写法只视觉提示导致管理员误以为已生效。 */}
       {setRoleMut.isError && (
-        <InlineNotice tone="danger">
+        <InlineNotice tone="danger" role="alert">
           {(setRoleMut.error as Error).message}
         </InlineNotice>
       )}

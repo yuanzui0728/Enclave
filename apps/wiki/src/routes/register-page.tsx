@@ -84,16 +84,28 @@ export function RegisterPage() {
                 : t(msg`再输一次以确认`)
             }
           >
+            {/* aria-invalid 让 SR 在"两次输入不一致"hint 变红时同步念出
+                "invalid entry"，否则只有视觉提示，盲用用户必须等到 submit
+                按钮也变灰才能间接感知。 */}
             <TextField
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={6}
+              aria-invalid={passwordMismatch || undefined}
               autoComplete="new-password"
             />
           </FormRow>
-          {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+          {/* 服务端拒绝注册（用户名重复 / 密码太短等）只渲染普通 div tone=danger
+              通知；原写法 SR 完全静默，用户体感是 submit 按钮亮了一下又灰回
+              去，没有任何反馈解释为什么。补 role=alert 让屏读把后端错误念出
+              来。和登录页同款修法。 */}
+          {error && (
+            <InlineNotice tone="danger" role="alert">
+              {error}
+            </InlineNotice>
+          )}
           <Button
             type="submit"
             variant="primary"

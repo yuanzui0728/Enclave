@@ -146,8 +146,16 @@ export function MyDraftsPage() {
         msg`点「AI 一键生成全部」后，无论你是否离开页面，生成完的内容都会自动保存到这里。仅你自己可见。`,
       )}
     >
+      {/* notice 是用户操作后的反馈（删除草稿成功/失败），需要 SR 即时
+          播报。tone=success 用 role=status 不打断；tone=danger 用
+          role=alert 强制听到。 */}
       {notice && (
-        <InlineNotice tone={notice.tone}>{notice.text}</InlineNotice>
+        <InlineNotice
+          tone={notice.tone}
+          role={notice.tone === "danger" ? "alert" : "status"}
+        >
+          {notice.text}
+        </InlineNotice>
       )}
 
       {listQ.isLoading && <LoadingBlock />}

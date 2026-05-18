@@ -220,8 +220,14 @@ export function AdminProtectionPage() {
                 >
                   {setProtMut.isPending ? t(msg`保存中...`) : t(msg`应用保护级别`)}
                 </Button>
+                {/* 应用保护级别失败需 SR 即时播报；管理员看不到红字时
+                    才有可能误以为已生效。 */}
                 {setProtMut.isError && (
-                  <InlineNotice tone="danger" className="flex-1">
+                  <InlineNotice
+                    tone="danger"
+                    role="alert"
+                    className="flex-1"
+                  >
                     {(setProtMut.error as Error).message}
                   </InlineNotice>
                 )}

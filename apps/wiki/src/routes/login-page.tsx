@@ -141,7 +141,11 @@ function PasswordForm({ onSuccess }: { onSuccess: () => void }) {
           required
         />
       </FormRow>
-      {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+      {error && (
+        <InlineNotice tone="danger" role="alert">
+          {error}
+        </InlineNotice>
+      )}
       <Button
         type="submit"
         variant="primary"
@@ -260,7 +264,11 @@ function EmailCodeForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </FormRow>
       {info && <InlineNotice tone="info">{info}</InlineNotice>}
-      {error && <InlineNotice tone="danger">{error}</InlineNotice>}
+      {error && (
+        <InlineNotice tone="danger" role="alert">
+          {error}
+        </InlineNotice>
+      )}
       <Button
         type="submit"
         variant="primary"

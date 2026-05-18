@@ -172,8 +172,13 @@ export function AdminBlocksPage() {
           >
             {blockMut.isPending ? t(msg`提交中...`) : t(msg`提交封禁`)}
           </Button>
+          {/* 新增封禁失败时只一句红字，没 role；与下面 successText 已有
+              role=status 对齐，补 role=alert 让 SR 即时播报。 */}
           {blockMut.isError && (
-            <span className="text-sm text-[color:var(--state-danger-text)]">
+            <span
+              role="alert"
+              className="text-sm text-[color:var(--state-danger-text)]"
+            >
               {(blockMut.error as Error).message}
             </span>
           )}
@@ -205,8 +210,11 @@ export function AdminBlocksPage() {
       {blocksQ.isError && (
         <ErrorBlock role="alert" message={(blocksQ.error as Error).message} />
       )}
+      {/* 撤销封禁失败时管理员点的"撤销"按钮没有 disabled 反馈，需要 SR
+          即时朗读错误原因；和邻居 blocksQ.isError 的 ErrorBlock role=alert
+          对齐。 */}
       {revokeMut.isError && (
-        <InlineNotice tone="danger">
+        <InlineNotice tone="danger" role="alert">
           {(revokeMut.error as Error).message}
         </InlineNotice>
       )}
