@@ -354,20 +354,22 @@ export function DesktopChannelsWorkspace({
       return;
     }
 
+    let fallbackToEcho: string | null | undefined = undefined;
     setSelectedPostId((current) => {
       if (current && posts.some((post) => post.id === current)) {
         return current;
       }
       const fallback = posts[0]?.id ?? null;
-      // 兜底切换走 ref，避免 setState updater 里直接调 prop（updater 必须 pure）。
-      // 用 microtask 触发，确保在本次 commit 后再 fire（channels-page Effect on
-      // routeSelectedPostId 那边按 URL 同步 desktopSelectedPostId 已经先跑过；这里
-      // 是 workspace 内的"我选 posts[0] 不是 routeSel"的 echo）。
       if (fallback !== current) {
-        Promise.resolve().then(() => onSelectedPostChangeRef.current(fallback));
+        fallbackToEcho = fallback;
       }
       return fallback;
     });
+    // 兜底切换走 ref，避免 setState updater 里直接调 prop（updater 必须 pure）。
+    // 同帧调用（在 React 18 严格模式下不会抛 "setState during render"）。
+    if (fallbackToEcho !== undefined) {
+      onSelectedPostChangeRef.current(fallbackToEcho);
+    }
   }, [posts]);
 
   const selectedPost =
@@ -457,17 +459,14 @@ export function DesktopChannelsWorkspace({
 
         const postId = (visible.target as HTMLElement).dataset.postId;
         if (postId) {
-          setSelectedPostId((current) => {
-            if (current === postId) {
-              return current;
-            }
-            // 走查 2026-05-18 新会话（本轮 R1）：观察者真切到新 slide 时，事件
-            // 驱动 echo 给 channels-page（替原来的 useEffect on [selectedPost?.id]
-            // 中转 echo —— 那条会捕到 stale 闭包让 URL ping-pong）。同帧调避免
-            // commit 后异步漂移；ref 解锁回调最新 identity。
-            onSelectedPostChangeRef.current(postId);
-            return postId;
-          });
+          setSelectedPostId(postId);
+          // 走查 2026-05-18 新会话（本轮 R3）：观察者真切到新 slide 时事件驱动
+          // echo 给 channels-page。原写法把 echo 放在 setSelectedPostId updater
+          // 内部，但 setState updater 必须 pure —— 内部又触发 parent setState
+          // 在 React 18 严格模式下抛 "Cannot update a component while rendering
+          // a different component"。把 echo 移到 updater 外、observer 回调本帧
+          // 同步调（不在 render 期间），ref 解锁回调最新 identity。
+          onSelectedPostChangeRef.current(postId);
         }
       },
       { root, threshold: [0.6] },
