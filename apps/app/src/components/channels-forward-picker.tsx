@@ -179,6 +179,11 @@ export function ChannelsForwardPicker({
         // staleTime 内可见）→ 404 FEED_FORWARD_TARGET_REQUIRED。让用户知
         // 道是"挑的好友"出问题、换一个就行，不是后端集体挂了。
         translatedMessage = t(msg`这位好友已不在通讯录，请换一位再试。`);
+        // 走查 2026-05-18 R4：原来只显示错误条但没刷新好友列表——cached
+        // friends 仍含已删除的那位，用户「换一位」时挑到旁边的好友也可能
+        // 是同批失效的（典型场景：character 大批量被删 / 切账号边界）。
+        // 触发 refetch 把陈旧 cache 清掉，让列表反映 server 真值。
+        void friendsQuery.refetch();
       } else {
         translatedMessage = t(msg`转发失败，请稍后重试。`);
       }
