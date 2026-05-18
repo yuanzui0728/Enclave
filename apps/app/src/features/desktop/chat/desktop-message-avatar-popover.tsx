@@ -504,29 +504,35 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       <div className="mx-4 h-px bg-[rgba(0,0,0,0.06)]" />
 
       <div className="space-y-2 px-4 py-3">
+        {/* R46：和姊妹 R45 详情侧栏同款 —— 头像 popover 里 6 个 query + 1 个
+            startChatMutation ErrorBlock 全部裸 <div>，没 role / aria-live。
+            avatar popover 是用户在消息列表点头像后弹出来的——里面的 friend /
+            block / conversation cache 失败、点「发消息」→ getOrCreate 失败时，
+            盲人 SR 完全感知不到。startChatMutation 尤其坑：按钮短暂 pending
+            后恢复 enabled，无任何反馈，用户会反复点。挂 role="alert"。 */}
         {!isOwner && characterQuery.isError && characterQuery.error instanceof Error ? (
-          <ErrorBlock message={characterQuery.error.message} />
+          <ErrorBlock role="alert" message={characterQuery.error.message} />
         ) : null}
         {!isOwner && friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <ErrorBlock message={friendsQuery.error.message} />
+          <ErrorBlock role="alert" message={friendsQuery.error.message} />
         ) : null}
         {!isOwner &&
         friendRequestsQuery.isError &&
         friendRequestsQuery.error instanceof Error ? (
-          <ErrorBlock message={friendRequestsQuery.error.message} />
+          <ErrorBlock role="alert" message={friendRequestsQuery.error.message} />
         ) : null}
         {!isOwner && blockedQuery.isError && blockedQuery.error instanceof Error ? (
-          <ErrorBlock message={blockedQuery.error.message} />
+          <ErrorBlock role="alert" message={blockedQuery.error.message} />
         ) : null}
         {!isOwner &&
         conversationsQuery.isError &&
         conversationsQuery.error instanceof Error ? (
-          <ErrorBlock message={conversationsQuery.error.message} />
+          <ErrorBlock role="alert" message={conversationsQuery.error.message} />
         ) : null}
         {!isOwner &&
         groupMembersQuery.isError &&
         groupMembersQuery.error instanceof Error ? (
-          <ErrorBlock message={groupMembersQuery.error.message} />
+          <ErrorBlock role="alert" message={groupMembersQuery.error.message} />
         ) : null}
         {/* 点「发消息」→ getOrCreateConversation 失败时，原来 mutation 没
             onError、JSX 里也没渲染 startChatMutation.error，按钮短暂 pending
@@ -535,7 +541,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         {!isOwner &&
         startChatMutation.isError &&
         startChatMutation.error instanceof Error ? (
-          <ErrorBlock message={startChatMutation.error.message} />
+          <ErrorBlock role="alert" message={startChatMutation.error.message} />
         ) : null}
 
         {!isOwner && !characterQuery.isError && characterQuery.isLoading ? (
