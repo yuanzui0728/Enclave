@@ -789,7 +789,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
   return (
     <ChatDetailsShell
-      title={groupQuery.data?.name ?? t(msg`群聊信息`)}
+      title={groupQuery.data?.name || t(msg`群聊信息`)}
       subtitle={
         membersQuery.data
           ? t(msg`${membersQuery.data.length} 人群聊`)
@@ -978,7 +978,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
+                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
@@ -1062,7 +1062,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               />
               <ChatSettingRow
                 label={t(msg`我在本群的昵称`)}
-                value={ownerMember?.memberName ?? t(msg`未设置`)}
+                value={ownerMember?.memberName || t(msg`未设置`)}
                 variant="wechat"
                 onClick={guardRowNavigation(() => {
                   void navigate({
@@ -1275,7 +1275,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
+                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
