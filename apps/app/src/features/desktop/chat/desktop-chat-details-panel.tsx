@@ -1580,6 +1580,19 @@ function GroupChatDetailsPanel({
     [friendMap],
   );
 
+  // 走查电脑端群聊 R2：原版下方 JSX 里 existingMemberIds={(membersQuery.data ?? []).map(...)}
+  // 直接在 JSX 里 .map 出 array → 每次 GroupChatDetailsPanel re-render（typing
+  // socket / messages 流 / conversations 60s 轮询透传 conversation prop 都会
+  // 让父 workspace 重渲带本侧栏一起）都 new 一份 array。picker 内 existingMemberIdSet
+  // useMemo 依赖这个 array 引用 → set 重建 → availableFriends useMemo 跟着失效
+  //（filter × 70+ 好友 × toLowerCase + matchesFriendSearch 多路 haystack），
+  // 弹层打开期间每个父 tick 都 O(N) 白扫一次。锁住引用让 picker 内 deferredSearchTerm
+  // 真正起作用。removableMembers 已经 useMemo（line 1583），口径对齐。
+  const existingMemberIds = useMemo(
+    () => (membersQuery.data ?? []).map((item) => item.memberId),
+    [membersQuery.data],
+  );
+
   const removableMembers = useMemo(
     () =>
       (membersQuery.data ?? [])
@@ -1989,9 +2002,7 @@ function GroupChatDetailsPanel({
       <DesktopGroupMemberPicker
         open={memberPickerOpen && memberPickerMode === "add"}
         groupName={groupQuery.data?.name ?? conversation.title}
-        existingMemberIds={(membersQuery.data ?? []).map(
-          (item) => item.memberId,
-        )}
+        existingMemberIds={existingMemberIds}
         pending={addMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
         onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
