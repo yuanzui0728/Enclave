@@ -7062,44 +7062,6 @@ function resolveGroupCallInvite(message: ChatRenderableMessage) {
   return invite;
 }
 
-function shouldCollapseGroupCallMessage(
-  previousMessage: ChatRenderableMessage | null,
-  currentMessage: ChatRenderableMessage,
-) {
-  if (!previousMessage) {
-    return false;
-  }
-
-  const currentInvite = resolveGroupCallInvite(currentMessage);
-  const previousInvite = resolveGroupCallInvite(previousMessage);
-
-  return Boolean(
-    currentInvite &&
-    previousInvite &&
-    previousInvite.status === "ongoing" &&
-    currentInvite.kind === previousInvite.kind &&
-    currentInvite.groupName === previousInvite.groupName,
-  );
-}
-
-function shouldCollapseGroupRelayMessage(
-  previousMessage: ChatRenderableMessage | null,
-  currentMessage: ChatRenderableMessage,
-) {
-  if (!previousMessage) {
-    return false;
-  }
-
-  const currentSummary = resolveGroupRelaySummary(currentMessage);
-  const previousSummary = resolveGroupRelaySummary(previousMessage);
-
-  return Boolean(
-    currentSummary &&
-    previousSummary &&
-    currentSummary.sourceGroupName === previousSummary.sourceGroupName,
-  );
-}
-
 function redirectCollapsedMessage(
   redirectedIds: Map<string, string>,
   previousMessageId: string,
