@@ -974,11 +974,33 @@ export function DesktopChatWorkspace({
       // stopPropagation 在 popover（document/bubble，在 window 之前）那条
       // 路径上有效，但 window/bubble 同元素 sibling 上根本拦不住。
       //
-      // 把真正的 dismissSidePanel 推到 microtask：所有同步 keydown
-      // listener 跑完后，如果还没人 preventDefault 这次 Esc（说明确实没有
-      // modal/dialog 接走它），才真的关侧栏。
+      // 走查电脑端群聊 R11：原写法把 dismissSidePanel 推到 queueMicrotask 期望
+      //「所有同步 keydown listener 跑完后再检查 defaultPrevented」。但 HTML
+      // 规范要求每个 event listener invocation 之间都跑一次 microtask
+      // checkpoint —— Chromium / Firefox / Safari 实测都遵守。诊断 walk 实证：
+      //   capture 听 ESC + queueMicrotask → 微任务在下一个 listener 之前就跑完
+      //   workspace bubble 听 ESC + queueMicrotask → 在 dialog bubble 之前跑完
+      // 所以 workspace 微任务里 `event.defaultPrevented` 永远是 false（dialog
+      // bubble 还没机会 fire 它的 preventDefault），dismissSidePanel 直接执行
+      // —— 「按 Esc 把弹窗和侧栏一起关掉」从来没真的修过。
+      //
+      // 改法：不靠 defaultPrevented，直接查 DOM ——
+      // - dialog/modal 挂 `role="dialog"` aria-modal="true"（之前 a11y 走查 R1
+      //   给一批 dialog 补齐过 + Cmd+F handler line 1097-1101 用同款查询）
+      // - 消息 / 会话 / 官号 上下文菜单挂 `role="menu"`（group-message-context-menu /
+      //   desktop-conversation-context-menu / desktop-official-message-context-menu
+      //   a11y 都已经补齐）
+      // microtask 时这些 overlay 还在 DOM 里（onClose 走 setState 异步），有就
+      // skip。无 overlay 才真的 dismiss。注意不查 [data-yj-portal-shield] ——
+      // workspace 自己的搜索框 / quick-menu 容器也用这个 attr 但是常驻元素，
+      // 永远命中（和 Cmd+F handler 同款 caveat）。
       queueMicrotask(() => {
-        if (event.defaultPrevented) {
+        if (
+          typeof document !== "undefined" &&
+          document.querySelector(
+            '[role="dialog"][aria-modal="true"], [role="menu"]',
+          )
+        ) {
           return;
         }
         dismissSidePanel();
