@@ -436,6 +436,26 @@ function MobileGroupChatEditPage({
                 placeholder={
                   mode === "name" ? t(msg`请输入群聊名称`) : t(msg`请输入我在本群的昵称`)
                 }
+                // 走查 R5：和姊妹页 R1-R4 同款 a11y 修法——上方 ChatDetailsSection
+                // 标题"新的群聊名称 / 新的群昵称"在视觉上是标签但没 htmlFor /
+                // aria-labelledby 关联，屏幕阅读器 focus 进来只能读 placeholder，
+                // 用户打字后多数 SR 就不再朗读。挂 aria-label 与 mode 标题一致。
+                aria-label={
+                  mode === "name" ? t(msg`群聊名称`) : t(msg`我在本群的昵称`)
+                }
+                // 走查 R5：原版只能点"保存"按钮提交；这里只是个单行输入框，
+                // 用户在键盘上按 Enter（包括 iOS / Android 软键盘的 Return /
+                // "完成"）是直觉行为。和姊妹页 group-announcement / chat-list
+                // 已有的 enterKeyHint=done 口径对齐——Enter 直接触发 handleSave，
+                // 不破 disabled 兜底（handleSave 里有 submitDisabled / 双击锁
+                // 守护）。enterKeyHint=done 让软键盘 Return 键长得像"完成"。
+                enterKeyHint="done"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSave();
+                  }
+                }}
                 className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
