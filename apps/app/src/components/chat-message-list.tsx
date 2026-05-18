@@ -6901,14 +6901,29 @@ function GroupCallInviteMessage({
   // 双击行为天然幂等不受影响，但 guard 加在卡级别多挂一道防线不冲突。
   //
   // 每张卡独立 guard：用户依次点 A 卡再点 B 卡（不同通话邀请）时不互相影响，
-  // 只挡同一张卡的 same-frame double tap。第一次成功后 mobile 路径页面 unmount
-  // re-mount 时 ref 自动复位。
+  // 只挡同一张卡的 same-frame double tap。
+  //
+  // 走查电脑端群聊 R8：原版 openFiredRef 一旦被翻 true 就永不复位——只指望
+  // "第一次成功后 mobile 路径页面 unmount re-mount 时 ref 自动复位"。但电脑端
+  // onOpen=setDesktopCallPanelState(input) 不会让本组件 unmount —— 群消息列表
+  // 一直挂着。用户在群里点了同一张群通话卡 → 通话面板打开 → 点「返回聊天」
+  // 关掉面板（setDesktopCallPanelState(null)，本组件仍 mount）→ 想再点同一张卡
+  // 重新打开通话面板 → openFiredRef 仍然 true → handleOpen early return →
+  // setDesktopCallPanelState 不被调用 → 通话面板再也打不开，必须刷新页面才能
+  // 重新点同一个邀请。raf 释放兜底"第一次成功后下一帧解锁"。
   const openFiredRef = useRef(false);
   const handleOpen = onOpen
     ? () => {
         if (openFiredRef.current) return;
         openFiredRef.current = true;
         onOpen();
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            openFiredRef.current = false;
+          });
+        } else {
+          openFiredRef.current = false;
+        }
       }
     : undefined;
 
