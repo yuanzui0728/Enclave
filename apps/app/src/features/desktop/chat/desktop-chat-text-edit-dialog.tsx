@@ -221,6 +221,14 @@ export function DesktopChatTextEditDialog({
               value={draft}
               onChange={(event) => handleDraftChange(event.target.value)}
               placeholder={placeholder}
+              // 走查 R76：原版只挂 placeholder，SR (NVDA/JAWS) 多数实现在
+              // 用户开始打字后就不再朗读 placeholder。本 dialog 是单聊「聊天
+              // 信息」改备注/标签/群公告/群昵称的入口，盲人用户 focus 进
+              // 输入框时只听到「编辑栏」+ dialog 顶部 aria-labelledby title
+              // （比如"设置备注"），但 dialog 还有 description 副标，且
+              // input 自身没 label 时 SR 朗读不稳定。aria-labelledby 引到
+              // dialog title 节点 id，复用已存在的 stable id。
+              aria-labelledby={titleId}
               rows={6}
               disabled={pending}
               className="min-h-[180px] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none"
@@ -231,6 +239,7 @@ export function DesktopChatTextEditDialog({
               value={draft}
               onChange={(event) => handleDraftChange(event.target.value)}
               placeholder={placeholder}
+              aria-labelledby={titleId}
               disabled={pending}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
             />
