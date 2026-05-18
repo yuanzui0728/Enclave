@@ -329,6 +329,8 @@ export class UsersService implements OnModuleInit {
     page?: number;
     pageSize?: number;
     includeTestAccounts?: boolean;
+    orderBy?: "expires" | "registered" | "lastLogin";
+    orderDir?: "asc" | "desc";
   }): Promise<CloudUserListResponse> {
     const page = Math.max(query.page ?? 1, 1);
     const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
@@ -382,8 +384,43 @@ export class UsersService implements OnModuleInit {
     }
 
     const total = await builder.getCount();
+
+    // 在 getCount() 之后再挂排序相关的 join，避免影响 count 行数（subquery
+    // 已经 GROUP BY userId，是 1:1 join，但仍按"先 count 后 join"留一层保险）。
+    const orderBy = query.orderBy ?? "registered";
+    const orderDir: "ASC" | "DESC" =
+      (query.orderDir ?? "desc").toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    if (orderBy === "expires") {
+      // subscriptionExpiresAt 在序列化时取「active 或 latest」的 expiresAt，等价
+      // 于 MAX(expiresAt) per user（active 永远 > expired），所以这里直接 MAX
+      // 就够，不用区分 status。
+      builder
+        .leftJoin(
+          (qb) =>
+            qb
+              .select("us.userId", "userId")
+              .addSelect("MAX(us.expiresAt)", "latestExpiresAt")
+              .from(UserSubscriptionEntity, "us")
+              .groupBy("us.userId"),
+          "subExp",
+          "subExp.userId = user.id",
+        )
+        // NULL 永远排到末尾，匹配前端老逻辑里 av===null 返回 1 的语义；
+        // 不依赖 SQLite/PG 的 NULLS LAST 方言。
+        .orderBy("CASE WHEN subExp.latestExpiresAt IS NULL THEN 1 ELSE 0 END", "ASC")
+        .addOrderBy("subExp.latestExpiresAt", orderDir)
+        .addOrderBy("user.createdAt", "DESC");
+    } else if (orderBy === "lastLogin") {
+      builder
+        .orderBy("CASE WHEN user.lastLoginAt IS NULL THEN 1 ELSE 0 END", "ASC")
+        .addOrderBy("user.lastLoginAt", orderDir)
+        .addOrderBy("user.createdAt", "DESC");
+    } else {
+      builder.orderBy("user.createdAt", orderDir);
+    }
+
     const records = await builder
-      .orderBy("user.createdAt", "DESC")
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getMany();

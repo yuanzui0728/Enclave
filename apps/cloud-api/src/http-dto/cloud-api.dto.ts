@@ -359,6 +359,8 @@ const SUBSCRIPTION_SOURCES = [
   "invite_reward",
   "admin_grant",
 ] as const;
+const CLOUD_USER_ORDER_BY = ["expires", "registered", "lastLogin"] as const;
+const CLOUD_USER_ORDER_DIR = ["asc", "desc"] as const;
 
 export class ListCloudUsersDto {
   @Transform(trimString)
@@ -410,6 +412,16 @@ export class ListCloudUsersDto {
   @IsOptional()
   @IsBoolean({ message: "includeTestAccounts 必须是布尔值。" })
   includeTestAccounts?: boolean;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(CLOUD_USER_ORDER_BY, { message: "orderBy 不合法。" })
+  orderBy?: (typeof CLOUD_USER_ORDER_BY)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(CLOUD_USER_ORDER_DIR, { message: "orderDir 不合法。" })
+  orderDir?: (typeof CLOUD_USER_ORDER_DIR)[number];
 }
 
 export class GrantSubscriptionDto {

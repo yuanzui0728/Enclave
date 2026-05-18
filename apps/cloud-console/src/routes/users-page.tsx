@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
   CloudUserStatus,
-  CloudUserSummary,
   SubscriptionStatus,
 } from "@yinjie/contracts";
 import { formatDateTime, useAppLocale } from "@yinjie/i18n";
@@ -28,18 +27,6 @@ const FILTER_CONTROL_CLASS =
 
 type SortField = "expires" | "registered" | "lastLogin";
 type SortDirection = "asc" | "desc";
-
-function getSortValue(user: CloudUserSummary, field: SortField): number | null {
-  const raw =
-    field === "expires"
-      ? user.subscriptionExpiresAt
-      : field === "registered"
-        ? user.createdAt
-        : user.lastLoginAt;
-  if (!raw) return null;
-  const ts = new Date(raw).getTime();
-  return Number.isNaN(ts) ? null : ts;
-}
 
 function IpRegionCell({ ip }: { ip: string | null }) {
   const region = useIpRegion(ip);
@@ -130,6 +117,8 @@ export function UsersPage() {
       subscriptionStatus,
       page,
       includeTestAccounts,
+      sortField,
+      sortDirection,
     ],
     queryFn: () =>
       cloudAdminApi.listCloudUsers({
@@ -139,23 +128,14 @@ export function UsersPage() {
         page,
         pageSize: 20,
         includeTestAccounts: includeTestAccounts || undefined,
+        // 全局排序：后端在 LIMIT 之前 ORDER BY，避免"只排当前页 20 条"。
+        // sortField=null 时不传 → 后端走默认 registered/desc。
+        orderBy: sortField ?? undefined,
+        orderDir: sortField ? sortDirection : undefined,
       }),
   });
 
-  // 排序仅作用在当前页的 20 条上：后端尚未提供 orderBy，全局排序需要新接口
-  const sortedItems = useMemo(() => {
-    const items = usersQuery.data?.items ?? [];
-    if (!sortField) return items;
-    const sign = sortDirection === "asc" ? 1 : -1;
-    return [...items].sort((a, b) => {
-      const av = getSortValue(a, sortField);
-      const bv = getSortValue(b, sortField);
-      if (av === null && bv === null) return 0;
-      if (av === null) return 1;
-      if (bv === null) return -1;
-      return (av - bv) * sign;
-    });
-  }, [usersQuery.data?.items, sortField, sortDirection]);
+  const items = usersQuery.data?.items ?? [];
 
   function toggleSort(field: SortField) {
     if (sortField === field) {
@@ -164,8 +144,8 @@ export function UsersPage() {
       setSortField(field);
       setSortDirection("desc");
     }
-    // 切换排序字段 / 方向时回到第 1 页，否则用户在第 5 页点排序看到的是"第 5 页那
-    // 20 条重排"，而不是想象中的"按新字段重新排好的最前面 20 条"
+    // 切换排序字段 / 方向时回到第 1 页，否则用户在第 5 页点排序看到的是新排序
+    // 下"第 5 页那 20 条"，而不是想象中的"按新字段重新排好的最前面 20 条"。
     setPage(1);
   }
 
@@ -294,7 +274,7 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--border-faint)]">
-              {sortedItems.map((user) => (
+              {items.map((user) => (
                 <tr key={user.id} className="align-top">
                   <td className="truncate px-4 py-3">
                     <Link

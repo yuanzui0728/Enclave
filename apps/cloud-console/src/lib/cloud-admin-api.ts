@@ -1258,6 +1258,8 @@ export const cloudAdminApi = {
         page: query?.page,
         pageSize: query?.pageSize,
         includeTestAccounts: query?.includeTestAccounts,
+        orderBy: query?.orderBy,
+        orderDir: query?.orderDir,
       })}`,
     ),
 

@@ -148,6 +148,9 @@ export interface CloudUserSummary {
   lastLoginAt: string | null;
 }
 
+export type CloudUserListOrderBy = "expires" | "registered" | "lastLogin";
+export type CloudUserListOrderDir = "asc" | "desc";
+
 export interface CloudUserListQuery {
   query?: string;
   subscriptionStatus?: SubscriptionStatus;
@@ -160,6 +163,10 @@ export interface CloudUserListQuery {
   // 默认 undefined / false：服务端隐藏 smoke / e2e / Twilio 测试号。运营临时
   // 需要看测试账号时传 true 放开。
   includeTestAccounts?: boolean;
+  // 全局排序：后端在 LIMIT 之前 ORDER BY，避免"只排当前页 20 条"的错觉。
+  // 默认 registered/desc，保持与原行为一致。
+  orderBy?: CloudUserListOrderBy;
+  orderDir?: CloudUserListOrderDir;
 }
 
 export interface CloudUserListResponse {
