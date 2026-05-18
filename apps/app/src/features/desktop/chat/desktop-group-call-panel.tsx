@@ -155,6 +155,22 @@ export function DesktopGroupCallPanel({
     () => members.map((member) => member.memberId),
     [members],
   );
+  // 走查电脑端群聊 R81：和姊妹 DesktopGroupMemberBrowserDialog R73（commit
+  // 8fdc9c0d9）同款 perf——下方 visibleMembers.map 内每行 `member.role === "owner"
+  // ? t(msg`群主`) : member.role === "admin" ? t(msg`管理员`) : t(msg`群成员`)`
+  // 3 个静态 t() 调用，8 个 visible tile × 3 = 24 次 translateRuntimeMessage
+  // Map 查表 / render。本面板 re-render 触发源多（mic/camera/speaker toggle /
+  // joinedMemberIdSet 切换 / 1200ms auto-sync / members 30s 轮询透传 /
+  // setLastPublishedCallCounts 后父级回流），每次都跑同 24 次。useMemo 锁
+  // t deps，locale 切换才重建。
+  const roleLabels = useMemo(
+    () => ({
+      owner: t(msg`群主`),
+      admin: t(msg`管理员`),
+      member: t(msg`群成员`),
+    }),
+    [t],
+  );
   const callKindLabel = kind === "voice" ? t(msg`群语音`) : t(msg`群视频`);
   const activeCount = activeMembers.length;
   const waitingCount = Math.max(members.length - activeCount, 0);
@@ -550,12 +566,14 @@ export function DesktopGroupCallPanel({
             // 替代 O(K) 的 .includes 扫——8 个 tile × K 个 joined = O(8K) 退化
             // 成 O(8) Set.has。
             const joined = joinedMemberIdSet.has(member.memberId);
+            // 走查电脑端群聊 R81：复用上方 roleLabels useMemo（line ~158）
+            // 替代每行 3 个 t() 直调——locale 不变 Map 查表只发生一次。
             const roleLabel =
               member.role === "owner"
-                ? t(msg`群主`)
+                ? roleLabels.owner
                 : member.role === "admin"
-                  ? t(msg`管理员`)
-                  : t(msg`群成员`);
+                  ? roleLabels.admin
+                  : roleLabels.member;
 
             return (
               <button
