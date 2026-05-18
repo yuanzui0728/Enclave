@@ -130,6 +130,22 @@ export function GroupMessageContextMenu({
     return unregister;
   }, [onClose]);
 
+  // 走查 R7：和姊妹 sheet（mobile-message-action-sheet R2 等）同款 ESC 兜底
+  // —— 桌面/平板/外接键盘右键消息弹的 context menu 上拍 ESC 没反应，只能点
+  // backdrop 才能关。本菜单同时挂在桌面 right-click（chat-message-list 桌面
+  // 分支）和移动长按路径上，桌面侧用户体感差异最大。defaultPrevented 时让位。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50"
