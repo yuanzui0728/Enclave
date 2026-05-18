@@ -1178,6 +1178,79 @@ function GroupChatDetailsPanel({
     setAvatarPopover(null);
   }, [conversation.id]);
 
+  // 走查电脑端群聊 R1：和姊妹 DirectChatDetailsPanel R2（commit 34f317955 —
+  // 「聊天信息」侧栏 8 处行进二级页缺同帧双击 ref 守）/ 移动端 chat-details
+  // R3（commit cdc13e28a）同款问题。本群聊「聊天信息」侧栏下方 3 处行进
+  // 二级页 row 全部裸跑 `onClick={() => { void navigate({ to: ... }) }}`：
+  //   - 群二维码 → /group/$groupId/qr （line 1868-1888）
+  //   - 聊天文件 → /desktop/chat-files （line 1894-1903）
+  //   - 聊天背景 → /group/$groupId/background （line 1973-1989）
+  // DesktopWechatGroupRow 内 onClick 没有任何 throttle，每个 tap 都直冲
+  // navigate；同帧 <16ms 双击任一行都让 tanstack-router push 2 条相同
+  // history 项 → 用户从二级页返回还要按 2 次返回才能回到 details；并且
+  // chat-files / group-qr / chat-background 几个二级页 mount 时各自拉网络
+  // 数据（getGroupAttachments / getGroupBackground / getGroupQrcode），第二次
+  // 也会重复 RTT 一次（公网隧道 ~600ms）。
+  // 加一把共享 rowNavigateFiredRef + guardRowNavigation 包装器（和姊妹
+  // DirectChatDetailsPanel 同款写法），同 mount 内首次 click 后所有后续 row
+  // click 直接 noop，raf 后释放兜底"navigate 没真正切走"（disabled/dialog 拦截）
+  // 的边界。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+
+  const handleOpenGroupQr = guardRowNavigation(() => {
+    void navigate({
+      to: "/group/$groupId/qr",
+      params: { groupId: conversation.id },
+      search: buildGroupInviteReturnSearch({
+        conversationPath: `/group/${conversation.id}`,
+        conversationTitle: groupQuery.data?.name ?? conversation.title,
+      }),
+      hash: buildMobileGroupRouteHash({
+        returnPath: "/tabs/chat",
+        returnHash: buildDesktopChatRouteHash({
+          conversationId: conversation.id,
+          panel: "details",
+        }),
+      }),
+    });
+  });
+
+  const handleOpenChatFiles = guardRowNavigation(() => {
+    void navigate({
+      to: "/desktop/chat-files",
+      hash: buildDesktopChatFilesRouteHash(conversation.id),
+    });
+  });
+
+  const handleOpenChatBackground = guardRowNavigation(() => {
+    void navigate({
+      to: "/group/$groupId/background",
+      params: { groupId: conversation.id },
+      hash: buildMobileGroupRouteHash({
+        returnPath: "/tabs/chat",
+        returnHash: buildDesktopChatRouteHash({
+          conversationId: conversation.id,
+          panel: "details",
+        }),
+      }),
+    });
+  });
+
   useEffect(() => {
     if (!notice) {
       return;
@@ -1868,23 +1941,7 @@ function GroupChatDetailsPanel({
         <DesktopWechatGroupRow
           label={t(msg`群二维码`)}
           value={t(msg`查看邀请卡`)}
-          onClick={() => {
-            void navigate({
-              to: "/group/$groupId/qr",
-              params: { groupId: conversation.id },
-              search: buildGroupInviteReturnSearch({
-                conversationPath: `/group/${conversation.id}`,
-                conversationTitle: groupQuery.data?.name ?? conversation.title,
-              }),
-              hash: buildMobileGroupRouteHash({
-                returnPath: "/tabs/chat",
-                returnHash: buildDesktopChatRouteHash({
-                  conversationId: conversation.id,
-                  panel: "details",
-                }),
-              }),
-            });
-          }}
+          onClick={handleOpenGroupQr}
         />
         <DesktopWechatGroupRow
           label={t(msg`查找聊天记录`)}
@@ -1894,12 +1951,7 @@ function GroupChatDetailsPanel({
         <DesktopWechatGroupRow
           label={t(msg`聊天文件`)}
           value={t(msg`查看本群附件`)}
-          onClick={() => {
-            void navigate({
-              to: "/desktop/chat-files",
-              hash: buildDesktopChatFilesRouteHash(conversation.id),
-            });
-          }}
+          onClick={handleOpenChatFiles}
         />
       </DesktopWechatGroupSection>
 
@@ -1973,19 +2025,7 @@ function GroupChatDetailsPanel({
         <DesktopWechatGroupRow
           label={t(msg`聊天背景`)}
           value={backgroundLabel}
-          onClick={() => {
-            void navigate({
-              to: "/group/$groupId/background",
-              params: { groupId: conversation.id },
-              hash: buildMobileGroupRouteHash({
-                returnPath: "/tabs/chat",
-                returnHash: buildDesktopChatRouteHash({
-                  conversationId: conversation.id,
-                  panel: "details",
-                }),
-              }),
-            });
-          }}
+          onClick={handleOpenChatBackground}
         />
       </DesktopWechatGroupSection>
 
