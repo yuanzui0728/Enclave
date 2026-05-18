@@ -63,6 +63,7 @@ export function DesktopCreateGroupDialog({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const titleId = useId();
+  const shareHistoryPanelId = useId();
   const [searchTerm, setSearchTerm] = useState("");
   // 走查 R2：和移动端 create-group-page.tsx commit 456d91ecc 同款问题。
   // filteredFriends 直接吃 searchTerm，yuanzui0728_5999 测号 70+ 好友时每个
@@ -1017,7 +1018,10 @@ export function DesktopCreateGroupDialog({
         </div>
 
         {conversationId && shareHistory ? (
-          <div className="border-t border-[rgba(15,23,42,0.08)] bg-[#fafafa] px-4 py-3">
+          <div
+            id={shareHistoryPanelId}
+            className="border-t border-[rgba(15,23,42,0.08)] bg-[#fafafa] px-4 py-3"
+          >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 {t(msg`分享聊天内容`)}
@@ -1209,6 +1213,17 @@ export function DesktopCreateGroupDialog({
           <div className="flex min-w-0 items-center gap-3 text-[12px] text-[color:var(--text-muted)]">
             <span>{t(msg`已选择 ${selectedIds.length} 位联系人`)}</span>
             {conversationId ? (
+              // 走查电脑端群聊 R100：原版「分享聊天内容」chip 是 disclosure 模式——
+              // 点击展开/收起上方 `{conversationId && shareHistory ? (...)` 整段
+              // 消息选择面板（line ~1021，含 messageSelectionNotice / preset chip
+              // 行 / shareable message 列表）。但 button 只用绿底/灰底 + 文案在
+              //「分享聊天内容」↔「已分享 N 条聊天内容」翻转做视觉区分，盲人 SR
+              // 走过去只听到当前 label，不知道该按钮控制一个可展开的区域，更不
+              // 知道当前是展开还是收起态——内置 disclosure 语义缺失。补
+              // aria-expanded 表达 toggle 状态；aria-controls 把整段面板 div 挂
+              // 上 id 锚定，让 SR 跳到 disclosure 内容时能识别归属。同步「收起」
+              // (line ~1033) 仅命令式 action 不挂 aria-expanded（按钮自身不持
+              //"展开/收起"状态，按下后总是变成 hide）。
               <button
                 type="button"
                 onClick={() => {
@@ -1219,6 +1234,8 @@ export function DesktopCreateGroupDialog({
                     setSelectedMessageIds([]);
                   }
                 }}
+                aria-expanded={shareHistory}
+                aria-controls={shareHistory ? shareHistoryPanelId : undefined}
                 className={cn(
                   "rounded-full px-3 py-1 transition",
                   shareHistory
