@@ -729,7 +729,10 @@ export function DesktopChatHistoryPanel({
           ) : null}
 
           {resultsQuery.isError && resultsQuery.error instanceof Error ? (
+            // R61：resultsQuery 失败（聊天记录搜索 4xx/5xx）时盲人 SR 完全
+            // 静默，只听到「正在搜索」消失。挂 role="alert"。
             <DesktopSearchFeedbackState
+              role="alert"
               className="px-4 py-5"
               icon={<AlertCircle size={16} className="text-[#d74b45]" />}
               title={t(msg`搜索失败`)}
@@ -885,6 +888,7 @@ function DesktopSearchFeedbackState({
   actionLabel,
   onAction,
   className,
+  role,
 }: {
   icon: ReactNode;
   title: string;
@@ -892,9 +896,11 @@ function DesktopSearchFeedbackState({
   actionLabel?: string;
   onAction?: () => void;
   className?: string;
+  // R61：error 变种需要 role="alert" 让 SR 立刻播报；loading / empty 不挂。
+  role?: "alert" | "status";
 }) {
   return (
-    <div className={cn("px-3 py-3", className)}>
+    <div className={cn("px-3 py-3", className)} role={role}>
       <div className="rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-5 py-8 text-center">
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#f6f6f6]">
           {icon}
