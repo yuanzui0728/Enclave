@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     >
       <AppLocaleProvider
         surface="wiki"
-        fallback={<LoadingBlock className="m-6" />}
+        fallback={<LoadingBlock className="m-6" label="加载中..." />}
       >
         <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />
