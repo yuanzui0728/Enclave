@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Bookmark,
   EyeOff,
+  ImageIcon,
   MessageCircleMore,
   Music2,
   Play,
@@ -2701,8 +2702,18 @@ function ChannelAudioPictorial({
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
       ) : (
+        // 走查 2026-05-18 R2：原 fallback 一律渲 Music2 音符图标——音频帖
+        // 是合理的（没封面就是音频流），但图集帖（mediaType=image）也复用
+        // 本组件且把 audioUrl 传空串，所有图片 url 失败 / 没 cover 时同样
+        // 落到这里，用户看到一张「图集帖」突然变成音符图标，体感「这不是
+        // 我看的那条」/「图集变成了音乐」。按 audioUrl 是否为空区分：
+        // 没音轨用 ImageIcon（lucide），保持图集语义。
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
-          <Music2 size={56} className="text-white/40" />
+          {audioUrl ? (
+            <Music2 size={56} className="text-white/40" />
+          ) : (
+            <ImageIcon size={56} className="text-white/40" />
+          )}
         </div>
       )}
 
