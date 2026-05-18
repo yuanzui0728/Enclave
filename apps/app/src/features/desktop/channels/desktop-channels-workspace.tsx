@@ -878,7 +878,20 @@ function ChannelMediaSurface({
   const audioAsset = post.media?.find((asset) => asset.kind === "audio");
   const videoAsset = post.media?.find((asset) => asset.kind === "video");
 
-  if (post.mediaType === "audio" && (audioAsset || post.mediaUrl)) {
+  // 走查 2026-05-18 R2（本轮）：原来 audio/video 两个分支的 gate 和 URL 解析
+  // 用了不同的 fallback 操作符——gate 用 `||`（truthy 检查），URL 用 `??`
+  // （nullish-only）。contracts 里 FeedMediaAsset.url 是 `string` 必填，但没
+  // 约束非空，server 偶发会落空字符串（minimax 拉取失败 + 后端没 cleanupBroken
+  // ChannelPosts 跑过 / 异步 LPP 子端口未确认 url 时）。
+  //   - video 分支：`videoAsset?.url || post.mediaUrl` 让 gate 取到 mediaUrl
+  //     真值，但 url prop 用 `??` 留下 videoAsset.url=""，<ChannelVideoPlayer>
+  //     拿到空字符串 → `isActive && url` 永远 false → 永远黑屏不播 + 不报错
+  //     （用户看到自己发的视频卡，封面有，点了取消静音也没反应）。
+  //   - audio 分支：gate 检查 audioAsset 对象本体存在（不看 url），url prop 同
+  //     样 `??` 让空字符串穿过 → AudioCard 拿到空 url → play 失败静默。
+  // 统一改成"先把可播 url 算出来，再用它当 gate"，逻辑零分歧。
+  const audioPlaybackUrl = audioAsset?.url || post.mediaUrl || "";
+  if (post.mediaType === "audio" && audioPlaybackUrl) {
     const backgroundCover = resolveAppMediaUrl(
       audioAsset?.posterUrl ?? post.coverUrl ?? undefined,
     );
@@ -904,7 +917,7 @@ function ChannelMediaSurface({
         ) : null}
         <div className="relative">
           <AudioCard
-            url={audioAsset?.url ?? post.mediaUrl ?? ""}
+            url={audioPlaybackUrl}
             posterUrl={audioAsset?.posterUrl ?? post.coverUrl ?? undefined}
             title={
               audioAsset?.title ?? post.title ?? `${post.authorName}·${t(msg`音乐`)}`
@@ -918,13 +931,14 @@ function ChannelMediaSurface({
     );
   }
 
-  if (post.mediaType === "video" && (videoAsset?.url || post.mediaUrl)) {
+  const videoPlaybackUrl = videoAsset?.url || post.mediaUrl || "";
+  if (post.mediaType === "video" && videoPlaybackUrl) {
     const resolvedPoster = resolveAppMediaUrl(
       videoAsset?.posterUrl ?? post.coverUrl ?? undefined,
     );
     return (
       <ChannelVideoPlayer
-        url={resolveAppMediaUrl(videoAsset?.url ?? post.mediaUrl ?? "")}
+        url={resolveAppMediaUrl(videoPlaybackUrl)}
         posterUrl={resolvedPoster || undefined}
         isActive={isActive}
         unmuted={unmuted}
@@ -1909,6 +1923,38 @@ function DesktopChannelCommentsPanel({
   // 提示告知用户为什么不能动。
   const cannotInteract = selectedPost?.canInteract === false;
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // 走查 2026-05-18 R2（本轮）：评论 input 同步双击锁。原 send 路径只 guard
+  // `submitPending` （即 react-query commentMutation.isPending），但 isPending
+  // 是 mutation 启动后下一次 render 才回 true 的异步 state。用户在 keyboard
+  // 上连按两次 Enter (典型间隔 <16ms) 或鼠标快速双击「发送」时，两次
+  // onSubmit() 同步进入 → submitComment() 同步进入 → commentMutation.mutate()
+  // 同步入栈两次 → onMutate 顺序 fire 两次（cache 乐观 +2）→ 两个 POST 落地
+  // 同一段文本插两条一模一样的评论。
+  // 同移动端 wechat-comment-bar / mobile-feed-publish-page 的 submittingRef
+  // 思路：ref 同步赋值，第一次 Enter 翻 true 后同帧内的 click/Enter 全部早返；
+  // submitPending 下沿（mutation settle）时释放，允许下条评论发送。
+  // 切 post / 切 reply target 时也释放（用户从一条切到另一条理论上是新意图）。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!submitPending) {
+      submittingRef.current = false;
+    }
+  }, [submitPending]);
+  useEffect(() => {
+    submittingRef.current = false;
+  }, [selectedPostId, replyTarget?.commentId]);
+  const handleSubmit = () => {
+    if (submittingRef.current) return;
+    if (
+      !selectedPost ||
+      cannotInteract ||
+      !draft.trim() ||
+      submitPending
+    )
+      return;
+    submittingRef.current = true;
+    onSubmit();
+  };
   // 打开评论抽屉 / 点 "回复 X" 时，把焦点送到 input——和移动端 sheet 的处理
   // 一致（commit 2090+），用户开了抽屉就能直接敲字。
   //
@@ -2261,15 +2307,8 @@ function DesktopChannelCommentsPanel({
               ) {
                 return;
               }
-              if (
-                !selectedPost ||
-                cannotInteract ||
-                !draft.trim() ||
-                submitPending
-              )
-                return;
               event.preventDefault();
-              onSubmit();
+              handleSubmit();
             }}
             placeholder={
               cannotInteract
@@ -2292,7 +2331,7 @@ function DesktopChannelCommentsPanel({
               !draft.trim() ||
               submitPending
             }
-            onClick={onSubmit}
+            onClick={handleSubmit}
             className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
           >
             {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
