@@ -6019,8 +6019,28 @@ function DesktopMentionPicker({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]">
-      <div className="px-4 pb-1 pt-1 text-[11px] text-[color:var(--text-dim)]">
+    // 走查电脑端群聊 R14：DesktopMentionPicker 是群聊里输入 "@" 弹出的成员选择
+    // 列表（direct 路径 conversation-thread-panel 没传 mentionCandidates，
+    // group-chat-thread-panel 才传，所以本组件实际只在群聊里出现）。原版裸 div
+    // 包一堆 <button>，盲人 SR 走过去：(a) 听不出这是个 list（按 Tab 走 textarea
+    // → 看不见选项），(b) 即使 hover 触发也不知道 activeIndex 是哪个。键盘
+    // 上 / 下 / Enter 由父 chat-composer 接管 textarea keydown 控制 activeIndex
+    // 而不挪 focus，SR 用户拿不到 audible 反馈。
+    //
+    // 加 role="listbox" + aria-label 表明列表语义，每个候选项 role="option" +
+    // aria-selected=活跃。textarea 上配合 aria-activedescendant / aria-controls
+    // 还能更准，但 textarea 又同时挂着其它 SR 文本，attribute 串扰大；选项加
+    // role=option 后 SR 在阅读 textarea 时 NVDA / VoiceOver 仍会朗读"列表
+    // N 项 当前 ${activeIndex+1}"，已经能 audible 区分。
+    <div
+      role="listbox"
+      aria-label={t(msg`@提及成员候选`)}
+      className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]"
+    >
+      <div
+        aria-hidden="true"
+        className="px-4 pb-1 pt-1 text-[11px] text-[color:var(--text-dim)]"
+      >
         {t(msg`选择要提到的成员`)}
       </div>
       <div className="space-y-0.5">
@@ -6028,6 +6048,8 @@ function DesktopMentionPicker({
           <button
             key={candidate.id}
             type="button"
+            role="option"
+            aria-selected={index === activeIndex}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(candidate)}
             className={cn(
@@ -6050,7 +6072,10 @@ function DesktopMentionPicker({
                 </div>
               ) : null}
             </div>
-            <div className="shrink-0 text-[13px] text-[color:var(--text-dim)]">
+            <div
+              aria-hidden="true"
+              className="shrink-0 text-[13px] text-[color:var(--text-dim)]"
+            >
               @
             </div>
           </button>
