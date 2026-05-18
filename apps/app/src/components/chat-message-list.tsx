@@ -1811,6 +1811,30 @@ export function ChatMessageList({
     }
     longPressTimerRef.current = window.setTimeout(() => {
       setMobileActionMessage(message);
+      // 走查 2026-05-18 移动端群聊 R6：长按弹 sheet 后，用户必然要先把手指从消息
+      // 上松开才能去敲 action；touchend 之后浏览器会自动派发一次合成 click，落点
+      // 是手指最终位置。如果用户按住超过 ~730ms（sheet 在 380ms 弹出 + sheet 内
+      // 的 350ms 时间 guard 一过），那次合成 click 会落到刚弹起来的 sheet 上：
+      //   - 落 ActionButton → 触发该 action（用户没主动点）
+      //   - 落 backdrop / Cancel → 把 sheet 直接关掉
+      // 解决：在长按 fire 那一刻装一个 capture-phase 一次性 click 拦截器，把这次
+      // 合成 click 在到达任何子元素之前先 preventDefault + stopPropagation；等
+      // 浏览器派发完合成 click（或 500ms 超时兜底）后立刻摘掉，下一次用户的真实
+      // 点击不受影响。click 捕获生效后摘自己，500ms timeout 是 fallback：mobile
+      // 有些原生壳 / Capacitor 在 touchend 后不一定派 click（pointercancel 路径），
+      // 不能死等。
+      if (typeof document !== "undefined") {
+        const swallowGhostClick = (event: Event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          document.removeEventListener("click", swallowGhostClick, true);
+          window.clearTimeout(timeoutHandle);
+        };
+        document.addEventListener("click", swallowGhostClick, true);
+        const timeoutHandle = window.setTimeout(() => {
+          document.removeEventListener("click", swallowGhostClick, true);
+        }, 500);
+      }
       clearLongPressTimer();
     }, 380);
   };
