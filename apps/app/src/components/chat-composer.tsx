@@ -1175,17 +1175,25 @@ export function ChatComposer({
     nativeDesktopFavorites,
   ]);
 
-  useEffect(() => {
-    return () => {
-      releaseAttachmentDraft(attachmentDraft);
-    };
-  }, [attachmentDraft]);
-
-  useEffect(() => {
-    return () => {
-      releaseImageDraft(desktopScreenshotDraft);
-    };
-  }, [desktopScreenshotDraft]);
+  // 走查 R1（新一轮）：这两条 useEffect 看起来是为了在 draft 变更或 unmount
+  // 时 revoke blob URL，但 closure 捕获的是 OLD draft —— React 在切到 NEW 之前
+  // 先跑 OLD cleanup → releaseAttachmentDraft(OLD) 会把 OLD draft 里所有 items
+  // 的 previewUrl 全 revoke 一遍。
+  //
+  // 在「整 draft 替换」路径（applyImageDraftFiles / applyGenericFileDraft /
+  // captureDesktopScreenshot / handleCancelAttachmentDraft 等）调用方已经手动
+  // releaseAttachmentDraft(attachmentDraft) 再 set 新 draft，effect 这里再跑
+  // 一遍只是双重 revoke（idempotent，无害）。
+  //
+  // 但「部分移除」路径——handleRemoveDraftImage 从 5 张里删第 3 张、
+  // trimSentImageDraftItems 发出后保留未发的——只 revoke 移走的那一张，剩余
+  // 的 items 仍要继续渲染。effect cleanup 拿 OLD draft（5 张）跑一次完整
+  // release → 把还要继续显示的 #1/#2/#4/#5 也 revoke 掉，缩略图 src 变成无效
+  // blob:URL，浏览器某些时机（滚出 viewport 再回 / 切窗口 / 点全屏预览）就
+  // 加载失败白屏。
+  //
+  // 卸载场景由上面 853-862 那对 ref + `[]`-deps effect 兜底，per-state 清理
+  // 由各调用方自己 explicit revoke 完成，这两条 deps effect 删掉。
 
   const handleCloseDesktopScreenshotEditor = useEffectEvent(() => {
     closeDesktopScreenshotEditor();
