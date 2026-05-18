@@ -38,11 +38,29 @@ export function DesktopChatTextEditDialog({
   const titleId = useId();
   const descId = useId();
 
+  // 走查电脑端群聊 R4：原版 useEffect deps=[initialValue, open]，凡 parent
+  // 重传 initialValue（即便没改 open=true 状态）都会 setDraft(initialValue)
+  // 覆盖用户当前正在编辑的内容。GroupChatDetailsPanel 里 initialValue 计算式
+  // 是 `group?.name ?? conversation.title` / `group?.announcement ?? ""` /
+  // `ownerMember?.memberName ?? ""`—— group/membersQuery 60s 轮询完成 +
+  // socket conversation_updated 触发 invalidate 都让 parent 用最新数据重渲，
+  // initialValue 跟着换引用 / 字符串值。极端时序：用户开「群聊名称」编辑，
+  // 刚打"新群名 v2"还没确认，后台 groupQuery 拉到一份 canonical group.name
+  // → parent 重传 initialValue=group.name → 本 effect 跑 setDraft(group.name)
+  // → 用户的草稿被清掉。改成只在 open 由 false→true 转 true 时 seed 一次
+  // draft，open 期间忽略 initialValue 变化；close 时 ref 回 false，下次开
+  // editor 时重新 seed。
+  const seededForCurrentOpenRef = useRef(false);
   useEffect(() => {
     if (!open) {
+      seededForCurrentOpenRef.current = false;
       return;
     }
 
+    if (seededForCurrentOpenRef.current) {
+      return;
+    }
+    seededForCurrentOpenRef.current = true;
     setDraft(initialValue);
   }, [initialValue, open]);
 
