@@ -59,9 +59,15 @@ function MobileChatMessageSearchPage({
       returnHash: safeReturnHash,
     }) || undefined;
 
+  // 走查 R6（第 6 轮）：和兄弟入口（chat-list / chat-room / chat-details /
+  // mobile-ai-call-screen / mobile-shell / mobile-reminder-toast-host）共享
+  // ["app-conversations", baseUrl]，那 6 处对齐到 15s staleTime；本页是从
+  // chat-details 「查找聊天记录」入口进来，上一页 conversations cache 还热，
+  // 缺 staleTime 会按默认重发一次 GET /conversations（公网隧道 ~600ms）。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
 
   const messagesQuery = useQuery({

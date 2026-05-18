@@ -88,9 +88,13 @@ export function ChatBackgroundPage() {
     [conversationId],
   );
 
+  // 走查 R6（第 6 轮）：和兄弟入口共享 ["app-conversations", baseUrl]，那一群
+  // 对齐到 15s staleTime；本页是 chat-details 「设置当前聊天背景」二级入口，
+  // 上一页 cache 还热，缺 staleTime 会按默认重发一次 GET /conversations。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
 
   const backgroundQuery = useConversationBackground(conversationId);
