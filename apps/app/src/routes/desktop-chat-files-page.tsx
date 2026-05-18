@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -411,17 +411,31 @@ export function DesktopChatFilesPage() {
     );
   }, [imageRows]);
 
+  // 走查新一轮 R4：和姊妹 chat-image-viewer-page R2 / chat-message-list R3 同
+  // 款 — handleAttachmentSave 是 fire-and-forget，无任何同步锁。聊天文件页
+  // 列表行 + 大图查看器内「保存」按钮 + 行内 hover 操作三处都直接调用，同
+  // 帧 <16ms double-click 弹出 2 个文件保存对话框堆叠。按 url 上锁，finally
+  // 解锁，不同附件互不影响（用户在文件页里挨个保存合法）。
+  const savingAttachmentUrlsRef = useRef<Set<string>>(new Set());
   const handleAttachmentSave = (input: {
     url: string;
     fileName: string;
     kind: "image" | "file";
   }) => {
+    if (savingAttachmentUrlsRef.current.has(input.url)) {
+      return;
+    }
+    savingAttachmentUrlsRef.current.add(input.url);
     void saveRemoteFile({
       url: input.url,
       fileName: input.fileName,
       kind: input.kind,
       dialogTitle: input.kind === "image" ? t(msg`保存图片`) : t(msg`保存文件`),
-    }).then((result) => {
+    })
+      .finally(() => {
+        savingAttachmentUrlsRef.current.delete(input.url);
+      })
+      .then((result) => {
       if (result.status === "cancelled") {
         return;
       }
