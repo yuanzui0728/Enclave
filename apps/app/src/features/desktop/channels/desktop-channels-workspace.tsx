@@ -1544,6 +1544,21 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
     },
     [post.id, registerSlide],
   );
+  // 走查 2026-05-18 第四轮 R1：原 IIFE 在 slide overlay 里裸调
+  // stripToolCallSyntax(post.text ?? "") + cleanText===post.title 比较，每次
+  // ChannelFeedSlide re-render（即便 memo'd，post 在 like / favorite / follow /
+  // viewCount tick / decorations refetch 时都换 identity → setQueryData 那条
+  // clone 路径）都跑一遍 — 4 个 regex replace + 1 个 CoT-detection long regex。
+  // 跟同文件 R9 DesktopThreadCommentCard / R10 DesktopCommentThreadReplies / R11
+  // PostReferenceCard 的 useMemo([text]) 模板对齐；post.title 也吃进 deps —
+  // title 极少变（一帖一生），含进去也不引发额外重算。
+  const slideBodyText = useMemo(() => {
+    const cleanText = stripToolCallSyntax(post.text ?? "");
+    if (!cleanText || cleanText === post.title) {
+      return null;
+    }
+    return cleanText;
+  }, [post.text, post.title]);
   return (
     <div
       ref={slideRef}
@@ -1632,20 +1647,14 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                 {post.title}
               </div>
             ) : null}
-            {(() => {
-              // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，
-              // 标题和正文重复出现没意义；只在两者不一致时才渲染正文。和移动端
-              // MobileChannelsCard 里的处理保持一致。
-              const cleanText = stripToolCallSyntax(post.text ?? "");
-              if (!cleanText || cleanText === post.title) {
-                return null;
-              }
-              return (
-                <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-white/82">
-                  {cleanText}
-                </div>
-              );
-            })()}
+            {slideBodyText ? (
+              // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，标题和
+              // 正文重复出现没意义；slideBodyText useMemo（同 slide 顶部）已经把
+              // "cleanText===title" 的情况返回 null，本节点只负责显隐渲染。
+              <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-white/82">
+                {slideBodyText}
+              </div>
+            ) : null}
             {post.topicTags?.length ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {post.topicTags.slice(0, 4).map((tag) => (
