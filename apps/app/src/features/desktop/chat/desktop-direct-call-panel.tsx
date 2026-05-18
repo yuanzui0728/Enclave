@@ -633,6 +633,19 @@ export function DesktopDirectCallPanel({
                 {t(msg`当前浏览器不支持桌面端语音录制，请改用键盘聊天或切换浏览器。`)}
               </InlineNotice>
             ) : null}
+            {activeCall.playerError ? (
+              <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
+            ) : null}
+          </div>
+          {/* R47：通话失败 ErrorBlock 必须 assertive ——turn / digital-human
+              gateway / endCall / speech 任一失败都打断当前通话流，盲人用户
+              必须立刻听到；R42 的注释也明确说"assertive 留给真正 error 类
+              （在下方 ErrorBlock 显示）"，但实际上四个 ErrorBlock 被嵌在
+              polite live region 里（嵌套 live region 行为各 SR 不一致：
+              NVDA 多数尊重内层 role="alert"，JAWS/VoiceOver 可能仍按外层
+              polite 排队，导致网络错误被通话录音 / TTS 反复挤掉队）。拆出
+              独立的 role="alert" 包装，确保所有 SR 都立刻打断播报。 */}
+          <div role="alert" aria-live="assertive" className="mt-3 space-y-3 empty:hidden">
             {activeCall.turnMutation.error instanceof Error ? (
               <ErrorBlock message={activeCall.turnMutation.error.message} />
             ) : null}
@@ -641,9 +654,6 @@ export function DesktopDirectCallPanel({
             ) : null}
             {endCallError ? <ErrorBlock message={endCallError} /> : null}
             {speech.error ? <ErrorBlock message={speech.error} /> : null}
-            {activeCall.playerError ? (
-              <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
-            ) : null}
           </div>
         </div>
 
