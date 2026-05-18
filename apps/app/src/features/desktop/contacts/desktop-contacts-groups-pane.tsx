@@ -268,9 +268,19 @@ function DesktopGroupDetailCard({
   const handleOpenGroupDetails = guardNavigate(() =>
     onOpenGroupDetails(group.id),
   );
+  // 走查电脑端群聊 R74：和姊妹「发起群聊」R2 / 「添加成员」R2 / 「查找聊天记录」
+  // R3 / 头像 popover R3 同款 cache 复用问题——原 queryKey 用独立的
+  // "app-contacts-group-members"，不复用 group-chat-thread-panel /
+  // desktop-chat-details-panel / desktop-chat-history-panel / desktop-message-
+  // avatar-popover 已经在用的 "app-group-members"。用户从「通讯录 → 群聊」
+  // 选一个群看 group detail card 时拉一份 members；点「进入群聊」/「群聊
+  // 信息」navigate 进群 thread → membersQuery 在另一份 cache key 上发新请求，
+  // 公网隧道 ~600ms RTT 再走一发。统一到共享 cache key + 15s staleTime（和其它
+  // 入口对齐），点进群聊立刻渲染。
   const membersQuery = useQuery({
-    queryKey: ["app-contacts-group-members", baseUrl, group.id],
+    queryKey: ["app-group-members", baseUrl, group.id],
     queryFn: () => getGroupMembers(group.id, baseUrl),
+    staleTime: 15_000,
   });
   const members = membersQuery.data ?? [];
   const memberCount = members.length;
