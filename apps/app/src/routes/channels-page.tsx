@@ -65,6 +65,7 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
+  restoreDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -1408,12 +1409,15 @@ export function ChannelsPage() {
       {
         onError: () => {
           if (alreadyFavorited) {
-            // 之前是「已收藏 → 取消收藏」分支，刚把记录删了，要把原记录加回去
+            // 之前是「已收藏 → 取消收藏」分支，刚把记录删了，要把原记录加回去。
+            //
+            // 走查 2026-05-18 R2：原代码 destructure 扔掉 collectedAt 走
+            // upsertDesktopFavorite(restored) 重写为 now → favorite 在「我 →
+            // 收藏」列表里神秘跳到顶部（按 collectedAt DESC 排序），用户体感
+            // 「我刚取消失败的收藏，怎么跑到最上面了」。改走 restoreDesktopFavorite
+            // 完整保留原 collectedAt，favorite 还原到原位置。
             if (previousFavoriteRecord) {
-              const { collectedAt: _unused, ...restored } =
-                previousFavoriteRecord;
-              void _unused;
-              upsertDesktopFavorite(restored);
+              restoreDesktopFavorite(previousFavoriteRecord);
             }
           } else {
             // 之前是「未收藏 → 收藏」分支，刚 upsert 了一条，删掉

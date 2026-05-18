@@ -201,6 +201,34 @@ export function removeDesktopFavorite(sourceId: string) {
   return nextFavorites;
 }
 
+/**
+ * 走查 2026-05-18 R2：用于「乐观取消收藏 → 网络失败 → 把原记录放回去」的兜底
+ * 路径。原 channels-page onError 走 upsertDesktopFavorite(restored) 把
+ * collectedAt 字段 destructure 扔掉，重写为 now → favorite 在"我 → 收藏"列表里
+ * 神秘跳到顶部（按 collectedAt DESC 排序）。restore 路径完整保留 collectedAt，
+ * favorite 留在原本的位置。
+ */
+export function restoreDesktopFavorite(record: DesktopFavoriteRecord) {
+  const current = readDesktopFavorites();
+  const nextFavorites = [
+    record,
+    ...current.filter((item) => item.sourceId !== record.sourceId),
+  ];
+  // normalizeDesktopFavorites 在 readDesktopFavorites 内部按 collectedAt DESC
+  // 排序——这里 prepend 是为了去重 + 触发后续 write 时 normalize 用同款 sort
+  // 把 record 落回正确位置（不依赖 prepend 的"最新"假设）。
+  writeDesktopFavorites(
+    [...nextFavorites].sort((left, right) =>
+      right.collectedAt < left.collectedAt
+        ? -1
+        : right.collectedAt > left.collectedAt
+          ? 1
+          : 0,
+    ),
+  );
+  return nextFavorites;
+}
+
 export function buildFavoriteShareText(item: DesktopFavoriteRecord) {
   const title = item.title.trim();
   const description = item.description.trim();
