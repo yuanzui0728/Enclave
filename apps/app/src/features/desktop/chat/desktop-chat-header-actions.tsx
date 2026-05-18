@@ -68,6 +68,12 @@ export function DesktopChatHeaderActions({
         tone="brand"
         label={t(msg`查找聊天记录`)}
         onClick={() => onToggleHistory?.()}
+        // R25：和姊妹「更多」按钮同款—— handleToggleSidePanel("history") 是真正
+        // 的 toggle（panel 已开点同按钮再关），但只有视觉绿边框 + brand 底色，
+        // 盲人屏幕阅读器走到「查找聊天记录 按钮」听不出此刻面板是开是关。
+        // 通话菜单按钮已有 aria-expanded 处理 popup 语义；本按钮 panel 是
+        // workspace 右侧 fixed 区，更接近 toggle button 的概念，用 aria-pressed。
+        ariaPressed={historyActive}
       >
         <Search size={16} />
       </DesktopChatHeaderButton>
@@ -129,6 +135,10 @@ export function DesktopChatHeaderActions({
         tone="neutral"
         label={t(msg`更多`)}
         onClick={() => onToggleDetails?.()}
+        // R25：handleToggleSidePanel("details") 是真正的 toggle（已开点同按钮
+        // 再关）。SR 必须靠 aria-pressed 才知道「更多」此刻是激活的（聊天信息
+        // 侧栏开着）还是收起的。和姊妹「查找聊天记录」按钮同款。
+        ariaPressed={detailsActive}
       >
         <MoreHorizontal size={16} />
       </DesktopChatHeaderButton>
@@ -144,6 +154,7 @@ function DesktopChatHeaderButton({
   onClick,
   ariaHaspopup,
   ariaExpanded,
+  ariaPressed,
 }: {
   active?: boolean;
   tone?: "neutral" | "brand";
@@ -152,6 +163,7 @@ function DesktopChatHeaderButton({
   onClick: () => void;
   ariaHaspopup?: "menu";
   ariaExpanded?: boolean;
+  ariaPressed?: boolean;
 }) {
   return (
     <button
@@ -161,6 +173,7 @@ function DesktopChatHeaderButton({
       title={label}
       aria-haspopup={ariaHaspopup}
       aria-expanded={ariaExpanded}
+      aria-pressed={ariaPressed}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color,box-shadow] duration-150",
         active && tone === "brand"
