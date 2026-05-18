@@ -206,6 +206,49 @@ export function DesktopGroupCallPanel({
     );
   }
 
+  // 走查 R2：「同步最新状态」/「结束通话」两个按钮原本只靠
+  // disabled={inviteNoticePending}/disabled={endNoticePending} 兜双触发，但
+  // pending 是 React state 来自父级 sendCallInviteMutation.isPending，
+  // 要等 commit 才进 DOM。同帧连点两次都看到 pending=false → mutateAsync
+  // 飞两份 → 群里收到 2 条 "ongoing" 通知（或 2 条 "ended"）。和姊妹
+  // R3 (e457a1739 — DesktopMessageAvatarPopover) 同款 sync ref 锁。
+  const inviteSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!inviteNoticePending) {
+      inviteSubmittingRef.current = false;
+    }
+  }, [inviteNoticePending]);
+  const endSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!endNoticePending) {
+      endSubmittingRef.current = false;
+    }
+  }, [endNoticePending]);
+
+  const handleManualSync = () => {
+    if (inviteNoticePending || inviteSubmittingRef.current) {
+      return;
+    }
+    inviteSubmittingRef.current = true;
+    onSendInviteNotice({
+      activeCount,
+      totalCount: members.length,
+    });
+  };
+
+  const handleEndCall = () => {
+    if (endNoticePending || endSubmittingRef.current) {
+      return;
+    }
+    endSubmittingRef.current = true;
+    onEndCall({
+      activeCount,
+      totalCount: members.length,
+      durationMs: Math.max(Date.now() - new Date(startedAt).getTime(), 0),
+      startedAt,
+    });
+  };
+
   return (
     <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] p-5 shadow-[var(--shadow-card)]">
       <div className="flex min-w-0 flex-[1.08] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
@@ -310,12 +353,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="primary"
-            onClick={() =>
-              onSendInviteNotice({
-                activeCount,
-                totalCount: members.length,
-              })
-            }
+            onClick={handleManualSync}
             disabled={inviteNoticePending}
             className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
@@ -338,17 +376,7 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={() =>
-              onEndCall({
-                activeCount,
-                totalCount: members.length,
-                durationMs: Math.max(
-                  Date.now() - new Date(startedAt).getTime(),
-                  0,
-                ),
-                startedAt,
-              })
-            }
+            onClick={handleEndCall}
             disabled={endNoticePending}
             className="rounded-[10px] border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.92)] text-[#d74b45] shadow-none hover:border-[rgba(220,38,38,0.2)] hover:bg-[rgba(254,226,226,0.96)]"
           >
