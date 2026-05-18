@@ -812,6 +812,15 @@ export function DesktopChatFilesPage() {
                             alt={item.attachment.fileName}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
+                            // 走查电脑端单聊 R93：聊天文件页 image 列表 96×96 缩
+                            // 略图，src 是原图 URL（公网媒体走 cloud-api 反代，
+                            // 大小没截）。loading="lazy" 已挂、首屏外不预拉，
+                            // 但首屏 6-8 张缩略图进入视口时仍是同步 decode
+                            // 全部 → 主线程被一组原图 (3-5MB/张相机原图) decode
+                            // 阻塞，文件页滚动到下一页时明显的"卡一下"。和姊妹
+                            // R84/R87/R92 一批 sticker/preview/viewer 已挂的
+                            // 同款修法补 decoding="async"。
+                            decoding="async"
                           />
                           <div className="absolute inset-x-0 bottom-0 border-t border-white/12 bg-black/36 px-2 py-1.5 text-left text-[10px] text-white">
                             {t(msg`点击预览`)}
@@ -1257,6 +1266,15 @@ function DesktopChatFilesImageViewer({
         <img
           src={item.attachment.url}
           alt={item.attachment.fileName}
+          // 走查电脑端单聊 R93：聊天文件页内置（非独立窗口）大图 viewer 主
+          // <img>。和姊妹 R88 chat-message-list / R92 独立窗口 viewer 同款 ——
+          // 1) decoding="async" 让原图 (1-5MB) decode off-thread，避免点
+          //    缩略图开 viewer 瞬间整页冻 100-300ms；
+          // 2) draggable={false} 防止用户在 viewer 里按住图触发 HTML5 native
+          //    drag，干扰前/后图切换按钮的 click 判定 + ChevronLeft/Right
+          //    导航。
+          decoding="async"
+          draggable={false}
           className="max-h-full max-w-full rounded-[18px] object-contain shadow-[0_24px_72px_rgba(15,23,42,0.36)]"
         />
       </div>
