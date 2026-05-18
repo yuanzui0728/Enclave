@@ -34,7 +34,18 @@ export function readLocalChatMessageActionState(): LocalChatMessageActionState {
     return EMPTY_STATE;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  // R17：和姊妹 chat-image-viewer-route-state R10 同款 —— Safari iOS 隐私模式 /
+  // 部分浏览器禁用 storage 时 getItem 本身可能抛 SecurityError。本函数被 chat-
+  // message-list useState lazy init / useLocalChatMessageActionState 的 syncState
+  // visibility/focus/storage/CHANGE_EVENT 回访同步路径反复调用，抛出会顺栈炸到
+  // ChatMessageList 整组件 mount → 桌面单聊「打不开」。同款 setItem 已在
+  // writeLocalChatMessageActionState (line 256-) try/catch；这里读路径同款保护。
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return EMPTY_STATE;
+  }
   if (!raw) {
     return EMPTY_STATE;
   }
