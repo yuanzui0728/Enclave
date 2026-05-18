@@ -1658,8 +1658,16 @@ export function MomentsPage() {
               });
             }
           }}
-          onOpenLikerPopover={({ anchorElement, like }) => {
-            const returnHash = currentRouteHash || undefined;
+          onOpenLikerPopover={({ anchorElement, moment, like }) => {
+            // 新一轮 R11：原版用 currentRouteHash（=routeSelectedMomentId 当前值）。
+            // 用户在 /tabs/moments 顶部"未深链"状态下滚到第 50 条 moment 看到
+            // liker 行，点 liker 头像 → popover 弹出，currentRouteHash 是 ""，
+            // 用户从 popover 里点「查看资料 / 朋友圈」跳出去 → 返回 /tabs/moments
+            // 时 hash 干净 → 落到顶部，丢掉刚才看到的第 50 条位置。改用当下被
+            // 点 liker 所属 moment.id 做 returnHash，desktop-moments-workspace
+            // 的 scroll effect 能 snap 回那条。
+            const returnHash =
+              buildDesktopMomentsRouteHash({ momentId: moment.id }) || undefined;
             if (like.authorType === "character") {
               setDesktopAvatarPopover({
                 anchorElement,
