@@ -1361,6 +1361,20 @@ export function ChannelsPage() {
         return null;
       }
 
+      // 走查 2026-05-18 新会话 R6（本轮）：getFeedPost 拉回 FeedPostWithComments
+      // 时已经带回了那条 post 的全量 comments，但下方 desktopCommentsQuery
+      // (`["app-feed-comments", baseUrl, postId]`) 拿不到这份数据 —— 它的
+      // placeholderData 走 getCommentsPreview = decorations.commentsPreviewByPostId
+      // [postId]，但 decorations 是 home 流的衍生缓存，deep-link post 不在
+      // home 里也就不在 decorations 里，placeholder 落 EMPTY_COMMENT_PREVIEW。
+      // 用户在 deep-link post 上点评论图标 → drawer 冒「正在读取评论...」→
+      // 公网隧道 RTT 200-500ms 再 fetch 一遍 listFeedComments(postId) → 渲染。
+      // 这次 RTT 完全是浪费，server 已经在 getFeedPost 那一次给过了。
+      // 提前 prime app-feed-comments cache，drawer 打开时直接 cache hit。
+      queryClient.setQueryData<FeedComment[]>(
+        ["app-feed-comments", baseUrl, post.id],
+        post.comments,
+      );
       return post;
     },
     enabled: Boolean(desktopMissingRoutePostId),
