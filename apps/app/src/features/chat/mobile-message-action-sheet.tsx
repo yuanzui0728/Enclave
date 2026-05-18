@@ -83,6 +83,27 @@ export function MobileMessageActionSheet({
     return unregister;
   }, [open, onClose]);
 
+  // 走查 R2：和姊妹 sheet mobile-message-reminder-sheet / message-quote-
+  // selection-sheet / mobile-details-action-sheet 对齐——长按消息冒出来的
+  // 这个 sheet 没挂 ESC keydown。桌面 web / 外接键盘 / 模拟器都拍不掉，
+  // 只能点 backdrop。a11y / 键盘用户体验缺一刀。和姊妹文件相同写法：
+  // open 才挂监听，defaultPrevented 时让位（dialog 内嵌套的子模态有自己
+  // 的 ESC 语义不被偷掉）。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) {
     return null;
   }
