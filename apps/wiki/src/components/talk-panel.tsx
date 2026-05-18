@@ -366,7 +366,20 @@ function PostTree({
               </>
             )}
           </div>
-          <div className="mt-1 whitespace-pre-wrap break-words">{post.body}</div>
+          {/* 后端 wiki-talk soft-delete 时把 body 直接覆盖成中文字面量 "[已删除]"
+              （api/src/modules/wiki/services/wiki-talk.service.ts 第 231 行）。
+              直接渲染 post.body 会让 en/ja/ko 用户在 talk page 看到一句裸中文，
+              跟同行 <StatusPill>「已删除」</StatusPill> 也重复。这里在前端识别
+              deletedAt 后渲染本地化占位符，让后端的中文字面量不再泄漏。 */}
+          {post.deletedAt ? (
+            <div className="mt-1 italic text-[var(--text-muted)]">
+              <Trans>（此回复已被删除）</Trans>
+            </div>
+          ) : (
+            <div className="mt-1 whitespace-pre-wrap break-words">
+              {post.body}
+            </div>
+          )}
           <PostTree
             posts={posts}
             resolveAuthor={resolveAuthor}
