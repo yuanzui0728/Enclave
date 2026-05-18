@@ -108,6 +108,21 @@ export function DesktopChatHistoryPanel({
     return () => window.cancelAnimationFrame(frame);
   }, [conversation.id, focusRequestKey]);
 
+  // R13：和 R11/R12 一票 onClose ref 镜像同款 perf 修法 —— onClose /
+  // onBackToDetails 是父组件 dialog/workspace 用 inline arrow 传进来，每次
+  // 重渲染都换引用。本 panel 在 dialog 变体下展示期间，父帧 dialog（被
+  // workspace 包裹）的 onClose 跟着 workspace 60s 轮询 / 搜索框 / typing tick
+  // 一起拆装；同时 panel 自己的 activeCategory / customDate / senderId /
+  // selectorView state 也会推动 effect 重跑。两条路径叠加 → window keydown
+  // capture listener 拆装频繁。ref 镜像两个回调，deps 收紧到只含真正影响
+  // handler 逻辑的状态。
+  const onCloseRef = useRef(onClose);
+  const onBackToDetailsRef = useRef(onBackToDetails);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    onBackToDetailsRef.current = onBackToDetails;
+  });
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) {
@@ -137,10 +152,11 @@ export function DesktopChatHistoryPanel({
         return;
       }
 
-      if (onBackToDetails) {
+      const backToDetails = onBackToDetailsRef.current;
+      if (backToDetails) {
         event.preventDefault();
         event.stopPropagation();
-        onBackToDetails();
+        backToDetails();
         return;
       }
 
@@ -148,7 +164,7 @@ export function DesktopChatHistoryPanel({
         return;
       }
 
-      onClose();
+      onCloseRef.current();
     }
 
     // 走查电脑端单聊新一轮 R5：本 panel 在 dialog 变体下嵌在 DesktopChatHistoryDialog
@@ -167,8 +183,6 @@ export function DesktopChatHistoryPanel({
     activeCategory,
     customDate,
     isDialog,
-    onBackToDetails,
-    onClose,
     quickDateFilter,
     selectorView,
     senderId,
