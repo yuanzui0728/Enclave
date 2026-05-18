@@ -197,10 +197,27 @@ export function upsertServerMessageInCache<
     next[idx] = incoming;
     return next;
   }
-  return [...cache, incoming].sort(
-    (a, b) =>
-      (parseTimestamp(a.createdAt) ?? 0) - (parseTimestamp(b.createdAt) ?? 0),
-  );
+  // 走查 R1：和姊妹函数 sortThreadMessages 同款 Schwartzian transform——原版
+  // comparator 每次都 parseTimestamp(a.createdAt) + parseTimestamp(b.createdAt)，
+  // N=200 条 cache + 1 incoming 的 sort 约 1500 次比较 × 2 parseTimestamp ≈ 3000
+  // 次 Date.parse。socket 单条 echo 是 hot path，活跃群每秒可能多次走这里。
+  // 先一次性 decorate 出 [ts, msg]，sort 只比 number，每条消息恰好 1 次 parseTimestamp。
+  return decorateAndSortByTimestamp([...cache, incoming]);
+}
+
+function decorateAndSortByTimestamp<TMessage extends ThreadMessageLike>(
+  messages: TMessage[],
+) {
+  const decorated: Array<[number, TMessage]> = new Array(messages.length);
+  for (let i = 0; i < messages.length; i += 1) {
+    decorated[i] = [parseTimestamp(messages[i]!.createdAt) ?? 0, messages[i]!];
+  }
+  decorated.sort((left, right) => left[0] - right[0]);
+  const sorted = new Array<TMessage>(decorated.length);
+  for (let i = 0; i < decorated.length; i += 1) {
+    sorted[i] = decorated[i]![1];
+  }
+  return sorted;
 }
 
 export function markThreadMessagesFailed<
@@ -514,11 +531,14 @@ function sortThreadMessages<
     deduped.set(message.id, message);
   }
 
-  return [...deduped.values()].sort(
-    (left, right) =>
-      (parseTimestamp(left.createdAt) ?? 0) -
-      (parseTimestamp(right.createdAt) ?? 0),
-  );
+  // 走查 R1：原版 comparator 内每次都 parseTimestamp(left.createdAt) +
+  // parseTimestamp(right.createdAt)，N=200 条消息每次 sort 约 1500 次比较 ×
+  // 2 parseTimestamp ≈ 3000 次 Date.parse。本函数是 mergeThreadMessageWindow
+  // 收尾 + upsertIncomingThreadMessage 每条 socket echo / replaceLocalThreadMessage
+  // 每次重试 echo 的 hot path，typing tick / AI 回声追加的高频 re-render
+  // 上叠出来。Schwartzian transform：先 decorate 一次性算 [ts, msg]，sort 只比
+  // number，每条消息恰好 1 次 parseTimestamp，省掉 log2(N)×2 倍重复解析。
+  return decorateAndSortByTimestamp([...deduped.values()]);
 }
 
 function isMatchingOptimisticEcho(
