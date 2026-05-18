@@ -134,7 +134,13 @@ function writeDesktopNoteDraftRecords(records: DesktopNoteDraftRecord[]) {
       }
     }
   } else {
-    storage.removeItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY);
+    // R20：removeItem 也可能抛（Safari iOS 隐私模式 / 浏览器禁用 storage）。
+    // 抛了静默降级——内存里的"没有 drafts"状态在下次 setItem 时仍能恢复。
+    try {
+      storage.removeItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY);
+    } catch {
+      // 静默
+    }
   }
 
   return records;
@@ -146,9 +152,17 @@ export function readDesktopNoteDrafts() {
     return [] as DesktopNoteDraftRecord[];
   }
 
-  return parseDesktopNoteDraftRecords(
-    storage.getItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY),
-  );
+  // R20：和姊妹 R17/R18/R19 同款 —— Safari iOS 隐私模式 / 浏览器禁用 storage 时
+  // getItem 本身可能抛 SecurityError。这个函数被 createDesktopNoteDraft 调用，
+  // 后者从 desktop-chat-workspace 「+ → 新建笔记」入口直接 fire；getItem 抛错
+  // 让快捷菜单整个崩。和 favorites-storage R19 同款保护。
+  let raw: string | null;
+  try {
+    raw = storage.getItem(DESKTOP_NOTE_DRAFTS_STORAGE_KEY);
+  } catch {
+    return [] as DesktopNoteDraftRecord[];
+  }
+  return parseDesktopNoteDraftRecords(raw);
 }
 
 export function readDesktopNoteDraft(draftId: string) {
