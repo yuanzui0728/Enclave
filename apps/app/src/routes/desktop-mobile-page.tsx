@@ -238,16 +238,26 @@ export function DesktopMobilePage() {
     [hash],
   );
 
+  // 走查电脑端群聊 R95：和姊妹 R94 system-status 同 batch 修复——本页 2 条
+  // 共享 cache（app-conversations / app-official-accounts）漏 staleTime。
+  // 「到手机继续」从群通话面板入口过来时，desktop-chat-workspace 早已带
+  // staleTime: 15_000 拉过 app-conversations，公众号面板/详情页也带相同节奏
+  // 拉过 app-official-accounts。本页 staleTime=0 → 即便 cache 几百 ms 前才
+  // fresh 也立刻 refetch，handoff 页头部「最近会话 / 关注公众号」区段空着等
+  // 公网 RTT 回包。和其它 desktop layout 入口 (chat-files / image-viewer /
+  // window) 一批 conversations cache 对齐 15s。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
 
   const officialAccountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
     queryFn: () => listOfficialAccounts(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
   const officialHandoffArticleQuery = useQuery({
     queryKey: [
