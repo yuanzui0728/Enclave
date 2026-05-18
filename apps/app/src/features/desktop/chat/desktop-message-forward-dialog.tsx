@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
@@ -56,6 +56,8 @@ export function DesktopMessageForwardDialog({
     useState<DesktopMessageForwardMode>("separate");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const isMobile = variant ? variant === "mobile" : isCompactViewport;
+  const titleId = useId();
+  const descId = useId();
   // 同步防双击锁——下面会话行 button 用 `disabled={pending}` 兜底，pending 是
   // 父组件的 forwardMutation.isPending 经 React commit 才更新。同帧连点同一行
   // 2 次会同时通过 disabled=false → 两次 onForward(conv, mode) → 父组件的
@@ -170,7 +172,16 @@ export function DesktopMessageForwardDialog({
         />
       ) : null}
 
+      {/* 走查 R3：和 R2 confirm/text-edit、姊妹 feature-unavailable / mobile sheet
+          系列同款 a11y 缺漏——modal 但没挂 role="dialog" + aria-modal +
+          aria-labelledby / aria-describedby。单聊消息列表右键「转发」、桌面
+          多选「转发」都会弹这个 dialog；盲人用户屏幕阅读器只听到「关闭转发消息
+          弹层 按钮」+ 输入框 + 会话行，无从知道这是个转发对话框。补语义。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         className={cn(
           "relative flex min-w-0 flex-col overflow-hidden",
           isMobile
@@ -181,6 +192,8 @@ export function DesktopMessageForwardDialog({
         {isMobile ? (
           <MobileForwardHeader
             messageCount={messages.length}
+            titleId={titleId}
+            descId={descId}
             pending={pending}
             onClose={onClose}
           />
@@ -196,10 +209,16 @@ export function DesktopMessageForwardDialog({
         >
           {!isMobile ? (
             <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl lg:px-5 lg:py-5">
-              <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+              <div
+                id={titleId}
+                className="text-[18px] font-medium text-[color:var(--text-primary)]"
+              >
                 {t(msg`转发消息`)}
               </div>
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id={descId}
+                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {messages.length === 1
                   ? t(msg`把这条消息转发到最近会话。`)
                   : t(msg`把选中的 ${messages.length} 条消息转发到最近会话。`)}
@@ -489,10 +508,14 @@ function ForwardModeButton({
 
 function MobileForwardHeader({
   messageCount,
+  titleId,
+  descId,
   pending,
   onClose,
 }: {
   messageCount: number;
+  titleId?: string;
+  descId?: string;
   pending: boolean;
   onClose: () => void;
 }) {
@@ -509,10 +532,16 @@ function MobileForwardHeader({
           {t(msg`取消`)}
         </button>
         <div className="pointer-events-none absolute inset-x-12 text-center">
-          <div className="truncate text-[17px] font-medium text-[#111827]">
+          <div
+            id={titleId}
+            className="truncate text-[17px] font-medium text-[#111827]"
+          >
             {t(msg`转发给`)}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+          <div
+            id={descId}
+            className="mt-0.5 truncate text-[11px] text-[#8c8c8c]"
+          >
             {t(msg`已选 ${messageCount} 条消息`)}
           </div>
         </div>

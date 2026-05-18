@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -60,6 +61,7 @@ export function DesktopCreateGroupDialog({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [shareHistory, setShareHistory] = useState(false);
@@ -726,12 +728,23 @@ export function DesktopCreateGroupDialog({
         className="absolute inset-0"
       />
 
+      {/* 走查 R3：和姊妹 forward / note-send / confirm / text-edit 同款 a11y
+          缺漏——modal 但没挂 role="dialog" + aria-modal + aria-labelledby。
+          单聊里 + 菜单「发起群聊」/ 详情侧栏「发起群聊」会弹这个；盲人屏幕
+          阅读器只听到「关闭发起群聊弹层 按钮」+ 搜索框 + 联系人行，听不到
+          「选择联系人」title。补语义。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onKeyDown={handleDialogKeyDown}
       >
         <div className="relative border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-6 py-4 text-center">
-          <div className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">
+          <div
+            id={titleId}
+            className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
+          >
             {t(msg`选择联系人`)}
           </div>
           <button

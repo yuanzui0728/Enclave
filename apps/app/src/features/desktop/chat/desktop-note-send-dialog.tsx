@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import {
@@ -48,6 +48,8 @@ export function DesktopNoteSendDialog({
 }: DesktopNoteSendDialogProps) {
   const t = translateRuntimeMessage;
   const [searchTerm, setSearchTerm] = useState("");
+  const titleId = useId();
+  const descId = useId();
   // 走查新一轮 R2：会话行按钮原本只靠 disabled={pending} 兜双击，pending 是
   // 父组件 sendMutation.isPending 经 React commit 才进 DOM。同帧连点同一行 2 次
   // 同时通过 disabled=false → 两次 onSend(conversation) → sendMutation 飞 2 次，
@@ -106,13 +108,30 @@ export function DesktopNoteSendDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查 R3：和姊妹 forward dialog 同款 a11y 修法——modal 但没挂
+          role="dialog" + aria-modal + aria-labelledby/aria-describedby。单聊
+          composer 「+ → 收藏 → 笔记」/ notes-workspace 右键「发送给」会弹这个
+          dialog；盲人屏幕阅读器只听到「关闭发送笔记弹层 按钮」+ 搜索框 + 会话行，
+          不知道是「发送笔记」对话框。补语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[18px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`发送笔记`)}
             </div>
-            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            <div
+              id={descId}
+              className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+            >
               {t(msg`把这条收藏笔记发到最近会话。`)}
             </div>
           </div>
