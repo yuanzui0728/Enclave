@@ -1239,7 +1239,13 @@ export function GroupQrPage() {
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={groupQuery.error.message} />
+          // 走查电脑端群聊 R84：和姊妹 group-chat-background-page / GroupChat
+          // DetailsPanel R45 一批 ErrorBlock 同款 a11y 修法——「群二维码」是
+          // 群聊「聊天信息」→「群二维码」入口，desktop 分支 3 处 ErrorBlock
+          // 都裸 <ErrorBlock>，盲人 SR 加载失败时静默；mobile 分支已经用
+          // MobileGroupInviteStatusCard 自带 tone="danger"，desktop 对齐挂
+          // role="alert"。
+          <ErrorBlock role="alert" message={groupQuery.error.message} />
         ) : (
           <MobileGroupInviteStatusCard
             badge={t(msg`群聊`)}
@@ -1273,7 +1279,7 @@ export function GroupQrPage() {
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={membersQuery.error.message} />
+          <ErrorBlock role="alert" message={membersQuery.error.message} />
         ) : (
           <MobileGroupInviteStatusCard
             badge={t(msg`成员`)}
@@ -1765,7 +1771,7 @@ export function GroupQrPage() {
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={conversationsQuery.error.message} />
+                <ErrorBlock role="alert" message={conversationsQuery.error.message} />
               ) : (
                 <div className="px-4 pb-4">
                   <MobileGroupInviteStatusCard

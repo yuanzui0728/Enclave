@@ -419,7 +419,13 @@ export function GroupChatBackgroundPage() {
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={groupQuery.error.message} />
+          // 走查电脑端群聊 R84：和姊妹 group-chat-thread-panel R67 /
+          // GroupChatDetailsPanel R45 一批 ErrorBlock 同款 a11y 修法——「群聊
+          // 背景」是群聊「聊天信息」→「聊天背景」入口，desktop 分支 3 处
+          // ErrorBlock 都裸 <ErrorBlock>，盲人 SR 加载失败时静默；mobile 分支
+          // 已经用 MobileGroupBackgroundStatusCard 自带 tone="danger"，desktop
+          // 对齐挂 role="alert"。
+          <ErrorBlock role="alert" message={groupQuery.error.message} />
         ) : (
           <MobileGroupBackgroundStatusCard
             badge={t(msg`读取失败`)}
@@ -451,7 +457,7 @@ export function GroupChatBackgroundPage() {
       ) : null}
       {backgroundQuery.isError && backgroundQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={backgroundQuery.error.message} />
+          <ErrorBlock role="alert" message={backgroundQuery.error.message} />
         ) : (
           <MobileGroupBackgroundStatusCard
             badge={t(msg`读取失败`)}
@@ -483,7 +489,7 @@ export function GroupChatBackgroundPage() {
       ) : null}
       {pageError ? (
         isDesktopLayout ? (
-          <ErrorBlock message={pageError} />
+          <ErrorBlock role="alert" message={pageError} />
         ) : (
           <InlineNotice
             tone="danger"
