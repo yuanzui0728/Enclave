@@ -158,6 +158,7 @@ export function UserDetailPage() {
             <input
               type="number"
               min={1}
+              max={3650}
               step={1}
               value={grantDays}
               onChange={(event) => setGrantDays(event.target.value)}
@@ -166,12 +167,13 @@ export function UserDetailPage() {
             <Button
               variant="primary"
               className="rounded-2xl bg-[color:var(--brand-primary)] text-white"
-              // 没校验 grantDays 时按下 → NaN/0 透传到后端，命中 BadRequest
-              // "durationDays 必须为正数"。前端先卡掉非正整数，按钮直接不可点。
+              // 没校验 grantDays 时按下 → NaN/0/>3650 全透传到后端，撞 DTO
+              // 边界。前端先卡 [1, 3650] 整数，按钮直接不可点。
               disabled={
                 grantMutation.isPending ||
                 !Number.isInteger(Number(grantDays)) ||
-                Number(grantDays) <= 0
+                Number(grantDays) <= 0 ||
+                Number(grantDays) > 3650
               }
               onClick={() => grantMutation.mutate()}
             >
