@@ -1120,7 +1120,7 @@ export function StickerPanel({
     : null;
   const manageNextLabel = nextManageSticker
     ? t(
-        msg`删后跳到：${nextManageSticker.label ?? nextManageSticker.stickerId}`,
+        msg`删后跳到：${nextManageSticker.label || nextManageSticker.stickerId}`,
       )
     : null;
   const manageRemainingLabel = t(
@@ -1272,7 +1272,7 @@ export function StickerPanel({
       setManageSearchPauseHintVisible(true);
       setPausedManageFocusKey(focusedManageDeleteKey);
       setPausedManageFocusLabel(
-        focusedManageSticker?.label ?? focusedManageSticker?.stickerId ?? null,
+        focusedManageSticker?.label || focusedManageSticker?.stickerId || null,
       );
     }
 
@@ -2135,7 +2135,7 @@ export function StickerPanel({
                             <img
                               src={highlightedSearchSectionLeadSticker.url}
                               alt={
-                                highlightedSearchSectionLeadSticker.label ??
+                                highlightedSearchSectionLeadSticker.label ||
                                 highlightedSearchSectionLeadSticker.stickerId
                               }
                               className="h-4 w-4 rounded-[6px] object-contain"
@@ -2143,7 +2143,7 @@ export function StickerPanel({
                             />
                             <span className="truncate">
                               {searchGroupLeadLabel}
-                              {highlightedSearchSectionLeadSticker.label ??
+                              {highlightedSearchSectionLeadSticker.label ||
                                 highlightedSearchSectionLeadSticker.stickerId}
                             </span>
                             {highlightedSearchSection ? (
@@ -2491,7 +2491,7 @@ export function StickerPanel({
                         }`}
                       >
                         {desktopManageCurrentDeleteLabel}
-                        {focusedManageSticker?.label ??
+                        {focusedManageSticker?.label ||
                           focusedManageSticker?.stickerId}
                       </span>
                       {focusedManageStickerPosition ? (
@@ -2618,7 +2618,7 @@ export function StickerPanel({
                     }`}
                   >
                     {manageCurrentLabel}
-                    {focusedManageSticker.label ??
+                    {focusedManageSticker.label ||
                       focusedManageSticker.stickerId}
                   </span>
                 ) : null}
