@@ -1166,10 +1166,21 @@ export function ChannelsPage() {
       // invalidate 落 mutationBaseUrl（A 账户）—— 标 B 的 cache stale 是错的：
       // 这次 follow 是给 A 加的，B 该 follow 列表完全不动；且 invalidate B 还
       // 会触发 B 不必要的 refetch。
+      //
+      // 走查 2026-05-18 新会话 R7（本轮）：active 'recommended' tab 的 home
+      // posts 已经被 onMutate 里 ownerState.isFollowingAuthor 乐观翻好，refetch
+      // ~35KB JSON 重拉一遍只为拿同样的 isFollowingAuthor=true，纯浪费。但
+      // inactive 'following' / 'friends' tab 的 cache 必须标 stale —— 否则用户
+      // 关注 X 后切到「关注」tab，30s staleTime 内还看不到 X 的 post。用
+      // refetchType: 'none' 砍掉所有 section 的 active refetch，但仍把全部
+      // section 的 cache 标 stale，下次切 tab 自动 fresh refetch。
+      // decorations 不能 'none'：sections.count 在头部 4 个 tab badge 是当前
+      // 'recommended' active query 的衍生数据，关注 X 后「关注 tab 计数 0→1」
+      // 必须立即可见，否则用户看到「关注 (0)」会怀疑「我刚才关注成功了吗」。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", mutationBaseUrl],
+        refetchType: "none",
       });
-      // 关注/取消关注影响 关注/朋友 tab 的 sections.count。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
