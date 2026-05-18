@@ -128,15 +128,27 @@ export function ChannelAuthorPage() {
     enabled: !isDesktopLayout,
   });
   const followMutation = useMutation({
-    mutationFn: () =>
-      profileQuery.data?.isFollowing
+    // 走查 2026-05-18 R1（新一轮）：原 mutationFn 直接读 `profileQuery.data?.
+    // isFollowing` 决定 follow / unfollow ——但 onMutate 在 mutationFn 之前已
+    // 经把 cache 里 isFollowing 翻成相反值（optimistic）。React Query v5 中
+    // `await queryClient.cancelQueries(...)` 留 microtask 边界，React 18 batched
+    // setState 可能在 await 期间被 flush，导致 useQuery 的 profileQuery.data
+    // 走新一轮 render 的 snapshot —— 此时 isFollowing 已是 optimistic 后的值。
+    // mutationFn 闭包绑定的就是最新一次 render 的 profileQuery，于是用户点
+    // 「+关注」却调到 unfollow（or vice versa）。和 channels-page.tsx 的
+    // followMutation 同款修复：把 `following` 作为 mutate 入参传入，从点击瞬
+    // 间读 profile（pre-optimistic）值固定下来，闭包/render 时序怎么变都无关。
+    // 调用点改成 followMutation.mutate({ following: profile.isFollowing })，
+    // handleRetryFollow 也按 profile.isFollowing 读真实状态。
+    mutationFn: (input: { following: boolean }) =>
+      input.following
         ? unfollowChannelAuthor(authorId, baseUrl)
         : followChannelAuthor(authorId, baseUrl),
     // optimistic：channels-page 主 feed 的 followMutation 已经做了 per-author 乐观，
     // 但作者主页这条独立路径之前没接，关注按钮要等 mutation 落地 + invalidate +
     // refetch 整条链路才翻状态（实测公网 ~400ms），用户连点会以为按钮没响应。
     // 同步翻 profile cache 的 isFollowing + followerCount。
-    onMutate: async () => {
+    onMutate: async (input) => {
       // 走查 2026-05-18 新一轮 R3：authorId 也要进 context — 移动端 channel-author
       // 这条路由切作者（/channels/authors/X → /channels/authors/Y）是 in-place
       // 切（TanStack Router 默认复用相同路径组件实例），同一 ChannelAuthorPage
@@ -191,7 +203,7 @@ export function ChannelAuthorPage() {
         );
       }
     },
-    onSuccess: async (_data, _input, context) => {
+    onSuccess: async (_data, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       const mutationAuthorId = context?.mutationAuthorId ?? authorId;
       const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
@@ -199,15 +211,18 @@ export function ChannelAuthorPage() {
       // 冒到当前 Y 的页面也错（用户看到「已关注」以为是 Y 的，其实是 X）。
       const sameAuthor = mutationAuthorId === authorId;
       if (sameAccount && sameAuthor) {
+        // input.following 是「点击瞬间是否已关注」的 pre-optimistic 值 —— true 表
+        // 示点击时已关注、本次走的是 unfollow；false 表示点击时未关注、本次走的
+        // 是 follow。比读 profileQuery.data.isFollowing（optimistic 后的最新值）
+        // 更直接，且不依赖 React 18 batched render 时序。
         setNotice({
-          message: profileQuery.data?.isFollowing
-            ? t(msg`已关注该视频号作者。`)
-            : t(msg`已取消关注。`),
+          message: input.following
+            ? t(msg`已取消关注。`)
+            : t(msg`已关注该视频号作者。`),
           tone: "success",
         });
       }
-      // onMutate 已经翻了 isFollowing；这里 profileQuery.data.isFollowing 是
-      // optimistic 后的最新值，所以文案分支需要对调（true 表示刚刚关注成功）。
+      //
       //
       // 新一轮走查 R3：原来只 invalidate home 主接口，没动 decorations。home
       // 的 4 个 tab 计数（推荐/朋友/关注/直播）来源是 decorations.sections.count，
@@ -351,7 +366,10 @@ export function ChannelAuthorPage() {
     }
 
     setNotice(null);
-    followMutation.mutate();
+    // 走查 2026-05-18 R1（新一轮）：mutationFn 改成按 input.following 决定走 follow
+    // 还是 unfollow。这里读 server 端真值（profileQuery.data.isFollowing）—— mutation
+    // 已经在前次失败时回滚过 cache，profileQuery.data 现在跟 server 一致。
+    followMutation.mutate({ following: profileQuery.data.isFollowing });
   }
 
   function openChannelPost(post: FeedPostListItem) {
@@ -605,7 +623,9 @@ export function ChannelAuthorPage() {
                     variant={profile.isFollowing ? "secondary" : "primary"}
                     size="lg"
                     disabled={followMutation.isPending}
-                    onClick={() => followMutation.mutate()}
+                    onClick={() =>
+                      followMutation.mutate({ following: profile.isFollowing })
+                    }
                     className={cn(
                       "h-11 rounded-full px-5 shadow-none",
                       profile.isFollowing
