@@ -1880,9 +1880,36 @@ export function ChannelsPage() {
       setNotice(""); // i18n-ignore-line
       // 走查 R1（本轮）：原来 baseUrl 切换没清 forwardPickerPost。用户在 A 账号
       // 打开转发面板挑好友时切到 B 账号，picker 不关、postId 还是 A 世界的 uuid；
-      // 点好友后 forwardFeedPostToChat 拿 A 的 postId 去 B 世界 API 打，立刻
+      // 点好友点确认 forwardFeedPostToChat 拿 A 的 postId 去 B 世界 API 打，立刻
       // 404 FEED_POST_NOT_FOUND，picker 弹一行没头没脑的"转发失败"。同步关掉。
       setForwardPickerPost(null);
+      // 走查 2026-05-19 第六轮 R1（本轮）：原 baseUrl 切换没清 URL hash 里残留
+      // 的 #post= / #author= —— 这俩 anchor 是 A 世界专属 uuid，切到 B 世界后：
+      //   - desktopMissingRoutePostId = routeSelectedPostId（A 的 uuid 不在 B
+      //     的 home 推荐流里），desktopMissingRoutePostQuery 浪费一次 RTT 200-
+      //     500ms 拿 404；
+      //   - desktopRoutePostPending = true → channels-page L2380 整页早返渲
+      //     RouteRedirectState「正在定位桌面视频号内容...」，用户在切完账户那
+      //     一瞬间看到全屏 loading 卡，体感「切个账户为什么卡了一下」；
+      //   - 404 回来 → 下面 L1554 effect navigate replace 清 postId；
+      //   - 链条 ~200-500ms 公网隧道 RTT，slower 网络更长。
+      // 直接在 baseUrl 切换那一刻 navigate 清掉 postId / author（保留 section
+      // 因为它是用户切账户前在哪 tab 的语义信号），跳过 ghost fetch + 跳过
+      // RouteRedirectState 闪现。isDesktopLayout gate：mobile 不走 desktop
+      // workspace 路径，那边没有这层（也没 RouteRedirectState 闪现）。
+      // replace 而非 push：用户切账户不该堆 history 条目。currentSection 从
+      // routeState 取而非 activeSection state — activeSection 会在 routeState
+      // .section 同步 effect 跑前一帧 stale，从 URL 现读最新值。
+      if (isDesktopLayout && (routeSelectedPostId || routeSelectedAuthorId)) {
+        const currentSection = routeState.section ?? "recommended";
+        void navigate({
+          to: "/tabs/channels",
+          hash: buildDesktopChannelsRouteHash({
+            section: currentSection,
+          }),
+          replace: true,
+        });
+      }
     }
 
     // 走查 2026-05-18 新会话（本轮 R1）：urlSelfSyncEchoPostIdRef 兜「URL 这次
