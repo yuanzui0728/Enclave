@@ -180,9 +180,19 @@ export function MobileReminderToastHost() {
     });
   }, [activeReminder, documentVisibility, notifyReminder]);
 
+  // 走查 2026-05-18 移动端群聊 R2：reminder toast 顶端定位 calc(safe-area-top
+  // + 6.5rem) ≈ y=104 是按"clear 单行 / 双行 topbar"算的；但 /chat/$id/search 和
+  // /group/$id/search 这两条路由 topbar 只是 56-60px 的标题行，正下方紧跟一条
+  // sticky 的搜索框（搜索 input 中心 y≈121），落在 toast bbox y=104..249 内 —
+  // dueReminders 非空时整个搜索框被 reminder 卡盖死，用户点不进去敲字。
+  // 这两条路由本身就是用户在做"找消息"专注任务，跟当前 reminder 并不互动，沿
+  // /tabs/chat 思路一起隐藏 toast（提醒还会留在 chat 列表 + 30s refetch 不掉）。
+  const isFocusedSearchRoute =
+    /^\/(?:chat|group)\/[^/]+\/search$/.test(normalizedPathname);
   const shouldHideActiveReminder =
     !activeReminder ||
     normalizedPathname === "/tabs/chat" ||
+    isFocusedSearchRoute ||
     (() => {
       const activePath = buildChatReminderPath(activeReminder);
       const activeHash = `#${buildChatReminderHashValue(activeReminder.messageId)}`;
