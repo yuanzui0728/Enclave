@@ -97,44 +97,62 @@ export function ConflictResolver({
         </Trans>
       </div>
       <div className="space-y-2">
-        {fields.map((f) => (
-          <div
-            key={f}
-            className="grid grid-cols-1 gap-2 text-xs items-start sm:grid-cols-[7rem_1fr_1fr]"
-          >
-            <div className="font-medium text-[var(--text-muted)] pt-2">
-              {FIELD_LABELS[f] ? t(FIELD_LABELS[f]) : f}
+        {fields.map((f) => {
+          const fieldLabel = FIELD_LABELS[f] ? t(FIELD_LABELS[f]) : (f as string);
+          const groupLabel = t(msg`${fieldLabel} 取值选择`);
+          const pickedSide = picks[f as string] ?? "mine";
+          return (
+            <div
+              key={f}
+              role="radiogroup"
+              aria-label={groupLabel}
+              className="grid grid-cols-1 gap-2 text-xs items-start sm:grid-cols-[7rem_1fr_1fr]"
+            >
+              <div className="font-medium text-[var(--text-muted)] pt-2">
+                {fieldLabel}
+              </div>
+              {/* 两个二选一卡片只靠边框色 + 背景色（绿/红）传达选中态，
+                  色盲用户跟 SR 用户都看不出当前选了哪边。给按钮加 role=radio
+                  + aria-checked 让 NVDA / VoiceOver 报"选中"，并配套 SR 专用
+                  的可访问名（"服务器当前 / 我的修改 字段:xxx"）让用户在没
+                  视觉的情况下能区分两份内容。 */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={pickedSide === "server"}
+                aria-label={t(msg`${fieldLabel} 使用服务器当前版本`)}
+                onClick={() => setPicks({ ...picks, [f]: "server" })}
+                className={`text-left rounded border px-2 py-1 whitespace-pre-wrap break-words ${
+                  pickedSide === "server"
+                    ? "border-[var(--brand-primary)] bg-[rgba(220,252,231,0.6)]"
+                    : "border-[var(--border-subtle)]"
+                }`}
+              >
+                <div className="text-[10px] uppercase text-[var(--text-muted)] mb-1">
+                  <Trans>服务器当前</Trans>
+                </div>
+                {fmt(serverCurrent[f])}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={pickedSide === "mine"}
+                aria-label={t(msg`${fieldLabel} 使用我的修改`)}
+                onClick={() => setPicks({ ...picks, [f]: "mine" })}
+                className={`text-left rounded border px-2 py-1 whitespace-pre-wrap break-words ${
+                  pickedSide === "mine"
+                    ? "border-[var(--brand-primary)] bg-[rgba(254,226,226,0.55)]"
+                    : "border-[var(--border-subtle)]"
+                }`}
+              >
+                <div className="text-[10px] uppercase text-[var(--text-muted)] mb-1">
+                  <Trans>我的修改</Trans>
+                </div>
+                {fmt(mine[f])}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setPicks({ ...picks, [f]: "server" })}
-              className={`text-left rounded border px-2 py-1 whitespace-pre-wrap break-words ${
-                picks[f] === "server"
-                  ? "border-[var(--brand-primary)] bg-[rgba(220,252,231,0.6)]"
-                  : "border-[var(--border-subtle)]"
-              }`}
-            >
-              <div className="text-[10px] uppercase text-[var(--text-muted)] mb-1">
-                <Trans>服务器当前</Trans>
-              </div>
-              {fmt(serverCurrent[f])}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPicks({ ...picks, [f]: "mine" })}
-              className={`text-left rounded border px-2 py-1 whitespace-pre-wrap break-words ${
-                picks[f] === "mine"
-                  ? "border-[var(--brand-primary)] bg-[rgba(254,226,226,0.55)]"
-                  : "border-[var(--border-subtle)]"
-              }`}
-            >
-              <div className="text-[10px] uppercase text-[var(--text-muted)] mb-1">
-                <Trans>我的修改</Trans>
-              </div>
-              {fmt(mine[f])}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="flex gap-2">
         <Button variant="primary" onClick={commit}>

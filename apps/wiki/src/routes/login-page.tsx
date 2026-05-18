@@ -40,9 +40,20 @@ export function LoginPage() {
   return (
     <PageShell narrow eyebrow={t(msg`账号`)} title={t(msg`登录`)}>
       <AppSection>
-        <div className="mb-4 flex gap-2">
+        {/* "用户名密码 / 邮箱验证码" 是互斥切换同一个登录表单的 tab，不是
+            navigate-to-URL 链接也不是 toggle。原写法两个普通 Button 没有
+            aria-selected / role=tab，SR 用户只能听到 "用户名密码 按钮 /
+            邮箱验证码 按钮"，无法判断当前选中的是哪一种。与 character-page
+            / account-page / my-drafts 顶部 tabs 的修法对齐。 */}
+        <div
+          role="tablist"
+          aria-label={t(msg`登录方式`)}
+          className="mb-4 flex gap-2"
+        >
           <Button
             type="button"
+            role="tab"
+            aria-selected={mode === "password"}
             variant={mode === "password" ? "primary" : "ghost"}
             onClick={() => setMode("password")}
             className="flex-1"
@@ -51,6 +62,8 @@ export function LoginPage() {
           </Button>
           <Button
             type="button"
+            role="tab"
+            aria-selected={mode === "email"}
             variant={mode === "email" ? "primary" : "ghost"}
             onClick={() => setMode("email")}
             className="flex-1"

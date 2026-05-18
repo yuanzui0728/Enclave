@@ -323,7 +323,21 @@ function ReviewCard({
           size="sm"
           className="w-full sm:w-auto"
           disabled={loading}
-          onClick={() => onDecide("reject", note || undefined)}
+          onClick={() => {
+            // 驳回是不可撤销的终态：revision 落 status=rejected，提交者要
+            // 重新走一整轮 6-section 表单。原写法点一下就直接发，跟旁边
+            // 的"要求修改"（提交者可改后重新提交）视觉权重一样，鼠标抖
+            // 一下就可能错点把别人的工作毙掉。高风险驳回更值得一道闸。
+            const label =
+              rev.contentSnapshot?.name || rev.characterId.slice(0, 16);
+            const ok = window.confirm(
+              t(
+                msg`确认驳回「${label}」v${rev.version}？此操作不可撤销，提交者需要重新提交。建议在审核备注里说明驳回原因。`,
+              ),
+            );
+            if (!ok) return;
+            onDecide("reject", note || undefined);
+          }}
         >
           <Trans>驳回</Trans>
         </Button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
@@ -21,6 +21,11 @@ export function ReportButton({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
+  // 成功条 toast：原写法 onSuccess 直接 setOpen(false) 把表单关掉，
+  // "已提交，管理员将处理。" 渲染在表单内部，用户根本没机会看到 ——
+  // 提交完按钮一闪表单消失，体感是"什么都没发生"，部分人会再点一次
+  // 制造重复举报。改：成功后保留表单短暂显示绿色 toast，2.5s 后再
+  // 自动收起；用户也可立刻"关闭"。
   const reportMut = useMutation({
     mutationFn: () =>
       wikiApi.reportTarget({
@@ -30,11 +35,15 @@ export function ReportButton({
         details: details.trim() || undefined,
       }),
     onSuccess: () => {
-      setOpen(false);
       setReason("");
       setDetails("");
     },
   });
+  useEffect(() => {
+    if (!reportMut.isSuccess) return;
+    const timer = window.setTimeout(() => setOpen(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [reportMut.isSuccess]);
 
   const submitReport = () => {
     if (reportMut.isPending || !reason.trim()) return;

@@ -430,12 +430,25 @@ export function DesktopChannelsWorkspace({
 
   // 走查 2026-05-18 新会话 R3：drawer open 状态上报 channels-page —— 父级用
   // 来 gate desktopCommentsQuery（之前 query 跟着 desktopSelectedPostId 走，
-  // 每滑过一张 slide 都 fetch comments 一次浪费 RTT）。fire-and-forget：
-  // onDrawerOpenChange 是 channels-page 的 setState setter，identity 稳定，
-  // 不会让这个 effect 重复跑。
+  // 每滑过一张 slide 都 fetch comments 一次浪费 RTT）。
+  // 走查 2026-05-18 第三轮 R2：原注释说 onDrawerOpenChange 是 setState setter
+  // identity 稳定 — 但事实上 channels-page 那里是内联箭头
+  // `onDrawerOpenChange={(postId) => { setDesktopCommentDrawerPostId(postId);
+  // if (postId === null) setDesktopReplyTarget(null); }}` —— 不是 raw setter，
+  // 每次 channels-page re-render 都换 identity。视频号工作区里 IntersectionObserver
+  // 切 selectedPostId / like/favorite/follow 乐观更新 / viewFeedPost mutation 完成
+  // / forwardNotice 3s 计时器 触发的 channels-page re-render 每秒 4-8 次，本 effect
+  // 跟着每次 re-fire 调 onDrawerOpenChange?.(commentDrawerPostId)，arrow 内部
+  // setDesktopCommentDrawerPostId(same) Object.is 命中是 React no-op，但
+  // conditional `if (postId === null) setDesktopReplyTarget(null)` 在 drawer 关
+  // 着时每帧调 setDesktopReplyTarget(null)（虽然也是 no-op）— 累计 React scheduler
+  // 工作量并非零。同 onSelectedPostChangeRef / onCloseAuthorRef 的 latest-ref 模式，
+  // deps 只挂 commentDrawerPostId，回调走 ref 拿最新 identity。
+  const onDrawerOpenChangeRef = useRef(onDrawerOpenChange);
+  onDrawerOpenChangeRef.current = onDrawerOpenChange;
   useEffect(() => {
-    onDrawerOpenChange?.(commentDrawerPostId);
-  }, [commentDrawerPostId, onDrawerOpenChange]);
+    onDrawerOpenChangeRef.current?.(commentDrawerPostId);
+  }, [commentDrawerPostId]);
 
   // 走查 2026-05-17 新会话 R2：原依赖整个 posts 数组——每次 ChannelsPage 上
   // 的 like/favorite/follow 乐观更新让 React Query setQueryData 返回新数组，
