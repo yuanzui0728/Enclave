@@ -7,6 +7,7 @@ import { getConversations } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import {
   buildDesktopChatWindowRouteHash,
@@ -50,7 +51,17 @@ export function DesktopChatWindowPage() {
         ) ?? null
       : null;
   const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
-  const headerTitle = activeConversation?.title || routeState?.title || t(msg`聊天`);
+  // R3：和 desktop-chat-workspace R1 同款——activeConversation.title /
+  // routeState.title 都可能是服务端持久化的 sentinel「未知联系人」/「Direct
+  // conversation」。独立窗口 header 那一行直接 raw 渲染 → en-US/ja-JP/ko-KR
+  // 用户看到中文字面量。getConversationDisplayTitle 翻成当前 locale 后再做
+  // || fallback。
+  const headerTitle =
+    (activeConversation?.title
+      ? getConversationDisplayTitle(activeConversation.title)
+      : "") ||
+    (routeState?.title ? getConversationDisplayTitle(routeState.title) : "") ||
+    t(msg`聊天`);
   const headerType =
     activeConversation?.type ?? routeState?.conversationType ?? "direct";
 
