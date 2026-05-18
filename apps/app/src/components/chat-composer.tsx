@@ -3548,6 +3548,15 @@ export function ChatComposer({
                     onKeyUp={syncInputCursor}
                     onSelect={syncInputCursor}
                     placeholder={placeholder}
+                    // 走查移动端/群聊 R9：和桌面 R23 同款 a11y 修法——R23 当时把
+                    // 移动 textarea 显式留给后续轮次（"移动 textarea (line 3542)
+                    // 暂不动以保持 scope 最小"）。移动端 SR（iOS VoiceOver / Android
+                    // TalkBack）对 placeholder 的支持也分裂：开始打字后多数实现就
+                    // 不再朗读，盲人用户 focus 进来听到 "编辑栏 空" 不知道是消息
+                    // 输入框。复用上层透下来的 placeholder 文案（"输入消息" 或
+                    // reminder 会话的 "直接说：明早8点提醒我吃药"），群聊路径同样
+                    // 受益（mentionCandidates 通过 chat-composer 入口共享同条 textarea）。
+                    aria-label={placeholder}
                     // text-[16px]: iOS Safari < 16px 字号会在 focus 时强制
                     // viewport zoom-in（导致整页布局抖一下 + 退出 focus 后
                     // 不会自动 zoom 回去）。这里聊天 composer 是 web 移动端
