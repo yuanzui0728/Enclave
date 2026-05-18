@@ -233,7 +233,18 @@ export function MobileReminderToastHost() {
     <div
       className="pointer-events-none absolute z-30 space-y-2"
       style={{
-        top: "calc(var(--safe-area-inset-top) + 0.75rem)",
+        // 走查 2026-05-18 新会话 R1：原来 top 只让出 0.75rem，在挂了 TabPageTopBar
+        // (sticky top-0 z-20) 的页面（channels/discover/contacts/me 等）reminder
+        // card (~110px 高) 直接盖到 topbar 的 title 行 + 视频号场景下还盖死 section
+        // tabs 行 → 用户点「朋友/关注/直播」tab 时 pointer event 落到 reminder
+        // 内部 pointer-events-auto 的卡上（实测 playwright「<span>苏澄</span> from
+        // pointer-events-none absolute z-30 subtree intercepts pointer events」）。
+        // 用户唯一变通是先 dismiss reminder 才能点 tab，体感「reminder 卡住了视频号
+        // 切换」。
+        // 推到 6.5rem (~104px)：清掉 TabPageTopBar 含 tabs 行最高 ~98px + 6px 视觉
+        // 间距；单行 topbar (~56px) 留 48px 间距视觉上 reminder 浮在 topbar 下方，
+        // 可接受；reminder 仍然位于"上方区域"维持"刚收到提醒"的提示力度。
+        top: "calc(var(--safe-area-inset-top) + 6.5rem)",
         right: "calc(var(--safe-area-inset-right) + 0.75rem)",
         left: "calc(var(--safe-area-inset-left) + 0.75rem)",
       }}
