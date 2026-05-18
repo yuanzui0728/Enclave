@@ -1410,6 +1410,32 @@ export function GroupChatThreadPanel({
     [currentMobileGroupRouteHash, groupId, navigate],
   );
 
+  // 走查移动端群聊 R1：mobile 群聊「群公告」上方 banner (line ~1582) onClick 走
+  // `void navigate({to:"/group/$id/details"})` 没挂 disabled / 没同步 ref 守，
+  // 同帧双击 push 2 条相同 history。MobileChatThreadHeader 的「...」 onMore
+  // 也跳详情但 header 内部有 actionFiredRef 兜（commit 222ec0680），这条 banner
+  // 在 header 外面是独立的 button，guard 漏掉。和 startGroupCall 同款 rAF 复位
+  // pattern，确保 mount 内 navigate 完毕窗口外仍可重试。
+  const openGroupDetailsFiredRef = useRef(false);
+  const openGroupDetails = useCallback(() => {
+    if (openGroupDetailsFiredRef.current) {
+      return;
+    }
+    openGroupDetailsFiredRef.current = true;
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(currentMobileGroupRouteHash
+        ? { hash: currentMobileGroupRouteHash }
+        : {}),
+    });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        openGroupDetailsFiredRef.current = false;
+      });
+    }
+  }, [currentMobileGroupRouteHash, groupId, navigate]);
+
   useEffect(() => {
     if (!isDesktop || !desktopCallRequest) {
       return;
@@ -1562,15 +1588,7 @@ export function GroupChatThreadPanel({
         <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1">
           <button
             type="button"
-            onClick={() => {
-              void navigate({
-                to: "/group/$groupId/details",
-                params: { groupId },
-                ...(currentMobileGroupRouteHash
-                  ? { hash: currentMobileGroupRouteHash }
-                  : {}),
-              });
-            }}
+            onClick={openGroupDetails}
             className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-white"
           >
             <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
