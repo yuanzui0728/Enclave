@@ -331,7 +331,14 @@ function readLocalSessionStore() {
     return [] as DesktopChatImageViewerStoredSession[];
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  // R10：Safari iOS 隐私模式 / 部分浏览器禁用 localStorage 时 getItem 本身也可能抛。
+  // 同 R4 recent-stickers / local-chat-message-actions 同款修法——读不到就当空 store。
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return [] as DesktopChatImageViewerStoredSession[];
+  }
   return parseStoredSessions(raw);
 }
 
@@ -345,10 +352,19 @@ function writeLocalSessionStore(
     return sessions;
   }
 
-  if (sessions.length) {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-  } else {
-    window.localStorage.removeItem(STORAGE_KEY);
+  // R10：和 R4 recent-stickers / local-chat-message-actions setItem 同款保护——配额
+  // 满 / Safari 隐私模式裸抛会沿调用栈炸到 openDesktopChatImageViewerWindow →
+  // ChatMessageList onOpen handler，结果用户在桌面单聊里点图片，图片查看窗口直接
+  // 打不开（saveDesktopChatImageViewerSession throw 后 returnstatement 没走到）。
+  // 静默降级：localStorage 写不进就只走 native store（如有），UI 不感知。
+  try {
+    if (sessions.length) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // 配额满 / 隐私模式 —— 静默降级，仍然走 native 镜像 + 返回内存里的 sessions
   }
 
   if (options?.syncNative !== false) {
