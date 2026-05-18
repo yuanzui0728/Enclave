@@ -78,6 +78,8 @@ export function DesktopChatHeaderActions({
           tone="neutral"
           label={t(msg`通话`)}
           onClick={() => setCallMenuOpen((current) => !current)}
+          ariaHaspopup="menu"
+          ariaExpanded={callMenuOpen}
         >
           <Phone size={16} />
         </DesktopChatHeaderButton>
@@ -140,12 +142,16 @@ function DesktopChatHeaderButton({
   children,
   label,
   onClick,
+  ariaHaspopup,
+  ariaExpanded,
 }: {
   active?: boolean;
   tone?: "neutral" | "brand";
   children: ReactNode;
   label: string;
   onClick: () => void;
+  ariaHaspopup?: "menu";
+  ariaExpanded?: boolean;
 }) {
   return (
     <button
@@ -153,6 +159,8 @@ function DesktopChatHeaderButton({
       onClick={onClick}
       aria-label={label}
       title={label}
+      aria-haspopup={ariaHaspopup}
+      aria-expanded={ariaExpanded}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color,box-shadow] duration-150",
         active && tone === "brand"

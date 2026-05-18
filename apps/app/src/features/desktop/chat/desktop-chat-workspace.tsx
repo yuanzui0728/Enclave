@@ -1708,7 +1708,11 @@ export function DesktopChatWorkspace({
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
                   className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
-                  aria-label={t(msg`打开快捷菜单`)}
+                  aria-label={
+                    isQuickMenuOpen ? t(msg`关闭快捷菜单`) : t(msg`打开快捷菜单`)
+                  }
+                  aria-haspopup="menu"
+                  aria-expanded={isQuickMenuOpen}
                 >
                   <Plus size={17} strokeWidth={2.2} />
                 </button>
