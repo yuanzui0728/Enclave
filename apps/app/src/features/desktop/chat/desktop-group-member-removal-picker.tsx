@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -68,6 +68,28 @@ export function DesktopGroupMemberRemovalPicker({
         ? current.filter((item) => item !== memberId)
         : [...current, memberId],
     );
+  };
+
+  // 走查桌面端群聊 R1：和 desktop-create-group-dialog R3 / desktop-group-member-picker
+  // 同款问题，但 remove 路径比 add 严重——parent removeMembersMutation 用
+  // Promise.all 并发 DELETE，server 端 removeMember 对"已删除成员"硬抛
+  // CHAT_GROUP_MEMBER_NOT_FOUND（add 是幂等返回 existing）。同帧双击 → 第一组
+  // DELETE 成功，第二组 DELETE 全部 404 → addMembersMutation/removeMembersMutation
+  // 的 error 落回侧栏顶部，用户看到"红条 + 群里其实成员都没了"的矛盾态。
+  // sync ref 锁同帧；pending 翻 false 后 useEffect 自动复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
+
+  const handleConfirm = () => {
+    if (!selectedIds.length || pending || submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    onConfirm(selectedIds);
   };
 
   if (!open) {
@@ -229,7 +251,7 @@ export function DesktopGroupMemberRemovalPicker({
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => onConfirm(selectedIds)}
+                onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
                 className="rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
               >

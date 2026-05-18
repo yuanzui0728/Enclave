@@ -1218,17 +1218,24 @@ function GroupChatDetailsPanel({
   });
 
   const addMembersMutation = useMutation({
+    // 走查桌面端群聊 R1：原版顺序 `for await addGroupMember` —— 公网隧道 ~600ms
+    // RTT × N 个成员，选 5 个就要等 3 秒按钮一直 disabled。removeMembersMutation
+    // 已经用 Promise.all 并发 DELETE，add 路径维持串行没有特殊理由（server
+    // 端 addMember 对重复成员幂等返回 existing，相互之间无序）。对齐 remove
+    // 路径，并发起 N 路 POST，5 个成员从 3s 降到 ~600ms。
     mutationFn: async (memberIds: string[]) => {
-      for (const memberId of memberIds) {
-        await addGroupMember(
-          conversation.id,
-          {
-            memberId,
-            memberType: "character",
-          },
-          baseUrl,
-        );
-      }
+      await Promise.all(
+        memberIds.map((memberId) =>
+          addGroupMember(
+            conversation.id,
+            {
+              memberId,
+              memberType: "character",
+            },
+            baseUrl,
+          ),
+        ),
+      );
     },
     onSuccess: async (_, memberIds) => {
       setNotice(
@@ -1379,56 +1386,71 @@ function GroupChatDetailsPanel({
   const groupMembers = membersQuery.data ?? [];
   const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
 
-  const memberItems: DesktopMemberGridItem[] = [
-    ...groupMembers
-      .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
-      .map((member) => ({
-        key: member.id,
-        label: resolveGroupMemberDisplayName(member),
-        src: member.memberAvatar,
-        onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
-          if (member.memberType === "character") {
+  const group = groupQuery.data;
+  // 走查桌面端群聊 R1：原版每次 render 重建 memberItems 数组 + 重建所有 onClick
+  // 闭包 + 重建 add/remove 两个 action 对象 → DesktopWechatMemberGrid 子组件全部
+  // 拿到新 props 引用全量重渲。GroupChatDetailsPanel 的高频 render 源很多
+  // （typing socket / messages stream / conversations 60s 轮询都会让父 workspace
+  // re-render 透传 conversation prop）。conversation.id / conversation.title /
+  // group?.name / groupMembers 引用都稳定时（无变化时），整段直接复用旧引用。
+  const groupNameOrTitle = group?.name ?? conversation.title;
+  const memberItems = useMemo<DesktopMemberGridItem[]>(
+    () => [
+      ...groupMembers
+        .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
+        .map((member) => ({
+          key: member.id,
+          label: resolveGroupMemberDisplayName(member),
+          src: member.memberAvatar,
+          onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+            if (member.memberType === "character") {
+              setAvatarPopover({
+                anchorElement: event.currentTarget,
+                kind: "character",
+                characterId: member.memberId,
+                fallbackName: resolveGroupMemberDisplayName(member),
+                fallbackAvatar: member.memberAvatar,
+                threadContext: {
+                  id: conversation.id,
+                  type: "group",
+                  title: groupNameOrTitle,
+                },
+              });
+              return;
+            }
+
             setAvatarPopover({
               anchorElement: event.currentTarget,
-              kind: "character",
-              characterId: member.memberId,
-              fallbackName: resolveGroupMemberDisplayName(member),
-              fallbackAvatar: member.memberAvatar,
-              threadContext: {
-                id: conversation.id,
-                type: "group",
-                title: group?.name ?? conversation.title,
-              },
+              kind: "owner",
             });
-            return;
-          }
-
-          setAvatarPopover({
-            anchorElement: event.currentTarget,
-            kind: "owner",
-          });
+          },
+        })),
+      {
+        key: "add",
+        label: t(msg`添加`),
+        kind: "add" as const,
+        onClick: () => {
+          setMemberPickerMode("add");
+          setMemberPickerOpen(true);
         },
-      })),
-    {
-      key: "add",
-      label: t(msg`添加`),
-      kind: "add" as const,
-      onClick: () => {
-        setMemberPickerMode("add");
-        setMemberPickerOpen(true);
       },
-    },
-    {
-      key: "remove",
-      label: t(msg`移除`),
-      kind: "remove" as const,
-      onClick: () => {
-        setMemberPickerMode("remove");
-        setMemberPickerOpen(true);
+      {
+        key: "remove",
+        label: t(msg`移除`),
+        kind: "remove" as const,
+        onClick: () => {
+          setMemberPickerMode("remove");
+          setMemberPickerOpen(true);
+        },
       },
-    },
-  ];
-  const group = groupQuery.data;
+    ],
+    [
+      conversation.id,
+      groupMembers,
+      groupNameOrTitle,
+      resolveGroupMemberDisplayName,
+    ],
+  );
   const isMuted = group?.isMuted ?? conversation.isMuted;
   const busy =
     updateGroupMutation.isPending ||
@@ -2096,18 +2118,47 @@ function DesktopGroupMemberBrowserDialog({
     return () => window.clearTimeout(timer);
   }, [autoFocusSearch, open]);
 
-  const ownerCount = useMemo(
-    () => members.filter((member) => member.role === "owner").length,
-    [members],
-  );
-  const adminCount = useMemo(
-    () => members.filter((member) => member.role === "admin").length,
-    [members],
-  );
-  const characterCount = useMemo(
-    () => members.filter((member) => member.memberType === "character").length,
-    [members],
-  );
+  // 走查桌面端群聊 R1：成员浏览 dialog 之前 X / 点背板才能关，整个 app 其它
+  // dialog（DesktopCreateGroupDialog / DesktopGroupMemberPicker 父侧栏 esc）
+  // 都支持 Escape，独这个 dialog 漏掉。补 ESC 与现有 X 等价，pending 时禁用。
+  // stopPropagation 避免冒泡触发外层 desktop-chat-workspace 的 dismissSidePanel
+  // 把背后的"聊天信息"侧栏一起关掉。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || pending) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open, pending]);
+
+  // 走查桌面端群聊 R1：原版 3 路 useMemo 各自跑一遍 members.filter，3 倍 O(N)
+  // 比较。N 通常 5-30 但 dialog 一打开各种 dep 变化（searchTerm / activeFilter
+  // / activeMemberId / members 父级 30s 轮询）会让父 useMemo 阵列连续重算。
+  // 合并到一次 reduce 算清三类——同样的 O(N)，但 cache 友好；引用上由
+  // useMemo 自动 dedupe（members ref 不变就返回旧对象，filterTabs 那行 inline
+  // 也跟着不重建）。
+  const roleCounts = useMemo(() => {
+    let owner = 0;
+    let admin = 0;
+    let character = 0;
+    for (const member of members) {
+      if (member.role === "owner") owner += 1;
+      if (member.role === "admin") admin += 1;
+      if (member.memberType === "character") character += 1;
+    }
+    return { owner, admin, character };
+  }, [members]);
+  const ownerCount = roleCounts.owner;
+  const adminCount = roleCounts.admin;
+  const characterCount = roleCounts.character;
   const filterTabs: Array<{
     id: DesktopGroupMemberBrowserFilter;
     label: string;

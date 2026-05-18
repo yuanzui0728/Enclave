@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
@@ -88,6 +88,29 @@ export function DesktopGroupMemberPicker({
         ? current.filter((item) => item !== characterId)
         : [...current, characterId],
     );
+  };
+
+  // 走查桌面端群聊 R1：和 desktop-create-group-dialog R3 同款问题。
+  // "加入群聊" 按钮只靠 `disabled={pending}`，pending 是来自父组件 React state
+  // 的 `addMembersMutation.isPending`，要等 commit 才进 DOM。同帧连点两次都看到
+  // pending=false → onConfirm 飞两份 → parent addMembersMutation.mutate(memberIds)
+  // 跑两遍，sequential `for await addGroupMember` 把同样的 N 个成员循环 POST 一遍。
+  // 服务端虽对"已存在成员"幂等返回 existing 不重复插行，但公网隧道 RTT ~600ms × N
+  // 白来一遍。sync ref 锁同帧；pending 翻 false（success 或 error）后 useEffect
+  // 自动复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
+
+  const handleConfirm = () => {
+    if (!selectedIds.length || pending || submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    onConfirm(selectedIds);
   };
 
   if (!open) {
@@ -303,7 +326,7 @@ export function DesktopGroupMemberPicker({
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => onConfirm(selectedIds)}
+                onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
                 className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
               >
