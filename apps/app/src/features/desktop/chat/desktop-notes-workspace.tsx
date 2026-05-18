@@ -1048,6 +1048,10 @@ export function DesktopNotesWorkspace({
       <div className="flex h-full items-center justify-center bg-[color:var(--bg-canvas)] p-6">
         <div className="w-full max-w-xl rounded-[20px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
           <ErrorBlock
+            // R54：笔记 standalone window 读取失败时的 fatal 落地页，盲人
+            // SR 必须立刻知道（页面只剩"回到来源"一个按钮，没其他焦点
+            // 可摸），role="alert" 让 SR 在 window 切到该页面时立刻播报。
+            role="alert"
             message={
               noteQuery.error instanceof Error
                 ? noteQuery.error.message
