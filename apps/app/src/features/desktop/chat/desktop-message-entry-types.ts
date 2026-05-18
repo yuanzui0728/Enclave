@@ -56,7 +56,7 @@ export function buildDesktopMessageEntries({
   });
 
   if (
-    matchesDesktopMessageEntryKeyword(normalizedKeyword, [
+    matchesDesktopMessageEntryKeyword(normalizedKeyword, () => [
       translateRuntimeMessage(msg`公众号`),
       translateRuntimeMessage(msg`公众号消息`),
       translateRuntimeMessage(msg`公众号主页`),
@@ -74,7 +74,7 @@ export function buildDesktopMessageEntries({
 
   if (
     subscriptionInboxSummary &&
-    matchesDesktopMessageEntryKeyword(normalizedKeyword, [
+    matchesDesktopMessageEntryKeyword(normalizedKeyword, () => [
       translateRuntimeMessage(msg`订阅号消息`),
       subscriptionInboxSummary.preview,
     ])
@@ -88,7 +88,7 @@ export function buildDesktopMessageEntries({
 
   for (const conversation of serviceConversations) {
     if (
-      !matchesDesktopMessageEntryKeyword(normalizedKeyword, [
+      !matchesDesktopMessageEntryKeyword(normalizedKeyword, () => [
         conversation.account.name,
         conversation.preview,
       ])
@@ -105,7 +105,7 @@ export function buildDesktopMessageEntries({
 
   for (const conversation of conversations) {
     if (
-      !matchesDesktopMessageEntryKeyword(normalizedKeyword, [
+      !matchesDesktopMessageEntryKeyword(normalizedKeyword, () => [
         conversation.title,
         getConversationPreviewText(conversation),
       ])
@@ -193,15 +193,25 @@ function buildDesktopOfficialAccountsEntrySummary({
   };
 }
 
+// 走查新一轮 R19：原版 haystacks 是 Array 形式直接传 in；调用方在每个 entry
+// kind 都 eager 构造一份 candidate 文案数组（其中
+// getConversationPreviewText(conversation) 是非平凡函数：走
+// localMessageActionState 解析撤回 / 提取 lastMessage / 生成 sender label /
+// 拼 prefix）。但 keyword 为空时 line 200 直接 return true，那一整份 array
+// 就白构造了。workspace 唯一调用方传 searchTerm: ""，意味着每次
+// localMessageActionState / conversations 变更，N 个会话都会调用一次
+// getConversationPreviewText，结果完全没人看。改成 haystacks 接 `() => Array`
+// 的 lazy provider，keyword 为空时连一次预览拼装都不跑；普通 keyword 流程也
+// 无影响（一次性 invoke）。
 function matchesDesktopMessageEntryKeyword(
   normalizedKeyword: string,
-  haystacks: Array<string | null | undefined>,
+  haystacks: () => Array<string | null | undefined>,
 ) {
   if (!normalizedKeyword) {
     return true;
   }
 
-  return haystacks.some((haystack) =>
+  return haystacks().some((haystack) =>
     haystack?.toLowerCase().includes(normalizedKeyword),
   );
 }
