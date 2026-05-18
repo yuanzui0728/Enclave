@@ -1962,16 +1962,21 @@ export function DesktopChatWorkspace({
             {conversationsQuery.isLoading ? (
               <LoadingBlock label={t(msg`正在读取会话...`)} />
             ) : null}
+            {/* R50：电脑端聊天工作区左侧会话列表的 3 个 ErrorBlock 都裸 <div>，
+                没 role / aria-live。conversations / messageEntries / blocked
+                是单聊主入口的核心 cache（公网隧道首次加载或网络中断时 4xx/5xx
+                极易触发），盲人 SR 用户进 chat workspace 听到「正在读取会话」
+                消失却不知道为什么列表是空的。挂 role="alert" 让 SR 立刻播报。 */}
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
-              <ErrorBlock message={conversationsQuery.error.message} />
+              <ErrorBlock role="alert" message={conversationsQuery.error.message} />
             ) : null}
             {messageEntriesQuery.isError &&
             messageEntriesQuery.error instanceof Error ? (
-              <ErrorBlock message={messageEntriesQuery.error.message} />
+              <ErrorBlock role="alert" message={messageEntriesQuery.error.message} />
             ) : null}
             {blockedQuery.isError && blockedQuery.error instanceof Error ? (
-              <ErrorBlock message={blockedQuery.error.message} />
+              <ErrorBlock role="alert" message={blockedQuery.error.message} />
             ) : null}
 
             <div className="space-y-1">
