@@ -132,9 +132,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     return true;
   };
 
+  // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
+  // mobile-shell 共享 ["app-conversations", baseUrl]，其它 4 处都对齐到 15s
+  // staleTime。本观察者裸跑 → 进 call 屏前用户必然走过 chat-room（同样 15s
+  // 内才进的通话），原生壳 10s 默认 stale 时间一过就会再发一次 GET /conversations
+  // （公网隧道 ~600ms）。对齐 15s 复用主缓存。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
   // 走查 R2（第 2 轮）：cache key 跟 use-digital-human-entry-guard /
   // desktop-direct-call-panel 对齐到 app-system-status；进 call 屏前用户必然

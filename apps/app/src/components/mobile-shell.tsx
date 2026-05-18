@@ -53,10 +53,16 @@ export function MobileShell({ children }: PropsWithChildren) {
   const runtimeConfig = useAppRuntimeConfig();
   const { reminders } = useMessageReminders();
 
+  // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
+  // mobile-ai-call-screen 共享 ["app-conversations", baseUrl]，其它 4 处都
+  // 对齐到 15s staleTime。本观察者裸跑 → 用户切 tab / 进/退聊天页时跨页面
+  // 都用同一 cache，原生壳 10s 默认 stale 跨页面切换很容易踩到，触发重复
+  // GET /conversations（公网隧道 ~600ms）。对齐 15s。
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
     queryFn: () => getConversations(runtimeConfig.apiBaseUrl),
     enabled: showTabs,
+    staleTime: 15_000,
   });
   const conversationList = useMemo(
     () => conversations ?? EMPTY_CONVERSATIONS,

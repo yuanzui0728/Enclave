@@ -48,10 +48,16 @@ export function MobileReminderToastHost() {
     typeof document === "undefined" ? null : document.visibilityState,
   );
 
+  // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
+  // mobile-ai-call-screen / mobile-shell 共享 ["app-conversations", baseUrl]，
+  // 其余 5 处对齐到 15s staleTime；本观察者裸跑 → 原生壳 10s 默认 stale 跨
+  // 路由切换时容易触发重复 GET /conversations，且本 host 只读 conversation
+  // 的 title 用于 reminder toast，15s 足够新鲜。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(baseUrl),
+    staleTime: 15_000,
   });
   const conversations = useMemo(
     () => conversationsQuery.data ?? EMPTY_CONVERSATIONS,
