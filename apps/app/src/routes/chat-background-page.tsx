@@ -748,7 +748,7 @@ export function ChatBackgroundPage() {
 
   return (
     <ChatDetailsShell
-      title={conversation?.title ?? t(msg`聊天背景`)}
+      title={displayedConversationTitle || t(msg`聊天背景`)}
       subtitle={t(msg`默认背景和好友专属背景`)}
       onBack={() => {
         navigateBackOrFallback(
