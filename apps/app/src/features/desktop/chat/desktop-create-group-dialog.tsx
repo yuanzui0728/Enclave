@@ -416,13 +416,22 @@ export function DesktopCreateGroupDialog({
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape" || createMutation.isPending) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      // 走查电脑端群聊 R6（和 R5 text-edit/confirm dialog 同款）：原版
+      // pending 时直接 early return 让 Esc 透传——workspace queueMicrotask
+      // 兜底看到 defaultPrevented=false 仍跑 dismissSidePanel 把背后的
+      //"聊天信息"侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关
+      // 弹窗倒把侧栏弄没了"。pending 期间仍消费 Esc 防 dismiss。
+      event.preventDefault();
+      event.stopPropagation();
+      if (createMutation.isPending) {
         return;
       }
 
       if (searchTerm.trim()) {
-        event.preventDefault();
-        event.stopPropagation();
         clearSearch();
         return;
       }
@@ -430,8 +439,6 @@ export function DesktopCreateGroupDialog({
       // 该 dialog 多数情况下是从右侧"聊天信息"侧栏的"发起群聊"打开。
       // Esc 关 dialog 时阻止冒泡，否则 workspace 的 dismissSidePanel 会
       // 把背后的详情侧栏也关掉。
-      event.preventDefault();
-      event.stopPropagation();
       onClose();
     }
 
