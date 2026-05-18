@@ -263,7 +263,16 @@ function MobileGroupChatEditPage({
   }
 
   function handleRetryLoad() {
-    void Promise.all([groupQuery.refetch(), membersQuery.refetch()]);
+    // mode === "name" 路径下 membersQuery 是 enabled:false（line 106-107），
+    // 但 React Query 的 refetch() 会绕过 enabled 直接触发 fetch —— 用户在
+    // 「群聊不存在」status card 上点「重试读取」时，name mode 也会白白多打
+    // 一次 GET /api/groups/$id/members，公网隧道 ~600ms RTT 的浪费 + 后端
+    // 请求噪音。按 mode 收口：只在 nickname mode 才捎带 members refetch。
+    const refetches = [groupQuery.refetch()];
+    if (mode === "nickname") {
+      refetches.push(membersQuery.refetch());
+    }
+    void Promise.all(refetches);
   }
 
   function handleRetrySave() {
