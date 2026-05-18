@@ -191,6 +191,25 @@ export function DesktopGroupCallPanel({
   // 拉 1200ms 定时器 → 每 1200ms 重发一条 "进行中" 邀请，群被 spam 一堆
   // 重复 ongoing 卡片。用 ref 记录"本组 counts 已经尝试过"，同 counts 不
   // 再重发；activeCount/totalCount 变了（成员加入/离开）才重新解锁。
+  //
+  // 走查电脑端群聊 R9（本轮新增）：parent group-chat-thread-panel 在 JSX 里
+  // inline 定义 onSendInviteNotice={(counts)=>{...mutateAsync...}}（line 1691），
+  // 每次 parent render 都换新函数引用。parent 在通话面板挂着的时候仍有
+  // groupQuery / membersQuery / messagesQuery 周期 refetch + typing socket /
+  // sendCallInviteMutation.isPending 变化等多路 re-render 触发——本 effect
+  // deps 里之前列了 onSendInviteNotice，于是 parent 每渲一次 → 本 effect
+  // cleanup（clearTimeout）+ re-schedule，1200ms 定时器永远在被重置；
+  // hasSyncedStatus=false 的情况下，"自动把最新 counts 同步到聊天消息流"
+  // 这条 path 在繁忙群里根本走不到，依赖用户手动点"同步最新状态"才能发出。
+  // 用 ref 锁住最新 callback 引用，effect deps 去掉 onSendInviteNotice，
+  // setTimeout 内部从 ref 取最新值——既不踩闭包过期、也不让 callback ref
+  // 变化触发 cleanup。同款 onPanelOpened 因为有 panelOpenedReported state
+  // gating（一旦发过就不再发），即便每 render 重跑也只 throw away，无副作用，
+  // 不需要这层包装；onEndCall 是用户点击触发，根本不在 useEffect 里。
+  const onSendInviteNoticeRef = useRef(onSendInviteNotice);
+  useEffect(() => {
+    onSendInviteNoticeRef.current = onSendInviteNotice;
+  }, [onSendInviteNotice]);
   const attemptedSyncCountsRef = useRef<{
     activeCount: number;
     totalCount: number;
@@ -213,7 +232,7 @@ export function DesktopGroupCallPanel({
         activeCount,
         totalCount: members.length,
       };
-      onSendInviteNotice({
+      onSendInviteNoticeRef.current({
         activeCount,
         totalCount: members.length,
       });
@@ -228,7 +247,6 @@ export function DesktopGroupCallPanel({
     hasSyncedStatus,
     inviteNoticePending,
     members.length,
-    onSendInviteNotice,
   ]);
 
   function toggleJoinedState(member: GroupMember) {
