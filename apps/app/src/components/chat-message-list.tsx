@@ -4887,6 +4887,11 @@ function MessageTimestampDivider({
         ? t(msg`切换为简略时间显示`)
         : t(msg`切换为完整日期显示`)
         }
+        // R32：消息列表里夹的时间戳 divider 同时是 toggle 按钮（点击切换全局
+        // detailedTimestampMode）。aria-label 已经按状态描述「下一步会做的动作」，
+        // 但 SR 用户没法在不按下的情况下知道当前是什么模式。aria-pressed 提供
+        // 即时的 audible toggle state，和 aria-label 互补。
+        aria-pressed={detailedTimestampMode}
       >
         {label}
       </button>
