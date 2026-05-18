@@ -53,15 +53,23 @@ export function DesktopChatConfirmDialog({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || pending) {
+      if (event.key !== "Escape") {
         return;
       }
 
+      // 走查电脑端群聊 R5：原版 pending 时直接 early return 让 Esc 透传——
+      // workspace queueMicrotask 看到 defaultPrevented=false 跑
+      // dismissSidePanel 把"聊天信息"侧栏偷关掉，本 dialog 因为 pending 不
+      // 会真关，用户看到的是"按 Esc 没关弹窗倒把侧栏弄没了"。pending 期间
+      // 仍消费掉 Esc 防 dismiss，mutation 落地后用户可以再按 Esc 真关。
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending) {
+        return;
+      }
       // 弹窗是 modal 层，Esc 关掉自己就够了；不 stopPropagation 的话
       // workspace 那条 dismissSidePanel 的 window keydown 会接着跑，
       // 一下 Esc 既把确认弹窗关了又把背后的详情侧栏一起关了。
-      event.preventDefault();
-      event.stopPropagation();
       onClose();
     };
 
