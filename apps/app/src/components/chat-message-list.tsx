@@ -7560,6 +7560,17 @@ function ImageViewerOverlay({
   const touchDeltaXRef = useRef(0);
   const touchDeltaYRef = useRef(0);
 
+  // 走查 R12：和姊妹 LocationViewerOverlay / NoteViewerOverlay R12 同款 perf
+  // 修法 —— 父组件 chat-message-list 在 4587 处 `onClose={() => setViewerMessageId(null)}`
+  // 是 inline arrow，父帧 typing tick / socket echo / message cache 写入每次
+  // 都换引用 → 下面两条 effect 反复拆装 Android back interceptor + window
+  // keydown。图片查看器打开期间用户翻图 / 暂停看几秒，父帧能跑 100+ 次。
+  // ref 镜像 onClose，effect deps 只保留真正影响绑定逻辑的 [isDesktop]。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // 原生壳硬件 Back 键：图片查看器打开时 BACK 应当先关查看器，不要直接
   // history.back 跳出聊天页。desktop 形态注册没副作用。
   useEffect(() => {
@@ -7568,11 +7579,11 @@ function ImageViewerOverlay({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [isDesktop, onClose]);
+  }, [isDesktop]);
 
   // 第三轮 R1：mobile variant ESC 漏挂。父组件 chat-message-list 在 line 1920
   // 那条 ESC + ←/→ 键盘 nav effect 加了 `if (!isDesktop) return`——desktop 才
@@ -7591,11 +7602,11 @@ function ImageViewerOverlay({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDesktop, onClose]);
+  }, [isDesktop]);
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
