@@ -7,6 +7,8 @@ import {
 import type {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CloudUserDetail,
+  CloudUserDistribution,
+  CloudUserDistributionBucket,
   CloudUserListResponse,
   CloudUserStats,
   CloudUserStatus,
@@ -14,6 +16,7 @@ import type {
   SubscriptionStatus,
 } from "@yinjie/contracts";
 import { Between, Brackets, In, Repository, type SelectQueryBuilder } from "typeorm";
+import { classifyDeviceType } from "../auth/device-type";
 import { EmailAuthService } from "../auth/email-auth.service";
 import {
   GoogleAuthService,
@@ -28,11 +31,14 @@ import { InviteRedemptionEntity } from "../entities/invite-redemption.entity";
 import { UserSubscriptionEntity } from "../entities/user-subscription.entity";
 import { InviteService } from "../invite/invite.service";
 import { SubscriptionService } from "../subscription/subscription.service";
+import { IpRegionService } from "./ip-region.service";
 
 export type EnsureUserContext = {
   inviteCode?: string | null;
   ip?: string | null;
   deviceFingerprint?: string | null;
+  userAgent?: string | null;
+  clientPlatform?: string | null;
   // 注册时一并设置的初始登录密码。仅在 isNewUser=true 时落盘；
   // 老用户即便传了也会被忽略，避免静默覆盖。
   setPasswordOnRegister?: string | null;
@@ -78,7 +84,23 @@ export class UsersService implements OnModuleInit {
     private readonly phoneAuth: PhoneAuthService,
     private readonly emailAuth: EmailAuthService,
     private readonly googleAuth: GoogleAuthService,
+    private readonly ipRegion: IpRegionService,
   ) {}
+
+  // 把 ip 解析为 region + countryCode。失败/空 IP 返回 null/null，调用方
+  // 用 ?? 兜底保留旧值即可，不阻塞主流程。同步 await：IpRegionService 命中
+  // 7d 缓存几乎零延迟，未命中 5s 超时；多花的这点登录耗时换取列表/图表实时性。
+  private async resolveRegionSafe(
+    ip: string | null | undefined,
+  ): Promise<{ region: string | null; countryCode: string | null }> {
+    if (!ip) return { region: null, countryCode: null };
+    try {
+      const r = await this.ipRegion.resolve(ip);
+      return { region: r.region ?? null, countryCode: r.countryCode ?? null };
+    } catch {
+      return { region: null, countryCode: null };
+    }
+  }
 
   onModuleInit() {
     this.phoneAuth.registerPostVerifyHook(async (phone, extras) => {
@@ -87,6 +109,8 @@ export class UsersService implements OnModuleInit {
           inviteCode: extras.inviteCode ?? null,
           ip: extras.ip ?? null,
           deviceFingerprint: extras.deviceFingerprint ?? null,
+          userAgent: extras.userAgent ?? null,
+          clientPlatform: extras.clientPlatform ?? null,
           setPasswordOnRegister: extras.setPasswordOnRegister ?? null,
         });
       } catch (error) {
@@ -102,6 +126,8 @@ export class UsersService implements OnModuleInit {
           inviteCode: extras.inviteCode ?? null,
           ip: extras.ip ?? null,
           deviceFingerprint: extras.deviceFingerprint ?? null,
+          userAgent: extras.userAgent ?? null,
+          clientPlatform: extras.clientPlatform ?? null,
           setPasswordOnRegister: extras.setPasswordOnRegister ?? null,
         });
       } catch (error) {
@@ -116,12 +142,21 @@ export class UsersService implements OnModuleInit {
         inviteCode: extras.inviteCode ?? null,
         ip: extras.ip ?? null,
         deviceFingerprint: extras.deviceFingerprint ?? null,
+        userAgent: extras.userAgent ?? null,
+        clientPlatform: extras.clientPlatform ?? null,
       });
     });
+
+    // 老用户回填 region：扫 lastLoginIp 非空且 lastLoginRegion 为空的账号，
+    // 串行调 IpRegionService（7d 缓存命中后零延迟），失败/解析不到的保留 null。
+    // 不 await — 后台异步跑，不阻塞 Nest 启动。
+    void this.backfillLastLoginRegions();
   }
 
   async ensureUser(phone: string, context: EnsureUserContext = {}) {
     const now = new Date();
+    const device = classifyDeviceType(context.clientPlatform, context.userAgent);
+    const { region, countryCode } = await this.resolveRegionSafe(context.ip);
     let user = await this.userRepo.findOne({ where: { phone } });
     let isNewUser = false;
 
@@ -134,6 +169,9 @@ export class UsersService implements OnModuleInit {
         registrationIp: context.ip ?? null,
         lastLoginIp: context.ip ?? null,
         registrationDeviceFingerprint: context.deviceFingerprint ?? null,
+        lastLoginDeviceType: device,
+        lastLoginRegion: region,
+        lastLoginCountryCode: countryCode,
       });
       user = await this.userRepo.save(user);
     } else {
@@ -143,6 +181,9 @@ export class UsersService implements OnModuleInit {
       if (!user.registrationDeviceFingerprint && context.deviceFingerprint) {
         user.registrationDeviceFingerprint = context.deviceFingerprint;
       }
+      if (device) user.lastLoginDeviceType = device;
+      if (region) user.lastLoginRegion = region;
+      if (countryCode) user.lastLoginCountryCode = countryCode;
       user = await this.userRepo.save(user);
     }
 
@@ -210,6 +251,8 @@ export class UsersService implements OnModuleInit {
     context: EnsureUserContext = {},
   ) {
     const now = new Date();
+    const device = classifyDeviceType(context.clientPlatform, context.userAgent);
+    const { region, countryCode } = await this.resolveRegionSafe(context.ip);
     let user = await this.userRepo.findOne({ where: { email } });
     let isNewUser = false;
 
@@ -224,6 +267,9 @@ export class UsersService implements OnModuleInit {
         registrationIp: context.ip ?? null,
         lastLoginIp: context.ip ?? null,
         registrationDeviceFingerprint: context.deviceFingerprint ?? null,
+        lastLoginDeviceType: device,
+        lastLoginRegion: region,
+        lastLoginCountryCode: countryCode,
       });
       user = await this.userRepo.save(user);
     } else {
@@ -235,6 +281,9 @@ export class UsersService implements OnModuleInit {
       if (!user.registrationDeviceFingerprint && context.deviceFingerprint) {
         user.registrationDeviceFingerprint = context.deviceFingerprint;
       }
+      if (device) user.lastLoginDeviceType = device;
+      if (region) user.lastLoginRegion = region;
+      if (countryCode) user.lastLoginCountryCode = countryCode;
       user = await this.userRepo.save(user);
     }
 
@@ -317,6 +366,54 @@ export class UsersService implements OnModuleInit {
       );
     }
     return user;
+  }
+
+  // 给老用户一次性回填 lastLoginRegion / lastLoginCountryCode。挑 lastLoginIp
+  // 不为空且 lastLoginRegion 为空的账号串行跑。ipRegion 解析有 5s 超时 + 7d 缓存，
+  // 串行避免连续打爆 ip-api 限频。重启第二次起条件不再命中，自然跳过。
+  private async backfillLastLoginRegions() {
+    try {
+      const candidates = await this.userRepo
+        .createQueryBuilder("u")
+        .select(["u.id", "u.lastLoginIp"])
+        .where("u.lastLoginIp IS NOT NULL")
+        .andWhere("u.lastLoginRegion IS NULL")
+        .getMany();
+
+      if (candidates.length === 0) return;
+
+      this.logger.log(
+        `[backfill] resolving lastLoginRegion for ${candidates.length} cloud users`,
+      );
+
+      let resolved = 0;
+      for (const candidate of candidates) {
+        const ip = candidate.lastLoginIp;
+        if (!ip) continue;
+        try {
+          const lookup = await this.ipRegion.resolve(ip);
+          if (lookup.region || lookup.countryCode) {
+            await this.userRepo.update(candidate.id, {
+              lastLoginRegion: lookup.region ?? null,
+              lastLoginCountryCode: lookup.countryCode ?? null,
+            });
+            resolved += 1;
+          }
+        } catch (error) {
+          this.logger.warn(
+            `[backfill] resolve failed for user=${candidate.id} ip=${ip}: ${(error as Error).message}`,
+          );
+        }
+      }
+
+      this.logger.log(
+        `[backfill] lastLoginRegion resolved ${resolved}/${candidates.length}`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `[backfill] lastLoginRegion task failed: ${(error as Error).message}`,
+      );
+    }
   }
 
   async getUserById(id: string) {
@@ -582,6 +679,13 @@ export class UsersService implements OnModuleInit {
       lastLoginIp: user.lastLoginIp,
       createdAt: user.createdAt.toISOString(),
       lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+      lastLoginDeviceType:
+        user.lastLoginDeviceType === "mobile" ||
+        user.lastLoginDeviceType === "desktop"
+          ? user.lastLoginDeviceType
+          : null,
+      lastLoginRegion: user.lastLoginRegion,
+      lastLoginCountryCode: user.lastLoginCountryCode,
       // SQLite 把 datetime 当 TEXT 存，getRawOne 出来就是字符串；空表 MAX 返回
       // null，正好对应"该用户从没发过 chat_message_sent"。统一转成 ISO 防止
       // "2026-05-18 03:31:59.441" 这种空格分隔被前端 new Date 在 Safari 上 NaN。
@@ -592,6 +696,70 @@ export class UsersService implements OnModuleInit {
   // 顶部"用户总数 / 会员用户数"卡片。口径固定为生产用户（永远剔除测试账号），
   // 不受当前列表筛选器影响——运营随便切 status/subscriptionStatus/搜索，看到的
   // 卡片数字依然是真实总量。
+  // 用户分布饼图数据：地区维度 top 10 + "其他"聚合（避免长尾国家压扁饼图）；
+  // 设备维度 mobile/desktop/unknown 三档（unknown = lastLoginDeviceType 为空，
+  // 通常是该字段上线之前已存在的老用户）。剔除测试账号，与 getUserStatsAdmin
+  // 同口径。
+  async getUserDistributionAdmin(): Promise<CloudUserDistribution> {
+    const REGION_TOP_N = 10;
+    const UNKNOWN_REGION_LABEL = "未知";
+    const OTHER_REGION_LABEL = "其他";
+
+    // 地区聚合：lastLoginRegion 为空时归到 "未知"。生产口径用
+    // applyProductionUserFilter 复用同一套测试号过滤。
+    const regionBuilder = this.userRepo
+      .createQueryBuilder("user")
+      .select(
+        "COALESCE(NULLIF(TRIM(user.lastLoginRegion), ''), :unknownRegion)",
+        "label",
+      )
+      .addSelect("COUNT(*)", "count")
+      .setParameter("unknownRegion", UNKNOWN_REGION_LABEL)
+      .groupBy("label")
+      .orderBy("count", "DESC");
+    this.applyProductionUserFilter(regionBuilder);
+    const rawRegions = await regionBuilder.getRawMany<{
+      label: string;
+      count: string | number;
+    }>();
+
+    const regionBuckets: CloudUserDistributionBucket[] = rawRegions.map((r) => ({
+      label: r.label || UNKNOWN_REGION_LABEL,
+      count: Number(r.count),
+    }));
+    let byRegion: CloudUserDistributionBucket[];
+    if (regionBuckets.length <= REGION_TOP_N) {
+      byRegion = regionBuckets;
+    } else {
+      const head = regionBuckets.slice(0, REGION_TOP_N);
+      const tail = regionBuckets.slice(REGION_TOP_N);
+      const tailSum = tail.reduce((acc, b) => acc + b.count, 0);
+      byRegion = [...head, { label: OTHER_REGION_LABEL, count: tailSum }];
+    }
+
+    // 设备聚合：把 NULL 归到 "unknown"，避免漏算；其他值（mobile/desktop）原样。
+    const deviceBuilder = this.userRepo
+      .createQueryBuilder("user")
+      .select(
+        "COALESCE(NULLIF(TRIM(user.lastLoginDeviceType), ''), 'unknown')",
+        "label",
+      )
+      .addSelect("COUNT(*)", "count")
+      .groupBy("label")
+      .orderBy("count", "DESC");
+    this.applyProductionUserFilter(deviceBuilder);
+    const rawDevices = await deviceBuilder.getRawMany<{
+      label: string;
+      count: string | number;
+    }>();
+    const byDevice: CloudUserDistributionBucket[] = rawDevices.map((r) => ({
+      label: r.label || "unknown",
+      count: Number(r.count),
+    }));
+
+    return { byRegion, byDevice };
+  }
+
   async getUserStatsAdmin(): Promise<CloudUserStats> {
     const baseBuilder = this.userRepo.createQueryBuilder("user");
     this.applyProductionUserFilter(baseBuilder);

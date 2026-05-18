@@ -86,6 +86,20 @@ function isValidIpLiteral(ip: string): boolean {
   return false;
 }
 
+// 取 server-side User-Agent；header 可能是 string[]，取首项；空串归一为 null。
+// classifyDeviceType() 在前端 clientPlatform === 'web' 或缺省时用它兜底「手机/电脑」分类。
+export function extractUserAgent(request: {
+  headers: Record<string, string | string[] | undefined>;
+}): string | null {
+  const raw = request.headers["user-agent"];
+  if (typeof raw === "string") return raw.trim() || null;
+  if (Array.isArray(raw) && raw.length > 0) {
+    const first = raw[0];
+    return typeof first === "string" ? first.trim() || null : null;
+  }
+  return null;
+}
+
 // 取真实客户端 IP：依次尝试 cf-connecting-ip / true-client-ip / x-real-ip /
 // x-forwarded-for（首个非私网跳）/ req.ip / socket.remoteAddress；
 // 全部都是 loopback/私网时再回落到调用方提供的 clientReportedIp（前端探的公网 IP）。
@@ -206,6 +220,8 @@ export class CloudAuthController {
       inviteCode: body.inviteCode ?? null,
       deviceFingerprint: body.deviceFingerprint ?? null,
       ip: extractIp(request, body.clientReportedIp ?? null),
+      userAgent: extractUserAgent(request),
+      clientPlatform: body.clientPlatform ?? null,
       setPasswordOnRegister: body.setPasswordOnRegister ?? null,
     });
   }
@@ -228,6 +244,8 @@ export class CloudAuthController {
       inviteCode: body.inviteCode ?? null,
       deviceFingerprint: body.deviceFingerprint ?? null,
       ip: extractIp(request, body.clientReportedIp ?? null),
+      userAgent: extractUserAgent(request),
+      clientPlatform: body.clientPlatform ?? null,
       setPasswordOnRegister: body.setPasswordOnRegister ?? null,
     });
   }
@@ -247,6 +265,8 @@ export class CloudAuthController {
       body.password,
       {
         ip: extractIp(request, body.clientReportedIp ?? null),
+        userAgent: extractUserAgent(request),
+        clientPlatform: body.clientPlatform ?? null,
       },
     );
   }
@@ -302,6 +322,8 @@ export class CloudAuthController {
       inviteCode: body.inviteCode ?? null,
       deviceFingerprint: body.deviceFingerprint ?? null,
       ip: extractIp(request, body.clientReportedIp ?? null),
+      userAgent: extractUserAgent(request),
+      clientPlatform: body.clientPlatform ?? null,
     });
   }
 }

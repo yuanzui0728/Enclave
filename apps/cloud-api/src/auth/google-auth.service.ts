@@ -23,6 +23,8 @@ export type GoogleVerifyExtras = {
   inviteCode?: string | null;
   deviceFingerprint?: string | null;
   ip?: string | null;
+  userAgent?: string | null;
+  clientPlatform?: string | null;
 };
 
 const GOOGLE_PROVIDER = "google";

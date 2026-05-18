@@ -33,6 +33,7 @@ import { RevenueSharingModule } from "./revenue-sharing/revenue-sharing.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { TelemetryModule } from "./telemetry/telemetry.module";
 import { TokenUsageModule } from "./token-usage/token-usage.module";
+import { IpRegionModule } from "./users/ip-region.module";
 import { UsersModule } from "./users/users.module";
 import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
@@ -58,6 +59,7 @@ import { WikiPublicModule } from "./wiki-public/wiki-public.module";
       useFactory: (configService: ConfigService) => buildCloudTypeOrmOptions(configService),
     }),
     TypeOrmModule.forFeature([...cloudEntities]),
+    IpRegionModule,
     CloudAuthCoreModule,
     CloudConfigModule,
     SubscriptionModule,

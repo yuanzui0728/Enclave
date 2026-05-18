@@ -61,6 +61,7 @@ import { FixAppPublicBaseUrlEnclaveai1778663000000 } from "./migrations/17786630
 import { AddInviteeRewardSubscriptionId1778664000000 } from "./migrations/1778664000000-add-invitee-reward-subscription-id";
 import { PartialUniqueInviteeRedemption1778665000000 } from "./migrations/1778665000000-partial-unique-invitee-redemption";
 import { AddCloudUserSessionInvalidAfter1778666000000 } from "./migrations/1778666000000-add-cloud-user-session-invalid-after";
+import { AddCloudUserLastLoginDeviceRegion1779000000000 } from "./migrations/1779000000000-add-cloud-user-last-login-device-region";
 import { resolveCloudDatabasePath } from "../config/cloud-runtime-config";
 
 type ConfigReader = {
@@ -132,6 +133,7 @@ export const cloudMigrations = [
   AddInviteeRewardSubscriptionId1778664000000,
   PartialUniqueInviteeRedemption1778665000000,
   AddCloudUserSessionInvalidAfter1778666000000,
+  AddCloudUserLastLoginDeviceRegion1779000000000,
 ];
 
 export function buildCloudDataSourceOptions(config: ConfigReader): DataSourceOptions {

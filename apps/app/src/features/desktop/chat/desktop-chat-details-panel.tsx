@@ -495,7 +495,45 @@ function DirectChatDetailsPanel({
     muteMutation.mutate(next);
   };
 
-  const handleAddToContacts = () => {
+  // 走查 R2：和姊妹 mobile chat-details-page R3（commit cdc13e28a）同款问题。
+  // 单聊「聊天信息」侧栏内 8 处「点行进二级页」按钮全部走
+  // `onClick={() => { void navigate({ to: ... }) }}` 形态、没挂同步 ref 守：
+  // - 添加到通讯录 (handleAddToContacts, /tabs/contacts 或 /desktop/add-friend)
+  // - 朋友圈 (handleOpenMoments, /desktop/friend-moments/$characterId)
+  // - 共同群聊 (buildDesktopChatThreadPath)
+  // - 更多资料 (/character/$characterId)
+  // - 聊天文件 (/desktop/chat-files)
+  // - 聊天背景 (/chat/$conversationId/background)
+  // - 发起群聊 fallback (/group/new，onCreateGroup 缺省时走)
+  //
+  // DesktopContactProfileActionRow / DesktopContactProfileToggleRow 内 onClick
+  // 没有任何 throttle，每个 tap 都直冲 navigate；同帧 <16ms 双击任一行都让
+  // tanstack-router push 2 条相同 history 项 → 用户从二级页返回还要按 2 次返回
+  // 才能回到 details，并且像 friend-moments / character-detail 这种二级页
+  // mount 时拉网络数据的，第二次也会重复 RTT 一次（公网隧道 ~600ms）。
+  //
+  // 加一把共享 rowNavigateFiredRef + guardRowNavigation 包装器（和姊妹
+  // backFiredRef / chat-details-page guardRowNavigation 同款写法），同 mount
+  // 内首次 click 后所有后续 row click 直接 noop，raf 后释放兜底 navigate 没
+  // 真正切走的边界（例如 disabled / dialog 拦截）。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
+
+  const handleAddToContacts = guardRowNavigation(() => {
     if (!targetCharacterId) {
       return;
     }
@@ -519,9 +557,9 @@ function DirectChatDetailsPanel({
         openCompose: true,
       }),
     });
-  };
+  });
 
-  const handleOpenMoments = () => {
+  const handleOpenMoments = guardRowNavigation(() => {
     if (!isFriend || !targetCharacterId) {
       return;
     }
@@ -538,7 +576,7 @@ function DirectChatDetailsPanel({
         }),
       }),
     });
-  };
+  });
 
   const currentEditDialog =
     editingField === "remarkName"
@@ -832,7 +870,7 @@ function DirectChatDetailsPanel({
                   ? t(msg`${commonGroups.length} 个共同群聊`)
                   : t(msg`暂时没有共同群聊`)
               }
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (!commonGroups[0]) {
                   return;
                 }
@@ -842,7 +880,7 @@ function DirectChatDetailsPanel({
                     conversationId: commonGroups[0].id,
                   }),
                 });
-              }}
+              })}
               disabled={!commonGroups.length}
               valueMuted={!commonGroups.length}
             />
@@ -853,7 +891,7 @@ function DirectChatDetailsPanel({
                   ? t(msg`查看角色档案与扩展介绍`)
                   : t(msg`查看角色资料`)
               }
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (!targetCharacterId) {
                   return;
                 }
@@ -869,7 +907,7 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
               disabled={!targetCharacterId}
             />
           </DesktopContactProfileSection>
@@ -883,17 +921,17 @@ function DirectChatDetailsPanel({
             <DesktopContactProfileActionRow
               label={t(msg`聊天文件`)}
               value={t(msg`查看本聊天附件`)}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 void navigate({
                   to: "/desktop/chat-files",
                   hash: buildDesktopChatFilesRouteHash(conversation.id),
                 });
-              }}
+              })}
             />
             <DesktopContactProfileActionRow
               label={t(msg`聊天背景`)}
               value={backgroundLabel}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 void navigate({
                   to: "/chat/$conversationId/background",
                   params: { conversationId: conversation.id },
@@ -905,12 +943,12 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
             />
             <DesktopContactProfileActionRow
               label={t(msg`发起群聊`)}
               value={t(msg`和对方创建新群`)}
-              onClick={() => {
+              onClick={guardRowNavigation(() => {
                 if (onCreateGroup) {
                   onCreateGroup({
                     conversationId: conversation.id,
@@ -932,7 +970,7 @@ function DirectChatDetailsPanel({
                     }),
                   }),
                 });
-              }}
+              })}
             />
           </DesktopContactProfileSection>
 

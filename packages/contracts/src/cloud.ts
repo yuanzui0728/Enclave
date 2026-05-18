@@ -108,6 +108,9 @@ export interface VerifyPhoneCodeRequest {
   // 让前端探一次公网 IP（ipify 等）作为兜底，后端仅在 server-side 头取不到
   // 公网 IP 时才采纳，否则保留服务器测得值（不可被客户端覆盖）。
   clientReportedIp?: string;
+  // 前端探测的端类型：'web' | 'desktop' | 'android' | 'ios'。后端在落库时和
+  // server-side User-Agent 一起归一为 'mobile' / 'desktop' 给管理端列表/分布图用。
+  clientPlatform?: string;
   // 仅在新建用户那一刻生效：通过校验后立刻 hash 落盘到 cloud_users.passwordHash。
   // 老用户登录时即使传了也会被后端忽略，避免静默覆盖已有密码。
   setPasswordOnRegister?: string;
@@ -135,6 +138,7 @@ export interface VerifyEmailCodeRequest {
   inviteCode?: string;
   deviceFingerprint?: string;
   clientReportedIp?: string;
+  clientPlatform?: string;
   // 见 VerifyPhoneCodeRequest.setPasswordOnRegister 的注释。
   setPasswordOnRegister?: string;
 }
@@ -153,6 +157,7 @@ export interface LoginWithPasswordRequest {
   password: string;
   deviceFingerprint?: string;
   clientReportedIp?: string;
+  clientPlatform?: string;
 }
 
 export interface LoginWithPasswordResponse {
@@ -183,6 +188,7 @@ export interface VerifyGoogleIdTokenRequest {
   inviteCode?: string;
   deviceFingerprint?: string;
   clientReportedIp?: string;
+  clientPlatform?: string;
 }
 
 export interface VerifyGoogleIdTokenResponse {
@@ -558,6 +564,8 @@ export interface CloudWorldSummary {
   lastHeartbeatAt?: string | null;
   lastSuspendedAt?: string | null;
   note?: string | null;
+  userCreatedAt?: string | null;
+  subscriptionExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

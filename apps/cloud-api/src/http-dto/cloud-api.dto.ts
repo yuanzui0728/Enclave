@@ -209,6 +209,14 @@ export class VerifyCodeDto {
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
 
+  // 前端探测的端类型：'web' | 'desktop' | 'android' | 'ios'。后端 classifyDeviceType
+  // 把它和 server-side User-Agent 一起归一为 mobile/desktop 落库。
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
+
   // 仅注册时一并设置初始密码（老用户登录时即便带上也会被后端忽略）。
   @IsOptional()
   @IsString({ message: "setPasswordOnRegister 必须是字符串。" })
@@ -266,6 +274,12 @@ export class VerifyEmailCodeDto {
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
 
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
+
   @IsOptional()
   @IsString({ message: "setPasswordOnRegister 必须是字符串。" })
   @MinLength(8, { message: "密码长度不能少于 8 位。" })
@@ -301,6 +315,12 @@ export class LoginWithPasswordDto {
   @IsString({ message: "clientReportedIp 必须是字符串。" })
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
 }
 
 export class ChangePasswordDto {
@@ -340,6 +360,12 @@ export class VerifyGoogleIdTokenDto {
   @IsString({ message: "clientReportedIp 必须是字符串。" })
   @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
   clientReportedIp?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientPlatform 必须是字符串。" })
+  @MaxLength(32, { message: "clientPlatform 不能超过 32 个字符。" })
+  clientPlatform?: string;
 }
 
 export class CheckoutDto {

@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import type {
   CloudUserDetail,
+  CloudUserDistribution,
   CloudUserListResponse,
   CloudUserStats,
   SubscriptionRecordSummary,
@@ -56,6 +57,13 @@ export class UsersAdminController {
   @Get("stats")
   async stats(): Promise<CloudUserStats> {
     return this.users.getUserStatsAdmin();
+  }
+
+  // 同样必须在 :id 之前声明：path-to-regexp 按声明顺序匹配，否则 GET
+  // /admin/cloud/users/distribution 会撞进 detail() 报 404。
+  @Get("distribution")
+  async distribution(): Promise<CloudUserDistribution> {
+    return this.users.getUserDistributionAdmin();
   }
 
   @Get(":id")
