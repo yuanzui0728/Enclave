@@ -422,65 +422,79 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     });
   };
 
+  // 走查（新一轮）R1：「推荐给朋友」原版无任何双击锁。playwright 三连点
+  // 触发 3 次 navigator.clipboard.writeText（web 路径）/ Native iOS 真机上
+  // 同样会 3 次 shareWithNativeShell.startActivity（commit 2 之前修过的
+  // mobile-favorites / contact-profile 同款 issue）。第一次 await clipboard
+  // 还没回，第二/第三次 click 已经撞进 try 分支，公网 RTT 窗口内 user 看到
+  // notice 字面闪 3 次「已复制联系人摘要 / 已打开系统分享」。和同页
+  // saveToContactsSubmittingRef / muteSubmittingRef / pinSubmittingRef 同款
+  // 修法：进入函数前先抢 ref；await 链结束（成功或失败）finally 复位。
+  const shareContactSubmittingRef = useRef(false);
   async function handleShareContact() {
-    if (!contactSummary) {
+    if (!contactSummary || shareContactSubmittingRef.current) {
       return;
     }
 
-    if (nativeMobileShareSupported) {
-      const shared = await shareWithNativeShell(contactSummary);
-      if (shared) {
+    shareContactSubmittingRef.current = true;
+    try {
+      if (nativeMobileShareSupported) {
+        const shared = await shareWithNativeShell(contactSummary);
+        if (shared) {
+          setNotice({
+            tone: "success",
+            message: t(msg`已打开系统分享面板。`),
+          });
+          return;
+        }
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
         setNotice({
-          tone: "success",
-          message: t(msg`已打开系统分享面板。`),
+          tone: "info",
+          message: nativeMobileShareSupported
+            ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+            : t(msg`当前环境暂不支持复制联系人摘要。`),
+          actionLabel: nativeMobileShareSupported
+            ? t(msg`重试分享`)
+            : t(msg`重试复制`),
+          onAction: handleShareContact,
+          secondaryActionLabel: statusBackLabel,
+          onSecondaryAction: handleOperationBack,
         });
         return;
       }
-    }
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setNotice({
-        tone: "info",
-        message: nativeMobileShareSupported
-          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
-          : t(msg`当前环境暂不支持复制联系人摘要。`),
-        actionLabel: nativeMobileShareSupported
-          ? t(msg`重试分享`)
-          : t(msg`重试复制`),
-        onAction: handleShareContact,
-        secondaryActionLabel: statusBackLabel,
-        onSecondaryAction: handleOperationBack,
-      });
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(contactSummary.text);
-      setNotice({
-        tone: "success",
-        message: nativeMobileShareSupported
-          ? t(msg`系统分享暂时不可用，已复制联系人摘要。`)
-          : t(msg`联系人摘要已复制。`),
-      });
-    } catch {
-      setNotice({
-        tone: "info",
-        message: nativeMobileShareSupported
-          ? t(msg`系统分享失败，请稍后重试。`)
-          : t(msg`复制联系人摘要失败，请稍后重试。`),
-        actionLabel: nativeMobileShareSupported
-          ? t(msg`重试分享`)
-          : t(msg`重试复制`),
-        onAction: () => {
-          void handleShareContact();
-        },
-        secondaryActionLabel: statusBackLabel,
-        onSecondaryAction: handleOperationBack,
-      });
+      try {
+        await navigator.clipboard.writeText(contactSummary.text);
+        setNotice({
+          tone: "success",
+          message: nativeMobileShareSupported
+            ? t(msg`系统分享暂时不可用，已复制联系人摘要。`)
+            : t(msg`联系人摘要已复制。`),
+        });
+      } catch {
+        setNotice({
+          tone: "info",
+          message: nativeMobileShareSupported
+            ? t(msg`系统分享失败，请稍后重试。`)
+            : t(msg`复制联系人摘要失败，请稍后重试。`),
+          actionLabel: nativeMobileShareSupported
+            ? t(msg`重试分享`)
+            : t(msg`重试复制`),
+          onAction: () => {
+            void handleShareContact();
+          },
+          secondaryActionLabel: statusBackLabel,
+          onSecondaryAction: handleOperationBack,
+        });
+      }
+    } finally {
+      shareContactSubmittingRef.current = false;
     }
   }
 
