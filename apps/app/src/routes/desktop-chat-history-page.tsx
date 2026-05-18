@@ -66,10 +66,21 @@ export function DesktopChatHistoryPage() {
   const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
+  // 走查电脑端单聊 R95：和姊妹 desktop-chat-files-page R1（"app-conversations
+  // 是和 chat-list / chat-workspace / chat-details 共用的 query key 其它入口
+  // 都已按 15s staleTime 对齐"）/ desktop-message-avatar-popover R1 / desktop-
+  // chat-details-panel R1 同款 — app-conversations 是被 chat-workspace
+  // (60s polling + 15s stale) / chat-files-page (15s) / avatar-popover
+  // (15s) / details-panel (15s) 等共用的 query key。本页用默认 staleTime=0，
+  // 用户从聊天 workspace 点「聊天记录」入口跳到 /desktop/chat-history 时，
+  // workspace 刚刷过的 cache（即便 <15s）这里仍被判 stale → 立刻 background
+  // refetch 一次 getConversations（公网隧道 ~600ms RTT）。补 staleTime: 15s
+  // 对齐口径，复用主缓存。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
 
   const conversations = useMemo(
