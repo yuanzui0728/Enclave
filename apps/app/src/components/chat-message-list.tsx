@@ -2919,7 +2919,14 @@ export function ChatMessageList({
         }
 
         if (deletedMessageIdSet.size > 0) {
-          await queryClient.invalidateQueries({
+          // 新一轮走查 R3：原版 `await invalidateQueries(app-conversations)` 把
+          // setActionNotice 推到 invalidate refetch 回来之后才执行，公网隧道
+          // ~600ms RTT 期间用户底部工具栏停在"删除中..."、看不到"已删除 N
+          // 条消息"的成功 notice。message cache 已经在 updateGroupMessageQueries
+          // / updateConversationMessageQueries 里就地 filter 完了，chat-list
+          // lastMessage badge 只需要兜底刷新，fire-and-forget。和 group-chat-
+          // thread-panel sendMutation R3 / chat-list-page 新一轮 R2 同款修法。
+          void queryClient.invalidateQueries({
             queryKey: ["app-conversations", baseUrl],
           });
         }
@@ -3105,7 +3112,14 @@ export function ChatMessageList({
       }
 
       if (succeededCount > 0) {
-        await queryClient.invalidateQueries({
+        // 新一轮走查 R3：和姊妹 handleDeleteSelectedMessages 同款——原版 await
+        // 让 selectionActionBusyRef / selectionActionPending 一直撑到 invalidate
+        // 回来，底部多选工具栏的 4 个按钮（收藏/转发/撤回/删除）继续 disabled
+        // 一个公网 RTT （~600ms），用户撤回完后只能干等。messages cache 已经
+        // 在循环里通过 updateGroupMessageQueries / updateConversationMessageQueries
+        // 就地替换成"已撤回"标记的 message，conversations 的 lastMessage 慢一帧
+        // 同步不影响功能。fire-and-forget。
+        void queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         });
       }
