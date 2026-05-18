@@ -604,6 +604,16 @@ function MobileGroupMemberPickerPage({
               }
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和姊妹页 create-group-page R1 同款修法。备注名/角色名
+              // 常是 ASCII（"wangxiaoming"、"zhang yang"）或英文姓名缩写，
+              // iOS 默认句首大写 + autocorrect 把"wang"改成"Wang"或"Want"，
+              // matchesFriendSearch 内部 toLowerCase 所以 case 不致命，但
+              // autocorrect 把字直接改掉是真坑。enterKeyHint=search 让软键盘
+              // 的 Return 键长得像"搜索"，与"搜索结果列表"语义对齐。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
         </div>

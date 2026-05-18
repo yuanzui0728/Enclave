@@ -284,6 +284,16 @@ function MobileGroupContactsPage() {
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in；
               // 和 group-member-picker / create-group 等其他群相关搜索框对齐。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // 走查 R1：和姊妹页 create-group-page R1 / group-member-picker-page
+              // R1 同款。群名常是 ASCII / 英文（"TeamA"、"discord"），iOS 默认
+              // 句首大写 + autocorrect 会把"teamA"改成"TeamA"或"Team"，
+              // useFilteredGroups 内部 toLowerCase 所以 case 不致命，但
+              // autocorrect 把字直接改掉是真坑。enterKeyHint=search 让软键盘
+              // 的 Return 键长得像"搜索"。
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
             />
           </label>
         </div>
