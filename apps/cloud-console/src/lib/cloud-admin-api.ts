@@ -30,6 +30,7 @@ import type {
   CloudApiErrorResponse,
   CloudConfigEntry,
   CloudUserDetail,
+  CloudUserDistribution,
   CloudUserListQuery,
   CloudUserListResponse,
   CloudUserStats,
@@ -1267,6 +1268,9 @@ export const cloudAdminApi = {
   getCloudUser: (id: string) => adminFetch<CloudUserDetail>(`/users/${id}`),
 
   getCloudUserStats: () => adminFetch<CloudUserStats>("/users/stats"),
+
+  getCloudUserDistribution: () =>
+    adminFetch<CloudUserDistribution>("/users/distribution"),
 
   lookupIpRegion: (ip: string) =>
     adminFetch<{

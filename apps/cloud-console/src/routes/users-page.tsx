@@ -14,6 +14,7 @@ import {
 } from "../lib/cloud-console-i18n";
 import { useIpRegion } from "../lib/ip-region";
 import { SurfaceCard } from "../components/ui";
+import { DistributionPieCard } from "../components/users/distribution-pie-card";
 
 function formatTimestamp(value?: string | null) {
   if (!value) return "-";
@@ -146,6 +147,14 @@ export function UsersPage() {
     staleTime: 30_000,
   });
 
+  // 地区 / 设备分布饼图：聚合口径剔除测试号，与 stats 卡保持一致。staleTime
+  // 30s 与上面 stats 同步，避免每次切表格筛选都触发 ip-region/distribution 重算。
+  const distributionQuery = useQuery({
+    queryKey: ["cloud-console", "saas-users", "distribution"],
+    queryFn: () => cloudAdminApi.getCloudUserDistribution(),
+    staleTime: 30_000,
+  });
+
   function toggleSort(field: SortField) {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -169,6 +178,14 @@ export function UsersPage() {
     },
   ];
 
+  // 设备维度饼图永远三档；后端返回的 raw label 是 'mobile' / 'desktop' /
+  // 'unknown'，前端做本地化映射。
+  const deviceLabelFormatter = (raw: string) => {
+    if (raw === "mobile") return t("Mobile");
+    if (raw === "desktop") return t("Desktop");
+    return t("Unknown");
+  };
+
   return (
     <SurfaceCard className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -185,6 +202,20 @@ export function UsersPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <DistributionPieCard
+          title={t("Region distribution")}
+          data={distributionQuery.data?.byRegion}
+          emptyLabel={t("No data yet.")}
+        />
+        <DistributionPieCard
+          title={t("Device distribution")}
+          data={distributionQuery.data?.byDevice}
+          emptyLabel={t("No data yet.")}
+          formatLabel={deviceLabelFormatter}
+        />
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -262,14 +293,15 @@ export function UsersPage() {
           {/* table-fixed + 显式宽度：避免排序切换、IP 异步解析导致列宽抖动 */}
           <table className="w-full table-fixed divide-y divide-[color:var(--border-faint)] text-sm">
             <colgroup>
-              <col className="w-[18%]" />
-              <col className="w-[12%]" />
-              <col className="w-[12%]" />
+              <col className="w-[16%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
               <col className="w-[11%]" />
-              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[8%]" />
               <col className="w-[11%]" />
-              <col className="w-[12%]" />
-              <col className="w-[12%]" />
+              <col className="w-[14%]" />
             </colgroup>
             <thead className="bg-[#f8faf8] text-left text-[color:var(--text-muted)]">
               <tr>
@@ -303,6 +335,7 @@ export function UsersPage() {
                   />
                 </th>
                 <th className="px-4 py-3 font-medium">{t("Last login IP")}</th>
+                <th className="px-4 py-3 font-medium">{t("Device")}</th>
                 <th className="px-4 py-3 font-medium">
                   <SortableHeader
                     label={t("Last chat")}
@@ -338,6 +371,13 @@ export function UsersPage() {
                   <td className="px-4 py-3">{formatTimestamp(user.lastLoginAt)}</td>
                   <td className="truncate px-4 py-3">
                     <IpRegionCell ip={user.lastLoginIp} />
+                  </td>
+                  <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                    {user.lastLoginDeviceType === "mobile"
+                      ? t("Mobile")
+                      : user.lastLoginDeviceType === "desktop"
+                        ? t("Desktop")
+                        : "-"}
                   </td>
                   <td className="px-4 py-3">
                     {formatTimestamp(user.lastChatMessageAt)}

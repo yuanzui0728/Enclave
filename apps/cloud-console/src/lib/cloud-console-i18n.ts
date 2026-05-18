@@ -318,6 +318,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last chat": "上次发言时间", // i18n-ignore-line: runtime dict value
     "Real users": "用户总数（不含测试号）", // i18n-ignore-line: runtime dict value
     "Member users": "会员用户数（订阅有效）", // i18n-ignore-line: runtime dict value
+    Device: "上次登录设备",
+    "Region distribution": "地区分布",
+    "Device distribution": "设备分布",
+    "No data yet.": "暂无数据",
     "Sort by last login": "按上次登录时间排序",
     "Last user message": "上次用户消息时间", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "按上次用户消息时间排序", // i18n-ignore-line: runtime dict value
@@ -971,6 +975,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last chat": "最終発言日時", // i18n-ignore-line: runtime dict value
     "Real users": "実ユーザー数（テスト除外）", // i18n-ignore-line: runtime dict value
     "Member users": "有効サブスクユーザー数", // i18n-ignore-line: runtime dict value
+    Device: "最終ログイン端末",
+    "Region distribution": "地域分布",
+    "Device distribution": "端末分布",
+    "No data yet.": "データがまだありません",
     "Sort by last login": "最終ログイン日時で並び替え",
     "Last user message": "最終ユーザーメッセージ日時", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "最終ユーザーメッセージ日時で並び替え", // i18n-ignore-line: runtime dict value
@@ -1629,6 +1637,10 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Last chat": "마지막 발언 시각", // i18n-ignore-line: runtime dict value
     "Real users": "실제 사용자 수(테스트 제외)", // i18n-ignore-line: runtime dict value
     "Member users": "유효 구독 사용자 수", // i18n-ignore-line: runtime dict value
+    Device: "마지막 로그인 단말",
+    "Region distribution": "지역 분포",
+    "Device distribution": "단말 분포",
+    "No data yet.": "데이터가 없습니다.",
     "Sort by last login": "마지막 로그인 시각으로 정렬",
     "Last user message": "마지막 사용자 메시지 시각",
     "Sort by last user message": "마지막 사용자 메시지 시각으로 정렬",

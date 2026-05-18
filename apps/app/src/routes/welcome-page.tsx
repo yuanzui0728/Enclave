@@ -671,6 +671,7 @@ export function WelcomePage() {
           inviteCode: inviteCodePayload,
           deviceFingerprint: getDeviceFingerprint(),
           clientReportedIp,
+          clientPlatform: runtimeConfig.appPlatform,
         },
         normalizedCloudApiBaseUrl || undefined,
       );
@@ -805,6 +806,7 @@ export function WelcomePage() {
               password,
               deviceFingerprint: getDeviceFingerprint(),
               clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
             },
             normalizedCloudApiBaseUrl || undefined,
           );
@@ -848,6 +850,7 @@ export function WelcomePage() {
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
               clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
               setPasswordOnRegister,
             },
             normalizedCloudApiBaseUrl || undefined,
@@ -879,6 +882,7 @@ export function WelcomePage() {
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
               clientReportedIp,
+              clientPlatform: runtimeConfig.appPlatform,
               setPasswordOnRegister,
             },
             normalizedCloudApiBaseUrl || undefined,
