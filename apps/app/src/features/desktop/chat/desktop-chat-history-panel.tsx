@@ -476,7 +476,18 @@ export function DesktopChatHistoryPanel({
               isDialog ? "mx-auto w-full max-w-[680px]" : "",
             )}
           >
-            <div className="flex flex-wrap items-center gap-1.5">
+            {/* 走查 R27：和姊妹 R26 转发模式 chooser / profile-settings 发送
+                快捷键一批同款—— 全部时间 / 今天 / 最近 7 天 / 最近 30 天 4 个
+                快捷日期过滤是 mutually exclusive 选择，原版只用绿底 + 绿字表示
+                active，<button> 是裸的。盲人 SR 走过去只听到 4 段裸 label 听不
+                出选中了哪一个；selectorView=date 是「查找聊天记录」常用筛选入口，
+                单聊 / 群聊都走这条。改成 role="radiogroup" + role="radio" +
+                aria-checked={active}。 */}
+            <div
+              role="radiogroup"
+              aria-label={t(msg`日期范围`)}
+              className="flex flex-wrap items-center gap-1.5"
+            >
               {(
                 [
                   { key: "all" as const, label: t(msg`全部时间`) },
@@ -491,6 +502,8 @@ export function DesktopChatHistoryPanel({
                   <button
                     key={option.key}
                     type="button"
+                    role="radio"
+                    aria-checked={active}
                     onClick={() => {
                       setQuickDateFilter(option.key);
                       setCustomDate("");
