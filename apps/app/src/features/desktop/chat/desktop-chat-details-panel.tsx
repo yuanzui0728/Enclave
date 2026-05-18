@@ -687,6 +687,29 @@ function DirectChatDetailsPanel({
       updateProfileMutation.error instanceof Error ? (
         <ErrorBlock message={updateProfileMutation.error.message} />
       ) : null}
+      {/* 走查新一轮 R1：pin / mute / clear / hide / report / block 6 个 mutation
+          都只挂了 onSuccess，错误路径完全静默 — server 返 4xx/5xx 时用户在 UI
+          上看不到任何反馈，会反复点同一个按钮（toggle 行尤其坑：conversation.isPinned
+          props 没翻，按钮视觉上没变化，用户以为没点中）。和姊妹 setStarred /
+          updateProfile 同款，把 isError 接入 ErrorBlock 列表。 */}
+      {pinMutation.isError && pinMutation.error instanceof Error ? (
+        <ErrorBlock message={pinMutation.error.message} />
+      ) : null}
+      {muteMutation.isError && muteMutation.error instanceof Error ? (
+        <ErrorBlock message={muteMutation.error.message} />
+      ) : null}
+      {clearMutation.isError && clearMutation.error instanceof Error ? (
+        <ErrorBlock message={clearMutation.error.message} />
+      ) : null}
+      {hideMutation.isError && hideMutation.error instanceof Error ? (
+        <ErrorBlock message={hideMutation.error.message} />
+      ) : null}
+      {reportMutation.isError && reportMutation.error instanceof Error ? (
+        <ErrorBlock message={reportMutation.error.message} />
+      ) : null}
+      {blockMutation.isError && blockMutation.error instanceof Error ? (
+        <ErrorBlock message={blockMutation.error.message} />
+      ) : null}
 
       <DesktopContactProfileHeader
         avatar={targetCharacter?.avatar}
