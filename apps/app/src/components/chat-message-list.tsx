@@ -6963,6 +6963,19 @@ function GroupRelaySummaryMessage({
 function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {
   const redirectedIds = new Map<string, string>();
   const collapsedMessages: ChatRenderableMessage[] = [];
+  // 走查电脑端群聊 R77：原版每条 message 跑 shouldCollapseGroupCallMessage +
+  // shouldCollapseGroupRelayMessage 两个 helper，各自内部 resolveGroupCallInvite
+  // / resolveGroupRelaySummary 对 previousMessage + currentMessage 都执行
+  // sanitizeDisplayedChatText（extractChatReplyMetadata regex + sanitizeAssistantText
+  // 6 路 regex 早退）+ parseXxx（startsWith 早退）。但 collapse 路径下 iter N+1
+  // 的 previousMessage 等价于 iter N 的 currentMessage（无论是否折叠，
+  // collapsedMessages[last] 都是 N 的 currentMessage）—— 同一份消息文本在相邻两
+  // 次迭代里被 sanitize+parse 各 2 次（call + relay 各 1 次）。200 条群消息 ×
+  // 4 路解析 / 帧 = 800 次重复函数调用 / 每次 visibleMessagesSnapshot 重建；
+  // hidden / recall 任意 messages 引用变化都触发 useMemo 失效，长群里反复跑。
+  // 缓存上一轮 current 解析结果作下一轮 previous 复用，调用减半。
+  let previousCallInvite: ReturnType<typeof resolveGroupCallInvite> = null;
+  let previousRelaySummary: ReturnType<typeof resolveGroupRelaySummary> = null;
 
   for (const message of messages) {
     const previousMessage =
@@ -6970,17 +6983,35 @@ function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {
         ? collapsedMessages[collapsedMessages.length - 1]
         : null;
 
-    if (
+    const currentCallInvite = resolveGroupCallInvite(message);
+    const currentRelaySummary = resolveGroupRelaySummary(message);
+
+    const canCollapseCall = Boolean(
       previousMessage &&
-      (shouldCollapseGroupCallMessage(previousMessage, message) ||
-        shouldCollapseGroupRelayMessage(previousMessage, message))
-    ) {
+        previousCallInvite &&
+        currentCallInvite &&
+        previousCallInvite.status === "ongoing" &&
+        currentCallInvite.kind === previousCallInvite.kind &&
+        currentCallInvite.groupName === previousCallInvite.groupName,
+    );
+
+    const canCollapseRelay = Boolean(
+      previousMessage &&
+        previousRelaySummary &&
+        currentRelaySummary &&
+        currentRelaySummary.sourceGroupName ===
+          previousRelaySummary.sourceGroupName,
+    );
+
+    if (previousMessage && (canCollapseCall || canCollapseRelay)) {
       redirectCollapsedMessage(redirectedIds, previousMessage.id, message.id);
       collapsedMessages[collapsedMessages.length - 1] = message;
-      continue;
+    } else {
+      collapsedMessages.push(message);
     }
 
-    collapsedMessages.push(message);
+    previousCallInvite = currentCallInvite;
+    previousRelaySummary = currentRelaySummary;
   }
 
   return {
