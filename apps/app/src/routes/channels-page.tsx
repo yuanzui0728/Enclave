@@ -2491,7 +2491,27 @@ export function ChannelsPage() {
             })
           }
           onSelectedPostChange={setDesktopSelectedPostId}
-          onDrawerOpenChange={setDesktopCommentDrawerPostId}
+          // 走查 2026-05-18 第二轮（本会话）R2：drawer 关闭时同时清 desktop
+          // ReplyTarget — workspace 的 4 条 drawer 关路径（X 按钮 / Esc / 切 slide
+          // 自动关 / baseUrl change reset）只 setCommentDrawerPostId(null)，
+          // desktopReplyTarget 留着不动。用户在 A post 打开 drawer 点「回复 X」
+          // → desktopReplyTarget={commentId:X, postId:A}，关 drawer → 再点其它
+          // post 的评论按钮重开 drawer：drawer 仍渲「正在回复 X」头条，textarea
+          // placeholder 也带 X 名字。但 X 是上条 post 的评论，新 post 上发送出去
+          // 会被 commentMutation.onMutate 当作回复 X（reply parentCommentId=X.id），
+          // server 端虽然能 reject 跨 post 的 parentCommentId，但仍属于"用户意图
+          // 错位"。Mobile sheet 的 onClose L2798-2801 早就 setMobileReplyTarget(null)
+          // 一起清，desktop 一直漏。
+          // 修法：drawer postId 落 null 时 channels-page 这边一起清 replyTarget。
+          // 既覆盖 X 按钮 / Esc 主动关，也覆盖自动关（切 slide / baseUrl change）。
+          // setDesktopReplyTarget(null) 是幂等的，replyTarget 本来就是 null 时 React
+          // useState Object.is 命中跳过 re-render，没副作用。
+          onDrawerOpenChange={(postId) => {
+            setDesktopCommentDrawerPostId(postId);
+            if (postId === null) {
+              setDesktopReplyTarget(null);
+            }
+          }}
           onViewPost={handleDesktopViewPost}
         />
       </Suspense>
