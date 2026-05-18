@@ -619,7 +619,14 @@ export function DesktopChatHistoryPanel({
               </div>
             ) : null}
             {membersQuery.isError && membersQuery.error instanceof Error ? (
-              <div className="mt-2 flex items-center gap-2 text-[12px] text-[#d74b45]">
+              // R60：群成员查询失败时的 inline error row（红色 AlertCircle +
+              // 文案 + 重试按钮）裸 <div>，没 role / aria-live。盲人 SR 用户
+              // 进群聊历史 → 按发言人筛选 → 成员加载失败时听不到任何错误，
+              // 只能看到空 radio group。挂 role="alert"。
+              <div
+                role="alert"
+                className="mt-2 flex items-center gap-2 text-[12px] text-[#d74b45]"
+              >
                 <AlertCircle size={13} />
                 <span className="truncate">
                   {membersQuery.error.message}
