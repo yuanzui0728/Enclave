@@ -186,15 +186,10 @@ export function CreateCharacterPage() {
       )}
       actions={headerActions}
     >
-      {/* 创建世界角色失败时（命名冲突 / 校验失败 / 服务超时）需要 SR 主动
-          播报，否则用户长按提交后只看到一闪而过的红条。 */}
-      {createMut.isError && (
-        <InlineNotice tone="danger" role="alert" className="mb-3">
-          {createMut.error instanceof WikiApiError
-            ? createMut.error.message
-            : (createMut.error as Error).message}
-        </InlineNotice>
-      )}
+      {/* createMut 失败时的错误已通过 saveError prop 流入 CharacterEditForm，
+          在表单底部以 role=alert 渲染（line 1652）。这里原写法在顶部再渲染
+          一份同款红条 → 同一条信息上屏两遍 + SR 双播报 alert。world-character-
+          edit-page / my-character-edit-page 都没有这层重复，删掉对齐。 */}
       {draftId && draftQ.data && (
         <InlineNotice tone="info" className="mb-3">
           <Trans>

@@ -646,8 +646,12 @@ function EditView({
   return (
     <Card className="space-y-4 p-4 sm:p-6">
       <p className="text-sm text-[var(--text-muted)]">
+        {/* 原写法 <strong>{user.role}</strong> 裸渲染后端英文枚举（admin /
+            patroller / autoconfirmed / newcomer），中文 UI 里一句"当前你的权限
+            是 patroller。"显得没翻译；和 root-layout UserMenu / 历史卡 /
+            recent-changes 等位置统一走 roleLabel 本地化。 */}
         <Trans>
-          当前你的权限是 <strong className="mx-1">{user.role}</strong>。
+          当前你的权限是 <strong className="mx-1">{roleLabel(user.role)}</strong>。
           编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。
           内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。
         </Trans>
