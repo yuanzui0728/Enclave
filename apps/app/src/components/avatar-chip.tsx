@@ -89,6 +89,16 @@ export function AvatarChip({
         // character.name 都允许 trim 成空（旧数据 + 老 conversation schema
         // normalize 前过渡），?? 让 aria-label="" → SR 跳过整张 emoji 头像；
         // "avatar" 写死英文 zh-CN/ja-JP/ko-KR 用户听到英文 fallback。
+        //
+        // 走查电脑端群聊 R107：和姊妹 R105 GroupAvatarChip / R106 unread badge
+        // 同款 — 裸 <span> 挂 aria-label 没 role，按 ARIA 1.2 spec 在 generic
+        // 元素上 aria-label 行为 implementation-defined。AvatarChip emoji 分支
+        // 在群里高频出现（角色没头像 URL 时所有 member 头像 + 消息气泡头像都
+        // 走这条），盲人 SR 在群消息列表 / 添加成员 picker / 群通话面板 / 详情
+        // 头像 grid 上听到大量 generic 元素悬空。补 role="img" 把整张 emoji 头像
+        // 当一张被命名的视觉元素；inner <span aria-hidden="true">emoji 字符</span>
+        // 不被 SR 朗读。
+        role="img"
         aria-label={name?.trim() || translateRuntimeMessage(msg`头像`)}
         className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f5f5)] leading-none shadow-[var(--shadow-soft)]`}
       >
