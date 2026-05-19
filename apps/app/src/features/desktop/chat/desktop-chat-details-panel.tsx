@@ -2720,6 +2720,13 @@ function DesktopGroupMemberBrowserDialog({
     }
 
     if (event.key === "Enter" && activeMemberId) {
+      // 走查 R150：CJK 用户在搜索框打字"张三 zhangsan"按 Enter 是 IME 提
+      // 交候选词的标准键。原 handler 抢 Enter → preventDefault + onViewMember
+      // 把焦点强行跳到 activeMemberId 详情页 → IME 半截输入被吞、用户被
+      // 莫名拽进某个不一定想看的成员详情。检 event.nativeEvent.isComposing。
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
       const activeMember = filteredMembers.find(
         (member) =>
           member.id === activeMemberId &&

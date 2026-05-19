@@ -3034,6 +3034,17 @@ export function ChatComposer({
     const commandKey = event.metaKey || event.ctrlKey;
 
     if (mentionPickerOpen && !desktopMentionDismissed) {
+      // 走查 R150：mention picker 弹起的同时 IME 通常也在 composing — 用户
+      // 在群聊里打"@张 zhang"还没敲空格 → 候选词窗口 + mention picker 两张
+      // 选择面板都开着。原 block 抢 Enter / ArrowDown / ArrowUp / Esc 早于
+      // L3075 的 isComposing 早返 → IME 用 Enter 提交候选词被 mention picker
+      // 抢去 applyMentionCandidate（可能选了一个完全不相关的 focused 成员）；
+      // 用 ↓↑ 在 IME 候选词翻页被 mention picker 抢去切换 focused 成员。
+      // 整个 block 前置 isComposing 早返，让 IME 自己处理这些键；候选词
+      // 提交 / 退出后用户再按一次才走 mention picker 路径。
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
       // 走查电脑端群聊新会话 R108：Esc 关 picker。原版没接 Esc → 直接透传到
       // workspace window keydown → dismissSidePanel 把背后「聊天信息」侧栏
       // 意外关掉。stopPropagation 阻断到 workspace；setDesktopMentionDismissed

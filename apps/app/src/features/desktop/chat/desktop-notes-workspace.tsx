@@ -1259,6 +1259,16 @@ export function DesktopNotesWorkspace({
                   if (event.key !== "Enter") {
                     return;
                   }
+                  // 走查 R150：标签 input 接受中文标签名（"工作 / 重要 /
+                  // 待办"），CJK 用户用拼音 / 假名 / 한글 拼"工 gong"还
+                  // 在候选词阶段按 Enter 是 IME 提交候选词的标准键。原
+                  // handler 抢 Enter → preventDefault + handleTagCommit
+                  // 拿当前 tagInput（可能只是"gong"或空串）当 tag 加上。
+                  // 检 event.nativeEvent.isComposing：composing 中让 IME
+                  // 自己提交候选词；用户提交完再按 Enter 才真的 commit。
+                  if (event.nativeEvent.isComposing) {
+                    return;
+                  }
 
                   event.preventDefault();
                   handleTagCommit();

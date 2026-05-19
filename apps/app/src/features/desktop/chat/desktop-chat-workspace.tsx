@@ -1588,6 +1588,14 @@ export function DesktopChatWorkspace({
     if (event.key !== "Enter") {
       return;
     }
+    // 走查 R150：CJK 用户在搜索框打字"张三 zhangsan"按 Enter 是 IME 提交候
+    // 选词的标准键，本 handler 抢 Enter → preventDefault 把 IME commit 拦
+    // 掉、openSearch 抢先弹出搜索全局浮层 → 用户半截候选词被吞。检
+    // event.nativeEvent.isComposing：composing 中让 IME 自己提交，本帧不
+    // 拦；用户提交完再按 Enter（isComposing=false）才打开搜索。
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
 
     event.preventDefault();
     desktopSearchLauncher.openSearch();

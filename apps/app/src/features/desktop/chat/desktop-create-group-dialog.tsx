@@ -644,6 +644,13 @@ export function DesktopCreateGroupDialog({
     }
 
     if (event.key === "Enter") {
+      // 走查 R150：CJK 用户在搜索框打字"张三 zhangsan"按 Enter 是 IME 提
+      // 交候选词的标准键。原 handler 抢 Enter → preventDefault + toggleSelection
+      // → IME 半截输入被吞，且 focused friend 不一定是用户真想选的。检
+      // event.nativeEvent.isComposing：composing 中让 IME 自己提交。
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
       const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
       if (!focusedFriend || createMutation.isPending) {
         return;
