@@ -172,6 +172,32 @@ export function PendingReviewsPage() {
   );
 }
 
+function LazyJsonDetails({
+  summary,
+  data,
+}: {
+  summary: string;
+  data: unknown;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      className="text-xs"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer text-[color:var(--text-muted)]">
+        {summary}
+      </summary>
+      {open && (
+        <pre className="mt-2 overflow-auto max-h-[40vh] md:max-h-[60vh] rounded bg-[var(--bg-canvas)] p-3">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      )}
+    </details>
+  );
+}
+
 function FilterSelect({
   label,
   value,
@@ -277,23 +303,19 @@ function ReviewCard({
             changedFields={rev.diffFromParent?.changed}
           />
         </div>
-        <details className="text-xs">
-          <summary className="cursor-pointer text-[color:var(--text-muted)]">
-            <Trans>查看完整快照</Trans>
-          </summary>
-          <pre className="mt-2 overflow-auto max-h-[40vh] md:max-h-[60vh] rounded bg-[var(--bg-canvas)] p-3">
-            {JSON.stringify(rev.contentSnapshot, null, 2)}
-          </pre>
-        </details>
+        {/* JSON.stringify 是 O(N) 序列化 + ~5KB/snapshot；待审队列 14 条 ×
+            2 个 details = 28 次穿堂风式跑 stringify，每次列表筛选 / mutation
+            invalidate 后整页 ReviewCard 都重渲。原写法 details 关着也跑。
+            用本地 open state 把 stringify 推到首次展开后。 */}
+        <LazyJsonDetails
+          summary={t(msg`查看完整快照`)}
+          data={rev.contentSnapshot}
+        />
         {rev.recipeSnapshot && (
-          <details className="text-xs">
-            <summary className="cursor-pointer text-[color:var(--text-muted)]">
-              <Trans>查看角色逻辑快照</Trans>
-            </summary>
-            <pre className="mt-2 overflow-auto max-h-[40vh] md:max-h-[60vh] rounded bg-[var(--bg-canvas)] p-3">
-              {JSON.stringify(rev.recipeSnapshot, null, 2)}
-            </pre>
-          </details>
+          <LazyJsonDetails
+            summary={t(msg`查看角色逻辑快照`)}
+            data={rev.recipeSnapshot}
+          />
         )}
         <FormRow
           label={t(msg`审核备注（可选）`)}
