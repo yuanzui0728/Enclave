@@ -1598,6 +1598,20 @@ function ChannelVideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, url]);
 
+  // 走查 2026-05-19 第十轮 R5：deps 历来只挂 [unmuted, isActive]，但 <video>
+  // 元素的 key=`video:${url}` 在 url 切换时会 remount（同一组件、新 DOM 节点） ——
+  // setVideoNode 在 attach 阶段强制 muted=true（确保 autoplay 不被策略拦），随后
+  // 这条 effect 本来该把 muted 校准回 !unmuted，但因为 deps 看不到 url 变化，
+  // 校准 effect 不会重跑 → 用户在 slide A 上点了 unmute 后，A 的 url 因为 home
+  // refetch 拿到新 cdn url 翻新 → 新 video 一律静音播放，左上角 mute 按钮还显
+  // 示 Volume2（unmuted state 仍 true），用户体感「明明 icon 是有声的怎么没声
+  // 音？再点静音按钮也救不回」（点静音按钮 toggle unmuted=false，effect 看 [u
+  // nmuted, isActive] 都变了重跑把 video.muted=true 一致 + 不调 play() → 仍无
+  // 声）。
+  // 修法：把 url 加进 deps，url 切换时同款 muted 校准跑一次。同 setVideoNode +
+  // 第一条 effect [isActive, url] 的协作链对齐，确保新 video 元素挂上 DOM 后
+  // 立刻按用户偏好把声音打开（autoplay-with-sound 若被浏览器拦则 catch 兜回
+  // muted，保留视觉播放）。
   useEffect(() => {
     const video = videoRef.current;
     if (!video) {
@@ -1613,7 +1627,7 @@ function ChannelVideoPlayer({
         });
       }
     }
-  }, [unmuted, isActive]);
+  }, [unmuted, isActive, url]);
 
   // 走查 2026-05-17 新会话 R1：跟移动端 ChannelVideoSurface R3 / ChannelAudio
   // Pictorial R3 同款——组件 unmount 时主动 pause。React 把 <video> 从 DOM 摘掉
