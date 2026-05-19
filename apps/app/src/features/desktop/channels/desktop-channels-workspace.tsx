@@ -2867,6 +2867,21 @@ function DesktopChannelAuthorPanel({
                   <button
                     key={post.id}
                     type="button"
+                    // 走查 2026-05-19 第十五轮 R2：recent posts 列表里 selectedPostId
+                    // === post.id 的那条 button 历来只有"视觉高亮"（左 3px 绿色 inset
+                    // border + 浅色背景）+ button 内 meta 行末尾追加 "· 当前内容" 绿
+                    // 字。SR 用户 Tab 过 5 张 recent posts 时听到的是
+                    // "{title} {kind} {timestamp} · {meta} · 当前内容 button" —— 必
+                    // 须扫完整段 button label 才能知道哪条是 current，盲用用户在 5
+                    // 条 button 间识别"我现在看的是哪条"得记很长的尾巴。同 codebase
+                    // 早就给 desktop-chat-workspace 的会话列表 / desktop-create-group
+                    // -dialog focused row / official-message-entry-row 挂了 aria-current
+                    // (commit 678/715 等)，author overlay 这条 5 条列表一直漏。
+                    // aria-current="true" 让 SR 在 button 名读完前就附加 "current" 语
+                    // 义，对齐姊妹组件；可视用户视觉高亮不动。aria-current 是 ARIA
+                    // 1.1 标准属性，跟 onClick={() => openPost(...)} 正交（点击仍跳同
+                    // 一条 post 是 idempotent，不影响功能正确）。
+                    aria-current={selectedPostId === post.id ? "true" : undefined}
                     onClick={() => onOpenPost(post.id, profile.authorId)}
                     className={cn(
                       "w-full rounded-[16px] border px-3 py-3 text-left transition",
