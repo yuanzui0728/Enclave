@@ -3325,18 +3325,29 @@ function StickerButton({
               : "h-16 w-16 rounded-[16px] object-contain"
           }
           loading="lazy"
-          // 走查电脑端单聊 R105：和姊妹 R94 ImageMessage / R97 chat-files / R98
-          // NoteCardMessage / R99 FeedPostCardMessage / R104 attachment draft
-          // 同款 — sticker 单元格整张是 <button type="button" onClick={onSelect}>
-          // (line 3265-3299)，里面这张 64×64（或 compact 48×48）<img> 默认
-          // draggable=true。yuanzui 在电脑端单聊"开 sticker panel → 浏览 panel
-          // 网格 → 点一张表情发出去"是高频操作：mousedown 落在 <img> 上 → 拖
-          // 出阈值距离 → 浏览器启动 HTML5 native drag (sticker URL) → drag
-          // start 后 mouseup 不触发 click → "点表情没发出去"用户得再点一次。
-          // 同时拖出的表情 URL 会被释放到桌面 / 隔壁 textarea：drop 在 textarea
-          // 时浏览器把 sticker URL 当 text 插入草稿，发出去对方收到一段图片链接
-          // 当文字；drop 到桌面则触发"下载这张表情到桌面"。和兄弟 sticker
-          // 同款 draggable={false} 防御。
+          // 走查电脑端单聊 R138：和姊妹 chat-message-list R84 sticker preview /
+          // StickerMessage R119 同款补 decoding="async"。本 sticker 单元格
+          // 跑在 sticker panel 网格里，一打开 panel 命中 50-200 张 sticker
+          // 同时 mount——builtin pack（小黄人 / 兔子 / 喵星人 等）每张 3-15KB，
+          // pack 切到自定义表情时还可能命中 500KB+ 的高清原图。loading="lazy"
+          // 已经把出视口的延后，但首屏 N 张同时进 decode 队列时浏览器默认
+          // 在主线程同步 decode，电脑端单聊"开 sticker → 一秒内选张表情发"
+          // 这条 hot path 上能感觉到一帧轻微卡顿；尤其 yuanzui 在低端
+          // chromebook 上反馈 sticker 网格滚动时偶发 jank。decoding="async"
+          // 让 decode 排到 off-thread，避免抢主线程；浏览器实现允许在
+          // decode 完成前先以低保真栅格化贴上去再回填，不影响最终视觉。
+          //
+          // 走查电脑端单聊 R105：sticker 单元格整张是 <button type="button"
+          // onClick={onSelect}> (line 3265-3299)，里面这张 64×64（或 compact
+          // 48×48）<img> 默认 draggable=true。yuanzui 在电脑端单聊"开 sticker
+          // panel → 浏览 panel 网格 → 点一张表情发出去"是高频操作：mousedown
+          // 落在 <img> 上 → 拖出阈值距离 → 浏览器启动 HTML5 native drag
+          // (sticker URL) → drag start 后 mouseup 不触发 click →"点表情
+          // 没发出去"用户得再点一次。同时拖出的表情 URL 会被释放到桌面
+          // / 隔壁 textarea：drop 在 textarea 时浏览器把 sticker URL 当 text
+          // 插入草稿，发出去对方收到一段图片链接当文字；drop 到桌面则
+          // 触发"下载这张表情到桌面"。和兄弟 sticker 同款 draggable={false}。
+          decoding="async"
           draggable={false}
         />
         {!compact ? (
