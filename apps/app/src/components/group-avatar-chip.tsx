@@ -57,6 +57,18 @@ export const GroupAvatarChip = memo(function GroupAvatarChip({
       // 2) "group avatar" 写死英文，zh-CN / ja-JP / ko-KR 用户 SR 听到英文
       //    fallback。和 GroupChatThreadPanel header / 详情页 title 一致兜底
       //    "群聊" / "Group chat"。
+      //
+      // 走查电脑端群聊 R105：原版只挂 aria-label 在裸 <div>（无 role），按
+      // ARIA 1.2 spec：aria-label 只有在元素带 role 时才被 AT 一致暴露 —
+      // 裸 <div>（generic 元素）部分 SR 实现（Chromium AX tree 早期版本 /
+      // VoiceOver 严格模式）会忽略整条 aria-label，盲人在群聊列表 / 详情
+      // 头像 / 通话面板上听到的是悬空的"group" generic 没有名字。补 role="img"
+      // 把整个 2×2 grid 当成一张"被命名的复合图"——4 个子 <img alt=""> 自动
+      // 被当成 decorative 装饰元素跳过、只朗读父容器的 aria-label。和姊妹
+      // AvatarChip line 86-97 emoji 分支用 <span aria-label> 不同：span 是
+      // phrasing content 有 implicit role=generic，但更窄；div 是 flow
+      // content + grid display，显式 role 更稳。
+      role="img"
       aria-label={name?.trim() || translateRuntimeMessage(msg`群聊`)}
     >
       {sources.map((source, index) => (
