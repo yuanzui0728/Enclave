@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import type { Character } from "@yinjie/contracts";
@@ -28,6 +28,7 @@ export function DesktopAddFriendSendDialog({
   const t = useRuntimeTranslator();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [greeting, setGreeting] = useState("");
+  const titleId = useId();
 
   useEffect(() => {
     if (!open || !character) {
@@ -52,7 +53,15 @@ export function DesktopAddFriendSendDialog({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !pending) {
+        // 走查电脑端群聊新会话 R111：和姊妹 R109/R110 同款 Esc race —— 本
+        // dialog 从群成员头像 popover「添加朋友」打开，未挂 role="dialog"
+        // 时 workspace dismissSidePanel microtask 命中不到，Esc 关 dialog
+        // 时连带把「聊天信息」侧栏一起关掉。下方 panel 已补 role="dialog"
+        // 作 a11y 兜底；这里改 capture + stopImmediatePropagation 二保险，
+        // workspace bubble Esc handler 拿不到这次 keydown，dismiss microtask
+        // 根本不会被 schedule。
         event.preventDefault();
+        event.stopImmediatePropagation();
         onClose();
         return;
       }
@@ -72,10 +81,10 @@ export function DesktopAddFriendSendDialog({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [greeting, onClose, onSubmit, open, pending]);
 
@@ -84,6 +93,13 @@ export function DesktopAddFriendSendDialog({
   }
 
   return (
+    // 走查电脑端群聊新会话 R111：和姊妹一批 dialog（R107-R113 desktop 单聊
+    // backdrop / R112 create-group / R101-R103 群成员 picker）同款 a11y +
+    // backdrop 焦点缺漏 —— 本 dialog 从群成员头像 popover 「添加朋友」打开，
+    // 但 panel 既没挂 role="dialog" + aria-modal + aria-labelledby（盲人 SR
+    // 听不到「发送添加朋友申请」title），backdrop <button> 也没 tabIndex={-1}
+    // （键盘用户 Tab 进 dialog 焦点先落到这张不可见 backdrop → Enter 秒关，
+    // 草稿验证信息一并丢）。一次性补齐双 a11y。
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
       <button
         type="button"
@@ -93,12 +109,21 @@ export function DesktopAddFriendSendDialog({
             onClose();
           }
         }}
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--shadow-overlay)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--shadow-overlay)]"
+      >
         <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-4">
-          <div className="text-center text-[17px] font-medium text-[color:var(--text-primary)]">
+          <div
+            id={titleId}
+            className="text-center text-[17px] font-medium text-[color:var(--text-primary)]"
+          >
             {t(msg`发送添加朋友申请`)}
           </div>
           <button
