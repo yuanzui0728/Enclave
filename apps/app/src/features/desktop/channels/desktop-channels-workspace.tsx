@@ -2032,11 +2032,22 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                 onClick={() => onOpenAuthor(post.authorId)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
-                <AvatarChip
-                  name={post.authorName}
-                  src={post.authorAvatar}
-                  size="wechat"
-                />
+                {/* 走查 2026-05-19 第十五轮 R9：AvatarChip 内部 <img> alt=
+                    {authorName}，下面 <div>{post.authorName}</div> 又渲一遍。
+                    ARIA Accessible Name Computation 把 <button> 的 name 算成
+                    descendant 全文 concat — 即 "李白 李白 5 分钟前 · ..."，作
+                    者名被 SR 念两遍。把 AvatarChip 包一层 aria-hidden="true"
+                    让它整张退出 accessible name 算式（视觉照常显示），button
+                    accessible name 只剩下方的 "李白 5 分钟前 · 100 播放 · 30
+                    秒"，单次朗读。同款 dedupe 模板可下到其它"avatar+text 双
+                    渲"button 入口，本轮聚焦视频号 slide overlay。 */}
+                <span aria-hidden="true">
+                  <AvatarChip
+                    name={post.authorName}
+                    src={post.authorAvatar}
+                    size="wechat"
+                  />
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14px] font-semibold text-white">
                     {post.authorName}
