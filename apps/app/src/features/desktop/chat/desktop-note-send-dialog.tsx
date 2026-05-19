@@ -351,11 +351,20 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
     <div className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-soft)]">
       {previewImage?.url ? (
         <div className="h-[184px] overflow-hidden bg-[rgba(15,23,42,0.05)]">
+          {/* 走查 R131：和 R130 (NoteViewerOverlay 内嵌 <img>) 一脉。本 preview
+              卡渲在「发送给好友 / 群聊」dialog 顶部，用户打开 dialog 时第一眼
+              就盯着这张封面缩略图，下意识用鼠标按住拖向背后某个会话行试图
+              "拖到对话上发送"。原生 <img draggable> 默认 true → 触发浏览器
+              ghost-image 拖拽 + dragend 落到外部 drop target 时被 IM
+              workspace 的全局 dragover 接住，要么 fileDrop 走附件路径
+              误传图片、要么直接被 OS 接管打开图片预览页。dialog 内点击
+              会话行才是合法路径，封面图不需要可拖。 */}
           <img
             src={previewImage.url}
             alt={note.title}
             decoding="async"
             loading="lazy"
+            draggable={false}
             className="h-full w-full object-cover"
           />
         </div>
