@@ -655,22 +655,47 @@ export function DesktopChannelsWorkspace({
     }
     scrollToOffset(container.clientHeight);
   }, [scrollToOffset]);
+  // 走查 2026-05-19 第十轮 R1：上一轮 R1（line 663）注释明确写「Home/End 兜首尾」，
+  // 实际 keydown handler 只挂了 Arrow/PageDown/PageUp 四个 key，Home/End 一直没接
+  // —— 用户按 Home 想跳回第 1 条 / 按 End 想跳到最后一条（抖音 / YouTube Shorts /
+  // Bilibili 全屏纵向流的标准键盘行为）一律无效，键盘用户只能按 N 次 PageDown 慢
+  // 慢挪。补 jumpTo(first|last) 配套 callback，跟 handlePrev/handleNext 一致走
+  // ref → 稳定 identity，下面 keydown 用 latest-ref 模式拿当下最新 fn。
+  const jumpToFirst = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+    container.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  const jumpToLast = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  }, []);
 
   // 走查 2026-05-19 第五轮 R1：视频号工作区原来只能用鼠标滚轮 / Tab+Enter 到右
   // 下角箭头按钮来切换 slide。键盘用户每滑一条都要先 Tab 数次到 FeedNavArrows
   // 再按 Enter，对齐抖音 / Bilibili / YouTube 全屏纵向视频流的标准键盘体感
   // （ArrowUp/Down + PageUp/Down），桌面 channels 一直漏。补 window-level 监听：
-  //   - Arrow/PageDown → 下一条；Arrow/PageUp → 上一条；Home/End 兜首尾
+  //   - Arrow/PageDown → 下一条；Arrow/PageUp → 上一条
+  //   - Home → 第 1 条；End → 最后一条（走查第十轮 R1 补齐）
   //   - 任一 modal 打开（drawer / author overlay / forward picker）→ bail，
   //     让键盘焦点留给 modal（modal 内 Esc/Tab 各自有处理）
   //   - focus 在输入元素（INPUT/TEXTAREA/contenteditable）→ bail，不抢评论
   //     textarea / TextField 光标移动
   //   - 修饰键 Ctrl/Cmd/Alt 按下 → bail，留给浏览器原生快捷键
-  // handlePrev/Next 走 ref → 稳定 identity，依赖 modal 状态 + 这两条 fn。
+  // handlePrev/Next/jumpToFirst/jumpToLast 走 ref → 稳定 identity，依赖 modal 状态。
   const handlePrevRef = useRef(handlePrev);
   handlePrevRef.current = handlePrev;
   const handleNextRef = useRef(handleNext);
   handleNextRef.current = handleNext;
+  const jumpToFirstRef = useRef(jumpToFirst);
+  jumpToFirstRef.current = jumpToFirst;
+  const jumpToLastRef = useRef(jumpToLast);
+  jumpToLastRef.current = jumpToLast;
   useEffect(() => {
     if (commentDrawerPostId || authorPanelVisible || forwardPickerPost) {
       return;
@@ -704,6 +729,18 @@ export function DesktopChannelsWorkspace({
       if (event.key === "ArrowUp" || event.key === "PageUp") {
         event.preventDefault();
         handlePrevRef.current();
+        return;
+      }
+      // 走查第十轮 R1：Home/End 跳首尾。注意只在 modal 关闭且非输入元素时挂；
+      // INPUT/TEXTAREA 上的 Home/End 是光标到行首/行末，已被上面 input gate 早返。
+      if (event.key === "Home") {
+        event.preventDefault();
+        jumpToFirstRef.current();
+        return;
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        jumpToLastRef.current();
       }
     };
     window.addEventListener("keydown", handler);
