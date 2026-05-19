@@ -1079,7 +1079,23 @@ export function DesktopChannelsWorkspace({
                   likePending={likePendingPostId === post.id}
                   favoritePending={favoritePendingPostId === post.id}
                   followPending={followPendingAuthorId === post.authorId}
-                  unmuted={unmuted}
+                  // 走查 2026-05-19 桌面端第十三轮 R1：原 `unmuted={unmuted}` 把全
+                  // 局静音状态直传所有 slide —— 用户在 active slide 点视频左上角
+                  // Volume 按钮 toggle global unmuted（或 ChannelVideoPlayer 整张
+                  // <video> 被点 → onClick={onToggleUnmuted}），workspace
+                  // setUnmuted 让所有 N 张 slide 拿到新 prop → ChannelFeedSlide memo
+                  // 失效 → 全部 N 张 reconciliation。inactive slide 的 video 已经
+                  // 被另一条 effect [isActive, url] pause + currentTime=0 + load()
+                  // 释放 buffer + slide 本身 inert=true 用户不可交互 + IO 保证不
+                  // 在视口，inactive 上的 unmuted 切换没有任何可感语义。
+                  // 收紧到「只把真 unmuted 状态传给 active slide」：inactive 一律
+                  // false（与 video.muted=true 一致）。toggle 全局静音时只有 active
+                  // 一张 prop 真变 → 仅这张 re-render；切 active slide 时新旧两张
+                  // 因 isActive 变本来就会重渲，本优化不引入额外开销。
+                  // 当前 yuanzui0728 测试库只有 2 张 slide 收益小，但生产负载下
+                  // recommended tab 一次拉 20+ slide，且 yz 等用户偏好快速 toggle
+                  // 静音浏览，省 ~95% 的 unmute-induced 全列表 re-render。
+                  unmuted={post.id === selectedPost?.id ? unmuted : false}
                   onToggleUnmuted={toggleUnmuted}
                   onLike={handleSlideLike}
                   onOpenAuthor={handleSlideOpenAuthor}
@@ -2248,11 +2264,57 @@ function ChannelCommentsDrawer({
       window.cancelAnimationFrame(focusTimer);
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
-      if (prev && document.contains(prev)) {
-        window.requestAnimationFrame(() =>
-          prev.focus({ preventScroll: true }),
-        );
+      if (!prev || !document.contains(prev)) return;
+      // 走查 2026-05-19 桌面端第十三轮 R2：drawer 关闭后焦点归还路径漏了 inert
+      // 边界。drawer 关闭原因有 3 条：
+      //   (a) 用户主动关（X / Esc）—— prev = 同 slide 的 chat-icon button，
+      //       slide 仍 active 不 inert，焦点归还成功。
+      //   (b) baseUrl 切换 workspace reset —— 整个 workspace 状态全清，prev 可能
+      //       已 unmount，document.contains 兜住。
+      //   (c) 用户用鼠标滚轮 / scroll 把视口滚到下一张 → IO setSelectedPostId →
+      //       L447 effect 把 commentDrawerPostId 翻 null 触发 drawer auto-close。
+      //       此时 prev（旧 slide 上的 chat-icon）还在 DOM 内，但旧 slide 因
+      //       isActive=false 拿到 inert=true（L1925），整个 subtree 退出可聚焦
+      //       序。.focus() 在 inert 内部元素上是 no-op，activeElement 落到 body。
+      //       CDP 实测 100% 复现：drawer 开着 → scrollTop=scrollHeight → 1.5s 后
+      //       activeElement.tagName === "BODY"。
+      // 键盘用户在这个路径下"刚滚到下一张"立刻失去 focus 上下文：Tab 走 sequential
+      // 顺序 → 从 document 头顶部 section tabs 开始，跟视觉位置脱节，必须按多次
+      // Tab 才能回到当前可见的 slide。
+      // 修法：cleanup 走 inert ancestor 检测，命中时把焦点改投给当前 active slide
+      // 内的同款 chat-icon button（按 DOM 顺序的第二个 [aria-haspopup="dialog"]
+      // 按钮 —— 第一个是作者头像 overlay 触发器，第二个是评论 drawer 触发器，
+      // 第三个是 share picker 触发器，结构在每张 slide 里稳定）。命中失败兜回原
+      // 行为（让浏览器自然落到 body / 下一个 sequential focusable）—— 不比当前
+      // 差。
+      let cursor: HTMLElement | null = prev;
+      let prevIsInert = false;
+      while (cursor) {
+        if (cursor.hasAttribute("inert")) {
+          prevIsInert = true;
+          break;
+        }
+        cursor = cursor.parentElement;
       }
+      if (prevIsInert) {
+        // 当前 active slide 的 chat-icon button（结构索引 [1]，evergreen）。
+        const activeSlide = document.querySelector<HTMLElement>(
+          '[data-post-id]:not([inert])',
+        );
+        const dialogTriggers = activeSlide?.querySelectorAll<HTMLElement>(
+          'button[aria-haspopup="dialog"]',
+        );
+        const newChatTrigger = dialogTriggers?.[1] ?? null;
+        if (newChatTrigger) {
+          window.requestAnimationFrame(() =>
+            newChatTrigger.focus({ preventScroll: true }),
+          );
+        }
+        return;
+      }
+      window.requestAnimationFrame(() =>
+        prev.focus({ preventScroll: true }),
+      );
     };
   }, []);
   // R1：trapTopmost 走 latest-ref 避免 effect deps 把 listener 每次都拆装 ——
@@ -2459,21 +2521,57 @@ function ChannelAuthorOverlay({
       window.cancelAnimationFrame(focusTimer);
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
-      if (prev && document.contains(prev)) {
-        // rAF 等到 overlay unmount commit 落定 — 同 frame 调 .focus() 时浏览器
-        // 偶发把焦点丢到 body（commit 还在跑 cleanup）。
-        //
-        // 走查 2026-05-19 第七轮 R6：preventScroll:true —— 用户在 overlay 内点
-        // recent posts 列表里的"非当前"post 时，URL 改 postId 让 workspace
-        // selectedPostId 变化、L508-529 scrolledRouteIdRef effect 把视口滚到新
-        // slide，但 overlay 仍打开（authorId 没动）。等用户最终关 overlay 时
-        // prev 仍指向"原始"slide 的作者按钮 —— 那条 slide 早就滚出视口。裸
-        // .focus() 默认 scrollIntoView 会把页面甩回去。preventScroll 让 view
-        // port 保持在新 slide 不抖；focus 仍 a11y-correct。
-        window.requestAnimationFrame(() =>
-          prev.focus({ preventScroll: true }),
-        );
+      if (!prev || !document.contains(prev)) return;
+      // rAF 等到 overlay unmount commit 落定 — 同 frame 调 .focus() 时浏览器
+      // 偶发把焦点丢到 body（commit 还在跑 cleanup）。
+      //
+      // 走查 2026-05-19 第七轮 R6：preventScroll:true —— 用户在 overlay 内点
+      // recent posts 列表里的"非当前"post 时，URL 改 postId 让 workspace
+      // selectedPostId 变化、L508-529 scrolledRouteIdRef effect 把视口滚到新
+      // slide，但 overlay 仍打开（authorId 没动）。等用户最终关 overlay 时
+      // prev 仍指向"原始"slide 的作者按钮 —— 那条 slide 早就滚出视口。裸
+      // .focus() 默认 scrollIntoView 会把页面甩回去。preventScroll 让 view
+      // port 保持在新 slide 不抖；focus 仍 a11y-correct。
+      //
+      // 走查 2026-05-19 桌面端第十三轮 R3：与 ChannelCommentsDrawer R2 同款的
+      // inert 失焦边角。author overlay 的 auto-close 路径：用户在 slide A 上点
+      // 头像打开 overlay（author=X），滚到 slide B 上属于 author=Y 的内容 →
+      // channels-page syncedRouteSelectedAuthorId 比 desktopSelectedPost.authorId
+      // !== routeSelectedAuthorId 落 undefined → URL author= 被抹掉 → routeSel
+      // ectedAuthorId=null → authorPanelVisible 翻 false → ChannelAuthorOverlay
+      // unmount → cleanup 跑 → prev = slide A 的作者头像 button。但 A 此刻
+      // 已经 inert=true（L1925 跟 isActive 联动），.focus() no-op，activeElement
+      // 落 body。键盘用户失去 a11y 上下文。
+      // 同款修法：检测 prev 是否在 inert 子树，命中时 fall back 到当前 active
+      // slide 的作者头像 button（DOM 顺序 [0] 个 [aria-haspopup="dialog"] —— 第
+      // 一个是 author overlay 触发器，第二个是 chat-icon，第三个是 share）。
+      let cursor: HTMLElement | null = prev;
+      let prevIsInert = false;
+      while (cursor) {
+        if (cursor.hasAttribute("inert")) {
+          prevIsInert = true;
+          break;
+        }
+        cursor = cursor.parentElement;
       }
+      if (prevIsInert) {
+        const activeSlide = document.querySelector<HTMLElement>(
+          '[data-post-id]:not([inert])',
+        );
+        const dialogTriggers = activeSlide?.querySelectorAll<HTMLElement>(
+          'button[aria-haspopup="dialog"]',
+        );
+        const newAuthorTrigger = dialogTriggers?.[0] ?? null;
+        if (newAuthorTrigger) {
+          window.requestAnimationFrame(() =>
+            newAuthorTrigger.focus({ preventScroll: true }),
+          );
+        }
+        return;
+      }
+      window.requestAnimationFrame(() =>
+        prev.focus({ preventScroll: true }),
+      );
     };
   }, []);
   // 走查 2026-05-19 第五轮 R5：focus trap — author overlay 视觉上 modal 但
