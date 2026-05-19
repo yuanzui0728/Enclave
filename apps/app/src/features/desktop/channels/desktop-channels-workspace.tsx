@@ -1557,7 +1557,27 @@ function ChannelMediaSurface({
   // fall through 到下方"暂无可播放内容"黑屏，用户在桌面工作区主区看到自己写
   // 的文字帖完全空白，体感「内容丢了」。把 title + text 渲到暗色卡上至少把
   // 文字显示出来；正文走 stripToolCallSyntax 过 AI 思考残留。
-  const textContent = stripToolCallSyntax(post.text ?? "");
+  // 走查 2026-05-19 第十五轮 R5：ChannelMediaSurface 历来不是 memo'd —— 父级
+  // ChannelFeedSlide memo 跳过非匹配 prop 变化但 commentDrawerOpen / authorOverlay
+  // OpenForThisAuthor / isActive / unmuted 任一改变都会让 slide re-render，
+  // ChannelMediaSurface 跟着重渲。原 textContent 裸调 stripToolCallSyntax(post.text)
+  // 每帧重跑 — 4 个 regex replace + 1 个 CoT-detection long regex。
+  // 同款热点：用户开关评论 drawer / 滚到本 slide / 切静音 / open author overlay
+  // → text-only slide 重渲 → regex 重跑一次。yuanzui0728 测试库 audio 帖占多，
+  // text-only 不常见但生产负载下可能更多；CoT-detection 的长 regex 在含中英
+  // prose 的 text 上累计 ms 级。
+  // 同 DesktopThreadCommentCard R9 / DesktopCommentThreadReplies R10 /
+  // PostReferenceCard R11 / R4 cleanTextByRecentPostId 已经成熟的 useMemo([text])
+  // 模板。post.text 在 home refetch 才换 string（identity 同时也是 value 等
+  // 价），memo 一次缓存，后续 N 帧 slide re-render 全 cache hit。
+  // 注：父级 ChannelFeedSlide 已经为 bottom overlay 算过 slideBodyText
+  //（同 stripToolCallSyntax 但带 title-equality 判断），本节点的 textContent
+  // 不带 title-equality（让 if 外面 `textContent !== post.title` 兜），所以
+  // 不能直接共用 slideBodyText；独立 useMemo 保持本组件功能内聚。
+  const textContent = useMemo(
+    () => stripToolCallSyntax(post.text ?? ""),
+    [post.text],
+  );
   if (post.title?.trim() || textContent.trim()) {
     return (
       <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-10">
