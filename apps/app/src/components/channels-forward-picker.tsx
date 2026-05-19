@@ -426,7 +426,16 @@ export function ChannelsForwardPicker({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="channels-forward-picker-title"
+        // 走查 2026-05-19 第十五轮 R14：原 aria-labelledby 只指 "转发到聊天" 通
+        // 用标题。SR 用户打开 picker 时只听到 "转发到聊天 dialog modal"，没
+        // 包含 postExcerpt — 被转发内容的预览（"{authorName}：{title}"）作为
+        // dialog accessible name 的一部分应该一起念出，让 SR 用户立刻知道是给
+        // 哪条 post 选转发目标。同 desktop ChannelCommentsDrawer R12 / Channel
+        // AuthorOverlay R13 的 IDREFS 模板对齐。
+        // postExcerpt 在 caller 没传时不渲染 (line 415-420 ternary)，aria-
+        // labelledby 引用不存在的 id 按 ARIA spec 自动 fallback 到只读 title
+        // —— 行为正确。
+        aria-labelledby="channels-forward-picker-title channels-forward-picker-excerpt"
         // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential tab 序列里 ——
         // 焦点 trap 兜底用：无 focusable child（极端 loading 态）时也能把焦点
         // 拉进来不漏。
@@ -439,7 +448,10 @@ export function ChannelsForwardPicker({
               {t(msg`转发到聊天`)}
             </div>
             {postExcerpt ? (
-              <div className="mt-1 line-clamp-1 text-[12px] text-[color:var(--text-muted)]">
+              <div
+                id="channels-forward-picker-excerpt"
+                className="mt-1 line-clamp-1 text-[12px] text-[color:var(--text-muted)]"
+              >
                 {postExcerpt}
               </div>
             ) : null}
