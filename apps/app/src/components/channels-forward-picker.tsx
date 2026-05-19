@@ -362,8 +362,21 @@ export function ChannelsForwardPicker({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center bg-[rgba(17,24,39,0.42)] backdrop-blur-[3px] sm:items-center">
+      {/* 走查 2026-05-19 第八轮 R5：和姊妹 R101/R102 group-member-picker /
+          R103 group-member-browser / R104 feature-unavailable / R107-R113 同
+          款 — backdrop <button> (absolute inset-0) 视觉不可见、纯 mouse"点击
+          背景关闭"affordance，但 DOM 顺序排在 dialog 子树第一位 + 没有
+          tabIndex={-1}。用户在视频号 slide 点 "转发" 打开 picker 后，第一次
+          Tab 焦点不是落到 dialog 内的「取消」/好友列表，而是先到这张不可见
+          backdrop —— 内部 useEffect rAF 已经把焦点初始 .focus() 到「取消」按
+          钮上，但任何后续 Tab cycle 会被 backdrop 抢一次 stop，键盘用户体感
+          "我刚才 Tab 到哪里去了"。Esc 路径已挂；mouse click 路径也保留（点
+          backdrop 关 picker）。tabIndex={-1} 让 backdrop 退出 sequential 序，
+          但仍可点击 — focus trap 看到 backdrop 不在 dialog 内时仍能把焦点拉回
+          dialog 首元素，本修复让 Tab 链路本身就不再触碰 backdrop。 */}
       <button
         type="button"
+        tabIndex={-1}
         aria-label={t(msg`关闭转发面板`)}
         onClick={onClose}
         className="absolute inset-0"

@@ -2211,8 +2211,16 @@ function ChannelAuthorOverlay({
   }, []);
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.55)] p-8 backdrop-blur-sm">
+      {/* 走查 2026-05-19 第八轮 R5：和姊妹 R101-R104 同款 — backdrop <button>
+          (absolute inset-0) 视觉不可见、纯 mouse"点击背景关闭"affordance，但
+          DOM 顺序排在 dialog 子树第一位 + 没有 tabIndex={-1}。用户在视频号
+          slide 点作者头像打开 overlay 后，第一次 Tab 焦点不是落到 dialog 内
+          的「回到内容」/recent posts，而是先到这张不可见 backdrop；按 Enter
+          会立刻关 overlay 体感"我刚刚 Tab 一下怎么 modal 没了"。同款问题在
+          ChannelsForwardPicker 同 round 修，本节修 author overlay。 */}
       <button
         type="button"
+        tabIndex={-1}
         aria-label={t(msg`关闭作者主页`)}
         onClick={onClose}
         className="absolute inset-0"
