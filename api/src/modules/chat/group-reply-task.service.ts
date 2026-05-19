@@ -36,6 +36,7 @@ import {
 } from './group-reply-task-observability';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import {
   type GroupMessage,
   type MessageAttachment,
@@ -501,6 +502,18 @@ export class GroupReplyTaskService {
         this.chatGateway.emitTypingStop(task.groupId, character.id, 'reply');
       }
     } catch (error) {
+      // 会员到期：保留 pending + 推后 1h 再试，等用户续费后继续；不要标 failed，
+      // 也不要 logger.error —— 3 秒一次的 cron × 多个到期 world 会把日志刷爆。
+      // 与 scheduler.service.ts:526 同一模式。
+      if (error instanceof SubscriptionExpiredException) {
+        task.status = 'pending';
+        task.executeAfter = new Date(Date.now() + 60 * 60 * 1000);
+        await this.taskRepo.save(task);
+        this.logger.debug(
+          `Skip group reply task ${task.id}: subscription expired, retry in 1h`,
+        );
+        return;
+      }
       task.status = 'failed';
       task.errorMessage =
         error instanceof Error ? error.message.slice(0, 1000) : String(error);
