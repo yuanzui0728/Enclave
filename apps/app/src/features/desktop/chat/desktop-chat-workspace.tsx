@@ -1818,7 +1818,24 @@ export function DesktopChatWorkspace({
       onDrop={handleWorkspaceDrop}
     >
       {standaloneWindow ? null : (
-        <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+        // 走查电脑端单聊 R147：和姊妹 R146 reminder section 同款 ——
+        // 桌面 chat 工作台左栏 320px wide 这条 <section> 包含全局搜索 +
+        // 「+」快捷菜单 + reminder section + 会话列表 + 官号入口卡，是
+        // 整页 chat tab 左侧的主区域。原版没 aria-label / aria-labelledby
+        // → HTML5 spec 要求 section 有 accessible name 才暴露为 region
+        // landmark，没有时 SR (NVDA/JAWS/VoiceOver) 走 landmark 导航
+        // 直接跳过整条 chat list，盲人用户从右栏 thread 切回 chat list
+        // 必须 Tab 一条一条走、找不到"chat list"这个 landmark 入口。
+        // 内部唯一可作 heading 的 visible 文案是搜索框 placeholder
+        // (msg`搜索`) 不适合做 labelledby，直接用 aria-label="会话列表"
+        // （文案对齐 desktop-chat-history-page R3 已用过的 t(msg`会话
+        // 列表`)）把 section 注册为 region landmark；右栏 thread
+        // section 已经通过内嵌 R143 <h1> conversationTitle 表达上下
+        // 文，左右两栏 SR 导航对称。
+        <section
+          aria-label={t(msg`会话列表`)}
+          className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]"
+        >
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
               {/* 走查新一轮 R13：和 R11 quickMenu 同款思路。聊天列表顶部的
