@@ -135,7 +135,16 @@ function ensureMacDesktopAssets() {
     return;
   }
 
-  if (!hasCommand("iconutil")) {
+  // iconutil 是 Xcode CLT 一部分，但不支持 `--version` flag —— `hasCommand`
+  // 默认走 `cmd --version` 探测时 iconutil 会 exit 1 被误判为缺失（CI
+  // macos-14 runner 实测 dmg 打包炸在这）。改用 POSIX `command -v`
+  // shell built-in：exit 0 即 PATH 上能找到，跨 mac/linux/zsh/bash 都
+  // 等效；只在 darwin 跑，无 windows 兼容性顾虑。
+  const iconUtilCheck = spawnSync("/bin/sh", ["-c", "command -v iconutil"], {
+    stdio: "ignore",
+    env,
+  });
+  if (iconUtilCheck.status !== 0) {
     console.error(
       bilingual(
         [
