@@ -2571,6 +2571,17 @@ export function ChannelsPage() {
           onToggleFavorite={(post) => {
             // R4 sync ref 锁同帧双击。
             if (desktopFavoriteSubmittingRef.current) return;
+            // 走查 2026-05-19 第十轮 R2：原来先 set ref 再调 toggleFavorite，但
+            // toggleFavorite 内部 `if (!ensureCanInteract(post)) return;` 命中非好友
+            // 帖时根本不调 favoriteMutation.mutate() —— isPending 不会翻 true → 下
+            // 方 useEffect [favoriteMutation.isPending] 不会 fire → ref 永远卡在 true，
+            // 后续所有 favorite 点击（即便是好友帖）全被早返堵死。用户在推荐流连点
+            // 几张非好友 audio 卡 → 收藏按钮彻底失灵，体感「我刚才到底按到了哪个键
+            // 让所有收藏都失效了」。
+            // 把 ensureCanInteract 上提到 set ref 之前（同 onLike L2515-2520 /
+            // onLikeComment L2580-2582 已经做过的同款模板），非好友帖直接走 warning
+            // notice 早返，不动 ref；好友帖正常 set ref → mutate → settled 后 reset。
+            if (!ensureCanInteract(post)) return;
             desktopFavoriteSubmittingRef.current = true;
             toggleFavorite(post);
           }}
