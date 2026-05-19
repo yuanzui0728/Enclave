@@ -118,11 +118,22 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck workspace
-        run: pnpm typecheck
+      - name: Typecheck app frontend (mac bundle deps only)
+        # 根 `pnpm typecheck` 跑 turbo run typecheck 扫全 workspace，但
+        # apps/cloud-api / apps/cloud-console / apps/wiki / apps/admin 都
+        # 在 .gitignore 里（私有模块，不入公开仓），CI 上找不到这些目录的
+        # 源码 → typecheck import 链全部炸。mac dmg 打包只依赖 apps/app
+        # （前端）+ apps/desktop（Tauri shell，typecheck 是 no-op），收窄
+        # filter 到这两个 + 它们传递依赖的共享 packages。
+        run: pnpm --filter @yinjie/app --filter @yinjie/desktop typecheck
 
-      - name: Build shared frontend packages
-        run: pnpm build
+      - name: Build shared frontend packages (mac bundle deps only)
+        # 同上，根 `pnpm build` 的 turbo filter 含 cloud-api/admin/
+        # cloud-console，CI 上拉不到源码会炸；mac dmg 只需 contracts/
+        # config/i18n/ui/app 这条前端链（apps/desktop cargo build 通过
+        # run-tauri.mjs 触发 beforeBuildCommand `pnpm --dir ../app
+        # build`，仍会跑 app vite build 一次，但 turbo 命中 cache 即可）。
+        run: pnpm --filter @yinjie/contracts --filter @yinjie/config --filter @yinjie/i18n --filter @yinjie/ui --filter @yinjie/app build
 
       - name: Resolve release metadata
         id: release_meta
