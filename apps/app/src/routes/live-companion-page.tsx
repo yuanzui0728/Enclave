@@ -107,16 +107,28 @@ export function LiveCompanionPage() {
   const generateSubmittingRef = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 走查 2026-05-19 第九轮 R1：整页底下渲了 DesktopUtilityShell + 一堆 functional
+  // 组件，但顶部 L912-927 那张 z-50 「功能开发中」backdrop 永远盖死整页（dev 占
+  // 位 / 敬请期待，第七轮 R2 才补的"返回视频号"link 是唯一出口）。这两条 query
+  // 一直 `enabled: isDesktopLayout` 跟着挂载即 fire —— 用户从视频号顶栏的「直
+  // 播伴侣」按钮误点进来（按钮上没标"开发中"），统一两条 RTT 200-500ms 公网隧
+  // 道（getSystemStatus + getFeed surface=channels limit=8），但用户视觉只看到
+  // "功能开发中 / 敬请期待"立刻按"返回"。每次误入流量都白浪费 ~40-60KB。同时
+  // mid-flight 切账户 baseUrl 一变 query 还会跟着 refetch 一次，浪费翻倍。
+  // 修法：给两条 query 加 dev-block 守卫常量，overlay 同步用同一个常量决定显
+  // 隐 —— 将来 dev 移掉 overlay 时把常量翻 false，两边一起恢复，避免"留 query
+  // 没启 / 启 query 没 overlay"的不对称。
+  const LIVE_COMPANION_DEV_BLOCKED = true;
   const statusQuery = useQuery({
     queryKey: ["desktop-live-companion-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
-    enabled: isDesktopLayout,
+    enabled: isDesktopLayout && !LIVE_COMPANION_DEV_BLOCKED,
   });
 
   const channelsQuery = useQuery({
     queryKey: ["desktop-live-companion-channels", baseUrl],
     queryFn: () => getFeed(1, 8, baseUrl, { surface: "channels" }),
-    enabled: isDesktopLayout,
+    enabled: isDesktopLayout && !LIVE_COMPANION_DEV_BLOCKED,
   });
 
   useEffect(() => {
@@ -908,23 +920,30 @@ export function LiveCompanionPage() {
         backdrop blur 把下层 DesktopUtilityShell 全盖死 → 无回退路径：只能用
         浏览器 Back / 桌面 shell 侧栏切走，体感「我点了直播伴侣进了死胡同」。
         加一颗「返回视频号」Link 把用户送回 /tabs/channels，至少给个清晰出口。
+
+        走查 2026-05-19 第九轮 R1：dev-block 状态用 LIVE_COMPANION_DEV_BLOCKED
+        常量统一控制 —— 上方 statusQuery / channelsQuery enabled 也跟同一常量，
+        避免"留 query 没启 overlay / 启 overlay 但 query 已禁用"的不对称。将来
+        dev 移掉 overlay 时把常量翻 false，overlay + 两条 query 一起恢复。
       */}
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
-        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
-          <div className="text-lg font-semibold text-[color:var(--text-primary)]">
-            {t(msg`功能开发中`)}
+      {LIVE_COMPANION_DEV_BLOCKED ? (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
+            <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+              {t(msg`功能开发中`)}
+            </div>
+            <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+              {t(msg`敬请期待`)}
+            </div>
+            <Link
+              to="/tabs/channels"
+              className="mt-4 inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+            >
+              {t(msg`返回视频号`)}
+            </Link>
           </div>
-          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
-            {t(msg`敬请期待`)}
-          </div>
-          <Link
-            to="/tabs/channels"
-            className="mt-4 inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
-          >
-            {t(msg`返回视频号`)}
-          </Link>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
