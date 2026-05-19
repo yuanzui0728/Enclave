@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 
@@ -92,7 +92,15 @@ export function DesktopOfficialMessageContextMenu({
         onPointerDown={(event) => event.stopPropagation()}
       >
         {visibleItems.map((item) => (
-          <div key={item.key}>
+          // 走查新一轮 R1：原版 `<div key={item.key}>` 把 MenuDivider + ContextMenuButton
+          // 一起包成一个无 role 的 <div>，破坏 role="menu" 的 ARIA 1.2 父子链 ——
+          // 合法子元素必须是 menuitem / menuitemcheckbox / menuitemradio / group /
+          // separator，裸 <div> 属于"unknown role"会让严格 SR (VoiceOver 严格模式
+          // / NVDA browse mode) 把整块菜单当 generic container 处理、跳过 menu
+          // 模式快捷键。姊妹 desktop-conversation-context-menu / chat group-message-
+          // context-menu 全部用 Fragment 平铺，本菜单 1) 有 dividerBefore 配对
+          // 需求 2) 用 array.map 时 key 必须落在最外层元素上 → 用 Fragment 带 key。
+          <Fragment key={item.key}>
             {item.dividerBefore ? <MenuDivider /> : null}
             <ContextMenuButton
               icon={item.icon}
@@ -101,7 +109,7 @@ export function DesktopOfficialMessageContextMenu({
               disabled={item.disabled}
               danger={item.danger}
             />
-          </div>
+          </Fragment>
         ))}
       </div>
     </div>

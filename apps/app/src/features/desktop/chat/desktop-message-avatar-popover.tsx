@@ -405,7 +405,17 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       event.stopPropagation();
       onCloseRef.current();
     };
-    const handleViewportChange = () => {
+    // 走查新一轮 R1：原 handleViewportChange 直接同步跑 anchor.getBoundingClientRect
+    // + setStyle 重定位。window scroll capture 监听对页面里**任何**可滚 element
+    // 的滚动事件都会 fire，长聊 ChatMessageList 上 wheel 一下能在 16ms 内 emit
+    // 多次 scroll，每次都被强同步 reflow（getBoundingClientRect 读完后 setStyle
+    // 写又 invalidate layout）— popover 打开期间快速滚天梯每一帧都白扯一次。
+    // 120Hz 显示器 + 长聊场景肉眼可见的卡顿。rAF 合并：scroll burst 期间一帧
+    // 只跑一次 updatePosition，未 commit 的尾巴丢弃；用户最终看到的位置仍是
+    // 最新一次 rAF 的快照。
+    let scrollRafId: number | null = null;
+    const runViewportChange = () => {
+      scrollRafId = null;
       if (!document.body.contains(anchorElement)) {
         onCloseRef.current();
         return;
@@ -417,6 +427,12 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         setStyle,
       });
     };
+    const handleViewportChange = () => {
+      if (scrollRafId !== null) {
+        return;
+      }
+      scrollRafId = window.requestAnimationFrame(runViewportChange);
+    };
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -424,6 +440,10 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     window.addEventListener("scroll", handleViewportChange, true);
 
     return () => {
+      if (scrollRafId !== null) {
+        window.cancelAnimationFrame(scrollRafId);
+        scrollRafId = null;
+      }
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("resize", handleViewportChange);
