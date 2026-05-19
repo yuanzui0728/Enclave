@@ -668,9 +668,20 @@ export function ConversationThreadPanel({
       {isDesktop ? (
         <header className="relative z-20 flex min-h-[64px] items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
-            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+            {/* 走查电脑端单聊 R143：和姊妹 R140 / R141 / R142 同款 ——
+                桌面 /tabs/chat workspace 主区右栏 conversationTitle 是
+                整个工作台内"用户当前正在聊哪一条会话"的唯一身份信息，
+                左栏是 chat list、本 <header> 是右栏唯一 landmark。原版
+                用裸 <div text-[17px] font-medium> 渲染，盲人 SR 走
+                heading 导航在整条 chat tab 上找不到 <h1>，只能从左栏
+                ConversationCardLink 列表逐条 Tab 走过去再切回右栏才
+                能定位"现在聊的是谁"。改成语义 <h1>，Tailwind 样式不
+                变；subtitle 仍是辅助 <div>。和 standalone window /
+                utility shell 一批 h1 化思路一致——把 page-level 主标题
+                显式暴露给 AT。 */}
+            <h1 className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
               {conversationTitle}
-            </div>
+            </h1>
             {subtitle ? (
               <div className="mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
                 {conversationType === "group" ? <Users size={12} /> : null}
