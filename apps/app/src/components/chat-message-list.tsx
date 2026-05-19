@@ -8429,6 +8429,17 @@ function NoteDetailActionSheet({
         className="absolute inset-0"
         aria-label={translateRuntimeMessage(msg`关闭操作菜单`)}
         onClick={onClose}
+        // 走查电脑端单聊 R125：和姊妹 R107-R117 backdrop 系列同款 —— NoteDetailActionSheet
+        // 是单聊 / 群聊 NoteViewerOverlay 里点「更多操作」弹出的 bottom-sheet action
+        // 菜单，全屏覆盖的 backdrop <button> (absolute inset-0) 视觉不可见、纯 mouse
+        // "点击背景关闭"affordance，但 DOM 顺序排在 action sheet 子树第一位。用户
+        // 在单聊里点对方分享的笔记 → 打开 NoteViewerOverlay → 右上角「更多操作」打开
+        // 这张 sheet 后按 Tab 切「编辑笔记 / 复制摘要 / 定位消息 / 取消」按钮，焦点
+        // 先落到这张不可见 backdrop → 看不到任何 focus ring → 再按 Enter 把 sheet
+        // 秒关，用户根本没机会选到具体操作。Esc keydown 在父级 NoteViewerOverlay
+        // 已挂（line 8178-8193，actionMenuOpen 时先关 sheet）；onClick 鼠标点击关
+        // 闭路径不受影响。
+        tabIndex={-1}
       />
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
         <div className="flex justify-center pb-2">
