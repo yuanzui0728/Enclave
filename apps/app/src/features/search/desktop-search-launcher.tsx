@@ -230,6 +230,15 @@ export function useDesktopSearchLauncher({
         return;
       }
 
+      // 走查电脑端群聊新会话 R110：和姊妹 R109 chat-composer sticker/plus
+      // menu 同款 race —— 桌面工作区顶部「搜索聊天和联系人」框是 DesktopSearch
+      // DropdownPanel，开着「聊天信息」侧栏在群聊里点搜索框输入时，按 Esc 关
+      // 搜索 dropdown 会顺手把侧栏一起关掉：dropdown panel 根元素是裸 <div>
+      // 没 role="dialog"/role="menu"，workspace dismissSidePanel microtask
+      // DOM 查询命中不到 → 直接 dismiss。capture-phase + stopImmediatePropagation
+      // 阻断 workspace bubble Esc handler。
+      event.preventDefault();
+      event.stopImmediatePropagation();
       setIsOpen(false);
     };
     const handleFocus = () => {
@@ -260,7 +269,7 @@ export function useDesktopSearchLauncher({
     void syncSearchHistory();
 
     window.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("focus", handleFocus);
     window.addEventListener("storage", handleStorageSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -268,7 +277,7 @@ export function useDesktopSearchLauncher({
     return () => {
       cancelled = true;
       window.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
