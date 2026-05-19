@@ -1709,6 +1709,22 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
     <div
       ref={slideRef}
       data-post-id={post.id}
+      // 走查 2026-05-19 第九轮 R2：视频号桌面工作区一次性渲 20 张 slide 全挂在
+      // 同一 snap-scroll 容器里 — 每张 slide 内有 5-6 个 focusable（作者按钮 +
+      // 关注按钮 + 点赞 / 评论 / 转发 / 收藏 4 颗 action 按钮）。snap-mandatory
+      // 视觉上一次只显示 active slide，但 DOM 里其它 19 张 slide 的 ~95 颗按钮
+      // 全在 sequential Tab 序里。键盘用户从顶栏 section tabs Tab 进 slide 区
+      // 后要按 95 次 Tab 才能到达底下 FeedNavArrows（实测 100+ 次到下一个 modal
+      // 触发区），screen reader 同款痛 — virtual cursor 顺 DOM 念过去要听完几
+      // 十张 offscreen 卡的"作者名 + 关注按钮 + 当前 N 赞..."才到当前可见 slide。
+      // inert 是 HTML 标准 attr（React 19 原生支持作为 boolean prop），让整个子
+      // 树退出 Tab 序 + SR / pointer interaction —— 当前 active slide
+      // inert=false，其它 19 张 inert=true。snap-mandatory + IntersectionObserver
+      // 协同：用户 scroll 到下一张 → IO 切 selectedPostId → isActive 翻转 →
+      // inert 自动跟着转。pointer 边界：mid-scroll 部分可见的相邻 slide 一帧内
+      // 仍 inert（点击 dead），但 snap 完成后立刻可用；视频号每条 800px+ 高度
+      // 让"两条都半露"窗口仅 100-200ms，UX 影响可忽略。
+      inert={!isActive}
       className="flex h-full min-h-[640px] snap-start snap-always items-center justify-center px-6 py-6"
     >
       <div className="flex max-h-full items-end gap-4">
