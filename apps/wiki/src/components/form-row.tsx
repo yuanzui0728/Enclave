@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -63,6 +64,9 @@ function HintTooltip({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement | null>(null);
   const tipRef = useRef<HTMLSpanElement | null>(null);
+  // aria-controls 必须指向被展开/收起的元素 id —— 原写法只挂 aria-expanded，
+  // SR 念出 "expanded" 但没有 controls 关系，NVDA 用户无法跳转到 tooltip 内容。
+  const tipId = useId();
 
   // 外部点击 / Escape → 关闭（主要服务触屏 tap 的关闭路径）
   useEffect(() => {
@@ -112,6 +116,7 @@ function HintTooltip({ children }: { children: ReactNode }) {
         type="button"
         aria-label={t(msg`说明`)}
         aria-expanded={open}
+        aria-controls={tipId}
         onMouseEnter={() => {
           if (isHoverDevice()) setOpen(true);
         }}
@@ -130,6 +135,7 @@ function HintTooltip({ children }: { children: ReactNode }) {
       {open && (
         <span
           ref={tipRef}
+          id={tipId}
           role="tooltip"
           // 初始就是 fixed + 屏外，避免一帧 flash 到 (0,0) 同时不影响 wrap 的 boundingRect
           style={{ position: "fixed", top: -9999, left: -9999 }}

@@ -4,7 +4,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -275,9 +275,19 @@ export function RootLayout() {
     void navigate({ to: "/search", search: { q: term } });
   }
 
+  // 打开抽屉时把 <header> / <main> / <footer> 标 inert，防止键盘用户 Tab
+  // 穿过抽屉最后一个控件后跳回顶栏（实测 mobile 视口 Tab 15 落到语言下拉、
+  // Tab 16 跳到 main 的"创建角色"按钮，盲用就觉得抽屉漏了）。lg+ 视口下抽屉
+  // 是常驻 sidebar，不应屏蔽 main/header。
+  const bgInert = mobileNavOpen && !isLargeViewport;
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] backdrop-blur">
+      <header
+        inert={bgInert ? true : undefined}
+        aria-hidden={bgInert ? "true" : undefined}
+        className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] backdrop-blur"
+      >
         <div className="mx-auto flex w-full max-w-screen-2xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
           <button
             ref={navTriggerRef}
@@ -478,14 +488,22 @@ export function RootLayout() {
             </div>
           </div>
         </aside>
-        <main className="min-w-0 flex-1">
+        <main
+          inert={bgInert ? true : undefined}
+          aria-hidden={bgInert ? "true" : undefined}
+          className="min-w-0 flex-1"
+        >
           <Suspense fallback={<LoadingBlock className="m-6" />}>
             <Outlet />
           </Suspense>
         </main>
       </div>
 
-      <footer className="border-t border-[color:var(--border-subtle)] py-4 text-center text-xs text-[color:var(--text-muted)]">
+      <footer
+        inert={bgInert ? true : undefined}
+        aria-hidden={bgInert ? "true" : undefined}
+        className="border-t border-[color:var(--border-subtle)] py-4 text-center text-xs text-[color:var(--text-muted)]"
+      >
         <Trans>
           隐界世界角色管理平台 ·
           任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效
@@ -506,6 +524,9 @@ function UserMenu({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -526,13 +547,51 @@ function UserMenu({
     };
   }, [open]);
 
+  // Esc 关闭后把焦点还回 trigger；打开后把焦点送到第一项 menuitem，
+  // 符合 WAI-ARIA APG menu pattern。
+  const prevOpenRef = useRef(false);
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+      items?.[0]?.focus();
+    } else if (!open && prevOpenRef.current) {
+      triggerRef.current?.focus();
+    }
+    prevOpenRef.current = open;
+  }, [open]);
+
+  // 方向键在 menuitem 之间循环 + Tab 关闭菜单（WAI-ARIA APG menu pattern：
+  // Tab 不应在 popup menu 内移动，应该把菜单收掉）。
+  const onMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Tab") {
+      setOpen(false);
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp" &&
+        event.key !== "Home" && event.key !== "End") return;
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+    );
+    if (items.length === 0) return;
+    const idx = items.indexOf(document.activeElement as HTMLElement);
+    let next = idx;
+    if (event.key === "ArrowDown") next = (idx + 1) % items.length;
+    else if (event.key === "ArrowUp") next = (idx - 1 + items.length) % items.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = items.length - 1;
+    event.preventDefault();
+    items[next]?.focus();
+  };
+
   const initial = user.username?.[0]?.toUpperCase() ?? "?";
   return (
     <div ref={wrapRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={menuId}
         // 原写法 aria-label 只塞 user.username，SR 用户听到 "yuanzui0728_5999,
         // menu" 不知道这个 menu 是干什么的（账户菜单？通知菜单？切语言？）。
         // 显式说明这是"账户菜单"，并把用户名嵌进去做区分（如果同页有多个
@@ -564,7 +623,10 @@ function UserMenu({
       </button>
       {open && (
         <div
+          ref={menuRef}
+          id={menuId}
           role="menu"
+          onKeyDown={onMenuKeyDown}
           className="absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-overlay)] shadow-lg"
         >
           {/* 移动端 chip 只显示首字母，把用户名和角色挪进下拉菜单顶部。 */}
