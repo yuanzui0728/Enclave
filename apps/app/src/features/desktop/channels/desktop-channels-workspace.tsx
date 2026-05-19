@@ -620,6 +620,19 @@ export function DesktopChannelsWorkspace({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 2026-05-19 第十一轮 R3：IME composition 期间 Esc 是用户用来
+      // 取消拼音 / 假名 / 한글候选词的标准键。原 handler 一律 preventDefault
+      // + 关 drawer / author overlay，中日韩用户在评论 drawer 的 input 里
+      // 输到一半按 Esc 想退出候选词 → 整个 drawer 直接被关掉，半截输入丢
+      // 失 + 体感「我刚才不是只想退候选词怎么连面板都没了」。同款 panel
+      // input 的 onKeyDown L3186-3196 早就 isComposing 早返 Enter，这条
+      // Esc 漏了同款保护。检 KeyboardEvent.isComposing：true 时让 IME 自
+      // 己消费 Esc，不抢；用户再按一次 Esc（候选词已退，isComposing=false）
+      // 才走 modal 关闭路径。同款修法之后建议也下到 picker 的 Esc handler，
+      // 不过 picker 无 input 不可能命中 IME composition，本轮只修 workspace。
+      if (event.isComposing) {
+        return;
+      }
       // R1 续：forward picker 在最上层时把 Esc 让给它独家处理。
       if (forwardPickerOpenRef.current) {
         return;
