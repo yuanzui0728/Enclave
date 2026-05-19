@@ -96,22 +96,28 @@ export function DesktopChatWindowPage() {
         return;
       }
 
-      // 走查新一轮 R27：原写法对 Esc 一刀切 closeStandaloneWindow，但本窗口
-      // 内还嵌着 ConversationThreadPanel + 各种 dialog（DesktopChatConfirmDialog
-      // / DesktopChatTextEditDialog / DesktopContactTextEditDialog / 转发弹层
-      // / 头像 popover / sticker panel / + 快捷菜单等），每个都注册了自己的
-      // window keydown Esc handler。stopPropagation 在 window 同元素 sibling
-      // listener 上不生效（MDN：需要 stopImmediatePropagation），结果用户：
-      // · 改备注 → 弹改备注 dialog → 按 Esc 想关 dialog → dialog 关掉同时
-      //   整个独立窗口被一起关掉，用户失去当前聊天上下文得手动重开。
-      // · 在 composer 里打到一半草稿 → 按 Esc 想清掉输入法或别的 sub UI →
-      //   整个窗口被关，未发的草稿一并丢失（textarea Esc 没 preventDefault，
-      //   直接命中本兜底）。
-      // 与姊妹 desktop-chat-workspace 的 dismissSidePanel 兜底（line 979）同
-      // 思路，推到 microtask + 检查 defaultPrevented：所有同步 sibling Esc
-      // listener 跑完后，如果有人 preventDefault 了（说明 sub UI 接走 Esc），
-      // 不再关窗。同时跳过 textarea / 输入框 focus 状态 —— Esc 在输入态对
-      // 用户来说大概率是"取消当前输入意图"而非"关窗"。
+      // 走查电脑端群聊 R115：本 page Esc 监听原写法 queueMicrotask + 检查
+      // event.defaultPrevented 想"等所有同步 sibling listener 跑完再决定关不
+      // 关窗"，和姊妹 desktop-chat-workspace dismissSidePanel R11 走过同一条
+      // 坑——HTML 规范要求每个 event listener invocation 之间都跑一次
+      // microtask checkpoint，Chromium / Firefox / Safari 实测都遵守。本 page
+      // 监听 mount 时机最早，dialog Esc listener 都在 dialog 打开瞬间才挂，
+      // 触发顺序按 attach 时间：page 先 fire → 排 microtask → microtask 在
+      // 下一个 listener 之前就跑完 → 此刻 event.defaultPrevented = false
+      //（dialog handler 还没 fire 它的 preventDefault）→ closeStandaloneWindow
+      // 直接执行 → 用户开 confirm/text-edit dialog 按 Esc 想关弹窗，整个
+      // 独立窗口跟着一起被关掉、聊天上下文丢失。
+      //
+      // 改用 workspace R114b 同款 DOM 查询：microtask 时这些 overlay 还在
+      // DOM 里（dialog onClose 走 setState 异步），有 [role="dialog"] /
+      // [role="menu"] 在 DOM 里就 skip 关窗，让 dialog 自己的 Esc handler
+      // 接管关 dialog。所有 modal/popover/context-menu 之前 a11y 走查都补过
+      // role —— confirm/text-edit/forward/create-group/note-send/picker/
+      // history/feature-unavailable 全部带 role="dialog"，avatar popover /
+      // sticker panel / image-viewer / location-viewer / note-viewer 也都补
+      // 过；conversation/message/official context-menu 带 role="menu"。
+      // textarea / 输入框 focus 仍然 short-circuit 保留——Esc 在输入态优先
+      // 给 IME / clear-search 类语义，绝不该关窗。
       const target = event.target;
       if (
         target instanceof HTMLElement &&
@@ -122,7 +128,10 @@ export function DesktopChatWindowPage() {
         return;
       }
       queueMicrotask(() => {
-        if (event.defaultPrevented) {
+        if (
+          typeof document !== "undefined" &&
+          document.querySelector('[role="dialog"], [role="menu"]')
+        ) {
           return;
         }
         closeStandaloneWindow(fallbackPath);
