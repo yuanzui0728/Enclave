@@ -1112,6 +1112,18 @@ export function DesktopChannelsWorkspace({
                   authorOverlayOpenForThisAuthor={
                     authorPanelVisible && post.authorId === routeSelectedAuthorId
                   }
+                  // 走查 2026-05-19 第十五轮 R7：同 R3 avatar / chat 按钮的 disclosure
+                  // 模式 — share 按钮第十一轮 R2 (commit 94b2d15ea) 已挂 aria-haspopup
+                  // ="dialog" 但漏 aria-expanded。用户点 share 打开 ChannelsForwardPicker
+                  // (z-110 全屏 modal) → 此刻该 slide 的 share 按钮的 popup 是"已展开"
+                  // 状态，但 SR 用户回头 hover 这颗按钮仍听 "转发到聊天 button has
+                  // popup dialog"，不知道 picker 当前在屏（picker 自动 focus trap 锁
+                  // 焦点在自己内部，但 SR rotor 仍能游走到 listing button）。
+                  // forwardPickerPost?.id 与 post.id 比对 — 仅当 picker 打开的那条
+                  // post 的 share 按钮汇报 expanded=true，其它 slide 恒 false。memo
+                  // 行为同 R3：非匹配 slide 上 prop 恒 false shallow-compare 跳过，
+                  // 仅打开/关闭 picker 切换那条 post 的 slide 重渲。
+                  sharePickerOpenForThisPost={forwardPickerPost?.id === post.id}
                   onToggleUnmuted={toggleUnmuted}
                   onLike={handleSlideLike}
                   onOpenAuthor={handleSlideOpenAuthor}
@@ -1885,6 +1897,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   registerSlide,
   commentDrawerOpen,
   authorOverlayOpenForThisAuthor,
+  sharePickerOpenForThisPost,
   isFavorite,
   likePending,
   favoritePending,
@@ -1909,6 +1922,10 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   // 由 workspace 计算 authorPanelVisible && post.authorId === routeSelectedAuthorId
   // 后传下来。给 avatar button 补 aria-expanded 跟 aria-haspopup="dialog" 配对。
   authorOverlayOpenForThisAuthor: boolean;
+  // 走查 2026-05-19 第十五轮 R7：ChannelsForwardPicker 是否为本 slide 的 share
+  // 按钮打开。同 R3 模板 — workspace 算 forwardPickerPost?.id === post.id，给
+  // share 按钮挂 aria-expanded 跟它早就有的 aria-haspopup="dialog" 配对。
+  sharePickerOpenForThisPost: boolean;
   isFavorite: boolean;
   likePending: boolean;
   favoritePending: boolean;
@@ -2159,6 +2176,9 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             // aria-haspopup="dialog" 让 SR 念出 "转发到聊天 button has popup
             // dialog"，盲用用户预期到下一步是 modal 而不是直接发送或导航。
             ariaHasPopup="dialog"
+            // R7（第十五轮）：跟 chat / avatar 同 disclosure 模式 — picker 打开
+            // 时该 slide 的 share 按钮汇报 expanded=true。其它 slide 恒 false。
+            ariaExpanded={sharePickerOpenForThisPost}
             onClick={() => onShare(post)}
           />
           <ChannelActionButton
