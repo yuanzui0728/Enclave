@@ -966,11 +966,24 @@ function CameraPreviewCard({
       </div>
       <div className="relative aspect-[4/3] bg-[linear-gradient(180deg,rgba(55,65,81,0.98),rgba(17,24,39,0.98))]">
         {cameraEnabled && status === "ready" ? (
+          // 走查电脑端单聊 R133：CameraPreviewCard 渲在视频通话面板里展示用户
+          // 自己的本地 webcam 预览（getUserMedia 拿到的 MediaStream 喂进
+          // videoRef）。原版 <video> 没挂 aria-hidden 也没 aria-label，SR
+          // (NVDA / JAWS / VoiceOver) tab/虚拟光标走过来会按"video 播放器"
+          // generic 角色朗读一次"播放中 视频"——但本元素 muted 不带 captions
+          // 也没 controls (用户不能 pause/play)，纯视觉镜像 (scale-x-[-1])
+          // 给视力可见用户对照"自己现在看着摄像头是什么样"。SR 用户对镜像
+          // 预览毫无信息收益；上方 section 已有"我的摄像头预览 · 预览中/已关闭"
+          // 文字双行表达状态。挂 aria-hidden="true" 把这条纯视觉镜像从 AT
+          // tree 中移除，避免在通话过程中重复出现 "video / video player"
+          // 噪声朗读。和姊妹 chat-message-list image viewer / digital-human
+          // stage 这类纯视觉媒体走"label/hidden"二选一标记的思路一致。
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
+            aria-hidden="true"
             className="h-full w-full scale-x-[-1] object-cover"
           />
         ) : (
