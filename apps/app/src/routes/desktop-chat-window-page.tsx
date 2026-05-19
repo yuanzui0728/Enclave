@@ -286,9 +286,22 @@ export function DesktopChatWindowPage() {
           <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[color:var(--brand-primary)]">
             {headerType === "group" ? t(msg`群聊独立窗口`) : t(msg`聊天独立窗口`)}
           </div>
-          <div className="mt-2 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+          {/* 走查电脑端单聊 R140：独立聊天窗口（右键会话「在独立窗口打开」/
+              Tauri 多开 sub-window）整页只有 <header> landmark，header 内
+              第一行 chip 是 group/direct 类型标签、第二行才是 headerTitle
+              （会话名/角色名）—— 原版用裸 <div> 渲染，整个 standalone window
+              没有任何 <h1>。盲人 SR (NVDA/JAWS/VoiceOver) 走 landmark/heading
+              导航时找不到主标题，只能从 chip 开始线性听，"群聊独立窗口"
+              比"yuanzui 的会话名"更弱信息，会话上下文要等读完两行说明卡
+              + 进入 DesktopChatWorkspace 内的 thread header 才能拿到。
+              在 standalone window 这种"专门为这条会话开一扇新窗"的形态里，
+              SR 用户对页面定位的需求最高。改成语义 <h1> 让 heading 导航
+              和 page title 一致，视觉样式不变（Tailwind className 完全
+              迁移）。和姊妹独立笔记窗口 / 独立图片查看器窗口走过 sub-window
+              + 单 h1 的同款思路。 */}
+          <h1 className="mt-2 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
             {headerTitle}
-          </div>
+          </h1>
           <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
             {t(msg`新窗口内延续当前聊天上下文`)}
           </div>
