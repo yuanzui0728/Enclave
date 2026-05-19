@@ -522,8 +522,21 @@ export function DesktopChatHistoryPanel({
               })}
 
               <div className="relative ml-auto flex items-center gap-1">
+                {/* 走查电脑端单聊 R135：本 button 是「指定日期」disclosure 触发，
+                    点击调 customDateInputRef.current.showPicker() 唤起浏览器原生
+                    日期选择 overlay；可视层 ChevronDown caret + 文案在"指定日期"
+                    ↔ 实际选中日期间切换。盲人 SR (NVDA/JAWS/VoiceOver) 走过来只
+                    听到"指定日期 按钮"，跟"全部时间 / 今天 / 最近 7 天 / 最近
+                    30 天"几个普通快捷 chip 在语义上无差异——SR 完全不知道这条
+                    点下去会拉起一张原生日历 popup（不是 in-page state 切换）。
+                    aria-haspopup="dialog" 显式声明"按钮按下会弹出一张选择
+                    dialog 类型的浮层"，让 SR 在朗读 button 名时附加"折叠 + 日历"
+                    提示，对齐姊妹 chat-header-actions 通话 menu 按钮 / desktop
+                    workspace「+」quickMenu 已有的 aria-haspopup 模式（那两条
+                    走 menu，本条原生 date picker 更接近 dialog）。 */}
                 <button
                   type="button"
+                  aria-haspopup="dialog"
                   onClick={() => {
                     const node = customDateInputRef.current;
                     if (!node) return;
