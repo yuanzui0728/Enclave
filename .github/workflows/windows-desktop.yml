@@ -1,0 +1,68 @@
+name: windows-desktop
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-windows-desktop:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo-target/yinjie-desktop
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck workspace (admin and app excluded — drift tracked separately)
+        run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app
+
+      - name: Build shared frontend packages
+        run: pnpm build
+
+      - name: Build desktop installer
+        run: pnpm --filter @yinjie/desktop build:windows:x64
+
+      - name: Upload desktop bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: yinjie-windows-desktop-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**
+            apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**
+            C:\Users\runneradmin\.cargo-target\yinjie-desktop\release\bundle\**
+            C:\Users\runneradmin\.cargo-target\yinjie-desktop\x86_64-pc-windows-msvc\release\bundle\**
