@@ -2142,6 +2142,7 @@ function ChannelAuthorOverlay({
   // → 「回到内容」/「+关注」/ recent posts 列表 → 实际焦点不容易漏出 modal，
   // 留到后续 round 处理）。
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (typeof document === "undefined") return;
     previouslyFocusedRef.current =
@@ -2149,7 +2150,34 @@ function ChannelAuthorOverlay({
       document.activeElement !== document.body
         ? document.activeElement
         : null;
+    // 走查 2026-05-19 第八轮 R6：原 effect 里 L2143 注释明确写「不挂 focus
+    // trap... 留到后续 round 处理」——其实 trap 在第五轮 R5 已经做了 (下方
+    // useEffect)，但**打开 modal 时主动把焦点移进 dialog 内**一直漏。同款
+    // ChannelsForwardPicker 早就（forward-picker L176-184）在 open 时 rAF 后
+    // .focus() 到「取消」按钮。author overlay 一直只「记录 prev focus + 关闭
+    // 时归还」，没在 open 时移焦进 dialog。
+    // 后果：键盘用户点 slide 头部作者头像按钮 (Enter) 打开 overlay 后焦点仍
+    // 停在那个按钮上（现在被 z-40 overlay 视觉覆盖）。第一次 Tab 走 sequential
+    // 顺序 —— 焦点在原按钮，DOM 顺序下一个 focusable 可能是 slide 内的「+关
+    // 注」/ comment 按钮 / nav arrow / drawer focusable —— 都还在 dialog
+    // 外面，trap 兜底拉回 dialog 首元素。"先 Tab 一次才进 modal"对盲用户/键
+    // 盘用户来说是额外认知负担，且 SR 阅读 modal 内容的连贯性被打断。
+    // 修法：open 同帧 rAF 后把焦点 .focus() 到 dialog 首 focusable
+    //（DesktopChannelAuthorPanel 顶部的「回到内容」Button —— overlay 的标准
+    // 退出 affordance，对齐 picker 上焦点初始落到「取消」的语义）。rAF 等到
+    // overlay 入场动画 + Suspense fallback 渲染稳定后再调，避免 focus 落到
+    // 将被卸载元素。
+    const focusTimer = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const firstFocusable = dialog.querySelector<HTMLButtonElement>(
+        "button:not([disabled])",
+      );
+      if (firstFocusable) firstFocusable.focus({ preventScroll: true });
+      else dialog.focus({ preventScroll: true });
+    });
     return () => {
+      window.cancelAnimationFrame(focusTimer);
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
       if (prev && document.contains(prev)) {
@@ -2176,7 +2204,6 @@ function ChannelAuthorOverlay({
   // tabs / refresh / 直播伴侣按钮上（虽然视觉被 0.55 backdrop 半盖但仍可聚焦），
   // 键盘用户体感"我刚刚在 modal 里怎么 Tab 跳到顶部去了"。同款 ChannelsForward
   // Picker 早就（L198-229）做了 Tab cycling，author-overlay 一直漏。
-  const dialogRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (typeof document === "undefined") return;
     const handler = (event: KeyboardEvent) => {
