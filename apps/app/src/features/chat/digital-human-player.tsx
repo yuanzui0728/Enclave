@@ -160,12 +160,26 @@ export function DigitalHumanPlayer({
           : "flex min-h-0 flex-1 rounded-[28px] border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(15,23,42,0.22)]",
       )}
     >
+      {/* 走查电脑端单聊 R136：和姊妹 R133 (CameraPreviewCard <video>) 同款。本
+          <video> 是 DigitalHumanPlayer streamUrl 分支挂在 absolute inset-0 当
+          背景流，上层 z-10 overlay 渲染状态卡 / 通话提示 / renderStatus
+          InlineNotice。video 自身 muted / 无 controls / 无 captions，SR
+          (NVDA/JAWS/VoiceOver) tab 或虚拟光标走过来只能朗读 "视频 播放中"
+          一段 generic 噪声 —— 对应内容（数字人画面）SR 用户根本拿不到任何信息，
+          所有 user-actionable 状态都已在下方 overlay 通过 statusLabel / statusHint
+          / renderStatus InlineNotice 提供（renderStatus=failed 走
+          role="alert" / assertive、其它走 role="status" / polite 已在
+          R55 修过）。挂 aria-hidden="true" 把这条纯视觉镜像从 AT tree
+          移除，避免 AI 视频通话期间反复出现 "video / video player"
+          噪声播报。和姊妹 R133 / digital-human-stage R100 走的 "label/hidden
+          二选一" 标记思路一致。 */}
       <video
         src={streamUrl}
         autoPlay
         playsInline
         muted
         loop
+        aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="relative z-10 flex h-full flex-col justify-between bg-[linear-gradient(180deg,rgba(2,6,23,0.18),rgba(2,6,23,0.54))] p-4">
