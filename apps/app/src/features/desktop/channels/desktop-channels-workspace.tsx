@@ -985,6 +985,18 @@ export function DesktopChannelsWorkspace({
                   isActive={post.id === selectedPost?.id}
                   sectionBadge={sectionBadge}
                   registerSlide={registerSlide}
+                  // 走查 2026-05-19 第十一轮 R2：commentDrawerOpen 给 slide 内
+                  // chat 图标按钮渲动态 aria-label + aria-expanded。drawer 关时
+                  // 按钮的语义动作是"打开评论"，drawer 已开时按钮再点会关 drawer
+                  //（handleSlideToggleCommentDrawer L300-304 toggle 语义）。原
+                  // aria-label 写死"打开评论"，SR 用户 drawer 开着时听见"打开
+                  // 评论 button"按 Enter 实际是关 drawer，体感「按了相反的动作」。
+                  // 只有当 slide 是当前 active 时它的 drawer 才有可能被开（drawer
+                  // 渲染条件 L1013：commentDrawerPostId === selectedPost.id），
+                  // 非 active slide 的 commentDrawerOpen 恒为 false，shallow
+                  // memo 比较 false===false 仍命中跳过 reconciliation；只有真正
+                  // 切到该 post 上 drawer 开 / 关时这一张才重渲。
+                  commentDrawerOpen={commentDrawerPostId === post.id}
                   isFavorite={Boolean(post.ownerState?.hasFavorited)}
                   likePending={likePendingPostId === post.id}
                   favoritePending={favoritePendingPostId === post.id}
@@ -1207,6 +1219,8 @@ function ForwardNotice({
 function ChannelActionButton({
   active,
   ariaLabel,
+  ariaExpanded,
+  ariaHasPopup,
   icon,
   label,
   pending = false,
@@ -1220,6 +1234,11 @@ function ChannelActionButton({
   // 可视 label 只是计数数字（"17"、"29"），屏读出来就一个数字毫无上下文。
   // 调用方传 ariaLabel 才能让屏读读出"点赞，当前 17 赞"这种完整意图。
   ariaLabel?: string;
+  // 走查 2026-05-19 第十一轮 R2：disclosure-of-popup 模式（评论按钮控制
+  // dialog drawer，转发按钮控制 picker dialog）补 aria-expanded /
+  // aria-haspopup 让 SR 知道这是个调出 popup 的入口、当前 popup 状态。
+  ariaExpanded?: boolean;
+  ariaHasPopup?: "dialog" | "menu" | "true";
   icon: ReactNode;
   label: string;
   pending?: boolean;
@@ -1237,6 +1256,10 @@ function ChannelActionButton({
       type="button"
       aria-pressed={typeof active === "boolean" ? active : undefined}
       aria-label={ariaLabel}
+      aria-expanded={
+        typeof ariaExpanded === "boolean" ? ariaExpanded : undefined
+      }
+      aria-haspopup={ariaHasPopup}
       disabled={pending}
       onClick={onClick}
       className={cn(
@@ -1731,6 +1754,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   isActive,
   sectionBadge,
   registerSlide,
+  commentDrawerOpen,
   isFavorite,
   likePending,
   favoritePending,
@@ -1748,6 +1772,9 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   isActive: boolean;
   sectionBadge: string;
   registerSlide: (postId: string, node: HTMLDivElement | null) => void;
+  // R2：当前 post 的评论 drawer 是否打开，给 chat 图标按钮反映动态语义
+  // （aria-label / aria-expanded）。非 active slide 上恒 false。
+  commentDrawerOpen: boolean;
   isFavorite: boolean;
   likePending: boolean;
   favoritePending: boolean;
@@ -1837,6 +1864,11 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             <div className="flex items-center gap-3">
               <button
                 type="button"
+                // 走查 2026-05-19 第十一轮 R2：作者按钮按下立即开 ChannelAuthor
+                // Overlay (role=dialog) —— 同 chat / share 按钮一道补
+                // aria-haspopup="dialog" 让 SR 念出"作者名 button has popup
+                // dialog"，盲用用户预期到下一步是 modal 打开。
+                aria-haspopup="dialog"
                 onClick={() => onOpenAuthor(post.authorId)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
@@ -1959,7 +1991,15 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             surface="dark"
             icon={<MessageCircleMore size={18} />}
             label={`${post.commentCount}`}
-            ariaLabel={t(msg`打开评论，当前 ${post.commentCount} 条`)}
+            // R2：drawer 打开时按钮的语义动作翻成"关闭评论"；aria-expanded /
+            // aria-haspopup="dialog" 让 SR 知道这个按钮控制一个 dialog disclosure。
+            ariaLabel={
+              commentDrawerOpen
+                ? t(msg`关闭评论，当前 ${post.commentCount} 条`)
+                : t(msg`打开评论，当前 ${post.commentCount} 条`)
+            }
+            ariaExpanded={commentDrawerOpen}
+            ariaHasPopup="dialog"
             onClick={() => onToggleCommentDrawer(post.id)}
           />
           <ChannelActionButton
@@ -1972,6 +2012,10 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             // 转发也无意义（picker 自己会显示标题）；这里强调它是会打开面板
             // 的入口，避免屏读用户当成 toggle 误按。
             ariaLabel={t(msg`转发到聊天`)}
+            // R2：转发按钮按下立即开 ChannelsForwardPicker (role=dialog) ——
+            // aria-haspopup="dialog" 让 SR 念出 "转发到聊天 button has popup
+            // dialog"，盲用用户预期到下一步是 modal 而不是直接发送或导航。
+            ariaHasPopup="dialog"
             onClick={() => onShare(post)}
           />
           <ChannelActionButton
