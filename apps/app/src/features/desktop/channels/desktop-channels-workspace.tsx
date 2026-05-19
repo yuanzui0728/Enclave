@@ -1436,6 +1436,22 @@ function ChannelMediaSurface({
   const audioAsset = post.media?.find((asset) => asset.kind === "audio");
   const videoAsset = post.media?.find((asset) => asset.kind === "video");
 
+  // 走查 2026-05-19 桌面端第十六轮 R1：ChannelMediaSurface 历来按 mediaType 分支
+  // 早返（L1452 audio / L1518 video / L1557 image-fallback），text-only 兜底用的
+  // textContent useMemo 原本声明在三条 early return 之后 —— Rules of Hooks 违规
+  // (eslint react-hooks/rules-of-hooks)，post.mediaType 在同条 post 生命周期内
+  // 服务端刷新可能切换（minimax LPP 异步落地 audio asset / cleanupBrokenChannel
+  // Posts 把坏掉的 video 标记成 text 重生成等），React 检测 hook count mismatch
+  // 直接抛 "Rendered more hooks than during the previous render" 整页崩。
+  // 修法：把 useMemo 上提到所有 early return 之前，audio/video/image 分支也会
+  // 跑一次 useMemo（首帧），但 stripToolCallSyntax 在 audio/video post.text 通常
+  // 是稳定空串或短摘要，useMemo([post.text]) 锁住后只在 post.text 真换才重算
+  // —— 单次执行开销远小于 hook count mismatch 整页崩的代价。
+  const textContent = useMemo(
+    () => stripToolCallSyntax(post.text ?? ""),
+    [post.text],
+  );
+
   // 走查 2026-05-18 R2（本轮）：原来 audio/video 两个分支的 gate 和 URL 解析
   // 用了不同的 fallback 操作符——gate 用 `||`（truthy 检查），URL 用 `??`
   // （nullish-only）。contracts 里 FeedMediaAsset.url 是 `string` 必填，但没
@@ -1586,10 +1602,8 @@ function ChannelMediaSurface({
   //（同 stripToolCallSyntax 但带 title-equality 判断），本节点的 textContent
   // 不带 title-equality（让 if 外面 `textContent !== post.title` 兜），所以
   // 不能直接共用 slideBodyText；独立 useMemo 保持本组件功能内聚。
-  const textContent = useMemo(
-    () => stripToolCallSyntax(post.text ?? ""),
-    [post.text],
-  );
+  // R1（本轮，第十六轮）：useMemo 已上提到函数顶部（早 return 之前），避免
+  // mediaType 切换时 hook count mismatch。本节点只消费 textContent.trim()。
   if (post.title?.trim() || textContent.trim()) {
     return (
       <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-10">
@@ -2844,7 +2858,20 @@ function DesktopChannelAuthorPanel({
     profile?.authorType === "character"
       ? t(msg`这位居民暂时还没有填写视频号简介。`)
       : t(msg`这个视频号作者暂时还没有填写简介。`);
-  const recentPosts = profile?.recentPosts.slice(0, 5) ?? [];
+  // 走查 2026-05-19 桌面端第十六轮 R2：原 `recentPosts = profile?.recentPosts
+  // .slice(0, 5) ?? []` 是裸表达式，每次 DesktopChannelAuthorPanel re-render
+  // 都返回新数组 identity —— 下方 cleanTextByRecentPostId useMemo([recentPosts])
+  // 看到 deps 变了，每帧重算整张 Map，第十五轮 R4 加的"5 张 button 共用 Map"
+  // 优化彻底破功（regex 仍是 5 次/帧）。eslint react-hooks/exhaustive-deps 这
+  // 条 warning 早就报，本轮一并修。
+  // 修法：把 recentPosts 自己也 useMemo([profile?.recentPosts]) 锁住 identity，
+  // 只在 author profile refetch 真换 recentPosts 数组时才返回新 slice；下游
+  // cleanTextByRecentPostId 的 deps 也跟着稳定，5 × stripToolCallSyntax 只在
+  // recentPosts 真换才重算。
+  const recentPosts = useMemo(
+    () => profile?.recentPosts.slice(0, 5) ?? [],
+    [profile?.recentPosts],
+  );
   // 走查 2026-05-19 第十五轮 R4：原 recent posts list 里每条 button 都用 IIFE
   // 调 stripToolCallSyntax(post.text ?? "")（L2906-2920）每帧重跑 — 4 个 regex
   // replace + 1 个 CoT-detection long regex × 5 张 button = 5 次/帧。
@@ -2858,8 +2885,7 @@ function DesktopChannelAuthorPanel({
   // 同 DesktopThreadCommentCard R9 / DesktopCommentThreadReplies R10 已经成
   // 熟的 useMemo([text]) 模板，但本场景是 5 张 button 共用 — 用 Map 把所有
   // post.id → cleanText 一次性算好，单帧只重算"post.text 真变了"那一条。
-  // recentPosts 在 author profile refetch 才换 identity（profile.recentPosts
-  // 新 array），单 author overlay 生命周期内通常稳定 → map 重算非常稀。
+  // recentPosts 上面 R2 已 useMemo 锁稳，deps 不再每帧 churn。
   const cleanTextByRecentPostId = useMemo(() => {
     const map = new Map<string, string>();
     recentPosts.forEach((post) => {
