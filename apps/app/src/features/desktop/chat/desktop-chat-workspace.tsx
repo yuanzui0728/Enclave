@@ -2114,6 +2114,25 @@ export function DesktopChatWorkspace({
                               </div>
                             )}
                             <div
+                              // 走查电脑端单聊 R139：已通知 reminder group 折叠
+                              // 时 grid-template-rows 走 0fr + opacity-0 +
+                              // overflow-hidden 把 DesktopReminderCard 们视
+                              // 觉上完全藏掉，但 DOM 仍然挂着、内部 button 仍
+                              // 可 Tab 聚焦 —— 用户从 chat list / 消息提醒
+                              // toggle 按钮 Tab 走焦点时，每条折叠 reminder
+                              // 内的「打开」+「完成」按钮都被串进 tab 序列，
+                              // focus ring 落在 height=0 的 element 上完全
+                              // 不可见 → 视觉用户看不到光标在哪、按 Enter
+                              // 会触发完全看不见的 reminder navigate 或
+                              // dismiss。盲人 SR 同样会走到被折叠的 card 上
+                              // 朗读"提醒卡片"，和「我刚才点了收起按钮」的
+                              // 操作意图相悖。挂 inert={collapsed} 当 React
+                              // 19 标准 boolean prop —— 整段 DOM 同时退出
+                              // focus / pointer-events / AT tree，和视觉折
+                              // 叠状态对齐；展开时 inert=false 立刻恢复。
+                              // 不影响 grid-template-rows 高度过渡动画
+                              // （inert 只阻挡交互，不改变布局）。
+                              inert={collapsed}
                               className={cn(
                                 "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
                                 collapsed
