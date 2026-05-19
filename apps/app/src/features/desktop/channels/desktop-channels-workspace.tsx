@@ -2749,7 +2749,18 @@ function ChannelAuthorOverlay({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="channels-author-overlay-title"
+        // 走查 2026-05-19 第十五轮 R13：原 aria-labelledby 只指 "作者主页" 通用
+        // 标题（DesktopChannelAuthorPanel L2876，generic 一句话）—— SR 用户打开
+        // overlay 时只听到 "作者主页 dialog modal"，没作者名上下文。同 R12 evening
+        // comment drawer 修复的模板对齐 — aria-labelledby 支持 IDREFS 序列，把
+        // overlay 内 profile.authorName 的 div id 也带上，SR 念出 "作者主页
+        // {authorName} dialog modal"。
+        // profile.authorName 在 L2926-2928 条件渲染 (isLoading/errorMessage 时不
+        // 渲染对应元素)；ARIA 1.2 spec: missing IDREFS 被忽略，所以 loading 期间
+        // SR 听到 "作者主页 dialog modal"（fallback 到 generic 标题），profile
+        // 落地后听到 "作者主页 {authorName} dialog modal"。dialog open 阶段
+        // 多数情况下 profile 已 cache hit / 同步落地，loading 路径很短。
+        aria-labelledby="channels-author-overlay-title channels-author-overlay-author-name"
         // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序列里 ——
         // focus trap 兜底：极端无 focusable child 时也能把焦点拉进来不漏。
         tabIndex={-1}
@@ -2923,7 +2934,13 @@ function DesktopChannelAuthorPanel({
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
+                {/* R13: id 被外层 ChannelAuthorOverlay 的 aria-labelledby 引用，
+                    让 SR 在 dialog open 时念出 "{authorName}" 当 dialog 标题
+                    的一部分（结合 generic "作者主页" 通用前缀）。 */}
+                <div
+                  id="channels-author-overlay-author-name"
+                  className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]"
+                >
                   {profile.authorName}
                 </div>
                 <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
