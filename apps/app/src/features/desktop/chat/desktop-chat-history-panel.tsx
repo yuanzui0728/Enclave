@@ -81,6 +81,45 @@ export function DesktopChatHistoryPanel({
   const [customDate, setCustomDate] = useState("");
   const [senderId, setSenderId] = useState("");
   const [memberKeyword, setMemberKeyword] = useState("");
+  // 走查再走一轮 R6：和姊妹 useChatReminderNowTimestamp（同一轮 R2 ff798361a 修过
+  // 的 stale-now 同款）—— buildResultSections (line ~1141) 在 useMemo deps=
+  // [resultItems] 内调用 resolveDateSectionLabel(item.createdAt)，里头 new
+  // Date() 捕获当前 today/yesterday 边界算"今天/昨天"。dialog 一打开 + 用户
+  // 没动数据时 resultItems 引用不变 → memo 永不重算 → 跨午夜场景下 11:59 搜
+  // 索的本日消息卡片标签卡在"今天"，过了 00:00 应该变"昨天"却不刷。用户长
+  // 时间停留在该 dialog（比如开着面板挂机、跨午夜回来继续筛选）会看到 label
+  // 偏差一天 —— 接着点结果跳转后"今天聊的"和列表里的"今天"对不上号。
+  // 用 todayKey 同款思路：60s tick + window focus 刷一遍当天 yyyy-mm-dd，把
+  // 它塞进 resultSections deps，跨日时强制重算 label。memberKeyword / senderId
+  // 等其它 state 已经覆盖另一侧重算路径，本 key 只兜午夜边界。
+  const [todayKey, setTodayKey] = useState(() => formatDateInput(new Date()));
+  useEffect(() => {
+    const refreshTodayKey = () => {
+      const next = formatDateInput(new Date());
+      setTodayKey((current) => (current === next ? current : next));
+    };
+    const timer = window.setInterval(refreshTodayKey, 60_000);
+    const handleFocus = () => refreshTodayKey();
+    const handleVisibility = () => {
+      if (typeof document === "undefined") {
+        return;
+      }
+      if (document.visibilityState === "visible") {
+        refreshTodayKey();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleFocus);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setKeyword("");
@@ -287,7 +326,10 @@ export function DesktopChatHistoryPanel({
   );
   const resultSections = useMemo(
     () => buildResultSections(resultItems),
-    [resultItems],
+    // todayKey 见组件顶部 R6 注释 —— 单纯做 stale-now invalidation key，不在
+    // buildResultSections 内部用，跨午夜时强制重算每个 section 的"今天/昨天"
+    // label，否则 resolveDateSectionLabel 内的 new Date() 永远不会重读。
+    [resultItems, todayKey],
   );
   const totalResults = resultsQuery.data?.pages[0]?.total ?? resultItems.length;
 
