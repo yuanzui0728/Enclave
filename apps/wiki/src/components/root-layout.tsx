@@ -172,17 +172,42 @@ export function RootLayout() {
   });
   const [q, setQ] = useState(urlSearchQ);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // <aside id=wiki-mobile-nav> 是个永久挂在 DOM 里的"屉式"导航：mobile 视口下用
+  // -translate-x-full 推到屏外。translate 不脱离 tab 序列，键盘用户从顶栏一路
+  // Tab，第 5~6 个 tab 会落到 -288px 处那颗 unseen "关闭导航" 按钮然后失踪。
+  // 用 matchMedia 跟踪 lg 断点；mobile 视口下若抽屉关闭，给 <aside> 标 inert
+  // + aria-hidden，把整组 16 个 tabbable 控件移出 tab 路径。lg 桌面是常驻 sidebar
+  // 不该 inert，所以读 isLargeViewport。
+  const [isLargeViewport, setIsLargeViewport] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return true;
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsLargeViewport(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  const drawerInert = !isLargeViewport && !mobileNavOpen;
+
   // 抽屉关闭后把焦点还给最初的 ☰ 触发按钮 —— 键盘 / SR 用户点 ☰ 打开 → 按
   // Escape 或点 X 关闭，原写法焦点会丢到 body（document.activeElement=BODY），
   // 用户必须用 Shift+Tab 一路退回头部才能再操作。WAI-ARIA APG 的 disclosure
   // pattern 要求 disclosure 关闭后焦点回到 trigger。
   const navTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
   const prevMobileNavOpenRef = useRef(false);
   useEffect(() => {
     if (prevMobileNavOpenRef.current && !mobileNavOpen) {
       // 关闭瞬间：把焦点还给 ☰。如果 ☰ 在 lg 视口不可见就跳过（≥lg 时
       // mobileNavOpen 不会被用户主动开，这条分支理论上不会触发）。
       navTriggerRef.current?.focus();
+    } else if (!prevMobileNavOpenRef.current && mobileNavOpen) {
+      // 打开瞬间：把焦点送进抽屉的 ✕ 按钮 —— 否则焦点仍停在 ☰ 触发按钮
+      // 上（视觉被遮罩遮住，键盘 / SR 用户感觉不到 modal 已展开）。
+      drawerCloseRef.current?.focus();
     }
     prevMobileNavOpenRef.current = mobileNavOpen;
   }, [mobileNavOpen]);
@@ -424,12 +449,19 @@ export function RootLayout() {
         )}
         <aside
           id="wiki-mobile-nav"
+          // mobile 视口下抽屉关闭时 inert + aria-hidden，把 16 个屏外 tab 目标
+          // （✕、导航链接、语言下拉等）从键盘 / SR 路径里隐藏。lg+ 桌面常驻
+          // sidebar 一直可达，不能 inert。
+          inert={drawerInert ? true : undefined}
+          aria-hidden={drawerInert ? "true" : undefined}
           className={`wiki-touch-scroll fixed inset-y-0 left-0 z-40 w-72 max-w-[85%] transform overflow-y-auto border-r border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] px-4 py-5 shadow-2xl transition-transform duration-[var(--motion-fast)] ease-[var(--ease-standard)] lg:static lg:z-auto lg:block lg:w-64 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:border-r-0 lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none lg:overflow-visible ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {/* 抽屉内顶部一个关闭按钮：移动端用户除了点遮罩，也能在抽屉内直接点 X 关闭 */}
+          {/* 抽屉内顶部一个关闭按钮：移动端用户除了点遮罩，也能在抽屉内直接点 X 关闭。
+              ref 让"打开抽屉" useEffect 把初始焦点送进来，符合 modal 打开标准模式。 */}
           <button
+            ref={drawerCloseRef}
             type="button"
             onClick={() => setMobileNavOpen(false)}
             aria-label={t(msg`关闭导航`)}
