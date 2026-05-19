@@ -785,13 +785,28 @@ export function DesktopChannelsWorkspace({
             盲用用户体感"这控件是按钮还是 tab"。同 mobile 那边 channels-page L2562
             的 R1 修复 + channel-author-page L713 的 R1 修复对齐：外层 role=
             tablist + aria-label，内层 role=tab + aria-selected。
+
+            走查 2026-05-19 第十一轮 R5：补 WAI-ARIA tab 模式 keyboard nav。原 4
+            颗 tab 全部 tabindex=0（button 默认）—— 键盘用户从 logo / 顶栏 Tab
+            进 tablist 后要按 4 次 Tab 才能跨过 tablist 抵达「换一批」/「直播伴
+            侣」按钮，且 tablist 内部 ArrowLeft/Right 完全无效（标准 horizontal
+            tablist 应该用箭头键在 tab 之间切焦点）。同 ArrowUp/Down 这条慢路径
+            的痛感对齐。
+            实现 roving tabindex：仅当前 active tab tabindex=0 进入 Tab 序，其它
+            tabindex=-1 退出 Tab 序；tablist 内监听 ArrowLeft/Right 移焦点 + 自动
+            activate（auto-activation 模式，符合 mouse click 单击即选中的 channels
+            UX 一致性，避免"按了箭头光移焦点没切 tab"的两步割裂）；Home/End 兜
+            首尾。tab 上的 onKeyDown 不挡 ArrowUp/Down 因为 slide nav handler 已
+            经按 INPUT/TEXTAREA 早返但允许 button 上的 ArrowUp/Down 滚 slide ——
+            tab focused 时按 ArrowDown 仍然滚 slide（"我看到 tab 列表想往下看内
+            容"的自然意图），不与 tablist 内 Left/Right 冲突（horizontal 维度）。
           */}
           <div
             className="flex h-full items-stretch gap-7"
             role="tablist"
             aria-label={t(msg`视频号分组`)}
           >
-            {sections.map((section) => {
+            {sections.map((section, index) => {
               const active = activeSection === section.key;
               return (
                 <button
@@ -799,7 +814,57 @@ export function DesktopChannelsWorkspace({
                   type="button"
                   role="tab"
                   aria-selected={active}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => onSectionChange(section.key)}
+                  onKeyDown={(event) => {
+                    // ArrowLeft/Right + Home/End 跨 tab；ArrowUp/Down 留给上层
+                    // window-level slide nav handler 滚 slide（horizontal tablist
+                    // 模式垂直方向交给 tabpanel 内容）。
+                    if (
+                      event.key !== "ArrowLeft" &&
+                      event.key !== "ArrowRight" &&
+                      event.key !== "Home" &&
+                      event.key !== "End"
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    let nextIndex = index;
+                    if (event.key === "ArrowLeft") {
+                      nextIndex = index === 0 ? sections.length - 1 : index - 1;
+                    } else if (event.key === "ArrowRight") {
+                      nextIndex =
+                        index === sections.length - 1 ? 0 : index + 1;
+                    } else if (event.key === "Home") {
+                      nextIndex = 0;
+                    } else if (event.key === "End") {
+                      nextIndex = sections.length - 1;
+                    }
+                    const nextSection = sections[nextIndex];
+                    if (!nextSection) return;
+                    // 同步抓 tablist 引用 —— React 18+ 不池化 synthetic event
+                    // 但 currentTarget 在 async callback 里仍可能成 null（async
+                    // tick 已经返回 handler 函数）。先抓 closest tablist 节点
+                    // 喂给 rAF，避免 nullable。
+                    const tablist = (
+                      event.currentTarget as HTMLElement | null
+                    )?.closest('[role="tablist"]') ?? null;
+                    // auto-activate：与 mouse click 单击切 tab 的 UX 对齐；同时
+                    // 异步把焦点移到新 tab —— activate 同帧 setActiveSection 触发
+                    // re-render，新 tab 的 tabIndex 翻 0，但焦点仍在旧 tab 上（now
+                    // tabIndex=-1）。rAF 等 React commit 落定再 querySelector 新
+                    // active tab 移焦点，符合"键盘用户跟着箭头按一下焦点就跟到"
+                    // 的预期。fallback：找 role="tab" + aria-selected="true"。
+                    onSectionChange(nextSection.key);
+                    window.requestAnimationFrame(() => {
+                      const nextTab =
+                        tablist?.querySelector<HTMLButtonElement>(
+                          '[role="tab"][aria-selected="true"]',
+                        );
+                      nextTab?.focus({ preventScroll: true });
+                    });
+                  }}
                   className="relative flex h-full items-center text-[14px] outline-none"
                 >
                   <span
