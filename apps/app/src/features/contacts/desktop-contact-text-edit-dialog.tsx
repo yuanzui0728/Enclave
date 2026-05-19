@@ -140,6 +140,16 @@ export function DesktopContactTextEditDialog({
             onClose();
           }
         }}
+        // 走查电脑端单聊 R127：和姊妹 desktop-chat-text-edit-dialog R109 /
+        // desktop-chat-confirm-dialog R107 / R107-R125 整套 backdrop 同款 ——
+        // DesktopContactTextEditDialog 被 desktop-chat-details-panel (单聊「聊天
+        // 信息」改备注/标签) + 联系人详情页改备注共用，backdrop <button>
+        // (absolute inset-0) 视觉不可见、纯 mouse"点击背景关闭"affordance，
+        // 但 DOM 顺序在 dialog 子树第一位。用户从「聊天信息」侧栏改备注/标签
+        // 打开 dialog 后按 Tab → 焦点先落到这张不可见 backdrop → 看不到任何
+        // focus ring → 再按 Enter dialog 秒关，用户半途打的备注/标签草稿丢。
+        // Esc keydown 已挂 (line 86-114)；onClick 鼠标点击关闭路径不受影响。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
