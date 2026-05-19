@@ -2708,6 +2708,18 @@ function DesktopGroupMemberBrowserDialog({
   };
 
   const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    // 走查再走一轮 R5：和姊妹 desktop-create-group-dialog handleSearchKeyDown
+    // 同款 —— R150 只给 Enter 补了 isComposing 守卫，但本搜索框是「群成员浏
+    // 览」核心入口（接 desktop-chat-details-panel.tsx GroupChatDetailsPanel
+    // 的 全员浏览 dialog），CJK IME 用户拼"张三 zhangsan"候选词期间会按
+    // ArrowUp/ArrowDown 翻页。原 handler ArrowUp/Down 在 composing 中抢键去
+    // 切 activeMemberId → 用户在 IME 候选词窗口里翻页同时 activeMemberId 也
+    // 被偷偷换掉，再敲 Enter 选错成员被拽进错误的详情页。把 isComposing 守卫
+    // 提到 ArrowUp/Down 上游，整段统一让 IME 优先消费方向键 + Enter。
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
+
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const nextMember = getNextNavigableMember(
@@ -2720,13 +2732,6 @@ function DesktopGroupMemberBrowserDialog({
     }
 
     if (event.key === "Enter" && activeMemberId) {
-      // 走查 R150：CJK 用户在搜索框打字"张三 zhangsan"按 Enter 是 IME 提
-      // 交候选词的标准键。原 handler 抢 Enter → preventDefault + onViewMember
-      // 把焦点强行跳到 activeMemberId 详情页 → IME 半截输入被吞、用户被
-      // 莫名拽进某个不一定想看的成员详情。检 event.nativeEvent.isComposing。
-      if (event.nativeEvent.isComposing) {
-        return;
-      }
       const activeMember = filteredMembers.find(
         (member) =>
           member.id === activeMemberId &&

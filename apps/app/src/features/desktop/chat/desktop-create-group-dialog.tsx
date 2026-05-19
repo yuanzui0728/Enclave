@@ -601,6 +601,23 @@ export function DesktopCreateGroupDialog({
   };
 
   const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    // 走查再走一轮 R5：R150 只给 Enter 补了 isComposing 守卫；但本搜索框是发起
+    // 群聊里挑联系人的核心入口，CJK IME 用户拼"张三 zhangsan"候选词期间还会
+    // 按 ArrowUp/ArrowDown 翻页 + Backspace 删 pinyin 字母。原 handler 三条
+    // fallback 全走 preventDefault：
+    // · ArrowDown/ArrowUp 在 composing 中把 IME 翻候选词的键吞掉去切
+    //   focusedFriendIndex，用户在 IME 候选窗口里翻页同时 focused friend 也
+    //   被偷偷换掉，再敲 Enter 选错朋友。
+    // · Backspace 在 composing 中 input.value 为""（pinyin pre-edit 不算
+    //   value）→ searchTerm.trim()=空 → 命中 `!searchTerm.trim() &&
+    //   selectedIds.length` 分支把已选朋友里最末一个移出群聊草稿。用户只是
+    //   想从"zhang"删掉个"g"退到"zhan"，结果群聊草稿少一个人。
+    // 整段四条 fallback 用统一 isComposing 早返收口，候选词阶段一律让 IME 消
+    // 费。和姊妹 R148/R150 / chat-composer mention picker (R150 注释引用) 同款。
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
+
     if (event.key === "Escape" && searchTerm.trim()) {
       event.preventDefault();
       event.stopPropagation();
@@ -644,13 +661,6 @@ export function DesktopCreateGroupDialog({
     }
 
     if (event.key === "Enter") {
-      // 走查 R150：CJK 用户在搜索框打字"张三 zhangsan"按 Enter 是 IME 提
-      // 交候选词的标准键。原 handler 抢 Enter → preventDefault + toggleSelection
-      // → IME 半截输入被吞，且 focused friend 不一定是用户真想选的。检
-      // event.nativeEvent.isComposing：composing 中让 IME 自己提交。
-      if (event.nativeEvent.isComposing) {
-        return;
-      }
       const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
       if (!focusedFriend || createMutation.isPending) {
         return;
