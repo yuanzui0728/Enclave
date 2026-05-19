@@ -195,7 +195,19 @@ export function DesktopChannelsWorkspace({
     id: string;
     excerpt: string;
   } | null>(null);
-  const [forwardNotice, setForwardNotice] = useState<string | null>(null);
+  // 走查 2026-05-19 第十轮 R3：forwardNotice 历史只存 string，下面 ForwardNotice
+  // 的 tone 判断走 `forwardNotice.includes("失败")` 把 toast 文案当 truth source ——
+  // 这条 string-match 只在中文 locale 下有效。en-US 翻译是 "Failed to forward to X:
+  // Y"（catalogs/app/en-US.po L8444），ja/ko 翻译类似不含「失败」字符，于是 en/ja/ko
+  // 用户的转发失败 toast 全渲成 success 绿底（"已转发"的视觉）+ role="status"
+  // (polite) 而不是 alert(assertive)，盲用 / 视觉用户都把失败误判为成功。
+  // 改成 state 同时存 message + tone，onForwarded → tone="success"，onForwardFailed
+  // → tone="danger"，跟 localization 完全解耦。ForwardNotice prop 也不再需要按字
+  // 符串嗅探。
+  const [forwardNotice, setForwardNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+  } | null>(null);
   const [commentDrawerPostId, setCommentDrawerPostId] = useState<string | null>(
     null,
   );
@@ -1067,7 +1079,11 @@ export function DesktopChannelsWorkspace({
             // flight 落地走到这里。skip 同上。
             return;
           }
-          setForwardNotice(t(msg`已转发给 ${target.name}。`));
+          // R3：tone 直接走 success，不再让下方 ForwardNotice 嗅字符串。
+          setForwardNotice({
+            message: t(msg`已转发给 ${target.name}。`),
+            tone: "success",
+          });
           // 走查 2026-05-17 R1：原注释说要刷"shareCount"——但桌面端工作区
           // 没有任何地方显示 post.shareCount / ownerState.hasShared，移动端同
           // 流程已经在 channels-page.tsx 移除了同款 invalidate。这里也跟着
@@ -1091,21 +1107,27 @@ export function DesktopChannelsWorkspace({
           if (forwardPickerBaseUrlRef.current === null) {
             return;
           }
-          setForwardNotice(
-            t(msg`转发给 ${input.targetName} 失败：${input.message}`),
-          );
+          // R3：tone 直接走 danger，不再让下方 ForwardNotice 嗅字符串。
+          setForwardNotice({
+            message: t(msg`转发给 ${input.targetName} 失败：${input.message}`),
+            tone: "danger",
+          });
         }}
       />
       {forwardNotice ? (
         <ForwardNotice
-          message={forwardNotice}
+          message={forwardNotice.message}
           // 走查 2026-05-18 新会话（本会话）R7：forwardNotice 这条 toast 可以是
           // 成功（"已转发给 X 已转发"）也可以是失败（"转发给 X 失败：xxx"），
           // 同一个 state 跑两种语义。SR 用户读 toast 的关键是 role/aria-live，
-          // success 走 status (polite)，failure 走 alert (assertive)。文案前缀
-          // 已经足够稳定（mobile 端从来都按"... 失败"判断 danger），用 startsWith
-          // 区分；后续如果文案翻译变这里要同步。
-          tone={forwardNotice.includes("失败") ? "danger" : "success"}
+          // success 走 status (polite)，failure 走 alert (assertive)。
+          // 走查 2026-05-19 第十轮 R3：原 tone 走 `forwardNotice.includes("失败")`
+          // 嗅 toast 文案 — 只在中文 locale 下有效。en-US 翻译"Failed to forward
+          // to X: Y"（catalogs/app/en-US.po L8444）/ ja / ko 类似全不含「失败」，
+          // 于是非中文用户的失败 toast 渲成 success 绿底 + role="status"(polite)。
+          // 改用 state 里直接带的 tone（onForwarded → success / onForwardFailed →
+          // danger），跟 localization 彻底解耦。
+          tone={forwardNotice.tone}
           onDismiss={() => setForwardNotice(null)}
         />
       ) : null}
