@@ -118,6 +118,17 @@ export function MobileMessageReminderSheet({
         className="absolute inset-0"
         aria-label={t(msg`关闭消息提醒面板`)}
         onClick={onClose}
+        // 走查电脑端单聊 R121：和姊妹 R107-R120 backdrop 同款 —— 本 sheet 通过
+        // variant="desktop" 也复用到桌面单聊路径（chat-message-list 4588 →
+        // MobileMessageReminderSheet variant={variant}）。桌面单聊右键消息选
+        //「提醒」时 sheet 弹成居中 modal，backdrop <button> (absolute inset-0)
+        // 视觉不可见、纯 mouse"点击背景关闭"affordance，但 DOM 顺序排在 sheet
+        // 子树第一位。用户开 sheet 后按 Tab 切预设时间 / 自定义时间 / 取消，
+        // 焦点先落到这张不可见 backdrop → 看不到 focus → 再按 Enter sheet 秒
+        // 关，选好的提醒时刻 / 写到一半的备注全丢。Esc keydown 已挂 (line
+        // 88-101)，键盘用户走 Esc 关 sheet；移动端 sheet 走 bottom slide 不影
+        // 响 mouse 用户路径。挂 tabIndex={-1} 把 backdrop 从 Tab 序列移出。
+        tabIndex={-1}
       />
       {/* 走查新一轮 R2：和姊妹 sheet mobile-message-action-sheet.tsx
           （commit 30f58a286）同款 a11y 缺漏——长按消息选「提醒」打开
