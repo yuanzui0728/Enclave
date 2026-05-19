@@ -51,9 +51,19 @@ export function SparkBadge({
       )}
       aria-label={t(msg`已连续 ${days} 天`)}
     >
+      {/* 走查电脑端单聊 R132：和 R131 note-send preview / R130 NoteViewerOverlay
+          / R94/R97/R98/R99/R104/R119 一票同款 —— SparkBadge 渲在桌面单聊
+          ConversationCardLink (desktop-chat-workspace.tsx:3096)，每条 sparkStreak
+          ≥ 3 天的会话行都挂一颗。会话行外层是 <Link>（anchor 默认 draggable
+          =true），用户从会话卡片任意位置 mousedown 轻微 drag 时浏览器要选
+          离 cursor 最近的 draggable 子元素作 ghost；这颗 spark <img> 默认
+          draggable=true → 拖到桌面会释放成 .svg 图标 + 触发"下载该图"，
+          / 拖到隔壁 textarea 还可能把 svg url 当 text 插入。AvatarChip /
+          GroupAvatarChip 早已挂 draggable={false}，本 badge 漏挂。 */}
       <img
         src={`/spark/tier-${tier}.svg`}
         alt=""
+        draggable={false}
         className={cn("shrink-0", preset.icon)}
       />
       <span>{days}</span>
