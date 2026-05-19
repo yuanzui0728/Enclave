@@ -997,8 +997,15 @@ export function DesktopChatWorkspace({
       queueMicrotask(() => {
         if (
           typeof document !== "undefined" &&
+          // 走查电脑端群聊新会话 R114b：原版 `[role="dialog"][aria-modal="true"],
+          // [role="menu"]` 把 non-modal popover（StickerPanel / 各种 popup
+          // dialog）排除在外，按 Esc 关那些 panel 时把侧栏一起 dismiss。放宽
+          // 成 `[role="dialog"]` 单条命中即跳过 — semantic 上"任何 dialog/popover
+          // 打开时按 Esc 都应该先关那个 dialog，不该顺手关侧栏"。已修过的
+          // viewer/dialog 都还在白名单内（它们仍带 aria-modal=true，新查询也命
+          // 中）；StickerPanel 这类 non-modal popup 终于能命中跳过 dismiss。
           document.querySelector(
-            '[role="dialog"][aria-modal="true"], [role="menu"]',
+            '[role="dialog"], [role="menu"]',
           )
         ) {
           return;
