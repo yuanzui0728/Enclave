@@ -1,5 +1,5 @@
-# Trigger: 2026-05-19T07:58:19Z
 name: windows-desktop
+# Trigger: 2026-05-19T08:00:57Z
 
 on:
   push:
@@ -83,5 +83,5 @@ jobs:
           path: |
             apps/desktop/src-tauri/target/release/bundle/**
             apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**
-            C:\Usersunneradmin\.cargo-target\yinjie-desktopeleaseundle\**
-            C:\Usersunneradmin\.cargo-target\yinjie-desktop†_64-pc-windows-msvceleaseundle\**
+            C:\Users\runneradmin\.cargo-target\yinjie-desktop\release\bundle\**
+            C:\Users\runneradmin\.cargo-target\yinjie-desktop\x86_64-pc-windows-msvc\release\bundle\**
