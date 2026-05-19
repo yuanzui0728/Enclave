@@ -186,22 +186,57 @@ export function ChannelsForwardPicker({
       window.cancelAnimationFrame(focusTimer);
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
-      if (prev && document.contains(prev)) {
-        // 等下一帧再把焦点还回去——picker 销毁触发的 React commit 跟焦点
-        // 转移同帧时浏览器偶发把焦点丢到 body；rAF 让 commit 落定。
-        //
-        // 走查 2026-05-19 第七轮 R6（desktop channels）：preventScroll:true ——
-        // picker 关闭路径有多种（手动 cancel / Esc / Android-back / mid-flight
-        // 切账户 baseUrl reset / pickFinishUI auto-close），其中 baseUrl reset
-        // / mid-flight 切账户的情况下 prev focus 可能是上一个账户里 home / chat
-        // 的某颗按钮，DOM 仍在但视口可能因账户切换重渲已经不一样位置；裸
-        // .focus() scrollIntoView 跳到看起来"凭空冒出来"的位置。preventScroll
-        // 让 viewport 保持稳定。同款 R6 在 desktop ChannelCommentsDrawer /
-        // ChannelAuthorOverlay 一起加。
-        window.requestAnimationFrame(() =>
-          prev.focus({ preventScroll: true }),
-        );
+      if (!prev || !document.contains(prev)) return;
+      // 等下一帧再把焦点还回去——picker 销毁触发的 React commit 跟焦点
+      // 转移同帧时浏览器偶发把焦点丢到 body；rAF 让 commit 落定。
+      //
+      // 走查 2026-05-19 第七轮 R6（desktop channels）：preventScroll:true ——
+      // picker 关闭路径有多种（手动 cancel / Esc / Android-back / mid-flight
+      // 切账户 baseUrl reset / pickFinishUI auto-close），其中 baseUrl reset
+      // / mid-flight 切账户的情况下 prev focus 可能是上一个账户里 home / chat
+      // 的某颗按钮，DOM 仍在但视口可能因账户切换重渲已经不一样位置；裸
+      // .focus() scrollIntoView 跳到看起来"凭空冒出来"的位置。preventScroll
+      // 让 viewport 保持稳定。同款 R6 在 desktop ChannelCommentsDrawer /
+      // ChannelAuthorOverlay 一起加。
+      //
+      // 走查 2026-05-19 第十五轮 R8：跟 desktop ChannelCommentsDrawer 第十三
+      // 轮 R2 / ChannelAuthorOverlay 第十三轮 R3 (commit e0cc6424f) 同款 inert
+      // 失焦边界 — picker 关闭路径里有"用户在 slide A 上点 share 按钮 → picker
+      // 打开 → 鼠标 / scroll 滚到 slide B → A 因 isActive=false 拿到 inert=true
+      // (desktop-channels-workspace.tsx L1941) → 整个 subtree 退出可聚焦序"。
+      // 此时 prev 还指向 A 的 share 按钮（DOM 在但 inert 内），.focus() no-op，
+      // activeElement 落 body，键盘用户失去 a11y 上下文。
+      // 修法：cleanup 走 inert ancestor 检测，命中时 fall back 到当前 active
+      // slide 的同款 share 按钮（DOM 顺序的第 [2] 个 [aria-haspopup="dialog"]
+      // 按钮 — [0]=avatar, [1]=chat, [2]=share，模板对齐 drawer R2 用 [1] /
+      // author R3 用 [0]）。命中失败兜回原行为（让浏览器自然落到 body）。
+      let cursor: HTMLElement | null = prev;
+      let prevIsInert = false;
+      while (cursor) {
+        if (cursor.hasAttribute("inert")) {
+          prevIsInert = true;
+          break;
+        }
+        cursor = cursor.parentElement;
       }
+      if (prevIsInert) {
+        const activeSlide = document.querySelector<HTMLElement>(
+          '[data-post-id]:not([inert])',
+        );
+        const dialogTriggers = activeSlide?.querySelectorAll<HTMLElement>(
+          'button[aria-haspopup="dialog"]',
+        );
+        const newShareTrigger = dialogTriggers?.[2] ?? null;
+        if (newShareTrigger) {
+          window.requestAnimationFrame(() =>
+            newShareTrigger.focus({ preventScroll: true }),
+          );
+        }
+        return;
+      }
+      window.requestAnimationFrame(() =>
+        prev.focus({ preventScroll: true }),
+      );
     };
   }, [open]);
   // Tab cycling trap：监听 keydown，截断 Tab 在 dialog 外 / 边界处的跨界，
