@@ -1288,6 +1288,20 @@ export function ChatComposer({
       if (event.key !== "Escape" || attachmentBusy) {
         return;
       }
+      // 走查再走一轮 R4：截图编辑器选中文字标注后会在工具栏渲染 <input> 让
+      // 用户输入标注文字（line 5298）。CJK 用户用 IME 拼"标记 biaoji"还在
+      // 候选词阶段按 Esc 想退候选词 —— 本 window 级 handler 抢 Esc 走三层
+      // fallback：shortcutHelp 开着先关 help / 否则有 selectedAnnotation
+      // 就 deselect / 否则把整张截图编辑器关掉。第二条最阴：用户敲到一半
+      // 的"标 / 标..."文字被吞，annotation 选中状态没了 input 也消失，用户
+      // 看到的是"按 Esc 没退候选词倒把刚选好的文字标注弄丢了"；极端情况
+      // 第三条 fallback 触发把整张截图扔掉。和姊妹 desktop-chat-history-
+      // dialog R151 / desktop-notes-workspace R148 / desktop-chat-workspace
+      // R148 同款修法 —— 先让 IME 消费 Esc，候选词退后用户再按一次才走
+      // fallback 路径。
+      if (event.isComposing) {
+        return;
+      }
 
       event.preventDefault();
       if (desktopScreenshotShortcutHelpOpen) {
