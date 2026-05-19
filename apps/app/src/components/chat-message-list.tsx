@@ -5893,6 +5893,19 @@ function ReplyQuoteCard({
           onJump(messageId);
         }
       }}
+      // 走查电脑端单聊 R144：ReplyQuoteCard 的 disabled 参数（用户进入多选模式
+      // 时由父 ChatMessageList 传 disabled={selectionMode}，避免引用卡跳走
+      // 打断选择流）原本只改 className（opacity-90 + cursor-default）+ gate
+      // onClick body，但底层 <button> 既没挂 HTML disabled 也没挂 aria-disabled
+      // —— SR (NVDA/JAWS/VoiceOver) 走过去仍然朗读"回复 senderName 按钮"
+      // 不带 disabled 状态，盲人用户按 Enter 完全无反馈（onClick 在 body
+      // 里 if (!disabled) return 静默吞掉），体感"按了没反应"；键盘用户
+      // 同样能 Tab 聚焦到一个其实点了等于 noop 的按钮上。挂 aria-disabled
+      // 让 SR 朗读"已禁用 按钮"明确表达不可用；继续保留 onClick body 的
+      // disabled 短路（hard-disabled 的 disabled 属性会让多选时 Tab 跳过
+      // 整张引用卡 +  hover 状态消失，影响选中态视觉一致性，所以这里走
+      // aria-only 软禁用）。
+      aria-disabled={disabled || undefined}
       className={`w-full overflow-hidden border text-left transition ${
         align === "right"
           ? isDesktop
