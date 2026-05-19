@@ -67,6 +67,15 @@ export function DesktopOfficialMessageContextMenu({
         type="button"
         onClick={onClose}
         aria-label={t(msg`关闭公众号消息菜单`)}
+        // 走查电脑端单聊 R129：和姊妹 DesktopConversationContextMenu R113 /
+        // R107-R128 整套 backdrop 同款 —— 本 backdrop <button> (absolute
+        // inset-0) 视觉不可见、纯 mouse"点击外部关闭"affordance，但 DOM 顺序
+        // 排在 menu 子树第一位。用户右键单聊左侧栏的订阅号 / 服务号会话弹出
+        // menu 后想 Tab 进 menu 项操作，焦点先落到这张不可见 backdrop → 看不
+        // 到 focus ring → 再按 Enter menu 秒关。Esc keydown 已挂 (line 41-58
+        // 父级 useEffect)，键盘用户走 Esc 关 menu；正常情况下 menu 项 ArrowDown/
+        // Tab 也可继续。挂 tabIndex={-1} 把 backdrop 从 Tab 序列移出去。
+        tabIndex={-1}
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
