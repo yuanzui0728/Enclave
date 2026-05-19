@@ -365,5 +365,16 @@ function ContextMenuButton({
 }
 
 function MenuDivider() {
-  return <div className="mx-3 my-1 border-t border-[color:var(--border-faint)]" />;
+  // 走查电脑端单聊 R137：和姊妹 desktop-conversation-context-menu MenuDivider
+  // 同款 —— 外层 role="menu" + 子 button 已挂 role="menuitem"，但本 divider
+  // 还是裸 <div>，按 ARIA 1.2 spec role="menu" 的合法子元素必须落到 group /
+  // menuitem* / none / separator 白名单内，裸 <div> 不在内。给 menu 内
+  // section 间分隔条挂 role="separator"，让 SR 走 menu 模式时把它识别为
+  // logical divider 并跳过，避免被部分实现暴露成 GenericContainer 噪音。
+  return (
+    <div
+      role="separator"
+      className="mx-3 my-1 border-t border-[color:var(--border-faint)]"
+    />
+  );
 }

@@ -141,6 +141,16 @@ export function PendingReviewsPage() {
       {pendingQ.isError && (
         <ErrorBlock role="alert" message={(pendingQ.error as Error).message} />
       )}
+      {/* decideMut 失败时原写法无任何反馈：patroller 点"通过/要求修改/驳回"
+          → 后端拒（如已被他人抢审 superseded、network 抖、conflict）→ 卡片
+          维持原样，按钮回到 enabled，巡查员误以为提交成功，第二个待审项
+          被卡死。补 InlineNotice 顶级展示后端报错原因；role=alert 让 SR 立即
+          播报。 */}
+      {decideMut.isError && (
+        <InlineNotice tone="danger" role="alert">
+          {(decideMut.error as Error).message}
+        </InlineNotice>
+      )}
       {!pendingQ.isLoading && items.length === 0 && (
         <PanelEmpty
           message={

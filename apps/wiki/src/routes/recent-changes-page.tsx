@@ -7,6 +7,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   Button,
   ErrorBlock,
+  InlineNotice,
   LoadingBlock,
   PanelEmpty,
   StatusPill,
@@ -71,6 +72,15 @@ export function RecentChangesPage() {
       {listQ.isLoading && <LoadingBlock />}
       {listQ.isError && (
         <ErrorBlock role="alert" message={(listQ.error as Error).message} />
+      )}
+      {/* patrolMut 失败时原写法无任何反馈：巡查员点"标记已巡查"→ 后端拒
+          （已被他人巡查 / revision 被驳回 superseded / 401 token 过期 / 网络
+          抖）→ 列表静默回到原状，巡查员以为成功转下一条。补 InlineNotice
+          顶层展示报错原因；role=alert 让 SR 立即播报。 */}
+      {patrolMut.isError && (
+        <InlineNotice tone="danger" role="alert">
+          {(patrolMut.error as Error).message}
+        </InlineNotice>
       )}
       {listQ.data && listQ.data.length === 0 && (
         <PanelEmpty

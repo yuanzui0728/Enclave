@@ -85,6 +85,19 @@ export function AdminAbuseFiltersPage() {
       {filtersQ.isError && (
         <ErrorBlock role="alert" message={(filtersQ.error as Error).message} />
       )}
+      {/* toggleMut / deleteMut 原写法 isError 不上屏：admin 点"停用/启用"或
+          "删除"，后端 4xx（鉴权过期、并发改、外键约束）静默吞掉。补两个
+          顶层 InlineNotice，role=alert 立即播报。 */}
+      {toggleMut.isError && (
+        <InlineNotice tone="danger" role="alert">
+          {(toggleMut.error as Error).message}
+        </InlineNotice>
+      )}
+      {deleteMut.isError && (
+        <InlineNotice tone="danger" role="alert">
+          {(deleteMut.error as Error).message}
+        </InlineNotice>
+      )}
       <ul className="space-y-2">
         {filtersQ.data?.map((f) => (
           <li key={f.id}>
@@ -472,7 +485,14 @@ function CreateFilterForm({
           onChange={(e) => setPatternText(e.target.value)}
         />
         {patternError && (
-          <div className="mt-1 text-xs text-[color:var(--state-danger-text)]">
+          // role=alert + aria-live：JSON 写错时 SR 立即播报 parser 报错原因。
+          // 原写法只是裸 div，盲用 admin 看不到 textarea 旁边的红字，submit 灰
+          // 也不知道为啥。
+          <div
+            role="alert"
+            aria-live="polite"
+            className="mt-1 text-xs text-[color:var(--state-danger-text)]"
+          >
             {patternError}
           </div>
         )}

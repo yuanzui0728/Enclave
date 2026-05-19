@@ -283,5 +283,22 @@ function ContextMenuButton({
 }
 
 function MenuDivider() {
-  return <div className="mx-3 my-1 border-t border-[color:var(--border-faint)]" />;
+  // 走查电脑端单聊 R137：和 R6/R62 一脉 —— 外层容器 role="menu" + 子项已挂
+  // role="menuitem"，但本 divider 还是裸 <div>。按 ARIA 1.2 spec role="menu"
+  // 的合法子元素是 group / menuitem / menuitemcheckbox / menuitemradio /
+  // none / presentation / separator —— 裸 <div> 不在白名单。VoiceOver /
+  // JAWS 在 menu 导航模式下走 ArrowDown 时部分实现会把这条裸 div 当成
+  // implicit generic 子项尝试朗读（"分组" / "空"）打断 menu item 序列；
+  // Chromium AX tree 也会把裸 div 暴露成 GenericContainer 让用户听到多余
+  // 噪音。挂 role="separator" 显式声明这是水平分隔条，aria-orientation="
+  // horizontal" 是 separator 默认值可省，让 SR 走 menu 模式时把它当 logical
+  // divider 跳过、并能在 group 间提供 "section break" 上下文。和姊妹
+  // group-message-context-menu / desktop-official-message-context-menu
+  // 同款 MenuDivider 缺漏统一收一批。
+  return (
+    <div
+      role="separator"
+      className="mx-3 my-1 border-t border-[color:var(--border-faint)]"
+    />
+  );
 }
