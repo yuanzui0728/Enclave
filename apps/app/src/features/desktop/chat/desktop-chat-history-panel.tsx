@@ -269,7 +269,14 @@ export function DesktopChatHistoryPanel({
   }, [senderOptions, memberKeyword]);
   const dateRange = useMemo(
     () => resolveDateRange(quickDateFilter, customDate),
-    [quickDateFilter, customDate],
+    // 走查再走一轮 R7：和 R6 (本组件 resultSections) / 姊妹
+    // useChatReminderNowTimestamp 同款 stale-now —— resolveDateRange 在
+    // filter="today" / "7d" / "30d" 三个分支里都 `new Date()` 取当天日期算
+    // dateFrom/dateTo。原 deps 漏 todayKey，dialog 跨午夜不变 filter 时
+    // dateRange 引用稳定 → 下方 resultsQuery.queryKey 也不变 →"今天"筛选
+    // 仍按昨日的日期 from/to 跑 server 端 search → 用户跨午夜后看到的
+    //"今天"结果其实是昨天数据，今天新发的消息不会进。todayKey 同款 invalidate。
+    [quickDateFilter, customDate, todayKey],
   );
   const hasDateFilter = Boolean(dateRange.dateFrom) || Boolean(dateRange.dateTo);
   const hasSearchRequest =
