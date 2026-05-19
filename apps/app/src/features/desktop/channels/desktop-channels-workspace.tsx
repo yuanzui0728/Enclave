@@ -2754,6 +2754,28 @@ function DesktopChannelAuthorPanel({
       ? t(msg`这位居民暂时还没有填写视频号简介。`)
       : t(msg`这个视频号作者暂时还没有填写简介。`);
   const recentPosts = profile?.recentPosts.slice(0, 5) ?? [];
+  // 走查 2026-05-19 第十五轮 R4：原 recent posts list 里每条 button 都用 IIFE
+  // 调 stripToolCallSyntax(post.text ?? "")（L2906-2920）每帧重跑 — 4 个 regex
+  // replace + 1 个 CoT-detection long regex × 5 张 button = 5 次/帧。
+  // 触发场景：用户在 author overlay 打开期间滚 main feed slide →
+  // IntersectionObserver setSelectedPostId → DesktopChannelsWorkspace re-render
+  // → ChannelAuthorOverlay re-render（不是 memo'd）→ DesktopChannelAuthorPanel
+  // re-render → 5 × stripToolCallSyntax 全跑一次。yuanzui0728 测试库小，但实
+  // 测用户在 author overlay 内浏览作者最近 5 条同时滚 main slide 时单秒能触发
+  // 8-10 帧 re-render（IO + onSelectedPostChange echo + URL hash 同步），等于
+  // 40-50 次/秒纯浪费的 regex。
+  // 同 DesktopThreadCommentCard R9 / DesktopCommentThreadReplies R10 已经成
+  // 熟的 useMemo([text]) 模板，但本场景是 5 张 button 共用 — 用 Map 把所有
+  // post.id → cleanText 一次性算好，单帧只重算"post.text 真变了"那一条。
+  // recentPosts 在 author profile refetch 才换 identity（profile.recentPosts
+  // 新 array），单 author overlay 生命周期内通常稳定 → map 重算非常稀。
+  const cleanTextByRecentPostId = useMemo(() => {
+    const map = new Map<string, string>();
+    recentPosts.forEach((post) => {
+      map.set(post.id, stripToolCallSyntax(post.text ?? ""));
+    });
+    return map;
+  }, [recentPosts]);
   // 走查 2026-05-18 新会话 R8（本轮）：原 liveClipCount = (profile?.recentPosts ?? [])
   // .filter(p => p.sourceKind === "live_clip").length，但 server 把 recentPosts
   // 截到 12 条 → 高产作者直播回放计数永远 ≤12，与 home 卡上的全量统计对不上。
@@ -2953,7 +2975,9 @@ function DesktopChannelAuthorPanel({
                       // recent posts list 里 title 已经在上面渲染了一遍，再渲染
                       // 一遍 text 就是重复——和 slide overlay / mobile card 那两处
                       // 一样处理。
-                      const cleanText = stripToolCallSyntax(post.text ?? "");
+                      // R4: cleanText 走父级 useMemo 算好的 Map（避免每帧滚 slide
+                      // 触发 panel re-render 时 5 张 button 全跑 regex）。
+                      const cleanText = cleanTextByRecentPostId.get(post.id) ?? "";
                       if (!cleanText || cleanText === post.title) {
                         return null;
                       }
