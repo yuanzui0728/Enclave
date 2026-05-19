@@ -47,11 +47,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck workspace (admin and app excluded — drift tracked separately)
-        run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app
+      - name: Typecheck desktop-relevant packages
+        # Windows installer does not need server-side / other-web-surface packages compiled.
+        # Excludes mirror those already gitignored at the repo root (cloud-api/cloud-console/wiki)
+        # plus admin/app which are drift-tracked separately (matches root ci.yml policy).
+        run: >-
+          pnpm exec turbo run typecheck
+          --filter=@yinjie/contracts
+          --filter=@yinjie/config
+          --filter=@yinjie/i18n
+          --filter=@yinjie/ui
+          --filter=@yinjie/analytics
+          --filter=@yinjie/desktop
 
-      - name: Build shared frontend packages
-        run: pnpm build
+      - name: Build desktop-relevant packages
+        # Only build what the Tauri shell consumes (shared packages + apps/app).
+        # apps/app build runs again inside Tauri's beforeBuildCommand for the relative-base output.
+        run: >-
+          pnpm exec turbo run build
+          --filter=@yinjie/contracts
+          --filter=@yinjie/config
+          --filter=@yinjie/i18n
+          --filter=@yinjie/ui
+          --filter=@yinjie/app
 
       - name: Build desktop installer
         run: pnpm --filter @yinjie/desktop build:windows:x64
