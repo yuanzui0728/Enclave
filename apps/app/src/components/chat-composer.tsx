@@ -5490,6 +5490,17 @@ function DesktopScreenshotEditor({
                     ref={imageRef}
                     src={draft.previewUrl}
                     alt={draft.fileName}
+                    // 走查再走一轮 R1：和姊妹 R87 DesktopAttachmentDraftBar 缩
+                    // 略图 / R94 ImageMessage / R97 chat-files / R99 FeedPostCardMessage
+                    // 一批已挂的同款 perf 修法。本 img 是桌面截图 / 单图编辑器
+                    // dialog 的全屏预览，src 是 URL.createObjectURL 出来的原图
+                    // blob — 截屏一张 1920×1080 / 2560×1440 屏幕 PNG 通常 3-8MB，
+                    // 单图选自相册可达 8-12MB 原图。dialog mount 瞬间浏览器默认
+                    // 在主线程同步把整张原图 decode 出像素 → 编辑器开屏淡入
+                    // 动画 + 工具栏挂载 / shortcut hint 组件 mount 同帧被卡 80-200ms。
+                    // decoding="async" 让浏览器走 off-thread decode，img 先空、
+                    // decode 完淡入，dialog 打开动画不再被阻塞。
+                    decoding="async"
                     draggable={false}
                     className={cn(
                       "block rounded-[14px] shadow-[0_24px_64px_rgba(0,0,0,0.32)]",
