@@ -1652,7 +1652,6 @@ function ChannelVideoPlayer({
       // element 释放缓冲；无 src 时只触发 emptied 事件、不发请求，安全。
       video.load();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, url]);
 
   // 走查 2026-05-19 第十轮 R5：deps 历来只挂 [unmuted, isActive]，但 <video>
@@ -3377,11 +3376,18 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
   // panel 每帧 re-render（commentDrafts setState 等） 都跑 stripToolCallSyntax
   // 一次。yuanzui0728 库里活跃 thread 实测 ~20 条带 replies，drawer 打开期
   // 每帧 20 × regex（含 CoT-detection long regex）。8 字/秒打字时 160 次/秒。
-  // useMemo([latestReply?.text]) 锁住，只在 latestReply 真换（新 reply 落地）
+  // useMemo([latestReplyText]) 锁住，只在 latestReply 真换（新 reply 落地）
   // 时重算。
+  //
+  // 走查 2026-05-19 第十一轮 R4：原 deps `[latestReply?.text]` 触发 react-hooks/
+  // exhaustive-deps warning（rule 想要 latestReply 本体也在 deps 里，因为
+  // 函数 body 用了 `latestReply ?` 当 gate）。先把 text 提取成变量再传给 memo
+  // —— ESLint 看到 `latestReplyText` 闭包变量已经在 deps 里，rule 满意；语义
+  // 等价（latestReply 仅用于 gate "是否有 reply"，text 是真实输入）。
+  const latestReplyText = latestReply?.text ?? "";
   const latestReplyCleanText = useMemo(
-    () => (latestReply ? stripToolCallSyntax(latestReply.text) : ""),
-    [latestReply?.text],
+    () => (latestReplyText ? stripToolCallSyntax(latestReplyText) : ""),
+    [latestReplyText],
   );
 
   return (
