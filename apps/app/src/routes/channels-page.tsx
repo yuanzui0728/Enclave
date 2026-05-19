@@ -2456,22 +2456,20 @@ export function ChannelsPage() {
     });
   }
 
-  // 走查 2026-05-19 第十轮 R4：原来只要 desktopRoutePostPending 就整页早返渲
-  // RouteRedirectState 全屏 loading，但用户在 author overlay 内点「最近内容」里
-  // 一条不在当前 section 推荐流里的 post 触发这条 path 时（typical 路径 —— 用户
-  // 已经在 channels page 内导航），workspace 整张 unmount → RouteRedirectState
-  // 全屏盖一下 → 200-500ms 公网隧道 RTT 后 workspace 重新 mount 渲新 post —— 用
-  // 户体感「我刚点了下作者主页里的某条，整个页面闪了一下白屏才出来」。
-  // 修法：visiblePosts 已经有数据时（用户在页内导航场景）直接 fall through 渲
-  // workspace，让 desktopMissingRoutePostQuery 在后台 fetch，落地后 workspace
-  // 的 scrolledRouteIdRef effect 把视口滚到 prepended 的新 post 上 — 体感是
-  // "滚动到新内容"而不是"整页闪现"。仅在 visiblePosts 为空（initial mount +
-  // deep link 命中根本没数据可显示）时才走 RouteRedirectState 全屏 loading。
-  if (
-    isDesktopLayout &&
-    desktopRoutePostPending &&
-    visiblePosts.length === 0
-  ) {
+  // 走查 2026-05-19 第十轮 R4 回退（commit 7ae1e8cb9）：原 commit 把 gate 加上
+  // `&& visiblePosts.length === 0`，意图是用户在 author overlay 内点最近内容时
+  // 不要全屏 redirect 而让 workspace 后台 fetch。但实测有 regression：visiblePosts
+  // 非空时 workspace 立刻 mount，selectedPostId fallback 到 posts[0]（routeSel
+  // 命中的 missingPostId 还没 prepend 进 desktopWorkspacePosts），通过 onSelected
+  // PostChange echo 回 channels-page → URL-sync effect 把 URL 上的 #post=X 改写
+  // 成 #post=posts[0] → routeSelectedPostId 变 posts[0] → desktopMissingRoutePost
+  // Id 计算为 null（posts[0] 在 visiblePosts 里）→ desktopMissingRoutePostQuery
+  // 被 disabled，X 的 fetch 直接被丢弃。用户点了作者主页里的某条新 post，结果
+  // URL 默默回到当前 slide，X 永远没机会渲。比"闪一下白屏"严重得多。
+  // 恢复原条件 — 全屏 redirect 是 visual 上不优雅，但功能正确性必须保住。后续
+  // 优化方向：传 prop 让 workspace 在 routePost loading 时不 echo posts[0]
+  // fallback URL；或加 inline loading 半透浮层；都需要更大改动。
+  if (isDesktopLayout && desktopRoutePostPending) {
     return (
       <RouteRedirectState
         title={t(msg`正在定位桌面视频号内容`)}
