@@ -469,6 +469,40 @@ export function DesktopChannelsWorkspace({
     () => posts.map((post) => post.id).join(","),
     [posts],
   );
+
+  // 走查 2026-05-19 第八轮 R3：用户从推荐 tab 滚到第 5 张 slide 然后点「朋友」
+  // tab → channels-page handleSectionChange 切 activeSection + 清 desktopSelected
+  // PostId + replace URL 把 hash 里的 post 锚点去掉（L2316-2328）→ routeSelected
+  // PostId 变 null + posts 整张换新。但 workspace 这边的 scrollContainerRef 是
+  // 同一个 DOM 节点不会 unmount，scrollTop 仍停在原推荐流第 5 张那个 offset
+  // （~3200px）。新「朋友」流 posts 渲到 0/800/1600... offset 上，IO 在原 offset
+  // 看到的是新 posts 里的第 4 / 5 张（按 viewport 高度算）→ setSelectedPostId
+  // (slide_4_of_friends) → IO 同帧 echo 给 channels-page → URL hash 又把
+  // post=slide_4_id 写回。结果用户切「朋友」tab 时本来期待"看到朋友圈的最新内
+  // 容（第 1 条）"，实际看到的是朋友圈第 4-5 条（按之前推荐流的滚动深度），
+  // 体感「这 tab 点了好像是滚动深度还跟着我」+ 第 1-3 条直接被跳过。同款问题
+  // mobile MobileChannelsViewport 不存在，因为 mobile 每条 tab 走的是同一个 carousel，
+  // scroll position 跟着 selectedPostId 反向同步。
+  //
+  // 修法：activeSection 真切到新值时同步把 scrollContainer 滚回顶端。useRef 跟
+  // 踪 prev section —— prop 同帧来 / 父级 re-render 仅触发对应 effect 一次，避免
+  // 每次 like / favorite 乐观更新都跳到顶。auto 不动画，避免 snap-mandatory 跟
+  // smooth scroll 跨帧打架。Re-fire 时序：L470 slideIdsKey effect 先 disconnect
+  // 旧 IO，本 effect 把 scrollTop=0 → 下一帧新 posts mount + 新 IO observe 在 0
+  // offset 处自然找到 slide 0 → setSelectedPostId(slide_0)。无 routeSelectedPostId
+  // 时这条路径 OK；有 routeSelectedPostId（深链场景）时 L520 那条 scrolledRouteId
+  // Ref effect 会再把 viewport 跳到目标 post，scroll-top reset 不冲突（routeSel
+  // PostId 变化触发的 effect 在同 commit 跑得更晚，scrollIntoView 会覆盖 0）。
+  const prevActiveSectionRef = useRef(activeSection);
+  useEffect(() => {
+    if (prevActiveSectionRef.current === activeSection) {
+      return;
+    }
+    prevActiveSectionRef.current = activeSection;
+    const root = scrollContainerRef.current;
+    if (!root) return;
+    root.scrollTop = 0;
+  }, [activeSection]);
   // IntersectionObserver: keep selectedPostId in sync with whichever slide
   // is currently filling the viewport.
   useEffect(() => {
