@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -1428,6 +1429,8 @@ function DesktopNoteUnsavedDialog({
   onSave: () => void;
 }) {
   const t = useRuntimeTranslator();
+  const titleId = useId();
+  const descId = useId();
   if (!open) {
     return null;
   }
@@ -1438,15 +1441,45 @@ function DesktopNoteUnsavedDialog({
         type="button"
         aria-label={t(msg`关闭未保存提示`)}
         onClick={onClose}
+        // 走查电脑端单聊 R128：和姊妹 desktop-chat-confirm-dialog R107 /
+        // desktop-chat-text-edit-dialog R109 / R107-R127 整套 backdrop 同款 ——
+        // DesktopNoteUnsavedDialog 在用户从单聊 workspace「+」→「新建笔记」打开
+        // 笔记编辑窗后改了草稿但未保存时点关闭弹出。backdrop <button> (absolute
+        // inset-0) 视觉不可见、纯 mouse"点击背景关闭"affordance，但 DOM 顺序
+        // 在 dialog 子树第一位 → 用户按 Tab 切「取消 / 不保存 / 保存并关闭」按钮
+        // 时焦点先落到这张不可见 backdrop → 看不到 focus → 再按 Enter 把整个
+        // 弹层关掉（onClose 走"取消"语义不丢草稿，但用户期望选具体动作而非靠
+        // backdrop 默退）。onClick 鼠标点击关闭路径不受影响。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+      {/* 走查电脑端单聊 R128：和姊妹 desktop-chat-confirm-dialog R2 / 整套
+          dialog 系列 a11y 同款 —— 这个未保存提示是 modal（backdrop 关闭 / 屏幕
+          居中 / Esc 应当关）但原版 <div> 既没挂 role="dialog" + aria-modal，也
+          没挂 aria-labelledby / aria-describedby。盲人 SR 打开时只听到「关闭未
+          保存提示 按钮 / 取消 / 不保存 / 保存并关闭」一串裸 button，听不到
+          标题「这条笔记还没有保存」+ 描述「保存后会进入收藏；如果直接关闭，
+          当前草稿改动会被丢弃。」。补 dialog 语义，title/description 用稳定
+          id 挂上让 SR 同时朗读。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+      >
         <div className="border-b border-[color:var(--border-faint)] px-6 py-5">
-          <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+          <div
+            id={titleId}
+            className="text-[18px] font-medium text-[color:var(--text-primary)]"
+          >
             {t(msg`这条笔记还没有保存`)}
           </div>
-          <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]">
+          <div
+            id={descId}
+            className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]"
+          >
             {t(msg`保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。`)}
           </div>
         </div>
