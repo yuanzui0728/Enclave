@@ -2141,8 +2141,19 @@ export function ChatMessageList({
     imageMessagesRef.current = imageMessages;
   });
 
+  // 走查电脑端单聊 R123：原 R16 的修法已经把 activeImageIndex / imageMessages
+  // 镜像到 ref，但下方 effect 的 dep 还写的是 `activeImage` —— 它是 useMemo
+  // 出来的 `imageMessages[activeImageIndex]`，而 imageMessages 用 .map((message)
+  // => ({...})) 每次 visibleMessages 变都重 build 全新对象数组。新消息（哪怕
+  // 不是图片）涌进 thread → visibleMessages 换引用 → imageMessages 换引用 →
+  // imageMessages[activeImageIndex] 换对象 → activeImage 换引用 → 本 effect
+  // 拆装一次 window keydown。R16 comment 的本意是"effect 仅依赖 isDesktop /
+  // activeImage 二态切换"，但用对象引用做 dep 没法达成"二态"语义。换成派生
+  // boolean `hasActiveImage`，effect 只在 viewer open/close 切换时拆装一次，
+  // 不再随 typing tick / socket 推非图消息 / 任意 query refetch 抽搐。
+  const hasActiveImage = activeImage !== null;
   useEffect(() => {
-    if (!isDesktop || !activeImage) {
+    if (!isDesktop || !hasActiveImage) {
       return;
     }
 
@@ -2188,7 +2199,7 @@ export function ChatMessageList({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeImage, isDesktop]);
+  }, [hasActiveImage, isDesktop]);
 
   // 走查桌面端单聊新一轮 R5：和姊妹 addingToStickerMessageIdsRef R4 /
   // recallingMessageIdsRef / deletingMessageIdsRef 同款 — handleToggleFavorite
