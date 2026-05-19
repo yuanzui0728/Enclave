@@ -3565,6 +3565,17 @@ export function ChatComposer({
                       ? t(msg`收起输入框`)
                       : t(msg`展开输入框`)
                   }
+                  // 走查电脑端单聊 R122：和姊妹 chat-header-actions R25 历史/详情
+                  // toggle / message-list MessageTimestampDivider R32 / SelectionToggle
+                  // R17 / composer-toolbar R34 一票 toggle button 同款修法 ——
+                  // 桌面 composer 右上角"展开/收起输入框"chevron button 是个 toggle
+                  // （desktopEditorExpanded true ↔ false，textarea rows 在 9 / 3
+                  // 之间切换）。aria-label 已按 next-action 描述（"收起" ↔ "展开"），
+                  // 但 SR 用户没法在不按下的情况下知道当前是不是已展开。挂
+                  // aria-pressed = desktopEditorExpanded 提供即时的 audible toggle
+                  // state，和 aria-label 互补，盲人用户拿一次 audible 反馈就知道
+                  // "现在编辑框是大模式（9 行）还是小模式（3 行）"。
+                  aria-pressed={desktopEditorExpanded}
                 >
                   {desktopEditorExpanded ? (
                     <ChevronDown size={16} />
