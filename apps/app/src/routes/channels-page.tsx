@@ -2581,6 +2581,13 @@ export function ChannelsPage() {
           // 读失败）原来没 retry 按钮，对齐 mobile MobileChannelsStatusCard 的
           // 「重试读取」（L2678-2698）补一份；handleRetryLoad 已经存在（L1847）。
           onRetryLoad={handleRetryLoad}
+          // 走查 2026-05-19 桌面端第十八轮 R2：作者主页 overlay 的 ErrorBlock 原来
+          // 无 retry CTA — 公网隧道 transient 500 / 网络断时用户只能关 overlay 再
+          // 点同一头像才能 trigger 新一次 fetch。补 desktopAuthorProfileQuery 的
+          // refetch 回调，让 panel 内的"重试读取"按钮直接触发同 query 重拉。
+          onRetryAuthorProfile={() => {
+            void desktopAuthorProfileQuery.refetch();
+          }}
           refreshPending={generateMutation.isPending}
           comments={desktopCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
           commentsErrorMessage={desktopCommentPanelErrorMessage}

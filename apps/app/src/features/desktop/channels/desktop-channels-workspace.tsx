@@ -118,6 +118,13 @@ type DesktopChannelsWorkspaceProps = {
   // 切 section 才能再触发 channelsQuery —— 公网隧道一次 transient 500 / network
   // 断也卡死视频号入口。补可选回调；undefined 时按原行为不渲按钮。
   onRetryLoad?: () => void;
+  // 走查 2026-05-19 桌面端第十八轮 R2：作者主页 overlay 的 ErrorBlock（DesktopChannel
+  // AuthorPanel L2932-2942）历来无 retry CTA — 用户点 slide 头像打开 overlay 命中
+  // getChannelAuthorProfile 公网隧道 transient 500 / 网络断 → 只能关 overlay 再点同
+  // 一头像才能 trigger 重新 fetch（authorId 没变 → useQuery 不会自动 retry，得 user
+  // 主动触发）。同 R3 home 错的"重试读取"模板对齐：补可选回调；undefined 时按原
+  // 行为不渲按钮（向后兼容）。
+  onRetryAuthorProfile?: () => void;
   onReplyToComment: (comment: FeedComment) => void;
   onSectionChange: (section: FeedChannelHomeSection) => void;
   onSelectedPostChange: (postId: string | null) => void;
@@ -176,6 +183,7 @@ export function DesktopChannelsWorkspace({
   onOpenAuthorPost,
   onRefresh,
   onRetryLoad,
+  onRetryAuthorProfile,
   onReplyToComment,
   onSectionChange,
   onSelectedPostChange,
@@ -1206,6 +1214,8 @@ export function DesktopChannelsWorkspace({
             trapTopmost={!forwardPickerPost}
             selectedPostId={selectedPost?.id ?? null}
             onClose={onCloseAuthor}
+            // R2（第十八轮）：透 retry CTA 给 author error 兜底
+            onRetryAuthorProfile={onRetryAuthorProfile}
             onOpenPost={onOpenAuthorPost}
             onToggleFollow={onToggleAuthorFollow}
           />
@@ -2575,6 +2585,7 @@ function ChannelAuthorOverlay({
   trapTopmost = true,
   onClose,
   onOpenPost,
+  onRetryAuthorProfile,
   onToggleFollow,
 }: {
   authorId: string | null;
@@ -2587,6 +2598,9 @@ function ChannelAuthorOverlay({
   // false=forward picker 浮在上方，author 让出 Tab 不抢 picker 的焦点。
   trapTopmost?: boolean;
   onClose: () => void;
+  // R2（第十八轮）：可选 retry CTA — 同 home errorMessage 的 onRetryLoad 模板。
+  // undefined 时 panel 不渲按钮（向后兼容）。
+  onRetryAuthorProfile?: () => void;
   onOpenPost: (postId: string, authorId: string) => void;
   onToggleFollow: (authorId: string, following: boolean) => void;
 }) {
@@ -2789,6 +2803,7 @@ function ChannelAuthorOverlay({
           selectedPostId={selectedPostId}
           onClose={onClose}
           onOpenPost={onOpenPost}
+          onRetryAuthorProfile={onRetryAuthorProfile}
           onToggleFollow={onToggleFollow}
         />
       </div>
@@ -2841,6 +2856,7 @@ function DesktopChannelAuthorPanel({
   selectedPostId,
   onClose,
   onOpenPost,
+  onRetryAuthorProfile,
   onToggleFollow,
 }: {
   authorId: string | null;
@@ -2851,6 +2867,8 @@ function DesktopChannelAuthorPanel({
   selectedPostId: string | null;
   onClose: () => void;
   onOpenPost: (postId: string, authorId: string) => void;
+  // R2（第十八轮）：可选 retry CTA — undefined 时不渲按钮。
+  onRetryAuthorProfile?: () => void;
   onToggleFollow: (authorId: string, following: boolean) => void;
 }) {
   const t = useRuntimeTranslator();
@@ -2936,8 +2954,32 @@ function DesktopChannelAuthorPanel({
         // server 错），只看到 backdrop 全黑 + 上方"作者主页"标题，听不到为什么
         // 资料没出来。挂 role="alert" 立刻播报错误内容（CHARACTER_NOT_FOUND /
         // 网络错等技术原因），让用户清楚是临时错误还是这位作者已不在。
+        //
+        // 走查 2026-05-19 桌面端第十八轮 R2：原 ErrorBlock 无 retry CTA — 公网隧
+        // 道一次 transient 500 / 网络断 → 用户只能关 overlay 再点同一头像才能
+        // 触发新一次 fetch（authorId 没变 → useQuery 不会自动 retry，得 user 主动
+        // 触发）。同 home errorMessage 的 R3「重试读取」模板：补 Button 作为
+        // ErrorBlock children；onRetryAuthorProfile 没传时不显示按钮（向后兼容）。
+        // 注意：CHARACTER_NOT_FOUND 这种"作者已不在"的永久性错误重试也无效，但
+        // mobile MobileChannelAuthorPage 早就同款都给了 retry 按钮（设计哲学：让
+        // 用户自己重试一次确认是 transient 还是 permanent，比禁掉 retry 让用户
+        // 困惑"为什么这个按钮没有"更好）。
         <div className="mt-4" role="alert">
-          <ErrorBlock message={errorMessage} />
+          <ErrorBlock message={errorMessage}>
+            {onRetryAuthorProfile ? (
+              <div className="mt-2 flex">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onRetryAuthorProfile}
+                  className="rounded-full bg-white"
+                >
+                  <RefreshCcw size={13} />
+                  {t(msg`重试读取`)}
+                </Button>
+              </div>
+            ) : null}
+          </ErrorBlock>
         </div>
       ) : null}
 
