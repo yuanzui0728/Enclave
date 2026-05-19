@@ -20,6 +20,15 @@ const env = {
   CARGO_TARGET_DIR: process.env.CARGO_TARGET_DIR ?? cargoTargetDir,
   CARGO_BUILD_JOBS: process.env.CARGO_BUILD_JOBS ?? "1",
 };
+
+// Tauri 2 hook commands run via `cmd /C` on Windows, where the POSIX
+// `KEY=value cmd` inline-env syntax is interpreted as an executable name.
+// Inject YINJIE_APP_BUILD_BASE here so `apps/app/vite.config.ts` picks up
+// the relative base for desktop bundling on every platform, without
+// touching the env when the web build runs `pnpm build` directly.
+if (mode === "build") {
+  env.YINJIE_APP_BUILD_BASE = process.env.YINJIE_APP_BUILD_BASE ?? "relative";
+}
 const hostTargetTriple = resolveHostTargetTriple();
 
 const explicitTarget = readTargetArg(forwardedArgs);
