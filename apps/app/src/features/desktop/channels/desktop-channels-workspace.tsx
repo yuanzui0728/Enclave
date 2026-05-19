@@ -2212,7 +2212,40 @@ function ChannelCommentsDrawer({
       document.activeElement !== document.body
         ? document.activeElement
         : null;
+    // 走查 2026-05-19 桌面端 R1（第十二轮）：drawer 打开时焦点完全没移进 dialog —
+    // DesktopChannelCommentsPanel 内有一条 [cannotInteract,selectedPostId,replyTarget]
+    // effect 在 cannotInteract=false 时把焦点 rAF 落到 input 上（L2941-2947），
+    // 但 cannotInteract=true（推荐流非好友帖，yuanzui0728 库里 80%+ 是 audio
+    // canInteract=false 占大多数）时 input 是 disabled，那条 effect 早返不动。
+    // 结果焦点停在打开 drawer 的"chat 图标"button 上 —— 该 button 现在被 z-30
+    // drawer 视觉覆盖，键盘用户按 Tab 走的是 sequential focus 不在 dialog 内 —
+    // trap 的 fallback 路径 (L2244-2248) 会兜一次 first.focus()，但 *第一次 Tab*
+    // 前焦点没在 dialog 里，SR 用户的 dialog 上下文也丢了（aria-modal=true 在
+    // <div> 上浏览器不自动迁焦点）。
+    // 同款 ChannelAuthorOverlay R6（L2399-2424）早就做了"open 同帧 rAF 后 focus
+    // 首 focusable"，drawer 一直漏。模板对齐：rAF 等 React commit 落定 + 入场
+    // 动画/Suspense fallback 渲完 → focus dialog 内首 focusable（cannotInteract
+    // 时 input disabled 跳过，落到关闭 X 按钮，符合 modal 退出 affordance 语义）；
+    // 极端无 focusable 时 fall back 到 dialog 本身（tabIndex=-1 已挂）。
+    // preventScroll：snap-y 容器 scrollTop 是当前 slide offset，让浏览器自动 scroll
+    // into view 会甩页面跳一下；focus 设到 hidden 元素本身仍然 a11y-correct。
+    const focusTimer = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      // canInteract=true 时 DesktopChannelCommentsPanel 内部的另一条 rAF 已经把
+      // 焦点送到 input 上（L2941-2947 effect），子组件 effect 先 fire → rAF 队列
+      // 里 input.focus 排前；这条 drawer 兜底 rAF 早返避免覆盖。cannotInteract
+      // 时 input disabled 那条 effect 早返不动 → 这里兜到 close X 按钮（第一个
+      // 非 disabled button）。
+      if (dialog.contains(document.activeElement)) return;
+      const firstFocusable = dialog.querySelector<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (firstFocusable) firstFocusable.focus({ preventScroll: true });
+      else dialog.focus({ preventScroll: true });
+    });
     return () => {
+      window.cancelAnimationFrame(focusTimer);
       const prev = previouslyFocusedRef.current;
       previouslyFocusedRef.current = null;
       if (prev && document.contains(prev)) {
