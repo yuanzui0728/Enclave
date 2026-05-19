@@ -104,7 +104,18 @@ export function OfficialMessageEntryRow({
             ) : null}
             {unreadCount > 0 ? (
               muted ? (
+                // 走查电脑端单聊 R145：和姊妹 desktop-chat-workspace R106 同
+                // 款 — 裸 <div> 挂 aria-label 没 role 时，按 ARIA 1.2 spec
+                // 在 generic 元素上 aria-label 行为 implementation-defined，
+                // Chromium AX tree 早期版本 / VoiceOver 严格模式可能不暴露
+                // aria-label。muted 变体只是一个红色 2×2 视觉小点，没有
+                // inner text，盲人 SR 走「订阅号 / 服务号」入口行时根本
+                // 听不到"N 条未读消息"——muted 入口尤其需要这层 fallback
+                // (既然通知静音了，红点几乎是用户唯一的未读信号)。补
+                // role="img" 把它当作"一张被命名的视觉指示"，AT 一致暴露
+                // aria-label。
                 <div
+                  role="img"
                   className={cn(
                     "rounded-full",
                     isDesktop ? "h-2 w-2 bg-[#fa5151]" : "h-2 w-2 bg-[#b8b8b8]",
@@ -117,7 +128,13 @@ export function OfficialMessageEntryRow({
                 // 是裸 text。SR 走到「订阅号 / 服务号」入口行只听到一句「99+」
                 // 没有上下文。补 aria-label，inner span aria-hidden 隔离视觉
                 // 数字。本组件同时被桌面端和移动端 chat-list 复用，两边一起修。
+                //
+                // 走查电脑端单聊 R145：同上 — 补 role="img" 让 aria-label 在
+                // 不带 role 的 generic <div> 上仍被 AT 暴露。inner <span
+                // aria-hidden="true"> 防"99+"裸文本被某些 SR 在 role="img"
+                // 名称之外又复读一遍。
                 <div
+                  role="img"
                   className={cn(
                     "flex items-center justify-center rounded-full bg-[#fa5151] text-center text-white",
                     isDesktop
