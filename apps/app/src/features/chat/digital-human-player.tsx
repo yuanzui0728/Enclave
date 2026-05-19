@@ -85,6 +85,23 @@ export function DigitalHumanPlayer({
             // 同款 i18n 修法。
             title={t(msg`${name} 的数字人视频播放器`)}
             allow="autoplay"
+            // 走查电脑端单聊 R134：单聊「视频通话」打开 DigitalHumanPlayer 时
+            // iframe.src 是 provider (minimax) 自己的 player URL，跨源加载。
+            // 原版没显式 referrerPolicy，浏览器走 default `strict-origin-when-
+            // cross-origin` → cross-origin 时仍把"完整 origin"附在 Referer 上
+            // (e.g. `https://1gw06751dd053.vicp.fun`)；同时 same-origin 时附完整
+            // URL（含 conversation 路由 hash）。对外部数字人 player：
+            // · provider 完全用 URL query token 鉴权 (?token=…)，根本不读
+            //   Referer 校验，所以 Referer 对 provider 完全无业务必要。
+            // · 但 vicp.fun 隧道公开域名经 provider 端日志/IDS/反向代理 access
+            //   log 命中后会带上 conversation route 痕迹（move-id / hash），
+            //   即便不含明文 yinjie-id，3rd-party 仍能积累"哪个会话发起过几次
+            //   AI 数字人通话"的元数据。
+            // 收紧到 referrerPolicy="no-referrer" — 整条 Referer 头不发送，
+            // 既不影响 provider 鉴权（query token 不变）也消除日志侧的隐式
+            // 元数据外泄。和 fetch / <a target=_blank> 加 rel="noreferrer"
+            // 同款隐私防御思路。
+            referrerPolicy="no-referrer"
             className="absolute inset-0 h-full w-full border-0"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] bg-[linear-gradient(180deg,rgba(2,6,23,0),rgba(2,6,23,0.78))] px-4 pb-4 pt-10">
