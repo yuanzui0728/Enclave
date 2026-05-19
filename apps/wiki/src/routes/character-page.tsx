@@ -739,8 +739,12 @@ function HistoryView({
           previous={previousById.get(rev.id) ?? null}
           isCurrent={rev.id === currentRevisionId}
           canRevert={canRevert}
+          // 用 mutateAsync 把 promise 透传到 RevisionCard：子组件 await 成功
+          // 才关闭/清空"回滚原因"表单。原写法 mutate() 即触即清，revertMut
+          // 失败（401 / conflict / 同 rev 被他人撤回）时 ErrorBlock 浮出但
+          // reason 已被清空 + 折回，巡查员要重新展开 + 重打原因。
           onRevert={(reason) =>
-            revertMut.mutate({ toRevisionId: rev.id, reason })
+            revertMut.mutateAsync({ toRevisionId: rev.id, reason })
           }
           // 历史 tab 多版本同时存在；revertMut 共享时点其中一条所有"回滚"
           // 按钮一起灰。只灰 variables.toRevisionId 命中的那条。
@@ -771,7 +775,7 @@ function RevisionCard({
   previous: WikiRevisionSummary | null;
   isCurrent: boolean;
   canRevert: boolean;
-  onRevert: (reason: string) => void;
+  onRevert: (reason: string) => Promise<unknown>;
   reverting: boolean;
 }) {
   const t = translateRuntimeMessage;
@@ -897,10 +901,17 @@ function RevisionCard({
                 variant="danger"
                 size="sm"
                 disabled={reverting || reason.trim().length === 0}
-                onClick={() => {
-                  onRevert(reason.trim());
-                  setShowRevert(false);
-                  setReason("");
+                onClick={async () => {
+                  // 等 mutation resolve 才 close+clear；失败时保留 reason 让
+                  // 巡查员对照 ErrorBlock 调整原因再重试，不必从 0 重打。
+                  try {
+                    await onRevert(reason.trim());
+                    setShowRevert(false);
+                    setReason("");
+                  } catch {
+                    // 父组件 useMutation 的 isError 已渲染到 ErrorBlock，吞 reject
+                    // 避免 unhandled promise rejection。
+                  }
                 }}
               >
                 {reverting ? t(msg`回滚中...`) : t(msg`确认回滚`)}

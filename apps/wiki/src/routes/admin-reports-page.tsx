@@ -8,6 +8,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   Button,
   ErrorBlock,
+  InlineNotice,
   LoadingBlock,
   PanelEmpty,
   StatusPill,
@@ -101,6 +102,15 @@ export function AdminReportsPage() {
       {reportsQ.isLoading && <LoadingBlock />}
       {reportsQ.isError && (
         <ErrorBlock role="alert" message={(reportsQ.error as Error).message} />
+      )}
+      {/* setStatusMut 失败时原写法无任何反馈：admin 点"标记已处理"/"驳回"，
+          后端 4xx（举报已被他人处理、状态机校验失败、token 过期）静默吞掉。
+          补 InlineNotice 顶层展示报错原因；和邻居 reportsQ.isError 的 role=alert
+          对齐。 */}
+      {setStatusMut.isError && (
+        <InlineNotice tone="danger" role="alert">
+          {(setStatusMut.error as Error).message}
+        </InlineNotice>
       )}
       {reportsQ.data?.length === 0 && (
         <PanelEmpty message={t(msg`当前分类下暂无举报。`)} />
