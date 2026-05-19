@@ -3593,6 +3593,29 @@ function DesktopChannelCommentsPanel({
           <TextField
             ref={inputRef}
             value={draft}
+            // 走查 2026-05-19 第十五轮 R10：TextField 历来没挂 aria-label，
+            // 靠 placeholder 当 informal label（part of SR 支持 placeholder
+            // 朗读，部分 SR / NVDA 默认 verbosity 不读 placeholder）。盲用用
+            // 户 Tab 到这条 input 听到 "edit" 或 "text field" 但没明确告知
+            // 当前是"写评论"还是"回复 X"还是"先选 post"，得回头读 drawer
+            // 顶部 "评论 N" 标题 + 上方"正在回复 X" chip 来拼语义。
+            // 同 codebase 评论 / 回复 input 历来不挂 aria-label，但 drawer
+            // 是单一 modal 上下文，input 明确语义跟 placeholder 等价即可：
+            //   - replyTarget 有 → 回复 X 的评论
+            //   - cannotInteract → 需先加为好友才能评论
+            //   - 没 selectedPost → 先选择一条内容
+            //   - 默认 → 评论这条视频号
+            // 跟 placeholder 对齐让 SR 读 button accessible name 时不依赖
+            // placeholder 平台差异。
+            aria-label={
+              cannotInteract
+                ? t(msg`需先加为好友才能评论`)
+                : replyTarget
+                  ? t(msg`回复 ${replyTarget.authorName} 的评论`)
+                  : selectedPost
+                    ? t(msg`评论这条视频号`)
+                    : t(msg`先选择一条内容`)
+            }
             onChange={(event) => onDraftChange(event.target.value)}
             // Enter 直接发——评论 input 是单行 TextField，不存在多行换行，没必要
             // 强迫用户手离开键盘去点"发送"。IME composing 时回车是确认候选词，
