@@ -2000,7 +2000,25 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
       className="flex h-full min-h-[640px] snap-start snap-always items-center justify-center px-6 py-6"
     >
       <div className="flex max-h-full items-end gap-4">
-        <article className="relative flex aspect-[9/16] h-[min(82vh,800px)] flex-shrink-0 overflow-hidden rounded-[20px] bg-[#0d0e12] shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+        {/* 走查 2026-05-19 第十五轮 R11：<article> landmark 历来没挂 aria-label
+            —— SR 用户用 article rotor / landmark 导航跳到 channels 视频号 active
+            slide 时只听到 "article"，没有作者 / 内容上下文。inert 把 19 张非
+            active slide 从 a11y 树排除，所以 rotor 只有 1 张 article 暴露给 SR
+            —— 但这张"唯一可见"的 article 本身缺 name，盲用用户进 channels 后
+            按"下一篇 article" 落到这里也得读完内部所有 div / button / chip 才
+            拼出"这是谁的 post"，跟可视用户一眼看见作者头像 + 名字 + meta 的
+            体感差距大。
+            aria-label 用 post.title?.trim() 优先（音乐 / 视频帖 server 给的标
+            题），fallback 作者名 + "的视频号"。verbose 给 SR 用户一句话总结，
+            可视样式不变。post.title 在 setQueryData 乐观更新不动（仅 likeCount
+            / ownerState 变），memo + aria-label 稳定 identity，零额外 re-render。 */}
+        <article
+          aria-label={
+            post.title?.trim()
+              ? t(msg`${post.authorName}：${post.title}`)
+              : t(msg`${post.authorName} 的视频号内容`)
+          }
+          className="relative flex aspect-[9/16] h-[min(82vh,800px)] flex-shrink-0 overflow-hidden rounded-[20px] bg-[#0d0e12] shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
           <ChannelMediaSurface
             post={post}
             isActive={isActive}
