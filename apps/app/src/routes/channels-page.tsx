@@ -1897,7 +1897,26 @@ export function ChannelsPage() {
   }
 
   function handleRetryLoad() {
-    void channelsQuery.refetch();
+    // 走查 2026-05-19 桌面端第十八轮 R1：原 handleRetryLoad 只 refetch channels
+    // Query，但 errorMessage （L1671-1679）会从两条 query 取错信息：
+    //   1) channelsQuery — 首屏 home 拉取失败
+    //   2) desktopMissingRoutePostQuery — deep-link 到一条不在 home 推荐流里
+    //      的 post 时单独拉那条 post 失败
+    // 后者错时 errorMessage 渲红条 + "重试读取" 按钮 → 用户点 retry → 只 refetch
+    // channelsQuery（早就成功了）→ desktopMissingRoutePostQuery 不动 → 红条
+    // 永远不消，用户得手动刷新整页才能再试。同款问题在 mobile 路径下不存在
+    //（mobile 没有 deep-link single-post 这条额外 query），是 desktop 独有的边界。
+    // 修法：两条 query 都 refetch，但只在 isError 时才 refetch 避免成功的 query
+    // 被白白触发一次网络请求。
+    if (channelsQuery.isError) {
+      void channelsQuery.refetch();
+    }
+    if (
+      desktopMissingRoutePostId &&
+      desktopMissingRoutePostQuery.isError
+    ) {
+      void desktopMissingRoutePostQuery.refetch();
+    }
   }
 
   function handleEmptyStateAction() {
