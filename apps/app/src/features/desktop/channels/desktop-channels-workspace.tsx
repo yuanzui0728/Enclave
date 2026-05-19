@@ -2457,7 +2457,15 @@ function ChannelCommentsDrawer({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="channels-comments-drawer-title"
+        // 走查 2026-05-19 第十五轮 R12：原 aria-labelledby 只指 "评论 N" 标题 —
+        // SR 用户打开 drawer 时只听到 "评论 17 dialog modal"，没有作者上下文，
+        // 用户得回头读 dialog 内下方的 subtitle div ({authorName}) 才知道是给
+        // 哪条 post 评论的。同 drawer 头部的可视布局已经把 "评论 N" 跟作者名
+        // 分两行显示，author subtitle 也是 dialog 的 accessible name 的一部分
+        // —— 多 id 走 ARIA "aria-labelledby IDREFS" 模板，让 SR 一次性念出
+        // "评论 17 {authorName} dialog modal"。给 subtitle 加 id channels-comm
+        // ents-drawer-author，两 id 用空格分隔走 IDREFS 序列。
+        aria-labelledby="channels-comments-drawer-title channels-comments-drawer-author"
         // R5 续：tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序
         // 列里 —— focus trap 兜底：极端无 focusable child 时也能把焦点拉进来
         // 不漏。
@@ -2472,7 +2480,10 @@ function ChannelCommentsDrawer({
             >
               {t(msg`评论 ${selectedPost.commentCount}`)}
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+            <div
+              id="channels-comments-drawer-author"
+              className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]"
+            >
               {selectedPost.authorName}
             </div>
           </div>
