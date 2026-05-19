@@ -233,7 +233,9 @@ export function AdminBlocksPage() {
             block={b}
             username={usersById.get(b.userId) ?? b.userId}
             onRevoke={() => revokeMut.mutate(b.id)}
-            revoking={revokeMut.isPending}
+            // 只灰当前条；原写法整列表所有"撤销"按钮一起灰，admin 想连撤多条
+            // 历史封禁要等每条 invalidate refetch。
+            revoking={revokeMut.isPending && revokeMut.variables === b.id}
           />
         ))}
       </ul>

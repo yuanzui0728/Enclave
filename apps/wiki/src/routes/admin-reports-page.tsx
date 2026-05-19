@@ -108,7 +108,11 @@ export function AdminReportsPage() {
       <ReportList
         reports={reportsQ.data ?? []}
         onDecide={(id, s) => setStatusMut.mutate({ id, status: s })}
-        disabled={setStatusMut.isPending}
+        // 整页共享 mutation；只灰当前举报卡，否则 admin 想连判 5 条 open 举报
+        // 每条都要等 invalidate。pendingId 让 ReportList 自行匹配 r.id。
+        pendingId={
+          setStatusMut.isPending ? setStatusMut.variables?.id ?? null : null
+        }
       />
     </PageShell>
   );
@@ -117,11 +121,11 @@ export function AdminReportsPage() {
 function ReportList({
   reports,
   onDecide,
-  disabled,
+  pendingId,
 }: {
   reports: ModerationReport[];
   onDecide: (id: string, s: "resolved" | "dismissed") => void;
-  disabled: boolean;
+  pendingId: string | null;
 }) {
   const { resolve: resolveOwner } = useUsernameMap(
     reports.map((r) => r.ownerId),
@@ -134,7 +138,7 @@ function ReportList({
             report={r}
             ownerLabel={resolveOwner(r.ownerId)}
             onDecide={(s) => onDecide(r.id, s)}
-            disabled={disabled}
+            disabled={pendingId === r.id}
           />
         </li>
       ))}

@@ -11,7 +11,7 @@ import {
   PanelEmpty,
   StatusPill,
 } from "@yinjie/ui";
-import { hasRole } from "../lib/auth-store";
+import { hasRole, roleLabel } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi, type WikiRevisionSummary } from "../lib/wiki-api";
 import { useUsernameMap } from "../lib/use-username-map";
@@ -90,7 +90,14 @@ export function RecentChangesPage() {
               editorName={resolveUsername(rev.editorUserId)}
               isPatroller={isPatroller}
               onPatrol={() => patrolMut.mutate(rev.id)}
-              patrolling={patrolMut.isPending}
+              // patrolMut 是整页共享的 mutation 实例；原写法 patrolling=
+              // patrolMut.isPending 会让"任一行"在跑时所有行的"标记已巡查"按
+              // 钮全灰。巡查员实战时多半是连点 N 条已扫过的小修改，每次都要等
+              // 上一条 invalidate refetch 才能点下一条。改成只 disable 当前行
+              // （variables 就是 rev.id），多行并发 mutate 也只盲掉那一行。
+              patrolling={
+                patrolMut.isPending && patrolMut.variables === rev.id
+              }
             />
           ))}
         </ul>
@@ -157,8 +164,11 @@ function ChangeRow({
           )}
         </div>
         <div className="text-xs text-[color:var(--text-muted)]">
+          {/* editorRoleAtTime 后端给的是英文枚举（patroller / admin /
+              autoconfirmed / newcomer）。原写法直接渲染，中文用户看到
+              "（patroller）"夹在中文里像漏译。走 roleLabel 本地化。 */}
           <Trans>
-            {editorName}（{rev.editorRoleAtTime}） ·{" "}
+            {editorName}（{roleLabel(rev.editorRoleAtTime)}） ·{" "}
             {formatDateTime(rev.createdAt)}
           </Trans>
         </div>

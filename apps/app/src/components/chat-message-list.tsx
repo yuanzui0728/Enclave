@@ -8304,6 +8304,16 @@ function NoteViewerOverlay({
                       alt={title}
                       loading="lazy"
                       decoding="async"
+                      // 走查电脑端单聊 R130：和姊妹 R94 ImageMessage / R97 chat-
+                      // files 缩略 / R98 NoteCardMessage / R99 FeedPostCardMessage
+                      // / R119 StickerMessage / R88 image viewer 一批同款 ——
+                      // NoteViewerOverlay 渲染分享笔记的预览图，默认 draggable=true。
+                      // 用户在单聊里点对方分享的笔记 → 打开 NoteViewerOverlay
+                      // 想用鼠标滚轮滚下去看正文时若 mousedown 落在 preview 图
+                      // 上轻微 drag → 浏览器启动 HTML5 native drag (图片 URL) →
+                      // 整段滚动手势被吞，drag URL 还可能被释放到桌面意外触发
+                      // "下载该图到桌面"。和姊妹 viewer img 一致挂 draggable={false}。
+                      draggable={false}
                       className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
                     />
                   ) : null}
@@ -8319,6 +8329,12 @@ function NoteViewerOverlay({
                         alt={asset.fileName}
                         loading="lazy"
                         decoding="async"
+                        // 走查电脑端单聊 R130：和上方 preview <img> 同款 —— 笔记
+                        // 正文内嵌的多张图片同样漏 draggable={false}。用户在
+                        // NoteViewerOverlay 里滚动浏览正文时鼠标 mousedown 落在
+                        // 任一张内嵌图上轻微 drag 都被浏览器接管成 native drag，
+                        // 干扰滚动手势。
+                        draggable={false}
                         className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
                       />
                     ))}

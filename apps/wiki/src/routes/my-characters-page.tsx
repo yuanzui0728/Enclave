@@ -233,8 +233,16 @@ export function MyCharactersPage() {
                     deleteMut.mutate(row.id);
                   }
                 }}
-                isExporting={exportMut.isPending}
-                isDeleting={deleteMut.isPending}
+                // 共享 mutation 对应"当前行"才显示中态：原写法 isPending 让
+                // 所有卡片的导出/删除按钮一起灰，连点多个角色的"📤 导出"会
+                // 误以为只有第一次有效。比较 variables（exportMut 收对象，按 id；
+                // deleteMut 收 string 直接是 id）来锁定行。
+                isExporting={
+                  exportMut.isPending && exportMut.variables?.id === row.id
+                }
+                isDeleting={
+                  deleteMut.isPending && deleteMut.variables === row.id
+                }
               />
             ))}
           </ul>

@@ -111,7 +111,10 @@ export function RiskBadge({
   if (highRisk) {
     return (
       <span className="ml-2 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-orange-50 text-orange-700">
-        ⚠ {t(msg`高风险（patroller 审核）`)}
+        {/* 原写法用 "patroller" 这个后端 enum 英文当 hint，跟编辑页其他位置已
+            经本地化的 "巡查员" 不一致；en/ja/ko 下读起来更怪。换 ROLE_LABEL
+            走和其它 banner 一致的本地化映射。 */}
+        ⚠ {t(msg`高风险（${t(ROLE_LABEL.patroller)} 审核）`)}
       </span>
     );
   }

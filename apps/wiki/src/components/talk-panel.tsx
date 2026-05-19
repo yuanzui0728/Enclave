@@ -232,6 +232,15 @@ function ThreadDetail({
     (postsQ.data ?? []).map((p) => p.authorId),
   );
   const isNarrow = useIsNarrowViewport();
+  // replyTo 只是 postId。原写法 hint 拼 `{replyTo.slice(0, 8)}…`，给用户看的是
+  // post id 的前 8 char（uuid 形态），用户根本不知道在回谁。改成查 postsQ.data
+  // 对应行 + resolveAuthor 拿到作者名展示。postsQ.data 还没回来或者那条 post
+  // 刚好被刷掉时退回到 8-char id 兜底。
+  const replyToAuthor = useMemo(() => {
+    if (!replyTo) return null;
+    const post = (postsQ.data ?? []).find((p) => p.id === replyTo);
+    return post ? resolveAuthor(post.authorId) : null;
+  }, [replyTo, postsQ.data, resolveAuthor]);
   // 按 parentPostId 分桶给 PostTree 用：原写法 PostTree 每层都 posts.filter()
   // 是 O(N) 扫表，递归 D 层等于 O(N·D)。一个 30 帖的 thread 楼中楼 12 层就是
   // 360 次比较 + 重复创建临时数组。预先在 ThreadDetail 这里做一次 O(N) 分桶，
@@ -310,7 +319,11 @@ function ThreadDetail({
         <div className="space-y-2 pt-2">
           {replyTo && (
             <div id={`reply-hint-${threadId}`} className="text-xs text-[var(--text-muted)]">
-              <Trans>回复楼中楼 · {replyTo.slice(0, 8)}…</Trans>{" "}
+              {replyToAuthor ? (
+                <Trans>回复 @{replyToAuthor} 的楼中楼</Trans>
+              ) : (
+                <Trans>回复楼中楼 · {replyTo.slice(0, 8)}…</Trans>
+              )}{" "}
               <button
                 type="button"
                 className="underline"

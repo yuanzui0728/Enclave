@@ -69,6 +69,15 @@ const ABUSE_FILTER_ACTION_LABELS: Record<string, MessageDescriptor> = {
   log: msg`记录`,
 };
 
+// admin-abuse-filters FilterCard 原写法 `范围：{filter.scope}` 渲染英文枚举
+// （"all" / "content" / "recipe"），跟 CreateFilterForm 下拉里"全部 / 仅档案 /
+// 仅角色逻辑"完全对不上号。集中映射。
+const ABUSE_FILTER_SCOPE_LABELS: Record<string, MessageDescriptor> = {
+  all: msg`全部`,
+  content: msg`仅档案`,
+  recipe: msg`仅角色逻辑`,
+};
+
 function lookup(
   map: Record<string, MessageDescriptor>,
   value: string | null | undefined,
@@ -94,3 +103,5 @@ export const blockScopeLabel = (v: string | null | undefined) =>
   lookup(BLOCK_SCOPE_LABELS, v);
 export const abuseFilterActionLabel = (v: string | null | undefined) =>
   lookup(ABUSE_FILTER_ACTION_LABELS, v);
+export const abuseFilterScopeLabel = (v: string | null | undefined) =>
+  lookup(ABUSE_FILTER_SCOPE_LABELS, v);

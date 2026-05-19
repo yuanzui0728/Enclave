@@ -25,7 +25,10 @@ import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
-import { revisionOperationLabel } from "../lib/revision-labels";
+import {
+  abuseFilterScopeLabel,
+  revisionOperationLabel,
+} from "../lib/revision-labels";
 
 export function AdminAbuseFiltersPage() {
   const t = translateRuntimeMessage;
@@ -177,7 +180,11 @@ function FilterCard({
         <ActionPill action={filter.action} />
         <SeverityPill severity={filter.severity} />
         <span className="text-xs text-[color:var(--text-muted)]">
-          <Trans>范围：{filter.scope}</Trans>
+          {/* 原写法裸渲染 filter.scope = "all" / "content" / "recipe"，跟下方
+              CreateFilterForm 下拉 "全部 (all) / 仅档案 (content) / 仅角色逻辑
+              (recipe)" 完全对不上号；admin 看 "范围：all" 像 i18n 漏译。统一
+              走 abuseFilterScopeLabel 映射。 */}
+          <Trans>范围：{abuseFilterScopeLabel(filter.scope)}</Trans>
         </span>
         {!filter.enabled && (
           <StatusPill>

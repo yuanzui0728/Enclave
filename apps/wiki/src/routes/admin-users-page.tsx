@@ -139,7 +139,14 @@ export function AdminUsersPage() {
                         aria-label={t(msg`${u.username} 的角色`)}
                         className="rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                         value={u.role}
-                        disabled={u.id === user?.id || setRoleMut.isPending}
+                        // 原写法整表 N 个 select 在任一改角色时一起灰，admin 想
+                        // 连改 5 个用户每次都要等 invalidate。只灰当前行（variables
+                        // .userId 命中该 u.id）。
+                        disabled={
+                          u.id === user?.id ||
+                          (setRoleMut.isPending &&
+                            setRoleMut.variables?.userId === u.id)
+                        }
                         onChange={(e) => {
                           const next = e.target.value as WikiRole;
                           // 降级巡查员 / 管理员是高风险且不可"轻松撤销"的操作

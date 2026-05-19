@@ -17,7 +17,7 @@ import {
   TextField,
   useTablistKeyboard,
 } from "@yinjie/ui";
-import { hasRole } from "../lib/auth-store";
+import { hasRole, roleLabel } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import {
   wikiApi,
@@ -742,7 +742,12 @@ function HistoryView({
           onRevert={(reason) =>
             revertMut.mutate({ toRevisionId: rev.id, reason })
           }
-          reverting={revertMut.isPending}
+          // 历史 tab 多版本同时存在；revertMut 共享时点其中一条所有"回滚"
+          // 按钮一起灰。只灰 variables.toRevisionId 命中的那条。
+          reverting={
+            revertMut.isPending &&
+            revertMut.variables?.toRevisionId === rev.id
+          }
         />
       ))}
       {revertMut.isError && (
@@ -782,7 +787,10 @@ function RevisionCard({
         <div className="flex items-center gap-2 flex-wrap">
           <strong>{editorName}</strong>
           <span className="text-xs text-[var(--text-muted)]">
-            {rev.editorRoleAtTime}
+            {/* 同 pending-reviews / recent-changes：editorRoleAtTime 是英文
+                enum，原写法直接渲染让中文用户看到一串 "patroller" / "admin"
+                夹在中文历史卡里像漏译。 */}
+            {roleLabel(rev.editorRoleAtTime)}
           </span>
           <span className="text-xs text-[var(--text-muted)]">
             {formatDateTime(rev.createdAt)}

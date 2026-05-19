@@ -15,7 +15,7 @@ import {
   StatusPill,
   TextField,
 } from "@yinjie/ui";
-import { hasRole } from "../lib/auth-store";
+import { hasRole, roleLabel } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi, type PendingReviewItem } from "../lib/wiki-api";
 import { useUsernameMap } from "../lib/use-username-map";
@@ -163,7 +163,15 @@ export function PendingReviewsPage() {
                   note,
                 })
               }
-              loading={decideMut.isPending}
+              // decideMut 是整页共享的 mutation；原写法 loading=decideMut.isPending
+              // 会让"任一卡片"决策中时整页 N 个卡片的 通过/要求修改/驳回 三个
+              // 按钮都灰掉。巡查员经常连扫 10+ 张待审，每次都要等 invalidate 重新
+              // refetch 才能点下一张，体感很卡。改成只灰当前卡片（variables.revisionId
+              // 就是 item.revision.id），多卡并发 decide 也只盲掉那一张。
+              loading={
+                decideMut.isPending &&
+                decideMut.variables?.revisionId === item.revision.id
+              }
             />
           </li>
         ))}
@@ -276,8 +284,9 @@ function ReviewCard({
           </StatusPill>
         )}
         <span className="text-xs text-[color:var(--text-muted)] sm:ml-auto">
+          {/* 同 recent-changes：editorRoleAtTime 是英文 enum，走 roleLabel 本地化 */}
           <Trans>
-            由 {editorName}（{rev.editorRoleAtTime}）提交于{" "}
+            由 {editorName}（{roleLabel(rev.editorRoleAtTime)}）提交于{" "}
             {formatDateTime(rev.createdAt)}
           </Trans>
         </span>
