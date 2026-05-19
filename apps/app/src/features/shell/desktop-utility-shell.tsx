@@ -47,9 +47,20 @@ export function DesktopUtilityShell({
         <div className="flex h-full min-h-0 flex-col">
           <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.74)] px-5 backdrop-blur-xl">
             <div className="min-w-0">
-              <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+              {/* 走查电脑端单聊 R142：和姊妹 R140 (独立聊天窗口) / R141
+                  (独立图片查看器) 同款 —— DesktopUtilityShell 给一批桌面
+                  utility 页面（chat-history-page "聊天记录" / chat-files-
+                  page "聊天文件" / favorites / settings / 等）当 layout
+                  shell 用，整个页面只有这一个 <header> landmark 表达 page
+                  title。原版用裸 <div> 渲染 title，盲人 SR 走 heading 导航
+                  找不到 <h1>，得线性扫整条 header（chip + title + subtitle
+                  + toolbar）。chat 单聊路径走"聊天记录" / "聊天文件"
+                  utility 页时影响最直接。改成语义 <h1>，Tailwind 样式不变；
+                  subtitle 仍是辅助 <div>。和姊妹 R140/R141 一致补 page
+                  title heading 语义。 */}
+              <h1 className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
                 {title}
-              </div>
+              </h1>
               {subtitle ? (
                 <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
                   {subtitle}
