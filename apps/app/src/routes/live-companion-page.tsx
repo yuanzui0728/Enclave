@@ -948,11 +948,36 @@ export function LiveCompanionPage() {
         dev 移掉 overlay 时把常量翻 false，overlay + 两条 query 一起恢复。
       */}
       {LIVE_COMPANION_DEV_BLOCKED ? (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
+        // 走查 2026-05-19 第十五轮 R6：原 overlay 是裸 <div> 没 role / 没 aria-
+        // modal —— 第十四轮 R1 给下层表单挂了 inert（commit dd20ddffc 让 SR/键盘
+        // 不再误入 dev-block 下面的 TextField），但 overlay 自身一直没向 SR 说明
+        // "这是一层 blocking modal" + "里面的 link 是唯一出口"。盲用用户进来听到
+        // 的语义流是 "功能开发中 静态文本 / 敬请期待 静态文本 / 返回视频号 link"，
+        // 没有"模态 / dialog / 当前在拦截层"上下文，且 visually-hidden 的下层
+        // DesktopUtilityShell 内容（aria 树仍然部分暴露 — inert 退出可聚焦但 SR
+        // virtual cursor 在某些 NVDA 模式仍能游走）容易让用户误以为"页面在加载
+        // 中" / 失去定位。
+        // 修法（参考 ChannelsForwardPicker / ChannelCommentsDrawer / ChannelAuthor
+        // Overlay 同款 dialog 模式）：
+        //   - role="dialog" + aria-modal="true" 让 SR 进入时知道"现在在 modal 内"
+        //   - aria-labelledby 指向标题（h2 元素而非裸 div，让 heading-rotor 也能
+        //     跳到这里）
+        // 不挂 focus trap：内部只有一个可聚焦元素（"返回视频号" link），用户的
+        // Tab/Shift+Tab 自然停在它上面，下层 inert 把外面所有 focusable 都退出
+        // 序了。极简模态不需要 trap helper。
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="live-companion-dev-block-title"
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]"
+        >
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
-            <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+            <h2
+              id="live-companion-dev-block-title"
+              className="text-lg font-semibold text-[color:var(--text-primary)]"
+            >
               {t(msg`功能开发中`)}
-            </div>
+            </h2>
             <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
               {t(msg`敬请期待`)}
             </div>
