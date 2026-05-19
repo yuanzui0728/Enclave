@@ -332,6 +332,26 @@ export function LiveCompanionPage() {
 
   return (
     <div className="relative isolate h-full min-h-0">
+      {/*
+        走查 2026-05-19 桌面端第十四轮 R1：dev-block overlay 视觉上盖死整页（z-50
+        bg-black/30 backdrop-blur），但下层 DesktopUtilityShell 里所有 TextField /
+        SelectorCard radio / 「发到手机继续」/ 「生成预热内容」/ 「带入直播准备」
+        等几十个 focusable 仍在 sequential Tab 序里。键盘用户从顶栏「返回视频号」
+        link Shift+Tab 出去后会 Tab 走到下层表单（焦点环肉眼看不到，藏在毛玻璃
+        下面），按键开始编辑「直播标题 / 主题 / 封面钩子」TextField 也能输入但
+        提交按钮全被 overlay 拦截 → 改动落 localStorage（draft 防抖效果仍跑）但
+        无任何视觉反馈，体感「我按了 Tab 焦点跑哪去了」；SR 用户更糟，TalkBack
+        / NVDA 会念出"直播标题 textbox"、"模式 radio group"等 dev-block 不该暴露
+        的内容，且 input.disabled=false 让 SR 以为可填，但实际所有改动无法落地。
+        修法：dev-block 时给 inner content 挂 inert，让整片表单 + 侧栏 metric 卡
+        统统退出 a11y 树 + 不可聚焦。overlay 内的「返回视频号」link 是用户唯一
+        入口，对齐 modal 焦点隔离的标准实践。dev 移掉 overlay 时常量翻 false，
+        inert 同步关掉。
+      */}
+      <div
+        className="contents"
+        {...(LIVE_COMPANION_DEV_BLOCKED ? { inert: true } : {})}
+      >
       <DesktopUtilityShell
         title={t(msg`直播伴侣`)}
         subtitle={t(msg`把开播前准备、状态检查和参考内容收在一起。`)}
@@ -914,6 +934,7 @@ export function LiveCompanionPage() {
         </div>
       </div>
     </DesktopUtilityShell>
+      </div>
       {/*
         走查 2026-05-18 新会话 R2：原蒙板只有"功能开发中 / 敬请期待"两行字，没
         任何出口按钮。用户从工作区顶栏的「直播伴侣」按钮点进来 → 满屏 z-50
