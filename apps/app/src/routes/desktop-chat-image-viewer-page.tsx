@@ -510,9 +510,19 @@ export function DesktopChatImageViewerPage() {
       `}</style>
       <header className="yj-desktop-image-print-hidden flex items-start justify-between gap-4 border-b border-white/8 bg-[#242424] px-5 py-4">
         <div className="min-w-0">
-          <div className="truncate text-[16px] font-medium">
+          {/* 走查电脑端单聊 R141：和姊妹 desktop-chat-window-page R140 同款 ——
+              独立图片查看器窗口（右键图片消息「在独立窗口打开」/ Tauri 多开
+              sub-window）整页只有一个 <header> landmark，原版图片 title
+              用裸 <div> 渲染。盲人 SR 走 heading 导航找不到 <h1>，只能
+              线性扫 header 区，"图片标题（文件名）"是这个 standalone
+              window 最关键的页面身份信息——切换上一张/下一张图片时
+              activeItem.title 跟着换，page title 也会同步 (yj-desktop-
+              image-print-stage CSS 的 print 标题用同一个 string)。改成
+              语义 <h1>，Tailwind 样式不动；header 内 meta + index 仍是
+              辅助 div。 */}
+          <h1 className="truncate text-[16px] font-medium">
             {activeItem.title}
-          </div>
+          </h1>
           {activeItem.meta ? (
             <div className="mt-1 truncate text-[12px] text-white/62">
               {activeItem.meta}
