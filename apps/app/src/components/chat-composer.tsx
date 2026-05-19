@@ -458,6 +458,17 @@ export function ChatComposer({
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<number | null>(null);
   const [mobileMentionDismissed, setMobileMentionDismissed] = useState(false);
+  // 走查电脑端群聊新会话 R108：原版桌面端 @mention picker 没有"主动关闭"路径
+  // —— 移动端有 mobileMentionDismissed + sheet 关闭按钮，桌面端 picker 只能
+  // 靠 backspace 删 "@xxx" / 移光标走开 / 选候选 才会消失。用户在群聊 composer
+  // 里打 @ 误触后想关 picker 自然按 Esc，但桌面端 handleDesktopInputKeyDown
+  // 在 mentionPickerOpen 里只接 ArrowDown/Up/Enter，Esc 透传到 window keydown
+  // → workspace 的 dismissSidePanel 兜底（line ~996-1007 只跳过 role="dialog"/
+  // role="menu"，listbox 不在白名单）→ 把背后的「聊天信息」侧栏意外关掉。
+  // 配合 mobileMentionDismissed 同款 state，让桌面端 Esc 把 picker 主动闭合
+  // —— activeMention 内容下次变化（用户多打一个字或挪光标）时 reset 让 picker
+  // 重新可弹。
+  const [desktopMentionDismissed, setDesktopMentionDismissed] = useState(false);
   const [mobileSpeechPressing, setMobileSpeechPressing] = useState(false);
   const [mobileSpeechCancelIntent, setMobileSpeechCancelIntent] =
     useState(false);
@@ -1365,6 +1376,11 @@ export function ChatComposer({
     }
     lastMentionStartRef.current = nextStart;
     setMobileMentionDismissed(false);
+    // 走查电脑端群聊新会话 R108：和上方 mobileMentionDismissed 同口径 ——
+    // 用户在桌面端按 Esc 把 picker 关掉后，下一次"换一个 @ 上下文"（光标走开
+    // 重打 @ / 在另一个位置又 @）应当让 picker 重新可弹。共用同款"start 变化
+    // 才 reset"逻辑，本 @ 上下文内多敲一个字不打扰用户的 dismiss 意图。
+    setDesktopMentionDismissed(false);
   }, [activeMention]);
 
   useEffect(() => {
@@ -3004,7 +3020,19 @@ export function ChatComposer({
   ) => {
     const commandKey = event.metaKey || event.ctrlKey;
 
-    if (mentionPickerOpen) {
+    if (mentionPickerOpen && !desktopMentionDismissed) {
+      // 走查电脑端群聊新会话 R108：Esc 关 picker。原版没接 Esc → 直接透传到
+      // workspace window keydown → dismissSidePanel 把背后「聊天信息」侧栏
+      // 意外关掉。stopPropagation 阻断到 workspace；setDesktopMentionDismissed
+      // 把 picker 收起；activeMention 上下文变化时 effect 会自动 reset，picker
+      // 重新可弹。
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setDesktopMentionDismissed(true);
+        return;
+      }
+
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setMentionActiveIndex((current) =>
@@ -3519,7 +3547,7 @@ export function ChatComposer({
             onClose={onCancelReply}
           />
         ) : null}
-        {isDesktop && mentionPickerOpen ? (
+        {isDesktop && mentionPickerOpen && !desktopMentionDismissed ? (
           <DesktopMentionPicker
             candidates={filteredMentionCandidates}
             activeIndex={mentionActiveIndex}
