@@ -8221,7 +8221,17 @@ function NoteViewerOverlay({
   const hasContentHtml = Boolean(document?.contentHtml?.trim());
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#ededed]">
+    // 走查电脑端群聊新会话 R113：和姊妹 R112 Image/Location viewer 同款 — 缺
+    // role="dialog" + aria-modal。NoteViewerOverlay 是全屏笔记查看器，从群消息
+    // 里点 note_card 附件打开。原版根 <div> 没 role，workspace dismissSidePanel
+    // microtask 命中不到 → 按 Esc 关 note viewer 把背后侧栏一起关。补 role 兜
+    // 底 SR 识别 modal + 自动绕开 workspace dismiss race。
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={translateRuntimeMessage(msg`笔记查看器`)}
+      className="fixed inset-0 z-50 flex flex-col bg-[#ededed]"
+    >
       <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
         <Button
           type="button"
