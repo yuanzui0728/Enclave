@@ -82,7 +82,12 @@ export function ScenePromptPreview({
           onClick={runBoth}
           disabled={previewMut.isPending || baselineMut.isPending}
         >
-          {previewMut.isPending ? t(msg`渲染中...`) : t(msg`渲染`)}
+          {/* 原写法 label 只看 previewMut，但 disabled 看 both —— baseline 还
+              在跑时按钮 disabled=true 但文案显示"渲染"，用户以为可点。统一
+              看 both，跟 disabled 语义对齐。 */}
+          {previewMut.isPending || baselineMut.isPending
+            ? t(msg`渲染中...`)
+            : t(msg`渲染`)}
         </Button>
       </div>
       <p className="text-xs text-[var(--text-muted)]">

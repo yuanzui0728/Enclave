@@ -959,14 +959,14 @@ msgstr "教程"
 #: apps/wiki/src/components/root-layout.tsx:417
 #: apps/wiki/src/routes/login-page.tsx:50
 #: apps/wiki/src/routes/login-page.tsx:167
-#: apps/wiki/src/routes/register-page.tsx:124
+#: apps/wiki/src/routes/register-page.tsx:143
 msgid "登录"
 msgstr "登录"
 
 #: apps/wiki/src/components/root-layout.tsx:414
 #: apps/wiki/src/routes/admin-users-page.tsx:88
-#: apps/wiki/src/routes/register-page.tsx:52
-#: apps/wiki/src/routes/register-page.tsx:115
+#: apps/wiki/src/routes/register-page.tsx:58
+#: apps/wiki/src/routes/register-page.tsx:134
 msgid "注册"
 msgstr "注册"
 
@@ -1033,36 +1033,36 @@ msgstr "Prompt 预览"
 msgid "Prompt 预览场景"
 msgstr "Prompt 预览场景"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:85
+#: apps/wiki/src/components/scene-prompt-preview.tsx:89
 msgid "渲染中..."
 msgstr "渲染中..."
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:85
+#: apps/wiki/src/components/scene-prompt-preview.tsx:90
 msgid "渲染"
 msgstr "渲染"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:89
+#: apps/wiki/src/components/scene-prompt-preview.tsx:94
 msgid "实时把当前编辑器中的 recipe 渲染成 AI 看到的 system prompt，避免误改。"
 msgstr "实时把当前编辑器中的 recipe 渲染成 AI 看到的 system prompt，避免误改。"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:97
+#: apps/wiki/src/components/scene-prompt-preview.tsx:102
 msgid "改前（baseline）"
 msgstr "改前（baseline）"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:100
-#: apps/wiki/src/components/scene-prompt-preview.tsx:109
+#: apps/wiki/src/components/scene-prompt-preview.tsx:105
+#: apps/wiki/src/components/scene-prompt-preview.tsx:114
 msgid "（点击渲染）"
 msgstr "（点击渲染）"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:106
+#: apps/wiki/src/components/scene-prompt-preview.tsx:111
 msgid "改后（当前编辑）"
 msgstr "改后（当前编辑）"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:123
+#: apps/wiki/src/components/scene-prompt-preview.tsx:128
 msgid "改后"
 msgstr "改后"
 
-#: apps/wiki/src/components/scene-prompt-preview.tsx:130
+#: apps/wiki/src/components/scene-prompt-preview.tsx:135
 msgid "改前"
 msgstr "改前"
 
@@ -1412,7 +1412,7 @@ msgstr "请先 <0>登录</0> 后再访问账户设置。"
 
 #: apps/wiki/src/routes/account-page.tsx:70
 #: apps/wiki/src/routes/login-page.tsx:50
-#: apps/wiki/src/routes/register-page.tsx:51
+#: apps/wiki/src/routes/register-page.tsx:57
 msgid "账号"
 msgstr "账号"
 
@@ -2535,7 +2535,7 @@ msgid "两者皆可登录；含 @ 视为邮箱"
 msgstr "两者皆可登录；含 @ 视为邮箱"
 
 #: apps/wiki/src/routes/login-page.tsx:148
-#: apps/wiki/src/routes/register-page.tsx:69
+#: apps/wiki/src/routes/register-page.tsx:83
 msgid "密码"
 msgstr "密码"
 
@@ -2894,43 +2894,47 @@ msgstr "{editorName}（{0}） · {1}"
 msgid "标记已巡查"
 msgstr "标记已巡查"
 
-#: apps/wiki/src/routes/register-page.tsx:32
+#: apps/wiki/src/routes/register-page.tsx:38
 msgid "两次输入的密码不一致"
 msgstr "两次输入的密码不一致"
 
-#: apps/wiki/src/routes/register-page.tsx:54
+#: apps/wiki/src/routes/register-page.tsx:60
 msgid "新账号默认为「新人」。提交的编辑需经巡查员审核后生效；累积达标后会自动晋升为「自动确认」。"
 msgstr "新账号默认为「新人」。提交的编辑需经巡查员审核后生效；累积达标后会自动晋升为「自动确认」。"
 
-#: apps/wiki/src/routes/register-page.tsx:59
+#: apps/wiki/src/routes/register-page.tsx:66
 msgid "用户名"
 msgstr "用户名"
 
-#: apps/wiki/src/routes/register-page.tsx:59
-msgid "≥ 2 字"
-msgstr "≥ 2 字"
-
 #: apps/wiki/src/routes/register-page.tsx:69
+msgid "用户名不能包含 @（保留给邮箱登录）"
+msgstr "用户名不能包含 @（保留给邮箱登录）"
+
+#: apps/wiki/src/routes/register-page.tsx:70
+msgid "≥ 2 字，不能包含 @"
+msgstr "≥ 2 字，不能包含 @"
+
+#: apps/wiki/src/routes/register-page.tsx:83
 msgid "≥ 6 位"
 msgstr "≥ 6 位"
 
-#: apps/wiki/src/routes/register-page.tsx:80
+#: apps/wiki/src/routes/register-page.tsx:94
 msgid "确认密码"
 msgstr "确认密码"
 
-#: apps/wiki/src/routes/register-page.tsx:83
+#: apps/wiki/src/routes/register-page.tsx:97
 msgid "两次输入不一致"
 msgstr "两次输入不一致"
 
-#: apps/wiki/src/routes/register-page.tsx:84
+#: apps/wiki/src/routes/register-page.tsx:98
 msgid "再输一次以确认"
 msgstr "再输一次以确认"
 
-#: apps/wiki/src/routes/register-page.tsx:115
+#: apps/wiki/src/routes/register-page.tsx:134
 msgid "注册中..."
 msgstr "注册中..."
 
-#: apps/wiki/src/routes/register-page.tsx:119
+#: apps/wiki/src/routes/register-page.tsx:138
 msgid "已有账号？"
 msgstr "已有账号？"
 
