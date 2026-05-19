@@ -196,6 +196,16 @@ export function AudioCard({
               <Play className="ml-[2px] h-4 w-4" />
             )}
           </button>
+          {/* 走查 2026-05-19 第十五轮 R1：seek slider 历来裸 <input type="range">，
+              无 aria-label —— SR 用户 Tab 到这条 slider 只能听到 "slider, 5, min
+              0, max 30"，不知道是音频进度还是其它什么的；更没 aria-valuetext，
+              所以 0-300 这种秒数读出来也毫无语义（"5 of 30" 不带单位）。同
+              卡顶部的 play/pause 按钮早就有 aria-label，这条 slider 一直漏。
+              channels 视频号 audio slide 在 yuanzui0728 测试库占 80%+，盲用
+              用户每打开一个音乐贴都摸不到进度条用途。
+              修法：aria-label="音频进度"；aria-valuetext 用 formatSeconds 把秒
+              数渲成 mm:ss 让 SR 念出 "0:05 / 0:30 共" 这种可读形式，对齐可视
+              用户看到的 right-side 文本 "0:05/0:30"。 */}
           <input
             type="range"
             min={0}
@@ -203,6 +213,12 @@ export function AudioCard({
             step={0.1}
             value={Math.min(progress, duration || 0)}
             onChange={handleSeek}
+            aria-label={t(msg`音频进度`)}
+            aria-valuetext={
+              duration
+                ? `${formatSeconds(progress)} / ${formatSeconds(duration)}`
+                : undefined
+            }
             className="h-1 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
             disabled={!duration}
           />
