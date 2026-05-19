@@ -1021,21 +1021,34 @@ export function ChatComposer({
     };
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
-        // 不 preventDefault：desktop-chat-workspace 那条 window keydown
-        // microtask 兜底（line 919）会接着跑 dismissSidePanel —— 桌面单聊
-        // 开着「聊天信息」侧栏然后点表情按钮打开 sticker panel，按 Esc 会
-        // 同时把 panel 和背后的侧栏一起关掉。和 image viewer / contextMenu
-        // 同款修法。
+        // 走查电脑端群聊新会话 R109：原版只调 preventDefault，但 workspace
+        // 那条 window keydown 的 microtask 兜底（desktop-chat-workspace.tsx
+        // line ~997-1007）只查 DOM 里有没有 role="dialog"/role="menu"，不查
+        // defaultPrevented（HTML spec: 每个 event listener invocation 之间都
+        // 跑 microtask checkpoint，workspace handler 注册先 → 它的 microtask
+        // 在本 sticker handler fire 之前就跑完，defaultPrevented 永远是 false）。
+        // sticker panel 根元素是裸 <div> 不带任何 role，DOM 查询命中不到 → 用户
+        // 在群聊「聊天信息」侧栏开着时点表情按钮打开 sticker panel，按 Esc 会
+        // 同时把 panel 和背后的侧栏一起关掉（注释里说"和 image viewer /
+        // contextMenu 同款修法"是错的——它们有 role="dialog"/role="menu"，
+        // sticker panel 没有）。
+        //
+        // 改用 capture-phase 监听 + stopImmediatePropagation：capture 阶段先
+        // 于所有 bubble listeners 跑，stopImmediatePropagation 阻断后续 capture
+        // 和 bubble 路径上的同名 listener（含 workspace bubble Esc handler）。
+        // workspace 的 dismissSidePanel microtask 根本不会被 schedule，侧栏
+        // 保持原状。
         event.preventDefault();
+        event.stopImmediatePropagation();
         setStickerPanelOpen(false);
       }
     };
 
     window.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [isDesktop, stickerPanelOpen]);
 
@@ -1125,18 +1138,23 @@ export function ChatComposer({
     };
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
-        // 同 sticker panel：不 preventDefault 的话 dismissSidePanel
-        // microtask 会接着跑把背后的「聊天信息」侧栏一起关掉。
+        // 走查电脑端群聊新会话 R109：和上方 sticker panel Esc handler 同款 ——
+        // 原版只 preventDefault 不够，workspace 的 dismissSidePanel microtask
+        // 只查 DOM role 不查 defaultPrevented，plus menu favorites picker 根
+        // 元素也是裸 <div>，命中不到 → 群聊「聊天信息」侧栏开着时点 + 按钮
+        // 打开 plus menu，按 Esc 同时关了 menu 和侧栏。capture-phase 注册 +
+        // stopImmediatePropagation 阻断 workspace bubble handler。
         event.preventDefault();
+        event.stopImmediatePropagation();
         setDesktopPlusMenuOpen(false);
       }
     };
 
     window.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [desktopPlusMenuOpen, isDesktop]);
 
