@@ -2010,6 +2010,22 @@ export function DesktopChatWorkspace({
                 // 给整个 reminder section 加 shield 是安全的。
                 <section
                   data-yj-portal-shield="desktop-chat-reminder-section"
+                  // 走查电脑端单聊 R146：本 <section> 是聊天列表顶部"消息提醒"
+                  // 模块的语义容器（filteredReminderEntries.length > 0 时
+                  // 才渲染，包含每条提醒卡片 + 折叠/展开 + 清空已通知 等）。
+                  // 原版没挂 aria-label / aria-labelledby —— HTML5 spec
+                  // 明确要求 <section> 必须有 accessible name 才能暴露为
+                  // navigable region；没有时 SR (NVDA/JAWS/VoiceOver)
+                  // 走 landmark 导航时直接跳过本 section，盲人用户从 chat
+                  // tab 切到 chat list 时听不到"消息提醒"这一整块的存在，
+                  // 必须逐条 Tab 朗读到 DesktopReminderCard 才反应过来。
+                  // 内部已经有 BellRing icon + <span>{t(msg`消息提醒`)}</span>
+                  // 可见小标题，但 span 没 heading role + 没 id，无法做
+                  // aria-labelledby。直接挂 aria-label 复用同款 msg 文案，
+                  // 把 section 注册为 region landmark；和姊妹 R142
+                  // utility shell h1 / R143 thread header h1 一脉的"把
+                  // visible section title 也对 AT 暴露"思路。
+                  aria-label={t(msg`消息提醒`)}
                   className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none"
                 >
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
