@@ -1022,6 +1022,23 @@ export function DesktopChannelsWorkspace({
                 replyTarget={commentReplyTarget}
                 selectedPost={selectedPost}
                 submitPending={commentPendingPostId === selectedPost.id}
+                // 走查 2026-05-19 第十一轮 R1：drawer (z-30) 跟 author overlay
+                // (z-40) / forward picker (z-110) 同时打开时（slide chat 图标开
+                // drawer → 点头像开 author → 在 author 内点转发图标开 picker，
+                // 多见于自己 author 主页的最近内容那条转发路径），每个 modal 的
+                // focus trap (L2078-2106 / L2296-2327 / picker L209-240) 都是
+                // document-level keydown listener，全部并行 fire 同一个 Tab key。
+                // author 的 trap 把焦点 cycle 到 overlay 内下一个 → drawer 的
+                // trap 紧接着判定 `active` 不在 drawer → preventDefault + focus
+                // drawer 内首元素 → 用户在 author overlay 里按 Tab 焦点直接被
+                // 甩到下层 drawer 的 X 关闭按钮，体感「我按 Tab 怎么 modal 切了」。
+                // 同款问题 picker 在最顶层时 author / drawer 两个 trap 也会跟着
+                // 抢焦点，三层 modal 互相打架。
+                // 修法：每层 modal 只在自己是栈顶时才让 trap 生效。drawer 顶
+                // 层条件 = author 没开 && picker 没开。trapTopmost 用 latest ref
+                // 模式传给 drawer 内部，effect deps 不挂这个 bool（避免每次
+                // open/close 切换重装 listener）。
+                trapTopmost={!authorPanelVisible && !forwardPickerPost}
                 onCancelReply={onCancelCommentReply}
                 onClose={() => setCommentDrawerPostId(null)}
                 onDraftChange={(value) =>
@@ -1049,6 +1066,10 @@ export function DesktopChannelsWorkspace({
               routeSelectedAuthorId !== null &&
               followPendingAuthorId === routeSelectedAuthorId
             }
+            // 走查 2026-05-19 第十一轮 R1：同 drawer trapTopmost 同款 — picker
+            // (z-110) 浮在 author overlay (z-40) 之上时，author overlay 的 focus
+            // trap 仍 fire 抢 picker 内的 Tab 焦点。author 顶层条件 = picker 没开。
+            trapTopmost={!forwardPickerPost}
             selectedPostId={selectedPost?.id ?? null}
             onClose={onCloseAuthor}
             onOpenPost={onOpenAuthorPost}
@@ -2001,6 +2022,7 @@ function ChannelCommentsDrawer({
   replyTarget,
   selectedPost,
   submitPending,
+  trapTopmost = true,
   onCancelReply,
   onClose,
   onDraftChange,
@@ -2023,6 +2045,10 @@ function ChannelCommentsDrawer({
   } | null;
   selectedPost: FeedPostListItem;
   submitPending: boolean;
+  // 走查 2026-05-19 第十一轮 R1：true=drawer 是当前最顶层 modal，focus trap
+  // 正常工作。false=author overlay / forward picker 浮在上方，drawer 让出
+  // Tab 不抢焦点，避免三层 modal 互相把焦点拉出彼此。
+  trapTopmost?: boolean;
   onCancelReply: () => void;
   onClose: () => void;
   onDraftChange: (value: string) => void;
@@ -2075,10 +2101,16 @@ function ChannelCommentsDrawer({
       }
     };
   }, []);
+  // R1：trapTopmost 走 latest-ref 避免 effect deps 把 listener 每次都拆装 ——
+  // open/close 切换栈顶状态时 handler 直接读最新 ref 即可。
+  const trapTopmostRef = useRef(trapTopmost);
+  trapTopmostRef.current = trapTopmost;
   useEffect(() => {
     if (typeof document === "undefined") return;
     const handler = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
+      // R1：上层 modal 打开时让出 Tab，避免抢上层 modal 的焦点。
+      if (!trapTopmostRef.current) return;
       const dialog = dialogRef.current;
       if (!dialog) return;
       const focusable = dialog.querySelectorAll<HTMLElement>(
@@ -2200,6 +2232,7 @@ function ChannelAuthorOverlay({
   isLoading,
   profile,
   selectedPostId,
+  trapTopmost = true,
   onClose,
   onOpenPost,
   onToggleFollow,
@@ -2210,6 +2243,9 @@ function ChannelAuthorOverlay({
   isLoading: boolean;
   profile: FeedChannelAuthorProfile | null;
   selectedPostId: string | null;
+  // 走查 2026-05-19 第十一轮 R1：true=author overlay 是当前最顶层 modal。
+  // false=forward picker 浮在上方，author 让出 Tab 不抢 picker 的焦点。
+  trapTopmost?: boolean;
   onClose: () => void;
   onOpenPost: (postId: string, authorId: string) => void;
   onToggleFollow: (authorId: string, following: boolean) => void;
@@ -2293,10 +2329,16 @@ function ChannelAuthorOverlay({
   // tabs / refresh / 直播伴侣按钮上（虽然视觉被 0.55 backdrop 半盖但仍可聚焦），
   // 键盘用户体感"我刚刚在 modal 里怎么 Tab 跳到顶部去了"。同款 ChannelsForward
   // Picker 早就（L198-229）做了 Tab cycling，author-overlay 一直漏。
+  // R1：trapTopmost 走 latest-ref 让 picker 开关切换栈顶状态时不需要重装
+  // listener；handler 内部 bail 即可。
+  const trapTopmostRef = useRef(trapTopmost);
+  trapTopmostRef.current = trapTopmost;
   useEffect(() => {
     if (typeof document === "undefined") return;
     const handler = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
+      // R1：picker 浮在 author 之上时让出 Tab，避免抢 picker 内的焦点。
+      if (!trapTopmostRef.current) return;
       const dialog = dialogRef.current;
       if (!dialog) return;
       const focusable = dialog.querySelectorAll<HTMLElement>(
