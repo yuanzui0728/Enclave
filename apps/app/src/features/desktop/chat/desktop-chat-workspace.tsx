@@ -3121,7 +3121,16 @@ const ConversationCardLink = memo(function ConversationCardLink({
             ) : null}
             {conversation.unreadCount > 0 ? (
               conversation.isMuted ? (
+                // 走查电脑端群聊 R106：和姊妹 R105 GroupAvatarChip 同款 — 裸 <div>
+                // 挂 aria-label 没 role，按 ARIA 1.2 spec 在 generic 元素上 aria-label
+                // 行为是 implementation-defined，部分 SR（Chromium AX tree 早期版本 /
+                // VoiceOver 严格模式）不暴露。muted 变体只是一个红色 2×2 视觉小点，
+                // 没有 inner text 也没 role，盲人 SR 走会话卡片时根本听不到"N 条
+                // 未读消息"提示——muted 群尤其需要这层 fallback 反馈（既然把通知
+                // 静音了，列表里这个红点几乎是用户唯一的未读信号）。补 role="img"
+                // 把它当作"一张被命名的视觉指示"，AT 一致暴露 aria-label。
                 <div
+                  role="img"
                   className="h-2 w-2 rounded-full bg-[#fa5151]"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 />
@@ -3133,7 +3142,13 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 是什么。补 aria-label 把语义补齐，inner span 用 aria-hidden
                 // 隔离视觉数字避免某些 SR 实现把 aria-label + 子文本重复念两遍。
                 // 和姊妹 official-message-entry-row 同款问题，下方一并修。
+                //
+                // 走查电脑端群聊 R106：同上 — 补 role="img" 让 aria-label 在
+                // 不带 role 的 generic <div> 上仍被 AT 暴露。inner <span
+                // aria-hidden="true"> 防"99+"裸文本被某些 SR 在 role="img"
+                // 名称之外又复读一遍。
                 <div
+                  role="img"
                   className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 >
