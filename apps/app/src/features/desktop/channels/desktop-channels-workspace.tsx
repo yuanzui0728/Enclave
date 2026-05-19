@@ -1225,9 +1225,26 @@ function ChannelMediaSurface({
   // 统一改成"先把可播 url 算出来，再用它当 gate"，逻辑零分歧。
   const audioPlaybackUrl = audioAsset?.url || post.mediaUrl || "";
   if (post.mediaType === "audio" && audioPlaybackUrl) {
-    const backgroundCover = resolveAppMediaUrl(
-      audioAsset?.posterUrl ?? post.coverUrl ?? undefined,
-    );
+    // 走查 2026-05-19 第八轮 R4：原 posterUrl / title 链一律 `??` —— `??` 只在
+    // null/undefined 时穿越，empty string "" 会一路穿过 fallback 链卡死。contracts
+    // normalizeMomentMediaAsset (client.ts L807-813) 把 asset.posterUrl 用
+    // truthy guard 保留：== "" 时 normalized 仍是 ""（不 absolutize 路径），所以
+    // server 返回 posterUrl="" 的情况会真的落到客户端。原来：
+    //   - audioAsset.posterUrl="" + post.coverUrl="https://valid"
+    //   - `audioAsset?.posterUrl ?? post.coverUrl ?? undefined` = ""
+    //   - resolveAppMediaUrl("") = ""
+    //   - backgroundCover gate truthy 检查 falsy → 不渲背景封面，但 post.coverUrl
+    //     本该作为兜底 cover 显示出来（音乐贴的氛围层），现在静默丢失。
+    //   - AudioCard 同样收到 posterUrl=""，内部 `posterUrl ? resolveAppMediaUrl(posterUrl) : undefined`
+    //     gate 是 truthy 检查所以 fall back 到 undefined → 显 ♫ 占位（fail safe），
+    //     但本来 post.coverUrl 完全可以填上去。
+    //   - title 同款：audioAsset.title="" 不会 fall back 到 post.title。
+    // 同 fallbackImage L1264 已经修过的 R5 同款 — 改用 `||` 让 ""/null/undefined
+    // 都走下一档 fallback。R5 当时只修了 image 帖的 cover 兜底，audio 这条
+    // 漏掉，本轮一并补上。
+    const audioPosterUrl =
+      audioAsset?.posterUrl || post.coverUrl || undefined;
+    const backgroundCover = resolveAppMediaUrl(audioPosterUrl);
     return (
       <div className="relative flex flex-1 items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-6">
         {backgroundCover ? (
@@ -1257,9 +1274,11 @@ function ChannelMediaSurface({
         <div className="relative">
           <AudioCard
             url={audioPlaybackUrl}
-            posterUrl={audioAsset?.posterUrl ?? post.coverUrl ?? undefined}
+            posterUrl={audioPosterUrl}
             title={
-              audioAsset?.title ?? post.title ?? `${post.authorName}·${t(msg`音乐`)}`
+              audioAsset?.title ||
+              post.title ||
+              `${post.authorName}·${t(msg`音乐`)}`
             }
             durationMs={audioAsset?.durationMs ?? post.durationMs ?? undefined}
             variant="feed"
@@ -1272,8 +1291,12 @@ function ChannelMediaSurface({
 
   const videoPlaybackUrl = videoAsset?.url || post.mediaUrl || "";
   if (post.mediaType === "video" && videoPlaybackUrl) {
+    // R4 续：同款 `??` → `||` 修复 — video poster 同样可能 posterUrl=""，原
+    // 链路 `videoAsset?.posterUrl ?? post.coverUrl ?? undefined` 让 "" 卡住，
+    // 视频 element 没 poster 显示纯黑等 metadata 加载。改用 || 让空字符串走
+    // 下一档 fallback。
     const resolvedPoster = resolveAppMediaUrl(
-      videoAsset?.posterUrl ?? post.coverUrl ?? undefined,
+      videoAsset?.posterUrl || post.coverUrl || undefined,
     );
     return (
       <ChannelVideoPlayer
