@@ -7770,7 +7770,21 @@ function ImageViewerOverlay({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.86)] backdrop-blur-sm">
+    // 走查电脑端群聊新会话 R112：原版 ImageViewerOverlay 是 modal 体验（全屏
+    // backdrop + Esc 关 + 焦点收口）但根 <div> 没挂 role="dialog" + aria-modal。
+    // workspace 的 dismissSidePanel microtask DOM 查 `[role="dialog"][aria-modal=
+    // "true"], [role="menu"]` 命中不到 → 用户在群聊（或单聊）开着「聊天信息」/
+    // 「查找记录」侧栏时点开图片预览按 Esc 关 viewer，侧栏被一起关掉（注释承诺
+    // "和 Round 5/6/7 给 popover / confirm / text-edit dialog 补的 preventDefault
+    // 同款修法"但 preventDefault 实际拦不住 microtask）。补 role="dialog" +
+    // aria-modal 把 viewer 注册到 workspace DOM 查询白名单里，Esc race 自动绕开。
+    // 同时盲人 SR 也能识别这是 modal 上下文。
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={translateRuntimeMessage(msg`图片查看器`)}
+      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.86)] backdrop-blur-sm"
+    >
       <button
         type="button"
         onClick={onClose}
@@ -8000,7 +8014,15 @@ function LocationViewerOverlay({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
+    // 走查电脑端群聊新会话 R112：和姊妹 ImageViewerOverlay 同款 — 缺 role="dialog"
+    // + aria-modal 让 workspace dismissSidePanel microtask 命中不到，按 Esc 关
+    // location viewer 时把背后侧栏一起关。补 role="dialog" + aria-label。
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={translateRuntimeMessage(msg`位置查看器`)}
+      className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md"
+    >
       <button
         type="button"
         onClick={onClose}
