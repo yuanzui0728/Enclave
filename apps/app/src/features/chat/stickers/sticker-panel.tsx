@@ -1,5 +1,5 @@
 import { msg } from "@lingui/macro";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteCustomSticker,
@@ -1063,6 +1063,7 @@ export function StickerPanel({
             : undefined
       : undefined;
   const panelTitle = t(msg`表情`);
+  const panelTitleId = useId();
   const closePanelLabel = t(msg`收起`);
   const clearSearchAriaLabel = showManageSearchPauseHint
     ? t(msg`清空表情搜索并继续删除管理`)
@@ -1857,7 +1858,20 @@ export function StickerPanel({
   );
 
   return (
+    // 走查电脑端群聊新会话 R114：StickerPanel 是 chat composer 表情按钮弹出的
+    // 浮层（桌面 absolute 定位、移动端内嵌在 composer 区）。原版根 <div> 没挂
+    // 任何 role — workspace 那条 dismissSidePanel microtask DOM 查 `[role="dialog"]
+    // [aria-modal="true"], [role="menu"]` 命中不到，按 Esc 关 panel 时把背后
+    //「聊天信息」侧栏一起关掉（详见 chat-composer.tsx R114 注释 / R109 回滚来由）。
+    // 补 role="dialog" + aria-labelledby 解决：
+    //   1) workspace DOM 查询命中跳过 dismiss
+    //   2) 盲人 SR 识别 modal 上下文
+    //   3) 不动 sticker-panel 内部 Esc handler 行为（清搜索 / 退 manage mode）
+    // 不挂 aria-modal — panel 关闭后可重新打开，semantic 上是非 modal popup
+    // 但 role="dialog" 已足够命中 workspace 兜底。
     <div
+      role="dialog"
+      aria-labelledby={panelTitleId}
       className={
         isMobile
           ? "mt-1.5 overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
@@ -1874,6 +1888,7 @@ export function StickerPanel({
         >
           <div className="min-w-0">
             <div
+              id={panelTitleId}
               className={
                 isMobile
                   ? "text-[13px] font-medium text-[color:var(--text-primary)]"

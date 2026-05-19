@@ -1021,34 +1021,29 @@ export function ChatComposer({
     };
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
-        // 走查电脑端群聊新会话 R109：原版只调 preventDefault，但 workspace
-        // 那条 window keydown 的 microtask 兜底（desktop-chat-workspace.tsx
-        // line ~997-1007）只查 DOM 里有没有 role="dialog"/role="menu"，不查
-        // defaultPrevented（HTML spec: 每个 event listener invocation 之间都
-        // 跑 microtask checkpoint，workspace handler 注册先 → 它的 microtask
-        // 在本 sticker handler fire 之前就跑完，defaultPrevented 永远是 false）。
-        // sticker panel 根元素是裸 <div> 不带任何 role，DOM 查询命中不到 → 用户
-        // 在群聊「聊天信息」侧栏开着时点表情按钮打开 sticker panel，按 Esc 会
-        // 同时把 panel 和背后的侧栏一起关掉（注释里说"和 image viewer /
-        // contextMenu 同款修法"是错的——它们有 role="dialog"/role="menu"，
-        // sticker panel 没有）。
+        // 走查电脑端群聊新会话 R114：上一次 R109 改成 capture phase +
+        // stopImmediatePropagation 想阻断 workspace dismissSidePanel，但同款
+        // 阻断把 StickerPanel 自己的内部 Esc handler（sticker-panel.tsx 1678-
+        // 1708：清搜索 / 退 customManageMode）也一起干掉了 — 用户在 sticker
+        // 搜索栏打了字按 Esc 期望"清空搜索"，结果整个 sticker panel 被关。
         //
-        // 改用 capture-phase 监听 + stopImmediatePropagation：capture 阶段先
-        // 于所有 bubble listeners 跑，stopImmediatePropagation 阻断后续 capture
-        // 和 bubble 路径上的同名 listener（含 workspace bubble Esc handler）。
-        // workspace 的 dismissSidePanel microtask 根本不会被 schedule，侧栏
-        // 保持原状。
+        // 改回 bubble phase + 仅 preventDefault；workspace dismissSidePanel
+        // race 通过下方 R109b sticker panel 根元素挂 role="dialog" 解决（让
+        // workspace dismiss microtask DOM 查询命中 sticker panel root 跳过
+        // dismiss）。两条 bubble handler 按注册顺序触发：StickerPanel 内部
+        // handler 注册先（child mount before parent commit），先 fire；如果
+        // 它清搜索 / 退 manage 后 return 没继续关 panel，下方本 handler 才
+        // setStickerPanelOpen(false)。
         event.preventDefault();
-        event.stopImmediatePropagation();
         setStickerPanelOpen(false);
       }
     };
 
     window.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isDesktop, stickerPanelOpen]);
 
