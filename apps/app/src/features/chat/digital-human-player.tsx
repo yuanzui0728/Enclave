@@ -75,7 +75,15 @@ export function DigitalHumanPlayer({
         >
           <iframe
             src={playerUrl}
-            title={`${name} digital human player`}
+            // 走查电脑端单聊 R126：单聊「视频通话」打开 DesktopDirectCallPanel
+            // → DigitalHumanPlayer 在 provider 返回 playerUrl 时渲染这条 iframe
+            // 嵌入 provider 数字人流。原版 title 写死英文 "digital human player"
+            // —— 这是 iframe 给 SR (NVDA/JAWS/VoiceOver) 朗读的唯一 accessible
+            // name，整个 app 都翻了 ja-JP/ko-KR/zh-CN 但 SR 用户在这条通话
+            // 入口听到突兀的英文「Lily digital human player」。translateRuntimeMessage
+            // 走运行时 catalog，和姊妹 R55 InlineNotice / R8 channels-workspace
+            // 同款 i18n 修法。
+            title={t(msg`${name} 的数字人视频播放器`)}
             allow="autoplay"
             className="absolute inset-0 h-full w-full border-0"
           />
