@@ -962,6 +962,14 @@ export function DesktopChatWorkspace({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：用户开着「聊天信息」/「查找聊天记录」侧栏的同时还能在
+      // chat composer 里继续打字。CJK 用户拼"你好 nihao"还在候选词阶段按
+      // Esc 想退候选 → 本 handler 抢着 dismissSidePanel 把侧栏关了，用户看
+      // 到的是"按 Esc 没退候选词倒把侧栏弄没了"。先让 IME 吃 Esc，候选词
+      // 退后用户再按一次（isComposing=false）才走 dismiss 路径。
+      if (event.isComposing) {
+        return;
+      }
 
       // 这条 window keydown 是 details 侧栏开着时的「按 Esc 关侧栏」兜底。
       // 问题是 confirm/text-edit/forward/create-group 这些 dialog 的 Esc

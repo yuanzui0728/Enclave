@@ -1681,6 +1681,14 @@ export function StickerPanel({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：sticker panel 顶部有搜索 input，CJK 用户用拼音 / 假名 /
+      // 한글 搜表情时按 Esc 是退候选词的标准键。原 handler 抢 Esc 清 keyword /
+      // 退管理模式 / 关 panel → 半截"可 ke"被吞、搜索流程被打断。先让 IME
+      // 吃 Esc，候选词退后再按一次才走原 fallback。同款已修：window 入参
+      // composer / chat-history-panel / 各 dialog。
+      if (event.isComposing) {
+        return;
+      }
 
       if (trimmedKeyword.length > 0) {
         event.preventDefault();
