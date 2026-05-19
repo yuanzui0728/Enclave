@@ -1253,7 +1253,20 @@ function DesktopChatFilesImageViewer({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.72)] backdrop-blur-[2px]">
+    // 走查电脑端群聊 R116：和姊妹 chat-message-list ImageViewerOverlay R112 /
+    // LocationViewerOverlay R112 / NoteViewerOverlay R113 同款 — 聊天文件页内置
+    // 图片 viewer 根 <div> 缺 role="dialog" + aria-modal。SR 走过去只听到一串
+    // 按钮 label「关闭图片预览 / 新窗口打开 / 保存图片 / 关闭 / 上一张 / 下一张」
+    // 浮空，听不到"图片查看器"上下文。补 role 让 SR 识别 modal 角色，aria-label
+    // 在 img 主体上方走 viewer 自己的语义入口；同时让本 viewer 在桌面 shell
+    // 其它路径上若也复用（如未来从 details 侧栏 hot-link）自动跳过 workspace
+    // dismissSidePanel DOM 查询，预防 race。
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(msg`图片查看器`)}
+      className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.72)] backdrop-blur-[2px]"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭图片预览`)}
