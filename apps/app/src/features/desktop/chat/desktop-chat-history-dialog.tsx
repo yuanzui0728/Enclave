@@ -51,6 +51,15 @@ export function DesktopChatHistoryDialog({
       if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
+      // 走查 R151：内嵌的 DesktopChatHistoryPanel R148 已挂 isComposing 守
+      // 卫 + capture phase。但 panel 在 capture 早返时不 preventDefault →
+      // defaultPrevented=false → 本 dialog 的 bubble handler 接着跑 → 关
+      // 弹层。CJK 用户在面板搜索框拼"张 zhang"还在候选词阶段按 Esc 想退候
+      // 选 → dialog 直接关掉，IME 候选词被吞、整段聊天记录搜索流程被打断。
+      // dialog 这层也补 isComposing 早返。
+      if (event.isComposing) {
+        return;
+      }
       event.preventDefault();
       onCloseRef.current();
     };
