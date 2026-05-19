@@ -1096,6 +1096,22 @@ export function DesktopChannelsWorkspace({
                   // recommended tab 一次拉 20+ slide，且 yz 等用户偏好快速 toggle
                   // 静音浏览，省 ~95% 的 unmute-induced 全列表 re-render。
                   unmuted={post.id === selectedPost?.id ? unmuted : false}
+                  // 走查 2026-05-19 第十五轮 R3：avatar button 早在第十一轮 R2 补了
+                  // aria-haspopup="dialog"（同 chat / share / 转发按钮一道），但漏
+                  // 了配套的 aria-expanded — 同 slide 的 chat 按钮（L2094 commentDrawer
+                  // Open）按 disclosure 模式同时挂 aria-haspopup + aria-expanded，让
+                  // SR 知道"popup 当前是开/关"。avatar 按钮一直只挂 aria-haspopup
+                  // 不挂 aria-expanded，author overlay 打开时 SR 听不到"已展开"反馈。
+                  // 计算 authorOverlayOpenForThisAuthor：authorPanelVisible AND post.authorId
+                  // 等于 routeSelectedAuthorId（overlay 显示的那位作者）。从 author
+                  // overlay 内点 recent posts 列表跳到同作者的另一条 post 时，新 active
+                  // slide 的 avatar 同样匹配 → 同样汇报 aria-expanded=true，对齐"多个
+                  // disclosure 按钮控制同一 popup"的 ARIA 语义。其它 slide 恒 false
+                  // shallow-compare 命中跳过 reconciliation；只有真正切到/离开匹配
+                  // 作者的 slide 上这一张才重渲，零额外开销。
+                  authorOverlayOpenForThisAuthor={
+                    authorPanelVisible && post.authorId === routeSelectedAuthorId
+                  }
                   onToggleUnmuted={toggleUnmuted}
                   onLike={handleSlideLike}
                   onOpenAuthor={handleSlideOpenAuthor}
@@ -1848,6 +1864,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   sectionBadge,
   registerSlide,
   commentDrawerOpen,
+  authorOverlayOpenForThisAuthor,
   isFavorite,
   likePending,
   favoritePending,
@@ -1868,6 +1885,10 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   // R2：当前 post 的评论 drawer 是否打开，给 chat 图标按钮反映动态语义
   // （aria-label / aria-expanded）。非 active slide 上恒 false。
   commentDrawerOpen: boolean;
+  // 走查 2026-05-19 第十五轮 R3：author overlay 是否为本 slide 的 author 打开。
+  // 由 workspace 计算 authorPanelVisible && post.authorId === routeSelectedAuthorId
+  // 后传下来。给 avatar button 补 aria-expanded 跟 aria-haspopup="dialog" 配对。
+  authorOverlayOpenForThisAuthor: boolean;
   isFavorite: boolean;
   likePending: boolean;
   favoritePending: boolean;
@@ -1962,6 +1983,15 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                 // aria-haspopup="dialog" 让 SR 念出"作者名 button has popup
                 // dialog"，盲用用户预期到下一步是 modal 打开。
                 aria-haspopup="dialog"
+                // 走查 2026-05-19 第十五轮 R3：跟同 slide 的 chat 按钮（L2094
+                // commentDrawerOpen 挂 aria-expanded） 模式对齐 — disclosure 按
+                // 钮挂 aria-haspopup 必须配 aria-expanded 让 SR 知道 popup 当前是
+                // 开/关。author overlay 打开时（且当前 slide 的 author 匹配 overlay
+                // 的 routeSelectedAuthorId）汇报 expanded=true；其它情况 false。
+                // 单纯挂 aria-haspopup 不挂 expanded 是 WAI-ARIA disclosure 不完整
+                // 实现，SR 用户听到"... button has popup dialog"但不知道 dialog 当
+                // 前在不在屏。
+                aria-expanded={authorOverlayOpenForThisAuthor}
                 onClick={() => onOpenAuthor(post.authorId)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >

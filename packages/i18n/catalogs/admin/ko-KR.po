@@ -11788,12 +11788,6 @@ msgid "当前候选池"
 msgstr ""
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1080
-#: apps/admin/src/routes/need-discovery-page.tsx:1286
-#: apps/admin/src/routes/need-discovery-page.tsx:1315
-msgid "当前候选"
-msgstr "현재 후보"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1080
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1278
 #: apps/admin/src/routes/need-discovery-page.tsx:1289
@@ -11807,6 +11801,12 @@ msgstr "현재 후보"
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "건"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1080
+#: apps/admin/src/routes/need-discovery-page.tsx:1286
+#: apps/admin/src/routes/need-discovery-page.tsx:1315
+msgid "当前候选"
+msgstr "현재 후보"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
