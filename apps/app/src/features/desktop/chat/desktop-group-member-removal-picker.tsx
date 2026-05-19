@@ -129,6 +129,12 @@ export function DesktopGroupMemberRemovalPicker({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：移除群成员 picker 顶部搜索 TextField，CJK 用户用 IME 拼
+      // 成员名时按 Esc 是退候选词的标准键。原 handler 抢 Esc 关 dialog →
+      // 半截"张 zhang"被吞、移除流程整个打断。先让 IME 消费 Esc。
+      if (event.isComposing) {
+        return;
+      }
       // 走查电脑端群聊 R6（和 R5 同款）：pending 时仍要消费 Esc，否则
       // workspace queueMicrotask 兜底跑 dismissSidePanel 把背后的"聊天信息"
       // 侧栏偷关掉，本 dialog 因为 pending 不真关，结果"按 Esc 没关 dialog

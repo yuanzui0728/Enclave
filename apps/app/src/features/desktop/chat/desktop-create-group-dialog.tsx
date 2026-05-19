@@ -453,6 +453,14 @@ export function DesktopCreateGroupDialog({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：发起群聊 dialog 顶部就是搜索 TextField 选成员，CJK 用户
+      // 用拼音 / 假名 / 한글 拼"张三 zhangsan"还在候选词阶段按 Esc 想退候
+      // 选 → 原 handler 抢 Esc 清搜索词 / 关 dialog → 半截草稿丢失，群聊创
+      // 建流程被打断。先让 IME 吃 Esc，候选词退后再按一次才走原 fallback
+      // 路径（清 search → 关 dialog）。
+      if (event.isComposing) {
+        return;
+      }
 
       // 走查电脑端群聊 R6（和 R5 text-edit/confirm dialog 同款）：原版
       // pending 时直接 early return 让 Esc 透传——workspace queueMicrotask

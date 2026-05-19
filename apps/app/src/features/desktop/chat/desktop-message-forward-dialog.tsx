@@ -150,6 +150,13 @@ export function DesktopMessageForwardDialog({
       if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
+      // 走查 R148：转发选人 dialog 有搜索 TextField（line 360），CJK 用户用
+      // 拼音 / 假名 / 한글 在搜会话名时 Esc 是 IME 取消候选词的标准键。原
+      // handler 直接 preventDefault 关弹层 → 用户半截"张 zhang"被丢、转发
+      // 流程整个挂掉。先让 IME 吃 Esc，candidate 退后再按一次才关 dialog。
+      if (event.isComposing) {
+        return;
+      }
       // 转发弹层是 modal 层；Esc 应只关掉它，避免冒泡到 workspace
       // dismissSidePanel 把背后的详情/查找记录侧栏也一并关掉。
       event.preventDefault();

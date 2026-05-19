@@ -980,6 +980,14 @@ export function DesktopNotesWorkspace({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：tag editor 里有 <input> 输入标签名，contentEditable 编辑
+      // 器全程接受 IME composition。CJK 用户拼"工作 gongzuo"还在候选词
+      // 阶段按 Esc 想退候选 → 原 handler 抢 Esc 关 tag editor / 关独立窗
+      // 口 → 半截输入丢、用户敲到一半的笔记被独立窗口直接关掉。先让 IME
+      // 消费 Esc。
+      if (event.isComposing) {
+        return;
+      }
 
       if (tagEditorOpen) {
         event.preventDefault();

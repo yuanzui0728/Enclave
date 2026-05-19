@@ -90,6 +90,15 @@ export function DesktopChatTextEditDialog({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：本 dialog 是改备注 / 群名称 / 群公告 / 群昵称的编辑器，
+      // 内嵌 TextField/TextAreaField，正是 IME composition 的高发区——用户
+      // 拼"新备 bei"还在候选词阶段按 Esc 想退候选 → 抢 Esc 关 dialog，半截
+      // 中文草稿丢失。先让 IME 吃 Esc，候选词退后再按一次才关弹层。和
+      // desktop-channels-workspace L633 / desktop-feed-compose-panel L89 同
+      // 款修法。
+      if (event.isComposing) {
+        return;
+      }
 
       // 走查电脑端群聊 R5：原版 pending 时直接 early return 让 Esc 透传——
       // workspace queueMicrotask 兜底看到 event.defaultPrevented=false 仍

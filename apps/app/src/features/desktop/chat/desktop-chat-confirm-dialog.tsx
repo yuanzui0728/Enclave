@@ -69,6 +69,16 @@ export function DesktopChatConfirmDialog({
       if (event.key !== "Escape") {
         return;
       }
+      // 走查 R148：window keydown 全局监听，dialog 弹起前用户若在背后的
+      // 搜索 / 备注 / 笔记 input 里用中/日/韩 IME 拼"删 yu"待选词，Esc 在
+      // IME 协议里是"取消候选词"的标准键。这里抢 Esc 关 dialog → 候选词
+      // 没被 IME 消费、用户的草稿被丢一截。和 desktop-channels-workspace
+      // L633 / desktop-feed-compose-panel L89 同款修法：isComposing=true 时
+      // 让 IME 自己吃这下 Esc，候选词退掉后用户再按一次（isComposing=false）
+      // 才走 dialog 关闭。
+      if (event.isComposing) {
+        return;
+      }
 
       // 走查电脑端群聊 R5：原版 pending 时直接 early return 让 Esc 透传——
       // workspace queueMicrotask 看到 defaultPrevented=false 跑

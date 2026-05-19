@@ -128,6 +128,14 @@ export function DesktopChatHistoryPanel({
       if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
+      // 走查 R148：查找聊天记录面板里有「指定成员关键字」/「指定日期」搜索
+      // TextField，CJK 用户用 IME 拼搜索词时按 Esc 是退候选词的标准键。原
+      // handler 抢 Esc 走 selectorView/filter/back 多层 fallback，半截
+      //"张 zhang"被吞、用户白打。先让 IME 消费 Esc，候选词退后再按一次才走
+      // 原 fallback 路径。和 desktop-channels-workspace L633 同款修法。
+      if (event.isComposing) {
+        return;
+      }
 
       if (selectorView) {
         event.preventDefault();

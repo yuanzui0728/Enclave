@@ -101,6 +101,13 @@ export function DesktopNoteSendDialog({
       if (event.key !== "Escape" || event.defaultPrevented) {
         return;
       }
+      // 走查 R148：笔记发送 dialog 内嵌搜索 TextField（line 232），CJK 用户
+      // 在搜会话名时用 IME 拼"老婆 laopo"。原 handler Esc 直接 preventDefault
+      // 关弹层 → 候选词没退、半截输入丢、笔记发送链路被打断。先让 IME 吃
+      // Esc，候选词退后再按一次才关 dialog。
+      if (event.isComposing) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       if (pending) {
