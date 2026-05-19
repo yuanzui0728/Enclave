@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
@@ -14,7 +14,16 @@ const fallbackAvatars = [
   defaultAvatarDusk,
 ];
 
-export function AvatarChip({
+// 走查电脑端单聊 R124：和姊妹 GroupAvatarChip R1（commit 已挂 memo）同款 perf
+// 修法 —— GroupAvatarChip 注释里说"和 AvatarChip / 其它 atom 组件口径对齐"
+// 但 AvatarChip 自己一直没挂 memo。全站 grep 115 处使用，chat-message-list
+// 长聊 200+ 消息每条都挂一张发送者头像，桌面端单聊里父帧（typing tick / socket
+// echo / setQueriesData / mutation pending 翻转）每秒重渲多次 → 每帧把所有
+// 头像组件的 useState/useEffect/useMemo 全跑一遍 + className 三元字符串重组。
+// 用户在长聊里典型场景：AI 正在 streaming 一条长回复，typing tick 一秒触发
+// 多次 setMessages → ChatMessageList re-render → 200+ AvatarChip × 5+ hook
+// 调用全跑。挂 memo 让 name/src/size 都是 string 引用稳定时跳过整个函数体。
+export const AvatarChip = memo(function AvatarChip({
   name,
   src,
   size = "md",
@@ -128,7 +137,7 @@ export function AvatarChip({
       className={`${classes} yj-no-callout border border-white/80 object-cover shadow-[var(--shadow-soft)]`}
     />
   );
-}
+});
 
 const EMOJI_PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
 // 数学/字母变体（𝕏 / 𝓜 / 𝟙 等）的 Unicode 一般类别其实是 Lu/Ll/Nd，不是 Symbol，
