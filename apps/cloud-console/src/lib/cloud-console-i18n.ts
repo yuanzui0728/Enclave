@@ -327,6 +327,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last user message": "按上次用户消息时间排序", // i18n-ignore-line: runtime dict value
     "Membership expires": "会员到期时间",
     "Membership registered": "会员注册时间",
+    "Sort by membership registered": "按会员注册时间排序",
+    "Sort by membership expires": "按会员到期时间排序",
     Owner: "世界主人",
     "Owner signature": "世界主人签名",
     "App platform": "运行平台",
@@ -984,6 +986,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last user message": "最終ユーザーメッセージ日時で並び替え", // i18n-ignore-line: runtime dict value
     "Membership expires": "会員有効期限",
     "Membership registered": "会員登録日時",
+    "Sort by membership registered": "会員登録日時で並び替え",
+    "Sort by membership expires": "会員有効期限で並び替え",
     Owner: "ワールドオーナー",
     "Owner signature": "オーナーの署名",
     "App platform": "実行プラットフォーム",
@@ -1646,6 +1650,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last user message": "마지막 사용자 메시지 시각으로 정렬",
     "Membership expires": "멤버십 만료 시각",
     "Membership registered": "멤버십 가입 시각",
+    "Sort by membership registered": "멤버십 가입 시각으로 정렬",
+    "Sort by membership expires": "멤버십 만료 시각으로 정렬",
     Owner: "월드 오너",
     "Owner signature": "오너 서명",
     "App platform": "실행 플랫폼",

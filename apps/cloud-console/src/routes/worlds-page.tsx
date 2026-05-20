@@ -192,7 +192,11 @@ type QuickActionConfirmState = {
   action: ConfirmableWorldLifecycleAction;
 };
 
-type WorldsSortField = "lastAccessedAt" | "lastUserMessageAt";
+type WorldsSortField =
+  | "lastAccessedAt"
+  | "lastUserMessageAt"
+  | "userCreatedAt"
+  | "subscriptionExpiresAt";
 type WorldsSortDirection = "asc" | "desc";
 type WorldsSortState = {
   field: WorldsSortField;
@@ -410,6 +414,22 @@ export function WorldsPage() {
         compareNullableDateString(
           left.world.lastUserMessageAt,
           right.world.lastUserMessageAt,
+          sortState.direction,
+        ),
+      );
+    } else if (sortState.field === "userCreatedAt") {
+      next.sort((left, right) =>
+        compareNullableDateString(
+          left.world.userCreatedAt,
+          right.world.userCreatedAt,
+          sortState.direction,
+        ),
+      );
+    } else if (sortState.field === "subscriptionExpiresAt") {
+      next.sort((left, right) =>
+        compareNullableDateString(
+          left.world.subscriptionExpiresAt,
+          right.world.subscriptionExpiresAt,
           sortState.direction,
         ),
       );
@@ -802,8 +822,40 @@ export function WorldsPage() {
                     </span>
                   </button>
                 </th>
-                <th className="px-4 py-3">{t("Membership registered")}</th>
-                <th className="px-4 py-3">{t("Membership expires")}</th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("userCreatedAt")}
+                    className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
+                    aria-label={t("Sort by membership registered")}
+                  >
+                    <span>{t("Membership registered")}</span>
+                    <span aria-hidden="true" className="text-[10px]">
+                      {sortState?.field === "userCreatedAt"
+                        ? sortState.direction === "desc"
+                          ? "▼"
+                          : "▲"
+                        : "↕"}
+                    </span>
+                  </button>
+                </th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("subscriptionExpiresAt")}
+                    className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
+                    aria-label={t("Sort by membership expires")}
+                  >
+                    <span>{t("Membership expires")}</span>
+                    <span aria-hidden="true" className="text-[10px]">
+                      {sortState?.field === "subscriptionExpiresAt"
+                        ? sortState.direction === "desc"
+                          ? "▼"
+                          : "▲"
+                        : "↕"}
+                    </span>
+                  </button>
+                </th>
                 <th className="px-4 py-3">{t("Actions")}</th>
               </tr>
             </thead>
