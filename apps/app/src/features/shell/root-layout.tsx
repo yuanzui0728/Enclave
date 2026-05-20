@@ -5,6 +5,7 @@ import { AppShell } from "./app-shell";
 import { DesktopRuntimeGuard } from "./desktop-runtime-guard";
 import { MobileNotificationLaunchBridge } from "./mobile-notification-launch-bridge";
 import { SubscriptionExpiredDialogHost } from "../subscription/subscription-expired-dialog-host";
+import { WorldUnavailableDialogHost } from "./world-unavailable-dialog-host";
 
 // ConversationStrongReminderHost 静态依赖 lib/socket → socket.io-client (~36KB)，
 // 之前把整条 socket 链拉进首屏 modulepreload。组件本身 return null（纯 useEffect
@@ -24,6 +25,7 @@ export function RootLayout() {
         <ConversationStrongReminderHost />
       </Suspense>
       <SubscriptionExpiredDialogHost />
+      <WorldUnavailableDialogHost />
       <MobileNotificationLaunchBridge />
       <Outlet />
     </AppShell>

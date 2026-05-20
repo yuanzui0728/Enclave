@@ -11,6 +11,7 @@ import {
 } from "@yinjie/contracts";
 import { getActiveLocale } from "@yinjie/i18n";
 import { handleApiSubscriptionExpiredError } from "./subscription-expired";
+import { handleApiWorldUnavailableError } from "./world-unavailable";
 import { resolveAppRuntimeContext } from "../runtime/platform";
 import { getAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { isCloudSessionExpired, useCloudSessionStore } from "../store/cloud-session-store";
@@ -132,6 +133,9 @@ export function configureContractsRuntime() {
   });
   setApiRequestErrorHandler((error) => {
     handleApiSubscriptionExpiredError(error);
+    // world child 死了 / 被 idle-suspend 之后所有 world API 请求会一直 502/503，
+    // 没有这一行前端会陷入无限 toast；命中后弹「世界已休眠」对话框，让用户走重登 → resume 闭环。
+    handleApiWorldUnavailableError(error);
   });
   // R3 走查（2026-05-17 我-设置）：cloud-api error filter 优先按 X-Yinjie-Locale
   // 头确定响应语言，没有才回落到 Accept-Language（即浏览器 / 系统语言）。

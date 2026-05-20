@@ -12,6 +12,7 @@ import {
 import { resolveAppSocketBaseUrl } from "./runtime-config";
 import { APP_RUNTIME_SOCKET_CONFIG_CHANGE_EVENT } from "../runtime/runtime-config-events";
 import { isCloudSessionExpired, useCloudSessionStore } from "../store/cloud-session-store";
+import { handleSocketWorldUnavailable } from "./world-unavailable";
 
 let socket: Socket | null = null;
 let activeSocketBaseUrl: string | null = null;
@@ -100,6 +101,11 @@ export function getChatSocket() {
     // upgrade 失败后陷入死循环不发任何 emit。改成 polling-first 让初始握手用
     // long-polling 拿到 sid，能升级就升级，不能升级也保持工作。
     transports: ["polling", "websocket"],
+    // world child 被 idle-suspend / 被 kill 后，反代会一直回 503。socket.io-client
+    // 默认 Infinity 重连，每次失败都会重新打一次 polling 请求 → 浏览器日志被刷爆且后端
+    // CPU 被压。给一个有限上限：6 次后停掉，由 connect_error 兜底走「跳登陆」流。
+    reconnectionAttempts: 6,
+    reconnectionDelayMax: 5000,
     ...(token ? { auth: { token }, query: { token } } : {}),
   });
 
@@ -110,6 +116,13 @@ export function getChatSocket() {
     for (const conversationId of joinedConversationRooms) {
       socket?.emit(CHAT_EVENTS.joinConversation, { conversationId });
     }
+  });
+
+  // world 被 idle-suspend / 进程死后，cloud-api ws-proxy 返 503/WORLD_INSTANCE_NOT_READY。
+  // 这里识别 502/503 / WORLD_INSTANCE_NOT_READY 文案，弹"世界已休眠"对话框走重登 → resume 闭环；
+  // 其它（网络抖动 / 鉴权 401 等）走 socket.io-client 默认重连逻辑。
+  socket.on('connect_error', (error: Error) => {
+    handleSocketWorldUnavailable({ message: error.message });
   });
 
   // 服务端 buildId 仅记录在 localStorage 中供调试；自动 reload 已下线，
