@@ -68,7 +68,9 @@ function validateParams(raw: string): {
         ok: false,
         count: 0,
         keys: [],
-        error: "providerParams 必须是 JSON 对象（不是数组、字符串或 null）。",
+        error: translateRuntimeMessage(
+          msg`providerParams 必须是 JSON 对象（不是数组、字符串或 null）。`,
+        ),
       };
     }
     const keys = Object.keys(parsed as Record<string, unknown>);
@@ -80,8 +82,10 @@ function validateParams(raw: string): {
       keys: [],
       error:
         error instanceof Error
-          ? `JSON 解析失败：${error.message}`
-          : "JSON 解析失败。",
+          ? translateRuntimeMessage(
+              msg`JSON 解析失败：${error.message}`,
+            )
+          : translateRuntimeMessage(msg`JSON 解析失败。`),
     };
   }
 }
@@ -149,6 +153,7 @@ export function DigitalHumanPage() {
 
   useEffect(() => {
     if (!notice) return;
+    // i18n-ignore-next-line: clearing notice state, not a user-facing literal
     const timer = window.setTimeout(() => setNotice(""), 2600);
     return () => window.clearTimeout(timer);
   }, [notice]);

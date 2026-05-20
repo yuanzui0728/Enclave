@@ -4,6 +4,27 @@
 
 ---
 
+## [0.1.2] - 2026-05-12
+
+> 稳定性巩固版：`docker compose up -d` 与源码 `pnpm dev:api` / `pnpm dev:app` / `pnpm dev:admin` 两条启动路径均完成端到端实测，路人按 README 走能直接跑通。
+
+### ✅ 实测验证 Verified
+
+- **Docker 启动**：`docker compose up -d` → `api` + `web` 容器均 `healthy`；`/healthz`、`/health`、`/api/system/build-id`、`/api/characters` 走 nginx 反代全 200
+- **源码启动**：`pnpm dev:api`（:3000）+ `pnpm dev:app`（:5180）+ `pnpm dev:admin`（:5181）依次拉起，所有 22 个调度 Job 正常运转
+- **数据库**：SQLite WAL 模式生效（`journalMode=wal`），108 个角色 + 12 条叙事弧线完整加载
+
+### 🐛 修复 Fixed
+
+- `DEPLOY.md` 克隆地址从占位符 `your-org/yinjieAPP.git` 修正为 `yuanzui0728/enclave.git`
+- 自 v0.1.1 以来累计 **453** 个 fix / **278** 个 feat / **29** 个 perf / **21** 个 refactor，覆盖：朋友圈/视频号分页与 refetch、场景相遇全链路、SQLite 全面调优（WAL + 64MB cache + 256MB mmap）、视频号即时反应/角色主动转发、AI 输出剥 `<think>` / 围栏后再 JSON.parse、桌面端路由尾斜杠归一化、提醒任务规则编辑器、i18n 4 语种回灌
+
+### 📚 文档 Docs
+
+- 本条目 + DEPLOY 修正
+
+---
+
 ## [0.1.1] - 2026-04-24
 
 > 首次公开之后第一个节奏更新：把"能跑起来"升级到"路人点开就能玩得顺"。

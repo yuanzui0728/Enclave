@@ -14,8 +14,8 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/your-org/yinjieAPP.git
-cd yinjieAPP
+git clone https://github.com/yuanzui0728/enclave.git
+cd enclave
 ```
 
 ### 2. 配置环境变量

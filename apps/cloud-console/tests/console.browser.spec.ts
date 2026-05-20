@@ -387,6 +387,21 @@ test.describe("cloud-console browser smoke", () => {
     }
   });
 
+  // Cloud-console defaults to zh-CN (DEFAULT_LOCALE) when no preference is persisted.
+  // Pin the surface locale to en-US so the assertions against English placeholders/labels stay valid.
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      try {
+        window.localStorage.setItem(
+          "yinjie-i18n-locale:cloud-console",
+          "en-US",
+        );
+      } catch {
+        // localStorage may be unavailable on the first init; the next navigation will retry.
+      }
+    });
+  });
+
   test("activates a request and handles modal dismissal in a real browser", async ({
     page,
   }) => {
@@ -449,7 +464,9 @@ test.describe("cloud-console browser smoke", () => {
     ).toBeVisible();
     await page.locator("a").filter({ hasText: worldName }).first().click();
 
-    await expect(page.getByText("Bootstrap package")).toBeVisible();
+    await expect(
+      page.getByText("Bootstrap package", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByLabel("World API base URL")).toHaveValue(
       "https://browser-world.example.com/api",
     );
@@ -525,7 +542,7 @@ test.describe("cloud-console browser smoke", () => {
     });
 
     await page.goto(`${stack.consoleServer.baseUrl}/worlds`);
-    await expect(page.getByText("Instance fleet")).toBeVisible();
+    await expect(page.getByText("Managed worlds")).toBeVisible();
 
     await expect(
       page.getByRole("button", { name: `Suspend ${worldName}` }),
