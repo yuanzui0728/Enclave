@@ -39,7 +39,7 @@ import type {
   WorldLifecycleJobType,
 } from "@yinjie/contracts";
 import { randomUUID } from "node:crypto";
-import { Brackets, EntityManager, In, Repository } from "typeorm";
+import { Brackets, EntityManager, In, MoreThan, Repository } from "typeorm";
 import {
   resolveAdminFrontendBaseUrl,
   resolveWorldAdminSecret,
@@ -50,6 +50,7 @@ import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
+import { UserSubscriptionEntity } from "../entities/user-subscription.entity";
 import { WaitingSessionSyncTaskEntity } from "../entities/waiting-session-sync-task.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import {
@@ -109,6 +110,8 @@ export class CloudService {
     private readonly waitingSessionSyncTaskRepo: Repository<WaitingSessionSyncTaskEntity>,
     @InjectRepository(CloudUserEntity)
     private readonly userRepo: Repository<CloudUserEntity>,
+    @InjectRepository(UserSubscriptionEntity)
+    private readonly subscriptionRepo: Repository<UserSubscriptionEntity>,
     private readonly configService: ConfigService,
     private readonly phoneAuthService: PhoneAuthService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
@@ -336,9 +339,17 @@ export class CloudService {
     const usersByPhone = await this.loadUsersByPhone(
       items.map((item) => item.phone),
     );
-    return items.map((item) =>
-      this.serializeWorld(item, usersByPhone.get(item.phone)),
+    const expiresByUserId = await this.loadSubscriptionExpiresByUserId(
+      [...usersByPhone.values()].map((user) => user.id),
     );
+    return items.map((item) => {
+      const user = usersByPhone.get(item.phone);
+      return this.serializeWorld(
+        item,
+        user,
+        user ? expiresByUserId.get(user.id) ?? null : null,
+      );
+    });
   }
 
   async listWorldInstances(
@@ -362,13 +373,23 @@ export class CloudService {
     const usersByPhone = await this.loadUsersByPhone(
       worlds.map((world) => world.phone),
     );
+    const expiresByUserId = await this.loadSubscriptionExpiresByUserId(
+      [...usersByPhone.values()].map((user) => user.id),
+    );
 
-    return worlds.map((world) => ({
-      world: this.serializeWorld(world, usersByPhone.get(world.phone)),
-      instance: instanceByWorldId.get(world.id)
-        ? this.serializeInstance(instanceByWorldId.get(world.id)!)
-        : null,
-    }));
+    return worlds.map((world) => {
+      const user = usersByPhone.get(world.phone);
+      return {
+        world: this.serializeWorld(
+          world,
+          user,
+          user ? expiresByUserId.get(user.id) ?? null : null,
+        ),
+        instance: instanceByWorldId.get(world.id)
+          ? this.serializeInstance(instanceByWorldId.get(world.id)!)
+          : null,
+      };
+    });
   }
 
   async getWorldById(id: string) {
@@ -376,7 +397,11 @@ export class CloudService {
     const user = world.phone
       ? await this.userRepo.findOne({ where: { phone: world.phone } })
       : null;
-    return this.serializeWorld(world, user ?? undefined);
+    const expires = user
+      ? (await this.loadSubscriptionExpiresByUserId([user.id])).get(user.id) ??
+        null
+      : null;
+    return this.serializeWorld(world, user ?? undefined, expires);
   }
 
   async getWorldDriftSummary(): Promise<CloudWorldDriftSummary> {
@@ -1317,12 +1342,17 @@ export class CloudService {
     const user = world.phone
       ? await this.userRepo.findOne({ where: { phone: world.phone } })
       : null;
-    return this.serializeWorld(world, user);
+    const expires = user
+      ? (await this.loadSubscriptionExpiresByUserId([user.id])).get(user.id) ??
+        null
+      : null;
+    return this.serializeWorld(world, user, expires);
   }
 
   private serializeWorld(
     world: CloudWorldEntity,
     user?: CloudUserEntity | null,
+    subscriptionExpiresAt?: string | null,
   ): CloudWorldSummary {
     return {
       id: world.id,
@@ -1349,6 +1379,8 @@ export class CloudService {
       lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
       lastSuspendedAt: world.lastSuspendedAt?.toISOString() ?? null,
       note: world.note,
+      userCreatedAt: user?.createdAt?.toISOString() ?? null,
+      subscriptionExpiresAt: subscriptionExpiresAt ?? null,
       createdAt: world.createdAt.toISOString(),
       updatedAt: world.updatedAt.toISOString(),
     };
@@ -1797,6 +1829,46 @@ export class CloudService {
     return new Map(
       this.filterVisibleWorlds(worlds).map((world) => [world.phone, world]),
     );
+  }
+
+  // 给 worlds 列表用：批量算每个 userId 的"会员到期日"。口径与 users.service
+  // 的 serializeUserSummary 一致 —— 优先取当前 active 订阅的 expiresAt，没有
+  // active 就回退到最近一条订阅的 expiresAt；都没有则 null。一次 IN 查全部，
+  // 避免 N+1。
+  private async loadSubscriptionExpiresByUserId(
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const uniqueIds = [...new Set(userIds.filter(Boolean))];
+    if (!uniqueIds.length) {
+      return new Map<string, string>();
+    }
+    const now = new Date();
+    const [activeRecords, allRecords] = await Promise.all([
+      this.subscriptionRepo.find({
+        where: {
+          userId: In(uniqueIds),
+          status: "active",
+          expiresAt: MoreThan(now),
+        },
+        order: { expiresAt: "DESC" },
+      }),
+      this.subscriptionRepo.find({
+        where: { userId: In(uniqueIds) },
+        order: { expiresAt: "DESC" },
+      }),
+    ]);
+    const result = new Map<string, string>();
+    for (const record of activeRecords) {
+      if (!result.has(record.userId)) {
+        result.set(record.userId, record.expiresAt.toISOString());
+      }
+    }
+    for (const record of allRecords) {
+      if (!result.has(record.userId)) {
+        result.set(record.userId, record.expiresAt.toISOString());
+      }
+    }
+    return result;
   }
 
   private async loadUsersByPhone(phones: (string | null | undefined)[]) {

@@ -13,6 +13,7 @@ import { CloudAdminSessionEntity } from "../src/entities/cloud-admin-session.ent
 import { CloudService } from "../src/cloud/cloud.service";
 import { CloudInstanceEntity } from "../src/entities/cloud-instance.entity";
 import { CloudUserEntity } from "../src/entities/cloud-user.entity";
+import { UserSubscriptionEntity } from "../src/entities/user-subscription.entity";
 import { CloudWorldEntity } from "../src/entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../src/entities/cloud-world-request.entity";
 import {
@@ -124,6 +125,7 @@ async function createTestDataSource() {
       CloudInstanceEntity,
       CloudWorldRequestEntity,
       CloudUserEntity,
+      UserSubscriptionEntity,
       WorldLifecycleJobEntity,
       WorldAccessSessionEntity,
       WaitingSessionSyncTaskEntity,
@@ -157,6 +159,7 @@ function createCloudService(
     dataSource.getRepository(WorldLifecycleJobEntity),
     dataSource.getRepository(WaitingSessionSyncTaskEntity),
     dataSource.getRepository(CloudUserEntity),
+    dataSource.getRepository(UserSubscriptionEntity),
     {
       get: () => undefined,
     } as never,
