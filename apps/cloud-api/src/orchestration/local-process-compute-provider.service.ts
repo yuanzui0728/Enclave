@@ -16,6 +16,7 @@ import {
   randomUUID,
 } from "node:crypto";
 import { existsSync, mkdirSync, openSync } from "node:fs";
+import * as net from "node:net";
 import path from "node:path";
 import BetterSqlite3 from "better-sqlite3";
 import { Repository } from "typeorm";
@@ -232,11 +233,36 @@ export class LocalProcessComputeProviderService
   async createInstance(
     world: CloudWorldEntity,
   ): Promise<ProvisionWorldInstanceResult> {
-    const port = await this.allocatePort();
     const accountDir = this.resolveAccountDir(world.phone);
     mkdirSync(accountDir, { recursive: true });
 
-    const child = await this.spawnChild(world, port, accountDir);
+    // 注册新用户 → provision → spawnChild。即便 allocatePort 加了 OS 探活，仍可能撞上：
+    // (1) 探活和 spawn 之间的 TOCTOU race
+    // (2) child 启动早期因别的原因 exit (DB 锁 / 配置错 / OOM)
+    // 之前没 retry，一撞就 job_failed → 用户的 world 永远卡在 status='failed'。
+    // 现在最多换 3 次端口，并把撞过的端口加入 exclude 列表，防止下一次又拿到。
+    const triedPorts = new Set<number>();
+    let lastErr: unknown = null;
+    let port = 0;
+    let child: ChildProcess | null = null;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      port = await this.allocatePort(triedPorts);
+      triedPorts.add(port);
+      try {
+        child = await this.spawnChild(world, port, accountDir);
+        break;
+      } catch (err) {
+        lastErr = err;
+        this.logger.warn(
+          `createInstance: spawn failed for world=${world.id} on port=${port} (attempt=${attempt + 1}): ${(err as Error).message}; will try a fresh port`,
+        );
+      }
+    }
+    if (!child) {
+      throw lastErr instanceof Error
+        ? lastErr
+        : new Error("createInstance: spawn exhausted retries");
+    }
     this.running.set(world.id, {
       pid: child.pid ?? 0,
       port,
@@ -394,7 +420,7 @@ export class LocalProcessComputeProviderService
     return path.join(ACCOUNTS_ROOT, sanitized);
   }
 
-  private async allocatePort(): Promise<number> {
+  private async allocatePort(extraExcluded?: Iterable<number>): Promise<number> {
     const used = new Set<number>();
     for (const state of this.running.values()) {
       used.add(state.port);
@@ -432,11 +458,64 @@ export class LocalProcessComputeProviderService
         `allocatePort: failed to scan world apiBaseUrls: ${(err as Error).message}`,
       );
     }
+    if (extraExcluded) {
+      for (const p of extraExcluded) used.add(p);
+    }
+    // 端口探活：DB 不知道但 OS 实际占用的端口（leaked child / 老 cloud-api 残留 / 别的进程
+    // 借用了我们的端口段）跳过。之前只看 DB，新用户注册时 createInstance 拿到孤儿占用的
+    // 端口 → spawn 立刻 EADDRINUSE → provision 直接 failed，无法自愈。
     let port = this.basePort;
-    while (used.has(port)) {
+    let probedSkips = 0;
+    const SKIP_CAP = 256;
+    while (true) {
+      if (!used.has(port)) {
+        const inUse = await this.isPortOccupied(port);
+        if (!inUse) return port;
+        probedSkips += 1;
+        this.logger.warn(
+          `allocatePort: port=${port} unknown to DB but OS-bound (leaked process?); skipping`,
+        );
+        used.add(port);
+        if (probedSkips >= SKIP_CAP) {
+          throw new Error(
+            `allocatePort: skipped ${SKIP_CAP} OS-bound unknown ports starting from ${this.basePort}; refuse to keep scanning`,
+          );
+        }
+      }
       port += 1;
     }
-    return port;
+  }
+
+  // OS-level 端口探活：尝试 bind 看是否被占。child 进程用 Node 默认 dual-stack 监听，
+  // 这里也走默认 host（不指定）确保覆盖 v4/v6 都占着的端口。
+  private isPortOccupied(port: number): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const server = net.createServer();
+      const done = (occupied: boolean) => {
+        try {
+          server.close();
+        } catch {
+          /* ignore */
+        }
+        resolve(occupied);
+      };
+      server.once("error", (err: NodeJS.ErrnoException) => {
+        // EADDRINUSE / EACCES = 别人在用 / 内核不让 bind，都视作占用
+        done(
+          err.code === "EADDRINUSE" ||
+            err.code === "EACCES" ||
+            err.code === "EADDRNOTAVAIL",
+        );
+      });
+      server.once("listening", () => {
+        server.close(() => resolve(false));
+      });
+      try {
+        server.listen(port);
+      } catch {
+        resolve(true);
+      }
+    });
   }
 
   private parsePersistedPort(instance: CloudInstanceEntity | null) {
