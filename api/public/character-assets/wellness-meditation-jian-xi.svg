@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-wellness-meditation-jian-xi-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6E8AA8" />
+      <stop offset="1" stop-color="#C8D8E4" />
+    </linearGradient>
+    <radialGradient id="glow-wellness-meditation-jian-xi-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(220, 232, 244, 0.55)" />
+      <stop offset="1" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-wellness-meditation-jian-xi-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-wellness-meditation-jian-xi-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-wellness-meditation-jian-xi-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(220, 232, 244, 0.10)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(220, 232, 244, 0.14)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-wellness-meditation-jian-xi-svg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <circle cx="512" cy="488" r="270" fill="rgba(255, 255, 255, 0.08)" stroke="rgba(255, 255, 255, 0.20)" stroke-width="2" />
+  <circle cx="512" cy="488" r="200" fill="none" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="512" cy="380" r="50" fill="rgba(255, 255, 255, 0.40)" />
+  <path d="M 430 460 Q 512 440 594 460 Q 620 540 594 580 Q 540 600 482 600 Q 430 600 408 552 Q 412 500 430 460 Z" fill="rgba(255, 255, 255, 0.36)" />
+  <path d="M 380 580 Q 320 600 320 560 Q 320 540 360 530 Z" fill="rgba(255, 255, 255, 0.32)" />
+  <path d="M 644 580 Q 704 600 704 560 Q 704 540 664 530 Z" fill="rgba(255, 255, 255, 0.32)" />
+  <text x="512" y="800" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif" font-size="240" font-weight="600" fill="#FFFFFF" letter-spacing="-12">息</text>
+</svg>

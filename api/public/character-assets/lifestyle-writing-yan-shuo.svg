@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-lifestyle-writing-yan-shuo-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3C3A38" />
+      <stop offset="1" stop-color="#7F786E" />
+    </linearGradient>
+    <radialGradient id="glow-lifestyle-writing-yan-shuo-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(245, 240, 228, 0.40)" />
+      <stop offset="1" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-lifestyle-writing-yan-shuo-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.28)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.06)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-lifestyle-writing-yan-shuo-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-lifestyle-writing-yan-shuo-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(245, 240, 228, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(245, 240, 228, 0.10)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-lifestyle-writing-yan-shuo-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <path d="M 720 220 L 800 280 L 360 720 L 280 740 L 300 660 Z" fill="rgba(245, 240, 228, 0.22)" stroke="rgba(245, 240, 228, 0.32)" stroke-width="3" />
+  <line x1="720" y1="220" x2="800" y2="280" stroke="rgba(245, 240, 228, 0.42)" stroke-width="4" />
+  <circle cx="820" cy="164" r="28" fill="rgba(245, 240, 228, 0.22)" />
+  <text x="512" y="608" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif" font-size="340" font-weight="600" fill="#F5F0E4" letter-spacing="-12">言</text>
+</svg>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-family-pet-jiang-mu-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C99267" />
+      <stop offset="1" stop-color="#F2DDC0" />
+    </linearGradient>
+    <radialGradient id="glow-family-pet-jiang-mu-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(244, 226, 196, 0.55)" />
+      <stop offset="1" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-family-pet-jiang-mu-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.32)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-family-pet-jiang-mu-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-family-pet-jiang-mu-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(244, 226, 196, 0.10)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(244, 226, 196, 0.16)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-family-pet-jiang-mu-svg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M 280 360 L 320 280 L 360 360 Z" fill="rgba(255, 255, 255, 0.36)" />
+  <path d="M 440 360 L 480 280 L 520 360 Z" fill="rgba(255, 255, 255, 0.36)" />
+  <ellipse cx="400" cy="400" rx="124" ry="106" fill="rgba(255, 255, 255, 0.34)" />
+  <circle cx="370" cy="395" r="10" fill="#6B4A2B" />
+  <circle cx="430" cy="395" r="10" fill="#6B4A2B" />
+  <path d="M 392 432 Q 400 442 408 432" stroke="#6B4A2B" stroke-width="5" stroke-linecap="round" fill="none" />
+  <ellipse cx="680" cy="430" rx="84" ry="100" fill="rgba(255, 255, 255, 0.30)" />
+  <ellipse cx="650" cy="338" rx="22" ry="38" fill="rgba(255, 255, 255, 0.30)" />
+  <ellipse cx="712" cy="338" rx="22" ry="38" fill="rgba(255, 255, 255, 0.30)" />
+  <circle cx="660" cy="420" r="8" fill="#6B4A2B" />
+  <circle cx="700" cy="420" r="8" fill="#6B4A2B" />
+  <text x="512" y="760" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif" font-size="280" font-weight="600" fill="#FFFFFF" letter-spacing="-12">牧</text>
+</svg>

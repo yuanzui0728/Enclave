@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-lifestyle-travel-shen-cheng-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B6FA8" />
+      <stop offset="1" stop-color="#9DC4E6" />
+    </linearGradient>
+    <radialGradient id="glow-lifestyle-travel-shen-cheng-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(220, 236, 250, 0.55)" />
+      <stop offset="1" stop-color="rgba(255, 255, 255, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-lifestyle-travel-shen-cheng-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-lifestyle-travel-shen-cheng-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-lifestyle-travel-shen-cheng-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(220, 236, 250, 0.10)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(220, 236, 250, 0.14)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-lifestyle-travel-shen-cheng-svg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M 220 380 Q 380 200 560 320 T 820 280" stroke="rgba(255, 255, 255, 0.38)" stroke-width="6" stroke-dasharray="14 14" fill="none" />
+  <circle cx="220" cy="380" r="14" fill="rgba(255, 255, 255, 0.6)" />
+  <circle cx="820" cy="280" r="14" fill="rgba(255, 255, 255, 0.6)" />
+  <path d="M 760 300 L 808 252 L 816 268 L 792 308 L 820 360 L 800 360 L 770 320 L 740 340 L 736 332 Z" fill="rgba(255, 255, 255, 0.34)" />
+  <text x="512" y="700" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif" font-size="320" font-weight="600" fill="#FFFFFF" letter-spacing="-12">程</text>
+</svg>
