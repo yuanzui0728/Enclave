@@ -20,13 +20,7 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { N1nPricingSyncService } from '../analytics/n1n-pricing-sync.service';
 import { WechatSyncAdminService } from './wechat-sync-admin.service';
-import { WikiSyncAdminService } from './wiki-sync-admin.service';
 import { CloudTokenUsageSyncService } from '../cloud-runtime/cloud-token-usage-sync.service';
-import type {
-  WikiSyncApplyRequest,
-  WikiSyncImportRequest,
-  WikiSyncPreviewFilter,
-} from './wiki-sync.types';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarAdminService } from '../cyber-avatar/cyber-avatar-admin.service';
 import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
@@ -68,7 +62,6 @@ export class AdminController {
     private readonly ai: AiOrchestratorService,
     private readonly usageLedger: AiUsageLedgerService,
     private readonly wechatSyncAdminService: WechatSyncAdminService,
-    private readonly wikiSyncAdminService: WikiSyncAdminService,
     private readonly actionRuntimeService: ActionRuntimeService,
     private readonly cyberAvatarAdminService: CyberAvatarAdminService,
     private readonly needDiscoveryService: NeedDiscoveryService,
@@ -557,31 +550,9 @@ export class AdminController {
     return this.ai.generateQuickCharacter(body.description?.trim() ?? '');
   }
 
-  @Get('characters/wiki-sync/preview')
-  previewWikiSync(
-    @Query('characterId') characterId?: string,
-    @Query('filter') filter?: string,
-  ) {
-    const allowed: WikiSyncPreviewFilter[] = ['drift', 'all', 'wiki_only'];
-    const safeFilter: WikiSyncPreviewFilter | undefined =
-      filter && (allowed as string[]).includes(filter)
-        ? (filter as WikiSyncPreviewFilter)
-        : undefined;
-    return this.wikiSyncAdminService.preview({
-      characterId: characterId?.trim() || undefined,
-      filter: safeFilter,
-    });
-  }
-
-  @Post('characters/wiki-sync/apply')
-  applyWikiSync(@Body() body: WikiSyncApplyRequest) {
-    return this.wikiSyncAdminService.applyBatch(body);
-  }
-
-  @Post('characters/wiki-sync/import-missing')
-  importMissingFromWiki(@Body() body: WikiSyncImportRequest) {
-    return this.wikiSyncAdminService.importMissing(body);
-  }
+  // wiki-sync 路由（preview/apply/import-missing）已迁出到 WikiSyncController
+  // （api/src/modules/admin/wiki-sync.controller.ts），只在 WikiAppModule 加载时挂载，
+  // 普通 world child 不再注册这些端点。详见 2026-05-20 wiki 拆库改造。
 
   @Post('wechat-sync/preview')
   previewWechatSync(@Body() body: WechatSyncPreviewRequestValue) {

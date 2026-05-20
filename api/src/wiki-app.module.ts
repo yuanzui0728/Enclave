@@ -1,3 +1,20 @@
+// i18n-ignore-start: server bootstrap, no user-facing strings.
+//
+// wiki-app.module.ts — wiki 独立进程（main-wiki.ts）的根 module。
+//
+// 与 AppModule 的关键差别：
+//   1. 数据库指向 wiki 自己的 sqlite（env WIKI_DATABASE_PATH / DATABASE_PATH，默认
+//      <repoRoot>/data/wiki/wiki.sqlite），不再寄生在某个 cloud user 的 world child 库里
+//   2. 显式 import WikiModule + WikiAdminModule —— 这两个在 AppModule 已经剥离，
+//      只在本 module 加载，确保 wiki cron / wiki 路由只在 wiki 独立进程里跑一次
+//   3. entities 列表包含 wiki entity（CharacterPage / Revision / Abuse / Talk 等）；
+//      synchronize: true 让首启时自动建表
+//
+// 复用 AppModule 的全部其它 module（Auth / Characters / Ai / Admin / Inference …），
+// 因为 WikiModule 内部依赖了 AuthModule + CharactersModule + AiModule 等，再往下又
+// 牵出 WorldModule / Subscription / MinimaxModule 等。这些模块在 wiki 进程内同时存在
+// 是可接受的——它们的 cron 都是基于 conversations/messages 等表运行，wiki sqlite 里
+// 这些表会被 synchronize 建出空表，跑空 cron 不影响 wiki 业务。
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -21,6 +38,7 @@ import { WorldModule } from './modules/world/world.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { NarrativeModule } from './modules/narrative/narrative.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { WikiAdminModule } from './modules/admin/wiki-admin.module';
 import { CloudRuntimeModule } from './modules/cloud-runtime/cloud-runtime.module';
 import { SystemModule } from './modules/system/system.module';
 import { ActionRuntimeModule } from './modules/action-runtime/action-runtime.module';
@@ -33,12 +51,11 @@ import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runti
 import { MinimaxModule } from './modules/minimax/minimax.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
-// WikiModule 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。普通 world child 不再
-// 加载 wiki 代码 / 不跑 wiki cron / 不在 sqlite 里建 wiki_* 表。2026-05-20 wiki 拆库改造。
+import { WikiModule } from './modules/wiki/wiki.module';
 import { PushModule } from './modules/push/push.module';
 import { PushTokenEntity } from './modules/push/push-token.entity';
 
-// Entities
+// Entities — chat 侧
 import { CharacterEntity } from './modules/characters/character.entity';
 import { CharacterBlueprintEntity } from './modules/characters/character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './modules/characters/character-blueprint-revision.entity';
@@ -116,12 +133,37 @@ import { InferenceProviderAccountEntity } from './modules/inference/inference-pr
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
-// wiki entity imports 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。
+
+// Entities — wiki 侧（AppModule 已剥离，仅在 WikiAppModule 注册）
+import { UserWikiProfileEntity } from './modules/wiki/entities/user-wiki-profile.entity';
+import { CharacterPageEntity } from './modules/wiki/entities/character-page.entity';
+import { CharacterRevisionEntity } from './modules/wiki/entities/character-revision.entity';
+import { EditSubmissionEntity } from './modules/wiki/entities/edit-submission.entity';
+import { WikiBlockEntity } from './modules/wiki/entities/wiki-block.entity';
+import { WikiProtectionLogEntity } from './modules/wiki/entities/wiki-protection-log.entity';
+import { WikiTalkThreadEntity } from './modules/wiki/entities/wiki-talk-thread.entity';
+import { WikiTalkPostEntity } from './modules/wiki/entities/wiki-talk-post.entity';
+import { WikiWatchlistEntity } from './modules/wiki/entities/wiki-watchlist.entity';
+import { UserPrivateCharacterEntity } from './modules/wiki/entities/user-private-character.entity';
+import { CharacterDraftEntity } from './modules/wiki/entities/character-draft.entity';
+import { WikiFieldProtectionEntity } from './modules/wiki/entities/wiki-field-protection.entity';
+import { AbuseFilterEntity } from './modules/wiki/entities/abuse-filter.entity';
+import { AbuseFilterHitEntity } from './modules/wiki/entities/abuse-filter-hit.entity';
+
 import {
   prepareDatabasePath,
   resolveApiPath,
   resolveRepoPath,
 } from './database/database-path';
+
+function resolveWikiDatabasePath(config: ConfigService): string {
+  // 优先用 WIKI_DATABASE_PATH，落到 DATABASE_PATH，最后兜底到 <repoRoot>/data/wiki/wiki.sqlite
+  const explicit = config.get<string>('WIKI_DATABASE_PATH')?.trim();
+  if (explicit) return prepareDatabasePath(explicit);
+  const fallbackEnv = config.get<string>('DATABASE_PATH')?.trim();
+  if (fallbackEnv) return prepareDatabasePath(fallbackEnv);
+  return prepareDatabasePath(resolveRepoPath('data/wiki/wiki.sqlite'));
+}
 
 @Module({
   imports: [
@@ -135,7 +177,7 @@ import {
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'better-sqlite3',
-        database: prepareDatabasePath(config.get<string>('DATABASE_PATH')),
+        database: resolveWikiDatabasePath(config),
         enableWAL: true,
         statementCacheSize: 200,
         prepareDatabase: (db: {
@@ -150,6 +192,8 @@ import {
           db.pragma('wal_autocheckpoint = 1000');
         },
         entities: [
+          // chat-side entities（wiki 进程内 transit-imported 的 Auth/Characters/Ai/Admin 等
+          // 模块仍然 forFeature 这些 entity，因此必须在 root 注册）
           CharacterEntity,
           UserEntity,
           EmailVerificationSessionEntity,
@@ -227,8 +271,22 @@ import {
           InferenceModelCatalogEntryEntity,
           SelfAgentHeartbeatRunEntity,
           SelfAgentRunEntity,
-          // wiki entity 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。
           PushTokenEntity,
+          // wiki-side entities（这些只在 wiki 进程的 sqlite 里建表，AppModule 不含）
+          UserWikiProfileEntity,
+          CharacterPageEntity,
+          CharacterRevisionEntity,
+          EditSubmissionEntity,
+          WikiBlockEntity,
+          WikiProtectionLogEntity,
+          WikiTalkThreadEntity,
+          WikiTalkPostEntity,
+          WikiWatchlistEntity,
+          UserPrivateCharacterEntity,
+          CharacterDraftEntity,
+          WikiFieldProtectionEntity,
+          AbuseFilterEntity,
+          AbuseFilterHitEntity,
         ],
         synchronize: true,
       }),
@@ -261,6 +319,8 @@ import {
     SubscriptionModule,
     CloudRuntimeModule,
     SystemModule,
+    WikiModule,
+    WikiAdminModule,
     PushModule,
   ],
   providers: [
@@ -270,4 +330,5 @@ import {
     },
   ],
 })
-export class AppModule {}
+export class WikiAppModule {}
+// i18n-ignore-end

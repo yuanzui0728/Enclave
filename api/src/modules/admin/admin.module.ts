@@ -41,14 +41,6 @@ import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { SelfAgentModule } from '../self-agent/self-agent.module';
-import { WikiModule } from '../wiki/wiki.module';
-import { CharacterPageEntity } from '../wiki/entities/character-page.entity';
-import { CharacterRevisionEntity } from '../wiki/entities/character-revision.entity';
-import { UserWikiProfileEntity } from '../wiki/entities/user-wiki-profile.entity';
-import { UserPrivateCharacterEntity } from '../wiki/entities/user-private-character.entity';
-import { WikiSyncAdminService } from './wiki-sync-admin.service';
-import { WikiUsersAdminService } from './wiki-users-admin.service';
-import { WikiUsersAdminController } from './wiki-users-admin.controller';
 import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
 
 @Module({
@@ -70,7 +62,6 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     FollowupRuntimeModule,
     ReminderRuntimeModule,
     SelfAgentModule,
-    WikiModule,
     CloudRuntimeModule,
     TypeOrmModule.forFeature([
       UserEntity,
@@ -90,10 +81,6 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
       AdminConversationReviewEntity,
       FriendRequestEntity,
       FriendshipEntity,
-      CharacterPageEntity,
-      CharacterRevisionEntity,
-      UserWikiProfileEntity,
-      UserPrivateCharacterEntity,
     ]),
   ],
   providers: [
@@ -101,14 +88,8 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     ReplyLogicAdminService,
     ChatRecordsAdminService,
     WechatSyncAdminService,
-    WikiSyncAdminService,
-    WikiUsersAdminService,
     AdminGuard,
   ],
-  controllers: [
-    AdminController,
-    ChatRecordsAdminController,
-    WikiUsersAdminController,
-  ],
+  controllers: [AdminController, ChatRecordsAdminController],
 })
 export class AdminModule {}
