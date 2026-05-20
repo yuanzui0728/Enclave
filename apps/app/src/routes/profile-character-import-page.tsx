@@ -266,6 +266,21 @@ export function ProfileCharacterImportPage() {
       void queryClient.invalidateQueries({
         queryKey: ["app-character", baseUrl, res.character.id],
       });
+      // 同上的死角第二处：聊天列表 / 消息列表 cache。后端 serializeConversation
+      // 和 serializeMessageWithAvatarMap 都是实时按 character.avatar 算 conversation.avatar
+      // 与 message.senderAvatar 的（chat.service.ts:1952 / 1982）。但前端 ["app-conversations",
+      // baseUrl] 和 ["app-conversation-messages", baseUrl, *] cache 各有 staleTime
+      // 15s/N秒，且 character-detail 那条 invalidate 不会顺带刷它们。
+      // 现象：用户在 wiki 改完头像（或同名角色 overwrite 导入）→ 回到 app 打开聊天列表
+      // 或聊天页 → 头像 / 消息气泡头像还是 import 前的旧值，15s 后才会 refetch。
+      // 用户视角就是「明明改了头像，为什么聊天页面头像还是初始头像」。
+      // 同 invalidateQueries 标 stale，不强制 refetch，下次 observer 看到 stale 自然拉。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversation-messages", baseUrl],
+      });
     } catch (err) {
       setResult({
         kind: "danger",
