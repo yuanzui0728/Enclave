@@ -1,14 +1,16 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
-import { CharacterRevisionEntity } from '../wiki/entities/character-revision.entity';
-import { EditSubmissionEntity } from '../wiki/entities/edit-submission.entity';
+// Wiki contribution events 由独立的 wiki-app 进程上报，world child 不再依赖 wiki entity。
+// 2026-05-20 wiki 拆库后，cloud-runtime 这里若还 inject CharacterRevisionEntity / EditSubmissionEntity
+// 会因为 DataSource 不再注册这两个 entity，repository.find() 抛 EntityMetadataNotFoundError，
+// 直接把新注册用户的 world child 启动早期崩出 code=1。
 
 type RuntimeReportPayload = {
   apiBaseUrl?: string | null;
@@ -33,23 +35,6 @@ type RevenueUsageEventPayload = {
   characterName?: string | null;
   quantity?: number;
   occurredAt?: string | null;
-  metadata?: Record<string, unknown> | null;
-};
-
-type RevenueContributionEventPayload = {
-  sourceEventId: string;
-  eventType:
-    | 'character_create'
-    | 'character_content_edit_approved'
-    | 'character_logic_edit_approved'
-    | 'character_review_approved'
-    | 'character_patrol'
-    | 'character_logic_publish';
-  characterId: string;
-  contributorExternalRefType: 'wiki_user';
-  contributorExternalRefId: string;
-  occurredAt?: string | null;
-  reversedAt?: string | null;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -82,10 +67,6 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
     private readonly messageRepo: Repository<MessageEntity>,
     @InjectRepository(GroupMessageEntity)
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
-    @InjectRepository(CharacterRevisionEntity)
-    private readonly characterRevisionRepo: Repository<CharacterRevisionEntity>,
-    @InjectRepository(EditSubmissionEntity)
-    private readonly editSubmissionRepo: Repository<EditSubmissionEntity>,
   ) {}
 
   onModuleInit() {
@@ -167,25 +148,12 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
   }
 
   private async reportRevenueEvents(config: ReportingConfig) {
-    const [usageEvents, contributionEvents] = await Promise.all([
-      this.buildUsageRevenueEvents(),
-      this.buildContributionRevenueEvents(),
-    ]);
-
+    const usageEvents = await this.buildUsageRevenueEvents();
     // cloud-api 单批最多 100 条（ReportRevenueUsageEventsDto.events @ArrayMaxSize(100)）。
-    // contribution-events 一条 revision 会展开 1-3 个事件（editor + 可能的 logic_publish +
-    // 可能的 reviewer），100 个 revision 能轻松冲到 ~300，会被云端 400 拒掉整批。
-    // 这里强制分批，每批不超 100。
     const MAX_EVENTS_PER_BATCH = 100;
     for (let i = 0; i < usageEvents.length; i += MAX_EVENTS_PER_BATCH) {
       const chunk = usageEvents.slice(i, i + MAX_EVENTS_PER_BATCH);
       await this.postRevenueSignal(config, 'usage-events', { events: chunk });
-    }
-    for (let i = 0; i < contributionEvents.length; i += MAX_EVENTS_PER_BATCH) {
-      const chunk = contributionEvents.slice(i, i + MAX_EVENTS_PER_BATCH);
-      await this.postRevenueSignal(config, 'contribution-events', {
-        events: chunk,
-      });
     }
   }
 
@@ -219,108 +187,6 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
           currency: record.currency,
         },
       }));
-  }
-
-  private async buildContributionRevenueEvents(): Promise<
-    RevenueContributionEventPayload[]
-  > {
-    const revisions = await this.characterRevisionRepo.find({
-      where: { status: In(['approved', 'reverted']) },
-      order: { createdAt: 'DESC' },
-      take: 100,
-    });
-    const revisionIds = revisions.map((revision) => revision.id);
-    const submissions = revisionIds.length
-      ? await this.editSubmissionRepo.find({
-          where: { revisionId: In(revisionIds) },
-        })
-      : [];
-    const submissionByRevisionId = new Map(
-      submissions.map((submission) => [submission.revisionId, submission]),
-    );
-    const events: RevenueContributionEventPayload[] = [];
-
-    for (const revision of revisions) {
-      const reversedAt =
-        revision.status === 'reverted' ? new Date().toISOString() : null;
-      const editorEventType =
-        revision.operation === 'create'
-          ? 'character_create'
-          : revision.revisionKind === 'recipe'
-            ? 'character_logic_edit_approved'
-            : 'character_content_edit_approved';
-      events.push({
-        sourceEventId: `wiki_revision:${revision.id}:editor`,
-        eventType: editorEventType,
-        characterId: revision.characterId,
-        contributorExternalRefType: 'wiki_user',
-        contributorExternalRefId: revision.editorUserId,
-        occurredAt: revision.createdAt.toISOString(),
-        reversedAt,
-        metadata: {
-          revisionId: revision.id,
-          version: revision.version,
-          operation: revision.operation,
-          revisionKind: revision.revisionKind,
-          editSummary: revision.editSummary,
-        },
-      });
-
-      if (revision.revisionKind === 'recipe') {
-        events.push({
-          sourceEventId: `wiki_revision:${revision.id}:logic_publish`,
-          eventType: 'character_logic_publish',
-          characterId: revision.characterId,
-          contributorExternalRefType: 'wiki_user',
-          contributorExternalRefId: revision.editorUserId,
-          occurredAt: revision.createdAt.toISOString(),
-          reversedAt,
-          metadata: {
-            revisionId: revision.id,
-            version: revision.version,
-            operation: revision.operation,
-          },
-        });
-      }
-
-      const submission = submissionByRevisionId.get(revision.id);
-      if (submission?.decision === 'approve' && submission.reviewerId) {
-        events.push({
-          sourceEventId: `wiki_revision:${revision.id}:reviewer`,
-          eventType: 'character_review_approved',
-          characterId: revision.characterId,
-          contributorExternalRefType: 'wiki_user',
-          contributorExternalRefId: submission.reviewerId,
-          occurredAt:
-            submission.decidedAt?.toISOString() ?? revision.createdAt.toISOString(),
-          reversedAt,
-          metadata: {
-            revisionId: revision.id,
-            submissionId: submission.id,
-            riskLevel: submission.riskLevel,
-          },
-        });
-      }
-
-      if (revision.patrolledBy) {
-        events.push({
-          sourceEventId: `wiki_revision:${revision.id}:patrol`,
-          eventType: 'character_patrol',
-          characterId: revision.characterId,
-          contributorExternalRefType: 'wiki_user',
-          contributorExternalRefId: revision.patrolledBy,
-          occurredAt:
-            revision.patrolledAt?.toISOString() ?? revision.createdAt.toISOString(),
-          reversedAt,
-          metadata: {
-            revisionId: revision.id,
-            version: revision.version,
-          },
-        });
-      }
-    }
-
-    return events;
   }
 
   private resolveUsageRevenueEventType(scene: string): RevenueUsageEventPayload['eventType'] {
@@ -442,9 +308,9 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
 
   private async postRevenueSignal(
     config: ReportingConfig,
-    action: 'usage-events' | 'contribution-events',
+    action: 'usage-events',
     payload: {
-      events: RevenueUsageEventPayload[] | RevenueContributionEventPayload[];
+      events: RevenueUsageEventPayload[];
     },
   ) {
     const response = await fetch(
