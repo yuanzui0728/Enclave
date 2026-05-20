@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   DefaultValuePipe,
@@ -116,6 +117,20 @@ export class WikiPageController {
       scene: SceneKey;
     },
   ) {
+    // 防御性校验：body 缺 recipe / scene 时直接 400，不要让 buildProfileFromRecipe
+    // 拿 undefined → 走到 promptBuilder 之后才崩出 "Cannot read properties of undefined
+    // (reading 'identity')" 这种 500（前端看到泛错没法定位是哪条字段没传）。
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('preview-prompt 需要 JSON body');
+    }
+    if (!body.recipe || typeof body.recipe !== 'object') {
+      throw new BadRequestException(
+        'preview-prompt: body.recipe 不能为空，需要传 character recipe 对象',
+      );
+    }
+    if (!body.scene || typeof body.scene !== 'string') {
+      throw new BadRequestException('preview-prompt: body.scene 不能为空');
+    }
     const recipe = normalizeWikiRecipe(
       body.recipe as Record<string, unknown>,
     );
