@@ -3982,7 +3982,15 @@ export function ChatMessageList({
                   {message.type === "sticker" &&
                   message.attachment?.kind === "sticker" ? (
                     <StickerMessage
-                      url={message.attachment.url}
+                      // 2026-05-21 修：sticker URL 是双源 —— 内置 `/stickers/<pack>/<name>.svg`
+                      // 走 nginx 静态 (document.origin)，自定义 `/api/chat/stickers/assets/<file>`
+                      // 走 /cloud/world-api 反代 + ?token=。前者绝不能被 resolveAttachmentUrl
+                      // 拼到 cloud-api 前缀，后者必须经鉴权追加 token。按前缀分流。
+                      url={
+                        message.attachment.url.startsWith("/api/")
+                          ? resolveAttachmentUrl(message.attachment.url)
+                          : message.attachment.url
+                      }
                       // 走查 2026-05-18 移动端单聊 R10：和 R7 / R9 同款 ?? vs || 漏防 ——
                       // StickerAttachment.label 是 `string | undefined`，自定义贴纸 / 老
                       // wiki import 偶发以空串落库。?? 只防 null/undefined，让 label === ""

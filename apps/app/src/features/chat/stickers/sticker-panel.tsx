@@ -14,6 +14,18 @@ import { Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 import { prepareCustomStickerUpload } from "./prepare-custom-sticker-upload";
 import { removeRecentSticker, type RecentStickerItem } from "./recent-stickers";
+import { resolveAppMediaUrl } from "../../../lib/media-url";
+
+// 2026-05-21 修：贴纸目录 URL 是两条来源混在一起 —
+//   1) 内置贴纸 `/stickers/<pack>/<name>.svg`：apps/app 静态资源，由 nginx 直接吐
+//      静态文件（dist/stickers/...）。永远走 document.origin 解析，绝不能被
+//      resolveAppMediaUrl 拼到 /cloud/world-api 前缀。
+//   2) 自定义贴纸 `/api/chat/stickers/assets/<file>`：world child 私有路径，公网
+//      隧道下必须经 /cloud/world-api 反代 + ?token=（CloudClientAuthGuard 兜底）。
+// 渲染时按前缀分流。
+function resolveStickerImageUrl(url: string): string {
+  return url.startsWith("/api/") ? resolveAppMediaUrl(url) : url;
+}
 
 type StickerPanelProps = {
   baseUrl?: string;
@@ -2108,7 +2120,7 @@ export function StickerPanel({
                       }`}
                     >
                       <img
-                        src={highlightedSearchItem.sticker.url}
+                        src={resolveStickerImageUrl(highlightedSearchItem.sticker.url)}
                         alt={
                           highlightedSearchItem.sticker.label ||
                           highlightedSearchItem.sticker.stickerId
@@ -2173,7 +2185,7 @@ export function StickerPanel({
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <div className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                             <img
-                              src={highlightedSearchSectionLeadSticker.url}
+                              src={resolveStickerImageUrl(highlightedSearchSectionLeadSticker.url)}
                               alt={
                                 highlightedSearchSectionLeadSticker.label ||
                                 highlightedSearchSectionLeadSticker.stickerId
@@ -2207,7 +2219,7 @@ export function StickerPanel({
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <div className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                             <img
-                              src={firstSearchResultItem.sticker.url}
+                              src={resolveStickerImageUrl(firstSearchResultItem.sticker.url)}
                               alt={
                                 firstSearchResultItem.sticker.label ||
                                 firstSearchResultItem.sticker.stickerId
@@ -3130,7 +3142,7 @@ export function StickerPanel({
                     >
                       {tab.coverSticker ? (
                         <img
-                          src={tab.coverSticker.url}
+                          src={resolveStickerImageUrl(tab.coverSticker.url)}
                           alt={tab.label}
                           className="h-full w-full object-cover"
                           loading="lazy"
@@ -3325,7 +3337,7 @@ function StickerButton({
         disabled={selectionDisabled}
       >
         <img
-          src={sticker.url}
+          src={resolveStickerImageUrl(sticker.url)}
           alt={sticker.label || sticker.stickerId}
           className={
             compact
