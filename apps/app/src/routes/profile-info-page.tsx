@@ -1,25 +1,52 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Copy } from "lucide-react";
-import { AppPage, cn } from "@yinjie/ui";
+import { isApiRequestError, updateWorldOwner } from "@yinjie/contracts";
+import { AppPage, Button, cn } from "@yinjie/ui";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { translateAppErrorCode } from "../lib/error-translate";
 import { navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildYinjieId } from "../lib/yinjie-id";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { writeClipboardText } from "../runtime/native-clipboard";
+import { pickImageFiles } from "../runtime/native-image-picker";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+
+// 跟原 profile-info-avatar-page 同步：服务端 world-owner.service 落库上限 2MB，
+// 客户端 picking 这一侧把 1MB 当上限，避免把巨型 base64 推到服务端再被拒。
+const MAX_AVATAR_BYTES = 1024 * 1024;
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+type PickedAvatar = {
+  dataUrl: string;
+  size: number;
+  name: string;
+};
 
 export function ProfileInfoPage() {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const queryClient = useQueryClient();
   const username = useWorldOwnerStore((state) => state.username);
   const ownerId = useWorldOwnerStore((state) => state.id);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
+  const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   // 隐界号像微信号一样要能复制给好友——之前这一行是 readOnly、点不动也长按
   // 没菜单（mobile webview 长按选中文本经常被 yj-no-callout 一类的祖先样式吃掉），
   // 用户想分享给朋友只能在 Welcome 页拼一次拿到。给它配 toast 短反馈，{key} 走
@@ -49,6 +76,91 @@ export function ProfileInfoPage() {
     }
   }, [isDesktopLayout, navigate]);
 
+  // 头像换图：选完图片弹本页内联确认弹层，用户点「完成」才落库。
+  // 防 race：用户连点两次「头像」行（picker A 在场时再点出 picker B），FileReader
+  // / native bridge 的回调不保证顺序——大图 A 先开始读、小图 B 更快完成，会让
+  // B 的 setPickedAvatar(B) 先落、A 的 onload 再覆写成 A。用自增 id 给每次 pick
+  // 编号，回调时只信"最新那次"。跟原 avatar page 同款。
+  const [pickedAvatar, setPickedAvatar] = useState<PickedAvatar | null>(null);
+  const latestPickIdRef = useRef(0);
+  // 防 stale onload 死锁：每个进行中的 FileReader 把 pickId 加进集合，
+  // onload/onerror 不管 pickId 是否最新都先把自己从集合移除。集合空了再清
+  // "读取中"。原 avatar page 走查过这个细节（连点两次 + 第二次取消会让旧
+  // reader 因 pickId mismatch 早退、状态钉死），照搬。
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const inFlightReadersRef = useRef<Set<number>>(new Set());
+
+  const saveMutation = useMutation({
+    mutationFn: async (dataUrl: string) => {
+      const owner = await updateWorldOwner({ avatar: dataUrl }, baseUrl);
+      queryClient.setQueryData(["world-owner", baseUrl], owner);
+      hydrateOwner(owner);
+    },
+    onSuccess: () => {
+      setPickedAvatar(null);
+    },
+  });
+
+  async function handlePickAvatar() {
+    const pickId = ++latestPickIdRef.current;
+    const files = await pickImageFiles({ multiple: false });
+    if (pickId !== latestPickIdRef.current) return;
+    const file = files[0];
+    if (!file) {
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      showToast(t(msg`图片过大，请压缩到 1MB 以内再试。`));
+      return;
+    }
+    if (file.size === 0) {
+      // 0 字节文件多半是相册导出失败 / 文件损坏。不拦的话 FileReader 会读出
+      // "data:image/...;base64,"（只有 MIME 头没有数据），照样塞进 pickedAvatar
+      // → 用户保存"空头像"，下次进来 AvatarChip onError 回落到 fallback，用户
+      // 以为自己改了头像却看到 initials，毫无线索可查。
+      showToast(t(msg`这张图片是空文件，请换一张试试。`));
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      // <input accept="image/*"> 只是 hint，桌面 Safari / 拖拽场景仍能丢 PDF
+      // / text/plain 进来。FileReader 照读不误，能塞进 pickedAvatar 拼出
+      // "data:application/pdf;base64,..." 落库，AvatarChip 加载失败回 fallback。
+      // 跟 chat-composer / compress-chat-background-image 同款 MIME 严校。
+      showToast(t(msg`只能选择图片文件。`));
+      return;
+    }
+    saveMutation.reset();
+    inFlightReadersRef.current.add(pickId);
+    setIsReadingFile(true);
+    const reader = new FileReader();
+    const finish = () => {
+      inFlightReadersRef.current.delete(pickId);
+      if (inFlightReadersRef.current.size === 0) {
+        setIsReadingFile(false);
+      }
+    };
+    reader.onerror = () => {
+      if (pickId === latestPickIdRef.current) {
+        showToast(t(msg`读取图片失败，请换一张试试。`));
+      }
+      finish();
+    };
+    reader.onload = () => {
+      if (pickId === latestPickIdRef.current) {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setPickedAvatar({
+            dataUrl: result,
+            size: file.size,
+            name: file.name,
+          });
+        }
+      }
+      finish();
+    };
+    reader.readAsDataURL(file);
+  }
+
   if (isDesktopLayout) {
     return null;
   }
@@ -66,6 +178,13 @@ export function ProfileInfoPage() {
     }
     const copied = await writeClipboardText(yinjieIdText);
     showToast(copied ? t(msg`已复制隐界号`) : t(msg`复制失败，请重试`));
+  }
+
+  function translateMutationError(err: unknown): string | null {
+    if (isApiRequestError(err)) {
+      return translateAppErrorCode(err) ?? err.message;
+    }
+    return err instanceof Error ? describeRequestError(err) : null;
   }
 
   return (
@@ -94,7 +213,11 @@ export function ProfileInfoPage() {
         <InfoRowGroup className="mt-1">
           <InfoRow
             label={t(msg`头像`)}
-            to="/profile/info/avatar"
+            onClick={() => {
+              void handlePickAvatar();
+            }}
+            disabled={isReadingFile || saveMutation.isPending}
+            ariaLabel={t(msg`更换头像`)}
             value={
               <AvatarChip name={ownerLabel} src={avatar} size="wechat" />
             }
@@ -170,6 +293,26 @@ export function ProfileInfoPage() {
         </InfoRowGroup>
       </div>
 
+      <AvatarConfirmDialog
+        picked={pickedAvatar}
+        ownerLabel={ownerLabel}
+        isSaving={saveMutation.isPending}
+        errorMessage={
+          saveMutation.isError
+            ? translateMutationError(saveMutation.error)
+            : null
+        }
+        onCancel={() => {
+          setPickedAvatar(null);
+          saveMutation.reset();
+        }}
+        onConfirm={() => {
+          if (pickedAvatar) {
+            saveMutation.mutate(pickedAvatar.dataUrl);
+          }
+        }}
+      />
+
       {toast ? (
         // role="status" + aria-live=polite：之前 toast 完全没 a11y 属性，VoiceOver /
         // TalkBack 用户点完「复制隐界号」按钮听不到任何反馈，以为没成功又点一次。
@@ -213,9 +356,12 @@ type InfoRowProps = {
   to?: string;
   readOnly?: boolean;
   denseValue?: boolean;
-  // onClick：纯按钮型行（如「点一下复制隐界号」），不导航也不是 readOnly。
+  // onClick：纯按钮型行（如「点一下复制隐界号」/「点一下换头像」），不导航也不是 readOnly。
   // 跟 to 互斥；同时传时 onClick 优先。
   onClick?: () => void;
+  // disabled 仅对 onClick 分支生效——避免在 FileReader 读图 / 保存上传过程中
+  // 用户连点头像行再开第二次 picker。Link 分支没有 disabled 概念。
+  disabled?: boolean;
   ariaLabel?: string;
 };
 
@@ -226,6 +372,7 @@ function InfoRow({
   readOnly,
   denseValue,
   onClick,
+  disabled,
   ariaLabel,
 }: InfoRowProps) {
   const inner = (
@@ -273,8 +420,9 @@ function InfoRow({
       <button
         type="button"
         onClick={onClick}
+        disabled={disabled}
         aria-label={ariaLabel}
-        className={cellClass}
+        className={cn(cellClass, "disabled:opacity-60")}
       >
         {inner}
       </button>
@@ -289,5 +437,124 @@ function InfoRow({
     <Link to={to as never} className={cellClass}>
       {inner}
     </Link>
+  );
+}
+
+type AvatarConfirmDialogProps = {
+  picked: PickedAvatar | null;
+  ownerLabel: string;
+  isSaving: boolean;
+  errorMessage: string | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function AvatarConfirmDialog({
+  picked,
+  ownerLabel,
+  isSaving,
+  errorMessage,
+  onCancel,
+  onConfirm,
+}: AvatarConfirmDialogProps) {
+  const t = useRuntimeTranslator();
+  const open = picked !== null;
+  const titleId = useId();
+  // 镜像 onCancel：deps 收紧到 [open]，避免 parent 任意 re-render 让 ESC/Back
+  // listener 反复拆装。跟 feature-unavailable-dialog 同款修法（见同文件 R6 注释）。
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      onCancelRef.current();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onCancelRef.current();
+      return true;
+    });
+    return unregister;
+  }, [open]);
+
+  if (!open || !picked) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]">
+      <button
+        type="button"
+        aria-label={t(msg`关闭`)}
+        onClick={() => {
+          if (!isSaving) onCancel();
+        }}
+        // 背景按钮纯鼠标 affordance；键盘 Tab 跳到这里会拿到 invisible focus
+        // 然后按 Enter 直接关掉，所以 tabIndex=-1 让 Tab 路径只走到真按钮。
+        tabIndex={-1}
+        className="absolute inset-0"
+      />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative w-full max-w-[320px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+      >
+        <div className="flex flex-col items-center px-6 pb-2 pt-6">
+          <AvatarChip name={ownerLabel} src={picked.dataUrl} size="xl" />
+          <div
+            id={titleId}
+            className="mt-4 max-w-full truncate text-[14px] text-[color:var(--text-primary)]"
+            title={picked.name}
+          >
+            {picked.name || t(msg`本地图片`)}
+          </div>
+          <div
+            className="mt-0.5 text-[11px] text-[color:var(--text-muted)]"
+            data-i18n-skip="true"
+          >
+            {formatBytes(picked.size)}
+          </div>
+        </div>
+
+        {errorMessage ? (
+          <div
+            role="alert"
+            className="mx-4 mt-3 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          >
+            {errorMessage}
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex gap-2 border-t border-[color:var(--border-faint)] px-4 pb-4 pt-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="flex-1 rounded-[12px] py-2 shadow-none"
+          >
+            {t(msg`取消`)}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={onConfirm}
+            disabled={isSaving}
+            className="flex-1 rounded-[12px] bg-[#07c160] py-2 text-white shadow-none hover:opacity-95"
+          >
+            {isSaving ? t(msg`保存中`) : t(msg`完成`)}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
