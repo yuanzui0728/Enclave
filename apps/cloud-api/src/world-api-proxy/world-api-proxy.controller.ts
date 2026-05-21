@@ -19,10 +19,14 @@ export class WorldApiProxyController {
     const phone = req.cloudPhone ?? "";
     const target = await this.proxyService.resolveTarget(phone);
     if (!target) {
+      // 注意：message 不要带 "account" 字眼。这条错误只代表 world child 还在
+      // 启动 / 已被 idle-suspend，**用户的账号本身没问题**。前端按 errorCode 选
+      // 本地化文案（apps/app/src/lib/world-unavailable.ts），这里的 message 仅
+      // 给 curl / 日志 / 老客户端 fallback 用，必须中性。
       res.status(503).json({
         statusCode: 503,
         errorCode: "WORLD_INSTANCE_NOT_READY",
-        message: "World instance is not ready for this account.", // i18n-ignore-line: backend API error code
+        message: "World is starting up or briefly offline. Please retry in a moment.", // i18n-ignore-line: backend API error code
       });
       return;
     }

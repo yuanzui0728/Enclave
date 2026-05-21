@@ -11,7 +11,6 @@ export function WorldUnavailableDialogHost() {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const open = useWorldUnavailableDialogStore((state) => state.open);
-  const message = useWorldUnavailableDialogStore((state) => state.message);
   const closeDialog = useWorldUnavailableDialogStore(
     (state) => state.closeDialog,
   );
@@ -35,6 +34,11 @@ export function WorldUnavailableDialogHost() {
     void navigate({ to: "/welcome", replace: true });
   };
 
+  // 历史上这里标题是「世界已休眠，请重新登录」+ 把后端英文 message
+  // ("World instance is not ready for this account.") 当 fine-print 渲染。
+  // 新注册用户 world 暖机几秒内若命中这条 503，会把 "this account" 误读为
+  // 「我账号没建上」→ 报"验证码过了但没建号"。改成中性表述：world 启动中
+  // 或已休眠都用同一条文案，避免暗示注册失败；后端英文 message 不再渲染。
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-4 sm:items-center">
       <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
@@ -42,16 +46,11 @@ export function WorldUnavailableDialogHost() {
           {t(msg`世界状态`)}
         </div>
         <h2 className="mt-3 text-2xl font-semibold text-[color:var(--text-primary)]">
-          {t(msg`世界已休眠，请重新登录`)}
+          {t(msg`世界暂时离线`)}
         </h2>
         <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-          {t(msg`长时间未使用，你的世界已自动关闭以节省资源。重新登录会自动唤起你的世界，几秒内即可继续使用。`)}
+          {t(msg`你的世界正在启动或已自动休眠。重新登录会立即唤醒它，几秒内即可继续使用——你的账号和数据都已安全保存在云端。`)}
         </p>
-        {message ? (
-          <p className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-            {message}
-          </p>
-        ) : null}
         <div className="mt-6">
           <Button
             variant="primary"

@@ -20,15 +20,28 @@ function isWorldUnavailableStatus(statusCode: number, errorCode: string | null) 
   return WORLD_UNAVAILABLE_STATUS_CODES.has(statusCode);
 }
 
-export function openWorldUnavailableDialog(message: string) {
-  useWorldUnavailableDialogStore.getState().openDialog({ message });
+export function openWorldUnavailableDialog() {
+  useWorldUnavailableDialogStore.getState().openDialog();
+}
+
+// welcome 页自己的 cloudAccessSessionQuery 会轮询 resolveMyCloudWorldAccess 直到
+// world ready，刚注册完 / 刚验证完邮箱、world 还在暖机的几秒里很容易命中 503
+// WORLD_INSTANCE_NOT_READY；这种情景弹「世界暂时离线，请重新登录」反而打断
+// welcome 页的状态流转，让新用户以为「我的账号有问题」。在 /welcome 路径直接
+// 跳过弹窗，让 welcome 页的内嵌进度条 / 文案承担提示。
+function isOnWelcomeRoute(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname === "/welcome";
 }
 
 export function handleApiWorldUnavailableError(error: ApiRequestError) {
   if (!isWorldUnavailableStatus(error.statusCode, error.errorCode)) {
     return;
   }
-  openWorldUnavailableDialog(error.message);
+  if (isOnWelcomeRoute()) {
+    return;
+  }
+  openWorldUnavailableDialog();
 }
 
 export function handleSocketWorldUnavailable(payload: ChatErrorPayload) {
@@ -41,7 +54,7 @@ export function handleSocketWorldUnavailable(payload: ChatErrorPayload) {
     /WORLD_INSTANCE_NOT_READY|WORLD_UPSTREAM_UNAVAILABLE/.test(message) ||
     /\b50[23]\b/.test(message)
   ) {
-    openWorldUnavailableDialog(message || "World is not running."); // i18n-ignore-line
+    openWorldUnavailableDialog();
     return true;
   }
   return false;
