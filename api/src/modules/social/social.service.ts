@@ -92,6 +92,11 @@ export class SocialService implements OnModuleInit {
    *      已能翻成「来自摇一摇 / 来自搜索添加 / 来自咖啡馆 / ...」。
    *
    * 天然幂等：第二次启动 `source IS NULL` 行已不复存在，SQL 不会再动。
+   *
+   * 走查 R10：TypeORM 的 Repository.query() 对 UPDATE 只回 lastInsertRowid，不回
+   * affected 行数（见 BetterSqlite3QueryRunner.js: 拿不到 useStructuredResult=true）。
+   * 默认好友走 createQueryBuilder().execute() 拿 UpdateResult.affected；第二步带
+   * 子查询的 UPDATE QueryBuilder 写起来更别扭，改成 count-before 拿日志计数。
    */
   async onModuleInit(): Promise<void> {
     try {
@@ -99,15 +104,14 @@ export class SocialService implements OnModuleInit {
         (id) => id !== SELF_CHARACTER_ID,
       );
       if (seedCharacterIds.length) {
-        const placeholders = seedCharacterIds.map(() => '?').join(', ');
-        const seedResult = await this.friendshipRepo.query(
-          `UPDATE friendships
-              SET source = 'default_seed'
-            WHERE (source IS NULL OR source = '')
-              AND characterId IN (${placeholders})`,
-          seedCharacterIds,
-        );
-        const seedChanges = this.extractChangeCount(seedResult);
+        const seedResult = await this.friendshipRepo
+          .createQueryBuilder()
+          .update()
+          .set({ source: 'default_seed' })
+          .where("(source IS NULL OR source = '')")
+          .andWhere('characterId IN (:...ids)', { ids: seedCharacterIds })
+          .execute();
+        const seedChanges = seedResult.affected ?? 0;
         if (seedChanges > 0) {
           this.logger.log(
             `[backfill] friendship.source = 'default_seed' for ${seedChanges} 行默认好友`,
@@ -115,17 +119,8 @@ export class SocialService implements OnModuleInit {
         }
       }
 
-      const joinResult = await this.friendshipRepo.query(
-        `UPDATE friendships
-            SET source = (
-              SELECT fr.triggerScene FROM friend_requests fr
-               WHERE fr.userId = friendships.userId
-                 AND fr.characterId = friendships.characterId
-                 AND fr.triggerScene IS NOT NULL
-                 AND fr.triggerScene != ''
-               ORDER BY fr.createdAt ASC
-               LIMIT 1
-            )
+      const joinCandidates = await this.friendshipRepo.query(
+        `SELECT COUNT(*) AS cnt FROM friendships
           WHERE (source IS NULL OR source = '')
             AND EXISTS (
               SELECT 1 FROM friend_requests fr
@@ -135,10 +130,48 @@ export class SocialService implements OnModuleInit {
                  AND fr.triggerScene != ''
             )`,
       );
-      const joinChanges = this.extractChangeCount(joinResult);
+      const joinChanges = Number(joinCandidates?.[0]?.cnt ?? 0);
       if (joinChanges > 0) {
+        await this.friendshipRepo.query(
+          `UPDATE friendships
+              SET source = (
+                SELECT fr.triggerScene FROM friend_requests fr
+                 WHERE fr.userId = friendships.userId
+                   AND fr.characterId = friendships.characterId
+                   AND fr.triggerScene IS NOT NULL
+                   AND fr.triggerScene != ''
+                 ORDER BY fr.createdAt ASC
+                 LIMIT 1
+              )
+            WHERE (source IS NULL OR source = '')
+              AND EXISTS (
+                SELECT 1 FROM friend_requests fr
+                 WHERE fr.userId = friendships.userId
+                   AND fr.characterId = friendships.characterId
+                   AND fr.triggerScene IS NOT NULL
+                   AND fr.triggerScene != ''
+              )`,
+        );
         this.logger.log(
           `[backfill] friendship.source from friend_requests.triggerScene 回填 ${joinChanges} 行`,
+        );
+      }
+
+      // SELF 镜像角色清零：DB 里若有遗留 source（早期路径误写，或刚才 join
+      // backfill 从 friend_requests 拉到了一条用户对自己摇一摇的脏数据），
+      // 一律归回 NULL。必须放在 join backfill 之后，否则会被覆盖回去。
+      // UI 已经 isSelfMirror 短路成「本人」，DB 留 NULL 更干净。
+      const selfNullResult = await this.friendshipRepo
+        .createQueryBuilder()
+        .update()
+        .set({ source: null })
+        .where('characterId = :selfId', { selfId: SELF_CHARACTER_ID })
+        .andWhere("source IS NOT NULL AND source != ''")
+        .execute();
+      const selfNullChanges = selfNullResult.affected ?? 0;
+      if (selfNullChanges > 0) {
+        this.logger.log(
+          `[backfill] friendship.source NULL'd for ${selfNullChanges} SELF mirror rows (legacy artifact)`,
         );
       }
     } catch (error) {
@@ -148,27 +181,6 @@ export class SocialService implements OnModuleInit {
         `[backfill] friendship.source backfill failed: ${(error as Error).message}`,
       );
     }
-  }
-
-  private extractChangeCount(result: unknown): number {
-    // better-sqlite3 driver: 直接返回 { changes, lastInsertRowid }
-    // node-sqlite3 driver: 通过 query() 时常返回数组 [{ ... }, affected]
-    if (
-      result &&
-      typeof result === 'object' &&
-      'changes' in result &&
-      typeof (result as { changes: number }).changes === 'number'
-    ) {
-      return (result as { changes: number }).changes;
-    }
-    if (
-      Array.isArray(result) &&
-      result.length === 2 &&
-      typeof result[1] === 'number'
-    ) {
-      return result[1];
-    }
-    return 0;
   }
 
   async getPendingRequests(

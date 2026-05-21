@@ -31,7 +31,7 @@ import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
 import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
-import { getFriendshipSourceLabel } from "../../contacts/friend-request-scene-label";
+import { resolveFriendshipSourceText } from "../../contacts/friend-request-scene-label";
 import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 import {
   buildDesktopChatRouteHash,
@@ -318,7 +318,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         friendship?.source?.trim()
           ? {
               label: t(msg`来源`),
-              value: t(getFriendshipSourceLabel(friendship.source)),
+              value: resolveFriendshipSourceText(t, friendship.source),
             }
           : null,
         groupMember

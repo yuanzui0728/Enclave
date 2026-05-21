@@ -893,6 +893,14 @@ export class CharactersService implements OnModuleInit {
       friendshipStatus = created.status;
     } else if (existingFriendship.status === 'removed') {
       existingFriendship.status = 'friend';
+      // 软删→重激活：保留首次相识的 source；若原本就为空（早期 import 流程没写）
+      // 就当作首次 import 回填 'private_import'，避免「来源」继续显示「未设置」。
+      if (
+        !existingFriendship.source ||
+        !existingFriendship.source.trim()
+      ) {
+        existingFriendship.source = 'private_import';
+      }
       const updated = await this.friendshipRepo.save(existingFriendship);
       friendshipStatus = updated.status;
     } else {

@@ -85,3 +85,57 @@ export function getFriendRequestSourceLabel(
 // Alias：character-detail-page / desktop friend popover 等读 `friendship.source`
 // 的 surface 用这个名字读起来更顺。实现完全一致——后端两个字段同源、UI 同义。
 export const getFriendshipSourceLabel = getFriendRequestSourceLabel;
+
+// 受控词表外的 source 值（来自 wechat-sync 的 admin 自填字段，如「同事」「前同事」
+// 「朋友介绍」）。switch 没匹配会落到 default 「来自相遇」分支——靠这个集合提前
+// 识别出"这条命中了已知 id"，让 resolveFriendshipSourceText 知道未知 id 该走
+// raw-text 兜底而不是 fallback 文案。
+const KNOWN_FRIENDSHIP_SOURCE_IDS = new Set<string>([
+  "shake",
+  "shake_keep",
+  "manual_add",
+  "need_discovery_daily",
+  "need_discovery_short_interval",
+  "followup_runtime",
+  "default_seed",
+  "private_import",
+  "contact_import",
+  "coffee_shop",
+  "cafe",
+  "gym",
+  "library",
+  "park",
+  "classroom",
+  "lab",
+  "office",
+  "coworking",
+  "study_room",
+  "restaurant",
+  "museum",
+  "bookstore",
+  "travel",
+  "night_walk",
+  "theater",
+  "home",
+]);
+
+/**
+ * Friendship.source 的最终展示文案：受控 id 走 i18n 翻译，自由文本（admin 在
+ * wechat-sync 时手输的「同事」/「朋友介绍」之类）原样回显，避免被 fallback 吞掉。
+ * 4 个移动/桌面 surface（character-detail-page、contact-detail-pane、
+ * desktop-add-friend-result-card、desktop-message-avatar-popover）统一用这一个
+ * 入口，不要直接 t(getFriendshipSourceLabel(...))。
+ *
+ * @param translate `useRuntimeTranslator()` 返回的 `(MessageDescriptor) => string`。
+ */
+export function resolveFriendshipSourceText(
+  translate: (message: MessageDescriptor) => string,
+  source: string | null | undefined,
+): string {
+  const raw = source?.trim();
+  if (!raw) return translate(msg`来自相遇`);
+  if (KNOWN_FRIENDSHIP_SOURCE_IDS.has(raw)) {
+    return translate(getFriendshipSourceLabel(raw));
+  }
+  return raw;
+}

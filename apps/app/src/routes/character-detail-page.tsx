@@ -41,7 +41,7 @@ import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-sta
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
-import { getFriendshipSourceLabel } from "../features/contacts/friend-request-scene-label";
+import { resolveFriendshipSourceText } from "../features/contacts/friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import {
   buildCharacterDetailRouteHash,
@@ -2108,9 +2108,8 @@ export function CharacterDetailPage() {
                     if (!isFriend) return metInWorldLabel;
                     // 「我」是镜像角色，DB source 留 NULL；UI 短路成「本人」。
                     if (isSelfMirror) return t(msg`本人`);
-                    const raw = friendship?.source?.trim();
-                    if (!raw) return unsetLabel;
-                    return t(getFriendshipSourceLabel(raw));
+                    if (!friendship?.source?.trim()) return unsetLabel;
+                    return resolveFriendshipSourceText(t, friendship.source);
                   })()
                 }
                 compact={!isDesktopLayout}

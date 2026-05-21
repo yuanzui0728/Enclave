@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { MessageCircleMore } from "lucide-react";
 import {
+  SELF_CHARACTER_ID,
   updateFriendProfile,
   type Character,
   type FriendListItem,
@@ -25,6 +26,7 @@ import {
   DesktopContactProfileShell,
   DesktopContactProfileToggleRow,
 } from "./desktop-contact-profile-blocks";
+import { resolveFriendshipSourceText } from "./friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "./invalidate-friend-display";
 
 type ContactDetailPaneProps = {
@@ -297,8 +299,15 @@ export function ContactDetailPane({
             />
             <DesktopContactProfileRow
               label={t(msg`来源`)}
-              value={friendship?.source?.trim() || t(msg`未设置`)}
-              muted={!friendship?.source?.trim()}
+              value={(() => {
+                if (character.id === SELF_CHARACTER_ID) return t(msg`本人`);
+                if (!friendship?.source?.trim()) return t(msg`未设置`);
+                return resolveFriendshipSourceText(t, friendship.source);
+              })()}
+              muted={
+                character.id !== SELF_CHARACTER_ID &&
+                !friendship?.source?.trim()
+              }
             />
             <DesktopContactProfileActionRow
               label={t(msg`标签`)}
