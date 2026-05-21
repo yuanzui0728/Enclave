@@ -11,20 +11,10 @@ import { MailModule } from '../mail/mail.module';
 import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { UserEntity } from './user.entity';
 import { WorldOwnerService } from './world-owner.service';
-import { WelcomeMessageService } from './welcome-message.service';
-import { CharacterEntity } from '../characters/character.entity';
-import { ConversationEntity } from '../chat/conversation.entity';
-import { MessageEntity } from '../chat/message.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      UserEntity,
-      EmailVerificationSessionEntity,
-      CharacterEntity,
-      ConversationEntity,
-      MessageEntity,
-    ]),
+    TypeOrmModule.forFeature([UserEntity, EmailVerificationSessionEntity]),
     MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -40,7 +30,6 @@ import { MessageEntity } from '../chat/message.entity';
     WorldOwnerService,
     AuthService,
     EmailAuthService,
-    WelcomeMessageService,
     JwtAuthGuard,
     OptionalJwtAuthGuard,
   ],

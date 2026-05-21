@@ -25,8 +25,6 @@ import {
   normalizeChatBackgroundAsset,
   parseChatBackgroundAsset,
 } from '../chat/chat-background.utils';
-import { WelcomeMessageService } from './welcome-message.service';
-
 const MIN_OWNER_NAME_LENGTH = 2;
 // 与移动端 profile-info-name-page MAX=20 / signature MAX=30 对齐，但服务端给
 // 一点宽容（粘贴时多空格、不同前端版本）。avatar 接受 URL 或 base64 data URL，
@@ -126,7 +124,6 @@ export class WorldOwnerService {
     private readonly userRepo: Repository<UserEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly welcomeMessageService: WelcomeMessageService,
   ) {}
 
   async ensureSingleOwnerMigration(): Promise<UserEntity> {
@@ -148,7 +145,8 @@ export class WorldOwnerService {
         userType: 'world_owner',
       });
       const saved = await this.userRepo.save(owner);
-      await this.welcomeMessageService.sendWelcomeMessage(saved.id);
+      // "我" 角色的欢迎消息由 social 模块的 InitialMessageService 在
+      // ensureDefaultFriendships 时统一调度，这里不再单独发，避免出现两条对话条目。
       return saved;
     }
 
