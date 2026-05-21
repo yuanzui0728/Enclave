@@ -5973,20 +5973,6 @@ function ImageMessage({
     setLoadFailed(false);
   }, [url]);
 
-  if (loadFailed) {
-    return (
-      <div
-        className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
-          isDesktop
-            ? "h-28 w-28 rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
-            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
-        }`}
-      >
-        {label || translateRuntimeMessage(msg`[图片]`)}
-      </div>
-    );
-  }
-
   // 用真实宽高按 maxSize 等比缩放占位：CLS 修复关键 — 图片加载前
   // <img> 就有 aspect-ratio + 真实显示尺寸，60 条历史的图陆续完成
   // 解码时不会让列高一格一格往上长。server 没给尺寸时回退到老行为
@@ -5999,6 +5985,13 @@ function ImageMessage({
   // 一样也跑一遍 diff/set。useMemo 把 size + style 引用稳住，依赖只有
   // (width, height, maxSize) 真变化时才重算。和姊妹 R73 chat 背景 style 同款
   // 优化方向。
+  // 2026-05-21 修：renderedSize / imageStyle 两个 useMemo 之前在 `if (loadFailed) return`
+  // 早返回**下方**——首次渲染调用 [useState, useEffect, useMemo, useMemo]，
+  // 一旦 <img> onError 触发 setLoadFailed(true)，下一帧只调到 [useState, useEffect]
+  // 就 early-return → React 19 抛 #300 didRenderTooFewHooks，整个聊天树崩。
+  // 移动端发送图片时乐观气泡先用 blob URL 渲染，blob revoke / 真实 URL 切换的
+  // 那一帧 img onError 易触发，复现非常稳定。把 hooks 全部前置，loadFailed
+  // 早返回放最后。
   const renderedSize = useMemo(
     () =>
       width && height && width > 0 && height > 0
@@ -6020,6 +6013,20 @@ function ImageMessage({
         : { maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` },
     [renderedSize, maxSize],
   );
+
+  if (loadFailed) {
+    return (
+      <div
+        className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
+          isDesktop
+            ? "h-28 w-28 rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
+        }`}
+      >
+        {label || translateRuntimeMessage(msg`[图片]`)}
+      </div>
+    );
+  }
 
   const image = (
     <img
