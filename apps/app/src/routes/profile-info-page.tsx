@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Copy, QrCode } from "lucide-react";
+import { ArrowLeft, ChevronRight, Copy } from "lucide-react";
 import { AppPage, cn } from "@yinjie/ui";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
@@ -148,34 +148,6 @@ export function ProfileInfoPage() {
               readOnly
             />
           )}
-          <InfoRow
-            label={t(msg`更多信息`)}
-            to="/profile/info/more"
-            value={
-              <span className="truncate text-[12px] text-[color:var(--text-dim)]">
-                {t(msg`敬请期待`)}
-              </span>
-            }
-          />
-        </InfoRowGroup>
-
-        <InfoRowGroup className="mt-2">
-          <InfoRow
-            label={t(msg`我的二维码名片`)}
-            to="/profile/info/qr"
-            value={
-              <span className="flex items-center gap-1.5">
-                <span className="text-[12px] text-[color:var(--text-dim)]">
-                  {t(msg`敬请期待`)}
-                </span>
-                <QrCode
-                  size={16}
-                  className="text-[color:var(--text-muted)]"
-                  aria-hidden="true"
-                />
-              </span>
-            }
-          />
         </InfoRowGroup>
 
         <InfoRowGroup className="mt-2">

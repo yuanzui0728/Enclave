@@ -209,11 +209,6 @@ const ProfileInfoAvatarPage = lazy(async () => {
   return { default: mod.ProfileInfoAvatarPage };
 });
 
-const ProfileInfoPlaceholderPage = lazy(async () => {
-  const mod = await import("./routes/profile-info-placeholder-page");
-  return { default: mod.ProfileInfoPlaceholderPage };
-});
-
 const ProfileSubscriptionPage = lazy(async () => {
   const mod = await import("./routes/profile-subscription-page");
   return { default: mod.ProfileSubscriptionPage };
@@ -917,20 +912,6 @@ const profileInfoAvatarRoute = createRoute({
   component: ProfileInfoAvatarPage,
 });
 
-const profileInfoQrRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/profile/info/qr",
-  beforeLoad: requireWorldReady,
-  component: ProfileInfoPlaceholderPage,
-});
-
-const profileInfoMoreRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/profile/info/more",
-  beforeLoad: requireWorldReady,
-  component: ProfileInfoPlaceholderPage,
-});
-
 const profileSubscriptionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/subscription",
@@ -1130,8 +1111,6 @@ const routeTree = rootRoute.addChildren([
   profileInfoNameRoute,
   profileInfoSignatureRoute,
   profileInfoAvatarRoute,
-  profileInfoQrRoute,
-  profileInfoMoreRoute,
   profileSubscriptionRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
