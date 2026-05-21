@@ -41,6 +41,7 @@ import {
 import { resolveNoteTitle } from "../features/favorites/note-editor-helpers";
 import { buildMobileNoteEditorRouteHash } from "../features/notes/mobile-note-editor-route-state";
 import { formatMessageTimestamp } from "../lib/format";
+import { resolveAppMediaUrl } from "../lib/media-url";
 import {
   isDesktopOnlyPath,
   navigateBackOrFallback,
@@ -269,7 +270,10 @@ function NoteRow({
       <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(7,193,96,0.08)]">
         {previewImage?.url ? (
           <img
-            src={previewImage.url}
+            // 2026-05-21 修：公网隧道下 /api/chat/attachments/<file> 必须经 /cloud/world-api
+            // 反代 + ?token=（cloud-api 鉴权兜底）。getFavoriteNotes 不做 URL 重写，
+            // 缩略图裸用相对路径会被浏览器解析到 host/api/* nginx 403。
+            src={resolveAppMediaUrl(previewImage.url)}
             alt={note.title}
             className="h-full w-full object-cover"
           />

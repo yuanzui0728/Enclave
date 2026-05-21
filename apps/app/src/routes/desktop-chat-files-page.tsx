@@ -63,6 +63,7 @@ import {
   getConversationThreadType,
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
+import { resolveAppMediaUrl } from "../lib/media-url";
 import { openExternalUrl } from "../runtime/external-url";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
@@ -412,12 +413,17 @@ export function DesktopChatFilesPage() {
     : -1;
   const activeImage: ImageAttachmentRow | null =
     activeImageIndex >= 0 ? (imageRows[activeImageIndex] ?? null) : null;
+  // 2026-05-21 修：和 chat-message-list resolveAttachmentUrl 同款 — 公网隧道下
+  // attachment.url 走 /cloud/world-api 反代 + ?token=（CloudClientAuthGuard
+  // 媒体兜底）。standaloneViewerItems / handleOpenInWindow / 缩略图 / 大图
+  // viewer / handleAttachmentOpen / handleAttachmentSave 一组都裸用原 URL
+  // 在公网形态全部 401。统一过 resolveAppMediaUrl。
   const standaloneViewerItems = useMemo(
     () =>
       imageRows.map(
         (item): DesktopChatImageViewerSessionItem => ({
           id: item.id,
-          imageUrl: item.attachment.url,
+          imageUrl: resolveAppMediaUrl(item.attachment.url),
           title: item.attachment.fileName,
           meta: `${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`,
           returnTo: buildAttachmentMessagePath(item),
@@ -537,7 +543,7 @@ export function DesktopChatFilesPage() {
     }
     openingWindowAttachmentIdsRef.current.add(item.id);
     void openDesktopChatImageViewerWindow({
-      imageUrl: item.attachment.url,
+      imageUrl: resolveAppMediaUrl(item.attachment.url),
       title: item.attachment.fileName,
       meta: `${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`,
       returnTo: buildAttachmentMessagePath(item),
@@ -838,7 +844,7 @@ export function DesktopChatFilesPage() {
                           className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
                         >
                           <img
-                            src={item.attachment.url}
+                            src={resolveAppMediaUrl(item.attachment.url)}
                             alt={item.attachment.fileName}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
@@ -903,7 +909,7 @@ export function DesktopChatFilesPage() {
                             type="button"
                             onClick={() => {
                               handleAttachmentOpen({
-                                url: item.attachment.url,
+                                url: resolveAppMediaUrl(item.attachment.url),
                                 kind:
                                   item.attachment.kind === "image"
                                     ? "image"
@@ -919,7 +925,7 @@ export function DesktopChatFilesPage() {
                             size="sm"
                             onClick={() => {
                               handleAttachmentSave({
-                                url: item.attachment.url,
+                                url: resolveAppMediaUrl(item.attachment.url),
                                 fileName: item.attachment.fileName,
                                 kind:
                                   item.attachment.kind === "image"
@@ -1024,7 +1030,7 @@ export function DesktopChatFilesPage() {
           onOpenInWindow={() => handleOpenInWindow(activeImage)}
           onSave={() =>
             handleAttachmentSave({
-              url: activeImage.attachment.url,
+              url: resolveAppMediaUrl(activeImage.attachment.url),
               fileName: activeImage.attachment.fileName,
               kind: "image",
             })
@@ -1343,7 +1349,7 @@ function DesktopChatFilesImageViewer({
 
       <div className="absolute inset-0 flex items-center justify-center px-24 pb-24 pt-24">
         <img
-          src={item.attachment.url}
+          src={resolveAppMediaUrl(item.attachment.url)}
           alt={item.attachment.fileName}
           // 走查电脑端单聊 R93：聊天文件页内置（非独立窗口）大图 viewer 主
           // <img>。和姊妹 R88 chat-message-list / R92 独立窗口 viewer 同款 ——

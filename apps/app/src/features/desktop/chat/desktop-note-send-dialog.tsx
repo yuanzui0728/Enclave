@@ -16,6 +16,7 @@ import {
   isPersistedGroupConversation,
 } from "../../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
+import { resolveAppMediaUrl } from "../../../lib/media-url";
 
 export type DesktopNoteSendDialogNote = {
   noteId: string;
@@ -367,7 +368,9 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
               误传图片、要么直接被 OS 接管打开图片预览页。dialog 内点击
               会话行才是合法路径，封面图不需要可拖。 */}
           <img
-            src={previewImage.url}
+            // 2026-05-21 修：和 mobile-notes-page / NoteViewerOverlay 同款 — 公网
+            // 隧道下 /api/chat/attachments/<file> 必须经 /cloud/world-api + ?token=。
+            src={resolveAppMediaUrl(previewImage.url)}
             alt={note.title}
             decoding="async"
             loading="lazy"

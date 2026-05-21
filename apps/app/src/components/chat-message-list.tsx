@@ -8354,7 +8354,12 @@ function NoteViewerOverlay({
                     .map((asset) => (
                       <img
                         key={asset.id}
-                        src={asset.url}
+                        // 2026-05-21 修：和姊妹 resolveAttachmentUrl 同款 — getFavoriteNote
+                        // 服务端返回的 asset.url 是 `/api/chat/attachments/<file>` 相对路径，
+                        // 公网隧道下浏览器按 document.origin 解析会落到 1gw...vicp.fun/api/*
+                        // 被 nginx 403。走 resolveAppMediaUrl 拼到 /cloud/world-api 反代 +
+                        // 追加 ?token=，与同视图 previewImageUrl 一致。
+                        src={resolveAppMediaUrl(asset.url)}
                         alt={asset.fileName}
                         loading="lazy"
                         decoding="async"
@@ -8370,7 +8375,9 @@ function NoteViewerOverlay({
                   {fileAssets.map((asset) => (
                     <a
                       key={asset.id}
-                      href={asset.url}
+                      // 同上 imageAssetsFallback 修法 — 公网隧道下文件下载 href 必须经
+                      // /cloud/world-api 反代 + ?token=，否则点击附件 nginx 403。
+                      href={resolveAppMediaUrl(asset.url)}
                       target="_blank"
                       rel="noreferrer"
                       className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(15,23,42,0.08)] bg-[rgba(243,244,246,0.82)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
