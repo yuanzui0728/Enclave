@@ -60,7 +60,6 @@ import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useGroupBackground } from "./backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
-import { getFriendDisplayName } from "../contacts/contact-utils";
 import { formatTimestamp } from "../../lib/format";
 import { isPersistedGroupConversation } from "../../lib/conversation-route";
 import { isMissingGroupError } from "../../lib/group-route-fallback";
