@@ -1195,7 +1195,12 @@ export function CharacterDetailPage() {
             // （都是「加入黑名单」），sheet 把它俩塞在同一张白卡里仅 1px 分隔，
             // 用户视觉上看成"两个加入黑名单按钮"不知道点哪个。title 改成询问
             // 形态（带问号）跟动词按钮拉开语义/视觉差。
-            title: isBlocked ? t(msg`移出黑名单？`) : t(msg`加入黑名单？`),
+            // 走查 R2：词面再对齐桌面 contact-detail-pane.tsx 的
+            // DangerConfirmDialog（「确定加入黑名单？」/「确定从通讯录删除 X？」）
+            // 和 profile-page「确认退出登录？」，统一用「确定…？」前缀。
+            title: isBlocked
+              ? t(msg`确定移出黑名单？`)
+              : t(msg`确定加入黑名单？`),
             description: isBlocked
               ? t(msg`移出后将恢复正常联系与互动。`)
               : t(msg`加入黑名单后，将不再接收这个角色的互动。`),
@@ -1218,7 +1223,9 @@ export function CharacterDetailPage() {
               // 联系人」跟 confirm 按钮 label 文案一致，sheet 渲染上两者塞同一
               // 张白卡里仅 1px 分隔，用户看成"两个删除联系人按钮"。title 加问号
               // 区分询问/动词。
-              title: t(msg`删除联系人？`),
+              // 走查 R2：词面同 block sheet 对齐桌面 DangerConfirmDialog 的
+              // 「确定…？」前缀（contact-detail-pane.tsx 用「确定从通讯录删除 X？」）。
+              title: t(msg`确定删除联系人？`),
               // 走查 R1：原 sheet 主标题写「删除后会从通讯录移除这个联系人。」，
               // 二级 description 写「此操作不可恢复」—— 后者是错的：后端
               // deleteFriend 只是把 friendship.status='removed'，再发一次好友
