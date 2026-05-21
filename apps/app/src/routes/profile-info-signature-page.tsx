@@ -14,7 +14,7 @@ import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-const SIGNATURE_MAX_LENGTH = 30;
+const SIGNATURE_MAX_LENGTH = 60;
 
 // 把所有 ASCII / Unicode 控制字符折叠成空格、压缩连续空白、再 trim。
 // 抽到 component 外是为了让 dirty 比较和 initial draft 都走同一份逻辑（之前

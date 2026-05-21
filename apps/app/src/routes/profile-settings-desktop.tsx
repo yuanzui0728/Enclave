@@ -42,7 +42,7 @@ const MIN_OWNER_NAME_LENGTH = 2;
 // 之前桌面端没设上限，移动端 counter 显示 30/30 后桌面端还能继续敲，存到后端的
 // 字符串比移动端列表/卡片渲染时预期的更长。
 const MAX_OWNER_NAME_LENGTH = 20;
-const MAX_OWNER_SIGNATURE_LENGTH = 30;
+const MAX_OWNER_SIGNATURE_LENGTH = 60;
 
 type SettingsTab =
   | "profile"
