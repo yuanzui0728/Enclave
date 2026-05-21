@@ -7,7 +7,6 @@ import {
   BAR_EXPERT_CHARACTER_ID,
   BAR_EXPERT_SOURCE_KEY,
 } from './bar-expert-character';
-import { BUILT_IN_CHARACTER_PRESETS } from './built-in-character-presets';
 import {
   buildDefaultCharacters,
   DEFAULT_CHARACTER_IDS,
@@ -28,26 +27,9 @@ import {
   WORLD_NEWS_DESK_SOURCE_KEY,
 } from './world-news-desk-character';
 
-const ADDITIONAL_DEFAULT_PRESET_KEYS = [
-  'lin_chen_sleep_support',
-  'lin_mian_sleep_support',
-  'council_negotiation_agent_gu_tang',
-  'council_safety_gatekeeper_deng_ta',
-  'council_relationship_observer_lu_zhi',
-  'jian_ning_relationship_expert',
-];
-
-const ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS =
-  ADDITIONAL_DEFAULT_PRESET_KEYS.map((presetKey) => {
-    const preset = BUILT_IN_CHARACTER_PRESETS.find(
-      (item) => item.presetKey === presetKey,
-    );
-    if (!preset) {
-      throw new Error(`Preset not found in test fixture: ${presetKey}`);
-    }
-    return preset.id;
-  });
-
+// 2026-05-21 起新用户默认好友收敛到 3 个；其它原默认好友（医生/律师/行动助理/
+// 酒吧专家/灯塔/顾棠/鹿栀/简宁/林晨/林眠）仍然作为系统/居民角色存在，但不再
+// 出厂自动 friendship。
 describe('default characters', () => {
   it('keeps default character ids unique', () => {
     expect(new Set(DEFAULT_CHARACTER_IDS).size).toBe(
@@ -55,17 +37,26 @@ describe('default characters', () => {
     );
   });
 
-  it('keeps automatic friendships limited to the baseline seed characters', () => {
+  it('limits automatic friendships to self + reminder + world-news (2026-05-21 精简)', () => {
     expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).toEqual([
       SELF_CHARACTER_ID,
-      ACTION_OPERATOR_CHARACTER_ID,
-      BAR_EXPERT_CHARACTER_ID,
-      DOCTOR_CHARACTER_ID,
-      LAWYER_CHARACTER_ID,
       REMINDER_CHARACTER_ID,
       WORLD_NEWS_DESK_CHARACTER_ID,
-      ...ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS,
     ]);
+
+    // 砍出默认好友的角色仍然作为系统角色 seed 进 characters 表，只是不再 friendship。
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      ACTION_OPERATOR_CHARACTER_ID,
+    );
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      BAR_EXPERT_CHARACTER_ID,
+    );
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      DOCTOR_CHARACTER_ID,
+    );
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      LAWYER_CHARACTER_ID,
+    );
 
     // 已退役的默认角色：酒店专家 / 礼序 / 纱凝。
     expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
@@ -77,6 +68,15 @@ describe('default characters', () => {
     expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
       WEDDING_DRESS_EXPERT_CHARACTER_ID,
     );
+  });
+
+  it('renames the self character to "我" (2026-05-21)', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === SELF_CHARACTER_ID,
+    );
+    expect(character).toBeDefined();
+    expect(character?.name).toBe('我');
+    expect(character?.profile?.name).toBe('我');
   });
 
   it('includes the bar expert with expected runtime defaults', () => {
@@ -222,35 +222,5 @@ describe('default characters', () => {
     );
   });
 
-  describe.each(ADDITIONAL_DEFAULT_PRESET_KEYS)(
-    'preset-sourced default %s',
-    (presetKey) => {
-      const preset = BUILT_IN_CHARACTER_PRESETS.find(
-        (item) => item.presetKey === presetKey,
-      );
-
-      it('appears in DEFAULT_CHARACTER_IDS', () => {
-        expect(preset).toBeDefined();
-        expect(DEFAULT_CHARACTER_IDS).toContain(preset!.id);
-      });
-
-      it('is materialized by buildDefaultCharacters', () => {
-        const character = buildDefaultCharacters().find(
-          (item) => item.id === preset!.id,
-        );
-        expect(character).toBeDefined();
-        expect(character?.sourceKey).toBe(presetKey);
-      });
-
-      // 默认好友必须 deletionPolicy='protected'，admin UI 的 isProtectedCharacter
-      // 才会和后端 delete()/import-overwrite 检查对齐。
-      it('overrides deletionPolicy to "protected"', () => {
-        const character = buildDefaultCharacters().find(
-          (item) => item.id === preset!.id,
-        );
-        expect(character?.deletionPolicy).toBe('protected');
-      });
-    },
-  );
 });
 // i18n-ignore-end

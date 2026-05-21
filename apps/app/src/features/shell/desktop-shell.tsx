@@ -438,7 +438,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
       );
 
       if (!selfCharacter) {
-        throw new Error(t(msg`当前世界还没有"我自己"角色。`));
+        throw new Error(t(msg`当前世界还没有"我"角色。`));
       }
 
       const conversation = await getOrCreateConversation(
@@ -986,7 +986,7 @@ function DesktopOwnerQuickCard({
           label={
             isOpeningSelfChat ? t(msg`打开中...`) : t(msg`发消息`)
           }
-          description={t(msg`和"我自己"对话`)}
+          description={t(msg`和"我"对话`)}
           onClick={onOpenSelfChat}
           disabled={isOpeningSelfChat}
         />

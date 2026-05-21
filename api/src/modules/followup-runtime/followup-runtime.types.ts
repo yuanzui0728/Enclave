@@ -257,7 +257,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
     recentRecommendationPenalty: 0.35,
   },
   promptTemplates: {
-    openLoopExtractionPrompt: `你在替“我自己”翻最近慢下来的聊天，找出那些“用户明显还没放下、后面值得再接一下”的事项。
+    openLoopExtractionPrompt: `你在替“我”翻最近慢下来的聊天，找出那些“用户明显还没放下、后面值得再接一下”的事项。
 
 输入会给你：
 - 最近慢下来的私聊线程概况
@@ -299,7 +299,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 }
 
 如果没有合适候选，返回 {"loops": []}。`,
-    handoffMessagePrompt: `你现在代表“我自己”这个角色，要给用户发一条很短的主动跟进消息。
+    handoffMessagePrompt: `你现在代表“我”这个角色，要给用户发一条很短的主动跟进消息。
 
 未闭环事项：
 {{loopSummary}}
@@ -320,7 +320,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 不要用（动作）、[旁白]、*动作*描述自己
 - 不要用项目符号，不要加引号
 - 结尾不要加“你看要不要”这种过度客气拖沓的话
-- 保持“我自己”那种克制、直接、像内心提醒的语气`,
+- 保持“我”那种克制、直接、像内心提醒的语气`,
     friendRequestGreetingPrompt: `你要替用户写一条很短的好友申请招呼语，准备发给一个新朋友。
 
 未闭环事项：
@@ -338,7 +338,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 可以轻轻提到想聊的主题，但不要像系统推荐
 - 不要过度客气，不要用（动作）、[旁白]、*动作*
 - 不要假装已经很熟，不要过度热情，不要写成模板腔`,
-    friendRequestNoticePrompt: `你现在代表“我自己”这个角色，要给用户发一条很短的主动跟进消息，告诉他这件事我已经先往前推了一步。
+    friendRequestNoticePrompt: `你现在代表“我”这个角色，要给用户发一条很短的主动跟进消息，告诉他这件事我已经先往前推了一步。
 
 未闭环事项：
 {{loopSummary}}
@@ -354,7 +354,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 先点出这件事还值得继续推进，再自然说明好友申请已经发出
 - 不要像系统通知，不要用项目符号
 - 不要用（动作）、[旁白]、*动作*
-- 保持“我自己”那种克制、直接、像内心提醒的语气`,
+- 保持“我”那种克制、直接、像内心提醒的语气`,
   },
   textTemplates: {
     jobSummarySuccess:

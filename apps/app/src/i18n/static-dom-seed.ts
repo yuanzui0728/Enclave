@@ -669,7 +669,7 @@ export const staticDomFallbackMessages = [
   msg`阿巡`,
   msg`界闻`,
   msg`小盯`,
-  msg`我自己`,
+  msg`我`,
   msg`林医生`,
   msg`简衡`,
   msg`简衡律师`,

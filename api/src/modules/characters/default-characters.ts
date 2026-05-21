@@ -8,7 +8,6 @@ import {
   BAR_EXPERT_CHARACTER_ID,
   buildBarExpertCharacter,
 } from './bar-expert-character';
-import { BUILT_IN_CHARACTER_PRESETS } from './built-in-character-presets';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { buildDoctorCharacter, DOCTOR_CHARACTER_ID } from './doctor-character';
 import { buildLawyerCharacter, LAWYER_CHARACTER_ID } from './lawyer-character';
@@ -26,14 +25,14 @@ export const SELF_CHARACTER_ID = 'char-default-self';
 /**
  * 默认好友 ≠ 一种独立的角色，而是"居民里被钉为出厂就自动建 friendship"的子集。
  *
- * 完整的三层模型见 `built-in-character-presets.ts` 顶部。本文件做两件事：
- *   1. `buildDefaultCharacters()` 返回 7 个原生默认角色（自身在独立文件里实现，
- *      seed 时直接落 characters 表且 deletionPolicy='protected'）。
- *   2. `ADDITIONAL_DEFAULT_PRESET_KEYS` 从 BUILT_IN 居民池里挑出来 6 个，再钉成
- *      默认好友。挑出来的角色定义不在这里，只引用 presetKey。
+ * 完整的三层模型见 `built-in-character-presets.ts` 顶部。
  *
- * 最终所有 13 个 ID 由 `DEFAULT_CHARACTER_IDS` 导出，由 social.service.ts 的
- * `ensureDefaultFriendships()` 写入 friendships 表。
+ * 2026-05-21 起精简：新用户进来消息过载（13 个默认好友 + 12 条错峰欢迎消息把新
+ * 用户淹没），默认好友收敛到 3 个 —— 界闻、我、小盯，且只有"我"主动发欢迎消息。
+ * 医生 / 律师 / 行动助理 / 酒吧专家 / 灯塔 / 顾棠 / 鹿栀 / 简宁 / 林晨 / 林眠
+ * 仍然作为预设角色保留在 BUILT_IN 居民池里，用户可以通过场景匹配 / 主动添加发现。
+ * 它们的角色定义函数（buildActionOperatorCharacter 等）也保留，让历史 world
+ * 已经 seed 过这些角色的也能正常加载。
  *
  * ⚠️ 加默认好友的代价远比想象大：
  *   `ensureDefaultFriendships()` 不只在新 world 启动时跑，`getFriends()` /
@@ -45,69 +44,19 @@ export const SELF_CHARACTER_ID = 'char-default-self';
  *   还得另外迁移。
  */
 
-// 这些是 2026-05-13 起新加入“默认好友”的预设角色：
-// 林晨 / 林眠（睡眠 + 情绪陪伴）、顾棠（谈判）、灯塔（安全把关）、鹿栀（关系观察）、简宁（恋爱顾问）。
-// 它们本身在 BUILT_IN_CHARACTER_PRESETS 里以 preset_catalog 形式存在，
-// 这里只是把它们一并钉为“新用户默认好友”。
-const ADDITIONAL_DEFAULT_PRESET_KEYS = [
-  'lin_chen_sleep_support',
-  'lin_mian_sleep_support',
-  'council_negotiation_agent_gu_tang',
-  'council_safety_gatekeeper_deng_ta',
-  'council_relationship_observer_lu_zhi',
-  'jian_ning_relationship_expert',
-] as const;
-
-function pickDefaultPresetCharacter(
-  presetKey: string,
-): Partial<CharacterEntity> {
-  const preset = BUILT_IN_CHARACTER_PRESETS.find(
-    (item) => item.presetKey === presetKey,
-  );
-  if (!preset) {
-    throw new Error(
-      `Default preset character not found in BUILT_IN_CHARACTER_PRESETS: ${presetKey}`,
-    );
-  }
-  // 与其他默认角色（self / 行动助理 / 林医生 …）保持一致：deletionPolicy='protected'
-  // 让 admin UI 的 isProtectedCharacter 和 import-by-name 覆盖检查同步识别这 6 个
-  // 为不可删除/不可覆盖。sourceType 仍保留 preset_catalog，让 listCelebrityPresets
-  // 把它们识别为"已安装的预设角色"。
-  return {
-    ...preset.character,
-    deletionPolicy: 'protected',
-  };
-}
-
-const ADDITIONAL_DEFAULT_PRESET_CHARACTERS: Partial<CharacterEntity>[] =
-  ADDITIONAL_DEFAULT_PRESET_KEYS.map(pickDefaultPresetCharacter);
-
-const ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS: string[] =
-  ADDITIONAL_DEFAULT_PRESET_CHARACTERS.map((character) => {
-    if (!character.id) {
-      throw new Error('Default preset character is missing an id');
-    }
-    return character.id;
-  });
-
 export const DEFAULT_CHARACTER_IDS: readonly string[] = [
   SELF_CHARACTER_ID,
-  ACTION_OPERATOR_CHARACTER_ID,
-  BAR_EXPERT_CHARACTER_ID,
-  DOCTOR_CHARACTER_ID,
-  LAWYER_CHARACTER_ID,
   REMINDER_CHARACTER_ID,
   WORLD_NEWS_DESK_CHARACTER_ID,
-  ...ADDITIONAL_DEFAULT_PRESET_CHARACTER_IDS,
 ];
 
 export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
   return [
     {
       id: SELF_CHARACTER_ID,
-      name: '我自己',
+      name: '我',
       avatar: '🪞',
-      relationship: '我自己',
+      relationship: '我',
       relationshipType: 'self',
       sourceType: 'default_seed',
       sourceKey: 'self',
@@ -120,8 +69,8 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
       expertDomains: ['general', 'psychology', 'management'],
       profile: {
         characterId: SELF_CHARACTER_ID,
-        name: '我自己',
-        relationship: '我自己',
+        name: '我',
+        relationship: '我',
         expertDomains: ['general', 'psychology', 'management'],
 
         coreLogic: `你是这个用户内在的另一个自己。不是朋友，不是咨询师，不是教练——是同一个人在安静状态下，回头看自己正在经历的事。
@@ -192,7 +141,7 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
 
           proactive: `【主动消息触发规则】
 
-这个角色非常少主动触发消息。"我自己"不会主动提醒你去做什么——它不是日程助手，不是提醒系统。
+这个角色非常少主动触发消息。"我"不会主动提醒你去做什么——它不是日程助手，不是提醒系统。
 
 触发条件（必须同时满足）：
 1. 距离上次对话超过3天，且记忆中有一件他当时没有说完的事，或者有一个他当时卡住的问题
@@ -301,7 +250,6 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
     buildLawyerCharacter(),
     buildReminderCharacter(),
     buildWorldNewsDeskCharacter(),
-    ...ADDITIONAL_DEFAULT_PRESET_CHARACTERS,
   ];
 }
 // i18n-ignore-end

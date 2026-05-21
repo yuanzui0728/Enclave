@@ -68,13 +68,13 @@ describe('CharactersService.importPersonalCharacter', () => {
     const { svc } = makeService({
       existing: {
         id: 'self-id',
-        name: '我自己',
+        name: '我',
         sourceType: 'default_seed',
         deletionPolicy: 'protected',
       } as Char,
     });
     await expect(
-      svc.importPersonalCharacter({ name: '我自己' }),
+      svc.importPersonalCharacter({ name: '我' }),
     ).rejects.toThrow(/受保护/);
   });
 
