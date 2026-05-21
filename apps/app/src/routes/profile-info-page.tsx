@@ -103,7 +103,19 @@ export function ProfileInfoPage() {
 
   async function handlePickAvatar() {
     const pickId = ++latestPickIdRef.current;
-    const files = await pickImageFiles({ multiple: false });
+    // pickImageFiles 在原生壳侧调 pickImagesWithNativeShell，权限被拒 / capacitor
+    // bridge 故障 / 用户系统层面阻断都会 throw（web 分支自己永不 reject，但原生
+    // 分支没保证）。不接 try/catch 异常会被 onClick 的 `void handlePickAvatar()`
+    // 吞掉，用户点完头像没反应也没提示，会一直以为点击没触发。
+    let files: File[];
+    try {
+      files = await pickImageFiles({ multiple: false });
+    } catch {
+      if (pickId === latestPickIdRef.current) {
+        showToast(t(msg`打开相册失败，请重试。`));
+      }
+      return;
+    }
     if (pickId !== latestPickIdRef.current) return;
     const file = files[0];
     if (!file) {
@@ -422,7 +434,13 @@ function InfoRow({
         onClick={onClick}
         disabled={disabled}
         aria-label={ariaLabel}
-        className={cn(cellClass, "disabled:opacity-60")}
+        // disabled 时 cellClass 里的 hover:bg-... / active:bg-... 不会被浏览器自
+        // 动抑制——mobile 上 tap disabled 按钮仍会闪一下高亮，看起来像"在响应"。
+        // 显式 disabled:hover/active:bg-transparent 把按下视觉效果断掉。
+        className={cn(
+          cellClass,
+          "disabled:opacity-60 disabled:hover:bg-transparent disabled:active:bg-transparent",
+        )}
       >
         {inner}
       </button>
@@ -493,11 +511,14 @@ function AvatarConfirmDialog({
       <button
         type="button"
         aria-label={t(msg`关闭`)}
-        onClick={() => {
-          if (!isSaving) onCancel();
-        }}
+        onClick={onCancel}
         // 背景按钮纯鼠标 affordance；键盘 Tab 跳到这里会拿到 invisible focus
         // 然后按 Enter 直接关掉，所以 tabIndex=-1 让 Tab 路径只走到真按钮。
+        //
+        // 走查 R2：dismiss 路径不 gate isSaving——对齐 ESC / Android Back / 原
+        // avatar page 顶栏返回箭头的行为。updateWorldOwner 没 abort signal，user
+        // 点取消不可能真撤回请求；与其假装"保存中无法取消"把用户卡住，不如让
+        // 模态随时能关，PATCH 继续在后台跑完，AvatarChip 走 store 反应式更新。
         tabIndex={-1}
         className="absolute inset-0"
       />
@@ -539,7 +560,9 @@ function AvatarConfirmDialog({
             type="button"
             variant="secondary"
             onClick={onCancel}
-            disabled={isSaving}
+            // 走查 R2：取消按钮不随 isSaving disable——跟 ESC / Android Back / 背景
+            // 点击 / 原 avatar page 顶栏返回箭头同口径。save 没有 abort signal，
+            // 让用户能随时关 modal，PATCH 继续在后台跑。
             className="flex-1 rounded-[12px] py-2 shadow-none"
           >
             {t(msg`取消`)}
