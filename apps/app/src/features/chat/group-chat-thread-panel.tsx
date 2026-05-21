@@ -24,7 +24,6 @@ import {
   sendGroupMessage,
   type SendGroupMessageRequest,
   type StickerAttachment,
-  type TypingPayload,
   uploadChatAttachment,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -71,8 +70,6 @@ import {
   onChatMessage,
   onChatSocketConnect,
   onConversationUpdated,
-  onTypingStart,
-  onTypingStop,
 } from "../../lib/socket";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
@@ -152,11 +149,6 @@ export function GroupChatThreadPanel({
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const [messages, setMessages] = useState<GroupThreadMessage[]>([]);
-  const [typingStates, setTypingStates] = useState<
-    Record<string, TypingPayload["stage"] | undefined>
-  >(
-    {},
-  );
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
     source: CallInviteSource | null;
@@ -344,7 +336,6 @@ export function GroupChatThreadPanel({
     setText("");
     setMessages([]);
     setReplyDraft(null);
-    setTypingStates({});
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
@@ -442,16 +433,6 @@ export function GroupChatThreadPanel({
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
   );
-  // 走查 2026-05-18 移动端群聊 R8：本 Map 之前定义在下方 line ~848 给
-  // resolveCharacterDisplayName 用；同样的 character→memberName 反查在
-  // typingSummary 里裸跑 membersQuery.data?.find（O(K·M)：K=并发 typing
-  // 角色数 1-3，M=群成员数 5-50）。typingSummary 在 AI 回复期每秒重算多次
-  // （messages / typingStates / typing tick 都触发），每次都全量扫一遍 members
-  // 找 memberName 是热路径上的浪费。
-  // 把 memberNameByCharacterId hoist 到 typingSummary 之前 —— 同一份 Map
-  // typingSummary 和 resolveCharacterDisplayName 共享，typing lookup 退化成
-  // O(1) Map.get；React useMemo cache 保证 Map 只在 membersQuery.data 真变化
-  // 才重建。
   const memberNameByCharacterId = useMemo<Map<string, string>>(() => {
     const map = new Map<string, string>();
     for (const member of membersQuery.data ?? []) {
@@ -461,61 +442,6 @@ export function GroupChatThreadPanel({
     }
     return map;
   }, [membersQuery.data]);
-  const typingSummary = useMemo(() => {
-    const entries = Object.entries(typingStates)
-      .map(([characterId, stage]) => {
-        const memberName = memberNameByCharacterId.get(characterId);
-        // 走查 Round 4：原版 [...messages].reverse().find() 每次都先把整个
-        // messages 拷一份再 reverse 再 find；活跃群 200 条消息 × 多个角色
-        // typing × 每秒多次 typing event 触发 useMemo 重算时挺烫手——而且
-        // 绝大多数情况下 memberName 直接拿得到，根本不需要回退查 messages。
-        // 只在 memberName 真为空时倒序循环找最近一条该 character 的消息，
-        // 命中即 break。
-        let messageName: string | undefined;
-        if (!memberName) {
-          for (let index = messages.length - 1; index >= 0; index -= 1) {
-            const message = messages[index];
-            if (
-              message?.senderType === "character" &&
-              message.senderId === characterId
-            ) {
-              messageName = message.senderName;
-              break;
-            }
-          }
-        }
-
-        return {
-          characterId,
-          stage,
-          name: memberName || messageName?.trim() || t(msg`有人`),
-        };
-      })
-      .filter((entry) => Boolean(entry.characterId));
-    if (!entries.length) {
-      return null;
-    }
-
-    if (entries.length === 1) {
-      const [entry] = entries;
-      return entry.stage === "image_generation"
-        ? t(msg`${entry.name} 正在生成图片...`)
-        : t(msg`${entry.name} 正在回复...`);
-    }
-
-    const hasImageStage = entries.some(
-      (entry) => entry.stage === "image_generation",
-    );
-    if (entries.length === 2 && !hasImageStage) {
-      return t(msg`${entries[0]?.name ?? t(msg`有人`)}、${entries[1]?.name ?? t(msg`有人`)} 正在回复...`);
-    }
-
-    if (hasImageStage) {
-      return t(msg`${entries[0]?.name ?? t(msg`有人`)} 等 ${entries.length} 位角色正在接力回复...`);
-    }
-
-    return t(msg`${entries[0]?.name ?? t(msg`有人`)} 等 ${entries.length} 位角色正在回复...`);
-  }, [memberNameByCharacterId, messages, typingStates, t]);
 
   useEffect(() => {
     if (unreadSnapshotReady || !conversationsQuery.isFetched) {
@@ -554,17 +480,6 @@ export function GroupChatThreadPanel({
         return;
       }
 
-      if (payload.senderType === "character") {
-        setTypingStates((current) => {
-          if (!(payload.senderId in current)) {
-            return current;
-          }
-
-          const next = { ...current };
-          delete next[payload.senderId];
-          return next;
-        });
-      }
       setMessages((current) => upsertIncomingGroupMessage(current, payload));
       // 直接把消息写进 cache：本地 state 已经有新消息，但 cache 没动；
       // 用户离开再回来时 useQuery 在移动端 staleTime=60s 内不会 refetch，
@@ -577,46 +492,6 @@ export function GroupChatThreadPanel({
         { queryKey: ["app-group-messages", baseUrl, groupId] },
         (current) => upsertServerMessageInCache(current, payload),
       );
-    });
-
-    const offTypingStart = onTypingStart((payload) => {
-      if (payload.conversationId === groupId) {
-        // 对齐单聊 use-conversation-thread.ts 同款 dedup：AI 回复期间
-        // typing_start 会按几秒一次的节奏持续 emit（reply 整段 + image_generation
-        // 阶段跨 30-60s，多角色并发触发频次更高）。同 characterId + 同 stage
-        // 时硬塞新对象会让 typingStates 引用变 → typingSummary useMemo 重算 +
-        // GroupChatThreadPanel + ChatMessageList + ChatComposer 整条链白渲染。
-        // 内容相等时直接复用旧 state 跳过 setState，watchdog 那个
-        // [typingStates] effect 也跟着不会重挂 120s 定时器。
-        setTypingStates((current) => {
-          if (current[payload.characterId] === payload.stage) {
-            return current;
-          }
-          return {
-            ...current,
-            [payload.characterId]: payload.stage,
-          };
-        });
-      }
-    });
-
-    const offTypingStop = onTypingStop((payload) => {
-      if (payload.conversationId === groupId) {
-        setTypingStates((current) => {
-          if (!(payload.characterId in current)) {
-            return current;
-          }
-
-          const currentStage = current[payload.characterId];
-          if (payload.stage && currentStage && payload.stage !== currentStage) {
-            return current;
-          }
-
-          const next = { ...current };
-          delete next[payload.characterId];
-          return next;
-        });
-      }
     });
 
     const offConversationUpdated = onConversationUpdated((payload) => {
@@ -645,26 +520,9 @@ export function GroupChatThreadPanel({
     return () => {
       offConnect();
       offMessage();
-      offTypingStart();
-      offTypingStop();
       offConversationUpdated();
     };
   }, [baseUrl, groupId, queryClient]);
-
-  // typing watchdog：群聊也一样会卡 typing — socket 断重连那几百 ms 里
-  // typing_stop + 真消息一起丢，多个 character 的「xx 正在输入...」就永
-  // 远不会消。120s 兜底；如果中间任意一个 character 的 typing 状态有更
-  // 新（再次 typing_start / 收到该 character 真消息 → delete[id]），
-  // typingStates 引用变化会重置 watchdog，活跃会话不会被误清。
-  useEffect(() => {
-    if (!Object.keys(typingStates).length) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setTypingStates({});
-    }, 120_000);
-    return () => window.clearTimeout(timer);
-  }, [typingStates]);
 
   useEffect(() => {
     if (!groupId || !unreadSnapshotReady) {
@@ -870,9 +728,6 @@ export function GroupChatThreadPanel({
   // memberName（joinedAt 时落，等价"群昵称"，最稳）作首选；remarkName 用户主动
   // 设的备注还在前面；character.name / messages.senderName 仅在前两者都没有时
   // 回退。
-  // 走查 R8：memberNameByCharacterId 已 hoist 到上方 typingSummary 之前共享
-  // （line ~440），同一份 Map 供 typingSummary 与本 resolveCharacterDisplayName
-  // 复用，避免对同一 Map 重复 useMemo。
   const resolveCharacterDisplayName = useCallback(
     (characterId?: string | null, fallbackName?: string | null) => {
       if (characterId) {
@@ -997,16 +852,12 @@ export function GroupChatThreadPanel({
     [groupId, groupTitle],
   );
   const mobileSubtitle = membersQuery.data
-    ? typingSummary
-      ? typingSummary
-      : groupQuery.data?.isMuted
-        ? t(msg`${membersQuery.data.length} 人群聊 · 免打扰`)
-        : t(msg`${membersQuery.data.length} 人群聊`)
-    : typingSummary
-      ? typingSummary
-      : groupQuery.data?.isMuted
-        ? t(msg`群聊 · 免打扰`)
-        : undefined;
+    ? groupQuery.data?.isMuted
+      ? t(msg`${membersQuery.data.length} 人群聊 · 免打扰`)
+      : t(msg`${membersQuery.data.length} 人群聊`)
+    : groupQuery.data?.isMuted
+      ? t(msg`群聊 · 免打扰`)
+      : undefined;
 
   useThreadEntryScrollToBottom({
     threadKey: groupId,
@@ -1564,11 +1415,9 @@ export function GroupChatThreadPanel({
               {groupQuery.data?.name || t(msg`群聊`)}
             </div>
             <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-              {typingSummary
-                ? typingSummary
-                : membersQuery.data
-                  ? t(msg`${membersQuery.data.length} 人群聊`)
-                  : t(msg`群聊`)}
+              {membersQuery.data
+                ? t(msg`${membersQuery.data.length} 人群聊`)
+                : t(msg`群聊`)}
             </div>
           </div>
 
