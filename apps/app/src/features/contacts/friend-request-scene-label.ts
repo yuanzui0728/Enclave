@@ -1,8 +1,10 @@
 import { msg } from "@lingui/macro";
 import type { MessageDescriptor } from "@lingui/core";
 
-// 把后端 FriendRequest.triggerScene 翻成 UI 文案的唯一入口。
-// 后端实际写入的 scene id 见 api/src/modules/{social,need-discovery,followup-runtime,shake-discovery}：
+// 把后端 FriendRequest.triggerScene **以及** Friendship.source 翻成 UI 文案的
+// 唯一入口（两个字段共用同一套词表，详见 api/src/modules/social/social.service.ts
+// activateFriendship 的注释）。后端实际写入的 id 见
+// api/src/modules/{social,need-discovery,followup-runtime,shake-discovery,characters,admin/wechat-sync-admin}：
 //   - 16 个 WeChat 同款场景（coffee_shop / gym / library / park / classroom /
 //     lab / office / coworking / study_room / restaurant / museum / bookstore /
 //     travel / night_walk / theater / home）
@@ -11,6 +13,9 @@ import type { MessageDescriptor } from "@lingui/core";
 //   - manual_add（用户主动添加且 autoAccept=true 时写入）
 //   - need_discovery_daily / need_discovery_short_interval（need-discovery 写入）
 //   - followup_runtime（followup-runtime 写入）
+//   - default_seed（ensureDefaultFriendships 创建的 界闻 / 小盯）
+//   - private_import（characters.service.ts 用户导入角色）
+//   - contact_import（admin/wechat-sync-admin.service.ts 微信通讯录同步）
 // 未知 id 一律降级到「来自相遇」，绝不把原始英文 id 直出给用户。
 // 不用「新的朋友」，那是页面标题；放在 row 内当来源 label 看起来像同义重复，
 // 用户读到时本能会反问"难道有不是新的朋友的好友请求？"。
@@ -33,6 +38,12 @@ export function getFriendRequestSourceLabel(
       return msg`来自智能推荐`;
     case "followup_runtime":
       return msg`来自智能跟进`;
+    case "default_seed":
+      return msg`隐界初始好友`;
+    case "private_import":
+      return msg`来自导入角色`;
+    case "contact_import":
+      return msg`来自通讯录导入`;
     case "coffee_shop":
     case "cafe":
       return msg`来自咖啡馆`;
@@ -70,3 +81,7 @@ export function getFriendRequestSourceLabel(
       return msg`来自相遇`;
   }
 }
+
+// Alias：character-detail-page / desktop friend popover 等读 `friendship.source`
+// 的 surface 用这个名字读起来更顺。实现完全一致——后端两个字段同源、UI 同义。
+export const getFriendshipSourceLabel = getFriendRequestSourceLabel;

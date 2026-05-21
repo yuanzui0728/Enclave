@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, IsNull, MoreThan, MoreThanOrEqual, Not, Repository } from 'typeorm';
@@ -57,7 +57,7 @@ const TAG_MAX_LENGTH = 30;
 const TAGS_MAX_COUNT = 32;
 
 @Injectable()
-export class SocialService {
+export class SocialService implements OnModuleInit {
   private readonly logger = new Logger(SocialService.name);
 
   constructor(
@@ -79,6 +79,97 @@ export class SocialService {
     private readonly worldLanguage: WorldLanguageService,
     private readonly initialMessageService: InitialMessageService,
   ) {}
+
+  /**
+   * 一次性 backfill `friendships.source`：早期版本所有 add-friend 入口（默认好友 /
+   * 搜索秒接 / 接受 pending request / 摇一摇 / 场景相遇 / 智能推荐 / 智能跟进）
+   * 都没写 source，导致移动端朋友信息页「来源」row 一律显示「未设置」。
+   *
+   * 这里做两件事：
+   *   1) 默认好友（界闻 / 小盯，不含 SELF）补 'default_seed'。
+   *   2) 其余 source 为空的行 join `friend_requests` 最早一条 triggerScene 回填
+   *      —— scheme 跟 FriendRequest.triggerScene 共用，前端 getFriendshipSourceLabel
+   *      已能翻成「来自摇一摇 / 来自搜索添加 / 来自咖啡馆 / ...」。
+   *
+   * 天然幂等：第二次启动 `source IS NULL` 行已不复存在，SQL 不会再动。
+   */
+  async onModuleInit(): Promise<void> {
+    try {
+      const seedCharacterIds = DEFAULT_CHARACTER_IDS.filter(
+        (id) => id !== SELF_CHARACTER_ID,
+      );
+      if (seedCharacterIds.length) {
+        const placeholders = seedCharacterIds.map(() => '?').join(', ');
+        const seedResult = await this.friendshipRepo.query(
+          `UPDATE friendships
+              SET source = 'default_seed'
+            WHERE (source IS NULL OR source = '')
+              AND characterId IN (${placeholders})`,
+          seedCharacterIds,
+        );
+        const seedChanges = this.extractChangeCount(seedResult);
+        if (seedChanges > 0) {
+          this.logger.log(
+            `[backfill] friendship.source = 'default_seed' for ${seedChanges} 行默认好友`,
+          );
+        }
+      }
+
+      const joinResult = await this.friendshipRepo.query(
+        `UPDATE friendships
+            SET source = (
+              SELECT fr.triggerScene FROM friend_requests fr
+               WHERE fr.userId = friendships.userId
+                 AND fr.characterId = friendships.characterId
+                 AND fr.triggerScene IS NOT NULL
+                 AND fr.triggerScene != ''
+               ORDER BY fr.createdAt ASC
+               LIMIT 1
+            )
+          WHERE (source IS NULL OR source = '')
+            AND EXISTS (
+              SELECT 1 FROM friend_requests fr
+               WHERE fr.userId = friendships.userId
+                 AND fr.characterId = friendships.characterId
+                 AND fr.triggerScene IS NOT NULL
+                 AND fr.triggerScene != ''
+            )`,
+      );
+      const joinChanges = this.extractChangeCount(joinResult);
+      if (joinChanges > 0) {
+        this.logger.log(
+          `[backfill] friendship.source from friend_requests.triggerScene 回填 ${joinChanges} 行`,
+        );
+      }
+    } catch (error) {
+      // backfill 失败不应让 cloud-api 启动崩溃，只记录即可（每个 owner 自己的
+      // ensureDefaultFriendships 还能继续把默认好友补上）
+      this.logger.warn(
+        `[backfill] friendship.source backfill failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private extractChangeCount(result: unknown): number {
+    // better-sqlite3 driver: 直接返回 { changes, lastInsertRowid }
+    // node-sqlite3 driver: 通过 query() 时常返回数组 [{ ... }, affected]
+    if (
+      result &&
+      typeof result === 'object' &&
+      'changes' in result &&
+      typeof (result as { changes: number }).changes === 'number'
+    ) {
+      return (result as { changes: number }).changes;
+    }
+    if (
+      Array.isArray(result) &&
+      result.length === 2 &&
+      typeof result[1] === 'number'
+    ) {
+      return result[1];
+    }
+    return 0;
+  }
 
   async getPendingRequests(
     direction: 'inbound' | 'outbound' | 'all' = 'inbound',
@@ -129,6 +220,7 @@ export class SocialService {
       req.characterName,
       {
         notifyConversation: shouldNotifyConversation,
+        source: req.triggerScene ?? null,
       },
     );
 
@@ -467,14 +559,34 @@ export class SocialService {
               characterId === SELF_CHARACTER_ID ? 100 : 60,
             status: 'friend',
             region: character.region?.trim() || null,
+            // SELF 是镜像角色，"来源"对自己讲不通：前端按 isSelfMirror 直接渲染
+            // 「本人」短路，不依赖 DB 值；其余默认好友（界闻 / 小盯）打 default_seed
+            // 标，前端 friendship-source-label 翻成「隐界初始好友」。
+            source:
+              characterId === SELF_CHARACTER_ID ? null : 'default_seed',
           }),
         );
-      } else if (
-        (!existing.region || !existing.region.trim()) &&
-        character.region?.trim()
-      ) {
-        existing.region = character.region.trim();
-        await this.friendshipRepo.save(existing);
+      } else {
+        let dirty = false;
+        if (
+          (!existing.region || !existing.region.trim()) &&
+          character.region?.trim()
+        ) {
+          existing.region = character.region.trim();
+          dirty = true;
+        }
+        // 老账户里默认好友是 ensureDefaultFriendships 早期版本写入的，source 为 NULL；
+        // 这里跟着 region 一起补，避免依赖 onModuleInit backfill 的执行顺序。
+        if (
+          (!existing.source || !existing.source.trim()) &&
+          characterId !== SELF_CHARACTER_ID
+        ) {
+          existing.source = 'default_seed';
+          dirty = true;
+        }
+        if (dirty) {
+          await this.friendshipRepo.save(existing);
+        }
       }
 
       await this.narrativeService.ensureArc(character.id, character.name);
@@ -799,6 +911,7 @@ export class SocialService {
       const savedExisting = await this.friendRequestRepo.save(existing);
       await this.activateFriendship(owner.id, char.id, char.name, {
         notifyConversation: true,
+        source: savedExisting.triggerScene ?? null,
       });
       this.eventBus.emit(AppEvents.FRIEND_REQUEST_ACCEPTED, {
         requestId: savedExisting.id,
@@ -862,6 +975,7 @@ export class SocialService {
     if (options?.autoAccept) {
       await this.activateFriendship(owner.id, char.id, char.name, {
         notifyConversation: true,
+        source: saved.triggerScene ?? null,
       });
       this.eventBus.emit(AppEvents.FRIEND_REQUEST_ACCEPTED, {
         requestId: saved.id,
@@ -1489,7 +1603,7 @@ ${personaSummary || '（暂无更多信息）'}
     ownerId: string,
     characterId: string,
     characterName: string,
-    options?: { notifyConversation?: boolean },
+    options?: { notifyConversation?: boolean; source?: string | null },
   ): Promise<FriendshipEntity> {
     const existing = await this.friendshipRepo.findOneBy({
       ownerId,
@@ -1500,6 +1614,7 @@ ${personaSummary || '（暂无更多信息）'}
 
     const character = await this.characterRepo.findOneBy({ id: characterId });
     const characterRegion = character?.region?.trim() || null;
+    const normalizedSource = options?.source?.trim() || null;
 
     if (existing) {
       if (ACTIVE_FRIENDSHIP_STATUSES.has(existing.status)) {
@@ -1509,6 +1624,13 @@ ${personaSummary || '（暂无更多信息）'}
         existing.status = 'friend';
         if ((!existing.region || !existing.region.trim()) && characterRegion) {
           existing.region = characterRegion;
+        }
+        // 软删→重激活：只在原 source 为空时回填，保留用户首次相识的语义。
+        if (
+          (!existing.source || !existing.source.trim()) &&
+          normalizedSource
+        ) {
+          existing.source = normalizedSource;
         }
         friendship = await this.friendshipRepo.save(existing);
       }
@@ -1520,6 +1642,7 @@ ${personaSummary || '（暂无更多信息）'}
           intimacyLevel: 10,
           status: 'friend',
           region: characterRegion,
+          source: normalizedSource,
         }),
       );
     }

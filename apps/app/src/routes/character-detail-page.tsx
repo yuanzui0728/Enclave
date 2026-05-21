@@ -41,6 +41,7 @@ import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-sta
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
+import { getFriendshipSourceLabel } from "../features/contacts/friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import {
   buildCharacterDetailRouteHash,
@@ -150,7 +151,9 @@ export function CharacterDetailPage() {
   const [mobileSheetAction, setMobileSheetAction] = useState<
     "call" | "block" | "delete" | null
   >(null);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editingProfileField, setEditingProfileField] = useState<
+    "remark" | "tags" | null
+  >(null);
   const { entryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
       baseUrl,
@@ -385,7 +388,6 @@ export function CharacterDetailPage() {
   const sendingLabel = t(msg`发送中...`);
   const addToContactsLabel = t(msg`添加到通讯录`);
   const profileSectionTitle = t(msg`资料`);
-  const settingsRemarkTagsLabel = t(msg`设置备注和标签`);
   const remarkLabel = t(msg`备注`);
   const remarkPlaceholder = t(msg`给朋友设置备注名`);
   const tagsLabel = t(msg`标签`);
@@ -513,7 +515,7 @@ export function CharacterDetailPage() {
   useEffect(() => {
     setNotice(null);
     setMobileSheetAction(null);
-    setIsEditingProfile(false);
+    setEditingProfileField(null);
     resetEntryGuard();
   }, [characterId, resetEntryGuard]);
 
@@ -538,14 +540,19 @@ export function CharacterDetailPage() {
   // 同时把 tags 数组扁平成字符串当 dep，避免引用抖动。
   const friendshipTagsKey = friendship?.tags?.join("，") ?? "";
   useEffect(() => {
-    if (isEditingProfile) {
+    if (editingProfileField) {
       return;
     }
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
       tags: friendshipTagsKey,
     });
-  }, [characterId, friendship?.remarkName, friendshipTagsKey, isEditingProfile]);
+  }, [
+    characterId,
+    friendship?.remarkName,
+    friendshipTagsKey,
+    editingProfileField,
+  ]);
 
   // 走查新 R6：entryNotice（数字人入口提示）在页面顶部 inline 渲染，但用户触发
   // 它的「视频通话」按钮在底部 action bar。底部点视频通话 → sheet 关掉 + entryNotice
@@ -568,12 +575,12 @@ export function CharacterDetailPage() {
   // 这里补上：表单打开时吃掉一次 back，关表单并把 form 重置回服务器值；用户再按
   // 一次才真的退页。
   useEffect(() => {
-    if (!isEditingProfile) {
+    if (!editingProfileField) {
       return;
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      setIsEditingProfile(false);
+      setEditingProfileField(null);
       setProfileForm({
         remarkName: friendship?.remarkName ?? "",
         tags: friendshipTagsKey,
@@ -581,7 +588,7 @@ export function CharacterDetailPage() {
       return true;
     });
     return unregister;
-  }, [isEditingProfile, friendship?.remarkName, friendshipTagsKey]);
+  }, [editingProfileField, friendship?.remarkName, friendshipTagsKey]);
 
   // 走查 R4：getOrCreateConversation 后端有两个会改 conversation 行的副作用：
   // (a) 第一次跟某角色聊天会 INSERT 一条新 direct conversation；(b) 用户之前
@@ -800,7 +807,7 @@ export function CharacterDetailPage() {
         tone: "success",
         message: t(msg`朋友资料已更新。`),
       });
-      setIsEditingProfile(false);
+      setEditingProfileField(null);
       await invalidateFriendDisplayQueries(queryClient, baseUrl);
     },
   });
@@ -898,8 +905,8 @@ export function CharacterDetailPage() {
     // 标签表单输到一半点左上角箭头，跟硬件返回是同一份心智模型，应该先收回表单
     // 不丢输入。Android back 走 registerAndroidBackInterceptor 自动收，软件按钮
     // 走这里手动收一次再返回。
-    if (isEditingProfile) {
-      setIsEditingProfile(false);
+    if (editingProfileField) {
+      setEditingProfileField(null);
       setProfileForm({
         remarkName: friendship?.remarkName ?? "",
         tags: friendshipTagsKey,
@@ -928,36 +935,41 @@ export function CharacterDetailPage() {
   // 即便用户没动过任何字符也会发一次 updateFriendProfile。后端会照样写 friendship
   // + 触发 cyber_avatar.captureSignal 这一整路审计/数字人 signal。点了「设置备注和
   // 标签」只是想关一下面板的人会无意识地刷一次后台 IO。对比一下"normalize 后"的
-  // remarkName 和 tags，跟服务器值完全等价就 setIsEditingProfile(false) 直接关
+  // remarkName 和 tags，跟服务器值完全等价就 setEditingProfileField(null) 直接关
   // 面板，跟桌面 DesktopContactTextEditDialog 的 confirmDisabled 行为对齐。
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (field: "remark" | "tags") => {
     // 走查 R1：input maxLength 拦的是键盘 / 常规粘贴，但 IME 合成态、自动填充、
     // 编程式 setValue 都能绕开。Save 之前再卡一次硬上限，超限直接吃掉（避免
     // 把超长 remarkName/tags 写进后端 — social.service 现在不会拒）。
-    if (
-      profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH ||
-      profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
-    ) {
+    if (field === "remark") {
+      if (profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH) {
+        return;
+      }
+      const nextRemarkName = profileForm.remarkName.trim() || null;
+      const currentRemarkName = friendship?.remarkName?.trim() || null;
+      if (nextRemarkName === currentRemarkName) {
+        setEditingProfileField(null);
+        return;
+      }
+      await updateProfileMutation.mutateAsync({ remarkName: nextRemarkName });
       return;
     }
-    const nextRemarkName = profileForm.remarkName.trim() || null;
+    if (profileForm.tags.length > TAGS_INPUT_MAX_LENGTH) {
+      return;
+    }
     const nextTags = profileForm.tags
       .split(/[，,]/)
       .map((item) => item.trim())
       .filter(Boolean);
-    const currentRemarkName = friendship?.remarkName?.trim() || null;
     const currentTags = friendship?.tags ?? [];
     const tagsUnchanged =
       nextTags.length === currentTags.length &&
       nextTags.every((tag, index) => tag === currentTags[index]);
-    if (nextRemarkName === currentRemarkName && tagsUnchanged) {
-      setIsEditingProfile(false);
+    if (tagsUnchanged) {
+      setEditingProfileField(null);
       return;
     }
-    await updateProfileMutation.mutateAsync({
-      remarkName: nextRemarkName,
-      tags: nextTags,
-    });
+    await updateProfileMutation.mutateAsync({ tags: nextTags });
   };
 
   const handleVoiceCall = () => {
@@ -1955,57 +1967,46 @@ export function CharacterDetailPage() {
             >
               {isFriend ? (
                 <ProfileRow
-                  label={settingsRemarkTagsLabel}
-                  value={buildRemarkSummary(
-                    friendship?.remarkName,
-                    friendship?.tags,
-                    unsetLabel,
-                  )}
-                  onClick={() => setIsEditingProfile((current) => !current)}
+                  label={remarkLabel}
+                  value={friendship?.remarkName?.trim() || unsetLabel}
+                  onClick={() => {
+                    setProfileForm((current) => ({
+                      ...current,
+                      remarkName: friendship?.remarkName ?? "",
+                    }));
+                    setEditingProfileField((current) =>
+                      current === "remark" ? null : "remark",
+                    );
+                  }}
                   compact={!isDesktopLayout}
                 />
               ) : null}
-              {isFriend && isEditingProfile ? (
+              {isFriend && editingProfileField === "remark" ? (
                 // border-t 由父级 ProfileSection 的 divide-y 统一管（走查 R5），
                 // 这里只留 background 跟 padding 避免叠成双线。
                 <div className="bg-[#f7f7f7] px-4 py-3">
-                  <div className="space-y-3">
-                    <DetailInputField
-                      label={remarkLabel}
-                      value={profileForm.remarkName}
-                      placeholder={remarkPlaceholder}
-                      onChange={(value) =>
-                        setProfileForm((current) => ({
-                          ...current,
-                          remarkName: value,
-                        }))
-                      }
-                      compact={!isDesktopLayout}
-                      maxLength={REMARK_NAME_MAX_LENGTH}
-                    />
-                    <DetailInputField
-                      label={tagsLabel}
-                      value={profileForm.tags}
-                      placeholder={tagsPlaceholder}
-                      onChange={(value) =>
-                        setProfileForm((current) => ({
-                          ...current,
-                          tags: value,
-                        }))
-                      }
-                      compact={!isDesktopLayout}
-                      maxLength={TAGS_INPUT_MAX_LENGTH}
-                    />
-                  </div>
+                  <DetailInputField
+                    label={remarkLabel}
+                    value={profileForm.remarkName}
+                    placeholder={remarkPlaceholder}
+                    onChange={(value) =>
+                      setProfileForm((current) => ({
+                        ...current,
+                        remarkName: value,
+                      }))
+                    }
+                    compact={!isDesktopLayout}
+                    maxLength={REMARK_NAME_MAX_LENGTH}
+                  />
                   <div className="mt-3 flex items-center gap-2">
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        setIsEditingProfile(false);
-                        setProfileForm({
+                        setEditingProfileField(null);
+                        setProfileForm((current) => ({
+                          ...current,
                           remarkName: friendship?.remarkName ?? "",
-                          tags: friendship?.tags?.join("，") ?? "",
-                        });
+                        }));
                       }}
                       className="h-9 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
@@ -2014,12 +2015,72 @@ export function CharacterDetailPage() {
                     </Button>
                     <Button
                       variant="primary"
-                      onClick={() => void handleSaveProfile()}
+                      onClick={() => void handleSaveProfile("remark")}
                       className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
                       disabled={
                         updateProfileMutation.isPending ||
-                        profileForm.remarkName.length >
-                          REMARK_NAME_MAX_LENGTH ||
+                        profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH
+                      }
+                    >
+                      {updateProfileMutation.isPending
+                        ? savingLabel
+                        : saveLabel}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+              {isFriend ? (
+                <ProfileRow
+                  label={tagsLabel}
+                  value={tagSummary}
+                  onClick={() => {
+                    setProfileForm((current) => ({
+                      ...current,
+                      tags: friendship?.tags?.join("，") ?? "",
+                    }));
+                    setEditingProfileField((current) =>
+                      current === "tags" ? null : "tags",
+                    );
+                  }}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
+              {isFriend && editingProfileField === "tags" ? (
+                <div className="bg-[#f7f7f7] px-4 py-3">
+                  <DetailInputField
+                    label={tagsLabel}
+                    value={profileForm.tags}
+                    placeholder={tagsPlaceholder}
+                    onChange={(value) =>
+                      setProfileForm((current) => ({
+                        ...current,
+                        tags: value,
+                      }))
+                    }
+                    compact={!isDesktopLayout}
+                    maxLength={TAGS_INPUT_MAX_LENGTH}
+                  />
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingProfileField(null);
+                        setProfileForm((current) => ({
+                          ...current,
+                          tags: friendship?.tags?.join("，") ?? "",
+                        }));
+                      }}
+                      className="h-9 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      {cancelLabel}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={() => void handleSaveProfile("tags")}
+                      className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
+                      disabled={
+                        updateProfileMutation.isPending ||
                         profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
                       }
                     >
@@ -2043,19 +2104,17 @@ export function CharacterDetailPage() {
               <ProfileRow
                 label={sourceLabel}
                 value={
-                  isFriend
-                    ? friendship?.source?.trim() || unsetLabel
-                    : metInWorldLabel
+                  (() => {
+                    if (!isFriend) return metInWorldLabel;
+                    // 「我」是镜像角色，DB source 留 NULL；UI 短路成「本人」。
+                    if (isSelfMirror) return t(msg`本人`);
+                    const raw = friendship?.source?.trim();
+                    if (!raw) return unsetLabel;
+                    return t(getFriendshipSourceLabel(raw));
+                  })()
                 }
                 compact={!isDesktopLayout}
               />
-              {isFriend ? (
-                <ProfileRow
-                  label={tagsLabel}
-                  value={tagSummary}
-                  compact={!isDesktopLayout}
-                />
-              ) : null}
               {/* 走查 R1：朋友圈入口在移动端无条件渲染，非好友点进去后端按"未授权"
                   返回空列表/错误，跟 desktop ContactDetailPane（已用 isFriend 包过）
                   不一致；非好友本来就拿不到对方朋友圈，挪到 isFriend 分支里。
@@ -2492,11 +2551,11 @@ function ProfileSection({
       </div>
       {/* 走查 R5：ProfileSection 的 children 容器只画了顶部一条横线（隔开 title
           跟第一行），相邻 ProfileRow / ProfileSwitchRow 之间没有任何 separator。
-          移动端"设置备注和标签 / 地区 / 来源 / 标签 / 朋友圈 / 推荐给朋友"这堆
-          ProfileRow 在 WeChat 白底面板里挨在一起、视觉上糊成一块连看哪行是哪行
-          都得数 label 字数。和 chat-details-page 用的 divide-y 模式对齐，给所
-          有非首子加 border-t。inline 编辑表单本身就有 border-t（line 1671），
-          配合 divide-y 会把它跟自己叠成双线，下方把它移除让 divide 统一管。 */}
+          移动端"备注 / 标签 / 地区 / 来源 / 朋友圈 / 推荐给朋友"这堆 ProfileRow
+          在 WeChat 白底面板里挨在一起、视觉上糊成一块连看哪行是哪行都得数 label
+          字数。和 chat-details-page 用的 divide-y 模式对齐，给所有非首子加
+          border-t。inline 编辑表单本身就有 border-t，配合 divide-y 会把它跟自己
+          叠成双线，下方把它移除让 divide 统一管。 */}
       <div className="divide-y divide-[color:var(--border-faint)] border-t border-[color:var(--border-faint)]">
         {children}
       </div>
@@ -2711,19 +2770,6 @@ function DetailInputField({
       />
     </label>
   );
-}
-
-function buildRemarkSummary(
-  remarkName?: string | null,
-  tags?: string[] | null,
-  emptyLabel?: string,
-) {
-  const segments = [
-    remarkName?.trim(),
-    tags?.filter(Boolean).join("、"),
-  ].filter(Boolean);
-
-  return segments.length ? segments.join(" · ") : (emptyLabel ?? "");
 }
 
 function isMissingCharacterError(error: unknown, characterId: string) {

@@ -16,6 +16,7 @@ import {
   translateExpertDomains,
 } from "../../../lib/character-i18n";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
+import { getFriendshipSourceLabel } from "../../contacts/friend-request-scene-label";
 
 export type DesktopAddFriendRelationshipState =
   | "available"
@@ -186,7 +187,11 @@ export function DesktopAddFriendResultCard({
             />
             <DesktopAddFriendDetailRow
               label={t(msg`来源`)}
-              value={friendship.source?.trim() || t(msg`未设置`)}
+              value={
+                friendship.source?.trim()
+                  ? t(getFriendshipSourceLabel(friendship.source))
+                  : t(msg`未设置`)
+              }
             />
           </>
         ) : null}
