@@ -580,8 +580,17 @@ export function ChatMessageList({
   const handleToggleDetailedTimestampMode = useCallback(() => {
     setDetailedTimestampMode((current) => !current);
   }, []);
+  // 2026-05-21 修：公网隧道下消息附件 <img>/<a> 通过 /cloud/world-api 反代到
+  // 对应账号 child，cloud-api CloudClientAuthGuard 要求带 cloud access token。
+  // 浏览器原生标签不能塞 Authorization header，guard 已支持 ?token= 兜底，但
+  // 之前 resolveRuntimeAttachmentUrl 只 absolutize URL、不追加 token —— 公网
+  // 用户进群所有图片/文件/语音 401，<img onError> 触发 loadFailed=true，全部
+  // 退化成「[图片]」fallback。复用 resolveAppMediaUrl 同款 token 追加（已在
+  // NoteCardMessage / FeedPostCardMessage / AvatarChip / Moments 走通），
+  // 同时保留 resolveRuntimeAttachmentUrl 的 private-host 重写以兼容本机直连。
   const resolveAttachmentUrl = useCallback(
-    (url: string) => resolveRuntimeAttachmentUrl(url, baseUrl),
+    (url: string) =>
+      resolveAppMediaUrl(resolveRuntimeAttachmentUrl(url, baseUrl)),
     [baseUrl],
   );
 
