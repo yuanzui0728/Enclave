@@ -26,7 +26,7 @@ import {
   parseChatBackgroundAsset,
 } from '../chat/chat-background.utils';
 const MIN_OWNER_NAME_LENGTH = 2;
-// 与移动端 profile-info-name-page MAX=20 / signature MAX=30 对齐，但服务端给
+// 与移动端 profile-info-name-page MAX=20 / signature MAX=60 对齐，但服务端给
 // 一点宽容（粘贴时多空格、不同前端版本）。avatar 接受 URL 或 base64 data URL，
 // 1MB 文件 → ~1.33MB base64，给 2MB 上限挡掉粘贴 10MB 大字符串 / 恶意客户端。
 // 之前完全没卡 → 同 phone 反复 PATCH 巨型 avatar 让 DB 行膨胀、每次 GET owner

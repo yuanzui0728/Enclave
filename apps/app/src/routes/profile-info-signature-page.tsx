@@ -91,8 +91,8 @@ export function ProfileInfoSignaturePage() {
   const sanitized = sanitizeOwnerSignature(draft);
   // 跟 sanitized 对齐 baseline，避免 legacy 多行 signature 一打开就 dirty=true。
   const dirty = sanitized !== sanitizeOwnerSignature(signature);
-  // 防御性 length gate：textarea maxLength=30 只挡 user input/paste，挡不住
-  // 程序设值 / legacy DB 里 >30 字符的旧数据。后者用户再编辑（dirty=true）时
+  // 防御性 length gate：textarea maxLength 只挡 user input/paste，挡不住
+  // 程序设值 / legacy DB 里超过 SIGNATURE_MAX_LENGTH 的旧数据。后者用户再编辑（dirty=true）时
   // 「完成」会发出超长 payload 被服务端 400 拒掉，错误条挂在底部毫无头绪。
   // 客户端 length 超限直接 disable 「完成」，counter 同步显示 sanitized.length
   // 让用户先看到红色 overflow 数字、自己删字。
@@ -218,8 +218,8 @@ export function ProfileInfoSignaturePage() {
         >
           {/* 显示 sanitized.length 而非 draft.length——用户粘了 "line1\n\nline2"
               (12 字符) 时 textarea raw 字符比真正会落库的 "line1 line2" (11) 多。
-              counter 跟实际保存的字符数对齐，免得用户看到 12/30 满意但实际
-              占用更少 / 看到 11/30 (全空白) 时实际保存为 0。*/}
+              counter 跟实际保存的字符数对齐，免得用户看到 12/60 满意但实际
+              占用更少 / 看到 11/60 (全空白) 时实际保存为 0。*/}
           {sanitized.length}/{SIGNATURE_MAX_LENGTH}
         </div>
       </div>
@@ -234,7 +234,7 @@ export function ProfileInfoSignaturePage() {
         </div>
       ) : null}
 
-      {/* overLimit 走查 R1：legacy DB >30 字符的旧签名（之前没卡上限）进编辑页时 sanitized 直接超限、「完成」灰着但没文字说明，跟 name-page 同款修。i18n-ignore-line */}
+      {/* overLimit 走查 R1：legacy DB 里超过 SIGNATURE_MAX_LENGTH 的旧签名进编辑页时 sanitized 直接超限、「完成」灰着但没文字说明，跟 name-page 同款修。i18n-ignore-line */}
       {overLimit ? (
         <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`签名太长啦，最多 ${SIGNATURE_MAX_LENGTH} 个字符，请删掉一些。`)}
