@@ -52,6 +52,8 @@ import {
   type AddFriendRelationshipState,
   type AddFriendSearchResult,
 } from "../features/contacts/add-friend-search";
+// 副标题手拼 character.name 时也要 strip bidi 控制字符，W2R2 抓到漏点。
+import { stripBidiControl } from "../features/contacts/contact-utils";
 import {
   clearAddFriendSearchHistory,
   loadAddFriendSearchHistory,
@@ -959,9 +961,13 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
   );
   const PrimaryIcon = meta.icon;
   const matchReasonText = t(item.matchReason);
+  // 走查第二轮 R2：W2R2 抓到「昵称 good‮bad」副标题仍残留 U+202E——displayName 走
+  // getSearchResultDisplayName 已 strip，但这里直接拼 item.character.name 漏了；
+  // 同 getSearchResultDisplayName 走一道 stripBidiControl。
+  const safeCharacterName = stripBidiControl(item.character.name);
   const subtitle =
-    displayName !== item.character.name
-      ? `${item.identifier} · ${t(msg`昵称`)} ${item.character.name}`
+    displayName !== safeCharacterName
+      ? `${item.identifier} · ${t(msg`昵称`)} ${safeCharacterName}`
       : item.identifier;
 
   // 行内自己关上 item，外面传进来的是稳定 ref；无需 useCallback——这两个

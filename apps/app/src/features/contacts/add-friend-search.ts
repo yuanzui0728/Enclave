@@ -7,7 +7,7 @@ import type {
 } from "@yinjie/contracts";
 
 import { buildYinjieId } from "../../lib/yinjie-id";
-import { getFriendDisplayName } from "./contact-utils";
+import { getFriendDisplayName, stripBidiControl } from "./contact-utils";
 
 export type AddFriendRelationshipState =
   | "available"
@@ -32,12 +32,17 @@ export function buildCharacterIdentifier(characterId: string) {
 export function getSearchResultDisplayName(
   item: Pick<AddFriendSearchResult, "character" | "friendship">,
 ) {
-  return item.friendship
-    ? getFriendDisplayName({
-        character: item.character,
-        friendship: item.friendship,
-      })
-    : item.character.name;
+  // 非好友态走 character.name 直读时也要 strip bidi 控制字符；getFriendDisplayName
+  // 已经走 stripBidiControl，这里对齐——「添加朋友」搜索结果是用户接触陌生角色
+  // 名字的主要入口，若放任 U+202E 之类的字符进来，角色名能被视觉伪装。
+  return stripBidiControl(
+    item.friendship
+      ? getFriendDisplayName({
+          character: item.character,
+          friendship: item.friendship,
+        })
+      : item.character.name,
+  );
 }
 
 export function formatRelationshipStatus(

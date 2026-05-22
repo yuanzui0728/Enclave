@@ -29,6 +29,7 @@ import {
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
   shouldIncludeInWorldCharacterDirectory,
+  stripBidiControl,
 } from "../features/contacts/contact-utils";
 import {
   buildWorldCharactersRouteHash,
@@ -523,13 +524,16 @@ function MobileWorldCharactersPage() {
                     )}
                   >
                     <AvatarChip
-                      name={item.character.name}
+                      name={stripBidiControl(item.character.name)}
                       src={item.character.avatar}
                       size="wechat"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                        {item.character.name}
+                        {/* W2R2 bidi 防御：character.name 可能含 U+202E 类控制字符；
+                            getFriendDisplayName/buildAddFriendSearchResults 已经做过同
+                            处理，世界角色目录这一处也对齐。 */}
+                        {stripBidiControl(item.character.name)}
                       </div>
                       <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
                         {item.character.relationship ||

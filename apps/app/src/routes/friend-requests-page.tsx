@@ -13,6 +13,7 @@ import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 
 type Translator = ReturnType<typeof useRuntimeTranslator>;
 import { AvatarChip } from "../components/avatar-chip";
+import { stripBidiControl } from "../features/contacts/contact-utils";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
@@ -300,6 +301,10 @@ function MobileFriendRequestsPage() {
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {(requestsQuery.data ?? []).map((request, index) => {
               const expired = isFriendRequestExpired(request.expiresAt);
+              // 走查第二轮 R1：申请方角色名也可能含 U+202E 等 bidi 控制字符
+              // （陌生角色发来的申请尤其值得 strip，因为用户对名字源头无控制）。
+              // 跟 getFriendDisplayName / getSearchResultDisplayName 同口径。
+              const safeName = stripBidiControl(request.characterName);
               const acceptErrorForRow =
                 acceptMutation.isError &&
                 acceptMutation.variables === request.id &&
@@ -330,10 +335,10 @@ function MobileFriendRequestsPage() {
                       "shrink-0 rounded-[8px] active:opacity-70",
                       expired ? "opacity-70" : undefined,
                     )}
-                    aria-label={t(msg`查看 ${request.characterName} 的资料`)}
+                    aria-label={t(msg`查看 ${safeName} 的资料`)}
                   >
                     <AvatarChip
-                      name={request.characterName}
+                      name={safeName}
                       src={request.characterAvatar}
                       size="wechat"
                     />
@@ -343,7 +348,7 @@ function MobileFriendRequestsPage() {
                       type="button"
                       onClick={() => openCharacterProfile(request.characterId)}
                       className="flex w-full items-start justify-between gap-3 text-left active:opacity-70"
-                      aria-label={t(msg`查看 ${request.characterName} 的资料`)}
+                      aria-label={t(msg`查看 ${safeName} 的资料`)}
                     >
                       <div className="min-w-0">
                         <div
@@ -352,7 +357,7 @@ function MobileFriendRequestsPage() {
                             expired ? "opacity-70" : undefined,
                           )}
                         >
-                          {request.characterName}
+                          {safeName}
                         </div>
                         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
                           <span className={expired ? "opacity-70" : undefined}>

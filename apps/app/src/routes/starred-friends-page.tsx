@@ -22,6 +22,7 @@ import {
   compareStarredFriends,
   getFriendDisplayName,
   matchesFriendSearch,
+  stripBidiControl,
 } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
@@ -365,7 +366,9 @@ function MobileStarredFriendsPage() {
                   </div>
                   {getFriendDisplayName(item) !== item.character.name ? (
                     <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-                      {item.character.name}
+                      {/* W2R2 bidi 防御：副标题在 remarkName 不等于真实名字时显示
+                          原 character.name；这里直接读没走 displayName，需补 strip。 */}
+                      {stripBidiControl(item.character.name)}
                     </div>
                   ) : null}
                 </div>

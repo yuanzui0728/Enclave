@@ -41,6 +41,7 @@ import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-sta
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
+import { stripBidiControl } from "../features/contacts/contact-utils";
 import { resolveFriendshipSourceText } from "../features/contacts/friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import {
@@ -419,7 +420,14 @@ export function CharacterDetailPage() {
   const deletingLabel = t(msg`正在删除...`);
   const removeFromContactsLabel = t(msg`从通讯录移除`);
   const remarkName = friendship?.remarkName?.trim() ?? "";
-  const displayName = remarkName || character?.name || detailInfoLabel;
+  // W2R4：character-detail 顶端主标题 / TopBar / 多处共用同一 displayName。原来
+  // 直接拼 remarkName || character.name，含 U+202E 类 bidi 控制字符的恶意角色名
+  // 会让顶端主标题被翻转显示（W2R4 抓到 good‮bad 角色的资料页 head 仍含 U+202E）。
+  // 集中在 displayName 入口 strip，下游所有引用 displayName 的渲染点（line 1826
+  // 主标题、share textcard、TopBar 等）一次性受益。
+  const displayName = stripBidiControl(
+    remarkName || character?.name || detailInfoLabel,
+  );
   const signature =
     character?.currentStatus?.trim() ||
     translateCharacterBio(t, character?.bio) ||
@@ -996,10 +1004,13 @@ export function CharacterDetailPage() {
     // remarkName || character.name —— 用户把对方备注成「妈妈」之后分享出去，
     // 对方收到的是「妈妈 的隐界名片」，根本不知道是谁。备注是 viewer-local
     // 概念，对外分享必须用 character 的真实 name。
-    const shareDisplayName = character.name || displayName;
+    // W2R2 bidi 防御：分享出去的名片对外可见，含 U+202E 类字符会让收件方看到
+    // 被反转的名字，更危险。stripBidi 后再拼 share 文本。
+    const shareDisplayName = stripBidiControl(character.name || displayName);
     const profileSummary = [
       t(msg`${shareDisplayName} 的隐界名片`),
-      character.relationship?.trim() || worldContactLabel,
+      // 同 displayName 同口径：分享给外部的 relationship 也 strip。
+      stripBidiControl(character.relationship?.trim()) || worldContactLabel,
       t(msg`隐界号：${buildYinjieId(character.id)}`),
       profileUrl,
     ].join("\n");
@@ -1837,8 +1848,9 @@ export function CharacterDetailPage() {
                     )}
                   >
                     {remarkName
-                      ? t(msg`昵称：${character.name}`)
-                      : character.relationship || worldContactLabel}
+                      ? t(msg`昵称：${stripBidiControl(character.name)}`)
+                      : stripBidiControl(character.relationship) ||
+                        worldContactLabel}
                   </div>
                   <div
                     className={cn(
@@ -1867,7 +1879,7 @@ export function CharacterDetailPage() {
                   ) : null}
                 </div>
                 <AvatarChip
-                  name={character.name}
+                  name={stripBidiControl(character.name)}
                   src={character.avatar}
                   size={isDesktopLayout ? "xl" : "wechat"}
                 />
