@@ -392,6 +392,7 @@ export function WelcomePage() {
   const savedCloudAccessToken = useCloudSessionStore((state) => state.accessToken);
   const savedCloudExpiresAt = useCloudSessionStore((state) => state.expiresAt);
   const savedCloudPhone = useCloudSessionStore((state) => state.phone);
+  const savedCloudEmail = useCloudSessionStore((state) => state.email);
   const saveCloudSession = useCloudSessionStore((state) => state.setSession);
   const localWorldEntryEnabled = isLocalWorldEntryEnabled();
 
@@ -404,7 +405,11 @@ export function WelcomePage() {
   const [phone, setPhone] = useState(savedCloudPhone ?? runtimeConfig.cloudPhone ?? "");
   const [code, setCode] = useState("");
   const [accountType, setAccountType] = useState<"phone" | "email">("email");
-  const [email, setEmail] = useState("");
+  // savedCloudEmail 是 zustand-persist 拿回来的，main.tsx 在 React mount 前已
+  // `await hydrateCloudSessionStore()`，所以这里读出来一定是最终值。phone 字段
+  // 早就读 savedCloudPhone 做预填，email 字段以前写死 ""，导致邮箱/Google 用户
+  // 重载后要重新敲一遍邮箱。补对称。
+  const [email, setEmail] = useState(savedCloudEmail ?? "");
   const [authMethod, setAuthMethod] = useState<"code" | "password">("code");
   const [password, setPassword] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -830,6 +835,15 @@ export function WelcomePage() {
       setLocalApiBaseUrl(normalizedLocalApiBaseUrl);
     }
 
+    // R3：本地路径里 setAppRuntimeConfig({apiBaseUrl:...}) 之后立刻内联 await
+    // getWorldOwner —— effect@530 watch apiBaseUrl，worldAccessMode==="local" 时
+    // 不走 cloudAccessToken 短路那一格，cloudConnectKeyRef 在云路径才被云三入口
+    // set，本地路径里默认 null，所以 R1 的短路对本地无效，effect 还是会再发一次
+    // getWorldOwner。复用同一个 ref 把本地连接也圈进去：local:URL 作为 connectKey，
+    // effect 见 ref 非空就 return，inline 把结果跑完再清 ref。
+    const connectKey = `local:${normalizedLocalApiBaseUrl}`;
+    cloudConnectKeyRef.current = connectKey;
+
     setAppRuntimeConfig({
       apiBaseUrl: normalizedLocalApiBaseUrl,
       socketBaseUrl: normalizedLocalApiBaseUrl,
@@ -858,6 +872,9 @@ export function WelcomePage() {
       setReadyBaseUrl(null);
       setEntryError(describeRequestError(error, t(msg`无法连接到本地世界。`)));
     } finally {
+      if (cloudConnectKeyRef.current === connectKey) {
+        cloudConnectKeyRef.current = null;
+      }
       setIsContinuing(false);
       continueInFlightRef.current = false;
     }
