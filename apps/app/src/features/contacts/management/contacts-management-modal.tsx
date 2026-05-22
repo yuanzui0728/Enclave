@@ -374,7 +374,7 @@ function ModalHeader({
               "hover:bg-black/4 active:bg-black/8 disabled:opacity-50",
             )}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft aria-hidden="true" size={18} />
           </button>
         ) : null}
       </div>
@@ -396,7 +396,7 @@ function ModalHeader({
           disabled={disabled}
           className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] hover:bg-black/4 active:bg-black/8 disabled:opacity-50"
         >
-          <X size={18} />
+          <X aria-hidden="true" size={18} />
         </button>
       </div>
     </div>

@@ -115,7 +115,7 @@ export function ManagementPermissionsScreen({
               className="-mr-1 flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
               aria-label={t(msg`清空输入`)}
             >
-              <X size={13} />
+              <X aria-hidden="true" size={13} />
             </button>
           ) : null}
         </label>
@@ -191,6 +191,7 @@ export function ManagementPermissionsScreen({
                         {item.displayName}
                       </div>
                       <ChevronRight
+                        aria-hidden="true"
                         size={15}
                         className="shrink-0 text-[color:var(--text-muted)]"
                       />
