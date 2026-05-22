@@ -11,11 +11,17 @@ const DEFAULT_MOBILE_CONTACT_DIRECTORY_ROUTE_STATE: MobileContactDirectoryRouteS
     keyword: "",
   };
 
+// 走查新一轮 R1：跟姊妹 mobile-add-friend-route-state / mobile-friend-requests-
+// route-state / character-detail-route-state 同口径补 "//" 协议无关 URL 校验。
+// /contacts/starred 和 /contacts/tags 两个子页都吃这条路由状态当 returnPath；
+// 原版只挡 startsWith("/")，攻击者构造 hash="returnPath=//evil.com/path" → 用户
+// 在子页点"返回上一页"会被 TanStack Router 当成 //evil.com/path 跳到第三方站。
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
   if (
     !nextValue ||
     !nextValue.startsWith("/") ||
+    nextValue.startsWith("//") ||
     isDesktopOnlyPath(nextValue)
   ) {
     return undefined;

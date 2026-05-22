@@ -66,6 +66,7 @@ import { buildCharacterDetailRouteHash } from "../features/contacts/character-de
 import { buildMobileAddFriendRouteHash } from "../features/contacts/mobile-add-friend-route-state";
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
+import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import {
   buildContactSections,
   buildDesktopFriendSections,
@@ -946,14 +947,17 @@ export function ContactsPage() {
       setFriendRequestSuccess(t(msg`已通过好友申请。`));
       // 走查 R1：app-friends-quick-start 全代码库 0 个 useQuery 订阅；app-group-friends
       // 在 create-group-page 已统一到 app-friends。两条 invalidate 都是死代码。
+      // 新一轮走查 R2：原来只 invalidate friend-requests / friends / conversations，
+      // moments.service.canOwnerViewPost 用 ownerFriendCharacterIds 决定 feed 可见性，
+      // 通过申请后新好友过去发过的 moments / 广场动态这一刻起本该出现在
+      // /tabs/moments、/feed 上，但旧缓存里这些 post 都被 canOwnerViewPost 过滤掉过。
+      // character-detail-page sendFriendRequestMutation 早就走 invalidateFriendDisplayQueries
+      // 覆盖朋友圈侧缓存（R10 注释），桌面 acceptFriendRequest 这一路漏了。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
         }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
+        invalidateFriendDisplayQueries(queryClient, baseUrl),
       ]);
 
       if (!wasOnNewFriendsPane && acceptedRequest?.characterId) {

@@ -17,6 +17,7 @@ import { stripBidiControl } from "../features/contacts/contact-utils";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import { getFriendRequestSourceLabel } from "../features/contacts/friend-request-scene-label";
 import {
   buildMobileFriendRequestsRouteHash,
@@ -95,14 +96,22 @@ function MobileFriendRequestsPage() {
     onSuccess: async () => {
       setSuccessNotice(t(msg`已通过好友申请。`));
       // 走查 R1：app-friends-quick-start / app-group-friends 都是无订阅者的死 key。
+      // 新一轮走查 R2：原来只 invalidate friend-requests / friends / conversations，
+      // moments.service.canOwnerViewPost 用 ownerFriendCharacterIds 决定 feed 可见性，
+      // 通过申请后新好友过去发过的 moments / 广场动态这一刻起本该出现在用户
+      // /tabs/moments、/feed 这两条 surface 上，但旧缓存里这些 post 全被
+      // canOwnerViewPost 过滤掉过——用户切到朋友圈看不到新好友的旧帖，要等
+      // staleTime 自然过期或下拉刷新。character-detail-page sendFriendRequestMutation
+      // (line 725-737 R10 注释) / character-detail-page blockMutation (R3+R9) 早就
+      // 走 invalidateFriendDisplayQueries 覆盖朋友圈侧缓存；这里跟 contacts-page
+      // 的 acceptFriendRequestMutation 同口径补上。app-friend-requests 不在
+      // invalidateFriendDisplayQueries 里面，单独留一条；其余 conversations /
+      // messages / moments / feed 全套都被它覆盖。
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
         }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
+        invalidateFriendDisplayQueries(queryClient, baseUrl),
       ]);
     },
   });
