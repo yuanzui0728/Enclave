@@ -97,6 +97,15 @@ export function MobileMomentsPublishPage() {
   // 的帖子）。ref 同步赋值不走 React render，第一次 click 把它翻 true 之后
   // 同帧内的所有后续 click 都被卡住，等 onSettled 才解锁。
   const submittingRef = useRef(false);
+  // 走查 R4：handlePickImages / handleVideoFileSelected 用同步 ref 防双发——
+  // 用户在 native picker 关闭到 createMomentImageDrafts setImageDrafts commit 之间
+  // 的 ~50-200ms 窗口里再次点 +，第二个 handlePickImages 读到的 imageDraftsRef 还是
+  // 老值（useEffect 写 ref 要等 commit），两批 addImageFiles 各自看见的 remainingSlots
+  // 都是足额的 → setImageDrafts 函数式更新依次合并把图片堆到 10+ 张（>MAX=9），
+  // 同时 publish 时 server MOMENTS_IMAGES_TOO_MANY 卡掉但前端列表已经显示越界，体感
+  // "选了多张但发不出去"。视频同理——并发开两条 replaceVideoFile 会让先完成的封面
+  // 被后完成的盖掉、posterPreviewUrl 错配。
+  const pickInflightRef = useRef(false);
   // 「这次离开页面之前，草稿已经被显式处理过」标记——onSuccess 清 IDB / 保留草稿 /
   // 不保留草稿 这三条路径都会翻 true。unmount cleanup 看到 true 就跳过 autosave，
   // 避免和 onSuccess 的 clearMomentDraft 抢着写同一把 IDB key（race 输了会让"已发布"
@@ -499,6 +508,8 @@ export function MobileMomentsPublishPage() {
   }
 
   async function handlePickImages() {
+    if (pickInflightRef.current) return;
+    pickInflightRef.current = true;
     try {
       // 第二次走查 R4：原生壳 (PHPicker / PickVisualMedia) 拿到 limit 后会在系统
       // 选图 UI 上限制最多可勾数量。不传时 native-image-picker 默认 9 张，但跟
@@ -521,16 +532,22 @@ export function MobileMomentsPublishPage() {
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
+    } finally {
+      pickInflightRef.current = false;
     }
   }
 
   async function handleVideoFileSelected(file: File | null) {
+    if (pickInflightRef.current) return;
+    pickInflightRef.current = true;
     try {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
+    } finally {
+      pickInflightRef.current = false;
     }
   }
 
