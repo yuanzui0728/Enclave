@@ -96,7 +96,12 @@ export function ProfileFeedbackPage() {
   const goBack = () =>
     navigateBackOrFallback(
       () => {
-        void navigate({ to: "/tabs/profile" });
+        // 走查 R1（移动端我-tab 端到端走查 2026-05-22）：fallback 路径之前不加
+        // replace，从「无 history 可退」走到这一支时会再往 stack 推一格
+        // /tabs/profile —— 用户从 profile 进 feedback → 没 history → Android Back
+        // 一下到 fallback，再 Back 又能回到 feedback。和 profile-info-* / favorites
+        // / settings 等其它兄弟 goBack 同款 replace:true 兜底。
+        void navigate({ to: "/tabs/profile", replace: true });
       },
       "/tabs/profile",
     );
@@ -149,7 +154,12 @@ export function ProfileFeedbackPage() {
       }
       navTimeoutRef.current = setTimeout(() => {
         navTimeoutRef.current = null;
-        void navigate({ to: "/tabs/profile" });
+        // 走查 R1：success 后自动 navigate 缺 replace —— 用户从 profile 进 feedback
+        // → 成功 → 1.5s 后 navigate（无 replace 多推一格）→ 落地 /tabs/profile
+        // 但 history 是 [profile, feedback, profile]，Android Back / 浏览器后退
+        // 又回到「已清空标题/详情」的 feedback 页，看起来像"提交完又被弹回来"。
+        // 跟 cleanup history 的语义对齐：成功后不该把 feedback 留在 stack 里。
+        void navigate({ to: "/tabs/profile", replace: true });
       }, 1500);
     } catch (error) {
       setNotice({
@@ -264,7 +274,12 @@ export function ProfileFeedbackPage() {
         </section>
 
         {notice ? (
+          // 走查 R1：notice 之前是裸 div，盲用/键盘用户提交失败时只能从禁用态
+          // 推断结果，没有上下文。danger 用 role="alert"（隐含 aria-live=assertive
+          // 立即打断当前朗读），success 用 role="status"（隐含 polite，待空隙朗读）。
+          // 跟 account-security-panel.tsx / mobile-friend-moments-page.tsx 同款 a11y。
           <div
+            role={notice.tone === "danger" ? "alert" : "status"}
             className={cn(
               "rounded-[10px] px-3 py-2 text-[12px]",
               notice.tone === "success"

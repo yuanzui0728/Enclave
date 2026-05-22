@@ -457,7 +457,11 @@ export function ProfileSubscriptionPage() {
   const goBack = () =>
     navigateBackOrFallback(
       () => {
-        void navigate({ to: "/tabs/profile" });
+        // 走查 R1（移动端我-tab 端到端走查 2026-05-22）：fallback 无 replace 会再
+        // 推一格 /tabs/profile，跟其它子页 goBack 不一致（profile-info-* /
+        // settings-language 等都是 replace:true）。Android Back 一下走 fallback
+        // 再 Back 又能回到 subscription，体感是"返回没生效"。
+        void navigate({ to: "/tabs/profile", replace: true });
       },
       "/tabs/profile",
     );

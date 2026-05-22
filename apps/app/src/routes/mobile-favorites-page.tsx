@@ -399,7 +399,15 @@ export function MobileFavoritesPage({
       </div>
 
       <div className="space-y-3 px-4 py-3">
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        {/* 走查 R1（移动端我-tab 端到端走查 2026-05-22）：notice 之前裸 InlineNotice 无 role，
+            盲用户长按收藏行 → 「移除收藏」→ 操作完成时只能从列表消失推断结果。
+            removeMutation onSuccess setNotice 那条「X 已从收藏中移除」朗读不出来。
+            role="status" 让屏幕阅读器在当前朗读结束后宣读这条消息（不打断长按操作流）。 */}
+        {notice ? (
+          <InlineNotice tone="success" role="status">
+            {notice}
+          </InlineNotice>
+        ) : null}
         {/* 走查 R1：之前直接渲染 error.message，错失 describeRequestError 的
             i18n 兜底——removeFavorite/getFavorites 抛 ApiRequestError 时 message
             可能是裸英文 "Invalid or expired cloud access token." / 网络错误的
