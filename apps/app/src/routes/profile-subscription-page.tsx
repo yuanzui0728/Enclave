@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -408,6 +408,12 @@ export function ProfileSubscriptionPage() {
   }, [profileQuery.data, setProfile]);
 
   const [checkoutError, setCheckoutError] = useState("");
+  // 新走查 R3：「联系开通」按钮只靠 disabled={checkoutMutation.isPending} 兜双
+  // 触发，React state propagation gap 让同帧 <16ms 第二次 click disabled 仍是
+  // false → 两条 POST /cloud/checkouts 都过门。checkout 不是幂等（每次写一条
+  // cloud_checkouts 记录给运营 follow-up），重复 2 条会让运营群里收到两条同
+  // 套餐申请，要手动 dedupe。Sync ref 守卫兜 propagation gap。
+  const checkoutInFlightRef = useRef(false);
   const checkoutMutation = useMutation({
     mutationFn: ({ planCode }: { planCode: string; planName: string }) =>
       createCheckout({ planCode }, accessToken ?? ""),
@@ -676,12 +682,21 @@ export function ProfileSubscriptionPage() {
                         variant="primary"
                         className="mt-3 rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
                         disabled={checkoutMutation.isPending}
-                        onClick={() =>
-                          checkoutMutation.mutate({
-                            planCode: plan.code,
-                            planName: plan.name,
-                          })
-                        }
+                        onClick={() => {
+                          if (checkoutInFlightRef.current) return;
+                          checkoutInFlightRef.current = true;
+                          checkoutMutation.mutate(
+                            {
+                              planCode: plan.code,
+                              planName: plan.name,
+                            },
+                            {
+                              onSettled: () => {
+                                checkoutInFlightRef.current = false;
+                              },
+                            },
+                          );
+                        }}
                       >
                         {checkoutMutation.isPending
                           ? t(msg`提交中…`)
