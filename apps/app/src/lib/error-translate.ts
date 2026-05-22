@@ -439,7 +439,7 @@ export function translateAppErrorCode(
     case "CHAT_STATUS_INVALID":
       return translateRuntimeMessage(msg`status 非法。`);
     case "CHAT_DIGITAL_HUMAN_AUTH_FAILED":
-      return translateRuntimeMessage(msg`数字人 provider 回调鉴权失败。`);
+      return translateRuntimeMessage(msg`视频画面鉴权失败`);
     case "CHAT_REVOKE_OWN_ONLY":
       return translateRuntimeMessage(msg`只能撤回自己发送的消息。`);
     case "CHAT_ATTACHMENT_NOT_FOUND":
@@ -485,11 +485,11 @@ export function translateAppErrorCode(
     case "CHAT_VOICE_CALL_AUDIO_REQUIRED":
       return translateRuntimeMessage(msg`请先录一段语音再继续。`);
     case "CHAT_DIGITAL_HUMAN_NOT_AVAILABLE":
-      return translateRuntimeMessage(msg`数字人通道当前不可用。`);
+      return translateRuntimeMessage(msg`视频通话暂不可用`);
     case "CHAT_DIGITAL_HUMAN_TASK_NOT_FOUND":
-      return translateRuntimeMessage(msg`数字人任务不存在。`);
+      return translateRuntimeMessage(msg`视频任务不存在`);
     case "CHAT_DIGITAL_HUMAN_TASK_INVALID":
-      return translateRuntimeMessage(msg`数字人任务参数无效。`);
+      return translateRuntimeMessage(msg`视频任务参数无效`);
     case "CHAT_REPLY_TASK_NOT_FOUND":
       return translateRuntimeMessage(msg`回复任务不存在。`);
     case "CHAT_REPLY_TASK_INVALID_STATE":

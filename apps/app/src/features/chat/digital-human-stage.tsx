@@ -59,7 +59,7 @@ export function DigitalHumanStage({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#bbf7d0]">
               <Video size={13} />
-              {t(msg`数字人舞台`)}
+              {t(msg`视频通话`)}
             </div>
             <div
               className={cn(
@@ -147,10 +147,10 @@ export function DigitalHumanStage({
               </div>
               <span className="text-sm text-white/76">
                 {talking
-                  ? t(msg`数字人播报中`)
+                  ? t(msg`对方正在说话`)
                   : thinking
-                    ? t(msg`数字人整理中`)
-                    : t(msg`数字人在线`)}
+                    ? t(msg`对方正在回复`)
+                    : t(msg`在线`)}
               </span>
               {providerLabel ? (
                 <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[11px] text-white/56">

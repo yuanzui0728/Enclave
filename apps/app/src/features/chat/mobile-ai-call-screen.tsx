@@ -50,7 +50,6 @@ import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
 import { DigitalHumanPlayer } from "./digital-human-player";
-import { resolveDigitalHumanGatewayStatusCopy } from "./digital-human-gateway-copy";
 import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
 import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
@@ -255,11 +254,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     ? digitalHumanCall.lastTurn?.assistantText
     : voiceCall.lastTurn?.assistantText;
   const speechStatus = systemStatusQuery.data?.inferenceGateway;
-  const digitalHumanGateway = systemStatusQuery.data?.digitalHumanGateway;
-  const digitalHumanGatewayCopy = resolveDigitalHumanGatewayStatusCopy(
-    t,
-    digitalHumanGateway,
-  );
   const cameraPreviewMetaLabel = !cameraEnabled
     ? t(msg`已关闭`)
     : cameraPreview.status === "ready"
@@ -453,10 +447,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       return t(msg`已接通`);
     }
 
-    if (isVideoMode && digitalHumanGatewayCopy?.statusLabel) {
-      return digitalHumanGatewayCopy.statusLabel;
-    }
-
     return t(msg`按住说话`);
   }, [
     activeCall.playbackState,
@@ -466,7 +456,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     digitalHumanCall.session?.renderStatus,
     digitalHumanCall.session?.streamUrl,
     digitalHumanCall.sessionState,
-    digitalHumanGatewayCopy?.statusLabel,
     isVideoMode,
     lastAssistantText,
     playbackSettling,
@@ -525,10 +514,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       return "";
     }
 
-    if (isVideoMode && digitalHumanGatewayCopy?.statusHint) {
-      return digitalHumanGatewayCopy.statusHint;
-    }
-
     return t(msg`按住下方按钮说话`);
   }, [
     activeCall.playbackState,
@@ -538,7 +523,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     digitalHumanCall.session?.renderStatus,
     digitalHumanCall.session?.streamUrl,
     digitalHumanCall.sessionState,
-    digitalHumanGatewayCopy?.statusHint,
     isVideoMode,
     lastAssistantText,
     playbackSettling,
@@ -941,31 +925,27 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   );
   const userBubblePlaceholder = useMemo(() => {
     if (callPhase === "error") {
-      return t(msg`上一轮没有顺利完成，准备好后可以重新录这一句。`);
+      return t(msg`上一句未发送，可重试`);
     }
 
     if (callPhase === "listening") {
-      return t(msg`正在听你这一句，松开后会立刻发出。`);
+      return t(msg`正在聆听，松开发送`);
     }
 
     if (callPhase === "thinking") {
-      return t(msg`刚刚那句已经发出，正在等待这一轮回复。`);
+      return t(msg`已发出，等待回复`);
     }
 
     if (callPhase === "speaking") {
-      return t(msg`这一轮先到这里，等 TA 说完后再继续。`);
+      return t(msg`等对方说完再继续`);
     }
 
     if (callPhase === "followup") {
-      return t(msg`这一轮已经完成，准备好后继续按住底部按钮说下一句。`);
+      return t(msg`按住下方按钮继续说话`);
     }
 
-    if (isVideoMode) {
-      return t(msg`按住底部按钮说第一句，画面会保持在当前视频通话里。`);
-    }
-
-    return t(msg`按住底部按钮，说出你想对 TA 说的话。`);
-  }, [callPhase, isVideoMode, t]);
+    return t(msg`按住下方按钮说话`);
+  }, [callPhase, t]);
   const assistantBubblePlaceholder = useMemo(() => {
     if (callPhase === "error") {
       return t(msg`回复暂未送达，恢复后会显示在这里`);
@@ -1433,10 +1413,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         <div className="mt-3.5 space-y-2.5">
           {showSpeechWarning && speechStatus ? (
             <MobileCallNotice tone="warning">
-              {speechStatus.voiceCallMessage ?? speechStatus.speechMessage}
-              {speechProviderSummary
-                ? t(msg` 当前链路：${speechProviderSummary}。`)
-                : ""}
+              {t(msg`语音功能暂未就绪`)}
             </MobileCallNotice>
           ) : null}
           {showDiagnosticsToggle ? (
@@ -1469,12 +1446,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
           {showPermissionPrimer ? (
             <MobileCallNotice tone="info">
-              {t(msg`首次使用请先允许麦克风权限。若自动播报被拦截，可直接补播这一句。`)}
+              {t(msg`首次使用请允许麦克风权限`)}
             </MobileCallNotice>
           ) : null}
           {showPermissionRequestHint ? (
             <MobileCallNotice tone="info">
-              {t(msg`正在请求麦克风权限，请在弹窗里点允许。`)}
+              {t(msg`请在弹窗里允许麦克风权限`)}
             </MobileCallNotice>
           ) : null}
           {showVideoFirstTurnPrimer ? (
@@ -1500,13 +1477,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   }}
                 />
               ) : null}
-            </MobileCallNotice>
-          ) : null}
-          {isVideoMode &&
-          !digitalHumanCall.sessionError &&
-          digitalHumanGatewayCopy?.noticeMessage ? (
-            <MobileCallNotice tone={digitalHumanGatewayCopy.noticeTone}>
-              {digitalHumanGatewayCopy.noticeMessage}
             </MobileCallNotice>
           ) : null}
           {isVideoMode && digitalHumanCall.sessionError ? (

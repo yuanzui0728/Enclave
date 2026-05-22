@@ -31,8 +31,8 @@ export function DigitalHumanPlayer({
 }: DigitalHumanPlayerProps) {
   const providerLabel =
     session?.presentationMode === "provider_stream"
-      ? t(msg`数字人视频流`)
-      : t(msg`内置数字人舞台`);
+      ? t(msg`视频流`)
+      : t(msg`视频画面`);
   const renderStatus = session?.renderStatus;
   const playerUrl =
     session?.presentationMode === "provider_stream"
@@ -58,7 +58,7 @@ export function DigitalHumanPlayer({
       onClick={onRetryRender}
       className="inline-flex h-10 items-center justify-center rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition hover:bg-white/12"
     >
-      {t(msg`重试连接数字人`)}
+      {t(msg`重新连接`)}
     </button>
   ) : null;
 
@@ -83,7 +83,7 @@ export function DigitalHumanPlayer({
             // 入口听到突兀的英文「Lily digital human player」。translateRuntimeMessage
             // 走运行时 catalog，和姊妹 R55 InlineNotice / R8 channels-workspace
             // 同款 i18n 修法。
-            title={t(msg`${name} 的数字人视频播放器`)}
+            title={t(msg`${name} 的视频播放器`)}
             allow="autoplay"
             // 走查电脑端单聊 R134：单聊「视频通话」打开 DigitalHumanPlayer 时
             // iframe.src 是 provider (minimax) 自己的 player URL，跨源加载。
@@ -120,7 +120,7 @@ export function DigitalHumanPlayer({
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
                 <span>{providerLabel}</span>
                 {renderStatusLabel ? (
-                  <span>{t(msg`渲染状态: ${renderStatusLabel}`)}</span>
+                  <span>{renderStatusLabel}</span>
                 ) : null}
               </div>
               {retryRenderAction ? (
@@ -203,12 +203,12 @@ export function DigitalHumanPlayer({
             tone={renderTone}
           >
             {renderStatus === "failed"
-              ? t(msg`数字人视频流渲染失败，当前已回退到文字加语音通话链路。可稍后重试连接数字人。`)
+              ? t(msg`画面生成失败，已切换到语音`)
               : renderStatus === "rendering"
-                ? t(msg`数字人视频流正在渲染，当前会优先保持播放器连接并继续刷新状态。`)
+                ? t(msg`画面生成中`)
                 : renderStatus === "queued"
-                  ? t(msg`数字人视频流已进入队列，当前会先保持会话连接，渲染完成后自动切到视频流。`)
-                  : t(msg`当前已切到数字人视频流播放器；若流不可用会自动回退到内置舞台。`)}
+                  ? t(msg`画面正在排队，请稍候`)
+                  : t(msg`画面已开启`)}
           </InlineNotice>
           <div className="rounded-[22px] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
@@ -225,7 +225,7 @@ export function DigitalHumanPlayer({
             <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
               <span>{providerLabel}</span>
               {renderStatusLabel ? (
-                <span>{t(msg`渲染状态: ${renderStatusLabel}`)}</span>
+                <span>{t(msg`画面: ${renderStatusLabel}`)}</span>
               ) : null}
             </div>
             {retryRenderAction ? (
@@ -241,13 +241,13 @@ export function DigitalHumanPlayer({
 function resolveRenderStatusLabel(renderStatus?: DigitalHumanSession["renderStatus"]) {
   switch (renderStatus) {
     case "queued":
-      return t(msg`排队中`);
+      return t(msg`等待中`);
     case "rendering":
-      return t(msg`渲染中`);
+      return t(msg`加载中`);
     case "ready":
-      return t(msg`视频流就绪`);
+      return t(msg`已就绪`);
     case "failed":
-      return t(msg`渲染失败`);
+      return t(msg`加载失败`);
     default:
       return null;
   }
@@ -256,13 +256,13 @@ function resolveRenderStatusLabel(renderStatus?: DigitalHumanSession["renderStat
 function resolveRenderStatusHint(renderStatus?: DigitalHumanSession["renderStatus"]) {
   switch (renderStatus) {
     case "queued":
-      return t(msg`正在排队准备数字人画面。`);
+      return t(msg`画面准备中`);
     case "rendering":
-      return t(msg`数字人画面生成中，请稍候。`);
+      return t(msg`画面生成中`);
     case "ready":
-      return t(msg`数字人视频流已就绪。`);
+      return t(msg`画面已就绪`);
     case "failed":
-      return t(msg`本轮视频流没有成功生成，但语音回复链路仍然可继续使用。`);
+      return t(msg`画面生成失败，可继续语音`);
     default:
       return null;
   }

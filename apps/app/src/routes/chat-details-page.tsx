@@ -431,9 +431,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         : isFriend
           ? t(msg`通讯录朋友`)
           : t(msg`世界联系人`));
-  const contactIdentifier = targetCharacterId
-    ? t(msg`隐界号：${buildYinjieId(targetCharacterId)}`)
-    : null;
+  // self 镜像：char-default-self 在每个账号里 hash 都一样，会渲染成同一个
+  // 假隐界号 yinjie_4dbfd23a，没意义且会误导用户以为这是自己的隐界号；隐掉。
+  const contactIdentifier =
+    targetCharacterId && !isSelfMirror
+      ? t(msg`隐界号：${buildYinjieId(targetCharacterId)}`)
+      : null;
   const contactSummary = useMemo(() => {
     if (!conversation) {
       return null;
@@ -1245,7 +1248,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               </div>
               <ChevronRight size={18} className="shrink-0 text-[#c7c7cc]" />
             </button>
-            {contactSummary ? (
+            {contactSummary && !isSelfMirror ? (
+              // self 镜像：分享 URL 是 /character/char-default-self，对方点开
+              // 跳的是 ta 自己的"我自己"镜像页，名片摘要里的隐界号也是同款
+              // 通用 hash —— 整段没意义，隐掉。要分享本人名片应该走单独的
+              // 个人资料分享流程，不应该在这里。
               <div className="border-t border-[color:var(--border-faint)]">
                 <ChatSettingRow
                   label={t(msg`推荐给朋友`)}
@@ -1310,14 +1317,20 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 disabled={busy}
                 onToggle={handleTogglePin}
               />
-              <ChatSettingRow
-                label={t(msg`强提醒`)}
-                value={strongReminderActive ? strongReminderLabel : undefined}
-                variant="wechat"
-                checked={strongReminderActive}
-                disabled={busy}
-                onToggle={handleToggleStrongReminder}
-              />
+              {isSelfMirror ? null : (
+                // self 镜像：自我对话没有"对方发来新消息"事件，3 小时强提醒
+                // 不会触发任何 push —— toggle 完全是 no-op，隐掉。
+                <ChatSettingRow
+                  label={t(msg`强提醒`)}
+                  value={
+                    strongReminderActive ? strongReminderLabel : undefined
+                  }
+                  variant="wechat"
+                  checked={strongReminderActive}
+                  disabled={busy}
+                  onToggle={handleToggleStrongReminder}
+                />
+              )}
             </div>
           </ChatDetailsSection>
 
@@ -1325,8 +1338,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <ChatCallFallbackSection
               variant="wechat"
               disabled={!targetCharacterId}
-              voiceValue={t(msg`AI 语音`)}
-              videoValue={t(msg`AI 数字人`)}
+              voiceValue={t(msg`语音通话`)}
+              videoValue={t(msg`视频通话`)}
               onSelectKind={guardRowNavigation((kind) => {
                 setNotice(null);
                 if (kind === "video") {

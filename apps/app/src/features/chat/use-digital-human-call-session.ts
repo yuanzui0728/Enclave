@@ -110,7 +110,7 @@ export function useDigitalHumanCallSession({
   const turnMutation = useMutation({
     mutationFn: async () => {
       if (!sessionRef.current) {
-        throw new Error(t(msg`数字人通话尚未建立，请稍后再试。`));
+        throw new Error(t(msg`通话尚未建立，请稍后再试`));
       }
 
       if (!speech.recordedAudio) {
@@ -149,7 +149,7 @@ export function useDigitalHumanCallSession({
       setSessionError(
         error instanceof Error
           ? error.message
-          : t(msg`数字人通话失败，请稍后再试。`),
+          : t(msg`通话失败，请稍后再试`),
       );
     },
   });
@@ -286,7 +286,7 @@ export function useDigitalHumanCallSession({
         setSessionError(
           error instanceof Error
             ? error.message
-            : t(msg`连接数字人失败，请稍后再试。`),
+            : t(msg`连接失败，请稍后再试`),
         );
       }
     })();
@@ -536,6 +536,6 @@ function resolveAutoplayBlockedCopy() {
 
 function resolveDigitalHumanPlaybackFailedCopy() {
   return isNativeMobileRuntime()
-    ? t(msg`数字人语音已生成，但当前设备没有成功播放。可以点“重播上一句”再试。`)
-    : t(msg`数字人语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。`);
+    ? t(msg`语音已生成但当前设备没有播放，可点"重播上一句"再试`)
+    : t(msg`语音已生成但浏览器没有播放，可点"重播上一句"再试`);
 }
