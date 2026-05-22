@@ -63,11 +63,18 @@ import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { consumeMomentPublishFlash } from "../features/moments/moment-publish-flash";
 import {
+  extractMomentDraftSnapshot,
   publishMomentComposeDraft,
   useMomentComposeDraft,
   type MomentImageDraft,
   type MomentVideoDraft,
 } from "../features/moments/moment-compose-media";
+import {
+  clearMomentDraft,
+  loadMomentDraft,
+  saveMomentDraft,
+  useMomentDraftIndicator,
+} from "../features/moments/moment-draft-store";
 import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import {
   getMomentSummaryText,
@@ -144,6 +151,13 @@ export function MomentsPage() {
     replyTo: WeChatCommentBarReplyTarget | null;
   } | null>(null);
   const [showCompose, setShowCompose] = useState(false);
+  // 桌面端发帖面板的「保留 / 不保留」ActionSheet 开关 —— 跟 mobile publish 页同
+  // 模板，但放在桌面 panel 上方的居中 modal 里。
+  const [desktopExitSheetOpen, setDesktopExitSheetOpen] = useState(false);
+  // 红点 indicator：订阅当前 baseUrl 的草稿存在状态。useMomentDraftIndicator
+  // 内部 useEffect 会在 mount / baseUrl 变化时 hasMomentDraft(baseUrl) → store
+  // 同步，所以页面刷新后首帧就准。
+  const hasMomentDraftIndicator = useMomentDraftIndicator(baseUrl);
   const [notice, _setNoticeRaw] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info" | "danger">(
     "success",
@@ -369,6 +383,9 @@ export function MomentsPage() {
       void queryClient.invalidateQueries({
         queryKey: ["app-moments-mine", mutationBaseUrl],
       });
+      // 发表成功 → 清掉对应账户的 IDB 草稿（同 mid-flight 切账户 guard，按
+      // mutationBaseUrl 走，不要清当前账户的草稿）。和 mobile publish 页对齐。
+      void clearMomentDraft(mutationBaseUrl);
       // 切账户后剩下的 draft reset / toast 都属于当前页面的 UI 反馈——用户已经
       // 切到 B 了不该让他看到 A 的「朋友圈已发布」绿条。和 friend-moments-page
       // / profile-moments-page 同模板。
@@ -389,6 +406,61 @@ export function MomentsPage() {
       setNotice(t(msg`朋友圈已发布。`));
     },
   });
+
+  // 桌面端打开发帖面板时 → 从 IDB 取草稿 hydrate。和移动端同模板，但触发条件是
+  // showCompose 翻 true 而不是 mount（移动端是整页 mount 即触发）。hasContent
+  // guard 防止用户已经在面板上输入新内容时被 IDB 慢盘 callback 覆盖。
+  const hydrateComposeFromStored = composeDraft.hydrateFromStored;
+  const composeHasContentNow = composeDraft.hasContent;
+  const composeHasContentRef = useRef(composeHasContentNow);
+  useEffect(() => {
+    composeHasContentRef.current = composeHasContentNow;
+  }, [composeHasContentNow]);
+  useEffect(() => {
+    if (!showCompose) return;
+    let cancelled = false;
+    void loadMomentDraft(baseUrl).then((stored) => {
+      if (cancelled || !stored) return;
+      if (composeHasContentRef.current) return;
+      hydrateComposeFromStored(stored);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showCompose, baseUrl, hydrateComposeFromStored]);
+
+  // 桌面端关闭面板的拦截：onCloseCompose 是 desktop-moments-toolbar / panel /
+  // workspace 共用的关闭出口。有内容 → 弹 ActionSheet；空 → 直接关。
+  // mid-flight createMutation.isPending 期间禁止关（和 mobile handleBack 一致）。
+  function handleRequestCloseDesktopCompose() {
+    if (createMutation.isPending) {
+      return;
+    }
+    if (composeDraft.hasContent) {
+      setDesktopExitSheetOpen(true);
+      return;
+    }
+    setShowCompose(false);
+  }
+  function handleDesktopKeepDraft() {
+    setDesktopExitSheetOpen(false);
+    void saveMomentDraft(
+      baseUrl,
+      extractMomentDraftSnapshot({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
+      }),
+    );
+    composeDraft.reset();
+    setShowCompose(false);
+  }
+  function handleDesktopDiscardDraft() {
+    setDesktopExitSheetOpen(false);
+    void clearMomentDraft(baseUrl);
+    composeDraft.reset();
+    setShowCompose(false);
+  }
 
   // 共享 optimistic helper —— 同时 toggle paged / flat / mine 三套 cache。
   // 之前本页 onMutate 只动 paged：用户在 /tabs/moments 给自己的帖子点心，切到
@@ -1633,8 +1705,19 @@ export function MomentsPage() {
           isMomentFavorite={(momentId) =>
             favoriteSourceIds.includes(`moment-${momentId}`)
           }
+          hasMomentDraft={hasMomentDraftIndicator}
           commentReplyTarget={desktopReplyTarget}
-          setShowCompose={setShowCompose}
+          setShowCompose={(nextValue) => {
+            // 关 panel 路径走草稿拦截（弹 ActionSheet）；打开路径直接放行。
+            // setShowCompose(true) 在 onOpenCompose / 一次性入口里调用；
+            // setShowCompose(false) 在 desktop-moment-compose-panel 的 X 按钮 /
+            // 遮罩 / ESC 里调用——这条路必须先经过 handleRequestCloseDesktopCompose。
+            if (nextValue) {
+              setShowCompose(true);
+              return;
+            }
+            handleRequestCloseDesktopCompose();
+          }}
           onCancelCommentReply={() => setDesktopReplyTarget(null)}
           onCommentChange={(momentId, value) =>
             setCommentDrafts((current) => ({
@@ -1916,6 +1999,57 @@ export function MomentsPage() {
             )}
           </Suspense>
         ) : null}
+        {desktopExitSheetOpen ? (
+          // 桌面 panel 关闭时的「保留 / 不保留 / 取消」ActionSheet —— 桌面端是
+          // 居中 modal（panel 已经是侧栏，不能再底部弹一个 sheet 抢视觉），
+          // z-30 高于 panel 自己的 z-20。和 mobile-moments-publish-page 同语义。
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t(msg`退出编辑`)}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(15,23,42,0.32)] backdrop-blur-[3px]"
+          >
+            <button
+              type="button"
+              aria-label={t(msg`关闭提示`)}
+              onClick={() => setDesktopExitSheetOpen(false)}
+              className="absolute inset-0"
+            />
+            <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[12px] bg-white shadow-[var(--shadow-overlay)]">
+              <div className="px-6 pb-3 pt-6 text-center">
+                <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+                  {t(msg`退出编辑？`)}
+                </div>
+                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+                  {t(msg`保留后下次继续编辑这条草稿。`)}
+                </div>
+              </div>
+              <div className="border-t border-[color:var(--border-faint)]">
+                <button
+                  type="button"
+                  onClick={handleDesktopKeepDraft}
+                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[15px] text-[color:var(--text-primary)] active:bg-black/[0.04]"
+                >
+                  {t(msg`保留`)}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDesktopDiscardDraft}
+                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[15px] font-medium text-[#FA5151] active:bg-black/[0.04]"
+                >
+                  {t(msg`不保留`)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDesktopExitSheetOpen(false)}
+                  className="block w-full py-3 text-center text-[15px] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
+                >
+                  {t(msg`取消`)}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </Suspense>
     );
   }
@@ -1964,6 +2098,7 @@ export function MomentsPage() {
       noticeAction={noticeAction}
       interactionActionLabel={interactionActionLabel}
       hasReturnPath={Boolean(safeReturnPath)}
+      hasMomentDraft={hasMomentDraftIndicator}
       actionBubble={actionBubble}
       commentBarTarget={commentBarTarget}
       commentDrafts={commentDrafts}
@@ -2186,6 +2321,7 @@ type MobileMomentsViewProps = {
   noticeAction: (() => void) | null;
   interactionActionLabel: string;
   hasReturnPath: boolean;
+  hasMomentDraft: boolean;
   actionBubble: { momentId: string; anchorRect: DOMRect } | null;
   commentBarTarget: {
     momentId: string;
@@ -2235,6 +2371,7 @@ function MobileMomentsView({
   noticeAction,
   interactionActionLabel,
   hasReturnPath,
+  hasMomentDraft,
   actionBubble,
   commentBarTarget,
   commentDrafts,
@@ -2407,16 +2544,31 @@ function MobileMomentsView({
           ) : undefined
         }
         rightActions={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[#1A1A1A] active:bg-black/[0.05]"
-            onClick={onCompose}
-            aria-label={t(msg`发一条朋友圈`)}
-          >
-            <Camera size={20} strokeWidth={1.6} />
-          </Button>
+          <span className="relative inline-flex">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full border-0 bg-transparent text-[#1A1A1A] active:bg-black/[0.05]"
+              onClick={onCompose}
+              aria-label={
+                hasMomentDraft
+                  ? t(msg`继续编辑朋友圈草稿`)
+                  : t(msg`发一条朋友圈`)
+              }
+            >
+              <Camera size={20} strokeWidth={1.6} />
+            </Button>
+            {hasMomentDraft ? (
+              // 微信风格 6px 红点：纯指示，不带"草稿"文字标签——见用户决策。
+              // pointer-events-none：点击穿透回 Button；ring 用顶栏底色（白）
+              // 模拟 WeChat 的"挖一圈底色"，没了底色红点会粘住下面 icon 边缘。
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[#FA5151] ring-2 ring-white"
+              />
+            ) : null}
+          </span>
         }
       />
 

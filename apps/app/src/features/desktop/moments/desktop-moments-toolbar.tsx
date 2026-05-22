@@ -29,6 +29,8 @@ type DesktopMomentsToolbarProps = {
   /** 走查新 R1：refresh in-flight 时按钮 disabled + 文案变「刷新中…」，
    *  防止连点触发多次同步 GET /api/moments?page=1。 */
   refreshPending?: boolean;
+  /** 当前账户有朋友圈草稿 → 「发朋友圈」按钮右上角挂红点。 */
+  hasMomentDraft?: boolean;
 };
 
 export function DesktopMomentsToolbar({
@@ -46,6 +48,7 @@ export function DesktopMomentsToolbar({
   onOpenCompose,
   onRefresh,
   refreshPending = false,
+  hasMomentDraft = false,
 }: DesktopMomentsToolbarProps) {
   const t = useRuntimeTranslator();
   return (
@@ -72,10 +75,21 @@ export function DesktopMomentsToolbar({
               <ArrowUp size={14} />
               {t(msg`回到顶部`)}
             </Button>
-            <Button variant="primary" size="sm" onClick={onOpenCompose}>
-              <PenSquare size={14} />
-              {t(msg`发朋友圈`)}
-            </Button>
+            <span className="relative inline-flex">
+              <Button variant="primary" size="sm" onClick={onOpenCompose}>
+                <PenSquare size={14} />
+                {t(msg`发朋友圈`)}
+              </Button>
+              {hasMomentDraft ? (
+                // 6px 红点；ring-2 是工具栏底色（白带 backdrop-blur），让红点
+                // 在按钮主色（绿）边角上仍能跟下面控件区分开。pointer-events-none
+                // 保证点击穿透到 Button。
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[#FA5151] ring-2 ring-white"
+                />
+              ) : null}
+            </span>
           </div>
         </div>
 

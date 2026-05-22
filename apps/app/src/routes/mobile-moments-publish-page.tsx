@@ -69,7 +69,7 @@ export function MobileMomentsPublishPage() {
   // 的帖子）。ref 同步赋值不走 React render，第一次 click 把它翻 true 之后
   // 同帧内的所有后续 click 都被卡住，等 onSettled 才解锁。
   const submittingRef = useRef(false);
-  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  const [exitSheetOpen, setExitSheetOpen] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   // toast 用 {message, key} 而不是 raw string —— 三行 SettingRow（所在位置/
   // 提醒谁看/谁可以看）点击都派发同一句「敬请期待」，如果只比较 message
@@ -164,6 +164,10 @@ export function MobileMomentsPublishPage() {
       void queryClient.invalidateQueries({
         queryKey: ["app-moments-mine", mutationBaseUrl],
       });
+      // 发表成功 → 清掉对应账户的草稿（按 mutationBaseUrl 走，而不是当前 baseUrl，
+      // mid-flight 切账户场景下用户的本意是清 A 的草稿，不是清 B 的）。和 cache
+      // invalidate / setQueryData 用同一把 baseUrl 锁。
+      void clearMomentDraft(mutationBaseUrl);
       // 切走后剩下的 flash/draft-reset/navigate 都跟当前用户体验有关——
       // 切账户后用户已经不在 publish 上下文里，全部静默。和 R7/R8/R9
       // mid-flight 关 sheet 失败时静默吞错同思路。
@@ -194,6 +198,70 @@ export function MobileMomentsPublishPage() {
     resetComposeDraft();
   }, [baseUrl, resetComposeDraft]);
 
+  // 进入发布页 → 从 IDB 取草稿 hydrate。reset effect 跑在前面（同步），
+  // 然后这条 async load 落地把上一次保留的内容写回。account 切换时 reset
+  // 会先把内存清掉，hasContent 守卫确保 hydrate 落点上没有新输入被覆盖。
+  const hydrateFromStored = composeDraft.hydrateFromStored;
+  const hasContentNow = composeDraft.hasContent;
+  const hasContentNowRef = useRef(hasContentNow);
+  useEffect(() => {
+    hasContentNowRef.current = hasContentNow;
+  }, [hasContentNow]);
+  useEffect(() => {
+    let cancelled = false;
+    void loadMomentDraft(baseUrl).then((stored) => {
+      if (cancelled || !stored) return;
+      // 慢盘场景：用户先打字、IDB read 才回来 —— 不要拿草稿覆盖新输入。
+      if (hasContentNowRef.current) return;
+      hydrateFromStored(stored);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [baseUrl, hydrateFromStored]);
+
+  // unmount 兜底自动保留：用户用浏览器返回 / swipe-back / 系统手势直接关 tab，
+  // 没机会走 ActionSheet 时，把当前 hasContent 的草稿自动落 IDB（微信也是这样的
+  // 默认行为）。用 ref 拍 baseUrl + draft snapshot 快照，避免 cleanup 闭包读
+  // stale state；同时跳过 createMutation.isPending 路径——发表成功的 onSuccess
+  // 已经 reset() 了，正常 unmount 时 hasContent=false 不会走到这里。
+  const composeStateRef = useRef({
+    text: composeDraft.text,
+    imageDrafts: composeDraft.imageDrafts,
+    videoDraft: composeDraft.videoDraft,
+    hasContent: composeDraft.hasContent,
+    baseUrl,
+    isPending: createMutation.isPending,
+  });
+  useEffect(() => {
+    composeStateRef.current = {
+      text: composeDraft.text,
+      imageDrafts: composeDraft.imageDrafts,
+      videoDraft: composeDraft.videoDraft,
+      hasContent: composeDraft.hasContent,
+      baseUrl,
+      isPending: createMutation.isPending,
+    };
+  });
+  useEffect(() => {
+    return () => {
+      const snap = composeStateRef.current;
+      // mid-flight 发表中 unmount 几乎不发生（handleBack guard 拦死），但兜
+      // 一下：发表中的内容不该重复 save 出来——onSuccess 会清。
+      if (!snap.hasContent || snap.isPending) {
+        return;
+      }
+      void saveMomentDraft(
+        snap.baseUrl,
+        extractMomentDraftSnapshot({
+          text: snap.text,
+          imageDrafts: snap.imageDrafts,
+          videoDraft: snap.videoDraft,
+        }),
+      );
+    };
+  }, []);
+
   useEffect(() => {
     if (!isDesktopLayout) return;
     void navigate({
@@ -215,13 +283,13 @@ export function MobileMomentsPublishPage() {
 
   // ESC 关闭「放弃发表」确认弹窗 / 媒体选择器（和 farm 的 sheet/modal 处理对齐）。
   useEffect(() => {
-    if (!discardConfirmOpen && !mediaPickerOpen) {
+    if (!exitSheetOpen && !mediaPickerOpen) {
       return;
     }
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (discardConfirmOpen) {
-        dismissDiscardConfirm();
+      if (exitSheetOpen) {
+        dismissExitSheet();
         return;
       }
       if (mediaPickerOpen) {
@@ -230,7 +298,7 @@ export function MobileMomentsPublishPage() {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [discardConfirmOpen, mediaPickerOpen]);
+  }, [exitSheetOpen, mediaPickerOpen]);
 
   // 原生壳硬件 Back 键统一走 publish 页自己的 handleBack：
   // - modal 打开 → 关 modal
@@ -245,17 +313,17 @@ export function MobileMomentsPublishPage() {
   // 次反复装卸，CPU/锁竞争白烧。改 ref 模式：interceptor 闭包稳定，最新 handler /
   // state 走 ref 读，effect 只在 mount/unmount 跑一次。
   const backInterceptorContextRef = useRef({
-    discardConfirmOpen,
+    exitSheetOpen,
     mediaPickerOpen,
-    dismissDiscardConfirm,
+    dismissExitSheet,
     setMediaPickerOpen,
     handleBack,
   });
   useEffect(() => {
     backInterceptorContextRef.current = {
-      discardConfirmOpen,
+      exitSheetOpen,
       mediaPickerOpen,
-      dismissDiscardConfirm,
+      dismissExitSheet,
       setMediaPickerOpen,
       handleBack,
     };
@@ -264,8 +332,8 @@ export function MobileMomentsPublishPage() {
     return registerAndroidBackInterceptor((event) => {
       event.preventDefault();
       const ctx = backInterceptorContextRef.current;
-      if (ctx.discardConfirmOpen) {
-        ctx.dismissDiscardConfirm();
+      if (ctx.exitSheetOpen) {
+        ctx.dismissExitSheet();
         return true;
       }
       if (ctx.mediaPickerOpen) {
@@ -301,21 +369,41 @@ export function MobileMomentsPublishPage() {
       return;
     }
     if (composeDraft.hasContent) {
-      setDiscardConfirmOpen(true);
+      setExitSheetOpen(true);
       return;
     }
     performBack();
   }
 
-  // 关闭「放弃发表」modal 的三个路径都一样：先收 modal、再把焦点还回 textarea。
-  // 用户语义就是要接着写，焦点丢失会让他得再 tap 一次 textarea 才能唤回键盘。
-  function dismissDiscardConfirm() {
-    setDiscardConfirmOpen(false);
+  // 关闭「保留 / 不保留」ActionSheet 的取消路径都一样：先收 sheet、再把焦点还回
+  // textarea。用户语义就是要接着写，焦点丢失会让他得再 tap 一次 textarea 才能唤回键盘。
+  function dismissExitSheet() {
+    setExitSheetOpen(false);
     textareaRef.current?.focus();
   }
 
+  function handleKeepDraft() {
+    // 保留草稿 → 拍当前 compose snapshot 存进 IDB（按 baseUrl 隔离），再 reset
+    // 内存 + 返回。saveMomentDraft 内部失败静默退化（隐私模式 / quota 满），
+    // UI 不要因为保存失败卡住——返回这条路径必须保证一定走通。
+    setExitSheetOpen(false);
+    void saveMomentDraft(
+      baseUrl,
+      extractMomentDraftSnapshot({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
+      }),
+    );
+    composeDraft.reset();
+    performBack();
+  }
+
   function handleConfirmDiscard() {
-    setDiscardConfirmOpen(false);
+    setExitSheetOpen(false);
+    // 不保留 → 把 IDB 里之前可能残留的草稿一起清掉（用户上次保留过 + 这次没用 +
+    // 这次决定丢弃；不清的话下次进发布页又恢复出来）。和 keep 一样静默处理失败。
+    void clearMomentDraft(baseUrl);
     composeDraft.reset();
     performBack();
   }
@@ -659,54 +747,45 @@ export function MobileMomentsPublishPage() {
         </div>
       ) : null}
 
-      {discardConfirmOpen ? (
-        // z-[1300]：alert 必须盖在 toast (z-1100) / mediaPickerSheet (z-1200) 之上。
-        // 之前 z-[100] 太低，用户在 1.6s 内连点 SettingRow → 取消，刚冒的 toast 会
-        // 把 modal 底边吃掉。
+      {exitSheetOpen ? (
+        // WeChat 风格 ActionSheet：底部弹起，「保留」灰底主动作 + 「不保留」红字
+        // 次动作 + 「取消」灰底返回。z-[1300] 必须盖在 toast (z-1100) /
+        // mediaPickerSheet (z-1200) 之上——用户在 1.6s 内连点 SettingRow 后退出，
+        // 刚冒的 toast 不应该把 sheet 底边吃掉。
         <div
-          role="alertdialog"
+          role="dialog"
           aria-modal="true"
-          aria-labelledby="moments-publish-discard-title"
-          aria-describedby="moments-publish-discard-desc"
-          className="fixed inset-0 z-[1300] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]"
+          aria-label={t(msg`退出编辑`)}
+          className="fixed inset-0 z-[1300] flex items-end justify-center bg-black/40"
         >
           <button
             type="button"
             aria-label={t(msg`关闭提示`)}
-            onClick={dismissDiscardConfirm}
+            onClick={dismissExitSheet}
             className="absolute inset-0"
           />
-          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[12px] bg-white shadow-[var(--shadow-overlay)]">
-            <div className="px-6 pb-3 pt-6 text-center">
-              <div
-                id="moments-publish-discard-title"
-                className="text-[16px] font-medium text-[#1A1A1A]"
-              >
-                {t(msg`放弃发表`)}
-              </div>
-              <div
-                id="moments-publish-discard-desc"
-                className="mt-2 text-[13px] leading-6 text-[#9A9A9A]"
-              >
-                {t(msg`返回会丢失已编辑的文字与媒体，确定不发布吗？`)}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 border-t border-[#ECECEC]">
-              <button
-                type="button"
-                onClick={dismissDiscardConfirm}
-                className="border-r border-[#ECECEC] py-3 text-[15px] text-[#576B95] active:bg-black/[0.04]"
-              >
-                {t(msg`继续编辑`)}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDiscard}
-                className="py-3 text-[15px] font-medium text-[#FA5151] active:bg-black/[0.04]"
-              >
-                {t(msg`放弃`)}
-              </button>
-            </div>
+          <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-white pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+            <button
+              type="button"
+              onClick={handleKeepDraft}
+              className="block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#F2F2F2]"
+            >
+              {t(msg`保留`)}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDiscard}
+              className="block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[#F2F2F2]"
+            >
+              {t(msg`不保留`)}
+            </button>
+            <button
+              type="button"
+              onClick={dismissExitSheet}
+              className="mt-2 block w-full bg-[#F7F7F7] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
+            >
+              {t(msg`取消`)}
+            </button>
           </div>
         </div>
       ) : null}

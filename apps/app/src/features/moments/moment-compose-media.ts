@@ -14,6 +14,7 @@ import {
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { track } from "@yinjie/analytics";
+import type { StoredMomentDraft } from "./moment-draft-store";
 
 const t = translateRuntimeMessage;
 
@@ -66,6 +67,60 @@ export function useMomentComposeDraft() {
 
   const hasMedia = imageDrafts.length > 0 || Boolean(videoDraft);
   const hasContent = Boolean(text.trim()) || hasMedia;
+  const hydrateFromStored = useCallback((stored: StoredMomentDraft) => {
+    // 草稿恢复路径：之前持久化的是裸 Blob（IDB structured-clone 原生支持），
+    // previewUrl 是 createObjectURL 的产物不可序列化，必须每次 hydrate 用新的
+    // Blob 重新生成。同时把可能残留的旧 draft 全部 release，避免重复 hydrate
+    // 累积 blob URL 泄漏（虽然正常路径下进入发布页前一定先 reset，但壳层
+    // back-forward cache 复用同一个 component instance 时这条 cleanup 是兜底）。
+    setText(stored.text);
+    setImageDrafts((current) => {
+      releaseMomentImageDrafts(current);
+      const nextDrafts: MomentImageDraft[] = stored.imageBlobs.map((entry) => {
+        const file = new File([entry.blob], entry.name || "moment-image", {
+          type: entry.type || entry.blob.type || "image/jpeg",
+        });
+        return {
+          id: buildDraftId("moment-image"),
+          kind: "image",
+          file,
+          previewUrl: URL.createObjectURL(file),
+          width: entry.width,
+          height: entry.height,
+        };
+      });
+      return nextDrafts;
+    });
+    setVideoDraft((current) => {
+      releaseMomentVideoDraft(current);
+      if (!stored.videoBlob) {
+        return null;
+      }
+      const entry = stored.videoBlob;
+      const file = new File([entry.blob], entry.name || "moment-video", {
+        type: entry.type || entry.blob.type || "video/mp4",
+      });
+      const posterFile = entry.posterBlob
+        ? new File(
+            [entry.posterBlob],
+            replaceFileExtension(entry.name || "moment-video", "jpg"),
+            { type: entry.posterBlob.type || "image/jpeg" },
+          )
+        : null;
+      return {
+        id: buildDraftId("moment-video"),
+        kind: "video",
+        file,
+        previewUrl: URL.createObjectURL(file),
+        posterFile,
+        posterPreviewUrl: posterFile ? URL.createObjectURL(posterFile) : null,
+        width: entry.width,
+        height: entry.height,
+        durationMs: entry.durationMs,
+      };
+    });
+    setMediaError(null);
+  }, []);
   const reset = useCallback(() => {
     setText((current) => (current ? "" : current));
     setImageDrafts((current) => {
@@ -178,6 +233,41 @@ export function useMomentComposeDraft() {
     },
     setMediaError,
     reset,
+    hydrateFromStored,
+  };
+}
+
+export function extractMomentDraftSnapshot(input: {
+  text: string;
+  imageDrafts: MomentImageDraft[];
+  videoDraft: MomentVideoDraft | null;
+}): StoredMomentDraft {
+  // image/video draft 的 .file 本身就是 Blob 的子类，IDB structured-clone 直接
+  // 落盘；不要做任何 base64/ArrayBuffer 中转，否则 9 张图 + 5 分钟视频 base64
+  // 化会先在主线程 sync 占 100MB+ 内存。
+  return {
+    text: input.text,
+    imageBlobs: input.imageDrafts.map((draft) => ({
+      id: draft.id,
+      blob: draft.file,
+      width: draft.width,
+      height: draft.height,
+      name: draft.file.name,
+      type: draft.file.type,
+    })),
+    videoBlob: input.videoDraft
+      ? {
+          id: input.videoDraft.id,
+          blob: input.videoDraft.file,
+          posterBlob: input.videoDraft.posterFile ?? null,
+          width: input.videoDraft.width,
+          height: input.videoDraft.height,
+          durationMs: input.videoDraft.durationMs,
+          name: input.videoDraft.file.name,
+          type: input.videoDraft.file.type,
+        }
+      : null,
+    savedAt: Date.now(),
   };
 }
 
