@@ -192,7 +192,7 @@ export function MomentComposeMediaPreview({
               >
                 <img
                   src={draft.previewUrl}
-                  alt={draft.file.name || t(msg`朋友圈图片预览`)}
+                  alt={draft.file.name || t(msg`图片预览`)}
                   className={cn(
                     imageDrafts.length === 1
                       ? `mx-auto w-auto max-w-full object-contain ${singlePreviewHeightClassName}`
@@ -290,7 +290,7 @@ function ComposeImageViewer({
         </IconOverlayButton>
         <div className="min-w-0 flex-1 text-center">
           <div className="truncate text-sm font-medium">
-            {draft.file.name || t(msg`朋友圈图片`)}
+            {draft.file.name || t(msg`图片`)}
           </div>
           <div className="mt-1 text-xs text-white/70">
             {activeIndex + 1} / {total}
@@ -302,7 +302,7 @@ function ComposeImageViewer({
       <div className="absolute inset-0 flex items-center justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] pt-[calc(env(safe-area-inset-top,0px)+4.5rem)]">
         <img
           src={draft.previewUrl}
-          alt={draft.file.name || t(msg`朋友圈图片`)}
+          alt={draft.file.name || t(msg`图片`)}
           className="max-h-full max-w-full object-contain"
         />
       </div>
@@ -358,7 +358,7 @@ function ComposeVideoViewer({
       <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
-            {draft.file.name || t(msg`朋友圈视频`)}
+            {draft.file.name || t(msg`视频`)}
           </div>
           <div className="mt-1 text-xs text-white/70">
             {t(msg`时长 ${formatMomentDurationLabel(draft.durationMs)}`)}
