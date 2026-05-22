@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "Music"
 
 #: apps/app/src/components/audio-card.tsx:191
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3244
-#: apps/app/src/routes/channels-page.tsx:3505
-msgid "播放"
-msgstr "Play"
-
-#: apps/app/src/components/audio-card.tsx:191
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3244
 #: apps/app/src/routes/channels-page.tsx:3505
 msgid "暂停"
 msgstr "Pause"
+
+#: apps/app/src/components/audio-card.tsx:191
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3244
+#: apps/app/src/routes/channels-page.tsx:3505
+msgid "播放"
+msgstr "Play"
 
 #: apps/app/src/components/audio-card.tsx:216
 msgid "音频进度"
@@ -177,7 +177,7 @@ msgstr "Retrying..."
 
 #: apps/app/src/components/channels-forward-picker.tsx:523
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1236
-#: apps/app/src/routes/moments-page.tsx:2841
+#: apps/app/src/routes/moments-page.tsx:2846
 msgid "重试加载"
 msgstr "Retry loading"
 
@@ -1596,7 +1596,7 @@ msgstr "Deleting..."
 #: apps/app/src/components/chat-message-list.tsx:4279
 #: apps/app/src/components/chat-message-list.tsx:4420
 #: apps/app/src/components/chat-message-list.tsx:4599
-#: apps/app/src/components/wechat-moment-card.tsx:367
+#: apps/app/src/components/wechat-moment-card.tsx:431
 #: apps/app/src/features/chat/group-message-context-menu.tsx:88
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:69
 #: apps/app/src/features/chat/reminder-task-panel.tsx:330
@@ -2118,7 +2118,7 @@ msgid "[聊天记录]"
 msgstr "[Chat history]"
 
 #: apps/app/src/components/chat-message-list.tsx:5927
-#: apps/app/src/components/wechat-moment-card.tsx:505
+#: apps/app/src/components/wechat-moment-card.tsx:582
 #: apps/app/src/features/chat/group-message-context-menu.tsx:219
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:245
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3968
@@ -2513,7 +2513,7 @@ msgstr "Back"
 
 #: apps/app/src/components/chat-message-list.tsx:8180
 #: apps/app/src/components/wechat-action-bubble.tsx:146
-#: apps/app/src/components/wechat-moment-card.tsx:397
+#: apps/app/src/components/wechat-moment-card.tsx:461
 #: apps/app/src/features/chat/mobile-chat-thread-header.tsx:27
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:232
 #: apps/app/src/i18n/static-dom-seed.ts:742
@@ -2716,7 +2716,7 @@ msgstr "Save it to your photos and post to X / RedNote / Weibo to invite more re
 #: apps/app/src/routes/discover-feed-page.tsx:2994
 #: apps/app/src/routes/discover-page.tsx:982
 #: apps/app/src/routes/live-companion-page.tsx:396
-#: apps/app/src/routes/mobile-friend-moments-page.tsx:1225
+#: apps/app/src/routes/mobile-friend-moments-page.tsx:1229
 #: apps/app/src/routes/moments-page.tsx:2560
 #: apps/app/src/routes/profile-info-page.tsx:193
 #: apps/app/src/routes/profile-moments-page.tsx:914
@@ -3050,7 +3050,7 @@ msgstr "Share tool"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:993
 #: apps/app/src/routes/moments-page.tsx:1183
 #: apps/app/src/routes/moments-page.tsx:2773
-#: apps/app/src/routes/moments-page.tsx:2925
+#: apps/app/src/routes/moments-page.tsx:2930
 #: apps/app/src/routes/official-account-article-page.tsx:208
 #: apps/app/src/routes/official-account-detail-page.tsx:390
 #: apps/app/src/routes/official-account-detail-page.tsx:421
@@ -3561,7 +3561,7 @@ msgid "今天"
 msgstr "Today"
 
 #: apps/app/src/components/official-article-viewer.tsx:521
-#: apps/app/src/components/wechat-moment-card.tsx:594
+#: apps/app/src/components/wechat-moment-card.tsx:671
 #: apps/app/src/features/games/parking-war/parking-war-data.ts:117
 msgid "刚刚"
 msgstr "Just now"
@@ -3700,43 +3700,43 @@ msgstr ""
 msgid "发送中"
 msgstr "Sending"
 
-#: apps/app/src/components/wechat-moment-card.tsx:139
+#: apps/app/src/components/wechat-moment-card.tsx:172
 msgid "朗读生成失败"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:377
-#: apps/app/src/components/wechat-moment-card.tsx:386
+#: apps/app/src/components/wechat-moment-card.tsx:441
+#: apps/app/src/components/wechat-moment-card.tsx:450
 msgid "朗读这条朋友圈"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:385
+#: apps/app/src/components/wechat-moment-card.tsx:449
 msgid "正在合成…"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:595
+#: apps/app/src/components/wechat-moment-card.tsx:672
 msgid "{diffMin} 分钟前"
 msgstr "{diffMin} min ago"
 
-#: apps/app/src/components/wechat-moment-card.tsx:598
+#: apps/app/src/components/wechat-moment-card.tsx:675
 msgid "{diffHour} 小时前"
 msgstr "{diffHour} hr ago"
 
-#: apps/app/src/components/wechat-moment-card.tsx:626
+#: apps/app/src/components/wechat-moment-card.tsx:703
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1238
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1457
 msgid "昨天"
 msgstr "Yesterday"
 
-#: apps/app/src/components/wechat-moment-card.tsx:627
+#: apps/app/src/components/wechat-moment-card.tsx:704
 msgid "{calendarDayDiff} 天前"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:632
+#: apps/app/src/components/wechat-moment-card.tsx:709
 msgid "{month}月{day}日"
 msgstr "{month}/{day}"
 
 #. placeholder {0}: date.getFullYear()
-#: apps/app/src/components/wechat-moment-card.tsx:634
+#: apps/app/src/components/wechat-moment-card.tsx:711
 msgid "{0}年{month}月{day}日"
 msgstr "{0}/{month}/{day}"
 
@@ -9519,7 +9519,7 @@ msgstr "Turn off mute"
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:3140
 #: apps/app/src/routes/chat-list-page.tsx:2103
 msgid "已置顶"
-msgstr ""
+msgstr "Pinned"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:3187
 msgid "有人@所有人"
@@ -11449,7 +11449,7 @@ msgstr "Retry loading more"
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:197
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:191
 #: apps/app/src/routes/discover-feed-page.tsx:2930
-#: apps/app/src/routes/moments-page.tsx:2884
+#: apps/app/src/routes/moments-page.tsx:2889
 msgid "正在寻找未屏蔽的动态"
 msgstr "Looking for unblocked posts"
 
@@ -11469,7 +11469,7 @@ msgstr "Every post author is on your block list. Unblock people in your contacts
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:215
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:201
 #: apps/app/src/routes/discover-feed-page.tsx:2954
-#: apps/app/src/routes/moments-page.tsx:2905
+#: apps/app/src/routes/moments-page.tsx:2910
 msgid "打开通讯录"
 msgstr "Open contacts"
 
@@ -11657,7 +11657,7 @@ msgstr "Retry sending"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:430
 #: apps/app/src/routes/discover-feed-page.tsx:2859
-#: apps/app/src/routes/moments-page.tsx:2858
+#: apps/app/src/routes/moments-page.tsx:2863
 msgid "正在加载更多…"
 msgstr "Loading more…"
 
@@ -11668,7 +11668,7 @@ msgstr "Failed to load more · tap to retry"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:447
 #: apps/app/src/routes/discover-feed-page.tsx:2875
-#: apps/app/src/routes/moments-page.tsx:2865
+#: apps/app/src/routes/moments-page.tsx:2870
 msgid "已经到底了"
 msgstr "You've reached the end"
 
@@ -12169,17 +12169,17 @@ msgid "正在读取朋友圈..."
 msgstr "Loading Moments..."
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:192
-#: apps/app/src/routes/moments-page.tsx:2887
+#: apps/app/src/routes/moments-page.tsx:2892
 msgid "当前页加载到的动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。"
 msgstr "All loaded post authors on this page are on your block list. Automatically loading the next page to find unblocked posts."
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:196
-#: apps/app/src/routes/moments-page.tsx:2893
+#: apps/app/src/routes/moments-page.tsx:2898
 msgid "朋友圈都被你屏蔽了"
 msgstr "All Moments are blocked"
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:197
-#: apps/app/src/routes/moments-page.tsx:2896
+#: apps/app/src/routes/moments-page.tsx:2901
 msgid "已加载的动态作者全部在你的屏蔽名单里。去通讯录里解除屏蔽，或者等其他居民发布新动态。"
 msgstr "Every loaded post author is on your block list. Unblock people in your contacts or wait for new posts."
 
@@ -14943,17 +14943,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "Hold the base and wipe out 20 enemy tanks."
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "Co-op"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "Pixel"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "Action"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "Co-op"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -20121,7 +20121,7 @@ msgstr "My posts"
 
 #: apps/app/src/i18n/static-dom-seed.ts:430
 #: apps/app/src/routes/moments-page.tsx:2660
-#: apps/app/src/routes/moments-page.tsx:2925
+#: apps/app/src/routes/moments-page.tsx:2930
 msgid "发一条朋友圈"
 msgstr "Post to Moments"
 
@@ -21644,7 +21644,7 @@ msgid "正在读取角色朋友圈..."
 msgstr "Loading character Moments..."
 
 #: apps/app/src/i18n/static-dom-seed.ts:1080
-#: apps/app/src/routes/moments-page.tsx:2913
+#: apps/app/src/routes/moments-page.tsx:2918
 msgid "还很安静"
 msgstr "Still quiet"
 
@@ -25859,21 +25859,21 @@ msgstr "Post to the feed"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2297
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:911
-#: apps/app/src/routes/moments-page.tsx:3005
+#: apps/app/src/routes/moments-page.tsx:3010
 #: apps/app/src/routes/profile-moments-page.tsx:1244
 msgid "正在刷新..."
 msgstr "Refreshing…"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2299
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:913
-#: apps/app/src/routes/moments-page.tsx:3007
+#: apps/app/src/routes/moments-page.tsx:3012
 #: apps/app/src/routes/profile-moments-page.tsx:1246
 msgid "松手刷新"
 msgstr "Release to refresh"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2300
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:914
-#: apps/app/src/routes/moments-page.tsx:3008
+#: apps/app/src/routes/moments-page.tsx:3013
 #: apps/app/src/routes/profile-moments-page.tsx:1247
 msgid "下拉刷新"
 msgstr "Pull to refresh"
@@ -27340,12 +27340,12 @@ msgstr "Discard post"
 msgid "返回会丢失已编辑的文字与媒体，确定不发布吗？"
 msgstr "Going back will discard your edited text and media. Don't publish?"
 
-#: apps/app/src/routes/mobile-feed-publish-page.tsx:763
+#: apps/app/src/routes/mobile-feed-publish-page.tsx:773
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1739
 msgid "继续编辑"
 msgstr "Continue editing"
 
-#: apps/app/src/routes/mobile-feed-publish-page.tsx:770
+#: apps/app/src/routes/mobile-feed-publish-page.tsx:780
 msgid "放弃"
 msgstr "Discard"
 
@@ -27592,7 +27592,7 @@ msgid "保留后下次继续编辑这条草稿。"
 msgstr ""
 
 #: apps/app/src/routes/moments-page.tsx:2254
-#: apps/app/src/routes/profile-moments-page.tsx:1405
+#: apps/app/src/routes/profile-moments-page.tsx:1406
 msgid "确定删除这条朋友圈吗？"
 msgstr "Delete this post?"
 
@@ -27605,15 +27605,15 @@ msgid "正在刷新朋友圈"
 msgstr "Refreshing Moments"
 
 #. placeholder {0}: describeRequestError(fetchNextPageError)
-#: apps/app/src/routes/moments-page.tsx:2830
+#: apps/app/src/routes/moments-page.tsx:2835
 msgid "加载更多失败：{0}"
 msgstr "Load more failed: {0}"
 
-#: apps/app/src/routes/moments-page.tsx:2831
+#: apps/app/src/routes/moments-page.tsx:2836
 msgid "加载更多失败，请稍后重试。"
 msgstr "Load more failed, please try again later."
 
-#: apps/app/src/routes/moments-page.tsx:2916
+#: apps/app/src/routes/moments-page.tsx:2921
 msgid "你先发一条动态，或者等世界里的角色们先开口。"
 msgstr "Post something first, or wait for the world's characters to speak up."
 

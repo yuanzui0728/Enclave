@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "音楽"
 
 #: apps/app/src/components/audio-card.tsx:191
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3244
-#: apps/app/src/routes/channels-page.tsx:3505
-msgid "播放"
-msgstr "再生"
-
-#: apps/app/src/components/audio-card.tsx:191
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3244
 #: apps/app/src/routes/channels-page.tsx:3505
 msgid "暂停"
 msgstr "一時停止"
+
+#: apps/app/src/components/audio-card.tsx:191
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3244
+#: apps/app/src/routes/channels-page.tsx:3505
+msgid "播放"
+msgstr "再生"
 
 #: apps/app/src/components/audio-card.tsx:216
 msgid "音频进度"
@@ -177,7 +177,7 @@ msgstr "再試行中..."
 
 #: apps/app/src/components/channels-forward-picker.tsx:523
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1236
-#: apps/app/src/routes/moments-page.tsx:2841
+#: apps/app/src/routes/moments-page.tsx:2846
 msgid "重试加载"
 msgstr "再読み込み"
 
@@ -1596,7 +1596,7 @@ msgstr "削除中..."
 #: apps/app/src/components/chat-message-list.tsx:4279
 #: apps/app/src/components/chat-message-list.tsx:4420
 #: apps/app/src/components/chat-message-list.tsx:4599
-#: apps/app/src/components/wechat-moment-card.tsx:367
+#: apps/app/src/components/wechat-moment-card.tsx:431
 #: apps/app/src/features/chat/group-message-context-menu.tsx:88
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:69
 #: apps/app/src/features/chat/reminder-task-panel.tsx:330
@@ -2118,7 +2118,7 @@ msgid "[聊天记录]"
 msgstr "[チャット履歴]"
 
 #: apps/app/src/components/chat-message-list.tsx:5927
-#: apps/app/src/components/wechat-moment-card.tsx:505
+#: apps/app/src/components/wechat-moment-card.tsx:582
 #: apps/app/src/features/chat/group-message-context-menu.tsx:219
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:245
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3968
@@ -2513,7 +2513,7 @@ msgstr "戻る"
 
 #: apps/app/src/components/chat-message-list.tsx:8180
 #: apps/app/src/components/wechat-action-bubble.tsx:146
-#: apps/app/src/components/wechat-moment-card.tsx:397
+#: apps/app/src/components/wechat-moment-card.tsx:461
 #: apps/app/src/features/chat/mobile-chat-thread-header.tsx:27
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:232
 #: apps/app/src/i18n/static-dom-seed.ts:742
@@ -2716,7 +2716,7 @@ msgstr "画像を保存して X / 小紅書 / Weibo に投稿、もっと多く�
 #: apps/app/src/routes/discover-feed-page.tsx:2994
 #: apps/app/src/routes/discover-page.tsx:982
 #: apps/app/src/routes/live-companion-page.tsx:396
-#: apps/app/src/routes/mobile-friend-moments-page.tsx:1225
+#: apps/app/src/routes/mobile-friend-moments-page.tsx:1229
 #: apps/app/src/routes/moments-page.tsx:2560
 #: apps/app/src/routes/profile-info-page.tsx:193
 #: apps/app/src/routes/profile-moments-page.tsx:914
@@ -3050,7 +3050,7 @@ msgstr "ツールを共有"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:993
 #: apps/app/src/routes/moments-page.tsx:1183
 #: apps/app/src/routes/moments-page.tsx:2773
-#: apps/app/src/routes/moments-page.tsx:2925
+#: apps/app/src/routes/moments-page.tsx:2930
 #: apps/app/src/routes/official-account-article-page.tsx:208
 #: apps/app/src/routes/official-account-detail-page.tsx:390
 #: apps/app/src/routes/official-account-detail-page.tsx:421
@@ -3561,7 +3561,7 @@ msgid "今天"
 msgstr "今日"
 
 #: apps/app/src/components/official-article-viewer.tsx:521
-#: apps/app/src/components/wechat-moment-card.tsx:594
+#: apps/app/src/components/wechat-moment-card.tsx:671
 #: apps/app/src/features/games/parking-war/parking-war-data.ts:117
 msgid "刚刚"
 msgstr "たった今"
@@ -3700,43 +3700,43 @@ msgstr ""
 msgid "发送中"
 msgstr "送信中"
 
-#: apps/app/src/components/wechat-moment-card.tsx:139
+#: apps/app/src/components/wechat-moment-card.tsx:172
 msgid "朗读生成失败"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:377
-#: apps/app/src/components/wechat-moment-card.tsx:386
+#: apps/app/src/components/wechat-moment-card.tsx:441
+#: apps/app/src/components/wechat-moment-card.tsx:450
 msgid "朗读这条朋友圈"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:385
+#: apps/app/src/components/wechat-moment-card.tsx:449
 msgid "正在合成…"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:595
+#: apps/app/src/components/wechat-moment-card.tsx:672
 msgid "{diffMin} 分钟前"
 msgstr "{diffMin}分前"
 
-#: apps/app/src/components/wechat-moment-card.tsx:598
+#: apps/app/src/components/wechat-moment-card.tsx:675
 msgid "{diffHour} 小时前"
 msgstr "{diffHour}時間前"
 
-#: apps/app/src/components/wechat-moment-card.tsx:626
+#: apps/app/src/components/wechat-moment-card.tsx:703
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1238
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1457
 msgid "昨天"
 msgstr "昨日"
 
-#: apps/app/src/components/wechat-moment-card.tsx:627
+#: apps/app/src/components/wechat-moment-card.tsx:704
 msgid "{calendarDayDiff} 天前"
 msgstr ""
 
-#: apps/app/src/components/wechat-moment-card.tsx:632
+#: apps/app/src/components/wechat-moment-card.tsx:709
 msgid "{month}月{day}日"
 msgstr "{month}月{day}日"
 
 #. placeholder {0}: date.getFullYear()
-#: apps/app/src/components/wechat-moment-card.tsx:634
+#: apps/app/src/components/wechat-moment-card.tsx:711
 msgid "{0}年{month}月{day}日"
 msgstr "{0}年{month}月{day}日"
 
@@ -9519,7 +9519,7 @@ msgstr "ミュートを解除"
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:3140
 #: apps/app/src/routes/chat-list-page.tsx:2103
 msgid "已置顶"
-msgstr ""
+msgstr "ピン留め済み"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:3187
 msgid "有人@所有人"
@@ -11449,7 +11449,7 @@ msgstr "再読み込み"
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:197
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:191
 #: apps/app/src/routes/discover-feed-page.tsx:2930
-#: apps/app/src/routes/moments-page.tsx:2884
+#: apps/app/src/routes/moments-page.tsx:2889
 msgid "正在寻找未屏蔽的动态"
 msgstr "未ブロックの投稿を検索中"
 
@@ -11469,7 +11469,7 @@ msgstr "現在の投稿者はすべてブロックリストに入っています
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:215
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:201
 #: apps/app/src/routes/discover-feed-page.tsx:2954
-#: apps/app/src/routes/moments-page.tsx:2905
+#: apps/app/src/routes/moments-page.tsx:2910
 msgid "打开通讯录"
 msgstr "連絡先を開く"
 
@@ -11657,7 +11657,7 @@ msgstr "送信を再試行"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:430
 #: apps/app/src/routes/discover-feed-page.tsx:2859
-#: apps/app/src/routes/moments-page.tsx:2858
+#: apps/app/src/routes/moments-page.tsx:2863
 msgid "正在加载更多…"
 msgstr "さらに読み込み中…"
 
@@ -11668,7 +11668,7 @@ msgstr "さらに読み込めませんでした・タップで再試行"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:447
 #: apps/app/src/routes/discover-feed-page.tsx:2875
-#: apps/app/src/routes/moments-page.tsx:2865
+#: apps/app/src/routes/moments-page.tsx:2870
 msgid "已经到底了"
 msgstr "これ以上ありません"
 
@@ -12169,17 +12169,17 @@ msgid "正在读取朋友圈..."
 msgstr "モーメンツを読み込み中..."
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:192
-#: apps/app/src/routes/moments-page.tsx:2887
+#: apps/app/src/routes/moments-page.tsx:2892
 msgid "当前页加载到的动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。"
 msgstr "このページで読み込んだ投稿者はすべてブロックリストに入っています。未ブロックの投稿を探すため、次のページを自動で読み込んでいます。"
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:196
-#: apps/app/src/routes/moments-page.tsx:2893
+#: apps/app/src/routes/moments-page.tsx:2898
 msgid "朋友圈都被你屏蔽了"
 msgstr "モーメンツがすべてブロックされています"
 
 #: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:197
-#: apps/app/src/routes/moments-page.tsx:2896
+#: apps/app/src/routes/moments-page.tsx:2901
 msgid "已加载的动态作者全部在你的屏蔽名单里。去通讯录里解除屏蔽，或者等其他居民发布新动态。"
 msgstr "読み込み済みの投稿者はすべてブロックリストに入っています。連絡先でブロック解除するか、新しい投稿をお待ちください。"
 
@@ -14943,17 +14943,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "基地を守り、敵戦車20両を撃破せよ。"
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "2P"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "ピクセル"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "アクション"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "2P"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -20121,7 +20121,7 @@ msgstr "自分の投稿"
 
 #: apps/app/src/i18n/static-dom-seed.ts:430
 #: apps/app/src/routes/moments-page.tsx:2660
-#: apps/app/src/routes/moments-page.tsx:2925
+#: apps/app/src/routes/moments-page.tsx:2930
 msgid "发一条朋友圈"
 msgstr "モーメンツを投稿"
 
@@ -21644,7 +21644,7 @@ msgid "正在读取角色朋友圈..."
 msgstr "キャラクターのモーメンツを読み込み中..."
 
 #: apps/app/src/i18n/static-dom-seed.ts:1080
-#: apps/app/src/routes/moments-page.tsx:2913
+#: apps/app/src/routes/moments-page.tsx:2918
 msgid "还很安静"
 msgstr "まだ静かです"
 
@@ -25859,21 +25859,21 @@ msgstr "広場に投稿"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2297
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:911
-#: apps/app/src/routes/moments-page.tsx:3005
+#: apps/app/src/routes/moments-page.tsx:3010
 #: apps/app/src/routes/profile-moments-page.tsx:1244
 msgid "正在刷新..."
 msgstr "更新中…"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2299
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:913
-#: apps/app/src/routes/moments-page.tsx:3007
+#: apps/app/src/routes/moments-page.tsx:3012
 #: apps/app/src/routes/profile-moments-page.tsx:1246
 msgid "松手刷新"
 msgstr "離して更新"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2300
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:914
-#: apps/app/src/routes/moments-page.tsx:3008
+#: apps/app/src/routes/moments-page.tsx:3013
 #: apps/app/src/routes/profile-moments-page.tsx:1247
 msgid "下拉刷新"
 msgstr "引っ張って更新"
@@ -27340,12 +27340,12 @@ msgstr "投稿を破棄"
 msgid "返回会丢失已编辑的文字与媒体，确定不发布吗？"
 msgstr "戻ると編集済みの文字とメディアが失われます。本当に投稿しませんか？"
 
-#: apps/app/src/routes/mobile-feed-publish-page.tsx:763
+#: apps/app/src/routes/mobile-feed-publish-page.tsx:773
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1739
 msgid "继续编辑"
 msgstr "編集を続ける"
 
-#: apps/app/src/routes/mobile-feed-publish-page.tsx:770
+#: apps/app/src/routes/mobile-feed-publish-page.tsx:780
 msgid "放弃"
 msgstr "破棄"
 
@@ -27592,7 +27592,7 @@ msgid "保留后下次继续编辑这条草稿。"
 msgstr ""
 
 #: apps/app/src/routes/moments-page.tsx:2254
-#: apps/app/src/routes/profile-moments-page.tsx:1405
+#: apps/app/src/routes/profile-moments-page.tsx:1406
 msgid "确定删除这条朋友圈吗？"
 msgstr "この投稿を削除しますか？"
 
@@ -27605,15 +27605,15 @@ msgid "正在刷新朋友圈"
 msgstr "モーメンツを更新中"
 
 #. placeholder {0}: describeRequestError(fetchNextPageError)
-#: apps/app/src/routes/moments-page.tsx:2830
+#: apps/app/src/routes/moments-page.tsx:2835
 msgid "加载更多失败：{0}"
 msgstr "さらに読み込めませんでした：{0}"
 
-#: apps/app/src/routes/moments-page.tsx:2831
+#: apps/app/src/routes/moments-page.tsx:2836
 msgid "加载更多失败，请稍后重试。"
 msgstr "さらに読み込めませんでした。しばらくしてから再試行してください。"
 
-#: apps/app/src/routes/moments-page.tsx:2916
+#: apps/app/src/routes/moments-page.tsx:2921
 msgid "你先发一条动态，或者等世界里的角色们先开口。"
 msgstr "まず投稿を 1 つ送るか、世界のキャラクターたちが先に話しかけるのを待ちましょう。"
 
