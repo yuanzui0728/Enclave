@@ -187,6 +187,12 @@ function MobileDiscoverEncounterPage() {
   useEffect(() => {
     setMessage(""); // i18n-ignore-line: clearing state
     setTone("info");
+    // 走查 Round 5：之前只清 setMessage，但 shakeMutation.isError / error 仍挂着
+    // world A 的失败状态——切到 world B 后红色错误条还在显示 SHAKE_DAILY_LIMIT
+    // 这种带 worldId 含义的提示。reset() 把 mutation 也归零，确保新 world 上看到
+    // 的是干净状态。
+    shakeMutation.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl]);
 
   function navigateToRouteStateReturn() {
