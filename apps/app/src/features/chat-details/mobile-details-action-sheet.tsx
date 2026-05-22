@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
@@ -110,11 +111,59 @@ export function MobileDetailsActionSheet({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  if (!open) {
+  // Fresh 走查 R11：sheet 打开时 character-detail / chat-details / group-chat-
+  // details 等父页底层全部仍可被 Tab/SR——deep probe 验证 /character/$id 上音视频
+  // 通话 sheet 打开后 15 个 focusable blockedByInert=0：Profile 行 (Remark/Tags/
+  // Moments/Recommend/Star/Reply with voice/Block/Delete contact) + 底部 Message
+  // / 音视频通话 按钮 全部 phantom 焦点。aria-modal 不强制 trap。修法：sheet 自身
+  // portal 到 body，并 effect 期间把所有 body 兄弟节点挂 inert。close 时一并恢复。
+  const portalRef = useRef<HTMLDivElement | null>(null);
+  if (!portalRef.current && typeof document !== 'undefined') {
+    portalRef.current = document.createElement('div');
+    portalRef.current.setAttribute('data-mobile-details-action-sheet', '');
+  }
+  useEffect(() => {
+    const el = portalRef.current;
+    if (!el || typeof document === 'undefined') return;
+    document.body.appendChild(el);
+    return () => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    };
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const root = document.body;
+    const portalEl = portalRef.current;
+    const toggled: Array<{ el: HTMLElement; hadInert: boolean; hadAriaHidden: string | null }> = [];
+    for (const child of Array.from(root.children) as HTMLElement[]) {
+      if (portalEl && (child === portalEl || child.contains(portalEl))) continue;
+      // 跳过 <script> 等不需要 inert 的节点，主要锁 React root 容器
+      if (child.tagName === 'SCRIPT' || child.tagName === 'NOSCRIPT') continue;
+      toggled.push({
+        el: child,
+        hadInert: child.hasAttribute('inert'),
+        hadAriaHidden: child.getAttribute('aria-hidden'),
+      });
+      child.setAttribute('inert', '');
+      child.setAttribute('aria-hidden', 'true');
+    }
+    return () => {
+      for (const { el, hadInert, hadAriaHidden } of toggled) {
+        if (!hadInert) el.removeAttribute('inert');
+        if (hadAriaHidden === null) {
+          el.removeAttribute('aria-hidden');
+        } else {
+          el.setAttribute('aria-hidden', hadAriaHidden);
+        }
+      }
+    };
+  }, [open]);
+
+  if (!open || !portalRef.current) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.14)]">
       <button
         type="button"
@@ -189,6 +238,7 @@ export function MobileDetailsActionSheet({
           {cancelLabel ?? t(msg`取消`)}
         </button>
       </div>
-    </div>
+    </div>,
+    portalRef.current,
   );
 }
