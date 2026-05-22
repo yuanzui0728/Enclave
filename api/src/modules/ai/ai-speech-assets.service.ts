@@ -19,7 +19,7 @@ export class AiSpeechAssetsService {
       baseName?: string;
     },
   ) {
-    const storageDir = this.resolvePrimaryStorageDir();
+    const storageDir = resolvePrimaryAiSpeechStorageDir();
     const safeBaseName = sanitizeSpeechAssetBaseName(options.baseName);
     const extension = normalizeSpeechExtension(options.fileExtension);
     const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeBaseName}.${extension}`;
@@ -38,16 +38,11 @@ export class AiSpeechAssetsService {
   }
 
   getStorageDir() {
-    return this.resolvePrimaryStorageDir();
+    return resolvePrimaryAiSpeechStorageDir();
   }
 
   resolveReadablePath(fileName: string) {
-    const normalized = this.normalizeFileName(fileName);
-    const candidates = [
-      path.join(this.resolvePrimaryStorageDir(), normalized),
-      path.join(this.resolveLegacyStorageDir(), normalized),
-    ];
-    return candidates.find((candidatePath) => existsSync(candidatePath)) ?? candidates[0];
+    return resolveReadableAiSpeechPath(this.normalizeFileName(fileName));
   }
 
   normalizeFileName(fileName: string) {
@@ -61,14 +56,30 @@ export class AiSpeechAssetsService {
 
     return normalized;
   }
+}
 
-  private resolvePrimaryStorageDir() {
-    return resolveDataPath('ai-speech');
-  }
+// ai-orchestrator 在喂历史音频给 LLM 时需要从 URL 反推磁盘路径走 base64
+// data-URI（裸 URL 经 /cloud/world-api 反代是 token-gated，外部 LLM fetch 会
+// 401）。和 chat-attachment-storage.ts:resolveReadableChatAttachmentPath
+// 同样的 free function 形态，避免在 ai-orchestrator 里注入 AiSpeechAssetsService
+// 引入模块内循环依赖。
+export function resolvePrimaryAiSpeechStorageDir() {
+  return resolveDataPath('ai-speech');
+}
 
-  private resolveLegacyStorageDir() {
-    return resolveApiPath('storage', 'ai-speech');
-  }
+export function resolveLegacyAiSpeechStorageDir() {
+  return resolveApiPath('storage', 'ai-speech');
+}
+
+export function resolveReadableAiSpeechPath(fileName: string) {
+  const candidatePaths = [
+    path.join(resolvePrimaryAiSpeechStorageDir(), fileName),
+    path.join(resolveLegacyAiSpeechStorageDir(), fileName),
+  ];
+  return (
+    candidatePaths.find((candidatePath) => existsSync(candidatePath)) ??
+    candidatePaths[0]
+  );
 }
 
 function sanitizeSpeechAssetBaseName(value?: string) {

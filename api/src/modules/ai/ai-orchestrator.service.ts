@@ -42,6 +42,7 @@ import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
 import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
+import { resolveReadableAiSpeechPath } from './ai-speech-assets.service';
 import {
   InferenceService,
   type ResolvedInferenceCapabilityProfile,
@@ -480,6 +481,10 @@ export class AiOrchestratorService {
 
       if (normalizedPath.startsWith('/api/moments/media/')) {
         return resolveReadableMomentMediaPath(fileName);
+      }
+
+      if (normalizedPath.startsWith('/api/ai/speech/')) {
+        return resolveReadableAiSpeechPath(fileName);
       }
 
       return null;
