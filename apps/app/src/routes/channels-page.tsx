@@ -4934,8 +4934,16 @@ function MobileChannelCommentsSheet({
   // Sheet 一直缺。桌面端 / iPad 接外接键盘 / 真机 PWA 在 web 嵌入下，用户按 Esc
   // 想关评论 sheet 没反应，必须用鼠标点 backdrop / 右上 X，体感断了。
   // 真机 mobile 浏览器没物理 Esc 也无害（window 上根本不会 fire），不会引入开销。
+  //
+  // 走查 wechat-clone R2（本轮）：长按 ActionSheet 也注册了 window keydown
+  // ESC handler。两层都开时按 ESC 走 listener 注册顺序：评论 sheet 先开
+  // → 它的 handler 先注册先 fire → 直接 onClose() 把父 sheet 关了，
+  // ActionSheet 在父被卸载时跟着消失，体感「按 ESC 一下两层都没了」。
+  // WeChat 原生行为：按 ESC 应该只关「最上面那层」action sheet。
+  // 用 longPressTarget 当显式优先级开关——长按 ActionSheet 开着时父 sheet
+  // 的 ESC handler 让位，等 ActionSheet 自己消费 ESC 关掉。
   useEffect(() => {
-    if (!open || typeof window === "undefined") {
+    if (!open || longPressTarget || typeof window === "undefined") {
       return;
     }
     const handler = (event: KeyboardEvent) => {
@@ -4946,7 +4954,7 @@ function MobileChannelCommentsSheet({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  }, [open, longPressTarget, onClose]);
 
   // 走查 2026-05-17 新会话 R4：Android 硬件 Back 键 — 评论 sheet 打开时按
   // Back 应该收 sheet 而不是退掉整个 /discover/channels 页（默认行为会让
@@ -5462,18 +5470,16 @@ function MobileChannelCommentsSheet({
           )}
         </div>
       </div>
+      {/*
+        长按 ActionSheet — 走查 R1（本轮）：原来传 preview 走 chat-style 气泡
+        （带 senderName + bg-rgba 颜色块），视觉上和「视频号评论」语境不搭，
+        体感像把聊天消息塞进了评论面板。WeChat 视频号原生 long-press 不显示
+        preview，action 列表直接出。去掉 preview prop，sheet 只显示 action +
+        取消，干净对齐微信。
+      */}
       <MobileMessageActionSheet
         open={Boolean(longPressTarget)}
         title={t(msg`评论操作`)}
-        preview={
-          longPressTarget
-            ? {
-                senderName: longPressTarget.comment.authorName,
-                text: longPressTarget.cleanText,
-                own: longPressTarget.comment.authorType === "user",
-              }
-            : undefined
-        }
         onClose={() => setLongPressTarget(null)}
         onCopy={() => {
           if (longPressTarget) {
