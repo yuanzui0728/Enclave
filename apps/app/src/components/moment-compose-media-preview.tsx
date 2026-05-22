@@ -365,10 +365,28 @@ function ComposeVideoViewer({
   // ——React 在 unmount 时把 `<video autoPlay>` 从 DOM 摘掉后浏览器不会自动
   // pause，音轨在后台一直跑直到刷整页（实测桌面 Chrome 起音 → 关 viewer，
   // 音乐还在响）。compose 预览 viewer 漏掉了同款 cleanup pause。
+  //
+  // 走查移动端发现-广场动态/Round 1 (perf)：仅 pause() 不够 —— controls 播放或
+  // autoPlay 期间 Chromium / iOS Safari 把整段视频 demux 后的 decoded buffer
+  // （H.264/HEVC 解码帧 + 音频 PCM 缓冲）一直挂到 DOM 节点真正被 GC 才释放。
+  // WKWebView 下 GC 时机不可预测，用户在 publish 页连续替换 3-5 个视频或反复
+  // 点开预览再关闭，低内存机型容易整页 OOM 重置（compose 一打开"添加视频"
+  // 解码 + autoPlay 内存占用尤其高）。和 moment-media-gallery.tsx
+  // MomentVideoViewerOverlay 我刚修过的同款 fix + moment-compose-media.ts
+  // buildMomentVideoPoster (line 720-721) / readVideoMetadata cleanup
+  // (line 652-656) 同模板：removeAttribute("src") + load() 显式把 <video> 切
+  // 回空 media 状态，浏览器立刻释放 demux/decode 缓冲，不依赖 GC 时机。
+  // src 是 blob URL（draft.previewUrl）—— 释放 <video> 不会 revoke blob URL
+  // 本身，blob 仍由 useMomentComposeDraft 的 imageDraftsRef / videoDraftRef
+  // 在 hook unmount 时统一 revoke，发布链路也照常用 draft.file 上传，不受影响。
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
     return () => {
-      videoRef.current?.pause();
+      const el = videoRef.current;
+      if (!el) return;
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
     };
   }, []);
   // 走查第 N 轮 R3：跟 ComposeImageViewer 同款——Android 原生 back 时优先关 viewer，
