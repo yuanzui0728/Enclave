@@ -1344,6 +1344,26 @@ export function DiscoverFeedPage() {
   // 同步上锁，第一次 click 翻进 set 后同帧的所有后续 click 都被早返。
   const expandingPostIdsRef = useRef<Set<string>>(new Set());
 
+  // 第三次新走查 R1：InlineNotice 顶上的「重试发送」/「重试点赞」按钮没有同步
+  // 锁。React 18 batches event handlers，用户在 <16ms 内双击重试按钮：
+  //   1. 第一次 click → mutate() → react-query 同步把 status 翻 'pending'、
+  //      把 onMutate 跑掉（commentInflightPostIds 翻进 Set 的 setState 入队，
+  //      还没 commit）。
+  //   2. 第二次 click 在 React commit 之前发生 → 当前 render 的 onClick
+  //      closure 没变，commentMutation.variables 已是上一次新设的 args，
+  //      commentMutation.isPending 在 closure 里仍然是上次 commit 的 false。
+  //   3. mutate() 再发一次 → 两条独立的 POST 飞向 server。
+  //
+  // 服务端没有评论幂等键 → DB 里多一条同文案评论；用户视感"我只点了一次重试，
+  // 怎么群里多冒一条同样的评论"。likeMutation 服务端 INSERT OR IGNORE 幂等
+  // DB 不会脏，但两个 RTT 白烧；桌面 toolbar onRetry 同走这条逻辑，一并保护。
+  //
+  // 同 expandingPostIdsRef / WeChatCommentBar 内部 submittingRef 同模式，
+  // 用 ref 做同步锁；状态机仍由 react-query 走 isPending/isError 维护 UI，
+  // ref 只在双击 race 的窗口内挡一下，mutate 落地后 (onSettled) 立即释放。
+  const commentRetrySubmittingRef = useRef(false);
+  const likeRetrySubmittingRef = useRef(false);
+
   async function expandFullComments(postId: string) {
     if (expandingPostIdsRef.current.has(postId)) return;
     if (fullCommentsByPostId[postId]) return;
@@ -2051,9 +2071,16 @@ export function DiscoverFeedPage() {
             // 桌面 toolbar 顶部点赞失败条上的「重试点赞」回放最后一次 mutate；
             // 与移动端 InlineNotice (line 2096-2124) 同样的语义：variables=null
             // 时（mutation 已经 reset 过）就把错误条直接收掉，否则回放。
+            // 第三次新走查 R1：同步锁兜双击 race。
+            if (likeRetrySubmittingRef.current) return;
             const targetPostId = likeMutation.variables;
             if (targetPostId) {
-              likeMutation.mutate(targetPostId);
+              likeRetrySubmittingRef.current = true;
+              likeMutation.mutate(targetPostId, {
+                onSettled: () => {
+                  likeRetrySubmittingRef.current = false;
+                },
+              });
             } else {
               likeMutation.reset();
             }
@@ -2068,6 +2095,8 @@ export function DiscoverFeedPage() {
             // 校验直接抛 "请先输入评论内容。" 替换掉原来的 server 错误，用户视感
             // 是"点了重试反而蹦出一条不相干的报错"。trim 后为空时兜回 variables.text
             // —— 用户主动点重试就是要把上次那条再发一遍。
+            // 第三次新走查 R1：同步锁兜双击 race。
+            if (commentRetrySubmittingRef.current) return;
             const variables = commentMutation.variables;
             if (!variables) {
               commentMutation.reset();
@@ -2078,10 +2107,18 @@ export function DiscoverFeedPage() {
               draftCandidate && draftCandidate.trim()
                 ? draftCandidate
                 : variables.text;
-            commentMutation.mutate({
-              ...variables,
-              text: currentDraft,
-            });
+            commentRetrySubmittingRef.current = true;
+            commentMutation.mutate(
+              {
+                ...variables,
+                text: currentDraft,
+              },
+              {
+                onSettled: () => {
+                  commentRetrySubmittingRef.current = false;
+                },
+              },
+            );
           }}
           onRefresh={() => {
             resetFeedToFirstPage();
@@ -2659,9 +2696,16 @@ export function DiscoverFeedPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    // 第三次新走查 R1：同步锁兜双击 race，见 likeRetrySubmittingRef 注释。
+                    if (likeRetrySubmittingRef.current) return;
                     const targetPostId = likeMutation.variables;
                     if (targetPostId) {
-                      likeMutation.mutate(targetPostId);
+                      likeRetrySubmittingRef.current = true;
+                      likeMutation.mutate(targetPostId, {
+                        onSettled: () => {
+                          likeRetrySubmittingRef.current = false;
+                        },
+                      });
                     } else {
                       likeMutation.reset();
                     }
@@ -2699,6 +2743,10 @@ export function DiscoverFeedPage() {
                     // 切账户 effect 那一份 .reset() 已经覆盖 stale isError，这
                     // 里 retry 按钮自然只剩两条分支：能回放就 mutate，回放不
                     // 出来直接 return 让用户重新点；无需再额外 reset。
+                    // 第三次新走查 R1：同步锁兜双击 race，见 commentRetrySubmittingRef
+                    // 注释。评论失败时用户最容易反复按"重试发送"，server 没幂等键 →
+                    // 双发就在 DB 里复刻两条同文案评论。
+                    if (commentRetrySubmittingRef.current) return;
                     const variables = commentMutation.variables;
                     if (!variables) {
                       return;
@@ -2714,10 +2762,18 @@ export function DiscoverFeedPage() {
                       draftCandidate && draftCandidate.trim()
                         ? draftCandidate
                         : variables.text;
-                    commentMutation.mutate({
-                      ...variables,
-                      text: currentDraft,
-                    });
+                    commentRetrySubmittingRef.current = true;
+                    commentMutation.mutate(
+                      {
+                        ...variables,
+                        text: currentDraft,
+                      },
+                      {
+                        onSettled: () => {
+                          commentRetrySubmittingRef.current = false;
+                        },
+                      },
+                    );
                   }}
                   className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
