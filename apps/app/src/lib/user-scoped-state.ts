@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { clearAllMomentDrafts } from "../features/moments/moment-draft-store";
 import { removeSecureStorageItem } from "../runtime/native-secure-storage";
 import {
   getAppRuntimeConfig,
@@ -127,6 +128,8 @@ export type ClearUserScopedStateOptions = {
 //   - localStorage / sessionStorage 里所有 yinjie-* / yinjie.* / yinjie:*
 //     前缀 key（豁免 device-fingerprint / runtime-config 整体 key）
 //   - native secure storage 上 zustand persist 的副本
+//   - IndexedDB 里的朋友圈草稿（yinjie-moments / drafts；按 baseUrl 当 key，
+//     但 baseUrl 会跨账户撞，切号必须物理删整个 store）
 //   - runtime-config 里跟身份绑定的字段（apiBaseUrl / cloudPhone / ...）
 // 保留：device fingerprint、cloudApiBaseUrl、appVersion 等设备级元信息。
 export async function clearUserScopedClientState(
@@ -138,7 +141,7 @@ export async function clearUserScopedClientState(
   resetRuntimeConfigUserFields();
   clearLocalStorageUserKeys();
   clearSessionStorageUserKeys();
-  await clearNativeSecureUserKeys();
+  await Promise.all([clearNativeSecureUserKeys(), clearAllMomentDrafts()]);
 }
 
 export function readPersistedOwnerIdentity(): string | null {

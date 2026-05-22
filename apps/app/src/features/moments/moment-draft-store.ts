@@ -150,6 +150,27 @@ export async function clearMomentDraft(
   useMomentDraftIndicatorStore.getState().setHasDraft(baseUrl, false);
 }
 
+// 切号 / 登出收敛点（clearUserScopedClientState）调用：一把抹掉整个 drafts
+// objectStore + 重置 indicator zustand。原本 draft 按 baseUrl 当 key 想做"账户
+// 隔离"，但 baseUrl 是 world 服务 URL，会跟 port pool 复用 / world 重启撞同一
+// 个 key，所以切号时必须从 IDB 物理删干净——不能依赖"新账户 baseUrl 不同所以
+// 读不到"这个假设。
+export async function clearAllMomentDrafts(): Promise<void> {
+  if (hasIndexedDb()) {
+    try {
+      await runTransaction(
+        "readwrite",
+        (store) => store.clear() as unknown as IDBRequest<undefined>,
+      );
+    } catch {
+      // 同 load/save/clear 路径：IDB 失败静默退化。clearUserScopedClientState
+      // 的其他步骤已经把 runtime-config.apiBaseUrl 清掉，新账户登录拿到新
+      // baseUrl 大概率读不到旧 key；极端 quota 满场景下接受残留。
+    }
+  }
+  useMomentDraftIndicatorStore.setState({ hasByBaseUrl: {} });
+}
+
 export async function hasMomentDraft(
   baseUrl: string | null | undefined,
 ): Promise<boolean> {
