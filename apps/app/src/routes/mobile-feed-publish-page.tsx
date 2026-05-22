@@ -513,7 +513,7 @@ export function MobileFeedPublishPage() {
             // aria-label 也按一样的规则切。
             aria-label={statusBackLabel}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft size={17} aria-hidden="true" />
           </Button>
         }
         rightActions={
@@ -529,20 +529,30 @@ export function MobileFeedPublishPage() {
               // 看到一条没视频的纯文本帖，记忆错位。
               if (pickInflightRef.current) return;
               submittingRef.current = true;
-              createMutation.mutate(
-                {
-                  // 把 mutate-time 的 draft snapshot 当 variables 传进去 ——
-                  // 见上方 createMutation 注释。
-                  text: composeDraft.text,
-                  imageDrafts: composeDraft.imageDrafts,
-                  videoDraft: composeDraft.videoDraft,
-                },
-                {
-                  onSettled: () => {
-                    submittingRef.current = false;
+              // 走查本轮 R1（防御）：和 moments-publish R1 (73e80ac8c) 同款 try-catch ——
+              // createMutation.mutate() 万一同步抛错（react-query v5 不会，但未来 wrapper
+              // / mutationFn 引入同步抛锁），onSettled 不会跑 → submittingRef 永远卡 true，
+              // 用户后续在同张 publish 页上点「发表」全被 ref guard 早返"假死"，看着按钮
+              // 亮的但 onClick 第一行就 return，只能整页刷新。
+              try {
+                createMutation.mutate(
+                  {
+                    // 把 mutate-time 的 draft snapshot 当 variables 传进去 ——
+                    // 见上方 createMutation 注释。
+                    text: composeDraft.text,
+                    imageDrafts: composeDraft.imageDrafts,
+                    videoDraft: composeDraft.videoDraft,
                   },
-                },
-              );
+                  {
+                    onSettled: () => {
+                      submittingRef.current = false;
+                    },
+                  },
+                );
+              } catch (mutateError) {
+                submittingRef.current = false;
+                throw mutateError;
+              }
             }}
             disabled={
               !composeDraft.hasContent ||
@@ -666,7 +676,7 @@ export function MobileFeedPublishPage() {
                   void handlePickImages();
                 }}
               >
-                <ImagePlus size={14} className="mr-1" />
+                <ImagePlus size={14} aria-hidden="true" className="mr-1" />
                 {t(msg`添加图片`)}
               </Button>
               <Button
@@ -690,7 +700,7 @@ export function MobileFeedPublishPage() {
                   videoInputRef.current?.click();
                 }}
               >
-                <Video size={14} className="mr-1" />
+                <Video size={14} aria-hidden="true" className="mr-1" />
                 {composeDraft.videoDraft ? t(msg`更换视频`) : t(msg`添加视频`)}
               </Button>
             </div>
