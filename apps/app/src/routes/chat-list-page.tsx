@@ -2132,20 +2132,36 @@ function ConversationListItemLinkImpl({
               ) : null}
               {hasUnreadMessages ? (
                 showMutedUnreadDot ? (
+                  // 新一轮 R2 (a11y consistency)：原版裸 <div aria-label> 没挂
+                  // role，按 ARIA 1.2 spec 在 generic 元素上 aria-label 行为
+                  // implementation-defined（Chromium AX 早期 / VoiceOver 严格
+                  // 模式可能直接不暴露）。同 OfficialMessageEntryRow R145、
+                  // desktop-chat-workspace R106 已经标准化的 role="img" 写法对
+                  // 齐：muted 变体只是一个 2×2 视觉小点，无 inner text，盲人
+                  // 用户走静音会话行时这一个 aria-label 是仅有的未读信号，必
+                  // 须可靠暴露。
                   <div
+                    role="img"
                     className="h-2 w-2 rounded-full bg-[#b8b8b8]"
-                    aria-label={t(msg`有未读消息`)}
+                    aria-label={
+                      conversation.unreadCount > 99
+                        ? t(msg`超过 99 条未读消息`)
+                        : t(msg`${conversation.unreadCount} 条未读消息`)
+                    }
                   />
                 ) : (
-                  // 走查 新一轮 R2：muted+unread 灰点已经挂了 aria-label="有未读
-                  // 消息"，但正常红色 unread badge 没挂 role/aria-label——SR 朗读
-                  // 整行时只听到一个孤零零的数字 "3" / "99+"，没有上下文，盲人
-                  // 用户分不清这是未读数还是其它元数据（聊天行里既有时间戳又有
-                  // sparkStreak 数字，可能更乱）。补 role="status" + aria-label
-                  // "N 条未读消息" / ">99 条未读消息"，跟 desktop-chat-workspace
-                  // 长列表的 unread 计数口径一致。
+                  // 新一轮 R2 (a11y consistency)：原 fix 用 role="status"——polite
+                  // live region 语义是「操作完成态 / 临时状态变更」（如 toast
+                  // / 加载完成），不适合长列表里 11 条静态未读 badge。每次
+                  // refetchInterval=60s + socket scheduleListInvalidate 触发的
+                  // 列表刷新，11 个 live region 都会被 SR 视为"新发生的状态
+                  // 变化"重新公告一遍，盲人用户站在 chat-list 不动每分钟都
+                  // 被「3 条未读消息 1 条未读消息 99+ 条未读消息 ...」打断。
+                  // 改成 role="img"：跟 OfficialMessageEntryRow R145、
+                  // desktop-chat-workspace R106 同款"被命名的视觉指示"，仍然
+                  // 可靠暴露 aria-label，不再发动 live region。
                   <div
-                    role="status"
+                    role="img"
                     aria-label={
                       conversation.unreadCount > 99
                         ? t(msg`超过 99 条未读消息`)
