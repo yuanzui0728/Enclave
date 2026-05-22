@@ -96,9 +96,16 @@ export function OfficialMessageEntryRow({
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {muted ? (
+              // 走查 R2（新一轮）：和姊妹 chat-list-page row 同款 — 裸
+              // <BellOff aria-label> 在 SVG / generic 元素上 implementation-
+              // defined。下方 R145 unread badge 已经统一用 role="img" 兜
+              // 住 SR 不可靠暴露的边界，本图标必须跟同一规约（订阅号/服
+              // 务号入口行 muted 时这一个 icon 是用户感知"通知静音"的唯一
+              // 视觉证据）。
               <BellOff
                 size={isDesktop ? 13 : 11}
                 className="text-[color:var(--text-dim)]"
+                role="img"
                 aria-label={t(msg`消息免打扰`)}
               />
             ) : null}
