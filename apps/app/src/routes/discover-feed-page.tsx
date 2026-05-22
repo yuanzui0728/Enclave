@@ -1363,6 +1363,25 @@ export function DiscoverFeedPage() {
   // ref 只在双击 race 的窗口内挡一下，mutate 落地后 (onSettled) 立即释放。
   const commentRetrySubmittingRef = useRef(false);
   const likeRetrySubmittingRef = useRef(false);
+  // 第三次新走查 R2：notice "info" 条上的「重试」按钮（expand 评论失败 / share
+  // 失败两条路径设置过它）也走同步锁兜双击。expand 那条 action 自身已经被
+  // expandingPostIdsRef 同步去重，但 share 那条调 handleSharePost(post) 没保护
+  // ——双击 → 两次 shareWithNativeShell()，iOS UIActivityViewController 只能
+  // present 一次，第二次的 await 直接 reject 或 hang，并把 toolbar 上的"已打开
+  // 系统分享面板"成功提示挤掉换成"分享失败"红条。pointer 一下；用户视感"打开
+  // 了分享但又跳出错误"。简单挂一个 fire-and-forget 同步锁：onClick 翻 true，
+  // 同帧后续 click 早返；下一次 React commit 把 button 摘掉后，rAF 把锁释放
+  // （捕获 action 本身可能是同步 / 异步无所谓，rAF 一帧的窗口足够让 commit 把
+  // notice 收掉）。
+  const noticeActionInflightRef = useRef(false);
+  // 第三次新走查 R3：handleSharePost 在 post 头部的「分享」按钮上是直接被点的
+  // （行内 `onClick={() => void handleSharePost(post)}`，三处调用点）。iOS
+  // UIActivityViewController 启动 sheet 通常 ~50-150ms，用户在 sheet 还没冒出
+  // 来时双击 → 两次 shareWithNativeShell() 并发。原生侧第二次 present 会被
+  // assertion 直接打回 false，setNotice 把第一次的 "已打开系统分享面板" 成功
+  // 提示替换成 "系统分享失败，请稍后重试"。同 retry 锁思路：per-post sync ref
+  // Set 兜 race，async 整段执行期间锁住，finally 释放。
+  const sharingPostIdsRef = useRef<Set<string>>(new Set());
 
   async function expandFullComments(postId: string) {
     if (expandingPostIdsRef.current.has(postId)) return;
@@ -1684,6 +1703,19 @@ export function DiscoverFeedPage() {
   ]);
 
   async function handleSharePost(post: (typeof visiblePosts)[number]) {
+    // 第三次新走查 R3：per-post 同步锁。同一 post 飞着的分享流程没结束前，再次
+    // 点击直接早返；不同 post 互不影响（多卡片同时尝试分享的场景极少，但保险
+    // 起见用 Set）。
+    if (sharingPostIdsRef.current.has(post.id)) return;
+    sharingPostIdsRef.current.add(post.id);
+    try {
+      await handleSharePostInner(post);
+    } finally {
+      sharingPostIdsRef.current.delete(post.id);
+    }
+  }
+
+  async function handleSharePostInner(post: (typeof visiblePosts)[number]) {
     const shareHash = buildFeedRouteHash({
       postId: post.id,
     });
@@ -2263,11 +2295,18 @@ export function DiscoverFeedPage() {
                           // 但忘了清掉旧 notice：用户点「重试」成功后，老错误条
                           // 没人收，挂在屏幕上像没修好一样。先把当前条收掉再调
                           // action；如果重试又失败，setNotice 会重新写新条。
+                          // 第三次新走查 R2：同步锁兜双击；详情见 noticeActionInflightRef
+                          // 注释。
+                          if (noticeActionInflightRef.current) return;
+                          noticeActionInflightRef.current = true;
                           const action = noticeAction;
                           setNotice(""); // i18n-ignore-line
                           setNoticeActionLabel(null);
                           setNoticeAction(null);
                           action();
+                          window.requestAnimationFrame(() => {
+                            noticeActionInflightRef.current = false;
+                          });
                         }}
                         className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
