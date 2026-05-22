@@ -197,7 +197,7 @@ export function useLocalChatMessageActionState() {
     const handleSync = () => {
       void syncState();
     };
-    // 走查新一轮 R8：和 chat-room-page / group-chat-page / group-qr-page R1
+    // 走查新一轮 R8：和 chat-room-page / group-chat-page R1
     // 同款 storage event 漏 gate 问题——本 hook 是被 chat-list-page /
     // chat-message-list / use-message-reminders / desktop workspace / search-index
     // 等 5+ 个 surface 同时挂着的全局 hook，原版 storage 监听对任何 OTHER tab

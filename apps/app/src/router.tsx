@@ -369,11 +369,6 @@ const GroupAnnouncementPage = lazy(async () => {
   return { default: mod.GroupAnnouncementPage };
 });
 
-const GroupQrPage = lazy(async () => {
-  const mod = await import("./routes/group-qr-page");
-  return { default: mod.GroupQrPage };
-});
-
 const GroupMessageSearchPage = lazy(async () => {
   const mod = await import("./routes/group-message-search-page");
   return { default: mod.GroupMessageSearchPage };
@@ -746,13 +741,6 @@ const groupAnnouncementRoute = createRoute({
   component: GroupAnnouncementPage,
 });
 
-const groupQrRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/group/$groupId/qr",
-  beforeLoad: requireWorldReady,
-  component: GroupQrPage,
-});
-
 const groupMessageSearchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/group/$groupId/search",
@@ -1076,7 +1064,6 @@ const routeTree = rootRoute.addChildren([
   groupChatNicknameEditRoute,
   groupChatBackgroundRoute,
   groupAnnouncementRoute,
-  groupQrRoute,
   groupMessageSearchRoute,
   groupMemberAddRoute,
   groupMemberRemoveRoute,

@@ -105,9 +105,8 @@ function queueNativeWrite(state: DetailedTimestampModeState) {
 // 这条 writeLocalState 通过 writeDetailedTimestampModeEnabled 被
 // chat-message-list.tsx line 689 在 useEffect 内同步调——抛错会冒到 React
 // error boundary，把整条聊天消息列表（单聊 + 群聊共享渲染）整片白屏。
-// 跟 R2 的 group-invite-delivery 是同一类问题；这里走同款修法：每段
-// setItem/removeItem 各裹 try/catch，单段失败不影响其它段，业务上做"持久化
-// 降级"——内存里的 React state 仍正确，下次再写就 OK。
+// 修法：每段 setItem/removeItem 各裹 try/catch，单段失败不影响其它段，
+// 业务上做"持久化降级"——内存里的 React state 仍正确，下次再写就 OK。
 function writeLocalState(
   state: DetailedTimestampModeState,
   options?: {

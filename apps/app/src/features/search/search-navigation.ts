@@ -217,7 +217,7 @@ export function applyDesktopSearchReturnContext(
     };
   }
 
-  const groupToolsMatch = target.to.match(/^\/group\/([^/?#]+)\/(background|qr)$/);
+  const groupToolsMatch = target.to.match(/^\/group\/([^/?#]+)\/(background)$/);
   if (groupToolsMatch?.[1]?.trim()) {
     const targetRouteState = parseMobileGroupRouteState(target.hash ?? "");
     return {

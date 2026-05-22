@@ -89,13 +89,6 @@ import {
   getConversationThreadLabel,
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
-import {
-  hydrateGroupInviteDeliveryFromNative,
-  readGroupInviteDeliveryRecord,
-  readGroupInviteReopenRecords,
-  type GroupInviteDeliveryRecord,
-  type GroupInviteReopenRecord,
-} from "../lib/group-invite-delivery";
 import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -223,11 +216,6 @@ export function DesktopMobilePage() {
   const [miniProgramsState, setMiniProgramsState] = useState(() =>
     readMiniProgramsState(),
   );
-  const [currentGroupInviteDelivery, setCurrentGroupInviteDelivery] =
-    useState<GroupInviteDeliveryRecord | null>(null);
-  const [currentGroupInviteReopens, setCurrentGroupInviteReopens] = useState<
-    GroupInviteReopenRecord[]
-  >([]);
   const localMessageActionState = useLocalChatMessageActionState();
   const callHandoffState = useMemo(
     () => parseDesktopMobileCallHandoffHash(hash),
@@ -738,38 +726,9 @@ export function DesktopMobilePage() {
   );
   const currentGroupInviteHandoff = recentGroupInviteHandoffs[0] ?? null;
   const archivedGroupInviteHandoffs = recentGroupInviteHandoffs.slice(1);
-  const currentGroupInviteId = currentGroupInviteHandoff
-    ? resolveGroupIdFromHandoffPath(currentGroupInviteHandoff.path)
-    : null;
   const currentGroupInviteDesktopPath = currentGroupInviteHandoff
     ? resolveGroupInviteDesktopOpenPath(currentGroupInviteHandoff.path)
     : null;
-  const activeGroupInviteDelivery =
-    currentGroupInviteDelivery &&
-    conversationPathSet.has(currentGroupInviteDelivery.conversationPath)
-      ? currentGroupInviteDelivery
-      : null;
-  const activeGroupInviteDeliveryDesktopPath = activeGroupInviteDelivery
-    ? (conversationDesktopPathMap.get(
-        activeGroupInviteDelivery.conversationPath,
-      ) ??
-      buildDesktopChatThreadPath({
-        conversationId: activeGroupInviteDelivery.conversationId,
-      }))
-    : null;
-  const activeGroupInviteReopens = useMemo(
-    () =>
-      currentGroupInviteReopens.filter((record) =>
-        conversationPathSet.has(record.conversationPath),
-      ),
-    [conversationPathSet, currentGroupInviteReopens],
-  );
-  const resolveGroupInviteDesktopConversationPath = (
-    conversationPath: string,
-  ) =>
-    conversationDesktopPathMap.get(conversationPath) ??
-    buildDesktopChatThreadPathFromConversationPath(conversationPath) ??
-    conversationPath;
 
   useEffect(() => {
     if (!isDesktopLayout) {
@@ -853,48 +812,6 @@ export function DesktopMobilePage() {
     const timer = window.setTimeout(() => setNotice(null), 2200);
     return () => window.clearTimeout(timer);
   }, [notice]);
-
-  useEffect(() => {
-    if (!isDesktopLayout) {
-      return;
-    }
-
-    if (!currentGroupInviteId) {
-      setCurrentGroupInviteDelivery(null);
-      setCurrentGroupInviteReopens([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const syncDelivery = async () => {
-      await hydrateGroupInviteDeliveryFromNative();
-      if (cancelled) {
-        return;
-      }
-
-      setCurrentGroupInviteDelivery(
-        readGroupInviteDeliveryRecord(currentGroupInviteId),
-      );
-      setCurrentGroupInviteReopens(
-        readGroupInviteReopenRecords(currentGroupInviteId),
-      );
-    };
-
-    void syncDelivery();
-
-    const handleFocus = () => {
-      void syncDelivery();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
-    };
-  }, [currentGroupInviteId, isDesktopLayout]);
 
   if (!isDesktopLayout) {
     return (
@@ -1830,77 +1747,6 @@ export function DesktopMobilePage() {
                     </Link>
                   </div>
 
-                  <div className="mt-4 space-y-3">
-                    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
-                      {activeGroupInviteDelivery ? (
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                              {t(
-                                msg`最近投递到 ${activeGroupInviteDelivery.conversationTitle}`,
-                              )}
-                            </div>
-                            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-                              {formatConversationTimestamp(
-                                activeGroupInviteDelivery.deliveredAt,
-                              )}
-                            </div>
-                          </div>
-                          <Link
-                            to={activeGroupInviteDeliveryDesktopPath as never}
-                            className="inline-flex h-8 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
-                          >
-                            {t(msg`回到会话`)}
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-                          {t(
-                            msg`这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。`,
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {activeGroupInviteReopens.length ? (
-                      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
-                        <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                          {t(msg`最近从这些会话回到邀请页`)}
-                        </div>
-                        <div className="mt-3 space-y-2">
-                          {activeGroupInviteReopens
-                            .slice(0, 2)
-                            .map((record) => (
-                              <div
-                                key={`${record.conversationPath}:${record.reopenedAt}`}
-                                className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2"
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
-                                    {record.conversationTitle}
-                                  </div>
-                                  <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
-                                    {t(
-                                      msg`回流于 ${formatConversationTimestamp(record.reopenedAt)}`,
-                                    )}
-                                  </div>
-                                </div>
-                                <Link
-                                  to={
-                                    resolveGroupInviteDesktopConversationPath(
-                                      record.conversationPath,
-                                    ) as never
-                                  }
-                                  className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                                >
-                                  {t(msg`回到会话`)}
-                                </Link>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
                 </div>
 
                 {archivedGroupInviteHandoffs.length ? (
@@ -2414,11 +2260,6 @@ function isDesktopMobileHandoffPathActive(
   }
 
   return conversationPathSet.has(conversationRoot);
-}
-
-function resolveGroupIdFromHandoffPath(path: string) {
-  const match = path.match(/^\/group\/([^/?#]+)/);
-  return match?.[1] ?? null;
 }
 
 function resolveGroupInviteDesktopOpenPath(path: string) {

@@ -52,7 +52,7 @@ const CHAT_TOOL_ROUTE_PATTERN =
   /^\/chat\/([^/]+)\/(details|background|search)$/;
 const DIRECT_CALL_ROUTE_PATTERN = /^\/chat\/([^/]+)\/(voice-call|video-call)$/;
 const GROUP_TOOL_ROUTE_PATTERN =
-  /^\/group\/([^/]+)\/(details|background|announcement|qr|search)$/;
+  /^\/group\/([^/]+)\/(details|background|announcement|search)$/;
 const GROUP_EDIT_ROUTE_PATTERN = /^\/group\/([^/]+)\/edit\/(name|nickname)$/;
 const GROUP_MEMBER_ROUTE_PATTERN =
   /^\/group\/([^/]+)\/members\/(add|remove)$/;

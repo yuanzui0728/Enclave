@@ -20,11 +20,6 @@ import {
   resolveGameInviteRouteContext,
 } from "../features/games/game-invite-route";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
-import {
-  hydrateGroupInviteDeliveryFromNative,
-  isGroupInviteStorageKey,
-  resolveGroupInviteRouteContext,
-} from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 const DesktopChatWorkspace = lazy(async () => {
@@ -143,51 +138,6 @@ export function GroupChatPage() {
   const handleRouteMobileShortcutHandled = useCallback(() => {
     setRouteMobileShortcutAction(null);
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    let cancelled = false;
-
-    const syncRouteContext = async () => {
-      await hydrateGroupInviteDeliveryFromNative();
-      if (cancelled) {
-        return;
-      }
-
-      setRouteContext(resolveRouteContext(groupId));
-    };
-
-    void syncRouteContext();
-
-    const handleFocus = () => {
-      void syncRouteContext();
-    };
-    // 走查新一次 R1：和姊妹页 group-qr-page.tsx 新 R1 同款问题——原版 storage
-    // handler 复用 handleFocus，OTHER tab 任何 localStorage 写入（主题、草稿、
-    // last viewed page 等等）都会触发 syncRouteContext → 内部 await
-    // hydrateGroupInviteDeliveryFromNative + 读 3 个 storage key + setRouteContext。
-    // 群聊页常驻打开，活跃用户其它 tab 一直在写无关 key，纯白消耗。用
-    // isGroupInviteStorageKey gate 一下，只在群邀请投递/记录/复登的 3 个 key
-    // 上才真同步；老 Safari 的 localStorage.clear() 场景 key=null 仍按全量
-    // 同步对待。
-    const handleStorage = (event: StorageEvent) => {
-      if (!isGroupInviteStorageKey(event.key)) {
-        return;
-      }
-      void syncRouteContext();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [groupId, search]);
 
   // 走查移动端群聊 R1：和姊妹路径 chat-room-page.tsx「新会话 R2」(commit 2d0997d7d)
   // 同款修法——callReturnNotice / safeRouteContext notice 的 actionLabel 按钮
@@ -343,13 +293,10 @@ export function GroupChatPage() {
   );
 }
 
-function resolveRouteContext(groupId: string) {
+function resolveRouteContext(_groupId: string) {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return (
-    resolveGameInviteRouteContext(window.location.search) ??
-    resolveGroupInviteRouteContext(`/group/${groupId}`)
-  );
+  return resolveGameInviteRouteContext(window.location.search);
 }

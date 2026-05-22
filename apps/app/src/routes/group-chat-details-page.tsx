@@ -34,7 +34,6 @@ import {
   parseMobileGroupRouteState,
 } from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { buildGroupInviteReturnSearch } from "../lib/group-invite-delivery";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
@@ -1059,24 +1058,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
-                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-                  });
-                },
-              },
-              {
-                key: "qr",
-                label: t(msg`查看群二维码`),
-                description: t(msg`打开邀请卡与分享入口`),
-                onClick: () => {
-                  setManagementSheetOpen(false);
-                  void navigate({
-                    to: "/group/$groupId/qr",
-                    params: { groupId },
-                    search: buildGroupInviteReturnSearch({
-                      conversationPath: `/group/${groupId}`,
-                      conversationTitle:
-                        groupQuery.data?.name || t(msg`当前群聊`),
-                    }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 },
