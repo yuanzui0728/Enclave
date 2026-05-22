@@ -823,12 +823,16 @@ export function WelcomePage() {
 
   function handleSendPhoneCode() {
     if (sendCodeInFlightRef.current || sendCodeMutation.isPending) return;
+    // 防御：错误条上的"重试发送"按钮如果哪天忘记跟主发送按钮一样 disable，
+    // 函数内也再卡一格 cooldown，避免绕过 UI 直接打 server 429。
+    if (codeCooldownSeconds > 0) return;
     sendCodeInFlightRef.current = true;
     sendCodeMutation.mutate();
   }
 
   function handleSendEmailCode() {
     if (sendEmailCodeInFlightRef.current || sendEmailCodeMutation.isPending) return;
+    if (codeCooldownSeconds > 0) return;
     sendEmailCodeInFlightRef.current = true;
     sendEmailCodeMutation.mutate();
   }
@@ -2045,7 +2049,11 @@ export function WelcomePage() {
             <MobileWelcomeNotice
               tone="danger"
               action={
-                phone.trim() && !sendCodeMutation.isPending ? (
+                // cooldown > 0 时也不显示按钮：原来只看 phone+isPending，配合 R2
+                // (新) 的 onError → cooldown 之后，用户首次 429 → cooldown 启动 →
+                // 按钮还是显示 → 点 → 又 429 → cooldown reset。把 cooldown 那一格
+                // 加进来，跟主发送按钮的 disabled 逻辑保持一致。
+                phone.trim() && !sendCodeMutation.isPending && codeCooldownSeconds <= 0 ? (
                   <button
                     type="button"
                     onClick={handleRetrySendCode}
@@ -2067,7 +2075,8 @@ export function WelcomePage() {
             <MobileWelcomeNotice
               tone="danger"
               action={
-                email.trim() && !sendEmailCodeMutation.isPending ? (
+                // 同上：cooldown > 0 时也不显示按钮。
+                email.trim() && !sendEmailCodeMutation.isPending && codeCooldownSeconds <= 0 ? (
                   <button
                     type="button"
                     onClick={() => handleSendEmailCode()}
