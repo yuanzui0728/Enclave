@@ -17,6 +17,7 @@ import {
   getOfficialAccountMessageEntries,
   hideConversation,
   hideGroup,
+  isApiRequestError,
   markConversationRead,
   markConversationUnread,
   markGroupRead,
@@ -654,11 +655,27 @@ function MobileChatListPage() {
         setNoticeInfo(t(msg`聊天已从列表移除。`));
       }
     } catch (error) {
-      setNoticeError(
-        error instanceof Error
-          ? error.message
-          : t(msg`聊天移除失败，请稍后再试。`),
-      );
+      // 新会话走查 R6：原版任何 catch 都走红条「聊天移除失败」。但 hideConversation
+      // / hideGroup 在另一端（其它设备 / admin 后台）已经把这条会话删掉时，server
+      // 走 requireOwnedConversation 抛 CHAT_CONVERSATION_NOT_FOUND → 404。从用户
+      // 视角：他们要删 A、A 现在确实不在了，是「成功」语义。原版红条让用户以为
+      // 没生效，再次去找 A 又不在列表，体验更差。把 404 当成功处理；其它真错误
+      // 仍然走红条。同款 idempotent-delete 模式在 React Native / Flutter 客户端
+      // 都常见。
+      if (
+        isApiRequestError(error) &&
+        error.statusCode === 404
+      ) {
+        if (showSuccessNotice) {
+          setNoticeInfo(t(msg`聊天已从列表移除。`));
+        }
+      } else {
+        setNoticeError(
+          error instanceof Error
+            ? error.message
+            : t(msg`聊天移除失败，请稍后再试。`),
+        );
+      }
     } finally {
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
