@@ -24,10 +24,14 @@ import {
   type InfiniteData,
   type QueryKey,
 } from "@tanstack/react-query";
+import { msg } from "@lingui/macro";
 import {
   type Moment,
   type MomentsPageResponse,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
+
+const t = translateRuntimeMessage;
 
 type Snapshot = [QueryKey, unknown];
 
@@ -89,7 +93,18 @@ export function useOptimisticMomentLikeHandlers(input: {
                 id: `optimistic-${ownerId}-${moment.id}`,
                 postId: moment.id,
                 authorId: ownerId,
-                authorName: ownerUsername ?? "",
+                // 走查移动端发现-朋友圈 新一轮 R1：之前 `ownerUsername ?? ""` 在
+                // ownerUsername 为 null（账户初始化 race / 用户没设 username）时
+                // 落地一个 authorName="" 的 optimistic like。wechat-moment-card 的
+                // visibleLikes filter (line 363-367) 把空 authorName 当脏数据剔掉
+                // → 用户点赞后心填红了但自己的名字不出现在 like footer 里，要
+                // 等 server return 后真实 like 才出现。和 4 处 moments-page /
+                // friend-moments-page / mobile-friend-moments-page / profile-
+                // moments-page commentMutation onMutate 的「`ownerUsername ??
+                // t(msg\`我\`)`」同模板对齐。`?.trim() ||` 而不是 `??` 是为了
+                // 把 "" / "   " 也吃掉（store setter 用 nullish coalescing
+                // 可能保留显式 ""）。
+                authorName: ownerUsername?.trim() || t(msg`我`),
                 authorAvatar: ownerAvatar ?? "",
                 authorType: "user" as const,
                 createdAt: new Date().toISOString(),
