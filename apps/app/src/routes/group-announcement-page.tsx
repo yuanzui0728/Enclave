@@ -342,7 +342,14 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
         );
       }}
       rightActions={
-        groupQuery.data ? (
+        // 走查 2026-05-22 R1：右上角 分享/复制 按钮原版只看 groupQuery.data 是否
+        // 加载完，公告还在 "暂未设置" 且用户也没新输入草稿时按钮依然亮着，
+        // 用户点了只会收到 "当前还没有可分享的群公告。" 的 notice ——既然
+        // onClick 在这种状态下必然变成无操作 notice，干脆在 saved announcement
+        // 和 draft 都为空时隐藏入口；用户开始打字（draft 非空）也算可分享，
+        // 不会破坏「输入中也能分享草稿」的语义。
+        groupQuery.data &&
+        (groupQuery.data.announcement?.trim() || draft.trim()) ? (
           <Button
             type="button"
             onClick={() => void handleShareAnnouncement()}
@@ -526,8 +533,18 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
                 className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
+              {/* 走查 2026-05-22 R1：原版无论有没有现有公告，都常驻一条
+                  "留空后保存，会清空当前群公告。"——在 announcement 还是
+                  "暂未设置" 的新群里没有任何可被"清空"的内容，这条提示纯属
+                  误导（用户会以为我空着提交就能"清空"什么，结果其实保存按钮
+                  在 draft==='' 时本来就被 disabled）。只有当真有公告内容时
+                  才显示这条提示。 */}
               <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-                <span>{t(msg`留空后保存，会清空当前群公告。`)}</span>
+                <span>
+                  {groupQuery.data.announcement?.trim()
+                    ? t(msg`留空后保存，会清空当前群公告。`)
+                    : null}
+                </span>
                 <span>{t(msg`${draft.trim().length} 字`)}</span>
               </div>
               <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
