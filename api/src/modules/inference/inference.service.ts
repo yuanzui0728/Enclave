@@ -18,6 +18,8 @@ import {
   type VendorFamilyPersonaDefinition,
 } from './inference-catalog.seed';
 import { MinimaxNativeClient } from '../ai/minimax-native.client';
+import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { executeChatCompletion } from '../ai/chat-completion-stream.util';
 
@@ -313,6 +315,14 @@ export class InferenceService implements OnModuleInit {
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
     private readonly subscription: SubscriptionService,
+    // 走查 yuanzui0728 R1：admin TTS / image 诊断走 MinimaxNativeClient 直接调
+    // /t2a_v2 与 /image_generation，原本完全绕开 MinimaxQuotaService。结果：
+    //   1. 撞 2056 时 markExhaustedToday 不触发，cloud-sync 不会推全 fleet
+    //      熔断 → 其它 world 各做一次必败请求才学到当日没额度
+    //   2. 配额计数 reserved/committed 不动 → DB 和真实消耗漂移
+    // 注入 quota service 让诊断也走标准 reserve/commit/release + 撞 2056
+    // 时 markExhaustedToday 通知全 fleet。
+    private readonly minimaxQuota: MinimaxQuotaService,
   ) {}
 
   async onModuleInit() {
@@ -1931,12 +1941,52 @@ export class InferenceService implements OnModuleInit {
         provider.ttsEndpoint,
         provider.ttsApiKey,
       );
-      const result = await minimax.synthesizeSpeech({
-        model: provider.ttsModel,
-        text: probeText,
-        voiceId: voice,
-      });
-      buffer = result.buffer;
+      // 走查 yuanzui0728 R1：原版直接 minimax.synthesizeSpeech 完全绕过
+      // MinimaxQuotaService。撞 2056 不会触发 markExhaustedToday → cloud-sync
+      // 推全 fleet 熔断也丢，配额计数 reserved/committed 不动也漂移。包成
+      // 标准 reserve/commit/release + 2056 markExhaustedToday；仅对常量表登
+      // 记的模型生效（speech-02-hd），未登记的自然 bypass 不阻塞 admin 测自
+      // 定义 TTS provider。
+      const quotaModel = provider.ttsModel;
+      const tracked = quotaModel in TOKEN_PLAN_DAILY_LIMITS;
+      if (tracked) {
+        const reserved = await this.minimaxQuota.tryReserve(quotaModel);
+        if (!reserved) {
+          throw new AppError('AI_TTS_QUOTA_EXHAUSTED', {
+            status: HttpStatus.TOO_MANY_REQUESTS,
+            legacyMessage: '今日语音合成额度已用完，请稍后再试。',
+          });
+        }
+      }
+      try {
+        const result = await minimax.synthesizeSpeech({
+          model: provider.ttsModel,
+          text: probeText,
+          voiceId: voice,
+        });
+        if (tracked) {
+          await this.minimaxQuota.commit(quotaModel);
+        }
+        buffer = result.buffer;
+      } catch (innerErr) {
+        if (tracked) {
+          await this.minimaxQuota.release(quotaModel);
+          // 撞 2056 标死，让全 fleet 立刻熔断（避免其它 world 各做一次必败请求）
+          const errMsg =
+            innerErr instanceof AppError
+              ? (innerErr.getResponse() as { code?: string } | undefined)?.code
+              : undefined;
+          const errMessage =
+            innerErr instanceof Error ? innerErr.message : String(innerErr);
+          if (
+            errMsg === 'MINIMAX_TOKEN_PLAN_EXHAUSTED' ||
+            /\b2056\b/.test(errMessage)
+          ) {
+            await this.minimaxQuota.markExhaustedToday(quotaModel);
+          }
+        }
+        throw innerErr;
+      }
     } else {
       const client = this.buildProviderClient({
         endpoint: provider.ttsEndpoint,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link, useParams } from "@tanstack/react-router";
@@ -434,6 +434,12 @@ function ReadView({ view }: { view: WikiPageView }) {
   const [narrationUrl, setNarrationUrl] = useState<string | null>(null);
   const [narrationLoading, setNarrationLoading] = useState(false);
   const [narrationError, setNarrationError] = useState<string | null>(null);
+  // 走查 yuanzui0728 R1：narrationLoading 是 React state，setState 要下一次 commit
+  // 才生效，同帧 / 异步 race 双击仍可能两次 await synthesizePageNarration → 烧两份
+  // 11000/天 TTS HD 配额（端点没缓存，每次都真合成）。和 wechat-moment-card 同款
+  // narrationInflightRef 同步守卫，跳过 React commit 时机风险。
+  const narrationInflightRef = useRef(false);
+  const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationText = useMemo(() => {
     const parts: string[] = [];
     const append = (label: string, value: string | undefined | null) => {
@@ -447,8 +453,49 @@ function ReadView({ view }: { view: WikiPageView }) {
     }
     return parts.join("\n\n").slice(0, 4000);
   }, [c.bio, c.personality, recipe?.prompting.coreLogic, t]);
+  // 走查 yuanzui0728 R1：切换到不同角色页（同组件、不同 view.characterId）时，
+  // 旧角色的 narrationUrl 还挂着，新角色 listen 按钮一点会触发再合成；同时旧
+  // <audio autoPlay> 还可能在后台播。重置 narrationUrl + 释放 audio buffer，
+  // 与 wechat-moment-card.tsx 切账户路径同款。
+  useEffect(() => {
+    const audio = narrationAudioRef.current;
+    if (audio) {
+      audio.pause();
+    }
+    setNarrationUrl(null);
+    setNarrationError(null);
+    setNarrationLoading(false);
+    narrationInflightRef.current = false;
+  }, [view.characterId]);
+  // 组件卸载时显式释放 audio buffer（Chromium / iOS Safari 后台仍会占内存）
+  useEffect(() => {
+    return () => {
+      const audio = narrationAudioRef.current;
+      if (!audio) return;
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    };
+  }, []);
   const handleListen = async () => {
+    // 同帧双击守卫：narrationLoading 是 React state，下次 commit 才翻 true；
+    // 同帧 / 微秒级第二次点击 ref 已 true，绕过烧两份 quota 的双调用。
+    if (narrationInflightRef.current) return;
     if (narrationLoading || !narrationText) return;
+    // 已合成过：toggle play/pause，绝不再次合成（端点 /ai/speech 无缓存，每
+    // 次点都是真烧一份 11000/天 配额；和 wechat-moment-card 同款 toggle）。
+    const existing = narrationAudioRef.current;
+    if (narrationUrl && existing) {
+      if (existing.paused) {
+        existing.play().catch(() => {
+          // iOS autoplay 限制偶发 reject，保留 native controls 让用户再点 play
+        });
+      } else {
+        existing.pause();
+      }
+      return;
+    }
+    narrationInflightRef.current = true;
     setNarrationLoading(true);
     setNarrationError(null);
     try {
@@ -462,6 +509,7 @@ function ReadView({ view }: { view: WikiPageView }) {
         err instanceof Error ? err.message : t(msg`朗读生成失败`),
       );
     } finally {
+      narrationInflightRef.current = false;
       setNarrationLoading(false);
     }
   };
@@ -498,6 +546,7 @@ function ReadView({ view }: { view: WikiPageView }) {
           </div>
           {narrationUrl ? (
             <audio
+              ref={narrationAudioRef}
               src={narrationUrl}
               controls
               autoPlay
