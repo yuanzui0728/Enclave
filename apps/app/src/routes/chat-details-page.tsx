@@ -426,7 +426,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const contactProfileSubtitle = friendship?.remarkName?.trim()
     ? t(msg`昵称：${targetCharacter?.name || t(msg`未设置`)}`)
     : targetCharacter?.relationship?.trim() ||
-      (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
+      (isSelfMirror
+        ? t(msg`本人`)
+        : isFriend
+          ? t(msg`通讯录朋友`)
+          : t(msg`世界联系人`));
   const contactIdentifier = targetCharacterId
     ? t(msg`隐界号：${buildYinjieId(targetCharacterId)}`)
     : null;
@@ -446,7 +450,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       t(msg`联系人`);
     const relationship =
       targetCharacter?.relationship?.trim() ||
-      (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
+      (isSelfMirror
+        ? t(msg`本人`)
+        : isFriend
+          ? t(msg`通讯录朋友`)
+          : t(msg`世界联系人`));
 
     return {
       title: t(msg`${contactName} 的隐界名片`),
@@ -468,6 +476,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     displayedConversationTitle,
     friendship?.remarkName,
     isFriend,
+    isSelfMirror,
     t,
     targetCharacter?.name,
     targetCharacter?.relationship,
@@ -1201,7 +1210,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {conversation ? (
         <>
           <ChatDetailsSection
-            title={isFriend ? t(msg`朋友资料`) : t(msg`详细资料`)}
+            title={
+              isSelfMirror
+                ? t(msg`个人资料`)
+                : isFriend
+                  ? t(msg`朋友资料`)
+                  : t(msg`详细资料`)
+            }
             variant="wechat"
           >
             <button
@@ -1370,9 +1385,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                   // 走查 R1：isBlocked 在 blockedQuery 加载完成前是 null，标签
                   // 保持完整的"隐藏/清空/投诉/拉黑"以免在 loading 期间收缩到
                   // "无拉黑选项"再扩出来；只有 true 时才隐藏拉黑入口。
-                  isBlocked === true
-                    ? t(msg`隐藏 / 清空 / 投诉`)
-                    : t(msg`隐藏 / 清空 / 投诉 / 拉黑`)
+                  // self 镜像：自己不能投诉/拉黑自己，副标题对齐。
+                  isSelfMirror
+                    ? t(msg`隐藏 / 清空`)
+                    : isBlocked === true
+                      ? t(msg`隐藏 / 清空 / 投诉`)
+                      : t(msg`隐藏 / 清空 / 投诉 / 拉黑`)
                 }
                 variant="wechat"
                 disabled={busy}
@@ -1517,34 +1535,44 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                   setDangerSheetAction("clear");
                 },
               },
-              {
-                key: "report",
-                label: t(msg`投诉`),
-                description: t(msg`提交一次聊天场景投诉`),
-                danger: true,
-                disabled: busy || !targetCharacterId,
-                onClick: () => {
-                  setManagementSheetOpen(false);
-                  setDangerSheetAction("report");
-                },
-              },
-              {
-                key: "block",
-                // isBlocked 在 blockedQuery 加载完成前是 null，按"未拉黑"显示
-                // 文案，但 disabled 同时加 `isBlocked !== false` —— loading 期间
-                // (null) 也 disabled，避免用户在状态未知时点击 → server 返回
-                // 「已在黑名单」误以为黑名单功能出错。
-                label: isBlocked === true ? t(msg`已加入黑名单`) : t(msg`加入黑名单`),
-                description: isBlocked === true
-                  ? t(msg`当前已经处于黑名单中`)
-                  : t(msg`不再接收该角色后续互动`),
-                danger: true,
-                disabled: busy || isBlocked !== false || !targetCharacterId,
-                onClick: () => {
-                  setManagementSheetOpen(false);
-                  setDangerSheetAction("block");
-                },
-              },
+              // self 镜像：自己投诉自己 / 拉黑自己都没意义，过滤掉。
+              ...(isSelfMirror
+                ? []
+                : [
+                    {
+                      key: "report",
+                      label: t(msg`投诉`),
+                      description: t(msg`提交一次聊天场景投诉`),
+                      danger: true,
+                      disabled: busy || !targetCharacterId,
+                      onClick: () => {
+                        setManagementSheetOpen(false);
+                        setDangerSheetAction("report");
+                      },
+                    },
+                    {
+                      key: "block",
+                      // isBlocked 在 blockedQuery 加载完成前是 null，按"未拉黑"显示
+                      // 文案，但 disabled 同时加 `isBlocked !== false` —— loading 期间
+                      // (null) 也 disabled，避免用户在状态未知时点击 → server 返回
+                      // 「已在黑名单」误以为黑名单功能出错。
+                      label:
+                        isBlocked === true
+                          ? t(msg`已加入黑名单`)
+                          : t(msg`加入黑名单`),
+                      description:
+                        isBlocked === true
+                          ? t(msg`当前已经处于黑名单中`)
+                          : t(msg`不再接收该角色后续互动`),
+                      danger: true,
+                      disabled:
+                        busy || isBlocked !== false || !targetCharacterId,
+                      onClick: () => {
+                        setManagementSheetOpen(false);
+                        setDangerSheetAction("block");
+                      },
+                    },
+                  ]),
             ]}
           />
 
