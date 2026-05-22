@@ -78,6 +78,7 @@ import {
 import { stripToolCallSyntax } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
@@ -1925,7 +1926,7 @@ export function DiscoverFeedPage() {
       blockedQuery.error instanceof Error &&
       blockedQuery.data === undefined
     ) {
-      errors.push(blockedQuery.error.message);
+      errors.push(describeRequestError(blockedQuery.error));
     }
 
     return (
@@ -1947,14 +1948,14 @@ export function DiscoverFeedPage() {
           commentDrafts={commentDrafts}
           commentErrorMessage={
             commentMutation.isError && commentMutation.error instanceof Error
-              ? commentMutation.error.message
+              ? describeRequestError(commentMutation.error)
               : null
           }
           commentPendingPostIds={commentInflightPostIds}
           composeErrorMessage={
             composeDraft.mediaError ??
             (createMutation.isError && createMutation.error instanceof Error
-              ? createMutation.error.message
+              ? describeRequestError(createMutation.error)
               : null)
           }
           createPending={createMutation.isPending}
@@ -1965,7 +1966,7 @@ export function DiscoverFeedPage() {
           rawLoadedCount={feedPosts.length}
           feedErrorMessage={
             feedQuery.isError && feedQuery.error instanceof Error
-              ? feedQuery.error.message
+              ? describeRequestError(feedQuery.error)
               : null
           }
           imageDrafts={composeDraft.imageDrafts}
@@ -1978,7 +1979,7 @@ export function DiscoverFeedPage() {
           }
           likeErrorMessage={
             likeMutation.isError && likeMutation.error instanceof Error
-              ? likeMutation.error.message
+              ? describeRequestError(likeMutation.error)
               : null
           }
           likePendingPostIds={likeInflightPostIds}
@@ -2297,7 +2298,7 @@ export function DiscoverFeedPage() {
             <MobileFeedStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`广场动态暂时不可用`)}
-              description={feedQuery.error.message}
+              description={describeRequestError(feedQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap gap-2">
@@ -2645,7 +2646,7 @@ export function DiscoverFeedPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {likeMutation.error.message}
+                  {describeRequestError(likeMutation.error)}
                 </span>
                 {/* 旧按钮是 handleStatusBack（refetch 整张 feed），跟"点赞失败"
                     完全不挨着，用户点完莫名其妙列表重刷一遍但赞没补上。改成
@@ -2674,7 +2675,7 @@ export function DiscoverFeedPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {commentMutation.error.message}
+                  {describeRequestError(commentMutation.error)}
                 </span>
                 {/* 同上：refetch 整张 feed 解决不了"评论没发出去"。回放上一次
                     的 mutate 变量（postId + replyTarget），text 现读现用——
@@ -2925,7 +2926,7 @@ export function DiscoverFeedPage() {
           commentMutation.isError &&
           commentMutation.error instanceof Error &&
           commentMutation.variables?.postId === commentBarTarget?.postId
-            ? commentMutation.error.message
+            ? describeRequestError(commentMutation.error)
             : null
         }
         onSubmit={() => {

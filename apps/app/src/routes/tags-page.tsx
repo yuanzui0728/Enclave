@@ -22,6 +22,7 @@ import {
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function TagsPage() {
@@ -257,7 +258,7 @@ function MobileTagsPage() {
             <MobileTagStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`标签页暂时不可用`)}
-              description={friendsQuery.error.message}
+              description={describeRequestError(friendsQuery.error)}
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button

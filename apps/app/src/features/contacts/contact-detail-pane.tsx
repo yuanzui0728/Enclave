@@ -14,6 +14,7 @@ import { Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
 import { SparkBadge } from "../../components/spark-badge";
 import { translateCharacterBio } from "../../lib/character-i18n";
 import { formatTimestamp } from "../../lib/format";
+import { describeRequestError } from "../../lib/request-error";
 import { buildYinjieId } from "../../lib/yinjie-id";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { DesktopContactTextEditDialog } from "./desktop-contact-text-edit-dialog";
@@ -273,7 +274,7 @@ export function ContactDetailPane({
         {updateProfileMutation.isError &&
         updateProfileMutation.error instanceof Error ? (
           <div className="px-6 pb-2">
-            <ErrorBlock message={updateProfileMutation.error.message} />
+            <ErrorBlock message={describeRequestError(updateProfileMutation.error)} />
           </div>
         ) : null}
         {isFriend ? (
@@ -508,7 +509,7 @@ export function ContactDetailPane({
           error={
             updateProfileMutation.isError &&
             updateProfileMutation.error instanceof Error
-              ? updateProfileMutation.error.message
+              ? describeRequestError(updateProfileMutation.error)
               : null
           }
           onClose={() => {

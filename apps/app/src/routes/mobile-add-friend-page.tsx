@@ -68,6 +68,7 @@ import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useCappedPending } from "../hooks/use-capped-pending";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -687,12 +688,12 @@ function MobileAddFriend() {
       {sendRequestMutation.isError &&
       sendRequestMutation.error instanceof Error ? (
         <div className="px-3 pt-2">
-          <ErrorBlock message={sendRequestMutation.error.message} />
+          <ErrorBlock message={describeRequestError(sendRequestMutation.error)} />
         </div>
       ) : null}
       {openChatMutation.isError && openChatMutation.error instanceof Error ? (
         <div className="px-3 pt-2">
-          <ErrorBlock message={openChatMutation.error.message} />
+          <ErrorBlock message={describeRequestError(openChatMutation.error)} />
         </div>
       ) : null}
 
@@ -789,7 +790,7 @@ function MobileAddFriend() {
           sendRequestMutation.error instanceof Error &&
           sendRequestMutation.variables?.characterId ===
             sendDialogResult.character.id
-            ? sendRequestMutation.error.message
+            ? describeRequestError(sendRequestMutation.error)
             : null
         }
         onClose={() => setSendDialogCharacterId(null)}

@@ -68,6 +68,7 @@ import { buildMobileMiniProgramsRouteSearch } from "../features/mini-programs/mo
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { normalizePathname } from "../lib/normalize-pathname";
+import { describeRequestError } from "../lib/request-error";
 import { searchStringToObject } from "../lib/route-search";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -802,10 +803,10 @@ function DesktopDiscoverWorkspace() {
                 <InlineNotice tone="info">{sceneMessage}</InlineNotice>
               ) : null}
               {sceneMutation.isError && sceneMutation.error instanceof Error ? (
-                <ErrorBlock message={sceneMutation.error.message} />
+                <ErrorBlock message={describeRequestError(sceneMutation.error)} />
               ) : null}
               {shakeMutation.isError && shakeMutation.error instanceof Error ? (
-                <ErrorBlock message={shakeMutation.error.message} />
+                <ErrorBlock message={describeRequestError(shakeMutation.error)} />
               ) : null}
             </AppSection>
 
@@ -920,7 +921,7 @@ function DesktopDiscoverWorkspace() {
                   message={
                     composeDraft.mediaError ??
                     (createFeedPostMutation.error instanceof Error
-                      ? createFeedPostMutation.error.message
+                      ? describeRequestError(createFeedPostMutation.error)
                       : "")
                   }
                 />
@@ -963,7 +964,7 @@ function DesktopDiscoverWorkspace() {
               <LoadingBlock label={t(msg`正在读取广场动态...`)} />
             ) : null}
             {feedQuery.isError && feedQuery.error instanceof Error ? (
-              <ErrorBlock message={feedQuery.error.message} />
+              <ErrorBlock message={describeRequestError(feedQuery.error)} />
             ) : null}
 
             {visiblePosts.map((post) => {
@@ -1079,11 +1080,11 @@ function DesktopDiscoverWorkspace() {
 
             {likeFeedMutation.isError &&
             likeFeedMutation.error instanceof Error ? (
-              <ErrorBlock message={likeFeedMutation.error.message} />
+              <ErrorBlock message={describeRequestError(likeFeedMutation.error)} />
             ) : null}
             {commentFeedMutation.isError &&
             commentFeedMutation.error instanceof Error ? (
-              <ErrorBlock message={commentFeedMutation.error.message} />
+              <ErrorBlock message={describeRequestError(commentFeedMutation.error)} />
             ) : null}
 
             {!feedQuery.isLoading &&
