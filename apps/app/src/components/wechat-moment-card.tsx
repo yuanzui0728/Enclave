@@ -16,7 +16,7 @@ import {
   type MomentLike,
   synthesizeMomentNarration,
 } from "@yinjie/contracts";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 import { Heart, MapPin, Volume2 } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
@@ -119,6 +119,14 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     },
     ref,
   ) {
+    // 走查新一轮 R1（i18n）：memo 包裹下 React 不会因父组件 re-render 让子重渲；
+    // 又因为 t = translateRuntimeMessage 是模块级静态绑定（不是 hook），locale
+    // 切换时本卡片完全感知不到，导致 formatWeChatTimestamp 输出的「刚刚 / X 分钟前
+    // / 昨天 / X 天前 / 月份名」+ 删除/朗读/更多操作 等按钮文案 + 评论行「回复」
+    // 全部锁死在首次渲染那一刻的语言版本。订阅 useAppLocale (内部 useContext)
+    // 后 React 即使在 memo 下也会因 context 变化让本组件 re-render — 静态 t 在
+    // 再次调用时读当前 locale，文案立即跟上。和 MomentMediaGallery 同模板。
+    useAppLocale();
     // 听贴文（MiniMax TTS HD）：本地 audio element + 状态机；缓存命中即刻播。
     const [narrationLoading, setNarrationLoading] = useState(false);
     const [narrationUrl, setNarrationUrl] = useState<string | null>(null);

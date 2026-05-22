@@ -9,7 +9,7 @@ import {
   type MomentVideoAsset,
 } from "@yinjie/contracts";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
-import { translateRuntimeMessage } from "@yinjie/i18n";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
 import { formatMomentDurationLabel } from "../features/moments/moment-compose-media";
 import { AudioCard } from "./audio-card";
@@ -51,6 +51,13 @@ function MomentMediaGalleryInner({
   variant = "desktop",
   stopPropagation = false,
 }: MomentMediaGalleryProps) {
+  // 走查新一轮 R1（i18n）：和 wechat-moment-card 同款 — gallery 被 memo 包裹（行
+  // 545），t 又是模块级 translateRuntimeMessage 静态绑定，locale 切换后本组件
+  // 既不收 prop 变化也不订阅 i18n context → 内部「实况 / 视频 / 时长 / 关闭图片
+  // 预览 / 上一张 / 下一张 / 朋友圈图片 / 朋友圈视频」一律锁死在首次渲染那一刻
+  // 的语言版本，直到 moment.media 引用变（极少）。订阅 useAppLocale 让 context
+  // 变化绕过 memo 触发 re-render，静态 t 在再次调用时读当前 locale 即可对齐。
+  useAppLocale();
   const [viewerState, setViewerState] = useState<ViewerState | null>(null);
 
   const imageCount = media.reduce(
