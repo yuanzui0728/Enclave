@@ -55,6 +55,9 @@ export function ProfileInfoPage() {
     null,
   );
   const toastKeyRef = useRef(0);
+  // 复制隐界号是 async（writeClipboardText 走 native bridge ~50-200ms），
+  // 同帧多次点击会重复打 bridge + 弹冗余 toast。简单 boolean ref 同步守卫。
+  const copyInFlightRef = useRef(false);
   function showToast(message: string) {
     toastKeyRef.current += 1;
     setToast({ message, key: toastKeyRef.current });
@@ -188,8 +191,20 @@ export function ProfileInfoPage() {
     if (!yinjieIdText) {
       return;
     }
-    const copied = await writeClipboardText(yinjieIdText);
-    showToast(copied ? t(msg`已复制隐界号`) : t(msg`复制失败，请重试`));
+    // 走查 R1：之前没 in-flight 守卫，移动端连点「隐界号」行（按钮 active 状态
+    // 不 disable，writeClipboardText 又是异步走 native bridge ~50-200ms）会让
+    // 同一份 yinjieId 串行写剪贴板 2-3 次 + 弹 2-3 条 toast，每条 toast 内部
+    // setTimeout 1.6s 自清又互相干扰（先 setToast({key:1}) → setToast({key:2}) →
+    // 第一个 timer 已被取消，第二个紧跟第三个，最后只看到最末一条，但 native
+    // bridge 已经被打了 3 次无用写。
+    if (copyInFlightRef.current) return;
+    copyInFlightRef.current = true;
+    try {
+      const copied = await writeClipboardText(yinjieIdText);
+      showToast(copied ? t(msg`已复制隐界号`) : t(msg`复制失败，请重试`));
+    } finally {
+      copyInFlightRef.current = false;
+    }
   }
 
   function translateMutationError(err: unknown): string | null {

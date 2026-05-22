@@ -113,15 +113,23 @@ export function MobileFavoritesPage({
   // contacts 暂未在 UI 任何位置接入 upsertDesktopFavorite，永远 0；
   // 先不在筛选条里暴露，跟 desktop favorites-page 对齐（同样不展示）。
   // FavoriteCategory.contacts 类型保留以便日后接入"收藏联系人"。
-  const filters: Array<{ id: FilterId; label: string }> = [
-    { id: "all", label: t(msg`全部`) },
-    { id: "messages", label: t(msg`消息`) },
-    { id: "notes", label: t(msg`笔记`) },
-    { id: "officialAccounts", label: t(msg`公众号`) },
-    { id: "moments", label: t(msg`朋友圈`) },
-    { id: "feed", label: t(msg`广场动态`) },
-    { id: "channels", label: t(msg`视频号`) },
-  ];
+  // 走查 R1：原本每次 render 都新建 7 个 object + 7 次 t() 调用。本页 search /
+  // filter / removeMutation / 长按弹层等任意 state 变更都会全量 re-render，
+  // 此处 filters 内容只在 locale 切换时才变。useMemo 在 t 不变时复用同一份引用，
+  // 子 button 节点也 keep stable —— 高频 setSearchText / setFavorites 路径下
+  // 省掉 7 次 t() 调用 + 7 个 object 分配 + React 节点 diff。
+  const filters = useMemo(
+    () => [
+      { id: "all" as FilterId, label: t(msg`全部`) },
+      { id: "messages" as FilterId, label: t(msg`消息`) },
+      { id: "notes" as FilterId, label: t(msg`笔记`) },
+      { id: "officialAccounts" as FilterId, label: t(msg`公众号`) },
+      { id: "moments" as FilterId, label: t(msg`朋友圈`) },
+      { id: "feed" as FilterId, label: t(msg`广场动态`) },
+      { id: "channels" as FilterId, label: t(msg`视频号`) },
+    ],
+    [t],
+  );
 
   const [favorites, setFavorites] = useState(() =>
     mergeDesktopFavoriteRecords([], readDesktopFavorites()),

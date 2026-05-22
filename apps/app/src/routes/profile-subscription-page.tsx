@@ -147,6 +147,12 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
     }
     let cancelled = false;
     setQrError(false);
+    // 走查 R1：之前只 reset qrError、保留旧 qrDataUrl，shareUrl 切换那一帧
+    // QR 卡里仍然显示前一个 URL 的二维码（重新登录另一个云账号 / 后端 invite
+    // code 轮换都是触发场景）；用户拿手机扫掉的就是旧链接。同步把 qrDataUrl
+    // 清成 null，下面的 qrError=false + qrDataUrl=null 让卡片落到「正在生成…」
+    // 占位，避免误导扫码。
+    setQrDataUrl(null);
     (async () => {
       try {
         const { default: QRCode } = await import("qrcode");
