@@ -163,6 +163,10 @@ export function CreateGroupPage() {
           : routeState.source === "group-contacts"
             ? "/contacts/groups"
             : undefined);
+      const groupHash = buildMobileGroupRouteHash({
+        returnPath,
+        returnHash: safeReturnPath ? safeReturnHash : undefined,
+      });
       // 走查（第三次会话 R1）：replace:true 把浏览器 history 里的 /group/new
       // 原地换成 /group/{id}，但 mobile-shell useEffect 看到的 pathname 变化
       // 跟 push 长得一样 → recordAppNavigation 把"被替换掉的 /group/new"当
@@ -173,18 +177,24 @@ export function CreateGroupPage() {
       // /tabs/chat]。Android 硬件 Back 从这条幽灵 /tabs/chat 一按又落回
       // /group/{id} 死循环。pre-write storage 让 mobile-shell 的
       // recordAppNavigation 因 currentPath 已等于目标 path 早返兜住，把
-      // "真实浏览器 prev"和"storage prev"对齐。仅 returnPath 可定位时调用，
-      // 深链入场（returnPath 不可知）维持原行为。
+      // "真实浏览器 prev"和"storage prev"对齐。
+      //
+      // R2 注意：mobile-shell 的 effect 算 currentPath 用 pathname+search+hash，
+      // storage 里的 curr 也带 hash；只 pre-write `/group/${id}` (无 hash)
+      // 跟 mobile-shell 写的 `/group/${id}#returnPath=...` 比对不等 → 早返兜
+      // 不住，会被原逻辑覆盖回 {prev:/group/new}。必须拼上 hash 才能命中
+      // currentState.currentPath === normalizedPath 那个分支。
+      // 仅 returnPath 可定位时调用；深链入场（returnPath 不可知）维持原行为。
       if (returnPath) {
-        overrideRecordedNavigationPair(`/group/${group.id}`, returnPath);
+        const groupFullPath = groupHash
+          ? `/group/${group.id}#${groupHash}`
+          : `/group/${group.id}`;
+        overrideRecordedNavigationPair(groupFullPath, returnPath);
       }
       void navigate({
         to: "/group/$groupId",
         params: { groupId: group.id },
-        hash: buildMobileGroupRouteHash({
-          returnPath,
-          returnHash: safeReturnPath ? safeReturnHash : undefined,
-        }),
+        hash: groupHash,
         replace: true,
       });
     },
