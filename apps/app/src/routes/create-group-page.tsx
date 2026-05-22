@@ -273,6 +273,16 @@ export function CreateGroupPage() {
   // 用 fallback 里的 fresh navigate。这里把整段重写成同模式，每个 source
   // 对应一条 fallback navigate。
   const handleBack = () => {
+    // 走查（新一轮）：搜不到联系人空态里已有「清空搜索」action，但顶栏「返回」
+    // 在 searchTerm 非空时同样应该先吃掉搜索 —— 跟桌面 Escape clearSearch (见
+    // desktop-create-group-dialog R 注释) / WeChat 移动端搜索框 back 一致。否则
+    // 用户搜到一半想回退一步看全量列表，只能手动点 input 右侧 X 或清字串，反
+    // 直觉地从顶栏点返回就直接把整页和已选都吹了。
+    if (searchTerm.trim()) {
+      setSearchTerm("");
+      return;
+    }
+
     const performFallbackNavigate = () => {
       if (safeReturnPath) {
         void navigate({
