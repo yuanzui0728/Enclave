@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type MouseEventHandler } from "react";
+import { memo, useEffect, useState, type CSSProperties, type MouseEventHandler } from "react";
 import { Camera } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { resolveAppMediaUrl } from "../lib/media-url";
@@ -19,7 +19,16 @@ type WeChatMomentsCoverProps = {
   onAvatarTap?: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function WeChatMomentsCover({
+// 新走查 R2：朋友圈 cover 在 profile-moments-page / mobile-friend-moments-page
+// 顶部，父组件高频 setState 都会拽着它一起 re-render——commentDrafts 每键
+// setCommentDrafts、notice 2.4s 自清、setActionBubble / setShareMomentId 弹层
+// 开关、optimistic likes setQueriesData 触发的 parent re-render——每条 keystroke
+// 都跑一次 cover 函数体（safeNickname trim + Array.from 取 initial + 几段 cn）。
+// 用户在朋友圈打长评论尤其明显，cover 又是相对静态的（昵称 / 头像 URL 几乎不
+// 变）。memo 让 nickname/avatarUrl/coverUrl 引用稳定时直接跳过函数体。
+// onAvatarTap 在 profile-moments-page mobile 不传，传也是 stable arrow（父级有
+// useCallback），不会破 memo。
+export const WeChatMomentsCover = memo(function WeChatMomentsCover({
   nickname,
   avatarUrl,
   coverUrl,
@@ -97,7 +106,7 @@ export function WeChatMomentsCover({
       </div>
     </section>
   );
-}
+});
 
 function CoverAvatar({
   src,
