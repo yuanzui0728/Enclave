@@ -764,6 +764,9 @@ export class FeedService implements OnModuleInit {
   async synthesizeFeedNarration(
     postId: string,
   ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    // 走查 R1：和 like/comment 同款先 worldOwner gate（确保请求带有效世界 token，
+    // 防止匿名公网直接打 /feed/:id/synthesize-audio 烧 11000/天 的 TTS HD 配额）。
+    await this.worldOwnerService.getOwnerOrThrow();
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post || post.publishStatus === 'deleted') {
       throw new AppError('FEED_POST_NOT_FOUND', {

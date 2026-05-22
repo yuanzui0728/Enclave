@@ -3489,14 +3489,23 @@ export class AiOrchestratorService {
       }
 
       attemptedProvider = true;
-      const voice =
-        options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
+      // 走查 R1：voicePreset 是 MiniMax voice_id（如 male-qn-qingse），把它原样
+      // 透给 OpenAI 风格 provider 的 audio.speech.create 会 400（OpenAI 的 voice
+      // 只认 alloy / echo / fable / onyx / nova / shimmer）。只在当前 attempt 的
+      // provider 也是 MiniMax 时才让 character voicePreset 生效；OpenAI 兜底
+      // attempt 仍用 provider 配置的 ttsVoice，不被角色配置污染。
+      const isMinimaxAttempt = MinimaxNativeClient.isMinimaxEndpoint(
+        provider.ttsEndpoint,
+      );
+      const voice = isMinimaxAttempt
+        ? options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE
+        : provider.ttsVoice || DEFAULT_TTS_VOICE;
       const instructions = await this.worldLanguage.buildSpeechInstructions({
         existingInstructions: options.instructions,
       });
 
       try {
-        if (MinimaxNativeClient.isMinimaxEndpoint(provider.ttsEndpoint)) {
+        if (isMinimaxAttempt) {
           // 先 new client —— 它的 constructor 在 apiKey 缺失时会抛
           // MINIMAX_API_KEY_MISSING；如果先 reserve 再 new，apiKey 缺失就会
           // 抛在 reserve 之后但 try/release 块之外，留下永远没释放的配额。

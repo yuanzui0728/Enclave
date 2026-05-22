@@ -452,8 +452,27 @@ export class MomentsService implements OnModuleInit {
   async synthesizeMomentNarration(
     postId: string,
   ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    // 走查 R1：原版直接 findOneBy postId 然后合成，**没做可见性检查** ——
+    // 任何登录用户可以朗读任何 post（包括被屏蔽的角色、设了 private 的别人贴
+    // 等），既漏权限又烧 11000/天 的 TTS HD 配额。和 getPost / addOwnerComment
+    // 同款的 owner visibility gate 走 canOwnerViewPost。
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const [visibleCharacterIds, ownerFriendCharacterIds, momentsHiddenFromMeCharacterIds] =
+      await Promise.all([
+        this.getVisibleCharacterIdSet(),
+        this.characters.getActiveFriendCharacterIdSet(owner.id),
+        this.remarkResolver.getMomentsHiddenFromMeCharacterIds(owner.id),
+      ]);
     const post = await this.postRepo.findOneBy({ id: postId });
-    if (!post) {
+    if (
+      !post ||
+      !this.canOwnerViewPost(
+        post,
+        visibleCharacterIds,
+        ownerFriendCharacterIds,
+        momentsHiddenFromMeCharacterIds,
+      )
+    ) {
       throw new AppError('MOMENT_POST_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
         legacyMessage: '朋友圈不存在或已删除。',
