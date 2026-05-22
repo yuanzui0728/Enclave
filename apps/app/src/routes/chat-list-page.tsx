@@ -690,6 +690,16 @@ function MobileChatListPage() {
       // 落库 .finally 的 invalidate 会用 server canonical 重新刷掉（成功
       // 路径相同），server 失败时 invalidate 把这条带回来 + setNoticeError
       // 红条，用户能看到「失败 + 会话回归」，比假装移除更不误导。
+      //
+      // 新会话走查 R5：和 patchConversationCache 对齐——先 await
+      // cancelQueries 再 setQueriesData。否则 socket 触发 + refetchOnFocus +
+      // 60s interval 任何一个在 commit 那一帧正好在飞的 refetch 完成后会
+      // 用 server canonical（含被删 conv）覆盖我们刚 filter 掉的 cache，
+      // 被删会话又冒回来；最终走 persistHiddenConversation 的 invalidate
+      // 重新刷掉，但中间 ~600ms 视觉闪烁正是 R2 想避免的。
+      await queryClient.cancelQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       queryClient.setQueriesData<ConversationListItem[]>(
         { queryKey: ["app-conversations", baseUrl] },
         (data) =>
