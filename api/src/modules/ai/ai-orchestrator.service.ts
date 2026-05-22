@@ -3594,6 +3594,13 @@ export class AiOrchestratorService {
           endpoint: provider.ttsEndpoint,
           apiKey: provider.ttsApiKey,
         });
+        // 走查 yuanzui0728 本次 R1：OpenAI SDK 默认 timeout 是 10min（600s）。
+        // MiniMax HD 撞 2056 / 网络 hang 后 fallback 到 OpenAI 兼容 TTS（如
+        // n1n.ai gpt-4o-mini-tts），若上游 524 / cloudflare 中转停滞，整条
+        // synthesizeSpeech 链路可挂 10min 不返回 —— 前端 fetch 默认无 client
+        // timeout，用户对着 loading spinner 干瞪 10min。in-flight dedup map
+        // 也撑 10min。和 MiniMax 自带 30s timeout 对齐：给 OpenAI TTS attempt
+        // 显式 60s（TTS 一般 ≤30s 完成，60s 留一倍冗余够防止边界 race 撞 504）。
         const response = await this.retrySpeechRequest('speech synthesis', () =>
           client.audio.speech.create(
             {
@@ -3603,7 +3610,7 @@ export class AiOrchestratorService {
               response_format: 'mp3',
               instructions,
             },
-            { maxRetries: 0 },
+            { maxRetries: 0, timeout: 60_000 },
           ),
         );
         const arrayBuffer = await response.arrayBuffer();
