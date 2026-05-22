@@ -784,7 +784,7 @@ function createPosterCaptureVideo(url: string, durationMs: number) {
 
     let timer: number | null = window.setTimeout(() => {
       timer = null;
-      cleanup();
+      releaseAndCleanup();
       reject(new Error(t(msg`视频封面生成超时。`)));
     }, POSTER_CAPTURE_TIMEOUT_MS);
     const cleanup = () => {
@@ -795,6 +795,17 @@ function createPosterCaptureVideo(url: string, durationMs: number) {
       video.onloadedmetadata = null;
       video.onseeked = null;
       video.onerror = null;
+    };
+    // 走查移动端朋友圈/新一轮 R1：成功路径在 buildMomentVideoPoster (line ~747)
+    // drawImage 完后立刻 video.removeAttribute("src")+load() 释放解码 buffer
+    // (见上方注释 line 740-746)；timeout / onerror 失败路径却只 null 事件 handler，
+    // <video preload="auto"> 已经把整段视频拉进内存，src 还指着 blob URL，decoded
+    // demux/decode 缓冲一直挂到 GC（实测一支 480p/3min ≈40MB；用户连续选 3-5 支
+    // 大视频中途有失败的，低内存机型快速 OOM）。失败路径也走同款 release。
+    const releaseAndCleanup = () => {
+      cleanup();
+      video.removeAttribute("src");
+      video.load();
     };
 
     video.onloadedmetadata = () => {
@@ -811,7 +822,7 @@ function createPosterCaptureVideo(url: string, durationMs: number) {
       resolve(video);
     };
     video.onerror = () => {
-      cleanup();
+      releaseAndCleanup();
       reject(new Error(t(msg`视频封面生成失败，请稍后重试。`)));
     };
     video.src = url;

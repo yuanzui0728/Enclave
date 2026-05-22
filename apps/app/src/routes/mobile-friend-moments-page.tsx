@@ -795,12 +795,27 @@ export function MobileFriendMomentsPage() {
       // 用户看到指示器走完一遍消失，但根本不知道列表没换。和 moments-page mobile
       // 下拉刷新失败的 danger notice 通道对齐：每个 refetch 单独看 result.error，
       // 任何一个失败都冒到顶部红条 2.4s 自动收。
+      //
+      // 走查移动端朋友圈/新一轮 R1：钉住触发时刻的 baseUrl/characterId —— 4 个
+      // refetch 并发跑期间（公网慢链路 1-3s）用户可能切账户 / 切到别的角色，
+      // 旧上下文的 refetch 失败若把红条冒到新页面就是误导（"我刚开角色 B 看到红条
+      // 写刷新失败，但我什么都没做"）。和 moments-page mobile 下拉刷新 baseUrl-
+      // guard (line 2371-2376) / mutation onError mutationGuardRef 同模板。
+      const guardBaseUrl = baseUrl;
+      const guardCharacterId = resolvedCharacterId;
       const results = await Promise.all([
         momentsQuery.refetch(),
         blockedQuery.refetch(),
         friendsQuery.refetch(),
         characterQuery.refetch(),
       ]);
+      const currentGuard = mutationGuardRef.current;
+      if (
+        guardBaseUrl !== currentGuard.baseUrl ||
+        guardCharacterId !== currentGuard.characterId
+      ) {
+        return;
+      }
       const failed = results.find((r) => r.isError && r.error instanceof Error);
       if (failed?.error instanceof Error) {
         const failedError = failed.error;

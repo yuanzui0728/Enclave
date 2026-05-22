@@ -106,6 +106,36 @@ export function MobileMomentsPublishPage() {
   // "选了多张但发不出去"。视频同理——并发开两条 replaceVideoFile 会让先完成的封面
   // 被后完成的盖掉、posterPreviewUrl 错配。
   const pickInflightRef = useRef(false);
+  // 走查移动端朋友圈/新一轮 R1：和 mobile-feed-publish-page 走查 Round 5 同模板
+  // 对齐 —— handlePickImages / handleVideoFileSelected 缺 shouldCommit 兜底导致两
+  // 条 mid-flight 泄漏：
+  //   (a) 账户切换：A 点视频 → picker → createMomentVideoDraft decode + 封面 1-30s
+  //       期间用户切到 B。下面 baseUrl effect 跑 composeDraft.reset() 把当前 state
+  //       清空。但 await 还在路上的 createMomentVideoDraft 30s 后落地 setVideoDraft
+  //       把 A 选的视频塞进 B 的空 draft，B 上凭空冒出一段没传过的视频。同款问
+  //       题：addImageFiles decode ~50-300ms 期间切账户，A 选的图落进 B draft。
+  //   (b) Unmount during decode：用户在解码窗口里 back → "放弃发表" confirm →
+  //       publish 页 unmount。React 把后续 setVideoDraft 静默 ignored（unmounted），
+  //       但 createMomentVideoDraft 内部已经 URL.createObjectURL 出 previewUrl +
+  //       posterPreviewUrl（封面 jpeg 多 MB），现在 orphan，反复"进 publish 选大
+  //       视频再 back" 会让 blob URL 池一路涨。
+  // baseUrlRef 拿最新值（不会被旧 closure 锁住）+ isMountedRef 跟踪 mount 状态；
+  // shouldCommit 在 hook 真正 setState 前再判一次：切走 / 已 unmount → hook 内部
+  // 把 nextDrafts/nextDraft release 掉，不让旧上下文的媒体落进新 state。
+  const baseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    baseUrlRef.current = baseUrl;
+  }, [baseUrl]);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    // StrictMode dev 下 effect 跑两遍（mount → cleanup → mount），每次 mount 都
+    // 要把 ref 拨回 true，否则第一次 cleanup 把它打成 false 后整页 shouldCommit
+    // 永远 false，handlePickImages / handleVideoFileSelected 选啥都 release 掉。
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   // 「这次离开页面之前，草稿已经被显式处理过」标记——onSuccess 清 IDB / 保留草稿 /
   // 不保留草稿 这三条路径都会翻 true。unmount cleanup 看到 true 就跳过 autosave，
   // 避免和 onSuccess 的 clearMomentDraft 抢着写同一把 IDB key（race 输了会让"已发布"
@@ -567,6 +597,7 @@ export function MobileMomentsPublishPage() {
   async function handlePickImages() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
+    const startBaseUrl = baseUrlRef.current;
     try {
       // 第二次走查 R4：原生壳 (PHPicker / PickVisualMedia) 拿到 limit 后会在系统
       // 选图 UI 上限制最多可勾数量。不传时 native-image-picker 默认 9 张，但跟
@@ -584,27 +615,60 @@ export function MobileMomentsPublishPage() {
       if (files.length === 0) {
         return;
       }
-      await composeDraft.addImageFiles(files);
+      // 走查移动端朋友圈/新一轮 R1：picker 关闭到 hook setImageDrafts commit 之间
+      // 仍有 50-300ms decode 窗口可能切账户 / unmount；shouldCommit 在 hook 内部
+      // setState 前再判一次，切走 / unmount 就 release 刚 decode 出来的 preview
+      // URL，不让旧上下文的图片塞进新 draft / orphan 到 blob URL 池。见上面
+      // baseUrlRef + isMountedRef 块的"两条 mid-flight 泄漏路径"注释。
+      await composeDraft.addImageFiles(files, {
+        shouldCommit: () =>
+          startBaseUrl === baseUrlRef.current && isMountedRef.current,
+      });
     } catch (error) {
+      // 切走后旧账户的 picker 错误不该弹到新账户的 mediaError 上——B 没碰 picker，
+      // 看到「图片选择失败」红条会以为是 B 自己点的。和 feed-publish-page 同模板。
+      if (startBaseUrl !== baseUrlRef.current) {
+        return;
+      }
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
     } finally {
-      pickInflightRef.current = false;
+      // 只在 baseUrl 没切走时才清自己设的锁；切走的话 reset effect 已经释放过
+      // pickInflightRef（虽然 publish 页 effect 里没显式清，但 unmount 时 ref 整体
+      // 释放），B 此时可能已经开了自己的 pick 链路，这里再 set false 会把 B 自己
+      // 的锁 trample 掉。
+      if (startBaseUrl === baseUrlRef.current) {
+        pickInflightRef.current = false;
+      }
     }
   }
 
   async function handleVideoFileSelected(file: File | null) {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
+    const startBaseUrl = baseUrlRef.current;
     try {
-      await composeDraft.replaceVideoFile(file);
+      // 走查移动端朋友圈/新一轮 R1：replaceVideoFile 内部 createMomentVideoDraft
+      // （视频元数据 + 封面生成 1-30s）是切账户 / unmount 最大的窗口；shouldCommit
+      // 切走 / unmount 时 hook 内部 release 刚生成的 posterPreviewUrl + previewUrl
+      // （封面 jpeg 多 MB），不让旧账户的视频塞进新账户 draft / orphan 到 blob URL
+      // 池。见上面 baseUrlRef + isMountedRef 块的"两条 mid-flight 泄漏路径"注释。
+      await composeDraft.replaceVideoFile(file, {
+        shouldCommit: () =>
+          startBaseUrl === baseUrlRef.current && isMountedRef.current,
+      });
     } catch (error) {
+      if (startBaseUrl !== baseUrlRef.current) {
+        return;
+      }
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
     } finally {
-      pickInflightRef.current = false;
+      if (startBaseUrl === baseUrlRef.current) {
+        pickInflightRef.current = false;
+      }
     }
   }
 
