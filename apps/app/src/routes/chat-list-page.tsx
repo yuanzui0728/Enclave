@@ -822,16 +822,30 @@ function MobileChatListPage() {
   // socket onConversationUpdated / onChatMessage 是房间级事件——chat-list 自身
   // 不在任何房间，但 socket 是全局复用的：用户曾打开过的聊天室仍然 join 着，
   // 那些会话变更可以即刻反映到列表上，不必等下一次 60s 兜底轮询。
+  //
+  // 走查 R1：原版每次 socket 推送都直接 invalidate → 一条消息触发
+  // conversation_updated + new_message 至少两次 invalidate；多 AI 群批量回复
+  // 时一秒内 10+ 个事件 = 10+ 次完整 getConversations 刷新（每次都要把整张
+  // 列表序列化 + 走完 normalizeConversationListItem）。公网隧道 RTT 下完全是
+  // 浪费——把 invalidate 攒到 250ms 的 trailing edge 上，用户感知不到延迟，
+  // 高频频道下 RPC 次数和 CPU 都降一个数量级。setQueriesData 直接 patch 进
+  // open chat-room messages cache 那部分仍逐条同步处理（消息要立刻显示）。
   useEffect(() => {
+    let pendingInvalidate: number | null = null;
+    const scheduleListInvalidate = () => {
+      if (pendingInvalidate !== null) return;
+      pendingInvalidate = window.setTimeout(() => {
+        pendingInvalidate = null;
+        void queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }, 250);
+    };
     const offUpdated = onConversationUpdated(() => {
-      void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
+      scheduleListInvalidate();
     });
     const offMessage = onChatMessage((payload) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
+      scheduleListInvalidate();
       // 直接把新消息写进对应会话的 messages cache：上一版用 invalidate 依赖
       // 下次 mount 触发 refetch，移动端 staleTime=60s 内 useQuery 可能仍然先
       // 把旧 cache 返回再后台 refetch → 用户进去先看到旧消息，AI 回复要 RTT
@@ -850,6 +864,10 @@ function MobileChatListPage() {
       }
     });
     return () => {
+      if (pendingInvalidate !== null) {
+        window.clearTimeout(pendingInvalidate);
+        pendingInvalidate = null;
+      }
       offUpdated();
       offMessage();
     };
