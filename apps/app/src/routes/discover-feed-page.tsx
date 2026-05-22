@@ -993,6 +993,10 @@ export function DiscoverFeedPage() {
 
     const sourceId = `feed-${post.id}`;
     const collected = favoriteSourceIdSet.has(sourceId);
+    // 走查新一轮 Round 1：原版同串里 `buildFeedRouteHash({postId})` 调两次构同一
+    // 份 URLSearchParams，且修一处忘改另一处的风险白白挂着。提一份变量，
+    // handleRowToggleFavorite 同坑一并对齐。
+    const feedHash = buildFeedRouteHash({ postId: post.id });
     const nextFavorites = collected
       ? removeDesktopFavorite(sourceId)
       : upsertDesktopFavorite({
@@ -1002,7 +1006,7 @@ export function DiscoverFeedPage() {
           title: post.authorName,
           description: getFeedSummaryText(post),
           meta: formatTimestamp(post.createdAt),
-          to: `/tabs/feed${buildFeedRouteHash({ postId: post.id }) ? `#${buildFeedRouteHash({ postId: post.id })}` : ""}`,
+          to: `/tabs/feed${feedHash ? `#${feedHash}` : ""}`,
           badge: t(msg`广场动态`),
           avatarName: post.authorName,
           avatarSrc: post.authorAvatar,
@@ -1810,6 +1814,7 @@ export function DiscoverFeedPage() {
     }
     const sourceId = `feed-${post.id}`;
     const collected = favoriteSourceIdSetRef.current.has(sourceId);
+    const feedHash = buildFeedRouteHash({ postId: post.id });
     const nextFavorites = collected
       ? removeDesktopFavorite(sourceId)
       : upsertDesktopFavorite({
@@ -1819,7 +1824,7 @@ export function DiscoverFeedPage() {
           title: post.authorName,
           description: getFeedSummaryText(post),
           meta: formatTimestamp(post.createdAt),
-          to: `/tabs/feed${buildFeedRouteHash({ postId: post.id }) ? `#${buildFeedRouteHash({ postId: post.id })}` : ""}`,
+          to: `/tabs/feed${feedHash ? `#${feedHash}` : ""}`,
           badge: t(msg`广场动态`),
           avatarName: post.authorName,
           avatarSrc: post.authorAvatar,
