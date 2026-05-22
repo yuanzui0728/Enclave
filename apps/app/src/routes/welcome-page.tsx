@@ -494,12 +494,23 @@ export function WelcomePage() {
   const [codeCooldownNow, setCodeCooldownNow] = useState(() => Date.now());
   useEffect(() => {
     if (codeCooldownEndAt <= Date.now()) return;
-    const tick = () => setCodeCooldownNow(Date.now());
+    let intervalId = 0;
+    // tick 里自己判 t >= endAt 就把 setInterval 清掉：endAt 只在 effect 依赖
+    // 里，cooldown 自然走完时 endAt 并不变、不会触发 cleanup，没有这一步
+    // setInterval 会一直每秒 setState 直到 welcome page 卸载，纯浪费 re-render。
+    const tick = () => {
+      const t = Date.now();
+      setCodeCooldownNow(t);
+      if (t >= codeCooldownEndAt) {
+        if (intervalId) window.clearInterval(intervalId);
+        document.removeEventListener("visibilitychange", tick);
+      }
+    };
     tick();
-    const id = window.setInterval(tick, 1000); // i18n-ignore-line
+    intervalId = window.setInterval(tick, 1000); // i18n-ignore-line
     document.addEventListener("visibilitychange", tick);
     return () => {
-      window.clearInterval(id);
+      if (intervalId) window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", tick);
     };
   }, [codeCooldownEndAt]);
