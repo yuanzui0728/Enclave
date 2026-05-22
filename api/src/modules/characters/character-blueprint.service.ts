@@ -1277,6 +1277,14 @@ export class CharacterBlueprintService {
     character.relationshipType = ts(identity.relationshipType);
     character.avatar = ts(identity.avatar);
     character.bio = ts(identity.bio);
+    // recipe.identity.region 是 2026-05-22 起 wiki UI 暴露的可选字段；wiki 私有角色
+    // 路径会 stripRejectedRecipeFields 把它砍掉，所以仅在 recipe 真带 region 字符串
+    // 时才覆盖 character.region。保留 character.region 现状是默认行为，防止 admin
+    // / preset 发布 recipe 不含 region 时把已有的 "上海·上海" 等 preset 抹空。
+    if (typeof identity.region === 'string') {
+      const trimmedRegion = identity.region.trim();
+      character.region = trimmedRegion === '' ? null : trimmedRegion;
+    }
     const expertDomainsRaw = arr(expertise.expertDomains);
     character.expertDomains = expertDomainsRaw.length
       ? expertDomainsRaw.map((item) => item.trim()).filter(Boolean)
