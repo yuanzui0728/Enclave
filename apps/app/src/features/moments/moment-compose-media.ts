@@ -575,20 +575,48 @@ async function createMomentVideoDraft(file: File): Promise<MomentVideoDraft> {
   }
 }
 
+// 同 readVideoMetadata，HEIC / 未知容器 / WebView 沙箱屏蔽 decode 等场景下
+// Image().onload / onerror 也可能都不 fire，外层 Promise.allSettled(files.map())
+// 一旦卡一张就把 picker UX 拖到「点了相册关了 sheet 啥都没出现」。10s 超时兜底。
+const IMAGE_METADATA_TIMEOUT_MS = 10_000;
+
 function readImageDimensions(url: string) {
   return new Promise<{ width: number; height: number }>((resolve, reject) => {
     const image = new Image();
 
+    let timer: number | null = window.setTimeout(() => {
+      timer = null;
+      image.onload = null;
+      image.onerror = null;
+      reject(new Error(t(msg`图片解析超时，请换一张再试。`)));
+    }, IMAGE_METADATA_TIMEOUT_MS);
+    const clearTimer = () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    };
+
     image.onload = () => {
+      clearTimer();
       resolve({
         width: image.naturalWidth,
         height: image.naturalHeight,
       });
     };
-    image.onerror = () => reject(new Error(t(msg`图片解析失败，请换一张再试。`)));
+    image.onerror = () => {
+      clearTimer();
+      reject(new Error(t(msg`图片解析失败，请换一张再试。`)));
+    };
     image.src = url;
   });
 }
+
+// 走查 R2：iOS Safari 部分 HEVC / Chrome 部分 VP9 变体撞解码不支持时，<video>
+// 既不 fire onloadedmetadata 也不 fire onerror —— promise 永远悬着，外层
+// handleVideoFileSelected 卡在 await 里，picker sheet 关了但视频既没出现也没报错，
+// 用户看到的就是「点了选择视频啥也没发生」。给一个 15s 超时兜底，避免无限挂起。
+const VIDEO_METADATA_TIMEOUT_MS = 15_000;
 
 function readVideoMetadata(url: string) {
   return new Promise<{
@@ -601,7 +629,16 @@ function readVideoMetadata(url: string) {
     video.muted = true;
     video.playsInline = true;
 
+    let timer: number | null = window.setTimeout(() => {
+      timer = null;
+      cleanup();
+      reject(new Error(t(msg`视频解析超时，请换一个文件再试。`)));
+    }, VIDEO_METADATA_TIMEOUT_MS);
     const cleanup = () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
       video.onloadedmetadata = null;
       video.onerror = null;
       video.removeAttribute("src");
