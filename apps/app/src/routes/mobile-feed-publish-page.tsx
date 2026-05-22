@@ -639,7 +639,17 @@ export function MobileFeedPublishPage() {
       </div>
 
       {discardConfirmOpen ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]">
+        // 走查新一轮 R3 (a11y)：跟 mobile-moments-publish-page exit-sheet 对齐——
+        // 原 wrapper 是裸 div，SR 用户无法识别这是个 modal，焦点也不会被锁定。
+        // 挂 role="dialog" + aria-modal="true" + aria-label="放弃发表"，让 SR 一进
+        // 来就读出对话框语义；浏览器/AT 收到 aria-modal=true 后会把焦点圈在内
+        // 部，Tab 不会逃到底层 publish 页的 textarea/按钮上去。
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t(msg`放弃发表`)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]"
+        >
           <button
             type="button"
             aria-label={t(msg`关闭提示`)}
