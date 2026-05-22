@@ -75,6 +75,7 @@ import {
   matchesCharacterSearch,
   matchesFriendSearch,
   shouldIncludeInWorldCharacterDirectory,
+  stripBidiControl,
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
 import { buildWorldCharactersRouteHash } from "../features/contacts/world-characters-route-state";
@@ -2983,7 +2984,11 @@ function FriendListRow({
         </span>
       ) : null}
       <AvatarChip
-        name={item.character.name}
+        // 通讯录 mobile 走查 R2：AvatarChip 把 name 落进 alt + fallback 渐变 hash
+        // seed，原本用 item.character.name 让 U+202E 等 bidi 控制字符泄到 alt /
+        // 屏阅器播报；item.displayName 已经走过 getFriendDisplayName 内部的
+        // stripBidiControl，跟列表标题口径一致。
+        name={item.displayName}
         src={item.character.avatar}
         size="wechat"
       />
@@ -3001,9 +3006,12 @@ function FriendListRow({
             {pendingCharacterId === item.character.id
               ? t(msg`正在打开会话...`)
               : item.displayName !== item.character.name
-                ? t(msg`昵称：${item.character.name}`)
-                : item.character.currentStatus?.trim() ||
-                  item.character.relationship ||
+                ? // 走查 R2：subtitle 拿 character.name 显示"昵称：xxx"——这条仅
+                  // 桌面行渲染，但 character.name 是用户输入端，含 bidi 控制字符时
+                  // 能把后续 layout 反转。跟主标题 displayName 同口径补 strip。
+                  t(msg`昵称：${stripBidiControl(item.character.name)}`)
+                : stripBidiControl(item.character.currentStatus).trim() ||
+                  stripBidiControl(item.character.relationship) ||
                   t(msg`保持联系`)}
           </div>
         ) : null}

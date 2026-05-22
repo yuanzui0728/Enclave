@@ -536,8 +536,12 @@ function MobileWorldCharactersPage() {
                         {stripBidiControl(item.character.name)}
                       </div>
                       <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
-                        {item.character.relationship ||
-                          item.character.currentStatus?.trim() ||
+                        {/* 通讯录 mobile 走查 R2：relationship / currentStatus 都是
+                            角色作者自定字段，character.name 已经在主标题 strip 过
+                            一道，这条副标题漏了。跟 W2R2 character.name 同口径补
+                            strip，避免单角色行带 U+202E 把后面 layout 反转。 */}
+                        {stripBidiControl(item.character.relationship) ||
+                          stripBidiControl(item.character.currentStatus).trim() ||
                           t(msg`查看角色资料`)}
                       </div>
                     </div>

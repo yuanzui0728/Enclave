@@ -4,6 +4,7 @@ import type { OfficialAccountSummary } from "@yinjie/contracts";
 import { BadgeCheck, ChevronRight, Radio } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
+import { stripBidiControl } from "../features/contacts/contact-utils";
 
 const t = translateRuntimeMessage;
 
@@ -38,7 +39,15 @@ export function OfficialAccountListItem({
           : undefined,
       )}
     >
-      <AvatarChip name={account.name} src={account.avatar} size="wechat" />
+      {/* 通讯录 mobile 走查 R2：公众号 name / handle / description 都是运营方
+          自由文本，同样可能嵌 U+202E 类 bidi 控制字符把后续视觉反转。跟通讯录
+          其他用户输入端口径一致：name 落 alt + 显示行；handle / description 也
+          一并 strip，避免任意一处泄漏控制字符让屏阅器播报到一半反向。 */}
+      <AvatarChip
+        name={stripBidiControl(account.name)}
+        src={account.avatar}
+        size="wechat"
+      />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -48,7 +57,7 @@ export function OfficialAccountListItem({
               dense ? "text-[14px]" : "text-[15px]",
             )}
           >
-            {account.name}
+            {stripBidiControl(account.name)}
           </div>
           {account.isVerified ? (
             <BadgeCheck
@@ -78,11 +87,11 @@ export function OfficialAccountListItem({
         </div>
         {dense ? (
           <div className="mt-1 truncate text-[11px] text-[color:var(--text-dim)]">
-            @{account.handle}
+            @{stripBidiControl(account.handle)}
           </div>
         ) : (
           <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-            {account.description}
+            {stripBidiControl(account.description)}
           </div>
         )}
       </div>
