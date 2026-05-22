@@ -35,6 +35,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { writeClipboardText } from "../runtime/native-clipboard";
@@ -375,7 +376,7 @@ function MobileOfficialAccountArticlePage({
             <MobileOfficialArticleStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`文章暂时不可用`)}
-              description={articleQuery.error.message}
+              description={describeRequestError(articleQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -407,7 +408,7 @@ function MobileOfficialAccountArticlePage({
             <MobileOfficialArticleStatusCard
               badge={t(msg`同步失败`)}
               title={t(msg`阅读状态暂未同步`)}
-              description={markReadMutation.error.message}
+              description={describeRequestError(markReadMutation.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">

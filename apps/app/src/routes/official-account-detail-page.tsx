@@ -40,6 +40,7 @@ import {
 import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { writeClipboardText } from "../runtime/native-clipboard";
@@ -366,7 +367,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             <MobileOfficialStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`公众号主页暂时不可用`)}
-              description={accountQuery.error.message}
+              description={describeRequestError(accountQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -534,7 +535,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="min-w-0 flex-1">
-                        {followMutation.error.message}
+                        {describeRequestError(followMutation.error)}
                       </span>
                       <div className="flex shrink-0 items-center gap-1.5">
                         {account ? (

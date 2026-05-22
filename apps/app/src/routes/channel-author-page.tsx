@@ -41,6 +41,7 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ChannelAuthorCollectionTab =
@@ -496,7 +497,7 @@ export function ChannelAuthorPage() {
             <MobileChannelAuthorStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`作者主页暂时不可用`)}
-              description={profileQuery.error.message}
+              description={describeRequestError(profileQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -526,7 +527,7 @@ export function ChannelAuthorPage() {
             <MobileChannelAuthorStatusCard
               badge={t(msg`关注失败`)}
               title={t(msg`作者状态暂未更新`)}
-              description={followMutation.error.message}
+              description={describeRequestError(followMutation.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">

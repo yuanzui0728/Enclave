@@ -52,6 +52,7 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { formatTimestamp } from "../lib/format";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -467,10 +468,10 @@ export function LiveCompanionPage() {
           "实例状态读取失败"。挂 role="alert"，aria-live=assertive 立即播报。
         */}
         {statusQuery.isError && statusQuery.error instanceof Error ? (
-          <ErrorBlock message={statusQuery.error.message} role="alert" />
+          <ErrorBlock message={describeRequestError(statusQuery.error)} role="alert" />
         ) : null}
         {channelsQuery.isError && channelsQuery.error instanceof Error ? (
-          <ErrorBlock message={channelsQuery.error.message} role="alert" />
+          <ErrorBlock message={describeRequestError(channelsQuery.error)} role="alert" />
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">

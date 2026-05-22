@@ -21,6 +21,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopChatWorkspace = lazy(async () => {
@@ -233,7 +234,7 @@ function MobileSubscriptionInboxPage() {
             <MobileSubscriptionInboxStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`订阅号消息暂时不可用`)}
-              description={inboxQuery.error.message}
+              description={describeRequestError(inboxQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -268,7 +269,7 @@ function MobileSubscriptionInboxPage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {markReadMutation.error.message}
+                  {describeRequestError(markReadMutation.error)}
                 </span>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <Button

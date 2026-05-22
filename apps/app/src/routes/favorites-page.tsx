@@ -54,6 +54,7 @@ import { resolveSearchNavigationTarget } from "../features/search/search-navigat
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { normalizePathname } from "../lib/normalize-pathname";
+import { describeRequestError } from "../lib/request-error";
 import { getCurrentWindowTargetPath } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -837,12 +838,12 @@ function DesktopFavoritesPage() {
           {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
           {favoritesQuery.isError && favoritesQuery.error instanceof Error ? (
             <div className="mb-4">
-              <ErrorBlock message={favoritesQuery.error.message} />
+              <ErrorBlock message={describeRequestError(favoritesQuery.error)} />
             </div>
           ) : null}
           {removeMutation.isError && removeMutation.error instanceof Error ? (
             <div className="mb-4">
-              <ErrorBlock message={removeMutation.error.message} />
+              <ErrorBlock message={describeRequestError(removeMutation.error)} />
             </div>
           ) : null}
 

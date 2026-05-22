@@ -31,6 +31,7 @@ import {
   parseMobileOfficialRouteState,
 } from "../mobile-official-route-state";
 import { isDesktopOnlyPath } from "../../../lib/history-back";
+import { describeRequestError } from "../../../lib/request-error";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 export function OfficialAccountServiceThread({
@@ -221,21 +222,21 @@ export function OfficialAccountServiceThread({
 
   const pageErrorMessage =
     (accountQuery.isError && accountQuery.error instanceof Error
-      ? accountQuery.error.message
+      ? describeRequestError(accountQuery.error)
       : null) ??
     (messagesQuery.isError && messagesQuery.error instanceof Error
-      ? messagesQuery.error.message
+      ? describeRequestError(messagesQuery.error)
       : null);
   const actionErrorMessage =
     (markReadMutation.isError && markReadMutation.error instanceof Error
-      ? markReadMutation.error.message
+      ? describeRequestError(markReadMutation.error)
       : null) ??
     (muteMutation.isError && muteMutation.error instanceof Error
-      ? muteMutation.error.message
+      ? describeRequestError(muteMutation.error)
       : null) ??
     (markArticleReadMutation.isError &&
     markArticleReadMutation.error instanceof Error
-      ? markArticleReadMutation.error.message
+      ? describeRequestError(markArticleReadMutation.error)
       : null);
   const desktopHeaderMeta = [
     accountQuery.data?.isVerified ? t(msg`已认证`) : null,
@@ -527,7 +528,7 @@ export function OfficialAccountServiceThread({
               !missingSelectedArticle ? (
                 <ServiceDesktopStatusPane
                   title={t(msg`文章暂时不可用`)}
-                  description={articleQuery.error.message}
+                  description={describeRequestError(articleQuery.error)}
                   tone="danger"
                 />
               ) : null}
