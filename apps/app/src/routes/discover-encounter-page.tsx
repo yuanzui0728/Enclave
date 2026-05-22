@@ -96,6 +96,19 @@ function MobileDiscoverEncounterPage() {
       }
 
       await keepShakeSession(preview.id, baseUrl);
+
+      // 走查 Round 2：invalidate 放在 onSuccess 里，组件在 AI ~60s 期间被用户
+      // 切走（去 chat / contacts 看角色到没到）时 mutation observer 已 unmount，
+      // 后端虽然真的创角成功，但 friend-requests / friends / conversations 三
+      // 个 cache 不会被刷——用户回去看通讯录还得自己下拉。queryClient 是 app
+      // 级单例，挪到 mutationFn 里保证无论组件是否还活着，下一次切回 chat/contacts
+      // 都能拿到最新数据。
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
+
       return preview;
     },
     onMutate: () => {
@@ -118,11 +131,6 @@ function MobileDiscoverEncounterPage() {
       setMessage(
         t(msg`${characterName} 已加入通讯录：${greeting}`),
       );
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
-      ]);
     },
   });
 
