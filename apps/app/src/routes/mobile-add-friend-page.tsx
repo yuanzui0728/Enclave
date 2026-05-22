@@ -492,11 +492,20 @@ function MobileAddFriend() {
   // 包成 `onPrimaryAction={() => handleResultPrimaryAction(result)}` 传给行，
   // 每行 props 引用永远新；即便给行加 memo 也跳不过。改用 useCallback 把两个
   // handler 固化成稳定引用，行内部 `() => onPrimaryAction(item)` 这层 arrow
-  // 在 memo 之后无影响（行的 props 已经稳定，无需重渲）。openChatMutation /
-  // navigate 引用本身在 react-query / tanstack-router 实现里就是稳定的。
-  // 注意 useCallback dep 只放真正稳定的项：navigate、openChatMutation.mutate、
-  // pathname、currentRouteHash。currentRouteHash 已经 useMemo'd（仅在
-  // submittedKeyword/safeReturnPath/safeReturnHash 变时变）。
+  // 在 memo 之后无影响（行的 props 已经稳定，无需重渲）。
+  //
+  // 新一轮 R2：原版 dep 写 [openChatMutation, openFriendRequests]，注释里
+  // 说 openChatMutation "在 useMutation 实现内引用稳定" —— 这条不对。看
+  // node_modules/.pnpm/@tanstack+react-query@5.96.1/.../useMutation.js：
+  //   return { ...result, mutate, mutateAsync: result.mutate };
+  // 每次 render 都 spread 出一个新对象，identity 必然变（即便底下 observer
+  // state 没翻）。所以 dep 上 openChatMutation 本体 = 父端每次 render（每个
+  // keystroke / notice 2.4s 计时 / friendRequestsQuery 15s 后台 refetch）都
+  // 重建 handleResultPrimaryAction → memo'd 12 行全部 onPrimaryAction 引用
+  // 变 → 行全部 re-render，memo 等于白挂。改成 dep 真正稳定的 .mutate 回调
+  // （react-query 内部用 useCallback 包过、observer 是 useState 初始值，引用
+  // 永远稳）。reset 仍走 ref，不进 dep。
+  const openChatMutate = openChatMutation.mutate;
   const handleResultPrimaryAction = useCallback(
     (result: AddFriendSearchResult) => {
       if (result.status === "available") {
@@ -522,7 +531,7 @@ function MobileAddFriend() {
         // 要"发消息"完全无关，挂在 page 顶端只是噪音。
         sendRequestResetRef.current();
         openChatResetRef.current();
-        openChatMutation.mutate(result.character.id);
+        openChatMutate(result.character.id);
         return;
       }
 
@@ -538,11 +547,7 @@ function MobileAddFriend() {
         return;
       }
     },
-    // openChatMutation 本体在 useMutation 实现内引用稳定，但 lint 仍要求列出；
-    // 列了之后每次 mutation state 翻动（pending/idle）会重建一次回调——影响
-    // 极小，相比每次 keystroke 重建全部 12 行的开销可忽略。reset 走 ref（line
-    // 303-306），不进 dep，所以重建频率不受 reset 影响。
-    [openChatMutation, openFriendRequests],
+    [openChatMutate, openFriendRequests],
   );
 
   const handleResultOpenProfile = useCallback(
