@@ -2558,23 +2558,21 @@ export function DiscoverFeedPage() {
                   return summaryText || undefined;
                 })()}
                 actions={
-                  post.canInteract ? (
-                    <div className="flex w-full justify-end">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          const rect =
-                            event.currentTarget.getBoundingClientRect();
-                          setActionBubble({ postId: post.id, anchorRect: rect });
-                        }}
-                        aria-label={t(msg`更多操作`)}
-                        className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
-                      >
-                        <MoreHorizontalDots />
-                      </button>
-                    </div>
-                  ) : null
+                  <div className="flex w-full justify-end">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const rect =
+                          event.currentTarget.getBoundingClientRect();
+                        setActionBubble({ postId: post.id, anchorRect: rect });
+                      }}
+                      aria-label={t(msg`更多操作`)}
+                      className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                    >
+                      <MoreHorizontalDots />
+                    </button>
+                  </div>
                 }
                 secondary={(() => {
                   const expandedComments = fullCommentsByPostId[post.id] ?? null;
@@ -2624,7 +2622,6 @@ export function DiscoverFeedPage() {
                             comment.replyToAuthorName ??
                             null;
                           const openReply = () => {
-                            if (!post.canInteract) return;
                             setCommentBarTarget({
                               postId: post.id,
                               replyTo: {
@@ -2642,41 +2639,22 @@ export function DiscoverFeedPage() {
                             comment.authorType === "character";
                           const replyAuthorIsCharacter =
                             replyToComment?.authorType === "character";
-                          // 走查 Round 1：post.canInteract=false（被屏蔽 / 不可互动）
-                          // 时旧实现依然渲 role="button" + cursor-pointer + active 按下
-                          // 灰底，整条评论看着可点，但 openReply 早返一行直接 noop。
-                          // 用户视感是"按下去有反馈但啥也没发生"，又跟卡片底下 actions
-                          // 区不显示「更多操作」按钮（line 2153 已 gate 在 canInteract）
-                          // 不一致：能不能互动这一条信号被分裂。canInteract=false 这条
-                          // 路径直接渲成 div + 普通文字，无 button 角色、无 cursor、无
-                          // active 反馈，让用户一眼看清"这条不能回复"。
-                          const commentInteractive = post.canInteract;
                           return (
                             <div
                               key={comment.id}
-                              {...(commentInteractive
-                                ? {
-                                    role: "button" as const,
-                                    tabIndex: 0,
-                                    onClick: openReply,
-                                    onKeyDown: (
-                                      event: import("react").KeyboardEvent<HTMLDivElement>,
-                                    ) => {
-                                      if (
-                                        event.key === "Enter" ||
-                                        event.key === " "
-                                      ) {
-                                        event.preventDefault();
-                                        openReply();
-                                      }
-                                    },
-                                  }
-                                : {})}
-                              className={
-                                commentInteractive
-                                  ? "block w-full cursor-pointer text-left text-[#1A1A1A] active:bg-[#EFEFEF]"
-                                  : "block w-full text-left text-[#1A1A1A]"
-                              }
+                              role="button"
+                              tabIndex={0}
+                              onClick={openReply}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  openReply();
+                                }
+                              }}
+                              className="block w-full cursor-pointer text-left text-[#1A1A1A] active:bg-[#EFEFEF]"
                             >
                               {/* 长名字（wiki 走查角色叫 "走查词条_1778866835578221688"、
                                   群里改备注成一句话等）会按字宽 wrap，把后面的
