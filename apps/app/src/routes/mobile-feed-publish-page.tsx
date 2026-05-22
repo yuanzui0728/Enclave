@@ -80,6 +80,20 @@ export function MobileFeedPublishPage() {
   // 同步赋值，第一次 click 翻 true 后同帧的所有后续 click 都被早返兜住。跟
   // mobile-moments-publish-page 的同步锁 (commit c0a87bbb 之前更早的 fix) 对齐。
   const submittingRef = useRef(false);
+  // 走查新 Round 1：跟 mobile-moments-publish-page R4 对齐——handlePickImages /
+  // handleVideoFileSelected 必须同步上锁。原生 picker 关闭到 setImageDrafts /
+  // setVideoDraft commit 之间窗口（图片 50-200ms、视频解码 + 封面生成 1-30s）
+  // 用户重复点 +：
+  //   - 两条 addImageFiles 各自读到的 imageDraftsRef.current 都是老值（useEffect
+  //     写 ref 要等 commit），两批 remainingSlots 都按 9 - oldLength 算 →
+  //     setImageDrafts 函数式更新合并后总数超 9，UI 显示越界，publish 时服务端
+  //     FEED_IMAGES_TOO_MANY 拒掉，体感"选了图发不出去"
+  //   - 两条 replaceVideoFile 并发跑：先完成的 setVideoDraft(A)，后完成的
+  //     setVideoDraft(B) → A 的封面 URL 和 video URL 永久 orphan（hook unmount
+  //     时 cleanup 只 release 当前 state 里的那份）
+  // 跟 submittingRef 同模式同步赋值，第一次 click 翻 true 后同帧/同窗口的后续
+  // click 全部早返。
+  const pickInflightRef = useRef(false);
 
   const createMutation = useMutation({
     // 再走查 R1：mutationFn 之前直接闭包读 composeDraft.* 字段，onSuccess 无脑
@@ -328,8 +342,21 @@ export function MobileFeedPublishPage() {
   }
 
   async function handlePickImages() {
+    if (pickInflightRef.current) return;
+    pickInflightRef.current = true;
     try {
-      const files = await pickImageFiles({ multiple: true });
+      // 跟 mobile-moments-publish-page R4 对齐：把剩余可用槽位传给原生 picker，
+      // PHPicker / PickVisualMedia 拿到 limit 后会在系统选图 UI 上限制最多可勾
+      // 数量，避免用户已选 5 张时原生界面仍允许勾 9 张 → 回到 addImageFiles 被
+      // "还可以继续添加 4 张" 拒掉、勾的图白选。
+      const remainingSlots = Math.max(
+        0,
+        9 - composeDraft.imageDrafts.length,
+      );
+      const files = await pickImageFiles({
+        multiple: true,
+        limit: remainingSlots > 0 ? remainingSlots : undefined,
+      });
       if (files.length === 0) {
         return;
       }
@@ -338,16 +365,22 @@ export function MobileFeedPublishPage() {
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
+    } finally {
+      pickInflightRef.current = false;
     }
   }
 
   async function handleVideoFileSelected(file: File | null) {
+    if (pickInflightRef.current) return;
+    pickInflightRef.current = true;
     try {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
+    } finally {
+      pickInflightRef.current = false;
     }
   }
 
