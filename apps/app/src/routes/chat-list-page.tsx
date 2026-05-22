@@ -669,6 +669,22 @@ function MobileChatListPage() {
   ) => {
     clearPendingHideTimer();
     if (pendingHideRef.current?.conversationId === entry.conversationId) {
+      // 走查 R2 新一轮：原版只清 pendingHide 状态再 await 服务端，公网隧道
+      // ~600ms 期间 visibleConversations.filter(c => c.id !== pendingHide.id)
+      // 失去 sentinel，但 conversations cache 还含这一条 → 会话在「成功
+      // toast」出现的同时短暂闪回列表，user 看到刚刚说「已从列表移除」的
+      // 会话又冒出来 ~600ms 后才真消失，疑惑「我是不是没删干净」。先用
+      // setQueriesData 同步把这一条从 cache filter 掉，再清状态 + 落库；
+      // 落库 .finally 的 invalidate 会用 server canonical 重新刷掉（成功
+      // 路径相同），server 失败时 invalidate 把这条带回来 + setNoticeError
+      // 红条，用户能看到「失败 + 会话回归」，比假装移除更不误导。
+      queryClient.setQueriesData<ConversationListItem[]>(
+        { queryKey: ["app-conversations", baseUrl] },
+        (data) =>
+          data
+            ? data.filter((item) => item.id !== entry.conversationId)
+            : data,
+      );
       pendingHideRef.current = null;
       setPendingHideConversation(null);
     }
@@ -813,6 +829,20 @@ function MobileChatListPage() {
        // invalidate 一定会重拉 conversations，列表上看不到这条聊天意味着实际
        // 没被 hide，对用户来说就是"没生效，可以再划一次"，比让 console / 远
        // 程 telemetry 多一条 unhandled error 更合适。
+      //
+      // 走查 R2（新一轮）：同 commitPendingHideConversation 一致——unmount 落库
+      // 是 fire-and-forget，下一次进 chat-list 时 cache 直接读，若没先把这
+      // 条 filter 掉、用户回到列表看到刚划掉的会话还在原位 ~600ms 后才
+      // invalidate 刷掉。setQueriesData 同步把这一条从 cache 去掉，invalidate
+      // 完后服务端 canonical 还会再 reconcile 一次。
+      queryClient.setQueriesData<ConversationListItem[]>(
+        { queryKey: ["app-conversations", baseUrl] },
+        (data) =>
+          data
+            ? data.filter((item) => item.id !== pending.conversationId)
+            : data,
+      );
+
       void (
         pending.isGroup
           ? hideGroup(pending.conversationId, baseUrl)
