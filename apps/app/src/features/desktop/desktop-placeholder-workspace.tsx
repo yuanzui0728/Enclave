@@ -39,7 +39,7 @@ export function DesktopPlaceholderWorkspace({
             {t(msg`该入口当前仅提供桌面布局`)}
           </div>
           <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-            {t(msg`这项能力优先对齐微信电脑版工作区，移动端暂时不单独开放。`)}
+            {t(msg`这项能力暂时只在桌面布局里提供，移动端还没单独开放。`)}
           </div>
           <a
             href={mobileFallbackTo}

@@ -565,7 +565,7 @@ export function ChatMessageList({
     () => readLocalChatMessageActionState().recalledMessageIds,
   );
   const {
-    reminders: messageReminders,
+    reminderMap: messageReminderMap,
     clearReminder,
     setReminder,
   } = useMessageReminders();
@@ -1898,10 +1898,6 @@ export function ChatMessageList({
   const recalledMessageIdSet = useMemo(
     () => new Set(recalledMessageIds),
     [recalledMessageIds],
-  );
-  const messageReminderMap = useMemo(
-    () => new Map(messageReminders.map((item) => [item.messageId, item])),
-    [messageReminders],
   );
   const visibleMessagesSnapshot = useMemo(
     () =>
@@ -7269,9 +7265,7 @@ function GroupCallInviteMessage({
             label={
               invite.status === "ended"
                 ? translateRuntimeMessage(msg`已结束`)
-                : invite.sourceLabel
-                  ? `${invite.sourceLabel}${translateRuntimeMessage(msg`发起`)}`
-                  : translateRuntimeMessage(msg`桌面发起`)
+                : translateRuntimeMessage(msg`进行中`)
             }
           />
           {completionBadge ? (
@@ -7284,83 +7278,12 @@ function GroupCallInviteMessage({
       </div>
 
       <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
-        <ResultCardMetric
-          label={translateRuntimeMessage(msg`当前状态`)}
-          value={getGroupCallStatusLabel(invite.kind, invite.status)}
-          variant={variant}
-        />
-        {invite.timestampLabel ? (
-          <ResultCardMetric
-            label={
-              invite.status === "ended"
-                ? translateRuntimeMessage(msg`结束于`)
-                : translateRuntimeMessage(msg`发起于`)
-            }
-            value={
-              invite.recordedAt
-                ? formatDetailedMessageTimestamp(invite.recordedAt)
-                : invite.timestampLabel
-            }
-            variant={variant}
-          />
-        ) : null}
-        {invite.status === "ended" && invite.startedAt && invite.recordedAt ? (
-          <ResultCardMetric
-            label={translateRuntimeMessage(msg`起止时间`)}
-            value={formatGroupCallRangeSummary(
-              invite.startedAt,
-              invite.recordedAt,
-            )}
-            variant={variant}
-          />
-        ) : null}
         {invite.durationLabel ? (
           <ResultCardMetric
-            label={translateRuntimeMessage(msg`本轮时长`)}
+            label={translateRuntimeMessage(msg`通话时长`)}
             value={invite.durationLabel}
             variant={variant}
           />
-        ) : null}
-        {invite.sourceLabel ? (
-          <ResultCardMetric
-            label={translateRuntimeMessage(msg`发起端`)}
-            value={invite.sourceLabel}
-            variant={variant}
-          />
-        ) : null}
-        {invite.snapshotLabel ? (
-          <ResultCardMetric
-            label={translateRuntimeMessage(msg`人数快照`)}
-            value={invite.snapshotLabel}
-            variant={variant}
-          />
-        ) : null}
-        {invite.activeCount ? (
-          <div
-            className={
-              isDesktop ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-1.5"
-            }
-          >
-            <ResultCardMetric
-              label={translateRuntimeMessage(msg`当前在线`)}
-              value={`${invite.activeCount.current}/${invite.activeCount.total}`}
-              variant={variant}
-            />
-            {/* 走查 R69：原版 `${count} ${msg\`人\`}` 把数字和「人」拆成
-                两段独立翻译，Lingui 翻译条目只有孤零零一个「人」字。en-US 翻译
-                条最多翻成 "people"——展示成 "5 people" 看着像 zh→en 直译，但
-                ja-JP 期望「5人」紧贴、fr-FR 期望 "5 personnes" 复数变格、不同
-                locale 的"个数 + 单位"语序也不一样。整段塞进一条 templated
-                message 让翻译者写完整短语，姊妹 chat-message-list 中"已加入
-                ${count} 位"等都是这种用法。 */}
-            <ResultCardMetric
-              label={translateRuntimeMessage(msg`待加入`)}
-              value={translateRuntimeMessage(
-                msg`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} 人`,
-              )}
-              variant={variant}
-            />
-          </div>
         ) : null}
         {translatedSummaryLines.map((line) => (
           <div
@@ -7503,47 +7426,18 @@ function DirectCallInviteMessage({
           label={
             invite.connectionStatus === "ended"
               ? translateRuntimeMessage(msg`已结束`)
-              : invite.sourceLabel
-                ? `${invite.sourceLabel}${translateRuntimeMessage(msg`发起`)}`
-                : translateRuntimeMessage(msg`桌面发起`)
+              : invite.connectionStatus === "connected"
+                ? translateRuntimeMessage(msg`已接通`)
+                : translateRuntimeMessage(msg`等待接听`)
           }
         />
       </div>
 
       <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
-        {invite.connectionStatus ? (
-          <ResultCardMetric
-            label={translateRuntimeMessage(msg`当前状态`)}
-            value={resolveDirectCallStatusLabel(invite)}
-            variant={variant}
-          />
-        ) : null}
-        {invite.timestampLabel ? (
-          <ResultCardMetric
-            label={
-              invite.connectionStatus === "ended"
-                ? translateRuntimeMessage(msg`结束于`)
-                : translateRuntimeMessage(msg`发起于`)
-            }
-            value={
-              invite.recordedAt
-                ? formatDetailedMessageTimestamp(invite.recordedAt)
-                : invite.timestampLabel
-            }
-            variant={variant}
-          />
-        ) : null}
         {invite.durationLabel ? (
           <ResultCardMetric
-            label={translateRuntimeMessage(msg`最近一轮`)}
+            label={translateRuntimeMessage(msg`通话时长`)}
             value={invite.durationLabel}
-            variant={variant}
-          />
-        ) : null}
-        {invite.sourceLabel ? (
-          <ResultCardMetric
-            label={translateRuntimeMessage(msg`发起端`)}
-            value={invite.sourceLabel}
             variant={variant}
           />
         ) : null}

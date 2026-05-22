@@ -537,7 +537,7 @@ export function DesktopDirectCallPanel({
                 ? formatDurationLabel(latestTurn.totalDurationMs)
                 : t(msg`等待开始`)
             }
-            detail={t(msg`成功后会同步写入当前聊天消息流。`)}
+            detail={t(msg`成功后会同步到当前聊天消息里。`)}
           />
         </div>
 

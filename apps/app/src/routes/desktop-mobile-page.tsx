@@ -1253,7 +1253,7 @@ export function DesktopMobilePage() {
                   }
                 />
                 <StatusRow
-                  label={t(msg`推理网关`)}
+                  label={t(msg`AI 服务`)}
                   value={
                     systemStatusQuery.data?.inferenceGateway.healthy
                       ? t(msg`可用`)

@@ -9,7 +9,7 @@ export function LegalTermsPage() {
     <MobileDocumentShell
       title={t(msg`服务条款`)}
       eyebrow="Terms"
-      summary={t(msg`你在隐界发布和互动的内容，需要遵守当前世界实例的服务规则、法律要求与基础安全边界。`)}
+      summary={t(msg`你在隐界发布和互动的内容，需要遵守当前世界的服务规则、法律要求与基础安全边界。`)}
       sections={[
         {
           title: t(msg`你的使用责任`),

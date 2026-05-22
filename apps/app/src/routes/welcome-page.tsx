@@ -1831,7 +1831,7 @@ export function WelcomePage() {
                   msg`检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：${normalizedLocalApiBaseUrl}`,
                 )
               : t(
-                  msg`检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：${normalizedLocalApiBaseUrl}`,
+                  msg`检测到你输入的是本机应用地址，已自动换算为对应的世界地址：${normalizedLocalApiBaseUrl}`,
                 )}
           </InlineNotice>
         ) : null}

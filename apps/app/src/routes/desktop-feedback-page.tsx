@@ -72,7 +72,7 @@ const categoryOptionConfigs: Array<{
   {
     id: "content",
     label: msg`内容口径`,
-    description: msg`文案、频道定义、桌面与微信对齐口径存在偏差。`,
+    description: msg`文案、频道定义、桌面端表达存在偏差。`,
     icon: ClipboardList,
   },
   {

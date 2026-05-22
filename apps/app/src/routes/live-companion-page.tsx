@@ -863,7 +863,7 @@ export function LiveCompanionPage() {
                 className="rounded-xl"
               >
                 <Wand2 size={14} />
-                {isGenerating ? t(msg`生成中...`) : t(msg`生成预热内容`)}
+                {isGenerating ? t(msg`生成中...`) : t(msg`提前生成内容`)}
               </Button>
             </div>
 

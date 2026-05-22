@@ -42,19 +42,13 @@ export function resolveGroupCallFooterCopy(
   if (invite.status === "ended") {
     return canReopenCall
       ? {
-          description:
-            invite.kind === "video"
-              ? t(msg`点击可基于这张卡片重新发起当前群视频通话。`)
-              : t(msg`点击可基于这张卡片重新发起当前群语音通话。`),
+          description: t(msg`点击重新发起`),
           actionLabel: t(msg`重新发起`),
           tone: "info" as const,
           ariaLabel: t(msg`重新发起 ${invite.groupName} 的群通话`),
         }
       : {
-          description:
-            invite.kind === "video"
-              ? t(msg`这轮群视频通话已经结束，当前保留为状态记录卡片。`)
-              : t(msg`这轮群语音通话已经结束，当前保留为状态记录卡片。`),
+          description: t(msg`通话已结束`),
           actionLabel: t(msg`查看记录`),
           tone: "muted" as const,
           ariaLabel: t(msg`查看 ${invite.groupName} 的群通话记录`),
@@ -65,8 +59,8 @@ export function resolveGroupCallFooterCopy(
     ? {
         description:
           invite.kind === "video"
-            ? t(msg`点击回到当前群视频通话。`)
-            : t(msg`点击回到当前群语音通话。`),
+            ? t(msg`点击回到视频通话`)
+            : t(msg`点击回到语音通话`),
         actionLabel:
           invite.kind === "voice" ? t(msg`回到语音`) : t(msg`回到视频`),
         tone: "info" as const,
@@ -75,8 +69,8 @@ export function resolveGroupCallFooterCopy(
     : {
         description:
           invite.kind === "video"
-            ? t(msg`当前消息已转成群视频通话卡片，便于群成员识别画面状态。`)
-            : t(msg`当前消息已转成群语音通话卡片，便于群成员识别状态。`),
+            ? t(msg`视频通话中`)
+            : t(msg`语音通话中`),
         actionLabel:
           invite.kind === "voice" ? t(msg`语音中`) : t(msg`视频中`),
         tone: "info" as const,

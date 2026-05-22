@@ -192,7 +192,7 @@ export function DesktopRuntimeGuard() {
 
   const desktopDescription =
     diagnostics?.bundledCoreApiExists === false
-      ? t(msg`当前桌面包里没有找到内置 Core API，宿主端还没法完整启动。`)
+      ? t(msg`桌面应用里没有找到内置的后端服务，应用还没法启动。`)
       : diagnostics?.coreApiPortOccupied
         ? t(msg`本地端口似乎已经被占用，桌面壳正在尝试重新接管入口。`)
         : diagnostics?.lastCoreApiError?.trim()
@@ -201,7 +201,7 @@ export function DesktopRuntimeGuard() {
   const description = hasDesktopRuntimeControl
     ? desktopDescription
     : needsRemoteConfiguration
-      ? t(msg`当前设备还没有配置远程世界地址，请先回到 setup 连接你的实例。`)
+      ? t(msg`当前设备还没有配置远程世界地址，请先回到欢迎页连接你的世界。`)
       : t(msg`服务器暂时不可用，请稍后再试。`);
   const helperText = hasDesktopRuntimeControl
     ? diagnostics?.summary || t(msg`隐界会继续在后台恢复，你只需要稍候片刻。`)

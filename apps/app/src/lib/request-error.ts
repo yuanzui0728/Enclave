@@ -59,13 +59,13 @@ export function describeRequestError(error: unknown, fallback?: string) {
 
     if (NETWORK_ERROR_MESSAGES.has(message)) {
       return translateRuntimeMessage(
-        msg`当前无法连接到隐界实例，请先检查世界地址和网络连接。`,
+        msg`当前无法连接到隐界世界，请先检查世界地址和网络连接。`,
       );
     }
 
     if (SERVICE_UNAVAILABLE_PATTERNS.some((pattern) => pattern.test(message))) {
       return translateRuntimeMessage(
-        msg`当前隐界实例暂时不可用，请确认世界服务已经启动后重试。`,
+        msg`当前隐界世界暂时不可用，请确认世界服务已经启动后重试。`,
       );
     }
 

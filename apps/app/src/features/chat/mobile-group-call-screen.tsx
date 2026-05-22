@@ -965,11 +965,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               {groupName}
             </div>
           </div>
-          <MobileCallMetaChip tone="success">
-            {effectiveSource === "desktop"
-              ? t(msg`沿用桌面来源`)
-              : t(msg`手机端发起`)}
-          </MobileCallMetaChip>
         </div>
       </header>
 

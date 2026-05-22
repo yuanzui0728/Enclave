@@ -267,7 +267,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       translateCharacterBio(t, character?.bio) ||
       (isFriend ? t(msg`这个联系人还没有签名。`) : t(msg`这个角色还没有签名。`));
   const relationshipSummary = isOwner
-    ? t(msg`当前世界实例的唯一主人`)
+    ? t(msg`当前世界的唯一主人`)
     : groupMember
       ? resolveGroupRoleLabel(groupMember.role, t)
       : character?.relationship?.trim() || (isFriend ? t(msg`联系人`) : t(msg`世界角色`));

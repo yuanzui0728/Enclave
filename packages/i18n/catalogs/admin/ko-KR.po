@@ -8462,13 +8462,13 @@ msgid "撤销修改"
 msgstr ""
 
 #: apps/admin/src/routes/digital-human-page.tsx:315
-msgid "保存中…"
-msgstr ""
-
-#: apps/admin/src/routes/digital-human-page.tsx:315
 #: apps/admin/src/routes/inference-page.tsx:1028
 msgid "保存"
 msgstr "저장"
+
+#: apps/admin/src/routes/digital-human-page.tsx:315
+msgid "保存中…"
+msgstr ""
 
 #: apps/admin/src/routes/digital-human-page.tsx:330
 msgid "内置舞台（mock_stage）"
@@ -11358,13 +11358,13 @@ msgid "批量动作"
 msgstr "일괄 작업"
 
 #: apps/admin/src/routes/inference-page.tsx:1478
+msgid "目标已选择"
+msgstr "대상 선택됨"
+
+#: apps/admin/src/routes/inference-page.tsx:1478
 #: apps/admin/src/routes/reply-logic-page.tsx:559
 msgid "未选择目标"
 msgstr "대상이 선택되지 않음"
-
-#: apps/admin/src/routes/inference-page.tsx:1478
-msgid "目标已选择"
-msgstr "대상 선택됨"
 
 #: apps/admin/src/routes/inference-page.tsx:1485
 msgid "目标 Provider"
@@ -11801,12 +11801,6 @@ msgid "当前候选池"
 msgstr ""
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1080
-#: apps/admin/src/routes/need-discovery-page.tsx:1286
-#: apps/admin/src/routes/need-discovery-page.tsx:1315
-msgid "当前候选"
-msgstr "현재 후보"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1080
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1278
 #: apps/admin/src/routes/need-discovery-page.tsx:1289
@@ -11820,6 +11814,12 @@ msgstr "현재 후보"
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "건"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1080
+#: apps/admin/src/routes/need-discovery-page.tsx:1286
+#: apps/admin/src/routes/need-discovery-page.tsx:1315
+msgid "当前候选"
+msgstr "현재 후보"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
@@ -12829,6 +12829,12 @@ msgstr "오늘 {0}건 채택 · 모멘트 {1}"
 msgid "未完成"
 msgstr "미완료"
 
+#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
+#. placeholder {1}: formatCompactTime(item.latestRunAt)
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
+msgid "最近 {0} · {1}"
+msgstr "최근 {0} · {1}"
+
 #. placeholder {0}: item.latestRunStatus
 #. placeholder {0}: previewResult.action
 #. placeholder {0}: previewResult.parsedTask.category
@@ -12841,12 +12847,6 @@ msgstr "미완료"
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1700
 msgid "{0}"
 msgstr "{0}"
-
-#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
-#. placeholder {1}: formatCompactTime(item.latestRunAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:373
-msgid "最近 {0} · {1}"
-msgstr "최근 {0} · {1}"
 
 #: apps/admin/src/routes/real-world-sync-page.tsx:374
 msgid "最近暂无执行记录"

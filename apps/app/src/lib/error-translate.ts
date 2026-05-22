@@ -233,7 +233,7 @@ export function translateAppErrorCode(
         msg`该账号通过邮箱验证码注册，请使用邮箱验证码登录。`,
       );
     case "AUTH_JWT_SECRET_MISSING":
-      return translateRuntimeMessage(msg`服务器未配置 JWT_SECRET。`);
+      return translateRuntimeMessage(msg`服务器登录组件未配置，请联系管理员。`);
     case "AUTH_CODE_REQUIRED":
       return translateRuntimeMessage(msg`验证码不能为空。`);
     case "AUTH_CODE_INVALID":
@@ -449,7 +449,7 @@ export function translateAppErrorCode(
         msg`角色档案不存在：${String(params.characterId ?? "")}`,
       );
     case "CHAT_ATTACHMENT_PAYLOAD_INVALID":
-      return translateRuntimeMessage(msg`附件 payload 无效。`);
+      return translateRuntimeMessage(msg`附件内容无效。`);
     case "CHAT_MESSAGE_TEXT_REQUIRED":
       return translateRuntimeMessage(msg`消息文本不能为空。`);
     case "CHAT_STICKER_LIMIT_REACHED":
@@ -517,7 +517,7 @@ export function translateAppErrorCode(
     case "EVAL_FEATURE_NOT_IMPLEMENTED":
       return translateRuntimeMessage(msg`该 Eval 功能尚未实现。`);
     case "SELF_AGENT_DEFAULT_NOT_INITIALIZED":
-      return translateRuntimeMessage(msg`默认 self 角色尚未落库。`);
+      return translateRuntimeMessage(msg`默认自我角色还没建好。`);
     case "WORLD_OWNER_NOT_FOUND":
       return translateRuntimeMessage(msg`世界主人不存在。`);
     case "WORLD_OWNER_NAME_TOO_SHORT": {
