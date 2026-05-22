@@ -728,11 +728,17 @@ function MobileAddFriend() {
             : null
         }
         onClose={() => setSendDialogCharacterId(null)}
-        onSubmit={async (greeting) => {
+        // 新一轮走查 R1：原版用 `await mutateAsync()` + sheet 那边 `() => void
+        // onSubmit(trimmed)`，rejection 没 catch 直接落 window.unhandledrejection
+        // 污染 telemetry。对齐 group-chat-background-page line 357 / chat-message-list
+        // line 2776 同款修法：换 mutate() fire-and-forget；mutation.error 已经通过
+        // page-level ErrorBlock 和 sheet 内 errorMessage prop 渲染给用户，业务上
+        // 不需要 await rejection。
+        onSubmit={(greeting) => {
           if (!sendDialogResult) {
             return;
           }
-          await sendRequestMutation.mutateAsync({
+          sendRequestMutation.mutate({
             characterId: sendDialogResult.character.id,
             greeting,
           });
@@ -1222,7 +1228,9 @@ function MobileAddFriendSendSheet({
           <button
             type="button"
             disabled={pending || !trimmed}
-            onClick={() => void onSubmit(trimmed)}
+            // 新一轮走查 R1：onSubmit 现在是 sync void（父端改 mutate()），
+            // 不必 void 包裹；保留 void 反而读着像有 promise 要兜，误导后续维护。
+            onClick={() => onSubmit(trimmed)}
             className={cn(
               "text-[14px] font-medium",
               pending || !trimmed
