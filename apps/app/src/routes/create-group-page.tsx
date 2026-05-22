@@ -219,6 +219,12 @@ export function CreateGroupPage() {
     seededSelectionRef.current = "";
     setSelectedIds([]);
     setSearchTerm("");
+    // 走查（新一轮）：createMutation.reset() 把 mutation observer 清掉，但
+    // mutate() 上挂的 inline onSettled 不会被回放——submittingRef 留在 true
+    // 就 dead-lock 了：下次 createMutation.isPending=false 让按钮 visually
+    // 解禁，但 onClick 那行 `if (submittingRef.current) return;` 一直早返，
+    // 用户怎么戳 没反应。这里跟 mutation reset 一起手动平掉。
+    submittingRef.current = false;
     createMutationResetRef.current();
   }, [baseUrl]);
 
