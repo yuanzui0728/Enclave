@@ -117,7 +117,13 @@ export function ProfileCharacterImportPage() {
     if (readId !== latestReadIdRef.current) return;
     let payload: unknown;
     try {
-      payload = JSON.parse(text);
+      // R3 走查：file.text() 不剥 UTF-8 BOM (﻿)。Windows Notepad / 部分
+      // 旧编辑器 save UTF-8 文件时默认会写 BOM，JSON.parse 规范不允许 BOM 起头
+      // 直接抛 "Unexpected token ﻿ in JSON at position 0"。bundle 内容
+      // 本身完全合法、用户也找不到原因。先剥首字符 BOM 再 parse；中间字符的
+      // BOM 已经被 name 的 NAME_CONTROL_CHAR_RE 兜住。
+      const normalized = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+      payload = JSON.parse(normalized);
     } catch (err) {
       setResult({
         kind: "danger",

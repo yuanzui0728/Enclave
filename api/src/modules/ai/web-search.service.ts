@@ -33,6 +33,18 @@ const MAX_RESULTS_INJECTED = 5;
 // 限：超 200 字裁掉。和 shouldTriggerForUserMessage 的 500 字 gate 区分:
 // gate 是 "不应该触发"，cap 是 "已决定触发但 query 不能太长"。
 const MAX_SEARCH_QUERY_CHARS = 200;
+// 走查 yuanzui0728 本次 R1：群聊 group-reply-task scheduleTurn 会按 N 个
+// actor 创建 N 行 task；每行 task 跑 generateTaskReply 时各自独立调
+// webSearch.searchAndFormat(baseUserPrompt)。如果 3 个 actor 都开了
+// webSearchEnabled，同一条触发消息会烧 3 份 200/天 配额——而 in-process
+// executeTurn 路径 R2 时已经预取共享了，task 路径漏了。也覆盖：
+//  - 用户连发两条同 query "今天天气" 短时间内
+//  - shake-discovery + moments 同 owner 同 expertDomains 撞同 query
+//  - 同 turn 内 in-process generateTaskReply 与异步 task 并行
+// in-flight 共享 Promise；成功结果再缓存 60s，期间命中直接返回老 markdown。
+// 60s 远小于 200/天 配额恢复周期，对时效性影响可忽略（"最近发生" 不会 60s
+// 内换主角）。失败/null 不缓存（避免 quota 临时拒后被锁死 60s）。
+const RESULT_CACHE_TTL_MS = 60_000;
 
 export interface WebSearchInjection {
   query: string;
@@ -43,6 +55,17 @@ export interface WebSearchInjection {
 @Injectable()
 export class WebSearchService {
   private readonly logger = new Logger(WebSearchService.name);
+  // 同 query 的 in-flight Promise 共享，避免群聊 N actor 并发 fan-out 烧 N 份配额。
+  private readonly inFlight = new Map<
+    string,
+    Promise<WebSearchInjection | null>
+  >();
+  // 成功结果短 TTL 缓存（仅缓存有结果的 injection；null/failure 不缓存以保留
+  // 重试机会）。同 query 60s 内复用同一份 markdown。
+  private readonly resultCache = new Map<
+    string,
+    { injection: WebSearchInjection; expiresAt: number }
+  >();
 
   constructor(
     private readonly minimax: MinimaxClient,
@@ -71,6 +94,41 @@ export class WebSearchService {
         ? trimmed.slice(0, MAX_SEARCH_QUERY_CHARS)
         : trimmed;
 
+    // 命中 60s 缓存直接返回。
+    const now = Date.now();
+    const cached = this.resultCache.get(cleaned);
+    if (cached) {
+      if (cached.expiresAt > now) {
+        return cached.injection;
+      }
+      this.resultCache.delete(cleaned);
+    }
+    // 已有同 query 在飞 → 共享同一 Promise，省一份 quota。
+    const existing = this.inFlight.get(cleaned);
+    if (existing) return existing;
+
+    const job = (async (): Promise<WebSearchInjection | null> => {
+      try {
+        const result = await this.performSearch(cleaned);
+        if (result) {
+          this.resultCache.set(cleaned, {
+            injection: result,
+            expiresAt: Date.now() + RESULT_CACHE_TTL_MS,
+          });
+          this.pruneExpiredCache();
+        }
+        return result;
+      } finally {
+        this.inFlight.delete(cleaned);
+      }
+    })();
+    this.inFlight.set(cleaned, job);
+    return job;
+  }
+
+  private async performSearch(
+    cleaned: string,
+  ): Promise<WebSearchInjection | null> {
     // 走标准 quota 三步：reserve → call → commit/release
     const reserved = await this.quota.tryReserve(QUOTA_MODEL);
     if (!reserved) {
@@ -107,6 +165,16 @@ export class WebSearchService {
         `web search failed query="${cleaned.slice(0, 60)}" err=${message}`,
       );
       return null;
+    }
+  }
+
+  // 一次 set 时顺手清过期 entry；进程内能在飞的 query 同时数 << 上百，无需 LRU。
+  private pruneExpiredCache() {
+    const now = Date.now();
+    for (const [key, entry] of this.resultCache) {
+      if (entry.expiresAt <= now) {
+        this.resultCache.delete(key);
+      }
     }
   }
 }

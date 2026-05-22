@@ -1993,12 +1993,20 @@ export class InferenceService implements OnModuleInit {
         apiKey: provider.ttsApiKey,
         model: provider.ttsModel,
       });
-      const response = await client.audio.speech.create({
-        model: provider.ttsModel,
-        voice,
-        input: probeText,
-        response_format: 'mp3',
-      });
+      // 走查 yuanzui0728 本次 R1：OpenAI SDK 默认 timeout 是 10min（600s）。
+      // ai-orchestrator 主链 TTS 已显式 60s（同 yuanzui0728 R1 前一轮修），但
+      // admin TTS 诊断这条仍裸调，上游 524 / cloudflare 中转停滞时 admin
+      // 端点会挂 10min 才返回——admin "测一下 TTS provider 是否能用" 是
+      // 高频低耐心动作，挂 10min 就是事实性失败。同款 60s timeout。
+      const response = await client.audio.speech.create(
+        {
+          model: provider.ttsModel,
+          voice,
+          input: probeText,
+          response_format: 'mp3',
+        },
+        { maxRetries: 0, timeout: 60_000 },
+      );
       buffer = Buffer.from(await response.arrayBuffer());
     }
     if (!buffer.length) {

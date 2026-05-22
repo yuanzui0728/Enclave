@@ -175,6 +175,7 @@ export class MinimaxNativeClient {
   private async postJson<T>(path: string, body: unknown): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     let response: Response;
+    let text: string;
     try {
       response = await fetchWithTimeout(
         url,
@@ -188,6 +189,15 @@ export class MinimaxNativeClient {
         },
         NATIVE_REQUEST_TIMEOUT_MS,
       );
+      // 走查 yuanzui0728 本次 R1：原版 await response.text() 在 try/catch 外。
+      // fetch 在收到 headers 就 resolve；body 是流式读取，TTS HD 的 hex
+      // 音频响应 ~MB 级，body 流可能再卡几十秒。timer 到期触发 abort 时
+      // response.text() 也会抛 AbortError，但因为在 try 外，AbortError 直接
+      // 漏成裸 Error 而非 AppError('AI_PROVIDER_TIMEOUT')，orchestrator 的
+      // isTransientSpeechFailure 既识不出 'AbortError' 关键词也匹配不到
+      // legacyMessage，fallback 链 / retry 都走不到。MinimaxClient（非 Native
+      // 这条）已经把 body 读取放在 try 里了，Native 这边漏了。
+      text = await response.text();
     } catch (error) {
       const err = error as Error & { name?: string };
       const isTimeout = err?.name === 'AbortError';
@@ -207,7 +217,6 @@ export class MinimaxNativeClient {
       );
     }
 
-    const text = await response.text();
     if (!response.ok) {
       this.logger.warn('minimax http error', {
         url,
