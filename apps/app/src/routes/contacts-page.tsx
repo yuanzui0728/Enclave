@@ -1113,6 +1113,40 @@ export function ContactsPage() {
     startChatResetRef.current();
   }, [baseUrl]);
 
+  // Fresh 走查 R1：bulkMode 中如果 WebSocket 把某好友 onConversationUpdated /
+  // 对方拉黑我 / 我从详情页删了 TA / refetchOnWindowFocus 拉回新一轮 getFriends，
+  // friendsQuery.data 缩短 → friendDirectoryItems 跟着缩 → mobileBulkAllIds /
+  // desktopBulkAllIds 都不再含那条 id，但 bulkSelectedIds 仍把它留着。
+  // 用户视觉上：
+  //   1) 删除确认 dialog 的 "确定删除选中的 N 个朋友？" 计数比实际可选大；
+  //   2) 全选状态 (selectedIds.length === totalIds.length) 永远凑不齐；
+  //   3) 真点执行：server 对那条幽灵 id 返回 NOT_FOUND，partial failure
+  //      把"幽灵 id 重新塞回选区"——用户看到红字"N 项失败"却找不到那几条
+  //      行，因为屏上已经不存在了。
+  // 把 stale 项目从 bulkSelectedIds 里删掉，跟基于 friendDirectoryItems 兜底
+  // （不依赖搜索过滤——bulkMode 下搜索被隐藏 = 实际相同；非 bulkMode 下
+  // bulkSelectedIds 早就在 exitBulkMode 里清光，effect 跑不到 no-op）。
+  useEffect(() => {
+    if (!bulkMode) {
+      return;
+    }
+    const allowedIds = new Set(
+      friendDirectoryItems.map((item) => item.character.id),
+    );
+    setBulkSelectedIds((current) => {
+      let mutated = false;
+      const next = new Set<string>();
+      for (const id of current) {
+        if (allowedIds.has(id)) {
+          next.add(id);
+        } else {
+          mutated = true;
+        }
+      }
+      return mutated ? next : current;
+    });
+  }, [bulkMode, friendDirectoryItems]);
+
   // 通讯录全局 notice 完成动作后应该自然淡出，对齐 mobile-add-friend / friend-
   // requests 的自清模板。原本一律 2.4s，但 danger（批量失败）信息在 2.4s 里
   // 用户基本来不及读完红字 + 错误原因，延长到 4.5s。

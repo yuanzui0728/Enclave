@@ -342,14 +342,26 @@ function MobileFriendRequestsPage() {
                 )}
               >
                 <div className="flex items-start gap-3">
+                  {/* Fresh 走查 R1：原版 avatar 和 body 两个 <button> 都挂相同 aria-
+                      label="查看 X 的资料"，SR 用户被迫连续听到两次同名按钮——更
+                      严重的是 body button 的 aria-label 还会**覆盖**按钮内的可见文
+                      本（角色名 / 来源 "来自摇一摇" / "已过期" badge / 日期），
+                      违反 WCAG 2.5.3 (Label in Name)：accessible name 没有包含
+                      可见文本里的"来自摇一摇"、"已过期"等关键信息，盲人用户根本
+                      听不到这条申请的来源 / 是否过期。
+                      修法：avatar button 设 tabIndex=-1 + aria-hidden 让 AT 跳过
+                      （视觉/触控仍可点），SR / 键盘用户走 body button；body button
+                      去掉 aria-label，让 accessible name 自然由"角色名 + 来源 +
+                      已过期 + 日期"拼接出来，跟视觉表征对齐。 */}
                   <button
                     type="button"
                     onClick={() => openCharacterProfile(request.characterId)}
+                    aria-hidden="true"
+                    tabIndex={-1}
                     className={cn(
                       "shrink-0 rounded-[8px] active:opacity-70",
                       expired ? "opacity-70" : undefined,
                     )}
-                    aria-label={t(msg`查看 ${safeName} 的资料`)}
                   >
                     <AvatarChip
                       name={safeName}
@@ -362,7 +374,6 @@ function MobileFriendRequestsPage() {
                       type="button"
                       onClick={() => openCharacterProfile(request.characterId)}
                       className="flex w-full items-start justify-between gap-3 text-left active:opacity-70"
-                      aria-label={t(msg`查看 ${safeName} 的资料`)}
                     >
                       <div className="min-w-0">
                         <div
