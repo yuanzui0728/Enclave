@@ -154,6 +154,14 @@ export function MobileFriendMomentsPage() {
   useEffect(() => {
     mutationGuardRef.current = { baseUrl, characterId: resolvedCharacterId };
   }, [baseUrl, resolvedCharacterId]);
+  // 走查本轮 R2：同帧双击守卫 —— 和 moments-page / profile-moments-page R5 同
+  // 模板。likeMutation onError 把「重试点赞」按钮挂到 notice.action 上，原版是
+  // 裸 `() => likeMutation.mutate(momentId)`：用户在 InlineNotice 上双击「重试
+  // 点赞」会同帧触发 2 次 mutate，React 没来得及 commit isPending=true，stale
+  // closure 两次都通过 → 2 个 POST /api/moments/{id}/like 同时飞 → toggle 多翻
+  // 一轮（点赞失败状态在 cache 里被回滚到"未赞"，重试两次反而又翻成"已赞"，但
+  // 用户的语义只是"再试一次"）。按 momentId 维度分别记账让不同 moment 互不影响。
+  const likeInflightRef = useRef<Record<string, boolean>>({});
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -192,7 +200,16 @@ export function MobileFriendMomentsPage() {
             ? t(msg`点赞失败：${describeRequestError(error)}`)
             : t(msg`点赞失败，请稍后重试。`),
         actionLabel: t(msg`重试点赞`),
-        action: () => likeMutation.mutate(momentId),
+        // 本轮 R2：双击守卫——见 likeInflightRef 注释。
+        action: () => {
+          if (likeInflightRef.current[momentId]) return;
+          likeInflightRef.current[momentId] = true;
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        },
       });
     },
     onSuccess: (_data, _momentId, context) => {
@@ -508,8 +525,17 @@ export function MobileFriendMomentsPage() {
         // <tool_call> 当正文发，wechat-moment-card 把 text strip 成空 +
         // 无 media → 卡片只剩头像/时间戳/⋯ + 评论挂着孤儿。父层先过滤掉
         // 整张「空胶水」卡片。
+        //
+        // 本轮 R1 (perf)：早返放行——「空胶水帖」只可能发生在 text-only moment
+        // 上；只要 moment 有 media 或 location，最终 return true 的分支已经盖死，
+        // 不需要走一遍 stripToolCallSyntax 正则。和 moments-page.tsx mobile 主页
+        // 同 R5 修法对齐：图文 moment 跑这条 useMemo 时不烧无谓正则，输入评论
+        // 草稿那种高频父级 re-render 路径上能省下毫秒级的主线程占用。
+        if (moment.media.length > 0 || moment.location) {
+          return true;
+        }
         const stripped = stripToolCallSyntax(moment.text);
-        if (!stripped && moment.media.length === 0 && !moment.location) {
+        if (!stripped) {
           return false;
         }
         return true;
