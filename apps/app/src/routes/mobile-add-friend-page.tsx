@@ -326,6 +326,27 @@ function MobileAddFriend() {
     openChatResetRef.current();
   }, [baseUrl]);
 
+  // 新一轮 R1：submittedKeyword 翻面（用户搜了新的关键词 / 取消搜索 / 点 X 清掉）
+  // 时把 sendRequest / openChat 两条 mutation 的 isError 也清掉。流程：
+  //   1) 搜 Alice → 点添加 → 4xx（rate limited / 拒绝 / 文案违规）
+  //   2) 关 sheet（或 500ms cap 自动关）→ 页顶 ErrorBlock 还挂着 Alice 的错
+  //   3) 用户改搜 Bob → 当前 results 已经跟 Alice 完全没关系，Alice 的错
+  //      照旧吊在 Bob 的搜索结果上方
+  // baseUrl 翻面时已经清了一次（line 320-327），但同 baseUrl 内换 keyword 没清。
+  // handleResultPrimaryAction "available" 分支在打开 sheet 前会 reset 一次
+  // （line 492-493），那只覆盖"用户点新一行的添加"，不覆盖"清/换搜索框"。
+  // 走 ref 是为了不把 mutation 本体放进 dep 触发无关 re-run，跟 baseUrl 那条
+  // 同款写法。
+  const submittedKeywordResetRef = useRef(submittedKeyword);
+  useEffect(() => {
+    if (submittedKeywordResetRef.current === submittedKeyword) {
+      return;
+    }
+    submittedKeywordResetRef.current = submittedKeyword;
+    sendRequestResetRef.current();
+    openChatResetRef.current();
+  }, [submittedKeyword]);
+
   const friendshipMap = useMemo(
     () =>
       new Map(
