@@ -463,19 +463,29 @@ async function uploadMomentVideoDraft(
       })()
     : null;
 
-  const [videoResponse, posterResponse] = await Promise.all([
+  // 走查 R3：原 Promise.all 一旦封面（KB 级）撞 CDN 抖动 / 偶发 5xx 就把已经上完
+  // 的视频（MB 级）拖一起 reject——主要工作量已经成功落库到服务端临时目录但被
+  // 这一拒前功尽弃；用户看到"上传失败"再传一次又是几十 MB。改 allSettled：视频
+  // 必须成功；封面失败就退到无封面 video（卡片渲染端有 fallback 走视频首帧）。
+  const [videoResult, posterResult] = await Promise.allSettled([
     uploadMomentMedia(videoFormData, baseUrl),
     posterFormData ? uploadMomentMedia(posterFormData, baseUrl) : Promise.resolve(null),
   ]);
 
-  const video = videoResponse.media as MomentVideoAsset;
-  if (!posterResponse) {
+  if (videoResult.status === "rejected") {
+    throw videoResult.reason instanceof Error
+      ? videoResult.reason
+      : new Error(String(videoResult.reason));
+  }
+
+  const video = videoResult.value.media as MomentVideoAsset;
+  if (posterResult.status === "rejected" || !posterResult.value) {
     return video;
   }
 
   return {
     ...video,
-    posterUrl: posterResponse.media.url,
+    posterUrl: posterResult.value.media.url,
   } satisfies MomentVideoAsset;
 }
 
@@ -719,6 +729,13 @@ async function buildMomentVideoPoster(
   }
 }
 
+// 走查 R3：和 readVideoMetadata 一样，preload="auto" 触发的整段下载 + seek 之后
+// 没有任何事件 fire 的灾难场景（codec 解码不支持但浏览器不抛错；seek 到 currentTime
+// 后 onseeked 永不触发）会让 buildMomentVideoPoster 卡死，外层 createMomentVideoDraft
+// → handleVideoFileSelected 一起挂起，UI 完全没反馈。15s 超时兜底——封面失败不影响
+// 视频本身（buildMomentVideoPoster 外层 catch 直接 return null）。
+const POSTER_CAPTURE_TIMEOUT_MS = 15_000;
+
 function createPosterCaptureVideo(url: string, durationMs: number) {
   return new Promise<HTMLVideoElement>((resolve, reject) => {
     const video = document.createElement("video");
@@ -729,7 +746,16 @@ function createPosterCaptureVideo(url: string, durationMs: number) {
 
     const captureSeconds = Math.max(0, Math.min((durationMs / 1000) * 0.15, 1));
 
+    let timer: number | null = window.setTimeout(() => {
+      timer = null;
+      cleanup();
+      reject(new Error(t(msg`视频封面生成超时。`)));
+    }, POSTER_CAPTURE_TIMEOUT_MS);
     const cleanup = () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
       video.onloadedmetadata = null;
       video.onseeked = null;
       video.onerror = null;
