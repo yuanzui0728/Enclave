@@ -265,15 +265,27 @@ function MobileAddFriend() {
       characterId: string;
       greeting: string;
     }) => sendFriendRequest({ characterId, greeting }, baseUrl),
-    onSuccess: async () => {
+    // 再开一轮 R2：onSuccess 别无脑 setSendDialogCharacterId(null)。慢网场景：
+    // 用户给 A 点发送 → 500ms cap 触发 sheet 自动收 → 用户立刻去 B 行点添加 →
+    // sendDialogCharacterId 变成 B → 此时 A 的 mutation 才回来，原版直接把 B
+    // 的 sheet 关掉，用户莫名其妙输入框消失。按 variables.characterId 校验：
+    // 只有当 sheet 仍开着的就是 A 时才主动关；用户已经切到 B 就让 B 的 sheet
+    // 维持原态（B 自己的状态由 B 自己的下一次 send/close 决定）。
+    onSuccess: (_, variables) => {
       setNotice({ tone: "success", message: t(msg`好友申请已发送。`) });
-      setSendDialogCharacterId(null);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-friend-requests", baseUrl],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-      ]);
+      setSendDialogCharacterId((current) =>
+        current === variables.characterId ? null : current,
+      );
+      // 不再 await invalidate；fire-and-forget。原版 await Promise.all 让
+      // useMutation 在内部把 onSuccess promise 跟 mutation 生命周期串起来，
+      // 但 caller 用的是 mutate() 不是 mutateAsync()，没人接 onSuccess 的
+      // 解析结果，await 在这里没业务收益。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-friend-requests", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-friends", baseUrl],
+      });
     },
   });
   const sendRequestDisplayedPending = useCappedPending(
@@ -466,11 +478,28 @@ function MobileAddFriend() {
   const handleResultPrimaryAction = useCallback(
     (result: AddFriendSearchResult) => {
       if (result.status === "available") {
+        // 再开一轮 R1：清掉上一次发送残留的 mutation.error，否则会出现：
+        // (1) 用户给角色 A 发申请，被后端 4xx（"rate limited" / 文案不合规等）；
+        // (2) 用户关掉 sheet，errorBlock 还在 page 顶端挂着；
+        // (3) 用户切到另一个角色 B 点"添加"，sheet 一打开就在 textarea 下方
+        //     看到给 A 时踩的"rate limited"——但 B 还没发任何东西，文案完全
+        //     无关。errorMessage 透传逻辑（line ~723）只是按 isError + sendDialogResult
+        //     是否非空判定，没分角色，所以 A 的过期 error 会被原样拍给 B。
+        // openChat 错误同理：A 打不开后切 B 来加好友，page 顶端会继续吊着 A 的
+        // openChat ErrorBlock，跟当前在 sheet 里要做的"发请求给 B"完全无关。
+        // 用 ref 是因为 useCallback dep 已经不带 mutation 本体，避免每次 isPending
+        // 翻动都重建 handler 让 memo 行重渲。
+        sendRequestResetRef.current();
+        openChatResetRef.current();
         setSendDialogCharacterId(result.character.id);
         return;
       }
 
       if (result.status === "friend") {
+        // 切到友好聊天前也清一次：上一次发请求残留的 sendRequest error，跟当前
+        // 要"发消息"完全无关，挂在 page 顶端只是噪音。
+        sendRequestResetRef.current();
+        openChatResetRef.current();
         openChatMutation.mutate(result.character.id);
         return;
       }
@@ -489,7 +518,8 @@ function MobileAddFriend() {
     },
     // openChatMutation 本体在 useMutation 实现内引用稳定，但 lint 仍要求列出；
     // 列了之后每次 mutation state 翻动（pending/idle）会重建一次回调——影响
-    // 极小，相比每次 keystroke 重建全部 12 行的开销可忽略。
+    // 极小，相比每次 keystroke 重建全部 12 行的开销可忽略。reset 走 ref（line
+    // 303-306），不进 dep，所以重建频率不受 reset 影响。
     [openChatMutation, openFriendRequests],
   );
 
@@ -720,10 +750,17 @@ function MobileAddFriend() {
         // sheet 内部展示在 textarea 下方——既不关 sheet 也不丢用户已敲的 greeting，
         // 用户能直接看到"对方拒绝/限流/网络断开"，再决定是否重试或改文案。只在
         // sheet 仍开着的时候透传，免得关闭后又把"我自己"打来的过期 error 拍回来。
+        // 再开一轮 R3：还要按 variables.characterId 校验，否则慢网下：用户给 A
+        // 发送 → 500ms cap 自动关 sheet → 用户打开 B 的 sheet → A 的 mutation
+        // 才回来报错 → 原版会把 A 的错误（"对 A 限流" / "A 拒绝" 等）原样塞进
+        // B 的 sheet，跟 B 完全无关。R1 里 reset() 只在开 sheet 的瞬间清，开完
+        // 之后 A 才回来报错也得校验。
         errorMessage={
           sendDialogResult &&
           sendRequestMutation.isError &&
-          sendRequestMutation.error instanceof Error
+          sendRequestMutation.error instanceof Error &&
+          sendRequestMutation.variables?.characterId ===
+            sendDialogResult.character.id
             ? sendRequestMutation.error.message
             : null
         }
