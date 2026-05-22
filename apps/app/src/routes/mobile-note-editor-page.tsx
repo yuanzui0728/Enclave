@@ -197,10 +197,18 @@ function MobileNoteEditor({
     queryFn: () => getFavoriteNote(selectedNoteId!, baseUrl),
     enabled: Boolean(selectedNoteId),
   });
+  // 走查 R1：原 queryKey 是独立的 `mobile-note-send-conversations`，跟 chat-list-page
+  // 的 `app-conversations` 完全不共享。结果是：用户从 + 菜单进编辑器、刚保存完笔记
+  // 点「发送」打开 sheet 时，明明 chat-list 几秒前刚拉过会话列表，sheet 还是要
+  // 从零起一次网络往返才能显示。公网隧道下 200~600ms 才出列表，期间 LoadingBlock
+  // 把整个 sheet 占满。改成跟 chat-list 同 key + 同 staleTime，命中 cache 直接
+  // 出列表，stale 时背景 refetch 不挡 UI。enabled 仍按 sendDialogNote 卡，关
+  // sheet 时不会主动触发 refetch。
   const recentConversationsQuery = useQuery({
-    queryKey: ["mobile-note-send-conversations", baseUrl],
+    queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(sendDialogNote),
+    staleTime: 15_000,
   });
 
   const sessionKey = `${selectedNoteId ?? "new"}:${draftIdParam ?? ""}`;
@@ -342,6 +350,23 @@ function MobileNoteEditor({
       return removeFavoriteNote(noteId, baseUrl);
     },
     onSuccess: async () => {
+      // 走查 R2：
+      // (1) 用户改过笔记 → isDirty=true → 点删除 → 服务端删成功 → leaveEditor →
+      //     useBlocker.shouldBlockFn 因 dirty 仍 true 拦下导航 → 弹"未保存"sheet。
+      //     用户刚删完，原笔记已经没了，却被问"要不要保存"——令人困惑。
+      //     skipBlockerRef.current=true 短路 blocker，跟 handleSaveAndClose /
+      //     handleDiscardAndClose 同款逻辑。
+      // (2) 删除后笔记草稿也应该不再写回 LS：本来 clearDesktopNoteDraft 一句就
+      //     干掉了草稿，但如果用户在删除前 200ms 内最后敲过键，220ms debounce
+      //     的 auto-save timer 排队中，先 fire 就把 draft 又写回去。跟
+      //     handleDiscardAndClose 同款做法。
+      autoSaveDisabledRef.current = true;
+      if (autoSaveTimerRef.current !== null) {
+        window.clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+      skipBlockerRef.current = true;
+
       if (activeDraftId) {
         clearDesktopNoteDraft(activeDraftId);
       }
@@ -585,6 +610,18 @@ function MobileNoteEditor({
     );
   }, [noteQuery.data, selectedNoteId]);
 
+  // 走查 R1：原写法只 useEffect 内 setTimeout + cleanup clearTimeout 来 debounce
+  // auto-save。一个隐蔽 race：用户在确认 sheet 里点「不保存」后，handleDiscardAndClose
+  // 同步 clearDesktopNoteDraft → leaveEditor → navigate。但如果用户在点「不保存」
+  // *之前* 220ms 内最后敲过一次键（timer 仍排队中），navigate 在 TanStack Router
+  // 下不是绝对同步——若 unmount 拖到 220ms 以上（保存确认 sheet 自身的 setState
+  // commit 也得一个 frame），timer 会先 fire 把刚 clear 掉的 draft 重写回 LS；
+  // 紧接着 unmount cleanup 因 editorState 非空（"Hello" 之类）跳过清理 → draft
+  // 残留。改成把 timer 放到 ref 里，并加一个 autoSaveDisabledRef 旗，让
+  // handleDiscardAndClose 能同步同时把 timer 撤掉 + 关掉后续 saveDesktopNoteDraft
+  // 触发——下次 setEditorState 触发 effect 时也不会再写 LS。
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const autoSaveDisabledRef = useRef(false);
   useEffect(() => {
     if (!activeDraftId) {
       return;
@@ -593,7 +630,15 @@ function MobileNoteEditor({
     if (initializedSessionKeyRef.current !== sessionKey) {
       return;
     }
-    const timer = window.setTimeout(() => {
+    if (autoSaveDisabledRef.current) {
+      return;
+    }
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      autoSaveTimerRef.current = null;
+      if (autoSaveDisabledRef.current) return;
       saveDesktopNoteDraft({
         draftId: activeDraftId,
         noteId: noteId || undefined,
@@ -601,7 +646,12 @@ function MobileNoteEditor({
         updatedAt: new Date().toISOString(),
       });
     }, 220);
-    return () => window.clearTimeout(timer);
+    return () => {
+      if (autoSaveTimerRef.current !== null) {
+        window.clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
   }, [activeDraftId, editorState, noteId, sessionKey]);
 
   useEffect(() => {
@@ -655,12 +705,22 @@ function MobileNoteEditor({
       return;
     }
     const nextHtml = normalizeEditorHtml(editor.innerHTML);
-    const nextAssets = filterAssetsByHtml(nextHtml, editorState.assets);
+    // 走查 R1：原写法用 closure `editorState.assets` 给 filterAssetsByHtml 喂参，
+    // 然后在 setEditorState 里盖回去。问题：handleAttachmentSelection 的 loop 里
+    // 每次 `document.execCommand("insertHTML", ...)` 都同步触发 contentEditable
+    // 的 input 事件 → syncEditorStateFromDom 同步跑一次，此时 React state 的
+    // `editorState.assets` 还是上一次 render 的旧值（loop 内 createdAssets 没进
+    // setState）。filterAssetsByHtml 用旧 assets 去筛 DOM 里新 asset-id → 直接
+    // 把刚 insert 的 <img>/<a> 的 asset record 当 stale 干掉。结果中间几帧
+    // setEditorState 把 assets 反复清成空数组，靠 loop 结束后的 cleanup
+    // setEditorState 兜回，期间 React 多次 re-render 一次空 assets，浪费 reflow。
+    // 改成纯 functional updater，filterAssetsByHtml 喂 current.assets，跟 React
+    // 视角 commit 后的 state 对齐。
     setEditorState((current) => ({
       ...current,
       contentHtml: nextHtml,
       contentText: extractNoteTextFromHtml(nextHtml),
-      assets: nextAssets,
+      assets: filterAssetsByHtml(nextHtml, current.assets),
     }));
   }
 
@@ -1036,6 +1096,15 @@ function MobileNoteEditor({
   }
 
   async function handleDiscardAndClose() {
+    // 走查 R1：在 clearDesktopNoteDraft 之前先把 auto-save 关掉 + 撤掉排队中的
+    // timer。否则 220ms debounce 的 timer 若已经排队（用户敲完最后一字后还没到
+    // 220ms 就点了"不保存"），navigate / unmount 一旦慢于 timer 触发，刚 clear
+    // 掉的 draft 会被 re-saveDesktopNoteDraft 写回 LS，下次进编辑器又"复活"。
+    autoSaveDisabledRef.current = true;
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     if (activeDraftId) {
       clearDesktopNoteDraft(activeDraftId);
     }
@@ -1320,6 +1389,13 @@ function MobileNoteEditor({
       >
         <ToolbarButton
           label={t(msg`附件`)}
+          // 走查 R1：原写法没卡 attachmentPending —— 上传慢（公网隧道下 1~3s）
+          // 时用户点不动会以为没生效，再连点几下 → 每次都 fileInputRef.click()
+          // 弹原生 file picker 叠起来 → 选同一组文件 → 触发多次 onChange →
+          // 同一份文件被并发上传 N 次，server 攒一堆重复 attachment，editor 也
+          // 插入 N 套同 src 的 <img>。disabled 卡 click 后用户能从底部「附件
+          // 上传中...」chip 读出在跑。
+          disabled={attachmentPending}
           onClick={() => fileInputRef.current?.click()}
         >
           <FolderUp size={15} />
@@ -1412,17 +1488,21 @@ function MobileNoteEditor({
 function ToolbarButton({
   active = false,
   children,
+  disabled = false,
   label,
   onClick,
 }: {
   active?: boolean;
   children: ReactNode;
+  disabled?: boolean;
   label: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(
@@ -1430,6 +1510,7 @@ function ToolbarButton({
         active
           ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
           : "border-transparent bg-white text-[color:var(--text-secondary)] active:bg-black/5",
+        disabled ? "cursor-not-allowed opacity-55" : undefined,
       )}
       aria-label={label}
       title={label}
