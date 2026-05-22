@@ -710,6 +710,15 @@ async function buildMomentVideoPoster(
 
     const video = await createPosterCaptureVideo(url, durationMs);
     context.drawImage(video, 0, 0, posterWidth, posterHeight);
+    // 走查移动端朋友圈 R1（perf）：createPosterCaptureVideo 走 preload="auto"
+    // 把整段（最多 5 分钟）视频先 buffer 进内存才能在 onseeked 抓到帧；drawImage
+    // 同步把帧 paint 到 canvas 之后这个 <video> 元素就没用了，但只丢 ref 不调
+    // removeAttribute("src")+load() 的话 Chromium / iOS Safari 会把 decoded
+    // 缓冲一直挂到 GC 才放（实测一支 480p/3min 视频 ≈40MB，跨多次 picker 累积
+    // 容易把低内存机型推到 OOM）。和 readVideoMetadata 那条 cleanup 同模板，
+    // 上传/保留草稿等后续路径只读 draft.posterFile blob，不再需要这个临时 video。
+    video.removeAttribute("src");
+    video.load();
     const blob = await canvasToBlob(canvas, {
       mimeType: "image/jpeg",
       quality: 0.88,
