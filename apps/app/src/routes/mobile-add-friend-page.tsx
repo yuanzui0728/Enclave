@@ -1130,6 +1130,17 @@ function MobileAddFriendSendSheet({
     };
   }, [open]);
 
+  // 新一轮 R3：onClose 是父端 `() => setSendDialogCharacterId(null)`，每次父 render
+  // 都是新箭头。如果直接把 onClose 放进下面两条 effect 的 deps，父端任何 re-render
+  // （notice 2.4s 自动清、friendRequestsQuery 15s staleTime 后台 refetch、ownerName
+  // 从 store hydrate 完之后变化）都会把这两条 effect cleanup + 重挂——意味着每个
+  // 不相干的状态变更都要 removeEventListener / interceptors.delete 旧 fn，再
+  // addEventListener / interceptors.add 一个新的。和上方 focus effect 同款修法：
+  // ref 化 onClose，effect 只看真正需要的状态（open / pending），handler 永远从
+  // ref 拿最新 onClose。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) {
       return;
@@ -1137,14 +1148,14 @@ function MobileAddFriendSendSheet({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !pending) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, open, pending]);
+  }, [open, pending]);
 
   // 原生壳硬件 Back：sheet 打开时先关 sheet，不让 BACK 把用户从 /add-friend 直
   // 接 history.back 弹回 /tabs/contacts。pending 中（正在发送）不拦避免打断。
@@ -1154,11 +1165,11 @@ function MobileAddFriendSendSheet({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [open, onClose, pending]);
+  }, [open, pending]);
 
   // 走查 R1：sheet 是 fixed inset-0，但没锁 body scroll —— iOS Safari WKWebView
   // 上用户用手指在半透明遮罩 / sheet 之外区域滑动会"穿透"滚动底层 /add-friend
