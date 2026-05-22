@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, InlineNotice } from "@yinjie/ui";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 
 async function copyTextToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
@@ -87,6 +88,8 @@ export function CheckoutContactDialog({
   onClose,
 }: CheckoutContactDialogProps) {
   const t = useRuntimeTranslator();
+  const titleId = useId();
+  const descId = useId();
   const [feedback, setFeedback] = useState<{
     tone: "success" | "danger";
     message: string;
@@ -102,20 +105,45 @@ export function CheckoutContactDialog({
     [hint, contact, t],
   );
 
+  // 新走查 R5：onClose 是父组件传 inline arrow（profile-subscription-page line
+  // 748-750），父级任何 re-render（profileQuery refetch / token refresh / checkout
+  // 后再 invalidate）都换 onClose 身份，下面 Esc effect 把 keydown listener 拆装
+  // 一遍。镜像 ref 把 deps 收紧到 [open]，dialog 开着期间只挂一次。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) {
       setFeedback(null);
       return;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
+      if (event.key !== "Escape") return;
+      // 新走查 R5：原本 Esc 不看 isComposing，CJK 用户在背后的 input（hint 中如果
+      // 含「微信号 / 邮箱」要用户复制时其实不会有 input，但 dialog 关闭后用户
+      // 可能立即去打字）按 Esc 想关 IME 候选词，window 全局 keydown 一接就把
+      // dialog 关掉、候选词没退掉。和 desktop-chat-confirm-dialog.tsx L79-81 同款
+      // 修法。
+      if (event.isComposing) return;
+      event.preventDefault();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
+
+  // 新走查 R5：Android 硬件 Back 没接拦截器——dialog 打开期间用户按 Back 直接
+  // history.back 离开 /profile/subscription 退回 /tabs/profile，dialog 跟着 unmount，
+  // 用户期望「Back 收 dialog 留在订阅页」反而退一格。和 WeChatActionBubble /
+  // MobileDetailsActionSheet / WeChatCommentBar / AvatarConfirmDialog 同款补全。
+  useEffect(() => {
+    if (!open) return;
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onCloseRef.current();
+      return true;
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -144,21 +172,41 @@ export function CheckoutContactDialog({
         type="button"
         aria-label={t(msg`关闭弹窗`)}
         onClick={onClose}
+        // 新走查 R5：backdrop 是不可见 affordance，键盘 Tab 时会落到这张 button
+        // 上拿到 invisible focus，按 Enter 关掉 dialog；Esc 路径已经支持关闭，
+        // 不需要 Tab 可达此 backdrop。和 desktop-chat-confirm-dialog R107 同款。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+      {/* 新走查 R5：补 a11y——dialog 之前裸 div，SR 用户在 plan checkout 成功后
+          只能听到 button label「复制 / 复制全部 / 我知道了」，听不到 title /
+          hint / 联系方式。和 desktop-chat-confirm-dialog / mobile-details-action-sheet
+          同款 role="dialog" + aria-modal + aria-labelledby + aria-describedby。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={hint ? descId : undefined}
+        className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+      >
         <div className="px-6 pt-6 pb-2">
           <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
             {t(msg`联系开通`)}
           </div>
-          <h2 className="mt-2 text-[18px] font-semibold text-[color:var(--text-primary)]">
+          <h2
+            id={titleId}
+            className="mt-2 text-[18px] font-semibold text-[color:var(--text-primary)]"
+          >
             {planName
               ? t(msg`开通 ${planName}`)
               : t(msg`联系运营开通会员`)}
           </h2>
           {hint ? (
-            <p className="mt-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+            <p
+              id={descId}
+              className="mt-3 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+            >
               {hint}
             </p>
           ) : null}
