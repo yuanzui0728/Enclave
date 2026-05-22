@@ -1841,10 +1841,42 @@ export class FeedService implements OnModuleInit {
       selectedCharacter.name,
     );
 
-    // 视频号不再调 LLM 生成 baseText：每个视频草稿都额外打一次 n1n 太贵；
-    // 真正的画面内容由 minimax 视频模型基于 videoPrompt 决定，文字部分用本地
-    // 兜底文案即可，配额耗尽 / minimax 失败时整条草稿都会被回滚。
-    const text = fallbackText;
+    // 默认视频号不调 LLM 生成 baseText（每个视频草稿都额外打一次 n1n 太贵）；
+    // 但用户在 wiki 写 / 私有角色 bundle 导入 `scenePrompts.channel_post` 时，
+    // 这条 prompt 是被用户明确选中"我希望视频号文案是这种调性"——之前的实现
+    // 把它落到 DB 但 generateChannelPost 永远走本地兜底文案，导致用户精心填的
+    // channel_post 提示词成了死字段，体感"导入了但没生效"。
+    //
+    // 收窄触发条件：仅当 profile.scenePrompts.channel_post 显式非空才走 LLM；
+    // 默认 / 内置角色仍走零成本兜底。AI 失败时静默回落到本地兜底，不让一次
+    // LLM 抖动把整个视频草稿干掉（配额已经先占走了）。
+    let text = fallbackText;
+    const channelScenePrompt =
+      profile?.scenePrompts?.channel_post?.trim() ?? '';
+    if (channelScenePrompt && profile) {
+      try {
+        const aiText = await this.ai.generateMoment({
+          profile,
+          currentTime: new Date(),
+          usageContext: {
+            surface: 'app',
+            scene: 'channel_post_generate',
+            scopeType: 'character',
+            scopeId: selectedCharacter.id,
+            scopeLabel: selectedCharacter.name,
+            characterId: selectedCharacter.id,
+            characterName: selectedCharacter.name,
+          },
+        });
+        if (aiText && aiText.trim().length > 0) {
+          text = aiText.trim();
+        }
+      } catch (err) {
+        this.logger.warn(
+          `channel_post AI text generation failed for ${selectedCharacter.name}, falling back to local text: ${(err as Error)?.message ?? err}`,
+        );
+      }
+    }
 
     const videoPrompt = composeChannelVideoPrompt(
       selectedCharacter.name,
