@@ -102,25 +102,31 @@ function loadEncounters(baseUrl: string | undefined): EncounterRecord[] {
 // setEncounterCount(loadEncounters().length)（再 load 一次），总共 3 次
 // JSON.parse 50 条记录 + 1 次写 + 1 次 read。返回新长度让调用端直接用，
 // 省两次读，并把"已经存在该 characterId / 静默失败"分支也能给出准确长度。
+// 走查 R-new1：以前 catch 兜底返回 0；但 catch 多半是 setItem quota 超了，
+// loadEncounters 已经拿到了 existing。调用端拿 0 后 setEncounterCount(0)，
+// hero 立刻从"今日已偶遇 N 人"塌成"挑一个常去的地方..."，即使本次相遇
+// 服务端已成功落库、且之前的 N 条 encounter 在 localStorage 里还在。
+// 改成 catch 时返回 existing.length（保持 UI 跟实际持久化状态一致）。
 function saveEncounter(
   baseUrl: string | undefined,
   record: EncounterRecord,
 ): number {
   if (typeof window === "undefined") return 0;
+  const existing = loadEncounters(baseUrl);
+  if (existing.some((e) => e.characterId === record.characterId)) {
+    return existing.length;
+  }
+  const next = [...existing, record].slice(-50);
   try {
-    const existing = loadEncounters(baseUrl);
-    if (existing.some((e) => e.characterId === record.characterId)) {
-      return existing.length;
-    }
-    const next = [...existing, record].slice(-50);
     window.localStorage.setItem(
       encountersStorageKey(baseUrl),
       JSON.stringify(next),
     );
     return next.length;
   } catch {
-    // localStorage 不可用就静默吃掉
-    return 0;
+    // setItem 失败（quota / private mode 等），写不进去就保持现有 length，
+    // 别把 hero 计数倒回 0 让用户误以为今日还没相遇。
+    return existing.length;
   }
 }
 
