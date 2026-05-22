@@ -40,7 +40,11 @@ import {
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { parseCreateGroupRouteHash } from "../lib/create-group-route-state";
-import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import {
+  isDesktopOnlyPath,
+  navigateBackOrFallback,
+  overrideRecordedNavigationPair,
+} from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopCreateGroupDialog = lazy(async () => {
@@ -272,17 +276,7 @@ export function CreateGroupPage() {
   // 走 navigateBackOrFallback：能 history.back() 就 back，安全兜不住时再
   // 用 fallback 里的 fresh navigate。这里把整段重写成同模式，每个 source
   // 对应一条 fallback navigate。
-  const handleBack = () => {
-    // 走查（新一轮）：搜不到联系人空态里已有「清空搜索」action，但顶栏「返回」
-    // 在 searchTerm 非空时同样应该先吃掉搜索 —— 跟桌面 Escape clearSearch (见
-    // desktop-create-group-dialog R 注释) / WeChat 移动端搜索框 back 一致。否则
-    // 用户搜到一半想回退一步看全量列表，只能手动点 input 右侧 X 或清字串，反
-    // 直觉地从顶栏点返回就直接把整页和已选都吹了。
-    if (searchTerm.trim()) {
-      setSearchTerm("");
-      return;
-    }
-
+  const exitPage = () => {
     const performFallbackNavigate = () => {
       if (safeReturnPath) {
         void navigate({
@@ -342,6 +336,24 @@ export function CreateGroupPage() {
     navigateBackOrFallback(performFallbackNavigate, safeReturnPath);
   };
 
+  const handleBack = () => {
+    // 走查（新一轮）：搜不到联系人空态里已有「清空搜索」action，但顶栏「返回」
+    // 在 searchTerm 非空时同样应该先吃掉搜索 —— 跟桌面 Escape clearSearch (见
+    // desktop-create-group-dialog R 注释) / WeChat 移动端搜索框 back 一致。否则
+    // 用户搜到一半想回退一步看全量列表，只能手动点 input 右侧 X 或清字串，反
+    // 直觉地从顶栏点返回就直接把整页和已选都吹了。注意 dual 行为只给顶栏左上
+    // 这个主"返回"手势用；下面错误/空态卡片里那几个明确写着「返回上一页」
+    // 文案的退出按钮一律走 exitPage 直接退页，否则用户在 createMutation 错误
+    // 弹框里点了「返回」按钮发现只是清掉搜索词、错误条还留在那 → 二次确认才
+    // 真的退出，反人类。
+    if (searchTerm.trim()) {
+      setSearchTerm("");
+      return;
+    }
+
+    exitPage();
+  };
+
   const statusBackLabel = safeReturnPath
     ? t(msg`返回上一页`)
     : routeState.source === "group-contacts"
@@ -380,7 +392,11 @@ export function CreateGroupPage() {
             open
             conversationId={routeState.conversationId}
             seedMemberIds={routeState.seedMemberIds}
-            onClose={handleBack}
+            // 走查（新一轮）：桌面 dialog 的 onClose 语义是"关弹窗"，跟移动端
+            // searchTerm 没关系；走 exitPage 直接退页，避免 isDesktopLayout
+            // 在响应式断点切换时（mobile→desktop）残留的 searchTerm 让 onClose
+            // 第一次点变成"清空一个看不见的搜索框"。
+            onClose={exitPage}
             onCreated={(groupId) => {
               void navigate({
                 to: buildDesktopChatThreadPath({
@@ -606,7 +622,7 @@ export function CreateGroupPage() {
                     type="button"
                     size="sm"
                     className="h-8 rounded-full px-3 text-[11px]"
-                    onClick={handleBack}
+                    onClick={exitPage}
                   >
                     {statusBackLabel}
                   </Button>
@@ -636,7 +652,7 @@ export function CreateGroupPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={handleBack}
+                  onClick={exitPage}
                   className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {statusBackLabel}
@@ -659,7 +675,7 @@ export function CreateGroupPage() {
                   type="button"
                   size="sm"
                   className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleBack}
+                  onClick={exitPage}
                 >
                   {statusBackLabel}
                 </Button>
