@@ -1586,6 +1586,49 @@ export class FeedService implements OnModuleInit {
     });
   }
 
+  async deleteOwnerComment(commentId: string): Promise<void> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const comment = await this.commentRepo.findOneBy({ id: commentId });
+
+    if (!comment || comment.status === 'deleted') {
+      throw new AppError('FEED_COMMENT_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '评论不存在或已被删除。',
+      });
+    }
+
+    // 仅作者本人可删自己的评论。Owner（视频号/广场动态的 post 主）暂不开
+    // 「删别人评论」能力——保留语义最小集合，需要时再拓 owner moderation 走
+    // 另一条 endpoint。
+    if (comment.authorId !== owner.id) {
+      throw new AppError('FEED_COMMENT_FORBIDDEN', {
+        status: HttpStatus.FORBIDDEN,
+        legacyMessage: '只能删除自己的评论。',
+      });
+    }
+
+    // 直接子回复（parentCommentId 指向本评论）一并软删，保持列表/计数一致；
+    // 后端只支持两层嵌套（根 + reply），sibling-of-sibling 不存在，所以一层扫描足够。
+    const descendants = await this.commentRepo.find({
+      where: { parentCommentId: commentId, status: 'published' },
+    });
+
+    const idsToDelete = [commentId, ...descendants.map((c) => c.id)];
+    await this.commentRepo.update(
+      { id: In(idsToDelete) },
+      { status: 'deleted' },
+    );
+
+    // commentCount 不能直接 decrement N（race：别人正在并发评论，commentCount
+    // 可能落到负值；TypeORM decrement 不带 MAX(0, ...) clamp）。手动读改写，
+    // 让 commentCount 永远 >= 0；并发误差 1-2 可接受，下一次 invalidate 会修正。
+    const post = await this.postRepo.findOneBy({ id: comment.postId });
+    if (post) {
+      const nextCount = Math.max(0, post.commentCount - idsToDelete.length);
+      await this.postRepo.update({ id: post.id }, { commentCount: nextCount });
+    }
+  }
+
   async likeOwnerComment(commentId: string): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const comment = await this.commentRepo.findOneBy({ id: commentId });

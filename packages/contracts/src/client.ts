@@ -3992,6 +3992,16 @@ export function likeFeedComment(id: string, baseUrl?: string) {
   );
 }
 
+export function deleteFeedComment(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/comments/${id}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
 export function generateChannelPost(baseUrl?: string) {
   const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
     allowDefault: false,

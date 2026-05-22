@@ -212,6 +212,11 @@ export class FeedController {
     return this.feedService.likeOwnerComment(commentId);
   }
 
+  @Delete('comments/:id')
+  deleteComment(@Param('id') commentId: string) {
+    return this.feedService.deleteOwnerComment(commentId);
+  }
+
   @Post('comments/:id/reply')
   replyComment(
     @Param('id') commentId: string,
