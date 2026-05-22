@@ -4,9 +4,11 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { msg } from "@lingui/macro";
@@ -17,17 +19,21 @@ import {
   ArrowLeft,
   Bookmark,
   EyeOff,
+  Heart,
   ImageIcon,
+  MessageCircle,
   MessageCircleMore,
   Music2,
   Play,
   Share2,
+  Smile,
   ThumbsUp,
   X,
 } from "lucide-react";
 import {
   SELF_CHARACTER_ID,
   addFeedComment,
+  deleteFeedComment,
   favoriteFeedPost,
   followChannelAuthor,
   generateChannelPost,
@@ -64,6 +70,7 @@ import {
 } from "../features/channels/channels-route-state";
 import { getChannelsSectionBadge } from "../features/channels/channels-section-badge";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -71,7 +78,7 @@ import {
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { formatTimestamp } from "../lib/format";
+import { formatTimestamp, formatWeChatCommentTime } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { describeRequestError } from "../lib/request-error";
@@ -631,6 +638,83 @@ export function ChannelsPage() {
       setNotice(error instanceof Error ? `${fallback} (${describeRequestError(error)})` : fallback);
     },
   });
+  // 删除评论 mutation：长按 ActionSheet → 删除 调用。后端软删 1 条根 + N 条
+  // 直接子回复（feed.service.deleteOwnerComment 一层扫描），前端 invalidate 评
+  // 论列表 + decorations preview，commentCount 走轻量乐观（-1，不算子回复，
+  // 真值由 invalidate 后 refetch 矫正）。
+  const deleteCommentMutation = useMutation({
+    mutationFn: (input: { commentId: string; postId: string }) =>
+      deleteFeedComment(input.commentId, baseUrl),
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
+      const previousEntries: Array<{
+        key: readonly unknown[];
+        previousPost: FeedPostListItem | null;
+      }> = [];
+      const snapshots = queryClient.getQueriesData<FeedChannelHomeResponse>({
+        queryKey: ["app-channels-home", baseUrl],
+      });
+      snapshots.forEach(([key, data]) => {
+        if (!data?.posts) return;
+        const previousPost =
+          data.posts.find((post) => post.id === input.postId) ?? null;
+        previousEntries.push({ key, previousPost });
+        queryClient.setQueryData<FeedChannelHomeResponse>(key, {
+          ...data,
+          posts: data.posts.map((post) =>
+            post.id === input.postId
+              ? { ...post, commentCount: Math.max(0, post.commentCount - 1) }
+              : post,
+          ),
+        });
+      });
+      return { previousEntries, mutationBaseUrl: baseUrl };
+    },
+    onSuccess: (_, input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
+        setNotice(t(msg`评论已删除。`));
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-channels-home-decorations", mutationBaseUrl],
+      });
+    },
+    onError: (error, input, context) => {
+      context?.previousEntries.forEach(({ key, previousPost }) => {
+        const current =
+          queryClient.getQueryData<FeedChannelHomeResponse>(key);
+        if (!current?.posts) return;
+        queryClient.setQueryData<FeedChannelHomeResponse>(key, {
+          ...current,
+          posts: current.posts.map((post) =>
+            post.id === input.postId ? (previousPost ?? post) : post,
+          ),
+        });
+      });
+      if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
+        return;
+      }
+      setNoticeTone("info");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
+      const fallback = t(msg`删除评论失败，请稍后重试。`);
+      setNotice(
+        error instanceof Error
+          ? `${fallback} (${describeRequestError(error)})`
+          : fallback,
+      );
+    },
+  });
+
   const generateMutation = useMutation({
     mutationFn: () => generateChannelPost(baseUrl),
     onMutate: () => {
@@ -2610,6 +2694,56 @@ export function ChannelsPage() {
             postId: comment.postId,
           });
         }}
+        onCopyComment={(_comment, cleanText) => {
+          // 走 navigator.clipboard，部分老 WKWebView / Android Chrome 隐私模式
+          // 不可用时静默吞错——用 textarea + execCommand fallback 兜一层。
+          const copyText = cleanText.trim();
+          if (!copyText) return;
+          try {
+            void navigator.clipboard?.writeText(copyText);
+          } catch {
+            try {
+              const ta = document.createElement("textarea");
+              ta.value = copyText;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              document.body.removeChild(ta);
+            } catch {
+              // ignore — Toast 仍然提示「已复制」让流程不卡，复制失败的边角不
+              // 兜底，跟微信视频号一致（它在 WKWebView 也偶发静默失败）。
+            }
+          }
+          setNoticeTone("success");
+          setNoticeActionLabel(null);
+          setNoticeAction(null);
+          setNotice(t(msg`已复制评论内容。`));
+        }}
+        onDeleteComment={(comment) => {
+          // 二次确认：删除是不可逆动作，避免长按 → 误点删除。confirm 是同
+          // 步 modal，移动端 capacitor / iOS WKWebView 都能弹原生对话。
+          const ok =
+            typeof window !== "undefined"
+              ? window.confirm(t(msg`确认删除这条评论？删除后不可恢复。`))
+              : true;
+          if (!ok) return;
+          deleteCommentMutation.mutate({
+            commentId: comment.id,
+            postId: comment.postId,
+          });
+        }}
+        onReportComment={(_comment) => {
+          // 举报先做前端 placeholder：toast 提示已收到，不实际打后端（后端
+          // 举报需另起 endpoint + 内容审核流程，独立 spec）。用户体感「点了
+          // 有反馈」即可，恶意评论真要清除走「删除（owner moderation）」路径
+          // 后续上线。
+          setNoticeTone("success");
+          setNoticeActionLabel(null);
+          setNoticeAction(null);
+          setNotice(t(msg`已收到举报，我们将尽快核实。`));
+        }}
         onReply={(comment) =>
           setMobileReplyTarget({
             authorId: comment.authorId,
@@ -2861,7 +2995,7 @@ function MediaProgressBar({
     return Math.max(0, Math.min(1, r));
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -2875,7 +3009,7 @@ function MediaProgressBar({
     setProgress(r);
   };
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!scrubbingRef.current) return;
     event.stopPropagation();
     const r = computeRatio(event.clientX);
@@ -2883,7 +3017,7 @@ function MediaProgressBar({
     setProgress(r);
   };
 
-  const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!scrubbingRef.current) return;
     event.stopPropagation();
     scrubbingRef.current = false;
@@ -4389,6 +4523,137 @@ function ActionRailButton({
   );
 }
 
+type WeChatCommentEntry = {
+  comment: FeedComment;
+  cleanText: string;
+  replyTargetName: string | null;
+};
+
+// 单条评论 row（顶层 / 子回复共用）：左头像 + 中名+正文+meta + 右心形点赞。
+// 微信视频号 tells：昵称小灰 13px、正文 15px 黑、meta 12px #b2b2b2、心形右
+// 侧竖排、`回复` 灰色非蓝、`作者` 浅绿 pill。memo 让 typing 期 commentsListNode
+// 的 useMemo bailout 时整批 row 不重渲。
+const CommentItemView = memo(function CommentItemView({
+  entry,
+  isRoot,
+  postAuthorId,
+  likePendingCommentId,
+  onLike,
+  onReply,
+  onLongPressStart,
+  onLongPressMove,
+  onLongPressCancel,
+  t,
+  children,
+}: {
+  entry: WeChatCommentEntry;
+  isRoot: boolean;
+  postAuthorId: string | null;
+  likePendingCommentId: string | null;
+  onLike: (comment: FeedComment) => void;
+  onReply: (comment: FeedComment) => void;
+  onLongPressStart: (
+    comment: FeedComment,
+    cleanText: string,
+    event: ReactPointerEvent,
+  ) => void;
+  onLongPressMove: (event: ReactPointerEvent) => void;
+  onLongPressCancel: () => void;
+  t: (message: import("@lingui/core").MessageDescriptor) => string;
+  children?: ReactNode;
+}) {
+  const { comment, cleanText, replyTargetName } = entry;
+  const liking = likePendingCommentId === comment.id;
+  const isAuthor = Boolean(postAuthorId && comment.authorId === postAuthorId);
+  const avatarSize = isRoot ? "sm" : "xs";
+  const nameSize = isRoot ? "text-[13px]" : "text-[12px]";
+  const bodySize = isRoot ? "text-[15px] leading-[22px]" : "text-[14px] leading-[20px]";
+
+  return (
+    <div
+      className={cn(
+        "px-4 select-none",
+        isRoot ? "pt-3 pb-2" : "",
+      )}
+      onPointerDown={(event) =>
+        onLongPressStart(comment, cleanText, event)
+      }
+      onPointerMove={onLongPressMove}
+      onPointerUp={onLongPressCancel}
+      onPointerLeave={onLongPressCancel}
+      onPointerCancel={onLongPressCancel}
+    >
+      <div className="flex items-start gap-2.5">
+        <AvatarChip
+          name={comment.authorName}
+          src={comment.authorAvatar}
+          size={avatarSize}
+        />
+        <div className="min-w-0 flex-1">
+          <div className={cn("flex items-center gap-1.5", nameSize)}>
+            <span className="min-w-0 truncate text-[#888888]">
+              {comment.authorName}
+            </span>
+            {isAuthor ? (
+              <span className="shrink-0 rounded-[3px] bg-[rgba(7,193,96,0.12)] px-1 py-px text-[10px] leading-[14px] text-[#07c160]">
+                {t(msg`作者`)}
+              </span>
+            ) : null}
+          </div>
+          <div className={cn("mt-1 break-words text-[#1a1a1a]", bodySize)}>
+            {replyTargetName ? (
+              <>
+                <span className="text-[#888888]">{t(msg`回复`)} </span>
+                <span className="text-[#576b95]">
+                  @{replyTargetName}
+                </span>
+                <span className="text-[#888888]">：</span>
+              </>
+            ) : null}
+            {cleanText}
+          </div>
+          <div className="mt-1.5 flex items-center gap-3 text-[12px] text-[#b2b2b2]">
+            <span>{formatWeChatCommentTime(comment.createdAt)}</span>
+            <button
+              type="button"
+              onClick={() => onReply(comment)}
+              className="transition active:text-[#1a1a1a]"
+            >
+              {t(msg`回复`)}
+            </button>
+          </div>
+          {children}
+        </div>
+        <button
+          type="button"
+          disabled={comment.likedByOwner || liking}
+          onClick={() => onLike(comment)}
+          aria-label={
+            comment.likedByOwner ? t(msg`已赞`) : t(msg`点赞`)
+          }
+          className={cn(
+            "flex shrink-0 flex-col items-center gap-0.5 pl-1 pt-0.5 transition disabled:cursor-not-allowed",
+            comment.likedByOwner
+              ? "text-[#fa5151]"
+              : "text-[#888888] active:text-[#1a1a1a]",
+          )}
+        >
+          <Heart
+            size={isRoot ? 18 : 16}
+            fill={comment.likedByOwner ? "#fa5151" : "none"}
+            strokeWidth={1.6}
+          />
+          {comment.likeCount > 0 ? (
+            <span className="text-[11px] leading-none">
+              {comment.likeCount}
+            </span>
+          ) : null}
+        </button>
+      </div>
+    </div>
+  );
+});
+
 function MobileChannelCommentsSheet({
   comments,
   commentsArePlaceholder,
@@ -4403,10 +4668,13 @@ function MobileChannelCommentsSheet({
   submitPending,
   onCancelReply,
   onClose,
+  onCopyComment,
+  onDeleteComment,
   onDraftChange,
   onErrorAction,
   onLikeComment,
   onReply,
+  onReportComment,
   onSubmit,
 }: {
   comments: FeedComment[];
@@ -4427,14 +4695,16 @@ function MobileChannelCommentsSheet({
   submitPending: boolean;
   onCancelReply: () => void;
   onClose: () => void;
+  onCopyComment: (comment: FeedComment, cleanText: string) => void;
+  onDeleteComment: (comment: FeedComment) => void;
   onDraftChange: (value: string) => void;
   onErrorAction?: () => void;
   onLikeComment: (comment: FeedComment) => void;
   onReply: (comment: FeedComment) => void;
+  onReportComment: (comment: FeedComment) => void;
   onSubmit: () => void;
 }) {
   const t = useRuntimeTranslator();
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const hasAutoScrolledRef = useRef(false);
   const previousCommentCountRef = useRef(0);
@@ -4519,6 +4789,134 @@ function MobileChannelCommentsSheet({
     [],
   );
 
+  // 嵌套回复：每条 root comment 默认展示前 3 条子回复，超过则折叠为
+  // 「—— 展开 N 条回复 ∨」。Set 存的是「已展开」的 rootCommentId。
+  // 关 sheet 时 reset，避免下次再开看到上次的展开状态对不上当前 post。
+  const [expandedReplyRoots, setExpandedReplyRoots] = useState<Set<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    if (!open) {
+      setExpandedReplyRoots(new Set());
+    }
+  }, [open]);
+  const toggleExpandReplies = useCallback((rootId: string) => {
+    setExpandedReplyRoots((prev) => {
+      const next = new Set(prev);
+      if (next.has(rootId)) {
+        next.delete(rootId);
+      } else {
+        next.add(rootId);
+      }
+      return next;
+    });
+  }, []);
+
+  // 长按 ActionSheet 状态：null = 未触发。长按 500ms 不松手且无 >10px 位移
+  // 才触发；点 button（回复/点赞按钮）不应该触发，所以 pointerdown handler 里
+  // 检查 (e.target as HTMLElement).closest('button') —— 如果落在按钮上跳过。
+  const [longPressTarget, setLongPressTarget] = useState<{
+    comment: FeedComment;
+    cleanText: string;
+  } | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressOriginRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!open) {
+      cancelLongPress();
+      setLongPressTarget(null);
+    }
+  }, [open, cancelLongPress]);
+  const startLongPress = useCallback(
+    (comment: FeedComment, cleanText: string, event: ReactPointerEvent) => {
+      // 点在 button / link / input 上时不开启长按——交给元素自己处理 click。
+      const targetEl = event.target as HTMLElement | null;
+      if (
+        targetEl &&
+        (targetEl.closest("button") ||
+          targetEl.closest("a") ||
+          targetEl.closest("textarea") ||
+          targetEl.closest("input"))
+      ) {
+        return;
+      }
+      cancelLongPress();
+      longPressOriginRef.current = { x: event.clientX, y: event.clientY };
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressTimerRef.current = null;
+        // 振动反馈（Android Chrome / 部分国产壳支持；iOS Safari noop，无害）。
+        try {
+          navigator.vibrate?.(10);
+        } catch {
+          // ignore
+        }
+        setLongPressTarget({ comment, cleanText });
+      }, 500);
+    },
+    [cancelLongPress],
+  );
+  const onLongPressMove = useCallback(
+    (event: ReactPointerEvent) => {
+      const origin = longPressOriginRef.current;
+      if (!origin) return;
+      const dx = event.clientX - origin.x;
+      const dy = event.clientY - origin.y;
+      if (dx * dx + dy * dy > 100) {
+        // sqrt(100) = 10px tolerance — 用户在滚动列表
+        cancelLongPress();
+      }
+    },
+    [cancelLongPress],
+  );
+
+  // 输入条：默认收起成一条 pill placeholder，点击后才弹出 textarea + 发送按钮
+  // （微信视频号原生交互）。draft 非空或 reply 模式开启时强制展开，避免用户
+  // 写到一半 blur 又被收回 pill 看不见自己的草稿。
+  const [inputExpanded, setInputExpanded] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setInputExpanded(false);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (draft.trim() || replyTarget) {
+      setInputExpanded(true);
+    }
+  }, [draft, replyTarget]);
+  const inputTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  // 同步锁防同帧双击（参考 WeChatCommentBar L61）：原 disabled={!draft.trim() ||
+  // submitPending} 是 React state，同帧 <16ms 第二次 click 用的是同一份 disabled
+  // = false，commentMutation 同步被调用两次。submitPending 翻 true 要等 React
+  // commit + parent re-render，间隙里同帧二连点会双发评论。
+  const submitLockRef = useRef(false);
+  useEffect(() => {
+    // submitPending 翻 false（mutation settle）时释放锁，让用户能继续发评论。
+    if (!submitPending) {
+      submitLockRef.current = false;
+    }
+  }, [submitPending]);
+  // textarea 高度自适应（最多 5 行）。
+  useLayoutEffect(() => {
+    const ta = inputTextareaRef.current;
+    if (!ta || !inputExpanded) return;
+    ta.style.height = "auto";
+    const next = Math.min(ta.scrollHeight, 5 * 22 + 18);
+    ta.style.height = `${next}px`;
+  }, [draft, inputExpanded]);
+  const handleSubmitClick = useCallback(() => {
+    if (submitLockRef.current) return;
+    if (!draft.trim() || submitPending) return;
+    submitLockRef.current = true;
+    onSubmit();
+  }, [draft, submitPending, onSubmit]);
+
   useEffect(() => {
     if (!open || typeof document === "undefined") {
       return;
@@ -4586,15 +4984,10 @@ function MobileChannelCommentsSheet({
     }
   }, [errorMessage]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-    });
-  }, [open, replyTarget?.commentId]);
+  // 自动聚焦改由 input pill 展开后的 textarea autoFocus + setInputExpanded(true)
+  // 的 effect 串联触发（详见上文 inputExpanded 那块）。replyTarget 切换时
+  // setInputExpanded(true) → autoFocus 落到新挂载的 textarea 上。原本这条
+  // raf focus effect 直接 open 时聚焦，跟"tap-to-open pill"语义冲突，删掉。
 
   // 视频号评论按 createdAt ASC 排（最老的在最上面，回复链路顺着对话读起来才连贯），
   // 但 yuanzui0728 这条 post 已经积了 142 条评论：用户打开评论面板第一眼看到的
@@ -4679,6 +5072,9 @@ function MobileChannelCommentsSheet({
   // replyTarget——这些只影响底部 textarea，敲字时直接返回上轮缓存的 element 树，
   // React 在子树上 bailout 跳过整个 142 条评论的重渲。stripToolCallSyntax 也跟着
   // 缓存住，不每次 keypress 都跑 142 次 regex。
+  // 微信视频号嵌套版（2026-05-22 重排）：按 parentCommentId 把评论拆成
+  // root + replies-by-root；root 用 38px 头像独立行，子回复缩进到父头像
+  // 右侧、头像 28px，超过 3 条折叠「—— 展开 N 条回复 ∨」。
   const commentsListNode = useMemo<ReactNode>(() => {
     if (!comments.length) return null;
     // 走查 2026-05-18 R2（本轮）：DB 里偶尔混入纯 AI thinking-prose 的评论
@@ -4689,93 +5085,119 @@ function MobileChannelCommentsSheet({
     // 加载完」。先按 cleanText 非空过滤掉这类条目再 map：可见行数会少于
     // 头部"N 条"角标几个，但角标本身就是后端 commentCount（含所有
     // published），那条来源跟前端可见数 drift 是已知容忍偏差。
-    const renderableComments = comments
-      .map((comment) => ({
-        comment,
-        cleanText: stripToolCallSyntax(comment.text),
-        replyTargetName: comment.replyToCommentId
-          ? (comment.replyToAuthorName ??
-              commentAuthorNameMap.get(comment.replyToCommentId) ??
-              null)
-          : null,
-      }))
-      .filter((entry) => entry.cleanText);
-    if (!renderableComments.length) return null;
+    const enriched = comments.map((comment) => ({
+      comment,
+      cleanText: stripToolCallSyntax(comment.text),
+      replyTargetName: comment.replyToCommentId
+        ? (comment.replyToAuthorName ??
+            commentAuthorNameMap.get(comment.replyToCommentId) ??
+            null)
+        : null,
+    }));
+
+    const repliesByRoot = new Map<string, typeof enriched>();
+    const roots: typeof enriched = [];
+    for (const entry of enriched) {
+      // 空文本（AI thinking-prose 全 strip 掉）整条丢掉——空泡泡比缺一条
+      // 更让用户困惑，commentCount drift 已经在 R2 走查里被接受。
+      if (!entry.cleanText) continue;
+      const parentId = entry.comment.parentCommentId;
+      if (parentId) {
+        const arr = repliesByRoot.get(parentId);
+        if (arr) {
+          arr.push(entry);
+        } else {
+          repliesByRoot.set(parentId, [entry]);
+        }
+      } else {
+        roots.push(entry);
+      }
+    }
+    // 后端可能存在「parent 已被软删但子回复 status='published' 仍返回」的边角
+    // 状况——把没匹配到 root 的孤儿 reply 升格为顶层显示（带 replyTargetName
+    // 前缀仍能看出上下文），避免整段 thread 漏渲。
+    for (const [parentId, replies] of repliesByRoot.entries()) {
+      const hasRoot = roots.some((r) => r.comment.id === parentId);
+      if (!hasRoot) {
+        for (const orphan of replies) {
+          roots.push(orphan);
+        }
+        repliesByRoot.delete(parentId);
+      }
+    }
+    // 按 createdAt 排序 roots（后端 getComments 已 ASC，但 orphan 升格后顺序
+    // 可能错位），同时按 createdAt ASC 排子回复（按对话顺序读）。
+    roots.sort((a, b) => a.comment.createdAt.localeCompare(b.comment.createdAt));
+    for (const arr of repliesByRoot.values()) {
+      arr.sort((a, b) => a.comment.createdAt.localeCompare(b.comment.createdAt));
+    }
+    if (!roots.length) return null;
+
+    const postAuthorId = post?.authorId ?? null;
+    const REPLIES_PREVIEW_COUNT = 3;
+
     return (
-      <div className="space-y-3">
-        {renderableComments.map(({ comment, cleanText, replyTargetName }) => {
-          // 优先用后端 serializeComment 给的 replyToAuthorName——本地
-          // commentAuthorNameMap 只能反查到当前已显示的 comments；如果被
-          // 回复的根评论在分页之外 / 已删 / 已隐，本地 map 是空，"回复 X"
-          // 整段就漏掉了。后端的 lookup map 是整个 post 全量评论 + 单条
-          // reply 新建时临时灌入，覆盖面更广，优先取后端值。
-          const liking = likePendingCommentId === comment.id;
+      <div className="-mx-4">
+        {roots.map((entry) => {
+          const rootComment = entry.comment;
+          const allReplies = repliesByRoot.get(rootComment.id) ?? [];
+          const expanded = expandedReplyRoots.has(rootComment.id);
+          const visibleReplies =
+            expanded || allReplies.length <= REPLIES_PREVIEW_COUNT
+              ? allReplies
+              : allReplies.slice(0, REPLIES_PREVIEW_COUNT);
+          const hiddenCount = allReplies.length - visibleReplies.length;
           return (
-            <div
-              key={comment.id}
-              className="rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3"
+            <CommentItemView
+              key={rootComment.id}
+              entry={entry}
+              isRoot
+              postAuthorId={postAuthorId}
+              likePendingCommentId={likePendingCommentId}
+              onLike={stableOnLikeComment}
+              onReply={stableOnReply}
+              onLongPressStart={startLongPress}
+              onLongPressMove={onLongPressMove}
+              onLongPressCancel={cancelLongPress}
+              t={t}
             >
-              <div className="flex items-start gap-3">
-                <AvatarChip
-                  name={comment.authorName}
-                  src={comment.authorAvatar}
-                  size="wechat"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-[11px]">
-                    {/*
-                      走查 R2（本轮）：跟评论 sheet 底部"正在回复 X" chip 同款问题。
-                      authorName 单纯 truncate 没有 min-w-0 / flex-1，flex item 默认
-                      按内容宽度伸展、不收缩，超长 authorName 会把右侧时间戳挤到
-                      comment 卡外。给名字加 min-w-0 + flex-1 让 truncate 真生效，
-                      时间戳 shrink-0 锁住宽度不被压。
-                    */}
-                    <span className="min-w-0 flex-1 truncate font-medium text-[#111827]">
-                      {comment.authorName}
-                    </span>
-                    <span className="shrink-0 text-[#9ca3af]">
-                      {formatTimestamp(comment.createdAt)}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[12px] leading-6 text-[#111827]">
-                    {replyTargetName ? (
-                      <span className="text-[#6b7280]">
-                        {t(msg`回复 ${replyTargetName}`)}
-                        {"："}
-                      </span>
-                    ) : null}
-                    {cleanText}
-                  </div>
-                  <div className="mt-2 flex items-center gap-4 text-[11px] text-[#6b7280]">
+              {allReplies.length > 0 ? (
+                <div className="mt-2 ml-[48px] flex flex-col gap-2.5">
+                  {visibleReplies.map((replyEntry) => (
+                    <CommentItemView
+                      key={replyEntry.comment.id}
+                      entry={replyEntry}
+                      isRoot={false}
+                      postAuthorId={postAuthorId}
+                      likePendingCommentId={likePendingCommentId}
+                      onLike={stableOnLikeComment}
+                      onReply={stableOnReply}
+                      onLongPressStart={startLongPress}
+                      onLongPressMove={onLongPressMove}
+                      onLongPressCancel={cancelLongPress}
+                      t={t}
+                    />
+                  ))}
+                  {hiddenCount > 0 ? (
                     <button
                       type="button"
-                      onClick={() => stableOnReply(comment)}
-                      className="transition active:text-[#111827]"
+                      onClick={() => toggleExpandReplies(rootComment.id)}
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#576b95] active:opacity-60"
                     >
-                      {t(msg`回复`)}
+                      {t(msg`—— 展开 ${hiddenCount} 条回复 ∨`)}
                     </button>
+                  ) : expanded && allReplies.length > REPLIES_PREVIEW_COUNT ? (
                     <button
                       type="button"
-                      disabled={comment.likedByOwner || liking}
-                      onClick={() => stableOnLikeComment(comment)}
-                      className={cn(
-                        "inline-flex items-center gap-1 transition disabled:cursor-not-allowed",
-                        comment.likedByOwner
-                          ? "text-[#07c160]"
-                          : "active:text-[#111827]",
-                      )}
+                      onClick={() => toggleExpandReplies(rootComment.id)}
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#576b95] active:opacity-60"
                     >
-                      <ThumbsUp size={12} />
-                      {liking
-                        ? t(msg`处理中`)
-                        : comment.likedByOwner
-                          ? t(msg`已赞 ${comment.likeCount}`)
-                          : t(msg`赞 ${comment.likeCount}`)}
+                      {t(msg`—— 收起 ∧`)}
                     </button>
-                  </div>
+                  ) : null}
                 </div>
-              </div>
-            </div>
+              ) : null}
+            </CommentItemView>
           );
         })}
       </div>
@@ -4786,6 +5208,12 @@ function MobileChannelCommentsSheet({
     likePendingCommentId,
     stableOnReply,
     stableOnLikeComment,
+    expandedReplyRoots,
+    toggleExpandReplies,
+    startLongPress,
+    onLongPressMove,
+    cancelLongPress,
+    post?.authorId,
     t,
   ]);
 
@@ -4823,27 +5251,21 @@ function MobileChannelCommentsSheet({
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
-        <div className="flex items-start justify-between gap-3 px-4 pb-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2" id="mobile-channels-comments-sheet-title">
-              <div className="text-[14px] font-medium text-[#111827]">
-                {t(msg`评论`)}
-              </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
-                {t(msg`${post.commentCount} 条`)}
-              </div>
-            </div>
-            <div className="mt-1 line-clamp-2 text-[11px] leading-[1.35rem] text-[#6b7280]">
-              {(() => {
-                const cleanText = stripToolCallSyntax(post.text);
-                if (post.title) {
-                  return cleanText && cleanText !== post.title
-                    ? `${post.title} · ${cleanText}`
-                    : post.title;
-                }
-                return cleanText;
-              })()}
-            </div>
+        {/*
+          微信视频号风格 header：居中标题「N 条评论」/「评论」（commentCount=0
+          时），右上 X 关闭，下方一条 0.5px 浅灰分割线。post.title preview 那行
+          内部上下文先省掉——WeChat 视频号评论面板顶部不复述视频标题，体感更
+          干净；用户点开就是冲着评论而非再读一遍视频信息来的。
+        */}
+        <div className="relative flex items-center justify-between gap-3 border-b border-[#ededed] px-4 pb-2 pt-1">
+          <div className="w-8 shrink-0" aria-hidden />
+          <div
+            id="mobile-channels-comments-sheet-title"
+            className="min-w-0 flex-1 truncate text-center text-[14px] font-medium text-[#1a1a1a]"
+          >
+            {post.commentCount > 0
+              ? t(msg`${post.commentCount} 条评论`)
+              : t(msg`评论`)}
           </div>
           {/*
             走查 2026-05-17 R1（新一轮）：原来 sheet 右上角这颗 X 关闭按钮 *只*
@@ -4865,38 +5287,40 @@ function MobileChannelCommentsSheet({
 
         <div
           ref={scrollContainerRef}
-          className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
+          className="min-h-0 flex-1 overflow-y-auto bg-white pb-4"
         >
           {errorMessage ? (
-            <InlineNotice
-              tone="warning"
-              className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 flex-1">{errorMessage}</span>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {errorActionLabel && onErrorAction ? (
+            <div className="px-4 pt-3">
+              <InlineNotice
+                tone="warning"
+                className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{errorMessage}</span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {errorActionLabel && onErrorAction ? (
+                      <button
+                        type="button"
+                        onClick={onErrorAction}
+                        className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                      >
+                        {errorActionLabel}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
-                      onClick={onErrorAction}
-                      className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                      onClick={onClose}
+                      className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
                     >
-                      {errorActionLabel}
+                      {t(msg`返回视频号`)}
                     </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
-                  >
-                    {t(msg`返回视频号`)}
-                  </button>
+                  </div>
                 </div>
-              </div>
-            </InlineNotice>
+              </InlineNotice>
+            </div>
           ) : null}
           {isLoading && !comments.length ? (
-            <div className="rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] text-[#6b7280]">
+            <div className="px-4 py-6 text-center text-[12px] text-[#b2b2b2]">
               {t(msg`正在读取评论...`)}
             </div>
           ) : null}
@@ -4919,21 +5343,34 @@ function MobileChannelCommentsSheet({
           */}
           {!isLoading && !comments.length && !errorMessage ? (
             (post?.commentCount ?? 0) > 0 ? (
-              <div className="rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] text-[#6b7280]">
+              <div className="px-4 py-6 text-center text-[12px] text-[#b2b2b2]">
                 {t(msg`正在读取最近评论...`)}
               </div>
             ) : (
-              <div className="rounded-[16px] border border-dashed border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center text-[12px] leading-6 text-[#6b7280]">
-                {t(msg`还没有评论，先发第一句。`)}
+              <div className="flex flex-col items-center gap-3 px-4 pb-8 pt-12">
+                <MessageCircle
+                  size={56}
+                  strokeWidth={1.2}
+                  className="text-[#d1d5db]"
+                />
+                <span className="text-[14px] text-[#9ca3af]">
+                  {t(msg`还没有评论，快来抢沙发`)}
+                </span>
               </div>
             )
           ) : null}
           {commentsListNode}
         </div>
 
-        <div className="border-t border-[color:var(--border-subtle)] bg-white px-4 pb-2 pt-3">
+        {/*
+          微信视频号 tap-to-open 输入条：默认收起成 pill，点击展开为 textarea+
+          发送按钮。reply mode / 已有 draft 时强制展开，让用户能看到自己写到一半
+          的内容。textarea text-[16px] 防 iOS viewport zoom；maxLength=500 跟服务端
+          assertCommentText 对齐；IME composing 时按 Enter 不误发。
+        */}
+        <div className="border-t border-[#ededed] bg-white px-3 pt-2">
           {replyTarget ? (
-            <div className="mb-2 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[#166534]">
+            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(7,193,96,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
               {/*
                 走查 R1（本轮）：原 truncate 没有 min-w-0 + flex-1，flex item 默认
                 min-width:auto，超长 authorName（比如用户用户名 yuanzui0728_5999 +
@@ -4947,50 +5384,131 @@ function MobileChannelCommentsSheet({
               </div>
               <button
                 type="button"
-                onClick={onCancelReply}
+                onClick={() => {
+                  onCancelReply();
+                  setInputExpanded(false);
+                }}
                 className="shrink-0 text-[#166534] transition active:opacity-70"
               >
                 {t(msg`取消`)}
               </button>
             </div>
           ) : null}
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={textareaRef}
-              rows={2}
-              value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
-              placeholder={
-                replyTarget
-                  ? t(msg`回复 ${replyTarget.authorName}...`)
-                  : t(msg`说点什么...`)
-              }
-              // 走查 R11：服务端 assertCommentText 上限 500 字（UTF-16 length），
-              // 之前 textarea 没卡，用户写 600 字提交才看到「评论最多 500 字。」
-              // 红条，已经粘贴/打字写好的内容要手动删一段。maxLength 让浏览器
-              // 在输入阶段就硬截断，移动端原生输入法也会跟着不再让用户多敲。
-              maxLength={500}
-              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
-              // zoom-in。视频号评论 sheet 是常用功能，原本 text-[13px] 每次写
-              // 评论都让整页放大、回弹时还要双指捏才能回正。
-              className="min-h-[72px] flex-1 rounded-[16px] border-[color:var(--border-subtle)] bg-[#f7f7f7] px-3 py-2 text-[16px] shadow-none focus:border-[rgba(7,193,96,0.2)] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={!draft.trim() || submitPending}
-              onClick={onSubmit}
-              // submitInitiatedAtRef 的钉值已经迁到 submitPending false→true effect
-              // 那条上，原 send 按钮 onClick 里手 set 的同款 timestamp 改去掉 —— retry
-              // 路径走的是 ChannelsPage 那条 retry button，不经过这里，所以单点 set
-              // 漏了 retry。effect 覆盖两条路径，单一来源。
-              className="mb-1 h-10 rounded-full bg-[#07c160] px-4 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
+          {inputExpanded ? (
+            <div className="flex items-end gap-2 py-1.5">
+              <div className="min-w-0 flex-1 rounded-[6px] border border-[#e5e5e5] bg-white px-3 py-2 text-[15px] text-[#1a1a1a]">
+                <textarea
+                  ref={inputTextareaRef}
+                  value={draft}
+                  onChange={(event) => onDraftChange(event.target.value)}
+                  placeholder={
+                    replyTarget
+                      ? t(msg`回复 ${replyTarget.authorName}：`)
+                      : t(msg`评论`)
+                  }
+                  rows={1}
+                  maxLength={500}
+                  autoFocus
+                  onBlur={() => {
+                    // 失焦时若无内容也无 reply 模式 → 收回 pill；保留内容 / reply
+                    // 时维持展开状态，避免用户切窗口回来发现草稿被收起看不见。
+                    if (!draft.trim() && !replyTarget) {
+                      setInputExpanded(false);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" || event.shiftKey) return;
+                    // IME 中文/日文 composing 期间按 Enter 选词不应触发提交。
+                    // isComposing 不全覆盖（搜狗/百度键盘走 keyCode=229），双判定。
+                    if (
+                      event.nativeEvent.isComposing ||
+                      event.nativeEvent.keyCode === 229
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    handleSubmitClick();
+                  }}
+                  className="block w-full resize-none border-0 bg-transparent text-[16px] leading-[22px] outline-none placeholder:text-[#b0b0b0]"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!draft.trim() || submitPending}
+                onClick={handleSubmitClick}
+                className={cn(
+                  "h-9 shrink-0 rounded-[4px] px-4 text-[14px] font-medium transition-colors",
+                  draft.trim() && !submitPending
+                    ? "bg-[#07c160] text-white active:bg-[#06ad56]"
+                    : "bg-[#e5e5e5] text-[#b0b0b0]",
+                )}
+              >
+                {submitPending ? t(msg`发送中`) : t(msg`发送`)}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setInputExpanded(true)}
+              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f7f7f7] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#ededed]"
             >
-              {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
-            </Button>
-          </div>
+              <span className="truncate">
+                {replyTarget
+                  ? t(msg`回复 ${replyTarget.authorName}：`)
+                  : t(msg`评论…`)}
+              </span>
+              <Smile size={20} className="ml-2 shrink-0 text-[#9ca3af]" />
+            </button>
+          )}
         </div>
       </div>
+      <MobileMessageActionSheet
+        open={Boolean(longPressTarget)}
+        title={t(msg`评论操作`)}
+        preview={
+          longPressTarget
+            ? {
+                senderName: longPressTarget.comment.authorName,
+                text: longPressTarget.cleanText,
+                own: longPressTarget.comment.authorType === "user",
+              }
+            : undefined
+        }
+        onClose={() => setLongPressTarget(null)}
+        onCopy={() => {
+          if (longPressTarget) {
+            onCopyComment(longPressTarget.comment, longPressTarget.cleanText);
+          }
+          setLongPressTarget(null);
+        }}
+        onReply={() => {
+          if (longPressTarget) {
+            onReply(longPressTarget.comment);
+            setInputExpanded(true);
+          }
+          setLongPressTarget(null);
+        }}
+        onDelete={
+          longPressTarget?.comment.authorType === "user"
+            ? () => {
+                if (longPressTarget) {
+                  onDeleteComment(longPressTarget.comment);
+                }
+                setLongPressTarget(null);
+              }
+            : undefined
+        }
+        onReport={
+          longPressTarget?.comment.authorType !== "user"
+            ? () => {
+                if (longPressTarget) {
+                  onReportComment(longPressTarget.comment);
+                }
+                setLongPressTarget(null);
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }
