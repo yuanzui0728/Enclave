@@ -101,7 +101,7 @@ export function DesktopNoteWindowPage() {
             {t(msg`独立笔记窗口`)}
           </div>
           <EmptyState
-            title={t(msg`这个笔记窗口缺少上下文`)}
+            title={t(msg`这个笔记窗口已失效`)}
             description={t(msg`主窗口重新打开一次新建笔记，或者回到收藏页选择已保存笔记。`)}
           />
           <div className="mt-6 flex justify-center">

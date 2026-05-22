@@ -1204,7 +1204,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                       : t(msg`桌面端请从聊天页继续发起语音通话`)}
                   </div>
                   <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                    {t(msg`当前独立路由主要保留给手机端通话流程。桌面端已经改为在聊天消息页内打开通话工作台，这样消息、侧栏信息和通话控制会保持在同一窗口里。`)}
+                    {t(msg`这个独立页面主要给手机端通话用。桌面端已经改成在聊天页里直接打开通话，这样消息、侧栏和通话控制会保持在同一窗口里。`)}
                   </div>
                 </div>
               </div>
@@ -1240,7 +1240,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
               <div className="mt-6">
                 <InlineNotice tone="info">
-                  {t(msg`回到聊天页后，继续使用顶部通话按钮即可进入桌面通话工作台。`)}
+                  {t(msg`回到聊天页后，点顶部通话按钮就能进入桌面通话。`)}
                 </InlineNotice>
               </div>
 
@@ -1423,7 +1423,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 onClick={() => setDiagnosticsExpanded((current) => !current)}
                 className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.04em] text-white/62 transition active:bg-white/12 active:text-white/78"
               >
-                {diagnosticsExpanded ? t(msg`收起链路详情`) : t(msg`链路详情`)}
+                {diagnosticsExpanded ? t(msg`收起详情`) : t(msg`详情`)}
               </button>
             </div>
           ) : null}
@@ -1431,7 +1431,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <MobileCallNotice tone="info" className="space-y-1.5">
               {speechStatus ? (
                 <div>
-                  <span className="text-white/48">{t(msg`当前语音链路：`)}</span>
+                  <span className="text-white/48">{t(msg`语音服务：`)}</span>
                   {speechStatus.voiceCallMessage ?? speechStatus.speechMessage}
                   {speechProviderSummary ? t(msg` ${speechProviderSummary}。`) : ""}
                 </div>

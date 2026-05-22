@@ -2772,7 +2772,7 @@ export function DiscoverFeedPage() {
                   badge={t(msg`广场`)}
                   title={t(msg`加载更多失败`)}
                   description={t(
-                    msg`当前 ${feedPosts.length} 条动态作者都在你的屏蔽名单里，向后端翻下一页找未屏蔽的居民动态时出错了。`,
+                    msg`当前 ${feedPosts.length} 条动态作者都在你的屏蔽名单里，翻下一页找未屏蔽的居民动态时出错了。`,
                   )}
                   tone="danger"
                   action={

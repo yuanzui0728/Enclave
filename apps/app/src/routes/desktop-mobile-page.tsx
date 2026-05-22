@@ -155,7 +155,7 @@ function getMobileHandoffCategoryMeta(): Array<{
     {
       id: "other",
       label: t(msg`其他`),
-      description: t(msg`未归入主链路的补充接力入口。`),
+      description: t(msg`其它没归类的接力入口。`),
     },
   ];
 }
@@ -957,7 +957,7 @@ export function DesktopMobilePage() {
 
               <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
                 <div className="text-xs font-medium text-[color:var(--text-muted)]">
-                  {t(msg`活跃接力链路`)}
+                  {t(msg`活跃接力`)}
                 </div>
                 <div className="mt-3 space-y-2">
                   {groupedHandoffHistory.length ? (
@@ -1517,7 +1517,7 @@ export function DesktopMobilePage() {
                     void handleCopyHandoff({
                       category: "mini_program",
                       description: t(
-                        msg`${activeMiniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
+                        msg`${activeMiniProgram.name} 的当前工作台，带上最近使用和本地待办。`,
                       ),
                       label: t(msg`${activeMiniProgram.name} 接力`),
                       path: `/discover/mini-programs?miniProgram=${activeMiniProgram.id}`,
@@ -1582,7 +1582,7 @@ export function DesktopMobilePage() {
                         void handleCopyHandoff({
                           category: "mini_program",
                           description: t(
-                            msg`${miniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
+                            msg`${miniProgram.name} 的当前工作台，带上最近使用和本地待办。`,
                           ),
                           label: t(msg`${miniProgram.name} 接力`),
                           path: `/discover/mini-programs?miniProgram=${miniProgram.id}`,
@@ -1980,7 +1980,7 @@ export function DesktopMobilePage() {
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
             {t(
-              msg`当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播链路。`,
+              msg`当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播。`,
             )}
           </div>
 

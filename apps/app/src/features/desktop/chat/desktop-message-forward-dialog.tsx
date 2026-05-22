@@ -455,7 +455,7 @@ export function DesktopMessageForwardDialog({
             {!loading && !error && !conversations.length ? (
               <EmptyState
                 title={t(msg`还没有可转发的最近会话`)}
-                description={t(msg`先去消息列表里建立一些聊天线程，再回来转发消息。`)}
+                description={t(msg`先去消息列表里开几个聊天，再回来转发消息。`)}
               />
             ) : null}
             {!loading &&

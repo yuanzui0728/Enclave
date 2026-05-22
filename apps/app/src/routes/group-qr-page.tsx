@@ -1407,7 +1407,7 @@ export function GroupQrPage() {
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                   {t(
-                    msg`这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。`,
+                    msg`这次是从聊天里直接回到群邀请页，可继续转发或回到原会话。`,
                   )}
                 </div>
               </div>
@@ -1693,7 +1693,7 @@ export function GroupQrPage() {
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                   {t(
-                    msg`从聊天线程点了“回到群邀请”后，会把最近回流入口记在这里，方便再次回到消息流。`,
+                    msg`在聊天里点过“回到群邀请”后，会把最近的入口记在这里，方便再次回到消息列表。`,
                   )}
                 </div>
               </div>
@@ -1822,7 +1822,7 @@ export function GroupQrPage() {
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
                   {t(
-                    msg`这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。`,
+                    msg`这一轮已经发出但还没有从聊天里回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。`,
                   )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">

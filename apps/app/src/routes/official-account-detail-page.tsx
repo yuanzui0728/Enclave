@@ -600,7 +600,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
                     {account.isFollowing
                       ? account.accountType === "service"
-                        ? t(msg`已关注，可直接进入服务消息线程。`)
+                        ? t(msg`已关注，可直接进入服务消息。`)
                         : t(msg`已关注，后续推送会汇总到订阅号消息。`)
                       : t(msg`关注后可从消息页查看这类内容。`)}
                   </div>

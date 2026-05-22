@@ -18,11 +18,11 @@ export function resolveDigitalHumanGatewayStatusCopy(
       return {
         statusLabel: t(msg`数字人模板未配置`),
         statusHint: t(
-          msg`当前外部数字人播放器模板还没配好，视频页只能停留在占位态或回退到内置链路。`,
+          msg`外部数字人的播放地址还没配好，视频通话会先用占位画面，或切回内置模式。`,
         ),
         noticeTone: "warning" as const,
         noticeMessage: t(
-          msg`外部数字人 \`playerUrlTemplate\` 未配置。先到 Admin 的数字人 Provider 配置里补播放器模板，再回来联调视频通话。`,
+          msg`外部数字人 \`playerUrlTemplate\` 没填。请到 Admin 的数字人服务配置里补上播放地址，再回来测试视频通话。`,
         ),
       };
     }
@@ -31,11 +31,11 @@ export function resolveDigitalHumanGatewayStatusCopy(
       return {
         statusLabel: t(msg`数字人回调未配置`),
         statusHint: t(
-          msg`当前外部播放器地址已经具备，但 provider 侧状态回写还没配齐，前端无法稳定拿到画面就绪结果。`,
+          msg`播放地址已经填好了，但外部服务那边的状态回传还没配，画面就绪通知拿不到。`,
         ),
         noticeTone: "warning" as const,
         noticeMessage: t(
-          msg`数字人 Provider 回调 token 未配置。建议先补 \`callbackToken\`，否则外部播放器很难把渲染状态稳定回写到当前会话。`,
+          msg`数字人服务的回调 token 没填。建议先补 \`callbackToken\`，否则外部播放器没法把画面状态回传到当前会话。`,
         ),
       };
     }
@@ -44,11 +44,11 @@ export function resolveDigitalHumanGatewayStatusCopy(
       return {
         statusLabel: t(msg`数字人参数无效`),
         statusHint: t(
-          msg`当前 provider 参数 JSON 解析失败，播放器模板虽然存在，但外部数字人实例参数没有成功注入。`,
+          msg`外部服务的参数 JSON 解析失败了，播放地址虽然填了，但外部数字人需要的参数没传进去。`,
         ),
         noticeTone: "warning" as const,
         noticeMessage: t(
-          msg`数字人 Provider 参数 JSON 无效。先回 Admin 修正 \`providerParams\`，确认 JSON 合法后再重试外部数字人视频通话。`,
+          msg`数字人服务的参数 JSON 不合法。请到 Admin 修正 \`providerParams\`，确认 JSON 没问题后再试一次视频通话。`,
         ),
       };
     }
@@ -56,7 +56,7 @@ export function resolveDigitalHumanGatewayStatusCopy(
     return {
       statusLabel: t(msg`数字人待配置`),
       statusHint: t(
-        msg`当前外部数字人 Provider 还没进入可联调状态，视频页会先保持占位并等待上游配置完成。`,
+        msg`外部数字人服务还没准备好，视频通话会先用占位画面，等配置好再切过去。`,
       ),
       noticeTone: "warning" as const,
       noticeMessage: gateway.message,
@@ -69,16 +69,16 @@ export function resolveDigitalHumanGatewayStatusCopy(
       statusHint:
         gateway.paramsCount > 0
           ? t(
-              msg`当前外部数字人 Provider 已就绪，已注入 ${gateway.paramsCount} 个上游参数，后续会优先展示 provider 画面。`,
+              msg`外部数字人服务已就绪，已传入 ${gateway.paramsCount} 个参数，接下来会优先用外部画面。`,
             )
           : t(
-              msg`当前外部数字人 Provider 已就绪，后续会优先展示 provider 画面和回调状态。`,
+              msg`外部数字人服务已就绪，接下来会优先用外部画面。`,
             ),
       noticeTone: "info" as const,
       noticeMessage:
         gateway.paramsKeys.length > 0
           ? t(
-              msg`外部数字人 Provider 已接通，当前模板参数：${gateway.paramsKeys.join(" / ")}。`,
+              msg`外部数字人服务已接通，当前参数：${gateway.paramsKeys.join(" / ")}。`,
             )
           : gateway.message,
     };
@@ -88,11 +88,11 @@ export function resolveDigitalHumanGatewayStatusCopy(
     return {
       statusLabel: t(msg`数字人模拟模式`),
       statusHint: t(
-        msg`当前仍在内置数字人舞台模式，回复链路可用，但还没有切到真实外部视频流。`,
+        msg`当前用的是内置数字人画面，可以正常对话，只是还没切到外部真实视频。`,
       ),
       noticeTone: "info" as const,
       noticeMessage: t(
-        msg`当前视频通话使用内置数字人舞台承载，适合先验证会话、语音和状态链路。`,
+        msg`当前视频通话用内置数字人画面承载，可以先验证会话、语音和状态。`,
       ),
     };
   }
@@ -100,11 +100,11 @@ export function resolveDigitalHumanGatewayStatusCopy(
   return {
     statusLabel: t(msg`数字人内置播放器`),
     statusHint: t(
-      msg`当前仍在内置数字人播放器模式，播放器壳已经接通，但尚未切到真实外部数字人 Provider。`,
+      msg`当前用的是内置数字人播放器，播放框架已经联通，但还没切到外部真实服务。`,
     ),
     noticeTone: "info" as const,
     noticeMessage: t(
-      msg`当前视频通话使用内置数字人播放器协议，占位链路可用，但上游仍不是外部真实数字人服务。`,
+      msg`当前视频通话用内置播放器，占位通话可用，但还不是外部真实数字人服务。`,
     ),
   };
 }

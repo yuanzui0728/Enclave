@@ -304,7 +304,7 @@ export function DesktopOfficialArticleWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-white p-6">
         <DesktopArticleWindowStatusPane
-          title={t(msg`文章窗口缺少上下文`)}
+          title={t(msg`文章窗口已失效`)}
           description={t(msg`这篇公众号文章的窗口参数已经失效，请回到公众号页重新打开。`)}
           action={
             <Button

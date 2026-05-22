@@ -16,6 +16,7 @@ import {
   DEFAULT_CORE_API_BASE_URL,
   getMyCloudWorldAccessSession,
   getWorldOwner,
+  isApiRequestError,
   loginCloudWithPassword,
   resolveMyCloudWorldAccess,
   sendCloudEmailCode,
@@ -474,6 +475,17 @@ export function WelcomePage() {
     );
     return () => window.clearTimeout(id);
   }, [codeCooldownSeconds]);
+  // 把 429 时服务端报的 retryAfter 也喂到本地 cooldown，否则用户首次点 send 命中
+  // 服务端 per-identity 窗口（比如 30s 前从别的设备/上次会话发过码）直接 429，
+  // 错误条上的"重试发送"按钮没禁用、cooldown 也是 0，连点 → 连 429。服务端
+  // exception message 形如"验证码发送过于频繁，请在 NN 秒后重试。"，正则把 NN 抠
+  // 出来；解析失败则 fallback 60s（跟成功路径保持一致）。
+  function startCooldownFromError(error: unknown) {
+    if (!isApiRequestError(error) || error.statusCode !== 429) return;
+    const match = error.message.match(/(\d+)\s*秒/);
+    const seconds = match ? Number(match[1]) : 60;
+    setCodeCooldownSeconds(Math.min(seconds, 60) || 60);
+  }
 
   const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
   const resolvedLocalApiBaseUrl = resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl);
@@ -773,6 +785,9 @@ export function WelcomePage() {
         bootstrapSource: "user",
       });
     },
+    onError: (error) => {
+      startCooldownFromError(error);
+    },
     onSettled: () => {
       sendCodeInFlightRef.current = false;
     },
@@ -797,6 +812,9 @@ export function WelcomePage() {
       );
       setEntryError("");
       setCodeCooldownSeconds(60);
+    },
+    onError: (error) => {
+      startCooldownFromError(error);
     },
     onSettled: () => {
       sendEmailCodeInFlightRef.current = false;

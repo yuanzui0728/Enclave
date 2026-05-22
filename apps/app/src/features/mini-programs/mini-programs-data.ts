@@ -470,7 +470,7 @@ export const miniProgramWorkspaceTaskTemplatesById: Record<
   "read-later": [
     {
       id: "clear-unread-queue",
-      title: t(msg`处理未读队列`),
+      title: t(msg`清掉未读积压`),
       detail: t(msg`优先清掉今天刚积压进来的文章、动态和链接。`),
       actionLabel: t(msg`已处理`),
     },

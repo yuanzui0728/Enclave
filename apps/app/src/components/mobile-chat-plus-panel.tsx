@@ -130,7 +130,7 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     disabled: true,
     disabledLabel: msg`待接入`,
     unavailableTitle: msg`红包暂未接入`,
-    unavailableDescription: msg`支付与到账链路还没接入，这里先保留和微信一致的能力入口。`,
+    unavailableDescription: msg`支付和到账还没开放，红包入口先放在这里。`,
   },
   transfer: {
     key: "transfer",

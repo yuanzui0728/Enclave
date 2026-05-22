@@ -1116,7 +1116,7 @@ export function ChatMessageList({
   const recallMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
       if (!threadContext) {
-        throw new Error(t(msg`当前线程暂不支持撤回消息。`));
+        throw new Error(t(msg`当前会话暂不支持撤回消息。`));
       }
 
       if (threadContext.type === "group") {
@@ -1202,7 +1202,7 @@ export function ChatMessageList({
   const deleteMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
       if (!threadContext) {
-        throw new Error(t(msg`当前线程暂不支持删除消息。`));
+        throw new Error(t(msg`当前会话暂不支持删除消息。`));
       }
 
       if (threadContext.type === "group") {
@@ -6702,6 +6702,7 @@ function VoiceMessage({
   const isDesktop = variant === "desktop";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const durationLabel = formatVoiceDurationLabel(attachment.durationMs);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -6781,7 +6782,11 @@ function VoiceMessage({
               ? "bg-[#f3f4f6]"
               : "bg-[color:var(--surface-console)]"
         }`}
-        aria-label={playing ? translateRuntimeMessage(msg`暂停语音`) : translateRuntimeMessage(msg`播放语音`)}
+        aria-label={
+          playing
+            ? translateRuntimeMessage(msg`暂停语音，时长 ${durationLabel}`)
+            : translateRuntimeMessage(msg`播放语音，时长 ${durationLabel}`)
+        }
       >
         {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
       </button>
@@ -6807,7 +6812,7 @@ function VoiceMessage({
       <span
         className={`shrink-0 tabular-nums text-black/60 ${isDesktop ? "text-xs" : "text-[11px]"}`}
       >
-        {formatVoiceDurationLabel(attachment.durationMs)}
+        {durationLabel}
       </span>
       <audio ref={audioRef} src={url} preload="none" />
     </div>

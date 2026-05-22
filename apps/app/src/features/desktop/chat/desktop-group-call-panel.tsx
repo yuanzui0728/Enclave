@@ -439,7 +439,7 @@ export function DesktopGroupCallPanel({
           <CallMetricCard
             label={t(msg`当前在线`)}
             value={t(msg`${activeCount} 人`)}
-            detail={t(msg`已加入当前桌面通话工作台`)}
+            detail={t(msg`已加入当前桌面通话`)}
           />
           <CallMetricCard
             label={t(msg`等待加入`)}

@@ -189,7 +189,7 @@ export function DesktopDirectCallPanel({
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
-      return t(msg`数字人渲染中`);
+      return t(msg`数字人画面加载中`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
@@ -197,7 +197,7 @@ export function DesktopDirectCallPanel({
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
-      return t(msg`数字人画面失败`);
+      return t(msg`数字人画面加载失败`);
     }
 
     if (
@@ -233,13 +233,13 @@ export function DesktopDirectCallPanel({
   ]);
   const statusHint = useMemo(() => {
     if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
-      return t(msg`正在建立数字人视频工作台，会话就绪后即可开始这一轮通话。`);
+      return t(msg`数字人视频正在准备，连上后就能开始通话。`);
     }
 
     if (isVideoMode && digitalHumanCall.sessionState === "error") {
       return (
         digitalHumanCall.sessionError ||
-        t(msg`连接数字人工作台失败，请稍后再试。`)
+        t(msg`连接数字人失败，请稍后再试。`)
       );
     }
 
@@ -251,29 +251,29 @@ export function DesktopDirectCallPanel({
 
     if (activeCall.turnMutation.isPending) {
       return isVideoMode
-        ? t(msg`本轮语音已收到，数字人正在整理文本、语音与舞台播报。`)
+        ? t(msg`本轮语音已收到，数字人正在整理文本、语音和画面。`)
         : t(msg`本轮语音已收到，正在转写并组织回复。`);
     }
 
     if (activeCall.playbackState === "playing") {
       return isVideoMode
-        ? t(msg`当前为半双工数字人视频通话，等 TA 说完后再开始下一轮。`)
-        : t(msg`当前为半双工模式，等 TA 说完后再开始下一轮。`);
+        ? t(msg`数字人视频通话需要轮流说，等 TA 说完后再开始下一轮。`)
+        : t(msg`需要轮流说，等 TA 说完后再开始下一轮。`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
       return t(
-        msg`语音回复已经生成，数字人视频画面正在渲染，完成后会自动切到 provider 画面。`,
+        msg`语音回复已生成，数字人画面正在加载，完成后会自动切过去。`,
       );
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
-      return t(msg`数字人视频流已进入排队，可以先保持语音通话。`);
+      return t(msg`数字人视频正在排队，可以先保持语音通话。`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
       return t(
-        msg`当前数字人画面渲染失败，但语音回复链路仍然可继续；可直接重试连接数字人。`,
+        msg`数字人画面没能加载出来，语音通话仍可继续；可重新连接数字人。`,
       );
     }
 
@@ -282,7 +282,7 @@ export function DesktopDirectCallPanel({
       digitalHumanCall.session?.renderStatus === "ready" &&
       (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
     ) {
-      return t(msg`数字人视频流已经就绪，桌面端会优先展示 provider 侧画面。`);
+      return t(msg`数字人视频已就绪，桌面端会优先展示外部画面。`);
     }
 
     if (
@@ -306,7 +306,7 @@ export function DesktopDirectCallPanel({
 
     return isVideoMode
       ? t(
-          msg`远端是 AI 数字人舞台，本地摄像头只用于你的桌面预览，不影响 AI 回复链路。`,
+          msg`对方画面是 AI 数字人，本地摄像头只用于桌面预览，不影响 AI 回复。`,
         )
       : t(msg`按住说一段，AI 会写入聊天并自动语音回复。`);
   }, [

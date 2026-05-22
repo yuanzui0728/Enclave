@@ -496,7 +496,7 @@ export function MiniProgramsPage() {
       }
       pushMobileHandoffRecord({
         category: "mini_program",
-        description: `${t(msg`把`)} ${miniProgram?.name ?? t(msg`小程序`)} ${t(msg`的当前工作台发到手机继续，保留最近使用和本地待办上下文。`)}`,
+        description: `${t(msg`把`)} ${miniProgram?.name ?? t(msg`小程序`)} ${t(msg`的当前工作台发到手机继续，保留最近使用和本地待办。`)}`,
         label: `${miniProgram?.name ?? t(msg`小程序`)} ${t(msg`接力`)}`,
         path,
       });
@@ -604,7 +604,7 @@ export function MiniProgramsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面小程序`)}
-            description={t(msg`正在载入桌面小程序工作区，马上恢复当前小程序上下文。`)}
+            description={t(msg`正在载入桌面小程序工作区，马上恢复当前小程序。`)}
             loadingLabel={t(msg`载入桌面小程序...`)}
           />
         }

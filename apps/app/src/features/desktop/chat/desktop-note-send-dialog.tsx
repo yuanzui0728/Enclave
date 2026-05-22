@@ -263,7 +263,7 @@ export function DesktopNoteSendDialog({
             {!loading && !error && !conversations.length ? (
               <EmptyState
                 title={t(msg`还没有可发送的最近会话`)}
-                description={t(msg`先去消息列表里建立一些聊天线程，再回来发送笔记。`)}
+                description={t(msg`先去消息列表里开几个聊天，再回来发送笔记。`)}
               />
             ) : null}
             {!loading &&

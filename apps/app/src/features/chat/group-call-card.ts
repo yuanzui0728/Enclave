@@ -65,12 +65,12 @@ export function resolveGroupCallFooterCopy(
     ? {
         description:
           invite.kind === "video"
-            ? t(msg`点击可回到当前群视频通话工作台。`)
-            : t(msg`点击可回到当前群语音通话工作台。`),
+            ? t(msg`点击回到当前群视频通话。`)
+            : t(msg`点击回到当前群语音通话。`),
         actionLabel:
           invite.kind === "voice" ? t(msg`回到语音`) : t(msg`回到视频`),
         tone: "info" as const,
-        ariaLabel: t(msg`回到 ${invite.groupName} 的群通话工作台`),
+        ariaLabel: t(msg`回到 ${invite.groupName} 的群通话`),
       }
     : {
         description:

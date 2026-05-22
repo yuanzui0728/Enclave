@@ -873,7 +873,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                       : t(msg`桌面端请从聊天页继续发起群语音`)}
                   </div>
                   <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                    {t(msg`当前独立路由主要保留给手机端通话流程。桌面端已经改为在群聊消息页内打开通话工作台，这样成员调度、聊天记录和侧栏信息会保持在同一窗口里。`)}
+                    {t(msg`这个独立页面主要给手机端通话用。桌面端已经改成在群聊页里直接打开通话，这样成员列表、聊天记录和侧栏信息会保持在同一窗口里。`)}
                   </div>
                 </div>
               </div>
