@@ -29099,7 +29099,7 @@ msgstr "Name is too long — please keep it within {NAME_MAX_LENGTH} characters.
 
 #: apps/app/src/routes/profile-info-page.tsx:115
 msgid "打开相册失败，请重试。"
-msgstr ""
+msgstr "Failed to open photo library. Please try again."
 
 #: apps/app/src/routes/profile-info-page.tsx:125
 msgid "图片过大，请压缩到 1MB 以内再试。"
