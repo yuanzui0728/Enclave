@@ -434,9 +434,15 @@ export function WelcomePage() {
     initialInviteCodeRef.current = readStoredInviteCode() ?? "";
   }
   const [inviteCode, setInviteCode] = useState(() => initialInviteCodeRef.current ?? "");
-  const [authMode, setAuthMode] = useState<"login" | "register">(() =>
-    initialInviteCodeRef.current ? "register" : "login",
-  );
+  const [authMode, setAuthMode] = useState<"login" | "register">(() => {
+    // 老用户（savedCloudEmail / savedCloudPhone 有值，无论 token 是否过期都算）
+    // 哪怕本地存了 invite 也优先默认登录 tab——以前只看 invite 在不在，结果
+    // "老用户 + 历史 invite 残留" 每次重载都被甩到注册 tab，要手动点登录。
+    // URL 携带 ?invite= 的入场仍然由下方 searchStr effect 强制 setAuthMode("register")，
+    // 不受这一格影响。
+    if (savedCloudEmail || savedCloudPhone) return "login";
+    return initialInviteCodeRef.current ? "register" : "login";
+  });
   const [inviteCodeAutoFilled, setInviteCodeAutoFilled] = useState(() =>
     Boolean(initialInviteCodeRef.current),
   );
