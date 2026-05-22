@@ -69,6 +69,13 @@ export function MobileMomentsPublishPage() {
   // 的帖子）。ref 同步赋值不走 React render，第一次 click 把它翻 true 之后
   // 同帧内的所有后续 click 都被卡住，等 onSettled 才解锁。
   const submittingRef = useRef(false);
+  // 「这次离开页面之前，草稿已经被显式处理过」标记——onSuccess 清 IDB / 保留草稿 /
+  // 不保留草稿 这三条路径都会翻 true。unmount cleanup 看到 true 就跳过 autosave，
+  // 避免和 onSuccess 的 clearMomentDraft 抢着写同一把 IDB key（race 输了会让"已发布"
+  // 的内容被 unmount autosave 复活成草稿——读 stale composeStateRef 时 hasContent
+  // 还是 true，因为 reset 的 setState 还没 commit；ref 由 useEffect 在 commit 后才
+  // 同步，cleanup 在 commit 中跑，读到的是 reset 之前的 ref）。
+  const draftHandledRef = useRef(false);
   const [exitSheetOpen, setExitSheetOpen] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   // toast 用 {message, key} 而不是 raw string —— 三行 SettingRow（所在位置/
@@ -167,6 +174,10 @@ export function MobileMomentsPublishPage() {
       // 发表成功 → 清掉对应账户的草稿（按 mutationBaseUrl 走，而不是当前 baseUrl，
       // mid-flight 切账户场景下用户的本意是清 A 的草稿，不是清 B 的）。和 cache
       // invalidate / setQueryData 用同一把 baseUrl 锁。
+      // 同步翻 draftHandledRef—— navigate 触发 unmount 时 cleanup 已不会再 autosave，
+      // 避免和这条 clear 抢同一把 IDB key（race 输了 stale snapshot 又把刚发布的内容
+      // 当草稿存回去）。
+      draftHandledRef.current = true;
       void clearMomentDraft(mutationBaseUrl);
       // 切走后剩下的 flash/draft-reset/navigate 都跟当前用户体验有关——
       // 切账户后用户已经不在 publish 上下文里，全部静默。和 R7/R8/R9
@@ -246,9 +257,13 @@ export function MobileMomentsPublishPage() {
   useEffect(() => {
     return () => {
       const snap = composeStateRef.current;
-      // mid-flight 发表中 unmount 几乎不发生（handleBack guard 拦死），但兜
-      // 一下：发表中的内容不该重复 save 出来——onSuccess 会清。
-      if (!snap.hasContent || snap.isPending) {
+      // 1) 显式处理过草稿（发表成功 / 保留 / 不保留）→ 跳过 autosave。否则会
+      //    和 onSuccess 的 clearMomentDraft race，stale ref 的 hasContent=true
+      //    会让"已发布"的内容被复活成草稿。
+      // 2) mid-flight 发表中 unmount 几乎不发生（handleBack guard 拦死），但兜
+      //    一下：发表中的内容不该重复 save 出来。
+      // 3) 空内容直接返回，不留无意义空草稿。
+      if (draftHandledRef.current || !snap.hasContent || snap.isPending) {
         return;
       }
       void saveMomentDraft(
@@ -369,6 +384,11 @@ export function MobileMomentsPublishPage() {
       return;
     }
     if (composeDraft.hasContent) {
+      // 先把 textarea 失焦把软键盘收掉——sheet 是 fixed bottom，键盘也是 fixed
+      // bottom，两者一起出现会盖在一起；WeChat 的发圈"保留/不保留"弹起前也先
+      // 收键盘。dismissExitSheet 在 sheet 关时把焦点还回 textarea，键盘会自然
+      // 弹回来，体感不丢上下文。
+      textareaRef.current?.blur();
       setExitSheetOpen(true);
       return;
     }
@@ -387,6 +407,9 @@ export function MobileMomentsPublishPage() {
     // 内存 + 返回。saveMomentDraft 内部失败静默退化（隐私模式 / quota 满），
     // UI 不要因为保存失败卡住——返回这条路径必须保证一定走通。
     setExitSheetOpen(false);
+    // 翻 draftHandledRef 阻止 unmount cleanup 再 autosave 一次——同样的快照
+    // 写两次只是浪费 IDB 一次 readwrite，但和发表成功路径用同一把锁保持一致。
+    draftHandledRef.current = true;
     void saveMomentDraft(
       baseUrl,
       extractMomentDraftSnapshot({
@@ -403,6 +426,9 @@ export function MobileMomentsPublishPage() {
     setExitSheetOpen(false);
     // 不保留 → 把 IDB 里之前可能残留的草稿一起清掉（用户上次保留过 + 这次没用 +
     // 这次决定丢弃；不清的话下次进发布页又恢复出来）。和 keep 一样静默处理失败。
+    // draftHandledRef 翻 true 防 cleanup autosave 把 stale 内容又存回（同 onSuccess
+    // 路径同款 stale snapshot 风险——cleanup 读 ref 是 reset 之前的 commit）。
+    draftHandledRef.current = true;
     void clearMomentDraft(baseUrl);
     composeDraft.reset();
     performBack();

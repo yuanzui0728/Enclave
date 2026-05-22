@@ -154,6 +154,16 @@ export function MomentsPage() {
   // 桌面端发帖面板的「保留 / 不保留」ActionSheet 开关 —— 跟 mobile publish 页同
   // 模板，但放在桌面 panel 上方的居中 modal 里。
   const [desktopExitSheetOpen, setDesktopExitSheetOpen] = useState(false);
+  // 同步镜像——ESC 把 sheet 翻 false 后，desktop-moment-compose-panel 自己的
+  // window keydown listener 仍会 fire 一次 onClose → handleRequestCloseDesktopCompose；
+  // 那条路径的闭包读到的 desktopExitSheetOpen 还是旧值。用 ref 同步跟（每次 render
+  // 更新），让那条路径看到"sheet 已经在询问中"直接 bail，避免 ESC 关了一下又被
+  // panel listener 重新弹回来。stopImmediatePropagation 在某些 React 18 + native
+  // window listener 顺序下不稳定，ref guard 是更可靠的兜底。
+  const desktopExitSheetOpenRef = useRef(false);
+  useEffect(() => {
+    desktopExitSheetOpenRef.current = desktopExitSheetOpen;
+  }, [desktopExitSheetOpen]);
   // 红点 indicator：订阅当前 baseUrl 的草稿存在状态。useMomentDraftIndicator
   // 内部 useEffect 会在 mount / baseUrl 变化时 hasMomentDraft(baseUrl) → store
   // 同步，所以页面刷新后首帧就准。
@@ -432,8 +442,14 @@ export function MomentsPage() {
   // 桌面端关闭面板的拦截：onCloseCompose 是 desktop-moments-toolbar / panel /
   // workspace 共用的关闭出口。有内容 → 弹 ActionSheet；空 → 直接关。
   // mid-flight createMutation.isPending 期间禁止关（和 mobile handleBack 一致）。
+  // ref guard：ESC / 第二次点 X / 第二次点遮罩这种"已经在询问中又被触发"的路径
+  // 直接 bail，否则会和 sheet 自己的关闭操作互相打架（ESC 让 sheet 翻 false，
+  // panel listener 同帧又把它翻 true 回来）。
   function handleRequestCloseDesktopCompose() {
     if (createMutation.isPending) {
+      return;
+    }
+    if (desktopExitSheetOpenRef.current) {
       return;
     }
     if (composeDraft.hasContent) {
@@ -461,6 +477,35 @@ export function MomentsPage() {
     composeDraft.reset();
     setShowCompose(false);
   }
+  // 桌面 ActionSheet 的 ESC 关闭——desktop-moment-compose-panel 自己的 keydown
+  // 监听仍挂着，会走 onClose → handleRequestCloseDesktopCompose → hasContent 仍 true
+  // → setDesktopExitSheetOpen(true) 把我刚关掉的 sheet 又开回来。用户按 ESC 本意是
+  // 关 sheet 不是再触发 keep/discard。stopImmediatePropagation 同节点（window）上
+  // 阻断 panel 那条 bubble-phase listener 触发（stopPropagation 不够——同节点同事
+  // 件仍会触发后续监听器，只阻断节点间传播）。IME 守卫和 panel 同款：中文/日文
+  // 输入法按 ESC 关候选窗时不该把 sheet 也关掉。
+  useEffect(() => {
+    if (!desktopExitSheetOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (
+        event.isComposing ||
+        (event as KeyboardEvent & { keyCode?: number }).keyCode === 229
+      ) {
+        return;
+      }
+      event.stopImmediatePropagation();
+      setDesktopExitSheetOpen(false);
+    };
+    // capture=true 让本 handler 在 capture 阶段抢先跑（理论早于 panel 的 bubble）。
+    // 真正的兜底是 handleRequestCloseDesktopCompose 里的 desktopExitSheetOpenRef
+    // guard——native window listener 顺序 + React 18 batch 让 stopImmediatePropagation
+    // 在部分场景下不稳定，ref guard 保证"sheet 关上一帧又被弹回来"不会发生。
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [desktopExitSheetOpen]);
 
   // 共享 optimistic helper —— 同时 toggle paged / flat / mine 三套 cache。
   // 之前本页 onMutate 只动 paged：用户在 /tabs/moments 给自己的帖子点心，切到
@@ -2007,7 +2052,12 @@ export function MomentsPage() {
             role="dialog"
             aria-modal="true"
             aria-label={t(msg`退出编辑`)}
-            className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(15,23,42,0.32)] backdrop-blur-[3px]"
+            // fixed 而不是 absolute：sheet 是 <Suspense> 直接子节点，没有
+            // positioned ancestor，absolute inset-0 会向上找到 body / html，
+            // 行为依赖外层布局——desktop panel 的 z-20 + 自己 transparent
+            // backdrop 叠加时遮罩可能漏到 panel 之外。fixed 直接对 viewport，
+            // 行为稳定可控。z-[1300] 和 mobile sheet 一致，盖住所有底层 popover。
+            className="fixed inset-0 z-[1300] flex items-center justify-center bg-[rgba(15,23,42,0.32)] backdrop-blur-[3px]"
           >
             <button
               type="button"
