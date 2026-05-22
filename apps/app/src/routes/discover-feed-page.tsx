@@ -2326,10 +2326,19 @@ export function DiscoverFeedPage() {
                           setNotice(""); // i18n-ignore-line
                           setNoticeActionLabel(null);
                           setNoticeAction(null);
-                          action();
-                          window.requestAnimationFrame(() => {
-                            noticeActionInflightRef.current = false;
-                          });
+                          // 新一轮 R3：action() 万一同步抛（理论上 expandFullComments
+                          // / handleSharePost 已经 try-catch 包好不会抛，但 noticeAction
+                          // 的来源也包括外部 retry path、未来新增的回调；防御性 wrap
+                          // 一道避免锁死）。直接同步 throw 时下方 rAF 永远不调度，
+                          // noticeActionInflightRef 卡在 true，用户再点别的 action 提示
+                          // 全部被同步锁早返"假死"，只能刷新页才能解。try-finally 兜底。
+                          try {
+                            action();
+                          } finally {
+                            window.requestAnimationFrame(() => {
+                              noticeActionInflightRef.current = false;
+                            });
+                          }
                         }}
                         className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
