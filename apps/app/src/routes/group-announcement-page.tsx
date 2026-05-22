@@ -430,6 +430,13 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
       {notice ? (
         <div className="px-4">
           <InlineNotice
+            // 新会话走查 R2：handleShareAnnouncement 成功/失败的反馈 notice
+            // （"已打开系统分享面板"/"群公告已复制"/"系统分享失败，请稍后重试"）
+            // 3.5s auto-dismiss，但盲人 SR 完全感知不到分享操作的结果。
+            // tone="success" 用 role="status"+polite；tone="info" 包含可重试
+            // action 时用 role="alert"+assertive 让用户立刻知道要重试。
+            role={notice.tone === "info" ? "alert" : "status"}
+            aria-live={notice.tone === "info" ? "assertive" : "polite"}
             tone={notice.tone}
             className="rounded-[14px] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
@@ -468,6 +475,11 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <div className="px-4">
           <InlineNotice
+            // 新会话走查 R2：saveMutation 失败时本条 notice 是用户唯一的错误
+            // 反馈。盲人 SR 之前点完"保存群公告"听不到任何"保存失败"播报，
+            // 以为操作生效转身离开。role="alert"+assertive 立刻播报。和姊妹
+            // group-chat-edit-page saveMutation error 同款修法。
+            role="alert"
             tone="danger"
             className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >

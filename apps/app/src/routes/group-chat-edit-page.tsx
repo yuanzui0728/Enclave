@@ -379,6 +379,12 @@ function MobileGroupChatEditPage({
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <div className="px-4">
           <InlineNotice
+            // 新会话走查 R2：saveGroupName / saveNickname mutation 失败时本条
+            // notice 是用户唯一的错误反馈。盲人 SR 之前点完"保存"按钮听不到
+            // 任何"保存失败"播报，以为操作生效转身离开。role="alert" +
+            // aria-live="assertive" 立刻播报 error.message。和姊妹 create-group-page
+            // createMutation error R(新一轮 R1) 同款修法。
+            role="alert"
             tone="danger"
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >

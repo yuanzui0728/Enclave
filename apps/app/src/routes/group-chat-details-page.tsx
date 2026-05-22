@@ -710,6 +710,16 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {notice ? (
         <div className="px-2.5">
           <InlineNotice
+            // 新会话走查 R2：本 notice 是 pin/mute/clear/leave/preferences 等
+            // mutation 成功后的反馈条（"群聊已置顶"/"已开启消息免打扰"/"群聊
+            // 记录已清空"等），auto-dismiss 3.5s（line ~239 useEffect）。原版
+            // 裸 InlineNotice 没 role/aria-live，盲人 SR 完全感知不到操作有没
+            // 有生效——切置顶 toggle 后没任何播报，下次进设置看到 toggle 状态
+            // 才知道之前到底有没有真正落库。和姊妹 chat-message-list actionNotice
+            // R37 / mobile-reminder-toast-host 同口径：success/info 路径用 status
+            // + polite，error 走另一条 saveMutation.isError 分支自带 danger 渲染。
+            role="status"
+            aria-live="polite"
             tone="info"
             className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
@@ -922,6 +932,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           {pinMutation.isError && pinMutation.error instanceof Error ? (
             <div className="px-2.5">
               <InlineNotice
+                // 新会话走查 R2：5 路 mutation error 红条（pin/preferences/clear/
+                // leave/hide）共用同一种渲染，盲人 SR 之前点完群设置 toggle 或
+                // 危险操作按钮听不到任何"置顶失败 / 清空失败 / 退出群聊失败" 播报，
+                // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
+                role="alert"
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
@@ -938,6 +953,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           preferencesMutation.error instanceof Error ? (
             <div className="px-2.5">
               <InlineNotice
+                // 新会话走查 R2：5 路 mutation error 红条（pin/preferences/clear/
+                // leave/hide）共用同一种渲染，盲人 SR 之前点完群设置 toggle 或
+                // 危险操作按钮听不到任何"置顶失败 / 清空失败 / 退出群聊失败" 播报，
+                // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
+                role="alert"
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
@@ -953,6 +973,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           {clearMutation.isError && clearMutation.error instanceof Error ? (
             <div className="px-2.5">
               <InlineNotice
+                // 新会话走查 R2：5 路 mutation error 红条（pin/preferences/clear/
+                // leave/hide）共用同一种渲染，盲人 SR 之前点完群设置 toggle 或
+                // 危险操作按钮听不到任何"置顶失败 / 清空失败 / 退出群聊失败" 播报，
+                // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
+                role="alert"
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
@@ -968,6 +993,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           {leaveMutation.isError && leaveMutation.error instanceof Error ? (
             <div className="px-2.5">
               <InlineNotice
+                // 新会话走查 R2：5 路 mutation error 红条（pin/preferences/clear/
+                // leave/hide）共用同一种渲染，盲人 SR 之前点完群设置 toggle 或
+                // 危险操作按钮听不到任何"置顶失败 / 清空失败 / 退出群聊失败" 播报，
+                // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
+                role="alert"
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
@@ -983,6 +1013,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           {hideMutation.isError && hideMutation.error instanceof Error ? (
             <div className="px-2.5">
               <InlineNotice
+                // 新会话走查 R2：5 路 mutation error 红条（pin/preferences/clear/
+                // leave/hide）共用同一种渲染，盲人 SR 之前点完群设置 toggle 或
+                // 危险操作按钮听不到任何"置顶失败 / 清空失败 / 退出群聊失败" 播报，
+                // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
+                role="alert"
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >

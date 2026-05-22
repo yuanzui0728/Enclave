@@ -775,6 +775,11 @@ function MobileGroupMemberPickerPage({
         {submitMutation.isError && submitMutation.error instanceof Error ? (
           <div className="px-4 pt-4">
             <InlineNotice
+              // 新会话走查 R2：批量 add/removeGroupMember 部分失败时本 notice
+              // 是唯一的错误反馈（"部分成员添加失败"/"部分成员移除失败"）。
+              // 盲人 SR 点完"确定(N)"听不到任何播报，以为操作全部生效转身离开。
+              // role="alert"+assertive 立刻播报错误并提示有可继续重试的剩余条。
+              role="alert"
               tone="danger"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
