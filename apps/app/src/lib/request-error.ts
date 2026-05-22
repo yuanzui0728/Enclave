@@ -65,7 +65,6 @@ export function describeRequestError(error: unknown, fallback?: string) {
     }
   }
 
-
   if (error instanceof Error) {
     const message = error.message.trim();
     if (error.name === "AbortError") {
