@@ -1374,11 +1374,22 @@ export function WelcomePage() {
                     aria-label={t(msg`验证码`)}
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    // 6 位数字短码，限长避免长按粘错；iOS 自动填充进来时也是 6 位
-                    maxLength={6}
+                    // 没有 maxLength（以前是 6）——HTML 属性 maxLength 在 onChange
+                    // 看到事件之前就把粘贴内容截掉，"1 2 3 4 5 6"（11 字符）会先被
+                    // 截成"1 2 3 4"再到我们手里，strip 空格之后只剩 4 位。把上限
+                    // 移到下面的 .slice(0, 6) 里，确保 strip 完成后再切。iOS 自动
+                    // 填充进来本身就是 6 位纯数字，没影响。
                     value={code}
                     onChange={(event) => {
-                      setCode(event.target.value);
+                      // 实测从邮件里复制 "1 2 3 4 5 6" / "123-456" / "  123456  "
+                      // 这种格式过来 maxLength=6 只截前 6 字符，混着空格/连字符的
+                      // 半截码直接进了 request body（server 端 code.trim() 不剥内
+                      // 部空白），结果是用户视角"我码贴对了"但被打 401。这里把
+                      // 非数字硬剥掉，paste 进来的杂字符不再卡住流程；中文/字母
+                      // 等也一律丢，inputMode=numeric 在 iOS 弹数字键盘已经堵了
+                      // 大半，但 paste 路径绕过了。
+                      const digitsOnly = event.target.value.replace(/\D+/g, "").slice(0, 6);
+                      setCode(digitsOnly);
                       setEntryError("");
                     }}
                     placeholder={
