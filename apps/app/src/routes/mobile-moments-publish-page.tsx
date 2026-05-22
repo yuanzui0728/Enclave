@@ -166,6 +166,12 @@ export function MobileMomentsPublishPage() {
     onMutate: () => {
       // onMutate 在 mutationFn 之前同步跑；这里钉住的 baseUrl 就是 publish 真正发
       // 到的目标账户。
+      // 走查 R7：开始 mutation 之前清掉 mediaError——errorMessage 取的是
+      // `mediaError ?? (isError ? describeRequestError : null)`，mediaError 优先级
+      // 高。如果用户之前 picker 失败过留下一条 mediaError，然后改纯文本发布失败，
+      // 红条上会一直挂着旧的 picker 失败文案，遮住真正的 publish 错误，体感
+      // 「点了发表没反应 / 错的提示」。
+      composeDraft.setMediaError(null);
       return { mutationBaseUrl: baseUrl };
     },
     onSuccess: (newMoment, _vars, context) => {
