@@ -58,7 +58,13 @@ export function CreateGroupPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [name, setName] = useState("");
+  // 走查（新一轮 R1）：原本有 `const [name, setName] = useState("")` + 在
+  // baseUrl change effect 里 setName("")，但整页 JSX 里没有任何 <input> 绑到
+  // setName——这是删 UI 时遗留的死状态。mutationFn 永远走 `name.trim() ||
+  // defaultGroupName` 后半段（空串 trim 也空），等于 100% 用 defaultGroupName，
+  // 多渲一次 useState + 一段 reset 噪音，给后续读代码的人留疑问"用户是不是
+  // 应该能改群名？"。删掉 + 直接传 defaultGroupName；群创建后用户进群再
+  // 改名（group-chat-edit-page）保持现行流程。
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   // 走查 R1：filteredFriends 直接吃 searchTerm，好友 100+ 时每个 keystroke 都
@@ -129,7 +135,7 @@ export function CreateGroupPage() {
     mutationFn: () =>
       createGroup(
         {
-          name: name.trim() || defaultGroupName,
+          name: defaultGroupName,
           memberIds: selectedIds,
         },
         baseUrl,
@@ -182,7 +188,6 @@ export function CreateGroupPage() {
 
     previousBaseUrlRef.current = baseUrl;
     seededSelectionRef.current = "";
-    setName("");
     setSelectedIds([]);
     setSearchTerm("");
     createMutationResetRef.current();
@@ -449,6 +454,13 @@ export function CreateGroupPage() {
                       key={item.character.id}
                       type="button"
                       onClick={() => toggleSelection(item.character.id)}
+                      // 走查（新一轮 R1）：横滚已选联系人头像没有 aria-label，
+                      // 屏幕阅读器读到 button 只读出文本子节点（displayName），
+                      // 用户听到的就是「张三」「李四」三人连读，毫无可点提示。
+                      // X 角标也没有 aria-hidden，盲人用户读 button 文本时容
+                      // 易听成「张三 X」之类的乱码。同 contacts-page / 群成员
+                      // 移除入口口径补全。
+                      aria-label={t(msg`移除已选联系人 ${displayName}`)}
                       className="flex w-14 shrink-0 flex-col items-center gap-1 text-center"
                     >
                       <div className="relative">
@@ -457,7 +469,10 @@ export function CreateGroupPage() {
                           src={item.character.avatar}
                           size="wechat"
                         />
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white">
+                        <span
+                          aria-hidden="true"
+                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white"
+                        >
                           <X size={10} />
                         </span>
                       </div>
@@ -607,14 +622,20 @@ export function CreateGroupPage() {
               badge={t(msg`暂无结果`)}
               title={t(msg`没有找到联系人`)}
               description={t(msg`换个名字、备注名或关系关键词试试。`)}
+              // 走查（新一轮 R1）：原本只有「返回消息列表」action，但这页"搜不到
+              // 联系人"的唯一原因就是 searchTerm 不命中——此时用户真正想做的是
+              // 改/清搜索词继续选，而不是退出整个创建群聊页（连已选都丢）。点
+              // 「返回消息列表」≈ 误触把用户踢出工作流。换成「清空搜索」，跟
+              // contacts-page / favorites-page / search-page 等同款空态的 UX 口径
+              // 一致：搜不到先让用户改关键词，而不是放弃当前页面。
               action={
                 <Button
                   type="button"
                   size="sm"
                   className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleBack}
+                  onClick={() => setSearchTerm("")}
                 >
-                  {statusBackLabel}
+                  {t(msg`清空搜索`)}
                 </Button>
               }
             />
@@ -680,6 +701,12 @@ function FriendSelectionRow({
   return (
     <button
       type="button"
+      // 走查（新一轮 R1）：button 视觉上是 checkbox（右侧绿色 ✓ 圈），但没
+      // aria-pressed / aria-checked，屏幕阅读器只读「张三 世界联系人」，
+      // 听不到「已选 / 未选」状态——盲人用户切勾完全靠记忆。原生 button
+      // 加 aria-pressed 比换 role="checkbox" 风险小（不破坏键盘 Enter/Space
+      // 触发），同 mobile-add-friend / group-member-picker 等已用同口径。
+      aria-pressed={checked}
       disabled={disabled}
       onClick={onClick}
       className={cn(
@@ -711,6 +738,7 @@ function FriendSelectionRow({
         ) : null}
       </div>
       <div
+        aria-hidden="true"
         className={cn(
           "flex shrink-0 items-center justify-center rounded-full border transition-colors",
           isDesktop ? "h-6 w-6" : "h-5 w-5",
