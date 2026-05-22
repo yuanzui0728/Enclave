@@ -11,6 +11,28 @@ import { MinimaxQuotaService, todayInShanghai } from './minimax-quota.service';
 
 const DEFAULT_PULL_INTERVAL_MS = 60 * 1000;
 const REPORT_DEDUPE_TTL_MS = 5 * 60 * 1000;
+// 走查 yuanzui0728 本次 R1：cloud-api uplink fetch 原版裸 fetch 无 timeout。
+// cloud-api 进程挂 / 网络黑洞时 push/pull 永远 hang，外层 `void ...catch(...)`
+// 因为没有 rejection 也永远不会触发，promise + open socket 累积。pull 由
+// setInterval(60s) 触发，若每次都 hang，几小时累积大量未释放的 fetch 连接。
+// 真实业务影响：撞墙信号断流，N-1 其他 world 各自烧 1 unit TTS HD / web-search
+// 才学到当日耗尽。15s timeout 对内网 cloud-api 调用够宽（正常 <100ms），异
+// 常时及时止损让 .catch 走得到。
+const CLOUD_UPLINK_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 type SyncConfig = {
   cloudPlatformBaseUrl: string;
@@ -35,6 +57,11 @@ export class MinimaxQuotaCloudSyncService
   // 防止某些雪崩场景下 listener 被反复触发（理论上 markExhaustedToday 已经
   // 做了"首次撞墙"判断，这里再加一道兜底）。
   private readonly recentReports = new Map<string, number>();
+  // 走查 yuanzui0728 本次 R1：pullOnce 由 setInterval(60s) 触发，原版无 in-
+  // flight 守卫。给 timeout 后正常情况下不会重叠，但 cloud-api 慢到 8-15s
+  // 之间反复发生时仍可能 overlap；用 promise 守一下，让 pull 真正完成后才
+  // 让下一次 tick 进入，避免 fetch 资源浪费。
+  private pullInFlight: Promise<void> | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -82,7 +109,7 @@ export class MinimaxQuotaCloudSyncService
   private async pushOnce(cfg: SyncConfig, model: string): Promise<void> {
     const usageDate = todayInShanghai();
     const body = { worldId: cfg.worldId, model, usageDate };
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${cfg.cloudPlatformBaseUrl}/internal/cloud/minimax-quota/exhausted`,
       {
         method: 'POST',
@@ -92,9 +119,13 @@ export class MinimaxQuotaCloudSyncService
         },
         body: JSON.stringify(body),
       },
+      CLOUD_UPLINK_TIMEOUT_MS,
     ).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`exhaustion push request error model=${model}: ${message}`);
+      const isTimeout = (err as Error)?.name === 'AbortError';
+      this.logger.warn(
+        `exhaustion push ${isTimeout ? 'timed out' : 'request error'} model=${model}: ${message}`,
+      );
       return null;
     });
     if (!response) return;
@@ -107,16 +138,33 @@ export class MinimaxQuotaCloudSyncService
   }
 
   async pullOnce(): Promise<void> {
+    // in-flight 守卫：cloud-api 慢时 setInterval 下一 tick 不再重复打 fetch。
+    if (this.pullInFlight) return this.pullInFlight;
+    const job = this.pullOnceInner().finally(() => {
+      this.pullInFlight = null;
+    });
+    this.pullInFlight = job;
+    return job;
+  }
+
+  private async pullOnceInner(): Promise<void> {
     const cfg = this.getConfig();
     if (!cfg) return;
     const usageDate = todayInShanghai();
     const url = `${cfg.cloudPlatformBaseUrl}/internal/cloud/minimax-quota/exhausted-today?worldId=${encodeURIComponent(cfg.worldId)}&date=${encodeURIComponent(usageDate)}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'x-world-callback-token': cfg.callbackToken },
-    }).catch((err: unknown) => {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: { 'x-world-callback-token': cfg.callbackToken },
+      },
+      CLOUD_UPLINK_TIMEOUT_MS,
+    ).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`exhaustion pull request error: ${message}`);
+      const isTimeout = (err as Error)?.name === 'AbortError';
+      this.logger.warn(
+        `exhaustion pull ${isTimeout ? 'timed out' : 'request error'}: ${message}`,
+      );
       return null;
     });
     if (!response) return;

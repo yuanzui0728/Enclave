@@ -263,8 +263,20 @@ export class MinimaxQuotaService {
       return (result.affected ?? 0) === 1;
     });
     if (ok) {
-      const remaining = await this.availableToday(model);
-      this.maybeWarnLowRemaining(model, remaining);
+      // 走查 yuanzui0728 本次 R1：原版 availableToday() 在事务外裸 await。
+      // 若它在 reserved=1 写好之后抛 DB 错（sqlite busy / 连接断），整个
+      // tryReserve 抛出 false 都没返回 → caller 当作 "reserve 失败" 走
+      // fallback，但 DB 行其实有一份 reserved=1 永远悬挂到下日重置，是真实
+      // 的配额泄漏。observability 用的 warn 失败不该影响 reserve 成功结果，
+      // 包成 try/catch 把后置步骤的 DB 错 swallow + warn。
+      try {
+        const remaining = await this.availableToday(model);
+        this.maybeWarnLowRemaining(model, remaining);
+      } catch (err) {
+        this.logger.warn(
+          `post-reserve availableToday/warn failed model=${model}: ${(err as Error)?.message}`,
+        );
+      }
     }
     return ok;
   }
