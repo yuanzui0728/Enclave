@@ -43,7 +43,7 @@ export function ChatRoomPage() {
   const routeState = parseMobileChatRouteState(hash);
   const highlightedMessageId = routeState.highlightedMessageId;
   const [routeContext, setRouteContext] = useState(() =>
-    resolveRouteContext(conversationId),
+    resolveRouteContext(),
   );
   const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
     useState<ChatComposeShortcutAction | null>(null);
@@ -73,8 +73,8 @@ export function ChatRoomPage() {
     : null;
 
   useEffect(() => {
-    setRouteContext(resolveRouteContext(conversationId));
-  }, [conversationId, search]);
+    setRouteContext(resolveRouteContext());
+  }, [search]);
 
   // 新一轮 R1：chat-room-page 在路由参数 conversationId 变化时是「保留挂载、
   // 只换 params」的——React 不重 mount 本组件（重 mount 的是子 ConversationThreadPanel
@@ -384,7 +384,7 @@ export function ChatRoomPage() {
   );
 }
 
-function resolveRouteContext(_conversationId: string) {
+function resolveRouteContext() {
   if (typeof window === "undefined") {
     return null;
   }

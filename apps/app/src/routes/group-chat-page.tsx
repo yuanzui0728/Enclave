@@ -37,7 +37,7 @@ export function GroupChatPage() {
   const routeState = parseMobileGroupRouteState(hash);
   const highlightedMessageId = routeState.highlightedMessageId;
   const [routeContext, setRouteContext] = useState(() =>
-    resolveRouteContext(groupId),
+    resolveRouteContext(),
   );
   const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
     useState<ChatComposeShortcutAction | null>(null);
@@ -54,8 +54,8 @@ export function GroupChatPage() {
     : null;
 
   useEffect(() => {
-    setRouteContext(resolveRouteContext(groupId));
-  }, [groupId, search]);
+    setRouteContext(resolveRouteContext());
+  }, [search]);
 
   useEffect(() => {
     if (isDesktopLayout) {
@@ -293,7 +293,7 @@ export function GroupChatPage() {
   );
 }
 
-function resolveRouteContext(_groupId: string) {
+function resolveRouteContext() {
   if (typeof window === "undefined") {
     return null;
   }
