@@ -2617,6 +2617,15 @@ export function ContactsPage() {
   return (
     <div ref={pageRef}>
       <AppPage className="relative min-h-full space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+        {/* Fresh 走查 R8：「通讯录管理」抽屉 modal 是 role="dialog" aria-modal="true"
+            + fixed inset-0 z-[60] backdrop，但底层 TabPageTopBar (gear / + / 搜索框)、
+            主体快捷入口、200+ 行好友列表、ContactsBulkActionBar 全可以被 Tab / SR
+            穿透访问——deep probe 验证 modal 打开后整页 25 个 focusable 中 21 个是
+            底层 phantom，aria-modal 只是 hint 浏览器不强制 trap focus。跟
+            official-accounts R7 同款给底层挂 className="contents" + inert + aria-
+            hidden，让真正的 dialog 内部 (含 modal back / Close / 4 个管理入口)
+            才是唯一 Tab 序列。body-scroll-lock 已 R4 修过。 */}
+        <div className="contents" {...(managementOpen ? { 'aria-hidden': 'true', inert: true } as Record<string, unknown> : {})}>
         <TabPageTopBar
           title={t(msg`通讯录`)}
           titleAlign="center"
@@ -2959,6 +2968,7 @@ export function ContactsPage() {
             setNoticeError={setNoticeError}
           />
         ) : null}
+        </div>
 
         <ContactsManagementModal
           open={managementOpen}
