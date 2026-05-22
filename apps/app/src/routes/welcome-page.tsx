@@ -1451,6 +1451,17 @@ export function WelcomePage() {
     handleSendPhoneCode();
   }
 
+  // 跟 phone 路径的 handleRetrySendCode 对齐：原来 email 的"重试发送"按钮是
+  // 直接 onClick={() => handleSendEmailCode()} 走的，没有 setEntryError("")。
+  // 复现：用户先填错验证码 → verify 失败 → entryError = "验证码错误"；再点
+  // "发送验证码" 撞 429 → sendEmailCodeMutation.isError = true；同时挂两条
+  // danger。这时点 email 错误条上的"重试发送"，mutation 跑完成功了，但
+  // entryError 那条还在显示，看上去像"send 已经又 OK 了，verify 还是错的"。
+  function handleRetrySendEmailCode() {
+    setEntryError("");
+    handleSendEmailCode();
+  }
+
   function handleRetryCloudSession() {
     setEntryError("");
     void cloudAccessSessionQuery.refetch();
@@ -2241,7 +2252,7 @@ export function WelcomePage() {
                 email.trim() && !sendEmailCodeMutation.isPending && effectiveCooldownSeconds <= 0 ? (
                   <button
                     type="button"
-                    onClick={() => handleSendEmailCode()}
+                    onClick={handleRetrySendEmailCode}
                     className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {t(msg`重试发送`)}
