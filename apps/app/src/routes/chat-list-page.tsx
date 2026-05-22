@@ -348,8 +348,19 @@ function MobileChatListPage() {
     showSubscriptionInboxItem;
   const hasConversations =
     reminderEntries.length > 0 || hasConversationSectionContent;
+  // 走查 R4：原版只看 isError，不区分「全无 cache」vs「有 cache 但 refetch
+  // 失败」。结果是用户已经看到一份缓存的列表正常用着，refetch 在公网隧道
+  // 超时一次（或服务端 5xx 一秒）整张列表就被红色全屏 error card 顶掉，
+  // 直到 retry 成功才回来——其实手上那份 cache 仍然完全可用。WeChat / 微博
+  // 等同类 app 的常规做法是：cache 有内容时退化成顶部小红条「无法刷新」+
+  // 保留列表，只在「真·零数据」时才铺大卡。下面 hasConversationStaleData
+  // / hasConversationFullLoadError 分别给两种渲染分支用。
   const hasConversationLoadError =
     conversationsQuery.isError && conversationsQuery.error instanceof Error;
+  const hasConversationFullLoadError =
+    hasConversationLoadError && conversations.length === 0;
+  const hasConversationStaleData =
+    conversationsQuery.isError && conversations.length > 0;
   const hasMessageEntriesError =
     messageEntriesQuery.isError && messageEntriesQuery.error instanceof Error;
 
@@ -1351,7 +1362,7 @@ function MobileChatListPage() {
             />
           </div>
         ) : null}
-        {hasConversationLoadError ? (
+        {hasConversationFullLoadError ? (
           <div className="px-3 pt-2">
             <MobileChatListStatusCard
               badge={t(msg`读取失败`)}
@@ -1373,6 +1384,31 @@ function MobileChatListPage() {
                 </Button>
               }
             />
+          </div>
+        ) : hasConversationStaleData ? (
+          // 走查 R4：refetch 失败但 cache 还在 —— 用小红条提示，列表照常可用
+          <div className="px-3 pt-2">
+            <InlineNotice
+              tone="danger"
+              role="alert"
+              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {t(msg`消息列表暂时无法刷新，显示的是最近一次同步的数据。`)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void conversationsQuery.refetch();
+                    void messageEntriesQuery.refetch();
+                  }}
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  {t(msg`重试`)}
+                </button>
+              </div>
+            </InlineNotice>
           </div>
         ) : null}
         {reminderEntries.length ? (
@@ -1561,7 +1597,7 @@ function MobileChatListPage() {
           </section>
         ) : null}
 
-        {!conversationsQuery.isLoading && !hasConversationLoadError ? (
+        {!conversationsQuery.isLoading && !hasConversationFullLoadError ? (
           hasConversationSectionContent ? (
             <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {showSubscriptionInboxItem && subscriptionInboxSummary ? (
