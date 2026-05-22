@@ -2157,8 +2157,18 @@ function ConversationListItemLinkImpl({
 
   return (
     <div
+      // 走查新一轮 R3：行容器之前只有 touch-pan-y，没挂 yj-no-callout。iOS Safari /
+      // Android WebView 长按 <Link> 会弹出系统级 "Copy Link / Open in New Tab"
+      // 菜单（TanStack Router 链接也命中，因为 DOM 上仍是真 <a href>），同时长
+      // 按一秒以上会启动文本选区把标题/预览蓝色高亮——用户慢一拍开始横向 swipe
+      // 时，gesture 被系统弹层 / 选区接管，应有的 pin/mute/标读/删除四件套永远
+      // 进不去。其它 mobile-only 滑动列表（avatar-chip / group-avatar-chip /
+      // mobile-shell bottom tab）都挂了这条类；唯独消息列表行漏了。加 yj-no-callout
+      // 让 -webkit-touch-callout:none + user-select:none 沿 * 选择子件下沉到内层
+      // Link / 文本 / swipe action button，swipe action button 不依赖 user-select
+      // 仍然可点。
       className={cn(
-        "yj-list-item-virtual relative overflow-hidden bg-[#c4c7cc] touch-pan-y",
+        "yj-list-item-virtual yj-no-callout relative overflow-hidden bg-[#c4c7cc] touch-pan-y",
         className,
       )}
       onTouchStart={handleTouchStart}
