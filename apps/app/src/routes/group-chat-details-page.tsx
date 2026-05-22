@@ -316,27 +316,23 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           ? payload.isMuted
             ? t(msg`已开启群消息免打扰。`)
             : t(msg`已关闭群消息免打扰。`)
-          : payload.savedToContacts !== undefined
-            ? payload.savedToContacts
-              ? t(msg`已保存到通讯录。`)
-              : t(msg`已从通讯录移除。`)
-            : payload.showMemberNicknames !== undefined
-              ? payload.showMemberNicknames
-                ? t(msg`已开启显示群成员昵称。`)
-                : t(msg`已关闭显示群成员昵称。`)
-              : payload.notifyOnAtMe !== undefined
-                ? payload.notifyOnAtMe
-                  ? t(msg`开启了 @我 通知。`)
-                  : t(msg`关闭了 @我 通知。`)
-                : payload.notifyOnAtAll !== undefined
-                  ? payload.notifyOnAtAll
-                    ? t(msg`开启了 @所有人 通知。`)
-                    : t(msg`关闭了 @所有人 通知。`)
-                  : payload.notifyOnAnnouncement !== undefined
-                    ? payload.notifyOnAnnouncement
-                      ? t(msg`开启了群公告通知。`)
-                      : t(msg`关闭了群公告通知。`)
-                    : t(msg`群聊设置已更新。`);
+          : payload.showMemberNicknames !== undefined
+            ? payload.showMemberNicknames
+              ? t(msg`已开启显示群成员昵称。`)
+              : t(msg`已关闭显示群成员昵称。`)
+            : payload.notifyOnAtMe !== undefined
+              ? payload.notifyOnAtMe
+                ? t(msg`开启了 @我 通知。`)
+                : t(msg`关闭了 @我 通知。`)
+              : payload.notifyOnAtAll !== undefined
+                ? payload.notifyOnAtAll
+                  ? t(msg`开启了 @所有人 通知。`)
+                  : t(msg`关闭了 @所有人 通知。`)
+                : payload.notifyOnAnnouncement !== undefined
+                  ? payload.notifyOnAnnouncement
+                    ? t(msg`开启了群公告通知。`)
+                    : t(msg`关闭了群公告通知。`)
+                  : t(msg`群聊设置已更新。`);
 
       // 走查 R4：同 pinMutation 改法。preferencesMutation.isPending 控制 6 个
       // 偏好 toggle 的 sync ref（line 670-678），await 链下解锁延迟用户连续切
