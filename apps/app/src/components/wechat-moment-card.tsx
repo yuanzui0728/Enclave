@@ -153,6 +153,18 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       const audio = narrationAudioRef.current;
       if (audio) {
         audio.pause();
+        // 走查新一轮 R2 (perf/mem)：之前只 pause，依赖 setNarrationUrl(null)
+        // 触发的 React 条件 unmount 让浏览器自然 GC decoded buffer——WKWebView
+        // (iOS / 内嵌 webview) GC 时机不可预测，单次切账户后 cached PCM/decoded
+        // 帧 ~100-500KB 会一直挂到下次主线程长任务才释放。频繁切账户 / dev hot
+        // reload 时多卡片累积 → 几 MB-几十 MB 常驻。和 readVideoMetadata cleanup
+        // (moment-compose-media.ts 681-682) / MomentVideoViewerOverlay R1
+        // (moment-media-gallery.tsx 691-695) 同款 fix：显式 removeAttribute(src)
+        // + load() 把 <audio> 切回 empty media，立刻释放 demux/decode 缓冲。
+        // 必须在 setNarrationUrl(null) 之前做——React unmount 后 ref 被清成 null
+        // 就拿不到了；同帧 pause + clear + load 三步一气呵成最稳。
+        audio.removeAttribute("src");
+        audio.load();
       }
       setNarrationUrl(null);
       setNarrationError(null);
