@@ -42,6 +42,9 @@ export class UserPrivateCharacterEntity {
   @Column({ default: 'friend' })
   relationshipType: string;
 
+  @Column({ type: 'text', nullable: true })
+  region?: string | null;
+
   @Column('simple-json', { default: '[]' })
   expertDomains: string[];
 

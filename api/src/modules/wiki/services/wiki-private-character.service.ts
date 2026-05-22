@@ -103,6 +103,7 @@ export type PrivateCharacterDto = {
   personality?: string | null;
   relationship?: string;
   relationshipType?: string;
+  region?: string | null;
   expertDomains?: string[];
   recipe?: CharacterBlueprintRecipeValue | null;
   profile?: PersonalityProfile | null;
@@ -122,6 +123,7 @@ export type PrivateCharacterExportBundle = {
   personality?: string | null;
   relationship: string;
   relationshipType: string;
+  region?: string | null;
   expertDomains: string[];
   recipe?: CharacterBlueprintRecipeValue | null;
   profile?: PersonalityProfile | null;
@@ -317,6 +319,7 @@ export class WikiPrivateCharacterService {
       personality: record.personality ?? null,
       relationship: record.relationship,
       relationshipType: record.relationshipType,
+      region: record.region ?? null,
       expertDomains: record.expertDomains ?? [],
       recipe: stripRejectedRecipeFields(record.recipe),
       profile: record.profile ?? null,
@@ -366,6 +369,7 @@ export class WikiPrivateCharacterService {
         typeof p.relationshipType === 'string'
           ? p.relationshipType
           : undefined,
+      region: typeof p.region === 'string' ? p.region : undefined,
       expertDomains: Array.isArray(p.expertDomains)
         ? p.expertDomains.filter((x): x is string => typeof x === 'string')
         : undefined,
@@ -418,6 +422,16 @@ export class WikiPrivateCharacterService {
     }
     if (typeof dto.relationshipType === 'string') {
       target.relationshipType = dto.relationshipType.trim();
+    }
+    // region：传入 string → trim 后写回（空字符串 → null，避免 "未设置" / "" 两种显示状态）；
+    // 显式传 null → 清空。undefined 跳过（不动 entity 上现有值）。
+    if (dto.region !== undefined) {
+      if (typeof dto.region === 'string') {
+        const trimmed = dto.region.trim();
+        target.region = trimmed === '' ? null : trimmed;
+      } else if (dto.region === null) {
+        target.region = null;
+      }
     }
     if (Array.isArray(dto.expertDomains)) {
       // trim + 去空 + 去重；和前端 splitCommaList() 行为对齐，否则同一用户在 UI

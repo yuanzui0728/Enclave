@@ -344,6 +344,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
   const [relationship, setRelationship] = useState("");
   const [relationshipType, setRelationshipType] = useState("friend");
   const [bio, setBio] = useState("");
+  const [region, setRegion] = useState("");
   const [expertDomains, setExpertDomains] = useState("");
 
   // —— 底层逻辑 ——
@@ -409,6 +410,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     personality: null,
     relationship: "",
     relationshipType: "friend",
+    region: null,
     expertDomains: [],
     recipe: null,
     profile: null,
@@ -475,6 +477,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     setRelationship(r.relationship ?? "");
     setRelationshipType(normalizeRelationshipType(r.relationshipType));
     setBio(r.bio ?? "");
+    setRegion(r.region ?? "");
     setExpertDomains((r.expertDomains ?? []).join(", "));
     if (typeof r.socialOpenness === "string") {
       setSocialOpenness(r.socialOpenness);
@@ -531,6 +534,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       setRelationshipType(normalizeRelationshipType(snap.relationshipType));
     }
     if (snap.bio) setBio(snap.bio);
+    if (typeof snap.region === "string") setRegion(snap.region);
     if (snap.expertDomains?.length) {
       setExpertDomains(snap.expertDomains.join(", "));
     }
@@ -582,6 +586,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     const trimmedName = name.trim();
     const trimmedRelationship = relationship.trim();
     const trimmedRelationshipType = relationshipType.trim() || "friend";
+    const trimmedRegion = region.trim();
     const expertList = splitCommaList(expertDomains);
 
     const fc = parseIntInRange(forgettingCurve, 0, 100);
@@ -596,6 +601,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
         avatar: trimmedAvatar,
         bio: bio.trim(),
         ...EMPTY_IDENTITY_EXTRA,
+        region: trimmedRegion,
       },
       expertise: {
         expertDomains: expertList,
@@ -655,6 +661,9 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       personality: null,
       relationship: trimmedRelationship,
       relationshipType: trimmedRelationshipType,
+      // region 空 → null：和朋友信息页 `friendship?.region || character?.region`
+      // 的空白判定对齐，避免 "" 落库后前端 trim() 也算非空但显示一个空白行。
+      region: trimmedRegion === "" ? null : trimmedRegion,
       expertDomains: expertList,
       recipe,
       profile: null,
@@ -673,6 +682,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
         personality: null,
         relationship: relationship.trim(),
         relationshipType: relationshipType.trim() || "friend",
+        region: region.trim() === "" ? null : region.trim(),
         expertDomains: splitCommaList(expertDomains),
         recipe: null,
         profile: null,
@@ -1210,6 +1220,18 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                       )}
                     </FormRow>
                   </div>
+                  <FormRow
+                    label={t(msg`地区`)}
+                    hint={t(msg`例如 上海·上海，可留空`)}
+                    effect={t(msg`在角色卡和朋友信息页展示，不进 AI 提示词`)}
+                  >
+                    <TextField
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      maxLength={64}
+                      placeholder={t(msg`例如 上海·上海`)}
+                    />
+                  </FormRow>
                   <FormRow
                     label={t(msg`擅长领域`)}
                     badge={<RecommendBadge label={t(msg`推荐`)} />}

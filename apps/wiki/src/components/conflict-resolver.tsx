@@ -15,6 +15,7 @@ const FIELD_LABELS: Record<keyof WikiContentSnapshot, MessageDescriptor> = {
   triggerScenes: msg`触发场景`,
   relationship: msg`关系描述`,
   relationshipType: msg`关系类型`,
+  region: msg`地区`,
 };
 
 type Side = "server" | "mine";

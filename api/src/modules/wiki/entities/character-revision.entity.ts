@@ -21,6 +21,7 @@ export type WikiContentSnapshot = {
   triggerScenes?: string[];
   relationship: string;
   relationshipType: string;
+  region?: string;
 };
 
 @Entity('character_revisions')

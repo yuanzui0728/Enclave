@@ -479,6 +479,7 @@ export class CharactersService implements OnModuleInit {
     personality?: string | null;
     relationship?: string;
     relationshipType?: string;
+    region?: string;
     expertDomains?: string[];
     triggerScenes?: string[] | null;
     recipe?: CharacterBlueprintRecipeValue | null;
@@ -594,6 +595,19 @@ export class CharactersService implements OnModuleInit {
         });
       }
       patch.relationshipType = input.relationshipType;
+    }
+    // region：单行 UI 文本（朋友信息页一行展示），含控制字符会撑高单行渲染。
+    // 空 trim 后落 null，避免 "" 和 null 两种 "未设置" 状态分裂；和 friendship.region
+    // / character.region 的 nullable 列对齐。
+    if (typeof input.region === 'string') {
+      if (containsControlChar(input.region)) {
+        throw new AppError('PRIVATE_IMPORT_INVALID', {
+          status: HttpStatus.BAD_REQUEST,
+          legacyMessage: 'region 不能包含换行符或控制字符。',
+        });
+      }
+      const trimmedRegion = input.region.trim();
+      patch.region = trimmedRegion === '' ? null : trimmedRegion;
     }
     // expertDomains：每个元素是 tag chip。空字符串 / 控制字符都会破坏 chip
     // 渲染（零宽 pill / 撑高单行）。filter 空串 + reject 控制字符。
@@ -1275,6 +1289,9 @@ const PRIVATE_CHARACTER_FIELD_LIMITS = {
   personality: 2000,
   relationship: 200,
   relationshipType: 80,
+  // region 不进 AI prompt（只在 character card / 朋友信息页文案展示），但仍要挡
+  // 误传：64 字够装 `广东·深圳市福田区` 这类粒度，并发"复制了一篇地区科普"也接得住。
+  region: 64,
   expertDomainItem: 80,
   expertDomainCount: 50,
   triggerSceneItem: 80,
@@ -1331,6 +1348,7 @@ export function assertPrivateCharacterFieldLimits(input: {
   personality?: string | null;
   relationship?: string;
   relationshipType?: string;
+  region?: string | null;
   expertDomains?: string[];
   triggerScenes?: string[] | null;
   recipe?: unknown;
@@ -1363,6 +1381,11 @@ export function assertPrivateCharacterFieldLimits(input: {
     input.relationshipType.length > L.relationshipType
   )
     throw tooLong('relationshipType', L.relationshipType);
+  if (
+    typeof input.region === 'string' &&
+    input.region.length > L.region
+  )
+    throw tooLong('region', L.region);
   if (Array.isArray(input.expertDomains)) {
     if (input.expertDomains.length > L.expertDomainCount)
       throw tooLong('expertDomains 个数', L.expertDomainCount);

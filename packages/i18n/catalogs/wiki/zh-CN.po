@@ -33,613 +33,635 @@ msgid "自定义"
 msgstr "自定义"
 
 #: apps/wiki/src/components/character-edit-form.tsx:74
-#: apps/wiki/src/components/character-edit-form.tsx:1098
-#: apps/wiki/src/components/character-edit-form.tsx:1795
+#: apps/wiki/src/components/character-edit-form.tsx:1128
+#: apps/wiki/src/components/character-edit-form.tsx:1837
 msgid "基础信息"
 msgstr "基础信息"
 
 #: apps/wiki/src/components/character-edit-form.tsx:75
-#: apps/wiki/src/components/character-edit-form.tsx:1240
-#: apps/wiki/src/components/character-edit-form.tsx:1799
+#: apps/wiki/src/components/character-edit-form.tsx:1282
+#: apps/wiki/src/components/character-edit-form.tsx:1841
 msgid "聊天回复"
 msgstr "聊天回复"
 
 #: apps/wiki/src/components/character-edit-form.tsx:76
-#: apps/wiki/src/components/character-edit-form.tsx:1292
-#: apps/wiki/src/components/character-edit-form.tsx:1316
-#: apps/wiki/src/components/character-edit-form.tsx:1797
+#: apps/wiki/src/components/character-edit-form.tsx:1334
+#: apps/wiki/src/components/character-edit-form.tsx:1358
+#: apps/wiki/src/components/character-edit-form.tsx:1839
 msgid "底层逻辑"
 msgstr "底层逻辑"
 
 #: apps/wiki/src/components/character-edit-form.tsx:77
-#: apps/wiki/src/components/character-edit-form.tsx:1362
-#: apps/wiki/src/components/character-edit-form.tsx:1801
+#: apps/wiki/src/components/character-edit-form.tsx:1404
+#: apps/wiki/src/components/character-edit-form.tsx:1843
 msgid "场景提示词"
 msgstr "场景提示词"
 
 #: apps/wiki/src/components/character-edit-form.tsx:78
-#: apps/wiki/src/components/character-edit-form.tsx:1511
-#: apps/wiki/src/components/character-edit-form.tsx:1803
+#: apps/wiki/src/components/character-edit-form.tsx:1553
+#: apps/wiki/src/components/character-edit-form.tsx:1845
 msgid "记忆提示词"
 msgstr "记忆提示词"
 
 #: apps/wiki/src/components/character-edit-form.tsx:79
-#: apps/wiki/src/components/character-edit-form.tsx:1570
+#: apps/wiki/src/components/character-edit-form.tsx:1612
 msgid "社交参数"
 msgstr "社交参数"
 
-#: apps/wiki/src/components/character-edit-form.tsx:564
+#: apps/wiki/src/components/character-edit-form.tsx:581
 msgid "头像只能填 emoji、http(s) URL 或 / 开头的站内路径"
 msgstr "头像只能填 emoji、http(s) URL 或 / 开头的站内路径"
 
 #. placeholder {0}: gen.message
-#: apps/wiki/src/components/character-edit-form.tsx:922
+#: apps/wiki/src/components/character-edit-form.tsx:952
 msgid "AI 生成失败：{0}"
 msgstr "AI 生成失败：{0}"
 
-#: apps/wiki/src/components/character-edit-form.tsx:983
+#: apps/wiki/src/components/character-edit-form.tsx:1013
 msgid "本编辑器和私有角色完全一致；这里的改动会作为一次 wiki 评审提交（涉及 prompting / memorySeed / lifeStrategy / tone / expertise / publishMapping / realityLink / identity.background|motivation|worldview 这些路径会被识别为高风险，需要 patroller 审核）。"
 msgstr "本编辑器和私有角色完全一致；这里的改动会作为一次 wiki 评审提交（涉及 prompting / memorySeed / lifeStrategy / tone / expertise / publishMapping / realityLink / identity.background|motivation|worldview 这些路径会被识别为高风险，需要 patroller 审核）。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1004
+#: apps/wiki/src/components/character-edit-form.tsx:1034
 msgid "加载中…"
 msgstr "加载中…"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
 #. placeholder {1}: aiFlash.count
-#: apps/wiki/src/components/character-edit-form.tsx:1051
-#: apps/wiki/src/components/character-edit-form.tsx:1677
+#: apps/wiki/src/components/character-edit-form.tsx:1081
+#: apps/wiki/src/components/character-edit-form.tsx:1719
 msgid "✨ 已优化「{0}」共 {1} 个字段"
 msgstr "✨ 已优化「{0}」共 {1} 个字段"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1056
+#: apps/wiki/src/components/character-edit-form.tsx:1086
 msgid "✨ AI 优化未返回不同内容（已保留你的填写）"
 msgstr "✨ AI 优化未返回不同内容（已保留你的填写）"
 
 #. placeholder {0}: aiFlash.count
-#: apps/wiki/src/components/character-edit-form.tsx:1061
+#: apps/wiki/src/components/character-edit-form.tsx:1091
 msgid "✨ 已补全 {0} 个字段"
 msgstr "✨ 已补全 {0} 个字段"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1063
+#: apps/wiki/src/components/character-edit-form.tsx:1093
 msgid "✨ AI 已生成完毕（未发现需要补全的空字段）"
 msgstr "✨ AI 已生成完毕（未发现需要补全的空字段）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1100
+#: apps/wiki/src/components/character-edit-form.tsx:1130
 msgid "角色名、头像、关系、简介、专长领域；只有「名称」是必填。"
 msgstr "角色名、头像、关系、简介、专长领域；只有「名称」是必填。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1114
+#: apps/wiki/src/components/character-edit-form.tsx:1144
 msgid "✨ AI 正在生成基础信息（含头像 emoji、专长领域），完成前本节字段已锁定。"
 msgstr "✨ AI 正在生成基础信息（含头像 emoji、专长领域），完成前本节字段已锁定。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1124
-#: apps/wiki/src/components/character-edit-form.tsx:1998
-#: apps/wiki/src/components/character-edit-form.tsx:2041
+#: apps/wiki/src/components/character-edit-form.tsx:1154
+#: apps/wiki/src/components/character-edit-form.tsx:2040
+#: apps/wiki/src/components/character-edit-form.tsx:2083
 #: apps/wiki/src/components/conflict-resolver.tsx:10
 #: apps/wiki/src/components/snapshot-diff.tsx:16
 msgid "名称"
 msgstr "名称"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1130
+#: apps/wiki/src/components/character-edit-form.tsx:1160
 msgid "例如 苏然"
 msgstr "例如 苏然"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1134
+#: apps/wiki/src/components/character-edit-form.tsx:1164
 #: apps/wiki/src/components/conflict-resolver.tsx:11
 #: apps/wiki/src/components/snapshot-diff.tsx:17
 msgid "头像"
 msgstr "头像"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1136
+#: apps/wiki/src/components/character-edit-form.tsx:1166
 msgid "emoji（🦊）、图片 URL，或点\"上传图片\"传一张本地图（PNG/JPG/WebP/GIF，≤4 MB）。空则用首字母占位（AI 生成基础信息时会自动补一个 emoji）"
 msgstr "emoji（🦊）、图片 URL，或点\"上传图片\"传一张本地图（PNG/JPG/WebP/GIF，≤4 MB）。空则用首字母占位（AI 生成基础信息时会自动补一个 emoji）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1138
+#: apps/wiki/src/components/character-edit-form.tsx:1168
 msgid "在角色卡片和列表里展示，不直接进 AI 提示词"
 msgstr "在角色卡片和列表里展示，不直接进 AI 提示词"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1147
-#: apps/wiki/src/components/character-edit-form.tsx:1999
-#: apps/wiki/src/components/character-edit-form.tsx:2042
+#: apps/wiki/src/components/character-edit-form.tsx:1177
+#: apps/wiki/src/components/character-edit-form.tsx:2041
+#: apps/wiki/src/components/character-edit-form.tsx:2084
 #: apps/wiki/src/components/conflict-resolver.tsx:16
 #: apps/wiki/src/components/snapshot-diff.tsx:22
 msgid "关系描述"
 msgstr "关系描述"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1148
+#: apps/wiki/src/components/character-edit-form.tsx:1178
 msgid "这个角色相对于你的身份"
 msgstr "这个角色相对于你的身份"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1149
+#: apps/wiki/src/components/character-edit-form.tsx:1179
 msgid "AI 自我介绍时会用这句来定位你"
 msgstr "AI 自我介绍时会用这句来定位你"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1155
+#: apps/wiki/src/components/character-edit-form.tsx:1185
 msgid "例如 大学室友"
 msgstr "例如 大学室友"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1159
+#: apps/wiki/src/components/character-edit-form.tsx:1189
 #: apps/wiki/src/components/conflict-resolver.tsx:17
 #: apps/wiki/src/components/snapshot-diff.tsx:23
 msgid "关系类型"
 msgstr "关系类型"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1160
+#: apps/wiki/src/components/character-edit-form.tsx:1190
 msgid "在角色卡和列表里展示，不直接进 AI 提示词"
 msgstr "在角色卡和列表里展示，不直接进 AI 提示词"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1184
+#: apps/wiki/src/components/character-edit-form.tsx:1214
 msgid "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 msgstr "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1194
+#: apps/wiki/src/components/character-edit-form.tsx:1224
+#: apps/wiki/src/routes/character-page.tsx:525
+msgid "地区"
+msgstr "地区"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1225
+msgid "例如 上海·上海，可留空"
+msgstr "例如 上海·上海，可留空"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1226
+msgid "在角色卡和朋友信息页展示，不进 AI 提示词"
+msgstr "在角色卡和朋友信息页展示，不进 AI 提示词"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1232
+msgid "例如 上海·上海"
+msgstr "例如 上海·上海"
+
+#: apps/wiki/src/components/character-edit-form.tsx:1236
 msgid "擅长领域"
 msgstr "擅长领域"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1195
-#: apps/wiki/src/components/character-edit-form.tsx:1208
-#: apps/wiki/src/components/character-edit-form.tsx:1317
+#: apps/wiki/src/components/character-edit-form.tsx:1237
+#: apps/wiki/src/components/character-edit-form.tsx:1250
+#: apps/wiki/src/components/character-edit-form.tsx:1359
 msgid "推荐"
 msgstr "推荐"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1196
+#: apps/wiki/src/components/character-edit-form.tsx:1238
 msgid "逗号分隔；用于检索、推荐与触发对话"
 msgstr "逗号分隔；用于检索、推荐与触发对话"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1197
+#: apps/wiki/src/components/character-edit-form.tsx:1239
 msgid "AI 会优先接这些领域的话题"
 msgstr "AI 会优先接这些领域的话题"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1202
+#: apps/wiki/src/components/character-edit-form.tsx:1244
 msgid "编程, 音乐, 心理学"
 msgstr "编程, 音乐, 心理学"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1207
-#: apps/wiki/src/components/character-edit-form.tsx:2000
-#: apps/wiki/src/components/character-edit-form.tsx:2043
+#: apps/wiki/src/components/character-edit-form.tsx:1249
+#: apps/wiki/src/components/character-edit-form.tsx:2042
+#: apps/wiki/src/components/character-edit-form.tsx:2085
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
-#: apps/wiki/src/routes/character-page.tsx:439
+#: apps/wiki/src/routes/character-page.tsx:443
+#: apps/wiki/src/routes/character-page.tsx:532
 msgid "简介"
 msgstr "简介"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1210
+#: apps/wiki/src/components/character-edit-form.tsx:1252
 msgid "一段话介绍角色背景与人设；其他用户可以读到。"
 msgstr "一段话介绍角色背景与人设；其他用户可以读到。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1213
+#: apps/wiki/src/components/character-edit-form.tsx:1255
 msgid "在角色卡片和搜索结果里展示给其他人；不直接进 AI 提示词。"
 msgstr "在角色卡片和搜索结果里展示给其他人；不直接进 AI 提示词。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1222
+#: apps/wiki/src/components/character-edit-form.tsx:1264
 msgid "例如：心理学背景，慢热而锋利。喜欢半夜读书，习惯先观察再回应。"
 msgstr "例如：心理学背景，慢热而锋利。喜欢半夜读书，习惯先观察再回应。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1242
+#: apps/wiki/src/components/character-edit-form.tsx:1284
 msgid "私聊 / 群聊场景下的具体回复风格与规则。"
 msgstr "私聊 / 群聊场景下的具体回复风格与规则。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1254
+#: apps/wiki/src/components/character-edit-form.tsx:1296
 msgid "✨ AI 正在生成聊天回复，完成前本节字段已锁定。"
 msgstr "✨ AI 正在生成聊天回复，完成前本节字段已锁定。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1262
+#: apps/wiki/src/components/character-edit-form.tsx:1304
 msgid "聊天场景提示词"
 msgstr "聊天场景提示词"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1263
+#: apps/wiki/src/components/character-edit-form.tsx:1305
 msgid "私聊 / 群聊场景的具体行为"
 msgstr "私聊 / 群聊场景的具体行为"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1264
+#: apps/wiki/src/components/character-edit-form.tsx:1306
 msgid "AI 在私聊和群聊场景下的具体表现"
 msgstr "AI 在私聊和群聊场景下的具体表现"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1272
+#: apps/wiki/src/components/character-edit-form.tsx:1314
 msgid "短句优先，能反问就别陈述。被夸时低调反弹回去。"
 msgstr "短句优先，能反问就别陈述。被夸时低调反弹回去。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1274
-#: apps/wiki/src/components/character-edit-form.tsx:1329
-#: apps/wiki/src/components/character-edit-form.tsx:1400
-#: apps/wiki/src/components/character-edit-form.tsx:1418
-#: apps/wiki/src/components/character-edit-form.tsx:1432
-#: apps/wiki/src/components/character-edit-form.tsx:1449
-#: apps/wiki/src/components/character-edit-form.tsx:1463
-#: apps/wiki/src/components/character-edit-form.tsx:1477
-#: apps/wiki/src/components/character-edit-form.tsx:1493
+#: apps/wiki/src/components/character-edit-form.tsx:1316
+#: apps/wiki/src/components/character-edit-form.tsx:1371
+#: apps/wiki/src/components/character-edit-form.tsx:1442
+#: apps/wiki/src/components/character-edit-form.tsx:1460
+#: apps/wiki/src/components/character-edit-form.tsx:1474
+#: apps/wiki/src/components/character-edit-form.tsx:1491
+#: apps/wiki/src/components/character-edit-form.tsx:1505
+#: apps/wiki/src/components/character-edit-form.tsx:1519
+#: apps/wiki/src/components/character-edit-form.tsx:1535
 msgid "📋 查看示例"
 msgstr "📋 查看示例"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1275
-#: apps/wiki/src/components/character-edit-form.tsx:1330
-#: apps/wiki/src/components/character-edit-form.tsx:1401
-#: apps/wiki/src/components/character-edit-form.tsx:1419
-#: apps/wiki/src/components/character-edit-form.tsx:1433
-#: apps/wiki/src/components/character-edit-form.tsx:1450
-#: apps/wiki/src/components/character-edit-form.tsx:1464
-#: apps/wiki/src/components/character-edit-form.tsx:1478
-#: apps/wiki/src/components/character-edit-form.tsx:1494
+#: apps/wiki/src/components/character-edit-form.tsx:1317
+#: apps/wiki/src/components/character-edit-form.tsx:1372
+#: apps/wiki/src/components/character-edit-form.tsx:1443
+#: apps/wiki/src/components/character-edit-form.tsx:1461
+#: apps/wiki/src/components/character-edit-form.tsx:1475
+#: apps/wiki/src/components/character-edit-form.tsx:1492
+#: apps/wiki/src/components/character-edit-form.tsx:1506
+#: apps/wiki/src/components/character-edit-form.tsx:1520
+#: apps/wiki/src/components/character-edit-form.tsx:1536
 msgid "收起示例"
 msgstr "收起示例"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1294
+#: apps/wiki/src/components/character-edit-form.tsx:1336
 msgid "角色在所有场景下都遵循的\"心法\"。优先级高于场景提示词。"
 msgstr "角色在所有场景下都遵循的\"心法\"。优先级高于场景提示词。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1308
+#: apps/wiki/src/components/character-edit-form.tsx:1350
 msgid "✨ AI 正在生成底层逻辑，完成前本节字段已锁定。"
 msgstr "✨ AI 正在生成底层逻辑，完成前本节字段已锁定。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1318
+#: apps/wiki/src/components/character-edit-form.tsx:1360
 msgid "贯穿所有场景的\"心法\"；优先级高于场景 prompt"
 msgstr "贯穿所有场景的\"心法\"；优先级高于场景 prompt"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1319
+#: apps/wiki/src/components/character-edit-form.tsx:1361
 msgid "AI 在所有场景里都会遵循这段（最高优先级）"
 msgstr "AI 在所有场景里都会遵循这段（最高优先级）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1327
+#: apps/wiki/src/components/character-edit-form.tsx:1369
 msgid "永远先确认对方在问什么，再用一句反问引导他说更多。不替对方下结论。"
 msgstr "永远先确认对方在问什么，再用一句反问引导他说更多。不替对方下结论。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1334
+#: apps/wiki/src/components/character-edit-form.tsx:1376
 msgid "遗忘曲线（0-100，默认 70）"
 msgstr "遗忘曲线（0-100，默认 70）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1335
-#: apps/wiki/src/components/character-edit-form.tsx:1536
-#: apps/wiki/src/components/character-edit-form.tsx:1549
+#: apps/wiki/src/components/character-edit-form.tsx:1377
+#: apps/wiki/src/components/character-edit-form.tsx:1578
+#: apps/wiki/src/components/character-edit-form.tsx:1591
 msgid "进阶"
 msgstr "进阶"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1336
+#: apps/wiki/src/components/character-edit-form.tsx:1378
 msgid "数值越高记得越牢；建议 50-80"
 msgstr "数值越高记得越牢；建议 50-80"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1337
+#: apps/wiki/src/components/character-edit-form.tsx:1379
 msgid "AI 记忆衰减速度，越大越牢"
 msgstr "AI 记忆衰减速度，越大越牢"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1364
+#: apps/wiki/src/components/character-edit-form.tsx:1406
 msgid "控制 AI 在朋友圈、广场、视频号、招呼、主动外联等场景下的措辞。不填会用默认推断。"
 msgstr "控制 AI 在朋友圈、广场、视频号、招呼、主动外联等场景下的措辞。不填会用默认推断。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1378
+#: apps/wiki/src/components/character-edit-form.tsx:1420
 msgid "✨ AI 正在生成场景提示词，完成前本节字段已锁定。"
 msgstr "✨ AI 正在生成场景提示词，完成前本节字段已锁定。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1388
+#: apps/wiki/src/components/character-edit-form.tsx:1430
 msgid "主动发布"
 msgstr "主动发布"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1391
+#: apps/wiki/src/components/character-edit-form.tsx:1433
 msgid "发朋友圈"
 msgstr "发朋友圈"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1392
+#: apps/wiki/src/components/character-edit-form.tsx:1434
 msgid "AI 发朋友圈时的内容风格"
 msgstr "AI 发朋友圈时的内容风格"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1399
+#: apps/wiki/src/components/character-edit-form.tsx:1441
 msgid "最近遇到一个小事 + 一句感受，不超过两句话。"
 msgstr "最近遇到一个小事 + 一句感受，不超过两句话。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1405
+#: apps/wiki/src/components/character-edit-form.tsx:1447
 #: apps/wiki/src/components/scene-prompt-preview.tsx:17
 msgid "广场发帖"
 msgstr "广场发帖"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1407
+#: apps/wiki/src/components/character-edit-form.tsx:1449
 msgid "AI 在广场公开发帖（比朋友圈正式、任何人都看得到）时的写作风格"
 msgstr "AI 在广场公开发帖（比朋友圈正式、任何人都看得到）时的写作风格"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1416
+#: apps/wiki/src/components/character-edit-form.tsx:1458
 msgid "写一段最近的观察 + 一个开放问题，给读者留余地。"
 msgstr "写一段最近的观察 + 一个开放问题，给读者留余地。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1423
+#: apps/wiki/src/components/character-edit-form.tsx:1465
 msgid "发视频号内容"
 msgstr "发视频号内容"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1424
+#: apps/wiki/src/components/character-edit-form.tsx:1466
 msgid "AI 发视频号 / 频道内容时的风格"
 msgstr "AI 发视频号 / 频道内容时的风格"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1431
+#: apps/wiki/src/components/character-edit-form.tsx:1473
 msgid "30 秒内能讲完的小见解 + 一句反差结尾。"
 msgstr "30 秒内能讲完的小见解 + 一句反差结尾。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1437
+#: apps/wiki/src/components/character-edit-form.tsx:1479
 msgid "互动响应"
 msgstr "互动响应"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1440
+#: apps/wiki/src/components/character-edit-form.tsx:1482
 msgid "朋友圈评论 / 回复"
 msgstr "朋友圈评论 / 回复"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1441
+#: apps/wiki/src/components/character-edit-form.tsx:1483
 msgid "AI 在朋友圈下评论时的风格"
 msgstr "AI 在朋友圈下评论时的风格"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1448
+#: apps/wiki/src/components/character-edit-form.tsx:1490
 msgid "先回应朋友的情绪，再问一个具体的细节。"
 msgstr "先回应朋友的情绪，再问一个具体的细节。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1454
+#: apps/wiki/src/components/character-edit-form.tsx:1496
 #: apps/wiki/src/components/scene-prompt-preview.tsx:18
 msgid "广场评论"
 msgstr "广场评论"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1455
+#: apps/wiki/src/components/character-edit-form.tsx:1497
 msgid "AI 在别人发的广场公开贴下面留言时的措辞"
 msgstr "AI 在别人发的广场公开贴下面留言时的措辞"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1462
+#: apps/wiki/src/components/character-edit-form.tsx:1504
 msgid "针对原作者的某一句具体回应，不抢话也不空夸。"
 msgstr "针对原作者的某一句具体回应，不抢话也不空夸。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1468
+#: apps/wiki/src/components/character-edit-form.tsx:1510
 msgid "好友请求 / 摇一摇问候"
 msgstr "好友请求 / 摇一摇问候"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1469
+#: apps/wiki/src/components/character-edit-form.tsx:1511
 msgid "AI 加好友 / 打招呼时的开场措辞"
 msgstr "AI 加好友 / 打招呼时的开场措辞"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1476
+#: apps/wiki/src/components/character-edit-form.tsx:1518
 msgid "先报上身份和我们怎么认识，问对方最近忙什么。"
 msgstr "先报上身份和我们怎么认识，问对方最近忙什么。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1482
+#: apps/wiki/src/components/character-edit-form.tsx:1524
 msgid "主动提醒"
 msgstr "主动提醒"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1483
+#: apps/wiki/src/components/character-edit-form.tsx:1525
 msgid "AI 主动外联用户时的开场措辞"
 msgstr "AI 主动外联用户时的开场措辞"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1491
+#: apps/wiki/src/components/character-edit-form.tsx:1533
 msgid "不打扰式开场：\"刚想起 xxx，想问你一句\"。不索取注意力。"
 msgstr "不打扰式开场：\"刚想起 xxx，想问你一句\"。不索取注意力。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1513
+#: apps/wiki/src/components/character-edit-form.tsx:1555
 msgid "控制 AI 整理近期记忆和提炼核心记忆时使用的指示模板。留空使用全局默认。"
 msgstr "控制 AI 整理近期记忆和提炼核心记忆时使用的指示模板。留空使用全局默认。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1527
+#: apps/wiki/src/components/character-edit-form.tsx:1569
 msgid "✨ AI 正在生成记忆提示词，完成前本节字段已锁定。"
 msgstr "✨ AI 正在生成记忆提示词，完成前本节字段已锁定。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1535
+#: apps/wiki/src/components/character-edit-form.tsx:1577
 msgid "近期记忆提示词"
 msgstr "近期记忆提示词"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1537
+#: apps/wiki/src/components/character-edit-form.tsx:1579
 msgid "AI 整理近期记忆时使用的指示模板"
 msgstr "AI 整理近期记忆时使用的指示模板"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1538
+#: apps/wiki/src/components/character-edit-form.tsx:1580
 msgid "变量：{{name}}、{{chatHistory}}"
 msgstr "变量：{{name}}、{{chatHistory}}"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1548
+#: apps/wiki/src/components/character-edit-form.tsx:1590
 msgid "长期记忆提示词"
 msgstr "长期记忆提示词"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1550
+#: apps/wiki/src/components/character-edit-form.tsx:1592
 msgid "AI 提炼核心记忆时使用的指示模板"
 msgstr "AI 提炼核心记忆时使用的指示模板"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1551
+#: apps/wiki/src/components/character-edit-form.tsx:1593
 msgid "变量：{{name}}、{{interactionHistory}}"
 msgstr "变量：{{name}}、{{interactionHistory}}"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1573
+#: apps/wiki/src/components/character-edit-form.tsx:1615
 msgid "控制角色对朋友圈/动态的开放度、主动浏览的频率，以及和你\"刚认识时\"的亲密度起点。运行时会自动调整。"
 msgstr "控制角色对朋友圈/动态的开放度、主动浏览的频率，以及和你\"刚认识时\"的亲密度起点。运行时会自动调整。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1580
+#: apps/wiki/src/components/character-edit-form.tsx:1622
 msgid "社交开放度"
 msgstr "社交开放度"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1581
+#: apps/wiki/src/components/character-edit-form.tsx:1623
 msgid "open 公开 / normal 普通 / private 仅好友"
 msgstr "open 公开 / normal 普通 / private 仅好友"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1587
+#: apps/wiki/src/components/character-edit-form.tsx:1629
 msgid "open 公开"
 msgstr "open 公开"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1588
+#: apps/wiki/src/components/character-edit-form.tsx:1630
 msgid "normal 普通"
 msgstr "normal 普通"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1589
+#: apps/wiki/src/components/character-edit-form.tsx:1631
 msgid "private 仅好友"
 msgstr "private 仅好友"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1593
+#: apps/wiki/src/components/character-edit-form.tsx:1635
 msgid "主动浏览概率（0-1）"
 msgstr "主动浏览概率（0-1）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1594
+#: apps/wiki/src/components/character-edit-form.tsx:1636
 msgid "数值越高，AI 越频繁主动看你的内容"
 msgstr "数值越高，AI 越频繁主动看你的内容"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1609
+#: apps/wiki/src/components/character-edit-form.tsx:1651
 msgid "亲密度种子（0-100）"
 msgstr "亲密度种子（0-100）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1610
+#: apps/wiki/src/components/character-edit-form.tsx:1652
 msgid "角色首次入库时的初始值，运行时会被自动调节"
 msgstr "角色首次入库时的初始值，运行时会被自动调节"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1625
+#: apps/wiki/src/components/character-edit-form.tsx:1667
 msgid "亲密度只是\"初始值\"——上线后会随你和角色的真实互动被自动调整，这里设的高低不会锁死。"
 msgstr "亲密度只是\"初始值\"——上线后会随你和角色的真实互动被自动调整，这里设的高低不会锁死。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1632
+#: apps/wiki/src/components/character-edit-form.tsx:1674
 msgid "世界角色的社交参数由 admin 管理，wiki 评审通道不会写入这三个字段；这里展示的是当前默认值，无法通过本表单提交修改。"
 msgstr "世界角色的社交参数由 admin 管理，wiki 评审通道不会写入这三个字段；这里展示的是当前默认值，无法通过本表单提交修改。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1658
+#: apps/wiki/src/components/character-edit-form.tsx:1700
 msgid "已保存 ✓"
 msgstr "已保存 ✓"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
-#: apps/wiki/src/components/character-edit-form.tsx:1682
+#: apps/wiki/src/components/character-edit-form.tsx:1724
 msgid "✨ AI 优化「{0}」未返回不同内容（已保留你的填写）"
 msgstr "✨ AI 优化「{0}」未返回不同内容（已保留你的填写）"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
 #. placeholder {1}: aiFlash.count
-#: apps/wiki/src/components/character-edit-form.tsx:1688
+#: apps/wiki/src/components/character-edit-form.tsx:1730
 msgid "✨ 已为「{0}」补全 {1} 个字段"
 msgstr "✨ 已为「{0}」补全 {1} 个字段"
 
 #. placeholder {0}: getSectionLabel(aiFlash.section, t)
-#: apps/wiki/src/components/character-edit-form.tsx:1693
+#: apps/wiki/src/components/character-edit-form.tsx:1735
 msgid "✨ 「{0}」没有空字段需要补全"
 msgstr "✨ 「{0}」没有空字段需要补全"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1699
+#: apps/wiki/src/components/character-edit-form.tsx:1741
 msgid "· 已自动保存为草稿（可在「我的草稿」找回）"
 msgstr "· 已自动保存为草稿（可在「我的草稿」找回）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1729
+#: apps/wiki/src/components/character-edit-form.tsx:1771
 msgid "请填写「名称」才能保存"
 msgstr "请填写「名称」才能保存"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1805
+#: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "整个角色"
 msgstr "整个角色"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1877
+#: apps/wiki/src/components/character-edit-form.tsx:1919
 msgid "全部内容已填满"
 msgstr "全部内容已填满"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1879
+#: apps/wiki/src/components/character-edit-form.tsx:1921
 msgid "「{sectionLabel}」已填满"
 msgstr "「{sectionLabel}」已填满"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1886
+#: apps/wiki/src/components/character-edit-form.tsx:1928
 msgid "AI 一键生成可以补的字段都已填好——再点不会有任何\"补空\"效果。"
 msgstr "AI 一键生成可以补的字段都已填好——再点不会有任何\"补空\"效果。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1891
+#: apps/wiki/src/components/character-edit-form.tsx:1933
 msgid "如果想让 AI 把整角色\"优化\"一遍，会用新生成的内容覆盖大部分字段 （sacred 3 字段——名称、关系、简介——始终保留）。是否进行优化？"
 msgstr "如果想让 AI 把整角色\"优化\"一遍，会用新生成的内容覆盖大部分字段 （sacred 3 字段——名称、关系、简介——始终保留）。是否进行优化？"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1900
+#: apps/wiki/src/components/character-edit-form.tsx:1942
 msgid "本节字段已经全部填写。AI 生成（默认）只会填补空字段，不会 改动已填的内容。"
 msgstr "本节字段已经全部填写。AI 生成（默认）只会填补空字段，不会 改动已填的内容。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1906
+#: apps/wiki/src/components/character-edit-form.tsx:1948
 msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
 msgstr "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1921
+#: apps/wiki/src/components/character-edit-form.tsx:1963
 #: apps/wiki/src/components/conflict-resolver.tsx:190
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
-#: apps/wiki/src/routes/character-page.tsx:204
-#: apps/wiki/src/routes/character-page.tsx:928
+#: apps/wiki/src/routes/character-page.tsx:225
+#: apps/wiki/src/routes/character-page.tsx:1021
 msgid "取消"
 msgstr "取消"
 
-#: apps/wiki/src/components/character-edit-form.tsx:1929
+#: apps/wiki/src/components/character-edit-form.tsx:1971
 msgid "✨ 开始优化"
 msgstr "✨ 开始优化"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2011
-#: apps/wiki/src/components/character-edit-form.tsx:2054
+#: apps/wiki/src/components/character-edit-form.tsx:2053
 msgid "生成中…"
 msgstr "生成中…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2011
+#: apps/wiki/src/components/character-edit-form.tsx:2053
 msgid "✨ AI 生成本节"
 msgstr "✨ AI 生成本节"
 
 #. placeholder {0}: missing.join("、")
-#: apps/wiki/src/components/character-edit-form.tsx:2015
-#: apps/wiki/src/components/character-edit-form.tsx:2061
+#: apps/wiki/src/components/character-edit-form.tsx:2057
+#: apps/wiki/src/components/character-edit-form.tsx:2106
 msgid "还需填写：{0}（点上方按钮可跳到第一个未填）"
 msgstr "还需填写：{0}（点上方按钮可跳到第一个未填）"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2056
+#: apps/wiki/src/components/character-edit-form.tsx:2099
+msgid "生成中（约 30 秒）…"
+msgstr "生成中（约 30 秒）…"
+
+#: apps/wiki/src/components/character-edit-form.tsx:2101
 msgid "✨ AI 一键生成全部"
 msgstr "✨ AI 一键生成全部"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2099
+#: apps/wiki/src/components/character-edit-form.tsx:2144
 msgid "把右侧字段填上，这里会同步展示 AI 看到的你的角色"
 msgstr "把右侧字段填上，这里会同步展示 AI 看到的你的角色"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2103
+#: apps/wiki/src/components/character-edit-form.tsx:2148
 msgid "AI 眼里的你的角色 ↑"
 msgstr "AI 眼里的你的角色 ↑"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2117
+#: apps/wiki/src/components/character-edit-form.tsx:2162
 msgid "角色编辑章节跳转"
 msgstr "角色编辑章节跳转"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2120
+#: apps/wiki/src/components/character-edit-form.tsx:2165
 msgid "章节"
 msgstr "章节"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2146
+#: apps/wiki/src/components/character-edit-form.tsx:2191
 msgid "↓ 跳到保存"
 msgstr "↓ 跳到保存"
 
 #. placeholder {0}: (file.size / 1024 / 1024).toFixed(1)
-#: apps/wiki/src/components/character-edit-form.tsx:2258
+#: apps/wiki/src/components/character-edit-form.tsx:2303
 msgid "图片太大（{0} MB），上限 4 MB。"
 msgstr "图片太大（{0} MB），上限 4 MB。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2268
+#: apps/wiki/src/components/character-edit-form.tsx:2313
 msgid "只支持 PNG / JPG / WebP / GIF。"
 msgstr "只支持 PNG / JPG / WebP / GIF。"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2277
+#: apps/wiki/src/components/character-edit-form.tsx:2322
 msgid "头像上传失败，请稍后再试"
 msgstr "头像上传失败，请稍后再试"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2314
+#: apps/wiki/src/components/character-edit-form.tsx:2359
 msgid "上传中…"
 msgstr "上传中…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2316
+#: apps/wiki/src/components/character-edit-form.tsx:2361
 msgid "上传图片"
 msgstr "上传图片"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2327
+#: apps/wiki/src/components/character-edit-form.tsx:2372
 msgid "清除"
 msgstr "清除"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2418
+#: apps/wiki/src/components/character-edit-form.tsx:2463
 msgid "AI 正在生成「{sectionLabel}」…"
 msgstr "AI 正在生成「{sectionLabel}」…"
 
-#: apps/wiki/src/components/character-edit-form.tsx:2424
+#: apps/wiki/src/components/character-edit-form.tsx:2469
 msgid "表单已锁定。可以返回列表，回来后结果会自动填好。"
 msgstr "表单已锁定。可以返回列表，回来后结果会自动填好。"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:13
 #: apps/wiki/src/components/snapshot-diff.tsx:19
-#: apps/wiki/src/routes/character-page.tsx:441
+#: apps/wiki/src/routes/character-page.tsx:444
+#: apps/wiki/src/routes/character-page.tsx:534
 msgid "性格"
 msgstr "性格"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:14
 #: apps/wiki/src/components/snapshot-diff.tsx:20
-#: apps/wiki/src/routes/character-page.tsx:444
+#: apps/wiki/src/routes/character-page.tsx:537
 msgid "专长领域"
 msgstr "专长领域"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:15
 #: apps/wiki/src/components/snapshot-diff.tsx:21
-#: apps/wiki/src/routes/character-page.tsx:453
+#: apps/wiki/src/routes/character-page.tsx:546
 msgid "触发场景"
 msgstr "触发场景"
 
@@ -763,7 +785,7 @@ msgstr "已提交，管理员将处理。"
 #: apps/wiki/src/routes/account-page.tsx:500
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:512
 #: apps/wiki/src/routes/admin-blocks-page.tsx:178
-#: apps/wiki/src/routes/character-page.tsx:194
+#: apps/wiki/src/routes/character-page.tsx:215
 msgid "提交中..."
 msgstr "提交中..."
 
@@ -826,7 +848,7 @@ msgstr "搜索"
 #: apps/wiki/src/components/root-layout.tsx:76
 #: apps/wiki/src/lib/revision-labels.ts:23
 #: apps/wiki/src/lib/revision-labels.ts:37
-#: apps/wiki/src/routes/character-page.tsx:381
+#: apps/wiki/src/routes/character-page.tsx:402
 #: apps/wiki/src/routes/create-character-page.tsx:102
 #: apps/wiki/src/routes/create-character-page.tsx:182
 #: apps/wiki/src/routes/pending-reviews-page.tsx:113
@@ -1171,7 +1193,7 @@ msgid "回复"
 msgstr "回复"
 
 #: apps/wiki/src/components/talk-panel.tsx:441
-#: apps/wiki/src/routes/character-page.tsx:126
+#: apps/wiki/src/routes/character-page.tsx:147
 #: apps/wiki/src/routes/home-page.tsx:246
 #: apps/wiki/src/routes/my-characters-page.tsx:65
 #: apps/wiki/src/routes/watchlist-page.tsx:92
@@ -1308,7 +1330,7 @@ msgstr "单条目"
 
 #: apps/wiki/src/lib/revision-labels.ts:60
 #: apps/wiki/src/routes/admin-blocks-page.tsx:117
-#: apps/wiki/src/routes/character-page.tsx:388
+#: apps/wiki/src/routes/character-page.tsx:409
 #: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
 msgstr "讨论"
@@ -1368,29 +1390,29 @@ msgstr "服务暂时不可用 ({0})，请稍后重试。"
 msgid "请求失败 ({0})"
 msgstr "请求失败 ({0})"
 
-#: apps/wiki/src/lib/wiki-api.ts:677
+#: apps/wiki/src/lib/wiki-api.ts:703
 msgid "管理员直接删除词条"
 msgstr "管理员直接删除词条"
 
-#: apps/wiki/src/lib/wiki-api.ts:688
+#: apps/wiki/src/lib/wiki-api.ts:714
 msgid "管理员直接恢复词条"
 msgstr "管理员直接恢复词条"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:1009
+#: apps/wiki/src/lib/wiki-api.ts:1044
 msgid "导出失败 ({0})"
 msgstr "导出失败 ({0})"
 
 #. placeholder {0}: res.status
-#: apps/wiki/src/lib/wiki-api.ts:1067
+#: apps/wiki/src/lib/wiki-api.ts:1102
 msgid "头像上传失败 ({0})"
 msgstr "头像上传失败 ({0})"
 
-#: apps/wiki/src/lib/wiki-api.ts:1085
+#: apps/wiki/src/lib/wiki-api.ts:1120
 msgid "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
 msgstr "文件太大（{sizeMb} MB），上限 5 MB。确认是 .character.json 文件后再试。"
 
-#: apps/wiki/src/lib/wiki-api.ts:1098
+#: apps/wiki/src/lib/wiki-api.ts:1133
 msgid "JSON 解析失败：{reason}"
 msgstr "JSON 解析失败：{reason}"
 
@@ -1859,7 +1881,7 @@ msgstr "无保护"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:141
 #: apps/wiki/src/routes/admin-protection-page.tsx:257
-#: apps/wiki/src/routes/character-page.tsx:399
+#: apps/wiki/src/routes/character-page.tsx:420
 #: apps/wiki/src/routes/home-page.tsx:253
 #: apps/wiki/src/routes/watchlist-page.tsx:98
 msgid "半保护"
@@ -1867,7 +1889,7 @@ msgstr "半保护"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:142
 #: apps/wiki/src/routes/admin-protection-page.tsx:259
-#: apps/wiki/src/routes/character-page.tsx:399
+#: apps/wiki/src/routes/character-page.tsx:420
 #: apps/wiki/src/routes/home-page.tsx:254
 #: apps/wiki/src/routes/watchlist-page.tsx:99
 msgid "完全保护"
@@ -2091,8 +2113,8 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} 对比 v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:54
-#: apps/wiki/src/routes/character-page.tsx:499
-#: apps/wiki/src/routes/character-page.tsx:817
+#: apps/wiki/src/routes/character-page.tsx:592
+#: apps/wiki/src/routes/character-page.tsx:910
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
 #: apps/wiki/src/routes/pending-reviews-page.tsx:293
 #: apps/wiki/src/routes/recent-changes-page.tsx:157
@@ -2107,115 +2129,134 @@ msgstr "旧角色逻辑"
 msgid "新角色逻辑"
 msgstr "新角色逻辑"
 
-#: apps/wiki/src/routes/character-page.tsx:111
+#: apps/wiki/src/routes/character-page.tsx:132
 msgid "角色页板块切换"
 msgstr "角色页板块切换"
 
-#: apps/wiki/src/routes/character-page.tsx:131
+#: apps/wiki/src/routes/character-page.tsx:152
 #: apps/wiki/src/routes/home-page.tsx:244
 msgid "待创建"
 msgstr "待创建"
 
-#: apps/wiki/src/routes/character-page.tsx:136
+#: apps/wiki/src/routes/character-page.tsx:157
 msgid "有待审版本"
 msgstr "有待审版本"
 
-#: apps/wiki/src/routes/character-page.tsx:145
+#: apps/wiki/src/routes/character-page.tsx:166
 msgid "版本切换"
 msgstr "版本切换"
 
-#: apps/wiki/src/routes/character-page.tsx:159
+#: apps/wiki/src/routes/character-page.tsx:180
 msgid "申请恢复"
 msgstr "申请恢复"
 
-#: apps/wiki/src/routes/character-page.tsx:159
+#: apps/wiki/src/routes/character-page.tsx:180
 msgid "申请删除"
 msgstr "申请删除"
 
-#: apps/wiki/src/routes/character-page.tsx:168
+#: apps/wiki/src/routes/character-page.tsx:189
 msgid "恢复理由"
 msgstr "恢复理由"
 
-#: apps/wiki/src/routes/character-page.tsx:168
+#: apps/wiki/src/routes/character-page.tsx:189
 msgid "删除理由"
 msgstr "删除理由"
 
-#: apps/wiki/src/routes/character-page.tsx:176
+#: apps/wiki/src/routes/character-page.tsx:197
 msgid "说明为什么这个角色词条应恢复"
 msgstr "说明为什么这个角色词条应恢复"
 
-#: apps/wiki/src/routes/character-page.tsx:177
+#: apps/wiki/src/routes/character-page.tsx:198
 msgid "说明为什么这个角色词条应归档为红链"
 msgstr "说明为什么这个角色词条应归档为红链"
 
-#: apps/wiki/src/routes/character-page.tsx:196
+#: apps/wiki/src/routes/character-page.tsx:217
 msgid "提交恢复申请"
 msgstr "提交恢复申请"
 
-#: apps/wiki/src/routes/character-page.tsx:197
+#: apps/wiki/src/routes/character-page.tsx:218
 msgid "提交删除申请"
 msgstr "提交删除申请"
 
-#: apps/wiki/src/routes/character-page.tsx:213
+#: apps/wiki/src/routes/character-page.tsx:234
 msgid "此词条已被软删除（红链）。"
 msgstr "此词条已被软删除（红链）。"
 
-#: apps/wiki/src/routes/character-page.tsx:215
+#: apps/wiki/src/routes/character-page.tsx:236
 msgid "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 msgstr "恢复也按编辑审核流提交，底层角色数据保留以保持运行时引用一致。"
 
-#: apps/wiki/src/routes/character-page.tsx:223
+#: apps/wiki/src/routes/character-page.tsx:244
 msgid "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 msgstr "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 
-#: apps/wiki/src/routes/character-page.tsx:324
-#: apps/wiki/src/routes/character-page.tsx:504
+#: apps/wiki/src/routes/character-page.tsx:345
+#: apps/wiki/src/routes/character-page.tsx:597
 msgid "稳定版"
 msgstr "稳定版"
 
-#: apps/wiki/src/routes/character-page.tsx:338
-#: apps/wiki/src/routes/character-page.tsx:504
+#: apps/wiki/src/routes/character-page.tsx:359
+#: apps/wiki/src/routes/character-page.tsx:597
 msgid "最新版"
 msgstr "最新版"
 
-#: apps/wiki/src/routes/character-page.tsx:377
+#: apps/wiki/src/routes/character-page.tsx:398
 msgid "阅读"
 msgstr "阅读"
 
-#: apps/wiki/src/routes/character-page.tsx:385
+#: apps/wiki/src/routes/character-page.tsx:406
 msgid "历史"
 msgstr "历史"
 
-#: apps/wiki/src/routes/character-page.tsx:463
+#: apps/wiki/src/routes/character-page.tsx:446
+#: apps/wiki/src/routes/character-page.tsx:556
 msgid "核心逻辑"
 msgstr "核心逻辑"
 
-#: apps/wiki/src/routes/character-page.tsx:467
+#: apps/wiki/src/routes/character-page.tsx:462
+msgid "朗读生成失败"
+msgstr "朗读生成失败"
+
+#: apps/wiki/src/routes/character-page.tsx:485
+#: apps/wiki/src/routes/character-page.tsx:489
+#: apps/wiki/src/routes/character-page.tsx:494
+msgid "朗读全文"
+msgstr "朗读全文"
+
+#: apps/wiki/src/routes/character-page.tsx:489
+msgid "正在合成…"
+msgstr "正在合成…"
+
+#: apps/wiki/src/routes/character-page.tsx:494
+msgid "生成中"
+msgstr "生成中"
+
+#: apps/wiki/src/routes/character-page.tsx:560
 msgid "聊天 Prompt"
 msgstr "聊天 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:470
+#: apps/wiki/src/routes/character-page.tsx:563
 msgid "主动触达 Prompt"
 msgstr "主动触达 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:475
+#: apps/wiki/src/routes/character-page.tsx:568
 msgid "发圈频率"
 msgstr "发圈频率"
 
-#: apps/wiki/src/routes/character-page.tsx:478
+#: apps/wiki/src/routes/character-page.tsx:571
 msgid "广场频率"
 msgstr "广场频率"
 
-#: apps/wiki/src/routes/character-page.tsx:481
+#: apps/wiki/src/routes/character-page.tsx:574
 msgid "活跃时段"
 msgstr "活跃时段"
 
 #. placeholder {0}: view.pendingRevisions.length
-#: apps/wiki/src/routes/character-page.tsx:490
+#: apps/wiki/src/routes/character-page.tsx:583
 msgid "有 {0} 个待审版本，最新为："
 msgstr "有 {0} 个待审版本，最新为："
 
-#: apps/wiki/src/routes/character-page.tsx:500
+#: apps/wiki/src/routes/character-page.tsx:593
 #: apps/wiki/src/routes/pending-reviews-page.tsx:135
 msgid "低风险"
 msgstr "低风险"
@@ -2223,127 +2264,127 @@ msgstr "低风险"
 #. placeholder {0}: view.currentRevision.version
 #. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:507
+#: apps/wiki/src/routes/character-page.tsx:600
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · 由 {1} 提交于 {2}"
 
-#: apps/wiki/src/routes/character-page.tsx:509
+#: apps/wiki/src/routes/character-page.tsx:602
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "尚未有 wiki 版本（显示后台原始数据）"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:513
+#: apps/wiki/src/routes/character-page.tsx:606
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "稳定版 v{0} / 最新版 v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:635
+#: apps/wiki/src/routes/character-page.tsx:728
 msgid "请先 <0>登录</0> 后再编辑。"
 msgstr "请先 <0>登录</0> 后再编辑。"
 
 #. placeholder {0}: roleLabel(user.role)
-#: apps/wiki/src/routes/character-page.tsx:653
+#: apps/wiki/src/routes/character-page.tsx:746
 msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 msgstr "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 
 #. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:661
+#: apps/wiki/src/routes/character-page.tsx:754
 #: apps/wiki/src/routes/world-character-edit-page.tsx:252
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 
-#: apps/wiki/src/routes/character-page.tsx:673
+#: apps/wiki/src/routes/character-page.tsx:766
 msgid "✨ 打开编辑器"
 msgstr "✨ 打开编辑器"
 
-#: apps/wiki/src/routes/character-page.tsx:676
+#: apps/wiki/src/routes/character-page.tsx:769
 msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 msgstr "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 
-#: apps/wiki/src/routes/character-page.tsx:734
+#: apps/wiki/src/routes/character-page.tsx:827
 msgid "还没有任何编辑记录。"
 msgstr "还没有任何编辑记录。"
 
-#: apps/wiki/src/routes/character-page.tsx:827
+#: apps/wiki/src/routes/character-page.tsx:920
 msgid "当前版本"
 msgstr "当前版本"
 
-#: apps/wiki/src/routes/character-page.tsx:832
+#: apps/wiki/src/routes/character-page.tsx:925
 #: apps/wiki/src/routes/recent-changes-page.tsx:167
 msgid "待巡查"
 msgstr "待巡查"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:842
+#: apps/wiki/src/routes/character-page.tsx:935
 #: apps/wiki/src/routes/recent-changes-page.tsx:190
 msgid "字段：{0}"
 msgstr "字段：{0}"
 
-#: apps/wiki/src/routes/character-page.tsx:850
+#: apps/wiki/src/routes/character-page.tsx:943
 msgid "收起对比"
 msgstr "收起对比"
 
-#: apps/wiki/src/routes/character-page.tsx:850
+#: apps/wiki/src/routes/character-page.tsx:943
 msgid "查看对比"
 msgstr "查看对比"
 
-#: apps/wiki/src/routes/character-page.tsx:859
+#: apps/wiki/src/routes/character-page.tsx:952
 msgid "独立对比"
 msgstr "独立对比"
 
-#: apps/wiki/src/routes/character-page.tsx:868
+#: apps/wiki/src/routes/character-page.tsx:961
 msgid "回滚到此版本"
 msgstr "回滚到此版本"
 
-#: apps/wiki/src/routes/character-page.tsx:882
+#: apps/wiki/src/routes/character-page.tsx:975
 #: apps/wiki/src/routes/pending-reviews-page.tsx:335
 msgid "查看角色逻辑快照"
 msgstr "查看角色逻辑快照"
 
-#: apps/wiki/src/routes/character-page.tsx:895
+#: apps/wiki/src/routes/character-page.tsx:988
 msgid "回滚原因（必填）"
 msgstr "回滚原因（必填）"
 
-#: apps/wiki/src/routes/character-page.tsx:900
+#: apps/wiki/src/routes/character-page.tsx:993
 msgid "例如：v3 涉及破坏性内容"
 msgstr "例如：v3 涉及破坏性内容"
 
-#: apps/wiki/src/routes/character-page.tsx:921
+#: apps/wiki/src/routes/character-page.tsx:1014
 msgid "回滚中..."
 msgstr "回滚中..."
 
-#: apps/wiki/src/routes/character-page.tsx:921
+#: apps/wiki/src/routes/character-page.tsx:1014
 msgid "确认回滚"
 msgstr "确认回滚"
 
-#: apps/wiki/src/routes/character-page.tsx:963
+#: apps/wiki/src/routes/character-page.tsx:1056
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ 角色已被管理员后台直接修改"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:966
+#: apps/wiki/src/routes/character-page.tsx:1059
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 
-#: apps/wiki/src/routes/character-page.tsx:973
+#: apps/wiki/src/routes/character-page.tsx:1066
 msgid "内容字段："
 msgstr "内容字段："
 
-#: apps/wiki/src/routes/character-page.tsx:979
+#: apps/wiki/src/routes/character-page.tsx:1072
 msgid "逻辑字段："
 msgstr "逻辑字段："
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:983
+#: apps/wiki/src/routes/character-page.tsx:1076
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:996
+#: apps/wiki/src/routes/character-page.tsx:1089
 msgid "同步中..."
 msgstr "同步中..."
 
-#: apps/wiki/src/routes/character-page.tsx:996
+#: apps/wiki/src/routes/character-page.tsx:1089
 msgid "纳入 wiki 历史"
 msgstr "纳入 wiki 历史"
 
@@ -2414,29 +2455,29 @@ msgstr "和私有角色 / 世界角色编辑器同一套体验；保存后角色
 
 #. placeholder {0}: draftQ.data.name || t(msg`未命名草稿`)
 #: apps/wiki/src/routes/create-character-page.tsx:195
-#: apps/wiki/src/routes/my-character-edit-page.tsx:296
+#: apps/wiki/src/routes/my-character-edit-page.tsx:297
 msgid "已从草稿「{0}」恢复。"
 msgstr "已从草稿「{0}」恢复。"
 
 #: apps/wiki/src/routes/create-character-page.tsx:196
-#: apps/wiki/src/routes/my-character-edit-page.tsx:297
+#: apps/wiki/src/routes/my-character-edit-page.tsx:298
 #: apps/wiki/src/routes/my-drafts-page.tsx:120
 #: apps/wiki/src/routes/my-drafts-page.tsx:275
 msgid "未命名草稿"
 msgstr "未命名草稿"
 
 #: apps/wiki/src/routes/create-character-page.tsx:206
-#: apps/wiki/src/routes/my-character-edit-page.tsx:307
+#: apps/wiki/src/routes/my-character-edit-page.tsx:308
 msgid "清空表单"
 msgstr "清空表单"
 
 #: apps/wiki/src/routes/create-character-page.tsx:220
-#: apps/wiki/src/routes/my-character-edit-page.tsx:321
+#: apps/wiki/src/routes/my-character-edit-page.tsx:322
 msgid "该草稿已不存在（可能已被删除），按空白表单继续。"
 msgstr "该草稿已不存在（可能已被删除），按空白表单继续。"
 
 #: apps/wiki/src/routes/create-character-page.tsx:226
-#: apps/wiki/src/routes/my-character-edit-page.tsx:329
+#: apps/wiki/src/routes/my-character-edit-page.tsx:330
 msgid "清掉 URL 中的 draftId"
 msgstr "清掉 URL 中的 draftId"
 
@@ -2471,7 +2512,7 @@ msgid "按维基百科模式管理世界角色：任何登录用户都能创建�
 msgstr "按维基百科模式管理世界角色：任何登录用户都能创建角色、编辑画像和运行逻辑、申请删除或恢复；高风险改动进入巡查队列，通过后才发布到角色运行时。"
 
 #: apps/wiki/src/routes/home-page.tsx:129
-#: apps/wiki/src/routes/my-character-edit-page.tsx:359
+#: apps/wiki/src/routes/my-character-edit-page.tsx:374
 msgid "✨ 创建角色"
 msgstr "✨ 创建角色"
 
@@ -2571,7 +2612,7 @@ msgstr "确认删除「{0}」？此操作无法撤销。"
 #: apps/wiki/src/routes/my-character-edit-page.tsx:160
 #: apps/wiki/src/routes/my-character-edit-page.tsx:176
 #: apps/wiki/src/routes/my-character-edit-page.tsx:183
-#: apps/wiki/src/routes/my-character-edit-page.tsx:280
+#: apps/wiki/src/routes/my-character-edit-page.tsx:281
 #: apps/wiki/src/routes/my-characters-page.tsx:97
 #: apps/wiki/src/routes/my-characters-page.tsx:118
 #: apps/wiki/src/routes/my-drafts-page.tsx:84
@@ -2612,31 +2653,31 @@ msgstr "📤 导出 JSON"
 msgid "🗑 删除"
 msgstr "🗑 删除"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:281
+#: apps/wiki/src/routes/my-character-edit-page.tsx:282
 msgid "新建私有角色"
 msgstr "新建私有角色"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:281
+#: apps/wiki/src/routes/my-character-edit-page.tsx:282
 msgid "编辑私有角色"
 msgstr "编辑私有角色"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:283
+#: apps/wiki/src/routes/my-character-edit-page.tsx:284
 msgid "这里保存的内容仅你可见。同名再导入会覆盖。点击「导出」下载 JSON，可在 app 端导入到你的世界。模块布局完全对齐隐界后台。"
 msgstr "这里保存的内容仅你可见。同名再导入会覆盖。点击「导出」下载 JSON，可在 app 端导入到你的世界。模块布局完全对齐隐界后台。"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:360
+#: apps/wiki/src/routes/my-character-edit-page.tsx:375
 msgid "💾 保存修改"
 msgstr "💾 保存修改"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:361
+#: apps/wiki/src/routes/my-character-edit-page.tsx:376
 msgid "保存中…"
 msgstr "保存中…"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:364
+#: apps/wiki/src/routes/my-character-edit-page.tsx:379
 msgid "保存后会跳到编辑页继续完善"
 msgstr "保存后会跳到编辑页继续完善"
 
-#: apps/wiki/src/routes/my-character-edit-page.tsx:365
+#: apps/wiki/src/routes/my-character-edit-page.tsx:380
 msgid "同名再导入会覆盖此角色"
 msgstr "同名再导入会覆盖此角色"
 

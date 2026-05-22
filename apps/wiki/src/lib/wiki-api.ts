@@ -148,6 +148,7 @@ export type WikiContentSnapshot = {
   triggerScenes?: string[];
   relationship: string;
   relationshipType: string;
+  region?: string;
 };
 
 export type WikiPageView = {
@@ -1151,6 +1152,7 @@ export type PrivateCharacterRecord = {
   personality?: string | null;
   relationship: string;
   relationshipType: string;
+  region?: string | null;
   expertDomains: string[];
   triggerScenes?: string[] | null;
   recipe?: CharacterBlueprintRecipe | null;
@@ -1178,6 +1180,7 @@ export type PrivateCharacterDto = {
   personality?: string | null;
   relationship?: string;
   relationshipType?: string;
+  region?: string | null;
   expertDomains?: string[];
   recipe?: CharacterBlueprintRecipe | null;
   profile?: unknown | null;

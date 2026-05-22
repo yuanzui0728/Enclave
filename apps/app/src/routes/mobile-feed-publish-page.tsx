@@ -41,6 +41,22 @@ export function MobileFeedPublishPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const composeDraft = useMomentComposeDraft();
+  // 走查移动端发现-发布广场动态 Round 1：handlePickImages / handleVideoFileSelected
+  // 原本写的 `startBaseUrl !== baseUrl` gate 全是 closure 自比自的 dead code——
+  // 两个 baseUrl 都是同一份 render 抓的常量，永远相等。意图是「mid-flight 切账户
+  // 时把旧账户选的图/视频拦下不要塞进新账户的 draft」，实际拦不住：
+  //   1. A 账户点「添加视频」→ picker / 视频元数据 + 封面生成 1-30s
+  //   2. 用户中途切到 B 账户 → 下面 reset effect 跑：resetComposeDraft 清空、
+  //      pickInflightRef / isMediaPreparing 都释放掉
+  //   3. ~30s 后 await composeDraft.replaceVideoFile 落地 → 内部 setVideoDraft 把
+  //      A 选的视频塞进 B 的 draft，B 进发表页突然看到一段自己没传过的视频
+  // 用 baseUrlRef 拿最新值（不会被旧 closure 锁住），handler 在 await 后用
+  // `startBaseUrl === baseUrlRef.current` 判断；hook 那边新加的 shouldCommit
+  // option 在 hook 内部 setState 之前再判一次，把 await 内部那段窗口也兜住。
+  const baseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    baseUrlRef.current = baseUrl;
+  }, [baseUrl]);
   const routeState = useMemo(
     () => parseMobileFeedPublishRouteState(hash),
     [hash],
@@ -413,7 +429,7 @@ export function MobileFeedPublishPage() {
     // 红条挂着原来"图片选择失败"的文案，用户没失败也没选成功，看着像悬而未决。
     // 在 picker 触发前主动清——用户点 + 号 = 明确表示"我要重来"。
     composeDraft.setMediaError(null);
-    const startBaseUrl = baseUrl;
+    const startBaseUrl = baseUrlRef.current;
     try {
       // 跟 mobile-moments-publish-page R4 对齐：把剩余可用槽位传给原生 picker，
       // PHPicker / PickVisualMedia 拿到 limit 后会在系统选图 UI 上限制最多可勾
@@ -432,14 +448,20 @@ export function MobileFeedPublishPage() {
       }
       // picker close 到这里是 mid-flight 切账户最大的窗口（原生 picker 显示期间
       // 用户切账户也算）；切走了就不要把旧账户选的图塞进新账户的 draft。
-      if (startBaseUrl !== baseUrl) {
+      // baseUrlRef 始终是最新值，不会被 closure 冻在 handler 创建时那一帧。
+      if (startBaseUrl !== baseUrlRef.current) {
         return;
       }
-      await composeDraft.addImageFiles(files);
+      // hook 内部 createMomentImageDrafts decode 期间（每张 ~50ms）仍然可能切账户；
+      // shouldCommit 在 hook 真正 setImageDrafts 之前再判一次，切走了就 release
+      // 刚 decode 出来的 preview URL、不让图片塞进新账户 draft。
+      await composeDraft.addImageFiles(files, {
+        shouldCommit: () => startBaseUrl === baseUrlRef.current,
+      });
     } catch (error) {
       // 切账户后旧账户的错误条不该弹到新账户的 toolbar——B 没碰 picker，看到
       // 「图片选择失败」红条会以为是 B 自己点的。
-      if (startBaseUrl !== baseUrl) {
+      if (startBaseUrl !== baseUrlRef.current) {
         return;
       }
       composeDraft.setMediaError(
@@ -449,7 +471,7 @@ export function MobileFeedPublishPage() {
       // 只在 baseUrl 没切走时才清自己设的锁；切走的话 reset effect 已经释放过
       // pickInflightRef / isMediaPreparing，B 此时可能已经开了自己的 pick 链路，
       // 这里再 set false 会把 B 自己的锁 trample 掉。
-      if (startBaseUrl === baseUrl) {
+      if (startBaseUrl === baseUrlRef.current) {
         pickInflightRef.current = false;
         setIsMediaPreparing(false);
       }
@@ -460,23 +482,24 @@ export function MobileFeedPublishPage() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
     setIsMediaPreparing(true);
-    const startBaseUrl = baseUrl;
+    const startBaseUrl = baseUrlRef.current;
     try {
-      // replaceVideoFile 内部 await createMomentVideoDraft 期间用户可能切账户；
-      // 旧账户的视频不该塞进新账户的 draft。
-      if (startBaseUrl !== baseUrl) {
-        return;
-      }
-      await composeDraft.replaceVideoFile(file);
+      // replaceVideoFile 内部 await createMomentVideoDraft（视频元数据 + 封面生成
+      // 1-30s）期间用户最可能切账户。shouldCommit 在 hook setVideoDraft 之前再判
+      // 一次，切走了就 release 刚生成的 poster/preview URL、不让旧账户的视频塞
+      // 进新账户 draft。
+      await composeDraft.replaceVideoFile(file, {
+        shouldCommit: () => startBaseUrl === baseUrlRef.current,
+      });
     } catch (error) {
-      if (startBaseUrl !== baseUrl) {
+      if (startBaseUrl !== baseUrlRef.current) {
         return;
       }
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
     } finally {
-      if (startBaseUrl === baseUrl) {
+      if (startBaseUrl === baseUrlRef.current) {
         pickInflightRef.current = false;
         setIsMediaPreparing(false);
       }

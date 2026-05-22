@@ -520,6 +520,13 @@ function ReadView({ view }: { view: WikiPageView }) {
               </div>
             );
           })()}
+          {c.region && c.region.trim() ? (
+            <div className="mt-1 text-sm text-[var(--text-muted)]">
+              <Trans>地区</Trans>
+              {": "}
+              {c.region.trim()}
+            </div>
+          ) : null}
         </div>
       </header>
       <Section label={t(msg`简介`)}>{c.bio || "—"}</Section>

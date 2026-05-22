@@ -15,6 +15,7 @@ export const WIKI_CONTENT_FIELDS = [
   'triggerScenes',
   'relationship',
   'relationshipType',
+  'region',
 ] as const;
 
 export type WikiContentField = (typeof WIKI_CONTENT_FIELDS)[number];
@@ -135,6 +136,7 @@ export function pickWikiContent(input: Record<string, unknown>): WikiContentSnap
       : undefined,
     relationship: asTrimmedString(input.relationship),
     relationshipType: asTrimmedString(input.relationshipType),
+    region: asTrimmedString(input.region),
   };
 }
 
@@ -156,6 +158,7 @@ export function snapshotFromCharacter(char: Record<string, unknown>): WikiConten
       : undefined,
     relationship: String(char.relationship ?? '').trim(),
     relationshipType: String(char.relationshipType ?? '').trim(),
+    region: String(char.region ?? '').trim(),
   };
 }
 
@@ -172,6 +175,7 @@ export function snapshotFromRecipe(
     triggerScenes: [...recipe.lifeStrategy.triggerScenes],
     relationship: recipe.identity.relationship,
     relationshipType: recipe.identity.relationshipType,
+    region: (recipe.identity.region ?? '').trim(),
   };
 }
 
@@ -196,6 +200,7 @@ export function normalizeWikiRecipe(
       background: str(source.identity?.background, base.identity.background),
       motivation: str(source.identity?.motivation, base.identity.motivation),
       worldview: str(source.identity?.worldview, base.identity.worldview),
+      region: str(source.identity?.region, base.identity.region ?? ''),
     },
     expertise: {
       expertDomains: stringList(
@@ -367,6 +372,7 @@ export function createDefaultWikiRecipe(
       background: '',
       motivation: '',
       worldview: '',
+      region: content.region ?? '',
     },
     expertise: {
       expertDomains: content.expertDomains.length ? content.expertDomains : ['general'],

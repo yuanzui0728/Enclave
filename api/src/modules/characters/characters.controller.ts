@@ -143,6 +143,7 @@ function parsePrivateCharacterImportBody(payload: unknown): {
   personality?: string | null;
   relationship?: string;
   relationshipType?: string;
+  region?: string;
   expertDomains?: string[];
   triggerScenes?: string[] | null;
   recipe?: unknown;
@@ -206,6 +207,7 @@ function parsePrivateCharacterImportBody(payload: unknown): {
       typeof p.relationship === 'string' ? p.relationship : undefined,
     relationshipType:
       typeof p.relationshipType === 'string' ? p.relationshipType : undefined,
+    region: typeof p.region === 'string' ? p.region : undefined,
     expertDomains: Array.isArray(p.expertDomains)
       ? (p.expertDomains as unknown[]).filter(
           (x): x is string => typeof x === 'string',

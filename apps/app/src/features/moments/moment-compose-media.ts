@@ -154,7 +154,16 @@ export function useMomentComposeDraft() {
     hasContent,
     canAddImages: !videoDraft && imageDrafts.length < MAX_IMAGE_COUNT,
     canAddVideo: imageDrafts.length === 0,
-    async addImageFiles(files: FileList | File[] | null) {
+    async addImageFiles(
+      files: FileList | File[] | null,
+      // 走查移动端发现-发布广场动态 Round 1：caller 可传一个"现在是否还该 commit"
+      // 的同步检查。decode 耗时窗口（per-file ~50ms × 并发，整批 ~50-300ms）
+      // 内若 caller 上下文已经变（典型：mid-flight 切账户，baseUrl 改了），返回
+      // false 让 hook 释放刚 decode 出来的 preview URL 并静默返回，不把图片塞进
+      // 当前账户的 draft。原本 mobile-feed-publish-page 的 startBaseUrl !== baseUrl
+      // gate 是 closure 自比自永远 false 的 dead code，根本拦不住。
+      options?: { shouldCommit?: () => boolean },
+    ) {
       const pickedFiles = Array.from(files ?? []);
       if (!pickedFiles.length) {
         return;
@@ -193,9 +202,23 @@ export function useMomentComposeDraft() {
         releaseMomentImageDrafts(nextDrafts);
         throw new Error(t(msg`图片动态最多支持 ${MAX_IMAGE_COUNT} 张图片。`));
       }
+      // shouldCommit 是 caller（典型 mobile-feed-publish-page）传进来的"还属于
+      // 当前 caller 上下文"判断；mid-flight 切账户后返回 false → 把刚 decode
+      // 出来的 preview URL release 掉、不让图片落进 hook state，否则它们会变成
+      // 新账户 draft 里凭空冒出来的图片。
+      if (options?.shouldCommit && !options.shouldCommit()) {
+        releaseMomentImageDrafts(nextDrafts);
+        return;
+      }
       setImageDrafts((current) => [...current, ...nextDrafts]);
     },
-    async replaceVideoFile(file: File | null | undefined) {
+    async replaceVideoFile(
+      file: File | null | undefined,
+      // 同 addImageFiles：视频元数据 + 封面生成 1-30s 是最长 await 窗口，caller
+      // 在此期间可能 mid-flight 切账户。shouldCommit 返回 false 时释放刚生成的
+      // poster/preview URL 并静默返回，不让旧账户的视频落进新账户 draft。
+      options?: { shouldCommit?: () => boolean },
+    ) {
       if (!file) {
         return;
       }
@@ -213,6 +236,10 @@ export function useMomentComposeDraft() {
       if (imageDraftsRef.current.length > 0) {
         releaseMomentVideoDraft(nextDraft);
         throw new Error(t(msg`当前不支持图片和视频混发。`));
+      }
+      if (options?.shouldCommit && !options.shouldCommit()) {
+        releaseMomentVideoDraft(nextDraft);
+        return;
       }
       setVideoDraft((current) => {
         releaseMomentVideoDraft(current);

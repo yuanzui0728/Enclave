@@ -43,6 +43,7 @@ export interface CharacterBlueprintRecipe {
     background: string;
     motivation: string;
     worldview: string;
+    region?: string | null;
   };
   expertise: {
     expertDomains: string[];
