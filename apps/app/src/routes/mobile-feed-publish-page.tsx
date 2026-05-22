@@ -158,7 +158,21 @@ export function MobileFeedPublishPage() {
     //   保证用户回 A 时第一帧能看到刚发的 post；flash / navigate / composeDraft
     //   .reset() 这些"对当前用户的 UI 反馈"只在 mutationBaseUrl===当前 baseUrl
     //   时才做，切走了静默。
-    onMutate: () => ({ mutationBaseUrl: baseUrl }),
+    onMutate: () => {
+      // 走查新 Round 3：跟 mobile-moments-publish-page R7 对齐——开始 mutation 之
+      // 前必须清掉 mediaError。InlineNotice 渲染走的是 `mediaError ?? mutation.
+      // error`，mediaError 优先。用户路径：
+      //   1. 点「添加视频」→ video metadata 超时 / HEVC 解码不支持 → mediaError
+      //      = "视频解析超时，请换一个文件再试。"
+      //   2. 用户改主意，只发纯文字，敲完字点「发表」
+      //   3. publish 因网络抖 / 服务端 5xx 失败 → mutation.isError=true，但 mediaError
+      //      还挂着
+      //   4. 红条里挂着旧的"视频解析超时"文案，但用户根本没在传视频，体感是
+      //      "提示错的 / 点了发表没反应"
+      // mediaError 是 picker 链路的错，进入 publish 链路就应作废。
+      composeDraft.setMediaError(null);
+      return { mutationBaseUrl: baseUrl };
+    },
     onSuccess: (newPost, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       // 把新 post prepend 到 paged 头部 + 平铺 flat cache，跳到 /discover/feed 时立刻可见，
