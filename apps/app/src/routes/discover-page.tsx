@@ -1153,15 +1153,6 @@ function MobileDiscoverHome() {
       <TabPageTopBar title={t(msg`发现`)} titleAlign="center" />
 
       <div className="pb-8">
-        <div className="px-3 pt-2">
-          <InlineNotice
-            tone="muted"
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
-          >
-            {t(msg`朋友圈、广场、相遇、视频号、游戏和小程序都从这里继续打开。`)}
-          </InlineNotice>
-        </div>
-
         <DiscoverMobileSection
           title={t(msg`社交与动态`)}
           items={socialDiscoverEntries}
