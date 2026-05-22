@@ -453,6 +453,14 @@ export function CreateGroupPage() {
                     <button
                       key={item.character.id}
                       type="button"
+                      // 走查 R2：原本仅 selection rows disabled={createMutation.isPending}，
+                      // 但顶上横滚的「已选 chip」漏锁——用户点了"确定"后到 onSuccess
+                      // navigate 之间 ~500ms 公网 RTT 里，chip 还能点 → toggleSelection
+                      // 改 state，把那位从 selectedIds 里剔掉；但 mutate() 闭包早就
+                      // 抓走了旧 selectedIds 飞出去 → server 仍按原始名单建群，UI
+                      // 上看到的"已选 N-1"和实际建好的"群里 N 人"对不上。和 rows 一
+                      // 个口径 disable 掉。
+                      disabled={createMutation.isPending}
                       onClick={() => toggleSelection(item.character.id)}
                       // 走查（新一轮 R1）：横滚已选联系人头像没有 aria-label，
                       // 屏幕阅读器读到 button 只读出文本子节点（displayName），
@@ -492,7 +500,19 @@ export function CreateGroupPage() {
 
           {(routeState.source === "chat-details" ||
             routeState.source === "desktop-chat") &&
-          routeState.seedMemberIds.length ? (
+          // 走查 R2：原本仅按 routeState.seedMemberIds.length 判断显示。
+          // 但如果种子 character 已经被解除好友（friendship.status="removed"），
+          // friendItems filter 把它过滤掉 → selectedFriendMap 里也没有 → seed
+          // useEffect 跑完 validSeedIds=[] 不进任何 selection。此时上面横滚是
+          // 「未选择」状态，下方却仍写「已按当前单聊默认勾选对方」——用户看
+          // 着"勾选了哪个？我看不到啊"会以为页面坏了。改为按"种子 id 至少
+          // 有一个能落到现有 friend map 里"判断；没有的话整条通知不显示，让
+          // 用户直接走"先选择联系人"的空态文案。friendsQuery.isLoading 时
+          // 保留显示，避免初次进来 friends 还没回来时通知闪一下又消失。
+          (friendsQuery.isLoading ||
+            routeState.seedMemberIds.some((id) =>
+              selectedFriendMap.has(id),
+            )) ? (
             <div className="-mx-4 border-y border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
               {t(msg`已按当前单聊默认勾选对方，你可以继续添加其他联系人。`)}
             </div>
