@@ -2047,10 +2047,12 @@ export function WelcomePage() {
   function renderOwnerStep() {
     return (
       <div className="space-y-5">
-        <h2 className="text-3xl font-semibold tracking-[0.05em] text-[color:var(--text-primary)]">
-          {t(msg`为世界主人命名`)}
-        </h2>
-
+        {/* 走查 R5：原来这里有一个 H2 "为世界主人命名"，但 renderEntryStep 外面
+            还有一个 H1 "连接你的世界" + "世界入口" badge —— owner 步骤下两层标
+            题一起出现，视觉上既冲突又重复（screenshot 里就是"连接你的世界"在
+            上、"为世界主人命名"在下两行叠着）。把 H2 删掉，统一让外层 H1 根据
+            showOwnerStep 切到 "为世界主人命名"（同时把 badge 也切到"世界主人"），
+            owner step 内部只剩纯交互卡。 */}
         <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-none">
           <TextField
             // 没有可见 label，靠 aria-label 让屏幕阅读器知道这是世界主人名字。
@@ -2067,7 +2069,11 @@ export function WelcomePage() {
                 void submitOwnerName();
               }
             }}
-            placeholder={t(msg`输入你希望被怎么称呼（至少 ${MIN_OWNER_NAME_LENGTH} 个字）`)}
+            // 走查 R5：原 placeholder "输入你希望被怎么称呼（至少 2 个字）"
+            // 在 iPhone 375 / 320 viewport 下被横向截断（text-center 让两头都被
+            // 削），且下方 description 已说明"名字至少 2 个字"，placeholder 不必
+            // 再重复 min 提示——缩到 "你希望被怎么称呼？" 7 字符干净不截断。
+            placeholder={t(msg`你希望被怎么称呼？`)}
             className="text-center text-base"
             autoFocus
           />
@@ -2347,10 +2353,11 @@ export function WelcomePage() {
           <div className="pointer-events-none absolute inset-0 rounded-[44px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
           <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
-              {t(msg`世界入口`)}
+              {/* 走查 R5：owner step 时切到"世界主人"，跟下方 H1 文案对齐 */}
+              {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
             </div>
             <h1 className="mt-5 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-              {t(msg`连接你的世界`)}
+              {showOwnerStep ? t(msg`为世界主人命名`) : t(msg`连接你的世界`)}
             </h1>
 
             <div className="mt-6">{showOwnerStep ? renderOwnerStep() : renderEntryStep()}</div>
@@ -2364,10 +2371,11 @@ export function WelcomePage() {
     <AppPage className="bg-[#f5f5f5] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-black/5 bg-white px-6 py-8 shadow-none">
         <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#15803d]">
-          {t(msg`世界入口`)}
+          {/* 走查 R5：见 desktop 分支同改 */}
+          {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
         </div>
         <h1 className="mt-6 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-          {t(msg`连接你的世界`)}
+          {showOwnerStep ? t(msg`为世界主人命名`) : t(msg`连接你的世界`)}
         </h1>
 
         <div className="mt-6">{showOwnerStep ? renderOwnerStep() : renderEntryStep()}</div>
