@@ -2351,31 +2351,17 @@ function ChannelCommentsDrawer({
       document.activeElement !== document.body
         ? document.activeElement
         : null;
-    // 走查 2026-05-19 桌面端 R1（第十二轮）：drawer 打开时焦点完全没移进 dialog —
-    // DesktopChannelCommentsPanel 内有一条 [cannotInteract,selectedPostId,replyTarget]
-    // effect 在 cannotInteract=false 时把焦点 rAF 落到 input 上（L2941-2947），
-    // 但 cannotInteract=true（推荐流非好友帖，yuanzui0728 库里 80%+ 是 audio
-    // canInteract=false 占大多数）时 input 是 disabled，那条 effect 早返不动。
-    // 结果焦点停在打开 drawer 的"chat 图标"button 上 —— 该 button 现在被 z-30
-    // drawer 视觉覆盖，键盘用户按 Tab 走的是 sequential focus 不在 dialog 内 —
-    // trap 的 fallback 路径 (L2244-2248) 会兜一次 first.focus()，但 *第一次 Tab*
-    // 前焦点没在 dialog 里，SR 用户的 dialog 上下文也丢了（aria-modal=true 在
-    // <div> 上浏览器不自动迁焦点）。
-    // 同款 ChannelAuthorOverlay R6（L2399-2424）早就做了"open 同帧 rAF 后 focus
-    // 首 focusable"，drawer 一直漏。模板对齐：rAF 等 React commit 落定 + 入场
-    // 动画/Suspense fallback 渲完 → focus dialog 内首 focusable（cannotInteract
-    // 时 input disabled 跳过，落到关闭 X 按钮，符合 modal 退出 affordance 语义）；
+    // drawer 打开时把焦点送进 dialog —— DesktopChannelCommentsPanel 内部有一条
+    // [selectedPostId,replyTarget] effect 会在子组件 mount 后 rAF 把焦点落到
+    // input 上（子组件 effect 先 fire → rAF 队列里 input.focus 排前）；这里
+    // 是兜底：若子组件那条没把焦点落进 dialog（极端情况），rAF 等 React commit
+    // 落定 + 入场动画/Suspense fallback 渲完 → focus dialog 内首 focusable，
     // 极端无 focusable 时 fall back 到 dialog 本身（tabIndex=-1 已挂）。
     // preventScroll：snap-y 容器 scrollTop 是当前 slide offset，让浏览器自动 scroll
     // into view 会甩页面跳一下；focus 设到 hidden 元素本身仍然 a11y-correct。
     const focusTimer = window.requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       if (!dialog) return;
-      // canInteract=true 时 DesktopChannelCommentsPanel 内部的另一条 rAF 已经把
-      // 焦点送到 input 上（L2941-2947 effect），子组件 effect 先 fire → rAF 队列
-      // 里 input.focus 排前；这条 drawer 兜底 rAF 早返避免覆盖。cannotInteract
-      // 时 input disabled 那条 effect 早返不动 → 这里兜到 close X 按钮（第一个
-      // 非 disabled button）。
       if (dialog.contains(document.activeElement)) return;
       const firstFocusable = dialog.querySelector<HTMLElement>(
         'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -3249,14 +3235,6 @@ function DesktopChannelCommentsPanel({
 }) {
   const t = useRuntimeTranslator();
   const selectedPostId = selectedPost?.id ?? null;
-  // 走查 2026-05-17 R3：移动端 R5 早就按 canInteract 把非好友帖的「回复 / 赞 /
-  // textarea / 发送」按钮全部 disable，桌面侧一直没接——用户读完评论按"发送"
-  // → ChannelsPage.submitComment 走 ensureCommentPostCanInteract → setNotice
-  // 提示「需先加为好友才能互动」。这条 notice 走 successNotice prop 渲在 workspace
-  // 顶端，被 z-30 抽屉部分遮住后用户多半看不到，体感「按了发送什么都没发生」。
-  // 在评论 panel 内部也按 canInteract 把所有 mutation 入口锁死，并贴一行黄色
-  // 提示告知用户为什么不能动。
-  const cannotInteract = selectedPost?.canInteract === false;
   const inputRef = useRef<HTMLInputElement | null>(null);
   // 走查 2026-05-18 R2（本轮）：评论 input 同步双击锁。原 send 路径只 guard
   // `submitPending` （即 react-query commentMutation.isPending），但 isPending
@@ -3280,33 +3258,18 @@ function DesktopChannelCommentsPanel({
   }, [selectedPostId, replyTarget?.commentId]);
   const handleSubmit = () => {
     if (submittingRef.current) return;
-    if (
-      !selectedPost ||
-      cannotInteract ||
-      !draft.trim() ||
-      submitPending
-    )
-      return;
+    if (!selectedPost || !draft.trim() || submitPending) return;
     submittingRef.current = true;
     onSubmit();
   };
   // 打开评论抽屉 / 点 "回复 X" 时，把焦点送到 input——和移动端 sheet 的处理
   // 一致（commit 2090+），用户开了抽屉就能直接敲字。
-  //
-  // 走查 2026-05-18 新会话 R4：mobile 那边 R1（channels-page L4087-4097）
-  // 早就发现并修过：post.canInteract === false 时 input 是 disabled，对 dis
-  // abled element 调 .focus() 是 no-op —— 但 sequential focus navigation 会
-  // 把焦点甩到 drawer 内下一个可聚焦元素，也就是头部「关闭评论」那颗 X
-  // button。用户想滚评论列表按 Space → 触发 X.click() → drawer 直接关掉。
-  // 桌面 drawer 一直漏，cannotInteract 时跳过 focus 让用户主动点击的位置
-  // 保留焦点。
   useEffect(() => {
     if (!selectedPostId) return;
-    if (cannotInteract) return;
     window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
-  }, [cannotInteract, selectedPostId, replyTarget?.commentId]);
+  }, [selectedPostId, replyTarget?.commentId]);
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
     comments.forEach((comment) => {
@@ -3650,7 +3613,6 @@ function DesktopChannelCommentsPanel({
               <DesktopThreadCommentCard
                 comment={rootComment}
                 active={replyTarget?.commentId === rootComment.id}
-                cannotInteract={cannotInteract}
                 commentAuthorNameMap={commentAuthorNameMap}
                 compact={false}
                 likePendingCommentId={likePendingCommentId}
@@ -3659,7 +3621,6 @@ function DesktopChannelCommentsPanel({
               />
               {replies.length ? (
                 <DesktopCommentThreadReplies
-                  cannotInteract={cannotInteract}
                   collapsed={collapsedThreadIds.includes(rootComment.id)}
                   replies={replies}
                   replyTarget={replyTarget}
@@ -3677,11 +3638,6 @@ function DesktopChannelCommentsPanel({
       ) : null}
 
       <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
-        {cannotInteract ? (
-          <div className="mb-3 rounded-[12px] bg-[rgba(234,179,8,0.10)] px-3 py-2 text-[11px] leading-[1.35rem] text-[#854d0e]">
-            {t(msg`需先加为好友才能互动。`)}
-          </div>
-        ) : null}
         {replyTarget ? (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
             <div className="truncate">
@@ -3716,19 +3672,16 @@ function DesktopChannelCommentsPanel({
             // 同 codebase 评论 / 回复 input 历来不挂 aria-label，但 drawer
             // 是单一 modal 上下文，input 明确语义跟 placeholder 等价即可：
             //   - replyTarget 有 → 回复 X 的评论
-            //   - cannotInteract → 需先加为好友才能评论
             //   - 没 selectedPost → 先选择一条内容
             //   - 默认 → 评论这条视频号
             // 跟 placeholder 对齐让 SR 读 button accessible name 时不依赖
             // placeholder 平台差异。
             aria-label={
-              cannotInteract
-                ? t(msg`需先加为好友才能评论`)
-                : replyTarget
-                  ? t(msg`回复 ${replyTarget.authorName} 的评论`)
-                  : selectedPost
-                    ? t(msg`评论这条视频号`)
-                    : t(msg`先选择一条内容`)
+              replyTarget
+                ? t(msg`回复 ${replyTarget.authorName} 的评论`)
+                : selectedPost
+                  ? t(msg`评论这条视频号`)
+                  : t(msg`先选择一条内容`)
             }
             onChange={(event) => onDraftChange(event.target.value)}
             // Enter 直接发——评论 input 是单行 TextField，不存在多行换行，没必要
@@ -3746,26 +3699,19 @@ function DesktopChannelCommentsPanel({
               handleSubmit();
             }}
             placeholder={
-              cannotInteract
-                ? t(msg`需先加为好友才能评论`)
-                : replyTarget
-                  ? t(msg`回复 ${replyTarget.authorName}...`)
-                  : selectedPost
-                    ? t(msg`写下你对这条视频号内容的评论...`)
-                    : t(msg`先选择一条内容`)
+              replyTarget
+                ? t(msg`回复 ${replyTarget.authorName}...`)
+                : selectedPost
+                  ? t(msg`写下你对这条视频号内容的评论...`)
+                  : t(msg`先选择一条内容`)
             }
-            disabled={!selectedPost || cannotInteract}
+            disabled={!selectedPost}
             className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
           />
           <Button
             variant="primary"
             size="sm"
-            disabled={
-              !selectedPost ||
-              cannotInteract ||
-              !draft.trim() ||
-              submitPending
-            }
+            disabled={!selectedPost || !draft.trim() || submitPending}
             onClick={handleSubmit}
             className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
           >
@@ -3783,7 +3729,6 @@ function DesktopChannelCommentsPanel({
 // 包装层的 reconciliation。collapsed / replyTarget 等真正变化的 prop 仍会让
 // memo 失效让该重渲的 thread 重渲。
 const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
-  cannotInteract,
   collapsed,
   commentAuthorNameMap,
   likePendingCommentId,
@@ -3794,7 +3739,6 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
   replyTarget,
   rootCommentId,
 }: {
-  cannotInteract: boolean;
   collapsed: boolean;
   commentAuthorNameMap: Map<string, string>;
   likePendingCommentId: string | null;
@@ -3891,7 +3835,6 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
               key={comment.id}
               comment={comment}
               active={replyTarget?.commentId === comment.id}
-              cannotInteract={cannotInteract}
               commentAuthorNameMap={commentAuthorNameMap}
               compact
               likePendingCommentId={likePendingCommentId}
@@ -3911,7 +3854,6 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
 // pure typing 直接 shallow-compare 命中跳过整张卡 reconciliation。
 const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
   active,
-  cannotInteract,
   comment,
   commentAuthorNameMap,
   compact,
@@ -3920,7 +3862,6 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
   onReplyToComment,
 }: {
   active: boolean;
-  cannotInteract: boolean;
   comment: FeedComment;
   commentAuthorNameMap: Map<string, string>;
   compact: boolean;
@@ -4022,18 +3963,15 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
           <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
             <button
               type="button"
-              disabled={cannotInteract}
               onClick={() => onReplyToComment(comment)}
-              className="transition hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="transition hover:text-[color:var(--text-primary)]"
             >
               {t(msg`回复`)}
             </button>
             <button
               type="button"
               disabled={
-                cannotInteract ||
-                comment.likedByOwner ||
-                likePendingCommentId === comment.id
+                comment.likedByOwner || likePendingCommentId === comment.id
               }
               onClick={() => onLikeComment(comment)}
               className={cn(
@@ -4041,7 +3979,6 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
                 comment.likedByOwner
                   ? "text-[color:var(--brand-primary)]"
                   : "hover:text-[color:var(--text-primary)]",
-                cannotInteract && !comment.likedByOwner ? "opacity-50" : null,
               )}
             >
               <ThumbsUp size={12} />

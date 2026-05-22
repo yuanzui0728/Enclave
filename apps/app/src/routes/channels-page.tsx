@@ -1336,16 +1336,6 @@ export function ChannelsPage() {
 
   const visiblePosts = channelsQuery.data?.posts ?? EMPTY_CHANNEL_POSTS;
 
-  // 2026-05-22：视频号互动放开，与广场一致——后端 canInteract 字段对所有
-  // channels post 恒为 true，前端 mutate 前的 gate 不再生效。保留函数名以
-  // 避免改所有调用点；如果未来要按场景重新加好友限制，恢复原 canInteract
-  // / desktopWorkspacePosts lookup 判断即可。
-  function ensureCanInteract(_post: { canInteract?: boolean } | undefined | null) {
-    return true;
-  }
-  function ensureCommentPostCanInteract(_postId: string) {
-    return true;
-  }
   const desktopMissingRoutePostId =
     isDesktopLayout &&
     routeSelectedPostId &&
@@ -1987,7 +1977,6 @@ export function ChannelsPage() {
   }
 
   function toggleFavorite(post: (typeof visiblePosts)[number]) {
-    if (!ensureCanInteract(post)) return;
     const sourceId = `channels-${post.id}`;
     const routeHash = buildDesktopChannelsRouteHash({
       postId: post.id,
@@ -2204,7 +2193,6 @@ export function ChannelsPage() {
       } | null;
     },
   ) {
-    if (!ensureCommentPostCanInteract(postId)) return;
     commentMutation.mutate({
       postId,
       replyTarget: options?.replyTarget ?? null,
@@ -2272,7 +2260,6 @@ export function ChannelsPage() {
             // R4 sync ref 锁挡同帧双击 — disabled={likePending} 是 isPending state
             // 反推，下一次 render 才生效；同帧 <16ms 内 5 次连点全过 disabled。
             if (desktopLikeSubmittingRef.current) return;
-            if (!ensureCommentPostCanInteract(postId)) return;
             const post = desktopWorkspacePosts.find((p) => p.id === postId);
             desktopLikeSubmittingRef.current = true;
             likeMutation.mutate({
@@ -2305,7 +2292,6 @@ export function ChannelsPage() {
             toggleFavorite(post);
           }}
           onLikeComment={(comment) => {
-            if (!ensureCommentPostCanInteract(comment.postId)) return;
             likeCommentMutation.mutate({
               commentId: comment.id,
               postId: comment.postId,
@@ -2568,7 +2554,6 @@ export function ChannelsPage() {
             commentsPreviewByPostId={commentsPreviewByPostId}
             routeSelectedPostId={routeSelectedPostId}
             onLike={(postId) => {
-              if (!ensureCommentPostCanInteract(postId)) return;
               const post = visiblePosts.find((p) => p.id === postId);
               likeMutation.mutate({
                 postId,
@@ -2620,7 +2605,6 @@ export function ChannelsPage() {
         }}
         onErrorAction={mobileCommentSheetRetryAction?.onClick}
         onLikeComment={(comment) => {
-          if (!ensureCommentPostCanInteract(comment.postId)) return;
           likeCommentMutation.mutate({
             commentId: comment.id,
             postId: comment.postId,
@@ -4607,21 +4591,10 @@ function MobileChannelCommentsSheet({
       return;
     }
 
-    // 走查 2026-05-18 第三会话 R1：原来无脑 textareaRef.focus()，但非好友帖
-    // (post.canInteract === false) 走 line ~4080 把 textarea disabled 掉。disabled
-    // input 调 .focus() 是 no-op（浏览器不会把焦点放上去），但 sequential focus
-    // navigation 会让焦点甩到 sheet 内下一个可聚焦元素——右上角"关闭评论面板"
-    // 那颗 X button。实测（playwright /discover/channels 非好友帖打开评论 sheet）
-    // document.activeElement 落到 BUTTON，用户按 Space 想滚评论列表 → 触发 X.click()
-    // → sheet 直接关掉。非好友 sheet 还允许用户读评论，autofocus 反成关闭陷阱。
-    // cannotInteract 时跳过 focus，让焦点留在用户主动点击的那个 comment 按钮上。
-    if (post?.canInteract === false) {
-      return;
-    }
     window.requestAnimationFrame(() => {
       textareaRef.current?.focus();
     });
-  }, [open, post?.canInteract, replyTarget?.commentId]);
+  }, [open, replyTarget?.commentId]);
 
   // 视频号评论按 createdAt ASC 排（最老的在最上面，回复链路顺着对话读起来才连贯），
   // 但 yuanzui0728 这条 post 已经积了 142 条评论：用户打开评论面板第一眼看到的
@@ -4706,11 +4679,6 @@ function MobileChannelCommentsSheet({
   // replyTarget——这些只影响底部 textarea，敲字时直接返回上轮缓存的 element 树，
   // React 在子树上 bailout 跳过整个 142 条评论的重渲。stripToolCallSyntax 也跟着
   // 缓存住，不每次 keypress 都跑 142 次 regex。
-  // 新一轮走查 R5：把 post.canInteract 也拿进来——非好友帖里，「回复」和「赞」
-  // 按钮原来照样可点，点完 ChannelsPage 兜底 setNotice 提示，但 sheet z-50 把
-  // page notice 盖死，用户没任何反馈。改成 cannotInteract 时两个按钮全 disable，
-  // 维持「能看不能动」的明确边界。
-  const cannotInteract = post?.canInteract === false;
   const commentsListNode = useMemo<ReactNode>(() => {
     if (!comments.length) return null;
     // 走查 2026-05-18 R2（本轮）：DB 里偶尔混入纯 AI thinking-prose 的评论
@@ -4781,26 +4749,20 @@ function MobileChannelCommentsSheet({
                   <div className="mt-2 flex items-center gap-4 text-[11px] text-[#6b7280]">
                     <button
                       type="button"
-                      disabled={cannotInteract}
                       onClick={() => stableOnReply(comment)}
-                      className="transition active:text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="transition active:text-[#111827]"
                     >
                       {t(msg`回复`)}
                     </button>
                     <button
                       type="button"
-                      disabled={
-                        cannotInteract || comment.likedByOwner || liking
-                      }
+                      disabled={comment.likedByOwner || liking}
                       onClick={() => stableOnLikeComment(comment)}
                       className={cn(
                         "inline-flex items-center gap-1 transition disabled:cursor-not-allowed",
                         comment.likedByOwner
                           ? "text-[#07c160]"
                           : "active:text-[#111827]",
-                        cannotInteract && !comment.likedByOwner
-                          ? "opacity-50"
-                          : null,
                       )}
                     >
                       <ThumbsUp size={12} />
@@ -4819,7 +4781,6 @@ function MobileChannelCommentsSheet({
       </div>
     );
   }, [
-    cannotInteract,
     comments,
     commentAuthorNameMap,
     likePendingCommentId,
@@ -4971,22 +4932,6 @@ function MobileChannelCommentsSheet({
         </div>
 
         <div className="border-t border-[color:var(--border-subtle)] bg-white px-4 pb-2 pt-3">
-          {/*
-            新一轮走查 R4：非好友帖（post.canInteract===false）的评论 sheet 之前
-            textarea 默认 enabled、send 按钮也只在 !draft.trim() 时 disable。用户
-            读完评论想跟着发一句，敲完按「发送」→ ChannelsPage.submitComment 走
-            ensureCommentPostCanInteract → setNotice("需先加为好友才能互动")。
-            但通知 InlineNotice 渲染在 ChannelsPage 顶部，被 z-50 评论 sheet 整张
-            backdrop 完全盖住，用户看不到任何反馈，体感「按了发送什么都没发生」。
-            sheet 自带 post，本地直接判 canInteract 把输入框 + 发送钮 disable，
-            并在 sheet 内贴一行黄色提示替代不可见的页级 notice，让限制在用户视
-            线内。
-          */}
-          {post && post.canInteract === false ? (
-            <div className="mb-2 rounded-[12px] bg-[rgba(234,179,8,0.10)] px-3 py-2 text-[11px] leading-[1.35rem] text-[#854d0e]">
-              {t(msg`需先加为好友才能互动。`)}
-            </div>
-          ) : null}
           {replyTarget ? (
             <div className="mb-2 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[#166534]">
               {/*
@@ -5015,13 +4960,10 @@ function MobileChannelCommentsSheet({
               rows={2}
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
-              disabled={post?.canInteract === false}
               placeholder={
-                post?.canInteract === false
-                  ? t(msg`需先加为好友才能评论`)
-                  : replyTarget
-                    ? t(msg`回复 ${replyTarget.authorName}...`)
-                    : t(msg`说点什么...`)
+                replyTarget
+                  ? t(msg`回复 ${replyTarget.authorName}...`)
+                  : t(msg`说点什么...`)
               }
               // 走查 R11：服务端 assertCommentText 上限 500 字（UTF-16 length），
               // 之前 textarea 没卡，用户写 600 字提交才看到「评论最多 500 字。」
@@ -5036,11 +4978,7 @@ function MobileChannelCommentsSheet({
             <Button
               variant="primary"
               size="sm"
-              disabled={
-                !draft.trim() ||
-                submitPending ||
-                post?.canInteract === false
-              }
+              disabled={!draft.trim() || submitPending}
               onClick={onSubmit}
               // submitInitiatedAtRef 的钉值已经迁到 submitPending false→true effect
               // 那条上，原 send 按钮 onClick 里手 set 的同款 timestamp 改去掉 —— retry
