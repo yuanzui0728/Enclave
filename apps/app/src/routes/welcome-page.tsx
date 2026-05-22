@@ -1343,7 +1343,14 @@ export function WelcomePage() {
       // 服务端基准已过期/已撤销。本地 token 不清干净的话 retry/重新解析全都
       // 带着这个失效 token 撞同样的 401 → entryError 一直挂、用户绕不出去。
       // 强制清掉，逼用户重新走 verify。
-      if (isApiRequestError(error) && error.statusCode === 401 && cloudAccessToken) {
+      // cloudAccessToken 这里是闭包值，verify path 里 setCloudAccessToken 的新
+      // token 不会反映到闭包里；用 verifySucceeded 兜底，覆盖"verify 刚拿到
+      // token、resolveMyCloudWorldAccess 就 401 把它拒了"的服务端竞态。
+      if (
+        isApiRequestError(error) &&
+        error.statusCode === 401 &&
+        (cloudAccessToken || verifySucceeded)
+      ) {
         setCloudAccessToken("");
         setCloudAccessSessionId(null);
         setConnectedAccessSessionId(null);
