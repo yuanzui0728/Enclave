@@ -36,6 +36,7 @@ import {
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import {
   createGroupInviteDeliveryBatchId,
@@ -1143,10 +1144,10 @@ export function GroupQrPage() {
       // unhandledrejection 污染 telemetry；用户也不会看到任何提示，按钮上
       // 没有任何反馈，第二下又被同步锁拦住，看着像"卡住了"。catch 这里就地
       // 翻成 danger notice，同时让上层 finally 正常解锁释放重试入口。
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : t(msg`发送群邀请失败，请稍后重试。`);
+      const message = describeRequestError(
+        error,
+        t(msg`发送群邀请失败，请稍后重试。`),
+      );
       showNotice(
         t(msg`未能把群邀请发到 ${conversation.title}：${message}`),
         "danger",
@@ -1245,12 +1246,12 @@ export function GroupQrPage() {
           // 都裸 <ErrorBlock>，盲人 SR 加载失败时静默；mobile 分支已经用
           // MobileGroupInviteStatusCard 自带 tone="danger"，desktop 对齐挂
           // role="alert"。
-          <ErrorBlock role="alert" message={groupQuery.error.message} />
+          <ErrorBlock role="alert" message={describeRequestError(groupQuery.error)} />
         ) : (
           <MobileGroupInviteStatusCard
             badge={t(msg`群聊`)}
             title={t(msg`群邀请页暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -1279,12 +1280,12 @@ export function GroupQrPage() {
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock role="alert" message={membersQuery.error.message} />
+          <ErrorBlock role="alert" message={describeRequestError(membersQuery.error)} />
         ) : (
           <MobileGroupInviteStatusCard
             badge={t(msg`成员`)}
             title={t(msg`群成员信息暂时不可用`)}
-            description={membersQuery.error.message}
+            description={describeRequestError(membersQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -1779,13 +1780,13 @@ export function GroupQrPage() {
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock role="alert" message={conversationsQuery.error.message} />
+                <ErrorBlock role="alert" message={describeRequestError(conversationsQuery.error)} />
               ) : (
                 <div className="px-4 pb-4">
                   <MobileGroupInviteStatusCard
                     badge={t(msg`会话`)}
                     title={t(msg`最近会话暂时不可用`)}
-                    description={conversationsQuery.error.message}
+                    description={describeRequestError(conversationsQuery.error)}
                     tone="danger"
                     action={
                       <div className="flex flex-wrap items-center justify-center gap-2">

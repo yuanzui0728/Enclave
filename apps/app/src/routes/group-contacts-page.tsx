@@ -27,6 +27,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const t = translateRuntimeMessage;
@@ -319,7 +320,7 @@ function MobileGroupContactsPage() {
             <MobileGroupContactsStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`群聊列表暂时不可用`)}
-              description={groupsQuery.error.message}
+              description={describeRequestError(groupsQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">

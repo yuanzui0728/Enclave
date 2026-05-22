@@ -45,6 +45,7 @@ import {
   navigateBackOrFallback,
   overrideRecordedNavigationPair,
 } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -652,7 +653,7 @@ export function CreateGroupPage() {
             <MobileCreateGroupStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`联系人列表暂时不可用`)}
-              description={friendsQuery.error.message}
+              description={describeRequestError(friendsQuery.error)}
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button
@@ -703,7 +704,7 @@ export function CreateGroupPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {createMutation.error.message}
+                  {describeRequestError(createMutation.error)}
                 </span>
                 <button
                   type="button"

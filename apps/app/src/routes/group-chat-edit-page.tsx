@@ -20,6 +20,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const t = translateRuntimeMessage;
@@ -316,7 +317,7 @@ function MobileGroupChatEditPage({
           <MobileGroupEditStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`群聊信息暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button
@@ -348,7 +349,7 @@ function MobileGroupChatEditPage({
           <MobileGroupEditStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`群成员信息暂时不可用`)}
-            description={membersQuery.error.message}
+            description={describeRequestError(membersQuery.error)}
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button
@@ -382,7 +383,7 @@ function MobileGroupChatEditPage({
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
+              <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
               <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   type="button"

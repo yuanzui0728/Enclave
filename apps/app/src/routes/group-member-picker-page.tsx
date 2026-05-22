@@ -37,6 +37,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupMemberPickerMode = "add" | "remove";
@@ -680,7 +681,7 @@ function MobileGroupMemberPickerPage({
             <MobileGroupMemberPickerStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`群聊信息暂时不可用`)}
-              description={groupQuery.error.message}
+              description={describeRequestError(groupQuery.error)}
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button
@@ -712,7 +713,7 @@ function MobileGroupMemberPickerPage({
             <MobileGroupMemberPickerStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`群成员信息暂时不可用`)}
-              description={membersQuery.error.message}
+              description={describeRequestError(membersQuery.error)}
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button
@@ -744,7 +745,7 @@ function MobileGroupMemberPickerPage({
             <MobileGroupMemberPickerStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`联系人列表暂时不可用`)}
-              description={friendsQuery.error.message}
+              description={describeRequestError(friendsQuery.error)}
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button
@@ -779,7 +780,7 @@ function MobileGroupMemberPickerPage({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {submitMutation.error.message}
+                  {describeRequestError(submitMutation.error)}
                 </span>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button

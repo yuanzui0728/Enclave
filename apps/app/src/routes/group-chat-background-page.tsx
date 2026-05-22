@@ -41,6 +41,7 @@ import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { describeRequestError } from "../lib/request-error";
 import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -333,15 +334,16 @@ export function GroupChatBackgroundPage() {
     clearGroupMutation.mutate(undefined, { onSettled: releaseLock }),
   );
   const pageError =
-    (uploadMutation.error instanceof Error && uploadMutation.error.message) ||
+    (uploadMutation.error instanceof Error &&
+      describeRequestError(uploadMutation.error)) ||
     (saveDefaultMutation.error instanceof Error &&
-      saveDefaultMutation.error.message) ||
+      describeRequestError(saveDefaultMutation.error)) ||
     (clearDefaultMutation.error instanceof Error &&
-      clearDefaultMutation.error.message) ||
+      describeRequestError(clearDefaultMutation.error)) ||
     (saveGroupMutation.error instanceof Error &&
-      saveGroupMutation.error.message) ||
+      describeRequestError(saveGroupMutation.error)) ||
     (clearGroupMutation.error instanceof Error &&
-      clearGroupMutation.error.message) ||
+      describeRequestError(clearGroupMutation.error)) ||
     null;
 
   const openPicker = async (target: UploadTarget) => {
@@ -433,12 +435,12 @@ export function GroupChatBackgroundPage() {
           // ErrorBlock 都裸 <ErrorBlock>，盲人 SR 加载失败时静默；mobile 分支
           // 已经用 MobileGroupBackgroundStatusCard 自带 tone="danger"，desktop
           // 对齐挂 role="alert"。
-          <ErrorBlock role="alert" message={groupQuery.error.message} />
+          <ErrorBlock role="alert" message={describeRequestError(groupQuery.error)} />
         ) : (
           <MobileGroupBackgroundStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`群聊背景暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -465,12 +467,12 @@ export function GroupChatBackgroundPage() {
       ) : null}
       {backgroundQuery.isError && backgroundQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock role="alert" message={backgroundQuery.error.message} />
+          <ErrorBlock role="alert" message={describeRequestError(backgroundQuery.error)} />
         ) : (
           <MobileGroupBackgroundStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`群聊背景暂时不可用`)}
-            description={backgroundQuery.error.message}
+            description={describeRequestError(backgroundQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">

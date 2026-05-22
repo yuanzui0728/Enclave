@@ -37,6 +37,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupInviteReturnSearch } from "../lib/group-invite-delivery";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 
@@ -298,11 +299,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     // chat-details-page 同步加 onError。
     onError: (error, pinned) => {
       showNotice(
-        error instanceof Error && error.message
-          ? error.message
-          : pinned
+        describeRequestError(
+          error,
+          pinned
             ? t(msg`置顶失败，请稍后再试。`)
             : t(msg`取消置顶失败，请稍后再试。`),
+        ),
       );
     },
   });
@@ -310,7 +312,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const preferencesMutation = useMutation({
     mutationFn: (payload: Parameters<typeof updateGroupPreferences>[1]) =>
       updateGroupPreferences(groupId, payload, baseUrl),
-    onSuccess: async (_, payload) => {
+    onSuccess: (_, payload) => {
       const nextNotice =
         payload.isMuted !== undefined
           ? payload.isMuted
@@ -350,9 +352,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     },
     onError: (error) => {
       showNotice(
-        error instanceof Error && error.message
-          ? error.message
-          : t(msg`群聊设置更新失败，请稍后再试。`),
+        describeRequestError(error, t(msg`群聊设置更新失败，请稍后再试。`)),
       );
     },
   });
@@ -377,9 +377,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     },
     onError: (error) => {
       showNotice(
-        error instanceof Error && error.message
-          ? error.message
-          : t(msg`清空群聊记录失败，请稍后再试。`),
+        describeRequestError(error, t(msg`清空群聊记录失败，请稍后再试。`)),
       );
     },
   });
@@ -417,9 +415,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     },
     onError: (error) => {
       showNotice(
-        error instanceof Error && error.message
-          ? error.message
-          : t(msg`退出群聊失败，请稍后再试。`),
+        describeRequestError(error, t(msg`退出群聊失败，请稍后再试。`)),
       );
     },
   });
@@ -453,9 +449,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     },
     onError: (error) => {
       showNotice(
-        error instanceof Error && error.message
-          ? error.message
-          : t(msg`隐藏群聊失败，请稍后再试。`),
+        describeRequestError(error, t(msg`隐藏群聊失败，请稍后再试。`)),
       );
     },
   });
@@ -697,7 +691,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           <MobileGroupDetailsStatusCard
             badge={t(msg`群聊`)}
             title={t(msg`群聊信息暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             tone="danger"
             action={statusRetryAction}
           />
@@ -708,7 +702,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           <MobileGroupDetailsStatusCard
             badge={t(msg`成员`)}
             title={t(msg`群成员信息暂时不可用`)}
-            description={membersQuery.error.message}
+            description={describeRequestError(membersQuery.error)}
             tone="danger"
             action={statusRetryAction}
           />
@@ -934,7 +928,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {pinMutation.error.message}
+                    {describeRequestError(pinMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -950,7 +944,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {preferencesMutation.error.message}
+                    {describeRequestError(preferencesMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -965,7 +959,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {clearMutation.error.message}
+                    {describeRequestError(clearMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -980,7 +974,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {leaveMutation.error.message}
+                    {describeRequestError(leaveMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -995,7 +989,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {hideMutation.error.message}
+                    {describeRequestError(hideMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>

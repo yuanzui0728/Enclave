@@ -16,6 +16,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
@@ -378,7 +379,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
           <MobileAnnouncementStatusCard
             badge={t(msg`群聊`)}
             title={t(msg`群公告暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -448,7 +449,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
+              <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
               <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   type="button"
