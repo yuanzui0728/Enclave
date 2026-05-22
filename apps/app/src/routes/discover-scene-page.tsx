@@ -521,13 +521,21 @@ function MobileDiscoverScenePage() {
                 走查 R7：SOCIAL_SCENE_INVALID 是入参根本没被服务端识别（前端
                 按钮 scene.id 跟服务端 SCENE_SYNONYMS 表不一致，或被中间件改写
                 成奇怪字符串），立即重试只会再吃一次 400，没意义；同样隐藏重试。
-                其它错误（网络 / cooldown / 服务异常 / AI 不可用）保留重试。
+                走查 R2：以前 COOLDOWN 也保留了"重试场景相遇"按钮，但服务端
+                cooldown=1500ms 且按钮没接 disabled，用户在 2.5s 客户端 cooldown
+                banner 期间疯点 retry 会循环吃 429 + onError 把 cooldownUntil
+                顶到 Date.now()+2.5s，banner 永远清不掉变成 retry loop。COOLDOWN
+                语义本身就是"等"，已经有顶上的倒计时 banner 驱动恢复，retry
+                按钮在这里没意义还会反复扣 server 端 owner / count / cooldown
+                三条 DB 查询，一并隐藏。
+                其它错误（网络 / 服务异常 / AI 不可用）保留重试。
               */}
               {sceneMutation.variables &&
               !(
                 isApiRequestError(sceneMutation.error) &&
                 (sceneMutation.error.errorCode === "SOCIAL_SCENE_DAILY_LIMIT" ||
-                  sceneMutation.error.errorCode === "SOCIAL_SCENE_INVALID")
+                  sceneMutation.error.errorCode === "SOCIAL_SCENE_INVALID" ||
+                  sceneMutation.error.errorCode === "SOCIAL_SCENE_COOLDOWN")
               ) ? (
                 <button
                   type="button"
