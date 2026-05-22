@@ -744,6 +744,17 @@ export function ConversationThreadPanel({
           }
         >
           <InlineNotice
+            // 走查移动端单聊新一轮 R4：和姊妹 DigitalHumanEntryNotice R57 /
+            // chat-message-list actionNotice R37 同款 a11y 修法 —— routeContext
+            // Notice 是用户从 voice-call / video-call 屏返回 / 从 game-invite /
+            // group-invite deep link 进单聊后才挂上来的"上下文提示条"（"本轮
+            // 语音通话已结束。你可以直接继续输入"等），6s 后自动消失或被滚动 /
+            // 输入 dismiss。盲人 SR 完全感知不到这条 transient notice，听不到
+            // 「为什么页面顶部多了一条按钮 + 文字」，也听不到「6s 后又消失了」。
+            // 用 status/polite —— 不抢断 SR 当前朗读，等读完当前内容补一句状态
+            // 反馈（"info" tone 不是错误，没必要 assertive）。
+            role="status"
+            aria-live="polite"
             tone="info"
             className={
               isDesktop
@@ -924,6 +935,13 @@ export function ConversationThreadPanel({
                 <ErrorBlock role="alert" message={socketError} />
               ) : (
                 <InlineNotice
+                  // 走查移动端单聊新一轮 R4：和上方 desktop ErrorBlock role="alert"
+                  // 一致 —— socketError 是 WS 断连 / cloud-api gateway 401 /
+                  // session 失效的兜底文案。盲人用户在 mobile 单聊里看不到也
+                  // 听不到"网络暂时连不上"，会继续敲下一条以为发出去了。挂
+                  // role="alert" + aria-live="assertive" 抢断当前 SR 朗读。
+                  role="alert"
+                  aria-live="assertive"
                   tone="danger"
                   className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
                 >

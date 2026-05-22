@@ -4309,6 +4309,15 @@ function MobileComposerStatusRail({
 }: MobileComposerStatusState) {
   return (
     <div
+      // 走查移动端单聊新一轮 R4：和姊妹桌面 DesktopComposerStatusStrip (R39)
+      // 同款 a11y 修法 —— mobile composer status rail 是用户在移动端单聊发
+      // 消息/附件/语音过程中显示的状态条（发送中/失败/已撤回/没网络/上传
+      // 失败等），原版裸 <div> SR 完全感知不到，盲人用户敲完一条以为发出
+      // 去了，实际 send 失败显示「发送失败」红条静静坐在 composer 上面。
+      // danger tone → alert + assertive 抢断 SR；success/info/muted → status
+      // + polite 不打断当前朗读。
+      role={tone === "danger" ? "alert" : "status"}
+      aria-live={tone === "danger" ? "assertive" : "polite"}
       className={cn(
         "mt-1.5 flex items-center justify-between gap-2 rounded-[12px] border px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
         tone === "danger"
