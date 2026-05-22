@@ -243,7 +243,7 @@ export function ContactsBulkActionBar({
               desktop ? "px-2.5" : "px-3",
             )}
           >
-            <CheckCheck size={13} />
+            <CheckCheck aria-hidden="true" size={13} />
             {allSelected ? t(msg`取消全选`) : t(msg`全选`)}
           </button>
           <div className="ml-auto flex items-center gap-1.5">
@@ -263,7 +263,7 @@ export function ContactsBulkActionBar({
                       : "bg-[#07c160] text-white disabled:opacity-50",
                   )}
                 >
-                  <Icon size={13} />
+                  <Icon aria-hidden="true" size={13} />
                   {btn.label}
                 </button>
               );

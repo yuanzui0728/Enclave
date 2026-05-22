@@ -279,6 +279,15 @@ function SwitchRow({
   disabled?: boolean;
   first?: boolean;
 }) {
+  // 走查新一轮 R2：原写法 <label> 包 <button role="switch">，但 HTML <label>
+  // 只对原生表单控件（input/select/textarea 等）的 SR accessible-name 生效，
+  // 对自定义 <button> 不会自动把 label 文本作为按钮的 accessible name。结果
+  // 屏阅器 Tab 到这里只听到「开关 已开/未开」，听不见是哪个权限项；用户在
+  // 三连开关里完全分不清自己在改 "不让TA看我朋友圈" 还是 "仅聊天的朋友"，
+  // 误开关后才反应过来。同理 description 也得跟开关关联。用 aria-labelledby +
+  // aria-describedby 指向标题/描述文本元素，让 SR 能播报完整语义。
+  const labelId = `permissions-switch-label-${label}`;
+  const descId = description ? `permissions-switch-desc-${label}` : undefined;
   return (
     <li
       className={
@@ -292,11 +301,17 @@ function SwitchRow({
         )}
       >
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] text-[color:var(--text-primary)]">
+          <div
+            id={labelId}
+            className="text-[14px] text-[color:var(--text-primary)]"
+          >
             {label}
           </div>
           {description ? (
-            <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+            <div
+              id={descId}
+              className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]"
+            >
               {description}
             </div>
           ) : null}
@@ -305,6 +320,8 @@ function SwitchRow({
           type="button"
           role="switch"
           aria-checked={checked}
+          aria-labelledby={labelId}
+          aria-describedby={descId}
           disabled={disabled}
           onClick={() => onChange(!checked)}
           className={cn(

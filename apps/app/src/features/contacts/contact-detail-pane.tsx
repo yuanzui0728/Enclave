@@ -247,7 +247,7 @@ export function ContactDetailPane({
               onClick={onStartChat}
               disabled={chatPending}
             >
-              <MessageCircleMore size={15} />
+              <MessageCircleMore aria-hidden="true" size={15} />
               {chatPending ? t(msg`打开中...`) : t(msg`发消息`)}
             </Button>
           ) : (
