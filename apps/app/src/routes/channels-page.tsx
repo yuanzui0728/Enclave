@@ -215,12 +215,23 @@ export function ChannelsPage() {
   // 去 disabled 闸门，onMutate 跑两遍：第二次读到 cache 已经被第一次乐观翻好的
   // hasLiked=true 当 previous，再次 +1 likeCount → cache 留 +2 ，server 真值 +1，
   // home staleTime=30s 期间不会 refetch 矫正，用户看见的赞数比实际多 1（或 follower
-  // Count、favoriteCount 同款）。和姊妹 desktopLikeSubmittingRef / Favorite /
-  // Follow 同款做法，移动端补一组 ref。reset useEffect 复用同款 mutation.isPending
-  // false 触发（refs 共享是允许的——desktop/mobile 不会同帧渲染）。
-  const mobileLikeSubmittingRef = useRef(false);
-  const mobileFavoriteSubmittingRef = useRef(false);
-  const mobileFollowSubmittingRef = useRef(false);
+  // Count、favoriteCount 同款）。
+  //
+  // 走查 2026-05-23 R2.1：原版用 useRef<boolean> 全局锁——能挡同帧 double-tap 但
+  // 副作用是「A 那条 mutation 在飞的 200-500ms 公网 RTT 期间，B/C/D... 任何其它
+  // post / author 的 like / favorite / follow 全被 early-return 吞掉」，用户视感
+  // 「点完一张卡 → 立刻滑到下一张点赞 → 没响应」。useMutation 内部允许多 mutate
+  // 并发，react-query 各自跑 onMutate / onError / onSuccess，A 的 onMutate 不会
+  // 阻塞 B 的 onMutate。我们只需要阻挡「同一 postId / authorId 同帧重入」，按 id
+  // 维度的 Set 取代 boolean — 同 id 第二次同帧 click 才 early-return，跨 id 不
+  // 影响。释放走 mutate(options).onSettled 把 id 从 Set 删掉，无需依赖全局
+  // isPending（react-query 多 mutate 并发时 isPending 会一直 true 直到全部 settle，
+  // 用它做 reset 会把还在飞的 B/C/D 的锁也错杀，反而要求另一道修复）。
+  // 注：likeMutation/favoriteMutation 的 onMutate / onSuccess / onError 仍然走
+  // ChannelsPage 顶部声明的那条公共版本——这里只是新增 per-id 入口侧 dedup。
+  const mobileLikeInflightRef = useRef<Set<string>>(new Set());
+  const mobileFavoriteInflightRef = useRef<Set<string>>(new Set());
+  const mobileFollowInflightRef = useRef<Set<string>>(new Set());
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -1721,23 +1732,23 @@ export function ChannelsPage() {
     ? (followMutation.variables?.authorId ?? null)
     : null;
   // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
-  // 走查 2026-05-23 R2：mobile 同款 ref 一并复位（共享 isPending false 触发）。
+  // 走查 2026-05-23 R2.1：mobile 改成 per-id Set 后，释放走 mutate(options).onSettled
+  // 在调用点把 id 从 Set 删掉，不再依赖 isPending 全局复位（react-query 多 mutate
+  // 并发时 isPending 一直 true 直到全部 settle，用它复位会把还在飞的 B/C/D 锁错杀）。
+  // desktop ref 仍是 boolean，按原全局 isPending 复位即可。
   useEffect(() => {
     if (!likeMutation.isPending) {
       desktopLikeSubmittingRef.current = false;
-      mobileLikeSubmittingRef.current = false;
     }
   }, [likeMutation.isPending]);
   useEffect(() => {
     if (!favoriteMutation.isPending) {
       desktopFavoriteSubmittingRef.current = false;
-      mobileFavoriteSubmittingRef.current = false;
     }
   }, [favoriteMutation.isPending]);
   useEffect(() => {
     if (!followMutation.isPending) {
       desktopFollowSubmittingRef.current = false;
-      mobileFollowSubmittingRef.current = false;
     }
   }, [followMutation.isPending]);
   const pendingCommentPostId = commentMutation.isPending
@@ -2072,7 +2083,13 @@ export function ChannelsPage() {
     });
   }
 
-  function toggleFavorite(post: (typeof visiblePosts)[number]) {
+  function toggleFavorite(
+    post: (typeof visiblePosts)[number],
+    // 走查 2026-05-23 R2.1：可选 onSettled，供 mobile per-id Set 在 mutation
+    // 真 settle 时释放锁（详见 mobileFavoriteInflightRef 声明处）。Desktop path
+    // 不传，按 favoriteMutation.isPending 全局复位即可。
+    options?: { onSettled?: () => void },
+  ) {
     const sourceId = `channels-${post.id}`;
     const routeHash = buildDesktopChannelsRouteHash({
       postId: post.id,
@@ -2134,6 +2151,7 @@ export function ChannelsPage() {
             removeDesktopFavorite(sourceId);
           }
         },
+        onSettled: options?.onSettled,
       },
     );
   }
@@ -2581,15 +2599,22 @@ export function ChannelsPage() {
             commentsPreviewByPostId={commentsPreviewByPostId}
             routeSelectedPostId={routeSelectedPostId}
             onLike={(postId) => {
-              // 走查 2026-05-23 R2：移动端补 sync ref 同款挡同帧 double-tap，
-              // 见 mobileLikeSubmittingRef 声明处长注释。
-              if (mobileLikeSubmittingRef.current) return;
+              // 走查 2026-05-23 R2.1：per-postId Set 挡同帧 double-tap，跨 post
+              // 不互锁。详见 mobileLikeInflightRef 声明处注释。
+              if (mobileLikeInflightRef.current.has(postId)) return;
               const post = visiblePosts.find((p) => p.id === postId);
-              mobileLikeSubmittingRef.current = true;
-              likeMutation.mutate({
-                postId,
-                hasLiked: Boolean(post?.ownerState?.hasLiked),
-              });
+              mobileLikeInflightRef.current.add(postId);
+              likeMutation.mutate(
+                {
+                  postId,
+                  hasLiked: Boolean(post?.ownerState?.hasLiked),
+                },
+                {
+                  onSettled: () => {
+                    mobileLikeInflightRef.current.delete(postId);
+                  },
+                },
+              );
             }}
             onOpenAuthor={(post) =>
               openChannelAuthor(post.authorId, { sourcePostId: post.id })
@@ -2601,15 +2626,33 @@ export function ChannelsPage() {
             onNotInterested={hidePost}
             onShare={(post) => void handleSharePost(post)}
             onToggleFollowAuthor={(post) => {
-              // 走查 2026-05-23 R2：sync ref 挡同帧 double-tap，对齐 like。
-              if (mobileFollowSubmittingRef.current) return;
-              mobileFollowSubmittingRef.current = true;
-              toggleFollowAuthor(post);
+              // 走查 2026-05-23 R2.1：per-authorId Set，跨作者不互锁。
+              if (mobileFollowInflightRef.current.has(post.authorId)) return;
+              mobileFollowInflightRef.current.add(post.authorId);
+              followMutation.mutate(
+                {
+                  authorId: post.authorId,
+                  following: Boolean(post.ownerState?.isFollowingAuthor),
+                },
+                {
+                  onSettled: () => {
+                    mobileFollowInflightRef.current.delete(post.authorId);
+                  },
+                },
+              );
             }}
             onToggleFavorite={(post) => {
-              if (mobileFavoriteSubmittingRef.current) return;
-              mobileFavoriteSubmittingRef.current = true;
-              toggleFavorite(post);
+              // 走查 2026-05-23 R2.1：per-postId Set，跨 post 不互锁。
+              // toggleFavorite 第二参数 onSettled 是为 mobile path 加的：mobile
+              // 走 per-id Set，必须等 mutation 真 settle 才能释放锁；toggleFavorite
+              // 自己持有 mutation 调用点，把 onSettled 透传进 mutate options 里。
+              if (mobileFavoriteInflightRef.current.has(post.id)) return;
+              mobileFavoriteInflightRef.current.add(post.id);
+              toggleFavorite(post, {
+                onSettled: () => {
+                  mobileFavoriteInflightRef.current.delete(post.id);
+                },
+              });
             }}
             onVisiblePost={handleMobileViewPost}
           />
