@@ -646,8 +646,8 @@ function MobileAddFriend() {
           <MobileAddFriendWelcomeState
             history={searchHistory}
             onApplyHistory={applyHistoryKeyword}
-            onRemoveHistory={handleRemoveHistory}
             onClearHistory={handleClearHistory}
+            onRemoveHistory={handleRemoveHistory}
             onQuickSearch={(value) => {
               setSearchText(value);
               submitSearch(value);
@@ -788,7 +788,13 @@ function MobileAddFriendWelcomeState({
                 <button
                   type="button"
                   onClick={() => onApplyHistory(item.keyword)}
-                  className="inline-flex min-w-0 items-center gap-1"
+                  // active:opacity-70 给点按反馈：example chip 有
+                  // active:bg-[surface-card-hover]、X 按钮有 active:bg-black/5、
+                  // 清空有 active:opacity-60；这个 keyword button 漏掉的话用户在
+                  // iOS 上点了没任何视觉反应，像点了没用。不用 bg-hover 是因为
+                  // 它跟外层 pill 已经是 bg-white，再叠 hover 会破坏 pill 整体
+                  // 视觉；opacity 在 keyword 部分单独表达"按下了"足够。
+                  className="inline-flex min-w-0 items-center gap-1 active:opacity-70"
                 >
                   <Clock3 size={12} className="shrink-0 text-[color:var(--text-dim)]" />
                   {/* 关键词写得很长（隐界号 / 长角色名）时不截断会把 X 推下一行 pill 形变 */}
