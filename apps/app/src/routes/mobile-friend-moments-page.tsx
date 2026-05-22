@@ -162,6 +162,15 @@ export function MobileFriendMomentsPage() {
   // 一轮（点赞失败状态在 cache 里被回滚到"未赞"，重试两次反而又翻成"已赞"，但
   // 用户的语义只是"再试一次"）。按 momentId 维度分别记账让不同 moment 互不影响。
   const likeInflightRef = useRef<Record<string, boolean>>({});
+  // 走查移动端朋友圈/Round 4 R1：同帧双击守卫 —— 跟 likeInflightRef 同模板，
+  // 之前只挂到 notice 重试按钮上漏了 onSubmit 主提交路径。WeChatCommentBar 内的
+  // submittingRef 是 bar 自己的本地 ref，对接 onSubmit 之外不可达；但 commentBar
+  // 在 onMutate 同步 setCommentBarTarget(null) 之后会 unmount，bar 内 submittingRef
+  // 直接随 unmount 丢掉，下一次开同条 moment 的 bar 又是 fresh ref —— 真正 mid-flight
+  // 期间用户重开 bar 再次点发送（同条 moment / 跨条 moment）时 submittingRef 已经
+  // false，会真的再发一次。改用页面级 commentInflightRef，按 momentId 维度记账，
+  // 跟 moments-page / profile-moments-page 同模板。
+  const commentInflightRef = useRef<Record<string, boolean>>({});
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -1061,9 +1070,18 @@ export function MobileFriendMomentsPage() {
                                   },
                             )
                           }
-                          onDoubleTapLike={() =>
-                            likeMutation.mutate(moment.id)
-                          }
+                          onDoubleTapLike={() => {
+                            // 走查移动端朋友圈/Round 4 R1：双击守卫 —— 之前裸
+                            // mutate 同帧双击触发 2 次 POST /like 把 toggle 多翻
+                            // 一轮，跟 moments-page / profile-moments-page 同模板。
+                            if (likeInflightRef.current[moment.id]) return;
+                            likeInflightRef.current[moment.id] = true;
+                            likeMutation.mutate(moment.id, {
+                              onSettled: () => {
+                                delete likeInflightRef.current[moment.id];
+                              },
+                            });
+                          }}
                           onCommentTap={(comment) =>
                             onCommentTap(moment.id, comment)
                           }
@@ -1090,7 +1108,19 @@ export function MobileFriendMomentsPage() {
         liked={liked}
         onLike={() => {
           if (actionBubble) {
-            likeMutation.mutate(actionBubble.momentId);
+            // 走查移动端朋友圈/Round 4 R1：双击守卫 —— 跟 onDoubleTapLike / notice
+            // 重试按钮 / moments-page / profile-moments-page 同模板。action bubble
+            // onClick 顺序是 onLike() → onClose()，onClose 会 setActionBubble(null)
+            // 把 bubble unmount；但同帧第二次 click 在 React 还没 commit 之前 bubble
+            // DOM 还在，会再触发一次 onLike → 2 个 POST /like 飞出去。
+            const id = actionBubble.momentId;
+            if (likeInflightRef.current[id]) return;
+            likeInflightRef.current[id] = true;
+            likeMutation.mutate(id, {
+              onSettled: () => {
+                delete likeInflightRef.current[id];
+              },
+            });
           }
         }}
         onComment={() => {
@@ -1154,7 +1184,16 @@ export function MobileFriendMomentsPage() {
         }
         onSubmit={() => {
           if (commentBarTarget) {
-            commentMutation.mutate(commentBarTarget.momentId);
+            // 走查移动端朋友圈/Round 4 R1：commentInflightRef 同帧双击守卫 ——
+            // 见上方 ref 注释。和 moments-page / profile-moments-page 同模板。
+            const id = commentBarTarget.momentId;
+            if (commentInflightRef.current[id]) return;
+            commentInflightRef.current[id] = true;
+            commentMutation.mutate(id, {
+              onSettled: () => {
+                delete commentInflightRef.current[id];
+              },
+            });
           }
         }}
         onClose={() => setCommentBarTarget(null)}
