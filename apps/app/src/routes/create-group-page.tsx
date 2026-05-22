@@ -581,9 +581,19 @@ export function CreateGroupPage() {
                     type="button"
                     size="sm"
                     className="h-8 rounded-full px-3 text-[11px]"
+                    // 走查（新一轮 R1）：原本只 onClick={refetch} 没有 disabled。
+                    // refetch 期间 isFetching=true 但 isError 还停在 true，红色
+                    // 卡 + 重试按钮 UI 完全不变；公网隧道 ~600ms 内用户连点重
+                    // 试 3~5 下都很正常 — React Query 会 coalesce 同步请求所
+                    // 以无副作用，但按钮"按下去没反应"看着像坏了。挂
+                    // isFetching 守卫 + 切换文案，跟 mobile-add-friend-page /
+                    // friend-requests-page 等"重试读取"按钮统一口径。
+                    disabled={friendsQuery.isFetching}
                     onClick={handleRetryLoad}
                   >
-                    {t(msg`重试读取`)}
+                    {friendsQuery.isFetching
+                      ? t(msg`正在重试...`)
+                      : t(msg`重试读取`)}
                   </Button>
                   <Button
                     type="button"
@@ -603,6 +613,14 @@ export function CreateGroupPage() {
           <div className="px-4 pt-4">
             <InlineNotice
               tone="danger"
+              // 走查（新一轮 R1）：createGroup 失败时这条红色 InlineNotice 是
+              // 用户唯一的错误反馈，但 InlineNotice 内部是裸 <div>，没 role /
+              // aria-live。屏幕阅读器用户点完"确定"后页面无任何播报，听到
+              // selection 还在 → 以为操作生效了。tone="danger" 这条 100% 是
+              // mutation 失败的语义错误，role="alert" 自带 aria-live="assertive"
+              // 让 SR 立刻读出 error.message。读取失败 status card 是用户主动
+              // 触发的 friendsQuery，retry 按钮在场不需要 alert。
+              role="alert"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
