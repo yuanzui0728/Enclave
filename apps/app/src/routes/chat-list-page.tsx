@@ -855,6 +855,22 @@ function MobileChatListPage() {
             : data,
       );
 
+      // 新会话走查 R1：本 useEffect 既负责 unmount cleanup，也负责 baseUrl 变化
+      // （多 world 切换 / 登出登录链路）触发的 effect 重跑 cleanup。原版只在
+      //  pendingHideRef.current 上清，没动 pendingHideConversation 状态。
+      //  - unmount 路径：组件即将被丢掉，setState 在 React 18+ 是 no-op，
+      //    新增这行不影响。
+      //  - baseUrl 变化路径：组件继续挂着，但 5s 定时器已被 clearPendingHideTimer
+      //    干掉、pendingHideRef 也清空。结果 pendingHideConversation 状态留着 →
+      //    顶部 InlineNotice「{title} 已从列表移除，5 秒内可撤销」永远不会撤
+      //    （定时器没了），Undo 按钮按下走 handleUndoHideConversation 也只是
+      //    把已 null 的 ref/state 再 null 一遍 + setNoticeInfo「已撤销删除」，
+      //    而被 hide 的会话已经在 setQueriesData 里 filter 掉了 → 用户看到「已撤
+      //    销」却找不到那条会话，状态彻底乱掉。补 setPendingHideConversation(null)
+      //    + setNotice(null) 兜底 baseUrl 变化路径。
+      setPendingHideConversation(null);
+      setNotice(null);
+
       void (
         pending.isGroup
           ? hideGroup(pending.conversationId, baseUrl)
