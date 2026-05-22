@@ -1973,13 +1973,30 @@ function ConversationListItemLinkImpl({
     setSwipeOffset(nextOffset);
   };
 
+  // 走查新一轮 R2：原版 deps=[open, swipeActionWidth]，对应一种"open 是状态
+  // 唯一权威"的预设。但 handleTouchEnd 自己也会 setSwipeOffset(-swipeActionWidth)
+  // 配合 onOpenChange(true)；如果同帧/同微任务里另一行也走完 touchend，
+  //   setOpenSwipeConversationId(A.id) →（被覆盖）→ setOpenSwipeConversationId(B.id)
+  // 在 React 18 自动 batch 下 commit 时 openSwipeConversationId 只剩 B：
+  //   · A 的 open prop false→false（值未变），useEffect 不触发；
+  //   · 但 A 自己的 handleTouchEnd 已经把 swipeOffset=-swipeActionWidth；
+  //   · 结果 A 和 B 同时露出 swipe 四件套，跟 wechat "唯一展开" 语义对不上。
+  // 典型 trigger：(a) 多指 swipe (b) 两根手指同时往左拖两行 (c) accessibility
+  // 触控辅助 / 双触屏 dock 等冷门设备双触。
+  // 修法：把 swipeOffset 自身也加进 deps，effect 在「offset 与 open 不一致」
+  // 时强制同步——open=false 时本地却拉成 -272 → 立刻回弹到 0。无限循环风险用
+  // `swipeOffsetRef.current !== nextOffset` gate 兜住。
   useEffect(() => {
-    if (!gestureRef.current?.dragging) {
-      const nextOffset = open ? -swipeActionWidth : 0;
-      swipeOffsetRef.current = nextOffset;
-      setSwipeOffset(nextOffset);
+    if (gestureRef.current?.dragging) {
+      return;
     }
-  }, [open, swipeActionWidth]);
+    const nextOffset = open ? -swipeActionWidth : 0;
+    if (swipeOffsetRef.current === nextOffset) {
+      return;
+    }
+    swipeOffsetRef.current = nextOffset;
+    setSwipeOffset(nextOffset);
+  }, [open, swipeActionWidth, swipeOffset]);
 
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (pending) {
@@ -2105,15 +2122,32 @@ function ConversationListItemLinkImpl({
                     aria-label={t(msg`有未读消息`)}
                   />
                 ) : (
+                  // 走查 新一轮 R2：muted+unread 灰点已经挂了 aria-label="有未读
+                  // 消息"，但正常红色 unread badge 没挂 role/aria-label——SR 朗读
+                  // 整行时只听到一个孤零零的数字 "3" / "99+"，没有上下文，盲人
+                  // 用户分不清这是未读数还是其它元数据（聊天行里既有时间戳又有
+                  // sparkStreak 数字，可能更乱）。补 role="status" + aria-label
+                  // "N 条未读消息" / ">99 条未读消息"，跟 desktop-chat-workspace
+                  // 长列表的 unread 计数口径一致。
                   <div
+                    role="status"
+                    aria-label={
+                      conversation.unreadCount > 99
+                        ? t(msg`超过 99 条未读消息`)
+                        : t(
+                            msg`${conversation.unreadCount} 条未读消息`,
+                          )
+                    }
                     className={cn(
                       "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#fa5151] px-1 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                       conversation.unreadCount > 9 ? "min-w-[22px]" : undefined,
                     )}
                   >
-                    {conversation.unreadCount > 99
-                      ? "99+"
-                      : conversation.unreadCount}
+                    <span aria-hidden="true">
+                      {conversation.unreadCount > 99
+                        ? "99+"
+                        : conversation.unreadCount}
+                    </span>
                   </div>
                 )
               ) : isPinned ? (
