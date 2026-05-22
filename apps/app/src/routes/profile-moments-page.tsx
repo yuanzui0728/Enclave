@@ -28,9 +28,9 @@ import { translateAppErrorCode } from "../lib/error-translate";
 function resolveMomentsErrorMessage(error: unknown): string | null {
   if (!(error instanceof Error)) return null;
   if (isApiRequestError(error)) {
-    return translateAppErrorCode(error) ?? error.message;
+    return translateAppErrorCode(error) ?? describeRequestError(error);
   }
-  return error.message;
+  return describeRequestError(error);
 }
 import { useAppLocale, useRuntimeTranslator } from "@yinjie/i18n";
 import {

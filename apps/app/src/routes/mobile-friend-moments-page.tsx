@@ -43,6 +43,7 @@ import { stripToolCallSyntax } from "../features/moments/moment-content";
 import { usePullToRefresh } from "../features/moments/use-pull-to-refresh";
 import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -186,9 +187,9 @@ export function MobileFriendMomentsPage() {
         // （server legacyMessage 中文兜底）。和 moments-page 主页同模式，把
         // 非 zh-CN 用户看到的硬编码中文错误堵掉。
         message: isApiRequestError(error)
-          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`点赞失败：${error.message}`)
+            ? t(msg`点赞失败：${describeRequestError(error)}`)
             : t(msg`点赞失败，请稍后重试。`),
         actionLabel: t(msg`重试点赞`),
         action: () => likeMutation.mutate(momentId),
@@ -466,9 +467,9 @@ export function MobileFriendMomentsPage() {
         tone: "danger",
         // 走查 R2：同 likeMutation 的 translateAppErrorCode 处理。
         message: isApiRequestError(error)
-          ? t(msg`评论失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`评论失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`评论失败：${error.message}`)
+            ? t(msg`评论失败：${describeRequestError(error)}`)
             : t(msg`评论失败，请稍后重试。`),
       });
     },
@@ -548,9 +549,9 @@ export function MobileFriendMomentsPage() {
   const resolveQueryErrorMessage = (error: unknown): string | null => {
     if (!(error instanceof Error)) return null;
     if (isApiRequestError(error)) {
-      return translateAppErrorCode(error) ?? error.message;
+      return translateAppErrorCode(error) ?? describeRequestError(error);
     }
-    return error.message;
+    return describeRequestError(error);
   };
   const errors: string[] = [];
   if (characterQuery.isError) {
@@ -718,9 +719,9 @@ export function MobileFriendMomentsPage() {
           // 走查 R2：translateAppErrorCode 同 mutation onError 处理。
           message: isApiRequestError(failedError)
             ? t(
-                msg`刷新失败：${translateAppErrorCode(failedError) ?? failedError.message}`,
+                msg`刷新失败：${translateAppErrorCode(failedError) ?? describeRequestError(failedError)}`,
               )
-            : t(msg`刷新失败：${failedError.message}`),
+            : t(msg`刷新失败：${describeRequestError(failedError)}`),
         });
       }
     },

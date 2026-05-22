@@ -76,6 +76,7 @@ import {
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -88,9 +89,9 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 function resolveMomentsErrorMessage(error: unknown): string | null {
   if (!(error instanceof Error)) return null;
   if (isApiRequestError(error)) {
-    return translateAppErrorCode(error) ?? error.message;
+    return translateAppErrorCode(error) ?? describeRequestError(error);
   }
-  return error.message;
+  return describeRequestError(error);
 }
 
 const DesktopMomentsWorkspace = lazy(async () => {
@@ -493,9 +494,9 @@ export function MomentsPage() {
         // error.message 兜底。和 profile-info-name-page / discover-scene-page
         // 同模式。
         isApiRequestError(error)
-          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`点赞失败：${error.message}`)
+            ? t(msg`点赞失败：${describeRequestError(error)}`)
             : t(msg`点赞失败，请稍后重试。`),
       );
     },
@@ -740,9 +741,9 @@ export function MomentsPage() {
         // 走查 R2 同 likeMutation 处理：translateAppErrorCode 优先走 i18n 字典
         // 拿当前 locale 文案，miss 才回退 raw err.message（server legacyMessage 中文）。
         isApiRequestError(err)
-          ? t(msg`评论失败：${translateAppErrorCode(err) ?? err.message}`)
+          ? t(msg`评论失败：${translateAppErrorCode(err) ?? describeRequestError(err)}`)
           : err instanceof Error
-            ? t(msg`评论失败：${err.message}`)
+            ? t(msg`评论失败：${describeRequestError(err)}`)
             : t(msg`评论失败，请稍后重试。`),
       );
     },
@@ -912,9 +913,9 @@ export function MomentsPage() {
         // 走查 R2 同 like/comment：err 是 AppError 时优先走 translateAppErrorCode
         // 拿当前 locale 文案，miss 才回退 raw err.message。
         isApiRequestError(error)
-          ? t(msg`删除失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`删除失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`删除失败：${error.message}`)
+            ? t(msg`删除失败：${describeRequestError(error)}`)
             : t(msg`删除失败，请稍后重试。`),
       );
     },
@@ -1870,9 +1871,9 @@ export function MomentsPage() {
                   setNoticeAction(null);
                   setNotice(
                     isApiRequestError(error)
-                      ? t(msg`刷新失败：${translateAppErrorCode(error) ?? error.message}`)
+                      ? t(msg`刷新失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
                       : error instanceof Error
-                        ? t(msg`刷新失败：${error.message}`)
+                        ? t(msg`刷新失败：${describeRequestError(error)}`)
                         : t(msg`刷新失败，请稍后重试。`),
                   );
                 }),
@@ -2124,9 +2125,9 @@ export function MomentsPage() {
           setNotice(
             // 走查 R2 同其它 mutation onError：i18n locale 一致性。
             isApiRequestError(error)
-              ? t(msg`刷新失败：${translateAppErrorCode(error) ?? error.message}`)
+              ? t(msg`刷新失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
               : error instanceof Error
-                ? t(msg`刷新失败：${error.message}`)
+                ? t(msg`刷新失败：${describeRequestError(error)}`)
                 : t(msg`刷新失败，请稍后重试。`),
           );
         }
@@ -2496,7 +2497,7 @@ function MobileMomentsView({
                 {t(msg`朋友圈暂时不可用`)}
               </div>
               <div className="mt-2 text-[12px] text-[#9A9A9A]">
-                {momentsError.message}
+                {describeRequestError(momentsError)}
               </div>
               <div className="mt-4 flex justify-center gap-2">
                 <Button
@@ -2571,7 +2572,7 @@ function MobileMomentsView({
               <div className="px-4 py-4 text-center">
                 <div className="text-[12px] text-[#9A9A9A]">
                   {fetchNextPageError.message
-                    ? t(msg`加载更多失败：${fetchNextPageError.message}`)
+                    ? t(msg`加载更多失败：${describeRequestError(fetchNextPageError)}`)
                     : t(msg`加载更多失败，请稍后重试。`)}
                 </div>
                 <div className="mt-2 flex justify-center">

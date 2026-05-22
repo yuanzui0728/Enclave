@@ -38,9 +38,9 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 function resolveMomentsErrorMessage(error: unknown): string | null {
   if (!(error instanceof Error)) return null;
   if (isApiRequestError(error)) {
-    return translateAppErrorCode(error) ?? error.message;
+    return translateAppErrorCode(error) ?? describeRequestError(error);
   }
-  return error.message;
+  return describeRequestError(error);
 }
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { RouteRedirectState } from "../components/route-redirect-state";
@@ -355,9 +355,9 @@ export function FriendMomentsPage() {
       setNotice({
         tone: "danger",
         message: isApiRequestError(error)
-          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`点赞失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`点赞失败：${error.message}`)
+            ? t(msg`点赞失败：${describeRequestError(error)}`)
             : t(msg`点赞失败，请稍后重试。`),
         actionLabel: t(msg`重试点赞`),
         // 走查电脑端朋友圈 R5：跟 moments-page R5 / chat 等同款 ——
@@ -577,9 +577,9 @@ export function FriendMomentsPage() {
       setNotice({
         tone: "danger",
         message: isApiRequestError(error)
-          ? t(msg`评论失败：${translateAppErrorCode(error) ?? error.message}`)
+          ? t(msg`评论失败：${translateAppErrorCode(error) ?? describeRequestError(error)}`)
           : error instanceof Error
-            ? t(msg`评论失败：${error.message}`)
+            ? t(msg`评论失败：${describeRequestError(error)}`)
             : t(msg`评论失败，请稍后重试。`),
       });
     },
