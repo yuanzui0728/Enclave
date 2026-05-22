@@ -643,6 +643,16 @@ export function MobileFriendMomentsPage() {
     // 虽然 mutationFn 用 momentId 拿对应 args，但 ref 占内存且语义上属于
     // 上一个角色页。onSuccess/onError 也会清，这里只是兜底防御。
     commentSubmitArgsRef.current = {};
+    // 走查本轮 R1：mutation reset 跟 moments-page line 1313-1316 同模板补齐 ——
+    // 角色 A 上评论 moment X 失败后 commentMutation.isError / .variables / .error
+    // 全挂着；用户切到 B 再切回 A 再点 moment X 评论：commentBarTarget.momentId === X
+    // 命中 errorMessage gate (line 1199-1202)，old A 的失败原文重新冒到 bar 里冒红条
+    // 误导成"我刚打开 bar 就出错"。同款问题：likeMutation 失败后 notice 已清但 isError
+    // 残留——本页没直接拿它渲 UI（重试按钮挂在 notice.action 里），但 hygiene 上随手清。
+    // reset() 只清状态不取消 in-flight；in-flight 后续 onError/onSuccess 还有 mutationGuard
+    // 拦住，安全。
+    likeMutation.reset();
+    commentMutation.reset();
   }, [baseUrl, resolvedCharacterId]);
 
   useEffect(() => {
