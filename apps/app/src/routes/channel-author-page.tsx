@@ -442,6 +442,17 @@ export function ChannelAuthorPage() {
       null,
     [profile?.recentPosts],
   );
+  // 走查 2026-05-22 R2：featuredLivePost hero 卡和下面 visiblePosts 列表常常撞
+  // 车。原条件只判 activeCollection !== "live"——"全部"tab 下 visiblePosts 包含
+  // 所有帖（含 live_clip），用户先看到 hero 卡又在列表里看到同一条 live 帖，两
+  // 次点击进同一个 post detail，体感「这条占了两个位置」。"动态" tab 在极端情况
+  // （live_clip 帖 mediaType=image/text 而非 video）下同样会撞。改成 id 集合查
+  // 重：featuredLivePost 在 visiblePosts 里就让位给列表渲染，hero 只在"它没出现
+  // 在当前 tab 列表"时露出（典型场景：视频/音乐 tab 把 live_clip 过滤掉，hero
+  // 仍然把作者最近一次直播亮出来）。
+  const featuredLivePostInVisible =
+    featuredLivePost &&
+    visiblePosts.some((post) => post.id === featuredLivePost.id);
 
   if (isDesktopLayout) {
     return (
@@ -660,9 +671,13 @@ export function ChannelAuthorPage() {
               过滤——featuredLivePost 是 recentPosts.find(live_clip)，正是 visiblePosts
               的第一条。结果同一条直播回放在 hero 卡 + 列表第一行各显示一次，
               用户两次点击进同一个 post detail，体感像 "为什么这条占两个位置"。
-              tab=live 时 hero 已经被列表完全覆盖，直接隐掉避免重复。
+
+              走查 2026-05-22 R2：原 `activeCollection !== "live"` 守卫只能挡掉
+              「直播回放」tab，但"全部"tab 下 visiblePosts 同样包含 live_clip 帖
+              ——hero 又跟列表第一行撞车。换成「post 出现在当前 tab 列表里就让位
+              给列表」的精确判断，"全部"/"动态" 边角同样兜住。
             */}
-            {featuredLivePost && activeCollection !== "live" ? (
+            {featuredLivePost && !featuredLivePostInVisible ? (
               <button
                 type="button"
                 onClick={() => openChannelPost(featuredLivePost)}
