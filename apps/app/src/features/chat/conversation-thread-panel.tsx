@@ -1120,6 +1120,14 @@ function MobileThreadStatusCard({
 }) {
   return (
     <section
+      // 走查移动端单聊新一轮 R5：和桌面 ErrorBlock role="alert" / LoadingBlock
+      // 同款 SR 反馈 —— MobileThreadStatusCard 在 messagesQuery.isLoading /
+      // isError / 空会话三态下覆盖整个消息流位置，原版裸 <section> 完全不
+      // 告诉盲人「正在读取会话」「会话暂时不可用」「还没有消息」是什么状态。
+      // danger → alert+assertive 立刻打断当前朗读；loading → status+polite
+      // 等读完再追一句进度；空态（default tone）也用 status+polite。
+      role={tone === "danger" ? "alert" : "status"}
+      aria-live={tone === "danger" ? "assertive" : "polite"}
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
