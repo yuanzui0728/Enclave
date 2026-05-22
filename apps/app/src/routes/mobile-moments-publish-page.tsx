@@ -182,6 +182,12 @@ export function MobileMomentsPublishPage() {
                   {
                     ...current.pages[0]!,
                     items: [newMoment, ...current.pages[0]!.items],
+                    // 走查 R6：和 moments-page desktop compose（行 370）对齐——pages[0].total
+                    // 也要 +1。同一把 ["app-moments-paged", baseUrl] cache 同时被 desktop
+                    // 工具栏「已加载 X / 共 Y 条动态」读，从 mobile publish 发完一条立刻
+                    // resize 到 desktop 宽度，invalidate refetch 还没落地的 ~600ms 内 Y
+                    // 是陈旧值，体感「我发了但总数没动」。
+                    total: (current.pages[0]!.total ?? 0) + 1,
                   },
                 ],
                 pageParams: current.pageParams.slice(0, 1),
