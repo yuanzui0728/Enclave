@@ -670,9 +670,16 @@ export function ContactsPage() {
     // 没排序时桌面星标列表的顺序就是 getFriends() 落库顺序，刚加星标的好友常常
     // 排到中间或末尾，用户找不到自己刚操作的那条；mobile 早就是 starredAt DESC，
     // 桌面这边一直没补。
+    // 防御性过滤 SELF：跟 mobile starred-friends-page / buildContactTagGroups 同
+    // 口径——脏数据 / 历史脚本误设 char-default-self.isStarred=true 时不要把
+    // "我"列进星标朋友（桌面 sidebar 「星标朋友 N 位常联系好友」也会被算错）。
     () =>
       (friendsQuery.data ?? [])
-        .filter((item) => item.friendship.isStarred)
+        .filter(
+          (item) =>
+            item.friendship.isStarred &&
+            item.character.id !== SELF_CHARACTER_ID,
+        )
         .sort(compareStarredFriends),
     [friendsQuery.data],
   );
@@ -2820,14 +2827,22 @@ export function ContactsPage() {
               // SELF，bulk 模式渲染 FriendListRow 时会显示空 checkbox 圆圈，但
               // toggleBulkSelection 的 SELF 守卫又会拒绝写入 → 用户点 SELF 行 checkbox
               // 没反应，看着像 App 卡了。totalIds / onSelectAll 已经把 SELF 排除，
-              // 把渲染侧也对齐。section 全空时仍保留 header 占位，避免右侧 A-Z
-              // 索引点 W 后 scrollIntoView 找不到锚点。
+              // 把渲染侧也对齐。
               const items =
                 bulkMode
                   ? section.items.filter(
                       (item) => item.character.id !== SELF_CHARACTER_ID,
                     )
                   : section.items;
+              // 走查 R1：bulk 模式下整个 section 只剩 SELF 时（如 yuanzui0728 的
+              // "W" section 只含「我」一位），上面 filter 完 items=0，但原版仍渲
+              // 染 SectionHeader + 空 div，用户看到一个孤儿字母（如 "W"）下面什么
+              // 都没有，体感像列表卡了一截。旧注释说"保留 header 占位避免 A-Z 索
+              // 引找不到锚点"是错的——A-Z 索引下面那行渲染条件 `!bulkMode`，bulk
+              // 模式根本不显示索引；非 bulk 路径继续渲染 header（保留旧锚点行为）。
+              if (bulkMode && !items.length) {
+                return null;
+              }
               return (
                 // scroll-margin-top 跟 syncActiveMobileIndexKey 的 stickyOffset 保
                 // 持 104px 一致：右侧 A-Z 索引点 "M" 后 scrollIntoView 把这块锚点

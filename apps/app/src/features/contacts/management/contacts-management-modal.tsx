@@ -261,9 +261,16 @@ export function ContactsManagementModal({
     }
   })();
 
+  // 走查 R2：原版 modal 容器没 role="dialog" / aria-modal，屏幕阅读器把它当
+  // 普通区块，不会播报 "进入对话框" 也不会阻断 modal 外的焦点；同时自动化测试
+  // 用 [role="dialog"] 抓取也直接 miss。aria-labelledby 指向 ModalHeader 的
+  // 标题元素，让 SR 在打开瞬间把标题（"通讯录管理" / "黑名单" / "朋友权限"）
+  // 一并播报。
+  const titleId = "contacts-management-modal-title";
   const header = (
     <ModalHeader
       title={titleText}
+      titleId={titleId}
       canGoBack={canGoBack}
       onBack={tryPop}
       onClose={tryClose}
@@ -283,7 +290,12 @@ export function ContactsManagementModal({
           disabled={busy}
           className="absolute inset-0"
         />
-        <div className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        >
           {header}
           <div
             ref={scrollContainerRef}
@@ -305,7 +317,12 @@ export function ContactsManagementModal({
         disabled={busy}
         className="absolute inset-0"
       />
-      <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(15,23,42,0.18)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(15,23,42,0.18)]"
+      >
         <div className="flex justify-center pt-2">
           <div className="h-1 w-9 rounded-full bg-black/10" />
         </div>
@@ -323,6 +340,7 @@ export function ContactsManagementModal({
 
 function ModalHeader({
   title,
+  titleId,
   canGoBack,
   onBack,
   onClose,
@@ -331,6 +349,8 @@ function ModalHeader({
   disabled = false,
 }: {
   title: ReactNode;
+  // 让外层 modal aria-labelledby 能挂到标题元素上；SR 在 modal 打开瞬间播报。
+  titleId?: string;
   canGoBack: boolean;
   onBack: () => void;
   onClose: () => void;
@@ -362,7 +382,10 @@ function ModalHeader({
           （可能是较长的外语好友名），原来 text-[15px] 单元素没有 max-width 也
           没 overflow:hidden，名字稍长就把 h-12 行高撑出 / 换行；改成中间区域
           占满剩余空间并按需省略。 */}
-      <div className="min-w-0 flex-1 truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div
+        id={titleId}
+        className="min-w-0 flex-1 truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]"
+      >
         {title}
       </div>
       <div className="flex w-9 justify-end">

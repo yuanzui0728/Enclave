@@ -282,8 +282,20 @@ export function ContactsBulkActionBar({
             disabled={bulk.isPending}
             className="absolute inset-0"
           />
-          <div className="relative w-full max-w-[420px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]">
-            <div className="border-b border-[color:var(--border-faint)] px-5 py-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+          {/* 走查 R3：跟 ContactsManagementModal 同一轮 a11y 修复，给"打标签" /
+              "删除确认"两个 confirm dialog 也补 role="dialog" / aria-modal /
+              aria-labelledby。否则屏幕阅读器把它们当普通 fixed div，朗读不会
+              进入 modal context；自动化测试用 [role="dialog"] 抓取也直接 miss。 */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contacts-bulk-tag-dialog-title"
+            className="relative w-full max-w-[420px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]"
+          >
+            <div
+              id="contacts-bulk-tag-dialog-title"
+              className="border-b border-[color:var(--border-faint)] px-5 py-3 text-[15px] font-medium text-[color:var(--text-primary)]"
+            >
               {t(msg`打标签`)}
             </div>
             <div className="px-5 py-4">
@@ -350,9 +362,20 @@ export function ContactsBulkActionBar({
             disabled={bulk.isPending}
             className="absolute inset-0"
           />
-          <div className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]">
+          {/* 走查 R3 a11y：role="dialog" + aria-modal + aria-labelledby —— 删除
+              确认尤其重要，SR 用户必须能播报 "确定删除选中的 N 个朋友？" 才能
+              判断是否继续，否则可能误按"删除"造成不可逆数据丢失。 */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contacts-bulk-delete-dialog-title"
+            className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]"
+          >
             <div className="px-5 py-5 text-center">
-              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div
+                id="contacts-bulk-delete-dialog-title"
+                className="text-[15px] font-medium text-[color:var(--text-primary)]"
+              >
                 {t(msg`确定删除选中的 ${selectedIds.length} 个朋友？`)}
               </div>
               <p className="mt-2 text-[12px] leading-5 text-[color:var(--text-muted)]">

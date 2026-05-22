@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
-import { getFriends } from "@yinjie/contracts";
+import { getFriends, SELF_CHARACTER_ID } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -112,7 +112,15 @@ function MobileStarredFriendsPage() {
   const starredFriends = useMemo(
     () =>
       (friendsQuery.data ?? [])
-        .filter((item) => item.friendship.isStarred)
+        // 防御性过滤 SELF：跟 buildContactTagGroups 同口径。如果脏数据 / 历史走查
+        // 脚本把 char-default-self 的 friendship.isStarred 标了 true，"我"会跑
+        // 到星标朋友列表里，星形图标 + 自己头像看着极其奇怪。前端守一道，
+        // 不依赖后端 / DB 完全干净。
+        .filter(
+          (item) =>
+            item.friendship.isStarred &&
+            item.character.id !== SELF_CHARACTER_ID,
+        )
         .sort(compareStarredFriends),
     [friendsQuery.data],
   );

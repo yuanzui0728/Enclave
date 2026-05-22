@@ -1,4 +1,4 @@
-import type { FriendListItem } from "@yinjie/contracts";
+import { SELF_CHARACTER_ID, type FriendListItem } from "@yinjie/contracts";
 import { getFriendDisplayName, matchesFriendSearch } from "./contact-utils";
 
 export type ContactTagGroup = {
@@ -13,6 +13,12 @@ export function buildContactTagGroups(
   const groups = new Map<string, FriendListItem[]>();
 
   for (const item of friends) {
+    // SELF（char-default-self）哪怕老数据 / 历史走查脚本误打上 tag，标签页
+    // 也不应展示——通讯录管理 → 标签里 "我" 在某个标签下做一位"联系人"
+    // 出现完全反直觉；前端 toggleBulkSelection / 全选逻辑都已经守 SELF。
+    if (item.character.id === SELF_CHARACTER_ID) {
+      continue;
+    }
     const tags =
       item.friendship.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
 
