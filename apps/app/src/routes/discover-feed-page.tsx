@@ -1610,6 +1610,25 @@ export function DiscoverFeedPage() {
   // 触发。routeSelectedPostId 真切到另一条时（站内跳到下一篇）锁里的 id 不匹配，
   // 自然解锁再 snap。
   const mobileScrollSnappedRouteIdRef = useRef<string | null>(null);
+  // 新一轮 R4：snap 锁在 routeSelectedPostId 从 X 切到 null 再切回 X 时不会重置。
+  // 用户路径（推送通知 → 应用 → 滚走 → 回收 inbox → 同条新推送 ← 不重 mount）：
+  //   1. 点推送 → /tabs/feed#post=X → snap 到 X，ref=X
+  //   2. 用户读完滚到下方评论区
+  //   3. 系统 back / 应用内"返回广场"清掉 hash → routeSelectedPostId=null →
+  //      snap effect 早返（!routeSelectedPostId 条件命中），ref 仍是 X
+  //   4. 同条 post 又一条推送 / 用户在收藏列表里再点同条 → /tabs/feed#post=X →
+  //      hash 重新带回 #post=X，但页面是同一个 mount 没 unmount → ref 仍是 X
+  //      → snap effect 看到 ref===route 早返 → 不 snap，用户视感"打开了同一条
+  //      推送但页面没跳到那条 post"
+  // 行为预期：每一次 routeSelectedPostId 从 falsy 变 truthy 都视为新一轮"我要看
+  // X"，重置 snap 锁让下方 effect 跑一次。route X → Y → X 这种 X≠Y 在 snap
+  // 主 effect 里已经处理（ref!=route 自然解锁），仅 null→X→null→X 这条边
+  // 路径需要补一刀；同模式应适用于 moments-page 同款 ref。
+  useEffect(() => {
+    if (!routeSelectedPostId) {
+      mobileScrollSnappedRouteIdRef.current = null;
+    }
+  }, [routeSelectedPostId]);
   useEffect(() => {
     if (
       isDesktopLayout ||
