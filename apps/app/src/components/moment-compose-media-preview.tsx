@@ -8,6 +8,7 @@ import {
   type MomentImageDraft,
   type MomentVideoDraft,
 } from "../features/moments/moment-compose-media";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
 
@@ -279,6 +280,22 @@ function ComposeImageViewer({
   onPrevious?: () => void;
   onNext?: () => void;
 }) {
+  // 走查第 N 轮 R3：原本 viewer 只挂 ESC capture-phase 关掉自己，对 Android 原生
+  // back 没保护。用户在 publish 页（mobile-feed-publish / mobile-moments-publish）
+  // hasContent=true 时打开图片预览 → Android 原生 back → publish 页那条
+  // "hasContent && !isPending" 的 interceptor 触发 → setDiscardConfirmOpen(true)
+  // → "放弃发表"对话框盖在 viewer 上。但用户本意只是关预览，结果看到"放弃发表"
+  // 完全错位。viewer 自己 register 一条 interceptor（LIFO 最后注册的最先消费），
+  // back 时优先关 viewer。
+  useEffect(() => {
+    if (!draft) return;
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+  }, [draft, onClose]);
+
   if (!draft) {
     return null;
   }
@@ -354,6 +371,16 @@ function ComposeVideoViewer({
       videoRef.current?.pause();
     };
   }, []);
+  // 走查第 N 轮 R3：跟 ComposeImageViewer 同款——Android 原生 back 时优先关 viewer，
+  // 不让外层 publish 页那条"hasContent && !isPending"interceptor 把 back 翻译成
+  // 弹"放弃发表"对话框。viewer 自己 register LIFO 排在外层之后，最先消费 back。
+  useEffect(() => {
+    return registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      onClose();
+      return true;
+    });
+  }, [onClose]);
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm">
       <button
