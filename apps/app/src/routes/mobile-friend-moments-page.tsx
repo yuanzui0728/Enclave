@@ -1016,7 +1016,29 @@ export function MobileFriendMomentsPage() {
             </div>
           ) : null}
 
-          {character && !timelineLoading && momentsQuery.isError ? (
+          {/*
+            走查移动端朋友圈/Round 3 R1：和 moments-page mobile R1（行 2143-2161）
+            同款 —— 之前只看 momentsQuery.isError 就盖整张「朋友圈暂时不可用 +
+            重试读取 + 返回上一页」大空态卡，把已经加载好的 friendMoments 整页吃
+            掉（行 1075-1078 gate 同时 require !momentsQuery.isError → moments
+            列表被错误态压没）。两条真实场景假爆：
+              1) react-query 默认 staleTime=0 + refetchOnMount=true，用户从角色
+                 详情进 friend-moments → 返回 → 再进同一角色 friend-moments 时
+                 后台 refetch；公网断流 / cloud-api 抖一下 refetch 失败但 data
+                 还是 cached 的：visibleMoments 有内容 + isError → 大空态卡盖
+                 整页，用户看不到原本已经能看的 8-30 条角色朋友圈，体感「我刚
+                 看过的内容凭空消失了」。
+              2) 用户 pull-to-refresh 失败时已经走 setNotice danger 红条兜底
+                 （行 803-815），同步又冒一张大空态卡形成双错误 UI。
+            gate 加 !friendMoments.length，错误态只在真·初次空仓时显示；有 cached
+            内容时静默用 stale data（同 react-query 默认体验），用户仍然能 pull-
+            refresh 重试。下方 friendMoments 列表 gate 同时去掉 !momentsQuery.isError
+            限制，让 error+data 路径继续渲染列表。
+          */}
+          {character &&
+          !timelineLoading &&
+          momentsQuery.isError &&
+          !friendMoments.length ? (
             <div className="px-4 pt-10 pb-12 text-center">
               <div className="text-[14px] font-medium text-[#1A1A1A]">
                 {t(msg`朋友圈暂时不可用`)}
@@ -1072,9 +1094,14 @@ export function MobileFriendMomentsPage() {
             </div>
           ) : null}
 
+          {/*
+            Round 3 R1：去掉 !momentsQuery.isError gate 让 error+cached data 路径
+            继续渲染。空仓 error 已被上方大空态卡承包；列表 + cached data 共存
+            时 stale 内容仍可见。空仓 + 无 error 路径仍走「还没有发表朋友圈」
+            兜底（line 1060 gate 不动）。
+          */}
           {character &&
           !timelineLoading &&
-          !momentsQuery.isError &&
           !isBlocked &&
           friendMoments.length
             ? friendMoments.map((moment, index) => {
