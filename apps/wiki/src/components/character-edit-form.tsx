@@ -300,6 +300,18 @@ export type CharacterEditFormProps = {
    * 这里只透传"是否禁用 + 禁用原因文字"，按钮渲染仍由组件统一处理。
    */
   extraSaveDisabledReason?: string | null;
+  /**
+   * AI 生成完成时的副作用回调，**在 updates 应用到表单 + consumeGenerationResult
+   * 之前**触发。当前唯一用途：私有 create + section='all' 完成时，后端回
+   * linkedDraftId，父组件用它跳 `/my-characters/new?draftId=xxx` 让 URL 反映状态。
+   *
+   * 不放进 useEffect 自己处理是因为子组件的 effect 会先于父组件的 effect 执行
+   * → 子组件 consumeGenerationResult 后父组件看不到 done 状态，捕不到 linkedDraftId。
+   */
+  onGenerationDone?: (state: {
+    section: AiGenerateSection;
+    linkedDraftId: string | null;
+  }) => void;
 };
 
 export function CharacterEditForm(props: CharacterEditFormProps) {
@@ -320,6 +332,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     clearSessionOnSave = true,
     footerSlot,
     extraSaveDisabledReason,
+    onGenerationDone,
   } = props;
 
   const t = useRuntimeTranslator();
@@ -897,6 +910,13 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     if (gen.status === "done") {
       setAiError(null);
       setAiQuotaExhausted(null);
+      // 父组件副作用先于内部 consume —— 让 my-character-edit-page 拿 linkedDraftId
+      // 跳 ?draftId=xxx；之后再 applyUpdates / consume，避免 status 已变 idle
+      // 父组件再 subscribe 捕不到 linkedDraftId。
+      onGenerationDone?.({
+        section: gen.section,
+        linkedDraftId: gen.linkedDraftId,
+      });
       const count = gen.optimize
         ? applyUpdatesOverwrite(gen.updates)
         : applyUpdatesFillEmptyOnly(gen.updates);
@@ -2051,7 +2071,10 @@ function TopGenerateButton({
         className="rounded-full border border-[color:var(--brand-primary)] bg-[image:var(--brand-gradient)] px-4 py-2 text-sm font-semibold text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-card)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
       >
         {isPending ? (
-          <Trans>生成中…</Trans>
+          // 2026-05-22 异步化后：enqueue 立即返回，LLM 后台跑 ~30s。给用户
+          // 一个时长锚点，避免误以为按钮卡死想刷新（刷新会丢 in-memory session
+          // 状态，目前没做 URL 持久化恢复；要等用户跳出页面才回得来）。
+          <Trans>生成中（约 30 秒）…</Trans>
         ) : (
           <Trans>✨ AI 一键生成全部</Trans>
         )}

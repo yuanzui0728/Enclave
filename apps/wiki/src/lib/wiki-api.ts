@@ -932,16 +932,19 @@ export const wikiApi = {
      */
     optimize?: boolean;
     /**
-     * 仅在「新建」场景传 true：后端在 section='all' AI 生成完成后会把
-     * 用户已填 + AI 输出 merge 写入 character_drafts。即便用户在生成中
-     * 关 tab，后端也会落库，下次进 /my-drafts 仍能看到。
+     * 仅在「新建」场景传 true：后端 enqueue 时 scope='private_create'，job
+     * 完成阶段会把"用户已填 + AI 输出"merge 后写入 character_drafts，并把
+     * draftId 挂到 job.linkedDraftId，前端轮询到后跳 ?draftId=xxx。
      */
     persistAsDraft?: boolean;
   }) {
-    return request<AiGeneratedDraft>("/wiki/my-characters/ai-generate", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
+    // 2026-05-22 起：后端改为异步 enqueue，POST 立即返回 jobId；前端走
+    // pollAiGenerationJob 轮询拿结果。改动是为了根治 Oray 隧道 ~60s 超时
+    // 抢先 503 但后端实际成功的"幽灵失败"。
+    return request<AiGenerationJobEnqueueResult>(
+      "/wiki/my-characters/ai-generate",
+      { method: "POST", body: JSON.stringify(input) },
+    );
   },
   /**
    * AI 生成角色字段（与 generateMyCharacterFields 走同一套 service，但路由是
@@ -949,21 +952,27 @@ export const wikiApi = {
    * 用同一份 15/h 配额）。世界角色 / 私有角色编辑器需要不同 URL 主要是为了
    * 让请求语义可追踪：私有 → /wiki/my-characters/ai-generate；世界 → /wiki/
    * ai-generate-character-fields。
+   *
+   * 同 generateMyCharacterFields，2026-05-22 起异步化，返回 jobId。世界路径
+   * scope='world_edit'，job ready 时 result 仅留在 jobs 表，不写 character_drafts。
    */
   generateCharacterFields(input: {
     section: AiGenerateSection;
     currentDraft: PrivateCharacterDto;
     optimize?: boolean;
-    /**
-     * 仅在「新建」场景传 true。同 generateMyCharacterFields 的 persistAsDraft，
-     * 但落库 kind='world'。
-     */
+    /** 世界路径首版忽略 persistAsDraft；保留入参兼容旧调用站点。 */
     persistAsDraft?: boolean;
   }) {
-    return request<AiGeneratedDraft>("/wiki/ai-generate-character-fields", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
+    return request<AiGenerationJobEnqueueResult>(
+      "/wiki/ai-generate-character-fields",
+      { method: "POST", body: JSON.stringify(input) },
+    );
+  },
+  /** 查询 AI 生成任务的最新状态。前端短轮询（3s 间隔）调它。 */
+  getAiGenerationJob(id: string) {
+    return request<AiGenerationJobView>(
+      `/wiki/ai-generation-jobs/${encodeURIComponent(id)}`,
+    );
   },
   /** 列出当前用户的所有草稿，按 updatedAt 倒序。 */
   listMyDrafts() {
@@ -1189,6 +1198,37 @@ export type MyDraftSummary = {
 /** 单份草稿详情，含 payload —— 用于跳回创建页 hydrate 表单。 */
 export type MyDraftDetail = MyDraftSummary & {
   payload: PrivateCharacterDto;
+};
+
+/**
+ * AI 生成异步 job 的两种返回形态：
+ *   - enqueue：POST 立即返回 { jobId, status: 'generating' }
+ *   - poll：GET /wiki/ai-generation-jobs/:id 返回 view（含 status / result / error）
+ *
+ * 2026-05-22 起所有 ai-generate POST 都走 enqueue 模型，根治 Oray 隧道 60s
+ * 超时导致的"幽灵 503"。
+ */
+export type AiGenerationJobEnqueueResult = {
+  jobId: string;
+  status: "generating";
+};
+
+export type AiGenerationJobView = {
+  id: string;
+  ownerUserId: string;
+  scope: "private_create" | "private_edit" | "world_edit";
+  section: AiGenerateSection;
+  status: "generating" | "ready" | "failed";
+  /** status='ready' 时是 AiGeneratedDraft，其它状态为 null。 */
+  result: AiGeneratedDraft | null;
+  errorMessage: string | null;
+  /**
+   * scope='private_create' && section='all' && status='ready' 时回填的草稿 id。
+   * 前端拿到后跳 `/my-characters/new?draftId=xxx` 让 URL 反映状态、刷新可恢复。
+   */
+  linkedDraftId: string | null;
+  aiStartedAt: string;
+  updatedAt: string;
 };
 
 /** AI 生成返回的 partial draft；只包含**当前为空**字段的建议。 */

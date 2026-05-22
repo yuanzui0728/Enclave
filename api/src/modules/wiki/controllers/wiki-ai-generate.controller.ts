@@ -13,6 +13,8 @@ import {
 } from '../../auth/jwt-auth.guard';
 import { WikiAiGenerateRateLimitGuard } from '../guards/wiki-ai-generate-rate-limit.guard';
 import { WikiPrivateCharacterAiService } from '../services/wiki-private-character-ai.service';
+import { AiGenerationJobService } from '../services/ai-generation-job.service';
+import { SubscriptionService } from '../../subscription/subscription.service';
 import type { PrivateCharacterDto } from '../services/wiki-private-character.service';
 import {
   SECTION_KEYS,
@@ -31,7 +33,11 @@ import {
 @Controller('wiki/ai-generate-character-fields')
 @UseGuards(JwtAuthGuard)
 export class WikiAiGenerateController {
-  constructor(private readonly aiService: WikiPrivateCharacterAiService) {}
+  constructor(
+    private readonly aiService: WikiPrivateCharacterAiService,
+    private readonly jobService: AiGenerationJobService,
+    private readonly subscription: SubscriptionService,
+  ) {}
 
   @Post()
   @UseGuards(WikiAiGenerateRateLimitGuard)
@@ -42,8 +48,9 @@ export class WikiAiGenerateController {
       section?: string;
       currentDraft?: PrivateCharacterDto;
       optimize?: boolean;
-      // 创建页传 true，编辑页不传。section='all' + persistAsDraft=true 时
-      // 后端把 merge 后的 draft 写入 character_drafts（kind='world'）。
+      // 世界角色编辑通常 persistAsDraft 不传（直接 merge 进表单不写库）。
+      // 即便传 true 也忽略 —— 世界角色不再写 character_drafts（首版精简，
+      // 后续若需要可加 world_create scope）。
       persistAsDraft?: boolean;
     },
   ) {
@@ -79,14 +86,22 @@ export class WikiAiGenerateController {
         );
       }
     }
-    return this.aiService.generateForSection({
+
+    await this.subscription.assertCanUseAi('text');
+
+    const job = await this.jobService.enqueue({
+      ownerUserId: user.id,
+      scope: 'world_edit',
       section,
-      currentDraft: draft,
-      ownerId: user.id,
       optimize: body?.optimize === true,
-      persistAsDraft:
-        body?.persistAsDraft === true ? { kind: 'world' } : undefined,
+      currentDraft: draft,
+      targetCharacterId: null,
     });
+    setImmediate(() => {
+      this.aiService.runJobInBackground(job.id).catch(() => {});
+    });
+
+    return { jobId: job.id, status: 'generating' as const };
   }
 }
 // i18n-ignore-end

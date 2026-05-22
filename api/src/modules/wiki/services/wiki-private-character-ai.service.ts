@@ -8,6 +8,7 @@ import {
   CharacterDraftService,
   type DraftKind,
 } from './character-draft.service';
+import { AiGenerationJobService } from './ai-generation-job.service';
 import {
   SECTION_PROMPTS,
   type SectionKey,
@@ -54,8 +55,15 @@ export class WikiPrivateCharacterAiService {
   constructor(
     private readonly orchestrator: AiOrchestratorService,
     private readonly draftService: CharacterDraftService,
+    private readonly jobService: AiGenerationJobService,
   ) {}
 
+  /**
+   * 纯函数版：跑 LLM + normalize，返回增量 updates。无副作用（不写 draft）。
+   *
+   * 由 `runJobInBackground` 调度；老的同步入口已下线（controller 现在统一走
+   * enqueue + job 表）。
+   */
   async generateForSection(input: {
     section: SectionKey;
     currentDraft: PrivateCharacterDto;
@@ -65,14 +73,6 @@ export class WikiPrivateCharacterAiService {
      * sacred 字段 (name / relationship / bio) 后端兜底，即便 optimize=true 也不返回。
      */
     optimize?: boolean;
-    /**
-     * 仅在「新建」场景下由 controller 注入。section='all' 完成后会把
-     * currentDraft 与 AI 输出合并，写入 character_drafts 表。
-     *
-     * 关键：写库在 await orchestrator 之后同步执行，与本次响应是否能送达
-     * 客户端无关 —— 用户在生成中关 tab 也能保留草稿。
-     */
-    persistAsDraft?: { kind: DraftKind } | undefined;
   }): Promise<AiGeneratedDraft> {
     const template = SECTION_PROMPTS[input.section];
     const vars = buildTemplateVars(input.currentDraft);
@@ -110,31 +110,96 @@ export class WikiPrivateCharacterAiService {
       if (parsed) raw = parsed;
     }
 
-    const updates = normalizeAiOutput(
+    return normalizeAiOutput(
       input.section,
       raw,
       input.currentDraft,
       input.optimize === true,
     );
+  }
 
-    // 创建场景下，把"用户已填 + AI 生成"merge 后落草稿。失败只 log，不影响
-    // AI 结果返回 —— 用户哪怕看到错误也比丢内容强。
-    if (input.persistAsDraft && input.section === 'all') {
-      const merged = mergeDraftWithUpdates(input.currentDraft, updates);
+  /**
+   * 后台异步执行入口。controller 在同步阶段 enqueue 完立刻返回 jobId，本方法
+   * 由 `setImmediate` 调度，与 HTTP 响应解耦。任何异常都吞掉并 markFailed，
+   * 不能往上抛 —— 调用栈是 setImmediate，没人接错误。
+   *
+   * scope='private_create' && section='all' && status='ready' 时，额外把 merge
+   * 后的完整 draft 写 character_drafts（保留"AI 一键生成完入 /my-drafts"语义），
+   * 把 draftId 回填到 job.linkedDraftId 给前端 navigate 用。
+   */
+  async runJobInBackground(jobId: string): Promise<void> {
+    let job: Awaited<ReturnType<AiGenerationJobService['getByIdInternal']>>;
+    try {
+      job = await this.jobService.getByIdInternal(jobId);
+    } catch (err) {
+      this.logger.error(
+        `ai-generation-job ${jobId} lookup failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
+    if (!job) {
+      this.logger.warn(`ai-generation-job ${jobId} not found, abort background run`);
+      return;
+    }
+
+    let currentDraft: PrivateCharacterDto;
+    try {
+      const parsed = JSON.parse(job.currentDraftSnapshot);
+      currentDraft = (parsed && typeof parsed === 'object'
+        ? parsed
+        : { name: '' }) as PrivateCharacterDto;
+    } catch (err) {
+      await this.jobService.markFailed(
+        jobId,
+        `currentDraft 反序列化失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
+
+    let updates: AiGeneratedDraft;
+    try {
+      updates = await this.generateForSection({
+        section: job.section,
+        currentDraft,
+        ownerId: job.ownerUserId,
+        optimize: job.optimize,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `ai-generation-job ${jobId} generateForSection failed: ${message}`,
+      );
+      await this.jobService.markFailed(jobId, message);
+      return;
+    }
+
+    let linkedDraftId: string | null = null;
+    if (job.scope === 'private_create' && job.section === 'all') {
+      const merged = mergeDraftWithUpdates(currentDraft, updates);
       try {
-        await this.draftService.createFromAi(
-          input.ownerId,
-          input.persistAsDraft.kind,
+        const draftKind: DraftKind = 'private';
+        const draft = await this.draftService.createFromAi(
+          job.ownerUserId,
+          draftKind,
           merged,
         );
+        linkedDraftId = draft.id;
       } catch (err) {
+        // 草稿写失败不阻断 ready —— 前端拿 updates 仍可走 merge 路径；
+        // 用户损失只是"刷新后丢草稿"，相比 markFailed 更可挽回。
         this.logger.warn(
-          `failed to persist character draft for owner=${input.ownerId} kind=${input.persistAsDraft.kind}: ${err instanceof Error ? err.message : String(err)}`,
+          `ai-generation-job ${jobId} persist draft failed: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
 
-    return updates;
+    try {
+      await this.jobService.markReady(jobId, updates, linkedDraftId);
+    } catch (err) {
+      this.logger.error(
+        `ai-generation-job ${jobId} markReady failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 }
 

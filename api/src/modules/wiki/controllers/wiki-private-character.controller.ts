@@ -21,6 +21,8 @@ import { WikiAiGenerateRateLimitGuard } from '../guards/wiki-ai-generate-rate-li
 import { WikiPrivateCharacterService } from '../services/wiki-private-character.service';
 import type { PrivateCharacterDto } from '../services/wiki-private-character.service';
 import { WikiPrivateCharacterAiService } from '../services/wiki-private-character-ai.service';
+import { AiGenerationJobService } from '../services/ai-generation-job.service';
+import { SubscriptionService } from '../../subscription/subscription.service';
 import {
   SECTION_KEYS,
   type SectionKey,
@@ -32,6 +34,8 @@ export class WikiPrivateCharacterController {
   constructor(
     private readonly service: WikiPrivateCharacterService,
     private readonly aiService: WikiPrivateCharacterAiService,
+    private readonly jobService: AiGenerationJobService,
+    private readonly subscription: SubscriptionService,
   ) {}
 
   @Get()
@@ -115,10 +119,14 @@ export class WikiPrivateCharacterController {
     return this.service.upsertByName(user.id, dto);
   }
 
-  // AI 自动生成：根据当前已填字段调一次 LLM，返回需要补全的字段。
-  // 5 个 section（basics/core_logic/chat/scenes/memory）+ 1 个 'all' 整体生成；
-  // 实际可用 key 见 SECTION_KEYS。life / reasoning 已于 2026-05-15 下线（详见 prompts.ts 顶部）。
-  // 单独的 rate limit（15/h/user），与 CRUD 桶（60/h）分开。
+  // AI 自动生成：异步化。enqueue 同步返回 jobId，setImmediate 跑 LLM；
+  // 前端走 GET /wiki/ai-generation-jobs/:id 轮询。
+  //
+  // 2026-05-22 起改异步：长 LLM 调用（30~60s）经 Oray 隧道时 ~60s 超时抢先吐
+  // 503 给浏览器，但后端实际成功并写了 character_drafts，UX 看起来"失败"实际"成功"。
+  //
+  // section 枚举 / sacred 字段校验 / rate-limit / subscription 全部在同步阶段
+  // 完成（早 fail），避免占用 job 行后又 markFailed。
   @Post('ai-generate')
   @UseGuards(WikiAiGenerateRateLimitGuard)
   async aiGenerate(
@@ -129,7 +137,7 @@ export class WikiPrivateCharacterController {
       currentDraft?: PrivateCharacterDto;
       optimize?: boolean;
       // 创建页传 true，编辑页不传。section='all' + persistAsDraft=true 时
-      // 后端把 merge 后的 draft 写入 character_drafts。
+      // job 完成阶段会把 merge 后的 draft 写入 character_drafts。
       persistAsDraft?: boolean;
     },
   ) {
@@ -168,13 +176,26 @@ export class WikiPrivateCharacterController {
         );
       }
     }
-    return this.aiService.generateForSection({
+
+    // subscription 早 fail：异步阶段抛错回传不到前端，必须在 enqueue 前同步抛
+    // 402。orchestrator 内的 assertCanUseAi 在 try 外，原本也能 propagate，但放
+    // 在 controller 显式调使语义更清晰、不依赖被调方的实现细节。
+    await this.subscription.assertCanUseAi('text');
+
+    const job = await this.jobService.enqueue({
+      ownerUserId: user.id,
+      scope: body?.persistAsDraft === true ? 'private_create' : 'private_edit',
       section,
-      currentDraft: draft,
-      ownerId: user.id,
       optimize: body?.optimize === true,
-      persistAsDraft:
-        body?.persistAsDraft === true ? { kind: 'private' } : undefined,
+      currentDraft: draft,
+      targetCharacterId: null,
     });
+    // setImmediate 解耦响应：错误已在 runJobInBackground 内 markFailed，吃掉
+    // 任何 reject（Node 未捕获 promise 会 warning，但不 crash）。
+    setImmediate(() => {
+      this.aiService.runJobInBackground(job.id).catch(() => {});
+    });
+
+    return { jobId: job.id, status: 'generating' as const };
   }
 }

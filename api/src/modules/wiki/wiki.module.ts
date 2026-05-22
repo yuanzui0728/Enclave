@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersModule } from '../characters/characters.module';
 import { UserEntity } from '../auth/user.entity';
@@ -20,6 +21,7 @@ import { WikiTalkPostEntity } from './entities/wiki-talk-post.entity';
 import { WikiWatchlistEntity } from './entities/wiki-watchlist.entity';
 import { UserPrivateCharacterEntity } from './entities/user-private-character.entity';
 import { CharacterDraftEntity } from './entities/character-draft.entity';
+import { AiGenerationJobEntity } from './entities/ai-generation-job.entity';
 import { WikiAiGenerateRateLimitGuard } from './guards/wiki-ai-generate-rate-limit.guard';
 import { WikiRateLimitGuard } from './guards/wiki-rate-limit.guard';
 import { WikiRoleGuard } from './guards/wiki-role.guard';
@@ -59,11 +61,15 @@ import { WikiAvatarService } from './services/wiki-avatar.service';
 import { WikiAiGenerateController } from './controllers/wiki-ai-generate.controller';
 import { CharacterDraftController } from './controllers/character-draft.controller';
 import { CharacterDraftService } from './services/character-draft.service';
+import { AiGenerationJobService } from './services/ai-generation-job.service';
+import { AiGenerationJobSweeperService } from './services/ai-generation-job-sweeper.service';
+import { WikiAiGenerateJobController } from './controllers/wiki-ai-generate-job.controller';
 
 @Module({
   imports: [
     AuthModule,
     CharactersModule,
+    SubscriptionModule,
     forwardRef(() => AiModule),
     TypeOrmModule.forFeature([
       CharacterEntity,
@@ -83,6 +89,7 @@ import { CharacterDraftService } from './services/character-draft.service';
       WikiFieldProtectionEntity,
       UserPrivateCharacterEntity,
       CharacterDraftEntity,
+      AiGenerationJobEntity,
     ]),
   ],
   controllers: [
@@ -103,6 +110,7 @@ import { CharacterDraftService } from './services/character-draft.service';
     WikiAvatarController,
     WikiAiGenerateController,
     CharacterDraftController,
+    WikiAiGenerateJobController,
   ],
   providers: [
     WikiPageService,
@@ -124,6 +132,8 @@ import { CharacterDraftService } from './services/character-draft.service';
     WikiPrivateCharacterCleanupService,
     WikiAvatarService,
     CharacterDraftService,
+    AiGenerationJobService,
+    AiGenerationJobSweeperService,
     WikiRoleGuard,
     WikiRateLimitGuard,
     WikiAiGenerateRateLimitGuard,
