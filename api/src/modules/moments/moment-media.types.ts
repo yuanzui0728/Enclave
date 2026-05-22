@@ -21,6 +21,11 @@ export interface MomentImageAsset {
   width?: number;
   height?: number;
   livePhoto?: MomentLivePhotoMetadata;
+  // 由 AiOrchestratorService.describeImageFromUrl 一次性生成并落到 mediaPayload，
+  // 让用文本模型（MiniMax-M2.7 这类不带 vision 的默认 provider）也能看到"图里有啥"，
+  // 不再因为 supportsNativeImageInput=false 在 buildChatCompletionMessage 里被静默丢掉，
+  // 角色就不会继续回"图片我看不到"了。
+  imageCaption?: string;
 }
 
 export interface MomentVideoAsset {

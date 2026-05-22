@@ -903,6 +903,12 @@ export class MomentsService implements OnModuleInit {
       return;
     }
 
+    // 一次性给配图打 caption，缓存到 post.mediaPayload。后面每个角色的 setTimeout
+    // 评论 closure 共享同一份 post 对象，buildMomentAiObservation 直接读 imageCaption，
+    // 不再每个角色都重新跑 vision；也让默认 provider 不支持 image_url 的世界（如
+    // MiniMax-M2.7）的角色能"看到"图。
+    await this.ensureMomentImageCaptions(post);
+
     let allChars = (await this.characters.findAllVisibleToOwner()).filter(
       (character) =>
         character.id !== post.authorId && visibleCharacterIds.has(character.id),
@@ -1873,6 +1879,7 @@ export class MomentsService implements OnModuleInit {
     assertMomentMediaUrl(url, 'image.url');
     assertMomentMediaUrl(thumbnailUrl, 'image.thumbnailUrl');
     assertMomentMediaUrl(motionUrl, 'image.livePhoto.motionUrl');
+    const imageCaption = asset.imageCaption?.trim() || undefined;
     return {
       id: asset.id?.trim() || `moment-image-${index + 1}`,
       kind: 'image',
@@ -1889,6 +1896,7 @@ export class MomentsService implements OnModuleInit {
             motionUrl,
           }
         : undefined,
+      imageCaption,
     };
   }
 
@@ -2034,20 +2042,21 @@ export class MomentsService implements OnModuleInit {
     const media = this.parseMomentMediaPayload(post.mediaPayload);
     const parts: AiMessagePart[] = [];
     const contentType = this.normalizeMomentContentType(post.contentType);
-    const summary = this.buildMomentPromptSummary(post);
+    let summary = this.buildMomentPromptSummary(post);
 
-    media
+    const imageAssets = media
       .filter((asset): asset is MomentImageAsset => asset.kind === 'image')
-      .slice(0, 4)
-      .forEach((asset, index) => {
-        parts.push({
-          type: 'image',
-          imageUrl: asset.url,
-          mimeType: asset.mimeType,
-          detail: 'auto',
-          altText: `朋友圈配图 ${index + 1}`,
-        });
+      .slice(0, 4);
+
+    imageAssets.forEach((asset, index) => {
+      parts.push({
+        type: 'image',
+        imageUrl: asset.url,
+        mimeType: asset.mimeType,
+        detail: 'auto',
+        altText: `朋友圈配图 ${index + 1}`,
       });
+    });
 
     if (contentType === 'video') {
       const video = media[0] as MomentVideoAsset | undefined;
@@ -2061,12 +2070,110 @@ export class MomentsService implements OnModuleInit {
       }
     }
 
+    summary =
+      (await this.appendMomentTranscriptSummary(summary, media, post)) ??
+      summary;
+
+    summary = this.appendMomentImageCaptionSummary(summary, imageAssets);
+
     return {
-      summary:
-        (await this.appendMomentTranscriptSummary(summary, media, post)) ??
-        summary,
+      summary,
       parts: parts.length ? parts : undefined,
     };
+  }
+
+  private appendMomentImageCaptionSummary(
+    summary: string,
+    images: MomentImageAsset[],
+  ): string {
+    const captioned = images
+      .map((asset, index) => ({
+        index,
+        caption: asset.imageCaption?.trim() || '',
+      }))
+      .filter((entry) => entry.caption.length > 0);
+    if (!captioned.length) {
+      return summary;
+    }
+
+    if (captioned.length === 1 && images.length === 1) {
+      return `${summary}。配图内容（AI 视觉识别）：${captioned[0].caption}`;
+    }
+
+    const lines = captioned.map(
+      (entry) => `第${entry.index + 1}张：${entry.caption}`,
+    );
+    return `${summary}。配图内容（AI 视觉识别）：\n${lines.join('\n')}`;
+  }
+
+  /**
+   * 走查时发现 yuanzui 的默认 provider 是 MiniMax-M2.7（不支持原生 image_url），
+   * 用户发图到朋友圈后所有角色评论都回"图片我看不到"。这里在角色互动调度起跑前
+   * 单次调用 vision-capable provider 给每张图出一段文字描述，缓存到 mediaPayload
+   * 里；后续每个角色评论都能从 buildMomentAiObservation 拿到文字配图内容，不再依赖
+   * 下游模型是否原生看图。
+   *
+   * 调用方式：scheduleCharacterInteractions 顶部 await 一次，10 个角色后续 setTimeout
+   * 里读到的就是已缓存的 caption；不需要每次都重新跑 vision。
+   */
+  private async ensureMomentImageCaptions(
+    post: MomentPostEntity,
+  ): Promise<void> {
+    const media = this.parseMomentMediaPayload(post.mediaPayload);
+    const images = media.filter(
+      (asset): asset is MomentImageAsset => asset.kind === 'image',
+    );
+    if (!images.length) {
+      return;
+    }
+
+    const targets = images
+      .map((asset, mediaIndex) => ({ asset, mediaIndex }))
+      .filter(({ asset }) => !asset.imageCaption?.trim())
+      .slice(0, 4); // 同步 buildMomentAiObservation 的 .slice(0, 4)；多图也只描述前 4 张
+    if (!targets.length) {
+      return;
+    }
+
+    const characterIdForKeyOverride =
+      post.authorType === 'character' ? post.authorId : undefined;
+
+    const captions = await Promise.all(
+      targets.map(({ asset }) =>
+        this.ai.describeImageFromUrl({
+          url: asset.url,
+          mimeType: asset.mimeType,
+          fileName: asset.fileName,
+          characterId: characterIdForKeyOverride,
+        }),
+      ),
+    );
+
+    let changed = false;
+    targets.forEach(({ mediaIndex }, i) => {
+      const caption = captions[i]?.trim();
+      if (!caption) {
+        return;
+      }
+      const target = media[mediaIndex] as MomentImageAsset;
+      target.imageCaption = caption;
+      changed = true;
+    });
+
+    if (!changed) {
+      return;
+    }
+
+    post.mediaPayload = this.serializeMomentMedia(media);
+    try {
+      await this.postRepo.save(post);
+    } catch (error) {
+      // 落库失败也无所谓，本次调度的 closure 们仍持有同一份 post 对象的 imageCaption；
+      // 顶多重启后再触发评论时需要重跑一次 vision。
+      this.logger.warn?.(
+        `ensureMomentImageCaptions: persist failed for post ${post.id}: ${(error as Error).message}`,
+      );
+    }
   }
 
   private async appendMomentTranscriptSummary(

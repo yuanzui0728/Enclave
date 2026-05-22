@@ -1954,6 +1954,107 @@ export class AiOrchestratorService {
     };
   }
 
+  /**
+   * 用一台 vision-capable provider 给图片一次性出一个简短文字描述，给所有用文本
+   * 模型的下游消费者（朋友圈/Feed 评论生成等）当上下文。MiniMax-M2.7 这类默认 provider
+   * 不支持原生 image_url，buildChatCompletionMessage 会静默丢图 → 角色只看到
+   * "用户发了一张图片" 然后回 "图片我看不到"。这条路径走一次 vision 调用，把结果
+   * 缓存到 mediaPayload 里。
+   *
+   * 选 provider：遍历当前世界已启用的 inference provider，挑第一个 supportsNativeImageInput
+   * 的；都不支持则返回 null（优雅降级，角色仍能继续回话）。
+   */
+  async describeImageFromUrl(input: {
+    url: string;
+    mimeType?: string | null;
+    fileName?: string | null;
+    characterId?: string;
+  }): Promise<string | null> {
+    const visionProvider = await this.pickVisionCapableProvider({
+      characterId: input.characterId,
+    });
+    if (!visionProvider) {
+      this.logger.debug?.(
+        'image-caption skipped: no vision-capable provider configured',
+      );
+      return null;
+    }
+
+    const loaded = input.url.startsWith('data:')
+      ? this.loadAssetFromDataUrl(input.url)
+      : await this.loadAssetFromUrl(input.url, MAX_INLINE_IMAGE_BYTES);
+    if (!loaded?.buffer.length) {
+      return null;
+    }
+
+    const mimeType =
+      this.normalizeMediaMimeType(input.mimeType) ??
+      this.normalizeMediaMimeType(loaded.mimeType) ??
+      this.inferMimeTypeFromFileName(input.fileName) ??
+      'image/jpeg';
+    if (!mimeType.startsWith('image/')) {
+      return null;
+    }
+
+    const imageDataUrl = `data:${mimeType};base64,${loaded.buffer.toString('base64')}`;
+
+    try {
+      const client = this.createProviderClient(visionProvider);
+      const response = await executeChatCompletion(client, {
+        model: visionProvider.model,
+        max_tokens: 240,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content:
+              '你是图片识别助手。用 2-3 句中文，平实地描述图片里实际能看到的内容：场景/主要物体/可识别文字/人物或人物动作（如有）。\n要求：看不清就说看不清；不要寒暄；不要加任何评论或推测；不要使用项目符号。',
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: '请描述这张图片：',
+              },
+              {
+                type: 'image_url',
+                image_url: { url: imageDataUrl, detail: 'auto' },
+              },
+            ],
+          },
+        ],
+      });
+      const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
+      return text || null;
+    } catch (error) {
+      this.logger.warn('image caption generation failed', {
+        url: input.url,
+        model: visionProvider.model,
+        errorMessage: this.extractErrorMessage(error),
+      });
+      return null;
+    }
+  }
+
+  private async pickVisionCapableProvider(options?: {
+    characterId?: string | null;
+  }): Promise<ResolvedProviderConfig | null> {
+    const configs = await this.inferenceService.listEnabledRuntimeProviderConfigs({
+      characterId: options?.characterId,
+    });
+    for (const config of configs) {
+      if (!config.apiKey?.trim()) {
+        continue;
+      }
+      const caps = await this.resolveProviderCapabilityProfile(config);
+      if (caps.supportsNativeImageInput) {
+        return config;
+      }
+    }
+    return null;
+  }
+
   async tryTranscribeMediaFromUrl(input: {
     url: string;
     mimeType?: string | null;
