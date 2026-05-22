@@ -213,6 +213,15 @@ export function MobileFeedPublishPage() {
     // 账户也安全——前面 Round 2 的 onSuccess 已经按 mutationBaseUrl gate 住，
     // 切走后的 success/error 反馈也不会落到新账户身上。
     createMutation.reset();
+    // 新一轮走查 Round 2：submittingRef 是同步防双击锁，A 账户点完「发表」时翻
+    // true，靠 createMutation.mutate 的 per-call onSettled 在请求落地时翻回 false。
+    // mid-flight 切到 B 账户时 createMutation.reset() 只清 UI 状态、不取消 in-flight
+    // 请求 → A 的 onSettled 仍会在 ~5s 后翻回 false，但中间这段窗口 B 重新输入
+    // 完想发表时被这条 ref 同步锁早返，按钮看着可点（hasContent=true / isPending
+    // =false），但 onClick 第一行 `if (submittingRef.current) return;` 直接咽掉，
+    // 用户视感是"按了发表完全没反应"。切账户当作"上一次提交已经跟当前用户无关"，
+    // 同步把锁拨回 false，让 B 第一次点能立刻飞。
+    submittingRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl, resetComposeDraft]);
 
