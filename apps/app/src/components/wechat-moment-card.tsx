@@ -492,18 +492,32 @@ function formatWeChatTimestamp(iso: string): string {
 
   const date = new Date(ts);
   const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
 
-  const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+  // 走查移动端朋友圈/Round 1 R1：之前「X 天前」分支走 wall-clock 差
+  // `Math.floor((today.getTime() - ts) / 86400000)`，但「昨天」分支走的是
+  // calendar-day sameDay 判定，二者口径不一致。前天 23:59 发的 moment 今天
+  // 14:00 来看：wall-clock 差 38h → floor=1 → 落到「X 天前」分支被算成
+  // 「1 天前」，但 calendar-wise 是 2 天前，用户读着前天的朋友圈写"1 天前"
+  // 很违和。把「昨天」/「X 天前」统一到 calendar-day 差：date / today 都
+  // 对齐到当日 00:00 再算天数差。Math.round 兜住 DST 切换日（中国无 DST，
+  // 但 i18n 用户可能在有 DST 的时区，那天的 dateMidnight - todayMidnight
+  // 会是 23h 或 25h）。
+  const dateMidnight = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  const todayMidnight = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const calendarDayDiff = Math.round(
+    (todayMidnight.getTime() - dateMidnight.getTime()) / 86400000,
+  );
 
-  if (sameDay(date, yesterday)) return t(msg`昨天`);
-
-  const diffDay = Math.floor((today.getTime() - ts) / 86400000);
-  if (diffDay < 7) return t(msg`${diffDay} 天前`);
+  if (calendarDayDiff === 1) return t(msg`昨天`);
+  if (calendarDayDiff < 7) return t(msg`${calendarDayDiff} 天前`);
 
   const month = date.getMonth() + 1;
   const day = date.getDate();
