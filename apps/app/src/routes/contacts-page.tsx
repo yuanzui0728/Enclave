@@ -1,5 +1,6 @@
 import {
   Suspense,
+  memo,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -1614,6 +1615,32 @@ export function ContactsPage() {
     startChatMutation.mutate(characterId);
   }
 
+  // Fresh 走查 R2：移动端 FriendListRow 原版每渲染都重建 onClick inline arrow，
+  // 列表 200+ 行 → 每次 contacts-page 父端 re-render（isQuickMenuOpen toggle /
+  // notice timer / mutation pending / friendRequestSuccess / friendsQuery
+  // refetch 等都触发）都把 200 行全量 re-render 一遍。把 click handler 提到
+  // useCallback + memo'd FriendListRow（见文件底部）后：
+  //   - 选 / 取消选某项 → 只 ONE 行 re-render（selected 这 1 个 boolean 变）
+  //   - 父端非选择类 state 变 → 全 200 行 memo skip，0 行 re-render
+  // 桌面 ContactsWorkspaceShell 路径 isDesktopLayout=true，使用独立 row
+  // 组件，不影响。
+  const handleMobileFriendRowClick = useCallback(
+    (characterId: string) => {
+      if (bulkMode) {
+        toggleBulkSelection(characterId);
+        return;
+      }
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: pathname,
+        }),
+      });
+    },
+    [bulkMode, toggleBulkSelection, navigate, pathname],
+  );
+
   function handleOpenProfile(characterId: string) {
     if (!isDesktopLayout) {
       void navigate({
@@ -2664,7 +2691,7 @@ export function ContactsPage() {
                           className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                         >
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
-                            <Icon size={14} />
+                            <Icon aria-hidden="true" size={14} />
                           </div>
                           <span>{t(item.label)}</span>
                         </button>
@@ -2703,7 +2730,7 @@ export function ContactsPage() {
                             item.disabled ? "bg-white/6" : "bg-white/10",
                           )}
                         >
-                          <Icon size={14} />
+                          <Icon aria-hidden="true" size={14} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div>{t(item.label)}</div>
@@ -2901,13 +2928,7 @@ export function ContactsPage() {
                       index={index}
                       bulkMode={bulkMode}
                       selected={bulkSelectedIds.has(item.character.id)}
-                      onClick={() => {
-                        if (bulkMode) {
-                          toggleBulkSelection(item.character.id);
-                          return;
-                        }
-                        handleOpenProfile(item.character.id);
-                      }}
+                      onSelect={handleMobileFriendRowClick}
                     />
                   ))}
                 </div>
@@ -2957,7 +2978,14 @@ export function ContactsPage() {
   );
 }
 
-function FriendListRow({
+// Fresh 走查 R2：memo 包裹避免父端不相关 state 翻动（notice 2.4s 自清 /
+// isQuickMenuOpen toggle / pendingCharacterId 变 / friendRequestsQuery 后台
+// refetch 等）把 200+ 行全部 re-render 一遍。配合 onSelect 改成稳定回调
+// （父端 useCallback handleMobileFriendRowClick）+ 把 onClick 内部 closure
+// 自己消化掉 item.character.id，shallow compare 命中率最大化。
+// pendingCharacterId / desktop / active / onDoubleClick 当前 mobile 路径无人
+// 使用，留 props 不删，desktop / games 子组件复用接口稳定。
+const FriendListRow = memo(function FriendListRow({
   item,
   index,
   pendingCharacterId,
@@ -2965,7 +2993,7 @@ function FriendListRow({
   active = false,
   bulkMode = false,
   selected = false,
-  onClick,
+  onSelect,
   onDoubleClick,
 }: {
   item: FriendDirectoryItem;
@@ -2975,15 +3003,19 @@ function FriendListRow({
   active?: boolean;
   bulkMode?: boolean;
   selected?: boolean;
-  onClick: () => void;
+  onSelect: (characterId: string) => void;
   onDoubleClick?: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // memo 内部用 closure 把 item.character.id 关进去；inner arrow 每次行
+  // re-render 时确实重建，但因为 row 本身 memo'd，re-render 频率已经被
+  // 控制成"props 真的变化时"。父端只需保证 onSelect 稳定。
+  const handleClick = () => onSelect(item.character.id);
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       onDoubleClick={onDoubleClick}
       // 走查 R3：bulkMode 下行变成"可选 / 已选"两态切换按钮，但原本只用视觉
       // 复选圆圈传达选中态，屏幕阅读器听到的就是"按钮 张三"，不知道勾没勾。
@@ -3082,7 +3114,7 @@ function FriendListRow({
       ) : null}
     </button>
   );
-}
+});
 
 function SectionHeader({
   title,
