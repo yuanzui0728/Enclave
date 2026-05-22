@@ -1,6 +1,7 @@
 import { msg } from "@lingui/macro";
 import { isApiRequestError } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { translateAppErrorCode } from "./error-translate";
 
 const NETWORK_ERROR_MESSAGES = new Set([
   "Failed to fetch",
@@ -49,7 +50,21 @@ export function describeRequestError(error: unknown, fallback?: string) {
         msg`当前云账号已被停用，请联系管理员或重新登录。`,
       );
     }
+    // 2026-05-22 走查移动端单聊 R2：走 /chat/<不存在>id 时 server 返
+    // CHAT_CONVERSATION_NOT_FOUND + params.conversationId + legacyMessage
+    // "Conversation X not found"。原 fallback 一路用 error.message（= 服务端
+    // legacyMessage），整个 zh-CN APP 在「会话暂时不可用」卡片底下亮出整段英文
+    // "Conversation direct_xxx not found"。error-translate.ts:393 早就为
+    // CHAT_CONVERSATION_NOT_FOUND / CHAT_GROUP_NOT_FOUND / CHAT_MESSAGE_NOT_FOUND
+    // 等准备了 zh-CN/en-US/ja-JP 三套文案，但 describeRequestError 没接进来。
+    // 把 translateAppErrorCode 放在 cloud-auth/账号 ban 检查之后、netError 之前
+    // 命中所有 KnownAppErrorCode；命中不到返回 null → 继续走旧的 fallback 链。
+    const translated = translateAppErrorCode(error);
+    if (translated) {
+      return translated;
+    }
   }
+
 
   if (error instanceof Error) {
     const message = error.message.trim();
