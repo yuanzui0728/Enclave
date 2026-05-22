@@ -96,6 +96,19 @@ export function describeRequestError(error: unknown, fallback?: string) {
       );
     }
 
+    // 走查移动端我-tab 端到端 2026-05-22：网关 / 反代 / mock server 返
+    // `{"statusCode":500}` 这种"只有 body 没 message"的偷懒响应时，contracts
+    // client 的 resolveRequestErrorMessage 会把整段 raw JSON 字符串当 message
+    // 抛出来 —— 用户面看到的就是 `提交失败：{"statusCode":500}` 这种暴露内部
+    // 结构的丑陋文案。前端这一层也兜一次：检测 message 像 JSON object/array
+    // 字符串就翻成本地化 fallback。和 contracts 同款修法双重保险。
+    if (message.startsWith("{") || message.startsWith("[")) {
+      if (isApiRequestError(error) && error.statusCode >= 500) {
+        return translateRuntimeMessage(msg`服务器暂时不可用，请稍后再试。`);
+      }
+      return resolvedFallback;
+    }
+
     return message || resolvedFallback;
   }
 

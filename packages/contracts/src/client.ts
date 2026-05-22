@@ -588,6 +588,23 @@ function resolveRequestErrorMessage(
     return `Request failed: ${status}`;
   }
 
+  // 走查移动端我-tab 端到端 2026-05-22：body 是 JSON 但没 message 字段（如
+  // 网关 / 反代直接返 `{"statusCode":500}` 或 `{"error":"Internal Server Error"}`
+  // 的偷懒响应）时，原版直接把整段 JSON 字符串当成"错误文案"塞给用户 ——
+  // feedback 失败时会渲染成 `提交失败：{"statusCode":500}` 这种暴露内部
+  // 结构的丑陋文案。检测开头是 `{` / `[` 的 JSON-looking body，落到通用
+  // 兜底：5xx → "服务器暂时不可用"，4xx → `Request failed: N`（后面再被
+  // describeRequestError 翻成本地化文案）。
+  if (
+    normalizedRawBody.startsWith("{") ||
+    normalizedRawBody.startsWith("[")
+  ) {
+    if (status >= 500) {
+      return "服务器暂时不可用，请稍后再试。";
+    }
+    return `Request failed: ${status}`;
+  }
+
   return normalizedRawBody;
 }
 
