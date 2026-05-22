@@ -560,12 +560,23 @@ export function MobileFriendMomentsPage() {
     const monthFormatter = new Intl.DateTimeFormat(activeLocale, {
       month: "long",
     });
-    return friendMoments.map((moment) => {
+    return friendMoments.map((moment, index) => {
+      // 走查移动端朋友圈/Round 5 R1：和 profile-moments-page R1 同模板对齐 ——
+      // 之前每条 moment 都画日期列，同一天发的多条 moment 会 stack 出多个一样
+      // 的 "23 May"，跟 WeChat / profile-moments 的"同一天只显示在第一条"惯例
+      // 不一致。后续 moment 的日期格仍占 w-12 宽度保持卡片对齐，但内容留空。
+      const previous = index > 0 ? friendMoments[index - 1] : null;
+      const showDate =
+        !previous || !isSameLocalDay(previous.postedAt, moment.postedAt);
+      if (!showDate) {
+        return { showDate: false as const, dayLabel: "", monthLabel: "" };
+      }
       const date = new Date(moment.postedAt);
       if (Number.isNaN(date.getTime())) {
-        return { dayLabel: "--", monthLabel: "--" };
+        return { showDate: true as const, dayLabel: "--", monthLabel: "--" };
       }
       return {
+        showDate: true as const,
         dayLabel: `${date.getDate()}`.padStart(2, "0"),
         monthLabel: monthFormatter.format(date),
       };
@@ -1023,7 +1034,8 @@ export function MobileFriendMomentsPage() {
           !isBlocked &&
           friendMoments.length
             ? friendMoments.map((moment, index) => {
-                const { dayLabel, monthLabel } = momentDateLabels[index] ?? {
+                const label = momentDateLabels[index] ?? {
+                  showDate: true as const,
                   dayLabel: "--",
                   monthLabel: "--",
                 };
@@ -1037,13 +1049,20 @@ export function MobileFriendMomentsPage() {
                     }
                   >
                     <div className="flex items-start gap-2 px-4 py-3.5">
-                      <div className="w-12 shrink-0 pt-1 text-right">
-                        <div className="text-[26px] font-semibold leading-none text-[#1A1A1A]">
-                          {dayLabel}
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-[0.04em] text-[#9A9A9A]">
-                          {monthLabel}
-                        </div>
+                      <div
+                        className="w-12 shrink-0 pt-1 text-right"
+                        aria-hidden={!label.showDate}
+                      >
+                        {label.showDate ? (
+                          <>
+                            <div className="text-[26px] font-semibold leading-none text-[#1A1A1A]">
+                              {label.dayLabel}
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-[0.04em] text-[#9A9A9A]">
+                              {label.monthLabel}
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                       <div className="min-w-0 flex-1">
                         <WeChatMomentCard
@@ -1199,5 +1218,21 @@ export function MobileFriendMomentsPage() {
         onClose={() => setCommentBarTarget(null)}
       />
     </AppPage>
+  );
+}
+
+// 走查移动端朋友圈/Round 5 R1：和 profile-moments-page 同模板的 local helper。
+// 不导出 / 不抽公共 lib —— profile-moments 也是 local 写法，先保持双份一致；
+// 真要做去重等下次有第三处需要时再抽 lib/format。
+function isSameLocalDay(aIso: string, bIso: string): boolean {
+  const a = new Date(aIso);
+  const b = new Date(bIso);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) {
+    return false;
+  }
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   );
 }
