@@ -22,6 +22,7 @@ import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { MomentMediaGallery } from "./moment-media-gallery";
 import { stripToolCallSyntax } from "../features/moments/moment-content";
+import { describeRequestError } from "../lib/request-error";
 
 const t = translateRuntimeMessage;
 
@@ -168,9 +169,14 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
         const result = await synthesizeMomentNarration(moment.id, apiBaseUrl);
         setNarrationUrl(result.audioUrl);
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : t(msg`朗读生成失败`);
-        setNarrationError(message);
+        // 走查 R2：原版直接 err.message 把 server legacyMessage 透给 UI——
+        // 朋友圈不存在 / 文本为空 / TTS 配额耗尽等 AppError 的 legacyMessage
+        // 全是中文，非 zh-CN locale 用户拿到的就是裸中文。和 moments-page
+        // resolveMomentsErrorMessage 同模板：走 describeRequestError 命中
+        // i18n 字典 + cloud-auth / 网络错 / fallback 三段兜底。
+        setNarrationError(
+          describeRequestError(err, t(msg`朗读生成失败`)),
+        );
       } finally {
         setNarrationLoading(false);
       }
