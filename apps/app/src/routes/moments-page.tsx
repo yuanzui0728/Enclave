@@ -2227,11 +2227,20 @@ export function MomentsPage() {
         // 新走查 R2：同帧 click 同步锁——见 desktop onLike 注释。
         if (likeInflightRef.current[momentId]) return;
         likeInflightRef.current[momentId] = true;
-        likeMutation.mutate(momentId, {
-          onSettled: () => {
-            delete likeInflightRef.current[momentId];
-          },
-        });
+        // 走查本轮 R1（防御）：和上面 onError 重试按钮 (~line 607) 同款 try-catch 兜底——
+        // 同一把 likeInflightRef 跨 6 处共用，任一入口同步抛错都会锁死所有入口
+        // (双击 wechat-moment-card / action bubble / 顶 notice 重试 / 6 处 likeMutation.mutate)。
+        // 之前只在重试路径加了 try-catch，这里和下面 action bubble onLike 一起补上对齐。
+        try {
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        } catch (mutateError) {
+          delete likeInflightRef.current[momentId];
+          throw mutateError;
+        }
       }}
       onDeleteMoment={(momentId) => {
         // ref guard 必须在 window.confirm 之前 set，否则 confirm 阻塞期间
@@ -2252,11 +2261,19 @@ export function MomentsPage() {
           mobileDeleteInflightRef.current = false;
           return;
         }
-        deleteMutation.mutate(momentId, {
-          onSettled: () => {
-            mobileDeleteInflightRef.current = false;
-          },
-        });
+        // 走查本轮 R1（防御）：和 likeInflightRef try-catch 同款——mobileDeleteInflightRef
+        // 是单 boolean（不按 momentId 维度），mutate() 同步抛错会让 ref 永远卡 true →
+        // 用户后续删除任何朋友圈都被 ref guard 早返"假死"，只能整页刷新。
+        try {
+          deleteMutation.mutate(momentId, {
+            onSettled: () => {
+              mobileDeleteInflightRef.current = false;
+            },
+          });
+        } catch (mutateError) {
+          mobileDeleteInflightRef.current = false;
+          throw mutateError;
+        }
       }}
       onOpenActionMenu={(momentId, anchorRect) =>
         // 走查移动端朋友圈/Round 3 R1：toggle —— 二次点同一颗 ⋯ 关菜单。和
@@ -2291,11 +2308,18 @@ export function MomentsPage() {
         // 新走查 R2：同帧 click 同步锁——见 desktop onCommentSubmit 注释。
         if (commentInflightRef.current[momentId]) return;
         commentInflightRef.current[momentId] = true;
-        commentMutation.mutate(momentId, {
-          onSettled: () => {
-            delete commentInflightRef.current[momentId];
-          },
-        });
+        // 走查本轮 R1（防御）：和 likeInflightRef try-catch 同款——commentInflightRef
+        // 跨 mobile/desktop 多入口共用，mutate() 同步抛错会锁死该 momentId 的评论入口。
+        try {
+          commentMutation.mutate(momentId, {
+            onSettled: () => {
+              delete commentInflightRef.current[momentId];
+            },
+          });
+        } catch (mutateError) {
+          delete commentInflightRef.current[momentId];
+          throw mutateError;
+        }
       }}
       onRefresh={async () => {
         // 下拉刷新只换头部 page 1，保留已加载的 page 2+：

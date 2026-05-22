@@ -2,6 +2,7 @@ import {
   forwardRef,
   memo,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -155,7 +156,15 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       onOpenActionMenu(rect);
     };
 
-    const displayText = stripToolCallSyntax(moment.text);
+    // 走查本轮 R2 (perf)：moment.text 仅在用户/角色编辑过 moment 才会变，
+    // 但 like 路径（optimistic toggle）走 `{...moment, likes, likeCount}`
+    // 同样换 moment 引用 → arePropsEqual 失配 → 卡片重渲。stripToolCallSyntax
+    // 跑一遍多 regex 拆解；text 没变就不必再 strip。和 visibleComments
+    // useMemo 同款优化。
+    const displayText = useMemo(
+      () => stripToolCallSyntax(moment.text),
+      [moment.text],
+    );
     const hasText = Boolean(displayText);
     const hasMedia = moment.media.length > 0;
     const hasLikes = moment.likes.length > 0;
@@ -167,16 +176,26 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     //     prose 残骸，否则 footer 会渲染空灰块）
     //   - cleanTextById：渲染时直接读已算好的 cleanText
     //   - commentAuthorById：reply-to 名字查表（O(1) 替代 O(N) find）
-    const cleanTextById = new Map<string, string>();
-    const commentAuthorById = new Map<string, string>();
-    const visibleComments: typeof moment.comments = [];
-    for (const c of moment.comments) {
-      commentAuthorById.set(c.id, c.authorName);
-      const cleanText = stripToolCallSyntax(c.text);
-      if (cleanText.trim().length === 0) continue;
-      cleanTextById.set(c.id, cleanText);
-      visibleComments.push(c);
-    }
+    //
+    // 走查本轮 R2 (perf)：用 useMemo + [moment.comments] 把整套预计算锁住——
+    // 用户点 like 时 use-optimistic-like 走 `{...moment, likes, likeCount}`，
+    // moment 引用换了但 moment.comments 数组引用没变（spread 浅拷贝保留原引用）。
+    // 之前每次 like 都重跑一遍 N 条评论的 stripToolCallSyntax + Map 建立，对
+    // 评论密集的爆款帖（50+ 评论）每次 like 都付一次正则烧 CPU。memo 后仅在
+    // 评论真变（新加/删除）时才重算。
+    const { cleanTextById, commentAuthorById, visibleComments } = useMemo(() => {
+      const cleanTextById = new Map<string, string>();
+      const commentAuthorById = new Map<string, string>();
+      const visibleComments: typeof moment.comments = [];
+      for (const c of moment.comments) {
+        commentAuthorById.set(c.id, c.authorName);
+        const cleanText = stripToolCallSyntax(c.text);
+        if (cleanText.trim().length === 0) continue;
+        cleanTextById.set(c.id, cleanText);
+        visibleComments.push(c);
+      }
+      return { cleanTextById, commentAuthorById, visibleComments };
+    }, [moment.comments]);
     const hasComments = visibleComments.length > 0;
     const showFooterBlock = hasLikes || hasComments;
 

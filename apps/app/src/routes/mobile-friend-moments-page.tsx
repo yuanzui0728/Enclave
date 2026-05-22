@@ -210,14 +210,23 @@ export function MobileFriendMomentsPage() {
             : t(msg`点赞失败，请稍后重试。`),
         actionLabel: t(msg`重试点赞`),
         // 本轮 R2：双击守卫——见 likeInflightRef 注释。
+        // 走查再一轮 R1（防御）：和 moments-page (desktop) onError retry 同款 try-catch
+        // 兜底——同一把 likeInflightRef 跨 3 处入口共用（重试 / onDoubleTapLike / 行动菜单
+        // onLike）；任一入口 mutate() 同步抛错都会让该 momentId 的 ref 卡 true，其余 2 处
+        // 入口对同条 moment 的点心操作全被 ref guard 早返"假死"，只能整页刷新。
         action: () => {
           if (likeInflightRef.current[momentId]) return;
           likeInflightRef.current[momentId] = true;
-          likeMutation.mutate(momentId, {
-            onSettled: () => {
-              delete likeInflightRef.current[momentId];
-            },
-          });
+          try {
+            likeMutation.mutate(momentId, {
+              onSettled: () => {
+                delete likeInflightRef.current[momentId];
+              },
+            });
+          } catch (mutateError) {
+            delete likeInflightRef.current[momentId];
+            throw mutateError;
+          }
         },
       });
     },
@@ -1093,13 +1102,20 @@ export function MobileFriendMomentsPage() {
                             // 走查移动端朋友圈/Round 4 R1：双击守卫 —— 之前裸
                             // mutate 同帧双击触发 2 次 POST /like 把 toggle 多翻
                             // 一轮，跟 moments-page / profile-moments-page 同模板。
+                            // 走查再一轮 R1（防御）：try-catch 兜底——见上方 notice
+                            // 重试 action 同款 try-catch 注释。
                             if (likeInflightRef.current[moment.id]) return;
                             likeInflightRef.current[moment.id] = true;
-                            likeMutation.mutate(moment.id, {
-                              onSettled: () => {
-                                delete likeInflightRef.current[moment.id];
-                              },
-                            });
+                            try {
+                              likeMutation.mutate(moment.id, {
+                                onSettled: () => {
+                                  delete likeInflightRef.current[moment.id];
+                                },
+                              });
+                            } catch (mutateError) {
+                              delete likeInflightRef.current[moment.id];
+                              throw mutateError;
+                            }
                           }}
                           onCommentTap={(comment) =>
                             onCommentTap(moment.id, comment)
@@ -1132,14 +1148,21 @@ export function MobileFriendMomentsPage() {
             // onClick 顺序是 onLike() → onClose()，onClose 会 setActionBubble(null)
             // 把 bubble unmount；但同帧第二次 click 在 React 还没 commit 之前 bubble
             // DOM 还在，会再触发一次 onLike → 2 个 POST /like 飞出去。
+            // 走查再一轮 R1（防御）：try-catch 兜底——见上方 notice 重试 action
+            // 同款 try-catch 注释。同一把 likeInflightRef 跨 3 处共用。
             const id = actionBubble.momentId;
             if (likeInflightRef.current[id]) return;
             likeInflightRef.current[id] = true;
-            likeMutation.mutate(id, {
-              onSettled: () => {
-                delete likeInflightRef.current[id];
-              },
-            });
+            try {
+              likeMutation.mutate(id, {
+                onSettled: () => {
+                  delete likeInflightRef.current[id];
+                },
+              });
+            } catch (mutateError) {
+              delete likeInflightRef.current[id];
+              throw mutateError;
+            }
           }
         }}
         onComment={() => {
@@ -1205,14 +1228,22 @@ export function MobileFriendMomentsPage() {
           if (commentBarTarget) {
             // 走查移动端朋友圈/Round 4 R1：commentInflightRef 同帧双击守卫 ——
             // 见上方 ref 注释。和 moments-page / profile-moments-page 同模板。
+            // 走查再一轮 R1（防御）：try-catch 兜底——同 likeInflightRef
+            // 注释，commentMutation.mutate() 同步抛错会让该 momentId 的评论入口
+            // 卡 true，用户在同条 moment 上无法再发评论，只能整页刷新。
             const id = commentBarTarget.momentId;
             if (commentInflightRef.current[id]) return;
             commentInflightRef.current[id] = true;
-            commentMutation.mutate(id, {
-              onSettled: () => {
-                delete commentInflightRef.current[id];
-              },
-            });
+            try {
+              commentMutation.mutate(id, {
+                onSettled: () => {
+                  delete commentInflightRef.current[id];
+                },
+              });
+            } catch (mutateError) {
+              delete commentInflightRef.current[id];
+              throw mutateError;
+            }
           }
         }}
         onClose={() => setCommentBarTarget(null)}

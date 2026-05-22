@@ -637,11 +637,20 @@ export function MobileMomentsPublishPage() {
               if (submittingRef.current) return;
               if (!canSubmit) return;
               submittingRef.current = true;
-              createMutation.mutate(undefined, {
-                onSettled: () => {
-                  submittingRef.current = false;
-                },
-              });
+              // 走查本轮 R1（防御）：和 moments-page likeInflightRef try-catch 同款 ——
+              // createMutation.mutate() 万一同步抛错（理论上 react-query v5 不会，但
+              // 未来 wrapper / mutationFn 引入同步抛锁），submittingRef 永远卡 true，
+              // 用户后续在同张 publish 页上发表全被早返"假死"，只能整页刷新。
+              try {
+                createMutation.mutate(undefined, {
+                  onSettled: () => {
+                    submittingRef.current = false;
+                  },
+                });
+              } catch (mutateError) {
+                submittingRef.current = false;
+                throw mutateError;
+              }
             }}
             disabled={!canSubmit}
             className={cn(
