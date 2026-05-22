@@ -1904,11 +1904,29 @@ export class ChatService {
     lastMessageEntity?: GroupMessageEntity | null,
     remarkMap?: FriendRemarkMap,
   ): Conversation & { lastMessage?: Message } {
+    // 走查 2026-05-22b R1：构造一份「角色 → 当前群昵称」的反查表传给
+    // groupMessageToConversationMessage。lastMessage.senderName 原本只兜
+    // remarkMap → entity.senderName 老历史值，character 在另一台设备/工具
+    // 改名落库成 "走查词条_177886..." 时，老消息 entity.senderName 还停留
+    // 在 "阿巡"，但新进来的消息 senderName 已经落成 "走查词条_..."。chat-list
+    // 列表的二行预览 "走查词条_177886...：xxx" 用户根本不知道这是谁。
+    // 群聊详情/picker（[[group-member-picker-page]] R3）和群聊面板
+    // （[[group-chat-thread-panel]] resolveCharacterDisplayName）已经用
+    // memberName（joinedAt 时落，等价"群昵称"）兜底，chat-list 二行也走
+    // 同样优先级 — 服务端这里集中加，client 不用再为每个 conversation 查群
+    // 成员（公网隧道 RTT × N 群很贵）。
+    const memberNameByCharacterId = new Map<string, string>();
+    for (const member of members) {
+      if (member.memberType !== 'character') continue;
+      const name = member.memberName?.trim();
+      if (name) memberNameByCharacterId.set(member.memberId, name);
+    }
     const lastMessage = lastMessageEntity
       ? this.groupMessageToConversationMessage(
           group.id,
           lastMessageEntity,
           remarkMap,
+          memberNameByCharacterId,
         )
       : undefined;
 
@@ -2060,17 +2078,24 @@ export class ChatService {
     conversationId: string,
     entity: GroupMessageEntity,
     remarkMap?: FriendRemarkMap,
+    memberNameByCharacterId?: Map<string, string>,
   ): Message {
     const remarkedSenderName =
       entity.senderType === 'character'
         ? remarkMap?.get(entity.senderId)
+        : undefined;
+    // 同上：character 消息按 remark → 群昵称 → entity.senderName 历史值 三层
+    // 兜底；非 character 路径维持原行为。
+    const memberName =
+      entity.senderType === 'character'
+        ? memberNameByCharacterId?.get(entity.senderId)
         : undefined;
     return {
       id: entity.id,
       conversationId,
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
-      senderName: remarkedSenderName || entity.senderName,
+      senderName: remarkedSenderName || memberName || entity.senderName,
       type: entity.type as
         | 'text'
         | 'system'
