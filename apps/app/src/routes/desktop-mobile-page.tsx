@@ -116,11 +116,6 @@ function getMobileHandoffCategoryMeta(): Array<{
       description: t(msg`单聊、群聊和消息列表入口。`),
     },
     {
-      id: "group_invite",
-      label: t(msg`群聊邀请`),
-      description: t(msg`群二维码、群邀请卡和群入口接力。`),
-    },
-    {
       id: "official",
       label: t(msg`公众号`),
       description: t(msg`公众号主页和文章阅读入口。`),
@@ -717,19 +712,6 @@ export function DesktopMobilePage() {
       }),
     });
   }
-  const recentGroupInviteHandoffs = useMemo(
-    () =>
-      activeHandoffHistory
-        .filter((item) => resolveMobileHandoffCategory(item) === "group_invite")
-        .slice(0, 3),
-    [activeHandoffHistory],
-  );
-  const currentGroupInviteHandoff = recentGroupInviteHandoffs[0] ?? null;
-  const archivedGroupInviteHandoffs = recentGroupInviteHandoffs.slice(1);
-  const currentGroupInviteDesktopPath = currentGroupInviteHandoff
-    ? resolveGroupInviteDesktopOpenPath(currentGroupInviteHandoff.path)
-    : null;
-
   useEffect(() => {
     if (!isDesktopLayout) {
       return;
@@ -1672,151 +1654,6 @@ export function DesktopMobilePage() {
         </section>
 
         <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <CheckCircle2
-                  size={16}
-                  className="text-[color:var(--brand-primary)]"
-                />
-                <span>{t(msg`群聊邀请接力`)}</span>
-              </div>
-              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                {t(
-                  msg`从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。`,
-                )}
-              </div>
-            </div>
-            <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
-              {t(msg`${recentGroupInviteHandoffs.length} 条最近邀请`)}
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {currentGroupInviteHandoff ? (
-              <>
-                <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                        {t(msg`当前群邀请`)}
-                      </div>
-                      <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
-                        {currentGroupInviteHandoff.label}
-                      </div>
-                      <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                        {currentGroupInviteHandoff.description}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
-                        <span>
-                          {t(
-                            msg`最近发送于 ${formatTimestamp(currentGroupInviteHandoff.sentAt)}`,
-                          )}
-                        </span>
-                        <span>{t(msg`已纳入手机接力固定入口`)}</span>
-                      </div>
-                    </div>
-                    <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
-                      {t(msg`群邀请入口`)}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        void handleCopyHandoff({
-                          category: "group_invite",
-                          description: currentGroupInviteHandoff.description,
-                          label: currentGroupInviteHandoff.label,
-                          path: currentGroupInviteHandoff.path,
-                          setHistory: setHandoffHistory,
-                          setNotice,
-                        })
-                      }
-                      className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-                    >
-                      <Copy size={14} />
-                      {t(msg`再发一次`)}
-                    </Button>
-                    <Link
-                      to={currentGroupInviteDesktopPath as never}
-                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                    >
-                      {t(msg`桌面打开`)}
-                    </Link>
-                  </div>
-
-                </div>
-
-                {archivedGroupInviteHandoffs.length ? (
-                  <div className="space-y-3">
-                    <div className="text-xs font-medium text-[color:var(--text-muted)]">
-                      {t(msg`最近群邀请记录`)}
-                    </div>
-                    {archivedGroupInviteHandoffs.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                            {item.label}
-                          </div>
-                          <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                            {item.description}
-                          </div>
-                          <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
-                            {t(msg`最近发送于 ${formatTimestamp(item.sentAt)}`)}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() =>
-                              void handleCopyHandoff({
-                                category: "group_invite",
-                                description: item.description,
-                                label: item.label,
-                                path: item.path,
-                                setHistory: setHandoffHistory,
-                                setNotice,
-                              })
-                            }
-                            className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                          >
-                            <Copy size={14} />
-                            {t(msg`再发一次`)}
-                          </Button>
-                          <Link
-                            to={
-                              resolveGroupInviteDesktopOpenPath(
-                                item.path,
-                              ) as never
-                            }
-                            className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                          >
-                            {t(msg`桌面打开`)}
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <EmptyState
-                title={t(msg`还没有群聊邀请接力`)}
-                description={t(
-                  msg`先去群二维码页发一条邀请到手机，这里就会变成固定入口。`,
-                )}
-              />
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
             <CheckCircle2
               size={16}
@@ -1826,7 +1663,7 @@ export function DesktopMobilePage() {
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
             {t(
-              msg`当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播。`,
+              msg`当前把手机接力记录按内容类型拆开，方便区分消息、公众号、小程序和直播。`,
             )}
           </div>
 
@@ -2260,10 +2097,6 @@ function isDesktopMobileHandoffPathActive(
   }
 
   return conversationPathSet.has(conversationRoot);
-}
-
-function resolveGroupInviteDesktopOpenPath(path: string) {
-  return buildDesktopChatThreadPathFromConversationPath(path) ?? path;
 }
 
 function resolveConversationRootPath(path: string) {

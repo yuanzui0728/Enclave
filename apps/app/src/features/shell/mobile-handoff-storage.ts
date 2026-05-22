@@ -2,7 +2,6 @@ import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
 export type MobileHandoffCategory =
   | "messages"
-  | "group_invite"
   | "official"
   | "mini_program"
   | "games"
@@ -24,7 +23,6 @@ const MAX_HANDOFF_RECORDS = 8;
 let mobileHandoffNativeWriteQueue: Promise<void> = Promise.resolve();
 const mobileHandoffCategories = new Set<MobileHandoffCategory>([
   "messages",
-  "group_invite",
   "official",
   "mini_program",
   "games",
