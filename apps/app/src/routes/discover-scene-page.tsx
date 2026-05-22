@@ -467,6 +467,11 @@ function MobileDiscoverScenePage() {
                 type="button"
                 onClick={() => sceneMutation.mutate(scene.id)}
                 disabled={disabled}
+                // 走查 R5：跟 [[discover-encounter-page]] 摇一摇按钮的 aria-busy
+                // 收口一致——busy 的那个按钮挂 aria-busy=true 让 SR 朗读"忙碌"，
+                // disabled 单独没法告诉 AT "正在干活"。AI 4-20s 期间只有一个
+                // scene 是 busy，其余 15 个是普通 disabled。
+                aria-busy={busy || undefined}
                 className={cn(
                   "bg-white px-4 py-4 text-left transition active:bg-[#f5f5f5]",
                   disabled && !busy && "opacity-60",
