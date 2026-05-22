@@ -780,6 +780,15 @@ export function ProfileMomentsPage() {
     setDesktopReplyTarget(null);
     setCommentDrafts({});
     setShareMomentId(null);
+    // 走查移动端朋友圈/最新一轮 R1：notice 之前也没清——baseUrl 改了但 notice
+    // 还挂着 2.4s（自动收 timer 走完才隐）。用户在 A 账户的「我的朋友圈」点赞失败
+    // 留下 danger 红条 + 「重试点赞」action 闭包指着 A 的 momentId → 切到 B，B
+    // 的「我的朋友圈」头部仍然先冒一条 A 账户的「点赞失败：...」红条；用户在
+    // 2.4s 内点「重试点赞」会触发 likeMutation.mutate(A_momentId) → mid-flight
+    // baseUrl-guard 把回调静默吃掉，但 mutation 本身已经飞出 POST /like/A_momentId
+    // 到 B 账户的 cloud-api → 404 + 一次浪费 RTT。和 moments-page line 1336-1338
+    // (setNotice("")) / mobile-friend-moments-page line 631 (setNotice(null)) 同模板。
+    setNotice(null);
     // 走查电脑端朋友圈 R1（新一轮）：desktopAvatarPopover 之前完全没有清理路径
     // —— 这页根本没有专门按 hash/pathname 翻转清弹层的 useEffect（moments-page
     // / friend-moments-page 还有那一支，profile-moments-page 直接漏）。切账户后
@@ -1306,9 +1315,19 @@ export function ProfileMomentsPage() {
               {/* 走查 R3：mobile 分支 ErrorBlock 之前无 role —— 我的朋友圈加载失败时
                   盲用户只能从"看不到列表"推断，听不到具体错因。和 favorites
                   ErrorBlock / mobile 分支 InlineNotice 同款补 role="alert"。 */}
+              {/* 走查移动端朋友圈/最新一轮 R1：之前直接 describeRequestError 绕开 i18n
+                  字典——server AppError 的 legacyMessage 是中文，非 zh-CN locale 用户
+                  收到的就是裸中文。本文件其它 9 处错误展示路径（pull-to-refresh notice
+                  / desktop workspace likeError/commentError/deleteError/composeError/
+                  loadError + 桌面错误聚合 / 评论 bar errorMessage）全部走
+                  resolveMomentsErrorMessage（先 translateAppErrorCode 命中字典，miss
+                  才回退 describeRequestError），唯独这条 mobile ErrorBlock 漏修。 */}
               <ErrorBlock
                 role="alert"
-                message={describeRequestError(momentsQuery.error)}
+                message={
+                  resolveMomentsErrorMessage(momentsQuery.error) ??
+                  describeRequestError(momentsQuery.error)
+                }
               >
                 <div className="mt-3">
                   <Button
