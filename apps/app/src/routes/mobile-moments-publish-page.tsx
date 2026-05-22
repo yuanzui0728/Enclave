@@ -636,6 +636,12 @@ export function MobileMomentsPublishPage() {
             value={composeDraft.text}
             onChange={(event) => composeDraft.setText(event.target.value)}
             placeholder={t(msg`这一刻的想法...`)}
+            // 走查本轮 R1 (a11y)：placeholder 只在 textarea 为空时 SR 才能读到，用户
+            // 一开始打字 placeholder 消失 → 屏幕阅读器再 enumerate 这个字段时只播报
+            // "edit textarea" 完全没语义。顶栏 title 又是空字符串（i18n-ignore-line），
+            // SR 用户从「我」/「发现」进发布页一开始就缺少"我正在哪里"的上下文。
+            // 挂 aria-label 后即使打字状态也能听到"朋友圈正文"。
+            aria-label={t(msg`朋友圈正文`)}
             rows={4}
             // 2000 字软上限，配合后端 MOMENTS_TEXT_TOO_LONG（同上限）形成双保险——
             // 之前没有任何上限，粘贴一段 50K 字符的全文会让 createUserMoment 通过、
@@ -825,8 +831,20 @@ export function MobileMomentsPublishPage() {
       ) : null}
 
       {toast ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+96px)] z-[1100] flex justify-center">
-          <div className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[13px] text-white">
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+96px)] z-[1100] flex justify-center"
+        >
+          {/* 走查本轮 R2 (a11y)：SettingRow（所在位置/提醒谁看/谁可以看）点击只
+              派发 "敬请期待" toast 做唯一反馈——SR 用户 tap 完整张 sheet 没任何
+              声音反馈，根本不知道按了之后发生啥（视觉上是一段几行的"敬请期待"
+              小黑条）。挂 role="status" + aria-live="polite"，VoiceOver/TalkBack
+              在 toast 一冒出来就播报内容；不要用 aria-live="assertive" 避免打断
+              已经在播报的 textarea 输入反馈。 */}
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[13px] text-white"
+          >
             {toast.message}
           </div>
         </div>
