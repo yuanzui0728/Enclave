@@ -1811,13 +1811,14 @@ export function WelcomePage() {
                 maxLength={12}
                 value={inviteCode}
                 onChange={(event) => {
-                  // .trim() 只剥首尾空白；粘 "AB C12"（中间空格）会原样保留，
-                  // 服务端 invite-code 仓库走精确匹配，连内部空格一起匹配就直接
-                  // INVITE_CODE_INVALID。和 8d7793d97 那一轮验证码字段做的同样处
-                  // 理一致：把所有空白整剥掉再 slice 到 maxLength=12，paste 路径
-                  // 不再绕开 trim。
+                  // 服务端 invite-code 格式是 "6 位大写英数"，仓库走精确匹配。
+                  // 原来只剥空白：粘 "ABCD-1234" / "ab.cd!" / 全角空格 等都会原样
+                  // 留下连字符 / 标点 / 全角，提交后被服务端打 INVITE_CODE_INVALID
+                  // ——用户视角是"我码贴对了"但被拒。跟验证码字段 \D+ 的逻辑对齐：
+                  // 直接 strip 所有非 A-Za-z0-9 字符（不只空白），再 toUpperCase
+                  // + slice 到 maxLength=12。
                   const next = event.target.value
-                    .replace(/\s+/g, "")
+                    .replace(/[^A-Za-z0-9]/g, "")
                     .toUpperCase()
                     .slice(0, 12);
                   setInviteCode(next);
