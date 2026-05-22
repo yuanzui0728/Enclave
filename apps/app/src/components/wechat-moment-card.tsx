@@ -167,7 +167,18 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     );
     const hasText = Boolean(displayText);
     const hasMedia = moment.media.length > 0;
-    const hasLikes = moment.likes.length > 0;
+    // 走查移动端朋友圈/新一轮 R1：之前 hasLikes 看 moment.likes.length，但 render
+    // 时又把 authorName 为空的 liker 过滤掉。极端场景（数据脏 / 角色被删 / 跨账户
+    // cache 残留只剩 likeCount 没 author 名字）下 likes.length>0 但 filter 后 0 个
+    // → 仍渲染整块 footer：灰底+Heart icon+空白行，用户看着像"有人赞了但名字
+    // 没出来"的 UI 坏点。先过滤再判定 hasLikes。memo 锁住"likes 引用没变就不
+    // 重 filter"，optimistic comment 路径 spread moment 时 likes 引用不变 → 命中。
+    const visibleLikes = useMemo(
+      () =>
+        moment.likes.filter((like) => (like.authorName ?? "").trim() !== ""),
+      [moment.likes],
+    );
+    const hasLikes = visibleLikes.length > 0;
     // 一遍过预计算每条评论的 cleanText + 同时建 authorId 反查表。之前 filter
     // 阶段（line 154）跑一次 stripToolCallSyntax，render map 里（line 347）又
     // 跑一次同样的 regex，50 条评论 ＝ 100 次正则；而且 commentAuthorById 还要
@@ -342,10 +353,10 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                     className="mt-1 shrink-0 fill-[#576B95] text-[#576B95]"
                   />
                   <div className="flex min-w-0 flex-wrap gap-x-1">
-                    {moment.likes
-                      // 空名字（数据脏 / 角色被删）的 liker 不渲染：否则 button 是空的
-                      // 还残留一个 "," 在新行上。
-                      .filter((like) => (like.authorName ?? "").trim() !== "")
+                    {visibleLikes
+                      // 走查 R1：filter 已经提到上方 useMemo（visibleLikes），
+                      // 这里直接渲染——避免每次卡片重渲都跑一次 filter。空名字
+                      // 兜底逻辑在 useMemo 里。
                       .map((like, index, arr) => (
                         <span
                           key={like.id ?? `${like.authorId}-${index}`}

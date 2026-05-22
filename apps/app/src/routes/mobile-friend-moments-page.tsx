@@ -666,25 +666,50 @@ export function MobileFriendMomentsPage() {
 
   // Android 硬件 Back：弹层打开时先收弹层（评论条 > 行动菜单 > 分享卡片），
   // 与 publish / chat 系列最近的 Back 行为对齐——别把整页退掉。
+  //
+  // 走查移动端朋友圈/新一轮 R1：之前 deps `[actionBubble, commentBarTarget,
+  // shareMomentId]` 让 effect 每次状态对象身份变化都 unregister + re-register
+  // 一遍。例如评论从 moment X 切到 moment Y（commentBarTarget 对象引用变），
+  // 或快速连点 ⋯ 切换 actionBubble 锚卡片 → interceptor add/remove。和
+  // moments-page.tsx (MobileMomentsView 内 line 2591-2628) 已经走的 hasOverlay
+  // 布尔 + backInterceptorRef 模式对齐：interceptor 只在 overlay 整体开/关
+  // 翻转时挂一次，中间状态切换走 ref 读最新值，避免 listener cleanup-storm。
+  const backInterceptorRef = useRef({
+    commentBarTarget,
+    actionBubble,
+    setCommentBarTarget,
+    setActionBubble,
+    setShareMomentId,
+  });
   useEffect(() => {
-    const hasOverlay = Boolean(
-      commentBarTarget || actionBubble || shareMomentId,
-    );
+    backInterceptorRef.current = {
+      commentBarTarget,
+      actionBubble,
+      setCommentBarTarget,
+      setActionBubble,
+      setShareMomentId,
+    };
+  });
+  const hasOverlay = Boolean(
+    commentBarTarget || actionBubble || shareMomentId,
+  );
+  useEffect(() => {
     if (!hasOverlay) return;
     return registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      if (commentBarTarget) {
-        setCommentBarTarget(null);
+      const ctx = backInterceptorRef.current;
+      if (ctx.commentBarTarget) {
+        ctx.setCommentBarTarget(null);
         return true;
       }
-      if (actionBubble) {
-        setActionBubble(null);
+      if (ctx.actionBubble) {
+        ctx.setActionBubble(null);
         return true;
       }
-      setShareMomentId(null);
+      ctx.setShareMomentId(null);
       return true;
     });
-  }, [actionBubble, commentBarTarget, shareMomentId]);
+  }, [hasOverlay]);
 
   function navigateToRouteStateReturn() {
     if (!safeReturnPath) {

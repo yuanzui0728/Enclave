@@ -410,12 +410,21 @@ export function MobileMomentsPublishPage() {
   }, [toast?.key]);
 
   // ESC 关闭「放弃发表」确认弹窗 / 媒体选择器（和 farm 的 sheet/modal 处理对齐）。
+  //
+  // 走查移动端朋友圈/新一轮 R2 (IME)：之前 ESC handler 不看 IME composing 状态 ——
+  // 中文/日文用户在 textarea 打拼音开候选窗，按 ESC 想关候选窗（系统行为）时
+  // keydown 一样冒出来命中这条 handler 把退出确认 sheet / 媒体选择 sheet 关掉。
+  // 实际 sheet 打开时 textarea 多数已 blur（dismissExitSheet 才 focus 回去），但
+  // 用户从 sheet 上又点回 textarea 继续输入候选时，ESC 又会回头关 sheet。和
+  // wechat-comment-bar R1 (line 138-139) / desktop sheet R1 (902d9f0a) 同模式：
+  // event.isComposing / keyCode===229 时跳过。
   useEffect(() => {
     if (!exitSheetOpen && !mediaPickerOpen) {
       return;
     }
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (event.isComposing || event.keyCode === 229) return;
       if (exitSheetOpen) {
         dismissExitSheet();
         return;
