@@ -84,6 +84,20 @@ function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, "");
 }
 
+// detectClientPublicIp 顺序探 3 个端点、每个 2.5s 超时；全失败要 7.5s。mount 时
+// 预热一遍就把它喂热了——但 Google 登录路径用户点完 Google 按钮往往在 mount
+// 后 2-5s 触发 continueWithGoogleSignIn，预热还没跑完。clientReportedIp 只用
+// 来给 cloud-api 在 L4 隧道下当兜底显示/统计源（不当风控基准），晚一点拿到 /
+// 干脆拿不到都不影响登录正确性，给它配一个紧 timeout 把"全 GFW 拒"那种 7.5s
+// 卡顿削平，避免 Google/Email 登录在弱网用户那里看上去像挂了。
+async function detectClientPublicIpWithTimeout(maxWaitMs: number): Promise<string | undefined> {
+  const ip = await Promise.race([
+    detectClientPublicIp(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), maxWaitMs)),
+  ]);
+  return ip ?? undefined;
+}
+
 function resolveBrowserBaseUrl() {
   if (typeof window !== "undefined" && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
     return window.location.origin;
@@ -964,7 +978,7 @@ export function WelcomePage() {
     try {
       const inviteCodePayload =
         authMode === "register" && inviteCode ? inviteCode : undefined;
-      const clientReportedIp = (await detectClientPublicIp()) ?? undefined;
+      const clientReportedIp = await detectClientPublicIpWithTimeout(1500);
       const verifyResult = await verifyCloudGoogleIdToken(
         {
           idToken,
@@ -1129,7 +1143,7 @@ export function WelcomePage() {
         verifyAttempted = true;
         const inviteCodePayload =
           authMode === "register" && inviteCode ? inviteCode : undefined;
-        const clientReportedIp = (await detectClientPublicIp()) ?? undefined;
+        const clientReportedIp = await detectClientPublicIpWithTimeout(1500);
         // 注册时一并设置密码，仅在 code 通道 + register + 用户主动填写时启用。
         const setPasswordOnRegister =
           authMethod === "code" &&
