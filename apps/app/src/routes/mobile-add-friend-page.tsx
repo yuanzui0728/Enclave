@@ -709,10 +709,20 @@ function MobileAddFriend() {
           </div>
         ) : loadingError ? (
           <div className="px-3 pt-3">
-            <ErrorBlock message={loadingError.message}>
+            <ErrorBlock message={describeRequestError(loadingError)}>
               {/* 对齐 friend-requests-page / contacts-page 的错误重试模板：4 条
                   query 任一挂掉时用户原本只能退页再进；这里把 refetch 一次性
                   重跑 4 条，让用户原地恢复。 */}
+              {/* 新一轮 R1：原版 message={loadingError.message} 漏了
+                  describeRequestError。同页 sendRequest/openChat 的两块 ErrorBlock
+                  和 sheet 内 errorMessage 都已经走 describeRequestError（32e0e8f5e
+                  "黑话清查"系列），唯独这块 page-level loading error 还在拍裸
+                  message。结果 character/friends/friend-requests/blocked 4 条
+                  query 任一挂掉（"Failed to fetch"、"Internal Server Error"、
+                  "Request failed: 500"、JSON.parse SyntaxError），用户在 zh-CN
+                  里直接看到英文 raw message，跟其他错误源行为不一致。
+                  describeRequestError 会把网络断、5xx、HTML 错误页等翻成「当前
+                  无法连接到隐界世界...」「当前隐界世界暂时不可用...」之类。 */}
               <div className="mt-2 flex justify-end">
                 <button
                   type="button"
