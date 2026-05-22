@@ -2212,12 +2212,17 @@ function ConversationListItemLinkImpl({
                   </div>
                 )
               ) : isPinned ? (
-                // 同上：Pin 当 visually-named icon 也要挂 role="img"。
+                // 走查 R4：原 R1 加 role="img" + aria-label 引入了「已置顶」
+                // 二次播报——content 开头第 3 次走查 R1 已经挂了 sr-only
+                //「已置顶」，覆盖 pinned-with-unread / pinned-no-unread 两种
+                // 状态。本 Pin 仅在 pinned-no-unread 才渲染，再带 aria-label
+                // 会让 SR 在同一行行尾再听一次「置顶聊天」。aria-hidden 隔
+                // 离掉避免 row 末尾重复播报，sr-only 在 row 头继续是唯一
+                // pin 信号。
                 <Pin
                   size={10}
                   className="text-[color:var(--text-dim)]"
-                  role="img"
-                  aria-label={t(msg`置顶聊天`)}
+                  aria-hidden="true"
                 />
               ) : null}
             </div>
