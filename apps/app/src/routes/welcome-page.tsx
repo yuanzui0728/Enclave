@@ -1362,11 +1362,18 @@ export function WelcomePage() {
         // 保留 phone/email：用户下一轮 verify 不用再敲一遍身份；只清 token
         // 跟 profile（profile 是 cloud-api 给的资料快照，token 失效后再用就
         // 没意义）。
+        // 走 useCloudSessionStore.getState() 拿现场最新值而不是闭包里的
+        // savedCloudPhone/savedCloudEmail——verify 成功路径里 saveCloudSession
+        // 刚把新身份写到 zustand（"alice 改 bob 再 verify"那种切号场景），但
+        // 闭包变量是函数入口那一刻捕获的、还停在 alice。用闭包写回去会把刚刚
+        // verify 通过的 bob 反向覆盖回 alice，下次进 /welcome 邮箱字段又回到
+        // 老身份——用户视角"我刚验证的怎么变回旧账号了"。
+        const latestSession = useCloudSessionStore.getState();
         saveCloudSession({
           accessToken: null,
           expiresAt: null,
-          phone: savedCloudPhone,
-          email: savedCloudEmail,
+          phone: latestSession.phone,
+          email: latestSession.email,
           profile: null,
         });
       }
