@@ -398,7 +398,6 @@ export function CharacterDetailPage() {
   const saveLabel = t(msg`保存`);
   const regionLabel = t(msg`地区`);
   const sourceLabel = t(msg`来源`);
-  const metInWorldLabel = t(msg`世界内自然认识`);
   const momentsLabel = t(msg`朋友圈`);
   const momentsValueLabel = t(msg`查看这位角色最近的朋友圈`);
   const recommendToFriendLabel = t(msg`推荐给朋友`);
@@ -2102,19 +2101,24 @@ export function CharacterDetailPage() {
                 }
                 compact={!isDesktopLayout}
               />
-              <ProfileRow
-                label={sourceLabel}
-                value={
-                  (() => {
-                    if (!isFriend) return metInWorldLabel;
-                    // 「我」是镜像角色，DB source 留 NULL；UI 短路成「本人」。
-                    if (isSelfMirror) return t(msg`本人`);
-                    if (!friendship?.source?.trim()) return unsetLabel;
-                    return resolveFriendshipSourceText(t, friendship.source);
-                  })()
-                }
-                compact={!isDesktopLayout}
-              />
+              {/* 走查 2026-05-22：非好友状态下"来源 / 世界内自然认识"是误导——
+                  这位角色其实还没进通讯录，根本没有"来源"语义；desktop
+                  contact-detail-pane 早已把整行包在 isFriend 分支里，移动端
+                  这里漏了。和 desktop 对齐，未加好友时整行不渲染。 */}
+              {isFriend ? (
+                <ProfileRow
+                  label={sourceLabel}
+                  value={
+                    (() => {
+                      // 「我」是镜像角色，DB source 留 NULL；UI 短路成「本人」。
+                      if (isSelfMirror) return t(msg`本人`);
+                      if (!friendship?.source?.trim()) return unsetLabel;
+                      return resolveFriendshipSourceText(t, friendship.source);
+                    })()
+                  }
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
               {/* 走查 R1：朋友圈入口在移动端无条件渲染，非好友点进去后端按"未授权"
                   返回空列表/错误，跟 desktop ContactDetailPane（已用 isFriend 包过）
                   不一致；非好友本来就拿不到对方朋友圈，挪到 isFriend 分支里。
