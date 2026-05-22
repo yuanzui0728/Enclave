@@ -208,6 +208,19 @@ export function ChannelsPage() {
   const desktopLikeSubmittingRef = useRef(false);
   const desktopFavoriteSubmittingRef = useRef(false);
   const desktopFollowSubmittingRef = useRef(false);
+  // 走查 2026-05-23 R2：上面 R4 desktop sync ref 锁的同款问题在移动端 onLike /
+  // onToggleFavorite / onToggleFollowAuthor 三个入口同样存在 —— `disabled={...
+  // Pending}` 依赖 useMutation.isPending → React state，下一次 render 才生效。
+  // 同帧（<16ms）连点（playwright/手势捕获 / 多指同点 / 辅助控制 swipe）都过得
+  // 去 disabled 闸门，onMutate 跑两遍：第二次读到 cache 已经被第一次乐观翻好的
+  // hasLiked=true 当 previous，再次 +1 likeCount → cache 留 +2 ，server 真值 +1，
+  // home staleTime=30s 期间不会 refetch 矫正，用户看见的赞数比实际多 1（或 follower
+  // Count、favoriteCount 同款）。和姊妹 desktopLikeSubmittingRef / Favorite /
+  // Follow 同款做法，移动端补一组 ref。reset useEffect 复用同款 mutation.isPending
+  // false 触发（refs 共享是允许的——desktop/mobile 不会同帧渲染）。
+  const mobileLikeSubmittingRef = useRef(false);
+  const mobileFavoriteSubmittingRef = useRef(false);
+  const mobileFollowSubmittingRef = useRef(false);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -1708,19 +1721,23 @@ export function ChannelsPage() {
     ? (followMutation.variables?.authorId ?? null)
     : null;
   // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
+  // 走查 2026-05-23 R2：mobile 同款 ref 一并复位（共享 isPending false 触发）。
   useEffect(() => {
     if (!likeMutation.isPending) {
       desktopLikeSubmittingRef.current = false;
+      mobileLikeSubmittingRef.current = false;
     }
   }, [likeMutation.isPending]);
   useEffect(() => {
     if (!favoriteMutation.isPending) {
       desktopFavoriteSubmittingRef.current = false;
+      mobileFavoriteSubmittingRef.current = false;
     }
   }, [favoriteMutation.isPending]);
   useEffect(() => {
     if (!followMutation.isPending) {
       desktopFollowSubmittingRef.current = false;
+      mobileFollowSubmittingRef.current = false;
     }
   }, [followMutation.isPending]);
   const pendingCommentPostId = commentMutation.isPending
@@ -2564,7 +2581,11 @@ export function ChannelsPage() {
             commentsPreviewByPostId={commentsPreviewByPostId}
             routeSelectedPostId={routeSelectedPostId}
             onLike={(postId) => {
+              // 走查 2026-05-23 R2：移动端补 sync ref 同款挡同帧 double-tap，
+              // 见 mobileLikeSubmittingRef 声明处长注释。
+              if (mobileLikeSubmittingRef.current) return;
               const post = visiblePosts.find((p) => p.id === postId);
+              mobileLikeSubmittingRef.current = true;
               likeMutation.mutate({
                 postId,
                 hasLiked: Boolean(post?.ownerState?.hasLiked),
@@ -2579,8 +2600,17 @@ export function ChannelsPage() {
             }}
             onNotInterested={hidePost}
             onShare={(post) => void handleSharePost(post)}
-            onToggleFollowAuthor={toggleFollowAuthor}
-            onToggleFavorite={toggleFavorite}
+            onToggleFollowAuthor={(post) => {
+              // 走查 2026-05-23 R2：sync ref 挡同帧 double-tap，对齐 like。
+              if (mobileFollowSubmittingRef.current) return;
+              mobileFollowSubmittingRef.current = true;
+              toggleFollowAuthor(post);
+            }}
+            onToggleFavorite={(post) => {
+              if (mobileFavoriteSubmittingRef.current) return;
+              mobileFavoriteSubmittingRef.current = true;
+              toggleFavorite(post);
+            }}
             onVisiblePost={handleMobileViewPost}
           />
         ) : null}
