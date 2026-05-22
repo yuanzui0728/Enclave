@@ -1,4 +1,5 @@
 import {
+  type InputHTMLAttributes,
   type ReactNode,
   useCallback,
   useEffect,
@@ -47,6 +48,15 @@ type WelcomeTranslator = (message: WelcomeMessage) => string;
 
 const LOCAL_APP_DEV_PORT = "5180";
 const LOCAL_CORE_API_PORT = "3000";
+// 前端先做一次粗校验把 "a@b" / "not-an-email" 这类明显非邮箱挡掉，避免发 send-code
+// 浪费 cloud-api 那一格 per-email rate-limit slot；同时把"无效邮箱"的错误反馈
+// 缩短到本地（之前要等 400 → describeRequestError 拆响应）。规则故意宽松：
+// `local@host`（无 TLD）也允许，让 LAN intranet 邮箱（如 user@corp.lan）能通过；
+// 真严格的 RFC 5321 校验交给服务端。
+const EMAIL_BASIC_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isProbableEmail(value: string) {
+  return EMAIL_BASIC_REGEX.test(value.trim().toLowerCase());
+}
 // 历史上只校验 trim() 非空，结果一大批新用户图省事敲个 "w" 就过 onboarding，
 // 世界主人昵称全是 "w"。这里要求 ≥ 2 个字符，逼用户真的写一个名字。
 const MIN_OWNER_NAME_LENGTH = 2;
@@ -249,6 +259,73 @@ function mobileNoticeTone(
   return "info";
 }
 
+type PasswordFieldProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "type"
+> & {
+  showLabel: string;
+  hideLabel: string;
+};
+
+function PasswordField({
+  showLabel,
+  hideLabel,
+  className,
+  ...rest
+}: PasswordFieldProps) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="relative">
+      <TextField
+        {...rest}
+        type={revealed ? "text" : "password"}
+        className={`${className ?? ""} pr-12`.trim()}
+      />
+      <button
+        type="button"
+        onClick={() => setRevealed((value) => !value)}
+        aria-label={revealed ? hideLabel : showLabel}
+        aria-pressed={revealed}
+        className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[color:var(--text-muted)] transition-colors hover:bg-[color:var(--surface-input-hover,rgba(0,0,0,0.04))] hover:text-[color:var(--text-primary)]"
+      >
+        {revealed ? (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.07 20.07 0 0 1 5.06-5.94" />
+            <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.16 20.16 0 0 1-3.16 4.19" />
+            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+          </svg>
+        ) : (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export function WelcomePage() {
   const t = useRuntimeTranslator();
   const { i18n } = useLingui();
@@ -297,7 +374,7 @@ export function WelcomePage() {
   const [entryError, setEntryError] = useState("");
   const [ownerError, setOwnerError] = useState("");
   const [isContinuing, setIsContinuing] = useState(false);
-  const [inviteCode, setInviteCode] = useState(readStoredInviteCode());
+  const [inviteCode, setInviteCode] = useState(() => readStoredInviteCode());
   const [authMode, setAuthMode] = useState<"login" | "register">(() =>
     readStoredInviteCode() ? "register" : "login",
   );
@@ -305,6 +382,17 @@ export function WelcomePage() {
     Boolean(readStoredInviteCode()),
   );
   const cloudConnectKeyRef = useRef<string | null>(null);
+  // tanstack-query 的 isPending 在 mutate() 调用后要走完 React 调度才反映到
+  // disabled prop；用户 30ms 内双击会绕过这一格，cloud-api 命中 per-email
+  // rate-limit 直接 429。走查 r2 复现：3 次连点真发了 2 次请求。用 ref 同步
+  // 守一下，"上一发未结束就丢掉新发"。
+  const sendCodeInFlightRef = useRef(false);
+  const sendEmailCodeInFlightRef = useRef(false);
+  // 同样的 React 调度延迟也存在于"登录并进入 / 注册并进入 / 连接本地世界 /
+  // Google 登录"按钮上：setIsContinuing(true) 要等 React 渲染才反映到 disabled。
+  // 30ms 双击就能发两次 verify-code（或两次 Google idToken 校验），命中 cloud-api
+  // 的 per-identity rate-limit 也会拒第二次。统一加 ref 守。
+  const continueInFlightRef = useRef(false);
 
   const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
   const resolvedLocalApiBaseUrl = resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl);
@@ -376,6 +464,14 @@ export function WelcomePage() {
     const timer = window.setTimeout(() => setNotice(""), 3200); // i18n-ignore-line
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  // 预热公网 IP 探测：detectClientPublicIp 每个端点 2.5s 超时、最多顺序探 3 个，
+  // 真要全部 fail 能阻塞登录 7.5s；提前在 mount 时 fire-and-forget 把 5min 缓存
+  // 喂热，用户点"登录并进入"时直接命中缓存。失败也无所谓——verify 那一格 await
+  // 会再补一次（依然走同一个 inflight），只不过那时也已经过了大头延时。
+  useEffect(() => {
+    void detectClientPublicIp();
+  }, []);
 
   useEffect(() => {
     if (!runtimeConfig.apiBaseUrl || !runtimeConfig.worldAccessMode) {
@@ -560,11 +656,19 @@ export function WelcomePage() {
       ),
     onSuccess: (result) => {
       setPhone(result.phone);
-      setCode("123456");
+      // 只在 dev/mock SMS provider 回吐 debugCode 时帮用户预填，避免把 DEV_BYPASS_CODE
+      // ("123456") 硬塞进 UI——以前那行 setCode("123456") 等于把后门码写在前端，
+      // 任何人 inspect 都能看到固定值；要么真在 dev，那就用 provider 给的 debugCode；
+      // 要么是 prod，就把输入框清空让用户从短信里取真码。与 email 路径保持一致。
+      setCode(result.debugCode ?? "");
       setCloudAccessToken("");
       setCloudAccessSessionId(null);
       setConnectedAccessSessionId(null);
-      setNotice(t(msg`验证码已发送。`));
+      setNotice(
+        result.debugCode
+          ? t(msg`开发模式：验证码已打印到服务端日志。`)
+          : t(msg`验证码已发送。`),
+      );
       setEntryError("");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
@@ -575,6 +679,9 @@ export function WelcomePage() {
         cloudWorldId: undefined,
         bootstrapSource: "user",
       });
+    },
+    onSettled: () => {
+      sendCodeInFlightRef.current = false;
     },
   });
 
@@ -597,7 +704,22 @@ export function WelcomePage() {
       );
       setEntryError("");
     },
+    onSettled: () => {
+      sendEmailCodeInFlightRef.current = false;
+    },
   });
+
+  function handleSendPhoneCode() {
+    if (sendCodeInFlightRef.current || sendCodeMutation.isPending) return;
+    sendCodeInFlightRef.current = true;
+    sendCodeMutation.mutate();
+  }
+
+  function handleSendEmailCode() {
+    if (sendEmailCodeInFlightRef.current || sendEmailCodeMutation.isPending) return;
+    sendEmailCodeInFlightRef.current = true;
+    sendEmailCodeMutation.mutate();
+  }
 
   function chooseMode(nextMode: WorldAccessMode) {
     if (nextMode === "local" && !localWorldEntryEnabled) {
@@ -610,11 +732,13 @@ export function WelcomePage() {
   }
 
   async function continueWithLocalWorld() {
+    if (continueInFlightRef.current) return;
     if (!normalizedLocalApiBaseUrl) {
       setEntryError(t(msg`请输入本地世界 API 地址。`));
       return;
     }
 
+    continueInFlightRef.current = true;
     setIsContinuing(true);
     setEntryError("");
     setOwnerError("");
@@ -652,10 +776,13 @@ export function WelcomePage() {
       setEntryError(describeRequestError(error, t(msg`无法连接到本地世界。`)));
     } finally {
       setIsContinuing(false);
+      continueInFlightRef.current = false;
     }
   }
 
   async function continueWithGoogleSignIn(idToken: string) {
+    if (continueInFlightRef.current) return;
+    continueInFlightRef.current = true;
     setIsContinuing(true);
     setEntryError("");
     setOwnerError("");
@@ -748,16 +875,22 @@ export function WelcomePage() {
       }
     } finally {
       setIsContinuing(false);
+      continueInFlightRef.current = false;
     }
   }
 
   async function continueWithCloudWorld() {
+    if (continueInFlightRef.current) return;
     if (accountType === "phone" && !phone.trim()) {
       setEntryError(t(msg`请输入手机号。`));
       return;
     }
     if (accountType === "email" && !email.trim()) {
       setEntryError(t(msg`请输入邮箱。`));
+      return;
+    }
+    if (accountType === "email" && !isProbableEmail(email)) {
+      setEntryError(t(msg`邮箱格式不正确，请检查后重试。`));
       return;
     }
 
@@ -772,6 +905,7 @@ export function WelcomePage() {
       }
     }
 
+    continueInFlightRef.current = true;
     setIsContinuing(true);
     setEntryError("");
     setOwnerError("");
@@ -955,7 +1089,12 @@ export function WelcomePage() {
       // an access token). Failures after verify succeeded are a different
       // class — they belong to the cloud-world entry flow, not auth.
       if (verifyAttempted && !verifySucceeded) {
-        track("login_fail", { method: accountType, authMode, message });
+        // method 维度跟 login_success 对齐：code 路径只发 "email"/"phone"，
+        // password 路径发 "email-password"/"phone-password"，不让分析看板把
+        // 同一个 password-flow 失败/成功的转化率拆成两个互不相交的桶。
+        const failMethod =
+          authMethod === "password" ? `${accountType}-password` : accountType;
+        track("login_fail", { method: failMethod, authMode, message });
       } else if (verifySucceeded) {
         track("cloud_world_entry_fail", {
           method: accountType,
@@ -965,10 +1104,12 @@ export function WelcomePage() {
       }
     } finally {
       setIsContinuing(false);
+      continueInFlightRef.current = false;
     }
   }
 
   async function submitOwnerName() {
+    if (continueInFlightRef.current) return;
     const username = ownerName.trim();
     if (!username) {
       setOwnerError(t(msg`请输入世界主人的名字。`));
@@ -986,6 +1127,7 @@ export function WelcomePage() {
       return;
     }
 
+    continueInFlightRef.current = true;
     setIsContinuing(true);
     setOwnerError("");
 
@@ -1003,6 +1145,7 @@ export function WelcomePage() {
       setOwnerError(describeRequestError(error, t(msg`保存世界主人资料失败。`)));
     } finally {
       setIsContinuing(false);
+      continueInFlightRef.current = false;
     }
   }
 
@@ -1024,7 +1167,7 @@ export function WelcomePage() {
 
   function handleRetrySendCode() {
     setEntryError("");
-    sendCodeMutation.mutate();
+    handleSendPhoneCode();
   }
 
   function handleRetryCloudSession() {
@@ -1036,9 +1179,15 @@ export function WelcomePage() {
     if (mode === "cloud") {
       return (
         <div className="space-y-4">
-          <div className="flex rounded-2xl bg-[#f5f5f5] p-1">
+          <div
+            role="tablist"
+            aria-label={t(msg`登录或注册`)}
+            className="flex rounded-2xl bg-[#f5f5f5] p-1"
+          >
             <Button
               type="button"
+              role="tab"
+              aria-selected={authMode === "login"}
               variant={authMode === "login" ? "primary" : "ghost"}
               onClick={() => {
                 setAuthMode("login");
@@ -1055,6 +1204,8 @@ export function WelcomePage() {
             </Button>
             <Button
               type="button"
+              role="tab"
+              aria-selected={authMode === "register"}
               variant={authMode === "register" ? "primary" : "ghost"}
               onClick={() => {
                 setAuthMode("register");
@@ -1077,6 +1228,9 @@ export function WelcomePage() {
                 {t(msg`手机号`)}
               </span>
               <TextField
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(event) => {
                   setPhone(event.target.value);
@@ -1096,6 +1250,13 @@ export function WelcomePage() {
               </span>
               <TextField
                 type="email"
+                inputMode="email"
+                // username 给 Safari 密码管家凑齐 username+password 才会触发"保存密码"
+                // 提示；只设 password autocomplete 会被忽略。
+                autoComplete="username"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -1110,8 +1271,14 @@ export function WelcomePage() {
             </label>
           )}
 
-          <div className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] p-1">
+          <div
+            role="tablist"
+            aria-label={t(msg`登录方式`)}
+            className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] p-1"
+          >
             <Button
+              role="tab"
+              aria-selected={authMethod === "code"}
               onClick={() => {
                 setAuthMethod("code");
                 setEntryError("");
@@ -1127,6 +1294,8 @@ export function WelcomePage() {
               {t(msg`使用验证码登录`)}
             </Button>
             <Button
+              role="tab"
+              aria-selected={authMethod === "password"}
               onClick={() => {
                 setAuthMethod("password");
                 // 密码登录与注册无关，强制切回 login 模式避免误传 inviteCode。
@@ -1153,6 +1322,14 @@ export function WelcomePage() {
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <TextField
+                    // 验证码输入框跟"邮箱"那一行不一样，是 div+span 排版而不是
+                    // <label> 包，少了原生 label-for-input 关联，必须显式 aria-label
+                    // 才让 VoiceOver / TalkBack 在 focus 时读出"验证码"。
+                    aria-label={t(msg`验证码`)}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    // 6 位数字短码，限长避免长按粘错；iOS 自动填充进来时也是 6 位
+                    maxLength={6}
                     value={code}
                     onChange={(event) => {
                       setCode(event.target.value);
@@ -1160,21 +1337,21 @@ export function WelcomePage() {
                     }}
                     placeholder={
                       accountType === "phone"
-                        ? t(msg`请输入验证码（默认 123456 即可通过）`)
-                        : t(msg`请输入邮箱收到的 6 位验证码`)
+                        ? t(msg`6 位短信验证码`)
+                        : t(msg`6 位邮箱验证码`)
                     }
                   />
                 </div>
                 <Button
                   onClick={() =>
                     accountType === "phone"
-                      ? sendCodeMutation.mutate()
-                      : sendEmailCodeMutation.mutate()
+                      ? handleSendPhoneCode()
+                      : handleSendEmailCode()
                   }
                   disabled={
                     accountType === "phone"
                       ? !phone.trim() || sendCodeMutation.isPending
-                      : !email.trim() || sendEmailCodeMutation.isPending
+                      : !isProbableEmail(email) || sendEmailCodeMutation.isPending
                   }
                   variant="secondary"
                   size="lg"
@@ -1194,14 +1371,16 @@ export function WelcomePage() {
                   <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
                     {t(msg`设置登录密码（选填）`)}
                   </span>
-                  <TextField
-                    type="password"
+                  <PasswordField
+                    autoComplete="new-password"
                     value={registerPassword}
                     onChange={(event) => {
                       setRegisterPassword(event.target.value);
                       setEntryError("");
                     }}
                     placeholder={t(msg`8-32 位，任意字符（不含空格）`)}
+                    showLabel={t(msg`显示密码`)}
+                    hideLabel={t(msg`隐藏密码`)}
                   />
                 </label>
               ) : null}
@@ -1211,14 +1390,19 @@ export function WelcomePage() {
               <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
                 {t(msg`密码`)}
               </span>
-              <TextField
-                type="password"
+              <PasswordField
+                // 跟"密码"那一行同样是 div+span 排版，没原生 label-for-input
+                // 关联，靠 aria-label 让屏幕阅读器知道这是密码字段。
+                aria-label={t(msg`密码`)}
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setEntryError("");
                 }}
                 placeholder={t(msg`请输入密码`)}
+                showLabel={t(msg`显示密码`)}
+                hideLabel={t(msg`隐藏密码`)}
               />
               <span className="block pt-1 text-xs text-[color:var(--text-muted)]">
                 {t(msg`忘记密码？请用验证码登录后到设置页修改`)}
@@ -1279,6 +1463,13 @@ export function WelcomePage() {
                 {t(msg`邀请码（选填）`)}
               </span>
               <TextField
+                autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                // 邀请码当前格式是 6 位大写英数；多点容差到 12 位避免以后扩位时
+                // 把 input 卡死。
+                maxLength={12}
                 value={inviteCode}
                 onChange={(event) => {
                   const next = event.target.value
@@ -1370,12 +1561,21 @@ export function WelcomePage() {
             {t(msg`本地世界地址`)}
           </span>
           <TextField
+            // placeholder 之前误把 "i18n-ignore-line" 注释当成展示字符串塞进去了，
+            // 直接出现在 UI 里。
+            // i18n-ignore-line
+            placeholder="http://127.0.0.1:3000"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             value={localApiBaseUrl}
             onChange={(event) => {
               setLocalApiBaseUrl(event.target.value);
               setEntryError("");
             }}
-            placeholder="http:// i18n-ignore-line —127.0.0.1:3000"
           />
         </label>
 
@@ -1413,6 +1613,10 @@ export function WelcomePage() {
 
         <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-none">
           <TextField
+            // 没有可见 label，靠 aria-label 让屏幕阅读器知道这是世界主人名字。
+            aria-label={t(msg`世界主人名字`)}
+            autoComplete="nickname"
+            maxLength={20}
             value={ownerName}
             onChange={(event) => {
               setOwnerName(event.target.value);
@@ -1562,8 +1766,13 @@ export function WelcomePage() {
               action={
                 ((mode === "local" && normalizedLocalApiBaseUrl) ||
                   (mode === "cloud" &&
-                    phone.trim() &&
-                    (cloudAccessToken || code.trim()) &&
+                    (accountType === "email"
+                      ? email.trim()
+                      : phone.trim()) &&
+                    (cloudAccessToken ||
+                      (authMethod === "password"
+                        ? Boolean(password)
+                        : code.trim())) &&
                     !isContinuing)) ? (
                   <button
                     type="button"
@@ -1611,7 +1820,7 @@ export function WelcomePage() {
                 email.trim() && !sendEmailCodeMutation.isPending ? (
                   <button
                     type="button"
-                    onClick={() => sendEmailCodeMutation.mutate()}
+                    onClick={() => handleSendEmailCode()}
                     className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {t(msg`重试发送`)}
