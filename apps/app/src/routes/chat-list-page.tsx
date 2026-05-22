@@ -2079,6 +2079,17 @@ function ConversationListItemLinkImpl({
         isPinned ? "bg-[#f5f5f5]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
+      {/* 走查第 3 次 R1：和 desktop-chat-workspace R35 同款——会话 isPinned 在
+          移动端只通过 bg-[#f5f5f5] 视觉差 + 列表顶部位置表达，盲人 SR 用户
+          只能听到会话名 / preview / 时间戳 / 未读数，听不出"这条是置顶的"。
+          右侧的 Pin 图标仅在 !hasUnreadMessages 分支才渲染——有未读的置顶
+          会话（典型用例：刚刚收到消息的我自己 / 工作群）SR 完全没有 pin
+          线索。补一段 sr-only 文本到 content 开头，SR 朗读时会先报"已置顶
+          + 会话名 ..."，明确表达列表里的位置语义；姊妹 isMuted 已经有
+          BellOff aria-label 处理方向一致。 */}
+      {isPinned ? (
+        <span className="sr-only">{t(msg`已置顶`)}</span>
+      ) : null}
       {/* 群聊和单聊用不同的头像组件——群聊后端没维护 avatar 字段（只有
           setGroupAvatar 这条没人调用的私有 API），AvatarChip 拿不到 src 就
           fallback 成"群名首字"单格占位（"林"），跟 /contacts/groups + 通讯录

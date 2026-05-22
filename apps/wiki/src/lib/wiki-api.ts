@@ -1231,20 +1231,26 @@ export type AiGenerationJobView = {
   updatedAt: string;
 };
 
-/** AI 生成返回的 partial draft；只包含**当前为空**字段的建议。 */
+/**
+ * AI 生成返回的 partial draft；只包含**当前为空**字段的建议。
+ *
+ * 必须与后端 api/src/modules/wiki/services/wiki-private-character-ai.service.ts
+ * 的 AiGeneratedDraft 完全对齐。2026-05-15 起 wiki UI 收敛字段后，后端只生成
+ * 下列字段，前端类型也同步收紧 —— bio/personality/relationship（sacred）、
+ * recipe.expertise/.tone、memorySeed.{memorySummary,coreMemory,recentSummarySeed}
+ * 已经不在后端返回里，无任何消费方，前端类型不再声明它们以免误导。
+ */
 export type AiGeneratedDraft = {
-  bio?: string;
-  personality?: string;
-  relationship?: string;
   relationshipType?: string;
   expertDomains?: string[];
-  // life / lifeStrategy / triggerScenes 都随 2026-05-15「生活策略」下线被移除。
   recipe?: {
-    identity?: Partial<CharacterBlueprintRecipe["identity"]>;
-    expertise?: Partial<CharacterBlueprintRecipe["expertise"]>;
-    tone?: Partial<CharacterBlueprintRecipe["tone"]>;
+    identity?: { avatar?: string };
     prompting?: Partial<CharacterBlueprintRecipe["prompting"]>;
-    memorySeed?: Partial<CharacterBlueprintRecipe["memorySeed"]>;
+    memorySeed?: {
+      forgettingCurve?: number;
+      recentSummaryPrompt?: string;
+      coreMemoryPrompt?: string;
+    };
   };
 };
 
