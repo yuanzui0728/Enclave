@@ -1775,6 +1775,10 @@ export function WelcomePage() {
           <button
             type="button"
             onClick={() => chooseMode("cloud")}
+            // aria-pressed 让屏幕阅读器/键盘用户能知道哪个 mode 当前选中——卡片
+            // 视觉靠 border / bg 区分，没 aria-pressed 的话 VoiceOver 只读"按钮 云世界"
+            // 不带选中状态。
+            aria-pressed={mode === "cloud"}
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
                 ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
@@ -1794,6 +1798,7 @@ export function WelcomePage() {
           <button
             type="button"
             onClick={() => chooseMode("local")}
+            aria-pressed={mode === "local"}
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
                 ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
@@ -2025,8 +2030,18 @@ function MobileWelcomeNotice({
           ? "border-black/5 bg-[#f7f7f5] text-[color:var(--text-secondary)]"
           : "border-[rgba(22,163,74,0.12)] bg-[#f6fbf7] text-[color:var(--text-secondary)]";
 
+  // role=alert + aria-live=assertive 让 VoiceOver/TalkBack 在错误出现的时候即时
+  // 念出来；走查 r6 发现密码错误/验证码错误整块就是普通 div，盲读用户根本不知
+  // 道页面发生了什么变化。其它色调（info/success/muted）走 polite 不打断阅读。
+  const ariaRole = tone === "danger" ? "alert" : "status";
+  const ariaLive = tone === "danger" ? "assertive" : "polite";
+
   return (
-    <div className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${toneClassName}`}>
+    <div
+      role={ariaRole}
+      aria-live={ariaLive}
+      className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${toneClassName}`}
+    >
       {action ? (
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 flex-1">{children}</span>
