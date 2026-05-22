@@ -455,8 +455,15 @@ export function MobileFeedPublishPage() {
       // hook 内部 createMomentImageDrafts decode 期间（每张 ~50ms）仍然可能切账户；
       // shouldCommit 在 hook 真正 setImageDrafts 之前再判一次，切走了就 release
       // 刚 decode 出来的 preview URL、不让图片塞进新账户 draft。
+      // 走查 Round 5：同时也要兜 unmount——用户在 decode 期间点 back 弹放弃发表
+      // 并 confirm，整页 unmount，hook 的 cleanup 只 release imageDraftsRef.current
+      // 里已经 commit 的那批；nextDrafts 还没 commit → 走 setImageDrafts 进 React
+      // 队列被 silently ignored（unmounted），preview URL 永久 orphan，反复进 publish
+      // 选大批图再退出会慢慢吃内存。把 isMountedRef 一起 gate 进去，shouldCommit=false
+      // → hook 自己 release nextDrafts。
       await composeDraft.addImageFiles(files, {
-        shouldCommit: () => startBaseUrl === baseUrlRef.current,
+        shouldCommit: () =>
+          startBaseUrl === baseUrlRef.current && isMountedRef.current,
       });
     } catch (error) {
       // 切账户后旧账户的错误条不该弹到新账户的 toolbar——B 没碰 picker，看到
@@ -488,8 +495,16 @@ export function MobileFeedPublishPage() {
       // 1-30s）期间用户最可能切账户。shouldCommit 在 hook setVideoDraft 之前再判
       // 一次，切走了就 release 刚生成的 poster/preview URL、不让旧账户的视频塞
       // 进新账户 draft。
+      // 走查 Round 5：同时兜 unmount 路径——15-30s 解码窗口里用户点 back 弹放弃
+      // 发表 confirm 后整页 unmount，hook 的 useEffect cleanup 只 release
+      // videoDraftRef.current 里已 commit 的那一份；nextDraft 还在 await 里没 commit
+      // → 后续 setVideoDraft 被 React silently ignored（unmounted），但 nextDraft
+      // 的 previewUrl + posterPreviewUrl（封面 jpeg，多 MB）永久 orphan，反复进
+      // publish 选大视频再 back 会让 blob: 池一路涨。把 isMountedRef 一起 gate 进
+      // shouldCommit，hook 内部直接 release nextDraft 兜底。
       await composeDraft.replaceVideoFile(file, {
-        shouldCommit: () => startBaseUrl === baseUrlRef.current,
+        shouldCommit: () =>
+          startBaseUrl === baseUrlRef.current && isMountedRef.current,
       });
     } catch (error) {
       if (startBaseUrl !== baseUrlRef.current) {
