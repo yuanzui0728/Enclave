@@ -37,6 +37,11 @@ type MobileMessageActionSheetProps = {
   recallLabel?: string;
   onDelete?: () => void;
   deleteLabel?: string;
+  // 视频号评论 wechat-clone：长按弹「举报」槽位。chat 消息暂不用，留 optional
+  // 不影响现有调用方；danger 风格但不像「删除」那样默认走红字（举报是中性，
+  // 非破坏性操作），用普通 text-[#111827]。
+  onReport?: () => void;
+  reportLabel?: string;
 };
 
 export function MobileMessageActionSheet({
@@ -67,6 +72,8 @@ export function MobileMessageActionSheet({
   recallLabel = t(msg`撤回`),
   onDelete,
   deleteLabel = t(msg`删除`),
+  onReport,
+  reportLabel = t(msg`举报`),
 }: MobileMessageActionSheetProps) {
   const titleId = useId();
   // 走查 R2：sheet 上每条 ActionButton 在父组件那边都靠 `setMobileActionMessage(null)`
@@ -286,6 +293,9 @@ export function MobileMessageActionSheet({
           ) : null}
           {onRecall ? (
             <ActionButton label={recallLabel} onClick={guardAction(onRecall)!} danger />
+          ) : null}
+          {onReport ? (
+            <ActionButton label={reportLabel} onClick={guardAction(onReport)!} />
           ) : null}
           {onDelete ? (
             <ActionButton label={deleteLabel} onClick={guardAction(onDelete)!} danger />
