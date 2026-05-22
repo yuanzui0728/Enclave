@@ -416,7 +416,7 @@ export function MobileFeedPublishPage() {
               <span className="min-w-0 flex-1">
                 {composeDraft.mediaError ??
                   (createMutation.error instanceof Error
-                    ? createMutation.error.message
+                    ? describeRequestError(createMutation.error)
                     : "")}
               </span>
               <button

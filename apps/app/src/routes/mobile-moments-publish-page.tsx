@@ -6,11 +6,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
-  isApiRequestError,
   type Moment,
   type MomentsPageResponse,
 } from "@yinjie/contracts";
-import { translateAppErrorCode } from "../lib/error-translate";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Play, Plus, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -24,9 +22,15 @@ import {
 } from "../features/moments/moments-route-state";
 import { parseMobileMomentsPublishRouteState } from "../features/moments/mobile-moments-publish-route-state";
 import {
+  extractMomentDraftSnapshot,
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
+import {
+  clearMomentDraft,
+  loadMomentDraft,
+  saveMomentDraft,
+} from "../features/moments/moment-draft-store";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
@@ -363,17 +367,22 @@ export function MobileMomentsPublishPage() {
   }
 
   const canSubmit = composeDraft.hasContent && !createMutation.isPending;
-  // 走查 R2：createMutation.error 是 AppError 时优先走 translateAppErrorCode
-  // 命中 i18n 字典出当前 locale 文案；非 AppError / 字典 miss 时回退到 raw
-  // err.message（server legacyMessage 中文兜底）。和主朋友圈/好友朋友圈页同模式，
-  // 把非 zh-CN 用户看到的硬编码中文错误堵掉。
+  // 走查深度第二轮：原本 isApiRequestError 命中走 translateAppErrorCode，否则裸吐
+  // err.message——但这条 fallback 在两条真实链路上都暴露原始英文给终端用户：
+  //   (a) 上传/发布过程 fetch throw TypeError("Failed to fetch") / ("Load failed")
+  //       —— 公网隧道断流、世界 child 重启、CORS preflight 失败时高频；用户看到
+  //       的是裸 "Failed to fetch"。
+  //   (b) ApiRequestError 但 errorCode 不在 KnownAppErrorCode 字典里（如服务端
+  //       500 抛 INTERNAL_ERROR、cloud-auth 401 抛裸英文 message）；
+  //       translateAppErrorCode 返回 null → 回退到 server legacyMessage 也是英文。
+  // describeRequestError 已经把这两类都翻成 zh-CN/en-US/ja-JP/ko-KR locale 的
+  // 友好文案（"当前无法连接到隐界世界..." / "当前隐界世界暂时不可用..." / "云账号会话
+  // 已失效..."），mediaError 那条链路（pickImages / replaceVideoFile）就是这么用的。
+  // 这里改成同一条出口，发布按钮的错误提示和媒体选择错误提示一致。
   const errorMessage =
     composeDraft.mediaError ??
     (createMutation.isError && createMutation.error instanceof Error
-      ? isApiRequestError(createMutation.error)
-        ? (translateAppErrorCode(createMutation.error) ??
-          createMutation.error.message)
-        : createMutation.error.message
+      ? describeRequestError(createMutation.error)
       : null);
 
   const imageCount = composeDraft.imageDrafts.length;
