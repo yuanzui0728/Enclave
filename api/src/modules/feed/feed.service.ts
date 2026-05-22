@@ -768,7 +768,15 @@ export class FeedService implements OnModuleInit {
     // 防止匿名公网直接打 /feed/:id/synthesize-audio 烧 11000/天 的 TTS HD 配额）。
     await this.worldOwnerService.getOwnerOrThrow();
     const post = await this.postRepo.findOneBy({ id: postId });
-    if (!post || post.publishStatus === 'deleted') {
+    // 走查本轮 R1：原版只挡 'deleted'，让 'draft' 和 'hidden' 也能朗读：
+    //   - draft：minimax 视频还在合成途中、还没真正发布的"半成品"贴
+    //   - hidden：startup batch 把死链/异常视频自动标 hidden 后准备下架的贴
+    // （feed.service.ts:3386 注释明确说明）；前端列表早就过滤掉这两类，
+    // 但 /feed/:id/synthesize-audio 直接吃 postId 没经过列表，可被 curl /
+    // 老客户端缓存命中调用，白烧 11000/天 TTS HD 配额在没法播的内容上。
+    // addOwnerComment / like 这些写动作 (line 1279) 都要求 published；narration
+    // 同口径对齐。
+    if (!post || post.publishStatus !== 'published') {
       throw new AppError('FEED_POST_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
         legacyMessage: '该内容不存在或已下架。',

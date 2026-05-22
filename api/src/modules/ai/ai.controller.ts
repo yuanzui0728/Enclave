@@ -77,6 +77,16 @@ export class AiController {
         legacyMessage: '请先提供要播报的文本。',
       });
     }
+    // 走查 R1：moments/feed 朗读在调用方截 3000 字；本端点是给前端 "试听音色"
+    // / 调试用，参数完全来自请求 body，curl/老客户端能塞几万字。orchestrator
+    // 已在 8000 字处兜底，但那是"截断而不抛"——本端点是用户主动触发，宁可
+    // 早期 400 让前端给出明确反馈，也不要静默截断让用户怀疑哪句没念上。
+    const MAX_DIRECT_SPEECH_CHARS = 4000;
+    if (text.length > MAX_DIRECT_SPEECH_CHARS) {
+      throw new AppError('AI_TTS_TEXT_TOO_LONG', {
+        legacyMessage: `播报文本超过 ${MAX_DIRECT_SPEECH_CHARS} 字符上限，请缩短后重试。`,
+      });
+    }
 
     const synthesized = await this.ai.synthesizeSpeech({
       text,

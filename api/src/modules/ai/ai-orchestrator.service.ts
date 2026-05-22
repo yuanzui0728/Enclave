@@ -3467,11 +3467,28 @@ export class AiOrchestratorService {
       ...fallbackProviders,
     ];
 
-    const text = options.text.trim();
-    if (!text) {
+    const rawText = options.text.trim();
+    if (!rawText) {
       throw new AppError('AI_TTS_TEXT_REQUIRED', {
         legacyMessage: '请先提供要播报的文本。',
       });
+    }
+    // 走查 R1：MiniMax /t2a_v2 单次合成 ~10000 字符上限，token-plan
+    // speech-02-hd 11000/天又按字符量算消耗。/api/ai/speech、chat 私聊
+    // voice 回复、voice-call fallback 这几条入口都没像 moments/feed
+    // narration 那样在调用方先 trim 到 3000，恶意 / bug / 老客户端送来一
+    // 串几万字会同时撞 MiniMax 4xx + 把当日配额一把烧空。集中在 orchestrator
+    // 兜底：超 8000 字硬截断 + 一行 warn 日志（不抛错，避免把 chat 回复打断）。
+    const MAX_TTS_INPUT_CHARS = 8000;
+    let text = rawText;
+    if (rawText.length > MAX_TTS_INPUT_CHARS) {
+      this.logger.warn('tts text truncated', {
+        conversationId: options.conversationId,
+        characterId: options.characterId,
+        original: rawText.length,
+        truncatedTo: MAX_TTS_INPUT_CHARS,
+      });
+      text = `${rawText.slice(0, MAX_TTS_INPUT_CHARS)}…`;
     }
 
     const startedAt = Date.now();
