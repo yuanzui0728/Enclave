@@ -45,6 +45,7 @@ import {
   navigateBackOrFallback,
   overrideRecordedNavigationPair,
 } from "../lib/history-back";
+import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopCreateGroupDialog = lazy(async () => {
@@ -283,6 +284,29 @@ export function CreateGroupPage() {
       return current.filter((id) => selectedFriendMap.has(id));
     });
   }, [friendsQuery.data, selectedFriendMap]);
+
+  // 走查（新一轮）：handleBack 的"先清搜索再退页"只在视觉返回按钮 click 上
+  // 生效；Android 硬件 Back 走 Capacitor.App.backButton → handleBackPressed →
+  // history.back()，完全绕开 handleBack，跟视觉返回 UX 分裂——用户搜一半按
+  // 硬件 back 直接退页 + 丢已选。挂个 interceptor 把同一套清搜索逻辑搬到硬件
+  // back 上；和 contacts-page R(quick-menu/bulk-mode) 同口径。桌面 layout 没
+  // 这个搜索框，effect 提前 noop。用 ref 让 interceptor 始终读到最新
+  // searchTerm，避免每次 keystroke 都解/注。
+  const searchTermRef = useRef(searchTerm);
+  searchTermRef.current = searchTerm;
+  useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+    return registerAndroidBackInterceptor((event) => {
+      if (searchTermRef.current.trim()) {
+        event.preventDefault();
+        setSearchTerm("");
+        return true;
+      }
+      return false;
+    });
+  }, [isDesktopLayout]);
 
   const filteredFriends = useMemo(() => {
     const keyword = deferredSearchTerm.trim().toLowerCase();
