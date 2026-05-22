@@ -186,6 +186,16 @@ export function MobileMessageActionSheet({
         className="absolute inset-0"
         aria-label={t(msg`关闭消息操作菜单`)}
         onClick={guardClose}
+        // 走查移动端单聊新一轮 R1：和姊妹 sheet message-quote-selection-sheet
+        // (R118) / mobile-message-reminder-sheet (R121) 同款 a11y 缺漏 ——
+        // 长按消息冒出来的 action sheet 的 backdrop <button> (absolute inset-0)
+        // 视觉不可见、纯 mouse"点击背景关闭" affordance，但 DOM 顺序排在 sheet
+        // 子树第一位。键盘用户按 Tab 进 sheet，焦点先落到这张不可见 backdrop
+        // → 看不到 focus 框 → 再按 Tab 才进 ActionButton 列。盲人 SR 焦点循
+        // 环里也会把 backdrop 念成"关闭消息操作菜单"占一格，节奏被打乱。
+        // 挂 tabIndex={-1} 把 backdrop 从 Tab 序列移出；mouse 点击关闭路径
+        // 不受影响（onClick 仍生效）。
+        tabIndex={-1}
       />
       {/* 走查新一轮 R2：长按群消息冒出来的这个底部操作 sheet 没挂 role="dialog"
           + aria-modal + aria-labelledby——和 mobile-details-action-sheet R(re)1

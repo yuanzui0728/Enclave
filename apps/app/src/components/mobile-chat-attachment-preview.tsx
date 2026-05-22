@@ -41,6 +41,20 @@ export function MobileChatAttachmentPreview({
                 <img
                   src={item.previewUrl}
                   alt={item.fileName}
+                  // 走查移动端单聊新一轮 R2：和桌面版 DesktopAttachmentDraftBar
+                  // (R87 + R104) 对齐 —— previewUrl 是 URL.createObjectURL 出来
+                  // 的原图 blob，浏览器默认同步在主线程把原图 decode 再缩到 48×48
+                  // 显示。yuanzui0728 在手机端一次相册选 5-9 张相机原图 (单张
+                  // 3-5MB)，整组同步 decode 的几十 ms 主线程阻塞会让 composer
+                  // 弹出动画 / 输入框 keystroke 掉帧。挂 decoding="async" 走
+                  // off-thread decode；缩略图先空、decode 完淡入，主线程不抢。
+                  // draggable={false}：iOS Safari / Android Chrome 上长按 <img>
+                  // 默认弹系统级图片菜单（保存到相册 / 拷贝 / 分享），用户本意
+                  // 是想点缩略图右上角 X 移除却先误触系统菜单；同时手指拖动
+                  // 缩略图也可能被浏览器当 native drag 把 blob: URL 文本拖到
+                  // textarea 里。
+                  decoding="async"
+                  draggable={false}
                   className="h-12 w-12 rounded-[12px] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
                 />
                 {onRemoveImage ? (

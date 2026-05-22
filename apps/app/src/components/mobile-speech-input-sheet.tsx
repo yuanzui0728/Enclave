@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Mic, Square, WandSparkles, X } from "lucide-react";
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -110,6 +110,19 @@ export function MobileSpeechInputSheet({
   const t = useRuntimeTranslator();
   const titleId = useId();
 
+  // 走查移动端单聊新一轮 R3：和姊妹 sheet mobile-message-reminder-sheet R3 /
+  // mobile-message-action-sheet R3 同款修法 —— onClose 在调用方 chat-composer
+  // 是 ternary `mode==="voice" ? cancelMobileSpeech : closeMobileSpeechSheet`，
+  // 其中 cancelMobileSpeech 是裸 arrow function（line 719-722，没 useCallback），
+  // composer 每个 keystroke / socket tick / typing tick / setQueriesData 都重渲
+  // → 每次重渲 onClose 都拿到新 reference → 下面两个 useEffect 的 deps 含 onClose
+  // 时每帧都会拆装：android back interceptor 拆掉重注 + window.add/removeEvent-
+  // Listener("keydown") 拆掉重挂。语音录制 sheet 在打开时父组件还在频繁重渲（
+  // 真实推送 / 心跳 / typing），这层注册抖动纯白消耗。把 onClose 镜像到 ref，
+  // effect 只依赖 [open] / [holding, open]，sheet 开着期间只挂一次。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   // 原生壳硬件 Back 键：sheet 打开时优先关 sheet（前提是手指没在按住录音），
   // 不让 BACK 同时 history.back 把用户从聊天页带回 chat list。和
   // mobile-message-action-sheet.tsx 对齐。
@@ -119,11 +132,11 @@ export function MobileSpeechInputSheet({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [holding, onClose, open]);
+  }, [holding, open]);
 
   // 新一轮 R2：和姊妹 sheet（mobile-message-action-sheet R3 / mobile-message-
   // reminder-sheet / message-quote-selection-sheet / mobile-details-action-sheet）
@@ -139,11 +152,11 @@ export function MobileSpeechInputSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [holding, onClose, open]);
+  }, [holding, open]);
 
   if (!open) {
     return null;
@@ -163,6 +176,15 @@ export function MobileSpeechInputSheet({
         aria-label={t(msg`关闭语音输入面板`)}
         onClick={onClose}
         disabled={holding}
+        // 走查移动端单聊新一轮 R3：和姊妹 sheet message-quote-selection-sheet
+        // R118 / mobile-message-reminder-sheet R121 / mobile-message-action-sheet
+        // 新一轮 R1 同款 —— backdrop <button> 视觉透明（bg-transparent）、纯
+        // mouse"点击背景关闭"affordance，但 DOM 顺序排在 sheet 子树第一位。
+        // 键盘 / 外接 Bluetooth 键盘用户按 Tab 进 sheet，焦点先落到这张不可见
+        // backdrop → 看不到 focus 框 → 误按 Enter 把用户辛苦录到一半的语音
+        // 直接 close 掉。挂 tabIndex={-1} 把 backdrop 从 Tab 序列移出；mouse
+        // 点击关闭路径不受影响。
+        tabIndex={-1}
       />
       {/* 走查新一轮 R4：和姊妹 sheet mobile-message-action-sheet.tsx
           / mobile-message-reminder-sheet.tsx / message-quote-selection-sheet.tsx
