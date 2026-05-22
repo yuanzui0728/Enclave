@@ -48,6 +48,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
 import {
@@ -1097,7 +1098,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileChatDetailsStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`聊天信息暂时不可用`)}
-            description={conversationsQuery.error.message}
+            description={describeRequestError(conversationsQuery.error)}
             tone="danger"
             action={renderStatusRetryAction(() => {
               void conversationsQuery.refetch();
@@ -1110,7 +1111,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileChatDetailsStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`联系人资料暂时不可用`)}
-            description={characterQuery.error.message}
+            description={describeRequestError(characterQuery.error)}
             tone="danger"
             action={renderStatusRetryAction(() => {
               void characterQuery.refetch();
@@ -1123,7 +1124,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileChatDetailsStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`通讯录信息暂时不可用`)}
-            description={friendsQuery.error.message}
+            description={describeRequestError(friendsQuery.error)}
             tone="danger"
             action={renderStatusRetryAction(() => {
               void friendsQuery.refetch();
@@ -1136,7 +1137,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileChatDetailsStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`黑名单状态暂时不可用`)}
-            description={blockedQuery.error.message}
+            description={describeRequestError(blockedQuery.error)}
             tone="danger"
             action={renderStatusRetryAction(() => {
               void blockedQuery.refetch();
@@ -1427,7 +1428,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {clearMutation.error.message}
+                    {describeRequestError(clearMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1442,7 +1443,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {hideMutation.error.message}
+                    {describeRequestError(hideMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1457,7 +1458,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {pinMutation.error.message}
+                    {describeRequestError(pinMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1472,7 +1473,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {muteMutation.error.message}
+                    {describeRequestError(muteMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1488,7 +1489,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {saveToContactsMutation.error.message}
+                    {describeRequestError(saveToContactsMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1503,7 +1504,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {reportMutation.error.message}
+                    {describeRequestError(reportMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>
@@ -1518,7 +1519,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
-                    {blockMutation.error.message}
+                    {describeRequestError(blockMutation.error)}
                   </span>
                   {renderOperationBackAction()}
                 </div>

@@ -59,6 +59,7 @@ import { useCappedPending } from "../hooks/use-capped-pending";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
@@ -1330,55 +1331,55 @@ export function CharacterDetailPage() {
             ) : null}
             {characterQuery.isError && characterQuery.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={characterQuery.error.message} />
+                <ErrorBlock message={describeRequestError(characterQuery.error)} />
               </div>
             ) : null}
             {friendsQuery.isError && friendsQuery.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={friendsQuery.error.message} />
+                <ErrorBlock message={describeRequestError(friendsQuery.error)} />
               </div>
             ) : null}
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={conversationsQuery.error.message} />
+                <ErrorBlock message={describeRequestError(conversationsQuery.error)} />
               </div>
             ) : null}
             {startChatMutation.isError &&
             startChatMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={startChatMutation.error.message} />
+                <ErrorBlock message={describeRequestError(startChatMutation.error)} />
               </div>
             ) : null}
             {openCallMutation.isError &&
             openCallMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={openCallMutation.error.message} />
+                <ErrorBlock message={describeRequestError(openCallMutation.error)} />
               </div>
             ) : null}
             {setStarredMutation.isError &&
             setStarredMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={setStarredMutation.error.message} />
+                <ErrorBlock message={describeRequestError(setStarredMutation.error)} />
               </div>
             ) : null}
             {setDefaultVoiceReplyMutation.isError &&
             setDefaultVoiceReplyMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
                 <ErrorBlock
-                  message={setDefaultVoiceReplyMutation.error.message}
+                  message={describeRequestError(setDefaultVoiceReplyMutation.error)}
                 />
               </div>
             ) : null}
             {blockMutation.isError && blockMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={blockMutation.error.message} />
+                <ErrorBlock message={describeRequestError(blockMutation.error)} />
               </div>
             ) : null}
             {deleteFriendMutation.isError &&
             deleteFriendMutation.error instanceof Error ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <ErrorBlock message={deleteFriendMutation.error.message} />
+                <ErrorBlock message={describeRequestError(deleteFriendMutation.error)} />
               </div>
             ) : null}
 
@@ -1522,12 +1523,12 @@ export function CharacterDetailPage() {
         {characterQuery.isError && characterQuery.error instanceof Error ? (
           <div className="px-4 py-3">
             {isDesktopLayout ? (
-              <ErrorBlock message={characterQuery.error.message} />
+              <ErrorBlock message={describeRequestError(characterQuery.error)} />
             ) : (
               <MobileCharacterStatusCard
                 badge={unavailableContactBadge}
                 title={unavailableContactProfileTitle}
-                description={characterQuery.error.message}
+                description={describeRequestError(characterQuery.error)}
                 tone="danger"
                 action={
                   <div className="flex flex-wrap gap-2">
@@ -1644,83 +1645,83 @@ export function CharacterDetailPage() {
             ) : null}
             {friendsQuery.isError && friendsQuery.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={friendsQuery.error.message} />
+                <ErrorBlock message={describeRequestError(friendsQuery.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {friendsQuery.error.message}
+                  {describeRequestError(friendsQuery.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {friendRequestsQuery.isError &&
             friendRequestsQuery.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={friendRequestsQuery.error.message} />
+                <ErrorBlock message={describeRequestError(friendRequestsQuery.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {friendRequestsQuery.error.message}
+                  {describeRequestError(friendRequestsQuery.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {blockedQuery.isError && blockedQuery.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={blockedQuery.error.message} />
+                <ErrorBlock message={describeRequestError(blockedQuery.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {blockedQuery.error.message}
+                  {describeRequestError(blockedQuery.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {startChatMutation.isError &&
             startChatMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={startChatMutation.error.message} />
+                <ErrorBlock message={describeRequestError(startChatMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {startChatMutation.error.message}
+                  {describeRequestError(startChatMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {openCallMutation.isError &&
             openCallMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={openCallMutation.error.message} />
+                <ErrorBlock message={describeRequestError(openCallMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {openCallMutation.error.message}
+                  {describeRequestError(openCallMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {sendFriendRequestMutation.isError &&
             sendFriendRequestMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={sendFriendRequestMutation.error.message} />
+                <ErrorBlock message={describeRequestError(sendFriendRequestMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {sendFriendRequestMutation.error.message}
+                  {describeRequestError(sendFriendRequestMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {setStarredMutation.isError &&
             setStarredMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={setStarredMutation.error.message} />
+                <ErrorBlock message={describeRequestError(setStarredMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {setStarredMutation.error.message}
+                  {describeRequestError(setStarredMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
@@ -1731,25 +1732,25 @@ export function CharacterDetailPage() {
             setDefaultVoiceReplyMutation.error instanceof Error ? (
               isDesktopLayout ? (
                 <ErrorBlock
-                  message={setDefaultVoiceReplyMutation.error.message}
+                  message={describeRequestError(setDefaultVoiceReplyMutation.error)}
                 />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {setDefaultVoiceReplyMutation.error.message}
+                  {describeRequestError(setDefaultVoiceReplyMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {updateProfileMutation.isError &&
             updateProfileMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={updateProfileMutation.error.message} />
+                <ErrorBlock message={describeRequestError(updateProfileMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {updateProfileMutation.error.message}
+                  {describeRequestError(updateProfileMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
@@ -1760,46 +1761,46 @@ export function CharacterDetailPage() {
                 10 个 mutation 写法对齐，避免一处双写。 */}
             {pinMutation.isError && pinMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={pinMutation.error.message} />
+                <ErrorBlock message={describeRequestError(pinMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {pinMutation.error.message}
+                  {describeRequestError(pinMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {muteMutation.isError && muteMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={muteMutation.error.message} />
+                <ErrorBlock message={describeRequestError(muteMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {muteMutation.error.message}
+                  {describeRequestError(muteMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {blockMutation.isError && blockMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={blockMutation.error.message} />
+                <ErrorBlock message={describeRequestError(blockMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {blockMutation.error.message}
+                  {describeRequestError(blockMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}
             {deleteFriendMutation.isError &&
             deleteFriendMutation.error instanceof Error ? (
               isDesktopLayout ? (
-                <ErrorBlock message={deleteFriendMutation.error.message} />
+                <ErrorBlock message={describeRequestError(deleteFriendMutation.error)} />
               ) : (
                 <MobileCharacterErrorNotice
                   action={renderMobileErrorBackAction()}
                 >
-                  {deleteFriendMutation.error.message}
+                  {describeRequestError(deleteFriendMutation.error)}
                 </MobileCharacterErrorNotice>
               )
             ) : null}

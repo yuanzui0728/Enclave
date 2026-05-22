@@ -42,6 +42,7 @@ import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -351,15 +352,16 @@ export function ChatBackgroundPage() {
     clearConversationMutation.mutate();
   };
   const pageError =
-    (uploadMutation.error instanceof Error && uploadMutation.error.message) ||
+    (uploadMutation.error instanceof Error &&
+      describeRequestError(uploadMutation.error)) ||
     (saveDefaultMutation.error instanceof Error &&
-      saveDefaultMutation.error.message) ||
+      describeRequestError(saveDefaultMutation.error)) ||
     (clearDefaultMutation.error instanceof Error &&
-      clearDefaultMutation.error.message) ||
+      describeRequestError(clearDefaultMutation.error)) ||
     (saveConversationMutation.error instanceof Error &&
-      saveConversationMutation.error.message) ||
+      describeRequestError(saveConversationMutation.error)) ||
     (clearConversationMutation.error instanceof Error &&
-      clearConversationMutation.error.message) ||
+      describeRequestError(clearConversationMutation.error)) ||
     null;
 
   // 走查 R6：和姊妹 chat-composer pickAlbum/pickCamera/pickFile R2（commit b60471b8d）
@@ -474,12 +476,12 @@ export function ChatBackgroundPage() {
       {conversationsQuery.isError &&
       conversationsQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={conversationsQuery.error.message} />
+          <ErrorBlock message={describeRequestError(conversationsQuery.error)} />
         ) : (
           <MobileBackgroundStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`聊天背景暂时不可用`)}
-            description={conversationsQuery.error.message}
+            description={describeRequestError(conversationsQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -506,12 +508,12 @@ export function ChatBackgroundPage() {
       ) : null}
       {backgroundQuery.isError && backgroundQuery.error instanceof Error ? (
         isDesktopLayout ? (
-          <ErrorBlock message={backgroundQuery.error.message} />
+          <ErrorBlock message={describeRequestError(backgroundQuery.error)} />
         ) : (
           <MobileBackgroundStatusCard
             badge={t(msg`读取失败`)}
             title={t(msg`聊天背景暂时不可用`)}
-            description={backgroundQuery.error.message}
+            description={describeRequestError(backgroundQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">

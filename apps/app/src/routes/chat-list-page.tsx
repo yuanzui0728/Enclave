@@ -98,6 +98,7 @@ import {
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { onChatMessage, onConversationUpdated } from "../lib/socket";
@@ -1373,7 +1374,7 @@ function MobileChatListPage() {
             <MobileChatListStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`消息页暂时不可用`)}
-              description={conversationsQuery.error.message}
+              description={describeRequestError(conversationsQuery.error)}
               tone="danger"
               action={
                 <Button

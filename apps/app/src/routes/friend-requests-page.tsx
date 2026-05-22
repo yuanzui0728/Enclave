@@ -24,6 +24,7 @@ import {
 import { buildWorldCharactersRouteHash } from "../features/contacts/world-characters-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
@@ -255,7 +256,7 @@ function MobileFriendRequestsPage() {
             <MobileFriendRequestsStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`新的朋友暂时不可用`)}
-              description={requestsQuery.error.message}
+              description={describeRequestError(requestsQuery.error)}
               tone="danger"
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
