@@ -407,6 +407,12 @@ export function MobileFeedPublishPage() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
     setIsMediaPreparing(true);
+    // 走查再一轮 R2：上一次 picker 失败留下的 mediaError，用户点"添加图片"
+    // 重选 → 打开 picker → 用户**取消**（没勾任何图）→ pickImageFiles 返回
+    // []，addImageFiles 没机会跑（addImageFiles 内部才清 mediaError），mediaError
+    // 红条挂着原来"图片选择失败"的文案，用户没失败也没选成功，看着像悬而未决。
+    // 在 picker 触发前主动清——用户点 + 号 = 明确表示"我要重来"。
+    composeDraft.setMediaError(null);
     const startBaseUrl = baseUrl;
     try {
       // 跟 mobile-moments-publish-page R4 对齐：把剩余可用槽位传给原生 picker，
@@ -673,7 +679,16 @@ export function MobileFeedPublishPage() {
                   isMediaPreparing
                 }
                 className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
-                onClick={() => videoInputRef.current?.click()}
+                onClick={() => {
+                  // 走查再一轮 R2：跟"添加图片"对齐——上一次视频解码失败 / 超时
+                  // 留下 mediaError 红条，用户点"添加视频"重选时若 picker 被取消
+                  // （cancel 不触发 onChange，handleVideoFileSelected 不跑，
+                  // replaceVideoFile 里的 setMediaError(null) 也不跑），红条挂着
+                  // 老的"视频解析超时"提示，悬而未决。点 + 号 = 明确表示重来，
+                  // 在打开 picker 前主动清。
+                  composeDraft.setMediaError(null);
+                  videoInputRef.current?.click();
+                }}
               >
                 <Video size={14} className="mr-1" />
                 {composeDraft.videoDraft ? t(msg`更换视频`) : t(msg`添加视频`)}
