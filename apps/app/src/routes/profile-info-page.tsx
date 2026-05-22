@@ -58,6 +58,13 @@ export function ProfileInfoPage() {
   // 复制隐界号是 async（writeClipboardText 走 native bridge ~50-200ms），
   // 同帧多次点击会重复打 bridge + 弹冗余 toast。简单 boolean ref 同步守卫。
   const copyInFlightRef = useRef(false);
+  // 新走查 R1：头像 saveMutation 同帧双击防抖。AvatarConfirmDialog「完成」按钮
+  // 只靠 disabled={isSaving}（=saveMutation.isPending）兜双触发；isPending 走
+  // React commit 才 propagate 到 DOM，同帧 <16ms 第二次 click 时 disabled 仍是
+  // false，两次都过门进 saveMutation.mutate(dataUrl)。avatar payload 是 ≤1MB
+  // 的 data URL，重复发等于浪费一份 ~1MB 带宽 + 一个 RTT；账号在公网隧道下
+  // 双发更明显。和 account-security-panel.tsx 同款 ref 守卫，onSettled 释放。
+  const saveAvatarInFlightRef = useRef(false);
   function showToast(message: string) {
     toastKeyRef.current += 1;
     setToast({ message, key: toastKeyRef.current });
@@ -334,9 +341,14 @@ export function ProfileInfoPage() {
           saveMutation.reset();
         }}
         onConfirm={() => {
-          if (pickedAvatar) {
-            saveMutation.mutate(pickedAvatar.dataUrl);
-          }
+          if (!pickedAvatar) return;
+          if (saveAvatarInFlightRef.current) return;
+          saveAvatarInFlightRef.current = true;
+          saveMutation.mutate(pickedAvatar.dataUrl, {
+            onSettled: () => {
+              saveAvatarInFlightRef.current = false;
+            },
+          });
         }}
       />
 

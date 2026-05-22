@@ -66,6 +66,14 @@ export function ProfileCharacterImportPage() {
   // 的回填覆盖，用户在预览卡里看到 file1 的内容、文件名却是 file2 选的那个。
   // 拿一个自增 id 标记 "最新一次 readFile 调用"，过期那条 fall through 直接早退。
   const latestReadIdRef = useRef(0);
+  // 新走查 R1：confirmImport 同帧双击守卫。原本只有 `if (submitting) return;`
+  // —— submitting 是 React state，同帧 <16ms 第二次 click 时闭包里读到的 submitting
+  // 仍是 false（state 还没 propagate）；两次都过门后会发 2 个 importPersonalCharacter
+  // POST，server 按 name upsert 是幂等的但仍浪费 RTT；更关键的是 onSuccess 会
+  // setQueryData / invalidateQueries 多跑一遍 + 第二次 res 覆盖第一次 res 让
+  // friendshipStatus / overwrote 标志可能错位（race 决定）。Sync ref 兜 react
+  // state 的 propagation gap，跟 account-security-panel.tsx changeInFlightRef 同款。
+  const importInFlightRef = useRef(false);
 
   const goBack = () =>
     navigateBackOrFallback(
@@ -214,9 +222,13 @@ export function ProfileCharacterImportPage() {
 
   async function confirmImport() {
     if (!preview) return;
-    // 极快双击「导入」按钮可能在 React 重渲染前两次都触发；用 submitting
-    // 守卫挡掉（虽然 disabled prop 也会挡，但 React 重渲染有微秒级延迟）。
+    // 极快双击「导入」按钮可能在 React 重渲染前两次都触发；submitting state
+    // 守卫存在 React state propagation gap（同帧 click 闭包读到的还是 false），
+    // 真正同步的守卫是 ref。新走查 R1：补 importInFlightRef，原 submitting
+    // 守卫保留作 fail-fast 双层兜底（slow-network 下 disabled 也会兜住）。
+    if (importInFlightRef.current) return;
     if (submitting) return;
+    importInFlightRef.current = true;
     setSubmitting(true);
     setResult(null);
     try {
@@ -288,6 +300,7 @@ export function ProfileCharacterImportPage() {
       });
     } finally {
       setSubmitting(false);
+      importInFlightRef.current = false;
     }
   }
 

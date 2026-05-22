@@ -59,6 +59,10 @@ export function ProfileFeedbackPage() {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const navTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 新走查 R1：submitting state 同帧双击有 propagation gap—两个 click 闭包都
+  // 读到 submitting=false 时都过门，POST /cloud/feedback 重复 2 次。和
+  // account-security-panel.tsx changeInFlightRef 同款 sync ref 守卫。
+  const submitInFlightRef = useRef(false);
 
   useEffect(() => {
     if (isDesktopLayout) {
@@ -98,6 +102,9 @@ export function ProfileFeedbackPage() {
     );
 
   const handleSubmit = async () => {
+    // 新走查 R1：sync ref 守卫先于 React state 守卫——同帧双击 React state 同
+    // 时是 false，两个 click 都过 `if (submitting) return;`，POST 重复 2 次。
+    if (submitInFlightRef.current) return;
     if (submitting) return;
     const trimmedTitle = title.trim();
     const trimmedDetail = detail.trim();
@@ -108,6 +115,7 @@ export function ProfileFeedbackPage() {
       });
       return;
     }
+    submitInFlightRef.current = true;
     setSubmitting(true);
     setNotice(null);
     try {
@@ -150,6 +158,7 @@ export function ProfileFeedbackPage() {
       });
     } finally {
       setSubmitting(false);
+      submitInFlightRef.current = false;
     }
   };
 
