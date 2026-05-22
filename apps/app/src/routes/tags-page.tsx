@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -108,11 +114,20 @@ function MobileTagsPage() {
     staleTime: 15_000,
   });
 
+  // 新一轮走查 R1：buildContactTagGroups 内部要把全量 friendsQuery.data 的每个
+  // friendship.tags 数组都过滤 + 分组 + 排序，长好友列表 + 多 tag 账号下随手敲
+  // 一字就跑一遍同步重算，主线程上肉眼可见的卡顿。和姐妹页 contacts-page /
+  // group-contacts-page / world-characters-page 同口径补 useDeferredValue，让
+  // input value 立刻反映出来，重算切到下一帧。
+  // hasSearchText 跟着 deferred 走——避免清空搜索那一帧因为 deferredSearchText
+  // 还残留上一个 keyword，让 hasSearchText 已经 false 但 tagGroups 还是 0 条，
+  // 误闪「还没有联系人标签」空态（跟 group-contacts-page R9 同坑）。
+  const deferredSearchText = useDeferredValue(searchText);
   const tagGroups = useMemo(
-    () => buildContactTagGroups(friendsQuery.data ?? [], searchText),
-    [friendsQuery.data, searchText],
+    () => buildContactTagGroups(friendsQuery.data ?? [], deferredSearchText),
+    [friendsQuery.data, deferredSearchText],
   );
-  const hasSearchText = searchText.trim().length > 0;
+  const hasSearchText = deferredSearchText.trim().length > 0;
 
   // 新一轮走查：URL ↔ searchText 双向同步的死循环
   // 旧实现 effect deps 是 [routeState.keyword, searchText]：用户敲 'h'

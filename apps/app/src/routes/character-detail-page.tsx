@@ -428,19 +428,25 @@ export function CharacterDetailPage() {
   const displayName = stripBidiControl(
     remarkName || character?.name || detailInfoLabel,
   );
+  // 新一轮走查：资料页头卡的 signature / activitySummary / tagSummary 共用源都
+  // 是角色作者/好友自定字段，displayName 已经在前面 strip 过一道，这三处漏了。
+  // tagSummary 尤其重要——历史脏数据里可能有含 U+202E 的 tag 名（contacts-bulk-
+  // action-bar 早期没卡 strip 时落进 friendship.tags JSON），即便现在写入端守住
+  // 了，存量数据渲染仍能让"标签：客户、朋友、‮bad"在 ProfileRow 里把后续 layout
+  // 反转。stripBidiControl 对空串返回空串，跟原 fallthrough 语义等价。
   const signature =
-    character?.currentStatus?.trim() ||
-    translateCharacterBio(t, character?.bio) ||
+    stripBidiControl(character?.currentStatus).trim() ||
+    stripBidiControl(translateCharacterBio(t, character?.bio)) ||
     t(msg`这个角色还没有个性签名。`);
   const expertiseSummary = character?.expertDomains?.length
     ? translateExpertDomains(t, character.expertDomains, "join")
     : unsetLabel;
   const activitySummary =
     translateCharacterActivity(t, character?.currentActivity) ||
-    character?.relationship?.trim() ||
+    stripBidiControl(character?.relationship).trim() ||
     t(msg`暂无状态`);
   const tagSummary = friendship?.tags?.length
-    ? friendship.tags.join("、")
+    ? friendship.tags.map((tag) => stripBidiControl(tag)).join("、")
     : unsetLabel;
 
   const navigateToDesktopContactsSelection = ({
@@ -1504,7 +1510,10 @@ export function CharacterDetailPage() {
             </div>
             {isDesktopLayout ? (
               <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
-                {character?.relationship || viewCharacterProfileLabel}
+                {/* 新一轮走查：桌面顶栏副标题用 character.relationship 当 fallback，
+                    跟头卡 / 主标题 同口径补 strip。 */}
+                {stripBidiControl(character?.relationship) ||
+                  viewCharacterProfileLabel}
               </div>
             ) : null}
           </div>
@@ -1878,7 +1887,7 @@ export function CharacterDetailPage() {
                       )}
                     >
                       {t(
-                        msg`地区：${friendship?.region?.trim() || character?.region?.trim() || unsetLabel}`,
+                        msg`地区：${stripBidiControl(friendship?.region).trim() || stripBidiControl(character?.region).trim() || unsetLabel}`,
                       )}
                     </div>
                   ) : null}
@@ -2113,10 +2122,13 @@ export function CharacterDetailPage() {
               <ProfileRow
                 label={regionLabel}
                 value={
+                  // 新一轮走查：地区也是角色作者 / friendship 上的用户输入端，
+                  // 跟其他字段同口径补 strip，避免单条脏数据把 ProfileRow value
+                  // 反转。
                   (isFriend
-                    ? friendship?.region?.trim() ||
-                      character.region?.trim()
-                    : character.region?.trim()) || unsetLabel
+                    ? stripBidiControl(friendship?.region).trim() ||
+                      stripBidiControl(character.region).trim()
+                    : stripBidiControl(character.region).trim()) || unsetLabel
                 }
                 compact={!isDesktopLayout}
               />
@@ -2242,7 +2254,10 @@ export function CharacterDetailPage() {
                     {bioLabel}
                   </div>
                   <div className="mt-2 text-[color:var(--text-secondary)] text-sm leading-7">
-                    {translateCharacterBio(t, character.bio) || noMoreIntroLabel}
+                    {/* bio fallthrough 是 raw 文本（descriptor 没命中时 translateCharacterBio
+                        直接返回 trimmed bio），跟头卡 signature 同口径 strip。 */}
+                    {stripBidiControl(translateCharacterBio(t, character.bio)) ||
+                      noMoreIntroLabel}
                   </div>
                 </div>
               </ProfileSection>

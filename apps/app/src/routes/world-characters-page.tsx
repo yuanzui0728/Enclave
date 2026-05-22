@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -134,7 +135,12 @@ function MobileWorldCharactersPage() {
       ),
     [charactersQuery.data, friendIds],
   );
-  const normalizedSearchText = searchText.trim().toLowerCase();
+  // 新一轮走查 R1：本页世界角色总量 200+（yuanzui0728 账号实测），每次 setSearchText
+  // 都同步跑 filter + buildContactSections (O(n log n))，给输入框喂字时能 see 到
+  // 100-200ms 的 jank。和 contacts-page / group-contacts-page 同口径补 useDeferredValue，
+  // 让 input 立刻反映出来，sections 重算切到低优先级帧。
+  const deferredSearchText = useDeferredValue(searchText);
+  const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const filteredItems = useMemo(() => {
     if (!normalizedSearchText) {
       return worldCharacterItems;
