@@ -191,6 +191,21 @@ function MobileNoteEditor({
   const [attachmentPending, setAttachmentPending] = useState(false);
   const [sendDialogNote, setSendDialogNote] =
     useState<NoteSendDialogNote | null>(null);
+  // 走查 R1（新一轮）：跟踪"哪个 sessionKey 已经被 init effect 真正回填过"。
+  // 之前用 initializedSessionKeyRef（ref）锁，但 ref 不参与渲染，保存按钮无法
+  // 看到 init 是否完成。
+  // 真实场景：用户从收藏列表点已有笔记 → /notes/new?noteId=X&draftId=…→
+  // selectedNoteId=X、useState 把 noteId 初始化成 X，editorState 是 EMPTY，
+  // noteQuery 还在拉。这个间隙保存按钮没 disabled（旧 disabled 只看
+  // saveMutation.isPending），用户随手点保存 → handleSave → mutationFn 用 closure
+  // 的空 editorState 拼 payload → updateFavoriteNote(X, {contentHtml: "", ...}) →
+  // 服务端把原笔记**整段覆写成空内容**。一次点击就把用户原笔记吞掉。
+  // 用状态版本"哪个 session 已就绪"+ 派生 isEditorReady，保存/发送按钮在
+  // init effect 完成 applyNoteSource 之前都 disabled。新建笔记不走 noteQuery
+  // 拉数据分支，进编辑器立刻进入 ready，所以正常 + 新建笔记 无感知。
+  const [readyForSessionKey, setReadyForSessionKey] = useState<string | null>(
+    null,
+  );
 
   const noteQuery = useQuery({
     queryKey: ["favorite-note", baseUrl, selectedNoteId],
@@ -214,6 +229,9 @@ function MobileNoteEditor({
   const sessionKey = `${selectedNoteId ?? "new"}:${draftIdParam ?? ""}`;
   const missingSelectedNote =
     selectedNoteId && isFavoriteNoteMissingError(noteQuery.error);
+  // 已有笔记 + noteQuery 还没把 contentHtml 写进 editorState 前，把保存/发送
+  // 屏蔽住。新建笔记不会走 noteQuery，进编辑器 → init effect 立刻 setReady。
+  const isEditorReady = readyForSessionKey === sessionKey;
 
   const currentSnapshot = useMemo(
     () => buildNoteSnapshot(editorState),
@@ -553,6 +571,7 @@ function MobileNoteEditor({
           });
         }
         initializedSessionKeyRef.current = sessionKey;
+        setReadyForSessionKey(sessionKey);
         return;
       }
 
@@ -573,6 +592,7 @@ function MobileNoteEditor({
           savedSource: noteQuery.data,
         });
         initializedSessionKeyRef.current = sessionKey;
+        setReadyForSessionKey(sessionKey);
         return;
       }
     }
@@ -590,6 +610,7 @@ function MobileNoteEditor({
       savedSource: null,
     });
     initializedSessionKeyRef.current = sessionKey;
+    setReadyForSessionKey(sessionKey);
   }, [
     activeDraftId,
     draftIdParam,
@@ -1268,7 +1289,11 @@ function MobileNoteEditor({
               variant="ghost"
               size="icon"
               onClick={() => void requestSend()}
-              disabled={saveMutation.isPending || sendMutation.isPending}
+              disabled={
+                saveMutation.isPending ||
+                sendMutation.isPending ||
+                !isEditorReady
+              }
               className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-secondary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
               aria-label={t(msg`发送`)}
             >
@@ -1279,7 +1304,7 @@ function MobileNoteEditor({
               variant="primary"
               size="sm"
               onClick={() => void handleSave()}
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || !isEditorReady}
               className="h-8 rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
             >
               <Save size={14} />
