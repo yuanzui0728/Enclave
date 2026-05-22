@@ -30,6 +30,7 @@ import {
   clearMomentDraft,
   loadMomentDraft,
   saveMomentDraft,
+  type StoredMomentDraft,
 } from "../features/moments/moment-draft-store";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
@@ -38,6 +39,33 @@ import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const t = translateRuntimeMessage;
+
+// 用 text 长度 + 媒体 blob 大小 + duration 串成 fingerprint。比深比 blob 内容
+// 便宜，又能足够稳定地判断"hydrate 完了之后用户有没有动过"——同样的 stored 写
+// 回来时 text 不变、图片视频还是同一份 File 引用对应同一 blob.size。
+function buildHydrationSignature(stored: StoredMomentDraft): string {
+  const imageSig = stored.imageBlobs
+    .map((b) => `${b.blob.size}x${b.width}x${b.height}`)
+    .join(",");
+  const videoSig = stored.videoBlob
+    ? `${stored.videoBlob.blob.size}x${stored.videoBlob.durationMs}`
+    : "";
+  return `${stored.text.length}|${imageSig}|${videoSig}`;
+}
+
+function buildLiveComposeSignature(input: {
+  text: string;
+  imageDrafts: { file: File; width: number; height: number }[];
+  videoDraft: { file: File; durationMs: number } | null;
+}): string {
+  const imageSig = input.imageDrafts
+    .map((d) => `${d.file.size}x${d.width}x${d.height}`)
+    .join(",");
+  const videoSig = input.videoDraft
+    ? `${input.videoDraft.file.size}x${input.videoDraft.durationMs}`
+    : "";
+  return `${input.text.length}|${imageSig}|${videoSig}`;
+}
 
 export function MobileMomentsPublishPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -218,6 +246,11 @@ export function MobileMomentsPublishPage() {
   useEffect(() => {
     hasContentNowRef.current = hasContentNow;
   }, [hasContentNow]);
+  // hydrate 完成 → cleanup-untouched 信号：用户没动过恢复出来的草稿就 swipe-back
+  // 时，cleanup autosave 不必再把同样一份 5min/100MB 视频 snapshot 写一遍 IDB。
+  // 记录"hydrate 落地时的文本快照"——纯文本对比足够覆盖大多数场景（媒体改动
+  // 走 add/remove/clear 等显式 setter，进一步检查 ref 长度也行；先保守只比文本）。
+  const hydratedSignatureRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     void loadMomentDraft(baseUrl).then((stored) => {
@@ -225,6 +258,19 @@ export function MobileMomentsPublishPage() {
       // 慢盘场景：用户先打字、IDB read 才回来 —— 不要拿草稿覆盖新输入。
       if (hasContentNowRef.current) return;
       hydrateFromStored(stored);
+      hydratedSignatureRef.current = buildHydrationSignature(stored);
+      // hydrate 完了把 textarea cursor 移到末尾 —— React 的受控 textarea 在 value
+      // 变化时不主动调整 selection，autoFocus 时初始 cursor 在 pos 0，hydrate
+      // 落地后用户看到内容但 cursor 还在开头，要继续写得手动点末尾。微信恢复
+      // 草稿是 cursor 直接落在末尾。setTimeout 0 等 React 把新 value 提交到 DOM
+      // 再设 selection（同帧 setSelectionRange 会被 React 之后的 controlled
+      // 提交 reset 掉）。
+      window.setTimeout(() => {
+        const ta = textareaRef.current;
+        if (!ta) return;
+        const end = ta.value.length;
+        ta.setSelectionRange(end, end);
+      }, 0);
     });
     return () => {
       cancelled = true;
@@ -265,6 +311,19 @@ export function MobileMomentsPublishPage() {
       // 3) 空内容直接返回，不留无意义空草稿。
       if (draftHandledRef.current || !snap.hasContent || snap.isPending) {
         return;
+      }
+      // 4) hydrate 出来用户一点都没动 → 没必要把同样一份 100MB 视频再 IDB write
+      //    一遍。fingerprint 一致就跳过（text 长度 + 媒体 size/分辨率 /duration
+      //    串起来比对，比 byte-by-byte 便宜，又能稳定区分用户是否动过）。
+      if (hydratedSignatureRef.current) {
+        const currentSig = buildLiveComposeSignature({
+          text: snap.text,
+          imageDrafts: snap.imageDrafts,
+          videoDraft: snap.videoDraft,
+        });
+        if (currentSig === hydratedSignatureRef.current) {
+          return;
+        }
       }
       void saveMomentDraft(
         snap.baseUrl,

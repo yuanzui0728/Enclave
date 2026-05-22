@@ -73,7 +73,10 @@ export function useMomentComposeDraft() {
     // Blob 重新生成。同时把可能残留的旧 draft 全部 release，避免重复 hydrate
     // 累积 blob URL 泄漏（虽然正常路径下进入发布页前一定先 reset，但壳层
     // back-forward cache 复用同一个 component instance 时这条 cleanup 是兜底）。
-    setText(stored.text);
+    // ?? "" 防御：旧 schema 或 IDB 篡改的情况下 stored.text 可能是 undefined / null。
+    // setText(undefined) 会让受控 textarea 退到 uncontrolled，React 在 dev mode 会
+    // 报"changing an uncontrolled input to be controlled"。
+    setText(stored.text ?? "");
     setImageDrafts((current) => {
       releaseMomentImageDrafts(current);
       const nextDrafts: MomentImageDraft[] = stored.imageBlobs.map((entry) => {
