@@ -118,6 +118,19 @@ export function ShareCardModal({
   onClose,
 }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
+  // 保存/分享按钮同帧双击守卫——pngDataUrl 一旦 ready 按钮就 enabled，用户在
+  // 公网慢链路 / 移动端等系统分享对话框冒出来这段时间内点第二次：
+  //   1) 原生壳（capacitor）路径：第二次 shareFileWithNativeShell 与第一次撞，
+  //      行为取决于 iOS/Android 实现，最不稳定的情况是两次都不冒出系统 sheet。
+  //   2) navigator.share Web Share API 路径：第二次调用通常 reject 抛
+  //      InvalidStateError，被外层 catch 翻成 setSaveError("保存失败，请长按
+  //      图片手动保存")——但用户本意就是再点一次，红条很迷惑。
+  //   3) <a> 下载路径：两次 click 会触发两次 PNG 文件下载（同名），桌面浏览器
+  //      下载栏堆两条同名条目。
+  // ref 同步赋值兜双击，等 onSettled / 操作完成才释放。state 给按钮一个 disabled
+  // + "保存中…" 视觉态，跟 publish 页「发表中」一致的反馈节奏。
+  const savingRef = useRef(false);
+  const [savingPending, setSavingPending] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
   // qrReady 与 qr 分开 — 失败时 qr 仍是 null 但 qrReady=true 表示"已经定下来了"。
   // 截图等 qrReady 后再开始，避免先无 QR 截一次、QR 到了再重截一次。
@@ -283,6 +296,11 @@ export function ShareCardModal({
 
   const handleSaveOrShare = async () => {
     if (!pngDataUrl) return;
+    // 同帧双击守卫——见 savingRef 注释。注意必须 ref 兜底，单纯 disabled 状态
+    // 是上一次 render 的 commit 值，同帧第二次 click 还看到 enabled。
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSavingPending(true);
     setSaveError(null);
     const fileName = `${filenamePrefix}-${cardKey}.png`;
 
@@ -337,6 +355,12 @@ export function ShareCardModal({
     } catch (err) {
       console.error("[share-card] save failed", err);
       setSaveError(t(msg`保存失败，请长按图片手动保存`));
+    } finally {
+      // 走完任一分支（含 early return AbortError）都要释放锁，否则一次失败之后
+      // 用户永远没法再点「保存 / 分享图片」（即使 saveError 红条已经挂着提示），
+      // 整个 modal 变成死状态除非关闭重开。
+      savingRef.current = false;
+      setSavingPending(false);
     }
   };
 
@@ -344,6 +368,11 @@ export function ShareCardModal({
     <div
       role="dialog"
       aria-modal="true"
+      // 走查本轮 R1 (a11y)：之前 role="dialog" aria-modal="true" 但没 aria-label /
+      // aria-labelledby —— 屏幕阅读器进 modal 时只读"dialog"，用户不知道是「分享我
+      // 的朋友圈」还是「分享朋友圈」/「分享广场动态」之类的哪一个。指向下方顶栏标题
+      // 节点，VoiceOver / TalkBack 进 modal 时第一句就读出 modalTitle。
+      aria-labelledby="share-card-modal-title"
       className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -421,7 +450,10 @@ export function ShareCardModal({
       {/* i18n-ignore-line: dev comment - 用户可见的预览 + 操作 */}
       <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <div className="text-[15px] font-medium text-gray-900">
+          <div
+            id="share-card-modal-title"
+            className="text-[15px] font-medium text-gray-900"
+          >
             {modalTitle}
           </div>
           <button
@@ -468,10 +500,10 @@ export function ShareCardModal({
           <button
             type="button"
             onClick={handleSaveOrShare}
-            disabled={!pngDataUrl}
+            disabled={!pngDataUrl || savingPending}
             className="w-full rounded-full bg-[#07C160] py-3 text-[15px] font-medium text-white active:bg-[#06A050] disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            {t(msg`保存 / 分享图片`)}
+            {savingPending ? t(msg`处理中…`) : t(msg`保存 / 分享图片`)}
           </button>
         </div>
       </div>
