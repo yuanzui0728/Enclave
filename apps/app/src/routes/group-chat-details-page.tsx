@@ -23,7 +23,6 @@ import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useGroupBackground } from "../features/chat/backgrounds/use-conversation-background";
-import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
@@ -720,7 +719,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const notifyAtMeSubmittingRef = useRef(false);
   const notifyAtAllSubmittingRef = useRef(false);
   const notifyAnnouncementSubmittingRef = useRef(false);
-  const savedToContactsSubmittingRef = useRef(false);
   const showMemberNicknamesSubmittingRef = useRef(false);
   useEffect(() => {
     if (!pinMutation.isPending) {
@@ -733,7 +731,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       notifyAtMeSubmittingRef.current = false;
       notifyAtAllSubmittingRef.current = false;
       notifyAnnouncementSubmittingRef.current = false;
-      savedToContactsSubmittingRef.current = false;
       showMemberNicknamesSubmittingRef.current = false;
     }
   }, [preferencesMutation.isPending]);
@@ -771,13 +768,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     }
     notifyAnnouncementSubmittingRef.current = true;
     preferencesMutation.mutate({ notifyOnAnnouncement: next });
-  };
-  const handleToggleSavedToContacts = (next: boolean) => {
-    if (savedToContactsSubmittingRef.current) {
-      return;
-    }
-    savedToContactsSubmittingRef.current = true;
-    preferencesMutation.mutate({ savedToContacts: next });
   };
   const handleToggleShowMemberNicknames = (next: boolean) => {
     if (showMemberNicknamesSubmittingRef.current) {
@@ -921,19 +911,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 variant="wechat"
               />
               <ChatSettingRow
-                label={t(msg`全部群成员`)}
-                value={t(msg`${totalMemberCount} 人`)}
-                variant="wechat"
-                onClick={() => {
-                  if (!hasCollapsedMembers) {
-                    showNotice(t(msg`当前群聊共有 ${totalMemberCount} 位成员。`));
-                    return;
-                  }
-                  setMemberGridExpanded(true);
-                  showNotice(t(msg`已展开全部 ${totalMemberCount} 位群成员。`));
-                }}
-              />
-              <ChatSettingRow
                 label={t(msg`群管理`)}
                 value={t(msg`成员与资料`)}
                 variant="wechat"
@@ -964,22 +941,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
-                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-                  });
-                })}
-              />
-              <ChatSettingRow
-                label={t(msg`群二维码`)}
-                value={t(msg`查看邀请卡`)}
-                variant="wechat"
-                onClick={guardRowNavigation(() => {
-                  void navigate({
-                    to: "/group/$groupId/qr",
-                    params: { groupId },
-                    search: buildGroupInviteReturnSearch({
-                      conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
-                    }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 })}
@@ -1054,13 +1015,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 onToggle={handleTogglePin}
               />
               <ChatSettingRow
-                label={t(msg`保存到通讯录`)}
-                variant="wechat"
-                checked={groupQuery.data.savedToContacts}
-                disabled={busy}
-                onToggle={handleToggleSavedToContacts}
-              />
-              <ChatSettingRow
                 label={t(msg`我在本群的昵称`)}
                 value={ownerMember?.memberName || t(msg`未设置`)}
                 variant="wechat"
@@ -1082,21 +1036,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             </div>
           </ChatDetailsSection>
 
-          <ChatCallFallbackSection
-            variant="wechat"
-            voiceValue={t(msg`群语音`)}
-            videoValue={t(msg`群视频`)}
-            onSelectKind={guardRowNavigation((kind: "voice" | "video") => {
-              void navigate({
-                to:
-                  kind === "voice"
-                    ? "/group/$groupId/voice-call"
-                    : "/group/$groupId/video-call",
-                params: { groupId },
-                ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-              });
-            })}
-          />
 
           <ChatDetailsSection title={t(msg`危险操作`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
