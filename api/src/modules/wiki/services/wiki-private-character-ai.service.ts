@@ -10,6 +10,7 @@ import {
 } from './character-draft.service';
 import { AiGenerationJobService } from './ai-generation-job.service';
 import {
+  SECTION_KEYS,
   SECTION_PROMPTS,
   type SectionKey,
   buildTemplateVars,
@@ -80,14 +81,15 @@ export class WikiPrivateCharacterAiService {
      */
     optimize?: boolean;
   }): Promise<AiGeneratedDraft> {
-    if (input.section === 'all') {
+    const { section } = input;
+    if (section === 'all') {
       return this.generateAllByFanout(input);
     }
-    return this.runSingleSection(input);
+    return this.runSingleSection({ ...input, section });
   }
 
   private async runSingleSection(input: {
-    section: SectionKey;
+    section: Exclude<SectionKey, 'all'>;
     currentDraft: PrivateCharacterDto;
     ownerId: string;
     optimize?: boolean;
@@ -137,37 +139,37 @@ export class WikiPrivateCharacterAiService {
   }
 
   /**
-   * section='all' 的扇出：5 个子 section 并行调 LLM，合并结果。
-   *
+   * section='all' 的扇出：N 个子 section 并行调 LLM，合并结果。
    * 子 section 之间天然有依赖（chat/scenes/memory 想引用 coreLogic 来保持自洽），
    * 但 reasoning model 单次大调用反而经常漏 coreLogic，所以这里把"自洽性"换成
    * "可靠性"——并行调用，coreLogic 与其它 section 同时基于同一份 sacred
    * (name/bio/relationship) 生成。
-
-   * 任何一节失败都不阻断其它节：单节抛出会被 catch、记 warn、按"该节缺失"处理；
-   * mergeDrafts 容忍部分缺失。这是为了避免"5 节里 1 节超时 → 整个一键生成失败"。
+   *
+   * 部分失败不阻断其它节：单节抛出会被 catch、记 warn、按"该节缺失"处理；
+   * mergeDrafts 容忍部分缺失，这是为了避免"N 节里 1 节超时 → 整个一键生成失败"。
+   * 但若全部失败 → 抛 ALL_FANOUT_FAILED 让 runJobInBackground markFailed，
+   * 否则用户会拿到一个完全空的 draft 还以为成功了。
    */
   private async generateAllByFanout(input: {
     currentDraft: PrivateCharacterDto;
     ownerId: string;
     optimize?: boolean;
   }): Promise<AiGeneratedDraft> {
-    const subsections: SectionKey[] = [
-      'basics',
-      'core_logic',
-      'chat',
-      'scenes',
-      'memory',
-    ];
+    const subsections = SECTION_KEYS.filter(
+      (k): k is Exclude<SectionKey, 'all'> => k !== 'all',
+    );
+    let successCount = 0;
     const results = await Promise.all(
       subsections.map(async (section) => {
         try {
-          return await this.runSingleSection({
+          const out = await this.runSingleSection({
             section,
             currentDraft: input.currentDraft,
             ownerId: input.ownerId,
             optimize: input.optimize,
           });
+          successCount += 1;
+          return out;
         } catch (err) {
           this.logger.warn(
             `all-fanout subsection=${section} failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -176,6 +178,11 @@ export class WikiPrivateCharacterAiService {
         }
       }),
     );
+    if (successCount === 0) {
+      throw new Error(
+        `ALL_FANOUT_FAILED: 所有 ${subsections.length} 个子 section 均失败`,
+      );
+    }
     return mergeDrafts(...results);
   }
 
@@ -348,23 +355,14 @@ function parseJsonAfterThink(text: string): Record<string, unknown> | null {
 // 输出归一化 + 用户已填字段过滤
 // ─────────────────────────────────────────────────────────────
 
+// section='all' 走 generateAllByFanout 拆 N 个 per-section 调用，不会进这里；
+// 这里只处理单 section 的扁平 raw。
 function normalizeAiOutput(
-  section: SectionKey,
+  section: Exclude<SectionKey, 'all'>,
   raw: Record<string, unknown>,
   currentDraft: PrivateCharacterDto,
   optimize: boolean,
 ): AiGeneratedDraft {
-  // 'all' 返回嵌套 section 结构，分发到对应 normalizer。
-  if (section === 'all') {
-    return mergeDrafts(
-      normalizeBasics(asObj(raw.basics), currentDraft, optimize),
-      normalizeCoreLogic(asObj(raw.core_logic), currentDraft, optimize),
-      normalizeChat(asObj(raw.chat), currentDraft, optimize),
-      normalizeScenes(asObj(raw.scenes), currentDraft, optimize),
-      normalizeMemory(asObj(raw.memory), currentDraft, optimize),
-    );
-  }
-
   switch (section) {
     case 'basics':
       return normalizeBasics(raw, currentDraft, optimize);
@@ -376,16 +374,12 @@ function normalizeAiOutput(
       return normalizeScenes(raw, currentDraft, optimize);
     case 'memory':
       return normalizeMemory(raw, currentDraft, optimize);
-    default:
+    default: {
+      const _exhaustive: never = section;
+      void _exhaustive;
       return {};
+    }
   }
-}
-
-function asObj(v: unknown): Record<string, unknown> {
-  if (v && typeof v === 'object' && !Array.isArray(v)) {
-    return v as Record<string, unknown>;
-  }
-  return {};
 }
 
 /**

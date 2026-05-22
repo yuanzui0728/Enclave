@@ -153,47 +153,18 @@ Schema：
   "coreMemoryPrompt": "string, 2-3 句。指示模板。变量：{{name}}、{{interactionHistory}}。让 AI 把所有过往交互提炼为'核心记忆'。要可执行。"
 }`;
 
-// 不要在 ALL 模板里写完整的 JSON 示例骨架。reasoning 模型（GLM 系列）会把
-// 示例当作"reference"输出在 <think>...</think> 块里，导致 extractJsonFromModelOutput
-// 抓到 <think> 里那段示例 + 真正的 JSON 合并成无法解析的字符串。
-// 改成只用文字描述结构。
-const ALL_TEMPLATE = `当前角色信息（3 个 sacred 字段已填）：
-- 姓名：{{name}}
-- 简介：{{bio}}
-- 关系：{{relationship}}
-
-请为这个角色一次性生成 5 个 section 的所有空白字段。section 内部要保持自洽（例：scenePrompts 引用 coreLogic 的精神）。
-
-输出一个嵌套 JSON 对象，**只能有 5 个顶层键**：basics / core_logic / chat / scenes / memory。
-
-各子对象的字段规范（每个字段的类型、长度、枚举值都要严格遵守）：
-
-[basics]
-- avatar: string, 恰好 1 个 emoji 字符，与角色气质相符（例：'🪷' / '🎨' / '🔧'）
-- expertDomains: string[], 3-5 个，每个 ≤ 6 字
-- relationshipType: 枚举 "friend" | "family" | "mentor" | "expert" | "custom"
-
-[core_logic]
-- coreLogic: string, 3-5 句，全场景通用的行为准则（可执行）
-- forgettingCurve: int 0-100（记性好 80-90 / 普通 60-70 / 健忘 40-50）
-
-[chat]
-- chat: string, 2-3 句，私聊/群聊场景的具体行为
-
-[scenes]
-- 一个嵌套对象，包含 7 个键：moments_post / moments_comment / feed_post / channel_post / feed_comment / greeting / proactive，每个值是 1-2 句的字符串
-
-[memory]
-- recentSummaryPrompt: string, 2-3 句指示模板
-- coreMemoryPrompt: string, 2-3 句指示模板
-
-再次提醒：**不要在你的回复中输出任何 JSON 示例代码、不要解释、不要 markdown 代码块、不要写"我会..."这种开场白**。第一个字符就是 \`{\`，最后一个字符就是 \`}\`。`;
-
 // ─────────────────────────────────────────────────────────────
 
-// maxTokens 设大一些：reasoning 模型（GLM 系列）会在 content 之前消耗一段
-// reasoning，留给真正 JSON 输出的预算会被吃掉。设小了实测会把 JSON 截断。
-export const SECTION_PROMPTS: Record<SectionKey, PromptTemplate> = {
+// 2026-05-22 起 section='all' 走 fan-out 拆 5 个并行子调用（见
+// WikiPrivateCharacterAiService.generateAllByFanout），ALL_TEMPLATE 删除——
+// MiniMax-M2.7 是 reasoning model，单次多 section 大调用会偷懒漏短字段
+// （线上观察 coreLogic / chat 经常空）。SECTION_PROMPTS 因此只覆盖单 section。
+// maxTokens 设大一些：reasoning 模型会在 content 之前消耗一段 reasoning，
+// 留给真正 JSON 输出的预算会被吃掉。设小了实测会把 JSON 截断。
+export const SECTION_PROMPTS: Record<
+  Exclude<SectionKey, 'all'>,
+  PromptTemplate
+> = {
   basics: {
     systemPrompt: SHARED_SYSTEM_PROMPT,
     userPromptTemplate: BASICS_TEMPLATE,
@@ -227,13 +198,6 @@ export const SECTION_PROMPTS: Record<SectionKey, PromptTemplate> = {
     userPromptTemplate: MEMORY_TEMPLATE,
     temperature: 0.5,
     maxTokens: 1500,
-    fallback: {},
-  },
-  all: {
-    systemPrompt: SHARED_SYSTEM_PROMPT,
-    userPromptTemplate: ALL_TEMPLATE,
-    temperature: 0.6,
-    maxTokens: 5000,
     fallback: {},
   },
 };
