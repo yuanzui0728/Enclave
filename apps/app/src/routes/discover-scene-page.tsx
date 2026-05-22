@@ -425,9 +425,17 @@ function MobileDiscoverScenePage() {
         灰按钮一脸懵。比 cooldown 提示优先级更高（同时存在时只显示这条）。
       */}
       {/*
-        走查 R1（移动端发现-场景相遇）：DAILY_LIMIT / cooldown 两条提示是按钮 grid
-        整体灰掉的原因；屏幕阅读器用户没法靠视觉看到 grid 变灰，需要 role=status
-        把"今天用完 / 稍等 X 秒"朗读出来，否则反复点 disabled 按钮没任何反馈。
+        走查 R1（移动端发现-场景相遇）：DAILY_LIMIT 是稳定文案，挂 role=status
+        让屏幕阅读器朗读一次"今天用完"，否则反复点 disabled 按钮没反馈。
+        走查 R4：cooldown banner 当时同款挂了 role=status aria-live=polite，但
+        文案每秒都变（"稍等 3/2/1 秒再出发吧"）—— 在 2.5s 冷却里 AT 会被打断
+        三次，spam。AT 在 cooldown 场景已经有兜底：
+          a) 由 success/info 反馈触发的 cooldown：上面的 success notice 本身就是
+             role=status，"X 在咖啡馆里注意到了你..." 已经朗读一遍；
+          b) 由 SOCIAL_SCENE_COOLDOWN 错误触发的 cooldown：下面的错误条目是
+             role=alert，"别走太急..." 已经 assertive 朗读。
+        cooldown banner 本身只用来给 sighted 用户一个倒计时数字，不必再做 live
+        region —— 撤掉 aria-live，AT 不再被秒级 spam。
       */}
       {dailyLimitHit ? (
         <div
@@ -439,8 +447,7 @@ function MobileDiscoverScenePage() {
         </div>
       ) : cooldownActive && !sceneMutation.isPending ? (
         <div
-          role="status"
-          aria-live="polite"
+          aria-hidden="true"
           className="text-center text-[11px] text-[color:var(--text-secondary)]"
         >
           {t(msg`稍等 ${cooldownRemainSec} 秒再出发吧。`)}
