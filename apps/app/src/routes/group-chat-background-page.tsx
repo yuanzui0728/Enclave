@@ -502,6 +502,12 @@ export function GroupChatBackgroundPage() {
           <ErrorBlock role="alert" message={pageError} />
         ) : (
           <InlineNotice
+            // 新会话走查 R4：和姊妹 desktop 分支 ErrorBlock 同款 a11y 修法——
+            // pageError 是上传/保存/清除背景 5 路 mutation 失败时的兜底反馈，
+            // mobile 这条裸 InlineNotice 没 role/aria-live。盲人 SR 点完保存
+            // 听不到任何错误播报，以为操作生效。role="alert"+assertive 立刻
+            // 播报 pageError 内容。
+            role="alert"
             tone="danger"
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
