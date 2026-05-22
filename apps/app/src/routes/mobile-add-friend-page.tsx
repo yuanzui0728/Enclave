@@ -1,6 +1,8 @@
 import {
   Suspense,
   lazy,
+  memo,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -439,7 +441,10 @@ function MobileAddFriend() {
     );
   }
 
-  function openFriendRequests() {
+  // 走查 R1：稳定 ref。handleResultPrimaryAction useCallback dep 需要它，否则
+  // 每次 render 重建 openFriendRequests → handleResultPrimaryAction 也重建 →
+  // memo'd 行的 prop 引用变 → memo 失效。
+  const openFriendRequests = useCallback(() => {
     void navigate({
       to: "/friend-requests",
       hash: buildMobileFriendRequestsRouteHash({
@@ -447,42 +452,60 @@ function MobileAddFriend() {
         returnHash: currentRouteHash || undefined,
       }),
     });
-  }
+  }, [currentRouteHash, navigate, pathname]);
 
-  function handleResultPrimaryAction(result: AddFriendSearchResult) {
-    if (result.status === "available") {
-      setSendDialogCharacterId(result.character.id);
-      return;
-    }
+  // 走查 R1：每次 setSearchText（用户每敲一键）父组件 re-render，原版用箭头函数
+  // 包成 `onPrimaryAction={() => handleResultPrimaryAction(result)}` 传给行，
+  // 每行 props 引用永远新；即便给行加 memo 也跳不过。改用 useCallback 把两个
+  // handler 固化成稳定引用，行内部 `() => onPrimaryAction(item)` 这层 arrow
+  // 在 memo 之后无影响（行的 props 已经稳定，无需重渲）。openChatMutation /
+  // navigate 引用本身在 react-query / tanstack-router 实现里就是稳定的。
+  // 注意 useCallback dep 只放真正稳定的项：navigate、openChatMutation.mutate、
+  // pathname、currentRouteHash。currentRouteHash 已经 useMemo'd（仅在
+  // submittedKeyword/safeReturnPath/safeReturnHash 变时变）。
+  const handleResultPrimaryAction = useCallback(
+    (result: AddFriendSearchResult) => {
+      if (result.status === "available") {
+        setSendDialogCharacterId(result.character.id);
+        return;
+      }
 
-    if (result.status === "friend") {
-      openChatMutation.mutate(result.character.id);
-      return;
-    }
+      if (result.status === "friend") {
+        openChatMutation.mutate(result.character.id);
+        return;
+      }
 
-    // inbound pending（对方发来的、还在等用户决定）：按钮不再 disabled，点击
-    // 跳到 /friend-requests 让用户去通过 / 拒绝。outbound pending（用户已发）
-    // 按钮还是 disabled，handler 不会触发。
-    if (
-      result.status === "pending" &&
-      result.pendingRequest &&
-      !result.pendingRequest.acceptAt
-    ) {
-      openFriendRequests();
-      return;
-    }
-  }
+      // inbound pending（对方发来的、还在等用户决定）：按钮不再 disabled，点击
+      // 跳到 /friend-requests 让用户去通过 / 拒绝。outbound pending（用户已发）
+      // 按钮还是 disabled，handler 不会触发。
+      if (
+        result.status === "pending" &&
+        result.pendingRequest &&
+        !result.pendingRequest.acceptAt
+      ) {
+        openFriendRequests();
+        return;
+      }
+    },
+    // openChatMutation 本体在 useMutation 实现内引用稳定，但 lint 仍要求列出；
+    // 列了之后每次 mutation state 翻动（pending/idle）会重建一次回调——影响
+    // 极小，相比每次 keystroke 重建全部 12 行的开销可忽略。
+    [openChatMutation, openFriendRequests],
+  );
 
-  function handleResultOpenProfile(result: AddFriendSearchResult) {
-    void navigate({
-      to: "/character/$characterId",
-      params: { characterId: result.character.id },
-      hash: buildCharacterDetailRouteHash({
-        returnPath: pathname,
-        returnHash: currentRouteHash || undefined,
-      }),
-    });
-  }
+  const handleResultOpenProfile = useCallback(
+    (result: AddFriendSearchResult) => {
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId: result.character.id },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: pathname,
+          returnHash: currentRouteHash || undefined,
+        }),
+      });
+    },
+    [currentRouteHash, navigate, pathname],
+  );
 
   return (
     <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
@@ -675,8 +698,10 @@ function MobileAddFriend() {
                     openChatMutation.variables === result.character.id)
                 }
                 showDivider={index > 0}
-                onPrimaryAction={() => handleResultPrimaryAction(result)}
-                onOpenProfile={() => handleResultOpenProfile(result)}
+                // 走查 R1：handler 直接传稳定 ref，行内部自己 close over item。
+                // 不再用 `() => fn(result)` 这种每 render 重建的箭头。
+                onPrimaryAction={handleResultPrimaryAction}
+                onOpenProfile={handleResultOpenProfile}
               />
             ))}
           </section>
@@ -861,11 +886,19 @@ type MobileAddFriendResultRowProps = {
   item: AddFriendSearchResult;
   actionPending: boolean;
   showDivider: boolean;
-  onPrimaryAction: () => void;
-  onOpenProfile: () => void;
+  onPrimaryAction: (item: AddFriendSearchResult) => void;
+  onOpenProfile: (item: AddFriendSearchResult) => void;
 };
 
-function MobileAddFriendResultRow({
+// 走查 R1：memo 行组件——父在 setSearchText 时（用户每敲一键）会 re-render，
+// 但行 props（item / actionPending / showDivider / 两个 handler）只要稳定就不
+// 重渲。`item` 引用稳定靠父端 useMemo 的 searchResults（仅在 submittedKeyword
+// /数据集变化时重算）；两个 handler 由父端 useCallback 固定。
+//
+// 没加自定义 areEqual 是因为默认 shallowEqual 已经把上述 props 全打中：
+// `item` 同对象 → ===，actionPending/showDivider 是 boolean → ===，
+// onPrimaryAction/onOpenProfile 是 useCallback ref → ===。
+const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
   item,
   actionPending,
   showDivider,
@@ -886,6 +919,11 @@ function MobileAddFriendResultRow({
       ? `${item.identifier} · ${t(msg`昵称`)} ${item.character.name}`
       : item.identifier;
 
+  // 行内自己关上 item，外面传进来的是稳定 ref；无需 useCallback——这两个
+  // 箭头每次行重渲都会重建，但行的 children 没有 memo 边界要保护。
+  const handlePrimaryClick = () => onPrimaryAction(item);
+  const handleProfileClick = () => onOpenProfile(item);
+
   return (
     <div
       className={cn(
@@ -896,7 +934,7 @@ function MobileAddFriendResultRow({
       <div className="flex items-start gap-3">
         <button
           type="button"
-          onClick={onOpenProfile}
+          onClick={handleProfileClick}
           className="shrink-0 rounded-[8px] active:opacity-70"
           aria-label={t(msg`查看资料`)}
         >
@@ -909,7 +947,7 @@ function MobileAddFriendResultRow({
         <div className="min-w-0 flex-1">
           <button
             type="button"
-            onClick={onOpenProfile}
+            onClick={handleProfileClick}
             className="block w-full text-left"
           >
             <div className="flex items-center gap-2">
@@ -940,7 +978,7 @@ function MobileAddFriendResultRow({
               variant={item.status === "available" ? "primary" : "secondary"}
               size="sm"
               disabled={meta.disabled}
-              onClick={onPrimaryAction}
+              onClick={handlePrimaryClick}
               className={cn(
                 "h-8 rounded-full px-3.5 text-[12px] shadow-none",
                 item.status === "available"
@@ -962,7 +1000,7 @@ function MobileAddFriendResultRow({
       </div>
     </div>
   );
-}
+});
 
 type ResultStatusMeta = {
   label: MessageDescriptor;
@@ -1152,10 +1190,18 @@ function MobileAddFriendSendSheet({
       />
 
       <div
+        // 走查 R3：补 role="dialog" + aria-modal + aria-labelledby，对齐
+        // share-card-modal / mobile-speech-input-sheet / channels-forward-picker
+        // / mobile-message-action-sheet 全站 sheet 模板。原版只用 backdrop button
+        // 拦点击 + Escape 关闭，但根容器没语义；屏幕阅读器把整块当通用 region，
+        // 不会进 modal mode、不会播报标题、Tab 也不收口在 sheet 内。
         // pb 接 --keyboard-inset：iOS WKWebView 上软键盘弹起会盖住 fixed
         // 元素，sheet 底部「取消 / 发送」按钮看不见。mobile-shell 把 keyboard
         // 高度写进 --keyboard-inset CSS 变量，这里 max(safe-area, keyboard)
         // 抬高 sheet 内容，保证按钮始终高于键盘。
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-add-friend-sheet-title"
         className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(15,23,42,0.18)] sm:rounded-[14px]"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
@@ -1167,7 +1213,10 @@ function MobileAddFriendSendSheet({
           >
             {t(msg`取消`)}
           </button>
-          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+          <div
+            id="mobile-add-friend-sheet-title"
+            className="text-[15px] font-medium text-[color:var(--text-primary)]"
+          >
             {t(msg`好友申请`)}
           </div>
           <button
