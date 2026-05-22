@@ -4,6 +4,24 @@ import { AppError } from '../../common/app-error.exception';
 // i18n-ignore-start: provider adapter — error/log strings only.
 
 const MINIMAX_HOST_REGEX = /(api\.minimaxi\.com|api\.minimax\.chat)/i;
+// 走查 yuanzui0728 本次 R2：原版 fetch 完全没有 timeout。Node fetch 默认
+// 无 timeout，MiniMax 上游网络 hang / cloudflare 中转停滞时整个 postJson
+// 永远等下去 —— 而 ai-orchestrator 的 fallback 链根本无法 fallback 到
+// OpenAI，因为还卡在 MiniMax attempt 的 fetch 里。新 MinimaxClient（不
+// 是这个 Native 类）已经用 fetchWithTimeout(30s) 兜底；Native 这边漏了。
+// 给同样的 30s timeout（TTS / image 一般 ≤20s 完成，30s 是 MinimaxClient
+// 同款值）。
+const NATIVE_REQUEST_TIMEOUT_MS = 30_000;
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...init, signal: controller.signal });
+}
 
 type MinimaxBaseResp = {
   status_code: number;
@@ -158,23 +176,35 @@ export class MinimaxNativeClient {
     const url = `${this.baseUrl}${path}`;
     let response: Response;
     try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
+      response = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      });
+        NATIVE_REQUEST_TIMEOUT_MS,
+      );
     } catch (error) {
+      const err = error as Error & { name?: string };
+      const isTimeout = err?.name === 'AbortError';
       this.logger.error('minimax network failure', {
         url,
-        error: (error as Error)?.message,
+        error: err?.message,
+        timeout: isTimeout,
       });
-      throw new AppError('AI_PROVIDER_UNAVAILABLE', {
-        status: HttpStatus.BAD_GATEWAY,
-        legacyMessage: 'MiniMax 网关暂不可达，请稍后再试。',
-      });
+      throw new AppError(
+        isTimeout ? 'AI_PROVIDER_TIMEOUT' : 'AI_PROVIDER_UNAVAILABLE',
+        {
+          status: HttpStatus.BAD_GATEWAY,
+          legacyMessage: isTimeout
+            ? `MiniMax 接口 ${NATIVE_REQUEST_TIMEOUT_MS}ms 超时，请稍后再试。`
+            : 'MiniMax 网关暂不可达，请稍后再试。',
+        },
+      );
     }
 
     const text = await response.text();
