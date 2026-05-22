@@ -470,18 +470,29 @@ export function WelcomePage() {
   // 服务端 CLOUD_EMAIL_CODE_RESEND_COOLDOWN_SECONDS 默认 60s，电话同义。客户端原
   // 来没节流——发完一次后按钮立刻又是 enabled，用户 second click 拿到 429（错误
   // 文案就是 "验证码发送过于频繁，请在 NN 秒后重试"），还无谓占掉 5/h 的窗口预算
-  // (CLOUD_EMAIL_CODE_MAX_PER_WINDOW 默认 5)。本地维护一个倒计时按钮态，发送成功
-  // 后 60s 内按钮 disabled + 显示剩余秒数；email/phone 改了立刻清掉，因为 cooldown
-  // 是 per-identity 的，换 identity 不该受影响。
-  const [codeCooldownSeconds, setCodeCooldownSeconds] = useState(0);
+  // (CLOUD_EMAIL_CODE_MAX_PER_WINDOW 默认 5)。
+  // 用 timestamp（cooldownEndAt）而不是裸 seconds counter：移动端浏览器
+  // setTimeout/setInterval 在 App 切后台时会被节流到 ≥1s 甚至 5s+，用 counter 倒
+  // 推真实时间会滞后——切回前台时 display 还显示 30s 但服务端 cooldown 早就到
+  // 期了，用户继续干等。用 endAt 时间戳 + 定时器纯触发 re-render、display 永远
+  // 算自 Date.now()，前后台都吻合；再挂 visibilitychange 让 refocus 时立刻补一帧。
+  const [codeCooldownEndAt, setCodeCooldownEndAt] = useState(0);
+  const [codeCooldownNow, setCodeCooldownNow] = useState(() => Date.now());
   useEffect(() => {
-    if (codeCooldownSeconds <= 0) return;
-    const id = window.setTimeout(
-      () => setCodeCooldownSeconds((n) => Math.max(0, n - 1)),
-      1000, // i18n-ignore-line
-    );
-    return () => window.clearTimeout(id);
-  }, [codeCooldownSeconds]);
+    if (codeCooldownEndAt <= Date.now()) return;
+    const tick = () => setCodeCooldownNow(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000); // i18n-ignore-line
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [codeCooldownEndAt]);
+  const codeCooldownSeconds = Math.max(
+    0,
+    Math.ceil((codeCooldownEndAt - codeCooldownNow) / 1000),
+  );
   // 把 429 时服务端报的 retryAfter 也喂到本地 cooldown，否则用户首次点 send 命中
   // 服务端 per-identity 窗口（比如 30s 前从别的设备/上次会话发过码）直接 429，
   // 错误条上的"重试发送"按钮没禁用、cooldown 也是 0，连点 → 连 429。服务端
@@ -494,7 +505,8 @@ export function WelcomePage() {
     if (!isApiRequestError(error) || error.statusCode !== 429) return;
     const match = error.message.match(/(\d+)\s*秒/);
     const seconds = match ? Number(match[1]) : 60;
-    setCodeCooldownSeconds(Math.min(seconds, 60) || 60);
+    const clamped = Math.min(seconds, 60) || 60;
+    setCodeCooldownEndAt(Date.now() + clamped * 1000);
   }
 
   const currentCodeIdentity =
@@ -799,7 +811,7 @@ export function WelcomePage() {
       // ref 更到 server-normalized 值，确保 setPhone(result.phone) 之后 effective
       // 立即匹配（server 给的可能是 "+86xxxx"，跟用户敲的 "xxxx" 不一致）。
       codeCooldownIdentityRef.current = result.phone;
-      setCodeCooldownSeconds(60);
+      setCodeCooldownEndAt(Date.now() + 60 * 1000);
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -839,7 +851,7 @@ export function WelcomePage() {
       // 同 phone 路径：用 server-normalized 邮箱（一般是小写化版本），跟
       // setEmail(result.email) 之后的 currentCodeIdentity 一致。
       codeCooldownIdentityRef.current = result.email;
-      setCodeCooldownSeconds(60);
+      setCodeCooldownEndAt(Date.now() + 60 * 1000);
     },
     onError: (error) => {
       startCooldownFromError(error);
