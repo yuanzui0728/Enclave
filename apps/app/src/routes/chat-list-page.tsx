@@ -2147,9 +2147,16 @@ function ConversationListItemLinkImpl({
             </div>
             <div className="flex min-h-[18px] items-center gap-1">
               {conversation.isMuted ? (
+                // 走查 R1（新一轮）：原版裸 <BellOff aria-label> 没挂 role；
+                // 同行下方 R2 unread badge 已经统一到 role="img"（generic
+                // 元素 / SVG 上 aria-label 行为 implementation-defined，VO
+                // 严格模式或 Chromium AX 早期可能直接不暴露）。muted 是用
+                // 户唯一的"会话静音"提示，盲人用户必须能可靠听到，跟下方
+                // unread 走同一规约。Lucide 默认不挂任何 role。
                 <BellOff
                   size={11}
                   className="text-[color:var(--text-dim)]"
+                  role="img"
                   aria-label={t(msg`消息免打扰`)}
                 />
               ) : null}
@@ -2205,9 +2212,11 @@ function ConversationListItemLinkImpl({
                   </div>
                 )
               ) : isPinned ? (
+                // 同上：Pin 当 visually-named icon 也要挂 role="img"。
                 <Pin
                   size={10}
                   className="text-[color:var(--text-dim)]"
+                  role="img"
                   aria-label={t(msg`置顶聊天`)}
                 />
               ) : null}

@@ -44,7 +44,11 @@ export function SubscriptionInboxCard({
               : "h-12 w-12 rounded-xl bg-[linear-gradient(135deg,#f59e0b,#f97316)]",
           )}
         >
-          <Newspaper size={variant === "desktop" ? 18 : 20} />
+          {/* 走查 R1（新一轮）：Newspaper 是装饰图标，row title「订阅号消
+              息」已是 accessible name；Lucide 默认不挂 role/aria，部分 AT
+              会把 inline SVG 念成「newspaper」覆盖标题。aria-hidden 隔离掉
+              避免重复念。同 chat-list quick menu 5 个 icon 已经按这条规约。 */}
+          <Newspaper size={variant === "desktop" ? 18 : 20} aria-hidden="true" />
         </div>
       }
       onClick={onClick}
