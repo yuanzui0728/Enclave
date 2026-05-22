@@ -1180,10 +1180,16 @@ function MobileNoteEditor({
     setSendDialogNote(nextNote);
   }
 
+  // 走查 R3（新一轮）：原条件只看 noteQuery.isLoading + ref；data 到了那一帧
+  // isLoading=false，但 init effect 还没在下一个 commit 里跑完 applyNoteSource
+  // → editor 用 editorState=EMPTY 渲染一帧（用户能瞄到一个空编辑器），随后
+  // 第二个 commit 才把内容塞进去。从 LoadingBlock 一直撑到 isEditorReady：
+  // 不仅命中"网络还在拉"，还把"data 到了但 useEffect 没 commit"那一帧也兜住。
+  // missingSelectedNote / 错误兜底由下面单独的 ErrorBlock 分支接管。
   if (
     selectedNoteId &&
-    noteQuery.isLoading &&
-    !initializedSessionKeyRef.current
+    !isEditorReady &&
+    !(noteQuery.isError && !readDesktopNoteDraftByNoteId(selectedNoteId))
   ) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
