@@ -1554,6 +1554,16 @@ export function WelcomePage() {
                       setRegisterPassword(event.target.value);
                       setEntryError("");
                     }}
+                    onKeyDown={(event) => {
+                      // 跟 code / password 字段对齐：注册路径用户填完邮箱+码+
+                      // 密码按 Enter 自然要提交，但本字段以前没接 Enter，必须
+                      // 用鼠标点"注册并进入"按钮，跟其他字段不一致——R5 走查
+                      // 的 a658fee3e 已经把 code/password 字段补齐，这里漏了。
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void continueWithCloudWorld();
+                      }
+                    }}
                     placeholder={t(msg`8-32 位，任意字符（不含空格）`)}
                     showLabel={t(msg`显示密码`)}
                     hideLabel={t(msg`隐藏密码`)}
