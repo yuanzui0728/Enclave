@@ -2587,7 +2587,7 @@ export function ContactsPage() {
                 className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
                 aria-label={t(msg`通讯录管理`)}
               >
-                <Settings size={15} />
+                <Settings aria-hidden="true" size={15} />
               </Button>
               <Button
                 type="button"
@@ -2601,7 +2601,7 @@ export function ContactsPage() {
                 aria-expanded={isQuickMenuOpen}
                 aria-haspopup="menu"
               >
-                <Plus size={15} strokeWidth={2.4} />
+                <Plus aria-hidden="true" size={15} strokeWidth={2.4} />
               </Button>
 
               {isQuickMenuOpen && !bulkMode ? (

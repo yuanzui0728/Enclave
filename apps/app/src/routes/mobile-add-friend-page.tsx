@@ -581,7 +581,7 @@ function MobileAddFriend() {
             className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             aria-label={t(msg`返回`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -601,7 +601,7 @@ function MobileAddFriend() {
                 : t(msg`新的朋友`)
             }
           >
-            <Users size={17} />
+            <Users aria-hidden="true" size={17} />
             {pendingRequestCount > 0 ? (
               <span
                 aria-hidden="true"
@@ -623,7 +623,7 @@ function MobileAddFriend() {
       >
         <div className="flex items-center gap-2">
           <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[8px] bg-white px-3">
-            <Search size={15} className="shrink-0 text-[color:var(--text-dim)]" />
+            <Search aria-hidden="true" size={15} className="shrink-0 text-[color:var(--text-dim)]" />
             <input
               ref={inputRef}
               value={searchText}
@@ -668,7 +668,7 @@ function MobileAddFriend() {
                 className="-mr-1 flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                 aria-label={t(msg`清空输入`)}
               >
-                <X size={13} />
+                <X aria-hidden="true" size={13} />
               </button>
             ) : null}
           </label>
@@ -854,7 +854,7 @@ function MobileAddFriendWelcomeState({
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(7,193,96,0.08)] text-[#07c160]">
-        <Search size={22} />
+        <Search aria-hidden="true" size={22} />
       </div>
       <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
         {t(msg`搜索隐界号或角色名`)}
@@ -892,7 +892,7 @@ function MobileAddFriendWelcomeState({
                   // 视觉；opacity 在 keyword 部分单独表达"按下了"足够。
                   className="inline-flex min-w-0 items-center gap-1 active:opacity-70"
                 >
-                  <Clock3 size={12} className="shrink-0 text-[color:var(--text-dim)]" />
+                  <Clock3 aria-hidden="true" size={12} className="shrink-0 text-[color:var(--text-dim)]" />
                   {/* 关键词写得很长（隐界号 / 长角色名）时不截断会把 X 推下一行 pill 形变 */}
                   <span className="max-w-[10rem] truncate" title={item.keyword}>
                     {item.keyword}
@@ -906,7 +906,7 @@ function MobileAddFriendWelcomeState({
                   className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                   aria-label={t(msg`删除`)}
                 >
-                  <X size={13} />
+                  <X aria-hidden="true" size={13} />
                 </button>
               </div>
             ))}
@@ -922,7 +922,7 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]">
-        <Search size={22} />
+        <Search aria-hidden="true" size={22} />
       </div>
       {/* 走查 R3：原版标题没 max-w / break-words，submittedKeyword 来自 URL
           hash 的 q= 参数，攻击者诱导用户打开 /add-friend#q=<60 个无空格字符>
@@ -1054,7 +1054,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
                 meta.disabled ? "opacity-70" : undefined,
               )}
             >
-              <PrimaryIcon size={13} />
+              <PrimaryIcon aria-hidden="true" size={13} />
               {t(meta.label)}
             </Button>
           </div>
