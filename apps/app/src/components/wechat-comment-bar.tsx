@@ -186,11 +186,28 @@ export function WeChatCommentBar({
 
   return createPortal(
     <>
-      <div
+      <button
+        type="button"
+        // 走查本轮 R1 (a11y)：之前是裸 <div onPointerDown={onClose}>，屏幕阅读器
+        // 用户没法把"点空白关 bar"这个动作 enumerate 出来（div 没语义 + 不可聚焦）。
+        // 改成 <button aria-label="关闭评论">，VoiceOver/TalkBack 在"评论 dialog"
+        // 后面能扫到"关闭评论"按钮一并 enable 用户用 tap-to-activate 退出。
+        // tabIndex={-1} 避免键盘 Tab 经过它把焦点偷出 dialog 之外（焦点应该
+        // 在 textarea 上）。
+        aria-label={t(msg`关闭评论`)}
+        tabIndex={-1}
         className="fixed inset-0 z-[1000] bg-black/30 backdrop-blur-[1px]"
         onPointerDown={onClose}
       />
       <div
+        // 走查本轮 R1 (a11y)：之前 bar 整个 portal 没有 role/aria-* 语义——VoiceOver
+        // / TalkBack 用户进入 bar 时只能听到 textarea placeholder（"评论" 或 "回复
+        // X："），不知道上下文是"评论 modal"。挂 role="dialog" + aria-modal="true"
+        // + aria-label 让屏幕阅读器在 focus 落到 textarea 之前先读出 dialog 名。
+        // 跟 share-card-modal / mobile-moments-publish 的 ActionSheet 同模板。
+        role="dialog"
+        aria-modal="true"
+        aria-label={replyTo ? t(msg`回复评论`) : t(msg`发表评论`)}
         className="fixed inset-x-0 z-[1001] bg-[#F7F7F7] shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
         style={{
           bottom: 0,

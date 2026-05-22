@@ -126,6 +126,11 @@ export function WeChatActionBubble({
     <div
       ref={bubbleRef}
       role="menu"
+      // 走查本轮 R1 (a11y)：role="menu" 但没 aria-label —— VoiceOver / TalkBack 用户
+      // 进 bubble 时只读"menu"，没有"更多操作"这种 contextual 标签；下方按钮也都
+      // 是裸 button 没 role="menuitem"，破坏 menu → menuitem 的 ARIA 关系。和「ⓘ
+      // 更多操作」按钮 aria-label 对齐。
+      aria-label={t(msg`更多操作`)}
       style={{
         position: "fixed",
         top: position.top,
@@ -136,6 +141,7 @@ export function WeChatActionBubble({
     >
       <button
         type="button"
+        role="menuitem"
         onClick={(event) => {
           event.stopPropagation();
           onLike();
@@ -152,6 +158,7 @@ export function WeChatActionBubble({
       <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
       <button
         type="button"
+        role="menuitem"
         onClick={(event) => {
           event.stopPropagation();
           onComment();
@@ -167,6 +174,7 @@ export function WeChatActionBubble({
           <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
           <button
             type="button"
+            role="menuitem"
             onClick={(event) => {
               event.stopPropagation();
               onFavorite();
@@ -189,6 +197,7 @@ export function WeChatActionBubble({
           <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
           <button
             type="button"
+            role="menuitem"
             onClick={(event) => {
               event.stopPropagation();
               onShare();
