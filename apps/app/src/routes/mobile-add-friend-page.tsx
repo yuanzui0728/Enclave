@@ -994,11 +994,16 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
       )}
     >
       <div className="flex items-start gap-3">
+        {/* Fresh 走查 R6：avatar button 与下方 body button 都跳"查看资料"，
+            屏阅器 / 键盘用户得连续 Tab 两次同名按钮。avatar 改 tabIndex=-1
+            + aria-hidden（视觉/触控仍可点），AT/键盘走 body 单一入口。
+            跟 friend-requests-page Fresh R1-A 同口径修法。 */}
         <button
           type="button"
           onClick={handleProfileClick}
+          aria-hidden="true"
+          tabIndex={-1}
           className="shrink-0 rounded-[8px] active:opacity-70"
-          aria-label={t(msg`查看资料`)}
         >
           <AvatarChip
             name={displayName}
