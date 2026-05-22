@@ -183,7 +183,16 @@ function MobileOfficialAccountsPage() {
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
-      <TabPageTopBar
+      {/* Fresh 走查 R7：底层 TabPageTopBar (back / 订阅入口) + 搜索框 + 公众号列表
+          全在 DOM 里、可被 Tab / SR 聚焦——deep probe 验证：Tab 一次后落到底层 back，
+          再依次 Tab 到 Newspaper、搜索框、3 个 account button，最后才轮到「功能开
+          发中」蒙板里的 back。AT 用户看到 6 个 phantom 焦点跳转后才能找到唯一可用
+          的返回按钮，蒙板视觉遮挡完全是骗 SR 用户。跟 live-companion-page 已上
+          dev-block 时挂 inert 同款，把整个底层子树从可访问性树和 Tab 序列里摘掉；
+          body-scroll-lock 已 R5 修过。className="contents" 让 wrapper 不引入新
+          盒模型，保持原视觉一致。 */}
+      <div className="contents" aria-hidden="true" {...({ inert: true } as Record<string, unknown>)}>
+        <TabPageTopBar
         title={t(msg`公众号`)}
         titleAlign="center"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
@@ -362,6 +371,7 @@ function MobileOfficialAccountsPage() {
             />
           </div>
         ) : null}
+      </div>
       </div>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[3px]">
         <Button
