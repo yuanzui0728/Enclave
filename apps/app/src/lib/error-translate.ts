@@ -609,8 +609,6 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`图片动态当前只支持图片资源。`);
     case "FEED_POST_NOT_FOUND":
       return translateRuntimeMessage(msg`动态不存在。`);
-    case "FEED_NOT_FRIEND":
-      return translateRuntimeMessage(msg`需先加为好友才能互动。`);
     case "CYBER_AVATAR_RUN_NOT_FOUND":
       return translateRuntimeMessage(
         msg`赛博分身运行记录不存在：${String(params.runId ?? "")}`,
