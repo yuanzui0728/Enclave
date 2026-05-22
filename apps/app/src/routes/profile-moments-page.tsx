@@ -1303,7 +1303,13 @@ export function ProfileMomentsPage() {
 
           {momentsQuery.isError && momentsQuery.error ? (
             <div className="px-4 pt-10">
-              <ErrorBlock message={describeRequestError(momentsQuery.error)}>
+              {/* 走查 R3：mobile 分支 ErrorBlock 之前无 role —— 我的朋友圈加载失败时
+                  盲用户只能从"看不到列表"推断，听不到具体错因。和 favorites
+                  ErrorBlock / mobile 分支 InlineNotice 同款补 role="alert"。 */}
+              <ErrorBlock
+                role="alert"
+                message={describeRequestError(momentsQuery.error)}
+              >
                 <div className="mt-3">
                   <Button
                     type="button"

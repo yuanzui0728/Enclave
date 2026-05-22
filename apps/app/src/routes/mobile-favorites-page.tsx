@@ -414,10 +414,20 @@ export function MobileFavoritesPage({
             "Failed to fetch"，en/ja/ko 用户也只看见原文。和 profile-feedback
             / profile-subscription / profile-info-* 同款翻译口径。 */}
         {removeMutation.isError ? (
-          <ErrorBlock message={describeRequestError(removeMutation.error)} />
+          // 走查 R3：两条 ErrorBlock 之前裸 div 无 role —— removeFavorite 失败时盲
+          // 用户只能从「列表没消失」推断"失败了"，但具体原因（network 挂 / token
+          // 过期 / 后端 5xx）听不到。ErrorBlock 透传 ...props 到 div，传 role="alert"
+          // 让屏幕阅读器在 mutation onError 出红条时立即朗读 describeRequestError。
+          <ErrorBlock
+            role="alert"
+            message={describeRequestError(removeMutation.error)}
+          />
         ) : null}
         {favoritesQuery.isError ? (
-          <ErrorBlock message={describeRequestError(favoritesQuery.error)} />
+          <ErrorBlock
+            role="alert"
+            message={describeRequestError(favoritesQuery.error)}
+          />
         ) : null}
 
         {favoritesQuery.isLoading && !favorites.length ? (

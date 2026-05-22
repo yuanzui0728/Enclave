@@ -454,13 +454,27 @@ export function ProfileCharacterImportPage() {
           />
         )}
         {result?.kind === "danger" && (
-          <div className="flex items-start gap-3 rounded-2xl bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[13px] text-[#b42318]">
+          // 走查 R3（移动端我-tab 端到端 2026-05-22）：之前 danger 卡缺 role —— 用户
+          // 拖入非法 JSON / 缺 name / 超大文件等 readFile 抛错时，盲用户没法听到
+          // 失败原因，只能反复试。role="alert"（隐含 aria-live=assertive）让屏幕
+          // 阅读器立即朗读 result.message。和 profile-info-* / account-security
+          // / favorites 等其它兄弟页 a11y 一致。
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-2xl bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[13px] text-[#b42318]"
+          >
             <X size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
           </div>
         )}
         {result?.kind === "warning" && (
-          <div className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[#92400e]">
+          // 走查 R3：warning 卡（如"拖入多文件只取第一个"提示）也补 role="status"
+          // —— 不像 danger 那么紧急（preview 已就位用户可以继续），polite 待空隙
+          // 朗读不打断主操作流。
+          <div
+            role="status"
+            className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[#92400e]"
+          >
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
           </div>
