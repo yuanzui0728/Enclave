@@ -75,6 +75,22 @@ export function ContactsBulkActionBar({
     return unregister;
   }, [showTagDialog, showDeleteDialog, bulk.isPending]);
 
+  // Fresh 走查 R4：两个 confirm dialog (打标签 / 删除) 都是 fixed inset-0
+  // 整屏覆盖，但一直没锁 body scroll —— iOS Safari WKWebView 上用户在遮罩
+  // 之外（dialog 卡片之外）滑动会"穿透"滚动底层 /tabs/contacts 联系人列表，
+  // 看着遮罩不动、底下 200+ 行联系人却在飘。跟 MobileAddFriendSendSheet R1 /
+  // contacts-management-modal Fresh R4 同款 body.style.overflow="hidden" 兜。
+  useEffect(() => {
+    if (!showTagDialog && !showDeleteDialog) {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [showTagDialog, showDeleteDialog]);
+
   const flushNotice = (success: boolean, action: string, failedCount = 0) => {
     // 部分失败也是错——走 danger tone 才能跟"操作成功"区分。这条以前 setNotice
     // 走 info tone，结果"部分操作失败"画成蓝条，跟"打标签：操作成功"长得一样。

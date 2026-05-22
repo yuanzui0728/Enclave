@@ -210,6 +210,23 @@ export function ContactsManagementModal({
     return unregister;
   }, [open, canGoBack, pop, onClose, busy]);
 
+  // Fresh 走查 R4：modal 是 fixed inset-0 整屏覆盖（mobile 底部抽屉 +
+  // desktop 中央 dialog），但一直没锁 body scroll —— iOS Safari WKWebView 上
+  // 用户用手指在半透明遮罩 / dialog 之外区域滑动会"穿透"滚动底层
+  // /tabs/contacts 的联系人列表，看着遮罩不动、底下 200+ 行联系人却在飘。
+  // 跟 MobileAddFriendSendSheet R1 / share-card-modal / channels-forward-picker
+  // 同款 body.style.overflow="hidden" 兜一下。
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const titleText = (() => {
