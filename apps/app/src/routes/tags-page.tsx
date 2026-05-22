@@ -228,7 +228,7 @@ function MobileTagsPage() {
             }
             aria-label={t(msg`返回通讯录`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -240,7 +240,7 @@ function MobileTagsPage() {
             onClick={openStarredFriends}
             aria-label={t(msg`查看星标朋友`)}
           >
-            <Star size={17} />
+            <Star aria-hidden="true" size={17} />
           </Button>
         }
       >
@@ -273,7 +273,7 @@ function MobileTagsPage() {
                 className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                 aria-label={t(msg`清空搜索`)}
               >
-                <X size={13} />
+                <X aria-hidden="true" size={13} />
               </button>
             ) : null}
           </label>
@@ -377,7 +377,7 @@ function MobileTagsPage() {
               >
                 <div className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
-                    <Tag size={14} className="text-[#15803d]" />
+                    <Tag aria-hidden="true" size={14} className="text-[#15803d]" />
                     {/* 通讯录 mobile 走查 R1：tag 名也是用户输入端（contacts-bulk-
                         action-bar 打标签 dialog / 资料页 tags 编辑），含 U+202E
                         可以反转后面的"N 位联系人"计数视觉。bulk action bar 在

@@ -233,7 +233,7 @@ function MobileFriendRequestsPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             aria-label={t(msg`返回`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -245,7 +245,7 @@ function MobileFriendRequestsPage() {
             onClick={openWorldCharacters}
             aria-label={t(msg`浏览世界角色`)}
           >
-            <BookUser size={17} />
+            <BookUser aria-hidden="true" size={17} />
           </Button>
         }
       />

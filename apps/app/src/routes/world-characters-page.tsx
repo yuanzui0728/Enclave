@@ -337,7 +337,7 @@ function MobileWorldCharactersPage() {
             }
             aria-label={t(msg`返回通讯录`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -349,7 +349,7 @@ function MobileWorldCharactersPage() {
             onClick={openFriendRequests}
             aria-label={t(msg`查看新的朋友`)}
           >
-            <UserPlus size={17} />
+            <UserPlus aria-hidden="true" size={17} />
           </Button>
         }
       >
@@ -382,7 +382,7 @@ function MobileWorldCharactersPage() {
                 className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                 aria-label={t(msg`清空搜索`)}
               >
-                <X size={13} />
+                <X aria-hidden="true" size={13} />
               </button>
             ) : null}
           </label>

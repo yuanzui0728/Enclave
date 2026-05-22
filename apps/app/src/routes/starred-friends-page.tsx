@@ -240,7 +240,7 @@ function MobileStarredFriendsPage() {
             }
             aria-label={t(msg`返回通讯录`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -252,7 +252,7 @@ function MobileStarredFriendsPage() {
             onClick={openTags}
             aria-label={t(msg`查看联系人标签`)}
           >
-            <Tag size={17} />
+            <Tag aria-hidden="true" size={17} />
           </Button>
         }
       >
@@ -290,7 +290,7 @@ function MobileStarredFriendsPage() {
                 className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                 aria-label={t(msg`清空搜索`)}
               >
-                <X size={13} />
+                <X aria-hidden="true" size={13} />
               </button>
             ) : null}
           </label>
@@ -431,6 +431,7 @@ function MobileStarredFriendsPage() {
                   ) : null}
                 </div>
                 <Star
+                  aria-hidden="true"
                   size={14}
                   className="shrink-0 text-[#d4a72c]"
                   fill="currentColor"

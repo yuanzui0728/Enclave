@@ -191,8 +191,15 @@ function MobileOfficialAccountsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
+            // 走查新一轮 R4：原版顶栏返回按钮漏了 aria-label，只有一个
+            // 装饰性 ArrowLeft svg，屏阅器 Tab 到只能听到"按钮"——尤其本页
+            // 是「公众号」入口，前置背后又叠了 fixed inset-0 z-[60] 的「功
+            // 能开发中」蒙板，蒙板里另有一个带 aria-label 的返回，但 TabPage
+            // TopBar 这个 back 仍在 DOM 里、SR 仍能聚焦到它。补"返回"对齐
+            // friend-requests / starred-friends / world-characters 同口径。
+            aria-label={t(msg`返回`)}
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft aria-hidden="true" size={17} />
           </Button>
         }
         rightActions={
@@ -204,7 +211,7 @@ function MobileOfficialAccountsPage() {
             onClick={openSubscriptionInbox}
             aria-label={t(msg`打开订阅号消息`)}
           >
-            <Newspaper size={17} />
+            <Newspaper aria-hidden="true" size={17} />
           </Button>
         }
       >
@@ -363,7 +370,7 @@ function MobileOfficialAccountsPage() {
           aria-label={t(msg`返回`)}
           className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-white"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft aria-hidden="true" size={18} />
         </Button>
         <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-white/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-[17px] font-semibold text-[color:var(--text-primary)]">
