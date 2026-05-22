@@ -2678,6 +2678,15 @@ export function ContactsPage() {
         >
           {bulkMode ? null : (
             <div className="pt-1.5">
+              {/*
+                走查 R1（消息-搜索走查同款）：和 chat-list-page R3 同款 a11y 修法
+                —— 原本 aria-label="打开搜一搜" 跟视觉文本「搜索」不一致，违反
+                WCAG 2.5.3 (Label in Name)：语音控制软件用户念出他们看到的「搜索」，
+                按钮的 accessible name 是「打开搜一搜」匹配不上不响应；屏幕阅读
+                器念到的也是「打开搜一搜」跟视觉表征对不上。去掉 aria-label，让
+                accessible name 直接落在视觉文本「搜索」上；Search icon
+                aria-hidden 不干扰可访问性树。
+              */}
               <button
                 type="button"
                 onClick={() => {
@@ -2691,9 +2700,8 @@ export function ContactsPage() {
                   });
                 }}
                 className="flex h-9 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
-                aria-label={t(msg`打开搜一搜`)}
               >
-                <Search size={14} className="shrink-0" />
+                <Search aria-hidden="true" size={14} className="shrink-0" />
                 <span className="min-w-0 flex-1 text-left">{t(msg`搜索`)}</span>
               </button>
             </div>
