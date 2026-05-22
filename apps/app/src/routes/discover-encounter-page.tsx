@@ -237,7 +237,11 @@ function MobileDiscoverEncounterPage() {
           disabled={shakeMutation.isPending}
           aria-busy={shakeMutation.isPending || undefined}
           variant="primary"
-          className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56]"
+          // 走查 Round 3：variant=primary 自带 [background-image:var(--brand-gradient)]
+          // 是橙黄色渐变；只盖 bg-[#07c160]（color，不带 image）会被橙色渐变覆盖，
+          // 实际渲染出来是橙色不是设计想要的微信绿。补 [background-image:none]
+          // 让 bg-color 真正生效。
+          className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56] [background-image:none]"
         >
           {/* 走查 Round 1：AI 端到端 ~60s（planning + 角色生成两次推理），按钮原来全程
               只有「正在寻找...」一行文字、没有 spinner——公网隧道 + 移动端用户经常以为
