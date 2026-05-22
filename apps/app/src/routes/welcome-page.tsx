@@ -420,12 +420,20 @@ export function WelcomePage() {
   const [entryError, setEntryError] = useState("");
   const [ownerError, setOwnerError] = useState("");
   const [isContinuing, setIsContinuing] = useState(false);
-  const [inviteCode, setInviteCode] = useState(() => readStoredInviteCode());
+  // 之前三个 useState 各跑一次 readStoredInviteCode()，mount 时 localStorage 读
+  // 3 次（同步 IO，受 localStorage quota 检查与 cookie/IDB 锁竞争影响）；同一份
+  // 值用同一个 useState 初始化器分发。useRef 只在首次 render 时拿初始值，subsequent
+  // renders 不会再读 localStorage。
+  const initialInviteCodeRef = useRef<string | null>(null);
+  if (initialInviteCodeRef.current === null) {
+    initialInviteCodeRef.current = readStoredInviteCode() ?? "";
+  }
+  const [inviteCode, setInviteCode] = useState(() => initialInviteCodeRef.current ?? "");
   const [authMode, setAuthMode] = useState<"login" | "register">(() =>
-    readStoredInviteCode() ? "register" : "login",
+    initialInviteCodeRef.current ? "register" : "login",
   );
   const [inviteCodeAutoFilled, setInviteCodeAutoFilled] = useState(() =>
-    Boolean(readStoredInviteCode()),
+    Boolean(initialInviteCodeRef.current),
   );
   const cloudConnectKeyRef = useRef<string | null>(null);
   // tanstack-query 的 isPending 在 mutate() 调用后要走完 React 调度才反映到
@@ -536,6 +544,17 @@ export function WelcomePage() {
     ) {
       setReadyBaseUrl(null);
       setOwnerSyncing(false);
+      return;
+    }
+
+    // connectToResolvedCloudWorld 流程里会 setAppRuntimeConfig({apiBaseUrl:...}) →
+    // 触发本 effect，再加上它紧跟着的内联 await getWorldOwner，两边并发各发一次
+    // getWorldOwner（同 URL 同 cookie），白送一次网络请求。上一轮 R1 修了
+    // continueWithCloudWorld 内联 vs effect@666 那一对，但本 effect 这边没套 ref。
+    // 三个 connect 入口（continueWithCloudWorld / continueWithGoogleSignIn / 监听
+    // currentCloudSession=ready 的 effect）都在调用 connectToResolvedCloudWorld 前
+    // 先把 cloudConnectKeyRef 置上，落幕在 finally 里清——这里直接复用即可。
+    if (cloudConnectKeyRef.current) {
       return;
     }
 
@@ -1549,7 +1568,13 @@ export function WelcomePage() {
                   text={authMode === "register" ? "signup_with" : "signin_with"}
                   shape="pill"
                   size="large"
-                  width="320"
+                  // GoogleLogin 的 width 只吃 200-400 px 字符串，没法 100%；移动端
+                  // AppPage px-4 + AppSection px-6 = 双侧 40px 内边距，iPhone SE 375
+                  // 视宽 → 内容仅 295px，Galaxy S22 360 → 仅 280px。原来 width=320
+                  // 在这些机型上横向溢出 25~40px，触发整页水平滚动。改成桌面 320 /
+                  // 移动 280：桌面 max-w-xl 容器 520px 内宽显得不会过小，移动正好
+                  // 卡在最窄机型的可用宽内。
+                  width={isDesktopLayout ? "320" : "280"}
                 />
                 </GoogleOAuthProvider>
               </div>
