@@ -63,9 +63,20 @@ export function AudioCard({
       // React 把 <audio> 从 DOM 摘掉后 Chromium / Firefox 不会自动 pause（webkit
       // 实测会），音轨会一直 loop 到刷新整页。和 51b8980a (ChannelAudioPictorial)
       // 同模式：unmount cleanup 主动 pause。
+      //
+      // 走查移动端朋友圈/最新一轮 R2 (perf/mem)：仅 pause() 不够 —— controls 已经播过
+      // 的 audio_card 把整段音轨 demux 后的 decoded PCM 缓冲（≈300KB / 60s）一直挂到
+      // GC 才释放，WKWebView 下 GC 时机不可预测；用户在朋友圈连续刷过 N 张 audio_card
+      // moment（每条都自动 mount + 用户拨过 progress 触发 decode），切账户 / 屏蔽 / 翻
+      // 页让卡片陆续 unmount 后 decoded buffer 累积。和 wechat-moment-card 朗读 audio
+      // cleanup (line 197-204) / MomentVideoViewerOverlay (moment-media-gallery line
+      // 698-702) / readVideoMetadata cleanup 同模板：removeAttribute("src") + load()
+      // 把 <audio> 切回空 media，立刻断音轨 + 释放 buffer，不依赖 GC 时机。
       if (!el.paused) {
         el.pause();
       }
+      el.removeAttribute("src");
+      el.load();
     };
   }, []);
 
