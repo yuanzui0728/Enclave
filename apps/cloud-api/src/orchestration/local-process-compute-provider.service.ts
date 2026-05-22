@@ -754,6 +754,11 @@ export class LocalProcessComputeProviderService
       env.MINIMAX_DAILY_LIMIT_IMAGE_01 = String(share.image01);
       env.MINIMAX_DAILY_LIMIT_LYRICS = String(share.lyrics);
       env.MINIMAX_DAILY_LIMIT_SPEECH_HD = String(share.speechHd);
+      // 走查本次 R1：vlm-coding-plan / web-search 没注入 env → child 用 1800 / 200
+      // fallback；N world 共享 key 时第一个 world 烧到 2056 才靠 cloud-sync 通知熔断，
+      // 前面 N-1 world 各做一次必败请求。对齐 speechHd 同款 group-share 模型。
+      env.MINIMAX_DAILY_LIMIT_VLM = String(share.vlmCodingPlan);
+      env.MINIMAX_DAILY_LIMIT_WEB_SEARCH = String(share.webSearch);
       // "世界角色朋友圈自动配图"专用日上限（用途配额，仍占 image01 总额，
       // 但额外做"每个 world 不超过这个数"的限制，详见 MomentImageBudgetService）。
       env.FEED_IMAGE_WORLD_DAILY_SHARE = String(share.feedImage);

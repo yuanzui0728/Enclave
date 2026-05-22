@@ -18,6 +18,14 @@ const PER_KEY_DAILY_TOTAL = {
   image01: 120,
   lyrics: 100,
   speechHd: 11000,
+  // 走查 R1：原版漏 vlm-coding-plan 和 web-search 两个 token plan 配额。
+  // N world 共享同把 MiniMax key 时，每个 world env 拿不到 MINIMAX_DAILY_LIMIT_VLM /
+  // MINIMAX_DAILY_LIMIT_WEB_SEARCH，回落到 api/minimax-quota.constants.ts 的
+  // fallback 1800 / 200 —— 每个 world 都"以为自己有满额"，第一个 world 烧到
+  // 2056 后才靠 cloud-sync 通知熔断；前面 N-1 world 各做了一次必败请求 + 一行
+  // 必败日志。对齐 speechHd 同款 group-share 模型修正。
+  vlmCodingPlan: 1800,
+  webSearch: 200,
 } as const;
 
 // "世界角色朋友圈自动配图"专用日上限（用途配额，**仍占 image01 model 总额**）。
@@ -34,6 +42,8 @@ export type WorldDailyShare = {
   image01: number;
   lyrics: number;
   speechHd: number;
+  vlmCodingPlan: number;
+  webSearch: number;
   feedImage: number;
 };
 
@@ -103,13 +113,15 @@ export class MinimaxQuotaDispatcherService {
     const feedImageGlobal = this.readFeedImageGlobal();
 
     const share: WorldDailyShare = {
-      hailuoFast: this.shareFor(PER_KEY_DAILY_TOTAL.hailuoFast, groupSize, myIndex, dayOfYear),
-      hailuo:     this.shareFor(PER_KEY_DAILY_TOTAL.hailuo,     groupSize, myIndex, dayOfYear),
-      music26:    this.shareFor(PER_KEY_DAILY_TOTAL.music26,    groupSize, myIndex, dayOfYear),
-      music25:    this.shareFor(PER_KEY_DAILY_TOTAL.music25,    groupSize, myIndex, dayOfYear),
-      image01:    this.shareFor(PER_KEY_DAILY_TOTAL.image01,    groupSize, myIndex, dayOfYear),
-      lyrics:     this.shareFor(PER_KEY_DAILY_TOTAL.lyrics,     groupSize, myIndex, dayOfYear),
-      speechHd:   this.shareFor(PER_KEY_DAILY_TOTAL.speechHd,   groupSize, myIndex, dayOfYear),
+      hailuoFast: this.shareFor(PER_KEY_DAILY_TOTAL.hailuoFast,    groupSize, myIndex, dayOfYear),
+      hailuo:     this.shareFor(PER_KEY_DAILY_TOTAL.hailuo,        groupSize, myIndex, dayOfYear),
+      music26:    this.shareFor(PER_KEY_DAILY_TOTAL.music26,       groupSize, myIndex, dayOfYear),
+      music25:    this.shareFor(PER_KEY_DAILY_TOTAL.music25,       groupSize, myIndex, dayOfYear),
+      image01:    this.shareFor(PER_KEY_DAILY_TOTAL.image01,       groupSize, myIndex, dayOfYear),
+      lyrics:     this.shareFor(PER_KEY_DAILY_TOTAL.lyrics,        groupSize, myIndex, dayOfYear),
+      speechHd:   this.shareFor(PER_KEY_DAILY_TOTAL.speechHd,      groupSize, myIndex, dayOfYear),
+      vlmCodingPlan: this.shareFor(PER_KEY_DAILY_TOTAL.vlmCodingPlan, groupSize, myIndex, dayOfYear),
+      webSearch:  this.shareFor(PER_KEY_DAILY_TOTAL.webSearch,     groupSize, myIndex, dayOfYear),
       feedImage:  this.shareFor(feedImageGlobal, allWorldsGroupSize, allWorldsMyIndex, dayOfYear),
     };
 

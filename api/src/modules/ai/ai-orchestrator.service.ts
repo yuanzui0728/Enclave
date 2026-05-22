@@ -3478,8 +3478,14 @@ export class AiOrchestratorService {
     // voice 回复、voice-call fallback 这几条入口都没像 moments/feed
     // narration 那样在调用方先 trim 到 3000，恶意 / bug / 老客户端送来一
     // 串几万字会同时撞 MiniMax 4xx + 把当日配额一把烧空。集中在 orchestrator
-    // 兜底：超 8000 字硬截断 + 一行 warn 日志（不抛错，避免把 chat 回复打断）。
-    const MAX_TTS_INPUT_CHARS = 8000;
+    // 兜底：超长字符硬截断 + 一行 warn 日志（不抛错，避免把 chat 回复打断）。
+    //
+    // 走查本次 R1：上限从 8000 降到 4000 —— OpenAI tts-1 input 字段 hard 上限
+    // 4096 字符；MiniMax 失败 fallback 到 gpt-4o-mini-tts 时 5000+ 字会被
+    // OpenAI 400 "input exceeds max length" 拒，导致整个 TTS 链路最终 503。
+    // 4000 既兜住所有 caller（moments/feed 已截 3000、chat reply LLM 输出
+    // 一般 <1000），也对 MiniMax 主链（10000 上限）无任何信息损失。
+    const MAX_TTS_INPUT_CHARS = 4000;
     let text = rawText;
     if (rawText.length > MAX_TTS_INPUT_CHARS) {
       this.logger.warn('tts text truncated', {
@@ -3490,6 +3496,17 @@ export class AiOrchestratorService {
       });
       text = `${rawText.slice(0, MAX_TTS_INPUT_CHARS)}…`;
     }
+
+    // 走查本次 R1：instructions hoist —— 原版在 for-attempt 循环内每次
+    // attempt 都 await buildSpeechInstructions（语言查 DB 拼字符串）。
+    // 主→fallback→fallback 三次 attempt = 3 次 DB 读 + 3 次同样的字符串
+    // 拼接，而 instructions 跟 attempt 的 provider 无关（语言 + 既有
+    // instructions 输入决定），抬到循环外只算一次。MiniMax attempt 还会
+    // 忽略 instructions（MinimaxNativeClient.synthesizeSpeech 不接收
+    // instructions 参数），保留在外层无副作用。
+    const instructions = await this.worldLanguage.buildSpeechInstructions({
+      existingInstructions: options.instructions,
+    });
 
     const startedAt = Date.now();
     let attemptedProvider = false;
@@ -3517,9 +3534,6 @@ export class AiOrchestratorService {
       const voice = isMinimaxAttempt
         ? options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE
         : provider.ttsVoice || DEFAULT_TTS_VOICE;
-      const instructions = await this.worldLanguage.buildSpeechInstructions({
-        existingInstructions: options.instructions,
-      });
 
       try {
         if (isMinimaxAttempt) {
