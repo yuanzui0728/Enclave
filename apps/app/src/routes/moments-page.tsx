@@ -237,6 +237,20 @@ export function MomentsPage() {
 
   // 朋友圈用无限分页，避免一次性把所有动态都拉过来（之前 1 次 ≈ 139 条 SQL）。
   // 每页 20 条；触底 → fetchNextPage；下拉刷新 → 重置到第 1 页。
+  //
+  // 走查移动端发现-朋友圈 R1 (perf)：staleTime 默认 0 + refetchOnMount/Focus 默认 true，
+  // 而 useInfiniteQuery 在 mount/focus 时**会把所有已加载页串行 refetch 一遍** —— 用
+  // 户从 /tabs/moments 切到 /tabs/chat 再切回来时，若之前已经滚到第 5 页，就要付
+  // 5 × ~600ms RTT 的串行回放（公网隧道），用户看到列表卡住、loading toast 不出现
+  // 但实际网络在跑，体感"刚才点过的东西现在变慢"。下方行 2146 的注释只把"UI 上
+  // 不显示大空态卡"那一面修了，refetch 本身的网络代价没解。
+  //
+  // 改：15s staleTime 让 tab 互跳 / 窗口失焦 < 15s 内不触发自动 refetch；超过 15s
+  // 自然会再拉一轮拿最新。和 blockedQuery (上方 line 300) / friend-moments-page
+  // characterQuery & friendsQuery (line 117/125) / mobile-friend-moments-page
+  // characterQuery & friendsQuery & blockedQuery 同一档 staleTime 对齐。手动 pull-
+  // to-refresh / 桌面 onRefresh / handleRetryLoad 都走显式 fetch，不受 staleTime
+  // 限制；create / delete mutation 的 invalidateQueries 也会立即冲掉 cache 拉新。
   const momentsQuery = useInfiniteQuery({
     queryKey: ["app-moments-paged", baseUrl],
     initialPageParam: 1,
@@ -244,6 +258,7 @@ export function MomentsPage() {
       getMomentsPage({ page: pageParam, limit: 20 }, baseUrl),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.hasMore ? allPages.length + 1 : undefined,
+    staleTime: 15_000,
   });
   // 按 id 去重：分页路径下若新发/删除导致页间边界偏移，page N 末尾和 page N+1 开头
   // 可能拿到同一条 moment。UI 层兜底去重，避免列表重复闪烁。
@@ -1192,24 +1207,36 @@ export function MomentsPage() {
     });
   }
 
-  function openMobileFriendMoments(characterId: string) {
+  // 走查移动端发现-朋友圈 R2 (UX)：和上方 openDesktopFriendMoments 同款返回锚定 ——
+  // 之前 returnHash 拿的是 currentRouteHash（=URL 当下的 routeSelectedMomentId），
+  // 用户从 /tabs/moments 滚到第 50 条点角色头像跳过去 → 返回 /tabs/moments 时 hash
+  // 是空的，落到顶部，刚才看到的第 50 条要重新翻。把 sourceMomentId 写进 return
+  // hash，mobileScrollSnappedRouteIdRef useEffect (line 1573-1601) 会按那个 id
+  // scrollIntoView。和 openDesktopFriendMoments 行 1247-1252 同模板。
+  function openMobileFriendMoments(characterId: string, sourceMomentId?: string) {
+    const returnHash = sourceMomentId
+      ? buildDesktopMomentsRouteHash({ momentId: sourceMomentId })
+      : currentRouteHash;
     void navigate({
       to: "/friend-moments/$characterId",
       params: { characterId },
       hash: buildMobileFriendMomentsRouteHash({
         returnPath: pathname,
-        returnHash: currentRouteHash || undefined,
+        returnHash: returnHash || undefined,
       }),
     });
   }
 
-  function openCharacterDetail(characterId: string) {
+  function openCharacterDetail(characterId: string, sourceMomentId?: string) {
+    const returnHash = sourceMomentId
+      ? buildDesktopMomentsRouteHash({ momentId: sourceMomentId })
+      : currentRouteHash;
     void navigate({
       to: "/character/$characterId",
       params: { characterId },
       hash: buildCharacterDetailRouteHash({
         returnPath: pathname,
-        returnHash: currentRouteHash || undefined,
+        returnHash: returnHash || undefined,
       }),
     });
   }
@@ -2211,7 +2238,9 @@ export function MomentsPage() {
       onCompose={openMobileMomentsPublishPage}
       onAuthorTap={(moment) => {
         if (moment.authorType === "character") {
-          openMobileFriendMoments(moment.authorId);
+          // 走查移动端发现-朋友圈 R2：把 moment.id 当 sourceMomentId 透下去 ——
+          // 返回 /tabs/moments 时按这条 moment 锚定 scrollIntoView，不再落到顶部。
+          openMobileFriendMoments(moment.authorId, moment.id);
           return;
         }
         // 走查 R1：自己发的 moment 在主朋友圈里 avatar+昵称仍按 link 色
@@ -2239,7 +2268,10 @@ export function MomentsPage() {
           return;
         }
         if (like.authorType === "character") {
-          openCharacterDetail(like.authorId);
+          // 走查移动端发现-朋友圈 R2：把 like.postId 当 sourceMomentId 透下去 ——
+          // 返回 /tabs/moments 时按"刚才被点的那条 liker 所属 moment"锚定回去，
+          // 不丢失滚动位置。和 onAuthorTap 同模板。
+          openCharacterDetail(like.authorId, like.postId);
         }
       }}
       onLikeMoment={(momentId) => {
@@ -2348,8 +2380,23 @@ export function MomentsPage() {
         // 钉住触发时刻的 baseUrl —— mid-flight 切账户后 catch 里别把 A 账户的失败
         // 弹成 B 账户的「刷新失败」红条；fetch 本身和 setQueryData 都按 OLD baseUrl
         // 走，这是对的（OLD 账户的 page 1 缓存刷新好，下次切回 A 第一帧就能看到）。
+        //
+        // 走查移动端发现-朋友圈 R1：和上方桌面 onRefresh shouldRetryPrefetch（行
+        // 1985-2012）同模板对齐 —— 在「刷新前 auto-prefetch 中途某页失败」时记账。
+        // 本路径用 setQueryData 在 page 1 in-place 覆盖（避免 multi-page refetch 把
+        // 整列表砍回 1 页带来的视觉抖动），但 react-query 的 isFetchNextPageError
+        // 仅在新一次 fetchNextPage / refetch 启动时才被 query.fetch 内部清成 false
+        // —— setQueryData 完全绕开 Query 实例的 fetch 路径，所以 isError 一直挂着。
+        // 后果：mobile sentinel useEffect 行 2547-2569 的 gate `!fetchNextPageError`
+        // 永远 false，IntersectionObserver 不挂，列表底部停在「加载更多失败 / 重试
+        // 加载」按钮上不动 —— 用户体感是「我下拉刷了一下，列表头有新内容，但中间
+        // 仍然挂着加载失败的红字」。修法和桌面一致：refresh 成功且原来处于
+        // fetchNextPageError 态时主动调一次 fetchNextPage()，react-query 在 fetch
+        // 开始时把 error / isError 一起置 null/false，isFetchNextPageError 跟着归
+        // 零 → sentinel useEffect 重跑能挂，触底 auto-prefetch 链路恢复。
         const refreshBaseUrl = baseUrl;
         const key = ["app-moments-paged", refreshBaseUrl];
+        const shouldRetryPrefetch = momentsQuery.isFetchNextPageError;
         try {
           await Promise.all([
             getMomentsPage({ page: 1, limit: 20 }, refreshBaseUrl).then((freshFirstPage) => {
@@ -2368,6 +2415,16 @@ export function MomentsPage() {
             }),
             ownerId ? blockedQuery.refetch() : Promise.resolve(null),
           ]);
+          // page 1 刷新成功后续上断掉的下一页链路：上面 await Promise.all 不抛说明
+          // page 1 成功；mid-flight 切账户后这次续链仍要落到 OLD baseUrl 上（react-
+          // query 实例就是按 OLD key 挂的），所以只比对 refreshBaseUrl !== current
+          // 时静默跳过，避免给 B 账户的 query 实例发 fetchNextPage 影响新账户加载。
+          if (
+            shouldRetryPrefetch &&
+            refreshBaseUrl === mutationBaseUrlRef.current
+          ) {
+            void momentsQuery.fetchNextPage();
+          }
         } catch (error) {
           if (refreshBaseUrl !== mutationBaseUrlRef.current) {
             // mid-flight 切走：A 的 refresh 失败不该弹到 B 账户的 notice 通道。
