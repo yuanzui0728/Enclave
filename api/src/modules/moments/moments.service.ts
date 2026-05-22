@@ -478,13 +478,22 @@ export class MomentsService implements OnModuleInit {
         legacyMessage: '朋友圈不存在或已删除。',
       });
     }
-    const text = post.text?.trim();
-    if (!text) {
+    const rawText = post.text?.trim();
+    if (!rawText) {
       throw new AppError('MOMENT_POST_TEXT_EMPTY', {
         status: HttpStatus.BAD_REQUEST,
         legacyMessage: '这条内容没有可朗读的文本。',
       });
     }
+    // 走查 R3：post.text 是 @Column('text')，理论无上限。MiniMax /t2a_v2 实测 ~10000
+    // 字符上限，长文一次塞过去就 4xx；同时 11000/天 token-plan 配额按 token 数算，
+    // 50KB 的 moment 会一次烧光大量配额。客户端实践里 moment 文本 <500，先 hard cap
+    // 3000 字符（约 1.2KB UTF-8，TTS 单次合成 ~2.5min 音频）兜底，超长尾省略号截断。
+    const MAX_NARRATION_CHARS = 3000;
+    const text =
+      rawText.length > MAX_NARRATION_CHARS
+        ? `${rawText.slice(0, MAX_NARRATION_CHARS)}…`
+        : rawText;
 
     // 按文本内容 hash 做缓存键，文本被编辑过会自动失效。
     const textHash = createHash('sha256').update(text).digest('hex').slice(0, 16);

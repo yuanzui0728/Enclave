@@ -778,7 +778,16 @@ export class FeedService implements OnModuleInit {
     // 这种 "？。" 双标点，TTS prosody 多顿一拍。先把 title 末尾的句末标点去掉再补 "。"。
     const titleClean = post.title?.trim().replace(/[。．！？!?…]+$/u, '') || '';
     const bodyClean = post.text?.trim() || '';
-    const text = [titleClean, bodyClean].filter((s) => s.length > 0).join('。');
+    const composed = [titleClean, bodyClean]
+      .filter((s) => s.length > 0)
+      .join('。');
+    // 走查 R3：feed.text 同 moments.text 同款 @Column('text') 无上限；广场长文 +
+    // MiniMax /t2a_v2 长度上限 + 11000/天 配额三重风险，hard cap 3000 字符防呆。
+    const MAX_NARRATION_CHARS = 3000;
+    const text =
+      composed.length > MAX_NARRATION_CHARS
+        ? `${composed.slice(0, MAX_NARRATION_CHARS)}…`
+        : composed;
     if (!text) {
       throw new AppError('FEED_POST_TEXT_EMPTY', {
         status: HttpStatus.BAD_REQUEST,
