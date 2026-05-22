@@ -500,7 +500,12 @@ export function MobileFeedPublishPage() {
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={handleBack}
-            aria-label={t(msg`返回广场`)}
+            // 走查再一轮 R1：跟 statusBackLabel 视觉文案对齐——safeReturnPath 存在
+            // 时返回去的是用户原本进来的路径（角色详情 / 通讯录等），不是广场。
+            // 原版 aria-label 死写"返回广场"，SR 用户听到的语义跟实际行为不符；
+            // safeReturnPath 切换时视觉按钮文案已经从"返回广场"变"返回上一页"，
+            // aria-label 也按一样的规则切。
+            aria-label={statusBackLabel}
           >
             <ArrowLeft size={17} />
           </Button>
