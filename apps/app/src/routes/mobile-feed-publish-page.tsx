@@ -15,6 +15,7 @@ import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { storeFeedPublishFlash } from "../features/feed/feed-publish-flash";
+import { buildFeedRouteHash } from "../features/feed/feed-route-state";
 import { parseMobileFeedPublishRouteState } from "../features/feed/mobile-feed-publish-route-state";
 import {
   publishFeedComposeDraft,
@@ -277,6 +278,10 @@ export function MobileFeedPublishPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl, resetComposeDraft]);
 
+  // 走查新一轮 R5：跟 mobile-moments-publish-page R3 对齐——desktop layout redirect
+  // 要 preserve safeReturnPath / safeReturnHash。用户在 mobile publish 中途 resize
+  // 到桌面 → desktop feed workspace 应该能拿到用户原本从哪进来的，否则用户进了
+  // 桌面 feed 后想退回原页面只能靠浏览器 back（链路里没了"返回上一页"按钮）。
   useEffect(() => {
     if (!isDesktopLayout) {
       return;
@@ -284,9 +289,14 @@ export function MobileFeedPublishPage() {
 
     void navigate({
       to: "/tabs/feed",
+      hash:
+        buildFeedRouteHash({
+          returnPath: safeReturnPath,
+          returnHash: safeReturnHash,
+        }) ?? undefined,
       replace: true,
     });
-  }, [isDesktopLayout, navigate]);
+  }, [isDesktopLayout, navigate, safeReturnPath, safeReturnHash]);
 
   // ESC 关闭「放弃发表」确认弹窗（和 farm 的 sheet/modal 处理对齐）。
   // 走查 R5：原版只看 `event.key === "Escape"`，但用户在文案 textarea 里
