@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
+import { WebSearchService } from '../ai/web-search.service';
 import { CharactersService } from '../characters/characters.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import {
@@ -25,6 +26,7 @@ export class GroupReplyOrchestratorService {
     private readonly ai: AiOrchestratorService,
     private readonly worldLanguage: WorldLanguageService,
     private readonly characters: CharactersService,
+    private readonly webSearch: WebSearchService,
   ) {}
 
   async generateTaskReply(input: {
@@ -58,6 +60,16 @@ export class GroupReplyOrchestratorService {
           promptSections: [],
         };
     const extraSystemPromptSections = [...replyModalities.promptSections];
+
+    // 群聊里只要触发本轮回复的角色开了 webSearchEnabled，且用户消息含时效关键词，
+    // 就追一次 web_search 注入；同 chat.service.ts 直聊路径一致。
+    if (
+      actor.character.webSearchEnabled === true &&
+      this.webSearch.shouldTriggerForUserMessage(baseUserPrompt)
+    ) {
+      const injection = await this.webSearch.searchAndFormat(baseUserPrompt);
+      if (injection) extraSystemPromptSections.push(injection.markdown);
+    }
 
     for (const reply of followupReplies) {
       rollingHistory.push({

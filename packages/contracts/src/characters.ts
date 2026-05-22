@@ -333,6 +333,8 @@ export interface Character {
   modelRoutingNotes?: string | null;
   region?: string | null;
   defaultVoiceReply?: boolean;
+  voicePreset?: string | null;
+  webSearchEnabled?: boolean;
 }
 
 export interface CharacterPresetSummary {

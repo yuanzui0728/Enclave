@@ -3201,6 +3201,28 @@ export function toggleMomentLike(id: string, baseUrl?: string) {
   );
 }
 
+export interface SynthesizeNarrationResult {
+  audioUrl: string;
+  durationMs?: number;
+  cached: boolean;
+}
+
+export function synthesizeMomentNarration(id: string, baseUrl?: string) {
+  return requestLegacyApi<SynthesizeNarrationResult>(
+    `/moments/${id}/synthesize-audio`,
+    { method: "POST" },
+    baseUrl,
+  );
+}
+
+export function synthesizeFeedNarration(id: string, baseUrl?: string) {
+  return requestLegacyApi<SynthesizeNarrationResult>(
+    `/feed/${id}/synthesize-audio`,
+    { method: "POST" },
+    baseUrl,
+  );
+}
+
 export function generateMoment(characterId: string, baseUrl?: string) {
   return requestLegacyApi<Moment | null>(
     `/moments/generate/${characterId}`,

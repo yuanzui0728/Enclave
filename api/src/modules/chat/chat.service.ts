@@ -15,6 +15,7 @@ import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
+import { WebSearchService } from '../ai/web-search.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
@@ -201,6 +202,7 @@ export class ChatService {
     @InjectRepository(FriendshipEntity)
     private friendshipRepo: Repository<FriendshipEntity>,
     private readonly remarkResolver: FriendRemarkResolver,
+    private readonly webSearch: WebSearchService,
   ) {}
 
   private async getRemarkMapForCurrentOwner(): Promise<FriendRemarkMap> {
@@ -1183,6 +1185,23 @@ export class ChatService {
       );
       extraSystemPromptSections.push(...selfAgentWorkspaceSections);
     }
+    // Web search 联网增强：角色开了 webSearchEnabled 且用户消息含"最近/今天/最新"等
+    // 时效关键词 → 调 MiniMax /v1/coding_plan/search 拿前几条结果拼到 system prompt。
+    // 失败/配额耗尽都 swallow，回退到不带搜索的原 prompt。
+    if (
+      charEntity?.webSearchEnabled === true &&
+      !selfAgentResult.handled &&
+      !actionResult.handled &&
+      !reminderResult.handled &&
+      this.webSearch.shouldTriggerForUserMessage(resolvedInput.promptText)
+    ) {
+      const injection = await this.webSearch.searchAndFormat(
+        resolvedInput.promptText,
+      );
+      if (injection) {
+        extraSystemPromptSections.push(injection.markdown);
+      }
+    }
 
     const assistantReplyText = selfAgentResult.handled
       ? (selfAgentResult.responseText?.trim() ?? '')
@@ -1245,6 +1264,7 @@ export class ChatService {
         characterName: profile.name,
         text: normalizedAssistantReplyText,
         modalities: replyModalities,
+        voicePreset: charEntity?.voicePreset ?? null,
       });
       const savedAiEntities = await this.msgRepo.save(
         assistantReply.drafts.map((draft) => this.msgRepo.create(draft)),
@@ -1429,6 +1449,7 @@ export class ChatService {
     characterName: string;
     text: string;
     modalities: AssistantReplyModalitiesPlan;
+    voicePreset?: string | null;
   }): Promise<{
     drafts: Array<
       Pick<
@@ -1493,6 +1514,7 @@ export class ChatService {
         text: input.text,
         conversationId: input.conversationId,
         characterId: input.characterId,
+        voice: input.voicePreset?.trim() || undefined,
         instructions: buildAssistantSpeechInstructions(input.characterName),
       });
       const asset = await this.speechAssets.saveGeneratedSpeech(

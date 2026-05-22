@@ -27,6 +27,9 @@ export type ShakeDiscoveryConfig = {
   allowMedical: boolean;
   allowLegal: boolean;
   allowFinance: boolean;
+  // 系统级 flag：true 时 planning 阶段会调一次 web_search（按 cyber avatar top 兴趣词
+  // 搜热点）把结果注入 signals。默认 false 避免每次摇一摇都烧 token-plan 搜索配额。
+  enableRealtimeSignalEnhance: boolean;
   planningPrompt: string;
   roleGenerationPrompt: string;
 };
@@ -120,6 +123,7 @@ export const DEFAULT_SHAKE_DISCOVERY_CONFIG: ShakeDiscoveryConfig = {
   allowMedical: true,
   allowLegal: true,
   allowFinance: true,
+  enableRealtimeSignalEnhance: false,
   planningPrompt: `你是隐界的“摇一摇相遇策划器”。你的任务不是直接生成角色，而是先根据用户当前可见的全部行为线索，规划 {{candidateDirectionCount}} 个都合理、但风格明显不同的相遇方向。
 
 用户画像：

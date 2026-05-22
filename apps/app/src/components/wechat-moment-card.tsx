@@ -14,9 +14,10 @@ import {
   type Moment,
   type MomentComment,
   type MomentLike,
+  synthesizeMomentNarration,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
-import { Heart, MapPin } from "lucide-react";
+import { Heart, MapPin, Volume2 } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { MomentMediaGallery } from "./moment-media-gallery";
@@ -49,6 +50,8 @@ type WeChatMomentCardProps = {
    * If omitted, the delete affordance is hidden entirely.
    */
   onDelete?: () => void;
+  /** Optional override for API base URL — passed to synthesizeMomentNarration. */
+  apiBaseUrl?: string;
 };
 
 const WECHAT_LINK_COLOR = "#576B95";
@@ -77,6 +80,7 @@ function arePropsEqual(
     prev.cardId === next.cardId &&
     prev.hideAuthor === next.hideAuthor &&
     prev.flush === next.flush &&
+    prev.apiBaseUrl === next.apiBaseUrl &&
     // handler 「是否存在」也得比较 — 比如 onDelete 在非 owner moment 上是 undefined
     // 有/无的切换会改变 UI（删除链接显隐），不能忽略
     Boolean(prev.onDelete) === Boolean(next.onDelete) &&
@@ -102,9 +106,50 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       onCommentTap,
       onLikeAuthorTap,
       onDelete,
+      apiBaseUrl,
     },
     ref,
   ) {
+    // 听贴文（MiniMax TTS HD）：本地 audio element + 状态机；缓存命中即刻播。
+    const [narrationLoading, setNarrationLoading] = useState(false);
+    const [narrationUrl, setNarrationUrl] = useState<string | null>(null);
+    const [narrationError, setNarrationError] = useState<string | null>(null);
+    const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
+    const hasNarratableText = (moment.text?.trim().length ?? 0) > 0;
+    const handleListenTap = async (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (narrationLoading) return;
+      // 第二次点：已加载 → toggle 播放/暂停
+      const existing = narrationAudioRef.current;
+      if (narrationUrl && existing) {
+        if (existing.paused) {
+          void existing.play();
+        } else {
+          existing.pause();
+        }
+        return;
+      }
+      setNarrationLoading(true);
+      setNarrationError(null);
+      try {
+        const result = await synthesizeMomentNarration(moment.id, apiBaseUrl);
+        setNarrationUrl(result.audioUrl);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : t(msg`朗读生成失败`);
+        setNarrationError(message);
+      } finally {
+        setNarrationLoading(false);
+      }
+    };
+    useEffect(() => {
+      if (!narrationUrl) return;
+      const audio = narrationAudioRef.current;
+      if (!audio) return;
+      void audio.play().catch(() => {
+        // 移动端 first-tap autoplay 偶尔 reject；保留 audio 控件让用户再点一次。
+      });
+    }, [narrationUrl]);
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const lastTapRef = useRef<number>(0);
     // 走查 R6：用计数器代替 boolean，每次双击 +1 — 这样：
@@ -324,25 +369,57 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                 </>
               ) : null}
             </div>
-            {moment.canInteract ? (
-              <button
-                ref={moreButtonRef}
-                type="button"
-                onClick={openMoreMenu}
-                aria-label={t(msg`更多操作`)}
-                className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
-                data-no-doubletap
-                // 走查移动端朋友圈/Round 3 R1：让 WeChatActionBubble 的 pointerdown
-                // capture handler 把这颗按钮排除掉，二次点 ⋯ 才能关菜单（否则
-                // pointerdown 关、click 又开，net effect 关不掉）。和 wechat-action-
-                // bubble.tsx 内 closest("[data-yj-bubble-anchor]") 联动；上层
-                // onOpenActionMenu 同时改成 toggle 才能完整闭合。
-                data-yj-bubble-anchor=""
-              >
-                <MoreHorizontalDots />
-              </button>
-            ) : null}
+            <div className="flex items-center gap-1.5">
+              {hasNarratableText ? (
+                <button
+                  type="button"
+                  onClick={handleListenTap}
+                  aria-label={t(msg`朗读这条朋友圈`)}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5] disabled:opacity-50"
+                  data-no-doubletap
+                  disabled={narrationLoading}
+                  title={
+                    narrationError
+                      ? narrationError
+                      : narrationLoading
+                        ? t(msg`正在合成…`)
+                        : t(msg`朗读这条朋友圈`)
+                  }
+                >
+                  <Volume2 size={13} aria-hidden="true" />
+                </button>
+              ) : null}
+              {moment.canInteract ? (
+                <button
+                  ref={moreButtonRef}
+                  type="button"
+                  onClick={openMoreMenu}
+                  aria-label={t(msg`更多操作`)}
+                  className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                  data-no-doubletap
+                  // 走查移动端朋友圈/Round 3 R1：让 WeChatActionBubble 的 pointerdown
+                  // capture handler 把这颗按钮排除掉，二次点 ⋯ 才能关菜单（否则
+                  // pointerdown 关、click 又开，net effect 关不掉）。和 wechat-action-
+                  // bubble.tsx 内 closest("[data-yj-bubble-anchor]") 联动；上层
+                  // onOpenActionMenu 同时改成 toggle 才能完整闭合。
+                  data-yj-bubble-anchor=""
+                >
+                  <MoreHorizontalDots />
+                </button>
+              ) : null}
+            </div>
           </div>
+          {narrationUrl ? (
+            <audio
+              ref={narrationAudioRef}
+              src={narrationUrl}
+              controls
+              preload="auto"
+              className="mt-2 w-full"
+              data-no-doubletap
+              onClick={(event) => event.stopPropagation()}
+            />
+          ) : null}
 
           {showFooterBlock ? (
             <div className="mt-2 overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#F7F7F7]">

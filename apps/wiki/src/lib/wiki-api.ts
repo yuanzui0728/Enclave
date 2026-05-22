@@ -335,7 +335,32 @@ export type CharacterListItem = {
   protectionLevel: string;
 };
 
+export type SynthesizePageNarrationResult = {
+  audioUrl: string;
+  mimeType: string;
+  fileName: string;
+  durationMs?: number;
+  voice?: string;
+  provider?: string;
+};
+
 export const wikiApi = {
+  // 朗读 wiki 角色页：调 wiki-api 进程上的 /ai/speech（AiModule 已挂载到 wiki-app）。
+  // 调用方负责拼好 text；voicePreset 缺失时走 provider 默认音色。
+  synthesizePageNarration(input: {
+    text: string;
+    characterId: string;
+    voice?: string | null;
+  }) {
+    return request<SynthesizePageNarrationResult>("/ai/speech", {
+      method: "POST",
+      body: JSON.stringify({
+        text: input.text,
+        characterId: input.characterId,
+        voice: input.voice ?? undefined,
+      }),
+    });
+  },
   register(username: string, password: string) {
     return request<AuthSession>("/auth/register", {
       method: "POST",

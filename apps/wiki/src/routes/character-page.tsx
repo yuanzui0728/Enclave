@@ -24,6 +24,27 @@ import {
   type WikiPageView,
   type WikiRevisionSummary,
 } from "../lib/wiki-api";
+
+// 简化：wiki 包没有 lucide-react 依赖，inline SVG 一个 speaker 即可。
+function SpeakerIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  );
+}
 import { SnapshotDiff } from "../components/snapshot-diff";
 import { TalkPanel } from "../components/talk-panel";
 import { WatchToggle } from "../components/watch-toggle";
@@ -408,17 +429,82 @@ function ReadView({ view }: { view: WikiPageView }) {
   const { resolve: resolveUsername } = useUsernameMap([
     view.currentRevision?.editorUserId,
   ]);
+  // 朗读全文（MiniMax TTS HD）：把 bio + personality + coreLogic 拼起来送 /ai/speech。
+  // 同一文本的多次点击不重复合成——按 audioUrl 缓存到组件 state。
+  const [narrationUrl, setNarrationUrl] = useState<string | null>(null);
+  const [narrationLoading, setNarrationLoading] = useState(false);
+  const [narrationError, setNarrationError] = useState<string | null>(null);
+  const narrationText = useMemo(() => {
+    const parts: string[] = [];
+    const append = (label: string, value: string | undefined | null) => {
+      const trimmed = value?.trim();
+      if (trimmed) parts.push(`${label}：${trimmed}`);
+    };
+    append(t(msg`简介`), c.bio);
+    if (c.personality) append(t(msg`性格`), c.personality);
+    if (recipe?.prompting.coreLogic) {
+      append(t(msg`核心逻辑`), recipe.prompting.coreLogic);
+    }
+    return parts.join("\n\n").slice(0, 4000);
+  }, [c.bio, c.personality, recipe?.prompting.coreLogic, t]);
+  const handleListen = async () => {
+    if (narrationLoading || !narrationText) return;
+    setNarrationLoading(true);
+    setNarrationError(null);
+    try {
+      const result = await wikiApi.synthesizePageNarration({
+        text: narrationText,
+        characterId: view.characterId,
+      });
+      setNarrationUrl(result.audioUrl);
+    } catch (err) {
+      setNarrationError(
+        err instanceof Error ? err.message : t(msg`朗读生成失败`),
+      );
+    } finally {
+      setNarrationLoading(false);
+    }
+  };
   return (
     <Card className="space-y-4 p-4 sm:p-6">
       <header className="flex items-start gap-3 sm:gap-4">
         <ReadViewAvatar name={c.name} src={c.avatar} />
         <div className="min-w-0 flex-1">
-          {/* 原本是 h1，但 character-page 外层已经挂了一个 sr-only h1 给所有
-              4 个 tab 共享，避免 h1 在 tab 切换时消失。这里降级到 h2 维持视
-              觉但避免页面双 h1 违反 WCAG 单 h1 原则。 */}
-          <h2 className="text-xl font-semibold leading-tight sm:text-2xl">
-            {c.name}
-          </h2>
+          <div className="flex items-start justify-between gap-3">
+            {/* 原本是 h1，但 character-page 外层已经挂了一个 sr-only h1 给所有
+                4 个 tab 共享，避免 h1 在 tab 切换时消失。这里降级到 h2 维持视
+                觉但避免页面双 h1 违反 WCAG 单 h1 原则。 */}
+            <h2 className="text-xl font-semibold leading-tight sm:text-2xl">
+              {c.name}
+            </h2>
+            {narrationText ? (
+              <button
+                type="button"
+                onClick={handleListen}
+                disabled={narrationLoading}
+                aria-label={t(msg`朗读全文`)}
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--border-subtle)] px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-50"
+                title={
+                  narrationError ??
+                  (narrationLoading ? t(msg`正在合成…`) : t(msg`朗读全文`))
+                }
+              >
+                <SpeakerIcon size={14} />
+                <span>
+                  {narrationLoading ? t(msg`生成中`) : t(msg`朗读全文`)}
+                </span>
+              </button>
+            ) : null}
+          </div>
+          {narrationUrl ? (
+            <audio
+              src={narrationUrl}
+              controls
+              autoPlay
+              preload="auto"
+              className="mt-2 w-full"
+            />
+          ) : null}
           {(() => {
             // 历史/导入角色 relationship 或 relationshipType 任一为空时，原本固定
             // 渲染 "X · Y"，会出现 " · friend" 或 "朋友 · " 这种孤立分隔符。

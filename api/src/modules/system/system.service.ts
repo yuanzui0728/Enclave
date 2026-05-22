@@ -924,6 +924,8 @@ export class SystemService {
       allowOwnerKeyOverride: true,
       modelRoutingNotes: '',
       defaultVoiceReply: false,
+      voicePreset: null,
+      webSearchEnabled: false,
       activityMode: 'auto',
       socialOpenness: 'normal',
       proactiveBrowseChance: 0.3,

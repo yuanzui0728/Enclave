@@ -22,6 +22,9 @@ const FALLBACK_TOKEN_PLAN_DAILY_LIMITS: Record<string, number> = {
   // (= 每周 4500 = 10 × 5h)，但 quota service 是 daily 粒度，先按 4 × 450 = 1800
   // 估软上限（保守值，超了就让 2056 反推熔断）。dashboard 的额度计数依然准确。
   'vlm-coding-plan': 1800,
+  // 网络搜索（/v1/coding_plan/search）：官方未公布日额度，按 coding_plan 系列
+  // 同量级保守开 200/天，撞 2056 走 markExhaustedToday 熔断。
+  'web-search': 200,
 };
 
 const ENV_KEY_BY_MODEL: Record<string, string> = {
@@ -34,6 +37,7 @@ const ENV_KEY_BY_MODEL: Record<string, string> = {
   'MiniMax-M2.7': 'MINIMAX_DAILY_LIMIT_M27',
   'speech-02-hd': 'MINIMAX_DAILY_LIMIT_SPEECH_HD',
   'vlm-coding-plan': 'MINIMAX_DAILY_LIMIT_VLM',
+  'web-search': 'MINIMAX_DAILY_LIMIT_WEB_SEARCH',
 };
 
 function readLimit(model: string): number {

@@ -377,5 +377,7 @@ export interface GenerateMomentOptions {
   recentTopics?: string[];
   generationContext?: MomentGenerationContext;
   usageContext?: AiUsageContext;
+  // 调用方可注入额外 system prompt 段（如 web_search 实时资料），追加到 systemPrompt 末尾。
+  extraSystemPromptSections?: string[];
 }
 // i18n-ignore-end

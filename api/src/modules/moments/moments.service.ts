@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -6,6 +6,8 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
+import { WebSearchService } from '../ai/web-search.service';
 import type { AiMessagePart, PersonalityProfile } from '../ai/ai.types';
 import { pickThemeAndStyle } from './music-theme-catalog';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
@@ -168,6 +170,8 @@ export class MomentsService implements OnModuleInit {
 
   constructor(
     private readonly ai: AiOrchestratorService,
+    private readonly speechAssets: AiSpeechAssetsService,
+    private readonly webSearch: WebSearchService,
     private readonly characters: CharactersService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly socialService: SocialService,
@@ -439,6 +443,89 @@ export class MomentsService implements OnModuleInit {
     return this._enrichPost(post, avatarContext);
   }
 
+  // 朋友圈 / 视频号"听贴文"：把 post.text 通过 MiniMax TTS HD（speech-02-hd）合成
+  // 朗读音频，结果缓存到 generationMetadata.narration{audioUrl,textHash,...}。同一段
+  // 文本第二次调直接返回缓存；文本被改过（hash 不匹配）则重新合成。
+  // voice 优先级：post.author（character）的 voicePreset → provider 默认音色。
+  // 走 AiOrchestratorService.synthesizeSpeech，所以自动复用现有 token-plan 配额 +
+  // 多 provider fallback 链，失败也走标准 AppError。
+  async synthesizeMomentNarration(
+    postId: string,
+  ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    const post = await this.postRepo.findOneBy({ id: postId });
+    if (!post) {
+      throw new AppError('MOMENT_POST_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '朋友圈不存在或已删除。',
+      });
+    }
+    const text = post.text?.trim();
+    if (!text) {
+      throw new AppError('MOMENT_POST_TEXT_EMPTY', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '这条内容没有可朗读的文本。',
+      });
+    }
+
+    // 按文本内容 hash 做缓存键，文本被编辑过会自动失效。
+    const textHash = createHash('sha256').update(text).digest('hex').slice(0, 16);
+    const meta = (post.generationMetadata ?? {}) as Record<string, unknown>;
+    const cached = meta.narration as
+      | {
+          audioUrl?: string;
+          durationMs?: number;
+          textHash?: string;
+        }
+      | undefined;
+    if (cached?.audioUrl && cached.textHash === textHash) {
+      return {
+        audioUrl: cached.audioUrl,
+        durationMs: cached.durationMs,
+        cached: true,
+      };
+    }
+
+    // 角色作者 → 用其 voicePreset；user 作者 → 走全局默认音色。
+    let voice: string | undefined;
+    if (post.authorType === 'character') {
+      const author = await this.characters.findById(post.authorId);
+      voice = author?.voicePreset?.trim() || undefined;
+    }
+
+    const synthesized = await this.ai.synthesizeSpeech({
+      text,
+      characterId:
+        post.authorType === 'character' ? post.authorId : undefined,
+      voice,
+    });
+    const asset = await this.speechAssets.saveGeneratedSpeech(
+      synthesized.buffer,
+      {
+        mimeType: synthesized.mimeType,
+        fileExtension: synthesized.fileExtension,
+        baseName: `moment-narration-${post.id}`,
+      },
+    );
+    const updatedMeta = {
+      ...meta,
+      narration: {
+        audioUrl: asset.audioUrl,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+        durationMs: synthesized.durationMs,
+        textHash,
+        synthesizedAt: new Date().toISOString(),
+      },
+    };
+    post.generationMetadata = updatedMeta;
+    await this.postRepo.save(post);
+    return {
+      audioUrl: asset.audioUrl,
+      durationMs: synthesized.durationMs,
+      cached: false,
+    };
+  }
+
   async addOwnerComment(
     postId: string,
     text: string,
@@ -662,11 +749,24 @@ export class MomentsService implements OnModuleInit {
               seedKey: `manual:${currentTime.toISOString().slice(0, 10)}`,
             })
           : null;
+      // 角色开了 webSearchEnabled + 有 expertDomains → 追一次热点搜索，
+      // 注入到 moment system prompt 让贴文贴近"今天发生的事"。失败/无配额 swallow。
+      const momentExtraSystemSections: string[] = [];
+      if (
+        !reminderMoment &&
+        char.webSearchEnabled === true &&
+        char.expertDomains?.length
+      ) {
+        const trendQuery = `${char.expertDomains.slice(0, 2).join(' ')} 最新`;
+        const injection = await this.webSearch.searchAndFormat(trendQuery);
+        if (injection) momentExtraSystemSections.push(injection.markdown);
+      }
       const text =
         reminderMoment?.text ??
         (await this.ai.generateMoment({
           profile,
           currentTime,
+          extraSystemPromptSections: momentExtraSystemSections,
           usageContext: {
             surface: 'app',
             scene: 'moment_post_generate',
@@ -2781,6 +2881,12 @@ export class MomentsService implements OnModuleInit {
     // 让生成的 seedText 不再凭空抒情、贴角色当下生活。
     const recentEvent = await this.pickRecentMomentSummary(char.id);
 
+    const videoMomentExtraSections: string[] = [];
+    if (char.webSearchEnabled === true && char.expertDomains?.length) {
+      const trendQuery = `${char.expertDomains.slice(0, 2).join(' ')} 最新`;
+      const injection = await this.webSearch.searchAndFormat(trendQuery);
+      if (injection) videoMomentExtraSections.push(injection.markdown);
+    }
     let seedText = '';
     try {
       seedText = (
@@ -2788,6 +2894,7 @@ export class MomentsService implements OnModuleInit {
           profile,
           currentTime: new Date(),
           recentTopics: recentEvent ? [recentEvent] : undefined,
+          extraSystemPromptSections: videoMomentExtraSections,
           usageContext: {
             surface: 'app',
             scene: 'minimax_moment_video',

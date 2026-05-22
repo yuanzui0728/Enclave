@@ -2482,7 +2482,13 @@ export class AiOrchestratorService {
       recentTopics,
       generationContext,
       usageContext,
+      extraSystemPromptSections,
     } = options;
+    const extraSystemPromptSuffix =
+      extraSystemPromptSections
+        ?.map((s) => s.trim())
+        .filter(Boolean)
+        .join('\n\n') ?? '';
     const sceneKey =
       this.resolveSceneKey(usageContext?.scene) ?? 'moments_post';
     const resolvedUsageContext: AiUsageContext = {
@@ -2498,12 +2504,15 @@ export class AiOrchestratorService {
       groupId: usageContext?.groupId,
     };
     if (sceneKey !== 'moments_post') {
-      const systemPrompt = await this.buildSystemPrompt(
+      const baseSystemPrompt = await this.buildSystemPrompt(
         profile,
         false,
         undefined,
         sceneKey,
       );
+      const systemPrompt = extraSystemPromptSuffix
+        ? `${baseSystemPrompt}\n\n${extraSystemPromptSuffix}`
+        : baseSystemPrompt;
       const finalLanguageReminder = await this.worldLanguage.buildFinalReminder();
       const wrapTaskPrompt = (taskPrompt: string) =>
         finalLanguageReminder
@@ -2571,6 +2580,9 @@ export class AiOrchestratorService {
       resolvedGenerationContext,
       sceneKey,
     );
+    if (extraSystemPromptSuffix) {
+      promptRequest.systemPrompt = `${promptRequest.systemPrompt}\n\n${extraSystemPromptSuffix}`;
+    }
     const finalLanguageReminderForMoment =
       await this.worldLanguage.buildFinalReminder();
     const wrapMomentPrompt = (taskPrompt: string) =>

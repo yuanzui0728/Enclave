@@ -167,6 +167,12 @@ export class MomentsController {
     return this.momentsService.getPost(id);
   }
 
+  // "听贴文"：把 post.text 走 MiniMax TTS HD 合成；同一文本第二次调直接返回缓存。
+  @Post(':id/synthesize-audio')
+  synthesizeAudio(@Param('id') postId: string) {
+    return this.momentsService.synthesizeMomentNarration(postId);
+  }
+
   @Post('generate/:characterId')
   generateForCharacter(@Param('characterId') characterId: string) {
     return this.momentsService.generateMomentForCharacter(characterId);

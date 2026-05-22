@@ -143,6 +143,7 @@ export class VoiceCallsService {
         characterId,
         characterName: character.name,
         text: assistantTextMessage.text,
+        voicePreset: character.voicePreset ?? null,
       });
       assistantVoiceMessage = fallbackVoiceReply.message;
       synthesisDurationMs = fallbackVoiceReply.synthesisDurationMs;
@@ -238,11 +239,13 @@ export class VoiceCallsService {
     characterId: string;
     characterName: string;
     text: string;
+    voicePreset?: string | null;
   }) {
     const synthesized = await this.ai.synthesizeSpeech({
       text: input.text,
       conversationId: input.conversationId,
       characterId: input.characterId,
+      voice: input.voicePreset?.trim() || undefined,
       instructions: buildSpeechInstructions(input.characterName),
     });
     const asset = await this.speechAssets.saveGeneratedSpeech(

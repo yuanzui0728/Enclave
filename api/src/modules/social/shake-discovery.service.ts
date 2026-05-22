@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { WebSearchService } from '../ai/web-search.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterBlueprintService } from '../characters/character-blueprint.service';
@@ -77,6 +78,7 @@ export class ShakeDiscoveryService {
     @InjectRepository(UserFeedInteractionEntity)
     private readonly feedInteractionRepo: Repository<UserFeedInteractionEntity>,
     private readonly ai: AiOrchestratorService,
+    private readonly webSearch: WebSearchService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly systemConfig: SystemConfigService,
@@ -162,6 +164,22 @@ export class ShakeDiscoveryService {
     const signalTexts = signalSnapshot.entries.map((item) => item.text);
     if (!signalTexts.length && (cyberAvatarProfile.signalCount ?? 0) <= 0) {
       return null;
+    }
+
+    // 系统级 flag 开启后，按 cyber avatar 当前 focus/recurring 主题追一次 web_search，
+    // 把"今天发生的相关事"作为额外 signal 拼进 planning prompt。
+    // 失败/无结果都 swallow，不影响主流程。
+    if (config.enableRealtimeSignalEnhance) {
+      const topTopic =
+        cyberAvatarProfile.liveState.focus?.[0]?.trim() ||
+        cyberAvatarProfile.liveState.activeTopics?.[0]?.trim() ||
+        cyberAvatarProfile.recentState.recurringTopics?.[0]?.trim();
+      if (topTopic) {
+        const injection = await this.webSearch.searchAndFormat(
+          `${topTopic} 最新`,
+        );
+        if (injection) signalTexts.push(injection.markdown);
+      }
     }
 
     const recentShakeHistory = summarizeRecentShakeHistory(sessions);
@@ -1051,6 +1069,10 @@ function normalizeConfig(
     allowMedical: sanitizeBoolean(input.allowMedical, fallback.allowMedical),
     allowLegal: sanitizeBoolean(input.allowLegal, fallback.allowLegal),
     allowFinance: sanitizeBoolean(input.allowFinance, fallback.allowFinance),
+    enableRealtimeSignalEnhance: sanitizeBoolean(
+      input.enableRealtimeSignalEnhance,
+      fallback.enableRealtimeSignalEnhance,
+    ),
     planningPrompt:
       sanitizeText(input.planningPrompt) || fallback.planningPrompt,
     roleGenerationPrompt:

@@ -17,7 +17,9 @@ import { FeedCommentEntity } from './feed-comment.entity';
 import { FeedPostLikeEntity } from './feed-post-like.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { VideoChannelFollowEntity } from './video-channel-follow.entity';
+import { createHash } from 'node:crypto';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import type { AiMessagePart } from '../ai/ai.types';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
@@ -194,6 +196,7 @@ export class FeedService implements OnModuleInit {
     @InjectRepository(VideoChannelFollowEntity)
     private readonly followRepo: Repository<VideoChannelFollowEntity>,
     private readonly ai: AiOrchestratorService,
+    private readonly speechAssets: AiSpeechAssetsService,
     private readonly characters: CharactersService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly socialService: SocialService,
@@ -753,6 +756,80 @@ export class FeedService implements OnModuleInit {
     });
     const ownerStateMap = await this.buildOwnerStateMap([post], owner.id);
     return this.serializePost(post, ownerStateMap.get(post.id), avatarContext);
+  }
+
+  // 视频号"听贴文"：把 feedPost.text（标题+正文）合成 TTS HD。
+  // 缓存放在 statsPayload.narration，textHash 不匹配时重合成。
+  // voice 优先级：character author 的 voicePreset → 全局默认。
+  async synthesizeFeedNarration(
+    postId: string,
+  ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    const post = await this.postRepo.findOneBy({ id: postId });
+    if (!post || post.publishStatus === 'deleted') {
+      throw new AppError('FEED_POST_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '该内容不存在或已下架。',
+      });
+    }
+    const text = [post.title?.trim(), post.text?.trim()]
+      .filter((s): s is string => !!s)
+      .join('。');
+    if (!text) {
+      throw new AppError('FEED_POST_TEXT_EMPTY', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '这条内容没有可朗读的文本。',
+      });
+    }
+    const textHash = createHash('sha256').update(text).digest('hex').slice(0, 16);
+    const stats = (post.statsPayload ?? {}) as Record<string, unknown>;
+    const cached = stats.narration as
+      | { audioUrl?: string; durationMs?: number; textHash?: string }
+      | undefined;
+    if (cached?.audioUrl && cached.textHash === textHash) {
+      return {
+        audioUrl: cached.audioUrl,
+        durationMs: cached.durationMs,
+        cached: true,
+      };
+    }
+
+    let voice: string | undefined;
+    if (post.authorType === 'character') {
+      const author = await this.characters.findById(post.authorId);
+      voice = author?.voicePreset?.trim() || undefined;
+    }
+    const synthesized = await this.ai.synthesizeSpeech({
+      text,
+      characterId:
+        post.authorType === 'character' ? post.authorId : undefined,
+      voice,
+    });
+    const asset = await this.speechAssets.saveGeneratedSpeech(
+      synthesized.buffer,
+      {
+        mimeType: synthesized.mimeType,
+        fileExtension: synthesized.fileExtension,
+        baseName: `feed-narration-${post.id}`,
+      },
+    );
+    const updatedStats = {
+      ...stats,
+      narration: {
+        audioUrl: asset.audioUrl,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+        durationMs: synthesized.durationMs,
+        textHash,
+        synthesizedAt: new Date().toISOString(),
+      },
+    };
+    post.statsPayload = updatedStats;
+    await this.postRepo.save(post);
+    return {
+      audioUrl: asset.audioUrl,
+      durationMs: synthesized.durationMs,
+      cached: false,
+    };
   }
 
   async createPost(input: {

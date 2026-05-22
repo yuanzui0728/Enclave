@@ -140,6 +140,12 @@ export class FeedController {
     return this.feedService.getPostWithComments(id);
   }
 
+  // "听贴文"：把视频号/广场 post 的标题+正文走 MiniMax TTS HD 合成。缓存命中直接返回。
+  @Post(':id/synthesize-audio')
+  synthesizeAudio(@Param('id') postId: string) {
+    return this.feedService.synthesizeFeedNarration(postId);
+  }
+
   @Post(':id/comment')
   addComment(
     @Param('id') postId: string,

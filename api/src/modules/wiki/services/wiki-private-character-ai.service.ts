@@ -2,6 +2,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { CharacterBlueprintRecipeValue as CharacterBlueprintRecipe } from '../../characters/character-blueprint.types';
 import { AiOrchestratorService } from '../../ai/ai-orchestrator.service';
+import { WebSearchService } from '../../ai/web-search.service';
 import type { AiUsageContext } from '../../ai/ai.types';
 import type { PrivateCharacterDto } from './wiki-private-character.service';
 import {
@@ -57,6 +58,7 @@ export class WikiPrivateCharacterAiService {
     private readonly orchestrator: AiOrchestratorService,
     private readonly draftService: CharacterDraftService,
     private readonly jobService: AiGenerationJobService,
+    private readonly webSearch: WebSearchService,
   ) {}
 
   /**
@@ -97,7 +99,21 @@ export class WikiPrivateCharacterAiService {
     const template = SECTION_PROMPTS[input.section];
     const vars = buildTemplateVars(input.currentDraft);
     const userPrompt = renderPromptTemplate(template.userPromptTemplate, vars);
-    const combinedPrompt = `${template.systemPrompt}\n\n---\n\n${userPrompt}`;
+    let combinedPrompt = `${template.systemPrompt}\n\n---\n\n${userPrompt}`;
+    // 写作助手：basics / core_logic 这两节最需要"真实背景资料"——AI 生成职业身份、
+    // 专长领域、核心逻辑时若拿到 web_search 结果，能避免凭空编造。其它节（chat /
+    // scenes / memory）是行为/语言风格，搜外网帮助不大，跳过省配额。
+    if (input.section === 'basics' || input.section === 'core_logic') {
+      const queryParts = [
+        input.currentDraft.name?.trim(),
+        input.currentDraft.bio?.trim(),
+      ].filter((s): s is string => !!s);
+      if (queryParts.length > 0) {
+        const query = queryParts.join(' ').slice(0, 80);
+        const injection = await this.webSearch.searchAndFormat(query);
+        if (injection) combinedPrompt = `${combinedPrompt}\n\n${injection.markdown}`;
+      }
+    }
 
     const usageContext: AiUsageContext = {
       surface: 'app',

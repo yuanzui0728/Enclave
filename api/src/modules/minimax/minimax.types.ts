@@ -121,4 +121,23 @@ export interface MinimaxClientErrorContext {
   message: string;
 }
 
+// Token Plan web search（/v1/coding_plan/search）：
+// 参考 PyPI minimax-coding-plan-mcp 0.0.4 minimax_mcp/server.py:89。
+// body 只一个字段 q；返回 organic[]（标题/链接/摘要/日期）+ related_searches[]。
+export interface MinimaxWebSearchInput {
+  query: string;
+}
+
+export interface MinimaxWebSearchOrganicItem {
+  title: string;
+  link: string;
+  snippet: string;
+  date?: string;
+}
+
+export interface MinimaxWebSearchResult {
+  organic: MinimaxWebSearchOrganicItem[];
+  relatedSearches: string[];
+}
+
 // i18n-ignore-end

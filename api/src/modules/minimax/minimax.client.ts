@@ -19,6 +19,9 @@ import {
   type MinimaxVideoStatus,
   type MinimaxVideoSubmitInput,
   type MinimaxVideoSubmitResult,
+  type MinimaxWebSearchInput,
+  type MinimaxWebSearchOrganicItem,
+  type MinimaxWebSearchResult,
 } from './minimax.types';
 
 const DEFAULT_BASE_URL = 'https://api.minimaxi.com';
@@ -359,6 +362,47 @@ export class MinimaxClient {
       );
     }
     return { content };
+  }
+
+  // Token Plan 网络搜索（/v1/coding_plan/search）：与 VLM 同一类 coding_plan 端点。
+  // 端点确认来源：PyPI 包 minimax-coding-plan-mcp 0.0.4 minimax_mcp/server.py:89。
+  // 入参：q（搜索词，3-5 keywords 效果最好）。
+  // 出参：organic[]={title,link,snippet,date}, related_searches[]={query},
+  // base_resp.status_code != 0 → 失败/熔断。无官方公布日额度，先按估算软上限 200/天，
+  // 撞 2056 走 markExhaustedToday 熔断。
+  async searchWeb(input: MinimaxWebSearchInput): Promise<MinimaxWebSearchResult> {
+    await this.subscription.assertCanUseAi('text');
+    const query = input.query.trim();
+    if (!query) {
+      throw new MinimaxClientError(
+        'MINIMAX_WEBSEARCH_EMPTY_QUERY',
+        'web search query is empty',
+        false,
+      );
+    }
+    const response = await this.postJson<{
+      organic?: Array<{
+        title?: string;
+        link?: string;
+        snippet?: string;
+        date?: string;
+      }>;
+      related_searches?: Array<{ query?: string }>;
+      base_resp?: MinimaxBaseResp;
+    }>('/v1/coding_plan/search', { q: query });
+    this.assertSuccess(response.base_resp, 'web search');
+    const organic: MinimaxWebSearchOrganicItem[] = (response.organic ?? [])
+      .map((item) => ({
+        title: (item.title ?? '').trim(),
+        link: (item.link ?? '').trim(),
+        snippet: (item.snippet ?? '').trim(),
+        date: item.date?.trim() || undefined,
+      }))
+      .filter((item) => item.title && item.link);
+    const relatedSearches = (response.related_searches ?? [])
+      .map((r) => r.query?.trim())
+      .filter((q): q is string => !!q);
+    return { organic, relatedSearches };
   }
 
   // MiniMax-M2.7 是 reasoning model：max_tokens 包含 reasoning_tokens，

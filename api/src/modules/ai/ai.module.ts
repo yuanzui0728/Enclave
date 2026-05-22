@@ -6,6 +6,7 @@ import { AiController } from './ai.controller';
 import { PromptBuilderService } from './prompt-builder.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { MomentGenerationContextService } from './moment-generation-context.service';
+import { WebSearchService } from './web-search.service';
 import { SystemConfigModule } from '../config/config.module';
 import { WorldModule } from '../world/world.module';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
@@ -43,6 +44,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
     AiUsageLedgerService,
     N1nPricingSyncService,
     MomentGenerationContextService,
+    WebSearchService,
   ],
   exports: [
     AiOrchestratorService,
@@ -52,6 +54,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
     AiUsageLedgerService,
     N1nPricingSyncService,
     MomentGenerationContextService,
+    WebSearchService,
   ],
 })
 export class AiModule {}

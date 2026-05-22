@@ -117,4 +117,14 @@ export class CharacterEntity {
   // 消耗 speech-02-hd token plan 配额。
   @Column({ default: false })
   defaultVoiceReply: boolean;
+
+  // 角色专属 MiniMax voice_id（如 male-qn-qingse / female-shaonv / audiobook_male_2）。
+  // null/空 → 走 inference provider 的全局默认。所有合成都走 speech-02-hd。
+  @Column('text', { nullable: true })
+  voicePreset?: string | null;
+
+  // 角色是否启用 web_search（/v1/coding_plan/search）。默认 false 避免无脑烧配额。
+  // 开了之后仍需要 WebSearchService 关键词命中才会真发请求。
+  @Column({ default: false })
+  webSearchEnabled: boolean;
 }

@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
+import { CharactersService } from '../characters/characters.service';
 import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMessageEntity } from './group-message.entity';
@@ -90,6 +91,7 @@ export class ReplyArtifactJobService {
     private readonly chatGateway: ChatGateway,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly remarkResolver: FriendRemarkResolver,
+    private readonly characters: CharactersService,
   ) {}
 
   private async resolveSenderRemark(
@@ -454,10 +456,12 @@ export class ReplyArtifactJobService {
       'reply',
     );
     try {
+      const character = await this.characters.findById(job.characterId);
       const synthesized = await this.ai.synthesizeSpeech({
         text: input.text,
         conversationId: job.threadId,
         characterId: job.characterId,
+        voice: character?.voicePreset?.trim() || undefined,
         instructions: buildAssistantSpeechInstructions(job.characterName),
       });
 
