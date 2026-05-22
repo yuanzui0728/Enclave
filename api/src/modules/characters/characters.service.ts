@@ -1526,6 +1526,16 @@ export function assertPrivateCharacterFieldLimits(input: {
         legacyMessage: 'intimacyLevel 必须在 0 - 100 之间。',
       });
     }
+    // 新会话 R1 走查：column 是 TypeORM 推断 INTEGER，bundle 写 1.5 在 SQLite
+    // 上会被静默截断成 1（INSERT 1.5 → row 存 1，回读也是 1）。原 Number.isFinite
+    // 范围检查放过浮点 → 用户精心填 25.5 期望保留小数，落库变 25，view 端再也
+    // 找不回；admin/wiki 数据迁移时也会一头雾水。明确拒，给用户一个可纠正的 400。
+    if (!Number.isInteger(input.intimacyLevel)) {
+      throw new AppError('PRIVATE_IMPORT_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'intimacyLevel 必须是整数（0 - 100），不接受小数。',
+      });
+    }
   }
 }
 // i18n-ignore-end

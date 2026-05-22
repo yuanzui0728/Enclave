@@ -132,6 +132,24 @@ describe('CharactersService.importPersonalCharacter', () => {
     ).resolves.toBeDefined();
   });
 
+  it('rejects intimacyLevel float (silent SQLite truncation guard)', async () => {
+    // 新会话 R1 走查：character.entity 的 intimacyLevel 列被 TypeORM 推成
+    // INTEGER，bundle 写 1.5 在 SQLite 上 INSERT 后回读得到 1 —— 用户填的
+    // 小数精度无声损失。明确拒，给一个 BadRequest 让用户纠正。
+    const { svc } = makeService({ existing: null });
+    await expect(
+      svc.importPersonalCharacter({ name: '小数', intimacyLevel: 1.5 }),
+    ).rejects.toThrow(/整数/);
+    // 整数仍 OK
+    await expect(
+      svc.importPersonalCharacter({ name: '整数', intimacyLevel: 25 }),
+    ).resolves.toBeDefined();
+    // 范围越界优先级仍走"必须在 0 - 100 之间"
+    await expect(
+      svc.importPersonalCharacter({ name: '越界', intimacyLevel: 150 }),
+    ).rejects.toThrow(/0 - 100/);
+  });
+
   it('rejects currentActivity / triggerScenes items containing control characters', async () => {
     // 第 4 次走查 R2：currentActivity 是状态 chip（"working"/"sleeping" 等），
     // triggerScenes 是 scene id 列表（"coffee_shop"/"gym"），都是单行 UI 文本。
