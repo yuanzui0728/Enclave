@@ -604,6 +604,13 @@ function MobileAddFriend() {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
+              // 第四轮 R1：跟 mobile-search-workspace 输入框同款挂 autoComplete="off"。
+              // 浏览器（移动 Chrome / iOS Safari）会从历史/saved search 推一条
+              // dropdown 盖在输入框上方，跟下方"最近搜索" pill 同时占着候选位
+              // 视觉打架；按用户在隐界这台设备的其它搜索关键词推（chat-list 顶端
+              // 搜索框 / 通讯录搜索 / 笔记搜索 等都共用浏览器 history），命中率
+              // 极低还遮挡键盘候选条。
+              autoComplete="off"
             />
             {searchText ? (
               <button
