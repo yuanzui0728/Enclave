@@ -454,6 +454,13 @@ export function WelcomePage() {
   // 守一下，"上一发未结束就丢掉新发"。
   const sendCodeInFlightRef = useRef(false);
   const sendEmailCodeInFlightRef = useRef(false);
+  // cooldown 跟哪个 identity 绑：原来在 phone/email onChange 里直接
+  // setCodeCooldownSeconds(0) 把倒计时清掉——确实解决了"换号还在等"，但
+  // 顺手把"误删一字再敲回原值"也清没了：原值仍在服务端 rate-limit 窗口里，
+  // 用户视角是按钮该 enabled、按下去却 429。改成把上次发送命中的 identity
+  // 记下来，effective 倒计时只在 identity 与当前输入一致时才显示，输入瞬
+  // 变成另一个值时自动隐藏、改回去再自动复现。
+  const codeCooldownIdentityRef = useRef<string>("");
   // 同样的 React 调度延迟也存在于"登录并进入 / 注册并进入 / 连接本地世界 /
   // Google 登录"按钮上：setIsContinuing(true) 要等 React 渲染才反映到 disabled。
   // 30ms 双击就能发两次 verify-code（或两次 Google idToken 校验），命中 cloud-api
@@ -480,12 +487,27 @@ export function WelcomePage() {
   // 错误条上的"重试发送"按钮没禁用、cooldown 也是 0，连点 → 连 429。服务端
   // exception message 形如"验证码发送过于频繁，请在 NN 秒后重试。"，正则把 NN 抠
   // 出来；解析失败则 fallback 60s（跟成功路径保持一致）。
+  // identity 已在 handleSendXxxCode 里于 mutate 前写入 ref，这里不用再 set；
+  // 走查避免：若读 currentCodeIdentity，期间用户改了字段会把 ref 钉到新值上，
+  // 反而让原 identity 的 cooldown 显示在不该显示的输入上。
   function startCooldownFromError(error: unknown) {
     if (!isApiRequestError(error) || error.statusCode !== 429) return;
     const match = error.message.match(/(\d+)\s*秒/);
     const seconds = match ? Number(match[1]) : 60;
     setCodeCooldownSeconds(Math.min(seconds, 60) || 60);
   }
+
+  const currentCodeIdentity =
+    accountType === "email" ? email.trim().toLowerCase() : phone.trim();
+  // effective：cooldown 真正显示给用户用的值。codeCooldownSeconds > 0 但
+  // 当前输入跟 ref 不一致时显示 0（用户已经把字段改成别的 identity，新 identity
+  // 没被限速）。改回原值时 effective 立刻回到非零，无需手动恢复。
+  const effectiveCooldownSeconds =
+    codeCooldownSeconds > 0 &&
+    currentCodeIdentity &&
+    currentCodeIdentity === codeCooldownIdentityRef.current
+      ? codeCooldownSeconds
+      : 0;
 
   const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
   const resolvedLocalApiBaseUrl = resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl);
@@ -774,6 +796,9 @@ export function WelcomePage() {
           : t(msg`验证码已发送。`),
       );
       setEntryError("");
+      // ref 更到 server-normalized 值，确保 setPhone(result.phone) 之后 effective
+      // 立即匹配（server 给的可能是 "+86xxxx"，跟用户敲的 "xxxx" 不一致）。
+      codeCooldownIdentityRef.current = result.phone;
       setCodeCooldownSeconds(60);
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
@@ -811,6 +836,9 @@ export function WelcomePage() {
           : t(msg`验证码已发送，请查收邮箱（含垃圾邮件箱）。`),
       );
       setEntryError("");
+      // 同 phone 路径：用 server-normalized 邮箱（一般是小写化版本），跟
+      // setEmail(result.email) 之后的 currentCodeIdentity 一致。
+      codeCooldownIdentityRef.current = result.email;
       setCodeCooldownSeconds(60);
     },
     onError: (error) => {
@@ -825,15 +853,20 @@ export function WelcomePage() {
     if (sendCodeInFlightRef.current || sendCodeMutation.isPending) return;
     // 防御：错误条上的"重试发送"按钮如果哪天忘记跟主发送按钮一样 disable，
     // 函数内也再卡一格 cooldown，避免绕过 UI 直接打 server 429。
-    if (codeCooldownSeconds > 0) return;
+    if (effectiveCooldownSeconds > 0) return;
     sendCodeInFlightRef.current = true;
+    // 先把当前 identity 钉进 ref：mutate 成功路径 onSuccess 会改写成 server
+    // normalized 值，但失败路径（429）走 startCooldownFromError 时拿到的就是
+    // 这里写的本地 normalized，确保 effective 倒计时绑在用户当前看到的输入上。
+    codeCooldownIdentityRef.current = phone.trim();
     sendCodeMutation.mutate();
   }
 
   function handleSendEmailCode() {
     if (sendEmailCodeInFlightRef.current || sendEmailCodeMutation.isPending) return;
-    if (codeCooldownSeconds > 0) return;
+    if (effectiveCooldownSeconds > 0) return;
     sendEmailCodeInFlightRef.current = true;
+    codeCooldownIdentityRef.current = email.trim().toLowerCase();
     sendEmailCodeMutation.mutate();
   }
 
@@ -1420,10 +1453,26 @@ export function WelcomePage() {
                   setCloudAccessSessionId(null);
                   setConnectedAccessSessionId(null);
                   setEntryError("");
-                  // cooldown 是 per-identity 的（服务端按 phone+purpose 取最新一次
-                  // session 算 retryAfter）；换号了就清掉本地倒计时，否则用户输入
-                  // 新号还要干等 60s。
-                  setCodeCooldownSeconds(0);
+                  // cooldown 现在按 identity 自适应隐藏/显示（见
+                  // effectiveCooldownSeconds 推导）；这里不再手动清零，避免
+                  // 「敲错一个字再删回原值」时把还有效的倒计时丢掉。
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  // 验证码登录且还没拿到码：Enter 等价于"发送验证码"，省一次
+                  // 转手；否则按"提交"走主流程，让 validation 自己出错给用户看。
+                  if (
+                    authMethod === "code" &&
+                    !code.trim() &&
+                    phone.trim() &&
+                    !sendCodeMutation.isPending &&
+                    effectiveCooldownSeconds <= 0
+                  ) {
+                    handleSendPhoneCode();
+                  } else {
+                    void continueWithCloudWorld();
+                  }
                 }}
                 placeholder={t(msg`请输入手机号`)}
               />
@@ -1450,9 +1499,24 @@ export function WelcomePage() {
                   setCloudAccessSessionId(null);
                   setConnectedAccessSessionId(null);
                   setEntryError("");
-                  // 同 phone 路径：cooldown 是 per-identity 的，换邮箱就让客户端
-                  // 立刻能再发，避免误把上一封邮件的 60s 押到新邮箱头上。
-                  setCodeCooldownSeconds(0);
+                  // 不再手动清 cooldown：当前输入跟 codeCooldownIdentityRef 不
+                  // 一致时 effective 自动归零，相等时自动复现——比硬清更稳。
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  // 与 phone 路径同：还没码就先发码，已有码（或密码模式）走提交。
+                  if (
+                    authMethod === "code" &&
+                    !code.trim() &&
+                    isProbableEmail(email) &&
+                    !sendEmailCodeMutation.isPending &&
+                    effectiveCooldownSeconds <= 0
+                  ) {
+                    handleSendEmailCode();
+                  } else {
+                    void continueWithCloudWorld();
+                  }
                 }}
                 placeholder={t(msg`you@example.com`)}
               />
@@ -1557,7 +1621,7 @@ export function WelcomePage() {
                       : handleSendEmailCode()
                   }
                   disabled={
-                    codeCooldownSeconds > 0 ||
+                    effectiveCooldownSeconds > 0 ||
                     (accountType === "phone"
                       ? !phone.trim() || sendCodeMutation.isPending
                       : !isProbableEmail(email) || sendEmailCodeMutation.isPending)
@@ -1572,8 +1636,8 @@ export function WelcomePage() {
                       : sendEmailCodeMutation.isPending
                   )
                     ? t(msg`发送中...`)
-                    : codeCooldownSeconds > 0
-                      ? t(msg`${codeCooldownSeconds}s 后重发`)
+                    : effectiveCooldownSeconds > 0
+                      ? t(msg`${effectiveCooldownSeconds}s 后重发`)
                       : t(msg`发送验证码`)}
                 </Button>
               </div>
@@ -1718,6 +1782,14 @@ export function WelcomePage() {
                   persistInviteCode(next);
                   setInviteCodeAutoFilled(false);
                   setEntryError("");
+                }}
+                onKeyDown={(event) => {
+                  // 注册路径里邀请码是最后一格，跟 code/password 字段对齐：
+                  // 用户敲完按 Enter 自然要提交，没 onKeyDown 时按下去啥也不发生。
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void continueWithCloudWorld();
+                  }
                 }}
                 placeholder={t(msg`填写邀请人给你的 6 位邀请码`)}
               />
@@ -2053,7 +2125,7 @@ export function WelcomePage() {
                 // (新) 的 onError → cooldown 之后，用户首次 429 → cooldown 启动 →
                 // 按钮还是显示 → 点 → 又 429 → cooldown reset。把 cooldown 那一格
                 // 加进来，跟主发送按钮的 disabled 逻辑保持一致。
-                phone.trim() && !sendCodeMutation.isPending && codeCooldownSeconds <= 0 ? (
+                phone.trim() && !sendCodeMutation.isPending && effectiveCooldownSeconds <= 0 ? (
                   <button
                     type="button"
                     onClick={handleRetrySendCode}
@@ -2076,7 +2148,7 @@ export function WelcomePage() {
               tone="danger"
               action={
                 // 同上：cooldown > 0 时也不显示按钮。
-                email.trim() && !sendEmailCodeMutation.isPending && codeCooldownSeconds <= 0 ? (
+                email.trim() && !sendEmailCodeMutation.isPending && effectiveCooldownSeconds <= 0 ? (
                   <button
                     type="button"
                     onClick={() => handleSendEmailCode()}
