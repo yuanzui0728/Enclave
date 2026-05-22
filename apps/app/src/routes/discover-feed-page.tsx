@@ -1125,7 +1125,7 @@ export function DiscoverFeedPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`广场刷新失败：${error.message}`)
+          ? t(msg`广场刷新失败：${describeRequestError(error)}`)
           : t(msg`广场刷新失败，请稍后重试。`),
       );
     }
@@ -1376,7 +1376,7 @@ export function DiscoverFeedPage() {
       });
       setNotice(
         error instanceof Error
-          ? t(msg`读取全部评论失败：${error.message}`)
+          ? t(msg`读取全部评论失败：${describeRequestError(error)}`)
           : t(msg`读取全部评论失败，请稍后重试。`),
       );
     } finally {

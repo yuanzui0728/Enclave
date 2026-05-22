@@ -3137,7 +3137,7 @@ export function ChatMessageList({
             message:
               firstError instanceof Error && firstError.message
                 ? t(
-                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条未收藏：${firstError.message}`,
+                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条未收藏：${describeRequestError(firstError)}`,
                   )
                 : t(
                     msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条收藏失败，请稍后再试。`,
@@ -3320,7 +3320,7 @@ export function ChatMessageList({
         setActionNotice({
           message:
             firstError instanceof Error && firstError.message
-              ? t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条未删除：${firstError.message}`)
+              ? t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条未删除：${describeRequestError(firstError)}`)
               : t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条删除失败，请稍后再试。`),
           tone: "danger",
           actionLabel: t(msg`继续删除剩余消息`),
@@ -3447,7 +3447,7 @@ export function ChatMessageList({
         setActionNotice({
           message:
             firstError instanceof Error && firstError.message
-              ? t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条未撤回：${firstError.message}`)
+              ? t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条未撤回：${describeRequestError(firstError)}`)
               : t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条撤回失败，请稍后再试。`),
           tone: "danger",
           actionLabel: t(msg`继续撤回剩余消息`),

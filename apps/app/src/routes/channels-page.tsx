@@ -74,6 +74,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
+import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -385,7 +386,7 @@ export function ChannelsPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`点赞失败：${error.message}`)
+          ? t(msg`点赞失败：${describeRequestError(error)}`)
           : t(msg`点赞失败，请稍后重试。`),
       );
     },
@@ -627,7 +628,7 @@ export function ChannelsPage() {
       const fallback = input.replyTarget
         ? t(msg`视频号回复发送失败，请稍后重试。`)
         : t(msg`视频号评论发送失败，请稍后重试。`);
-      setNotice(error instanceof Error ? `${fallback} (${error.message})` : fallback);
+      setNotice(error instanceof Error ? `${fallback} (${describeRequestError(error)})` : fallback);
     },
   });
   const generateMutation = useMutation({
@@ -683,7 +684,7 @@ export function ChannelsPage() {
       setNoticeTone("info");
       setNotice(
         err instanceof Error
-          ? t(msg`换一批失败：${err.message}`)
+          ? t(msg`换一批失败：${describeRequestError(err)}`)
           : t(msg`换一批失败，请稍后重试。`),
       );
     },
@@ -811,7 +812,7 @@ export function ChannelsPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`收藏失败：${error.message}`)
+          ? t(msg`收藏失败：${describeRequestError(error)}`)
           : t(msg`收藏失败，请稍后重试。`),
       );
     },
@@ -1055,7 +1056,7 @@ export function ChannelsPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`关注失败：${error.message}`)
+          ? t(msg`关注失败：${describeRequestError(error)}`)
           : t(msg`关注失败，请稍后重试。`),
       );
     },
@@ -1156,7 +1157,7 @@ export function ChannelsPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`减少推荐失败：${error.message}`)
+          ? t(msg`减少推荐失败：${describeRequestError(error)}`)
           : t(msg`减少推荐失败，请稍后重试。`),
       );
     },
@@ -1306,7 +1307,7 @@ export function ChannelsPage() {
       setNoticeAction(null);
       setNotice(
         error instanceof Error
-          ? t(msg`评论点赞失败：${error.message}`)
+          ? t(msg`评论点赞失败：${describeRequestError(error)}`)
           : t(msg`评论点赞失败，请稍后重试。`),
       );
     },
