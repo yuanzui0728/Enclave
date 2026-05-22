@@ -9,6 +9,7 @@ import {
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
 import { registerAndroidBackInterceptor } from "../../../runtime/android-back-button";
+import { stripBidiControl } from "../contact-utils";
 import { useBulkFriendshipMutation } from "./use-bulk-friendship-mutation";
 
 type Props = {
@@ -133,7 +134,13 @@ export function ContactsBulkActionBar({
   };
 
   const runTag = () => {
-    const tag = tagDraft.trim();
+    // 走查第三次 R1：粘贴 "‮malicious" 类带 U+202E (RTL Override) 的 tag 名会被
+    // 落进 friendship.tags JSON 字段，之后所有渲染该 tag 的入口（通讯录主页 /tags
+    // 子页、桌面 tags pane、打标签 dialog 历史回显）都会被视觉反转骗。第二次
+    // 走查已在所有 character.name 渲染入口 strip；这里是用户**写入**入口必须
+    // 在提交前 strip 一次，避免脏数据进库。trim 前先 strip：strip 完头尾留下
+    // 空白时再 trim。
+    const tag = stripBidiControl(tagDraft).trim();
     if (!tag || !hasSelection) {
       setShowTagDialog(false);
       return;

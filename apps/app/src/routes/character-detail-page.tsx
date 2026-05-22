@@ -952,7 +952,10 @@ export function CharacterDetailPage() {
       if (profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH) {
         return;
       }
-      const nextRemarkName = profileForm.remarkName.trim() || null;
+      // 走查第三次 R1：用户输入「‮重要」类带 U+202E (RTL Override) 字符的备注
+      // 会落进 friendship.remarkName，之后通讯录主页 / 资料页头卡 / 添加朋友搜索
+      // 都被骗（W2 已修读侧 strip，写侧入口也得守，避免脏数据进库后清不掉）。
+      const nextRemarkName = stripBidiControl(profileForm.remarkName).trim() || null;
       const currentRemarkName = friendship?.remarkName?.trim() || null;
       if (nextRemarkName === currentRemarkName) {
         setEditingProfileField(null);
@@ -964,7 +967,9 @@ export function CharacterDetailPage() {
     if (profileForm.tags.length > TAGS_INPUT_MAX_LENGTH) {
       return;
     }
-    const nextTags = profileForm.tags
+    // tags 同步 strip——单 tag 名「‮客户」混进 friendship.tags JSON 之后所有 tag
+    // 列表渲染都受影响。bulk action bar 的 "打标签" runTag 已经同口径 strip。
+    const nextTags = stripBidiControl(profileForm.tags)
       .split(/[，,]/)
       .map((item) => item.trim())
       .filter(Boolean);
