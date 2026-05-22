@@ -118,6 +118,18 @@ export class WebSearchService {
           this.pruneExpiredCache();
         }
         return result;
+      } catch (err) {
+        // 走查 yuanzui0728 本次 R2：performSearch 里 quota.tryReserve 的
+        // typeorm transaction 在 sqlite busy / 连接抖时会真的抛 —— 原版没
+        // 兜，直接漏到 chat.service.ts:1198 / group-reply-orchestrator
+        // 等调用方让整个 AI 回复链失败。但本服务的契约自始就是 "任何失败
+        // 都 swallow + 返回 null，让调用方走无搜索的原 prompt"（line 84
+        // 注释）。这里补 catch 落实契约。
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `web search wrapper swallowed err query="${cleaned.slice(0, 60)}" err=${message}`,
+        );
+        return null;
       } finally {
         this.inFlight.delete(cleaned);
       }

@@ -3592,10 +3592,27 @@ export class AiOrchestratorService {
             };
           } catch (innerErr) {
             if (tracked) {
-              await this.minimaxQuota.release(quotaModel);
+              // 走查 yuanzui0728 本次 R2：release()/markExhaustedToday() 是
+              // DB write，原版裸 await 失败时会用 DB 错把 innerErr 给吃掉，
+              // 同时跳过下面的 markExhaustedToday → 2056 信号丢失 → 同 key
+              // 其他 world 各撞一次。两个调用都包 .catch swallow + warn，
+              // 保 innerErr 原样抛给 outer fallback 判断。
+              await this.minimaxQuota
+                .release(quotaModel)
+                .catch((releaseErr) => {
+                  this.logger.warn(
+                    `TTS quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
+                  );
+                });
               // 撞 2056（Token Plan 整体耗尽）就标死，避免本 tick 之后还反复重试
               if (this.isMinimaxTokenPlanExhausted(innerErr)) {
-                await this.minimaxQuota.markExhaustedToday(quotaModel);
+                await this.minimaxQuota
+                  .markExhaustedToday(quotaModel)
+                  .catch((markErr) => {
+                    this.logger.warn(
+                      `markExhaustedToday failed model=${quotaModel}: ${(markErr as Error)?.message}`,
+                    );
+                  });
               }
             }
             throw innerErr;
