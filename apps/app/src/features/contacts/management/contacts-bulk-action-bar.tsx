@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import {
   CheckCheck,
@@ -27,6 +28,12 @@ type Props = {
   // setNoticeError 走 danger tone（同一个 notice slot 上层渲染时切红字 + 长一点
   // 的自动消失时间），方便用户区分"批量删除完成"和"批量删除挂了"。
   setNoticeError?: (message: string | null) => void;
+  // Fresh 走查 R10：bulk 模式下 "打标签 / 删除确认" 二次 dialog 是 fixed inset-0
+  // z-[70] 整屏遮罩，但底层（bulk action bar 4 颗按钮、200+ 行 aria-pressed
+  // 友 row、顶部 Cancel）全部仍可 Tab —— deep probe 验证 209 个 focusable
+  // blockedByInert=0。把 dialog 打开 / 关闭信号回报给父页，父页统一在 contacts-page
+  // 的 inert wrapper 把整页摘掉。callback prop 比直接抬升状态侵入少。
+  onBlockingDialogChange?: (open: boolean) => void;
   desktop?: boolean;
 };
 
@@ -39,6 +46,7 @@ export function ContactsBulkActionBar({
   onPartialFailure,
   setNotice,
   setNoticeError,
+  onBlockingDialogChange,
   desktop = false,
 }: Props) {
   const t = useRuntimeTranslator();
@@ -90,6 +98,12 @@ export function ContactsBulkActionBar({
       document.body.style.overflow = previous;
     };
   }, [showTagDialog, showDeleteDialog]);
+
+  // Fresh 走查 R10：dialog open/close 信号同步给父页，父页根据它在 inert wrapper
+  // 把 bulk action bar + 200+ 行 friend list + 顶栏 Cancel 一起摘掉 Tab 序列。
+  useEffect(() => {
+    onBlockingDialogChange?.(showTagDialog || showDeleteDialog);
+  }, [showTagDialog, showDeleteDialog, onBlockingDialogChange]);
 
   const flushNotice = (success: boolean, action: string, failedCount = 0) => {
     // 部分失败也是错——走 danger tone 才能跟"操作成功"区分。这条以前 setNotice
@@ -288,7 +302,9 @@ export function ContactsBulkActionBar({
         </div>
       </div>
 
-      {showTagDialog ? (
+      {showTagDialog ? createPortal(
+        // Fresh 走查 R10：dialog 必须 portal 到 body 才能从 contacts-page 的 inert
+        // wrapper 子树里逃出来，否则父页 inert 时 dialog 自身也跟着失焦 / 不可点。
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]">
           {/* 新一轮走查：bulk.isPending 时禁用 backdrop close + cancel + 确定。
               原写法只锁了 确定 按钮，cancel + 点空白处都没拦：mutation 在飞 8s
@@ -367,9 +383,9 @@ export function ContactsBulkActionBar({
             </div>
           </div>
         </div>
-      ) : null}
+      , document.body) : null}
 
-      {showDeleteDialog ? (
+      {showDeleteDialog ? createPortal(
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]">
           {/* 新一轮走查：删除是不可逆操作，pending 时锁 backdrop + 取消尤其重要。
               用户点了删除按钮发现选错人，第一反应可能去点空白处或取消想撤销，
@@ -425,7 +441,7 @@ export function ContactsBulkActionBar({
             </div>
           </div>
         </div>
-      ) : null}
+      , document.body) : null}
     </>
   );
 }
