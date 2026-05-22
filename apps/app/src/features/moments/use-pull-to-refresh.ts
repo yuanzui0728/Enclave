@@ -73,6 +73,16 @@ export function usePullToRefresh({
   // useEffect 重挂监听器；handleTouchMove 已经在算 offset，顺手同步到 ref。
   const offsetRef = useRef(0);
   const safetyTimerRef = useRef<number | null>(null);
+  // 走查新一轮 R3：每次触发刷新自增一个 sessionId。旧 promise 的 .finally 回调
+  // 捕获触发时刻的 session id；触发到 .finally 之间可能发生：
+  //   1) safety timer 10s 兜底超时强制收尾 → refreshingRef=false
+  //   2) 用户再拉一次 → 新 session 启动
+  //   3) 旧 promise 终于 resolve → .finally 跑 setTimeout(finishRefresh,250)
+  //   4) 250ms 后 finishRefresh 把新 session 的 refreshing 状态吃掉，UI 还在
+  //      转的指示器突然消失但请求仍在路上
+  // session 不匹配就 skip，避免 stale promise 干扰新 refresh。和 React 闭包
+  // 同款模式：在异步边界比对触发时刻的"会话 id"。
+  const refreshSessionRef = useRef(0);
   // onRefresh 在调用方多数是 inline 箭头（() => Promise.all([...refetch()])），
   // 每次父组件 re-render 引用都新——若 handleTouchEnd 直接依赖它，useEffect
   // 会在每次重渲都先 removeEventListener×4 再 addEventListener×4，输入评论
@@ -188,9 +198,18 @@ export function usePullToRefresh({
     offsetRef.current = 0;
     if (finalOffset >= TRIGGER_DISTANCE) {
       refreshingRef.current = true;
+      refreshSessionRef.current += 1;
+      const session = refreshSessionRef.current;
       const result = onRefreshRef.current();
       Promise.resolve(result).finally(() => {
-        window.setTimeout(finishRefresh, 250);
+        // session 不匹配 = 这条 promise 来自旧一次 refresh（被 safety timer
+        // 强制收尾后又被新 pull 顶替），跳过避免把新 session 的状态吃掉。
+        if (refreshSessionRef.current !== session) return;
+        window.setTimeout(() => {
+          // 250ms 内可能又被新 pull 抢走，二次比对兜底。
+          if (refreshSessionRef.current !== session) return;
+          finishRefresh();
+        }, 250);
       });
       if (safetyTimerRef.current !== null) {
         window.clearTimeout(safetyTimerRef.current);
