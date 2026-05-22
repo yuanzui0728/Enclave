@@ -1106,7 +1106,13 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           ) : null}
           {leavingScreen ? (
-            <MobileCallNotice tone="info">
+            // 新会话走查 R3：和姊妹 sync/end danger MobileCallNotice 同款 a11y
+            // 修法——leavingScreen 期间这条 info notice 是用户点完"结束通话"
+            // 后看到的唯一过渡反馈。盲人 SR 听不到任何"通话结束中..."播报，
+            // 在公网隧道 ~600ms RTT 内会以为按钮没响应再点一遍（leavingScreenRef
+            // 兜底吞掉同帧重复，但 SR 体感仍是"按钮没动"）。role="status" +
+            // aria-live="polite" 让"通话结束中..." 被 SR 朗读但不抢断当前播报。
+            <MobileCallNotice role="status" aria-live="polite" tone="info">
               {t(msg`通话结束中...`)}
             </MobileCallNotice>
           ) : null}

@@ -1553,6 +1553,15 @@ export function GroupChatThreadPanel({
         isDesktop ? (
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3">
             <InlineNotice
+              // 新会话走查 R3：routeContextNotice 是用户从群语音/视频通话页返回
+              // 群聊页时展示的过渡反馈，描述 "本轮群语音通话已结束。你可以继续
+              // 在群里输入，也可以切回语音发送"+ "发语音继续"按钮。盲人 SR
+              // 之前完全听不到这条 description，从 call screen 返回直接落到
+              // 安静的群聊页，不知道有"继续语音/继续打字"的快捷动作。
+              // role="status" + aria-live="polite" 让 SR 朗读 description，
+              // 不抢断当前播报。
+              role="status"
+              aria-live="polite"
               tone="info"
               className="border-[color:var(--border-faint)] bg-white"
             >
@@ -1586,7 +1595,16 @@ export function GroupChatThreadPanel({
           </div>
         ) : (
           <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1">
-            <div className="rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 shadow-none">
+            {/* 新会话走查 R3：和上方 desktop 分支 routeContextNotice 同款 a11y
+                修法——mobile 这条裸 div + raw rounded box 完全没 role/aria-live。
+                从 call screen 返回的盲人 SR 用户听不到任何"通话已结束 / 继续语音"
+                提示。挂 role="status" + aria-live="polite" 让 description 被 SR
+                朗读但不抢断当前播报。 */}
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 shadow-none"
+            >
               <div className="text-[10px] leading-4 text-[#166534]">
                 {routeContextNotice.description}
               </div>
