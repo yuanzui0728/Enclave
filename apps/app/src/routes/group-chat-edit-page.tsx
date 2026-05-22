@@ -473,12 +473,27 @@ function MobileGroupChatEditPage({
                 // 已有的 enterKeyHint=done 口径对齐——Enter 直接触发 handleSave，
                 // 不破 disabled 兜底（handleSave 里有 submitDisabled / 双击锁
                 // 守护）。enterKeyHint=done 让软键盘 Return 键长得像"完成"。
+                // 走查移动端群聊 R1：原版 Enter 提交没拦 IME composing，CJK
+                // 用户用拼音/五笔/Wubi 在候选词列表里按 Enter 确认候选词时，
+                // 我们 preventDefault + handleSave 会把"确认候选词"误吞成
+                // "提交群名/昵称"——输入半截就被保存了，剩下的拼音串当成被
+                // 取消的候选词丢失。和姊妹路径 profile-info-name-page R(...)、
+                // checkout-contact-dialog R5 同款修法：`event.nativeEvent.isComposing`
+                // 或 keyCode===229 任一为真都视为 IME 进行中，跳过提交让 IME
+                // 自己接管 Enter。
                 enterKeyHint="done"
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    handleSave();
+                  if (event.key !== "Enter" || event.shiftKey) {
+                    return;
                   }
+                  if (
+                    event.nativeEvent.isComposing ||
+                    event.nativeEvent.keyCode === 229
+                  ) {
+                    return;
+                  }
+                  event.preventDefault();
+                  handleSave();
                 }}
                 className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
