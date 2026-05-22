@@ -283,6 +283,11 @@ function PasswordField({
       />
       <button
         type="button"
+        // onMouseDown.preventDefault 阻止 button 抢焦点：原本切换显示密码后
+        // document.activeElement 会跳到 button，移动端键盘随之被收起，用户得
+        // 再点输入框才能继续敲。preventDefault 让 click 仍然触发但焦点留在
+        // input 上（也保住 IME / caret position）。
+        onMouseDown={(event) => event.preventDefault()}
         onClick={() => setRevealed((value) => !value)}
         aria-label={revealed ? hideLabel : showLabel}
         aria-pressed={revealed}
