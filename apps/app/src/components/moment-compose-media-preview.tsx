@@ -141,7 +141,14 @@ export function MomentComposeMediaPreview({
             />
           </div>
           <div className="text-[12px] text-[color:var(--text-muted)]">
-            {t(msg`已生成视频封面，发布后会按视频卡片展示。`)}
+            {/* 走查第 N 轮 R2：buildMomentVideoPoster 内部 try/catch 失败会返回 null
+                （codec 解码不支持 / canvas toBlob 拒掉 / 超时等），此时 posterPreviewUrl
+                是 null，UI 回退用 <video preload="metadata"> 抓首帧渲染。原版文案永远
+                写"已生成视频封面"是误导——封面失败时仍然这么说，跟实情不符。按
+                posterPreviewUrl 真实状态切提示。*/}
+            {videoDraft.posterPreviewUrl
+              ? t(msg`已生成视频封面，发布后会按视频卡片展示。`)
+              : t(msg`未能生成视频封面，发布后会用首帧兜底。`)}
           </div>
         </div>
         {showVideoViewer ? (
