@@ -595,14 +595,28 @@ export function MomentsPage() {
       // 用户双击「重试点赞」会同帧 2 次 mutate → 2 个 POST /like → toggle 多翻
       // 一轮（点赞失败语义被"重试两次"翻成"再次取消"）；和上方 onLike inflight
       // ref 守卫不一致。用同一把 likeInflightRef 兜住，retry 也走 onSettled 释放。
+      //
+      // 走查移动端朋友圈/新一轮 R1（防御）：和 discover-feed-page commit c4730200a
+      // 同模板——理论上 tanstack/query v5 `mutate()` 不会同步 throw，但万一未来
+      // 重构 / wrapper 引入同步抛错，ref 已经在第 599-600 行被同步翻 true，throw
+      // 跳过 onSettled 注册，likeInflightRef[momentId] 永远卡 true。后果：用户
+      // 后续在同条 moment 上点心 (line 2202)、双击点心 (wechat-moment-card 双击)、
+      // bubble 里点赞 (action bubble) 全被 ref guard 早返"假死"，只能整页刷新。
+      // 同一把 ref 跨 6 处共用，任一入口的同步抛锁住所有入口。try-catch 兜底释放
+      // 再重抛，错误仍能冒到 error boundary 但 ref 不会卡住。
       setNoticeAction(() => () => {
         if (likeInflightRef.current[momentId]) return;
         likeInflightRef.current[momentId] = true;
-        likeMutation.mutate(momentId, {
-          onSettled: () => {
-            delete likeInflightRef.current[momentId];
-          },
-        });
+        try {
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        } catch (mutateError) {
+          delete likeInflightRef.current[momentId];
+          throw mutateError;
+        }
       });
       setNotice(
         // 走查 R2：之前直拼 error.message 等于把 server 的 legacyMessage（始终
@@ -1017,14 +1031,24 @@ export function MomentsPage() {
       // 同 like retry 走 deleteInflightRef 兜双击，否则双击「重试删除」会
       // 触发 2 个 DELETE /api/moments/{id}（第二次会被 server 404 但仍付 RTT
       // + 弹一条新红条覆盖原 retry 结果，体感"刚点了一下又冒出另一个错误"）。
+      //
+      // 走查移动端朋友圈/新一轮 R1（防御）：跟 likeMutation onError retry 同款 try-
+      // catch 兜底——理论上 deleteMutation.mutate() 不会同步 throw，但同一把
+      // deleteInflightRef 还被电脑端行 1819 和「重试删除」二次入口共用。任一入口
+      // 同步抛错会把 ref 卡 true → 用户对该 moment 的删除全死锁。
       setNoticeAction(() => () => {
         if (deleteInflightRef.current[momentId]) return;
         deleteInflightRef.current[momentId] = true;
-        deleteMutation.mutate(momentId, {
-          onSettled: () => {
-            delete deleteInflightRef.current[momentId];
-          },
-        });
+        try {
+          deleteMutation.mutate(momentId, {
+            onSettled: () => {
+              delete deleteInflightRef.current[momentId];
+            },
+          });
+        } catch (mutateError) {
+          delete deleteInflightRef.current[momentId];
+          throw mutateError;
+        }
       });
       setNotice(
         // 走查 R2 同 like/comment：err 是 AppError 时优先走 translateAppErrorCode
