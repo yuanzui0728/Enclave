@@ -351,7 +351,6 @@ export function CharacterDetailPage() {
     hasInboundFriendRequest || hasOutboundFriendRequest;
   const unsetLabel = t(msg`未设置`);
   const worldContactLabel = t(msg`世界联系人`);
-  const worldRoleLabel = t(msg`世界角色`);
   const friendInfoLabel = t(msg`朋友信息`);
   const detailInfoLabel = t(msg`详细资料`);
   const loadingFriendProfileLabel = t(msg`正在读取朋友资料...`);
@@ -1849,20 +1848,23 @@ export function CharacterDetailPage() {
                   >
                     {t(msg`隐界号：${buildYinjieId(character.id)}`)}
                   </div>
-                  <div
-                    className={cn(
-                      "mt-1 text-[color:var(--text-muted)]",
-                      isDesktopLayout ? "text-sm" : "text-[12px]",
-                    )}
-                  >
-                    {isFriend
-                      ? t(
-                          msg`地区：${friendship?.region?.trim() || character?.region?.trim() || unsetLabel}`,
-                        )
-                      : t(
-                          msg`身份：${character.relationship || worldRoleLabel}`,
-                        )}
-                  </div>
+                  {/* 走查 2026-05-22：非好友状态下这行原本渲染「身份：${relationship
+                      || worldRoleLabel}」，但上一行 subtitle 已经把 relationship /
+                      worldContactLabel 整段拿去当副标题用了——同一条文案在头卡里
+                      连写两遍只是多加一个「身份：」前缀。和上面副标题的 fallback
+                      保持互斥：只在好友态展示「地区：xxx」，非好友直接省掉这行。 */}
+                  {isFriend ? (
+                    <div
+                      className={cn(
+                        "mt-1 text-[color:var(--text-muted)]",
+                        isDesktopLayout ? "text-sm" : "text-[12px]",
+                      )}
+                    >
+                      {t(
+                        msg`地区：${friendship?.region?.trim() || character?.region?.trim() || unsetLabel}`,
+                      )}
+                    </div>
+                  ) : null}
                 </div>
                 <AvatarChip
                   name={character.name}
