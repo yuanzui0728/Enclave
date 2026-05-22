@@ -501,8 +501,15 @@ export function MobileFeedPublishPage() {
         {composeDraft.mediaError ||
         (createMutation.isError && createMutation.error instanceof Error) ? (
           <InlineNotice
-            tone="info"
-            className="rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[12px] shadow-none"
+            // 走查新一轮 R1：跟 mobile-moments-publish-page R3 对齐——这条 notice 显
+            // 示的是错误信息（mediaError / publish failure），原 tone="info" 用蓝色
+            // 提示样式，语义错位（错误用 info 看着像中性提示）、视觉无法吸引注意
+            // （蓝色不如红色显眼），SR 用户也错过。换 danger tone + role="alert"，
+            // 让 assertive 立即朗读，用户按"发表"后 5s 无响应、textarea 又锁了
+            // readOnly 时不会完全不知道为啥失败。
+            tone="danger"
+            role="alert"
+            className="rounded-[16px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[12px] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">
