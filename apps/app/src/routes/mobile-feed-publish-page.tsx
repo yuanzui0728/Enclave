@@ -680,6 +680,14 @@ export function MobileFeedPublishPage() {
                   onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
                   onRemoveVideo={() => composeDraft.clearVideoDraft()}
                   variant="mobile"
+                  // 走查 Round 3：publish 飞行期间禁掉 X 移除按钮。否则用户在
+                  // isPending 5s 慢请求里点 X 拔掉一张图，composeDraft.imageDrafts
+                  // 引用变 → onSuccess 的 draftStillMatchesPublish 比对假成 false
+                  // → 跳过 reset+navigate，用户卡在 publish 页没有任何反馈（textarea
+                  // 已 readOnly + 媒体没了 + 没回到广场），但服务端实际已按原始
+                  // imageDrafts 入库了 9 张图，用户记忆与广场现实错位。textarea
+                  // 已 readOnly、+ 按钮已 disabled，这条是漏的最后一个入口。
+                  removalDisabled={createMutation.isPending}
                 />
               </div>
             ) : null}

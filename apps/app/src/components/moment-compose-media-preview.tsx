@@ -18,6 +18,13 @@ type MomentComposeMediaPreviewProps = {
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   variant?: "desktop" | "mobile";
+  // 走查移动端发现-发布广场动态 Round 3：publish 飞行期间 X 按钮必须禁用，否则
+  // 用户点 X 把图片/视频从 draft 里抠掉 → composeDraft.imageDrafts/videoDraft
+  // 引用变 → onSuccess 的 `draftStillMatchesPublish` reference compare 假成
+  // false → 跳过 reset+navigate，用户卡在 publish 页面没有任何反馈（textarea
+  // readOnly + 媒体没了 + 没回到广场），但服务端实际已经按原始 draft 入库了。
+  // 文本 textarea 已经 readOnly、+ 加号按钮已 disabled，唯独 X 是漏的。
+  removalDisabled?: boolean;
 };
 
 export function MomentComposeMediaPreview({
@@ -26,6 +33,7 @@ export function MomentComposeMediaPreview({
   onRemoveImage,
   onRemoveVideo,
   variant = "desktop",
+  removalDisabled = false,
 }: MomentComposeMediaPreviewProps) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [showVideoViewer, setShowVideoViewer] = useState(false);
@@ -139,6 +147,7 @@ export function MomentComposeMediaPreview({
             <RemoveDraftButton
               ariaLabel={t(msg`移除当前视频`)}
               onClick={onRemoveVideo}
+              disabled={removalDisabled}
             />
           </div>
           <div className="text-[12px] text-[color:var(--text-muted)]">
@@ -214,6 +223,7 @@ export function MomentComposeMediaPreview({
               <RemoveDraftButton
                 ariaLabel={t(msg`移除图片 ${draft.file.name || ""}`)}
                 onClick={() => onRemoveImage(draft.id)}
+                disabled={removalDisabled}
               />
             </div>
           ))}
@@ -246,19 +256,28 @@ export function MomentComposeMediaPreview({
 function RemoveDraftButton({
   ariaLabel,
   onClick,
+  disabled = false,
 }: {
   ariaLabel: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={(event) => {
         event.stopPropagation();
+        if (disabled) return;
         onClick();
       }}
       aria-label={ariaLabel}
-      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/58 text-white transition hover:bg-black/72"
+      disabled={disabled}
+      className={cn(
+        "absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-white transition",
+        disabled
+          ? "bg-black/30 cursor-not-allowed"
+          : "bg-black/58 hover:bg-black/72",
+      )}
     >
       <X size={14} />
     </button>
