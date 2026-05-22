@@ -287,7 +287,12 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="primary"
-                    className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                    // 走查新 R3：之前只 hover:bg-，移动端 tap 时没视觉按压反馈
+                    // —— 用户敲一下「复制链接」没动静再敲一次就发了 2 次 handleCopy
+                    // → toast 闪 2 帧（feedback 自清 timer 互踩）+ writeClipboardText
+                    // bridge 也跑 2 次。给 active:bg-[#069750] 比 hover 更深一档的绿
+                    // 让按下瞬间能看到颜色变化，跟 wechat 的"复制成功"按钮按压反馈一致。
+                    className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56] active:bg-[#069750]"
                     onClick={() =>
                       void handleCopy(shareUrl, t(msg`已复制邀请链接。`))
                     }
@@ -701,7 +706,9 @@ export function ProfileSubscriptionPage() {
                       </div>
                       <Button
                         variant="primary"
-                        className="mt-3 rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                        // 走查新 R3：「联系开通」按钮 mobile tap 没按压反馈 ——
+                        // 给 active:bg- 比 hover 更深一档的绿；同 R3 上方「复制链接」修法。
+                        className="mt-3 rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56] active:bg-[#069750]"
                         disabled={checkoutMutation.isPending}
                         onClick={() => {
                           if (checkoutInFlightRef.current) return;
