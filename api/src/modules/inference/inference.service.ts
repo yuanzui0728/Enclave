@@ -335,6 +335,45 @@ export class InferenceService implements OnModuleInit {
         `Failed to auto-install vendor-family personas: ${extractErrorMessage(error)}`,
       );
     }
+    // 2026-05-22: 启动后异步补跑从未录入 snapshot 的 capability，避免新 world child
+    // 或首次升级后 voice-call 页面三行长期挂"Real diagnostics have not run yet"。
+    // 不阻塞 boot；已有 result 的 capability（不论 ok/failed/unavailable）一律不重跑，
+    // 防止每次重启烧 provider token。
+    void this.autoRunMissingDiagnostics();
+  }
+
+  private async autoRunMissingDiagnostics() {
+    try {
+      const existing = await this.getLatestDiagnosticSnapshot();
+      const known = new Set(
+        (existing?.results ?? []).map((result) => result.capability),
+      );
+      const missing = DIAGNOSTIC_CAPABILITIES.filter(
+        (capability) => !known.has(capability),
+      );
+      if (missing.length === 0) {
+        return;
+      }
+      this.logger.log(
+        `Auto-running ${missing.length} pending inference diagnostics: ${missing.join(', ')}`,
+      );
+      for (const capability of missing) {
+        try {
+          const result = await this.runDiagnostic(capability, {});
+          this.logger.log(
+            `Auto-diagnostic ${capability} → ${result.status}${result.real ? ' (real)' : ''}`,
+          );
+        } catch (error) {
+          this.logger.warn(
+            `Auto-diagnostic ${capability} threw: ${extractErrorMessage(error)}`,
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Auto-diagnostic bootstrap failed: ${extractErrorMessage(error)}`,
+      );
+    }
   }
 
   private encodeSecret(value?: string | null) {
