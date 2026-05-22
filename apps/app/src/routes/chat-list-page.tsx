@@ -728,8 +728,24 @@ function MobileChatListPage() {
             ? data.filter((item) => item.id !== entry.conversationId)
             : data,
       );
-      pendingHideRef.current = null;
-      setPendingHideConversation(null);
+      // 走查新一轮 R5：rapid A→B 删除——handleScheduleHideConversation 删 B 时
+      // 把 A 的 commit fire-and-forget 调度出去；A 的 commit 在 await cancelQueries
+      // 那个 microtask 边界 yields，handler 继续往下 pendingHideRef.current = B
+      // / setPendingHide(B) / setTimeout(B) 全跑完，然后 A 的 commit 再回来把
+      // 自己进入 if 判定时还指向 A 的 pendingHideRef.current 无脑 = null。结果
+      //   · B 的 pendingHide state 被同步清空（顶部 5s 撤销条没了）
+      //   · pendingHideRef.current = null 让 5s 后 B 的 setTimeout 走 early
+      //     return（latestPending = null → 不 commit）
+      //   · B 没有被 hide 到 server，cache 又因为 invalidate 重新加回 B；用户
+      //     看到 B 还在列表里，且没有任何 toast / undo 入口提示「上一次删除
+      //     失败/被跳过」
+      // 再 check 一次：只有 ref 还指向同一条 entry 时才清。typical "B 在 await
+      // 期间已经被新 pending 顶掉" → 跳过；A 仍按常规走 persistHiddenConversation
+      // 落库，B 的 5s 撤销 / 落库由它自己的 timer 接管。
+      if (pendingHideRef.current?.conversationId === entry.conversationId) {
+        pendingHideRef.current = null;
+        setPendingHideConversation(null);
+      }
     }
 
     await persistHiddenConversation(entry, showSuccessNotice);
