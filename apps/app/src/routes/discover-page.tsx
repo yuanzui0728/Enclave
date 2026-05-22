@@ -25,6 +25,7 @@ import {
   Gamepad2,
   Heart,
   ImagePlus,
+  MapPin,
   Newspaper,
   PlaySquare,
   Sparkles,
@@ -144,8 +145,8 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "scene",
     label: msg`场景相遇`,
-    badge: msg`地点`,
-    icon: Sparkles,
+    badge: msg`场景`,
+    icon: MapPin,
     iconClassName: "bg-[linear-gradient(135deg,#16a34a,#0f766e)] text-white",
     to: "/discover/scene",
     buildHash: ({ hash, pathname }) =>
