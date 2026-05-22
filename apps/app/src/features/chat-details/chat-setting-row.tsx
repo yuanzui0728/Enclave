@@ -28,22 +28,38 @@ export function ChatSettingRow({
   const isSwitch = typeof checked === "boolean" && Boolean(onToggle);
   const interactive = isSwitch || Boolean(onClick);
   const isWechat = variant === "wechat";
+  // 走查移动端群聊 R2：原版无论是否 interactive 都渲 `<button>`，纯展示行
+  // （群详情页「群主」label + ownerDisplayName value 这种没 onClick / onToggle
+  // 的行）也是个可聚焦 button——VoiceOver / TalkBack 在群详情里 swipe 滑过会
+  // 落到这条上读出 "群主，名字，按钮"，盲人用户按 Enter 期待跳转，结果 onClick
+  // handler 整段早返，空响应；同时 group-chat-edit-page 现在标题下方读出来也
+  // 是 "群主，按钮" 一连串多余的可点提示，把真正能进二级页的"群聊名称/群公
+  // 告/查找聊天记录/聊天背景/我在本群的昵称"按钮淹没。non-interactive 时直接
+  // 渲 `<div>` 不挂语义，配合 ChevronRight 在 !interactive 已经隐藏（line ~100）
+  // 跟视觉 cue 一致；switch/clickable 仍走 button 保留键盘 Enter/Space 触发。
+  const Tag = interactive ? "button" : ("div" as const);
+  const interactiveButtonProps = interactive
+    ? {
+        type: "button" as const,
+        onClick: () => {
+          if (disabled) {
+            return;
+          }
+          if (isSwitch) {
+            onToggle?.(!checked);
+            return;
+          }
+          onClick?.();
+        },
+        role: isSwitch ? "switch" : undefined,
+        "aria-checked": isSwitch ? checked : undefined,
+        "aria-disabled": disabled,
+      }
+    : {};
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        if (disabled) {
-          return;
-        }
-        if (isSwitch) {
-          onToggle?.(!checked);
-          return;
-        }
-        if (interactive) {
-          onClick?.();
-        }
-      }}
+    <Tag
+      {...interactiveButtonProps}
       className={cn(
         "flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left",
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
@@ -57,9 +73,6 @@ export function ChatSettingRow({
           ),
         className,
       )}
-      role={isSwitch ? "switch" : undefined}
-      aria-checked={isSwitch ? checked : undefined}
-      aria-disabled={disabled}
     >
       <span className={cn("text-[16px]", isWechat && "text-[14px] text-[#111827]")}>
         {label}
@@ -107,6 +120,6 @@ export function ChatSettingRow({
           />
         )}
       </span>
-    </button>
+    </Tag>
   );
 }
