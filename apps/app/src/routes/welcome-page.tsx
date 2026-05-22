@@ -1347,11 +1347,14 @@ export function WelcomePage() {
         setCloudAccessToken("");
         setCloudAccessSessionId(null);
         setConnectedAccessSessionId(null);
+        // 保留 phone/email：用户下一轮 verify 不用再敲一遍身份；只清 token
+        // 跟 profile（profile 是 cloud-api 给的资料快照，token 失效后再用就
+        // 没意义）。
         saveCloudSession({
           accessToken: null,
           expiresAt: null,
-          phone: null,
-          email: null,
+          phone: savedCloudPhone,
+          email: savedCloudEmail,
           profile: null,
         });
       }
