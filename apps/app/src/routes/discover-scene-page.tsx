@@ -224,11 +224,20 @@ function MobileDiscoverScenePage() {
     // 等下方"正在前往健身房…"按钮 spinner 一起出现，用户分不清新一次是
     // 真的在跑还是已经回来了；并且如果新这次后续 onError，错误条目会
     // 叠在旧成功条目之下，UI 一团乱。
+    // 走查 R6：把 capturedBaseUrl 也通过 mutation context 带到 onError，跟
+    // onSuccess 的 R2-Round2 守门对齐——否则 AI await 期间切 world，旧 world
+    // 的 SOCIAL_SCENE_COOLDOWN 错误会在新 world 把 cooldownUntil 顶到
+    // Date.now()+2.5s，让新 world 第一次就背着一条幽灵冷却 ban。
     onMutate: () => {
       setMessage(""); // i18n-ignore-line: clearing state
       setLastRequestId(null);
+      return { capturedBaseUrl: baseUrl };
     },
-    onError: (error) => {
+    onError: (error, _scene, context) => {
+      if (context?.capturedBaseUrl !== baseUrl) {
+        // 走查 R6：旧 world 的错误已经跟当前这一屏没关系了，丢掉避免污染。
+        return;
+      }
       // 走查 R1-Round1：server 端 SOCIAL_SCENE_COOLDOWN（1.5s 间隔）和客户端
       // 2.5s cooldown 不对齐：服务端先于客户端给出 cooldown（用户跨设备 / 跨
       // 标签页 / 客户端时钟回拨），grid 不灰，用户继续点 → 每次都是 429。
