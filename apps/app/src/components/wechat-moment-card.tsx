@@ -176,7 +176,12 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       const existing = narrationAudioRef.current;
       if (narrationUrl && existing) {
         if (existing.paused) {
-          void existing.play();
+          // 走查 R4：play() 返回 promise，iOS / autoplay policy 受限时会 reject
+          // —— 之前裸 `void existing.play()` 让拒绝走 unhandled rejection，dev
+          // 控制台一条 warning，生产 Sentry 也会上报。和 line 216 的 catch 同模板。
+          existing.play().catch(() => {
+            // 静默；native controls 仍可见，用户可以从那里再点 play。
+          });
         } else {
           existing.pause();
         }
