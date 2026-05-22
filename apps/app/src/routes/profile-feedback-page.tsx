@@ -53,12 +53,66 @@ export function ProfileFeedbackPage() {
   const cloudPhone = useCloudSessionStore((state) => state.phone);
   const cloudEmail = useCloudSessionStore((state) => state.email);
 
-  const [category, setCategory] = useState<CloudFeedbackCategory>("bug");
-  const [title, setTitle] = useState("");
-  const [detail, setDetail] = useState("");
+  // 走查新一轮 R1（移动端我-tab 端到端 2026-05-22）：feedback 表单输到一半切走
+  // 再回来 title/detail 全丢 —— 用户写长篇反馈（detail 上限 4000 字）时误触
+  // 离开（如点底部 tab / Android Back 误关）就重写一遍。用 sessionStorage 草稿
+  // 化：mount 时读回上次 draft，每次 onChange 同步写回；handleSubmit 成功后
+  // 清掉。category 也一起存（用户挑过的 category 也是输入态）。
+  // session 而非 localStorage：feedback 是短期 transient，关 tab 后丢 OK；
+  // 且不跨用户共享（多账号切来切去时不要把 A 的反馈草稿误塞给 B 看）。
+  const DRAFT_STORAGE_KEY = "yinjie-feedback-draft-mobile-v1";
+  const initialDraft = (() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed !== "object" || !parsed) return null;
+      return {
+        category:
+          typeof parsed.category === "string"
+            ? (parsed.category as CloudFeedbackCategory)
+            : "bug",
+        title: typeof parsed.title === "string" ? parsed.title : "",
+        detail: typeof parsed.detail === "string" ? parsed.detail : "",
+      };
+    } catch {
+      return null;
+    }
+  })();
+  const [category, setCategory] = useState<CloudFeedbackCategory>(
+    initialDraft?.category ?? "bug",
+  );
+  const [title, setTitle] = useState(initialDraft?.title ?? "");
+  const [detail, setDetail] = useState(initialDraft?.detail ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const navTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 任意 input 变化时同步 draft 进 sessionStorage —— 切走 unmount 后再回来
+  // 也能读回。category + title + detail 三态合一对象，避免 3 个分别 set 引发
+  // 3 次写。debounce 不必要：sessionStorage 写本机几乎免费 (< 1ms / op)。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // title/detail 都空 + category=默认时不写 storage —— 用户没真动过的初始态
+    // 不污染 storage，下次进来仍走 "" 初值。
+    if (!title && !detail && category === "bug") {
+      try {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        /* noop */
+      }
+      return;
+    }
+    try {
+      sessionStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({ category, title, detail }),
+      );
+    } catch {
+      /* quota/serialize fail 静默忽略，下次切回来变空表单是 graceful degrade */
+    }
+  }, [category, title, detail]);
   // 新走查 R1：submitting state 同帧双击有 propagation gap—两个 click 闭包都
   // 读到 submitting=false 时都过门，POST /cloud/feedback 重复 2 次。和
   // account-security-panel.tsx changeInFlightRef 同款 sync ref 守卫。
@@ -145,6 +199,14 @@ export function ProfileFeedbackPage() {
       );
       setTitle("");
       setDetail("");
+      setCategory("bug");
+      // 走查新一轮 R1：成功后清掉 sessionStorage 草稿 —— 否则下次用户进 feedback
+      // 页又会看到刚提交过的草稿，以为没提交成功又重复发一次。
+      try {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        /* noop */
+      }
       setNotice({
         tone: "success",
         message: t(msg`反馈已提交，感谢你的支持`),
