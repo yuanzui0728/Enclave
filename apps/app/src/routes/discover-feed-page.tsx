@@ -2754,9 +2754,16 @@ export function DiscoverFeedPage() {
             </>
           ) : null}
 
-          {!feedQuery.isLoading &&
-          !feedQuery.isError &&
-          !visiblePosts.length ? (
+          {/* 新一轮走查 R2：原来外层 gate 是 `!isLoading && !isError && !visiblePosts.length`，
+              `!isError` 跟"还没有新动态"那条 fallback 是配套的（错误时别强行显示"还没有新动态"
+              干扰用户判断），但同时把"全被你屏蔽 + 后台 refetch 失败"这条路径也吞掉了：
+              cache 已经有数据（feedPosts > 0），用户屏蔽了所有作者（visiblePosts=0），
+              此时 react-query 后台 staleTime 过期再去 refetch 一次撞 5xx → feedQuery.isError=
+              true。整张页面 danger card 因 feedPosts.length>0 被跳过，empty 卡又被 !isError
+              整片跳过，processedPosts 渲 0 条；顶栏底下完全空白，用户视感"广场坏了"——其实
+              数据还在，只是被自己屏蔽了。把 `!isError` 下沉到 "完全无数据" 那条 fallback 里，
+              "全被屏蔽" 系列 empty 卡跟 isError 解耦。 */}
+          {!feedQuery.isLoading && !visiblePosts.length ? (
             feedPosts.length > 0 ? (
               // 后端给了 N 条 post 但全是被屏蔽的角色：旧逻辑统一显示「还没有
               // 新动态 → 你先发一条」，把"被你自己屏蔽掉了"包装成"广场空"，
@@ -2821,7 +2828,10 @@ export function DiscoverFeedPage() {
                   }
                 />
               )
-            ) : (
+            ) : !feedQuery.isError ? (
+              // "完全无数据 + 非错误" 才推 "还没有新动态" — feedQuery.isError 且
+              // feedPosts.length===0 的场景已经由顶上 L2288 的 danger 卡承接，
+              // 这里再渲一份就重复露出，所以仅在 !isError 时填这条 fallback。
               <MobileFeedStatusCard
                 badge={t(msg`广场`)}
                 title={t(msg`还没有新动态`)}
@@ -2839,7 +2849,7 @@ export function DiscoverFeedPage() {
                   </Button>
                 }
               />
-            )
+            ) : null
           ) : null}
         </section>
       </div>
