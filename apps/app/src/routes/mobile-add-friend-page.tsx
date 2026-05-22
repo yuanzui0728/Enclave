@@ -13,6 +13,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CheckCircle2,
+  Clock3,
   MessageCircleMore,
   Search,
   ShieldBan,
@@ -49,6 +50,13 @@ import {
   type AddFriendRelationshipState,
   type AddFriendSearchResult,
 } from "../features/contacts/add-friend-search";
+import {
+  clearAddFriendSearchHistory,
+  loadAddFriendSearchHistory,
+  pushAddFriendSearchHistory,
+  removeAddFriendSearchHistory,
+  type AddFriendSearchHistoryItem,
+} from "../features/contacts/add-friend-search-history";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import {
   buildMobileAddFriendRouteHash,
@@ -140,6 +148,9 @@ function MobileAddFriend() {
   const [sendDialogCharacterId, setSendDialogCharacterId] = useState<
     string | null
   >(null);
+  const [searchHistory, setSearchHistory] = useState<
+    AddFriendSearchHistoryItem[]
+  >(() => loadAddFriendSearchHistory());
   const previousBaseUrlRef = useRef(baseUrl);
 
   // baseUrl 切换（切账号 / 切世界）后旧 character.id 在新世界里基本不存在：
@@ -383,6 +394,25 @@ function MobileAddFriend() {
     const next = keyword.trim();
     setSubmittedKeyword(next);
     setNotice(null);
+    // 只在用户主动提交（form submit / 取消按钮变身前的"搜索"按钮 / quickSearch
+    // chip）时记录；从 URL hash 还原 submittedKeyword 那一条 effect 不走这里，
+    // 避免用户从子页 back 回来又被记一遍。空 keyword 不入库（pushHelper 内部已挡）。
+    if (next) {
+      setSearchHistory(pushAddFriendSearchHistory(next));
+    }
+  }
+
+  function applyHistoryKeyword(keyword: string) {
+    setSearchText(keyword);
+    submitSearch(keyword);
+  }
+
+  function handleRemoveHistory(keyword: string) {
+    setSearchHistory(removeAddFriendSearchHistory(keyword));
+  }
+
+  function handleClearHistory() {
+    setSearchHistory(clearAddFriendSearchHistory());
   }
 
   function clearSearch() {
@@ -614,6 +644,10 @@ function MobileAddFriend() {
           </div>
         ) : !trimmedKeyword ? (
           <MobileAddFriendWelcomeState
+            history={searchHistory}
+            onApplyHistory={applyHistoryKeyword}
+            onRemoveHistory={handleRemoveHistory}
+            onClearHistory={handleClearHistory}
             onQuickSearch={(value) => {
               setSearchText(value);
               submitSearch(value);
@@ -684,8 +718,16 @@ function MobileAddFriend() {
 }
 
 function MobileAddFriendWelcomeState({
+  history,
+  onApplyHistory,
+  onClearHistory,
+  onRemoveHistory,
   onQuickSearch,
 }: {
+  history: AddFriendSearchHistoryItem[];
+  onApplyHistory: (keyword: string) => void;
+  onClearHistory: () => void;
+  onRemoveHistory: (keyword: string) => void;
   onQuickSearch: (keyword: string) => void;
 }) {
   const t = useRuntimeTranslator();
@@ -700,6 +742,8 @@ function MobileAddFriendWelcomeState({
   // （苏老师 + profile.relationship 含「老师」一片），导师 = 6 命中，复盘 =
   // 6 命中。隐界号格式提示由顶端 placeholder「隐界号 / 角色名」承担，不再
   // 硬编码 fake yinjie_ chip。
+  // 只在还没真历史时展示；用户搜过之后这些 example chip 会被"最近搜索"接管，
+  // 否则用户会一直以为"最近搜索"压根没起效（实际是被 example 占位掩盖了）。
   const examples = [
     t(msg`林`),
     t(msg`老师`),
@@ -718,18 +762,63 @@ function MobileAddFriendWelcomeState({
       <div className="mt-1.5 max-w-[280px] text-[12px] leading-5 text-[color:var(--text-muted)]">
         {t(msg`输入完整的隐界号能精确命中，也可以用角色名或资料关键词搜索。`)}
       </div>
-      <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-        {examples.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => onQuickSearch(item)}
-            className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_0_0_1px_rgba(15,23,42,0.06)] active:bg-[color:var(--surface-card-hover)]"
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      {history.length ? (
+        <div className="mt-5 w-full max-w-[320px] text-left">
+          <div className="flex items-center justify-between px-1">
+            <div className="text-[12px] font-medium text-[color:var(--text-muted)]">
+              {t(msg`最近搜索`)}
+            </div>
+            <button
+              type="button"
+              onClick={onClearHistory}
+              className="text-[11px] text-[color:var(--text-muted)] active:opacity-60"
+            >
+              {t(msg`清空`)}
+            </button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {history.map((item) => (
+              <div
+                key={item.keyword}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_0_0_1px_rgba(15,23,42,0.04)]"
+              >
+                <button
+                  type="button"
+                  onClick={() => onApplyHistory(item.keyword)}
+                  className="inline-flex min-w-0 items-center gap-1"
+                >
+                  <Clock3 size={12} className="shrink-0 text-[color:var(--text-dim)]" />
+                  {/* 关键词写得很长（隐界号 / 长角色名）时不截断会把 X 推下一行 pill 形变 */}
+                  <span className="max-w-[10rem] truncate" title={item.keyword}>
+                    {item.keyword}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemoveHistory(item.keyword)}
+                  className="-mr-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                  aria-label={t(msg`删除`)}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          {examples.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onQuickSearch(item)}
+              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_0_0_1px_rgba(15,23,42,0.06)] active:bg-[color:var(--surface-card-hover)]"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
