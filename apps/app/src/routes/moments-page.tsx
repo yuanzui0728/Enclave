@@ -2978,6 +2978,12 @@ function MobileMomentsInlineNotice({
   return (
     <InlineNotice
       tone={tone}
+      // 走查本轮 R1 (a11y)：之前 InlineNotice 无 role —— 点赞/评论/删除失败 / 下拉
+      // 刷新失败 / 朋友圈互动已更新这类反馈条 SR 用户完全错过；只能从「重试点赞」
+      // 按钮 focus 上推断"刚才出错了"。danger 用 role="alert"（assertive 立即朗读），
+      // success/info 用 status（polite 待空隙）。和 profile-moments-page R2 同模板，
+      // 跟群聊 R2/R3 InlineNotice 走 SR alert/status 同节奏。
+      role={tone === "danger" ? "alert" : "status"}
       className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
     >
       {action ? (

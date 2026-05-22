@@ -871,6 +871,11 @@ export function MobileFriendMomentsPage() {
             <div className="px-4 pt-3">
               <InlineNotice
                 tone={notice.tone}
+                // 走查本轮 R3 (a11y)：和 profile-moments / moments-page mobile 同模板 ——
+                // 之前 InlineNotice 无 role，点赞/评论/刷新失败这类反馈 SR 用户完全
+                // 错过。danger → alert（assertive 立即朗读），success/info → status
+                // （polite 待空隙）。
+                role={notice.tone === "danger" ? "alert" : "status"}
                 className="rounded-[8px] px-3 py-2 text-[12px] shadow-none"
               >
                 {notice.action && notice.actionLabel ? (

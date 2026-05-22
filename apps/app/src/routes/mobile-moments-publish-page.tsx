@@ -628,6 +628,10 @@ export function MobileMomentsPublishPage() {
           <div className="px-4 pt-3">
             <InlineNotice
               tone="danger"
+              // 走查本轮 R3 (a11y)：发布失败 / 媒体选择失败的反馈条 SR 用户错过 ——
+              // 用户按"发表"后 5s 无响应、textarea 又锁了 readOnly，错过红条等于
+              // 完全不知道为啥。挂 role="alert" 让 assertive 立即朗读。
+              role="alert"
               className="rounded-[8px] px-3 py-2 text-[12px] shadow-none"
             >
               {errorMessage}
