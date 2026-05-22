@@ -232,6 +232,11 @@ function MobileNoteEditor({
   // 已有笔记 + noteQuery 还没把 contentHtml 写进 editorState 前，把保存/发送
   // 屏蔽住。新建笔记不会走 noteQuery，进编辑器 → init effect 立刻 setReady。
   const isEditorReady = readyForSessionKey === sessionKey;
+  // 真正怕覆写的场景：已经认定有一条 noteId 的笔记在背后（server 上有这条
+  // record，editorState 现在却是 EMPTY）。新建笔记 / 直接打开 /notes/new
+  // 没 noteId，editorState 的"空"就是用户起步状态，allow save，让 createNote
+  // 正常落库。
+  const isExistingNoteNotReady = Boolean(selectedNoteId) && !isEditorReady;
 
   const currentSnapshot = useMemo(
     () => buildNoteSnapshot(editorState),
@@ -1292,7 +1297,8 @@ function MobileNoteEditor({
               disabled={
                 saveMutation.isPending ||
                 sendMutation.isPending ||
-                !isEditorReady
+                isExistingNoteNotReady ||
+                attachmentPending
               }
               className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-secondary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
               aria-label={t(msg`发送`)}
@@ -1304,7 +1310,17 @@ function MobileNoteEditor({
               variant="primary"
               size="sm"
               onClick={() => void handleSave()}
-              disabled={saveMutation.isPending || !isEditorReady}
+              // 走查 R2（新一轮）：附件上传期间保存会把 editorState 此刻的 *部分*
+              // assets 一起 push 到 server——editor DOM 里已经 insertHTML 进所有
+              // <img>/<a>，但 handleAttachmentSelection 收尾的 mergeNoteAssets +
+              // setEditorState 还没跑完，editorState.assets 只有上传完成那几条。
+              // payload 直接走，server 拿到的笔记缺一半 asset record，下次拉就少了。
+              // attachmentPending 期间一并 disable Save/Send。
+              disabled={
+                saveMutation.isPending ||
+                isExistingNoteNotReady ||
+                attachmentPending
+              }
               className="h-8 rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
             >
               <Save size={14} />
