@@ -745,10 +745,6 @@ function MobileAddFriend() {
             onApplyHistory={applyHistoryKeyword}
             onClearHistory={handleClearHistory}
             onRemoveHistory={handleRemoveHistory}
-            onQuickSearch={(value) => {
-              setSearchText(value);
-              submitSearch(value);
-            }}
           />
         ) : !searchResults.length ? (
           <MobileAddFriendNoResultsState keyword={trimmedKeyword} />
@@ -834,34 +830,13 @@ function MobileAddFriendWelcomeState({
   onApplyHistory,
   onClearHistory,
   onRemoveHistory,
-  onQuickSearch,
 }: {
   history: AddFriendSearchHistoryItem[];
   onApplyHistory: (keyword: string) => void;
   onClearHistory: () => void;
   onRemoveHistory: (keyword: string) => void;
-  onQuickSearch: (keyword: string) => void;
 }) {
   const t = useRuntimeTranslator();
-  // chip 必须是「真能搜的字符串」而不是描述用法的标签。原来用 ["角色名",
-  // "隐界号", "关系描述"]——点击就把这些 label 作为 keyword 提交，几乎永远
-  // 命中不到东西。第二轮换成 ["yinjie_1234abcd","白石","数字人","治愈系"]
-  // 依然全部命中 0：fake yinjie_ ID 必定不匹配，"白石/数字人/治愈系" 在当前
-  // 世界角色池里没有任何角色名 / 资料 / expertDomains 命中。点一下就直接
-  // 落到 "没有找到 X" 空态，比不放 chip 还误导用户。
-  // 改成默认 seed 角色池里高命中的关键词（角色名前缀 / 关系描述 / expert
-  // domain 都会命中）：林 = 13 命中（林佑/林医生/林晨…），老师 = 11 命中
-  // （苏老师 + profile.relationship 含「老师」一片），导师 = 6 命中，复盘 =
-  // 6 命中。隐界号格式提示由顶端 placeholder「隐界号 / 角色名」承担，不再
-  // 硬编码 fake yinjie_ chip。
-  // 只在还没真历史时展示；用户搜过之后这些 example chip 会被"最近搜索"接管，
-  // 否则用户会一直以为"最近搜索"压根没起效（实际是被 example 占位掩盖了）。
-  const examples = [
-    t(msg`林`),
-    t(msg`老师`),
-    t(msg`导师`),
-    t(msg`复盘`),
-  ];
 
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
@@ -892,16 +867,12 @@ function MobileAddFriendWelcomeState({
             {history.map((item) => (
               <div
                 key={item.keyword}
-                // 视觉只用 border，不再叠 shadow ring（叠双 1px 太重，跟 example
-                // chip 节奏对不上）。example chip 没有内部交互所以用 shadow 描边；
-                // history pill 内嵌 X 删除按钮，border 更适合表达"有结构的容器"。
                 className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
               >
                 <button
                   type="button"
                   onClick={() => onApplyHistory(item.keyword)}
-                  // active:opacity-70 给点按反馈：example chip 有
-                  // active:bg-[surface-card-hover]、X 按钮有 active:bg-black/5、
+                  // active:opacity-70 给点按反馈：X 按钮有 active:bg-black/5、
                   // 清空有 active:opacity-60；这个 keyword button 漏掉的话用户在
                   // iOS 上点了没任何视觉反应，像点了没用。不用 bg-hover 是因为
                   // 它跟外层 pill 已经是 bg-white，再叠 hover 会破坏 pill 整体
@@ -928,20 +899,7 @@ function MobileAddFriendWelcomeState({
             ))}
           </div>
         </div>
-      ) : (
-        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-          {examples.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onQuickSearch(item)}
-              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_0_0_1px_rgba(15,23,42,0.06)] active:bg-[color:var(--surface-card-hover)]"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
