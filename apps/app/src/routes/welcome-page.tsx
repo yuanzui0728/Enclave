@@ -325,7 +325,11 @@ function PasswordField({
         {...rest}
         ref={inputRef}
         type={revealed ? "text" : "password"}
-        className={`${className ?? ""} pr-12`.trim()}
+        // 走查 R3：眼睛按钮升到 h-11 w-11 (44px) 后，pr-12 (48px) 不够放——
+        // 按钮 right-2 + w-11 = 占 [W-52, W-8]，文字 padding-right 48 让 caret 能进到
+        // W-48，跟按钮 left=W-52 重叠 4px。改 pr-14 (56px) 让 caret 终点 W-56 与
+        // 按钮左缘 W-52 留 4px 间隙，长密码不会被眼睛挡住。
+        className={`${className ?? ""} pr-14`.trim()}
       />
       <button
         type="button"
@@ -347,7 +351,10 @@ function PasswordField({
         }}
         aria-label={revealed ? hideLabel : showLabel}
         aria-pressed={revealed}
-        className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[color:var(--text-muted)] transition-colors hover:bg-[color:var(--surface-input-hover,rgba(0,0,0,0.04))] hover:text-[color:var(--text-primary)]"
+        // 走查 R3：h-9 w-9 = 36×36px 低于 Apple HIG 44pt 触控目标。改成 44×44px
+        // (h-11 w-11)，确保移动端手指（尤其大拇指）容易点中；视觉上图标仍是 h-4 w-4，
+        // 不会因为按钮变大而显得突兀。
+        className="absolute right-2 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-[color:var(--text-muted)] transition-colors hover:bg-[color:var(--surface-input-hover,rgba(0,0,0,0.04))] hover:text-[color:var(--text-primary)]"
       >
         {revealed ? (
           <svg
@@ -1531,6 +1538,13 @@ export function WelcomePage() {
               variant={authMode === "register" ? "primary" : "ghost"}
               onClick={() => {
                 setAuthMode("register");
+                // 走查 R3：与 "使用密码登录" 强制把 authMode 拉回 login 对称——
+                // 注册路径上 UI 只支持验证码（没有"注册并设置密码"作为主流程，
+                // 选填密码是 code 路径下的附属字段）。如果用户先点"使用密码登录"
+                // 进入 password 方式，再点"注册" tab，旧逻辑下页面会保持 password
+                // 方式 + 注册按钮"注册并进入"，但提交时走的是 loginCloudWithPassword
+                // 并 track 成 login_success——按钮文案与实际行为完全对不上。
+                if (authMethod !== "code") setAuthMethod("code");
                 setEntryError("");
               }}
               size="md"
@@ -2127,6 +2141,13 @@ export function WelcomePage() {
             // 视觉靠 border / bg 区分，没 aria-pressed 的话 VoiceOver 只读"按钮 云世界"
             // 不带选中状态。
             aria-pressed={mode === "cloud"}
+            // 走查 R3：原来没显式 aria-label，VoiceOver 会把整个 button 的可见文本
+            // 念出来——也就是"云世界 通过邮箱登录。新用户会获得一个全新的世界，
+            // 老用户会唤醒自己已有的世界。"，盲读用户每次 Tab 焦点切到这一格都得听完
+            // 整段描述。显式 aria-label 只读"云世界"，描述靠 aria-describedby 关联，
+            // 屏幕阅读器只在用户主动停留时才念描述。
+            aria-label={t(msg`云世界`)}
+            aria-describedby="welcome-mode-cloud-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
                 ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
@@ -2136,7 +2157,10 @@ export function WelcomePage() {
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               {t(msg`云世界`)}
             </div>
-            <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+            <div
+              id="welcome-mode-cloud-desc"
+              className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]"
+            >
               {t(
                 msg`通过邮箱登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。`,
               )}
@@ -2147,6 +2171,8 @@ export function WelcomePage() {
             type="button"
             onClick={() => chooseMode("local")}
             aria-pressed={mode === "local"}
+            aria-label={t(msg`本地世界`)}
+            aria-describedby="welcome-mode-local-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
                 ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
@@ -2156,7 +2182,10 @@ export function WelcomePage() {
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               {t(msg`本地世界`)}
             </div>
-            <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+            <div
+              id="welcome-mode-local-desc"
+              className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]"
+            >
               {t(
                 msg`输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。`,
               )}
