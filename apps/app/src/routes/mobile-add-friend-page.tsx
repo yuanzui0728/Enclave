@@ -780,7 +780,10 @@ function MobileAddFriendWelcomeState({
             {history.map((item) => (
               <div
                 key={item.keyword}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_0_0_1px_rgba(15,23,42,0.04)]"
+                // 视觉只用 border，不再叠 shadow ring（叠双 1px 太重，跟 example
+                // chip 节奏对不上）。example chip 没有内部交互所以用 shadow 描边；
+                // history pill 内嵌 X 删除按钮，border 更适合表达"有结构的容器"。
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
               >
                 <button
                   type="button"
@@ -796,10 +799,12 @@ function MobileAddFriendWelcomeState({
                 <button
                   type="button"
                   onClick={() => onRemoveHistory(item.keyword)}
-                  className="-mr-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                  // 触控可用性：h-4 w-4 (16x16) 低于 24x24 下限，bump 到 h-5 w-5
+                  // (20x20) 跟顶部输入框清空 X 同尺寸。icon size 同步 11→13。
+                  className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
                   aria-label={t(msg`删除`)}
                 >
-                  <X size={11} />
+                  <X size={13} />
                 </button>
               </div>
             ))}

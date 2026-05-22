@@ -50,13 +50,23 @@ function write(history: AddFriendSearchHistoryItem[]) {
   if (!storage) {
     return history;
   }
-  if (history.length) {
-    storage.setItem(
-      ADD_FRIEND_SEARCH_HISTORY_STORAGE_KEY,
-      JSON.stringify(history),
-    );
-  } else {
-    storage.removeItem(ADD_FRIEND_SEARCH_HISTORY_STORAGE_KEY);
+  // 兜异常：iOS Safari 隐私模式 setItem 直接抛 SecurityError；
+  // 普通模式 localStorage 配额满（典型 5MB）setItem 抛 QuotaExceededError。
+  // 不抓的话用户搜一次 → submitSearch 调 push → write 抛 → page-level 没有
+  // ErrorBoundary 兜，整页白屏。read 端 parse 已经 try/catch 了，write 对称
+  // 也兜一下，让历史功能软退化为"this session only"，不影响搜索本身。
+  try {
+    if (history.length) {
+      storage.setItem(
+        ADD_FRIEND_SEARCH_HISTORY_STORAGE_KEY,
+        JSON.stringify(history),
+      );
+    } else {
+      storage.removeItem(ADD_FRIEND_SEARCH_HISTORY_STORAGE_KEY);
+    }
+  } catch {
+    // 静默失败：返回的 history 仍是新值，UI 内存里的 pill 会照常显示，只是
+    // 下次冷启动 reload 会丢；比让搜索流崩掉好。
   }
   return history;
 }
