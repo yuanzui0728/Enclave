@@ -9,7 +9,6 @@ import {
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { Copy, Share2 } from "lucide-react";
 import {
   clearGroupMessages,
   getGroup,
@@ -38,11 +37,8 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupInviteReturnSearch } from "../lib/group-invite-delivery";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
-import { buildPublicShareUrl } from "../lib/share-url";
-import { shareWithNativeShell } from "../runtime/mobile-bridge";
-import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 export function GroupChatDetailsPage() {
   const { groupId } = useParams({ from: "/group/$groupId/details" });
@@ -66,19 +62,11 @@ export function GroupChatDetailsPage() {
 
 function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const t = translateRuntimeMessage;
-  // 走查新一轮 R1：本文件 t = translateRuntimeMessage 是模块级 stable ref，
-  // 下方 groupSummary useMemo 把 t 列进 deps 但 locale 切换时 t 引用不变 →
-  // 用户切语言后，分享出去的标题/正文仍是切换前的旧 locale（实测 zh→en 切换
-  // 后点"分享群聊"，复制出来的还是中文"XX 群聊 / N 人群聊"）。和本文件 R3
-  // 修过的 addMemberLabel/removeMemberLabel 提到外面同口径——把 locale 拉进
-  // useMemo deps，让 share summary 跟随当前语言重算。
-  const { locale } = useAppLocale();
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const routeState = useMemo(() => parseMobileGroupRouteState(hash), [hash]);
   const safeReturnPath =
     routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
@@ -489,101 +477,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   );
   const totalMemberCount = membersQuery.data?.length ?? 0;
   const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
-  // 走查新一轮 R1：原版只看 group 数据就拼分享文本，membersQuery 还在飞时
-  // totalMemberCount=0 → 分享出去的摘要写着 "${group.name} 群聊\n0 人群聊"。
-  // 慢网下 groupQuery 先回（毫秒级 cache 命中）但 membersQuery 还没回时
-  // 用户已经点"分享群聊"，对方收到的就是 "0 人群聊" 摘要。等 membersQuery
-  // 到达后再生成 share summary，rightActions 顶部那颗分享按钮自然也在
-  // groupSummary 没准备好时隐藏。
-  const groupSummary = useMemo(() => {
-    const group = groupQuery.data;
-    if (!group || !membersQuery.data) {
-      return null;
-    }
-
-    const groupPath = `/group/${groupId}`;
-    const groupUrl = buildPublicShareUrl(groupPath);
-
-    return {
-      title: t(msg`${group.name} 群聊`),
-      text: [
-        t(msg`${group.name} 群聊`),
-        t(msg`${membersQuery.data.length} 人群聊`),
-        groupUrl,
-      ].join("\n"),
-      url: groupUrl,
-    };
-    // locale 进 deps — t 是 stable ref，单独依赖 t 无法在切语言时触发重算。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId, groupQuery.data, locale, membersQuery.data]);
-
-  async function handleShareGroup() {
-    if (!groupSummary) {
-      return;
-    }
-
-    if (nativeMobileShareSupported) {
-      const shared = await shareWithNativeShell(groupSummary);
-
-      if (shared) {
-        showNotice(t(msg`已打开系统分享面板。`));
-        return;
-      }
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      showNotice(
-        nativeMobileShareSupported
-          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
-          : t(msg`当前环境暂不支持复制群聊摘要。`),
-        nativeMobileShareSupported
-          ? {
-              showBackAction: true,
-              actionLabel: t(msg`重试分享`),
-              onAction: () => {
-                void handleShareGroup();
-              },
-            }
-          : {
-              showBackAction: true,
-              actionLabel: t(msg`重试复制`),
-              onAction: () => {
-                void handleShareGroup();
-              },
-            },
-      );
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(groupSummary.text);
-      showNotice(
-        nativeMobileShareSupported
-          ? t(msg`系统分享暂时不可用，已复制群聊摘要。`)
-          : t(msg`群聊摘要已复制。`),
-      );
-    } catch {
-      showNotice(
-        nativeMobileShareSupported
-          ? t(msg`系统分享失败，请稍后重试。`)
-          : t(msg`复制群聊摘要失败，请稍后重试。`),
-        {
-          showBackAction: true,
-          actionLabel: nativeMobileShareSupported
-            ? t(msg`重试分享`)
-            : t(msg`重试复制`),
-          onAction: () => {
-            void handleShareGroup();
-          },
-        },
-      );
-    }
-  }
-
   // 把"添加"/"移除"这两条本地化标签提到 useMemo 外面算：本文件用的是
   // translateRuntimeMessage 直引用而不是 useRuntimeTranslator 钩子，所以
   // useMemo 的 deps 里加 t 也是 stable ref——locale 切换后 deps 不会变，
@@ -797,28 +690,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           `/group/${groupId}`,
         );
       }}
-      rightActions={
-        groupSummary ? (
-          <Button
-            type="button"
-            onClick={() => void handleShareGroup()}
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
-            aria-label={
-              nativeMobileShareSupported
-                ? t(msg`分享群聊`)
-                : t(msg`复制群聊摘要`)
-            }
-          >
-            {nativeMobileShareSupported ? (
-              <Share2 size={18} />
-            ) : (
-              <Copy size={18} />
-            )}
-          </Button>
-        ) : undefined
-      }
     >
       {groupQuery.isLoading || membersQuery.isLoading ? (
         <div className="px-2.5">
