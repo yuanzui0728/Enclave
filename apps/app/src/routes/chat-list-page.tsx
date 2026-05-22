@@ -948,13 +948,19 @@ function MobileChatListPage() {
     const anchor = scrollAnchorRef.current;
     if (!anchor) return;
 
+    // 走查 R4 新一轮：原 walk-up 同时要求 overflowY:auto/scroll **且**
+    // scrollHeight > clientHeight 才算「可挂监听器」。问题在于初次 mount 时
+    // 列表可能短到刚好不需要滚（10 条短文本 + 1 屏可显示完），匹配失败 →
+    // scrollEl=document.body → return → 永远不挂 listener。之后 socket 推
+    // 新会话把列表撑到溢出 viewport 时已经错过 effect 唯一一次执行机会
+    // （deps=[isConversationsListSettled] 不会因 conversations 引用变化重跑）。
+    // 改成只按「overflowY 是否 auto/scroll」当 scroll container 探针——
+    // mobile-shell 那一层 absolute inset-0 overflow-y-auto 永远成立；内部
+    // handleScroll 自己用 maxScroll<100 闸门跳过实际无内容可滚的 noise event。
     let scrollEl: HTMLElement | null = anchor.parentElement;
     while (scrollEl && scrollEl !== document.body) {
       const style = window.getComputedStyle(scrollEl);
-      if (
-        (style.overflowY === "auto" || style.overflowY === "scroll") &&
-        scrollEl.scrollHeight > scrollEl.clientHeight
-      ) {
+      if (style.overflowY === "auto" || style.overflowY === "scroll") {
         break;
       }
       scrollEl = scrollEl.parentElement;
