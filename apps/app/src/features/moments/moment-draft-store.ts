@@ -158,10 +158,7 @@ export async function clearMomentDraft(
 export async function clearAllMomentDrafts(): Promise<void> {
   if (hasIndexedDb()) {
     try {
-      await runTransaction(
-        "readwrite",
-        (store) => store.clear() as unknown as IDBRequest<undefined>,
-      );
+      await runTransaction("readwrite", (store) => store.clear());
     } catch {
       // 同 load/save/clear 路径：IDB 失败静默退化。clearUserScopedClientState
       // 的其他步骤已经把 runtime-config.apiBaseUrl 清掉，新账户登录拿到新
