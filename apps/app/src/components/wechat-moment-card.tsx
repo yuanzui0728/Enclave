@@ -302,6 +302,12 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                 aria-label={t(msg`更多操作`)}
                 className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
                 data-no-doubletap
+                // 走查移动端朋友圈/Round 3 R1：让 WeChatActionBubble 的 pointerdown
+                // capture handler 把这颗按钮排除掉，二次点 ⋯ 才能关菜单（否则
+                // pointerdown 关、click 又开，net effect 关不掉）。和 wechat-action-
+                // bubble.tsx 内 closest("[data-yj-bubble-anchor]") 联动；上层
+                // onOpenActionMenu 同时改成 toggle 才能完整闭合。
+                data-yj-bubble-anchor=""
               >
                 <MoreHorizontalDots />
               </button>

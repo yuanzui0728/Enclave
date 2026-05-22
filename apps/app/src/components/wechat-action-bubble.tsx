@@ -74,6 +74,19 @@ export function WeChatActionBubble({
       if (target && bubbleRef.current?.contains(target)) {
         return;
       }
+      // 走查移动端朋友圈/Round 3 R1：之前 pointerdown capture 一律 onClose，导致用户
+      // 二次点同一颗 ⋯ 按钮想关菜单时——pointerdown 先把气泡 setActionBubble(null)，
+      // 紧接着 click 跑 openMoreMenu 又 setActionBubble({...}) 把它再开起来，菜单关
+      // 不掉只能去点空白。这里把"⋯ 按钮"显式排除：anchor 按钮挂 data-yj-bubble-anchor
+      // 标记，pointerdown 落在 anchor 上时不主动 close，让上层 onOpenActionMenu 的
+      // toggle 函数式更新（current?.id === id ? null : {...}）来决定开/关。其它页面
+      // 没挂 data-attr 的 ⋯ 按钮行为不变（仍是旧行为，逐步迁移即可）。
+      if (
+        target instanceof Element &&
+        target.closest("[data-yj-bubble-anchor]")
+      ) {
+        return;
+      }
       onCloseRef.current();
     };
     const handleScroll = () => onCloseRef.current();

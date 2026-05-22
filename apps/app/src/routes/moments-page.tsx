@@ -2235,7 +2235,13 @@ export function MomentsPage() {
         });
       }}
       onOpenActionMenu={(momentId, anchorRect) =>
-        setActionBubble({ momentId, anchorRect })
+        // 走查移动端朋友圈/Round 3 R1：toggle —— 二次点同一颗 ⋯ 关菜单。和
+        // wechat-action-bubble.tsx 内 data-yj-bubble-anchor 排除联动。pointerdown
+        // capture 不再因为落在 anchor 上把 actionBubble 抢先翻 null，这里函数式
+        // 更新读到的 current 就是 stale-free 的最新值，可以可靠 toggle 到 null。
+        setActionBubble((current) =>
+          current?.momentId === momentId ? null : { momentId, anchorRect },
+        )
       }
       onCloseActionMenu={() => setActionBubble(null)}
       onCommentTap={(momentId, comment) =>

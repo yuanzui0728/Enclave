@@ -1051,10 +1051,15 @@ export function MobileFriendMomentsPage() {
                           flush
                           onAuthorTap={openCharacterDetail}
                           onOpenActionMenu={(rect) =>
-                            setActionBubble({
-                              momentId: moment.id,
-                              anchorRect: rect,
-                            })
+                            // 走查移动端朋友圈/Round 3 R1：toggle —— 见 moments-page 同模板。
+                            setActionBubble((current) =>
+                              current?.momentId === moment.id
+                                ? null
+                                : {
+                                    momentId: moment.id,
+                                    anchorRect: rect,
+                                  },
+                            )
                           }
                           onDoubleTapLike={() =>
                             likeMutation.mutate(moment.id)

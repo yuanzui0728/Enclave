@@ -1374,7 +1374,12 @@ export function ProfileMomentsPage() {
                   dayLabel={dateLabel.day}
                   monthLabel={dateLabel.monthLabel}
                   onOpenActionMenu={(rect) =>
-                    setActionBubble({ momentId: moment.id, anchorRect: rect })
+                    // 走查移动端朋友圈/Round 3 R1：toggle —— 见 moments-page 同模板。
+                    setActionBubble((current) =>
+                      current?.momentId === moment.id
+                        ? null
+                        : { momentId: moment.id, anchorRect: rect },
+                    )
                   }
                   onDoubleTapLike={() => {
                     // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
