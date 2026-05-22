@@ -1897,60 +1897,88 @@ export function ContactsPage() {
   ];
   const mobileShortcutItems = shortcutItems;
   const mobileErrorItems: MobileErrorItem[] = [];
-  if (friendsQuery.isError && friendsQuery.error instanceof Error) {
+  // Fresh 走查 R9：本地世界整段离线（或 cloud-api 抖断）时 4 条背景 query
+  // (friends/characters/friend-requests/contact-groups) 会同时 isError，原版
+  // 各自推一条 InlineNotice 进 mobileErrorItems —— 用户进来看到「联系人列表 /
+  // 世界角色目录 / 好友申请入口 / 群聊入口」四条 "暂时没有刷新成功" 红条堆在
+  // 一起，4 个 retry 按钮 + 3 个跳转按钮共 7 个 CTA，全部点了也只是同一个网络
+  // 故障重复重试。屏幕阅读器对盲人用户更友好：先确定信号是同一原因，再合并
+  // 成一条 "通讯录数据暂时无法刷新"，Retry 触发四个 query 一起 refetch。
+  // 阈值用 ≥3 个同时 isError —— 1 单错给精确归因（哪条入口挂了），全错或近全
+  // 错合并降噪。
+  const backgroundQueryErrors = [
+    { query: friendsQuery, key: 'friends' as const },
+    { query: charactersQuery, key: 'characters' as const },
+    { query: friendRequestsQuery, key: 'friend-requests' as const },
+    { query: contactGroupsQuery, key: 'contact-groups' as const },
+  ].filter(({ query }) => query.isError && query.error instanceof Error);
+  if (backgroundQueryErrors.length >= 3) {
     mobileErrorItems.push({
-      key: "friends",
-      message: t(msg`联系人列表暂时没有刷新成功。`),
+      key: 'contacts-batch-refresh',
+      message: t(msg`通讯录数据暂时无法刷新，请检查网络连接。`),
       onRetry: () => {
-        void friendsQuery.refetch();
+        for (const { query } of backgroundQueryErrors) {
+          void query.refetch();
+        }
       },
       retryLabel: t(msg`重试读取`),
     });
-  }
-  if (charactersQuery.isError && charactersQuery.error instanceof Error) {
-    mobileErrorItems.push({
-      key: "characters",
-      message: t(msg`世界角色目录暂时没有刷新成功。`),
-      onRetry: () => {
-        void charactersQuery.refetch();
-      },
-      retryLabel: t(msg`重试读取`),
-      actionLabel: t(msg`浏览角色`),
-      onAction: () => {
-        handleShortcutNavigate("/contacts/world-characters");
-      },
-    });
-  }
-  if (
-    friendRequestsQuery.isError &&
-    friendRequestsQuery.error instanceof Error
-  ) {
-    mobileErrorItems.push({
-      key: "friend-requests",
-      message: t(msg`好友申请入口暂时没有刷新成功。`),
-      onRetry: () => {
-        void friendRequestsQuery.refetch();
-      },
-      retryLabel: t(msg`重试读取`),
-      actionLabel: t(msg`查看新的朋友`),
-      onAction: () => {
-        handleShortcutNavigate("/friend-requests");
-      },
-    });
-  }
-  if (contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error) {
-    mobileErrorItems.push({
-      key: "contact-groups",
-      message: t(msg`群聊入口暂时没有刷新成功。`),
-      onRetry: () => {
-        void contactGroupsQuery.refetch();
-      },
-      retryLabel: t(msg`重试读取`),
-      actionLabel: t(msg`查看群聊`),
-      onAction: () => {
-        handleShortcutNavigate("/contacts/groups");
-      },
-    });
+  } else {
+    if (friendsQuery.isError && friendsQuery.error instanceof Error) {
+      mobileErrorItems.push({
+        key: "friends",
+        message: t(msg`联系人列表暂时没有刷新成功。`),
+        onRetry: () => {
+          void friendsQuery.refetch();
+        },
+        retryLabel: t(msg`重试读取`),
+      });
+    }
+    if (charactersQuery.isError && charactersQuery.error instanceof Error) {
+      mobileErrorItems.push({
+        key: "characters",
+        message: t(msg`世界角色目录暂时没有刷新成功。`),
+        onRetry: () => {
+          void charactersQuery.refetch();
+        },
+        retryLabel: t(msg`重试读取`),
+        actionLabel: t(msg`浏览角色`),
+        onAction: () => {
+          handleShortcutNavigate("/contacts/world-characters");
+        },
+      });
+    }
+    if (
+      friendRequestsQuery.isError &&
+      friendRequestsQuery.error instanceof Error
+    ) {
+      mobileErrorItems.push({
+        key: "friend-requests",
+        message: t(msg`好友申请入口暂时没有刷新成功。`),
+        onRetry: () => {
+          void friendRequestsQuery.refetch();
+        },
+        retryLabel: t(msg`重试读取`),
+        actionLabel: t(msg`查看新的朋友`),
+        onAction: () => {
+          handleShortcutNavigate("/friend-requests");
+        },
+      });
+    }
+    if (contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error) {
+      mobileErrorItems.push({
+        key: "contact-groups",
+        message: t(msg`群聊入口暂时没有刷新成功。`),
+        onRetry: () => {
+          void contactGroupsQuery.refetch();
+        },
+        retryLabel: t(msg`重试读取`),
+        actionLabel: t(msg`查看群聊`),
+        onAction: () => {
+          handleShortcutNavigate("/contacts/groups");
+        },
+      });
+    }
   }
   if (startChatMutation.isError && startChatMutation.error instanceof Error) {
     mobileErrorItems.push({
