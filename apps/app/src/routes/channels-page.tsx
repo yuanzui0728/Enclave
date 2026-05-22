@@ -4704,6 +4704,18 @@ function MobileChannelCommentsSheet({
   onSubmit: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-23 R1：parent ChannelsPage 的 `onClose={() => { setMobileCommentSheetPostId(null); setMobileReplyTarget(null); }}`
+  // 是 inline 箭头，每次 parent re-render identity 都翻新。下面 ESC keydown
+  // / Android back interceptor 两条 effect 的 deps 都挂了 onClose，导致 parent
+  // 每次 re-render（用户在 textarea 敲一个字 setCommentDrafts → 整段 parent
+  // commit → onClose 新 identity → cleanup remove listener + add listener；
+  // 通知冒出 / 缓存乐观更新 / activeSection 切换 等都同款）都装卸一次同款
+  // listener，30 keystrokes/s 长打一段话期间 60-90 次 remove/add 周期。
+  // 同款修法在 channels-forward-picker.tsx (line 129-143) 早就用 onCloseRef
+  // 模板挡住，本组件一直缺。把 onClose 镜像到 ref，effect deps 只挂 open /
+  // longPressTarget，listener 内部读 ref.current 拿到最新闭包。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const hasAutoScrolledRef = useRef(false);
   const previousCommentCountRef = useRef(0);
@@ -4948,12 +4960,12 @@ function MobileChannelCommentsSheet({
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, longPressTarget, onClose]);
+  }, [open, longPressTarget]);
 
   // 走查 2026-05-17 新会话 R4：Android 硬件 Back 键 — 评论 sheet 打开时按
   // Back 应该收 sheet 而不是退掉整个 /discover/channels 页（默认行为会让
@@ -4966,10 +4978,10 @@ function MobileChannelCommentsSheet({
     if (!open) return;
     return registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
-  }, [open, onClose]);
+  }, [open]);
 
   // Sheet 关闭时重置自动滚动 flag，下次再打开重新跑一次。previousCommentCountRef
   // 也复位以便下次打开时不会把首次 0→N 数据到位误判成"用户刚刚发了一条评论"。

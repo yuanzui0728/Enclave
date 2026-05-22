@@ -750,7 +750,13 @@ export function MomentsPage() {
         id: tempId,
         postId: momentId,
         authorId: ownerId,
-        authorName: ownerUsername ?? t(msg`我`),
+        // 走查移动端发现-朋友圈 新一轮 R3：和 use-optimistic-like 新一轮 R1 同款 ——
+        // `??` 只 catch null/undefined；ownerUsername 为 "" / "   " (store setter 用
+        // nullish coalescing 可能保留显式 "")时 optimistic comment 的 authorName 落
+        // 地为空。wechat-moment-card 渲染评论行是 `<span>{authorName}</span>...<span>
+        // ：{cleanCommentText}</span>`，authorName 为空时 UI 上是 "：评论内容"（前面
+        // 没人，看着像 UI 坏）。用 `?.trim() ||` 兜下空字符串。
+        authorName: ownerUsername?.trim() || t(msg`我`),
         authorAvatar: ownerAvatar ?? "",
         authorType: "user",
         text,
