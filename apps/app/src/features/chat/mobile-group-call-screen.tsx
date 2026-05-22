@@ -1285,6 +1285,21 @@ function MobileCallStatusCard({
 }) {
   return (
     <section
+      // 走查新会话 R1：和姊妹 R1 MobileCallNotice tone="danger" 同款 a11y 修法
+      // ——本 status card 是 groupQuery / membersQuery / 群不存在 三条错误路径的
+      // 主体视觉（line ~705/744/796）：整页 AppPage 被它替代，旁边没有任何兜底
+      // 内容。tone="danger" 时盲人 SR 进入"群通话暂时不可用"/"成员信息暂时不可用"
+      // /"当前不能发起群通话"页面只能听到一个静默 "section"，连 badge/title 都
+      // 不读（role="region" 隐式生效靠 aria-labelledby，section 当前没挂）。
+      // role="alert" 自带 aria-live="assertive"，立刻读出 title + description，
+      // 让用户知道"为什么页面是空的"。tone="loading"（"正在连接..."）改 role=
+      // "status" aria-live="polite"，避免抢断 SR 当前朗读。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "mx-auto flex max-w-[26rem] flex-col items-center rounded-[28px] border px-5 py-6 text-center shadow-[0_24px_64px_rgba(2,6,23,0.28)]",
         tone === "danger"

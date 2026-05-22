@@ -468,6 +468,16 @@ function MobileGroupContactsStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹群聊页 StatusCard 一批同款修法——通讯录群聊
+      // 列表 load 失败 / 空态时该卡片是页面唯一可读内容，盲人 SR 不知道
+      // 是"加载失败要重试"还是"还没有群聊要发起"。role="alert"+assertive
+      // 主动播报错误；loading 用 polite 让"正在读取群聊"轻提示。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

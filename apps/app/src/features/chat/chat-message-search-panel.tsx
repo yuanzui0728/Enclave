@@ -1334,6 +1334,16 @@ function MobileSearchStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹群聊页 StatusCard 一批同款 a11y 修法——「查找
+      // 聊天记录」页 messagesQuery / groupQuery 失败时本卡片是主视觉；之前盲人
+      // SR 听不到"群聊记录暂时不可用"。同时本组件也被单聊版引用（chat-message-
+      // search-panel 是 group 和 direct 共用），一处修双路径受益。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

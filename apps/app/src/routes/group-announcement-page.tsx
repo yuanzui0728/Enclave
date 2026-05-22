@@ -608,6 +608,16 @@ function MobileAnnouncementStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹 group-chat-details/edit / group-call StatusCard
+      // 同款——"群公告暂时不可用" / "群聊不存在" 这两条 danger 路径下卡片
+      // 是页面主视觉，盲人 SR 听不到错误原因。role="alert"+assertive 主动播报；
+      // tone="loading" 用 role="status"+polite 让"正在读取群公告"被朗读。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

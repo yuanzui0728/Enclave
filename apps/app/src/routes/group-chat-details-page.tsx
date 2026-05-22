@@ -1122,6 +1122,19 @@ function MobileGroupDetailsStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹 mobile-group-call-screen MobileCallStatusCard
+      // 同款 a11y 修法——StatusCard 是 groupQuery / membersQuery / 群不存在 几
+      // 条错误路径的主要视觉。tone="danger" 时盲人 SR 没有任何朗读触发，listen
+      // 到的就是上下文寂静；tone="loading" 时也没"正在读取群聊信息"播报。
+      // role="alert" → 自动 aria-live=assertive 立刻读出 badge+title+description；
+      // role="status" → polite 不抢断 SR 当前朗读，配合刚展示出来的 loading
+      // 三点指示器一起朗读。和姊妹 group-call MobileCallStatusCard 口径一致。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

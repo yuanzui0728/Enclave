@@ -917,6 +917,15 @@ function MobileCreateGroupStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹群聊页 StatusCard 一批同款修法——发起群聊页
+      // friendsQuery 失败 / 没有可加好友空态时该卡片是页面唯一可读内容。
+      // role="alert"+assertive 主动播报错误；loading 用 polite。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

@@ -986,6 +986,16 @@ function MobileGroupMemberPickerStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹 group-chat-details/edit/announcement StatusCard
+      // 同款 a11y 修法——添加/移除成员页 load 失败时（groupQuery/membersQuery/
+      // friendsQuery 任一报错）整页只剩本卡片，盲人 SR 听不到错误原因，连有没有
+      // 出错都不知道。role="alert"+assertive 主动播报；loading 用 polite。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

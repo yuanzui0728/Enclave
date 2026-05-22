@@ -1981,6 +1981,16 @@ function MobileGroupThreadStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹群聊页 StatusCard 一批同款 a11y 修法——thread
+      // 主页 groupQuery / membersQuery / messagesQuery 任一报错时本卡片渲染在
+      // 消息列表上方，盲人 SR 之前听不到错误原因。role="alert"+assertive 立刻
+      // 播报；loading 用 polite 兜底"正在读取群消息"。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"

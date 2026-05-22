@@ -523,6 +523,16 @@ function MobileGroupEditStatusCard({
 }) {
   return (
     <section
+      // 新会话走查 R1：和姊妹 group-chat-details / group-call MobileCallStatusCard
+      // 同款——load 失败 / 群不存在时该卡是页面主视觉，盲人 SR 进入"群聊信息
+      // 暂时不可用"页面只能听到静默。role="alert" + aria-live="assertive" 主动
+      // 朗读 badge+title+description；loading 用 polite 兜底"正在读取群聊信息"。
+      role={
+        tone === "danger" ? "alert" : tone === "loading" ? "status" : undefined
+      }
+      aria-live={
+        tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
+      }
       className={cn(
         "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
