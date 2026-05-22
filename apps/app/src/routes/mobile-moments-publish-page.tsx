@@ -261,6 +261,13 @@ export function MobileMomentsPublishPage() {
 
   useEffect(() => {
     resetComposeDraft();
+    // 走查本轮 R1：切账户时 createMutation 的 isError / error / variables 残值不会
+    // 自动清，errorMessage（行 596-599）读 createMutation.isError 来兜底渲染 InlineNotice。
+    // 用户在账户 A 上发表失败留下红条 → 顶部切到 B：composeDraft.reset() 清了文本/媒体
+    // 但顶上还挂着 A 那条「发表失败：...」（mediaError ?? (isError ? msg : null) 链路里
+    // mediaError 走 reset() 已经清掉，但 createMutation.isError 仍为 true）。和 moments-page
+    // line 1313-1316 baseUrl 切换时 likeMutation.reset() 等 4 把同模板对齐。
+    createMutation.reset();
   }, [baseUrl, resetComposeDraft]);
 
   // 进入发布页 → 从 IDB 取草稿 hydrate。reset effect 跑在前面（同步），
@@ -472,6 +479,14 @@ export function MobileMomentsPublishPage() {
     // 拦不下来这次发表（用户以为放弃了，但 onSuccess 仍会触发 flash + 跳回朋友圈
     // 看到自己刚才说"放弃"的那条已经在列表里）。强制等 isPending 翻到 false。
     if (createMutation.isPending) {
+      return;
+    }
+    // 走查本轮 R1：媒体选择 sheet 开着时点 topbar 取消，应该和 Android 硬件 back
+    // 一样先收 sheet，不要把"放弃编辑"确认弹窗（z-1300）盖到媒体 sheet（z-1200）
+    // 上变成双层 modal；且 hasContent=false 时原来直接 performBack 会带着 sheet
+    // 一起被 navigate 卸掉，体感是"按一下取消，整页都没了"。统一交互：先关 sheet。
+    if (mediaPickerOpen) {
+      setMediaPickerOpen(false);
       return;
     }
     if (composeDraft.hasContent) {
