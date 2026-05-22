@@ -1108,7 +1108,14 @@ function MobileChatListPage() {
     const nextPending: PendingHideConversation = {
       conversationId: conversation.id,
       isGroup: isPersistedGroupConversation(conversation),
-      title: conversation.title,
+      // 新会话走查 R2：和姊妹 e8aac574b（direct 会话标题 "未知联系人" /
+      // "Direct conversation" 持久化中文字面量、切到 en/ja/ko 仍渲染原文）
+      // 同款问题——原版存 raw conversation.title。后端 normalizeLegacy 写入
+      // 中文 sentinel 时，pendingHide InlineNotice 在 en-US locale 渲染就
+      // 变成「未知联系人 has been removed from the list, undo within 5s」
+      // 中英文混杂。走 getConversationDisplayTitle 翻一遍 sentinel；普通
+      // 业务标题（"苏澄"等）原样透传，零回归。
+      title: getConversationDisplayTitle(conversation.title),
     };
 
     pendingHideRef.current = nextPending;
