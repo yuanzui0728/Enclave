@@ -52,6 +52,10 @@ import { MinimaxNativeClient } from './minimax-native.client';
 import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import {
+  MinimaxClient,
+  MinimaxClientError,
+} from '../minimax/minimax.client';
+import {
   executeChatCompletion,
   type ChatCompletionTaskResult,
 } from './chat-completion-stream.util';
@@ -215,6 +219,7 @@ export class AiOrchestratorService {
     private readonly momentGenerationContext: MomentGenerationContextService,
     private readonly subscription: SubscriptionService,
     private readonly minimaxQuota: MinimaxQuotaService,
+    private readonly minimaxClient: MinimaxClient,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -1954,15 +1959,21 @@ export class AiOrchestratorService {
     };
   }
 
+  // 给所有 vision 路径共用的 caption prompt——文字海报/截图/聊天记录尤其要把上面的字
+  // 念出来，这次走查 wiki-promo.png 的现场就是为了这种场景。
+  private static readonly IMAGE_CAPTION_PROMPT =
+    '用 2-3 句中文，平实地描述图片里实际能看到的内容：场景/主要物体/可识别文字/人物或人物动作（如有）。如果是截图/海报/卡片/聊天记录，优先把上面能读到的标题与正文文字念出来——这通常是图片的核心信息。看不清就说看不清；不要寒暄；不要加任何评论或推测；不要使用项目符号。';
+
   /**
-   * 用一台 vision-capable provider 给图片一次性出一个简短文字描述，给所有用文本
-   * 模型的下游消费者（朋友圈/Feed 评论生成等）当上下文。MiniMax-M2.7 这类默认 provider
-   * 不支持原生 image_url，buildChatCompletionMessage 会静默丢图 → 角色只看到
-   * "用户发了一张图片" 然后回 "图片我看不到"。这条路径走一次 vision 调用，把结果
-   * 缓存到 mediaPayload 里。
+   * 给图片一次性出一段中文文字描述，缓存到 mediaPayload，让所有用文本模型的下游
+   * 消费者（朋友圈/Feed 评论生成等）也"看得到"图。
    *
-   * 选 provider：遍历当前世界已启用的 inference provider，挑第一个 supportsNativeImageInput
-   * 的；都不支持则返回 null（优雅降级，角色仍能继续回话）。
+   * 路由优先级：
+   * 1) MiniMax Token Plan 的 /v1/coding_plan/vlm 专用 VLM 端点——免费额度 450/5h，
+   *    Token Plan 用户首选。注意此端点跟 chat completion 完全无关，是独立 service。
+   * 2) gpt-4.1 等 supportsNativeImageInput=true 的 chat provider（n1n.ai / OpenAI），
+   *    付费但稳定；MiniMax 没配置 / quota 满 / VLM 失败时兜底。
+   * 3) 都没有 → 返回 null，角色互动继续，summary 里就没 caption（原始行为）。
    */
   async describeImageFromUrl(input: {
     url: string;
@@ -1970,16 +1981,6 @@ export class AiOrchestratorService {
     fileName?: string | null;
     characterId?: string;
   }): Promise<string | null> {
-    const visionProvider = await this.pickVisionCapableProvider({
-      characterId: input.characterId,
-    });
-    if (!visionProvider) {
-      this.logger.debug(
-        'image-caption skipped: no vision-capable provider configured',
-      );
-      return null;
-    }
-
     const loaded = input.url.startsWith('data:')
       ? this.loadAssetFromDataUrl(input.url)
       : await this.loadAssetFromUrl(input.url, MAX_INLINE_IMAGE_BYTES);
@@ -1995,8 +1996,83 @@ export class AiOrchestratorService {
     if (!mimeType.startsWith('image/')) {
       return null;
     }
+    // VLM 端点（参考 minimax-coding-plan-mcp server.py 注释）只支持 JPEG/PNG/WebP。
+    // GIF/SVG 等先不送 MiniMax，直接走 chat-vision provider 兜底。
+    const minimaxSupportsFormat = /^image\/(jpeg|png|webp)$/.test(mimeType);
 
     const imageDataUrl = `data:${mimeType};base64,${loaded.buffer.toString('base64')}`;
+
+    // Tier 1: MiniMax /v1/coding_plan/vlm
+    if (minimaxSupportsFormat && this.minimaxClient.isConfigured()) {
+      const caption = await this.describeImageViaMinimaxVlm(imageDataUrl);
+      if (caption) return caption;
+      // null → 配额满 / 失败 / 熔断，落到 Tier 2 chat-vision provider
+    }
+
+    // Tier 2: chat-vision provider（gpt-4.1 之类）
+    return this.describeImageViaChatVision(imageDataUrl, {
+      characterId: input.characterId,
+    });
+  }
+
+  private async describeImageViaMinimaxVlm(
+    imageDataUrl: string,
+  ): Promise<string | null> {
+    if (await this.minimaxQuota.isExhaustedToday('vlm-coding-plan')) {
+      this.logger.debug?.(
+        'vlm-coding-plan exhausted today; skipping minimax VLM tier',
+      );
+      return null;
+    }
+    const reserved = await this.minimaxQuota.tryReserve('vlm-coding-plan');
+    if (!reserved) {
+      this.logger.debug?.(
+        'vlm-coding-plan reservation refused (pacing / exhausted); skipping minimax VLM tier',
+      );
+      return null;
+    }
+
+    try {
+      const result = await this.minimaxClient.understandImage({
+        prompt: AiOrchestratorService.IMAGE_CAPTION_PROMPT,
+        imageUrl: imageDataUrl,
+      });
+      await this.minimaxQuota.commit('vlm-coding-plan');
+      const text = sanitizeAiText(result.content);
+      return text || null;
+    } catch (error) {
+      await this.minimaxQuota.release('vlm-coding-plan');
+      if (
+        error instanceof MinimaxClientError &&
+        error.code === 'MINIMAX_QUOTA_EXHAUSTED'
+      ) {
+        // 撞 2056 / 1042：标本日 vlm-coding-plan 熔断，后续直接跳过 MiniMax Tier
+        await this.minimaxQuota.markExhaustedToday('vlm-coding-plan');
+        this.logger.warn(
+          `minimax VLM quota exhausted (code=${error.providerStatusCode}); falling to chat-vision`,
+        );
+      } else {
+        this.logger.warn('minimax VLM caption failed', {
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+      return null;
+    }
+  }
+
+  private async describeImageViaChatVision(
+    imageDataUrl: string,
+    options: { characterId?: string | null },
+  ): Promise<string | null> {
+    const visionProvider = await this.pickVisionCapableProvider({
+      characterId: options.characterId,
+    });
+    if (!visionProvider) {
+      this.logger.debug(
+        'image-caption skipped: no vision-capable chat provider configured',
+      );
+      return null;
+    }
 
     try {
       const client = this.createProviderClient(visionProvider);
@@ -2009,16 +2085,12 @@ export class AiOrchestratorService {
           messages: [
             {
               role: 'system',
-              content:
-                '你是图片识别助手。用 2-3 句中文，平实地描述图片里实际能看到的内容：场景/主要物体/可识别文字/人物或人物动作（如有）。\n如果是截图/海报/卡片/聊天记录，优先把上面能读到的标题与正文文字念出来——这通常是图片的核心信息。\n要求：看不清就说看不清；不要寒暄；不要加任何评论或推测；不要使用项目符号。',
+              content: `你是图片识别助手。${AiOrchestratorService.IMAGE_CAPTION_PROMPT}`,
             },
             {
               role: 'user',
               content: [
-                {
-                  type: 'text',
-                  text: '请描述这张图片：',
-                },
+                { type: 'text', text: '请描述这张图片：' },
                 {
                   type: 'image_url',
                   image_url: { url: imageDataUrl, detail: 'auto' },
@@ -2035,8 +2107,7 @@ export class AiOrchestratorService {
       const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
       return text || null;
     } catch (error) {
-      this.logger.warn('image caption generation failed', {
-        url: input.url,
+      this.logger.warn('image caption generation failed (chat-vision tier)', {
         model: visionProvider.model,
         errorMessage: this.extractErrorMessage(error),
       });

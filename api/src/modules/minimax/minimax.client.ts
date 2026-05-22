@@ -325,6 +325,42 @@ export class MinimaxClient {
     };
   }
 
+  // Token Plan 图片理解（450 次 / 5h 窗口）走专用 /v1/coding_plan/vlm 端点；
+  // chat completion / chatcompletion_v2 / /anthropic 三个端点对 image_url 一律静默丢图
+  // （2026-05-22 实测确认）。/v1/coding_plan/vlm 跟 chat completion 完全无关，是 MCP
+  // tool understand_image 走的同一条独立 VLM service——参考 PyPI 包
+  // minimax-coding-plan-mcp 0.0.4 minimax_mcp/server.py + client.py。
+  //
+  // 入参：prompt（中文 OK），image（必须是 base64 dataUrl 或公网 https/http URL；
+  // 本地 /api/moments/media 这种内网路径不行，调用方先转 dataUrl）。
+  // 支持格式：JPEG / PNG / WebP（GIF 接口 docs 列了但 server.py 注释明确说不支持）
+  // 上限 20MB。
+  // 出参：content 一段 LLM 生成的描述文本；base_resp.status_code != 0 → 失败/熔断。
+  async understandImage(input: {
+    prompt: string;
+    imageUrl: string; // base64 dataUrl 或 https URL
+  }): Promise<{ content: string }> {
+    await this.subscription.assertCanUseAi('text');
+    const body = {
+      prompt: input.prompt,
+      image_url: input.imageUrl,
+    };
+    const response = await this.postJson<{
+      content?: string;
+      base_resp?: MinimaxBaseResp;
+    }>('/v1/coding_plan/vlm', body);
+    this.assertSuccess(response.base_resp, 'vlm');
+    const content = response.content?.trim() ?? '';
+    if (!content) {
+      throw new MinimaxClientError(
+        'MINIMAX_VLM_EMPTY',
+        'vlm returned empty content',
+        true,
+      );
+    }
+    return { content };
+  }
+
   // MiniMax-M2.7 是 reasoning model：max_tokens 包含 reasoning_tokens，
   // ≤1000 时几乎全部 token 都被 reasoning 吃掉、content 为空。这里默认 2000，
   // 实测能稳定拿到完整 [verse]/[chorus] 输出。

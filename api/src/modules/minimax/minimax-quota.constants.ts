@@ -18,6 +18,10 @@ const FALLBACK_TOKEN_PLAN_DAILY_LIMITS: Record<string, number> = {
   // 语音合成 · HD（高保真），Token Plan 每日 11000 次。
   // 撞 2056 / quota 失败时熔断，避免无表消耗。
   'speech-02-hd': 11000,
+  // 图片理解专用 VLM（/v1/coding_plan/vlm）：Token Plan 真实是 5h-window 450 次
+  // (= 每周 4500 = 10 × 5h)，但 quota service 是 daily 粒度，先按 4 × 450 = 1800
+  // 估软上限（保守值，超了就让 2056 反推熔断）。dashboard 的额度计数依然准确。
+  'vlm-coding-plan': 1800,
 };
 
 const ENV_KEY_BY_MODEL: Record<string, string> = {
@@ -29,6 +33,7 @@ const ENV_KEY_BY_MODEL: Record<string, string> = {
   'lyrics': 'MINIMAX_DAILY_LIMIT_LYRICS',
   'MiniMax-M2.7': 'MINIMAX_DAILY_LIMIT_M27',
   'speech-02-hd': 'MINIMAX_DAILY_LIMIT_SPEECH_HD',
+  'vlm-coding-plan': 'MINIMAX_DAILY_LIMIT_VLM',
 };
 
 function readLimit(model: string): number {
