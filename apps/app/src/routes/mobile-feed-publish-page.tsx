@@ -544,6 +544,13 @@ export function MobileFeedPublishPage() {
               value={composeDraft.text}
               onChange={(event) => composeDraft.setText(event.target.value)}
               placeholder={t(msg`写点想让世界居民都能看到的内容...`)}
+              // 走查新一轮 R2 (a11y)：跟 mobile-moments-publish-page R1 对齐——
+              // placeholder 只在 textarea 为空时 SR 才能读到，用户一旦开始打字
+              // placeholder 消失 → 屏幕阅读器再 enumerate 这个字段时只播报
+              // "edit textarea"。顶栏 title 虽然是 "发表广场动态"，但 SR 不会
+              // 把它跟当前 textarea 自动关联起来。挂 aria-label 后即使打字状态
+              // 也能听到"广场动态正文"。
+              aria-label={t(msg`广场动态正文`)}
               // R2 走查：跟后端 MAX_FEED_TEXT_LENGTH=2000 对齐的软上限，超出由
               // 后端 FEED_TEXT_TOO_LONG 兜底；UI 卡完用户不会再误传几 MB 长文
               // 把 SocialPostCard 撑爆。
