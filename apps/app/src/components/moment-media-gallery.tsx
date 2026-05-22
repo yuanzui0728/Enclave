@@ -238,6 +238,21 @@ function MomentMediaGalleryInner({
     viewerState?.kind === "image" ? images[viewerState.index] ?? null : null;
   const isMobileVariant = variant === "mobile";
 
+  // 新会话走查 R1：走到这里 contentType 一定不是 "audio_card"/"video"（这两条
+  // 早返已经在上方命中）。理论上 resolveFeedMomentContentType 在 media 非空时
+  // 必然返回 "image_album"，于是下面的 grid 分支期待 images.length≥1。但 server
+  // schema 漂移 / 历史脏数据偶尔会塞 kind 为 undefined 或不在 image/video/audio
+  // 三类之外的资产（比如 "file" / "lottie"）：media.length>0 → contentType=
+  // "image_album"，但 images.filter(kind==="image") 会落到 0。继续往下走时
+  //   columns = Math.min(2 or 3, 0) = 0
+  //   totalWidth = 105 × 0 + 4 × (-1) = -4
+  //   gridTemplateColumns: "repeat(0, 105px)" / width: "-4px"
+  // 渲成一团 zero-grid + 负宽容器，整张卡片底部凭空多一个空白块。整段不渲染
+  // 最稳；audio/video 早已经分流处理。
+  if (images.length === 0) {
+    return null;
+  }
+
   // WeChat 九宫格规则（1:1 视觉克隆）：
   // 1 张：单图按原比例自适应（最大 ~210px 宽）
   // 4 张：2×2，宽度 = 2 × 单格 + 1 × gap
