@@ -94,6 +94,22 @@ export function MobileFeedPublishPage() {
   // 跟 submittingRef 同模式同步赋值，第一次 click 翻 true 后同帧/同窗口的后续
   // click 全部早返。
   const pickInflightRef = useRef(false);
+  // 走查新 Round 2：媒体处理中（addImageFiles / replaceVideoFile）publish 按钮、
+  // + 加号按钮都得视觉禁掉。pickInflightRef 是同步 gate，只挡 pickImages 自身
+  // 重入；publish 按钮 / 媒体按钮的 disabled 走 React props，必须有能触发 re-
+  // render 的 state。慢路径下用户最容易踩：
+  //   1. 用户已敲文字 "今天去爬山" → 文本 hasContent=true
+  //   2. 用户点「添加视频」→ picker 关闭 → replaceVideoFile 开始解码 + 封面生成
+  //   3. 解码 15-30s 期间用户看着 publish 按钮亮着，又看了眼觉得"该好了吧"
+  //      → 点发表
+  //   4. composeDraft.videoDraft 此时还是 null（setVideoDraft 还没 commit）→
+  //      publish 飞出去**没有视频**，用户在广场上看到自己发了一条纯文本帖子
+  //      但他记忆中明明加了视频，体感是"视频丢了"
+  // 同理图片：用户连选 9 张大图，addImageFiles 解码 ~500ms 期间发表，飞出去
+  // 不带图片。
+  // isMediaPreparing state 在 handler 入口翻 true、finally 翻 false，把 publish
+  // 按钮 / 媒体按钮一起按禁用对齐 isPending 的视觉。
+  const [isMediaPreparing, setIsMediaPreparing] = useState(false);
 
   const createMutation = useMutation({
     // 再走查 R1：mutationFn 之前直接闭包读 composeDraft.* 字段，onSuccess 无脑
@@ -344,6 +360,7 @@ export function MobileFeedPublishPage() {
   async function handlePickImages() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
+    setIsMediaPreparing(true);
     try {
       // 跟 mobile-moments-publish-page R4 对齐：把剩余可用槽位传给原生 picker，
       // PHPicker / PickVisualMedia 拿到 limit 后会在系统选图 UI 上限制最多可勾
@@ -367,12 +384,14 @@ export function MobileFeedPublishPage() {
       );
     } finally {
       pickInflightRef.current = false;
+      setIsMediaPreparing(false);
     }
   }
 
   async function handleVideoFileSelected(file: File | null) {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
+    setIsMediaPreparing(true);
     try {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
@@ -381,6 +400,7 @@ export function MobileFeedPublishPage() {
       );
     } finally {
       pickInflightRef.current = false;
+      setIsMediaPreparing(false);
     }
   }
 
@@ -418,6 +438,12 @@ export function MobileFeedPublishPage() {
             onClick={() => {
               if (submittingRef.current) return;
               if (!composeDraft.hasContent || createMutation.isPending) return;
+              // 走查新 Round 2：媒体处理中也不让发表——见 isMediaPreparing 注释。
+              // 用户点「添加视频」后 15-30s 解码 + 封面生成窗口里 publish 按钮看着
+              // 亮的，没这条 gate 用户敲完文字就点发表，飞出去 composeDraft.videoDraft
+              // 还是 null（setVideoDraft 没 commit），post 落地不带视频，用户在广场
+              // 看到一条没视频的纯文本帖，记忆错位。
+              if (pickInflightRef.current) return;
               submittingRef.current = true;
               createMutation.mutate(
                 {
@@ -434,15 +460,25 @@ export function MobileFeedPublishPage() {
                 },
               );
             }}
-            disabled={!composeDraft.hasContent || createMutation.isPending}
+            disabled={
+              !composeDraft.hasContent ||
+              createMutation.isPending ||
+              isMediaPreparing
+            }
             className={cn(
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
-              composeDraft.hasContent && !createMutation.isPending
+              composeDraft.hasContent &&
+                !createMutation.isPending &&
+                !isMediaPreparing
                 ? "bg-[#07c160] text-white active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
-            {createMutation.isPending ? t(msg`发表中`) : t(msg`发表`)}
+            {createMutation.isPending
+              ? t(msg`发表中`)
+              : isMediaPreparing
+                ? t(msg`处理中`)
+                : t(msg`发表`)}
           </button>
         }
       />
@@ -523,7 +559,9 @@ export function MobileFeedPublishPage() {
                 variant="secondary"
                 size="sm"
                 disabled={
-                  !composeDraft.canAddImages || createMutation.isPending
+                  !composeDraft.canAddImages ||
+                  createMutation.isPending ||
+                  isMediaPreparing
                 }
                 className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
                 onClick={() => {
@@ -537,7 +575,11 @@ export function MobileFeedPublishPage() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={!composeDraft.canAddVideo || createMutation.isPending}
+                disabled={
+                  !composeDraft.canAddVideo ||
+                  createMutation.isPending ||
+                  isMediaPreparing
+                }
                 className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
                 onClick={() => videoInputRef.current?.click()}
               >
