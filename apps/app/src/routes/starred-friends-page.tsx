@@ -356,14 +356,30 @@ function MobileStarredFriendsPage() {
                   : t(msg`先去联系人资料里把常联系的好友设为星标朋友。`)
               }
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                normalizedSearchText ? (
+                  // 走查新一轮 R1：搜索命中 0 条时主 CTA 应是「清空搜索」回到完
+                  // 整星标列表，跟兄弟页 world-characters-page R1 / group-contacts
+                  // -page R9 同口径。原版无脑落到 statusBackLabel（"查看联系人标
+                  // 签"或"返回上一页"），用户搜了一个找不到的关键词只能 backspace
+                  // 逐字清空，或被引导到不相关的标签页，行为分裂。
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={() => setSearchText("")}
+                  >
+                    {t(msg`清空搜索`)}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                )
               }
             />
           </div>

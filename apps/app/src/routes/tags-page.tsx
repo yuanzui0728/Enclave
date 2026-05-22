@@ -339,14 +339,30 @@ function MobileTagsPage() {
                   : t(msg`先在联系人资料里补上标签，通讯录标签页就会自动聚合。`)
               }
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                hasSearchText ? (
+                  // 走查新一轮 R1：跟 group-contacts-page / world-characters-page
+                  // / starred-friends-page 同口径——搜索命中 0 条时主 CTA 应是
+                  // 「清空搜索」回到完整标签列表，而不是无脑跳「查看星标朋友」/
+                  // 「返回上一页」（用户搜了"alice"找不到，却被引导去星标朋友页
+                  // 跟动作完全无关）。
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={() => setSearchText("")}
+                  >
+                    {t(msg`清空搜索`)}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                )
               }
             />
           </div>
