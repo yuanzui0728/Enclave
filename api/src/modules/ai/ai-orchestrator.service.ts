@@ -1974,7 +1974,7 @@ export class AiOrchestratorService {
       characterId: input.characterId,
     });
     if (!visionProvider) {
-      this.logger.debug?.(
+      this.logger.debug(
         'image-caption skipped: no vision-capable provider configured',
       );
       return null;
@@ -2000,31 +2000,38 @@ export class AiOrchestratorService {
 
     try {
       const client = this.createProviderClient(visionProvider);
-      const response = await executeChatCompletion(client, {
-        model: visionProvider.model,
-        max_tokens: 240,
-        temperature: 0.2,
-        messages: [
-          {
-            role: 'system',
-            content:
-              '你是图片识别助手。用 2-3 句中文，平实地描述图片里实际能看到的内容：场景/主要物体/可识别文字/人物或人物动作（如有）。\n要求：看不清就说看不清；不要寒暄；不要加任何评论或推测；不要使用项目符号。',
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: '请描述这张图片：',
-              },
-              {
-                type: 'image_url',
-                image_url: { url: imageDataUrl, detail: 'auto' },
-              },
-            ],
-          },
-        ],
-      });
+      const response = await executeChatCompletion(
+        client,
+        {
+          model: visionProvider.model,
+          max_tokens: 240,
+          temperature: 0.2,
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是图片识别助手。用 2-3 句中文，平实地描述图片里实际能看到的内容：场景/主要物体/可识别文字/人物或人物动作（如有）。\n如果是截图/海报/卡片/聊天记录，优先把上面能读到的标题与正文文字念出来——这通常是图片的核心信息。\n要求：看不清就说看不清；不要寒暄；不要加任何评论或推测；不要使用项目符号。',
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: '请描述这张图片：',
+                },
+                {
+                  type: 'image_url',
+                  image_url: { url: imageDataUrl, detail: 'auto' },
+                },
+              ],
+            },
+          ],
+        },
+        // vision provider 抽风（GFW / 配额 / 上游 503）时硬卡 20s 兜底，
+        // 不让 moments.scheduleCharacterInteractions 的 await 一直挂着；
+        // 失败就降级返回 null，角色互动照常往下走（只是没 caption）。
+        { timeout: 20_000, maxRetries: 0 },
+      );
       const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
       return text || null;
     } catch (error) {
@@ -2040,16 +2047,33 @@ export class AiOrchestratorService {
   private async pickVisionCapableProvider(options?: {
     characterId?: string | null;
   }): Promise<ResolvedProviderConfig | null> {
-    const configs = await this.inferenceService.listEnabledRuntimeProviderConfigs({
-      characterId: options?.characterId,
-    });
+    let configs: ResolvedProviderConfig[];
+    try {
+      configs = await this.inferenceService.listEnabledRuntimeProviderConfigs({
+        characterId: options?.characterId,
+      });
+    } catch (error) {
+      this.logger.warn('pickVisionCapableProvider: list configs failed', {
+        errorMessage: this.extractErrorMessage(error),
+      });
+      return null;
+    }
+
     for (const config of configs) {
       if (!config.apiKey?.trim()) {
         continue;
       }
-      const caps = await this.resolveProviderCapabilityProfile(config);
-      if (caps.supportsNativeImageInput) {
-        return config;
+      try {
+        const caps = await this.resolveProviderCapabilityProfile(config);
+        if (caps.supportsNativeImageInput) {
+          return config;
+        }
+      } catch (error) {
+        // 某个 provider 解析能力 profile 抛错（例如外部 catalog 不可达）不能让整条
+        // 路径死掉——跳过当前，继续看下一个，照样可能挑到能用的。
+        this.logger.debug(
+          `pickVisionCapableProvider: capability resolve failed for ${config.model}: ${this.extractErrorMessage(error)}`,
+        );
       }
     }
     return null;

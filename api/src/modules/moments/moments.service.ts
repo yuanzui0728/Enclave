@@ -1840,6 +1840,7 @@ export class MomentsService implements OnModuleInit {
       // 阻止 SSRF：url / posterUrl 必须命中 /api/moments/media/ 白名单。
       assertMomentMediaUrl(url, 'video.url');
       assertMomentMediaUrl(posterUrl, 'video.posterUrl');
+      const posterCaption = asset.posterCaption?.trim() || undefined;
       return {
         id: asset.id?.trim() || `moment-video-${index + 1}`,
         kind: 'video',
@@ -1851,6 +1852,7 @@ export class MomentsService implements OnModuleInit {
         width: normalizeOptionalPositiveNumber(asset.width),
         height: normalizeOptionalPositiveNumber(asset.height),
         durationMs: normalizeOptionalPositiveNumber(asset.durationMs),
+        posterCaption,
       };
     }
 
@@ -2035,6 +2037,24 @@ export class MomentsService implements OnModuleInit {
     return '一条朋友圈';
   }
 
+  // 朋友圈 AI 评论 / 文本模型路径里能"看到"的图上限——和 ensureMomentImageCaptions
+  // 必须严格一致，否则会出现"打了 caption 的图没进 summary"或"summary 里提到第 5 张
+  // 但 parts 只有 4 张"的不对齐问题。
+  private static readonly MAX_AI_OBSERVABLE_IMAGES = 4;
+
+  private collectObservableImagesWithIndex(
+    media: MomentMediaAsset[],
+  ): Array<{ mediaIndex: number; asset: MomentImageAsset }> {
+    const out: Array<{ mediaIndex: number; asset: MomentImageAsset }> = [];
+    for (let i = 0; i < media.length; i++) {
+      const asset = media[i];
+      if (asset.kind !== 'image') continue;
+      out.push({ mediaIndex: i, asset });
+      if (out.length >= MomentsService.MAX_AI_OBSERVABLE_IMAGES) break;
+    }
+    return out;
+  }
+
   private async buildMomentAiObservation(post: MomentPostEntity): Promise<{
     summary: string;
     parts?: AiMessagePart[];
@@ -2044,17 +2064,26 @@ export class MomentsService implements OnModuleInit {
     const contentType = this.normalizeMomentContentType(post.contentType);
     let summary = this.buildMomentPromptSummary(post);
 
-    const imageAssets = media
-      .filter((asset): asset is MomentImageAsset => asset.kind === 'image')
-      .slice(0, 4);
+    const imageEntries = this.collectObservableImagesWithIndex(media);
 
-    imageAssets.forEach((asset, index) => {
+    imageEntries.forEach(({ asset }, index) => {
       parts.push({
         type: 'image',
         imageUrl: asset.url,
         mimeType: asset.mimeType,
         detail: 'auto',
         altText: `朋友圈配图 ${index + 1}`,
+      });
+    });
+
+    const captionEntries: Array<{ label: string; caption: string }> = [];
+    imageEntries.forEach(({ asset }, idx) => {
+      const caption = asset.imageCaption?.trim();
+      if (!caption) return;
+      captionEntries.push({
+        label:
+          imageEntries.length > 1 ? `第${idx + 1}张` : '配图',
+        caption,
       });
     });
 
@@ -2067,6 +2096,10 @@ export class MomentsService implements OnModuleInit {
           detail: 'auto',
           altText: '朋友圈视频封面',
         });
+        const posterCaption = video.posterCaption?.trim();
+        if (posterCaption) {
+          captionEntries.push({ label: '视频封面', caption: posterCaption });
+        }
       }
     }
 
@@ -2074,7 +2107,7 @@ export class MomentsService implements OnModuleInit {
       (await this.appendMomentTranscriptSummary(summary, media, post)) ??
       summary;
 
-    summary = this.appendMomentImageCaptionSummary(summary, imageAssets);
+    summary = this.appendMomentImageCaptionSummary(summary, captionEntries);
 
     return {
       summary,
@@ -2084,25 +2117,15 @@ export class MomentsService implements OnModuleInit {
 
   private appendMomentImageCaptionSummary(
     summary: string,
-    images: MomentImageAsset[],
+    entries: Array<{ label: string; caption: string }>,
   ): string {
-    const captioned = images
-      .map((asset, index) => ({
-        index,
-        caption: asset.imageCaption?.trim() || '',
-      }))
-      .filter((entry) => entry.caption.length > 0);
-    if (!captioned.length) {
+    if (!entries.length) {
       return summary;
     }
-
-    if (captioned.length === 1 && images.length === 1) {
-      return `${summary}。配图内容（AI 视觉识别）：${captioned[0].caption}`;
+    if (entries.length === 1) {
+      return `${summary}。${entries[0].label}内容（AI 视觉识别）：${entries[0].caption}`;
     }
-
-    const lines = captioned.map(
-      (entry) => `第${entry.index + 1}张：${entry.caption}`,
-    );
+    const lines = entries.map((entry) => `${entry.label}：${entry.caption}`);
     return `${summary}。配图内容（AI 视觉识别）：\n${lines.join('\n')}`;
   }
 
@@ -2120,26 +2143,44 @@ export class MomentsService implements OnModuleInit {
     post: MomentPostEntity,
   ): Promise<void> {
     const media = this.parseMomentMediaPayload(post.mediaPayload);
-    const images = media.filter(
-      (asset): asset is MomentImageAsset => asset.kind === 'image',
-    );
-    if (!images.length) {
+    if (!media.length) {
       return;
     }
 
-    const targets = images
-      .map((asset, mediaIndex) => ({ asset, mediaIndex }))
-      .filter(({ asset }) => !asset.imageCaption?.trim())
-      .slice(0, 4); // 同步 buildMomentAiObservation 的 .slice(0, 4)；多图也只描述前 4 张
-    if (!targets.length) {
+    // 跟 buildMomentAiObservation 共用同一个 collectObservableImagesWithIndex；
+    // 以前两边各自 filter+slice，mediaIndex 还是 filtered-images 数组的下标，写回
+    // media[wrongIndex] 会改错对象（live_photo / 混合 media 时会撞）。这版统一走
+    // "media 的真索引"。
+    const imageTargets = this.collectObservableImagesWithIndex(media).filter(
+      ({ asset }) => !asset.imageCaption?.trim(),
+    );
+
+    // video 帖的封面图也要单独走一次 caption，写回 video asset 的 posterCaption。
+    let videoPosterTarget: {
+      videoIndex: number;
+      asset: MomentVideoAsset;
+    } | null = null;
+    const contentType = this.normalizeMomentContentType(post.contentType);
+    if (contentType === 'video') {
+      const video = media[0];
+      if (
+        video?.kind === 'video' &&
+        video.posterUrl &&
+        !video.posterCaption?.trim()
+      ) {
+        videoPosterTarget = { videoIndex: 0, asset: video };
+      }
+    }
+
+    if (!imageTargets.length && !videoPosterTarget) {
       return;
     }
 
     const characterIdForKeyOverride =
       post.authorType === 'character' ? post.authorId : undefined;
 
-    const captions = await Promise.all(
-      targets.map(({ asset }) =>
+    const captionJobs: Array<Promise<string | null>> = [
+      ...imageTargets.map(({ asset }) =>
         this.ai.describeImageFromUrl({
           url: asset.url,
           mimeType: asset.mimeType,
@@ -2147,30 +2188,56 @@ export class MomentsService implements OnModuleInit {
           characterId: characterIdForKeyOverride,
         }),
       ),
-    );
+    ];
+    if (videoPosterTarget) {
+      captionJobs.push(
+        this.ai.describeImageFromUrl({
+          url: videoPosterTarget.asset.posterUrl!,
+          mimeType: 'image/jpeg',
+          fileName: `${videoPosterTarget.asset.fileName}.poster`,
+          characterId: characterIdForKeyOverride,
+        }),
+      );
+    }
+
+    const captions = await Promise.all(captionJobs);
 
     let changed = false;
-    targets.forEach(({ mediaIndex }, i) => {
+    imageTargets.forEach(({ mediaIndex }, i) => {
       const caption = captions[i]?.trim();
-      if (!caption) {
-        return;
-      }
-      const target = media[mediaIndex] as MomentImageAsset;
+      if (!caption) return;
+      const target = media[mediaIndex];
+      if (target.kind !== 'image') return; // 多一道防御，防止索引漂移
       target.imageCaption = caption;
       changed = true;
     });
+    if (videoPosterTarget) {
+      const posterCaption =
+        captions[captions.length - 1]?.trim() || '';
+      if (posterCaption) {
+        const target = media[videoPosterTarget.videoIndex];
+        if (target.kind === 'video') {
+          target.posterCaption = posterCaption;
+          changed = true;
+        }
+      }
+    }
 
     if (!changed) {
       return;
     }
 
-    post.mediaPayload = this.serializeMomentMedia(media);
+    // 关键：用 targeted update 只写 mediaPayload 一列，避免在 caption 异步等待期间被
+    // 并发 toggleLike / addComment 增量改过的 likeCount / commentCount 被 save(post)
+    // 整对象覆盖回旧值。post 对象在内存里也同步更新，下面 setTimeout closures 还能直接读。
+    const nextPayload = this.serializeMomentMedia(media);
+    post.mediaPayload = nextPayload;
     try {
-      await this.postRepo.save(post);
+      await this.postRepo.update({ id: post.id }, { mediaPayload: nextPayload });
     } catch (error) {
       // 落库失败也无所谓，本次调度的 closure 们仍持有同一份 post 对象的 imageCaption；
       // 顶多重启后再触发评论时需要重跑一次 vision。
-      this.logger.warn?.(
+      this.logger.warn(
         `ensureMomentImageCaptions: persist failed for post ${post.id}: ${(error as Error).message}`,
       );
     }

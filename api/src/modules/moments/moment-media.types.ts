@@ -39,6 +39,9 @@ export interface MomentVideoAsset {
   width?: number;
   height?: number;
   durationMs?: number;
+  // 封面图的 AI 视觉描述，跟 MomentImageAsset.imageCaption 对称——video 帖的角色评论
+  // 也走 ensureMomentImageCaptions 单次缓存，文本下游模型才能"看到"封面。
+  posterCaption?: string;
 }
 
 export interface MomentAudioAsset {
