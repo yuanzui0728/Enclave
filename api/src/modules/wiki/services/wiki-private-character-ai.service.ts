@@ -87,7 +87,28 @@ export class WikiPrivateCharacterAiService {
     if (section === 'all') {
       return this.generateAllByFanout(input);
     }
-    return this.runSingleSection({ ...input, section });
+    // 单 section 路径：basics / core_logic 自取 injection。其它节 (chat / scenes /
+    // memory) 跳过——它们是行为/语言风格，搜外网帮助不大、还烧配额。
+    const injection = sectionWantsWebSearch(section)
+      ? await this.fetchWebSearchInjection(input.currentDraft)
+      : null;
+    return this.runSingleSection({ ...input, section, webSearchInjection: injection });
+  }
+
+  /**
+   * 取一段可插入 system prompt 的 web_search markdown。
+   * 收紧的守门（2026-05-22 走查）：必须 name + bio 都齐且 bio 实质性（≥4 字），
+   * 否则拿一个泛人名搜出来全是噪音、白烧配额。任何失败安静返回 null。
+   */
+  private async fetchWebSearchInjection(
+    currentDraft: PrivateCharacterDto,
+  ): Promise<string | null> {
+    const name = currentDraft.name?.trim() || '';
+    const bio = currentDraft.bio?.trim() || '';
+    if (!name || bio.length < 4) return null;
+    const query = `${name} ${bio}`.slice(0, 80);
+    const injection = await this.webSearch.searchAndFormat(query);
+    return injection ? injection.markdown : null;
   }
 
   private async runSingleSection(input: {
@@ -95,24 +116,19 @@ export class WikiPrivateCharacterAiService {
     currentDraft: PrivateCharacterDto;
     ownerId: string;
     optimize?: boolean;
+    /**
+     * 由 caller 预先取好的 web_search markdown，避免 fan-out 模式下 basics 和
+     * core_logic 各自跑一次相同 query 烧两份 web-search 配额。null 表示该节
+     * 不需要 / 不该有 injection；caller 已经决定。
+     */
+    webSearchInjection?: string | null;
   }): Promise<AiGeneratedDraft> {
     const template = SECTION_PROMPTS[input.section];
     const vars = buildTemplateVars(input.currentDraft);
     const userPrompt = renderPromptTemplate(template.userPromptTemplate, vars);
     let combinedPrompt = `${template.systemPrompt}\n\n---\n\n${userPrompt}`;
-    // 写作助手：basics / core_logic 这两节最需要"真实背景资料"——AI 生成职业身份、
-    // 专长领域、核心逻辑时若拿到 web_search 结果，能避免凭空编造。其它节（chat /
-    // scenes / memory）是行为/语言风格，搜外网帮助不大，跳过省配额。
-    if (input.section === 'basics' || input.section === 'core_logic') {
-      const queryParts = [
-        input.currentDraft.name?.trim(),
-        input.currentDraft.bio?.trim(),
-      ].filter((s): s is string => !!s);
-      if (queryParts.length > 0) {
-        const query = queryParts.join(' ').slice(0, 80);
-        const injection = await this.webSearch.searchAndFormat(query);
-        if (injection) combinedPrompt = `${combinedPrompt}\n\n${injection.markdown}`;
-      }
+    if (input.webSearchInjection) {
+      combinedPrompt = `${combinedPrompt}\n\n${input.webSearchInjection}`;
     }
 
     const usageContext: AiUsageContext = {
@@ -174,6 +190,11 @@ export class WikiPrivateCharacterAiService {
     const subsections = SECTION_KEYS.filter(
       (k): k is Exclude<SectionKey, 'all'> => k !== 'all',
     );
+    // web_search 在 fan-out 内只取一次：basics 和 core_logic 之前各自调一次相同
+    // query，重复烧配额（每天软上限 200/天）。提前共享给两节。
+    const sharedInjection = subsections.some(sectionWantsWebSearch)
+      ? await this.fetchWebSearchInjection(input.currentDraft)
+      : null;
     const results = await Promise.all(
       subsections.map(async (section) => {
         try {
@@ -182,6 +203,9 @@ export class WikiPrivateCharacterAiService {
             currentDraft: input.currentDraft,
             ownerId: input.ownerId,
             optimize: input.optimize,
+            webSearchInjection: sectionWantsWebSearch(section)
+              ? sharedInjection
+              : null,
           });
         } catch (err) {
           this.logger.warn(
@@ -627,6 +651,16 @@ function normalizeMemory(
 // normalizeLife removed 2026-05-15 along with the wiki life section.
 
 // ───── helpers ─────
+
+/**
+ * 只有 basics（生成职业身份 / 专长领域 / avatar）和 core_logic（生成行为准则）
+ * 真正受益于"真实背景资料"——其它节 (chat / scenes / memory) 是行为/语言风格，
+ * 搜外网帮助不大。封装成一个独立断言，让 generateForSection / generateAllByFanout
+ * 都用同一份逻辑判断，不会两边漂移。
+ */
+function sectionWantsWebSearch(section: Exclude<SectionKey, 'all'>): boolean {
+  return section === 'basics' || section === 'core_logic';
+}
 
 /**
  * 判断一个 AiGeneratedDraft 是否带了实质字段。
