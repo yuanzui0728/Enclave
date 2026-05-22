@@ -1040,7 +1040,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
         <div className="mt-3.5 space-y-2.5">
           {syncStatusMutation.error instanceof Error ? (
+            // 走查 2026-05-22 移动端群聊 R1：和姊妹 group-chat-thread-panel
+            // R67（commit 9a8c5f...）一批 ErrorBlock 同款 a11y 修法——这条
+            // 是用户点「同步在席」失败时的唯一可视错误反馈（旁边按钮也只是
+            // 重试/继续，不带语义播报），裸 InlineNotice 内部仅 <div>，盲人
+            // SR 在群语音通话页失败时只能看到"沉默"。role="alert" 自带
+            // aria-live="assertive"，立刻读出 describeRequestError 内容。
             <MobileCallNotice
+              role="alert"
               tone="danger"
               className="flex items-center justify-between gap-3"
             >
@@ -1067,7 +1074,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           ) : null}
           {endStatusMutation.error instanceof Error ? (
+            // 走查 2026-05-22 R1：同 syncStatusMutation 错误条 a11y 修法。
+            // 这条是用户点「结束通话」失败时的反馈，盲人 SR 听不到「结束
+            // 失败，请重试」会以为通话已经结束转身离开，结果通话还在线
+            // → 计费/在席状态不同步。
             <MobileCallNotice
+              role="alert"
               tone="danger"
               className="flex items-center justify-between gap-3"
             >

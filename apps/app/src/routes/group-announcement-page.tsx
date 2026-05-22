@@ -211,79 +211,95 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     triggerSave();
   };
 
+  // 走查 2026-05-22 R1：handleShareAnnouncement 是 async 函数（先 await
+  // shareWithNativeShell 弹原生 share sheet、再退路径 await navigator.clipboard
+  // .writeText），上方右上角入口 onClick={() => void handleShareAnnouncement()}
+  // 完全没 busy 守，慢网或弹原生 sheet 那几百 ms 用户连点 2 次会同时进入两条
+  // share/clipboard 路径——iOS Safari 实测会因为重叠请求 share-sheet 直接报
+  // NotAllowedError 让两条都失败；Web 端也会触发两条 navigator.clipboard
+  // .writeText 同时打 + 两条 setNotice 闪现成功提示。和姊妹 chat-details-page
+  // / chat-list-page 同款 ref 同步赋值：第一次 click 翻 true 后同帧后续 click
+  // 都被早返，finally 解锁。"重试分享/复制" 的 notice onAction 复用同一把锁。
+  const sharingRef = useRef(false);
   async function handleShareAnnouncement() {
-    const group = groupQuery.data;
-    const announcement = draft.trim() || group?.announcement?.trim() || "";
-    if (!group || !announcement) {
-      setNotice({
-        tone: "info",
-        message: t(msg`当前还没有可分享的群公告。`),
-      });
-      return;
-    }
-
-    const groupPath = `/group/${groupId}/announcement`;
-    const groupUrl = buildPublicShareUrl(groupPath);
-    const announcementTitle = t(msg`${group.name} 群公告`);
-    const summary = [announcementTitle, announcement, groupUrl].join("\n\n");
-
-    if (nativeMobileShareSupported) {
-      const shared = await shareWithNativeShell({
-        title: announcementTitle,
-        text: summary,
-        url: groupUrl,
-      });
-
-      if (shared) {
+    if (sharingRef.current) return;
+    sharingRef.current = true;
+    try {
+      const group = groupQuery.data;
+      const announcement = draft.trim() || group?.announcement?.trim() || "";
+      if (!group || !announcement) {
         setNotice({
-          tone: "success",
-          message: t(msg`已打开系统分享面板。`),
+          tone: "info",
+          message: t(msg`当前还没有可分享的群公告。`),
         });
         return;
       }
-    }
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setNotice({
-        tone: "info",
-        message: nativeMobileShareSupported
-          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
-          : t(msg`当前环境暂不支持复制群公告。`),
-        actionLabel: nativeMobileShareSupported
-          ? t(msg`重试分享`)
-          : t(msg`重试复制`),
-        onAction: () => {
-          void handleShareAnnouncement();
-        },
-      });
-      return;
-    }
+      const groupPath = `/group/${groupId}/announcement`;
+      const groupUrl = buildPublicShareUrl(groupPath);
+      const announcementTitle = t(msg`${group.name} 群公告`);
+      const summary = [announcementTitle, announcement, groupUrl].join("\n\n");
 
-    try {
-      await navigator.clipboard.writeText(summary);
-      setNotice({
-        tone: "success",
-        message: nativeMobileShareSupported
-          ? t(msg`系统分享暂时不可用，已复制群公告。`)
-          : t(msg`群公告已复制。`),
-      });
-    } catch {
-      setNotice({
-        tone: "info",
-        message: nativeMobileShareSupported
-          ? t(msg`系统分享失败，请稍后重试。`)
-          : t(msg`复制群公告失败，请稍后重试。`),
-        actionLabel: nativeMobileShareSupported
-          ? t(msg`重试分享`)
-          : t(msg`重试复制`),
-        onAction: () => {
-          void handleShareAnnouncement();
-        },
-      });
+      if (nativeMobileShareSupported) {
+        const shared = await shareWithNativeShell({
+          title: announcementTitle,
+          text: summary,
+          url: groupUrl,
+        });
+
+        if (shared) {
+          setNotice({
+            tone: "success",
+            message: t(msg`已打开系统分享面板。`),
+          });
+          return;
+        }
+      }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setNotice({
+          tone: "info",
+          message: nativeMobileShareSupported
+            ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+            : t(msg`当前环境暂不支持复制群公告。`),
+          actionLabel: nativeMobileShareSupported
+            ? t(msg`重试分享`)
+            : t(msg`重试复制`),
+          onAction: () => {
+            void handleShareAnnouncement();
+          },
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        setNotice({
+          tone: "success",
+          message: nativeMobileShareSupported
+            ? t(msg`系统分享暂时不可用，已复制群公告。`)
+            : t(msg`群公告已复制。`),
+        });
+      } catch {
+        setNotice({
+          tone: "info",
+          message: nativeMobileShareSupported
+            ? t(msg`系统分享失败，请稍后重试。`)
+            : t(msg`复制群公告失败，请稍后重试。`),
+          actionLabel: nativeMobileShareSupported
+            ? t(msg`重试分享`)
+            : t(msg`重试复制`),
+          onAction: () => {
+            void handleShareAnnouncement();
+          },
+        });
+      }
+    } finally {
+      sharingRef.current = false;
     }
   }
 
