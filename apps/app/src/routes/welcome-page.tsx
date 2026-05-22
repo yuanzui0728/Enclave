@@ -274,10 +274,41 @@ function PasswordField({
   ...rest
 }: PasswordFieldProps) {
   const [revealed, setRevealed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // React 在 commit 把 input.type 切到新值后浏览器内部会把 selectionStart/End
+  // 重置为 0（chromium 实测：直接 el.type = "..." 不会丢，但 React reconciler
+  // 通过 setAttribute 的路径会丢）；用户在长密码中间核对时点眼睛，caret 被
+  // 打回开头。在 onClick 捕一次旧 selection，commit 后通过 rAF 还原——
+  // useEffect 同步还原不够及时（浏览器的 reset 在 commit 之后才发生）。
+  const pendingSelectionRef = useRef<[number, number] | null>(null);
+  useEffect(() => {
+    const pending = pendingSelectionRef.current;
+    if (!pending || !inputRef.current) return;
+    const input = inputRef.current;
+    pendingSelectionRef.current = null;
+    const [start, end] = pending;
+    // 双层 rAF：commit 后再过一帧浏览器才把 selection reset 完；同步或单层
+    // rAF 内调 setSelectionRange 会被随后的内部 reset 盖掉。
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        try {
+          input.setSelectionRange(start, end);
+        } catch {
+          // 部分浏览器 type=password 上 setSelectionRange 会抛
+        }
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [revealed]);
   return (
     <div className="relative">
       <TextField
         {...rest}
+        ref={inputRef}
         type={revealed ? "text" : "password"}
         className={`${className ?? ""} pr-12`.trim()}
       />
@@ -288,7 +319,17 @@ function PasswordField({
         // 再点输入框才能继续敲。preventDefault 让 click 仍然触发但焦点留在
         // input 上（也保住 IME / caret position）。
         onMouseDown={(event) => event.preventDefault()}
-        onClick={() => setRevealed((value) => !value)}
+        onClick={() => {
+          const input = inputRef.current;
+          if (input) {
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            if (start !== null && end !== null) {
+              pendingSelectionRef.current = [start, end];
+            }
+          }
+          setRevealed((value) => !value);
+        }}
         aria-label={revealed ? hideLabel : showLabel}
         aria-pressed={revealed}
         className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[color:var(--text-muted)] transition-colors hover:bg-[color:var(--surface-input-hover,rgba(0,0,0,0.04))] hover:text-[color:var(--text-primary)]"
