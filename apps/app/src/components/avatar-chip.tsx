@@ -30,19 +30,21 @@ export const AvatarChip = memo(function AvatarChip({
 }: {
   name?: string | null;
   src?: string | null;
-  size?: "sm" | "md" | "lg" | "xl" | "wechat";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "wechat";
 }) {
   const [loadFailed, setLoadFailed] = useState(false);
   const classes =
-    size === "sm"
-      ? "h-9 w-9 rounded-[16px] text-sm"
-      : size === "xl"
-        ? "h-16 w-16 rounded-full text-2xl"
-        : size === "wechat"
-          ? "h-12 w-12 rounded-xl text-base"
-          : size === "lg"
-            ? "h-14 w-14 rounded-full text-xl"
-            : "h-11 w-11 rounded-full text-base";
+    size === "xs"
+      ? "h-7 w-7 rounded-[10px] text-xs"
+      : size === "sm"
+        ? "h-9 w-9 rounded-[16px] text-sm"
+        : size === "xl"
+          ? "h-16 w-16 rounded-full text-2xl"
+          : size === "wechat"
+            ? "h-12 w-12 rounded-xl text-base"
+            : size === "lg"
+              ? "h-14 w-14 rounded-full text-xl"
+              : "h-11 w-11 rounded-full text-base";
   // 第三轮新会话 R2：之前 src?.trim() 在 render 函数体里裸跑——AvatarChip 全
   // 站用 113 次，profile-info-avatar-page 用户在 URL 输入框敲字时，1MB data URL
   // 头像每个 keystroke 都被 trim() 复制一次（O(n) 但生成新字符串副本，更重）。
@@ -82,15 +84,17 @@ export const AvatarChip = memo(function AvatarChip({
 
   if (!isLikelyImageSource(trimmedSrc) && isEmojiAvatar(trimmedSrc)) {
     const emojiTextSize =
-      size === "sm"
-        ? "text-[18px]"
-        : size === "xl"
-          ? "text-[34px]"
-          : size === "wechat"
-            ? "text-[24px]"
-            : size === "lg"
-              ? "text-[28px]"
-              : "text-[22px]";
+      size === "xs"
+        ? "text-[14px]"
+        : size === "sm"
+          ? "text-[18px]"
+          : size === "xl"
+            ? "text-[34px]"
+            : size === "wechat"
+              ? "text-[24px]"
+              : size === "lg"
+                ? "text-[28px]"
+                : "text-[22px]";
     return (
       <span
         // 走查电脑端群聊 R11：和姊妹 GroupAvatarChip R11 同款 ?? vs || 漏防 +
