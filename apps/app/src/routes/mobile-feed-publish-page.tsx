@@ -733,10 +733,17 @@ export function MobileFeedPublishPage() {
         // 挂 role="dialog" + aria-modal="true" + aria-label="放弃发表"，让 SR 一进
         // 来就读出对话框语义；浏览器/AT 收到 aria-modal=true 后会把焦点圈在内
         // 部，Tab 不会逃到底层 publish 页的 textarea/按钮上去。
+        // 走查本轮 R2 (a11y)：aria-labelledby + aria-describedby 指向可见的标题
+        // 和描述文本，autoFocus 命中「继续编辑」时 SR 用户能依次听到「放弃发表
+        // dialog → 返回会丢失已编辑的文字与媒体... → 继续编辑 button」，拿到完
+        // 整决策上下文；原本只挂 aria-label="放弃发表" 时 SR 跳到 focused button
+        // 就只读到"继续编辑 button"，描述里那句"返回会丢失"完全错过，盲用户根本
+        // 不知道按"放弃"会丢什么。
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={t(msg`放弃发表`)}
+          aria-labelledby="discard-confirm-title"
+          aria-describedby="discard-confirm-description"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(17,24,39,0.32)] p-6 backdrop-blur-[3px]"
         >
           <button
@@ -747,17 +754,33 @@ export function MobileFeedPublishPage() {
           />
           <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[18px] bg-white shadow-[var(--shadow-overlay)]">
             <div className="px-6 pb-3 pt-6 text-center">
-              <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+              <div
+                id="discard-confirm-title"
+                className="text-[16px] font-medium text-[color:var(--text-primary)]"
+              >
                 {t(msg`放弃发表`)}
               </div>
-              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id="discard-confirm-description"
+                className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {t(msg`返回会丢失已编辑的文字与媒体，确定不发布吗？`)}
               </div>
             </div>
             <div className="grid grid-cols-2 border-t border-[color:var(--border-faint)]">
+              {/*
+                走查本轮 R1 (a11y)：autoFocus 在「继续编辑」（左侧、安全动作）—— modal
+                打开时焦点原本停在 topbar 返回按钮上（已被 modal backdrop 盖住），SR
+                用户拿到 role=dialog 通知后 enumerate 还要 Tab N 次才能到达可操作按钮；
+                键盘用户按 Enter 也只命中已隐藏的 topbar 按钮无反应。iOS 系统弹窗 /
+                macOS 警告框惯例：默认焦点落在安全动作（继续编辑 = 不丢内容）而不是
+                破坏性动作（放弃），用户误按 Enter 时不会丢草稿。和 ESC 关闭路径同
+                对齐——让"继续编辑"在键盘 & SR 链路下都成为最直接的默认。
+              */}
               <button
                 type="button"
                 onClick={() => setDiscardConfirmOpen(false)}
+                autoFocus
                 className="border-r border-[color:var(--border-faint)] py-3 text-[15px] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
               >
                 {t(msg`继续编辑`)}
