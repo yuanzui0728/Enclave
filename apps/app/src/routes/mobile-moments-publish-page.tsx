@@ -267,6 +267,12 @@ export function MobileMomentsPublishPage() {
   const hydratedSignatureRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
+    // 走查 R5：账户 A→B 切换时若 A 已 hydrate 过、B 无 stored draft，老 sig 一直留
+    // 在 ref 里。B 用户随便敲一段文本时若 length 撞巧和 A 一致（无媒体场景下
+    // signature 只看 text.length），cleanup 那条 sig 比对就会以为「用户没动过
+    // hydrate 草稿」直接 skip autosave，B 的新内容白丢。新 baseUrl 进来先擦掉
+    // 上个账户残留的 sig，让 loadMomentDraft 命中 stored 后再回填本账户的 sig。
+    hydratedSignatureRef.current = null;
     void loadMomentDraft(baseUrl).then((stored) => {
       if (cancelled || !stored) return;
       // 慢盘场景：用户先打字、IDB read 才回来 —— 不要拿草稿覆盖新输入。
