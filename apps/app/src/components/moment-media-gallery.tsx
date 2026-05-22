@@ -553,7 +553,18 @@ function MomentImageViewerOverlay({
   // 定位的 containing block 就从 viewport 收缩到那个祖先 → 全屏 viewer 会落在帖子
   // 卡片大小的盒子里而不是全屏。portal 到 document.body 跳出 transform 笼子。
   const overlay = (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.92)] backdrop-blur-sm">
+    <div
+      // 新会话走查 R1 (a11y)：之前裸 div 全屏 overlay，没 role/aria-modal/aria-label。
+      // 屏幕阅读器用户从 WeChatGridCell 点开大图后只听到"button image"，进入 viewer
+      // 后什么上下文都没有，找不到关闭/翻页入口。挂 dialog 语义 + aria-label="图片
+      // 预览"（活动图 fileName 在顶部可见，alt 也带），让 VoiceOver/TalkBack 进 viewer
+      // 时第一句报"图片预览"。aria-modal=true 让 SR 不再扫底层 moment 卡片（避免
+      // 混乱）。和 wechat-comment-bar 走查 R4 / share-card-modal 走查 R3 同模板。
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(msg`图片预览`)}
+      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.92)] backdrop-blur-sm"
+    >
       {/* i18n-ignore-start: dev comment - 关闭层叠说明 */}
       {/* 原本想用一个 `absolute inset-0 button` 当"点击任意空白关闭"层，但下面的
           图片容器也是 `absolute inset-0`（没 z-index），按 CSS 默认 stack 后兄弟
@@ -671,7 +682,14 @@ function MomentVideoViewerOverlay({
 
   // 同图片 viewer，朋友圈页 transform 祖先会把 fixed 困在 post 卡片里。portal 出去。
   const overlay = (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm">
+    <div
+      // 新会话走查 R1 (a11y)：同图片 viewer 修法。SR 进入视频预览时报"视频预览"，
+      // aria-modal=true 屏蔽底层 moment 卡片避免上下文混乱。
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(msg`视频预览`)}
+      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm"
+    >
       {/* 跟图片 viewer 同样的层叠陷阱：absolute inset-0 close button 被下方的
           视频容器（也是 absolute inset-0）盖住，背景空白点击全部沉默。差别在
           于视频元素自带 controls，整层 onClick={onClose} 会导致点 controls 也
