@@ -2112,7 +2112,29 @@ function ConversationListItemLinkImpl({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      <div className="absolute inset-y-0 right-0 flex">
+      {/*
+        新会话走查 R4：原版 linkClassName 在 pending 时挂 pointer-events-none
+        让用户进不去聊天，但下面 absolute 定位的 4 个 swipe action button
+        没禁。`pointer-events: none` 让 Link 对点击「透明」，hit-test 走到
+        Link 下方的 action buttons 上（即便 swipe 已经在合上动画期间 / 已经
+        合上视觉看不见，按钮还在 DOM 里并接收 click）。典型 trigger：
+          1. 用户先 swipe 露 Pin/Mute/Mark/Delete 4 个按钮
+          2. 点 Pin → setOpenSwipeConversationId(null) + pinMutation.mutate()
+             同帧触发，pending=true 立刻挂上，但 swipeOffset 从 -272→0 还有
+             ~150ms motion-fast 动画
+          3. 这 150ms 里 Pin 已经透传不响应，但 Mute/Delete 仍然部分露出 +
+             click 能穿透 Link 打到按钮 → 用户再点一下右侧任意位置 →
+             muteMutation / hideMutation 同时入队，跟 pinMutation 抢同一会
+             话的乐观更新，状态闪烁、optimistic rollback 互相冲掉
+        给 action buttons 容器同款 pointer-events-none + 视觉 70% 透明，
+        与 Link 一致表达「mutation 进行中、整行不可点」。
+      */}
+      <div
+        className={cn(
+          "absolute inset-y-0 right-0 flex",
+          pending ? "pointer-events-none opacity-70" : undefined,
+        )}
+      >
         <button
           type="button"
           onClick={onTogglePinned}
