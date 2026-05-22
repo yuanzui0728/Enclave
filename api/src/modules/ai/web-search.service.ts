@@ -25,6 +25,14 @@ const TRIGGER_PATTERNS: readonly RegExp[] = [
 
 const QUOTA_MODEL = 'web-search';
 const MAX_RESULTS_INJECTED = 5;
+// 走查本次 R2：searchAndFormat 调用方多样（shake-discovery 的 topTopic、
+// moments 的 expertDomains+"最新"、wiki-private AI 的 name+bio），其中
+// shake-discovery 直接吃 cyberAvatar.focus 字段，理论无长度上限。MiniMax
+// /v1/coding_plan/search docs 推荐 "3-5 keywords 效果最好"，超长 query 至少
+// 4xx + 烧 200/天 quota 一次，且即便不 4xx 也搜不出有意义结果。给一个软上
+// 限：超 200 字裁掉。和 shouldTriggerForUserMessage 的 500 字 gate 区分:
+// gate 是 "不应该触发"，cap 是 "已决定触发但 query 不能太长"。
+const MAX_SEARCH_QUERY_CHARS = 200;
 
 export interface WebSearchInjection {
   query: string;
@@ -53,9 +61,15 @@ export class WebSearchService {
   // 任何失败（client 配置缺失 / quota 耗尽 / 网络）都 swallow 并返回 null
   // → 调用方退回到不带搜索的原 prompt。
   async searchAndFormat(query: string): Promise<WebSearchInjection | null> {
-    const cleaned = query.trim();
-    if (!cleaned) return null;
+    const trimmed = query.trim();
+    if (!trimmed) return null;
     if (!this.minimax.isConfigured()) return null;
+    // 软裁防 200/天 quota 烧在必败超长 query 上（shake-discovery 直接传
+    // cyberAvatar.focus 字段无上限）。
+    const cleaned =
+      trimmed.length > MAX_SEARCH_QUERY_CHARS
+        ? trimmed.slice(0, MAX_SEARCH_QUERY_CHARS)
+        : trimmed;
 
     // 走标准 quota 三步：reserve → call → commit/release
     const reserved = await this.quota.tryReserve(QUOTA_MODEL);
