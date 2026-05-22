@@ -2130,16 +2130,15 @@ export function MomentsPage() {
         // 走查 R4：commentBar 内 textarea 上方错误条 — 之前直拼 server
         // legacyMessage（中文），非 zh-CN locale 用户看到的就是中文。和上方
         // commentMutation.onError 的 translateAppErrorCode 处理同步。
+        //
+        // 走查本轮 R1：之前 fallback 走 `commentMutation.error.message` 裸吐 ——
+        // 公网隧道断流时 fetch 抛 TypeError("Failed to fetch")，translateAppErrorCode
+        // 返回 null，fallback 把"Failed to fetch"原样塞给 zh-CN 用户。和上方 desktop
+        // 分支 commentErrorMessage 已经走 resolveMomentsErrorMessage(...) 同模板对齐，
+        // describeRequestError 把网络错 / cloud-auth 401 等翻成当前 locale 友好文案。
         commentMutation.isError &&
         commentMutation.variables === commentBarTarget?.momentId
-          ? isApiRequestError(commentMutation.error)
-            ? (translateAppErrorCode(commentMutation.error) ??
-              (commentMutation.error instanceof Error
-                ? commentMutation.error.message
-                : null))
-            : commentMutation.error instanceof Error
-              ? commentMutation.error.message
-              : null
+          ? resolveMomentsErrorMessage(commentMutation.error)
           : null
       }
       notice={notice}
