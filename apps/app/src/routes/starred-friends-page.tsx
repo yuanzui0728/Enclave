@@ -385,8 +385,13 @@ function MobileStarredFriendsPage() {
                     }),
                   });
                 }}
+                // 走查新一轮 R3：跟 contacts-page FriendListRow / world-characters-page
+                // / group-contacts-page / tags-page 同口径补 yj-list-item-virtual。
+                // 星标朋友通常少（yuanzui 实测 1 位），但仍跟兄弟"长列表行"页面对齐
+                // 防御 worst case + 行高度一致预测，content-visibility:auto +
+                // contain-intrinsic-size 双发挥。
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                  "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                   index > 0
                     ? "border-t border-[color:var(--border-faint)]"
                     : undefined,

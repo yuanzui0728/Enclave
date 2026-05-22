@@ -591,11 +591,22 @@ function MobileAddFriend() {
             variant="ghost"
             size="icon"
             className="relative h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
-            aria-label={t(msg`新的朋友`)}
+            // 走查新一轮 R4：原本 aria-label 固定"新的朋友"，但右上角有红色徽标
+            // 显示 pendingRequestCount，SR 用户听不到具体待处理数；改成带计数的
+            // 复合 aria-label，让 SR 用户跟视力用户拿到同等信息。badge 数字本身
+            // aria-hidden 跳过避免重复播报。
+            aria-label={
+              pendingRequestCount > 0
+                ? t(msg`新的朋友，${pendingRequestCount > 99 ? "99+" : pendingRequestCount} 条待处理`)
+                : t(msg`新的朋友`)
+            }
           >
             <Users size={17} />
             {pendingRequestCount > 0 ? (
-              <span className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[#fa5151] px-[3px] text-[9px] font-medium leading-[14px] text-white">
+              <span
+                aria-hidden="true"
+                className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[#fa5151] px-[3px] text-[9px] font-medium leading-[14px] text-white"
+              >
                 {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
               </span>
             ) : null}

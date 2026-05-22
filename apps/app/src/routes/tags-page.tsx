@@ -387,8 +387,15 @@ function MobileTagsPage() {
                         }),
                       });
                     }}
+                    // 走查新一轮 R3：跟 contacts-page FriendListRow / world-characters-page
+                    // / group-contacts-page Round 9 同口径补 yj-list-item-virtual。
+                    // buildContactTagGroups 命中搜索时整组全员展示（不只匹配项），
+                    // 即便用户只搜了 "alice" 仍会渲染该 tag 下全部 N 人；yuanzui
+                    // 当前唯一 tag "朋友" 下挂 ~190 位好友，一打开标签页就是 190
+                    // 个屏外按钮强制 layout/paint，content-visibility:auto +
+                    // contain-intrinsic-size 把屏外行延后渲染。
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                      "yj-list-item-virtual flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                       index > 0
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,

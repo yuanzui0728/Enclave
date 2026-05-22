@@ -156,7 +156,12 @@ export function ContactShortcutList({
             </div>
 
             {item.badgeCount ? (
+              // 走查新一轮 R4：原版 badge 是纯视觉 div，SR 读 button 时会按 DOM 顺序
+              // 把 "新的朋友, 5 条待处理申请, 5" 念出来——subtitle 已经把"X 条待处
+              // 理申请"播报过了，badge 里的裸数字 "5" 是重复信息。aria-hidden 让 SR
+              // 跳过 badge，保留视觉提示。
               <div
+                aria-hidden="true"
                 className={cn(
                   "flex items-center justify-center rounded-full bg-[#e74c3c] font-medium leading-none text-white",
                   variant === "desktop-flat"

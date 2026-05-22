@@ -174,7 +174,10 @@ export function ManagementPermissionsScreen({
                     <button
                       type="button"
                       onClick={() => onPickFriend(item.character.id)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]"
+                      // 走查新一轮 R3：管理 modal 的"朋友权限"列表用整份 friends
+                      // 数据（yuanzui 实测 ~198 行），原本裸跑 layout，跟兄弟通讯录
+                      // 长列表页面对齐 yj-list-item-virtual 让屏外行延后渲染。
+                      className="yj-list-item-virtual flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]"
                     >
                       <AvatarChip
                         // 通讯录 mobile 走查 R3：AvatarChip name 用于 alt + 渐变 hash
