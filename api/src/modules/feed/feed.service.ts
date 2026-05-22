@@ -865,8 +865,19 @@ export class FeedService implements OnModuleInit {
         synthesizedAt: new Date().toISOString(),
       },
     };
-    post.statsPayload = updatedStats;
-    await this.postRepo.save(post);
+    // 走查 yuanzui0728 本次 R3：同 moments 同款 upsert 复活 bug——
+    // postRepo.save(post) 在 owner 跨端删贴期间会把贴整行 INSERT 回去。
+    // 改 update({ id }) 精确更新 statsPayload；行已删则 affected=0，仍把
+    // audioUrl 返用户（mp3 已合成、配额已扣）但不复活贴。
+    const updateResult = await this.postRepo.update(
+      { id: post.id },
+      { statsPayload: updatedStats },
+    );
+    if (updateResult.affected === 0) {
+      this.logger.warn(
+        `feed narration saved but post=${post.id} disappeared mid-synthesis; not resurrecting`,
+      );
+    }
     return {
       audioUrl: asset.audioUrl,
       durationMs: synthesized.durationMs,

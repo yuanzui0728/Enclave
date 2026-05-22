@@ -6,6 +6,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { WebSearchService } from '../ai/web-search.service';
 import type { AiMessagePart, PersonalityProfile } from '../ai/ai.types';
@@ -568,8 +569,21 @@ export class MomentsService implements OnModuleInit {
         synthesizedAt: new Date().toISOString(),
       },
     };
-    post.generationMetadata = updatedMeta;
-    await this.postRepo.save(post);
+    // 走查 yuanzui0728 本次 R3：原版 postRepo.save(post) 是 upsert 语义。
+    // 如果 owner 在另一端 (iPad / 其他客户端) 在 TTS 合成期间删了这条贴，
+    // 这里 save 会按 entity 整行 INSERT 回去 —— 死贴复活，连同新生成的
+    // narration 一起。改用 update({ id }) 精确更新单列；行已删则 affected=0，
+    // 我们仍把 audioUrl 返给用户（mp3 已生成，TTS 配额已消费，让他听一下不
+    // 再多花什么），但下次再点会重合成 cache miss——和"贴不存在"的语义一致。
+    const updateResult = await this.postRepo.update(
+      { id: post.id },
+      { generationMetadata: updatedMeta },
+    );
+    if (updateResult.affected === 0) {
+      this.logger.warn(
+        `moment narration saved but post=${post.id} disappeared mid-synthesis; not resurrecting`,
+      );
+    }
     return {
       audioUrl: asset.audioUrl,
       durationMs: synthesized.durationMs,
@@ -884,6 +898,11 @@ export class MomentsService implements OnModuleInit {
 
       return this._enrichPost(post);
     } catch (err) {
+      // 会员到期必须 propagate：controller 直接 return 这个值，吞掉就让用户
+      // 看到 null 不知道是过期(批量 generateAllMoments 也得早退)。
+      if (err instanceof SubscriptionExpiredException) {
+        throw err;
+      }
       this.logger.error(`Failed to generate moment for ${characterId}`, err);
       return null;
     }
