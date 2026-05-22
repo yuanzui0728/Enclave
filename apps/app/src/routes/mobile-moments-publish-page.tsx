@@ -202,10 +202,6 @@ export function MobileMomentsPublishPage() {
       // 发表成功 → 清掉对应账户的草稿（按 mutationBaseUrl 走，而不是当前 baseUrl，
       // mid-flight 切账户场景下用户的本意是清 A 的草稿，不是清 B 的）。和 cache
       // invalidate / setQueryData 用同一把 baseUrl 锁。
-      // 同步翻 draftHandledRef—— navigate 触发 unmount 时 cleanup 已不会再 autosave，
-      // 避免和这条 clear 抢同一把 IDB key（race 输了 stale snapshot 又把刚发布的内容
-      // 当草稿存回去）。
-      draftHandledRef.current = true;
       void clearMomentDraft(mutationBaseUrl);
       // 切走后剩下的 flash/draft-reset/navigate 都跟当前用户体验有关——
       // 切账户后用户已经不在 publish 上下文里，全部静默。和 R7/R8/R9
@@ -213,6 +209,15 @@ export function MobileMomentsPublishPage() {
       if (mutationBaseUrl !== createMutationBaseUrlRef.current) {
         return;
       }
+      // 翻 draftHandledRef—— navigate 触发 unmount 时 cleanup 已不会再 autosave，
+      // 避免和上面那条 clearMomentDraft 抢同一把 IDB key（race 输了 stale snapshot 又
+      // 把刚发布的内容当草稿存回去）。
+      // 走查 R1：原本这行同步落在 mid-flight 切账户 guard 之前，A 的 onSuccess 跑回
+      // 来时把 draftHandledRef 当前 B 的会话也标记成「草稿已处理」——用户在 B 上重新
+      // 输入后通过 tab 切换 / 深链接 / 系统手势这类不走 handleBack 的路径离开 publish
+      // 时，unmount cleanup 看到 draftHandledRef=true 就跳过 autosave，B 的新内容凭空
+      // 消失。挪到 same-account 分支只在本账户成功时翻 true。
+      draftHandledRef.current = true;
       storeMomentPublishFlash(t(msg`朋友圈已发布。`));
       composeDraft.reset();
       // 只在用户还停在 publish 页时才 navigate。isPending 期间 我把 取消按钮
