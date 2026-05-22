@@ -1964,8 +1964,17 @@ export class InferenceService implements OnModuleInit {
           text: probeText,
           voiceId: voice,
         });
+        // 走查 yuanzui0728 本次 R1：commit() 失败原会被 outer catch 当作 TTS
+        // 失败 → release（双重 -1）+ throw，把已经拿到的 result.buffer 直接
+        // 丢掉，admin 测试界面看到 503 / 红字。但 MiniMax 已经真的扣了 1 unit
+        // + 我们拿到 mp3。和主链 synthesizeSpeech 同款修法：commit swallow +
+        // warn 日志。
         if (tracked) {
-          await this.minimaxQuota.commit(quotaModel);
+          await this.minimaxQuota.commit(quotaModel).catch((commitErr) => {
+            this.logger.warn(
+              `admin TTS diagnostic quota commit failed (probe success preserved) model=${quotaModel}: ${(commitErr as Error)?.message}`,
+            );
+          });
         }
         buffer = result.buffer;
       } catch (innerErr) {

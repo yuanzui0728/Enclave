@@ -140,7 +140,15 @@ export class WebSearchService {
 
     try {
       const result = await this.minimax.searchWeb({ query: cleaned });
-      await this.quota.commit(QUOTA_MODEL);
+      // 走查 yuanzui0728 本次 R1：commit() 失败原会让 catch 触发 release（双
+      // 重 -1）+ return null，把已经搜到的 organic 结果整段丢掉——MiniMax 已
+      // 经真扣了 1 unit，本次 search 是有效输出。和 TTS 主链同款 swallow，
+      // 让 result 返回去注入 system prompt。
+      await this.quota.commit(QUOTA_MODEL).catch((commitErr) => {
+        this.logger.warn(
+          `web search quota commit failed (result preserved) err=${(commitErr as Error)?.message}`,
+        );
+      });
       if (!result.organic.length) return null;
       const top = result.organic.slice(0, MAX_RESULTS_INJECTED);
       const lines = top.map((item, idx) => {

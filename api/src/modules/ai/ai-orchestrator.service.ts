@@ -3568,8 +3568,19 @@ export class AiOrchestratorService {
                   voiceId: voice,
                 }),
             );
+            // 走查 yuanzui0728 本次 R1：commit() 失败（DB 一过性错误）原会被
+            // outer catch 当作 TTS 失败 → release（双重 -1）+ throw，把已经
+            // 拿到的 result.buffer 直接丢掉，用户看到 503 "通道繁忙"。
+            // 但 MiniMax 已经真的扣了 1 unit + 我们已经拿到 mp3。commit DB 失败
+            // 是局部记账问题，不该让用户失败。包成 .catch swallow + warn 日志，
+            // 让 reserved 留着（当天行内的小漂移，跨日重置；远小于把 mp3 丢了
+            // 让用户重试白烧第二次 11000/天 配额的代价）。
             if (tracked) {
-              await this.minimaxQuota.commit(quotaModel);
+              await this.minimaxQuota.commit(quotaModel).catch((commitErr) => {
+                this.logger.warn(
+                  `TTS quota commit failed (TTS success preserved) model=${quotaModel}: ${(commitErr as Error)?.message}`,
+                );
+              });
             }
             return {
               buffer: result.buffer,
