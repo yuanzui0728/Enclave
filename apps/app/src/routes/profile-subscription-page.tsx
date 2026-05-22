@@ -318,7 +318,15 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 </div>
 
                 {feedback ? (
-                  <InlineNotice tone={feedback.tone}>
+                  // 走查 R2：之前 InlineNotice 无 role —— 复制邀请码 / 系统分享
+                  // 后弹 success / danger 反馈，盲用/键盘用户听不到。danger 用
+                  // role="alert"（assertive 立即朗读），success 走 role="status"
+                  // （polite，待空隙朗读）。和 R1 修过的 profile-feedback notice
+                  // / account-security-panel feedback 同款 a11y 收口。
+                  <InlineNotice
+                    tone={feedback.tone}
+                    role={feedback.tone === "danger" ? "alert" : "status"}
+                  >
                     {feedback.message}
                   </InlineNotice>
                 ) : null}
@@ -658,7 +666,12 @@ export function ProfileSubscriptionPage() {
               {t(msg`可购套餐`)}
             </div>
             {checkoutError ? (
-              <InlineNotice className="mt-4" tone="danger">
+              // 走查 R2：checkout 失败时 danger 红条之前无 role —— 用户点「联系
+              // 开通」按钮被 server 拒（429/会话失效/网络挂）时，盲用户只能从
+              // 按钮恢复非 disabled 推断"失败了"，不知道具体原因。role="alert"
+              // 让屏幕阅读器立即朗读 checkoutError 文案，跟 mutation onError 设
+              // 进来的 describeRequestError 串通。
+              <InlineNotice className="mt-4" tone="danger" role="alert">
                 {checkoutError}
               </InlineNotice>
             ) : null}

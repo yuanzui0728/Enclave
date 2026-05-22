@@ -1261,6 +1261,12 @@ export function ProfileMomentsPage() {
             <div className="px-4 pt-3">
               <InlineNotice
                 tone={notice.tone}
+                // 走查 R2（移动端我-tab 端到端 2026-05-22）：之前 InlineNotice 无 role ——
+                // 点赞/删除失败时 onError 已经把 danger + actionLabel 塞进 notice，
+                // 但盲用户只能从「重试点赞」按钮的 focus 推断"出错了"。danger 用
+                // role="alert"（assertive 立即朗读），success/info 用 status（polite
+                // 待空隙）。和 R1 profile-feedback / favorites notice 一并补齐。
+                role={notice.tone === "danger" ? "alert" : "status"}
                 className="rounded-[8px] border border-[#ECECEC] bg-white px-3 py-2 text-[12px] shadow-none"
               >
                 {/* 走查 R2：之前 mobile 分支只渲 notice.message，但点赞/删除失败
