@@ -2126,7 +2126,13 @@ export function WelcomePage() {
             </MobileWelcomeNotice>
           )
         ) : null}
-        {sendCodeMutation.isError && sendCodeMutation.error instanceof Error ? (
+        {sendCodeMutation.isError &&
+        sendCodeMutation.error instanceof Error &&
+        // 错误只对"上次发送的那个号"有意义：用户把 phone 改成别的号之后，旧错
+        // 误条还堆在底下显两份 danger 容易让人困惑（"我刚改了号怎么还报这个？"）。
+        // 用 codeCooldownIdentityRef 跟 currentCodeIdentity 比，与 effective
+        // cooldown 的隐藏逻辑保持一致。
+        currentCodeIdentity === codeCooldownIdentityRef.current ? (
           isDesktopLayout ? (
             <ErrorBlock message={describeRequestError(sendCodeMutation.error)} />
           ) : (
@@ -2152,7 +2158,10 @@ export function WelcomePage() {
             </MobileWelcomeNotice>
           )
         ) : null}
-        {sendEmailCodeMutation.isError && sendEmailCodeMutation.error instanceof Error ? (
+        {sendEmailCodeMutation.isError &&
+        sendEmailCodeMutation.error instanceof Error &&
+        // 同 phone 路径：换了邮箱旧错误就不再相关，按 identity 隐藏。
+        currentCodeIdentity === codeCooldownIdentityRef.current ? (
           isDesktopLayout ? (
             <ErrorBlock message={describeRequestError(sendEmailCodeMutation.error)} />
           ) : (
