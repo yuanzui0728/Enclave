@@ -73,6 +73,53 @@ export function formatTimestamp(value?: string | null) {
   });
 }
 
+// 微信视频号评论 meta 时间格式：
+//   < 1 min      → 刚刚
+//   < 1 hour     → N 分钟前
+//   同一日内     → N 小时前
+//   昨天         → 昨天
+//   今年其他天   → M月D日
+//   往年         → YYYY年M月D日
+// 跟微信视频号 / 朋友圈评论 meta 体感对齐——比 formatTimestamp 那种纯 MM-DD HH:mm
+// 更符合「8 分钟前」「昨天」这种 ambient 阅读节奏，弱化精确时分对视觉的拉扯。
+export function formatWeChatCommentTime(value?: string | null) {
+  const date = parseDateValue(value);
+  if (!date) {
+    return getJustNowLabel();
+  }
+
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  // 时钟漂移 / server-client skew 偶发 future 时间戳，统一当 "刚刚"——
+  // 否则会出现 "−2 分钟前" 这种诡异负值。
+  if (diffMs < 60_000) {
+    return getJustNowLabel();
+  }
+
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  if (diffMinutes < 60) {
+    return t(msg`${diffMinutes} 分钟前`);
+  }
+
+  const nowDate = new Date(now);
+  if (isSameDay(date, nowDate)) {
+    const diffHours = Math.floor(diffMinutes / 60);
+    return t(msg`${diffHours} 小时前`);
+  }
+
+  const yesterday = new Date(nowDate);
+  yesterday.setDate(nowDate.getDate() - 1);
+  if (isSameDay(date, yesterday)) {
+    return getYesterdayLabel();
+  }
+
+  if (date.getFullYear() === nowDate.getFullYear()) {
+    return t(msg`${date.getMonth() + 1}月${date.getDate()}日`);
+  }
+
+  return t(msg`${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`);
+}
+
 export function formatConversationTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
