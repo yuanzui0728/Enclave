@@ -19,7 +19,10 @@ import {
   buildMobileContactDirectoryRouteHash,
   parseMobileContactDirectoryRouteState,
 } from "../features/contacts/mobile-contact-directory-route-state";
-import { getFriendDisplayName } from "../features/contacts/contact-utils";
+import {
+  getFriendDisplayName,
+  stripBidiControl,
+} from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
@@ -324,7 +327,11 @@ function MobileTagsPage() {
                 <div className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
                     <Tag size={14} className="text-[#15803d]" />
-                    <span>{group.tag}</span>
+                    {/* 通讯录 mobile 走查 R1：tag 名也是用户输入端（contacts-bulk-
+                        action-bar 打标签 dialog / 资料页 tags 编辑），含 U+202E
+                        可以反转后面的"N 位联系人"计数视觉。bulk action bar 在
+                        写入端 strip 过，存量脏数据仍可能被列出，渲染再守一道。 */}
+                    <span>{stripBidiControl(group.tag)}</span>
                   </div>
                   <div className="text-[10px] text-[color:var(--text-muted)]">
                     {t(msg`${group.items.length} 位联系人`)}
@@ -353,7 +360,10 @@ function MobileTagsPage() {
                     )}
                   >
                     <AvatarChip
-                      name={item.character.name}
+                      // 通讯录 mobile 走查 R1：AvatarChip 把 name 落进 alt 属性，
+                      // 含 bidi 控制字符的名字会被屏幕阅读器播报到一半反向。
+                      // 和兄弟 starred-friends-page / world-characters-page 同口径。
+                      name={stripBidiControl(item.character.name)}
                       src={item.character.avatar}
                       size="wechat"
                     />
@@ -363,7 +373,9 @@ function MobileTagsPage() {
                       </div>
                       {getFriendDisplayName(item) !== item.character.name ? (
                         <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-                          {item.character.name}
+                          {/* 走查 R1：副标题在 remark 不等于真名时显示原 character.name，
+                              这里直接读没走 displayName，跟 starred-friends-page 同口径补 strip。 */}
+                          {stripBidiControl(item.character.name)}
                         </div>
                       ) : null}
                     </div>

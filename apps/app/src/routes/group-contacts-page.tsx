@@ -23,6 +23,7 @@ import {
   parseMobileGroupRouteState,
 } from "../features/chat/mobile-group-route-state";
 import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
+import { stripBidiControl } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
@@ -421,14 +422,19 @@ function MobileGroupContactsPage() {
                 )}
               >
                 <GroupAvatarChip
-                  name={group.name}
+                  // 通讯录 mobile 走查 R1：群名是群主 / 改名权限成员可改的用户
+                  // 输入端，含 U+202E 类 bidi 控制字符会把后续 timestamp 视觉
+                  // 反转，且 GroupAvatarChip 也会把 name 落进 alt 让屏阅器读乱。
+                  // 跟 character.name / friendship.remarkName 等其他用户输入端
+                  // 的 strip 同口径。
+                  name={stripBidiControl(group.name)}
                   members={groupParticipantsMap.get(group.id)}
                   size="wechat"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1 truncate text-[14px] text-[color:var(--text-primary)]">
-                      {group.name}
+                      {stripBidiControl(group.name)}
                     </div>
                     <div className="shrink-0 text-[9px] text-[color:var(--text-dim)]">
                       {formatConversationTimestamp(

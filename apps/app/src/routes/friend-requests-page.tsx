@@ -305,6 +305,11 @@ function MobileFriendRequestsPage() {
               // （陌生角色发来的申请尤其值得 strip，因为用户对名字源头无控制）。
               // 跟 getFriendDisplayName / getSearchResultDisplayName 同口径。
               const safeName = stripBidiControl(request.characterName);
+              // 通讯录 mobile 走查 R1：greeting 同样是申请方发起方写的自由文本，
+              // 比 characterName 更值得 strip——攻击者可以在 greeting 里嵌
+              // U+202E 把后续视觉反转，伪造看上去无害的招呼语。characterName
+              // 已经 strip 过，这一处对齐。empty 时仍走默认 "想认识你。" 文案。
+              const safeGreeting = stripBidiControl(request.greeting);
               const acceptErrorForRow =
                 acceptMutation.isError &&
                 acceptMutation.variables === request.id &&
@@ -381,7 +386,7 @@ function MobileFriendRequestsPage() {
                         expired ? "opacity-70" : undefined,
                       )}
                     >
-                      {request.greeting || t(msg`想认识你。`)}
+                      {safeGreeting || t(msg`想认识你。`)}
                     </div>
 
                     {acceptErrorForRow || declineErrorForRow ? (
