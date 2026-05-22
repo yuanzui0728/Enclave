@@ -194,10 +194,17 @@ export function WeChatCommentBar({
         // 后面能扫到"关闭评论"按钮一并 enable 用户用 tap-to-activate 退出。
         // tabIndex={-1} 避免键盘 Tab 经过它把焦点偷出 dialog 之外（焦点应该
         // 在 textarea 上）。
+        //
+        // 走查本轮 R7：同时挂 onPointerDown（鼠标/触摸即时响应）和 onClick（SR
+        // 双击 / 桌面 SR 模拟 click 也能 close）—— onPointerDown 不被 SR 的
+        // synthetic click 触发，单挂会让 SR 用户看到按钮但无法激活；onClick 在
+        // 触摸场景下有 ~250ms 双击检测延迟，单挂会让 tap 关 bar 体感变拖沓。
+        // onClose 多次调用对父组件是幂等（setCommentBarTarget(null) 等于 null）。
         aria-label={t(msg`关闭评论`)}
         tabIndex={-1}
         className="fixed inset-0 z-[1000] bg-black/30 backdrop-blur-[1px]"
         onPointerDown={onClose}
+        onClick={onClose}
       />
       <div
         // 走查本轮 R1 (a11y)：之前 bar 整个 portal 没有 role/aria-* 语义——VoiceOver
