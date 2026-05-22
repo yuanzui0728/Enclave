@@ -2258,11 +2258,27 @@ function ConversationListItemLinkImpl({
         给 action buttons 容器同款 pointer-events-none + 视觉 70% 透明，
         与 Link 一致表达「mutation 进行中、整行不可点」。
       */}
+      {/*
+        走查新一轮 R1（a11y critical）：原版 swipe-action 容器始终在 DOM 里，
+        既没 aria-hidden 也没 inert——76 条会话 × 3~4 个按钮 = ~268 个隐藏
+        button 永久挂在 AT tree 里。VoiceOver/TalkBack 顺序读到每一行时都先
+        听见「取消置顶 取消免打扰 删除」再听 conversation 标题，盲人用户根本
+        分不清这是当前会话已经"在执行什么"还是仅仅未展开的 swipe 选项；同时
+        Tab 键焦点会跑进这 268 个不可见按钮里循环。
+        实测 (playwright accessibility snapshot)：first row innerText =
+        "取消置顶 取消免打扰 删除 🔧 陆辞..."。
+        修法：!open 时给容器加 inert（React 19 原生支持），同时撤出 AT tree、
+        撤出 Tab 焦点序、按钮也不可点（兼上面那条 pending 透传 hit-test 的
+        担忧）；open=true 时正常暴露，用户已经主动 swipe 想用这些按钮。
+      */}
       <div
         className={cn(
           "absolute inset-y-0 right-0 flex",
-          pending ? "pointer-events-none opacity-70" : undefined,
+          pending || !open ? "pointer-events-none" : undefined,
+          pending ? "opacity-70" : undefined,
         )}
+        inert={!open || undefined}
+        aria-hidden={!open || undefined}
       >
         <button
           type="button"
