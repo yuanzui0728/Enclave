@@ -604,8 +604,8 @@ export function MiniProgramsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面小程序`)}
-            description={t(msg`正在载入桌面小程序工作区，马上恢复当前小程序。`)}
-            loadingLabel={t(msg`载入桌面小程序...`)}
+            description={t(msg`正在打开桌面小程序，马上恢复当前小程序。`)}
+            loadingLabel={t(msg`正在打开桌面小程序...`)}
           />
         }
       >

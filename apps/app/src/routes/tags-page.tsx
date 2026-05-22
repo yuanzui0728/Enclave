@@ -58,7 +58,7 @@ export function TagsPage() {
     return (
       <RouteRedirectState
         title={t(msg`正在切换到桌面标签`)}
-        description={t(msg`标签页在桌面布局里并入了通讯录工作区，这里会自动带你打开标签视图。`)}
+        description={t(msg`标签页在桌面布局里并入了通讯录，这里会自动带你打开标签视图。`)}
         loadingLabel={t(msg`正在打开桌面标签...`)}
       />
     );

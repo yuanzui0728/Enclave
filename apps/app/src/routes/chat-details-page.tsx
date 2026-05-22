@@ -79,7 +79,7 @@ export function ChatDetailsPage() {
         conversationId={conversationId}
         panel="details"
         title={t(msg`正在打开桌面聊天信息`)}
-        description={t(msg`正在切换到桌面聊天工作区中的聊天信息侧栏。`)}
+        description={t(msg`正在切换到桌面聊天中的聊天信息侧栏。`)}
         loadingLabel={t(msg`打开桌面聊天信息...`)}
       />
     );
@@ -1339,8 +1339,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <ChatCallFallbackSection
               variant="wechat"
               disabled={!targetCharacterId}
-              voiceValue={t(msg`语音通话`)}
-              videoValue={t(msg`视频通话`)}
+              // 直 chat：右侧不显示子标签，对齐微信「语音通话 / 视频通话」
+              // 纯 label + 箭头；之前写「语音通话/视频通话」会跟 label 重复。
               onSelectKind={guardRowNavigation((kind) => {
                 setNotice(null);
                 if (kind === "video") {

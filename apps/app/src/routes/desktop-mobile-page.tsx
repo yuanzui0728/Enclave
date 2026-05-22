@@ -901,7 +901,7 @@ export function DesktopMobilePage() {
       <DesktopLayoutRequiredState
         title={t(msg`手机接力当前仅提供桌面布局`)}
         description={t(
-          msg`手机接力面板目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续处理会话。`,
+          msg`手机接力面板目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到消息页继续处理会话。`,
         )}
         actionLabel={t(msg`返回消息`)}
         fallbackTo="/tabs/chat"
@@ -1226,7 +1226,7 @@ export function DesktopMobilePage() {
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
               {t(
-                msg`这里不新造设备接口，先用当前世界的真实运行状态来判断手机接力是否值得继续。`,
+                msg`这里不另起一套设备检测，直接看当前世界的真实运行状态，判断手机接力是否值得继续。`,
               )}
             </div>
 

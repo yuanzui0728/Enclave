@@ -34,8 +34,12 @@ export function ChatCallFallbackSection({
   const t = translateRuntimeMessage;
   const isGroup = scope === "group";
   const isWechat = variant === "wechat";
-  const resolvedVoiceValue = voiceValue ?? t(msg`暂未开放`);
-  const resolvedVideoValue = videoValue ?? t(msg`暂未开放`);
+  // value 完全交给调用方控制：传 undefined 就右侧不显示子标签（直 chat
+  // 对齐微信「语音通话 / 视频通话」纯 label + 箭头），群聊侧仍传「群语音 /
+  // 群视频」做区分。原来 ?? "暂未开放" fallback 现在 2 个调用方都不靠它，
+  // 还会在调用方写 label 同款字面量时撞成左右重复，去掉。
+  const resolvedVoiceValue = voiceValue;
+  const resolvedVideoValue = videoValue;
 
   return (
     <>

@@ -284,7 +284,7 @@ export function DesktopFeedbackPage() {
       <DesktopLayoutRequiredState
         title={t(msg`意见反馈当前仅提供桌面布局`)}
         description={t(
-          msg`反馈工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到设置继续排查或记录问题。`,
+          msg`反馈工作区目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到设置继续排查或记录问题。`,
         )}
         actionLabel={t(msg`前往设置`)}
         fallbackTo="/profile/settings"
@@ -475,7 +475,7 @@ export function DesktopFeedbackPage() {
                     setError(null);
                   }}
                   placeholder={t(
-                    msg`一句话说明问题，例如：桌面壳切回聊天后导航状态错乱`,
+                    msg`一句话说明问题，例如：桌面应用切回聊天后导航状态错乱`,
                   )}
                 />
               </div>

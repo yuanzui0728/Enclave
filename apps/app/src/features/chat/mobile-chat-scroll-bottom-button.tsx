@@ -13,9 +13,10 @@ export function MobileChatScrollBottomButton({
   pendingCount = 0,
   onClick,
 }: MobileChatScrollBottomButtonProps) {
-  const badgeLabel =
-    pendingCount > 99 ? "99+" : pendingCount > 0 ? String(pendingCount) : null;
   const hasPending = pendingCount > 0;
+  // 走查 R2：visual badge 用 cap 过的值（"99+"），SR 也念同一个值，听见/看见对齐。
+  const badgeLabel =
+    pendingCount > 99 ? "99+" : pendingCount > 0 ? String(pendingCount) : "";
 
   return (
     <button
@@ -23,12 +24,8 @@ export function MobileChatScrollBottomButton({
       onClick={onClick}
       className="flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white/96 px-3 pl-2.5 text-[12px] text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.12)] backdrop-blur active:bg-[color:var(--surface-card-hover)]"
       aria-label={
-        pendingCount > 0
-          ? // 走查 R2：原版 aria-label 用裸 pendingCount，pendingCount=250 时屏幕
-            // 阅读器念「查看 250 条新消息」，但视觉上 badge 走 badgeLabel cap 成
-            // "99+"——VoiceOver / TalkBack 用户听到的数字和看见的不一致。统一用
-            // badgeLabel cap 后的值。
-            t(msg`查看 ${badgeLabel ?? pendingCount} 条新消息`)
+        hasPending
+          ? t(msg`查看 ${badgeLabel} 条新消息`)
           : t(msg`回到底部`)
       }
     >
@@ -42,9 +39,7 @@ export function MobileChatScrollBottomButton({
         <ChevronDown size={14} />
       </span>
       <span className={hasPending ? "text-[#15803d]" : undefined}>
-        {pendingCount > 0
-          ? t(msg`${badgeLabel ?? ""} 条新消息`)
-          : t(msg`回到底部`)}
+        {hasPending ? t(msg`${badgeLabel} 条新消息`) : t(msg`回到底部`)}
       </span>
     </button>
   );

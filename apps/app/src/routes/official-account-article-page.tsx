@@ -59,8 +59,8 @@ export function OfficialAccountArticlePage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面公众号文章`)}
-            description={t(msg`正在载入桌面文章阅读视图，马上显示当前内容。`)}
-            loadingLabel={t(msg`载入桌面公众号文章...`)}
+            description={t(msg`正在打开桌面文章阅读，马上显示当前内容。`)}
+            loadingLabel={t(msg`正在打开桌面公众号文章...`)}
           />
         }
       >

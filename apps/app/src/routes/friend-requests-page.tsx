@@ -42,7 +42,7 @@ export function FriendRequestsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在切换到桌面新的朋友`)}
-            description={t(msg`正在跳转到桌面通讯录工作区中的好友请求视图。`)}
+            description={t(msg`正在跳转到桌面通讯录中的好友请求视图。`)}
             loadingLabel={t(msg`切换桌面好友请求...`)}
           />
         }

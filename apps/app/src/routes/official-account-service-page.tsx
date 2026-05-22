@@ -34,8 +34,8 @@ export function OfficialAccountServicePage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面服务号会话`)}
-            description={t(msg`正在载入桌面消息工作区中的服务号会话。`)}
-            loadingLabel={t(msg`载入桌面服务号会话...`)}
+            description={t(msg`正在打开桌面服务号消息。`)}
+            loadingLabel={t(msg`正在打开桌面服务号会话...`)}
           />
         }
       >

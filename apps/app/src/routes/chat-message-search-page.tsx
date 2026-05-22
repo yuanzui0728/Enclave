@@ -28,7 +28,7 @@ export function ChatMessageSearchPage() {
         conversationId={conversationId}
         panel="history"
         title={t(msg`正在打开桌面聊天记录`)}
-        description={t(msg`正在切换到桌面聊天工作区中的聊天记录搜索侧栏。`)}
+        description={t(msg`正在切换到桌面聊天中的聊天记录搜索侧栏。`)}
         loadingLabel={t(msg`打开桌面聊天记录...`)}
       />
     );

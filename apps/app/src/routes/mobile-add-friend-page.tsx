@@ -89,7 +89,7 @@ export function MobileAddFriendPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面添加朋友`)}
-            description={t(msg`正在跳转到桌面添加朋友工作区。`)}
+            description={t(msg`正在跳转到桌面添加朋友。`)}
             loadingLabel={t(msg`切换桌面添加朋友...`)}
           />
         }

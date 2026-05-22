@@ -956,8 +956,8 @@ export function ProfileMomentsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面我的朋友圈`)}
-            description={t(msg`正在载入桌面端我的朋友圈工作区。`)}
-            loadingLabel={t(msg`载入桌面我的朋友圈...`)}
+            description={t(msg`正在打开桌面端我的朋友圈。`)}
+            loadingLabel={t(msg`正在打开桌面我的朋友圈...`)}
           />
         }
       >

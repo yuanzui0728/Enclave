@@ -150,25 +150,7 @@ export function ChannelsPage() {
     string | null
   >(null);
   const [notice, setNotice] = useState("");
-  // 走查 2026-05-18 新会话 R6（本轮）：原 tone 只允许 "success" | "info"，
-  // 但下面 InlineNotice 的 role 判断（"danger" || "warning" → role=alert）
-  // 在 TypeScript 上是死分支永不命中，typecheck 报 TS2367。结果所有失败 toast
-  // （点赞失败 / 收藏失败 / 关注失败 / 评论失败 / 转发失败 / 减少推荐失败 / 换
-  // 一批失败 / 评论点赞失败）一律 setNoticeTone("info")，role 落 "status"
-  // = aria-live=polite，SR 用户的当前播报不会被打断，"点完赞 200-500ms 后才
-  // 听到失败" 的体感（典型场景：公网隧道弱网时点赞 → 用户继续往下滚 → 失败
-  // toast 冒出来但 SR 因 polite 排队后才播 → 用户已经离开这条 post），失败感
-  // 知严重延迟。把 tone 联合类型扩到包含 "danger" / "warning"，并把所有
-  // "...失败" / 阻塞类约束（如「需先加为好友才能互动」）显式分流：
-  //   - "...失败" 类（mutation onError）→ "danger" → role=alert（assertive）
-  //   - 阻塞约束（ensureCanInteract）→ "warning" → role=alert
-  //   - 中性信息（生成无内容 / 已在直播流中）→ "info" → role=status
-  //   - 成功反馈 → "success" → role=status
-  // InlineNotice 已经支持这 4 个 tone 的视觉变体（packages/ui/src/components/
-  // inline-notice.tsx），无需改基础组件。
-  const [noticeTone, setNoticeTone] = useState<
-    "success" | "info" | "danger" | "warning"
-  >("success");
+  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
     null,
   );
@@ -209,29 +191,14 @@ export function ChannelsPage() {
   // 走查 2026-05-18 新会话（本轮 R4）：like / favorite / follow 三个 toggle 按
   // 钮的 pending 锁靠 useMutation.isPending → React state，下一次 render 才生
   // 效。同帧（<16ms）内连点 5 次 like 在 React state commit 前都过了，5 条
-  // POST 全飞出去（网络 + cache 乐观更新 5 倍）。跟 chat-details
-  // saveToContactsSubmittingRef / muteSubmittingRef 一套：再叠一层 sync ref
-  // 锁挡同帧 double-tap，mutation settled 后 useEffect [isPending] 复位。
+  // POST 全飞出去（网络 + cache 乐观更新 5 倍），onSuccess notice 闪烁，最
+  // 后留下的 hasLiked / count 取决于 server 谁先回来谁后回来。跟 chat-details
+  // / chat-message-list 的 saveToContactsSubmittingRef / muteSubmittingRef 一
+  // 套：再叠一层 sync ref 锁挡同帧 double-tap，mutation settled 后 useEffect
+  // [isPending] 复位。
   const desktopLikeSubmittingRef = useRef(false);
   const desktopFavoriteSubmittingRef = useRef(false);
   const desktopFollowSubmittingRef = useRef(false);
-  // R6 续：「换一批」按钮（generateMutation）同款 — 同帧 3 次点击触发 3 条
-  // POST /channels/generate（实测）。一次生成 ~3-5 秒 LPP 端口，重复触发把队列
-  // 撑爆。同一套 ref + useEffect [isPending] 复位。
-  const desktopGenerateSubmittingRef = useRef(false);
-  // 走查 2026-05-18 新会话 R5（本轮）：评论卡上的「赞」按钮（desktop drawer +
-  // mobile sheet 共用同一条 likeCommentMutation）一直漏 sync ref，跟同文件 R4
-  // 修过的 like/favorite/follow/generate 四个 toggle 同款 race：disabled=
-  // {pendingLikeCommentId === comment.id} 靠 likeCommentMutation.isPending →
-  // React state 下一次 render 才回 true。yuanzui0728 库里堆 142 条评论的那条
-  // post，drawer 打开后键鼠双击或触摸双击「赞 0 → 已赞 1」同帧 <16ms 内进 2
-  // 个 click handler，两次 mutate({commentId, postId}) 同步入栈，onMutate 各
-  // 自把 cache likeCount +1（看到「已赞 2」），两条 POST 都飞出去；服务端
-  // likeOwnerComment 对 already-liked 是 no-op（不会真叠 2 分）但仍走完
-  // build avatar context + DB findOne + Promise.all，再被回滚一次。+1 RTT 在
-  // 公网隧道下 ~200-500ms 浪费，再叠 onSettled invalidate 多刷一次 home
-  // decorations。补 sync ref 锁 — 同帧第二次 click 直接早返。
-  const commentLikeSubmittingRef = useRef(false);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -411,11 +378,9 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // 失败时给一行 danger 通知；不要把单条点赞失败升级成"视频号暂时不可
-      // 用"大状态卡——home 列表其实还能用。tone=danger → 下方 InlineNotice
-      // role=alert / aria-live=assertive，让 SR 用户立刻知道失败（详见 L153
-      // R6 注释）。
-      setNoticeTone("danger");
+      // 失败时给一行 info 通知；不要把单条点赞失败升级成"视频号暂时不可用"
+      // 大状态卡——home 列表其实还能用。
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -501,27 +466,12 @@ export function ChannelsPage() {
       // 漏更新 commentCount 落不到那条 slide 的「N 条评论」小角标，用户在 deep-
       // link post 上发评论后看到 setNotice「评论已发送」但右栏角标数字不动 +
       // drawer 头部「评论 N」也不变，体感「发了吗？」。
-      //
-      // 走查 2026-05-18 新会话 R6（本轮）：app-feed-comments 也得 cancel —— R2
-      // 把 onSuccess 改成直接 setQueryData push 新评论代替 invalidate 全量
-      // refetch，但如果用户在 drawer 刚开（initial listFeedComments fetch 在飞
-      // ~RTT）就立刻打字 Enter（input 已 auto-focus，公网 200-500ms RTT 内来
-      // 得及），mutationFn 可能比 initial fetch 先回，onSuccess push 之后
-      // initial fetch 才落地 → tanstack-query 用旧 list 覆盖掉刚 push 的新评论
-      // → 用户在 drawer 看不到自己刚发的（commentCount +1 但列表里没那条），
-      // 体感「评论丢了」。cancel 掉 initial fetch 避免覆盖；onSuccess 的 push
-      // 改成「没 cache 就创建 [createdComment]」让 cache 不为 undefined（同样
-      // 配 enabled=true 的情况下 tanstack 不会立刻 re-trigger 一个新 fetch 把
-      // 旧 list 又拉回来）。
       await Promise.all([
         queryClient.cancelQueries({
           queryKey: ["app-channels-home", baseUrl],
         }),
         queryClient.cancelQueries({
           queryKey: ["app-feed-post", baseUrl, input.postId],
-        }),
-        queryClient.cancelQueries({
-          queryKey: ["app-feed-comments", baseUrl, input.postId],
         }),
       ]);
       const previousEntries: Array<{
@@ -566,7 +516,7 @@ export function ChannelsPage() {
         mutationBaseUrl: baseUrl,
       };
     },
-    onSuccess: (createdComment, input, context) => {
+    onSuccess: (_, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       // mid-flight 切账户：清 draft / reply target / notice 都不该跑到新账户。
       // 但 decorations / feed-comments invalidate 仍要落原账户（A），让用户回 A
@@ -633,49 +583,11 @@ export function ChannelsPage() {
       // 走查 2026-05-18 新会话 R1：invalidate 落 mutationBaseUrl 而非闭包 baseUrl ——
       // 切账户后 baseUrl 是 B，但这条评论是 A 的，标 B 的 cache stale 触发 B
       // 不必要的 refetch + A 的 cache 永远不刷新。
-      //
-      // 走查 2026-05-18 新会话 R2（本轮）：原来无脑 invalidate app-feed-comments
-      // 触发 listFeedComments 全量 refetch (server 拿 MAX_FEED_COMMENT_FETCH_LIMIT
-      // ~100 条 → 全部 serialize + reply-author-map + likedCommentIds → ~10-30KB
-      // JSON，公网隧道 RTT 200-500ms)，但 addFeedComment / replyFeedComment 本身
-      // 就返了 createdComment 对象。yuanzui0728 那条积了 142 条评论的 post 上发
-      // 评论：用户按发送 → toast "评论已发送" → commentCount +1 → drawer 列表却
-      // 卡 200-500ms 才显示新评论（refetch 完成那一刻才 append），体感「评论卡
-      // 住没渲」+「我刚发的去哪了」。直接 setQueryData 把 createdComment 推到
-      // 缓存末尾（server 按 createdAt ASC，新评论必为最新一条），drawer 那条
-      // auto-scroll-on-growth effect 立刻把视口落到底部显示新评论 —— 0 RTT 完成
-      // 「发送 → 看到」闭环。同款思路下 decorations 仍走 invalidate（commentsPreview
-      // 那里要重算 top-3 + replyAuthorNameMap，不便就地手算）。
-      // R6: cache 为 undefined 说明 drawer initial fetch 已被上面 cancelQueries
-      // 砍掉（或者根本没 fetch 过）—— 此时不要 push 单条 list（会让用户在
-      // drawer 里"只看到自己刚发的一条评论"，丢失 142 条历史），让下方
-      // invalidate 触发 fresh refetch 拿全量（新评论已落库会一并回来）。
-      // cache 有数组的常规路径才 push（覆盖上面 R2 主诉求：drawer 已开稳定
-      // 一段时间，cache 完整，直接 push 省掉全量 refetch）。
-      const existingCommentsCache = queryClient.getQueryData<FeedComment[]>([
-        "app-feed-comments",
-        mutationBaseUrl,
-        input.postId,
-      ]);
-      if (existingCommentsCache && existingCommentsCache.length > 0) {
-        queryClient.setQueryData<FeedComment[]>(
-          ["app-feed-comments", mutationBaseUrl, input.postId],
-          (current) => {
-            if (!current) return current;
-            // 防重：万一 server 返回同 id 的评论（极罕见的 retry / race），先去掉再 push。
-            const dedup = current.filter((c) => c.id !== createdComment.id);
-            return [...dedup, createdComment];
-          },
-        );
-      } else {
-        // 初始 fetch 还没回（被 cancel）/ 从未 fetch 过：让 invalidate 触发
-        // fresh refetch 拿全量。server 端新评论已落库，refetch 必带回。
-        void queryClient.invalidateQueries({
-          queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
-        });
-      }
       void queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
     // 走查 R7: 失败兜底。原来没 onError，错误只通过 mobileCommentSheetErrorMessage
@@ -709,8 +621,7 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // R6: 失败 toast → danger（详见 L153 注释）。
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       const fallback = input.replyTarget
@@ -766,10 +677,10 @@ export function ChannelsPage() {
       }
       // 网络/服务端错误不要冒到顶层的 errorMessage——那会让整个 home
       // 切到 "视频号暂时不可用" 状态卡，但实际推荐流仍然能拉到。改成
-      // 轻量通知（不全屏），2.4s 自动消失；R6: tone=danger 走 role=alert。
+      // info 风格的轻量通知，2.4s 自动消失。
       setNoticeActionLabel(null);
       setNoticeAction(null);
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNotice(
         err instanceof Error
           ? t(msg`换一批失败：${err.message}`)
@@ -895,8 +806,7 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // R6: 失败 toast → danger（详见 L153 注释）。
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1140,8 +1050,7 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // R6: 失败 toast → danger（详见 L153 注释）。
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1166,21 +1075,10 @@ export function ChannelsPage() {
       // invalidate 落 mutationBaseUrl（A 账户）—— 标 B 的 cache stale 是错的：
       // 这次 follow 是给 A 加的，B 该 follow 列表完全不动；且 invalidate B 还
       // 会触发 B 不必要的 refetch。
-      //
-      // 走查 2026-05-18 新会话 R7（本轮）：active 'recommended' tab 的 home
-      // posts 已经被 onMutate 里 ownerState.isFollowingAuthor 乐观翻好，refetch
-      // ~35KB JSON 重拉一遍只为拿同样的 isFollowingAuthor=true，纯浪费。但
-      // inactive 'following' / 'friends' tab 的 cache 必须标 stale —— 否则用户
-      // 关注 X 后切到「关注」tab，30s staleTime 内还看不到 X 的 post。用
-      // refetchType: 'none' 砍掉所有 section 的 active refetch，但仍把全部
-      // section 的 cache 标 stale，下次切 tab 自动 fresh refetch。
-      // decorations 不能 'none'：sections.count 在头部 4 个 tab badge 是当前
-      // 'recommended' active query 的衍生数据，关注 X 后「关注 tab 计数 0→1」
-      // 必须立即可见，否则用户看到「关注 (0)」会怀疑「我刚才关注成功了吗」。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", mutationBaseUrl],
-        refetchType: "none",
       });
+      // 关注/取消关注影响 关注/朋友 tab 的 sections.count。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
@@ -1253,8 +1151,7 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // R6: 失败 toast → danger（详见 L153 注释）。
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1274,21 +1171,10 @@ export function ChannelsPage() {
       }
       // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错（hidePost
       // 只动 A 的 home），且 B 会做不必要的 refetch。
-      //
-      // 走查 2026-05-18 新会话 R8（本轮）：active 'recommended' tab 已经被
-      // onMutate 里 posts.filter 抠掉了这条 post，refetch 重拉一遍只为拿同样
-      // 的"少了这条"列表，纯浪费 ~35KB JSON。但 inactive 'friends' / 'following'
-      // / 'live' tab cache 必须标 stale —— 用户「减少推荐」的可能是某位朋友
-      // 的 post，朋友 tab 的 cache 还含这条，下次切过去会看到，体感「我刚说
-      // 不感兴趣怎么还在」。用 refetchType: 'none' 砍掉所有 section 的 active
-      // refetch，标 stale 让下次切 tab 自动 fresh refetch。
-      // decorations 不能 'none'：sections.count 在头部 4 个 tab badge 是 active
-      // query 衍生数据，「不感兴趣」一条朋友帖后「朋友 tab 计数 5→4」必须立
-      // 即可见。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", mutationBaseUrl],
-        refetchType: "none",
       });
+      // 隐藏帖子影响 sections.count / 作者位 / 直播位。
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
       });
@@ -1415,8 +1301,7 @@ export function ChannelsPage() {
       // 走查 R8: 跟 commentMutation 一样的兜底——用户点赞完后立刻关 sheet，
       // mutation 失败时 mobileCommentSheetErrorMessage 已经不渲染了，optimistic
       // 翻回去用户也不知道为啥，加 page 级 notice 兜底。
-      // R6: 失败 toast → danger（详见 L153 注释）。
-      setNoticeTone("danger");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1425,7 +1310,7 @@ export function ChannelsPage() {
           : t(msg`评论点赞失败，请稍后重试。`),
       );
     },
-    onSuccess: (_data, _input, context) => {
+    onSuccess: (_, input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
       if (sameAccount) {
@@ -1435,18 +1320,15 @@ export function ChannelsPage() {
         setNotice(t(msg`评论互动已更新。`));
       }
       // fire-and-forget：await 会让 like-comment 按钮一直 disabled。
-      // 走查 2026-05-18 新会话 R3（本轮）：原来兜「optimistic 已经翻 likedByOwner /
-      // likeCount，invalidate 让 server 真值兜底一次防 drift」——但 likeOwnerComment
-      // 是 one-way 操作（server 端 already-liked = no-op，没有 unlike 路径），
-      // optimistic flip 必然等于 server 真值（除非 onError 错回滚但 server 实际
-      // 成功这种极罕见网络分区）。yuanzui0728 那条 142 条评论的 post 上每点一
-      // 个赞都触发 listFeedComments 全量 refetch (server ~100 条 serialize +
-      // replyAuthorMap + likedSet → ~10-30KB JSON，公网隧道 RTT 200-500ms)，
-      // 5-10 个赞累计 1-5 秒纯浪费。同 commentMutation R2 的修法对齐：去掉
-      // comments invalidate，让 optimistic 当家；decorations 仍 invalidate
-      // (commentsPreviewByPostId 那条预览的 likedByOwner / likeCount 也要刷新)。
+      // optimistic 已经翻了 likedByOwner/likeCount，invalidate 让 server 真值兜底
+      // 一次（防止极端情况下两边 state drift）。
+      // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错；A 才是这条
+      // 评论点赞实际发生的账户。
       void queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
   });
@@ -1459,9 +1341,7 @@ export function ChannelsPage() {
   // 后直接 return；share / view / not-interested / 转发 仍开放给非好友。
   function ensureCanInteract(post: { canInteract?: boolean } | undefined | null) {
     if (!post || post.canInteract === false) {
-      // R6: 阻塞约束 → warning（详见 L153 注释）。tone=warning → role=alert
-      // 让 SR 用户立刻知道为什么按了按钮没反应。
-      setNoticeTone("warning");
+      setNoticeTone("info");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`需先加为好友才能互动。`));
@@ -1755,58 +1635,6 @@ export function ChannelsPage() {
     commentMutation.variables?.postId === desktopCommentDrawerPostId
       ? commentMutation.error.message
       : null);
-  // 走查 2026-05-19 第八轮 R1：mobile sheet 早就有 mobileCommentSheetRetryAction
-  // 把 listFeedComments / likeCommentMutation / commentMutation 三种失败兜成
-  // 「重试读取评论 / 重试评论点赞 / 重试发送评论 / 重试回复评论」按钮（同文件
-  // L1694-1739），desktop drawer 一直只渲红色 ErrorBlock 没有 retry 入口 — 用
-  // 户在 yuanzui0728 那条 142 条评论的 post 公网隧道断了之后只能关 drawer / 切
-  // slide / 刷整页才能再发请求。补一份对齐 mobile 的 retry action chain：
-  //   - listFeedComments 失败 → 「重试读取评论」refetch
-  //   - likeCommentMutation 失败（postId 命中当前 drawer）→ 「重试评论点赞」
-  //   - commentMutation 失败（postId 命中当前 drawer + text 非空）→
-  //     「重试回复评论」/ 「重试发送评论」（按 replyTarget 区分）
-  // commentMutation 的 retry text 同 mobile 那条逻辑：草稿空就退回失败时的旧
-  // text，避免 mutationFn 抛"请先输入评论内容"把红条又翻一遍。
-  const desktopCommentDrawerRetryAction =
-    desktopCommentsQuery.isError && desktopCommentDrawerPostId
-      ? {
-          label: t(msg`重试读取评论`),
-          onClick: () => {
-            void desktopCommentsQuery.refetch();
-          },
-        }
-      : likeCommentMutation.isError &&
-          likeCommentMutation.error instanceof Error &&
-          likeCommentMutation.variables?.postId === desktopCommentDrawerPostId
-        ? {
-            label: t(msg`重试评论点赞`),
-            onClick: () => {
-              if (!likeCommentMutation.variables) return;
-              likeCommentMutation.mutate(likeCommentMutation.variables);
-            },
-          }
-        : commentMutation.isError &&
-            commentMutation.error instanceof Error &&
-            commentMutation.variables?.postId === desktopCommentDrawerPostId &&
-            commentMutation.variables.text.trim()
-          ? {
-              label: commentMutation.variables.replyTarget
-                ? t(msg`重试回复评论`)
-                : t(msg`重试发送评论`),
-              onClick: () => {
-                const variables = commentMutation.variables;
-                if (!variables) return;
-                const rawDraft = commentDrafts[variables.postId];
-                const currentDraft = rawDraft?.trim()
-                  ? rawDraft
-                  : variables.text;
-                commentMutation.mutate({
-                  ...variables,
-                  text: currentDraft,
-                });
-              },
-            }
-          : null;
   const pendingLikePostId = likeMutation.isPending
     ? (likeMutation.variables?.postId ?? null)
     : null;
@@ -1820,18 +1648,7 @@ export function ChannelsPage() {
   const pendingFollowAuthorId = followMutation.isPending
     ? (followMutation.variables?.authorId ?? null)
     : null;
-  const pendingCommentPostId = commentMutation.isPending
-    ? (commentMutation.variables?.postId ?? null)
-    : null;
-  const pendingLikeCommentId = likeCommentMutation.isPending
-    ? (likeCommentMutation.variables?.commentId ?? null)
-    : null;
   // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
-  // 走查 2026-05-18 第三轮 R1：这 3 条 effect 历史上重复写了两份（第一份在
-  // pendingCommentPostId / pendingLikeCommentId 计算上方，第二份在下方），完全
-  // 同 body 同 deps。React 把 6 个 fiber slot 全跑一遍 + isPending 翻 false 时
-  // 2 次写同一 ref（cheap 但浪费）。把上面那份去掉，留下方一份完整集合（like/
-  // favorite/follow + generate + likeComment）。
   useEffect(() => {
     if (!likeMutation.isPending) {
       desktopLikeSubmittingRef.current = false;
@@ -1847,16 +1664,12 @@ export function ChannelsPage() {
       desktopFollowSubmittingRef.current = false;
     }
   }, [followMutation.isPending]);
-  useEffect(() => {
-    if (!generateMutation.isPending) {
-      desktopGenerateSubmittingRef.current = false;
-    }
-  }, [generateMutation.isPending]);
-  useEffect(() => {
-    if (!likeCommentMutation.isPending) {
-      commentLikeSubmittingRef.current = false;
-    }
-  }, [likeCommentMutation.isPending]);
+  const pendingCommentPostId = commentMutation.isPending
+    ? (commentMutation.variables?.postId ?? null)
+    : null;
+  const pendingLikeCommentId = likeCommentMutation.isPending
+    ? (likeCommentMutation.variables?.commentId ?? null)
+    : null;
 
   // useCallback 必要：onViewPost 作为 prop 进 DesktopChannelsWorkspace 的 useEffect 依赖，
   // 内联箭头函数会导致 effect 在父组件每次 re-render 都重跑，狂刷 viewFeedPost。
@@ -1897,26 +1710,7 @@ export function ChannelsPage() {
   }
 
   function handleRetryLoad() {
-    // 走查 2026-05-19 桌面端第十八轮 R1：原 handleRetryLoad 只 refetch channels
-    // Query，但 errorMessage （L1671-1679）会从两条 query 取错信息：
-    //   1) channelsQuery — 首屏 home 拉取失败
-    //   2) desktopMissingRoutePostQuery — deep-link 到一条不在 home 推荐流里
-    //      的 post 时单独拉那条 post 失败
-    // 后者错时 errorMessage 渲红条 + "重试读取" 按钮 → 用户点 retry → 只 refetch
-    // channelsQuery（早就成功了）→ desktopMissingRoutePostQuery 不动 → 红条
-    // 永远不消，用户得手动刷新整页才能再试。同款问题在 mobile 路径下不存在
-    //（mobile 没有 deep-link single-post 这条额外 query），是 desktop 独有的边界。
-    // 修法：两条 query 都 refetch，但只在 isError 时才 refetch 避免成功的 query
-    // 被白白触发一次网络请求。
-    if (channelsQuery.isError) {
-      void channelsQuery.refetch();
-    }
-    if (
-      desktopMissingRoutePostId &&
-      desktopMissingRoutePostQuery.isError
-    ) {
-      void desktopMissingRoutePostQuery.refetch();
-    }
+    void channelsQuery.refetch();
   }
 
   function handleEmptyStateAction() {
@@ -1951,36 +1745,9 @@ export function ChannelsPage() {
       setNotice(""); // i18n-ignore-line
       // 走查 R1（本轮）：原来 baseUrl 切换没清 forwardPickerPost。用户在 A 账号
       // 打开转发面板挑好友时切到 B 账号，picker 不关、postId 还是 A 世界的 uuid；
-      // 点好友点确认 forwardFeedPostToChat 拿 A 的 postId 去 B 世界 API 打，立刻
+      // 点好友后 forwardFeedPostToChat 拿 A 的 postId 去 B 世界 API 打，立刻
       // 404 FEED_POST_NOT_FOUND，picker 弹一行没头没脑的"转发失败"。同步关掉。
       setForwardPickerPost(null);
-      // 走查 2026-05-19 第六轮 R1（本轮）：原 baseUrl 切换没清 URL hash 里残留
-      // 的 #post= / #author= —— 这俩 anchor 是 A 世界专属 uuid，切到 B 世界后：
-      //   - desktopMissingRoutePostId = routeSelectedPostId（A 的 uuid 不在 B
-      //     的 home 推荐流里），desktopMissingRoutePostQuery 浪费一次 RTT 200-
-      //     500ms 拿 404；
-      //   - desktopRoutePostPending = true → channels-page L2380 整页早返渲
-      //     RouteRedirectState「正在定位桌面视频号内容...」，用户在切完账户那
-      //     一瞬间看到全屏 loading 卡，体感「切个账户为什么卡了一下」；
-      //   - 404 回来 → 下面 L1554 effect navigate replace 清 postId；
-      //   - 链条 ~200-500ms 公网隧道 RTT，slower 网络更长。
-      // 直接在 baseUrl 切换那一刻 navigate 清掉 postId / author（保留 section
-      // 因为它是用户切账户前在哪 tab 的语义信号），跳过 ghost fetch + 跳过
-      // RouteRedirectState 闪现。isDesktopLayout gate：mobile 不走 desktop
-      // workspace 路径，那边没有这层（也没 RouteRedirectState 闪现）。
-      // replace 而非 push：用户切账户不该堆 history 条目。currentSection 从
-      // routeState 取而非 activeSection state — activeSection 会在 routeState
-      // .section 同步 effect 跑前一帧 stale，从 URL 现读最新值。
-      if (isDesktopLayout && (routeSelectedPostId || routeSelectedAuthorId)) {
-        const currentSection = routeState.section ?? "recommended";
-        void navigate({
-          to: "/tabs/channels",
-          hash: buildDesktopChannelsRouteHash({
-            section: currentSection,
-          }),
-          replace: true,
-        });
-      }
     }
 
     // 走查 2026-05-18 新会话（本轮 R1）：urlSelfSyncEchoPostIdRef 兜「URL 这次
@@ -2052,19 +1819,6 @@ export function ChannelsPage() {
       return;
     }
 
-    // 走查 2026-05-18 新会话（本轮 R4）：URL 上有 author=Y 但 sync edRouteSelected
-    // AuthorId 还没追上（routeSelectedAuthorId=Y 在闭包里 != desktopSelectedPost.
-    // authorId 因为后者用 stale closure），同 commit 跑到这里 syncedRouteSelected
-    // AuthorId=undefined，nextHash 会把 URL 上的 author= 抹掉。下一帧 Effect A 用
-    // routeSelectedAuthorId=null 落 state → 用户的"deep-link 到这条 post + 这位
-    // 作者"意图被吞，author overlay 永远不开。
-    // 跳过本帧 navigate，等 Effect A 把 desktopSel 同步成 routeSel 后下一帧
-    // desktopSelectedPost.authorId === routeSelectedAuthorId 让 synced 有值 → 本
-    // effect 用最新 closure 重跑，nextHash 自然带回 author=，URL 不被砍。
-    if (routeSelectedAuthorId && !syncedRouteSelectedAuthorId) {
-      return;
-    }
-
     const nextHash = buildDesktopChannelsRouteHash({
       postId: desktopSelectedPostId,
       authorId: syncedRouteSelectedAuthorId,
@@ -2091,7 +1845,6 @@ export function ChannelsPage() {
     activeSection,
     isDesktopChannelsRoute,
     syncedRouteSelectedAuthorId,
-    routeSelectedAuthorId,
     normalizedHash,
     desktopSelectedPostId,
     isDesktopLayout,
@@ -2475,19 +2228,6 @@ export function ChannelsPage() {
     });
   }
 
-  // 走查 2026-05-19 第十轮 R4 回退（commit 7ae1e8cb9）：原 commit 把 gate 加上
-  // `&& visiblePosts.length === 0`，意图是用户在 author overlay 内点最近内容时
-  // 不要全屏 redirect 而让 workspace 后台 fetch。但实测有 regression：visiblePosts
-  // 非空时 workspace 立刻 mount，selectedPostId fallback 到 posts[0]（routeSel
-  // 命中的 missingPostId 还没 prepend 进 desktopWorkspacePosts），通过 onSelected
-  // PostChange echo 回 channels-page → URL-sync effect 把 URL 上的 #post=X 改写
-  // 成 #post=posts[0] → routeSelectedPostId 变 posts[0] → desktopMissingRoutePost
-  // Id 计算为 null（posts[0] 在 visiblePosts 里）→ desktopMissingRoutePostQuery
-  // 被 disabled，X 的 fetch 直接被丢弃。用户点了作者主页里的某条新 post，结果
-  // URL 默默回到当前 slide，X 永远没机会渲。比"闪一下白屏"严重得多。
-  // 恢复原条件 — 全屏 redirect 是 visual 上不优雅，但功能正确性必须保住。后续
-  // 优化方向：传 prop 让 workspace 在 routePost loading 时不 echo posts[0]
-  // fallback URL；或加 inline loading 半透浮层；都需要更大改动。
   if (isDesktopLayout && desktopRoutePostPending) {
     return (
       <RouteRedirectState
@@ -2507,9 +2247,9 @@ export function ChannelsPage() {
           <RouteRedirectState
             title={t(msg`正在打开桌面视频号`)}
             description={t(
-              msg`正在载入桌面视频号工作区，马上显示当前频道内容。`,
+              msg`正在打开桌面视频号，马上显示当前频道内容。`,
             )}
-            loadingLabel={t(msg`载入桌面视频号...`)}
+            loadingLabel={t(msg`正在打开桌面视频号...`)}
           />
         }
       >
@@ -2536,14 +2276,17 @@ export function ChannelsPage() {
           sections={channelSections}
           successNotice={notice}
           successNoticeTone={noticeTone}
+          isPostFavorite={(postId) =>
+            desktopWorkspacePosts.find((post) => post.id === postId)
+              ?.ownerState?.hasFavorited ?? false
+          }
           onCommentChange={updateCommentDraft}
           onCommentSubmit={(postId) =>
             submitComment(postId, { replyTarget: desktopReplyTarget })
           }
           onLike={(postId) => {
-            // R4: sync ref 锁挡同帧双击。disabled={pending} 靠 React state，下一
-            // 次 render 才生效；同帧 <16ms 连点 5 次时 5 个 click handler 全过
-            // disabled，5 条 like POST 一起飞出去。
+            // R4 sync ref 锁挡同帧双击 — disabled={likePending} 是 isPending state
+            // 反推，下一次 render 才生效；同帧 <16ms 内 5 次连点全过 disabled。
             if (desktopLikeSubmittingRef.current) return;
             if (!ensureCommentPostCanInteract(postId)) return;
             const post = desktopWorkspacePosts.find((p) => p.id === postId);
@@ -2553,46 +2296,10 @@ export function ChannelsPage() {
               hasLiked: Boolean(post?.ownerState?.hasLiked),
             });
           }}
-          onRefresh={() => {
-            // R6: sync ref 锁同帧双击。disabled={refreshPending} 是 React state
-            // 反推，同帧 3 次连点会触发 3 条 generate POST 把 LPP 队列撑爆。
-            if (desktopGenerateSubmittingRef.current) return;
-            // 走查 2026-05-19 第七轮 R4：generateChannelPost 走 characters
-            // .findAllVisibleToOwner 随机角色出一条 audio，永远落到「推荐」
-            // 流——不会自动产生关注 / 朋友的视频号 / 直播。原 desktop 顶部
-            // 「换一批」按钮在 friends/following/live tab 上点了也只 generate，
-            // 不切 section —— 用户停在 friends 看着空态，notice 说"生成中...
-            // 几分钟后刷新看看" 但回头还是空（新 post 在 recommended），体感
-            // "按了没用"。mobile 顶部 refresh button L2596-2602 早就先切到
-            // recommended 再 generate；同款空态 CTA workspace L862 那条也已
-            // 经分流 isSpecialTab → "去推荐看看" 切 tab + recommended →
-            // "换一批" generate。顶部按钮跟它们对齐。
-            if (
-              activeSection === "following" ||
-              activeSection === "friends" ||
-              activeSection === "live"
-            ) {
-              handleSectionChange("recommended");
-            }
-            desktopGenerateSubmittingRef.current = true;
-            generateMutation.mutate();
-          }}
-          // 走查 2026-05-19 第五轮 R3：desktop workspace 顶部 errorMessage（home
-          // 读失败）原来没 retry 按钮，对齐 mobile MobileChannelsStatusCard 的
-          // 「重试读取」（L2678-2698）补一份；handleRetryLoad 已经存在（L1847）。
-          onRetryLoad={handleRetryLoad}
-          // 走查 2026-05-19 桌面端第十八轮 R2：作者主页 overlay 的 ErrorBlock 原来
-          // 无 retry CTA — 公网隧道 transient 500 / 网络断时用户只能关 overlay 再
-          // 点同一头像才能 trigger 新一次 fetch。补 desktopAuthorProfileQuery 的
-          // refetch 回调，让 panel 内的"重试读取"按钮直接触发同 query 重拉。
-          onRetryAuthorProfile={() => {
-            void desktopAuthorProfileQuery.refetch();
-          }}
+          onRefresh={() => generateMutation.mutate()}
           refreshPending={generateMutation.isPending}
           comments={desktopCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
           commentsErrorMessage={desktopCommentPanelErrorMessage}
-          commentsErrorActionLabel={desktopCommentDrawerRetryAction?.label}
-          onCommentsErrorAction={desktopCommentDrawerRetryAction?.onClick}
           commentsLoading={desktopCommentsQuery.isLoading}
           commentReplyTarget={desktopReplyTarget}
           commentLikePendingId={pendingLikeCommentId}
@@ -2601,7 +2308,7 @@ export function ChannelsPage() {
           onOpenAuthor={openChannelAuthor}
           onOpenAuthorPost={openChannelAuthorPost}
           onToggleAuthorFollow={(authorId, following) => {
-            // R4 sync ref 锁同帧双击（同上面 onLike 注释）。
+            // R4 sync ref 锁同帧双击。
             if (desktopFollowSubmittingRef.current) return;
             desktopFollowSubmittingRef.current = true;
             followMutation.mutate({ authorId, following });
@@ -2610,26 +2317,11 @@ export function ChannelsPage() {
           onToggleFavorite={(post) => {
             // R4 sync ref 锁同帧双击。
             if (desktopFavoriteSubmittingRef.current) return;
-            // 走查 2026-05-19 第十轮 R2：原来先 set ref 再调 toggleFavorite，但
-            // toggleFavorite 内部 `if (!ensureCanInteract(post)) return;` 命中非好友
-            // 帖时根本不调 favoriteMutation.mutate() —— isPending 不会翻 true → 下
-            // 方 useEffect [favoriteMutation.isPending] 不会 fire → ref 永远卡在 true，
-            // 后续所有 favorite 点击（即便是好友帖）全被早返堵死。用户在推荐流连点
-            // 几张非好友 audio 卡 → 收藏按钮彻底失灵，体感「我刚才到底按到了哪个键
-            // 让所有收藏都失效了」。
-            // 把 ensureCanInteract 上提到 set ref 之前（同 onLike L2515-2520 /
-            // onLikeComment L2580-2582 已经做过的同款模板），非好友帖直接走 warning
-            // notice 早返，不动 ref；好友帖正常 set ref → mutate → settled 后 reset。
-            if (!ensureCanInteract(post)) return;
             desktopFavoriteSubmittingRef.current = true;
             toggleFavorite(post);
           }}
           onLikeComment={(comment) => {
-            // R5 sync ref 锁同帧双击（同上面 onLike / onToggleFavorite /
-            // onToggleAuthorFollow 注释）。
-            if (commentLikeSubmittingRef.current) return;
             if (!ensureCommentPostCanInteract(comment.postId)) return;
-            commentLikeSubmittingRef.current = true;
             likeCommentMutation.mutate({
               commentId: comment.id,
               postId: comment.postId,
@@ -2644,27 +2336,7 @@ export function ChannelsPage() {
             })
           }
           onSelectedPostChange={setDesktopSelectedPostId}
-          // 走查 2026-05-18 第二轮（本会话）R2：drawer 关闭时同时清 desktop
-          // ReplyTarget — workspace 的 4 条 drawer 关路径（X 按钮 / Esc / 切 slide
-          // 自动关 / baseUrl change reset）只 setCommentDrawerPostId(null)，
-          // desktopReplyTarget 留着不动。用户在 A post 打开 drawer 点「回复 X」
-          // → desktopReplyTarget={commentId:X, postId:A}，关 drawer → 再点其它
-          // post 的评论按钮重开 drawer：drawer 仍渲「正在回复 X」头条，textarea
-          // placeholder 也带 X 名字。但 X 是上条 post 的评论，新 post 上发送出去
-          // 会被 commentMutation.onMutate 当作回复 X（reply parentCommentId=X.id），
-          // server 端虽然能 reject 跨 post 的 parentCommentId，但仍属于"用户意图
-          // 错位"。Mobile sheet 的 onClose L2798-2801 早就 setMobileReplyTarget(null)
-          // 一起清，desktop 一直漏。
-          // 修法：drawer postId 落 null 时 channels-page 这边一起清 replyTarget。
-          // 既覆盖 X 按钮 / Esc 主动关，也覆盖自动关（切 slide / baseUrl change）。
-          // setDesktopReplyTarget(null) 是幂等的，replyTarget 本来就是 null 时 React
-          // useState Object.is 命中跳过 re-render，没副作用。
-          onDrawerOpenChange={(postId) => {
-            setDesktopCommentDrawerPostId(postId);
-            if (postId === null) {
-              setDesktopReplyTarget(null);
-            }
-          }}
+          onDrawerOpenChange={setDesktopCommentDrawerPostId}
           onViewPost={handleDesktopViewPost}
         />
       </Suspense>
@@ -2767,23 +2439,6 @@ export function ChannelsPage() {
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
-            // 走查 2026-05-18 新会话 R1：InlineNotice 包的是裸 <div>，没有任何
-            // role / aria-live。视频号 home 里 like / 收藏 / 关注 / 减少推荐 /
-            // 转发 mutation onSuccess 走 setNotice 在这个位置冒一行 toast，
-            // 视觉用户能立刻看到，但 SR 用户没有任何反馈 —— CDP 实测点完赞
-            // 整页 aria-live region 数 = 0，VoiceOver / TalkBack 不会自动播报
-            // "已点赞这条视频号" / "已转发给 X" / "减少推荐失败：xxx"，体感
-            // "我按了按钮但什么都没发生"。
-            // tone===danger / warning（视频号转发失败 / 评论提交失败这类阻塞
-            // 错误）走 role="alert" → aria-live=assertive 立刻打断当前播报；
-            // info / success / muted 走 role="status" → aria-live=polite
-            // 排队播报，不打断用户当前阅读流。InlineNotice 是裸 props spread
-            // 到 div，直接挂 role 走标准 ARIA 路径，不需要改基础组件。
-            role={
-              noticeTone === "danger" || noticeTone === "warning"
-                ? "alert"
-                : "status"
-            }
           >
             {noticeTone === "info" &&
             (Boolean(noticeAction && noticeActionLabel) ||
@@ -2981,10 +2636,7 @@ export function ChannelsPage() {
         }}
         onErrorAction={mobileCommentSheetRetryAction?.onClick}
         onLikeComment={(comment) => {
-          // R5 sync ref 锁同帧双击（与 desktop drawer onLikeComment 同款）。
-          if (commentLikeSubmittingRef.current) return;
           if (!ensureCommentPostCanInteract(comment.postId)) return;
-          commentLikeSubmittingRef.current = true;
           likeCommentMutation.mutate({
             commentId: comment.id,
             postId: comment.postId,
@@ -3047,8 +2699,7 @@ export function ChannelsPage() {
           if (input.mutationBaseUrl !== mutationBaseUrlRef.current) {
             return;
           }
-          // R6: 失败 toast → danger（详见 L153 注释）。
-          setNoticeTone("danger");
+          setNoticeTone("info");
           setNoticeActionLabel(null);
           setNoticeAction(null);
           setNotice(t(msg`转发给 ${input.targetName} 失败：${input.message}`));
@@ -4912,63 +4563,6 @@ function MobileChannelCommentsSheet({
     };
   }, [open]);
 
-  // 走查 2026-05-18 新会话 R2（移动端视频号评论 sheet）：跟同 commit 的
-  // ChannelsForwardPicker focus trap 同款问题—— sheet 挂了
-  // role="dialog" aria-modal="true" 但浏览器不会自动 trap focus（aria-modal
-  // 只对原生 <dialog>.showModal() 生效）。CDP 实测从「打开评论」按钮按 5 次
-  // Tab，焦点 5 次全漏到 background 的视频号卡 action rail 上 —— 既挡键盘用
-  // 户用 Tab 在评论列表里走/到发送按钮，又让 SR 用户的 modal 内部语义破口。
-  // 现状部分缓解：open 时已经把 textarea .focus() 拉进 sheet（line 4644-4651
-  // requestAnimationFrame focus），但 Tab cycle 仍能跳出。
-  // 同款修法 — keydown 监听 Tab + 首尾循环 + 飘出时拉回，不依赖第三方
-  // focus-trap 库。previouslyFocusedRef 记开打前焦点关闭时归还。
-  const sheetRef = useRef<HTMLDivElement | null>(null);
-  const previouslyFocusedSheetRef = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    if (!open || typeof document === "undefined") return;
-    previouslyFocusedSheetRef.current =
-      document.activeElement instanceof HTMLElement &&
-      document.activeElement !== document.body
-        ? document.activeElement
-        : null;
-    return () => {
-      const prev = previouslyFocusedSheetRef.current;
-      previouslyFocusedSheetRef.current = null;
-      if (prev && document.contains(prev)) {
-        window.requestAnimationFrame(() => prev.focus());
-      }
-    };
-  }, [open]);
-  useEffect(() => {
-    if (!open || typeof document === "undefined") return;
-    const handler = (event: KeyboardEvent) => {
-      if (event.key !== "Tab") return;
-      const sheet = sheetRef.current;
-      if (!sheet) return;
-      const focusable = sheet.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable.length) return;
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
-      const active = document.activeElement as HTMLElement | null;
-      if (!active || !sheet.contains(active)) {
-        event.preventDefault();
-        (event.shiftKey ? last : first).focus();
-        return;
-      }
-      if (event.shiftKey && active === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
-
   // 走查 R9：Esc 键关 sheet —— ChannelsForwardPicker (line 95-104) 早就有这套
   // window keydown / Escape preventDefault + onClose 的兜底，但 MobileChannelComments
   // Sheet 一直缺。桌面端 / iPad 接外接键盘 / 真机 PWA 在 web 嵌入下，用户按 Esc
@@ -5276,13 +4870,9 @@ function MobileChannelCommentsSheet({
         在 tab 序列里）。配合 aria-labelledby 把头部"评论 · N 条"作为对话标题。
       */}
       <div
-        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-channels-comments-sheet-title"
-        // tabIndex=-1 让 sheet 自身可程序聚焦兜底（极端 loading 态下 sheet 内
-        // 没有任何 focusable child 时焦点 trap 仍能落到 sheet 上不漏）。
-        tabIndex={-1}
         className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
       >
         <div className="flex justify-center pb-1.5">
@@ -5335,12 +4925,6 @@ function MobileChannelCommentsSheet({
           {errorMessage ? (
             <InlineNotice
               tone="warning"
-              // 走查 2026-05-18 新会话 R1：sheet 内的错误条 —— "评论提交失败"
-              // / "网络错误，请重试" 这类是用户主动操作后的阻塞错误，挂
-              // role="alert" 让 SR aria-live=assertive 立刻打断当前播报。
-              // 上面 page-level notice 走 role="status" polite，二者错位
-              // 不冲突。
-              role="alert"
               className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
             >
               <div className="flex items-center justify-between gap-2">

@@ -271,8 +271,8 @@ export function GroupChatPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面群聊`)}
-            description={t(msg`正在载入桌面聊天工作区，马上恢复当前群聊。`)}
-            loadingLabel={t(msg`载入桌面群聊...`)}
+            description={t(msg`正在打开桌面聊天，马上恢复当前群聊。`)}
+            loadingLabel={t(msg`正在打开桌面群聊...`)}
           />
         }
       >

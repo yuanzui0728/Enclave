@@ -18,8 +18,8 @@ export function GroupVoiceCallPage() {
       <DesktopChatRouteRedirectShell
         conversationId={groupId}
         callAction="voice"
-        title={t(msg`正在返回群聊工作区`)}
-        description={t(msg`桌面端群语音通话入口已经收口到聊天工作区，正在恢复当前群聊的语音通话动作。`)}
+        title={t(msg`正在返回群聊`)}
+        description={t(msg`桌面端群语音通话入口已经收口到聊天，正在恢复当前群聊的语音通话动作。`)}
         loadingLabel={t(msg`正在切换到桌面群聊...`)}
       />
     );

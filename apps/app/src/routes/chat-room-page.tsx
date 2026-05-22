@@ -382,8 +382,8 @@ export function ChatRoomPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面对话`)}
-            description={t(msg`正在载入桌面聊天工作区，马上恢复当前会话。`)}
-            loadingLabel={t(msg`载入桌面对话...`)}
+            description={t(msg`正在打开桌面聊天，马上恢复当前会话。`)}
+            loadingLabel={t(msg`正在打开桌面对话...`)}
           />
         }
       >

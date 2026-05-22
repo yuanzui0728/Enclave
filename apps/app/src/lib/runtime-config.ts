@@ -42,7 +42,7 @@ function isInsideCapacitorShell() {
 }
 
 // 浏览器同源回落分两类：
-// - 本地直连（localhost / 127.x / 私网 IP / 内网域名 / 桌面壳的 file://）：
+// - 本地直连（localhost / 127.x / 私网 IP / 内网域名 / 桌面应用的 file://）：
 //   允许 baseUrl = ${origin}，请求直接打到本机 api(3000)，无鉴权 = 单租户本地开发场景。
 // - 远程公网域名（vicp.fun / 公网 IP / 隧道）：必须走 cloud-api 的多租户反代入口
 //   ${origin}/cloud/world-api，由 cloud-api 凭 cloud access token 路由到对应账号 child；
@@ -120,7 +120,7 @@ export function configureContractsRuntime() {
   // 多租户公网部署：world API 的 base URL 走 cloud-api 的反代入口
   // (路径 /cloud/world-api)。客户端必须把当前 cloud access token 透给反代层，
   // 反代层凭 token 里的 phone 字段把请求路由到该账号自己的 child process。
-  // 本地直连（localhost / 私网 IP / 桌面壳）不走反代，不附 token，行为不变。
+  // 本地直连（localhost / 私网 IP / 桌面应用）不走反代，不附 token，行为不变。
   setCloudWorldApiTokenProvider((baseUrl) => {
     if (!baseUrl || !baseUrl.includes("/cloud/world-api")) {
       return null;

@@ -500,8 +500,8 @@ export function SearchPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面搜索`)}
-            description={t(msg`正在载入桌面搜索工作区，马上同步当前搜索条件。`)}
-            loadingLabel={t(msg`载入桌面搜索...`)}
+            description={t(msg`正在打开桌面搜索，马上同步当前搜索条件。`)}
+            loadingLabel={t(msg`正在打开桌面搜索...`)}
           />
         }
       >
@@ -563,7 +563,6 @@ export function SearchPage() {
       onOpenResult={handleOpenResult}
       onRetryLoad={retryLoad}
       onRemoveHistory={handleRemoveHistory}
-      scopeCounts={scopeCounts}
       searchText={searchText}
       searchingMessages={searchingMessages}
       setActiveCategory={setActiveCategory}

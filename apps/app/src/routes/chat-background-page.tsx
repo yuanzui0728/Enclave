@@ -793,7 +793,7 @@ export function ChatBackgroundPage() {
                 <ChatBackgroundPreview
                   background={effectivePreviewBackground}
                   title={displayedConversationTitle}
-                  subtitle={t(msg`桌面端预览会同步展示在聊天工作区`)}
+                  subtitle={t(msg`桌面端预览会同步展示在聊天`)}
                 />
               ) : null}
             </div>

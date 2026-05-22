@@ -751,7 +751,7 @@ export function GroupChatBackgroundPage() {
                 <ChatBackgroundPreview
                   background={effectivePreviewBackground}
                   title={groupQuery.data.name}
-                  subtitle={t(msg`桌面端预览会同步展示在群聊工作区`)}
+                  subtitle={t(msg`桌面端预览会同步展示在群聊`)}
                 />
               ) : null}
             </div>

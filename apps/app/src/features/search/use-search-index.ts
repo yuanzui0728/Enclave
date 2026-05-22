@@ -5,9 +5,7 @@ import {
   getFeed,
   getFriends,
   getMoments,
-  getOfficialAccountArticles,
   listCharacters,
-  listOfficialAccounts,
   searchConversationMessages,
   searchGroupMessages,
 } from "@yinjie/contracts";
@@ -30,7 +28,6 @@ import {
   shouldHideSearchableChatMessage,
   useLocalChatMessageActionState,
 } from "../chat/local-chat-message-actions";
-import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
 import { getFriendDisplayName } from "../contacts/contact-utils";
 import { translateExpertDomain } from "../../lib/character-i18n";
 import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
@@ -86,21 +83,6 @@ function localizeSearchMessageSender(senderName: string) {
   return senderName;
 }
 
-function buildDesktopOfficialAccountSearchPath(
-  accountId: string,
-  articleId?: string,
-) {
-  const hash = buildDesktopContactsRouteHash({
-    pane: "official-accounts",
-    accountId,
-    articleId,
-    officialMode: "accounts",
-    showWorldCharacters: false,
-  });
-
-  return hash ? `/tabs/contacts#${hash}` : "/tabs/contacts";
-}
-
 export function useSearchIndex(
   searchText: string,
   activeCategory: SearchCategory,
@@ -136,9 +118,11 @@ export function useSearchIndex(
     }, REMOTE_SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [normalizedSearchText, isDesktopLayout]);
+  // miniProgramSearchResults 来自 useSearchQuickLinks，搜索 UI 暂时把小程序
+  // 隐藏后，flat list 不再 spread 它；recentMiniPrograms 仍然返回给消费者
+  // (虽然当前 UI 也没渲染——desktop landing 只用 recentFavorites)。
   const {
     favoriteSearchResults,
-    miniProgramSearchResults,
     recentFavorites,
     recentMiniPrograms,
   } = useSearchQuickLinks(searchText, isDesktopLayout);
@@ -155,10 +139,10 @@ export function useSearchIndex(
     queryKey: ["app-characters", baseUrl],
     queryFn: () => listCharacters(baseUrl),
   });
-  const officialAccountsQuery = useQuery({
-    queryKey: ["app-official-accounts", baseUrl],
-    queryFn: () => listOfficialAccounts(baseUrl),
-  });
+  // officialAccounts/miniPrograms 暂时从搜索 UI 隐藏：相关 useQuery 全部
+  // 撤掉，避免每次输入都对 N 个公众号 fan-out /articles 拉文章。独立
+  // /contacts/official-accounts 路由继续走它自己的 listOfficialAccounts
+  // useQuery，跟这里没耦合。
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
     queryFn: () => getMoments(baseUrl),
@@ -177,10 +161,6 @@ export function useSearchIndex(
     () => conversationsQuery.data ?? [],
     [conversationsQuery.data],
   );
-  const officialAccounts = useMemo(
-    () => officialAccountsQuery.data ?? [],
-    [officialAccountsQuery.data],
-  );
   // 之前把 lastActivityAt 拼进 queryKey：用户正在输入搜索词时，任一会话来一条
   // 新消息 → lastActivityAt 翻新 → conversationsSearchKey 翻新 → 74 个会话的
   // /message-search 全部 invalidate，整个搜索结果列表瞬时被丢弃。新增的那条
@@ -192,12 +172,6 @@ export function useSearchIndex(
         .map((item) => `${item.source ?? item.type}:${item.id}`)
         .join("|"),
     [conversations],
-  );
-  // 公众号文章索引同理：lastPublishedAt 变了不应该把"keyword 命中的旧搜索"
-  // 整批 invalidate，只用 account.id 当指纹。
-  const officialAccountsSearchKey = useMemo(
-    () => officialAccounts.map((item) => item.id).join("|"),
-    [officialAccounts],
   );
 
   // 走查 R2 真机 e2e：用户从「通讯录」按搜索来，常立刻点「联系人」chip 把范围
@@ -276,47 +250,6 @@ export function useSearchIndex(
       ) as SearchMessageRow[];
     },
   });
-  // 走查 R1：跟 messageSearchIndexQuery 同款。当 activeCategory 是「联系人」/
-  // 「朋友圈」/「广场动态」/「收藏」/「小程序」时，公众号文章命中根本不会进入
-  // visibleResults，但这条 query 还是会对 N 个 official_accounts fan-out N 个
-  // /:id/articles GET——用户从「通讯录」按搜索进来、马上点「联系人」chip 时尤其
-  // 浪费（这是最常见路径）。跟 messageSearchIndexQuery 一样按 activeCategory 收
-  // 窄；切回「全部」/「公众号」时再 enable，placeholderData 不在这条上是因为
-  // articles 不带 keyword 参数（拉一次随后客户端按 keyword 过滤），keyword 抖
-  // 不影响 queryKey、缓存自然续命。
-  const officialAccountArticlesEnabledForCategory =
-    activeCategory === "all" || activeCategory === "officialAccounts";
-  const officialAccountArticlesQuery = useQuery({
-    queryKey: [
-      "app-search-official-account-articles",
-      baseUrl,
-      officialAccountsSearchKey,
-    ],
-    enabled:
-      Boolean(normalizedSearchText) &&
-      officialAccounts.length > 0 &&
-      officialAccountArticlesEnabledForCategory,
-    staleTime: 60_000,
-    // 同 messageSearchIndexQuery：keyword 一变 queryKey 变，没 placeholderData
-    // 的话上一批文章命中瞬时消失。
-    placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const settledResults = await Promise.allSettled(
-        officialAccounts.map(async (account) => {
-          const articles = await getOfficialAccountArticles(
-            account.id,
-            baseUrl,
-          );
-          return articles.map((article) => ({ account, article }));
-        }),
-      );
-
-      return settledResults.flatMap((result) =>
-        result.status === "fulfilled" ? result.value : [],
-      );
-    },
-  });
-
   const indexedResults = useMemo<SearchResultItem[]>(() => {
     const friendMap = new Map(
       (friendsQuery.data ?? []).map((item) => [item.character.id, item]),
@@ -479,63 +412,10 @@ export function useSearchIndex(
       },
     );
 
-    const officialAccountResults: SearchResultItem[] = officialAccounts.map(
-      (account) => ({
-        id: `official-${account.id}`,
-        category: "officialAccounts",
-        title: account.name,
-        description:
-          account.recentArticle?.title ||
-          account.description ||
-          t(msg`查看公众号资料与最近文章。`),
-        meta: `${account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`)} · @${
-          account.handle
-        }`,
-        keywords: [
-          account.name,
-          account.handle,
-          account.description,
-          account.recentArticle?.title,
-          account.recentArticle?.summary,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase(),
-        to: isDesktopLayout
-          ? buildDesktopOfficialAccountSearchPath(account.id)
-          : `/official-accounts/${account.id}`,
-        badge: account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`),
-        avatarName: account.name,
-        avatarSrc: account.avatar,
-        sortTime: parseTimestamp(account.lastPublishedAt) ?? 0,
-      }),
-    );
-    const officialAccountArticleResults: SearchResultItem[] = (
-      officialAccountArticlesQuery.data ?? []
-    ).map(({ account, article }) => ({
-      id: `official-article:${account.id}:${article.id}`,
-      category: "officialAccounts",
-      title: article.title,
-      description: article.summary || t(msg`来自 ${account.name} 的公众号文章`),
-      meta: t(msg`公众号文章 · ${account.name} · ${formatTimestamp(article.publishedAt)}`),
-      keywords: [
-        account.name,
-        account.handle,
-        article.title,
-        article.summary,
-        article.authorName,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase(),
-      to: isDesktopLayout
-        ? buildDesktopOfficialAccountSearchPath(account.id, article.id)
-        : `/official-accounts/articles/${article.id}`,
-      badge: t(msg`公众号文章`),
-      avatarName: account.name,
-      avatarSrc: account.avatar,
-      sortTime: parseTimestamp(article.publishedAt) ?? 0,
-    }));
+    // officialAccounts / miniPrograms 暂时从搜索结果里隐藏——这两段以前在这里
+    // 构造 SearchResultItem[] 并并入下方 return 的 flat list。现在两个 query
+    // 已撤、scope chip 也已下线，构造同步删除；恢复时跟 search-types.ts 的
+    // descriptor 数组一起回填。
 
     const momentResults: SearchResultItem[] = (momentsQuery.data ?? []).map(
       (moment) => {
@@ -632,9 +512,6 @@ export function useSearchIndex(
       ...globalMessageResults,
       ...contactResults,
       ...favoriteSearchResults,
-      ...officialAccountResults,
-      ...officialAccountArticleResults,
-      ...miniProgramSearchResults,
       ...momentResults,
       ...feedResults,
     ];
@@ -646,11 +523,8 @@ export function useSearchIndex(
     favoriteSearchResults,
     localMessageActionState,
     messageSearchIndexQuery.data,
-    miniProgramSearchResults,
     momentsQuery.data,
     debouncedRemoteKeyword,
-    officialAccountArticlesQuery.data,
-    officialAccounts,
     isDesktopLayout,
   ]);
 
@@ -743,85 +617,14 @@ export function useSearchIndex(
       });
   }, [indexedResults, isDesktopLayout, normalizedSearchText]);
 
-  const officialAccountGroups = useMemo<SearchOfficialAccountGroup[]>(() => {
-    // 走查 R1：同 messageGroups——只 desktop-search-workspace 消费这个。mobile
-    // 不去算分组结构，省两次 indexedResults 过滤 + filterSearchResults + map
-    // 排序。
-    if (!isDesktopLayout || !normalizedSearchText) {
-      return [] as SearchOfficialAccountGroup[];
-    }
-
-    const officialAccountResults = indexedResults.filter(
-      (item) =>
-        item.category === "officialAccounts" &&
-        item.id.startsWith("official-") &&
-        !item.id.startsWith("official-article:"),
-    );
-    const officialAccountResultById = new Map(
-      officialAccountResults.map((item) => [
-        item.id.replace(/^official-/, ""),
-        item,
-      ]),
-    );
-    const articleResults = filterSearchResults(
-      indexedResults.filter(
-        (item) =>
-          item.category === "officialAccounts" &&
-          item.id.startsWith("official-article:"),
-      ),
-      normalizedSearchText,
-      "officialAccounts",
-    );
-    const groupedArticles = new Map<string, SearchResultItem[]>();
-
-    for (const item of articleResults) {
-      const accountId = resolveOfficialAccountId(item.id);
-      if (!accountId) {
-        continue;
-      }
-
-      const current = groupedArticles.get(accountId);
-      if (current) {
-        current.push(item);
-        continue;
-      }
-
-      groupedArticles.set(accountId, [item]);
-    }
-
-    return Array.from(groupedArticles.entries())
-      .map(([accountId, articles]) => {
-        const header = officialAccountResultById.get(accountId);
-        if (!header) {
-          return null;
-        }
-
-        return {
-          id: `official-account-group-${accountId}`,
-          header,
-          totalHits: articles.length,
-          articles: [...articles]
-            .sort((left, right) => right.sortTime - left.sortTime)
-            .slice(0, 3),
-          sortTime: Math.max(
-            header.sortTime,
-            articles[0]?.sortTime ?? header.sortTime,
-          ),
-        };
-      })
-      .filter((item): item is SearchOfficialAccountGroup => Boolean(item))
-      .sort((left, right) => {
-        if (left.sortTime !== right.sortTime) {
-          return right.sortTime - left.sortTime;
-        }
-
-        return sortSearchResults(
-          left.header,
-          right.header,
-          normalizedSearchText,
-        );
-      });
-  }, [indexedResults, isDesktopLayout, normalizedSearchText]);
+  // officialAccounts 暂时从搜索结果中隐藏：indexedResults 里已经不再产出公众号 /
+  // 公众号文章条目，分组结果恒空。保留 export 是为了让现存 desktop 消费者
+  // (desktop-search-workspace.officialAccountGroups) 拿空数组、对应 section 不
+  // 渲染即可，避免改桌面渲染流。
+  const officialAccountGroups = useMemo<SearchOfficialAccountGroup[]>(
+    () => [],
+    [],
+  );
 
   const allMatchedResults = useMemo(
     () => filterSearchResults(indexedResults, normalizedSearchText, "all"),
@@ -857,8 +660,10 @@ export function useSearchIndex(
       conversations: conversations.length,
       contacts: (charactersQuery.data ?? []).length,
       favorites: favoriteSearchResults.length,
-      officialAccounts: (officialAccountsQuery.data ?? []).length,
-      miniPrograms: miniProgramSearchResults.length,
+      // officialAccounts / miniPrograms 暂时隐藏，count 锁 0；类型仍要这两键
+      // (SearchScopeCounts 是 Record-like 全字段)。
+      officialAccounts: 0,
+      miniPrograms: 0,
       moments: (momentsQuery.data ?? []).length,
       feed: (feedQuery.data?.posts ?? []).length,
     }),
@@ -867,9 +672,7 @@ export function useSearchIndex(
       conversations.length,
       feedQuery.data?.posts,
       favoriteSearchResults.length,
-      miniProgramSearchResults.length,
       momentsQuery.data,
-      officialAccountsQuery.data,
     ],
   );
 
@@ -877,7 +680,6 @@ export function useSearchIndex(
     conversationsQuery.isLoading ||
     friendsQuery.isLoading ||
     charactersQuery.isLoading ||
-    officialAccountsQuery.isLoading ||
     momentsQuery.isLoading ||
     feedQuery.isLoading;
 
@@ -885,8 +687,6 @@ export function useSearchIndex(
     extractErrorMessage(conversationsQuery.error) ||
     extractErrorMessage(friendsQuery.error) ||
     extractErrorMessage(charactersQuery.error) ||
-    extractErrorMessage(officialAccountsQuery.error) ||
-    extractErrorMessage(officialAccountArticlesQuery.error) ||
     extractErrorMessage(momentsQuery.error) ||
     extractErrorMessage(feedQuery.error) ||
     extractErrorMessage(messageSearchIndexQuery.error);
@@ -895,12 +695,10 @@ export function useSearchIndex(
     void conversationsQuery.refetch();
     void friendsQuery.refetch();
     void charactersQuery.refetch();
-    void officialAccountsQuery.refetch();
     void momentsQuery.refetch();
     void feedQuery.refetch();
 
     if (normalizedSearchText) {
-      void officialAccountArticlesQuery.refetch();
       void messageSearchIndexQuery.refetch();
     }
   }
@@ -977,7 +775,3 @@ function resolveMessageConversationId(to: string) {
   return null;
 }
 
-function resolveOfficialAccountId(resultId: string) {
-  const match = resultId.match(/^official-article:([^:]+):/);
-  return match?.[1] ?? null;
-}

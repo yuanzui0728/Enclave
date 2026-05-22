@@ -842,7 +842,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   {groupName}
                 </div>
                 <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                  {t(msg`桌面端通话入口已收口到聊天工作区顶部工具栏。`)}
+                  {t(msg`桌面端通话入口已收口到聊天顶部工具栏。`)}
                 </div>
               </div>
             </div>

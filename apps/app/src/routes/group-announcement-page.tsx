@@ -33,7 +33,7 @@ export function GroupAnnouncementPage() {
         panel="details"
         detailsAction="announcement"
         title={t(msg`正在打开桌面群公告`)}
-        description={t(msg`正在切换到桌面聊天工作区中的群公告编辑视图。`)}
+        description={t(msg`正在切换到桌面聊天中的群公告编辑视图。`)}
         loadingLabel={t(msg`打开桌面群公告...`)}
       />
     );

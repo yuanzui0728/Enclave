@@ -300,7 +300,7 @@ export function LiveCompanionPage() {
     // 走查 2026-05-18 R1：原早期 guard 只看 navigator.clipboard.writeText —— 但
     // writeClipboardText 内部本来就有三级 fallback（native bridge → navigator
     // .clipboard → execCommand）。在 iOS Capacitor 壳 / 部分 Safari WKWebView /
-    // 不暴露 navigator.clipboard 的桌面壳里 navigator.clipboard 缺席但 native
+    // 不暴露 navigator.clipboard 的桌面应用里 navigator.clipboard 缺席但 native
     // bridge / execCommand 实际可用，guard 把这些环境硬卡死成"暂不支持"，用户
     // 永远点不动「发准备到手机」/「发到手机继续」。直接按 writeClipboardText
     // 的 boolean 返回兜底。
@@ -323,7 +323,7 @@ export function LiveCompanionPage() {
     return (
       <DesktopLayoutRequiredState
         title={t(msg`直播伴侣当前仅提供桌面布局`)}
-        description={t(msg`直播伴侣工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到视频号继续查看内容。`)}
+        description={t(msg`直播伴侣目前只在 Web 桌面布局和桌面应用里启用，移动布局先回到视频号继续查看内容。`)}
         actionLabel={t(msg`前往视频号`)}
         fallbackTo="/discover/channels"
       />
@@ -483,7 +483,7 @@ export function LiveCompanionPage() {
               <span>{t(msg`开播准备`)}</span>
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-              {t(msg`先把直播标题、主题、封面钩子和桌面策略准备好，后面接真推流时这层不用再推倒。`)}
+              {t(msg`先把直播标题、主题、封面卖点和桌面准备做好，等真正开播时这一步不用重新做。`)}
             </div>
 
             <div className="mt-4 space-y-4">

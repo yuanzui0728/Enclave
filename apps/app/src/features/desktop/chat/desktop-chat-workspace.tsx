@@ -2013,7 +2013,7 @@ export function DesktopChatWorkspace({
             {conversationsQuery.isLoading ? (
               <LoadingBlock label={t(msg`正在读取会话...`)} />
             ) : null}
-            {/* R50：电脑端聊天工作区左侧会话列表的 3 个 ErrorBlock 都裸 <div>，
+            {/* R50：电脑端聊天左侧会话列表的 3 个 ErrorBlock 都裸 <div>，
                 没 role / aria-live。conversations / messageEntries / blocked
                 是单聊主入口的核心 cache（公网隧道首次加载或网络中断时 4xx/5xx
                 极易触发），盲人 SR 用户进 chat workspace 听到「正在读取会话」

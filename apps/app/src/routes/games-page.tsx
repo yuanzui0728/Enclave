@@ -582,8 +582,8 @@ export function GamesPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开游戏中心`)}
-            description={t(msg`正在载入桌面端游戏中心。`)}
-            loadingLabel={t(msg`载入桌面游戏中心...`)}
+            description={t(msg`正在打开桌面端游戏中心。`)}
+            loadingLabel={t(msg`正在打开桌面游戏中心...`)}
           />
         }
       >

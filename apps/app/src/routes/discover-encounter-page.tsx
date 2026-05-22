@@ -42,7 +42,7 @@ export function DiscoverEncounterPage() {
     return (
       <RouteRedirectState
         title={t(msg`正在切换到桌面发现页`)}
-        description={t(msg`桌面端的发现入口已经收口到桌面发现工作区，先回到主发现页。`)}
+        description={t(msg`桌面端的发现入口已经收口到桌面发现，先回到主发现页。`)}
         loadingLabel={t(msg`正在切换到桌面发现页...`)}
       />
     );

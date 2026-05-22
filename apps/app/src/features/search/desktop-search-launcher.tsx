@@ -15,7 +15,6 @@ import { ChevronRight, Clock3 } from "lucide-react";
 import {
   getConversations,
   getFriends,
-  listOfficialAccounts,
   listCharacters,
   recordSearchActivity,
   searchConversationMessages,
@@ -59,7 +58,6 @@ import {
   applyDesktopSearchReturnContext,
   resolveSearchNavigationTarget,
 } from "./search-navigation";
-import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
 import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
   hydrateSearchHistoryFromNative,
@@ -95,13 +93,6 @@ type DesktopSearchDropdownPanelProps = {
 type SearchLauncherActionItem = {
   id: string;
   onSelect: () => void;
-};
-
-type SearchLauncherOfficialGroup = {
-  article: DesktopSearchQuickLink | null;
-  header: DesktopSearchQuickLink;
-  id: string;
-  sortTime: number;
 };
 
 type SearchLauncherConversationMessageRow = {
@@ -143,21 +134,6 @@ function buildSearchLauncherHistoryActionId(keyword: string) {
 }
 
 const REMOTE_SEARCH_DEBOUNCE_MS = 280;
-
-function buildDesktopOfficialAccountSearchPath(
-  accountId: string,
-  articleId?: string,
-) {
-  const hash = buildDesktopContactsRouteHash({
-    pane: "official-accounts",
-    accountId,
-    articleId,
-    officialMode: "accounts",
-    showWorldCharacters: false,
-  });
-
-  return hash ? `/tabs/contacts#${hash}` : "/tabs/contacts";
-}
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useDesktopSearchLauncher({
@@ -409,12 +385,9 @@ export function DesktopSearchDropdownPanel({
     enabled: shouldLoadSuggestions,
     staleTime: 30_000,
   });
-  const officialAccountsQuery = useQuery({
-    queryKey: ["app-official-accounts", baseUrl],
-    queryFn: () => listOfficialAccounts(baseUrl),
-    enabled: shouldLoadSuggestions,
-    staleTime: 30_000,
-  });
+  // officialAccounts 暂时从搜索 UI 隐藏：launcher 的"公众号"建议块同步撤掉，
+  // 不发起 listOfficialAccounts 拉取。独立 /contacts/official-accounts 页
+  // 还有它自己的 query，互不影响。
 
   const friendMatches = useMemo(() => {
     if (!normalizedKeyword) {
@@ -656,86 +629,22 @@ export function DesktopSearchDropdownPanel({
       ),
     [conversationGroupHeaderIds, conversationMatches],
   );
-  const officialGroups = useMemo<SearchLauncherOfficialGroup[]>(() => {
-    return (officialAccountsQuery.data ?? []).map((account) => {
-      const accountTypeLabel =
-        account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`);
-      const header = {
-        id: `official-account-${account.id}`,
-        title: account.name,
-        description:
-          account.description ||
-          account.recentArticle?.summary ||
-          t(msg`打开公众号主页与最近文章。`),
-        meta: `${accountTypeLabel} · @${account.handle}`,
-        badge: accountTypeLabel,
-        to: buildDesktopOfficialAccountSearchPath(account.id),
-        avatarName: account.name,
-        avatarSrc: account.avatar,
-      } satisfies DesktopSearchQuickLink;
-      const article = account.recentArticle
-        ? ({
-            id: `official-article-${account.recentArticle.id}`,
-            title: account.recentArticle.title,
-            description:
-              account.recentArticle.summary ||
-              t(msg`来自 ${account.name} 的最近文章`),
-            meta: t(msg`公众号文章 · ${account.name}`),
-            badge: t(msg`公众号文章`),
-            to: buildDesktopOfficialAccountSearchPath(
-              account.id,
-              account.recentArticle.id,
-            ),
-            avatarName: account.name,
-            avatarSrc: account.avatar,
-          } satisfies DesktopSearchQuickLink)
-        : null;
-      const sortTime = Date.parse(
-        account.recentArticle?.publishedAt ?? account.lastPublishedAt ?? "",
-      );
-
-      return {
-        article,
-        header,
-        id: `official-group-${account.id}`,
-        sortTime: Number.isNaN(sortTime) ? 0 : sortTime,
-      };
-    });
-  }, [officialAccountsQuery.data, t]);
-  const officialMatches = useMemo(() => {
-    if (!normalizedKeyword) {
-      return [] as SearchLauncherOfficialGroup[];
-    }
-
-    return officialGroups
-      .filter(
-        (group) =>
-          matchesLauncherQuickLink(group.header, normalizedKeyword) ||
-          (group.article
-            ? matchesLauncherQuickLink(group.article, normalizedKeyword)
-            : false),
-      )
-      .slice(0, 4);
-  }, [normalizedKeyword, officialGroups]);
   const suggestionsLoading =
     shouldLoadSuggestions &&
     (friendsQuery.isLoading ||
       charactersQuery.isLoading ||
       conversationsQuery.isLoading ||
-      conversationMessageMatchesQuery.isLoading ||
-      officialAccountsQuery.isLoading);
+      conversationMessageMatchesQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
     (friendsQuery.error instanceof Error ||
       charactersQuery.error instanceof Error ||
-      conversationsQuery.error instanceof Error ||
-      officialAccountsQuery.error instanceof Error);
+      conversationsQuery.error instanceof Error);
   const hasSuggestionResults =
     conversationMessageGroups.length > 0 ||
     conversationOnlyMatches.length > 0 ||
     friendMatches.length > 0 ||
     worldCharacterMatches.length > 0 ||
-    officialMatches.length > 0 ||
     favoriteMatches.length > 0;
   const [activeActionId, setActiveActionId] =
     useState<string>("launcher-search");
@@ -853,21 +762,6 @@ export function DesktopSearchDropdownPanel({
     }));
   }, [friendMatches, handleOpenCharacterDetail, t, trimmedKeyword]);
 
-  const officialEntries = useMemo<LauncherResultEntry[]>(() => {
-    if (!trimmedKeyword) {
-      return [];
-    }
-
-    return officialMatches.map((group) => ({
-      id: group.header.id,
-      title: group.header.title,
-      description: group.article?.title ?? group.header.description,
-      avatarName: group.header.avatarName ?? group.header.title,
-      avatarSrc: group.header.avatarSrc,
-      onSelect: () => handleOpenQuickLink(group.header),
-    }));
-  }, [handleOpenQuickLink, officialMatches, trimmedKeyword]);
-
   const favoriteEntries = useMemo<LauncherResultEntry[]>(() => {
     if (!trimmedKeyword) {
       return [];
@@ -916,12 +810,6 @@ export function DesktopSearchDropdownPanel({
         viewMoreActionId: "view-more-contacts",
       },
       {
-        category: "officialAccounts",
-        entries: officialEntries,
-        title: t(msg`公众号`),
-        viewMoreActionId: "view-more-officialAccounts",
-      },
-      {
         category: "favorites",
         entries: favoriteEntries,
         title: t(msg`收藏`),
@@ -938,7 +826,6 @@ export function DesktopSearchDropdownPanel({
       chatEntries,
       contactEntries,
       favoriteEntries,
-      officialEntries,
       t,
       worldCharacterEntries,
     ],
@@ -1474,14 +1361,4 @@ function buildFriendSuggestionDescription(
   );
 }
 
-function matchesLauncherQuickLink(
-  item: DesktopSearchQuickLink,
-  keyword: string,
-) {
-  return [item.title, item.description, item.meta, item.badge]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-    .includes(keyword);
-}
 

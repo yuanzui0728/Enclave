@@ -223,7 +223,7 @@ export const miniProgramEntries: MiniProgramEntry[] = [
     name: t(msg`居民办事`),
     nameMessage: msg`居民办事`,
     slogan: t(msg`把世界里的办事流程做成一个统一入口。`),
-    description: t(msg`集中承接报名、申请、生活服务和状态查询，移动端适合随手办，桌面端适合查全量记录。`),
+    description: t(msg`集中承接报名、申请、生活服务和状态查询，移动端适合随手办，桌面端适合查完整记录。`),
     developer: t(msg`居民服务台`),
     badge: t(msg`生活服务`),
     heroLabel: t(msg`统一入口`),

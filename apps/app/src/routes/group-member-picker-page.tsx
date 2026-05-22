@@ -82,8 +82,8 @@ function GroupMemberPickerPage({
         }
         description={
           mode === "add"
-            ? t(msg`正在切换到桌面聊天工作区中的添加成员弹层。`)
-            : t(msg`正在切换到桌面聊天工作区中的移除成员弹层。`)
+            ? t(msg`正在切换到桌面聊天中的添加成员弹层。`)
+            : t(msg`正在切换到桌面聊天中的移除成员弹层。`)
         }
         loadingLabel={
           mode === "add"

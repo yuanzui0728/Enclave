@@ -1936,9 +1936,9 @@ export function ContactsPage() {
           <RouteRedirectState
             title={t(msg`正在打开桌面通讯录`)}
             description={t(
-              msg`正在载入桌面通讯录工作区，马上显示联系人和详情。`,
+              msg`正在打开桌面通讯录，马上显示联系人和详情。`,
             )}
-            loadingLabel={t(msg`载入桌面通讯录...`)}
+            loadingLabel={t(msg`正在打开桌面通讯录...`)}
           />
         }
       >

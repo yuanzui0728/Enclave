@@ -71,6 +71,11 @@ import type { MessageDescriptor } from "@lingui/core";
 import { useCallback } from "react";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 
+// officialAccounts / miniPrograms 暂时从搜索 UI 隐藏（chip / 标题 / 路由白名单
+// 全走这几个 descriptor 数组派生）：公众号入口先不接、小程序整段还是「敬请期待」
+// 挂个 chip 反像 broken feature。类型联合 SearchResultCategory 等保留这两个
+// 成员是有意的——日后想恢复只要把对应条目塞回 4 个数组并解开两条
+// useQuery 即可，不需要重建数据契约。
 export const searchCategoryLabels: Array<{
   id: SearchCategory;
   label: string;
@@ -79,8 +84,6 @@ export const searchCategoryLabels: Array<{
   { id: "messages", label: t(msg`聊天记录`) },
   { id: "contacts", label: t(msg`联系人`) },
   { id: "favorites", label: t(msg`收藏`) },
-  { id: "officialAccounts", label: t(msg`公众号`) },
-  { id: "miniPrograms", label: t(msg`小程序`) },
   { id: "moments", label: t(msg`朋友圈`) },
   { id: "feed", label: t(msg`广场动态`) },
 ];
@@ -89,6 +92,8 @@ export const searchCategoryTitles: Record<SearchResultCategory, string> = {
   messages: t(msg`聊天记录`),
   contacts: t(msg`联系人`),
   favorites: t(msg`收藏`),
+  // officialAccounts / miniPrograms 保留键位但运行时不会被命中——
+  // allMatchedResults 里相关结果块全砍了，scopeCounts 永远 0。
   officialAccounts: t(msg`公众号`),
   miniPrograms: t(msg`小程序`),
   moments: t(msg`朋友圈`),
@@ -103,8 +108,6 @@ export const searchCategoryLabelDescriptors: Array<{
   { id: "messages", label: msg`聊天记录` },
   { id: "contacts", label: msg`联系人` },
   { id: "favorites", label: msg`收藏` },
-  { id: "officialAccounts", label: msg`公众号` },
-  { id: "miniPrograms", label: msg`小程序` },
   { id: "moments", label: msg`朋友圈` },
   { id: "feed", label: msg`广场动态` },
 ];

@@ -1496,7 +1496,7 @@ export function MomentsPage() {
       return (
         <RouteRedirectState
           title={t(msg`正在打开好友朋友圈`)}
-          description={t(msg`正在切换到桌面好友朋友圈工作区，马上显示对应居民的动态。`)}
+          description={t(msg`正在切换到桌面好友朋友圈，马上显示对应居民的动态。`)}
           loadingLabel={t(msg`正在切换到桌面朋友圈...`)}
         />
       );
@@ -1556,8 +1556,8 @@ export function MomentsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面朋友圈`)}
-            description={t(msg`正在载入桌面朋友圈工作区，马上显示动态和详情。`)}
-            loadingLabel={t(msg`载入桌面朋友圈...`)}
+            description={t(msg`正在打开桌面朋友圈，马上显示动态和详情。`)}
+            loadingLabel={t(msg`正在打开桌面朋友圈...`)}
           />
         }
       >

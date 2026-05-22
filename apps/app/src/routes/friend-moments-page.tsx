@@ -977,8 +977,8 @@ export function FriendMomentsPage() {
       fallback={
         <RouteRedirectState
           title={t(msg`正在打开桌面好友朋友圈`)}
-          description={t(msg`正在载入桌面好友朋友圈工作区，马上显示角色动态详情。`)}
-          loadingLabel={t(msg`载入桌面好友朋友圈...`)}
+          description={t(msg`正在打开桌面好友朋友圈，马上显示角色动态详情。`)}
+          loadingLabel={t(msg`正在打开桌面好友朋友圈...`)}
         />
       }
     >

@@ -810,8 +810,8 @@ function DesktopFavoritesPage() {
           fallback={
             <RouteRedirectState
               title={t(msg`正在打开桌面笔记`)}
-              description={t(msg`正在载入桌面笔记工作区，马上恢复当前笔记内容。`)}
-              loadingLabel={t(msg`载入桌面笔记工作区...`)}
+              description={t(msg`正在打开桌面笔记，马上恢复当前笔记内容。`)}
+              loadingLabel={t(msg`正在打开桌面笔记...`)}
             />
           }
         >

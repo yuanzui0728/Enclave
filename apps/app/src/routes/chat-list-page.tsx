@@ -204,8 +204,8 @@ export function ChatListPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面消息`)}
-            description={t(msg`正在载入桌面消息工作区，马上显示最近会话。`)}
-            loadingLabel={t(msg`载入桌面消息工作区...`)}
+            description={t(msg`正在打开桌面消息，马上显示最近会话。`)}
+            loadingLabel={t(msg`正在打开桌面消息...`)}
           />
         }
       >

@@ -31,7 +31,7 @@ export function GroupMessageSearchPage() {
         conversationId={groupId}
         panel="history"
         title={t(msg`正在打开桌面群聊记录`)}
-        description={t(msg`正在切换到桌面聊天工作区中的群聊记录搜索侧栏。`)}
+        description={t(msg`正在切换到桌面聊天中的群聊记录搜索侧栏。`)}
         loadingLabel={t(msg`打开桌面群聊记录...`)}
       />
     );

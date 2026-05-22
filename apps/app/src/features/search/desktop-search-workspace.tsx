@@ -95,13 +95,13 @@ const desktopSearchSelectedRowClassName =
 
 type DesktopSearchFocusRegion = "input" | "categories" | "results";
 
+// officialAccounts / miniPrograms 已暂时从搜索 UI 隐藏，landing scope 卡
+// 一并撤下；恢复时跟 search-types.ts descriptor 数组同步回填。
 const landingScopeCards: Array<{
   id:
     | "messages"
     | "contacts"
     | "favorites"
-    | "officialAccounts"
-    | "miniPrograms"
     | "moments"
     | "feed";
   icon: typeof MessageSquareText;
@@ -125,18 +125,6 @@ const landingScopeCards: Array<{
     icon: Bookmark,
     title: msg`收藏`,
     description: msg`聚合消息、笔记和内容收藏。`,
-  },
-  {
-    id: "officialAccounts",
-    icon: Newspaper,
-    title: msg`公众号`,
-    description: msg`支持账号资料和文章命中。`,
-  },
-  {
-    id: "miniPrograms",
-    icon: Blocks,
-    title: msg`小程序`,
-    description: msg`覆盖最近使用和目录里的入口。`,
   },
   {
     id: "moments",
@@ -1777,13 +1765,11 @@ function DesktopSearchScopeCard({
   const iconToneClassName =
     category === "favorites"
       ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
-      : category === "miniPrograms"
-        ? "bg-[rgba(15,118,110,0.12)] text-[#0f766e]"
-        : category === "moments"
-          ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
-          : category === "feed"
-            ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
-            : "bg-[rgba(7,193,96,0.10)] text-[#15803d]";
+      : category === "moments"
+        ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
+        : category === "feed"
+          ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
+          : "bg-[rgba(7,193,96,0.10)] text-[#15803d]";
 
   return (
     <button
@@ -2897,14 +2883,6 @@ function getDesktopSearchScopeCount(
 
   if (category === "favorites") {
     return scopeCounts.favorites;
-  }
-
-  if (category === "officialAccounts") {
-    return scopeCounts.officialAccounts;
-  }
-
-  if (category === "miniPrograms") {
-    return scopeCounts.miniPrograms;
   }
 
   if (category === "moments") {

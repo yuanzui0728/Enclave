@@ -13,10 +13,8 @@ import {
   Bookmark,
   ChevronRight,
   Clock3,
-  Megaphone,
   Newspaper,
   Search,
-  Sparkles,
   Sprout,
   UsersRound,
 } from "lucide-react";
@@ -31,7 +29,6 @@ import {
   type SearchResultCategory,
   type SearchResultItem,
   type SearchResultSection,
-  type SearchScopeCounts,
 } from "./search-types";
 
 type MobileSearchWorkspaceProps = {
@@ -54,7 +51,6 @@ type MobileSearchWorkspaceProps = {
   onOpenResult: (item: SearchResultItem) => void;
   onRetryLoad: () => void;
   onRemoveHistory: (keyword: string) => void;
-  scopeCounts: SearchScopeCounts;
   searchText: string;
   searchingMessages: boolean;
   setActiveCategory: Dispatch<SetStateAction<SearchCategory>>;
@@ -64,7 +60,8 @@ type MobileSearchWorkspaceProps = {
 
 // 顺序与 allViewCategories 对齐——「全部」视图里展示的分组顺序一致，
 // chip / 卡片 / 「查看更多」之间不会出现"卡片说有内容、chip 里看不到"
-// 的错位。miniPrograms 当前是 ComingSoonOverlay，不进 quickScopeCards。
+// 的错位。officialAccounts / miniPrograms 已暂时从搜索 UI 隐藏，对应
+// 卡片条目同步移除；恢复时跟 search-types.ts descriptor 数组一起回填。
 const quickScopeCards: Array<{
   key: SearchCategory;
   title: MessageDescriptor;
@@ -85,13 +82,6 @@ const quickScopeCards: Array<{
     description: msg`搜好友、备注和世界角色`,
     icon: UsersRound,
     iconClassName: "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
-  },
-  {
-    key: "officialAccounts",
-    title: msg`公众号`,
-    description: msg`搜账号资料和文章`,
-    icon: Megaphone,
-    iconClassName: "bg-[rgba(234,179,8,0.14)] text-[#9a6b12]",
   },
   {
     key: "favorites",
@@ -133,7 +123,6 @@ export function MobileSearchWorkspace({
   onOpenResult,
   onRetryLoad,
   onRemoveHistory,
-  scopeCounts,
   searchText,
   searchingMessages,
   setActiveCategory,
@@ -193,12 +182,11 @@ export function MobileSearchWorkspace({
   }, [activeCategory]);
 
   // 「全部」视图里展示的分组顺序：messages/contacts 最常用排前面，
-  // officialAccounts/favorites 次之，moments/feed 是社交内容放后面。
-  // miniPrograms 当前是 ComingSoonOverlay，不进「全部」；和 chip 一致。
+  // favorites 次之，moments/feed 是社交内容放后面。officialAccounts /
+  // miniPrograms 暂时从搜索 UI 隐藏，分别不进「全部」分组。
   const allViewCategories: SearchResultCategory[] = [
     "messages",
     "contacts",
-    "officialAccounts",
     "favorites",
     "moments",
     "feed",
@@ -298,11 +286,7 @@ export function MobileSearchWorkspace({
             // chip 后挂的命中条数原来对所有非「全部」分类都挂；当结果是 0 时
             // 显示 "联系人 0" / "朋友圈 0" 看起来像未读徽标，但其实是空命中，
             // 干扰视觉。只在 count > 0 时挂出来。
-            // miniPrograms 永远是 ComingSoonOverlay「功能开发中」、scope 没接索
-            // 引，count 永远 0，挂个 "小程序 0" 跟 overlay 表达的"还没做"自相
-            // 矛盾——直接不挂。
-            const matchableId =
-              item.id !== "all" && item.id !== "miniPrograms" ? item.id : null;
+            const matchableId = item.id !== "all" ? item.id : null;
             const showCount =
               matchableId !== null &&
               hasKeyword &&
@@ -343,7 +327,7 @@ export function MobileSearchWorkspace({
           <MobileSearchStatusCard
             badge={t(msg`读取中`)}
             title={t(msg`正在准备搜一搜`)}
-            description={t(msg`稍等一下，正在整理最近记录和可搜索范围。`)}
+            description={t(msg`稍等一下，正在整理最近记录和搜索入口。`)}
             tone="loading"
           />
         ) : null}
@@ -454,8 +438,8 @@ export function MobileSearchWorkspace({
                       setActiveCategory(item.key as SearchCategory);
                       // 点 quickScopeCard 时只切了 activeCategory（顶部 chip 变绿）
                       // ——但因为还没输入 keyword，下方主区还停在原来的「最近搜索 /
-                      // 快捷范围 / 可搜索范围」，视觉上看不出任何变化，用户以为没
-                      // 反应。把焦点拨回输入框，引导用户立刻开始打字。
+                      // 快捷范围」，视觉上看不出任何变化，用户以为没反应。把焦点
+                      // 拨回输入框，引导用户立刻开始打字。
                       inputRef.current?.focus();
                     }}
                     className={cn(
@@ -486,60 +470,15 @@ export function MobileSearchWorkspace({
                 );
               })}
             </section>
-
-            <section className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
-              <div className="flex items-center gap-1.5 text-[14px] font-medium text-[color:var(--text-primary)]">
-                <Sparkles size={15} className="text-[#15803d]" />
-                <span>{t(msg`当前可搜索范围`)}</span>
-              </div>
-              {/* 小程序 chip 命中是 ComingSoonOverlay「功能开发中」，但这里之前
-                  还把 scopeCounts.miniPrograms（已索引的小程序条目数）当
-                  「可搜索」给挂出来——一边写"可搜索范围"一边显示 10 条，跟
-                  overlay 矛盾。索性从可搜索范围里拿掉；剩下 6 项 2×3 grid 也
-                  能整齐填满，不会再出现"广场动态"独占最后一行的视觉断尾。 */}
-              <div className="mt-2.5 grid grid-cols-2 gap-2.5 text-[11px] text-[color:var(--text-secondary)]">
-                <ScopeStat
-                  label={t(msg`会话`)}
-                  value={`${scopeCounts.conversations}`}
-                />
-                <ScopeStat label={t(msg`联系人`)} value={`${scopeCounts.contacts}`} />
-                <ScopeStat label={t(msg`收藏`)} value={`${scopeCounts.favorites}`} />
-                <ScopeStat
-                  label={t(msg`公众号`)}
-                  value={`${scopeCounts.officialAccounts}`}
-                />
-                <ScopeStat label={t(msg`朋友圈`)} value={`${scopeCounts.moments}`} />
-                <ScopeStat label={t(msg`广场动态`)} value={`${scopeCounts.feed}`} />
-              </div>
-            </section>
           </div>
         ) : null}
 
-        {/* 走查 R1：banner 文案是「消息结果会继续增加」——只在「全部」/「聊天记录」
-            两个 chip 下才有意义；用户切到「联系人」/「朋友圈」/「广场动态」/
-            「公众号」/「收藏」时挂这条横幅会让人误以为当前分类的结果也在追加，
-            实际上消息索引跟这些分类毫无关系。和下面「无结果」卡片的"等消息索引"
-            分支保持同一组分类。 */}
-        {!loading && !error && hasKeyword && searchingMessages &&
-        (activeCategory === "all" || activeCategory === "messages") ? (
-          <InlineNotice
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
-            tone="info"
-          >
-            {t(msg`正在补全全局聊天记录索引，消息结果会继续增加。`)}
-          </InlineNotice>
-        ) : null}
-
         {/* 「无结果」卡片只在「确实没东西可看」时出：
-            - 消息索引还在补全时（searchingMessages）继续展示下面的局部结果 +
-              上面的补全 banner，避免用户先看到「没有找到相关内容」、过两秒
-              消息又冒出来的反复；只对受消息索引影响的分类（全部 / 聊天记录）
-              做这层等待。
-            - miniPrograms 整个分类自带 ComingSoonOverlay 表达「功能开发中」，
-              再叠一条「没有找到相关内容」会让用户分不清是"真没有"还是
-              "本来就还做不出来"——直接 suppress，让 overlay 自己说。 */}
-        {!loading && !error && hasKeyword && !visibleResults.length &&
-        activeCategory !== "miniPrograms" && !(
+            消息索引还在补全时（searchingMessages）继续展示下面的局部结果 +
+            「聊天记录」分组的骨架占位行，避免用户先看到「没有找到相关内容」、
+            过两秒消息又冒出来的反复；只对受消息索引影响的分类
+            （全部 / 聊天记录）做这层等待。 */}
+        {!loading && !error && hasKeyword && !visibleResults.length && !(
           searchingMessages && (activeCategory === "all" || activeCategory === "messages")
         ) ? (
           <div className="pt-3">
@@ -565,14 +504,36 @@ export function MobileSearchWorkspace({
         {!error && hasKeyword ? (
           activeCategory === "all" ? (
             <div className="space-y-4">
+              {/* 消息索引还在远端 fan-out 但 groupedResults 里还没出现 messages
+                  分组时，前置一段"骨架版聊天记录分组"——位置跟 allViewCategories
+                  把 messages 排首位的语义一致，让用户直接看到"这块在加载"，
+                  而不是用一句"消息结果会继续增加"的文字横幅去解释。 */}
+              {searchingMessages &&
+              !orderedAllSections.some((section) => section.category === "messages") ? (
+                <section className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--text-muted)]">
+                    <span>{getCategoryTitle("messages")}</span>
+                    <SectionHeaderLoadingIndicator />
+                  </div>
+                  <div className="space-y-1">
+                    <MessageSearchSkeletonRow />
+                    <MessageSearchSkeletonRow />
+                  </div>
+                </section>
+              ) : null}
               {orderedAllSections.map((section) => {
                 const visible = section.results.slice(0, 3);
                 const hasMore = section.results.length > 3;
+                // 已有部分消息结果但远端还在追加：表头右边挂三点动效，
+                // 不打扰已经渲染出来的结果卡。
+                const showLoadingDots =
+                  section.category === "messages" && searchingMessages;
 
                 return (
                   <section key={section.category} className="space-y-2">
-                    <div className="text-[12px] font-medium text-[color:var(--text-muted)]">
-                      {getCategoryTitle(section.category)}
+                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--text-muted)]">
+                      <span>{getCategoryTitle(section.category)}</span>
+                      {showLoadingDots ? <SectionHeaderLoadingIndicator /> : null}
                     </div>
                     <div className="space-y-1">
                       {visible.map((item) => (
@@ -607,32 +568,27 @@ export function MobileSearchWorkspace({
                 );
               })}
             </div>
-          ) : visibleResults.length || activeCategory === "miniPrograms" ? (
+          ) : visibleResults.length ||
+            (activeCategory === "messages" && searchingMessages) ? (
             // 非「全部」分类、0 命中时不再渲染「{分类} · 0 条」空表头：
             // 上面的「无结果」卡片已经把"没找到"说清楚了，再叠一行 0 条只会
-            // 让信息密度变重。miniPrograms 是例外——chip 命中就要让
-            // ComingSoonOverlay 出来，告知"功能开发中"，比"无结果"更准确；
-            // 此时也别再叠「小程序 · 0 条」，否则跟 overlay 的"功能开发中"
-            // 互相矛盾（一边说在搜了 0 条，一边说功能还没开）。
+            // 让信息密度变重。
+            // 聊天记录分类还在远端 fan-out 时也走进来：哪怕 0 命中，也要给
+            // 一个表头 + 骨架行的"加载占位"，比空白屏 / 文字横幅都更直观。
             <div className="space-y-2.5">
-              {activeCategory === "miniPrograms" && !visibleResults.length ? null : (
-                <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
-                  {getCategoryTitle(activeCategory)} · {visibleResults.length}{" "}
-                  {t(msg`条`)}
-                </div>
-              )}
-              {/* miniPrograms 命中 0 时下面 visibleResults 是空数组，relative
-                  容器没高度，absolute inset-0 的 overlay 退化到 0×0 浮在角落
-                  上——给一个 min-height 让 overlay 有地方撑开居中。其它分类
-                  正常走 result 行的高度，不需要 min-height。 */}
-              <div
-                className={cn(
-                  "relative space-y-1.5",
-                  activeCategory === "miniPrograms" && !visibleResults.length
-                    ? "min-h-[180px]"
-                    : undefined,
-                )}
-              >
+              <div className="flex items-center gap-1.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+                {/* 0 命中但还在加载时不挂「· 0 条」——0 是中间态、贴上去
+                    看着像最终结果；命中真出来再加 count。 */}
+                <span>
+                  {visibleResults.length
+                    ? `${getCategoryTitle(activeCategory)} · ${visibleResults.length} ${t(msg`条`)}`
+                    : getCategoryTitle(activeCategory)}
+                </span>
+                {activeCategory === "messages" && searchingMessages ? (
+                  <SectionHeaderLoadingIndicator tone="primary" />
+                ) : null}
+              </div>
+              <div className="space-y-1.5">
                 {visibleResults.map((item) => (
                   <SearchResultCard
                     key={item.id}
@@ -642,8 +598,18 @@ export function MobileSearchWorkspace({
                     onOpen={onOpenResult}
                   />
                 ))}
-                {activeCategory === "miniPrograms" ? (
-                  <MobileSearchComingSoonOverlay />
+                {/* 聊天记录分类 0 命中 + 远端还在 fan-out：渲染 3 行骨架，
+                    让用户立刻看到"这一段在加载"，命中到了再 swap 进真实卡。
+                    visibleResults.length 一旦 > 0，下面这一段就退场（因为
+                    条件挂的是 !visibleResults.length），跟真实结果不会同屏。 */}
+                {activeCategory === "messages" &&
+                searchingMessages &&
+                !visibleResults.length ? (
+                  <>
+                    <MessageSearchSkeletonRow />
+                    <MessageSearchSkeletonRow />
+                    <MessageSearchSkeletonRow />
+                  </>
                 ) : null}
               </div>
             </div>
@@ -707,29 +673,59 @@ function MobileSearchStatusCard({
   );
 }
 
-function MobileSearchComingSoonOverlay() {
-  const t = useRuntimeTranslator();
+// 跟 SearchResultCard layout="mobile" 的几何对齐：48px 圆角头像 + 两行
+// 文字条；用透明背景 + 极淡灰条，肉眼一看就知道"占位"而不是"空结果卡"。
+// 不挂边框、不挂点击态，避免被误当成可点。
+function MessageSearchSkeletonRow() {
   return (
-    <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center rounded-[14px] bg-black/30 backdrop-blur-[3px]">
-      <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white/95 px-4 py-3 text-center shadow-[var(--shadow-card)]">
-        <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
-          {t(msg`功能开发中`)}
-        </div>
-        <div className="mt-1 text-[11px] text-[color:var(--text-secondary)]">
-          {t(msg`敬请期待`)}
-        </div>
+    <div
+      aria-hidden="true"
+      className="flex w-full items-start gap-3 rounded-[16px] px-3.5 py-2.5"
+    >
+      <div className="h-12 w-12 shrink-0 animate-pulse rounded-xl bg-black/[0.06]" />
+      <div className="min-w-0 flex-1 space-y-2 pt-1">
+        <div className="h-3 w-1/3 animate-pulse rounded-md bg-black/[0.06]" />
+        <div className="h-2.5 w-2/3 animate-pulse rounded-md bg-black/[0.04]" />
       </div>
     </div>
   );
 }
 
-function ScopeStat({ label, value }: { label: string; value: string }) {
+// 分组表头右侧的三点动效——跟 MobileSearchStatusCard tone="loading" 的
+// dot spinner 同一族视觉，只是更小。tone="muted" 给「全部」视图里的灰字
+// 表头，"primary" 给单分类视图里的主色表头。读屏走 sr-only 文案。
+function SectionHeaderLoadingIndicator({
+  tone = "muted",
+}: {
+  tone?: "muted" | "primary";
+}) {
+  const t = useRuntimeTranslator();
+  const dotColor =
+    tone === "primary"
+      ? "bg-[color:var(--text-muted)]"
+      : "bg-[color:var(--text-dim)]";
   return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5">
-      <div>{label}</div>
-      <div className="mt-1 text-[13px] font-medium text-[color:var(--text-primary)]">
-        {value}
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-0.5" aria-live="polite">
+      <span className="sr-only">{t(msg`正在加载更多消息`)}</span>
+      <span
+        aria-hidden="true"
+        className={cn("h-1 w-1 animate-pulse rounded-full", dotColor)}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-1 w-1 animate-pulse rounded-full [animation-delay:140ms]",
+          dotColor,
+        )}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-1 w-1 animate-pulse rounded-full [animation-delay:280ms]",
+          dotColor,
+        )}
+      />
+    </span>
   );
 }
+

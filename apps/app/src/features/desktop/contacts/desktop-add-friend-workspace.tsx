@@ -422,7 +422,7 @@ export function DesktopAddFriendWorkspace() {
       <DesktopLayoutRequiredState
         title={t(msg`添加朋友当前仅提供桌面布局`)}
         description={t(
-          msg`添加朋友工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到新的朋友继续处理联系人入口。`,
+          msg`添加朋友目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到新的朋友继续处理联系人入口。`,
         )}
         actionLabel={t(msg`查看新的朋友`)}
         fallbackTo="/friend-requests"

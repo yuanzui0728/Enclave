@@ -51,7 +51,7 @@ export function GroupContactsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在切换到桌面群聊`)}
-            description={t(msg`正在跳转到桌面通讯录工作区中的群聊视图。`)}
+            description={t(msg`正在跳转到桌面通讯录中的群聊视图。`)}
             loadingLabel={t(msg`切换桌面群聊视图...`)}
           />
         }

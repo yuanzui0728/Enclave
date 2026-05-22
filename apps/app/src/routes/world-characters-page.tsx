@@ -61,7 +61,7 @@ export function WorldCharactersPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在切换到桌面世界角色`)}
-            description={t(msg`正在跳转到桌面通讯录工作区中的世界角色视图。`)}
+            description={t(msg`正在跳转到桌面通讯录中的世界角色视图。`)}
             loadingLabel={t(msg`切换桌面世界角色...`)}
           />
         }

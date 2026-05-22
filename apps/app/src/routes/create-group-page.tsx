@@ -438,8 +438,8 @@ export function CreateGroupPage() {
           fallback={
             <RouteRedirectState
               title={t(msg`正在打开桌面发起群聊`)}
-              description={t(msg`正在载入桌面发起群聊对话框，马上恢复当前选择。`)}
-              loadingLabel={t(msg`载入桌面发起群聊...`)}
+              description={t(msg`正在打开桌面发起群聊，马上恢复当前选择。`)}
+              loadingLabel={t(msg`正在打开桌面发起群聊...`)}
             />
           }
         >

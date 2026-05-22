@@ -194,7 +194,7 @@ export function DesktopRuntimeGuard() {
     diagnostics?.bundledCoreApiExists === false
       ? t(msg`桌面应用里没有找到内置的后端服务，应用还没法启动。`)
       : diagnostics?.coreApiPortOccupied
-        ? t(msg`本地端口似乎已经被占用，桌面壳正在尝试重新接管入口。`)
+        ? t(msg`本地端口似乎已经被占用，桌面应用正在尝试重新接管入口。`)
         : diagnostics?.lastCoreApiError?.trim()
           ? diagnostics.lastCoreApiError
           : t(msg`我们正在为你整理入口，稍等片刻后再试一次就好。`);

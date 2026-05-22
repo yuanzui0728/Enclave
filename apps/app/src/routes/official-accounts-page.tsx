@@ -42,7 +42,7 @@ export function OfficialAccountsPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在切换到桌面公众号`)}
-            description={t(msg`正在跳转到桌面通讯录工作区中的公众号视图。`)}
+            description={t(msg`正在跳转到桌面通讯录中的公众号视图。`)}
             loadingLabel={t(msg`切换桌面公众号视图...`)}
           />
         }

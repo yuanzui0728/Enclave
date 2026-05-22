@@ -573,7 +573,7 @@ export function DesktopChatFilesPage() {
     return (
       <DesktopLayoutRequiredState
         title={t(msg`聊天文件当前仅提供桌面布局`)}
-        description={t(msg`聊天文件工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续查看会话附件。`)}
+        description={t(msg`聊天文件工作区目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到消息页继续查看会话附件。`)}
         actionLabel={t(msg`返回消息`)}
         fallbackTo="/tabs/chat"
       />

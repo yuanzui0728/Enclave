@@ -55,7 +55,7 @@ export function ContactsRouteRedirectShell({
   return (
     <RouteRedirectState
       title={t(msg`正在切换到桌面通讯录`)}
-      description={t(msg`正在同步路由并切换到桌面通讯录工作区。`)}
+      description={t(msg`正在同步路由并切换到桌面通讯录。`)}
       loadingLabel={t(msg`切换桌面通讯录...`)}
     />
   );

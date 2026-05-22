@@ -1425,11 +1425,17 @@ function MobileNoteEditor({
 
       <div className="min-h-0 flex-1 overflow-auto bg-white px-4 py-4">
         <div className="relative">
-          {!editorState.contentText.trim() ? (
+          {/* 走查 R4（第三轮）：原条件只看 contentText.trim() 空，没有 assets 兜底。
+              新建笔记 → 直接传图（不打任何字）这条路径，contentText="" 但
+              editorState.assets 有 entry / DOM 也有 <img>，placeholder "写点什么。
+              支持富文本、待办、图片和文件。" 直接 absolute top-0 left-0 覆盖在
+              图片左上角。pointer-events-none 不挡操作，但视觉上一片文字盖在
+              图上，很丑。 noteQuery.isLoading 分支在 R3 加 LoadingBlock gate 之后
+              已经走不到（loading 走 LoadingBlock 而不是这条 placeholder），
+              一并清掉这条 dead path。*/}
+          {!editorState.contentText.trim() && editorState.assets.length === 0 ? (
             <div className="pointer-events-none absolute left-0 top-0 text-[15px] leading-7 text-[color:var(--text-dim)]">
-              {noteQuery.isLoading
-                ? t(msg`加载笔记中…`)
-                : t(msg`写点什么。支持富文本、待办、图片和文件。`)}
+              {t(msg`写点什么。支持富文本、待办、图片和文件。`)}
             </div>
           ) : null}
           <div

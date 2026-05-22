@@ -103,7 +103,7 @@ export function translateAppErrorCode(
     case "MOMENTS_INVALID_MEDIA_TYPE":
       return translateRuntimeMessage(msg`朋友圈当前仅支持图片或视频。`);
     case "MOMENTS_MEDIA_URL_INVALID":
-      return translateRuntimeMessage(msg`朋友圈媒体必须来自上传接口。`);
+      return translateRuntimeMessage(msg`朋友圈图片或视频必须通过上传入口添加。`);
     case "MOMENTS_MEDIA_NOT_FOUND":
       return translateRuntimeMessage(msg`朋友圈媒体不存在。`);
     case "MOMENTS_NOT_FOUND":
@@ -323,10 +323,10 @@ export function translateAppErrorCode(
     case "ADMIN_INVALID_SECRET":
       return translateRuntimeMessage(msg`管理后台访问密钥无效。`);
     case "ADMIN_WIKI_ITEMS_REQUIRED":
-      return translateRuntimeMessage(msg`items 必填。`);
+      return translateRuntimeMessage(msg`内容列表不能为空。`);
     case "ADMIN_WIKI_CHARACTER_REVISION_REQUIRED":
       return translateRuntimeMessage(
-        msg`characterId 与 expectedStableRevisionId 必填。`,
+        msg`角色 ID 和稳定版本 ID 不能为空。`,
       );
     case "ADMIN_CONVERSATION_NOT_FOUND":
       return translateRuntimeMessage(
@@ -343,7 +343,7 @@ export function translateAppErrorCode(
     case "ADMIN_WORLD_OWNER_NOT_FOUND":
       return translateRuntimeMessage(msg`World owner 不存在。`);
     case "ADMIN_SELFAGENT_DOC_UNKNOWN":
-      return translateRuntimeMessage(msg`未知的 self-agent workspace 文档名。`);
+      return translateRuntimeMessage(msg`未知的自我角色面板文档名。`);
     case "ADMIN_WECHAT_CONTACTS_AT_LEAST_ONE":
       return translateRuntimeMessage(msg`至少选择一个联系人。`);
     case "ADMIN_WECHAT_PREVIEW_LIMIT":
@@ -628,11 +628,11 @@ export function translateAppErrorCode(
         msg`Action 运行记录不存在：${String(params.id ?? "")}`,
       );
     case "ACTION_RUN_NO_PLAN_SNAPSHOT":
-      return translateRuntimeMessage(msg`该动作缺少 plan 快照，当前无法重试。`);
+      return translateRuntimeMessage(msg`该动作没有保留执行计划，当前无法重试。`);
     case "FOLLOWUP_FRIEND_REQUEST_REQUIRED":
-      return translateRuntimeMessage(msg`friendRequestId 必填。`);
+      return translateRuntimeMessage(msg`好友申请 ID 不能为空。`);
     case "FOLLOWUP_NOT_FOUND":
-      return translateRuntimeMessage(msg`Follow-up 不存在。`);
+      return translateRuntimeMessage(msg`回访记录不存在。`);
     case "WIKI_PAGE_NOT_FOUND":
       return translateRuntimeMessage(msg`词条不存在。`);
     case "WIKI_PAGE_DELETED":

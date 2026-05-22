@@ -41,8 +41,8 @@ export function SubscriptionInboxPage() {
         fallback={
           <RouteRedirectState
             title={t(msg`正在打开桌面订阅号消息`)}
-            description={t(msg`正在载入桌面消息工作区中的订阅号消息视图。`)}
-            loadingLabel={t(msg`载入桌面订阅号消息...`)}
+            description={t(msg`正在打开桌面订阅号消息。`)}
+            loadingLabel={t(msg`正在打开桌面订阅号消息...`)}
           />
         }
       >

@@ -62,7 +62,7 @@ export function StarredFriendsPage() {
     return (
       <RouteRedirectState
         title={t(msg`正在切换到桌面星标朋友`)}
-        description={t(msg`星标朋友在桌面布局里并入了通讯录工作区，这里会自动带你打开对应视图。`)}
+        description={t(msg`星标朋友在桌面布局里并入了通讯录，这里会自动带你打开对应视图。`)}
         loadingLabel={t(msg`正在打开桌面星标朋友...`)}
       />
     );

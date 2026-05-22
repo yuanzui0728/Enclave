@@ -1934,9 +1934,9 @@ export function DiscoverFeedPage() {
           <RouteRedirectState
             title={t(msg`正在打开桌面发现`)}
             description={t(
-              msg`正在载入桌面看一看工作区，马上显示当前动态内容。`,
+              msg`正在打开桌面看一看，马上显示当前动态内容。`,
             )}
-            loadingLabel={t(msg`载入桌面发现工作区...`)}
+            loadingLabel={t(msg`正在打开桌面发现...`)}
           />
         }
       >

@@ -54,8 +54,8 @@ function GroupChatEditPage({
         title={mode === "name" ? t(msg`正在打开桌面群聊名称`) : t(msg`正在打开桌面群昵称`)}
         description={
           mode === "name"
-            ? t(msg`正在切换到桌面聊天工作区中的群聊名称编辑视图。`)
-            : t(msg`正在切换到桌面聊天工作区中的群昵称编辑视图。`)
+            ? t(msg`正在切换到桌面聊天中的群聊名称编辑视图。`)
+            : t(msg`正在切换到桌面聊天中的群昵称编辑视图。`)
         }
         loadingLabel={
           mode === "name" ? t(msg`打开桌面群聊名称...`) : t(msg`打开桌面群昵称...`)
