@@ -60,6 +60,10 @@ export function MomentShareCardModal({
           liked={liked}
           flush={false}
           onOpenActionMenu={() => {}}
+          // 走查 R3：分享卡是导出场景——⋯ / 删除 按钮已经通过 canInteract=false /
+          // 不传 onDelete 隐藏，「朗读」按钮也要一起隐藏。否则用户点了会触发 TTS
+          // 请求 + audio 控件渲到卡片底部，截图捕获会把控件一起带进去。
+          hideListenButton
         />
       ) : null}
     </ShareCardModal>

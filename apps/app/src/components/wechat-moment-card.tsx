@@ -53,6 +53,12 @@ type WeChatMomentCardProps = {
   onDelete?: () => void;
   /** Optional override for API base URL — passed to synthesizeMomentNarration. */
   apiBaseUrl?: string;
+  /**
+   * 走查 R3：分享卡导出场景下不要渲染「朗读」按钮——点了会触发 TTS 请求 +
+   * audio 控件渲到卡片底部，截图会把控件一起带进去。和 ⋯ / 删除 按钮在
+   * MomentShareCardModal 隐藏的处理对齐。
+   */
+  hideListenButton?: boolean;
 };
 
 const WECHAT_LINK_COLOR = "#576B95";
@@ -82,6 +88,7 @@ function arePropsEqual(
     prev.hideAuthor === next.hideAuthor &&
     prev.flush === next.flush &&
     prev.apiBaseUrl === next.apiBaseUrl &&
+    prev.hideListenButton === next.hideListenButton &&
     // handler 「是否存在」也得比较 — 比如 onDelete 在非 owner moment 上是 undefined
     // 有/无的切换会改变 UI（删除链接显隐），不能忽略
     Boolean(prev.onDelete) === Boolean(next.onDelete) &&
@@ -108,6 +115,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       onLikeAuthorTap,
       onDelete,
       apiBaseUrl,
+      hideListenButton = false,
     },
     ref,
   ) {
@@ -135,6 +143,17 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       // 列表 unmount）吞掉；但留着 true 会让按钮在新账户里一直 disabled，
       // 极端情况（同 moment.id 跨账户存在 / dev hot reload）下用户无法重试。
       setNarrationLoading(false);
+    }, [apiBaseUrl]);
+    // 走查 R3：mid-flight 切账户 race —— 用户在 A 账户点「朗读」、TTS 还在合成
+    // 时切到 B，apiBaseUrl effect 同步把 narrationUrl 清成 null；但 await 在路上
+    // 的 synthesizeMomentNarration 拿着 A 的 token 回来，resolve 后 setNarrationUrl
+    // 把 A 的 audio URL 写到 B 视图上 → 用户在 B 上看到一个挂载好的 <audio>，
+    // 点 play 拿 401。卡片一般会随账户切换 unmount，但同 moment.id 跨账户存在
+    // 时不会。和 moments-page likeMutation 的 mutationBaseUrlRef 同模板：fetch
+    // 触发时刻钉 ref，resolve 时比对，不匹配静默吞错。
+    const narrationRequestBaseUrlRef = useRef(apiBaseUrl);
+    useEffect(() => {
+      narrationRequestBaseUrlRef.current = apiBaseUrl;
     }, [apiBaseUrl]);
     // unmount cleanup：浏览器把 <audio> 从 DOM 移除后 Chromium / iOS Safari 仍可能
     // 让音轨在后台继续播 + 把整段 decoded buffer 挂到 GC 才释放（实测一段 60s
@@ -165,10 +184,17 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       }
       setNarrationLoading(true);
       setNarrationError(null);
+      // 走查 R3：钉住请求时刻的 apiBaseUrl，resolve / reject / settle 之前先比对
+      // narrationRequestBaseUrlRef.current。mid-flight 切账户后这次合成属于旧
+      // 账户，结果写到新账户视图既是错误数据（audio URL 带旧 token）也会和
+      // apiBaseUrl 重置 effect 抢着翻 narrationLoading。
+      const requestedBaseUrl = apiBaseUrl;
       try {
         const result = await synthesizeMomentNarration(moment.id, apiBaseUrl);
+        if (narrationRequestBaseUrlRef.current !== requestedBaseUrl) return;
         setNarrationUrl(result.audioUrl);
       } catch (err) {
+        if (narrationRequestBaseUrlRef.current !== requestedBaseUrl) return;
         // 走查 R2：原版直接 err.message 把 server legacyMessage 透给 UI——
         // 朋友圈不存在 / 文本为空 / TTS 配额耗尽等 AppError 的 legacyMessage
         // 全是中文，非 zh-CN locale 用户拿到的就是裸中文。和 moments-page
@@ -178,7 +204,9 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           describeRequestError(err, t(msg`朗读生成失败`)),
         );
       } finally {
-        setNarrationLoading(false);
+        if (narrationRequestBaseUrlRef.current === requestedBaseUrl) {
+          setNarrationLoading(false);
+        }
       }
     };
     useEffect(() => {
@@ -440,7 +468,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               ) : null}
             </div>
             <div className="flex items-center gap-1.5">
-              {hasNarratableText ? (
+              {hasNarratableText && !hideListenButton ? (
                 <button
                   type="button"
                   onClick={handleListenTap}
