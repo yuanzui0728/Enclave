@@ -158,18 +158,15 @@ export class WikiPrivateCharacterAiService {
     const subsections = SECTION_KEYS.filter(
       (k): k is Exclude<SectionKey, 'all'> => k !== 'all',
     );
-    let successCount = 0;
     const results = await Promise.all(
       subsections.map(async (section) => {
         try {
-          const out = await this.runSingleSection({
+          return await this.runSingleSection({
             section,
             currentDraft: input.currentDraft,
             ownerId: input.ownerId,
             optimize: input.optimize,
           });
-          successCount += 1;
-          return out;
         } catch (err) {
           this.logger.warn(
             `all-fanout subsection=${section} failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -178,12 +175,14 @@ export class WikiPrivateCharacterAiService {
         }
       }),
     );
-    if (successCount === 0) {
-      throw new Error(
-        `ALL_FANOUT_FAILED: 所有 ${subsections.length} 个子 section 均失败`,
-      );
+    const merged = mergeDrafts(...results);
+    // 检查"产出了实质内容"而不是"没抛异常"：runSingleSection 在 LLM 返回不可
+    // 解析 JSON + plain-text fallback 也抓不到 JSON 时，会安静返回 {}，successCount
+    // 仍 +1 但用户实际什么都没拿到。直接检查合并后的 merged 才是真信号。
+    if (!isMeaningfulDraft(merged)) {
+      throw new Error('AI 一键生成全部子任务都未产出内容，请稍后重试。');
     }
-    return mergeDrafts(...results);
+    return merged;
   }
 
   /**
@@ -612,6 +611,18 @@ function normalizeMemory(
 // normalizeLife removed 2026-05-15 along with the wiki life section.
 
 // ───── helpers ─────
+
+/**
+ * 判断一个 AiGeneratedDraft 是否带了实质字段。
+ * "没抛异常"≠"产出了东西"——LLM 返回不可解析 JSON 且 plain-text fallback
+ * 也抓不到 JSON 时 normalizer 会安静返回 {}。fan-out 用这个区分真假成功。
+ */
+function isMeaningfulDraft(d: AiGeneratedDraft): boolean {
+  if (d.relationshipType !== undefined) return true;
+  if (d.expertDomains !== undefined && d.expertDomains.length > 0) return true;
+  if (d.recipe && Object.keys(d.recipe).length > 0) return true;
+  return false;
+}
 
 function trimStr(v: unknown): string | null {
   if (typeof v !== 'string') return null;
