@@ -69,6 +69,7 @@ import {
 import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import { translateCharacterBio } from "../lib/character-i18n";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { formatTimestamp } from "../lib/format";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -772,7 +773,7 @@ export function FriendMomentsPage() {
       await composeDraft.addImageFiles(files);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : t(msg`图片选择失败，请稍后重试。`),
+        describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
     }
   }
@@ -782,7 +783,7 @@ export function FriendMomentsPage() {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : t(msg`视频选择失败，请稍后重试。`),
+        describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
     }
   }

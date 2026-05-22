@@ -28,6 +28,7 @@ import {
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { describeRequestError } from "../lib/request-error";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -336,7 +337,7 @@ export function MobileMomentsPublishPage() {
       await composeDraft.addImageFiles(files);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : t(msg`图片选择失败，请稍后重试。`),
+        describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
     }
   }
@@ -346,7 +347,7 @@ export function MobileMomentsPublishPage() {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : t(msg`视频选择失败，请稍后重试。`),
+        describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
     }
   }
