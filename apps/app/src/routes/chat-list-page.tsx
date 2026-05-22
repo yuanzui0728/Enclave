@@ -1288,8 +1288,15 @@ function MobileChatListPage() {
             });
           }}
           className="relative block w-full text-left"
-          aria-label={t(msg`打开搜一搜`)}
         >
+          {/*
+            新会话走查 R3：原版 aria-label="打开搜一搜" 跟视觉文本「搜索」不一致，
+            违反 WCAG 2.5.3 (Label in Name) —— 语音控制软件用户念出他们看到的
+            「搜索」，按钮的 accessible name 是「打开搜一搜」，匹配不上不响应；
+            屏幕阅读器念到的也是「打开搜一搜」跟视觉表征对不上。改成不挂
+            aria-label，让 accessible name 直接落在视觉文本「搜索」上；Search
+            icon 仍 aria-hidden 不干扰。
+          */}
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[color:var(--text-dim)]"
