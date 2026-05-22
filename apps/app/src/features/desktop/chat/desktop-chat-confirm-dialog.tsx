@@ -47,6 +47,57 @@ export function DesktopChatConfirmDialog({
     }
   }, [pending]);
 
+  // 走查新一轮 R5（移动端我-tab 端到端 2026-05-22）：本 dialog 全站作为 confirm
+  // modal（profile-page 退出登录 / 单聊「删除聊天 / 清空记录 / 加入黑名单」/
+  // workspace 右键菜单 …）使用，已挂 role="dialog" + aria-modal/labelledby/
+  // describedby，但 **缺 focus management**：
+  // 1) open 翻 true 时焦点仍停在点击按钮（背景里），SR 不读 dialog title/desc，
+  //    键盘用户按 Tab 还会先跳到背景的 settings 按钮再进 dialog；
+  // 2) ESC / 取消关闭后焦点掉到 document.body，键盘用户上下文丢失，需要重新
+  //    Tab 找到刚才那个触发按钮才能继续。
+  // 标准 WAI-ARIA dialog pattern：open=true → focus dialog 本身（tabIndex=-1
+  // 让 .focus() 成功 + 加 aria-modal 隔离），同步保存 previousActiveElement；
+  // open=false 时把焦点还原回打开按钮。
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    // 焦点定到「取消」按钮上（不是 dialog div / confirm 按钮）：
+    // 1) 是 danger / destructive 操作时（退出登录 / 删除聊天 / 加入黑名单），
+    //    SR 用户初始焦点在「取消」上 → Enter 默认 = 取消，安全（避免 Enter
+    //    误触发"确认"丢数据）；
+    // 2) 也是 W3C ARIA Authoring Practices 1.2 dialog pattern 推荐：
+    //    "place focus on the dialog's primary safe action"。
+    // 用 setTimeout(0) 让 .focus() 排在事件循环下一个 tick，避开 click→pointerup
+    // 序列里 chromium 把 focus 还原回触发按钮的兜底逻辑（实测裸 .focus() 同步
+    // 调用 / requestAnimationFrame 都被压回去）。
+    const timer = window.setTimeout(() => {
+      cancelButtonRef.current?.focus();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      // dialog 关闭（open→false）或 unmount 时把焦点还原回打开按钮 ——
+      // 键盘用户能继续上下文 navigate。previousFocus 元素可能已经 unmount
+      // （e.g. 触发按钮所在的 Suspense 边界跳了），try/catch 兜 detached 节点
+      // .focus() 在某些浏览器抛 InvalidStateError 的情况。
+      const prev = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (prev && prev.isConnected) {
+        try {
+          prev.focus();
+        } catch {
+          /* noop */
+        }
+      }
+    };
+  }, [open]);
+
   // R11：和姊妹移动端 R3 (c422bc945 — strong-reminder host / 3 sheet onClose
   // 每帧拆装) 同款 perf 问题。原版 deps=[onClose, open, pending]，调用方
   // workspace / details-panel 几乎全是 inline arrow `onClose={() => setX(null)}`
@@ -182,6 +233,7 @@ export function DesktopChatConfirmDialog({
 
         <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <Button
+            ref={cancelButtonRef}
             type="button"
             variant="secondary"
             onClick={onClose}
