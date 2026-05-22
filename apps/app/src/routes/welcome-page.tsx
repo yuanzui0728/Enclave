@@ -448,6 +448,22 @@ export function WelcomePage() {
   // 的 per-identity rate-limit 也会拒第二次。统一加 ref 守。
   const continueInFlightRef = useRef(false);
 
+  // 服务端 CLOUD_EMAIL_CODE_RESEND_COOLDOWN_SECONDS 默认 60s，电话同义。客户端原
+  // 来没节流——发完一次后按钮立刻又是 enabled，用户 second click 拿到 429（错误
+  // 文案就是 "验证码发送过于频繁，请在 NN 秒后重试"），还无谓占掉 5/h 的窗口预算
+  // (CLOUD_EMAIL_CODE_MAX_PER_WINDOW 默认 5)。本地维护一个倒计时按钮态，发送成功
+  // 后 60s 内按钮 disabled + 显示剩余秒数；email/phone 改了立刻清掉，因为 cooldown
+  // 是 per-identity 的，换 identity 不该受影响。
+  const [codeCooldownSeconds, setCodeCooldownSeconds] = useState(0);
+  useEffect(() => {
+    if (codeCooldownSeconds <= 0) return;
+    const id = window.setTimeout(
+      () => setCodeCooldownSeconds((n) => Math.max(0, n - 1)),
+      1000, // i18n-ignore-line
+    );
+    return () => window.clearTimeout(id);
+  }, [codeCooldownSeconds]);
+
   const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
   const resolvedLocalApiBaseUrl = resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl);
   const normalizedLocalApiBaseUrl =
@@ -735,6 +751,7 @@ export function WelcomePage() {
           : t(msg`验证码已发送。`),
       );
       setEntryError("");
+      setCodeCooldownSeconds(60);
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -768,6 +785,7 @@ export function WelcomePage() {
           : t(msg`验证码已发送，请查收邮箱（含垃圾邮件箱）。`),
       );
       setEntryError("");
+      setCodeCooldownSeconds(60);
     },
     onSettled: () => {
       sendEmailCodeInFlightRef.current = false;
@@ -979,6 +997,25 @@ export function WelcomePage() {
       if (authMethod === "password" && !password) {
         setEntryError(t(msg`请输入密码。`));
         return;
+      }
+      // 注册路径上的选填密码：placeholder 写明 "8-32 位，任意字符（不含空格）"，
+      // 但之前没有客户端校验，用户填 "abc" 或粘到带空格的密码点"注册并进入"会
+      // 直接进 verify-code 一来回；服务端拒后再回到本页，且 472cb4436 改成验证
+      // 码失败不消耗后还能再点一次——但 verify 请求本身、网络耗时、给用户的中
+      // 文翻译损失依然多余。早断早返回更直接。
+      if (
+        authMethod === "code" &&
+        authMode === "register" &&
+        registerPassword.trim()
+      ) {
+        if (registerPassword.length < 8 || registerPassword.length > 32) {
+          setEntryError(t(msg`密码长度需在 8-32 位之间。`));
+          return;
+        }
+        if (/\s/.test(registerPassword)) {
+          setEntryError(t(msg`密码不能包含空格。`));
+          return;
+        }
       }
     }
 
@@ -1331,6 +1368,10 @@ export function WelcomePage() {
                   setCloudAccessSessionId(null);
                   setConnectedAccessSessionId(null);
                   setEntryError("");
+                  // cooldown 是 per-identity 的（服务端按 phone+purpose 取最新一次
+                  // session 算 retryAfter）；换号了就清掉本地倒计时，否则用户输入
+                  // 新号还要干等 60s。
+                  setCodeCooldownSeconds(0);
                 }}
                 placeholder={t(msg`请输入手机号`)}
               />
@@ -1357,6 +1398,9 @@ export function WelcomePage() {
                   setCloudAccessSessionId(null);
                   setConnectedAccessSessionId(null);
                   setEntryError("");
+                  // 同 phone 路径：cooldown 是 per-identity 的，换邮箱就让客户端
+                  // 立刻能再发，避免误把上一封邮件的 60s 押到新邮箱头上。
+                  setCodeCooldownSeconds(0);
                 }}
                 placeholder={t(msg`you@example.com`)}
               />
@@ -1461,9 +1505,10 @@ export function WelcomePage() {
                       : handleSendEmailCode()
                   }
                   disabled={
-                    accountType === "phone"
+                    codeCooldownSeconds > 0 ||
+                    (accountType === "phone"
                       ? !phone.trim() || sendCodeMutation.isPending
-                      : !isProbableEmail(email) || sendEmailCodeMutation.isPending
+                      : !isProbableEmail(email) || sendEmailCodeMutation.isPending)
                   }
                   variant="secondary"
                   size="lg"
@@ -1475,7 +1520,9 @@ export function WelcomePage() {
                       : sendEmailCodeMutation.isPending
                   )
                     ? t(msg`发送中...`)
-                    : t(msg`发送验证码`)}
+                    : codeCooldownSeconds > 0
+                      ? t(msg`${codeCooldownSeconds}s 后重发`)
+                      : t(msg`发送验证码`)}
                 </Button>
               </div>
               {authMode === "register" ? (
@@ -1596,9 +1643,15 @@ export function WelcomePage() {
                 maxLength={12}
                 value={inviteCode}
                 onChange={(event) => {
+                  // .trim() 只剥首尾空白；粘 "AB C12"（中间空格）会原样保留，
+                  // 服务端 invite-code 仓库走精确匹配，连内部空格一起匹配就直接
+                  // INVITE_CODE_INVALID。和 8d7793d97 那一轮验证码字段做的同样处
+                  // 理一致：把所有空白整剥掉再 slice 到 maxLength=12，paste 路径
+                  // 不再绕开 trim。
                   const next = event.target.value
-                    .trim()
-                    .toUpperCase();
+                    .replace(/\s+/g, "")
+                    .toUpperCase()
+                    .slice(0, 12);
                   setInviteCode(next);
                   persistInviteCode(next);
                   setInviteCodeAutoFilled(false);
