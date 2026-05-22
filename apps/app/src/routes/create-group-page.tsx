@@ -163,6 +163,21 @@ export function CreateGroupPage() {
           : routeState.source === "group-contacts"
             ? "/contacts/groups"
             : undefined);
+      // 走查（第三次会话 R1）：replace:true 把浏览器 history 里的 /group/new
+      // 原地换成 /group/{id}，但 mobile-shell useEffect 看到的 pathname 变化
+      // 跟 push 长得一样 → recordAppNavigation 把"被替换掉的 /group/new"当
+      // 成 previousPath 写进 sessionStorage。从新群点返回时 group-chat-page
+      // 走 navigateBackOrFallback(fallback,"/tabs/chat")，canSafelyNavigateBack
+      // 拿 storage prev=/group/new 跟 expected /tabs/chat 比对失败 → fallback
+      // 又 push 一条 /tabs/chat，history 变 [/tabs/chat, /group/{id},
+      // /tabs/chat]。Android 硬件 Back 从这条幽灵 /tabs/chat 一按又落回
+      // /group/{id} 死循环。pre-write storage 让 mobile-shell 的
+      // recordAppNavigation 因 currentPath 已等于目标 path 早返兜住，把
+      // "真实浏览器 prev"和"storage prev"对齐。仅 returnPath 可定位时调用，
+      // 深链入场（returnPath 不可知）维持原行为。
+      if (returnPath) {
+        overrideRecordedNavigationPair(`/group/${group.id}`, returnPath);
+      }
       void navigate({
         to: "/group/$groupId",
         params: { groupId: group.id },

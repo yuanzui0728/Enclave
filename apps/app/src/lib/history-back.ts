@@ -130,6 +130,43 @@ function shouldResetNavigationStateForCurrentDocument() {
   );
 }
 
+// 走查（第三次会话 R1）：用 navigate({replace:true}) 跳转时，浏览器 history
+// 把当前条目原地替换，但 mobile-shell useEffect 看到的 pathname 变化跟 push
+// 长得一样 → recordAppNavigation 把"被替换掉的"那一页当成 previousPath 写进
+// sessionStorage。典型场景：create-group-page 的 onSuccess 用 replace 跳到
+// /group/{id} → storage prev 被写成 /group/new（已 replace 出 history） →
+// 用户从新群点返回时 canSafelyNavigateBack(/tabs/chat) 因 prev=/group/new
+// 比对失败，fallback navigate({to:/tabs/chat}) 又 push 一条新 history。整体
+// 表现：浏览器 history 多一条幽灵 /tabs/chat，Android 硬件 Back 从那条幽灵
+// 一按又回到 /group/{id} 死循环。
+//
+// 这个 helper 在 replace 导航前 pre-write 正确的 storage，让 mobile-shell
+// 的 recordAppNavigation(currentPath) 因 currentState.currentPath === path
+// 早返兜住。从而把"真实浏览器 prev"和"storage prev"对齐。
+export function overrideRecordedNavigationPair(
+  nextPath: string,
+  previousPath: string,
+) {
+  const normalizedNext = normalizeAppPath(nextPath);
+  const normalizedPrev = normalizeAppPath(previousPath);
+  if (!normalizedNext || !normalizedPrev) {
+    return;
+  }
+
+  const storage = getStorage();
+  if (!storage) {
+    return;
+  }
+
+  writeAppNavigationState(
+    {
+      currentPath: normalizedNext,
+      previousPath: normalizedPrev,
+    },
+    storage,
+  );
+}
+
 export function recordAppNavigation(path: string) {
   const normalizedPath = normalizeAppPath(path);
   if (!normalizedPath) {
