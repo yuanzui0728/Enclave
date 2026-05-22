@@ -127,7 +127,11 @@ export function OfficialMessageEntryRow({
                     "rounded-full",
                     isDesktop ? "h-2 w-2 bg-[#fa5151]" : "h-2 w-2 bg-[#b8b8b8]",
                   )}
-                  aria-label={t(msg`${unreadCount} 条未读消息`)}
+                  aria-label={
+                    unreadCount > 99
+                      ? t(msg`超过 99 条未读消息`)
+                      : t(msg`${unreadCount} 条未读消息`)
+                  }
                 />
               ) : (
                 // 走查桌面端单聊 新一轮 R3：和姊妹 desktop-chat-workspace 同
@@ -149,7 +153,11 @@ export function OfficialMessageEntryRow({
                       : "min-h-[18px] min-w-[18px] px-1 text-[11px] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                     unreadCount > 9 ? "min-w-[22px]" : undefined,
                   )}
-                  aria-label={t(msg`${unreadCount} 条未读消息`)}
+                  aria-label={
+                    unreadCount > 99
+                      ? t(msg`超过 99 条未读消息`)
+                      : t(msg`${unreadCount} 条未读消息`)
+                  }
                 >
                   <span aria-hidden="true">
                     {unreadCount > 99 ? "99+" : unreadCount}
