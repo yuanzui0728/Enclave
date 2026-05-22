@@ -554,7 +554,11 @@ export function ProfileSubscriptionPage() {
       <AppPage className="bg-[color:var(--bg-canvas)] px-4 pt-6">
         {mobileTopBar}
         <AppSection className="mx-auto max-w-3xl">
-          <ErrorBlock message={describeRequestError(error)} />
+          {/* 走查 R4：会员中心首屏 3 个 query（profile/subscription/invite）任一
+              失败时 ErrorBlock 之前无 role —— 整个 fail state 占满 viewport 但
+              盲用户没法听到错因，只能通过 TopBar 返回按钮重试。补 role="alert"
+              和其它兄弟 ErrorBlock（favorites / moments）口径一致。 */}
+          <ErrorBlock role="alert" message={describeRequestError(error)} />
         </AppSection>
       </AppPage>
     );
