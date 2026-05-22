@@ -2139,8 +2139,27 @@ export function MomentsPage() {
       ownerUsername={ownerUsername}
       visibleMoments={visibleMoments}
       momentsLoading={momentsQuery.isLoading}
+      // 走查移动端朋友圈/Round 2 R1：和 desktop 行 1656-1668 同款 ——
+      // 之前只看 momentsQuery.isError 翻 true 就把整张「朋友圈暂时不可用 +
+      // 重试读取」大空态卡推到 MobileMomentsView 里 render（line 2749-2778）。
+      // 两条真实场景都会假爆：
+      //   1) useInfiniteQuery 默认 staleTime=0 + refetchOnMount=true ——
+      //      用户从 /tabs/moments 切到 /tabs/chat 再切回来时 react-query 自动
+      //      background refetch，公网断流或 cloud-api 抖一下，refetch 失败但
+      //      data 是上一轮 cached 还在的：visibleMoments.length > 0 + isError
+      //      → 大空态卡夹在 PullToRefreshIndicator 和加载好的 moment 列表之间，
+      //      用户看着「朋友圈暂时不可用」+ 下面还有 20 条朋友圈正常显示，迷惑；
+      //   2) fetchNextPage 失败时 react-query v5 也会把 isError 翻 true（同时
+      //      isFetchNextPageError=true）—— mobile 底部已经有专门的「加载更多失败 +
+      //      重试加载」错误条（line 2826-2849），同步又冒一张大空态卡形成双错误 UI。
+      // gate 加两条：fetchNextPageError 路径完全交给底部 sentinel；visibleMoments
+      // 有内容就别盖大空态（auto-refetch 失败时静默用 cached data，跟 react-query
+      // 默认体验一致；pull-to-refresh 自己有 setNotice danger 红条兜底）。
       momentsError={
-        momentsQuery.isError && momentsQuery.error instanceof Error
+        momentsQuery.isError &&
+        !momentsQuery.isFetchNextPageError &&
+        visibleMoments.length === 0 &&
+        momentsQuery.error instanceof Error
           ? momentsQuery.error
           : null
       }
