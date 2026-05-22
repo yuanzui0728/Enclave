@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { type ComponentType, lazy } from "react";
 import {
   createRootRoute,
   createRoute,
@@ -7,412 +7,194 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { RootLayout } from "./features/shell/root-layout";
+import { recoverFromStaleAssets } from "./lib/stale-asset-recovery";
 import { useWorldOwnerStore } from "./store/world-owner-store";
 
-const SplashPage = lazy(async () => {
-  const mod = await import("./routes/splash-page");
-  return { default: mod.SplashPage };
-});
-
-const WelcomePage = lazy(async () => {
-  const mod = await import("./routes/welcome-page");
-  return { default: mod.WelcomePage };
-});
-
-const ChatListPage = lazy(async () => {
-  const mod = await import("./routes/chat-list-page");
-  return { default: mod.ChatListPage };
-});
-
-const FavoritesPage = lazy(async () => {
-  const mod = await import("./routes/favorites-page");
-  return { default: mod.FavoritesPage };
-});
-
-const MomentsPage = lazy(async () => {
-  const mod = await import("./routes/moments-page");
-  return { default: mod.MomentsPage };
-});
-
-const MobileMomentsPublishPage = lazy(async () => {
-  const mod = await import("./routes/mobile-moments-publish-page");
-  return { default: mod.MobileMomentsPublishPage };
-});
-
-const MobileFeedPublishPage = lazy(async () => {
-  const mod = await import("./routes/mobile-feed-publish-page");
-  return { default: mod.MobileFeedPublishPage };
-});
-
-const FriendMomentsPage = lazy(async () => {
-  const mod = await import("./routes/friend-moments-page");
-  return { default: mod.FriendMomentsPage };
-});
-
-const MobileFriendMomentsPage = lazy(async () => {
-  const mod = await import("./routes/mobile-friend-moments-page");
-  return { default: mod.MobileFriendMomentsPage };
-});
-
-const LegacyFriendMomentsRedirectPage = lazy(async () => {
-  const mod = await import("./routes/legacy-friend-moments-redirect-page");
-  return { default: mod.LegacyFriendMomentsRedirectPage };
-});
-
-const FeedPage = lazy(async () => {
-  const mod = await import("./routes/feed-page");
-  return { default: mod.FeedPage };
-});
-
-const ChannelsPage = lazy(async () => {
-  const mod = await import("./routes/channels-page");
-  return { default: mod.ChannelsPage };
-});
-
-const ChannelAuthorPage = lazy(async () => {
-  const mod = await import("./routes/channel-author-page");
-  return { default: mod.ChannelAuthorPage };
-});
-
-const SearchPage = lazy(async () => {
-  const mod = await import("./routes/search-page");
-  return { default: mod.SearchPage };
-});
-
-const GamesPage = lazy(async () => {
-  const mod = await import("./routes/games-page");
-  return { default: mod.GamesPage };
-});
-
-const YinjieFarmPage = lazy(async () => {
-  const mod = await import("./routes/yinjie-farm-page");
-  return { default: mod.YinjieFarmPage };
-});
-
-const MiniProgramsPage = lazy(async () => {
-  const mod = await import("./routes/mini-programs-page");
-  return { default: mod.MiniProgramsPage };
-});
-
-const DiscoverPage = lazy(async () => {
-  const mod = await import("./routes/discover-page");
-  return { default: mod.DiscoverPage };
-});
-
-const DiscoverEncounterPage = lazy(async () => {
-  const mod = await import("./routes/discover-encounter-page");
-  return { default: mod.DiscoverEncounterPage };
-});
-
-const DiscoverScenePage = lazy(async () => {
-  const mod = await import("./routes/discover-scene-page");
-  return { default: mod.DiscoverScenePage };
-});
-
-const DiscoverFeedPage = lazy(async () => {
-  const mod = await import("./routes/discover-feed-page");
-  return { default: mod.DiscoverFeedPage };
-});
-
-const DiscoverChannelsPage = lazy(async () => {
-  const mod = await import("./routes/channels-page");
-  return { default: mod.ChannelsPage };
-});
-
-const ContactsPage = lazy(async () => {
-  const mod = await import("./routes/contacts-page");
-  return { default: mod.ContactsPage };
-});
-
-const StarredFriendsPage = lazy(async () => {
-  const mod = await import("./routes/starred-friends-page");
-  return { default: mod.StarredFriendsPage };
-});
-
-const WorldCharactersPage = lazy(async () => {
-  const mod = await import("./routes/world-characters-page");
-  return { default: mod.WorldCharactersPage };
-});
-
-const OfficialAccountsPage = lazy(async () => {
-  const mod = await import("./routes/official-accounts-page");
-  return { default: mod.OfficialAccountsPage };
-});
-
-const GroupContactsPage = lazy(async () => {
-  const mod = await import("./routes/group-contacts-page");
-  return { default: mod.GroupContactsPage };
-});
-
-const TagsPage = lazy(async () => {
-  const mod = await import("./routes/tags-page");
-  return { default: mod.TagsPage };
-});
-
-const OfficialAccountDetailPage = lazy(async () => {
-  const mod = await import("./routes/official-account-detail-page");
-  return { default: mod.OfficialAccountDetailPage };
-});
-
-const OfficialAccountArticlePage = lazy(async () => {
-  const mod = await import("./routes/official-account-article-page");
-  return { default: mod.OfficialAccountArticlePage };
-});
-
-const OfficialAccountServicePage = lazy(async () => {
-  const mod = await import("./routes/official-account-service-page");
-  return { default: mod.OfficialAccountServicePage };
-});
-
-const SubscriptionInboxPage = lazy(async () => {
-  const mod = await import("./routes/subscription-inbox-page");
-  return { default: mod.SubscriptionInboxPage };
-});
-
-const ProfilePage = lazy(async () => {
-  const mod = await import("./routes/profile-page");
-  return { default: mod.ProfilePage };
-});
-
-const ProfileSettingsPage = lazy(async () => {
-  const mod = await import("./routes/profile-settings-page");
-  return { default: mod.ProfileSettingsPage };
-});
-
-const ProfileSettingsLanguagePage = lazy(async () => {
-  const mod = await import("./routes/profile-settings-language-page");
-  return { default: mod.ProfileSettingsLanguagePage };
-});
-
-const ProfileSettingsAccountSecurityPage = lazy(async () => {
-  const mod = await import("./routes/profile-settings-account-security-page");
-  return { default: mod.ProfileSettingsAccountSecurityPage };
-});
-
-const ProfileInfoPage = lazy(async () => {
-  const mod = await import("./routes/profile-info-page");
-  return { default: mod.ProfileInfoPage };
-});
-
-const ProfileInfoNamePage = lazy(async () => {
-  const mod = await import("./routes/profile-info-name-page");
-  return { default: mod.ProfileInfoNamePage };
-});
-
-const ProfileInfoSignaturePage = lazy(async () => {
-  const mod = await import("./routes/profile-info-signature-page");
-  return { default: mod.ProfileInfoSignaturePage };
-});
-
-const ProfileSubscriptionPage = lazy(async () => {
-  const mod = await import("./routes/profile-subscription-page");
-  return { default: mod.ProfileSubscriptionPage };
-});
-
-const ProfileFavoritesPage = lazy(async () => {
-  const mod = await import("./routes/profile-favorites-page");
-  return { default: mod.ProfileFavoritesPage };
-});
-
-const ProfileMomentsPage = lazy(async () => {
-  const mod = await import("./routes/profile-moments-page");
-  return { default: mod.ProfileMomentsPage };
-});
-
-const DesktopMobilePage = lazy(async () => {
-  const mod = await import("./routes/desktop-mobile-page");
-  return { default: mod.DesktopMobilePage };
-});
-
-const DesktopChatFilesPage = lazy(async () => {
-  const mod = await import("./routes/desktop-chat-files-page");
-  return { default: mod.DesktopChatFilesPage };
-});
-
-const DesktopChatHistoryPage = lazy(async () => {
-  const mod = await import("./routes/desktop-chat-history-page");
-  return { default: mod.DesktopChatHistoryPage };
-});
-
-const DesktopChatImageViewerPage = lazy(async () => {
-  const mod = await import("./routes/desktop-chat-image-viewer-page");
-  return { default: mod.DesktopChatImageViewerPage };
-});
-
-const DesktopChatWindowPage = lazy(async () => {
-  const mod = await import("./routes/desktop-chat-window-page");
-  return { default: mod.DesktopChatWindowPage };
-});
-
-const DesktopOfficialArticleWindowPage = lazy(async () => {
-  const mod = await import("./routes/desktop-official-article-window-page");
-  return { default: mod.DesktopOfficialArticleWindowPage };
-});
-
-const DesktopNoteWindowPage = lazy(async () => {
-  const mod = await import("./routes/desktop-note-window-page");
-  return { default: mod.DesktopNoteWindowPage };
-});
-
-const DesktopFeedbackPage = lazy(async () => {
-  const mod = await import("./routes/desktop-feedback-page");
-  return { default: mod.DesktopFeedbackPage };
-});
-
-const ProfileFeedbackPage = lazy(async () => {
-  const mod = await import("./routes/profile-feedback-page");
-  return { default: mod.ProfileFeedbackPage };
-});
-
-const ProfileCharacterImportPage = lazy(async () => {
-  const mod = await import("./routes/profile-character-import-page");
-  return { default: mod.ProfileCharacterImportPage };
-});
-
-const DesktopAddFriendPage = lazy(async () => {
-  const mod = await import("./routes/desktop-add-friend-page");
-  return { default: mod.DesktopAddFriendPage };
-});
-
-const DesktopSettingsPage = lazy(async () => {
-  const mod = await import("./routes/desktop-settings-page");
-  return { default: mod.DesktopSettingsPage };
-});
-
-const LiveCompanionPage = lazy(async () => {
-  const mod = await import("./routes/live-companion-page");
-  return { default: mod.LiveCompanionPage };
-});
-
-const ChatRoomPage = lazy(async () => {
-  const mod = await import("./routes/chat-room-page");
-  return { default: mod.ChatRoomPage };
-});
-
-const ChatVoiceCallPage = lazy(async () => {
-  const mod = await import("./routes/chat-voice-call-page");
-  return { default: mod.ChatVoiceCallPage };
-});
-
-const ChatVideoCallPage = lazy(async () => {
-  const mod = await import("./routes/chat-video-call-page");
-  return { default: mod.ChatVideoCallPage };
-});
-
-const GroupVoiceCallPage = lazy(async () => {
-  const mod = await import("./routes/group-voice-call-page");
-  return { default: mod.GroupVoiceCallPage };
-});
-
-const GroupVideoCallPage = lazy(async () => {
-  const mod = await import("./routes/group-video-call-page");
-  return { default: mod.GroupVideoCallPage };
-});
-
-const ChatBackgroundPage = lazy(async () => {
-  const mod = await import("./routes/chat-background-page");
-  return { default: mod.ChatBackgroundPage };
-});
-
-const GroupChatBackgroundPage = lazy(async () => {
-  const mod = await import("./routes/group-chat-background-page");
-  return { default: mod.GroupChatBackgroundPage };
-});
-
-const ChatDetailsPage = lazy(async () => {
-  const mod = await import("./routes/chat-details-page");
-  return { default: mod.ChatDetailsPage };
-});
-
-const ChatMessageSearchPage = lazy(async () => {
-  const mod = await import("./routes/chat-message-search-page");
-  return { default: mod.ChatMessageSearchPage };
-});
-
-const CharacterDetailPage = lazy(async () => {
-  const mod = await import("./routes/character-detail-page");
-  return { default: mod.CharacterDetailPage };
-});
-
-const FriendRequestsPage = lazy(async () => {
-  const mod = await import("./routes/friend-requests-page");
-  return { default: mod.FriendRequestsPage };
-});
-
-const MobileAddFriendPage = lazy(async () => {
-  const mod = await import("./routes/mobile-add-friend-page");
-  return { default: mod.MobileAddFriendPage };
-});
-
-const GroupChatPage = lazy(async () => {
-  const mod = await import("./routes/group-chat-page");
-  return { default: mod.GroupChatPage };
-});
-
-const GroupChatDetailsPage = lazy(async () => {
-  const mod = await import("./routes/group-chat-details-page");
-  return { default: mod.GroupChatDetailsPage };
-});
-
-const GroupChatNameEditPage = lazy(async () => {
-  const mod = await import("./routes/group-chat-edit-page");
-  return { default: mod.GroupChatNameEditPage };
-});
-
-const GroupChatNicknameEditPage = lazy(async () => {
-  const mod = await import("./routes/group-chat-edit-page");
-  return { default: mod.GroupChatNicknameEditPage };
-});
-
-const GroupAnnouncementPage = lazy(async () => {
-  const mod = await import("./routes/group-announcement-page");
-  return { default: mod.GroupAnnouncementPage };
-});
-
-const GroupMessageSearchPage = lazy(async () => {
-  const mod = await import("./routes/group-message-search-page");
-  return { default: mod.GroupMessageSearchPage };
-});
-
-const GroupMemberAddPage = lazy(async () => {
-  const mod = await import("./routes/group-member-picker-page");
-  return { default: mod.GroupMemberAddPage };
-});
-
-const GroupMemberRemovePage = lazy(async () => {
-  const mod = await import("./routes/group-member-picker-page");
-  return { default: mod.GroupMemberRemovePage };
-});
-
-const CreateGroupPage = lazy(async () => {
-  const mod = await import("./routes/create-group-page");
-  return { default: mod.CreateGroupPage };
-});
-
-const NotesPage = lazy(async () => {
-  const mod = await import("./routes/notes-page");
-  return { default: mod.NotesPage };
-});
-
-const MobileNoteEditorPage = lazy(async () => {
-  const mod = await import("./routes/mobile-note-editor-page");
-  return { default: mod.MobileNoteEditorPage };
-});
-
-const LegalPrivacyPage = lazy(async () => {
-  const mod = await import("./routes/legal-privacy-page");
-  return { default: mod.LegalPrivacyPage };
-});
-
-const LegalTermsPage = lazy(async () => {
-  const mod = await import("./routes/legal-terms-page");
-  return { default: mod.LegalTermsPage };
-});
-
-const LegalCommunityPage = lazy(async () => {
-  const mod = await import("./routes/legal-community-page");
-  return { default: mod.LegalCommunityPage };
-});
+// 旧 entry bundle 持有一段时间后被 emptyOutDir 的新 build 顶掉，dynamic import
+// 既可能 404（vite:preloadError 在 main.tsx 兜底）也可能拿到一个"看起来成功
+// 但 namespace 里没我们要的命名导出"的结果（rollup output 形状变了 / browser
+// HTTP cache 串到别的 hash 上等极端情况）。后者会让 mod.XxxPage 是 undefined，
+// 进而 lazy 内层 throw TypeError，被 TelemetryErrorBoundary 接到，用户看到
+// fallback。这里把它统一识别成 stale-asset，触发一次 reload 回到一致状态。
+function lazyNamed<Props extends Record<string, unknown>>(
+  importer: () => Promise<Record<string, unknown>>,
+  exportName: string,
+) {
+  return lazy(async () => {
+    const mod = await importer();
+    const candidate =
+      mod && typeof mod === "object" ? mod[exportName] : undefined;
+    if (typeof candidate !== "function") {
+      recoverFromStaleAssets();
+      throw new Error(
+        `Stale chunk: missing export "${exportName}" — triggering reload`,
+      );
+    }
+    return { default: candidate as ComponentType<Props> };
+  });
+}
+
+const SplashPage = lazyNamed(() => import("./routes/splash-page"), "SplashPage");
+
+const WelcomePage = lazyNamed(() => import("./routes/welcome-page"), "WelcomePage");
+
+const ChatListPage = lazyNamed(() => import("./routes/chat-list-page"), "ChatListPage");
+
+const FavoritesPage = lazyNamed(() => import("./routes/favorites-page"), "FavoritesPage");
+
+const MomentsPage = lazyNamed(() => import("./routes/moments-page"), "MomentsPage");
+
+const MobileMomentsPublishPage = lazyNamed(() => import("./routes/mobile-moments-publish-page"), "MobileMomentsPublishPage");
+
+const MobileFeedPublishPage = lazyNamed(() => import("./routes/mobile-feed-publish-page"), "MobileFeedPublishPage");
+
+const FriendMomentsPage = lazyNamed(() => import("./routes/friend-moments-page"), "FriendMomentsPage");
+
+const MobileFriendMomentsPage = lazyNamed(() => import("./routes/mobile-friend-moments-page"), "MobileFriendMomentsPage");
+
+const LegacyFriendMomentsRedirectPage = lazyNamed(() => import("./routes/legacy-friend-moments-redirect-page"), "LegacyFriendMomentsRedirectPage");
+
+const FeedPage = lazyNamed(() => import("./routes/feed-page"), "FeedPage");
+
+const ChannelsPage = lazyNamed(() => import("./routes/channels-page"), "ChannelsPage");
+
+const ChannelAuthorPage = lazyNamed(() => import("./routes/channel-author-page"), "ChannelAuthorPage");
+
+const SearchPage = lazyNamed(() => import("./routes/search-page"), "SearchPage");
+
+const GamesPage = lazyNamed(() => import("./routes/games-page"), "GamesPage");
+
+const YinjieFarmPage = lazyNamed(() => import("./routes/yinjie-farm-page"), "YinjieFarmPage");
+
+const MiniProgramsPage = lazyNamed(() => import("./routes/mini-programs-page"), "MiniProgramsPage");
+
+const DiscoverPage = lazyNamed(() => import("./routes/discover-page"), "DiscoverPage");
+
+const DiscoverEncounterPage = lazyNamed(() => import("./routes/discover-encounter-page"), "DiscoverEncounterPage");
+
+const DiscoverScenePage = lazyNamed(() => import("./routes/discover-scene-page"), "DiscoverScenePage");
+
+const DiscoverFeedPage = lazyNamed(() => import("./routes/discover-feed-page"), "DiscoverFeedPage");
+
+const DiscoverChannelsPage = lazyNamed(() => import("./routes/channels-page"), "ChannelsPage");
+
+const ContactsPage = lazyNamed(() => import("./routes/contacts-page"), "ContactsPage");
+
+const StarredFriendsPage = lazyNamed(() => import("./routes/starred-friends-page"), "StarredFriendsPage");
+
+const WorldCharactersPage = lazyNamed(() => import("./routes/world-characters-page"), "WorldCharactersPage");
+
+const OfficialAccountsPage = lazyNamed(() => import("./routes/official-accounts-page"), "OfficialAccountsPage");
+
+const GroupContactsPage = lazyNamed(() => import("./routes/group-contacts-page"), "GroupContactsPage");
+
+const TagsPage = lazyNamed(() => import("./routes/tags-page"), "TagsPage");
+
+const OfficialAccountDetailPage = lazyNamed(() => import("./routes/official-account-detail-page"), "OfficialAccountDetailPage");
+
+const OfficialAccountArticlePage = lazyNamed(() => import("./routes/official-account-article-page"), "OfficialAccountArticlePage");
+
+const OfficialAccountServicePage = lazyNamed(() => import("./routes/official-account-service-page"), "OfficialAccountServicePage");
+
+const SubscriptionInboxPage = lazyNamed(() => import("./routes/subscription-inbox-page"), "SubscriptionInboxPage");
+
+const ProfilePage = lazyNamed(() => import("./routes/profile-page"), "ProfilePage");
+
+const ProfileSettingsPage = lazyNamed(() => import("./routes/profile-settings-page"), "ProfileSettingsPage");
+
+const ProfileSettingsLanguagePage = lazyNamed(() => import("./routes/profile-settings-language-page"), "ProfileSettingsLanguagePage");
+
+const ProfileSettingsAccountSecurityPage = lazyNamed(() => import("./routes/profile-settings-account-security-page"), "ProfileSettingsAccountSecurityPage");
+
+const ProfileInfoPage = lazyNamed(() => import("./routes/profile-info-page"), "ProfileInfoPage");
+
+const ProfileInfoNamePage = lazyNamed(() => import("./routes/profile-info-name-page"), "ProfileInfoNamePage");
+
+const ProfileInfoSignaturePage = lazyNamed(() => import("./routes/profile-info-signature-page"), "ProfileInfoSignaturePage");
+
+const ProfileSubscriptionPage = lazyNamed(() => import("./routes/profile-subscription-page"), "ProfileSubscriptionPage");
+
+const ProfileFavoritesPage = lazyNamed(() => import("./routes/profile-favorites-page"), "ProfileFavoritesPage");
+
+const ProfileMomentsPage = lazyNamed(() => import("./routes/profile-moments-page"), "ProfileMomentsPage");
+
+const DesktopMobilePage = lazyNamed(() => import("./routes/desktop-mobile-page"), "DesktopMobilePage");
+
+const DesktopChatFilesPage = lazyNamed(() => import("./routes/desktop-chat-files-page"), "DesktopChatFilesPage");
+
+const DesktopChatHistoryPage = lazyNamed(() => import("./routes/desktop-chat-history-page"), "DesktopChatHistoryPage");
+
+const DesktopChatImageViewerPage = lazyNamed(() => import("./routes/desktop-chat-image-viewer-page"), "DesktopChatImageViewerPage");
+
+const DesktopChatWindowPage = lazyNamed(() => import("./routes/desktop-chat-window-page"), "DesktopChatWindowPage");
+
+const DesktopOfficialArticleWindowPage = lazyNamed(() => import("./routes/desktop-official-article-window-page"), "DesktopOfficialArticleWindowPage");
+
+const DesktopNoteWindowPage = lazyNamed(() => import("./routes/desktop-note-window-page"), "DesktopNoteWindowPage");
+
+const DesktopFeedbackPage = lazyNamed(() => import("./routes/desktop-feedback-page"), "DesktopFeedbackPage");
+
+const ProfileFeedbackPage = lazyNamed(() => import("./routes/profile-feedback-page"), "ProfileFeedbackPage");
+
+const ProfileCharacterImportPage = lazyNamed(() => import("./routes/profile-character-import-page"), "ProfileCharacterImportPage");
+
+const DesktopAddFriendPage = lazyNamed(() => import("./routes/desktop-add-friend-page"), "DesktopAddFriendPage");
+
+const DesktopSettingsPage = lazyNamed(() => import("./routes/desktop-settings-page"), "DesktopSettingsPage");
+
+const LiveCompanionPage = lazyNamed(() => import("./routes/live-companion-page"), "LiveCompanionPage");
+
+const ChatRoomPage = lazyNamed(() => import("./routes/chat-room-page"), "ChatRoomPage");
+
+const ChatVoiceCallPage = lazyNamed(() => import("./routes/chat-voice-call-page"), "ChatVoiceCallPage");
+
+const ChatVideoCallPage = lazyNamed(() => import("./routes/chat-video-call-page"), "ChatVideoCallPage");
+
+const GroupVoiceCallPage = lazyNamed(() => import("./routes/group-voice-call-page"), "GroupVoiceCallPage");
+
+const GroupVideoCallPage = lazyNamed(() => import("./routes/group-video-call-page"), "GroupVideoCallPage");
+
+const ChatBackgroundPage = lazyNamed(() => import("./routes/chat-background-page"), "ChatBackgroundPage");
+
+const GroupChatBackgroundPage = lazyNamed(() => import("./routes/group-chat-background-page"), "GroupChatBackgroundPage");
+
+const ChatDetailsPage = lazyNamed(() => import("./routes/chat-details-page"), "ChatDetailsPage");
+
+const ChatMessageSearchPage = lazyNamed(() => import("./routes/chat-message-search-page"), "ChatMessageSearchPage");
+
+const CharacterDetailPage = lazyNamed(() => import("./routes/character-detail-page"), "CharacterDetailPage");
+
+const FriendRequestsPage = lazyNamed(() => import("./routes/friend-requests-page"), "FriendRequestsPage");
+
+const MobileAddFriendPage = lazyNamed(() => import("./routes/mobile-add-friend-page"), "MobileAddFriendPage");
+
+const GroupChatPage = lazyNamed(() => import("./routes/group-chat-page"), "GroupChatPage");
+
+const GroupChatDetailsPage = lazyNamed(() => import("./routes/group-chat-details-page"), "GroupChatDetailsPage");
+
+const GroupChatNameEditPage = lazyNamed(() => import("./routes/group-chat-edit-page"), "GroupChatNameEditPage");
+
+const GroupChatNicknameEditPage = lazyNamed(() => import("./routes/group-chat-edit-page"), "GroupChatNicknameEditPage");
+
+const GroupAnnouncementPage = lazyNamed(() => import("./routes/group-announcement-page"), "GroupAnnouncementPage");
+
+const GroupMessageSearchPage = lazyNamed(() => import("./routes/group-message-search-page"), "GroupMessageSearchPage");
+
+const GroupMemberAddPage = lazyNamed(() => import("./routes/group-member-picker-page"), "GroupMemberAddPage");
+
+const GroupMemberRemovePage = lazyNamed(() => import("./routes/group-member-picker-page"), "GroupMemberRemovePage");
+
+const CreateGroupPage = lazyNamed(() => import("./routes/create-group-page"), "CreateGroupPage");
+
+const NotesPage = lazyNamed(() => import("./routes/notes-page"), "NotesPage");
+
+const MobileNoteEditorPage = lazyNamed(() => import("./routes/mobile-note-editor-page"), "MobileNoteEditorPage");
+
+const LegalPrivacyPage = lazyNamed(() => import("./routes/legal-privacy-page"), "LegalPrivacyPage");
+
+const LegalTermsPage = lazyNamed(() => import("./routes/legal-terms-page"), "LegalTermsPage");
+
+const LegalCommunityPage = lazyNamed(() => import("./routes/legal-community-page"), "LegalCommunityPage");
 
 const rootRoute = createRootRoute({
   component: RootLayout,

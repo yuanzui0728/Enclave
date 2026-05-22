@@ -44,51 +44,7 @@ import {
   refreshCloudSessionIfNeeded,
 } from "./store/cloud-session-store";
 import { hydrateNativeRuntimeConfig } from "./runtime/runtime-config-store";
-
-const VITE_PRELOAD_RECOVERY_KEY = "yinjie-app-vite-preload-recovery";
-
-function shouldRecoverFromStaleAssets() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    if (window.sessionStorage.getItem(VITE_PRELOAD_RECOVERY_KEY) === "1") {
-      return false;
-    }
-
-    window.sessionStorage.setItem(VITE_PRELOAD_RECOVERY_KEY, "1");
-    return true;
-  } catch {
-    return true;
-  }
-}
-
-function isCapacitorNativeShell() {
-  if (typeof window === "undefined") return false;
-  const capacitor = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
-  return Boolean(capacitor?.isNativePlatform?.());
-}
-
-function recoverFromStaleAssets() {
-  if (!shouldRecoverFromStaleAssets()) {
-    return;
-  }
-
-  // Capacitor 原生壳的 chunk 全打包在 .ipa / .apk 里，理论上不会 "stale"，
-  // 但万一 OS/WKWebView 缓存抽风触发了 dynamic import 失败，window.location
-  // .reload() 在深路径下会变成灾难：当前 URL 形如 capacitor://localhost/
-  // tabs/chat，Capacitor router 的 SPA fallback 把 index.html 内容塞回去，
-  // 但 document URL 还停在 /tabs/chat —— index.html 里的 ./assets/xxx.js
-  // 相对 URL 解到 /tabs/assets/xxx.js，router 看 .js 后缀直接 404，整个 app
-  // 加载不出来，用户只能强杀重开。改成跳回根再载入即可避开。
-  if (isCapacitorNativeShell()) {
-    window.location.replace("/");
-    return;
-  }
-
-  window.location.reload();
-}
+import { recoverFromStaleAssets } from "./lib/stale-asset-recovery";
 
 function installStaleAssetRecovery() {
   if (typeof window === "undefined") {
@@ -104,7 +60,15 @@ function installStaleAssetRecovery() {
     const message = event.message?.trim() ?? "";
     if (
       !message.includes("Failed to fetch dynamically imported module") &&
-      !message.includes("Importing a module script failed")
+      !message.includes("Importing a module script failed") &&
+      // router.tsx 已用 lazyNamed 把"缺命名导出"的情况自己 reload；这条规则
+      // 兜的是还没走 lazyNamed 的零星 dynamic import（含外部包），让旧 chunk
+      // 一旦把 mod.XxxPage 解析成 undefined 也能自愈成 reload，不卡死在
+      // ErrorBoundary fallback。窗口收紧到 ...Page 命名后缀，避免吞掉跟
+      // stale-chunk 无关的常规 undefined 访问 bug。
+      !/Cannot read properties of undefined \(reading '[A-Z][A-Za-z0-9_]*Page'\)/.test(
+        message,
+      )
     ) {
       return;
     }
