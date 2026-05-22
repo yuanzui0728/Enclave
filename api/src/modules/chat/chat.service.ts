@@ -396,6 +396,32 @@ export class ChatService {
       });
     }
 
+    // 走查 2026-05-22b R2：globalMemberNameByCharacterId 是「跨所有群」的
+    // characterId → 最新 memberName 反查表。groupToConversation 当前只把
+    // 当前 group 的 members 传下去（R1 修），但「老成员」场景下，char-manual-axun
+    // 已经从 d0d58c1b 退群、当前 members 列表里没了，所以 fallback 落到
+    // entity.senderName="走查词条_..." 老历史值，chat-list 里那一条预览
+    // 还是"走查词条_xxx：行..." 的坏样子。同一个角色其实还在
+    // 041df650 群里挂着 memberName="阿巡"——把所有群成员合并起来，按
+    // joinedAt 较新的赢，就能给老群里的退群消息也兜出"阿巡"。
+    const globalMemberNameByCharacterId = new Map<string, string>();
+    const globalMemberJoinedAtByCharacterId = new Map<string, number>();
+    for (const { members } of groupDetails) {
+      for (const member of members) {
+        if (member.memberType !== 'character') continue;
+        const name = member.memberName?.trim();
+        if (!name) continue;
+        const joinedAt = member.joinedAt
+          ? new Date(member.joinedAt).getTime()
+          : 0;
+        const prev = globalMemberJoinedAtByCharacterId.get(member.memberId) ?? -1;
+        if (joinedAt >= prev) {
+          globalMemberNameByCharacterId.set(member.memberId, name);
+          globalMemberJoinedAtByCharacterId.set(member.memberId, joinedAt);
+        }
+      }
+    }
+
     for (const { group, members, lastGroupMessage, unreadCount } of groupDetails) {
       result.push({
         ...this.groupToConversation(
@@ -403,6 +429,7 @@ export class ChatService {
           members,
           lastGroupMessage,
           remarkMap,
+          globalMemberNameByCharacterId,
         ),
         unreadCount,
       });
@@ -1903,6 +1930,7 @@ export class ChatService {
     members: GroupMemberEntity[],
     lastMessageEntity?: GroupMessageEntity | null,
     remarkMap?: FriendRemarkMap,
+    globalMemberNameByCharacterId?: Map<string, string>,
   ): Conversation & { lastMessage?: Message } {
     // 走查 2026-05-22b R1：构造一份「角色 → 当前群昵称」的反查表传给
     // groupMessageToConversationMessage。lastMessage.senderName 原本只兜
@@ -1915,11 +1943,19 @@ export class ChatService {
     // memberName（joinedAt 时落，等价"群昵称"）兜底，chat-list 二行也走
     // 同样优先级 — 服务端这里集中加，client 不用再为每个 conversation 查群
     // 成员（公网隧道 RTT × N 群很贵）。
+    // R2：先看当前 group members，没命中（成员已退群）再看跨群全局反查表。
     const memberNameByCharacterId = new Map<string, string>();
     for (const member of members) {
       if (member.memberType !== 'character') continue;
       const name = member.memberName?.trim();
       if (name) memberNameByCharacterId.set(member.memberId, name);
+    }
+    if (globalMemberNameByCharacterId) {
+      for (const [characterId, name] of globalMemberNameByCharacterId) {
+        if (!memberNameByCharacterId.has(characterId)) {
+          memberNameByCharacterId.set(characterId, name);
+        }
+      }
     }
     const lastMessage = lastMessageEntity
       ? this.groupMessageToConversationMessage(
