@@ -14,6 +14,7 @@
 // 启动方式：
 //   MAIN_MODE=wiki WIKI_PORT=3500 WIKI_DATABASE_PATH=$(pwd)/data/wiki/wiki.sqlite \
 //     YINJIE_DATA_ROOT=$(pwd)/data/wiki node api/dist/main-wiki.js
+import './proxy-bootstrap';
 import * as express from 'express';
 import * as path from 'node:path';
 import { NestFactory } from '@nestjs/core';
