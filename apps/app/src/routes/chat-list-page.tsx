@@ -1262,8 +1262,18 @@ function MobileChatListPage() {
       <div ref={scrollAnchorRef} className="pb-6">
         {pendingHideConversation ? (
           <div className="px-3 pt-2">
+            {/*
+              走查 R3：原版 InlineNotice 全程纯样式 div，没有 role/aria-live →
+              屏幕阅读器对 pin/mute/标读未读/删除/撤销提醒等关键操作的回执完全
+              静默，盲人用户没法验证操作是否生效。pendingHide / 成功 toast /
+              清空提醒都是「操作完成态」用 role="status"（polite live region）；
+              失败 toast / messageEntriesQuery 失败横条是「需要立即关注」用
+              role="alert"（assertive）。注意 role="alert" 隐式 aria-live=
+              "assertive"，跟下方红色错误条样式没冲突。
+            */}
             <InlineNotice
               tone="info"
+              role="status"
               className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
@@ -1286,6 +1296,7 @@ function MobileChatListPage() {
           <div className="px-3 pt-2">
             <InlineNotice
               tone={notice.tone}
+              role={notice.tone === "danger" ? "alert" : "status"}
               className={cn(
                 "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
                 notice.tone === "info"
@@ -1301,6 +1312,7 @@ function MobileChatListPage() {
           <div className="px-3 pt-2">
             <InlineNotice
               tone="danger"
+              role="alert"
               className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
@@ -1708,6 +1720,14 @@ function MobileChatListStatusCard({
 
   return (
     <section
+      // 走查 R3：原版仅靠样式表示「加载中 / 读取失败」，screen reader 进入页面
+      // 时听不到任何状态。loading 走 role="status"（polite live region）让 SR
+      // 在播完上文之后补一句「正在刷新消息列表 + 描述」；读取失败走 role="alert"
+      // 立即播报让用户知道页面不可用。aria-busy=true 配合 loading 让 SR 给「忙
+      // 等」反馈，等 isLoading=false 重渲后自动撤销。default tone（"还没有新消息"
+      // 空态）不算瞬变状态，保留默认 section 语义不补 role 即可。
+      role={loading ? "status" : tone === "danger" ? "alert" : undefined}
+      aria-busy={loading || undefined}
       className={cn(
         "rounded-[18px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
