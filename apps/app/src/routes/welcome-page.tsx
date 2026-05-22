@@ -791,6 +791,16 @@ export function WelcomePage() {
   }, [hydrateOwner, navigate, normalizedCloudApiBaseUrl, t]);
 
   useEffect(() => {
+    // 走查新一轮 R6：mode 守恒——cloud session 在 waiting 态，用户切到 "本地
+    // 世界" tile，cloudAccessSessionQuery 继续 polling；当服务端把 session 翻成
+    // ready 时这个 effect 仍会 fire connectToResolvedCloudWorld → setAppRuntimeConfig
+    // 把 apiBaseUrl 写成 cloud world 的 URL，进而 navigate /tabs/chat，覆盖用户
+    // 当前 "本地世界" 的选择。复现脚本能稳定触发。加 mode==="cloud" 这一格让用户
+    // 切走 cloud tab 后再 ready 就不再自动连接；用户再切回 cloud 时，effect
+    // 的 deps（mode + currentCloudSession）变化会重新评估，仍可恢复。
+    if (mode !== "cloud") {
+      return;
+    }
     if (!currentCloudSession || !cloudAccessToken || currentCloudSession.status !== "ready" || !currentCloudSession.resolvedApiBaseUrl) {
       return;
     }
@@ -815,6 +825,7 @@ export function WelcomePage() {
     connectToResolvedCloudWorld,
     connectedAccessSessionId,
     currentCloudSession,
+    mode,
     phone,
     runtimeConfig.cloudPhone,
   ]);
