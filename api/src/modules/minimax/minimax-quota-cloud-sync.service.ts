@@ -96,7 +96,20 @@ export class MinimaxQuotaCloudSyncService
   private scheduleReport(model: string): void {
     const cfg = this.getConfig();
     if (!cfg) return;
-    const key = `${model}:${todayInShanghai()}`;
+    const today = todayInShanghai();
+    const key = `${model}:${today}`;
+    // 走查 yuanzui0728 本次 R2：recentReports 原版只 set 不 prune，跨日的
+    // 老 key (`speech-02-hd:2026-05-22`) 永远残留。每天 9 个模型 × 多年 =
+    // 千级别字符串 + 数字残留。这里顺手清掉非今日 key（同进程内不会回头
+    // 找昨天的 entry，所以无副作用）。
+    if (this.recentReports.size > 0) {
+      const todaySuffix = `:${today}`;
+      for (const k of this.recentReports.keys()) {
+        if (!k.endsWith(todaySuffix)) {
+          this.recentReports.delete(k);
+        }
+      }
+    }
     const lastAt = this.recentReports.get(key) ?? 0;
     if (Date.now() - lastAt < REPORT_DEDUPE_TTL_MS) return;
     this.recentReports.set(key, Date.now());

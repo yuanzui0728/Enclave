@@ -457,10 +457,19 @@ function ReadView({ view }: { view: WikiPageView }) {
   // 旧角色的 narrationUrl 还挂着，新角色 listen 按钮一点会触发再合成；同时旧
   // <audio autoPlay> 还可能在后台播。重置 narrationUrl + 释放 audio buffer，
   // 与 wechat-moment-card.tsx 切账户路径同款。
+  //
+  // 走查 yuanzui0728 本次 R2：原版只 pause 没释放 buffer——注释说"释放"
+  // 但代码只 pause。SPA 路由切换 /character/A → /character/B 时 ReadView
+  // 复用、view.characterId 变，旧 audio 的 src 还挂着 decoded PCM 一直挂
+  // 到 ReadView 整个 unmount（用户跳出 /character/* 路由才会）。每个 TTS
+  // ~50-300KB，连续浏览 10-30 个角色 ≈ 数 MB 常驻。和 wechat-moment-card
+  // 同款 removeAttribute(src) + load() 显式 release。
   useEffect(() => {
     const audio = narrationAudioRef.current;
     if (audio) {
       audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
     }
     setNarrationUrl(null);
     setNarrationError(null);

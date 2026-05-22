@@ -3405,8 +3405,16 @@ function ChannelAudioPictorial({
       ) : null}
 
       {/* 暂停状态指示：居中大 Play 图标。
-          图集帖（audioUrl=""）没有播放/暂停语义，否则用户点一下解除静音后就一直挂着 Play 图标。 */}
-      {audioUrl && active && userUnmuted && !isPlaying ? (
+          图集帖（audioUrl=""）没有播放/暂停语义，否则用户点一下解除静音后就一直挂着 Play 图标。
+          走查 2026-05-23 R1：原条件用 `active && !isPlaying`，但 active 是即刻翻转
+          的，而 mediaActive 走 250ms 防抖才把 src 接到 <audio>。在 active=true →
+          mediaActive=true 的 250ms 窗口里 audio 还没拿到 src（src=undefined），
+          天然 isPlaying=false，加 userUnmuted 已经为 true（用户在上一张卡解过锁）
+          后整个条件全 true → 用户每次滑到新卡瞬间看到一颗大 Play 按钮闪 ~280-
+          400ms 才被真正 play() 触发的 onPlay 翻 isPlaying=true 收掉。体感「我什么
+          都没动它怎么提示我去 play」。改 active → mediaActive，把"加载窗口期"和
+          "真正的用户暂停态"分开，只在 src 真挂上、audio 真处于 paused 时才提示。 */}
+      {audioUrl && mediaActive && userUnmuted && !isPlaying ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
             <Play size={32} className="text-white" fill="white" />
@@ -3613,7 +3621,14 @@ function ChannelVideoSurface({
         onPause={() => setIsPlaying(false)}
         className="pointer-events-none h-full min-h-[calc(100dvh-12rem)] w-full object-cover"
       />
-      {active && userUnmuted && !isPlaying ? (
+      {/* 走查 2026-05-23 R1：跟 ChannelAudioPictorial 同款 — 用 mediaActive 替
+          active，避开 active=true → mediaActive=true 的 250ms 防抖窗口里把视频
+          loading 当成"用户暂停"提示 Play 按钮。视频体积比音频大，从 mediaActive
+          翻 true 到 onPlay 触发 isPlaying=true 的延迟可达 500ms+（公网隧道 +
+          decode 起步），原条件下用户每滑到新视频卡都看到一颗大 Play 按钮闪近半秒，
+          体感「这视频是不是没自动播」反复点屏幕 → handleTap 反而真把已经开始 play
+          的视频暂停了。 */}
+      {mediaActive && userUnmuted && !isPlaying ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
             <Play size={32} className="text-white" fill="white" />
