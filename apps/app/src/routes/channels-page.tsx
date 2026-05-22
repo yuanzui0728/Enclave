@@ -4151,6 +4151,28 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
   onToggleFavorite,
 }: MobileChannelsCardProps) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-22 R1：post 没有可用媒体（mediaType=text，或者 audio/video/image
+  // 但 media URL 全空）时，MobileChannelMediaSurface 走 "text fallback" 分支，在
+  // 卡片中央用 22px title + 14px text 把内容大字渲染一份。底部 overlay 又会再渲
+  // 一遍 title (13px) + ExpandableText (12px)，同一份正文 + 标题在同一张卡上出
+  // 现两次，目视像「文案抖动了一下」。判断同 MobileChannelMediaSurface 三处
+  // mediaType 守卫，hasUsableMedia=false 时跳过 overlay 里的 title / text，作者
+  // 信息 / tags / meta / 评论预览 仍然保留——它们不在中央 fallback 里出现。
+  const hasUsableMedia = (() => {
+    const audioAsset = post.media?.find((asset) => asset.kind === "audio");
+    const videoAsset = post.media?.find((asset) => asset.kind === "video");
+    const imageAssets =
+      post.media?.filter((asset) => asset.kind === "image") ?? [];
+    if (post.mediaType === "audio" && (audioAsset || post.mediaUrl)) return true;
+    if (post.mediaType === "video" && (videoAsset?.url || post.mediaUrl))
+      return true;
+    if (
+      post.mediaType === "image" &&
+      (imageAssets.length > 0 || post.coverUrl || post.mediaUrl)
+    )
+      return true;
+    return false;
+  })();
   return (
     <article
       ref={setCardRef}
@@ -4315,27 +4337,36 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                 </button>
               ) : null}
             </div>
-            {post.title ? (
+            {/*
+              hasUsableMedia=false 时（text fallback 路径）中央已经把 title /
+              text 大字渲染一份，这里就不再重复——继续渲染会让"一段文字帖"看着
+              像「同一句话写了两遍」。media 帖（audio/video/image）下中央是
+              媒体本体，没有 title/text 文案，bottom overlay 仍然要把这两段渲
+              出来当 caption。
+            */}
+            {hasUsableMedia && post.title ? (
               <div className="mt-2 text-[13px] font-medium text-white">
                 {post.title}
               </div>
             ) : null}
-            {(() => {
-              // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，
-              // 标题和正文重复出现没意义；只在两者不一致时才渲染正文。
-              const cleanText = stripToolCallSyntax(post.text);
-              if (!cleanText || cleanText === post.title) {
-                return null;
-              }
-              return (
-                <ExpandableText
-                  text={cleanText}
-                  className="mt-1"
-                  textClassName="text-[12px] leading-[1.35rem] text-white"
-                  toggleClassName="text-[11px] text-white/82"
-                />
-              );
-            })()}
+            {hasUsableMedia
+              ? (() => {
+                  // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，
+                  // 标题和正文重复出现没意义；只在两者不一致时才渲染正文。
+                  const cleanText = stripToolCallSyntax(post.text);
+                  if (!cleanText || cleanText === post.title) {
+                    return null;
+                  }
+                  return (
+                    <ExpandableText
+                      text={cleanText}
+                      className="mt-1"
+                      textClassName="text-[12px] leading-[1.35rem] text-white"
+                      toggleClassName="text-[11px] text-white/82"
+                    />
+                  );
+                })()
+              : null}
             {post.topicTags?.length ? (
               <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] text-white/72">
                 {post.topicTags.slice(0, 3).map((tag) => (
