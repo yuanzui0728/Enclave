@@ -14,6 +14,8 @@ export type NoteEditorState = {
   contentText: string;
   tags: string[];
   assets: FavoriteNoteAsset[];
+  // 用户显式输入的标题；空串表示"走自动派生"（仍由 resolveNoteTitle 取正文首行）。
+  title: string;
 };
 
 export const EMPTY_NOTE_EDITOR_STATE: NoteEditorState = {
@@ -21,6 +23,7 @@ export const EMPTY_NOTE_EDITOR_STATE: NoteEditorState = {
   contentText: "",
   tags: [],
   assets: [],
+  title: "",
 };
 
 export type NoteSendDialogNote = {
@@ -35,11 +38,17 @@ export type NoteSendDialogNote = {
 export function buildEditorStateFromDocument(
   note: FavoriteNoteDocument,
 ): NoteEditorState {
+  // server 永远会返回一个 title 字段：
+  //   - 如果用户曾显式输入过 → server 持久化的就是那个值
+  //   - 如果从未输入 → server 当时按 buildFavoriteNotePresentation 取的正文首行
+  // 编辑器 input 是受控的，没必要"反推是不是派生的"——直接把 server 的 title
+  // 回填即可：清空输入框就是显式把 title 设回 ""，保存后服务端再走派生 fallback。
   return {
     contentHtml: note.contentHtml,
     contentText: note.contentText,
     tags: [...note.tags],
     assets: note.assets.map((asset) => ({ ...asset })),
+    title: note.title ?? "",
   };
 }
 
@@ -51,6 +60,7 @@ export function buildEditorStateFromDraft(
     contentText: draft.contentText,
     tags: [...draft.tags],
     assets: draft.assets.map((asset) => ({ ...asset })),
+    title: draft.title ?? "",
   };
 }
 
@@ -88,6 +98,7 @@ export function buildNoteSnapshot(state: NoteEditorState) {
     contentText: state.contentText.trim(),
     tags: [...state.tags].sort(),
     assets: state.assets,
+    title: state.title.trim(),
   });
 }
 
@@ -98,6 +109,8 @@ export function buildNoteMutationPayload(state: NoteEditorState) {
     contentText: extractNoteTextFromHtml(contentHtml),
     tags: state.tags,
     assets: filterAssetsByHtml(contentHtml, state.assets),
+    // 空串照样带：后端 trim 后为空就会回退到 buildFavoriteNotePresentation 派生。
+    title: state.title.trim(),
   };
 }
 
@@ -197,7 +210,11 @@ export function buildNoteSendDialogNote(input: {
   state: NoteEditorState;
   updatedAt?: string;
 }): NoteSendDialogNote {
-  const title = resolveNoteTitle(input.state.contentText);
+  // 与后端 buildFavoriteNoteDocument 同步：显式标题优先，留空再走"正文首行派生"。
+  const explicitTitle = input.state.title.trim();
+  const title = explicitTitle
+    ? explicitTitle.slice(0, 28)
+    : resolveNoteTitle(input.state.contentText);
   return {
     noteId: input.noteId,
     title,

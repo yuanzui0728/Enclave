@@ -198,9 +198,22 @@ export function DesktopNotesWorkspace({
     [editorState],
   );
   const isDirty = currentSnapshot !== savedSnapshot;
-  const noteTitle = useMemo(
+  // derivedTitle: 用户没显式输入标题时的回退值（占位 placeholder + 派生）。
+  // 显式输入的标题存在 editorState.title 里；保存时 buildNoteMutationPayload
+  // 把 title 带过去，后端 trim 后为空才走"派生"分支。
+  const derivedTitle = useMemo(
     () => resolveNoteTitle(editorState.contentText),
     [editorState.contentText],
+  );
+  const noteTitle = editorState.title.trim() || derivedTitle;
+  const handleTitleChange = useCallback(
+    (next: string) => {
+      const limited = next.slice(0, 32);
+      setEditorState((current) =>
+        current.title === limited ? current : { ...current, title: limited },
+      );
+    },
+    [],
   );
 
   const saveMutation = useMutation({
@@ -617,9 +630,9 @@ export function DesktopNotesWorkspace({
     // 新加标签 / 刚移除的标签整个吞回去。改成 functional updater 从最新
     // state 拼，从源头消除这个抖动。
     setEditorState((current) => ({
+      ...current,
       contentHtml: nextHtml,
       contentText: extractNoteTextFromHtml(nextHtml),
-      tags: current.tags,
       assets: filterAssetsByHtml(nextHtml, current.assets),
     }));
   }
@@ -763,9 +776,9 @@ export function DesktopNotesWorkspace({
           );
           const nextAssets = mergeNoteAssets(current.assets, createdAssets);
           return {
+            ...current,
             contentHtml: nextHtml,
             contentText: extractNoteTextFromHtml(nextHtml),
-            tags: current.tags,
             assets: filterAssetsByHtml(nextHtml, nextAssets),
           };
         });
@@ -1101,7 +1114,7 @@ export function DesktopNotesWorkspace({
       />
 
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.9)] px-5 py-4 backdrop-blur-xl">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {!standaloneWindow ? (
               <button
@@ -1113,9 +1126,25 @@ export function DesktopNotesWorkspace({
                 <ArrowLeft size={16} />
               </button>
             ) : null}
-            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-              {noteTitle}
-            </div>
+            {/* 标题改成受控 input：用户点击直接编辑；不填走 placeholder 展示派生
+                标题。Enter preventDefault + blur 避免 IME 候选回车在桌面端造成
+                焦点跳到正文 contentEditable。maxLength=32 与后端截断一致。 */}
+            <input
+              type="text"
+              value={editorState.title}
+              onChange={(event) => handleTitleChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  (event.target as HTMLInputElement).blur();
+                }
+              }}
+              placeholder={derivedTitle}
+              maxLength={32}
+              aria-label={t(msg`笔记标题`)}
+              disabled={noteQuery.isLoading}
+              className="min-w-0 flex-1 truncate bg-transparent text-[16px] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
+            />
           </div>
           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
             {saveMutation.isPending

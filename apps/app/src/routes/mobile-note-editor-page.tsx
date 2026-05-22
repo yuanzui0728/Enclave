@@ -212,9 +212,23 @@ function MobileNoteEditor({
     [editorState],
   );
   const isDirty = currentSnapshot !== savedSnapshot;
-  const noteTitle = useMemo(
+  // derivedTitle: 用户没显式输入标题时的回退展示值（占位 placeholder + 派生）。
+  // 显式输入的标题存在 editorState.title 里；保存时 buildNoteMutationPayload 会
+  // 带过去，后端 trim 后为空才走"派生"分支。
+  const derivedTitle = useMemo(
     () => resolveNoteTitle(editorState.contentText),
     [editorState.contentText],
+  );
+  const handleTitleChange = useCallback(
+    (next: string) => {
+      // input.maxLength={32} 已经卡了大部分输入；这里再 slice 一次防止 IME 长串
+      // composition 落字时一口气冲过 32。
+      const limited = next.slice(0, 32);
+      setEditorState((current) =>
+        current.title === limited ? current : { ...current, title: limited },
+      );
+    },
+    [],
   );
 
   const saveMutation = useMutation({
@@ -642,12 +656,12 @@ function MobileNoteEditor({
     }
     const nextHtml = normalizeEditorHtml(editor.innerHTML);
     const nextAssets = filterAssetsByHtml(nextHtml, editorState.assets);
-    setEditorState({
+    setEditorState((current) => ({
+      ...current,
       contentHtml: nextHtml,
       contentText: extractNoteTextFromHtml(nextHtml),
-      tags: editorState.tags,
       assets: nextAssets,
-    });
+    }));
   }
 
   function focusEditorAtEnd() {
@@ -772,12 +786,12 @@ function MobileNoteEditor({
       const nextHtml = normalizeEditorHtml(
         editor?.innerHTML ?? editorState.contentHtml,
       );
-      setEditorState({
+      setEditorState((current) => ({
+        ...current,
         contentHtml: nextHtml,
         contentText: extractNoteTextFromHtml(nextHtml),
-        tags: editorState.tags,
         assets: filterAssetsByHtml(nextHtml, nextAssets),
-      });
+      }));
 
       if (failedFiles.length === 0) {
         setNotice({
@@ -1125,7 +1139,31 @@ function MobileNoteEditor({
       />
 
       <TabPageTopBar
-        title={noteTitle}
+        title={
+          // 顶栏标题改成受控 input：用户点击直接编辑；不填走 placeholder 展示派生
+          // 标题，保存时 buildNoteMutationPayload 把 title 带过去（空串→后端派生）。
+          // text-[16px]: iOS Safari focus 时 <16px 强制 viewport zoom-in；
+          // enterKeyHint="done" + Enter preventDefault 避免 IME 候选回车顺带跑掉
+          // 焦点（外层 contentEditable 没有 form，但部分 IME 仍会触发 default
+          // submit-like 行为）。maxLength={32} 与后端截断长度一致。
+          <input
+            type="text"
+            value={editorState.title}
+            onChange={(event) => handleTitleChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                (event.target as HTMLInputElement).blur();
+              }
+            }}
+            placeholder={derivedTitle}
+            maxLength={32}
+            enterKeyHint="done"
+            aria-label={t(msg`笔记标题`)}
+            disabled={noteQuery.isLoading}
+            className="w-full bg-transparent text-[16px] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
+          />
+        }
         titleAlign="left"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         titleClassName="text-[16px] font-medium tracking-normal"

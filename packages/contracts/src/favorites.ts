@@ -58,4 +58,6 @@ export interface UpsertFavoriteNoteRequest {
   contentText?: string;
   tags?: string[];
   assets?: FavoriteNoteAsset[];
+  // 用户显式输入的标题；trim 后为空则后端走"正文首行派生"。
+  title?: string;
 }

@@ -78,6 +78,8 @@ export interface UpsertFavoriteNoteInput {
   contentText?: string;
   tags?: string[];
   assets?: FavoriteNoteAsset[];
+  // 用户显式输入的标题；trim 后为空则按 buildFavoriteNotePresentation 派生。
+  title?: string;
 }
 
 type FavoriteMessageSnapshot = {
@@ -960,10 +962,17 @@ function buildFavoriteNoteDocument(input: {
     contentHtml,
   );
   const presentation = buildFavoriteNotePresentation(contentText);
+  // 显式标题优先：用户在编辑器顶栏 input 输入的标题直接持久化；trim 后为空才回退
+  // 到正文首行派生（与 buildFavoriteNotePresentation 一致截到 32 字，避免 echo
+  // 时前后端长度不一致）。
+  const explicitTitle = (input.input.title ?? '').trim();
+  const title = explicitTitle
+    ? explicitTitle.slice(0, 32)
+    : presentation.title;
 
   return {
     id: input.id,
-    title: presentation.title,
+    title,
     excerpt: presentation.excerpt,
     contentHtml,
     contentText,
@@ -993,6 +1002,10 @@ function normalizeFavoriteNoteDocument(
       contentText: input.contentText,
       tags: input.tags,
       assets: input.assets,
+      // 透传已持久化的 title：rowToFavoriteNoteDocument 每次读 DB 都跑一次这里，
+      // 如果不传 buildFavoriteNoteDocument 就会把存量的"用户显式标题"重新派生回
+      // 正文首行，相当于编辑后的标题在下一次 GET 时就丢了。
+      title: input.title,
     },
   });
 }

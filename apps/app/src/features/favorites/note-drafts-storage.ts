@@ -7,6 +7,9 @@ export type DesktopNoteDraftRecord = {
   contentText: string;
   tags: string[];
   assets: FavoriteNoteAsset[];
+  // 用户显式输入的标题；空串表示"走自动派生"。可选保留对旧 localStorage 数据
+  // 的兼容（解析时缺字段会回填 ""）。
+  title: string;
   updatedAt: string;
 };
 
@@ -58,6 +61,8 @@ function normalizeDesktopNoteDraftRecord(
     noteId: value.noteId?.trim() || undefined,
     contentHtml: typeof value.contentHtml === "string" ? value.contentHtml : "",
     contentText: typeof value.contentText === "string" ? value.contentText : "",
+    // 新加字段对旧 localStorage 兜底为空，避免老草稿一上来报 undefined.trim()。
+    title: typeof value.title === "string" ? value.title : "",
     tags: Array.isArray(value.tags)
       ? value.tags
           .filter((item): item is string => typeof item === "string")
@@ -207,6 +212,7 @@ export function createDesktopNoteDraft(
     noteId: input?.noteId?.trim() || undefined,
     contentHtml: input?.contentHtml ?? "",
     contentText: input?.contentText ?? "",
+    title: input?.title ?? "",
     tags:
       input?.tags
         ?.map((item) => item.trim())
