@@ -44,10 +44,7 @@ import {
 } from "./mobile-group-route-state";
 import { upsertServerMessageInCache } from "./chat-message-delivery";
 import { buildGroupCallInviteMessage } from "./group-call-message";
-import {
-  buildGroupCallWorkspaceSummaryLines,
-  getGroupCallStatusLabel,
-} from "./group-call-presentation";
+import { getGroupCallStatusLabel } from "./group-call-presentation";
 import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
 
@@ -75,8 +72,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     [hash],
   );
   const effectiveSource = routeState?.source ?? "mobile";
-  const sourceLabel =
-    effectiveSource === "desktop" ? t(msg`桌面端`) : t(msg`手机端`);
   const desktopThreadPath = useMemo(
     () =>
       buildDesktopChatThreadPath({
@@ -249,20 +244,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const hasSyncedStatus =
     lastPublishedCounts?.activeCount === activeCount &&
     lastPublishedCounts?.totalCount === totalCount;
-  const showWorkspacePrimer = !callTipsDismissed && !hasResumeCounts;
-  const showResumeHint = hasResumeCounts && !callTipsDismissed;
-  const workspaceSummaryLines = buildGroupCallWorkspaceSummaryLines({
-    kind: mode,
-    status: "ongoing",
-    sourceLabel,
-    counts: totalCount
-      ? {
-          activeCount,
-          totalCount,
-          waitingCount,
-        }
-      : null,
-  });
 
   useEffect(() => {
     if (!resolvedGroupId || membersQuery.isLoading) {
@@ -698,12 +679,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         )}
       >
         {isDesktopLayout ? (
-          <LoadingBlock label={t(msg`正在连接${callTitle}...`)} />
+          <LoadingBlock label={t(msg`正在连接...`)} />
         ) : (
           <MobileCallStatusCard
-            badge={t(msg`连接中`)}
-            title={t(msg`正在连接${callTitle}`)}
-            description={t(msg`稍等一下，正在同步群资料和成员状态。`)}
+            title={t(msg`正在连接...`)}
             tone="loading"
           />
         )}
@@ -1012,19 +991,16 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
           <div className="mt-3.5 grid grid-cols-3 gap-2.5">
             <CallMetricCard
-              label={t(msg`当前在线`)}
+              label={t(msg`在线`)}
               value={t(msg`${activeCount} 人`)}
-              detail={t(msg`已加入本轮群通话`)}
             />
             <CallMetricCard
-              label={t(msg`等待加入`)}
+              label={t(msg`等待`)}
               value={t(msg`${waitingCount} 人`)}
-              detail={t(msg`可继续同步群状态`)}
             />
             <CallMetricCard
               label={t(msg`发起时间`)}
               value={formatDetailedMessageTimestamp(startedAt)}
-              detail={t(msg`当前为移动群通话工作台`)}
             />
           </div>
 
@@ -1032,7 +1008,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             <CallControlButton
               active={!muted}
               disabled={leavingScreen}
-              label={muted ? t(msg`解除静音`) : t(msg`静音麦克风`)}
+              label={muted ? t(msg`取消静音`) : t(msg`静音`)}
               icon={muted ? <Mic size={16} /> : <MicOff size={16} />}
               onClick={() => {
                 setCallTipsDismissed(true);
@@ -1042,7 +1018,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             <CallControlButton
               active={speakerEnabled}
               disabled={leavingScreen}
-              label={speakerEnabled ? t(msg`扬声器已开`) : t(msg`开启扬声器`)}
+              label={speakerEnabled ? t(msg`关闭免提`) : t(msg`免提`)}
               icon={<Volume2 size={16} />}
               onClick={() => {
                 setCallTipsDismissed(true);
@@ -1067,37 +1043,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         </section>
 
         <div className="mt-3.5 space-y-2.5">
-          {showWorkspacePrimer ? (
-            <MobileCallNotice tone="info">
-              {t(msg`首次进入可先点下方成员席位切换"已加入/待加入"，再点"同步最新状态"把在线人数回写到群聊卡片。`)}
-            </MobileCallNotice>
-          ) : null}
-          {showResumeHint ? (
-            <MobileCallNotice tone="info">
-              {t(msg`当前沿用了上一端的群通话快照，可继续调整在线成员后再同步到群聊。`)}
-            </MobileCallNotice>
-          ) : null}
-          {workspaceSummaryLines.length ? (
-            <MobileCallNotice tone="info">
-              <div className="space-y-1">
-                {workspaceSummaryLines.map((line) => (
-                  <div key={line}>{line}</div>
-                ))}
-              </div>
-            </MobileCallNotice>
-          ) : null}
-          {mode === "video" ? (
-            <MobileCallNotice tone="info">
-              {t(msg`当前群视频页先承载移动工作台状态，本地摄像头开关只影响当前页面提示，不会上传真实画面。`)}
-            </MobileCallNotice>
-          ) : null}
-          {!hasSyncedStatus && !syncStatusMutation.isError ? (
-            <MobileCallNotice tone="warning">
-              {syncStatusMutation.isPending
-                ? t(msg`正在把最新在线人数同步到群聊。`)
-                : t(msg`成员状态刚有变化，系统会自动刷新群通话卡片。`)}
-            </MobileCallNotice>
-          ) : null}
           {syncStatusMutation.error instanceof Error ? (
             <MobileCallNotice
               tone="danger"
@@ -1108,25 +1053,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
-            <MobileCallNotice tone="info">
-              {t(msg`这次群状态没有回写成功。你可以继续调整成员席位，确认后再手动重试同步。`)}
-            </MobileCallNotice>
-          ) : null}
-          {syncStatusMutation.error instanceof Error ? (
             <div className="flex flex-wrap gap-2">
               <MobileCallActionButton
                 onClick={handleRetrySyncStatus}
                 disabled={leavingScreen}
               >
                 <Users size={16} />
-                {t(msg`重试同步状态`)}
+                {t(msg`重试`)}
               </MobileCallActionButton>
               <MobileCallActionButton
                 onClick={handleContinueAfterSyncError}
                 disabled={leavingScreen}
               >
                 <Mic size={16} />
-                {t(msg`继续调整成员`)}
+                {t(msg`继续`)}
               </MobileCallActionButton>
             </div>
           ) : null}
@@ -1135,13 +1075,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               tone="danger"
               className="flex items-center justify-between gap-3"
             >
-              <span>{endStatusMutation.error.message}</span>
+              <span>{t(msg`结束失败，请重试`)}</span>
               {renderBackToGroupAction()}
-            </MobileCallNotice>
-          ) : null}
-          {endStatusMutation.error instanceof Error ? (
-            <MobileCallNotice tone="info">
-              {t(msg`结束群通话失败了，但当前工作台还在。你可以重试结束，或者先继续保留这一轮状态。`)}
             </MobileCallNotice>
           ) : null}
           {endStatusMutation.error instanceof Error ? (
@@ -1151,32 +1086,27 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 disabled={leavingScreen}
               >
                 <PhoneOff size={16} />
-                {t(msg`重试结束通话`)}
+                {t(msg`重试`)}
               </MobileCallActionButton>
               <MobileCallActionButton
                 onClick={handleContinueAfterEndError}
                 disabled={leavingScreen}
               >
                 <Users size={16} />
-                {t(msg`继续保留当前状态`)}
+                {t(msg`保留当前状态`)}
               </MobileCallActionButton>
             </div>
           ) : null}
           {leavingScreen ? (
             <MobileCallNotice tone="info">
-              {t(msg`正在结束当前群通话并返回群聊，请稍候。`)}
+              {t(msg`通话结束中...`)}
             </MobileCallNotice>
           ) : null}
         </div>
 
         <section className="mt-3.5 min-h-0 flex-1 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-medium text-white">{t(msg`成员席位`)}</div>
-              <div className="mt-1 text-[12px] leading-5 text-white/58">
-                {t(msg`点击角色成员可切换为已加入或待加入，快速同步这一轮群通话状态。`)}
-              </div>
-            </div>
+            <div className="text-sm font-medium text-white">{t(msg`成员`)}</div>
             <MobileCallMetaChip>
               {t(msg`${activeCount}/${totalCount} 已加入`)}
             </MobileCallMetaChip>
@@ -1226,10 +1156,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                       </div>
                       <div className="mt-0.5 text-[11px] leading-[18px] text-white/52">
                         {member.memberType === "user"
-                          ? t(msg`世界主人始终保留在当前群通话工作台`)
+                          ? t(msg`始终在线`)
                           : joined
-                            ? t(msg`当前已加入本轮群通话`)
-                            : t(msg`点击后可加入本轮群通话`)}
+                            ? t(msg`已加入`)
+                            : t(msg`点击加入`)}
                       </div>
                     </div>
                     <MobileCallMetaChip
@@ -1249,7 +1179,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
           {members.length > visibleMembers.length ? (
             <div className="mt-3 text-center text-[12px] text-white/50">
-              {t(msg`其余 ${members.length - visibleMembers.length} 位成员先收口到聊天详情页管理。`)}
+              {t(msg`其余 ${members.length - visibleMembers.length} 位成员请到群聊详情管理`)}
             </div>
           ) : null}
         </section>
@@ -1268,8 +1198,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             {syncStatusMutation.isPending
               ? t(msg`同步中...`)
               : hasSyncedStatus
-                ? t(msg`已同步群状态`)
-                : t(msg`同步最新状态`)}
+                ? t(msg`已同步`)
+                : t(msg`同步状态`)}
           </MobileCallActionButton>
           <MobileCallActionButton
             tone="danger"
@@ -1339,9 +1269,9 @@ function MobileCallStatusCard({
   action,
   tone = "default",
 }: {
-  badge: string;
+  badge?: string;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
@@ -1354,16 +1284,18 @@ function MobileCallStatusCard({
           : "border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-white",
       )}
     >
-      <div
-        className={cn(
-          "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
-          tone === "danger"
-            ? "bg-[#ef4444]/14 text-[#fecaca]"
-            : "bg-[#34d399]/12 text-[#bbf7d0]",
-        )}
-      >
-        {badge}
-      </div>
+      {badge ? (
+        <div
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
+            tone === "danger"
+              ? "bg-[#ef4444]/14 text-[#fecaca]"
+              : "bg-[#34d399]/12 text-[#bbf7d0]",
+          )}
+        >
+          {badge}
+        </div>
+      ) : null}
       {tone === "loading" ? (
         <div className="mt-3 flex items-center justify-center gap-1.5">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/24" />
@@ -1372,9 +1304,11 @@ function MobileCallStatusCard({
         </div>
       ) : null}
       <div className="mt-3 text-[18px] font-medium leading-7">{title}</div>
-      <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
-        {description}
-      </p>
+      {description ? (
+        <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
+          {description}
+        </p>
+      ) : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </section>
   );
@@ -1454,13 +1388,15 @@ function CallMetricCard({
 }: {
   label: string;
   value: string;
-  detail: string;
+  detail?: string;
 }) {
   return (
     <div className="rounded-[18px] border border-white/12 bg-white/6 px-3 py-3">
       <div className="text-[11px] tracking-[0.12em] text-white/45">{label}</div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
-      <div className="mt-1 text-[11px] leading-5 text-white/54">{detail}</div>
+      {detail ? (
+        <div className="mt-1 text-[11px] leading-5 text-white/54">{detail}</div>
+      ) : null}
     </div>
   );
 }

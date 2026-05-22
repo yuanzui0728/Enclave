@@ -32,7 +32,7 @@ msgstr "界面语言"
 msgid "正在切换语言..."
 msgstr "正在切换语言..."
 
-#: packages/ui/src/components/loading-block.tsx:28
+#: packages/ui/src/components/loading-block.tsx:49
 msgid "加载中..."
 msgstr "加载中..."
 

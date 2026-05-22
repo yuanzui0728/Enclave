@@ -11,18 +11,14 @@ type DirectCallInvite = NonNullable<
 
 export function resolveDirectCallStatusLabel(invite: DirectCallInvite) {
   if (invite.connectionStatus === "ended") {
-    return t(msg`已结束`);
+    return t(msg`通话已结束`);
   }
 
   if (invite.connectionStatus === "connected") {
-    return invite.kind === "video"
-      ? t(msg`画面已接通`)
-      : t(msg`已接通`);
+    return t(msg`已接通`);
   }
 
-  return invite.kind === "video"
-    ? t(msg`等待接入画面`)
-    : t(msg`等待接听`);
+  return t(msg`等待接听`);
 }
 
 export function resolveDirectCallFooterCopy(
@@ -32,22 +28,16 @@ export function resolveDirectCallFooterCopy(
   if (invite.connectionStatus === "ended") {
     return canReopenCall
       ? {
-          description:
-            invite.kind === "video"
-              ? t(msg`点击可重新发起当前单聊视频通话。`)
-              : t(msg`点击可重新发起当前单聊语音通话。`),
+          description: t(msg`点击重新发起`),
           actionLabel: t(msg`重新发起`),
           tone: "info" as const,
-          ariaLabel: t(msg`重新发起 ${invite.title} 的单聊通话`),
+          ariaLabel: t(msg`重新发起 ${invite.title} 的通话`),
         }
       : {
-          description:
-            invite.kind === "video"
-              ? t(msg`这轮单聊视频通话已经结束，当前保留为状态记录卡片。`)
-              : t(msg`这轮单聊语音通话已经结束，当前保留为状态记录卡片。`),
+          description: t(msg`通话已结束`),
           actionLabel: t(msg`查看记录`),
           tone: "muted" as const,
-          ariaLabel: t(msg`查看 ${invite.title} 的单聊通话记录`),
+          ariaLabel: t(msg`查看 ${invite.title} 的通话记录`),
         };
   }
 
@@ -55,21 +45,21 @@ export function resolveDirectCallFooterCopy(
     ? {
         description:
           invite.kind === "video"
-            ? t(msg`点击可回到当前单聊视频通话工作台。`)
-            : t(msg`点击可回到当前单聊语音通话工作台。`),
+            ? t(msg`点击回到视频通话`)
+            : t(msg`点击回到语音通话`),
         actionLabel:
           invite.kind === "voice" ? t(msg`回到语音`) : t(msg`回到视频`),
         tone: "info" as const,
-        ariaLabel: t(msg`回到 ${invite.title} 的单聊通话工作台`),
+        ariaLabel: t(msg`回到 ${invite.title} 的通话`),
       }
     : {
         description:
           invite.kind === "video"
-            ? t(msg`当前消息已转成单聊视频通话卡片，方便快速识别状态。`)
-            : t(msg`当前消息已转成单聊语音通话卡片，方便快速识别状态。`),
+            ? t(msg`视频通话中`)
+            : t(msg`语音通话中`),
         actionLabel:
           invite.kind === "voice" ? t(msg`语音中`) : t(msg`视频中`),
         tone: "info" as const,
-        ariaLabel: t(msg`查看 ${invite.title} 的单聊通话状态`),
+        ariaLabel: t(msg`查看 ${invite.title} 的通话状态`),
       };
 }

@@ -403,19 +403,19 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const busy = activeCall.busy;
   const statusLabel = useMemo(() => {
     if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
-      return t(msg`正在连接数字人`);
+      return t(msg`正在连接...`);
     }
 
     if (isVideoMode && digitalHumanCall.sessionError) {
-      return t(msg`数字人连接失败`);
+      return t(msg`连接失败`);
     }
 
     if (activeCall.turnMutation.isPending) {
-      return isVideoMode ? t(msg`数字人整理回复中`) : t(msg`AI 正在思考`);
+      return t(msg`对方正在回复...`);
     }
 
     if (activeCall.playbackState === "playing") {
-      return isVideoMode ? t(msg`数字人正在说话`) : t(msg`正在说话`);
+      return t(msg`对方正在说话`);
     }
 
     if (isVideoMode && playbackSettling) {
@@ -426,19 +426,19 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       speech.status === "requesting-permission" ||
       speech.status === "listening"
     ) {
-      return isVideoMode ? t(msg`正在听你说话`) : t(msg`正在聆听`);
+      return t(msg`正在聆听...`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
-      return t(msg`数字人渲染中`);
+      return t(msg`画面加载中`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
-      return t(msg`数字人排队中`);
+      return t(msg`画面准备中`);
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
-      return t(msg`数字人画面失败`);
+      return t(msg`画面加载失败`);
     }
 
     if (lastAssistantText) {
@@ -450,7 +450,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       digitalHumanCall.session?.renderStatus === "ready" &&
       (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
     ) {
-      return t(msg`数字人视频已接通`);
+      return t(msg`已接通`);
     }
 
     if (isVideoMode && digitalHumanGatewayCopy?.statusLabel) {
@@ -475,39 +475,39 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   ]);
   const statusHint = useMemo(() => {
     if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
-      return t(msg`正在接通数字人，接通后就能开始第一轮。`);
+      return "";
     }
 
     if (isVideoMode && digitalHumanCall.sessionError) {
-      return t(msg`数字人暂时没接通，可以重试，或先切到语音。`);
+      return t(msg`可重试或改用语音`);
     }
 
     if (activeCall.turnMutation.isPending) {
-      return t(msg`这一句已收到，正在整理回复。`);
+      return "";
     }
 
     if (activeCall.playbackState === "playing") {
-      return t(msg`等 TA 说完，再开始下一句。`);
+      return "";
     }
 
     if (isVideoMode && playbackSettling) {
-      return t(msg`这一轮刚结束，等播报收尾后再继续。`);
+      return "";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
-      return t(msg`回复已生成，画面还在准备中。`);
+      return "";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
-      return t(msg`画面正在排队，语音会先继续。`);
+      return "";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
-      return t(msg`这一轮画面没出来，但语音还能继续。`);
+      return "";
     }
 
     if (isVideoMode && lastAssistantText) {
-      return t(msg`这一轮已经结束，准备好后继续说下一句。`);
+      return "";
     }
 
     if (
@@ -515,25 +515,21 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       digitalHumanCall.session?.renderStatus === "ready" &&
       (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
     ) {
-      return t(msg`视频已经就绪，会优先展示远端画面。`);
+      return "";
     }
 
     if (
       speech.status === "requesting-permission" ||
       speech.status === "listening"
     ) {
-      return t(msg`松开后会立刻发出这一句。`);
+      return "";
     }
 
     if (isVideoMode && digitalHumanGatewayCopy?.statusHint) {
       return digitalHumanGatewayCopy.statusHint;
     }
 
-    return isVideoMode
-      ? digitalSession?.presentationMode === "mock_stage"
-        ? t(msg`先按住底部按钮说第一句，数字人会听完再用语音和画面回应。`)
-        : t(msg`先按住底部按钮说第一句，数字人会听完再回应。`)
-      : t(msg`每次说一段，AI 会回一段语音。`);
+    return t(msg`按住下方按钮说话`);
   }, [
     activeCall.playbackState,
     activeCall.turnMutation.isPending,
@@ -543,7 +539,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     digitalHumanCall.session?.streamUrl,
     digitalHumanCall.sessionState,
     digitalHumanGatewayCopy?.statusHint,
-    digitalSession?.presentationMode,
     isVideoMode,
     lastAssistantText,
     playbackSettling,
@@ -813,14 +808,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const hasVideoPlaybackFailure =
     isVideoMode && Boolean(activeCall.playerError) && Boolean(lastAssistantText);
   const videoRecoveryMessage = hasVideoSessionFailure
-    ? t(msg`数字人还没恢复，先重试或改用语音继续。`)
+    ? t(msg`连接失败，可重试或改用语音`)
     : hasVideoRenderFailure
-      ? t(msg`这一轮画面没出来，当前已回到语音链路。`)
+      ? t(msg`画面暂不可用，已切换到语音`)
       : null;
   const showPlaybackNudge = hasVideoPlaybackFailure || showPlaybackRecoveryAction;
   const playbackNudgeMessage = isVideoMode
-    ? t(msg`这一句没有自动播报，点一下继续听。`)
-    : t(msg`这一句没有自动播报，点一下补播。`);
+    ? t(msg`没有自动播报，点一下继续`)
+    : t(msg`没有自动播报，点一下补播`);
   const hasCallProgress =
     Boolean(lastUserTranscript) ||
     Boolean(lastAssistantText) ||
@@ -973,29 +968,27 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   }, [callPhase, isVideoMode, t]);
   const assistantBubblePlaceholder = useMemo(() => {
     if (callPhase === "error") {
-      return t(msg`这一轮的回复暂时没有顺利回来，恢复后会继续显示在这里。`);
+      return t(msg`回复暂未送达，恢复后会显示在这里`);
     }
 
     if (callPhase === "connecting") {
-      return t(msg`数字人接通后，会先在这里显示这一轮回复，再通过语音和画面回应你。`);
+      return t(msg`接通后会在这里显示回复`);
     }
 
     if (callPhase === "thinking") {
-      return t(msg`正在整理这一轮回复，马上就会回到这里。`);
+      return t(msg`回复整理中...`);
     }
 
     if (callPhase === "speaking") {
-      return t(msg`TA 正在说这一轮回复，等说完后可以继续下一句。`);
+      return t(msg`对方正在说话...`);
     }
 
     if (callPhase === "followup") {
-      return t(msg`这一轮回复已经结束，下一轮内容也会继续显示在这里。`);
+      return t(msg`这一轮已结束`);
     }
 
-    return isVideoMode
-      ? t(msg`数字人的回复会先显示在这里，再通过语音自动播报。`)
-      : t(msg`TA 的回复会在这里显示，并自动播报给你听。`);
-  }, [callPhase, isVideoMode, t]);
+    return t(msg`回复会在这里显示并自动播报`);
+  }, [callPhase, t]);
 
   useEffect(() => {
     if (
@@ -1020,22 +1013,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         )}
       >
         {isDesktopLayout ? (
-          <LoadingBlock
-            label={
-              isVideoMode
-                ? t(msg`正在连接数字人视频通话...`)
-                : t(msg`正在连接语音通话...`)
-            }
-          />
+          <LoadingBlock label={t(msg`正在连接...`)} />
         ) : (
           <MobileCallStatusCard
-            badge={t(msg`连接中`)}
-            title={
-              isVideoMode
-                ? t(msg`正在连接数字人视频通话`)
-                : t(msg`正在连接语音通话`)
-            }
-            description={t(msg`稍等一下，正在同步会话信息并准备当前通话链路。`)}
+            title={t(msg`正在连接...`)}
             tone="loading"
           />
         )}
@@ -1147,8 +1128,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <ErrorBlock
               message={
                 isVideoMode
-                  ? t(msg`当前只支持在单聊里发起 AI 数字人视频通话。`)
-                  : t(msg`当前只支持在单聊里发起 AI 语音通话。`)
+                  ? t(msg`只能在单聊里发起视频通话`)
+                  : t(msg`只能在单聊里发起语音通话`)
               }
             />
             <Button
@@ -1165,16 +1146,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           </>
         ) : (
           <MobileCallStatusCard
-            badge={t(msg`通话`)}
             title={
               isVideoMode
-                ? t(msg`当前不能发起视频通话`)
-                : t(msg`当前不能发起语音通话`)
+                ? t(msg`暂不能发起视频通话`)
+                : t(msg`暂不能发起语音通话`)
             }
             description={
               isVideoMode
-                ? t(msg`目前只支持在单聊里发起 AI 数字人视频通话。`)
-                : t(msg`目前只支持在单聊里发起 AI 语音通话。`)
+                ? t(msg`只能在单聊里发起视频通话`)
+                : t(msg`只能在单聊里发起语音通话`)
             }
             tone="danger"
             action={
@@ -1264,8 +1244,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
                     {isVideoMode
-                      ? t(msg`AI 数字人视频通话`)
-                      : t(msg`AI 语音通话`)}
+                      ? t(msg`视频通话`)
+                      : t(msg`语音通话`)}
                   </div>
                 </div>
                 <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
@@ -1499,7 +1479,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
           {showVideoFirstTurnPrimer ? (
             <MobileCallNotice tone="info">
-              {t(msg`数字人已接通。先按住底部按钮说第一句，松开后会自动回复。`)}
+              {t(msg`已接通，按住下方按钮说话`)}
             </MobileCallNotice>
           ) : null}
           {isVideoMode &&
@@ -1540,7 +1520,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
           {leavingScreen ? (
             <MobileCallNotice tone="info">
-              {t(msg`正在结束通话并返回聊天。`)}
+              {t(msg`通话结束中...`)}
             </MobileCallNotice>
           ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
@@ -1616,7 +1596,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   }
                 >
                   <RotateCcw size={16} />
-                  {t(msg`重试连接数字人`)}
+                  {t(msg`重新连接`)}
                 </MobileCallActionButton>
               ) : null}
               {(hasVideoSessionFailure || hasVideoRenderFailure) ? (
@@ -1627,7 +1607,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   disabled={leavingScreen}
                 >
                   <PhoneOff size={16} />
-                  {t(msg`改用语音通话`)}
+                  {t(msg`切换到语音`)}
                 </MobileCallActionButton>
               ) : null}
             </div>
@@ -1664,7 +1644,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             label={t(msg`我`)}
             text={
               activeCall.turnMutation.isPending
-                ? speech.displayText || t(msg`本轮语音已发出，正在整理...`)
+                ? speech.displayText || t(msg`语音已发出，整理中...`)
                 : lastUserTranscript || userBubblePlaceholder
             }
             align="right"
@@ -1766,7 +1746,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                     : isVideoMode && digitalHumanCall.sessionError
                       ? t(msg`暂不可用`)
                     : activeCall.turnMutation.isPending
-                    ? t(msg`AI 回复中`)
+                    ? t(msg`对方回复中`)
                     : speech.status === "listening" || recordButtonHolding
                       ? t(msg`松开发送`)
                       : activeCall.playbackState === "playing"
@@ -1774,11 +1754,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                         : isVideoMode && playbackSettling
                           ? t(msg`准备下一轮`)
                         : t(msg`按住说话`)}
-                </span>
-                <span className="text-xs text-white/72">
-                  {isVideoMode
-                    ? t(msg`当前为半双工数字人视频通话`)
-                    : t(msg`当前为半双工语音通话`)}
                 </span>
               </span>
             </button>
@@ -1845,12 +1820,12 @@ function resolveLatestTurnTranscript(turn: VoiceCallTurnResult | null) {
 
   switch (turn.transcriptStatus) {
     case "pending":
-      return t(msg`本轮语音已发出，字幕补跑中，AI 已按原始录音完成理解。`);
+      return t(msg`语音已发出，字幕生成中`);
     case "failed":
-      return t(msg`本轮语音已发出，字幕生成失败，AI 已按原始录音完成理解。`);
+      return t(msg`语音已发出，字幕生成失败`);
     case "skipped":
     default:
-      return t(msg`本轮语音已发出，AI 已按原始录音完成理解。`);
+      return t(msg`语音已发出`);
   }
 }
 
@@ -1861,9 +1836,9 @@ function MobileCallStatusCard({
   action,
   tone = "default",
 }: {
-  badge: string;
+  badge?: string;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
@@ -1876,16 +1851,18 @@ function MobileCallStatusCard({
           : "border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-white",
       )}
     >
-      <div
-        className={cn(
-          "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
-          tone === "danger"
-            ? "bg-[#ef4444]/14 text-[#fecaca]"
-            : "bg-[#34d399]/12 text-[#bbf7d0]",
-        )}
-      >
-        {badge}
-      </div>
+      {badge ? (
+        <div
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
+            tone === "danger"
+              ? "bg-[#ef4444]/14 text-[#fecaca]"
+              : "bg-[#34d399]/12 text-[#bbf7d0]",
+          )}
+        >
+          {badge}
+        </div>
+      ) : null}
       {tone === "loading" ? (
         <div className="mt-3 flex items-center justify-center gap-1.5">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/24" />
@@ -1894,9 +1871,11 @@ function MobileCallStatusCard({
         </div>
       ) : null}
       <div className="mt-3 text-[18px] font-medium leading-7">{title}</div>
-      <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
-        {description}
-      </p>
+      {description ? (
+        <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
+          {description}
+        </p>
+      ) : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </section>
   );

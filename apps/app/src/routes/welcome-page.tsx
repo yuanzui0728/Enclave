@@ -1979,15 +1979,19 @@ export function WelcomePage() {
             <MobileWelcomeNotice
               tone="danger"
               action={
+                // 收窄触发条件：原来 cloudAccessToken || (password|code) 是 OR，
+                // 用户填错验证码 / 密码 → verify 报错 → 错误条出现"重新解析"按钮
+                // → 点了又用同一份错码 verify 一次 → 同一份错误，无意义循环。
+                // 改成只在 cloud 模式有 token（即 verify 已成功、错在 resolve
+                // 阶段，可用 token 重新走 resolveMyCloudWorldAccess）或 local
+                // 模式下显示。verify-failed 状态下不显示按钮，强制用户改
+                // code/password 后再点"登录并进入"。
                 ((mode === "local" && normalizedLocalApiBaseUrl) ||
                   (mode === "cloud" &&
                     (accountType === "email"
                       ? email.trim()
                       : phone.trim()) &&
-                    (cloudAccessToken ||
-                      (authMethod === "password"
-                        ? Boolean(password)
-                        : code.trim())) &&
+                    cloudAccessToken &&
                     !isContinuing)) ? (
                   <button
                     type="button"
