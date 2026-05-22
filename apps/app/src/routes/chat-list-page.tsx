@@ -159,6 +159,7 @@ type PendingHideConversation = {
 
 const SWIPE_ACTION_BUTTON_WIDTH = 68;
 const HIDE_UNDO_WINDOW_MS = 5_000;
+const SCROLL_POSITION_STORAGE_KEY = "yinjie-mobile-chat-list-scrolltop";
 const DesktopChatWorkspace = lazy(async () => {
   const mod = await import("../features/chat/chat-tab-shell");
   return { default: mod.ChatTabShell };
@@ -251,6 +252,13 @@ function MobileChatListPage() {
     useState<PendingHideConversation | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
+  // 走查新一轮 R1：用户在列表里滚到某条会话点进去聊天，返回后 scroll
+  // 总是被掼回顶部。mobile-shell 的 MobileViewportPane 拿 path 当 key，
+  // 路由切换就 unmount 整个 pane，scrollTop 归零；用户必须重新一路下滑
+  // 找到那条会话。靠 sessionStorage 持久化滚动位置，mount 时 restore，
+  // 滚动时 rAF throttled save。仅 chat-list 这一处，不影响其它 tab。
+  const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
+  const scrollRestoredRef = useRef(false);
   const normalizedPathname = normalizePathname(pathname);
   const isActiveTab = normalizedPathname === "/tabs/chat";
   const officialRouteState = useMemo(
@@ -873,6 +881,89 @@ function MobileChatListPage() {
     };
   }, [baseUrl, queryClient]);
 
+  // 走查新一轮 R1：恢复列表滚动位置。
+  // 触发条件：conversations 渲染完成（列表已展开到完整高度）且本组件实例
+  // 还没 restore 过。一次性 restore + 持续 save，组件 unmount 时移除监听。
+  // restore 只在数据可见后做一次：cache 命中场景下 conversationsQuery.isLoading
+  // 一开始就 false，但若数据是空（reminderEntries/serviceConversations 也空）
+  // 把 scrollTop 设到旧值也是 no-op（scrollHeight === clientHeight）。
+  const isConversationsListSettled =
+    !conversationsQuery.isLoading && conversations.length > 0;
+  useEffect(() => {
+    // StrictMode 兜底：原版把 restored 提到 early return 里，第一次 effect 跑
+    // 完写好 restored=true → cleanup 摘掉 listener → 第二次 effect 因 restored
+    // 已 true 直接 early return → listener 没再挂上 → 整段失效。改成 restored
+    // 只 gate 一次性的 scrollTop 恢复，listener 每次 effect 跑都要重挂。
+    if (!isConversationsListSettled) {
+      return;
+    }
+    const anchor = scrollAnchorRef.current;
+    if (!anchor) return;
+
+    let scrollEl: HTMLElement | null = anchor.parentElement;
+    while (scrollEl && scrollEl !== document.body) {
+      const style = window.getComputedStyle(scrollEl);
+      if (
+        (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        scrollEl.scrollHeight > scrollEl.clientHeight
+      ) {
+        break;
+      }
+      scrollEl = scrollEl.parentElement;
+    }
+    if (!scrollEl || scrollEl === document.body) return;
+
+    if (!scrollRestoredRef.current) {
+      scrollRestoredRef.current = true;
+      let saved: number | null = null;
+      try {
+        const raw = window.sessionStorage.getItem(SCROLL_POSITION_STORAGE_KEY);
+        saved = raw ? Number.parseInt(raw, 10) : null;
+      } catch {
+        // sessionStorage 可能在 Safari 隐私模式 / iframe sandbox 下抛 SecurityError；
+        // 静默兜底，不影响列表正常使用。
+      }
+      if (saved !== null && Number.isFinite(saved) && saved > 0) {
+        const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+        scrollEl.scrollTop = Math.min(saved, Math.max(0, maxScroll));
+      }
+    }
+
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      // 路由切走时 React 先 unmount 内层 children（列表 section 整片消失），
+      // scrollHeight 暴跌到接近 clientHeight，浏览器把 scrollTop 强制 clamp 到
+      // 0 并 fire 一次最后的 scroll 事件。这条幽灵事件如果落到 sessionStorage，
+      // 就会把用户真实的 scrollTop=500 覆盖成 0，下次回来仍是从顶部开始。
+      // 用 scrollHeight - clientHeight < 100 当哨兵：列表至少要有内容能滚才
+      // 值得保存；不到 100px 的差值要么是列表小到不需要 restore，要么就是
+      // unmount 路径的伪事件。
+      const maxScroll = scrollEl!.scrollHeight - scrollEl!.clientHeight;
+      if (maxScroll < 100) return;
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        try {
+          window.sessionStorage.setItem(
+            SCROLL_POSITION_STORAGE_KEY,
+            String(scrollEl!.scrollTop),
+          );
+        } catch {
+          // 同上：写入失败静默
+        }
+      });
+    };
+    scrollEl.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      scrollEl.removeEventListener("scroll", handleScroll);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [isConversationsListSettled]);
+
   function handleNavigate(
     to: "/group/new" | "/friend-requests" | "/add-friend" | "/notes/new",
   ) {
@@ -1131,7 +1222,7 @@ function MobileChatListPage() {
         </button>
       </TabPageTopBar>
 
-      <div className="pb-6">
+      <div ref={scrollAnchorRef} className="pb-6">
         {pendingHideConversation ? (
           <div className="px-3 pt-2">
             <InlineNotice
