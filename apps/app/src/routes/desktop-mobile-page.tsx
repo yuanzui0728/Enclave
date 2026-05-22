@@ -58,7 +58,6 @@ import {
 } from "../features/desktop/official-accounts/desktop-mobile-official-handoff-route-state";
 import {
   buildDesktopChatThreadPath,
-  buildDesktopChatThreadPathFromConversationPath,
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
   parseDesktopChatRouteHash,

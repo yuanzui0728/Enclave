@@ -173,9 +173,8 @@ const expectations = [
   {
     file: "src/features/desktop/chat/desktop-chat-details-panel.tsx",
     description:
-      "desktop chat details carries group-qr source context, sends pending-friend shortcuts to the desktop new-friends pane, preserves desktop return hashes for chat/group background and group qr pages, and opens common groups through the desktop chat workspace",
+      "desktop chat details sends pending-friend shortcuts to the desktop new-friends pane, preserves desktop return hashes for chat/group background pages, and opens common groups through the desktop chat workspace",
     includes: [
-      'import { buildGroupInviteReturnSearch } from "../../../lib/group-invite-delivery";',
       'import { buildMobileChatRouteHash } from "../../chat/mobile-chat-route-state";',
       'import { buildMobileGroupRouteHash } from "../../chat/mobile-group-route-state";',
       'import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";',
@@ -183,32 +182,11 @@ const expectations = [
       'pane: "new-friends",',
       'to: "/chat/$conversationId/background",',
       'to: "/group/$groupId/background",',
-      "search: buildGroupInviteReturnSearch({",
       "hash: buildMobileGroupRouteHash({",
       "hash: buildMobileChatRouteHash({",
       'returnPath: "/tabs/chat",',
       'panel: "details",',
-      "conversationPath: `/group/${conversation.id}`,",
       "to: buildDesktopChatThreadPath({",
-    ],
-  },
-  {
-    file: "src/routes/group-qr-page.tsx",
-    description:
-      "group qr page reads source conversation query params from the raw search string and routes desktop conversation and details returns back through /tabs/chat",
-    includes: [
-      'select: (state) => state.location.searchStr',
-      "const params = new URLSearchParams(search);",
-      'import {',
-      "buildDesktopChatRouteHash,",
-      'const conversationPath = params.get("from")?.trim();',
-      'const fromPath = params.get("from")?.trim();',
-      "const desktopDetailsFallbackHash = useMemo(",
-      "const conversationDesktopPathMap = useMemo(",
-      "buildDesktopChatThreadPathFromConversationPath(conversationPath)",
-      'to: safeReturnPath ?? "/tabs/chat",',
-      "to: buildConversationOpenPath(",
-      "to: resolveConversationOpenPath(",
     ],
   },
   {
@@ -524,7 +502,7 @@ const expectations = [
       'import {',
       "normalizeDesktopGameInviteReturnPath,",
       "const safeRouteContext = routeContext",
-      "}, [conversationId, search]);",
+      "}, [search]);",
       "if (isDesktopLayout) {",
       "to: buildDesktopChatThreadPath({",
       "conversationId,",
@@ -634,8 +612,8 @@ const expectations = [
       "to: buildDesktopChatThreadPath({",
       "conversationId: groupId,",
       "messageId: highlightedMessageId ?? undefined,",
-      "resolveGameInviteRouteContext(window.location.search) ??",
-      "}, [groupId, search]);",
+      "return resolveGameInviteRouteContext(window.location.search);",
+      "}, [search]);",
       'to: "/group/$groupId",',
       "if (isDesktopLayout) {",
     ],
@@ -814,7 +792,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group targets so desktop search surfaces return to the active search workspace",
+      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, and create-group targets so desktop search surfaces return to the active search workspace",
     includes: [
       'import {',
       "buildMobileChatRouteHash,",
@@ -837,7 +815,7 @@ const expectations = [
       'const chatBackgroundMatch = target.to.match(',
       'parseMobileChatRouteState(target.hash ?? "")',
       "buildMobileChatRouteHash({",
-      'const groupToolsMatch = target.to.match(/^\\/group\\/([^/?#]+)\\/(background|qr)$/);',
+      'const groupToolsMatch = target.to.match(/^\\/group\\/([^/?#]+)\\/(background)$/);',
       'parseMobileGroupRouteState(target.hash ?? "")',
       "buildMobileGroupRouteHash({",
       'target.to === "/group/new"',
@@ -892,7 +870,7 @@ const expectations = [
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group opens, and self-heals legacy and trailing-slash /search paths back to /tabs/search even when the hash already matches",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, and create-group opens, and self-heals legacy and trailing-slash /search paths back to /tabs/search even when the hash already matches",
     includes: [
       "applyDesktopSearchReturnContext,",
       "resolveSearchNavigationTarget(item, {",
@@ -1013,7 +991,7 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, trims query/hash and trailing slashes before classifying legacy chat/contacts/discover/discover-tool/search/favorites/moments/friend-moments/feed roots plus desktop and legacy games/channel/channel-author/mini-program histories, folds legacy contacts panes and add-friend paths into shortcuts, classifies both legacy and current desktop official/profile/settings histories into the right buckets, recognizes current /tabs/chat conversation histories when filtering active handoffs, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, trims query/hash and trailing slashes before classifying legacy chat/contacts/discover/discover-tool/search/favorites/moments/friend-moments/feed roots plus desktop and legacy games/channel/channel-author/mini-program histories, folds legacy contacts panes and add-friend paths into shortcuts, classifies both legacy and current desktop official/profile/settings histories into the right buckets, recognizes current /tabs/chat conversation histories when filtering active handoffs, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
       "buildDesktopChatThreadPath({",
       "return [legacyPath, desktopPath];",
@@ -1073,17 +1051,9 @@ const expectations = [
       "const callHandoffDesktopPath = callHandoffConversation",
       "buildDesktopChatThreadPath({",
       "const conversationDesktopPathMap = useMemo(",
-      "const activeGroupInviteDeliveryDesktopPath = activeGroupInviteDelivery",
-      "buildDesktopChatThreadPathFromConversationPath(conversationPath)",
       'if (normalizedPath !== "/tabs/chat") {',
       "const routeState = parseDesktopChatRouteHash(rawHash);",
       "routeState.conversationId",
-      "const currentGroupInviteDesktopPath = currentGroupInviteHandoff",
-      "resolveGroupInviteDesktopOpenPath(currentGroupInviteHandoff.path)",
-      "to={activeGroupInviteDeliveryDesktopPath as never}",
-      "to={currentGroupInviteDesktopPath as never}",
-      "resolveGroupInviteDesktopOpenPath(",
-      "item.path,",
       "path: callHandoffMobilePath,",
       "to={callHandoffDesktopPath as never}",
       "getOfficialAccountArticle(officialHandoffState!.articleId!, baseUrl)",
