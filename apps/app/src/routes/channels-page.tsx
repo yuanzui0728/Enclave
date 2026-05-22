@@ -232,6 +232,21 @@ export function ChannelsPage() {
   const mobileLikeInflightRef = useRef<Set<string>>(new Set());
   const mobileFavoriteInflightRef = useRef<Set<string>>(new Set());
   const mobileFollowInflightRef = useRef<Set<string>>(new Set());
+  // 走查 2026-05-23 R3：mobileCommentSheetRetryAction.onClick（错误条上的「重试
+  // 读取评论 / 重试评论点赞 / 重试发送评论 / 重试回复评论」按钮）一直没同帧
+  // 双击锁。re-fire 一次 mutate 后 errorState 异步翻成 pending → mobileCommentSheet
+  // RetryAction 才会被 recompute 成 null、按钮隐掉，但同帧内紧跟一次 React
+  // commit 之前的 click 还会拿到旧 onClick 闭包，evaluator 第二次跑同条 onClick
+  // —— commentMutation 没幂等键 → DB 留两条同文案评论，用户视感「我只点了一次
+  // 重试，怎么群里多冒一条」。likeComment 服务端 idempotent 不会脏库但 RTT
+  // 白烧 + 跟随渲染时 cache 闪动；mobileCommentsQuery.refetch 双发也只多吃一次
+  // 网请求，但既然要补就一起兜。同 feed/discover-feed-page.tsx R1
+  // commentRetrySubmittingRef 模板对齐；这里也直接走 useEffect [isPending] 复
+  // 位（这条只追单 mutation 自身，且每条按钮锁绑各自 mutation 不会跨 mutation
+  // 早杀）。
+  const mobileCommentRetrySubmittingRef = useRef(false);
+  const mobileLikeCommentRetrySubmittingRef = useRef(false);
+  const mobileCommentsRefetchRef = useRef(false);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -1659,7 +1674,13 @@ export function ChannelsPage() {
       ? {
           label: t(msg`重试读取评论`),
           onClick: () => {
-            void mobileCommentsQuery.refetch();
+            // 走查 2026-05-23 R3：同帧双击锁。refetch 双发只多花一次 RTT 不破
+            // 数据，但同其它两条 retry 一并兜，行为一致。
+            if (mobileCommentsRefetchRef.current) return;
+            mobileCommentsRefetchRef.current = true;
+            void mobileCommentsQuery.refetch().finally(() => {
+              mobileCommentsRefetchRef.current = false;
+            });
           },
         }
       : likeCommentMutation.isError &&
@@ -1668,7 +1689,17 @@ export function ChannelsPage() {
         ? {
             label: t(msg`重试评论点赞`),
             onClick: () => {
-              likeCommentMutation.mutate(likeCommentMutation.variables);
+              // 走查 2026-05-23 R3：同帧双击锁。server idempotent 不破数据但
+              // 双发等于白烧一次 RTT，按钮态同帧也会跟着翻 pending 闪一下。
+              if (mobileLikeCommentRetrySubmittingRef.current) return;
+              const variables = likeCommentMutation.variables;
+              if (!variables) return;
+              mobileLikeCommentRetrySubmittingRef.current = true;
+              likeCommentMutation.mutate(variables, {
+                onSettled: () => {
+                  mobileLikeCommentRetrySubmittingRef.current = false;
+                },
+              });
             },
           }
         : commentMutation.isError &&
@@ -1684,6 +1715,10 @@ export function ChannelsPage() {
               // 失败那一刻的旧 text 又发一遍，但评论过长 / 被风控驳回时用户
               // 通常已经在草稿里缩短改写过，旧 text 会把刚改完的本意顶回去。
               onClick: () => {
+                // 走查 2026-05-23 R3：同帧双击锁。comment 服务端没幂等键，
+                // 双发会在 DB 留两条同文案评论 + 评论 sheet 渲两次同内容，
+                // 用户视感「我只点一次怎么群里冒了两条」。同 feed 那边 R1。
+                if (mobileCommentRetrySubmittingRef.current) return;
                 const variables = commentMutation.variables;
                 if (!variables) return;
                 // 用户失败后把草稿改回空再点重试——别替换 variables.text 让
@@ -1693,10 +1728,18 @@ export function ChannelsPage() {
                 const currentDraft = rawDraft?.trim()
                   ? rawDraft
                   : variables.text;
-                commentMutation.mutate({
-                  ...variables,
-                  text: currentDraft,
-                });
+                mobileCommentRetrySubmittingRef.current = true;
+                commentMutation.mutate(
+                  {
+                    ...variables,
+                    text: currentDraft,
+                  },
+                  {
+                    onSettled: () => {
+                      mobileCommentRetrySubmittingRef.current = false;
+                    },
+                  },
+                );
               },
             }
           : null;
