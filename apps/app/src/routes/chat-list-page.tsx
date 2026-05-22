@@ -2138,9 +2138,23 @@ function ConversationListItemLinkImpl({
                 <SparkBadge streak={conversation.sparkStreak} size="sm" />
               ) : null}
               <div className="text-[11px] text-[color:var(--text-dim)]">
+                {/*
+                  yuanzui0728 走查 R1：原版 fallback 链最后一级是
+                  conversation.updatedAt——但 updatedAt 会被「mark read /
+                  setConversationMuted / setConversationPinned / hideConversation
+                  撤销」等纯元数据变更顺手 touch（ORM @UpdateDateColumn 行级别
+                  自动刷新），并不代表"会话里有新东西发生"。实测：
+                  _walk_emoji_69839 这条 direct conv 5/20 创建后再没真消息，
+                  但 unread/pin 拨动让 updatedAt 跳到 2026-05-22 09:45 UTC →
+                  chat-list 列出 "17:45 今天"，用户点进去发现空空如也。
+                  改用 lastActivityAt（chat.service 显式按 message-write 维护）
+                  作为更准确的 fallback，updatedAt 仅作为最终兜底（兼容
+                  老数据 lastActivityAt 缺值的极端情况）。
+                */}
                 {formatConversationTimestamp(
                   visibleLastMessage?.createdAt ??
                     conversation.lastMessage?.createdAt ??
+                    conversation.lastActivityAt ??
                     conversation.updatedAt,
                 )}
               </div>

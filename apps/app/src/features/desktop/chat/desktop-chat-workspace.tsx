@@ -3164,9 +3164,17 @@ const ConversationCardLink = memo(function ConversationCardLink({
               <SparkBadge streak={conversation.sparkStreak} size="sm" />
             ) : null}
             <span>
+              {/*
+                yuanzui0728 走查 R1（桌面同款）：和姊妹 chat-list-page row
+                同款问题——updatedAt 会被 mark read / pin / mute 等元数据变更
+                touch（@UpdateDateColumn 自动刷新），不代表会话有新东西发生。
+                lastActivityAt 是 chat.service touchConversationActivity 显式
+                按 message-write 维护的"最后真实活动时间"，做更准确 fallback。
+              */}
               {formatConversationTimestamp(
                 visibleLastMessage?.createdAt ??
                   conversation.lastMessage?.createdAt ??
+                  conversation.lastActivityAt ??
                   conversation.updatedAt,
               )}
             </span>
