@@ -77,6 +77,7 @@ import {
   restoreDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
+import { usePullToRefresh } from "../features/moments/use-pull-to-refresh";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp, formatWeChatCommentTime } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
@@ -1771,26 +1772,20 @@ export function ChannelsPage() {
     void channelsQuery.refetch();
   }
 
-  function handleEmptyStateAction() {
-    if (navigateToRouteStateReturn()) {
-      return;
-    }
-
-    // 这些 tab 的空态点"去推荐看看"才有意义——generateChannelPost 走
-    // characters.findAllVisibleToOwner 随机一位 feedFrequency>0 的角色，
-    // 既不保证落到通讯录里的朋友（friends tab）、也不会生成直播（live tab）、
-    // 当然也不会自动产生关注（following tab）。统一切回推荐。
-    if (
-      activeSection === "following" ||
-      activeSection === "friends" ||
-      activeSection === "live"
-    ) {
-      handleSectionChange("recommended");
-      return;
-    }
-
-    generateMutation.mutate();
-  }
+  // mobile 下拉刷新：换掉原顶栏「换一批」按钮 + 0 帖空态卡里的「换一批 / 去推
+  // 荐看看」按钮。仅 refetch home + decorations（不再触发 generateChannelPost
+  // 异步生成），生成入口保留在 desktop workspace 那边。
+  const innerScrollerRef = useRef<HTMLDivElement | null>(null);
+  const { containerRef: pullContainerRef, state: pullState } = usePullToRefresh({
+    enabled: !isDesktopLayout,
+    getScroller: () => innerScrollerRef.current,
+    onRefresh: async () => {
+      await Promise.all([
+        channelsQuery.refetch(),
+        decorationsQuery.refetch(),
+      ]);
+    },
+  });
 
   useEffect(() => {
     const baseUrlChanged = previousBaseUrlRef.current !== baseUrl;
@@ -2430,33 +2425,6 @@ export function ChannelsPage() {
             <ArrowLeft size={17} />
           </Button>
         }
-        rightActions={
-          <Button
-            onClick={() => {
-              // 走查 R2 新一轮：generateChannelPost 走 characters.findAllVisibleToOwner
-              // 随机角色出一条 audio，永远落到「推荐」流——不会自动产生关注 / 朋友的
-              // 视频号 / 直播。原顶部「换一批」按钮在 朋友 / 关注 / 直播 tab 上一样能
-              // 点，notice 提示「新视频号正在生成中，几分钟后刷新看看」，但用户回这些
-              // tab 永远看不到那条新 audio（不在筛选集合里），refresh 后仍是空态或者
-              // 老的几条，体感「换一批没用」。empty state 的「去推荐看看」按钮已经按
-              // 同款逻辑切到 recommended 再 generate，顶部按钮跟它对齐。
-              if (
-                activeSection === "following" ||
-                activeSection === "friends" ||
-                activeSection === "live"
-              ) {
-                handleSectionChange("recommended");
-              }
-              generateMutation.mutate();
-            }}
-            variant="ghost"
-            size="sm"
-            className="h-8 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[12px] font-medium text-[color:var(--text-primary)] hover:bg-white"
-            disabled={generateMutation.isPending}
-          >
-            {generateMutation.isPending ? t(msg`生成中...`) : t(msg`换一批`)}
-          </Button>
-        }
       >
         <div className="mt-1.5 flex items-center gap-1" role="tablist" aria-label={t(msg`视频号分组`)}>
           {channelSections.map((section) => {
@@ -2488,7 +2456,20 @@ export function ChannelsPage() {
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+      <div
+        ref={pullContainerRef}
+        className="relative space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5"
+      >
+        <ChannelsPullToRefreshIndicator state={pullState} t={t} />
+        {/* translateY 容器把首屏内容跟着下拉手势一起下移，对齐 PullToRefreshIndicator
+            的视觉位置；松手回弹靠 220ms ease-out transition 平滑收。 */}
+        <div
+          style={{
+            transform: `translateY(${pullState.offset}px)`,
+            transition: pullState.pulling ? "none" : "transform 220ms ease-out",
+          }}
+          className="space-y-1.5"
+        >
         {notice ? (
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
@@ -2568,69 +2549,14 @@ export function ChannelsPage() {
           />
         ) : null}
 
-        {!channelsQuery.isLoading && !errorMessage && !visiblePosts.length ? (
-          <MobileChannelsStatusCard
-            badge={t(msg`视频号`)}
-            title={
-              activeSection === "following"
-                ? // 走查 2026-05-18 新一轮 R3：原文案 "还没关注任何视频号" 假设
-                  // 用户 0 个关注，但用户在关注 tab 把所有关注作者的帖都「减少
-                  // 推荐」掉时也会落到这条空态——明明在关注、文案却说「没关注」，
-                  // 体感「我刚才关注的人去哪了？」。改成中性「关注的视频号暂时
-                  // 没有新内容」，0 关注 / 0 可见两种场景都讲得通。
-                  t(msg`关注的视频号暂时没有新内容`)
-                : activeSection === "friends"
-                  ? t(msg`朋友还没有视频号动态`)
-                  : activeSection === "live"
-                    ? t(msg`暂无正在直播`)
-                    : t(msg`还没有内容`)
-            }
-            description={
-              activeSection === "following"
-                ? t(
-                    msg`去推荐 tab 找一找感兴趣的作者，点 +关注 把他们留下来，新内容会在这里聚合显示。`,
-                  )
-                : activeSection === "friends"
-                  ? t(
-                      msg`等通讯录里的角色发新视频号动态，这里就会聚合显示。`,
-                    )
-                  : activeSection === "live"
-                    ? t(msg`稍后再来看看，可能有角色开播。`)
-                    : t(
-                        msg`再生成一批内容后，这里会逐步形成更连续的视频推荐流。`,
-                      )
-            }
-            action={
-              <Button
-                variant="primary"
-                size="sm"
-                className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
-                // 只有按钮实际行为是「换一批」时才跟 generateMutation.isPending 关：
-                // - safeReturnPath 在 → 按钮是「返回上一页」，generate pending 不应该挡返回；
-                // - following/friends/live → 按钮是「去推荐看看」，纯切 tab，也不挡。
-                disabled={
-                  !safeReturnPath &&
-                  activeSection === "recommended" &&
-                  generateMutation.isPending
-                }
-                onClick={handleEmptyStateAction}
-              >
-                {safeReturnPath
-                  ? t(msg`返回上一页`)
-                  : activeSection === "following" ||
-                      activeSection === "friends" ||
-                      activeSection === "live"
-                    ? t(msg`去推荐看看`)
-                    : generateMutation.isPending
-                      ? t(msg`生成中...`)
-                      : t(msg`换一批`)}
-              </Button>
-            }
-          />
-        ) : null}
+        {/* 0 帖空态卡已删——原"关注的视频号暂时没有新内容 / 朋友还没有视频号
+            动态 / 暂无正在直播 / 还没有内容"那套提示 + 内嵌「换一批 / 去推荐
+            看看」按钮入口都被下拉刷新接管。0 帖时这里直接留白，用户下拉就刷
+            新；refetch 后若仍 0 帖也不再弹文案。 */}
         {!channelsQuery.isLoading && visiblePosts.length ? (
           <MobileChannelsViewport
             activeSection={activeSection}
+            externalScrollerRef={innerScrollerRef}
             likePendingPostId={pendingLikePostId}
             favoritePendingPostId={pendingFavoritePostId}
             followPendingAuthorId={pendingFollowAuthorId}
@@ -2658,6 +2584,7 @@ export function ChannelsPage() {
             onVisiblePost={handleMobileViewPost}
           />
         ) : null}
+        </div>
       </div>
       <MobileChannelCommentsSheet
         comments={mobileCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
@@ -3683,6 +3610,36 @@ function ChannelVideoSurface({
   );
 }
 
+// 视频号顶栏「换一批」按钮换成下拉刷新后用的指示器；和 moments-page 那条
+// 同套视觉（pointer-events-none + 顶部 absolute + 小灰字），不抽 shared 组件，
+// 两边以后一起改再统一。
+function ChannelsPullToRefreshIndicator({
+  state,
+  t,
+}: {
+  state: { offset: number; refreshing: boolean; pulling: boolean };
+  t: ReturnType<typeof useRuntimeTranslator>;
+}) {
+  if (!state.offset && !state.refreshing) return null;
+  const label = state.refreshing
+    ? t(msg`正在刷新...`)
+    : state.offset >= 64
+      ? t(msg`松手刷新`)
+      : t(msg`下拉刷新`);
+  return (
+    <div
+      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[#9A9A9A]"
+      style={{
+        top: 0,
+        height: `${state.offset || 60}px`,
+        transform: `translateY(-${(state.offset || 60) - state.offset}px)`,
+      }}
+    >
+      <span>{label}</span>
+    </div>
+  );
+}
+
 function MobileChannelsStatusCard({
   badge,
   title,
@@ -3745,6 +3702,9 @@ function createDesktopChannelRoutePost(
 
 type MobileChannelsViewportProps = {
   activeSection: FeedChannelHomeSection;
+  // 转发内部 scroller div 给 page 级 usePullToRefresh — 让 hook 能正确读到
+  // 当前实际滚动位置，避免用户在 snap 卡片中段下拉时误触发刷新。
+  externalScrollerRef?: { current: HTMLDivElement | null };
   likePendingPostId: string | null;
   favoritePendingPostId: string | null;
   followPendingAuthorId: string | null;
@@ -3774,6 +3734,7 @@ type MobileCardNullaryHandlers = {
 
 function MobileChannelsViewport({
   activeSection,
+  externalScrollerRef,
   likePendingPostId,
   favoritePendingPostId,
   followPendingAuthorId,
@@ -4092,7 +4053,14 @@ function MobileChannelsViewport({
 
   return (
     <div
-      ref={scrollContainerRef}
+      ref={(node) => {
+        scrollContainerRef.current = node;
+        // page-level usePullToRefresh 通过 externalScrollerRef.current 在
+        // touch 事件触发时直接拿到这个真正在滚的 div，绕开 hook 默认的「往上
+        // 爬找 ancestor scroller」逻辑（那条路径只能爬到 MobileShell 那层，
+        // scrollTop 恒 0，用户在卡片中段下拉就会误判成「在顶」）。
+        if (externalScrollerRef) externalScrollerRef.current = node;
+      }}
       className="h-[calc(100dvh-9.6rem)] snap-y snap-mandatory space-y-2 overflow-y-auto overscroll-contain scroll-pb-2 pb-2"
     >
       {posts.map((post) => {

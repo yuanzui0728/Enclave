@@ -18,6 +18,14 @@ type UsePullToRefreshOptions = {
   onRefresh: () => Promise<unknown> | void;
   /** Disable when false (eg. while no scroll container yet). */
   enabled?: boolean;
+  /**
+   * 显式指定真正在滚的元素。不传则沿用 resolveScrollContainer 自动往上爬找
+   * 最近一个 overflow-y:auto 祖先。channels-page 里真正在滚的是 MobileChannels
+   * Viewport 内部的 div（自己就是 overflow-y:auto），再往上爬只会找到 MobileShell
+   * 那一层（scrollTop 恒为 0），导致用户在 snap 卡片中段下拉时也会误触发刷新——
+   * 给这种情形显式喂入正确的 scroller。
+   */
+  getScroller?: () => HTMLElement | null;
 };
 
 type PullState = {
@@ -60,6 +68,7 @@ function resolveScrollContainer(node: HTMLElement): HTMLElement {
 export function usePullToRefresh({
   onRefresh,
   enabled = true,
+  getScroller,
 }: UsePullToRefreshOptions): UsePullToRefreshResult {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLElement | null>(null);
@@ -93,6 +102,13 @@ export function usePullToRefresh({
   useEffect(() => {
     onRefreshRef.current = onRefresh;
   }, [onRefresh]);
+  // getScroller 跟 onRefresh 同款：调用方传 inline lambda，每次 re-render 引用都
+  // 不一样；ref 套一层保持 handler 闭包稳定，避免高频 setState 触发 useEffect
+  // 反复拆装 touch 监听。
+  const getScrollerRef = useRef(getScroller);
+  useEffect(() => {
+    getScrollerRef.current = getScroller;
+  }, [getScroller]);
   const [state, setState] = useState<PullState>({
     pulling: false,
     refreshing: false,
@@ -125,7 +141,10 @@ export function usePullToRefresh({
       if (!enabled) return;
       // 正在刷新：完全让位给原生滚动，让用户能上滑查看列表。
       if (refreshingRef.current) return;
-      const scroller = scrollerRef.current;
+      // 优先用调用方喂入的 scroller（每次都问一遍 — child viewport 可能在 hook
+      // effect 跑完之后才挂载，cache 在 scrollerRef 上的 fallback 已经过时）；
+      // 没传或临时返 null 才退回 ancestor 爬出来的那个。
+      const scroller = getScrollerRef.current?.() ?? scrollerRef.current;
       if (!scroller) return;
       // Only start tracking when scroll is at top.
       if (scroller.scrollTop > 0) return;
@@ -140,7 +159,7 @@ export function usePullToRefresh({
       // 刷新进行中绝不 preventDefault，否则 iOS 会把整段手势锁成"非滚动"，
       // 之后用户上滑也不会触发原生滚动。
       if (refreshingRef.current) return;
-      const scroller = scrollerRef.current;
+      const scroller = getScrollerRef.current?.() ?? scrollerRef.current;
       if (!scroller) return;
       const startY = startYRef.current;
       if (startY === null) return;
@@ -237,7 +256,8 @@ export function usePullToRefresh({
   useEffect(() => {
     const node = containerRef.current;
     if (!node || !enabled) return;
-    scrollerRef.current = resolveScrollContainer(node);
+    const customScroller = getScrollerRef.current?.() ?? null;
+    scrollerRef.current = customScroller ?? resolveScrollContainer(node);
     node.addEventListener("touchstart", handleTouchStart, { passive: true });
     node.addEventListener("touchmove", handleTouchMove, { passive: false });
     node.addEventListener("touchend", handleTouchEnd);
