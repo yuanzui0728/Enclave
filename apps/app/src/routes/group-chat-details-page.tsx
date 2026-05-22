@@ -280,9 +280,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       setGroupPinned(groupId, { pinned }, baseUrl),
     onSuccess: (_, pinned) => {
       // 走查 R4：原本 await Promise.all 3 条 invalidate 才 resolve；
-      // pinSubmittingRef 依赖 pinMutation.isPending 翻 false 才解锁（line 665-667），
-      // await 链下 isPending 一直拉着，公网隧道 RTT ~600ms × 3 ≈ 1.8s 内用户都
-      // 没法再点 toggle。fire-and-forget：notice 已经发了，cache 让目标页自己拉。
+      // pinSubmittingRef 依赖 pinMutation.isPending 翻 false 才解锁，await
+      // 链下 isPending 一直拉着，公网隧道 RTT ~600ms × 3 ≈ 1.8s 内用户都没法
+      // 再点 toggle。fire-and-forget：notice 已经发了，cache 让目标页自己拉。
       showNotice(pinned ? t(msg`群聊已置顶。`) : t(msg`群聊已取消置顶。`));
       void queryClient.invalidateQueries({
         queryKey: ["app-group", baseUrl, groupId],
@@ -334,9 +334,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     : t(msg`关闭了群公告通知。`)
                   : t(msg`群聊设置已更新。`);
 
-      // 走查 R4：同 pinMutation 改法。preferencesMutation.isPending 控制 6 个
-      // 偏好 toggle 的 sync ref（line 670-678），await 链下解锁延迟用户连续切
-      // 偏好的间隔被强制拉长 ~1.8s。fire-and-forget。
+      // 走查 R4：同 pinMutation 改法。preferencesMutation.isPending 控制 5 个
+      // 偏好 toggle 的 sync ref，await 链下解锁延迟用户连续切偏好的间隔被强制
+      // 拉长 ~1.8s。fire-and-forget。
       showNotice(nextNotice);
       void queryClient.invalidateQueries({
         queryKey: ["app-group", baseUrl, groupId],
@@ -360,9 +360,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(groupId, baseUrl),
     onSuccess: () => {
-      // 走查 R4：同 pin/preferences 改法。clearMutation.isPending 进入 busy 求和
-      // （line 644），await 链下整个详情页所有按钮都被 disable，公网隧道 ~1.8s
-      // 体感卡顿。fire-and-forget 让 UI 立刻响应；活跃群聊页面的 messages cache
+      // 走查 R4：同 pin/preferences 改法。clearMutation.isPending 进入 busy
+      // 求和，await 链下整个详情页所有按钮都被 disable，公网隧道 ~1.8s 体感
+      // 卡顿。fire-and-forget 让 UI 立刻响应；活跃群聊页面的 messages cache
       // 由当前清群操作的服务端 emit 路径自动同步。
       showNotice(t(msg`群聊记录已清空。`));
       void queryClient.invalidateQueries({
@@ -545,7 +545,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const hasCollapsedMembers = totalMemberCount > COLLAPSED_MEMBER_PREVIEW_COUNT;
   const dangerSheetConfig =
     dangerSheetAction === "hide"
-        ? {
+      ? {
           title: t(msg`隐藏聊天`),
           description: t(
             msg`该群聊会先从消息列表中隐藏，收到新消息后会再次出现。`,
@@ -569,10 +569,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         : dangerSheetAction === "leave"
           ? {
               title: t(msg`删除并退出`),
-              description:
-                t(
-                  msg`删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。`,
-                ),
+              description: t(
+                msg`删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。`,
+              ),
               confirmLabel: t(msg`删除并退出`),
               confirmDescription: t(msg`该群聊会被移除`),
               confirmDanger: true,
@@ -674,16 +673,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           : t(msg`群聊信息`)
       }
       onBack={() => {
-        navigateBackOrFallback(
-          () => {
-            void navigate({
-              to: "/group/$groupId",
-              params: { groupId },
-              ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-            });
-          },
-          `/group/${groupId}`,
-        );
+        navigateBackOrFallback(() => {
+          void navigate({
+            to: "/group/$groupId",
+            params: { groupId },
+            ...(groupRouteHash ? { hash: groupRouteHash } : {}),
+          });
+        }, `/group/${groupId}`);
       }}
     >
       {groupQuery.isLoading || membersQuery.isLoading ? (
@@ -724,7 +720,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             tone="info"
             className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
-            {notice.showBackAction || (notice.actionLabel && notice.onAction) ? (
+            {notice.showBackAction ||
+            (notice.actionLabel && notice.onAction) ? (
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0 flex-1">{notice.message}</span>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -749,7 +746,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           <MobileGroupDetailsStatusCard
             badge={t(msg`群聊`)}
             title={t(msg`群聊不存在`)}
-            description={t(msg`这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。`)}
+            description={t(
+              msg`这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。`,
+            )}
             action={statusRetryAction}
           />
         </div>
@@ -902,7 +901,6 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             </div>
           </ChatDetailsSection>
 
-
           <ChatDetailsSection title={t(msg`危险操作`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
@@ -1008,7 +1006,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           <MobileDetailsActionSheet
             open={managementSheetOpen}
             title={t(msg`群管理`)}
-            description={t(msg`${ownerDisplayName} 可快速管理成员、公告和群资料。`)}
+            description={t(
+              msg`${ownerDisplayName} 可快速管理成员、公告和群资料。`,
+            )}
             onClose={() => setManagementSheetOpen(false)}
             actions={[
               {
@@ -1080,7 +1080,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name || t(msg`当前群聊`),
+                      conversationTitle:
+                        groupQuery.data?.name || t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
