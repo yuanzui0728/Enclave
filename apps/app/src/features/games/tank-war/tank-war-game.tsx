@@ -238,7 +238,7 @@ function MenuOverlay({
       {hud.status === "boot" ? (
         <p className="text-[13px] font-semibold">{t(msg`坦克大战`)}</p>
       ) : hud.status === "game-over" ? (
-        <p className="text-[13px] font-semibold text-red-400">{t(msg`Game Over`)}</p>
+        <p className="text-[13px] font-semibold text-red-400">{t(msg`游戏结束`)}</p>
       ) : (
         <p className="text-[13px] font-semibold text-emerald-400">
           {t(msg`恭喜过关，进入下一关`)}

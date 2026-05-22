@@ -717,7 +717,7 @@ export function LiveCompanionPage() {
                 ) : (
                   <div className="space-y-3">
                     <StatusRow
-                      label={t(msg`Core API`)}
+                      label={t(msg`核心服务`)}
                       value={
                         statusQuery.data?.coreApi.healthy
                           ? t(msg`在线`)

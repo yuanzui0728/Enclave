@@ -729,7 +729,7 @@ export function useConversationThread(conversationId: string) {
     });
 
     if (!targetCharacterId) {
-      throw new Error(t(msg`The target character is not ready yet.`));
+      throw new Error(t(msg`这位联系人暂时不可用，请稍后再试。`));
     }
 
     await runSendMutation({
@@ -762,7 +762,7 @@ export function useConversationThread(conversationId: string) {
     });
 
     if (!targetCharacterId) {
-      throw new Error(t(msg`The target character is not ready yet.`));
+      throw new Error(t(msg`这位联系人暂时不可用，请稍后再试。`));
     }
 
     await runSendMutation({
@@ -804,7 +804,7 @@ export function useConversationThread(conversationId: string) {
     });
 
     if (!targetCharacterId) {
-      throw new Error(t(msg`The target character is not ready yet.`));
+      throw new Error(t(msg`这位联系人暂时不可用，请稍后再试。`));
     }
 
     if (payload.type === "image") {
