@@ -132,6 +132,22 @@ export class GroupReplyOrchestratorService {
     const language = await this.worldLanguage.getLanguage();
     const emittedReplies: Array<{ senderName: string; text: string }> = [];
     const rollingHistory: ChatMessage[] = [...conversationHistory];
+    // 走查 R2：executeTurn 这条 generateReply 路径之前完全没接 web_search 注入。
+    // 只要 selectedActors 里有任一角色开了 webSearchEnabled、且用户消息命中时效
+    // 关键词，就在循环外预先 fire 一次 search，把结果缓存给所有开了 flag 的 actor
+    // 共用——避免 3 个 actor × 1 个相同 query 烧 3 份 token-plan 搜索配额。
+    let sharedWebSearchMarkdown: string | null = null;
+    const turnNeedsSearch =
+      selectedActors.some((a) => a.character.webSearchEnabled === true) &&
+      this.webSearch.shouldTriggerForUserMessage(
+        currentUserContext.promptText,
+      );
+    if (turnNeedsSearch) {
+      const injection = await this.webSearch.searchAndFormat(
+        currentUserContext.promptText,
+      );
+      if (injection) sharedWebSearchMarkdown = injection.markdown;
+    }
 
     for (const [index, actor] of selectedActors.entries()) {
       if (this.isReplyTurnStale(groupId, triggerMessageId)) {
@@ -143,6 +159,15 @@ export class GroupReplyOrchestratorService {
         return;
       }
 
+      // 只把搜索结果发给真的开了 webSearchEnabled 的 actor（其它 actor 走原 prompt
+      // 不被污染——它们没声明依赖实时知识的角色性格）。
+      const turnExtraSections: string[] = [];
+      if (
+        sharedWebSearchMarkdown &&
+        actor.character.webSearchEnabled === true
+      ) {
+        turnExtraSections.push(sharedWebSearchMarkdown);
+      }
       try {
         const reply = await this.ai.generateReply({
           profile: actor.profile,
@@ -153,6 +178,7 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
+          extraSystemPromptSections: turnExtraSections,
           emptyTextFallback: '',
           usageContext: {
             surface: 'app',

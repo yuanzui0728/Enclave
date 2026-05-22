@@ -774,9 +774,11 @@ export class FeedService implements OnModuleInit {
         legacyMessage: '该内容不存在或已下架。',
       });
     }
-    const text = [post.title?.trim(), post.text?.trim()]
-      .filter((s): s is string => !!s)
-      .join('。');
+    // 走查 R2：原版 join('。') 在 title 已经带句末标点时拼出 "今天好开心？。去公园了"
+    // 这种 "？。" 双标点，TTS prosody 多顿一拍。先把 title 末尾的句末标点去掉再补 "。"。
+    const titleClean = post.title?.trim().replace(/[。．！？!?…]+$/u, '') || '';
+    const bodyClean = post.text?.trim() || '';
+    const text = [titleClean, bodyClean].filter((s) => s.length > 0).join('。');
     if (!text) {
       throw new AppError('FEED_POST_TEXT_EMPTY', {
         status: HttpStatus.BAD_REQUEST,
