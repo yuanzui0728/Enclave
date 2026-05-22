@@ -1,10 +1,13 @@
 import {
+  memo,
+  useCallback,
   useDeferredValue,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import type { FriendListItem } from "@yinjie/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -198,6 +201,24 @@ function MobileTagsPage() {
     void friendsQuery.refetch();
   }
 
+  // Fresh 走查 R3：稳定 onSelectFriend，让下面 N 个 tag × M 个好友的 memo'd
+  // row 在 deferredSearchText 重算 / friendsQuery 后台 refetch / 等无关
+  // re-render 时全部 skip。dep 只有 navigate + pathname + currentRouteHash，
+  // 都是低频翻面。
+  const handleSelectFriend = useCallback(
+    (characterId: string) => {
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: pathname,
+          returnHash: currentRouteHash || undefined,
+        }),
+      });
+    },
+    [currentRouteHash, navigate, pathname],
+  );
+
   const statusBackLabel = safeReturnPath
     ? t(msg`返回上一页`)
     : t(msg`查看星标朋友`);
@@ -390,54 +411,12 @@ function MobileTagsPage() {
                 </div>
 
                 {group.items.map((item, index) => (
-                  <button
+                  <TagFriendListRow
                     key={`${group.tag}-${item.character.id}`}
-                    type="button"
-                    onClick={() => {
-                      void navigate({
-                        to: "/character/$characterId",
-                        params: { characterId: item.character.id },
-                        hash: buildCharacterDetailRouteHash({
-                          returnPath: pathname,
-                          returnHash: currentRouteHash || undefined,
-                        }),
-                      });
-                    }}
-                    // 走查新一轮 R3：跟 contacts-page FriendListRow / world-characters-page
-                    // / group-contacts-page Round 9 同口径补 yj-list-item-virtual。
-                    // buildContactTagGroups 命中搜索时整组全员展示（不只匹配项），
-                    // 即便用户只搜了 "alice" 仍会渲染该 tag 下全部 N 人；yuanzui
-                    // 当前唯一 tag "朋友" 下挂 ~190 位好友，一打开标签页就是 190
-                    // 个屏外按钮强制 layout/paint，content-visibility:auto +
-                    // contain-intrinsic-size 把屏外行延后渲染。
-                    className={cn(
-                      "yj-list-item-virtual flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
-                      index > 0
-                        ? "border-t border-[color:var(--border-faint)]"
-                        : undefined,
-                    )}
-                  >
-                    <AvatarChip
-                      // 通讯录 mobile 走查 R1：AvatarChip 把 name 落进 alt 属性，
-                      // 含 bidi 控制字符的名字会被屏幕阅读器播报到一半反向。
-                      // 和兄弟 starred-friends-page / world-characters-page 同口径。
-                      name={stripBidiControl(item.character.name)}
-                      src={item.character.avatar}
-                      size="wechat"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                        {getFriendDisplayName(item)}
-                      </div>
-                      {getFriendDisplayName(item) !== item.character.name ? (
-                        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-                          {/* 走查 R1：副标题在 remark 不等于真名时显示原 character.name，
-                              这里直接读没走 displayName，跟 starred-friends-page 同口径补 strip。 */}
-                          {stripBidiControl(item.character.name)}
-                        </div>
-                      ) : null}
-                    </div>
-                  </button>
+                    item={item}
+                    index={index}
+                    onSelect={handleSelectFriend}
+                  />
                 ))}
               </section>
             ))}
@@ -447,6 +426,63 @@ function MobileTagsPage() {
     </AppPage>
   );
 }
+
+// Fresh 走查 R3：把 tag 下好友行抽出 + memo。yuanzui 实测 "朋友" 标签
+// 下挂 ~190 人；search keystroke / friendsQuery 后台 refetch / 其它无关
+// state 翻动都不再让全量 190 行 re-render。配合上方 useCallback 的
+// onSelect 稳定，shallow compare 命中率最大化。
+const TagFriendListRow = memo(function TagFriendListRow({
+  item,
+  index,
+  onSelect,
+}: {
+  item: FriendListItem;
+  index: number;
+  onSelect: (characterId: string) => void;
+}) {
+  const handleClick = () => onSelect(item.character.id);
+  const displayName = getFriendDisplayName(item);
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      // 走查新一轮 R3：跟 contacts-page FriendListRow / world-characters-page
+      // / group-contacts-page Round 9 同口径补 yj-list-item-virtual。
+      // buildContactTagGroups 命中搜索时整组全员展示（不只匹配项），
+      // 即便用户只搜了 "alice" 仍会渲染该 tag 下全部 N 人；yuanzui
+      // 当前唯一 tag "朋友" 下挂 ~190 位好友，一打开标签页就是 190
+      // 个屏外按钮强制 layout/paint，content-visibility:auto +
+      // contain-intrinsic-size 把屏外行延后渲染。
+      className={cn(
+        "yj-list-item-virtual flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+        index > 0
+          ? "border-t border-[color:var(--border-faint)]"
+          : undefined,
+      )}
+    >
+      <AvatarChip
+        // 通讯录 mobile 走查 R1：AvatarChip 把 name 落进 alt 属性，
+        // 含 bidi 控制字符的名字会被屏幕阅读器播报到一半反向。
+        // 和兄弟 starred-friends-page / world-characters-page 同口径。
+        name={stripBidiControl(item.character.name)}
+        src={item.character.avatar}
+        size="wechat"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+          {displayName}
+        </div>
+        {displayName !== item.character.name ? (
+          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+            {/* 走查 R1：副标题在 remark 不等于真名时显示原 character.name，
+                这里直接读没走 displayName，跟 starred-friends-page 同口径补 strip。 */}
+            {stripBidiControl(item.character.name)}
+          </div>
+        ) : null}
+      </div>
+    </button>
+  );
+});
 
 function MobileTagStatusCard({
   badge,

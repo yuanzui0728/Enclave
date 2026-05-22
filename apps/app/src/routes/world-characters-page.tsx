@@ -1,6 +1,8 @@
 import {
   Suspense,
   lazy,
+  memo,
+  useCallback,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -8,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Character } from "@yinjie/contracts";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -247,6 +250,24 @@ function MobileWorldCharactersPage() {
       scrollContainer.removeEventListener("scroll", syncActiveMobileIndexKey);
     };
   }, [mobileIndexItems, normalizedSearchText, sections]);
+
+  // Fresh 走查 R3：稳定 onSelectCharacter，让下面 200+ 行的 memo'd row
+  // 在 activeMobileIndexKey 滚动追踪每次跨段更新时全部 skip re-render。
+  // dep 只有 navigate + currentRouteHash，前者全局稳定，后者 useMemo
+  // 仅在 keyword / safeReturnPath / safeReturnHash 变化时翻面（极低频）。
+  const handleSelectCharacter = useCallback(
+    (characterId: string) => {
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: "/contacts/world-characters",
+          returnHash: currentRouteHash || undefined,
+        }),
+      });
+    },
+    [currentRouteHash, navigate],
+  );
 
   function handleIndexJump(
     anchorId: string,
@@ -518,49 +539,12 @@ function MobileWorldCharactersPage() {
                   {section.title}
                 </div>
                 {section.items.map((item, index) => (
-                  <button
+                  <WorldCharacterListRow
                     key={item.character.id}
-                    type="button"
-                    onClick={() => {
-                      void navigate({
-                        to: "/character/$characterId",
-                        params: { characterId: item.character.id },
-                        hash: buildCharacterDetailRouteHash({
-                          returnPath: "/contacts/world-characters",
-                          returnHash: currentRouteHash || undefined,
-                        }),
-                      });
-                    }}
-                    className={cn(
-                      "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
-                      index > 0
-                        ? "border-t border-[color:var(--border-faint)]"
-                        : undefined,
-                    )}
-                  >
-                    <AvatarChip
-                      name={stripBidiControl(item.character.name)}
-                      src={item.character.avatar}
-                      size="wechat"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                        {/* W2R2 bidi 防御：character.name 可能含 U+202E 类控制字符；
-                            getFriendDisplayName/buildAddFriendSearchResults 已经做过同
-                            处理，世界角色目录这一处也对齐。 */}
-                        {stripBidiControl(item.character.name)}
-                      </div>
-                      <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
-                        {/* 通讯录 mobile 走查 R2：relationship / currentStatus 都是
-                            角色作者自定字段，character.name 已经在主标题 strip 过
-                            一道，这条副标题漏了。跟 W2R2 character.name 同口径补
-                            strip，避免单角色行带 U+202E 把后面 layout 反转。 */}
-                        {stripBidiControl(item.character.relationship) ||
-                          stripBidiControl(item.character.currentStatus).trim() ||
-                          t(msg`查看角色资料`)}
-                      </div>
-                    </div>
-                  </button>
+                    character={item.character}
+                    index={index}
+                    onSelect={handleSelectCharacter}
+                  />
                 ))}
               </div>
             ))}
@@ -581,6 +565,58 @@ function MobileWorldCharactersPage() {
     </div>
   );
 }
+
+// Fresh 走查 R3：把世界角色行抽出 + memo，让父端任何不相关 state 翻动
+// （搜索 keystroke / activeMobileIndexKey 滚动追踪 / friendsQuery 后台 refetch
+// 等）不再让 200+ 行整体 re-render。props 全部 stable：character 引用来自
+// useMemo 的 worldCharacterItems / sections（仅在 data/friendIds 变化时翻），
+// index 数值稳定，onSelect 父端 useCallback 固定。
+const WorldCharacterListRow = memo(function WorldCharacterListRow({
+  character,
+  index,
+  onSelect,
+}: {
+  character: Character;
+  index: number;
+  onSelect: (characterId: string) => void;
+}) {
+  const handleClick = () => onSelect(character.id);
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={cn(
+        "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+        index > 0
+          ? "border-t border-[color:var(--border-faint)]"
+          : undefined,
+      )}
+    >
+      <AvatarChip
+        name={stripBidiControl(character.name)}
+        src={character.avatar}
+        size="wechat"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+          {/* W2R2 bidi 防御：character.name 可能含 U+202E 类控制字符；
+              getFriendDisplayName/buildAddFriendSearchResults 已经做过同
+              处理，世界角色目录这一处也对齐。 */}
+          {stripBidiControl(character.name)}
+        </div>
+        <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
+          {/* 通讯录 mobile 走查 R2：relationship / currentStatus 都是
+              角色作者自定字段，character.name 已经在主标题 strip 过
+              一道，这条副标题漏了。跟 W2R2 character.name 同口径补
+              strip，避免单角色行带 U+202E 把后面 layout 反转。 */}
+          {stripBidiControl(character.relationship) ||
+            stripBidiControl(character.currentStatus).trim() ||
+            t(msg`查看角色资料`)}
+        </div>
+      </div>
+    </button>
+  );
+});
 
 function MobileWorldCharactersStatusCard({
   badge,
