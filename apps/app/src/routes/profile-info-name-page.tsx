@@ -59,6 +59,12 @@ export function ProfileInfoNamePage() {
   // 取消，几秒后 onSuccess 仍会再调一次 goBack——这时 navigate 会从用户已经
   // 退到的页（如 /profile/info）再退一格到 /tabs/profile，一跳两格。
   const isMountedRef = useRef(true);
+  // 新走查 R4：「完成」按钮 + Enter 提交都走 saveMutation.mutate()，只靠
+  // disabled={!canSave || saveMutation.isPending} 兜双触发；isPending 走
+  // React commit 才 propagate，同帧 <16ms 第二次 click / 两次同帧 Enter 都过门
+  // 发 2 个 PATCH。username 改动幂等但仍浪费 RTT；onSuccess 跑 2 遍 goBack 也会
+  // 把 navigateBackOrFallback 推 2 格 history。Sync ref 守 propagation gap。
+  const saveInFlightRef = useRef(false);
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -113,6 +119,17 @@ export function ProfileInfoNamePage() {
     },
   });
 
+  const handleSave = () => {
+    if (saveInFlightRef.current) return;
+    if (!canSave || saveMutation.isPending) return;
+    saveInFlightRef.current = true;
+    saveMutation.mutate(undefined, {
+      onSettled: () => {
+        saveInFlightRef.current = false;
+      },
+    });
+  };
+
   if (isDesktopLayout) {
     return null;
   }
@@ -153,7 +170,7 @@ export function ProfileInfoNamePage() {
           <button
             type="button"
             disabled={!canSave || saveMutation.isPending}
-            onClick={() => saveMutation.mutate()}
+            onClick={handleSave}
             className={cn(
               "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
               !canSave || saveMutation.isPending
@@ -202,7 +219,7 @@ export function ProfileInfoNamePage() {
             }
             if (event.key === "Enter" && canSave && !saveMutation.isPending) {
               event.preventDefault();
-              saveMutation.mutate();
+              handleSave();
             }
           }}
           enterKeyHint="done"

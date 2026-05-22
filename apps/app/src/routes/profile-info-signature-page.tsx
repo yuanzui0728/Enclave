@@ -58,6 +58,11 @@ export function ProfileInfoSignaturePage() {
   // 保存中用户手动 ← 退出页面后，几秒后 onSuccess 还会再调 goBack 一次，
   // 多跳一格——见 profile-info-name-page / -avatar-page 同款 ref。
   const isMountedRef = useRef(true);
+  // 新走查 R4：「完成」按钮 + Enter 提交都走 saveMutation.mutate()，只靠
+  // disabled={!canSave || saveMutation.isPending} 兜双触发；isPending 走
+  // React commit 才 propagate，同帧 <16ms 第二次 click / 两次同帧 Enter 都
+  // 过门发 2 个 PATCH。同 name-page 同款修法。
+  const saveInFlightRef = useRef(false);
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -111,6 +116,17 @@ export function ProfileInfoSignaturePage() {
     },
   });
 
+  const handleSave = () => {
+    if (saveInFlightRef.current) return;
+    if (!canSave || saveMutation.isPending) return;
+    saveInFlightRef.current = true;
+    saveMutation.mutate(undefined, {
+      onSettled: () => {
+        saveInFlightRef.current = false;
+      },
+    });
+  };
+
   if (isDesktopLayout) {
     return null;
   }
@@ -147,7 +163,7 @@ export function ProfileInfoSignaturePage() {
           <button
             type="button"
             disabled={!canSave || saveMutation.isPending}
-            onClick={() => saveMutation.mutate()}
+            onClick={handleSave}
             className={cn(
               "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
               !canSave || saveMutation.isPending
@@ -192,7 +208,7 @@ export function ProfileInfoSignaturePage() {
               // 也不会拿到 \n。如果 canSave 且 not pending，按 Enter 直接 submit。
               event.preventDefault();
               if (canSave && !saveMutation.isPending) {
-                saveMutation.mutate();
+                handleSave();
               }
             }
           }}
