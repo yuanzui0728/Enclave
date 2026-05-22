@@ -1327,6 +1327,23 @@ export function WelcomePage() {
     } catch (error) {
       setReadyBaseUrl(null);
       setEntryError(describeRequestError(error, t(msg`解析云世界访问失败。`)));
+      // 401 = 服务端拒绝当前 cloud token：最常见的命中点是 zustand-persist 拿
+      // 回来的旧 token 还在 isCloudSessionExpired 客户端时钟看是"未过期"，但
+      // 服务端基准已过期/已撤销。本地 token 不清干净的话 retry/重新解析全都
+      // 带着这个失效 token 撞同样的 401 → entryError 一直挂、用户绕不出去。
+      // 强制清掉，逼用户重新走 verify。
+      if (isApiRequestError(error) && error.statusCode === 401 && cloudAccessToken) {
+        setCloudAccessToken("");
+        setCloudAccessSessionId(null);
+        setConnectedAccessSessionId(null);
+        saveCloudSession({
+          accessToken: null,
+          expiresAt: null,
+          phone: null,
+          email: null,
+          profile: null,
+        });
+      }
       const message = error instanceof Error ? error.message.slice(0, 200) : null;
       // Only emit login_fail when the verify step itself failed (we never got
       // an access token). Failures after verify succeeded are a different
