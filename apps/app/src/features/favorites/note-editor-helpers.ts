@@ -38,18 +38,36 @@ export type NoteSendDialogNote = {
 export function buildEditorStateFromDocument(
   note: FavoriteNoteDocument,
 ): NoteEditorState {
-  // server 永远会返回一个 title 字段：
-  //   - 如果用户曾显式输入过 → server 持久化的就是那个值
-  //   - 如果从未输入 → server 当时按 buildFavoriteNotePresentation 取的正文首行
-  // 编辑器 input 是受控的，没必要"反推是不是派生的"——直接把 server 的 title
-  // 回填即可：清空输入框就是显式把 title 设回 ""，保存后服务端再走派生 fallback。
+  // 老笔记 / 没填显式标题的笔记：server 存的 title 是 buildFavoriteNotePresentation
+  // 按"正文首行 slice 32"派生出来的。这里反推：如果 server.title 跟我们按 server
+  // 同款算法算出来的值一致，说明用户没显式填过 → state.title = ''，input 显示
+  // placeholder，用户编辑正文时 placeholder 自动跟着首行刷新；否则就是用户显式
+  // 填过的，回填到输入框，后续保存按 explicit 走，不会被正文首行覆盖。
+  //
+  // 关键：必须用 deriveServerStyleNoteTitle（slice 32），不能用 resolveNoteTitle
+  // （slice 28）来比对——后者比 server 短 4 个字，长首行会被错判成"用户显式"。
+  const serverDerived = deriveServerStyleNoteTitle(note.contentText);
+  const isLikelyDerived =
+    serverDerived !== null && note.title === serverDerived;
   return {
     contentHtml: note.contentHtml,
     contentText: note.contentText,
     tags: [...note.tags],
     assets: note.assets.map((asset) => ({ ...asset })),
-    title: note.title ?? "",
+    title: isLikelyDerived ? "" : (note.title ?? ""),
   };
+}
+
+// 跟后端 api/src/modules/chat/favorites.service.ts buildFavoriteNotePresentation
+// 完全对齐：取 contentText 首行 + slice(0, 32)。contentText 为空时返回 null
+// 让上层走"不可比对"分支，避免拿 i18n 化的"无标题笔记"去跟 server 写死的字面量
+// 比对而误判。
+function deriveServerStyleNoteTitle(contentText: string): string | null {
+  const firstLine = contentText
+    .split("\n")
+    .map((line) => line.trim())
+    .find(Boolean);
+  return firstLine ? firstLine.slice(0, 32) : null;
 }
 
 export function buildEditorStateFromDraft(
