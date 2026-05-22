@@ -93,6 +93,7 @@ export function ContactShortcutList({
               )}
             >
               <Icon
+                aria-hidden="true"
                 size={
                   variant === "desktop-flat"
                     ? 16
@@ -177,6 +178,7 @@ export function ContactShortcutList({
 
             {item.disabled || variant === "desktop-flat" ? null : (
               <ChevronRight
+                aria-hidden="true"
                 size={mobileDense ? 14 : 15}
                 className="shrink-0 text-[color:var(--text-muted)]"
               />

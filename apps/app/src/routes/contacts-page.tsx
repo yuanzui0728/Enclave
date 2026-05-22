@@ -3029,11 +3029,22 @@ function FriendListRow({
       </div>
       <SparkBadge streak={item.friendship.sparkStreak} size="sm" />
       {item.friendship.isStarred ? (
-        <Star
-          size={15}
-          className="shrink-0 text-[#f3a311]"
-          fill="currentColor"
-        />
+        <>
+          {/* 走查新一轮 R3：原版 Star icon 是纯视觉，<svg> 没有任何文字内容/
+              aria-label，屏阅器只能听到「按钮 张三」，听不出 TA 是不是星标
+              好友。同一列表里星标 / 非星标行在 SR 上完全等价，盲人用户没法
+              通过通讯录主列表区分谁是常联系。补一段 sr-only "星标朋友" 让
+              accessible name 升级成「按钮 张三 星标朋友」，跟视觉表征对齐；
+              视觉表征上不变（仍是金色五角星 icon）。Star icon 自身补 aria-
+              hidden 跟 desktop-chat-workspace "已置顶" sr-only 同套路。 */}
+          <span className="sr-only">{t(msg`星标朋友`)}</span>
+          <Star
+            aria-hidden="true"
+            size={15}
+            className="shrink-0 text-[#f3a311]"
+            fill="currentColor"
+          />
+        </>
       ) : null}
     </button>
   );
