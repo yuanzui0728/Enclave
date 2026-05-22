@@ -16,6 +16,16 @@ const runtimeDir = path.join(rootDir, "runtime-data", "app-web-nginx");
 const confDir = path.join(runtimeDir, "conf");
 const logsDir = path.join(runtimeDir, "logs");
 const bodyDir = path.join(runtimeDir, "body");
+// proxy_temp / fastcgi_temp / scgi_temp / uwsgi_temp 默认指向
+// /var/lib/nginx/{proxy,fastcgi,scgi,uwsgi}，那一层是 root:root + drwx------（仅 www-data 可写）。
+// 本进程以普通 ps 用户跑，命中默认路径就是 EPERM。nginx 对上游响应在 in-memory buffer
+// (proxy_buffers 默认 8x4k≈32k) 装不下时会把剩余 body 落 proxy_temp 文件做 spool，
+// 落不下就吊住——浏览器看到的是 PATCH /world/owner（avatar 回显 ~1MB）/ GET /moments
+// （图列响应几百K）一直转圈不响应。把四个 temp 都重指到 ps 可写的 runtime-data 下。
+const proxyTempDir = path.join(runtimeDir, "proxy_temp");
+const fastcgiTempDir = path.join(runtimeDir, "fastcgi_temp");
+const scgiTempDir = path.join(runtimeDir, "scgi_temp");
+const uwsgiTempDir = path.join(runtimeDir, "uwsgi_temp");
 const configPath = path.join(confDir, "nginx.conf");
 const pidPath = path.join(runtimeDir, "nginx.pid");
 const bootstrapErrorLogPath = path.join(logsDir, "bootstrap-error.log");
@@ -35,6 +45,10 @@ ensureDir(runtimeDir);
 ensureDir(confDir);
 ensureDir(logsDir);
 ensureDir(bodyDir);
+ensureDir(proxyTempDir);
+ensureDir(fastcgiTempDir);
+ensureDir(scgiTempDir);
+ensureDir(uwsgiTempDir);
 
 if (!existsSync(appDistDir)) {
   console.error(`[web-nginx] missing app dist: ${appDistDir}`);
@@ -70,6 +84,14 @@ events {
 http {
   client_max_body_size 32m;
   client_body_temp_path ${bodyDir} 1 2;
+  # 把 proxy/fastcgi/scgi/uwsgi 的 spool 目录从默认的 /var/lib/nginx/* 改到
+  # runtime-data 下，ps 用户才有写权限。否则上游响应一超 proxy_buffers
+  # （默认 8x4k≈32k）就 EPERM、客户端 PATCH /world/owner（avatar 回显 ~1MB）
+  # 一直卡转圈。
+  proxy_temp_path ${proxyTempDir} 1 2;
+  fastcgi_temp_path ${fastcgiTempDir} 1 2;
+  scgi_temp_path ${scgiTempDir} 1 2;
+  uwsgi_temp_path ${uwsgiTempDir} 1 2;
 
   include /etc/nginx/mime.types;
   default_type application/octet-stream;
