@@ -1266,7 +1266,7 @@ function MobileChatListPage() {
               aria-expanded={isQuickMenuOpen}
               aria-haspopup="menu"
             >
-              <Plus size={15} strokeWidth={2.4} />
+              <Plus size={15} strokeWidth={2.4} aria-hidden="true" />
             </Button>
 
             {isQuickMenuOpen ? (
@@ -1292,7 +1292,17 @@ function MobileChatListPage() {
                         className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                       >
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
-                          <Icon size={14} />
+                          {/*
+                            走查再再一轮 R1：菜单项视觉文本（发起群聊 / 添加朋友 /
+                            新建笔记）已经在 <span> 给出 accessible name；Lucide
+                            icon 是装饰元素，但默认 <svg> 没挂任何 aria-* —— 部
+                            分 AT 把 inline SVG 当 image，加念一遍冗余英文文件名
+                            「users」/「user-plus」/「file-text」，覆盖视觉文本
+                            的精确中文标签。同文件 line 1370 搜索 icon 已挂
+                            aria-hidden 走的就是这条规约，这里 5 个菜单项 + 行
+                            内 BellOff / Pin / Search / Plus 等都该一致。
+                          */}
+                          <Icon size={14} aria-hidden="true" />
                         </div>
                         <span>{t(item.label)}</span>
                       </button>
@@ -1327,7 +1337,8 @@ function MobileChatListPage() {
                           item.disabled ? "bg-white/6" : "bg-white/10",
                         )}
                       >
-                        <Icon size={14} />
+                        {/* 同上：装饰 icon 不该被 AT 念额外英文文件名 */}
+                        <Icon size={14} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div>{t(item.label)}</div>
@@ -1522,7 +1533,11 @@ function MobileChatListPage() {
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             <div className="flex items-center justify-between px-4 py-1.25">
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#111827]">
-                <BellRing size={13} className="text-[#07c160]" />
+                <BellRing
+                  size={13}
+                  className="text-[#07c160]"
+                  aria-hidden="true"
+                />
                 <span>{t(msg`消息提醒`)}</span>
               </div>
               <div className="text-[10px] text-[#8f9992]">
@@ -2255,7 +2270,7 @@ function ConversationListItemLinkImpl({
           className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-white active:brightness-[0.96]"
         >
           <div className="flex flex-col items-center gap-0.5 text-[11px]">
-            <Pin size={13} />
+            <Pin size={13} aria-hidden="true" />
             <span>
               {conversation.isPinned ? t(msg`取消置顶`) : t(msg`置顶`)}
             </span>
@@ -2270,7 +2285,7 @@ function ConversationListItemLinkImpl({
           )}
         >
           <div className="flex flex-col items-center gap-0.5 text-[11px]">
-            <BellOff size={13} />
+            <BellOff size={13} aria-hidden="true" />
             <span>
               {conversation.isMuted ? t(msg`取消免打扰`) : t(msg`免打扰`)}
             </span>
@@ -2284,9 +2299,9 @@ function ConversationListItemLinkImpl({
           >
             <div className="flex flex-col items-center gap-0.5 text-[11px]">
               {conversation.unreadCount > 0 ? (
-                <CheckCheck size={13} />
+                <CheckCheck size={13} aria-hidden="true" />
               ) : (
-                <Circle size={13} />
+                <Circle size={13} aria-hidden="true" />
               )}
               <span>{readActionLabel}</span>
             </div>
@@ -2298,7 +2313,7 @@ function ConversationListItemLinkImpl({
           className="flex w-[68px] items-center justify-center bg-[#fa5151] text-white active:brightness-[0.96]"
         >
           <div className="flex flex-col items-center gap-0.5 text-[11px]">
-            <Trash2 size={13} />
+            <Trash2 size={13} aria-hidden="true" />
             <span>{t(msg`删除`)}</span>
           </div>
         </button>
