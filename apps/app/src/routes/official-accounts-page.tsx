@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useQuery } from "@tanstack/react-query";
@@ -167,6 +167,19 @@ function MobileOfficialAccountsPage() {
 
     openSubscriptionInbox();
   }
+
+  // Fresh 走查 R5：本页一进来就是 fixed inset-0 z-[60] 「功能开发中」整屏
+  // 蒙板（功能未上线），但底下 TabPageTopBar + 搜索框 + 公众号列表 DOM
+  // 全部还在。iOS Safari WKWebView 上用户在蒙板之外（卡片之外）滑动会
+  // "穿透"滚动底下的列表，看着蒙板不动、底下却在飘。跟 management-modal /
+  // bulk-action-bar Fresh R4 同款 body.style.overflow="hidden" 兜。
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
