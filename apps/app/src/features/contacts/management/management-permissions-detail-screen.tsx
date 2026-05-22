@@ -10,6 +10,7 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { stripBidiControl } from "../contact-utils";
 import { invalidateFriendVisibilityQueries } from "../invalidate-friend-display";
 
 type Props = {
@@ -197,13 +198,24 @@ export function ManagementPermissionsDetailScreen({
   return (
     <div className="px-3 py-3">
       <div className="flex items-center gap-3 rounded-[12px] bg-white px-3 py-3 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-        <AvatarChip name={character.name} src={character.avatar} size="wechat" />
+        {/* 通讯录 mobile 走查 R3：朋友权限详情头卡：character.name / remarkName /
+            relationship 三处都是用户输入端，避免 U+202E 把开关行 layout 反转 →
+            用户误开关。跟 friend-row / blacklist row 同口径补 strip。 */}
+        <AvatarChip
+          name={stripBidiControl(
+            friendship?.remarkName?.trim() || character.name,
+          )}
+          src={character.avatar}
+          size="wechat"
+        />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
-            {friendship?.remarkName?.trim() || character.name}
+            {stripBidiControl(
+              friendship?.remarkName?.trim() || character.name,
+            )}
           </div>
           <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-            {character.relationship || t(msg`保持联系`)}
+            {stripBidiControl(character.relationship) || t(msg`保持联系`)}
           </div>
         </div>
       </div>

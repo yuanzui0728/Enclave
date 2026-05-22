@@ -10,6 +10,7 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { stripBidiControl } from "../contact-utils";
 
 export function ManagementBlacklistScreen() {
   const t = useRuntimeTranslator();
@@ -127,8 +128,12 @@ export function ManagementBlacklistScreen() {
           // 飞 / 角色已被删 时会把 "char-cel" "char-def" 这种 UUID 前缀当人名贴出来，
           // 头像 chip 还会用 "c" 当首字母占位。改成"未知联系人"+ avatar 走 fallback 渲染，
           // 比泄露内部 id 更友好。
-          const name =
-            character?.name ?? t(msg`未知联系人`);
+          // 通讯录 mobile 走查 R3：character.name 是角色作者自由文本，含 U+202E
+          // 等 bidi 控制字符会让黑名单行的"移出"按钮位置看起来跟实际不对应，
+          // 严重时把"reason 副标题"反转读乱。跟通讯录主页 / 公众号行 同口径补 strip。
+          const name = stripBidiControl(
+            character?.name ?? t(msg`未知联系人`),
+          );
           return (
             <li
               key={entry.id}
@@ -150,7 +155,12 @@ export function ManagementBlacklistScreen() {
                   </div>
                   {entry.reason ? (
                     <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-                      {entry.reason}
+                      {/* 通讯录 mobile 走查 R3：reason 当前实现是前端 hardcode 文案
+                          (contact-detail-pane / character-detail-page 里直接写"来自通讯录
+                          详情页加入黑名单"等)，但 server DTO 把这个字段当任意 string 透
+                          出来——第三方客户端 / 直 POST 都能塞含 bidi 控制字符的 reason。
+                          补一道渲染时 strip，跟 name 同口径。 */}
+                      {stripBidiControl(entry.reason)}
                     </div>
                   ) : null}
                 </div>

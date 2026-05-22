@@ -169,7 +169,10 @@ export function ManagementPermissionsScreen({
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]"
                     >
                       <AvatarChip
-                        name={item.character.name}
+                        // 通讯录 mobile 走查 R3：AvatarChip name 用于 alt + 渐变 hash
+                        // seed；item.character.name 含 bidi 控制字符会泄到 alt。
+                        // 跟主页 FriendListRow 同口径用 item.displayName（已 strip）。
+                        name={item.displayName}
                         src={item.character.avatar}
                         size="wechat"
                       />
