@@ -408,7 +408,14 @@ export function CreateGroupPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
             onClick={handleBack}
-            aria-label={t(msg`返回`)}
+            // 走查（新一轮）：handleBack 现在 searchTerm 非空时走 setSearchTerm("")
+            // 早返，aria-label 还硬编码"返回"对 SR 用户就是骗——听到"返回"按下
+            // 去其实是清搜索词，下一次按才真的退页。同 file 内 R2 给搜索 input /
+            // 横滚 chip 补 aria-label 是同口径思路，把屏幕阅读器的口播和实际
+            // 行为对齐。
+            aria-label={
+              searchTerm.trim() ? t(msg`清空搜索`) : t(msg`返回`)
+            }
           >
             <ArrowLeft size={18} />
           </Button>
