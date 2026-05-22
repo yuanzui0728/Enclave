@@ -98,20 +98,29 @@ function loadEncounters(baseUrl: string | undefined): EncounterRecord[] {
   }
 }
 
-function saveEncounter(baseUrl: string | undefined, record: EncounterRecord) {
-  if (typeof window === "undefined") return;
+// 走查 R1：以前 onSuccess 里先 saveEncounter()（内部 load 一次写一次）再
+// setEncounterCount(loadEncounters().length)（再 load 一次），总共 3 次
+// JSON.parse 50 条记录 + 1 次写 + 1 次 read。返回新长度让调用端直接用，
+// 省两次读，并把"已经存在该 characterId / 静默失败"分支也能给出准确长度。
+function saveEncounter(
+  baseUrl: string | undefined,
+  record: EncounterRecord,
+): number {
+  if (typeof window === "undefined") return 0;
   try {
     const existing = loadEncounters(baseUrl);
     if (existing.some((e) => e.characterId === record.characterId)) {
-      return;
+      return existing.length;
     }
     const next = [...existing, record].slice(-50);
     window.localStorage.setItem(
       encountersStorageKey(baseUrl),
       JSON.stringify(next),
     );
+    return next.length;
   } catch {
     // localStorage 不可用就静默吃掉
+    return 0;
   }
 }
 
@@ -171,20 +180,31 @@ function MobileDiscoverScenePage() {
     [hash],
   );
 
-  // 冷却倒计时刷新：每 200ms 推一次 now，到点立刻清掉自己，避免空转。
+  // 冷却倒计时刷新：display 只显示整秒（`Math.ceil((remain)/1000)`），所以 1Hz
+  // 已经够。以前是 200ms 一跳，2.5s 冷却内白白 12 次 re-render，每次都会重排
+  // 16 个 64px 按钮 grid + 重算 disabled / busy，毫无视觉收益。
+  // 走查 R1：把第一跳对齐到剩余毫秒的"下一个秒边界"，避免 1s setInterval 跟
+  // setCooldownUntil 那一刻偏移 ~999ms 让第一秒倒计时显示停留过久。
   useEffect(() => {
-    if (cooldownUntil <= Date.now()) {
+    const remain = cooldownUntil - Date.now();
+    if (remain <= 0) {
       return;
     }
-    const id = window.setInterval(() => {
-      const next = Date.now();
-      setNow(next);
-      if (next >= cooldownUntil) {
-        window.clearInterval(id);
-      }
-    }, 200);
+    const firstDelay = remain % 1000 || 1000;
+    let intervalId = 0;
+    const timeoutId = window.setTimeout(() => {
+      setNow(Date.now());
+      intervalId = window.setInterval(() => {
+        const next = Date.now();
+        setNow(next);
+        if (next >= cooldownUntil) {
+          window.clearInterval(intervalId);
+        }
+      }, 1000);
+    }, firstDelay);
     return () => {
-      window.clearInterval(id);
+      window.clearTimeout(timeoutId);
+      if (intervalId) window.clearInterval(intervalId);
     };
   }, [cooldownUntil]);
 
@@ -260,13 +280,13 @@ function MobileDiscoverScenePage() {
       }
 
       setLastRequestId(request.id);
-      saveEncounter(baseUrl, {
+      const nextCount = saveEncounter(baseUrl, {
         scene,
         characterName: request.characterName,
         characterId: request.characterId,
         ts: Date.now(),
       });
-      setEncounterCount(loadEncounters(baseUrl).length);
+      setEncounterCount(nextCount);
       void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
     },
   });
@@ -352,6 +372,11 @@ function MobileDiscoverScenePage() {
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={tone}
+            // 走查 R1（移动端发现-场景相遇）：success / fallback / "暂时没有新相遇了"
+            // 三种 notice 是异步 mutation 4-20s 后才 settle 的反馈，屏幕阅读器用户
+            // 没法靠视觉感知；挂一个 role=status 让 AT 至少能 polite 朗读到。
+            role="status"
+            aria-live="polite"
           >
             {lastRequestId ? (
               <div className="flex items-center justify-between gap-2">
@@ -399,12 +424,25 @@ function MobileDiscoverScenePage() {
         2 列 8 行 870px 的灰按钮把 danger notice 推到屏幕外，用户只看到一大坨
         灰按钮一脸懵。比 cooldown 提示优先级更高（同时存在时只显示这条）。
       */}
+      {/*
+        走查 R1（移动端发现-场景相遇）：DAILY_LIMIT / cooldown 两条提示是按钮 grid
+        整体灰掉的原因；屏幕阅读器用户没法靠视觉看到 grid 变灰，需要 role=status
+        把"今天用完 / 稍等 X 秒"朗读出来，否则反复点 disabled 按钮没任何反馈。
+      */}
       {dailyLimitHit ? (
-        <div className="text-center text-[11px] text-[color:var(--text-secondary)]">
+        <div
+          role="status"
+          aria-live="polite"
+          className="text-center text-[11px] text-[color:var(--text-secondary)]"
+        >
           {t(msg`今天的场景相遇次数已经用完，明天再试试。`)}
         </div>
       ) : cooldownActive && !sceneMutation.isPending ? (
-        <div className="text-center text-[11px] text-[color:var(--text-secondary)]">
+        <div
+          role="status"
+          aria-live="polite"
+          className="text-center text-[11px] text-[color:var(--text-secondary)]"
+        >
           {t(msg`稍等 ${cooldownRemainSec} 秒再出发吧。`)}
         </div>
       ) : null}
@@ -457,6 +495,11 @@ function MobileDiscoverScenePage() {
         <InlineNotice
           className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           tone="danger"
+          // 走查 R1（移动端发现-场景相遇）：错误条目是阻塞用户继续动作的硬反馈
+          // （DAILY_LIMIT / INVALID / 网络异常），用 role=alert 让屏幕阅读器
+          // 立即朗读，比 polite status 更紧迫，符合其它走查 R1-R6 的统一处理。
+          role="alert"
+          aria-live="assertive"
         >
           <div className="flex items-center justify-between gap-2">
             {/*
