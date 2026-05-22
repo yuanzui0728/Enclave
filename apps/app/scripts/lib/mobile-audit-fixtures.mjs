@@ -238,7 +238,6 @@ export const extendedRoutePaths = [
   "/chat/conv-1/search",
   "/group/group-1",
   "/group/group-1/announcement",
-  "/group/group-1/qr",
   "/friend-moments/char-1",
 ];
 
