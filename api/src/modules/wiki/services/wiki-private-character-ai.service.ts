@@ -63,6 +63,12 @@ export class WikiPrivateCharacterAiService {
    *
    * 由 `runJobInBackground` 调度；老的同步入口已下线（controller 现在统一走
    * enqueue + job 表）。
+   *
+   * 2026-05-22：section='all' 改成 5 个 per-section 并行子调用 + 合并。原本是单次
+   * 大调用，但 MiniMax-M2.7 是 reasoning model，completionTokens 含 reasoning，
+   * 5 节合起来生成时模型会"偷懒"漏字段（线上观察：coreLogic / chat 经常空，但
+   * 单独再调 chat 一次又能稳定产出）。拆成并行小调用，每个 prompt 已被验证过
+   * 能独立稳定填出对应字段；总延迟 ≈ 最慢一节的延迟。
    */
   async generateForSection(input: {
     section: SectionKey;
@@ -72,6 +78,18 @@ export class WikiPrivateCharacterAiService {
      * 优化模式：true 时 normalizer 不再"目标为空才填"，让 AI 覆盖整节。
      * sacred 字段 (name / relationship / bio) 后端兜底，即便 optimize=true 也不返回。
      */
+    optimize?: boolean;
+  }): Promise<AiGeneratedDraft> {
+    if (input.section === 'all') {
+      return this.generateAllByFanout(input);
+    }
+    return this.runSingleSection(input);
+  }
+
+  private async runSingleSection(input: {
+    section: SectionKey;
+    currentDraft: PrivateCharacterDto;
+    ownerId: string;
     optimize?: boolean;
   }): Promise<AiGeneratedDraft> {
     const template = SECTION_PROMPTS[input.section];
@@ -116,6 +134,49 @@ export class WikiPrivateCharacterAiService {
       input.currentDraft,
       input.optimize === true,
     );
+  }
+
+  /**
+   * section='all' 的扇出：5 个子 section 并行调 LLM，合并结果。
+   *
+   * 子 section 之间天然有依赖（chat/scenes/memory 想引用 coreLogic 来保持自洽），
+   * 但 reasoning model 单次大调用反而经常漏 coreLogic，所以这里把"自洽性"换成
+   * "可靠性"——并行调用，coreLogic 与其它 section 同时基于同一份 sacred
+   * (name/bio/relationship) 生成。
+
+   * 任何一节失败都不阻断其它节：单节抛出会被 catch、记 warn、按"该节缺失"处理；
+   * mergeDrafts 容忍部分缺失。这是为了避免"5 节里 1 节超时 → 整个一键生成失败"。
+   */
+  private async generateAllByFanout(input: {
+    currentDraft: PrivateCharacterDto;
+    ownerId: string;
+    optimize?: boolean;
+  }): Promise<AiGeneratedDraft> {
+    const subsections: SectionKey[] = [
+      'basics',
+      'core_logic',
+      'chat',
+      'scenes',
+      'memory',
+    ];
+    const results = await Promise.all(
+      subsections.map(async (section) => {
+        try {
+          return await this.runSingleSection({
+            section,
+            currentDraft: input.currentDraft,
+            ownerId: input.ownerId,
+            optimize: input.optimize,
+          });
+        } catch (err) {
+          this.logger.warn(
+            `all-fanout subsection=${section} failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+          return {} as AiGeneratedDraft;
+        }
+      }),
+    );
+    return mergeDrafts(...results);
   }
 
   /**
@@ -327,9 +388,20 @@ function asObj(v: unknown): Record<string, unknown> {
   return {};
 }
 
+/**
+ * 合并多个 per-section normalizer 的输出。
+ *
+ * 关键不变量：normalizeChat / normalizeScenes 会回填 `coreLogic: ''` 与
+ * `scenePrompts.<key>: ''` 占位（满足 typescript 的 Partial<scenePrompts> 形状），
+ * 浅 spread 会让空串覆盖前一节真正产出的非空值（特别是 core_logic 节生成的
+ * coreLogic 会被 scenes 节占位覆写成空）。这里跟 mergeDraftWithUpdates 一样做
+ * "非空才覆盖"的深合并。
+ */
 function mergeDrafts(...parts: AiGeneratedDraft[]): AiGeneratedDraft {
   const out: AiGeneratedDraft = {};
   const recipe: AiGeneratedDraft['recipe'] = {};
+  let mergedPrompting: Record<string, unknown> | undefined;
+  let mergedScenePrompts: Record<string, string> | undefined;
   for (const p of parts) {
     if (p.relationshipType !== undefined) {
       out.relationshipType = p.relationshipType;
@@ -340,10 +412,23 @@ function mergeDrafts(...parts: AiGeneratedDraft[]): AiGeneratedDraft {
         recipe.identity = { ...(recipe.identity ?? {}), ...p.recipe.identity };
       }
       if (p.recipe.prompting) {
-        recipe.prompting = {
-          ...(recipe.prompting ?? {}),
-          ...p.recipe.prompting,
-        };
+        if (!mergedPrompting) mergedPrompting = {};
+        const upPr = p.recipe.prompting as Record<string, unknown>;
+        for (const [k, v] of Object.entries(upPr)) {
+          if (k === 'scenePrompts' && v && typeof v === 'object') {
+            if (!mergedScenePrompts) mergedScenePrompts = {};
+            for (const [sk, sv] of Object.entries(v as Record<string, unknown>)) {
+              if (typeof sv === 'string' && sv.trim()) {
+                mergedScenePrompts[sk] = sv;
+              }
+            }
+          } else if (k === 'coreLogic' && typeof v === 'string' && !v.trim()) {
+            // 跳过其它 normalizer 塞的空 coreLogic 占位。
+            continue;
+          } else if (v !== undefined) {
+            mergedPrompting[k] = v;
+          }
+        }
       }
       if (p.recipe.memorySeed) {
         recipe.memorySeed = {
@@ -352,6 +437,13 @@ function mergeDrafts(...parts: AiGeneratedDraft[]): AiGeneratedDraft {
         };
       }
     }
+  }
+  if (mergedPrompting) {
+    if (mergedScenePrompts) {
+      mergedPrompting.scenePrompts = mergedScenePrompts;
+    }
+    recipe.prompting =
+      mergedPrompting as Partial<CharacterBlueprintRecipe['prompting']>;
   }
   if (Object.keys(recipe).length > 0) out.recipe = recipe;
   return out;
