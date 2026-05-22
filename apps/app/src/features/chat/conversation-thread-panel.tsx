@@ -25,6 +25,7 @@ import {
   type ChatReplyMetadata,
 } from "../../lib/chat-text";
 import { resolveMessageSemanticPreview } from "../../lib/message-attachment-semantic";
+import { describeRequestError } from "../../lib/request-error";
 import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
@@ -916,12 +917,12 @@ export function ConversationThreadPanel({
                 // 失败路径常见于公网隧道断 / cloud-api OOM / world child
                 // 重启时，盲人 SR 完全没反馈，会在空白聊天里一直按上下箭头
                 // 找消息。挂 role="alert"。
-                <ErrorBlock role="alert" message={messagesQuery.error.message} />
+                <ErrorBlock role="alert" message={describeRequestError(messagesQuery.error)} />
               ) : (
                 <MobileThreadStatusCard
                   badge={t(msg`会话`)}
                   title={t(msg`会话暂时不可用`)}
-                  description={messagesQuery.error.message}
+                  description={describeRequestError(messagesQuery.error)}
                   tone="danger"
                   action={renderStatusActions()}
                 />
@@ -1041,7 +1042,7 @@ export function ConversationThreadPanel({
             pending={sendMutation.isPending}
             error={
               sendMutation.error instanceof Error
-                ? sendMutation.error.message
+                ? describeRequestError(sendMutation.error)
                 : null
             }
             errorActionLabel={!isDesktop && onBack ? t(msg`返回上一页`) : undefined}

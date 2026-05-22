@@ -9,6 +9,7 @@ import {
   type SnoozeReminderTaskRequest,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { describeRequestError } from "../../lib/request-error";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 
 const t = translateRuntimeMessage;
@@ -113,7 +114,9 @@ export function useReminderRuntimeTasks(
     isLoading: tasksQuery.isLoading,
     isFetching: tasksQuery.isFetching,
     error:
-      tasksQuery.error instanceof Error ? tasksQuery.error.message : undefined,
+      tasksQuery.error instanceof Error
+        ? describeRequestError(tasksQuery.error)
+        : undefined,
     completeTask,
     snoozeTask,
     cancelTask,

@@ -43,6 +43,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { buildDirectCallInviteMessage } from "./group-call-message";
 import { emitChatMessage } from "../../lib/socket";
+import { describeRequestError } from "../../lib/request-error";
 import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { openAppSettings } from "../../runtime/mobile-bridge";
@@ -1013,12 +1014,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         )}
       >
         {isDesktopLayout ? (
-          <ErrorBlock message={conversationsQuery.error.message} />
+          <ErrorBlock message={describeRequestError(conversationsQuery.error)} />
         ) : (
           <MobileCallStatusCard
             badge={t(msg`会话`)}
             title={t(msg`通话暂时不可用`)}
-            description={conversationsQuery.error.message}
+            description={describeRequestError(conversationsQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap justify-center gap-2">
@@ -1498,7 +1499,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               tone="danger"
               className="flex items-center justify-between gap-3"
             >
-              <span>{activeCall.turnMutation.error.message}</span>
+              <span>{describeRequestError(activeCall.turnMutation.error)}</span>
               {renderBackToChatAction()}
             </MobileCallNotice>
           ) : null}
@@ -1600,7 +1601,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               tone="danger"
               className="flex flex-wrap items-center justify-between gap-3"
             >
-              <span>{characterQuery.error.message}</span>
+              <span>{describeRequestError(characterQuery.error)}</span>
               <div className="flex flex-wrap items-center gap-2">
                 {renderRetryCharacterLoadAction()}
                 {renderBackToChatAction()}

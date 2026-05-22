@@ -64,6 +64,7 @@ import { formatTimestamp } from "../../lib/format";
 import { isPersistedGroupConversation } from "../../lib/conversation-route";
 import { isMissingGroupError } from "../../lib/group-route-fallback";
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { describeRequestError } from "../../lib/request-error";
 import {
   joinConversationRoom,
   onChatMessage,
@@ -824,7 +825,9 @@ export function GroupChatThreadPanel({
     [initialUnreadCount, initialUnreadCutoff, messages],
   );
   const sendError =
-    sendMutation.error instanceof Error ? sendMutation.error.message : null;
+    sendMutation.error instanceof Error
+      ? describeRequestError(sendMutation.error)
+      : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   // 走查 R73 续：和姊妹单聊 R73 同款——避免每次 render 都 new style 对象
   // 触发 React 给容器 div 做无意义的 style 重设。
@@ -1756,13 +1759,13 @@ export function GroupChatThreadPanel({
                 <ErrorBlock
                   role="alert"
                   className="mb-3"
-                  message={groupQuery.error.message}
+                  message={describeRequestError(groupQuery.error)}
                 />
               ) : (
                 <MobileGroupThreadStatusCard
                   badge={t(msg`群聊`)}
                   title={t(msg`群聊信息暂时不可用`)}
-                  description={groupQuery.error.message}
+                  description={describeRequestError(groupQuery.error)}
                   tone="danger"
                   action={renderStatusActions(groupQuery)}
                 />
@@ -1773,13 +1776,13 @@ export function GroupChatThreadPanel({
                 <ErrorBlock
                   role="alert"
                   className="mb-3"
-                  message={membersQuery.error.message}
+                  message={describeRequestError(membersQuery.error)}
                 />
               ) : (
                 <MobileGroupThreadStatusCard
                   badge={t(msg`成员`)}
                   title={t(msg`群成员信息暂时不可用`)}
-                  description={membersQuery.error.message}
+                  description={describeRequestError(membersQuery.error)}
                   tone="danger"
                   action={renderStatusActions(membersQuery)}
                 />
@@ -1811,12 +1814,12 @@ export function GroupChatThreadPanel({
               isDesktop ? (
                 // R53：和姊妹 R51 单聊 messagesQuery 同款 —— 群聊 desktop
                 // 分支裸 <ErrorBlock>，盲人 SR 在空白群消息列表里无反馈。
-                <ErrorBlock role="alert" message={messagesQuery.error.message} />
+                <ErrorBlock role="alert" message={describeRequestError(messagesQuery.error)} />
               ) : (
                 <MobileGroupThreadStatusCard
                   badge={t(msg`消息`)}
                   title={t(msg`群消息暂时不可用`)}
-                  description={messagesQuery.error.message}
+                  description={describeRequestError(messagesQuery.error)}
                   tone="danger"
                   action={renderStatusActions(messagesQuery)}
                 />

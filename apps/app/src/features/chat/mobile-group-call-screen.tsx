@@ -32,6 +32,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { GroupAvatarChip } from "../../components/group-avatar-chip";
 import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { formatDetailedMessageTimestamp } from "../../lib/format";
+import { describeRequestError } from "../../lib/request-error";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import {
@@ -699,12 +700,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         )}
       >
         {isDesktopLayout ? (
-          <ErrorBlock message={groupQuery.error.message} />
+          <ErrorBlock message={describeRequestError(groupQuery.error)} />
         ) : (
           <MobileCallStatusCard
             badge={t(msg`群聊`)}
             title={t(msg`群通话暂时不可用`)}
-            description={groupQuery.error.message}
+            description={describeRequestError(groupQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap justify-center gap-2">
@@ -738,12 +739,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         )}
       >
         {isDesktopLayout ? (
-          <ErrorBlock message={membersQuery.error.message} />
+          <ErrorBlock message={describeRequestError(membersQuery.error)} />
         ) : (
           <MobileCallStatusCard
             badge={t(msg`成员`)}
             title={t(msg`成员信息暂时不可用`)}
-            description={membersQuery.error.message}
+            description={describeRequestError(membersQuery.error)}
             tone="danger"
             action={
               <div className="flex flex-wrap justify-center gap-2">
@@ -1043,7 +1044,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               tone="danger"
               className="flex items-center justify-between gap-3"
             >
-              <span>{syncStatusMutation.error.message}</span>
+              <span>{describeRequestError(syncStatusMutation.error)}</span>
               {renderBackToGroupAction()}
             </MobileCallNotice>
           ) : null}

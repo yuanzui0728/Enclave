@@ -123,6 +123,7 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { resolveMessageSemanticPreview } from "../lib/message-attachment-semantic";
+import { describeRequestError } from "../lib/request-error";
 import { resolveConfiguredCoreApiBaseUrl } from "../lib/runtime-config";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
@@ -1093,10 +1094,7 @@ export function ChatMessageList({
     },
     onError: (error, input) => {
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`转发失败，请稍后再试。`),
+        message: describeRequestError(error, t(msg`转发失败，请稍后再试。`)),
         tone: "danger",
         actionLabel: t(msg`继续转发消息`),
         onAction: () => {
@@ -1184,10 +1182,7 @@ export function ChatMessageList({
     },
     onError: (error, message) => {
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`撤回失败，请稍后再试。`),
+        message: describeRequestError(error, t(msg`撤回失败，请稍后再试。`)),
         tone: "danger",
         actionLabel: t(msg`继续撤回`),
         onAction: () => {
@@ -1259,10 +1254,7 @@ export function ChatMessageList({
     },
     onError: (error, message) => {
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`删除失败，请稍后再试。`),
+        message: describeRequestError(error, t(msg`删除失败，请稍后再试。`)),
         tone: "danger",
         actionLabel: t(msg`继续删除`),
         onAction: () => {
@@ -1343,10 +1335,10 @@ export function ChatMessageList({
     },
     onError: (error, message) => {
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`添加到表情失败，请稍后再试。`),
+        message: describeRequestError(
+          error,
+          t(msg`添加到表情失败，请稍后再试。`),
+        ),
         tone: "danger",
         actionLabel: t(msg`继续添加到表情`),
         onAction: () => {
@@ -2307,10 +2299,7 @@ export function ChatMessageList({
           : current.filter((id) => id !== sourceId),
       );
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`收藏失败，请稍后再试。`),
+        message: describeRequestError(error, t(msg`收藏失败，请稍后再试。`)),
         tone: "danger",
         actionLabel: collected ? t(msg`继续取消收藏`) : t(msg`继续收藏`),
         onAction: () => {
@@ -2375,10 +2364,10 @@ export function ChatMessageList({
             // ActionNotice 让用户知道这次失败了。
             .catch((error) => {
               setActionNotice({
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : t(msg`打开聊天失败，请稍后重试。`),
+                message: describeRequestError(
+                  error,
+                  t(msg`打开聊天失败，请稍后重试。`),
+                ),
                 tone: "danger",
               });
             })
@@ -2720,10 +2709,10 @@ export function ChatMessageList({
       });
     } catch (error) {
       setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`重试发送失败，请稍后再试。`),
+        message: describeRequestError(
+          error,
+          t(msg`重试发送失败，请稍后再试。`),
+        ),
         tone: "danger",
         actionLabel: t(msg`继续重试发送`),
         onAction: () => {
@@ -2780,10 +2769,10 @@ export function ChatMessageList({
         await clearReminder(messageId);
       } catch (error) {
         setActionNotice({
-          message:
-            error instanceof Error
-              ? error.message
-              : t(msg`取消提醒失败，请稍后再试。`),
+          message: describeRequestError(
+            error,
+            t(msg`取消提醒失败，请稍后再试。`),
+          ),
           tone: "danger",
           actionLabel: t(msg`继续取消提醒`),
           onAction: () => {
@@ -2875,10 +2864,10 @@ export function ChatMessageList({
         setReminderTargetMessage(null);
       } catch (error) {
         setActionNotice({
-          message:
-            error instanceof Error
-              ? error.message
-              : t(msg`设置提醒失败，请稍后再试。`),
+          message: describeRequestError(
+            error,
+            t(msg`设置提醒失败，请稍后再试。`),
+          ),
           tone: "danger",
           actionLabel: t(msg`继续设置提醒`),
           onAction: () => {
@@ -4802,7 +4791,7 @@ export function ChatMessageList({
             pending={forwardMutation.isPending}
             error={
               forwardConversationsQuery.error instanceof Error
-                ? forwardConversationsQuery.error.message
+                ? describeRequestError(forwardConversationsQuery.error)
                 : null
             }
             onClose={() => setForwardMessages(null)}
