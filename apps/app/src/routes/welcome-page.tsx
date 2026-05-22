@@ -660,7 +660,7 @@ export function WelcomePage() {
     setOwnerSyncing(true);
 
     void getWorldOwner(runtimeConfig.apiBaseUrl)
-      .then((owner) => {
+      .then(async (owner) => {
         if (!active) {
           return;
         }
@@ -670,7 +670,9 @@ export function WelcomePage() {
         setOwnerError("");
         setEntryError("");
         if (owner.onboardingCompleted) {
-          void navigate({ to: "/tabs/chat", replace: true });
+          // await 而不是 void：finally 等卸载后再跑，避免 owner-loading status
+          // card 在 navigate 完成的最后一帧闪一下空状态。
+          await navigate({ to: "/tabs/chat", replace: true });
         }
       })
       .catch(() => {
@@ -768,7 +770,8 @@ export function WelcomePage() {
       setNotice(t(msg`已连接到云世界。`));
 
       if (owner.onboardingCompleted) {
-        void navigate({ to: "/tabs/chat", replace: true });
+        // await 而不是 void：finally 等卸载后再跑，避免 button label flash 帧。
+        await navigate({ to: "/tabs/chat", replace: true });
       }
     } catch (error) {
       setReadyBaseUrl(null);
@@ -961,7 +964,9 @@ export function WelcomePage() {
       setOwnerName(owner.username ?? "");
 
       if (owner.onboardingCompleted) {
-        void navigate({ to: "/tabs/chat", replace: true });
+        // await 而不是 void：finally 等卸载后再跑，避免 button label flash 帧。
+        // return 不会跳过 finally，但 await 让 finally 在卸载后才执行。
+        await navigate({ to: "/tabs/chat", replace: true });
         return;
       }
 
@@ -1421,7 +1426,12 @@ export function WelcomePage() {
         readyBaseUrl,
       );
       hydrateOwner(owner);
-      void navigate({ to: "/tabs/chat", replace: true });
+      // await 而不是 void：tanstack-router 的 navigate 是异步的（Promise 在新
+      // route 挂完才 resolve），void 走的话 try 立刻结束 → finally 立刻
+      // setIsContinuing(false)，button label "保存中..." → "进入世界" 露出 1-2
+      // 帧 flash 才被卸载吞掉。await 后 finally 在卸载后才跑，setState 在已卸
+      // 载组件上是 no-op，避免那一帧 flash。
+      await navigate({ to: "/tabs/chat", replace: true });
     } catch (error) {
       setOwnerError(describeRequestError(error, t(msg`保存世界主人资料失败。`)));
     } finally {
