@@ -1392,6 +1392,15 @@ export function WelcomePage() {
                       setCode(digitsOnly);
                       setEntryError("");
                     }}
+                    onKeyDown={(event) => {
+                      // 手机软键盘的"前往/Go"键就是 Enter；用户敲完 6 位码自然想
+                      // 按一下就进，没 form 包裹默认啥也不会发生。显式接管：触发
+                      // 跟点"登录并进入"按钮一致的提交逻辑（带 inFlightRef 守恒）
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void continueWithCloudWorld();
+                      }
+                    }}
                     placeholder={
                       accountType === "phone"
                         ? t(msg`6 位短信验证码`)
@@ -1456,6 +1465,12 @@ export function WelcomePage() {
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setEntryError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void continueWithCloudWorld();
+                  }
                 }}
                 placeholder={t(msg`请输入密码`)}
                 showLabel={t(msg`显示密码`)}
@@ -1632,6 +1647,12 @@ export function WelcomePage() {
             onChange={(event) => {
               setLocalApiBaseUrl(event.target.value);
               setEntryError("");
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void continueWithLocalWorld();
+              }
             }}
           />
         </label>
