@@ -531,6 +531,15 @@ export class CharactersService implements OnModuleInit {
     // 几乎一定是误传。在这里挡一道，比上线后被 prompt cost 烧出 P0 强。
     assertPrivateCharacterFieldLimits(input);
 
+    // 走查 R1（2026-05-22 端到端）：原顺序是 character.save → owner.getOwnerOrThrow →
+    // friendship.save。罕见但可能：owner 拉取失败（world 启动早期 / world_owner 表
+    // 被外部脚本意外删空）时 character 已经落库，但 friendship 没建——DB 里留下
+    // 孤儿 row（不在 friend list，但是 findAllVisibleToOwner 仍会显出 + 占用 name 槽位
+    // 让下次同名 import 走 existing 路径而不是新建）。用户视角是"导入失败"但状态半截。
+    // 把 owner 拉取提到 character.save 之前：失败时 throw，DB 完全干净，用户重试
+    // 直接走新建。owner 是 world-shared 单例，调用极轻；提前不影响热路径性能。
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+
     const existing = await this.repo.findOne({
       where: { name: trimmedName },
     });
@@ -890,7 +899,7 @@ export class CharactersService implements OnModuleInit {
     //     否则用户 import 完角色仍然不出现在好友列表里
     //   - 'blocked' 是用户明确动作，不触碰
     //   - 其它正常状态（friend/close/best）保留 intimacy/星标
-    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    // owner 在方法开头已经拉好（见走查 R1 注释），这里直接复用。
     const existingFriendship = await this.friendshipRepo.findOne({
       where: { ownerId: owner.id, characterId: saved.id },
     });
