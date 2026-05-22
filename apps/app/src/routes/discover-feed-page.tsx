@@ -168,12 +168,32 @@ export function DiscoverFeedPage() {
   const [loadingFullCommentsPostIds, setLoadingFullCommentsPostIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
-  const [notice, setNotice] = useState("");
+  const [notice, _setNoticeRaw] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
     null,
   );
   const [noticeAction, setNoticeAction] = useState<(() => void) | null>(null);
+  // 新一轮 R2：跟 moments-page R1 (noticeKey 注释 commit) 同款坑——「广场互动已
+  // 更新。」是 likeMutation / commentMutation 复用的通用 success 文案，用户连点
+  // 两下点赞 / 连发两条评论时：
+  //   1. 第一次成功 → setNotice("广场互动已更新。") → notice 翻 "广场互动已更
+  //      新。"，下方 useEffect 起 2.4s 倒计时
+  //   2. ~1s 后第二次成功 → setNotice("广场互动已更新。") 又被调一次，但 React
+  //      Object.is 看到 "广场互动已更新。" === "广场互动已更新。" → 不触发 state
+  //      update → useEffect 不重跑 → 第一次的 timer 仍在跑，剩 1.4s 就消失
+  //   3. 用户视感"第二次互动好像没成功"，文案没新弹一次刷新的视觉提示
+  // 用递增 nonce 给 useEffect 当 reset 锚：setNotice 每次调用都 bump nonce 一次，
+  // 即便文案完全一样 useEffect 也会 cleanup 旧 timer 重新起 2.4s，让用户每次操
+  // 作都看到完整窗口。setNotice("") 走同路径，useEffect 内 if(!notice) return
+  // 早返关掉 timer，行为一致。
+  const noticeKeyRef = useRef(0);
+  const [noticeKey, setNoticeKey] = useState(0);
+  const setNotice = useCallback((text: string) => {
+    noticeKeyRef.current += 1;
+    setNoticeKey(noticeKeyRef.current);
+    _setNoticeRaw(text);
+  }, []);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   // 「分享图卡」目标 post id — 与 link-share 分开存，用户可以两种都点。
   const [shareCardPostId, setShareCardPostId] = useState<string | null>(null);
@@ -1496,7 +1516,10 @@ export function DiscoverFeedPage() {
       setNoticeAction(null);
     }, 2400);
     return () => window.clearTimeout(timer);
-  }, [notice, noticeAction]);
+    // 新一轮 R2：deps 跟 noticeKey 而不是只 notice —— 连续两次相同字符串走
+    // setNotice 也得重置倒计时；见 noticeKeyRef 注释。setNotice 用 useCallback
+    // 锁稳引用，依赖 deps 里写它是安全的。
+  }, [noticeKey, notice, noticeAction, setNotice]);
 
   useEffect(() => {
     setDesktopSelectedPostId(routeSelectedPostId);
