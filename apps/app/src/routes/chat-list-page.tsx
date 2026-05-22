@@ -882,13 +882,20 @@ function MobileChatListPage() {
   }, [baseUrl, queryClient]);
 
   // 走查新一轮 R1：恢复列表滚动位置。
-  // 触发条件：conversations 渲染完成（列表已展开到完整高度）且本组件实例
-  // 还没 restore 过。一次性 restore + 持续 save，组件 unmount 时移除监听。
-  // restore 只在数据可见后做一次：cache 命中场景下 conversationsQuery.isLoading
-  // 一开始就 false，但若数据是空（reminderEntries/serviceConversations 也空）
-  // 把 scrollTop 设到旧值也是 no-op（scrollHeight === clientHeight）。
+  // 触发条件：本组件实例有可滚动内容、还没 restore 过。一次性 restore +
+  // 持续 save，组件 unmount 时移除监听。
+  //
+  // 新一轮走查 R1（新）：原版 gate 只看 conversations.length > 0 —— 用户
+  // **没有任何直接/群聊会话**、只有「消息提醒」分组或「公众号入口」section
+  // （订阅号 + 服务号会话）的场景下，reminderEntries.length /
+  // hasConversationSectionContent 完全可以撑出可滚动高度（订阅 20+ 公众号 /
+  // 数十条提醒），但 isConversationsListSettled 永远 false → 滚动监听器从
+  // 不挂载，既不存 sessionStorage 也不 restore。进退一次后页面落回顶部，
+  // 用户得重新滚回原位。改用 hasConversations（reminderEntries OR conv
+  // section content）当 gate，覆盖所有有内容的场景；内层 walk-up 还会在
+  // 「找不到可滚动祖先」时早 return，所以放宽 gate 没有副作用。
   const isConversationsListSettled =
-    !conversationsQuery.isLoading && conversations.length > 0;
+    !conversationsQuery.isLoading && hasConversations;
   useEffect(() => {
     // StrictMode 兜底：原版把 restored 提到 early return 里，第一次 effect 跑
     // 完写好 restored=true → cleanup 摘掉 listener → 第二次 effect 因 restored
