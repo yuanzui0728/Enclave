@@ -116,6 +116,39 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     const [narrationError, setNarrationError] = useState<string | null>(null);
     const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
     const hasNarratableText = (moment.text?.trim().length ?? 0) > 0;
+    // 走查移动端朋友圈/最新一轮 R1：apiBaseUrl 切换（账户切换）时，narrationUrl
+    // 是上一个账户的 audio URL（path 里带 account-scoped token），直接挂到 audio
+    // src 会 401 / CORS / token expired。narrationError 也是旧账户的错误文案，
+    // 用户切到 B 看到 A 当时的"朗读生成失败"红条非常误导。和 moments-page
+    // mutationGuardRef 同思路：账户身份变化时清掉与旧账户绑定的派生状态。同时
+    // 把可能还在播的 audio 显式 pause —— 不然切到 B 还能听到 A 的语音。
+    useEffect(() => {
+      const audio = narrationAudioRef.current;
+      if (audio) {
+        audio.pause();
+      }
+      setNarrationUrl(null);
+      setNarrationError(null);
+      // narrationLoading 也清——in-flight TTS 请求是旧 apiBaseUrl 发出的，
+      // 切账户后即便 resolve 也会被同卡片 conditional render（卡片大概率随
+      // 列表 unmount）吞掉；但留着 true 会让按钮在新账户里一直 disabled，
+      // 极端情况（同 moment.id 跨账户存在 / dev hot reload）下用户无法重试。
+      setNarrationLoading(false);
+    }, [apiBaseUrl]);
+    // unmount cleanup：浏览器把 <audio> 从 DOM 移除后 Chromium / iOS Safari 仍可能
+    // 让音轨在后台继续播 + 把整段 decoded buffer 挂到 GC 才释放（实测一段 60s
+    // TTS 音频 ≈300KB decoded + audio context 锁住 10MB 上下文）。和 moment-media-
+    // gallery viewer R1 同款修法（line 691-695）：pause + removeAttribute("src") +
+    // load() 把 <audio> 切回空 media，立刻断音轨 + 释放 buffer。
+    useEffect(() => {
+      return () => {
+        const audio = narrationAudioRef.current;
+        if (!audio) return;
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      };
+    }, []);
     const handleListenTap = async (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       if (narrationLoading) return;
@@ -149,6 +182,37 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       void audio.play().catch(() => {
         // 移动端 first-tap autoplay 偶尔 reject；保留 audio 控件让用户再点一次。
       });
+    }, [narrationUrl]);
+    // 走查移动端朋友圈/最新一轮 R1：列表里 N 张卡片每张都有自己的 <audio>，
+    // 用户在多条朋友圈上都点过「朗读」后任意一条点 play（通过 audio 自带 controls
+    // 或通过「朗读」按钮 toggle），其它已加载的 <audio> 不会自动 pause —— 同时
+    // 多路语音叠在一起，体感「为什么我开始听第二条还能听到第一条」。用 window
+    // 自定义事件做协调：本卡片 audio 触发 play 时全局广播，所有其它在听的卡片
+    // 监听到非自己来源就把自己 pause；不引入 zustand / context，纯 DOM 事件。
+    // 仅在 narrationUrl 真实存在（即 audio 节点 mount 时）挂监听，没合成过的卡
+    // 片不参与协调。和 share-card-modal 内 canInteract=false 的 wechat-moment-card
+    // 也兼容——它不会主动点 play，监听器不挂；即使被全局广播触发 pause 也无副作用。
+    useEffect(() => {
+      if (!narrationUrl) return;
+      const audio = narrationAudioRef.current;
+      if (!audio) return;
+      const NARRATION_PLAY_EVENT = "yj-moment-narration-play";
+      const handlePlay = () => {
+        window.dispatchEvent(
+          new CustomEvent(NARRATION_PLAY_EVENT, { detail: audio }),
+        );
+      };
+      const handleExternalPlay = (event: Event) => {
+        if ((event as CustomEvent).detail !== audio) {
+          audio.pause();
+        }
+      };
+      audio.addEventListener("play", handlePlay);
+      window.addEventListener(NARRATION_PLAY_EVENT, handleExternalPlay);
+      return () => {
+        audio.removeEventListener("play", handlePlay);
+        window.removeEventListener(NARRATION_PLAY_EVENT, handleExternalPlay);
+      };
     }, [narrationUrl]);
     const moreButtonRef = useRef<HTMLButtonElement>(null);
     const lastTapRef = useRef<number>(0);
@@ -419,6 +483,19 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               data-no-doubletap
               onClick={(event) => event.stopPropagation()}
             />
+          ) : null}
+          {narrationError ? (
+            // 走查移动端朋友圈/最新一轮 R1：之前 narrationError 只挂到「朗读」
+            // 按钮的 title attr——移动端长按才显示，普通 tap 完全看不到反馈，
+            // 用户点完听见啥都没动以为按钮坏了。inline 一条红字让失败原因
+            // 可见，role="alert" 让 SR 立刻朗读。tone 跟全局 #FA5151（同
+            // share-card-modal / wechat-comment-bar 错误条）一致。
+            <div
+              role="alert"
+              className="mt-2 rounded-[4px] bg-[rgba(250,81,81,0.08)] px-2.5 py-1.5 text-[12px] leading-[18px] text-[#fa5151]"
+            >
+              {narrationError}
+            </div>
           ) : null}
 
           {showFooterBlock ? (

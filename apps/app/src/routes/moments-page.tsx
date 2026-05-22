@@ -2790,6 +2790,11 @@ function MobileMomentsView({
                 cardId={`moment-post-${moment.id}`}
                 moment={moment}
                 ownerId={ownerId}
+                // 走查移动端朋友圈/最新一轮 R1：朗读按钮的 synthesizeMomentNarration
+                // 没拿到 apiBaseUrl 时走 requestLegacyApi 的全局默认 URL ——切到
+                // 私有部署 / 子帐号 world 时不会指到当前 active 账户的 cloud-api。
+                // 把当前 baseUrl 透下去（同 likeMutation 等所有写路径已透）。
+                apiBaseUrl={baseUrl}
                 liked={
                   Boolean(ownerId) &&
                   moment.likes.some((like) => like.authorId === ownerId)

@@ -1370,6 +1370,7 @@ export function ProfileMomentsPage() {
                 <PersonalAlbumRow
                   moment={moment}
                   ownerId={ownerId}
+                  apiBaseUrl={baseUrl}
                   showDate={dateLabel.showDate}
                   dayLabel={dateLabel.day}
                   monthLabel={dateLabel.monthLabel}
@@ -1527,6 +1528,7 @@ function isSameLocalDay(aIso: string, bIso: string): boolean {
 function PersonalAlbumRow({
   moment,
   ownerId,
+  apiBaseUrl,
   showDate,
   dayLabel,
   monthLabel,
@@ -1538,6 +1540,7 @@ function PersonalAlbumRow({
 }: {
   moment: Moment;
   ownerId: string | null;
+  apiBaseUrl?: string;
   showDate: boolean;
   dayLabel: string;
   monthLabel: string;
@@ -1568,6 +1571,10 @@ function PersonalAlbumRow({
           cardId={`moment-post-${moment.id}`}
           moment={moment}
           ownerId={ownerId}
+          // 走查移动端朋友圈/最新一轮 R1：朗读按钮 synthesizeMomentNarration
+          // 没拿到 apiBaseUrl 会走全局默认 URL，私有部署 / 多账户场景命错
+          // cloud-api。和 likeMutation 等写路径同款透传。
+          apiBaseUrl={apiBaseUrl}
           liked={
             Boolean(ownerId) &&
             moment.likes.some((like) => like.authorId === ownerId)

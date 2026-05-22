@@ -1113,6 +1113,10 @@ export function MobileFriendMomentsPage() {
                           cardId={`moment-post-${moment.id}`}
                           moment={moment}
                           ownerId={ownerId}
+                          // 走查移动端朋友圈/最新一轮 R1：synthesizeMomentNarration
+                          // 没拿到 apiBaseUrl 时走全局默认 URL，跨账户 / 私有部署
+                          // 命错 cloud-api。和 likeMutation 等写路径同款透传。
+                          apiBaseUrl={baseUrl}
                           liked={Boolean(
                             ownerId &&
                               moment.likes.some(
