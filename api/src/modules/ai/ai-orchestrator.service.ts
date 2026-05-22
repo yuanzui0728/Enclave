@@ -60,6 +60,10 @@ const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_AUDIO_BYTES = 2 * 1024 * 1024;
 const MAX_DOCUMENT_EXTRACTION_BYTES = 512 * 1024;
 const MAX_DOCUMENT_EXTRACTED_TEXT_CHARS = 1800;
+// cloud-api 反代前缀：/cloud/world-api/api/... → world child /api/...。
+// attachment.url 入库时是公网 absolute URL 带这个前缀，外部 LLM fetch 会 401，
+// 必须落本地磁盘走 base64。
+const CLOUD_WORLD_API_PROXY_PREFIX_RE = /^\/cloud\/world-api(?=\/|$)/;
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'audio/mp4',
   'audio/x-m4a',
@@ -350,7 +354,20 @@ export class AiOrchestratorService {
         return true;
       }
 
-      return !this.isPrivateHostname(parsed.hostname);
+      if (this.isPrivateHostname(parsed.hostname)) {
+        return false;
+      }
+
+      // /cloud/world-api/* 是 cloud-api 多租户反代路径，受 CloudClientAuthGuard
+      // 保护，必须带 cloud access token 才能访问；裸 URL 对 LLM 是 401。前端
+      // <img src> 会过 resolveAppMediaUrl 追加 ?token=，但 attachment.url 入库
+      // 时只 absolutize 没带 token，所以这条 URL 不能直传给 OpenAI/Anthropic 让
+      // 它远端 fetch。返回 false 让上层走本地磁盘 → base64 兜底。
+      if (CLOUD_WORLD_API_PROXY_PREFIX_RE.test(parsed.pathname)) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
@@ -438,9 +455,17 @@ export class AiOrchestratorService {
       // 兼容相对路径 (e.g. '/api/moments/media/foo.mp4')；MiniMax 资产现在
       // 一律存相对路径让浏览器跨域名通用，服务端转录路径要在此识别。
       const isAbsolute = /^https?:\/\//i.test(url);
-      const normalizedPath = isAbsolute
+      const rawPath = isAbsolute
         ? new URL(url).pathname.replace(/\/+$/, '')
         : url.split('?')[0].split('#')[0].replace(/\/+$/, '');
+      // 客户端 normalizeAttachmentAssetUrl 会把 `/api/chat/attachments/<file>`
+      // absolutize 成 `https://<host>/cloud/world-api/api/chat/attachments/<file>`
+      // 再入库。资产实际存在本地 world child 磁盘上，先把反代前缀剥掉再走原有
+      // 匹配逻辑——既避免重复维护两套前缀，也覆盖未来新增的 /api/* 资产路径。
+      const normalizedPath = rawPath.replace(
+        CLOUD_WORLD_API_PROXY_PREFIX_RE,
+        '',
+      );
       const fileName = decodeURIComponent(
         path.basename(normalizedPath.split('/').pop() ?? ''),
       );
