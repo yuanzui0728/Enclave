@@ -167,6 +167,17 @@ type MomentAvatarContext = {
 @Injectable()
 export class MomentsService implements OnModuleInit {
   private readonly logger = new Logger(MomentsService.name);
+  // 走查 R2：synthesizeMomentNarration TOCTOU — 两个并发请求（多端同时听同
+  // 一条贴 / iPad + iPhone / 同 owner curl 重试）都先 findOneBy → 都 miss
+  // 缓存 → 都各自打一次 MiniMax TTS HD，11000/天配额白白烧两份。前端
+  // wechat-moment-card 自带 inflightRef 只挡同卡同帧双击，跨设备/客户端的
+  // race 完全靠服务端兜。per-postId Promise 表共享 in-flight；任一抛错时
+  // 立刻删 key 让下次重试重新触发；resolve 后也立刻删（不留长 cache，
+  // 二次读走 generationMetadata.narration 的真缓存路径）。
+  private readonly inFlightNarrations = new Map<
+    string,
+    Promise<{ audioUrl: string; durationMs?: number; cached: boolean }>
+  >();
 
   constructor(
     private readonly ai: AiOrchestratorService,
@@ -450,6 +461,18 @@ export class MomentsService implements OnModuleInit {
   // 走 AiOrchestratorService.synthesizeSpeech，所以自动复用现有 token-plan 配额 +
   // 多 provider fallback 链，失败也走标准 AppError。
   async synthesizeMomentNarration(
+    postId: string,
+  ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    const existingInflight = this.inFlightNarrations.get(postId);
+    if (existingInflight) return existingInflight;
+    const job = this.synthesizeMomentNarrationInner(postId).finally(() => {
+      this.inFlightNarrations.delete(postId);
+    });
+    this.inFlightNarrations.set(postId, job);
+    return job;
+  }
+
+  private async synthesizeMomentNarrationInner(
     postId: string,
   ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
     // 走查 R1：原版直接 findOneBy postId 然后合成，**没做可见性检查** ——

@@ -5,11 +5,18 @@ import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 
 // 触发"实时知识"搜索的关键词清单（中英混用，覆盖典型时效性追问）。
 // 命中任一即认为这条用户消息可能需要联网；不命中则跳过避免烧配额。
+//
+// 走查 R2：原版中文模式全部用 `\b...\b` —— JS regex 的 `\b` 是 ASCII word
+// boundary（[A-Za-z0-9_] 与非 word 字符之间），中文字符是非 word，意味着
+// "最近怎么样" "今天天气" 这类 100% 中文输入里 `\b最近\b` 永远匹配不到。
+// 实测确认：5 条典型中文样本里 0 hit。整个 web_search 功能对中文用户=死的。
+// 修法：中文模式纯子串匹配（不要 `\b`），英文模式继续用 `\b` 防止
+// "recently" 被嵌在 "torrent ly" 之类里误触。
 const TRIGGER_PATTERNS: readonly RegExp[] = [
-  // 中文：时间相关
-  /\b最近\b/, /\b今天\b/, /\b现在\b/, /\b最新\b/, /\b刚刚\b/, /\b这两天\b/,
-  /\b近期\b/, /\b前几天\b/, /\b今年\b/, /\b目前\b/, /\b最新版\b/, /\b最近发生\b/,
-  /\b几号\b/, /\b几月\b/, /\b上周\b/, /\b这周\b/,
+  // 中文：时间相关（必须纯子串匹配，中文无 word boundary）
+  /最近/, /今天/, /现在/, /最新/, /刚刚/, /这两天/,
+  /近期/, /前几天/, /今年/, /目前/, /最新版/,
+  /几号/, /几月/, /上周/, /这周/, /本周/, /本月/,
   // 英文
   /\brecently\b/i, /\btoday\b/i, /\blatest\b/i, /\bbreaking\b/i,
   /\bcurrent(ly)?\b/i, /\bright now\b/i, /\bjust announced\b/i,

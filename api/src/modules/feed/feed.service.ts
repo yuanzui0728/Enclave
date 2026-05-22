@@ -183,6 +183,14 @@ function sanitizeForwardQuip(raw: string | undefined | null): string {
 @Injectable()
 export class FeedService implements OnModuleInit {
   private readonly logger = new Logger(FeedService.name);
+  // 走查 R2：synthesizeFeedNarration 与 MomentsService 同款 TOCTOU——
+  // 并发请求都 miss 缓存 → 各自烧一次 11000/天 TTS HD 配额。per-postId
+  // Promise 表共享 in-flight；resolve / reject 后立即删 key，下次走真
+  // 缓存（statsPayload.narration）路径。
+  private readonly inFlightNarrations = new Map<
+    string,
+    Promise<{ audioUrl: string; durationMs?: number; cached: boolean }>
+  >();
 
   constructor(
     @InjectRepository(FeedPostEntity)
@@ -762,6 +770,18 @@ export class FeedService implements OnModuleInit {
   // 缓存放在 statsPayload.narration，textHash 不匹配时重合成。
   // voice 优先级：character author 的 voicePreset → 全局默认。
   async synthesizeFeedNarration(
+    postId: string,
+  ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
+    const existingInflight = this.inFlightNarrations.get(postId);
+    if (existingInflight) return existingInflight;
+    const job = this.synthesizeFeedNarrationInner(postId).finally(() => {
+      this.inFlightNarrations.delete(postId);
+    });
+    this.inFlightNarrations.set(postId, job);
+    return job;
+  }
+
+  private async synthesizeFeedNarrationInner(
     postId: string,
   ): Promise<{ audioUrl: string; durationMs?: number; cached: boolean }> {
     // 走查 R1：和 like/comment 同款先 worldOwner gate（确保请求带有效世界 token，
