@@ -961,7 +961,12 @@ export function WelcomePage() {
         return;
       }
 
-      setNotice(describeCloudSession(t, session));
+      // 不再 setNotice(describeCloudSession)：currentCloudSession 渲染（renderEntryStep
+      // 1720 行那一格）已经用 mobileNoticeTone 按 session.status 出正确色调的 notice，
+      // 这里再写一份 success 绿色的 notice 跟它并存，session.status=waiting 时尤其奇怪
+      // ——绿色"正在创建世界..."贴在 info 色"正在创建世界..."上面，3.2s 后才消失。
+      // ready 状态下也多余：connectToResolvedCloudWorld 自己会 setNotice("已连接到云
+      // 世界。")，立刻覆盖。
 
       if (session.status === "ready") {
         // 见 continueWithCloudWorld 的同名修复：内联 await 与 useEffect 监听
@@ -1213,7 +1218,9 @@ export function WelcomePage() {
         return;
       }
 
-      setNotice(describeCloudSession(t, session));
+      // 同 continueWithGoogleSignIn：不再 setNotice(describeCloudSession)，避免跟
+      // currentCloudSession 渲染的 notice 视觉重复且色调对不上（waiting 状态本该是
+      // info，setNotice 写的 notice 是硬编码 success 绿色）。
 
       if (session.status === "ready") {
         // 老用户回归 / 世界已经在跑：resolveMyCloudWorldAccess 直接回 status=ready，
