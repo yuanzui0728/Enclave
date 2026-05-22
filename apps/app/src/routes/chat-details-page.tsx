@@ -947,7 +947,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     dangerSheetAction === "hide"
       ? {
           title: t(msg`隐藏聊天`),
-          description: t(msg`该聊天会先从消息列表中隐藏，收到新消息后会再次出现。`),
+          // self 镜像：自我对话不会有"对方发来新消息"重新弹回列表，描述
+          // 改成中性的"再写一条新内容就会回来"贴近实际行为。
+          description: isSelfMirror
+            ? t(msg`该聊天会先从消息列表中隐藏，下次再写新内容时会重新出现。`)
+            : t(msg`该聊天会先从消息列表中隐藏，收到新消息后会再次出现。`),
           confirmLabel: t(msg`隐藏聊天`),
           confirmDescription: t(msg`不删除现有聊天记录`),
           confirmDanger: false,
@@ -956,8 +960,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       : dangerSheetAction === "clear"
         ? {
             title: t(msg`清空聊天记录`),
-            description:
-              t(msg`仅清空当前聊天历史消息，对方资料和会话入口会继续保留。`),
+            // self 镜像：自我对话没有"对方资料"概念。
+            description: isSelfMirror
+              ? t(msg`仅清空这段自我对话的历史消息，会话入口会继续保留。`)
+              : t(msg`仅清空当前聊天历史消息，对方资料和会话入口会继续保留。`),
             confirmLabel: t(msg`清空聊天记录`),
             confirmDescription: t(msg`此操作不可恢复`),
             confirmDanger: true,
@@ -1523,15 +1529,25 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileDetailsActionSheet
             open={managementSheetOpen}
             title={t(msg`聊天管理`)}
-            description={t(
-              msg`对 ${targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
-            )}
+            // self 镜像 sheet 里没有「投诉 / 拉黑」action，描述也对应去掉
+            // 「或安全操作」尾巴，避免和实际可选项不一致。
+            description={
+              isSelfMirror
+                ? t(
+                    msg`对 ${targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)} 进行隐藏或清空操作。`,
+                  )
+                : t(
+                    msg`对 ${targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
+                  )
+            }
             onClose={() => setManagementSheetOpen(false)}
             actions={[
               {
                 key: "hide",
                 label: t(msg`隐藏聊天`),
-                description: t(msg`先从消息列表隐藏，后续有新消息时再次出现`),
+                description: isSelfMirror
+                  ? t(msg`先从消息列表隐藏，下次写新内容时会重新出现`)
+                  : t(msg`先从消息列表隐藏，后续有新消息时再次出现`),
                 disabled: busy,
                 onClick: () => {
                   setManagementSheetOpen(false);
@@ -1541,7 +1557,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               {
                 key: "clear",
                 label: t(msg`清空聊天记录`),
-                description: t(msg`仅清空这段聊天，不影响联系人关系`),
+                description: isSelfMirror
+                  ? t(msg`仅清空这段自我对话的历史，会话入口保留`)
+                  : t(msg`仅清空这段聊天，不影响联系人关系`),
                 danger: true,
                 disabled: busy,
                 onClick: () => {
