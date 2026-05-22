@@ -124,6 +124,16 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     const [narrationUrl, setNarrationUrl] = useState<string | null>(null);
     const [narrationError, setNarrationError] = useState<string | null>(null);
     const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
+    // 走查本轮 R1：同帧双击守卫——之前 handleListenTap 只看 React state
+    // `narrationLoading`，但 setNarrationLoading(true) 要等下一次 commit；同帧
+    // 第二次 click 闭包读到的还是旧 false，会走到 setNarrationLoading(true) +
+    // synthesizeMomentNarration 第二次。结果：同一条 moment 同时发出 2 个 TTS
+    // 合成请求，MiniMax 配额白白扣两次（每条 ~450/5h 免费额度），race 中后
+    // resolve 的 setNarrationUrl 把先 resolve 的 audio URL 盖掉。和 like /
+    // comment / delete 同款同帧双击同步锁，ref 同步赋值跳过 React commit 时机
+    // 风险。同时把已有缓存音频的 toggle 路径也守起来——慢点击在 audio.play()
+    // 与 .pause() 间反复触发不算 bug 但加锁可避免 audio 状态机抖动。
+    const narrationInflightRef = useRef(false);
     const hasNarratableText = (moment.text?.trim().length ?? 0) > 0;
     // 走查移动端朋友圈/最新一轮 R1：apiBaseUrl 切换（账户切换）时，narrationUrl
     // 是上一个账户的 audio URL（path 里带 account-scoped token），直接挂到 audio
@@ -143,6 +153,10 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
       // 列表 unmount）吞掉；但留着 true 会让按钮在新账户里一直 disabled，
       // 极端情况（同 moment.id 跨账户存在 / dev hot reload）下用户无法重试。
       setNarrationLoading(false);
+      // 走查本轮 R1：narrationInflightRef 同步守卫也得清——旧账户的 fetch 还在
+      // 路上，finally 会把它清掉，但中间窗口里用户在新账户同一张卡上点朗读会
+      // 被 ref guard 早返"假死"。和 narrationLoading 一起在切账户瞬间释放。
+      narrationInflightRef.current = false;
     }, [apiBaseUrl]);
     // 走查 R3：mid-flight 切账户 race —— 用户在 A 账户点「朗读」、TTS 还在合成
     // 时切到 B，apiBaseUrl effect 同步把 narrationUrl 清成 null；但 await 在路上
@@ -171,6 +185,9 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
     }, []);
     const handleListenTap = async (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
+      // 同帧双击守卫——见 narrationInflightRef 注释。React state narrationLoading
+      // 单独不够：它要下一次 commit 后才翻 true，同帧第二次 click 仍读 false。
+      if (narrationInflightRef.current) return;
       if (narrationLoading) return;
       // 第二次点：已加载 → toggle 播放/暂停
       const existing = narrationAudioRef.current;
@@ -187,6 +204,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
         }
         return;
       }
+      narrationInflightRef.current = true;
       setNarrationLoading(true);
       setNarrationError(null);
       // 走查 R3：钉住请求时刻的 apiBaseUrl，resolve / reject / settle 之前先比对
@@ -209,6 +227,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           describeRequestError(err, t(msg`朗读生成失败`)),
         );
       } finally {
+        narrationInflightRef.current = false;
         if (narrationRequestBaseUrlRef.current === requestedBaseUrl) {
           setNarrationLoading(false);
         }
