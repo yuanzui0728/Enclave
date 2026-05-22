@@ -358,7 +358,12 @@ export function ProfileMomentsPage() {
         id: tempId,
         postId: momentId,
         authorId: ownerId,
-        authorName: ownerName ?? t(msg`我`),
+        // 走查移动端发现-朋友圈/新一轮 R1：和 use-optimistic-like.ts L107 /
+        // moments-page.tsx L759 / friend-moments-page / mobile-friend-moments-page
+        // 同款修法 —— `??` 只 catch null/undefined；ownerName 为 "" / "   " 时
+        // optimistic comment 的 authorName 落地为空，wechat-moment-card 渲染评论行
+        // 变成 "：评论内容"（前面没人）。`?.trim() ||` 兜下空字符串。
+        authorName: ownerName?.trim() || t(msg`我`),
         authorAvatar: ownerAvatar ?? "",
         authorType: "user",
         text,

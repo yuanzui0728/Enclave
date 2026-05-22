@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -313,7 +320,14 @@ export function MobileFriendMomentsPage() {
         id: tempId,
         postId: momentId,
         authorId: ownerId,
-        authorName: ownerUsername ?? t(msg`我`),
+        // 走查移动端发现-朋友圈/新一轮 R1：和 use-optimistic-like.ts L107 /
+        // moments-page.tsx L759 同款修法 —— `??` 只 catch null/undefined；
+        // ownerUsername 为 "" / "   "（store setter 用 nullish coalescing 可能
+        // 保留显式 ""）时 optimistic comment 的 authorName 落地为空，wechat-
+        // moment-card 渲染评论行是 `<span>{authorName}</span>...<span>：{cleanCommentText}</span>`，
+        // authorName 为空时 UI 上是 "：评论内容"（前面没人，看着像 UI 坏）。
+        // 用 `?.trim() ||` 兜下空字符串。
+        authorName: ownerUsername?.trim() || t(msg`我`),
         authorAvatar: ownerAvatar ?? "",
         authorType: "user",
         text,
@@ -723,6 +737,26 @@ export function MobileFriendMomentsPage() {
     return true;
   }
 
+  // 走查移动端发现-朋友圈/新一轮 R1 (perf)：cover 的 onAvatarTap 走稳定引用 ——
+  // 见 WeChatMomentsCover 用处的注释。这里只读 mutationGuardRef.current 与 navigate
+  // 做导航，handler 本身不需要 deps，整个生命周期内引用稳定，memo 命中率最高。
+  const handleCoverAvatarTap = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      const guard = mutationGuardRef.current;
+      if (!guard.characterId) return;
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId: guard.characterId },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: `/friend-moments/${guard.characterId}`,
+          returnHash: currentRouteHash || undefined,
+        }),
+      });
+    },
+    [navigate, currentRouteHash],
+  );
+
   function openCharacterDetail() {
     if (!resolvedCharacterId) {
       return false;
@@ -940,10 +974,15 @@ export function MobileFriendMomentsPage() {
           <WeChatMomentsCover
             nickname={displayName}
             avatarUrl={character?.avatar}
-            onAvatarTap={(event) => {
-              event.stopPropagation();
-              openCharacterDetail();
-            }}
+            // 走查移动端发现-朋友圈/新一轮 R1 (perf)：WeChatMomentsCover 是 memo
+            // 包裹的，但 onAvatarTap 之前是 inline 箭头，每次父组件 re-render（评论
+            // 草稿 setCommentDrafts 每键、点赞 optimistic、notice 2.4s 自清、share
+            // modal 开关）都换一份新 fn 引用 → memo 浅比 fail → cover 整张重渲：
+            // safeNickname trim + Array.from initial 取首字 + 几段 cn 都白跑。
+            // wechat-moments-cover.tsx 自己注释也说"传也是 stable arrow（父级有
+            // useCallback）"——这里之前漏了 useCallback。挂稳后 commentDrafts
+            // 高频 setState 不再带动 cover 重渲。
+            onAvatarTap={handleCoverAvatarTap}
           />
 
           {notice ? (
