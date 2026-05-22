@@ -1502,7 +1502,15 @@ function MobileNoteEditor({
 
       <UnsavedSheet
         open={closeConfirmOpen}
+        // 走查 R4（新一轮）：原 pending 只看 saveMutation.isPending。如果 dirty
+        // 时附件还在上传（attachmentPending=true）就点 Back → sheet 弹出 →
+        // 点"保存并关闭"，handleSaveAndClose → handleSave → mutationFn 用此刻
+        // 的 editorState 拼 payload，但 createdAssets 还没合进 editorState.assets
+        // → server 拿到的笔记缺一半 asset。把"保存并关闭"也卡掉 attachmentPending；
+        // saveDisabled 兜底，让 UnsavedSheet 上的 onSave 按钮在附件上传期变灰，
+        // 用户必须等附件完成或选择"不保存 / 继续编辑"。
         pending={saveMutation.isPending}
+        saveDisabled={attachmentPending}
         onClose={() => setCloseConfirmOpen(false)}
         onDiscard={() => void handleDiscardAndClose()}
         onSave={() => void handleSaveAndClose()}
@@ -1637,12 +1645,14 @@ function ConfirmSheet({
 function UnsavedSheet({
   open,
   pending,
+  saveDisabled = false,
   onClose,
   onDiscard,
   onSave,
 }: {
   open: boolean;
   pending: boolean;
+  saveDisabled?: boolean;
   onClose: () => void;
   onDiscard: () => void;
   onSave: () => void;
@@ -1670,10 +1680,15 @@ function UnsavedSheet({
           </div>
         </div>
         <div className="flex flex-col gap-2 border-t border-[color:var(--border-faint)] px-5 py-4">
+          {saveDisabled ? (
+            <div className="rounded-[10px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+              {t(msg`附件还在上传，完成后再保存或者直接放弃。`)}
+            </div>
+          ) : null}
           <Button
             variant="primary"
             onClick={onSave}
-            disabled={pending}
+            disabled={pending || saveDisabled}
             className="h-11 rounded-[12px] bg-[color:var(--brand-primary)] text-[15px] text-white hover:opacity-95"
           >
             {pending ? t(msg`保存中...`) : t(msg`保存并关闭`)}
