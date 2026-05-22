@@ -3912,14 +3912,14 @@ export class FeedService implements OnModuleInit {
   }
 
   private canOwnerInteractWithFeedPost(
-    post: FeedPostEntity,
-    avatarContext?: FeedAvatarContext,
+    _post: FeedPostEntity,
+    _avatarContext?: FeedAvatarContext,
   ): boolean {
-    if (post.authorType !== 'character') return true;
-    // 广场（surface='feed'）所有人都能互动；视频号仍保留好友限制。
-    if (post.surface === 'feed') return true;
-    if (!avatarContext) return false;
-    return avatarContext.ownerFriendCharacterIds.has(post.authorId);
+    // 2026-05-22：视频号互动放开，与广场一致——非好友角色的帖子也允许 like /
+    // comment / favorite / comment_like / reply。canInteract 字段保留并恒为
+    // true，前端旧的 cannotInteract 分支永远不命中；DTO 不变以保持前后端兼
+    // 容。如果未来要按场景重新加限制，恢复原 surface + friend set 判断即可。
+    return true;
   }
 
   private serializePost(
@@ -4282,21 +4282,10 @@ export class FeedService implements OnModuleInit {
   }
 
   private async assertOwnerCanInteractWithPost(postId: string) {
-    const post = await this.assertPostExists(postId);
-    if (post.authorType !== 'character') return post;
-    // 广场（surface='feed'）开放给所有人评论 / 点赞，不再要求加好友。
-    if (post.surface === 'feed') return post;
-    const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendIds = await this.characters.getActiveFriendCharacterIdSet(
-      owner.id,
-    );
-    if (!friendIds.has(post.authorId)) {
-      throw new AppError('FEED_NOT_FRIEND', {
-        status: HttpStatus.FORBIDDEN,
-        legacyMessage: '需先加为好友才能互动',
-      });
-    }
-    return post;
+    // 2026-05-22：视频号互动放开，与广场一致——不再校验好友关系。
+    // FEED_NOT_FRIEND 错误码在 contracts / error-translate 里保留以便日后恢复，
+    // 但本路径不再抛出。仅保留 post 存在性校验作为 controller 调用点的稳定入口。
+    return this.assertPostExists(postId);
   }
 
   async hasFeedPostSyncedFromMoment(momentPostId: string): Promise<boolean> {

@@ -1336,32 +1336,15 @@ export function ChannelsPage() {
 
   const visiblePosts = channelsQuery.data?.posts ?? EMPTY_CHANNEL_POSTS;
 
-  // 推荐流里有大量非好友角色的帖子，后端对这些 post 的 like / comment /
-  // favorite / comment_like 都会 403 FEED_NOT_FRIEND。前端原本没有 gating，按
-  // 钮照点 → 用户看到 403 而不是友好提示。这里集中拦在 mutate 前，提示一句
-  // 后直接 return；share / view / not-interested / 转发 仍开放给非好友。
-  function ensureCanInteract(post: { canInteract?: boolean } | undefined | null) {
-    if (!post || post.canInteract === false) {
-      setNoticeTone("info");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(t(msg`需先加为好友才能互动。`));
-      return false;
-    }
+  // 2026-05-22：视频号互动放开，与广场一致——后端 canInteract 字段对所有
+  // channels post 恒为 true，前端 mutate 前的 gate 不再生效。保留函数名以
+  // 避免改所有调用点；如果未来要按场景重新加好友限制，恢复原 canInteract
+  // / desktopWorkspacePosts lookup 判断即可。
+  function ensureCanInteract(_post: { canInteract?: boolean } | undefined | null) {
     return true;
   }
-  function ensureCommentPostCanInteract(postId: string) {
-    // 走查 2026-05-18 新会话 R1（本轮）：原 lookup 只看 visiblePosts —— 但
-    // desktop 用户走 deep-link 进一条不在 home 推荐流里的 post 时，post 是
-    // 通过 desktopMissingRoutePostQuery 单独拉回再 prepend 到 desktopWork
-    // spacePosts 的；visiblePosts 没那条 post，find 返回 undefined →
-    // ensureCanInteract(undefined) 走 `!post` 早返 → 用户看到「需先加为好
-    // 友才能互动」即便那帖来自朋友。同事被链接分享视频号链接 → 进去想
-    // 点赞 → 误以为对方拉黑了自己。
-    // 改成在 desktopWorkspacePosts 里查（mobile 路径上 desktopWorkspace
-    // Posts === visiblePosts，行为不变）。
-    const post = desktopWorkspacePosts.find((p) => p.id === postId);
-    return ensureCanInteract(post);
+  function ensureCommentPostCanInteract(_postId: string) {
+    return true;
   }
   const desktopMissingRoutePostId =
     isDesktopLayout &&
