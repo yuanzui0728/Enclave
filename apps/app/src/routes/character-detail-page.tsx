@@ -749,7 +749,7 @@ export function CharacterDetailPage() {
       setNotice({
         tone: "success",
         message: enabled
-          ? t(msg`已开启默认语音回复（消耗 token plan 配额）。`)
+          ? t(msg`已开启默认语音回复。`)
           : t(msg`已关闭默认语音回复。`),
       });
       await queryClient.invalidateQueries({
