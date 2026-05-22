@@ -678,8 +678,20 @@ function MomentVideoViewerOverlay({
     // 到刷新整页（实测桌面 Chrome 起音 → 关 viewer，音乐还在响）。和
     // 51b8980a (视频号 ChannelVideoSurface) 同模式：unmount 走 cleanup 主动
     // pause，避免「关掉看了还能听到」。
+    //
+    // 走查移动端朋友圈走查/Round 1 (perf)：仅 pause() 不够 —— controls 播放期间
+    // Chromium / iOS Safari 把整段视频 demux 后的 decoded buffer（H.264/HEVC
+    // 解码帧 + 音频 PCM 缓冲）一直挂到 DOM 节点真正被 GC 才释放。WKWebView 下
+    // GC 时机不可预测，用户连续打开 3-5 条不同视频后低内存机型容易把整页 OOM
+    // 重置（朋友圈一打开 ⋯ → 分享 / 评论卡顿明显）。和同文件 moment-compose-
+    // media.ts buildMomentVideoPoster (line 720-721 注释"4K 视频 ≈40MB，跨多次
+    // picker 累积容易把低内存机型推到 OOM") + readVideoMetadata cleanup
+    // (line 652-656) 同款 fix：removeAttribute("src") + load() 显式把 <video>
+    // 切回空 media 状态，浏览器立刻释放 demux/decode 缓冲，不依赖 GC 时机。
     return () => {
       el.pause();
+      el.removeAttribute("src");
+      el.load();
     };
   }, []);
 
