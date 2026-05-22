@@ -12,6 +12,7 @@ export const WIKI_SYNC_CONTENT_FIELDS = [
   'triggerScenes',
   'relationship',
   'relationshipType',
+  'region',
 ] as const;
 
 export type WikiSyncContentField = (typeof WIKI_SYNC_CONTENT_FIELDS)[number];

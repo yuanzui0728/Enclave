@@ -174,6 +174,8 @@ msgid "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 msgstr "구체적인 관계를 입력하세요. 예: 스승 / 집주인 / 이웃"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1224
+#: apps/wiki/src/components/conflict-resolver.tsx:18
+#: apps/wiki/src/components/snapshot-diff.tsx:24
 #: apps/wiki/src/routes/character-page.tsx:525
 msgid "地区"
 msgstr "지역"
@@ -559,7 +561,7 @@ msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用
 msgstr "이미 입력한 필드까지 AI 가 수정하도록 하려면 \"최적화\" 작업이 됩니다 — 새로 생성된 내용으로 섹션 전체가 덮어쓰여집니다(신성한 3개 필드 — 이름·관계·소개 — 는 항상 보존됩니다). 최적화를 진행할까요?"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1963
-#: apps/wiki/src/components/conflict-resolver.tsx:190
+#: apps/wiki/src/components/conflict-resolver.tsx:191
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
 #: apps/wiki/src/routes/character-page.tsx:225
@@ -665,35 +667,35 @@ msgstr "전문 분야"
 msgid "触发场景"
 msgstr "트리거 시나리오"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:116
+#: apps/wiki/src/components/conflict-resolver.tsx:117
 msgid "编辑冲突"
 msgstr "편집 충돌"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:118
+#: apps/wiki/src/components/conflict-resolver.tsx:119
 msgid "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 msgstr ": 서버 버전에서, 당신이 수정한 필드를 다른 사람도 수정했습니다. 필드별로 유지할 버전을 선택하고 다시 제출하세요."
 
-#: apps/wiki/src/components/conflict-resolver.tsx:125
+#: apps/wiki/src/components/conflict-resolver.tsx:126
 msgid "{fieldLabel} 取值选择"
 msgstr "{fieldLabel} 값 선택"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:150
+#: apps/wiki/src/components/conflict-resolver.tsx:151
 msgid "{fieldLabel} 使用服务器当前版本"
 msgstr "{fieldLabel}: 서버의 현재 값 사용"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:159
+#: apps/wiki/src/components/conflict-resolver.tsx:160
 msgid "服务器当前"
 msgstr "서버 현재"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:168
+#: apps/wiki/src/components/conflict-resolver.tsx:169
 msgid "{fieldLabel} 使用我的修改"
 msgstr "{fieldLabel}: 내 수정 사용"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:177
+#: apps/wiki/src/components/conflict-resolver.tsx:178
 msgid "我的修改"
 msgstr "내 변경"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:187
+#: apps/wiki/src/components/conflict-resolver.tsx:188
 msgid "应用所选并重新提交"
 msgstr "선택 적용 및 재제출"
 
@@ -1088,15 +1090,15 @@ msgstr "변경 후"
 msgid "改前"
 msgstr "변경 전"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:26
+#: apps/wiki/src/components/snapshot-diff.tsx:27
 msgid "旧"
 msgstr "이전"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:27
+#: apps/wiki/src/components/snapshot-diff.tsx:28
 msgid "新"
 msgstr "신규"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:28
+#: apps/wiki/src/components/snapshot-diff.tsx:29
 msgid "未检测到字段变化。"
 msgstr "필드 변경이 감지되지 않았습니다."
 

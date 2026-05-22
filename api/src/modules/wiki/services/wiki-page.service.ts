@@ -159,16 +159,27 @@ export class WikiPageService {
       factorySnapshot?.blueprint.draftRecipe ??
       pendingRevision?.recipeSnapshot ??
       null;
-    const content = visibleRevision
+    const rawContent = visibleRevision
       ? visibleRevision.contentSnapshot
       : character
         ? snapshotFromCharacter(character as unknown as Record<string, unknown>)
         : pendingRevision?.contentSnapshot;
-    if (!content) {
+    if (!rawContent) {
       throw new AppError('WIKI_PAGE_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
         legacyMessage: `角色 ${characterId} 不存在`,
       });
+    }
+    // region 回填：2026-05-22 起把 region 加入 WikiContentSnapshot，但**老**
+    // revision 的 contentSnapshot 不带这个 key（typeof === 'undefined'）。如果直接
+    // 把 undefined 喂回前端编辑器，hydrate 出来 region 输入框是空，用户编辑别的
+    // 字段保存后，pickWikiContent 会把 region 写成 ""，applySnapshotToCharacter
+    // 进而把已有的 character.region（preset / 历史填过的）清空。读路径上从
+    // character row 兜一次，保证前端拿到的 visibleContent.region 与 character
+    // 列一致，round-trip 不丢字段。clone 一份避免改坏 typeorm 返回的引用。
+    const content: WikiContentSnapshot = { ...rawContent };
+    if (typeof content.region !== 'string' && character?.region) {
+      content.region = character.region;
     }
     const drift = await this.computeDrift(
       character,

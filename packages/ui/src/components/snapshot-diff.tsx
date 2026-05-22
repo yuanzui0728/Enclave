@@ -9,6 +9,7 @@ export type SnapshotDiffShape = {
   triggerScenes?: string[] | null;
   relationship?: string | null;
   relationshipType?: string | null;
+  region?: string | null;
 };
 
 // English defaults keep this UI primitive surface-agnostic; surface apps pass
@@ -23,6 +24,7 @@ const DEFAULT_FIELD_LABELS: Record<keyof SnapshotDiffShape, string> = {
   triggerScenes: "Trigger scenes",
   relationship: "Relationship",
   relationshipType: "Relationship type",
+  region: "Region",
 };
 // i18n-ignore-end
 

@@ -21,6 +21,7 @@ export function SnapshotDiff(props: SnapshotDiffProps) {
         triggerScenes: t`触发场景`,
         relationship: t`关系描述`,
         relationshipType: t`关系类型`,
+        region: t`地区`,
         ...props.fieldLabels,
       }}
       oldLabel={props.oldLabel ?? t`旧`}

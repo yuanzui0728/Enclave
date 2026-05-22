@@ -676,11 +676,25 @@ export function diffFields(
 ): WikiContentField[] {
   const changed: WikiContentField[] = [];
   for (const key of WIKI_CONTENT_FIELDS) {
-    const a = JSON.stringify(before[key] ?? null);
-    const b = JSON.stringify(after[key] ?? null);
+    const beforeRaw = before[key];
+    const afterRaw = after[key];
+    // 把 undefined / null / "" / [] 都归一为 "空"，避免幽灵变更：
+    // 老 revision 没有 region 字段 (undefined) 与新 form 提交空 region ("") 在
+    // JSON.stringify 下并不相等，会让任意"动 bio"的 edit 也把 region 拖进 changed
+    // 列表 → 显示 "你改了 region" 但其实没改。其它字段（personality / triggerScenes）
+    // 之所以没碰到这坑，是因为现有 schema 兜底已经把缺失项变成 ""/[]。
+    if (isBlankFieldValue(beforeRaw) && isBlankFieldValue(afterRaw)) continue;
+    const a = JSON.stringify(beforeRaw ?? null);
+    const b = JSON.stringify(afterRaw ?? null);
     if (a !== b) changed.push(key);
   }
   return changed;
+}
+
+function isBlankFieldValue(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  return false;
 }
 
 function str(value: unknown, fallback = ''): string {

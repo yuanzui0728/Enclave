@@ -174,6 +174,8 @@ msgid "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 msgstr "具体的な関係を入力してください。例：師匠 / 大家 / 隣人"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1224
+#: apps/wiki/src/components/conflict-resolver.tsx:18
+#: apps/wiki/src/components/snapshot-diff.tsx:24
 #: apps/wiki/src/routes/character-page.tsx:525
 msgid "地区"
 msgstr "地域"
@@ -559,7 +561,7 @@ msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用
 msgstr "入力済みの項目も AI に修正させる場合は「最適化」操作となり、セクション全体が新たに生成された内容で上書きされます（神聖な 3 項目 — 名前・関係・紹介 — は常に保持されます）。最適化を実行しますか？"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1963
-#: apps/wiki/src/components/conflict-resolver.tsx:190
+#: apps/wiki/src/components/conflict-resolver.tsx:191
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
 #: apps/wiki/src/routes/character-page.tsx:225
@@ -665,35 +667,35 @@ msgstr "専門分野"
 msgid "触发场景"
 msgstr "トリガーシーン"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:116
+#: apps/wiki/src/components/conflict-resolver.tsx:117
 msgid "编辑冲突"
 msgstr "編集競合"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:118
+#: apps/wiki/src/components/conflict-resolver.tsx:119
 msgid "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 msgstr "：サーバー側のバージョンで、あなたが変更したフィールドが他の人に変更されています。フィールドごとに残す版を選んでから再送信してください。"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:125
+#: apps/wiki/src/components/conflict-resolver.tsx:126
 msgid "{fieldLabel} 取值选择"
 msgstr "{fieldLabel} の値を選択"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:150
+#: apps/wiki/src/components/conflict-resolver.tsx:151
 msgid "{fieldLabel} 使用服务器当前版本"
 msgstr "{fieldLabel}: サーバーの現在値を使う"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:159
+#: apps/wiki/src/components/conflict-resolver.tsx:160
 msgid "服务器当前"
 msgstr "サーバー現在"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:168
+#: apps/wiki/src/components/conflict-resolver.tsx:169
 msgid "{fieldLabel} 使用我的修改"
 msgstr "{fieldLabel}: 自分の編集を使う"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:177
+#: apps/wiki/src/components/conflict-resolver.tsx:178
 msgid "我的修改"
 msgstr "自分の変更"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:187
+#: apps/wiki/src/components/conflict-resolver.tsx:188
 msgid "应用所选并重新提交"
 msgstr "選択を適用して再送信"
 
@@ -1088,15 +1090,15 @@ msgstr "変更後"
 msgid "改前"
 msgstr "変更前"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:26
+#: apps/wiki/src/components/snapshot-diff.tsx:27
 msgid "旧"
 msgstr "旧"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:27
+#: apps/wiki/src/components/snapshot-diff.tsx:28
 msgid "新"
 msgstr "新"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:28
+#: apps/wiki/src/components/snapshot-diff.tsx:29
 msgid "未检测到字段变化。"
 msgstr "フィールドの変更は検出されませんでした。"
 

@@ -174,6 +174,8 @@ msgid "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 msgstr "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1224
+#: apps/wiki/src/components/conflict-resolver.tsx:18
+#: apps/wiki/src/components/snapshot-diff.tsx:24
 #: apps/wiki/src/routes/character-page.tsx:525
 msgid "地区"
 msgstr "地区"
@@ -559,7 +561,7 @@ msgid "如果想让 AI 也修改已填字段，是「优化」操作——会用
 msgstr "如果想让 AI 也修改已填字段，是「优化」操作——会用新生成的内容 覆盖整节（名称、关系、简介这 3 个 sacred 字段始终保留）。是否进行优化？"
 
 #: apps/wiki/src/components/character-edit-form.tsx:1963
-#: apps/wiki/src/components/conflict-resolver.tsx:190
+#: apps/wiki/src/components/conflict-resolver.tsx:191
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
 #: apps/wiki/src/routes/character-page.tsx:225
@@ -665,35 +667,35 @@ msgstr "专长领域"
 msgid "触发场景"
 msgstr "触发场景"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:116
+#: apps/wiki/src/components/conflict-resolver.tsx:117
 msgid "编辑冲突"
 msgstr "编辑冲突"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:118
+#: apps/wiki/src/components/conflict-resolver.tsx:119
 msgid "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 msgstr "：服务器上的版本已被其他人修改了你也改过的字段。逐字段选择保留哪个版本后重新提交。"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:125
+#: apps/wiki/src/components/conflict-resolver.tsx:126
 msgid "{fieldLabel} 取值选择"
 msgstr "{fieldLabel} 取值选择"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:150
+#: apps/wiki/src/components/conflict-resolver.tsx:151
 msgid "{fieldLabel} 使用服务器当前版本"
 msgstr "{fieldLabel} 使用服务器当前版本"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:159
+#: apps/wiki/src/components/conflict-resolver.tsx:160
 msgid "服务器当前"
 msgstr "服务器当前"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:168
+#: apps/wiki/src/components/conflict-resolver.tsx:169
 msgid "{fieldLabel} 使用我的修改"
 msgstr "{fieldLabel} 使用我的修改"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:177
+#: apps/wiki/src/components/conflict-resolver.tsx:178
 msgid "我的修改"
 msgstr "我的修改"
 
-#: apps/wiki/src/components/conflict-resolver.tsx:187
+#: apps/wiki/src/components/conflict-resolver.tsx:188
 msgid "应用所选并重新提交"
 msgstr "应用所选并重新提交"
 
@@ -1088,15 +1090,15 @@ msgstr "改后"
 msgid "改前"
 msgstr "改前"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:26
+#: apps/wiki/src/components/snapshot-diff.tsx:27
 msgid "旧"
 msgstr "旧"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:27
+#: apps/wiki/src/components/snapshot-diff.tsx:28
 msgid "新"
 msgstr "新"
 
-#: apps/wiki/src/components/snapshot-diff.tsx:28
+#: apps/wiki/src/components/snapshot-diff.tsx:29
 msgid "未检测到字段变化。"
 msgstr "未检测到字段变化。"
 

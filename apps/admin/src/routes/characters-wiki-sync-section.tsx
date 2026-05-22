@@ -40,6 +40,7 @@ const FIELD_LABEL_MESSAGES: Record<WikiSyncContentField, ReturnType<typeof msg>>
   triggerScenes: msg`触发场景`,
   relationship: msg`关系描述`,
   relationshipType: msg`关系类型`,
+  region: msg`地区`,
 };
 
 function getFieldLabels(): Record<WikiSyncContentField, string> {
