@@ -8,7 +8,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
-import { ArrowLeft, Search, Star, Tag } from "lucide-react";
+import { ArrowLeft, Search, Star, Tag, X } from "lucide-react";
 import { getFriends, SELF_CHARACTER_ID } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
@@ -258,16 +258,41 @@ function MobileStarredFriendsPage() {
       >
         <div className="pt-1.5">
           <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
-            <Search size={14} className="shrink-0" />
+            <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索星标朋友`)}
+              // 走查 R1：父 label 没有可读文本节点（只有 Search 图标 + input），
+              // 屏幕阅读器 focus 进来念出来的是"编辑栏 空"无 accessible name；
+              // placeholder 在不同 SR 上行为不一致。跟 group-contacts-page 同口径
+              // 补 aria-label 兜底。autoCorrect/Capitalize off：搜星标朋友常用昵
+              // 称英文，iOS 句首大写会把"alice"改成"Alice"；matchesFriendSearch
+              // 内部 toLowerCase 但 autocorrect 把字直接改掉是真坑。
+              aria-label={t(msg`搜索星标朋友`)}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
+            {searchText ? (
+              // 走查 R1：跟兄弟页 world-characters-page 同口径补一键清空。原本
+              // 用户只能逐字 backspace，长 query 体验差；type="search" 的浏览器
+              // 原生 X 按钮在 iOS WKWebView/Android Chrome 里渲染极不一致，不能
+              // 依赖。
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                aria-label={t(msg`清空搜索`)}
+              >
+                <X size={13} />
+              </button>
+            ) : null}
           </label>
         </div>
       </TabPageTopBar>

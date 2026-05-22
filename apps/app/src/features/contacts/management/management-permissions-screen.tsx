@@ -83,12 +83,20 @@ export function ManagementPermissionsScreen({
     <div className="flex h-full flex-col">
       <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[#f7f7f7] px-3 py-2">
         <label className="flex h-9 items-center gap-2 rounded-[10px] bg-white px-3 text-[13px] text-[color:var(--text-dim)]">
-          <Search size={14} />
+          <Search aria-hidden="true" size={14} />
           <input
             type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t(msg`搜索好友`)}
+            // 走查 R2：父 label 没有可读文本节点，跟外面其它入口同口径补
+            // aria-label。autoCorrect/autoCapitalize off：好友名常有英文 / 拼音
+            // 关键词，iOS 句首大写会把"alice"改成"Alice"误改用户意图。
+            aria-label={t(msg`搜索好友`)}
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            enterKeyHint="search"
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in；管理 modal 弹起来就抖。
             className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"

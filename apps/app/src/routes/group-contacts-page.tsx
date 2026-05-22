@@ -11,7 +11,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { onChatMessage, onConversationUpdated } from "../lib/socket";
-import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
+import { ArrowLeft, MessageSquarePlus, Search, X } from "lucide-react";
 import { getConversations, getGroups, type Group } from "@yinjie/contracts";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { AppPage, Button, cn } from "@yinjie/ui";
@@ -277,7 +277,7 @@ function MobileGroupContactsPage() {
       >
         <div className="pt-1.5">
           <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
-            <Search size={14} className="shrink-0" />
+            <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
@@ -301,6 +301,21 @@ function MobileGroupContactsPage() {
               spellCheck={false}
               enterKeyHint="search"
             />
+            {searchText ? (
+              // 走查 R2：和姊妹页 world-characters / starred-friends / tags / mobile-
+              // add-friend 一批补齐——type="search" 浏览器原生 X 在 iOS WKWebView /
+              // Android Chrome 里渲染极不一致不能依赖，并且空态分支 line 363-371
+              // 的"清除搜索"按钮要"先空态触发才出现"，长 query 用户没看到结果
+              // 时只能逐字 backspace。
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                aria-label={t(msg`清空搜索`)}
+              >
+                <X size={13} />
+              </button>
+            ) : null}
           </label>
         </div>
       </TabPageTopBar>

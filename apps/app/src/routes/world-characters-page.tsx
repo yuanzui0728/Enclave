@@ -355,12 +355,21 @@ function MobileWorldCharactersPage() {
       >
         <div className="pt-1.5">
           <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
-            <Search size={14} className="shrink-0" />
+            <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索世界角色`)}
+              // 走查 R1：父 label 没有文本子节点，仅 icon + input；屏幕阅读器 SR
+              // focus 进来念出"编辑栏 空"。补 aria-label，跟 group-contacts-page
+              // 同口径。autoCorrect/autoCapitalize off：搜世界角色常用英文/拼音
+              // 关键词，iOS 句首大写会把"alice"改成"Alice"误改用户意图。
+              aria-label={t(msg`搜索世界角色`)}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in，用户敲一下"搜索"立刻整页放大、回弹时还要双指捏才能回到
               // 正常视窗。跟 mobile-add-friend-page 已修过的搜索框对齐。

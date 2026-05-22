@@ -8,7 +8,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
-import { ArrowLeft, Search, Star, Tag } from "lucide-react";
+import { ArrowLeft, Search, Star, Tag, X } from "lucide-react";
 import { getFriends } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
@@ -246,16 +246,36 @@ function MobileTagsPage() {
       >
         <div className="pt-1.5">
           <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
-            <Search size={14} className="shrink-0" />
+            <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索标签或联系人`)}
+              // 走查 R1：父 label 没有可读文本节点；同 starred-friends-page R1 补
+              // aria-label，避免屏阅器 focus 进来念"编辑栏 空"。autoCorrect/
+              // autoCapitalize 关掉避免 iOS 句首大写把英文标签自动改写。
+              aria-label={t(msg`搜索标签或联系人`)}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="search"
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
+            {searchText ? (
+              // 走查 R1：跟 world-characters-page / starred-friends-page R1 同口
+              // 径补一键清空，方便长 query 重置。
+              <button
+                type="button"
+                onClick={() => setSearchText("")}
+                className="-mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[color:var(--text-dim)] active:bg-black/5"
+                aria-label={t(msg`清空搜索`)}
+              >
+                <X size={13} />
+              </button>
+            ) : null}
           </label>
         </div>
       </TabPageTopBar>

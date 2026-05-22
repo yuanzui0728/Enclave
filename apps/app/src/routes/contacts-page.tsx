@@ -2947,6 +2947,12 @@ function FriendListRow({
       type="button"
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      // 走查 R3：bulkMode 下行变成"可选 / 已选"两态切换按钮，但原本只用视觉
+      // 复选圆圈传达选中态，屏幕阅读器听到的就是"按钮 张三"，不知道勾没勾。
+      // aria-pressed 是 button 上等价于 aria-checked 的写法（[role=button] 也
+      // 适用），SR 会把 "按钮 张三" 升级成 "切换按钮 张三 已按下/未按下"。非
+      // bulkMode 下保持 undefined，避免对普通"打开资料"的导航按钮误加按下态。
+      aria-pressed={bulkMode ? selected : undefined}
       className={cn(
         "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
@@ -2960,6 +2966,7 @@ function FriendListRow({
     >
       {bulkMode ? (
         <span
+          aria-hidden="true"
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
