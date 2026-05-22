@@ -54,6 +54,8 @@ const emptyCharacterDraft: CharacterDraft = {
   inferenceModelId: null,
   allowOwnerKeyOverride: true,
   modelRoutingNotes: "",
+  voicePreset: null,
+  webSearchEnabled: false,
   expertDomains: [],
   activityFrequency: "normal",
   momentsFrequency: 1,
@@ -836,6 +838,36 @@ export function CharacterEditorPage() {
               }))
             }
           />
+          {/* TTS HD（speech-02-hd）+ Web Search 角色级开关，2026-05-22 加。
+              voicePreset 留空 → 走 provider 全局默认音色（所有合成统一 speech-02-hd 模型）。
+              webSearchEnabled 默认关，开了之后还得用户消息命中"最近/今天/最新"等
+              时效关键词才会真发 /v1/coding_plan/search（200/日 token-plan 配额）。 */}
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <Field
+              label={t(msg`角色专属音色 voicePreset`)}
+              placeholder="male-qn-qingse / female-shaonv / audiobook_male_2"
+              value={draft.voicePreset ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  voicePreset: value.trim() || null,
+                }))
+              }
+            />
+            <Toggle
+              label={t(msg`启用 Web 搜索 (token-plan)`)}
+              checked={draft.webSearchEnabled ?? false}
+              onChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  webSearchEnabled: checked,
+                }))
+              }
+            />
+          </div>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            {t(msg`voicePreset 留空 → provider 默认音色；所有合成走 speech-02-hd。Web 搜索默认关；开后命中"最近/今天/最新"等关键词才真发 /v1/coding_plan/search（200/日配额）。`)}
+          </p>
           {inferenceOverviewQuery.isError &&
           inferenceOverviewQuery.error instanceof Error ? (
             <AdminErrorState
@@ -1516,6 +1548,8 @@ function normalizeDraft(
     inferenceModelId: draft.inferenceModelId?.trim() || null,
     allowOwnerKeyOverride: draft.allowOwnerKeyOverride ?? true,
     modelRoutingNotes: draft.modelRoutingNotes?.trim() || "",
+    voicePreset: draft.voicePreset?.trim() || null,
+    webSearchEnabled: draft.webSearchEnabled === true,
     profile: {
       ...profile,
       characterId: normalizedId,

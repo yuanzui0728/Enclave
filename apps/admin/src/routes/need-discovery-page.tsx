@@ -2444,6 +2444,18 @@ function ShakeConfigCard({
                 })
               }
             />
+            {/* 2026-05-22：planning 阶段联网增强（按 cyber avatar 当前 focus 词调 web_search）。
+                默认关；开后每次摇一摇都会消耗一次 token-plan /v1/coding_plan/search 配额（200/日）。*/}
+            <ConfigCheckbox
+              label={t(msg`启用实时信号增强 (web_search)`)}
+              checked={config.enableRealtimeSignalEnhance}
+              onChange={(checked) =>
+                onChange({
+                  ...config,
+                  enableRealtimeSignalEnhance: checked,
+                })
+              }
+            />
           </div>
         </ConfigBlock>
 
@@ -3549,6 +3561,10 @@ function parseShakeDiscoveryConfig(raw?: string | null): ShakeDiscoveryConfig {
         typeof parsed.allowFinance === "boolean"
           ? parsed.allowFinance
           : fallback.allowFinance,
+      enableRealtimeSignalEnhance:
+        typeof parsed.enableRealtimeSignalEnhance === "boolean"
+          ? parsed.enableRealtimeSignalEnhance
+          : fallback.enableRealtimeSignalEnhance,
       planningPrompt:
         typeof parsed.planningPrompt === "string" &&
         parsed.planningPrompt.trim()
