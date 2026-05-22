@@ -28,7 +28,12 @@ export function WeChatMomentsCover({
   onAvatarTap,
 }: WeChatMomentsCoverProps) {
   const safeNickname = nickname?.trim() || " ";
-  const initial = safeNickname.slice(0, 1).toUpperCase();
+  // 走查 R2：safeNickname.slice(0, 1) 走 UTF-16 code unit，emoji 起头的昵称
+  // （例如 "🎉小助手" 或单 emoji "🦊"）会被砍出 surrogate pair 的高位半个
+  // 字符，渲染成 ▢ 替换字符。Array.from + iterator 按 code point 取首字，
+  // 跟 profile-character-import-page PreviewAvatar / AvatarChip pickFallback
+  // 同款 fix。toUpperCase 对汉字 / emoji 无影响，对 latin "a" → "A" 仍然生效。
+  const initial = (Array.from(safeNickname)[0] ?? " ").toUpperCase();
 
   const coverStyle: CSSProperties = coverUrl
     ? {

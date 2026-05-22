@@ -1263,7 +1263,28 @@ export function ProfileMomentsPage() {
                 tone={notice.tone}
                 className="rounded-[8px] border border-[#ECECEC] bg-white px-3 py-2 text-[12px] shadow-none"
               >
-                {notice.message}
+                {/* 走查 R2：之前 mobile 分支只渲 notice.message，但点赞/删除失败
+                    时 likeMutation/deleteMutation onError 已经把 actionLabel +
+                    action 塞进 notice 对象（line 265-278 / 717-730），用户却看
+                    不到"重试点赞 / 重试删除"按钮，必须自己滚到那条 moment、再
+                    开 ⋯ 弹层、再点一次。和 mobile-friend-moments-page.tsx 行
+                    844-868 / moments-page.tsx 行 2625-2664 mobile 同模板对齐。 */}
+                {notice.action && notice.actionLabel ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1">{notice.message}</span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 shrink-0 rounded-full border-[#E5E5E5] bg-white px-3 text-[11px]"
+                      onClick={notice.action}
+                    >
+                      {notice.actionLabel}
+                    </Button>
+                  </div>
+                ) : (
+                  notice.message
+                )}
               </InlineNotice>
             </div>
           ) : null}
