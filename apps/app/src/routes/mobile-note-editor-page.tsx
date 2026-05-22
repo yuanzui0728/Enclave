@@ -232,6 +232,17 @@ function MobileNoteEditor({
   // 已有笔记 + noteQuery 还没把 contentHtml 写进 editorState 前，把保存/发送
   // 屏蔽住。新建笔记不会走 noteQuery，进编辑器 → init effect 立刻 setReady。
   const isEditorReady = readyForSessionKey === sessionKey;
+  // 走查 R2（第三轮）：LoadingBlock + ErrorBlock 两条早期 return 各调用了一次
+  // readDesktopNoteDraftByNoteId(selectedNoteId) —— 每次 render 两次 JSON.parse
+  // 全表草稿。编辑过程中 onInput / setEditorState 一秒能 5~10 次 re-render，
+  // 用户 LS 里堆着十几条草稿时这相当于一秒 100~200 次 parse 5KB 全表。
+  // sessionKey 不变 → 用户没换笔记 → LS 那条草稿只可能由当前编辑器自己写，
+  // 而我们关心的 truthy/falsy 在 init effect 之前不会变；init effect 之后
+  // isEditorReady=true → 两条 gate 都跳过了，结果不再被读到。安全的 memo 时机。
+  const cachedLocalDraftForSelected = useMemo(
+    () => (selectedNoteId ? readDesktopNoteDraftByNoteId(selectedNoteId) : null),
+    [selectedNoteId],
+  );
   // 真正怕覆写的场景：已经认定有一条 noteId 的笔记在背后（server 上有这条
   // record，editorState 现在却是 EMPTY）。新建笔记 / 直接打开 /notes/new
   // 没 noteId，editorState 的"空"就是用户起步状态，allow save，让 createNote
@@ -1152,12 +1163,24 @@ function MobileNoteEditor({
       return;
     }
 
-    const savedNote =
-      isDirty || !noteId
-        ? await handleSave()
-        : noteQuery.data && noteQuery.data.id === noteId
-          ? noteQuery.data
-          : null;
+    // 走查 R1（第三轮）：原写法 attemptedSave 跟 sheet 打开解耦——已有笔记
+    // dirty 改完点发送，handleSave 落库失败时 handleSave 返回 null；但代码继续
+    // fallback 到 buildNoteSendDialogNote 用本地 editorState 构造 note card
+    // 喂给 sheet，sheet 仍然弹出来。用户点会话发送出去 → 接收方收到一张
+    // 标题 / excerpt 用 *客户端 dirty 内容* 的 note card，点开 (server fetch
+    // by noteId) → 服务端那条还是上一次保存成功的旧内容，**两边对不上**。
+    // 改成：用户期望走"保存后再发送"路径（isDirty 或新建笔记）但 handleSave
+    // 没拿到 server 返回时直接 return；saveMutation.onError 已经设过红 notice，
+    // 用户能看到失败原因，重试或检查网络后再来。
+    const needsSaveBeforeSend = isDirty || !noteId;
+    const savedNote = needsSaveBeforeSend
+      ? await handleSave()
+      : noteQuery.data && noteQuery.data.id === noteId
+        ? noteQuery.data
+        : null;
+    if (needsSaveBeforeSend && !savedNote) {
+      return;
+    }
 
     const nextNote = savedNote
       ? buildNoteSendDialogNoteFromDocument(savedNote)
@@ -1189,7 +1212,7 @@ function MobileNoteEditor({
   if (
     selectedNoteId &&
     !isEditorReady &&
-    !(noteQuery.isError && !readDesktopNoteDraftByNoteId(selectedNoteId))
+    !(noteQuery.isError && !cachedLocalDraftForSelected)
   ) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
@@ -1201,7 +1224,7 @@ function MobileNoteEditor({
   if (
     selectedNoteId &&
     noteQuery.isError &&
-    !readDesktopNoteDraftByNoteId(selectedNoteId)
+    !cachedLocalDraftForSelected
   ) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
