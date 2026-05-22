@@ -904,7 +904,19 @@ export function WelcomePage() {
       setNotice(describeCloudSession(t, session));
 
       if (session.status === "ready") {
-        await connectToResolvedCloudWorld(accessToken, "", session);
+        // 见 continueWithCloudWorld 的同名修复：内联 await 与 useEffect 监听
+        // currentCloudSession 重复触发会让 getWorldOwner 跑两次。
+        const connectKey = `${session.id}:${session.resolvedApiBaseUrl ?? ""}`;
+        if (cloudConnectKeyRef.current !== connectKey) {
+          cloudConnectKeyRef.current = connectKey;
+          try {
+            await connectToResolvedCloudWorld(accessToken, "", session);
+          } finally {
+            if (cloudConnectKeyRef.current === connectKey) {
+              cloudConnectKeyRef.current = null;
+            }
+          }
+        }
       }
     } catch (error) {
       setReadyBaseUrl(null);
@@ -1125,7 +1137,22 @@ export function WelcomePage() {
       setNotice(describeCloudSession(t, session));
 
       if (session.status === "ready") {
-        await connectToResolvedCloudWorld(accessToken, verifiedPhone, session);
+        // 老用户回归 / 世界已经在跑：resolveMyCloudWorldAccess 直接回 status=ready，
+        // 这一行内联 await 跟 [currentCloudSession.status==="ready"] 那个 useEffect
+        // 会同时跑 connectToResolvedCloudWorld（setQueryData 把 currentCloudSession
+        // 即时填好，effect 一 commit 就触发），两边各发一次 getWorldOwner——白送
+        // 一次网络请求。借用同一个 cloudConnectKeyRef 让 effect 那边短路，只跑这一次。
+        const connectKey = `${session.id}:${session.resolvedApiBaseUrl ?? ""}`;
+        if (cloudConnectKeyRef.current !== connectKey) {
+          cloudConnectKeyRef.current = connectKey;
+          try {
+            await connectToResolvedCloudWorld(accessToken, verifiedPhone, session);
+          } finally {
+            if (cloudConnectKeyRef.current === connectKey) {
+              cloudConnectKeyRef.current = null;
+            }
+          }
+        }
       }
     } catch (error) {
       setReadyBaseUrl(null);
