@@ -266,6 +266,14 @@ export function MobileFeedPublishPage() {
     // 用户视感是"按了发表完全没反应"。切账户当作"上一次提交已经跟当前用户无关"，
     // 同步把锁拨回 false，让 B 第一次点能立刻飞。
     submittingRef.current = false;
+    // 走查新一轮 R4：A 账户 in-flight pick handler 还在跑时切到 B，pickInflightRef
+    // 和 isMediaPreparing 是同一份共享 state，不释放的话：
+    //   - B 无法新开 pick 流程（pickInflightRef=true 直接早返）
+    //   - B 的发表按钮一直被 isMediaPreparing=true 禁用
+    // A 的 handler 在 finally 里改成 `startBaseUrl === baseUrl` 才操作 refs，
+    // 切走了就什么都不做，避免反过来把 B 自己设的锁 trample 掉。
+    pickInflightRef.current = false;
+    setIsMediaPreparing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl, resetComposeDraft]);
 
@@ -371,10 +379,25 @@ export function MobileFeedPublishPage() {
     performBack();
   }
 
+  // 走查新一轮 R4：handlePickImages / handleVideoFileSelected 的 await 期间最长
+  // 可能挂 1-30s（原生 picker + 图片解码 / 视频元数据 + 封面生成）。慢路径下用
+  // 户在 A 账户解码视频中切到 B 账户：
+  //   1. baseUrl 变 → 上面那条 reset effect 跑 resetComposeDraft 等，新加的两行
+  //      也把 pickInflightRef / isMediaPreparing 释放掉
+  //   2. 15-30s 后 await composeDraft.replaceVideoFile 落地，handler 检查
+  //      startBaseUrl !== baseUrl → 早返；不调 hook 的 setVideoDraft，旧账户的
+  //      视频不会塞进新账户的 draft
+  //   3. A 的 finally 用 `startBaseUrl === baseUrl` 守 — 切走了就什么都不做，
+  //      避免把 B 自己新设的 pickInflightRef=true / isMediaPreparing=true 又
+  //      trample 回 false（B 可能正在自己加图，依赖这俩锁挡同帧重入）
+  // composeDraft.addImageFiles / replaceVideoFile 内部 setState 落地无法外部
+  // 拦截，所以 gate 必须在 await 之前——await pickImageFiles 完成后立刻判一次，
+  // 切走了就连 addImageFiles 这一步都不调。
   async function handlePickImages() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
     setIsMediaPreparing(true);
+    const startBaseUrl = baseUrl;
     try {
       // 跟 mobile-moments-publish-page R4 对齐：把剩余可用槽位传给原生 picker，
       // PHPicker / PickVisualMedia 拿到 limit 后会在系统选图 UI 上限制最多可勾
@@ -391,14 +414,29 @@ export function MobileFeedPublishPage() {
       if (files.length === 0) {
         return;
       }
+      // picker close 到这里是 mid-flight 切账户最大的窗口（原生 picker 显示期间
+      // 用户切账户也算）；切走了就不要把旧账户选的图塞进新账户的 draft。
+      if (startBaseUrl !== baseUrl) {
+        return;
+      }
       await composeDraft.addImageFiles(files);
     } catch (error) {
+      // 切账户后旧账户的错误条不该弹到新账户的 toolbar——B 没碰 picker，看到
+      // 「图片选择失败」红条会以为是 B 自己点的。
+      if (startBaseUrl !== baseUrl) {
+        return;
+      }
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`图片选择失败，请稍后重试。`)),
       );
     } finally {
-      pickInflightRef.current = false;
-      setIsMediaPreparing(false);
+      // 只在 baseUrl 没切走时才清自己设的锁；切走的话 reset effect 已经释放过
+      // pickInflightRef / isMediaPreparing，B 此时可能已经开了自己的 pick 链路，
+      // 这里再 set false 会把 B 自己的锁 trample 掉。
+      if (startBaseUrl === baseUrl) {
+        pickInflightRef.current = false;
+        setIsMediaPreparing(false);
+      }
     }
   }
 
@@ -406,15 +444,26 @@ export function MobileFeedPublishPage() {
     if (pickInflightRef.current) return;
     pickInflightRef.current = true;
     setIsMediaPreparing(true);
+    const startBaseUrl = baseUrl;
     try {
+      // replaceVideoFile 内部 await createMomentVideoDraft 期间用户可能切账户；
+      // 旧账户的视频不该塞进新账户的 draft。
+      if (startBaseUrl !== baseUrl) {
+        return;
+      }
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
+      if (startBaseUrl !== baseUrl) {
+        return;
+      }
       composeDraft.setMediaError(
         describeRequestError(error, t(msg`视频选择失败，请稍后重试。`)),
       );
     } finally {
-      pickInflightRef.current = false;
-      setIsMediaPreparing(false);
+      if (startBaseUrl === baseUrl) {
+        pickInflightRef.current = false;
+        setIsMediaPreparing(false);
+      }
     }
   }
 
