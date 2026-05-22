@@ -102,7 +102,11 @@ import { formatConversationTimestamp } from "../lib/format";
 import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
-import { onChatMessage, onConversationUpdated } from "../lib/socket";
+import {
+  onChatMessage,
+  onChatSocketConnect,
+  onConversationUpdated,
+} from "../lib/socket";
 
 type QuickActionItem = {
   key: string;
@@ -956,6 +960,28 @@ function MobileChatListPage() {
         );
       }
     });
+    // 新会话走查 R7：socket disconnect 期间 server 给 chat-list 推的所有
+    // conversation_updated / new_message 都丢了——socket.ts 重连时 server 端
+    // Socket 实例是新的，历史房间记忆全无，per-thread-panel 的 onChatSocketConnect
+    // 会自动 re-join 自己那一个房间（看 socket.ts:22 注释），但「断网期间
+    // 在别的会话里收到的新消息」没人补救：chat-list 自己从不 join 任何房间，
+    // 完全靠 conversation_updated 触发 invalidate。
+    //
+    // 这种 gap 在公网隧道 / 4G→WiFi 切换 / cloud token 续期那几秒频繁出现：
+    // 用户站在 chat-list 不动，断网那阵子张三发的新消息直到 60s refetchInterval
+    // 兜底（或下次 refetchOnWindowFocus）才显示，体感「微信里有消息但列表
+    // 不动」。
+    //
+    // 挂 onChatSocketConnect → invalidate conversations + messageEntries，
+    // 把 reconnect 当成显式 sync 时机。同款修法 use-conversation-thread /
+    // group-chat-thread-panel 都有；scheduleListInvalidate 走 250ms debounce
+    // 复用，多个 onConnect / onMessage 同帧触发只发一次 GET。
+    const offConnect = onChatSocketConnect(() => {
+      scheduleListInvalidate();
+      void queryClient.invalidateQueries({
+        queryKey: ["app-official-message-entries", baseUrl],
+      });
+    });
     return () => {
       if (pendingInvalidate !== null) {
         window.clearTimeout(pendingInvalidate);
@@ -963,6 +989,7 @@ function MobileChatListPage() {
       }
       offUpdated();
       offMessage();
+      offConnect();
     };
   }, [baseUrl, queryClient]);
 
