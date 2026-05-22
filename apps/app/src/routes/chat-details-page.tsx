@@ -13,6 +13,7 @@ import {
   getFriends,
   hideConversation,
   REMINDER_CHARACTER_ID,
+  SELF_CHARACTER_ID,
   sendFriendRequest,
   setConversationStrongReminder,
   setConversationMuted,
@@ -203,6 +204,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const backgroundQuery = useConversationBackground(conversationId);
   const targetCharacterId = conversation?.participants[0] ?? "";
   const isReminderConversation = targetCharacterId === REMINDER_CHARACTER_ID;
+  // char-default-self 是用户自我镜像，「我自己」详情页里发起群聊 / 通话 /
+  // 保存通讯录都没意义（自己不能给自己发起群聊、AI 通话、加自己为好友），全部隐掉。
+  const isSelfMirror = targetCharacterId === SELF_CHARACTER_ID;
 
   // 走查 R3（第 3 轮）：和 desktop-chat-details-panel / desktop-direct-call-panel /
   // desktop-message-avatar-popover 共享同一 queryKey "app-character"，那 3 处都对齐
@@ -904,23 +908,27 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       src: targetCharacter?.avatar,
       onClick: targetCharacterId ? handleOpenCharacterProfile : undefined,
     },
-    {
-      key: "add",
-      label: t(msg`发起群聊`),
-      kind: "add" as const,
-      onClick: guardRowNavigation(() => {
-        void navigate({
-          to: "/group/new",
-          hash: buildCreateGroupRouteHash({
-            source: "chat-details",
-            conversationId,
-            returnPath: `/chat/${conversationId}/details`,
-            returnHash: chatRouteHash,
-            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
-          }),
-        });
-      }),
-    },
+    ...(isSelfMirror
+      ? []
+      : [
+          {
+            key: "add",
+            label: t(msg`发起群聊`),
+            kind: "add" as const,
+            onClick: guardRowNavigation(() => {
+              void navigate({
+                to: "/group/new",
+                hash: buildCreateGroupRouteHash({
+                  source: "chat-details",
+                  conversationId,
+                  returnPath: `/chat/${conversationId}/details`,
+                  returnHash: chatRouteHash,
+                  seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+                }),
+              });
+            }),
+          },
+        ]),
   ];
   const dangerSheetConfig =
     dangerSheetAction === "hide"
@@ -1298,41 +1306,45 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             </div>
           </ChatDetailsSection>
 
-          <ChatCallFallbackSection
-            variant="wechat"
-            disabled={!targetCharacterId}
-            voiceValue={t(msg`AI 语音`)}
-            videoValue={t(msg`AI 数字人`)}
-            onSelectKind={guardRowNavigation((kind) => {
-              setNotice(null);
-              if (kind === "video") {
-                if (!guardVideoEntry()) {
-                  // 走查第一轮 R3：guardVideoEntry 拒绝时还没真发生导航，
-                  // ref 已经被外层 guardRowNavigation 抢占；raf 后释放即可，
-                  // 用户下一帧可再点其他通话类型。
-                  return;
+          {isSelfMirror ? null : (
+            <ChatCallFallbackSection
+              variant="wechat"
+              disabled={!targetCharacterId}
+              voiceValue={t(msg`AI 语音`)}
+              videoValue={t(msg`AI 数字人`)}
+              onSelectKind={guardRowNavigation((kind) => {
+                setNotice(null);
+                if (kind === "video") {
+                  if (!guardVideoEntry()) {
+                    // 走查第一轮 R3：guardVideoEntry 拒绝时还没真发生导航，
+                    // ref 已经被外层 guardRowNavigation 抢占；raf 后释放即可，
+                    // 用户下一帧可再点其他通话类型。
+                    return;
+                  }
                 }
-              }
-              void navigate({
-                to:
-                  kind === "voice"
-                    ? "/chat/$conversationId/voice-call"
-                    : "/chat/$conversationId/video-call",
-                params: { conversationId },
-                ...(chatRouteHash ? { hash: chatRouteHash } : {}),
-              });
-            })}
-          />
+                void navigate({
+                  to:
+                    kind === "voice"
+                      ? "/chat/$conversationId/voice-call"
+                      : "/chat/$conversationId/video-call",
+                  params: { conversationId },
+                  ...(chatRouteHash ? { hash: chatRouteHash } : {}),
+                });
+              })}
+            />
+          )}
 
           <ChatDetailsSection title={t(msg`聊天扩展`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
-              <ChatSettingRow
-                label={t(msg`保存到通讯录`)}
-                value={isFriend ? t(msg`已添加`) : undefined}
-                variant="wechat"
-                disabled={isFriend || !targetCharacterId || busy}
-                onClick={handleSaveToContacts}
-              />
+              {isSelfMirror ? null : (
+                <ChatSettingRow
+                  label={t(msg`保存到通讯录`)}
+                  value={isFriend ? t(msg`已添加`) : undefined}
+                  variant="wechat"
+                  disabled={isFriend || !targetCharacterId || busy}
+                  onClick={handleSaveToContacts}
+                />
+              )}
               <ChatSettingRow
                 label={t(msg`设置当前聊天背景`)}
                 value={getChatBackgroundLabel(
