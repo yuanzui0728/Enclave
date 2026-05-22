@@ -1010,6 +1010,7 @@ export function WelcomePage() {
         authMode === "register" ? "register_success" : "login_success",
         { method: "google" },
       );
+      consumeInviteCodeAfterRegister();
 
       const session = await resolveMyCloudWorldAccess(
         {
@@ -1231,6 +1232,7 @@ export function WelcomePage() {
             authMode === "register" ? "register_success" : "login_success",
             { method: "email" },
           );
+          consumeInviteCodeAfterRegister();
         } else {
           const verifyResult = await verifyCloudPhoneCode(
             {
@@ -1264,6 +1266,7 @@ export function WelcomePage() {
             authMode === "register" ? "register_success" : "login_success",
             { method: "phone" },
           );
+          consumeInviteCodeAfterRegister();
         }
       }
 
@@ -1413,6 +1416,19 @@ export function WelcomePage() {
   function handleRetryCloudSession() {
     setEntryError("");
     void cloudAccessSessionQuery.refetch();
+  }
+
+  // 注册成功后清掉本地存的邀请码。server 端 invite-code 在 verify 通过那一刻
+  // 已被消费（一码一人，仓库表写 redeemedAt），客户端再留着没意义；如果不清
+  // 干净，用户后续登出再回到 /welcome 时 useState 初始化器还能从 localStorage
+  // 把这个失效码读出来填到注册 tab，下一轮注册按 "登录并进入" 会被服务端打
+  // INVITE_CODE_USED。三个 verify 成功路径（email-code / phone-code / google）
+  // 都要触发——password 路径用不到 invite 跳过。
+  function consumeInviteCodeAfterRegister() {
+    if (authMode !== "register" || !inviteCode) return;
+    persistInviteCode("");
+    setInviteCode("");
+    setInviteCodeAutoFilled(false);
   }
 
   function renderModeFields() {
