@@ -423,14 +423,15 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     targetCharacter?.name ||
     displayedConversationTitle ||
     t(msg`对方`);
+  // self 镜像 priority：DB 里 char-default-self.relationship 被种成 "我" / "我自己"，
+  // 会导致 trim() 短路放过 isSelfMirror 分支；头像名字已经是"我自己"，副标题
+  // 再来一行"我自己" / "我"重复且没信息量。isSelfMirror 必须早于 relationship。
   const contactProfileSubtitle = friendship?.remarkName?.trim()
     ? t(msg`昵称：${targetCharacter?.name || t(msg`未设置`)}`)
-    : targetCharacter?.relationship?.trim() ||
-      (isSelfMirror
-        ? t(msg`本人`)
-        : isFriend
-          ? t(msg`通讯录朋友`)
-          : t(msg`世界联系人`));
+    : isSelfMirror
+      ? t(msg`本人`)
+      : targetCharacter?.relationship?.trim() ||
+        (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
   // self 镜像：char-default-self 在每个账号里 hash 都一样，会渲染成同一个
   // 假隐界号 yinjie_4dbfd23a，没意义且会误导用户以为这是自己的隐界号；隐掉。
   const contactIdentifier =
