@@ -227,13 +227,16 @@ function MobileDiscoverEncounterPage() {
         <Button
           onClick={() => void handleShakeButtonClick()}
           disabled={shakeMutation.isPending}
+          aria-busy={shakeMutation.isPending || undefined}
           variant="primary"
           className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56]"
         >
           {/* 走查 Round 1：AI 端到端 ~60s（planning + 角色生成两次推理），按钮原来全程
               只有「正在寻找...」一行文字、没有 spinner——公网隧道 + 移动端用户经常以为
               页面卡死多次点按钮。disabled 防住了重复 mutate，但视觉缺少"它正在干活"的
-              反馈。对齐 chat 模块用的 LoaderCircle + animate-spin。 */}
+              反馈。对齐 chat 模块用的 LoaderCircle + animate-spin。
+              走查 Round 1（a11y）：disabled 拦住了点击但盲用户没有"页面在等 AI"的语义反馈，
+              补 aria-busy 让 SR 朗读"忙碌"状态，与 chat send 按钮 loading 行为对齐。 */}
           {shakeMutation.isPending ? (
             <LoaderCircle size={16} className="animate-spin" />
           ) : (
@@ -244,9 +247,15 @@ function MobileDiscoverEncounterPage() {
       }
       notice={
         message ? (
+          // 走查 Round 1（a11y）：「X 已加入通讯录」「附近暂时没有新的相遇」这类成功/警告
+          // 反馈是用户摇完 ~60s 等到的关键结果——之前是裸 InlineNotice，盲用户只能从
+          // 按钮 disabled 状态推断完成，没有内容上下文。挂 role=status + aria-live=polite
+          // 让 SR 在 AI 跑完一刻读出结果（与 account-security-panel 的 success/info 收口一致）。
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={tone}
+            role="status"
+            aria-live="polite"
           >
             {message}
           </InlineNotice>
@@ -255,9 +264,13 @@ function MobileDiscoverEncounterPage() {
       onBack={handleBack}
     >
       {shakeMutation.isError && shakeMutation.error instanceof Error ? (
+        // 走查 Round 1（a11y）：danger 错误（SHAKE_DAILY_LIMIT / SHAKE_COOLDOWN /
+        // SHAKE_AI_*_FAILED 等）必须立即打断 SR 当前朗读告诉用户摇失败了，挂 role=alert
+        // （隐含 aria-live=assertive）。与 account-security-panel 的 danger feedback 对齐。
         <InlineNotice
           className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           tone="danger"
+          role="alert"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="min-w-0 flex-1">
