@@ -3141,9 +3141,14 @@ export function deleteMoment(id: string, baseUrl?: string) {
 }
 
 export function uploadMomentMedia(payload: FormData, baseUrl?: string) {
-  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
-    allowDefault: false,
-  });
+  // 不能再跑 normalizeMomentMediaAsset 把 `/api/moments/media/<file>` 重写成绝对
+  // URL：上传响应的 media 唯一用途是立刻回传给 createUserMoment / createFeedPost。
+  // 服务端 assertMomentMediaUrl（moments.service.ts:84）强制要求 url/thumbnailUrl/
+  // posterUrl/livePhoto.motionUrl 必须 "/api/moments/media/" 开头才能落库（防 SSRF
+  // 渲染时把 <img src="https://evil/..."> 落到第三方域名）。这里若再绝对化，发布
+  // 时 100% 撞 MOMENTS_MEDIA_URL_INVALID「朋友圈媒体必须来自上传接口」。
+  // 朋友圈卡片渲染时绝对化在 createUserMoment.then(normalizeMoment) 那一步完成，
+  // 跟此处独立；预览渲染由前端 blob: previewUrl 承担，也不依赖这里的 URL 形态。
   return requestLegacyApi<UploadMomentMediaResponse>(
     "/moments/media",
     {
@@ -3151,9 +3156,7 @@ export function uploadMomentMedia(payload: FormData, baseUrl?: string) {
       body: payload,
     },
     baseUrl,
-  ).then((response) => ({
-    media: normalizeMomentMediaAsset(response.media, resolvedBaseUrl),
-  }));
+  );
 }
 
 export function addMomentComment(
