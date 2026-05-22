@@ -1638,6 +1638,16 @@ function MobileChatListPage() {
                           </ChatReminderMetaPill>
                         </div>
                       )}
+                      {/* 第 3 次走查 R2：和姊妹 swipe-action 容器同款——collapsed
+                          时 grid-rows-[0fr] opacity-0 + overflow-hidden 仅把 entries
+                          视觉藏掉，DOM 里的 entry button / 完成按钮仍在 a11y tree
+                          + Tab 焦点序里。「已通知」组默认 collapsed=true
+                          （isNotifiedReminderGroupExpanded 初始 false），SR 用户
+                          展开提醒区 section 时会被这些"看不见但能听到"的旧提醒
+                          item 重复念一遍；Tab 键也会落进折叠区里循环，aria-expanded
+                          虚晃一招其实控制不了内容暴露。补 inert + aria-hidden 同步
+                          视觉折叠状态，跟 ConversationListItemLink swipe-action 容器
+                          的 inert 修法一致。 */}
                       <div
                         className={cn(
                           "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
@@ -1645,6 +1655,8 @@ function MobileChatListPage() {
                             ? "grid-rows-[0fr] opacity-0"
                             : "grid-rows-[1fr] opacity-100",
                         )}
+                        inert={collapsed || undefined}
+                        aria-hidden={collapsed || undefined}
                       >
                         <div className="overflow-hidden">
                           {group.entries.map((entry, index) => (
