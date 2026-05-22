@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -125,7 +131,13 @@ function MobileStarredFriendsPage() {
         .sort(compareStarredFriends),
     [friendsQuery.data],
   );
-  const normalizedSearchText = searchText.trim().toLowerCase();
+  // 新一轮走查 R2：跟兄弟页 contacts-page / world-characters-page / tags-page
+  // 同口径补 useDeferredValue。星标朋友通常没那么多，但 matchesFriendSearch 一
+  // 路过 character.name/relationship/bio/currentStatus/currentActivity/expert/
+  // remark/region/source/tags 总共 10+ haystack，star 列表很多时 keystroke 仍
+  // 然会卡。让 input 立刻反应，filter 排到下一帧。
+  const deferredSearchText = useDeferredValue(searchText);
+  const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const filteredFriends = useMemo(() => {
     if (!normalizedSearchText) {
       return starredFriends;
