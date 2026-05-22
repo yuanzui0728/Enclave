@@ -347,8 +347,23 @@ export function MobileMomentsPublishPage() {
       //    会让"已发布"的内容被复活成草稿。
       // 2) mid-flight 发表中 unmount 几乎不发生（handleBack guard 拦死），但兜
       //    一下：发表中的内容不该重复 save 出来。
-      // 3) 空内容直接返回，不留无意义空草稿。
-      if (draftHandledRef.current || !snap.hasContent || snap.isPending) {
+      if (draftHandledRef.current || snap.isPending) {
+        return;
+      }
+      // 3) 空内容场景细分：
+      //    a. 进页面就是空 → IDB 本来就没东西，直接 return；
+      //    b. 进页面时 hydrate 出过旧草稿，用户用 backspace / X 把内容全清空之后用
+      //       topbar 取消 / 硬件 back / swipe-back 离开 —— 这条路径走 performBack
+      //       不会经过 ExitActionSheet 的"不保留"按钮（hasContent=false 时 handleBack
+      //       直接 performBack），autosave 又因为 !hasContent 跳过，结果 IDB 那把旧
+      //       "abc" 草稿原封不动留着，下次进发布页又 hydrate 出来——用户感觉刚才
+      //       backspace 几下白删了。hydratedSignatureRef 非空说明这次会话进入时
+      //       hydrate 过草稿，配合 hasContent=false 推断"用户清空了草稿"——主动
+      //       clearMomentDraft 让删除真实生效。
+      if (!snap.hasContent) {
+        if (hydratedSignatureRef.current) {
+          void clearMomentDraft(snap.baseUrl);
+        }
         return;
       }
       // 4) hydrate 出来用户一点都没动 → 没必要把同样一份 100MB 视频再 IDB write
@@ -768,7 +783,7 @@ export function MobileMomentsPublishPage() {
                         : "bg-black/45",
                     )}
                   >
-                    <X size={12} />
+                    <X size={12} aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -797,7 +812,7 @@ export function MobileMomentsPublishPage() {
                   )}
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white">
-                      <Play size={16} className="translate-x-[1px] fill-current" />
+                      <Play size={16} aria-hidden="true" className="translate-x-[1px] fill-current" />
                     </span>
                   </div>
                   <button
@@ -812,7 +827,7 @@ export function MobileMomentsPublishPage() {
                         : "bg-black/45",
                     )}
                   >
-                    <X size={12} />
+                    <X size={12} aria-hidden="true" />
                   </button>
                 </div>
               ) : null}
@@ -831,7 +846,7 @@ export function MobileMomentsPublishPage() {
                   style={{ aspectRatio: "1 / 1" }}
                   aria-label={t(msg`添加图片`)}
                 >
-                  <Plus size={28} strokeWidth={1.4} />
+                  <Plus size={28} strokeWidth={1.4} aria-hidden="true" />
                 </button>
               ) : null}
             </div>
@@ -849,7 +864,7 @@ export function MobileMomentsPublishPage() {
                 // 用户以为没法发视频。
                 aria-label={t(msg`添加图片或视频`)}
               >
-                <Plus size={32} strokeWidth={1.4} />
+                <Plus size={32} strokeWidth={1.4} aria-hidden="true" />
               </button>
             </div>
           ) : null}
@@ -998,7 +1013,7 @@ function SettingRow({
       <span className="text-[15px] text-[#1A1A1A]">{label}</span>
       <span className="flex items-center gap-1 text-[14px] text-[#9A9A9A]">
         {value ? <span>{value}</span> : null}
-        <ChevronRight size={16} className="text-[#C5C5C5]" />
+        <ChevronRight size={16} aria-hidden="true" className="text-[#C5C5C5]" />
       </span>
     </button>
   );
