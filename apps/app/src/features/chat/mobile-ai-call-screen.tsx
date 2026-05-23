@@ -602,10 +602,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       if (isVideoMode) {
         await digitalHumanCall.endSession();
       }
-      // 走查本轮：单聊语音通话挂断时把 call_log 卡片写进 thread（hook 内做去重，
+      // 单聊语音通话挂断时把 call_log 卡片写进 thread（hook 内做去重，
       // timer 超时 / 用户 hangup / 退出页 三个入口共享一次落库）。
+      // fire-and-forget：hangup 内部已 try/catch 吞掉 finalize 失败，await 它
+      // 只是让公网 5xx 慢链路把 navigation 拖死，用户体感"按了挂断没反应"。
+      // 组件 unmount 后 hangup 闭包仍能跑完（dynamicArgsRef 持值），HTTP 照发。
       if (!isVideoMode) {
-        await voiceCall.hangup("user_hangup");
+        void voiceCall.hangup("user_hangup");
       }
 
       if (

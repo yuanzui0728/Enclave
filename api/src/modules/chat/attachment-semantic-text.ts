@@ -291,9 +291,7 @@ function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
 
   if (attachment.kind === 'call_log') {
     const modeLabel = attachment.mode === 'video' ? '视频通话' : '语音通话';
-    const minutes = Math.floor(attachment.durationSec / 60);
-    const seconds = attachment.durationSec % 60;
-    const duration = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const duration = formatCallLogDurationLabel(attachment.durationSec);
     if (attachment.endedReason === 'timeout') {
       return `${modeLabel} · 已超时 ${duration}`;
     }
@@ -327,5 +325,18 @@ function truncateSemanticText(value: string, maxChars: number) {
   }
 
   return `${normalized.slice(0, maxChars).trim()}…`;
+}
+
+function formatCallLogDurationLabel(durationSec: number): string {
+  const safe = Math.max(0, Math.round(durationSec));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  const mm = String(minutes).padStart(2, '0');
+  const ss = String(seconds).padStart(2, '0');
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${mm}:${ss}`;
+  }
+  return `${mm}:${ss}`;
 }
 // i18n-ignore-end

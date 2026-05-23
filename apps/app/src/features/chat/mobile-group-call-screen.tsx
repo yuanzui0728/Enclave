@@ -642,8 +642,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       // call_log 卡片：和单聊同款，挂断时让系统在群里写一条「📞 通话时长 mm:ss」
       // 系统消息，使群聊记录直观看出"刚结束一通通话"。voiceCall.hangup 内部去重，
       // timeout / hangup 同时触发只会写一次。
+      // fire-and-forget：hangup 内部已 try/catch 吞掉 finalize 失败，await 它
+      // 只是让公网 5xx 慢链路把 navigation 拖死。组件 unmount 后闭包仍能跑完。
       if (mode === "voice") {
-        await voiceCall.hangup("user_hangup");
+        void voiceCall.hangup("user_hangup");
       }
       void navigate({
         to: "/group/$groupId",

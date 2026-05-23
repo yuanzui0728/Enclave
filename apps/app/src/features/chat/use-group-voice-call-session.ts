@@ -46,6 +46,10 @@ export function useGroupVoiceCallSession({
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioQueueRef = useRef<GroupVoiceCallAssistantTurn[]>([]);
+  // TTS 失败的 turn 用 setTimeout 维持 1.2s "X 在说" 高亮再推进队列，
+  // 需要 ref 持 handle 让 stopReplyPlayback / unmount cleanup 能取消，
+  // 否则用户挂断后 1.2s 内 setState on unmounted。
+  const fallbackPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSubmitRecordingRef = useRef(false);
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
@@ -75,8 +79,16 @@ export function useGroupVoiceCallSession({
   speechCancelRef.current = speech.cancel;
   speechClearResultRef.current = speech.clearResult;
 
+  const cancelFallbackPlayTimer = useCallback(() => {
+    if (fallbackPlayTimerRef.current !== null) {
+      clearTimeout(fallbackPlayTimerRef.current);
+      fallbackPlayTimerRef.current = null;
+    }
+  }, []);
+
   const stopReplyPlayback = useCallback(() => {
     audioQueueRef.current = [];
+    cancelFallbackPlayTimer();
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
@@ -84,7 +96,7 @@ export function useGroupVoiceCallSession({
     }
     setPlaybackState("idle");
     setActiveSpeakerId(null);
-  }, []);
+  }, [cancelFallbackPlayTimer]);
 
   const playNext = useCallback(async () => {
     const audio = audioRef.current;
@@ -96,10 +108,12 @@ export function useGroupVoiceCallSession({
     }
     setActiveSpeakerId(next.characterId);
     setPlayerError(null);
+    cancelFallbackPlayTimer();
 
     if (!next.assistantAudioUrl) {
       // TTS 失败的 turn：维持头像高亮一小段时间让 UI 看到"X 在说"，再继续下一条
-      setTimeout(() => {
+      fallbackPlayTimerRef.current = setTimeout(() => {
+        fallbackPlayTimerRef.current = null;
         void playNext();
       }, 1200);
       return;
@@ -120,7 +134,7 @@ export function useGroupVoiceCallSession({
       setPlaybackState("idle");
       setPlayerError(resolveAutoplayBlockedCopy());
     }
-  }, []);
+  }, [cancelFallbackPlayTimer]);
 
   const turnMutation = useMutation({
     mutationFn: async () => {

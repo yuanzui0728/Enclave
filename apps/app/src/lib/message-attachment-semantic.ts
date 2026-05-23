@@ -312,11 +312,7 @@ function buildAttachmentFallbackLabel(
   }
 
   if (attachment.kind === "call_log") {
-    const minutes = Math.floor(attachment.durationSec / 60);
-    const seconds = attachment.durationSec % 60;
-    const durationStr = `${String(minutes).padStart(2, "0")}:${String(
-      seconds,
-    ).padStart(2, "0")}`;
+    const durationStr = formatCallLogDurationLabel(attachment.durationSec);
     const label =
       attachment.mode === "video" ? t(msg`视频通话`) : t(msg`语音通话`);
     const detail =
@@ -340,6 +336,19 @@ function buildAttachmentFallbackLabel(
     attachment.label || attachment.stickerId,
     bracketed,
   );
+}
+
+function formatCallLogDurationLabel(durationSec: number) {
+  const safe = Math.max(0, Math.round(durationSec));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}:${mm}:${ss}`;
+  }
+  return `${mm}:${ss}`;
 }
 
 function buildNamedFallbackLabel(label: string, detail?: string, bracketed = false) {

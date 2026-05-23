@@ -50,6 +50,29 @@ export function useCallFinalize({
   const timeoutHandleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSessionEndedRef = useRef(onSessionEnded);
   onSessionEndedRef.current = onSessionEnded;
+  // 把动态参数放进 ref：群通话里 participantCount 会随成员加入/离开变，
+  // 直聊里 characterId 通话中一般不变，但 baseUrl 在 dev 切换 world 时偶发变。
+  // 如果这些进了 hangup 的 useCallback deps，hangup 重建 → 上面 mount-time
+  // useEffect deps 包含 hangup → 触发重新调度 → startedAtIsoRef.current 被
+  // 重置成当前时间，通话已进行 5 分钟变成 0 分钟，call_log 显示"通话时长 02:00"
+  // 而非真实的 07:00。改用 ref 拿到最新值，hangup 闭包稳定，useEffect 只在
+  // enabled / timeoutMs 真变时跑。
+  const dynamicArgsRef = useRef({
+    thread,
+    mode,
+    baseUrl,
+    scopeId,
+    characterId,
+    participantCount,
+  });
+  dynamicArgsRef.current = {
+    thread,
+    mode,
+    baseUrl,
+    scopeId,
+    characterId,
+    participantCount,
+  };
 
   const clearTimer = useCallback(() => {
     if (timeoutHandleRef.current !== null) {
@@ -66,33 +89,38 @@ export function useCallFinalize({
       finalizedRef.current = true;
       clearTimer();
 
+      const args = dynamicArgsRef.current;
       const request: FinalizeCallRequest = {
-        thread,
-        mode,
+        thread: args.thread,
+        mode: args.mode,
         startedAtIso: startedAtIsoRef.current,
         endedReason: reason,
-        ...(thread === "direct"
-          ? { conversationId: scopeId }
-          : { groupId: scopeId }),
-        ...(characterId ? { characterId } : {}),
-        ...(typeof participantCount === "number" ? { participantCount } : {}),
+        ...(args.thread === "direct"
+          ? { conversationId: args.scopeId }
+          : { groupId: args.scopeId }),
+        ...(args.characterId ? { characterId: args.characterId } : {}),
+        ...(typeof args.participantCount === "number"
+          ? { participantCount: args.participantCount }
+          : {}),
       };
 
       try {
-        if (thread === "direct") {
-          await finalizeVoiceCall(request, baseUrl);
+        if (args.thread === "direct") {
+          await finalizeVoiceCall(request, args.baseUrl);
         } else {
-          await finalizeGroupVoiceCall(request, baseUrl);
+          await finalizeGroupVoiceCall(request, args.baseUrl);
         }
       } catch {
         // finalize 失败也不让用户卡在通话页，call_log 写不进就算了
       }
       onSessionEndedRef.current?.(reason);
     },
-    [thread, mode, baseUrl, scopeId, characterId, participantCount, clearTimer],
+    [clearTimer],
   );
 
-  // 每次 enabled 切到 true 时重置 startedAt + finalizedRef + 启动 10min timer
+  // 每次 enabled 切到 true 时重置 startedAt + finalizedRef + 启动 10min timer。
+  // hangup 闭包已稳定（不依赖动态参数），所以这条 effect 不会因
+  // participantCount 变化重跑。
   useEffect(() => {
     if (!enabled) {
       clearTimer();

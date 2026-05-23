@@ -380,9 +380,7 @@ function parseStartedAt(iso: string): Date {
 }
 
 function buildCallLogFallbackText(attachment: CallLogAttachment): string {
-  const minutes = Math.floor(attachment.durationSec / 60);
-  const seconds = attachment.durationSec % 60;
-  const duration = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const duration = formatCallLogDurationLabel(attachment.durationSec);
   const modeLabel = attachment.mode === 'video' ? '视频通话' : '语音通话';
   if (attachment.endedReason === 'timeout') {
     return `${modeLabel} · 已超时 ${duration}`;
@@ -394,6 +392,19 @@ function buildCallLogFallbackText(attachment: CallLogAttachment): string {
     return `${modeLabel} · 未接通`;
   }
   return `${modeLabel} · 通话时长 ${duration}`;
+}
+
+function formatCallLogDurationLabel(durationSec: number): string {
+  const safe = Math.max(0, Math.round(durationSec));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  const mm = String(minutes).padStart(2, '0');
+  const ss = String(seconds).padStart(2, '0');
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${mm}:${ss}`;
+  }
+  return `${mm}:${ss}`;
 }
 
 function buildSpeechInstructions(characterName: string) {
