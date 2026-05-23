@@ -5042,20 +5042,29 @@ function MobileChannelCommentsSheet({
   // （微信视频号原生交互）。draft 非空或 reply 模式开启时强制展开，避免用户
   // 写到一半 blur 又被收回 pill 看不见自己的草稿。
   //
-  // 走查 2026-05-23 新会话 R1：原 useState(false) + 一条 useEffect [draft, replyTarget]
-  // 在 mount 后异步把 inputExpanded 翻成 true。但 sheet 用 `if (!open || !post)
-  // return null;` 把 open=false 的状态整段从 React 树摘掉 — 用户关 sheet 再开
-  // 同一条 post（commentDrafts[postId] 还保留着上一次的 "hello"）会触发 sheet
-  // 重 mount，useState 初值固定 false → 渲染第一帧显 pill placeholder → 下一帧
-  // effect 把 expanded 翻 true → 渲第二帧才是 textarea。中间 ~16ms+ 用户看到 pill
-  // 闪一下，体感「我刚写的草稿是不是没了」。
+  // 走查 2026-05-23 新会话 R1+R3：原 useState(false) + useEffect [draft, replyTarget]
+  // 在 mount 后异步把 inputExpanded 翻 true 会闪一下 pill 再换成 textarea；R1
+  // 用 lazy initializer 想消掉首帧 pill，但 sheet 是被 parent 无条件渲染（不靠
+  // 父级条件挂载），open=false→true 时 sheet 不 remount → lazy init 只跑首
+  // 次 mount，open 反复切换时不会重新拍定状态。重开同一条 post（commentDrafts
+  // [postId] 仍是上次的 "hello"）一样闪 pill。
   //
-  // 改用 lazy initializer 一次性读取 mount 时点的 draft / replyTarget，让首帧
-  // 就拍定状态。后续动态变化（替换 replyTarget / 用户在 textarea 里继续敲 → draft
-  // 翻非空）仍由下面那条 effect 兜，逻辑不变。
-  const [inputExpanded, setInputExpanded] = useState(
-    () => Boolean(draft.trim() || replyTarget),
-  );
+  // 改成 React 官方"adjusting state on prop change during render"模板：用
+  // prevOpenRef 同步识别 open 的 false→true 跳变，在 render 阶段就把 inputExpanded
+  // 拍到正确值。React 会同步重渲一次但不会 commit 中间帧到 DOM，肉眼无 flash。
+  // close 路径（open=true→false）仍走 effect 把 expanded 回 false — 这帧 sheet
+  // 整体在退场（dialog 收起 / 父级 setMobileCommentSheetPostId(null) 让 sheet
+  // 自己 `return null`），用户看不到中间帧。
+  const [inputExpanded, setInputExpanded] = useState(false);
+  const prevOpenRef = useRef(false);
+  if (open && !prevOpenRef.current) {
+    // open 从 false 翻 true：sheet 即将展示。同步拍定 inputExpanded 防首帧 pill 闪
+    const shouldExpand = Boolean(draft.trim() || replyTarget);
+    if (shouldExpand !== inputExpanded) {
+      setInputExpanded(shouldExpand);
+    }
+  }
+  prevOpenRef.current = open;
   useEffect(() => {
     if (!open) {
       setInputExpanded(false);
