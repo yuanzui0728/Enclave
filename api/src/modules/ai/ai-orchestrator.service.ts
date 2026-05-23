@@ -52,6 +52,7 @@ import { MinimaxNativeClient } from './minimax-native.client';
 import {
   MinimaxQuotaService,
   parseMinimaxResetAt,
+  detectMinimaxExhaustionScope,
 } from '../minimax/minimax-quota.service';
 import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import {
@@ -2154,16 +2155,21 @@ export class AiOrchestratorService {
         // 撞 2056 / 1042：标 vlm-coding-plan 熔断到真正 reset 时间，后续直接跳过 MiniMax Tier
         // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 从 status_msg 里抠
         // "resets at <ISO>"——5h-window 撞 2056 1h 后就恢复，不再锁到明天。
-        const resetAt = parseMinimaxResetAt(this.extractErrorMessage(error));
+        // 走查 yuanzui0728 本次 R9：detectMinimaxExhaustionScope 区分 weekly /
+        // daily（plan-level）vs 5h-window（model-level）。前者 cascade 全 tracked
+        // model 一起熔断，避免 TTS / web-search 下次调用还白打一次 MiniMax 才学到。
+        const msg = this.extractErrorMessage(error);
+        const resetAt = parseMinimaxResetAt(msg);
+        const scope = detectMinimaxExhaustionScope(msg);
         await this.minimaxQuota
-          .markExhaustedToday('vlm-coding-plan', resetAt)
+          .markExhaustedToday('vlm-coding-plan', resetAt, scope)
           .catch((markErr) => {
             this.logger.warn(
               `VLM markExhaustedToday failed: ${(markErr as Error)?.message}`,
             );
           });
         this.logger.warn(
-          `minimax VLM quota exhausted (code=${error.providerStatusCode}, until=${resetAt?.toISOString() ?? 'next-day-shanghai'}); falling to chat-vision`,
+          `minimax VLM quota exhausted (code=${error.providerStatusCode}, scope=${scope}, until=${resetAt?.toISOString() ?? 'next-day-shanghai'}); falling to chat-vision`,
         );
       } else {
         this.logger.warn('minimax VLM caption failed', {
@@ -3767,12 +3773,16 @@ export class AiOrchestratorService {
               // 撞 2056：标本日 quota 熔断到真正 reset 时间。
               // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 从 AppError message
               // 抠 "resets at <ISO>"——5h-window 撞 2056 1h 后就恢复，不再锁到明天。
+              // 走查 yuanzui0728 本次 R9：detectMinimaxExhaustionScope 区分 weekly /
+              // daily（plan-level）vs 5h-window（model-level）—— Token Plan Max
+              // weekly 45000 是整把 key 总池，撞了 cascade 全 tracked model 一起熔断
+              // 避免 VLM / web-search 下次调用还白打一次 MiniMax 才学到。
               if (this.isMinimaxTokenPlanExhausted(innerErr)) {
-                const resetAt = parseMinimaxResetAt(
-                  this.extractErrorMessage(innerErr),
-                );
+                const msg = this.extractErrorMessage(innerErr);
+                const resetAt = parseMinimaxResetAt(msg);
+                const scope = detectMinimaxExhaustionScope(msg);
                 await this.minimaxQuota
-                  .markExhaustedToday(quotaModel, resetAt)
+                  .markExhaustedToday(quotaModel, resetAt, scope)
                   .catch((markErr) => {
                     this.logger.warn(
                       `markExhaustedToday failed model=${quotaModel}: ${(markErr as Error)?.message}`,
