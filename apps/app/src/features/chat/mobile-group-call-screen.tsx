@@ -14,6 +14,7 @@ import {
   getGroup,
   getGroupMembers,
   sendGroupMessage,
+  type CallFinalizeEndedReason,
   type GroupMessage,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -244,6 +245,17 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     mode === "voice" ? t(msg`群语音通话`) : t(msg`群视频通话`);
   const statusTitle = getGroupCallStatusLabel(mode, "ongoing");
 
+  // 走查 R3：useCallFinalize 10 分钟兜底 timer 触发 hangup("timeout") 后会调
+  // onSessionEnded(reason)；原版没传，10min 自动结束后群里写了一条
+  // "📞 通话时长 10:00" call_log 卡片但通话屏不离屏 + 群通话状态卡片仍停在
+  // "ongoing"（因为 endStatusMutation 没被触发）。用户回头看群只看到 call_log，
+  // 通话状态卡片永远停留在"画面进行中"，下次他从群顶部点通话按钮还会以为
+  // 通话还在线。用 ref 持后置 handler，让 onSessionEnded 走 endStatusMutation
+  // + navigate 兜底路径。inline 直接 capture 闭包要写更长 deps 链；ref 模式
+  // 让 voiceCall 创建时不必关心后面 endStatusMutation 还没声明的 TDZ 问题。
+  const handleVoiceCallAutoEndRef = useRef<
+    (reason: CallFinalizeEndedReason) => void
+  >(() => {});
   // 群语音通话：录音 → 群 voice-call turn → 顺序播多角色 AI 回话；视频模式暂不接
   const voiceCall = useGroupVoiceCallSession({
     baseUrl,
@@ -251,6 +263,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     enabled:
       mode === "voice" && !isDesktopLayout && Boolean(resolvedGroupId),
     participantCount: totalCount || undefined,
+    onSessionEnded: (reason) => handleVoiceCallAutoEndRef.current(reason),
   });
   const voiceActiveSpeakerId = voiceCall.activeSpeakerId;
   const voiceCallLastTurn = voiceCall.lastTurn;
@@ -427,6 +440,51 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       invalidateConversationsCache();
     },
   });
+
+  // 走查 R3：useGroupVoiceCallSession 10 分钟超时兜底回调。原版通话 timeout 后
+  // 只写了 call_log，群通话状态卡片仍停在"画面进行中"。这里复刻 handleEndCall
+  // 关键收尾：endStatusMutation 把状态卡片切成"已结束"，再 navigate 回群聊页。
+  // 不 await endStatusMutation —— navigate 在公网 RTT ~600ms 下不能因为
+  // sendGroupMessage 卡住；mutation 内部 onSuccess 会 merge cache 进群消息列表。
+  handleVoiceCallAutoEndRef.current = (reason) => {
+    if (leavingScreenRef.current) {
+      return;
+    }
+    if (reason !== "timeout") {
+      return;
+    }
+    leavingScreenRef.current = true;
+    setLeavingScreen(true);
+
+    if (resolvedGroupId && groupQuery.data && totalCount) {
+      const durationMs = Math.max(
+        Date.now() - new Date(startedAt).getTime(),
+        0,
+      );
+      // fire-and-forget：sendGroupMessage 内部已有错误兜底（onSuccess 不跑也无副作用）
+      void endStatusMutation
+        .mutateAsync({ activeCount, totalCount, durationMs, startedAt })
+        .catch(() => undefined);
+    }
+
+    if (isDesktopLayout) {
+      void navigate({
+        to: desktopThreadPath,
+        replace: true,
+      });
+    } else {
+      void navigate({
+        to: "/group/$groupId",
+        params: { groupId: resolvedGroupId },
+        search:
+          buildChatCallReturnSearch({
+            kind: mode,
+          }) || undefined,
+        ...(groupRouteHash ? { hash: groupRouteHash } : {}),
+        replace: true,
+      });
+    }
+  };
 
   const syncCurrentStatus = useCallback(async () => {
     if (!resolvedGroupId || !groupQuery.data || !totalCount) {

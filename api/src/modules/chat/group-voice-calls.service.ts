@@ -373,7 +373,13 @@ export class GroupVoiceCallsService {
       groupId: input.groupId,
       userMessageId: userMessage.id,
       userTranscript: transcript || undefined,
-      transcriptStatus: transcript ? 'completed' : 'skipped',
+      // R3 走查：原本在最终成功 return 里又重新算 `transcript ? 'completed' :
+      // 'skipped'`，把上面 line 145 算好的 `transcriptStatus`（含 failed 分支）
+      // 给覆盖掉。whisper 真抛错时 transcript="" + transcriptionFailed=true，
+      // 旧路径返回 'skipped'，前端 mobile-group-call-screen 显示"未转写"而非
+      // "字幕失败"，用户以为是没声音被 skip，其实是 whisper 挂了。直接复用
+      // 已计算的 transcriptStatus 局部变量。
+      transcriptStatus,
       ...(transcriptionDurationMs !== undefined
         ? { transcriptionDurationMs }
         : {}),

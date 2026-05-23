@@ -15,6 +15,7 @@ import {
   getCharacter,
   getConversations,
   getSystemStatus,
+  type CallFinalizeEndedReason,
   type VoiceCallTurnResult,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage, useRuntimeTranslator } from "@yinjie/i18n";
@@ -205,6 +206,66 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       resolvedConversationId,
     ],
   );
+  // 走查 R3：useCallFinalize 10 分钟兜底 timer 到时会 fire `hangup("timeout")`，
+  // 写一条 call_log 卡片然后调 onSessionEnded(reason)。原版没传 onSessionEnded，
+  // 用户进通话页录到一半放下手机，10min 后聊天列表里冒一条"通话已超时 10:00"
+  // 卡片，但通话屏没任何反应：mic 按钮仍能按、再按按钮还能起新 turn（但 finalize
+  // 已被 finalizedRef 锁，挂断按钮变 noop，不再写 call_log）。用户回头看聊天页
+  // 看到"已结束"以为通话挂了，回到通话页又能正常说话——状态严重错位。
+  // 兜底：timeout 时主动 begin leaving + 把 waiting 卡片 close 成 ended，然后
+  // 走和 handleBack 同一条导航出口。user_hangup 路径下 leavingScreenRef 已经
+  // 被 beginLeaving 翻 true，回调里幂等 return。
+  const handleSessionAutoEnded = useCallback(
+    (reason: CallFinalizeEndedReason) => {
+      if (leavingScreenRef.current) {
+        return;
+      }
+      if (reason !== "timeout") {
+        return;
+      }
+
+      leavingScreenRef.current = true;
+      setLeavingScreen(true);
+
+      if (
+        conversation?.type === "direct" &&
+        waitingNoticeSentRef.current &&
+        !endedNoticeSentRef.current
+      ) {
+        endedNoticeSentRef.current = true;
+        // fire-and-forget：和 handleBack 同样思路，await ended 会拖慢 navigate
+        void sendCallStatusMessage("ended");
+      }
+
+      if (isDesktopLayout) {
+        void navigate({
+          to: desktopThreadPath,
+          replace: true,
+        });
+      } else {
+        void navigate({
+          to: "/chat/$conversationId",
+          params: { conversationId: resolvedConversationId },
+          search:
+            buildChatCallReturnSearch({
+              kind: mode,
+            }) || undefined,
+          ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
+          replace: true,
+        });
+      }
+    },
+    [
+      conversation?.type,
+      currentMobileRouteHash,
+      desktopThreadPath,
+      isDesktopLayout,
+      mode,
+      navigate,
+      resolvedConversationId,
+      sendCallStatusMessage,
+    ],
+  );
   const voiceCall = useVoiceCallSession({
     baseUrl,
     conversationId: resolvedConversationId,
@@ -218,6 +279,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       connectedNoticeSentRef.current = true;
       await sendCallStatusMessage("connected", result.totalDurationMs);
     },
+    onSessionEnded: handleSessionAutoEnded,
   });
   const digitalHumanCall = useDigitalHumanCallSession({
     baseUrl,
