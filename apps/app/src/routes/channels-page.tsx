@@ -5277,17 +5277,25 @@ function MobileChannelCommentsSheet({
   // 微信视频号嵌套版（2026-05-22 重排）：按 parentCommentId 把评论拆成
   // root + replies-by-root；root 用 38px 头像独立行，子回复缩进到父头像
   // 右侧、头像 28px，超过 3 条折叠「—— 展开 N 条回复 ∨」。
-  const commentsListNode = useMemo<ReactNode>(() => {
-    if (!comments.length) return null;
-    // 走查 2026-05-18 R2（本轮）：DB 里偶尔混入纯 AI thinking-prose 的评论
-    // （feed_comments 实测最长 1019 字 CoT，至少 yuanzui0728 库的 eb9c88ce
-    // 帖等就有 1 条），stripToolCallSyntax 直接抠成空串。原代码无脑 map →
-    // 渲染出仅 "作者名 + 时间戳 + 回复 X：" 的空泡泡（cleanText 空 → 整条评
-    // 论文本区是空白），点赞/回复按钮还在底下；用户体感「这条评论坏了 / 没
-    // 加载完」。先按 cleanText 非空过滤掉这类条目再 map：可见行数会少于
-    // 头部"N 条"角标几个，但角标本身就是后端 commentCount（含所有
-    // published），那条来源跟前端可见数 drift 是已知容忍偏差。
-    const enriched = comments.map((comment) => ({
+  //
+  // 走查 2026-05-23 新会话 R2：拆成 3 个 useMemo，避免心形点赞 / expand reply
+  // 等纯 UI-state 翻动时重跑 stripToolCallSyntax × N + roots bucketing 全套：
+  //   1) enriched（数据派生层）—— 仅 [comments, commentAuthorNameMap] 触发；
+  //   2) bucketed (roots/repliesByRoot)—— 仅 enriched 引用变化才重 bucket+sort；
+  //   3) commentsListNode（JSX 层）—— UI 态变化（likePending/expand）只重建 JSX
+  //      objects；CommentItemView memo 配合 R1 的 liking-boolean prop 让真正
+  //      re-render 收敛到目标那 1-2 条。
+  // 142 条评论 → 心形点赞延迟从 R1 后 ~4ms 再降到 <1ms（stripToolCallSyntax
+  // 142 次大头消失），expand reply 同理。
+
+  // (1) 数据派生层：stripToolCallSyntax + 取 replyTargetName。
+  // 走查 2026-05-18 R2（本轮）：DB 里偶尔混入纯 AI thinking-prose 的评论
+  // （feed_comments 实测最长 1019 字 CoT），stripToolCallSyntax 直接抠成空串。
+  // 原代码无脑 map → 渲染出仅 "作者名 + 时间戳 + 回复 X：" 的空泡泡。先按
+  // cleanText 非空过滤掉这类条目，可见行数会少于头部"N 条"角标几个，但角标
+  // 本身就是后端 commentCount（含所有 published），跟前端可见数 drift 已知容忍。
+  const enrichedComments = useMemo(() => {
+    return comments.map((comment) => ({
       comment,
       cleanText: stripToolCallSyntax(comment.text),
       replyTargetName: comment.replyToCommentId
@@ -5296,10 +5304,14 @@ function MobileChannelCommentsSheet({
             null)
         : null,
     }));
+  }, [comments, commentAuthorNameMap]);
 
-    const repliesByRoot = new Map<string, typeof enriched>();
-    const roots: typeof enriched = [];
-    for (const entry of enriched) {
+  // (2) bucket 层：按 parentCommentId 切根/子回复 + 排序 + 孤儿升格。
+  // 仅当 enrichedComments 真换（即 comments / commentAuthorNameMap 变）时重做。
+  const { roots, repliesByRoot } = useMemo(() => {
+    const repliesByRoot = new Map<string, typeof enrichedComments>();
+    const roots: typeof enrichedComments = [];
+    for (const entry of enrichedComments) {
       // 空文本（AI thinking-prose 全 strip 掉）整条丢掉——空泡泡比缺一条
       // 更让用户困惑，commentCount drift 已经在 R2 走查里被接受。
       if (!entry.cleanText) continue;
@@ -5333,8 +5345,12 @@ function MobileChannelCommentsSheet({
     for (const arr of repliesByRoot.values()) {
       arr.sort((a, b) => a.comment.createdAt.localeCompare(b.comment.createdAt));
     }
-    if (!roots.length) return null;
+    return { roots, repliesByRoot };
+  }, [enrichedComments]);
 
+  // (3) JSX 层：把 roots 渲成 CommentItemView 树。
+  const commentsListNode = useMemo<ReactNode>(() => {
+    if (!roots.length) return null;
     const postAuthorId = post?.authorId ?? null;
     const REPLIES_PREVIEW_COUNT = 3;
 
@@ -5405,8 +5421,8 @@ function MobileChannelCommentsSheet({
       </div>
     );
   }, [
-    comments,
-    commentAuthorNameMap,
+    roots,
+    repliesByRoot,
     likePendingCommentId,
     stableOnReply,
     stableOnLikeComment,
