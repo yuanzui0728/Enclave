@@ -8,6 +8,7 @@ import { GroupService } from './group.service';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 import { summarizeChatMentions } from './chat-text.utils';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import type {
   CallLogAttachment,
   CallLogEndedReason,
@@ -21,7 +22,13 @@ const VOICE_CALL_TTS_INSTRUCTIONS_PREFIX =
   'Keep the delivery natural, conversational, and suitable for a mobile voice call. The speaker is ';
 const VOICE_CALL_TTS_INSTRUCTIONS_SUFFIX = '.';
 
-const MAX_GROUP_VOICE_SPEAKERS_PER_TURN = 2;
+// 群语音通话单轮接话上限：默认 2 人；@all 时放宽到 3。文字群聊里
+// planner 把 @all 的 maxSpeakers 拉到 5（groupReplyMaxSpeakersMentionAll），
+// 但语音场景一轮 5 × LLM+TTS 会让用户等 ~5s（Promise.all 并发也吃 max(LLM+TTS)），
+// 而且 MiniMax HD 11000/天的配额按角色 × 字符量算，5 人轮太烧。3 是体验
+// 与成本的平衡：用户说"大家聊聊"能听到 2-3 个角色接话，不会感觉冷场。
+const MAX_GROUP_VOICE_SPEAKERS_DEFAULT = 2;
+const MAX_GROUP_VOICE_SPEAKERS_MENTION_ALL = 3;
 
 type UploadedAudioFile = {
   buffer: Buffer;
@@ -107,6 +114,7 @@ export class GroupVoiceCallsService {
     // 选 candidates[0]。
     let transcript = '';
     let transcriptionDurationMs: number | undefined;
+    let transcriptionFailed = false;
     try {
       const transcribed = await this.ai.transcribeAudio(file, {
         mode: 'voice_call',
@@ -117,12 +125,28 @@ export class GroupVoiceCallsService {
         attachment.transcriptText = transcript;
       }
     } catch (err) {
+      // 订阅过期必须早冒：catch 吞掉的话，用户拿到 200 + 空 transcript，
+      // 之后 LLM 调用又会因订阅过期挂，前端拿到的是第二次 5xx——用户根本搞不
+      // 清第一次到底成不成。让 SubscriptionExpiredException 透传到全局
+      // exception filter，前端拿到标准 expired payload 弹会员到期 dialog。
+      if (err instanceof SubscriptionExpiredException) {
+        throw err;
+      }
+      transcriptionFailed = true;
       this.logger.warn(
         `group voice-call transcribe failed for ${input.groupId}: ${
           (err as Error)?.message
         }`,
       );
     }
+    // transcriptStatus 区分 failed vs skipped：mobile-ai-call-screen 给二者
+    // 不同 UI 文案（"字幕失败" vs "未转写"）。当前路径：whisper 抛错 = failed；
+    // whisper 跑完但返回空字符串（用户没说话 / 录到静音）= skipped。
+    const transcriptStatus: 'completed' | 'failed' | 'skipped' = transcript
+      ? 'completed'
+      : transcriptionFailed
+        ? 'failed'
+        : 'skipped';
 
     // 用 owner（user 自己）身份在群里写一条 voice user message。
     // attachment.transcriptText 已 inline 填充，群聊历史里点开 voice 气泡能立刻
@@ -142,7 +166,7 @@ export class GroupVoiceCallsService {
         groupId: input.groupId,
         userMessageId: userMessage.id,
         userTranscript: transcript || undefined,
-        transcriptStatus: transcript ? 'completed' : 'skipped',
+        transcriptStatus,
         ...(transcriptionDurationMs !== undefined
           ? { transcriptionDurationMs }
           : {}),
@@ -190,7 +214,10 @@ export class GroupVoiceCallsService {
         selectedActors = filtered;
       }
     }
-    selectedActors = selectedActors.slice(0, MAX_GROUP_VOICE_SPEAKERS_PER_TURN);
+    const maxSpeakers = enrichedUserContext.hasMentionAll
+      ? MAX_GROUP_VOICE_SPEAKERS_MENTION_ALL
+      : MAX_GROUP_VOICE_SPEAKERS_DEFAULT;
+    selectedActors = selectedActors.slice(0, maxSpeakers);
     if (!selectedActors.length) {
       this.logger.warn(
         `group voice-call ${input.groupId} had no actors after planner; transcript="${transcript}"`,
@@ -199,7 +226,7 @@ export class GroupVoiceCallsService {
         groupId: input.groupId,
         userMessageId: userMessage.id,
         userTranscript: transcript || undefined,
-        transcriptStatus: transcript ? 'completed' : 'skipped',
+        transcriptStatus,
         ...(transcriptionDurationMs !== undefined
           ? { transcriptionDurationMs }
           : {}),
@@ -239,6 +266,12 @@ export class GroupVoiceCallsService {
               instructions: buildSpeechInstructions(actor.character.name),
             });
           } catch (err) {
+            // 订阅过期透传：synthesizeSpeech 内部走 assertCanUseAi('audio')，
+            // 同 transcribe 一样，让 expired exception 冒上去给前端弹 dialog；
+            // 真正 TTS provider 失败才走三级文本兜底。
+            if (err instanceof SubscriptionExpiredException) {
+              throw err;
+            }
             this.logger.warn(
               `group voice-call TTS unavailable for character ${actor.character.id}: ${
                 (err as Error)?.message
@@ -310,6 +343,13 @@ export class GroupVoiceCallsService {
             ...(speechFallbackReason ? { speechFallbackReason } : {}),
           };
         } catch (err) {
+          // 订阅过期透传：generateTaskReply 内部走 ai.generateReply →
+          // assertCanUseAi('chat')。LLM 文本生成挂了也透传，让前端弹 dialog；
+          // 其它错误（角色 LLM 配置异常 / 网络抖动）被 actor-local catch 吞，
+          // 该角色不出回话但其它角色照常走。
+          if (err instanceof SubscriptionExpiredException) {
+            throw err;
+          }
           this.logger.warn(
             `group voice-call actor ${actor.character.id} failed: ${
               (err as Error)?.message

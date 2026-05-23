@@ -4,6 +4,7 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { CharactersService } from '../characters/characters.service';
 import { ChatService } from './chat.service';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import type {
   CallLogAttachment,
   CallLogEndedReason,
@@ -103,6 +104,34 @@ export class VoiceCallsService {
       });
     }
 
+    // 同步走 whisper：单聊 LLM provider（如 deepseek-chat）不支持 audio input，
+    // sendMessageDetailed 内部 buildMessagePromptText 拿 attachment.transcriptText
+    // 拼 "转写内容：xxx"。mediaInsightJob 走异步路径要 1-2s 后才回填，本轮 LLM
+    // 已经看着 "原始音频已随消息提供" 兜底文案回了空话——必须 inline 把 transcript
+    // 填好，让 LLM 拿到真实文本再生成回话。订阅过期透传走全局 exception filter。
+    let transcriptionFailed = false;
+    try {
+      const transcribed = await this.ai.transcribeAudio(file, {
+        conversationId: conversation.id,
+        characterId,
+        mode: 'voice_call',
+      });
+      const transcript = transcribed.text?.trim() || '';
+      if (transcript) {
+        attachment.transcriptText = transcript;
+      }
+    } catch (err) {
+      if (err instanceof SubscriptionExpiredException) {
+        throw err;
+      }
+      transcriptionFailed = true;
+      this.logger.warn(
+        `voice-call transcribe failed for ${conversation.id}: ${
+          (err as Error)?.message
+        }`,
+      );
+    }
+
     const messageResult = await this.chatService.sendMessageDetailed(
       conversation.id,
       {
@@ -165,12 +194,18 @@ export class VoiceCallsService {
       this.getVoiceAttachment(userMessage),
       capabilityProfile.supportsTranscription,
     );
+    // 同步 whisper catch 走过 → 强制 status='failed'，让前端拿到"字幕失败"
+    // 文案而非 "pending"（resolveTranscriptState 在 attachment.insight 也缺时
+    // 默认 pending，对同步路径的失败语义不正确）。
+    const finalTranscriptStatus = transcriptionFailed
+      ? 'failed'
+      : transcriptState.status;
 
     return {
       conversationId: conversation.id,
       characterId,
       characterName: character.name,
-      transcriptStatus: transcriptState.status,
+      transcriptStatus: finalTranscriptStatus,
       assistantText: assistantTextMessage.text,
       assistantAudioUrl: assistantVoiceAttachment?.url ?? null,
       assistantAudioFileName: assistantVoiceAttachment?.fileName ?? '',
@@ -354,6 +389,11 @@ export class VoiceCallsService {
         provider: synthesized.provider,
       };
     } catch (err) {
+      // 订阅过期透传：synthesizeSpeech 内部 assertCanUseAi('audio')，让
+      // expired 异常冒到全局 filter 给前端弹 dialog；其它（provider 全挂）走文本兜底。
+      if (err instanceof SubscriptionExpiredException) {
+        throw err;
+      }
       // 三级兜底：MiniMax + OpenAI 双 provider 都挂时不要让通话整体 5xx；
       // assistantText 已经入库，前端识别 audioUrl=null 后只显文字气泡，
       // 通话继续。
