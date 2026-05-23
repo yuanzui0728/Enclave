@@ -222,46 +222,63 @@ export class MinimaxQuotaService {
     // 例：lyrics 100/天，6:00 (25%) 允许 27 个；12:00 允许 52 个；24:00 前烧完 100。
     const elapsedRatio = shanghaiDayElapsedRatio();
     const linearBudget = Math.ceil(limit * elapsedRatio) + PACING_EARLY_BURST;
-    const ok = await this.repo.manager.transaction(async (mgr) => {
-      const row = await mgr.findOne(MinimaxQuotaEntity, {
-        where: { model, usageDate },
-      });
-      // 事务内再 race-safe 查一次 exhaustedAt：从 isExhaustedToday() 到这里之间，
-      // 同进程的 markExhaustedToday（另一个 async 路径，例如 moments lyrics 2056）
-      // 可能刚把这个 model 标了 exhausted。补上内存 Set 防止重复 DB 查。
-      if (row?.exhaustedAt) {
-        this.exhaustedToday.add(this.exhaustedKey(model));
-        return false;
-      }
-      const usedNow = (row?.reserved ?? 0) + (row?.committed ?? 0);
-      if (usedNow >= linearBudget) {
-        // 已超线性预算：本 tick 跳过，等到时间线再放开。
-        return false;
-      }
-      if (!row) {
-        const created = mgr.create(MinimaxQuotaEntity, {
-          model,
-          usageDate,
-          reserved: 1,
-          committed: 0,
+    let ok: boolean;
+    try {
+      ok = await this.repo.manager.transaction(async (mgr) => {
+        const row = await mgr.findOne(MinimaxQuotaEntity, {
+          where: { model, usageDate },
         });
-        await mgr.save(created);
-        return true;
-      }
-      if (row.reserved + row.committed >= limit) {
-        return false;
-      }
-      const result = await mgr
-        .createQueryBuilder()
-        .update(MinimaxQuotaEntity)
-        .set({ reserved: () => 'reserved + 1' })
-        .where(
-          'id = :id AND reserved + committed < :limit AND reserved + committed < :budget',
-          { id: row.id, limit, budget: linearBudget },
-        )
-        .execute();
-      return (result.affected ?? 0) === 1;
-    });
+        // 事务内再 race-safe 查一次 exhaustedAt：从 isExhaustedToday() 到这里之间，
+        // 同进程的 markExhaustedToday（另一个 async 路径，例如 moments lyrics 2056）
+        // 可能刚把这个 model 标了 exhausted。补上内存 Set 防止重复 DB 查。
+        if (row?.exhaustedAt) {
+          this.exhaustedToday.add(this.exhaustedKey(model));
+          return false;
+        }
+        const usedNow = (row?.reserved ?? 0) + (row?.committed ?? 0);
+        if (usedNow >= linearBudget) {
+          // 已超线性预算：本 tick 跳过，等到时间线再放开。
+          return false;
+        }
+        if (!row) {
+          const created = mgr.create(MinimaxQuotaEntity, {
+            model,
+            usageDate,
+            reserved: 1,
+            committed: 0,
+          });
+          await mgr.save(created);
+          return true;
+        }
+        if (row.reserved + row.committed >= limit) {
+          return false;
+        }
+        const result = await mgr
+          .createQueryBuilder()
+          .update(MinimaxQuotaEntity)
+          .set({ reserved: () => 'reserved + 1' })
+          .where(
+            'id = :id AND reserved + committed < :limit AND reserved + committed < :budget',
+            { id: row.id, limit, budget: linearBudget },
+          )
+          .execute();
+        return (result.affected ?? 0) === 1;
+      });
+    } catch (err) {
+      // 走查 yuanzui0728 本次 R4：原版事务抛出（sqlite busy / WAL checkpoint /
+      // disk full）会冒到 caller。describeImageViaMinimaxVlm 没兜，throw 直接
+      // 让 ensureMomentImageCaptions 的 Promise.all 整批 reject，10 角色 setTimeout
+      // 全拿不到 imageCaption。synthesizeSpeech 主链 catch 看到非 401/429/500-504
+      // 的 Error 当成 BadGateway "暂不支持语音合成"——明明是本地 DB 抖，错误归因
+      // 给了 provider。tryReserve 契约本来就是 boolean（true=占到名额 / false=
+      // 没占到），DB 错和"没占到"在调用侧的处理路径完全一样：回退/兜底/熔断，没
+      // 必要让 caller 区分"DB 错"和"配额满"。包成 try/catch 把异常视作 false：
+      // 一过性 DB 错时 fleet 自然降级，DB 恢复后下一次 reserve 自然恢复。
+      this.logger.warn(
+        `tryReserve DB error model=${model} (treated as refused): ${(err as Error)?.message}`,
+      );
+      return false;
+    }
     if (ok) {
       // 走查 yuanzui0728 本次 R1：原版 availableToday() 在事务外裸 await。
       // 若它在 reserved=1 写好之后抛 DB 错（sqlite busy / 连接断），整个
