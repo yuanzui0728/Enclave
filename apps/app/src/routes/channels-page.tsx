@@ -158,7 +158,24 @@ export function ChannelsPage() {
   const [desktopCommentDrawerPostId, setDesktopCommentDrawerPostId] = useState<
     string | null
   >(null);
-  const [notice, setNotice] = useState("");
+  // 走查 2026-05-23 新会话 R2：原 useState<string> 直接被各处 setNotice 直接写，
+  // 但 likeMutation / commentMutation / favoriteMutation / followMutation 等成功
+  // 路径 toast 文案是固定字符串（"视频号互动已更新"/"已收藏"/"已取消关注" 等）。
+  // 用户在 2.4s 倒计时窗口内反复触发同款 action（点赞 → 取消点赞 → 再点赞，or
+  // 收藏 → 取消 → 收藏 within ~2s）每次 setNotice 写同样的 string → React Object.is
+  // 相等 → 不触发 state update → 下方 useEffect [notice] 不重跑 → 原 timer 仍在
+  // 跑，剩余时间继续走完后 notice 消失，用户视感「我第二次操作没成功？文案没刷
+  // 新」。同 feed/discover-feed-page 新一轮 R2 修过的 noticeKey 模板：包一层
+  // useCallback setNotice，bump 一个 ref counter 顺手 setNoticeKey 让 useEffect
+  // 拿 noticeKey 当锚必 fire，即便文案完全一样也会 cleanup 旧 timer + 起新 2.4s。
+  const noticeKeyRef = useRef(0);
+  const [noticeKey, setNoticeKey] = useState(0);
+  const [notice, _setNoticeRaw] = useState("");
+  const setNotice = useCallback((text: string) => {
+    noticeKeyRef.current += 1;
+    setNoticeKey(noticeKeyRef.current);
+    _setNoticeRaw(text);
+  }, []);
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
     null,
@@ -2102,7 +2119,10 @@ export function ChannelsPage() {
       setNoticeAction(null);
     }, 2400);
     return () => window.clearTimeout(timer);
-  }, [notice]);
+    // 走查 2026-05-23 新会话 R2：deps 跟 noticeKey 而不是只 notice — 连续两次相同
+    // 字符串走 setNotice 也要重置倒计时；setNotice 是 useCallback 锁稳引用，写在
+    // deps 里 ESLint exhaustive-deps 满意。详见 noticeKeyRef 声明处注释。
+  }, [noticeKey, notice, setNotice]);
 
   // 视频号转发：点击转发按钮 → 弹好友选择器 → 用户选完调
   // forwardFeedPostToChat（在 ChannelsForwardPicker 内部完成）。
