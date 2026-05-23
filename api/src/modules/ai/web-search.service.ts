@@ -1,7 +1,10 @@
 // i18n-ignore-start: backend infra — log/system-prompt strings only.
 import { Injectable, Logger } from '@nestjs/common';
 import { MinimaxClient, MinimaxClientError } from '../minimax/minimax.client';
-import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  parseMinimaxResetAt,
+} from '../minimax/minimax-quota.service';
 
 // 触发"实时知识"搜索的关键词清单（中英混用，覆盖典型时效性追问）。
 // 命中任一即认为这条用户消息可能需要联网；不命中则跳过避免烧配额。
@@ -193,7 +196,10 @@ export class WebSearchService {
         err instanceof MinimaxClientError &&
         err.code === 'MINIMAX_QUOTA_EXHAUSTED'
       ) {
-        await this.quota.markExhaustedToday(QUOTA_MODEL);
+        // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 抠 "resets at <ISO>"
+        // 让 5h-window 撞 2056 后到点自动解封，不再锁全 fleet 到明天。
+        const resetAt = parseMinimaxResetAt(err.message);
+        await this.quota.markExhaustedToday(QUOTA_MODEL, resetAt);
       }
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(

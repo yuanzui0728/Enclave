@@ -18,7 +18,10 @@ import {
   type VendorFamilyPersonaDefinition,
 } from './inference-catalog.seed';
 import { MinimaxNativeClient } from '../ai/minimax-native.client';
-import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  parseMinimaxResetAt,
+} from '../minimax/minimax-quota.service';
 import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { executeChatCompletion } from '../ai/chat-completion-stream.util';
@@ -2000,8 +2003,11 @@ export class InferenceService implements OnModuleInit {
             errMsg === 'MINIMAX_TOKEN_PLAN_EXHAUSTED' ||
             /\b2056\b/.test(errMessage)
           ) {
+            // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window 撞 2056
+            // 也按真窗口恢复，admin diag 不再让全 fleet 锁到明天。
+            const resetAt = parseMinimaxResetAt(errMessage);
             await this.minimaxQuota
-              .markExhaustedToday(quotaModel)
+              .markExhaustedToday(quotaModel, resetAt)
               .catch((markErr) => {
                 this.logger.warn(
                   `markExhaustedToday failed model=${quotaModel}: ${(markErr as Error)?.message}`,

@@ -62,6 +62,8 @@ import { AddInviteeRewardSubscriptionId1778664000000 } from "./migrations/177866
 import { PartialUniqueInviteeRedemption1778665000000 } from "./migrations/1778665000000-partial-unique-invitee-redemption";
 import { AddCloudUserSessionInvalidAfter1778666000000 } from "./migrations/1778666000000-add-cloud-user-session-invalid-after";
 import { AddCloudUserLastLoginDeviceRegion1779000000000 } from "./migrations/1779000000000-add-cloud-user-last-login-device-region";
+import { AddCloudMinimaxExhaustionKeyFingerprint1779010000000 } from "./migrations/1779010000000-add-cloud-minimax-exhaustion-key-fingerprint";
+import { AddCloudMinimaxExhaustionUntil1779511200000 } from "./migrations/1779511200000-add-cloud-minimax-exhaustion-until";
 import { resolveCloudDatabasePath } from "../config/cloud-runtime-config";
 
 type ConfigReader = {
@@ -134,6 +136,8 @@ export const cloudMigrations = [
   PartialUniqueInviteeRedemption1778665000000,
   AddCloudUserSessionInvalidAfter1778666000000,
   AddCloudUserLastLoginDeviceRegion1779000000000,
+  AddCloudMinimaxExhaustionKeyFingerprint1779010000000,
+  AddCloudMinimaxExhaustionUntil1779511200000,
 ];
 
 export function buildCloudDataSourceOptions(config: ConfigReader): DataSourceOptions {

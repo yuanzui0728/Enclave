@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { MinimaxQuotaService, todayInShanghai } from './minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  nextShanghaiMidnight,
+  todayInShanghai,
+} from './minimax-quota.service';
 
 const DEFAULT_PULL_INTERVAL_MS = 60 * 1000;
 const REPORT_DEDUPE_TTL_MS = 5 * 60 * 1000;
@@ -76,7 +80,11 @@ export class MinimaxQuotaCloudSyncService
       );
       return;
     }
-    this.quota.setExhaustedListener((model) => this.scheduleReport(model));
+    // 走查 yuanzui0728 本次 R5：listener 签名升级到 (model, until)，把真实 reset
+    // 时间一并推到 cloud-api，让全 fleet 同把 key 的其它 world 都按真窗口恢复。
+    this.quota.setExhaustedListener((model, until) =>
+      this.scheduleReport(model, until),
+    );
     // 启动立刻拉一次：刚 spawn 的 child 立即继承全 fleet "今日已耗尽" 状态。
     void this.pullOnce();
     this.timer = setInterval(() => {
@@ -93,7 +101,7 @@ export class MinimaxQuotaCloudSyncService
   }
 
   // 由 quota.markExhaustedToday 通过 listener 调用，不抛回调用方。
-  private scheduleReport(model: string): void {
+  private scheduleReport(model: string, until: Date): void {
     const cfg = this.getConfig();
     if (!cfg) return;
     const today = todayInShanghai();
@@ -113,15 +121,27 @@ export class MinimaxQuotaCloudSyncService
     const lastAt = this.recentReports.get(key) ?? 0;
     if (Date.now() - lastAt < REPORT_DEDUPE_TTL_MS) return;
     this.recentReports.set(key, Date.now());
-    void this.pushOnce(cfg, model).catch((err: unknown) => {
+    void this.pushOnce(cfg, model, until).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(`exhaustion push exception model=${model}: ${message}`);
     });
   }
 
-  private async pushOnce(cfg: SyncConfig, model: string): Promise<void> {
+  private async pushOnce(
+    cfg: SyncConfig,
+    model: string,
+    until: Date,
+  ): Promise<void> {
     const usageDate = todayInShanghai();
-    const body = { worldId: cfg.worldId, model, usageDate };
+    // 走查 yuanzui0728 本次 R5：携带 untilAt 让 cloud-api 持久化真实 reset 时间。
+    // 老 cloud-api 不识别 untilAt 时，直接忽略字段（contracts 标 optional），降级
+    // 成"锁到明天"——与改前等价。
+    const body = {
+      worldId: cfg.worldId,
+      model,
+      usageDate,
+      untilAt: until.toISOString(),
+    };
     const response = await fetchWithTimeout(
       `${cfg.cloudPlatformBaseUrl}/internal/cloud/minimax-quota/exhausted`,
       {
@@ -192,11 +212,34 @@ export class MinimaxQuotaCloudSyncService
       const body = (await response.json()) as {
         usageDate?: string;
         models?: unknown;
+        entries?: unknown;
       };
-      const models = Array.isArray(body?.models)
-        ? body.models.filter((m): m is string => typeof m === 'string' && m.length > 0)
-        : [];
-      this.quota.addRemoteExhaustedToday(models);
+      // 走查 yuanzui0728 本次 R5：优先读 entries[]（带 untilAt 的新格式）。
+      // 老 cloud-api 不返 entries 时降级到 models[] + 兜底 next-day Shanghai 00:00
+      // （与改前 markExhaustedToday 默认 until 等价）。
+      const entries: { model: string; untilMs: number }[] = [];
+      if (Array.isArray(body?.entries)) {
+        const fallbackUntilMs = nextShanghaiMidnight().getTime();
+        for (const raw of body.entries) {
+          if (!raw || typeof raw !== 'object') continue;
+          const obj = raw as { model?: unknown; untilAt?: unknown };
+          if (typeof obj.model !== 'string' || !obj.model) continue;
+          let untilMs = fallbackUntilMs;
+          if (typeof obj.untilAt === 'string') {
+            const parsed = Date.parse(obj.untilAt);
+            if (Number.isFinite(parsed)) untilMs = parsed;
+          }
+          entries.push({ model: obj.model, untilMs });
+        }
+      } else if (Array.isArray(body?.models)) {
+        const fallbackUntilMs = nextShanghaiMidnight().getTime();
+        for (const m of body.models) {
+          if (typeof m === 'string' && m.length > 0) {
+            entries.push({ model: m, untilMs: fallbackUntilMs });
+          }
+        }
+      }
+      this.quota.addRemoteExhaustedToday(entries);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(`exhaustion pull parse error: ${message}`);

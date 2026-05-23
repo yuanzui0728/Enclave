@@ -20,7 +20,12 @@ import {
 } from './minimax-job.types';
 import { MinimaxClient, MinimaxClientError } from './minimax.client';
 import { MinimaxAssetStorage } from './minimax-asset.storage';
-import { MinimaxQuotaService, shanghaiDateOf, todayInShanghai } from './minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  parseMinimaxResetAt,
+  shanghaiDateOf,
+  todayInShanghai,
+} from './minimax-quota.service';
 import type { MinimaxJobCallback } from './minimax-job.callbacks';
 import type { MinimaxVideoModel, MinimaxMusicModel } from './minimax.types';
 
@@ -336,7 +341,12 @@ export class MinimaxJobService {
               ) {
                 // 同 handleClientError 里的逻辑：image-01 服务端确认今日耗尽，
                 // 标本地不再 reserve，下次直接走 maybeDemoteFastToHd / 跳过。
-                await this.quota.markExhaustedToday('image-01');
+                // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window
+                // 撞 2056 后真窗口结束自动解封。
+                const resetAt = parseMinimaxResetAt(
+                  err instanceof Error ? err.message : String(err),
+                );
+                await this.quota.markExhaustedToday('image-01', resetAt);
               }
               this.logger.warn(
                 `cover gen failed for job ${job.id}: ${(err as Error)?.message}`,
@@ -745,8 +755,11 @@ export class MinimaxJobService {
     const message = e?.message ?? 'unknown error';
     // 真实 minimax 服务端确认本 model 今日额度已耗尽 → 标记，后续
     // tryReserve 直接返回 false，避免今天剩余 cron tick 继续打无效请求。
+    // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window 撞 2056 后真
+    // 窗口结束就自动解封，不再每个 model 锁全 fleet 到明天。
     if (e instanceof MinimaxClientError && code === 'MINIMAX_QUOTA_EXHAUSTED') {
-      await this.quota.markExhaustedToday(job.model);
+      const resetAt = parseMinimaxResetAt(message);
+      await this.quota.markExhaustedToday(job.model, resetAt);
     }
     if (!retriable) {
       await this.markFailed(job, code, `${context}: ${message}`);

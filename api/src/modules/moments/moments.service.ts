@@ -52,7 +52,10 @@ import {
   type MomentVideoAsset,
 } from './moment-media.types';
 import { MinimaxJobService } from '../minimax/minimax-job.service';
-import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  parseMinimaxResetAt,
+} from '../minimax/minimax-quota.service';
 import { MinimaxClient, MinimaxClientError } from '../minimax/minimax.client';
 import { MinimaxAssetStorage } from '../minimax/minimax-asset.storage';
 import { MomentImageBudgetService } from './moment-image-budget.service';
@@ -2766,9 +2769,12 @@ export class MomentsService implements OnModuleInit {
             err instanceof MinimaxClientError &&
             err.code === 'MINIMAX_QUOTA_EXHAUSTED'
           ) {
-            await this.minimaxQuota.markExhaustedToday('lyrics');
-            await this.minimaxQuota.markExhaustedToday('music-2.6');
-            await this.minimaxQuota.markExhaustedToday('music-2.5');
+            // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window 撞 2056
+            // 后真窗口结束就自动解封，不再锁全 fleet 到明天。
+            const resetAt = parseMinimaxResetAt(err.message);
+            await this.minimaxQuota.markExhaustedToday('lyrics', resetAt);
+            await this.minimaxQuota.markExhaustedToday('music-2.6', resetAt);
+            await this.minimaxQuota.markExhaustedToday('music-2.5', resetAt);
             throw new MusicQuotaExhaustedError(
               `token plan exhausted via lyrics 2056; skip music moment for ${characterName}`,
             );
@@ -2819,8 +2825,12 @@ export class MomentsService implements OnModuleInit {
             err instanceof MinimaxClientError &&
             err.code === 'MINIMAX_QUOTA_EXHAUSTED'
           ) {
-            // M2.7 chat 也走同 Token Plan，2056 一旦发生今天就不要再试了。
-            await this.minimaxQuota.markExhaustedToday('MiniMax-M2.7');
+            // M2.7 chat 也走同 Token Plan，2056 后熔断到真正 reset 时间。
+            const resetAt = parseMinimaxResetAt(err.message);
+            await this.minimaxQuota.markExhaustedToday(
+              'MiniMax-M2.7',
+              resetAt,
+            );
           }
           this.logger.warn(
             `minimax LLM lyrics failed, falling back to generic LLM: ${(err as Error)?.message}`,

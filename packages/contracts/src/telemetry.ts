@@ -183,14 +183,31 @@ export interface MinimaxHourlyTelemetryResponse {
 // 跨 world 共享的"今日某 model 配额耗尽"广播：world child 撞 1042/2056 后推给
 // cloud-api；其它 world 启动 / 定时拉取后跳过该 model 的所有提交，避免每个
 // world 各撞一次浪费上游配额。usageDate 用 Asia/Shanghai 的 YYYY-MM-DD。
+//
+// 走查 yuanzui0728 本次 R5：MiniMax 2056 实际是 "5-hour window" 限流
+// （status_msg 携带 "resets at <ISO>"），但原版只能熔断到 next-day 00:00
+// Shanghai，window 一小时后已恢复仍把全 fleet 锁到明天。新增 untilAt 字段
+// 让 cloud-api 持久化真实 reset 时间，让所有共享同 key 的 worlds 都按上游
+// 真实窗口恢复。报告方解析失败时省略，cloud-api 默认 next-day midnight。
 export interface MinimaxQuotaExhaustionReportPayload {
   worldId: string;
   model: string;
   usageDate: string;
   callbackToken?: string | null;
+  /** ISO 8601 reset 时间，从 MiniMax 2056 status_msg 解析。缺失时 cloud-api 默认 next-day 00:00 Shanghai。 */
+  untilAt?: string;
+}
+
+export interface MinimaxQuotaExhaustionEntry {
+  model: string;
+  /** ISO 8601 reset 时间。客户端 Date.parse 后比对 Date.now() 决定是否仍熔断。 */
+  untilAt: string;
 }
 
 export interface MinimaxQuotaExhaustionTodayResponse {
   usageDate: string;
+  /** 旧字段：仅 model id 数组（已熔断的模型）。新客户端应优先读 entries。 */
   models: string[];
+  /** 新字段：每条 entry 带 untilAt，让 world 按真实 reset 时间自动恢复。 */
+  entries?: MinimaxQuotaExhaustionEntry[];
 }

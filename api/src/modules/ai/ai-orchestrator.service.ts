@@ -49,7 +49,10 @@ import {
 } from '../inference/inference.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { MinimaxNativeClient } from './minimax-native.client';
-import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
+import {
+  MinimaxQuotaService,
+  parseMinimaxResetAt,
+} from '../minimax/minimax-quota.service';
 import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import {
   MinimaxClient,
@@ -2077,16 +2080,19 @@ export class AiOrchestratorService {
         error instanceof MinimaxClientError &&
         error.code === 'MINIMAX_QUOTA_EXHAUSTED'
       ) {
-        // 撞 2056 / 1042：标本日 vlm-coding-plan 熔断，后续直接跳过 MiniMax Tier
+        // 撞 2056 / 1042：标 vlm-coding-plan 熔断到真正 reset 时间，后续直接跳过 MiniMax Tier
+        // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 从 status_msg 里抠
+        // "resets at <ISO>"——5h-window 撞 2056 1h 后就恢复，不再锁到明天。
+        const resetAt = parseMinimaxResetAt(this.extractErrorMessage(error));
         await this.minimaxQuota
-          .markExhaustedToday('vlm-coding-plan')
+          .markExhaustedToday('vlm-coding-plan', resetAt)
           .catch((markErr) => {
             this.logger.warn(
               `VLM markExhaustedToday failed: ${(markErr as Error)?.message}`,
             );
           });
         this.logger.warn(
-          `minimax VLM quota exhausted (code=${error.providerStatusCode}); falling to chat-vision`,
+          `minimax VLM quota exhausted (code=${error.providerStatusCode}, until=${resetAt?.toISOString() ?? 'next-day-shanghai'}); falling to chat-vision`,
         );
       } else {
         this.logger.warn('minimax VLM caption failed', {
@@ -3641,10 +3647,15 @@ export class AiOrchestratorService {
                     `TTS quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
                   );
                 });
-              // 撞 2056（Token Plan 整体耗尽）就标死，避免本 tick 之后还反复重试
+              // 撞 2056：标本日 quota 熔断到真正 reset 时间。
+              // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 从 AppError message
+              // 抠 "resets at <ISO>"——5h-window 撞 2056 1h 后就恢复，不再锁到明天。
               if (this.isMinimaxTokenPlanExhausted(innerErr)) {
+                const resetAt = parseMinimaxResetAt(
+                  this.extractErrorMessage(innerErr),
+                );
                 await this.minimaxQuota
-                  .markExhaustedToday(quotaModel)
+                  .markExhaustedToday(quotaModel, resetAt)
                   .catch((markErr) => {
                     this.logger.warn(
                       `markExhaustedToday failed model=${quotaModel}: ${(markErr as Error)?.message}`,

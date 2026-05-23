@@ -45,24 +45,55 @@ const EXHAUSTED_CACHE_TTL_MS = 30_000;
 // 固定 2 个，避免凌晨小流量任务被完全锁死。
 const PACING_EARLY_BURST = 2;
 
+// 走查 yuanzui0728 本次 R5：MiniMax 2056 status_msg 携带的 "resets at <ISO>"。
+// 例：'usage limit exceeded, 5-hour usage limit reached for Token Plan Max (0/0 used), resets at 2026-05-23T10:00:00+08:00'
+//     'usage limit exceeded, daily usage limit reached for Token Plan Max (100/100 used), resets at 2026-05-24T00:00:00+08:00'
+// 解析失败 / 早于 Date.now() → null，caller 兜底到 next-day Shanghai 00:00。
+export function parseMinimaxResetAt(
+  message: string | null | undefined,
+): Date | null {
+  if (!message) return null;
+  const m = message.match(/resets at\s+([0-9T:\-+.Z]+)/i);
+  if (!m) return null;
+  const ts = Date.parse(m[1]);
+  if (!Number.isFinite(ts)) return null;
+  const date = new Date(ts);
+  if (date.getTime() <= Date.now()) return null;
+  return date;
+}
+
+// next-day 00:00 Shanghai (UTC Date)。所有 markExhaustedToday(model) 调用未传
+// 显式 until 时落到这里，与改前"锁到明天"行为完全等价。
+export function nextShanghaiMidnight(now: Date = new Date()): Date {
+  const shifted = new Date(now.getTime() + SHANGHAI_OFFSET_MINUTES * 60_000);
+  shifted.setUTCDate(shifted.getUTCDate() + 1);
+  shifted.setUTCHours(0, 0, 0, 0);
+  return new Date(shifted.getTime() - SHANGHAI_OFFSET_MINUTES * 60_000);
+}
+
 @Injectable()
 export class MinimaxQuotaService {
   private readonly logger = new Logger(MinimaxQuotaService.name);
   // 当日已经告警过的 "model:date" key，跨日期自然失效（key 含日期）
   private readonly warnedToday = new Set<string>();
-  // 内存层熔断：minimax 返回 2056/1042 后立即写入，避免热路径反复打 DB。
-  // 同时 markExhaustedToday 也持久化到 DB（exhaustedAt 列），跨进程/重启共享。
-  // key=model:Shanghai-day，跨日自然失效。
-  private readonly exhaustedToday = new Set<string>();
+  // 走查 yuanzui0728 本次 R5：内存熔断从 Set<key> 升级为 Map<key, untilMs>。
+  // 每个 entry 携带真实 reset 时刻；isExhausted hot path 比对 Date.now()，
+  // 5h-window 到点自动失效——不再等跨日。markExhaustedToday(model, untilDate)
+  // 时新值与已存 untilMs 取 max（同 cloud-api 的 upsert 语义对齐）。
+  // key 仍是 model:Shanghai-day，跨日自然失效。
+  private readonly exhaustedUntilByKey = new Map<string, number>();
   // DB 查询结果缓存：每个 key 最多查一次 / TTL，避免 tryReserve 热路径反复 SELECT。
+  // value = 0 表示 "DB 查到过没熔断"；> 0 表示 "已熔断到这个 ms 时刻"。
   private readonly exhaustedDbCache = new Map<
     string,
-    { value: boolean; expiresAt: number }
+    { untilMs: number; expiresAt: number }
   >();
   // CloudSync 注册的"上报"回调：markExhaustedToday 时触发，把
   // 本地撞墙事件 fire-and-forget 推给 cloud-api，让其它共用同把 key 的 world
   // 提前熔断。设计为可选 setter 而非 DI 依赖，避免与 CloudSync 形成循环。
-  private exhaustedListener: ((model: string) => void) | null = null;
+  // 走查 yuanzui0728 本次 R5：listener 多带一个 untilDate，让 sync 上推时
+  // 把真实 reset 时间一并广播给 cloud-api。
+  private exhaustedListener: ((model: string, until: Date) => void) | null = null;
 
   constructor(
     @InjectRepository(MinimaxQuotaEntity)
@@ -70,27 +101,40 @@ export class MinimaxQuotaService {
   ) {}
 
   // CloudSync 在 onModuleInit 注册；不注册时所有行为与单机一致。
-  setExhaustedListener(cb: (model: string) => void): void {
+  setExhaustedListener(cb: (model: string, until: Date) => void): void {
     this.exhaustedListener = cb;
   }
 
   // CloudSync 定时拉取后调用：把其它 world 报上来的"今日已耗尽" model 合并进
-  // 本地 Set，让 tryReserve / isExhaustedToday 命中。不写 DB（DB 是 per-world，
-  // 跨 world 状态留在 cloud-api 共享表里 + 各自的内存 Set）；不回调 listener
+  // 本地 Map，让 tryReserve / isExhaustedToday 命中。不写 DB（DB 是 per-world，
+  // 跨 world 状态留在 cloud-api 共享表里 + 各自的内存 Map）；不回调 listener
   // 避免重复推送形成环。
-  addRemoteExhaustedToday(models: readonly string[]): void {
-    if (!models.length) return;
+  // 走查 yuanzui0728 本次 R5：entries[] 携带 untilAt；老 cloud-api 没新字段时
+  // entries 缺失，sync 服务会兜底成 nextShanghaiMidnight 转成 entries 调本方法。
+  addRemoteExhaustedToday(
+    entries: readonly { model: string; untilMs: number }[],
+  ): void {
+    if (!entries.length) return;
     const day = todayInShanghai();
+    const now = Date.now();
     let added = 0;
-    for (const model of models) {
+    let extended = 0;
+    for (const { model, untilMs } of entries) {
+      if (untilMs <= now) continue; // 已过 reset 时间，不熔断
       const key = `${model}:${day}`;
-      if (this.exhaustedToday.has(key)) continue;
-      this.exhaustedToday.add(key);
-      added += 1;
+      const existing = this.exhaustedUntilByKey.get(key);
+      if (existing === undefined) {
+        this.exhaustedUntilByKey.set(key, untilMs);
+        added += 1;
+      } else if (untilMs > existing) {
+        // 后报的 until 更晚 → 取更晚的（同 cloud-api upsert 取 max 一致）
+        this.exhaustedUntilByKey.set(key, untilMs);
+        extended += 1;
+      }
     }
-    if (added > 0) {
+    if (added > 0 || extended > 0) {
       this.logger.warn(
-        `minimax remote-exhausted merged: +${added} models for ${day} (Shanghai)`,
+        `minimax remote-exhausted merged: +${added} new / ${extended} extended for ${day} (Shanghai)`,
       );
     }
   }
@@ -100,30 +144,53 @@ export class MinimaxQuotaService {
   }
 
   // 当 minimax 真的回 2056/1042 时，调用方在 catch 里调这个。
-  // 写三处：1) 进程内 Set；2) DB row.exhaustedAt（让其他 child / 重启后的本进程能看见）；
+  // 写三处：1) 进程内 Map；2) DB row.exhaustedUntil（让其他 child / 重启后的本进程能看见）；
   // 3) 通过 listener fire-and-forget 推到 cloud-api 共享表（让全 fleet 同把 key
   // 的其它 world 提前熔断，避免每个 world 都白撞一次）。
-  async markExhaustedToday(model: string): Promise<void> {
+  //
+  // 走查 yuanzui0728 本次 R5：新增 untilOverride 参数。MiniMax 2056 status_msg
+  // 携带 "resets at <ISO>"，caller 解析后传进来；省略时兜底到 next-day Shanghai
+  // 00:00（与改前完全等价）。5h-window 撞 2056 时这个值通常是 1-5h 后，到点
+  // tryReserve 自动恢复——不再等跨日才解封。
+  async markExhaustedToday(
+    model: string,
+    untilOverride?: Date | null,
+  ): Promise<void> {
+    const until = untilOverride ?? nextShanghaiMidnight();
+    const untilMs = until.getTime();
     const key = this.exhaustedKey(model);
-    const firstHitThisProcess = !this.exhaustedToday.has(key);
+    const existing = this.exhaustedUntilByKey.get(key);
+    const firstHitThisProcess = existing === undefined;
+    // 取 max(existing, new)：同进程多次 mark 时（先 5h-window 撞、后 daily 撞）
+    // 取更晚的，避免被早 reset 的 until 覆盖。
+    const nextUntilMs = existing === undefined ? untilMs : Math.max(existing, untilMs);
+    this.exhaustedUntilByKey.set(key, nextUntilMs);
     if (firstHitThisProcess) {
-      this.exhaustedToday.add(key);
       this.logger.warn(
-        `minimax model=${model} marked exhausted for ${todayInShanghai()} (Shanghai); skipping all reservations until next-day reset`,
+        `minimax model=${model} marked exhausted until ${new Date(nextUntilMs).toISOString()} (Shanghai day ${todayInShanghai()})`,
       );
       // 只在本进程首次撞墙时上报，避免重复发包；CloudSync 内部也会做
       // best-effort 网络重试与节流。
       try {
-        this.exhaustedListener?.(model);
+        this.exhaustedListener?.(model, new Date(nextUntilMs));
       } catch (err) {
         this.logger.warn(
           `exhausted listener threw model=${model}: ${(err as Error)?.message}`,
         );
       }
+    } else if (nextUntilMs > existing) {
+      // 同进程二次撞 + 更晚的 until → 也推一次，让 cloud-api 同步刷
+      try {
+        this.exhaustedListener?.(model, new Date(nextUntilMs));
+      } catch (err) {
+        this.logger.warn(
+          `exhausted listener threw on extend model=${model}: ${(err as Error)?.message}`,
+        );
+      }
     }
-    // 同步把 DB cache 翻成 true（哪怕 DB 写失败也不影响本进程立刻熔断）
+    // 同步把 DB cache 写成最新 until（哪怕 DB 写失败也不影响本进程立刻熔断）
     this.exhaustedDbCache.set(key, {
-      value: true,
+      untilMs: nextUntilMs,
       expiresAt: Date.now() + EXHAUSTED_CACHE_TTL_MS,
     });
 
@@ -140,12 +207,18 @@ export class MinimaxQuotaService {
             reserved: 0,
             committed: 0,
             exhaustedAt: new Date(),
+            exhaustedUntil: new Date(nextUntilMs),
           });
           await mgr.save(created);
           return;
         }
-        if (row.exhaustedAt) return;
-        await mgr.update(MinimaxQuotaEntity, row.id, { exhaustedAt: new Date() });
+        // 已有行：取 max(existing, new) 更新；exhaustedAt 保留首报时间不动
+        const dbUntilMs = row.exhaustedUntil?.getTime() ?? 0;
+        if (dbUntilMs >= nextUntilMs && row.exhaustedAt) return;
+        await mgr.update(MinimaxQuotaEntity, row.id, {
+          exhaustedAt: row.exhaustedAt ?? new Date(),
+          exhaustedUntil: new Date(Math.max(dbUntilMs, nextUntilMs)),
+        });
       });
     } catch (err) {
       // DB 写失败仅记日志：内存层已经熔断，重启后还能再撞一次 2056 重置而已。
@@ -157,16 +230,32 @@ export class MinimaxQuotaService {
 
   async isExhaustedToday(model: string): Promise<boolean> {
     const key = this.exhaustedKey(model);
-    if (this.exhaustedToday.has(key)) return true;
+    const now = Date.now();
+    // 内存层：untilMs > now 才算熔断；已过的 entry 顺手清掉
+    const inMem = this.exhaustedUntilByKey.get(key);
+    if (inMem !== undefined) {
+      if (inMem > now) return true;
+      this.exhaustedUntilByKey.delete(key);
+    }
     const cached = this.exhaustedDbCache.get(key);
-    if (cached && cached.expiresAt > Date.now()) return cached.value;
-    let value = false;
+    if (cached && cached.expiresAt > now) {
+      return cached.untilMs > now;
+    }
+    let untilMs = 0;
     try {
       const row = await this.repo.findOne({
         where: { model, usageDate: todayInShanghai() },
       });
-      value = !!row?.exhaustedAt;
-      if (value) this.exhaustedToday.add(key);
+      // 走查 yuanzui0728 本次 R5：兼容旧行（exhaustedUntil=NULL but exhaustedAt set）
+      // → 兜底成 next-day Shanghai 00:00（行为与改前等价）。
+      if (row?.exhaustedUntil) {
+        untilMs = row.exhaustedUntil.getTime();
+      } else if (row?.exhaustedAt) {
+        untilMs = nextShanghaiMidnight().getTime();
+      }
+      if (untilMs > now) {
+        this.exhaustedUntilByKey.set(key, untilMs);
+      }
     } catch (err) {
       // DB 失败时返回 false：宁可多打一次必败请求，也不让热路径卡住
       this.logger.warn(
@@ -174,10 +263,10 @@ export class MinimaxQuotaService {
       );
     }
     this.exhaustedDbCache.set(key, {
-      value,
-      expiresAt: Date.now() + EXHAUSTED_CACHE_TTL_MS,
+      untilMs,
+      expiresAt: now + EXHAUSTED_CACHE_TTL_MS,
     });
-    return value;
+    return untilMs > now;
   }
 
   // 配额耗尽预警：reserve 成功后，如果剩余 ≤ 1，写一次性 warn 日志，
@@ -228,11 +317,18 @@ export class MinimaxQuotaService {
         const row = await mgr.findOne(MinimaxQuotaEntity, {
           where: { model, usageDate },
         });
-        // 事务内再 race-safe 查一次 exhaustedAt：从 isExhaustedToday() 到这里之间，
-        // 同进程的 markExhaustedToday（另一个 async 路径，例如 moments lyrics 2056）
-        // 可能刚把这个 model 标了 exhausted。补上内存 Set 防止重复 DB 查。
-        if (row?.exhaustedAt) {
-          this.exhaustedToday.add(this.exhaustedKey(model));
+        // 事务内再 race-safe 查一次 exhaustedAt/exhaustedUntil：从 isExhaustedToday()
+        // 到这里之间，同进程的 markExhaustedToday（另一个 async 路径，例如 moments
+        // lyrics 2056）可能刚把这个 model 标了 exhausted。补上内存 Map 防止重复 DB 查。
+        // 走查 yuanzui0728 本次 R5：用 exhaustedUntil 比对 Date.now()；旧行
+        // (exhaustedUntil=NULL but exhaustedAt set) 兜底成 next-day Shanghai 00:00。
+        const dbUntilMs = row?.exhaustedUntil
+          ? row.exhaustedUntil.getTime()
+          : row?.exhaustedAt
+            ? nextShanghaiMidnight().getTime()
+            : 0;
+        if (dbUntilMs > Date.now()) {
+          this.exhaustedUntilByKey.set(this.exhaustedKey(model), dbUntilMs);
           return false;
         }
         const usedNow = (row?.reserved ?? 0) + (row?.committed ?? 0);
