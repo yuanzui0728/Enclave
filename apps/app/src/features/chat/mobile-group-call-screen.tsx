@@ -1318,14 +1318,22 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             <button
               type="button"
               disabled={leavingScreen || voiceCallBusy}
-              onPointerDown={() => {
+              onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture?.(event.pointerId);
                 void voiceCall.startRecordingTurn();
               }}
               onPointerUp={() => {
                 voiceCall.stopRecordingTurn();
               }}
               onPointerLeave={() => {
-                voiceCall.stopRecordingTurn();
+                // R4 走查：原版 onPointerLeave 调 stopRecordingTurn → 提交录音。
+                // 微信类 UX 的语义是「手指拖出按钮 = 取消」，单聊语音 mic 通过
+                // setPointerCapture 让 leave 根本不会 fire 来回避这个问题，
+                // 群聊原版没设 capture → leave 立刻 fire → 用户手指稍微滑出
+                // 半像素就把录音提交出去，体感是「按下还没说就发出去了」。
+                // 上方 onPointerDown 补 setPointerCapture 同时这条改 cancel
+                // 兜底（IE/Safari 在 setPointerCapture 失败时仍会 fire leave）。
+                voiceCall.cancelRecordingTurn();
               }}
               onPointerCancel={() => {
                 voiceCall.cancelRecordingTurn();

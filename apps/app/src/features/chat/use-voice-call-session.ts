@@ -197,13 +197,20 @@ export function useVoiceCallSession({
   }, [speech.recordedAudio, speech.status, turnMutation]);
 
   useEffect(() => {
+    // R4 走查：原 deps 含 characterId。conversationId 从 useParams 拿，进通话页
+    // 立刻就有；characterId 派生自 conversation.participants[0]，
+    // 必须等 conversationsQuery 解析才从 undefined 跳到 "char-X"。这一跳让本
+    // effect 再跑一次 stopReplyPlayback + speech.cancel，把用户在 query 解析
+    // 间隙抢按下的录音掐掉（loading UI 期间罕见，但 query refetch / 切前后台
+    // 后 query 缓存被 invalidate 重新加载时 characterId 会再次抖动）。
+    // 同会话内 character 不会真变；conversationId 才是真正的"换会话"信号。
     autoSubmitRecordingRef.current = false;
     setLastTurn(null);
     setPlayerError(null);
     setAudioMuted(false);
     stopReplyPlayback();
     speechCancelRef.current();
-  }, [characterId, conversationId, stopReplyPlayback]);
+  }, [conversationId, stopReplyPlayback]);
 
   useEffect(() => {
     return () => {
