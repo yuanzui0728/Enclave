@@ -62,25 +62,6 @@ export function parseMinimaxResetAt(
   return date;
 }
 
-// 走查 yuanzui0728 本次 R9：判定 2056 status_msg 是不是 "整把 key 池子级别"耗尽
-// （weekly / daily 限额）vs "model-family 5h-window" 限额。前者直接 cascade 标全 fleet
-// 所有 tracked model（避免每个 model 第一次调还白打一次 MiniMax 收 2056）；后者只标
-// 本 model（5h-window 可能 per-model-family，不要过早 cascade 锁住其它 model）。
-//
-// docs / 实测：
-//   "weekly usage limit reached for Token Plan Max (45000/45000 used)"  → plan
-//   "daily usage limit reached for Token Plan Max (100/100 used)"        → plan
-//   "5-hour usage limit reached for Token Plan Max (0/0 used)"           → model (谨慎)
-export function detectMinimaxExhaustionScope(
-  message: string | null | undefined,
-): 'plan' | 'model' {
-  if (!message) return 'model';
-  if (/\b(weekly|daily)\b\s+usage\s+limit/i.test(message)) {
-    return 'plan';
-  }
-  return 'model';
-}
-
 // next-day 00:00 Shanghai (UTC Date)。所有 markExhaustedToday(model) 调用未传
 // 显式 until 时落到这里，与改前"锁到明天"行为完全等价。
 export function nextShanghaiMidnight(now: Date = new Date()): Date {
@@ -171,42 +152,12 @@ export class MinimaxQuotaService {
   // 携带 "resets at <ISO>"，caller 解析后传进来；省略时兜底到 next-day Shanghai
   // 00:00（与改前完全等价）。5h-window 撞 2056 时这个值通常是 1-5h 后，到点
   // tryReserve 自动恢复——不再等跨日才解封。
-  // 走查 yuanzui0728 本次 R9：新增可选 scope 参数。MiniMax 2056 status_msg
-  // 形如 "weekly usage limit reached for Token Plan Max (45000/45000 used)" —
-  // Token Plan Max 是**整把 key 的总池**，所有 model（speech-02-hd / vlm-coding-plan
-  // / web-search / MiniMax-M2.7 / image-01 / music / lyrics）共享同一上限。撞 weekly
-  // / daily 2056 后任一 model 都不可用，但原版只标触发 model 一个，其它 model 第一次
-  // 调还会白白打到 MiniMax 收 2056 才被熔断——每个 model × 每条调用路径 都白烧一次
-  // 1-7s 网络 round-trip + 占 in-flight 名额。
-  //
-  // scope='plan' 时把所有 TOKEN_PLAN_DAILY_LIMITS 里登记的 model 一起 mark 同一个
-  // untilMs，让 fleet 立刻熔断到真实 reset 时间（weekly = next Monday，daily = next
-  // Shanghai midnight，5h-window = 1-5h 后；都由 caller 经 parseMinimaxResetAt 抠出）。
-  // 5h-window 时谨慎一些 — caller 仍只传 scope='model' 即可（5h 窗口可能 per-model-
-  // family）；weekly / daily 才传 scope='plan'。
   async markExhaustedToday(
     model: string,
     untilOverride?: Date | null,
-    scope: 'model' | 'plan' = 'model',
   ): Promise<void> {
     const until = untilOverride ?? nextShanghaiMidnight();
     const untilMs = until.getTime();
-    if (scope === 'plan') {
-      // 把所有 tracked model 一起 mark 同一 untilMs，避免逐个 model 才学到。
-      const allModels = Object.keys(TOKEN_PLAN_DAILY_LIMITS);
-      this.logger.warn(
-        `minimax token plan-level exhaustion triggered by model=${model}; cascading mark to ${allModels.length} tracked models until ${until.toISOString()}`,
-      );
-      for (const m of allModels) {
-        if (m === model) continue; // 本 model 走下面的常规路径
-        // 递归用 scope='model' 防止无限循环，且每个 model 各自做 cloud-sync 上报
-        await this.markExhaustedToday(m, until, 'model').catch((err) => {
-          this.logger.warn(
-            `cascade markExhaustedToday failed model=${m}: ${(err as Error)?.message}`,
-          );
-        });
-      }
-    }
     const key = this.exhaustedKey(model);
     const existing = this.exhaustedUntilByKey.get(key);
     const firstHitThisProcess = existing === undefined;

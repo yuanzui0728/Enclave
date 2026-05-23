@@ -4,7 +4,6 @@ import { MinimaxClient, MinimaxClientError } from '../minimax/minimax.client';
 import {
   MinimaxQuotaService,
   parseMinimaxResetAt,
-  detectMinimaxExhaustionScope,
 } from '../minimax/minimax-quota.service';
 
 // 触发"实时知识"搜索的关键词清单（中英混用，覆盖典型时效性追问）。
@@ -240,13 +239,8 @@ export class WebSearchService {
       ) {
         // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 抠 "resets at <ISO>"
         // 让 5h-window 撞 2056 后到点自动解封，不再锁全 fleet 到明天。
-        // 走查 yuanzui0728 本次 R9：detectMinimaxExhaustionScope 区分 weekly /
-        // daily（plan-level）vs 5h-window（model-level）。weekly / daily 2056
-        // 时 cascade 标全 tracked model 一起熔断，避免 TTS / VLM / chat 各自
-        // 下次调用还白打一次 MiniMax 才学到。
         const resetAt = parseMinimaxResetAt(err.message);
-        const scope = detectMinimaxExhaustionScope(err.message);
-        await this.quota.markExhaustedToday(QUOTA_MODEL, resetAt, scope);
+        await this.quota.markExhaustedToday(QUOTA_MODEL, resetAt);
       }
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(

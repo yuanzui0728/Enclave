@@ -21,7 +21,6 @@ import { MinimaxNativeClient } from '../ai/minimax-native.client';
 import {
   MinimaxQuotaService,
   parseMinimaxResetAt,
-  detectMinimaxExhaustionScope,
 } from '../minimax/minimax-quota.service';
 import { TOKEN_PLAN_DAILY_LIMITS } from '../minimax/minimax-quota.constants';
 import { SubscriptionService } from '../subscription/subscription.service';
@@ -2019,13 +2018,9 @@ export class InferenceService implements OnModuleInit {
           ) {
             // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window 撞 2056
             // 也按真窗口恢复，admin diag 不再让全 fleet 锁到明天。
-            // 走查 yuanzui0728 本次 R9：detectMinimaxExhaustionScope 让 weekly /
-            // daily 2056 cascade 标全 tracked model（admin TTS 撞 weekly 后
-            // VLM / web-search 下次调用就直接跳过 MiniMax，不再白打）。
             const resetAt = parseMinimaxResetAt(errMessage);
-            const scope = detectMinimaxExhaustionScope(errMessage);
             await this.minimaxQuota
-              .markExhaustedToday(quotaModel, resetAt, scope)
+              .markExhaustedToday(quotaModel, resetAt)
               .catch((markErr) => {
                 this.logger.warn(
                   `markExhaustedToday failed model=${quotaModel}: ${(markErr as Error)?.message}`,
