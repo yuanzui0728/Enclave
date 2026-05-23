@@ -2037,17 +2037,41 @@ export class AiOrchestratorService {
         prompt: AiOrchestratorService.IMAGE_CAPTION_PROMPT,
         imageUrl: imageDataUrl,
       });
-      await this.minimaxQuota.commit('vlm-coding-plan');
+      // 走查 yuanzui0728 本次 R1：commit() 失败原会被 outer catch 当作 VLM 失败
+      // → release（双重 -1）+ return null，把已经拿到的 caption 直接丢掉，moments
+      // 上传图片走到 chat-vision Tier 2 又烧一份 vision-capable provider tokens。
+      // 但 MiniMax 已经真的扣了 1 unit + 我们拿到 caption。和 TTS HD / web-search
+      // 同款 swallow + warn 日志，保 caption 不丢。release 同样兜，避免 release
+      // DB 错替原 inner err 让 outer error 路径误判。
+      await this.minimaxQuota.commit('vlm-coding-plan').catch((commitErr) => {
+        this.logger.warn(
+          `VLM quota commit failed (caption preserved): ${(commitErr as Error)?.message}`,
+        );
+      });
       const text = sanitizeAiText(result.content);
       return text || null;
     } catch (error) {
-      await this.minimaxQuota.release('vlm-coding-plan');
+      // 走查 yuanzui0728 本次 R1：release / markExhaustedToday 都是 DB write；
+      // 裸 await 失败会把 release DB 错冒上来掩盖原本的 MinimaxClientError，
+      // outer 也判不出 MINIMAX_QUOTA_EXHAUSTED → markExhaustedToday 不触发 →
+      // 同 key 共享 fleet 别的 world 各撞一次 2056。同 TTS HD R2 修法包 swallow。
+      await this.minimaxQuota.release('vlm-coding-plan').catch((releaseErr) => {
+        this.logger.warn(
+          `VLM quota release failed: ${(releaseErr as Error)?.message}`,
+        );
+      });
       if (
         error instanceof MinimaxClientError &&
         error.code === 'MINIMAX_QUOTA_EXHAUSTED'
       ) {
         // 撞 2056 / 1042：标本日 vlm-coding-plan 熔断，后续直接跳过 MiniMax Tier
-        await this.minimaxQuota.markExhaustedToday('vlm-coding-plan');
+        await this.minimaxQuota
+          .markExhaustedToday('vlm-coding-plan')
+          .catch((markErr) => {
+            this.logger.warn(
+              `VLM markExhaustedToday failed: ${(markErr as Error)?.message}`,
+            );
+          });
         this.logger.warn(
           `minimax VLM quota exhausted (code=${error.providerStatusCode}); falling to chat-vision`,
         );
