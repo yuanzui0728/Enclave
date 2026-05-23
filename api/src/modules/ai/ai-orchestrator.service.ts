@@ -527,8 +527,21 @@ export class AiOrchestratorService {
       }
     }
 
+    // 走查 yuanzui0728 本次 R3：原版 fetch 无 timeout。本地 URL 走 resolveLocalAssetPath
+    // bypass，但外部 URL（chat-vision 附件 / 跨 cloud 引用 / MiniMax CDN posterUrl）
+    // 一旦上游 hang，VLM caption Promise.all 整批悬挂——moments 上传 9 张图、一张走
+    // 远端 URL 卡死，整条 ensureMomentImageCaptions 没人能写回 mediaPayload。
+    // 同时 arrayBuffer() 是一次性 read body，response 不带 Content-Length 时 maxBytes
+    // 前置 check 失效，恶意 / 异常上游 chunked 几百 MB 会真分配到内存才被 post-check
+    // 兜住，进程 OOM 概率非零。
+    // 加 15s timeout（图片 ≤5MB、音频 ≤2MB，正常 < 5s 完成）；timer.unref() 让 SIGTERM
+    // 不挂等；body 读取也在同 try 内，timer 到期会让 arrayBuffer() 抛 AbortError 一并
+    // 兜走（同 minimax.client.ts fetchWithTimeout 同款）。
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+    timer.unref?.();
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) {
         return null;
       }
