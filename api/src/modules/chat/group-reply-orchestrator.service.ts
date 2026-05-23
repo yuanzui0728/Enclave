@@ -142,7 +142,16 @@ export class GroupReplyOrchestratorService {
       this.webSearch.shouldTriggerForUserMessage(
         currentUserContext.promptText,
       );
+    // 走查 yuanzui0728 本次 R2：原版 webSearch.searchAndFormat 紧跟着 latestTrigger
+    // set 之后 await。用户连发两条 message 时（第一条触发 search，5G/中转 800ms
+    // 内第二条 message 已经入栈触发新的 executeTurn → 把 latestTrigger 改成 id2），
+    // 第一轮 search 的 1 unit 就白白烧掉了——下面 for 循环第一帧就 isReplyTurnStale
+    // bail。yuanzui 当前世界 web-search 配额只有 10/天，一次连发就是 10% quota。
+    // 移到 search await 之前做一次 stale 检查；同一查询 60s 内还能命中 inFlight/
+    // resultCache，比赛 0 cost。MiniMax 真扣 unit 的路径只在确实是 latest trigger
+    // 且 search 命中触发时进入。
     if (turnNeedsSearch) {
+      if (this.isReplyTurnStale(groupId, triggerMessageId)) return;
       const injection = await this.webSearch.searchAndFormat(
         currentUserContext.promptText,
       );
