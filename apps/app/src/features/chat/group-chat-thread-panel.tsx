@@ -8,7 +8,7 @@ import {
   type Ref,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { Phone, Video } from "lucide-react";
 import {
@@ -429,6 +429,36 @@ export function GroupChatThreadPanel({
     });
     onRouteMobileShortcutHandled?.();
   }, [isDesktop, onRouteMobileShortcutHandled, routeMobileShortcutAction]);
+
+  // 视频通话尚未上线：mobile 端 /group/$groupId/video-call 路由会被
+  // group-video-call-page mobile 分支重定向回 /group/$groupId?callUnavailable=video。
+  // 这里消费 query → 弹「敬请期待」dialog，再把 query 抹掉，避免按返回键
+  // 反复触发。和 conversation-thread-panel 同款路径。
+  const groupRouteSearch = useSearch({ strict: false }) as {
+    callUnavailable?: string;
+  };
+  const groupCallUnavailableSearch = groupRouteSearch.callUnavailable;
+  useEffect(() => {
+    if (isDesktop || groupCallUnavailableSearch !== "video") {
+      return;
+    }
+    setCallUnavailableKind("video");
+    void navigate({
+      to: "/group/$groupId",
+      params: { groupId },
+      search: {},
+      replace: true,
+      ...(currentMobileGroupRouteHash
+        ? { hash: currentMobileGroupRouteHash }
+        : {}),
+    });
+  }, [
+    currentMobileGroupRouteHash,
+    groupCallUnavailableSearch,
+    groupId,
+    isDesktop,
+    navigate,
+  ]);
 
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
@@ -1457,15 +1487,9 @@ export function GroupChatThreadPanel({
               key: "video-call",
               icon: Video,
               label: t(msg`视频通话`),
-              onClick: () => {
-                void navigate({
-                  to: "/group/$groupId/video-call",
-                  params: { groupId },
-                  ...(currentMobileGroupRouteHash
-                    ? { hash: currentMobileGroupRouteHash }
-                    : {}),
-                });
-              },
+              // 视频通话功能未上线：顶栏点击不再 navigate 进半成品 call 屏，
+              // 直接复用已有的 FeatureUnavailableDialog 路径。
+              onClick: () => setCallUnavailableKind("video"),
             },
           ]}
           onMore={() => {

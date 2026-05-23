@@ -8,7 +8,7 @@ import {
   type Ref,
 } from "react";
 import { msg } from "@lingui/macro";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { Phone, Users, Video } from "lucide-react";
 import { type StickerAttachment } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -629,6 +629,37 @@ export function ConversationThreadPanel({
     setMobileShortcutRequest(null);
   }, [conversationId]);
 
+  // 视频通话尚未上线：mobile 端 /chat/$conversationId/video-call 路由会被
+  // chat-video-call-page mobile 分支重定向回 /chat/$conversationId?callUnavailable=video。
+  // 这里消费 query → 弹「敬请期待」dialog，再把 query 抹掉，避免按返回键时
+  // dialog 被反复触发。桌面端走 desktopCallRequest 那条路径，互不干扰。
+  const routeSearch = useSearch({ strict: false }) as {
+    callUnavailable?: string;
+  };
+  const callUnavailableSearch = routeSearch.callUnavailable;
+  useEffect(() => {
+    // 这条路径只服务 mobile redirect shell，桌面有自己的 desktopCallRequest
+    // 分支；desktop 上若意外带这个 query，也别把 URL 切到 /chat/$id（会把
+    // 用户从 /tabs/chat 工作台甩到独立 chat 屏）。
+    if (isDesktop || callUnavailableSearch !== "video") {
+      return;
+    }
+    setCallUnavailableKind("video");
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId },
+      search: {},
+      replace: true,
+      ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
+    });
+  }, [
+    callUnavailableSearch,
+    conversationId,
+    currentMobileRouteHash,
+    isDesktop,
+    navigate,
+  ]);
+
   useEffect(() => {
     if (isDesktop || !routeMobileShortcutAction) {
       return;
@@ -719,7 +750,9 @@ export function ConversationThreadPanel({
                     key: "video-call",
                     icon: Video,
                     label: t(msg`视频通话`),
-                    onClick: () => startDirectCall("video"),
+                    // 视频通话功能未上线：顶栏点击不再 navigate 进半成品 call
+                    // 屏，直接复用桌面端已有的 FeatureUnavailableDialog 路径。
+                    onClick: () => setCallUnavailableKind("video"),
                   },
                 ]
               : undefined

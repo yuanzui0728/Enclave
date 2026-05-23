@@ -822,7 +822,21 @@ export class FeedService implements OnModuleInit {
         legacyMessage: '这条内容没有可朗读的文本。',
       });
     }
-    const textHash = createHash('sha256').update(text).digest('hex').slice(0, 16);
+    // 走查 yuanzui0728 本次 R1：voice resolve 必须先于 cache 检查 —— 原版只
+    // hash text，admin 改了 character.voicePreset 后老 feed 的 cache 仍命中、
+    // 返回旧音色 mp3。包进 hash key 后 voicePreset 一变 cache 自动失效重合
+    // 成。代价是 cache 命中也要查一次 characters.findById（~1ms），换正确性。
+    let voice: string | undefined;
+    if (post.authorType === 'character') {
+      const author = await this.characters.findById(post.authorId);
+      voice = author?.voicePreset?.trim() || undefined;
+    }
+
+    // 按 text + voice 联合 hash 做 cache key；用 \x1f 分隔避免拼接撞 hash。
+    const textHash = createHash('sha256')
+      .update(`${text}\x1f${voice ?? ''}`)
+      .digest('hex')
+      .slice(0, 16);
     const stats = (post.statsPayload ?? {}) as Record<string, unknown>;
     const cached = stats.narration as
       | { audioUrl?: string; durationMs?: number; textHash?: string }
@@ -833,12 +847,6 @@ export class FeedService implements OnModuleInit {
         durationMs: cached.durationMs,
         cached: true,
       };
-    }
-
-    let voice: string | undefined;
-    if (post.authorType === 'character') {
-      const author = await this.characters.findById(post.authorId);
-      voice = author?.voicePreset?.trim() || undefined;
     }
     const synthesized = await this.ai.synthesizeSpeech({
       text,

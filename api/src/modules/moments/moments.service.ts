@@ -519,8 +519,24 @@ export class MomentsService implements OnModuleInit {
         ? `${rawText.slice(0, MAX_NARRATION_CHARS)}…`
         : rawText;
 
-    // 按文本内容 hash 做缓存键，文本被编辑过会自动失效。
-    const textHash = createHash('sha256').update(text).digest('hex').slice(0, 16);
+    // 走查 yuanzui0728 本次 R1：voice resolve 必须先于 cache 检查 —— 原版只
+    // hash text，admin 改了 character.voicePreset 后老贴的 cache 仍命中、返回
+    // 旧音色的 mp3，用户重听感受"为什么换了音色却没生效"。包进 hash key 后
+    // voicePreset 一变，textHash 就 mismatch → 自然重合成。代价是 cache 命中
+    // 也要查一次 characters.findById（~1ms），换正确性。
+    // 角色作者 → 用其 voicePreset；user 作者 → 走全局默认音色。
+    let voice: string | undefined;
+    if (post.authorType === 'character') {
+      const author = await this.characters.findById(post.authorId);
+      voice = author?.voicePreset?.trim() || undefined;
+    }
+
+    // 按 text + voice 联合 hash 做 cache key；voice 变了自动失效。
+    // 用 \x1f (Unit Separator) 分隔避免 "abc" + "def" 与 "ab" + "cdef" 撞 hash。
+    const textHash = createHash('sha256')
+      .update(`${text}\x1f${voice ?? ''}`)
+      .digest('hex')
+      .slice(0, 16);
     const meta = (post.generationMetadata ?? {}) as Record<string, unknown>;
     const cached = meta.narration as
       | {
@@ -535,13 +551,6 @@ export class MomentsService implements OnModuleInit {
         durationMs: cached.durationMs,
         cached: true,
       };
-    }
-
-    // 角色作者 → 用其 voicePreset；user 作者 → 走全局默认音色。
-    let voice: string | undefined;
-    if (post.authorType === 'character') {
-      const author = await this.characters.findById(post.authorId);
-      voice = author?.voicePreset?.trim() || undefined;
     }
 
     const synthesized = await this.ai.synthesizeSpeech({
