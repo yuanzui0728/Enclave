@@ -2108,15 +2108,34 @@ export class AiOrchestratorService {
       const text = sanitizeAiText(result.content);
       return text || null;
     } catch (error) {
-      // 走查 yuanzui0728 本次 R1：release / markExhaustedToday 都是 DB write；
-      // 裸 await 失败会把 release DB 错冒上来掩盖原本的 MinimaxClientError，
-      // outer 也判不出 MINIMAX_QUOTA_EXHAUSTED → markExhaustedToday 不触发 →
-      // 同 key 共享 fleet 别的 world 各撞一次 2056。同 TTS HD R2 修法包 swallow。
-      await this.minimaxQuota.release('vlm-coding-plan').catch((releaseErr) => {
-        this.logger.warn(
-          `VLM quota release failed: ${(releaseErr as Error)?.message}`,
-        );
-      });
+      // 走查 yuanzui0728 本次 R3：区分"MiniMax 已扣 1 unit 但 content 空"vs
+      // "真 provider 错/网络抖/熔断"。MINIMAX_VLM_BILLED_EMPTY 时 MiniMax 视
+      // 本次为成功扣费，应 commit 不 release，否则本地 quota 计数永远比真实
+      // 少 1，长期偏置后撞 2056（450/5h 窗口本就紧）。其它错误（QUOTA_EXHAUSTED
+      // / NETWORK / 1026 sensitive / 2013 invalid params）走 release（MiniMax
+      // 端要么没扣要么扣费状态未定，宁可少计一份本地占名额）。
+      const isBilledButEmpty =
+        error instanceof MinimaxClientError &&
+        error.code === 'MINIMAX_VLM_BILLED_EMPTY';
+      if (isBilledButEmpty) {
+        await this.minimaxQuota.commit('vlm-coding-plan').catch((commitErr) => {
+          this.logger.warn(
+            `VLM quota commit-on-empty failed: ${(commitErr as Error)?.message}`,
+          );
+        });
+      } else {
+        // 走查 yuanzui0728 本次 R1：release / markExhaustedToday 都是 DB write；
+        // 裸 await 失败会把 release DB 错冒上来掩盖原本的 MinimaxClientError，
+        // outer 也判不出 MINIMAX_QUOTA_EXHAUSTED → markExhaustedToday 不触发 →
+        // 同 key 共享 fleet 别的 world 各撞一次 2056。同 TTS HD R2 修法包 swallow。
+        await this.minimaxQuota
+          .release('vlm-coding-plan')
+          .catch((releaseErr) => {
+            this.logger.warn(
+              `VLM quota release failed: ${(releaseErr as Error)?.message}`,
+            );
+          });
+      }
       if (
         error instanceof MinimaxClientError &&
         error.code === 'MINIMAX_QUOTA_EXHAUSTED'
@@ -3676,18 +3695,39 @@ export class AiOrchestratorService {
             };
           } catch (innerErr) {
             if (tracked) {
-              // 走查 yuanzui0728 本次 R2：release()/markExhaustedToday() 是
-              // DB write，原版裸 await 失败时会用 DB 错把 innerErr 给吃掉，
-              // 同时跳过下面的 markExhaustedToday → 2056 信号丢失 → 同 key
-              // 其他 world 各撞一次。两个调用都包 .catch swallow + warn，
-              // 保 innerErr 原样抛给 outer fallback 判断。
-              await this.minimaxQuota
-                .release(quotaModel)
-                .catch((releaseErr) => {
-                  this.logger.warn(
-                    `TTS quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
-                  );
-                });
+              // 走查 yuanzui0728 本次 R3：区分"MiniMax 已扣 1 unit 但 hex 空"
+              // vs 真错。MinimaxNativeClient.synthesizeSpeech 在 status_code=0
+              // + data.audio 空时抛 AppError('AI_TTS_EMPTY')——这条 MiniMax
+              // 视为成功扣费（11000/天 大但 weekly limit 紧），应 commit 不
+              // release。否则本地计数永远偏少，长期偏置后 fleet 撞 weekly limit
+              // 提前数小时锁死。其它错误（quota_exhausted / network / 401 /
+              // provider_invalid_params）继续走 release（MiniMax 端未扣费）。
+              const ttsBilledButEmpty =
+                innerErr instanceof AppError &&
+                ((innerErr.getResponse() as { code?: string } | undefined)
+                  ?.code === 'AI_TTS_EMPTY');
+              if (ttsBilledButEmpty) {
+                await this.minimaxQuota
+                  .commit(quotaModel)
+                  .catch((commitErr) => {
+                    this.logger.warn(
+                      `TTS quota commit-on-empty failed model=${quotaModel}: ${(commitErr as Error)?.message}`,
+                    );
+                  });
+              } else {
+                // 走查 yuanzui0728 本次 R2：release()/markExhaustedToday() 是
+                // DB write，原版裸 await 失败时会用 DB 错把 innerErr 给吃掉，
+                // 同时跳过下面的 markExhaustedToday → 2056 信号丢失 → 同 key
+                // 其他 world 各撞一次。两个调用都包 .catch swallow + warn，
+                // 保 innerErr 原样抛给 outer fallback 判断。
+                await this.minimaxQuota
+                  .release(quotaModel)
+                  .catch((releaseErr) => {
+                    this.logger.warn(
+                      `TTS quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
+                    );
+                  });
+              }
               // 撞 2056：标本日 quota 熔断到真正 reset 时间。
               // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 从 AppError message
               // 抠 "resets at <ISO>"——5h-window 撞 2056 1h 后就恢复，不再锁到明天。

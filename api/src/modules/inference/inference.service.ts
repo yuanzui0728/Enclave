@@ -1982,21 +1982,34 @@ export class InferenceService implements OnModuleInit {
         buffer = result.buffer;
       } catch (innerErr) {
         if (tracked) {
-          // 走查 yuanzui0728 本次 R2：release/markExhaustedToday 是 DB write，
-          // 裸 await 失败时会把 innerErr 替成 DB 错并跳过 mark；和 ai-
-          // orchestrator 主链同款 swallow + warn。
-          await this.minimaxQuota
-            .release(quotaModel)
-            .catch((releaseErr) => {
-              this.logger.warn(
-                `admin TTS diagnostic quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
-              );
-            });
-          // 撞 2056 标死，让全 fleet 立刻熔断（避免其它 world 各做一次必败请求）
+          // 走查 yuanzui0728 本次 R3：同 ai-orchestrator 主链同款修法——区分
+          // AI_TTS_EMPTY（MiniMax 视为成功扣费但 hex 空）vs 真错。admin TTS
+          // 诊断如果撞 EMPTY 也算被扣费，应 commit 不 release，避免本地计数偏少。
           const errMsg =
             innerErr instanceof AppError
               ? (innerErr.getResponse() as { code?: string } | undefined)?.code
               : undefined;
+          if (errMsg === 'AI_TTS_EMPTY') {
+            await this.minimaxQuota
+              .commit(quotaModel)
+              .catch((commitErr) => {
+                this.logger.warn(
+                  `admin TTS diagnostic commit-on-empty failed model=${quotaModel}: ${(commitErr as Error)?.message}`,
+                );
+              });
+          } else {
+            // 走查 yuanzui0728 本次 R2：release/markExhaustedToday 是 DB write，
+            // 裸 await 失败时会把 innerErr 替成 DB 错并跳过 mark；和 ai-
+            // orchestrator 主链同款 swallow + warn。
+            await this.minimaxQuota
+              .release(quotaModel)
+              .catch((releaseErr) => {
+                this.logger.warn(
+                  `admin TTS diagnostic quota release failed model=${quotaModel}: ${(releaseErr as Error)?.message}`,
+                );
+              });
+          }
+          // 撞 2056 标死，让全 fleet 立刻熔断（避免其它 world 各做一次必败请求）
           const errMessage =
             innerErr instanceof Error ? innerErr.message : String(innerErr);
           if (

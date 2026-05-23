@@ -359,9 +359,14 @@ export class MinimaxClient {
     this.assertSuccess(response.base_resp, 'vlm');
     const content = response.content?.trim() ?? '';
     if (!content) {
+      // 走查 yuanzui0728 本次 R3：assertSuccess 已确认 status_code=0，MiniMax
+      // 视本次为成功并扣 1 unit；content 空是 LLM 偶发输出不到（罕见但实测
+      // 出现过）。distinct code 让 ai-orchestrator 的 catch 区分这条 vs 真
+      // provider 错——这条应 commit 不 release，否则我方 quota 计数永远比
+      // MiniMax 真实少 1，重复触发后撞 2056 全 fleet 锁死。
       throw new MinimaxClientError(
-        'MINIMAX_VLM_EMPTY',
-        'vlm returned empty content',
+        'MINIMAX_VLM_BILLED_EMPTY',
+        'vlm returned empty content (billed but no caption)',
         true,
       );
     }
