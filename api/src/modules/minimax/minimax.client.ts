@@ -49,13 +49,17 @@ export type MinimaxRateLimitKind = 'rpm' | 'quota' | null;
 // 但 body 读取（response.text / arrayBuffer）是流式的，可能再卡几分钟。让 timer
 // 自然到期触发 abort，body 读取也会抛 AbortError，避免完整生命周期失去超时保护。
 // 正常完成路径下 timer 几十秒后过期，对资源无影响。
+// 走查 yuanzui0728 本次 R2：加 .unref() 让 timer 不阻塞 event loop。pm2 reload
+// / cloud-api 重启时 SIGTERM 不再等最后一批 30s timer 烧完才退出（之前最坏挂
+// 30s，看似 hang）。process 真的还活着时 timer 该 firing 仍 firing 保护 body 流。
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
   timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
   return fetch(url, { ...init, signal: controller.signal });
 }
 

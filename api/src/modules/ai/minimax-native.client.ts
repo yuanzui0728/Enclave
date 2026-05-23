@@ -19,22 +19,16 @@ async function fetchWithTimeout(
   timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  // 走查 yuanzui0728 本次 R1：原版裸 setTimeout 不 clearTimeout，且 fetch
-  // 不 await —— 即便 fetch 成功 resolve，timer 还会再挂 30s 等到时再 abort
-  // (此时 controller 已无意义) 才被 GC，影响：
-  //   1) Node 进程优雅退出时（pm2 reload / cloud-api 重启），最多要等 30s
-  //      内最后一批 timer 跑完才能 SIGKILL，看似 hang。
-  //   2) 即便 fetch 几百 ms 就 success，本进程在收到 SIGTERM 后多撑 30s
-  //      （hd / web-search 紧贴 fetch 完成的话）。
-  //   3) abort() 在已 resolve 的 fetch 上是 no-op 但白浪费一次 timer firing。
-  // MinimaxClient (非 Native) 已经按 try/finally 清 timer + await 包好，
-  // Native 这边漏。补 try/finally + clearTimeout + await。
+  // 走查 yuanzui0728 本次 R1：刻意不 clearTimeout（同 MinimaxClient line 48-51
+  // 注释解释）—— fetch 在 headers 到时就 resolve，body 流读 (response.text /
+  // arrayBuffer) 还可能再卡几十秒；让 timer 自然到期触发 abort，body 读取也会
+  // 抛 AbortError，否则 fetchWithTimeout 返回后 body 读取就裸跑无超时保护。
+  // 但加 .unref() 让这个 timer 不阻塞 event loop —— SIGTERM 时 Node 不再等
+  // 最后一批 30s timer 烧完才退出。process 真的还活着时 timer 该 firing 还是
+  // firing（保护 body 流），但 pm2 reload / cloud-api 重启没有"挂 30s"的代价。
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
+  timer.unref?.();
+  return fetch(url, { ...init, signal: controller.signal });
 }
 
 type MinimaxBaseResp = {
