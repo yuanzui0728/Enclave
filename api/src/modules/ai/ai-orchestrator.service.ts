@@ -813,6 +813,15 @@ export class AiOrchestratorService {
     const message = this.extractErrorMessage(error);
     const status = this.extractErrorStatus(error);
 
+    // 走查 yuanzui0728 本次 R4：上一轮 R1 把 quota/billing 403 也归到 transient
+    // 触发 retrySpeechRequest 的 3 次指数 backoff 重试，但账户没钱不会几秒内
+    // 充值 → 干烧 ~3.5s。这里改回不算 transient（不重试 same provider），但
+    // 走 fallback chain（下面 isFallbackEligibleProviderFailure 单独把它包进
+    // 来），同 provider 不重试浪费时间，但下一个 provider 还能试。
+    if (this.isProviderQuotaOrBillingFailure(error)) {
+      return false;
+    }
+
     if (
       status === 408 ||
       status === 409 ||
@@ -826,15 +835,7 @@ export class AiOrchestratorService {
       return true;
     }
 
-    // 403 + quota/billing 走 transient：用户面看到"通道繁忙"，fallback 链
-    // 把它当作 eligible failure 继续往下试（与 429 同语义）。
-    if (status === 401 || status === 403) {
-      if (this.isProviderQuotaOrBillingFailure(error)) {
-        return true;
-      }
-    }
-
-    return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙|insufficient[_\s-]?quota|user quota is not enough|余额(不足)?|额度(不足|用完|已用尽)?/i.test(
+    return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙/i.test(
       message,
     );
   }
@@ -881,7 +882,10 @@ export class AiOrchestratorService {
     return (
       this.isAuthenticationFailure(error) ||
       this.isTransientProviderFailure(error) ||
-      this.isModelOrCapabilityFailure(error)
+      this.isModelOrCapabilityFailure(error) ||
+      // 走查 yuanzui0728 本次 R4：quota/billing 不算 transient（不重试 same
+      // provider），但仍 fallback eligible：下一个 provider 账户可能还有钱。
+      this.isProviderQuotaOrBillingFailure(error)
     );
   }
 
@@ -3160,6 +3164,14 @@ export class AiOrchestratorService {
       return error;
     }
 
+    // 走查 yuanzui0728 本次 R4：同 synthesis 路径——quota/billing 比 auth 先判，
+    // 让用户知道是 provider 额度问题，避免乱改 key 浪费时间。
+    if (this.isProviderQuotaOrBillingFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音转写 Provider 账户额度不足，请充值或切换其它语音 Provider。',
+      );
+    }
+
     if (this.isAuthenticationFailure(error)) {
       return new ServiceUnavailableException(
         '当前语音转写配置鉴权失败，请检查 Provider Key。',
@@ -3187,6 +3199,16 @@ export class AiOrchestratorService {
       return error;
     }
 
+    // 走查 yuanzui0728 本次 R4：quota/billing 比 auth/transient 都先判，避免
+    // n1n.ai "user quota is not enough" 被报成"鉴权失败"或被吞进笼统的"通道
+    // 繁忙"——明确告诉用户是 provider 账户额度问题（让他知道要补钱，不是
+    // 改 key、不是等几分钟）。
+    if (this.isProviderQuotaOrBillingFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音播报 Provider 账户额度不足，请充值或切换其它语音 Provider。',
+      );
+    }
+
     if (this.isAuthenticationFailure(error)) {
       return new ServiceUnavailableException(
         '当前语音播报配置鉴权失败，请检查 Provider Key。',
@@ -3212,6 +3234,13 @@ export class AiOrchestratorService {
       error instanceof ServiceUnavailableException
     ) {
       return error;
+    }
+
+    // 走查 yuanzui0728 本次 R4：同 speech 路径修法，quota/billing 比 auth 先判。
+    if (this.isProviderQuotaOrBillingFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前图片生成 Provider 账户额度不足，请充值或切换其它图片生成 Provider。',
+      );
     }
 
     if (this.isAuthenticationFailure(error)) {
