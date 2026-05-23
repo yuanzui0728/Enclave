@@ -998,6 +998,27 @@ export class ChatService {
     const fallbackText =
       text?.trim() || this.getAttachmentFallbackText(attachment);
 
+    // R6 走查（真实操作发现）：finalize 端调两次（用户重连/setTimeout 二次触发/
+    // 多端同点挂断）会写出 2 条 id 不同但内容完全一致的 call_log。前端
+    // useCallFinalize.finalizedRef 只是本地锁，跨端/重试都兜不到。后端按
+    // (conversationId, kind='call_log', startedAt) 做去重 —— 同一通话的同一段
+    // 开始时间只允许一条 call_log。其它 attachment kind（如 image / file）
+    // 不走这条幂等路径。
+    if (attachment.kind === 'call_log') {
+      const startedAtIso = attachment.startedAt;
+      if (startedAtIso) {
+        const existing = await this.msgRepo
+          .createQueryBuilder('m')
+          .where('m.conversationId = :conversationId', { conversationId })
+          .andWhere('m.attachmentKind = :kind', { kind: 'call_log' })
+          .andWhere("json_extract(m.attachmentPayload, '$.startedAt') = :startedAt", { startedAt: startedAtIso })
+          .getOne();
+        if (existing) {
+          return this.serializeMessage(existing);
+        }
+      }
+    }
+
     const messageEntity = this.msgRepo.create({
       id: `msg_${Date.now()}_${attachment.kind}`,
       conversationId,

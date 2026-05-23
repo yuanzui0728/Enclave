@@ -973,6 +973,25 @@ export class GroupService {
     text: string,
   ): Promise<GroupMessage> {
     const group = await this.requireAccessibleGroup(groupId);
+
+    // R6 走查（真实操作发现）：群语音 finalize 端没有幂等保护，重连/双端
+    // 同点挂断会写 2 条相同 call_log。按 (groupId, kind='call_log', startedAt)
+    // 去重，复用第一条 messageId。socket 也不重发，否则群成员客户端会插重复卡片。
+    if (attachment.kind === 'call_log') {
+      const startedAtIso = attachment.startedAt;
+      if (startedAtIso) {
+        const existing = await this.messageRepo
+          .createQueryBuilder('m')
+          .where('m.groupId = :groupId', { groupId })
+          .andWhere('m.attachmentKind = :kind', { kind: 'call_log' })
+          .andWhere("json_extract(m.attachmentPayload, '$.startedAt') = :startedAt", { startedAt: startedAtIso })
+          .getOne();
+        if (existing) {
+          return this.toGroupMessage(existing);
+        }
+      }
+    }
+
     const message = this.messageRepo.create({
       groupId,
       senderId: 'system',

@@ -3,11 +3,13 @@ import { AppError } from '../../common/app-error.exception';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
+import { CharactersService } from '../characters/characters.service';
 import { ChatService } from './chat.service';
 import { GroupService } from './group.service';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 import { summarizeChatMentions } from './chat-text.utils';
+import type { GroupReplyCandidate } from './group-reply.types';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import type {
   CallLogAttachment,
@@ -71,6 +73,7 @@ export class GroupVoiceCallsService {
     private readonly groupService: GroupService,
     private readonly planner: GroupReplyPlannerService,
     private readonly orchestrator: GroupReplyOrchestratorService,
+    private readonly characters: CharactersService,
   ) {}
 
   async createTurn(
@@ -201,17 +204,68 @@ export class GroupVoiceCallsService {
       runtimeRules,
     });
     let selectedActors = plannerDecision.selectedActors;
-    // 用户在语音里明确点名（@x）时，planner.isExplicitTarget 已优先放在最前，
-    // 同时 requestedSpeakerIds（如果前端帮助识别了 @）会进一步过滤。
+    // R6 走查真实操作发现：原版「filter only」对 requestedSpeakerIds 是**降级
+    // 过滤**——planner 没选指定角色时 filtered=空 → if (filtered.length) 跳过
+    // → 仍由 planner 自由发挥。前端在语音中识别 @ 后明确传 requestedSpeakerIds，
+    // 用户语义是「强制让 X 回话」，不是「只在 planner 选了 X 时让 X 回」。
+    // 修正：requestedIds 是强制指令，planner 漏选的也得 build candidate 拉进来。
+    // members 是 GroupMemberEntity[]，不是 GroupReplyCandidate[]；需要拿
+    // characters.findManyByIds + getRuntimeProfileFromCharacter 构出最小 candidate
+    // 喂给 orchestrator.generateTaskReply（只用 character.id/name/voicePreset 和 profile）。
     const requestedIds = (input.requestedSpeakerIds ?? [])
       .map((id) => id.trim())
       .filter(Boolean);
     if (requestedIds.length) {
-      const filtered = selectedActors.filter((actor) =>
-        requestedIds.includes(actor.character.id),
+      const memberIdSet = new Set(
+        members.map((member) => member.memberId),
       );
-      if (filtered.length) {
-        selectedActors = filtered;
+      const validRequestedIds = requestedIds.filter((id) => memberIdSet.has(id));
+      if (validRequestedIds.length) {
+        const selectedById = new Map(
+          selectedActors.map((actor) => [actor.character.id, actor]),
+        );
+        const missingIds = validRequestedIds.filter(
+          (id) => !selectedById.has(id),
+        );
+        let extraActors: GroupReplyCandidate[] = [];
+        if (missingIds.length) {
+          const missingCharacters = await this.characters.findManyByIds(missingIds);
+          const profiles = await Promise.all(
+            missingCharacters.map(async (character) => {
+              const profile =
+                await this.characters.getRuntimeProfileFromCharacter(character);
+              return profile ? { character, profile } : null;
+            }),
+          );
+          extraActors = profiles
+            .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+            .map(
+              (entry): GroupReplyCandidate => ({
+                character: entry.character,
+                profile: entry.profile,
+                score: 100, // 明确点名最高
+                randomPassed: true,
+                isExplicitTarget: true,
+                isReplyTarget: false,
+                recentSpeakerIndex: -1,
+              }),
+            );
+        }
+        const forcedActors: GroupReplyCandidate[] = [];
+        for (const id of validRequestedIds) {
+          const fromPlanner = selectedById.get(id);
+          if (fromPlanner) {
+            forcedActors.push(fromPlanner);
+            continue;
+          }
+          const built = extraActors.find((actor) => actor.character.id === id);
+          if (built) {
+            forcedActors.push(built);
+          }
+        }
+        if (forcedActors.length) {
+          selectedActors = forcedActors;
+        }
       }
     }
     const maxSpeakers = enrichedUserContext.hasMentionAll
