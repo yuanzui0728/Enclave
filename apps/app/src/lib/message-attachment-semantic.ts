@@ -240,6 +240,12 @@ export function resolveAttachmentSemanticText(
     );
   }
 
+  if (attachment.kind === "call_log") {
+    // call_log 卡片只在 chat-message-list 里渲染特殊气泡，预览/搜索文本不需要
+    // 自己填——上层 fallbackLabel 已经组装好 `语音通话 · 通话时长 mm:ss` 之类。
+    return "";
+  }
+
   // 走查 2026-05-18 移动端单聊 R9：和 use-conversation-thread R7（commit 154b556fe）
   // 同款 ?? vs || 漏防——StickerAttachment.label 在 schema 上是 `string | undefined`，
   // 用户自定义贴纸不填 label 时偶发以空串落库（旧版 reminder 卡 / 老 wiki import
@@ -303,6 +309,25 @@ function buildAttachmentFallbackLabel(
   if (attachment.kind === "feed_post_card") {
     const detail = attachment.title?.trim() || attachment.authorName;
     return buildNamedFallbackLabel(t(msg`视频号`), detail, bracketed);
+  }
+
+  if (attachment.kind === "call_log") {
+    const minutes = Math.floor(attachment.durationSec / 60);
+    const seconds = attachment.durationSec % 60;
+    const durationStr = `${String(minutes).padStart(2, "0")}:${String(
+      seconds,
+    ).padStart(2, "0")}`;
+    const label =
+      attachment.mode === "video" ? t(msg`视频通话`) : t(msg`语音通话`);
+    const detail =
+      attachment.endedReason === "timeout"
+        ? t(msg`已超时 ${durationStr}`)
+        : attachment.endedReason === "error"
+          ? t(msg`连接异常`)
+          : attachment.endedReason === "no_answer"
+            ? t(msg`未接通`)
+            : durationStr;
+    return buildNamedFallbackLabel(label, detail, bracketed);
   }
 
   // 走查 2026-05-18 移动端单聊 R9：同上 resolveAttachmentSemanticText sticker 分支

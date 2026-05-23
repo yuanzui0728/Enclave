@@ -989,6 +989,35 @@ export class ChatService {
     return this.serializeMessage(messageEntity);
   }
 
+  async saveSystemAttachmentMessage(
+    conversationId: string,
+    attachment: MessageAttachment,
+    text: string,
+  ): Promise<Message> {
+    const entity = await this.requireOwnedConversation(conversationId);
+    const fallbackText =
+      text?.trim() || this.getAttachmentFallbackText(attachment);
+
+    const messageEntity = this.msgRepo.create({
+      id: `msg_${Date.now()}_${attachment.kind}`,
+      conversationId,
+      senderType: 'system',
+      senderId: 'system',
+      senderName: 'system',
+      type: attachment.kind,
+      text: fallbackText,
+      attachmentKind: attachment.kind,
+      attachmentPayload: JSON.stringify(attachment),
+    });
+
+    await this.msgRepo.save(messageEntity);
+    await this.touchConversationActivity(
+      entity,
+      messageEntity.createdAt ?? new Date(),
+    );
+    return this.serializeMessage(messageEntity);
+  }
+
   async sendMessage(
     convId: string,
     input: SendConversationMessageInput,
@@ -1937,7 +1966,8 @@ export class ChatService {
         | 'contact_card'
         | 'location_card'
         | 'note_card'
-        | 'feed_post_card',
+        | 'feed_post_card'
+        | 'call_log',
       text:
         entity.senderType === 'user'
           ? entity.text
@@ -2427,6 +2457,10 @@ export class ChatService {
       return this.buildTextAiParts(promptText);
     }
 
+    if (attachment.kind === 'call_log') {
+      return this.buildTextAiParts(promptText);
+    }
+
     return [
       {
         type: 'sticker',
@@ -2568,6 +2602,11 @@ export class ChatService {
       ].filter(Boolean);
       const captionText = caption ? `，补充说明：${caption}` : '';
       return `${detailParts.join('，')}${captionText}`.trim();
+    }
+
+    if (attachment.kind === 'call_log') {
+      // call_log 是系统消息，不会进入 user prompt 路径；保留兜底字符串。
+      return '';
     }
 
     return caption

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  createVoiceCallTurn,
+  createGroupVoiceCallTurn,
   type CallFinalizeEndedReason,
-  type VoiceCallTurnResult,
+  type GroupVoiceCallAssistantTurn,
+  type GroupVoiceCallTurnResult,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
@@ -14,82 +15,105 @@ import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
 
-type UseVoiceCallSessionOptions = {
+type UseGroupVoiceCallSessionOptions = {
   baseUrl?: string;
-  conversationId: string;
-  characterId?: string;
+  groupId: string;
   enabled: boolean;
-  onTurnSuccess?: (result: VoiceCallTurnResult) => void | Promise<void>;
+  participantCount?: number;
+  requestedSpeakerIds?: string[];
+  onTurnSuccess?: (result: GroupVoiceCallTurnResult) => void | Promise<void>;
   onSessionEnded?: (reason: CallFinalizeEndedReason) => void;
 };
 
-export function useVoiceCallSession({
+type PlaybackPhase = "idle" | "playing";
+
+/**
+ * 群聊语音通话会话：
+ * - 单轮接受多个 AI 角色顺序回话（planner 选人，最多 2 人）
+ * - audioQueueRef 维护本轮 turn 队列；activeSpeakerId 高亮当前说话角色
+ * - assistantAudioUrl 为 null 的 turn（TTS 兜底失败）仍展示头像 highlight，
+ *   但不播放音频，立即推进队列
+ */
+export function useGroupVoiceCallSession({
   baseUrl,
-  conversationId,
-  characterId,
+  groupId,
   enabled,
+  participantCount,
+  requestedSpeakerIds,
   onTurnSuccess,
   onSessionEnded,
-}: UseVoiceCallSessionOptions) {
+}: UseGroupVoiceCallSessionOptions) {
   const queryClient = useQueryClient();
-  const callFinalize = useCallFinalize({
-    thread: "direct",
-    mode: "voice",
-    baseUrl,
-    scopeId: conversationId,
-    ...(characterId ? { characterId } : {}),
-    enabled,
-    ...(onSessionEnded ? { onSessionEnded } : {}),
-  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioQueueRef = useRef<GroupVoiceCallAssistantTurn[]>([]);
   const autoSubmitRecordingRef = useRef(false);
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
-  const [lastTurn, setLastTurn] = useState<VoiceCallTurnResult | null>(null);
-  const [audioMuted, setAudioMuted] = useState(false);
-  const [playbackState, setPlaybackState] = useState<"idle" | "playing">(
-    "idle",
+  const [lastTurn, setLastTurn] = useState<GroupVoiceCallTurnResult | null>(
+    null,
   );
+  const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [playbackState, setPlaybackState] = useState<PlaybackPhase>("idle");
   const [playerError, setPlayerError] = useState<string | null>(null);
   const speech = useSpeechInput({
     baseUrl,
-    conversationId,
+    conversationId: groupId,
     enabled,
     mode: "voice",
+  });
+  const callFinalize = useCallFinalize({
+    thread: "group",
+    mode: "voice",
+    baseUrl,
+    scopeId: groupId,
+    ...(typeof participantCount === "number" ? { participantCount } : {}),
+    enabled,
+    ...(onSessionEnded ? { onSessionEnded } : {}),
   });
 
   speechCancelRef.current = speech.cancel;
   speechClearResultRef.current = speech.clearResult;
 
   const stopReplyPlayback = useCallback(() => {
+    audioQueueRef.current = [];
     const audio = audioRef.current;
-    if (!audio) {
-      return;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
     }
-
-    audio.pause();
-    audio.currentTime = 0;
     setPlaybackState("idle");
+    setActiveSpeakerId(null);
   }, []);
 
-  const playReplyAudio = useCallback(async (audioUrl: string | null) => {
-    // null = 三级 TTS 兜底失败，UI 只展示文字气泡，不试图播放
-    if (!audioUrl) {
+  const playNext = useCallback(async () => {
+    const audio = audioRef.current;
+    const next = audioQueueRef.current.shift();
+    if (!next) {
+      setActiveSpeakerId(null);
       setPlaybackState("idle");
       return;
     }
-    const audio = audioRef.current;
+    setActiveSpeakerId(next.characterId);
+    setPlayerError(null);
+
+    if (!next.assistantAudioUrl) {
+      // TTS 失败的 turn：维持头像高亮一小段时间让 UI 看到"X 在说"，再继续下一条
+      setTimeout(() => {
+        void playNext();
+      }, 1200);
+      return;
+    }
+
     if (!audio) {
+      setActiveSpeakerId(null);
+      setPlaybackState("idle");
       return;
     }
 
     audio.pause();
-    // 后端语音附件现在返回相对 URL（/api/chat/attachments/...），公网入口需要走
-    // /cloud/world-api 反代并附 cloud token；这里统一过 resolveAppMediaUrl 处理。
-    audio.src = resolveAppMediaUrl(audioUrl);
+    audio.src = resolveAppMediaUrl(next.assistantAudioUrl);
     audio.currentTime = 0;
-    setPlayerError(null);
-
     try {
       await audio.play();
     } catch {
@@ -103,7 +127,6 @@ export function useVoiceCallSession({
       if (!speech.recordedAudio) {
         throw new Error(t(msg`请先录一段语音再试。`));
       }
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -111,12 +134,14 @@ export function useVoiceCallSession({
         speech.recordedAudio.fileName,
       );
       formData.append("durationMs", String(speech.recordedAudio.durationMs));
-      formData.append("conversationId", conversationId);
-      if (characterId) {
-        formData.append("characterId", characterId);
+      formData.append("groupId", groupId);
+      if (requestedSpeakerIds?.length) {
+        formData.append(
+          "requestedSpeakerIds",
+          requestedSpeakerIds.join(","),
+        );
       }
-
-      return createVoiceCallTurn(formData, baseUrl);
+      return createGroupVoiceCallTurn(formData, baseUrl);
     },
     onSuccess: async (result) => {
       setLastTurn(result);
@@ -126,11 +151,12 @@ export function useVoiceCallSession({
           queryKey: ["app-conversations", baseUrl],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-conversation-messages", baseUrl, conversationId],
+          queryKey: ["app-group-messages", baseUrl, groupId],
         }),
         Promise.resolve(onTurnSuccess?.(result)),
       ]);
-      await playReplyAudio(result.assistantAudioUrl);
+      audioQueueRef.current = [...result.assistantTurns];
+      await playNext();
     },
   });
 
@@ -148,11 +174,13 @@ export function useVoiceCallSession({
       setPlaybackState("idle");
     };
     const handleEnded = () => {
-      setPlaybackState("idle");
+      // 当前 turn 播完，推进到下一个；queue 空了 playNext 会 reset state
+      void playNext();
     };
     const handleError = () => {
       setPlaybackState("idle");
       setPlayerError(resolveVoicePlaybackFailedCopy());
+      void playNext();
     };
 
     audio.addEventListener("play", handlePlay);
@@ -166,14 +194,13 @@ export function useVoiceCallSession({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, []);
+  }, [playNext]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) {
       return;
     }
-
     audio.muted = audioMuted;
   }, [audioMuted]);
 
@@ -181,18 +208,10 @@ export function useVoiceCallSession({
     if (!speech.recordedAudio || speech.status !== "ready") {
       return;
     }
-
     if (!autoSubmitRecordingRef.current || turnMutation.isPending) {
       return;
     }
-
     autoSubmitRecordingRef.current = false;
-    // 用 mutate() 而不是 mutateAsync()——这里不 await 结果，mutation.error 已经
-    // 被 useMutation 内部捕获并通过 mutation.error 暴露给消费者
-    // (mobile-ai-call-screen 在 line 730 读它显示「重试」状态条)；
-    // mutateAsync() 的 promise 在 mutationFn 抛错时会 reject，`void` 不接
-    // → 落 window.unhandledrejection 污染 telemetry（公网隧道 5xx / cloud token
-    // 过期重连时 createVoiceCallTurn 偶发 4xx/5xx，每次都会触发）。
     turnMutation.mutate();
   }, [speech.recordedAudio, speech.status, turnMutation]);
 
@@ -203,7 +222,7 @@ export function useVoiceCallSession({
     setAudioMuted(false);
     stopReplyPlayback();
     speechCancelRef.current();
-  }, [characterId, conversationId, stopReplyPlayback]);
+  }, [groupId, stopReplyPlayback]);
 
   useEffect(() => {
     return () => {
@@ -217,17 +236,14 @@ export function useVoiceCallSession({
     if (!enabled || typeof document === "undefined") {
       return;
     }
-
     const handleVisibilityChange = () => {
       if (document.visibilityState !== "hidden") {
         return;
       }
-
       autoSubmitRecordingRef.current = false;
       stopReplyPlayback();
       speechCancelRef.current();
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -238,7 +254,6 @@ export function useVoiceCallSession({
     if (!enabled) {
       return;
     }
-
     if (
       turnMutation.isPending ||
       playbackState === "playing" ||
@@ -246,20 +261,13 @@ export function useVoiceCallSession({
     ) {
       return;
     }
-
     autoSubmitRecordingRef.current = true;
     setPlayerError(null);
     if (speech.status !== "idle") {
       speech.cancel();
     }
-
     await speech.start();
-  }, [
-    enabled,
-    playbackState,
-    speech,
-    turnMutation.isPending,
-  ]);
+  }, [enabled, playbackState, speech, turnMutation.isPending]);
 
   const stopRecordingTurn = useCallback(() => {
     if (
@@ -269,7 +277,6 @@ export function useVoiceCallSession({
       speech.stop();
       return;
     }
-
     autoSubmitRecordingRef.current = false;
   }, [speech]);
 
@@ -279,12 +286,12 @@ export function useVoiceCallSession({
   }, [speech]);
 
   const replayLastTurn = useCallback(async () => {
-    if (!lastTurn || !lastTurn.assistantAudioUrl) {
+    if (!lastTurn?.assistantTurns.length) {
       return;
     }
-
-    await playReplyAudio(lastTurn.assistantAudioUrl);
-  }, [lastTurn, playReplyAudio]);
+    audioQueueRef.current = [...lastTurn.assistantTurns];
+    await playNext();
+  }, [lastTurn, playNext]);
 
   const hangup = useCallback(
     async (reason?: CallFinalizeEndedReason) => {
@@ -297,6 +304,7 @@ export function useVoiceCallSession({
   );
 
   return {
+    activeSpeakerId,
     audioMuted,
     audioRef,
     busy:
@@ -308,7 +316,6 @@ export function useVoiceCallSession({
     lastTurn,
     playbackState,
     playerError,
-    playReplyAudio,
     replayLastTurn,
     sessionStartedAtIso: callFinalize.startedAtIsoRef.current,
     setAudioMuted,
@@ -322,12 +329,12 @@ export function useVoiceCallSession({
 
 function resolveAutoplayBlockedCopy() {
   return isNativeMobileRuntime()
-    ? t(msg`系统拦截了自动播报，点“重播上一句”即可播放。`)
-    : t(msg`浏览器拦截了自动播报，点“重播上一句”即可播放。`);
+    ? t(msg`系统拦截了自动播报，点"重播上一句"即可播放。`)
+    : t(msg`浏览器拦截了自动播报，点"重播上一句"即可播放。`);
 }
 
 function resolveVoicePlaybackFailedCopy() {
   return isNativeMobileRuntime()
-    ? t(msg`语音已生成，但当前设备没有成功播放。可以点“重播上一句”再试。`)
-    : t(msg`语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。`);
+    ? t(msg`语音已生成，但当前设备没有成功播放。可以点"重播上一句"再试。`)
+    : t(msg`语音已生成，但浏览器没有成功播放。可以点"重播上一句"再试。`);
 }

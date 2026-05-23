@@ -35,7 +35,7 @@ export interface VoiceCallTurnResult {
   userTranscript?: string;
   transcriptStatus: VoiceCallTranscriptStatus;
   assistantText: string;
-  assistantAudioUrl: string;
+  assistantAudioUrl: string | null;
   assistantAudioFileName: string;
   assistantAudioMimeType: string;
   transcriptionDurationMs?: number;
@@ -44,6 +44,57 @@ export interface VoiceCallTurnResult {
   provider?: string;
   userMessageId: string;
   assistantMessageId: string;
+  speechFallbackReason?: "tts_unavailable";
+}
+
+export interface GroupVoiceCallAssistantTurn {
+  messageId: string;
+  characterId: string;
+  characterName: string;
+  characterAvatar?: string;
+  assistantText: string;
+  assistantAudioUrl: string | null;
+  assistantAudioFileName: string;
+  assistantAudioMimeType: string;
+  synthesisDurationMs: number;
+  durationMs?: number;
+  provider?: string;
+  speechFallbackReason?: "tts_unavailable";
+}
+
+export interface GroupVoiceCallTurnResult {
+  groupId: string;
+  userMessageId: string;
+  userTranscript?: string;
+  transcriptStatus: VoiceCallTranscriptStatus;
+  transcriptionDurationMs?: number;
+  assistantTurns: GroupVoiceCallAssistantTurn[];
+  totalDurationMs: number;
+}
+
+export type CallFinalizeThread = "direct" | "group";
+export type CallFinalizeMode = "voice" | "video";
+export type CallFinalizeEndedReason =
+  | "user_hangup"
+  | "timeout"
+  | "error"
+  | "no_answer";
+
+export interface FinalizeCallRequest {
+  thread: CallFinalizeThread;
+  mode: CallFinalizeMode;
+  conversationId?: string;
+  groupId?: string;
+  characterId?: string;
+  startedAtIso: string;
+  endedReason: CallFinalizeEndedReason;
+  participantCount?: number;
+}
+
+export interface FinalizeCallResult {
+  messageId: string | null;
+  durationSec: number;
+  endedReason: CallFinalizeEndedReason;
 }
 
 export type DigitalHumanCallMode = "desktop_video_call" | "mobile_video_call";

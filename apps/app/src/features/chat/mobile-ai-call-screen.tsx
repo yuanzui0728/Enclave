@@ -602,6 +602,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       if (isVideoMode) {
         await digitalHumanCall.endSession();
       }
+      // 走查本轮：单聊语音通话挂断时把 call_log 卡片写进 thread（hook 内做去重，
+      // timer 超时 / 用户 hangup / 退出页 三个入口共享一次落库）。
+      if (!isVideoMode) {
+        await voiceCall.hangup("user_hangup");
+      }
 
       if (
         conversation?.type === "direct" &&
@@ -1498,8 +1503,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <MobileCallNotice
               tone="danger"
               className="flex items-center justify-between gap-3"
+              title={describeRequestError(activeCall.turnMutation.error)}
             >
-              <span>{describeRequestError(activeCall.turnMutation.error)}</span>
+              <span>{t(msg`网络不稳定，请重试`)}</span>
               {renderBackToChatAction()}
             </MobileCallNotice>
           ) : null}
@@ -1524,6 +1530,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 {renderBackToChatAction()}
               </MobileCallNotice>
             )
+          ) : null}
+          {!isVideoMode &&
+          voiceCall.lastTurn &&
+          voiceCall.lastTurn.assistantAudioUrl === null ? (
+            <MobileCallNotice tone="warning">
+              {t(msg`语音合成暂不可用，本轮以文字呈现`)}
+            </MobileCallNotice>
           ) : null}
           {videoRecoveryMessage ? (
             <MobileCallNotice

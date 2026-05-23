@@ -231,6 +231,10 @@ export function resolveAttachmentSemanticText(
     );
   }
 
+  if (attachment.kind === 'call_log') {
+    return '';
+  }
+
   // 走查 2026-05-18 移动端单聊 R9 server-side 镜像：和 client
   // apps/app/src/lib/message-attachment-semantic.ts 同款 ?? vs || 漏防 —— sticker.label
   // 是 `string | undefined`，老 wiki import / 旧 reminder 卡 / 用户自定义贴纸都见过
@@ -283,6 +287,20 @@ function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
   if (attachment.kind === 'feed_post_card') {
     const label = attachment.title?.trim() || attachment.authorName;
     return label ? `视频号 · ${label}` : '视频号';
+  }
+
+  if (attachment.kind === 'call_log') {
+    const modeLabel = attachment.mode === 'video' ? '视频通话' : '语音通话';
+    const minutes = Math.floor(attachment.durationSec / 60);
+    const seconds = attachment.durationSec % 60;
+    const duration = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (attachment.endedReason === 'timeout') {
+      return `${modeLabel} · 已超时 ${duration}`;
+    }
+    if (attachment.endedReason === 'error') {
+      return `${modeLabel} · 连接异常`;
+    }
+    return `${modeLabel} · 通话时长 ${duration}`;
   }
 
   // 走查 R14：和 client apps/app/src/lib/message-attachment-semantic.ts:313-317

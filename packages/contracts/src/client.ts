@@ -174,6 +174,9 @@ import type {
   CreateDigitalHumanSessionRequest,
   DigitalHumanSession,
   DigitalHumanTurnResult,
+  FinalizeCallRequest,
+  FinalizeCallResult,
+  GroupVoiceCallTurnResult,
   SpeechSynthesisRequest,
   SpeechSynthesisResult,
   SpeechTranscriptionResult,
@@ -1141,6 +1144,45 @@ export function createVoiceCallTurn(payload: FormData, baseUrl?: string) {
     {
       method: "POST",
       body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function finalizeVoiceCall(
+  payload: FinalizeCallRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FinalizeCallResult>(
+    "/chat/voice-calls/finalize",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function createGroupVoiceCallTurn(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<GroupVoiceCallTurnResult>(
+    "/chat/group-voice-calls/turns",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function finalizeGroupVoiceCall(
+  payload: FinalizeCallRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FinalizeCallResult>(
+    "/chat/group-voice-calls/finalize",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
     },
     baseUrl,
   );

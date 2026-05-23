@@ -15,6 +15,7 @@ import {
   DigitalHumanCallsController,
   FavoritesController,
   GroupController,
+  GroupVoiceCallsController,
   MessageRemindersController,
   VoiceCallsController,
 } from './chat.controller';
@@ -26,6 +27,7 @@ import { MessageRemindersService } from './message-reminders.service';
 import { SearchActivityController } from './search-activity.controller';
 import { SearchActivityService } from './search-activity.service';
 import { VoiceCallsService } from './voice-calls.service';
+import { GroupVoiceCallsService } from './group-voice-calls.service';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 import { GroupReplyTaskService } from './group-reply-task.service';
@@ -104,6 +106,7 @@ import { EventsModule } from '../events/events.module';
     DigitalHumanCallsService,
     MockDigitalHumanProviderAdapter,
     VoiceCallsService,
+    GroupVoiceCallsService,
     CustomStickersService,
   ],
   controllers: [
@@ -111,6 +114,7 @@ import { EventsModule } from '../events/events.module';
     ChatAttachmentController,
     ChatStickerController,
     VoiceCallsController,
+    GroupVoiceCallsController,
     DigitalHumanCallsController,
     FavoritesController,
     SearchActivityController,

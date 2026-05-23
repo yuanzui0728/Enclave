@@ -30,6 +30,7 @@ import { GroupService } from './group.service';
 import { DigitalHumanCallsService } from './digital-human-calls.service';
 import { CustomStickersService } from './custom-stickers.service';
 import { VoiceCallsService } from './voice-calls.service';
+import { GroupVoiceCallsService } from './group-voice-calls.service';
 import {
   MessageRemindersService,
   type CreateMessageReminderInput,
@@ -404,6 +405,110 @@ export class VoiceCallsController {
       conversationId,
       characterId: body.characterId?.trim() || undefined,
       ...(body.durationMs ? { durationMs: Number(body.durationMs) } : {}),
+    });
+  }
+
+  @Post('finalize')
+  finalize(
+    @Body()
+    body: {
+      conversationId?: string;
+      characterId?: string;
+      mode?: 'voice' | 'video';
+      startedAtIso?: string;
+      endedReason?: 'user_hangup' | 'timeout' | 'error' | 'no_answer';
+    },
+  ) {
+    const conversationId = body.conversationId?.trim();
+    if (!conversationId) {
+      throw new AppError('CHAT_CONVERSATION_ID_REQUIRED', {
+        legacyMessage: '缺少 conversationId。',
+      });
+    }
+    return this.voiceCallsService.finalizeCall({
+      conversationId,
+      ...(body.characterId?.trim()
+        ? { characterId: body.characterId.trim() }
+        : {}),
+      mode: body.mode === 'video' ? 'video' : 'voice',
+      startedAtIso: body.startedAtIso ?? new Date().toISOString(),
+      endedReason: body.endedReason ?? 'user_hangup',
+    });
+  }
+}
+
+@Controller('chat/group-voice-calls')
+export class GroupVoiceCallsController {
+  constructor(
+    private readonly groupVoiceCallsService: GroupVoiceCallsService,
+  ) {}
+
+  @Post('turns')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    }),
+  )
+  createTurn(
+    @UploadedFile() file: UploadedAttachmentFile | undefined,
+    @Body()
+    body: {
+      groupId?: string;
+      durationMs?: string;
+      requestedSpeakerIds?: string;
+    },
+  ) {
+    if (!file) {
+      throw new AppError('AI_AUDIO_REQUIRED', {
+        legacyMessage: '请先录一段语音再试。',
+      });
+    }
+    const groupId = body.groupId?.trim();
+    if (!groupId) {
+      throw new AppError('CHAT_GROUP_ID_REQUIRED', {
+        legacyMessage: '缺少 groupId。',
+      });
+    }
+    const requestedSpeakerIds = body.requestedSpeakerIds
+      ? body.requestedSpeakerIds
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : undefined;
+    return this.groupVoiceCallsService.createTurn(file, {
+      groupId,
+      ...(body.durationMs ? { durationMs: Number(body.durationMs) } : {}),
+      ...(requestedSpeakerIds?.length ? { requestedSpeakerIds } : {}),
+    });
+  }
+
+  @Post('finalize')
+  finalize(
+    @Body()
+    body: {
+      groupId?: string;
+      mode?: 'voice' | 'video';
+      startedAtIso?: string;
+      endedReason?: 'user_hangup' | 'timeout' | 'error' | 'no_answer';
+      participantCount?: number;
+    },
+  ) {
+    const groupId = body.groupId?.trim();
+    if (!groupId) {
+      throw new AppError('CHAT_GROUP_ID_REQUIRED', {
+        legacyMessage: '缺少 groupId。',
+      });
+    }
+    return this.groupVoiceCallsService.finalizeCall({
+      groupId,
+      mode: body.mode === 'video' ? 'video' : 'voice',
+      startedAtIso: body.startedAtIso ?? new Date().toISOString(),
+      endedReason: body.endedReason ?? 'user_hangup',
+      ...(typeof body.participantCount === 'number'
+        ? { participantCount: body.participantCount }
+        : {}),
     });
   }
 }

@@ -30,11 +30,13 @@ import {
   MoreHorizontal,
   Pause,
   Pencil,
+  Phone,
   Play,
   Printer,
   Share2,
   Star,
   Trash2,
+  Video,
   X,
 } from "lucide-react";
 import {
@@ -4070,6 +4072,9 @@ export function ChatMessageList({
                           : () => openAttachment(message)
                       }
                     />
+                  ) : message.type === "call_log" &&
+                    message.attachment?.kind === "call_log" ? (
+                    <CallLogMessage attachment={message.attachment} />
                   ) : directCallInvite ? (
                     <DirectCallInviteMessage
                       own={isUser}
@@ -7152,6 +7157,70 @@ function resolveRenderableMessageText(message: ChatRenderableMessage) {
   }
 
   return sanitizeDisplayedChatText(message.text);
+}
+
+function CallLogMessage({
+  attachment,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "call_log" }>;
+}) {
+  const t = useRuntimeTranslator();
+  const modeLabel =
+    attachment.mode === "video" ? t(msg`视频通话`) : t(msg`语音通话`);
+  const durationLabel = formatCallLogDuration(attachment.durationSec);
+  const reasonLabel = resolveCallLogReasonLabel(attachment.endedReason, t);
+  const Icon = attachment.mode === "video" ? Video : Phone;
+  const tone =
+    attachment.endedReason === "user_hangup" ? "neutral" : "warning";
+  return (
+    <div
+      className={cn(
+        "inline-flex max-w-[280px] items-center gap-2.5 rounded-[14px] border px-3 py-2 text-[12px] leading-[18px]",
+        tone === "warning"
+          ? "border-[rgba(245,158,11,0.20)] bg-[rgba(245,158,11,0.08)] text-[color:var(--text-primary)]"
+          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]",
+      )}
+    >
+      <Icon
+        size={16}
+        className={cn(
+          tone === "warning"
+            ? "text-[#b45309]"
+            : "text-[color:var(--text-muted)]",
+        )}
+      />
+      <div className="flex flex-col gap-0.5">
+        <div className="font-medium">{modeLabel}</div>
+        <div className="text-[color:var(--text-muted)]">
+          {reasonLabel ? `${reasonLabel} · ${durationLabel}` : durationLabel}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatCallLogDuration(durationSec: number) {
+  const safe = Math.max(0, Math.round(durationSec));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function resolveCallLogReasonLabel(
+  reason: Extract<MessageAttachment, { kind: "call_log" }>["endedReason"],
+  t: ReturnType<typeof useRuntimeTranslator>,
+) {
+  switch (reason) {
+    case "timeout":
+      return t(msg`已超时`);
+    case "error":
+      return t(msg`连接异常`);
+    case "no_answer":
+      return t(msg`未接通`);
+    case "user_hangup":
+    default:
+      return "";
+  }
 }
 
 function GroupCallInviteMessage({

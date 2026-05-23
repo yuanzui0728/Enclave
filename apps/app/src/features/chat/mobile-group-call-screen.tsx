@@ -48,6 +48,7 @@ import { buildGroupCallInviteMessage } from "./group-call-message";
 import { getGroupCallStatusLabel } from "./group-call-presentation";
 import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
+import { useGroupVoiceCallSession } from "./use-group-voice-call-session";
 
 type MobileGroupCallScreenProps = {
   mode: "voice" | "video";
@@ -242,6 +243,28 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const callTitle =
     mode === "voice" ? t(msg`群语音通话`) : t(msg`群视频通话`);
   const statusTitle = getGroupCallStatusLabel(mode, "ongoing");
+
+  // 群语音通话：录音 → 群 voice-call turn → 顺序播多角色 AI 回话；视频模式暂不接
+  const voiceCall = useGroupVoiceCallSession({
+    baseUrl,
+    groupId: resolvedGroupId,
+    enabled:
+      mode === "voice" && !isDesktopLayout && Boolean(resolvedGroupId),
+    participantCount: totalCount || undefined,
+  });
+  const voiceActiveSpeakerId = voiceCall.activeSpeakerId;
+  const voiceCallLastTurn = voiceCall.lastTurn;
+  const voiceCallSpeechError = voiceCall.speech.error;
+  const voiceCallTurnError = voiceCall.turnMutation.error;
+  const voiceCallSpeechStatus = voiceCall.speech.status;
+  const voiceCallPlaybackState = voiceCall.playbackState;
+  const voiceCallBusy = voiceCall.busy;
+  const voiceCallLastAssistantText = voiceCallLastTurn?.assistantTurns?.[0]?.assistantText;
+  const voiceCallHasTtsFallback = Boolean(
+    voiceCallLastTurn?.assistantTurns.some(
+      (turn) => turn.assistantAudioUrl === null,
+    ),
+  );
   const hasSyncedStatus =
     lastPublishedCounts?.activeCount === activeCount &&
     lastPublishedCounts?.totalCount === totalCount;
@@ -616,6 +639,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         durationMs,
         startedAt,
       });
+      // call_log 卡片：和单聊同款，挂断时让系统在群里写一条「📞 通话时长 mm:ss」
+      // 系统消息，使群聊记录直观看出"刚结束一通通话"。voiceCall.hangup 内部去重，
+      // timeout / hangup 同时触发只会写一次。
+      if (mode === "voice") {
+        await voiceCall.hangup("user_hangup");
+      }
       void navigate({
         to: "/group/$groupId",
         params: { groupId: resolvedGroupId },
@@ -1129,6 +1158,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           <div className="mt-3.5 grid gap-2.5">
             {visibleMembers.map((member) => {
               const joined = joinedMemberIdSet.has(member.memberId);
+              const isActiveSpeaker =
+                mode === "voice" &&
+                voiceActiveSpeakerId === member.memberId;
               const roleLabel =
                 member.role === "owner"
                   ? t(msg`群主`)
@@ -1147,6 +1179,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                     joined
                       ? "border-[rgba(34,197,94,0.22)] bg-[rgba(34,197,94,0.10)]"
                       : "border-white/12 bg-white/6",
+                    isActiveSpeaker
+                      ? "border-emerald-400/64 bg-emerald-400/14 ring-2 ring-emerald-400/40"
+                      : null,
                     member.memberType === "user"
                       ? "cursor-default"
                       : "active:bg-white/12",
@@ -1197,6 +1232,82 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           ) : null}
         </section>
+
+        {mode === "voice" && !isDesktopLayout ? (
+          <section className="mt-3.5 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-white">
+                {t(msg`按住说话`)}
+              </div>
+              <MobileCallMetaChip
+                tone={
+                  voiceCallPlaybackState === "playing" ? "success" : "default"
+                }
+              >
+                {voiceCallTurnError instanceof Error
+                  ? t(msg`网络不稳定，请重试`)
+                  : voiceCall.turnMutation.isPending
+                    ? t(msg`AI 思考中...`)
+                    : voiceCallSpeechStatus === "listening"
+                      ? t(msg`录音中...`)
+                      : voiceCallPlaybackState === "playing"
+                        ? t(msg`角色正在说`)
+                        : t(msg`待录音`)}
+              </MobileCallMetaChip>
+            </div>
+            <button
+              type="button"
+              disabled={leavingScreen || voiceCallBusy}
+              onPointerDown={() => {
+                void voiceCall.startRecordingTurn();
+              }}
+              onPointerUp={() => {
+                voiceCall.stopRecordingTurn();
+              }}
+              onPointerLeave={() => {
+                voiceCall.stopRecordingTurn();
+              }}
+              onPointerCancel={() => {
+                voiceCall.cancelRecordingTurn();
+              }}
+              className={cn(
+                "mt-3 flex w-full items-center justify-center gap-2 rounded-[18px] py-4 text-[14px] font-medium transition",
+                voiceCallSpeechStatus === "listening"
+                  ? "bg-emerald-500 text-white shadow-[0_12px_36px_rgba(34,197,94,0.36)]"
+                  : "bg-white/8 text-white",
+                voiceCallBusy ? "opacity-72" : null,
+                leavingScreen ? "opacity-50" : null,
+              )}
+            >
+              <Mic size={18} />
+              {voiceCallSpeechStatus === "listening"
+                ? t(msg`松开发送`)
+                : t(msg`按住说话`)}
+            </button>
+            {voiceCallSpeechError ? (
+              <MobileCallNotice tone="danger" className="mt-3">
+                {voiceCallSpeechError}
+              </MobileCallNotice>
+            ) : null}
+            {voiceCallHasTtsFallback ? (
+              <MobileCallNotice tone="warning" className="mt-3">
+                {t(msg`语音合成暂不可用，本轮以文字呈现`)}
+              </MobileCallNotice>
+            ) : null}
+            {voiceCallLastAssistantText &&
+            !voiceCallSpeechError &&
+            !voiceCallTurnError ? (
+              <div className="mt-3 rounded-[14px] border border-white/12 bg-white/4 px-3.5 py-2.5 text-[12px] leading-[18px] text-white/72">
+                {voiceCallLastAssistantText}
+              </div>
+            ) : null}
+            <audio
+              ref={voiceCall.audioRef}
+              preload="auto"
+              className="hidden"
+            />
+          </section>
+        ) : null}
 
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <MobileCallActionButton

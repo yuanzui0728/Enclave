@@ -23,7 +23,7 @@ type ProviderTurnInput = {
   conversationId?: string;
   characterId?: string;
   characterName?: string;
-  assistantAudioUrl: string;
+  assistantAudioUrl: string | null;
   assistantText: string;
   assistantMessageId: string;
   posterUrl?: string;

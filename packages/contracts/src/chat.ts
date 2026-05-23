@@ -23,7 +23,8 @@ export type MessageType =
   | "contact_card"
   | "location_card"
   | "note_card"
-  | "feed_post_card";
+  | "feed_post_card"
+  | "call_log";
 export type GroupMemberType = "user" | "character";
 export type ChatMessageSearchCategory = "all" | "media" | "files" | "links";
 

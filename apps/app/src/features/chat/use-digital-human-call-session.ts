@@ -86,7 +86,11 @@ export function useDigitalHumanCallSession({
     setPlaybackState("idle");
   }, []);
 
-  const playReplyAudio = useCallback(async (audioUrl: string) => {
+  const playReplyAudio = useCallback(async (audioUrl: string | null) => {
+    if (!audioUrl) {
+      setPlaybackState("idle");
+      return;
+    }
     const audio = audioRef.current;
     if (!audio) {
       return;

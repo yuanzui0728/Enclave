@@ -6,7 +6,7 @@ export type DigitalHumanPlayerPageSessionSnapshot = {
   lastTurn?: {
     assistantText?: string;
     assistantMessageId?: string;
-    assistantAudioUrl?: string;
+    assistantAudioUrl?: string | null;
   };
 };
 

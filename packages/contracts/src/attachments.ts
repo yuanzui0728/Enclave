@@ -130,6 +130,23 @@ export interface FeedPostCardAttachment {
   surface: "channels";
 }
 
+export type CallLogEndedReason =
+  | "user_hangup"
+  | "timeout"
+  | "error"
+  | "no_answer";
+
+export interface CallLogAttachment {
+  kind: "call_log";
+  mode: "voice" | "video";
+  thread: "direct" | "group";
+  durationSec: number;
+  endedReason: CallLogEndedReason;
+  startedAt: string;
+  endedAt: string;
+  participantCount?: number;
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
@@ -138,7 +155,8 @@ export type MessageAttachment =
   | ContactCardAttachment
   | LocationCardAttachment
   | NoteCardAttachment
-  | FeedPostCardAttachment;
+  | FeedPostCardAttachment
+  | CallLogAttachment;
 
 export type UploadableAttachment =
   | ImageAttachment

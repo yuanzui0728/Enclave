@@ -967,39 +967,81 @@ export class GroupService {
     return this.toGroupMessage(message);
   }
 
-  async triggerAiReplies(
+  async saveSystemAttachmentMessage(
+    groupId: string,
+    attachment: MessageAttachment,
+    text: string,
+  ): Promise<GroupMessage> {
+    const group = await this.requireAccessibleGroup(groupId);
+    const message = this.messageRepo.create({
+      groupId,
+      senderId: 'system',
+      senderType: 'character',
+      senderName: 'system',
+      text,
+      type: attachment.kind,
+      attachmentKind: attachment.kind,
+      attachmentPayload: JSON.stringify(attachment),
+    });
+
+    await this.messageRepo.save(message);
+    await this.touchGroupActivity(group, message.createdAt ?? new Date());
+    const nextMessage = this.toGroupMessage(message);
+    this.chatGateway.emitThreadMessage(groupId, nextMessage);
+    return nextMessage;
+  }
+
+  async saveCharacterVoiceMessage(
+    groupId: string,
+    character: {
+      id: string;
+      name: string;
+      avatar?: string;
+    },
+    attachment: MessageAttachment,
+    text: string,
+  ): Promise<GroupMessage> {
+    const group = await this.requireAccessibleGroup(groupId);
+    const message = this.messageRepo.create({
+      groupId,
+      senderId: character.id,
+      senderType: 'character',
+      senderName: character.name,
+      senderAvatar: character.avatar,
+      text,
+      type: attachment.kind,
+      attachmentKind: attachment.kind,
+      attachmentPayload: JSON.stringify(attachment),
+    });
+
+    await this.messageRepo.save(message);
+    await this.touchGroupActivity(group, message.createdAt ?? new Date());
+    const nextMessage = this.toGroupMessage(message);
+    this.chatGateway.emitThreadMessage(groupId, nextMessage);
+    return nextMessage;
+  }
+
+  async prepareReplyContext(
     groupId: string,
     userMessage: GroupMessage,
-  ): Promise<void> {
+  ): Promise<{
+    members: GroupMemberEntity[];
+    recentMessages: GroupMessageEntity[];
+    history: ChatMessage[];
+    currentUserContext: GroupUserMessageContext;
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>;
+  } | null> {
     const group = await this.requireAccessibleGroup(groupId);
     const members = (
       await this.memberRepo.find({
         where: { groupId, memberType: 'character' },
       })
-    )
-      // 走查 R3：addMember 已在 R1 起拦截 SELF_CHARACTER_ID 作为 character 入群，
-      // 但 yuanzui0728 等老账号在 R1 前建的群里历史落了 memberType=character 的
-      // char-default-self 行（实测群 78a3d894-dd62-... 修复前一直挂着 SELF 行）。
-      // 这里在 AI 选 actor 阶段再兜一层：planner.selectReplyActorsForTurn 会按
-      // 群成员里的 character 抽 reply actor，SELF 入选后用户在群里发完一条消息
-      // 会立刻看到 "我自己 正在回复..."、AI 用"我自己"角色身份回一条——本质是
-      // 用户在自言自语。先在 source 处过掉，运行时永远不再让 SELF 作为 reply
-      // actor，给历史脏数据留缓冲（用户可以手动从 群成员→移除 把 SELF 行清掉）。
-      .filter((member) => member.memberId !== SELF_CHARACTER_ID);
+    ).filter((member) => member.memberId !== SELF_CHARACTER_ID);
     if (!members.length) {
-      return;
+      return null;
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
-    // 走查本会话 R2：原版 where 只看 groupId，没拿 lastClearedAt 卡 cutoff。
-    // 用户点过"清空聊天记录"后 group.lastClearedAt 已经写进去了，但本接口
-    // 仍然把 lastClearedAt 之前的群消息当 conversationHistory 喂给 AI（见
-    // group-reply-task.service.ts:451 conversationHistory → AI prompt），AI
-    // 用清空前的上下文回复用户。和单聊 chat.service.ts:1543 ensureConversationHistory
-    // 走 getVisibleMessageCutoff 过滤的口径完全对不上：单聊清空后 AI 真的会
-    // "忘"，群聊清空后 AI 还记得用户以为擦掉的对话。同时 planner 算
-    // recentSpeakerIds 也跟着用了陈旧数据，actor 轮换会偏向已经被清空的发言者。
-    // 用 buildGroupMessageWhere 一并加 since=lastClearedAt 兜底。
     const recentMessages = await this.messageRepo.find({
       where: this.buildGroupMessageWhere(
         groupId,
@@ -1019,6 +1061,20 @@ export class GroupService {
       groupId,
       userMessage,
     );
+
+    return { members, recentMessages, history, currentUserContext, runtimeRules };
+  }
+
+  async triggerAiReplies(
+    groupId: string,
+    userMessage: GroupMessage,
+  ): Promise<void> {
+    const context = await this.prepareReplyContext(groupId, userMessage);
+    if (!context) {
+      return;
+    }
+    const { members, recentMessages, history, currentUserContext, runtimeRules } =
+      context;
     const plannerDecision =
       await this.groupReplyPlanner.selectReplyActorsForTurn({
         members,
@@ -1426,6 +1482,9 @@ export class GroupService {
       ].filter(Boolean);
       const captionText = caption ? `，补充说明：${caption}` : '';
       attachmentSummary = `${detailParts.join('，')}${captionText}`.trim();
+    } else if (attachment.kind === 'call_log') {
+      // call_log 是系统记录，不进 user prompt 路径；返回空让 prompt-text 走兜底。
+      attachmentSummary = '';
     } else {
       attachmentSummary = caption
         ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`
