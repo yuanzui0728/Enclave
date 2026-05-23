@@ -387,7 +387,14 @@ export class AiOrchestratorService {
   }
 
   private normalizeMediaMimeType(value?: string | null) {
-    const normalized = value?.trim().toLowerCase();
+    // 走查 yuanzui0728 本次 R5：HTTP Content-Type header 常带 ";charset=utf-8"
+    // / ";boundary=..." 参数（CDN / S3 / 七牛 出图都有），原版只 lowercase 不
+    // 剥参数。describeImageFromUrl 用 /^image\/(jpeg|png|webp)$/ 严格匹 ——
+    // "image/jpeg; charset=utf-8" 直接 miss → 跳过 MiniMax VLM 走 chat-vision
+    // 兜底 → 烧贵的 vision-capable provider tokens 而 MiniMax 450/5h 免费额度
+    // 被白浪费。同时把它当 dataUrl mime 拼下去，MiniMax 端也会解析失败。
+    // 先 split(';')[0] 剥参数再 trim+lowercase，行为对所有调用方都更鲁棒。
+    const normalized = value?.split(';')[0]?.trim().toLowerCase();
     if (!normalized) {
       return undefined;
     }
