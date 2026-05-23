@@ -446,6 +446,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   // 关键收尾：endStatusMutation 把状态卡片切成"已结束"，再 navigate 回群聊页。
   // 不 await endStatusMutation —— navigate 在公网 RTT ~600ms 下不能因为
   // sendGroupMessage 卡住；mutation 内部 onSuccess 会 merge cache 进群消息列表。
+  // R5 走查：超时正好赶上 syncStatusMutation 在 in-flight 时，end 抢先到群里
+  // 会导致 "已结束" 紧跟一条 stray "画面进行中"，与 handleEndCall (line ~617)
+  // 同源问题。这里 fire-and-forget 也要先 await inFlightSyncPromiseRef，让两条
+  // 系统消息至少按 ongoing→ended 顺序落库；await 在 navigate 之前完成，navigate
+  // 在 await 之后才发起，公网慢链路下"挂断按钮"无可视反应的问题不存在（这是
+  // 后台 timer 自动触发，用户没在按按钮）。
   handleVoiceCallAutoEndRef.current = (reason) => {
     if (leavingScreenRef.current) {
       return;
@@ -456,33 +462,41 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     leavingScreenRef.current = true;
     setLeavingScreen(true);
 
-    if (resolvedGroupId && groupQuery.data && totalCount) {
-      const durationMs = Math.max(
-        Date.now() - new Date(startedAt).getTime(),
-        0,
-      );
-      // fire-and-forget：sendGroupMessage 内部已有错误兜底（onSuccess 不跑也无副作用）
-      void endStatusMutation
-        .mutateAsync({ activeCount, totalCount, durationMs, startedAt })
-        .catch(() => undefined);
-    }
+    const finishAutoEnd = () => {
+      if (resolvedGroupId && groupQuery.data && totalCount) {
+        const durationMs = Math.max(
+          Date.now() - new Date(startedAt).getTime(),
+          0,
+        );
+        void endStatusMutation
+          .mutateAsync({ activeCount, totalCount, durationMs, startedAt })
+          .catch(() => undefined);
+      }
 
-    if (isDesktopLayout) {
-      void navigate({
-        to: desktopThreadPath,
-        replace: true,
-      });
+      if (isDesktopLayout) {
+        void navigate({
+          to: desktopThreadPath,
+          replace: true,
+        });
+      } else {
+        void navigate({
+          to: "/group/$groupId",
+          params: { groupId: resolvedGroupId },
+          search:
+            buildChatCallReturnSearch({
+              kind: mode,
+            }) || undefined,
+          ...(groupRouteHash ? { hash: groupRouteHash } : {}),
+          replace: true,
+        });
+      }
+    };
+
+    const pendingSync = inFlightSyncPromiseRef.current;
+    if (pendingSync) {
+      void pendingSync.then(finishAutoEnd, finishAutoEnd);
     } else {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: resolvedGroupId },
-        search:
-          buildChatCallReturnSearch({
-            kind: mode,
-          }) || undefined,
-        ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-        replace: true,
-      });
+      finishAutoEnd();
     }
   };
 
