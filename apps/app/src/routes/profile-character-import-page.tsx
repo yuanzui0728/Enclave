@@ -18,6 +18,7 @@ import {
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { resolveAppMediaUrl } from "../lib/media-url";
 import { describeRequestError } from "../lib/request-error";
@@ -255,9 +256,22 @@ export function ProfileCharacterImportPage() {
       // "标 stale"语义是同步执行的——refetch 是 async 副作用，对"用户接下来
       // 点去通讯录看到新数据"没影响（页面 mount 时 useQuery 看到 stale 自然
       // refetch）。改成 void fire-and-forget。
-      void queryClient.invalidateQueries({
-        queryKey: ["app-friends", baseUrl],
-      });
+      //
+      // R10 走查（2026-05-23 第 5 次会话）：之前补的 6 条 invalidate 只覆盖了
+      // friends / characters / character-id / conversations / conversation-messages /
+      // channels-forward-friends。重导入同名角色（avatar/bio 全换）时，下列三组
+      // 仍会让用户在 staleTime 内看到旧值：
+      //   - 朋友圈 / 个人 moments / 单角色 moments（app-moments / app-moments-paged /
+      //     app-moments-character）：后端 momentsService 实时按 character.avatar 填
+      //     authorAvatar，cache 内是旧 snapshot
+      //   - 广场动态（app-feed / app-feed-paged / app-feed-post）：同理
+      //   - 群面板成员列表 / 群详情（app-group-members / app-group / app-contact-groups）：
+      //     角色已是群成员时，群面板拉的成员列表里 memberAvatar 是按 character.avatar
+      //     回填的（group.service.ts:442），cache 旧时显示旧头像
+      // invalidateFriendDisplayQueries 已经把前两组共享 helper（remark/tags 更新走的
+      // 同一组 9 条 key）；这里复用 + 补 group 三条 + import 自身的 3 条（character/
+      // characters/forward）。
+      void invalidateFriendDisplayQueries(queryClient, baseUrl);
       void queryClient.invalidateQueries({
         queryKey: ["app-characters", baseUrl],
       });
@@ -284,20 +298,17 @@ export function ProfileCharacterImportPage() {
       void queryClient.invalidateQueries({
         queryKey: ["app-character", baseUrl, res.character.id],
       });
-      // 同上的死角第二处：聊天列表 / 消息列表 cache。后端 serializeConversation
-      // 和 serializeMessageWithAvatarMap 都是实时按 character.avatar 算 conversation.avatar
-      // 与 message.senderAvatar 的（chat.service.ts:1952 / 1982）。但前端 ["app-conversations",
-      // baseUrl] 和 ["app-conversation-messages", baseUrl, *] cache 各有 staleTime
-      // 15s/N秒，且 character-detail 那条 invalidate 不会顺带刷它们。
-      // 现象：用户在 wiki 改完头像（或同名角色 overwrite 导入）→ 回到 app 打开聊天列表
-      // 或聊天页 → 头像 / 消息气泡头像还是 import 前的旧值，15s 后才会 refetch。
-      // 用户视角就是「明明改了头像，为什么聊天页面头像还是初始头像」。
-      // 同 invalidateQueries 标 stale，不强制 refetch，下次 observer 看到 stale 自然拉。
+      // R10 走查补：群面板的 3 条。新建路径下角色不在任何群，invalidate 是 no-op；
+      // 重导入路径下若用户把同名角色加进过群聊，群面板下次打开就拉到新 avatar/name
+      // 而不是 staleTime 内的旧值。
       void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
+        queryKey: ["app-group", baseUrl],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["app-conversation-messages", baseUrl],
+        queryKey: ["app-group-members", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
       });
     } catch (err) {
       setResult({
