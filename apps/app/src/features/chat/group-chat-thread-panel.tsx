@@ -430,36 +430,6 @@ export function GroupChatThreadPanel({
     onRouteMobileShortcutHandled?.();
   }, [isDesktop, onRouteMobileShortcutHandled, routeMobileShortcutAction]);
 
-  // 视频通话尚未上线：mobile 端 /group/$groupId/video-call 路由会被
-  // group-video-call-page mobile 分支重定向回 /group/$groupId?callUnavailable=video。
-  // 这里消费 query → 弹「敬请期待」dialog，再把 query 抹掉，避免按返回键
-  // 反复触发。和 conversation-thread-panel 同款路径。
-  const groupRouteSearch = useSearch({ strict: false }) as {
-    callUnavailable?: string;
-  };
-  const groupCallUnavailableSearch = groupRouteSearch.callUnavailable;
-  useEffect(() => {
-    if (isDesktop || groupCallUnavailableSearch !== "video") {
-      return;
-    }
-    setCallUnavailableKind("video");
-    void navigate({
-      to: "/group/$groupId",
-      params: { groupId },
-      search: {},
-      replace: true,
-      ...(currentMobileGroupRouteHash
-        ? { hash: currentMobileGroupRouteHash }
-        : {}),
-    });
-  }, [
-    currentMobileGroupRouteHash,
-    groupCallUnavailableSearch,
-    groupId,
-    isDesktop,
-    navigate,
-  ]);
-
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
   );
@@ -1430,6 +1400,36 @@ export function GroupChatThreadPanel({
     handleDesktopCallAction,
     isDesktop,
     onDesktopCallRequestHandled,
+  ]);
+
+  // 视频通话尚未上线：mobile 端 /group/$groupId/video-call 路由会被
+  // group-video-call-page mobile 分支重定向回 /group/$groupId?callUnavailable=video。
+  // 这里消费 query → 弹「敬请期待」dialog，再把 query 抹掉，避免按返回键
+  // 反复触发。和 conversation-thread-panel 同款路径。
+  const groupRouteSearch = useSearch({ strict: false }) as {
+    callUnavailable?: string;
+  };
+  const groupCallUnavailableSearch = groupRouteSearch.callUnavailable;
+  useEffect(() => {
+    if (isDesktop || groupCallUnavailableSearch !== "video") {
+      return;
+    }
+    setCallUnavailableKind("video");
+    void navigate({
+      to: "/group/$groupId",
+      params: { groupId },
+      search: {},
+      replace: true,
+      ...(currentMobileGroupRouteHash
+        ? { hash: currentMobileGroupRouteHash }
+        : {}),
+    });
+  }, [
+    currentMobileGroupRouteHash,
+    groupCallUnavailableSearch,
+    groupId,
+    isDesktop,
+    navigate,
   ]);
 
   return (
