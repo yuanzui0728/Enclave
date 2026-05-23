@@ -5,6 +5,8 @@ import { CloudUserOAuthIdentityEntity } from "../entities/cloud-user-oauth-ident
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { EmailVerificationSessionEntity } from "../entities/email-verification-session.entity";
 import { PhoneVerificationSessionEntity } from "../entities/phone-verification-session.entity";
+import { UserSubscriptionEntity } from "../entities/user-subscription.entity";
+import { AccountDeletionService } from "./account-deletion.service";
 import { CloudClientAuthGuard } from "./cloud-client-auth.guard";
 import { CloudMailService } from "./cloud-mail.service";
 import { EmailAuthService } from "./email-auth.service";
@@ -24,6 +26,7 @@ import { ServiceTokenGuard } from "./service-token.guard";
       CloudUserEntity,
       CloudUserOAuthIdentityEntity,
       CloudLoginAttemptEntity,
+      UserSubscriptionEntity,
     ]),
   ],
   providers: [
@@ -31,6 +34,7 @@ import { ServiceTokenGuard } from "./service-token.guard";
     EmailAuthService,
     GoogleAuthService,
     PasswordAuthService,
+    AccountDeletionService,
     CloudMailService,
     MockSmsProviderService,
     MockEmailProviderService,
@@ -42,6 +46,7 @@ import { ServiceTokenGuard } from "./service-token.guard";
     EmailAuthService,
     GoogleAuthService,
     PasswordAuthService,
+    AccountDeletionService,
     CloudMailService,
     MockSmsProviderService,
     MockEmailProviderService,

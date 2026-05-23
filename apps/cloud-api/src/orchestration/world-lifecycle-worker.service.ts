@@ -7,7 +7,9 @@ import type { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialE
 import type { CloudInstancePowerState, WorldLifecycleJobType } from "@yinjie/contracts";
 import { CloudAlertNotifierService } from "../alerts/cloud-alert-notifier.service";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
+import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
+import { UserSubscriptionEntity } from "../entities/user-subscription.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
@@ -39,6 +41,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
     @InjectRepository(WorldAccessSessionEntity)
     private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
+    @InjectRepository(CloudUserEntity)
+    private readonly userRepo: Repository<CloudUserEntity>,
+    @InjectRepository(UserSubscriptionEntity)
+    private readonly subscriptionRepo: Repository<UserSubscriptionEntity>,
     private readonly configService: ConfigService,
     private readonly cloudAlertNotifier: CloudAlertNotifierService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
@@ -725,6 +731,17 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         continue;
       }
 
+      // 双口径 + 会员豁免（2026-05-20）：
+      //   会员永不自动关闭；非会员要求「用户也 24h+ 没登录」叠加「world 24h+ 没访问」
+      //   两个条件都满足才 suspend，避免误杀挂后台不久的活跃用户。
+      const suspendDecision = await this.shouldSuspendIdleWorld(
+        world.phone,
+        cutoff,
+      );
+      if (!suspendDecision.shouldSuspend) {
+        continue;
+      }
+
       world.status = "stopping";
       world.desiredState = "sleeping";
       world.healthStatus = "stopping";
@@ -747,6 +764,48 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         `Queued idle suspend for world ${world.id} after ${this.idleSuspendSeconds}s of inactivity.`,
       );
     }
+  }
+
+  // 决定一个 idle world 是否真该 suspend。
+  //   - phone 为空（占位/异常）：直接放行 suspend，没用户能登回。
+  //   - 找不到对应 cloud_users 行：同上。
+  //   - 存在 active 且未过期的订阅：会员，永不 suspend。
+  //   - lastLoginAt 为空或 >= cutoff：用户还在用账号本身，不 suspend（world 端 idle 可能只是切到了别的设备）。
+  private async shouldSuspendIdleWorld(
+    worldPhone: string | null,
+    worldIdleCutoffMs: number,
+  ): Promise<{ shouldSuspend: boolean; reason: string }> {
+    if (!worldPhone) {
+      return { shouldSuspend: true, reason: "no-phone" };
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { phone: worldPhone },
+      select: ["id", "lastLoginAt"],
+    });
+    if (!user) {
+      return { shouldSuspend: true, reason: "no-user" };
+    }
+
+    const activeSubscription = await this.subscriptionRepo
+      .createQueryBuilder("s")
+      .where("s.userId = :userId", { userId: user.id })
+      .andWhere("s.status = :active", { active: "active" })
+      .andWhere("s.expiresAt > :now", { now: new Date() })
+      .select("1")
+      .getRawOne();
+    if (activeSubscription) {
+      return { shouldSuspend: false, reason: "active-membership" };
+    }
+
+    if (
+      !user.lastLoginAt ||
+      user.lastLoginAt.getTime() >= worldIdleCutoffMs
+    ) {
+      return { shouldSuspend: false, reason: "user-still-logging-in" };
+    }
+
+    return { shouldSuspend: true, reason: "idle-non-member" };
   }
 
   private async reconcileObservedWorlds() {

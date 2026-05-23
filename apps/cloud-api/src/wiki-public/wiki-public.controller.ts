@@ -11,18 +11,15 @@ import {
 import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 
-// wiki avatar 文件物理上只存在于 cloud-api 给"wiki owner 账号"spawn 的 world
-// child 的 data/accounts/<wiki-owner>/wiki-avatars/ 目录里。原 WikiAvatarController
-// 的 GET 路由挂在 child world api 上，要走 /cloud/world-api 反代——而反代会按
-// 请求者 cloud token 路由到他自己的 world child，那个 child 上没有 wiki-avatars/
+// 2026-05-20 wiki 拆库改造后，wiki 头像存到独立 data/wiki/wiki-avatars/ 目录。
+// 历史上 wiki 寄生在 91173587559732 这个普通账户的 world child 里，头像走 child world api
+// 反代会按请求者 cloud token 路由到他自己的 world child，那个 child 上没有 wiki-avatars/
 // 目录，所有非 wiki-owner 用户请求 wiki 头像必然 404（实测 24h 650+ 次 resource_error）。
-//
-// 这个 controller 直接在 cloud-api 进程内服务这些文件，不挂任何 guard——wiki 头像
-// 本来就是公共资源（原 WikiAvatarController.@Get 也没挂 guard，靠"任何人都能读"
-// 这个约定），把它从 per-user-world-proxy 路径迁出到公共路径就修好了。
+// 拆库后 wiki 不再寄生，头像目录改成 data/wiki/wiki-avatars/，cloud-api 直接从这个
+// 公共目录服务，所有用户都能命中。env 覆盖：YINJIE_WIKI_AVATARS_DIR（相对 repoRoot 或绝对路径）。
 const REPO_ROOT_ENV = "YINJIE_REPO_ROOT";
-const WIKI_OWNER_ACCOUNT_ENV = "YINJIE_WIKI_OWNER_ACCOUNT_ID";
-const DEFAULT_WIKI_OWNER_ACCOUNT_ID = "91173587559732";
+const WIKI_AVATARS_DIR_ENV = "YINJIE_WIKI_AVATARS_DIR";
+const DEFAULT_WIKI_AVATARS_DIR = "data/wiki/wiki-avatars";
 
 const FILENAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
@@ -47,16 +44,12 @@ export class WikiPublicAvatarController {
   constructor(private readonly config: ConfigService) {
     const repoRoot =
       process.env[REPO_ROOT_ENV]?.trim() || findRepoRoot(__dirname);
-    const ownerId =
-      this.config.get<string>(WIKI_OWNER_ACCOUNT_ENV)?.trim() ||
-      DEFAULT_WIKI_OWNER_ACCOUNT_ID;
-    this.avatarsDir = path.join(
-      repoRoot,
-      "data",
-      "accounts",
-      ownerId,
-      "wiki-avatars",
-    );
+    const configured =
+      this.config.get<string>(WIKI_AVATARS_DIR_ENV)?.trim() ||
+      DEFAULT_WIKI_AVATARS_DIR;
+    this.avatarsDir = path.isAbsolute(configured)
+      ? configured
+      : path.join(repoRoot, configured);
   }
 
   @Get(":fileName")

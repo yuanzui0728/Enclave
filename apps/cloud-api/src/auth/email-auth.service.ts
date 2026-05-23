@@ -387,6 +387,114 @@ export class EmailAuthService {
     );
   }
 
+  // 账户删除（self-service）发码：与 change_password 完全同构，只是 purpose 隔离
+  // 限流计数器，并且故意拒绝 DEV_BYPASS_CODE。Apple App Store 5.1.1(v) 要求
+  // 删号能从 App 内自助发起，二次邮箱验证码是当前最稳妥的"明确意图确认"手段。
+  async sendDeleteAccountCode(
+    email: string,
+  ): Promise<SendChangePasswordCodeResponse> {
+    const normalized = this.normalizeEmail(email);
+
+    const user = await this.userRepo.findOne({
+      where: { email: normalized },
+    });
+    if (!user) {
+      throw new BadRequestException("邮箱与当前账号不匹配。");
+    }
+
+    await this.enforceSendCodeRateLimit(normalized, "delete_account");
+
+    const code = this.generateCode();
+    const expiresAt = new Date(Date.now() + this.getCodeTtlSeconds() * 1000);
+    const session = this.sessionRepo.create({
+      email: normalized,
+      code,
+      purpose: "delete_account",
+      expiresAt,
+      verifiedAt: null,
+    });
+    await this.sessionRepo.save(session);
+
+    let result: Awaited<ReturnType<CloudMailService["sendVerificationCode"]>>;
+    try {
+      result = await this.mailService.sendVerificationCode(
+        normalized,
+        code,
+        false,
+      );
+    } catch (error) {
+      await this.sessionRepo.delete({ id: session.id });
+      if (error instanceof ServiceUnavailableException) throw error;
+      throw new ServiceUnavailableException("邮件验证码发送失败，请稍后重试。");
+    }
+
+    return {
+      email: normalized,
+      expiresAt: expiresAt.toISOString(),
+      debugCode: result.debugCode ?? null,
+    };
+  }
+
+  // 删号场景的只读校验：与 validateChangePasswordCode 同构，purpose=delete_account；
+  // 拒绝 DEV_BYPASS_CODE。本方法只做"码合法 + 用户状态可删"判定，**不**写
+  // verifiedAt（让 AccountDeletionService 在 status 切换、订阅取消等副作用全部
+  // 成功后再 mark used，否则用户重试还能再用同一个码）。
+  async validateDeleteAccountCode(
+    email: string,
+    code: string,
+  ): Promise<{
+    email: string;
+    user: CloudUserEntity;
+    session: EmailVerificationSessionEntity;
+  }> {
+    const normalized = this.normalizeEmail(email);
+    const trimmedCode = (code ?? "").trim();
+    if (!trimmedCode) {
+      throw new BadRequestException("验证码不能为空。");
+    }
+
+    const session = await this.sessionRepo.findOne({
+      where: {
+        email: normalized,
+        code: trimmedCode,
+        purpose: "delete_account",
+      },
+      order: { createdAt: "DESC" },
+    });
+    if (!session) {
+      throw new UnauthorizedException("验证码错误。");
+    }
+    if (session.verifiedAt) {
+      throw new UnauthorizedException("该验证码已使用。");
+    }
+    if (session.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException("验证码已过期。");
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { email: normalized },
+    });
+    if (!user) {
+      throw new BadRequestException("邮箱与当前账号不匹配。");
+    }
+    if (user.status !== "active") {
+      throw new ForbiddenException(
+        user.status === "banned"
+          ? "This cloud account has been banned."
+          : "This cloud account has been archived.",
+      );
+    }
+
+    return { email: normalized, user, session };
+  }
+
+  async markDeleteAccountCodeUsed(sessionId: string): Promise<void> {
+    await this.sessionRepo.update(
+      { id: sessionId },
+      { verifiedAt: new Date() },
+    );
+  }
+
   private parsePositiveInteger(rawValue: string | undefined, fallback: number) {
     const parsed = Number(rawValue ?? "");
     if (!Number.isFinite(parsed) || parsed <= 0) return fallback;

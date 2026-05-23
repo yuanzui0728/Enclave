@@ -23,6 +23,23 @@ const FALLBACK_COPY: SubscriptionExpiredMeta['copy'] = {
   welcomePromoBanner: null,
 };
 
+// 保守 BLOCK 分支用——cloud-api 暂时不可达 + 本地无 cache 时，避免用"会员已到期"误导
+// (实际不是真过期，是网络问题；plans 也为空，用户点续费无内容)。
+// expiredCta 故意不用"重试" —— dialog 主按钮 navigate target 是 /profile/subscription
+// (subscription-expired-dialog-host.tsx hardcode)，"重试"语义会让用户期望它真的
+// 重试网络但实际跳订阅页错位。"我知道了" + 用户下次操作自然重试。
+const NETWORK_FALLBACK_COPY: SubscriptionExpiredMeta['copy'] = {
+  expiredTitle: '网络异常',
+  expiredMessage: '暂时无法验证会员状态，AI 功能稍后再试。',
+  expiredCta: '我知道了',
+  expiredHint: '请检查网络后稍后再试',
+  checkoutManualHint: '',
+  checkoutContactInfo: '',
+  inviteShareTitle: '',
+  inviteShareBody: '',
+  welcomePromoBanner: null,
+};
+
 const FALLBACK_LOOKUP: CloudSubscriptionLookup = {
   status: 'active',
   expiresAt: null,
@@ -52,12 +69,12 @@ export class SubscriptionService {
     }
     const fresh = await this.cloudClient.lookup(phone);
     if (!fresh) {
-      // 拉取失败：30 秒短缓存，避免放行带来的滥用，但允许后续重试
-      const fallback: CloudSubscriptionLookup = {
-        ...FALLBACK_LOOKUP,
-        status: this.cached?.value.status ?? 'active',
-        hardBlockEnabled: false,
-      };
+      // 拉取失败 30 秒短缓存。有上次 cache 就沿用（含 hardBlockEnabled，让 active 用户
+      // 在 cloud-api 抖动期间不受影响）；没 cache 时保守拒绝（防止 expired 用户利用
+      // cloud-api 失联绕过会员校验）。
+      const fallback: CloudSubscriptionLookup = this.cached?.value
+        ? this.cached.value
+        : { ...FALLBACK_LOOKUP, status: 'expired', hardBlockEnabled: true, copy: NETWORK_FALLBACK_COPY };
       this.cached = { value: fallback, expiresAt: now + 30 * 1000 };
       return fallback;
     }

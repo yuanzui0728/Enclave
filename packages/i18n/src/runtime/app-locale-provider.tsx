@@ -61,6 +61,14 @@ type AppLocaleProviderProps = {
    *   {})，所以 i18n._() 在 catalog 到位前调用是安全的（返回源 ID）。
    */
   renderBeforeReady?: boolean;
+  /**
+   * 是否在 idle 时把"其它 locale 的 catalog"预下载下来，为日后语言切换提速。
+   * 默认 true。在 /welcome / /splash / /setup 这类未登录入口页 consumer 可以
+   * 把它设成 false，避免给那些下一秒就关页或还在打字的用户灌 ~6MB+ 的预下载
+   * 流量（zh + en + ja + ko 三个未激活 catalog 在 dev 下加起来 ~8MB raw .po，
+   * prod 下 ~330KB gzipped 也不算白菜）。
+   */
+  prefetchOtherLocales?: boolean;
 };
 
 const AppLocaleContext = createContext<AppLocaleContextValue | null>(null);
@@ -73,6 +81,7 @@ export function AppLocaleProvider({
   preferredLocales,
   surface,
   renderBeforeReady = false,
+  prefetchOtherLocales = true,
 }: AppLocaleProviderProps) {
   const initialLocale = useMemo(() => {
     const queryLocale = readQueryLocale();
@@ -199,6 +208,11 @@ export function AppLocaleProvider({
     if (!isReady) {
       return;
     }
+    if (!prefetchOtherLocales) {
+      // consumer 主动关掉了（典型场景：未登录入口页 /welcome /splash /setup
+      // 这种"用户随时可能关页"的页面，避免给他们灌 ~6MB+ 的预下载）。
+      return;
+    }
 
     // 其它 locale catalog 主要用于即时语言切换。这一发预下载在公网慢网环境
     // 下有 ~330KB gzipped 的额外带宽（zh-CN / en-US / ja-JP / ko-KR 三个），
@@ -251,7 +265,7 @@ export function AppLocaleProvider({
 
     const timeoutId = window.setTimeout(fire, 5_000);
     return () => window.clearTimeout(timeoutId);
-  }, [isReady, locale, surface]);
+  }, [isReady, locale, surface, prefetchOtherLocales]);
 
   const contextValue = useMemo<AppLocaleContextValue>(
     () => ({

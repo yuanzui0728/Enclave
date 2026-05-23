@@ -460,6 +460,23 @@ export class GroupVoiceCallsService {
       Math.round((endedAt.getTime() - startedAt.getTime()) / 1000),
     );
 
+    // R7 走查（真实操作发现）：原版没做 group 存在校验，直接走
+    // groupService.saveSystemAttachmentMessage —— 那条内部 requireAccessibleGroup
+    // 会抛 AppError(CHAT_GROUP_NOT_FOUND)，但下方 try/catch 把所有异常一律
+    // 吞成 messageId=null + 200。前端拿到 200 + null 误以为"call_log 写库静默
+    // 失败"（持久化的最佳努力故障），但其实是用户/外部 caller 传了脏 groupId。
+    // 单聊侧（voice-calls.service finalizeCall）一开始就 await getConversation
+    // 显式抛 404，群聊侧没对齐。前置一次 getGroup 抛同款 CHAT_GROUP_NOT_FOUND，
+    // 把"业务错"与"持久化错"分开。
+    const group = await this.groupService.getGroup(input.groupId);
+    if (!group || group.id !== input.groupId) {
+      throw new AppError('CHAT_GROUP_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        params: { groupId: input.groupId },
+        legacyMessage: `Group ${input.groupId} not found`,
+      });
+    }
+
     const attachment: CallLogAttachment = {
       kind: 'call_log',
       mode: input.mode,

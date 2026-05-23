@@ -426,6 +426,14 @@ export function useConversationThread(conversationId: string) {
     });
 
     const offError = onChatError((payload) => {
+      // SUBSCRIPTION_EXPIRED 是系统级会员拦截(由群聊 cron / scheduler 通过
+      // server.emit broadcast 推),不是"当前 1v1 会话的某条消息发送失败"。
+      // 之前不区分会把当前 thread 所有 pending 消息标 failed,用户看着以为
+      // 1v1 也挂了。只弹会员 dialog,thread state 保持不动。
+      if (payload.code === "SUBSCRIPTION_EXPIRED") {
+        handleSocketSubscriptionExpiredError(payload);
+        return;
+      }
       setMessages((current) => markThreadMessagesFailed(current));
       updatePendingDirectMessageStatus(conversationId, null, "failed");
       handleSocketSubscriptionExpiredError(payload);

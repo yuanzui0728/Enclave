@@ -505,7 +505,11 @@ export class GroupReplyTaskService {
       // 会员到期：保留 pending + 推后 1h 再试，等用户续费后继续；不要标 failed，
       // 也不要 logger.error —— 3 秒一次的 cron × 多个到期 world 会把日志刷爆。
       // 与 scheduler.service.ts:526 同一模式。
+      // 但要 emit 一次 socket error 给该群房间，否则用户发完消息看到 AI 沉默
+      // 完全无感知(1v1 路径有 chat.gateway 外层 catch 兜底，群聊路径走的是
+      // controller 的 fire-and-forget triggerAiReplies → 这个 cron，需手动补位)。
       if (error instanceof SubscriptionExpiredException) {
+        this.chatGateway.emitSubscriptionExpired(error);
         task.status = 'pending';
         task.executeAfter = new Date(Date.now() + 60 * 60 * 1000);
         await this.taskRepo.save(task);

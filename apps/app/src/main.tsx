@@ -140,6 +140,19 @@ async function bootstrap() {
     return syncNativeLocalePreference(locale);
   };
 
+  // 未登录入口页（splash / welcome / setup）默认不要在 idle 时预下载其它三种
+  // locale 的 catalog——dev 下每个 .po ~2MB raw、prod 下三个加起来 ~330KB
+  // gzipped。这些页面用户随时可能直接关掉，给他们灌 6MB 预下载没意义；登录
+  // 后导航到 /tabs/* 时 catalog 真要切换会即时按需 import 一份（多 100-300ms），
+  // 对极少切语言的用户来说更划算。
+  const initialPathname =
+    typeof window === "undefined" ? "" : window.location.pathname;
+  const isUnauthenticatedEntryRoute =
+    initialPathname === "/" ||
+    initialPathname === "/welcome" ||
+    initialPathname === "/setup" ||
+    initialPathname.startsWith("/splash");
+
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <TelemetryErrorBoundary
@@ -165,6 +178,7 @@ async function bootstrap() {
           initialLocale={initialLocale ?? null}
           onLocaleChange={handleLocaleChange}
           preferredLocales={preferredLocales}
+          prefetchOtherLocales={!isUnauthenticatedEntryRoute}
           // 公网隧道下 i18n 主 catalog ~106KB gzipped、过隧道 0.3-1s。原本 catalog
           // 没回来时整棵 React 树都被 fallback=<BootstrapScreen /> 卡住。renderBe
           // foreReady=true 让 children 立即渲染，catalog 到位再无缝替换：源 ID

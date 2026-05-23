@@ -176,7 +176,7 @@ msgstr "填一个具体的关系，例如 师傅 / 房东 / 邻居"
 #: apps/wiki/src/components/character-edit-form.tsx:1224
 #: apps/wiki/src/components/conflict-resolver.tsx:18
 #: apps/wiki/src/components/snapshot-diff.tsx:24
-#: apps/wiki/src/routes/character-page.tsx:525
+#: apps/wiki/src/routes/character-page.tsx:574
 msgid "地区"
 msgstr "地区"
 
@@ -219,8 +219,8 @@ msgstr "编程, 音乐, 心理学"
 #: apps/wiki/src/components/character-edit-form.tsx:2085
 #: apps/wiki/src/components/conflict-resolver.tsx:12
 #: apps/wiki/src/components/snapshot-diff.tsx:18
-#: apps/wiki/src/routes/character-page.tsx:443
-#: apps/wiki/src/routes/character-page.tsx:532
+#: apps/wiki/src/routes/character-page.tsx:449
+#: apps/wiki/src/routes/character-page.tsx:581
 msgid "简介"
 msgstr "简介"
 
@@ -565,7 +565,7 @@ msgstr "如果想让 AI 也修改已填字段，是「优化」操作——会�
 #: apps/wiki/src/components/report-button.tsx:114
 #: apps/wiki/src/components/talk-panel.tsx:65
 #: apps/wiki/src/routes/character-page.tsx:225
-#: apps/wiki/src/routes/character-page.tsx:1021
+#: apps/wiki/src/routes/character-page.tsx:1070
 msgid "取消"
 msgstr "取消"
 
@@ -650,20 +650,20 @@ msgstr "表单已锁定。可以返回列表，回来后结果会自动填好。
 
 #: apps/wiki/src/components/conflict-resolver.tsx:13
 #: apps/wiki/src/components/snapshot-diff.tsx:19
-#: apps/wiki/src/routes/character-page.tsx:444
-#: apps/wiki/src/routes/character-page.tsx:534
+#: apps/wiki/src/routes/character-page.tsx:450
+#: apps/wiki/src/routes/character-page.tsx:583
 msgid "性格"
 msgstr "性格"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:14
 #: apps/wiki/src/components/snapshot-diff.tsx:20
-#: apps/wiki/src/routes/character-page.tsx:537
+#: apps/wiki/src/routes/character-page.tsx:586
 msgid "专长领域"
 msgstr "专长领域"
 
 #: apps/wiki/src/components/conflict-resolver.tsx:15
 #: apps/wiki/src/components/snapshot-diff.tsx:21
-#: apps/wiki/src/routes/character-page.tsx:546
+#: apps/wiki/src/routes/character-page.tsx:595
 msgid "触发场景"
 msgstr "触发场景"
 
@@ -2115,8 +2115,8 @@ msgid "v{0} 对比 v{1}"
 msgstr "v{0} 对比 v{1}"
 
 #: apps/wiki/src/routes/character-diff-page.tsx:54
-#: apps/wiki/src/routes/character-page.tsx:592
-#: apps/wiki/src/routes/character-page.tsx:910
+#: apps/wiki/src/routes/character-page.tsx:641
+#: apps/wiki/src/routes/character-page.tsx:959
 #: apps/wiki/src/routes/pending-reviews-page.tsx:136
 #: apps/wiki/src/routes/pending-reviews-page.tsx:293
 #: apps/wiki/src/routes/recent-changes-page.tsx:157
@@ -2193,12 +2193,12 @@ msgid "此角色仍在待创建队列中。巡查员通过创建版本后，才�
 msgstr "此角色仍在待创建队列中。巡查员通过创建版本后，才会写入运行时角色注册表。"
 
 #: apps/wiki/src/routes/character-page.tsx:345
-#: apps/wiki/src/routes/character-page.tsx:597
+#: apps/wiki/src/routes/character-page.tsx:646
 msgid "稳定版"
 msgstr "稳定版"
 
 #: apps/wiki/src/routes/character-page.tsx:359
-#: apps/wiki/src/routes/character-page.tsx:597
+#: apps/wiki/src/routes/character-page.tsx:646
 msgid "最新版"
 msgstr "最新版"
 
@@ -2210,55 +2210,55 @@ msgstr "阅读"
 msgid "历史"
 msgstr "历史"
 
-#: apps/wiki/src/routes/character-page.tsx:446
-#: apps/wiki/src/routes/character-page.tsx:556
+#: apps/wiki/src/routes/character-page.tsx:452
+#: apps/wiki/src/routes/character-page.tsx:605
 msgid "核心逻辑"
 msgstr "核心逻辑"
 
-#: apps/wiki/src/routes/character-page.tsx:462
+#: apps/wiki/src/routes/character-page.tsx:509
 msgid "朗读生成失败"
 msgstr "朗读生成失败"
 
-#: apps/wiki/src/routes/character-page.tsx:485
-#: apps/wiki/src/routes/character-page.tsx:489
-#: apps/wiki/src/routes/character-page.tsx:494
+#: apps/wiki/src/routes/character-page.tsx:533
+#: apps/wiki/src/routes/character-page.tsx:537
+#: apps/wiki/src/routes/character-page.tsx:542
 msgid "朗读全文"
 msgstr "朗读全文"
 
-#: apps/wiki/src/routes/character-page.tsx:489
+#: apps/wiki/src/routes/character-page.tsx:537
 msgid "正在合成…"
 msgstr "正在合成…"
 
-#: apps/wiki/src/routes/character-page.tsx:494
+#: apps/wiki/src/routes/character-page.tsx:542
 msgid "生成中"
 msgstr "生成中"
 
-#: apps/wiki/src/routes/character-page.tsx:560
+#: apps/wiki/src/routes/character-page.tsx:609
 msgid "聊天 Prompt"
 msgstr "聊天 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:563
+#: apps/wiki/src/routes/character-page.tsx:612
 msgid "主动触达 Prompt"
 msgstr "主动触达 Prompt"
 
-#: apps/wiki/src/routes/character-page.tsx:568
+#: apps/wiki/src/routes/character-page.tsx:617
 msgid "发圈频率"
 msgstr "发圈频率"
 
-#: apps/wiki/src/routes/character-page.tsx:571
+#: apps/wiki/src/routes/character-page.tsx:620
 msgid "广场频率"
 msgstr "广场频率"
 
-#: apps/wiki/src/routes/character-page.tsx:574
+#: apps/wiki/src/routes/character-page.tsx:623
 msgid "活跃时段"
 msgstr "活跃时段"
 
 #. placeholder {0}: view.pendingRevisions.length
-#: apps/wiki/src/routes/character-page.tsx:583
+#: apps/wiki/src/routes/character-page.tsx:632
 msgid "有 {0} 个待审版本，最新为："
 msgstr "有 {0} 个待审版本，最新为："
 
-#: apps/wiki/src/routes/character-page.tsx:593
+#: apps/wiki/src/routes/character-page.tsx:642
 #: apps/wiki/src/routes/pending-reviews-page.tsx:135
 msgid "低风险"
 msgstr "低风险"
@@ -2266,127 +2266,127 @@ msgstr "低风险"
 #. placeholder {0}: view.currentRevision.version
 #. placeholder {1}: resolveUsername(view.currentRevision.editorUserId)
 #. placeholder {2}: formatDateTime(view.currentRevision.createdAt)
-#: apps/wiki/src/routes/character-page.tsx:600
+#: apps/wiki/src/routes/character-page.tsx:649
 msgid "v{0} · 由 {1} 提交于 {2}"
 msgstr "v{0} · 由 {1} 提交于 {2}"
 
-#: apps/wiki/src/routes/character-page.tsx:602
+#: apps/wiki/src/routes/character-page.tsx:651
 msgid "尚未有 wiki 版本（显示后台原始数据）"
 msgstr "尚未有 wiki 版本（显示后台原始数据）"
 
 #. placeholder {0}: view.stableRevision.version
 #. placeholder {1}: view.latestRevision.version
-#: apps/wiki/src/routes/character-page.tsx:606
+#: apps/wiki/src/routes/character-page.tsx:655
 msgid "稳定版 v{0} / 最新版 v{1}"
 msgstr "稳定版 v{0} / 最新版 v{1}"
 
-#: apps/wiki/src/routes/character-page.tsx:728
+#: apps/wiki/src/routes/character-page.tsx:777
 msgid "请先 <0>登录</0> 后再编辑。"
 msgstr "请先 <0>登录</0> 后再编辑。"
 
 #. placeholder {0}: roleLabel(user.role)
-#: apps/wiki/src/routes/character-page.tsx:746
+#: apps/wiki/src/routes/character-page.tsx:795
 msgid "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 msgstr "当前你的权限是 <0>{0}</0>。 编辑器已统一为和私有角色一致的 6-section 体验，独立成一个页面打开。 内容字段和角色逻辑改动仍走同一套版本、冲突检测、巡查评审。"
 
 #. placeholder {0}: pageQ.data.pendingRevision.version
 #. placeholder {0}: view.pendingRevision.version
-#: apps/wiki/src/routes/character-page.tsx:754
+#: apps/wiki/src/routes/character-page.tsx:803
 #: apps/wiki/src/routes/world-character-edit-page.tsx:252
 msgid "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 msgstr "⚠ 当前已有待审版本 v{0}，继续提交可能触发编辑冲突。"
 
-#: apps/wiki/src/routes/character-page.tsx:766
+#: apps/wiki/src/routes/character-page.tsx:815
 msgid "✨ 打开编辑器"
 msgstr "✨ 打开编辑器"
 
-#: apps/wiki/src/routes/character-page.tsx:769
+#: apps/wiki/src/routes/character-page.tsx:818
 msgid "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 msgstr "编辑器同时支持 AI 一键生成 / 跨导航草稿。"
 
-#: apps/wiki/src/routes/character-page.tsx:827
+#: apps/wiki/src/routes/character-page.tsx:876
 msgid "还没有任何编辑记录。"
 msgstr "还没有任何编辑记录。"
 
-#: apps/wiki/src/routes/character-page.tsx:920
+#: apps/wiki/src/routes/character-page.tsx:969
 msgid "当前版本"
 msgstr "当前版本"
 
-#: apps/wiki/src/routes/character-page.tsx:925
+#: apps/wiki/src/routes/character-page.tsx:974
 #: apps/wiki/src/routes/recent-changes-page.tsx:167
 msgid "待巡查"
 msgstr "待巡查"
 
 #. placeholder {0}: rev.diffFromParent.changed.join(", ")
-#: apps/wiki/src/routes/character-page.tsx:935
+#: apps/wiki/src/routes/character-page.tsx:984
 #: apps/wiki/src/routes/recent-changes-page.tsx:190
 msgid "字段：{0}"
 msgstr "字段：{0}"
 
-#: apps/wiki/src/routes/character-page.tsx:943
+#: apps/wiki/src/routes/character-page.tsx:992
 msgid "收起对比"
 msgstr "收起对比"
 
-#: apps/wiki/src/routes/character-page.tsx:943
+#: apps/wiki/src/routes/character-page.tsx:992
 msgid "查看对比"
 msgstr "查看对比"
 
-#: apps/wiki/src/routes/character-page.tsx:952
+#: apps/wiki/src/routes/character-page.tsx:1001
 msgid "独立对比"
 msgstr "独立对比"
 
-#: apps/wiki/src/routes/character-page.tsx:961
+#: apps/wiki/src/routes/character-page.tsx:1010
 msgid "回滚到此版本"
 msgstr "回滚到此版本"
 
-#: apps/wiki/src/routes/character-page.tsx:975
+#: apps/wiki/src/routes/character-page.tsx:1024
 #: apps/wiki/src/routes/pending-reviews-page.tsx:335
 msgid "查看角色逻辑快照"
 msgstr "查看角色逻辑快照"
 
-#: apps/wiki/src/routes/character-page.tsx:988
+#: apps/wiki/src/routes/character-page.tsx:1037
 msgid "回滚原因（必填）"
 msgstr "回滚原因（必填）"
 
-#: apps/wiki/src/routes/character-page.tsx:993
+#: apps/wiki/src/routes/character-page.tsx:1042
 msgid "例如：v3 涉及破坏性内容"
 msgstr "例如：v3 涉及破坏性内容"
 
-#: apps/wiki/src/routes/character-page.tsx:1014
+#: apps/wiki/src/routes/character-page.tsx:1063
 msgid "回滚中..."
 msgstr "回滚中..."
 
-#: apps/wiki/src/routes/character-page.tsx:1014
+#: apps/wiki/src/routes/character-page.tsx:1063
 msgid "确认回滚"
 msgstr "确认回滚"
 
-#: apps/wiki/src/routes/character-page.tsx:1056
+#: apps/wiki/src/routes/character-page.tsx:1105
 msgid "⚠ 角色已被管理员后台直接修改"
 msgstr "⚠ 角色已被管理员后台直接修改"
 
 #. placeholder {0}: drift.source
-#: apps/wiki/src/routes/character-page.tsx:1059
+#: apps/wiki/src/routes/character-page.tsx:1108
 msgid "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 msgstr "wiki 当前版本与运行时实际角色数据存在 {totalDrift} 处差异 （source: {0}）。点击右侧按钮可把当前实际值作为新版本写入 wiki 历史。"
 
-#: apps/wiki/src/routes/character-page.tsx:1066
+#: apps/wiki/src/routes/character-page.tsx:1115
 msgid "内容字段："
 msgstr "内容字段："
 
-#: apps/wiki/src/routes/character-page.tsx:1072
+#: apps/wiki/src/routes/character-page.tsx:1121
 msgid "逻辑字段："
 msgstr "逻辑字段："
 
 #. placeholder {0}: drift.recipeDrift.length - 8
-#: apps/wiki/src/routes/character-page.tsx:1076
+#: apps/wiki/src/routes/character-page.tsx:1125
 msgid "… (+{0})"
 msgstr "… (+{0})"
 
-#: apps/wiki/src/routes/character-page.tsx:1089
+#: apps/wiki/src/routes/character-page.tsx:1138
 msgid "同步中..."
 msgstr "同步中..."
 
-#: apps/wiki/src/routes/character-page.tsx:1089
+#: apps/wiki/src/routes/character-page.tsx:1138
 msgid "纳入 wiki 历史"
 msgstr "纳入 wiki 历史"
 

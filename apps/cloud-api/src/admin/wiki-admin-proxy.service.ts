@@ -14,11 +14,12 @@ import type {
 } from "@yinjie/contracts";
 import { resolveWorldAdminSecret } from "./admin-bootstrap-resolver";
 
-// dev 默认指向 apps/wiki vite 配置里 /api 代理的同一个端口（3045）：
-// 这是 cloud-api 给 dev 用 91173587559732 账号 spawn 的 world api，正好就是
-// 5184/wiki 后台用户看到的那份数据。生产环境用 WIKI_API_BASE_URL 显式覆盖。
-// api/ 进程 setGlobalPrefix('api')，所以默认 base 带上 /api。
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:3045/api";
+// 2026-05-20 wiki 拆库改造后，wiki 不再寄生在某个 cloud user 的 world child 里，而是
+// 走独立进程 main-wiki.ts (api/dist/main-wiki.js)，固定端口 3500。原来寄生在 3045 时
+// cloud-api 端口池 first-available 分配，谁先 spawn 抢到 3045 谁就拿到 wiki 后台流量
+// ——历史上多次串台。现在 wiki-api 不属于 cloud-api orchestration，端口稳定。
+// 生产环境用 env WIKI_API_BASE_URL 显式覆盖（如改成对外域名）。
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:3500/api";
 const FETCH_TIMEOUT_MS = 10_000;
 
 @Injectable()

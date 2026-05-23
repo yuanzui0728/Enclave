@@ -334,6 +334,12 @@ export class ChangePasswordDto {
   newPassword: string;
 }
 
+export class DeleteAccountDto {
+  @Transform(trimString)
+  @Matches(CODE_PATTERN, { message: "code 格式不正确。" })
+  code: string;
+}
+
 export class VerifyGoogleIdTokenDto {
   @Transform(trimString)
   @IsString({ message: "idToken 必须是字符串。" })

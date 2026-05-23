@@ -67,11 +67,11 @@ export default defineConfig({
     allowedHosts: ["yinjieai.top", "1gw06751dd053.vicp.fun"],
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:3045",
+        target: "http://127.0.0.1:3500",
         changeOrigin: true,
       },
       "/health": {
-        target: "http://127.0.0.1:3045",
+        target: "http://127.0.0.1:3500",
         changeOrigin: true,
       },
       "/telemetry": {
@@ -89,11 +89,11 @@ export default defineConfig({
     allowedHosts: ["yinjieai.top", "1gw06751dd053.vicp.fun"],
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:3045",
+        target: "http://127.0.0.1:3500",
         changeOrigin: true,
       },
       "/health": {
-        target: "http://127.0.0.1:3045",
+        target: "http://127.0.0.1:3500",
         changeOrigin: true,
       },
       "/telemetry": {

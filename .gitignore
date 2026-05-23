@@ -35,6 +35,8 @@ crates/*/target/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.bak*
+*.env.bak*
 
 # Database
 api/database.sqlite
@@ -101,6 +103,7 @@ Thumbs.db
 .claude/
 .Codex/
 .git-rewrite/
+.git-saas/
 .github/
 jieshao/
 

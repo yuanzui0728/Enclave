@@ -12,6 +12,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import {
   ChangePasswordDto,
+  DeleteAccountDto,
   LoginWithPasswordDto,
   SendCodeDto,
   SendEmailCodeDto,
@@ -25,6 +26,7 @@ import {
   resolveCloudJwtIssuer,
 } from "../config/cloud-runtime-config";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
+import { AccountDeletionService } from "./account-deletion.service";
 import { CLOUD_CLIENT_ACCESS_TOKEN_PURPOSE } from "./cloud-jwt.constants";
 import { CloudClientAuthGuard } from "./cloud-client-auth.guard";
 import { EmailAuthService } from "./email-auth.service";
@@ -170,6 +172,7 @@ export class CloudAuthController {
     private readonly emailAuthService: EmailAuthService,
     private readonly googleAuthService: GoogleAuthService,
     private readonly passwordAuthService: PasswordAuthService,
+    private readonly accountDeletionService: AccountDeletionService,
     @InjectRepository(CloudUserEntity)
     private readonly userRepo: Repository<CloudUserEntity>,
     private readonly jwtService: JwtService,
@@ -307,6 +310,27 @@ export class CloudAuthController {
       throw new NotFoundException("登录已失效，请重新登录。");
     }
     return user;
+  }
+
+  // Apple App Store 5.1.1(v) 强制：账号注销必须 App 内自助完成。两步：
+  //   1) POST /account/deletion/send-code → 往绑定邮箱发码（与改密码同构）
+  //   2) POST /account/deletion/confirm    → 提交验证码 → 软删除生效
+  // 软删除做法见 AccountDeletionService。
+  @Post("account/deletion/send-code")
+  @UseGuards(CloudClientAuthGuard)
+  async sendAccountDeletionCode(@Req() request: { cloudPhone?: string }) {
+    const user = await this.findCloudUserOrFail(request.cloudPhone);
+    return this.accountDeletionService.sendCode(user.id);
+  }
+
+  @Post("account/deletion/confirm")
+  @UseGuards(CloudClientAuthGuard)
+  async confirmAccountDeletion(
+    @Body() body: DeleteAccountDto,
+    @Req() request: { cloudPhone?: string },
+  ) {
+    const user = await this.findCloudUserOrFail(request.cloudPhone);
+    return this.accountDeletionService.confirmDeletion(user.id, body.code);
   }
 
   @Post("google/verify-id-token")

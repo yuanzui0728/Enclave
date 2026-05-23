@@ -178,6 +178,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(payload.id).emit('conversation_updated', payload);
   }
 
+  // 群聊 / 调度器 cron 路径里抓到 SubscriptionExpiredException 时通过 socket
+  // 推一条 error,前端 useConversationThread 已挂 handleSocketSubscriptionExpiredError,
+  // 不至于让用户陷在"发完消息 AI 沉默"的无感状态。1v1 路径有外层 try/catch + client.emit
+  // 已经覆盖了,只有 cron 异步路径需要这个补位。
+  // 用 server.emit 全 broadcast(world child 是 owner-only,只服务一个用户),
+  // 而不是 .to(roomId) ——后者要求前端正好在该 conversation 房间里,用户切到
+  // chat-list / 视频号 / 个人主页就收不到 dialog 了。broadcast 覆盖所有页面 +
+  // 多端登录,前端 SubscriptionExpiredDialogHost 是全局 zustand,重复 emit 也只显示一个 dialog。
+  // 60s in-process dedupe:用户在群里连发 N 条消息 → cron N 次都 emit 会被前端反复
+  // 弹回(关 dialog 再发 → 再弹)。同 SubscriptionService 的 cache TTL 60s 对齐,
+  // 一个会员状态周期内只通知一次;cache 过期 lookup 还是 expired 就再 emit 一次。
+  // 1h retry 路径(group-reply-task 推 1h 后再跑)间隔远大于 60s,会再 emit,
+  // 这是合理的"系统提醒"。
+  private lastSubscriptionExpiredEmitAt = 0;
+  private static readonly SUBSCRIPTION_EXPIRED_EMIT_DEDUPE_MS = 60_000;
+
+  emitSubscriptionExpired(error: SubscriptionExpiredException) {
+    if (!this.server) {
+      return;
+    }
+    const now = Date.now();
+    if (
+      now - this.lastSubscriptionExpiredEmitAt <
+      ChatGateway.SUBSCRIPTION_EXPIRED_EMIT_DEDUPE_MS
+    ) {
+      return;
+    }
+    this.lastSubscriptionExpiredEmitAt = now;
+    this.server.emit('error', this.toChatErrorPayload(error.message, error));
+  }
+
   @SubscribeMessage('join_conversation')
   handleJoin(
     @MessageBody() data: { conversationId: string },

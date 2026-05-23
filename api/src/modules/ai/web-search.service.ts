@@ -69,6 +69,14 @@ export class WebSearchService {
     string,
     { injection: WebSearchInjection; expiresAt: number }
   >();
+  // 走查 yuanzui0728 本次 R2：MiniMax 实测 HTTP 200 + base_resp.status_code=0
+  // + organic=[] 的"空结果"是真实场景（query 用词冷门 / 命中过滤）——但 MiniMax
+  // 已经计 1 份 200/天 quota。原版 performSearch 这条路径返回 null 不缓存，
+  // moments daily 跑 trend search、shake-discovery hourly 跑 same focus 重复
+  // query 直接每次 burn 一份必空 quota。区分"empty"vs"failure"缓存：empty
+  // 也缓 60s（短到不影响时效性，长到吸住典型 cron 同 query 重打）；failure
+  // 仍不缓存以保留重试机会。
+  private readonly emptyResultCache = new Map<string, number>(); // value = expiresAt ms
 
   constructor(
     private readonly minimax: MinimaxClient,
@@ -106,21 +114,37 @@ export class WebSearchService {
       }
       this.resultCache.delete(cleaned);
     }
+    // 走查 R2：empty cache 同 60s TTL；命中 → 直接返回 null（不烧 quota）。
+    const emptyExpiresAt = this.emptyResultCache.get(cleaned);
+    if (emptyExpiresAt !== undefined) {
+      if (emptyExpiresAt > now) return null;
+      this.emptyResultCache.delete(cleaned);
+    }
     // 已有同 query 在飞 → 共享同一 Promise，省一份 quota。
     const existing = this.inFlight.get(cleaned);
     if (existing) return existing;
 
     const job = (async (): Promise<WebSearchInjection | null> => {
       try {
-        const result = await this.performSearch(cleaned);
-        if (result) {
+        const outcome = await this.performSearch(cleaned);
+        // outcome 三态：
+        //   { kind:'hit', injection }   → 缓 60s 实结果
+        //   { kind:'empty' }            → 缓 60s null（避免相同 cron 周期内重复 burn）
+        //   { kind:'fail' }             → 不缓存（保留重试机会，下次 quota / network 恢复
+        //                                  时还能拿到真结果）
+        if (outcome.kind === 'hit') {
           this.resultCache.set(cleaned, {
-            injection: result,
+            injection: outcome.injection,
             expiresAt: Date.now() + RESULT_CACHE_TTL_MS,
           });
           this.pruneExpiredCache();
+          return outcome.injection;
         }
-        return result;
+        if (outcome.kind === 'empty') {
+          this.emptyResultCache.set(cleaned, Date.now() + RESULT_CACHE_TTL_MS);
+          this.pruneExpiredCache();
+        }
+        return null;
       } catch (err) {
         // 走查 yuanzui0728 本次 R2：performSearch 里 quota.tryReserve 的
         // typeorm transaction 在 sqlite busy / 连接抖时会真的抛 —— 原版没
@@ -143,14 +167,20 @@ export class WebSearchService {
 
   private async performSearch(
     cleaned: string,
-  ): Promise<WebSearchInjection | null> {
+  ): Promise<
+    | { kind: 'hit'; injection: WebSearchInjection }
+    | { kind: 'empty' }
+    | { kind: 'fail' }
+  > {
     // 走标准 quota 三步：reserve → call → commit/release
     const reserved = await this.quota.tryReserve(QUOTA_MODEL);
     if (!reserved) {
       this.logger.debug(
         `web search skipped: quota reserve failed for "${cleaned.slice(0, 60)}"`,
       );
-      return null;
+      // 配额拒（非"MiniMax billed 但 empty"）→ 算 fail，不污染 empty cache。
+      // 配额恢复后下次 trigger 可以正常 reserve + 真打 MiniMax。
+      return { kind: 'fail' };
     }
 
     try {
@@ -164,7 +194,15 @@ export class WebSearchService {
           `web search quota commit failed (result preserved) err=${(commitErr as Error)?.message}`,
         );
       });
-      if (!result.organic.length) return null;
+      if (!result.organic.length) {
+        // 走查 R2：MiniMax billed 1 unit 但返回 0 organic（冷门词 / 命中过滤）。
+        // 区分于 quota refused / network failed：这条是"成功打到 provider 但结
+        // 果为空"，可以 60s 缓 null 避免 cron 周期内 same query 重复 burn。
+        this.logger.debug(
+          `web search returned 0 organic for "${cleaned.slice(0, 60)}" (billed 1 unit)`,
+        );
+        return { kind: 'empty' };
+      }
       const top = result.organic.slice(0, MAX_RESULTS_INJECTED);
       const lines = top.map((item, idx) => {
         const dateSuffix = item.date ? `（${sanitizeInjectedField(item.date)}）` : '';
@@ -189,7 +227,10 @@ export class WebSearchService {
         `## 实时搜索结果（来自 MiniMax web_search · "${safeCleaned}"）\n` +
         lines.join('\n') +
         '\n\n如果用到上述资料，请在回复末尾用 `（来源：URL）` 形式标注引用。';
-      return { query: cleaned, markdown, hits: top.length };
+      return {
+        kind: 'hit',
+        injection: { query: cleaned, markdown, hits: top.length },
+      };
     } catch (err) {
       await this.quota.release(QUOTA_MODEL).catch(() => undefined);
       if (
@@ -205,7 +246,7 @@ export class WebSearchService {
       this.logger.warn(
         `web search failed query="${cleaned.slice(0, 60)}" err=${message}`,
       );
-      return null;
+      return { kind: 'fail' };
     }
   }
 
@@ -215,6 +256,11 @@ export class WebSearchService {
     for (const [key, entry] of this.resultCache) {
       if (entry.expiresAt <= now) {
         this.resultCache.delete(key);
+      }
+    }
+    for (const [key, expiresAt] of this.emptyResultCache) {
+      if (expiresAt <= now) {
+        this.emptyResultCache.delete(key);
       }
     }
   }

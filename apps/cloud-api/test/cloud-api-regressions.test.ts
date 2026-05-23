@@ -281,6 +281,8 @@ function createWorkerService(
     dataSource.getRepository(CloudInstanceEntity),
     dataSource.getRepository(WorldLifecycleJobEntity),
     dataSource.getRepository(WorldAccessSessionEntity),
+    dataSource.getRepository(CloudUserEntity),
+    dataSource.getRepository(UserSubscriptionEntity),
     {
       get: (key: string) => config[key],
     } as never,

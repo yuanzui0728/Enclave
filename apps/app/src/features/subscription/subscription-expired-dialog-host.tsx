@@ -2,12 +2,31 @@ import { msg } from "@lingui/macro";
 import { useNavigate } from "@tanstack/react-router";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
+import { useEffect } from "react";
+import { onChatError } from "../../lib/socket";
+import { handleSocketSubscriptionExpiredError } from "../../lib/subscription-expired";
 import { useSubscriptionExpiredDialogStore } from "../../store/subscription-expired-dialog-store";
 
 export function SubscriptionExpiredDialogHost() {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const open = useSubscriptionExpiredDialogStore((state) => state.open);
+
+  // 全局监听 SUBSCRIPTION_EXPIRED socket 'error' 事件 —— 群聊后台 cron / 调度器
+  // 拦截时通过 server.emit broadcast 发到所有 sockets。1v1 use-conversation-thread
+  // 只在 1v1 页 mount 时订阅 onChatError;用户切到群聊 / 视频号 / 个人主页
+  // 就收不到 dialog。这里挂到 root-layout 全局,所有页面都覆盖。其他业务 error
+  // 不处理(只识别 SUBSCRIPTION_EXPIRED 走 dialog 逻辑)。
+  useEffect(() => {
+    const off = onChatError((payload) => {
+      if (payload.code !== "SUBSCRIPTION_EXPIRED") {
+        return;
+      }
+      handleSocketSubscriptionExpiredError(payload);
+    });
+    return off;
+  }, []);
+
   const message = useSubscriptionExpiredDialogStore((state) => state.message);
   const meta = useSubscriptionExpiredDialogStore((state) => state.meta);
   const closeDialog = useSubscriptionExpiredDialogStore(
