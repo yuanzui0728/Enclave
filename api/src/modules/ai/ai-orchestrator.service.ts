@@ -776,9 +776,30 @@ export class AiOrchestratorService {
     return typeof status === 'number' ? status : undefined;
   }
 
+  // 走查 yuanzui0728 本次 R1：n1n.ai / 部分 OpenAI 兼容网关在余额耗尽时返回
+  // 403 "user quota is not enough" / `local:insufficient_quota`（实测 yuanzui
+  // 当前 provider_default fallback 路径就是这个）；OpenAI 官方在 billing/quota
+  // 也偶发 403 with `code: 'insufficient_quota'`。这些是"账户没钱"/"额度
+  // 已用完"，跟 invalid api key / 401 unauthorized 完全是两种问题。原版
+  // isAuthenticationFailure 见到 403 一律真→toSpeechSynthesisException 报
+  // "鉴权失败，请检查 Provider Key"，让用户误以为 key 配错跑去翻 admin
+  // 重置 key——其实只是 fallback provider 账户余额烧光。提出 isProviderQuotaOrBillingFailure
+  // 让 auth 分类绕开它、transient 分类把它包进去：fallback 链照常 eligible，
+  // 但 final 错误消息从"鉴权失败"换成"通道繁忙，稍后再试"，归因正确。
+  private isProviderQuotaOrBillingFailure(error: unknown) {
+    const message = this.extractErrorMessage(error);
+    return /insufficient[_\s-]?quota|user quota is not enough|quota[_\s-]?exceeded|exceeded[_\s-]?quota|billing|balance|余额(不足)?|额度(不足|用完|已用尽)?|hard limit|account[_\s-]?suspended/i.test(
+      message,
+    );
+  }
+
   private isAuthenticationFailure(error: unknown) {
     const message = this.extractErrorMessage(error);
     const status = this.extractErrorStatus(error);
+    // quota/billing 类先把它识别成"不是 auth"——下面 transient 路径接住它。
+    if (this.isProviderQuotaOrBillingFailure(error)) {
+      return false;
+    }
     if (status === 401 || status === 403) {
       return true;
     }
@@ -805,7 +826,15 @@ export class AiOrchestratorService {
       return true;
     }
 
-    return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙/i.test(
+    // 403 + quota/billing 走 transient：用户面看到"通道繁忙"，fallback 链
+    // 把它当作 eligible failure 继续往下试（与 429 同语义）。
+    if (status === 401 || status === 403) {
+      if (this.isProviderQuotaOrBillingFailure(error)) {
+        return true;
+      }
+    }
+
+    return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙|insufficient[_\s-]?quota|user quota is not enough|余额(不足)?|额度(不足|用完|已用尽)?/i.test(
       message,
     );
   }
@@ -2001,6 +2030,18 @@ export class AiOrchestratorService {
       ? this.loadAssetFromDataUrl(input.url)
       : await this.loadAssetFromUrl(input.url, MAX_INLINE_IMAGE_BYTES);
     if (!loaded?.buffer.length) {
+      return null;
+    }
+    // 走查 yuanzui0728 本次 R1：MiniMax VLM 端点硬上限 20MB，但 loadAssetFromDataUrl
+    // 没传 size cap，moments.service 路径传 asset.url 是 https URL 时已被
+    // MAX_INLINE_IMAGE_BYTES=5MB 截，但若上游 caller 直接给 base64 dataUrl 就裸跑。
+    // >5MB 的图发给 VLM 端点必败（2013 invalid params 或 oversized），但 MiniMax
+    // 仍计一次 quota（450/5h 紧）；先在本地拦截，不浪费 quota 也不浪费一次
+    // 7s+ 网络 round-trip 等失败回执。同 URL 路径的上限对齐 5MB。
+    if (loaded.buffer.length > MAX_INLINE_IMAGE_BYTES) {
+      this.logger.warn(
+        `describeImageFromUrl: image too large (${loaded.buffer.length}B > ${MAX_INLINE_IMAGE_BYTES}B); skipping VLM caption`,
+      );
       return null;
     }
 
