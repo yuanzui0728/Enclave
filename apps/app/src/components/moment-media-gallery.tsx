@@ -737,7 +737,16 @@ function MomentVideoViewerOverlay({
         aria-label={t(msg`关闭视频预览`)}
         tabIndex={-1}
       />
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
+      {/* 走查移动端发现-朋友圈/新一轮 R1：top bar 必须比下方 needsManualPlay
+          backdrop (z-10) 高，否则 video.play() 拒绝触发 needsManualPlay=true
+          时，那个 `absolute inset-0 z-10 bg-black/30` 全屏 backdrop 会盖住
+          顶栏的 X 关闭按钮（两者同 z-10 但 backdrop DOM 在后，paint on top）。
+          iOS Safari 没有 ESC、没有 Android Back，X 是唯一关闭出口；视频
+          codec 解码失败 / autoplay policy 拒绝时用户彻底卡死在 viewer 里
+          只能整页刷新。bump 到 z-20 让顶栏永远浮在 backdrop 之上；下面那条
+          play 按钮虽然拦不到 X 区域，但视频中段巨大的 tap 区域仍能命中
+          handleManualPlay，体验不破。 */}
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-20 flex items-center justify-between gap-3 px-4 text-white">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
             {video.fileName || t(msg`朋友圈视频`)}

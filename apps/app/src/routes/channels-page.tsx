@@ -5021,7 +5021,21 @@ function MobileChannelCommentsSheet({
   // 输入条：默认收起成一条 pill placeholder，点击后才弹出 textarea + 发送按钮
   // （微信视频号原生交互）。draft 非空或 reply 模式开启时强制展开，避免用户
   // 写到一半 blur 又被收回 pill 看不见自己的草稿。
-  const [inputExpanded, setInputExpanded] = useState(false);
+  //
+  // 走查 2026-05-23 新会话 R1：原 useState(false) + 一条 useEffect [draft, replyTarget]
+  // 在 mount 后异步把 inputExpanded 翻成 true。但 sheet 用 `if (!open || !post)
+  // return null;` 把 open=false 的状态整段从 React 树摘掉 — 用户关 sheet 再开
+  // 同一条 post（commentDrafts[postId] 还保留着上一次的 "hello"）会触发 sheet
+  // 重 mount，useState 初值固定 false → 渲染第一帧显 pill placeholder → 下一帧
+  // effect 把 expanded 翻 true → 渲第二帧才是 textarea。中间 ~16ms+ 用户看到 pill
+  // 闪一下，体感「我刚写的草稿是不是没了」。
+  //
+  // 改用 lazy initializer 一次性读取 mount 时点的 draft / replyTarget，让首帧
+  // 就拍定状态。后续动态变化（替换 replyTarget / 用户在 textarea 里继续敲 → draft
+  // 翻非空）仍由下面那条 effect 兜，逻辑不变。
+  const [inputExpanded, setInputExpanded] = useState(
+    () => Boolean(draft.trim() || replyTarget),
+  );
   useEffect(() => {
     if (!open) {
       setInputExpanded(false);
