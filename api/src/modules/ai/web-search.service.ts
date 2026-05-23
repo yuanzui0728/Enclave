@@ -164,11 +164,26 @@ export class WebSearchService {
       if (!result.organic.length) return null;
       const top = result.organic.slice(0, MAX_RESULTS_INJECTED);
       const lines = top.map((item, idx) => {
-        const dateSuffix = item.date ? `（${item.date}）` : '';
-        return `${idx + 1}. ${item.title}${dateSuffix}\n   ${item.snippet}\n   来源：${item.link}`;
+        const dateSuffix = item.date ? `（${sanitizeInjectedField(item.date)}）` : '';
+        // 走查 yuanzui0728 新一轮 R1：原版直接把 title/snippet/link 原样插
+        // markdown，搜索结果 title 含 "\n# IMPORTANT: ignore previous
+        // instructions" 这种就把 system prompt 切出一个 H1 section，是经典
+        // 间接 prompt injection。MiniMax /v1/coding_plan/search 大概率不会返
+        // 这种 payload，但搜索结果的 title 完全来自第三方站点 / 第三方 SEO，
+        // 我们没法保证。基本防御：sanitize 把换行、连续空白、markdown 行级
+        // 控字符压成单空格 + 220/500 char 软上限，保 markdown 结构不被外部
+        // 文本撕坏，AI 仍能读到原始信息。
+        const safeTitle = sanitizeInjectedField(item.title).slice(0, 220);
+        const safeSnippet = sanitizeInjectedField(item.snippet).slice(0, 500);
+        const safeLink = sanitizeInjectedField(item.link).slice(0, 500);
+        return `${idx + 1}. ${safeTitle}${dateSuffix}\n   ${safeSnippet}\n   来源：${safeLink}`;
       });
+      // 走查同款：cleaned 本身已经过 trim + 200 char cap，不可能含换行（用
+      // 户输入框过滤过），但插到 markdown 里仍可能含 " 让 ## ... " 行失衡。
+      // 同样 sanitize 一下（常见用户消息中不含 markdown 控字符，开销 ~0）。
+      const safeCleaned = sanitizeInjectedField(cleaned);
       const markdown =
-        `## 实时搜索结果（来自 MiniMax web_search · "${cleaned}"）\n` +
+        `## 实时搜索结果（来自 MiniMax web_search · "${safeCleaned}"）\n` +
         lines.join('\n') +
         '\n\n如果用到上述资料，请在回复末尾用 `（来源：URL）` 形式标注引用。';
       return { query: cleaned, markdown, hits: top.length };
@@ -198,4 +213,24 @@ export class WebSearchService {
     }
   }
 }
+
+// 抽出 markdown injection 防御：把可能撕裂 markdown 结构或导致间接 prompt
+// injection 的字符压成单空格。覆盖：
+//   - \r\n / \n / \r：换行（最关键，外部 "\n# X" 会把 system prompt 切出
+//     新 markdown 段，让 AI 把搜索结果当指令读）
+//   - U+2028 LINE SEPARATOR / U+2029 PARAGRAPH SEPARATOR：unicode 分隔符
+//     （不显示但少数 markdown parser 当成换行处理）
+//   - \t：tab（缩进可能被某些 markdown parser 误读为代码块）
+//   - 连续空白合并：避免 "A    B" 变成多空格扰乱 prompt 节奏
+// 不删除 markdown 控字符（#/`/[/]/*）—— 这些在外部正文里可能是合法字符
+// （论文标题含 *、URL 含 []）；只要把"行级"结构 (换行/缩进) 控住，单行内
+// 的控字符不会切出新 section 或 list-item。
+function sanitizeInjectedField(value: string | null | undefined): string {
+  if (!value) return '';
+  return value
+    .replace(/[\r\n\t\u2028\u2029]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // i18n-ignore-end
