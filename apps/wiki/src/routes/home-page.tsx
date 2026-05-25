@@ -155,6 +155,11 @@ export function HomePage() {
                 <Trans>点击进入查看 / 编辑 / 历史 / 讨论</Trans>
               </span>
             </>
+          ) : charactersQ.isError ? (
+            // 出错时不要再喊"正在加载词条…"——下方 ErrorBlock 已经在报错了，
+            // 顶部还停在"加载中"会让用户以为还在转圈、与红色错误条自相矛盾。
+            // 留空（外层 span 的 min-h-5 仍占位防跳动），错误信息交给 ErrorBlock。
+            null
           ) : (
             // 用 t(msg) 而不是 <Trans>：<Trans> 的新 message 没在
             // packages/i18n/catalogs/wiki/*.po 里抽取过，会在 console 抛
