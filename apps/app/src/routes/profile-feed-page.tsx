@@ -81,7 +81,13 @@ export function ProfileFeedPage() {
   const [fullCommentsByPostId, setFullCommentsByPostId] = useState<
     Record<string, FeedComment[]>
   >({});
-  const [expandingPostId, setExpandingPostId] = useState<string | null>(null);
+  // 走查 R2：原本是单值 expandingPostId——同时展开两条帖（手指快点 A 再点 B）时
+  // 只有最后点的那条显示「加载中…」，先点的 A 的按钮 label 在 B 加载期间闪回
+  // 「查看全部」。每条帖各自维护 loading 态才对，照 discover-feed-page 的
+  // loadingFullCommentsPostIds 改成 Set。expandInflightRef 仍是同帧双击的同步去重锁。
+  const [expandingPostIds, setExpandingPostIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const expandInflightRef = useRef<Record<string, boolean>>({});
 
   // 清洗评论：gpt-4.1 等非推理模型会把整段 CoT prose 当评论存进来、历史还有
@@ -105,12 +111,37 @@ export function ProfileFeedPage() {
     return map;
   }, [ownPosts, fullCommentsByPostId]);
 
+  // 走查 R1 (perf)：displayText / summaryText / meta(时间戳) 之前在下面的
+  // ownPosts.map(...) 里 inline 现算——每帧对全部 116 条帖各跑一次
+  // stripToolCallSyntax（多条回溯正则）+ getFeedSummaryText（内部又 strip 一次）
+  // + formatTimestamp。本页 notice 2.4s 自清 / 打开删除弹层 / 展开评论
+  // (expandingPostIds) 这些高频本地 setState 都触发整页 re-render，每次白烧
+  // ~116×(strip+format)。照 discover-feed-page 的 processedPosts 那套 hoist 进
+  // useMemo，只有 ownPosts 真换（首拉 / 删除 / refetch）或切语言才重算。
+  // t 进 deps：getFeedSummaryText（"分享了 N 张图片"）与 formatTimestamp（Intl
+  // locale 敏感）都跟运行时 locale 走，漏了 t 会在切语言后 stale。
+  const processedPosts = useMemo(
+    () =>
+      ownPosts.map((post) => {
+        const displayText = stripToolCallSyntax(post.text ?? "").trim();
+        const summaryText = displayText ? "" : getFeedSummaryText(post);
+        const formattedCreatedAt = formatTimestamp(post.createdAt);
+        return { post, displayText, summaryText, formattedCreatedAt };
+      }),
+    [ownPosts, t],
+  );
+
   const handleExpandComments = async (postId: string) => {
     if (fullCommentsByPostId[postId] || expandInflightRef.current[postId]) {
       return;
     }
     expandInflightRef.current[postId] = true;
-    setExpandingPostId(postId);
+    setExpandingPostIds((current) => {
+      if (current.has(postId)) return current;
+      const next = new Set(current);
+      next.add(postId);
+      return next;
+    });
     const reqBaseUrl = baseUrl;
     try {
       const all = await listFeedComments(postId, baseUrl);
@@ -127,7 +158,12 @@ export function ProfileFeedPage() {
       });
     } finally {
       delete expandInflightRef.current[postId];
-      setExpandingPostId((current) => (current === postId ? null : current));
+      setExpandingPostIds((current) => {
+        if (!current.has(postId)) return current;
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
     }
   };
 
@@ -143,7 +179,7 @@ export function ProfileFeedPage() {
     setNotice(null);
     setPendingDeleteId(null);
     setFullCommentsByPostId({});
-    setExpandingPostId(null);
+    setExpandingPostIds(new Set());
   }, [baseUrl]);
 
   // 删除确认弹层：Esc 关闭，和点遮罩取消对齐。
@@ -241,19 +277,25 @@ export function ProfileFeedPage() {
     if (feedQuery.isLoading) {
       return <LoadingBlock />;
     }
-    if (feedQuery.isError) {
+    const loadErrorMessage = feedQuery.isError
+      ? ((isApiRequestError(feedQuery.error)
+          ? translateAppErrorCode(feedQuery.error)
+          : null) ??
+        describeRequestError(
+          feedQuery.error,
+          t(msg`广场动态加载失败，请稍后重试。`),
+        ))
+      : null;
+    // 走查 R3：原本 `if (feedQuery.isError) return <ErrorBlock>` 单独早返——
+    // react-query v5 里 isError 与 data 可并存（首拉成功后的后台 refetch 失败时
+    // data 仍保留旧值）。删除成功后 onSuccess invalidate 触发的刷新一旦瞬断、或
+    // staleTime 过期重拉失败，都会把整列有效内容顶成全屏错误页（删除明明成功了）。
+    // 只有首拉就失败（没有任何可渲染数据）才铺全屏 ErrorBlock；已有数据时保留
+    // 列表，刷新失败降级成顶部一条非阻断的重试条（对齐 profile-moments 的
+    // 「列表常驻 + 错误单独展示」）。
+    if (loadErrorMessage && ownPosts.length === 0) {
       return (
-        <ErrorBlock
-          message={
-            (isApiRequestError(feedQuery.error)
-              ? translateAppErrorCode(feedQuery.error)
-              : null) ??
-            describeRequestError(
-              feedQuery.error,
-              t(msg`广场动态加载失败，请稍后重试。`),
-            )
-          }
-        >
+        <ErrorBlock message={loadErrorMessage}>
           <Button
             type="button"
             variant="ghost"
@@ -277,16 +319,31 @@ export function ProfileFeedPage() {
 
     return (
       <div className="space-y-3">
-        {ownPosts.map((post) => {
-          const displayText = stripToolCallSyntax(post.text ?? "").trim();
-          const summaryText = displayText ? "" : getFeedSummaryText(post);
+        {loadErrorMessage ? (
+          <InlineNotice
+            tone="danger"
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 text-[12px] shadow-none"
+          >
+            <span>{loadErrorMessage}</span>
+            <button
+              type="button"
+              onClick={() => void feedQuery.refetch()}
+              disabled={feedQuery.isFetching}
+              className="shrink-0 font-medium underline underline-offset-2 disabled:opacity-60"
+            >
+              {feedQuery.isFetching ? t(msg`重新加载中…`) : t(msg`重试`)}
+            </button>
+          </InlineNotice>
+        ) : null}
+        {processedPosts.map(({ post, displayText, summaryText, formattedCreatedAt }) => {
           return (
             <SocialPostCard
               key={post.id}
               cardId={`profile-feed-post-${post.id}`}
               authorName={post.authorName}
               authorAvatar={post.authorAvatar}
-              meta={formatTimestamp(post.createdAt)}
+              meta={formattedCreatedAt}
               headerActions={
                 <Button
                   type="button"
@@ -374,10 +431,10 @@ export function ProfileFeedPage() {
                         <button
                           type="button"
                           onClick={() => void handleExpandComments(post.id)}
-                          disabled={expandingPostId === post.id}
+                          disabled={expandingPostIds.has(post.id)}
                           className="text-[12px] text-[#576B95] disabled:opacity-60"
                         >
-                          {expandingPostId === post.id
+                          {expandingPostIds.has(post.id)
                             ? t(msg`加载中…`)
                             : t(msg`查看全部 ${post.commentCount} 条评论`)}
                         </button>
