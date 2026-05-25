@@ -56,6 +56,13 @@ export function useCallFinalize({
   // 只在 active && !finalized 时补一发 hangup —— 已经走过 handleBack /
   // timeout 路径的 finalizedRef=true 让兜底 no-op。
   const callActiveRef = useRef(false);
+  // 走查新一轮 R8：R4 unmount 兜底在 React.StrictMode dev 下被合成 unmount/
+  // re-mount cycle 触发——synthetic unmount cleanup 直接发 hangup → 写一条
+  // 假 call_log "通话时长 00:00"。dev 调试每打开一次通话都污染一条脏 log。
+  // 改成 setTimeout(0) 延迟兜底：strict mode 的合成 re-mount 同步发生，
+  // re-mount 的 effect setup 在 tick 结束前会先清掉 pending tail；真正的
+  // unmount 后没有 re-mount，tick 结束 timeout 才 fire，hangup 正常发。
+  const pendingTailRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutHandleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSessionEndedRef = useRef(onSessionEnded);
   onSessionEndedRef.current = onSessionEnded;
@@ -163,11 +170,25 @@ export function useCallFinalize({
   // user_hangup —— 明面出口已经把 finalizedRef 翻 true，这里 no-op；纯 silent
   // exit 才真发。reason 用 user_hangup 比 timeout/error 更贴近用户意图（人主动
   // 离开页面），契约里也没有 navigation/exit 这种第四种 reason。
+  //
+  // 走查 R8：原版 cleanup 内同步 fire hangup，被 React.StrictMode dev 的合成
+  // unmount/re-mount cycle 抓住——每次打开通话页都先写一条假 call_log "通话时长
+  // 00:00"。改成 setTimeout(0) 延迟，setup 在 strict mode 的 re-mount tick 内
+  // 抢先 cancel 掉 pending tail；真 unmount 没 re-mount → tick 结束 timeout
+  // 才 fire 真正的 hangup。同模式可参考 mobile-feed-publish-page L86 那条
+  // isMountedRef 注释（同样在治 strict mode 双跑）。
   useEffect(() => {
+    if (pendingTailRef.current !== null) {
+      clearTimeout(pendingTailRef.current);
+      pendingTailRef.current = null;
+    }
     return () => {
-      if (callActiveRef.current && !finalizedRef.current) {
-        void hangup("user_hangup");
-      }
+      pendingTailRef.current = setTimeout(() => {
+        pendingTailRef.current = null;
+        if (callActiveRef.current && !finalizedRef.current) {
+          void hangup("user_hangup");
+        }
+      }, 0);
     };
   }, [hangup]);
 
