@@ -529,6 +529,19 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
   };
 
+  // 走查新一轮 R4（perf/correctness）：原版把整个 syncStatusMutation 放进
+  // syncCurrentStatus 的 useCallback deps。useMutation 每次 render 都返回新的
+  // 结果对象（带最新 isPending/data/error），syncStatusMutation 引用每次 render
+  // 都会变 → syncCurrentStatus 每次 render 都重建。
+  // 下方 1200ms deferred sync effect 把 syncCurrentStatus 放进 deps，于是这条
+  // effect 也每次 render 都 cleanup+reschedule 1200ms 计时器。loop 阶段切换 /
+  // 群通话面板小数据变更触发的 re-render 都会重置计时器——AI 在连续说话或群
+  // 内多角色逐条播报期间渲染频次密集，sync 永远 fire 不出去，
+  // hasSyncedStatus 永久卡 false，群通话状态卡片不刷"X/N 人在线"。
+  // 改成只 capture `syncStatusMutation.mutateAsync`（mutate/mutateAsync 在
+  // React-Query 5 是稳定身份），syncCurrentStatus 仅在真正影响调用结果的
+  // activeCount/totalCount/groupQuery.data/resolvedGroupId 变化时重建。
+  const syncMutateAsync = syncStatusMutation.mutateAsync;
   const syncCurrentStatus = useCallback(async () => {
     if (!resolvedGroupId || !groupQuery.data || !totalCount) {
       return;
@@ -551,7 +564,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
     syncStatusBusyRef.current = true;
     try {
-      const pendingSync = syncStatusMutation.mutateAsync({
+      const pendingSync = syncMutateAsync({
         activeCount,
         totalCount,
       });
@@ -573,7 +586,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     activeCount,
     groupQuery.data,
     resolvedGroupId,
-    syncStatusMutation,
+    syncMutateAsync,
     totalCount,
   ]);
 
