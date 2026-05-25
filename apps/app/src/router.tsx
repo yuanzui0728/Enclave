@@ -118,6 +118,8 @@ const ProfileFavoritesPage = lazyNamed(() => import("./routes/profile-favorites-
 
 const ProfileMomentsPage = lazyNamed(() => import("./routes/profile-moments-page"), "ProfileMomentsPage");
 
+const ProfileFeedPage = lazyNamed(() => import("./routes/profile-feed-page"), "ProfileFeedPage");
+
 const DesktopMobilePage = lazyNamed(() => import("./routes/desktop-mobile-page"), "DesktopMobilePage");
 
 const DesktopChatFilesPage = lazyNamed(() => import("./routes/desktop-chat-files-page"), "DesktopChatFilesPage");
@@ -691,6 +693,13 @@ const profileMomentsRoute = createRoute({
   component: ProfileMomentsPage,
 });
 
+const profileFeedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/feed",
+  beforeLoad: requireWorldReady,
+  component: ProfileFeedPage,
+});
+
 const profileFeedbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/feedback",
@@ -870,6 +879,7 @@ const routeTree = rootRoute.addChildren([
   profileSubscriptionRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
+  profileFeedRoute,
   profileFeedbackRoute,
   profileCharacterImportRoute,
   desktopMobileRoute,

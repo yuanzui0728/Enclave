@@ -317,6 +317,7 @@ export class FeedService implements OnModuleInit {
     page = 1,
     limit = 20,
     surface: FeedSurface = 'feed',
+    ownerOnly = false,
   ): Promise<{ posts: FeedListItem[]; total: number }> {
     // 走查 R1：controller 把 `Number(query)` 直接灌进来 — ?limit=abc → NaN，
     // TypeORM .take(NaN) 抛 "Provided skip value is not a number" → 500；
@@ -344,7 +345,13 @@ export class FeedService implements OnModuleInit {
 
     let pagedPosts: FeedPostEntity[];
     let total: number;
-    if (surface === 'feed') {
+    if (ownerOnly) {
+      // 「我的广场动态」：只看当前 owner 自己发的广场帖（surface='feed'），
+      // 给个人页聚合 + 管理用。不走 visibility 过滤——本来就是自己的内容。
+      const result = await this.findOwnFeedPostsPaged(owner.id, page, limit);
+      pagedPosts = result.posts;
+      total = result.total;
+    } else if (surface === 'feed') {
       // 广场：SQL 层完成 visibility 过滤 + skip/take，避免拉全表后再内存过滤
       const result = await this.findVisibleFeedPostsPaged(
         owner.id,
@@ -1688,6 +1695,39 @@ export class FeedService implements OnModuleInit {
       const nextCount = Math.max(0, post.commentCount - idsToDelete.length);
       await this.postRepo.update({ id: post.id }, { commentCount: nextCount });
     }
+  }
+
+  /**
+   * 删除自己发布的广场动态（个人页「我的广场动态」用）。仿 moments.deleteOwnerPost：
+   * 仅本人 authorType='user' 的帖可删；硬删 + 事务级联清评论 / 点赞 / 互动记录
+   * （帖子已不存在，软删无意义，且要清掉散落在 4 张表的关联行避免脏数据）。
+   */
+  async deleteOwnerPost(
+    postId: string,
+  ): Promise<{ success: true; id: string }> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const post = await this.postRepo.findOneBy({ id: postId });
+    if (!post || post.publishStatus === 'deleted') {
+      throw new AppError('FEED_POST_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '该广场动态不存在或已被删除。',
+      });
+    }
+    if (post.authorType !== 'user' || post.authorId !== owner.id) {
+      throw new AppError('FEED_POST_DELETE_FORBIDDEN', {
+        status: HttpStatus.FORBIDDEN,
+        legacyMessage: '只能删除自己发布的广场动态。',
+      });
+    }
+
+    await this.postRepo.manager.transaction(async (manager) => {
+      await manager.delete(FeedCommentEntity, { postId });
+      await manager.delete(FeedPostLikeEntity, { postId });
+      await manager.delete(UserFeedInteractionEntity, { postId });
+      await manager.delete(FeedPostEntity, postId);
+    });
+
+    return { success: true, id: postId };
   }
 
   async likeOwnerComment(commentId: string): Promise<void> {
@@ -3597,6 +3637,31 @@ export class FeedService implements OnModuleInit {
     }
 
     qb.orderBy('post.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [posts, total] = await qb.getManyAndCount();
+    return { posts, total };
+  }
+
+  /**
+   * 「我的广场动态」分页：只取当前 owner 自己发布的广场帖（authorType='user'）。
+   * 供个人页 GET /feed?mine=true 用，让用户集中查看 / 管理自己发的广场内容。
+   * 范围与 findVisibleFeedPostsPaged 对齐——只含 surface='feed' 的 published 帖，
+   * 不含视频号（channels）。
+   */
+  private async findOwnFeedPostsPaged(
+    ownerId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ posts: FeedPostEntity[]; total: number }> {
+    const qb = this.postRepo
+      .createQueryBuilder('post')
+      .where('post.surface = :surface', { surface: 'feed' })
+      .andWhere('post.publishStatus = :status', { status: 'published' })
+      .andWhere("post.authorType = 'user'")
+      .andWhere('post.authorId = :ownerId', { ownerId })
+      .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 

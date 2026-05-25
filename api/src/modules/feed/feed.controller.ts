@@ -76,16 +76,21 @@ export class FeedController {
     @Query('page') page = '1',
     @Query('limit') limit = '20',
     @Query('surface') surface: 'feed' | 'channels' | undefined,
+    // mine=true：只返回当前 owner 自己发布的广场帖，给个人页「我的广场动态」
+    // 聚合 + 管理用（照朋友圈 GET /moments?mine=true 那套）。
+    @Query('mine') mine?: string,
   ) {
     // 走查 R1：?limit=abc 直接 Number(NaN) → TypeORM .take(NaN) 抛 "Provided
     // skip value is not a number" → 500，老 client 不会发这种请求但 curl /
     // 反代 / 旧缓存链路一旦塞进来，整条广场就 500；同时 ?limit=999999 这条
     // DoS 路径之前 0 设防（前端硬编码 20，但服务端也得自己兜）。统一 clamp
     // 到 [1, 100]，?page 同样兜 [1, …]。
+    const ownerOnly = mine === 'true' || mine === '1';
     return this.feedService.getFeed(
       clampPaginationPage(page),
       clampPaginationLimit(limit),
       surface,
+      ownerOnly,
     );
   }
 
@@ -174,6 +179,14 @@ export class FeedController {
   @Delete(':id/favorite')
   unfavoritePost(@Param('id') postId: string) {
     return this.feedService.unfavoriteOwnerPost(postId);
+  }
+
+  // 删除自己发布的广场动态（个人页「我的广场动态」用）。与 :id/like、:id/favorite、
+  // comments/:id 段数不同，无路由冲突。仅本人 authorType='user' 的帖可删，service
+  // 内做权限校验 + 级联清评论/点赞/互动。
+  @Delete(':id')
+  deletePost(@Param('id') postId: string) {
+    return this.feedService.deleteOwnerPost(postId);
   }
 
   @Post(':id/share')

@@ -3310,6 +3310,22 @@ export function getFeed(
   ).then((response) => normalizeFeedListResponse(response, resolvedBaseUrl));
 }
 
+// 「我的广场动态」：拉当前 owner 自己发布的广场帖（GET /feed?mine=true），
+// 给个人页聚合 + 管理用，照 getOwnMoments 那套。一次性 limit=100 拉全
+// （个人自己发的广场量级远小于此；后续要分页再扩）。返回 posts 数组。
+export function getOwnFeed(baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  return requestLegacyApi<FeedListResponse>(
+    "/feed?mine=true&page=1&limit=100",
+    undefined,
+    baseUrl,
+  ).then(
+    (response) => normalizeFeedListResponse(response, resolvedBaseUrl).posts,
+  );
+}
+
 export function getGameCenterHome(baseUrl?: string) {
   return requestLegacyApi<GameCenterHomeResponse>(
     "/games/home",
@@ -4037,6 +4053,17 @@ export function likeFeedComment(id: string, baseUrl?: string) {
 export function deleteFeedComment(id: string, baseUrl?: string) {
   return requestLegacyApi<void>(
     `/feed/comments/${id}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+// 删除自己发布的广场动态（个人页「我的广场动态」用），照 deleteMoment 那套。
+export function deleteFeedPost(id: string, baseUrl?: string) {
+  return requestLegacyApi<{ success: boolean; id: string }>(
+    `/feed/${id}`,
     {
       method: "DELETE",
     },

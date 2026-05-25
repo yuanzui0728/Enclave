@@ -6,6 +6,7 @@ import {
   Camera,
   ChevronRight,
   CreditCard,
+  LayoutGrid,
   FileText,
   LogOut,
   MessageSquareText,
@@ -167,6 +168,12 @@ export function ProfilePage() {
             iconClassName="bg-[rgba(168,85,247,0.12)] text-[#7e22ce]"
             label={t(msg`朋友圈`)}
             to="/profile/moments"
+          />
+          <ProfileEntry
+            icon={LayoutGrid}
+            iconClassName="bg-[rgba(99,102,241,0.12)] text-[#4f46e5]"
+            label={t(msg`广场`)}
+            to="/profile/feed"
           />
         </ProfileEntryGroup>
 
