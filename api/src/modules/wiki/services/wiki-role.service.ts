@@ -99,6 +99,18 @@ export class WikiRoleService {
         legacyMessage: 'role 必须是 newcomer / autoconfirmed / patroller / admin',
       });
     }
+    // 不能改自己的角色。前端 admin-users-page 已对当前用户禁用 <select>，但那只是
+    // 客户端防御 —— 直接打 POST /wiki/users/:me/role 能绕过，admin 可借此把自己
+    // 降级（last-admin 守卫只在"全站仅剩一名 admin"时拦得住；只要还有第二个
+    // admin，自降会成功并立刻失去后台权限，需另一名 admin 才能恢复）。页面描述
+    // 明写"无法修改自己的角色"，服务端必须同样兜住，否则就是写在文案里没落地的保证。
+    if (targetUserId === actor.id) {
+      throw new AppError('WIKI_FORBIDDEN', {
+        status: HttpStatus.FORBIDDEN,
+        params: { reason: '无法修改自己的角色' },
+        legacyMessage: '无法修改自己的角色',
+      });
+    }
     // reason 会拼到 user.roleGrantedBy 落库展示，必须有长度上限 —— 否则
     // 任何 admin 都能用 5KB+ 字符串撑爆这一列，admin-users 列表里渲染会卡。
     // typeof 守一下：客户端传 {} / [] 时直接当空字符串，不要走到 .trim() 抛 500。
@@ -193,7 +205,12 @@ export class WikiRoleService {
       profile?: UserWikiProfileEntity | null;
     }>
   > {
+    // 只取列表要用的列。不加 select 时 TypeORM SELECT * 会把每个用户的
+    // passwordHash / customApiKey / customApiBase / defaultChatBackgroundPayload
+    //（后者常是一整张 base64 背景图 data URL）全捞进内存再在下面 map 里丢掉，
+    // 用户数一多就是几 MB 级的无谓 sqlite 读取 + 序列化。
     const users = await this.userRepo.find({
+      select: ['id', 'username', 'role', 'userType', 'createdAt', 'roleGrantedAt'],
       order: { createdAt: 'DESC' },
     });
     const profiles = await this.profileRepo.find();
