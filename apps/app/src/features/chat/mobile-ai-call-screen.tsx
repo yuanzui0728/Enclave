@@ -367,8 +367,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     activeCall.cancelRecordingTurn();
     activeCall.stopReplyPlayback();
     try {
+      // 走查新一轮 R2（perf）：和下方 voice mode `void voiceCall.hangup` 同源——
+      // 原版视频模式 `await digitalHumanCall.endSession()` 卡 ~600ms 公网 RTT
+      // 才 navigate，用户按 PhoneOff "挂断"按钮明显延迟才离屏。endSession 内部
+      // try/catch 吞掉错误是 best-effort 关闭，HTTP 发出去就行，没必要 await；
+      // 且 useDigitalHumanCallSession setup effect 的 unmount cleanup 也会兜底
+      // 发一次 closeDigitalHumanSession（status !== "ended" 时），后端按 sessionId
+      // 幂等处理，两条同 sessionId 的 close 请求只多消耗一次微小服务端事务。
       if (isVideoMode) {
-        await digitalHumanCall.endSession();
+        void digitalHumanCall.endSession();
       }
       // 单聊语音通话挂断时把 call_log 卡片写进 thread（hook 内做去重，
       // timer 超时 / 用户 hangup / 退出页 三个入口共享一次落库）。
@@ -464,7 +471,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     activeCall.cancelRecordingTurn();
     activeCall.stopReplyPlayback();
     try {
-      await digitalHumanCall.endSession();
+      // 走查新一轮 R2（perf）：和姊妹 handleBack 同源 fire-and-forget——
+      // 切换到语音通话时 await 600ms 公网 RTT 后才 navigate 让用户体感卡顿，
+      // closeDigitalHumanSession best-effort、hook unmount cleanup 也会兜底
+      // 发一次（status !== "ended"），后端按 sessionId 幂等处理。
+      void digitalHumanCall.endSession();
 
       // 走查第一轮 R2：和姊妹 handleBack (line 626-633) 同款问题——本入口
       // 「改用语音通话」是 video 数字人 session 出错时的 recovery 出口，
