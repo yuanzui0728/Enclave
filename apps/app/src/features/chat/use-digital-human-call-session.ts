@@ -141,6 +141,11 @@ export function useDigitalHumanCallSession({
       setSessionState("ready");
       setSessionError(null);
       speechClearResultRef.current();
+      // 乐观置 playing：见 use-voice-call-session onSuccess 注释——避免回复音频
+      // 缓冲窗口内 VAD 误判一轮结束、提前起录把数字人语音录进去。
+      if (result.turn.assistantAudioUrl) {
+        setPlaybackState("playing");
+      }
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],

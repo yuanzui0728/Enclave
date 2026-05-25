@@ -197,9 +197,17 @@ export function useContinuousVoiceLoop({
           startCooldownToArm();
         }
         break;
+      case "cooldown":
+        // 群多角色逐条播报时 playbackState 可能瞬时落 idle 再回 playing，
+        // 或单聊回复音频在公网慢链路上还在缓冲（'play' 事件未触发）。一旦
+        // 播放/思考恢复就取消沉降回 speaking，避免在回复还没播完时提前起录。
+        if (playbackState === "playing" || isMutationPending) {
+          clearCooldown();
+          setPhase("speaking");
+        }
+        break;
       case "armed":
       case "capturing":
-      case "cooldown":
       default:
         break;
     }
@@ -216,13 +224,16 @@ export function useContinuousVoiceLoop({
         }
       }, COOLDOWN_MS);
     }
-    // arm/startCooldownToArm 内部读最新输入；deps 覆盖所有判定输入
+    // internalPhase 必须入 deps：reconcile 按 phaseRef.current 分支，phase 变化
+    // （arm→armed、VAD→capturing、cooldown timer→idle 等）都要重跑这条 effect，
+    // 否则只能靠 arm/cancelRecordingTurn 每帧换引用“顺带”重跑，太脆。
   }, [
     arm,
     cancelRecordingTurn,
     clearCooldown,
     enabled,
     gateReady,
+    internalPhase,
     isMutationError,
     isMutationPending,
     leaving,

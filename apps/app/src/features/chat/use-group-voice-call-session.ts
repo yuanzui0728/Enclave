@@ -164,6 +164,12 @@ export function useGroupVoiceCallSession({
     onSuccess: async (result) => {
       setLastTurn(result);
       speechClearResultRef.current();
+      // 乐观置 playing：见 use-voice-call-session onSuccess 注释。群聊多角色逐条
+      // 播报/兜底高亮整列没排完前都算“在说话”，先占住 playing，等 playNext 把
+      // 队列清空才回 idle，避免 VAD 在缓冲/换人间隙误判提前起录。
+      if (result.assistantTurns.length > 0) {
+        setPlaybackState("playing");
+      }
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],

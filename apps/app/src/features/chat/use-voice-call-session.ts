@@ -125,6 +125,14 @@ export function useVoiceCallSession({
     onSuccess: async (result) => {
       setLastTurn(result);
       speechClearResultRef.current();
+      // 乐观置 playing：mutation 一 resolve isPending 就翻 false，但回复音频在
+      // 公网慢链路上要先缓冲（'play' 事件之前 playbackState 仍是 idle），VAD 连续
+      // 监听会误判“这一轮已结束”提前起录、把对面正要播的语音录进去。先标 playing
+      // 占住，等真正 'ended'/'pause'/autoplay 失败再回 idle（playReplyAudio 此时
+      // audio 处于 paused，audio.pause() 不会再发 'pause' 覆盖）。
+      if (result.assistantAudioUrl) {
+        setPlaybackState("playing");
+      }
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
