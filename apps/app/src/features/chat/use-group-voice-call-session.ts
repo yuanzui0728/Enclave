@@ -49,6 +49,17 @@ export function useGroupVoiceCallSession({
 }: UseGroupVoiceCallSessionOptions) {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 走查新一轮 R1.1（高，functional）：和 use-voice-call-session 同款 audio 监听
+  // 冷启动死链——deps=[playNext] 但 playNext 引用稳定，等价于 useEffect(..[])。
+  // 冷启动深链 /groups/$id/voice-call（cache 空）走 loading 早返时 audioRef 仍
+  // null，监听不挂；接到第一条 turn 后 onSuccess 乐观 setPlaybackState("playing")
+  // 没人翻回 idle（ended 不触发 → playNext 推不下一条 → 整个队列卡死）。改
+  // callback ref + audioEl 状态触发 effect 重跑。
+  const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const attachAudio = useCallback((node: HTMLAudioElement | null) => {
+    audioRef.current = node;
+    setAudioEl(node);
+  }, []);
   const audioQueueRef = useRef<GroupVoiceCallAssistantTurn[]>([]);
   // 走查 R1：用户按"挂断"后 mutation 仍在公网慢链路上，handleEndCall 立刻
   // stopReplyPlayback，但 onSuccess 才到时会把整列 assistantTurns 灌进 queue
@@ -239,7 +250,8 @@ export function useGroupVoiceCallSession({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, [playNext]);
+    // 走查新一轮 R1.1：audioEl 进 deps，冷启动 loading 早返之后 audio 真挂上才挂监听。
+  }, [audioEl, playNext]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -247,7 +259,7 @@ export function useGroupVoiceCallSession({
       return;
     }
     audio.muted = audioMuted;
-  }, [audioMuted]);
+  }, [audioMuted, audioEl]);
 
   // 走查新一轮 R7（perf）：见 use-voice-call-session 同款注释——拆 mutate 稳定
   // 身份 + isPending boolean 进 deps，effect 不再每 render 重跑只为早返。
@@ -370,7 +382,7 @@ export function useGroupVoiceCallSession({
   return {
     activeSpeakerId,
     audioMuted,
-    audioRef,
+    audioRef: attachAudio,
     voiceLoop,
     busy:
       turnMutation.isPending ||

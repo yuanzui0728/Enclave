@@ -50,6 +50,16 @@ export function useDigitalHumanCallSession({
 }: UseDigitalHumanCallSessionOptions) {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 走查新一轮 R1.1（高，functional）：和 use-voice-call-session 同款 audio 监听
+  // 冷启动死链——首渲染走 loading 早返时 audioRef 仍 null，[] deps effect 永
+  // 不再跑，play/pause/ended/error 监听不挂；onSuccess 乐观 setPlaybackState
+  // ("playing") 没人翻回 idle → 数字人 video 通话第一条 turn 后 voiceLoop 卡死
+  // 在 speaking 阶段。改 callback ref + audioEl 状态触发 effect 重跑。
+  const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const attachAudio = useCallback((node: HTMLAudioElement | null) => {
+    audioRef.current = node;
+    setAudioEl(node);
+  }, []);
   const autoSubmitRecordingRef = useRef(false);
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
@@ -217,7 +227,8 @@ export function useDigitalHumanCallSession({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, []);
+    // 走查新一轮 R1.1：audioEl 进 deps，冷启动 loading 早返之后 audio 真挂上才挂监听。
+  }, [audioEl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -226,7 +237,7 @@ export function useDigitalHumanCallSession({
     }
 
     audio.muted = audioMuted;
-  }, [audioMuted]);
+  }, [audioMuted, audioEl]);
 
   // 走查新一轮 R7（perf）：见 use-voice-call-session 同款注释——拆 mutate 稳定
   // 身份 + isPending boolean 进 deps，effect 不再每 render 重跑只为早返。
@@ -566,7 +577,7 @@ export function useDigitalHumanCallSession({
 
   return {
     audioMuted,
-    audioRef,
+    audioRef: attachAudio,
     voiceLoop,
     busy:
       sessionState === "connecting" ||

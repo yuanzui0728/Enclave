@@ -46,6 +46,22 @@ export function useVoiceCallSession({
     ...(onSessionEnded ? { onSessionEnded } : {}),
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 走查新一轮 R1.1（高，functional）：原版下面两条 audio 事件 effect 写成
+  // useEffect(..., [])。冷启动深链 /chat/$id/voice-call（conversations 缓存为空）
+  // 时，首渲染先走 conversationsQuery.isLoading 分支返回 LoadingCard，<audio>
+  // 不在 DOM 树里 → audioRef.current 仍是 null → effect 第一次跑直接早返；query
+  // 落地后 <audio> 真挂上，但 [] deps effect 再不会重跑，play/pause/ended/error
+  // 监听**永远不会再挂**。onSuccess 那条乐观 setPlaybackState("playing") 没人
+  // 翻回 idle（pause/ended 都不触发了），useContinuousVoiceLoop 永远停在 speaking
+  // 阶段 → VAD 再也不 arm。冷启动用户接到第一条 AI 回复后通话就死了。
+  // 改用 useState 配合 callback ref 暴露，audio 真正挂载/卸载时翻 audioEl 触发
+  // effect 重跑。audioRef.current 仍同步保持，给 playReplyAudio / stopReplyPlayback
+  // 等命令式读路径用。
+  const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const attachAudio = useCallback((node: HTMLAudioElement | null) => {
+    audioRef.current = node;
+    setAudioEl(node);
+  }, []);
   const autoSubmitRecordingRef = useRef(false);
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
@@ -223,7 +239,9 @@ export function useVoiceCallSession({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, []);
+    // 见上面 R1.1 注释——把 audioEl 串进 deps，audio 真正挂上后 effect 才有机会
+    // 重跑挂监听。
+  }, [audioEl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -232,7 +250,10 @@ export function useVoiceCallSession({
     }
 
     audio.muted = audioMuted;
-  }, [audioMuted]);
+    // audioEl 也得进 deps：冷启动 audioMuted 默认 false，audio 挂上后此 effect
+    // 不重跑就会跳过初始 mute 同步——理论上初始 false 无害，但只要哪天默认值/
+    // 路由把 muted=true 带进来就立刻漏 sync。
+  }, [audioMuted, audioEl]);
 
   // 走查新一轮 R7（perf）：原版 deps 含整个 turnMutation 对象。useMutation 每次
   // render 返回新结果，turnMutation 引用每 render 都变 → autoSubmit effect 每
@@ -378,7 +399,7 @@ export function useVoiceCallSession({
 
   return {
     audioMuted,
-    audioRef,
+    audioRef: attachAudio,
     voiceLoop,
     busy:
       turnMutation.isPending ||
