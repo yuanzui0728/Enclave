@@ -3208,3 +3208,23 @@ msgstr "Admin sync"
 #: apps/wiki/src/lib/use-username-map.ts
 msgid "系统账号"
 msgstr "System account"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}"
+msgstr "Reverted to v{version}"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}：{reason}"
+msgstr "Reverted to v{version}: {reason}"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到 30 分钟内连续 {count} 次编辑"
+msgstr "Anti-vandalism bot: {count} rapid edits within 30 min"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到关键字段被清空"
+msgstr "Anti-vandalism bot: critical field cleared"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人自动回滚"
+msgstr "Anti-vandalism bot auto-revert"

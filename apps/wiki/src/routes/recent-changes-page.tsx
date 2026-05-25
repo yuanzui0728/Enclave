@@ -21,6 +21,7 @@ import { formatDateTime } from "../lib/format";
 import {
   revisionChangedFieldsLabel,
   revisionChangeSourceLabel,
+  revisionEditSummaryLabel,
   revisionKindLabel,
   revisionOperationLabel,
   revisionStatusLabel,
@@ -183,8 +184,14 @@ function ChangeRow({
             {formatDateTime(rev.createdAt)}
           </Trans>
         </div>
-        {rev.editSummary && (
-          <div className="break-words text-sm leading-6">{rev.editSummary}</div>
+        {/* editSummary 里 revert 版本是后端机器拼的 `Revert to v{N}: {reason}`
+            （bot revert 时 reason 还是 antivandal_bot:xxx 内部码），裸渲染会在
+            zh-first UI 漏出英文 + snake_case。revisionEditSummaryLabel 只本地化
+            这类机器摘要，人工填写的原样透传。 */}
+        {revisionEditSummaryLabel(rev.editSummary) && (
+          <div className="break-words text-sm leading-6">
+            {revisionEditSummaryLabel(rev.editSummary)}
+          </div>
         )}
         {revisionChangedFieldsLabel(rev.diffFromParent?.changed) && (
           <div className="break-words text-xs text-[color:var(--text-muted)]">

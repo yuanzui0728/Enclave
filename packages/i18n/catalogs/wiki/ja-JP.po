@@ -3208,3 +3208,23 @@ msgstr "管理同期"
 #: apps/wiki/src/lib/use-username-map.ts
 msgid "系统账号"
 msgstr "システムアカウント"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}"
+msgstr "v{version} に巻き戻し"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}：{reason}"
+msgstr "v{version} に巻き戻し：{reason}"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到 30 分钟内连续 {count} 次编辑"
+msgstr "荒らし対策ボット：30 分以内に連続 {count} 回編集"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到关键字段被清空"
+msgstr "荒らし対策ボット：重要フィールドが消去されました"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人自动回滚"
+msgstr "荒らし対策ボットによる自動巻き戻し"

@@ -3208,3 +3208,23 @@ msgstr "관리 동기화"
 #: apps/wiki/src/lib/use-username-map.ts
 msgid "系统账号"
 msgstr "시스템 계정"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}"
+msgstr "v{version}(으)로 되돌림"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "回滚到 v{version}：{reason}"
+msgstr "v{version}(으)로 되돌림: {reason}"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到 30 分钟内连续 {count} 次编辑"
+msgstr "반달 방지 봇: 30분 내 연속 {count}회 편집"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人检测到关键字段被清空"
+msgstr "반달 방지 봇: 핵심 필드 비워짐"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "反破坏机器人自动回滚"
+msgstr "반달 방지 봇 자동 되돌림"

@@ -184,3 +184,47 @@ export function revisionChangedFieldsLabel(
     .map(fieldPathLabel)
     .join(", ");
 }
+
+// ── editSummary 本地化（仅针对机器自动生成的 revert 摘要）──
+// revert 版本的 editSummary 由后端 wiki-review.service.revert() 拼成
+// `Revert to v{N}: {reason}`；反破坏机器人 revert 时 reason 形如
+// `antivandal_bot:rapid_repeated_edits_3_in_30min` / `antivandal_bot:critical_field_cleared`。
+// recent-changes / character-page / pending-reviews 都把 editSummary 当正文裸渲染，
+// zh-first UI 的"回滚"行正文于是直接漏出英文前缀 + snake_case 内部码
+// （2026-05-25 patroller 走查发现，如「Revert to v25: antivandal_bot:rapid_repeated_edits_3_in_30min」）。
+// editSummary 后端存的是静态文本、不知道访问者 locale，只能在展示期本地化
+// （同 revisionChangedFieldsLabel / use-username-map.friendlyName 的客户端口径）。
+// 不匹配机器模式的 editSummary（人工自由填写，可能是任意语言）原样返回，绝不误伤。
+function localizeRevertReason(reason: string): string {
+  const r = reason.trim();
+  if (!r) return "";
+  const bot = /^antivandal_bot:(.+)$/.exec(r);
+  if (!bot) return r; // 人工填写的回滚理由，原样保留
+  const code = bot[1];
+  const rapid = /^rapid_repeated_edits_(\d+)_in_30min$/.exec(code);
+  if (rapid) {
+    const count = rapid[1];
+    return translateRuntimeMessage(
+      msg`反破坏机器人检测到 30 分钟内连续 ${count} 次编辑`,
+    );
+  }
+  if (code === "critical_field_cleared") {
+    return translateRuntimeMessage(msg`反破坏机器人检测到关键字段被清空`);
+  }
+  return translateRuntimeMessage(msg`反破坏机器人自动回滚`);
+}
+
+/** revert 版本的机器自动摘要本地化；非 revert / 人工摘要原样返回。 */
+export function revisionEditSummaryLabel(
+  summary: string | null | undefined,
+): string {
+  const s = (summary ?? "").trim();
+  if (!s) return "";
+  const m = /^Revert to v(\d+):\s*(.*)$/.exec(s);
+  if (!m) return s;
+  const version = m[1];
+  const reason = localizeRevertReason(m[2]);
+  return reason
+    ? translateRuntimeMessage(msg`回滚到 v${version}：${reason}`)
+    : translateRuntimeMessage(msg`回滚到 v${version}`);
+}
