@@ -528,9 +528,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     void sendCallStatusMessage("waiting");
   }, [conversation, isDesktopLayout, sendCallStatusMessage]);
 
-  // 微信式连续免提通话状态（来自 VAD loop）
+  // 微信式连续免提通话状态（来自 VAD loop）。
+  // 走查新一轮 R1（perf 高）：原本还从 voiceLoop 取 `inputLevel: number` 并透传
+  // 给 <SpeakingIndicator>。VAD 每帧把节流后的 level setState 到 loop hook，再
+  // 沿 useVoiceCallSession → activeCall.voiceLoop 一路冒泡到这个 1000+ 行组件，
+  // listening 阶段每秒被拖着重渲染 ~16 次。改成只传 `inputLevelRef`，
+  // SpeakingIndicator 内部 rAF + DOM 写值，父组件再不因 level 变化重渲染。
   const vadPhase = activeCall.voiceLoop.phase;
-  const inputLevel = activeCall.voiceLoop.inputLevel;
+  const inputLevelRef = activeCall.voiceLoop.inputLevelRef;
   const micMuted = activeCall.voiceLoop.micMuted;
   const setMicMuted = activeCall.voiceLoop.setMicMuted;
 
@@ -1063,7 +1068,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         ) : (
           <div className="flex flex-col items-center text-center">
             <div className="relative">
-              <SpeakingIndicator phase={vadPhase} inputLevel={inputLevel} />
+              <SpeakingIndicator phase={vadPhase} inputLevelRef={inputLevelRef} />
               <AvatarChip name={characterName} src={characterAvatar} size="xl" />
             </div>
             <div className="mt-6 text-[24px] font-semibold tracking-[0.01em]">

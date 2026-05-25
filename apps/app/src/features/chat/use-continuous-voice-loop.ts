@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
   useVoiceActivityDetection,
   type VadConfig,
@@ -69,7 +69,15 @@ export function useContinuousVoiceLoop({
   phase: VoiceLoopPhase;
   micMuted: boolean;
   setMicMuted: (next: boolean | ((prev: boolean) => boolean)) => void;
-  inputLevel: number;
+  /**
+   * 走查新一轮 R1（perf 高）：原本暴露 `inputLevel: number` state，VAD 每帧把
+   * level 节流到 ~16fps setState 一次。但 MobileAiCallScreen 是 1000+ 行的
+   * 大组件，每秒被 16 次 setState 拖着重新跑整个 JSX/diff（CallTimer/状态条
+   * /控制条/toast/<audio>...），低端 Android listening 阶段持续掉帧。改成
+   * 只暴露 ref，SpeakingIndicator 自己在内部跑 rAF + DOM 写值，父组件完全不
+   * 因 level 变化重渲染。
+   */
+  inputLevelRef: RefObject<number>;
   vadSupported: boolean;
   primeAudioContext: () => Promise<void>;
 } {
@@ -81,7 +89,6 @@ export function useContinuousVoiceLoop({
   }, []);
 
   const [micMuted, setMicMuted] = useState(false);
-  const [inputLevel, setInputLevel] = useState(0);
   // 走查 R2：原本只有三套 session hook 自己挂 visibilitychange → speech.cancel +
   // stopReplyPlayback；reconcile 不知情，phase 仍卡在 armed/capturing（VAD
   // active=true 但 getMediaStream 一直返回 null）。用户切回前台后 visibility 事件
@@ -94,7 +101,6 @@ export function useContinuousVoiceLoop({
       : false,
   );
   const cooldownTimerRef = useRef<number | null>(null);
-  const lastLevelEmitRef = useRef(0);
 
   const speechStatus = speech.status;
   const speechError = Boolean(speech.error);
@@ -110,16 +116,6 @@ export function useContinuousVoiceLoop({
     }
   }, []);
 
-  const handleLevel = useCallback((level: number) => {
-    // 跳帧节流到 ~16fps，避免每帧 setState 触发 re-render 风暴
-    const now = performance.now();
-    if (now - lastLevelEmitRef.current < 60) {
-      return;
-    }
-    lastLevelEmitRef.current = now;
-    setInputLevel(level);
-  }, []);
-
   const handleSpeechStart = useCallback(() => {
     if (phaseRef.current === "armed") {
       setPhase("capturing");
@@ -133,6 +129,9 @@ export function useContinuousVoiceLoop({
     }
   }, [setPhase, stopRecordingTurn]);
 
+  // VAD 自己每帧维护 inputLevelRef.current；不再走 onLevel 推到 React state，
+  // 直接把 ref 透传给 SpeakingIndicator 由它在 rAF 里读 + DOM 写，避免父组件
+  // 因为 level 变化而 16fps 重渲染。
   const { inputLevelRef, supported: vadSupported, resumeContext } =
     useVoiceActivityDetection({
       getMediaStream: speech.getMediaStream,
@@ -140,10 +139,8 @@ export function useContinuousVoiceLoop({
       onSpeechStart: handleSpeechStart,
       onSpeechEnd: handleUtteranceEnd,
       onMaxDuration: handleUtteranceEnd,
-      onLevel: handleLevel,
       config,
     });
-  void inputLevelRef; // 当前 UI 走节流 number；保留 ref 供需要零重渲染的消费者
 
   const primeAudioContext = useCallback(async () => {
     await resumeContext();
@@ -171,7 +168,8 @@ export function useContinuousVoiceLoop({
       if (phase !== "idle") {
         clearCooldown();
         cancelRecordingTurn();
-        setInputLevel(0);
+        // inputLevelRef 由 VAD effect 的 cleanup 在 vadActive 翻 false 时归零，
+        // 这里不再 setState（level 已经从父组件 state 链路中移除）。
         setPhase("idle");
       }
       return;
@@ -187,7 +185,6 @@ export function useContinuousVoiceLoop({
       if (phase !== "error") {
         clearCooldown();
         cancelRecordingTurn();
-        setInputLevel(0);
         setPhase("error");
       }
       return;
@@ -241,7 +238,6 @@ export function useContinuousVoiceLoop({
 
     function startCooldownToArm() {
       clearCooldown();
-      setInputLevel(0);
       setPhase("cooldown");
       cooldownTimerRef.current = window.setTimeout(() => {
         cooldownTimerRef.current = null;
@@ -337,7 +333,7 @@ export function useContinuousVoiceLoop({
     phase,
     micMuted,
     setMicMuted,
-    inputLevel,
+    inputLevelRef,
     vadSupported,
     primeAudioContext,
   };
