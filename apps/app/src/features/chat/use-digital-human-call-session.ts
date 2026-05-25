@@ -74,6 +74,10 @@ export function useDigitalHumanCallSession({
 
   speechCancelRef.current = speech.cancel;
   speechClearResultRef.current = speech.clearResult;
+  // 走查 R2：和 use-voice-call-session 同款防残音，挂断后慢链路 mutation 仍可能
+  // resolve，onSuccess 跑会让数字人在 leave 屏的过程中说半句话。
+  const leavingRef = useRef(leaving);
+  leavingRef.current = leaving;
 
   useEffect(() => {
     sessionRef.current = session;
@@ -136,6 +140,9 @@ export function useDigitalHumanCallSession({
       return createDigitalHumanTurn(sessionRef.current.id, formData, baseUrl);
     },
     onSuccess: async (result) => {
+      if (leavingRef.current) {
+        return;
+      }
       setSession(result.session);
       setLastTurn(result.turn);
       setSessionState("ready");
@@ -155,6 +162,9 @@ export function useDigitalHumanCallSession({
         }),
         Promise.resolve(onTurnSuccess?.(result)),
       ]);
+      if (leavingRef.current) {
+        return;
+      }
       await playReplyAudio(result.turn.assistantAudioUrl);
     },
     onError: (error) => {

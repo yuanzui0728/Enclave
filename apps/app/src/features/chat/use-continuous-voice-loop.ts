@@ -78,6 +78,17 @@ export function useContinuousVoiceLoop({
 
   const [micMuted, setMicMuted] = useState(false);
   const [inputLevel, setInputLevel] = useState(0);
+  // 走查 R2：原本只有三套 session hook 自己挂 visibilitychange → speech.cancel +
+  // stopReplyPlayback；reconcile 不知情，phase 仍卡在 armed/capturing（VAD
+  // active=true 但 getMediaStream 一直返回 null）。用户切回前台后 visibility 事件
+  // 不再 fire，reconcile 也没人推一下 → 麦克风永久死亡。把 hidden 当成 micMuted
+  // 同级的硬中断推 phase=idle；切回前台 setIsHidden(false) → reconcile 走
+  // case idle → arm() → speech.start() 重新拿流。
+  const [isHidden, setIsHidden] = useState(() =>
+    typeof document !== "undefined"
+      ? document.visibilityState === "hidden"
+      : false,
+  );
   const cooldownTimerRef = useRef<number | null>(null);
   const lastLevelEmitRef = useRef(0);
 
@@ -144,8 +155,15 @@ export function useContinuousVoiceLoop({
   useEffect(() => {
     const phase = phaseRef.current;
 
-    // 1) 硬中断 → idle（静音 / 离屏 / 未启用 / 视频未就绪）
-    if (!enabled || micMuted || leaving || !gateReady || !vadSupported) {
+    // 1) 硬中断 → idle（静音 / 离屏 / 未启用 / 视频未就绪 / 切到后台）
+    if (
+      !enabled ||
+      micMuted ||
+      leaving ||
+      isHidden ||
+      !gateReady ||
+      !vadSupported
+    ) {
       if (phase !== "idle") {
         clearCooldown();
         cancelRecordingTurn();
@@ -234,6 +252,7 @@ export function useContinuousVoiceLoop({
     enabled,
     gateReady,
     internalPhase,
+    isHidden,
     isMutationError,
     isMutationPending,
     leaving,
@@ -245,6 +264,23 @@ export function useContinuousVoiceLoop({
     speechStatus,
     vadSupported,
   ]);
+
+  // 走查 R2：监听 visibility 把 hidden 推进 reconcile —— session hook 已经各自挂
+  // 一份去 cancel speech / stopReplyPlayback，但那只处理音频/录音资源；loop 状态
+  // 机自己不知道用户切走了，phase 会卡 armed。这里独立挂，setIsHidden 触发
+  // 重新跑 reconcile（hidden=true → 硬中断 idle；visible=false → 走 case idle 重新 arm）。
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const handle = () => {
+      setIsHidden(document.visibilityState === "hidden");
+    };
+    document.addEventListener("visibilitychange", handle);
+    return () => {
+      document.removeEventListener("visibilitychange", handle);
+    };
+  }, []);
 
   // 首次用户手势（点屏幕任意处）resume AudioContext —— iOS / Capacitor 起步
   // suspended，否则 AnalyserNode 读到全静音、VAD 永远检测不到说话。

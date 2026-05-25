@@ -50,6 +50,12 @@ export function useGroupVoiceCallSession({
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioQueueRef = useRef<GroupVoiceCallAssistantTurn[]>([]);
+  // 走查 R1：用户按"挂断"后 mutation 仍在公网慢链路上，handleEndCall 立刻
+  // stopReplyPlayback，但 onSuccess 才到时会把整列 assistantTurns 灌进 queue
+  // 并 playNext —— 用户挂断后听到一段残音/兜底高亮才被 unmount cleanup 截停。
+  // ref 在 onSuccess 入口幂等丢弃。
+  const leavingRef = useRef(leaving);
+  leavingRef.current = leaving;
   // TTS 失败的 turn 用 setTimeout 维持 1.2s "X 在说" 高亮再推进队列，
   // 需要 ref 持 handle 让 stopReplyPlayback / unmount cleanup 能取消，
   // 否则用户挂断后 1.2s 内 setState on unmounted。
@@ -162,6 +168,9 @@ export function useGroupVoiceCallSession({
       return createGroupVoiceCallTurn(formData, baseUrl);
     },
     onSuccess: async (result) => {
+      if (leavingRef.current) {
+        return;
+      }
       setLastTurn(result);
       speechClearResultRef.current();
       // 乐观置 playing：见 use-voice-call-session onSuccess 注释。群聊多角色逐条
@@ -179,6 +188,10 @@ export function useGroupVoiceCallSession({
         }),
         Promise.resolve(onTurnSuccess?.(result)),
       ]);
+      // 二次守门：await 期间 leaving 可能已翻 true。
+      if (leavingRef.current) {
+        return;
+      }
       audioQueueRef.current = [...result.assistantTurns];
       await playNext();
     },

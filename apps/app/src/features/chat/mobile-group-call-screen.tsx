@@ -31,6 +31,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { describeRequestError } from "../../lib/request-error";
+import { registerAndroidBackInterceptor } from "../../runtime/android-back-button";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import {
@@ -252,11 +253,19 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     (reason: CallFinalizeEndedReason) => void
   >(() => {});
   // 群语音通话：录音 → 群 voice-call turn → 顺序播多角色 AI 回话；视频模式暂不接
+  // 走查 R2：enabled 原本只看 mode/resolvedGroupId，但 groupQuery/membersQuery 加载
+  // 这 600ms 公网 RTT 期内 VAD loop 已经 arm → speech.start() → 弹麦克风权限。如果
+  // groupQuery 失败 (group 不存在 / 403)，整个错误兜底视图都展开了，麦克风还在转。
+  // 等 group 数据落地 + 至少一名成员（buildInitialJoinedMemberIds 依赖）再 enable。
   const voiceCall = useGroupVoiceCallSession({
     baseUrl,
     groupId: resolvedGroupId,
     enabled:
-      mode === "voice" && !isDesktopLayout && Boolean(resolvedGroupId),
+      mode === "voice" &&
+      !isDesktopLayout &&
+      Boolean(resolvedGroupId) &&
+      Boolean(groupQuery.data) &&
+      members.length > 0,
     leaving: leavingScreen,
     participantCount: totalCount || undefined,
     onSessionEnded: (reason) => handleVoiceCallAutoEndRef.current(reason),
@@ -445,6 +454,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
     leavingScreenRef.current = true;
     setLeavingScreen(true);
+    // 走查 R3：和 handleEndCall (line ~696) 对齐，先停 mic/audio。原版只
+    // setLeavingScreen + 进 finishAutoEnd（异步等 pendingSync 落地），但
+    // voiceCall.audio 仍在播，且 onSuccess R1 leavingRef 守门是 mutation 完成后
+    // 才触发——已经 in-flight 的播放队列要靠 stopReplyPlayback 主动截断；
+    // cancelRecordingTurn 是和 voice loop reconcile 的 cancelRecordingTurn 重复
+    // 但幂等，提早跑省一帧。
+    voiceCall.cancelRecordingTurn();
+    voiceCall.stopReplyPlayback();
 
     const finishAutoEnd = () => {
       if (resolvedGroupId && groupQuery.data && totalCount) {
@@ -599,27 +616,32 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     totalCount,
   ]);
 
+  // 走查 R1：原 handleBack 只 setLeavingScreen + navigate，跳过 voiceCall.hangup
+  // / endStatusMutation / 停录 / 停播 / cancelFallback timer 全部收尾——用户点顶栏
+  // "返回群聊"或下面 Android Back 拦截走这里，结果：
+  //   1) 群里"画面进行中"系统卡片永远不变"已结束"，下次进群成员以为还在通话
+  //   2) finalize HTTP 不发 → 群消息列表没有"📞 通话时长 mm:ss"call_log
+  //   3) audio 节点正在播 AI 回复时直接 navigate，~200ms 残音 + media stream 在
+  //      unmount 链路真正跑完前继续占麦
+  // 单聊（mobile-ai-call-screen）的 handleBack 早就走的就是 hangup→ended 通知→
+  // navigate 一条龙；群聊这里没有"后台通话"概念（unmount=call 终止），minimize
+  // 语义上就是 end，复用 handleEndCall 让两个入口（顶栏返回 + Android Back）行为
+  // 一致。原版仅在 isDesktopLayout 分支裸 navigate 是 desktop redirect shell 兜底，
+  // 该路径不需要写 call_log（desktop 没真正在跑通话）。
   const handleBack = () => {
     if (leavingScreenRef.current || leavingScreen) {
       return;
     }
-
-    leavingScreenRef.current = true;
-    setLeavingScreen(true);
     if (isDesktopLayout) {
+      leavingScreenRef.current = true;
+      setLeavingScreen(true);
       void navigate({
         to: desktopThreadPath,
         replace: true,
       });
       return;
     }
-
-    void navigate({
-      to: "/group/$groupId",
-      params: { groupId: resolvedGroupId },
-      ...(groupRouteHash ? { hash: groupRouteHash } : {}),
-      replace: true,
-    });
+    void handleEndCall();
   };
 
   // 走查 R1：3 个错误态分支 (groupQuery 失败 / membersQuery 失败 / groupQuery.data
@@ -730,6 +752,29 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     syncStatusMutation.reset();
     void syncCurrentStatus();
   };
+
+  // 走查 R1：和姊妹 mobile-ai-call-screen 一样接 Android 硬件 Back 拦截。
+  // 用户按物理 Back → 默认走 history.back()，直接绕过 handleBack 兜底链路：
+  //   - voiceCall.hangup 不发 → 群消息列表没"📞 通话时长"call_log
+  //   - endStatusMutation 不发 → 群通话状态卡片永远停在"画面进行中"
+  //   - VAD/recorder 在 React unmount 链路真正跑完前继续占麦/解码
+  // handleBack 闭包持稳定身份（声明顺序晚于 handleEndCall），这里只 wrap 一层
+  // event.preventDefault + 调 handleBack。leavingScreen 期间不挂拦截器，
+  // 让用户能正常退出 leaving 卡死的兜底界面。
+  useEffect(() => {
+    if (isDesktopLayout || leavingScreen) {
+      return;
+    }
+    const unregister = registerAndroidBackInterceptor((event) => {
+      event.preventDefault();
+      handleBack();
+      return true;
+    });
+    return unregister;
+    // handleBack 闭包 deps 链长（endStatusMutation/voiceCall/navigate/...），
+    // 拿当前渲染版本就够 —— leavingScreenRef 已经保证幂等。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesktopLayout, leavingScreen]);
 
   const handleRetryEndCall = () => {
     if (leavingScreen) {
@@ -1030,6 +1075,16 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   // 微信式群通话状态（VAD loop 仅 voice 模式生效）
   const micMuted = voiceCall.voiceLoop.micMuted;
   const setMicMuted = voiceCall.voiceLoop.setMicMuted;
+  // 走查 R1：原版「免提」按钮只 toggle 本地 speakerEnabled state，从未挂到
+  // voiceCall.setAudioMuted —— 用户点关闭 AI 群成员仍在响。voice 模式下委托
+  // 给 session 的 audioMuted（已经 wire 到 audio.muted），video 模式仍保留
+  // 本地 state stub（video 还没接通话）。
+  const speakerOn =
+    mode === "voice" ? !voiceCall.audioMuted : speakerEnabled;
+  const toggleSpeaker =
+    mode === "voice"
+      ? () => voiceCall.setAudioMuted((current) => !current)
+      : () => setSpeakerEnabled((current) => !current);
   const groupCallStatusLine =
     mode === "voice"
       ? voiceCall.voiceLoop.phase === "listening"
@@ -1127,12 +1182,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       controls={
         <WeChatCallControlBar>
           <WeChatCallControlButton
-            icon={
-              speakerEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />
-            }
+            icon={speakerOn ? <Volume2 size={24} /> : <VolumeX size={24} />}
             label={t(msg`免提`)}
-            variant={speakerEnabled ? "active" : "default"}
-            onClick={() => setSpeakerEnabled((current) => !current)}
+            variant={speakerOn ? "active" : "default"}
+            onClick={toggleSpeaker}
             disabled={leavingScreen}
           />
           <WeChatCallControlButton

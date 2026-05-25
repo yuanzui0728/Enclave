@@ -202,62 +202,37 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   // 兜底：timeout 时主动 begin leaving + 把 waiting 卡片 close 成 ended，然后
   // 走和 handleBack 同一条导航出口。user_hangup 路径下 leavingScreenRef 已经
   // 被 beginLeaving 翻 true，回调里幂等 return。
+  // 走查 R3：原版只 setLeavingScreen + navigate，把 audio/mic 收尾全部赌在 unmount
+  // cleanup。leaving=true 后 voice loop 的 reconcile 会 cancelRecordingTurn（释放
+  // 录音），但 audio 仍在播——10min 超时通常发生在用户离开手机时，但万一这一刻
+  // 用户回看屏幕，听到的是被「通话已超时」截断的半句 AI 回复 + audio 在 unmount
+  // 前继续吼几百 ms。和 handleBack 显式 stopReplyPlayback 对齐。
+  // 用 ref-wrapped callback 模式（参考群通话 handleVoiceCallAutoEndRef）：
+  // useVoiceCallSession 在 ref 还没填值的当帧就要拿到稳定身份的 onSessionEnded，
+  // 但 ref 实际填值要等 activeCall 已经声明完。每次渲染再覆盖一遍 .current 让
+  // ref 始终看到最新闭包（conversation/sendCallStatusMessage 等都会跟着新闭包刷新）。
+  const handleSessionAutoEndedRef = useRef<
+    (reason: CallFinalizeEndedReason) => void
+  >(() => {});
   const handleSessionAutoEnded = useCallback(
     (reason: CallFinalizeEndedReason) => {
-      if (leavingScreenRef.current) {
-        return;
-      }
-      if (reason !== "timeout") {
-        return;
-      }
-
-      leavingScreenRef.current = true;
-      setLeavingScreen(true);
-
-      if (
-        conversation?.type === "direct" &&
-        waitingNoticeSentRef.current &&
-        !endedNoticeSentRef.current
-      ) {
-        endedNoticeSentRef.current = true;
-        // fire-and-forget：和 handleBack 同样思路，await ended 会拖慢 navigate
-        void sendCallStatusMessage("ended");
-      }
-
-      if (isDesktopLayout) {
-        void navigate({
-          to: desktopThreadPath,
-          replace: true,
-        });
-      } else {
-        void navigate({
-          to: "/chat/$conversationId",
-          params: { conversationId: resolvedConversationId },
-          search:
-            buildChatCallReturnSearch({
-              kind: mode,
-            }) || undefined,
-          ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
-          replace: true,
-        });
-      }
+      handleSessionAutoEndedRef.current(reason);
     },
-    [
-      conversation?.type,
-      currentMobileRouteHash,
-      desktopThreadPath,
-      isDesktopLayout,
-      mode,
-      navigate,
-      resolvedConversationId,
-      sendCallStatusMessage,
-    ],
+    [],
   );
   const voiceCall = useVoiceCallSession({
     baseUrl,
     conversationId: resolvedConversationId,
     characterId,
-    enabled: mode === "voice" && !isDesktopLayout && Boolean(conversationId),
+    // 走查 R2：原 enabled 不等 conversation 数据落地、也不校验 type。loading 这 600ms
+    // 公网 RTT 期内 VAD loop 已经 arm → speech.start() → 系统弹麦克风权限。如果
+    // conversation 后来发现是群（被 routes guard 兜底渲染"暂不能发起语音通话"），用户
+    // 已经被无意义弹了麦权限。补上 conversation?.type === "direct" 收口。
+    enabled:
+      mode === "voice" &&
+      !isDesktopLayout &&
+      Boolean(conversationId) &&
+      conversation?.type === "direct",
     leaving: leavingScreen,
     onTurnSuccess: async (result) => {
       if (connectedNoticeSentRef.current) {
@@ -277,7 +252,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       mode === "video" &&
       !isDesktopLayout &&
       Boolean(conversationId) &&
-      Boolean(characterId),
+      Boolean(characterId) &&
+      conversation?.type === "direct",
     leaving: leavingScreen,
     onTurnSuccess: async (result) => {
       if (connectedNoticeSentRef.current) {
@@ -300,6 +276,52 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const activeCall = isVideoMode ? digitalHumanCall : voiceCall;
   const speech = activeCall.speech;
   const digitalSession = isVideoMode ? digitalHumanCall.session : null;
+
+  // 走查 R3：ref 实体填值，让上面 handleSessionAutoEnded 的稳定 cb 能拿到最新
+  // activeCall / conversation / navigate 闭包；handleBack 同款收尾顺序（cancel +
+  // stopReplyPlayback → 写 ended → navigate）。
+  handleSessionAutoEndedRef.current = (
+    reason: CallFinalizeEndedReason,
+  ) => {
+    if (leavingScreenRef.current) {
+      return;
+    }
+    if (reason !== "timeout") {
+      return;
+    }
+
+    leavingScreenRef.current = true;
+    setLeavingScreen(true);
+    activeCall.cancelRecordingTurn();
+    activeCall.stopReplyPlayback();
+
+    if (
+      conversation?.type === "direct" &&
+      waitingNoticeSentRef.current &&
+      !endedNoticeSentRef.current
+    ) {
+      endedNoticeSentRef.current = true;
+      void sendCallStatusMessage("ended");
+    }
+
+    if (isDesktopLayout) {
+      void navigate({
+        to: desktopThreadPath,
+        replace: true,
+      });
+    } else {
+      void navigate({
+        to: "/chat/$conversationId",
+        params: { conversationId: resolvedConversationId },
+        search:
+          buildChatCallReturnSearch({
+            kind: mode,
+          }) || undefined,
+        ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
+        replace: true,
+      });
+    }
+  };
   const cameraPreviewMessage = !cameraEnabled
     ? t(msg`本地摄像头已关闭`)
     : cameraPreview.status === "requesting-permission"

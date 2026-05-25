@@ -49,6 +49,13 @@ export function useVoiceCallSession({
   const autoSubmitRecordingRef = useRef(false);
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
+  // 走查 R1：用户按"挂断"后 mutation 仍在公网慢链路上（cloud→world→model 可
+  // 能 1-3s），handleBack 立刻 stopReplyPlayback，但 onSuccess 才到时 audio
+  // 已被复位、`leaving` prop 早翻 true，仍照常 setPlaybackState("playing") +
+  // audio.play() —— 用户挂断后听到 200ms 残音才被 unmount cleanup 截停。
+  // 用 ref 在 onSuccess 入口幂等丢弃，避免 prop dep 跑进 useMutation。
+  const leavingRef = useRef(leaving);
+  leavingRef.current = leaving;
   const [lastTurn, setLastTurn] = useState<VoiceCallTurnResult | null>(null);
   const [audioMuted, setAudioMuted] = useState(false);
   const [playbackState, setPlaybackState] = useState<"idle" | "playing">(
@@ -123,6 +130,12 @@ export function useVoiceCallSession({
       return createVoiceCallTurn(formData, baseUrl);
     },
     onSuccess: async (result) => {
+      // 走查 R1：用户挂断/导航 leaving 后 mutation 仍可能在公网慢链路上 in-flight，
+      // 这里 resolve 才到。setLastTurn / playReplyAudio 仍跑会让用户离屏时听到一段
+      // 残音、UI 闪一下"对方正在说话"。leavingRef 同步守门，幂等丢弃整个 onSuccess。
+      if (leavingRef.current) {
+        return;
+      }
       setLastTurn(result);
       speechClearResultRef.current();
       // 乐观置 playing：mutation 一 resolve isPending 就翻 false，但回复音频在
@@ -142,6 +155,11 @@ export function useVoiceCallSession({
         }),
         Promise.resolve(onTurnSuccess?.(result)),
       ]);
+      // 二次守门：上面 await 期间 leaving 可能被翻 true（onTurnSuccess 自身用
+      // sendCallStatusMessage 公网 ~600ms），到这一步播音频已经无意义。
+      if (leavingRef.current) {
+        return;
+      }
       await playReplyAudio(result.assistantAudioUrl);
     },
   });
