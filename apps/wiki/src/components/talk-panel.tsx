@@ -301,6 +301,10 @@ function ThreadDetail({
         childrenByParent={childrenByParent}
         resolveAuthor={resolveAuthor}
         isNarrow={isNarrow}
+        // 逐帖「回复」按钮的显隐必须和下方 composer 完全同条件：composer 只在
+        // user && !isLocked 时渲染，否则点「回复」只 setReplyTo 而 composer 不
+        // 出现 = 死按钮（锁定串 / 未登录访客都会撞上）。
+        canReply={Boolean(user) && !thread.isLocked}
         onReply={(postId) => setReplyTo(postId)}
         onDelete={(postId) => {
           // deleteMut.isPending 时 onDelete 不再触发新一次 confirm + mutate ——
@@ -396,6 +400,7 @@ function PostTree({
   onReply,
   onDelete,
   canDelete,
+  canReply,
   parentId = null,
   depth = 0,
   isNarrow,
@@ -405,6 +410,7 @@ function PostTree({
   onReply: (id: string) => void;
   onDelete: (id: string) => void;
   canDelete: (post: WikiTalkPost) => boolean;
+  canReply: boolean;
   parentId?: string | null;
   depth?: number;
   isNarrow?: boolean;
@@ -443,17 +449,26 @@ function PostTree({
             )}
             {!post.deletedAt && (
               <>
+                {/* ml-auto 间隔条把操作按钮整体推到右侧。独立 spacer 而不是把
+                    ml-auto 挂在「回复」上——锁定串 / 未登录访客隐藏「回复」后，
+                    剩下的举报 / 删除仍能保持右对齐，不会塌回左侧。 */}
+                <span className="ml-auto" aria-hidden="true" />
                 {/* per-post 操作按钮的可访问名要把作者名嵌进去。N 条回复都叫
                     "回复 按钮" / "删除 按钮"，SR 用户在长 thread 里没法判断点
-                    的是哪一条；用 aria-label 显式带上作者名，视觉文案保留短。 */}
-                <button
-                  type="button"
-                  aria-label={t(msg`回复 ${resolveAuthor(post.authorId)} 的发言`)}
-                  className="ml-auto inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--text-primary)]"
-                  onClick={() => onReply(post.id)}
-                >
-                  <Trans>回复</Trans>
-                </button>
+                    的是哪一条；用 aria-label 显式带上作者名，视觉文案保留短。
+                    canReply=false（锁定串 / 未登录）时不渲染「回复」，避免点了
+                    没有 composer 出现的死按钮。举报按钮自身已对未登录返回 null，
+                    且锁定串仍允许举报，所以不随 canReply 一起关。 */}
+                {canReply && (
+                  <button
+                    type="button"
+                    aria-label={t(msg`回复 ${resolveAuthor(post.authorId)} 的发言`)}
+                    className="inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--text-primary)]"
+                    onClick={() => onReply(post.id)}
+                  >
+                    <Trans>回复</Trans>
+                  </button>
+                )}
                 <ReportButton targetType="wiki_talk_post" targetId={post.id} />
                 {canDelete(post) && (
                   <button
@@ -489,6 +504,7 @@ function PostTree({
             onReply={onReply}
             onDelete={onDelete}
             canDelete={canDelete}
+            canReply={canReply}
             parentId={post.id}
             depth={depth + 1}
           />
