@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -7,6 +7,8 @@ import {
   deleteFeedPost,
   getOwnFeed,
   isApiRequestError,
+  listFeedComments,
+  type FeedComment,
   type FeedPostListItem,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -69,7 +71,65 @@ export function ProfileFeedPage() {
     queryKey: [FEED_MINE_QUERY_KEY, baseUrl],
     queryFn: () => getOwnFeed(baseUrl),
   });
-  const ownPosts = feedQuery.data ?? [];
+  // useMemo 固定引用：feedQuery.data 为空时 `?? []` 每次 render 都 new 一个新数组，
+  // 会让下面 processedComments 的 useMemo 依赖每帧变化、白白重算。
+  const feedData = feedQuery.data;
+  const ownPosts = useMemo(() => feedData ?? [], [feedData]);
+
+  // 「查看全部评论」展开后按 postId 缓存 listFeedComments 全量结果；未展开用
+  // 后端给的 commentsPreview（最后 3 条）。
+  const [fullCommentsByPostId, setFullCommentsByPostId] = useState<
+    Record<string, FeedComment[]>
+  >({});
+  const [expandingPostId, setExpandingPostId] = useState<string | null>(null);
+  const expandInflightRef = useRef<Record<string, boolean>>({});
+
+  // 清洗评论：gpt-4.1 等非推理模型会把整段 CoT prose 当评论存进来、历史还有
+  // text="" 的鬼影评论；stripToolCallSyntax 后为空的一律过掉，避免渲出「作者：」
+  // 这种只剩冒号的空行（和 discover-feed-page processedCommentsByPostId 同款）。
+  const processedComments = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ comment: FeedComment; cleanText: string }>
+    >();
+    for (const post of ownPosts) {
+      const source = fullCommentsByPostId[post.id] ?? post.commentsPreview ?? [];
+      const cleaned = source
+        .map((comment) => ({
+          comment,
+          cleanText: stripToolCallSyntax(comment.text ?? ""),
+        }))
+        .filter((entry) => entry.cleanText.trim().length > 0);
+      map.set(post.id, cleaned);
+    }
+    return map;
+  }, [ownPosts, fullCommentsByPostId]);
+
+  const handleExpandComments = async (postId: string) => {
+    if (fullCommentsByPostId[postId] || expandInflightRef.current[postId]) {
+      return;
+    }
+    expandInflightRef.current[postId] = true;
+    setExpandingPostId(postId);
+    const reqBaseUrl = baseUrl;
+    try {
+      const all = await listFeedComments(postId, baseUrl);
+      // mid-flight 切账户防卫：别把 A 账户的评论塞进 B 账户的 state。
+      if (reqBaseUrl !== mutationBaseUrlRef.current) return;
+      setFullCommentsByPostId((current) => ({ ...current, [postId]: all }));
+    } catch (error) {
+      if (reqBaseUrl !== mutationBaseUrlRef.current) return;
+      setNotice({
+        tone: "danger",
+        message:
+          (isApiRequestError(error) ? translateAppErrorCode(error) : null) ??
+          describeRequestError(error, t(msg`评论加载失败，请稍后重试。`)),
+      });
+    } finally {
+      delete expandInflightRef.current[postId];
+      setExpandingPostId((current) => (current === postId ? null : current));
+    }
+  };
 
   // notice 2.4s 自清，和朋友圈/我-tab 各页通道一致。
   useEffect(() => {
@@ -78,10 +138,12 @@ export function ProfileFeedPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  // 切账户：清掉残留 notice / 待确认删除，避免把 A 账户的状态带到 B 账户。
+  // 切账户：清掉残留 notice / 待确认删除 / 已展开评论，避免把 A 账户的状态带到 B。
   useEffect(() => {
     setNotice(null);
     setPendingDeleteId(null);
+    setFullCommentsByPostId({});
+    setExpandingPostId(null);
   }, [baseUrl]);
 
   // 删除确认弹层：Esc 关闭，和点遮罩取消对齐。
@@ -265,6 +327,55 @@ export function ProfileFeedPage() {
                   return parts.join(" · ");
                 }
                 return summaryText || undefined;
+              })()}
+              secondary={(() => {
+                const rendered = processedComments.get(post.id) ?? [];
+                const expanded = Boolean(fullCommentsByPostId[post.id]);
+                const showExpand =
+                  !expanded && post.commentCount > rendered.length;
+                if (rendered.length === 0 && !showExpand) {
+                  return null;
+                }
+                return (
+                  <div className="overflow-hidden rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]">
+                    <div className="space-y-1 px-3 py-2 text-[12px] leading-[20px]">
+                      {rendered.map(({ comment, cleanText }) => {
+                        const replyToName = comment.replyToAuthorName ?? null;
+                        return (
+                          <div
+                            key={comment.id}
+                            className="break-words text-[color:var(--text-primary)]"
+                          >
+                            <span className="text-[#576B95]">
+                              {comment.authorName}
+                            </span>
+                            {replyToName ? (
+                              <>
+                                <span> {t(msg`回复`)} </span>
+                                <span className="text-[#576B95]">
+                                  {replyToName}
+                                </span>
+                              </>
+                            ) : null}
+                            <span>：{cleanText}</span>
+                          </div>
+                        );
+                      })}
+                      {showExpand ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleExpandComments(post.id)}
+                          disabled={expandingPostId === post.id}
+                          className="text-[12px] text-[#576B95] disabled:opacity-60"
+                        >
+                          {expandingPostId === post.id
+                            ? t(msg`加载中…`)
+                            : t(msg`查看全部 ${post.commentCount} 条评论`)}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
               })()}
             />
           );
