@@ -519,7 +519,11 @@ export class WikiPageService {
         'c.personality AS personality',
         'c.expertDomains AS expertDomains',
       ])
-      .limit(Math.min(Math.max(limit, 1), 100))
+      // 不在 SQL 里 limit —— 必须先对**全部**命中行打分排序再截断。SQL 这条没有
+      // ORDER BY，若先 LIMIT 20 就是按 rowid 任意砍掉一批：命中数 > limit 时（如
+      // 搜 "a" 命中 50 行），名称精确命中（score 10：OpenAI / Anthropic …）反而被
+      // 排在前面 rowid 的低分 bio 命中（score 3）挤出 top-20。打分是 JS 侧做的，
+      // 所以必须取齐命中行再排序、最后 slice。命中集已被 WHERE 收窄，量可控。
       .getRawMany<{
         id: string;
         name: string;
@@ -530,6 +534,7 @@ export class WikiPageService {
       }>();
 
     const lower = q.toLowerCase();
+    const take = Math.min(Math.max(limit, 1), 100);
     return rows
       .map((r) => {
         let score = 0;
@@ -546,7 +551,14 @@ export class WikiPageService {
           score,
         };
       })
-      .sort((a, b) => b.score - a.score);
+      // 二级键按 name 稳定排序：同分行有确定顺序，不随 SQL rowid 漂；截断点
+      // 落在同分边界上时取哪些也就稳定可复现了。
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          (a.name ?? '').localeCompare(b.name ?? '', 'zh-Hans-CN'),
+      )
+      .slice(0, take);
   }
 
   async setDeletedFlag(
