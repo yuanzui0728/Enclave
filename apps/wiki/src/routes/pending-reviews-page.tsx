@@ -24,6 +24,7 @@ import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import {
+  revisionChangedFieldsLabel,
   revisionKindLabel,
   revisionOperationLabel,
 } from "../lib/revision-labels";
@@ -312,7 +313,8 @@ function ReviewCard({
         )}
         <div className="text-xs text-[color:var(--text-muted)]">
           <Trans>
-            改动字段：{rev.diffFromParent?.changed?.join(", ") ?? "—"}
+            改动字段：
+            {revisionChangedFieldsLabel(rev.diffFromParent?.changed) || "—"}
           </Trans>
         </div>
         <div className="rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] p-3">

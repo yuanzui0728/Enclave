@@ -19,6 +19,7 @@ import { useUsernameMap } from "../lib/use-username-map";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
 import {
+  revisionChangedFieldsLabel,
   revisionChangeSourceLabel,
   revisionKindLabel,
   revisionOperationLabel,
@@ -185,9 +186,11 @@ function ChangeRow({
         {rev.editSummary && (
           <div className="break-words text-sm leading-6">{rev.editSummary}</div>
         )}
-        {rev.diffFromParent?.changed && (
+        {revisionChangedFieldsLabel(rev.diffFromParent?.changed) && (
           <div className="break-words text-xs text-[color:var(--text-muted)]">
-            <Trans>字段：{rev.diffFromParent.changed.join(", ")}</Trans>
+            <Trans>
+              字段：{revisionChangedFieldsLabel(rev.diffFromParent?.changed)}
+            </Trans>
           </div>
         )}
       </div>

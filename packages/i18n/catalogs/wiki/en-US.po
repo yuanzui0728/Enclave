@@ -3144,3 +3144,67 @@ msgstr "Merge"
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "AI 重生成"
 msgstr "AI regenerated"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段开始"
+msgstr "Active hours start"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段结束"
+msgstr "Active hours end"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "动态频率"
+msgstr "Moments frequency"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "情绪基调"
+msgstr "Emotional tone"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "提示词"
+msgstr "Prompt"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "初始记忆"
+msgstr "Memory seed"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "推理设置"
+msgstr "Reasoning settings"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "生活策略"
+msgstr "Life strategy"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "语气"
+msgstr "Tone"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "专长"
+msgstr "Expertise"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "发布映射"
+msgstr "Publish mapping"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "身份"
+msgstr "Identity"
+
+#: apps/wiki/src/lib/character-labels.ts:17
+msgid "本人"
+msgstr "Yourself"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "反破坏机器人"
+msgstr "Anti-vandalism bot"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "管理同步"
+msgstr "Admin sync"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "系统账号"
+msgstr "System account"

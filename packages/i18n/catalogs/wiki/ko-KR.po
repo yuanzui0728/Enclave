@@ -3144,3 +3144,67 @@ msgstr "병합"
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "AI 重生成"
 msgstr "AI 재생성"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段开始"
+msgstr "활동 시간 시작"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段结束"
+msgstr "활동 시간 종료"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "动态频率"
+msgstr "모먼트 빈도"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "情绪基调"
+msgstr "감정 톤"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "提示词"
+msgstr "프롬프트"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "初始记忆"
+msgstr "초기 기억"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "推理设置"
+msgstr "추론 설정"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "生活策略"
+msgstr "라이프 전략"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "语气"
+msgstr "말투"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "专长"
+msgstr "전문 분야"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "发布映射"
+msgstr "퍼블리시 매핑"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "身份"
+msgstr "신원"
+
+#: apps/wiki/src/lib/character-labels.ts:17
+msgid "本人"
+msgstr "본인"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "反破坏机器人"
+msgstr "반달 방지 봇"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "管理同步"
+msgstr "관리 동기화"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "系统账号"
+msgstr "시스템 계정"

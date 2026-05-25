@@ -118,3 +118,69 @@ export const abuseFilterActionLabel = (v: string | null | undefined) =>
   lookup(ABUSE_FILTER_ACTION_LABELS, v);
 export const abuseFilterScopeLabel = (v: string | null | undefined) =>
   lookup(ABUSE_FILTER_SCOPE_LABELS, v);
+
+// ── 修订 diff 的 changed 字段列表本地化 ──
+// changed 里既有真实字段路径（bio / region / prompting.coreLogic /
+// lifeStrategy.activeHoursStart），也有内部哨兵（__create__ / __delete__ /
+// __restore__ / __revert__ / __sync_from_character__）。recent-changes /
+// character-page / pending-reviews 三处原本都 `changed.join(", ")` 裸渲染，
+// 中/英/日/韩 UI 上直接漏出英文 key，甚至把哨兵显示成「字段：__create__」
+// 「字段：__sync_from_character__」（2026-05-25 走查发现）。
+// 处理：哨兵不是字段（其语义已由 operation/changeSource pill 表达），整组过滤；
+// 真实路径走精确映射，未知路径按命名空间前缀回落到分类名，最后才兜底原 key。
+const SENTINEL_FIELDS = new Set([
+  "__create__",
+  "__delete__",
+  "__restore__",
+  "__revert__",
+  "__sync_from_character__",
+]);
+
+const FIELD_PATH_LABELS: Record<string, MessageDescriptor> = {
+  name: msg`名称`,
+  avatar: msg`头像`,
+  bio: msg`简介`,
+  personality: msg`性格`,
+  expertDomains: msg`专长领域`,
+  triggerScenes: msg`触发场景`,
+  relationship: msg`关系描述`,
+  relationshipType: msg`关系类型`,
+  region: msg`地区`,
+  "prompting.coreLogic": msg`核心逻辑`,
+  "lifeStrategy.activeHoursStart": msg`活跃时段开始`,
+  "lifeStrategy.activeHoursEnd": msg`活跃时段结束`,
+  "lifeStrategy.momentsFrequency": msg`动态频率`,
+  "lifeStrategy.feedFrequency": msg`广场频率`,
+  "tone.emotionalTone": msg`情绪基调`,
+};
+
+const FIELD_NAMESPACE_LABELS: Record<string, MessageDescriptor> = {
+  prompting: msg`提示词`,
+  memorySeed: msg`初始记忆`,
+  reasoning: msg`推理设置`,
+  lifeStrategy: msg`生活策略`,
+  tone: msg`语气`,
+  expertise: msg`专长`,
+  publishMapping: msg`发布映射`,
+  identity: msg`身份`,
+};
+
+function fieldPathLabel(path: string): string {
+  const exact = FIELD_PATH_LABELS[path];
+  if (exact) return translateRuntimeMessage(exact);
+  const ns = path.includes(".") ? path.split(".")[0] : undefined;
+  const nsHit = ns ? FIELD_NAMESPACE_LABELS[ns] : undefined;
+  if (nsHit) return translateRuntimeMessage(nsHit);
+  return path;
+}
+
+/** 过滤内部哨兵后，把真实字段路径本地化并 join；全是哨兵时返回 ""（调用方据此隐藏整行）。 */
+export function revisionChangedFieldsLabel(
+  changed: string[] | null | undefined,
+): string {
+  if (!changed?.length) return "";
+  return changed
+    .filter((c) => !SENTINEL_FIELDS.has(c))
+    .map(fieldPathLabel)
+    .join(", ");
+}

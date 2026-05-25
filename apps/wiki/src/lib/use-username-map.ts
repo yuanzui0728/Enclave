@@ -7,9 +7,28 @@
  * 命中率高于"逐个 user 单独 query"。返回 Map<id, username>，找不到的 id 自动回落到 UUID。
  */
 import { useMemo } from "react";
+import { msg } from "@lingui/macro";
+import type { MessageDescriptor } from "@lingui/core";
 import { useQuery } from "@tanstack/react-query";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { wikiApi } from "./wiki-api";
 import { getToken } from "./auth-store";
+
+// 系统账号（userType=system）的 username 走 `__system_*__` 双下划线约定，
+// 直接渲染会在 recent-changes / 审核卡上漏出 "__system_wiki_antivandal_bot__"
+// 这种带下划线的内部句柄（2026-05-25 走查发现：反破坏机器人回滚破坏后即如此）。
+// 映射成友好本地化名；未知系统账号回落到「系统账号」，绝不漏 __…__ 原样。
+const SYSTEM_DISPLAY_NAMES: Record<string, MessageDescriptor> = {
+  __system_wiki_antivandal_bot__: msg`反破坏机器人`,
+  __system_wiki_admin_sync__: msg`管理同步`,
+};
+
+function friendlyName(username: string): string {
+  const hit = SYSTEM_DISPLAY_NAMES[username];
+  if (hit) return translateRuntimeMessage(hit);
+  if (/^__.*__$/.test(username)) return translateRuntimeMessage(msg`系统账号`);
+  return username;
+}
 
 export function useUsernameMap(rawIds: Array<string | null | undefined>) {
   const ids = useMemo(() => {
@@ -34,7 +53,8 @@ export function useUsernameMap(rawIds: Array<string | null | undefined>) {
   return useMemo(() => {
     const map = new Map<string, string>();
     for (const row of q.data ?? []) {
-      map.set(row.id, row.username);
+      // 系统账号映射成友好名，避免 __system_*__ 句柄漏进 UI。
+      map.set(row.id, friendlyName(row.username));
     }
     return {
       map,

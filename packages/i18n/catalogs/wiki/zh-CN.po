@@ -3144,3 +3144,67 @@ msgstr "合并"
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "AI 重生成"
 msgstr "AI 重生成"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段开始"
+msgstr "活跃时段开始"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "活跃时段结束"
+msgstr "活跃时段结束"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "动态频率"
+msgstr "动态频率"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "情绪基调"
+msgstr "情绪基调"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "提示词"
+msgstr "提示词"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "初始记忆"
+msgstr "初始记忆"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "推理设置"
+msgstr "推理设置"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "生活策略"
+msgstr "生活策略"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "语气"
+msgstr "语气"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "专长"
+msgstr "专长"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "发布映射"
+msgstr "发布映射"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "身份"
+msgstr "身份"
+
+#: apps/wiki/src/lib/character-labels.ts:17
+msgid "本人"
+msgstr "本人"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "反破坏机器人"
+msgstr "反破坏机器人"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "管理同步"
+msgstr "管理同步"
+
+#: apps/wiki/src/lib/use-username-map.ts
+msgid "系统账号"
+msgstr "系统账号"
