@@ -45,11 +45,38 @@ export class CharacterDraftService {
   }
 
   async listByOwner(ownerUserId: string): Promise<DraftSummary[]> {
-    const rows = await this.repo.find({
-      where: { ownerUserId },
-      order: { updatedAt: 'DESC' },
+    // 列表只展示 name，不需要 payload。早先用 repo.find() = SELECT *，会把每行可能
+    // 很大的 AI 生成 payload（recipe + profile，单条可达几十 KB）整列读进内存再
+    // JSON.parse 仅为取一个 name —— 草稿多的用户每次开列表都白读/白解析一大坨。
+    // 改成只 select 轻量列 + 在 SQLite 里用 json_extract 取 name（与私有角色列表
+    // 轻量化 6657d12ef 同思路）。
+    //
+    // json_valid 兜底：payload 理论上恒为合法 JSON（createFromAi 只走
+    // JSON.stringify），但若被外部篡改成非法 JSON，裸 json_extract 会抛
+    // "malformed JSON" 直接拖垮整条列表查询；包一层 json_valid 退化成 NULL，
+    // 行为与旧 parsePayload 的 try/catch 一致（解析失败 → name 空串）。
+    const { entities, raw } = await this.repo
+      .createQueryBuilder('d')
+      .select(['d.id', 'd.kind', 'd.source', 'd.createdAt', 'd.updatedAt'])
+      .addSelect(
+        "CASE WHEN json_valid(d.payload) THEN json_extract(d.payload, '$.name') ELSE NULL END",
+        'draftName',
+      )
+      .where('d.ownerUserId = :ownerUserId', { ownerUserId })
+      .orderBy('d.updatedAt', 'DESC')
+      .getRawAndEntities();
+
+    return entities.map((row, i) => {
+      const rawName = (raw[i] as { draftName?: unknown } | undefined)?.draftName;
+      return {
+        id: row.id,
+        kind: row.kind,
+        name: typeof rawName === 'string' ? rawName.trim() : '',
+        source: row.source,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      };
     });
-    return rows.map((r) => this.toSummary(r));
   }
 
   async getById(ownerUserId: string, id: string): Promise<DraftDetail> {
@@ -80,18 +107,6 @@ export class CharacterDraftService {
   private extractName(payload: PrivateCharacterDto): string {
     const name = typeof payload?.name === 'string' ? payload.name.trim() : '';
     return name;
-  }
-
-  private toSummary(row: CharacterDraftEntity): DraftSummary {
-    const payload = this.parsePayload(row.payload);
-    return {
-      id: row.id,
-      kind: row.kind,
-      name: this.extractName(payload),
-      source: row.source,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    };
   }
 
   private toDetail(row: CharacterDraftEntity): DraftDetail {
