@@ -18,7 +18,10 @@ import {
   useTablistKeyboard,
 } from "@yinjie/ui";
 import { hasRole, roleLabel } from "../lib/auth-store";
-import { relationshipTypeLabel } from "../lib/character-labels";
+import {
+  relationshipTypeLabel,
+  socialOpennessLabel,
+} from "../lib/character-labels";
 import { useAuth } from "../lib/use-auth";
 import {
   wikiApi,
@@ -633,15 +636,47 @@ function ReadView({ view }: { view: WikiPageView }) {
       )}
       {recipe && (
         <>
+          {/* 底层逻辑：对齐编辑页「底层逻辑」section（核心逻辑 + 遗忘曲线） */}
           <Section label={t(msg`核心逻辑`)}>
             {recipe.prompting.coreLogic || "—"}
           </Section>
+          <Section label={t(msg`遗忘曲线（0-100，默认 70）`)}>
+            {recipe.memorySeed.forgettingCurve}
+          </Section>
+          {/* 场景提示词：对齐编辑页「聊天回复」+「场景提示词」section 的全部 8 项 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Section label={t(msg`聊天 Prompt`)}>
+            <Section label={t(msg`聊天场景提示词`)}>
               {recipe.prompting.scenePrompts.chat || "—"}
             </Section>
-            <Section label={t(msg`主动触达 Prompt`)}>
+            <Section label={t(msg`发朋友圈`)}>
+              {recipe.prompting.scenePrompts.moments_post || "—"}
+            </Section>
+            <Section label={t(msg`朋友圈评论 / 回复`)}>
+              {recipe.prompting.scenePrompts.moments_comment || "—"}
+            </Section>
+            <Section label={t(msg`广场发帖`)}>
+              {recipe.prompting.scenePrompts.feed_post || "—"}
+            </Section>
+            <Section label={t(msg`发视频号内容`)}>
+              {recipe.prompting.scenePrompts.channel_post || "—"}
+            </Section>
+            <Section label={t(msg`广场评论`)}>
+              {recipe.prompting.scenePrompts.feed_comment || "—"}
+            </Section>
+            <Section label={t(msg`好友请求 / 摇一摇问候`)}>
+              {recipe.prompting.scenePrompts.greeting || "—"}
+            </Section>
+            <Section label={t(msg`主动提醒`)}>
               {recipe.prompting.scenePrompts.proactive || "—"}
+            </Section>
+          </div>
+          {/* 记忆提示词：对齐编辑页「记忆提示词」section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Section label={t(msg`近期记忆提示词`)}>
+              {recipe.memorySeed.recentSummaryPrompt || "—"}
+            </Section>
+            <Section label={t(msg`长期记忆提示词`)}>
+              {recipe.memorySeed.coreMemoryPrompt || "—"}
             </Section>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -658,6 +693,18 @@ function ReadView({ view }: { view: WikiPageView }) {
           </div>
         </>
       )}
+      {/* 社交参数：住 CharacterEntity 列、与 recipe 无关，始终渲染（对齐编辑页「社交参数」section） */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Section label={t(msg`社交开放度`)}>
+          {socialOpennessLabel(view.socialOpenness) || view.socialOpenness}
+        </Section>
+        <Section label={t(msg`主动浏览概率（0-1）`)}>
+          {view.proactiveBrowseChance}
+        </Section>
+        <Section label={t(msg`亲密度种子（0-100）`)}>
+          {view.intimacyLevel}
+        </Section>
+      </div>
       {view.pendingRevision && (
         <InlineNotice tone="info">
           <Trans>
@@ -960,12 +1007,19 @@ function RevisionCard({
   const [showRevert, setShowRevert] = useState(false);
   const [reason, setReason] = useState("");
   // 历史列表为省负载已 drop 掉 recipeSnapshot（见 wiki-page.service.getHistory）；
-  // 点开"查看对比"时才按需拉这一条修订的完整数据拿 recipeSnapshot。enabled:showDiff
-  // 保证未展开的卡不发请求；展开过一次后 react-query 缓存，收起再展开不再重拉。
+  // 点开"查看对比"时才按需拉这一条修订的完整数据拿 recipeSnapshot。
+  // enabled 还额外 gate 在 revisionKind !== 'content'：后端只给 recipe/lifecycle
+  // 修订存 recipeSnapshot，content 修订（改简介/名等，正常 wiki 最常见的编辑类型）
+  // 一律不带（wiki-edit.service 的 content 路径 create 时就不写 recipeSnapshot 列，
+  // 全库 91 条 content 修订 0 条有 recipe）。对 content 修订点开 diff 时再发一发
+  // getRevision 纯属白打——拉回来 recipeSnapshot 必为 null，还会闪一下"正在加载角色
+  // 逻辑快照…"。据此跳过，content 修订展开 diff 零额外请求、无误导 loading 文案。
+  // 展开过一次后 react-query 缓存，收起再展开不再重拉。
+  const mayHaveRecipe = rev.revisionKind !== "content";
   const revisionDetailQ = useQuery({
     queryKey: ["wiki", "revision", rev.characterId, rev.id],
     queryFn: () => wikiApi.getRevision(rev.characterId, rev.id),
-    enabled: showDiff,
+    enabled: showDiff && mayHaveRecipe,
     staleTime: 5 * 60 * 1000,
   });
   // 列表里 recipeSnapshot 已被 drop（undefined）；优先用按需拉到的完整修订。
