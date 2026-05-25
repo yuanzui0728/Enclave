@@ -355,7 +355,11 @@ function CharacterAvatar({
   useEffect(() => {
     setImgFailed(false);
   }, [trimmed]);
-  const display = trimmed.length > 0 ? trimmed.slice(0, 2) : name.slice(0, 1);
+  // name 首字用 Array.from 按 code point 取，避免 emoji 开头的名字（如「🌙夜航员」）
+  // 被 slice(0,1) 切半个代理对 → 列表卡片渲染出 "�" 乱码块。与 character-edit-form
+  // 的 CharacterAvatarPreview / home-page / character-page 的头像 fallback 对齐。
+  const display =
+    trimmed.length > 0 ? trimmed.slice(0, 2) : Array.from(name)[0] ?? "";
   if (isUrl && !imgFailed) {
     return (
       <img
