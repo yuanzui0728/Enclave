@@ -22,6 +22,13 @@ type UseSpeechInputOptions = {
   enabled: boolean;
   language?: string;
   mode?: "dictation" | "voice";
+  /**
+   * 走查新一轮 R3（perf 中）：默认 true 与 chat-composer 长按语音"已录制 0:03"
+   * 元数据兼容。三套 voice-call session hook 不消费 displayText（VAD 的指示环
+   * 已经实时反映音量），传 false 跳过 4Hz setInterval，免得每次 recording 阶段
+   * 拖着 1000+ 行的通话屏父组件每秒重渲染 4 次。
+   */
+  trackElapsed?: boolean;
 };
 
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
@@ -230,6 +237,7 @@ export function useSpeechInput({
   enabled,
   language,
   mode = "dictation",
+  trackElapsed = true,
 }: UseSpeechInputOptions) {
   const [status, setStatus] = useState<SpeechInputStatus>("idle");
   const [engine, setEngine] = useState<SpeechInputEngine>(null);
@@ -316,7 +324,11 @@ export function useSpeechInput({
   }, [cancel]);
 
   useEffect(() => {
-    if (mode !== "voice" || status !== "listening") {
+    // 走查新一轮 R3：voice-call 三套 session hook 传 trackElapsed=false 跳过这个
+    // 4Hz setInterval —— 它们不消费 displayText（VAD 指示环已经实时反映音量），
+    // 4Hz setState 只会拖着大体量通话屏父组件每秒多重渲染 4 次。chat-composer
+    // 默认 trackElapsed=true 保留"已录制 0:03"文字。
+    if (mode !== "voice" || status !== "listening" || !trackElapsed) {
       return;
     }
 
@@ -332,7 +344,7 @@ export function useSpeechInput({
     tick();
     const intervalId = window.setInterval(tick, 250);
     return () => window.clearInterval(intervalId);
-  }, [mode, status]);
+  }, [mode, status, trackElapsed]);
 
   const startBrowserRecognition = () => {
     if (!recognitionConstructor) {

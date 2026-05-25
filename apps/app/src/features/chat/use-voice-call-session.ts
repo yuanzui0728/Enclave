@@ -67,6 +67,9 @@ export function useVoiceCallSession({
     conversationId,
     enabled,
     mode: "voice",
+    // 通话屏不显示"已录制 0:03"元数据（VAD 指示环已实时反映音量），跳过 4Hz
+    // recordingElapsedMs setInterval 避免每秒拖着 1000+ 行通话屏多 4 次重渲染。
+    trackElapsed: false,
   });
 
   speechCancelRef.current = speech.cancel;

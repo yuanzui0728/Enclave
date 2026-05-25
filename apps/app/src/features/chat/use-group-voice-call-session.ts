@@ -75,6 +75,9 @@ export function useGroupVoiceCallSession({
     conversationId: groupId,
     enabled,
     mode: "voice",
+    // 通话屏不显示"已录制 0:03"，跳过 4Hz setInterval；见 use-voice-call-session
+    // 同款注释。
+    trackElapsed: false,
   });
   const callFinalize = useCallFinalize({
     thread: "group",
