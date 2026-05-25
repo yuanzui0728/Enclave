@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   ErrorBlock,
+  InlineNotice,
   LoadingBlock,
   PanelEmpty,
   StatusPill,
@@ -46,23 +47,20 @@ function WatchlistRow({ entry }: { entry: WatchlistEntry }) {
     onSettled: () => void qc.invalidateQueries({ queryKey: WATCHLIST_KEY }),
   });
 
+  // 取消关注故意不做乐观移除：乐观删行会让本行 unmount，连带销毁这条 mutation
+  // 的 error 状态，失败回滚后重新挂载的是全新实例 → 报错永远显示不出来。改为成功
+  // 后再失效列表移除该行；失败时本行还在，下面的 InlineNotice 才能呈现失败原因。
+  // 点击到服务端确认之间用 busy 禁用按钮给反馈。
   const unwatchMut = useMutation({
     mutationFn: () => wikiApi.unwatch(entry.characterId),
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: WATCHLIST_KEY });
-      const prev = qc.getQueryData<WatchlistEntry[]>(WATCHLIST_KEY);
-      qc.setQueryData<WatchlistEntry[]>(WATCHLIST_KEY, (old) =>
-        (old ?? []).filter((e) => e.characterId !== entry.characterId),
-      );
-      return { prev };
-    },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(WATCHLIST_KEY, ctx.prev);
-    },
-    onSettled: () => void qc.invalidateQueries({ queryKey: WATCHLIST_KEY }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: WATCHLIST_KEY }),
   });
 
   const busy = flagsMut.isPending || unwatchMut.isPending;
+  // 乐观更新失败时会静默回滚（行复原 / 开关弹回），用户不知道发生了什么。
+  // 把失败原因显式呈现出来——WikiApiError.message 在 request() 里已本地化兜底
+  // （含 5xx / 网络断开文案），直接展示无需再造译文。
+  const mutError = (flagsMut.error ?? unwatchMut.error) as Error | null;
 
   return (
     <li className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)]">
@@ -127,6 +125,11 @@ function WatchlistRow({ entry }: { entry: WatchlistEntry }) {
           <Trans>取消关注</Trans>
         </Button>
       </div>
+      {mutError && (
+        <InlineNotice tone="danger" role="alert" className="mt-2 text-xs">
+          {mutError.message}
+        </InlineNotice>
+      )}
     </li>
   );
 }
