@@ -99,13 +99,23 @@ export function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[color:var(--border-faint)]">
-                {usersQ.data.map((u) => (
+                {usersQ.data.map((u) => {
+                  // world_owner（从 chat 端带过来的账号）可能从没设过 wiki 用户名，
+                  // username 为空串 → "用户"列渲染成空白格，且下面 select 的 aria-label
+                  // 退化成" 的角色"（开头空格），正好废掉本页为盲用用户精心做的
+                  // 每行唯一可访问名。回落到 "#id 前缀"：语言中立、无需新增 i18n 消息
+                  //（本仓 lingui 编译成 hash id，新串没抽取就会渲染成 hash），视觉与
+                  // 读屏下都能把这一行和其它行区分开。
+                  const displayName = u.username?.trim()
+                    ? u.username
+                    : `#${u.id.slice(0, 8)}`;
+                  return (
                   <tr
                     key={u.id}
                     className="transition-colors hover:bg-[color:var(--surface-card-hover)]"
                   >
                     <td className="px-4 py-3 font-medium text-[color:var(--text-primary)]">
-                      {u.username}
+                      {displayName}
                     </td>
                     <td className="hidden px-4 py-3 text-xs sm:table-cell">
                       {u.userType === "world_owner" ? (
@@ -136,7 +146,7 @@ export function AdminUsersPage() {
                           盲用用户不知道当前 select 改的是哪个账号。aria-label
                           显式拼"{username} 的角色"，每行唯一区分。 */}
                       <select
-                        aria-label={t(msg`${u.username} 的角色`)}
+                        aria-label={t(msg`${displayName} 的角色`)}
                         className="rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                         value={u.role}
                         // 原写法整表 N 个 select 在任一改角色时一起灰，admin 想
@@ -160,7 +170,7 @@ export function AdminUsersPage() {
                           if (toRank < fromRank) {
                             const ok = window.confirm(
                               t(
-                                msg`将「${u.username}」的角色从 ${roleLabel(u.role)} 改为 ${roleLabel(next)}？该用户立刻失去对应权限。`,
+                                msg`将「${displayName}」的角色从 ${roleLabel(u.role)} 改为 ${roleLabel(next)}？该用户立刻失去对应权限。`,
                               ),
                             );
                             if (!ok) {
@@ -184,7 +194,8 @@ export function AdminUsersPage() {
                       </select>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
