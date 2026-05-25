@@ -336,10 +336,6 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
     placeholderData: keepPreviousData,
   });
 
-  if (worldsQuery.error) {
-    return <CloudAdminErrorBlock error={worldsQuery.error} />;
-  }
-
   const items = worldsQuery.data?.items ?? [];
   const total = worldsQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / WORLDS_PAGE_SIZE));
@@ -373,43 +369,56 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-[color:var(--border-subtle)]">
-        <table className="w-full text-sm">
-          <thead className="bg-[color:var(--surface-input)] text-left text-xs uppercase tracking-wide text-[color:var(--text-muted)]">
-            <tr>
-              <th className="px-4 py-2">{t("World")}</th>
-              <th className="px-4 py-2 text-right">{t("Total tokens")}</th>
-              <th className="px-4 py-2 text-right">{t("Estimated cost")}</th>
-              <th className="px-4 py-2 text-right">{t("Request count")}</th>
-              <th className="px-4 py-2 text-right">{t("Failure rate")}</th>
-              <th className="px-4 py-2 text-right">{t("Active characters")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {worldsQuery.isLoading ? (
+      {worldsQuery.isError ? (
+        <div className="mt-4">
+          <CloudAdminErrorBlock error={worldsQuery.error} />
+        </div>
+      ) : (
+        <div
+          className="mt-4 overflow-hidden rounded-2xl border border-[color:var(--border-subtle)] transition-opacity"
+          // 翻页保留上一页数据时淡出提示"正在取新数据"，避免整段卸载的闪烁。
+          style={{ opacity: worldsQuery.isFetching ? 0.55 : 1 }}
+          aria-busy={worldsQuery.isFetching}
+        >
+          <table className="w-full text-sm">
+            <thead className="bg-[color:var(--surface-input)] text-left text-xs uppercase tracking-wide text-[color:var(--text-muted)]">
               <tr>
-                <td
-                  className="px-4 py-6 text-center text-[color:var(--text-muted)]"
-                  colSpan={6}
-                >
-                  {t("Loading…")}
-                </td>
+                <th className="px-4 py-2">{t("World")}</th>
+                <th className="px-4 py-2 text-right">{t("Total tokens")}</th>
+                <th className="px-4 py-2 text-right">{t("Estimated cost")}</th>
+                <th className="px-4 py-2 text-right">{t("Request count")}</th>
+                <th className="px-4 py-2 text-right">{t("Failure rate")}</th>
+                <th className="px-4 py-2 text-right">
+                  {t("Active characters")}
+                </th>
               </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td
-                  className="px-4 py-6 text-center text-[color:var(--text-muted)]"
-                  colSpan={6}
-                >
-                  {t("No data for the selected range yet.")}
-                </td>
-              </tr>
-            ) : (
-              items.map((row) => <WorldRow key={row.worldId} row={row} />)
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {worldsQuery.isLoading ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-[color:var(--text-muted)]"
+                    colSpan={6}
+                  >
+                    {t("Loading…")}
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-[color:var(--text-muted)]"
+                    colSpan={6}
+                  >
+                    {t("No data for the selected range yet.")}
+                  </td>
+                </tr>
+              ) : (
+                items.map((row) => <WorldRow key={row.worldId} row={row} />)
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="mt-4 flex items-center justify-end">
         <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
