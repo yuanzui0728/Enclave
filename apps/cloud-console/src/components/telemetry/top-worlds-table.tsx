@@ -31,6 +31,13 @@ function formatRelative(iso: string | null, t: Tr): string {
   return t("{n}d ago").replace("{n}", String(d));
 }
 
+// 后端旧版本（cloud-api 尚未重启、仍返回旧响应形状）不带真人维度新字段，
+// 此时字段为 undefined。统一兜底成 0 再格式化，避免 undefined.toLocaleString()
+// 在部署窗口内把整页打崩；cloud-api 重启后即显示真实数值。
+function num(v: number | null | undefined): string {
+  return (v ?? 0).toLocaleString();
+}
+
 // 7 天内算"仍活跃"，染绿；超过则视作沉寂，染灰。
 function isRecent(iso: string | null): boolean {
   if (!iso) return false;
@@ -151,8 +158,8 @@ export function TelemetryTopWorldsTable({
                 });
               // 行为细分（发消息 / 发帖）放进 humanActions 单元格 title，悬停可见。
               const actionBreakdown = t("{chat} chats · {posts} posts")
-                .replace("{chat}", String(row.chatMessageCount))
-                .replace("{posts}", String(row.postCount));
+                .replace("{chat}", String(row.chatMessageCount ?? 0))
+                .replace("{posts}", String(row.postCount ?? 0));
               const recent = isRecent(row.lastUserMessageAt);
               return (
                 <tr
@@ -188,14 +195,14 @@ export function TelemetryTopWorldsTable({
                     className="font-semibold text-(--text-primary)"
                     title={actionBreakdown}
                   >
-                    {row.humanActionCount.toLocaleString()}
+                    {num(row.humanActionCount)}
                   </Td>
-                  <Td align="right">{row.uniqueUsers.toLocaleString()}</Td>
+                  <Td align="right">{num(row.uniqueUsers)}</Td>
                   <Td align="right" className="text-(--text-secondary)">
-                    {row.uniqueAnons.toLocaleString()}
+                    {num(row.uniqueAnons)}
                   </Td>
-                  <Td align="right">{row.sessionCount.toLocaleString()}</Td>
-                  <Td align="right">{row.activeDays.toLocaleString()}</Td>
+                  <Td align="right">{num(row.sessionCount)}</Td>
+                  <Td align="right">{num(row.activeDays)}</Td>
                   <Td
                     align="right"
                     className={
@@ -210,12 +217,12 @@ export function TelemetryTopWorldsTable({
                   <Td
                     align="right"
                     className={
-                      row.errorCount > 0
+                      (row.errorCount ?? 0) > 0
                         ? "bg-rose-50 font-semibold text-rose-600"
                         : "text-(--text-secondary)"
                     }
                   >
-                    {row.errorCount.toLocaleString()}
+                    {num(row.errorCount)}
                   </Td>
                 </tr>
               );

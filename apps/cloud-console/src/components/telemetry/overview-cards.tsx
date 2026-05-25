@@ -5,8 +5,9 @@ export function TelemetryOverviewCards({ data }: { data: TelemetryOverviewRespon
   const t = useCloudConsoleText();
   const cards = [
     // 真人维度优先：先放"活跃真人 / 真人行为"，再放原有 PV/UV/会话指标。
-    { label: t("Active real users"), value: data.activeUserCount },
-    { label: t("Human actions"), value: data.humanActionCount },
+    // ?? 0 兜底：cloud-api 旧响应不带这两个新字段时显示 0，而非空白卡。
+    { label: t("Active real users"), value: data.activeUserCount ?? 0 },
+    { label: t("Human actions"), value: data.humanActionCount ?? 0 },
     { label: t("Page views PV"), value: data.pvCount },
     { label: t("Unique visitors UV"), value: data.uvCount },
     { label: t("Sessions"), value: data.sessionCount },
