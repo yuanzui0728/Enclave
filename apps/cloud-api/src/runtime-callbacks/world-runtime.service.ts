@@ -22,6 +22,7 @@ type RuntimeCallbackPayload = {
   reportedAt?: string | null;
   lastInteractiveAt?: string | null;
   lastUserMessageAt?: string | null;
+  lastUserBehaviorAt?: string | null;
 };
 
 type RuntimeFailurePayload = RuntimeCallbackPayload & {
@@ -64,6 +65,7 @@ export class WorldRuntimeService {
     const reportedAt = this.parseOptionalDate(payload.reportedAt, "reportedAt") ?? new Date();
     const lastInteractiveAt = this.parseOptionalDate(payload.lastInteractiveAt, "lastInteractiveAt");
     const lastUserMessageAt = this.parseOptionalDate(payload.lastUserMessageAt, "lastUserMessageAt");
+    const lastUserBehaviorAt = this.parseOptionalDate(payload.lastUserBehaviorAt, "lastUserBehaviorAt");
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });
@@ -74,6 +76,9 @@ export class WorldRuntimeService {
     }
     if (lastUserMessageAt && this.isNewerTimestamp(world.lastUserMessageAt, lastUserMessageAt)) {
       world.lastUserMessageAt = lastUserMessageAt;
+    }
+    if (lastUserBehaviorAt && this.isNewerTimestamp(world.lastUserBehaviorAt, lastUserBehaviorAt)) {
+      world.lastUserBehaviorAt = lastUserBehaviorAt;
     }
 
     const failureMessage =
@@ -118,6 +123,7 @@ export class WorldRuntimeService {
     const reportedAt = this.parseOptionalDate(payload.reportedAt, "reportedAt") ?? new Date();
     const lastInteractiveAt = this.parseOptionalDate(payload.lastInteractiveAt, "lastInteractiveAt");
     const lastUserMessageAt = this.parseOptionalDate(payload.lastUserMessageAt, "lastUserMessageAt");
+    const lastUserBehaviorAt = this.parseOptionalDate(payload.lastUserBehaviorAt, "lastUserBehaviorAt");
     const instance =
       signal === "bootstrap" || signal === "heartbeat"
         ? await this.findOrCreateInstance(world)
@@ -132,6 +138,9 @@ export class WorldRuntimeService {
     }
     if (lastUserMessageAt && this.isNewerTimestamp(world.lastUserMessageAt, lastUserMessageAt)) {
       world.lastUserMessageAt = lastUserMessageAt;
+    }
+    if (lastUserBehaviorAt && this.isNewerTimestamp(world.lastUserBehaviorAt, lastUserBehaviorAt)) {
+      world.lastUserBehaviorAt = lastUserBehaviorAt;
     }
 
     if (signal === "bootstrap") {

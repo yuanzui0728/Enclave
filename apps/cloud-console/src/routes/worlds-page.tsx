@@ -195,7 +195,7 @@ type QuickActionConfirmState = {
 type WorldsSortField =
   | "lastAccessedAt"
   | "lastUserMessageAt"
-  | "lastInteractiveAt"
+  | "lastUserBehaviorAt"
   | "userCreatedAt"
   | "subscriptionExpiresAt";
 type WorldsSortDirection = "asc" | "desc";
@@ -418,11 +418,11 @@ export function WorldsPage() {
           sortState.direction,
         ),
       );
-    } else if (sortState.field === "lastInteractiveAt") {
+    } else if (sortState.field === "lastUserBehaviorAt") {
       next.sort((left, right) =>
         compareNullableDateString(
-          left.world.lastInteractiveAt,
-          right.world.lastInteractiveAt,
+          left.world.lastUserBehaviorAt,
+          right.world.lastUserBehaviorAt,
           sortState.direction,
         ),
       );
@@ -834,13 +834,13 @@ export function WorldsPage() {
                 <th className="px-4 py-3">
                   <button
                     type="button"
-                    onClick={() => toggleSort("lastInteractiveAt")}
+                    onClick={() => toggleSort("lastUserBehaviorAt")}
                     className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
                     aria-label={t("Sort by last interaction")}
                   >
                     <span>{t("Last interaction")}</span>
                     <span aria-hidden="true" className="text-[10px]">
-                      {sortState?.field === "lastInteractiveAt"
+                      {sortState?.field === "lastUserBehaviorAt"
                         ? sortState.direction === "desc"
                           ? "▼"
                           : "▲"
@@ -925,7 +925,7 @@ export function WorldsPage() {
                       {formatDateTime(item.world.lastUserMessageAt)}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      {formatDateTime(item.world.lastInteractiveAt)}
+                      {formatDateTime(item.world.lastUserBehaviorAt)}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
                       {formatDateTime(item.world.userCreatedAt)}

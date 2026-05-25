@@ -3,10 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
+import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
+import { FeedCommentEntity } from '../feed/feed-comment.entity';
+import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
+import { MomentCommentEntity } from '../moments/moment-comment.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
 // Wiki contribution events 由独立的 wiki-app 进程上报，world child 不再依赖 wiki entity。
 // 2026-05-20 wiki 拆库后，cloud-runtime 这里若还 inject CharacterRevisionEntity / EditSubmissionEntity
 // 会因为 DataSource 不再注册这两个 entity，repository.find() 抛 EntityMetadataNotFoundError，
@@ -21,6 +26,9 @@ type RuntimeReportPayload = {
   reportedAt?: string | null;
   lastInteractiveAt?: string | null;
   lastUserMessageAt?: string | null;
+  // 最近一次"真人行为"（朋友圈/广场/视频号 评论·点赞·分享·收藏·浏览·关注，
+  // authorType='user' / ownerId），与「用户行为」后台页同源，不含 AI、不含纯聊天。
+  lastUserBehaviorAt?: string | null;
 };
 
 type RevenueUsageEventPayload = {
@@ -67,6 +75,16 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
     private readonly messageRepo: Repository<MessageEntity>,
     @InjectRepository(GroupMessageEntity)
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
+    @InjectRepository(MomentCommentEntity)
+    private readonly momentCommentRepo: Repository<MomentCommentEntity>,
+    @InjectRepository(MomentLikeEntity)
+    private readonly momentLikeRepo: Repository<MomentLikeEntity>,
+    @InjectRepository(FeedCommentEntity)
+    private readonly feedCommentRepo: Repository<FeedCommentEntity>,
+    @InjectRepository(UserFeedInteractionEntity)
+    private readonly userFeedInteractionRepo: Repository<UserFeedInteractionEntity>,
+    @InjectRepository(VideoChannelFollowEntity)
+    private readonly videoChannelFollowRepo: Repository<VideoChannelFollowEntity>,
   ) {}
 
   onModuleInit() {
@@ -101,13 +119,16 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
 
     this.reporting = true;
     try {
-      const [latestInteractiveAt, latestUserMessageAt] = await Promise.all([
-        this.resolveLatestInteractiveAt(),
-        this.resolveLatestUserMessageAt(),
-      ]);
+      const [latestInteractiveAt, latestUserMessageAt, latestUserBehaviorAt] =
+        await Promise.all([
+          this.resolveLatestInteractiveAt(),
+          this.resolveLatestUserMessageAt(),
+          this.resolveLatestUserBehaviorAt(),
+        ]);
       const reportedAt = new Date().toISOString();
       const lastInteractiveIso = latestInteractiveAt?.toISOString() ?? null;
       const lastUserMessageIso = latestUserMessageAt?.toISOString() ?? null;
+      const lastUserBehaviorIso = latestUserBehaviorAt?.toISOString() ?? null;
 
       const basePayload: RuntimeReportPayload = {
         apiBaseUrl: config.publicApiBaseUrl,
@@ -117,6 +138,7 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
         reportedAt,
         lastInteractiveAt: lastInteractiveIso,
         lastUserMessageAt: lastUserMessageIso,
+        lastUserBehaviorAt: lastUserBehaviorIso,
       };
 
       if (!this.bootstrapReported) {
@@ -266,6 +288,60 @@ export class CloudRuntimeReportingService implements OnModuleInit, OnModuleDestr
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(`Failed to resolve latest user message: ${message}`);
+      return null;
+    }
+  }
+
+  // 最近一次"真人行为"时间：取「用户行为」后台页同源的 5 张表里 authorType='user'
+  // / ownerId 行的最新 createdAt。不含 AI（character 行）、不含纯聊天消息（聊天另有
+  // lastUserMessageAt 列）。每张表 findOne(DESC, take 1)，整体 Promise.all + 取 max。
+  // 整段 try/catch 兜底：任一 entity/表缺失也只是少算一项，绝不让心跳 cycle 崩。
+  private async resolveLatestUserBehaviorAt(): Promise<Date | null> {
+    try {
+      const [momentComment, momentLike, feedComment, interaction, follow] =
+        await Promise.all([
+          this.momentCommentRepo.findOne({
+            where: { authorType: 'user' },
+            order: { createdAt: 'DESC' },
+          }),
+          this.momentLikeRepo.findOne({
+            where: { authorType: 'user' },
+            order: { createdAt: 'DESC' },
+          }),
+          this.feedCommentRepo.findOne({
+            where: { authorType: 'user' },
+            order: { createdAt: 'DESC' },
+          }),
+          // user_feed_interactions / video_channel_follows 的行天然都是真人发起
+          // （ownerId 即真人；character 不写这两张表），无需 authorType 过滤。
+          this.userFeedInteractionRepo.findOne({
+            where: {},
+            order: { createdAt: 'DESC' },
+          }),
+          this.videoChannelFollowRepo.findOne({
+            where: {},
+            order: { createdAt: 'DESC' },
+          }),
+        ]);
+
+      const candidates = [
+        momentComment?.createdAt,
+        momentLike?.createdAt,
+        feedComment?.createdAt,
+        interaction?.createdAt,
+        follow?.createdAt,
+      ].filter((value): value is Date => Boolean(value));
+
+      if (!candidates.length) {
+        return null;
+      }
+
+      return candidates.reduce((latest, current) =>
+        current.getTime() > latest.getTime() ? current : latest,
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to resolve latest user behavior: ${message}`);
       return null;
     }
   }

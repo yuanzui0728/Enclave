@@ -1375,6 +1375,7 @@ export class CloudService {
       lastAccessedAt: world.lastAccessedAt?.toISOString() ?? null,
       lastInteractiveAt: world.lastInteractiveAt?.toISOString() ?? null,
       lastUserMessageAt: world.lastUserMessageAt?.toISOString() ?? null,
+      lastUserBehaviorAt: world.lastUserBehaviorAt?.toISOString() ?? null,
       lastBootedAt: world.lastBootedAt?.toISOString() ?? null,
       lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
       lastSuspendedAt: world.lastSuspendedAt?.toISOString() ?? null,

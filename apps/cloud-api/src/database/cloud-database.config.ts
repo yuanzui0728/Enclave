@@ -64,6 +64,7 @@ import { AddCloudUserSessionInvalidAfter1778666000000 } from "./migrations/17786
 import { AddCloudUserLastLoginDeviceRegion1779000000000 } from "./migrations/1779000000000-add-cloud-user-last-login-device-region";
 import { AddCloudMinimaxExhaustionKeyFingerprint1779010000000 } from "./migrations/1779010000000-add-cloud-minimax-exhaustion-key-fingerprint";
 import { AddCloudMinimaxExhaustionUntil1779511200000 } from "./migrations/1779511200000-add-cloud-minimax-exhaustion-until";
+import { AddCloudWorldLastUserBehaviorAt1779600000000 } from "./migrations/1779600000000-add-cloud-world-last-user-behavior-at";
 import { resolveCloudDatabasePath } from "../config/cloud-runtime-config";
 
 type ConfigReader = {
@@ -138,6 +139,7 @@ export const cloudMigrations = [
   AddCloudUserLastLoginDeviceRegion1779000000000,
   AddCloudMinimaxExhaustionKeyFingerprint1779010000000,
   AddCloudMinimaxExhaustionUntil1779511200000,
+  AddCloudWorldLastUserBehaviorAt1779600000000,
 ];
 
 export function buildCloudDataSourceOptions(config: ConfigReader): DataSourceOptions {

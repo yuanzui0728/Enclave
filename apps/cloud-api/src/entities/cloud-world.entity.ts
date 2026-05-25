@@ -61,6 +61,12 @@ export class CloudWorldEntity {
   @Column({ type: "datetime", nullable: true })
   lastUserMessageAt: Date | null;
 
+  // 最近一次"真人行为"时间：world runtime 上报的 朋友圈/广场/视频号 互动
+  // （评论·点赞·分享·收藏·浏览·关注，authorType='user' / ownerId）最新时间，
+  // 与「用户行为」后台页同源。区别于 lastUserMessageAt（纯聊天）/ lastInteractiveAt（含 AI）。
+  @Column({ type: "datetime", nullable: true })
+  lastUserBehaviorAt: Date | null;
+
   @Column({ type: "datetime", nullable: true })
   lastBootedAt: Date | null;
 

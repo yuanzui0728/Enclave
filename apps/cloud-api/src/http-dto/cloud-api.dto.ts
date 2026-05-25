@@ -1388,6 +1388,11 @@ export class RuntimeCallbackDto {
   @IsOptional()
   @IsISO8601({ strict: true }, { message: "lastUserMessageAt 必须是合法 ISO 时间字符串。" }) // i18n-ignore-line: nest validation error message
   lastUserMessageAt?: string | null;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsISO8601({ strict: true }, { message: "lastUserBehaviorAt 必须是合法 ISO 时间字符串。" }) // i18n-ignore-line: nest validation error message
+  lastUserBehaviorAt?: string | null;
 }
 
 export class RuntimeFailureDto extends RuntimeCallbackDto {

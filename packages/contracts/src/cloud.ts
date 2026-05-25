@@ -560,6 +560,8 @@ export interface CloudWorldSummary {
   lastAccessedAt?: string | null;
   lastInteractiveAt?: string | null;
   lastUserMessageAt?: string | null;
+  /** 上次真人行为（朋友圈/广场/视频号 互动，与「用户行为」后台页同源；不含 AI、不含纯聊天）。 */
+  lastUserBehaviorAt?: string | null;
   lastBootedAt?: string | null;
   lastHeartbeatAt?: string | null;
   lastSuspendedAt?: string | null;
