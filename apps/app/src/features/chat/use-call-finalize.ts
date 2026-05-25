@@ -102,12 +102,28 @@ export function useCallFinalize({
       if (finalizedRef.current) {
         return;
       }
+      // 走查新一轮 R9：capture callActiveRef BEFORE 翻 false。R4 的 unmount setTimeout
+      // 兜底已经用 `callActiveRef.current && !finalizedRef.current` 守住"silent exit"
+      // 路径（浏览器/iOS swipe back），但**明面** handleBack → voiceCall.hangup 漏了
+      // 这层守。失败路径——conversationsQuery 出 error / 非 direct conversation /
+      // 找不到 conversation——MobileAiCallScreen 上方早返渲染收口卡片，conversation 永
+      // 远不进 type==="direct" 分支，useVoiceCallSession.enabled 全程为 false →
+      // useCallFinalize enabled 也是 false → 主 enabled effect 没跑 → callActiveRef
+      // 始终是 false（call 从未"激活"）。用户点收口卡片上的"返回聊天" → handleBack →
+      // voiceCall.hangup → callFinalize.hangup 仍把一条 0 秒 finalizeVoiceCall HTTP
+      // 写进后端，结果用户单聊/群聊里就冒一条 "[语音通话] 通话时长 00:00" 脏 call_log
+      // 卡片。短路：从未激活就不发 HTTP，只 mark finalized 防后续重入。
+      const wasActive = callActiveRef.current;
       finalizedRef.current = true;
       // 兜底 unmount cleanup（下方独立 effect）靠 callActiveRef && !finalizedRef
       // 判断是否补发 hangup。任何"明面"出口（handleBack / timer timeout）走到这里
       // 都标 false，避免 navigate → unmount → cleanup 再补一次写出"重复 call_log"。
       callActiveRef.current = false;
       clearTimer();
+
+      if (!wasActive) {
+        return;
+      }
 
       const args = dynamicArgsRef.current;
       const request: FinalizeCallRequest = {

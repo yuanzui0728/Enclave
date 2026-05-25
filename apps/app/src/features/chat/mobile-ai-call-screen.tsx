@@ -567,10 +567,19 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const micMuted = activeCall.voiceLoop.micMuted;
   const setMicMuted = activeCall.voiceLoop.setMicMuted;
 
-  // 通话计时锚点：语音进屏即视为接通；视频等数字人 session ready 才起算
+  // 通话计时锚点：语音进屏即视为接通；视频等数字人 session ready 才起算。
+  // 走查新一轮 R1：原版 voice mode 直接 mount 当帧 setConnectedAtMs(Date.now())
+  // —— 但此时 conversationsQuery.isLoading=true，上面早返渲染的是 "正在连接..."
+  // loading 卡，用户还没看到真正的通话屏。公网隧道 ~600ms 后 query 落地进入 call
+  // shell 时，CallTimer 已经偷跑了半秒到一秒，用户进屏第一眼就是 "0:01" 而不是
+  // "0:00"。等 conversation 真正可用（落地通过 direct 校验，把 loading/error/
+  // 非 direct 分支全部排除）才视为"接通"，避免秒表抢跑。
   const [connectedAtMs, setConnectedAtMs] = useState<number | null>(null);
   useEffect(() => {
     if (connectedAtMs !== null) {
+      return;
+    }
+    if (!conversation || conversation.type !== "direct") {
       return;
     }
     if (!isVideoMode) {
@@ -580,7 +589,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     if (digitalHumanCall.sessionState === "ready") {
       setConnectedAtMs(Date.now());
     }
-  }, [connectedAtMs, isVideoMode, digitalHumanCall.sessionState]);
+  }, [connectedAtMs, conversation, isVideoMode, digitalHumanCall.sessionState]);
 
   // 单行极简状态文字（微信只显示这种简短状态）
   const callStatusLine = useMemo(() => {

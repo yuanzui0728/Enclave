@@ -74,6 +74,18 @@ export function useVoiceCallSession({
 
   speechCancelRef.current = speech.cancel;
   speechClearResultRef.current = speech.clearResult;
+  // 走查新一轮 R1（perf）：原版 start/stop/cancelRecordingTurn 三个 useCallback
+  // 的 deps 是 `[speech]` —— useSpeechInput 每 render 返回新对象（status/error/
+  // recordedAudio 等是 state，整体 spread 在新对象里），三个 cb 每 render 都换
+  // 引用；进而让 use-continuous-voice-loop 里 `arm` (deps=[startRecordingTurn])
+  // 跟着换 → reconcile useEffect (deps 含 arm/cancelRecordingTurn) 每 render
+  // 重跑。listening 阶段父组件每次 setState（audioMuted 切换、micMuted、phase
+  // 切换、playbackState 切换……）都顺带把整套状态机重评估一遍，低端机叠加 VAD
+  // rAF 时段时帧率被拖。改成 speechRef 透传最新 speech 对象，三个 cb 只在真正
+  // 关心的状态 dep（enabled / playbackState / turnMutation.isPending）变化时
+  // 重建。
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
 
   const stopReplyPlayback = useCallback(() => {
     const audio = audioRef.current;
@@ -303,41 +315,34 @@ export function useVoiceCallSession({
     if (
       turnMutation.isPending ||
       playbackState === "playing" ||
-      speech.status === "processing"
+      speechRef.current.status === "processing"
     ) {
       return;
     }
 
     autoSubmitRecordingRef.current = true;
     setPlayerError(null);
-    if (speech.status !== "idle") {
-      speech.cancel();
+    if (speechRef.current.status !== "idle") {
+      speechRef.current.cancel();
     }
 
-    await speech.start();
-  }, [
-    enabled,
-    playbackState,
-    speech,
-    turnMutation.isPending,
-  ]);
+    await speechRef.current.start();
+  }, [enabled, playbackState, turnMutation.isPending]);
 
   const stopRecordingTurn = useCallback(() => {
-    if (
-      speech.status === "listening" ||
-      speech.status === "requesting-permission"
-    ) {
-      speech.stop();
+    const sp = speechRef.current;
+    if (sp.status === "listening" || sp.status === "requesting-permission") {
+      sp.stop();
       return;
     }
 
     autoSubmitRecordingRef.current = false;
-  }, [speech]);
+  }, []);
 
   const cancelRecordingTurn = useCallback(() => {
     autoSubmitRecordingRef.current = false;
-    speech.cancel();
-  }, [speech]);
+    speechRef.current.cancel();
+  }, []);
 
   const replayLastTurn = useCallback(async () => {
     if (!lastTurn || !lastTurn.assistantAudioUrl) {
