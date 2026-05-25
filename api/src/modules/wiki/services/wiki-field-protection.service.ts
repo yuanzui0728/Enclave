@@ -11,6 +11,48 @@ import { WIKI_FIELD_PROTECTION_SEEDS } from '../seed/field-protections.seed';
 
 export type FieldPolicyMap = Map<string, string>; // fieldPath -> minRole
 
+// 字段保护 403 提示本地化：原写法把 recipe 路径（prompting.coreLogic）和角色枚举
+// （autoconfirmed）裸塞进中文句子，zh-CN 用户（newcomer 改底层逻辑等高频场景）看到
+// "字段 prompting.coreLogic 受保护，至少需要 autoconfirmed 权限" —— 路径 + 角色双重
+// 英文泄漏（与 recent-changes / 历史卡的字段路径泄漏同类，那些已 revisionChangedFieldsLabel
+// 修复）。这里把路径映射成编辑器里的中文 section 名、角色映射成站内中文称谓。
+// 精确路径优先，再退到前缀；缺失时回落原路径（保证不崩，最多还原成英文）。
+const PROTECTED_PATH_LABELS_EXACT: Record<string, string> = {
+  'prompting.coreLogic': '底层逻辑',
+  'prompting.scenePrompts.chat': '聊天场景提示词',
+  'memorySeed.coreMemory': '核心记忆',
+  realityLink: '真实人物链接',
+};
+const PROTECTED_PATH_LABELS_PREFIX: Array<[string, string]> = [
+  ['prompting.scenePrompts.', '场景提示词'],
+  ['prompting.', '提示词'],
+  ['memorySeed.', '记忆设置'],
+  ['tone.', '语气风格'],
+  ['expertise.', '专长设置'],
+  ['reasoning.', '推理设置'],
+  ['lifeStrategy.', '生活节奏'],
+  ['publishMapping.', '发布设置'],
+  ['identity.background', '角色背景'],
+  ['identity.motivation', '角色动机'],
+  ['identity.worldview', '世界观'],
+];
+function protectedPathLabel(path: string): string {
+  if (PROTECTED_PATH_LABELS_EXACT[path]) return PROTECTED_PATH_LABELS_EXACT[path];
+  for (const [prefix, label] of PROTECTED_PATH_LABELS_PREFIX) {
+    if (path === prefix || path.startsWith(prefix)) return label;
+  }
+  return path;
+}
+const ROLE_ZH_LABELS: Record<string, string> = {
+  newcomer: '新手',
+  autoconfirmed: '自动确认用户',
+  patroller: '巡查员',
+  admin: '管理员',
+};
+function roleZhLabel(role: string): string {
+  return ROLE_ZH_LABELS[role] ?? role;
+}
+
 @Injectable()
 export class WikiFieldProtectionService implements OnModuleInit {
   private readonly logger = new Logger(WikiFieldProtectionService.name);
@@ -81,12 +123,16 @@ export class WikiFieldProtectionService implements OnModuleInit {
       if (!violated) continue;
       const minRank = rankOf(violated.minRole);
       if (userRank < minRank) {
+        const friendly = `字段「${protectedPathLabel(violated.protectedPath)}」受保护，至少需要「${roleZhLabel(violated.minRole)}」权限`;
         throw new AppError('WIKI_FORBIDDEN', {
           status: HttpStatus.FORBIDDEN,
+          // 结构化 params 保留原始路径/角色，方便前端将来按 locale 二次本地化或排查。
           params: {
-            reason: `字段 ${violated.protectedPath} 受保护，至少需要 ${violated.minRole} 权限`,
+            reason: friendly,
+            fieldPath: violated.protectedPath,
+            minRole: violated.minRole,
           },
-          legacyMessage: `字段 ${violated.protectedPath} 受保护，至少需要 ${violated.minRole} 权限`,
+          legacyMessage: friendly,
         });
       }
     }

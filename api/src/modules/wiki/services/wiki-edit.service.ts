@@ -886,14 +886,41 @@ export class WikiEditService {
       ? await this.revisionRepo.findOne({ where: { id: page.currentRevisionId } })
       : null;
     const factorySnapshot = await this.blueprints.getFactorySnapshot(characterId);
-    const beforeRecipe =
+    const rawBeforeRecipe =
       currentRevision?.recipeSnapshot ??
       factorySnapshot.blueprint.publishedRecipe ??
       factorySnapshot.blueprint.draftRecipe;
-    let afterRecipe = normalizeWikiRecipe(input.recipeSnapshot ?? {}, beforeRecipe);
     const beforeContent =
       currentRevision?.contentSnapshot ??
       snapshotFromCharacter(character as unknown as Record<string, unknown>);
+    // 诊断基线对齐：identity 的公共显示字段（name/avatar/bio/relationship/
+    // relationshipType/region）和 expertise.expertDomains 以当前 content snapshot
+    // 为权威，覆盖 recipe 基线里可能漂移的同名字段。
+    // 背景：content 通道编辑（revisionKind='content'，如旧 admin 内容编辑 /
+    // syncFromCharacter）会更新 character + contentSnapshot 但**不**回写
+    // blueprint.publishedRecipe.identity.*，使后者滞留旧值；而 6-section 编辑器
+    // 走 recipe 通道，前端 dtoToWikiEdit 总把 recipe.identity 同步成当前 content。
+    // 两边不对齐时，用户一字未改，afterRecipe(=当前content) 与 beforeRecipe(=滞留)
+    // 在 identity.bio 等字段必然 diff → "未检测到变更" 永不触发、每次编辑 changed
+    // 凭空多出这些字段（还可能因 identity.background 等被误判高风险）。把基线这些
+    // 字段对齐到 content snapshot，使 recipe diff 只反映用户真实改动。
+    const beforeRecipe: typeof rawBeforeRecipe = {
+      ...rawBeforeRecipe,
+      identity: {
+        ...rawBeforeRecipe.identity,
+        name: beforeContent.name,
+        avatar: beforeContent.avatar,
+        bio: beforeContent.bio,
+        relationship: beforeContent.relationship,
+        relationshipType: beforeContent.relationshipType,
+        region: beforeContent.region ?? rawBeforeRecipe.identity.region ?? '',
+      },
+      expertise: {
+        ...rawBeforeRecipe.expertise,
+        expertDomains: [...(beforeContent.expertDomains ?? [])],
+      },
+    };
+    let afterRecipe = normalizeWikiRecipe(input.recipeSnapshot ?? {}, beforeRecipe);
     let changed = filterPhantomBlankPaths(
       beforeRecipe,
       afterRecipe,
