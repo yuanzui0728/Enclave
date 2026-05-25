@@ -70,6 +70,18 @@ function BootstrapForm({ cloudApiBaseUrl }: { cloudApiBaseUrl: string }) {
   const [state, setState] = useState<GateState>({ kind: "idle" });
   const [notice, setNotice] = useState("");
   const pollAbort = useRef<AbortController | null>(null);
+  const cloudConsoleHint = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const consoleUrl = new URL(cloudApiBaseUrl);
+      // 同 host 不同 port：cloud-api 3001 → cloud-console 5182（dev-services.mjs 约定）
+      consoleUrl.port = "5182";
+      consoleUrl.protocol = window.location.protocol;
+      return consoleUrl.toString();
+    } catch {
+      return null;
+    }
+  }, [cloudApiBaseUrl]);
 
   useEffect(() => () => pollAbort.current?.abort(), []);
 
@@ -234,12 +246,32 @@ function BootstrapForm({ cloudApiBaseUrl }: { cloudApiBaseUrl: string }) {
         <div className="space-y-1">
           <h1 className="text-lg font-semibold">隐界管理后台</h1>
           <p className="text-sm text-[color:var(--text-dim)]">
-            输入邮箱登录，会自动连接到该账号对应的 main-api 子进程。
+            输入邮箱登录，会自动连接到<b>该邮箱绑定的那个 world</b>（不是浏览任意世界）。
           </p>
           <p className="text-xs text-[color:var(--text-dim)]">
             cloud-api: {cloudApiBaseUrl}
           </p>
         </div>
+
+        <InlineNotice tone="warning">
+          ⚠ 想查看具体某个世界的后台数据，请回云控制台
+          {cloudConsoleHint ? (
+            <>
+              （
+              <a
+                className="underline"
+                href={cloudConsoleHint}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {cloudConsoleHint}
+              </a>
+              ）
+            </>
+          ) : null}
+          的"世界列表"，点对应世界的"进入后台"，那里走 hash bootstrap
+          会把当前 admin tab 精确连到那个 world child，不会串台。
+        </InlineNotice>
 
         <div className="space-y-3">
           <label className="block text-sm space-y-1">
@@ -296,6 +328,9 @@ function BootstrapForm({ cloudApiBaseUrl }: { cloudApiBaseUrl: string }) {
   );
 }
 
+// 一眼看出当前 admin tab 是哪个 world：apiBaseUrl 是 multi-world child 真正区分
+// 数据源的字段，必须显著可见而非藏在 hover title 里，否则"撞错 world child / 撞
+// dev fallback :3000"这种串台症状没法直接发现。
 function FloatingAccountBadge() {
   const runtime = useAdminRuntime();
 
@@ -306,18 +341,39 @@ function FloatingAccountBadge() {
     }
   }
 
+  const apiBaseUrl = runtime.apiBaseUrl?.trim() ?? "";
+  const worldIdShort = runtime.cloudWorldId
+    ? runtime.cloudWorldId.slice(0, 8)
+    : null;
+  // dev fallback 命中 = .env 里 VITE_CORE_API_BASE_URL 兜底进来；multi-world 部署里
+  // 见到这个就说明 hash bootstrap 失败了，所有世界都会撞同一份数据。染红提醒。
+  const isDevFallback =
+    /127\.0\.0\.1:3000\b/.test(apiBaseUrl) ||
+    /localhost:3000\b/.test(apiBaseUrl);
+  const baseClasses =
+    "fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs shadow";
+  const toneClasses = isDevFallback
+    ? "border-red-500/70 bg-red-500/10 text-red-700"
+    : "border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] text-[color:var(--text-dim)]";
+
   return (
-    <div
-      className="fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] px-3 py-1.5 text-xs shadow"
-      title={runtime.apiBaseUrl}
-    >
-      <span className="text-[color:var(--text-dim)]">
+    <div className={`${baseClasses} ${toneClasses}`} title={apiBaseUrl}>
+      {isDevFallback ? <span>⚠ dev fallback</span> : null}
+      {worldIdShort ? (
+        <span className="font-mono">world {worldIdShort}</span>
+      ) : null}
+      <span className="font-mono">{apiBaseUrl || "(no apiBaseUrl)"}</span>
+      <span>
         {runtime.cloudEmail ?? runtime.cloudPhone ?? "未知账号"}
       </span>
       <button
         type="button"
         onClick={logout}
-        className="text-[color:var(--accent)] hover:underline"
+        className={
+          isDevFallback
+            ? "text-red-700 hover:underline"
+            : "text-[color:var(--accent)] hover:underline"
+        }
       >
         切换账号
       </button>
