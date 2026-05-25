@@ -90,6 +90,23 @@ describe('WikiPrivateCharacterService.createStrict', () => {
     expect(out.expertDomains).toEqual(['编程', '音乐']);
   });
 
+  it('rejects control chars in single-line fields (name/relationship/region)', async () => {
+    // 走查发现：wiki 私有角色写入路径只过 isVisuallyEmpty + 长度，漏了控制字符。
+    // 世界 import-personal 早就拒带 \n 的 name，导致"wiki 存下带换行的 name →
+    // 导出 JSON → app 端导入"被世界侧拒，round-trip 单向断裂。共享校验器补上后
+    // 两条路径对齐。
+    const svc = makeService({ byOwnerName: null });
+    await expect(
+      svc.createStrict('u1', { name: '行一\n行二' }),
+    ).rejects.toThrow(/换行符或控制字符/);
+    await expect(
+      svc.createStrict('u1', { name: '正常名', relationship: '我的\t朋友' }),
+    ).rejects.toThrow(/relationship/);
+    await expect(
+      svc.createStrict('u1', { name: '正常名', region: '上\n海' }),
+    ).rejects.toThrow(/region/);
+  });
+
   it('rejects unsafe avatar scheme (javascript:/data:/file:)', async () => {
     const svc = makeService({ byOwnerName: null });
     // 与前端 isSafeAvatarValue 严格对齐：curl 直传应被服务层 reject。

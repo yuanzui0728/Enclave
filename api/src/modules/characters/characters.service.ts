@@ -1395,6 +1395,28 @@ export function assertPrivateCharacterFieldLimits(input: {
     input.region.length > L.region
   )
     throw tooLong('region', L.region);
+  // 单行 UI 字段（name / relationship / relationshipType / region）不能含换行符或
+  // 控制字符：它们渲染成通讯录单行 chip / 标题，\n 会撑高布局，且这些值直接拼进
+  // AI prompt，多行注入是 prompt-injection 面。世界 import-personal 路径本来就逐个
+  // 内联拒（name 在本校验器之前、relationship/relationshipType/region 在之后），
+  // 但 wiki 私有角色写入路径（createStrict / update / upsertByName）只经过本校验器
+  // —— 之前漏了控制字符校验，导致 wiki 里能存下带 \n 的 name，再走"导出 JSON →
+  // app 端导入"时被世界侧拒，round-trip 单向断裂。把校验收进共享校验器后两条路径
+  // 对齐；世界路径的内联检查保留为冗余（消息完全一致，不改变可观测行为）。
+  const singleLineFields: Array<[string, string | null | undefined]> = [
+    ['name', input.name],
+    ['relationship', input.relationship],
+    ['relationshipType', input.relationshipType],
+    ['region', input.region],
+  ];
+  for (const [label, value] of singleLineFields) {
+    if (typeof value === 'string' && containsControlChar(value)) {
+      throw new AppError('PRIVATE_IMPORT_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: `${label} 不能包含换行符或控制字符。`,
+      });
+    }
+  }
   if (Array.isArray(input.expertDomains)) {
     if (input.expertDomains.length > L.expertDomainCount)
       throw tooLong('expertDomains 个数', L.expertDomainCount);
