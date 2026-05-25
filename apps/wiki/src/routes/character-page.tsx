@@ -641,7 +641,7 @@ function ReadView({ view }: { view: WikiPageView }) {
             {recipe.prompting.coreLogic || "—"}
           </Section>
           <Section label={t(msg`遗忘曲线（0-100，默认 70）`)}>
-            {recipe.memorySeed.forgettingCurve}
+            {recipe.memorySeed?.forgettingCurve ?? "—"}
           </Section>
           {/* 场景提示词：对齐编辑页「聊天回复」+「场景提示词」section 的全部 8 项 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -673,10 +673,10 @@ function ReadView({ view }: { view: WikiPageView }) {
           {/* 记忆提示词：对齐编辑页「记忆提示词」section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Section label={t(msg`近期记忆提示词`)}>
-              {recipe.memorySeed.recentSummaryPrompt || "—"}
+              {recipe.memorySeed?.recentSummaryPrompt || "—"}
             </Section>
             <Section label={t(msg`长期记忆提示词`)}>
-              {recipe.memorySeed.coreMemoryPrompt || "—"}
+              {recipe.memorySeed?.coreMemoryPrompt || "—"}
             </Section>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
