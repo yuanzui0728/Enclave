@@ -737,6 +737,7 @@ export const wikiApi = {
         bio: string;
         relationship: string;
         expertDomains: string[];
+        personalityMatch: string | null;
         score: number;
       }>
     >(`/wiki/search?${params.toString()}`, { auth: false });

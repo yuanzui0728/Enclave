@@ -70,6 +70,25 @@ function parseExpertDomains(raw: string | null | undefined): string[] {
   }
 }
 
+// 截出一段以首个命中关键词为中心的性格摘要（≤120 字），让"只命中性格"的结果在卡片
+// 上有可见依据，同时不把整段 personality（可能上千字）全量下发。窗口前后加省略号
+// 标明是节选。无命中（理论上不会进来）退回开头 120 字。
+function personalitySnippet(text: string, lowerTerms: string[]): string {
+  if (!text) return '';
+  const MAX = 120;
+  if (text.length <= MAX) return text;
+  const lower = text.toLowerCase();
+  let idx = -1;
+  for (const term of lowerTerms) {
+    const i = lower.indexOf(term);
+    if (i >= 0 && (idx < 0 || i < idx)) idx = i;
+  }
+  if (idx < 0) return text.slice(0, MAX) + '…';
+  const start = Math.max(0, idx - 30);
+  const end = Math.min(text.length, start + MAX);
+  return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+}
+
 @Injectable()
 export class WikiPageService {
   constructor(
@@ -526,6 +545,7 @@ export class WikiPageService {
       bio: string;
       relationship: string;
       expertDomains: string[];
+      personalityMatch: string | null;
       score: number;
     }>
   > {
@@ -607,12 +627,16 @@ export class WikiPageService {
         const dom = r.expertDomains?.toLowerCase();
         const bio = r.bio?.toLowerCase();
         const pers = r.personality?.toLowerCase();
+        let matchedPersonality = false;
         for (const term of lowerTerms) {
           if (name?.includes(term)) score += 10;
           if (rel?.includes(term)) score += 6;
           if (dom?.includes(term)) score += 5;
           if (bio?.includes(term)) score += 3;
-          if (pers?.includes(term)) score += 2;
+          if (pers?.includes(term)) {
+            score += 2;
+            matchedPersonality = true;
+          }
         }
         return {
           characterId: r.id,
@@ -624,6 +648,13 @@ export class WikiPageService {
           // 这类只命中 expertDomains（隐藏字段）的查询，原本卡片上 name/关系/简介
           // 都没有该词，用户看不出为什么命中；把命中所在的专长标签亮出来就有了依据。
           expertDomains: parseExpertDomains(r.expertDomains),
+          // 性格命中透明化：personality 也是可搜字段，但卡片上从不展示。搜只命中它
+          // 的词（如 "逆向" 命中查理·芒格的"冷峻、短句、逆向…"）时，name/关系/简介/
+          // 专长里都没有该词，用户同样看不出为什么命中。命中时回传一段以首个命中词为
+          // 中心的性格摘要当可见依据，未命中给 null 省流量（不把全表 personality 下发）。
+          personalityMatch: matchedPersonality
+            ? personalitySnippet(r.personality ?? '', lowerTerms)
+            : null,
           score,
         };
       })

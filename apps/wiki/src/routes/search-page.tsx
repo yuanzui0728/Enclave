@@ -93,6 +93,15 @@ export function SearchPage() {
                   {r.bio}
                 </p>
               )}
+              {/* 性格命中摘要：personality 是可搜字段但卡片不展示它，只命中性格的
+                  查询（如 "逆向"）在 name/关系/简介/专长里都看不到该词。后端命中时
+                  回传一段以命中词为中心的性格摘要，这里带"性格"前缀展示，让命中有依据。 */}
+              {r.personalityMatch && (
+                <p className="mt-1 line-clamp-2 text-xs text-[color:var(--text-muted)]">
+                  <span className="font-medium">{t(msg`性格`)}</span>
+                  {`：${r.personalityMatch}`}
+                </p>
+              )}
               {/* 专长标签：搜专长域（如 finance / general）只命中 expertDomains
                   这种隐藏字段时，name/关系/简介里都没有该词，光看卡片用户不知道
                   为什么命中。把专长标签亮出来、并高亮与查询匹配的那个，命中就有
