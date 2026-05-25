@@ -308,9 +308,19 @@ export function useSpeechInput({
       mediaRecorderRef.current.state !== "inactive"
     ) {
       mediaRecorderRef.current.stop();
-    } else {
-      stopMediaTracks();
     }
+    // 走查新一轮 R5：原版 if/else——recorder 活跃时只 stop()，预期 onstop
+    // 异步触发 stopMediaTracks() 把 MediaStream 关掉。但 cancel 自己刚把
+    // mediaStartRequestIdRef.current 自增过一次，onstop 进入后 requestId 不匹配
+    // 直接 return（line 480）→ stopMediaTracks 从不跑 → MediaStream tracks
+    // 残留活跃 → 麦克风硬件灯继续亮、系统隐私指示器持续显示 mic in use，要等
+    // 下一次 start()（覆盖 mediaStreamRef）后才靠 GC 间接关闭硬件。voice-call
+    // 通话 cancel 频繁（每个 leaving / hidden / 切换 character 都触发），用户
+    // 体感"挂断后麦克风灯还亮 10 秒"。
+    // 改：cancel 内无条件 stopMediaTracks()。recorder.stop() 触发的 onstop 仍
+    // 会 stale-return；正常 speech.stop() 路径下 onstop 走完后再 stopMediaTracks
+    // 是对已经停止的 track 二次 stop，浏览器 spec 规定 idempotent，无副作用。
+    stopMediaTracks();
 
     mediaRecorderRef.current = null;
     recordedChunksRef.current = [];
