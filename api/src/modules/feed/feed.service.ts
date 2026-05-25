@@ -332,7 +332,9 @@ export class FeedService implements OnModuleInit {
     if (surface !== 'feed' && surface !== 'channels') {
       surface = 'feed';
     }
-    if (surface === 'channels') {
+    // ownerOnly（我的广场动态）只看自己的 feed 帖，永不返回视频号；即便有人手动
+    // 传 mine=true&surface=channels 也别白白触发 channels 播种 / topUp。
+    if (surface === 'channels' && !ownerOnly) {
       await this.ensureChannelSeedData();
       await this.topUpChannelsIfNeeded();
     }

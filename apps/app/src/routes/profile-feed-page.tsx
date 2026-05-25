@@ -84,6 +84,16 @@ export function ProfileFeedPage() {
     setPendingDeleteId(null);
   }, [baseUrl]);
 
+  // 删除确认弹层：Esc 关闭，和点遮罩取消对齐。
+  useEffect(() => {
+    if (!pendingDeleteId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPendingDeleteId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pendingDeleteId]);
+
   const deleteMutation = useMutation({
     mutationFn: (postId: string) => deleteFeedPost(postId, baseUrl),
     onMutate: async (postId: string) => {
@@ -307,8 +317,17 @@ export function ProfileFeedPage() {
       </div>
 
       {pendingDeleteId ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-8 sm:items-center">
-          <div className="w-full max-w-sm rounded-[16px] bg-[color:var(--bg-canvas-elevated)] p-5 shadow-lg">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-8 sm:items-center"
+          role="presentation"
+          onClick={() => setPendingDeleteId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-[16px] bg-[color:var(--bg-canvas-elevated)] p-5 shadow-lg"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
               {t(msg`删除这条广场动态？`)}
             </div>

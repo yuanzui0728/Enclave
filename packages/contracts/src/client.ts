@@ -70,6 +70,7 @@ import type {
   FeedChannelHomeSection,
   FeedListResponse,
   FeedPost,
+  FeedPostListItem,
   FeedPostWithComments,
   FeedShareRequest,
   FeedSurface,
@@ -3311,19 +3312,38 @@ export function getFeed(
 }
 
 // 「我的广场动态」：拉当前 owner 自己发布的广场帖（GET /feed?mine=true），
-// 给个人页聚合 + 管理用，照 getOwnMoments 那套。一次性 limit=100 拉全
-// （个人自己发的广场量级远小于此；后续要分页再扩）。返回 posts 数组。
-export function getOwnFeed(baseUrl?: string) {
+// 给个人页聚合 + 管理用，照 getOwnMoments 那套返回完整数组。后端单页上限 100
+// （clampFeedPaginationLimit），所以循环翻页直到取满 total——重度账号自己就发
+// 过 100+ 条，单次 limit=100 会静默丢尾部。安全闸 50 页（5000 条）兜死循环。
+export async function getOwnFeed(baseUrl?: string) {
   const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
     allowDefault: false,
   });
-  return requestLegacyApi<FeedListResponse>(
-    "/feed?mine=true&page=1&limit=100",
-    undefined,
-    baseUrl,
-  ).then(
-    (response) => normalizeFeedListResponse(response, resolvedBaseUrl).posts,
-  );
+  const pageSize = 100;
+  const maxPages = 50;
+  const all: FeedPostListItem[] = [];
+  // 按 id 去重：分页期间若边界偏移（极小概率），page N 末尾与 N+1 开头可能撞同
+  // 一条；用 seen 兜底，避免列表里重复渲染。
+  const seen = new Set<string>();
+  for (let page = 1; page <= maxPages; page += 1) {
+    const response = normalizeFeedListResponse(
+      await requestLegacyApi<FeedListResponse>(
+        `/feed?mine=true&page=${page}&limit=${pageSize}`,
+        undefined,
+        baseUrl,
+      ),
+      resolvedBaseUrl,
+    );
+    for (const post of response.posts) {
+      if (seen.has(post.id)) continue;
+      seen.add(post.id);
+      all.push(post);
+    }
+    if (response.posts.length === 0 || seen.size >= response.total) {
+      break;
+    }
+  }
+  return all;
 }
 
 export function getGameCenterHome(baseUrl?: string) {
