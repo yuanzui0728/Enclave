@@ -56,6 +56,20 @@ type ListPagesRow = {
   protectionLevel: string;
 };
 
+// expertDomains 列是 simple-json；getRawMany 拿到的是未经实体水合的原始 JSON
+// 字符串。脏数据（非数组 / 非法 JSON / null）一律退化成 []，绝不让搜索因一行
+// 坏 expertDomains 抛错。
+function parseExpertDomains(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((d): d is string => typeof d === 'string' && d.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 @Injectable()
 export class WikiPageService {
   constructor(
@@ -483,6 +497,7 @@ export class WikiPageService {
       name: string;
       bio: string;
       relationship: string;
+      expertDomains: string[];
       score: number;
     }>
   > {
@@ -499,7 +514,15 @@ export class WikiPageService {
         'p',
         'p.characterId = c.id',
       )
-      .where('(p.isDeleted = 0 OR p.isDeleted IS NULL)')
+      // 删除可见性必须和 listPages 完全同口径：listPages 的过滤是
+      // `page?.isDeleted || page?.lifecycleStatus === 'deleted'` 两者任一即隐藏，
+      // 而这里原来只看 isDeleted。两个删除标记目前由 soft_delete 审批 /
+      // setDeletedFlag 成对写入、恒同步，但只要哪天有路径只置 lifecycleStatus，
+      // 搜索就会漏出一条目录里已隐藏的词条。补上 lifecycleStatus 判定让两条读路径
+      // 对"什么算可见"达成一致（无 page 行时 leftJoin 出 NULL，按未删除放行）。
+      .where(
+        "(p.isDeleted = 0 OR p.isDeleted IS NULL) AND (p.lifecycleStatus != 'deleted' OR p.lifecycleStatus IS NULL)",
+      )
       // 同 listPages 的口径：私有 import 不参与公开 wiki 搜索，否则用户搜
       // "smoke" / "测试" 会把所有人的私有测试数据全捞出来。已被显式 wiki
       // 化（page.currentRevisionId != null）的 private 行保留，让用户能搜到
@@ -548,6 +571,11 @@ export class WikiPageService {
           name: r.name,
           bio: r.bio,
           relationship: r.relationship,
+          // expertDomains 是 simple-json 列，getRawMany 拿到的是原始 JSON 字符串。
+          // 回传解析后的数组，让搜索结果卡能展示专长标签 —— 搜 "finance" / "general"
+          // 这类只命中 expertDomains（隐藏字段）的查询，原本卡片上 name/关系/简介
+          // 都没有该词，用户看不出为什么命中；把命中所在的专长标签亮出来就有了依据。
+          expertDomains: parseExpertDomains(r.expertDomains),
           score,
         };
       })
