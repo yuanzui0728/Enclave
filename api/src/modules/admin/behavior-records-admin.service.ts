@@ -402,19 +402,14 @@ export class BehaviorRecordsAdminService {
       followWhere.createdAt = createdAtWhere;
     }
 
-    const [
-      momentComments,
-      momentLikes,
-      feedComments,
-      interactions,
-      follows,
-    ] = await Promise.all([
-      this.momentCommentRepo.find({ where: momentCommentWhere }),
-      this.momentLikeRepo.find({ where: momentLikeWhere }),
-      this.feedCommentRepo.find({ where: feedCommentWhere }),
-      this.interactionRepo.find({ where: interactionWhere }),
-      this.followRepo.find({ where: followWhere }),
-    ]);
+    const [momentComments, momentLikes, feedComments, interactions, follows] =
+      await Promise.all([
+        this.momentCommentRepo.find({ where: momentCommentWhere }),
+        this.momentLikeRepo.find({ where: momentLikeWhere }),
+        this.feedCommentRepo.find({ where: feedCommentWhere }),
+        this.interactionRepo.find({ where: interactionWhere }),
+        this.followRepo.find({ where: followWhere }),
+      ]);
 
     // 批量补帖子上下文，避免逐行查询。
     const momentPostIds = new Set<string>();
@@ -465,10 +460,12 @@ export class BehaviorRecordsAdminService {
         sourceId: comment.id,
         targetPostId: comment.postId,
         targetPostExcerpt: post ? this.truncate(post.text) : null,
-        targetPostMediaType: post ? post.contentType ?? null : null,
+        targetPostMediaType: post ? (post.contentType ?? null) : null,
         targetAuthorId: post ? post.authorId : null,
         targetAuthorName: post ? post.authorName : null,
-        targetAuthorType: post ? this.normalizeAuthorType(post.authorType) : null,
+        targetAuthorType: post
+          ? this.normalizeAuthorType(post.authorType)
+          : null,
         text: comment.text,
         payload: comment.replyToCommentId
           ? {
@@ -491,10 +488,12 @@ export class BehaviorRecordsAdminService {
         sourceId: like.id,
         targetPostId: like.postId,
         targetPostExcerpt: post ? this.truncate(post.text) : null,
-        targetPostMediaType: post ? post.contentType ?? null : null,
+        targetPostMediaType: post ? (post.contentType ?? null) : null,
         targetAuthorId: post ? post.authorId : null,
         targetAuthorName: post ? post.authorName : null,
-        targetAuthorType: post ? this.normalizeAuthorType(post.authorType) : null,
+        targetAuthorType: post
+          ? this.normalizeAuthorType(post.authorType)
+          : null,
         text: null,
         payload: null,
         postMissing: !post,
@@ -512,10 +511,12 @@ export class BehaviorRecordsAdminService {
         sourceId: comment.id,
         targetPostId: comment.postId,
         targetPostExcerpt: post ? this.feedExcerpt(post) : null,
-        targetPostMediaType: post ? post.mediaType ?? null : null,
+        targetPostMediaType: post ? (post.mediaType ?? null) : null,
         targetAuthorId: post ? post.authorId : null,
         targetAuthorName: post ? post.authorName : null,
-        targetAuthorType: post ? this.normalizeAuthorType(post.authorType) : null,
+        targetAuthorType: post
+          ? this.normalizeAuthorType(post.authorType)
+          : null,
         text: comment.text,
         payload: comment.replyToCommentId
           ? {
@@ -554,10 +555,12 @@ export class BehaviorRecordsAdminService {
         sourceId: interaction.id,
         targetPostId: interaction.postId ?? null,
         targetPostExcerpt: post ? this.feedExcerpt(post) : null,
-        targetPostMediaType: post ? post.mediaType ?? null : null,
+        targetPostMediaType: post ? (post.mediaType ?? null) : null,
         targetAuthorId: post ? post.authorId : null,
         targetAuthorName: post ? post.authorName : null,
-        targetAuthorType: post ? this.normalizeAuthorType(post.authorType) : null,
+        targetAuthorType: post
+          ? this.normalizeAuthorType(post.authorType)
+          : null,
         text: null,
         payload: interaction.payload ?? null,
         postMissing: Boolean(interaction.postId) && !post,
@@ -757,12 +760,14 @@ export class BehaviorRecordsAdminService {
     lines.push(`- 导出时间：${payload.exportedAt}`);
     lines.push(`- 记录条数：${payload.total}`);
     const filterParts: string[] = [];
-    if (payload.filters.surface) filterParts.push(`面=${payload.filters.surface}`);
+    if (payload.filters.surface)
+      filterParts.push(`面=${payload.filters.surface}`);
     if (payload.filters.behaviorType)
       filterParts.push(`类型=${payload.filters.behaviorType}`);
     if (payload.filters.dateFrom)
       filterParts.push(`起=${payload.filters.dateFrom}`);
-    if (payload.filters.dateTo) filterParts.push(`止=${payload.filters.dateTo}`);
+    if (payload.filters.dateTo)
+      filterParts.push(`止=${payload.filters.dateTo}`);
     if (filterParts.length) {
       lines.push(`- 过滤：${filterParts.join('，')}`);
     }
@@ -884,7 +889,7 @@ export class BehaviorRecordsAdminService {
     if (!payload || typeof payload !== 'object') {
       return null;
     }
-    const value = (payload as Record<string, unknown>)[key];
+    const value = payload[key];
     return typeof value === 'string' ? value : null;
   }
 
@@ -912,7 +917,9 @@ export class BehaviorRecordsAdminService {
   }
 
   private toIso(value: Date): string {
-    return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+    return value instanceof Date
+      ? value.toISOString()
+      : new Date(value).toISOString();
   }
 
   private startOfLocalDay(value: Date) {

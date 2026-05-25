@@ -138,7 +138,10 @@ export function BehaviorRecordsPage() {
     [overview, t],
   );
 
-  const records = recordsQuery.data?.items ?? [];
+  const records = useMemo(
+    () => recordsQuery.data?.items ?? [],
+    [recordsQuery.data?.items],
+  );
   const groups = useMemo(() => groupByDay(records), [records]);
   const listLoading = recordsQuery.isLoading && !recordsQuery.data;
 
