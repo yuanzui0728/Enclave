@@ -532,6 +532,10 @@ msgstr "· 초안으로 자동 저장되었습니다(\"내 초안\"에서 복원
 msgid "请填写「名称」才能保存"
 msgstr "\"이름\"을 입력해야 저장할 수 있습니다"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1806
+msgid "请填写自定义的「关系类型」才能保存"
+msgstr "저장하려면 사용자 지정 \"관계 유형\"을 입력하세요"
+
 #: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "整个角色"
 msgstr "캐릭터 전체"

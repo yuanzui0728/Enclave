@@ -532,6 +532,10 @@ msgstr "· 下書きとして自動保存されました（「マイ下書き」
 msgid "请填写「名称」才能保存"
 msgstr "「名前」を入力すると保存できます"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1806
+msgid "请填写自定义的「关系类型」才能保存"
+msgstr "保存するにはカスタムの「関係タイプ」を入力してください"
+
 #: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "整个角色"
 msgstr "キャラクター全体"

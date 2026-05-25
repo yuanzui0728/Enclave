@@ -532,6 +532,10 @@ msgstr "· Saved automatically as a draft (find it in \"My Drafts\")"
 msgid "请填写「名称」才能保存"
 msgstr "Fill in \"Name\" before saving"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1806
+msgid "请填写自定义的「关系类型」才能保存"
+msgstr "Fill in the custom \"Relationship type\" before saving"
+
 #: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "整个角色"
 msgstr "the whole character"

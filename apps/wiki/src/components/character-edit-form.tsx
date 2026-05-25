@@ -1023,10 +1023,17 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
   // 仅靠 trim().length === 0 漏掉粘 ZWS 占位字符的情况，按钮会假性可点，点完
   // 后端 wiki name 校验回 400，用户体感是"我填了名字但被拒"。
   const nameVisuallyEmpty = isVisuallyEmpty(name);
+  // 关系类型选了「自定义」但没填具体词：handleSubmit 里有早 return 兜底，但
+  // form 是 noValidate（关掉原生校验气泡）+ TextField 不带 :invalid 红边样式，
+  // 保存按钮又没把这条算进禁用 —— 于是用户点「提交创建」会静默无反应（既不发
+  // 请求也不提示）。把它纳入禁用判定 + footer 给出原因，消除静默 no-op。
+  const relationshipTypeMissing =
+    isCustomRelationshipType(relationshipType) && !relationshipType.trim();
   const saveButtonDisabled =
     isSavePending ||
     nameVisuallyEmpty ||
     isGenerating ||
+    relationshipTypeMissing ||
     !!extraSaveDisabledReason;
 
   // 不同 scope 的不同生成 / 评审说明
@@ -1794,6 +1801,10 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                 <div className="text-xs text-[color:var(--text-muted)] sm:ml-auto">
                   {nameVisuallyEmpty ? (
                     <Trans>请填写「名称」才能保存</Trans>
+                  ) : relationshipTypeMissing ? (
+                    <span className="text-[color:var(--state-warning-text)]">
+                      <Trans>请填写自定义的「关系类型」才能保存</Trans>
+                    </span>
                   ) : extraSaveDisabledReason ? (
                     <span className="text-[color:var(--state-warning-text)]">
                       {extraSaveDisabledReason}

@@ -532,6 +532,10 @@ msgstr "· 已自动保存为草稿（可在「我的草稿」找回）"
 msgid "请填写「名称」才能保存"
 msgstr "请填写「名称」才能保存"
 
+#: apps/wiki/src/components/character-edit-form.tsx:1806
+msgid "请填写自定义的「关系类型」才能保存"
+msgstr "请填写自定义的「关系类型」才能保存"
+
 #: apps/wiki/src/components/character-edit-form.tsx:1847
 msgid "整个角色"
 msgstr "整个角色"
