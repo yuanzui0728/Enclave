@@ -330,6 +330,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last login": "按上次登录时间排序",
     "Last user message": "上次用户消息时间", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "按上次用户消息时间排序", // i18n-ignore-line: runtime dict value
+    "Last interaction": "上次交互时间", // i18n-ignore-line: runtime dict value
+    "Sort by last interaction": "按上次交互时间排序", // i18n-ignore-line: runtime dict value
     "Membership expires": "会员到期时间",
     "Membership registered": "会员注册时间",
     "Sort by membership registered": "按会员注册时间排序",
@@ -1004,6 +1006,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last login": "最終ログイン日時で並び替え",
     "Last user message": "最終ユーザーメッセージ日時", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "最終ユーザーメッセージ日時で並び替え", // i18n-ignore-line: runtime dict value
+    "Last interaction": "最終インタラクション日時", // i18n-ignore-line: runtime dict value
+    "Sort by last interaction": "最終インタラクション日時で並び替え", // i18n-ignore-line: runtime dict value
     "Membership expires": "会員有効期限",
     "Membership registered": "会員登録日時",
     "Sort by membership registered": "会員登録日時で並び替え",
@@ -1683,6 +1687,8 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Sort by last login": "마지막 로그인 시각으로 정렬",
     "Last user message": "마지막 사용자 메시지 시각",
     "Sort by last user message": "마지막 사용자 메시지 시각으로 정렬",
+    "Last interaction": "마지막 상호작용 시각",
+    "Sort by last interaction": "마지막 상호작용 시각으로 정렬",
     "Membership expires": "멤버십 만료 시각",
     "Membership registered": "멤버십 가입 시각",
     "Sort by membership registered": "멤버십 가입 시각으로 정렬",

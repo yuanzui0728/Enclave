@@ -195,6 +195,7 @@ type QuickActionConfirmState = {
 type WorldsSortField =
   | "lastAccessedAt"
   | "lastUserMessageAt"
+  | "lastInteractiveAt"
   | "userCreatedAt"
   | "subscriptionExpiresAt";
 type WorldsSortDirection = "asc" | "desc";
@@ -414,6 +415,14 @@ export function WorldsPage() {
         compareNullableDateString(
           left.world.lastUserMessageAt,
           right.world.lastUserMessageAt,
+          sortState.direction,
+        ),
+      );
+    } else if (sortState.field === "lastInteractiveAt") {
+      next.sort((left, right) =>
+        compareNullableDateString(
+          left.world.lastInteractiveAt,
+          right.world.lastInteractiveAt,
           sortState.direction,
         ),
       );
@@ -825,6 +834,23 @@ export function WorldsPage() {
                 <th className="px-4 py-3">
                   <button
                     type="button"
+                    onClick={() => toggleSort("lastInteractiveAt")}
+                    className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
+                    aria-label={t("Sort by last interaction")}
+                  >
+                    <span>{t("Last interaction")}</span>
+                    <span aria-hidden="true" className="text-[10px]">
+                      {sortState?.field === "lastInteractiveAt"
+                        ? sortState.direction === "desc"
+                          ? "▼"
+                          : "▲"
+                        : "↕"}
+                    </span>
+                  </button>
+                </th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
                     onClick={() => toggleSort("userCreatedAt")}
                     className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[color:var(--text-primary)]"
                     aria-label={t("Sort by membership registered")}
@@ -897,6 +923,9 @@ export function WorldsPage() {
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
                       {formatDateTime(item.world.lastUserMessageAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                      {formatDateTime(item.world.lastInteractiveAt)}
                     </td>
                     <td className="px-4 py-3 text-[color:var(--text-secondary)]">
                       {formatDateTime(item.world.userCreatedAt)}
