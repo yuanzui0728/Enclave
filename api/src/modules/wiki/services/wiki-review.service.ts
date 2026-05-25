@@ -5,8 +5,12 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, MoreThan, Repository } from 'typeorm';
 import type { AuthenticatedUser } from '../../auth/jwt-auth.guard';
 import { CharacterPageEntity } from '../entities/character-page.entity';
-import { CharacterRevisionEntity } from '../entities/character-revision.entity';
+import {
+  CharacterRevisionEntity,
+  type WikiContentSnapshot,
+} from '../entities/character-revision.entity';
 import { EditSubmissionEntity } from '../entities/edit-submission.entity';
+import type { CharacterBlueprintRecipeValue } from '../../characters/character-blueprint.types';
 import { UserWikiProfileEntity } from '../entities/user-wiki-profile.entity';
 import { WikiEditService } from './wiki-edit.service';
 import { WikiFieldProtectionService } from './wiki-field-protection.service';
@@ -23,6 +27,18 @@ export type ReviewDecisionInput = {
 };
 
 const REVIEW_NOTE_MAX_LENGTH = 1000;
+
+/**
+ * 审核台一条待审项：除提交记录 + 待审 revision 外，再带上 parent revision 的
+ * 快照当作 SnapshotDiff 的 "旧" 值——否则 edit 操作的 old 列永远是 —，巡查员看
+ * 不到改前内容（create 操作 parent 为空，base*Snapshot 回落 null 是正确语义）。
+ */
+export type PendingReviewEntry = {
+  submission: EditSubmissionEntity;
+  revision: CharacterRevisionEntity;
+  baseContentSnapshot: WikiContentSnapshot | null;
+  baseRecipeSnapshot: CharacterBlueprintRecipeValue | null;
+};
 
 @Injectable()
 export class WikiReviewService {
@@ -47,10 +63,7 @@ export class WikiReviewService {
   ) {}
 
   async listPending(limit?: number): Promise<
-    Array<{
-      submission: EditSubmissionEntity;
-      revision: CharacterRevisionEntity;
-    }>
+    PendingReviewEntry[]
   >;
   async listPending(input?: {
     limit?: number;
@@ -58,10 +71,7 @@ export class WikiReviewService {
     riskLevel?: string;
     revisionKind?: string;
   }): Promise<
-    Array<{
-      submission: EditSubmissionEntity;
-      revision: CharacterRevisionEntity;
-    }>
+    PendingReviewEntry[]
   >;
   async listPending(
     input:
@@ -73,10 +83,7 @@ export class WikiReviewService {
           revisionKind?: string;
         } = {},
   ): Promise<
-    Array<{
-      submission: EditSubmissionEntity;
-      revision: CharacterRevisionEntity;
-    }>
+    PendingReviewEntry[]
   > {
     const opts = typeof input === 'number' ? { limit: input } : input;
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
@@ -111,9 +118,34 @@ export class WikiReviewService {
       where: { id: In(submissions.map((s) => s.revisionId)) },
     });
     const revMap = new Map(revisions.map((r) => [r.id, r]));
+    // 批量取 parent revision 当作 SnapshotDiff 的 "旧" 值。单条 In 查询，查询数
+    // 与列表长度无关（O(1) 不是 N+1）。edit 的 diffFromParent 就是相对 parent 算
+    // 的，所以 parent 快照才是正确的 before；create 无 parent → before=null。
+    const parentIds = Array.from(
+      new Set(
+        revisions
+          .map((r) => r.parentRevisionId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+    const parents = parentIds.length
+      ? await this.revisionRepo.find({ where: { id: In(parentIds) } })
+      : [];
+    const parentMap = new Map(parents.map((r) => [r.id, r]));
     return submissions
       .map((s) => ({ submission: s, revision: revMap.get(s.revisionId)! }))
-      .filter((entry) => entry.revision);
+      .filter((entry) => entry.revision)
+      .map((entry) => {
+        const parent = entry.revision.parentRevisionId
+          ? parentMap.get(entry.revision.parentRevisionId)
+          : null;
+        return {
+          submission: entry.submission,
+          revision: entry.revision,
+          baseContentSnapshot: parent?.contentSnapshot ?? null,
+          baseRecipeSnapshot: parent?.recipeSnapshot ?? null,
+        };
+      });
   }
 
   /**

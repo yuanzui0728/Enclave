@@ -318,8 +318,11 @@ function ReviewCard({
           </Trans>
         </div>
         <div className="rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] p-3">
+          {/* before 原写死 null：edit 操作的"旧"列永远是 —，巡查员看不到改前
+              内容，无从判断这次改动是否破坏。改用后端带回的 parent 快照
+              （create 无 parent → null，"全新创建"语义不变）。 */}
           <SnapshotDiff
-            before={null}
+            before={item.baseContentSnapshot ?? null}
             after={rev.contentSnapshot}
             changedFields={rev.diffFromParent?.changed}
           />

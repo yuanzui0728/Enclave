@@ -229,6 +229,10 @@ export type EditSubmission = {
 export type PendingReviewItem = {
   submission: EditSubmission;
   revision: WikiRevisionSummary;
+  // edit 操作的"改前"快照（= parent revision 的快照），给 SnapshotDiff 当 before
+  // 用，让巡查员看到 旧→新 对比。create 操作没有 parent → null。
+  baseContentSnapshot?: WikiContentSnapshot | null;
+  baseRecipeSnapshot?: CharacterBlueprintRecipe | null;
 };
 
 export type WikiUserRow = {
