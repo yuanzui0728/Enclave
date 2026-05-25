@@ -289,7 +289,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     if (leavingScreenRef.current) {
       return;
     }
-    if (reason !== "timeout") {
+    // 走查新一轮 R5：原版只接 timeout —— useCallFinalize R4 兜底在浏览器/iOS
+    // swipe back 时也会发 hangup("user_hangup")，触发 onSessionEnded("user_hangup")
+    // 经过这条回调。如果这里仍只匹配 timeout，单聊"通话中..."状态卡片永远不会
+    // 被翻成"通话已结束"，对方/本人下次回头看聊天列表 lastMessage 永远停在
+    // "通话中..."误导信息。call_log 卡片已经被 useCallFinalize 自己写过，但
+    // sendCallStatusMessage("ended") 走 emitChatMessage 是另一条独立消息，只有
+    // 这里能发。明面入口（handleBack）已先翻 leavingScreenRef → 上面 guard 早
+    // return，这里加 user_hangup 不会重复写。
+    if (reason !== "timeout" && reason !== "user_hangup") {
       return;
     }
 

@@ -449,7 +449,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     if (leavingScreenRef.current) {
       return;
     }
-    if (reason !== "timeout") {
+    // 走查新一轮 R5：原版只接 timeout —— useCallFinalize R4 兜底在浏览器/iOS
+    // swipe back 时也会发 hangup("user_hangup")，触发 onSessionEnded("user_hangup")
+    // 经过这条回调。如果这里仍只匹配 timeout，群"画面进行中"状态卡片永远不会
+    // 被翻成"已结束"，下次群成员进群以为还在通话（call_log 卡片已经被
+    // useCallFinalize 自己的 finalizeGroupVoiceCall 写过，但 sendGroupMessage
+    // "ended" 系统状态卡是另一条消息，只有这里能发）。
+    // 明面入口（handleEndCall）已经先把 leavingScreenRef 翻 true → 上面那条
+    // guard 早 return，这里加 user_hangup 分支不会重复写。
+    if (reason !== "timeout" && reason !== "user_hangup") {
       return;
     }
     leavingScreenRef.current = true;
