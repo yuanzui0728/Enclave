@@ -28,11 +28,8 @@ import {
   Users,
   VideoOff,
   Volume2,
+  VolumeX,
 } from "lucide-react";
-import { AvatarChip } from "../../components/avatar-chip";
-import { GroupAvatarChip } from "../../components/group-avatar-chip";
-import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
-import { formatDetailedMessageTimestamp } from "../../lib/format";
 import { describeRequestError } from "../../lib/request-error";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
@@ -46,10 +43,21 @@ import {
 } from "./mobile-group-route-state";
 import { upsertServerMessageInCache } from "./chat-message-delivery";
 import { buildGroupCallInviteMessage } from "./group-call-message";
-import { getGroupCallStatusLabel } from "./group-call-presentation";
 import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
 import { useGroupVoiceCallSession } from "./use-group-voice-call-session";
+import {
+  CallStatusLine,
+  CallTimer,
+  WeChatCallControlBar,
+  WeChatCallControlButton,
+  WeChatCallShell,
+  WeChatCallToast,
+  WeChatCallToastAction,
+  WeChatCallTopBar,
+  WeChatGroupCallGrid,
+  WeChatGroupCallTile,
+} from "./wechat-call";
 
 type MobileGroupCallScreenProps = {
   mode: "voice" | "video";
@@ -123,10 +131,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     };
   }, [routeState]);
   const hasResumeCounts = resumeCounts !== null;
-  const [muted, setMuted] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
-  const [callTipsDismissed, setCallTipsDismissed] = useState(false);
   const [leavingScreen, setLeavingScreen] = useState(false);
   const [joinedMemberIds, setJoinedMemberIds] = useState<string[]>([]);
   // 走查新一轮 R3：原 useState lazy init 一刀切用 `new Date().toISOString()`，
@@ -229,21 +235,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     () => new Set(joinedMemberIds),
     [joinedMemberIds],
   );
-  // 走查 新 R1：原版直接在 JSX 里 `members.map(m=>m.memberId)` 喂 GroupAvatarChip，
-  // 每次 render（成员加入/离开、syncCurrentStatus 1200ms timer 触发、activeCount
-  // 变化等）都 new 一个 array → GroupAvatarChip 拿到新 prop 引用、重新算 hashSeed
-  // × 4 + 重新挂 4 个 <img>。memberIds 改 useMemo 锁住引用，群成员稳定时
-  // GroupAvatarChip 完全跳过重渲染。
-  const memberIdsForAvatar = useMemo(
-    () => members.map((member) => member.memberId),
-    [members],
-  );
   const totalCount = members.length;
-  const waitingCount = Math.max(totalCount - activeCount, 0);
   const groupName = groupQuery.data?.name || t(msg`群聊`);
   const callTitle =
     mode === "voice" ? t(msg`群语音通话`) : t(msg`群视频通话`);
-  const statusTitle = getGroupCallStatusLabel(mode, "ongoing");
 
   // 走查 R3：useCallFinalize 10 分钟兜底 timer 触发 hangup("timeout") 后会调
   // onSessionEnded(reason)；原版没传，10min 自动结束后群里写了一条
@@ -262,22 +257,13 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     groupId: resolvedGroupId,
     enabled:
       mode === "voice" && !isDesktopLayout && Boolean(resolvedGroupId),
+    leaving: leavingScreen,
     participantCount: totalCount || undefined,
     onSessionEnded: (reason) => handleVoiceCallAutoEndRef.current(reason),
   });
   const voiceActiveSpeakerId = voiceCall.activeSpeakerId;
-  const voiceCallLastTurn = voiceCall.lastTurn;
   const voiceCallSpeechError = voiceCall.speech.error;
   const voiceCallTurnError = voiceCall.turnMutation.error;
-  const voiceCallSpeechStatus = voiceCall.speech.status;
-  const voiceCallPlaybackState = voiceCall.playbackState;
-  const voiceCallBusy = voiceCall.busy;
-  const voiceCallLastAssistantText = voiceCallLastTurn?.assistantTurns?.[0]?.assistantText;
-  const voiceCallHasTtsFallback = Boolean(
-    voiceCallLastTurn?.assistantTurns.some(
-      (turn) => turn.assistantAudioUrl === null,
-    ),
-  );
   const hasSyncedStatus =
     lastPublishedCounts?.activeCount === activeCount &&
     lastPublishedCounts?.totalCount === totalCount;
@@ -303,7 +289,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
 
     initializedSessionKeyRef.current = callSessionKey;
-    setMuted(false);
     setSpeakerEnabled(true);
     setCameraEnabled(mode === "video");
     leavingScreenRef.current = false;
@@ -313,7 +298,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         routeState?.snapshotRecordedAt ??
         new Date().toISOString(),
     );
-    setCallTipsDismissed(hasResumeCounts);
     setLastPublishedCounts(resumeCounts);
     panelOpenedReportedRef.current = hasResumeCounts;
     setJoinedMemberIds(
@@ -654,14 +638,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   };
   const retryLoadDisabled = groupQuery.isFetching || membersQuery.isFetching;
 
-  const renderBackToGroupAction = () => (
-    <InlineNoticeActionButton
-      label={t(msg`返回群聊`)}
-      className="border-current/28 bg-white/12 active:bg-white/16"
-      onClick={handleBack}
-    />
-  );
-
   const handleEndCall = async () => {
     if (leavingScreenRef.current || leavingScreen) {
       return;
@@ -736,7 +712,6 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   };
 
   const toggleJoinedState = (memberId: string) => {
-    setCallTipsDismissed(true);
     if (syncStatusMutation.isError) {
       syncStatusMutation.reset();
     }
@@ -752,13 +727,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       return;
     }
 
-    setCallTipsDismissed(true);
     syncStatusMutation.reset();
     void syncCurrentStatus();
-  };
-
-  const handleContinueAfterSyncError = () => {
-    syncStatusMutation.reset();
   };
 
   const handleRetryEndCall = () => {
@@ -770,8 +740,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     void handleEndCall();
   };
 
-  const handleContinueAfterEndError = () => {
-    endStatusMutation.reset();
+  // 群语音通话 VAD 出错（录音/网络）后清干净，让连续监听循环重新起录
+  const handleRetryGroupVoiceTurn = () => {
+    if (leavingScreen) {
+      return;
+    }
+    voiceCall.cancelRecordingTurn();
+    voiceCall.stopReplyPlayback();
+    voiceCall.turnMutation.reset();
+    voiceCall.speech.clearResult();
   };
 
   if (groupQuery.isLoading || membersQuery.isLoading) {
@@ -1050,389 +1027,187 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     );
   }
 
+  // 微信式群通话状态（VAD loop 仅 voice 模式生效）
+  const micMuted = voiceCall.voiceLoop.micMuted;
+  const setMicMuted = voiceCall.voiceLoop.setMicMuted;
+  const groupCallStatusLine =
+    mode === "voice"
+      ? voiceCall.voiceLoop.phase === "listening"
+        ? t(msg`正在聆听…`)
+        : voiceCall.voiceLoop.phase === "thinking"
+          ? t(msg`成员正在回复…`)
+          : voiceCall.voiceLoop.phase === "speaking"
+            ? t(msg`成员正在说话…`)
+            : ""
+      : "";
+  const startedAtMs = new Date(startedAt).getTime();
+
+  let groupCallToast: ReactNode = null;
+  if (!leavingScreen) {
+    if (syncStatusMutation.error instanceof Error) {
+      groupCallToast = (
+        <WeChatCallToast
+          tone="danger"
+          message={describeRequestError(syncStatusMutation.error)}
+          action={
+            <WeChatCallToastAction
+              label={t(msg`重试`)}
+              onClick={handleRetrySyncStatus}
+            />
+          }
+        />
+      );
+    } else if (endStatusMutation.error instanceof Error) {
+      groupCallToast = (
+        <WeChatCallToast
+          tone="danger"
+          message={t(msg`结束失败，请重试`)}
+          action={
+            <WeChatCallToastAction
+              label={t(msg`重试`)}
+              onClick={handleRetryEndCall}
+            />
+          }
+        />
+      );
+    } else if (mode === "voice" && voiceCallSpeechError) {
+      groupCallToast = (
+        <WeChatCallToast
+          tone="danger"
+          message={voiceCallSpeechError}
+          action={
+            <WeChatCallToastAction
+              label={t(msg`重试`)}
+              onClick={handleRetryGroupVoiceTurn}
+            />
+          }
+        />
+      );
+    } else if (mode === "voice" && voiceCallTurnError instanceof Error) {
+      groupCallToast = (
+        <WeChatCallToast
+          tone="danger"
+          message={t(msg`网络不稳定，请重试`)}
+          action={
+            <WeChatCallToastAction
+              label={t(msg`重试`)}
+              onClick={handleRetryGroupVoiceTurn}
+            />
+          }
+        />
+      );
+    } else if (mode === "voice" && voiceCall.playerError) {
+      groupCallToast = (
+        <WeChatCallToast
+          tone="info"
+          message={t(msg`没有自动播报，点一下补播`)}
+          action={
+            <WeChatCallToastAction
+              label={t(msg`补播`)}
+              onClick={() => {
+                void voiceCall.replayLastTurn();
+              }}
+            />
+          }
+        />
+      );
+    }
+  }
+
   return (
-    <AppPage className="flex min-h-[100dvh] flex-col space-y-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_40%,#020617_100%)] px-0 py-0 text-white">
-      <header className="sticky top-0 z-20 border-b border-white/8 bg-[rgba(2,6,23,0.72)] px-3 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
+    <WeChatCallShell
+      topBar={
+        <WeChatCallTopBar
+          onMinimize={handleBack}
+          minimizeLabel={t(msg`返回群聊`)}
+          centerTitle={callTitle}
+          centerSubtitle={t(msg`${activeCount}/${totalCount} 已加入`)}
+        />
+      }
+      controls={
+        <WeChatCallControlBar>
+          <WeChatCallControlButton
+            icon={
+              speakerEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />
+            }
+            label={t(msg`免提`)}
+            variant={speakerEnabled ? "active" : "default"}
+            onClick={() => setSpeakerEnabled((current) => !current)}
             disabled={leavingScreen}
-            className={mobileCallIconButtonClass()}
-            aria-label={t(msg`返回群聊`)}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[17px] font-medium">{callTitle}</div>
-            <div className="mt-0.5 truncate text-[12px] text-white/60">
-              {groupName}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3.5">
-        <section className="rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4.5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
-          <div className="flex items-center gap-4">
-            <GroupAvatarChip
-              name={groupName}
-              members={memberIdsForAvatar}
-              size="wechat"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="text-[22px] font-semibold tracking-[0.01em]">
-                {groupName}
-              </div>
-              <div className="mt-1 text-sm text-white/64">{statusTitle}</div>
-            </div>
-          </div>
-
-          <div className="mt-3.5 grid grid-cols-3 gap-2.5">
-            <CallMetricCard
-              label={t(msg`在线`)}
-              value={t(msg`${activeCount} 人`)}
-            />
-            <CallMetricCard
-              label={t(msg`等待`)}
-              value={t(msg`${waitingCount} 人`)}
-            />
-            <CallMetricCard
-              label={t(msg`发起时间`)}
-              value={formatDetailedMessageTimestamp(startedAt)}
-            />
-          </div>
-
-          <div className="mt-3.5 flex flex-wrap gap-2">
-            <CallControlButton
-              active={!muted}
-              disabled={leavingScreen}
-              label={muted ? t(msg`取消静音`) : t(msg`静音`)}
-              icon={muted ? <Mic size={16} /> : <MicOff size={16} />}
-              onClick={() => {
-                setCallTipsDismissed(true);
-                setMuted((current) => !current);
-              }}
-            />
-            <CallControlButton
-              active={speakerEnabled}
-              disabled={leavingScreen}
-              label={speakerEnabled ? t(msg`关闭免提`) : t(msg`免提`)}
-              icon={<Volume2 size={16} />}
-              onClick={() => {
-                setCallTipsDismissed(true);
-                setSpeakerEnabled((current) => !current);
-              }}
-            />
-            {mode === "video" ? (
-              <CallControlButton
-                active={cameraEnabled}
-                disabled={leavingScreen}
-                label={cameraEnabled ? t(msg`关闭摄像头`) : t(msg`打开摄像头`)}
-                icon={
-                  cameraEnabled ? <VideoOff size={16} /> : <Camera size={16} />
-                }
-                onClick={() => {
-                  setCallTipsDismissed(true);
-                  setCameraEnabled((current) => !current);
-                }}
-              />
-            ) : null}
-          </div>
-        </section>
-
-        <div className="mt-3.5 space-y-2.5">
-          {syncStatusMutation.error instanceof Error ? (
-            // 走查 2026-05-22 移动端群聊 R1：和姊妹 group-chat-thread-panel
-            // R67（commit 9a8c5f...）一批 ErrorBlock 同款 a11y 修法——这条
-            // 是用户点「同步在席」失败时的唯一可视错误反馈（旁边按钮也只是
-            // 重试/继续，不带语义播报），裸 InlineNotice 内部仅 <div>，盲人
-            // SR 在群语音通话页失败时只能看到"沉默"。role="alert" 自带
-            // aria-live="assertive"，立刻读出 describeRequestError 内容。
-            <MobileCallNotice
-              role="alert"
-              tone="danger"
-              className="flex items-center justify-between gap-3"
-            >
-              <span>{describeRequestError(syncStatusMutation.error)}</span>
-              {renderBackToGroupAction()}
-            </MobileCallNotice>
-          ) : null}
-          {syncStatusMutation.error instanceof Error ? (
-            <div className="flex flex-wrap gap-2">
-              <MobileCallActionButton
-                onClick={handleRetrySyncStatus}
-                disabled={leavingScreen}
-              >
-                <Users size={16} />
-                {t(msg`重试`)}
-              </MobileCallActionButton>
-              <MobileCallActionButton
-                onClick={handleContinueAfterSyncError}
-                disabled={leavingScreen}
-              >
-                <Mic size={16} />
-                {t(msg`继续`)}
-              </MobileCallActionButton>
-            </div>
-          ) : null}
-          {endStatusMutation.error instanceof Error ? (
-            // 走查 2026-05-22 R1：同 syncStatusMutation 错误条 a11y 修法。
-            // 这条是用户点「结束通话」失败时的反馈，盲人 SR 听不到「结束
-            // 失败，请重试」会以为通话已经结束转身离开，结果通话还在线
-            // → 计费/在席状态不同步。
-            <MobileCallNotice
-              role="alert"
-              tone="danger"
-              className="flex items-center justify-between gap-3"
-            >
-              <span>{t(msg`结束失败，请重试`)}</span>
-              {renderBackToGroupAction()}
-            </MobileCallNotice>
-          ) : null}
-          {endStatusMutation.error instanceof Error ? (
-            <div className="flex flex-wrap gap-2">
-              <MobileCallActionButton
-                onClick={handleRetryEndCall}
-                disabled={leavingScreen}
-              >
-                <PhoneOff size={16} />
-                {t(msg`重试`)}
-              </MobileCallActionButton>
-              <MobileCallActionButton
-                onClick={handleContinueAfterEndError}
-                disabled={leavingScreen}
-              >
-                <Users size={16} />
-                {t(msg`保留当前状态`)}
-              </MobileCallActionButton>
-            </div>
-          ) : null}
-          {leavingScreen ? (
-            // 新会话走查 R3：和姊妹 sync/end danger MobileCallNotice 同款 a11y
-            // 修法——leavingScreen 期间这条 info notice 是用户点完"结束通话"
-            // 后看到的唯一过渡反馈。盲人 SR 听不到任何"通话结束中..."播报，
-            // 在公网隧道 ~600ms RTT 内会以为按钮没响应再点一遍（leavingScreenRef
-            // 兜底吞掉同帧重复，但 SR 体感仍是"按钮没动"）。role="status" +
-            // aria-live="polite" 让"通话结束中..." 被 SR 朗读但不抢断当前播报。
-            <MobileCallNotice role="status" aria-live="polite" tone="info">
-              {t(msg`通话结束中...`)}
-            </MobileCallNotice>
-          ) : null}
-        </div>
-
-        <section className="mt-3.5 min-h-0 flex-1 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-white">{t(msg`成员`)}</div>
-            <MobileCallMetaChip>
-              {t(msg`${activeCount}/${totalCount} 已加入`)}
-            </MobileCallMetaChip>
-          </div>
-
-          <div className="mt-3.5 grid gap-2.5">
-            {visibleMembers.map((member) => {
-              const joined = joinedMemberIdSet.has(member.memberId);
-              const isActiveSpeaker =
-                mode === "voice" &&
-                voiceActiveSpeakerId === member.memberId;
-              const roleLabel =
-                member.role === "owner"
-                  ? t(msg`群主`)
-                  : member.role === "admin"
-                    ? t(msg`管理员`)
-                    : t(msg`群成员`);
-
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => toggleJoinedState(member.memberId)}
-                  disabled={leavingScreen || member.memberType === "user"}
-                  className={cn(
-                    "rounded-[18px] border px-3.5 py-2.5 text-left transition",
-                    joined
-                      ? "border-[rgba(34,197,94,0.22)] bg-[rgba(34,197,94,0.10)]"
-                      : "border-white/12 bg-white/6",
-                    isActiveSpeaker
-                      ? "border-emerald-400/64 bg-emerald-400/14 ring-2 ring-emerald-400/40"
-                      : null,
-                    member.memberType === "user"
-                      ? "cursor-default"
-                      : "active:bg-white/12",
-                    leavingScreen ? "opacity-60" : null,
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <AvatarChip
-                      name={member.memberName || member.memberId}
-                      src={member.memberAvatar}
-                      size="wechat"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="truncate text-[13px] font-medium text-white">
-                          {member.memberName || member.memberId}
-                        </div>
-                        <MobileCallMetaChip className="px-2 py-0.5 text-[10px] text-white/64">
-                          {roleLabel}
-                        </MobileCallMetaChip>
-                      </div>
-                      <div className="mt-0.5 text-[11px] leading-[18px] text-white/52">
-                        {member.memberType === "user"
-                          ? t(msg`始终在线`)
-                          : joined
-                            ? t(msg`已加入`)
-                            : t(msg`点击加入`)}
-                      </div>
-                    </div>
-                    <MobileCallMetaChip
-                      tone={joined ? "success" : "default"}
-                      className={cn(
-                        "shrink-0 px-2.5 py-1 text-[10px] font-medium",
-                        joined ? null : "text-white/58",
-                      )}
-                    >
-                      {joined ? t(msg`已加入`) : t(msg`待加入`)}
-                    </MobileCallMetaChip>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {members.length > visibleMembers.length ? (
-            <div className="mt-3 text-center text-[12px] text-white/50">
-              {t(msg`其余 ${members.length - visibleMembers.length} 位成员请到群聊详情管理`)}
-            </div>
-          ) : null}
-        </section>
-
-        {mode === "voice" && !isDesktopLayout ? (
-          <section className="mt-3.5 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-white">
-                {t(msg`按住说话`)}
-              </div>
-              <MobileCallMetaChip
-                tone={
-                  voiceCallPlaybackState === "playing" ? "success" : "default"
-                }
-              >
-                {voiceCallTurnError instanceof Error
-                  ? t(msg`网络不稳定，请重试`)
-                  : voiceCall.turnMutation.isPending
-                    ? t(msg`AI 思考中...`)
-                    : voiceCallSpeechStatus === "listening"
-                      ? t(msg`录音中...`)
-                      : voiceCallPlaybackState === "playing"
-                        ? t(msg`角色正在说`)
-                        : t(msg`待录音`)}
-              </MobileCallMetaChip>
-            </div>
-            <button
-              type="button"
-              disabled={leavingScreen || voiceCallBusy}
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture?.(event.pointerId);
-                void voiceCall.startRecordingTurn();
-              }}
-              onPointerUp={() => {
-                voiceCall.stopRecordingTurn();
-              }}
-              onPointerLeave={() => {
-                // R4 走查：原版 onPointerLeave 调 stopRecordingTurn → 提交录音。
-                // 微信类 UX 的语义是「手指拖出按钮 = 取消」，单聊语音 mic 通过
-                // setPointerCapture 让 leave 根本不会 fire 来回避这个问题，
-                // 群聊原版没设 capture → leave 立刻 fire → 用户手指稍微滑出
-                // 半像素就把录音提交出去，体感是「按下还没说就发出去了」。
-                // 上方 onPointerDown 补 setPointerCapture 同时这条改 cancel
-                // 兜底（IE/Safari 在 setPointerCapture 失败时仍会 fire leave）。
-                voiceCall.cancelRecordingTurn();
-              }}
-              onPointerCancel={() => {
-                voiceCall.cancelRecordingTurn();
-              }}
-              className={cn(
-                "mt-3 flex w-full items-center justify-center gap-2 rounded-[18px] py-4 text-[14px] font-medium transition",
-                voiceCallSpeechStatus === "listening"
-                  ? "bg-emerald-500 text-white shadow-[0_12px_36px_rgba(34,197,94,0.36)]"
-                  : "bg-white/8 text-white",
-                voiceCallBusy ? "opacity-72" : null,
-                leavingScreen ? "opacity-50" : null,
-              )}
-            >
-              <Mic size={18} />
-              {voiceCallSpeechStatus === "listening"
-                ? t(msg`松开发送`)
-                : t(msg`按住说话`)}
-            </button>
-            {voiceCallSpeechError ? (
-              <MobileCallNotice tone="danger" className="mt-3">
-                {voiceCallSpeechError}
-              </MobileCallNotice>
-            ) : null}
-            {voiceCallHasTtsFallback ? (
-              <MobileCallNotice tone="warning" className="mt-3">
-                {t(msg`语音合成暂不可用，本轮以文字呈现`)}
-              </MobileCallNotice>
-            ) : null}
-            {voiceCallLastAssistantText &&
-            !voiceCallSpeechError &&
-            !voiceCallTurnError ? (
-              <div className="mt-3 rounded-[14px] border border-white/12 bg-white/4 px-3.5 py-2.5 text-[12px] leading-[18px] text-white/72">
-                {voiceCallLastAssistantText}
-              </div>
-            ) : null}
-            <audio
-              ref={voiceCall.audioRef}
-              preload="auto"
-              className="hidden"
-            />
-          </section>
-        ) : null}
-
-        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-          <MobileCallActionButton
-            onClick={() => {
-              setCallTipsDismissed(true);
-              syncStatusMutation.reset();
-              void syncCurrentStatus();
-            }}
-            disabled={syncStatusMutation.isPending || !totalCount || leavingScreen}
-            className="h-12 w-full min-w-0"
-          >
-            <Users size={16} />
-            {syncStatusMutation.isPending
-              ? t(msg`同步中...`)
-              : hasSyncedStatus
-                ? t(msg`已同步`)
-                : t(msg`同步状态`)}
-          </MobileCallActionButton>
-          <MobileCallActionButton
-            tone="danger"
+          />
+          <WeChatCallControlButton
+            icon={<PhoneOff size={26} />}
+            label={
+              leavingScreen || endStatusMutation.isPending
+                ? t(msg`结束中...`)
+                : t(msg`挂断`)
+            }
+            variant="danger"
+            size="lg"
             onClick={() => {
               void handleEndCall();
             }}
-            // 走查 R4：sync 进行中先视觉 disable end 按钮，避免 sync 的 ~600ms
-            // RTT 窗口内用户连点 end → 两条 sendGroupMessage 抢路。handleEndCall
-            // 入口仍会 await 已在 in-flight 的 sync promise，双重保险。
             disabled={
               endStatusMutation.isPending ||
               syncStatusMutation.isPending ||
               leavingScreen
             }
-            className="h-12 w-full min-w-0"
-          >
-            <PhoneOff size={16} />
-            {leavingScreen || endStatusMutation.isPending
-              ? t(msg`结束中...`)
-              : syncStatusMutation.isPending
-                ? t(msg`等待同步...`)
-                : t(msg`结束通话`)}
-          </MobileCallActionButton>
+          />
+          <WeChatCallControlButton
+            icon={micMuted ? <MicOff size={24} /> : <Mic size={24} />}
+            label={micMuted ? t(msg`取消静音`) : t(msg`静音`)}
+            variant={micMuted ? "active" : "default"}
+            onClick={() => setMicMuted((current) => !current)}
+            disabled={leavingScreen}
+          />
+          {mode === "video" ? (
+            <WeChatCallControlButton
+              icon={
+                cameraEnabled ? <VideoOff size={24} /> : <Camera size={24} />
+              }
+              label={cameraEnabled ? t(msg`关闭摄像头`) : t(msg`打开摄像头`)}
+              variant={cameraEnabled ? "active" : "default"}
+              onClick={() => setCameraEnabled((current) => !current)}
+              disabled={leavingScreen}
+            />
+          ) : null}
+        </WeChatCallControlBar>
+      }
+      stage={
+        <div className="flex w-full max-w-[420px] flex-col items-center">
+          <CallTimer
+            startedAtMs={startedAtMs}
+            running
+            waitingLabel={callTitle}
+          />
+          <CallStatusLine className="mt-1.5" text={groupCallStatusLine} />
+          <WeChatGroupCallGrid className="mt-7 w-full">
+            {visibleMembers.map((member) => (
+              <WeChatGroupCallTile
+                key={member.id}
+                name={member.memberName || member.memberId}
+                avatar={member.memberAvatar}
+                joined={joinedMemberIdSet.has(member.memberId)}
+                isActiveSpeaker={
+                  mode === "voice" &&
+                  voiceActiveSpeakerId === member.memberId
+                }
+                disabled={leavingScreen || member.memberType === "user"}
+                onToggle={() => toggleJoinedState(member.memberId)}
+              />
+            ))}
+          </WeChatGroupCallGrid>
+          {members.length > visibleMembers.length ? (
+            <div className="mt-5 text-center text-[12px] text-white/50">
+              {t(msg`其余 ${members.length - visibleMembers.length} 位成员请到群聊详情管理`)}
+            </div>
+          ) : null}
         </div>
-      </div>
-    </AppPage>
+      }
+    >
+      <audio ref={voiceCall.audioRef} preload="auto" className="hidden" />
+      {groupCallToast}
+    </WeChatCallShell>
   );
 }
 
@@ -1536,49 +1311,6 @@ function MobileCallStatusCard({
   );
 }
 
-function MobileCallNotice({
-  tone = "info",
-  className,
-  ...props
-}: ComponentProps<typeof InlineNotice>) {
-  return (
-    <InlineNotice
-      tone={tone}
-      className={cn(
-        "rounded-[20px] px-4 py-3 text-[12px] leading-6 shadow-none",
-        tone === "warning"
-          ? "border-[#f59e0b]/24 bg-[#f59e0b]/10 text-[#fde68a]"
-          : tone === "danger"
-            ? "border-[#f87171]/24 bg-[#ef4444]/10 text-[#fecaca]"
-            : tone === "success"
-              ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
-              : "border-white/12 bg-white/8 text-white/74",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function MobileCallMetaChip({
-  tone = "default",
-  className,
-  ...props
-}: ComponentProps<"span"> & { tone?: "default" | "success" }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-3 py-1 text-[11px]",
-        tone === "success"
-          ? "border-[#34d399]/24 bg-[#34d399]/14 text-[#bbf7d0]"
-          : "border-white/10 bg-white/8 text-white/72",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function MobileCallActionButton({
   tone = "default",
   className,
@@ -1599,57 +1331,3 @@ function MobileCallActionButton({
   );
 }
 
-function mobileCallIconButtonClass() {
-  return "flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white/82 transition active:bg-white/12 disabled:opacity-55";
-}
-
-function CallMetricCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-}) {
-  return (
-    <div className="rounded-[18px] border border-white/12 bg-white/6 px-3 py-3">
-      <div className="text-[11px] tracking-[0.12em] text-white/45">{label}</div>
-      <div className="mt-2 text-sm font-medium text-white">{value}</div>
-      {detail ? (
-        <div className="mt-1 text-[11px] leading-5 text-white/54">{detail}</div>
-      ) : null}
-    </div>
-  );
-}
-
-function CallControlButton({
-  active,
-  disabled = false,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  disabled?: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "inline-flex h-11 items-center gap-2 rounded-full border px-4.5 text-[13px] font-medium transition active:translate-y-[0.5px] disabled:opacity-55",
-        active
-          ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.14)] text-[#bbf7d0]"
-          : "border-white/10 bg-white/8 text-white/74 active:bg-white/12",
-      )}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}

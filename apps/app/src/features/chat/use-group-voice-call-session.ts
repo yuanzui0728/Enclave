@@ -11,6 +11,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { resolveAppMediaUrl } from "../../lib/media-url";
 import { useCallFinalize } from "./use-call-finalize";
+import { useContinuousVoiceLoop } from "./use-continuous-voice-loop";
 import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
@@ -19,6 +20,8 @@ type UseGroupVoiceCallSessionOptions = {
   baseUrl?: string;
   groupId: string;
   enabled: boolean;
+  /** 屏幕正在离开（挂断/导航），停掉 VAD 连续监听 */
+  leaving?: boolean;
   participantCount?: number;
   requestedSpeakerIds?: string[];
   onTurnSuccess?: (result: GroupVoiceCallTurnResult) => void | Promise<void>;
@@ -38,6 +41,7 @@ export function useGroupVoiceCallSession({
   baseUrl,
   groupId,
   enabled,
+  leaving = false,
   participantCount,
   requestedSpeakerIds,
   onTurnSuccess,
@@ -317,10 +321,26 @@ export function useGroupVoiceCallSession({
     [callFinalize, stopReplyPlayback],
   );
 
+  // 微信式连续免提通话：VAD 自动起录，多角色整列播完（playbackState 回 idle）
+  // 才恢复监听
+  const voiceLoop = useContinuousVoiceLoop({
+    enabled,
+    speech,
+    playbackState,
+    isMutationPending: turnMutation.isPending,
+    isMutationError: turnMutation.isError,
+    playerError,
+    leaving,
+    startRecordingTurn,
+    stopRecordingTurn,
+    cancelRecordingTurn,
+  });
+
   return {
     activeSpeakerId,
     audioMuted,
     audioRef,
+    voiceLoop,
     busy:
       turnMutation.isPending ||
       speech.status === "processing" ||

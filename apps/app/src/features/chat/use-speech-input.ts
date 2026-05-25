@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import {
   resolveSpeechRecognitionLocale,
@@ -430,7 +430,17 @@ export function useSpeechInput({
     mediaStartRequestIdRef.current = requestId;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 免提连续通话（VAD）下扬声器会回灌进麦克风；开 echoCancellation /
+      // noiseSuppression / autoGainControl 压回声 + 抬低音量人声，AnalyserNode
+      // 的静音检测更干净。这些约束不被支持时浏览器会自动忽略，等价于旧的
+      // { audio: true }，不影响 dictation 录音转写质量。
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
 
       if (
         mediaStartRequestIdRef.current !== requestId ||
@@ -666,6 +676,10 @@ export function useSpeechInput({
     resetState();
   };
 
+  // VAD 连续监听复用这条活流挂 AnalyserNode，避免二次 getUserMedia。
+  // 返回稳定 accessor 读 ref.current（实时），不直接外泄 ref 本体。
+  const getMediaStream = useCallback(() => mediaStreamRef.current, []);
+
   return {
     canCommit:
       mode === "voice"
@@ -678,6 +692,7 @@ export function useSpeechInput({
     displayText,
     engine,
     error,
+    getMediaStream,
     interimTranscript,
     mode,
     permissionDenied,

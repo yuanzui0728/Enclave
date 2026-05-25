@@ -1,0 +1,289 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useVoiceActivityDetection,
+  type VadConfig,
+} from "./use-voice-activity-detection";
+import type { useSpeechInput } from "./use-speech-input";
+
+// 微信式连续免提通话的「自动监听」协调器：把 VAD 检测器的说话起止事件接到
+// 三套 session hook 已有的「停录即自动发 turn」流上，并管理整轮循环
+// （起录 → 静音停录发送 → AI 回复 → 播完自动恢复监听）。麦克风静音、离屏、
+// 权限失败、自动播放被拦等都在这里收口。
+
+export type VoiceLoopPhase =
+  | "idle"
+  | "connecting"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "error";
+
+type InternalPhase =
+  | "idle"
+  | "armed" // 麦克风开、等说话起点
+  | "capturing" // 检测到说话、录音中
+  | "submitting" // 停录 → 生成 blob → turn 请求中
+  | "speaking" // AI 回复播放中
+  | "cooldown" // 播完短暂沉降，避开尾音/回声后再起录
+  | "error";
+
+const COOLDOWN_MS = 500;
+
+type SpeechInputApi = ReturnType<typeof useSpeechInput>;
+
+type UseContinuousVoiceLoopOptions = {
+  enabled: boolean;
+  speech: SpeechInputApi;
+  playbackState: "idle" | "playing";
+  isMutationPending: boolean;
+  isMutationError: boolean;
+  playerError: string | null;
+  /** 屏幕正在离开（挂断/导航），停掉循环 */
+  leaving?: boolean;
+  /** 数字人视频：sessionState==="ready" 前不起录；语音/群默认 true */
+  gateReady?: boolean;
+  startRecordingTurn: () => Promise<void> | void;
+  stopRecordingTurn: () => void;
+  cancelRecordingTurn: () => void;
+  config?: Partial<VadConfig>;
+};
+
+export function useContinuousVoiceLoop({
+  enabled,
+  speech,
+  playbackState,
+  isMutationPending,
+  isMutationError,
+  playerError,
+  leaving = false,
+  gateReady = true,
+  startRecordingTurn,
+  stopRecordingTurn,
+  cancelRecordingTurn,
+  config,
+}: UseContinuousVoiceLoopOptions): {
+  phase: VoiceLoopPhase;
+  micMuted: boolean;
+  setMicMuted: (next: boolean | ((prev: boolean) => boolean)) => void;
+  inputLevel: number;
+  vadSupported: boolean;
+  primeAudioContext: () => Promise<void>;
+} {
+  const [internalPhase, setInternalPhaseState] = useState<InternalPhase>("idle");
+  const phaseRef = useRef<InternalPhase>("idle");
+  const setPhase = useCallback((next: InternalPhase) => {
+    phaseRef.current = next;
+    setInternalPhaseState(next);
+  }, []);
+
+  const [micMuted, setMicMuted] = useState(false);
+  const [inputLevel, setInputLevel] = useState(0);
+  const cooldownTimerRef = useRef<number | null>(null);
+  const lastLevelEmitRef = useRef(0);
+
+  const speechStatus = speech.status;
+  const speechError = Boolean(speech.error);
+  // VAD 只在 armed/capturing 阶段分析；thinking/speaking 期间扬声器在响，
+  // 关掉 analyser 才不会把 AI 自己的声音当成用户说话。
+  const vadActive =
+    internalPhase === "armed" || internalPhase === "capturing";
+
+  const clearCooldown = useCallback(() => {
+    if (cooldownTimerRef.current !== null) {
+      window.clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+  }, []);
+
+  const handleLevel = useCallback((level: number) => {
+    // 跳帧节流到 ~16fps，避免每帧 setState 触发 re-render 风暴
+    const now = performance.now();
+    if (now - lastLevelEmitRef.current < 60) {
+      return;
+    }
+    lastLevelEmitRef.current = now;
+    setInputLevel(level);
+  }, []);
+
+  const handleSpeechStart = useCallback(() => {
+    if (phaseRef.current === "armed") {
+      setPhase("capturing");
+    }
+  }, [setPhase]);
+
+  const handleUtteranceEnd = useCallback(() => {
+    if (phaseRef.current === "armed" || phaseRef.current === "capturing") {
+      setPhase("submitting");
+      stopRecordingTurn();
+    }
+  }, [setPhase, stopRecordingTurn]);
+
+  const { inputLevelRef, supported: vadSupported, resumeContext } =
+    useVoiceActivityDetection({
+      getMediaStream: speech.getMediaStream,
+      active: vadActive,
+      onSpeechStart: handleSpeechStart,
+      onSpeechEnd: handleUtteranceEnd,
+      onMaxDuration: handleUtteranceEnd,
+      onLevel: handleLevel,
+      config,
+    });
+  void inputLevelRef; // 当前 UI 走节流 number；保留 ref 供需要零重渲染的消费者
+
+  const primeAudioContext = useCallback(async () => {
+    await resumeContext();
+  }, [resumeContext]);
+
+  const arm = useCallback(() => {
+    void resumeContext();
+    void startRecordingTurn();
+    setPhase("armed");
+  }, [resumeContext, setPhase, startRecordingTurn]);
+
+  // 单一 reconcile：根据输入推进状态机
+  useEffect(() => {
+    const phase = phaseRef.current;
+
+    // 1) 硬中断 → idle（静音 / 离屏 / 未启用 / 视频未就绪）
+    if (!enabled || micMuted || leaving || !gateReady || !vadSupported) {
+      if (phase !== "idle") {
+        clearCooldown();
+        cancelRecordingTurn();
+        setInputLevel(0);
+        setPhase("idle");
+      }
+      return;
+    }
+
+    // 2) 错误态：mutation 失败 / 自动播放被拦 / 语音录制错误 → error，不自动恢复
+    if (isMutationError || Boolean(playerError) || speechError) {
+      if (phase !== "error") {
+        clearCooldown();
+        cancelRecordingTurn();
+        setInputLevel(0);
+        setPhase("error");
+      }
+      return;
+    }
+
+    const recordingInFlight =
+      speechStatus === "requesting-permission" ||
+      speechStatus === "listening" ||
+      speechStatus === "ready" ||
+      speechStatus === "processing";
+
+    switch (phase) {
+      case "idle":
+      case "error":
+        // 条件具备就自动起录（进通话即监听）
+        if (playbackState === "idle" && !isMutationPending) {
+          arm();
+        }
+        break;
+      case "submitting":
+        // 等录音落地 + mutation 跑完再判定下一步
+        if (isMutationPending || recordingInFlight) {
+          break;
+        }
+        if (playbackState === "playing") {
+          setPhase("speaking");
+        } else {
+          // 无音频回复 / 已结束 → 进沉降
+          startCooldownToArm();
+        }
+        break;
+      case "speaking":
+        if (playbackState === "idle") {
+          startCooldownToArm();
+        }
+        break;
+      case "armed":
+      case "capturing":
+      case "cooldown":
+      default:
+        break;
+    }
+
+    function startCooldownToArm() {
+      clearCooldown();
+      setInputLevel(0);
+      setPhase("cooldown");
+      cooldownTimerRef.current = window.setTimeout(() => {
+        cooldownTimerRef.current = null;
+        // 沉降结束回 idle，由 reconcile 重新评估起录条件（幂等）
+        if (phaseRef.current === "cooldown") {
+          setPhase("idle");
+        }
+      }, COOLDOWN_MS);
+    }
+    // arm/startCooldownToArm 内部读最新输入；deps 覆盖所有判定输入
+  }, [
+    arm,
+    cancelRecordingTurn,
+    clearCooldown,
+    enabled,
+    gateReady,
+    isMutationError,
+    isMutationPending,
+    leaving,
+    micMuted,
+    playbackState,
+    playerError,
+    setPhase,
+    speechError,
+    speechStatus,
+    vadSupported,
+  ]);
+
+  // 首次用户手势（点屏幕任意处）resume AudioContext —— iOS / Capacitor 起步
+  // suspended，否则 AnalyserNode 读到全静音、VAD 永远检测不到说话。
+  useEffect(() => {
+    if (!enabled || !vadSupported || typeof window === "undefined") {
+      return;
+    }
+
+    const handleGesture = () => {
+      void resumeContext();
+    };
+
+    window.addEventListener("pointerdown", handleGesture, { once: true });
+    window.addEventListener("touchend", handleGesture, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleGesture);
+      window.removeEventListener("touchend", handleGesture);
+    };
+  }, [enabled, resumeContext, vadSupported]);
+
+  useEffect(() => {
+    return () => {
+      clearCooldown();
+    };
+  }, [clearCooldown]);
+
+  const phase: VoiceLoopPhase = (() => {
+    switch (internalPhase) {
+      case "armed":
+      case "capturing":
+        return "listening";
+      case "submitting":
+        return "thinking";
+      case "speaking":
+      case "cooldown":
+        return "speaking";
+      case "error":
+        return "error";
+      case "idle":
+      default:
+        return enabled && !gateReady ? "connecting" : "idle";
+    }
+  })();
+
+  return {
+    phase,
+    micMuted,
+    setMicMuted,
+    inputLevel,
+    vadSupported,
+    primeAudioContext,
+  };
+}

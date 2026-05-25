@@ -16,6 +16,7 @@ import {
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { resolveAppMediaUrl } from "../../lib/media-url";
+import { useContinuousVoiceLoop } from "./use-continuous-voice-loop";
 import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
@@ -25,6 +26,8 @@ type UseDigitalHumanCallSessionOptions = {
   conversationId: string;
   characterId?: string;
   enabled: boolean;
+  /** 屏幕正在离开（挂断/导航），停掉 VAD 连续监听 */
+  leaving?: boolean;
   mode?: DigitalHumanCallMode;
   onTurnSuccess?: (result: DigitalHumanTurnResult) => void | Promise<void>;
 };
@@ -41,6 +44,7 @@ export function useDigitalHumanCallSession({
   conversationId,
   characterId,
   enabled,
+  leaving = false,
   mode = "desktop_video_call",
   onTurnSuccess,
 }: UseDigitalHumanCallSessionOptions) {
@@ -493,9 +497,25 @@ export function useDigitalHumanCallSession({
     await playReplyAudio(lastTurn.assistantAudioUrl);
   }, [lastTurn, playReplyAudio]);
 
+  // 微信式连续免提通话：数字人 session ready 后才起录（gateReady）
+  const voiceLoop = useContinuousVoiceLoop({
+    enabled,
+    speech,
+    playbackState,
+    isMutationPending: turnMutation.isPending,
+    isMutationError: turnMutation.isError,
+    playerError,
+    leaving,
+    gateReady: sessionState === "ready",
+    startRecordingTurn,
+    stopRecordingTurn,
+    cancelRecordingTurn,
+  });
+
   return {
     audioMuted,
     audioRef,
+    voiceLoop,
     busy:
       sessionState === "connecting" ||
       sessionState === "closing" ||

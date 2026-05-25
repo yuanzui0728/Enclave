@@ -10,6 +10,7 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { resolveAppMediaUrl } from "../../lib/media-url";
 import { useCallFinalize } from "./use-call-finalize";
+import { useContinuousVoiceLoop } from "./use-continuous-voice-loop";
 import { useSpeechInput } from "./use-speech-input";
 
 const t = translateRuntimeMessage;
@@ -19,6 +20,8 @@ type UseVoiceCallSessionOptions = {
   conversationId: string;
   characterId?: string;
   enabled: boolean;
+  /** 屏幕正在离开（挂断/导航），停掉 VAD 连续监听 */
+  leaving?: boolean;
   onTurnSuccess?: (result: VoiceCallTurnResult) => void | Promise<void>;
   onSessionEnded?: (reason: CallFinalizeEndedReason) => void;
 };
@@ -28,6 +31,7 @@ export function useVoiceCallSession({
   conversationId,
   characterId,
   enabled,
+  leaving = false,
   onTurnSuccess,
   onSessionEnded,
 }: UseVoiceCallSessionOptions) {
@@ -303,9 +307,24 @@ export function useVoiceCallSession({
     [callFinalize, stopReplyPlayback],
   );
 
+  // 微信式连续免提通话：VAD 自动起录/静音停录/播完恢复，替代按住说话
+  const voiceLoop = useContinuousVoiceLoop({
+    enabled,
+    speech,
+    playbackState,
+    isMutationPending: turnMutation.isPending,
+    isMutationError: turnMutation.isError,
+    playerError,
+    leaving,
+    startRecordingTurn,
+    stopRecordingTurn,
+    cancelRecordingTurn,
+  });
+
   return {
     audioMuted,
     audioRef,
+    voiceLoop,
     busy:
       turnMutation.isPending ||
       speech.status === "processing" ||
