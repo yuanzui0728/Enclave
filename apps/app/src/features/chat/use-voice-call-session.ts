@@ -103,7 +103,19 @@ export function useVoiceCallSession({
 
     try {
       await audio.play();
-    } catch {
+    } catch (error) {
+      // 走查 R4：原本靠 leavingRef.current 判，但 setLeavingScreen→leavingRef
+      // 要等 React 渲染才更新；用户挂断时 stopReplyPlayback 的 audio.pause()
+      // 立刻把 audio.play() 的 promise 以 AbortError 在当前微任务 reject，
+      // 渲染没 commit 之前 leavingRef.current 仍是 false → 仍误设 playerError。
+      // 改用 DOMException.name === "AbortError" 同步类型判定，pause 触发的
+      // abort 直接吞，autoplay 拦截走 NotAllowedError 才挂"补播"toast。
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
+        return;
+      }
       setPlaybackState("idle");
       setPlayerError(resolveAutoplayBlockedCopy());
     }
@@ -146,20 +158,20 @@ export function useVoiceCallSession({
       if (result.assistantAudioUrl) {
         setPlaybackState("playing");
       }
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversation-messages", baseUrl, conversationId],
-        }),
-        Promise.resolve(onTurnSuccess?.(result)),
-      ]);
-      // 二次守门：上面 await 期间 leaving 可能被翻 true（onTurnSuccess 自身用
-      // sendCallStatusMessage 公网 ~600ms），到这一步播音频已经无意义。
-      if (leavingRef.current) {
-        return;
-      }
+      // 走查 R1（perf）：原本这里 await Promise.all([invalidateQueries × 2,
+      // onTurnSuccess])，但 invalidateQueries 默认返回 promise 要等所有活跃
+      // observer refetch 完成才 resolve —— 公网隧道 ~600ms RTT。每轮通话用户
+      // 说完话听 AI 回复都硬卡 600ms。回放/UI 不依赖列表/消息缓存的最新值
+      // （只是聊天列表的 lastMessage 同步），全部踢到 fire-and-forget，audio
+      // 立刻起播；onTurnSuccess 本身（sendCallStatusMessage("connected"）也是
+      // socket emit + 后台 invalidate，没人 await 它。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversation-messages", baseUrl, conversationId],
+      });
+      void Promise.resolve(onTurnSuccess?.(result)).catch(() => undefined);
       await playReplyAudio(result.assistantAudioUrl);
     },
   });

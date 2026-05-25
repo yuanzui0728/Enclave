@@ -37,7 +37,12 @@ type UseContinuousVoiceLoopOptions = {
   playbackState: "idle" | "playing";
   isMutationPending: boolean;
   isMutationError: boolean;
-  playerError: string | null;
+  /**
+   * playerError 不再让 loop 进 error phase（playback 失败不影响录音），仅 toast
+   * 用。保留 prop 仅为向后兼容三套 session hook 调用点；未来可以删。
+   * @deprecated 走查 R1 起 loop 不再消费此字段
+   */
+  playerError?: string | null;
   /** 屏幕正在离开（挂断/导航），停掉循环 */
   leaving?: boolean;
   /** 数字人视频：sessionState==="ready" 前不起录；语音/群默认 true */
@@ -54,7 +59,6 @@ export function useContinuousVoiceLoop({
   playbackState,
   isMutationPending,
   isMutationError,
-  playerError,
   leaving = false,
   gateReady = true,
   startRecordingTurn,
@@ -173,8 +177,13 @@ export function useContinuousVoiceLoop({
       return;
     }
 
-    // 2) 错误态：mutation 失败 / 自动播放被拦 / 语音录制错误 → error，不自动恢复
-    if (isMutationError || Boolean(playerError) || speechError) {
+    // 2) 错误态：mutation 失败 / 语音录制错误 → error，不自动恢复
+    // 走查 R1：playerError 原本也走这条 → loop 永久 stuck（autoplay 拦截 / 音频
+    // 404 时用户没法继续说话）。但 playback 失败本质上只影响这一句听不听得到
+    // ——不该绑死后续录音。toast 仍会挂"补播"按钮让用户主动重播，loop 该照常
+    // 跑下一轮（用户接着说，下一轮 AI 回复的 'play' 事件会顺带 setPlayerError(null)
+    // 自然恢复）。只有 mutation/speech 这两种 hard error 真的让流程进行不下去。
+    if (isMutationError || speechError) {
       if (phase !== "error") {
         clearCooldown();
         cancelRecordingTurn();
@@ -258,7 +267,6 @@ export function useContinuousVoiceLoop({
     leaving,
     micMuted,
     playbackState,
-    playerError,
     setPhase,
     speechError,
     speechStatus,

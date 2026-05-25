@@ -113,7 +113,15 @@ export function useDigitalHumanCallSession({
 
     try {
       await audio.play();
-    } catch {
+    } catch (error) {
+      // 走查 R4：和 use-voice-call-session 同款，按 AbortError 类型同步判定，
+      // 不靠 leavingRef（渲染前更新不到，仍会误显「继续」toast）。
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
+        return;
+      }
       setPlaybackState("idle");
       setPlayerError(resolveAutoplayBlockedCopy());
     }
@@ -153,18 +161,15 @@ export function useDigitalHumanCallSession({
       if (result.turn.assistantAudioUrl) {
         setPlaybackState("playing");
       }
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversation-messages", baseUrl, conversationId],
-        }),
-        Promise.resolve(onTurnSuccess?.(result)),
-      ]);
-      if (leavingRef.current) {
-        return;
-      }
+      // 走查 R1（perf）：和 use-voice-call-session 同款 fire-and-forget invalidate；
+      // 数字人通话嘴型对齐对延迟更敏感，少 600ms 公网 RTT 让 lipsync 准 60ms 一帧。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversation-messages", baseUrl, conversationId],
+      });
+      void Promise.resolve(onTurnSuccess?.(result)).catch(() => undefined);
       await playReplyAudio(result.turn.assistantAudioUrl);
     },
     onError: (error) => {

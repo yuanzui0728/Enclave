@@ -160,7 +160,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     staleTime: 15_000,
   });
   const sendCallStatusMessage = useCallback(
-    async (status: "waiting" | "connected" | "ended", durationMs?: number) => {
+    (status: "waiting" | "connected" | "ended", durationMs?: number) => {
       if (!characterId || !resolvedConversationId || !conversation) {
         return;
       }
@@ -175,14 +175,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         }),
       });
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversation-messages", baseUrl, resolvedConversationId],
-        }),
-      ]);
+      // 走查 R2（perf）：原版 await Promise.all([invalidate × 2]) → handleBack
+      // 内 await sendCallStatusMessage("ended") 卡住 navigate 等 600ms 公网 RTT
+      // 等列表 refetch 完成，按完"挂断"几乎一秒才离屏，体感"按了没反应"。emit
+      // 已发出 socket，invalidate 是后台刷新（chat-room/chat-list 自己重 fetch），
+      // 离屏前没必要等。同步去 await 也消除 unhandled rejection 风险。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversation-messages", baseUrl, resolvedConversationId],
+      });
     },
     [
       baseUrl,
@@ -388,12 +391,22 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
   };
 
+  // 走查 R2：和姊妹 mobile-group-call-screen handleRetryLoad 对齐。原版裸 refetch，
+  // 用户对着 ErrorBlock 多点 2-3 次"重试读取"会把 conversationsQuery +
+  // characterQuery 两条 refetch 同时再排队飞——useQuery 内部对同 queryKey 已
+  // in-flight 的请求会 dedup，但 isFetching=true 时新 refetch() 调用仍排队再发
+  // 一次。公网隧道 ~600ms RTT × 4-6 条同时飞后端短时压力翻倍。
   const handleRetryLoad = () => {
+    if (conversationsQuery.isFetching || characterQuery.isFetching) {
+      return;
+    }
     void conversationsQuery.refetch();
     if (characterId) {
       void characterQuery.refetch();
     }
   };
+  const retryLoadDisabled =
+    conversationsQuery.isFetching || characterQuery.isFetching;
 
   // 第三轮 R2：原版没接 Android Back 拦截。call 屏只有屏幕上的「PhoneOff /
   // 返回」走 handleBack()，里面做 4 件关键事：
@@ -595,9 +608,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <div className="flex flex-wrap justify-center gap-2">
                 <MobileCallActionButton
                   onClick={handleRetryLoad}
+                  disabled={retryLoadDisabled}
                   className="min-w-[132px]"
                 >
-                  {t(msg`重试读取`)}
+                  {retryLoadDisabled ? t(msg`正在重试...`) : t(msg`重试读取`)}
                 </MobileCallActionButton>
                 <MobileCallActionButton
                   onClick={() => {
@@ -648,9 +662,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <div className="flex flex-wrap justify-center gap-2">
                 <MobileCallActionButton
                   onClick={handleRetryLoad}
+                  disabled={retryLoadDisabled}
                   className="min-w-[132px]"
                 >
-                  {t(msg`重试读取`)}
+                  {retryLoadDisabled ? t(msg`正在重试...`) : t(msg`重试读取`)}
                 </MobileCallActionButton>
                 <MobileCallActionButton
                   onClick={handleBack}

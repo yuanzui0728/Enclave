@@ -471,6 +471,15 @@ export function useSpeechInput({
       };
 
       mediaRecorder.onstop = async () => {
+        // 走查 R4：cancel→start 快速循环里旧 recorder 的 stop 触发会异步走到
+        // 这里。彼时 mediaRecorderRef/mediaStreamRef/recordedChunksRef 都已被新
+        // 一轮 start 接管 —— 老 onstop 再去 null mediaRecorderRef / 调
+        // stopMediaTracks 会把新流的轨道全部停掉，再 setStatus("error")
+        // ("没有录到有效语音") 让 loop 进 error 永久卡死。requestId 同步守门：
+        // 仅自己这一轮请求活跃时才碰共享 ref / state，过期 onstop 静默退出。
+        if (mediaStartRequestIdRef.current !== requestId) {
+          return;
+        }
         const shouldUpload = shouldUploadRecordingRef.current;
         const recordedChunks = [...recordedChunksRef.current];
         const durationMs = resolveRecordingDuration(

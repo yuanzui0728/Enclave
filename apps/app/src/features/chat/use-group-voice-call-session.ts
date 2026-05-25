@@ -140,7 +140,15 @@ export function useGroupVoiceCallSession({
     audio.currentTime = 0;
     try {
       await audio.play();
-    } catch {
+    } catch (error) {
+      // 走查 R4：和 use-voice-call-session 同款 —— leavingRef 是渲染后才更新的，
+      // 微任务 catch 跑在更新前，仍会误设 playerError。换 AbortError 同步判定。
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
+        return;
+      }
       setPlaybackState("idle");
       setPlayerError(resolveAutoplayBlockedCopy());
     }
@@ -179,19 +187,16 @@ export function useGroupVoiceCallSession({
       if (result.assistantTurns.length > 0) {
         setPlaybackState("playing");
       }
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, groupId],
-        }),
-        Promise.resolve(onTurnSuccess?.(result)),
-      ]);
-      // 二次守门：await 期间 leaving 可能已翻 true。
-      if (leavingRef.current) {
-        return;
-      }
+      // 走查 R1（perf）：和 use-voice-call-session 同款 fire-and-forget。await
+      // invalidateQueries 让群成员逐条播报的"第一个声音"被 ~600ms 公网 RTT 卡住，
+      // 群聊更明显（成员越多越糟，AI 思考已经几秒了再 + 600ms 听感像断线）。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-messages", baseUrl, groupId],
+      });
+      void Promise.resolve(onTurnSuccess?.(result)).catch(() => undefined);
       audioQueueRef.current = [...result.assistantTurns];
       await playNext();
     },
