@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link, useSearch } from "@tanstack/react-router";
@@ -29,6 +30,16 @@ export function SearchPage() {
   // 其余相对可读。百分号放进占位符表达式内（值为 "42%"），msgid 仍是 `相关度 {0}`，
   // en/ja/ko 译文不受影响。
   const maxScore = Math.max(1, ...(resultsQ.data?.map((r) => r.score) ?? [1]));
+  // 专长标签高亮要和后端命中口径对齐：后端把 query 按空白拆成多词、每词
+  // 在 expertDomains 里逐个 some(d.includes(term)) 命中（AND 跨词 / OR 跨域）。
+  // 原来前端高亮却拿**整串** query 去 d.includes(query)——多词查询（"finance
+  // management" 命中查理·芒格/纳瓦尔）下任何单个标签都不含整串 → 一个都不高亮，
+  // "为什么命中"的可见依据对所有多词搜索彻底失效。这里同样按词拆，任一词命中
+  // 该标签即高亮，与后端 some(includes) 逐词语义一致；单词查询行为不变。
+  const queryTerms = useMemo(
+    () => query.toLowerCase().split(/\s+/).filter(Boolean),
+    [query],
+  );
 
   return (
     <PageShell
@@ -109,9 +120,10 @@ export function SearchPage() {
               {r.expertDomains?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {r.expertDomains.slice(0, 8).map((d, idx) => {
-                    const matched =
-                      query.length > 0 &&
-                      d.toLowerCase().includes(query.toLowerCase());
+                    const dLower = d.toLowerCase();
+                    const matched = queryTerms.some((term) =>
+                      dLower.includes(term),
+                    );
                     return (
                       <TagBadge
                         key={`${d}-${idx}`}
