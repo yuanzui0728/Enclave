@@ -290,7 +290,10 @@ function EmailCodeForm({ onSuccess }: { onSuccess: () => void }) {
       <Button
         type="submit"
         variant="primary"
-        disabled={verifying || !email.trim() || code.trim().length < 6}
+        // code 必须严格是 6 位数字，不只是 length===6。否则用户输入 "abcdef" /
+        // "12ab56" 时按钮会亮起，点击后被 input pattern="[0-9]{6}" 在浏览器层
+        // 拦下弹原生 tooltip，体验断裂。与 account-page 改密码面板的校验对齐。
+        disabled={verifying || !email.trim() || !/^\d{6}$/.test(code.trim())}
         className="w-full"
       >
         {verifying ? t(msg`登录中...`) : t(msg`登录 / 注册`)}
