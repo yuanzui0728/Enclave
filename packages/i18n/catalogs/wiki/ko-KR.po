@@ -2344,6 +2344,10 @@ msgstr "이 버전으로 롤백"
 msgid "查看角色逻辑快照"
 msgstr "캐릭터 로직 스냅샷 보기"
 
+#: apps/wiki/src/routes/character-page.tsx
+msgid "正在加载角色逻辑快照…"
+msgstr "캐릭터 로직 스냅샷 로딩 중…"
+
 #: apps/wiki/src/routes/character-page.tsx:1037
 msgid "回滚原因（必填）"
 msgstr "롤백 사유 (필수)"

@@ -2344,6 +2344,10 @@ msgstr "回滚到此版本"
 msgid "查看角色逻辑快照"
 msgstr "查看角色逻辑快照"
 
+#: apps/wiki/src/routes/character-page.tsx
+msgid "正在加载角色逻辑快照…"
+msgstr "正在加载角色逻辑快照…"
+
 #: apps/wiki/src/routes/character-page.tsx:1037
 msgid "回滚原因（必填）"
 msgstr "回滚原因（必填）"

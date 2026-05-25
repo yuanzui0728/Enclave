@@ -424,11 +424,44 @@ export class WikiPageService {
   ): Promise<CharacterRevisionEntity[]> {
     // 词条不存在直接 404，否则 `[]` 让前端"以为这只是没历史"，掩盖 typo 之类的拼错 id。
     await this.assertCharacterIdExists(characterId);
-    return this.revisionRepo.find({
-      where: { characterId },
-      order: { version: 'DESC' },
-      take: Math.min(Math.max(limit, 1), 200),
-    });
+    // 历史 tab 列表（character-page.tsx HistoryView）每行只渲染 pill / editSummary /
+    // diffFromParent.changed / 编辑者；contentSnapshot 仅在点开"查看对比"时给
+    // SnapshotDiff 用，recipeSnapshot 则只在再展开"查看角色逻辑快照"时用 ——
+    // 但默认 find() 会把每行的 recipeSnapshot（完整角色蓝图）一起下发。实测一个
+    // 64 修订的词条 recipeSnapshot 独占整包 ~49%（111KB 里 ~55KB），而用户一次
+    // 通常只展开 0-1 条 diff。和 listRecentChanges(c6da6d10a) / listPages(245484943)
+    // 同口径：显式 select 掉 recipeSnapshot，改由前端在点开 diff 时按需拉取单条
+    // 修订（getRevision → pages/:id/revisions/:revisionId）。contentSnapshot 体量
+    // 小(~11%)且 SnapshotDiff 需要 before/after 两版，留在列表里避免点开时再多发 N 个请求。
+    return this.revisionRepo
+      .createQueryBuilder('r')
+      .select([
+        'r.id',
+        'r.characterId',
+        'r.version',
+        'r.parentRevisionId',
+        'r.baseRevisionId',
+        'r.contentSnapshot',
+        'r.diffFromParent',
+        'r.editorUserId',
+        'r.editorRoleAtTime',
+        'r.editSummary',
+        'r.status',
+        'r.revisionKind',
+        'r.operation',
+        'r.riskLevel',
+        'r.changeSource',
+        'r.isMinor',
+        'r.isPatrolled',
+        'r.patrolledBy',
+        'r.patrolledAt',
+        'r.revertedByRevisionId',
+        'r.createdAt',
+      ])
+      .where('r.characterId = :characterId', { characterId })
+      .orderBy('r.version', 'DESC')
+      .take(Math.min(Math.max(limit, 1), 200))
+      .getMany();
   }
 
   async getRevisionOrThrow(id: string): Promise<CharacterRevisionEntity> {

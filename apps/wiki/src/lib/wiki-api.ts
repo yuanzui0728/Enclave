@@ -466,6 +466,15 @@ export const wikiApi = {
       { auth: false },
     );
   },
+  // 单条修订全字段（含 recipeSnapshot）。历史 tab 列表为省负载已 drop 掉
+  // recipeSnapshot（见 wiki-page.service.getHistory），点开某条 diff 的"查看角色
+  // 逻辑快照"时按需拉这一条。auth:false——历史/修订查看是公开读路径。
+  getRevision(characterId: string, revisionId: string) {
+    return request<WikiRevisionSummary>(
+      `/wiki/pages/${encodeURIComponent(characterId)}/revisions/${encodeURIComponent(revisionId)}`,
+      { auth: false },
+    );
+  },
   getDiff(characterId: string, fromRevisionId: string, toRevisionId: string) {
     const params = new URLSearchParams({
       from: fromRevisionId,

@@ -56,6 +56,7 @@ import { useUsernameMap } from "../lib/use-username-map";
 import {
   revisionChangedFieldsLabel,
   revisionChangeSourceLabel,
+  revisionEditSummaryLabel,
   revisionKindLabel,
   revisionOperationLabel,
   revisionStatusLabel,
@@ -958,6 +959,19 @@ function RevisionCard({
   const [showDiff, setShowDiff] = useState(false);
   const [showRevert, setShowRevert] = useState(false);
   const [reason, setReason] = useState("");
+  // 历史列表为省负载已 drop 掉 recipeSnapshot（见 wiki-page.service.getHistory）；
+  // 点开"查看对比"时才按需拉这一条修订的完整数据拿 recipeSnapshot。enabled:showDiff
+  // 保证未展开的卡不发请求；展开过一次后 react-query 缓存，收起再展开不再重拉。
+  const revisionDetailQ = useQuery({
+    queryKey: ["wiki", "revision", rev.characterId, rev.id],
+    queryFn: () => wikiApi.getRevision(rev.characterId, rev.id),
+    enabled: showDiff,
+    staleTime: 5 * 60 * 1000,
+  });
+  // 列表里 recipeSnapshot 已被 drop（undefined）；优先用按需拉到的完整修订。
+  // 留 rev.recipeSnapshot 兜底：万一后端将来又把它放回列表也不会丢。
+  const recipeSnapshot =
+    revisionDetailQ.data?.recipeSnapshot ?? rev.recipeSnapshot ?? null;
   return (
     <Card className="flex items-start gap-3 p-3 text-sm">
       <div className="w-10 shrink-0 pt-0.5 font-mono text-[var(--text-muted)] sm:w-12">
@@ -1005,8 +1019,17 @@ function RevisionCard({
             </span>
           )}
         </div>
-        {rev.editSummary && (
-          <div className="mt-1 break-words">{rev.editSummary}</div>
+        {/* revert 版本的 editSummary 由后端拼成英文机器串
+            `Revert to v{N}: {reason}`，反破坏机器人 reason 形如
+            `antivandal_bot:critical_field_cleared` —— 历史 tab 之前裸渲染让 zh-CN
+            用户在「回滚」卡正文看到一整串英文前缀 + snake_case 内部码（与
+            recent-changes 同源问题，那边已修；这里是 reference_wiki_zwalk_role_fixtures
+            标记的遗留）。走 revisionEditSummaryLabel 本地化机器模式；人工自由
+            填写的摘要不匹配机器正则 → 原样透传，绝不误伤。 */}
+        {revisionEditSummaryLabel(rev.editSummary) && (
+          <div className="mt-1 break-words">
+            {revisionEditSummaryLabel(rev.editSummary)}
+          </div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
           {revisionChangedFieldsLabel(rev.diffFromParent?.changed) && (
@@ -1060,13 +1083,29 @@ function RevisionCard({
               after={rev.contentSnapshot}
               changedFields={rev.diffFromParent?.changed}
             />
-            {rev.recipeSnapshot && (
+            {/* recipeSnapshot 按需加载：拉取中先提示，拉到非空才渲染快照
+                details；该修订本就无角色逻辑快照（多数纯档案/lifecycle 修订）则
+                什么都不显示，避免空 details。 */}
+            {revisionDetailQ.isLoading && (
+              <p className="mt-3 text-xs text-[var(--text-muted)]">
+                <Trans>正在加载角色逻辑快照…</Trans>
+              </p>
+            )}
+            {revisionDetailQ.isError && (
+              <p
+                role="alert"
+                className="mt-3 text-xs text-[var(--state-danger-text)]"
+              >
+                {(revisionDetailQ.error as Error).message}
+              </p>
+            )}
+            {recipeSnapshot && (
               <details className="mt-3 text-xs">
                 <summary className="cursor-pointer text-[var(--text-muted)]">
                   <Trans>查看角色逻辑快照</Trans>
                 </summary>
                 <pre className="mt-2 p-3 bg-[var(--bg-canvas)] rounded overflow-auto max-h-[40vh] md:max-h-[60vh]">
-                  {JSON.stringify(rev.recipeSnapshot, null, 2)}
+                  {JSON.stringify(recipeSnapshot, null, 2)}
                 </pre>
               </details>
             )}
