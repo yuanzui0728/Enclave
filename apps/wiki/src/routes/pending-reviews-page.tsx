@@ -341,6 +341,16 @@ function ReviewCard({
             data={rev.recipeSnapshot}
           />
         )}
+        {/* recipe（逻辑）编辑是最高风险类型：coreLogic/系统提示等都在这里。原写法
+            只给出"新"逻辑快照，巡查员无从对比改前 → 无法判断这次改动是否注入恶意
+            指令。带上 parent 的 recipe 快照供并排展开对比（lazy，展开才序列化，
+            无额外性能开销）。create 操作无 parent → 不渲染。 */}
+        {rev.recipeSnapshot && item.baseRecipeSnapshot && (
+          <LazyJsonDetails
+            summary={t(msg`旧角色逻辑`)}
+            data={item.baseRecipeSnapshot}
+          />
+        )}
         <FormRow
           label={t(msg`审核备注（可选）`)}
           hint={t(msg`留给提交者的反馈。要求修改 / 驳回时建议填写`)}
