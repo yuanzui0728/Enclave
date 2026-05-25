@@ -174,10 +174,6 @@ export type WikiPageView = {
   content: WikiContentSnapshot;
   visibleContent: WikiContentSnapshot;
   recipe: CharacterBlueprintRecipe | null;
-  // 社交参数（住 CharacterEntity 列，不进 recipe/快照）；后端 getPageView surface 出来
-  socialOpenness: string;
-  proactiveBrowseChance: number;
-  intimacyLevel: number;
   pendingRevision: WikiRevisionSummary | null;
   pendingRevisions: WikiRevisionSummary[];
   viewMode: "stable" | "current";

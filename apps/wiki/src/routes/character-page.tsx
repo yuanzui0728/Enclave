@@ -18,10 +18,7 @@ import {
   useTablistKeyboard,
 } from "@yinjie/ui";
 import { hasRole, roleLabel } from "../lib/auth-store";
-import {
-  relationshipTypeLabel,
-  socialOpennessLabel,
-} from "../lib/character-labels";
+import { relationshipTypeLabel } from "../lib/character-labels";
 import { useAuth } from "../lib/use-auth";
 import {
   wikiApi,
@@ -693,18 +690,6 @@ function ReadView({ view }: { view: WikiPageView }) {
           </div>
         </>
       )}
-      {/* 社交参数：住 CharacterEntity 列、与 recipe 无关，始终渲染（对齐编辑页「社交参数」section） */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Section label={t(msg`社交开放度`)}>
-          {socialOpennessLabel(view.socialOpenness) || view.socialOpenness}
-        </Section>
-        <Section label={t(msg`主动浏览概率（0-1）`)}>
-          {view.proactiveBrowseChance}
-        </Section>
-        <Section label={t(msg`亲密度种子（0-100）`)}>
-          {view.intimacyLevel}
-        </Section>
-      </div>
       {view.pendingRevision && (
         <InlineNotice tone="info">
           <Trans>
