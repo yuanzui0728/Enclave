@@ -168,6 +168,20 @@ const FIELD_NAMESPACE_LABELS: Record<string, MessageDescriptor> = {
 function fieldPathLabel(path: string): string {
   const exact = FIELD_PATH_LABELS[path];
   if (exact) return translateRuntimeMessage(exact);
+  // recipe 改动走 diffPaths()，emit 的是带命名空间的点路径（identity.bio /
+  // expertise.expertDomains / lifeStrategy.triggerScenes）；content 改动走
+  // diffFields()，emit 的是扁平叶子键（bio / expertDomains / triggerScenes）。
+  // 同一字段两种来源 → 点路径之前只命中下面的命名空间回落：改简介(identity.bio)
+  // 被标成「身份」、改专长领域(expertise.expertDomains)被标成「专长」、改触发场景
+  // (lifeStrategy.triggerScenes)被标成「生活策略」，跟扁平来源标签对不上号
+  // （2026-05-25 admin 走查发现 recipe revision「字段：身份」实为只改了简介）。
+  // 先用叶子段复用已映射(且已翻译)的扁平标签，命中即用精确字段名；点路径上的
+  // identity.* 等叶子语义与同名扁平字段完全一致，不会误配。
+  if (path.includes(".")) {
+    const leaf = path.slice(path.lastIndexOf(".") + 1);
+    const leafHit = FIELD_PATH_LABELS[leaf];
+    if (leafHit) return translateRuntimeMessage(leafHit);
+  }
   const ns = path.includes(".") ? path.split(".")[0] : undefined;
   const nsHit = ns ? FIELD_NAMESPACE_LABELS[ns] : undefined;
   if (nsHit) return translateRuntimeMessage(nsHit);
@@ -179,10 +193,14 @@ export function revisionChangedFieldsLabel(
   changed: string[] | null | undefined,
 ): string {
   if (!changed?.length) return "";
-  return changed
+  const labels = changed
     .filter((c) => !SENTINEL_FIELDS.has(c))
-    .map(fieldPathLabel)
-    .join(", ");
+    .map(fieldPathLabel);
+  // 多个点路径回落到同一命名空间标签时去重：一次 recipe 编辑常同时动
+  // reasoning.enableCoT / enableReflection / enableRouting，三者都回落到
+  // 「推理设置」，原写法渲染成「字段：推理设置, 推理设置, 推理设置」。Set 去重
+  // 保留首次出现顺序，消除重复串（2026-05-25 admin 走查发现）。
+  return [...new Set(labels)].join(", ");
 }
 
 // ── editSummary 本地化（仅针对机器自动生成的 revert 摘要）──

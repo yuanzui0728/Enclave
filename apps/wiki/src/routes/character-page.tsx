@@ -18,6 +18,7 @@ import {
   useTablistKeyboard,
 } from "@yinjie/ui";
 import { hasRole, roleLabel } from "../lib/auth-store";
+import { relationshipTypeLabel } from "../lib/character-labels";
 import { useAuth } from "../lib/use-auth";
 import {
   wikiApi,
@@ -53,6 +54,7 @@ import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
 import {
+  revisionChangedFieldsLabel,
   revisionChangeSourceLabel,
   revisionKindLabel,
   revisionOperationLabel,
@@ -563,14 +565,33 @@ function ReadView({ view }: { view: WikiPageView }) {
               className="mt-2 w-full"
             />
           ) : null}
+          {/* 朗读合成失败（如 TTS provider 503 额度不足）原本只把 narrationError
+              塞进按钮 title — 鼠标不悬停 / 屏读用户完全无感，点了"朗读全文"后只见
+              按钮闪一下回弹、没有音频也没有任何可见反馈，体感是"点了没反应"。
+              补一行可见的 role=alert 文案（与 DriftBanner / ErrorBlock 同款语义），
+              让失败原因被念出来也被看到；title 保留给悬停兜底。 */}
+          {narrationError && !narrationUrl ? (
+            <p
+              role="alert"
+              className="mt-2 text-xs text-[color:var(--state-danger-text)]"
+            >
+              {narrationError}
+            </p>
+          ) : null}
           {(() => {
             // 历史/导入角色 relationship 或 relationshipType 任一为空时，原本固定
             // 渲染 "X · Y"，会出现 " · friend" 或 "朋友 · " 这种孤立分隔符。
             // home-page 卡片同位置已经走条件拼接，详情页对齐避免割裂感。
+            // relationshipType 预设是英文哨兵（friend/expert/mentor/family/self），
+            // 必须经 relationshipTypeLabel 本地化才不会在详情页露出英文；"custom"
+            // 哨兵和纯标点脏数据（如 "。"）映射成空只展示 relationship 文本。
+            // 此前只对齐了孤立分隔符却漏了本地化 → 详情页 81 个角色里 78 个露出
+            // "测试伙伴 · expert" 这种英文，与列表/搜索（已本地化）不一致。
+            const relType = relationshipTypeLabel(c.relationshipType);
             const rel =
-              c.relationship && c.relationshipType
-                ? `${c.relationship} · ${c.relationshipType}`
-                : c.relationship || c.relationshipType || "";
+              c.relationship && relType
+                ? `${c.relationship} · ${relType}`
+                : c.relationship || relType || "";
             if (!rel) return null;
             return (
               <div className="mt-1 text-sm text-[var(--text-muted)]">
@@ -988,9 +1009,11 @@ function RevisionCard({
           <div className="mt-1 break-words">{rev.editSummary}</div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
-          {rev.diffFromParent?.changed && (
+          {revisionChangedFieldsLabel(rev.diffFromParent?.changed) && (
             <span className="break-words">
-              <Trans>字段：{rev.diffFromParent.changed.join(", ")}</Trans>
+              <Trans>
+                字段：{revisionChangedFieldsLabel(rev.diffFromParent?.changed)}
+              </Trans>
             </span>
           )}
           <button
@@ -1010,15 +1033,25 @@ function RevisionCard({
               <Trans>独立对比</Trans>
             </Link>
           )}
-          {canRevert && !isCurrent && rev.status === "approved" && (
-            <button
-              type="button"
-              className="inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--text-primary)]"
-              onClick={() => setShowRevert((v) => !v)}
-            >
-              <Trans>回滚到此版本</Trans>
-            </button>
-          )}
+          {/* 生命周期版本（soft_delete / restore，revisionKind==='lifecycle'）
+              后端 revert 直接拒 400「生命周期版本请通过删除 / 恢复申请处理，
+              不支持直接回滚」。原写法对所有 approved 非当前版本都渲染"回滚到
+              此版本"，巡查员在历史里点到一条"删除/恢复"记录的回滚按钮 → 展开
+              表单 → 填原因 → 提交才撞 400，是个必然失败的死路操作。和后端
+              gate 对齐，对 lifecycle 版本直接不显示回滚入口（删除/恢复请走
+              页面顶部的"申请删除 / 申请恢复"）。 */}
+          {canRevert &&
+            !isCurrent &&
+            rev.status === "approved" &&
+            rev.revisionKind !== "lifecycle" && (
+              <button
+                type="button"
+                className="inline-flex min-h-[32px] items-center rounded-md px-2 py-1 underline hover:text-[var(--text-primary)]"
+                onClick={() => setShowRevert((v) => !v)}
+              >
+                <Trans>回滚到此版本</Trans>
+              </button>
+            )}
         </div>
         {showDiff && (
           <div className="mt-3 rounded border border-[var(--border-subtle)] p-3">
