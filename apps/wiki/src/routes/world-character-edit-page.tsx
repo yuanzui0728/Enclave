@@ -71,9 +71,20 @@ export function WorldCharacterEditPage() {
   const submitMut = useMutation({
     mutationFn: async (dto: PrivateCharacterDto) => {
       const { contentSnapshot, recipeSnapshot } = dtoToWikiEdit(dto);
+      // baseRevisionId 必须指向 stable 当前版本（page.currentRevisionId），
+      // **不能**用 view 里的 currentRevision.id —— view=current 时后者是
+      // *pending* 版本（getPageView 的 visibleRevision = latestRevision），而
+      // 后端 submit/submitRecipeEdit 的冲突检测固定以 page.currentRevisionId
+      // 作为 before 基线。用 pending 当 base 时，用户在自己已有 pending 的页
+      // 面上继续编辑，pending 的改动会被 diff 成"并发修改"，对同一字段必然
+      // 触发假 409 冲突（newcomer 每次编辑都进 pending、任何人做高风险 recipe
+      // 改动后再回来改同一字段都会撞）。stable head 同时也是真并发检测需要的
+      // 基线：页面加载时捕获的 stable，提交时若 server 已前进 → 正确进 3-way
+      // merge；未前进 → base==current 跳过冲突分支，正常叠一个新版本（审核
+      // 通过时由 review pipeline 接管 supersede）。
       const baseRevisionId =
-        pageQ.data?.currentRevision?.id ??
         pageQ.data?.page.currentRevisionId ??
+        pageQ.data?.currentRevision?.id ??
         null;
       return wikiApi.submitEdit(characterId, {
         contentSnapshot,
