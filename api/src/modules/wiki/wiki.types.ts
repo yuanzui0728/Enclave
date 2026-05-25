@@ -141,15 +141,33 @@ export function pickWikiContent(input: Record<string, unknown>): WikiContentSnap
 }
 
 export function snapshotFromCharacter(char: Record<string, unknown>): WikiContentSnapshot {
+  // personality 口径修复（newcomer 走查二轮）：wiki 内容快照里的 personality 在
+  // snapshotFromRecipe 侧映射的是 recipe.tone.emotionalTone，而 applyRecipeToCharacter
+  // 把 tone.emotionalTone 落到 character.profile.traits.emotionalTone（不写顶层
+  // character.personality 列）。于是 recipe 创建 / 应用的角色顶层 personality 列恒为
+  // NULL，resyncCreateRevisionToRuntime 用 snapshotFromCharacter 回写修订快照时就把
+  // personality 抹掉了（wiki 创建的角色"性格"段永远空白）。顶层列为空时回落到
+  // profile.traits.emotionalTone，让 snapshotFromCharacter 与 snapshotFromRecipe 口径
+  // 一致：既修复创建丢失，又避免 drift 误报（两侧读到同一个值）。
+  const topPersonality =
+    char.personality === undefined || char.personality === null
+      ? undefined
+      : String(char.personality);
+  const profileTone = (
+    char.profile as { traits?: { emotionalTone?: unknown } } | null | undefined
+  )?.traits?.emotionalTone;
+  const personality =
+    topPersonality && topPersonality.trim()
+      ? topPersonality
+      : typeof profileTone === 'string' && profileTone.trim()
+        ? profileTone
+        : topPersonality;
   return {
     schemaVersion: WIKI_CONTENT_SCHEMA_VERSION,
     name: String(char.name ?? '').trim(),
     avatar: String(char.avatar ?? '').trim(),
     bio: String(char.bio ?? '').trim(),
-    personality:
-      char.personality === undefined || char.personality === null
-        ? undefined
-        : String(char.personality),
+    personality,
     expertDomains: Array.isArray(char.expertDomains)
       ? (char.expertDomains as unknown[]).map((v) => String(v))
       : [],
