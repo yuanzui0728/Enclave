@@ -624,21 +624,45 @@ export class WikiPageService {
         let score = 0;
         const name = r.name?.toLowerCase();
         const rel = r.relationship?.toLowerCase();
-        const dom = r.expertDomains?.toLowerCase();
+        // expertDomains 必须按**解析后的域值**匹配，不能拿原始 JSON 串。SQL WHERE
+        // 是在原始 `["finance","management"]` 上做 LIKE 的——搜 JSON 结构字符（"["
+        // / "," / "\"" / "]"）会命中几乎所有有专长的角色（搜 "," 命中 70 条全是假
+        // 命中）。这里解析成域字符串数组逐个 includes，结构符不再误命中。
+        const domains = parseExpertDomains(r.expertDomains);
+        const domLower = domains.map((d) => d.toLowerCase());
         const bio = r.bio?.toLowerCase();
         const pers = r.personality?.toLowerCase();
         let matchedPersonality = false;
+        // 在 JS 侧按真实字段内容重新校验"每个词都命中"：SQL WHERE 用原始
+        // expertDomains JSON 做的 AND 会因结构符漏进假命中（如 "finance ," 里 ","
+        // 命中 JSON 逗号），这里用解析后的域值复核，任一词无任何真实字段命中就丢弃。
+        let allTermsMatch = true;
         for (const term of lowerTerms) {
-          if (name?.includes(term)) score += 10;
-          if (rel?.includes(term)) score += 6;
-          if (dom?.includes(term)) score += 5;
-          if (bio?.includes(term)) score += 3;
+          let termHit = false;
+          if (name?.includes(term)) {
+            score += 10;
+            termHit = true;
+          }
+          if (rel?.includes(term)) {
+            score += 6;
+            termHit = true;
+          }
+          if (domLower.some((d) => d.includes(term))) {
+            score += 5;
+            termHit = true;
+          }
+          if (bio?.includes(term)) {
+            score += 3;
+            termHit = true;
+          }
           if (pers?.includes(term)) {
             score += 2;
             matchedPersonality = true;
+            termHit = true;
           }
+          if (!termHit) allTermsMatch = false;
         }
-        return {
+        const result = {
           characterId: r.id,
           name: r.name,
           bio: r.bio,
@@ -647,7 +671,7 @@ export class WikiPageService {
           // 回传解析后的数组，让搜索结果卡能展示专长标签 —— 搜 "finance" / "general"
           // 这类只命中 expertDomains（隐藏字段）的查询，原本卡片上 name/关系/简介
           // 都没有该词，用户看不出为什么命中；把命中所在的专长标签亮出来就有了依据。
-          expertDomains: parseExpertDomains(r.expertDomains),
+          expertDomains: domains,
           // 性格命中透明化：personality 也是可搜字段，但卡片上从不展示。搜只命中它
           // 的词（如 "逆向" 命中查理·芒格的"冷峻、短句、逆向…"）时，name/关系/简介/
           // 专长里都没有该词，用户同样看不出为什么命中。命中时回传一段以首个命中词为
@@ -657,7 +681,12 @@ export class WikiPageService {
             : null,
           score,
         };
+        // 只保留每个词都在真实字段命中、且总分 > 0 的行；过滤掉只靠 expertDomains
+        // JSON 结构符蒙进 WHERE 的假命中（搜 "," / "[" / "\"" 这类）。
+        return { result, keep: allTermsMatch && score > 0 };
       })
+      .filter((x) => x.keep)
+      .map((x) => x.result)
       // 二级键按 name 稳定排序：同分行有确定顺序，不随 SQL rowid 漂；截断点
       // 落在同分边界上时取哪些也就稳定可复现了。
       .sort(
