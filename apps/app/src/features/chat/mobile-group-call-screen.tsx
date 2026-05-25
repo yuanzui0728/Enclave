@@ -145,11 +145,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   // 的 recordedAt（往往是几分钟甚至几十分钟前）。用户肉眼可见的时间跳变。
   // useState 的 lazy initializer 在 mount 期同步跑，且 routeState 在前面已经
   // 计算好，可以直接复用——避免这次 flash。
-  const [startedAt, setStartedAt] = useState(
-    () =>
-      routeState?.recordedAt ??
-      routeState?.snapshotRecordedAt ??
-      new Date().toISOString(),
+  // 走查新一轮 R7：parseMobileGroupCallRouteHash 对 recordedAt 只 trim 不验证
+  // ISO 合法性。Hash 来自 URL（可以被用户/外部 link 篡改），传入 "garbage" 一
+  // 路灌到 new Date(startedAt).getTime() → NaN，CallTimer 渲染出 "NaN:NaN"。
+  // 抽个 resolveStartedAt 兜底，无效字符串回落到 now。
+  const [startedAt, setStartedAt] = useState(() =>
+    resolveStartedAt(
+      routeState?.recordedAt ?? routeState?.snapshotRecordedAt,
+    ),
   );
   const [lastPublishedCounts, setLastPublishedCounts] = useState<{
     activeCount: number;
@@ -303,9 +306,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     leavingScreenRef.current = false;
     setLeavingScreen(false);
     setStartedAt(
-      routeState?.recordedAt ??
-        routeState?.snapshotRecordedAt ??
-        new Date().toISOString(),
+      resolveStartedAt(
+        routeState?.recordedAt ?? routeState?.snapshotRecordedAt,
+      ),
     );
     setLastPublishedCounts(resumeCounts);
     panelOpenedReportedRef.current = hasResumeCounts;
@@ -1279,6 +1282,16 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       {groupCallToast}
     </WeChatCallShell>
   );
+}
+
+function resolveStartedAt(candidate: string | undefined): string {
+  if (candidate) {
+    const ms = new Date(candidate).getTime();
+    if (Number.isFinite(ms)) {
+      return candidate;
+    }
+  }
+  return new Date().toISOString();
 }
 
 function buildInitialJoinedMemberIds(
