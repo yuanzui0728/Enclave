@@ -419,6 +419,12 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     intimacyLevel: 0,
   }));
   const skipSnapshotOnUnmountRef = useRef(false);
+  // 同步防重入闸：isSavePending 是父组件 mutation.isPending 透传进来的 prop，
+  // 落后真实提交一个 render —— 用户/脚本快速连点两下时，第二下的 handleSubmit
+  // 跑到 `if (isSavePending) return` 时 prop 还是 false，于是发出第二个 POST。
+  // 无自定义 slug 时 resolveNewCharacterId 每次生成不同随机 id → 双击直接建出
+  // 两个 pending_create 角色。用 ref 在第一发同步置位，第二发立刻短路。
+  const submittingRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -968,6 +974,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
     if (isSavePending) return;
     if (isGenerating) return;
     if (isCustomRelationshipType(relationshipType) && !relationshipType.trim())
@@ -976,6 +983,8 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     if (!dto) return;
     if (!dto.name) return;
     setSubmitErrorOverride(null);
+    // 校验全过、确定要发请求时才置位，避免上面任意一个早 return 把闸卡死。
+    submittingRef.current = true;
     try {
       await onSave(dto);
       if (clearSessionOnSave) {
@@ -996,6 +1005,10 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       setSubmitErrorOverride(
         err instanceof Error ? err.message : String(err),
       );
+    } finally {
+      // 成功跳页时本组件会卸载，这行可有可无；失败/留页时必须复位，否则用户
+      // 改完再提交会被永久短路。
+      submittingRef.current = false;
     }
   }
 
