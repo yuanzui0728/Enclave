@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
-  useInfiniteQuery,
+  keepPreviousData,
   useMutation,
   useQuery,
 } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import type {
   AdminChatRecordConversationListItem,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationSearchQuery,
+  AdminChatRecordConversationSort,
   AdminChatRecordReviewStatus,
   Message,
 } from "@yinjie/contracts";
@@ -23,7 +24,11 @@ import {
 import {
   AdminEmptyState,
   AdminErrorState,
+  AdminPageHero,
+  AdminPillSelectField,
   AdminSkeletonCard,
+  AdminToggle,
+  AdminToolbar,
 } from "../components/admin-workbench";
 import { chatRecordsAdminApi } from "../lib/chat-records-api";
 import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
@@ -64,6 +69,30 @@ function readInitialChatRecordsFocus(search?: string) {
   };
 }
 
+const MESSAGE_PAGE_SIZE = 60;
+// Sentinel page number → backend clamps to the last (newest) page. Lets us
+// land on the latest messages without first fetching to learn totalPages.
+const MESSAGE_LATEST_PAGE = 1_000_000_000;
+const LIST_PAGE_SIZE_OPTIONS = [24, 50, 100];
+
+const SORT_OPTIONS: Array<{
+  value: AdminChatRecordConversationSort;
+  label: ReturnType<typeof msg>;
+}> = [
+  { value: "lastActivityAt", label: msg`最近活跃` },
+  { value: "recentMessageCount30d", label: msg`30 天消息数` },
+  { value: "storedMessageCount", label: msg`留存消息数` },
+];
+
+const ACTIVITY_WINDOW_OPTIONS: Array<{
+  value: AdminChatRecordActivityWindow;
+  label: ReturnType<typeof msg>;
+}> = [
+  { value: "all", label: msg`全部时间` },
+  { value: "7d", label: msg`近 7 天` },
+  { value: "30d", label: msg`近 30 天` },
+];
+
 export function ChatRecordsPage() {
   const t = translateRuntimeMessage;
   const baseUrl = resolveAdminCoreApiBaseUrl();
@@ -75,10 +104,20 @@ export function ChatRecordsPage() {
   );
   const [characterId, setCharacterId] = useState(initialFocus.characterId);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
+  const [sortBy, setSortBy] = useState<AdminChatRecordConversationSort>(
+    "lastActivityAt",
+  );
+  const [activityWindow, setActivityWindow] =
+    useState<AdminChatRecordActivityWindow>("all");
+  const [includeHidden, setIncludeHidden] = useState(false);
+  const [onlyReviewed, setOnlyReviewed] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState(
     initialFocus.conversationId,
   );
   const [focusedMessageId, setFocusedMessageId] = useState("");
+  // null = land on the newest (last) page; a number = explicit page.
+  const [messagePage, setMessagePage] = useState<number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchContext, setSearchContext] = useState<{
     conversationId: string;
@@ -89,24 +128,45 @@ export function ChatRecordsPage() {
   useEffect(() => {
     setCharacterId(initialFocus.characterId);
     setSelectedConversationId(initialFocus.conversationId);
+    setPage(1);
   }, [initialFocus.characterId, initialFocus.conversationId]);
 
-  const listQuery = useMemo(
+  function applyFilterChange(apply: () => void) {
+    apply();
+    setPage(1);
+  }
+
+  const overviewQuery = useQuery({
+    queryKey: ["admin-chat-records-overview", baseUrl],
+    queryFn: () => chatRecordsAdminApi.getOverview(),
+  });
+  const overview = overviewQuery.data;
+  const overviewMetrics = overview
+    ? [
+        { label: t(msg`会话总数`), value: overview.totalConversationCount.toLocaleString() },
+        { label: t(msg`7 天活跃会话`), value: overview.activeConversationCount7d.toLocaleString() },
+        { label: t(msg`7 天消息数`), value: overview.messageCount7d.toLocaleString() },
+        { label: t(msg`30 天消息数`), value: overview.messageCount30d.toLocaleString() },
+      ]
+    : undefined;
+
+  const listQuery = useMemo<AdminChatRecordConversationListQuery>(
     () => ({
       characterId: characterId || undefined,
-      includeHidden: false,
-      onlyReviewed: false,
-      activityWindow: "all" as AdminChatRecordActivityWindow,
-      sortBy: "lastActivityAt" as AdminChatRecordConversationListQuery["sortBy"],
+      includeHidden,
+      onlyReviewed,
+      activityWindow,
+      sortBy,
       page,
-      pageSize: 24,
+      pageSize,
     }),
-    [characterId, page],
+    [characterId, includeHidden, onlyReviewed, activityWindow, sortBy, page, pageSize],
   );
 
   const conversationsQuery = useQuery({
     queryKey: ["admin-chat-records-conversations", baseUrl, listQuery],
     queryFn: () => chatRecordsAdminApi.listConversations(listQuery),
+    placeholderData: keepPreviousData,
   });
 
   const conversations = useMemo(
@@ -133,6 +193,7 @@ export function ChatRecordsPage() {
 
   useEffect(() => {
     setFocusedMessageId("");
+    setMessagePage(null);
   }, [activeConversationId]);
 
   const searchMutation = useMutation({
@@ -142,40 +203,42 @@ export function ChatRecordsPage() {
         includeClearedHistory: true,
       }),
   });
-  const messagesQuery = useInfiniteQuery({
+  const messagesQuery = useQuery({
     queryKey: [
       "admin-chat-records-messages",
       baseUrl,
       activeConversationId,
       focusedMessageId,
+      messagePage,
     ],
-    queryFn: ({ pageParam }) =>
-      chatRecordsAdminApi.getConversationMessages(activeConversationId, {
-        includeClearedHistory: true,
-        limit: 60,
-        cursor: focusedMessageId || !pageParam ? undefined : String(pageParam),
-        aroundMessageId: focusedMessageId || undefined,
-        before: focusedMessageId ? 18 : undefined,
-        after: focusedMessageId ? 18 : undefined,
-      }),
-    initialPageParam: 0,
+    queryFn: () =>
+      focusedMessageId
+        ? chatRecordsAdminApi.getConversationMessages(activeConversationId, {
+            includeClearedHistory: true,
+            aroundMessageId: focusedMessageId,
+            before: 18,
+            after: 18,
+          })
+        : chatRecordsAdminApi.getConversationMessages(activeConversationId, {
+            includeClearedHistory: true,
+            page: messagePage ?? MESSAGE_LATEST_PAGE,
+            pageSize: MESSAGE_PAGE_SIZE,
+          }),
     enabled: Boolean(activeConversationId),
-    getNextPageParam: (lastPage) =>
-      lastPage.nextCursor ? Number(lastPage.nextCursor) : undefined,
+    placeholderData: keepPreviousData,
   });
 
   const selectedConversation =
     conversations.find((item) => item.id === activeConversationId) ?? null;
 
-  const messages = useMemo(() => {
-    const pages = messagesQuery.data?.pages ?? [];
-    if (!pages.length) {
-      return [] as Message[];
-    }
-    return focusedMessageId
-      ? pages[0].items
-      : [...pages].reverse().flatMap((pageData) => pageData.items);
-  }, [focusedMessageId, messagesQuery.data?.pages]);
+  const messagesPage = messagesQuery.data;
+  const messages = messagesPage?.items ?? [];
+  const showMessagePager =
+    !focusedMessageId &&
+    messagesPage?.mode === "paged" &&
+    (messagesPage.total ?? 0) > 0;
+  const messageCurrentPage = messagesPage?.page ?? 1;
+  const messageTotalPages = messagesPage?.totalPages ?? 1;
 
   const searchContextActive =
     searchContext?.conversationId === activeConversationId;
@@ -205,63 +268,121 @@ export function ChatRecordsPage() {
     clearSearchContextState();
   }
 
-  if (conversationsQuery.isLoading) {
-    return <AdminSkeletonCard rows={5} showAction />;
-  }
-  if (conversationsQuery.error instanceof Error) {
-    return (
-      <AdminErrorState
-        title={t(msg`会话列表加载失败`)}
-        detail={conversationsQuery.error.message}
-        onRetry={() => conversationsQuery.refetch()}
-      />
-    );
-  }
+  const listData = conversationsQuery.data;
+  const listLoading =
+    conversationsQuery.isLoading && !conversationsQuery.data;
 
   return (
     <div className="space-y-6">
+      <AdminPageHero
+        eyebrow={t(msg`运营工作台`)}
+        title={t(msg`聊天记录`)}
+        description={t(
+          msg`查看与审阅用户和角色的对话，支持按活跃度筛选、会话内搜索与分页浏览。`,
+        )}
+        metrics={overviewMetrics}
+      />
+
+      <AdminToolbar
+        filters={
+          <>
+            <AdminPillSelectField
+              value={sortBy}
+              onChange={(value) =>
+                applyFilterChange(() =>
+                  setSortBy(value as AdminChatRecordConversationSort),
+                )
+              }
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {t(option.label)}
+                </option>
+              ))}
+            </AdminPillSelectField>
+            <AdminPillSelectField
+              value={activityWindow}
+              onChange={(value) =>
+                applyFilterChange(() =>
+                  setActivityWindow(value as AdminChatRecordActivityWindow),
+                )
+              }
+            >
+              {ACTIVITY_WINDOW_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {t(option.label)}
+                </option>
+              ))}
+            </AdminPillSelectField>
+            <AdminToggle
+              label={t(msg`含隐藏会话`)}
+              checked={includeHidden}
+              onChange={(checked) =>
+                applyFilterChange(() => setIncludeHidden(checked))
+              }
+            />
+            <AdminToggle
+              label={t(msg`仅看已复盘`)}
+              checked={onlyReviewed}
+              onChange={(checked) =>
+                applyFilterChange(() => setOnlyReviewed(checked))
+              }
+            />
+          </>
+        }
+        actions={
+          characterId ? (
+            <button
+              type="button"
+              onClick={() => applyFilterChange(() => setCharacterId(""))}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-1 text-xs font-medium text-[color:var(--brand-primary)] transition hover:opacity-80"
+            >
+              {t(msg`已按角色筛选`)}
+              <span aria-hidden>×</span>
+            </button>
+          ) : null
+        }
+      />
+
       <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
         <div className="space-y-3 xl:sticky xl:top-6 xl:self-start xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
-          {conversations.length ? (
-            conversations.map((item) => (
-              <ConversationListItemCard
-                key={item.id}
-                item={item}
-                active={item.id === activeConversationId}
-                onSelect={() => selectConversation(item.id)}
-              />
-            ))
+          {listLoading ? (
+            <AdminSkeletonCard rows={5} showAction />
+          ) : conversationsQuery.error instanceof Error ? (
+            <AdminErrorState
+              title={t(msg`会话列表加载失败`)}
+              detail={conversationsQuery.error.message}
+              onRetry={() => conversationsQuery.refetch()}
+            />
+          ) : conversations.length ? (
+            <>
+              {conversations.map((item) => (
+                <ConversationListItemCard
+                  key={item.id}
+                  item={item}
+                  active={item.id === activeConversationId}
+                  onSelect={() => selectConversation(item.id)}
+                />
+              ))}
+
+              {listData ? (
+                <Pager
+                  page={listData.page}
+                  totalPages={listData.totalPages}
+                  total={listData.total}
+                  disabled={conversationsQuery.isFetching}
+                  onChange={(next) => setPage(next)}
+                  pageSize={pageSize}
+                  pageSizeOptions={LIST_PAGE_SIZE_OPTIONS}
+                  onPageSizeChange={(size) =>
+                    applyFilterChange(() => setPageSize(size))
+                  }
+                />
+              ) : null}
+            </>
           ) : (
             <AdminEmptyState title={t(msg`暂无会话`)} description="" />
           )}
-
-          {conversationsQuery.data && conversationsQuery.data.totalPages > 1 ? (
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page <= 1}
-              >
-                {t(msg`上一页`)}
-              </Button>
-              <span className="text-xs text-[color:var(--text-muted)]">
-                {page} / {conversationsQuery.data.totalPages}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  setPage((current) =>
-                    Math.min(conversationsQuery.data!.totalPages, current + 1),
-                  )
-                }
-                disabled={page >= conversationsQuery.data.totalPages}
-              >
-                {t(msg`下一页`)}
-              </Button>
-            </div>
-          ) : null}
         </div>
 
         <div className="min-w-0 space-y-3">
@@ -292,7 +413,7 @@ export function ChatRecordsPage() {
                       size="sm"
                       onClick={() => setFocusedMessageId("")}
                     >
-                      {t(msg`返回最新消息`)}
+                      {t(msg`返回分页浏览`)}
                     </Button>
                   ) : null}
                 </div>
@@ -370,19 +491,14 @@ export function ChatRecordsPage() {
                 )}
               </div>
 
-              {!focusedMessageId && messagesQuery.data?.pages.at(-1)?.hasMore ? (
-                <div className="flex justify-center pt-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void messagesQuery.fetchNextPage()}
-                    disabled={messagesQuery.isFetchingNextPage}
-                  >
-                    {messagesQuery.isFetchingNextPage
-                      ? t(msg`加载中...`)
-                      : t(msg`加载更早消息`)}
-                  </Button>
-                </div>
+              {showMessagePager ? (
+                <Pager
+                  page={messageCurrentPage}
+                  totalPages={messageTotalPages}
+                  total={messagesPage?.total ?? 0}
+                  disabled={messagesQuery.isFetching}
+                  onChange={(next) => setMessagePage(next)}
+                />
               ) : null}
             </>
           ) : (
@@ -392,6 +508,95 @@ export function ChatRecordsPage() {
             />
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  totalPages,
+  total,
+  onChange,
+  disabled,
+  pageSize,
+  pageSizeOptions,
+  onPageSizeChange,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  onChange: (page: number) => void;
+  disabled?: boolean;
+  pageSize?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
+}) {
+  const t = translateRuntimeMessage;
+  const [jump, setJump] = useState("");
+  const safeTotalPages = Math.max(1, totalPages);
+  const clamp = (value: number) =>
+    Math.min(Math.max(1, value), safeTotalPages);
+
+  function submitJump() {
+    const parsed = Number(jump.trim());
+    if (Number.isFinite(parsed) && parsed >= 1) {
+      onChange(clamp(Math.floor(parsed)));
+    }
+    setJump("");
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <span className="text-xs text-[color:var(--text-muted)]">
+        {t(msg`共 ${total} 条 · 第 ${page} / ${safeTotalPages} 页`)}
+      </span>
+      <div className="flex items-center gap-2">
+        {pageSizeOptions && onPageSizeChange ? (
+          <select
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-2.5 py-1 text-xs text-[color:var(--text-secondary)]"
+          >
+            {pageSizeOptions.map((option) => (
+              <option key={option} value={option}>
+                {t(msg`${option} / 页`)}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onChange(clamp(page - 1))}
+          disabled={disabled || page <= 1}
+        >
+          {t(msg`上一页`)}
+        </Button>
+        <input
+          value={jump}
+          onChange={(event) =>
+            setJump(event.target.value.replace(/[^0-9]/g, ""))
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              submitJump();
+            }
+          }}
+          onBlur={() => jump && submitJump()}
+          placeholder={t(msg`跳页`)}
+          inputMode="numeric"
+          className="w-14 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-2.5 py-1 text-center text-xs text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onChange(clamp(page + 1))}
+          disabled={disabled || page >= safeTotalPages}
+        >
+          {t(msg`下一页`)}
+        </Button>
       </div>
     </div>
   );

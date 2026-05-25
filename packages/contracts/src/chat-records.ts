@@ -155,6 +155,8 @@ export interface AdminChatRecordConversationDetail {
 export interface AdminChatRecordMessagesQuery {
   cursor?: string;
   limit?: number;
+  page?: number;
+  pageSize?: number;
   aroundMessageId?: string;
   before?: number;
   after?: number;
@@ -166,9 +168,12 @@ export interface AdminChatRecordMessagesPage {
   total: number;
   nextCursor?: string;
   hasMore: boolean;
-  mode: "latest" | "around";
+  mode: "latest" | "around" | "paged";
   includeClearedHistory: boolean;
   aroundMessageId?: string | null;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 }
 
 export interface AdminChatRecordConversationSearchQuery

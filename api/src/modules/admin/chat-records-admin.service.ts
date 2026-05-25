@@ -47,6 +47,8 @@ type ChatRecordConversationListQuery = {
 type ChatRecordConversationMessagesQuery = {
   cursor?: string;
   limit?: number | string;
+  page?: number | string;
+  pageSize?: number | string;
   aroundMessageId?: string;
   before?: number | string;
   after?: number | string;
@@ -212,9 +214,12 @@ type ChatRecordConversationMessagesPage = {
   total: number;
   nextCursor?: string;
   hasMore: boolean;
-  mode: 'latest' | 'around';
+  mode: 'latest' | 'around' | 'paged';
   includeClearedHistory: boolean;
   aroundMessageId?: string | null;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 };
 
 type ChatRecordTokenUsageSummary = {
@@ -614,6 +619,37 @@ export class ChatRecordsAdminService {
         mode: 'around',
         includeClearedHistory,
         aroundMessageId,
+      };
+    }
+
+    // Page-number pagination (offset) — used by the admin chat-records UI so
+    // operators can jump to any page. allMessages is already sorted ASC.
+    if (query.page != null && String(query.page).trim() !== '') {
+      const pageSize = Math.min(
+        this.normalizePositiveInteger(query.pageSize, DEFAULT_MESSAGE_PAGE_SIZE),
+        MAX_MESSAGE_PAGE_SIZE,
+      );
+      const total = allMessages.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      const page = Math.min(
+        Math.max(1, this.normalizePositiveInteger(query.page, 1)),
+        totalPages,
+      );
+      const start = (page - 1) * pageSize;
+      const items = allMessages
+        .slice(start, start + pageSize)
+        .map((item) => this.toMessageContract(item));
+
+      return {
+        items,
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasMore: false,
+        mode: 'paged',
+        includeClearedHistory,
+        aroundMessageId: null,
       };
     }
 

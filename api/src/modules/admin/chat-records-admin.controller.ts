@@ -72,6 +72,8 @@ export class ChatRecordsAdminController {
     query: {
       cursor?: string;
       limit?: number | string;
+      page?: number | string;
+      pageSize?: number | string;
       aroundMessageId?: string;
       before?: number | string;
       after?: number | string;
