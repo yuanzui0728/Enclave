@@ -23,6 +23,7 @@ import { WikiPageService } from './wiki-page.service';
 import { WikiRoleService } from './wiki-role.service';
 import {
   WIKI_CONTENT_FIELDS,
+  assertWikiContentTextLimits,
   assertWikiEditSummary,
   assertWikiNameNotVisuallyEmpty,
   createDefaultWikiRecipe,
@@ -163,6 +164,7 @@ export class WikiEditService {
     // 不会被 trim 干掉，会让 wiki 列表/卡片显示空白行且不可点（私有角色 2026-05-15
     // v2 走查时同一类型坑已经修过，这里复用统一 helper）。
     assertWikiNameNotVisuallyEmpty(submitted.name);
+    assertWikiContentTextLimits(submitted);
     let after = submitted;
     let changed = diffFields(before, after);
     let changeSource = 'edit';
@@ -344,6 +346,7 @@ export class WikiEditService {
     // 二次兜底：normalize 完之后 content.name 仍可能因 trim 后是空（兜底进 fallback
     // 的极端 case，例如 seedInput.name=' '）—— assert 一次确保 DB 落下来一定非空。
     assertWikiNameNotVisuallyEmpty(content.name);
+    assertWikiContentTextLimits(content);
     this.assertEditSummary({
       operation: 'create',
       riskLevel: 'high',
@@ -960,6 +963,7 @@ export class WikiEditService {
     // 在 source.identity.name='' 时**不会**回退到 base.identity.name（str()
     // 只有非字符串才走 fallback），所以恶意客户端能把已发布角色 name 清空。
     assertWikiNameNotVisuallyEmpty(afterContent.name);
+    assertWikiContentTextLimits(afterContent);
 
     const riskReport = isHighRiskRecipeChange(changed);
     let riskLevel = riskReport.highRisk ? 'high' : 'low';

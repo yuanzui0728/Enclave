@@ -465,8 +465,18 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       applyDtoToForm(initialDto);
     }
     hydratedTokenRef.current = token;
+    // 草稿恢复（token 形如 draft:<id> / draft-loading:<id>）时，草稿即权威内容：
+    // 用户已在父级确认过"恢复草稿会覆盖[未保存内容]"。此时绝不能再把 "private:new"
+    // 残留 session 快照 overlay 回表单，否则会盖掉刚 apply 上去的草稿（与确认框承诺
+    // 相反，name/bio 等字段被旧残留顶掉）。父级 clearEditSession 因 React 子→父
+    // effect 执行顺序晚于本 overlay，兜底不及，必须在此显式跳过。
+    // 用户取消恢复时父级会跳回无 draftId 的创建页 → token 变回 "new"，届时 overlay
+    // 照常恢复其未保存编辑，行为不受影响。
+    const restoringDraft =
+      typeof token === "string" &&
+      (token.startsWith("draft:") || token.startsWith("draft-loading:"));
     const sessSnap = session.formSnapshot;
-    if (sessSnap) overlaySnapshotToForm(sessSnap);
+    if (sessSnap && !restoringDraft) overlaySnapshotToForm(sessSnap);
     setHydrationDone(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrationToken, initialDto, mode]);
@@ -1155,6 +1165,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                       <TextField
                         id="char-field-name"
                         required
+                        maxLength={40}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={t(msg`例如 苏然`)}
@@ -1258,6 +1269,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                     <TextAreaField
                       id="char-field-bio"
                       rows={4}
+                      maxLength={500}
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       placeholder={t(

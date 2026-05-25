@@ -20,6 +20,16 @@ export const WIKI_CONTENT_FIELDS = [
 
 export type WikiContentField = (typeof WIKI_CONTENT_FIELDS)[number];
 
+// name / bio 长度上限。三条写入路径（createPage / submit 内容 / submitRecipeEdit）
+// 此前只校验 name 视觉非空，对长度完全不设防：curl 一发就能落一条 name 长达
+// 数十 KB 的词条，title 会同步到 character_pages.title，再灌进列表卡 / 巡查队列 /
+// 搜索结果 / 详情 <h1>，撑爆布局且白白胀 contentSnapshot/recipeSnapshot JSON。
+// 现存最长 title=30、bio=132，取 40 / 500 既不误伤存量也够日常使用（与前端
+// TextField/TextAreaField 的 maxLength 对齐，HTML maxLength 与 .length 同按 UTF-16
+// code unit 计，前后端口径一致）。
+export const WIKI_NAME_MAX_LENGTH = 40;
+export const WIKI_BIO_MAX_LENGTH = 500;
+
 /**
  * 永远不允许通过 wiki 通道写入的字段：
  * - 5 个 model routing 字段：wiki 用户不能选自己的推理账户/模型
@@ -93,6 +103,32 @@ export function assertWikiNameNotVisuallyEmpty(raw: string): void {
     throw new AppError('WIKI_VALIDATION_FAILED', {
       params: { detail: 'name 不能为空' },
       legacyMessage: 'name 不能为空',
+    });
+  }
+}
+
+/**
+ * name / bio 长度上限校验。三条写入路径在 name 视觉非空校验之后调用，对最终落库
+ * 的 content 统一卡上限，挡住绕过前端 maxLength 的 curl 直发（前端 maxLength 只约束
+ * 键盘输入，程序化设值 / API 直发都不受限）。typeof 守：非字符串当空串放行，由
+ * 其它字段校验接住，不在这里抛 TypeError。
+ */
+export function assertWikiContentTextLimits(content: {
+  name?: string;
+  bio?: string;
+}): void {
+  const nameLen = typeof content.name === 'string' ? content.name.trim().length : 0;
+  if (nameLen > WIKI_NAME_MAX_LENGTH) {
+    throw new AppError('WIKI_VALIDATION_FAILED', {
+      params: { detail: `名称最多 ${WIKI_NAME_MAX_LENGTH} 个字符` },
+      legacyMessage: `名称最多 ${WIKI_NAME_MAX_LENGTH} 个字符`,
+    });
+  }
+  const bioLen = typeof content.bio === 'string' ? content.bio.trim().length : 0;
+  if (bioLen > WIKI_BIO_MAX_LENGTH) {
+    throw new AppError('WIKI_VALIDATION_FAILED', {
+      params: { detail: `简介最多 ${WIKI_BIO_MAX_LENGTH} 个字符` },
+      legacyMessage: `简介最多 ${WIKI_BIO_MAX_LENGTH} 个字符`,
     });
   }
 }
