@@ -249,16 +249,20 @@ export function useGroupVoiceCallSession({
     audio.muted = audioMuted;
   }, [audioMuted]);
 
+  // 走查新一轮 R7（perf）：见 use-voice-call-session 同款注释——拆 mutate 稳定
+  // 身份 + isPending boolean 进 deps，effect 不再每 render 重跑只为早返。
+  const turnMutate = turnMutation.mutate;
+  const turnIsPending = turnMutation.isPending;
   useEffect(() => {
     if (!speech.recordedAudio || speech.status !== "ready") {
       return;
     }
-    if (!autoSubmitRecordingRef.current || turnMutation.isPending) {
+    if (!autoSubmitRecordingRef.current || turnIsPending) {
       return;
     }
     autoSubmitRecordingRef.current = false;
-    turnMutation.mutate();
-  }, [speech.recordedAudio, speech.status, turnMutation]);
+    turnMutate();
+  }, [speech.recordedAudio, speech.status, turnIsPending, turnMutate]);
 
   useEffect(() => {
     autoSubmitRecordingRef.current = false;

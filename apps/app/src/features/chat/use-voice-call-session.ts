@@ -222,12 +222,21 @@ export function useVoiceCallSession({
     audio.muted = audioMuted;
   }, [audioMuted]);
 
+  // 走查新一轮 R7（perf）：原版 deps 含整个 turnMutation 对象。useMutation 每次
+  // render 返回新结果，turnMutation 引用每 render 都变 → autoSubmit effect 每
+  // render 都重跑（哪怕 speech.recordedAudio/status/isPending 都没变），跑完
+  // 只是早返。loop 阶段切换 / 音频事件高频期间叠出来大量无谓 effect 调用。
+  // 拆成稳定的 mutate（react-query 5 mutate/mutateAsync 是稳定身份）+ isPending
+  // boolean，effect 只在真正影响判定的字段变化时跑。和 mobile-group-call-screen
+  // syncMutateAsync R4 同款修法。
+  const turnMutate = turnMutation.mutate;
+  const turnIsPending = turnMutation.isPending;
   useEffect(() => {
     if (!speech.recordedAudio || speech.status !== "ready") {
       return;
     }
 
-    if (!autoSubmitRecordingRef.current || turnMutation.isPending) {
+    if (!autoSubmitRecordingRef.current || turnIsPending) {
       return;
     }
 
@@ -238,8 +247,8 @@ export function useVoiceCallSession({
     // mutateAsync() 的 promise 在 mutationFn 抛错时会 reject，`void` 不接
     // → 落 window.unhandledrejection 污染 telemetry（公网隧道 5xx / cloud token
     // 过期重连时 createVoiceCallTurn 偶发 4xx/5xx，每次都会触发）。
-    turnMutation.mutate();
-  }, [speech.recordedAudio, speech.status, turnMutation]);
+    turnMutate();
+  }, [speech.recordedAudio, speech.status, turnIsPending, turnMutate]);
 
   useEffect(() => {
     // R4 走查：原 deps 含 characterId。conversationId 从 useParams 拿，进通话页
