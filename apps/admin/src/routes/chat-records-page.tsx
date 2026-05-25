@@ -233,8 +233,20 @@ export function ChatRecordsPage() {
 
   const messagesPage = messagesQuery.data;
   const messages = messagesPage?.items ?? [];
+  // keepPreviousData keeps the prior conversation's page as placeholder across
+  // a conversation switch — guard against flashing the wrong chat by checking
+  // the data actually belongs to the active conversation. Within the same
+  // conversation the placeholder still matches, so page transitions stay smooth.
+  const messagesMatchActive =
+    messages.length === 0 ||
+    messages[0]?.conversationId === activeConversationId;
+  const messagesLoading =
+    messagesQuery.isLoading ||
+    (messagesQuery.isPlaceholderData && !messagesMatchActive);
   const showMessagePager =
     !focusedMessageId &&
+    !messagesLoading &&
+    messagesMatchActive &&
     messagesPage?.mode === "paged" &&
     (messagesPage.total ?? 0) > 0;
   const messageCurrentPage = messagesPage?.page ?? 1;
@@ -474,7 +486,7 @@ export function ChatRecordsPage() {
               ) : null}
 
               <div className="space-y-4 pt-1">
-                {messagesQuery.isLoading ? (
+                {messagesLoading ? (
                   <LoadingBlock label={t(msg`正在读取聊天记录...`)} />
                 ) : messagesQuery.error instanceof Error ? (
                   <ErrorBlock message={messagesQuery.error.message} />
@@ -584,7 +596,6 @@ function Pager({
               submitJump();
             }
           }}
-          onBlur={() => jump && submitJump()}
           placeholder={t(msg`跳页`)}
           inputMode="numeric"
           className="w-14 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-2.5 py-1 text-center text-xs text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
@@ -822,7 +833,25 @@ function attachmentLabel(message: Message) {
   if (attachment.kind === "location_card") {
     return `${t(msg`位置`)}：${attachment.title}`;
   }
-  return `${t(msg`笔记`)}：${attachment.title}`;
+  if (attachment.kind === "note_card") {
+    return `${t(msg`笔记`)}：${attachment.title}`;
+  }
+  if (attachment.kind === "feed_post_card") {
+    return `${t(msg`视频号`)}：${
+      attachment.title || attachment.excerpt || attachment.authorName
+    }`;
+  }
+  // call_log
+  const callKind =
+    attachment.mode === "video" ? t(msg`视频通话`) : t(msg`语音通话`);
+  return `${callKind} · ${formatCallDuration(attachment.durationSec)}`;
+}
+
+function formatCallDuration(durationSec: number) {
+  const total = Math.max(0, Math.floor(durationSec));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatPreview(message: Message | null, maxLength = 120) {
