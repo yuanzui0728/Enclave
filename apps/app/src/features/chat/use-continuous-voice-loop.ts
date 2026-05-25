@@ -232,6 +232,20 @@ export function useContinuousVoiceLoop({
         break;
       case "armed":
       case "capturing":
+        // 走查新一轮 R1：用户在 phase=armed/capturing（VAD 已经在听）时点"补播"
+        // toast → playReplyAudio → audio.play → 'play' 事件把 playbackState 推
+        // 到 "playing"。原版 case armed/capturing 一律 break，phase 不动，VAD
+        // 继续工作 → AI 自己的回音被 mic 收到（echoCancellation 也有泄漏）→
+        // VAD onset 触发，submit 一段错误的 turn。"补播" toast 只在 playerError
+        // 时出现（autoplay 被拦后 playbackState 已经走过 speaking→cooldown→arm，
+        // 500ms 之外用户点 button 时 phase 已经在 armed），这条窗口实际存在。
+        // 补救：playbackState 翻 playing 就让出阶段进 speaking + cancelRecordingTurn
+        // 把当前录音掐掉。
+        if (playbackState === "playing") {
+          cancelRecordingTurn();
+          setPhase("speaking");
+        }
+        break;
       default:
         break;
     }
