@@ -219,11 +219,6 @@ export class BehaviorRecordsAdminService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const records = await this.collectOwnerRecords(owner.id);
 
-    const sevenDaysAgo = this.daysAgo(7).getTime();
-    const thirtyDaysAgo = this.daysAgo(30).getTime();
-    const inWindow = (record: BehaviorRecord, cutoff: number) =>
-      Date.parse(record.createdAt) >= cutoff;
-
     const countsByType = BEHAVIOR_TYPES.map((type) => ({
       key: type,
       count: records.filter((record) => record.behaviorType === type).length,
@@ -235,15 +230,16 @@ export class BehaviorRecordsAdminService {
 
     const trend7d = this.buildTrendPoints(records, 7);
     const trend30d = this.buildTrendPoints(records, 30);
+    // 用趋势桶（本地日）求和得到 7d/30d，保证与 activeDays / 趋势图严格自洽，
+    // 不用 rolling 7*24h 时间戳口径（会与按本地日分桶的趋势在边界处对不上）。
+    const sumTrend = (points: BehaviorTrendPoint[]) =>
+      points.reduce((total, point) => total + point.total, 0);
 
     return {
       owner: this.serializeOwner(owner),
       totalBehaviorCount: records.length,
-      behaviorCount7d: records.filter((record) => inWindow(record, sevenDaysAgo))
-        .length,
-      behaviorCount30d: records.filter((record) =>
-        inWindow(record, thirtyDaysAgo),
-      ).length,
+      behaviorCount7d: sumTrend(trend7d),
+      behaviorCount30d: sumTrend(trend30d),
       countsByType,
       countsBySurface,
       trend7d,
@@ -263,8 +259,8 @@ export class BehaviorRecordsAdminService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const surface = this.normalizeSurface(query.surface);
     const behaviorType = this.normalizeBehaviorType(query.behaviorType);
-    const dateFrom = this.normalizeDate(query.dateFrom);
-    const dateTo = this.normalizeDate(query.dateTo);
+    const dateFrom = this.parseRangeBound(query.dateFrom, 'start');
+    const dateTo = this.parseRangeBound(query.dateTo, 'end');
     const includeHiddenComments = this.normalizeBoolean(
       query.includeHiddenComments,
     );
@@ -306,8 +302,8 @@ export class BehaviorRecordsAdminService {
     const format = this.normalizeExportFormat(query.format);
     const surface = this.normalizeSurface(query.surface);
     const behaviorType = this.normalizeBehaviorType(query.behaviorType);
-    const dateFrom = this.normalizeDate(query.dateFrom);
-    const dateTo = this.normalizeDate(query.dateTo);
+    const dateFrom = this.parseRangeBound(query.dateFrom, 'start');
+    const dateTo = this.parseRangeBound(query.dateTo, 'end');
     const includeHiddenComments = this.normalizeBoolean(
       query.includeHiddenComments,
     );
@@ -535,6 +531,16 @@ export class BehaviorRecordsAdminService {
     for (const interaction of interactions) {
       const behaviorType = this.normalizeInteractionType(interaction.type);
       if (!behaviorType) {
+        continue;
+      }
+      // forward_to_chat 由 forwardChannelPostToChat 写入，owner 主动转发与 AI 角色
+      // 主动转发（runChannelProactiveForwardTick）共用同一写入路径、都挂 ownerId=主人。
+      // 仅 payload.viaActorType==='user' 才是真人主动转发；角色发起的"推给我"不是
+      // 主人行为，按"仅真人用户行为"口径排除。
+      if (
+        behaviorType === 'forward_to_chat' &&
+        this.readPayloadString(interaction.payload, 'viaActorType') !== 'user'
+      ) {
         continue;
       }
       const post = interaction.postId
@@ -846,13 +852,40 @@ export class BehaviorRecordsAdminService {
     return parsed > 0 ? Math.floor(parsed) : fallback;
   }
 
-  private normalizeDate(value: string | undefined) {
+  // 解析日期筛选边界。前端 <input type="date"> 传裸 'YYYY-MM-DD'，若直接
+  // new Date() 会按 UTC 零点解析，在 UTC+8 下 dateTo=今天会把今天几乎整天都排除。
+  // 这里把裸日期按"本地日"解释：start=本地当天 00:00:00.000，end=本地当天
+  // 23:59:59.999，与趋势/分组用的本地日口径一致；带时分秒的完整时间戳则原样解析。
+  private parseRangeBound(
+    value: string | undefined,
+    bound: 'start' | 'end',
+  ): Date | undefined {
     const trimmed = value?.trim();
     if (!trimmed) {
       return undefined;
     }
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (dateOnly) {
+      const year = Number(dateOnly[1]);
+      const month = Number(dateOnly[2]) - 1;
+      const day = Number(dateOnly[3]);
+      return bound === 'end'
+        ? new Date(year, month, day, 23, 59, 59, 999)
+        : new Date(year, month, day, 0, 0, 0, 0);
+    }
     const parsed = new Date(trimmed);
     return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }
+
+  private readPayloadString(
+    payload: Record<string, unknown> | null | undefined,
+    key: string,
+  ): string | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    const value = (payload as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : null;
   }
 
   private dateRangeWhere(from?: Date, to?: Date) {

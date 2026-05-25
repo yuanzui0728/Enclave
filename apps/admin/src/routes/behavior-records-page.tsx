@@ -70,7 +70,7 @@ const BEHAVIOR_OPTIONS: Array<{
 
 const LIST_PAGE_SIZE_OPTIONS = [24, 50, 100];
 
-function surfaceTone(surface: BehaviorSurface): string {
+function surfaceTone(surface: BehaviorSurface | string): string {
   switch (surface) {
     case "moments":
       return "border-sky-200 bg-sky-50 text-sky-700";
@@ -78,7 +78,18 @@ function surfaceTone(surface: BehaviorSurface): string {
       return "border-violet-200 bg-violet-50 text-violet-700";
     case "channels":
       return "border-rose-200 bg-rose-50 text-rose-700";
+    default:
+      return "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]";
   }
+}
+
+// 与后端 buildTrendPoints 的 formatLocalDayKey 同口径：按本地日分组，保证
+// 时间线日期分隔头与行内本地时间、概览趋势图的"日"一致（不要用 ISO 串 UTC 截断）。
+function formatLocalDayKey(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function BehaviorRecordsPage() {
@@ -519,7 +530,7 @@ function groupByDay(records: AdminBehaviorRecord[]): BehaviorDayGroup[] {
   const groups: BehaviorDayGroup[] = [];
   let current: BehaviorDayGroup | null = null;
   for (const record of records) {
-    const date = record.createdAt.slice(0, 10);
+    const date = formatLocalDayKey(new Date(record.createdAt));
     if (!current || current.date !== date) {
       current = { date, records: [] };
       groups.push(current);
