@@ -23,10 +23,17 @@ import { ChatModule } from '../chat/chat.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 import { ChatRecordsAdminController } from './chat-records-admin.controller';
+import { BehaviorRecordsAdminService } from './behavior-records-admin.service';
+import { BehaviorRecordsAdminController } from './behavior-records-admin.controller';
 import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
 import { SchedulerModule } from '../scheduler/scheduler.module';
 import { MomentPostEntity } from '../moments/moment-post.entity';
+import { MomentCommentEntity } from '../moments/moment-comment.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
+import { FeedCommentEntity } from '../feed/feed-comment.entity';
+import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
+import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { FeedModule } from '../feed/feed.module';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
@@ -76,7 +83,12 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
       GroupReplyTaskEntity,
       NarrativeArcEntity,
       MomentPostEntity,
+      MomentCommentEntity,
+      MomentLikeEntity,
       FeedPostEntity,
+      FeedCommentEntity,
+      VideoChannelFollowEntity,
+      UserFeedInteractionEntity,
       AiUsageLedgerEntity,
       AdminConversationReviewEntity,
       FriendRequestEntity,
@@ -87,9 +99,14 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     AdminService,
     ReplyLogicAdminService,
     ChatRecordsAdminService,
+    BehaviorRecordsAdminService,
     WechatSyncAdminService,
     AdminGuard,
   ],
-  controllers: [AdminController, ChatRecordsAdminController],
+  controllers: [
+    AdminController,
+    ChatRecordsAdminController,
+    BehaviorRecordsAdminController,
+  ],
 })
 export class AdminModule {}

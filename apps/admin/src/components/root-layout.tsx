@@ -210,6 +210,13 @@ function resolveNavItems() {
           ),
         },
         {
+          to: "/behavior-records" as const,
+          label: t(msg`用户行为`),
+          hint: t(
+            msg`回看世界主人在朋友圈、广场、视频号的真实互动行为与分析。`,
+          ),
+        },
+        {
           to: "/real-world-sync" as const,
           label: t(msg`现实联动`),
           roleBadge: t(msg`承接：界闻/联动角色`),

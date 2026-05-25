@@ -91,6 +91,11 @@ const ChatRecordsPage = lazy(async () => {
   return { default: mod.ChatRecordsPage };
 });
 
+const BehaviorRecordsPage = lazy(async () => {
+  const mod = await import("./routes/behavior-records-page");
+  return { default: mod.BehaviorRecordsPage };
+});
+
 const TokenUsagePage = lazy(async () => {
   const mod = await import("./routes/token-usage-page");
   return { default: mod.TokenUsagePage };
@@ -228,6 +233,12 @@ const chatRecordsRoute = createRoute({
   component: ChatRecordsPage,
 });
 
+const behaviorRecordsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/behavior-records",
+  component: BehaviorRecordsPage,
+});
+
 const tokenUsageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/token-usage",
@@ -271,6 +282,7 @@ const routeTree = rootRoute.addChildren([
   cyberAvatarRoute,
   realWorldSyncRoute,
   chatRecordsRoute,
+  behaviorRecordsRoute,
   tokenUsageRoute,
   inferenceRoute,
   minimaxQuotaRoute,

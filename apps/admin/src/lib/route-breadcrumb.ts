@@ -142,6 +142,16 @@ export function resolveRouteMeta(pathname: string): RouteMeta {
     };
   }
 
+  if (pathname === "/behavior-records") {
+    return {
+      eyebrow: t(msg`用户行为`),
+      title: t(msg`互动行为收集与分析`),
+      description: t(
+        msg`集中查看世界主人在朋友圈、广场、视频号的评论、点赞、转发、收藏、浏览、关注等真实互动行为。`,
+      ),
+    };
+  }
+
   if (pathname === "/token-usage") {
     return {
       eyebrow: t(msg`Token 用量`),
