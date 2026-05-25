@@ -463,11 +463,26 @@ export function useDigitalHumanCallSession({
     autoSubmitRecordingRef.current = false;
     stopReplyPlayback();
     speechCancelRef.current();
+
+    // 走查新一轮 R2：原版直接 setSession(null) 后 setSessionAttempt(++)，预期
+    // setup effect cleanup 能把上一段 session 关掉——但 sessionRef.current 是由
+    // 另一条 [session] 同步 effect 维护的，React 按声明顺序跑 effects，sessionRef
+    // 同步先把 ref 改成 null，setup cleanup 再去读 ref 已经是 null，直接 skip
+    // 不发 closeDigitalHumanSession。结果：用户在 turn 失败后点"重新连接"，老
+    // session 在服务端永远挂着到自然超时。本帧抢先按当前 ref 同步发一份
+    // best-effort close（不 await，失败吞掉，不影响下一段重连）。
+    const previousSession = sessionRef.current;
+    if (previousSession && previousSession.status !== "ended") {
+      void closeDigitalHumanSession(previousSession.id, baseUrl).catch(
+        () => undefined,
+      );
+    }
+
     setSession(null);
     setSessionError(null);
     setSessionState("connecting");
     setSessionAttempt((current) => current + 1);
-  }, [stopReplyPlayback]);
+  }, [baseUrl, stopReplyPlayback]);
 
   const startRecordingTurn = useCallback(async () => {
     if (!enabled || sessionState !== "ready" || !sessionRef.current) {
