@@ -174,13 +174,20 @@ export class WikiTalkService {
         body,
       });
       const saved = await manager.save(post);
+      // postCount 用原子 SQL 自增（SET postCount = postCount + 1），不要写
+      // thread.postCount + 1 —— thread 是进事务前读的快照，两个并发回复会读到
+      // 同一个旧值各 +1，丢一次更新让计数永久偏少（线程标题「N 条」与展开后
+      // 实际帖数对不上）。increment() 生成的是原子表达式，并发安全。
+      await manager.increment(
+        WikiTalkThreadEntity,
+        { id: threadId },
+        'postCount',
+        1,
+      );
       await manager.update(
         WikiTalkThreadEntity,
         { id: threadId },
-        {
-          postCount: thread.postCount + 1,
-          lastReplyAt: new Date(),
-        },
+        { lastReplyAt: new Date() },
       );
       return saved;
     });
