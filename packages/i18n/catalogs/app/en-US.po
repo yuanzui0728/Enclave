@@ -28830,3 +28830,39 @@ msgstr "Save cancelled."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "File opened."
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "我的广场动态"
+msgstr "我的广场动态"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "还没有发布广场动态"
+msgstr "还没有发布广场动态"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "你在广场发布的动态会出现在这里，可随时删除管理。"
+msgstr "你在广场发布的动态会出现在这里，可随时删除管理。"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "广场动态加载失败，请稍后重试。"
+msgstr "广场动态加载失败，请稍后重试。"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "删除这条广场动态"
+msgstr "删除这条广场动态"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "删除这条广场动态？"
+msgstr "删除这条广场动态？"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "删除后将一并移除它的评论与互动记录，且无法恢复。"
+msgstr "删除后将一并移除它的评论与互动记录，且无法恢复。"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "已删除这条广场动态。"
+msgstr "已删除这条广场动态。"
+
+#: apps/app/src/routes/profile-feed-page.tsx
+msgid "评论加载失败，请稍后重试。"
+msgstr "评论加载失败，请稍后重试。"
