@@ -178,16 +178,24 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   // 留下，end 之前 await 它（不在乎结果，吞 reject 防 unhandledrejection）。
   const inFlightSyncPromiseRef = useRef<Promise<unknown> | null>(null);
 
+  // 走查新一轮 R3（perf）：和 group-chat-thread-panel.tsx L276/L282 共享同样的
+  // queryKey ["app-group", baseUrl, groupId] / ["app-group-members", ...]，姊妹
+  // 那边 staleTime: 15_000，本观察者裸跑 → 进群通话屏前用户必然先在群聊页加载
+  // 过这两条（同 15s 内才会去发起通话），原生壳 10s 默认 stale 一过就再发一次
+  // GET /groups + /groups/members（公网隧道 ~600ms × 2）。对齐 15s staleTime
+  // 复用主 cache。和 mobile-ai-call-screen R3/R4 同款修法。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, resolvedGroupId],
     queryFn: () => getGroup(resolvedGroupId, baseUrl),
     enabled: Boolean(resolvedGroupId),
+    staleTime: 15_000,
   });
 
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, resolvedGroupId],
     queryFn: () => getGroupMembers(resolvedGroupId, baseUrl),
     enabled: Boolean(resolvedGroupId),
+    staleTime: 15_000,
   });
 
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
