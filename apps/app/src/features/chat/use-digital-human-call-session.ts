@@ -364,8 +364,18 @@ export function useDigitalHumanCallSession({
     };
   }, [enabled, stopReplyPlayback]);
 
+  // 走查新一轮 R6（perf）：原版 deps 把整个 session?.status 串进去，每条 SSE
+  // event 把 status 从 queued → rendering → ready 推一遍都会触发 effect 重跑：
+  // cleanup 关 ES → 新 effect 重开 ES → server 又推一次初始 event → setSession
+  // 又跑一遍 status 更新。一条 session 启动到 ready 的过程 ES 被 close/reopen
+  // 2-3 次，每次都是新的长连 HTTP，公网隧道下浪费明显（且短时高频建连容易
+  // 撞 provider 端 rate limit）。
+  // 真正需要终止 ES 的只有 status === "ended"，提取成 boolean 进 deps，其他
+  // status 字段更新走 onmessage 自己 setSession 而不触发 effect 重跑。
+  const sessionId = session?.id;
+  const sessionEnded = session?.status === "ended";
   useEffect(() => {
-    if (!enabled || !session?.id || session.status === "ended") {
+    if (!enabled || !sessionId || sessionEnded) {
       return;
     }
 
@@ -429,7 +439,7 @@ export function useDigitalHumanCallSession({
 
     if (typeof EventSource === "function") {
       eventSource = new EventSource(
-        buildDigitalHumanSessionEventsUrl(session.id, baseUrl),
+        buildDigitalHumanSessionEventsUrl(sessionId, baseUrl),
       );
       eventSource.onmessage = (event) => {
         try {
@@ -460,7 +470,7 @@ export function useDigitalHumanCallSession({
       stopEventStream();
       stopPolling();
     };
-  }, [baseUrl, enabled, session?.id, session?.status]);
+  }, [baseUrl, enabled, sessionId, sessionEnded]);
 
   const retrySession = useCallback(() => {
     autoSubmitRecordingRef.current = false;
