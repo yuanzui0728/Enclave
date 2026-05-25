@@ -23,6 +23,12 @@ import { formatDateTime } from "../lib/format";
 import { useUsernameMap } from "../lib/use-username-map";
 import { ReportButton } from "./report-button";
 
+// 楼中楼递归渲染的安全阀（纯防 React 递归过深，不是内容上限）。真实楼层受写额度
+// 限制（newcomer 5/h、autoconfirmed 30/h）几乎不可能堆到几十层；阈值给到 60，
+// 60 层 React 递归毫无压力，realistic thread 永远到不了。超过时不再静默吞帖（见
+// PostTree 内注释），而是渲染一条可见的「已折叠」提示。
+const MAX_TALK_RENDER_DEPTH = 60;
+
 export function TalkPanel({ characterId }: { characterId: string }) {
   const t = translateRuntimeMessage;
   const { user } = useAuth();
@@ -416,7 +422,19 @@ function PostTree({
   isNarrow?: boolean;
 }) {
   const t = translateRuntimeMessage;
-  if (depth > 12) return null;
+  // 原写法 `if (depth > 12) return null` 会把第 13 层以下的楼中楼**静默吞掉**：
+  // 深层回复凭空消失，而 thread.postCount 仍计入它们 →「N 条」与展开后可见楼数
+  // 对不上（2026-05-25 深度走查发现，18 层链只渲染到第 12 层）。缩进早被下方
+  // Math.min(depth,6/4) 钳住、撑不破布局，这个 cutoff 纯粹是递归安全阀。阈值抬到
+  // MAX_TALK_RENDER_DEPTH，且超过时不再 return null 而是给一条**可见**的「已折叠」
+  // 提示——深层内容要么照常显示、要么有明确交代，绝不无声消失。
+  if (depth > MAX_TALK_RENDER_DEPTH) {
+    return (
+      <p className="py-1 text-xs italic text-[var(--text-muted)]">
+        <Trans>回复层级过深，更深的楼层已折叠。</Trans>
+      </p>
+    );
+  }
   // root 桶用 "__root__" 哨兵——必须和 ThreadDetail childrenByParent 写入侧
   // 完全一致，否则递归读不到 root 帖，整 thread 一条都不渲染。
   const children = childrenByParent.get(parentId ?? "__root__") ?? [];
