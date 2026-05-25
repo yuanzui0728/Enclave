@@ -36,6 +36,11 @@ export type WikiPageView = {
   content: WikiContentSnapshot;
   visibleContent: WikiContentSnapshot;
   recipe: CharacterBlueprintRecipeValue | null;
+  // 社交参数住在 CharacterEntity 列上（不进 revision 快照 / recipe），阅读页要展示
+  // 真实值就得在这里 surface 出来；character 为 null 时回落实体默认值。
+  socialOpenness: string;
+  proactiveBrowseChance: number;
+  intimacyLevel: number;
   pendingRevision: CharacterRevisionEntity | null;
   pendingRevisions: CharacterRevisionEntity[];
   viewMode: 'stable' | 'current';
@@ -251,6 +256,9 @@ export class WikiPageService {
       content,
       visibleContent: content,
       recipe,
+      socialOpenness: character?.socialOpenness ?? 'normal',
+      proactiveBrowseChance: character?.proactiveBrowseChance ?? 0.3,
+      intimacyLevel: character?.intimacyLevel ?? 0,
       pendingRevision,
       pendingRevisions,
       viewMode,

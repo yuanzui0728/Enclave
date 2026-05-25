@@ -174,6 +174,10 @@ export type WikiPageView = {
   content: WikiContentSnapshot;
   visibleContent: WikiContentSnapshot;
   recipe: CharacterBlueprintRecipe | null;
+  // 社交参数（住 CharacterEntity 列，不进 recipe/快照）；后端 getPageView surface 出来
+  socialOpenness: string;
+  proactiveBrowseChance: number;
+  intimacyLevel: number;
   pendingRevision: WikiRevisionSummary | null;
   pendingRevisions: WikiRevisionSummary[];
   viewMode: "stable" | "current";
@@ -716,6 +720,17 @@ export const wikiApi = {
     return request<{ success: true }>(
       `/wiki/watchlist/${encodeURIComponent(characterId)}`,
       { method: "DELETE" },
+    );
+  },
+  // 更新某条已观察词条的通知开关（编辑 / 讨论）。复用 add 端点：对已存在条目，
+  // 传 boolean flag 即按字段更新（见 WikiWatchlistService.add）。
+  setWatchFlags(
+    characterId: string,
+    flags: { notifyOnEdit?: boolean; notifyOnTalk?: boolean },
+  ) {
+    return request<WatchlistEntry>(
+      `/wiki/watchlist/${encodeURIComponent(characterId)}`,
+      { method: "POST", body: JSON.stringify(flags) },
     );
   },
   softDeletePage(characterId: string, reason?: string) {
