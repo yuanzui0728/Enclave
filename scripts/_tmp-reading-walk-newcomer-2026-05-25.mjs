@@ -25,10 +25,28 @@ const pass = (s) => { console.log(`  ✅ ${s}`); passes.push(s); };
 const fail = (s, d = "") => { console.log(`  ❌ ${s}${d ? "\n     " + d : ""}`); issues.push({ s, d }); };
 const info = (s) => console.log(`  ·  ${s}`);
 
-const login = await (await fetch(`${API}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: WALK_USER, password: "123456" }) })).json();
+// wiki-api(3500) 偶发被重启（无稳定常驻 respawner），重启窗口里裸 fetch 直接
+// ECONNREFUSED。所有顶层 fetch 走带退避重试的 fetchJson；并在开跑前先 waitForApi
+// 轮询 /wiki/pages 直到 200，把环境抖动和真正的产品缺陷分开。
+async function fetchJson(url, opts, tries = 10) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try { return await (await fetch(url, opts)).json(); }
+    catch (e) { lastErr = e; await sleep(700); }
+  }
+  throw lastErr;
+}
+async function waitForApi() {
+  for (let i = 0; i < 30; i++) {
+    try { const r = await fetch(`${API}/wiki/pages`); if (r.ok) return; } catch { /* retry */ }
+    await sleep(700);
+  }
+}
+await waitForApi();
+const login = await fetchJson(`${API}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: WALK_USER, password: "123456" }) });
 const { token, user } = login;
 if (!token || user?.role !== "newcomer") { console.error("login failed / not newcomer:", JSON.stringify(login).slice(0, 300)); process.exit(1); }
-const realRows = await (await fetch(`${API}/wiki/pages`)).json();
+const realRows = await fetchJson(`${API}/wiki/pages`);
 const apiHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
 const browser = await chromium.launch({ headless: true });
@@ -54,14 +72,31 @@ async function freshPage({ anon = false } = {}) {
   return { ctx, p, errs };
 }
 
+// 共享 wiki-api(3500) 被并发会话（创建角色走查）按轮重启以重置写额度桶——纯读走查
+// 命中重启窗口时，5184 仍在但代理上游 3500 报错 → react-query error，依赖真实内容
+// 渲染的 selector（如 header h2 / ul.grid>li）等不到，会被误判成产品缺陷。loadUntil
+// goto 后等目标 selector，超时就 reload 重试几次（API 恢复后即成功），把环境抖动
+// 与真缺陷分开。selector 始终不出现（真错误）则抛错，让对应断言照常失败。
+async function loadUntil(p, url, selector, { tries = 4, timeout = 7000 } = {}) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      if (i === 0) await p.goto(url, { waitUntil: "domcontentloaded" });
+      else await p.reload({ waitUntil: "domcontentloaded" });
+      await p.waitForSelector(selector, { timeout });
+      return true;
+    } catch (e) { lastErr = e; await sleep(800); }
+  }
+  throw lastErr;
+}
+
 console.log(`\n========== newcomer「阅读」走查 ${ROUND} ==========`);
 
 // ── A. 列表渲染 / 计数 / 下沉 / 孤立分隔符 / 英文哨兵 / focus / console ──
 console.log("\n=== A. 角色目录列表 ===");
 {
   const { ctx, p, errs } = await freshPage();
-  await p.goto(`${WIKI}/`, { waitUntil: "domcontentloaded" });
-  await p.waitForSelector("ul.grid > li", { timeout: 10000 });
+  await loadUntil(p, `${WIKI}/`, "ul.grid > li", { timeout: 10000 });
   const countText = (await p.locator('text=/共 \\d+ 个词条/').first().textContent().catch(() => null))?.trim();
   if (countText && /共 \d+ 个词条/.test(countText)) pass(`计数行已落定: "${countText}"`); else fail("计数行未显示 共N个词条", String(countText));
   if (await p.locator('text=正在加载词条').count() === 0) pass("计数行无残留『正在加载词条…』"); else fail("计数行卡在加载中");
@@ -128,8 +163,9 @@ console.log("\n=== D. 列表 XSS 安全 ===");
 console.log("\n=== E. 角色详情读视图（newcomer）===");
 {
   const { ctx, p, errs } = await freshPage();
-  await p.goto(`${WIKI}/character/${TEST_CID}`, { waitUntil: "domcontentloaded" });
-  await p.waitForSelector('[role="tablist"]', { timeout: 10000 });
+  // 等 header h2（真实内容），不是 tablist——tablist 在 pageQ.data 缺失时也会渲染，
+  // 共享 API 重启窗口里会出现"有 tab 没正文"假象。等不到内容就 reload 重试。
+  await loadUntil(p, `${WIKI}/character/${TEST_CID}`, "header h2", { timeout: 10000 });
   await sleep(400);
   const srH1 = await p.locator("h1.sr-only").count();
   if (srH1 === 1) pass("详情挂 1 个 sr-only h1（tab 切换不丢标题）"); else fail("sr-only h1 数量异常", `count=${srH1}`);
@@ -205,8 +241,7 @@ console.log("\n=== E3. 朗读失败可见反馈 ===");
 {
   const { ctx, p, errs } = await freshPage();
   await p.route("**/api/ai/speech", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ code: "LEGACY_ERROR", message: "走查注入 TTS 故障" }) }));
-  await p.goto(`${WIKI}/character/${TEST_CID}`, { waitUntil: "domcontentloaded" });
-  await p.waitForSelector('[role="tablist"]');
+  await loadUntil(p, `${WIKI}/character/${TEST_CID}`, "header h2", { timeout: 10000 });
   const btn = p.locator('button[aria-label="朗读全文"]');
   if (await btn.count() === 0) { info("无朗读按钮，跳过 E3"); }
   else {
@@ -221,6 +256,31 @@ console.log("\n=== E3. 朗读失败可见反馈 ===");
   }
   if (errs.length === 0) pass("朗读失败无 console error / 无崩溃"); else fail("朗读失败 console error", errs.join(" | "));
   await ctx.close();
+}
+
+// ── E4. recipe 子对象缺失防白屏（注入删 prompting/scenePrompts/lifeStrategy）──
+// recipeSnapshot 类型上 prompting/scenePrompts/lifeStrategy/memorySeed 都必填，但
+// 实际存库/工厂兜底/schema 漂移的快照不保证齐全。ReadView 渲染若裸取这些子对象，
+// 缺任一就抛错冒泡到根 TelemetryErrorBoundary → 整个 SPA 白屏（不只这一页）。
+// 注入删每个子对象，验证 ReadView 仍渲染 header h2（降级成 "—"），不再崩页。
+console.log("\n=== E4. recipe 子对象缺失防白屏 ===");
+{
+  const base = await (await fetch(`${API}/wiki/pages/${TEST_CID}?view=stable`, { headers: apiHeaders })).json();
+  const readRe = new RegExp(`/api/wiki/pages/${TEST_CID.replace(/[-/]/g, "\\$&")}(\\?view=[^/]*)?$`);
+  let ok = 0;
+  const drops = ["prompting", "prompting.scenePrompts", "lifeStrategy", "memorySeed"];
+  for (const drop of drops) {
+    const { ctx, p, errs } = await freshPage();
+    const v = JSON.parse(JSON.stringify(base));
+    if (v.recipe) { if (drop === "prompting.scenePrompts") delete v.recipe.prompting?.scenePrompts; else delete v.recipe[drop]; }
+    await p.route((url) => readRe.test(url.toString()), (r) => r.request().method() === "GET" ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(v) }) : r.continue());
+    await p.goto(`${WIKI}/character/${TEST_CID}`, { waitUntil: "domcontentloaded" });
+    await sleep(900);
+    const hasH2 = await p.locator("header h2").count();
+    if (hasH2 === 1 && errs.length === 0) ok++; else fail(`recipe 缺 ${drop} 白屏/崩页`, `headerH2=${hasH2} errs=${errs.join("|").slice(0,120)}`);
+    await ctx.close();
+  }
+  if (ok === drops.length) pass(`recipe 子对象缺失全部 ${drops.length} 例优雅降级（prompting/scenePrompts/lifeStrategy/memorySeed 均不崩页）`);
 }
 
 // ── F. 读 API 正确性（perf fast-path 不丢字段 + newcomer 钳 stable）──

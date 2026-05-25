@@ -451,11 +451,15 @@ function ReadView({ view }: { view: WikiPageView }) {
     };
     append(t(msg`简介`), c.bio);
     if (c.personality) append(t(msg`性格`), c.personality);
-    if (recipe?.prompting.coreLogic) {
+    // recipe?.prompting 仍要再 ?. 一层：recipe 存在但 prompting 子对象缺失时
+    // （历史/工厂兜底/未来 schema 漂移的非规范 recipeSnapshot），`recipe?.prompting
+    // .coreLogic` 会在 undefined 上取 .coreLogic 抛错 → 连 useMemo 一起崩。见
+    // 下方 ReadView 同款防白屏处理（与 memorySeed?. 一致）。
+    if (recipe?.prompting?.coreLogic) {
       append(t(msg`核心逻辑`), recipe.prompting.coreLogic);
     }
     return parts.join("\n\n").slice(0, 4000);
-  }, [c.bio, c.personality, recipe?.prompting.coreLogic, t]);
+  }, [c.bio, c.personality, recipe?.prompting?.coreLogic, t]);
   // 走查 yuanzui0728 R1：切换到不同角色页（同组件、不同 view.characterId）时，
   // 旧角色的 narrationUrl 还挂着，新角色 listen 按钮一点会触发再合成；同时旧
   // <audio autoPlay> 还可能在后台播。重置 narrationUrl + 释放 audio buffer，
@@ -633,9 +637,17 @@ function ReadView({ view }: { view: WikiPageView }) {
       )}
       {recipe && (
         <>
+          {/* recipe 子对象一律走可选链 + 兜底：recipeSnapshot 类型上 prompting /
+              scenePrompts / lifeStrategy / memorySeed 都是必填，但实际存进库/工厂
+              兜底/未来 schema 漂移的快照不保证齐全。9cc76cd08 当时只给 memorySeed
+              加了 ?. 兜底，prompting / scenePrompts / lifeStrategy 仍裸取——一旦
+              缺这三个任一，ReadView 渲染抛错会冒泡到根 TelemetryErrorBoundary，
+              整个 wiki SPA（不只是这一页）被替换成错误兜底。实测注入缺 prompting
+              / scenePrompts / lifeStrategy 均白屏。这里补齐同款可选链，与 memorySeed
+              口径一致，任何子对象缺失只渲染 "—" 不再崩页。 */}
           {/* 底层逻辑：对齐编辑页「底层逻辑」section（核心逻辑 + 遗忘曲线） */}
           <Section label={t(msg`核心逻辑`)}>
-            {recipe.prompting.coreLogic || "—"}
+            {recipe.prompting?.coreLogic || "—"}
           </Section>
           <Section label={t(msg`遗忘曲线（0-100，默认 70）`)}>
             {recipe.memorySeed?.forgettingCurve ?? "—"}
@@ -643,28 +655,28 @@ function ReadView({ view }: { view: WikiPageView }) {
           {/* 场景提示词：对齐编辑页「聊天回复」+「场景提示词」section 的全部 8 项 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Section label={t(msg`聊天场景提示词`)}>
-              {recipe.prompting.scenePrompts.chat || "—"}
+              {recipe.prompting?.scenePrompts?.chat || "—"}
             </Section>
             <Section label={t(msg`发朋友圈`)}>
-              {recipe.prompting.scenePrompts.moments_post || "—"}
+              {recipe.prompting?.scenePrompts?.moments_post || "—"}
             </Section>
             <Section label={t(msg`朋友圈评论 / 回复`)}>
-              {recipe.prompting.scenePrompts.moments_comment || "—"}
+              {recipe.prompting?.scenePrompts?.moments_comment || "—"}
             </Section>
             <Section label={t(msg`广场发帖`)}>
-              {recipe.prompting.scenePrompts.feed_post || "—"}
+              {recipe.prompting?.scenePrompts?.feed_post || "—"}
             </Section>
             <Section label={t(msg`发视频号内容`)}>
-              {recipe.prompting.scenePrompts.channel_post || "—"}
+              {recipe.prompting?.scenePrompts?.channel_post || "—"}
             </Section>
             <Section label={t(msg`广场评论`)}>
-              {recipe.prompting.scenePrompts.feed_comment || "—"}
+              {recipe.prompting?.scenePrompts?.feed_comment || "—"}
             </Section>
             <Section label={t(msg`好友请求 / 摇一摇问候`)}>
-              {recipe.prompting.scenePrompts.greeting || "—"}
+              {recipe.prompting?.scenePrompts?.greeting || "—"}
             </Section>
             <Section label={t(msg`主动提醒`)}>
-              {recipe.prompting.scenePrompts.proactive || "—"}
+              {recipe.prompting?.scenePrompts?.proactive || "—"}
             </Section>
           </div>
           {/* 记忆提示词：对齐编辑页「记忆提示词」section */}
@@ -678,14 +690,14 @@ function ReadView({ view }: { view: WikiPageView }) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Section label={t(msg`发圈频率`)}>
-              {recipe.lifeStrategy.momentsFrequency}
+              {recipe.lifeStrategy?.momentsFrequency ?? "—"}
             </Section>
             <Section label={t(msg`广场频率`)}>
-              {recipe.lifeStrategy.feedFrequency}
+              {recipe.lifeStrategy?.feedFrequency ?? "—"}
             </Section>
             <Section label={t(msg`活跃时段`)}>
-              {recipe.lifeStrategy.activeHoursStart ?? "—"}-
-              {recipe.lifeStrategy.activeHoursEnd ?? "—"}
+              {recipe.lifeStrategy?.activeHoursStart ?? "—"}-
+              {recipe.lifeStrategy?.activeHoursEnd ?? "—"}
             </Section>
           </div>
         </>
