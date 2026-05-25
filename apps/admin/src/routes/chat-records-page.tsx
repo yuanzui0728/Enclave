@@ -129,6 +129,10 @@ export function ChatRecordsPage() {
     setCharacterId(initialFocus.characterId);
     setSelectedConversationId(initialFocus.conversationId);
     setPage(1);
+    setFocusedMessageId("");
+    setMessagePage(null);
+    setSearchContext(null);
+    setSearchKeyword("");
   }, [initialFocus.characterId, initialFocus.conversationId]);
 
   function applyFilterChange(apply: () => void) {
@@ -187,14 +191,16 @@ export function ChatRecordsPage() {
       (item) => item.id === selectedConversationId,
     );
     if (!selectedConversationId || !stillVisible) {
+      // Reset per-conversation view state in the same batch as the re-select
+      // so the messages query never fires for the new conversation while still
+      // holding the previous one's focused message (404) or page number.
       setSelectedConversationId(conversations[0].id);
+      setFocusedMessageId("");
+      setMessagePage(null);
+      setSearchContext(null);
+      setSearchKeyword("");
     }
   }, [conversations, selectedConversationId]);
-
-  useEffect(() => {
-    setFocusedMessageId("");
-    setMessagePage(null);
-  }, [activeConversationId]);
 
   const searchMutation = useMutation({
     mutationFn: (keyword: string) =>
@@ -277,6 +283,7 @@ export function ChatRecordsPage() {
   function selectConversation(conversationId: string) {
     setSelectedConversationId(conversationId);
     setSearchKeyword("");
+    setMessagePage(null);
     clearSearchContextState();
   }
 
