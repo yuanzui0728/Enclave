@@ -21,9 +21,27 @@ export type WatchlistEntryView = {
   protectionLevel: string;
 };
 
+// feed 只渲染这几个字段（版本号/状态/摘要/时间），但历史上整条 revision 实体被原样
+// 返回，连 contentSnapshot / recipeSnapshot / diffFromParent 三个大 JSON 列一起塞进
+// 响应。2026-05-25 走查实测：100 条动态里 recipeSnapshot 单列就占 66KB、整 feed
+// 体 ~180KB，而 UI 真正用到的不足 15KB。改用瘦 DTO + QueryBuilder.select 只取必要列，
+// 既少从 SQLite 读大 JSON，也少序列化/传输。
+export type WatchlistFeedRevision = {
+  id: string;
+  version: number;
+  status: string;
+  editSummary: string;
+  createdAt: Date;
+};
+export type WatchlistFeedThread = {
+  id: string;
+  title: string;
+  lastReplyAt: Date | null;
+  createdAt: Date;
+};
 export type WatchlistFeedItem =
-  | { kind: 'revision'; characterId: string; title: string; revision: CharacterRevisionEntity }
-  | { kind: 'talk'; characterId: string; title: string; thread: WikiTalkThreadEntity };
+  | { kind: 'revision'; characterId: string; title: string; revision: WatchlistFeedRevision }
+  | { kind: 'talk'; characterId: string; title: string; thread: WatchlistFeedThread };
 
 @Injectable()
 export class WikiWatchlistService {
@@ -139,8 +157,19 @@ export class WikiWatchlistService {
 
     const items: WatchlistFeedItem[] = [];
     if (editIds.length > 0) {
+      // contentSnapshot 仅用于取改名时的快照标题（rev 时刻的 name），算完 title 即丢弃，
+      // 不进响应；recipeSnapshot / diffFromParent 等大列彻底不 select。
       const qb = this.revisionRepo
         .createQueryBuilder('r')
+        .select([
+          'r.id',
+          'r.characterId',
+          'r.version',
+          'r.status',
+          'r.editSummary',
+          'r.createdAt',
+          'r.contentSnapshot',
+        ])
         .where('r.characterId IN (:...ids)', { ids: editIds })
         .andWhere('r.status IN (:...statuses)', {
           statuses: ['approved', 'pending', 'reverted'],
@@ -154,13 +183,26 @@ export class WikiWatchlistService {
           kind: 'revision',
           characterId: rev.characterId,
           title: rev.contentSnapshot?.name || titleOf(rev.characterId),
-          revision: rev,
+          revision: {
+            id: rev.id,
+            version: rev.version,
+            status: rev.status,
+            editSummary: rev.editSummary,
+            createdAt: rev.createdAt,
+          },
         });
       }
     }
     if (talkIds.length > 0) {
       const qb = this.threadRepo
         .createQueryBuilder('t')
+        .select([
+          't.id',
+          't.characterId',
+          't.title',
+          't.lastReplyAt',
+          't.createdAt',
+        ])
         .where('t.characterId IN (:...ids)', { ids: talkIds })
         .orderBy('t.lastReplyAt', 'DESC')
         .take(50);
@@ -171,7 +213,12 @@ export class WikiWatchlistService {
           kind: 'talk',
           characterId: thread.characterId,
           title: titleOf(thread.characterId),
-          thread,
+          thread: {
+            id: thread.id,
+            title: thread.title,
+            lastReplyAt: thread.lastReplyAt ?? null,
+            createdAt: thread.createdAt,
+          },
         });
       }
     }

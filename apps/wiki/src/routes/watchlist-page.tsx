@@ -142,9 +142,7 @@ export function WatchlistPage() {
                         params={{ characterId: item.characterId }}
                         className="font-medium hover:underline"
                       >
-                        {item.title ||
-                          item.revision.contentSnapshot?.name ||
-                          item.characterId}
+                        {item.title || item.characterId}
                       </Link>
                       <span className="ml-auto text-xs text-[color:var(--text-muted)]">
                         v{item.revision.version} ·{" "}

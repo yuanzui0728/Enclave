@@ -313,9 +313,20 @@ export type WatchlistEntry = {
   protectionLevel: string;
 };
 
+// feed 返回的是瘦 DTO（服务端只 select 渲染需要的列，不再回传 contentSnapshot /
+// recipeSnapshot 等大 JSON）。与完整的 WikiRevisionSummary / WikiTalkThread 区分开，
+// 避免类型谎称存在那些已不下发的字段。
+export type WatchlistFeedRevision = Pick<
+  WikiRevisionSummary,
+  "id" | "version" | "status" | "editSummary" | "createdAt"
+>;
+export type WatchlistFeedThread = Pick<
+  WikiTalkThread,
+  "id" | "title" | "lastReplyAt" | "createdAt"
+>;
 export type WatchlistFeedItem =
-  | { kind: "revision"; characterId: string; title: string; revision: WikiRevisionSummary }
-  | { kind: "talk"; characterId: string; title: string; thread: WikiTalkThread };
+  | { kind: "revision"; characterId: string; title: string; revision: WatchlistFeedRevision }
+  | { kind: "talk"; characterId: string; title: string; thread: WatchlistFeedThread };
 
 export type ModerationReport = {
   id: string;
