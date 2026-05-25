@@ -333,7 +333,16 @@ export function ProfileFeedPage() {
                 const expanded = Boolean(fullCommentsByPostId[post.id]);
                 const showExpand =
                   !expanded && post.commentCount > rendered.length;
-                if (rendered.length === 0 && !showExpand) {
+                // commentCount>0 但展开后清洗剩 0（整帖评论全是 CoT prose / 空评论）：
+                // 别 return null 让评论框点开就消失（用户点了「查看全部」反而啥都没了），
+                // 给一行占位，和 discover-feed-page expandedAllFiltered 对齐。
+                const expandedAllFiltered =
+                  expanded && rendered.length === 0 && post.commentCount > 0;
+                if (
+                  rendered.length === 0 &&
+                  !showExpand &&
+                  !expandedAllFiltered
+                ) {
                   return null;
                 }
                 return (
@@ -372,6 +381,11 @@ export function ProfileFeedPage() {
                             ? t(msg`加载中…`)
                             : t(msg`查看全部 ${post.commentCount} 条评论`)}
                         </button>
+                      ) : null}
+                      {expandedAllFiltered ? (
+                        <div className="text-[12px] text-[color:var(--text-muted)]">
+                          {t(msg`评论暂时无法显示`)}
+                        </div>
                       ) : null}
                     </div>
                   </div>
