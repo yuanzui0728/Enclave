@@ -112,17 +112,23 @@ export class WikiPageService {
     characterId: string,
     input: { view?: 'stable' | 'current'; user?: AuthenticatedUser } = {},
   ): Promise<WikiPageView> {
-    const character = await this.characterRepo.findOne({
-      where: { id: characterId },
-    });
-    const existingPage = await this.pageRepo.findOne({ where: { characterId } });
+    // character / page 两条查询互不依赖，并行发；角色详情是 wiki 最热路径。
+    const [character, existingPage] = await Promise.all([
+      this.characterRepo.findOne({ where: { id: characterId } }),
+      this.pageRepo.findOne({ where: { characterId } }),
+    ]);
     if (!character && !existingPage) {
       throw new AppError('WIKI_PAGE_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
         legacyMessage: `角色 ${characterId} 不存在`,
       });
     }
-    const page = character ? await this.getOrInitPage(characterId) : existingPage!;
+    // 复用上面已查出的 existingPage：原写法 character 存在时无条件调
+    // getOrInitPage，而它内部又 pageRepo.findOne({characterId}) 一次，等于每次
+    // 详情访问都对 page 表查两遍同样的行。existingPage 命中直接用；只有 page
+    // 行还不存在（首次访问某个 world 同步过来的角色）才走 getOrInitPage 建行，
+    // 此时 existingPage 必为 null 且 character 必存在（否则上面已抛 404）。
+    const page = existingPage ?? (await this.getOrInitPage(characterId));
     let stableRevision: CharacterRevisionEntity | null = null;
     if (page.currentRevisionId) {
       stableRevision = await this.revisionRepo.findOne({
@@ -144,15 +150,29 @@ export class WikiPageService {
     if (!latestRevision) {
       latestRevision = pendingRevision ?? stableRevision;
     }
-    const factorySnapshot = character
-      ? await this.blueprints.getFactorySnapshot(characterId).catch(() => null)
-      : null;
     const canViewCurrent =
       rankOf(input.user?.role) >= rankOf('autoconfirmed');
     const viewMode =
       input.view === 'current' && canViewCurrent ? 'current' : 'stable';
     const visibleRevision =
       viewMode === 'current' ? latestRevision ?? stableRevision : stableRevision;
+    // drift 漂移横幅只对 patroller+ 渲染（前端 character-page 已 gate 在
+    // hasRole(user,'patroller')）。匿名 / newcomer / autoconfirmed 占角色详情访
+    // 问的绝大多数，对他们算 drift 纯属白算。
+    const isPatroller = rankOf(input.user?.role) >= rankOf('patroller');
+    // getFactorySnapshot 很重：重查一遍 character + 两次 cloneRecipe + 三段
+    // diffSummary/fieldSources/publishDiff 构造，而本视图只取它的
+    // publishedRecipe/draftRecipe 兜底 recipe（外加 patroller 算 drift 用）。
+    // 仅在 (a) 当前可见版本没带 recipeSnapshot 需要兜底，或 (b) patroller 要算
+    // drift 时才拉。命中"wiki 版本已自带 recipe 的普通访客读"路径直接跳过整个
+    // 快照计算。注意 needFactory 用 !visibleRevision?.recipeSnapshot 而非把
+    // pendingRevision 也算进来——factory 在 recipe 兜底链里优先级高于 pending，
+    // 一旦可见版本缺 recipe 就必须拉 factory 才能保持原有兜底顺序不变。
+    const needFactory =
+      !!character && (!visibleRevision?.recipeSnapshot || isPatroller);
+    const factorySnapshot = needFactory
+      ? await this.blueprints.getFactorySnapshot(characterId).catch(() => null)
+      : null;
     const recipe =
       visibleRevision?.recipeSnapshot ??
       factorySnapshot?.blueprint.publishedRecipe ??
@@ -181,11 +201,13 @@ export class WikiPageService {
     if (typeof content.region !== 'string' && character?.region) {
       content.region = character.region;
     }
-    const drift = await this.computeDrift(
-      character,
-      stableRevision,
-      factorySnapshot?.blueprint.publishedRecipe ?? null,
-    );
+    const drift: DriftReport = isPatroller
+      ? await this.computeDrift(
+          character,
+          stableRevision,
+          factorySnapshot?.blueprint.publishedRecipe ?? null,
+        )
+      : { hasDrift: false, contentDrift: [], recipeDrift: [], source: 'none' };
 
     return {
       characterId,
@@ -251,7 +273,31 @@ export class WikiPageService {
   }
 
   private async computeListPages(): Promise<ListPagesRow[]> {
-    const characters = await this.characterRepo.find({ order: { name: 'ASC' } });
+    // 只投影目录卡片真正需要的 7 列，别 .find() 把整行实体拉出来。characters
+    // 行带着 profile(JSON,均 ~3KB/最大 8KB) + expertDomains/aiRelationships 等
+    // 大 TEXT 列，全表 ~97 行整实体水合下来是几百 KB + 38 列对象构造，而目录只
+    // 用到 8 个小字段。和同文件 search() 一致走 getRawMany 投影。
+    const characters = await this.characterRepo
+      .createQueryBuilder('c')
+      .select([
+        'c.id AS id',
+        'c.name AS name',
+        'c.avatar AS avatar',
+        'c.bio AS bio',
+        'c.relationship AS relationship',
+        'c.relationshipType AS relationshipType',
+        'c.sourceType AS sourceType',
+      ])
+      .orderBy('c.name', 'ASC')
+      .getRawMany<{
+        id: string;
+        name: string;
+        avatar: string;
+        bio: string;
+        relationship: string;
+        relationshipType: string;
+        sourceType: string;
+      }>();
     const pages = await this.pageRepo.find();
     const pendingRevisions = await this.revisionRepo.find({
       where: { operation: 'create', status: 'pending' },
