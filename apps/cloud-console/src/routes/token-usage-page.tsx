@@ -1,5 +1,10 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
   CloudTokenPricingItem,
@@ -24,6 +29,7 @@ import {
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
 import { useConsoleNotice } from "../components/console-notice";
+import { Pager } from "../components/pager";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import { useCloudConsoleText } from "../lib/cloud-console-i18n";
 
@@ -278,25 +284,56 @@ function trendDataForChart(points: TokenUsageTrendPoint[]) {
   }));
 }
 
+// 与 users-page / wiki-users-page 同款搜索防抖：停止输入 350ms 后才更新查询值，
+// 把逐字击键收敛成一次请求。
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+const WORLDS_PAGE_SIZE = 20;
+
 function WorldsTab({ range }: { range: { from: string; to: string } }) {
   const t = useCloudConsoleText();
   const [sort, setSort] = useState<
     "tokens" | "cost" | "requests" | "failureRate"
   >("tokens");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const debouncedSearch = useDebouncedValue(search.trim(), 350);
+
+  // 搜索词（防抖后）/ 排序 / 时间范围变化时都复位回第 1 页，
+  // 否则会停在旧结果的第 N 页看到空表。
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, sort, range.from, range.to]);
 
   const worldsQuery = useQuery({
-    queryKey: ["token-usage", "worlds", range.from, range.to, sort, search],
+    queryKey: [
+      "token-usage",
+      "worlds",
+      range.from,
+      range.to,
+      sort,
+      debouncedSearch,
+      page,
+    ],
     queryFn: () =>
       cloudAdminApi.listCloudTokenUsageWorlds({
         from: range.from,
         to: range.to,
         sort,
         dir: "desc",
-        page: 1,
-        pageSize: 100,
-        search: search || undefined,
+        page,
+        pageSize: WORLDS_PAGE_SIZE,
+        search: debouncedSearch || undefined,
       }),
+    placeholderData: keepPreviousData,
   });
 
   if (worldsQuery.error) {
@@ -304,6 +341,8 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
   }
 
   const items = worldsQuery.data?.items ?? [];
+  const total = worldsQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / WORLDS_PAGE_SIZE));
 
   return (
     <section className={SECTION}>
@@ -370,6 +409,10 @@ function WorldsTab({ range }: { range: { from: string; to: string } }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 flex items-center justify-end">
+        <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </section>
   );
