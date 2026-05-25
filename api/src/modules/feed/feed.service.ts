@@ -3663,7 +3663,13 @@ export class FeedService implements OnModuleInit {
       .andWhere('post.publishStatus = :status', { status: 'published' })
       .andWhere("post.authorType = 'user'")
       .andWhere('post.authorId = :ownerId', { ownerId })
+      // 走查 R2：feed_posts.createdAt 是秒级 datetime，实测同一秒批量发帖会
+      // 撞同 createdAt（一个时间戳 5 条）。只按 createdAt DESC 排，跨页边界处
+      // 同秒帖的相对顺序在两次独立查询间是未定义的 → page N/N+1 边界可能漏掉
+      // 或重复一条；getOwnFeed 的 id 去重能挡重复但挡不住「漏」。补 id DESC
+      // 次级排序，和 moments stableOrder（postedAt+id）一致，分页全程确定。
       .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('post.id', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
