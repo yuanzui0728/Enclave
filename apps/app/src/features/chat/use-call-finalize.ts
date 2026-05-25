@@ -47,6 +47,15 @@ export function useCallFinalize({
 }: UseCallFinalizeOptions): CallFinalizeHandle {
   const startedAtIsoRef = useRef<string>(new Date().toISOString());
   const finalizedRef = useRef(false);
+  // 走查新一轮 R4：浏览器后退按钮 / iOS 边缘 swipe back / 手机厂商手势 back
+  // 直接走 history.back，绕开 handleBack 兜底链路（Android hardware back 已经被
+  // registerAndroidBackInterceptor 抓住），最后只跑 React unmount。原版 unmount
+  // 只 clearTimer，**根本不调 hangup**，导致这条退出路径上 call_log 不写、后端
+  // finalize HTTP 不发，群/单聊状态卡片永远停在"通话中..."。这条 callActiveRef
+  // 记录"call 是否真正进行过"（enabled effect 跑过一次就 true），unmount 兜底
+  // 只在 active && !finalized 时补一发 hangup —— 已经走过 handleBack /
+  // timeout 路径的 finalizedRef=true 让兜底 no-op。
+  const callActiveRef = useRef(false);
   const timeoutHandleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSessionEndedRef = useRef(onSessionEnded);
   onSessionEndedRef.current = onSessionEnded;
@@ -87,6 +96,10 @@ export function useCallFinalize({
         return;
       }
       finalizedRef.current = true;
+      // 兜底 unmount cleanup（下方独立 effect）靠 callActiveRef && !finalizedRef
+      // 判断是否补发 hangup。任何"明面"出口（handleBack / timer timeout）走到这里
+      // 都标 false，避免 navigate → unmount → cleanup 再补一次写出"重复 call_log"。
+      callActiveRef.current = false;
       clearTimer();
 
       const args = dynamicArgsRef.current;
@@ -128,6 +141,9 @@ export function useCallFinalize({
     }
     startedAtIsoRef.current = new Date().toISOString();
     finalizedRef.current = false;
+    // 标记"call 真正进入活跃状态"——下方 unmount-only effect 用它判断是否要补
+    // 发 hangup 兜底（浏览器/iOS swipe back 等绕过 handleBack 的退出路径）。
+    callActiveRef.current = true;
     timeoutHandleRef.current = setTimeout(() => {
       void hangup("timeout");
     }, timeoutMs);
@@ -135,6 +151,25 @@ export function useCallFinalize({
       clearTimer();
     };
   }, [enabled, hangup, timeoutMs, clearTimer]);
+
+  // 走查新一轮 R4：unmount-only 兜底。原版 useCallFinalize 只在 handleBack /
+  // Android hardware back interceptor / 10min timeout 三条入口写 call_log，
+  // **浏览器后退 / iOS 边缘 swipe / 厂商手势 back** 直接 history.back → 组件
+  // unmount，handleBack 根本没机会跑，call_log 永远不写、后端 finalize HTTP
+  // 不发，群/单聊状态卡片永远停在"通话中..."误导对方。
+  // 这里挂一条 deps=[hangup] 的 cleanup（hangup 是 useCallback([clearTimer])
+  // 稳定身份 → effect 只在 unmount 跑 cleanup），unmount 时若 call 实际进入过
+  // 活跃状态（callActiveRef）且尚未 finalized（finalizedRef），补发一份
+  // user_hangup —— 明面出口已经把 finalizedRef 翻 true，这里 no-op；纯 silent
+  // exit 才真发。reason 用 user_hangup 比 timeout/error 更贴近用户意图（人主动
+  // 离开页面），契约里也没有 navigation/exit 这种第四种 reason。
+  useEffect(() => {
+    return () => {
+      if (callActiveRef.current && !finalizedRef.current) {
+        void hangup("user_hangup");
+      }
+    };
+  }, [hangup]);
 
   return { startedAtIsoRef, hangup };
 }
