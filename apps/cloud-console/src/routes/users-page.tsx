@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
   CloudUserStatus,
@@ -21,6 +21,18 @@ function formatTimestamp(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return formatDateTime(date, { dateStyle: "medium", timeStyle: "short" });
+}
+
+// 搜索框防抖：输入框每个字符都直接进 queryKey 会让 listCloudUsers 每敲一下就打一次
+// 后端（实测敲 6 个字符 = 6 次请求）。这里把"输入值"与"实际用于查询的值"解耦，
+// 停止输入 350ms 后才更新查询值，把一串击键收敛成一次请求。
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
 }
 
 const FILTER_CONTROL_CLASS =
@@ -107,8 +119,15 @@ export function UsersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [includeTestAccounts, setIncludeTestAccounts] = useState(false);
 
-  // 后端搜索时也 trim，前端这里 normalize 一遍避免 " 138" / "138 " 走出两条 cache key
-  const normalizedQuery = query.trim();
+  // 后端搜索时也 trim，前端这里 normalize 一遍避免 " 138" / "138 " 走出两条 cache key。
+  // 再套一层 350ms 防抖，避免连续击键逐字触发后端查询。
+  const normalizedQuery = useDebouncedValue(query.trim(), 350);
+  // 搜索词（防抖后）变化时回到第 1 页：否则在第 5 页改搜索会看到"新词的第 5 页"。
+  // 放在 effect 里跟随 debounced 值，而不是放在 onChange 里跟随每次击键——
+  // 后者会在防抖窗口内用旧搜索词 + page=1 多打一次无谓请求。
+  useEffect(() => {
+    setPage(1);
+  }, [normalizedQuery]);
   const usersQuery = useQuery({
     queryKey: [
       "cloud-console",
@@ -134,6 +153,8 @@ export function UsersPage() {
         orderBy: sortField ?? undefined,
         orderDir: sortField ? sortDirection : undefined,
       }),
+    // 翻页 / 改筛选时保留上一页数据，避免表格整段卸载闪一下 LoadingBlock 再回来。
+    placeholderData: keepPreviousData,
   });
 
   const items = usersQuery.data?.items ?? [];
@@ -226,8 +247,8 @@ export function UsersPage() {
         <input
           value={query}
           onChange={(event) => {
+            // page 回到 1 交给跟随 debounced 值的 effect 处理。
             setQuery(event.target.value);
-            setPage(1);
           }}
           placeholder={t("Search phone or email")}
           className={FILTER_CONTROL_CLASS}
@@ -293,7 +314,12 @@ export function UsersPage() {
       ) : null}
 
       {usersQuery.data ? (
-        <div className="overflow-x-auto rounded-[24px] border border-[color:var(--border-faint)] bg-white">
+        <div
+          className="overflow-x-auto rounded-[24px] border border-[color:var(--border-faint)] bg-white transition-opacity"
+          // 保留上一页数据时用淡出提示"正在取新数据"，替代过去整段卸载的闪烁。
+          style={{ opacity: usersQuery.isFetching ? 0.55 : 1 }}
+          aria-busy={usersQuery.isFetching}
+        >
           {/* table-fixed + 显式宽度：避免排序切换、IP 异步解析导致列宽抖动 */}
           <table className="w-full table-fixed divide-y divide-[color:var(--border-faint)] text-sm">
             <colgroup>

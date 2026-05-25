@@ -1,6 +1,6 @@
 // i18n-ignore-start: cloud-console surface 字典里没有这组中文，直接走字面量。
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { formatDateTime, useAppLocale } from "@yinjie/i18n";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -14,6 +14,16 @@ function formatTimestamp(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return formatDateTime(date, { dateStyle: "medium", timeStyle: "short" });
+}
+
+// 与 users-page 同款搜索防抖：停止输入 350ms 后才更新查询值，把逐字击键收敛成一次请求。
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
 }
 
 const FILTER_CONTROL_CLASS =
@@ -31,7 +41,11 @@ export function WikiUsersPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
-  const normalizedQ = q.trim();
+  const normalizedQ = useDebouncedValue(q.trim(), 350);
+  // 搜索词（防抖后）变化时回到第 1 页。
+  useEffect(() => {
+    setPage(1);
+  }, [normalizedQ]);
   const usersQuery = useQuery({
     queryKey: ["cloud-console", "wiki-users", normalizedQ, page],
     queryFn: () =>
@@ -40,6 +54,7 @@ export function WikiUsersPage() {
         page,
         pageSize: 20,
       }),
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -48,8 +63,8 @@ export function WikiUsersPage() {
         <input
           value={q}
           onChange={(event) => {
+            // page 回到 1 交给跟随 debounced 值的 effect 处理。
             setQ(event.target.value);
-            setPage(1);
           }}
           placeholder="搜索用户名 / 邮箱"
           className={FILTER_CONTROL_CLASS}
