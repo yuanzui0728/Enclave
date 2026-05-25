@@ -15,6 +15,7 @@
 //   MAIN_MODE=wiki WIKI_PORT=3500 WIKI_DATABASE_PATH=$(pwd)/data/wiki/wiki.sqlite \
 //     YINJIE_DATA_ROOT=$(pwd)/data/wiki node api/dist/main-wiki.js
 import './proxy-bootstrap';
+import compression from 'compression';
 import * as express from 'express';
 import * as path from 'node:path';
 import { NestFactory } from '@nestjs/core';
@@ -92,6 +93,13 @@ async function bootstrap() {
   const app = await NestFactory.create(WikiAppModule, {
     bodyParser: false,
   });
+  // gzip 压缩所有响应：wiki-api 的 JSON 出参原本零压缩（recent-changes 50 行
+  // ~63KB、pages/search 列表更大），实测响应无 Content-Encoding。这些是公开端点
+  // （任何 wiki 访客都打），且 patroller 每次"标记已巡查"都会整列表 refetch，
+  // gzip 后 JSON 体积降 ~85%。wiki-api 无 SSE/event-stream 端点，compression 不会
+  // 破坏流式响应；默认 1KB 阈值让 patrol/auth 这种小响应不进压缩。仅作用于本
+  // 独立 wiki 进程（main-wiki），不影响 cloud-api / world child。
+  app.use(compression());
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
   app.getHttpAdapter().getInstance().set('trust proxy', true);
