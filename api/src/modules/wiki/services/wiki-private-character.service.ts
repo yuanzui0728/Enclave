@@ -153,6 +153,56 @@ export class WikiPrivateCharacterService {
   }
 
   /**
+   * 列表视图（GET /wiki/my-characters）专用的轻量加载。
+   *
+   * /my-characters 列表卡只渲染 name / avatar / bio / relationship /
+   * relationshipType / expertDomains / updatedAt，从不读 recipe / profile /
+   * aiRelationships / triggerScenes 这几个大 JSON 列。原 listForOwner 走 find()
+   * 全列加载——实测一个带「AI 一键生成」recipe（8 个场景提示词全文）的角色，单行
+   * recipe ≈ 11 KB，5 个角色的列表响应里 recipe+profile 就占了 ~55 KB / 总 58 KB
+   * （94%），而卡片真正用到的只有 ~1.1 KB。角色越多浪费越线性放大。
+   *
+   * 这里用 select 只取卡片需要的轻量列，把 4 个大 JSON 列排除在 SQL 读取 + JSON
+   * 序列化 + 网络传输之外。编辑页走 getById 单独拉全量、admin 视图仍走 listForOwner
+   * 全量，两者都不受影响。
+   */
+  listSummariesForOwner(
+    ownerUserId: string,
+  ): Promise<UserPrivateCharacterEntity[]> {
+    return this.repo.find({
+      where: { ownerUserId },
+      order: { updatedAt: 'DESC' },
+      // 排除重列：recipe / profile / aiRelationships / triggerScenes。
+      // 其余皆为标量 / 小数组，字节可忽略，保留以免列表记录形状对消费方失真。
+      select: {
+        id: true,
+        ownerUserId: true,
+        name: true,
+        avatar: true,
+        bio: true,
+        personality: true,
+        relationship: true,
+        relationshipType: true,
+        region: true,
+        expertDomains: true,
+        isOnline: true,
+        onlineMode: true,
+        activityMode: true,
+        currentActivity: true,
+        sourceType: true,
+        sourceKey: true,
+        deletionPolicy: true,
+        isTemplate: true,
+        socialOpenness: true,
+        proactiveBrowseChance: true,
+        intimacyLevel: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
    * 管理员视角：批量统计若干 owner 各自的私有角色数量。
    * 返回 Map<ownerUserId, count>；ownerIds 里没有任何私有角色的人不会出现在 Map 里（调用方按缺省 0 处理）。
    * 实现走 find + JS aggregate：避免 getRawMany 的 alias 行为在不同 TypeORM/driver 版本上

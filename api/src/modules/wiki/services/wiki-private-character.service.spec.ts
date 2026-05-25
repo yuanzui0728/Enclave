@@ -168,3 +168,38 @@ describe('WikiPrivateCharacterService.parseImportBundle', () => {
     expect(dto.name).toBe('导入测试');
   });
 });
+
+describe('WikiPrivateCharacterService.listSummariesForOwner', () => {
+  // 性能走查：/my-characters 列表卡只渲染 name/avatar/bio/relationship/
+  // relationshipType/expertDomains/updatedAt，从不读 recipe/profile 等大 JSON 列。
+  // 实测 5 个带「AI 一键生成」recipe 的角色，列表响应 ~58KB 里 recipe+profile 占
+  // ~55KB（94%），卡片真正用到的只有 ~1.1KB。这里锁住 select 把 4 个重列排除掉。
+  it('selects only lightweight columns, excluding recipe/profile/aiRelationships/triggerScenes', async () => {
+    const find = jest.fn(async () => []);
+    const repo = { find } as unknown as ConstructorParameters<
+      typeof WikiPrivateCharacterService
+    >[0];
+    const svc = new WikiPrivateCharacterService(repo);
+    await svc.listSummariesForOwner('u1');
+    expect(find).toHaveBeenCalledTimes(1);
+    const arg = find.mock.calls[0][0] as {
+      where: Record<string, unknown>;
+      order: Record<string, unknown>;
+      select: Record<string, unknown>;
+    };
+    expect(arg.where).toEqual({ ownerUserId: 'u1' });
+    expect(arg.order).toEqual({ updatedAt: 'DESC' });
+    // 重列必须缺席（undefined，而非 true），不进 SQL 读取 / 序列化 / 传输。
+    expect(arg.select.recipe).toBeUndefined();
+    expect(arg.select.profile).toBeUndefined();
+    expect(arg.select.aiRelationships).toBeUndefined();
+    expect(arg.select.triggerScenes).toBeUndefined();
+    // 卡片字段必须在。
+    expect(arg.select.name).toBe(true);
+    expect(arg.select.avatar).toBe(true);
+    expect(arg.select.bio).toBe(true);
+    expect(arg.select.relationship).toBe(true);
+    expect(arg.select.expertDomains).toBe(true);
+    expect(arg.select.updatedAt).toBe(true);
+  });
+});

@@ -40,7 +40,8 @@ export class WikiPrivateCharacterController {
 
   @Get()
   list(@CurrentUser() user: AuthenticatedUser) {
-    return this.service.listForOwner(user.id);
+    // 列表卡不读 recipe / profile 等大 JSON 列，走 summary 加载省掉 ~94% 响应体。
+    return this.service.listSummariesForOwner(user.id);
   }
 
   @Post()
