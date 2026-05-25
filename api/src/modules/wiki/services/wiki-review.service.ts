@@ -221,9 +221,14 @@ export class WikiReviewService {
         revision.operation !== 'edit');
 
     await this.dataSource.transaction(async (manager) => {
-      await manager.update(
+      // status='pending' 进 WHERE 让这步成为原子的"抢审"：上面的 revision.status
+      // 检查在事务外，两个 patroller 同时点同一条 → 都读到 pending → 都进事务。
+      // 不加守卫的话第二个会重复 +approvedEditCount/+patrolledCount、重复
+      // applySnapshot，甚至把对方的 approve 覆盖成 reject（这些计数喂自动晋升/降级，
+      // 偏一点就漂）。affected=0 说明已被抢审，throw 回滚整个事务、不再往下增计数。
+      const revUpdate = await manager.update(
         CharacterRevisionEntity,
-        { id: revisionId },
+        { id: revisionId, status: 'pending' },
         {
           status: finalStatus,
           isPatrolled: isApprove,
@@ -231,6 +236,12 @@ export class WikiReviewService {
           patrolledAt: isApprove ? new Date() : null,
         },
       );
+      if (!revUpdate.affected) {
+        throw new AppError('WIKI_REVIEW_INVALID_STATE', {
+          params: { detail: '该版本已被其他巡查员处理' },
+          legacyMessage: '该版本已被其他巡查员处理',
+        });
+      }
       await manager.update(
         EditSubmissionEntity,
         { id: submission.id },
