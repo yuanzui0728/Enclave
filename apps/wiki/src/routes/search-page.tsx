@@ -23,6 +23,12 @@ export function SearchPage() {
     enabled: query.length > 0,
   });
   const hitCount = resultsQ.data?.length ?? 0;
+  // 相关度展示归一化：后端 score 是字段权重之和（单词 2–24，多词 AND 会累加到
+  // 更高，无固定上界），原样显示"相关度 24"对用户毫无刻度可言。结果已按 score
+  // 降序，取榜首分作分母，把每条折算成相对最佳命中的 0–100% —— 榜首恒 100%，
+  // 其余相对可读。百分号放进占位符表达式内（值为 "42%"），msgid 仍是 `相关度 {0}`，
+  // en/ja/ko 译文不受影响。
+  const maxScore = Math.max(1, ...(resultsQ.data?.map((r) => r.score) ?? [1]));
 
   return (
     <PageShell
@@ -75,7 +81,11 @@ export function SearchPage() {
                   </span>
                 )}
                 <span className="ml-auto whitespace-nowrap text-xs text-[color:var(--text-muted)]">
-                  <Trans>相关度 {Math.round(r.score * 100) / 100}</Trans>
+                  {/* 占位符保持单个数值表达式，msgid 仍是 `相关度 {0}`（命中现有 catalog
+                      哈希）。早先试过把 "%" 放进模板串 → lingui 把它解析进消息变成
+                      `相关度 {0}%`（新哈希 DgCNQ8 不在 catalog）→ 整条退化成显示哈希。
+                      所以这里用纯归一化数值（0–100，榜首恒 100），不带 %。 */}
+                  <Trans>相关度 {Math.round((r.score / maxScore) * 100)}</Trans>
                 </span>
               </div>
               {r.bio && (

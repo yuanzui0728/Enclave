@@ -531,11 +531,16 @@ export class WikiPageService {
   > {
     const q = query.trim();
     if (!q) return [];
+    // 按空白拆成多个关键词做 AND 匹配：用户搜 "理性 朋友" / "finance management"
+    // 期望两个词都命中（不要求连续），原来只做单一连续子串 LIKE 时这类查询一律
+    // 0 结果。\s+ 同时覆盖普通空格和全角空格(U+3000)。上限 12 个词，挡住把整段
+    // 话粘进来生成超长 SQL。单关键词时 terms=[q]，与原来的单一 LIKE 完全等价。
+    const terms = q.split(/\s+/).filter(Boolean).slice(0, 12);
     // 用 '!' 作 ESCAPE 字符而不是 '\\'。TypeORM 把 SQL 片段里的反斜杠再 escape 一次，
     // 实际跑到 SQLite 的是 ESCAPE '\\\\'（两字符）→ "ESCAPE expression must be a single
     // character"。改成 '!' 后两边都不需要再过 backslash quoting。
-    const like = `%${q.replace(/[%_!]/g, (m) => `!${m}`)}%`;
-    const rows = await this.characterRepo
+    const toLike = (s: string) => `%${s.replace(/[%_!]/g, (m) => `!${m}`)}%`;
+    const qb = this.characterRepo
       .createQueryBuilder('c')
       .leftJoin(
         CharacterPageEntity,
@@ -557,11 +562,17 @@ export class WikiPageService {
       // 自己主动公开的内容。
       .andWhere(
         "(c.sourceType != 'private_import' OR p.currentRevisionId IS NOT NULL)",
-      )
-      .andWhere(
-        "(c.name LIKE :like ESCAPE '!' OR c.bio LIKE :like ESCAPE '!' OR c.relationship LIKE :like ESCAPE '!' OR c.personality LIKE :like ESCAPE '!' OR c.expertDomains LIKE :like ESCAPE '!')",
-        { like },
-      )
+      );
+    // 每个关键词都必须至少命中一个可搜字段（AND 跨词、OR 跨字段）。每词独立
+    // 占位符，避免共用 :like 被覆盖。
+    terms.forEach((term, i) => {
+      const key = `t${i}`;
+      qb.andWhere(
+        `(c.name LIKE :${key} ESCAPE '!' OR c.bio LIKE :${key} ESCAPE '!' OR c.relationship LIKE :${key} ESCAPE '!' OR c.personality LIKE :${key} ESCAPE '!' OR c.expertDomains LIKE :${key} ESCAPE '!')`,
+        { [key]: toLike(term) },
+      );
+    });
+    const rows = await qb
       .select([
         'c.id AS id',
         'c.name AS name',
@@ -584,16 +595,25 @@ export class WikiPageService {
         expertDomains: string;
       }>();
 
-    const lower = q.toLowerCase();
+    const lowerTerms = terms.map((t) => t.toLowerCase());
     const take = Math.min(Math.max(limit, 1), 100);
     return rows
       .map((r) => {
+        // 逐词累加字段权重：命中的关键词越多、命中的字段越靠前，分越高。
+        // 单关键词时只循环一次，与原打分（name10/关系6/专长5/简介3/性格2）等价。
         let score = 0;
-        if (r.name?.toLowerCase().includes(lower)) score += 10;
-        if (r.relationship?.toLowerCase().includes(lower)) score += 6;
-        if (r.expertDomains?.toLowerCase().includes(lower)) score += 5;
-        if (r.bio?.toLowerCase().includes(lower)) score += 3;
-        if (r.personality?.toLowerCase().includes(lower)) score += 2;
+        const name = r.name?.toLowerCase();
+        const rel = r.relationship?.toLowerCase();
+        const dom = r.expertDomains?.toLowerCase();
+        const bio = r.bio?.toLowerCase();
+        const pers = r.personality?.toLowerCase();
+        for (const term of lowerTerms) {
+          if (name?.includes(term)) score += 10;
+          if (rel?.includes(term)) score += 6;
+          if (dom?.includes(term)) score += 5;
+          if (bio?.includes(term)) score += 3;
+          if (pers?.includes(term)) score += 2;
+        }
         return {
           characterId: r.id,
           name: r.name,
