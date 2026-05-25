@@ -315,6 +315,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       void sendCallStatusMessage("ended");
     }
 
+    // 走查新一轮 R6：user_hangup 走的是 R4 unmount 兜底路径——浏览器 back /
+    // iOS swipe 已经 history.back 把路由切走，组件正在 unmount。再发一次
+    // navigate 会和 history.back 撞车（router 把刚生效的回退路由再 replace
+    // 一遍，URL 抖动；多 tab 历史栈可能出现循环）。timeout 是后台 timer 主动
+    // 触发，用户还在通话屏，必须显式 navigate 回 thread。两条路径分流。
+    if (reason === "user_hangup") {
+      return;
+    }
+
     if (isDesktopLayout) {
       void navigate({
         to: desktopThreadPath,

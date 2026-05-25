@@ -482,6 +482,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           .catch(() => undefined);
       }
 
+      // 走查新一轮 R6：user_hangup 走 R4 unmount 兜底路径——浏览器/iOS swipe
+      // back 已经把路由 history.back 切走，组件正在 unmount。再 navigate 会和
+      // history.back 撞车（router 把刚回退到的群聊页再 replace 一遍，URL 抖动、
+      // 多 tab 历史栈循环）。timeout 是后台 timer 主动触发，用户还在群通话屏，
+      // 必须显式 navigate 回群聊页。两条路径分流。
+      if (reason === "user_hangup") {
+        return;
+      }
+
       if (isDesktopLayout) {
         void navigate({
           to: desktopThreadPath,
