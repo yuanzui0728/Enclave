@@ -12,6 +12,11 @@ const LONG_CACHE = "public, max-age=31536000, immutable";
 const HTML_CACHE = "public, max-age=0, s-maxage=600, stale-while-revalidate=86400";
 
 const config: NextConfig = {
+  // 线上服务（site-prod）走独立 distDir，避免 `pnpm build` / turbo / `next dev` 等
+  // 默认写 .next 的命令在 next start 运行期间原地覆盖 chunk，导致已启动的服务仍按旧 HTML
+  // 引用旧 hash → /_next/static 全部 400 白屏。只有 dev-services 的 site-prod 流程会设
+  // SITE_DIST_DIR=.next-prod 并 build→restart 原子切换；其余构建落 .next，碰不到线上目录。
+  distDir: process.env.SITE_DIST_DIR || ".next",
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
   reactStrictMode: true,

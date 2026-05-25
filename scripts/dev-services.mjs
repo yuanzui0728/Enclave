@@ -163,6 +163,8 @@ const services = {
     args: [path.join(rootDir, "apps", "site", "node_modules", "next", "dist", "bin", "next"), "start", "-p", "5185"],
     env: {
       NODE_ENV: "production",
+      // 与默认 `.next` 隔离：线上 build+serve 只用 .next-prod，turbo/手动 next build 落 .next 不会污染线上。
+      SITE_DIST_DIR: ".next-prod",
     },
     port: 5185,
     url: "http://127.0.0.1:5185/",
@@ -184,7 +186,7 @@ const services = {
         [path.join(rootDir, "apps", "site", "node_modules", "next", "dist", "bin", "next"), "build"],
         {
           cwd: path.join(rootDir, "apps", "site"),
-          env: { ...process.env, NODE_ENV: "production" },
+          env: { ...process.env, NODE_ENV: "production", SITE_DIST_DIR: ".next-prod" },
           shell: false,
           stdio: "inherit",
           windowsHide: true,

@@ -19,6 +19,7 @@ packages/*/node_modules/
 dist/
 build/
 .next/
+.next-prod/
 out/
 apps/*/dist/
 apps/*/dist-mobile/
