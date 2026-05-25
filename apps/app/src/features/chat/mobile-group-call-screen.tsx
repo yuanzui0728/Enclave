@@ -1126,14 +1126,19 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     mode === "voice"
       ? () => voiceCall.setAudioMuted((current) => !current)
       : () => setSpeakerEnabled((current) => !current);
+  // 走查（用户截屏 "6mhtb0" 报告 i18n 乱码）：原版用了 U+2026 单字符省略号 `…`，
+  // lingui 5.x macro 给每条 msg 算 6 字节 base62 hash 当 ID；catalog .po 里
+  // msgid 是 `...`（3 个 ASCII 点）版本，hash 对不上 runtime 直接把 ID
+  // 当 fallback 渲染。改回 `...` 让 hash 与已有/即将抽取的翻译重新对齐。
+  // 同 ebed94912 commit 在单聊语音通话屏也漏改了 4 条，姊妹文件已一并修。
   const groupCallStatusLine =
     mode === "voice"
       ? voiceCall.voiceLoop.phase === "listening"
-        ? t(msg`正在聆听…`)
+        ? t(msg`正在聆听...`)
         : voiceCall.voiceLoop.phase === "thinking"
-          ? t(msg`成员正在回复…`)
+          ? t(msg`成员正在回复...`)
           : voiceCall.voiceLoop.phase === "speaking"
-            ? t(msg`成员正在说话…`)
+            ? t(msg`成员正在说话...`)
             : ""
       : "";
   const startedAtMs = new Date(startedAt).getTime();

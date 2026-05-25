@@ -598,11 +598,18 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
     switch (vadPhase) {
       case "listening":
-        return t(msg`正在聆听…`);
+        // 走查（用户截屏 "6mhtb0" 报告 i18n 乱码）：原版用了 U+2026 单字符省略号
+        // `…`，lingui 5.x 的 macro 给每条 msg 算 6 字节 base62 hash 当 ID；现有
+        // catalog .po 里的 msgid 是 `正在聆听...`（3 个 ASCII 点，hash `jg91Py`），
+        // 而 `…` 版本的 hash 是 `6mhtb0`，runtime 找不到翻译就把 ID 当 fallback
+        // 文本渲染 → 通话屏 status 栏直接显示 "6mhtb0"。同 commit 也漏改了下面
+        // 3 条。改回 `...` 让 hash 与已有翻译重新对齐（en-US `Listening...` / ja-JP
+        // `聞き取り中...` / ko-KR `듣는 중...` 全部覆盖到）。
+        return t(msg`正在聆听...`);
       case "thinking":
-        return t(msg`对方正在回复…`);
+        return t(msg`对方正在回复...`);
       case "speaking":
-        return t(msg`对方正在说话…`);
+        return t(msg`对方正在说话...`);
       case "connecting":
         return t(msg`正在连接...`);
       default:
@@ -1115,7 +1122,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               className="mt-2.5"
               startedAtMs={connectedAtMs}
               running={connectedAtMs !== null}
-              waitingLabel={t(msg`正在等待接听…`)}
+              waitingLabel={t(msg`正在等待接听...`)}
             />
             <CallStatusLine className="mt-1.5" text={callStatusLine} />
           </div>
