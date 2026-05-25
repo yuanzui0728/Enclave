@@ -144,7 +144,13 @@ export class WikiWatchlistService {
     const talkIds = entries
       .filter((e) => e.notifyOnTalk)
       .map((e) => e.characterId);
-    const since = sinceISO ? new Date(sinceISO) : null;
+    // new Date('garbage') 产出 Invalid Date——仍是 truthy 对象，若原样塞进 QueryBuilder，
+    // 过滤行为完全取决于 sqlite 驱动怎么序列化 NaN 时间（实测被静默当成"无过滤"返回全量，
+    // 而 Invalid Date.toISOString() 本身又会抛）。既不报错也不可靠，显式判定无效就回落成
+    // null（无 since 过滤），让 ?since= 这个公开 query 参数的行为可预期、不依赖驱动巧合。
+    const parsedSince = sinceISO ? new Date(sinceISO) : null;
+    const since =
+      parsedSince && !Number.isNaN(parsedSince.getTime()) ? parsedSince : null;
 
     // 一次性把所有相关 page 的 title 取出来，避免每个 feed item 再查一次。
     // UI 之前只有 characterId 可显示，feed 列表全是 char_wiki_… UUID。
