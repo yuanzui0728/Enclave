@@ -116,6 +116,31 @@ export class AiGenerationJobService {
     });
   }
 
+  /**
+   * 进程启动时调：把当前所有 status='generating' 的 job 直接标 failed，**不看
+   * aiStartedAt 早晚**。
+   *
+   * 不变量：job 只能由 enqueue 时同进程内 setImmediate 触发的 runJobInBackground
+   * 推进。进程一旦重启（部署 / 崩溃 / 设备重启），旧 runner 随进程消失，新进程
+   * 绝不会接管任何历史 job。因此"刚启动那一刻仍是 generating 的行"100% 是被
+   * 重启孤立的，与开始时间无关。
+   *
+   * 这正是周期 sweeper（带 5 分钟 age 阈值，防误杀当前进程在跑的慢任务）补不到
+   * 的盲区：刚好在重启瞬间入队的 job aiStartedAt 很新，会被 age 阈值放过，让前端
+   * 一直转圈到下一次（甚至几次后）cron tick 才被收掉；若重启间隔 < 5 分钟，
+   * EVERY_5_MINUTES 计时器反复被重置可能永远不触发，孤立 job 永久卡在 generating。
+   * 启动即清是唯一能保证孤立 job 立刻拿到终态的兜底。
+   *
+   * 返回被标记的行数（用于日志）。
+   */
+  async failOrphanedOnBoot(message: string): Promise<number> {
+    const result = await this.repo.update(
+      { status: 'generating' },
+      { status: 'failed', errorMessage: message },
+    );
+    return result.affected ?? 0;
+  }
+
   private parseResult(raw: string | null): AiGeneratedDraft | null {
     if (!raw) return null;
     try {
