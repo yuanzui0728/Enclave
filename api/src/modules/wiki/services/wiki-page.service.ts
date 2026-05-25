@@ -332,9 +332,16 @@ export class WikiPageService {
         sourceType: string;
       }>();
     const pages = await this.pageRepo.find();
+    // 和上面 characters 投影同理：目录卡片只读 contentSnapshot 的 name/avatar/bio/
+    // relationship/relationshipType + characterId。recipeSnapshot(simple-json,
+    // 单条 ~8KB，实测占本查询 JSON 体量 ~86%) 与 diffFromParent 在这里一概不用，
+    // 默认 find() 却把它们整列水合进内存再反序列化。显式 select 把这两列丢掉——
+    // 与 listRecentChanges 早先 drop recipeSnapshot 的优化保持一致（每个 newcomer
+    // 待审创建都会往这张表加一条带满 recipe 的 pending 行，列表缓存每次重建都白载）。
     const pendingRevisions = await this.revisionRepo.find({
       where: { operation: 'create', status: 'pending' },
       order: { createdAt: 'DESC' },
+      select: { id: true, characterId: true, contentSnapshot: true },
     });
     const pageMap = new Map(pages.map((page) => [page.characterId, page]));
     // private_import 是用户从 app 端 import 的私有角色（每个真实用户都会带一批
