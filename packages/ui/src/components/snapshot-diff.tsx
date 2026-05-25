@@ -61,23 +61,28 @@ export function SnapshotDiff({
   newLabel = DEFAULT_NEW_LABEL,
 }: SnapshotDiffProps) {
   const resolvedFieldLabels = { ...DEFAULT_FIELD_LABELS, ...(fieldLabels ?? {}) };
+  const valueDiffers = (k: keyof SnapshotDiffShape) =>
+    JSON.stringify(before?.[k] ?? null) !== JSON.stringify(after[k] ?? null);
   const keys = (Object.keys(after) as (keyof SnapshotDiffShape)[]).filter(
     (k) => {
-      if (k === "avatar" || !resolvedFieldLabels[k]) {
-        // hide unknown keys but keep avatar — let the predicate below decide
-      }
       if (changedFields && changedFields.length > 0) {
-        if (
-          changedFields.includes("__create__") ||
-          changedFields.includes("__delete__") ||
-          changedFields.includes("__restore__") ||
-          changedFields.includes("__revert__")
-        ) {
-          return true;
+        // Sentinel-driven revisions (`__create__` / `__delete__` / `__restore__` /
+        // `__revert__` / `__sync_from_character__`) carry no field names — the backend
+        // signals a lifecycle / whole-snapshot event rather than a field edit. The old
+        // code force-rendered EVERY content field for these, but the diff baseline
+        // (`before`) typically equals the snapshot for delete/restore/revert ops, so it
+        // produced a wall of rows where old === new (looks broken: "8 fields changed"
+        // yet every value identical — observed on 56/64 revisions of a revert-heavy
+        // page). Fall back to actual value equality so only fields that genuinely differ
+        // from the baseline render; a lifecycle op with no content change collapses to
+        // the empty label, which is honest. `__create__` still shows all populated fields
+        // because its baseline is null (every populated field differs).
+        if (changedFields.some((c) => c.startsWith("__") && c.endsWith("__"))) {
+          return valueDiffers(k);
         }
         return changedFields.includes(k);
       }
-      return JSON.stringify(before?.[k] ?? null) !== JSON.stringify(after[k] ?? null);
+      return valueDiffers(k);
     },
   );
   if (keys.length === 0) {
