@@ -982,6 +982,38 @@ function HistoryView({
   );
 }
 
+// 折叠式 JSON 查看器：把 JSON.stringify 推迟到 <details> 首次展开后。recipeSnapshot
+// 动辄数 KB~数十 KB，原写法 <pre>{JSON.stringify} 写死在折叠 details 里，关着也每次
+// 重渲都跑 O(N) 序列化 + 挂载大文本节点（pending-reviews 待审队列同源问题，那边亦有
+// 本地同名组件修过）。用本地 open state gate 住，关着零开销。
+function LazyJsonDetails({
+  summary,
+  data,
+  className = "text-xs",
+}: {
+  summary: string;
+  data: unknown;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      className={className}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer text-[var(--text-muted)]">
+        {summary}
+      </summary>
+      {open && (
+        <pre className="mt-2 p-3 bg-[var(--bg-canvas)] rounded overflow-auto max-h-[40vh] md:max-h-[60vh]">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      )}
+    </details>
+  );
+}
+
 function RevisionCard({
   rev,
   editorName,
@@ -1150,15 +1182,15 @@ function RevisionCard({
                 {(revisionDetailQ.error as Error).message}
               </p>
             )}
+            {/* recipeSnapshot 动辄数 KB~数十 KB；原写法 <pre>{JSON.stringify} 写死在
+                <details> 里，关着也每次重渲都跑序列化（与 pending-reviews 同源问题，那边
+                已有同名本地组件修过）。改走 LazyJsonDetails，展开才序列化 + 挂载。 */}
             {recipeSnapshot && (
-              <details className="mt-3 text-xs">
-                <summary className="cursor-pointer text-[var(--text-muted)]">
-                  <Trans>查看角色逻辑快照</Trans>
-                </summary>
-                <pre className="mt-2 p-3 bg-[var(--bg-canvas)] rounded overflow-auto max-h-[40vh] md:max-h-[60vh]">
-                  {JSON.stringify(recipeSnapshot, null, 2)}
-                </pre>
-              </details>
+              <LazyJsonDetails
+                className="mt-3 text-xs"
+                summary={t(msg`查看角色逻辑快照`)}
+                data={recipeSnapshot}
+              />
             )}
           </div>
         )}
