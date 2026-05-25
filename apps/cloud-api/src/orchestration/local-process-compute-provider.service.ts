@@ -738,8 +738,16 @@ export class LocalProcessComputeProviderService
       this.syncProviderMinimaxKey(accountDir, minimaxAlloc.key, world.id);
     }
     // 安全：child 只该看到自己分到的那个 key，整个池只属于 cloud-api 层。
-    // 不删的话 ...process.env 会把全部 CSV 池泄露给 child env（/proc/PID/environ 可见）。
-    delete env.MINIMAX_API_KEYS;
+    // 不显式 set（只 delete）的话：
+    //   1. ...process.env 会把全部 CSV 池泄露给 child env（/proc/PID/environ 可见）
+    //   2. child 启动时 @nestjs/config 又会读 root .env，把 MINIMAX_API_KEYS=CSV 池
+    //      重新 inject 到 process.env —— minimax.client.ts 的 fromCsv 优先于
+    //      single 的逻辑就让 child 实际走"全 pool round-robin"，per-world
+    //      assignment / 配额分摊 / 撞墙 fingerprint 路径全失效。
+    // 显式 set 成单 key（dotenv 默认 override:false → 已存在的 process.env 不被
+    // .env 文件覆盖），同时杜绝 1+2 两种泄露。pool 为空时 set 空串走 single
+    // fallback。
+    env.MINIMAX_API_KEYS = minimaxAlloc ? minimaxAlloc.key : "";
 
     // 算 per-world 日配额并注入 env：共享同一 key 的 N 个 world 公平分摊单 key 日限额；
     // 配额 < world 数时 dispatcher 做日轮换，保证每个 world 都能轮到。
