@@ -421,6 +421,34 @@ export class WikiPageService {
     const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
     const qb = this.revisionRepo
       .createQueryBuilder('r')
+      // recent-changes 列表只渲染 contentSnapshot.name + diffFromParent.changed
+      // （见 recent-changes-page.tsx），但默认 getMany 会把每行的 recipeSnapshot
+      // （完整角色蓝图）一起序列化下发 —— 实测占整包 ~50%（50 行 126KB 里
+      // recipeSnapshot 独占 ~63KB）。WikiRevisionSummary.recipeSnapshot 本就是
+      // optional，且 listRecentChanges 仅此一个调用方，显式 select 掉它纯赚网络体积。
+      .select([
+        'r.id',
+        'r.characterId',
+        'r.version',
+        'r.parentRevisionId',
+        'r.baseRevisionId',
+        'r.contentSnapshot',
+        'r.diffFromParent',
+        'r.editorUserId',
+        'r.editorRoleAtTime',
+        'r.editSummary',
+        'r.status',
+        'r.revisionKind',
+        'r.operation',
+        'r.riskLevel',
+        'r.changeSource',
+        'r.isMinor',
+        'r.isPatrolled',
+        'r.patrolledBy',
+        'r.patrolledAt',
+        'r.revertedByRevisionId',
+        'r.createdAt',
+      ])
       .leftJoin(
         CharacterPageEntity,
         'p',
