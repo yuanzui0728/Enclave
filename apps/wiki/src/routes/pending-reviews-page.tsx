@@ -25,6 +25,7 @@ import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 import {
   revisionChangedFieldsLabel,
+  revisionEditSummaryLabel,
   revisionKindLabel,
   revisionOperationLabel,
 } from "../lib/revision-labels";
@@ -303,12 +304,20 @@ function ReviewCard({
         </span>
       </div>
       <div className="space-y-3 px-4 py-4 text-sm">
-        {rev.editSummary && (
+        {/* recipe revert 的 blueprint publish 失败时，rollbackRecipeRevert 会把
+            revert revision 退回 status=pending，于是它会出现在待审队列里——此时
+            editSummary 是后端机器拼的 `Revert to v{N}: antivandal_bot:...`，裸渲染
+            会在 zh-first UI 漏出英文 + snake_case 内部码。走 revisionEditSummaryLabel
+            本地化机器模式（人工自由填写的摘要原样返回），与 recent-changes /
+            character-page 口径统一。 */}
+        {revisionEditSummaryLabel(rev.editSummary) && (
           <div>
             <span className="text-xs text-[color:var(--text-muted)]">
               <Trans>摘要</Trans>
             </span>
-            <div className="mt-0.5 leading-6">{rev.editSummary}</div>
+            <div className="mt-0.5 leading-6">
+              {revisionEditSummaryLabel(rev.editSummary)}
+            </div>
           </div>
         )}
         <div className="text-xs text-[color:var(--text-muted)]">
