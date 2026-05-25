@@ -401,6 +401,15 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
   const [hydrationDone, setHydrationDone] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const hydratedTokenRef = useRef<string | number | null>(null);
+  // hydrate 时拿到的完整 recipe（含本编辑器**不暴露**的子结构：identity 的
+  // occupation/background/motivation/worldview、expertise 的描述/限制/拒答风格、
+  // 整段 tone、reasoning、lifeStrategy、publishMapping）。buildDto 直接以它为底
+  // 透传这些字段，否则编辑一个已有富 recipe 的世界/导入角色时，只动了简介也会把
+  // 上述字段全部抹空（str('',base)→'' 不回退）+ 误判成高风险编辑（tone.* /
+  // expertise.* / identity.background|motivation|worldview / reasoning 都是高风险
+  // 路径）。这与 memorySeed 三字段早先的 passthrough 修复（见下）是同一类 bug，
+  // 当时只补了 memorySeed，其余非 UI section 漏了。create 模式无 initialDto → null。
+  const hydratedRecipeRef = useRef<CharacterBlueprintRecipe | null>(null);
   const savedFlashTimerRef = useRef<number | null>(null);
   const aiFlashTimerRef = useRef<number | null>(null);
   const buildCurrentDraftRef = useRef<() => PrivateCharacterDto>(() => ({
@@ -505,6 +514,11 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       setIntimacyLevel(String(r.intimacyLevel));
     }
     const rp = r.recipe;
+    // 存一份 hydrate 时的完整 recipe（深拷贝，避免后续 buildDto 输出与之共享引用）；
+    // buildDto 用它透传本编辑器不暴露的非 UI 子结构。无 recipe（create）→ null。
+    hydratedRecipeRef.current = rp
+      ? (JSON.parse(JSON.stringify(rp)) as CharacterBlueprintRecipe)
+      : null;
     if (rp) {
       const pr = rp.prompting ?? ({} as CharacterBlueprintRecipe["prompting"]);
       setCoreLogic(pr.coreLogic ?? "");
@@ -609,21 +623,46 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     const pbc = parseFloatInRange(proactiveBrowseChance, 0, 1);
     const il = parseIntInRange(intimacyLevel, 0, 100);
 
+    // 编辑模式下透传 hydrate 时的非 UI section 原值（深拷贝，避免共享引用）；
+    // create 模式（无 hydrate）→ null，落回 EMPTY_* 默认值（新角色本就没有这些）。
+    const preserved = hydratedRecipeRef.current
+      ? (JSON.parse(
+          JSON.stringify(hydratedRecipeRef.current),
+        ) as CharacterBlueprintRecipe)
+      : null;
+
     const recipe: CharacterBlueprintRecipe = {
       identity: {
+        // occupation/background/motivation/worldview 本编辑器不暴露：编辑期透传
+        // hydrate 原值，create 期用空串。原写法恒展开 EMPTY_IDENTITY_EXTRA 会把
+        // 世界角色已有的这些字段抹空 + 误判高风险。
+        ...EMPTY_IDENTITY_EXTRA,
+        occupation: preserved?.identity.occupation ?? EMPTY_IDENTITY_EXTRA.occupation,
+        background: preserved?.identity.background ?? EMPTY_IDENTITY_EXTRA.background,
+        motivation: preserved?.identity.motivation ?? EMPTY_IDENTITY_EXTRA.motivation,
+        worldview: preserved?.identity.worldview ?? EMPTY_IDENTITY_EXTRA.worldview,
         name: trimmedName,
         relationship: trimmedRelationship,
         relationshipType: trimmedRelationshipType,
         avatar: trimmedAvatar,
         bio: bio.trim(),
-        ...EMPTY_IDENTITY_EXTRA,
         region: trimmedRegion,
       },
       expertise: {
-        expertDomains: expertList,
+        // 同理：expertiseDescription/knowledgeLimits/refusalStyle 不暴露 → 透传。
         ...EMPTY_EXPERTISE_EXTRA,
+        expertiseDescription:
+          preserved?.expertise.expertiseDescription ??
+          EMPTY_EXPERTISE_EXTRA.expertiseDescription,
+        knowledgeLimits:
+          preserved?.expertise.knowledgeLimits ?? EMPTY_EXPERTISE_EXTRA.knowledgeLimits,
+        refusalStyle:
+          preserved?.expertise.refusalStyle ?? EMPTY_EXPERTISE_EXTRA.refusalStyle,
+        expertDomains: expertList,
       },
-      tone: EMPTY_TONE,
+      // 整段 tone 不暴露：编辑期原样透传（含 speechPatterns / emotionalTone /
+      // workStyle 等），create 期用 EMPTY_TONE。
+      tone: preserved?.tone ?? EMPTY_TONE,
       prompting: {
         coreLogic: coreLogic.trim(),
         scenePrompts: {
@@ -648,12 +687,14 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
         recentSummaryPrompt: recentSummaryPrompt.trim(),
         coreMemoryPrompt: coreMemoryPrompt.trim(),
       },
-      reasoning: {
+      // reasoning / lifeStrategy / publishMapping 同样不暴露：编辑期透传 hydrate
+      // 原值，否则世界角色被这里的硬默认值覆盖（reasoning.* 还属高风险）。
+      reasoning: preserved?.reasoning ?? {
         enableCoT: false,
         enableReflection: false,
         enableRouting: false,
       },
-      lifeStrategy: {
+      lifeStrategy: preserved?.lifeStrategy ?? {
         activityFrequency: "normal",
         momentsFrequency: 1,
         feedFrequency: 1,
@@ -661,13 +702,18 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
         activeHoursEnd: null,
         triggerScenes: [],
       },
-      publishMapping: {
+      publishMapping: preserved?.publishMapping ?? {
         isTemplate: false,
         onlineModeDefault: "auto",
         activityModeDefault: "auto",
         initialOnline: false,
         initialActivity: null,
       },
+      // realityLink 后端 normalizeWikiRecipe 在 source===undefined 时回落 base，
+      // 但显式透传更稳；preserved 无该字段（undefined）时省略，保持原行为。
+      ...(preserved?.realityLink !== undefined
+        ? { realityLink: preserved.realityLink }
+        : {}),
     };
 
     return {
@@ -1649,7 +1695,15 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                     </Trans>
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {/* 世界角色（含 /create）：这三个社交参数会被 dtoToWikiEdit 丢掉
+                    （wiki 评审通道不写社交参数，admin 才管）。原写法输入框仍可点可改，
+                    用户改了「亲密度种子」以为生效、提交后被静默丢弃——可编辑却被忽略
+                    的控件是 UX 陷阱。disable 掉让 UI 与下方「无法通过本表单提交修改」
+                    notice 一致；private scope 这三个字段真会落库，保持可编辑。 */}
+                <fieldset
+                  disabled={scope === "world"}
+                  className="m-0 grid grid-cols-1 gap-4 border-0 p-0 md:grid-cols-3 disabled:opacity-60"
+                >
                   <FormRow
                     label={t(msg`社交开放度`)}
                     effect={t(msg`open 公开 / normal 普通 / private 仅好友`)}
@@ -1693,7 +1747,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                       placeholder="0"
                     />
                   </FormRow>
-                </div>
+                </fieldset>
                 {scope === "private" && (
                   <InlineNotice tone="warning">
                     <Trans>
