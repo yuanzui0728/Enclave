@@ -116,7 +116,7 @@ function OverviewTab({
   const t = useCloudConsoleText();
   const [worldsPage, setWorldsPage] = useState(1);
   const [worldsSort, setWorldsSort] = useState<TopWorldsSortState>({
-    by: "eventCount",
+    by: "humanActionCount",
     dir: "desc",
   });
 
@@ -161,10 +161,10 @@ function OverviewTab({
       worldsSort.dir,
     ],
     queryFn: () => {
-      // 默认排序（eventCount desc）下不发 sort 参数——后端默认值与之一致，省去参数
-      // 也让"重启前的旧 cloud-api"在 forbidNonWhitelisted 下不会 400。
+      // 默认排序（humanActionCount desc）下不发 sort 参数——后端默认值与之一致，
+      // 省去参数也让"重启前的旧 cloud-api"在 forbidNonWhitelisted 下不会 400。
       const isDefault =
-        worldsSort.by === "eventCount" && worldsSort.dir === "desc";
+        worldsSort.by === "humanActionCount" && worldsSort.dir === "desc";
       return cloudAdminApi.getTelemetryTopWorlds(range, {
         page: worldsPage,
         pageSize: TOP_WORLDS_PAGE_SIZE,

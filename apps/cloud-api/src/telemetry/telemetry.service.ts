@@ -226,11 +226,20 @@ export class TelemetryService {
         "SUM(CASE WHEN e.eventType = 'error' THEN 1 ELSE 0 END)",
         "errorCount",
       )
+      // 活跃登录真人：userId 仅在云端登录后才填，NULL 自动被 COUNT(DISTINCT) 排除。
+      .addSelect("COUNT(DISTINCT e.userId)", "activeUserCount")
+      // 真人主动行为：business 事件（发消息/发帖/支付），剔除 pv/api_call/session 噪声。
+      .addSelect(
+        "SUM(CASE WHEN e.eventType = 'business' THEN 1 ELSE 0 END)",
+        "humanActionCount",
+      )
       .getRawMany<{
         pvCount: string | null;
         uvCount: string | null;
         sessionCount: string | null;
         errorCount: string | null;
+        activeUserCount: string | null;
+        humanActionCount: string | null;
       }>();
 
     const sessionDurationsQb = this.events
@@ -277,6 +286,8 @@ export class TelemetryService {
       uvCount: toInt(totals?.uvCount),
       sessionCount: toInt(totals?.sessionCount),
       errorCount: toInt(totals?.errorCount),
+      activeUserCount: toInt(totals?.activeUserCount),
+      humanActionCount: toInt(totals?.humanActionCount),
       avgSessionDurationMs,
       sparkline: sparkRows.map((r) => ({
         date: r.date,
@@ -553,10 +564,19 @@ export class TelemetryService {
     const startIso = startOfRange(range);
 
     // 白名单兜底，防御 DTO 之外的入口（如 listWorldsForFilter 直接传 opts）。
+    // 默认按 humanActionCount（真人主动行为）排序——最贴合"真人活跃"，取代旧的 eventCount。
+    const SORTABLE_KEYS: TelemetryTopWorldsSortKey[] = [
+      "eventCount",
+      "uniqueUsers",
+      "errorCount",
+      "humanActionCount",
+      "sessionCount",
+      "activeDays",
+    ];
     const sortBy: TelemetryTopWorldsSortKey =
-      opts.sortBy === "uniqueUsers" || opts.sortBy === "errorCount"
+      opts.sortBy && SORTABLE_KEYS.includes(opts.sortBy)
         ? opts.sortBy
-        : "eventCount";
+        : "humanActionCount";
     const sortDir: "ASC" | "DESC" = opts.sortDir === "asc" ? "ASC" : "DESC";
 
     // total: 当前 range 内有事件的世界总数（COUNT DISTINCT worldId）。
@@ -578,12 +598,32 @@ export class TelemetryService {
         "SUM(CASE WHEN e.eventType = 'error' THEN 1 ELSE 0 END)",
         "errorCount",
       )
+      // 真人活跃维度，全部走同一次 GROUP BY，无额外查询。
+      .addSelect("COUNT(DISTINCT e.anonId)", "uniqueAnons")
+      .addSelect(
+        "SUM(CASE WHEN e.eventType = 'business' THEN 1 ELSE 0 END)",
+        "humanActionCount",
+      )
+      .addSelect(
+        "SUM(CASE WHEN e.eventName = 'chat_message_sent' THEN 1 ELSE 0 END)",
+        "chatMessageCount",
+      )
+      .addSelect(
+        "SUM(CASE WHEN e.eventName IN ('moment_published', 'feed_post_published') THEN 1 ELSE 0 END)",
+        "postCount",
+      )
+      .addSelect("COUNT(DISTINCT e.sessionId)", "sessionCount")
+      .addSelect("COUNT(DISTINCT substr(e.occurredAt, 1, 10))", "activeDays")
       .where("e.worldId IS NOT NULL")
       .andWhere("e.occurredAt >= :start", { start: startIso })
       .groupBy("e.worldId")
       .orderBy(sortBy, sortDir);
-    // 非 eventCount 列做 tiebreaker，保证同值时分页稳定。
+    // tiebreaker：同主排序值时，依次用 humanActionCount、eventCount、worldId 兜底，
+    // 保证分页稳定（同值行在翻页时不会乱序重复 / 漏掉）。
+    if (sortBy !== "humanActionCount")
+      rowsQb.addOrderBy("humanActionCount", "DESC");
     if (sortBy !== "eventCount") rowsQb.addOrderBy("eventCount", "DESC");
+    rowsQb.addOrderBy("e.worldId", "ASC");
     const rows = await rowsQb
       .limit(pageSize)
       .offset(offset)
@@ -592,6 +632,12 @@ export class TelemetryService {
         eventCount: string;
         uniqueUsers: string;
         errorCount: string;
+        uniqueAnons: string;
+        humanActionCount: string;
+        chatMessageCount: string;
+        postCount: string;
+        sessionCount: string;
+        activeDays: string;
       }>();
 
     if (rows.length === 0) {
@@ -606,8 +652,17 @@ export class TelemetryService {
       .select("w.id", "id")
       .addSelect("w.name", "name")
       .addSelect("w.phone", "phone")
+      // 真人互动新鲜度：由 world runtime 基于 senderType='user' 消息 / 会话活动上报。
+      .addSelect("w.lastUserMessageAt", "lastUserMessageAt")
+      .addSelect("w.lastInteractiveAt", "lastInteractiveAt")
       .where("w.id IN (:...ids)", { ids: worldIds })
-      .getRawMany<{ id: string; name: string | null; phone: string | null }>();
+      .getRawMany<{
+        id: string;
+        name: string | null;
+        phone: string | null;
+        lastUserMessageAt: string | Date | null;
+        lastInteractiveAt: string | Date | null;
+      }>();
     const worldInfoMap = new Map(worldInfoRows.map((r) => [r.id, r]));
 
     // 用 world.phone 反查用户邮箱（cloud_worlds.phone unique）。phone 也可能是邮箱字符串本身，
@@ -640,6 +695,14 @@ export class TelemetryService {
         eventCount: toInt(r.eventCount),
         uniqueUsers: toInt(r.uniqueUsers),
         errorCount: toInt(r.errorCount),
+        uniqueAnons: toInt(r.uniqueAnons),
+        humanActionCount: toInt(r.humanActionCount),
+        chatMessageCount: toInt(r.chatMessageCount),
+        postCount: toInt(r.postCount),
+        sessionCount: toInt(r.sessionCount),
+        activeDays: toInt(r.activeDays),
+        lastUserMessageAt: toIsoOrNull(info?.lastUserMessageAt),
+        lastInteractiveAt: toIsoOrNull(info?.lastInteractiveAt),
       };
     });
     return { range, rows: result, total, page, pageSize };
@@ -674,6 +737,20 @@ function toInt(v: string | number | null | undefined): number {
   if (typeof v === "number") return v;
   const n = Number.parseInt(v, 10);
   return Number.isFinite(n) ? n : 0;
+}
+
+// cloud_worlds 的 datetime 列经 raw query 取出可能是 Date（driver hydrate）或
+// SQLite 字符串（"YYYY-MM-DD HH:MM:SS.SSS"）。统一规整成 ISO string，空/非法返回 null。
+function toIsoOrNull(v: string | Date | null | undefined): string | null {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? null : v.toISOString();
+  }
+  const s = String(v).trim();
+  if (s.length === 0) return null;
+  // SQLite datetime 缺时区，按 UTC 解析（与 startOfRange 的存储约定一致）。
+  const d = new Date(s.includes("T") ? s : `${s.replace(" ", "T")}Z`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 function percentile(values: number[], q: number): number | null {

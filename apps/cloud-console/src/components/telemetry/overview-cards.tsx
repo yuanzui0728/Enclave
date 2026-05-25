@@ -4,6 +4,9 @@ import { useCloudConsoleText } from "../../lib/cloud-console-i18n";
 export function TelemetryOverviewCards({ data }: { data: TelemetryOverviewResponse }) {
   const t = useCloudConsoleText();
   const cards = [
+    // 真人维度优先：先放"活跃真人 / 真人行为"，再放原有 PV/UV/会话指标。
+    { label: t("Active real users"), value: data.activeUserCount },
+    { label: t("Human actions"), value: data.humanActionCount },
     { label: t("Page views PV"), value: data.pvCount },
     { label: t("Unique visitors UV"), value: data.uvCount },
     { label: t("Sessions"), value: data.sessionCount },
@@ -14,7 +17,7 @@ export function TelemetryOverviewCards({ data }: { data: TelemetryOverviewRespon
   ];
 
   return (
-    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
       {cards.map((c) => (
         <li
           key={c.label}

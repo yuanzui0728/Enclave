@@ -80,6 +80,9 @@ const TOP_WORLDS_SORT_BY_VALUES = [
   "eventCount",
   "uniqueUsers",
   "errorCount",
+  "humanActionCount",
+  "sessionCount",
+  "activeDays",
 ] as const;
 const TOP_WORLDS_SORT_DIR_VALUES = ["asc", "desc"] as const;
 

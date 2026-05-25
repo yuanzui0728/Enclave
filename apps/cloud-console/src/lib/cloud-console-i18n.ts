@@ -42,6 +42,11 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Successful requests": "成功请求",
     "Failed requests": "失败请求",
     "Active characters": "活跃角色",
+    "Input": "输入",
+    "Output": "输出",
+    "Avg cost / request": "均成本/请求",
+    "Avg tokens / request": "均 Token/请求",
+    "Top models": "Top 模型",
     "Daily trends": "每日趋势",
     "Failure rate": "失败率",
     "Last synced": "最近同步",
@@ -437,6 +442,16 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     World: "世界",
     "All worlds": "全部世界",
     "Active users": "活跃用户",
+    "Active real users": "活跃真人", // i18n-ignore-line: runtime dict value
+    "Human actions": "真人行为", // i18n-ignore-line: runtime dict value
+    Visitors: "访客", // i18n-ignore-line: runtime dict value
+    "Active days": "活跃天数", // i18n-ignore-line: runtime dict value
+    "Last user activity": "最近真人互动", // i18n-ignore-line: runtime dict value
+    "just now": "刚刚", // i18n-ignore-line: runtime dict value
+    "{n}m ago": "{n} 分钟前", // i18n-ignore-line: runtime dict value
+    "{n}h ago": "{n} 小时前", // i18n-ignore-line: runtime dict value
+    "{n}d ago": "{n} 天前", // i18n-ignore-line: runtime dict value
+    "{chat} chats · {posts} posts": "发消息 {chat} · 发帖 {posts}", // i18n-ignore-line: runtime dict value
     "Recent activity": "最近活动",
     "Top worlds by activity": "世界活跃度排行",
     "Page views (this world)": "页面浏览（本世界）",
@@ -687,6 +702,11 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Successful requests": "成功リクエスト",
     "Failed requests": "失敗リクエスト",
     "Active characters": "アクティブキャラクター",
+    "Input": "入力",
+    "Output": "出力",
+    "Avg cost / request": "平均コスト/リクエスト",
+    "Avg tokens / request": "平均トークン/リクエスト",
+    "Top models": "上位モデル",
     "Daily trends": "日次トレンド",
     "Failure rate": "失敗率",
     "Last synced": "最終同期",
@@ -1099,6 +1119,16 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     World: "ワールド",
     "All worlds": "すべてのワールド",
     "Active users": "アクティブユーザー",
+    "Active real users": "アクティブ実ユーザー", // i18n-ignore-line: runtime dict value
+    "Human actions": "実ユーザー操作", // i18n-ignore-line: runtime dict value
+    Visitors: "訪問者", // i18n-ignore-line: runtime dict value
+    "Active days": "アクティブ日数", // i18n-ignore-line: runtime dict value
+    "Last user activity": "最終ユーザー操作", // i18n-ignore-line: runtime dict value
+    "just now": "たった今", // i18n-ignore-line: runtime dict value
+    "{n}m ago": "{n} 分前", // i18n-ignore-line: runtime dict value
+    "{n}h ago": "{n} 時間前", // i18n-ignore-line: runtime dict value
+    "{n}d ago": "{n} 日前", // i18n-ignore-line: runtime dict value
+    "{chat} chats · {posts} posts": "メッセージ {chat} · 投稿 {posts}", // i18n-ignore-line: runtime dict value
     "Recent activity": "最近のアクティビティ",
     "Top worlds by activity": "アクティビティ別ワールドランキング",
     "Page views (this world)": "ページビュー（このワールド）",
@@ -1355,6 +1385,11 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Successful requests": "성공한 요청",
     "Failed requests": "실패한 요청",
     "Active characters": "활성 캐릭터",
+    "Input": "입력",
+    "Output": "출력",
+    "Avg cost / request": "평균 비용/요청",
+    "Avg tokens / request": "평균 토큰/요청",
+    "Top models": "상위 모델",
     "Daily trends": "일일 추이",
     "Failure rate": "실패율",
     "Last synced": "마지막 동기화",
@@ -1763,6 +1798,16 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     World: "월드",
     "All worlds": "모든 월드",
     "Active users": "활성 사용자",
+    "Active real users": "활성 실사용자", // i18n-ignore-line: runtime dict value
+    "Human actions": "실사용자 행동", // i18n-ignore-line: runtime dict value
+    Visitors: "방문자", // i18n-ignore-line: runtime dict value
+    "Active days": "활성 일수", // i18n-ignore-line: runtime dict value
+    "Last user activity": "최근 실사용자 활동", // i18n-ignore-line: runtime dict value
+    "just now": "방금", // i18n-ignore-line: runtime dict value
+    "{n}m ago": "{n}분 전", // i18n-ignore-line: runtime dict value
+    "{n}h ago": "{n}시간 전", // i18n-ignore-line: runtime dict value
+    "{n}d ago": "{n}일 전", // i18n-ignore-line: runtime dict value
+    "{chat} chats · {posts} posts": "메시지 {chat} · 게시 {posts}", // i18n-ignore-line: runtime dict value
     "Recent activity": "최근 활동",
     "Top worlds by activity": "활동량 상위 월드",
     "Page views (this world)": "페이지 뷰(이 월드)",

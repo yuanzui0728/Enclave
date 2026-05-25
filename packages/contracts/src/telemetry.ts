@@ -52,6 +52,10 @@ export interface TelemetryOverviewResponse {
   sessionCount: number;
   errorCount: number;
   avgSessionDurationMs: number;
+  /** 区间内有过动作的登录真人数：COUNT(DISTINCT userId)。anon 访客不算。 */
+  activeUserCount: number;
+  /** 真人主动行为总数：SUM(eventType='business')，剔除 pv/api_call/session 等自动采集噪声。 */
+  humanActionCount: number;
   sparkline: TelemetryTimeseriesPoint[];
 }
 
@@ -129,15 +133,37 @@ export interface TelemetryWorldRow {
   worldName: string | null;
   ownerEmail: string | null;
   ownerPhone: string | null;
+  /** 既有：区间内全部事件 COUNT(*)。含 pv/api_call 等噪声，排行不再主推，仅保留备查。 */
   eventCount: number;
+  /** 既有：活跃登录真人 COUNT(DISTINCT userId)。 */
   uniqueUsers: number;
   errorCount: number;
+  // 真人活跃维度（全部由 client_telemetry_events 同一次 GROUP BY 派生）：
+  /** ① 访客数 COUNT(DISTINCT anonId)（含未登录）。 */
+  uniqueAnons: number;
+  /** ② 真人主动行为 SUM(eventType='business')：发消息/发朋友圈/发广场/支付等。 */
+  humanActionCount: number;
+  /** ② 细分：发消息次数 SUM(eventName='chat_message_sent')。 */
+  chatMessageCount: number;
+  /** ② 细分：发帖次数 SUM(eventName IN ('moment_published','feed_post_published'))。 */
+  postCount: number;
+  /** ③ 会话数 COUNT(DISTINCT sessionId)。 */
+  sessionCount: number;
+  /** ③ 活跃天数 COUNT(DISTINCT 日期)：衡量粘性/留存。 */
+  activeDays: number;
+  /** ④ 最近一次真人发消息时间（来自 cloud_worlds.lastUserMessageAt，由 world runtime 基于 senderType='user' 上报）。从未有真人发言为 null。 */
+  lastUserMessageAt: string | null;
+  /** ④ 最近一次真人会话互动时间（来自 cloud_worlds.lastInteractiveAt）。 */
+  lastInteractiveAt: string | null;
 }
 
 export type TelemetryTopWorldsSortKey =
   | "eventCount"
   | "uniqueUsers"
-  | "errorCount";
+  | "errorCount"
+  | "humanActionCount"
+  | "sessionCount"
+  | "activeDays";
 
 export type TelemetryTopWorldsSortDir = "asc" | "desc";
 
