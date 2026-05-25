@@ -13,6 +13,7 @@ import {
 } from "@yinjie/ui";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi } from "../lib/wiki-api";
+import { relationshipTypeLabel } from "../lib/character-labels";
 import { PageShell } from "../components/page-shell";
 
 export function HomePage() {
@@ -220,10 +221,13 @@ export function HomePage() {
                     {(() => {
                       // 个别测试 / 历史角色 relationship 为空（API 不会过滤），
                       // 直接拼会渲染出 " · friend" 的前导分隔符。两端都给走判断。
+                      // relationshipType 预设是英文哨兵值（friend/expert/mentor…），
+                      // 经 relationshipTypeLabel 翻成中文；自定义自由文本原样透出。
+                      const relType = relationshipTypeLabel(c.relationshipType);
                       const rel =
-                        c.relationship && c.relationshipType
-                          ? `${c.relationship} · ${c.relationshipType}`
-                          : c.relationship || c.relationshipType || "";
+                        c.relationship && relType
+                          ? `${c.relationship} · ${relType}`
+                          : c.relationship || relType || "";
                       if (!rel) return null;
                       return (
                         <div
