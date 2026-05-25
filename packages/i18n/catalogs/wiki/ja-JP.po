@@ -3128,3 +3128,19 @@ msgstr "📝 編集を送信（審査へ）"
 #: apps/wiki/src/routes/world-character-edit-page.tsx:283
 msgid "提交后进评审队列，通过后合并"
 msgstr "送信後、審査キューに入り、承認後にマージされます。"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "已回滚"
+msgstr "巻き戻し済み"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "管理员覆写"
+msgstr "管理者上書き"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "合并"
+msgstr "マージ"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "AI 重生成"
+msgstr "AI 再生成"

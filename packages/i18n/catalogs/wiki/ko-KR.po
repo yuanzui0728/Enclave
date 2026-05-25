@@ -3128,3 +3128,19 @@ msgstr "📝 편집 제출(검수로)"
 #: apps/wiki/src/routes/world-character-edit-page.tsx:283
 msgid "提交后进评审队列，通过后合并"
 msgstr "제출 후 검수 대기열에 들어가며 승인 후 병합됩니다."
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "已回滚"
+msgstr "되돌림 완료"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "管理员覆写"
+msgstr "관리자 강제 적용"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "合并"
+msgstr "병합"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "AI 重生成"
+msgstr "AI 재생성"

@@ -15,6 +15,10 @@ const STATUS_LABELS: Record<string, MessageDescriptor> = {
   approved: msg`已通过`,
   rejected: msg`已驳回`,
   needs_changes: msg`需修改`,
+  // 后端 status 枚举（character-revision.entity）含 'reverted'：被新修订回滚后旧
+  // 版的终态。漏掉它 → recent-changes 里被回滚的版本 pill 直接渲染英文 "reverted"，
+  // 跟同行"已通过/待审"夹一起像漏译（2026-05-25 走查发现）。
+  reverted: msg`已回滚`,
   superseded: msg`已被取代`,
 };
 
@@ -35,6 +39,15 @@ const REVISION_KIND_LABELS: Record<string, MessageDescriptor> = {
 
 const CHANGE_SOURCE_LABELS: Record<string, MessageDescriptor> = {
   edit: msg`编辑`,
+  // 后端 changeSource 枚举（character-revision.entity）实为
+  // 'edit' | 'revert' | 'admin_override' | 'merge' | 'ai_regen'。原 map 只覆盖了
+  // edit + 三个历史值(system/migration/import)，漏了真正会出现在 recent-changes
+  // 里的 revert / admin_override / merge / ai_regen —— 这些 changeSource !== 'edit'
+  // 会渲染 pill，直接漏出英文枚举（2026-05-25 走查发现 reverted/revert/admin_override）。
+  revert: msg`回滚`,
+  admin_override: msg`管理员覆写`,
+  merge: msg`合并`,
+  ai_regen: msg`AI 重生成`,
   system: msg`系统`,
   migration: msg`迁移`,
   import: msg`导入`,

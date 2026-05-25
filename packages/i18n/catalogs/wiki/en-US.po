@@ -3128,3 +3128,19 @@ msgstr "📝 Submit edit (enter review)"
 #: apps/wiki/src/routes/world-character-edit-page.tsx:283
 msgid "提交后进评审队列，通过后合并"
 msgstr "After submission, enters the review queue; merges upon approval."
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "已回滚"
+msgstr "Reverted"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "管理员覆写"
+msgstr "Admin override"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "合并"
+msgstr "Merge"
+
+#: apps/wiki/src/lib/revision-labels.ts
+msgid "AI 重生成"
+msgstr "AI regenerated"
