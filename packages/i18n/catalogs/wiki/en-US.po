@@ -3232,3 +3232,15 @@ msgstr "Anti-vandalism bot: critical field cleared"
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "反破坏机器人自动回滚"
 msgstr "Anti-vandalism bot auto-revert"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "编辑通知"
+msgstr "Edit alerts"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "讨论通知"
+msgstr "Talk alerts"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "取消关注"
+msgstr "Unwatch"

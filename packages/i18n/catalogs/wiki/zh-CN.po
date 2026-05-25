@@ -3232,3 +3232,15 @@ msgstr "反破坏机器人检测到关键字段被清空"
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "反破坏机器人自动回滚"
 msgstr "反破坏机器人自动回滚"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "编辑通知"
+msgstr "编辑通知"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "讨论通知"
+msgstr "讨论通知"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "取消关注"
+msgstr "取消关注"

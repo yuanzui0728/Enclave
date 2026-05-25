@@ -3232,3 +3232,15 @@ msgstr "荒らし対策ボット：重要フィールドが消去されました
 #: apps/wiki/src/lib/revision-labels.ts
 msgid "反破坏机器人自动回滚"
 msgstr "荒らし対策ボットによる自動巻き戻し"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "编辑通知"
+msgstr "編集通知"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "讨论通知"
+msgstr "討論通知"
+
+#: apps/wiki/src/routes/watchlist-page.tsx
+msgid "取消关注"
+msgstr "ウォッチ解除"

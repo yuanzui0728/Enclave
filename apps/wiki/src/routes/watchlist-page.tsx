@@ -1,9 +1,10 @@
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
+  Button,
   Card,
   ErrorBlock,
   LoadingBlock,
@@ -11,9 +12,124 @@ import {
   StatusPill,
 } from "@yinjie/ui";
 import { useAuth } from "../lib/use-auth";
-import { wikiApi } from "../lib/wiki-api";
+import { wikiApi, type WatchlistEntry } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { formatDate, formatDateTime } from "../lib/format";
+
+// 观察列表条目的行内管理：调整"编辑/讨论"通知开关 + 取消关注。
+// 此前 /watchlist 是纯只读列表，取消关注只能逐个点进角色页 ⭐，且后端早已支持的
+// notifyOnEdit/notifyOnTalk 两个开关在 UI 上根本无入口（永远停在默认 true）。
+const WATCHLIST_KEY = ["wiki", "watchlist"] as const;
+
+function WatchlistRow({ entry }: { entry: WatchlistEntry }) {
+  const t = translateRuntimeMessage;
+  const qc = useQueryClient();
+
+  const flagsMut = useMutation({
+    mutationFn: (flags: { notifyOnEdit?: boolean; notifyOnTalk?: boolean }) =>
+      wikiApi.setWatchFlags(entry.characterId, flags),
+    onMutate: async (flags) => {
+      await qc.cancelQueries({ queryKey: WATCHLIST_KEY });
+      const prev = qc.getQueryData<WatchlistEntry[]>(WATCHLIST_KEY);
+      qc.setQueryData<WatchlistEntry[]>(WATCHLIST_KEY, (old) =>
+        (old ?? []).map((e) =>
+          e.characterId === entry.characterId ? { ...e, ...flags } : e,
+        ),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(WATCHLIST_KEY, ctx.prev);
+    },
+    // WATCHLIST_KEY 是前缀，同时令 list / feed / status 各 query 失效重取
+    // （通知开关变化会影响 feed 内容）。
+    onSettled: () => void qc.invalidateQueries({ queryKey: WATCHLIST_KEY }),
+  });
+
+  const unwatchMut = useMutation({
+    mutationFn: () => wikiApi.unwatch(entry.characterId),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: WATCHLIST_KEY });
+      const prev = qc.getQueryData<WatchlistEntry[]>(WATCHLIST_KEY);
+      qc.setQueryData<WatchlistEntry[]>(WATCHLIST_KEY, (old) =>
+        (old ?? []).filter((e) => e.characterId !== entry.characterId),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(WATCHLIST_KEY, ctx.prev);
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: WATCHLIST_KEY }),
+  });
+
+  const busy = flagsMut.isPending || unwatchMut.isPending;
+
+  return (
+    <li className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)]">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          to="/character/$characterId"
+          params={{ characterId: entry.characterId }}
+          className="font-medium text-[color:var(--text-primary)] hover:underline"
+        >
+          {entry.title || entry.characterId}
+        </Link>
+        {entry.isDeleted && (
+          <StatusPill>
+            <Trans>已删除</Trans>
+          </StatusPill>
+        )}
+        {entry.protectionLevel !== "none" && (
+          <StatusPill>
+            {entry.protectionLevel === "semi"
+              ? t(msg`半保护`)
+              : t(msg`完全保护`)}
+          </StatusPill>
+        )}
+        <span className="ml-auto whitespace-nowrap text-xs text-[color:var(--text-muted)]">
+          <Trans>自 {formatDate(entry.addedAt)}</Trans>
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {/* 文案固定为概念名（编辑通知/讨论通知），开/关状态用 aria-pressed + 实心/
+            幽灵两种 variant 表达，避免每个状态各占一条译文，也更贴近 a11y 规范。 */}
+        <Button
+          size="sm"
+          variant={entry.notifyOnEdit ? "secondary" : "ghost"}
+          aria-pressed={entry.notifyOnEdit}
+          disabled={busy}
+          onClick={() =>
+            flagsMut.mutate({ notifyOnEdit: !entry.notifyOnEdit })
+          }
+        >
+          <span aria-hidden="true">{entry.notifyOnEdit ? "🔔 " : "🔕 "}</span>
+          {t(msg`编辑通知`)}
+        </Button>
+        <Button
+          size="sm"
+          variant={entry.notifyOnTalk ? "secondary" : "ghost"}
+          aria-pressed={entry.notifyOnTalk}
+          disabled={busy}
+          onClick={() =>
+            flagsMut.mutate({ notifyOnTalk: !entry.notifyOnTalk })
+          }
+        >
+          <span aria-hidden="true">{entry.notifyOnTalk ? "🔔 " : "🔕 "}</span>
+          {t(msg`讨论通知`)}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto text-[color:var(--text-danger,#dc2626)]"
+          disabled={busy}
+          onClick={() => unwatchMut.mutate()}
+        >
+          <Trans>取消关注</Trans>
+        </Button>
+      </div>
+    </li>
+  );
+}
 
 export function WatchlistPage() {
   const t = translateRuntimeMessage;
@@ -75,37 +191,7 @@ export function WatchlistPage() {
           )}
           <ul className="space-y-2">
             {listQ.data?.map((entry) => (
-              <li
-                key={entry.characterId}
-                className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm shadow-[var(--shadow-soft)] transition-colors hover:bg-[color:var(--surface-card-hover)]"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    to="/character/$characterId"
-                    params={{ characterId: entry.characterId }}
-                    className="font-medium text-[color:var(--text-primary)] hover:underline"
-                  >
-                    {entry.title || entry.characterId}
-                  </Link>
-                  {entry.isDeleted && (
-                    <StatusPill>
-                      <Trans>已删除</Trans>
-                    </StatusPill>
-                  )}
-                  {entry.protectionLevel !== "none" && (
-                    <StatusPill>
-                      {entry.protectionLevel === "semi"
-                        ? t(msg`半保护`)
-                        : t(msg`完全保护`)}
-                    </StatusPill>
-                  )}
-                  <span className="ml-auto whitespace-nowrap text-xs text-[color:var(--text-muted)]">
-                    <Trans>
-                      自 {formatDate(entry.addedAt)}
-                    </Trans>
-                  </span>
-                </div>
-              </li>
+              <WatchlistRow key={entry.characterId} entry={entry} />
             ))}
           </ul>
         </section>
