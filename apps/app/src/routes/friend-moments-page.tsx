@@ -892,7 +892,7 @@ export function FriendMomentsPage() {
       <AppPage className="flex min-h-full items-center justify-center bg-[#f2f2f2] px-4 py-8">
         <LoadingBlock
           label={t(msg`正在切换到手机端角色朋友圈...`)}
-          className="w-full max-w-[360px] rounded-[24px] border-[color:var(--border-faint)] bg-white py-8 shadow-[var(--shadow-section)]"
+          className="w-full max-w-[360px] rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] py-8 shadow-[var(--shadow-section)]"
         />
       </AppPage>
     );
@@ -939,7 +939,7 @@ export function FriendMomentsPage() {
       <div className="flex h-full items-center justify-center bg-[rgba(244,247,246,0.98)] px-6">
         <LoadingBlock
           label={t(msg`正在读取角色朋友圈...`)}
-          className="w-full max-w-[420px] rounded-[24px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="w-full max-w-[420px] rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] py-10 shadow-[var(--shadow-section)]"
         />
       </div>
     );
@@ -948,7 +948,7 @@ export function FriendMomentsPage() {
   if (!character) {
     return (
       <div className="flex h-full items-center justify-center bg-[rgba(244,247,246,0.98)] px-6">
-        <div className="w-full max-w-[480px] rounded-[24px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-section)]">
+        <div className="w-full max-w-[480px] rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] p-6 shadow-[var(--shadow-section)]">
           <div className="text-[18px] font-semibold text-[color:var(--text-primary)]">
             {t(msg`无法打开这位角色的朋友圈`)}
           </div>

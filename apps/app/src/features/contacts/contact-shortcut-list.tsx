@@ -34,7 +34,7 @@ export function ContactShortcutList({
       className={cn(
         variant === "desktop-flat"
           ? "overflow-hidden rounded-[16px] bg-transparent"
-          : "overflow-hidden border border-[color:var(--border-faint)] bg-white",
+          : "overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)]",
         compact && variant !== "desktop-flat" ? "rounded-[20px]" : "rounded-none",
         className,
       )}
@@ -57,14 +57,14 @@ export function ContactShortcutList({
                 : compact
                   ? item.disabled
                     ? mobileDense
-                      ? "cursor-not-allowed bg-white px-4 py-3"
-                      : "cursor-not-allowed bg-white px-4 py-3.5"
+                      ? "cursor-not-allowed bg-transparent px-4 py-3"
+                      : "cursor-not-allowed bg-transparent px-4 py-3.5"
                     : mobileDense
-                      ? "bg-white px-4 py-3 active:bg-[color:var(--surface-console)]"
-                      : "bg-white px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
+                      ? "bg-transparent px-4 py-3 active:bg-[color:var(--surface-console)]"
+                      : "bg-transparent px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
                   : item.disabled
-                    ? "cursor-not-allowed bg-white px-4 py-3"
-                    : "bg-white px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
+                    ? "cursor-not-allowed bg-transparent px-4 py-3"
+                    : "bg-transparent px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
               item.disabled ? "opacity-60" : undefined,
               variant === "desktop-flat" && index > 0
                 ? "border-t border-[rgba(0,0,0,0.04)]"

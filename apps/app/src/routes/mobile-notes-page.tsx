@@ -265,7 +265,7 @@ function NoteRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)] active:bg-none"
     >
       <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(245, 158, 11,0.08)]">
         {previewImage?.url ? (

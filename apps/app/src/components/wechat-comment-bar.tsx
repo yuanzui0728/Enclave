@@ -236,7 +236,7 @@ export function WeChatCommentBar({
           </div>
         ) : null}
         <div className="flex items-end gap-2 px-3 py-2.5">
-          <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
+          <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
             <textarea
               ref={textAreaRef}
               value={value}

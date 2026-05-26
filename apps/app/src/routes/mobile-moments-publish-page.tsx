@@ -786,7 +786,7 @@ export function MobileMomentsPublishPage() {
           </div>
         ) : null}
 
-        <section className="bg-white px-4 pt-4">
+        <section className="bg-[color:var(--surface-card)] px-4 pt-4">
           <textarea
             ref={textareaRef}
             value={composeDraft.text}
@@ -945,7 +945,7 @@ export function MobileMomentsPublishPage() {
           <div className="h-3" />
         </section>
 
-        <section className="mt-2 bg-white">
+        <section className="mt-2 bg-[color:var(--surface-card)]">
           <SettingRow
             label={t(msg`所在位置`)}
             value={t(msg`不显示位置`)}
@@ -1023,7 +1023,7 @@ export function MobileMomentsPublishPage() {
             onClick={dismissExitSheet}
             className="absolute inset-0"
           />
-          <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-white pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+          <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
             <button
               type="button"
               onClick={handleKeepDraft}
@@ -1116,7 +1116,7 @@ function MediaPickerSheet({
         className="absolute inset-0"
         aria-label={t(msg`关闭`)}
       />
-      <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-white pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+      <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
         <button
           type="button"
           onClick={onPickImages}

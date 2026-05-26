@@ -2143,7 +2143,7 @@ export function MomentsPage() {
               onClick={() => setDesktopExitSheetOpen(false)}
               className="absolute inset-0"
             />
-            <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[12px] bg-white shadow-[var(--shadow-overlay)]">
+            <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[12px] bg-[color:var(--bg-canvas-elevated)] shadow-[var(--shadow-overlay)]">
               <div className="px-6 pb-3 pt-6 text-center">
                 <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
                   {t(msg`退出编辑？`)}
@@ -2753,11 +2753,11 @@ function MobileMomentsView({
   }, [hasOverlay]);
 
   return (
-    <AppPage className="relative space-y-0 bg-white px-0 pb-0 pt-0">
+    <AppPage className="relative space-y-0 bg-[color:var(--bg-canvas-elevated)] px-0 pb-0 pt-0">
       <TabPageTopBar
         title={t(msg`朋友圈`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-white px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           isDiscoverSubPage ? (
             <Button
@@ -2802,7 +2802,7 @@ function MobileMomentsView({
 
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-y-auto overscroll-contain bg-white"
+        className="relative flex-1 overflow-y-auto overscroll-contain bg-[color:var(--bg-canvas-elevated)]"
         style={{ overflowAnchor: "none" }}
       >
         <PullToRefreshIndicator state={pullState} t={t} />
@@ -2839,7 +2839,7 @@ function MobileMomentsView({
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
                           onClick={noticeAction}
                         >
                           {noticeActionLabel}
@@ -2850,7 +2850,7 @@ function MobileMomentsView({
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
                           onClick={onNoticeBack}
                         >
                           {interactionActionLabel}
@@ -2883,7 +2883,7 @@ function MobileMomentsView({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
                   onClick={onRetry}
                 >
                   {t(msg`重试读取`)}
@@ -2892,7 +2892,7 @@ function MobileMomentsView({
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
                     onClick={onNoticeBack}
                   >
                     {t(msg`返回上一页`)}
@@ -2965,7 +2965,7 @@ function MobileMomentsView({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
                     onClick={onRetryNextPage}
                   >
                     {t(msg`重试加载`)}

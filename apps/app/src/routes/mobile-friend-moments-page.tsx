@@ -897,7 +897,7 @@ export function MobileFriendMomentsPage() {
           title={t(msg`朋友圈`)}
           subtitle={t(msg`好友`)}
           titleAlign="center"
-          className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-white px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+          className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           leftActions={
             <Button
               onClick={handleBack}
@@ -950,11 +950,11 @@ export function MobileFriendMomentsPage() {
   };
 
   return (
-    <AppPage className="relative space-y-0 bg-white px-0 pb-0 pt-0">
+    <AppPage className="relative space-y-0 bg-[color:var(--bg-canvas-elevated)] px-0 pb-0 pt-0">
       <TabPageTopBar
         title={displayName}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-white px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={handleBack}
@@ -970,7 +970,7 @@ export function MobileFriendMomentsPage() {
 
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-y-auto overscroll-contain bg-white"
+        className="relative flex-1 overflow-y-auto overscroll-contain bg-[color:var(--bg-canvas-elevated)]"
         style={{ overflowAnchor: "none" }}
       >
         {pullState.offset || pullState.refreshing ? (
@@ -1026,7 +1026,7 @@ export function MobileFriendMomentsPage() {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
                       onClick={notice.action}
                     >
                       {notice.actionLabel}
@@ -1051,7 +1051,7 @@ export function MobileFriendMomentsPage() {
           {!character &&
           !characterQuery.isLoading &&
           !friendsQuery.isLoading ? (
-            <section className="mx-4 mt-4 rounded-[12px] border border-[color:var(--border-subtle)] bg-white px-4 py-5">
+            <section className="mx-4 mt-4 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5">
               <div className="text-[16px] font-semibold text-[color:var(--text-primary)]">
                 {t(msg`无法打开这位角色的朋友圈`)}
               </div>
@@ -1128,7 +1128,7 @@ export function MobileFriendMomentsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -1136,7 +1136,7 @@ export function MobileFriendMomentsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
                   onClick={handleBack}
                 >
                   {statusBackLabel}

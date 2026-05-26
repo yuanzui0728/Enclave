@@ -639,7 +639,7 @@ export function MobileFeedPublishPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
               >
                 {statusBackLabel}
               </button>
@@ -647,7 +647,7 @@ export function MobileFeedPublishPage() {
           </InlineNotice>
         ) : null}
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
           <div className="border-b border-[rgba(180, 130, 20, 0.06)] px-4 py-3">
             <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
               {t(msg`这一刻`)}
@@ -753,7 +753,7 @@ export function MobileFeedPublishPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -798,7 +798,7 @@ export function MobileFeedPublishPage() {
             onClick={() => setDiscardConfirmOpen(false)}
             className="absolute inset-0"
           />
-          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[20px] bg-white shadow-[var(--shadow-overlay)]">
+          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[20px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
             <div className="px-6 pb-3 pt-6 text-center">
               <div
                 id="discard-confirm-title"

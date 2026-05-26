@@ -57,7 +57,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
   // 这块区域不画封面背景，让头像在白底（下方内容区背景）上正确显示。
   return (
     <section
-      className={cn("relative w-full bg-white", className)}
+      className={cn("relative w-full bg-[color:var(--bg-canvas-elevated)]", className)}
       style={{ height: 276 }}
     >
       {/* i18n-ignore-line: dev comment - 封面背景层 */}

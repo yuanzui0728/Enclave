@@ -1216,11 +1216,11 @@ export function ProfileMomentsPage() {
   );
 
   return (
-    <AppPage className="relative space-y-0 bg-white px-0 py-0">
+    <AppPage className="relative space-y-0 bg-[color:var(--bg-canvas-elevated)] px-0 py-0">
       <TabPageTopBar
         title={t(msg`我的朋友圈`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-white px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <button
             type="button"
@@ -1245,7 +1245,7 @@ export function ProfileMomentsPage() {
 
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-y-auto overscroll-contain bg-white"
+        className="relative flex-1 overflow-y-auto overscroll-contain bg-[color:var(--bg-canvas-elevated)]"
         style={{ overflowAnchor: "none" }}
       >
         {pullState.offset || pullState.refreshing ? (
@@ -1281,7 +1281,7 @@ export function ProfileMomentsPage() {
                 // role="alert"（assertive 立即朗读），success/info 用 status（polite
                 // 待空隙）。和 R1 profile-feedback / favorites notice 一并补齐。
                 role={notice.tone === "danger" ? "alert" : "status"}
-                className="rounded-[8px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[12px] shadow-none"
+                className="rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2 text-[12px] shadow-none"
               >
                 {/* 走查 R2：之前 mobile 分支只渲 notice.message，但点赞/删除失败
                     时 likeMutation/deleteMutation onError 已经把 actionLabel +
@@ -1296,7 +1296,7 @@ export function ProfileMomentsPage() {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
                       onClick={notice.action}
                     >
                       {notice.actionLabel}
@@ -1339,7 +1339,7 @@ export function ProfileMomentsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[12px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[12px]"
                     onClick={() => {
                       void momentsQuery.refetch();
                     }}
