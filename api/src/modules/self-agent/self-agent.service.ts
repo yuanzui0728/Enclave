@@ -260,7 +260,7 @@ export class SelfAgentService {
       recentRuns,
     ] = await Promise.all([
       this.workspace.listWorkspaceDocuments({ character: selfCharacter }),
-      this.followupOpenLoopRepo.count({
+      new TenantRepository(this.followupOpenLoopRepo).count({
         where: { status: In(['open', 'watching', 'recommended']) },
       }),
       this.reminderTaskRepo.count({
@@ -409,7 +409,7 @@ export class SelfAgentService {
 
     const [openLoops, upcomingReminders, awaitingConfirmationRuns, awaitingSlotRuns] =
       await Promise.all([
-        this.followupOpenLoopRepo.find({
+        new TenantRepository(this.followupOpenLoopRepo).find({
           where: { status: In(['open', 'watching', 'recommended']) },
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
           take: rules.heartbeat.maxItemsPerCategory,

@@ -3,6 +3,11 @@ import { AppError } from '../../common/app-error.exception';
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { randomUUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
@@ -374,11 +379,27 @@ export class GroupReplyTaskService {
       });
 
       for (const task of dueTasks) {
-        await this.processTask(task.id);
+        // 共享 world：poll 是全 owner 的（afterLoad 对无帧读宽松），但 processTask 会读写
+        // 角色/群/消息（租户级）→ 必须在该 task 所属 owner 的帧里跑，否则裸写抛
+        // TENANT_WRITE_WITHOUT_CONTEXT / 裸读串号。沿用 minimax runJobInTenantFrame 模式。
+        await this.runTaskInOwnerFrame(task.ownerId, () =>
+          this.processTask(task.id),
+        );
       }
     } finally {
       this.processing = false;
     }
+  }
+
+  private async runTaskInOwnerFrame(
+    ownerId: string | null | undefined,
+    fn: () => Promise<void>,
+  ): Promise<void> {
+    if (!isSharedWorldMode() || !ownerId) {
+      await fn();
+      return;
+    }
+    await TenantContextStore.run({ ownerId, phone: '' }, fn);
   }
 
   @Cron('17 4 * * *')
@@ -417,10 +438,14 @@ export class GroupReplyTaskService {
         return;
       }
 
-      const character = await this.characterRepo.findOneBy({
+      // 共享 world：在 task.ownerId 帧内跑（见 processDueTasks）；角色/群是租户级（复合主键
+      // 或 ownerId 列），裸 findOneBy({id}) 跨 owner 命中 → 读守卫抛。走 TenantRepository。
+      const character = await new TenantRepository(this.characterRepo).findOneBy({
         id: task.actorCharacterId,
       });
-      const group = await this.groupRepo.findOneBy({ id: task.groupId });
+      const group = await new TenantRepository(this.groupRepo).findOneBy({
+        id: task.groupId,
+      });
       if (!character?.profile) {
         await this.markTaskCancelled(task, 'actor_missing');
         return;
@@ -436,7 +461,9 @@ export class GroupReplyTaskService {
       const userMessageParts = this.parsePartsPayload(
         task.userMessagePartsPayload,
       );
-      const followupReplies = await this.groupMessageRepo.find({
+      const followupReplies = await new TenantRepository(
+        this.groupMessageRepo,
+      ).find({
         where: {
           groupId: task.groupId,
           senderType: 'character',
@@ -578,7 +605,9 @@ export class GroupReplyTaskService {
   }
 
   private async hasNewerUserMessage(task: GroupReplyTaskEntity) {
-    const newerUserMessage = await this.groupMessageRepo.findOne({
+    const newerUserMessage = await new TenantRepository(
+      this.groupMessageRepo,
+    ).findOne({
       where: {
         groupId: task.groupId,
         senderType: 'user',
@@ -591,7 +620,7 @@ export class GroupReplyTaskService {
   }
 
   private async findExistingActorReply(task: GroupReplyTaskEntity) {
-    return this.groupMessageRepo.findOne({
+    return new TenantRepository(this.groupMessageRepo).findOne({
       where: {
         groupId: task.groupId,
         senderType: 'character',
@@ -608,7 +637,9 @@ export class GroupReplyTaskService {
     character: CharacterEntity,
     text: string,
   ): Promise<Date> {
-    const group = await this.groupRepo.findOneBy({ id: groupId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: groupId,
+    });
     if (!group) {
       throw new AppError('CHAT_GROUP_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { MessageEntity } from '../chat/message.entity';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -614,7 +615,8 @@ export class ReminderRuntimeService {
         .orderBy('task.lastCompletedAt', 'DESC')
         .limit(8)
         .getMany(),
-      this.messageRepo.find({
+      // 共享 world：reminder 会话 id / 角色 id 跨 owner 共用，裸读会跨租户命中 → 读守卫抛。
+      new TenantRepository(this.messageRepo).find({
         where: {
           conversationId: this.buildConversationId(),
           senderType: 'character',
@@ -623,7 +625,7 @@ export class ReminderRuntimeService {
         order: { createdAt: 'DESC' },
         take: 10,
       }),
-      this.momentPostRepo.find({
+      new TenantRepository(this.momentPostRepo).find({
         where: {
           authorId: REMINDER_CHARACTER_ID,
         },
@@ -1826,7 +1828,7 @@ export class ReminderRuntimeService {
     conversationId: string,
     sourceMessageId: string,
   ) {
-    const rows = await this.messageRepo.find({
+    const rows = await new TenantRepository(this.messageRepo).find({
       where: {
         conversationId,
         senderType: 'user',
@@ -1987,7 +1989,9 @@ export class ReminderRuntimeService {
 
   async prepareDueDispatches(now = new Date()): Promise<ReminderDispatch[]> {
     const rules = await this.rulesService.getRules();
-    const rows = await this.taskRepo.find({
+    // 共享 world：到期提醒派发 cron 经 runForAllTenants 在 per-owner 帧里跑；裸 find 会读到
+    // 所有 owner 的到期任务（afterLoad 读守卫抛 + 跨 owner 误派发）→ 走 TenantRepository。
+    const rows = await new TenantRepository(this.taskRepo).find({
       where: {
         characterId: REMINDER_CHARACTER_ID,
         status: 'active',
@@ -2010,7 +2014,9 @@ export class ReminderRuntimeService {
   }
 
   async markTaskDelivered(taskId: string, deliveredAt = new Date()) {
-    const task = await this.taskRepo.findOneBy({ id: taskId });
+    const task = await new TenantRepository(this.taskRepo).findOneBy({
+      id: taskId,
+    });
     if (!task) {
       return;
     }
@@ -2036,7 +2042,9 @@ export class ReminderRuntimeService {
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const conversationId = this.buildConversationId();
-    const lastReminderMessage = await this.messageRepo.findOne({
+    const lastReminderMessage = await new TenantRepository(
+      this.messageRepo,
+    ).findOne({
       where: {
         conversationId,
         senderType: 'character',

@@ -5,6 +5,11 @@ import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import {
   In,
   LessThanOrEqual,
   MoreThan,
@@ -308,11 +313,23 @@ export class ReplyArtifactJobService {
       });
 
       for (const job of dueJobs) {
-        await this.processJob(job.id);
+        // 共享 world：每个 job 在其 owner 的租户帧里处理（poll 全 owner，处理读写租户级）。
+        await this.runJobInOwnerFrame(job.ownerId, () => this.processJob(job.id));
       }
     } finally {
       this.processing = false;
     }
+  }
+
+  private async runJobInOwnerFrame(
+    ownerId: string | null | undefined,
+    fn: () => Promise<void>,
+  ): Promise<void> {
+    if (!isSharedWorldMode() || !ownerId) {
+      await fn();
+      return;
+    }
+    await TenantContextStore.run({ ownerId, phone: '' }, fn);
   }
 
   private async processJob(jobId: string) {
@@ -594,7 +611,10 @@ export class ReplyArtifactJobService {
       return null;
     }
 
-    const conversation = await this.conversationRepo.findOneBy({ id: job.threadId });
+    // 共享 world：在 job.ownerId 帧内跑；会话 id（direct_<char>）跨 owner 共用 → scoped。
+    const conversation = await new TenantRepository(
+      this.conversationRepo,
+    ).findOneBy({ id: job.threadId });
     if (!conversation) {
       await this.markJobCancelled(job.id, 'conversation_missing');
       return null;
@@ -609,7 +629,7 @@ export class ReplyArtifactJobService {
       return null;
     }
 
-    const sourceMessage = await this.messageRepo.findOneBy({
+    const sourceMessage = await new TenantRepository(this.messageRepo).findOneBy({
       id: latestJob.sourceMessageId,
       conversationId: latestJob.threadId,
     });
@@ -631,7 +651,9 @@ export class ReplyArtifactJobService {
       return null;
     }
 
-    const group = await this.groupRepo.findOneBy({ id: job.threadId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: job.threadId,
+    });
     if (!group) {
       await this.markJobCancelled(job.id, 'group_missing');
       return null;
@@ -646,7 +668,9 @@ export class ReplyArtifactJobService {
       return null;
     }
 
-    const sourceMessage = await this.groupMessageRepo.findOneBy({
+    const sourceMessage = await new TenantRepository(
+      this.groupMessageRepo,
+    ).findOneBy({
       id: latestJob.sourceMessageId,
       groupId: latestJob.threadId,
     });
@@ -656,7 +680,7 @@ export class ReplyArtifactJobService {
     }
 
     if (latestJob.groupReplyTaskId) {
-      const task = await this.groupReplyTaskRepo.findOneBy({
+      const task = await new TenantRepository(this.groupReplyTaskRepo).findOneBy({
         id: latestJob.groupReplyTaskId,
       });
       if (!task) {
@@ -670,7 +694,9 @@ export class ReplyArtifactJobService {
       }
     }
 
-    const newerUserMessage = await this.groupMessageRepo.findOne({
+    const newerUserMessage = await new TenantRepository(
+      this.groupMessageRepo,
+    ).findOne({
       where: {
         groupId: latestJob.threadId,
         senderType: 'user',

@@ -308,14 +308,16 @@ export class SchedulerService {
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    const existingPosts = await this.momentPostRepo.find({
-      where: {
-        authorId: newsDesk.id,
-        generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
-        postedAt: Between(start, new Date()),
-      },
-      order: { postedAt: 'DESC' },
-    });
+    const existingPosts = await this.tenantService
+      .scoped(this.momentPostRepo)
+      .find({
+        where: {
+          authorId: newsDesk.id,
+          generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
+          postedAt: Between(start, new Date()),
+        },
+        order: { postedAt: 'DESC' },
+      });
     if (
       existingPosts.some((post) => post.generationMetadata?.slot === slot.key)
     ) {
@@ -807,13 +809,15 @@ export class SchedulerService {
   private async handleExpireFriendRequests(): Promise<TrackedJobResult> {
     const runtimeRules = await this.replyLogicRules.getRules();
     const now = new Date();
-    const expiringRequests = await this.friendRequestRepo.find({
-      where: {
-        status: 'pending',
-        expiresAt: LessThan(now),
-      },
-      order: { expiresAt: 'ASC', createdAt: 'ASC' },
-    });
+    const expiringRequests = await this.tenantService
+      .scoped(this.friendRequestRepo)
+      .find({
+        where: {
+          status: 'pending',
+          expiresAt: LessThan(now),
+        },
+        order: { expiresAt: 'ASC', createdAt: 'ASC' },
+      });
     for (const request of expiringRequests) {
       request.status = 'expired';
       await this.friendRequestRepo.save(request);
@@ -835,14 +839,16 @@ export class SchedulerService {
 
   private async handleAutoAcceptDueFriendRequests(): Promise<TrackedJobResult> {
     const now = new Date();
-    const dueRequests = await this.friendRequestRepo.find({
-      where: {
-        status: 'pending',
-        acceptAt: LessThanOrEqual(now),
-      },
-      order: { acceptAt: 'ASC', createdAt: 'ASC' },
-      take: 50,
-    });
+    const dueRequests = await this.tenantService
+      .scoped(this.friendRequestRepo)
+      .find({
+        where: {
+          status: 'pending',
+          acceptAt: LessThanOrEqual(now),
+        },
+        order: { acceptAt: 'ASC', createdAt: 'ASC' },
+        take: 50,
+      });
     let acceptedCount = 0;
     for (const req of dueRequests) {
       try {
@@ -1047,12 +1053,14 @@ export class SchedulerService {
         continue;
       }
 
-      const todayCount = await this.momentPostRepo.count({
-        where: {
-          authorId: char.id,
-          postedAt: Between(startOfDay, now),
-        },
-      });
+      const todayCount = await this.tenantService
+        .scoped(this.momentPostRepo)
+        .count({
+          where: {
+            authorId: char.id,
+            postedAt: Between(startOfDay, now),
+          },
+        });
 
       if (
         todayCount < char.momentsFrequency &&
@@ -1129,7 +1137,8 @@ export class SchedulerService {
         now.getTime() - MUSIC_RECENT_DAYS * 24 * 60 * 60 * 1000,
       );
       const recentRows = candidates.length
-        ? await this.momentPostRepo
+        ? await this.tenantService
+            .scoped(this.momentPostRepo)
             .createQueryBuilder('p')
             .select('p.authorId', 'authorId')
             .addSelect('COUNT(*)', 'cnt')
@@ -1155,13 +1164,15 @@ export class SchedulerService {
           ];
         if (weight <= 0) continue;
         if (Math.random() > MUSIC_PER_CHAR_PROB * weight) continue;
-        const todayMusic = await this.momentPostRepo.count({
-          where: {
-            authorId: char.id,
-            generationKind: 'minimax_music',
-            postedAt: Between(startOfDay, now),
-          },
-        });
+        const todayMusic = await this.tenantService
+          .scoped(this.momentPostRepo)
+          .count({
+            where: {
+              authorId: char.id,
+              generationKind: 'minimax_music',
+              postedAt: Between(startOfDay, now),
+            },
+          });
         if (todayMusic > 0) continue;
         const post = await this.momentsService.scheduleMinimaxMusicMoment(char);
         if (post) {
@@ -1186,12 +1197,14 @@ export class SchedulerService {
     const cooldownSince = new Date(
       now.getTime() - MOMENT_VIDEO_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
     );
-    const recentMomentVideos = await this.momentPostRepo.count({
-      where: {
-        generationKind: 'minimax_video',
-        postedAt: MoreThanOrEqual(cooldownSince),
-      },
-    });
+    const recentMomentVideos = await this.tenantService
+      .scoped(this.momentPostRepo)
+      .count({
+        where: {
+          generationKind: 'minimax_video',
+          postedAt: MoreThanOrEqual(cooldownSince),
+        },
+      });
     if (
       remainingVideo > MOMENT_VIDEO_RESERVE_FOR_CHANNELS &&
       recentMomentVideos < MAX_MOMENT_VIDEOS_PER_COOLDOWN
@@ -1209,7 +1222,8 @@ export class SchedulerService {
         now.getTime() - VIDEO_RECENT_DAYS * 24 * 60 * 60 * 1000,
       );
       const recentVideoRows = candidates.length
-        ? await this.momentPostRepo
+        ? await this.tenantService
+            .scoped(this.momentPostRepo)
             .createQueryBuilder('p')
             .select('p.authorId', 'authorId')
             .addSelect('COUNT(*)', 'cnt')
@@ -1248,13 +1262,15 @@ export class SchedulerService {
 
       for (const { char, recent, weight } of orderedCandidates) {
         if (video >= VIDEO_MAX_PER_TICK) break;
-        const recentVideoForChar = await this.momentPostRepo.count({
-          where: {
-            authorId: char.id,
-            generationKind: 'minimax_video',
-            postedAt: MoreThanOrEqual(cooldownSince),
-          },
-        });
+        const recentVideoForChar = await this.tenantService
+          .scoped(this.momentPostRepo)
+          .count({
+            where: {
+              authorId: char.id,
+              generationKind: 'minimax_video',
+              postedAt: MoreThanOrEqual(cooldownSince),
+            },
+          });
         if (recentVideoForChar > 0) continue;
         const post = await this.momentsService.scheduleMinimaxVideoMoment(
           char,
@@ -1385,13 +1401,15 @@ export class SchedulerService {
         continue;
       }
 
-      const weeklyChannelsCount = await this.feedPostRepo.count({
-        where: {
-          authorId: char.id,
-          createdAt: MoreThanOrEqual(weekStart),
-          surface: 'channels',
-        },
-      });
+      const weeklyChannelsCount = await this.tenantService
+        .scoped(this.feedPostRepo)
+        .count({
+          where: {
+            authorId: char.id,
+            createdAt: MoreThanOrEqual(weekStart),
+            surface: 'channels',
+          },
+        });
       if (weeklyChannelsCount >= char.feedFrequency) {
         continue;
       }
@@ -1844,14 +1862,16 @@ export class SchedulerService {
       return null;
     }
 
-    const existingPosts = await this.momentPostRepo.find({
-      where: {
-        authorId: input.char.id,
-        generationKind: REMINDER_MOMENT_GENERATION_KIND,
-        postedAt: Between(input.startOfDay, input.now),
-      },
-      order: { postedAt: 'DESC' },
-    });
+    const existingPosts = await this.tenantService
+      .scoped(this.momentPostRepo)
+      .find({
+        where: {
+          authorId: input.char.id,
+          generationKind: REMINDER_MOMENT_GENERATION_KIND,
+          postedAt: Between(input.startOfDay, input.now),
+        },
+        order: { postedAt: 'DESC' },
+      });
     if (
       existingPosts.some((post) => post.generationMetadata?.slot === slot.key)
     ) {
@@ -2143,13 +2163,15 @@ export class SchedulerService {
             : [];
 
         // 追加近30天朋友圈（authorId = char.id）
-        const moments = await this.momentPostRepo.find({
-          where: {
-            authorId: char.id,
-            postedAt: MoreThan(since),
-          },
-          order: { postedAt: 'ASC' },
-        });
+        const moments = await this.tenantService
+          .scoped(this.momentPostRepo)
+          .find({
+            where: {
+              authorId: char.id,
+              postedAt: MoreThan(since),
+            },
+            order: { postedAt: 'ASC' },
+          });
 
         const chatLines = messages.map((m) =>
           m.senderType === 'character'

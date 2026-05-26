@@ -115,16 +115,16 @@ export class NeedDiscoveryService {
     const [config, recentRuns, activeCandidates, recentCandidates, stats] =
       await Promise.all([
         this.configService.getConfig(),
-        this.runRepo.find({
+        new TenantRepository(this.runRepo).find({
           order: { startedAt: 'DESC', createdAt: 'DESC' },
           take: 20,
         }),
-        this.candidateRepo.find({
+        new TenantRepository(this.candidateRepo).find({
           where: { status: In([...ACTIVE_CANDIDATE_STATUSES]) },
           order: { createdAt: 'DESC', updatedAt: 'DESC' },
           take: 12,
         }),
-        this.candidateRepo.find({
+        new TenantRepository(this.candidateRepo).find({
           order: { createdAt: 'DESC', updatedAt: 'DESC' },
           take: 20,
         }),
@@ -193,7 +193,7 @@ export class NeedDiscoveryService {
     );
 
     try {
-      const lastSuccess = await this.runRepo.findOne({
+      const lastSuccess = await new TenantRepository(this.runRepo).findOne({
         where: {
           cadenceType: input.cadenceType,
           status: 'success',
@@ -252,7 +252,7 @@ export class NeedDiscoveryService {
         });
       }
 
-      const pendingCount = await this.candidateRepo.count({
+      const pendingCount = await new TenantRepository(this.candidateRepo).count({
         where: { status: In([...ACTIVE_CANDIDATE_STATUSES]) },
       });
       if (pendingCount >= config.shared.pendingCandidateLimit) {
@@ -265,7 +265,9 @@ export class NeedDiscoveryService {
 
       const startOfDay = new Date(now);
       startOfDay.setHours(0, 0, 0, 0);
-      const todayCreatedCount = await this.candidateRepo.count({
+      const todayCreatedCount = await new TenantRepository(
+        this.candidateRepo,
+      ).count({
         where: { createdAt: MoreThanOrEqual(startOfDay) },
       });
       if (
@@ -444,7 +446,9 @@ export class NeedDiscoveryService {
     ];
     const [characters, activeGroups] = await Promise.all([
       characterIds.length
-        ? this.characterRepo.find({ where: { id: In(characterIds) } })
+        ? new TenantRepository(this.characterRepo).find({
+            where: { id: In(characterIds) },
+          })
         : Promise.resolve([] as CharacterEntity[]),
       userGroupIds.length
         ? this.groupRepo.find({
@@ -463,7 +467,7 @@ export class NeedDiscoveryService {
     const groupMap = new Map(activeGroups.map((item) => [item.id, item.name]));
 
     if (conversationIds.length > 0) {
-      const messages = await this.messageRepo.find({
+      const messages = await new TenantRepository(this.messageRepo).find({
         where: {
           conversationId: In(conversationIds),
           createdAt: Between(windowStartedAt, windowEndedAt),
@@ -871,7 +875,7 @@ export class NeedDiscoveryService {
         },
       }),
       this.charactersService.findAllVisibleToOwner(ownerId),
-      this.candidateRepo.find({
+      new TenantRepository(this.candidateRepo).find({
         where: [
           { status: In([...ACTIVE_CANDIDATE_STATUSES]) },
           { status: 'accepted' },
@@ -1027,7 +1031,7 @@ export class NeedDiscoveryService {
       return '暂无已建立好友。';
     }
 
-    const characters = await this.characterRepo.find({
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { id: In(friendships.map((item) => item.characterId)) },
     });
     const characterMap = new Map(characters.map((item) => [item.id, item]));
@@ -1042,7 +1046,7 @@ export class NeedDiscoveryService {
   }
 
   private async buildExistingCandidatesSummary() {
-    const candidates = await this.candidateRepo.find({
+    const candidates = await new TenantRepository(this.candidateRepo).find({
       where: { status: In([...ACTIVE_CANDIDATE_STATUSES]) },
       order: { createdAt: 'DESC' },
       take: 8,

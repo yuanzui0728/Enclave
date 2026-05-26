@@ -10,6 +10,11 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { In, LessThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { GroupMessageEntity } from './group-message.entity';
@@ -171,11 +176,22 @@ export class MediaInsightJobService {
       });
 
       for (const job of dueJobs) {
-        await this.processJob(job.id);
+        // 共享 world：每个 job 在其 owner 的租户帧里处理（poll 全 owner，处理读写租户级）。
+        await this.runJobInOwnerFrame(job.ownerId, () => this.processJob(job.id));
       }
     } finally {
       this.processing = false;
     }
+  }
+
+  private async runJobInOwnerFrame<T>(
+    ownerId: string | null | undefined,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    if (!isSharedWorldMode() || !ownerId) {
+      return fn();
+    }
+    return TenantContextStore.run({ ownerId, phone: '' }, fn);
   }
 
   private async ensureMessageInsight(input: {
@@ -499,15 +515,16 @@ export class MediaInsightJobService {
   private async loadSourceMessage(job: MediaInsightJobEntity): Promise<{
     attachment?: MessageAttachment;
   } | null> {
+    // 共享 world：在 job.ownerId 帧内跑；会话/群消息是租户级 → scoped（会话 id 跨 owner 共用）。
     if (job.threadType === 'conversation') {
-      const entity = await this.messageRepo.findOneBy({
+      const entity = await new TenantRepository(this.messageRepo).findOneBy({
         id: job.sourceMessageId,
         conversationId: job.threadId,
       });
       return entity ? { attachment: this.parseAttachment(entity) } : null;
     }
 
-    const entity = await this.groupMessageRepo.findOneBy({
+    const entity = await new TenantRepository(this.groupMessageRepo).findOneBy({
       id: job.sourceMessageId,
       groupId: job.threadId,
     });

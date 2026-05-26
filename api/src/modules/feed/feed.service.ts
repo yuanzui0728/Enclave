@@ -3627,7 +3627,12 @@ export class FeedService implements OnModuleInit {
 
   // 启动时把死链/无 URL 的视频号视频/音频帖批量标 hidden，避免每次请求重算。
   // 重复跑无副作用：已经 hidden 的不会再次匹配 publishStatus='published' 条件。
+  // shared 模式跳过（同 cleanupLegacyDemoChannelPosts）：boot 期无租户帧，裸全局
+  // find/update 会 fail-closed 抛 TENANT_CONTEXT_MISSING；且死链只命中 demo 期占位主机
+  // （placehold.co 等，见 FEED_DEAD_MEDIA_HOSTS），各账号 cutover 前每次 boot 已 hide，
+  // 迁移后数据已规整；真实 minimax 视频走本地媒体不在死链表。如需可另写离线 per-owner 脚本。
   private async cleanupBrokenChannelPosts() {
+    if (isSharedWorldMode()) return;
     try {
       const candidates = await this.postRepo.find({
         where: [

@@ -46,6 +46,11 @@ const SCOPED_ENTITY_NAMES = new Set([
   'ReplyArtifactJobEntity', 'MediaInsightJobEntity', 'FavoriteEntity',
   'FavoriteNoteEntity', 'AIRelationshipEntity', 'CharacterFriendshipEntity',
   'WorldContextEntity', 'CharacterEntity',
+  // Phase 8r·9 / 8s 新加 ownerId 的子系统表
+  'NeedDiscoveryCandidateEntity', 'NeedDiscoveryRunEntity',
+  'FollowupRunEntity', 'FollowupOpenLoopEntity', 'FollowupRecommendationEntity',
+  'CharacterRealWorldDigestEntity', 'CharacterRealWorldSignalEntity',
+  'CharacterRealWorldSyncRunEntity',
 ]);
 
 const HIGH_METHODS = ['createQueryBuilder', 'query'];

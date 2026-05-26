@@ -11,6 +11,11 @@ export class NeedDiscoveryRunEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属（Phase 8s——need-discovery run-ledger 原漏建 ownerId，
+  // 致 cron 的「上次成功执行」节奏门跨 owner 全局判定 → 抑制其余 owner 的发现）。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column()
   cadenceType: string;
 

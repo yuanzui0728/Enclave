@@ -1829,6 +1829,10 @@ export class MomentsService implements OnModuleInit {
   private async backfillCharacterMomentsToFeed() {
     // 一次性回填：历史的角色朋友圈如果还没同步进 feed_posts，
     // 就把它们镜像到广场，让广场可以看到所有角色的动态。
+    // shared 模式跳过：boot 期无租户帧，syncMomentPostToFeed 写 feed 需 ownerId 会
+    // fail-closed 抛 TENANT_CONTEXT_MISSING；且 cutover 迁移已 union 各账号的 feed_posts
+    // （历史同步行齐全），新帖在创建时即时同步，无需 boot 全量回填。
+    if (isSharedWorldMode()) return;
     const characterPosts = await this.postRepo.find({
       where: { authorType: 'character' },
       order: { postedAt: 'ASC' },
@@ -2973,7 +2977,9 @@ export class MomentsService implements OnModuleInit {
   // 没有则返回 null，由 LLM 自由发挥。
   private async pickRecentMomentSummary(charId: string): Promise<string | null> {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recent = await this.postRepo.findOne({
+    // 视频生成跑在 per-owner cron 帧里；authorId 是跨租户共用的角色 id，裸 findOne 会读到
+    // 别 owner 的同角色帖 → afterLoad 读守卫抛。走 TenantRepository 限当前 owner。
+    const recent = await new TenantRepository(this.postRepo).findOne({
       where: { authorId: charId, postedAt: MoreThanOrEqual(since) },
       order: { postedAt: 'DESC' },
     });

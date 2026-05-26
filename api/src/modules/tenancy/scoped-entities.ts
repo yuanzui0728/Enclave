@@ -60,6 +60,7 @@ import { CharacterBlueprintEntity } from '../characters/character-blueprint.enti
 import { CharacterBlueprintRevisionEntity } from '../characters/character-blueprint-revision.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
+import { NeedDiscoveryRunEntity } from '../need-discovery/need-discovery-run.entity';
 import { FollowupRunEntity } from '../followup-runtime/followup-run.entity';
 import { FollowupOpenLoopEntity } from '../followup-runtime/followup-open-loop.entity';
 import { FollowupRecommendationEntity } from '../followup-runtime/followup-recommendation.entity';
@@ -137,6 +138,8 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   CharacterBlueprintRevisionEntity,
   AIBehaviorLogEntity,
   NeedDiscoveryCandidateEntity,
+  // need-discovery run-ledger（Phase 8s 补 ownerId；uuid id 全局唯一 → 普通可空列）。
+  NeedDiscoveryRunEntity,
   // followup-runtime + real-world-sync 子系统（Phase 8r·9 补 ownerId 收口——原漏建、shared
   // 模式下曾跨 owner 静默混 character 派生数据）。uuid id 全局唯一 → 普通可空 ownerId 列。
   FollowupRunEntity,

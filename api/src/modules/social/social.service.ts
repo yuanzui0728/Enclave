@@ -904,7 +904,12 @@ export class SocialService implements OnModuleInit {
     const char =
       (await this.charactersService.ensurePresetCharacterInstalled(
         characterId,
-      )) ?? (await this.characterRepo.findOneBy({ id: characterId }));
+      )) ??
+      // 共享 world：characters 复合主键 (ownerId,id)，裸 findOneBy({id}) 会跨 owner 命中
+      // 同 id 角色 → 读守卫抛。走 TenantRepository 限当前 owner（LPP 透传）。
+      (await new TenantRepository(this.characterRepo).findOneBy({
+        id: characterId,
+      }));
     if (!char)
       throw new AppError('CHARACTER_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -1591,7 +1596,10 @@ ${personaSummary || '（暂无更多信息）'}
     const today = formatLocalDate(now);
     const yesterday = formatLocalDate(addDays(now, -1));
 
-    const stale = await this.friendshipRepo
+    // 共享 world：resetExpiredSparks 经 runForAllTenants 在 per-owner 帧里跑；裸 QB 会
+    // 扫到别 owner 的 friendship（afterLoad 读守卫抛）→ 走 TenantRepository 自动 andWhere
+    // ownerId，只清当前 owner 的到期火花（下面 whereInIds 用本 owner 的 id，唯一 id 安全）。
+    const stale = await new TenantRepository(this.friendshipRepo)
       .createQueryBuilder('f')
       .where('f.sparkStreak > 0')
       .andWhere(
@@ -1636,7 +1644,10 @@ ${personaSummary || '（暂无更多信息）'}
     let friendship: FriendshipEntity;
     let shouldNotifyConversation = options?.notifyConversation === true;
 
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    // 复合主键 (ownerId,id)：裸 findOneBy({id}) 跨 owner 命中 → 走 TenantRepository。
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     const characterRegion = character?.region?.trim() || null;
     const normalizedSource = options?.source?.trim() || null;
 
