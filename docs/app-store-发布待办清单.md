@@ -92,7 +92,8 @@
 - [x] **补 iOS 权限用途文案** —— 已完成（commit cade9135b），相机/相册/麦克风 base 文案已填。
 - [x] **iOS 发布流水线（GitHub Actions macOS）** —— 仓库里**早已存在** `.github/workflows/ios-release.yml`，完整可用（自动 web build→sync→签名→archive→export→可选上传 TestFlight）。**没有 Mac 也能上 iOS**。你只需：① 有 Apple 账号后，按 `docs/ios-ci-secrets.md`（已新建）配好 GitHub Secrets；② Actions 里手动跑或打 `app-v*` tag 触发。
 - [x] **AI 内容审核** —— 已完成框架（commit bbdec4060）。国内/国际两套规则，命中替换为安全话术，覆盖 1:1+群聊回复、文字/视频朋友圈。**两件事要你跟进**：
-  - **部署 env**：国内服务器进程设 `YINJIE_MODERATION_REGION=cn`（默认 intl）。
+  - **部署 env**：国内服务器进程设 `YINJIE_MODERATION_REGION=cn`（默认 intl）。应急关停：设 `YINJIE_MODERATION_DISABLED=1` 整体跳过审核（误报失控时即时止血，重启生效）。
+  - **误伤防护**：规则已多轮收窄，刻意放行创伤倾诉/育儿/性教育/自杀求助/成人恋爱等正当敏感内容（对陪伴 App，误伤这些比漏报更糟）；命中打 `[content-moderation] flagged` 日志供运营监控误报率。
   - **接托管内容安全服务**（生产必须）：内置的只是起步规则集，国内涉政/涉黄判定**应接阿里云内容安全 / 腾讯天御**（硬编码涉政词表不合规也防不住）；扩展位/接入说明见 `api/src/modules/moderation/content-moderation.ts` 注释。
   - 注：用户**输入**侧过滤（非 AI 输出）是后续项；当前靠举报 + 拉黑兜底。
 - [ ] **隐藏付费入口**（若你选路线 1）—— 依赖你的支付决策。
