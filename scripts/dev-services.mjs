@@ -124,6 +124,39 @@ const services = {
       }
     },
   },
+  // 共享 world 多租户进程（MAIN_MODE=shared-world）。一个进程 + 一个共享库服务所有
+  // opted-in（SHARED_WORLD_PHONES）用户；与 LPP 每用户 child 并存。不进 serviceGroups，
+  // 按需显式启动：node scripts/dev-services.mjs start|restart|stop shared-world。
+  // CLOUD_SERVICE_TOKEN / CLOUD_API_BASE_URL 等由 app 的 ConfigModule 从 root .env 读。
+  "shared-world": {
+    cwd: path.join(rootDir, "api"),
+    command: nodeBinary,
+    args: [path.join(rootDir, "api", "dist", "main-shared-world.js")],
+    port: 4100,
+    url: "http://127.0.0.1:4100/health",
+    env: {
+      MAIN_MODE: "shared-world",
+      SHARED_WORLD_PORT: "4100",
+      SHARED_WORLD_HOST: "127.0.0.1",
+      DATABASE_PATH: path.join(rootDir, "data", "shared-world", "database.sqlite"),
+      YINJIE_DATA_ROOT: path.join(rootDir, "data", "shared-world"),
+    },
+    prestart() {
+      const result = spawnSync(nodeBinary, [path.join(rootDir, "api", "node_modules", "@nestjs", "cli", "bin", "nest.js"), "build"], {
+        cwd: path.join(rootDir, "api"),
+        env: process.env,
+        shell: false,
+        stdio: "inherit",
+        windowsHide: true,
+      });
+      if (result.error) {
+        throw result.error;
+      }
+      if (result.status !== 0) {
+        throw new Error(`shared-world build failed with exit code ${result.status ?? "unknown"}.`);
+      }
+    },
+  },
   "cloud-console": {
     cwd: path.join(rootDir, "apps", "cloud-console"),
     command: nodeBinary,
