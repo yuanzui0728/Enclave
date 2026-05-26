@@ -235,31 +235,47 @@ export class MomentsService implements OnModuleInit {
 
   private async ensureMomentUniqueIndexes(): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
+    // 共享 world：(postId,authorId) 跨租户共用（模板/迁移帖 id 跨账号重复），唯一索引与去重
+    // 必须含 ownerId，否则 boot 去重把别租户的赞当「重复」删掉 + 第二个 owner 的赞撞 unique
+    // 被丢。LPP 维持 2 列。recount 在 shared 关联 ownerId 防跨租户计数。
+    const shared = isSharedWorldMode();
+    const likeGroup = shared ? 'ownerId, postId, authorId' : 'postId, authorId';
+    const likeCorr = shared
+      ? 'AND moment_likes.ownerId = moment_posts.ownerId'
+      : '';
+    const commentCorr = shared
+      ? 'AND moment_comments.ownerId = moment_posts.ownerId'
+      : '';
     try {
       await queryRunner.connect();
-      // 1. 去重 moment_likes：每对 (postId, authorId) 只保留 createdAt 最早一行
+      // 1. 去重 moment_likes：每对 (ownerId,)postId, authorId 只保留 createdAt 最早一行
       await queryRunner.query(`
         DELETE FROM moment_likes
         WHERE id NOT IN (
-          SELECT MIN(id) FROM moment_likes GROUP BY postId, authorId
+          SELECT MIN(id) FROM moment_likes GROUP BY ${likeGroup}
         )
       `);
+      await queryRunner.query(
+        `DROP INDEX IF EXISTS ${shared ? 'uniq_moment_likes_post_author' : 'uniq_moment_likes_owner_post_author'}`,
+      );
       await queryRunner.query(`
-        CREATE UNIQUE INDEX IF NOT EXISTS uniq_moment_likes_post_author
-        ON moment_likes(postId, authorId)
+        CREATE UNIQUE INDEX IF NOT EXISTS ${shared ? 'uniq_moment_likes_owner_post_author' : 'uniq_moment_likes_post_author'}
+        ON moment_likes(${likeGroup})
       `);
       // 2. 用 like 表实际行数把 likeCount 拉回真值，修复历史漂移
       await queryRunner.query(`
         UPDATE moment_posts
         SET likeCount = COALESCE((
-          SELECT COUNT(*) FROM moment_likes WHERE moment_likes.postId = moment_posts.id
+          SELECT COUNT(*) FROM moment_likes
+          WHERE moment_likes.postId = moment_posts.id ${likeCorr}
         ), 0)
       `);
       // 3. commentCount 同理重算（rare race，但既然在跑就一起对齐）
       await queryRunner.query(`
         UPDATE moment_posts
         SET commentCount = COALESCE((
-          SELECT COUNT(*) FROM moment_comments WHERE moment_comments.postId = moment_posts.id
+          SELECT COUNT(*) FROM moment_comments
+          WHERE moment_comments.postId = moment_posts.id ${commentCorr}
         ), 0)
       `);
       // 4. authorId+postedAt 复合索引：ownerOnly / characterAuthorId 路径走索引

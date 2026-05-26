@@ -238,18 +238,33 @@ export class FeedService implements OnModuleInit {
   // 把之前漂移的计数拉回真值。线上重启时跑一次即可，幂等。
   private async ensureFeedUniqueIndexes(): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
+    // 共享 world：(postId,authorId) 跨租户共用（模板/迁移帖 id 跨账号重复），唯一索引与去重
+    // 必须含 ownerId，否则 B 的赞被当成 A 的「重复」在 boot 去重时删掉 + 第二个 owner 的赞
+    // 撞 unique 被丢。LPP 维持 2 列（单库无跨租户）。recount 同理在 shared 关联 ownerId。
+    const shared = isSharedWorldMode();
+    const likeGroup = shared ? 'ownerId, postId, authorId' : 'postId, authorId';
+    const likeCorr = shared
+      ? 'AND feed_post_likes.ownerId = feed_posts.ownerId'
+      : '';
+    const ufiCorr = shared
+      ? 'AND user_feed_interactions.userId = feed_posts.ownerId'
+      : '';
     try {
       await queryRunner.connect();
-      // 1. 去重 feed_post_likes：每对 (postId, authorId) 只保留 createdAt 最早一行
+      // 1. 去重 feed_post_likes：每对 (ownerId,)postId, authorId 只保留 createdAt 最早一行
       await queryRunner.query(`
         DELETE FROM feed_post_likes
         WHERE id NOT IN (
-          SELECT MIN(id) FROM feed_post_likes GROUP BY postId, authorId
+          SELECT MIN(id) FROM feed_post_likes GROUP BY ${likeGroup}
         )
       `);
+      // 切换模式时另一种列组合的旧索引要先 drop（否则 2 列 unique 残留挡多租户）。
+      await queryRunner.query(
+        `DROP INDEX IF EXISTS ${shared ? 'uniq_feed_post_likes_post_author' : 'uniq_feed_post_likes_owner_post_author'}`,
+      );
       await queryRunner.query(`
-        CREATE UNIQUE INDEX IF NOT EXISTS uniq_feed_post_likes_post_author
-        ON feed_post_likes(postId, authorId)
+        CREATE UNIQUE INDEX IF NOT EXISTS ${shared ? 'uniq_feed_post_likes_owner_post_author' : 'uniq_feed_post_likes_post_author'}
+        ON feed_post_likes(${likeGroup})
       `);
 
       // 2. 去重 user_feed_interactions：toggle 类型（like / favorite / view /
@@ -290,11 +305,12 @@ export class FeedService implements OnModuleInit {
       await queryRunner.query(`
         UPDATE feed_posts
         SET likeCount = COALESCE((
-          SELECT COUNT(*) FROM feed_post_likes WHERE feed_post_likes.postId = feed_posts.id
+          SELECT COUNT(*) FROM feed_post_likes
+          WHERE feed_post_likes.postId = feed_posts.id ${likeCorr}
         ), 0) + COALESCE((
           SELECT COUNT(*) FROM user_feed_interactions
           WHERE user_feed_interactions.postId = feed_posts.id
-            AND user_feed_interactions.type = 'like'
+            AND user_feed_interactions.type = 'like' ${ufiCorr}
         ), 0)
       `);
       await queryRunner.query(`
@@ -302,7 +318,7 @@ export class FeedService implements OnModuleInit {
         SET favoriteCount = COALESCE((
           SELECT COUNT(*) FROM user_feed_interactions
           WHERE user_feed_interactions.postId = feed_posts.id
-            AND user_feed_interactions.type = 'favorite'
+            AND user_feed_interactions.type = 'favorite' ${ufiCorr}
         ), 0)
       `);
     } catch (error) {
