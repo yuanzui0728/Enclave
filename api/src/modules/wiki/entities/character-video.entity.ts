@@ -51,7 +51,7 @@ export class CharacterVideoEntity {
   @Column({ type: 'text', nullable: true })
   refinedPrompt?: string | null;
 
-  @Column({ default: 'generating' })
+  @Column({ type: 'text', default: 'generating' })
   status!: CharacterVideoStatus;
 
   @Column({ type: 'text', nullable: true })
