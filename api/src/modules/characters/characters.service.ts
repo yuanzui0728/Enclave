@@ -474,10 +474,13 @@ export class CharactersService implements OnModuleInit {
       // ai_relationships 有 ownerId：QB delete 手工加 ownerId（仅 shared；LPP ownerId 为
       // NULL 不能进 WHERE，否则 NULL=:id 永假会漏删）。
       {
+        // ⚠️ 必须给 OR 加括号：andWhere 追加 `AND ownerId=?` 时 SQL 的 AND 优先级高于 OR，
+        // 不括会变成 `charA=:id OR (charB=:id AND ownerId=?)` → 把其他租户 characterIdA=:id
+        // 的关系也删掉（实测 B 的 ai_rels 被误删）。括起来才是 `(charA OR charB) AND owner`。
         let q = aiRelationshipRepo
           .createQueryBuilder()
           .delete()
-          .where('characterIdA = :id OR characterIdB = :id', { id });
+          .where('(characterIdA = :id OR characterIdB = :id)', { id });
         if (ownerId) q = q.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
         await q.execute();
       }

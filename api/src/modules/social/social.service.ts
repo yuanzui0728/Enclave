@@ -11,6 +11,7 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   DEFAULT_CHARACTER_IDS,
@@ -544,7 +545,10 @@ export class SocialService implements OnModuleInit {
     // 原实现对 13 个默认角色逐条 findOneBy character + findOneBy friendship，
     // 每次 getFriends() 都额外 26 条 SQL（稳态没新写入也照打）。改成一次 IN()
     // 取齐两份数据后只对真正缺失/欠补的角色写 DB，常态下查询数从 26 退回到 2。
-    const characters = await this.characterRepo.find({
+    // scoped：首触 seedNewOwner 在 owner 帧里跑，必须只读当前 owner 的默认角色行；裸 find
+    // 会读到其他租户的同 id 默认角色 → 触 afterLoad 读泄漏雷达。LPP 透传（char.ownerId 为
+    // NULL，不能用显式 ownerId 过滤，故走 mode-aware 包装）。
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { id: In([...DEFAULT_FRIENDSHIP_CHARACTER_IDS]) },
     });
     if (!characters.length) {

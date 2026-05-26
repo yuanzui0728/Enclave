@@ -7,6 +7,7 @@ import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { ChatService } from '../chat/chat.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 
 // 2026-05-21 起：新用户进来只让"我"（self mirror）主动发一条欢迎消息。
 // 之前 13 个默认好友里 12 个会错峰用 LLM 生成欢迎，对零基础新用户来说信息过载。
@@ -54,7 +55,9 @@ export class InitialMessageService {
         where: { id: conversationId, ownerId },
       });
       if (existing) {
-        const messageCount = await this.messageRepo.count({
+        // scoped：conversationId 形如 direct_<charId> 跨租户共用，裸 count 会把别人会话的
+        // 消息也算进来；按当前 owner 限定（LPP 透传）。
+        const messageCount = await new TenantRepository(this.messageRepo).count({
           where: { conversationId },
         });
         if (messageCount > 0) return;
@@ -81,18 +84,22 @@ export class InitialMessageService {
     key: string,
   ): Promise<void> {
     try {
-      const character = await this.characterRepo.findOneBy({ id: characterId });
+      // scoped：setTimeout 回调里 ALS 租户帧仍在（AsyncLocalStorage 跨定时器传递），裸
+      // findOneBy({id}) 会读到别的租户的同 id 角色 → afterLoad 读泄漏。按当前 owner 限定。
+      const character = await new TenantRepository(this.characterRepo).findOneBy({
+        id: characterId,
+      });
       if (!character) return;
 
       const conversationId = `direct_${characterId}`;
-      const existingCount = await this.messageRepo.count({
+      const existingCount = await new TenantRepository(this.messageRepo).count({
         where: { conversationId },
       });
       if (existingCount > 0) return;
 
       await this.chatService.getOrCreateConversation(characterId);
 
-      const stillEmpty = await this.messageRepo.count({
+      const stillEmpty = await new TenantRepository(this.messageRepo).count({
         where: { conversationId },
       });
       if (stillEmpty > 0) return;
@@ -108,9 +115,9 @@ export class InitialMessageService {
       });
       await this.messageRepo.save(messageEntity);
 
-      const conversation = await this.conversationRepo.findOneBy({
-        id: conversationId,
-      });
+      const conversation = await new TenantRepository(
+        this.conversationRepo,
+      ).findOneBy({ id: conversationId });
       if (conversation) {
         conversation.lastActivityAt = messageEntity.createdAt ?? new Date();
         await this.conversationRepo.save(conversation);

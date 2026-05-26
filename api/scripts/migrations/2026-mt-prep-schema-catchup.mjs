@@ -61,6 +61,12 @@ if (!(before.charPk.length === 1 && before.charPk[0] === 'id')) {
 }
 console.log(`catch-up 前：${before.tables} 表，characters ${before.charColCount} 列，PK=(${before.charPk.join(',')})`);
 
+// 🔴 防御：实体（tenant-entity.ts applyOwnerIdColumn）在 import 期按 MAIN_MODE 决定主键
+// 形状。prep 必须以「单 id 主键」实体跑 synchronize（只加性补列/补表）。若环境里残留了
+// MAIN_MODE=shared-world，dist 实体会声明复合主键，synchronize 会尝试把单 id 库重建成
+// 复合 → 毁迁移。这里在 glob 加载实体前清掉它（下方还有 after.charPk 双保险）。
+delete process.env.MAIN_MODE;
+
 const ds = new DataSource({
   type: 'better-sqlite3',
   database: dbPath,

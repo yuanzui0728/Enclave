@@ -19,6 +19,7 @@ import { WebSearchService } from '../ai/web-search.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { WorldLanguageService } from '../config/world-language.service';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
@@ -219,7 +220,9 @@ export class ChatService {
     const isNonUserFacingConversation =
       isNonUserFacingDirectConversationId(convId);
 
-    let entity = await this.convRepo.findOneBy({ id: convId });
+    // scoped：convId 形如 direct_<charId> 跨租户共用，裸 findOneBy({id}) 会命中别的租户的
+    // 同 id 会话 → 读泄漏 / 误用别人的会话。按当前 owner 限定（LPP 透传）。
+    let entity = await new TenantRepository(this.convRepo).findOneBy({ id: convId });
     if (!entity) {
       const char = await this.characters.findById(characterId);
       entity = this.convRepo.create({
