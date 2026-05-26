@@ -60,6 +60,13 @@ function normalizeUserMessage(input: string) {
   return input.trim();
 }
 
+// 真实世界动作 pending run 的防卡死参数
+// 超过这个时长没有任何推进的待确认/待补全 run 视为陈旧，新消息进来不再被它劫持。
+const PENDING_RUN_STALE_MS = 30 * 60 * 1000;
+// 同一条 pending run 被「既不确认也不取消」的消息顶过这么多次后自动取消，
+// 避免对着用户无限重复同一句确认。
+const MAX_PENDING_FOLLOWUPS = 3;
+
 function truncateActionSignalSummary(value: string) {
   const normalized = value.trim();
   return normalized.length > 220
@@ -173,13 +180,24 @@ export class ActionRuntimeService {
         });
         return { handled: false };
       }
-      const connectors = await this.listReadyConnectorEntities();
-      return this.handlePendingRun({
-        run: pendingRun,
-        userMessage,
-        rules,
-        connectors,
-      });
+      if (this.isPendingRunStale(pendingRun)) {
+        // 用户早已离开这个话题（例如几小时后的新消息或主动跟进），陈旧的待确认/待补全
+        // run 不应再劫持本轮消息——取消它，让下面按全新意图重新规划。
+        await this.cancelStalePendingRun({
+          run: pendingRun,
+          rules,
+          reason: 'pending_run_stale',
+          currentCharacter: input.character,
+        });
+      } else {
+        const connectors = await this.listReadyConnectorEntities();
+        return this.handlePendingRun({
+          run: pendingRun,
+          userMessage,
+          rules,
+          connectors,
+        });
+      }
     }
 
     if (!canHandleCurrentCharacter) {
@@ -867,9 +885,12 @@ export class ActionRuntimeService {
       return { handled: false };
     }
 
+    const wasAwaitingConfirmation = run.status === 'awaiting_confirmation';
+
     if (
-      run.status === 'awaiting_confirmation' &&
-      this.matchesKeyword(normalized, rules.policy.rejectionKeywords)
+      wasAwaitingConfirmation &&
+      (this.matchesKeyword(normalized, rules.policy.rejectionKeywords) ||
+        this.looksLikeRejection(normalized))
     ) {
       run.status = 'cancelled';
       run.tracePayload = appendTrace(run.tracePayload, {
@@ -885,7 +906,7 @@ export class ActionRuntimeService {
     }
 
     if (
-      run.status === 'awaiting_confirmation' &&
+      wasAwaitingConfirmation &&
       this.matchesKeyword(normalized, rules.policy.confirmationKeywords)
     ) {
       run.status = 'running';
@@ -900,6 +921,23 @@ export class ActionRuntimeService {
       });
       await this.runRepo.save(run);
       return this.executeRun(run, rules, connectors);
+    }
+
+    // 兜底防死循环：既不确认也不取消的消息顶过上限后自动放弃，
+    // 把控制权交还给自然对话，不再用系统口吻反复刷同一句确认。
+    if (this.countPendingFollowups(run) >= MAX_PENDING_FOLLOWUPS) {
+      run.status = 'cancelled';
+      run.policyDecisionPayload = {
+        ...(run.policyDecisionPayload ?? {}),
+        reason: 'pending_followups_exhausted',
+      };
+      run.tracePayload = appendTrace(run.tracePayload, {
+        phase: 'cancelled',
+        reason: 'pending_followups_exhausted',
+      });
+      await this.runRepo.save(run);
+      await this.captureActionRunSignal(run, plan, 'cancelled');
+      return { handled: false };
     }
 
     const mergedPlan = this.mergePlanWithMessage(plan, normalized, rules);
@@ -932,24 +970,81 @@ export class ActionRuntimeService {
         this.resolveForceConfirmationFromRun(run),
       )
     ) {
+      const existingRequestedAt =
+        typeof run.confirmationPayload?.requestedAt === 'string'
+          ? run.confirmationPayload.requestedAt
+          : new Date().toISOString();
       run.status = 'awaiting_confirmation';
       run.confirmationPayload = {
-        requestedAt: new Date().toISOString(),
+        ...(run.confirmationPayload ?? {}),
+        requestedAt: existingRequestedAt,
+        lastPromptedAt: new Date().toISOString(),
         confirmationKeywords: [...rules.policy.confirmationKeywords],
       };
       await this.runRepo.save(run);
       return {
         handled: true,
-        responseText:
-          run.status === 'awaiting_confirmation'
-            ? this.renderConfirmation(mergedPlan, rules)
-            : rules.promptTemplates.pendingConfirmationReminderTemplate,
+        // 刚从「补全参数」转过来 → 首次给完整确认说明；
+        // 已经问过确认的轮次 → 改用更短的提醒（含怎么取消），不再重复刷长确认。
+        responseText: wasAwaitingConfirmation
+          ? this.renderPendingReminder(mergedPlan, rules)
+          : this.renderConfirmation(mergedPlan, rules),
       };
     }
 
     run.status = 'running';
     await this.runRepo.save(run);
     return this.executeRun(run, rules, connectors);
+  }
+
+  private isPendingRunStale(run: ActionRunEntity) {
+    const reference =
+      run.updatedAt instanceof Date ? run.updatedAt.getTime() : NaN;
+    if (Number.isNaN(reference)) {
+      return false;
+    }
+    return Date.now() - reference > PENDING_RUN_STALE_MS;
+  }
+
+  private countPendingFollowups(run: ActionRunEntity) {
+    const steps = Array.isArray(run.tracePayload?.steps)
+      ? (run.tracePayload?.steps as Array<Record<string, unknown>>)
+      : [];
+    return steps.filter((step) => step?.phase === 'user_followup').length;
+  }
+
+  private looksLikeRejection(message: string) {
+    const trimmed = message.trim();
+    if (!trimmed) {
+      return false;
+    }
+    const lower = trimmed.toLowerCase();
+    // 以否定/退出意图开头：不要点外卖了 / 不用了 / 别弄了 / 算了 / 取消 / no / stop
+    if (/^(不要|不用|不想|不必|别|算了|取消|停|结束|撤|no\b|nope|stop)/i.test(trimmed)) {
+      return true;
+    }
+    // 句中出现的强退出信号
+    const strongExits = [
+      '取消',
+      '别弄',
+      '别发',
+      '别再',
+      '不想要',
+      '不用了',
+      '停一下',
+      '停下',
+      '走了',
+      '退出',
+    ];
+    if (strongExits.some((keyword) => trimmed.includes(keyword))) {
+      return true;
+    }
+    // 用户在抱怨「一直重复 / 又发了 / 出 bug」——同样视为想让它停下来
+    const complaints = ['一直重复', '在重复', '又发', '出bug', 'bug', '出错'];
+    if (complaints.some((keyword) => lower.includes(keyword))) {
+      return true;
+    }
+    return false;
   }
 
   private async executeRun(
@@ -2074,14 +2169,21 @@ export class ActionRuntimeService {
     return [];
   }
 
+  private isAutoExecutable(
+    plan: ActionPlanValue,
+    rules: ActionRuntimeRulesValue,
+  ) {
+    return (
+      rules.policy.autoExecuteRiskLevels.includes(plan.riskLevel) &&
+      rules.policy.trustedOperationKeys.includes(plan.operationKey)
+    );
+  }
+
   private requiresConfirmation(
     plan: ActionPlanValue,
     rules: ActionRuntimeRulesValue,
   ) {
-    if (
-      rules.policy.autoExecuteRiskLevels.includes(plan.riskLevel) &&
-      rules.policy.trustedOperationKeys.includes(plan.operationKey)
-    ) {
+    if (this.isAutoExecutable(plan, rules)) {
       return false;
     }
     return plan.requiresConfirmation;
@@ -2092,7 +2194,11 @@ export class ActionRuntimeService {
     rules: ActionRuntimeRulesValue,
     forceConfirmation: boolean,
   ) {
-    if (forceConfirmation) {
+    // read_only + trusted 的动作没有真实副作用（如「外卖候选整理」只是筛选 mock 候选），
+    // 即便是主代理委托并开启了强制确认，也直接执行——否则会卡在一个永远无法自动收尾的
+    // 确认态里反复刷确认。真正有成本/不可逆的动作（如真实下单 food_delivery_submit）
+    // 不在 trustedOperationKeys 里，仍会被 forceConfirmation 拦下。
+    if (forceConfirmation && !this.isAutoExecutable(plan, rules)) {
       return true;
     }
     return this.requiresConfirmation(plan, rules);
@@ -3533,6 +3639,19 @@ export class ActionRuntimeService {
       title: plan.title,
       slotSummary: this.describeSlots(plan.slots),
     });
+  }
+
+  private renderPendingReminder(
+    plan: ActionPlanValue,
+    rules: ActionRuntimeRulesValue,
+  ) {
+    return renderTemplate(
+      rules.promptTemplates.pendingConfirmationReminderTemplate,
+      {
+        title: plan.title,
+        slotSummary: this.describeSlots(plan.slots),
+      },
+    );
   }
 
   private renderSuccess(
