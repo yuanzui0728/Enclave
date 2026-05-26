@@ -8,6 +8,7 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
 import { SystemConfigService } from '../config/config.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
 import { FavoriteEntity } from './favorite.entity';
@@ -142,6 +143,10 @@ export class FavoritesService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // 共享 world：这些是 LPP 单库的「config JSON blob → 行级表」一次性迁移 + 头像回填，
+    // 读的是 per-owner 的 favorites_records 等键，boot 期无租户帧会 fail-closed 抛
+    // TENANT_CONTEXT_MISSING；合并库本就已是行级，无需全局迁移。shared 跳过。
+    if (isSharedWorldMode()) return;
     // 把旧版 system_config 里的 JSON blob 一次性搬到行级表里。幂等：迁移完成后
     // 旧 key 写入会被清空，下次启动看到 raw=null 直接跳过。
     await this.migrateFavoritesFromConfig();
