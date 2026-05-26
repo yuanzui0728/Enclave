@@ -200,7 +200,7 @@ export function MobileSpeechInputSheet({
         aria-labelledby={titleId}
         className="pointer-events-auto relative w-full max-w-[19.5rem]"
       >
-        <div className="rounded-[24px] border border-black/8 bg-[rgba(250,245,237,0.96)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(180,130,20,0.18)] backdrop-blur-xl">
+        <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(180,130,20,0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
@@ -219,7 +219,7 @@ export function MobileSpeechInputSheet({
             <button
               type="button"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/6 bg-[color:var(--surface-card)] text-[#7a7a7a] transition active:bg-[#f1f1f1]",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#7a7a7a] transition active:bg-[#f1f1f1]",
                 holding ? "pointer-events-none opacity-0" : "opacity-100",
               )}
               onClick={onClose}
@@ -239,8 +239,8 @@ export function MobileSpeechInputSheet({
                   : listening || holding
                     ? "border-[#f59e0b]/30 bg-[#f59e0b]"
                     : processing
-                      ? "border-black/6 bg-[#f0f1f3] text-[#606266]"
-                      : "border-black/6 bg-[color:var(--surface-card)] text-[#f59e0b]",
+                      ? "border-[color:var(--border-faint)] bg-[#f0f1f3] text-[#606266]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#f59e0b]",
               )}
             >
               {processing ? (
@@ -263,8 +263,8 @@ export function MobileSpeechInputSheet({
             className={cn(
               "mt-4 min-h-[76px] rounded-[20px] border px-4 py-3 text-[13px] leading-6",
               text
-                ? "border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-                : "border-black/6 bg-[rgba(255,255,255,0.72)] text-[#a3a3a3]",
+                ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+                : "border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] text-[#a3a3a3]",
             )}
           >
             {text ||
@@ -284,7 +284,7 @@ export function MobileSpeechInputSheet({
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex h-10 items-center justify-center rounded-[16px] border border-black/6 bg-[color:var(--surface-card)] text-[14px] font-medium text-[#606266] transition active:bg-[#f1f1f1]"
+                className="flex h-10 items-center justify-center rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[14px] font-medium text-[#606266] transition active:bg-[#f1f1f1]"
               >
                 {t(msg`取消`)}
               </button>

@@ -694,7 +694,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               onClick={handleBack}
               className={cn(
                 isDesktopLayout
-                  ? "rounded-[12px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  ? "rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
                   : "rounded-full",
               )}
             >
@@ -752,7 +752,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               onClick={handleBack}
               className={cn(
                 isDesktopLayout
-                  ? "rounded-[12px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  ? "rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
                   : "rounded-full",
               )}
             >
@@ -790,12 +790,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     return (
       <AppPage className="min-h-full bg-[#f3f3f3] px-0 py-0">
         <div className="flex min-h-full flex-col">
-          <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f8f5ec] px-6 py-4">
+          <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-6 py-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-black/6 bg-white text-[color:var(--text-primary)] transition hover:bg-[#efefef]"
+                className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[#efefef]"
                 aria-label={t(msg`返回聊天`)}
               >
                 <ArrowLeft size={18} />
@@ -817,14 +817,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               type="button"
               variant="secondary"
               onClick={handleBack}
-              className="rounded-[12px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
             >
               {t(msg`返回聊天`)}
             </Button>
           </header>
 
           <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-            <div className="w-full max-w-[760px] rounded-[20px] border border-black/6 bg-white p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
+            <div className="w-full max-w-[760px] rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
               <div className="inline-flex rounded-full bg-[rgba(180,130,20,0.05)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`桌面通话工作区`)}
               </div>
@@ -845,7 +845,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`当前会话`)}
                   </div>
@@ -853,7 +853,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                     {conversation.title}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`通话类型`)}
                   </div>
@@ -863,7 +863,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                       : t(msg`语音通话`)}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`对话对象`)}
                   </div>
@@ -900,7 +900,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                         : {}),
                     });
                   }}
-                  className="rounded-[12px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
                 >
                   {t(msg`查看聊天信息`)}
                 </Button>

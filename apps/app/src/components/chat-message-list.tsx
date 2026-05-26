@@ -3563,7 +3563,7 @@ export function ChatMessageList({
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
-                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
+                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
                 : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(180,130,20,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
@@ -3573,7 +3573,7 @@ export function ChatMessageList({
       ) : null}
       {selectionMode ? (
         isDesktop ? (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-black/6 bg-[#f8f5ec] px-4 py-3 backdrop-blur">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[#f8f5ec] px-4 py-3 backdrop-blur">
             <div>
               <div className="text-sm text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedMessageIds.length} 条消息`)}
@@ -3799,7 +3799,7 @@ export function ChatMessageList({
                   id={`chat-message-${message.id}`}
                   className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
-                      ? "rounded-full border border-black/6 bg-[#f8f5ec] px-3 py-1.5 text-[11px]"
+                      ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1.5 text-[11px]"
                       : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
@@ -4159,10 +4159,10 @@ export function ChatMessageList({
                       className={`px-3.5 py-2 text-[15px] leading-6 ${
                         isUser
                           ? isDesktop
-                            ? "rounded-[16px] bg-[#95ec69] text-[#111827] shadow-none"
+                            ? "rounded-[16px] bg-[#95ec69] text-[color:var(--text-primary)] shadow-none"
                             : "rounded-[20px] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
-                            ? "rounded-[16px] border border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
+                            ? "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
                             : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                       } whitespace-pre-wrap break-words`}
                     >
@@ -4171,7 +4171,7 @@ export function ChatMessageList({
                   )}
                   {reminderRecord ? (
                     <div
-                      className={`px-1 text-[#8c8c8c] ${
+                      className={`px-1 text-[color:var(--text-muted)] ${
                         isDesktop
                           ? "mt-1 text-[11px]"
                           : "mt-px px-0.5 text-[10px]"
@@ -4898,7 +4898,7 @@ function UnreadMarkerDivider({
       <div
         className={
           isDesktop
-            ? "rounded-full border border-black/6 bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
+            ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
             : "rounded-full border border-[rgba(245,158,11,0.18)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[#b45309]"
         }
       >
@@ -4936,7 +4936,7 @@ function MessageTimestampDivider({
         onClick={onToggle}
         className={
           isDesktop
-            ? "inline-flex items-center rounded-full border border-black/6 bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[#8c8c8c] transition hover:bg-[color:var(--surface-card)]"
+            ? "inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-card)]"
             : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
         }
         aria-label={
@@ -5083,7 +5083,7 @@ function SharedHistorySummaryNotice({
       className={cn(
         "mx-auto max-w-[84%] border text-center",
         isDesktop
-          ? "rounded-[16px] border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
+          ? "rounded-[16px] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
           : "rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
           ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
@@ -5919,7 +5919,7 @@ function ReplyQuoteCard({
             ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
-            ? "mb-2 rounded-[12px] border-black/6 bg-[#f8f5ec] px-3 py-2 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[12px] border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[12px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
       } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
@@ -6045,7 +6045,7 @@ function ImageMessage({
       onLoad={onMediaReady}
       className={`bg-[color:var(--surface-card)] object-cover shadow-none ${
         isDesktop
-          ? "rounded-[16px] border border-black/6"
+          ? "rounded-[16px] border border-[color:var(--border-faint)]"
           : "rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
       style={imageStyle}
@@ -6157,7 +6157,7 @@ function ContactCardMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
@@ -6301,7 +6301,7 @@ function NoteCardMessage({
     <div
       className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[248px] rounded-[16px] border border-black/6"
+          ? "w-[248px] rounded-[16px] border border-[color:var(--border-faint)]"
           : "w-[220px] rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
     >
@@ -6463,7 +6463,7 @@ function FeedPostCardMessage({
     <div
       className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[260px] rounded-[16px] border border-black/6"
+          ? "w-[260px] rounded-[16px] border border-[color:var(--border-faint)]"
           : "w-[228px] rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
     >
@@ -6558,7 +6558,7 @@ function FileAttachmentMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
@@ -6629,7 +6629,7 @@ function LocationCardMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
@@ -6757,10 +6757,10 @@ function VoiceMessage({
       } ${
         own
           ? isDesktop
-            ? "bg-[#95ec69] text-[#111827]"
+            ? "bg-[#95ec69] text-[color:var(--text-primary)]"
             : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00]"
           : isDesktop
-            ? "rounded-[20px] border border-black/5 bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+            ? "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
             : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
       }`}
     >
@@ -7009,7 +7009,7 @@ function GroupRelaySummaryMessage({
         <div
           className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
             isDesktop
-              ? "border-t border-black/6"
+              ? "border-t border-[color:var(--border-faint)]"
               : "border-t border-[color:var(--border-subtle)]"
           }`}
         >
@@ -7368,7 +7368,7 @@ function GroupCallInviteMessage({
       <div
         className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
           isDesktop
-            ? "border-t border-black/6"
+            ? "border-t border-[color:var(--border-faint)]"
             : "border-t border-[color:var(--border-subtle)]"
         }`}
       >
@@ -7524,7 +7524,7 @@ function DirectCallInviteMessage({
       <div
         className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
           isDesktop
-            ? "border-t border-black/6"
+            ? "border-t border-[color:var(--border-faint)]"
             : "border-t border-[color:var(--border-subtle)]"
         }`}
       >

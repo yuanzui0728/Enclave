@@ -220,14 +220,14 @@ export function MobileMessageActionSheet({
         </div>
         <div
           id={titleId}
-          className="pb-2.5 text-center text-[12px] text-[#8c8c8c]"
+          className="pb-2.5 text-center text-[12px] text-[color:var(--text-muted)]"
         >
           {title}
         </div>
         {preview ? (
           <div className="mb-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2.5">
             {preview.senderName ? (
-              <div className="pb-1 text-[10px] text-[#8c8c8c]">
+              <div className="pb-1 text-[10px] text-[color:var(--text-muted)]">
                 {preview.senderName}
               </div>
             ) : null}

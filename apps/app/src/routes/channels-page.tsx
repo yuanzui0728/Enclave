@@ -5475,7 +5475,7 @@ function MobileChannelCommentsSheet({
           内部上下文先省掉——WeChat 视频号评论面板顶部不复述视频标题，体感更
           干净；用户点开就是冲着评论而非再读一遍视频信息来的。
         */}
-        <div className="relative flex items-center justify-between gap-3 border-b border-[#ededed] px-4 pb-2 pt-1">
+        <div className="relative flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 pb-2 pt-1">
           <div className="w-8 shrink-0" aria-hidden />
           <div
             id="mobile-channels-comments-sheet-title"
@@ -5497,7 +5497,7 @@ function MobileChannelCommentsSheet({
             type="button"
             onClick={onClose}
             aria-label={t(msg`关闭评论面板`)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--surface-card)] text-[#6b7280] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--surface-card)] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             <X size={15} />
           </button>
@@ -5528,7 +5528,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
+                      className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]"
                     >
                       {t(msg`返回视频号`)}
                     </button>
@@ -5571,7 +5571,7 @@ function MobileChannelCommentsSheet({
                   strokeWidth={1.2}
                   className="text-[#d1d5db]"
                 />
-                <span className="text-[14px] text-[#9ca3af]">
+                <span className="text-[14px] text-[color:var(--text-dim)]">
                   {t(msg`还没有评论，快来抢沙发`)}
                 </span>
               </div>
@@ -5586,7 +5586,7 @@ function MobileChannelCommentsSheet({
           的内容。textarea text-[16px] 防 iOS viewport zoom；maxLength=500 跟服务端
           assertCommentText 对齐；IME composing 时按 Enter 不误发。
         */}
-        <div className="border-t border-[#ededed] bg-[color:var(--surface-card)] px-3 pt-2">
+        <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 pt-2">
           {replyTarget ? (
             <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(245,158,11,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
               {/*
@@ -5675,7 +5675,7 @@ function MobileChannelCommentsSheet({
                   ? t(msg`回复 ${replyTarget.authorName}：`)
                   : t(msg`评论…`)}
               </span>
-              <Smile size={20} className="ml-2 shrink-0 text-[#9ca3af]" />
+              <Smile size={20} className="ml-2 shrink-0 text-[color:var(--text-dim)]" />
             </button>
           )}
         </div>

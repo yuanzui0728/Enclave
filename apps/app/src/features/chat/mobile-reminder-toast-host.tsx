@@ -310,7 +310,7 @@ export function MobileReminderToastHost() {
             <button
               type="button"
               onClick={clearLocalNotice}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#8c8c8c]"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)]"
               aria-label={t(msg`关闭提醒结果提示`)}
             >
               <X size={14} />
@@ -339,7 +339,7 @@ export function MobileReminderToastHost() {
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#8c8c8c]"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)]"
                   aria-label={t(msg`暂时关闭提醒浮条`)}
                 >
                   <X size={15} />
@@ -357,7 +357,7 @@ export function MobileReminderToastHost() {
                 {activeReminder.previewText}
               </div>
               <div className="mt-2 flex items-center justify-between gap-3">
-                <div className="text-[12px] text-[#8c8c8c]">
+                <div className="text-[12px] text-[color:var(--text-muted)]">
                   {formatReminderListTimestamp(
                     activeReminder.remindAt,
                     activeReminder.isDue,

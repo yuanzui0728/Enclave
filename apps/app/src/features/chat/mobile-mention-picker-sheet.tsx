@@ -172,7 +172,7 @@ export function MobileMentionPickerSheet({
                   {candidate.name}
                 </div>
                 {candidate.subtitle ? (
-                  <div className="mt-0.5 truncate text-[10px] text-[#8c8c8c]">
+                  <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
                     {candidate.subtitle}
                   </div>
                 ) : null}

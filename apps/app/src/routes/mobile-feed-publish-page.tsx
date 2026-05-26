@@ -647,7 +647,7 @@ export function MobileFeedPublishPage() {
           </InlineNotice>
         ) : null}
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
           <div className="border-b border-[rgba(180,130,20,0.06)] px-4 py-3">
             <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
               {t(msg`这一刻`)}
@@ -753,7 +753,7 @@ export function MobileFeedPublishPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">

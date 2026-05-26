@@ -19,7 +19,7 @@ export function ChatBackgroundPreview({
 }: ChatBackgroundPreviewProps) {
   return (
     <div className="overflow-hidden rounded-[24px] border border-white/80 bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
-      <div className="border-b border-black/5 bg-[rgba(255,255,255,0.82)] px-4 py-3 backdrop-blur">
+      <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] px-4 py-3 backdrop-blur">
         <div className="text-sm font-medium text-[color:var(--text-primary)]">
           {title}
         </div>

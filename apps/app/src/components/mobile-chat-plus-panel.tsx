@@ -477,7 +477,7 @@ export function MobileChatPlusPanel({
                           <Icon size={20} />
                         </div>
                         <div className="min-h-[2rem] text-center">
-                          <div className="text-[11px] text-[#5f5f5f]">
+                          <div className="text-[11px] text-[color:var(--text-secondary)]">
                             {t(item.label)}
                           </div>
                           {itemDisabledLabel ? (
@@ -562,7 +562,7 @@ export function MobileChatPlusPanel({
                 <button
                   type="button"
                   onClick={() => setUnavailableAction(null)}
-                  className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[color:var(--surface-card-hover)]"
+                  className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-card-hover)]"
                 >
                   {t(msg`知道了`)}
                 </button>
@@ -823,7 +823,7 @@ function PanelStatusBlock({
           <button
             type="button"
             onClick={onSecondary}
-            className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[color:var(--surface-card-hover)]"
+            className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {secondaryLabel}
           </button>

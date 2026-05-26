@@ -158,7 +158,7 @@ export function MobileMessageReminderSheet({
             className={
               isDesktop
                 ? "text-[15px] font-medium text-[color:var(--text-primary)]"
-                : "text-center text-[12px] text-[#8c8c8c]"
+                : "text-center text-[12px] text-[color:var(--text-muted)]"
             }
           >
             {title}
@@ -168,7 +168,7 @@ export function MobileMessageReminderSheet({
               className={
                 isDesktop
                   ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
-                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[#4b5563]"
+                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
               }
             >
               {previewText}
@@ -207,7 +207,7 @@ export function MobileMessageReminderSheet({
                   className={
                     isDesktop
                       ? "mt-0.5 text-[11px] text-[color:var(--text-muted)]"
-                      : "mt-0.5 text-[11px] text-[#8c8c8c]"
+                      : "mt-0.5 text-[11px] text-[color:var(--text-muted)]"
                   }
                 >
                   {option.detail}

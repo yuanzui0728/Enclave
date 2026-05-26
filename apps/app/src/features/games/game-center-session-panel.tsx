@@ -199,7 +199,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(245,158,11,0.16)] hover:bg-white"
+                ? "h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(245,158,11,0.16)] hover:bg-white"
                 : undefined
             }
           >

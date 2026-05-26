@@ -89,7 +89,7 @@ export function MobileChatThreadHeader({
             {title}
           </div>
           {subtitle ? (
-            <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
               {subtitle}
             </div>
           ) : null}

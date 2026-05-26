@@ -1306,7 +1306,7 @@ function MobileAddFriendSendSheet({
             className={cn(
               "text-[14px] font-medium",
               pending || !trimmed
-                ? "text-[#9ca3af]"
+                ? "text-[color:var(--text-dim)]"
                 : "text-[#f59e0b] active:opacity-80",
             )}
           >

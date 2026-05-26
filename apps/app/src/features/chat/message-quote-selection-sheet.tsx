@@ -144,7 +144,7 @@ export function MessageQuoteSelectionSheet({
         )}
 
         <div className={isDesktop ? "" : "px-1 pb-0.5"}>
-          <div id={titleId} className="text-center text-[12px] text-[#8c8c8c]">
+          <div id={titleId} className="text-center text-[12px] text-[color:var(--text-muted)]">
             {t(msg`部分引用`)}
           </div>
           <div
@@ -159,7 +159,7 @@ export function MessageQuoteSelectionSheet({
         <div
           className={`mt-4 rounded-[16px] ${
             isDesktop
-              ? "border border-black/6 bg-[#fafafa] p-4"
+              ? "border border-[color:var(--border-faint)] bg-[#fafafa] p-4"
               : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3"
           }`}
         >

@@ -698,7 +698,7 @@ export function ConversationThreadPanel({
       }`}
     >
       {isDesktop ? (
-        <header className="relative z-20 flex min-h-[64px] items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-6 py-3">
+        <header className="relative z-20 flex min-h-[64px] items-center gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
             {/* 走查电脑端单聊 R143：和姊妹 R140 / R141 / R142 同款 ——
                 桌面 /tabs/chat workspace 主区右栏 conversationTitle 是

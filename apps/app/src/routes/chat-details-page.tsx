@@ -1245,11 +1245,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 <div className="truncate text-[15px] text-[color:var(--text-primary)]">
                   {contactDisplayName}
                 </div>
-                <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+                <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
                   {contactProfileSubtitle}
                 </div>
                 {contactIdentifier ? (
-                  <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+                  <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
                     {contactIdentifier}
                   </div>
                 ) : null}

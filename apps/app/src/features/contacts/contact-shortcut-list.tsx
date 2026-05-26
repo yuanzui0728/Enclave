@@ -67,7 +67,7 @@ export function ContactShortcutList({
                     : "bg-transparent px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
               item.disabled ? "opacity-60" : undefined,
               variant === "desktop-flat" && index > 0
-                ? "border-t border-[rgba(0,0,0,0.04)]"
+                ? "border-t border-[color:var(--border-faint)]"
                 : index > 0
                   ? "border-t border-[color:var(--border-faint)]"
                   : undefined,

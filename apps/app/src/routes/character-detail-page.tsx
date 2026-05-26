@@ -1509,7 +1509,7 @@ export function CharacterDetailPage() {
               {isFriend ? friendInfoLabel : detailInfoLabel}
             </div>
             {isDesktopLayout ? (
-              <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+              <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
                 {/* 新一轮走查：桌面顶栏副标题用 character.relationship 当 fallback，
                     跟头卡 / 主标题 同口径补 strip。 */}
                 {stripBidiControl(character?.relationship) ||
@@ -1832,7 +1832,7 @@ export function CharacterDetailPage() {
               className={cn(
                 "overflow-hidden bg-[color:var(--surface-card)]",
                 isDesktopLayout
-                  ? "rounded-[20px] border border-black/5"
+                  ? "rounded-[20px] border border-[color:var(--border-faint)]"
                   : "-mx-3 border-y border-[color:var(--border-faint)]",
               )}
             >
@@ -1913,7 +1913,7 @@ export function CharacterDetailPage() {
             </section>
 
             {isDesktopLayout ? (
-              <section className="overflow-hidden rounded-[20px] border border-black/5 bg-[color:var(--surface-card)] p-4">
+              <section className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                 <div
                   className={cn(
                     "grid gap-2",
@@ -2582,7 +2582,7 @@ function ProfileSection({
             ? compact
               ? "px-4 py-2 text-[11px] text-[color:var(--text-muted)]"
               : "px-4 py-2.5 text-[12px] text-[color:var(--text-muted)]"
-            : "px-4 py-3 text-xs uppercase tracking-[0.16em] text-[#8c8c8c]",
+            : "px-4 py-3 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]",
         )}
       >
         {title}

@@ -109,7 +109,7 @@ export function MomentPostCard({
 
             {/* Divider between likes and comments */}
             {likes.length > 0 && comments.length > 0 ? (
-              <div className="my-1.5 border-t border-[rgba(0,0,0,0.08)]" />
+              <div className="my-1.5 border-t border-[color:var(--border-faint)]" />
             ) : null}
 
             {/* Comments */}

@@ -2628,7 +2628,7 @@ export function DiscoverFeedPage() {
                   // O(1) 命中；高频 setState 也不重建。
                   const commentById = cached?.byId ?? new Map<string, FeedComment>();
                   return (
-                    <div className="overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#f8f5ec]">
+                    <div className="overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[#f8f5ec]">
                       <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
                         {renderedComments.map(({ comment, cleanText }) => {
                           const replyToComment = comment.replyToCommentId

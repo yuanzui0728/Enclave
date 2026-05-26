@@ -35,7 +35,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))",
       }}
     >
-      <div className="w-full max-w-md rounded-[24px] border border-black/5 bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
+      <div className="w-full max-w-md rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#b45309]">
           Beyond Reality
         </div>
@@ -50,7 +50,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[24px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 1
             </div>
@@ -58,7 +58,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
               {t(msg`确认入口`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 2
             </div>
@@ -66,7 +66,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
               {t(msg`同步世界主人`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 3
             </div>

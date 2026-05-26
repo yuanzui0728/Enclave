@@ -197,7 +197,7 @@ export function MobileDetailsActionSheet({
             {description ? (
               <div
                 id={descriptionId}
-                className="mt-0.5 text-[11px] leading-[18px] text-[#8c8c8c]"
+                className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]"
               >
                 {description}
               </div>
@@ -220,7 +220,7 @@ export function MobileDetailsActionSheet({
               {action.description ? (
                 <span
                   className={`mt-0.5 text-[11px] leading-[18px] ${
-                    action.danger ? "text-[#e28a84]" : "text-[#8c8c8c]"
+                    action.danger ? "text-[#e28a84]" : "text-[color:var(--text-muted)]"
                   }`}
                 >
                   {action.description}

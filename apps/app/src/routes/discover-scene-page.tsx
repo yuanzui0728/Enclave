@@ -469,7 +469,7 @@ function MobileDiscoverScenePage() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-[color:var(--surface-card)]">
+      <section className="overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="grid grid-cols-2 gap-0.5 bg-black/5 p-0.5">
           {scenes.map((scene) => {
             const Icon = scene.icon;

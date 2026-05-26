@@ -1441,7 +1441,7 @@ export function GroupChatThreadPanel({
       }`}
     >
       {isDesktop ? (
-        <header className="relative z-20 flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-6 py-3">
+        <header className="relative z-20 flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {groupQuery.data?.name || t(msg`群聊`)}

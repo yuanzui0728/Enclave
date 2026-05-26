@@ -82,7 +82,7 @@ export function ChatSettingRow({
           <span
             className={cn(
               "max-w-[11rem] truncate text-[14px] text-[color:var(--text-muted)]",
-              isWechat && "max-w-[12rem] text-[11px] text-[#8c8c8c]",
+              isWechat && "max-w-[12rem] text-[11px] text-[color:var(--text-muted)]",
             )}
           >
             {value}

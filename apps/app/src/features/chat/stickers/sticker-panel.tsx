@@ -1979,7 +1979,7 @@ export function StickerPanel({
               title={headerUploadButtonTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[#3f4b5f] transition active:bg-[#f5f1e6] disabled:opacity-45"
+                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[#f5f1e6] disabled:opacity-45"
                   : `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:opacity-45 ${
                       headerUploadButtonTone === "resume"
                         ? "border-[rgba(160,90,10,0.18)] bg-[rgba(160,90,10,0.12)] text-[#9a5a0a] hover:bg-[rgba(160,90,10,0.18)]"
@@ -2004,7 +2004,7 @@ export function StickerPanel({
               title={closePanelTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[#7b7f84] transition active:bg-[#f5f1e6]"
+                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[#f5f1e6]"
                   : "rounded-full px-2 py-1 text-xs text-[color:var(--text-secondary)] transition hover:bg-white/80"
               }
             >
@@ -3119,7 +3119,7 @@ export function StickerPanel({
                     ? `shrink-0 rounded-[12px] border px-2.5 py-1 text-[11px] transition ${
                         active
                           ? "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-                          : "border-transparent bg-transparent text-[#7b7f84]"
+                          : "border-transparent bg-transparent text-[color:var(--text-muted)]"
                       }`
                     : `flex shrink-0 flex-col items-center gap-1 rounded-[16px] px-1.5 pb-1 pt-1.5 transition ${
                         active
