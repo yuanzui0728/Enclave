@@ -402,6 +402,9 @@ export class SelfAgentService {
       return this.serializeHeartbeatRun(skippedRun);
     }
 
+    // 先清掉早已陈旧的待确认/待补参数动作，避免心跳每小时反复唠叨同一批卡死 run。
+    await this.actionRuntime.expireStalePendingRuns(owner.id);
+
     const [openLoops, upcomingReminders, awaitingConfirmationRuns, awaitingSlotRuns] =
       await Promise.all([
         this.followupOpenLoopRepo.find({

@@ -997,6 +997,37 @@ export class ActionRuntimeService {
     return this.executeRun(run, rules, connectors);
   }
 
+  // 主动清扫陈旧 pending run：长期卡在待确认/待补参数（用户早已离开话题）的 run
+  // 会被 self-agent 心跳反复计为"还有 N 个动作卡在确认上"而每小时唠叨，这里把它们
+  // 取消，止住唠叨并清掉 DB 卡死状态。由心跳按小时调用。
+  async expireStalePendingRuns(ownerId?: string): Promise<number> {
+    const baseWhere = ownerId ? { ownerId } : {};
+    const pending = await this.runRepo.find({
+      where: [
+        { ...baseWhere, status: 'awaiting_confirmation' as const },
+        { ...baseWhere, status: 'awaiting_slots' as const },
+      ],
+    });
+    let expired = 0;
+    for (const run of pending) {
+      if (!this.isPendingRunStale(run)) {
+        continue;
+      }
+      run.status = 'cancelled';
+      run.policyDecisionPayload = {
+        ...(run.policyDecisionPayload ?? {}),
+        reason: 'pending_run_stale_swept',
+      };
+      run.tracePayload = appendTrace(run.tracePayload, {
+        phase: 'cancelled',
+        reason: 'pending_run_stale_swept',
+      });
+      await this.runRepo.save(run);
+      expired += 1;
+    }
+    return expired;
+  }
+
   private isPendingRunStale(run: ActionRunEntity) {
     const reference =
       run.updatedAt instanceof Date ? run.updatedAt.getTime() : NaN;
