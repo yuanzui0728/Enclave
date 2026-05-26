@@ -6,6 +6,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { sanitizeAiMessageText } from '../ai/ai-text-sanitizer';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { WebSearchService } from '../ai/web-search.service';
@@ -856,6 +857,10 @@ export class MomentsService implements OnModuleInit {
         }));
       if (!text) return null;
 
+      // AI 生成的朋友圈正文过内容审核（命中违禁→替换安全话术）。reminder nudge
+      // （晚安/喝水/番茄钟）是我们自己的安全文案，不必审。区域 cn/intl 由部署级 env 决定。
+      const safeText = reminderMoment ? text : sanitizeAiMessageText(text);
+
       // 尝试为这条朋友圈配 1 张 AI 方图。受 3 层约束控制（任一失败都安全
       // fallback 为纯文本，不影响发帖本身）：
       //   1) MomentImageBudgetService —— 全 world 日上限 100 + world 内角色
@@ -870,7 +875,7 @@ export class MomentsService implements OnModuleInit {
         : await this.tryGenerateMomentImage(
             char.id,
             char.name,
-            text,
+            safeText,
             profile,
           );
 
@@ -880,7 +885,7 @@ export class MomentsService implements OnModuleInit {
         authorAvatar: char.avatar,
         authorType: 'character',
         visibility: this.deriveDefaultVisibility(char.socialOpenness),
-        text,
+        text: safeText,
         contentType: imageMedia ? 'image_album' : 'text',
         mediaPayload: this.serializeMomentMedia(imageMedia ? [imageMedia] : []),
         // 把时间戳推到过去 0-15 分钟随机点，避免 cron tick 把分钟卡在 00/15/30/45。
@@ -3001,6 +3006,9 @@ export class MomentsService implements OnModuleInit {
       );
     }
     if (!seedText) seedText = `${char.name} 拍了一段画面记录今天。`;
+    // 视频朋友圈的 seedText 既作为可见正文落库（下面 text: seedText），又会喂进
+    // composeMomentVideoPrompt 当视频 prompt，过一次内容审核（命中→安全话术）。
+    seedText = sanitizeAiMessageText(seedText);
 
     const personaBlock = extractPersonaBlock(profile);
     const job = await this.minimaxJobs.enqueueVideoJob({

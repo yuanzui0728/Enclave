@@ -1,3 +1,5 @@
+import { moderateAiText } from '../moderation/content-moderation';
+
 const THOUGHT_BLOCK_PATTERN = /<thought\b[^>]*>[\s\S]*?<\/thought>/gi;
 const INTERNAL_REASONING_BLOCK_PATTERN =
   /<internal_reasoning\b[^>]*>[\s\S]*?<\/internal_reasoning>/gi;
@@ -27,6 +29,14 @@ export function sanitizeAiText(text: string): string {
     .replace(INTERNAL_SPEAKER_PREFIX_PATTERN, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+// 用于「AI 生成文本最终成为用户可见消息/朋友圈」的写入口：在 sanitizeAiText 之上
+// 再叠一层内容审核（命中违禁规则→替换为安全话术）。**不要**用在 JSON 提取 /
+// extractJsonFromModelOutput / 读取映射 / 拼 prompt 上下文上——审核话术混进 JSON
+// 会破坏解析，混进 prompt 历史会污染模型记忆。区域(cn/intl)由部署级 env 决定。
+export function sanitizeAiMessageText(text: string): string {
+  return moderateAiText(sanitizeAiText(text)).text;
 }
 
 const JSON_CODE_FENCE_PATTERN = /```(?:json|JSON)?\s*([\s\S]*?)```/;

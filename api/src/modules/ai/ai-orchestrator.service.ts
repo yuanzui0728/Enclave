@@ -28,6 +28,7 @@ import {
 import { PromptBuilderService } from './prompt-builder.service';
 import {
   extractJsonFromModelOutput,
+  sanitizeAiMessageText,
   sanitizeAiText,
 } from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
@@ -1469,7 +1470,7 @@ export class AiOrchestratorService {
 
         const rawText = response.output_text ?? '';
         const text =
-          sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
+          sanitizeAiMessageText(rawText) || emptyTextFallback || '（无回复）';
         const usage = this.normalizeUsageMetrics(response.usage);
         return {
           text,
@@ -1509,7 +1510,7 @@ export class AiOrchestratorService {
       });
 
       const rawText = response.choices[0]?.message?.content ?? '';
-      const text = sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
+      const text = sanitizeAiMessageText(rawText) || emptyTextFallback || '（无回复）';
       const usage = this.normalizeUsageMetrics(response.usage);
 
       return {
