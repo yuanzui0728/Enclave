@@ -16,6 +16,7 @@ import {
 } from '../ai/reply-logic.constants';
 import { WorldContextEntity } from './world-context.entity';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import { TenantContextStore } from '../tenancy/tenant-context';
 
 const WORLD_RUNTIME_LOCATION_CONFIG_KEY = 'world_runtime_location';
 const WORLD_LAST_LIVE_WEATHER_CONFIG_KEY = 'world_last_live_weather';
@@ -304,9 +305,21 @@ function normalizeNumber(value: unknown, fallback: number) {
 @Injectable()
 export class WorldService {
   private readonly logger = new Logger(WorldService.name);
-  private locationCache: WorldResolvedLocation | null = null;
-  private locationCacheExpiresAt = 0;
-  private locationRefreshPromise: Promise<void> | null = null;
+  // 共享 world：位置/天气快照按 owner 隔离（底层 system_config 已 per-owner，Phase 8m·2）。
+  // 进程级单缓存会把 A 的城市/经纬度/时区返给 B → 按 owner 键分桶。LPP 用固定 '__global__'
+  // 键，行为与单缓存逐字一致。
+  private readonly locationCacheByOwner = new Map<
+    string,
+    { value: WorldResolvedLocation; expiresAt: number }
+  >();
+  private readonly locationRefreshPromiseByOwner = new Map<
+    string,
+    Promise<void>
+  >();
+
+  private locationCacheKey(): string {
+    return TenantContextStore.get()?.ownerId ?? '__global__';
+  }
 
   constructor(
     @InjectRepository(WorldContextEntity)
@@ -508,8 +521,10 @@ export class WorldService {
       return;
     }
 
-    if (this.locationRefreshPromise) {
-      await this.locationRefreshPromise;
+    const cacheKey = this.locationCacheKey();
+    const inflight = this.locationRefreshPromiseByOwner.get(cacheKey);
+    if (inflight) {
+      await inflight;
       return;
     }
 
@@ -517,12 +532,12 @@ export class WorldService {
       sourceIp,
       currentLocation,
     );
-    this.locationRefreshPromise = refreshPromise;
+    this.locationRefreshPromiseByOwner.set(cacheKey, refreshPromise);
     try {
       await refreshPromise;
     } finally {
-      if (this.locationRefreshPromise === refreshPromise) {
-        this.locationRefreshPromise = null;
+      if (this.locationRefreshPromiseByOwner.get(cacheKey) === refreshPromise) {
+        this.locationRefreshPromiseByOwner.delete(cacheKey);
       }
     }
   }
@@ -869,8 +884,9 @@ export class WorldService {
   }
 
   private async getResolvedLocation(): Promise<WorldResolvedLocation> {
-    if (this.locationCache && Date.now() < this.locationCacheExpiresAt) {
-      return this.locationCache;
+    const cached = this.locationCacheByOwner.get(this.locationCacheKey());
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.value;
     }
 
     const raw = await this.systemConfig.getConfig(
@@ -941,8 +957,10 @@ export class WorldService {
   }
 
   private primeLocationCache(location: WorldResolvedLocation) {
-    this.locationCache = location;
-    this.locationCacheExpiresAt = Date.now() + WORLD_LOCATION_CACHE_TTL_MS;
+    this.locationCacheByOwner.set(this.locationCacheKey(), {
+      value: location,
+      expiresAt: Date.now() + WORLD_LOCATION_CACHE_TTL_MS,
+    });
   }
 
   private createDefaultLocation(): WorldResolvedLocation {
