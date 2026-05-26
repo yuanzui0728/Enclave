@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { MinimaxModule } from '../minimax/minimax.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersModule } from '../characters/characters.module';
@@ -72,15 +73,22 @@ import { GameGenerationJobEntity } from './entities/game-generation-job.entity';
 import { WikiGameService } from './services/wiki-game.service';
 import { WikiGameAiService } from './services/wiki-game-ai.service';
 import { GameGenerationJobService } from './services/game-generation-job.service';
+import { WikiGamePublishSyncService } from './services/wiki-game-publish-sync.service';
 import { WikiGameController } from './controllers/wiki-game.controller';
 import { WikiGameAiGenerateController } from './controllers/wiki-game-ai-generate.controller';
 import { WikiGameJobController } from './controllers/wiki-game-job.controller';
+import { CharacterVideoEntity } from './entities/character-video.entity';
+import { WikiCharacterVideoService } from './services/wiki-character-video.service';
+import { WikiCharacterVideoCallbacks } from './services/wiki-character-video.callbacks';
+import { WikiCharacterVideoPublishSyncService } from './services/wiki-character-video-publish-sync.service';
+import { WikiCharacterVideoController } from './controllers/wiki-character-video.controller';
 
 @Module({
   imports: [
     AuthModule,
     CharactersModule,
     SubscriptionModule,
+    MinimaxModule,
     forwardRef(() => AiModule),
     TypeOrmModule.forFeature([
       CharacterEntity,
@@ -104,6 +112,7 @@ import { WikiGameJobController } from './controllers/wiki-game-job.controller';
       GamePageEntity,
       GameRevisionEntity,
       GameGenerationJobEntity,
+      CharacterVideoEntity,
     ]),
   ],
   controllers: [
@@ -130,6 +139,7 @@ import { WikiGameJobController } from './controllers/wiki-game-job.controller';
     WikiGameController,
     WikiGameAiGenerateController,
     WikiGameJobController,
+    WikiCharacterVideoController,
   ],
   providers: [
     WikiPageService,
@@ -156,6 +166,10 @@ import { WikiGameJobController } from './controllers/wiki-game-job.controller';
     WikiGameService,
     WikiGameAiService,
     GameGenerationJobService,
+    WikiGamePublishSyncService,
+    WikiCharacterVideoService,
+    WikiCharacterVideoCallbacks,
+    WikiCharacterVideoPublishSyncService,
     WikiRoleGuard,
     WikiRateLimitGuard,
     WikiAiGenerateRateLimitGuard,

@@ -10,6 +10,7 @@ export * from "./character-blueprints";
 export * from "./cloud";
 export * from "./characters";
 export * from "./chat-records";
+export * from "./character-video";
 export * from "./client";
 export * from "./config";
 export * from "./contact-import";

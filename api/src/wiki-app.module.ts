@@ -154,6 +154,7 @@ import { AiGenerationJobEntity } from './modules/wiki/entities/ai-generation-job
 import { GamePageEntity } from './modules/wiki/entities/game-page.entity';
 import { GameRevisionEntity } from './modules/wiki/entities/game-revision.entity';
 import { GameGenerationJobEntity } from './modules/wiki/entities/game-generation-job.entity';
+import { CharacterVideoEntity } from './modules/wiki/entities/character-video.entity';
 import { WikiFieldProtectionEntity } from './modules/wiki/entities/wiki-field-protection.entity';
 import { AbuseFilterEntity } from './modules/wiki/entities/abuse-filter.entity';
 import { AbuseFilterHitEntity } from './modules/wiki/entities/abuse-filter-hit.entity';
@@ -296,6 +297,7 @@ function resolveWikiDatabasePath(config: ConfigService): string {
           GamePageEntity,
           GameRevisionEntity,
           GameGenerationJobEntity,
+          CharacterVideoEntity,
           WikiFieldProtectionEntity,
           AbuseFilterEntity,
           AbuseFilterHitEntity,
