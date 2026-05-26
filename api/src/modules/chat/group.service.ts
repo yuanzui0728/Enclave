@@ -16,6 +16,11 @@ import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import { MessageEntity } from './message.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
 import {
   searchMessages as searchVisibleMessages,
   sliceMessagesAround,
@@ -374,7 +379,7 @@ export class GroupService {
       return [];
     }
 
-    const groups = await this.groupRepo.find({
+    const groups = await new TenantRepository(this.groupRepo).find({
       where: {
         id: In(groupIds),
       },
@@ -391,7 +396,7 @@ export class GroupService {
 
   async listSavedGroups(): Promise<Group[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const groups = await this.groupRepo.find({
+    const groups = await new TenantRepository(this.groupRepo).find({
       where: {
         creatorId: owner.id,
         creatorType: 'user',
@@ -1583,8 +1588,14 @@ export class GroupService {
       Pick<GroupMessageEntity, 'senderType' | 'senderId' | 'type'>
     > = {},
   ): FindOptionsWhere<GroupMessageEntity> {
+    // 共享 world：group_messages 行都带 ownerId，集中给所有走 buildGroupMessageWhere 的
+    // 群消息读注入当前租户 ownerId，防跨租户串号（与 chat.service.buildMessageWhere 对称）。
+    // LPP 不注入（透传，ownerId 列为 NULL）；调用都在请求/cron 租户帧内。
     return {
       groupId,
+      ...(isSharedWorldMode()
+        ? { ownerId: TenantContextStore.getOrThrow().ownerId }
+        : {}),
       ...(since ? { createdAt: MoreThan(since) } : {}),
       ...extra,
     };
@@ -1616,7 +1627,11 @@ export class GroupService {
       return null;
     }
 
-    return this.groupRepo.findOne({ where: { id: groupId } });
+    // 共享 world：group id 全局唯一但裸 findOne({id}) 仍可被枚举到别租户的群 → 触读守卫
+    // 报警/泄漏。走 TenantRepository 按 ownerId 过滤（shared 注入 / LPP 透传）。
+    return new TenantRepository(this.groupRepo).findOne({
+      where: { id: groupId },
+    });
   }
 
   private async requireAccessibleGroup(groupId: string): Promise<GroupEntity> {
@@ -1634,7 +1649,7 @@ export class GroupService {
 
   private async requireOwnedGroup(groupId: string): Promise<GroupEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const group = await this.groupRepo.findOne({
+    const group = await new TenantRepository(this.groupRepo).findOne({
       where: {
         id: groupId,
         creatorId: owner.id,
@@ -1834,7 +1849,9 @@ export class GroupService {
   }
 
   private async emitGroupConversationUpdated(groupId: string) {
-    const group = await this.groupRepo.findOneBy({ id: groupId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: groupId,
+    });
     if (!group) {
       return;
     }

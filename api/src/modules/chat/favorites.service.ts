@@ -8,7 +8,8 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
 import { SystemConfigService } from '../config/config.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
 import { FavoriteEntity } from './favorite.entity';
@@ -528,7 +529,7 @@ export class FavoritesService implements OnModuleInit {
       });
     }
 
-    const removedRow = await this.favoriteNoteRepo.findOneBy({
+    const removedRow = await new TenantRepository(this.favoriteNoteRepo).findOneBy({
       id: normalizedId,
     });
     const removedNote = removedRow
@@ -643,7 +644,9 @@ export class FavoritesService implements OnModuleInit {
       });
     }
 
-    const group = await this.groupRepo.findOneBy({ id: input.threadId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: input.threadId,
+    });
     if (!group) {
       throw new AppError('CHAT_GROUP_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -652,7 +655,7 @@ export class FavoritesService implements OnModuleInit {
       });
     }
 
-    const message = await this.groupMessageRepo.findOneBy({
+    const message = await new TenantRepository(this.groupMessageRepo).findOneBy({
       id: input.messageId,
       groupId: group.id,
     });
@@ -791,7 +794,9 @@ export class FavoritesService implements OnModuleInit {
       });
     }
 
-    const row = await this.favoriteNoteRepo.findOneBy({ id: normalizedId });
+    const row = await new TenantRepository(this.favoriteNoteRepo).findOneBy({
+      id: normalizedId,
+    });
     if (!row) {
       throw new AppError('CHAT_NOTE_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -804,7 +809,8 @@ export class FavoritesService implements OnModuleInit {
   }
 
   private async readFavorites(): Promise<FavoriteRecord[]> {
-    const rows = await this.favoriteRepo.find({
+    // 共享 world：收藏按 owner 隔离（chat_favorites 带 ownerId），裸 find 会读到全租户。
+    const rows = await new TenantRepository(this.favoriteRepo).find({
       order: { collectedAt: 'DESC' },
       take: MAX_FAVORITES,
     });
@@ -812,7 +818,7 @@ export class FavoritesService implements OnModuleInit {
   }
 
   private async readFavoriteNoteDocuments(): Promise<FavoriteNoteDocument[]> {
-    const rows = await this.favoriteNoteRepo.find({
+    const rows = await new TenantRepository(this.favoriteNoteRepo).find({
       order: { updatedAt: 'DESC' },
       take: MAX_FAVORITE_NOTES,
     });
@@ -853,38 +859,48 @@ export class FavoritesService implements OnModuleInit {
   }
 
   private async trimFavoritesIfNeeded(): Promise<void> {
-    const total = await this.favoriteRepo.count();
+    // 共享 world：count/keep/delete 都必须按 owner 限定——否则 count 数全租户、keep 取
+    // 全局 top-N、`DELETE WHERE sourceId NOT IN keepIds` 会跨租户删掉别人的收藏。
+    const ownerId = isSharedWorldMode()
+      ? TenantContextStore.getOrThrow().ownerId
+      : null;
+    const total = await new TenantRepository(this.favoriteRepo).count();
     if (total <= MAX_FAVORITES) return;
     // SQLite 不支持 DELETE … ORDER BY … LIMIT，先取要保留的 sourceId，再 NOT IN
-    const keep = await this.favoriteRepo.find({
+    const keep = await new TenantRepository(this.favoriteRepo).find({
       select: ['sourceId'],
       order: { collectedAt: 'DESC' },
       take: MAX_FAVORITES,
     });
     const keepIds = keep.map((row) => row.sourceId);
     if (keepIds.length === 0) return;
-    await this.favoriteRepo
+    let qb = this.favoriteRepo
       .createQueryBuilder()
       .delete()
-      .where('sourceId NOT IN (:...keepIds)', { keepIds })
-      .execute();
+      .where('sourceId NOT IN (:...keepIds)', { keepIds });
+    if (ownerId) qb = qb.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
+    await qb.execute();
   }
 
   private async trimFavoriteNotesIfNeeded(): Promise<void> {
-    const total = await this.favoriteNoteRepo.count();
+    const ownerId = isSharedWorldMode()
+      ? TenantContextStore.getOrThrow().ownerId
+      : null;
+    const total = await new TenantRepository(this.favoriteNoteRepo).count();
     if (total <= MAX_FAVORITE_NOTES) return;
-    const keep = await this.favoriteNoteRepo.find({
+    const keep = await new TenantRepository(this.favoriteNoteRepo).find({
       select: ['id'],
       order: { updatedAt: 'DESC' },
       take: MAX_FAVORITE_NOTES,
     });
     const keepIds = keep.map((row) => row.id);
     if (keepIds.length === 0) return;
-    await this.favoriteNoteRepo
+    let qb = this.favoriteNoteRepo
       .createQueryBuilder()
       .delete()
-      .where('id NOT IN (:...keepIds)', { keepIds })
-      .execute();
+      .where('id NOT IN (:...keepIds)', { keepIds });
+    if (ownerId) qb = qb.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
+    await qb.execute();
   }
 
   private async captureFavoriteAction(

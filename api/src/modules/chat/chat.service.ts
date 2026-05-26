@@ -265,7 +265,11 @@ export class ChatService {
   }
 
   async getConversation(convId: string): Promise<Conversation | undefined> {
-    const entity = await this.convRepo.findOneBy({ id: convId });
+    // 共享 world：direct_<charId> 会话 id 跨租户共用，裸 findOneBy({id}) 会读到别的租户的
+    // 同 id 会话 → 串号。走 TenantRepository（shared 注入 ownerId / LPP 透传）。
+    const entity = await new TenantRepository(this.convRepo).findOneBy({
+      id: convId,
+    });
     if (!entity) {
       return undefined;
     }
@@ -1169,10 +1173,7 @@ export class ChatService {
 
     const charEntity = await this.characters.findById(charId);
     const lastMsg = await this.msgRepo.findOne({
-      where: {
-        conversationId: convId,
-        senderType: 'user',
-      },
+      where: this.buildMessageWhere(convId, undefined, { senderType: 'user' }),
       order: { createdAt: 'DESC' },
     });
     const chatContext = {
@@ -1951,7 +1952,10 @@ export class ChatService {
     characterId: string,
   ): Promise<string | null> {
     const characterMessage = await this.msgRepo.findOne({
-      where: { conversationId, senderType: 'character', senderId: characterId },
+      where: this.buildMessageWhere(conversationId, undefined, {
+        senderType: 'character',
+        senderId: characterId,
+      }),
       order: { createdAt: 'DESC' },
     });
     const characterName = characterMessage?.senderName?.trim();
@@ -1959,7 +1963,9 @@ export class ChatService {
       return characterName;
     }
     const systemMessage = await this.msgRepo.findOne({
-      where: { conversationId, senderType: 'system' },
+      where: this.buildMessageWhere(conversationId, undefined, {
+        senderType: 'system',
+      }),
       order: { createdAt: 'ASC' },
     });
     const fromSystem = systemMessage?.text?.match(/你已添加了(.+?)[，,。.\s]*现在/);
