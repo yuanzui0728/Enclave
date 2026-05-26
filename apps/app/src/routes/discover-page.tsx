@@ -30,6 +30,7 @@ import {
   PlaySquare,
   Sparkles,
   Users,
+  UsersRound,
   Video,
 } from "lucide-react";
 import {
@@ -87,6 +88,7 @@ type MobileDiscoverEntry = {
   key:
     | "moments"
     | "encounter"
+    | "avatarEncounter"
     | "scene"
     | "feed"
     | "channels"
@@ -99,6 +101,7 @@ type MobileDiscoverEntry = {
   to:
     | "/discover/moments"
     | "/discover/encounter"
+    | "/discover/avatar-encounter"
     | "/discover/scene"
     | "/discover/feed"
     | "/discover/channels"
@@ -137,6 +140,19 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     iconClassName:
       "bg-[linear-gradient(135deg,#fdba74,#f97316)] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
+    buildHash: ({ hash, pathname }) =>
+      buildMobileDiscoverToolRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
+  },
+  {
+    key: "avatarEncounter",
+    label: msg`分身相遇`,
+    badge: msg`分身`,
+    icon: UsersRound,
+    iconClassName: "bg-[linear-gradient(135deg,#fb7185,#f43f5e)] text-white",
+    to: "/discover/avatar-encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
         returnPath: pathname,

@@ -1,13 +1,24 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Languages, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Languages,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
+import {
+  getAvatarEncounterOverview,
+  setAvatarEncounterOptIn,
+} from "@yinjie/contracts";
 import {
   SUPPORTED_LOCALE_LABELS,
   useAppLocale,
   useRuntimeTranslator,
 } from "@yinjie/i18n";
-import { AppPage } from "@yinjie/ui";
+import { AppPage, cn } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { shouldShowCloudAccountControls } from "../lib/cloud-session";
@@ -73,6 +84,43 @@ function ProfileSettingsMobileEntry() {
     sessionPhone: cloudPhone,
     worldOwnerId: ownerId,
   });
+
+  const cloudApiBaseUrl = runtimeConfig.cloudApiBaseUrl;
+  // 分身相遇 opt-in 是跨用户撮合池的开关，必须走 cloud-api（不是 world owner
+  // 的 encounterOptedIn 那条本地镜像）。默认 ON——但用 overview 的真实值校正。
+  const overviewQuery = useQuery({
+    queryKey: ["avatar-encounter-overview", cloudApiBaseUrl, cloudAccessToken],
+    queryFn: () =>
+      getAvatarEncounterOverview(cloudAccessToken ?? "", cloudApiBaseUrl),
+    enabled: Boolean(cloudAccessToken) && showCloudAccountEntries,
+  });
+
+  // optimistic 本地状态：先随 overview 落地，toggle 时立刻翻转，失败回滚。
+  const [optedIn, setOptedIn] = useState(true);
+  useEffect(() => {
+    if (typeof overviewQuery.data?.optedIn === "boolean") {
+      setOptedIn(overviewQuery.data.optedIn);
+    }
+  }, [overviewQuery.data?.optedIn]);
+
+  const optInMutation = useMutation({
+    mutationFn: (next: boolean) =>
+      setAvatarEncounterOptIn({ optedIn: next }, cloudAccessToken ?? "", cloudApiBaseUrl),
+    onSuccess: (result) => {
+      setOptedIn(result.optedIn);
+    },
+    onError: () => {
+      // 翻车回滚到服务端已知值（overview）/ 反向当前值。
+      setOptedIn(overviewQuery.data?.optedIn ?? !optedIn);
+    },
+  });
+
+  function handleToggleOptIn() {
+    if (optInMutation.isPending) return;
+    const next = !optedIn;
+    setOptedIn(next); // optimistic
+    optInMutation.mutate(next);
+  }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -149,6 +197,48 @@ function ProfileSettingsMobileEntry() {
           </button>
         ) : null}
       </div>
+
+      {/* 分身相遇 opt-in：跨用户撮合池开关，默认开。走 cloud-api，跟 账号安全
+          同款 showCloudAccountEntries 门禁（local-world / 没登云账号的不显示）。 */}
+      {showCloudAccountEntries ? (
+        <div className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <div className="flex w-full items-center gap-2.5 px-4 py-2.75 text-left">
+            <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(244,63,94,0.12)] text-[#f43f5e]">
+              <UsersRound size={15} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[14px] text-[color:var(--text-primary)]">
+                {t(msg`允许我的分身参与社交相遇`)}
+              </div>
+              <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+                {t(msg`关闭后别人无法和你的分身相遇，你也收不到新的相遇。`)}
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={optedIn}
+              aria-label={t(msg`允许我的分身参与社交相遇`)}
+              onClick={handleToggleOptIn}
+              disabled={optInMutation.isPending}
+              className={cn(
+                "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                optedIn
+                  ? "bg-[color:var(--brand-primary)]"
+                  : "bg-[color:var(--border-subtle)]",
+                optInMutation.isPending && "opacity-60",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-[var(--shadow-soft)] transition-[left]",
+                  optedIn ? "left-[1.375rem]" : "left-0.5",
+                )}
+              />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </AppPage>
   );
 }

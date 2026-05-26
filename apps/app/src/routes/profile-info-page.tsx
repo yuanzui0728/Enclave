@@ -46,6 +46,7 @@ export function ProfileInfoPage() {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
+  const contact = useWorldOwnerStore((state) => state.contact);
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   // 隐界号像微信号一样要能复制给好友——之前这一行是 readOnly、点不动也长按
   // 没菜单（mobile webview 长按选中文本经常被 yj-no-callout 一类的祖先样式吃掉），
@@ -192,6 +193,7 @@ export function ProfileInfoPage() {
   // 一起 fallback 到「世界主人」。
   const ownerLabel = username?.trim() || t(msg`世界主人`);
   const trimmedSignature = signature?.trim() ?? "";
+  const trimmedContact = contact?.trim() ?? "";
   const yinjieIdText = ownerId ? buildYinjieId(ownerId) : null;
 
   async function handleCopyYinjieId() {
@@ -321,6 +323,23 @@ export function ProfileInfoPage() {
                 )}
               >
                 {trimmedSignature || t(msg`未填写`)}
+              </span>
+            }
+          />
+          {/* 联系方式：分身相遇匹配成功后才会披露给对方，平时只在这里编辑。 */}
+          <InfoRow
+            label={t(msg`联系方式`)}
+            to="/profile/info/contact"
+            value={
+              <span
+                className={cn(
+                  "max-w-[55vw] truncate text-[13px]",
+                  trimmedContact
+                    ? "text-[color:var(--text-muted)]"
+                    : "text-[color:var(--text-dim)]",
+                )}
+              >
+                {trimmedContact || t(msg`未填写`)}
               </span>
             }
           />
@@ -554,7 +573,7 @@ function AvatarConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[320px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[320px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <div className="flex flex-col items-center px-6 pb-2 pt-6">
           <AvatarChip name={ownerLabel} src={picked.dataUrl} size="xl" />

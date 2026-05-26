@@ -222,6 +222,26 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`别走太急，过一会再去下一个地方。`);
     case "SOCIAL_SCENE_DAILY_LIMIT":
       return translateRuntimeMessage(msg`今天的场景相遇次数已经用完，明天再试试。`);
+    case "AVATAR_ENCOUNTER_DAILY_LIMIT":
+      return translateRuntimeMessage(msg`今日的分身相遇次数已用完，明天再来。`);
+    case "AVATAR_ENCOUNTER_NO_CANDIDATE":
+      return translateRuntimeMessage(msg`暂时没有合适的相遇对象，过会再试试。`);
+    case "AVATAR_ENCOUNTER_CONTACT_REQUIRED":
+      return translateRuntimeMessage(
+        msg`请先在「我 › 个人信息 › 联系方式」里填写联系方式。`,
+      );
+    case "AVATAR_ENCOUNTER_DISABLED":
+      return translateRuntimeMessage(msg`请先在设置里开启「分身相遇」。`);
+    case "AVATAR_ENCOUNTER_PARTNER_OPTED_OUT":
+      return translateRuntimeMessage(msg`对方已退出社交相遇。`);
+    case "AVATAR_ENCOUNTER_AI_GENERATION_FAILED":
+      return translateRuntimeMessage(msg`这次相遇没能生成，请再试一次。`);
+    case "AVATAR_ENCOUNTER_WORLD_NOT_READY":
+      return translateRuntimeMessage(msg`你的分身正在唤醒，请稍后重试。`);
+    case "AVATAR_ENCOUNTER_NOT_FOUND":
+      return translateRuntimeMessage(msg`这次相遇不存在或已失效。`);
+    case "AVATAR_ENCOUNTER_ALREADY_DECIDED":
+      return translateRuntimeMessage(msg`你已经做过选择了。`);
     case "AUTH_USERNAME_PASSWORD_REQUIRED":
       return translateRuntimeMessage(msg`用户名与密码不能为空。`);
     case "AUTH_USERNAME_TAKEN":

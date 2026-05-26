@@ -72,6 +72,8 @@ const DiscoverPage = lazyNamed(() => import("./routes/discover-page"), "Discover
 
 const DiscoverEncounterPage = lazyNamed(() => import("./routes/discover-encounter-page"), "DiscoverEncounterPage");
 
+const DiscoverAvatarEncounterPage = lazyNamed(() => import("./routes/discover-avatar-encounter-page"), "DiscoverAvatarEncounterPage");
+
 const DiscoverScenePage = lazyNamed(() => import("./routes/discover-scene-page"), "DiscoverScenePage");
 
 const DiscoverFeedPage = lazyNamed(() => import("./routes/discover-feed-page"), "DiscoverFeedPage");
@@ -111,6 +113,8 @@ const ProfileInfoPage = lazyNamed(() => import("./routes/profile-info-page"), "P
 const ProfileInfoNamePage = lazyNamed(() => import("./routes/profile-info-name-page"), "ProfileInfoNamePage");
 
 const ProfileInfoSignaturePage = lazyNamed(() => import("./routes/profile-info-signature-page"), "ProfileInfoSignaturePage");
+
+const ProfileInfoContactPage = lazyNamed(() => import("./routes/profile-info-contact-page"), "ProfileInfoContactPage");
 
 const ProfileSubscriptionPage = lazyNamed(() => import("./routes/profile-subscription-page"), "ProfileSubscriptionPage");
 
@@ -595,6 +599,13 @@ const discoverEncounterRoute = createRoute({
   component: DiscoverEncounterPage,
 });
 
+const discoverAvatarEncounterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/avatar-encounter",
+  beforeLoad: requireWorldReady,
+  component: DiscoverAvatarEncounterPage,
+});
+
 const discoverSceneRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/discover/scene",
@@ -670,6 +681,13 @@ const profileInfoSignatureRoute = createRoute({
   path: "/profile/info/signature",
   beforeLoad: requireWorldReady,
   component: ProfileInfoSignaturePage,
+});
+
+const profileInfoContactRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/info/contact",
+  beforeLoad: requireWorldReady,
+  component: ProfileInfoContactPage,
 });
 
 const profileSubscriptionRoute = createRoute({
@@ -864,6 +882,7 @@ const routeTree = rootRoute.addChildren([
   discoverMomentsRoute,
   discoverMomentsPublishRoute,
   discoverEncounterRoute,
+  discoverAvatarEncounterRoute,
   discoverSceneRoute,
   discoverFeedRoute,
   discoverFeedPublishRoute,
@@ -876,6 +895,7 @@ const routeTree = rootRoute.addChildren([
   profileInfoRoute,
   profileInfoNameRoute,
   profileInfoSignatureRoute,
+  profileInfoContactRoute,
   profileSubscriptionRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
