@@ -118,22 +118,30 @@ export class WikiCharacterVideoService implements OnModuleInit {
       throw new ServiceUnavailableException('今日视频生成额度已用完，请明天再试。');
     }
 
-    const entity = await this.repo.save(
-      this.repo.create({
-        ownerWikiUserId,
-        privateCharacterId,
-        characterName: character.name,
-        characterAvatar: character.avatar ?? '',
-        relationship: character.relationship ?? null,
-        prompt: trimmed.slice(0, PROMPT_MAX),
-        refinedPrompt,
-        status: 'generating',
-        minimaxJobId: job.id,
-        publishState: 'not_published',
-        isDeleted: false,
-      }),
-    );
-    await this.minimaxJobs.attachTarget(job.id, entity.id);
+    // enqueue 成功后建实体 + 挂 target；任一步抛错都要回滚 job（释放已 reserve 的
+    // 配额 + 删 orphan job），否则配额白扣、cron 还会去跑一个挂不上目标的 job。
+    let entity: CharacterVideoEntity;
+    try {
+      entity = await this.repo.save(
+        this.repo.create({
+          ownerWikiUserId,
+          privateCharacterId,
+          characterName: character.name,
+          characterAvatar: character.avatar ?? '',
+          relationship: character.relationship ?? null,
+          prompt: trimmed.slice(0, PROMPT_MAX),
+          refinedPrompt,
+          status: 'generating',
+          minimaxJobId: job.id,
+          publishState: 'not_published',
+          isDeleted: false,
+        }),
+      );
+      await this.minimaxJobs.attachTarget(job.id, entity.id);
+    } catch (err) {
+      await this.minimaxJobs.cancelJob(job.id).catch(() => {});
+      throw err;
+    }
     return this.toView(entity);
   }
 
@@ -200,7 +208,15 @@ export class WikiCharacterVideoService implements OnModuleInit {
 
   // ——— 私有 ———
 
+  // 正在上推的 video id（进程内锁）。markReadyFromJob 的即时上推与 5min sweeper 的
+  // retryPendingPublishes 都在本进程跑；若并发上推同一条，cloud 端按 sourceCharacterVideoId
+  // 的 findOne→insert 不是原子的，会建出两条 cloudVideoId 不同的中心视频 → 各 world 收到
+  // 两条重复帖。用进程内 Set 串行化同一 video 的上推，杜绝该竞态。
+  private readonly publishing = new Set<string>();
+
   private async tryPublish(row: CharacterVideoEntity): Promise<void> {
+    if (this.publishing.has(row.id)) return;
+    this.publishing.add(row.id);
     try {
       const result = await this.publishSync.publish(row);
       row.publishState = result.ok ? 'published' : 'pending';
@@ -211,6 +227,8 @@ export class WikiCharacterVideoService implements OnModuleInit {
         `publish video ${row.id} failed: ${err instanceof Error ? err.message : String(err)}`,
       );
       await this.repo.update({ id: row.id }, { publishState: 'pending' });
+    } finally {
+      this.publishing.delete(row.id);
     }
   }
 

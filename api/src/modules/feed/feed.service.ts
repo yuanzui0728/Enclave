@@ -2165,12 +2165,23 @@ export class FeedService implements OnModuleInit {
       return { injected: false, reason: 'character_not_imported' };
     }
 
-    const existing = await this.postRepo
+    // 幂等查重必须按 owner 收口：同一 cloudVideoId 会被扇出到【多个】owner 的视频号，
+    // 在共享库（单库多租户）下不加 ownerId 过滤会命中别的 owner 的同 id 帖 → 误判
+    // 「已注入」→ 当前 owner 永远收不到。LPP 物理分库无此问题（但加 ownerId 反而因
+    // 历史帖 ownerId 为 NULL 而漏掉），故仅共享模式按当前租户 owner 收口。
+    let existingQuery = this.postRepo
       .createQueryBuilder('post')
       .where('post.surface = :surface', { surface: 'channels' })
       .andWhere('post.statsPayload LIKE :marker', {
         marker: `%"cloudVideoId":"${input.cloudVideoId}"%`,
-      })
+      });
+    if (isSharedWorldMode()) {
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      existingQuery = existingQuery.andWhere('post.ownerId = :ownerId', {
+        ownerId: owner.id,
+      });
+    }
+    const existing = await existingQuery
       .orderBy('post.createdAt', 'DESC')
       .getOne();
     if (existing) {

@@ -35,28 +35,30 @@ export class CharacterImportRegisterClient {
       this.logger.warn(`Invalid CLOUD_API_BASE_URL: ${baseUrl}`);
       return;
     }
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': token,
-        },
-        body: JSON.stringify({
-          sourceCharacterId,
-          ownerPhone: phone,
-          localCharacterId: input.localCharacterId,
-        }),
-      });
-      if (!res.ok) {
+    // 登记是「谁导入了该角色」的唯一入口：扇出名单与唤醒拉取都基于它。一次失败就漏掉
+    // 这个 owner（除非再次导入），故 3 次重试 + 退避，最大化命中。仍失败则静默放弃。
+    const body = JSON.stringify({
+      sourceCharacterId,
+      ownerPhone: phone,
+      localCharacterId: input.localCharacterId,
+    });
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Service-Token': token },
+          body,
+        });
+        if (res.ok) return;
         this.logger.warn(
-          `character import register HTTP ${res.status} (src=${sourceCharacterId})`,
+          `character import register HTTP ${res.status} (attempt ${attempt}, src=${sourceCharacterId})`,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `character import register failed (attempt ${attempt}): ${err instanceof Error ? err.message : String(err)}`,
         );
       }
-    } catch (err) {
-      this.logger.warn(
-        `character import register failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 500));
     }
   }
 
