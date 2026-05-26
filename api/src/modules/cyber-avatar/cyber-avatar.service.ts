@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
@@ -142,6 +143,11 @@ export class CyberAvatarService {
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
   async runIncrementalRefreshCron() {
+    // 共享 world：本 cron 尚未做 per-owner fan-out（executeRefresh 走 getOwnerOrThrow，
+    // 无帧 fail-closed 抛 TENANT_CONTEXT_MISSING）。在专项把它逐 owner 安全化之前，shared
+    // 模式直接跳过（保持 cutover 后现状=未运行，避免日志刷 CONTEXT_MISSING）。见 memory
+    // project_shared_world_multitenant 的 cyber-avatar/games 专项跟进项。
+    if (isSharedWorldMode()) return;
     await sleepForWorldJitter(60_000);
     const rules = await this.rulesService.getRules();
     if (
@@ -158,6 +164,8 @@ export class CyberAvatarService {
 
   @Cron(CYBER_AVATAR_DEEP_REFRESH_CRON)
   async runDeepRefreshCron() {
+    // 共享 world：同 runIncrementalRefreshCron，专项前跳过。
+    if (isSharedWorldMode()) return;
     await sleepForWorldJitter(600_000);
     const rules = await this.rulesService.getRules();
     if (

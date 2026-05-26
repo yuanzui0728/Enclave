@@ -2055,9 +2055,10 @@ export class SchedulerService {
         }
 
         // 查询近7天的消息
-        const recentMessages = await this.messageRepo
+        const recentMessages = await this.tenantService
+          .scoped(this.messageRepo)
           .createQueryBuilder('msg')
-          .where('msg.conversationId IN (:...ids)', { ids: charConvIds })
+          .andWhere('msg.conversationId IN (:...ids)', { ids: charConvIds })
           .andWhere('msg.createdAt > :since', { since })
           .orderBy('msg.createdAt', 'ASC')
           .limit(200)
@@ -2153,9 +2154,10 @@ export class SchedulerService {
         // 查询近30天消息
         const messages =
           charConvIds.length > 0
-            ? await this.messageRepo
+            ? await this.tenantService
+                .scoped(this.messageRepo)
                 .createQueryBuilder('msg')
-                .where('msg.conversationId IN (:...ids)', { ids: charConvIds })
+                .andWhere('msg.conversationId IN (:...ids)', { ids: charConvIds })
                 .andWhere('msg.createdAt > :since', { since })
                 .orderBy('msg.createdAt', 'ASC')
                 .limit(500)

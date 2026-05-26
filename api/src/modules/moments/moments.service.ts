@@ -424,7 +424,10 @@ export class MomentsService implements OnModuleInit {
             order: stableOrder,
           }
         : { order: stableOrder };
-    const posts = await this.postRepo.find(baseFindOptions);
+    // 共享 world：默认朋友圈广场分支无 where → 裸 find 读全 owner 的 moment_posts（读守卫抛 /
+    // 跨用户泄漏）；characterAuthorId 分支 authorId 也是跨租户共用角色 id。走 TenantRepository
+    // 自动并 ownerId（无 where 时即 where:{ownerId}；LPP 透传）。
+    const posts = await new TenantRepository(this.postRepo).find(baseFindOptions);
     const visiblePosts = posts.filter((post) =>
       this.canOwnerViewPost(
         post,
@@ -1520,12 +1523,14 @@ export class MomentsService implements OnModuleInit {
     const resolvedAvatarContext =
       avatarContext ?? (await this.buildMomentAvatarContext());
     const postIds = posts.map((post) => post.id);
+    // 共享 world：按 postId 取赞/评论，但 like/comment 是租户级——并 ownerId 防跨 owner
+    // 命中（种子/历史数据里有跨 owner 的同 postId 行）。走 TenantRepository。
     const [likes, comments] = await Promise.all([
-      this.likeRepo.find({
+      new TenantRepository(this.likeRepo).find({
         where: { postId: In(postIds) },
         order: { createdAt: 'ASC' },
       }),
-      this.commentRepo.find({
+      new TenantRepository(this.commentRepo).find({
         where: { postId: In(postIds) },
         order: { createdAt: 'ASC' },
       }),
@@ -1559,11 +1564,11 @@ export class MomentsService implements OnModuleInit {
     const resolvedAvatarContext =
       avatarContext ?? (await this.buildMomentAvatarContext());
     const [likes, comments] = await Promise.all([
-      this.likeRepo.find({
+      new TenantRepository(this.likeRepo).find({
         where: { postId: post.id },
         order: { createdAt: 'ASC' },
       }),
-      this.commentRepo.find({
+      new TenantRepository(this.commentRepo).find({
         where: { postId: post.id },
         order: { createdAt: 'ASC' },
       }),

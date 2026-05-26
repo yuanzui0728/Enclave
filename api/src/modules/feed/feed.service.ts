@@ -3709,7 +3709,9 @@ export class FeedService implements OnModuleInit {
   }
 
   private async getVisibleFeedPosts(surface: FeedSurface, ownerId: string) {
-    const posts = await this.postRepo.find({
+    // 共享 world：裸 find 按 surface 读全 owner 的 feed/channels 帖（读守卫抛 / 跨用户泄漏）。
+    // 走 TenantRepository 自动并 ownerId（LPP 透传）。
+    const posts = await new TenantRepository(this.postRepo).find({
       where: { surface, publishStatus: 'published' },
       order:
         surface === 'channels'
@@ -3757,6 +3759,13 @@ export class FeedService implements OnModuleInit {
       .createQueryBuilder('post')
       .where('post.surface = :surface', { surface: 'feed' })
       .andWhere('post.publishStatus = :status', { status: 'published' });
+
+    // 共享 world：authorId 是跨租户共用的角色 id，仅按 authorId IN visibleIds 过滤会命中
+    // 别 owner 同角色发的广场帖（afterLoad 读守卫抛 / 跨用户内容泄漏）。显式按 ownerId 收口
+    // （shared 才加；LPP 的 ownerId 为 NULL，加了会全空——故 mode-gate）。
+    if (isSharedWorldMode()) {
+      qb.andWhere('post.ownerId = :ownerId', { ownerId });
+    }
 
     if (visibleIds.length === 0) {
       qb.andWhere("post.authorType <> 'character'");

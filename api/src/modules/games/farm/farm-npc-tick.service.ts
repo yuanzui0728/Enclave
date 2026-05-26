@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { isSharedWorldMode } from '../../tenancy/tenant-context';
 import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -50,6 +51,9 @@ export class FarmNpcTickService {
 
   @Cron(FARM_NPC_TICK_CRON)
   async runScheduledTick(): Promise<void> {
+    // 共享 world：runTick per-owner fan-out + 内层读 scoped 未做（getOwnerOrThrow 无帧
+    // fail-closed；npcRepo.findOneBy({characterId}) 跨 owner）。专项前跳过，避免半执行/串号。
+    if (isSharedWorldMode()) return;
     await sleepForWorldJitter(60_000);
     if (this.running) {
       this.logger.warn('上一次 farm tick 仍在执行，跳过本轮');

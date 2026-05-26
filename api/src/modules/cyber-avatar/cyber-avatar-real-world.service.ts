@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { Cron } from '@nestjs/schedule';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -203,6 +204,8 @@ export class CyberAvatarRealWorldService {
 
   @Cron(CYBER_AVATAR_REAL_WORLD_SYNC_CRON)
   async runSyncCron() {
+    // 共享 world：runSync per-owner fan-out 未做（getOwnerOrThrow 无帧 fail-closed）；专项前跳过。
+    if (isSharedWorldMode()) return;
     await sleepForWorldJitter(60_000);
     const rules = await this.rulesService.getRules();
     if (

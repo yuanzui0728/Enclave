@@ -1,6 +1,7 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { isSharedWorldMode } from '../../tenancy/tenant-context';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
@@ -56,6 +57,8 @@ export class ParkingWarTickService {
 
   @Cron(PARKING_WAR_TICK_CRON)
   async runScheduledTick(): Promise<void> {
+    // 共享 world：同 farm tick——per-owner fan-out + 内层 npcRepo 读未安全化；专项前跳过。
+    if (isSharedWorldMode()) return;
     await sleepForWorldJitter(60_000);
     if (this.running) {
       this.logger.warn('上一次 parking-war tick 仍在执行，跳过本轮');
