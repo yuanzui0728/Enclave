@@ -10,6 +10,9 @@ import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarService } from './cyber-avatar.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
+import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
+import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
+import { MatchmakingServiceTokenGuard } from './matchmaking-service-token.guard';
 import { SystemConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
@@ -29,10 +32,13 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
     forwardRef(() => AiModule),
     forwardRef(() => NeedDiscoveryModule),
   ],
+  controllers: [CyberAvatarMatchmakingController],
   providers: [
     CyberAvatarRulesService,
     CyberAvatarService,
     CyberAvatarMatchmakingSyncService,
+    CyberAvatarEncounterService,
+    MatchmakingServiceTokenGuard,
     CyberAvatarRealWorldService,
     CyberAvatarAdminService,
   ],
