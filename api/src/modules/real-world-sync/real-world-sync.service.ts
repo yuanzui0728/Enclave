@@ -714,7 +714,8 @@ export class RealWorldSyncService {
     const rules = await this.rulesService.getRules();
     const [character, runs, signals, digests, momentsToday, todayBulletins] =
       await Promise.all([
-        this.characterRepo.findOneBy({ id: characterId }),
+        // characters 复合主键 (ownerId,id)：裸 findOneBy({id}) 跨 owner 命中第一行 → 读守卫抛。
+        new TenantRepository(this.characterRepo).findOneBy({ id: characterId }),
         new TenantRepository(this.runRepo).find({
           where: { characterId },
           order: { createdAt: 'DESC' },
@@ -821,7 +822,11 @@ export class RealWorldSyncService {
   async resolveRuntimeContext(
     characterId: string,
   ): Promise<RealWorldRuntimeContextValue | null> {
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    // 复合主键 (ownerId,id)：裸 findOneBy({id}) 跨 owner 命中 → 读守卫抛（runSync per-char
+    // 在 per-owner cron 帧里跑，characterId 是跨租户共用的角色 id）。走 TenantRepository。
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       return null;
     }
