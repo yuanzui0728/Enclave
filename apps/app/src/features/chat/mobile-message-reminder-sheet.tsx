@@ -167,7 +167,7 @@ export function MobileMessageReminderSheet({
             <div
               className={
                 isDesktop
-                  ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                  ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
                   : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
               }
             >

@@ -423,7 +423,7 @@ function MobileSubscriptionArticleRow({
           className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
         />
       ) : (
-        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
+        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[10px] text-[color:var(--text-dim)]">
           {t(msg`文章`)}
         </div>
       )}

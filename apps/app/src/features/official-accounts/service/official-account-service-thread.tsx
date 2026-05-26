@@ -772,7 +772,7 @@ function ServiceDesktopStatusPane({
           "w-full rounded-[24px] border px-8 py-10 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
         )}
       >
         {tone === "loading" ? (
@@ -812,7 +812,7 @@ function ServiceDesktopInlineStatus({
           "rounded-[16px] border px-4 py-3 text-[13px] leading-6 shadow-none",
           tone === "danger"
             ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]",
         )}
       >
         {message}
@@ -837,7 +837,7 @@ function ServiceThreadStatusPane({
           "rounded-[24px] border px-6 py-8 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
         )}
       >
         {tone === "loading" ? (
@@ -877,7 +877,7 @@ function ServiceThreadInlineStatus({
           "rounded-[16px] border px-4 py-3 text-[13px] leading-6 shadow-none",
           tone === "danger"
             ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]",
         )}
       >
         {message}

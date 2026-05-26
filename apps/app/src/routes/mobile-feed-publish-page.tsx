@@ -532,7 +532,7 @@ export function MobileFeedPublishPage() {
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#f2f2f2] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-secondary)] px-0 py-0">
       <TabPageTopBar
         title={t(msg`发表广场动态`)}
         titleAlign="center"

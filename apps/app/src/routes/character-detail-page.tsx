@@ -1941,7 +1941,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           handleVoiceCall();
                         }}
-                        className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                         disabled={openCallMutation.isPending}
                       >
                         {openCallMutation.isPending
@@ -2036,7 +2036,7 @@ export function CharacterDetailPage() {
                           remarkName: friendship?.remarkName ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2098,7 +2098,7 @@ export function CharacterDetailPage() {
                           tags: friendship?.tags?.join("，") ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}

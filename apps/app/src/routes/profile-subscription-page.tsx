@@ -234,7 +234,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
       ) : (
         <>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-[16px] bg-[#fafafa] px-3 py-3">
+            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`邀请码`)}
               </div>
@@ -242,7 +242,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.code || t(msg`暂无`)}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[#fafafa] px-3 py-3">
+            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`单次奖励`)}
               </div>
@@ -250,7 +250,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.rewardDays} {t(msg`天`)}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[#fafafa] px-3 py-3">
+            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`成功邀请`)}
               </div>
@@ -258,7 +258,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.redeemCount}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[#fafafa] px-3 py-3">
+            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`累计奖励`)}
               </div>
@@ -688,7 +688,7 @@ export function ProfileSubscriptionPage() {
               {purchasePlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4"
+                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -758,7 +758,7 @@ export function ProfileSubscriptionPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
                     >
                       <div className="font-medium text-[color:var(--text-primary)]">
                         {item.inviteePhoneMasked}

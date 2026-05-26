@@ -50,7 +50,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 1
             </div>
@@ -58,7 +58,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
               {t(msg`确认入口`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 2
             </div>
@@ -66,7 +66,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
               {t(msg`同步世界主人`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 shadow-none">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 3
             </div>

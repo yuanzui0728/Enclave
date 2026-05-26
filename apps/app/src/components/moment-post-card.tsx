@@ -96,7 +96,7 @@ export function MomentPostCard({
 
         {/* Likes + Comments interaction area */}
         {(likes.length > 0 || comments.length > 0) ? (
-          <div className="mt-2 rounded-[6px] bg-[rgba(0,0,0,0.04)] px-3 py-2 text-[13px] leading-[1.7]">
+          <div className="mt-2 rounded-[6px] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] leading-[1.7]">
             {/* Likes */}
             {likes.length > 0 ? (
               <div className="flex flex-wrap items-center gap-x-1">

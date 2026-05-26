@@ -51,7 +51,7 @@ export function LegacyFriendMomentsRedirectPage() {
   }, [characterId, hash, isDesktopLayout, navigate]);
 
   return (
-    <AppPage className="flex min-h-full items-center justify-center bg-[#f2f2f2] px-4 py-8">
+    <AppPage className="flex min-h-full items-center justify-center bg-[color:var(--surface-secondary)] px-4 py-8">
       <LoadingBlock
         label={t(msg`正在打开角色朋友圈...`)}
         className="w-full max-w-[360px] rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-8 shadow-[var(--shadow-section)]"

@@ -3673,7 +3673,7 @@ export function ChatComposer({
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-b-[16px] border-t border-[color:var(--border-faint)] bg-[#fafafa] px-3.5 py-2.5">
+              <div className="flex items-center justify-between gap-3 rounded-b-[16px] border-t border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3.5 py-2.5">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <DesktopToolbarGroup>
                     <div className="relative">
@@ -6196,7 +6196,7 @@ function DesktopMentionPicker({
             onClick={() => onSelect(candidate)}
             className={cn(
               "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
-              index === activeIndex ? "bg-[#f5f1e6]" : "hover:bg-[#fafafa]",
+              index === activeIndex ? "bg-[#f5f1e6]" : "hover:bg-[color:var(--surface-card-hover)]",
             )}
           >
             <AvatarChip

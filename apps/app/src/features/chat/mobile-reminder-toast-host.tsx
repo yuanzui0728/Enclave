@@ -331,7 +331,7 @@ export function MobileReminderToastHost() {
                     {t(msg`消息提醒`)}
                   </div>
                   {remainingCount > 0 ? (
-                    <div className="shrink-0 rounded-full bg-[rgba(0,0,0,0.06)] px-2 py-0.5 text-[11px] text-[#5f6368]">
+                    <div className="shrink-0 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[11px] text-[#5f6368]">
                       {t(msg`还有 ${remainingCount} 条`)}
                     </div>
                   ) : null}
@@ -348,7 +348,7 @@ export function MobileReminderToastHost() {
               <div className="mt-1 truncate text-[13px] font-medium text-[#3f3f46]">
                 <span>{activeReminder.title}</span>
                 {activeReminderStatusLabel ? (
-                  <span className="ml-2 rounded-full bg-[rgba(0,0,0,0.06)] px-2 py-0.5 text-[11px] font-normal text-[#5f6368]">
+                  <span className="ml-2 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[11px] font-normal text-[#5f6368]">
                     {activeReminderStatusLabel}
                   </span>
                 ) : null}

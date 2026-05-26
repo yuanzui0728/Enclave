@@ -780,7 +780,7 @@ function DesktopFavoritesPage() {
                         removeMutation.variables?.sourceId ===
                           selectedFavorite.sourceId
                       }
-                      className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {removeMutation.isPending &&
                       removeMutation.variables?.sourceId ===

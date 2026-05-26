@@ -1046,7 +1046,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`当前群聊`)}
                   </div>
@@ -1054,7 +1054,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                     {groupName}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`通话类型`)}
                   </div>
@@ -1064,7 +1064,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                       : t(msg`群语音通话`)}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-4">
+                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
                   <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`成员规模`)}
                   </div>

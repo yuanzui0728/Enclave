@@ -68,7 +68,7 @@ export function ManagementRootScreen({
                     : undefined,
                 )}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f0f0] text-[color:var(--text-secondary)]">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]">
                   <Icon aria-hidden="true" size={15} />
                 </div>
                 <span className="min-w-0 flex-1 text-[15px] text-[color:var(--text-primary)]">

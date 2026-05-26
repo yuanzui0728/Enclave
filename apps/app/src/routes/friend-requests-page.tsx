@@ -445,7 +445,7 @@ function MobileFriendRequestsPage() {
                         }
                         variant="secondary"
                         size="sm"
-                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       >
                         {declineMutation.isPending &&
                         declineMutation.variables?.requestId === request.id

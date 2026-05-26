@@ -159,7 +159,7 @@ export function MessageQuoteSelectionSheet({
         <div
           className={`mt-4 rounded-[16px] ${
             isDesktop
-              ? "border border-[color:var(--border-faint)] bg-[#fafafa] p-4"
+              ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] p-4"
               : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3"
           }`}
         >

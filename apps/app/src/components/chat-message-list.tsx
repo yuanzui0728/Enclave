@@ -4936,7 +4936,7 @@ function MessageTimestampDivider({
         onClick={onToggle}
         className={
           isDesktop
-            ? "inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-card)]"
+            ? "inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-card)]"
             : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
         }
         aria-label={
