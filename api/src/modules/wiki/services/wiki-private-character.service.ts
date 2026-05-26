@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { UserPrivateCharacterEntity } from '../entities/user-private-character.entity';
+import { UserEntity } from '../../auth/user.entity';
 import type { CharacterBlueprintRecipeValue } from '../../characters/character-blueprint.types';
 import { assertPrivateCharacterFieldLimits } from '../../characters/characters.service';
 import type { PersonalityProfile } from '../../ai/ai.types';
@@ -131,6 +132,9 @@ export type PrivateCharacterExportBundle = {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  // 源私有角色 id：world 导入时落到 CharacterEntity.wikiSourceCharacterId，作为
+  // 「私有角色视频」跨-world 扇出的关联键（cloud-api 据此把视频投到导入者视频号）。
+  sourceCharacterId?: string;
   meta: {
     exportedAt: string;
     exportedBy: string;
@@ -138,11 +142,62 @@ export type PrivateCharacterExportBundle = {
   };
 };
 
+/** 角色广场列表卡 / 详情用的对外摘要（不含 recipe/profile 等大 JSON 与 admin-only 字段）。 */
+export type PublicCharacterSummary = {
+  id: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  relationship: string;
+  relationshipType: string;
+  expertDomains: string[];
+  viewCount: number;
+  downloadCount: number;
+  publishedAt: string | null;
+  updatedAt: string;
+  ownerUserId: string;
+  ownerName: string;
+};
+
+export type PublicCharacterDetail = PublicCharacterSummary & {
+  personality: string | null;
+  region: string | null;
+};
+
+/** 管理员激励榜单：按 owner 聚合的公开角色统计。 */
+export type CreatorPublicStats = {
+  publicCount: number;
+  totalViews: number;
+  totalDownloads: number;
+};
+
+export type CreatorRewardStat = {
+  ownerUserId: string;
+  username: string;
+  email: string | null;
+  // cloudPhone：wiki 用户 ↔ cloud 会员账号的关联键。多数本地注册用户为 null，
+  // 运营据此（或 email / username）去 cloud-console 人工赠送会员时长。
+  cloudPhone: string | null;
+  publicCharacterCount: number;
+  totalViews: number;
+  totalDownloads: number;
+};
+
+export type CreatorRewardListResponse = {
+  items: CreatorRewardStat[];
+  totalCreators: number;
+  totalPublicCharacters: number;
+  totalViews: number;
+  totalDownloads: number;
+};
+
 @Injectable()
 export class WikiPrivateCharacterService {
   constructor(
     @InjectRepository(UserPrivateCharacterEntity)
     private readonly repo: Repository<UserPrivateCharacterEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   listForOwner(ownerUserId: string): Promise<UserPrivateCharacterEntity[]> {
@@ -196,6 +251,11 @@ export class WikiPrivateCharacterService {
         socialOpenness: true,
         proactiveBrowseChance: true,
         intimacyLevel: true,
+        // 公开/统计列：列表卡要渲染公开开关 + 浏览·下载徽标。
+        isPublic: true,
+        viewCount: true,
+        downloadCount: true,
+        publishedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -233,6 +293,213 @@ export class WikiPrivateCharacterService {
       throw new ForbiddenException('无权访问该私有角色');
     }
     return row;
+  }
+
+  // —————————————————— 公开 / 角色广场 / 统计 ——————————————————
+
+  /**
+   * owner 切换自己私有角色的公开状态。首次公开写 publishedAt（再次公开不覆盖），
+   * 取消公开保留 viewCount/downloadCount 历史累计不清零。
+   */
+  async setVisibility(
+    ownerUserId: string,
+    id: string,
+    isPublic: boolean,
+  ): Promise<UserPrivateCharacterEntity> {
+    const row = await this.getById(ownerUserId, id);
+    row.isPublic = isPublic;
+    if (isPublic && !row.publishedAt) {
+      row.publishedAt = new Date();
+    }
+    return this.repo.save(row);
+  }
+
+  /**
+   * 管理员强制下架（不校验 owner）：公开角色不走巡查审核流，保留这个管控口子。
+   * 同样不清零统计。返回是否实际改动（已是私有→false）。
+   */
+  async adminSetPublic(id: string, isPublic: boolean): Promise<boolean> {
+    const row = await this.repo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('私有角色不存在');
+    if (row.isPublic === isPublic) return false;
+    row.isPublic = isPublic;
+    if (isPublic && !row.publishedAt) row.publishedAt = new Date();
+    await this.repo.save(row);
+    return true;
+  }
+
+  /**
+   * 角色广场列表：所有 isPublic=true 的角色，按下载量、其次更新时间倒序。
+   * 走轻量 select（不读 recipe/profile 大列），并批量补 owner 展示名。
+   */
+  async listPublic(limit = 200): Promise<PublicCharacterSummary[]> {
+    const rows = await this.repo.find({
+      where: { isPublic: true },
+      order: { downloadCount: 'DESC', updatedAt: 'DESC' },
+      take: Math.min(500, Math.max(1, limit)),
+      select: {
+        id: true,
+        ownerUserId: true,
+        name: true,
+        avatar: true,
+        bio: true,
+        relationship: true,
+        relationshipType: true,
+        expertDomains: true,
+        viewCount: true,
+        downloadCount: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    });
+    const ownerNames = await this.loadOwnerNames(rows.map((r) => r.ownerUserId));
+    return rows.map((r) => this.toPublicSummary(r, ownerNames));
+  }
+
+  /** 角色广场详情：非公开角色一律 404（不泄露私有角色存在）。 */
+  async getPublicById(id: string): Promise<PublicCharacterDetail> {
+    const row = await this.repo.findOne({ where: { id } });
+    if (!row || !row.isPublic) {
+      throw new NotFoundException('该公开角色不存在或已下架');
+    }
+    const ownerNames = await this.loadOwnerNames([row.ownerUserId]);
+    return {
+      ...this.toPublicSummary(row, ownerNames),
+      personality: row.personality ?? null,
+      region: row.region ?? null,
+    };
+  }
+
+  /**
+   * 取一个公开角色的完整实体（供下载导出用）。非公开 → 404。
+   * 与 getById 不同：不校验 owner（任何登录用户都能下载公开角色）。
+   */
+  async getPublicEntity(id: string): Promise<UserPrivateCharacterEntity> {
+    const row = await this.repo.findOne({ where: { id } });
+    if (!row || !row.isPublic) {
+      throw new NotFoundException('该公开角色不存在或已下架');
+    }
+    return row;
+  }
+
+  /** 原子自增浏览量。调用方负责排除 owner 自看。 */
+  async incrementView(id: string): Promise<void> {
+    await this.repo.increment({ id }, 'viewCount', 1);
+  }
+
+  /** 原子自增下载量。调用方负责排除 owner 自下。 */
+  async incrementDownload(id: string): Promise<void> {
+    await this.repo.increment({ id }, 'downloadCount', 1);
+  }
+
+  /**
+   * 管理员激励榜单：按 owner 聚合公开角色数 / 总浏览 / 总下载。
+   * 只统计 isPublic=true 的角色。返回 Map<ownerUserId, stats>。
+   */
+  async aggregatePublicStatsByOwner(): Promise<Map<string, CreatorPublicStats>> {
+    const rows = await this.repo.find({
+      where: { isPublic: true },
+      select: {
+        ownerUserId: true,
+        viewCount: true,
+        downloadCount: true,
+      },
+    });
+    const result = new Map<string, CreatorPublicStats>();
+    for (const r of rows) {
+      const cur =
+        result.get(r.ownerUserId) ??
+        { publicCount: 0, totalViews: 0, totalDownloads: 0 };
+      cur.publicCount += 1;
+      cur.totalViews += r.viewCount ?? 0;
+      cur.totalDownloads += r.downloadCount ?? 0;
+      result.set(r.ownerUserId, cur);
+    }
+    return result;
+  }
+
+  /**
+   * 创作者激励榜单：把公开角色的浏览/下载聚合到每个 owner，附联系方式
+   * （username / email / cloudPhone），按下载量从高到低排序。运营据此到
+   * cloud-console 人工赠送会员时长。供 wiki 后台（JWT admin）与 cloud-console
+   * （x-admin-secret）两个 admin 入口共用。
+   */
+  async listCreatorRewardStats(): Promise<CreatorRewardListResponse> {
+    const statsByOwner = await this.aggregatePublicStatsByOwner();
+    const ownerIds = Array.from(statsByOwner.keys());
+    const users = ownerIds.length
+      ? await this.userRepo.find({
+          where: { id: In(ownerIds) },
+          select: { id: true, username: true, email: true, cloudPhone: true },
+        })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const items: CreatorRewardStat[] = ownerIds.map((ownerUserId) => {
+      const s = statsByOwner.get(ownerUserId)!;
+      const u = userMap.get(ownerUserId);
+      return {
+        ownerUserId,
+        username: u?.username ?? '',
+        email: u?.email ?? null,
+        cloudPhone: u?.cloudPhone ?? null,
+        publicCharacterCount: s.publicCount,
+        totalViews: s.totalViews,
+        totalDownloads: s.totalDownloads,
+      };
+    });
+    // 下载量优先、其次浏览量倒序：激励看重"被多少人真正拿走"。
+    items.sort(
+      (a, b) =>
+        b.totalDownloads - a.totalDownloads || b.totalViews - a.totalViews,
+    );
+
+    return {
+      items,
+      totalCreators: items.length,
+      totalPublicCharacters: items.reduce(
+        (n, it) => n + it.publicCharacterCount,
+        0,
+      ),
+      totalViews: items.reduce((n, it) => n + it.totalViews, 0),
+      totalDownloads: items.reduce((n, it) => n + it.totalDownloads, 0),
+    };
+  }
+
+  private async loadOwnerNames(
+    ownerIds: string[],
+  ): Promise<Map<string, string>> {
+    const uniq = Array.from(new Set(ownerIds)).filter((x) => !!x);
+    const map = new Map<string, string>();
+    if (uniq.length === 0) return map;
+    const users = await this.userRepo.find({
+      where: { id: In(uniq) },
+      select: { id: true, username: true },
+    });
+    for (const u of users) map.set(u.id, u.username);
+    return map;
+  }
+
+  private toPublicSummary(
+    r: UserPrivateCharacterEntity,
+    ownerNames: Map<string, string>,
+  ): PublicCharacterSummary {
+    return {
+      id: r.id,
+      name: r.name,
+      avatar: r.avatar ?? '',
+      bio: r.bio ?? '',
+      relationship: r.relationship ?? '',
+      relationshipType: r.relationshipType ?? '',
+      expertDomains: r.expertDomains ?? [],
+      viewCount: r.viewCount ?? 0,
+      downloadCount: r.downloadCount ?? 0,
+      publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+      updatedAt: r.updatedAt.toISOString(),
+      ownerUserId: r.ownerUserId,
+      // owner 账号被删 / 查不到时回落到空串，前端按"匿名创作者"渲染。
+      ownerName: ownerNames.get(r.ownerUserId) ?? '',
+    };
   }
 
   /**
@@ -379,6 +646,9 @@ export class WikiPrivateCharacterService {
       socialOpenness: record.socialOpenness,
       proactiveBrowseChance: record.proactiveBrowseChance,
       intimacyLevel: record.intimacyLevel,
+      // 源 id = 该私有角色自身 id。owner 自导出与角色广场导出都走这里，故导入者
+      // 拿到的恒为原始角色 id，与创作者生成视频时的 sourceCharacterId 对齐。
+      sourceCharacterId: record.id,
       meta: {
         exportedAt: new Date().toISOString(),
         exportedBy,

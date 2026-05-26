@@ -56,6 +56,10 @@ import { FriendshipEntity } from '../social/friendship.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { CharacterFriendshipEntity } from '../social/character-friendship.entity';
+import { CharacterBlueprintEntity } from '../characters/character-blueprint.entity';
+import { CharacterBlueprintRevisionEntity } from '../characters/character-blueprint-revision.entity';
+import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
+import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
 
 // 已带 ownerId 的存量实体（30 个）。
 const ALREADY_SCOPED_ENTITIES: Function[] = [
@@ -120,6 +124,13 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   CharacterEntity,
   AIRelationshipEntity,
   CharacterFriendshipEntity,
+  // 角色工厂/行为日志/需求发现候选（原「无 ownerId 已知缺口」，Phase 8r 补收口）。
+  // blueprint id=`blueprint_<characterId>`，preset 跨租户重合 → 模式感知复合主键 (id,ownerId)；
+  // revision/behavior-log/need-discovery 的 id 是 uuid 全局唯一 → 普通可空 ownerId 列即可。
+  CharacterBlueprintEntity,
+  CharacterBlueprintRevisionEntity,
+  AIBehaviorLogEntity,
+  NeedDiscoveryCandidateEntity,
 ];
 
 let registered = false;

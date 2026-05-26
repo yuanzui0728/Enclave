@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { CharactersModule } from '../characters/characters.module';
+import { AiModule } from '../ai/ai.module';
 import { GamesController } from './games.controller';
 import { GamesService } from './games.service';
 import { AdminGamesController } from './admin-games.controller';
+import { GamePlayController } from './game-play.controller';
+import { GamePlayService } from './game-play.service';
 import { AdminGuard } from '../admin/admin.guard';
 import { GameCatalogEntity } from './game-catalog.entity';
 import { GameCatalogRevisionEntity } from './game-catalog-revision.entity';
@@ -21,9 +25,11 @@ import { GameSubmissionEntity } from './game-submission.entity';
       GameSubmissionEntity,
     ]),
     AuthModule,
+    CharactersModule,
+    AiModule,
   ],
-  providers: [GamesService, AdminGuard],
-  controllers: [GamesController, AdminGamesController],
+  providers: [GamesService, GamePlayService, AdminGuard],
+  controllers: [GamesController, AdminGamesController, GamePlayController],
   exports: [GamesService],
 })
 export class GamesModule {}

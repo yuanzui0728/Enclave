@@ -38,6 +38,7 @@ import {
 } from '../config/world-language.service';
 import { NeedDiscoveryCandidateEntity } from './need-discovery-candidate.entity';
 import { NeedDiscoveryConfigService } from './need-discovery-config.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { NeedDiscoveryRunEntity } from './need-discovery-run.entity';
 import type {
   NeedDiscoveryAnalysisDraft,
@@ -978,14 +979,26 @@ export class NeedDiscoveryService {
       needGeneratedCharacters,
       friendIds,
     ] = await Promise.all([
-      this.candidateRepo.count({
+      // 共享 world：候选/角色按 owner 隔离，per-owner status 统计必须 scoped（否则跨租户
+      // 聚合 + characterRepo 读触读守卫）。
+      new TenantRepository(this.candidateRepo).count({
         where: { status: In([...ACTIVE_CANDIDATE_STATUSES]) },
       }),
-      this.candidateRepo.count({ where: { status: 'accepted' } }),
-      this.candidateRepo.count({ where: { status: 'declined' } }),
-      this.candidateRepo.count({ where: { status: 'expired' } }),
-      this.candidateRepo.count({ where: { status: 'deleted' } }),
-      this.characterRepo.find({ where: { sourceType: 'need_generated' } }),
+      new TenantRepository(this.candidateRepo).count({
+        where: { status: 'accepted' },
+      }),
+      new TenantRepository(this.candidateRepo).count({
+        where: { status: 'declined' },
+      }),
+      new TenantRepository(this.candidateRepo).count({
+        where: { status: 'expired' },
+      }),
+      new TenantRepository(this.candidateRepo).count({
+        where: { status: 'deleted' },
+      }),
+      new TenantRepository(this.characterRepo).find({
+        where: { sourceType: 'need_generated' },
+      }),
       this.socialService.getFriendCharacterIds(ownerId),
     ]);
     const activeFriendIds = new Set(friendIds);

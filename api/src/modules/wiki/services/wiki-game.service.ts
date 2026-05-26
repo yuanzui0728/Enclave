@@ -1,5 +1,6 @@
 // i18n-ignore-start: backend service, errors are domain codes (no user-facing zh strings).
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -15,6 +16,11 @@ import type {
 } from '../wiki-game.types';
 import { GamePageEntity } from '../entities/game-page.entity';
 import { GameRevisionEntity } from '../entities/game-revision.entity';
+import { WikiGamePublishSyncService } from './wiki-game-publish-sync.service';
+import {
+  findHardExternalRefs,
+  MAX_PUBLISH_HTML_BYTES,
+} from './wiki-game-html-safety';
 
 @Injectable()
 export class WikiGameService {
@@ -23,6 +29,7 @@ export class WikiGameService {
     private readonly pages: Repository<GamePageEntity>,
     @InjectRepository(GameRevisionEntity)
     private readonly revisions: Repository<GameRevisionEntity>,
+    private readonly publishSync: WikiGamePublishSyncService,
   ) {}
 
   // ───────── internal: 给 AI 服务 / 复刻用 ─────────
@@ -170,9 +177,57 @@ export class WikiGameService {
     ownerUserId: string,
     gameId: string,
     visibility: 'private' | 'public',
-  ): Promise<void> {
-    await this.requireOwnedPage(ownerUserId, gameId);
+  ): Promise<{ visibility: string; boardSynced: boolean }> {
+    const page = await this.requireOwnedPage(ownerUserId, gameId);
     await this.pages.update({ gameId }, { visibility });
+    if (visibility !== 'public') {
+      return { visibility, boardSynced: false };
+    }
+    // 公开 = 同时上架隐界游戏板块：上推最新产物到 cloud-api 全局板块。
+    const artifact = await this.loadLatestArtifact(gameId);
+    if (!artifact) return { visibility, boardSynced: false };
+
+    // 发布前安全闸：硬拒外部引用（破沙箱零网络保证 + 滥用载体）+ 体积上限。
+    const violations = findHardExternalRefs(artifact.html);
+    if (violations.length > 0) {
+      // 拒绝发布：把可见性回滚为私有，抛 400 让用户先去掉外链。
+      await this.pages.update({ gameId }, { visibility: 'private' });
+      throw new BadRequestException(
+        `游戏含外部引用（${violations.join('、')}），无法发布到游戏板块。请改为纯本地实现（资源内联、用 YinjieGame.askCharacter 调 AI）。`,
+      );
+    }
+    if (Buffer.byteLength(artifact.html, 'utf8') > MAX_PUBLISH_HTML_BYTES) {
+      await this.pages.update({ gameId }, { visibility: 'private' });
+      throw new BadRequestException('游戏体积过大，无法发布，请精简后重试。');
+    }
+
+    const spec = artifact.spec;
+    const synced = await this.publishSync.push(
+      {
+        gameId,
+        name: spec.title,
+        slogan: spec.pitch,
+        description: spec.rules,
+        category: 'featured',
+        tone: 'sunset',
+        tags: spec.genre ? [spec.genre] : [],
+        authorWikiUserId: ownerUserId,
+        authorDisplayName: page.authorDisplayName ?? ownerUserId,
+        sourceWikiGameId: gameId,
+        clonedFromGameId: page.forkedFromGameId ?? null,
+      },
+      artifact,
+    );
+    await this.pages.update(
+      { gameId },
+      {
+        publishedCatalogGameId: gameId,
+        publishedVersion: (page.publishedVersion ?? 0) + 1,
+        lastPublishedAt: new Date(),
+        syncState: synced ? 'synced' : 'pending',
+      },
+    );
+    return { visibility, boardSynced: synced };
   }
 
   async saveManualRevision(

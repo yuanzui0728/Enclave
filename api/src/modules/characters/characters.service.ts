@@ -480,15 +480,15 @@ export class CharactersService implements OnModuleInit {
         authorType: 'character',
       });
       await scoped(narrativeArcRepo).delete({ characterId: id });
-      // ai_behavior_logs / blueprints / need_discovery_candidates 暂无 ownerId 列：按
-      // characterId 删（多 owner 下对共享 id 会过删，属未纳入隔离的已知缺口）。
-      await aiBehaviorLogRepo.delete({ characterId: id });
+      // ai_behavior_logs / blueprints(+revisions) / need_discovery_candidates 已补 ownerId
+      // 列（Phase 8r）：级联删走 scoped 按 ownerId 限定，多 owner 下不再过删共享 id。
+      await scoped(aiBehaviorLogRepo).delete({ characterId: id });
       await scoped(moderationReportRepo).delete({
         targetType: 'character',
         targetId: id,
       });
-      await blueprintRevisionRepo.delete({ characterId: id });
-      await blueprintRepo.delete({ characterId: id });
+      await scoped(blueprintRevisionRepo).delete({ characterId: id });
+      await scoped(blueprintRepo).delete({ characterId: id });
       // ai_relationships 有 ownerId：QB delete 手工加 ownerId（仅 shared；LPP ownerId 为
       // NULL 不能进 WHERE，否则 NULL=:id 永假会漏删）。
       {
@@ -502,18 +502,23 @@ export class CharactersService implements OnModuleInit {
         if (ownerId) q = q.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
         await q.execute();
       }
-      await needDiscoveryCandidateRepo
-        .createQueryBuilder()
-        .update()
-        .set({
-          status: 'deleted',
-          deletedAt: new Date(),
-        })
-        .where('characterId = :id', { id })
-        .andWhere('status NOT IN (:...lockedStatuses)', {
-          lockedStatuses: ['declined', 'expired', 'deleted'],
-        })
-        .execute();
+      {
+        // need_discovery_candidates 已补 ownerId（Phase 8r）：QB update 手工加 ownerId（仅
+        // shared；LPP ownerId 为 NULL 不进 WHERE）。否则多 owner 下对共享 characterId 过删。
+        let q = needDiscoveryCandidateRepo
+          .createQueryBuilder()
+          .update()
+          .set({
+            status: 'deleted',
+            deletedAt: new Date(),
+          })
+          .where('characterId = :id', { id })
+          .andWhere('status NOT IN (:...lockedStatuses)', {
+            lockedStatuses: ['declined', 'expired', 'deleted'],
+          });
+        if (ownerId) q = q.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
+        await q.execute();
+      }
       // 复合主键下不能用标量 id；scoped delete 按 (ownerId,id) 只删当前 owner 的角色行。
       await scoped(characterRepo).delete({ id });
     });

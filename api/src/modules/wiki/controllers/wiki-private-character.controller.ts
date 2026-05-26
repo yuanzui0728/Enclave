@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Res,
@@ -27,6 +28,7 @@ import {
   SECTION_KEYS,
   type SectionKey,
 } from '../services/wiki-private-character-ai.prompts';
+import { sendCharacterExportBundle } from './character-export-response';
 
 @Controller('wiki/my-characters')
 @UseGuards(JwtAuthGuard)
@@ -93,21 +95,30 @@ export class WikiPrivateCharacterController {
   ) {
     const record = await this.service.getById(user.id, id);
     const bundle = this.service.toExportBundle(record, user.id);
-    const safeName = record.name.replace(/[\\/:*?"<>|\r\n\t]+/g, '_').slice(
-      0,
-      80,
-    );
-    const baseName = safeName || 'character';
-    // ASCII fallback：非 ASCII 字符替换成 '_'，保证老浏览器也能拿到合法 filename。
-    // 同时按 RFC 5987 给 filename*=UTF-8''…，modern 浏览器优先用它，正确显示中文。
-    const asciiName = baseName.replace(/[^\x20-\x7E]/g, '_');
-    const utf8Encoded = encodeURIComponent(baseName);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${asciiName}.character.json"; filename*=UTF-8''${utf8Encoded}.character.json`,
-    );
-    res.send(JSON.stringify(bundle, null, 2));
+    sendCharacterExportBundle(res, bundle, record.name);
+  }
+
+  // 切换公开 / 私有：公开后该角色进入「角色广场」，任何人可浏览、登录用户可下载。
+  @Patch(':id/visibility')
+  @UseGuards(PrivateCharacterRateLimitGuard)
+  async setVisibility(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: { isPublic?: unknown },
+  ) {
+    if (!body || typeof body.isPublic !== 'boolean') {
+      throw new BadRequestException('isPublic 必须是布尔值');
+    }
+    const record = await this.service.setVisibility(user.id, id, body.isPublic);
+    return {
+      id: record.id,
+      isPublic: record.isPublic,
+      viewCount: record.viewCount,
+      downloadCount: record.downloadCount,
+      publishedAt: record.publishedAt
+        ? record.publishedAt.toISOString()
+        : null,
+    };
   }
 
   @Post('import')

@@ -100,8 +100,8 @@ export class WikiGameController {
     if (v !== 'public' && v !== 'private') {
       throw new BadRequestException("visibility 必须是 'public' 或 'private'");
     }
-    await this.service.setVisibility(user.id, id, v);
-    return { success: true, visibility: v };
+    const result = await this.service.setVisibility(user.id, id, v);
+    return { success: true, ...result };
   }
 
   @Delete('my-games/:id')

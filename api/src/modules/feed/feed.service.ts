@@ -24,6 +24,7 @@ import type { AiMessagePart } from '../ai/ai.types';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
 import {
@@ -2305,7 +2306,13 @@ export class FeedService implements OnModuleInit {
       const likeRepo = manager.getRepository(FeedPostLikeEntity);
       const postRepo = manager.getRepository(FeedPostEntity);
 
-      const existing = await likeRepo.findOneBy({ postId, authorId });
+      // 共享 world：按当前 owner 过滤 like 预检（postId 虽唯一，仍走 scoped 防 authorId
+      // 误匹配别租户 + 让读守卫雷达干净）。insert 由 subscriber 盖 ownerId；delete/decrement
+      // 按唯一 uuid id 定位本身精确。
+      const existing = await new TenantRepository(likeRepo).findOneBy({
+        postId,
+        authorId,
+      });
       if (existing) {
         const deletion = await likeRepo.delete({ id: existing.id });
         if (deletion.affected && deletion.affected > 0) {
@@ -2440,8 +2447,11 @@ export class FeedService implements OnModuleInit {
               //   · toggleLike 重入 → 已有的 like 被反向删掉
               //   · 同一角色同一 post 被刷出多条 AI 评论
               const [existingLike, existingCommentCount] = await Promise.all([
-                this.likeRepo.findOneBy({ postId: fresh.id, authorId: char.id }),
-                this.commentRepo.count({
+                new TenantRepository(this.likeRepo).findOneBy({
+                  postId: fresh.id,
+                  authorId: char.id,
+                }),
+                new TenantRepository(this.commentRepo).count({
                   where: { postId: fresh.id, authorId: char.id },
                 }),
               ]);

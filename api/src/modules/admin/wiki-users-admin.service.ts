@@ -4,7 +4,10 @@ import { In, Repository } from 'typeorm';
 import { UserEntity } from '../auth/user.entity';
 import { UserWikiProfileEntity } from '../wiki/entities/user-wiki-profile.entity';
 import { UserPrivateCharacterEntity } from '../wiki/entities/user-private-character.entity';
-import { WikiPrivateCharacterService } from '../wiki/services/wiki-private-character.service';
+import {
+  WikiPrivateCharacterService,
+  type CreatorRewardListResponse,
+} from '../wiki/services/wiki-private-character.service';
 
 export type WikiUserListQuery = {
   q?: string;
@@ -57,6 +60,13 @@ export type WikiUserPrivateCharacterListResponse = {
   username: string;
   items: WikiPrivateCharacterDetail[];
 };
+
+// 激励榜单类型 single source of truth 在 WikiPrivateCharacterService，这里只 re-export
+// 给 cloud-console 端的 controller 用。
+export type {
+  CreatorRewardStat,
+  CreatorRewardListResponse,
+} from '../wiki/services/wiki-private-character.service';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -148,6 +158,23 @@ export class WikiUsersAdminService {
       username: user.username,
       items: records.map(toDetail),
     };
+  }
+
+  /**
+   * 创作者激励榜单（cloud-console 入口；wiki 后台走 /wiki/admin/community/creator-rewards）。
+   * 逻辑 single source of truth 在 WikiPrivateCharacterService。
+   */
+  listCreatorRewardStats(): Promise<CreatorRewardListResponse> {
+    return this.privateCharacters.listCreatorRewardStats();
+  }
+
+  /** 管理员强制下架某个公开角色（isPublic=false）。返回是否实际改动。 */
+  async forceUnpublish(characterId: string): Promise<{ changed: boolean }> {
+    const changed = await this.privateCharacters.adminSetPublic(
+      characterId,
+      false,
+    );
+    return { changed };
   }
 }
 

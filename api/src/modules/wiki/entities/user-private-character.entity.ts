@@ -17,6 +17,8 @@ import type { PersonalityProfile } from '../../ai/ai.types';
 @Entity('user_private_characters')
 @Unique('uq_user_private_characters_owner_name', ['ownerUserId', 'name'])
 @Index(['ownerUserId', 'updatedAt'])
+// 角色广场列表查询走 isPublic=true + 排序，加复合索引避免全表扫。
+@Index(['isPublic', 'downloadCount'])
 export class UserPrivateCharacterEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -101,6 +103,22 @@ export class UserPrivateCharacterEntity {
   aiRelationships?:
     | { characterId: string; relationshipType: string; strength: number }[]
     | null;
+
+  // —— 2026-05-26 起：私有角色公开 / 角色广场 / 浏览·下载统计 ——
+  // isPublic=true 时该角色进入「角色广场」，任何人可浏览、登录用户可下载导出。
+  // viewCount / downloadCount 作为创作者激励（人工赠送会员时长）的数据基础，
+  // 取消公开（isPublic=false）不清零统计，保留历史累计。publishedAt 记首次公开时间。
+  @Column({ type: 'boolean', default: false })
+  isPublic: boolean;
+
+  @Column({ type: 'integer', default: 0 })
+  viewCount: number;
+
+  @Column({ type: 'integer', default: 0 })
+  downloadCount: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  publishedAt?: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

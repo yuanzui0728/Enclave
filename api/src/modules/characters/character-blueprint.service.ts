@@ -15,6 +15,7 @@ import { DEFAULT_CHARACTER_IDS } from './default-characters';
 import { CharacterBlueprintEntity } from './character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './character-blueprint-revision.entity';
 import { CharacterEntity } from './character.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { PromptBuilderService } from '../ai/prompt-builder.service';
 
@@ -708,7 +709,7 @@ export class CharacterBlueprintService {
 
   async listRevisions(characterId: string) {
     const blueprint = await this.ensureBlueprint(characterId);
-    const revisions = await this.revisionRepo.find({
+    const revisions = await new TenantRepository(this.revisionRepo).find({
       where: { blueprintId: blueprint.id },
       order: { version: 'DESC', createdAt: 'DESC' },
     });
@@ -868,7 +869,7 @@ export class CharacterBlueprintService {
 
   async restoreRevisionToDraft(characterId: string, revisionId: string) {
     const blueprint = await this.ensureBlueprint(characterId);
-    const revision = await this.revisionRepo.findOneBy({
+    const revision = await new TenantRepository(this.revisionRepo).findOneBy({
       id: revisionId,
       blueprintId: blueprint.id,
     });
@@ -977,7 +978,11 @@ export class CharacterBlueprintService {
   }
 
   private async ensureBlueprint(characterId: string) {
-    const existing = await this.blueprintRepo.findOneBy({ characterId });
+    // 共享 world：blueprint 按 owner 隔离（复合主键 (id,ownerId)）。裸 findOneBy({characterId})
+    // 会读到别租户的同 characterId blueprint → 读守卫报警；走 TenantRepository 注入 ownerId。
+    const existing = await new TenantRepository(this.blueprintRepo).findOneBy({
+      characterId,
+    });
     if (existing) {
       const character = await this.getCharacterOrThrow(characterId);
       const nextDraftRecipe = this.hydrateRecipeFromCharacter(

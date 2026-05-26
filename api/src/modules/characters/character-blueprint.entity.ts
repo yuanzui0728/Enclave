@@ -5,6 +5,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { applyOwnerIdColumn } from '../tenancy/tenant-entity';
 import type {
   CharacterBlueprintAiGenerationTraceValue,
   CharacterBlueprintRecipeValue,
@@ -15,7 +16,15 @@ export class CharacterBlueprintEntity {
   @PrimaryColumn()
   id: string;
 
-  @Column({ unique: true })
+  // 共享 world 多租户：blueprint id = `blueprint_<characterId>`，preset/默认角色 id 跨
+  // 租户重合 → id 与 characterId 都会撞。shared 模式把 ownerId 设为复合主键 (id,ownerId)
+  // 的一部分（DB 由 step1b 建成），LPP 保持单 id 主键 + 普通 ownerId 列。见文件末尾。
+  ownerId: string;
+
+  // 原 `@Column({ unique: true })`：因 id 由 characterId 唯一派生，复合主键 (ownerId,id)
+  // 已等价保证 per-owner-per-character 唯一，故去掉冗余的 owner-blind 单列 unique（否则
+  // 多 owner 下同 preset characterId 撞全局 unique）。
+  @Column()
   characterId: string;
 
   @Column()
@@ -45,3 +54,6 @@ export class CharacterBlueprintEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+// 模式感知主键：shared=复合 (id,ownerId)；LPP/wiki/prep=单 id + 普通可空 ownerId 列。
+applyOwnerIdColumn(CharacterBlueprintEntity.prototype, 'ownerId');
