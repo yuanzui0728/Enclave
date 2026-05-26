@@ -29,6 +29,7 @@ import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.en
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { CharacterImportRegisterClient } from './character-import-register.client';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
@@ -65,6 +66,7 @@ export class CharactersService implements OnModuleInit {
     private readonly dataSource: DataSource,
     private readonly realWorldRuntimeProfile: RealWorldRuntimeProfileService,
     private readonly blueprintService: CharacterBlueprintService,
+    private readonly importRegisterClient: CharacterImportRegisterClient,
   ) {}
 
   // 租户作用域 repo：shared 模式自动并 ownerId 进 where / 盖到写入行；LPP/wiki 透传（零变化）。
@@ -94,6 +96,22 @@ export class CharactersService implements OnModuleInit {
 
   async findById(id: string): Promise<CharacterEntity | null> {
     const character = await this.scopedRepo.findOneBy({ id });
+    return this.normalizeCharacterAvatar(character);
+  }
+
+  /**
+   * 按 wiki 私有角色源 id 找本世界（当前租户）已导入的角色。供「私有角色视频」
+   * 扇出注入用：cloud-api DOWN 调用注入帧已建好租户上下文，scopedRepo 自动按
+   * 当前 owner 过滤，命中的就是这个 owner 导入的那份副本（无则未导入）。
+   */
+  async findByWikiSourceCharacterId(
+    sourceCharacterId: string,
+  ): Promise<CharacterEntity | null> {
+    const trimmed = (sourceCharacterId ?? '').trim();
+    if (!trimmed) return null;
+    const character = await this.scopedRepo.findOne({
+      where: { wikiSourceCharacterId: trimmed },
+    });
     return this.normalizeCharacterAvatar(character);
   }
 
@@ -537,6 +555,7 @@ export class CharactersService implements OnModuleInit {
     socialOpenness?: string;
     proactiveBrowseChance?: number;
     intimacyLevel?: number;
+    sourceCharacterId?: string;
     aiRelationships?:
       | { characterId: string; relationshipType: string; strength: number }[]
       | null;
@@ -608,6 +627,14 @@ export class CharactersService implements OnModuleInit {
 
     // Patch：只放 input 里"实际提供"的字段；undefined 表示缺失，跳过。
     const patch: Partial<CharacterEntity> = {};
+    // wiki 私有角色源 id（bundle 携带）。sourceKey 仍留 name 不动（按名去重身份键），
+    // 这里独立落 wikiSourceCharacterId 作为跨-world 视频扇出关联键。
+    if (
+      typeof input.sourceCharacterId === 'string' &&
+      input.sourceCharacterId.trim()
+    ) {
+      patch.wikiSourceCharacterId = input.sourceCharacterId.trim();
+    }
     // 走查第 3 次 R1：avatar 全空白字符串原样存浪费字节，且前端 PreviewAvatar
     // / AvatarChip 都 trim 后落 fallback；统一在入口 trim。
     if (typeof input.avatar === 'string') patch.avatar = input.avatar.trim();
@@ -972,6 +999,18 @@ export class CharactersService implements OnModuleInit {
       friendshipStatus = updated.status;
     } else {
       friendshipStatus = existingFriendship.status;
+    }
+
+    // 私有角色源 id 在场时登记到 cloud-api（谁导入了该角色），让该角色的视频能扇出到本 world
+    // 视频号。失败静默（fire-and-forget），不阻断导入主流程。
+    if (typeof input.sourceCharacterId === 'string' && input.sourceCharacterId.trim()) {
+      void this.importRegisterClient
+        .register({
+          sourceCharacterId: input.sourceCharacterId.trim(),
+          localCharacterId: saved.id,
+          owner,
+        })
+        .catch(() => {});
     }
 
     // 第 5 次走查 R3：return 出 friendshipStatus 让 UI 判定显示哪条文案。

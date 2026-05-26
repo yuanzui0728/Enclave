@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { Entity, PrimaryColumn, Column, Index } from 'typeorm';
 import type { PersonalityProfile } from '../ai/ai.types';
 import { applyOwnerIdColumn } from '../tenancy/tenant-entity';
 
@@ -36,6 +36,13 @@ export class CharacterEntity {
 
   @Column('text', { nullable: true })
   sourceKey?: string | null;
+
+  // 私有角色（private_import）导入时回填的 wiki 私有角色 id。sourceKey 仍存 name
+  // （按名去重的身份键），这里独立存源 id 作为「私有角色视频」跨-world 扇出的关联键：
+  // cloud-api 按此 id 找到本地角色、把该角色的视频注入此 world 视频号。
+  @Index()
+  @Column('text', { nullable: true })
+  wikiSourceCharacterId?: string | null;
 
   @Column({ default: 'archive_allowed' })
   deletionPolicy: string;

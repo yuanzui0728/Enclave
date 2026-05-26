@@ -6,6 +6,7 @@ import { CharacterEntity } from './character.entity';
 import { CharacterBlueprintEntity } from './character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './character-blueprint-revision.entity';
 import { CharacterBlueprintService } from './character-blueprint.service';
+import { CharacterImportRegisterClient } from './character-import-register.client';
 import { AiModule } from '../ai/ai.module';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { AuthModule } from '../auth/auth.module';
@@ -28,6 +29,7 @@ import { PrivateCharacterRateLimitGuard } from './guards/private-character-rate-
   providers: [
     CharactersService,
     CharacterBlueprintService,
+    CharacterImportRegisterClient,
     AdminGuard,
     PrivateCharacterRateLimitGuard,
   ],

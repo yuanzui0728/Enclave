@@ -2142,6 +2142,87 @@ export class FeedService implements OnModuleInit {
     });
   }
 
+  /**
+   * 注入一条「私有角色视频」到本世界视频号（由 cloud-api DOWN 扇出调用，运行在
+   * 注入的租户帧下）。按 wikiSourceCharacterId 找本地角色 → 以该角色身份发 channels 帖。
+   * 角色未导入到本世界 → 不注入（可见性天然门禁：只有导入该角色的人能看到）。
+   * 按 statsPayload.cloudVideoId 幂等（DOWN 重投 / 唤醒拉取重复调用不产生重复帖）。
+   * mediaUrl 是 cloud-api 中心媒体的相对路径（/cloud/public/...，App 解析到 cloud-api 自身）。
+   */
+  async injectCharacterVideoPost(input: {
+    cloudVideoId: string;
+    sourceCharacterId: string;
+    text: string;
+    title?: string | null;
+    mediaUrl: string;
+    coverUrl?: string | null;
+    durationMs?: number | null;
+  }): Promise<{ injected: boolean; reason?: string }> {
+    const character = await this.characters.findByWikiSourceCharacterId(
+      input.sourceCharacterId,
+    );
+    if (!character) {
+      return { injected: false, reason: 'character_not_imported' };
+    }
+
+    const existing = await this.postRepo
+      .createQueryBuilder('post')
+      .where('post.surface = :surface', { surface: 'channels' })
+      .andWhere('post.statsPayload LIKE :marker', {
+        marker: `%"cloudVideoId":"${input.cloudVideoId}"%`,
+      })
+      .orderBy('post.createdAt', 'DESC')
+      .getOne();
+    if (existing) {
+      // 已注入过：刷新媒体（中心 URL 不变则等价 no-op），不重复建帖。
+      existing.mediaUrl = input.mediaUrl;
+      existing.coverUrl = input.coverUrl ?? existing.coverUrl;
+      existing.durationMs = input.durationMs ?? existing.durationMs;
+      existing.publishStatus = 'published';
+      await this.postRepo.save(existing);
+      return { injected: true };
+    }
+
+    const media: MomentMediaAsset[] = [
+      {
+        id: input.cloudVideoId,
+        kind: 'video',
+        url: input.mediaUrl,
+        posterUrl: input.coverUrl ?? undefined,
+        mimeType: 'video/mp4',
+        fileName: `character-video-${input.cloudVideoId}.mp4`,
+        size: 0,
+        durationMs: input.durationMs ?? undefined,
+      },
+    ];
+    const saved = await this.createPost({
+      authorAvatar: character.avatar ?? '',
+      authorId: character.id,
+      authorName: character.name,
+      authorType: 'character',
+      text: input.text,
+      title: input.title ?? undefined,
+      media,
+      mediaType: 'video',
+      mediaUrl: input.mediaUrl,
+      coverUrl: input.coverUrl ?? null,
+      durationMs: input.durationMs ?? undefined,
+      aspectRatio: 9 / 16,
+      topicTags: ['AI世界', '隐界'],
+      sourceKind: 'character_generated',
+      recommendationScore: 100,
+      surface: 'channels',
+      publishStatus: 'published',
+      statsPayload: {
+        cloudVideoId: input.cloudVideoId,
+        sourceCharacterId: input.sourceCharacterId,
+        syncedFrom: 'character_video',
+      },
+    });
+    if (saved) void this.scheduleChannelsCharacterReactions(saved);
+    return { injected: true };
+  }
+
   async createChannelAudioPost(input: {
     authorId: string;
     authorName: string;

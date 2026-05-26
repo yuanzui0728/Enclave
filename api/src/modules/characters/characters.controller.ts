@@ -159,6 +159,7 @@ function parsePrivateCharacterImportBody(payload: unknown): {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  sourceCharacterId?: string;
   aiRelationships?:
     | { characterId: string; relationshipType: string; strength: number }[]
     | null;
@@ -247,6 +248,10 @@ function parsePrivateCharacterImportBody(payload: unknown): {
         : undefined,
     intimacyLevel:
       typeof p.intimacyLevel === 'number' ? p.intimacyLevel : undefined,
+    // wiki 私有角色源 id（导出 bundle 携带）。world 落到 CharacterEntity.wikiSourceCharacterId，
+    // 作为「私有角色视频」跨-world 扇出的关联键。
+    sourceCharacterId:
+      typeof p.sourceCharacterId === 'string' ? p.sourceCharacterId : undefined,
     aiRelationships: Array.isArray(p.aiRelationships)
       ? (p.aiRelationships as unknown[])
           .filter(
