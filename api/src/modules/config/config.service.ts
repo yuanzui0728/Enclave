@@ -50,6 +50,29 @@ export class SystemConfigService {
     return record?.value ?? null;
   }
 
+  // 当前租户可见的全部配置（逻辑 key → value）：global 键（裸 key）+ 当前 owner 的
+  // `o:<ownerId>:*` 键（剥前缀还原逻辑 key）。绝不返回别 owner 的 o:* 键。供 in-world
+  // admin 的 getConfig 用。LPP：库里无 o: 前缀，原样全返（行为零变化）。
+  async getAllForCurrentTenant(): Promise<Record<string, string>> {
+    const entries = await this.repo.find();
+    if (!isSharedWorldMode()) {
+      return Object.fromEntries(entries.map((e) => [e.key, e.value]));
+    }
+    const ownerPrefix = `o:${TenantContextStore.getOrThrow().ownerId}:`;
+    const result: Record<string, string> = {};
+    for (const e of entries) {
+      if (e.key.startsWith('o:')) {
+        if (e.key.startsWith(ownerPrefix)) {
+          result[e.key.slice(ownerPrefix.length)] = e.value;
+        }
+        // 别 owner 的 o:<other>:* 键：跳过（不泄漏）。
+      } else {
+        result[e.key] = e.value; // 裸 key = global
+      }
+    }
+    return result;
+  }
+
   async setConfig(key: string, value: string): Promise<void> {
     await this.repo.upsert({ key: this.resolveStorageKey(key), value }, ['key']);
   }

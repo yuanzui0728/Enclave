@@ -4,13 +4,13 @@ import { Repository } from 'typeorm';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { MessageEntity } from '../chat/message.entity';
-import { SystemConfigEntity } from '../config/config.entity';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { resolveDatabasePath } from '../../database/database-path';
 import { CharactersService } from '../characters/characters.service';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import { SystemConfigService } from '../config/config.service';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 @Injectable()
@@ -24,12 +24,11 @@ export class AdminService {
     private characterRepo: Repository<CharacterEntity>,
     @InjectRepository(MessageEntity)
     private messageRepo: Repository<MessageEntity>,
-    @InjectRepository(SystemConfigEntity)
-    private configRepo: Repository<SystemConfigEntity>,
     @InjectRepository(FriendshipEntity)
     private friendshipRepo: Repository<FriendshipEntity>,
     private readonly config: ConfigService,
     private readonly charactersService: CharactersService,
+    private readonly systemConfig: SystemConfigService,
   ) {}
 
   // 世界进程内的 admin 是「当前 owner 自己的后台」（跨 owner 平台管理在 cloud-console，
@@ -71,19 +70,16 @@ export class AdminService {
     };
   }
 
+  // 共享 world：经 SystemConfigService 做 per-owner 键命名空间隔离——getConfig 只返回当前
+  // owner 的 o:<ownerId>:* 键（剥前缀）+ global 键，绝不 dump 别 owner 的键；setConfig 经
+  // resolveStorageKey 写正确 key（global 裸 key / per-owner 加前缀），不再写裸 key 串号。
+  // LPP 透传（裸 key，行为零变化）。
   async getConfig() {
-    const entries = await this.configRepo.find();
-    return Object.fromEntries(entries.map((e) => [e.key, e.value]));
+    return this.systemConfig.getAllForCurrentTenant();
   }
 
   async setConfig(key: string, value: string) {
-    const existing = await this.configRepo.findOneBy({ key });
-    if (existing) {
-      existing.value = value;
-      await this.configRepo.save(existing);
-    } else {
-      await this.configRepo.save(this.configRepo.create({ key, value }));
-    }
+    await this.systemConfig.setConfig(key, value);
     return { success: true };
   }
 
