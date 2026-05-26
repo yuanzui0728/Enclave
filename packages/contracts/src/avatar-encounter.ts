@@ -84,9 +84,14 @@ export interface AvatarEncounterDecisionResult {
   contact: AvatarEncounterContact | null;
 }
 
-/** 「收到的相遇」收件箱条目（被别人发起、等我决策的相遇）。 */
+/**
+ * 「我的相遇」列表条目。异步双向匹配下既含别人发起给我的（recipient），也含我
+ * 发起出去的（initiator）——发起方必须能回来看自己发起的相遇是否匹配成功。
+ * role 决定卡片状态文案（同一 status 对发起/被发起方含义不同）。
+ */
 export interface AvatarEncounterInboxItem {
   id: string;
+  role: "initiator" | "recipient";
   partnerNickname: string;
   matchReason: string;
   summary: string;

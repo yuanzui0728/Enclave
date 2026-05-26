@@ -14,42 +14,41 @@ type StatusPill = {
   className: string;
 };
 
-// 收件箱卡是「别人发起、等我看」的视角（recipient）。status 映射到一个小标签：
-// - awaiting_recipient = 还没看 → 待查看
-// - matched = 双方都想要 → 已匹配
-// - awaiting_initiator = 我已想要、在等对方 → 已想要
-// - closed_recipient_skipped = 我略过了 → 已略过
-// generating / failed / closed_initiator_skipped 走兜底（一般不会进 recipient 收件箱，
-// 但 closed_initiator_skipped 表示对方撤回，给「已结束」兜底）。
-function resolveStatusPill(status: AvatarEncounterStatus): StatusPill {
-  switch (status) {
-    case "matched":
-      return {
-        label: msg`已匹配`,
-        className: "bg-[rgba(244,63,94,0.12)] text-[#f43f5e]",
-      };
-    case "awaiting_initiator":
-      return {
-        label: msg`已想要`,
-        className: "bg-[color:var(--brand-soft)] text-[#b45309]",
-      };
-    case "closed_recipient_skipped":
-      return {
-        label: msg`已略过`,
-        className: "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]",
-      };
-    case "closed_initiator_skipped":
-      return {
-        label: msg`已结束`,
-        className: "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]",
-      };
-    case "awaiting_recipient":
-    default:
-      return {
-        label: msg`待查看`,
-        className: "bg-[rgba(96,165,250,0.16)] text-[#2563eb]",
-      };
+const PILL_MATCHED: StatusPill = {
+  label: msg`已匹配`,
+  className: "bg-[rgba(244,63,94,0.12)] text-[#f43f5e]",
+};
+const PILL_MUTED = (label: MessageDescriptor): StatusPill => ({
+  label,
+  className: "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]",
+});
+
+// 同一 status 对发起方 / 被发起方含义不同，按 role 给文案：
+// - matched：双方都想要 → 已匹配（两侧一致）
+// - awaiting_recipient：recipient 还没决策→待查看；initiator 已想要、在等对方→等待对方
+// - closed_recipient_skipped：recipient 自己略过→已略过；initiator 被对方略过→对方略过
+function resolveStatusPill(
+  status: AvatarEncounterStatus,
+  role: AvatarEncounterInboxItem["role"],
+): StatusPill {
+  if (status === "matched") {
+    return PILL_MATCHED;
   }
+  if (status === "awaiting_recipient") {
+    return role === "recipient"
+      ? {
+          label: msg`待查看`,
+          className: "bg-[rgba(96,165,250,0.16)] text-[#2563eb]",
+        }
+      : {
+          label: msg`等待对方`,
+          className: "bg-[color:var(--brand-soft)] text-[#b45309]",
+        };
+  }
+  if (status === "closed_recipient_skipped") {
+    return role === "recipient" ? PILL_MUTED(msg`已略过`) : PILL_MUTED(msg`对方略过`);
+  }
+  return PILL_MUTED(msg`已结束`);
 }
 
 type AvatarEncounterInboxCardProps = {
@@ -62,7 +61,7 @@ export function AvatarEncounterInboxCard({
   onClick,
 }: AvatarEncounterInboxCardProps) {
   const t = useRuntimeTranslator();
-  const pill = resolveStatusPill(item.status);
+  const pill = resolveStatusPill(item.status, item.role);
   // matchReason 太长就截断当一句话摘要；空就退到脚本 summary。
   const snippet = item.matchReason?.trim() || item.summary?.trim() || "";
 

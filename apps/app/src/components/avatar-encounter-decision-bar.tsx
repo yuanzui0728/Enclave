@@ -29,13 +29,18 @@ export function AvatarEncounterDecisionBar({
   const t = useRuntimeTranslator();
 
   if (decision) {
-    // 已决策：根据 want/skip + 是否 matched 给只读状态。matched 的联系方式披露
-    // 由调用方单独渲染（这里只表态）。
+    // 已决策：根据 want/skip + 终态给只读状态。matched 的联系方式披露由调用方单独渲染。
+    // want 但已 closed（对方略过 / 对方退出社交）→ 明确「没匹配上」，别再说「等待对方」。
+    const closedNoMatch =
+      status === "closed_recipient_skipped" ||
+      status === "closed_initiator_skipped";
     const label =
       decision === "want"
         ? status === "matched"
           ? t(msg`已想要 · 已匹配`)
-          : t(msg`已想要 · 等待对方`)
+          : closedNoMatch
+            ? t(msg`想要了，但这次没匹配上`)
+            : t(msg`已想要 · 等待对方`)
         : t(msg`已略过`);
     return (
       <div

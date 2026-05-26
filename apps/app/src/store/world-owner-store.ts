@@ -18,6 +18,8 @@ type WorldOwnerState = {
   signature: string;
   contact: string;
   contactKind: WorldOwnerContactKind;
+  // 分身相遇 opt-in：world owner 列是唯一真源（cloud-api 撮合池由 world 推快照同步）。
+  encounterOptedIn: boolean;
   hasCustomApiKey: boolean;
   customApiBase: string | null;
   createdAt: string | null;
@@ -28,6 +30,7 @@ type WorldOwnerState = {
     signature?: string;
     contact?: string;
     contactKind?: WorldOwnerContactKind;
+    encounterOptedIn?: boolean;
     onboardingCompleted?: boolean;
     hasCustomApiKey?: boolean;
     customApiBase?: string | null;
@@ -38,6 +41,7 @@ type WorldOwnerState = {
     signature?: string;
     contact?: string;
     contactKind?: WorldOwnerContactKind;
+    encounterOptedIn?: boolean;
   }) => void;
   logout: () => void;
   clearOwner: () => void;
@@ -53,6 +57,8 @@ const defaultAvatar = defaultOwnerAvatar;
 const DEFAULT_SIGNATURE = "";
 const DEFAULT_CONTACT = "";
 const DEFAULT_CONTACT_KIND: WorldOwnerContactKind = "wechat";
+// 默认进池（产品决策：默认开启可关）。
+const DEFAULT_ENCOUNTER_OPTED_IN = true;
 
 function resolveOwnerAvatar(avatar?: string | null) {
   return avatar && avatar.trim() ? avatar : defaultAvatar;
@@ -78,6 +84,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       signature: DEFAULT_SIGNATURE,
       contact: DEFAULT_CONTACT,
       contactKind: DEFAULT_CONTACT_KIND,
+      encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
       hasCustomApiKey: false,
       customApiBase: null,
       createdAt: null,
@@ -90,6 +97,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           signature: owner.signature ?? DEFAULT_SIGNATURE,
           contact: owner.contact ?? DEFAULT_CONTACT,
           contactKind: resolveContactKind(owner.contactKind),
+          encounterOptedIn: owner.encounterOptedIn !== false,
           hasCustomApiKey: owner.hasCustomApiKey,
           customApiBase: owner.customApiBase ?? null,
           createdAt: owner.createdAt,
@@ -104,6 +112,8 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           signature: input.signature ?? state.signature,
           contact: input.contact ?? state.contact,
           contactKind: input.contactKind ?? state.contactKind,
+          encounterOptedIn:
+            input.encounterOptedIn ?? state.encounterOptedIn,
           onboardingCompleted: input.onboardingCompleted ?? state.onboardingCompleted,
           hasCustomApiKey: input.hasCustomApiKey ?? state.hasCustomApiKey,
           customApiBase:
@@ -119,6 +129,8 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           signature: input.signature ?? state.signature,
           contact: input.contact ?? state.contact,
           contactKind: input.contactKind ?? state.contactKind,
+          encounterOptedIn:
+            input.encounterOptedIn ?? state.encounterOptedIn,
         })),
       logout: () =>
         set({
@@ -129,6 +141,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           signature: DEFAULT_SIGNATURE,
           contact: DEFAULT_CONTACT,
           contactKind: DEFAULT_CONTACT_KIND,
+          encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,
@@ -142,6 +155,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           signature: DEFAULT_SIGNATURE,
           contact: DEFAULT_CONTACT,
           contactKind: DEFAULT_CONTACT_KIND,
+          encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,

@@ -157,12 +157,24 @@ function MobileAvatarEncounterPage() {
       heroDescription={heroDescription}
       onBack={handleBack}
     >
-      {/* 页内分段 tab：发现相遇 / 收到的相遇。 */}
+      {!accessToken ? (
+        // 分身相遇是跨用户功能，必须登录云账号。本地 world / 未登云的用户在这里
+        // 友好提示，而不是点「开始相遇」后拿到一句英文 401。
+        <InlineNotice
+          className="rounded-[12px] px-3 py-2.5 text-[12px] leading-5 shadow-none"
+          tone="info"
+          role="status"
+        >
+          {t(msg`分身相遇需要登录云账号后使用。`)}
+        </InlineNotice>
+      ) : (
+        <>
+      {/* 页内分段 tab：发现相遇 / 我的相遇。 */}
       <div className="flex rounded-[14px] bg-[color:var(--surface-soft)] p-1">
         {(
           [
             { key: "discover", label: msg`发现相遇` },
-            { key: "received", label: msg`收到的相遇` },
+            { key: "received", label: msg`我的相遇` },
           ] as const
         ).map((tab) => {
           const active = tab.key === activeTab;
@@ -198,6 +210,8 @@ function MobileAvatarEncounterPage() {
           cloudApiBaseUrl={cloudApiBaseUrl}
           contactKindLabel={contactKindLabel}
         />
+      )}
+        </>
       )}
     </MobileDiscoverToolShell>
   );
@@ -532,7 +546,7 @@ function ReceivedTab({
       {inboxQuery.isLoading ? (
         <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[color:var(--text-muted)]">
           <LoaderCircle size={16} className="animate-spin" />
-          {t(msg`正在加载收到的相遇…`)}
+          {t(msg`正在加载我的相遇…`)}
         </div>
       ) : inboxQuery.isError && inboxQuery.error instanceof Error ? (
         <InlineNotice
@@ -548,10 +562,10 @@ function ReceivedTab({
         <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-10 text-center">
           <Inbox size={26} className="mx-auto text-[color:var(--text-dim)]" />
           <div className="mt-2 text-[13px] text-[color:var(--text-secondary)]">
-            {t(msg`还没有人和你的分身相遇`)}
+            {t(msg`还没有相遇记录`)}
           </div>
           <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-            {t(msg`保持开启社交相遇，别人发起时会出现在这里。`)}
+            {t(msg`你发起的、以及别人和你分身的相遇都会出现在这里。`)}
           </div>
         </div>
       ) : (
@@ -644,7 +658,7 @@ function ReceivedDetail({
         onClick={onBack}
         className="text-[13px] font-medium text-[#f43f5e] active:opacity-80"
       >
-        {t(msg`‹ 返回收到的相遇`)}
+        {t(msg`‹ 返回我的相遇`)}
       </button>
 
       {viewQuery.isLoading ? (
