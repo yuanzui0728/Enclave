@@ -6,8 +6,12 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { registerAllScopedEntities } from './scoped-entities';
 import { TenantContextMiddleware } from './tenant-context.middleware';
 import { TenantService } from './tenant.service';
+
+// 模块加载即填充 scoped 实体注册表（subscriber / TenantRepository / CI 守卫共用）。
+registerAllScopedEntities();
 
 // @Global：TenantService 全局可注入，避免改 30+ 个 service 的 module imports。
 // 只 import AuthModule 取 WorldOwnerService；SocialService 在运行时经 ModuleRef 懒解析，
