@@ -58,13 +58,13 @@
 		<false/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string></string>
+	<string>Used to take profile photos or moment images.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string></string>
+	<string>Used to choose profile photos or moment images from your photo library.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string></string>
+	<string>Used to save exported images to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string></string>
+	<string>Used for voice input and voice interactions.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
