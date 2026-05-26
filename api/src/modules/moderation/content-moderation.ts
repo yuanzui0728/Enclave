@@ -39,15 +39,19 @@ const SHARED_RULES: ModerationRule[] = [
   {
     id: 'csam',
     category: 'minor_sexual',
-    // 未成年指称 + 明确性行为/裸露词的近邻共现。
-    // 隐界含成人恋爱/陪伴内容，误报会把真实回复替成话术，因此英文一律加 \b 词界：
-    //   - 不加的话 child→childish/childhood/children's、minor→minority 会被 substring
-    //     误伤，「don't be childish about sex」这类正常成人对话直接被拦。
-    //   - 中文用具体指称（未成年/幼女/幼童/小学生），**不含「孩子」**（成人聊生育/
-    //     家庭会用），不收 bare「性」「裸」「性侵」（防「性格/裸眼/防性侵」误伤）。
-    // 成人性内容本身（无未成年指称）不命中——需「未成年指称 + 性词」共现才触发。
+    // 未成年指称 + 明确性行为/色情词的近邻共现。隐界是陪伴 App，可能承载创伤倾诉/
+    // 育儿/性教育等正当敏感对话，**误伤这些（把安慰幸存者、育儿建议替成"换个话题吧"）
+    // 比漏报更糟**，故性词组刻意收窄：
+    //   - 去掉「猥亵」「性侵」——这是性侵幸存者倾诉、新闻、法律、安慰回复的高频词
+    //     （"你未成年时被猥亵不是你的错"会被误伤再创伤）。
+    //   - 去掉「裸体/naked/nude」——育儿/艺术高频（"给幼童洗澡裸体""child naked in
+    //     bath"）。保留「裸照」（未成年裸照几乎必为 CSAM，育儿不会这么说）。
+    //   - 用「性行为/性交」等复合词而非 bare「性」，故"未成年性教育"不命中。
+    // 英文一律 \b 词界：防 child→childish/childhood、minor→minority 误伤
+    //   （"don't be childish about sex""Minority Report"）。中文不含「孩子」（成人聊生育）。
+    // 成人性内容（无未成年指称）不命中。残留边界（如英文 minor+sex 性教育）交托管服务。
     pattern:
-      /(未成年|幼女|幼童|小学生|\bloli\b|\bunderage\b|\bminor\b|\bchild\b|\bchildren\b|\bpreteen\b)[^。.,，!?！？\n]{0,12}(性行为|性交|做爱|性爱|裸照|裸体|猥亵|\bsexual\b|\bsex\b|\bnude\b|\bnaked\b|\bporn\b)/i,
+      /(未成年|幼女|幼童|小学生|\bloli\b|\bunderage\b|\bminor\b|\bchild\b|\bchildren\b|\bpreteen\b)[^。.,，!?！？\n]{0,12}(性行为|性交|做爱|性爱|裸照|\bsexual\b|\bsex\b|\bporn\b)/i,
   },
   {
     id: 'weapon_explosive_making',
