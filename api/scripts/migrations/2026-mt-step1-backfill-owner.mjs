@@ -25,6 +25,7 @@ if (!dbPath || !existsSync(dbPath)) {
 // 本轮新加 ownerId 列的表（与 entity @Column ownerId / scoped-entities.ts 对齐）。
 // 已带 ownerId 的存量表（conversations.userId / friendships.userId 等）值已就绪，不在此列。
 const OWNER_COLUMN_TABLES = [
+  'characters', // 需要 ownerId（step1b 再据此建复合主键 (ownerId,id)）
   'feed_posts', 'feed_comments', 'feed_post_likes',
   'moment_posts', 'moment_comments', 'moment_likes', 'moments',
   'messages', 'groups', 'group_members', 'group_messages',
@@ -33,6 +34,8 @@ const OWNER_COLUMN_TABLES = [
   'world_contexts',
   'ai_relationships', 'character_friendships',
 ];
+// 注：conversations 不在此列——它已有 owner 列（DB 列名 userId，ConversationEntity 映射），
+// 值已就绪。step1b 对 conversations 用 userId 建复合主键 (userId,id)。
 
 const db = new BetterSqlite3(dbPath);
 db.pragma('journal_mode = WAL');
