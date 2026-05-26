@@ -55,6 +55,19 @@ export class UserEntity {
   @Column({ type: 'text', nullable: true, unique: true })
   cloudPhone: string | null;
 
+  // 分身相遇：仅在双方都「想要」时披露给对方的真实联系方式（微信/手机号等）。
+  @Column({ type: 'text', nullable: true })
+  encounterContactField: string | null;
+
+  // 联系方式类型：'wechat' | 'phone' | 'other'，决定前端展示文案。
+  @Column({ type: 'text', nullable: true })
+  encounterContactKind: string | null;
+
+  // 是否允许我的分身参与社交相遇。默认开启（产品决策：默认进池，设置里可关）。
+  // SQLite ADD COLUMN DEFAULT 1 会把存量 owner 行回填为已开启。
+  @Column({ default: true })
+  encounterOptedIn: boolean;
+
   @Column({ default: 'newcomer' })
   role: string; // wiki RBAC: 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
 

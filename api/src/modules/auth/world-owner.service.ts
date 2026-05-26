@@ -56,6 +56,14 @@ function sanitizeOwnerSignature(value: string): string {
   return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// 联系方式（微信号 / 手机号 / 社交账号）按单行存：剥控制字符、折叠空白。
+// 上限给 100 字符——真实 handle 都很短，挡住有人把整段文本塞进去。
+const MAX_OWNER_CONTACT_LENGTH = 100;
+const OWNER_CONTACT_KINDS = new Set(['wechat', 'phone', 'other']);
+function sanitizeOwnerContact(value: string): string {
+  return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // 跟客户端 profile-info-avatar-page.tsx 的 MIN_AVATAR_DATA_URL_LENGTH 同步：
 // 短于 32 字符的 data URL（如 "data:image/x;," / "data:image/png;base64," 等）
 // 解码后没有像素内容，AvatarChip 加载会失败回 fallback——用户以为头像改好
@@ -105,6 +113,9 @@ type UpdateWorldOwnerInput = {
   avatar?: string;
   signature?: string;
   onboardingCompleted?: boolean;
+  contact?: string;
+  contactKind?: string;
+  encounterOptedIn?: boolean;
 };
 
 type WorldOwnerProfile = {
@@ -117,6 +128,9 @@ type WorldOwnerProfile = {
   customApiBase?: string | null;
   defaultChatBackground?: ChatBackgroundAsset | null;
   createdAt: string;
+  contact: string | null;
+  contactKind: 'wechat' | 'phone' | 'other' | null;
+  encounterOptedIn: boolean;
 };
 
 @Injectable()
@@ -400,6 +414,12 @@ export class WorldOwnerService {
         legacyMessage: '个性签名必须是字符串。',
       });
     }
+    if (input.contact !== undefined && typeof input.contact !== 'string') {
+      throw new AppError('WORLD_OWNER_SIGNATURE_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '联系方式必须是字符串。',
+      });
+    }
     // username: 先 sanitize（剥控制字符 + 折叠空白）再校长度，跟前端
     // profile-info-name-page 同款；这样 curl 直调 / 老客户端 PATCH
     // "foo\nbar" 时落库的也是 "foo bar"，不会污染 chat sender 渲染。
@@ -412,6 +432,10 @@ export class WorldOwnerService {
       input.signature === undefined
         ? undefined
         : sanitizeOwnerSignature(input.signature);
+    const nextContact =
+      input.contact === undefined
+        ? undefined
+        : sanitizeOwnerContact(input.contact);
 
     // 历史上前端只校验 trim() 非空，导致大量用户用单字 "w" 过 onboarding。
     // 后端在这里兜底：写入 username 时必须 ≥ 2 个字符，过短直接拒绝。
@@ -456,12 +480,41 @@ export class WorldOwnerService {
           '头像链接必须是 http/https 图片地址，或 data:image/ 开头的图片数据。',
       });
     }
+    if (
+      nextContact !== undefined &&
+      nextContact.length > MAX_OWNER_CONTACT_LENGTH
+    ) {
+      throw new AppError('WORLD_OWNER_SIGNATURE_TOO_LONG', {
+        status: HttpStatus.BAD_REQUEST,
+        params: { maxLength: MAX_OWNER_CONTACT_LENGTH },
+        legacyMessage: `联系方式最多 ${MAX_OWNER_CONTACT_LENGTH} 个字符。`,
+      });
+    }
+    if (
+      input.contactKind !== undefined &&
+      !OWNER_CONTACT_KINDS.has(input.contactKind)
+    ) {
+      throw new AppError('WORLD_OWNER_SIGNATURE_INVALID', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '联系方式类型不合法。',
+      });
+    }
 
     owner.username = nextUsername ?? owner.username;
     owner.avatar = nextAvatar ?? owner.avatar ?? '';
     owner.signature = nextSignature ?? owner.signature ?? '';
     if (typeof input.onboardingCompleted === 'boolean') {
       owner.onboardingCompleted = input.onboardingCompleted;
+    }
+    if (nextContact !== undefined) {
+      // 空串 = 清空联系方式（退出可被披露），落 null。
+      owner.encounterContactField = nextContact.length > 0 ? nextContact : null;
+    }
+    if (input.contactKind !== undefined) {
+      owner.encounterContactKind = input.contactKind;
+    }
+    if (typeof input.encounterOptedIn === 'boolean') {
+      owner.encounterOptedIn = input.encounterOptedIn;
     }
 
     await this.userRepo.save(owner);
@@ -535,6 +588,12 @@ export class WorldOwnerService {
       defaultChatBackground:
         parseChatBackgroundAsset(owner.defaultChatBackgroundPayload) ?? null,
       createdAt: owner.createdAt.toISOString(),
+      contact: owner.encounterContactField ?? null,
+      contactKind:
+        (owner.encounterContactKind as 'wechat' | 'phone' | 'other' | null) ??
+        null,
+      // 列默认 true；存量行经 ADD COLUMN DEFAULT 1 回填，但防御性地把 null/undefined 视为开启。
+      encounterOptedIn: owner.encounterOptedIn !== false,
     };
   }
 

@@ -45,6 +45,9 @@ export class WorldController {
       avatar?: string;
       signature?: string;
       onboardingCompleted?: boolean;
+      contact?: string;
+      contactKind?: string;
+      encounterOptedIn?: boolean;
     },
   ) {
     const owner = await this.worldOwnerService.updateOwner(body);
