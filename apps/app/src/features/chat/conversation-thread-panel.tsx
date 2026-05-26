@@ -694,7 +694,7 @@ export function ConversationThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop ? "bg-[rgba(245,247,247,0.96)]" : "bg-[#fcfff4]"
+        isDesktop ? "bg-[rgba(245,247,247,0.96)]" : "bg-[#f4ede0]"
       }`}
     >
       {isDesktop ? (

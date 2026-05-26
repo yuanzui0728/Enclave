@@ -337,7 +337,7 @@ function MobileWorldCharactersPage() {
       <TabPageTopBar
         title={t(msg`世界角色`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -535,7 +535,7 @@ function MobileWorldCharactersPage() {
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {sectionsWithAnchors.map((section) => (
               <div key={section.key} id={section.scopedAnchorId}>
-                <div className="bg-[rgba(252, 255, 244,0.94)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                <div className="bg-[rgba(250, 245, 237,0.94)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
                 {section.items.map((item, index) => (

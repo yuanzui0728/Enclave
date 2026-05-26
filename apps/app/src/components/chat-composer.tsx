@@ -3430,7 +3430,7 @@ export function ChatComposer({
       <div
         className={
           isDesktop
-            ? "relative isolate z-30 border-t border-black/6 bg-[#fcfff4] px-3.5 py-3"
+            ? "relative isolate z-30 border-t border-black/6 bg-[#f4ede0] px-3.5 py-3"
             : "border-t border-black/6 bg-[#f8f5ec] px-2 pb-2 pt-1"
         }
         // 走查 R74：原版每次 render new 一个 {paddingBottom:...} 对象。
@@ -3447,7 +3447,7 @@ export function ChatComposer({
         }}
       >
         {isDesktop && desktopDropActive ? (
-          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#f59e0b]/35 bg-[rgba(252, 255, 244,0.96)] text-sm font-medium text-[#b45309]">
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#f59e0b]/35 bg-[rgba(250, 245, 237,0.96)] text-sm font-medium text-[#b45309]">
             {t(msg`松开鼠标发送图片或文件`)}
           </div>
         ) : null}

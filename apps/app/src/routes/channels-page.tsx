@@ -2496,7 +2496,7 @@ export function ChannelsPage() {
         title={t(msg`视频号`)}
         subtitle={t(msg`内容推荐与视频动态`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => {
@@ -5668,7 +5668,7 @@ function MobileChannelCommentsSheet({
             <button
               type="button"
               onClick={() => setInputExpanded(true)}
-              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#fcfff4]"
+              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#f4ede0]"
             >
               <span className="truncate">
                 {replyTarget

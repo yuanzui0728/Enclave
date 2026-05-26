@@ -533,7 +533,7 @@ function MobileGroupMemberPickerPage({
       <TabPageTopBar
         title={pageTitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -929,7 +929,7 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[rgba(245, 158, 11,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+            ? "rounded-[12px] border border-[rgba(245, 158, 11,0.18)] bg-[rgba(245, 238, 225,0.96)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
             ? "bg-[rgba(245, 158, 11,0.06)]"

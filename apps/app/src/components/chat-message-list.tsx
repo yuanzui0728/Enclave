@@ -3653,7 +3653,7 @@ export function ChatMessageList({
             </div>
           </div>
         ) : (
-          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[color:var(--border-subtle)] bg-[rgba(252, 255, 244,0.94)] px-2 py-2 backdrop-blur-xl">
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[color:var(--border-subtle)] bg-[rgba(250, 245, 237,0.94)] px-2 py-2 backdrop-blur-xl">
             <button
               type="button"
               onClick={resetSelectionMode}
@@ -4239,7 +4239,7 @@ export function ChatMessageList({
         );
       })}
       {selectionMode && !isDesktop ? (
-        <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-subtle)] bg-[rgba(252, 255, 244,0.96)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-subtle)] bg-[rgba(250, 245, 237,0.96)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2 backdrop-blur-xl">
           <div className="grid grid-cols-4 gap-1.5">
             <SelectionModeActionButton
               icon={<Star size={17} />}
@@ -8232,9 +8232,9 @@ function NoteViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={translateRuntimeMessage(msg`笔记查看器`)}
-      className="fixed inset-0 z-50 flex flex-col bg-[#fcfff4]"
+      className="fixed inset-0 z-50 flex flex-col bg-[#f4ede0]"
     >
-      <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
+      <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
         <Button
           type="button"
           variant="ghost"

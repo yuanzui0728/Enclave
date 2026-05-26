@@ -210,7 +210,7 @@ export function MobileSearchWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-canvas)]">
-      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-2.5 pt-1.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-2.5 pt-1.5 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"

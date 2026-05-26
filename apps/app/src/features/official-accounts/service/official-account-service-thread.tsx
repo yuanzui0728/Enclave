@@ -511,7 +511,7 @@ export function OfficialAccountServiceThread({
           ref={activeArticleId ? undefined : desktopThreadScrollContainerRef}
           className={cn(
             "min-h-0 flex-1 overflow-auto",
-            activeArticleId ? "bg-white" : "bg-[#fcfff4]",
+            activeArticleId ? "bg-white" : "bg-[#f4ede0]",
           )}
         >
           {activeArticleId ? (

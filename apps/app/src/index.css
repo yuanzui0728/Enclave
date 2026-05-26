@@ -50,7 +50,7 @@ body {
 
 html.yj-mobile,
 body.yj-mobile {
-  background: #fcfff4;
+  background: #f4ede0;
 }
 
 @keyframes page-in {
@@ -247,25 +247,27 @@ body.yj-mobile::after {
 }
 
 .yj-mobile-shell {
-  /* === 青柠蜜橙(Citrus)：阳光暖色，与微信绿/灰区分 === */
-  --bg-canvas: #fcfff4;
+  /* === 青柠蜜橙(Citrus)：阳光暖色，与微信绿/灰区分 ===
+   * 表面阶梯：画布(暖奶油) < 分组/面板(暖) < 卡片/行(白)
+   * 让白卡片在暖奶油画布上清晰浮起，恢复层次(替微信"灰底白卡") */
+  --bg-canvas: #f4ede0;
   --bg-canvas-elevated: #ffffff;
   --bg-accent: none;
   --bg-glow-top: none;
   --bg-glow-bottom: none;
   --bg-grid: none;
 
-  --surface-primary: rgba(255, 253, 245, 0.98);
-  --surface-shell: #fcfff4;
+  --surface-primary: rgba(255, 255, 255, 0.96);
+  --surface-shell: #f4ede0;
   --surface-section: #ffffff;
   --surface-card: #ffffff;
-  --surface-card-hover: #fbfde9;
+  --surface-card-hover: #f3ebdc;
   --surface-soft: rgba(245, 158, 11, 0.08);
-  --surface-secondary: #fbfdf3;
-  --surface-panel: #fbfdf3;
+  --surface-secondary: #faf4ea;
+  --surface-panel: #faf4ea;
   --surface-tertiary: rgba(132, 204, 22, 0.12);
-  --surface-overlay: rgba(252, 255, 244, 0.96);
-  --surface-console: #fbfdf3;
+  --surface-overlay: rgba(250, 245, 237, 0.94);
+  --surface-console: #faf5ec;
   --surface-input: #ffffff;
 
   --border-faint: rgba(120, 70, 20, 0.06);

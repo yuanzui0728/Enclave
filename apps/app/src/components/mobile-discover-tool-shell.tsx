@@ -131,7 +131,7 @@ export function MobileDiscoverToolShell({
         title={title}
         subtitle={subtitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(252, 255, 244,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(250, 245, 237,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={onBack}
