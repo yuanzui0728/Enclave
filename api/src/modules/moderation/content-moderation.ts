@@ -104,9 +104,23 @@ export function resolveModerationRegion(): ModerationRegion {
   return cachedRegion;
 }
 
+// 应急开关：审核会静默改写每个 world 的每条 AI 回复，blast radius 极大。万一生产中
+// 误报失控（正常陪伴对话被批量替成话术），运维需要能**即时关停**而不必回滚代码重发。
+// 设 YINJIE_MODERATION_DISABLED=1/true 即整体跳过审核（仅 sanitize 不 moderate）。
+let cachedDisabled: boolean | null = null;
+function moderationDisabled(): boolean {
+  if (cachedDisabled !== null) return cachedDisabled;
+  const raw = (process.env.YINJIE_MODERATION_DISABLED ?? '')
+    .trim()
+    .toLowerCase();
+  cachedDisabled = raw === '1' || raw === 'true' || raw === 'yes';
+  return cachedDisabled;
+}
+
 // 仅供测试重置缓存用。
 export function __resetModerationRegionCacheForTest(): void {
   cachedRegion = null;
+  cachedDisabled = null;
 }
 
 const SAFE_REPLY_ZH = '抱歉，这个话题不太方便继续，我们聊点别的吧。';
@@ -127,7 +141,7 @@ export function moderateAiText(
   text: string,
   region: ModerationRegion = resolveModerationRegion(),
 ): ModerationResult {
-  if (!text) {
+  if (!text || moderationDisabled()) {
     return { flagged: false, text };
   }
   for (const rule of rulesForRegion(region)) {
