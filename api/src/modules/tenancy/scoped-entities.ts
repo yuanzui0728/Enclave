@@ -18,6 +18,12 @@ import { CyberAvatarRealWorldItemEntity } from '../cyber-avatar/cyber-avatar-rea
 import { CyberAvatarRunEntity } from '../cyber-avatar/cyber-avatar-run.entity';
 import { CyberAvatarSignalEntity } from '../cyber-avatar/cyber-avatar-signal.entity';
 import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
+import { FeedPostEntity } from '../feed/feed-post.entity';
+import { FeedCommentEntity } from '../feed/feed-comment.entity';
+import { FeedPostLikeEntity } from '../feed/feed-post-like.entity';
+import { MomentPostEntity } from '../moments/moment-post.entity';
+import { MomentCommentEntity } from '../moments/moment-comment.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { FarmCheckinEntity } from '../games/farm/entities/farm-checkin.entity';
 import { FarmEventLogEntity } from '../games/farm/entities/farm-event-log.entity';
 import { FarmNpcStateEntity } from '../games/farm/entities/farm-npc-state.entity';
@@ -71,11 +77,23 @@ const ALREADY_SCOPED_ENTITIES: Function[] = [
   FriendshipEntity,
 ];
 
+// 本轮新加 ownerId 列、已登记的表。读查询改写按域逐步推进（写入侧 subscriber 即覆盖）；
+// 复合主键/唯一索引按 ownerId 重做随迁移期（Phase 8）落，不在实体层改。
+const NEWLY_SCOPED_ENTITIES: Function[] = [
+  // feed + moments（AI 内容主面）
+  FeedPostEntity,
+  FeedCommentEntity,
+  FeedPostLikeEntity,
+  MomentPostEntity,
+  MomentCommentEntity,
+  MomentLikeEntity,
+];
+
 let registered = false;
 
 export function registerAllScopedEntities(): void {
   if (registered) return;
-  for (const entity of ALREADY_SCOPED_ENTITIES) {
+  for (const entity of [...ALREADY_SCOPED_ENTITIES, ...NEWLY_SCOPED_ENTITIES]) {
     registerTenantScopedEntity(entity);
   }
   registered = true;

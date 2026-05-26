@@ -18,6 +18,12 @@ export class MomentPostEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属用户。LPP 单库下为 NULL（物理隔离 + TenantRepository 透传），
+  // shared 模式由 TenantRepository/subscriber 盖当前 owner。按 ownerId 的复合唯一/索引
+  // 重做属迁移期工作（synchronize 陷阱 / 运行时 CREATE INDEX），不在实体层改。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   authorId: string;
 

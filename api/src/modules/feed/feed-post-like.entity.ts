@@ -12,6 +12,10 @@ export class FeedPostLikeEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属用户（子表冗余 ownerId）。LPP 为 NULL，shared 模式盖当前 owner。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   postId: string;
 
