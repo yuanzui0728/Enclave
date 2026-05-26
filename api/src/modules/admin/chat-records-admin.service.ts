@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThanOrEqual, Repository } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
@@ -343,7 +344,8 @@ export class ChatRecordsAdminService {
     const thirtyDaysAgo = this.daysAgo(30);
 
     const [recentMessages, recentUsage] = await Promise.all([
-      this.messageRepo.find({
+      // scoped：conversationId（direct_<id>）跨租户共用，按当前 owner 限定（LPP 透传）。
+      new TenantRepository(this.messageRepo).find({
         where: {
           conversationId: In(conversationIds),
           createdAt: MoreThanOrEqual(thirtyDaysAgo),
@@ -352,7 +354,7 @@ export class ChatRecordsAdminService {
           createdAt: 'DESC',
         },
       }),
-      this.usageRepo.find({
+      new TenantRepository(this.usageRepo).find({
         where: {
           conversationId: In(conversationIds),
           occurredAt: MoreThanOrEqual(thirtyDaysAgo),
@@ -854,7 +856,8 @@ export class ChatRecordsAdminService {
       options?.preloadedCharacters
         ? Promise.resolve(options.preloadedCharacters)
         : characterIds.length
-          ? this.characterRepo.find({
+          ? // scoped：按 owner 限定，角色 id 跨租户共用，裸 find 会读到别 owner 的同 id 角色。
+            new TenantRepository(this.characterRepo).find({
               where: { id: In(characterIds) },
             })
           : Promise.resolve([]),

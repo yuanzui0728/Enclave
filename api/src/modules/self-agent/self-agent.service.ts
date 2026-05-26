@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThanOrEqual } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { ActionRunEntity } from '../action-runtime/action-run.entity';
 import { UserEntity } from '../auth/user.entity';
@@ -516,7 +517,9 @@ export class SelfAgentService {
   }
 
   private async requireSelfCharacter() {
-    const character = await this.characterRepo.findOneBy({
+    // scoped：SELF_CHARACTER_ID 跨租户共用，裸 findOneBy 会读到别的 owner 的自我角色（在
+    // 租户帧内 → afterLoad 读泄漏）。按当前 owner 限定（LPP 透传）。
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
       id: SELF_CHARACTER_ID,
     });
     if (!character) {

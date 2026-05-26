@@ -3,6 +3,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { decryptUserApiKey, encryptUserApiKey } from '../auth/api-key-crypto';
 import { CharacterEntity } from '../characters/character.entity';
@@ -788,7 +789,8 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const character = await this.characterRepo.findOneBy({
+    // scoped：sourceKey 可能跨租户重复，按当前 owner 限定（LPP 透传）。
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
       sourceKey: normalizedSourceKey,
     });
     return character ?? null;

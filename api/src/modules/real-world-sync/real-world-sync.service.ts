@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { getBuiltInCharacterBlueprintPatch } from '../characters/built-in-character-blueprints';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharacterBlueprintEntity } from '../characters/character-blueprint.entity';
@@ -573,7 +574,8 @@ export class RealWorldSyncService {
       activeDigests,
       todayBulletins,
     ] = await Promise.all([
-      this.characterRepo.find({ order: { name: 'ASC' } }),
+      // scoped：in-world admin 按 owner，角色列表只列当前 owner 的（LPP 透传）。
+      new TenantRepository(this.characterRepo).find({ order: { name: 'ASC' } }),
       this.runRepo.find({
         order: { createdAt: 'DESC' },
         take: 20,

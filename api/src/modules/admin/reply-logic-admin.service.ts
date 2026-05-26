@@ -3,6 +3,7 @@ import { AppError } from '../../common/app-error.exception';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
@@ -143,7 +144,8 @@ export class ReplyLogicAdminService {
     const owner = await this.getOwnerOrThrow();
     const [characters, conversations, provider, worldContext, runtimeRules] =
       await Promise.all([
-        this.characterRepo.find({ order: { name: 'ASC' } }),
+        // scoped：in-world admin 按 owner，角色列表只列当前 owner 的（LPP 透传）。
+        new TenantRepository(this.characterRepo).find({ order: { name: 'ASC' } }),
         this.listConversationItems(owner.id),
         this.resolveProviderSummary(owner),
         this.resolveWorldContextSummary(),
