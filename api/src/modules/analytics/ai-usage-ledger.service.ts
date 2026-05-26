@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm';
+import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
 import { AiUsageLedgerEntity } from './ai-usage-ledger.entity';
 import { SystemConfigService } from '../config/config.service';
 import { CharacterEntity } from '../characters/character.entity';
@@ -1492,6 +1493,14 @@ export class AiUsageLedgerService {
         from: from.toISOString(),
         to: to.toISOString(),
       });
+
+    // scoped：预算用量按当前 owner 聚合，否则把全租户用量加进一个 owner 的预算（串号 +
+    // 预算虚高）。LPP 不加（ledger.ownerId 为 NULL，单库即该 owner 全部）。
+    if (isSharedWorldMode()) {
+      qb.andWhere('ledger.ownerId = :__ownerId', {
+        __ownerId: TenantContextStore.getOrThrow().ownerId,
+      });
+    }
 
     if (characterId) {
       qb.andWhere('ledger.characterId = :characterId', { characterId });

@@ -288,7 +288,7 @@ export class SelfAgentService {
         order: { updatedAt: 'DESC', createdAt: 'DESC' },
         take: 12,
       }),
-      this.runRepo.find({
+      new TenantRepository(this.runRepo).find({
         order: { updatedAt: 'DESC', createdAt: 'DESC' },
         take: 20,
       }),

@@ -685,7 +685,8 @@ export class ReplyLogicAdminService {
         this.groupMemberRepo.find({
           where: { memberId: ownerId, memberType: 'user' },
         }),
-        this.characterRepo.find(),
+        // scoped：listConversationItems 给 in-world admin 用，角色按当前 owner 限定（裸 find 串号）。
+        new TenantRepository(this.characterRepo).find(),
       ],
     );
     const storedConversations = filterUserFacingConversations(
