@@ -576,15 +576,15 @@ export class RealWorldSyncService {
     ] = await Promise.all([
       // scoped：in-world admin 按 owner，角色列表只列当前 owner 的（LPP 透传）。
       new TenantRepository(this.characterRepo).find({ order: { name: 'ASC' } }),
-      this.runRepo.find({
+      new TenantRepository(this.runRepo).find({
         order: { createdAt: 'DESC' },
         take: 20,
       }),
-      this.signalRepo.find({
+      new TenantRepository(this.signalRepo).find({
         order: { createdAt: 'DESC' },
         take: 20,
       }),
-      this.digestRepo.find({
+      new TenantRepository(this.digestRepo).find({
         where: { status: 'active' },
         order: { appliedAt: 'DESC', updatedAt: 'DESC' },
         take: 20,
@@ -715,17 +715,17 @@ export class RealWorldSyncService {
     const [character, runs, signals, digests, momentsToday, todayBulletins] =
       await Promise.all([
         this.characterRepo.findOneBy({ id: characterId }),
-        this.runRepo.find({
+        new TenantRepository(this.runRepo).find({
           where: { characterId },
           order: { createdAt: 'DESC' },
           take: 12,
         }),
-        this.signalRepo.find({
+        new TenantRepository(this.signalRepo).find({
           where: { characterId },
           order: { createdAt: 'DESC' },
           take: 20,
         }),
-        this.digestRepo.find({
+        new TenantRepository(this.digestRepo).find({
           where: { characterId },
           order: { updatedAt: 'DESC' },
           take: 10,
@@ -832,7 +832,7 @@ export class RealWorldSyncService {
       return null;
     }
 
-    let digest = await this.digestRepo.findOne({
+    let digest = await new TenantRepository(this.digestRepo).findOne({
       where: {
         characterId,
         status: 'active',
@@ -844,7 +844,7 @@ export class RealWorldSyncService {
     });
     if (!digest && character.sourceKey === WORLD_NEWS_DESK_SOURCE_KEY) {
       await this.runCharacterSync(character, config, rules, false);
-      digest = await this.digestRepo.findOne({
+      digest = await new TenantRepository(this.digestRepo).findOne({
         where: {
           characterId,
           status: 'active',
@@ -860,7 +860,7 @@ export class RealWorldSyncService {
     }
 
     const signals = digest.signalIds.length
-      ? await this.signalRepo.find({
+      ? await new TenantRepository(this.signalRepo).find({
           where: { id: In(digest.signalIds) },
           order: { publishedAt: 'DESC', createdAt: 'DESC' },
         })
@@ -884,7 +884,7 @@ export class RealWorldSyncService {
   }
 
   async getActiveDigestSnapshot(characterId: string) {
-    const digest = await this.digestRepo.findOne({
+    const digest = await new TenantRepository(this.digestRepo).findOne({
       where: {
         characterId,
         status: 'active',
@@ -899,7 +899,7 @@ export class RealWorldSyncService {
     }
 
     const signals = digest.signalIds.length
-      ? await this.signalRepo.find({
+      ? await new TenantRepository(this.signalRepo).find({
           where: { id: In(digest.signalIds) },
           order: { publishedAt: 'DESC', createdAt: 'DESC' },
         })
@@ -947,7 +947,7 @@ export class RealWorldSyncService {
     const now = new Date();
     const syncDate = formatSyncDate(now);
     if (!force) {
-      const existingDigest = await this.digestRepo.findOne({
+      const existingDigest = await new TenantRepository(this.digestRepo).findOne({
         where: {
           characterId: character.id,
           syncDate,

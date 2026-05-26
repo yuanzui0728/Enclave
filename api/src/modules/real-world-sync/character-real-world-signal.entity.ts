@@ -15,6 +15,10 @@ export class CharacterRealWorldSignalEntity {
   @PrimaryColumn()
   id: string;
 
+  // 共享 world 多租户归属（Phase 8r·9——real-world-sync 子系统原漏建 ownerId）。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column()
   characterId: string;
 

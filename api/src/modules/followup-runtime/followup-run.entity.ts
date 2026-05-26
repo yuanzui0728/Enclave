@@ -11,6 +11,10 @@ export class FollowupRunEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属（Phase 8r·9——followup 子系统原漏建 ownerId）。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column({ default: 'scheduler' })
   triggerType: string;
 

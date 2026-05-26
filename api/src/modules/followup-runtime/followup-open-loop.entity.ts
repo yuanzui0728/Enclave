@@ -11,6 +11,11 @@ export class FollowupOpenLoopEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属（Phase 8r·9——followup 子系统原漏建 ownerId）。LPP 为 NULL；
+  // shared 由 TenantRepository/subscriber 盖当前 owner（uuid id 全局唯一，无需复合主键）。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column()
   topicKey: string;
 

@@ -44,6 +44,7 @@ import { FollowupOpenLoopEntity } from './followup-open-loop.entity';
 import { FollowupRecommendationEntity } from './followup-recommendation.entity';
 import { FollowupRunEntity } from './followup-run.entity';
 import { FollowupRuntimeRulesService } from './followup-runtime-rules.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
 
@@ -106,18 +107,18 @@ export class FollowupRuntimeService {
     const [rules, recentRuns, activeOpenLoops, recentRecommendations, stats] =
       await Promise.all([
         this.rulesService.getRules(),
-        this.runRepo.find({
+        new TenantRepository(this.runRepo).find({
           order: { startedAt: 'DESC', createdAt: 'DESC' },
           take: 20,
         }),
-        this.openLoopRepo.find({
+        new TenantRepository(this.openLoopRepo).find({
           where: {
             status: In(['open', 'watching', 'recommended']),
           },
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
           take: 16,
         }),
-        this.recommendationRepo.find({
+        new TenantRepository(this.recommendationRepo).find({
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
           take: 20,
         }),
@@ -215,7 +216,7 @@ export class FollowupRuntimeService {
     requestId: string;
     acceptedAt: Date;
   }) {
-    const recommendation = await this.recommendationRepo.findOneBy({
+    const recommendation = await new TenantRepository(this.recommendationRepo).findOneBy({
       friendRequestId: input.requestId,
     });
     if (!recommendation) {
@@ -232,7 +233,7 @@ export class FollowupRuntimeService {
     requestId: string;
     declinedAt: Date;
   }) {
-    const recommendation = await this.recommendationRepo.findOneBy({
+    const recommendation = await new TenantRepository(this.recommendationRepo).findOneBy({
       friendRequestId: input.requestId,
     });
     if (!recommendation) {
@@ -249,7 +250,7 @@ export class FollowupRuntimeService {
     requestId: string;
     expiredAt: Date;
   }) {
-    const recommendation = await this.recommendationRepo.findOneBy({
+    const recommendation = await new TenantRepository(this.recommendationRepo).findOneBy({
       friendRequestId: input.requestId,
     });
     if (!recommendation) {
@@ -285,7 +286,7 @@ export class FollowupRuntimeService {
     );
 
     try {
-      const lastSuccess = await this.runRepo.findOne({
+      const lastSuccess = await new TenantRepository(this.runRepo).findOne({
         where: {
           status: 'success',
         },
@@ -337,7 +338,7 @@ export class FollowupRuntimeService {
 
       const startOfDay = new Date(now);
       startOfDay.setHours(0, 0, 0, 0);
-      const todayRecommendationCount = await this.recommendationRepo.count({
+      const todayRecommendationCount = await new TenantRepository(this.recommendationRepo).count({
         where: {
           createdAt: MoreThanOrEqual(startOfDay),
           status: Not('draft'),
@@ -671,15 +672,15 @@ export class FollowupRuntimeService {
       friendAddedCount,
       recentRunCount,
     ] = await Promise.all([
-      this.openLoopRepo.count({
+      new TenantRepository(this.openLoopRepo).count({
         where: {
           status: In(['open', 'watching']),
         },
       }),
-      this.openLoopRepo.count({
+      new TenantRepository(this.openLoopRepo).count({
         where: { status: 'recommended' },
       }),
-      this.recommendationRepo.count({
+      new TenantRepository(this.recommendationRepo).count({
         where: {
           status: In([
             'sent',
@@ -691,7 +692,7 @@ export class FollowupRuntimeService {
           ]),
         },
       }),
-      this.recommendationRepo.count({
+      new TenantRepository(this.recommendationRepo).count({
         where: {
           status: In([
             'opened',
@@ -703,17 +704,17 @@ export class FollowupRuntimeService {
           ]),
         },
       }),
-      this.recommendationRepo.count({
+      new TenantRepository(this.recommendationRepo).count({
         where: {
           status: 'friend_request_pending',
         },
       }),
-      this.recommendationRepo.count({
+      new TenantRepository(this.recommendationRepo).count({
         where: {
           status: In(['friend_added', 'chat_started', 'resolved']),
         },
       }),
-      this.runRepo.count({
+      new TenantRepository(this.runRepo).count({
         where: {
           createdAt: MoreThanOrEqual(weekStart),
         },
@@ -752,7 +753,7 @@ export class FollowupRuntimeService {
       now.getTime() - rules.quietHoursThreshold * 60 * 60 * 1000,
     );
     const conversations = filterUserFacingConversations(
-      await this.conversationRepo.find({
+      await new TenantRepository(this.conversationRepo).find({
         where: {
           ownerId,
           type: 'direct',
@@ -775,7 +776,7 @@ export class FollowupRuntimeService {
         continue;
       }
 
-      const messages = await this.messageRepo.find({
+      const messages = await new TenantRepository(this.messageRepo).find({
         where: {
           conversationId: conversation.id,
           createdAt: MoreThanOrEqual(windowStartedAt),
@@ -994,7 +995,7 @@ export class FollowupRuntimeService {
     const cooldownStart = new Date(
       now.getTime() - rules.sameTopicCooldownHours * 60 * 60 * 1000,
     );
-    const existingLoops = await this.openLoopRepo.find({
+    const existingLoops = await new TenantRepository(this.openLoopRepo).find({
       where: {
         topicKey: In(topicKeys),
         updatedAt: MoreThanOrEqual(cooldownStart),
@@ -1017,19 +1018,19 @@ export class FollowupRuntimeService {
     const [characters, friendships, pendingRequests, recentRecommendations] =
       await Promise.all([
         this.charactersService.findAllVisibleToOwner(ownerId),
-        this.friendshipRepo.find({
+        new TenantRepository(this.friendshipRepo).find({
           where: {
             ownerId,
             status: Not(In(['blocked', 'removed'])),
           },
         }),
-        this.friendRequestRepo.find({
+        new TenantRepository(this.friendRequestRepo).find({
           where: {
             ownerId,
             status: 'pending',
           },
         }),
-        this.recommendationRepo.find({
+        new TenantRepository(this.recommendationRepo).find({
           where: {
             createdAt: MoreThanOrEqual(
               new Date(
@@ -1394,7 +1395,7 @@ export class FollowupRuntimeService {
   }
 
   private async requireRecommendation(recommendationId: string) {
-    const recommendation = await this.recommendationRepo.findOneBy({
+    const recommendation = await new TenantRepository(this.recommendationRepo).findOneBy({
       id: recommendationId,
     });
     if (!recommendation) {
@@ -1408,7 +1409,7 @@ export class FollowupRuntimeService {
   }
 
   private async markOpenLoopResolved(openLoopId: string, resolvedAt: Date) {
-    const openLoop = await this.openLoopRepo.findOneBy({ id: openLoopId });
+    const openLoop = await new TenantRepository(this.openLoopRepo).findOneBy({ id: openLoopId });
     if (!openLoop) {
       return;
     }
@@ -1419,7 +1420,7 @@ export class FollowupRuntimeService {
   }
 
   private async reopenOpenLoopIfNeeded(openLoopId: string, at?: Date) {
-    const openLoop = await this.openLoopRepo.findOneBy({ id: openLoopId });
+    const openLoop = await new TenantRepository(this.openLoopRepo).findOneBy({ id: openLoopId });
     if (!openLoop) {
       return;
     }

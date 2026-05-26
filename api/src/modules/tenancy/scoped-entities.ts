@@ -60,6 +60,12 @@ import { CharacterBlueprintEntity } from '../characters/character-blueprint.enti
 import { CharacterBlueprintRevisionEntity } from '../characters/character-blueprint-revision.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
+import { FollowupRunEntity } from '../followup-runtime/followup-run.entity';
+import { FollowupOpenLoopEntity } from '../followup-runtime/followup-open-loop.entity';
+import { FollowupRecommendationEntity } from '../followup-runtime/followup-recommendation.entity';
+import { CharacterRealWorldDigestEntity } from '../real-world-sync/character-real-world-digest.entity';
+import { CharacterRealWorldSignalEntity } from '../real-world-sync/character-real-world-signal.entity';
+import { CharacterRealWorldSyncRunEntity } from '../real-world-sync/character-real-world-sync-run.entity';
 
 // 已带 ownerId 的存量实体（30 个）。
 const ALREADY_SCOPED_ENTITIES: Function[] = [
@@ -131,6 +137,14 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   CharacterBlueprintRevisionEntity,
   AIBehaviorLogEntity,
   NeedDiscoveryCandidateEntity,
+  // followup-runtime + real-world-sync 子系统（Phase 8r·9 补 ownerId 收口——原漏建、shared
+  // 模式下曾跨 owner 静默混 character 派生数据）。uuid id 全局唯一 → 普通可空 ownerId 列。
+  FollowupRunEntity,
+  FollowupOpenLoopEntity,
+  FollowupRecommendationEntity,
+  CharacterRealWorldDigestEntity,
+  CharacterRealWorldSignalEntity,
+  CharacterRealWorldSyncRunEntity,
 ];
 
 let registered = false;

@@ -16,6 +16,11 @@ export class CharacterRealWorldDigestEntity {
   @PrimaryColumn()
   id: string;
 
+  // 共享 world 多租户归属（Phase 8r·9——real-world-sync 子系统原漏建 ownerId，曾跨 owner 混）。
+  // id 为 real_world_digest_<uuid> 全局唯一，无需复合主键。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column()
   characterId: string;
 
