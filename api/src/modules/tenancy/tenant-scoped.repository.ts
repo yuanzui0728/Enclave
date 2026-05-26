@@ -92,6 +92,40 @@ export class TenantRepository<T extends ObjectLiteral> {
     return this.repo.delete(this.mergeWhere(where) as FindOptionsWhere<T>);
   }
 
+  increment(
+    where: FindOptionsWhere<T>,
+    propertyPath: string,
+    value: number | string,
+  ): Promise<UpdateResult> {
+    if (this.passthrough) return this.repo.increment(where, propertyPath, value);
+    return this.repo.increment(
+      this.mergeWhere(where) as FindOptionsWhere<T>,
+      propertyPath,
+      value,
+    );
+  }
+
+  decrement(
+    where: FindOptionsWhere<T>,
+    propertyPath: string,
+    value: number | string,
+  ): Promise<UpdateResult> {
+    if (this.passthrough) return this.repo.decrement(where, propertyPath, value);
+    return this.repo.decrement(
+      this.mergeWhere(where) as FindOptionsWhere<T>,
+      propertyPath,
+      value,
+    );
+  }
+
+  findAndCount(options?: FindManyOptions<T>): Promise<[T[], number]> {
+    if (this.passthrough) return this.repo.findAndCount(options);
+    return this.repo.findAndCount({
+      ...options,
+      where: this.mergeWhere(options?.where),
+    });
+  }
+
   // 写入：shared 模式盖上当前租户 ownerId 再存（subscriber 还会再校验一致性）；
   // LPP 透传，ownerId 列保持 NULL 不影响单库逻辑。
   create(entityLike: DeepPartial<T>): T {
@@ -105,11 +139,17 @@ export class TenantRepository<T extends ObjectLiteral> {
   }
 
   // 需要复杂查询时用：shared 模式自动 andWhere ownerId；LPP 透传返回裸 builder。
-  createScopedQueryBuilder(alias: string): SelectQueryBuilder<T> {
+  // createQueryBuilder 与 TypeORM 同名，便于 service 把 this.repo.createQueryBuilder
+  // 直接换成 this.scoped(repo).createQueryBuilder（自动带 ownerId 过滤）。
+  createQueryBuilder(alias: string): SelectQueryBuilder<T> {
     const qb = this.repo.createQueryBuilder(alias);
     if (this.passthrough) return qb;
     return qb.andWhere(`${alias}.ownerId = :__tenantOwnerId`, {
       __tenantOwnerId: this.ownerId(),
     });
+  }
+
+  createScopedQueryBuilder(alias: string): SelectQueryBuilder<T> {
+    return this.createQueryBuilder(alias);
   }
 }

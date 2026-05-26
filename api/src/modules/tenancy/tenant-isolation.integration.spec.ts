@@ -18,6 +18,9 @@ class IsoRow {
 
   @Column({ type: 'text' })
   content: string;
+
+  @Column({ type: 'integer', default: 0 })
+  likes: number;
 }
 
 describe('tenant isolation (real sqlite + TypeORM subscriber)', () => {
@@ -110,5 +113,28 @@ describe('tenant isolation (real sqlite + TypeORM subscriber)', () => {
     );
     expect(rows.map((r) => r.id)).toEqual(['m-b1']);
     expect(JSON.stringify(rows)).not.toContain('A-secret');
+  });
+
+  it('scoped createQueryBuilder only returns/affects own rows', async () => {
+    const rows = await TenantContextStore.run({ ownerId: A, phone: 'pa' }, () =>
+      new TenantRepository(ds.getRepository(IsoRow))
+        .createQueryBuilder('r')
+        .getMany(),
+    );
+    expect(rows.every((r) => r.ownerId === A)).toBe(true);
+    expect(rows.some((r) => r.id === 'm-b1')).toBe(false);
+  });
+
+  it('scoped increment never touches another tenant row', async () => {
+    // A 用 B 的 id 去 increment：ownerId 过滤后匹配 0 行，B 的 likes 不变。
+    await TenantContextStore.run({ ownerId: A, phone: 'pa' }, () =>
+      new TenantRepository(ds.getRepository(IsoRow)).increment(
+        { id: 'm-b1' } as never,
+        'likes',
+        5,
+      ),
+    );
+    const b = await ds.getRepository(IsoRow).findOneBy({ id: 'm-b1' } as never);
+    expect(b?.likes ?? 0).toBe(0);
   });
 });
