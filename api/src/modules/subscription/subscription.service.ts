@@ -50,10 +50,20 @@ const FALLBACK_LOOKUP: CloudSubscriptionLookup = {
   plans: [],
 };
 
+// 缓存上限：shared 模式下按 phone 缓存，防止租户多了 Map 无界增长。超过即清空重建
+// （TTL 才 60s，清空只是多打一轮 lookup，无正确性影响）。
+const SUBSCRIPTION_CACHE_MAX_ENTRIES = 5000;
+
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
-  private cached: { value: CloudSubscriptionLookup; expiresAt: number } | null = null;
+  // 按 phone 缓存：shared 模式一个进程服务多用户，绝不能让一个用户的会员状态/到期
+  // 串给别人（否则一人到期 hardBlock 会拦下全进程所有用户）。LPP 模式只有一个 phone，
+  // 退化成单条缓存，行为不变。
+  private readonly cacheByPhone = new Map<
+    string,
+    { value: CloudSubscriptionLookup; expiresAt: number }
+  >();
 
   constructor(private readonly cloudClient: CloudSubscriptionClient) {}
 
@@ -64,22 +74,33 @@ export class SubscriptionService {
       return FALLBACK_LOOKUP;
     }
     const now = Date.now();
-    if (this.cached && this.cached.expiresAt > now) {
-      return this.cached.value;
+    const cached = this.cacheByPhone.get(phone);
+    if (cached && cached.expiresAt > now) {
+      return cached.value;
     }
     const fresh = await this.cloudClient.lookup(phone);
     if (!fresh) {
       // 拉取失败 30 秒短缓存。有上次 cache 就沿用（含 hardBlockEnabled，让 active 用户
       // 在 cloud-api 抖动期间不受影响）；没 cache 时保守拒绝（防止 expired 用户利用
       // cloud-api 失联绕过会员校验）。
-      const fallback: CloudSubscriptionLookup = this.cached?.value
-        ? this.cached.value
+      const fallback: CloudSubscriptionLookup = cached?.value
+        ? cached.value
         : { ...FALLBACK_LOOKUP, status: 'expired', hardBlockEnabled: true, copy: NETWORK_FALLBACK_COPY };
-      this.cached = { value: fallback, expiresAt: now + 30 * 1000 };
+      this.setCache(phone, fallback, now + 30 * 1000);
       return fallback;
     }
-    this.cached = { value: fresh, expiresAt: now + CACHE_TTL_MS };
+    this.setCache(phone, fresh, now + CACHE_TTL_MS);
     return fresh;
+  }
+
+  private setCache(phone: string, value: CloudSubscriptionLookup, expiresAt: number) {
+    if (
+      this.cacheByPhone.size >= SUBSCRIPTION_CACHE_MAX_ENTRIES &&
+      !this.cacheByPhone.has(phone)
+    ) {
+      this.cacheByPhone.clear();
+    }
+    this.cacheByPhone.set(phone, { value, expiresAt });
   }
 
   async assertCanUseAi(_feature: 'text' | 'image' | 'audio'): Promise<void> {
@@ -99,8 +120,12 @@ export class SubscriptionService {
     throw new SubscriptionExpiredException(status.copy.expiredMessage, meta);
   }
 
-  invalidateCache() {
-    this.cached = null;
+  invalidateCache(phone?: string) {
+    if (phone) {
+      this.cacheByPhone.delete(phone);
+      return;
+    }
+    this.cacheByPhone.clear();
   }
 }
 // i18n-ignore-end

@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
 import type {
   SubscriptionExpiredCopy,
   SubscriptionExpiredPlan,
@@ -22,6 +26,11 @@ export class CloudSubscriptionClient {
   constructor(private readonly config: ConfigService) {}
 
   resolveOwnerPhone(): string | null {
+    // shared 模式：phone 来自当前请求/cron 的租户上下文（一个进程服务多用户，CLOUD_OWNER_PHONE
+    // env 已无意义）。LPP / wiki 模式：沿用 spawn 时注入的 CLOUD_OWNER_PHONE env。
+    if (isSharedWorldMode()) {
+      return TenantContextStore.get()?.phone ?? null;
+    }
     return this.config.get<string>('CLOUD_OWNER_PHONE')?.trim() || null;
   }
 
