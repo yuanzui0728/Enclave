@@ -39,13 +39,20 @@ export class TenantService {
     return new TenantRepository<T>(repo);
   }
 
-  // 在指定 phone 的租户帧里跑 fn。新建 owner 时跑一次 owner 级首触种子（默认好友）。
-  async runAsTenant<T>(phone: string, fn: () => Promise<T>): Promise<T> {
+  // 按 phone 建档（首触种子）并返回 TenantContext，但不建立 ALS 帧。用于 WS 连接握手
+  // 时把租户身份绑到 socket（之后每个 WS 事件再用 TenantContextStore.run 短暂建帧）。
+  async ensureTenant(phone: string): Promise<TenantContext> {
     const { owner, created } = await this.worldOwner.ensureOwnerForPhone(phone);
     if (created) {
       await this.seedNewOwner(owner.id, phone);
     }
-    return TenantContextStore.run({ ownerId: owner.id, phone }, fn);
+    return { ownerId: owner.id, phone };
+  }
+
+  // 在指定 phone 的租户帧里跑 fn。新建 owner 时跑一次 owner 级首触种子（默认好友）。
+  async runAsTenant<T>(phone: string, fn: () => Promise<T>): Promise<T> {
+    const ctx = await this.ensureTenant(phone);
+    return TenantContextStore.run(ctx, fn);
   }
 
   // 已知 ownerId + phone 时直接建帧（cron fan-out 用，省一次按 phone 回查）。

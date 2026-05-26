@@ -11,6 +11,13 @@ import {
 import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { TenantService } from '../tenancy/tenant.service';
+import {
+  isSharedWorldMode,
+  TenantContext,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
+import { INTERNAL_USER_PHONE_HEADER } from '../tenancy/internal-headers';
 import { AiProviderAuthError } from '../ai/ai.types';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import {
@@ -117,16 +124,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly tenantService: TenantService,
   ) {}
 
-  handleConnection(client: Socket) {
+  // 把 socket 上绑定的租户身份取回（shared 模式由 handleConnection 从握手头解析后存）。
+  private socketTenant(client: Socket): TenantContext | undefined {
+    return (client.data as { tenant?: TenantContext })?.tenant;
+  }
+
+  // 在 socket 的租户帧里跑 WS 事件处理（shared 模式）。socket.io adapter 不会把 ALS
+  // 传进 message handler，所以每个 @SubscribeMessage 都得手动用它包一层；否则下游
+  // getOwnerOrThrow 无上下文会 fail-closed 抛。LPP 模式直接跑，行为不变。
+  private async withTenant<T>(client: Socket, fn: () => Promise<T>): Promise<T> {
+    if (!isSharedWorldMode()) {
+      return fn();
+    }
+    const tenant = this.socketTenant(client);
+    if (!tenant) {
+      throw new Error('TENANT_CONTEXT_MISSING');
+    }
+    return TenantContextStore.run(tenant, fn);
+  }
+
+  async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
+
+    // shared 模式：从 cloud-api ws-proxy 注入的受信握手头解析 phone → 绑定租户身份到
+    // socket，并加入 owner 房间（用于 owner 级广播，如订阅到期）。缺头 = 非法连接，
+    // 直接断开（fail-closed）。LPP / wiki 模式没有这个头，跳过，行为不变。
+    if (isSharedWorldMode()) {
+      const raw = client.handshake.headers[INTERNAL_USER_PHONE_HEADER];
+      const phone = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+      if (!phone) {
+        this.logger.warn(`ws connection without tenant phone, disconnecting ${client.id}`);
+        client.disconnect(true);
+        return;
+      }
+      try {
+        const tenant = await this.tenantService.ensureTenant(phone);
+        (client.data as { tenant?: TenantContext }).tenant = tenant;
+        void client.join(`owner:${tenant.ownerId}`);
+      } catch (error) {
+        this.logger.error(
+          `ws tenant bind failed phone=${phone}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        client.disconnect(true);
+        return;
+      }
+    }
+
     // socket 连接握手后立即下发 buildId，客户端比对自己的旧版本决定是否 reload。
     client.emit('system.hello', { buildId: SYSTEM_BUILD_ID });
   }
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
+    // 清理 owner 级订阅到期去重记录，避免 Map 随连接数无限增长。
+    const tenant = this.socketTenant(client);
+    if (tenant) {
+      this.subscriptionExpiredEmitAtByOwner.delete(tenant.ownerId);
+    }
   }
 
   emitThreadMessage(roomId: string, message: Message | GroupMessage) {
@@ -192,6 +249,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // 1h retry 路径(group-reply-task 推 1h 后再跑)间隔远大于 60s,会再 emit,
   // 这是合理的"系统提醒"。
   private lastSubscriptionExpiredEmitAt = 0;
+  // shared 模式按 owner 去重（每个 owner 自己的 60s 窗口），LPP 模式用上面的单值。
+  private readonly subscriptionExpiredEmitAtByOwner = new Map<string, number>();
   private static readonly SUBSCRIPTION_EXPIRED_EMIT_DEDUPE_MS = 60_000;
 
   emitSubscriptionExpired(error: SubscriptionExpiredException) {
@@ -199,6 +258,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     const now = Date.now();
+    const payload = this.toChatErrorPayload(error.message, error);
+
+    // shared 模式：不能 server.emit 全 broadcast（会把一个用户的到期 dialog 推给所有
+    // 在线租户）。改成只推给当前租户 owner 房间（该 owner 的所有在线端）。
+    if (isSharedWorldMode()) {
+      const ctx = TenantContextStore.get();
+      if (!ctx) {
+        // 没有租户上下文就无从定向，宁可不推也不全 broadcast 串号。
+        return;
+      }
+      const last = this.subscriptionExpiredEmitAtByOwner.get(ctx.ownerId) ?? 0;
+      if (now - last < ChatGateway.SUBSCRIPTION_EXPIRED_EMIT_DEDUPE_MS) {
+        return;
+      }
+      this.subscriptionExpiredEmitAtByOwner.set(ctx.ownerId, now);
+      this.server.to(`owner:${ctx.ownerId}`).emit('error', payload);
+      return;
+    }
+
+    // LPP：单 owner 进程，沿用全 broadcast + 单值去重。
     if (
       now - this.lastSubscriptionExpiredEmitAt <
       ChatGateway.SUBSCRIPTION_EXPIRED_EMIT_DEDUPE_MS
@@ -206,14 +285,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     this.lastSubscriptionExpiredEmitAt = now;
-    this.server.emit('error', this.toChatErrorPayload(error.message, error));
+    this.server.emit('error', payload);
   }
 
   @SubscribeMessage('join_conversation')
-  handleJoin(
+  async handleJoin(
     @MessageBody() data: { conversationId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    // shared 模式：只许加入属于本租户的会话房间——否则别的 owner 猜到 conversationId
+    // 就能 join 进来收到 new_message。owner-scoped getConversation + afterLoad 守卫双重
+    // 兜底：拿不到（非本人会话）即拒绝 join。LPP 模式沿用旧逻辑（乐观 join，不校验存在）。
+    if (isSharedWorldMode()) {
+      const allowed = await this.withTenant(client, async () => {
+        const conv = await this.chatService.getConversation(data.conversationId);
+        return Boolean(conv);
+      });
+      if (!allowed) {
+        return { event: 'join_rejected', data: data.conversationId };
+      }
+    }
     void client.join(data.conversationId);
     return { event: 'joined', data: data.conversationId };
   }
@@ -226,18 +317,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { conversationId, characterId } = payload;
 
     try {
-      let convId = conversationId;
-      const existing = await this.chatService.getConversation(convId);
-      if (!existing) {
-        const conv = await this.chatService.getOrCreateConversation(
-          characterId,
-          conversationId,
-        );
-        convId = conv.id;
-      }
+      // shared 模式：整个处理链（建会话 / 生成回复 / 落库 / emit）都在 socket 绑定的
+      // 租户帧里跑，下游 getOwnerOrThrow 才能拿到正确 owner。LPP 模式 withTenant 直接跑。
+      return await this.withTenant(client, async () => {
+        let convId = conversationId;
+        const existing = await this.chatService.getConversation(convId);
+        if (!existing) {
+          const conv = await this.chatService.getOrCreateConversation(
+            characterId,
+            conversationId,
+          );
+          convId = conv.id;
+        }
 
-      await this.deliverConversationReply(convId, characterId, payload);
-      return { event: 'message_sent', data: { conversationId: convId } };
+        await this.deliverConversationReply(convId, characterId, payload);
+        return { event: 'message_sent', data: { conversationId: convId } };
+      });
     } catch (err) {
       this.logger.error('Error handling message', err);
       client.emit(
