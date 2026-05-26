@@ -49,6 +49,12 @@ export interface WorldOwner {
   customApiBase?: string | null;
   defaultChatBackground?: ChatBackgroundAsset | null;
   createdAt: string;
+  /** 分身相遇：仅在双方都「想要」时披露给对方的真实联系方式（微信/手机号等）。 */
+  contact?: string | null;
+  /** 联系方式类型，决定前端展示文案。 */
+  contactKind?: "wechat" | "phone" | "other" | null;
+  /** 是否允许我的分身参与社交相遇（默认 true）。关闭后从匹配池移除。 */
+  encounterOptedIn?: boolean;
 }
 
 export interface UpdateWorldOwnerRequest {
@@ -56,6 +62,9 @@ export interface UpdateWorldOwnerRequest {
   avatar?: string;
   signature?: string;
   onboardingCompleted?: boolean;
+  contact?: string;
+  contactKind?: "wechat" | "phone" | "other";
+  encounterOptedIn?: boolean;
 }
 
 export interface UpdateWorldOwnerApiKeyRequest {

@@ -1,6 +1,7 @@
 export * from "./api";
 export * from "./action-runtime";
 export * from "./attachments";
+export * from "./avatar-encounter";
 export * from "./behavior-records";
 export * from "./auth";
 export * from "./chat-backgrounds";

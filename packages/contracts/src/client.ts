@@ -30,6 +30,16 @@ import type {
   UpdateGroupRequest,
 } from "./chat";
 import type { MessageAttachment } from "./attachments";
+import type {
+  AvatarEncounterDecisionResult,
+  AvatarEncounterInboxResponse,
+  AvatarEncounterOverview,
+  AvatarEncounterSession,
+  AvatarEncounterSettings,
+  AvatarEncounterView,
+  DecideAvatarEncounterRequest,
+  UpdateAvatarEncounterSettingsRequest,
+} from "./avatar-encounter";
 import type { Character, CharacterDraft } from "./characters";
 import type {
   CloudWorldLookupResponse,
@@ -4389,6 +4399,85 @@ export function getMyCloudInviteSummary(accessToken: string, baseUrl?: string) {
   return requestCloudApi<InviteSummaryResponse>(
     "/cloud/me/invite/summary",
     buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+// ── 分身相遇（cloud-api 跨用户） ─────────────────────────────────────────────
+// 这些都是 requestCloudApi（带 accessToken），不是 world-api。联系方式字段本身
+// 通过 world-api 的 updateWorldOwner({ contact }) 维护；这里只做撮合 / 决策 / 披露。
+
+export function getAvatarEncounterOverview(
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<AvatarEncounterOverview>(
+    "/cloud/social/avatar-encounters/overview",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function startAvatarEncounter(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<AvatarEncounterSession>(
+    "/cloud/social/avatar-encounters",
+    buildCloudAuthHeaders(accessToken, { method: "POST" }),
+    baseUrl,
+  );
+}
+
+export function getAvatarEncounter(
+  encounterId: string,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<AvatarEncounterView>(
+    `/cloud/social/avatar-encounters/${encounterId}`,
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function decideAvatarEncounter(
+  encounterId: string,
+  payload: DecideAvatarEncounterRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<AvatarEncounterDecisionResult>(
+    `/cloud/social/avatar-encounters/${encounterId}/decision`,
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+export function listReceivedAvatarEncounters(
+  accessToken: string,
+  cursor?: string,
+  baseUrl?: string,
+) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  return requestCloudApi<AvatarEncounterInboxResponse>(
+    `/cloud/social/avatar-encounters/received${query}`,
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function setAvatarEncounterOptIn(
+  payload: UpdateAvatarEncounterSettingsRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<AvatarEncounterSettings>(
+    "/cloud/social/avatar-encounters/settings",
+    buildCloudAuthHeaders(accessToken, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
     baseUrl,
   );
 }
