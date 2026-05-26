@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { AppError } from '../../common/app-error.exception';
+import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
 import { UserEntity } from './user.entity';
 import { decryptUserApiKey, encryptUserApiKey } from './api-key-crypto';
 import type { AiKeyOverride } from '../ai/ai.types';
@@ -127,6 +128,15 @@ export class WorldOwnerService {
   ) {}
 
   async ensureSingleOwnerMigration(): Promise<UserEntity> {
+    // 硬门禁：这个方法会把「多余的」world_owner 连同其数据全部删掉，是单进程单 owner
+    // 时代的迁移逻辑。共享 world 库里有 N 个 owner，一旦在 shared 模式跑就会删掉除一人
+    // 外所有租户的数据——绝对禁止。
+    if (isSharedWorldMode()) {
+      throw new AppError('SINGLE_OWNER_MIGRATION_FORBIDDEN_IN_SHARED_MODE', {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        legacyMessage: '共享 world 模式禁止单 owner 迁移。',
+      });
+    }
     const users = await this.userRepo.find({
       where: { userType: 'world_owner' },
       order: { createdAt: 'ASC' },
@@ -264,7 +274,85 @@ export class WorldOwnerService {
     return this.getOwnerOrThrow();
   }
 
+  // 共享 world 多租户：按 phone 建档 + 查回 owner（create-on-first-touch）。
+  // 并发首触靠 cloudPhone UNIQUE 约束兜底——抢插失败就回查已存在的那行。
+  // 返回 created 标志，供调用方（TenantService）决定是否跑 owner 级首触种子。
+  async ensureOwnerForPhone(
+    phone: string,
+  ): Promise<{ owner: UserEntity; created: boolean }> {
+    const normalized = phone?.trim();
+    if (!normalized) {
+      throw new AppError('TENANT_PHONE_REQUIRED', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '缺少租户 phone。',
+      });
+    }
+
+    const existing = await this.userRepo.findOne({
+      where: { userType: 'world_owner', cloudPhone: normalized },
+    });
+    if (existing) {
+      return { owner: existing, created: false };
+    }
+
+    try {
+      const owner = this.userRepo.create({
+        username: '',
+        passwordHash: this.generatePlaceholderPasswordHash(),
+        onboardingCompleted: false,
+        avatar: '',
+        signature: '',
+        customApiKey: null,
+        customApiBase: null,
+        defaultChatBackgroundPayload: null,
+        userType: 'world_owner',
+        cloudPhone: normalized,
+      });
+      const saved = await this.userRepo.save(owner);
+      return { owner: saved, created: true };
+    } catch (error) {
+      // UNIQUE(cloudPhone) 冲突 = 另一并发请求已建档，回查那行。
+      const raced = await this.userRepo.findOne({
+        where: { userType: 'world_owner', cloudPhone: normalized },
+      });
+      if (raced) {
+        return { owner: raced, created: false };
+      }
+      throw error;
+    }
+  }
+
+  // cron fan-out 用：列出共享库里所有 world_owner 租户（带 phone）。
+  async listTenantOwners(): Promise<UserEntity[]> {
+    return this.userRepo.find({
+      where: { userType: 'world_owner' },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async getOwnerOrThrow(): Promise<UserEntity> {
+    // shared 模式：owner 完全由请求级 TenantContext 决定。绝不回退到「第一个
+    // world_owner 行」——那会把别人的数据当成当前用户返回（最严重的串号面）。
+    const ctx = TenantContextStore.get();
+    if (ctx) {
+      const owner = await this.userRepo.findOne({ where: { id: ctx.ownerId } });
+      if (!owner) {
+        throw new AppError('TENANT_OWNER_NOT_FOUND', {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          legacyMessage: '租户 owner 不存在。',
+        });
+      }
+      return owner;
+    }
+    if (isSharedWorldMode()) {
+      // shared 进程里没有上下文还来查 owner = 漏接的后台路径，fail-closed。
+      throw new AppError('TENANT_CONTEXT_MISSING', {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        legacyMessage: '缺少租户上下文。',
+      });
+    }
+
+    // LPP / wiki 进程：单 owner 旧路径，行为完全不变。
     const owner = await this.userRepo.findOne({
       where: { userType: 'world_owner' },
       order: { createdAt: 'ASC' },

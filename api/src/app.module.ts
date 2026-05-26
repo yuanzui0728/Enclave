@@ -37,6 +37,8 @@ import { SubscriptionExpiredFilter } from './modules/subscription/subscription-e
 // 加载 wiki 代码 / 不跑 wiki cron / 不在 sqlite 里建 wiki_* 表。2026-05-20 wiki 拆库改造。
 import { PushModule } from './modules/push/push.module';
 import { PushTokenEntity } from './modules/push/push-token.entity';
+import { TenantModule } from './modules/tenancy/tenant.module';
+import { TenantOwnershipSubscriber } from './modules/tenancy/tenant-ownership.subscriber';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -231,8 +233,12 @@ import {
           PushTokenEntity,
         ],
         synchronize: true,
+        // 多租户写入侧纵深防御。只在 shared 模式 + 已注册 scoped 实体时生效（见
+        // TenantOwnershipSubscriber）；LPP / wiki 进程里整段 no-op。
+        subscribers: [TenantOwnershipSubscriber],
       }),
     }),
+    TenantModule,
     AiModule,
     AuthModule,
     ChatModule,

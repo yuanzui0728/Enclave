@@ -48,6 +48,13 @@ export class UserEntity {
   @Column({ default: 'world_owner' })
   userType: string; // 'world_owner' | 'wiki_member'
 
+  // 共享 world 多租户：把每个 world_owner 行映射到一个云端用户 phone。LPP 每用户
+  // 进程里的旧 owner 行 / wiki_member 行没有 phone（NULL）；SQLite 下多个 NULL 在
+  // UNIQUE 索引里互不冲突，所以存量行不受影响。shared 模式下 ensureOwnerForPhone
+  // 用它建档 + 查回当前请求的 owner。
+  @Column({ type: 'text', nullable: true, unique: true })
+  cloudPhone: string | null;
+
   @Column({ default: 'newcomer' })
   role: string; // wiki RBAC: 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
 
