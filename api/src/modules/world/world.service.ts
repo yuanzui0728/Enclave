@@ -15,6 +15,7 @@ import {
   type ReplyLogicRuntimeRules,
 } from '../ai/reply-logic.constants';
 import { WorldContextEntity } from './world-context.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 
 const WORLD_RUNTIME_LOCATION_CONFIG_KEY = 'world_runtime_location';
 const WORLD_LAST_LIVE_WEATHER_CONFIG_KEY = 'world_last_live_weather';
@@ -360,7 +361,9 @@ export class WorldService {
   }
 
   async getLatest(): Promise<WorldContextEntity | null> {
-    const latest = await this.repo.findOne({
+    // scoped：world_context 每 owner 一份，裸 findOne({}) 会返回任意 owner 的最新快照
+    // → 串号。按当前租户限定（LPP 透传）。
+    const latest = await new TenantRepository(this.repo).findOne({
       where: {},
       order: { timestamp: 'DESC' },
     });

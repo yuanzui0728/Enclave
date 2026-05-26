@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharactersService } from '../../characters/characters.service';
 import { CharacterEntity } from '../../characters/character.entity';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmEventService } from './farm-event.service';
 import { FarmNpcStateEntity } from './entities/farm-npc-state.entity';
 import {
@@ -45,6 +46,7 @@ export class FarmNpcService {
     const existing = await this.npcRepo
       .createQueryBuilder('npc')
       .where('npc.characterId IN (:...ids)', { ids })
+      .andWhere('npc.ownerId = :ownerId', { ownerId })
       .getMany();
     const existingMap = new Map(existing.map((row) => [row.characterId, row]));
     const created: FarmNpcStateEntity[] = [];
@@ -80,14 +82,18 @@ export class FarmNpcService {
   async getNpcStateForCharacter(
     characterId: string,
   ): Promise<FarmNpcStateEntity | null> {
-    return this.npcRepo.findOneBy({ characterId });
+    // 无 ownerId 入参：走 mode-aware scoped（请求/游戏帧内按 ALS owner 限定；LPP 透传）。
+    return new TenantRepository(this.npcRepo).findOneBy({ characterId });
   }
 
   async getOrCreateNpcState(
     character: CharacterEntity,
     ownerId: string,
   ): Promise<FarmNpcStateEntity> {
-    const existing = await this.npcRepo.findOneBy({ characterId: character.id });
+    const existing = await this.npcRepo.findOneBy({
+      characterId: character.id,
+      ownerId,
+    });
     if (existing) return existing;
     const created = await this.ensureNpcStateForCharacters([character], ownerId);
     return created[0]!;

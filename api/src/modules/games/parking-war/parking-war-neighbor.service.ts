@@ -58,8 +58,9 @@ export class ParkingWarNeighborService {
   ): Promise<ParkingWarNpcStateEntity[]> {
     if (characters.length === 0) return [];
     const ids = characters.map((c) => c.id);
+    // 共享 world：characterId 跨租户共用，必须带 ownerId 否则读到别人世界的 NPC state。
     const existing = await this.npcRepo.find({
-      where: ids.map((characterId) => ({ characterId })),
+      where: ids.map((characterId) => ({ characterId, ownerId })),
     });
     const existingByCharId = new Map(existing.map((s) => [s.characterId, s]));
     const toCreate: ParkingWarNpcStateEntity[] = [];
@@ -80,7 +81,7 @@ export class ParkingWarNeighborService {
       );
       // 并发情况下重新读一遍
       created = await this.npcRepo.find({
-        where: toCreate.map((s) => ({ characterId: s.characterId })),
+        where: toCreate.map((s) => ({ characterId: s.characterId, ownerId })),
       });
     }
     return [...existing, ...created];
@@ -90,7 +91,10 @@ export class ParkingWarNeighborService {
     character: CharacterEntity,
     ownerId: string,
   ): Promise<ParkingWarNpcStateEntity> {
-    const existing = await this.npcRepo.findOneBy({ characterId: character.id });
+    const existing = await this.npcRepo.findOneBy({
+      characterId: character.id,
+      ownerId,
+    });
     if (existing) return existing;
     const created = await this.ensureNpcStateForCharacters([character], ownerId);
     return created[0]!;

@@ -20,6 +20,7 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
 import { WorldLanguageService } from '../config/world-language.service';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
@@ -1723,8 +1724,15 @@ export class ChatService {
     cutoff?: Date,
     extra: Partial<FindOptionsWhere<MessageEntity>> = {},
   ): FindOptionsWhere<MessageEntity> {
+    // 共享 world：conversationId 形如 direct_<charId> 跨租户共用，仅按它查消息会读到别的
+    // 租户的同会话消息 → 串号。这里集中给所有走 buildMessageWhere 的消息读注入当前租户
+    // ownerId（messages 行都带 ownerId）。LPP 不注入（透传，ownerId 列为 NULL）。
+    // 调用都在请求/cron 租户帧内；不在帧内即 fail-closed 抛 TENANT_CONTEXT_MISSING。
     return {
       conversationId,
+      ...(isSharedWorldMode()
+        ? { ownerId: TenantContextStore.getOrThrow().ownerId }
+        : {}),
       ...extra,
       ...(cutoff ? { createdAt: MoreThan(cutoff) } : {}),
     };

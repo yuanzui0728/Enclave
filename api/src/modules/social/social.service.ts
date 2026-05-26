@@ -340,7 +340,9 @@ export class SocialService implements OnModuleInit {
     const characterIds = Array.from(
       new Set(friendships.map((f) => f.characterId)),
     );
-    const characters = await this.characterRepo.find({
+    // scoped：好友列表的角色按当前 owner 限定，否则共享 id（默认/preset 角色）会读到别租户
+    // 的同 id 行 → afterLoad 读泄漏。LPP 透传（char.ownerId NULL，不能用显式 ownerId）。
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { id: In(characterIds) },
     });
     const characterById = new Map(characters.map((c) => [c.id, c]));
