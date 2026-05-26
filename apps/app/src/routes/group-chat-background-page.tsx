@@ -447,7 +447,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -455,7 +455,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleErrorStateAction}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
@@ -479,7 +479,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -487,7 +487,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleErrorStateAction}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
@@ -516,7 +516,7 @@ export function GroupChatBackgroundPage() {
               <button
                 type="button"
                 onClick={handleErrorStateAction}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
               </button>
@@ -560,7 +560,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -568,7 +568,7 @@ export function GroupChatBackgroundPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={handleMissingGroupAction}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回消息列表`)}
@@ -748,7 +748,7 @@ export function GroupChatBackgroundPage() {
                     : {}),
                 });
               }}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`返回群聊信息`)}
             </Button>
@@ -810,7 +810,7 @@ function SectionCard({
       className={
         compact
           ? "space-y-4 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4 shadow-none"
-          : "space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]"
+          : "space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]"
       }
     >
       <div>
@@ -867,10 +867,10 @@ function PresetGrid({
           onClick={() => onSelect(preset)}
           className={`overflow-hidden rounded-[12px] border text-left transition ${
             preset.assetId === selectedAssetId
-              ? "border-[rgba(245, 158, 11,0.22)] bg-white shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+              ? "border-[rgba(245, 158, 11,0.22)] bg-[color:var(--surface-card)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
               : compact
-                ? "border-[color:var(--border-subtle)] bg-white active:bg-[color:var(--surface-card-hover)]"
-                : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]"
+                ? "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] active:bg-[color:var(--surface-card-hover)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[color:var(--surface-console)]"
           }`}
         >
           <div
@@ -881,7 +881,7 @@ function PresetGrid({
               backgroundSize: "cover",
             }}
           />
-          <div className="bg-white px-3 py-3 text-sm text-[color:var(--text-primary)]">
+          <div className="bg-[color:var(--surface-card)] px-3 py-3 text-sm text-[color:var(--text-primary)]">
             {preset.label}
           </div>
         </button>
@@ -916,10 +916,10 @@ function ModeChip({
         active
           ? compact
             ? "border-[rgba(245, 158, 11,0.16)] bg-[rgba(247,251,248,0.96)] text-[#b45309]"
-            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
           : compact
-            ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)] active:bg-white"
-            : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white"
+            ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card)]"
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]"
       } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {label}

@@ -614,11 +614,11 @@ export function GamesPage() {
   }
 
   return (
-    <AppPage className="space-y-0 bg-white px-0 pb-0 pt-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-card)] px-0 pb-0 pt-0">
       <TabPageTopBar
         title={t(msg`游戏`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-white px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={handleBack}
@@ -632,9 +632,9 @@ export function GamesPage() {
         }
       />
 
-      <div className="bg-white pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
+      <div className="bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {myGames.length > 0 ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-white">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
             <SectionHeader title={t(msg`我的游戏`)} />
             <div className="flex gap-4 overflow-x-auto px-4 pb-3 pt-1">
               {myGames.map((game) => (
@@ -649,7 +649,7 @@ export function GamesPage() {
         ) : null}
 
         {bannerGame ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3">
             <BannerCard
               game={bannerGame}
               onLaunch={() => handleSelectAndLaunch(bannerGame.id)}
@@ -658,7 +658,7 @@ export function GamesPage() {
         ) : null}
 
         {successNotice ? (
-          <div className="bg-white px-4 pt-3">
+          <div className="bg-[color:var(--surface-card)] px-4 pt-3">
             <InlineNotice
               className="rounded-[12px] px-3 py-2 text-[12px] leading-[1.35rem] shadow-none"
               tone={noticeTone}
@@ -675,7 +675,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={noticeActionState.onAction}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionState.label}
                       </button>
@@ -684,7 +684,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={handleBack}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {statusBackLabel}
                       </button>
@@ -701,7 +701,7 @@ export function GamesPage() {
         {isEmbeddedActive && activeGameId ? (
           <div
             ref={embeddedSlotRef}
-            className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3"
+            className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3"
           >
             <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)]">
               <EmbeddedGameSlot
@@ -718,9 +718,9 @@ export function GamesPage() {
         ) : null}
 
         {friendActivities.length > 0 ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-white">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
             <SectionHeader title={t(msg`好友在玩`)} />
-            <ul className="bg-white">
+            <ul className="bg-[color:var(--surface-card)]">
               {friendActivities.map((activity) => {
                 const game = getGameCenterGame(activity.gameId);
                 if (!game) return null;
@@ -745,9 +745,9 @@ export function GamesPage() {
         ) : null}
 
         {featuredRest.length > 0 ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-white">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
             <SectionHeader title={t(msg`精选小游戏`)} trailing={t(msg`更多`)} />
-            <ul className="bg-white">
+            <ul className="bg-[color:var(--surface-card)]">
               {featuredRest.map((game) => (
                 <GameListRow
                   key={`featured-${game.id}`}
@@ -759,9 +759,9 @@ export function GamesPage() {
           </div>
         ) : null}
 
-        <div className="border-b border-[color:var(--border-faint)] bg-white">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
           <SectionHeader title={t(msg`热门小游戏`)} trailing={t(msg`更多`)} />
-          <ul className="bg-white">
+          <ul className="bg-[color:var(--surface-card)]">
             {gameCenterHotRankings.map((entry) => {
               const game = getGameCenterGame(entry.gameId);
               if (!game) return null;
@@ -776,9 +776,9 @@ export function GamesPage() {
           </ul>
         </div>
 
-        <div className="bg-white">
+        <div className="bg-[color:var(--surface-card)]">
           <SectionHeader title={t(msg`新游榜`)} trailing={t(msg`更多`)} />
-          <ul className="bg-white">
+          <ul className="bg-[color:var(--surface-card)]">
             {gameCenterNewRankings.map((entry) => {
               const game = getGameCenterGame(entry.gameId);
               if (!game) return null;
@@ -914,7 +914,7 @@ function BannerCard({
         </div>
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-white/72">{game.playersLabel}</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[color:var(--text-primary)]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[12px] font-medium text-[color:var(--text-primary)]">
             <Play size={13} />
             {t(msg`开始`)}
           </span>
@@ -1016,7 +1016,7 @@ function FriendActivityRow({
         className={cn(
           "h-7 shrink-0 rounded-full px-4 text-[12px] font-medium",
           invited
-            ? "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]"
+            ? "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
             : "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]",
         )}
       >

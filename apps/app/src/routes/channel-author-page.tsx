@@ -493,18 +493,18 @@ export function ChannelAuthorPage() {
         {notice ? (
           <InlineNotice
             tone={notice.tone}
-            className="mb-4 rounded-[16px] border-[color:var(--border-faint)] bg-white"
+            className="mb-4 rounded-[16px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
           >
             {notice.message}
           </InlineNotice>
         ) : null}
         {profileQuery.isLoading ? (
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
             <LoadingBlock label={t(msg`正在读取作者主页...`)} />
           </div>
         ) : null}
         {profileQuery.isError && profileQuery.error instanceof Error ? (
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`作者主页暂时不可用`)}
@@ -515,7 +515,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryLoad}
                   >
                     {t(msg`重试读取`)}
@@ -523,7 +523,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回视频号`)}
@@ -534,7 +534,7 @@ export function ChannelAuthorPage() {
           </div>
         ) : null}
         {followMutation.isError && followMutation.error instanceof Error ? (
-          <div className="mb-4 rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
+          <div className="mb-4 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-5 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`关注失败`)}
               title={t(msg`作者状态暂未更新`)}
@@ -546,7 +546,7 @@ export function ChannelAuthorPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                       onClick={handleRetryFollow}
                     >
                       {profileQuery.data.isFollowing
@@ -557,7 +557,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回视频号`)}
@@ -569,7 +569,7 @@ export function ChannelAuthorPage() {
         ) : null}
 
         {!profileQuery.isLoading && !profileQuery.isError && profile ? (
-          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
             <section
               className={cn(
                 "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
@@ -643,7 +643,7 @@ export function ChannelAuthorPage() {
                     className={cn(
                       "h-11 rounded-full px-5 shadow-none",
                       profile.isFollowing
-                        ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]"
+                        ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
                         : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
                     )}
                   >
@@ -658,7 +658,7 @@ export function ChannelAuthorPage() {
                   variant="secondary"
                   size="lg"
                   onClick={navigateBackToChannels}
-                  className="h-11 rounded-full border-[color:var(--border-faint)] bg-white px-5 text-[color:var(--text-primary)] shadow-none"
+                  className="h-11 rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 text-[color:var(--text-primary)] shadow-none"
                 >
                   {t(msg`返回视频号`)}
                 </Button>
@@ -712,7 +712,7 @@ export function ChannelAuthorPage() {
                     );
                   })()}
                 </div>
-                <span className="shrink-0 rounded-full border border-[rgba(127,29,29,0.12)] bg-white px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
+                <span className="shrink-0 rounded-full border border-[rgba(127,29,29,0.12)] bg-[color:var(--surface-card)] px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
                   {t(msg`查看回放`)}
                 </span>
               </button>
@@ -726,7 +726,7 @@ export function ChannelAuthorPage() {
                 谁是当前选中，盲用用户只能靠 tab 序列推断。补齐 tablist / tab
                 role + 当前态。
               */}
-              <div className="border-y border-[color:var(--border-faint)] bg-white px-3">
+              <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3">
                 <div className="flex overflow-x-auto" role="tablist" aria-label={t(msg`作者内容分栏`)}>
                   {collectionTabs.map((tab) => {
                     const selected = activeCollection === tab.key;
@@ -769,7 +769,7 @@ export function ChannelAuthorPage() {
               </div>
 
               {visiblePosts.length ? (
-                <div className="divide-y divide-[color:var(--border-faint)] bg-white">
+                <div className="divide-y divide-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
                   {visiblePosts.map((post) => {
                     const postStatus = resolveChannelPostCardStatus(t, post);
 
@@ -861,7 +861,7 @@ export function ChannelAuthorPage() {
                   })}
                 </div>
               ) : (
-                <div className="bg-white p-6">
+                <div className="bg-[color:var(--surface-card)] p-6">
                   <EmptyState
                     title={t(msg`${activeCollectionLabel}分栏暂时没有内容`)}
                     description={t(msg`切换其他分栏看看，或者等作者发布新的内容后再回来。`)}
@@ -886,7 +886,7 @@ function ChannelAuthorHeaderStat({
   value: string;
 }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-[color:var(--text-primary)]">
+    <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-2 text-[color:var(--text-primary)]">
       <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(245, 158, 11,0.1)] text-[color:var(--brand-primary)]">
         {icon}
       </div>

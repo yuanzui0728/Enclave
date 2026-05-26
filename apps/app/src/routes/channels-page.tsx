@@ -2583,7 +2583,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={noticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -2596,7 +2596,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={handleStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -2619,7 +2619,7 @@ export function ChannelsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -2628,7 +2628,7 @@ export function ChannelsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {t(msg`返回上一页`)}
@@ -4328,7 +4328,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
     <article
       ref={setCardRef}
       data-post-id={post.id}
-      className="snap-start scroll-mt-2 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-white shadow-none"
+      className="snap-start scroll-mt-2 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-none"
     >
       <div className="relative min-h-[calc(100dvh-12rem)] bg-[#0f1115]">
         <MobileChannelMediaSurface
@@ -4604,7 +4604,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-subtle)] bg-white px-3.5 py-3">
+      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[color:var(--text-muted)]">
           <span>
             {post.mediaType === "video"
@@ -5497,7 +5497,7 @@ function MobileChannelCommentsSheet({
             type="button"
             onClick={onClose}
             aria-label={t(msg`关闭评论面板`)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#6b7280] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--surface-card)] text-[#6b7280] transition active:bg-[color:var(--surface-card-hover)]"
           >
             <X size={15} />
           </button>
@@ -5505,13 +5505,13 @@ function MobileChannelCommentsSheet({
 
         <div
           ref={scrollContainerRef}
-          className="min-h-0 flex-1 overflow-y-auto bg-white pb-4"
+          className="min-h-0 flex-1 overflow-y-auto bg-[color:var(--surface-card)] pb-4"
         >
           {errorMessage ? (
             <div className="px-4 pt-3">
               <InlineNotice
                 tone="warning"
-                className="rounded-[16px] border-[color:var(--border-danger)] bg-white"
+                className="rounded-[16px] border-[color:var(--border-danger)] bg-[color:var(--surface-card)]"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1">{errorMessage}</span>
@@ -5520,7 +5520,7 @@ function MobileChannelCommentsSheet({
                       <button
                         type="button"
                         onClick={onErrorAction}
-                        className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                        className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                       >
                         {errorActionLabel}
                       </button>
@@ -5528,7 +5528,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
+                      className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
                     >
                       {t(msg`返回视频号`)}
                     </button>
@@ -5586,7 +5586,7 @@ function MobileChannelCommentsSheet({
           的内容。textarea text-[16px] 防 iOS viewport zoom；maxLength=500 跟服务端
           assertCommentText 对齐；IME composing 时按 Enter 不误发。
         */}
-        <div className="border-t border-[#ededed] bg-white px-3 pt-2">
+        <div className="border-t border-[#ededed] bg-[color:var(--surface-card)] px-3 pt-2">
           {replyTarget ? (
             <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(245, 158, 11,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
               {/*
@@ -5614,7 +5614,7 @@ function MobileChannelCommentsSheet({
           ) : null}
           {inputExpanded ? (
             <div className="flex items-end gap-2 py-1.5">
-              <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
+              <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
                 <textarea
                   ref={inputTextareaRef}
                   value={draft}

@@ -1536,7 +1536,7 @@ export function WelcomePage() {
               size="md"
               className={`flex-1 rounded-xl shadow-none ${
                 authMode === "login"
-                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]"
                   : "bg-transparent hover:bg-transparent"
               }`}
             >
@@ -1561,7 +1561,7 @@ export function WelcomePage() {
               size="md"
               className={`flex-1 rounded-xl shadow-none ${
                 authMode === "register"
-                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]"
                   : "bg-transparent hover:bg-transparent"
               }`}
             >
@@ -1672,7 +1672,7 @@ export function WelcomePage() {
               size="md"
               className={`flex-1 rounded-xl shadow-none ${
                 authMethod === "code"
-                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]"
                   : "bg-transparent hover:bg-transparent"
               }`}
             >
@@ -1691,7 +1691,7 @@ export function WelcomePage() {
               size="md"
               className={`flex-1 rounded-xl shadow-none ${
                 authMethod === "password"
-                  ? "bg-white text-[color:var(--text-primary)] hover:bg-white"
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]"
                   : "bg-transparent hover:bg-transparent"
               }`}
             >
@@ -1761,7 +1761,7 @@ export function WelcomePage() {
                   }
                   variant="secondary"
                   size="lg"
-                  className="shrink-0 rounded-2xl border-black/5 bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
+                  className="shrink-0 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-[color:var(--surface-card)]"
                 >
                   {(
                     accountType === "phone"
@@ -2064,7 +2064,7 @@ export function WelcomePage() {
             上、"为世界主人命名"在下两行叠着）。把 H2 删掉，统一让外层 H1 根据
             showOwnerStep 切到 "为世界主人命名"（同时把 badge 也切到"世界主人"），
             owner step 内部只剩纯交互卡。 */}
-        <div className="rounded-[24px] border border-black/5 bg-white p-5 shadow-none">
+        <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-none">
           <TextField
             // 没有可见 label，靠 aria-label 让屏幕阅读器知道这是世界主人名字。
             aria-label={t(msg`世界主人名字`)}
@@ -2106,7 +2106,7 @@ export function WelcomePage() {
                     <button
                       type="button"
                       onClick={handleBackToEntryStep}
-                      className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                      className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                     >
                       {t(msg`返回上一步`)}
                     </button>
@@ -2124,7 +2124,7 @@ export function WelcomePage() {
               disabled={isContinuing}
               variant="secondary"
               size="lg"
-              className="rounded-2xl border-black/5 bg-[#f5f1e6] shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
+              className="rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`返回`)}
             </Button>
@@ -2168,7 +2168,7 @@ export function WelcomePage() {
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
                 ? "border-[rgba(245, 158, 11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(245, 158, 11,0.16)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(245, 158, 11,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2193,7 +2193,7 @@ export function WelcomePage() {
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
                 ? "border-[rgba(245, 158, 11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(245, 158, 11,0.16)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(245, 158, 11,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2258,7 +2258,7 @@ export function WelcomePage() {
                   <button
                     type="button"
                     onClick={handleRetryEntryStep}
-                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {mode === "local" ? t(msg`重新连接`) : t(msg`重新解析`)}
                   </button>
@@ -2290,7 +2290,7 @@ export function WelcomePage() {
                   <button
                     type="button"
                     onClick={handleRetrySendCode}
-                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {t(msg`重试发送`)}
                   </button>
@@ -2316,7 +2316,7 @@ export function WelcomePage() {
                   <button
                     type="button"
                     onClick={handleRetrySendEmailCode}
-                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {t(msg`重试发送`)}
                   </button>
@@ -2340,7 +2340,7 @@ export function WelcomePage() {
                   <button
                     type="button"
                     onClick={handleRetryCloudSession}
-                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
                     {t(msg`重新解析`)}
                   </button>
@@ -2380,7 +2380,7 @@ export function WelcomePage() {
 
   return (
     <AppPage className="bg-[#f5f1e6] px-4 py-8">
-      <AppSection className="mx-auto w-full max-w-xl border-black/5 bg-white px-6 py-8 shadow-none">
+      <AppSection className="mx-auto w-full max-w-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-8 shadow-none">
         <div className="inline-flex rounded-full border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#b45309]">
           {/* 走查 R5：见 desktop 分支同改 */}
           {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
@@ -2409,7 +2409,7 @@ function MobileWelcomeStatusCard({
   const toneClassName =
     tone === "danger"
       ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
-      : "border-black/5 bg-[#f7faf8] text-[color:var(--text-secondary)]";
+      : "border-[color:var(--border-faint)] bg-[#f7faf8] text-[color:var(--text-secondary)]";
   const badgeClassName =
     tone === "danger"
       ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
@@ -2441,7 +2441,7 @@ function MobileWelcomeNotice({
       : tone === "success"
         ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.08)] text-[#b45309]"
         : tone === "muted"
-          ? "border-black/5 bg-[#f7f7f5] text-[color:var(--text-secondary)]"
+          ? "border-[color:var(--border-faint)] bg-[#f7f7f5] text-[color:var(--text-secondary)]"
           : "border-[rgba(22,163,74,0.12)] bg-[#fffdf2] text-[color:var(--text-secondary)]";
 
   // role=alert + aria-live=assertive 让 VoiceOver/TalkBack 在错误出现的时候即时
