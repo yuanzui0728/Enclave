@@ -311,7 +311,7 @@ export function ContactsManagementModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+          className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
         >
           {header}
           <div
@@ -338,7 +338,7 @@ export function ContactsManagementModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(180, 130, 20, 0.18)]"
+        className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-[color:var(--surface-card)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(180, 130, 20, 0.18)]"
       >
         <div className="flex justify-center pt-2">
           <div className="h-1 w-9 rounded-full bg-black/10" />
@@ -378,7 +378,7 @@ function ModalHeader({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[color:var(--border-faint)] bg-white px-3">
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3">
       <div className="flex w-9 justify-start">
         {canGoBack ? (
           <button

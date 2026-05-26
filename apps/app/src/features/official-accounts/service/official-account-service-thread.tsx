@@ -412,7 +412,7 @@ export function OfficialAccountServiceThread({
             className="absolute inset-0 z-10 bg-transparent"
           />
         ) : null}
-        <header className="border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5">
+        <header className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
               {activeArticleId ? (
@@ -450,7 +450,7 @@ export function OfficialAccountServiceThread({
                 <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[0_18px_50px_rgba(180, 130, 20, 0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(180, 130, 20, 0.12)]">
                   <button
                     type="button"
                     onClick={() => {
@@ -511,11 +511,11 @@ export function OfficialAccountServiceThread({
           ref={activeArticleId ? undefined : desktopThreadScrollContainerRef}
           className={cn(
             "min-h-0 flex-1 overflow-auto",
-            activeArticleId ? "bg-white" : "bg-[#f4ede0]",
+            activeArticleId ? "bg-[color:var(--surface-card)]" : "bg-[#f4ede0]",
           )}
         >
           {activeArticleId ? (
-            <div className="min-h-full bg-white">
+            <div className="min-h-full bg-[color:var(--surface-card)]">
               {articleQuery.isLoading ? (
                 <ServiceDesktopStatusPane
                   title={t(msg`正在读取文章`)}
@@ -597,7 +597,7 @@ export function OfficialAccountServiceThread({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
       <header className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <Button
@@ -668,7 +668,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryPageData}
                   >
                     {t(msg`重试读取`)}
@@ -677,7 +677,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}
@@ -700,7 +700,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryActionSync}
                   >
                     {t(msg`重试同步`)}
@@ -709,7 +709,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}
@@ -742,7 +742,7 @@ export function OfficialAccountServiceThread({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}

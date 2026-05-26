@@ -82,7 +82,7 @@ export function ManagementPermissionsScreen({
   return (
     <div className="flex h-full flex-col">
       <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2">
-        <label className="flex h-9 items-center gap-2 rounded-[12px] bg-white px-3 text-[13px] text-[color:var(--text-dim)]">
+        <label className="flex h-9 items-center gap-2 rounded-[12px] bg-[color:var(--surface-card)] px-3 text-[13px] text-[color:var(--text-dim)]">
           <Search aria-hidden="true" size={14} />
           <input
             type="search"
@@ -141,7 +141,7 @@ export function ManagementPermissionsScreen({
               <button
                 type="button"
                 onClick={() => void friendsQuery.refetch()}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {t(msg`重试读取`)}
               </button>
@@ -161,7 +161,7 @@ export function ManagementPermissionsScreen({
               <div className="px-1 pb-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {section.title}
               </div>
-              <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
+              <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
                 {section.items.map((item, index) => (
                   <li
                     key={item.character.id}

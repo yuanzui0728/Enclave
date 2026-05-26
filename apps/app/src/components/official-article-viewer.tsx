@@ -201,10 +201,10 @@ export function OfficialArticleViewer({
     <article
       className={
         mobile
-          ? "w-full bg-white px-4 py-4"
+          ? "w-full bg-[color:var(--surface-card)] px-4 py-4"
           : desktopSurface === "reader"
-            ? "mx-auto w-full max-w-[720px] bg-white px-6 py-8 sm:px-8"
-            : "mx-auto w-full max-w-[760px] rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
+            ? "mx-auto w-full max-w-[720px] bg-[color:var(--surface-card)] px-6 py-8 sm:px-8"
+            : "mx-auto w-full max-w-[760px] rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
       }
     >
       <div
@@ -452,7 +452,7 @@ export function OfficialArticleViewer({
                     ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(180, 130, 20, 0.03)]"
                     : isDesktopReader
                       ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(180, 130, 20, 0.02)]"
-                      : "flex w-full items-start justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
+                      : "flex w-full items-start justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                 }
               >
                 <div className={cn("min-w-0 flex-1", isDesktopReader ? "pr-4" : undefined)}>

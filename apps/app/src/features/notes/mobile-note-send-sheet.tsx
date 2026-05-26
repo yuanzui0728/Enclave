@@ -94,7 +94,7 @@ export function MobileNoteSendSheet({
 
       <div
         className={cn(
-          "relative flex max-h-[88vh] min-h-0 flex-col rounded-t-[22px] bg-white shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]",
+          "relative flex max-h-[88vh] min-h-0 flex-col rounded-t-[22px] bg-[color:var(--surface-card)] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]",
           // pb 接 --keyboard-inset：sheet 里有「搜索最近会话」TextField，iOS
           // WKWebView 上聚焦后软键盘弹起会盖住底部「会以笔记卡片形式出现…/
           // 取消」action 栏 —— 跟 mobile-add-friend 的 SendSheet 一样要用
@@ -156,7 +156,7 @@ export function MobileNoteSendSheet({
             </div>
           ) : null}
           {!loading && !error && !conversations.length ? (
-            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-5 text-center text-[13px] text-[color:var(--text-secondary)]">
+            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-5 text-center text-[13px] text-[color:var(--text-secondary)]">
               {t(msg`先去消息列表里建立一些聊天，再回来发送笔记。`)}
             </div>
           ) : null}
@@ -164,7 +164,7 @@ export function MobileNoteSendSheet({
           !error &&
           conversations.length > 0 &&
           !filteredConversations.length ? (
-            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-4 text-center text-[13px] text-[color:var(--text-secondary)]">
+            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-center text-[13px] text-[color:var(--text-secondary)]">
               {t(msg`没有匹配的最近会话。`)}
             </div>
           ) : null}
@@ -220,7 +220,7 @@ export function MobileNoteSendSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+            className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
           >
             {t(msg`取消`)}
           </Button>

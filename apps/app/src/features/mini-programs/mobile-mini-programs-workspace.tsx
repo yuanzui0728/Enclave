@@ -143,7 +143,7 @@ export function MobileMiniProgramsWorkspace({
               placeholder={t(msg`搜索小程序、服务或场景`)}
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。
-              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.22)] focus:bg-white"
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.22)] focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -192,7 +192,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onNoticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -201,7 +201,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {statusBackLabel}
                     </button>
@@ -265,7 +265,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onOpenMiniProgram(selectedMiniProgram.id)}
-                className="h-8.5 flex-1 border-white/18 bg-white px-3 text-[11px] text-[color:var(--text-primary)] hover:bg-white/92"
+                className="h-8.5 flex-1 border-white/18 bg-[color:var(--surface-card)] px-3 text-[11px] text-[color:var(--text-primary)] hover:bg-white/92"
               >
                 {t(msg`打开小程序`)}
               </Button>
@@ -383,7 +383,7 @@ export function MobileMiniProgramsWorkspace({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={() => {
                     if (statusBackLabel && onStatusBack) {
                       onStatusBack();
@@ -479,7 +479,7 @@ export function MobileMiniProgramsWorkspace({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
                   onClick={() => {
                     if (statusBackLabel && onStatusBack) {
                       onStatusBack();
@@ -511,7 +511,7 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
         variant="ghost"
         size="icon"
         aria-label={t(msg`返回`)}
-        className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-white"
+        className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
       >
         <ArrowLeft size={18} />
       </Button>

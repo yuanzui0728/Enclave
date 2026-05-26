@@ -251,7 +251,7 @@ export function MobileSearchWorkspace({
               spellCheck={false}
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。全局搜索是用户最常用的 entry，每次进来都 zoom 体验最差。
-              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
+              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -353,14 +353,14 @@ export function MobileSearchWorkspace({
                 <button
                   type="button"
                   onClick={onRetryLoad}
-                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px] text-[color:var(--text-primary)]"
                 >
                   {t(msg`重试读取`)}
                 </button>
                 <button
                   type="button"
                   onClick={onBack}
-                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px] text-[color:var(--text-primary)]"
                 >
                   {t(msg`返回上一页`)}
                 </button>

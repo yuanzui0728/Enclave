@@ -75,7 +75,7 @@ export function AvatarEncounterTranscript({
                   "max-w-[78%] whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2.5 text-[13px] leading-6",
                   isMine
                     ? "bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
-                    : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]",
+                    : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]",
                 )}
               >
                 {turn.text}

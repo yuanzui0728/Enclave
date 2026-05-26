@@ -112,7 +112,7 @@ export function FeatureComingSoonDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
         <button
           type="button"
           aria-label={t(msg`关闭`)}

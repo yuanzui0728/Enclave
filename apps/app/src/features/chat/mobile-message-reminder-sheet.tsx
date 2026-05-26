@@ -168,7 +168,7 @@ export function MobileMessageReminderSheet({
               className={
                 isDesktop
                   ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
-                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[12px] leading-5 text-[#4b5563]"
+                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[#4b5563]"
               }
             >
               {previewText}
@@ -178,8 +178,8 @@ export function MobileMessageReminderSheet({
         <div
           className={
             isDesktop
-              ? "mt-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-white"
-              : "overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
+              ? "mt-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
+              : "overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
           }
         >
           {options.map((option) => (
@@ -225,7 +225,7 @@ export function MobileMessageReminderSheet({
               type="button"
               variant="secondary"
               onClick={onClose}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -234,7 +234,7 @@ export function MobileMessageReminderSheet({
           <button
             type="button"
             onClick={onClose}
-            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {t(msg`取消`)}
           </button>

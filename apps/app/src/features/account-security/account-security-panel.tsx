@@ -360,7 +360,7 @@ export function AccountSecurityPanel() {
       </InlineNotice>
 
       <form
-        className="space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-white p-4"
+        className="space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
         // noValidate：禁掉 HTML5 native 校验。<input pattern="\d{6}"> 留着是
         // 给 a11y 报字段格式期望，但 native popup（"Please match the requested
         // format."）的文案是浏览器系统语言决定的，zh-CN 用户在 headless chrome
@@ -424,7 +424,7 @@ export function AccountSecurityPanel() {
               }
               variant="secondary"
               size="lg"
-              className="shrink-0 rounded-2xl border-black/5 bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
+              className="shrink-0 rounded-2xl border-black/5 bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-[color:var(--surface-card)]"
             >
               {sendCodeMutation.isPending
                 ? t(msg`发送中...`)

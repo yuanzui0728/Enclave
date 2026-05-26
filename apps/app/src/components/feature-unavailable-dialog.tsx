@@ -106,7 +106,7 @@ export function FeatureUnavailableDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <div className="px-6 pb-2 pt-6 text-center">
           <div

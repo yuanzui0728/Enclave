@@ -600,7 +600,7 @@ function DangerConfirmDialog({
         onClick={onCancel}
         className="absolute inset-0"
       />
-      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]">
+      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
         <div className="px-5 py-5 text-center">
           <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
             {title}

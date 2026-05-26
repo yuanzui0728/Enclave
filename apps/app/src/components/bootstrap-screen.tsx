@@ -35,7 +35,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))",
       }}
     >
-      <div className="w-full max-w-md rounded-[24px] border border-black/5 bg-white px-8 py-10 shadow-none">
+      <div className="w-full max-w-md rounded-[24px] border border-black/5 bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#b45309]">
           Beyond Reality
         </div>

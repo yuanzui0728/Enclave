@@ -150,7 +150,7 @@ export function MobileMentionPickerSheet({
             {t(msg`选择要提醒的人`)}
           </div>
         </div>
-        <div className="mx-3 max-h-[46vh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+        <div className="mx-3 max-h-[46vh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
           {candidates.map((candidate, index) => (
             <button
               key={candidate.id}
@@ -184,7 +184,7 @@ export function MobileMentionPickerSheet({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {t(msg`取消`)}
           </button>

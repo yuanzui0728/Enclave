@@ -60,7 +60,7 @@ export function AvatarEncounterDecisionBar({
         onClick={onSkip}
         disabled={pending}
         className={cn(
-          "flex flex-1 items-center justify-center gap-1.5 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[13px] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]",
+          "flex flex-1 items-center justify-center gap-1.5 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[13px] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]",
           pending && "opacity-60",
         )}
       >

@@ -52,7 +52,7 @@ export function OfficialServiceMessageBubble({
 
         <div
           className={cn(
-            "overflow-hidden border bg-white text-left",
+            "overflow-hidden border bg-[color:var(--surface-card)] text-left",
             isDesktop
               ? "rounded-[20px] shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]"
               : "rounded-[16px] shadow-[0_4px_12px_rgba(180, 130, 20, 0.035)]",

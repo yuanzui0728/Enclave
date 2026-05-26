@@ -440,7 +440,7 @@ export function ChannelsForwardPicker({
         // 焦点 trap 兜底用：无 focusable child（极端 loading 态）时也能把焦点
         // 拉进来不漏。
         tabIndex={-1}
-        className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)] sm:rounded-[20px]"
+        className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)] sm:rounded-[20px]"
       >
         <div className="flex items-center justify-between px-5 pb-2 pt-5">
           <div>
@@ -516,7 +516,7 @@ export function ChannelsForwardPicker({
                   void friendsQuery.refetch();
                 }}
                 disabled={friendsQuery.isFetching}
-                className="mt-3 inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-1 text-[12px] font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-3 inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-1 text-[12px] font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {friendsQuery.isFetching
                   ? t(msg`重试中...`)

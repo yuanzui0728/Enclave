@@ -448,7 +448,7 @@ export function ShareCardModal({
       </div>
 
       {/* i18n-ignore-line: dev comment - 用户可见的预览 + 操作 */}
-      <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-[color:var(--surface-card)] shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
           <div
             id="share-card-modal-title"

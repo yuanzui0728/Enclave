@@ -269,7 +269,7 @@ export function ContactsBulkActionBar({
             // 用户看着像"我点了全选但只剩几个高亮"，根本对不上。
             disabled={!totalIds.length || bulk.isPending}
             className={cn(
-              "flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-white text-[12px] text-[color:var(--text-secondary)] disabled:opacity-50",
+              "flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[12px] text-[color:var(--text-secondary)] disabled:opacity-50",
               desktop ? "px-2.5" : "px-3",
             )}
           >
@@ -329,7 +329,7 @@ export function ContactsBulkActionBar({
             role="dialog"
             aria-modal="true"
             aria-labelledby="contacts-bulk-tag-dialog-title"
-            className="relative w-full max-w-[420px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]"
+            className="relative w-full max-w-[420px] overflow-hidden rounded-[16px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
           >
             <div
               id="contacts-bulk-tag-dialog-title"
@@ -354,7 +354,7 @@ export function ContactsBulkActionBar({
                 // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
                 // zoom-in，autoFocus 一打开就抖；text-[14px] 时还会把 dialog
                 // 推出可视区一截。
-                className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#f59e0b] disabled:opacity-60"
+                className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#f59e0b] disabled:opacity-60"
               />
               <div className="mt-1 flex items-center justify-between text-[11px] text-[color:var(--text-muted)]">
                 <span>{t(msg`已选 ${selectedIds.length} 项`)}</span>
@@ -367,7 +367,7 @@ export function ContactsBulkActionBar({
                   type="button"
                   onClick={() => setShowTagDialog(false)}
                   disabled={bulk.isPending}
-                  className="h-9 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] disabled:opacity-50"
+                  className="h-9 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-[13px] text-[color:var(--text-secondary)] disabled:opacity-50"
                 >
                   {t(msg`取消`)}
                 </button>
@@ -408,7 +408,7 @@ export function ContactsBulkActionBar({
             role="dialog"
             aria-modal="true"
             aria-labelledby="contacts-bulk-delete-dialog-title"
-            className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-overlay)]"
+            className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
           >
             <div className="px-5 py-5 text-center">
               <div

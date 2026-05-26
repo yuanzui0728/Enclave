@@ -186,7 +186,7 @@ export function MobileDetailsActionSheet({
           <div className="h-1 w-9 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
 
-        <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+        <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
           <div className="border-b border-[color:var(--border-subtle)] px-5 py-2.5 text-center">
             <div
               id={titleId}
@@ -233,7 +233,7 @@ export function MobileDetailsActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 flex h-10 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+          className="mt-2 flex h-10 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {cancelLabel ?? t(msg`取消`)}
         </button>

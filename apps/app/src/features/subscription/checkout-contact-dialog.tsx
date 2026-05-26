@@ -188,7 +188,7 @@ export function CheckoutContactDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={hint ? descId : undefined}
-        className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+        className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
       >
         <div className="px-6 pt-6 pb-2">
           <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
@@ -230,7 +230,7 @@ export function CheckoutContactDialog({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="shrink-0 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] shadow-none"
+                  className="shrink-0 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] shadow-none"
                   onClick={() => void handleCopy(item.value, item.successMessage)}
                 >
                   {t(msg`复制`)}

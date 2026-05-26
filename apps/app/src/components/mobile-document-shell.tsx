@@ -171,7 +171,7 @@ export function MobileDocumentShell({
                       <button
                         type="button"
                         onClick={notice.onAction}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {notice.actionLabel}
                       </button>
@@ -192,7 +192,7 @@ export function MobileDocumentShell({
                             : "/tabs/profile",
                         )
                       }
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -204,7 +204,7 @@ export function MobileDocumentShell({
             </InlineNotice>
           </div>
         ) : null}
-        <section className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4">
+        <section className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
           <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#b45309]">
             {eyebrow}
           </div>
@@ -219,7 +219,7 @@ export function MobileDocumentShell({
         {sections.map((section) => (
           <section
             key={section.title}
-            className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4"
+            className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4"
           >
             <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
               {section.title}

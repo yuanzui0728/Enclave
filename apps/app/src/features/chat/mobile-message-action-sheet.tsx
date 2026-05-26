@@ -225,7 +225,7 @@ export function MobileMessageActionSheet({
           {title}
         </div>
         {preview ? (
-          <div className="mb-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5">
+          <div className="mb-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2.5">
             {preview.senderName ? (
               <div className="pb-1 text-[10px] text-[#8c8c8c]">
                 {preview.senderName}
@@ -248,7 +248,7 @@ export function MobileMessageActionSheet({
             </div>
           </div>
         ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
           {onReply ? <ActionButton label={t(msg`回复`)} onClick={guardAction(onReply)!} /> : null}
           {onQuoteSelection ? (
             <ActionButton
@@ -304,7 +304,7 @@ export function MobileMessageActionSheet({
         <button
           type="button"
           onClick={guardClose}
-          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {t(msg`取消`)}
         </button>

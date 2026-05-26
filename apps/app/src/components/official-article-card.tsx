@@ -29,10 +29,10 @@ export function OfficialArticleCard({
       className={cn(
         "group w-full transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
+          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
-            ? "border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
-            : "border-b border-[color:var(--border-faint)] bg-white px-5 py-4 hover:bg-[color:var(--surface-console)]",
+            ? "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
+            : "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-4 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
             ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)]"
@@ -113,7 +113,7 @@ export function OfficialArticleCard({
                   : "h-8 rounded-lg px-3 text-[11px]",
                 favorite
                   ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
-                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
               )}
             >
               <Star

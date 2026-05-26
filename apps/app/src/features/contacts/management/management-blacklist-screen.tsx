@@ -85,7 +85,7 @@ export function ManagementBlacklistScreen() {
             <button
               type="button"
               onClick={() => void blockedQuery.refetch()}
-              className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
             >
               {t(msg`重试读取`)}
             </button>
@@ -121,7 +121,7 @@ export function ManagementBlacklistScreen() {
           {unblockMutation.error.message}
         </InlineNotice>
       ) : null}
-      <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
+      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
         {blocked.map((entry, index) => {
           const character = characterMap.get(entry.characterId);
           // R2 走查：原 fallback 是 entry.characterId.slice(0,8)，charactersQuery 还在
@@ -169,7 +169,7 @@ export function ManagementBlacklistScreen() {
                   variant="secondary"
                   onClick={() => unblockMutation.mutate(entry.characterId)}
                   disabled={unblockMutation.isPending}
-                  className="h-8 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[12px]"
+                  className="h-8 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[12px]"
                 >
                   {unblockMutation.isPending &&
                   unblockMutation.variables === entry.characterId

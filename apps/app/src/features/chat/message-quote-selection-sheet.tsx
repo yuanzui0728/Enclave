@@ -133,7 +133,7 @@ export function MessageQuoteSelectionSheet({
         aria-labelledby={titleId}
         className={`absolute ${
           isDesktop
-            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[24px] bg-white p-5 shadow-[0_24px_60px_rgba(180, 130, 20, 0.18)]"
+            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[24px] bg-[color:var(--surface-card)] p-5 shadow-[0_24px_60px_rgba(180, 130, 20, 0.18)]"
             : "inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
         }`}
       >
@@ -160,7 +160,7 @@ export function MessageQuoteSelectionSheet({
           className={`mt-4 rounded-[16px] ${
             isDesktop
               ? "border border-black/6 bg-[#fafafa] p-4"
-              : "border border-[color:var(--border-subtle)] bg-white px-3 py-3"
+              : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3"
           }`}
         >
           <div
@@ -204,7 +204,7 @@ export function MessageQuoteSelectionSheet({
                 ? "bg-[rgba(245, 158, 11,0.10)] text-[#11925a]"
                 : "bg-[rgba(245, 158, 11,0.10)] text-[#11925a]"
               : isDesktop
-                ? "bg-white text-[color:var(--text-muted)]"
+                ? "bg-[color:var(--surface-card)] text-[color:var(--text-muted)]"
                 : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]"
           }`}
         >
@@ -223,7 +223,7 @@ export function MessageQuoteSelectionSheet({
             className={
               isDesktop
                 ? "rounded-full"
-                : "h-11 flex-1 rounded-[16px] border-[color:var(--border-subtle)] bg-white text-[15px] active:bg-[color:var(--surface-card-hover)]"
+                : "h-11 flex-1 rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] active:bg-[color:var(--surface-card-hover)]"
             }
           >
             {t(msg`取消`)}

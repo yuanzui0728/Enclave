@@ -272,7 +272,7 @@ export function MiniProgramOpenPanel({
                     size="sm"
                     onClick={() => onToggleTask(miniProgram.id, task.id)}
                     className={cn(
-                      "shrink-0 border-white/80 bg-white",
+                      "shrink-0 border-white/80 bg-[color:var(--surface-card)]",
                       compact && "h-8 rounded-full px-3 text-[11px]",
                     )}
                   >

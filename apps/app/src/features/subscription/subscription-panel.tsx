@@ -210,7 +210,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
   }, [shareUrl, invite.shareTitle, invite.shareBody, handleCopy, t]);
 
   return (
-    <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
+    <AppSection className="rounded-[24px] border-black/5 bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
       <div className="text-sm font-semibold text-[color:var(--text-primary)]">
         {t(msg`邀请奖励`)}
       </div>
@@ -284,7 +284,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                   </Button>
                   <Button
                     variant="secondary"
-                    className="rounded-2xl border-[color:var(--border-faint)] bg-white shadow-none"
+                    className="rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
                     onClick={() =>
                       void handleCopy(
                         invite.code ?? "",
@@ -297,7 +297,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                   {showSystemShare ? (
                     <Button
                       variant="secondary"
-                      className="rounded-2xl border-[color:var(--border-faint)] bg-white shadow-none"
+                      className="rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
                       onClick={() => void handleShare()}
                     >
                       {t(msg`系统分享`)}
@@ -313,7 +313,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
               </div>
 
               <div className="flex flex-col items-center gap-2 self-center sm:self-start">
-                <div className="rounded-[20px] border border-black/5 bg-white p-3">
+                <div className="rounded-[20px] border border-black/5 bg-[color:var(--surface-card)] p-3">
                   {qrDataUrl ? (
                     <img
                       src={qrDataUrl}
@@ -558,7 +558,7 @@ export function SubscriptionPanel({
       </AppSection>
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.95fr]">
-        <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
+        <AppSection className="rounded-[24px] border-black/5 bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
           <div className="text-sm font-semibold text-[color:var(--text-primary)]">
             {t(msg`可购套餐`)}
           </div>
@@ -617,7 +617,7 @@ export function SubscriptionPanel({
         <div className="space-y-4">
           <InviteShareCard invite={invite} />
 
-          <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
+          <AppSection className="rounded-[24px] border-black/5 bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
             <div className="text-sm font-semibold text-[color:var(--text-primary)]">
               {t(msg`最近邀请记录`)}
             </div>

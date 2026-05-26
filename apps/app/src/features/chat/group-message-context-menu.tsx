@@ -211,7 +211,7 @@ export function GroupMessageContextMenu({
         role="menu"
         aria-label={t(msg`消息操作菜单`)}
         style={{ left, top }}
-        className="absolute w-[196px] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white py-1.5 shadow-[var(--shadow-overlay)]"
+        className="absolute w-[196px] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-1.5 shadow-[var(--shadow-overlay)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {onReply ? (

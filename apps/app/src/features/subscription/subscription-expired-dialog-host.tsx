@@ -43,7 +43,7 @@ export function SubscriptionExpiredDialogHost() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+      <div className="w-full max-w-md rounded-[24px] bg-[color:var(--surface-card)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
         <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
           {t(msg`AI 访问权限`)}
         </div>
