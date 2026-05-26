@@ -2883,7 +2883,7 @@ export function ContactsPage() {
             />
           )}
 
-          <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)]">
             {friendsQuery.isLoading ? (
               <MobileContactsStatusCard
                 badge={t(msg`读取中`)}
@@ -3070,10 +3070,10 @@ const FriendListRow = memo(function FriendListRow({
       // bulkMode 下保持 undefined，避免对普通"打开资料"的导航按钮误加按下态。
       aria-pressed={bulkMode ? selected : undefined}
       className={cn(
-        "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
+        "yj-list-item-virtual flex w-full items-center gap-3 text-left transition-colors",
         desktop
-          ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
-          : "py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
+          ? "bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
+          : "bg-transparent py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
           ? "border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 238, 225,0.94)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
@@ -3172,12 +3172,18 @@ function SectionHeader({
   return (
     <div
       className={cn(
-        "z-10 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
+        "z-10 flex items-center gap-1.5 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
-          : "text-[11px] bg-[rgba(250, 245, 237,0.94)]",
+          : "text-[11px] bg-[rgba(250,245,237,0.82)]",
       )}
     >
+      {!desktop ? (
+        <span
+          aria-hidden
+          className="inline-block h-2.5 w-[3px] rounded-full bg-[color:var(--accent-dot)]"
+        />
+      ) : null}
       {title}
     </div>
   );

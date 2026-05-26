@@ -369,16 +369,16 @@ export function MobileFavoritesPage({
         }
       />
 
-      <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-2">
+      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2">
         <TextField
           value={searchText}
           onChange={(event) => setSearchText(event.target.value)}
           placeholder={t(msg`搜索已收藏内容`)}
-          className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-2 text-[14px] shadow-none"
+          className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-[14px] shadow-none"
         />
       </div>
 
-      <div className="overflow-x-auto border-b border-[color:var(--border-faint)] bg-white px-4 py-2">
+      <div className="overflow-x-auto border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2">
         <div className="flex gap-2 whitespace-nowrap">
           {filters.map((filter) => (
             <button
@@ -389,7 +389,7 @@ export function MobileFavoritesPage({
                 "rounded-full border px-3 py-1 text-[12px] transition-colors",
                 activeFilter === filter.id
                   ? "border-[#b45309] bg-[rgba(245, 158, 11,0.10)] text-[#b45309]"
-                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
+                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
               )}
             >
               {filter.label}
@@ -581,7 +581,7 @@ function FavoriteRow({
       onPointerUp={clearTimer}
       onPointerCancel={clearTimer}
       onPointerLeave={clearTimer}
-      className="flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)] active:bg-none"
       style={{ touchAction: "manipulation", WebkitUserSelect: "none" }}
     >
       <AvatarChip

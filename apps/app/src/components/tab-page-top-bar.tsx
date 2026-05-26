@@ -71,7 +71,7 @@ export function TabPageTopBar({
   return (
     <div
       className={cn(
-        "sticky top-0 z-20 -mx-4 -mt-6 mb-4 overflow-hidden border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 py-3 backdrop-blur-xl sm:-mx-5 sm:px-5",
+        "sticky top-0 z-20 -mx-4 -mt-6 mb-4 overflow-hidden border-b border-[color:var(--border-brand)] bg-[color:var(--surface-overlay)] bg-[image:var(--topbar-bg)] px-4 py-3 backdrop-blur-xl sm:-mx-5 sm:px-5",
         className,
       )}
       {...props}

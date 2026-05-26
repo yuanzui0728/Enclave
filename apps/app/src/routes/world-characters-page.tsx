@@ -532,10 +532,14 @@ function MobileWorldCharactersPage() {
         ) : null}
 
         {sectionsWithAnchors.length ? (
-          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)]">
             {sectionsWithAnchors.map((section) => (
               <div key={section.key} id={section.scopedAnchorId}>
-                <div className="bg-[rgba(250, 245, 237,0.94)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                <div className="flex items-center gap-1.5 bg-[rgba(250,245,237,0.82)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2.5 w-[3px] rounded-full bg-[color:var(--accent-dot)]"
+                  />
                   {section.title}
                 </div>
                 {section.items.map((item, index) => (
@@ -586,7 +590,7 @@ const WorldCharacterListRow = memo(function WorldCharacterListRow({
       type="button"
       onClick={handleClick}
       className={cn(
-        "yj-list-item-virtual flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+        "yj-list-item-virtual flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
         index > 0
           ? "border-t border-[color:var(--border-faint)]"
           : undefined,

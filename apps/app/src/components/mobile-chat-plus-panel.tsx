@@ -520,7 +520,7 @@ export function MobileChatPlusPanel({
           ) : null}
 
           {unavailableAction ? (
-            <div className="mx-3 mt-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3 shadow-none">
+            <div className="mx-3 mt-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-3 shadow-none">
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
@@ -599,7 +599,7 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {friends.length ? (
-            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
               {friends.map((item, index) => {
                 const { character, friendship } = item;
                 // 走查 R1：联系人列表跟通讯录 / 群成员选择 / 桌面拓展面板里都
@@ -697,7 +697,7 @@ export function MobileChatPlusPanel({
             // 走查新一轮 R2：description 跟 title 一样时（笔记 favorite 几乎都是
             // 这种），picker 第三行只是把 title 又写一遍——share text 那边已经
             // 在 buildFavoriteShareText 去重了，这里 UI 上同步把那行藏掉。
-            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
               {favoriteRecords.map((item, index) => {
                 const trimmedTitle = item.title.trim();
                 const trimmedDescription = item.description.trim();
@@ -761,7 +761,7 @@ export function MobileChatPlusPanel({
             onBack={() => setActiveView("root")}
             onClose={onClose}
           />
-          <div className="mx-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+          <div className="mx-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
             {CHAT_LOCATION_SCENES.map((scene) => (
               <button
                 key={scene.id}
@@ -806,7 +806,7 @@ function PanelStatusBlock({
   onSecondary?: () => void;
 }) {
   return (
-    <div className="mx-2.5 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center shadow-none">
+    <div className="mx-2.5 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-5 text-center shadow-none">
       <div className="text-[13px] font-medium text-[color:var(--text-primary)]">{title}</div>
       <div className="mx-auto mt-1.5 max-w-[18rem] text-[11px] leading-[18px] text-[color:var(--text-muted)]">
         {description}

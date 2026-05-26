@@ -813,7 +813,7 @@ function DesktopDiscoverWorkspace() {
               ) : null}
             </AppSection>
 
-            <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
+            <AppSection className="space-y-4 border-[color:var(--border-faint)] shadow-none">
               <div className="rounded-[24px] border border-[rgba(245, 158, 11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -879,7 +879,7 @@ function DesktopDiscoverWorkspace() {
                       !composeDraft.canAddImages ||
                       createFeedPostMutation.isPending
                     }
-                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[11px]"
                     onClick={() => imageInputRef.current?.click()}
                   >
                     <ImagePlus size={14} className="mr-1" />
@@ -893,7 +893,7 @@ function DesktopDiscoverWorkspace() {
                       !composeDraft.canAddVideo ||
                       createFeedPostMutation.isPending
                     }
-                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[11px]"
                     onClick={() => videoInputRef.current?.click()}
                   >
                     <Video size={14} className="mr-1" />

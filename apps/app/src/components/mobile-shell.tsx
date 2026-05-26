@@ -183,7 +183,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                     className={cn(
                       "relative flex h-8 w-8 items-center justify-center transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
-                        ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)]"
+                        ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)] [background-image:linear-gradient(135deg,rgba(245,158,11,0.20),rgba(132,204,22,0.16))]"
                         : "rounded-[12px] bg-transparent",
                     )}
                   >

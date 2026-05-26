@@ -248,27 +248,40 @@ body.yj-mobile::after {
 
 .yj-mobile-shell {
   /* === 青柠蜜橙(Citrus)：阳光暖色，与微信绿/灰区分 ===
-   * 表面阶梯：画布(暖奶油) < 分组/面板(暖) < 卡片/行(白)
-   * 让白卡片在暖奶油画布上清晰浮起，恢复层次(替微信"灰底白卡") */
+   * 表面阶梯：画布(暖奶油) < 分组/面板(暖) < 卡片/行(暖象牙白+暖渐变)
+   * 卡片用暖象牙白替纯白，再叠纵向暖渐变(--surface-card-gradient)，
+   * 像被阳光打到，既保留浮起层次又不刺眼(替原"纯白大色块") */
   --bg-canvas: #f4ede0;
-  --bg-canvas-elevated: #ffffff;
+  --bg-canvas-elevated: #fffaf3;
   --bg-accent: none;
   --bg-glow-top: none;
   --bg-glow-bottom: none;
   --bg-grid: none;
 
-  --surface-primary: rgba(255, 255, 255, 0.96);
+  --surface-primary: rgba(255, 250, 243, 0.96);
   --surface-shell: #f4ede0;
-  --surface-section: #ffffff;
-  --surface-card: #ffffff;
-  --surface-card-hover: #f3ebdc;
+  --surface-section: #fffaf3;
+  --surface-card: #fffaf3;
+  --surface-card-hover: #f6ecd9;
   --surface-soft: rgba(245, 158, 11, 0.08);
   --surface-secondary: #faf4ea;
   --surface-panel: #faf4ea;
   --surface-tertiary: rgba(132, 204, 22, 0.12);
   --surface-overlay: rgba(250, 245, 237, 0.94);
   --surface-console: #faf5ec;
-  --surface-input: #ffffff;
+  --surface-input: #fff8ee;
+
+  /* 暖渐变卡：顶亮→底浅蜜桃。仅移动端定义；桌面/base 未定义此变量，
+   * 共享组件用 bg-[image:var(--surface-card-gradient)] 时桌面回退 none，
+   * 只显示各自纯色底，互不影响。 */
+  --surface-card-gradient: linear-gradient(180deg, #fffefb 0%, #fcf3e3 100%);
+  --accent-dot: var(--brand-primary);
+  --avatar-ring: 0 0 0 1.5px rgba(245, 158, 11, 0.14);
+  --topbar-bg: linear-gradient(
+    180deg,
+    rgba(255, 251, 244, 0.96),
+    rgba(250, 243, 231, 0.92)
+  );
 
   --border-faint: rgba(120, 70, 20, 0.06);
   --border-subtle: rgba(120, 70, 20, 0.1);
@@ -285,7 +298,7 @@ body.yj-mobile::after {
   --brand-secondary: #84cc16;
   --brand-accent: #facc15;
   --brand-soft: rgba(245, 158, 11, 0.1);
-  --brand-gradient: linear-gradient(135deg, #facc15, #f59e0b);
+  --brand-gradient: linear-gradient(135deg, #facc15 0%, #f59e0b 55%, #84cc16 100%);
 
   /* 成功态保留真绿，避免与品牌绿语义混淆 */
   --state-success-bg: rgba(34, 197, 94, 0.1);

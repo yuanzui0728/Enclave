@@ -44,7 +44,7 @@ export function SocialPostCard({
       // scrollIntoView({block:"start"})，但移动端顶上有带 subtitle 的 sticky
       // TabPageTopBar (~80px)，对齐到 y=0 会把作者头/meta 藏在顶栏底下。
       // 给 article 加 scroll-margin-top 让浏览器把这点高度还回来。
-      className="scroll-mt-[88px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4 shadow-none"
+      className="scroll-mt-[88px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)] p-4 shadow-none"
     >
       <div className="flex items-start gap-3">
         {onAuthorClick ? (

@@ -5,7 +5,7 @@ export function AppSection({ className, ...props }: HTMLAttributes<HTMLElement>)
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]",
+        "relative overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-section)] bg-[image:var(--surface-card-gradient)] p-5 shadow-[var(--shadow-section)]",
         className,
       )}
       {...props}

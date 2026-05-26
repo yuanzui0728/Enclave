@@ -50,7 +50,7 @@ export function MomentPostCard({
   const [showCommentBox, setShowCommentBox] = useState(false);
 
   return (
-    <div className="flex gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-4">
+    <div className="flex gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4">
       {/* Left: Avatar */}
       <div className="shrink-0">
         <AvatarChip name={authorName} src={authorAvatar} size="wechat" />
