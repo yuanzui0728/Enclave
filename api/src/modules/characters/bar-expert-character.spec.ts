@@ -6,7 +6,7 @@ describe('bar expert character', () => {
     const character = buildBarExpertCharacter();
 
     expect(character).toMatchObject({
-      name: '阿澄',
+      name: '鸡尾酒顾问',
       relationshipType: 'expert',
       sourceType: 'default_seed',
       momentsFrequency: 1,

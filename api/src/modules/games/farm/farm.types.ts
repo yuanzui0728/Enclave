@@ -501,8 +501,8 @@ export const FARM_EXCLUDED_CHARACTER_IDS = new Set<string>([
   'world-news-desk',
   'system',
   'system-character',
-  // Actual default-character ids in this codebase. 漏掉这些会让 "我自己 / 小盯 /
-  // 界闻" 这些系统 NPC 出现在邻居列表，并且能被串门 / 偷菜。
+  // Actual default-character ids in this codebase. 漏掉这些会让 "我自己 / 提醒助手 /
+  // 新闻编辑" 这些系统 NPC 出现在邻居列表，并且能被串门 / 偷菜。
   'char-default-self',
   'char-default-reminder',
   'char-default-world-news-desk',

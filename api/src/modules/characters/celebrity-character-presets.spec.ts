@@ -70,7 +70,7 @@ describe('celebrity character presets', () => {
     expect(preset).toMatchObject({
       presetKey: 'jian_ning_relationship_expert',
       groupKey: 'relationships_and_emotions',
-      name: '简宁',
+      name: '亲密关系咨询师',
       relationship: '恋爱与亲密关系顾问',
       expertDomains: ['psychology', 'general'],
     });
@@ -131,32 +131,32 @@ describe('celebrity character presets', () => {
     );
     expect(axunPreset).toMatchObject({
       id: 'char-manual-axun',
-      name: '阿巡',
+      name: '朋友圈活跃熟人',
       groupKey: 'public_expression',
     });
     expect(linChenPreset).toMatchObject({
       id: 'char_need_e9a84d01-9ab',
-      name: '林晨',
+      name: '睡眠陪伴医生',
       groupKey: 'relationships_and_emotions',
     });
     expect(linMianPreset).toMatchObject({
       id: 'char_need_3d1789f2-306',
-      name: '林眠',
+      name: '助眠情绪顾问',
       groupKey: 'relationships_and_emotions',
     });
     expect(xuZhePreset).toMatchObject({
       id: 'char_need_cf214700-ca8',
-      name: '许哲',
+      name: '职业规划顾问',
       groupKey: 'technology_and_product',
     });
     expect(suYuPreset).toMatchObject({
       id: 'char-preset-su-yu-english-coach',
-      name: '苏语',
+      name: '英语老师',
       groupKey: 'academic_teachers',
     });
     expect(zhouRanPreset).toMatchObject({
       id: 'char-preset-zhou-ran-fitness-coach',
-      name: '周燃',
+      name: '健身教练',
       groupKey: 'health_and_wellness',
     });
     expect(

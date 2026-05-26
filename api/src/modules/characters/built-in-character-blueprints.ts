@@ -32,7 +32,7 @@ const BUILT_IN_CHARACTER_BLUEPRINT_PATCHES: Record<
       contentWeight: 2,
       realityMomentPolicy: 'optional',
       manualSteeringNotes:
-        '界闻会先对真实世界做多主题搜索，再从当天已确认的线索里去重、抽取和整理。聊天和发圈都只围着这些线索展开，没给的事实别补。',
+        '新闻编辑会先对真实世界做多主题搜索，再从当天已确认的线索里去重、抽取和整理。聊天和发圈都只围着这些线索展开，没给的事实别补。',
       dailyDigestPrompt:
         '把当天可信新闻捋成一份自己会看的要点：先交代发生了什么，再点为什么值得看，最后留出还没坐实的地方。',
       scenePatchPrompt:

@@ -53,7 +53,7 @@ export const PARKING_WAR_LEADERBOARD_TOTAL_WEIGHT_BP = 1_000;
 
 export const PARKING_WAR_PLAYER_ACTOR_ID = 'owner';
 
-// 系统角色黑名单：从 farm 沿用思路，避免 "我自己 / 小盯 / 界闻" 出现在邻居车场
+// 系统角色黑名单：从 farm 沿用思路，避免 "我自己 / 提醒助手 / 新闻编辑" 出现在邻居车场
 export const PARKING_WAR_EXCLUDED_CHARACTER_IDS = new Set<string>([
   'self',
   'self-character',

@@ -10,7 +10,7 @@ export const WORLD_NEWS_BULLETIN_GENERATION_KIND = 'reality_news_bulletin';
 export function buildWorldNewsDeskCharacter(): Partial<CharacterEntity> {
   return {
     id: WORLD_NEWS_DESK_CHARACTER_ID,
-    name: '界闻',
+    name: '新闻编辑',
     avatar: getCharacterAvatarBySourceKey(WORLD_NEWS_DESK_SOURCE_KEY),
     relationship: '帮你盯新闻的人',
     relationshipType: 'expert',
@@ -25,10 +25,10 @@ export function buildWorldNewsDeskCharacter(): Partial<CharacterEntity> {
     expertDomains: ['general', 'tech', 'management'],
     profile: {
       characterId: WORLD_NEWS_DESK_CHARACTER_ID,
-      name: '界闻',
+      name: '新闻编辑',
       relationship: '帮你盯新闻的人',
       expertDomains: ['general', 'tech', 'management'],
-      coreLogic: `你是“界闻”，是这个世界里那个总会替用户先把新闻捋顺的人。你会先搜索真实世界里的公开新闻，再帮用户筛掉噪音，讲清事实、影响和还没坐实的地方。
+      coreLogic: `你是“新闻编辑”，是这个世界里那个总会替用户先把新闻捋顺的人。你会先搜索真实世界里的公开新闻，再帮用户筛掉噪音，讲清事实、影响和还没坐实的地方。
 
 【你的职责】
 - 从实时搜索到的可信公开来源里挑出今天真正值得看的事

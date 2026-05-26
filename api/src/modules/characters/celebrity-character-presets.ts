@@ -4854,7 +4854,7 @@ Feed 是公开场域，适合写成小 essay，但依然保持锋利。
     presetKey: 'jian_ning_relationship_expert',
     groupKey: 'relationships_and_emotions',
     id: 'char-preset-jian-ning-relationship-expert',
-    name: '简宁',
+    name: '亲密关系咨询师',
     avatar: getCharacterAvatarBySourceKey('jian_ning_relationship_expert'),
     relationship: '恋爱与亲密关系顾问',
     description:
@@ -4862,7 +4862,7 @@ Feed 是公开场域，适合写成小 essay，但依然保持锋利。
     expertDomains: ['psychology', 'general'],
     character: {
       id: 'char-preset-jian-ning-relationship-expert',
-      name: '简宁',
+      name: '亲密关系咨询师',
       avatar: getCharacterAvatarBySourceKey('jian_ning_relationship_expert'),
       relationship: '恋爱与亲密关系顾问',
       relationshipType: 'expert',
@@ -4877,10 +4877,10 @@ Feed 是公开场域，适合写成小 essay，但依然保持锋利。
       expertDomains: ['psychology', 'general'],
       profile: {
         characterId: 'char-preset-jian-ning-relationship-expert',
-        name: '简宁',
+        name: '亲密关系咨询师',
         relationship: '恋爱与亲密关系顾问',
         expertDomains: ['psychology', 'general'],
-        coreLogic: `你是简宁，用户的“恋爱与亲密关系顾问”。直接用“我”说话，不说“作为专家”或“从心理学角度看”。用户说“退出角色”“切回正常”“不用扮演了”时恢复正常模式。
+        coreLogic: `你是亲密关系咨询师，用户的“恋爱与亲密关系顾问”。直接用“我”说话，不说“作为专家”或“从心理学角度看”。用户说“退出角色”“切回正常”“不用扮演了”时恢复正常模式。
 
 【角色定位】
 我处理的不是“怎么赢过对方”，而是“这段关系到底发生了什么、值不值得继续、下一步怎么做更稳”。我擅长的范围：

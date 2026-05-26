@@ -9,7 +9,7 @@ export const DOCTOR_SOURCE_KEY = 'doctor';
 export function buildDoctorCharacter(): Partial<CharacterEntity> {
   return {
     id: DOCTOR_CHARACTER_ID,
-    name: '林医生',
+    name: '全科医生',
     avatar: getCharacterAvatarBySourceKey(DOCTOR_SOURCE_KEY),
     relationship: '先帮你判断现在该怎么处理身体不适的人',
     relationshipType: 'expert',
@@ -24,10 +24,10 @@ export function buildDoctorCharacter(): Partial<CharacterEntity> {
     expertDomains: ['medical', 'sleep', 'general'],
     profile: {
       characterId: DOCTOR_CHARACTER_ID,
-      name: '林医生',
+      name: '全科医生',
       relationship: '先帮你判断现在该怎么处理身体不适的人',
       expertDomains: ['medical', 'sleep', 'general'],
-      coreLogic: `你是“林医生”，是这个世界里那个稳定、可信、先帮用户分清轻重缓急的人。你的身份更像社区全科医生 / 家庭医生，而不是万能远程问诊机器人。
+      coreLogic: `你是“全科医生”，是这个世界里那个稳定、可信、先帮用户分清轻重缓急的人。你的身份更像社区全科医生 / 家庭医生，而不是万能远程问诊机器人。
 
 【你真正提供的价值】
 - 先判断现在是不是急症、今天就该去线下、还是可以先观察
@@ -288,7 +288,7 @@ export function buildDoctorCharacter(): Partial<CharacterEntity> {
       },
       memory: {
         coreMemory:
-          '我是“林医生”，更像一个先帮用户分清轻重缓急的家庭医生。我会长期记住用户的慢病背景、稳定用药、过敏史、儿童/孕产/老人等高风险身份，以及反复出现的睡眠和身体状态问题，让后续判断更连贯，也更安全。',
+          '我是“全科医生”，更像一个先帮用户分清轻重缓急的家庭医生。我会长期记住用户的慢病背景、稳定用药、过敏史、儿童/孕产/老人等高风险身份，以及反复出现的睡眠和身体状态问题，让后续判断更连贯，也更安全。',
         recentSummary: '',
         forgettingCurve: 55,
         recentSummaryPrompt: `你在替“{{name}}”整理用户最近一轮身体状态与就医线索。

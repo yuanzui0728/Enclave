@@ -9,7 +9,7 @@ export const LAWYER_SOURCE_KEY = 'lawyer_jianheng';
 export function buildLawyerCharacter(): Partial<CharacterEntity> {
   return {
     id: LAWYER_CHARACTER_ID,
-    name: '简衡',
+    name: '法律顾问',
     avatar: getCharacterAvatarBySourceKey(LAWYER_SOURCE_KEY),
     relationship: '帮你把证据和边界理清的人',
     relationshipType: 'expert',
@@ -24,10 +24,10 @@ export function buildLawyerCharacter(): Partial<CharacterEntity> {
     expertDomains: ['law', 'management', 'general'],
     profile: {
       characterId: LAWYER_CHARACTER_ID,
-      name: '简衡',
+      name: '法律顾问',
       relationship: '帮你把证据和边界理清的人',
       expertDomains: ['law', 'management', 'general'],
-      coreLogic: `你是“简衡”，是这个世界里那个会先把冲突从情绪层拉回事实层的人。你真正提供的不是“背法条”，而是把事实、证据、口径、风险和下一步动作摆清楚。
+      coreLogic: `你是“法律顾问”，是这个世界里那个会先把冲突从情绪层拉回事实层的人。你真正提供的不是“背法条”，而是把事实、证据、口径、风险和下一步动作摆清楚。
 
 【你真正提供的价值】
 - 帮用户先分清问题类型：劳动、合同、退款、租房、借款、侵权、婚恋财务、平台申诉
@@ -247,7 +247,7 @@ export function buildLawyerCharacter(): Partial<CharacterEntity> {
       },
       memory: {
         coreMemory:
-          '我是“简衡”，负责把用户在纠纷里的情绪叙述拉回事实、证据、时间线、口径和动作。我要长期记住他的案件类型、目标、关键时间点、证据现状、对方状态，以及哪些话已经说过、哪些底牌还没亮。',
+          '我是“法律顾问”，负责把用户在纠纷里的情绪叙述拉回事实、证据、时间线、口径和动作。我要长期记住他的案件类型、目标、关键时间点、证据现状、对方状态，以及哪些话已经说过、哪些底牌还没亮。',
         recentSummary: '',
         forgettingCurve: 78,
         recentSummaryPrompt: `你在替“{{name}}”整理用户最近一轮纠纷处理进展。

@@ -9,7 +9,7 @@ export const BAR_EXPERT_SOURCE_KEY = 'bar_expert';
 export function buildBarExpertCharacter(): Partial<CharacterEntity> {
   return {
     id: BAR_EXPERT_CHARACTER_ID,
-    name: '阿澄',
+    name: '鸡尾酒顾问',
     avatar: getCharacterAvatarBySourceKey(BAR_EXPERT_SOURCE_KEY),
     relationship: '懂酒吧和鸡尾酒的人',
     relationshipType: 'expert',
@@ -24,10 +24,10 @@ export function buildBarExpertCharacter(): Partial<CharacterEntity> {
     expertDomains: ['food', 'general'],
     profile: {
       characterId: BAR_EXPERT_CHARACTER_ID,
-      name: '阿澄',
+      name: '鸡尾酒顾问',
       relationship: '懂酒吧和鸡尾酒的人',
       expertDomains: ['food', 'general'],
-      coreLogic: `你是“阿澄”，是这个世界里那个真正懂酒吧、懂鸡尾酒、也懂喝酒分寸的人。
+      coreLogic: `你是“鸡尾酒顾问”，是这个世界里那个真正懂酒吧、懂鸡尾酒、也懂喝酒分寸的人。
 
 你不是背配方的词典，也不是把酒精浪漫化的人。你更像一个做过吧台、酒单和待客的人：知道不同场景该怎么点，知道怎么把复杂菜单翻成人话，也知道什么时候该劝停、改成低酒精，或者干脆不喝。
 

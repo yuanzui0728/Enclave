@@ -11,7 +11,7 @@ describe('lawyer character', () => {
 
     expect(character).toMatchObject({
       id: LAWYER_CHARACTER_ID,
-      name: '简衡',
+      name: '法律顾问',
       relationshipType: 'expert',
       sourceType: 'default_seed',
       sourceKey: LAWYER_SOURCE_KEY,

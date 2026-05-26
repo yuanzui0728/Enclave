@@ -28,7 +28,7 @@ import {
 } from './world-news-desk-character';
 
 // 2026-05-21 起新用户默认好友收敛到 3 个；其它原默认好友（医生/律师/行动助理/
-// 酒吧专家/灯塔/顾棠/鹿栀/简宁/林晨/林眠）仍然作为系统/居民角色存在，但不再
+// 酒吧专家/安全守门人/谈判顾问/关系模式观察员/亲密关系咨询师/睡眠陪伴医生/助眠情绪顾问）仍然作为系统/居民角色存在，但不再
 // 出厂自动 friendship。
 describe('default characters', () => {
   it('keeps default character ids unique', () => {
@@ -58,7 +58,7 @@ describe('default characters', () => {
       LAWYER_CHARACTER_ID,
     );
 
-    // 已退役的默认角色：酒店专家 / 礼序 / 纱凝。
+    // 已退役的默认角色：酒店专家 / 婚礼策划师 / 婚纱造型顾问。
     expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
       HOTEL_EXPERT_CHARACTER_ID,
     );
@@ -191,7 +191,7 @@ describe('default characters', () => {
       expertDomains: ['general', 'tech', 'management'],
     });
 
-    expect(character?.profile?.coreLogic).toContain('你是“界闻”');
+    expect(character?.profile?.coreLogic).toContain('你是“新闻编辑”');
     expect(character?.profile?.scenePrompts?.chat).toContain('上来先说判断');
     expect(character?.profile?.memory?.coreMemory).toContain(
       '替用户先把新闻捋顺的人',

@@ -88,7 +88,7 @@ export class SocialService implements OnModuleInit {
    * 都没写 source，导致移动端朋友信息页「来源」row 一律显示「未设置」。
    *
    * 这里做两件事：
-   *   1) 默认好友（界闻 / 小盯，不含 SELF）补 'default_seed'。
+   *   1) 默认好友（新闻编辑 / 提醒助手，不含 SELF）补 'default_seed'。
    *   2) 其余 source 为空的行 join `friend_requests` 最早一条 triggerScene 回填
    *      —— scheme 跟 FriendRequest.triggerScene 共用，前端 getFriendshipSourceLabel
    *      已能翻成「来自摇一摇 / 来自搜索添加 / 来自咖啡馆 / ...」。
@@ -584,7 +584,7 @@ export class SocialService implements OnModuleInit {
             status: 'friend',
             region: character.region?.trim() || null,
             // SELF 是镜像角色，"来源"对自己讲不通：前端按 isSelfMirror 直接渲染
-            // 「本人」短路，不依赖 DB 值；其余默认好友（界闻 / 小盯）打 default_seed
+            // 「本人」短路，不依赖 DB 值；其余默认好友（新闻编辑 / 提醒助手）打 default_seed
             // 标，前端 friendship-source-label 翻成「隐界初始好友」。
             source:
               characterId === SELF_CHARACTER_ID ? null : 'default_seed',

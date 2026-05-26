@@ -6,7 +6,7 @@ describe('doctor character', () => {
     const character = buildDoctorCharacter();
 
     expect(character).toMatchObject({
-      name: '林医生',
+      name: '全科医生',
       relationshipType: 'expert',
       sourceType: 'default_seed',
       momentsFrequency: 0,

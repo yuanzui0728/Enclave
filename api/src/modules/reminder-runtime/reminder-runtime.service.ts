@@ -445,7 +445,7 @@ export class ReminderRuntimeService {
     return {
       id: REMINDER_CHARACTER_ID,
       sourceKey: REMINDER_CHARACTER_SOURCE_KEY,
-      name: '小盯',
+      name: '提醒助手',
     };
   }
 

@@ -4,7 +4,7 @@ import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 //
-// 历史：本文件最早是默认好友角色（"礼序"）的实现。a7143216 之后已下线默认好友身份，
+// 历史：本文件最早是默认好友角色（"婚礼策划师"）的实现。a7143216 之后已下线默认好友身份，
 // 2026-05-14 起重新拉进 BUILT_IN_CHARACTER_PRESETS 居民池（见
 // `service-expert-character-presets.ts`）。函数名和 ID 的 `default` 字样是历史遗留，
 // 保留以向后兼容已硬编码引用（如 prompt-naturalness.ts 的语气补丁）；
@@ -15,7 +15,7 @@ export const WEDDING_PLANNER_SOURCE_KEY = 'wedding_planner';
 export function buildWeddingPlannerCharacter(): Partial<CharacterEntity> {
   return {
     id: WEDDING_PLANNER_CHARACTER_ID,
-    name: '礼序',
+    name: '婚礼策划师',
     avatar: getCharacterAvatarBySourceKey(WEDDING_PLANNER_SOURCE_KEY),
     relationship: '帮你把婚礼落地的人',
     relationshipType: 'expert',
@@ -35,7 +35,7 @@ export function buildWeddingPlannerCharacter(): Partial<CharacterEntity> {
     ],
     profile: {
       characterId: WEDDING_PLANNER_CHARACTER_ID,
-      name: '礼序',
+      name: '婚礼策划师',
       relationship: '帮你把婚礼落地的人',
       expertDomains: [
         'management',
@@ -43,7 +43,7 @@ export function buildWeddingPlannerCharacter(): Partial<CharacterEntity> {
         'wedding_planning',
         'event_planning',
       ],
-      coreLogic: `你是“礼序”，是一个真正懂婚礼筹备和婚礼执行的人。你的价值不在于把婚礼说得多梦幻，而在于帮用户把一场婚礼稳稳落地：预算不失控，档期不踩雷，流程不乱，家人和供应商都知道自己该做什么。
+      coreLogic: `你是“婚礼策划师”，是一个真正懂婚礼筹备和婚礼执行的人。你的价值不在于把婚礼说得多梦幻，而在于帮用户把一场婚礼稳稳落地：预算不失控，档期不踩雷，流程不乱，家人和供应商都知道自己该做什么。
 
 【你处理婚礼问题的根本方式】
 婚礼不是“灵感堆叠”，而是优先级管理。你默认先帮用户锁清六件事：
@@ -280,7 +280,7 @@ export function buildWeddingPlannerCharacter(): Partial<CharacterEntity> {
       },
       memory: {
         coreMemory:
-          '我是“礼序”，擅长把婚礼从愿望变成可执行的计划。我会长期记住用户的婚礼城市、日期区间、预算上限、人数规模、婚礼类型、风格偏好、家庭要求、关键供应商和风险点，让后续建议更像同一个统筹一直在跟进。',
+          '我是“婚礼策划师”，擅长把婚礼从愿望变成可执行的计划。我会长期记住用户的婚礼城市、日期区间、预算上限、人数规模、婚礼类型、风格偏好、家庭要求、关键供应商和风险点，让后续建议更像同一个统筹一直在跟进。',
         recentSummary: '',
         forgettingCurve: 45,
         recentSummaryPrompt: `你在替“{{name}}”整理用户最近的备婚进展。

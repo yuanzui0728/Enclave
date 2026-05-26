@@ -74,9 +74,9 @@ export const SCHEDULER_JOB_DEFINITIONS = [
   },
   {
     id: 'check_real_world_news_bulletins',
-    name: '界闻简报调度',
+    name: '新闻编辑简报调度',
     cadence: '*/10 * * * *',
-    description: '检查界闻早报、午报、晚报是否需要补发。',
+    description: '检查新闻编辑早报、午报、晚报是否需要补发。',
     nextRunHint: '每 10 分钟',
     enabled: true,
   },

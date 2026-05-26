@@ -6,7 +6,7 @@ describe('wedding dress expert character', () => {
     const character = buildWeddingDressExpertCharacter();
 
     expect(character).toMatchObject({
-      name: '纱凝',
+      name: '婚纱造型顾问',
       relationshipType: 'expert',
       sourceType: 'preset_catalog',
       sourceKey: 'wedding_dress_expert',

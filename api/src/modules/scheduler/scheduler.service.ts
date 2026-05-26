@@ -254,7 +254,7 @@ export class SchedulerService {
     );
   }
 
-  // 界闻早午晚报检查：10min→30min。
+  // 新闻编辑早午晚报检查：10min→30min。
   @Cron('*/30 * * * *')
   async checkRealWorldNewsBulletins() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
@@ -276,7 +276,7 @@ export class SchedulerService {
         success: false,
         created: false,
         slot: null,
-        summary: '当前不在界闻早报、午报或晚报窗口，且未指定补发时段。',
+        summary: '当前不在新闻编辑早报、午报或晚报窗口，且未指定补发时段。',
       };
     }
 
@@ -288,7 +288,7 @@ export class SchedulerService {
         success: false,
         created: false,
         slot,
-        summary: '界闻角色尚未落库，无法补发新闻简报。',
+        summary: '新闻编辑角色尚未落库，无法补发新闻简报。',
       };
     }
 
@@ -300,7 +300,7 @@ export class SchedulerService {
         success: false,
         created: false,
         slot,
-        summary: '界闻当前处于屏蔽状态，跳过新闻简报补发。',
+        summary: '新闻编辑当前处于屏蔽状态，跳过新闻简报补发。',
       };
     }
 
@@ -321,7 +321,7 @@ export class SchedulerService {
         success: true,
         created: false,
         slot,
-        summary: `界闻今天的${slot.label}已存在，跳过重复补发。`,
+        summary: `新闻编辑今天的${slot.label}已存在，跳过重复补发。`,
       };
     }
 
@@ -334,7 +334,7 @@ export class SchedulerService {
         success: false,
         created: false,
         slot,
-        summary: `界闻在${slot.label}前的新闻同步失败，未生成简报。`,
+        summary: `新闻编辑在${slot.label}前的新闻同步失败，未生成简报。`,
       };
     }
 
@@ -359,7 +359,7 @@ export class SchedulerService {
         success: false,
         created: false,
         slot,
-        summary: `界闻已完成${slot.label}同步，但朋友圈生成失败。`,
+        summary: `新闻编辑已完成${slot.label}同步，但朋友圈生成失败。`,
       };
     }
 
@@ -368,7 +368,7 @@ export class SchedulerService {
       created: true,
       slot,
       postId: post.id,
-      summary: `界闻已发布今天的${slot.label}。`,
+      summary: `新闻编辑已发布今天的${slot.label}。`,
     };
   }
 
