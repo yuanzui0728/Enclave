@@ -89,6 +89,22 @@ export class WorldController {
         });
     }
 
+    // 分身相遇：联系方式 / opt-in 变更要立刻同步到 cloud-api 撮合池（否则要等下一次
+    // 画像重建 cron 才生效，关闭 opt-in 后还会被别人匹配到）。best-effort 不挡主路径。
+    if (
+      body.contact !== undefined ||
+      body.contactKind !== undefined ||
+      body.encounterOptedIn !== undefined
+    ) {
+      void this.cyberAvatar.pushMatchmakingSnapshot().catch((err) => {
+        this.logger.warn(
+          `pushMatchmakingSnapshot failed for owner=${owner.id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      });
+    }
+
     return owner;
   }
 

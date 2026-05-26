@@ -16,6 +16,7 @@ import {
 } from './cyber-avatar.constants';
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
+import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import type {
   CyberAvatarAggregationPayload,
   CyberAvatarLiveState,
@@ -136,6 +137,7 @@ export class CyberAvatarService {
     private readonly ai: AiOrchestratorService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly rulesService: CyberAvatarRulesService,
+    private readonly matchmakingSync: CyberAvatarMatchmakingSyncService,
   ) {}
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
@@ -279,6 +281,61 @@ export class CyberAvatarService {
     } catch {
       return '';
     }
+  }
+
+  // 分身相遇：构建当前 owner 的撮合快照并推到 cloud-api。
+  // 触发点：① executeRefresh 重建成功后；② owner PATCH 改了联系方式/opt-in（world.controller）。
+  // 全程 best-effort——任何异常都吞掉，绝不影响调用方主路径。
+  async pushMatchmakingSnapshot(): Promise<void> {
+    try {
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      const profile = this.serializeProfile(await this.ensureProfile(owner.id));
+      const personaSummary = await this.buildPromptContext();
+      const interestTags = this.collectInterestTags(
+        profile.liveState,
+        profile.recentState,
+      );
+      await this.matchmakingSync.pushSnapshot({
+        owner,
+        personaSummary,
+        interestTags,
+        avatarVersion: profile.version,
+        signalCount: profile.signalCount ?? 0,
+        builtAt: profile.lastBuiltAt,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `pushMatchmakingSnapshot failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  // 兴趣标签 = liveState.activeTopics + recentState.recurringTopics，去重（忽略大小写）后截断。
+  private collectInterestTags(
+    liveState: unknown,
+    recentState: unknown,
+  ): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const collect = (source: unknown, field: string) => {
+      const arr = (source as Record<string, unknown> | null)?.[field];
+      if (!Array.isArray(arr)) return;
+      for (const item of arr) {
+        if (typeof item !== 'string') continue;
+        const trimmed = item.trim();
+        if (!trimmed) continue;
+        const key = trimmed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(trimmed);
+        if (out.length >= 12) return;
+      }
+    };
+    collect(liveState, 'activeTopics');
+    collect(recentState, 'recurringTopics');
+    return out;
   }
 
   async buildPromptSections(options?: {
@@ -586,6 +643,10 @@ export class CyberAvatarService {
           where: { ownerId: owner.id, status: 'pending' },
         }),
       });
+
+      // 分身相遇：画像重建成功后把精简快照推到 cloud-api 撮合池。best-effort，
+      // 绝不挡 cyber-avatar 主路径（同 owner_profile_update signal 的降级处理思路）。
+      void this.pushMatchmakingSnapshot().catch(() => undefined);
 
       return this.serializeRunDetail(run);
     } catch (error) {

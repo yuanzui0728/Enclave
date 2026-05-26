@@ -9,6 +9,7 @@ import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarService } from './cyber-avatar.service';
+import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import { SystemConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
@@ -31,6 +32,7 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
   providers: [
     CyberAvatarRulesService,
     CyberAvatarService,
+    CyberAvatarMatchmakingSyncService,
     CyberAvatarRealWorldService,
     CyberAvatarAdminService,
   ],
