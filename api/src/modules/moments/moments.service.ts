@@ -20,6 +20,7 @@ import { MomentCommentEntity } from './moment-comment.entity';
 import { MomentLikeEntity } from './moment-like.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
 import {
@@ -2566,7 +2567,9 @@ export class MomentsService implements OnModuleInit {
     let commentCount = 0;
     let participantCount = 0;
 
-    const recentPosts = await this.postRepo.find({
+    // 共享 world：cron 在每个 owner 帧里跑，朋友圈帖按当前 owner 隔离（裸 find 会读到全
+    // 租户帖 → afterLoad 读守卫抛 → 该 owner 的 NPC tick 失败）。走 TenantRepository。
+    const recentPosts = await new TenantRepository(this.postRepo).find({
       where: { postedAt: MoreThanOrEqual(recentSince) },
       order: { postedAt: 'DESC' },
     });
@@ -2617,7 +2620,7 @@ export class MomentsService implements OnModuleInit {
       if (candidatePosts.length === 0) continue;
 
       // Skip posts already liked by this NPC
-      const alreadyLiked = await this.likeRepo.find({
+      const alreadyLiked = await new TenantRepository(this.likeRepo).find({
         where: {
           authorId: char.id,
           postId: In(candidatePosts.map((p) => p.id)),

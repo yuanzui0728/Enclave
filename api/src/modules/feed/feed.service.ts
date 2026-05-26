@@ -2743,7 +2743,9 @@ export class FeedService implements OnModuleInit {
     // 让前端「AI 已参与回应」角标继续生效（对齐旧 triggerAiReactionForPost 的语义）。
     const reactedPostIds = new Set<string>();
 
-    const recentPosts = await this.postRepo.find({
+    // 共享 world：cron 在每个 owner 帧里跑，feed 帖按当前 owner 隔离（裸 find 会读到全
+    // 租户帖 → afterLoad 读守卫抛 → 该 owner 的 NPC tick 整个失败）。走 TenantRepository。
+    const recentPosts = await new TenantRepository(this.postRepo).find({
       where: {
         surface: In(['feed', 'channels']),
         publishStatus: 'published',
@@ -2774,7 +2776,7 @@ export class FeedService implements OnModuleInit {
       if (candidatePosts.length === 0) continue;
 
       // 跳过已经赞过的帖子，避免反复点赞同一条。
-      const alreadyLiked = await this.likeRepo.find({
+      const alreadyLiked = await new TenantRepository(this.likeRepo).find({
         where: {
           authorId: char.id,
           postId: In(candidatePosts.map((p) => p.id)),
@@ -2985,7 +2987,7 @@ export class FeedService implements OnModuleInit {
       MAX_FORWARDS_PER_OWNER_PER_DAY - totalProactiveForwardsToday;
 
     // 候选帖
-    const candidatePostsRaw = await this.postRepo.find({
+    const candidatePostsRaw = await new TenantRepository(this.postRepo).find({
       where: [
         {
           surface: 'channels',

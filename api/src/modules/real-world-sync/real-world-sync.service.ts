@@ -780,7 +780,10 @@ export class RealWorldSyncService {
 
   async runSync(input?: { characterId?: string | null; force?: boolean }) {
     const rules = await this.rulesService.getRules();
-    const characters = await this.characterRepo.find(
+    // 共享 world：runSync 由 check_moment_schedule cron 在每个 owner 帧里跑（也供 admin
+    // 调），角色按当前 owner 隔离——裸 find 会读到全租户角色 → afterLoad 读守卫抛 → 该 owner
+    // 的整个 moment-schedule cron 失败（实测 104 行 CharacterEntity 泄漏即此处）。走 scoped。
+    const characters = await new TenantRepository(this.characterRepo).find(
       input?.characterId ? { where: { id: input.characterId } } : {},
     );
     let successCount = 0;
