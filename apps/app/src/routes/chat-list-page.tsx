@@ -1249,7 +1249,7 @@ function MobileChatListPage() {
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title={t(msg`消息`)}
-        className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
+        className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
@@ -1276,7 +1276,7 @@ function MobileChatListPage() {
               <div
                 role="menu"
                 aria-label={t(msg`快捷操作`)}
-                className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(180, 130, 20, 0.2)]"
+                className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(180,130,20,0.2)]"
               >
                 {quickActionItems.map((item) => {
                   const Icon = item.icon;
@@ -1452,7 +1452,7 @@ function MobileChatListPage() {
                   <button
                     type="button"
                     onClick={openOfficialAccountsList}
-                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {t(msg`查看公众号`)}
                   </button>
@@ -1910,7 +1910,7 @@ function MobileChatListStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

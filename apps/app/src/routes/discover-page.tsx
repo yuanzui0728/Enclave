@@ -830,7 +830,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-[color:var(--border-faint)] shadow-none">
-              <div className="rounded-[24px] border border-[rgba(245, 158, 11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[24px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] tracking-[0.14em] text-[#b45309]">
@@ -845,7 +845,7 @@ function DesktopDiscoverWorkspace() {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-full bg-[rgba(245, 158, 11,0.1)] px-3 py-1 text-[11px] font-medium text-[#b45309]">
+                  <div className="rounded-full bg-[rgba(245,158,11,0.1)] px-3 py-1 text-[11px] font-medium text-[#b45309]">
                     {t(msg`发帖区`)}
                   </div>
                 </div>
@@ -1031,7 +1031,7 @@ function DesktopDiscoverWorkspace() {
                       size="sm"
                       className={
                         post.ownerState?.hasLiked
-                          ? "border-[rgba(245, 158, 11,0.18)] bg-[rgba(245, 158, 11,0.06)] text-[#f59e0b]"
+                          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(245,158,11,0.06)] text-[#f59e0b]"
                           : undefined
                       }
                     >
@@ -1273,7 +1273,7 @@ function DiscoverMobileEntryRow({
         <div className="truncate text-[13px] text-[color:var(--text-primary)]">
           {t(item.label)}
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[#b45309]">
+        <div className="shrink-0 rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[#b45309]">
           {t(item.badge)}
         </div>
       </div>

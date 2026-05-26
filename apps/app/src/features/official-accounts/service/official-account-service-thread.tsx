@@ -450,7 +450,7 @@ export function OfficialAccountServiceThread({
                 <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(180, 130, 20, 0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(180,130,20,0.12)]">
                   <button
                     type="button"
                     onClick={() => {
@@ -913,7 +913,7 @@ function MobileOfficialStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

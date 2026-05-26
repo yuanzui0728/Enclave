@@ -72,7 +72,7 @@ export function ContactShortcutList({
                   ? "border-t border-[color:var(--border-faint)]"
                   : undefined,
               variant === "desktop-flat" && item.active
-                ? "bg-white shadow-[0_1px_2px_rgba(180, 130, 20, 0.05)]"
+                ? "bg-white shadow-[0_1px_2px_rgba(180,130,20,0.05)]"
                 : undefined,
             )}
           >

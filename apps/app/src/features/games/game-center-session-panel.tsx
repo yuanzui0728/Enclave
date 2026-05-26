@@ -199,7 +199,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
+                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(245,158,11,0.16)] hover:bg-white"
                 : undefined
             }
           >
@@ -241,7 +241,7 @@ function SessionMetric({
         "border",
         compact
           ? "rounded-[16px] border-white/80 bg-white/82 px-3 py-3"
-          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(180, 130, 20, 0.04)]",
+          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(180,130,20,0.04)]",
       )}
     >
       <div

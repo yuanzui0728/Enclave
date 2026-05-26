@@ -161,7 +161,7 @@ export function ManagementPermissionsScreen({
               <div className="px-1 pb-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {section.title}
               </div>
-              <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
+              <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180,130,20,0.04)]">
                 {section.items.map((item, index) => (
                   <li
                     key={item.character.id}

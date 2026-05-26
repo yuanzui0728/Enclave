@@ -110,7 +110,7 @@ export function MobileMessageReminderSheet({
       className={`fixed inset-0 z-50 ${
         isDesktop
           ? "flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
-          : "bg-[rgba(180, 130, 20, 0.14)]"
+          : "bg-[rgba(180,130,20,0.14)]"
       }`}
     >
       <button
@@ -144,7 +144,7 @@ export function MobileMessageReminderSheet({
         className={
           isDesktop
             ? "relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
-            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
+            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180,130,20,0.10)]"
         }
       >
         {isDesktop ? null : (

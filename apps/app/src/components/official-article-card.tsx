@@ -35,8 +35,8 @@ export function OfficialArticleCard({
             : "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-4 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
-            ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)]"
-            : "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.05)]"
+            ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)]"
+            : "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.05)]"
           : undefined,
       )}
     >
@@ -60,7 +60,7 @@ export function OfficialArticleCard({
             {article.isPinned ? (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] font-medium text-[color:var(--brand-primary)]",
+                  "inline-flex items-center gap-1 rounded-full border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] font-medium text-[color:var(--brand-primary)]",
                   dense ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-[11px]",
                 )}
               >
@@ -124,7 +124,7 @@ export function OfficialArticleCard({
             </button>
           ) : null}
           {!compact && !dense ? (
-            <div className="shrink-0 rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+            <div className="shrink-0 rounded-full border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
               {article.readCount} {t(msg`阅读`)}
             </div>
           ) : null}

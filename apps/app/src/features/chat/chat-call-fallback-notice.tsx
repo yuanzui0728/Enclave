@@ -56,7 +56,7 @@ export function ChatCallFallbackNotice({
         )}
       >
         <div className="flex items-start gap-3 px-4 py-3.5">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(245, 158, 11,0.09)] text-[color:var(--brand-primary)]">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(245,158,11,0.09)] text-[color:var(--brand-primary)]">
             <Icon size={17} />
           </div>
           <div className="min-w-0 flex-1">

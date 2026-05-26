@@ -2664,7 +2664,7 @@ export function ContactsPage() {
         <TabPageTopBar
           title={t(msg`通讯录`)}
           titleAlign="center"
-          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
             bulkMode ? (
               <Button
@@ -2719,7 +2719,7 @@ export function ContactsPage() {
                 <div
                   role="menu"
                   aria-label={t(msg`快捷操作`)}
-                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(180, 130, 20, 0.2)]"
+                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(180,130,20,0.2)]"
                 >
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
@@ -2854,7 +2854,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onAction}
-                          className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                          className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                         >
                           {item.actionLabel}
                         </button>
@@ -3076,7 +3076,7 @@ const FriendListRow = memo(function FriendListRow({
           : "bg-transparent py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 238, 225,0.94)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+          ? "border border-[rgba(245,158,11,0.16)] bg-[rgba(245,238,225,0.94)] shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
           : undefined,
       )}
     >
@@ -3206,7 +3206,7 @@ function MobileContactsStatusCard({
 
   return (
     <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245, 158, 11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]">
         {badge}
       </div>
       {loading ? (

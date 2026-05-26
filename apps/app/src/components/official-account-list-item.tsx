@@ -34,8 +34,8 @@ export function OfficialAccountListItem({
             : "gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
         active
           ? compact
-            ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)]"
-            : "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.06)]"
+            ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)]"
+            : "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.06)]"
           : undefined,
       )}
     >
@@ -77,7 +77,7 @@ export function OfficialAccountListItem({
           {account.isFollowing ? (
             <span
               className={cn(
-                "rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] text-[color:var(--brand-primary)]",
+                "rounded-full border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] text-[color:var(--brand-primary)]",
                 dense ? "px-1.5 py-0.5 text-[9px]" : "px-1.5 py-0.5 text-[10px]",
               )}
             >

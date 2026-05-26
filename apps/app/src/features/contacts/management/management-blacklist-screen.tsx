@@ -121,7 +121,7 @@ export function ManagementBlacklistScreen() {
           {unblockMutation.error.message}
         </InlineNotice>
       ) : null}
-      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
+      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180,130,20,0.04)]">
         {blocked.map((entry, index) => {
           const character = characterMap.get(entry.characterId);
           // R2 走查：原 fallback 是 entry.characterId.slice(0,8)，charactersQuery 还在

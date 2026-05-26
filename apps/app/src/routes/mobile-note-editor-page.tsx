@@ -1289,7 +1289,7 @@ function MobileNoteEditor({
           />
         }
         titleAlign="left"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         titleClassName="text-[16px] font-medium tracking-normal"
         leftActions={
           <Button
@@ -1382,13 +1382,13 @@ function MobileNoteEditor({
           {editorState.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+              className="inline-flex items-center gap-1 rounded-full bg-[rgba(245,158,11,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
             >
               <span>#{tag}</span>
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
-                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition active:bg-[rgba(245, 158, 11,0.16)]"
+                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition active:bg-[rgba(245,158,11,0.16)]"
                 aria-label={t(msg`移除标签 ${tag}`)}
               >
                 <X size={12} />
@@ -1449,8 +1449,8 @@ function MobileNoteEditor({
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // contentEditable 也算 focusable form control，同样受影响。
               "text-[16px] leading-7 text-[color:var(--text-primary)]",
-              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180, 130, 20, 0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180, 130, 20, 0.08)]",
+              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180,130,20,0.08)]",
               "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
             )}
           />
@@ -1459,7 +1459,7 @@ function MobileNoteEditor({
 
       <div
         className={cn(
-          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.96)] px-2.5 py-2 backdrop-blur-xl",
+          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-2.5 py-2 backdrop-blur-xl",
           "pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]",
         )}
       >
@@ -1511,7 +1511,7 @@ function MobileNoteEditor({
           <Tag size={15} />
         </ToolbarButton>
         {attachmentPending ? (
-          <span className="rounded-full bg-[rgba(245, 158, 11,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[rgba(245,158,11,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
             {t(msg`附件上传中...`)}
           </span>
         ) : null}
@@ -1592,7 +1592,7 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-[12px] border px-2.5 text-[12px] transition",
         active
-          ? "border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]"
+          ? "border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]"
           : "border-transparent bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-black/5",
         disabled ? "cursor-not-allowed opacity-55" : undefined,
       )}
@@ -1639,7 +1639,7 @@ function ConfirmSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180,130,20,0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {title}
@@ -1699,7 +1699,7 @@ function UnsavedSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180,130,20,0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {t(msg`这条笔记还没有保存`)}
@@ -1710,7 +1710,7 @@ function UnsavedSheet({
         </div>
         <div className="flex flex-col gap-2 border-t border-[color:var(--border-faint)] px-5 py-4">
           {saveDisabled ? (
-            <div className="rounded-[12px] bg-[rgba(245, 158, 11,0.08)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+            <div className="rounded-[12px] bg-[rgba(245,158,11,0.08)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
               {t(msg`附件还在上传，完成后再保存或者直接放弃。`)}
             </div>
           ) : null}

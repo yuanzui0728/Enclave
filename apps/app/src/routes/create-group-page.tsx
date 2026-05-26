@@ -472,7 +472,7 @@ export function CreateGroupPage() {
       <TabPageTopBar
         title={t(msg`选择联系人`)}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -602,7 +602,7 @@ export function CreateGroupPage() {
             routeState.seedMemberIds.some((id) =>
               selectedFriendMap.has(id),
             )) ? (
-            <div className="-mx-4 border-y border-[rgba(245, 158, 11,0.12)] bg-[rgba(245, 158, 11,0.06)] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
+            <div className="-mx-4 border-y border-[rgba(245,158,11,0.12)] bg-[rgba(245,158,11,0.06)] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
               {t(msg`已按当前单聊默认勾选对方，你可以继续添加其他联系人。`)}
             </div>
           ) : null}
@@ -840,10 +840,10 @@ function FriendSelectionRow({
         "flex w-full items-center gap-3 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[rgba(245, 158, 11,0.18)] bg-[rgba(245, 238, 225,0.96)] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+            ? "rounded-[12px] border border-[rgba(245,158,11,0.18)] bg-[rgba(245,238,225,0.96)] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[rgba(245, 158, 11,0.06)] px-4 py-3.5"
+            ? "bg-[rgba(245,158,11,0.06)] px-4 py-3.5"
             : "bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5",
         !isDesktop && withDivider
           ? "border-t border-[color:var(--border-faint)]"
@@ -938,7 +938,7 @@ function MobileCreateGroupStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

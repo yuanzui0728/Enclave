@@ -338,7 +338,7 @@ export function ContactsManagementModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-[color:var(--surface-card)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(180, 130, 20, 0.18)]"
+        className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-[18px] bg-[color:var(--surface-card)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_28px_rgba(180,130,20,0.18)]"
       >
         <div className="flex justify-center pt-2">
           <div className="h-1 w-9 rounded-full bg-black/10" />

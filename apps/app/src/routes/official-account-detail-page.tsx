@@ -489,7 +489,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     </span>
                   ) : null}
                   {account.isFollowing ? (
-                    <span className="rounded-full bg-[rgba(245, 158, 11,0.1)] px-2 py-0.5 text-[color:var(--brand-primary)]">
+                    <span className="rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[color:var(--brand-primary)]">
                       {t(msg`已关注`)}
                     </span>
                   ) : null}
@@ -683,7 +683,7 @@ function MobileOfficialStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

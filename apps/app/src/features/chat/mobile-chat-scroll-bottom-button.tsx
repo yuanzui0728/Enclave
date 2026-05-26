@@ -22,7 +22,7 @@ export function MobileChatScrollBottomButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white/96 px-3 pl-2.5 text-[12px] text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(180, 130, 20, 0.12)] backdrop-blur active:bg-[color:var(--surface-card-hover)]"
+      className="flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white/96 px-3 pl-2.5 text-[12px] text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(180,130,20,0.12)] backdrop-blur active:bg-[color:var(--surface-card-hover)]"
       aria-label={
         hasPending
           ? t(msg`查看 ${badgeLabel} 条新消息`)

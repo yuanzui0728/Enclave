@@ -475,7 +475,7 @@ export function ChannelAuthorPage() {
         title={profile?.authorName ?? t(msg`视频号作者`)}
         subtitle={t(msg`作者主页`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={navigateBackToChannels}
@@ -587,7 +587,7 @@ export function ChannelAuthorPage() {
                     <div className="truncate text-[24px] font-semibold text-[color:var(--text-primary)]">
                       {profile.authorName}
                     </div>
-                    <span className="rounded-full bg-[rgba(180, 130, 20, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                       {profile.authorType === "character"
                         ? t(msg`居民作者`)
                         : t(msg`世界主人`)}
@@ -778,7 +778,7 @@ export function ChannelAuthorPage() {
                         key={post.id}
                         type="button"
                         onClick={() => openChannelPost(post)}
-                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(180, 130, 20, 0.02)]"
+                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(180,130,20,0.02)]"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -887,7 +887,7 @@ function ChannelAuthorHeaderStat({
 }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-2 text-[color:var(--text-primary)]">
-      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(245, 158, 11,0.1)] text-[color:var(--brand-primary)]">
+      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]">
         {icon}
       </div>
       <div>
@@ -1065,7 +1065,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   }
 
   return {
-    badgeClassName: "bg-[rgba(245, 158, 11,0.18)] text-white",
+    badgeClassName: "bg-[rgba(245,158,11,0.18)] text-white",
     icon: <MessageCircleMore size={14} />,
     label: t(msg`动态`),
     overlayClassName:
@@ -1097,9 +1097,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`视频`),
       metaLabel: t(msg`短片更新`),
       primaryBadgeClassName:
-        "border-[rgba(180, 130, 20, 0.08)] bg-[rgba(180, 130, 20, 0.05)] text-[#0f172a]",
+        "border-[rgba(180,130,20,0.08)] bg-[rgba(180,130,20,0.05)] text-[#0f172a]",
       secondaryBadgeClassName:
-        "border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+        "border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 1000))} 秒短片`)
         : t(msg`视频号短片`),
@@ -1126,7 +1126,7 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
     label: t(msg`动态`),
     metaLabel: t(msg`内容卡片`),
     primaryBadgeClassName:
-      "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]",
+      "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]",
     secondaryBadgeClassName:
       "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
     secondaryLabel: post.topicTags?.length
@@ -1219,7 +1219,7 @@ function MobileChannelAuthorStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(180, 130, 20, 0.06)] text-[color:var(--text-secondary)]",
+            : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]",
         )}
       >
         {badge}

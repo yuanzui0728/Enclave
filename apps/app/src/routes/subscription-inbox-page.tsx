@@ -314,7 +314,7 @@ function MobileSubscriptionInboxPage() {
                     }),
                   });
                 }}
-                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180, 130, 20, 0.02)]"
+                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180,130,20,0.02)]"
               >
                 <AvatarChip
                   name={group.account.name}
@@ -398,12 +398,12 @@ function MobileSubscriptionArticleRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180, 130, 20, 0.03)]"
+      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180,130,20,0.03)]"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
           {delivery.article.isPinned ? (
-            <span className="rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
+            <span className="rounded-full border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
               {t(msg`置顶`)}
             </span>
           ) : null}
@@ -458,7 +458,7 @@ function MobileSubscriptionInboxStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

@@ -200,7 +200,7 @@ export function MobileSpeechInputSheet({
         aria-labelledby={titleId}
         className="pointer-events-auto relative w-full max-w-[19.5rem]"
       >
-        <div className="rounded-[24px] border border-black/8 bg-[rgba(250, 245, 237,0.96)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(180, 130, 20, 0.18)] backdrop-blur-xl">
+        <div className="rounded-[24px] border border-black/8 bg-[rgba(250,245,237,0.96)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(180,130,20,0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
@@ -292,7 +292,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10 items-center justify-center rounded-full bg-[#f59e0b] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_rgba(245, 158, 11,0.18)] transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-full bg-[#f59e0b] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_rgba(245,158,11,0.18)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />

@@ -340,7 +340,7 @@ export function MobileFavoritesPage({
       <TabPageTopBar
         title={t(msg`收藏`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           showBackButton ? (
             <Button
@@ -388,7 +388,7 @@ export function MobileFavoritesPage({
               className={cn(
                 "rounded-full border px-3 py-1 text-[12px] transition-colors",
                 activeFilter === filter.id
-                  ? "border-[#b45309] bg-[rgba(245, 158, 11,0.10)] text-[#b45309]"
+                  ? "border-[#b45309] bg-[rgba(245,158,11,0.10)] text-[#b45309]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
               )}
             >
@@ -595,7 +595,7 @@ function FavoriteRow({
             {item.title}
           </div>
           {item.badge ? (
-            <span className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.08)] px-1.5 py-0.5 text-[10px] text-[#b45309]">
+            <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] text-[#b45309]">
               {item.badge}
             </span>
           ) : null}
@@ -617,13 +617,13 @@ function FavoriteRow({
             {noteSummary.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[rgba(245, 158, 11,0.08)] px-2 py-0.5 text-[10px] text-[#b45309]"
+                className="rounded-full bg-[rgba(245,158,11,0.08)] px-2 py-0.5 text-[10px] text-[#b45309]"
               >
                 #{tag}
               </span>
             ))}
             {noteSummary.assets.length ? (
-              <span className="rounded-full bg-[rgba(180, 130, 20, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 {t(msg`附件 ${noteSummary.assets.length}`)}
               </span>
             ) : null}

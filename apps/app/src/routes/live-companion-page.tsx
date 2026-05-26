@@ -357,7 +357,7 @@ export function LiveCompanionPage() {
         title={t(msg`直播伴侣`)}
         subtitle={t(msg`把开播前准备、状态检查和参考内容收在一起。`)}
       toolbar={
-        <div className="rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+        <div className="rounded-full border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
           {activeSession ? t(msg`直播中`) : t(msg`待开播`)}
         </div>
       }
@@ -413,7 +413,7 @@ export function LiveCompanionPage() {
                         className={cn(
                           "rounded-full px-2.5 py-1 text-[10px] font-medium",
                           item.passed
-                            ? "bg-[rgba(245, 158, 11,0.07)] text-[color:var(--brand-primary)]"
+                            ? "bg-[rgba(245,158,11,0.07)] text-[color:var(--brand-primary)]"
                             : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
                         )}
                       >
@@ -694,7 +694,7 @@ export function LiveCompanionPage() {
                       className={cn(
                         "rounded-md px-2.5 py-1 text-[11px] font-medium",
                         item.passed
-                          ? "bg-[rgba(245, 158, 11,0.07)] text-[color:var(--brand-primary)]"
+                          ? "bg-[rgba(245,158,11,0.07)] text-[color:var(--brand-primary)]"
                           : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
                       )}
                     >
@@ -884,7 +884,7 @@ export function LiveCompanionPage() {
                           "rounded-md px-2.5 py-1 text-[11px] font-medium",
                           item.status === "live"
                             ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
-                            : "bg-[rgba(245, 158, 11,0.07)] text-[color:var(--brand-primary)]",
+                            : "bg-[rgba(245,158,11,0.07)] text-[color:var(--brand-primary)]",
                         )}
                       >
                         {item.status === "live"
@@ -1043,7 +1043,7 @@ function SelectorCard({
               className={cn(
                 "rounded-xl border px-3 py-2 text-xs font-medium transition",
                 selected
-                  ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] text-[color:var(--brand-primary)]"
+                  ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)] text-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]",
               )}
             >
@@ -1082,7 +1082,7 @@ function ToggleCard({
       className={cn(
         "rounded-[20px] border px-4 py-4 text-left transition",
         checked
-          ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)]"
+          ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.07)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
       )}
     >
@@ -1095,7 +1095,7 @@ function ToggleCard({
             "rounded-md px-2.5 py-1 text-[11px] font-medium",
             checked
               ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
-              : "bg-[rgba(180, 130, 20, 0.06)] text-[color:var(--text-secondary)]",
+              : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]",
           )}
         >
           {checked ? t(msg`开启`) : t(msg`关闭`)}

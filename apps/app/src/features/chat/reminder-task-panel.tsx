@@ -191,7 +191,7 @@ export function ReminderTaskPanel({
             ? isDesktop
               ? "px-4 py-3"
               : "px-4 py-3"
-            : "rounded-[20px] border border-[rgba(245, 158, 11,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(180, 130, 20, 0.45)]",
+            : "rounded-[20px] border border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(180,130,20,0.45)]",
           !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >
@@ -203,7 +203,7 @@ export function ReminderTaskPanel({
         >
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#f59e0b]">
                 <BellRing size={16} />
               </span>
               <div className="min-w-0">
@@ -260,7 +260,7 @@ export function ReminderTaskPanel({
                 {t(msg`正在同步提醒任务…`)}
               </div>
             ) : tasks.length === 0 ? (
-              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(180, 130, 20, 0.1)] bg-[rgba(255,255,255,0.86)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(180,130,20,0.1)] bg-[rgba(255,255,255,0.86)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
                 {t(msg`还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。`)}
               </div>
             ) : (
@@ -274,7 +274,7 @@ export function ReminderTaskPanel({
                   return (
                     <article
                       key={task.id}
-                      className="rounded-[16px] border border-[rgba(180, 130, 20, 0.08)] bg-white/95 px-3 py-3"
+                      className="rounded-[16px] border border-[rgba(180,130,20,0.08)] bg-white/95 px-3 py-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">

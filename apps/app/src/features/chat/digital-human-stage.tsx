@@ -37,8 +37,8 @@ export function DigitalHumanStage({
       className={cn(
         "relative overflow-hidden border text-white",
         mobile
-          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(180, 130, 20, 0.34)]"
-          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(180, 130, 20, 0.06)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(180, 130, 20, 0.22)]",
+          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(180,130,20,0.34)]"
+          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(180,130,20,0.06)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(180,130,20,0.22)]",
       )}
     >
       <div

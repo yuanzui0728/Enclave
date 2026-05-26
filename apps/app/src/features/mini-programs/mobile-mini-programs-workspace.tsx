@@ -118,7 +118,7 @@ export function MobileMiniProgramsWorkspace({
         title={t(msg`小程序`)}
         subtitle={t(msg`最近使用与常用入口`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={onBack}
@@ -143,7 +143,7 @@ export function MobileMiniProgramsWorkspace({
               placeholder={t(msg`搜索小程序、服务或场景`)}
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。
-              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.22)] focus:bg-[color:var(--surface-card)]"
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245,158,11,0.22)] focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -192,7 +192,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onNoticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -201,7 +201,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {statusBackLabel}
                     </button>
@@ -562,7 +562,7 @@ function MobileMiniProgramsStatusCard({
 }) {
   return (
     <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245, 158, 11,0.1)] px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#f59e0b]">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#f59e0b]">
         {badge}
       </div>
       <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
@@ -594,7 +594,7 @@ function MiniProgramTile({
       className={cn(
         "rounded-[16px] border px-2.5 py-2.5 text-left transition",
         active
-          ? "border-[rgba(245, 158, 11,0.18)] bg-[rgba(243,251,246,0.96)]"
+          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -656,7 +656,7 @@ function MiniProgramListCard({
       className={cn(
         "w-full cursor-pointer rounded-[16px] border px-3 py-3 text-left shadow-none transition",
         active
-          ? "border-[rgba(245, 158, 11,0.18)] bg-[rgba(243,251,246,0.96)]"
+          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

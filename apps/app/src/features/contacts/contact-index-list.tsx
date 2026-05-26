@@ -180,8 +180,8 @@ export function ContactIndexList({
         className={cn(
           "flex flex-col items-center rounded-full bg-[rgba(255,255,255,0.84)] backdrop-blur",
           compact
-            ? "gap-px px-0.5 py-1.5 text-[9px] shadow-[0_8px_24px_rgba(180, 130, 20, 0.10)]"
-            : "gap-0.5 px-1 py-2 text-[10px] shadow-[0_10px_30px_rgba(180, 130, 20, 0.10)]",
+            ? "gap-px px-0.5 py-1.5 text-[9px] shadow-[0_8px_24px_rgba(180,130,20,0.10)]"
+            : "gap-0.5 px-1 py-2 text-[10px] shadow-[0_10px_30px_rgba(180,130,20,0.10)]",
         )}
       >
         {items.map((item) => (
@@ -219,7 +219,7 @@ export function ContactIndexList({
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
           <div
             className={cn(
-              "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-white shadow-[0_18px_40px_rgba(180, 130, 20, 0.22)] backdrop-blur",
+              "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-white shadow-[0_18px_40px_rgba(180,130,20,0.22)] backdrop-blur",
               compact
                 ? "h-20 w-20 rounded-[24px] text-[28px]"
                 : "h-24 w-24 rounded-[24px] text-[34px]",

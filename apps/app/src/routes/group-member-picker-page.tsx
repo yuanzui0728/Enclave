@@ -533,7 +533,7 @@ function MobileGroupMemberPickerPage({
       <TabPageTopBar
         title={pageTitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -791,7 +791,7 @@ function MobileGroupMemberPickerPage({
                   <button
                     type="button"
                     onClick={handleRetrySubmit}
-                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {mode === "add" ? t(msg`重试添加`) : t(msg`重试移除`)}
                   </button>
@@ -929,10 +929,10 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[rgba(245, 158, 11,0.18)] bg-[rgba(245, 238, 225,0.96)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+            ? "rounded-[12px] border border-[rgba(245,158,11,0.18)] bg-[rgba(245,238,225,0.96)] shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[rgba(245, 158, 11,0.06)]"
+            ? "bg-[rgba(245,158,11,0.06)]"
             : "bg-[color:var(--bg-canvas-elevated)]",
         !isDesktop && withDivider
           ? "border-t border-[color:var(--border-faint)]"
@@ -1013,7 +1013,7 @@ function MobileGroupMemberPickerStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

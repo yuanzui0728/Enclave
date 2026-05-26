@@ -245,7 +245,7 @@ export function ProfileFeedbackPage() {
       <TabPageTopBar
         title={t(msg`反馈`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250, 245, 237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={goBack}
@@ -276,7 +276,7 @@ export function ProfileFeedbackPage() {
                   className={cn(
                     "flex flex-col items-center justify-center gap-1 rounded-[12px] border px-2 py-3 text-[12px] transition-colors",
                     active
-                      ? "border-[#b45309] bg-[rgba(245, 158, 11,0.10)] text-[#b45309]"
+                      ? "border-[#b45309] bg-[rgba(245,158,11,0.10)] text-[#b45309]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
                   )}
                 >
@@ -345,7 +345,7 @@ export function ProfileFeedbackPage() {
             className={cn(
               "rounded-[12px] px-3 py-2 text-[12px]",
               notice.tone === "success"
-                ? "bg-[rgba(245, 158, 11,0.08)] text-[#b45309]"
+                ? "bg-[rgba(245,158,11,0.08)] text-[#b45309]"
                 : "bg-[rgba(220,38,38,0.08)] text-[#b42318]",
             )}
           >

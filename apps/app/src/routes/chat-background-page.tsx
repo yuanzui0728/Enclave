@@ -873,7 +873,7 @@ function PresetGrid({
           onClick={() => onSelect(preset)}
           className={`overflow-hidden rounded-[12px] border text-left transition ${
             preset.assetId === selectedAssetId
-              ? "border-[rgba(245, 158, 11,0.22)] bg-[color:var(--surface-card)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
+              ? "border-[rgba(245,158,11,0.22)] bg-[color:var(--surface-card)] shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
               : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[color:var(--surface-console)]"
           }`}
         >
@@ -967,7 +967,7 @@ function MobileBackgroundStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}
