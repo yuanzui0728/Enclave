@@ -75,7 +75,11 @@ const ALL_FAMILY_IDS = Array.from(new Set(Object.values(FAMILY_BY_MODEL)));
 const UNIQUE_FK_COLUMNS = new Set([
   'character_blueprints.characterId',
   'character_pages.characterId',
+  'character_revisions.characterId', // 复合 UNIQUE (characterId, version)
   'farm_npc_states.characterId',
+  'parking_war_npc_states.characterId',
+  'feed_post_likes.authorId', // 复合 UNIQUE (postId, authorId)：多 persona 点赞同贴合并后撞车
+  'moment_likes.authorId', // 复合 UNIQUE (postId, authorId)
   'video_channel_follows.authorId',
   'wiki_watchlist.characterId',
 ]);
@@ -132,6 +136,7 @@ const SCALAR_TABLES = [
   ['moments', 'authorId'],
   ['narrative_arcs', 'characterId'],
   ['need_discovery_candidates', 'characterId'],
+  ['parking_war_npc_states', 'characterId'],
   ['reminder_tasks', 'characterId'],
   ['reply_artifact_jobs', 'characterId'],
   ['self_agent_runs', 'characterId'],
