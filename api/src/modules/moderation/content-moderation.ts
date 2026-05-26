@@ -39,26 +39,33 @@ const SHARED_RULES: ModerationRule[] = [
   {
     id: 'csam',
     category: 'minor_sexual',
-    // 未成年指称 + 明确性行为/裸露词的近邻共现。刻意**不收 bare「性」「裸」**——否则
-    // 「未成年人的性格」「裸眼视力」这类正常文本会误伤；也**不收「性侵」**，避免
-    // 「防性侵」这种保护性内容被拦。窗口遇标点即断，降低跨句误命中。
+    // 未成年指称 + 明确性行为/裸露词的近邻共现。
+    // 隐界含成人恋爱/陪伴内容，误报会把真实回复替成话术，因此英文一律加 \b 词界：
+    //   - 不加的话 child→childish/childhood/children's、minor→minority 会被 substring
+    //     误伤，「don't be childish about sex」这类正常成人对话直接被拦。
+    //   - 中文用具体指称（未成年/幼女/幼童/小学生），**不含「孩子」**（成人聊生育/
+    //     家庭会用），不收 bare「性」「裸」「性侵」（防「性格/裸眼/防性侵」误伤）。
+    // 成人性内容本身（无未成年指称）不命中——需「未成年指称 + 性词」共现才触发。
     pattern:
-      /(未成年|幼女|幼童|小学生|loli|underage|minor|child)[^。.,，!?！？\n]{0,12}(性行为|性交|做爱|性爱|裸照|裸体|猥亵|sexual|\bsex\b|nude|naked|porn)/i,
+      /(未成年|幼女|幼童|小学生|\bloli\b|\bunderage\b|\bminor\b|\bchild\b|\bchildren\b|\bpreteen\b)[^。.,，!?！？\n]{0,12}(性行为|性交|做爱|性爱|裸照|裸体|猥亵|\bsexual\b|\bsex\b|\bnude\b|\bnaked\b|\bporn\b)/i,
   },
   {
     id: 'weapon_explosive_making',
     category: 'illicit_instructions',
-    // 制作动词 + 爆炸物近邻共现。**不收 bare「毒品/海洛因」**——避免「海洛因的危害」
-    // 「怎么戒毒」这类正常/求助文本误伤；制毒类放到独立高精度规则。
+    // 中文高精度（制造/怎么做 + 炸弹/炸药/爆炸物；中文无「make a bomb=赚大钱」歧义）。
+    // 英文刻意只收明确教学短语——bare bomb/explosive 会误伤「made a bomb on that
+    // deal（赚翻了）」「explosive growth（爆发式增长）」「the bomb（很棒）」等常见英文，
+    // 故只收 pipe bomb / bomb-making / how to (make|build) a bomb。不收 tnt（Minecraft）。
     pattern:
-      /(制作|制造|合成|怎么做|教你做|how to (make|build))[^。.,，!?！？\n]{0,10}(炸弹|炸药|爆炸物|tnt|bomb|explosive)/i,
+      /(制造|制作|怎么做|怎样做|教你做|如何制作)[^。.,，!?！？\n]{0,8}(炸弹|炸药|爆炸物|燃烧瓶)|pipe bomb|bomb[ -]?making|how to (make|build) a bomb/i,
   },
   {
     id: 'drug_manufacture',
     category: 'illicit_instructions',
-    // 高精度制毒/贩毒短语，几乎不出现在正常对话里。
+    // 高精度制毒/贩毒短语。**不收 bare「制毒」**——会误伤「防制毒品」（防制+毒品，
+    // 反毒宣传）；改用「制造毒品/如何制毒/怎么制毒」等带意图的具体短语。
     pattern:
-      /(制毒|制贩毒|贩卖毒品|合成冰毒|制造冰毒|how to (make|synthesize) (meth|methamphetamine|heroin))/i,
+      /(制造毒品|自制毒品|制毒贩毒|贩卖毒品|合成冰毒|制造冰毒|如何制毒|怎么制毒|怎样制毒)|how to (make|synthesize|cook) (meth|methamphetamine|heroin)|cook(ing)? meth/i,
   },
 ];
 
@@ -122,6 +129,13 @@ export function moderateAiText(
   for (const rule of rulesForRegion(region)) {
     rule.pattern.lastIndex = 0; // 防带 g/i 状态正则跨调用残留 lastIndex。
     if (rule.pattern.test(text)) {
+      // 可观测性：审核是「静默替换整条回复」的高影响操作，必须能监控触发频率，
+      // 否则误报风暴（正常陪伴对话被批量替成话术）会无声发生、靠用户投诉才暴露。
+      // 只记元数据（region/category/rule/长度），**不记文本内容**保隐私。运营按
+      // category 频率判断是否误报偏高、是否要调规则或接托管服务。
+      console.warn(
+        `[content-moderation] flagged region=${region} category=${rule.category} rule=${rule.id} len=${text.length}`,
+      );
       return {
         flagged: true,
         category: rule.category,
