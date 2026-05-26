@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm';
 import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { AiUsageLedgerEntity } from './ai-usage-ledger.entity';
 import { SystemConfigService } from '../config/config.service';
 import { CharacterEntity } from '../characters/character.entity';
@@ -1413,14 +1414,16 @@ export class AiUsageLedgerService {
 
     const [catalog, records, characters] = await Promise.all([
       this.getPricingCatalog(),
-      this.repo.find({
+      // 共享 world：预算汇总只算当前 owner 的用量/角色（in-world admin 按租户），裸 find
+      // 会聚全租户 + 触读守卫（实测 token-usage/budgets TENANT_READ_LEAK）。
+      new TenantRepository(this.repo).find({
         where: {
           occurredAt: Between(monthStart, now),
         },
         order: { occurredAt: 'DESC' },
       }),
       configuredCharacterIds.length
-        ? this.characterRepo.find({
+        ? new TenantRepository(this.characterRepo).find({
             where: { id: In(configuredCharacterIds) },
           })
         : Promise.resolve([]),

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import { WorldOwnerService } from '../auth/world-owner.service';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
@@ -121,6 +122,7 @@ export class ReplyLogicAdminService {
     private readonly groupReplyTaskService: GroupReplyTaskService,
     private readonly schedulerTelemetry: SchedulerTelemetryService,
     private readonly friendRemarkResolver: FriendRemarkResolver,
+    private readonly worldOwnerService: WorldOwnerService,
   ) {}
 
   private computeSenderRemark(
@@ -661,18 +663,11 @@ export class ReplyLogicAdminService {
   }
 
   private async getOwnerOrThrow() {
-    const owner = await this.userRepo.findOne({
-      where: {},
-      order: { createdAt: 'ASC' },
-    });
-    if (!owner) {
-      throw new AppError('ADMIN_WORLD_OWNER_NOT_FOUND', {
-        status: HttpStatus.NOT_FOUND,
-        legacyMessage: 'World owner not found',
-      });
-    }
-
-    return owner;
+    // 共享 world：owner 必须由请求级 TenantContext 决定。原来本地 findOne({where:{}}) 取
+    // 「最早一行 world_owner」会在 shared 模式恒返第一个 owner、无视当前租户 → in-world admin
+    // 把别 owner 的会话/角色当成当前用户读出（实测 reply-logic/overview 触 TENANT_READ_LEAK）。
+    // 委托 WorldOwnerService.getOwnerOrThrow（shared 按 ALS owner / LPP 单 owner 旧路径不变）。
+    return this.worldOwnerService.getOwnerOrThrow();
   }
 
   private async listConversationItems(ownerId: string) {

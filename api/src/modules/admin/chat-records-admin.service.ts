@@ -953,7 +953,8 @@ export class ChatRecordsAdminService {
       return new Map<string, MessageEntity[]>();
     }
 
-    const messages = await this.messageRepo.find({
+    // scoped：conversationId（direct_<charId>）跨租户共用，按当前 owner 限定（LPP 透传）。
+    const messages = await new TenantRepository(this.messageRepo).find({
       where: {
         conversationId: In(conversationIds),
       },
@@ -997,7 +998,7 @@ export class ChatRecordsAdminService {
   }
 
   private async loadStoredMessages(conversationId: string) {
-    return this.messageRepo.find({
+    return new TenantRepository(this.messageRepo).find({
       where: {
         conversationId,
       },

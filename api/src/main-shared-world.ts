@@ -77,6 +77,17 @@ function applyCorsHeaders(
   next();
 }
 
+// 共享进程的爆炸半径 = 全体 owner。一个租户请求里逃逸出请求 Promise 链的异步错误
+// （如静态文件流 onerror 回调里 throw、未 await 的 job 拒绝）若按默认行为崩进程，会让所有
+// 在线用户一起掉线（LPP 下只崩一个 child）。这里兜底：记日志但不退出，把「全队 DoS」降级成
+// 「单次请求失败 + 一条告警」。真正的修复仍在各调用点（如 moments 媒体已改预检不 throw）。
+process.on('uncaughtException', (err) => {
+  console.error('[shared-world] uncaughtException (kept alive):', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[shared-world] unhandledRejection (kept alive):', reason);
+});
+
 async function bootstrap() {
   const host = process.env.SHARED_WORLD_HOST ?? '127.0.0.1';
   // 信任边界：受信头只在 loopback 内可信（公网经 cloud-api 终结）。非 loopback 绑定时

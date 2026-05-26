@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { promises as fsp } from 'fs';
 import type { Response } from 'express';
 import { MomentsService } from './moments.service';
 import {
@@ -89,7 +90,7 @@ export class MomentsController {
   }
 
   @Get('media/:fileName')
-  getMomentMedia(
+  async getMomentMedia(
     @Param('fileName') fileName: string,
     @Res() response: Response,
   ) {
@@ -102,43 +103,46 @@ export class MomentsController {
     // 不存在抛 ENOENT → NestJS 全局 500）时**不会**带上 immutable Cache-Control，
     // 避免浏览器把错误响应永久缓存。
     //
-    // 走查 R3：sendFile 内部抛 ENOENT 会经 express 的 next(err) → NestJS 全局
-    // 异常通道，500 响应体 legacyMessage 会带上完整磁盘路径，比如：
-    //   "ENOENT: no such file or directory, stat
-    //    '/home/ps/claude/yinjie-app/data/accounts/91173587559732/moments-media/x.png'"
-    // 这条 legacyMessage 同时泄露 (a) 服务端绝对路径 (b) account/phone id
-    // (91173587559732 是用户登录手机号 hash)，对外暴露面太大。改回调形式接管
-    // err，匹配 ENOENT/EACCES 等"文件没找到/不可读"族直接抛 MOMENTS_MEDIA_NOT_FOUND
-    // (404，跟 normalizeMomentMediaFileName 抛同一条)，其它真异常照常 next 让
-    // 全局通道处理但 message 也要兜成不带路径的统一文案。
-    response.sendFile(
-      this.momentsService.resolveMomentMediaFilePath(
-        this.momentsService.normalizeMomentMediaFileName(fileName),
-      ),
-      {
-        headers: {
-          'Cache-Control': 'public, max-age=31536000, immutable',
-        },
-      },
-      (err) => {
-        if (!err) return;
-        const code = (err as NodeJS.ErrnoException).code;
-        if (code === 'ENOENT' || code === 'EACCES' || code === 'EISDIR') {
-          // 跟 normalizeMomentMediaFileName 抛同一个 code/legacyMessage，前端
-          // 已有 i18n 映射，不需要新增字典项。
-          throw new AppError('MOMENTS_MEDIA_NOT_FOUND', {
-            status: HttpStatus.NOT_FOUND,
-            legacyMessage: '朋友圈媒体不存在。',
-          });
-        }
-        // 其它意外错误（权限、IO 异常）：吃掉原始 err.message（可能含路径），
-        // 抛一条不暴露内部细节的统一 500。
-        throw new AppError('MOMENTS_MEDIA_NOT_FOUND', {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          legacyMessage: '朋友圈媒体读取失败，请稍后重试。',
-        });
-      },
+    // 走查 R3：sendFile 内部抛 ENOENT 会经 express 的 next(err) → NestJS 全局异常通道，
+    // 500 响应体 legacyMessage 会带上完整磁盘路径 + account/phone id，对外暴露面太大。
+    //
+    // 🔴 共享 world 关键：原来用 sendFile 的 error 回调里 `throw AppError`——但该回调跑在
+    // send 流的异步 onerror 上下文（非请求 Promise 链），throw 会变成 uncaughtException
+    // 直接 **崩进程**。LPP 下只崩一个用户的 world child，shared 模式下崩掉整个进程 =
+    // 全体 owner 掉线（一个缺图请求 = 全队 DoS，实测复现）。
+    // 改成：先 fs.access 预检文件（缺失/不可读在 handler 体内抛 AppError，走 NestJS 异常
+    // 通道、不带路径、不崩）；再 sendFile，且回调里**绝不 throw**（仅在 IO 错误时销毁连接）。
+    const filePath = this.momentsService.resolveMomentMediaFilePath(
+      this.momentsService.normalizeMomentMediaFileName(fileName),
     );
+    try {
+      await fsp.access(filePath);
+    } catch {
+      throw new AppError('MOMENTS_MEDIA_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: '朋友圈媒体不存在。',
+      });
+    }
+    await new Promise<void>((resolve) => {
+      response.sendFile(
+        filePath,
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          },
+        },
+        (err) => {
+          // 回调绝不 throw（会逃逸成 uncaughtException 崩进程）。预检后到这里的错误基本
+          // 只是流中途 IO 异常（headers 多半已发，无法再改响应）——记一笔、销毁连接即可。
+          if (err && !response.headersSent) {
+            response.status(HttpStatus.NOT_FOUND).end();
+          } else if (err) {
+            response.destroy();
+          }
+          resolve();
+        },
+      );
+    });
   }
 
   @Post('user-post')
