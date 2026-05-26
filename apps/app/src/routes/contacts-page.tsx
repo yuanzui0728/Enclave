@@ -1888,7 +1888,7 @@ export function ContactsPage() {
           : t(msg`按标签整理联系人`),
       active: desktopSelection?.kind === "tags",
       icon: Tag,
-      iconClassName: "bg-[linear-gradient(135deg,#22c55e,#15803d)]",
+      iconClassName: "bg-[linear-gradient(135deg,#a3e635,#65a30d)]",
       onClick: () => {
         const nextSelection = {
           kind: "tags",
@@ -2664,7 +2664,7 @@ export function ContactsPage() {
         <TabPageTopBar
           title={t(msg`通讯录`)}
           titleAlign="center"
-          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
             bulkMode ? (
               <Button
@@ -3076,7 +3076,7 @@ const FriendListRow = memo(function FriendListRow({
           : "py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "border border-[rgba(7,193,96,0.16)] bg-[rgba(240,247,243,0.94)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+          ? "border border-[rgba(245, 158, 11,0.16)] bg-[rgba(240,247,243,0.94)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
           : undefined,
       )}
     >
@@ -3086,7 +3086,7 @@ const FriendListRow = memo(function FriendListRow({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
-              ? "border-[#07c160] bg-[#07c160] text-white"
+              ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
               : "border-[color:var(--border-subtle)] bg-white",
           )}
         >
@@ -3175,7 +3175,7 @@ function SectionHeader({
         "z-10 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
-          : "text-[11px] bg-[rgba(247,247,247,0.94)]",
+          : "text-[11px] bg-[rgba(252, 255, 244,0.94)]",
       )}
     >
       {title}
@@ -3200,7 +3200,7 @@ function MobileContactsStatusCard({
 
   return (
     <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#07c160]">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(245, 158, 11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]">
         {badge}
       </div>
       {loading ? (

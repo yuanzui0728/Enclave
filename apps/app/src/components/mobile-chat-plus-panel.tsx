@@ -114,7 +114,7 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     key: "video-call",
     label: msg`视频通话`,
     icon: Video,
-    iconClassName: "bg-[#07c160]",
+    iconClassName: "bg-[#f59e0b]",
     disabled: true,
     disabledLabel: msg`待接入`,
     unavailableTitle: msg`视频通话暂未接入`,
@@ -510,7 +510,7 @@ export function MobileChatPlusPanel({
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     activeRootPage === pageIndex
-                      ? "w-5 bg-[#07c160]"
+                      ? "w-5 bg-[#f59e0b]"
                       : "w-1.5 bg-[rgba(148,163,184,0.42)]",
                   )}
                   aria-label={t(msg`切换到第 ${pageIndex + 1} 页`)}
@@ -554,7 +554,7 @@ export function MobileChatPlusPanel({
                         unavailableAction.key,
                       );
                     }}
-                    className="mr-2 rounded-full bg-[#07c160] px-3 py-1.5 text-[11px] font-medium text-white transition active:opacity-90"
+                    className="mr-2 rounded-full bg-[#f59e0b] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
                   >
                     {t(unavailableFallbackLabel)}
                   </button>
@@ -728,7 +728,7 @@ export function MobileChatPlusPanel({
                         <div className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-primary)]">
                           {item.title}
                         </div>
-                        <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
+                        <span className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.10)] px-2 py-0.5 text-[10px] text-[#f59e0b]">
                           {item.badge}
                         </span>
                       </div>
@@ -815,7 +815,7 @@ function PanelStatusBlock({
         <button
           type="button"
           onClick={onPrimary}
-          className="rounded-full bg-[#07c160] px-3 py-1.5 text-[11px] font-medium text-white transition active:opacity-90"
+          className="rounded-full bg-[#f59e0b] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
         >
           {primaryLabel}
         </button>

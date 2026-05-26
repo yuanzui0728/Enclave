@@ -27,7 +27,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
 
   return (
     <div
-      className="flex min-h-screen min-h-dvh items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center"
+      className="flex min-h-screen min-h-dvh items-center justify-center bg-[#f5f1e6] px-4 py-10 text-center"
       style={{
         paddingTop: "max(2.5rem, env(safe-area-inset-top, 0px))",
         paddingRight: "max(1rem, env(safe-area-inset-right, 0px))",
@@ -36,10 +36,10 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
       }}
     >
       <div className="w-full max-w-md rounded-[32px] border border-black/5 bg-white px-8 py-10 shadow-none">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#15803d]">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#b45309]">
           Beyond Reality
         </div>
-        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#07c160,#34c759)] text-2xl font-semibold text-white shadow-none">
+        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#f59e0b,#84cc16)] text-2xl font-semibold text-white shadow-none">
           {t(msg`隐界`)}
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
@@ -76,7 +76,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[22px] border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-4 py-3 text-left text-sm leading-7 text-[#475569]">
+        <div className="mt-6 rounded-[22px] border border-[rgba(245, 158, 11,0.12)] bg-[rgba(245, 158, 11,0.06)] px-4 py-3 text-left text-sm leading-7 text-[#475569]">
           {message ??
             t(msg`正在整理这次进入世界的路径，马上带你回到上次停留的地方。`)}
         </div>

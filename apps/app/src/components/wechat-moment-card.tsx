@@ -577,7 +577,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           ) : null}
 
           {showFooterBlock ? (
-            <div className="mt-2 overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#F7F7F7]">
+            <div className="mt-2 overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#f8f5ec]">
               {hasLikes ? (
                 <div className="flex flex-wrap items-start gap-1 px-2.5 py-1.5 text-[13px] leading-[20px]">
                   <Heart

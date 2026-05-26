@@ -340,7 +340,7 @@ export function MobileFavoritesPage({
       <TabPageTopBar
         title={t(msg`收藏`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           showBackButton ? (
             <Button
@@ -388,7 +388,7 @@ export function MobileFavoritesPage({
               className={cn(
                 "rounded-full border px-3 py-1 text-[12px] transition-colors",
                 activeFilter === filter.id
-                  ? "border-[#15803d] bg-[rgba(7,193,96,0.10)] text-[#15803d]"
+                  ? "border-[#b45309] bg-[rgba(245, 158, 11,0.10)] text-[#b45309]"
                   : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
               )}
             >
@@ -595,7 +595,7 @@ function FavoriteRow({
             {item.title}
           </div>
           {item.badge ? (
-            <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[#15803d]">
+            <span className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.08)] px-1.5 py-0.5 text-[10px] text-[#b45309]">
               {item.badge}
             </span>
           ) : null}
@@ -617,7 +617,7 @@ function FavoriteRow({
             {noteSummary.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[#15803d]"
+                className="rounded-full bg-[rgba(245, 158, 11,0.08)] px-2 py-0.5 text-[10px] text-[#b45309]"
               >
                 #{tag}
               </span>

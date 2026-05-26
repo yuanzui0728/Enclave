@@ -151,7 +151,7 @@ export function MobileNotesPage() {
       <TabPageTopBar
         title={t(msg`我的笔记`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -267,7 +267,7 @@ function NoteRow({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)]"
     >
-      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(7,193,96,0.08)]">
+      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(245, 158, 11,0.08)]">
         {previewImage?.url ? (
           <img
             // 2026-05-21 修：公网隧道下 /api/chat/attachments/<file> 必须经 /cloud/world-api

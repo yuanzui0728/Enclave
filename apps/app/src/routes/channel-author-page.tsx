@@ -468,14 +468,14 @@ export function ChannelAuthorPage() {
     <AppPage
       className={cn(
         "space-y-0 px-0 py-0",
-        isDesktopLayout ? "bg-[rgba(244,247,246,0.98)]" : "bg-[#f5f5f5]",
+        isDesktopLayout ? "bg-[rgba(244,247,246,0.98)]" : "bg-[#f5f1e6]",
       )}
     >
       <TabPageTopBar
         title={profile?.authorName ?? t(msg`视频号作者`)}
         subtitle={t(msg`作者主页`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={navigateBackToChannels}
@@ -887,7 +887,7 @@ function ChannelAuthorHeaderStat({
 }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-[color:var(--text-primary)]">
-      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(7,193,96,0.1)] text-[color:var(--brand-primary)]">
+      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(245, 158, 11,0.1)] text-[color:var(--brand-primary)]">
         {icon}
       </div>
       <div>
@@ -1065,7 +1065,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   }
 
   return {
-    badgeClassName: "bg-[rgba(7,193,96,0.18)] text-white",
+    badgeClassName: "bg-[rgba(245, 158, 11,0.18)] text-white",
     icon: <MessageCircleMore size={14} />,
     label: t(msg`动态`),
     overlayClassName:
@@ -1126,7 +1126,7 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
     label: t(msg`动态`),
     metaLabel: t(msg`内容卡片`),
     primaryBadgeClassName:
-      "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]",
+      "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]",
     secondaryBadgeClassName:
       "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
     secondaryLabel: post.topicTags?.length

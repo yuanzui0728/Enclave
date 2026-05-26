@@ -406,7 +406,7 @@ export function ShareCardModal({
               gap: 14,
               padding: "14px 16px 18px",
               borderTop: "1px solid #EDEDED",
-              background: "#F7F7F7",
+              background: "#f8f5ec",
             }}
           >
             {qr ? (
@@ -501,7 +501,7 @@ export function ShareCardModal({
             type="button"
             onClick={handleSaveOrShare}
             disabled={!pngDataUrl || savingPending}
-            className="w-full rounded-full bg-[#07C160] py-3 text-[15px] font-medium text-white active:bg-[#06A050] disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="w-full rounded-full bg-[#f59e0b] py-3 text-[15px] font-medium text-[#3b2206] active:bg-[#d97706] disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {savingPending ? t(msg`处理中…`) : t(msg`保存 / 分享图片`)}
           </button>

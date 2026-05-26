@@ -694,7 +694,7 @@ export function ConversationThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop ? "bg-[rgba(245,247,247,0.96)]" : "bg-[#ededed]"
+        isDesktop ? "bg-[rgba(245,247,247,0.96)]" : "bg-[#fcfff4]"
       }`}
     >
       {isDesktop ? (
@@ -793,7 +793,7 @@ export function ConversationThreadPanel({
             className={
               isDesktop
                 ? "border-[color:var(--border-faint)] bg-white"
-                : "rounded-[12px] border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[#166534] shadow-none"
+                : "rounded-[12px] border-[rgba(245, 158, 11,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[#166534] shadow-none"
             }
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1174,7 +1174,7 @@ function MobileThreadStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

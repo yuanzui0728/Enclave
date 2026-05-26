@@ -401,7 +401,7 @@ export function OfficialArticleViewer({
             ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[14px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(15,23,42,0.08)] [&_blockquote]:bg-[rgba(15,23,42,0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
             : isDesktopReader
               ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[14px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(15,23,42,0.08)] [&_blockquote]:bg-[rgba(15,23,42,0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
-              : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.2)] [&_blockquote]:bg-[rgba(7,193,96,0.07)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
+              : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(245, 158, 11,0.2)] [&_blockquote]:bg-[rgba(245, 158, 11,0.07)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         }
         onClick={(event) => void handleContentLinkClick(event)}
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}

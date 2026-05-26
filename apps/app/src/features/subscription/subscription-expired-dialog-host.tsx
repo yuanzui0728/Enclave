@@ -73,14 +73,14 @@ export function SubscriptionExpiredDialogHost() {
         <div className="mt-6 flex gap-3">
           <Button
             variant="secondary"
-            className="flex-1 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f5f5] shadow-none"
+            className="flex-1 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none"
             onClick={() => closeDialog()}
           >
             {t(msg`稍后再说`)}
           </Button>
           <Button
             variant="primary"
-            className="flex-1 rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+            className="flex-1 rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
             onClick={() => {
               closeDialog();
               void navigate({ to: "/profile/subscription" });

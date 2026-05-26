@@ -121,7 +121,7 @@ export function MobileDocumentShell({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
+    <AppPage className="space-y-0 bg-[#f5f1e6] px-0 py-0">
       <TabPageTopBar
         title={title}
         titleAlign="center"
@@ -205,7 +205,7 @@ export function MobileDocumentShell({
           </div>
         ) : null}
         <section className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#15803d]">
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#b45309]">
             {eyebrow}
           </div>
           <div className="mt-2 text-[16px] font-medium text-[color:var(--text-primary)]">

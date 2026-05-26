@@ -708,10 +708,10 @@ export function MobileMomentsPublishPage() {
   const showImageGrid = imageCount > 0;
 
   return (
-    <AppPage className="space-y-0 bg-[#F7F7F7] px-0 py-0">
+    <AppPage className="space-y-0 bg-[#f8f5ec] px-0 py-0">
       <TabPageTopBar
         title="" // i18n-ignore-line: intentionally empty
-        className="mx-0 mb-0 mt-0 border-b border-[#ECECEC] bg-[#F7F7F7] px-3 pb-1.5 pt-1.5 text-[#1A1A1A] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[#ECECEC] bg-[#f8f5ec] px-3 pb-1.5 pt-1.5 text-[#1A1A1A] shadow-none"
         leftActions={
           <button
             type="button"
@@ -761,7 +761,7 @@ export function MobileMomentsPublishPage() {
               // 避免顶栏右上角看起来抖一下；按住够装下 isPending 文案。
               "h-7 min-w-[3.75rem] rounded-[3px] px-3 text-[14px] font-medium transition",
               canSubmit
-                ? "bg-[#07C160] text-white active:bg-[#06AD56]"
+                ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
                 : "bg-[#9DD9B0] text-white",
             )}
           >
@@ -915,7 +915,7 @@ export function MobileMomentsPublishPage() {
                     void handlePickImages();
                   }}
                   disabled={createMutation.isPending}
-                  className="flex items-center justify-center bg-[#F7F7F7] text-[#B0B0B0] disabled:opacity-50 active:bg-[#EFEFEF]"
+                  className="flex items-center justify-center bg-[#f8f5ec] text-[#B0B0B0] disabled:opacity-50 active:bg-[#EFEFEF]"
                   style={{ aspectRatio: "1 / 1" }}
                   aria-label={t(msg`添加图片`)}
                 >
@@ -1041,7 +1041,7 @@ export function MobileMomentsPublishPage() {
             <button
               type="button"
               onClick={dismissExitSheet}
-              className="mt-2 block w-full bg-[#F7F7F7] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
+              className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
             >
               {t(msg`取消`)}
             </button>
@@ -1138,7 +1138,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 block w-full bg-[#F7F7F7] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
+          className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
         >
           {t(msg`取消`)}
         </button>

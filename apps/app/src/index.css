@@ -50,7 +50,7 @@ body {
 
 html.yj-mobile,
 body.yj-mobile {
-  background: #ededed;
+  background: #fcfff4;
 }
 
 @keyframes page-in {
@@ -247,64 +247,68 @@ body.yj-mobile::after {
 }
 
 .yj-mobile-shell {
-  --bg-canvas: #ededed;
+  /* === 青柠蜜橙(Citrus)：阳光暖色，与微信绿/灰区分 === */
+  --bg-canvas: #fcfff4;
   --bg-canvas-elevated: #ffffff;
   --bg-accent: none;
   --bg-glow-top: none;
   --bg-glow-bottom: none;
   --bg-grid: none;
 
-  --surface-primary: rgba(247, 247, 247, 0.98);
-  --surface-shell: #ededed;
+  --surface-primary: rgba(255, 253, 245, 0.98);
+  --surface-shell: #fcfff4;
   --surface-section: #ffffff;
   --surface-card: #ffffff;
-  --surface-card-hover: #f7f7f7;
-  --surface-soft: rgba(7, 193, 96, 0.08);
-  --surface-secondary: #f5f5f5;
-  --surface-panel: #f5f5f5;
-  --surface-tertiary: rgba(7, 193, 96, 0.12);
-  --surface-overlay: rgba(242, 242, 242, 0.98);
-  --surface-console: #f5f5f5;
+  --surface-card-hover: #fbfde9;
+  --surface-soft: rgba(245, 158, 11, 0.08);
+  --surface-secondary: #fbfdf3;
+  --surface-panel: #fbfdf3;
+  --surface-tertiary: rgba(132, 204, 22, 0.12);
+  --surface-overlay: rgba(252, 255, 244, 0.96);
+  --surface-console: #fbfdf3;
   --surface-input: #ffffff;
 
-  --border-faint: rgba(0, 0, 0, 0.06);
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.12);
-  --border-brand: rgba(7, 193, 96, 0.28);
+  --border-faint: rgba(120, 70, 20, 0.06);
+  --border-subtle: rgba(120, 70, 20, 0.1);
+  --border-strong: rgba(120, 70, 20, 0.16);
+  --border-brand: rgba(245, 158, 11, 0.28);
 
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #8c8c8c;
-  --text-dim: #b4b4b4;
-  --text-on-brand: #ffffff;
+  --text-primary: #1a1206;
+  --text-secondary: #4b3a24;
+  --text-muted: #8c7a5f;
+  --text-dim: #b4a48a;
+  --text-on-brand: #3b2206;
 
-  --brand-primary: #07c160;
-  --brand-secondary: #21c87a;
-  --brand-accent: #34c759;
-  --brand-soft: rgba(7, 193, 96, 0.08);
-  --brand-gradient: linear-gradient(180deg, #21c87a, #07c160);
+  --brand-primary: #f59e0b;
+  --brand-secondary: #84cc16;
+  --brand-accent: #facc15;
+  --brand-soft: rgba(245, 158, 11, 0.1);
+  --brand-gradient: linear-gradient(135deg, #facc15, #f59e0b);
 
-  --state-success-bg: rgba(7, 193, 96, 0.1);
-  --state-success-text: #0f7a45;
-  --state-warning-bg: rgba(250, 173, 20, 0.1);
+  /* 成功态保留真绿，避免与品牌绿语义混淆 */
+  --state-success-bg: rgba(34, 197, 94, 0.1);
+  --state-success-text: #15803d;
+  --state-warning-bg: rgba(250, 173, 20, 0.12);
   --state-warning-text: #ad6800;
   --state-danger-bg: rgba(250, 81, 81, 0.1);
   --state-danger-text: #cf1322;
   --state-info-bg: rgba(64, 169, 255, 0.08);
   --state-info-text: #0958d9;
 
+  /* 暖琥珀柔光，替微信的冷灰阴影 */
   --shadow-shell: none;
-  --shadow-section: 0 1px 2px rgba(15, 23, 42, 0.03);
-  --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.05);
-  --shadow-soft: 0 4px 12px rgba(15, 23, 42, 0.04);
-  --shadow-lift: 0 12px 24px rgba(15, 23, 42, 0.06);
-  --shadow-overlay: 0 -8px 28px rgba(15, 23, 42, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(7, 193, 96, 0.16);
+  --shadow-section: 0 1px 2px rgba(180, 130, 20, 0.05);
+  --shadow-card: 0 8px 20px rgba(180, 130, 20, 0.08);
+  --shadow-soft: 0 4px 12px rgba(180, 130, 20, 0.06);
+  --shadow-lift: 0 12px 24px rgba(180, 130, 20, 0.1);
+  --shadow-overlay: 0 -8px 28px rgba(180, 130, 20, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(245, 158, 11, 0.16);
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 0.875rem;
-  --radius-xl: 1rem;
+  /* 圆角放大 = 结构差异关键(原 0.5~1rem 太微信) */
+  --radius-sm: 0.75rem;
+  --radius-md: 1.125rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.875rem;
 }
 
 .yj-mobile-shell,

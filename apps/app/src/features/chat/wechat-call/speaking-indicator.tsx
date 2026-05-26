@@ -73,7 +73,7 @@ export function SpeakingIndicator({
       {listening ? (
         <span
           ref={ringRef}
-          className="absolute inset-0 rounded-full border-2 border-[#07c160] transition-transform duration-100 ease-out"
+          className="absolute inset-0 rounded-full border-2 border-[#f59e0b] transition-transform duration-100 ease-out"
           style={{
             transform: "scale(1)",
             opacity: 0.4,

@@ -424,7 +424,7 @@ export function AccountSecurityPanel() {
               }
               variant="secondary"
               size="lg"
-              className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+              className="shrink-0 rounded-2xl border-black/5 bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
             >
               {sendCodeMutation.isPending
                 ? t(msg`发送中...`)

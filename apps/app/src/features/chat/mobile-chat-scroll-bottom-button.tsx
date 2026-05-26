@@ -32,13 +32,13 @@ export function MobileChatScrollBottomButton({
       <span
         className={`flex h-5 w-5 items-center justify-center rounded-full ${
           hasPending
-            ? "bg-[#07c160] text-white"
+            ? "bg-[#f59e0b] text-[#3b2206]"
             : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]"
         }`}
       >
         <ChevronDown size={14} />
       </span>
-      <span className={hasPending ? "text-[#15803d]" : undefined}>
+      <span className={hasPending ? "text-[#b45309]" : undefined}>
         {hasPending ? t(msg`${badgeLabel} 条新消息`) : t(msg`回到底部`)}
       </span>
     </button>

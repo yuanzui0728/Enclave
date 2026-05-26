@@ -290,7 +290,7 @@ export function ContactsBulkActionBar({
                     desktop ? "px-2.5" : "px-3",
                     btn.danger
                       ? "bg-[#fef2f2] text-[#d74b45] disabled:opacity-50"
-                      : "bg-[#07c160] text-white disabled:opacity-50",
+                      : "bg-[#f59e0b] text-[#3b2206] disabled:opacity-50",
                   )}
                 >
                   <Icon aria-hidden="true" size={13} />
@@ -354,7 +354,7 @@ export function ContactsBulkActionBar({
                 // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
                 // zoom-in，autoFocus 一打开就抖；text-[14px] 时还会把 dialog
                 // 推出可视区一截。
-                className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#07c160] disabled:opacity-60"
+                className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#f59e0b] disabled:opacity-60"
               />
               <div className="mt-1 flex items-center justify-between text-[11px] text-[color:var(--text-muted)]">
                 <span>{t(msg`已选 ${selectedIds.length} 项`)}</span>
@@ -375,7 +375,7 @@ export function ContactsBulkActionBar({
                   type="button"
                   onClick={runTag}
                   disabled={!tagDraft.trim() || bulk.isPending}
-                  className="h-9 rounded-full bg-[#07c160] px-4 text-[13px] font-medium text-white disabled:opacity-50"
+                  className="h-9 rounded-full bg-[#f59e0b] px-4 text-[13px] font-medium text-[#3b2206] disabled:opacity-50"
                 >
                   {bulk.isPending ? t(msg`处理中...`) : t(msg`确定`)}
                 </button>

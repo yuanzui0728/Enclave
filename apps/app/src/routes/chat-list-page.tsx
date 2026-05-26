@@ -1249,7 +1249,7 @@ function MobileChatListPage() {
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title={t(msg`消息`)}
-        className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
+        className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
@@ -1414,7 +1414,7 @@ function MobileChatListPage() {
                 <button
                   type="button"
                   onClick={handleUndoHideConversation}
-                  className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#07c160]"
+                  className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
                 >
                   {t(msg`撤销`)}
                 </button>
@@ -1535,7 +1535,7 @@ function MobileChatListPage() {
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#111827]">
                 <BellRing
                   size={13}
-                  className="text-[#07c160]"
+                  className="text-[#f59e0b]"
                   aria-hidden="true"
                 />
                 <span>{t(msg`消息提醒`)}</span>
@@ -1575,7 +1575,7 @@ function MobileChatListPage() {
                                   ? "bg-[#fff7e6] text-[#d48806]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
-                                    : "bg-[#eaf8ef] text-[#07c160]",
+                                    : "bg-[#eaf8ef] text-[#f59e0b]",
                               )}
                             >
                               {group.title}
@@ -1627,7 +1627,7 @@ function MobileChatListPage() {
                                   ? "bg-[#fff7e6] text-[#d48806]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
-                                    : "bg-[#eaf8ef] text-[#07c160]",
+                                    : "bg-[#eaf8ef] text-[#f59e0b]",
                               )}
                             >
                               {group.title}
@@ -1683,7 +1683,7 @@ function MobileChatListPage() {
                                         ? "bg-[#fff7e6] text-[#d48806]"
                                         : entry.isDue
                                           ? "bg-[#fff1f0] text-[#d74b45]"
-                                          : "bg-[#eaf8ef] text-[#07c160]",
+                                          : "bg-[#eaf8ef] text-[#f59e0b]",
                                     )}
                                   >
                                     {getChatReminderStatusLabel(entry)}
@@ -1910,7 +1910,7 @@ function MobileChatListStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}
@@ -1971,7 +1971,7 @@ function ConversationListItemLinkImpl({
   const readActionLabel =
     conversation.unreadCount > 0 ? t(msg`标已读`) : t(msg`标未读`);
   const muteActionClassName = conversation.isMuted
-    ? "bg-[#07c160]"
+    ? "bg-[#f59e0b]"
     : "bg-[#9aa0a6]";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
   const swipeOffsetRef = useRef(swipeOffset);
@@ -2088,11 +2088,11 @@ function ConversationListItemLinkImpl({
     <div
       className={cn(
         "flex items-center gap-2.5 px-4 py-2.5",
-        isPinned ? "bg-[#f5f5f5]" : "bg-[color:var(--bg-canvas-elevated)]",
+        isPinned ? "bg-[#f5f1e6]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       {/* 走查第 3 次 R1：和 desktop-chat-workspace R35 同款——会话 isPinned 在
-          移动端只通过 bg-[#f5f5f5] 视觉差 + 列表顶部位置表达，盲人 SR 用户
+          移动端只通过 bg-[#f5f1e6] 视觉差 + 列表顶部位置表达，盲人 SR 用户
           只能听到会话名 / preview / 时间戳 / 未读数，听不出"这条是置顶的"。
           右侧的 Pin 图标仅在 !hasUnreadMessages 分支才渲染——有未读的置顶
           会话（典型用例：刚刚收到消息的我自己 / 工作群）SR 完全没有 pin

@@ -1281,8 +1281,8 @@ export function CharacterDetailPage() {
 
   if (isDesktopLayout && character && friendship) {
     return (
-      <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[#ededed] px-0 py-0">
-        <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-3 py-2 backdrop-blur-xl">
+      <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[#fcfff4] px-0 py-0">
+        <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.95)] px-3 py-2 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
             <button
               type="button"
@@ -1483,7 +1483,7 @@ export function CharacterDetailPage() {
   return (
     <AppPage
       className={cn(
-        "min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[color:var(--text-primary)]",
+        "min-h-full space-y-0 bg-[#fcfff4] px-0 py-0 text-[color:var(--text-primary)]",
         isDesktopLayout
           ? "h-full overflow-y-auto"
           : "flex h-full min-h-0 flex-col overflow-hidden",
@@ -1491,7 +1491,7 @@ export function CharacterDetailPage() {
     >
       <header
         className={cn(
-          "z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2 backdrop-blur-xl",
+          "z-20 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.95)] px-2 py-2 backdrop-blur-xl",
           isDesktopLayout ? "sticky top-0" : "shrink-0",
         )}
       >
@@ -1928,7 +1928,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           startChatMutation.mutate();
                         }}
-                        className="h-11 rounded-[12px] bg-[#07c160] text-[15px] text-white shadow-none hover:bg-[#06ad56]"
+                        className="h-11 rounded-[12px] bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                         disabled={startChatMutation.isPending}
                       >
                         {startChatMutation.isPending
@@ -1956,7 +1956,7 @@ export function CharacterDetailPage() {
                         setNotice(null);
                         handleAddToContacts();
                       }}
-                      className="h-11 rounded-[12px] bg-[#07c160] text-[15px] text-white shadow-none hover:bg-[#06ad56]"
+                      className="h-11 rounded-[12px] bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       // 走查新 R1：disabled 没把 friendsQuery.isLoading 算进去。
                       // characterQuery 命中缓存秒回时底部 bar 已经渲染，friendsQuery
                       // 还在拉就 isAlreadyFriend=false 走非好友 layout，按钮显示
@@ -2012,7 +2012,7 @@ export function CharacterDetailPage() {
               {isFriend && editingProfileField === "remark" ? (
                 // border-t 由父级 ProfileSection 的 divide-y 统一管（走查 R5），
                 // 这里只留 background 跟 padding 避免叠成双线。
-                <div className="bg-[#f7f7f7] px-4 py-3">
+                <div className="bg-[#f8f5ec] px-4 py-3">
                   <DetailInputField
                     label={remarkLabel}
                     value={profileForm.remarkName}
@@ -2044,7 +2044,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("remark")}
-                      className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
+                      className="h-9 flex-1 rounded-[10px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH
@@ -2074,7 +2074,7 @@ export function CharacterDetailPage() {
                 />
               ) : null}
               {isFriend && editingProfileField === "tags" ? (
-                <div className="bg-[#f7f7f7] px-4 py-3">
+                <div className="bg-[#f8f5ec] px-4 py-3">
                   <DetailInputField
                     label={tagsLabel}
                     value={profileForm.tags}
@@ -2106,7 +2106,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("tags")}
-                      className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
+                      className="h-9 flex-1 rounded-[10px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
@@ -2356,7 +2356,7 @@ export function CharacterDetailPage() {
         // "发消息 / 音视频通话 / 添加到通讯录"会被横条盖到一半。和
         // chat-message-list / message-quote-selection-sheet 已经在用的写法对齐，
         // pb 走 env(safe-area-inset-bottom)。
-        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
+        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
           <div
             className={cn(
               "grid gap-2",
@@ -2481,7 +2481,7 @@ function MobileCharacterStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}
@@ -2547,7 +2547,7 @@ function MobileProfileActionButton({
       className={cn(
         "flex min-h-11 items-center justify-center rounded-[11px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
         primary
-          ? "border-[#07c160] bg-[#07c160] text-white active:bg-[#06ad56]"
+          ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] active:bg-[#f2f3f5]",
       )}
     >
@@ -2726,7 +2726,7 @@ function ProfileSwitchRow({
           compact
             ? "relative h-7 w-11 rounded-full transition-colors"
             : "relative h-8 w-13 rounded-full transition-colors",
-          checked ? "bg-[#07c160]" : "bg-[#d5d5d5]",
+          checked ? "bg-[#f59e0b]" : "bg-[#d5d5d5]",
         )}
       >
         <span
@@ -2800,7 +2800,7 @@ function DetailInputField({
         // (备注名 / 备注标签 / 朋友圈权限 ...)，挨个点过去整页会反复弹缩。
         // 移动端固定 16px；桌面端没有 zoom 问题继续用 14px 维持视觉密度。
         className={cn(
-          "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
+          "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
           compact
             ? "rounded-[11px] py-2.5 text-[16px]"
             : "rounded-[12px] py-3 text-sm",

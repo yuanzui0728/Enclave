@@ -1522,7 +1522,7 @@ export function WelcomePage() {
           <div
             role="tablist"
             aria-label={t(msg`登录或注册`)}
-            className="flex rounded-2xl bg-[#f5f5f5] p-1"
+            className="flex rounded-2xl bg-[#f5f1e6] p-1"
           >
             <Button
               type="button"
@@ -1659,7 +1659,7 @@ export function WelcomePage() {
           <div
             role="tablist"
             aria-label={t(msg`登录方式`)}
-            className="flex items-center gap-2 rounded-2xl bg-[#f5f5f5] p-1"
+            className="flex items-center gap-2 rounded-2xl bg-[#f5f1e6] p-1"
           >
             <Button
               role="tab"
@@ -1761,7 +1761,7 @@ export function WelcomePage() {
                   }
                   variant="secondary"
                   size="lg"
-                  className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                  className="shrink-0 rounded-2xl border-black/5 bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
                 >
                   {(
                     accountType === "phone"
@@ -1985,7 +1985,7 @@ export function WelcomePage() {
             disabled={isContinuing || ownerSyncing || cloudWorldPending}
             variant="primary"
             size="lg"
-            className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+            className="w-full rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
           >
             {describeCloudButtonLabel(
               t,
@@ -2047,7 +2047,7 @@ export function WelcomePage() {
           disabled={!normalizedLocalApiBaseUrl || isContinuing}
           variant="primary"
           size="lg"
-          className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+          className="w-full rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
         >
           {isContinuing ? t(msg`连接中...`) : t(msg`连接本地世界`)}
         </Button>
@@ -2124,7 +2124,7 @@ export function WelcomePage() {
               disabled={isContinuing}
               variant="secondary"
               size="lg"
-              className="rounded-2xl border-black/5 bg-[#f5f5f5] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+              className="rounded-2xl border-black/5 bg-[#f5f1e6] shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
             >
               {t(msg`返回`)}
             </Button>
@@ -2136,7 +2136,7 @@ export function WelcomePage() {
               }
               variant="primary"
               size="lg"
-              className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+              className="rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
             >
               {isContinuing ? t(msg`保存中...`) : t(msg`进入世界`)}
             </Button>
@@ -2167,8 +2167,8 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-cloud-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
-                ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
+                ? "border-[rgba(245, 158, 11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(245, 158, 11,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2192,8 +2192,8 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-local-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
-                ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
+                ? "border-[rgba(245, 158, 11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(245, 158, 11,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2379,9 +2379,9 @@ export function WelcomePage() {
   }
 
   return (
-    <AppPage className="bg-[#f5f5f5] px-4 py-8">
+    <AppPage className="bg-[#f5f1e6] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-black/5 bg-white px-6 py-8 shadow-none">
-        <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#15803d]">
+        <div className="inline-flex rounded-full border border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#b45309]">
           {/* 走查 R5：见 desktop 分支同改 */}
           {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
         </div>
@@ -2413,7 +2413,7 @@ function MobileWelcomeStatusCard({
   const badgeClassName =
     tone === "danger"
       ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
-      : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[#15803d]";
+      : "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.08)] text-[#b45309]";
 
   return (
     <div className={`rounded-[24px] border px-4 py-4 shadow-none ${toneClassName}`}>
@@ -2439,10 +2439,10 @@ function MobileWelcomeNotice({
     tone === "danger"
       ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
       : tone === "success"
-        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+        ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.08)] text-[#b45309]"
         : tone === "muted"
           ? "border-black/5 bg-[#f7f7f5] text-[color:var(--text-secondary)]"
-          : "border-[rgba(22,163,74,0.12)] bg-[#f6fbf7] text-[color:var(--text-secondary)]";
+          : "border-[rgba(22,163,74,0.12)] bg-[#fffdf2] text-[color:var(--text-secondary)]";
 
   // role=alert + aria-live=assertive 让 VoiceOver/TalkBack 在错误出现的时候即时
   // 念出来；走查 r6 发现密码错误/验证码错误整块就是普通 div，盲读用户根本不知

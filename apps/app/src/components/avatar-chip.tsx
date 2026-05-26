@@ -113,7 +113,7 @@ export const AvatarChip = memo(function AvatarChip({
         // 不被 SR 朗读。
         role="img"
         aria-label={name?.trim() || translateRuntimeMessage(msg`头像`)}
-        className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f5f5)] leading-none shadow-[var(--shadow-soft)]`}
+        className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f1e6)] leading-none shadow-[var(--shadow-soft)]`}
       >
         <span aria-hidden="true">{trimmedSrc}</span>
       </span>

@@ -79,7 +79,7 @@ function ProfileSettingsMobileEntry() {
       <TabPageTopBar
         title={t(msg`设置`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           // 第三轮 R1：之前用 UI <Button variant="ghost"> + className "shadow-none"
           // 直接把 tokens.css 全局 :focus-visible 的 box-shadow 焦点环压成 0——

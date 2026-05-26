@@ -567,11 +567,11 @@ function MobileAddFriend() {
   );
 
   return (
-    <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
+    <AppPage className="space-y-0 bg-[#fcfff4] px-0 py-0">
       <TabPageTopBar
         title={t(msg`添加朋友`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -615,7 +615,7 @@ function MobileAddFriend() {
       />
 
       <form
-        className="border-b border-[color:var(--border-faint)] bg-[#f7f7f7] px-3 py-2.5"
+        className="border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2.5"
         onSubmit={(event) => {
           event.preventDefault();
           submitSearch(searchText);
@@ -684,7 +684,7 @@ function MobileAddFriend() {
             <Button
               type="submit"
               variant="primary"
-              className="h-9 shrink-0 rounded-[8px] bg-[#07c160] px-3.5 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
+              className="h-9 shrink-0 rounded-[8px] bg-[#f59e0b] px-3.5 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -853,7 +853,7 @@ function MobileAddFriendWelcomeState({
 
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(7,193,96,0.08)] text-[#07c160]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(245, 158, 11,0.08)] text-[#f59e0b]">
         <Search aria-hidden="true" size={22} />
       </div>
       <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
@@ -1049,7 +1049,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
               className={cn(
                 "h-8 rounded-full px-3.5 text-[12px] shadow-none",
                 item.status === "available"
-                  ? "bg-[#07c160] text-white hover:bg-[#06ad56]"
+                  ? "bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
                   : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]",
                 // 按 meta.disabled 加 opacity-70 而不是按 status：Bug W 之后
                 // inbound pending（acceptAt=null）按钮其实是可点的（跳 /friend-requests），
@@ -1307,7 +1307,7 @@ function MobileAddFriendSendSheet({
               "text-[14px] font-medium",
               pending || !trimmed
                 ? "text-[#9ca3af]"
-                : "text-[#07c160] active:opacity-80",
+                : "text-[#f59e0b] active:opacity-80",
             )}
           >
             {pending ? t(msg`发送中`) : t(msg`发送`)}
@@ -1315,7 +1315,7 @@ function MobileAddFriendSendSheet({
         </div>
 
         <div className="px-4 pt-3.5">
-          <div className="flex items-center gap-3 rounded-[10px] bg-[#f7f7f7] px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-[10px] bg-[#f8f5ec] px-3 py-2.5">
             <AvatarChip
               name={displayName}
               src={result.character.avatar}
@@ -1344,7 +1344,7 @@ function MobileAddFriendSendSheet({
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-h-[112px] w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.42)]"
+              className="min-h-[112px] w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.42)]"
             />
             <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
               {greeting.length}/60

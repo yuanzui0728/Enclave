@@ -337,7 +337,7 @@ function MobileWorldCharactersPage() {
       <TabPageTopBar
         title={t(msg`世界角色`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -535,7 +535,7 @@ function MobileWorldCharactersPage() {
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {sectionsWithAnchors.map((section) => (
               <div key={section.key} id={section.scopedAnchorId}>
-                <div className="bg-[rgba(247,247,247,0.94)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                <div className="bg-[rgba(252, 255, 244,0.94)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
                 {section.items.map((item, index) => (
@@ -645,7 +645,7 @@ function MobileWorldCharactersStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

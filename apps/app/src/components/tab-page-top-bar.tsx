@@ -71,7 +71,7 @@ export function TabPageTopBar({
   return (
     <div
       className={cn(
-        "sticky top-0 z-20 -mx-4 -mt-6 mb-4 overflow-hidden border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 backdrop-blur-xl sm:-mx-5 sm:px-5",
+        "sticky top-0 z-20 -mx-4 -mt-6 mb-4 overflow-hidden border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 py-3 backdrop-blur-xl sm:-mx-5 sm:px-5",
         className,
       )}
       {...props}
@@ -100,7 +100,7 @@ export function TabPageTopBar({
               : undefined
           }
         >
-          {eyebrow ? <div className="truncate text-[11px] uppercase tracking-[0.26em] text-[#15803d]">{eyebrow}</div> : null}
+          {eyebrow ? <div className="truncate text-[11px] uppercase tracking-[0.26em] text-[#b45309]">{eyebrow}</div> : null}
           <h1
             className={cn(
               "truncate tracking-[0.01em] text-current",

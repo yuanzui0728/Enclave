@@ -3563,7 +3563,7 @@ export function ChatMessageList({
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
-                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f7f7f7] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
@@ -3573,7 +3573,7 @@ export function ChatMessageList({
       ) : null}
       {selectionMode ? (
         isDesktop ? (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-black/6 bg-[#f7f7f7] px-4 py-3 backdrop-blur">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-black/6 bg-[#f8f5ec] px-4 py-3 backdrop-blur">
             <div>
               <div className="text-sm text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedMessageIds.length} 条消息`)}
@@ -3653,7 +3653,7 @@ export function ChatMessageList({
             </div>
           </div>
         ) : (
-          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[color:var(--border-subtle)] bg-[rgba(247,247,247,0.94)] px-2 py-2 backdrop-blur-xl">
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[color:var(--border-subtle)] bg-[rgba(252, 255, 244,0.94)] px-2 py-2 backdrop-blur-xl">
             <button
               type="button"
               onClick={resetSelectionMode}
@@ -3670,7 +3670,7 @@ export function ChatMessageList({
                 !visibleMessages.length || selectionActionPending !== null
               }
               onClick={handleToggleSelectAllMessages}
-              className="flex h-9 min-w-16 items-center justify-end rounded-[10px] px-2.5 text-[15px] font-medium text-[#07c160] transition active:bg-white/80 disabled:text-[#b8b8b8]"
+              className="flex h-9 min-w-16 items-center justify-end rounded-[10px] px-2.5 text-[15px] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[#b8b8b8]"
             >
               {allVisibleSelected ? t(msg`全不选`) : t(msg`全选`)}
             </button>
@@ -3799,7 +3799,7 @@ export function ChatMessageList({
                   id={`chat-message-${message.id}`}
                   className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
-                      ? "rounded-full border border-black/6 bg-[#f7f7f7] px-3 py-1.5 text-[11px]"
+                      ? "rounded-full border border-black/6 bg-[#f8f5ec] px-3 py-1.5 text-[11px]"
                       : "rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
@@ -3873,7 +3873,7 @@ export function ChatMessageList({
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
                   : isSelected
-                    ? "bg-[rgba(7,193,96,0.06)] shadow-[0_0_0_1px_rgba(7,193,96,0.12)]"
+                    ? "bg-[rgba(245,158,11,0.06)] shadow-[0_0_0_1px_rgba(245,158,11,0.14)]"
                     : ""
               }`}
             >
@@ -3904,7 +3904,7 @@ export function ChatMessageList({
 
                         handleMobileCharacterAvatarClick(event, message);
                       }}
-                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
+                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.4)] focus-visible:ring-offset-2"
                       aria-label={t(msg`查看${message.senderName?.trim() || t(msg`联系人`)}资料`)}
                     >
                       <AvatarChip
@@ -4156,14 +4156,14 @@ export function ChatMessageList({
                     />
                   ) : (
                     <div
-                      className={`rounded-[17px] px-3.5 py-2 text-[15px] leading-6 ${
+                      className={`px-3.5 py-2 text-[15px] leading-6 ${
                         isUser
                           ? isDesktop
-                            ? "bg-[#95ec69] text-[#111827] shadow-none"
-                            : "bg-[#95ec69] text-[#111827] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
+                            ? "rounded-[17px] bg-[#95ec69] text-[#111827] shadow-none"
+                            : "rounded-[20px] rounded-br-[6px] bg-[#e8f8c8] text-[#3f4d12] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
-                            ? "border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
-                            : "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
+                            ? "rounded-[17px] border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
+                            : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
                       } whitespace-pre-wrap break-words`}
                     >
                       {renderTextWithMentions(displayText)}
@@ -4210,7 +4210,7 @@ export function ChatMessageList({
                     <button
                       type="button"
                       onClick={handleDesktopOwnerAvatarClick}
-                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
+                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.4)] focus-visible:ring-offset-2"
                       aria-label={t(msg`查看${ownerName?.trim() || t(msg`我的`)}资料`)}
                     >
                       <AvatarChip
@@ -4239,7 +4239,7 @@ export function ChatMessageList({
         );
       })}
       {selectionMode && !isDesktop ? (
-        <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-subtle)] bg-[rgba(247,247,247,0.96)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-subtle)] bg-[rgba(252, 255, 244,0.96)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2 backdrop-blur-xl">
           <div className="grid grid-cols-4 gap-1.5">
             <SelectionModeActionButton
               icon={<Star size={17} />}
@@ -4892,14 +4892,14 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "h-px flex-1 bg-black/8"
-            : "h-px flex-1 bg-[rgba(7,193,96,0.1)]"
+            : "h-px flex-1 bg-[rgba(245,158,11,0.14)]"
         }
       />
       <div
         className={
           isDesktop
-            ? "rounded-full border border-black/6 bg-[#f7f7f7] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
-            : "rounded-full border border-[rgba(7,193,96,0.12)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[#059652]"
+            ? "rounded-full border border-black/6 bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
+            : "rounded-full border border-[rgba(245,158,11,0.18)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[#b45309]"
         }
       >
         {label}
@@ -4908,7 +4908,7 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "h-px flex-1 bg-black/10"
-            : "h-px flex-1 bg-[rgba(7,193,96,0.1)]"
+            : "h-px flex-1 bg-[rgba(245,158,11,0.14)]"
         }
       />
     </div>
@@ -5919,7 +5919,7 @@ function ReplyQuoteCard({
             ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[11px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
-            ? "mb-2 rounded-[12px] border-black/6 bg-[#f7f7f7] px-3 py-2 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[12px] border-black/6 bg-[#f8f5ec] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[11px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
       } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
@@ -6096,8 +6096,8 @@ function SelectionToggle({
       }}
       className={`mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium transition ${
         checked
-          ? "border-[rgba(7,193,96,0.2)] bg-[#07c160] text-white shadow-[0_4px_10px_rgba(7,193,96,0.16)]"
-          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[rgba(7,193,96,0.24)]"
+          ? "border-[rgba(245,158,11,0.24)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-[0_4px_10px_rgba(245,158,11,0.2)]"
+          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[rgba(245,158,11,0.3)]"
       }`}
       aria-label={checked ? translateRuntimeMessage(msg`取消选择消息`) : translateRuntimeMessage(msg`选择消息`)}
       // 走查电脑端群聊 R17：和姊妹 R32 时间戳 divider toggle / R13 群通话面板
@@ -6163,7 +6163,7 @@ function ContactCardMessage({
     >
       {recommendation ? (
         <div
-          className={`inline-flex rounded-full bg-[#07c160]/10 px-2 py-0.5 text-[10px] font-medium text-[#07c160] ${
+          className={`inline-flex rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[10px] font-medium text-[#b45309] ${
             isDesktop ? "mb-2.5" : "mb-2"
           }`}
         >
@@ -6365,7 +6365,7 @@ function NoteCardMessage({
             {tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]"
               >
                 #{tag}
               </span>
@@ -6756,7 +6756,9 @@ function VoiceMessage({
           : "min-w-[140px] max-w-[208px] gap-2.5 px-2.5 py-2"
       } ${
         own
-          ? "bg-[#95ec69] text-[#111827]"
+          ? isDesktop
+            ? "bg-[#95ec69] text-[#111827]"
+            : "bg-[#e8f8c8] text-[#3f4d12]"
           : isDesktop
             ? "rounded-[18px] border border-black/5 bg-white text-[color:var(--text-primary)]"
             : "rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)]"
@@ -8230,9 +8232,9 @@ function NoteViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={translateRuntimeMessage(msg`笔记查看器`)}
-      className="fixed inset-0 z-50 flex flex-col bg-[#ededed]"
+      className="fixed inset-0 z-50 flex flex-col bg-[#fcfff4]"
     >
-      <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
+      <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
         <Button
           type="button"
           variant="ghost"
@@ -8368,7 +8370,7 @@ function NoteViewerOverlay({
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center rounded-full bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+                    className="inline-flex items-center rounded-full bg-[color:var(--brand-soft)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
                   >
                     #{tag}
                   </span>

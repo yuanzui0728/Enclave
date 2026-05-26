@@ -131,7 +131,7 @@ export function MobileDiscoverToolShell({
         title={title}
         subtitle={subtitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(252, 255, 244,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={onBack}
@@ -192,11 +192,11 @@ export function MobileDiscoverToolShell({
             )}
           </InlineNotice>
         ) : null}
-        <section className="relative overflow-hidden rounded-[20px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
-          <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[rgba(7,193,96,0.08)] blur-3xl" />
+        <section className="relative overflow-hidden rounded-[20px] border border-[rgba(245, 158, 11,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
+          <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[rgba(245, 158, 11,0.08)] blur-3xl" />
           <div className="relative flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <div className="inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1 text-[11px] font-medium text-[#07c160]">
+              <div className="inline-flex rounded-full bg-[rgba(245, 158, 11,0.12)] px-3 py-1 text-[11px] font-medium text-[#f59e0b]">
                 {resolvedHeroBadge}
               </div>
               <div className="mt-3 text-[22px] font-semibold leading-tight text-[#111827]">
@@ -208,7 +208,7 @@ export function MobileDiscoverToolShell({
                 </div>
               ) : null}
             </div>
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[rgba(7,193,96,0.12)] text-[#07c160]">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
               {heroVisual}
             </div>
           </div>

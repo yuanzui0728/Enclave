@@ -257,7 +257,7 @@ export function CheckoutContactDialog({
             <Button
               type="button"
               variant="secondary"
-              className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[#f5f5f5] py-2 shadow-none"
+              className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[#f5f1e6] py-2 shadow-none"
               onClick={() =>
                 void handleCopy(combinedText, t(msg`已复制全部信息。`))
               }
@@ -268,7 +268,7 @@ export function CheckoutContactDialog({
           <Button
             type="button"
             variant="primary"
-            className="flex-1 rounded-[12px] bg-[#07c160] py-2 text-white shadow-none hover:bg-[#06ad56]"
+            className="flex-1 rounded-[12px] bg-[#f59e0b] py-2 text-[#3b2206] shadow-none hover:bg-[#d97706]"
             onClick={onClose}
           >
             {t(msg`我知道了`)}

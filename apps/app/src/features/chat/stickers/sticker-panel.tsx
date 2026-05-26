@@ -1979,7 +1979,7 @@ export function StickerPanel({
               title={headerUploadButtonTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#3f4b5f] transition active:bg-[#f5f5f5] disabled:opacity-45"
+                  ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#3f4b5f] transition active:bg-[#f5f1e6] disabled:opacity-45"
                   : `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:opacity-45 ${
                       headerUploadButtonTone === "resume"
                         ? "border-[rgba(160,90,10,0.18)] bg-[rgba(160,90,10,0.12)] text-[#9a5a0a] hover:bg-[rgba(160,90,10,0.18)]"
@@ -2004,7 +2004,7 @@ export function StickerPanel({
               title={closePanelTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#7b7f84] transition active:bg-[#f5f5f5]"
+                  ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#7b7f84] transition active:bg-[#f5f1e6]"
                   : "rounded-full px-2 py-1 text-xs text-[color:var(--text-secondary)] transition hover:bg-white/80"
               }
             >

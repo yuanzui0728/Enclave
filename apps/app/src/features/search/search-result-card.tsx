@@ -23,7 +23,7 @@ export function SearchResultCard({
         : item.category === "favorites"
           ? "border-[#eadbb4] bg-[#fff8e8] text-[#9a6b12]"
         : item.category === "officialAccounts"
-          ? "border-[#d8d8d8] bg-[#f5f5f5] text-[color:var(--text-secondary)]"
+          ? "border-[#d8d8d8] bg-[#f5f1e6] text-[color:var(--text-secondary)]"
           : item.category === "miniPrograms"
             ? "border-[#d3e7df] bg-[#eff8f4] text-[#226448]"
           : item.category === "moments"
@@ -37,7 +37,7 @@ export function SearchResultCard({
       className={
         layout === "mobile"
           ? "flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-2.5 text-left transition hover:bg-white"
-          : "flex w-full items-start gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+          : "flex w-full items-start gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[rgba(245, 158, 11,0.16)] hover:bg-[color:var(--surface-console)]"
       }
     >
       <AvatarChip

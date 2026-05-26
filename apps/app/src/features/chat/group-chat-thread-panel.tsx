@@ -1513,7 +1513,7 @@ export function GroupChatThreadPanel({
             }}
             className="flex min-w-0 flex-1 items-start gap-3 text-left transition hover:opacity-90"
           >
-            <span className="mt-0.5 shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
+            <span className="mt-0.5 shrink-0 rounded-full bg-[rgba(245, 158, 11,0.08)] px-2.5 py-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
               {t(msg`群公告`)}
             </span>
             <div className="min-w-0 flex-1">
@@ -1558,9 +1558,9 @@ export function GroupChatThreadPanel({
           <button
             type="button"
             onClick={openGroupDetails}
-            className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-white"
+            className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(245, 158, 11,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-white"
           >
-            <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
+            <span className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#b45309]">
               {t(msg`群公告`)}
             </span>
             <span className="min-w-0 flex-1 truncate text-[11px] text-[color:var(--text-primary)]">
@@ -1627,7 +1627,7 @@ export function GroupChatThreadPanel({
             <div
               role="status"
               aria-live="polite"
-              className="rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 shadow-none"
+              className="rounded-[12px] border border-[rgba(245, 158, 11,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 shadow-none"
             >
               <div className="text-[10px] leading-4 text-[#166534]">
                 {routeContextNotice.description}
@@ -2045,7 +2045,7 @@ function MobileGroupThreadStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

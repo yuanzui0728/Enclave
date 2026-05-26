@@ -200,7 +200,7 @@ export function MobileSpeechInputSheet({
         aria-labelledby={titleId}
         className="pointer-events-auto relative w-full max-w-[19.5rem]"
       >
-        <div className="rounded-[24px] border border-black/8 bg-[rgba(247,247,247,0.96)] px-4 pb-4 pt-3 text-[#111827] shadow-[0_20px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+        <div className="rounded-[24px] border border-black/8 bg-[rgba(252, 255, 244,0.96)] px-4 pb-4 pt-3 text-[#111827] shadow-[0_20px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
@@ -237,10 +237,10 @@ export function MobileSpeechInputSheet({
                 holding && cancelIntent
                   ? "border-[#ff7875]/36 bg-[#ef4444]"
                   : listening || holding
-                    ? "border-[#07c160]/30 bg-[#07c160]"
+                    ? "border-[#f59e0b]/30 bg-[#f59e0b]"
                     : processing
                       ? "border-black/6 bg-[#f0f1f3] text-[#606266]"
-                      : "border-black/6 bg-white text-[#07c160]",
+                      : "border-black/6 bg-white text-[#f59e0b]",
               )}
             >
               {processing ? (
@@ -292,7 +292,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10 items-center justify-center rounded-[14px] bg-[#07c160] text-[14px] font-medium text-white shadow-[0_6px_16px_rgba(7,193,96,0.18)] transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-[14px] bg-[#f59e0b] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_rgba(245, 158, 11,0.18)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />

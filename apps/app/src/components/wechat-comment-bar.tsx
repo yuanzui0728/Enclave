@@ -215,7 +215,7 @@ export function WeChatCommentBar({
         role="dialog"
         aria-modal="true"
         aria-label={replyTo ? t(msg`回复评论`) : t(msg`发表评论`)}
-        className="fixed inset-x-0 z-[1001] bg-[#F7F7F7] shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+        className="fixed inset-x-0 z-[1001] bg-[#f8f5ec] shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
         style={{
           bottom: 0,
           paddingBottom: `max(env(safe-area-inset-bottom,0px), 6px)`,
@@ -279,7 +279,7 @@ export function WeChatCommentBar({
             className={cn(
               "h-[36px] shrink-0 rounded-[4px] px-4 text-[14px] font-medium transition-colors",
               canSubmit
-                ? "bg-[#07C160] text-white active:bg-[#06AD56]"
+                ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
                 : "bg-[#E5E5E5] text-[#B0B0B0]",
             )}
           >

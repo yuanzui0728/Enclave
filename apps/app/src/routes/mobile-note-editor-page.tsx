@@ -1251,7 +1251,7 @@ function MobileNoteEditor({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
+    <AppPage className="space-y-0 bg-[#fcfff4] px-0 py-0">
       <input
         ref={fileInputRef}
         type="file"
@@ -1289,7 +1289,7 @@ function MobileNoteEditor({
           />
         }
         titleAlign="left"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         titleClassName="text-[16px] font-medium tracking-normal"
         leftActions={
           <Button
@@ -1382,13 +1382,13 @@ function MobileNoteEditor({
           {editorState.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+              className="inline-flex items-center gap-1 rounded-full bg-[rgba(245, 158, 11,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
             >
               <span>#{tag}</span>
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
-                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition active:bg-[rgba(7,193,96,0.16)]"
+                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition active:bg-[rgba(245, 158, 11,0.16)]"
                 aria-label={t(msg`移除标签 ${tag}`)}
               >
                 <X size={12} />
@@ -1459,7 +1459,7 @@ function MobileNoteEditor({
 
       <div
         className={cn(
-          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-2.5 py-2 backdrop-blur-xl",
+          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.96)] px-2.5 py-2 backdrop-blur-xl",
           "pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]",
         )}
       >
@@ -1511,7 +1511,7 @@ function MobileNoteEditor({
           <Tag size={15} />
         </ToolbarButton>
         {attachmentPending ? (
-          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[rgba(245, 158, 11,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
             {t(msg`附件上传中...`)}
           </span>
         ) : null}
@@ -1592,7 +1592,7 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-2.5 text-[12px] transition",
         active
-          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+          ? "border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]"
           : "border-transparent bg-white text-[color:var(--text-secondary)] active:bg-black/5",
         disabled ? "cursor-not-allowed opacity-55" : undefined,
       )}
@@ -1710,7 +1710,7 @@ function UnsavedSheet({
         </div>
         <div className="flex flex-col gap-2 border-t border-[color:var(--border-faint)] px-5 py-4">
           {saveDisabled ? (
-            <div className="rounded-[10px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+            <div className="rounded-[10px] bg-[rgba(245, 158, 11,0.08)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
               {t(msg`附件还在上传，完成后再保存或者直接放弃。`)}
             </div>
           ) : null}

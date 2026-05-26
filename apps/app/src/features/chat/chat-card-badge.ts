@@ -7,7 +7,7 @@ export type ChatCardBadgeTone =
 
 export function resolveChatCardBadgeClassName(tone: ChatCardBadgeTone) {
   if (tone === "success") {
-    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(34,197,94,0.14)] text-[#15803d]";
+    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(34,197,94,0.14)] text-[#b45309]";
   }
 
   if (tone === "warning") {

@@ -403,7 +403,7 @@ function MobileSubscriptionArticleRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
           {delivery.article.isPinned ? (
-            <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
+            <span className="rounded-full border border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
               {t(msg`置顶`)}
             </span>
           ) : null}
@@ -458,7 +458,7 @@ function MobileSubscriptionInboxStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

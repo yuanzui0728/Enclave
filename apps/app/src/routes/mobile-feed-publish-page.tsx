@@ -536,7 +536,7 @@ export function MobileFeedPublishPage() {
       <TabPageTopBar
         title={t(msg`发表广场动态`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.96)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -602,7 +602,7 @@ export function MobileFeedPublishPage() {
               composeDraft.hasContent &&
                 !createMutation.isPending &&
                 !isMediaPreparing
-                ? "bg-[#07c160] text-white active:opacity-90"
+                ? "bg-[#f59e0b] text-[#3b2206] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -763,7 +763,7 @@ export function MobileFeedPublishPage() {
                 {t(msg`当前发布到广场`)}
               </div>
             </div>
-            <span className="rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1 text-[11px] font-medium text-[#07c160]">
+            <span className="rounded-full bg-[rgba(245, 158, 11,0.12)] px-3 py-1 text-[11px] font-medium text-[#f59e0b]">
               {t(msg`公开可见`)}
             </span>
           </div>

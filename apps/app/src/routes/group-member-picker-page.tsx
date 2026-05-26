@@ -533,7 +533,7 @@ function MobileGroupMemberPickerPage({
       <TabPageTopBar
         title={pageTitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -565,7 +565,7 @@ function MobileGroupMemberPickerPage({
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
               selectedIds.length && !submitMutation.isPending
                 ? mode === "add"
-                  ? "bg-[#07c160] text-white active:opacity-90"
+                  ? "bg-[#f59e0b] text-[#3b2206] active:opacity-90"
                   : "bg-[#ff4d4f] text-white active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
@@ -929,10 +929,10 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+            ? "rounded-[12px] border border-[rgba(245, 158, 11,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(245, 158, 11,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[rgba(7,193,96,0.06)]"
+            ? "bg-[rgba(245, 158, 11,0.06)]"
             : "bg-[color:var(--bg-canvas-elevated)]",
         !isDesktop && withDivider
           ? "border-t border-[color:var(--border-faint)]"
@@ -958,7 +958,7 @@ function CandidateRow({
           "flex shrink-0 items-center justify-center rounded-full border text-[11px]",
           isDesktop ? "h-6 w-6" : "h-5 w-5",
           checked
-            ? "border-[#07c160] bg-[#07c160] text-white"
+            ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
             : isDesktop
               ? "border-[color:var(--border-faint)] bg-white text-transparent"
               : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",
@@ -1013,7 +1013,7 @@ function MobileGroupMemberPickerStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

@@ -134,7 +134,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`随机`,
     icon: Sparkles,
     iconClassName:
-      "bg-[linear-gradient(135deg,#22c55e,#07c160)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -812,10 +812,10 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-              <div className="rounded-[24px] border border-[rgba(7,193,96,0.14)] bg-[linear-gradient(180deg,rgba(246,252,248,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[24px] border border-[rgba(245, 158, 11,0.14)] bg-[linear-gradient(180deg,rgba(246,252,248,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[11px] tracking-[0.14em] text-[#15803d]">
+                    <div className="text-[11px] tracking-[0.14em] text-[#b45309]">
                       {t(msg`广场发布`)}
                     </div>
                     <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -827,7 +827,7 @@ function DesktopDiscoverWorkspace() {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+                  <div className="rounded-full bg-[rgba(245, 158, 11,0.1)] px-3 py-1 text-[11px] font-medium text-[#b45309]">
                     {t(msg`发帖区`)}
                   </div>
                 </div>
@@ -1013,7 +1013,7 @@ function DesktopDiscoverWorkspace() {
                       size="sm"
                       className={
                         post.ownerState?.hasLiked
-                          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] text-[#07c160]"
+                          ? "border-[rgba(245, 158, 11,0.18)] bg-[rgba(245, 158, 11,0.06)] text-[#f59e0b]"
                           : undefined
                       }
                     >
@@ -1255,7 +1255,7 @@ function DiscoverMobileEntryRow({
         <div className="truncate text-[13px] text-[color:var(--text-primary)]">
           {t(item.label)}
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[#15803d]">
+        <div className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[#b45309]">
           {t(item.badge)}
         </div>
       </div>

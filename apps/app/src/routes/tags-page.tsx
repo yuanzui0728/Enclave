@@ -228,7 +228,7 @@ function MobileTagsPage() {
       <TabPageTopBar
         title={t(msg`标签`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
@@ -398,7 +398,7 @@ function MobileTagsPage() {
               >
                 <div className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
-                    <Tag aria-hidden="true" size={14} className="text-[#15803d]" />
+                    <Tag aria-hidden="true" size={14} className="text-[#b45309]" />
                     {/* 通讯录 mobile 走查 R1：tag 名也是用户输入端（contacts-bulk-
                         action-bar 打标签 dialog / 资料页 tags 编辑），含 U+202E
                         可以反转后面的"N 位联系人"计数视觉。bulk action bar 在
@@ -511,7 +511,7 @@ function MobileTagStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

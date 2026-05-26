@@ -168,7 +168,7 @@ export function ProfileInfoSignaturePage() {
               "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
-                : "text-[#07c160] active:bg-black/[0.05]",
+                : "text-[#f59e0b] active:bg-black/[0.05]",
             )}
           >
             {saveMutation.isPending ? t(msg`保存中`) : t(msg`完成`)}

@@ -74,7 +74,7 @@ const quickScopeCards: Array<{
     title: msg`聊天记录`,
     description: msg`搜会话、群聊和历史消息`,
     icon: Search,
-    iconClassName: "bg-[rgba(7,193,96,0.12)] text-[#07c160]",
+    iconClassName: "bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]",
   },
   {
     key: "contacts",
@@ -95,7 +95,7 @@ const quickScopeCards: Array<{
     title: msg`朋友圈`,
     description: msg`搜好友动态、评论和点赞`,
     icon: Sprout,
-    iconClassName: "bg-[rgba(34,197,94,0.12)] text-[#15803d]",
+    iconClassName: "bg-[rgba(34,197,94,0.12)] text-[#b45309]",
   },
   {
     key: "feed",
@@ -210,7 +210,7 @@ export function MobileSearchWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-canvas)]">
-      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-2.5 pt-1.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-2.5 pt-1.5 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -251,7 +251,7 @@ export function MobileSearchWorkspace({
               spellCheck={false}
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。全局搜索是用户最常用的 entry，每次进来都 zoom 体验最差。
-              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
+              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
             />
             {searchText ? (
               <button
@@ -303,7 +303,7 @@ export function MobileSearchWorkspace({
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
                   activeCategory === item.id
-                    ? "bg-[#07c160] text-white"
+                    ? "bg-[#f59e0b] text-[#3b2206]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -650,7 +650,7 @@ function MobileSearchStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

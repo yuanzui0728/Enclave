@@ -150,7 +150,7 @@ export function MobileShell({ children }: PropsWithChildren) {
         </div>
         {showTabs ? (
           <nav
-            className="yj-no-callout shrink-0 grid grid-cols-4 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-1.5 pt-1.5 backdrop-blur-xl"
+            className="yj-no-callout shrink-0 grid grid-cols-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-1.5 pt-1.5 backdrop-blur-xl"
             style={{
               paddingBottom: "max(0.375rem, var(--safe-area-inset-bottom))",
             }}
@@ -174,15 +174,17 @@ export function MobileShell({ children }: PropsWithChildren) {
                   className={cn(
                     "flex flex-col items-center gap-1 rounded-[12px] px-2 py-1.5 text-[11px] font-medium transition-[color,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     active
-                      ? "text-[#07c160]"
+                      ? "text-[color:var(--brand-primary)]"
                       : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
                   )}
                   aria-label={t(label)}
                 >
                   <div
                     className={cn(
-                      "relative flex h-8 w-8 items-center justify-center rounded-[10px] transition-[background-color,color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-                      active ? "bg-[rgba(7,193,96,0.10)]" : "bg-transparent",
+                      "relative flex h-8 w-8 items-center justify-center transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      active
+                        ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)]"
+                        : "rounded-[10px] bg-transparent",
                     )}
                   >
                     <Icon size={18} />
@@ -190,7 +192,9 @@ export function MobileShell({ children }: PropsWithChildren) {
                       <span
                         className={cn(
                           "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[11px] leading-none text-white",
-                          showReminderBadge ? "bg-[#07c160]" : "bg-[#fa5151]",
+                          showReminderBadge
+                            ? "bg-[color:var(--brand-primary)]"
+                            : "bg-[#fa5151]",
                         )}
                       >
                         {badgeCount > 99 ? "99+" : badgeCount}

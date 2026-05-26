@@ -559,7 +559,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 // 的标题一致。
                 aria-label={t(msg`群公告`)}
                 // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
+                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
               />
               {/* 走查 2026-05-22 R1：原版无论有没有现有公告，都常驻一条
                   "留空后保存，会清空当前群公告。"——在 announcement 还是
@@ -642,7 +642,7 @@ function MobileAnnouncementStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}

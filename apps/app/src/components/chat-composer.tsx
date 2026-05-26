@@ -3430,8 +3430,8 @@ export function ChatComposer({
       <div
         className={
           isDesktop
-            ? "relative isolate z-30 border-t border-black/6 bg-[#ededed] px-3.5 py-3"
-            : "border-t border-black/6 bg-[#f7f7f7] px-2 pb-2 pt-1"
+            ? "relative isolate z-30 border-t border-black/6 bg-[#fcfff4] px-3.5 py-3"
+            : "border-t border-black/6 bg-[#f8f5ec] px-2 pb-2 pt-1"
         }
         // 走查 R74：原版每次 render new 一个 {paddingBottom:...} 对象。
         // composer 在用户每个 keystroke 都 re-render（value state 变），
@@ -3447,7 +3447,7 @@ export function ChatComposer({
         }}
       >
         {isDesktop && desktopDropActive ? (
-          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#07c160]/35 bg-[rgba(247,247,247,0.96)] text-sm font-medium text-[#07a35a]">
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#f59e0b]/35 bg-[rgba(252, 255, 244,0.96)] text-sm font-medium text-[#b45309]">
             {t(msg`松开鼠标发送图片或文件`)}
           </div>
         ) : null}
@@ -3824,7 +3824,7 @@ export function ChatComposer({
                     className={cn(
                       "h-[34px] min-w-[76px] rounded-[9px] px-4 text-[13px] font-medium shadow-none disabled:opacity-100",
                       value.trim()
-                        ? "bg-[#07c160] !text-white hover:bg-[#06ad56]"
+                        ? "bg-[#f59e0b] !text-[#3b2206] hover:bg-[#d97706]"
                         : "bg-[#e8e8e8] !text-[#70757a] hover:bg-[#e8e8e8]",
                     )}
                   >
@@ -3834,7 +3834,7 @@ export function ChatComposer({
               </div>
             </>
           ) : (
-            <div className="flex items-end gap-1.5 rounded-[18px] bg-[#f7f7f7]">
+            <div className="flex items-end gap-1.5 rounded-[18px] bg-[#f8f5ec]">
               {showSpeechEntry ? (
                 <button
                   type="button"
@@ -3882,7 +3882,7 @@ export function ChatComposer({
                     mobileSpeechPressing
                       ? mobileSpeechCancelIntent
                         ? "border-[#ff4d4f]/45 bg-[#fff5f5] text-[#ff4d4f]"
-                        : "border-[#07c160]/35 bg-[#f3fff8] text-[#07c160]"
+                        : "border-[#f59e0b]/35 bg-[#fffdf2] text-[#f59e0b]"
                       : "text-[#7a7a7a]",
                     speech.status === "processing"
                       ? "border-black/12 bg-black/[0.03] text-[#8b8b8b]"
@@ -3964,7 +3964,7 @@ export function ChatComposer({
                   type="button"
                   onClick={onSubmit}
                   disabled={composerPending}
-                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-[10px] bg-[#07c160] px-3 text-[13px] font-medium text-white shadow-[0_2px_6px_rgba(7,193,96,0.18)] disabled:opacity-45"
+                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-[10px] bg-[#f59e0b] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_rgba(245, 158, 11,0.18)] disabled:opacity-45"
                 >
                   {t(msg`发送`)}
                 </button>
@@ -4134,7 +4134,7 @@ function DesktopFavoritePicker({
         <button
           type="button"
           onClick={onBack}
-          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
+          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]"
           aria-label={t(msg`关闭发送收藏`)}
         >
           <ChevronLeft size={16} />
@@ -4153,7 +4153,7 @@ function DesktopFavoritePicker({
               onClick={() => onSelect(item)}
               disabled={busy}
               className={cn(
-                "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60",
+                "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[#f5f1e6] disabled:cursor-not-allowed disabled:opacity-60",
                 index > 0 ? "border-t border-black/[0.06]" : "",
               )}
             >
@@ -4167,7 +4167,7 @@ function DesktopFavoritePicker({
                   <div className="truncate text-sm text-[color:var(--text-primary)]">
                     {item.title}
                   </div>
-                  <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
+                  <span className="rounded-full bg-[rgba(245, 158, 11,0.10)] px-2 py-0.5 text-[10px] text-[#f59e0b]">
                     {item.badge}
                   </span>
                 </div>
@@ -4223,7 +4223,7 @@ function DesktopToolbarButton({
         "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[10px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
         active
           ? "border-black/6 bg-[#f3f4f6] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
-          : "text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
+          : "text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]",
       )}
     >
       <span>{icon}</span>
@@ -4267,7 +4267,7 @@ function DesktopComposerStatusStrip({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
           : tone === "success"
-            ? "border-[rgba(7,193,96,0.16)] bg-[#f6fbf7] text-[#15803d]"
+            ? "border-[rgba(245, 158, 11,0.16)] bg-[#fffdf2] text-[#b45309]"
             : "border-black/6 bg-white text-[color:var(--text-secondary)]",
       )}
     >
@@ -4280,7 +4280,7 @@ function DesktopComposerStatusStrip({
             "shrink-0 rounded-full px-2 py-0.5 font-medium transition",
             tone === "danger"
               ? "bg-white text-[#b42318] hover:bg-[#fffafa]"
-              : "bg-white text-[#15803d] hover:bg-[#f5f5f5]",
+              : "bg-white text-[#b45309] hover:bg-[#f5f1e6]",
           )}
         >
           {primaryActionLabel}
@@ -4323,7 +4323,7 @@ function MobileComposerStatusRail({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff5f5] text-[#b42318]"
           : tone === "success"
-            ? "border-[rgba(7,193,96,0.14)] bg-[#f6fbf7] text-[#15803d]"
+            ? "border-[rgba(245, 158, 11,0.14)] bg-[#fffdf2] text-[#b45309]"
             : tone === "info"
               ? "border-[rgba(96,165,250,0.18)] bg-[#f7fbff] text-[#1d4ed8]"
               : "border-black/6 bg-[rgba(255,255,255,0.88)] text-[color:var(--text-muted)]",
@@ -4340,7 +4340,7 @@ function MobileComposerStatusRail({
               tone === "danger"
                 ? "border-[#fecaca] text-[#b42318]"
                 : tone === "success"
-                  ? "border-[rgba(7,193,96,0.14)] text-[#15803d]"
+                  ? "border-[rgba(245, 158, 11,0.14)] text-[#b45309]"
                   : tone === "info"
                     ? "border-[#bfdbfe] text-[#1d4ed8]"
                     : "border-black/6 text-[color:var(--text-secondary)]",
@@ -4380,8 +4380,8 @@ function DesktopAttachmentDraftBar({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="mb-2.5 rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[#f8fbf8] px-3.5 py-3">
-      <div className="mb-2.5 text-[11px] font-medium text-[#07a35a]">
+    <div className="mb-2.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] bg-[#fffdf2] px-3.5 py-3">
+      <div className="mb-2.5 text-[11px] font-medium text-[#b45309]">
         {t(msg`待发送附件`)}
       </div>
       {draft.kind === "images" ? (
@@ -4468,7 +4468,7 @@ function DesktopAttachmentDraftBar({
           variant="primary"
           onClick={onSend}
           disabled={pending}
-          className="h-8 rounded-[8px] bg-[#07c160] px-3 text-white hover:bg-[#06ad56]"
+          className="h-8 rounded-[8px] bg-[#f59e0b] px-3 text-[#3b2206] hover:bg-[#d97706]"
         >
           {pending ? t(msg`正在发送...`) : t(msg`发送附件`)}
         </Button>
@@ -5181,7 +5181,7 @@ function DesktopScreenshotEditor({
 
   const getShortcutDemoClass = (groupId: ScreenshotShortcutHelpGroupId) =>
     shortcutDemoGroup === groupId
-      ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.12)] shadow-[0_0_0_1px_rgba(152,245,186,0.2),0_12px_28px_rgba(7,193,96,0.14)]"
+      ? "border-[#b45309] bg-[rgba(245, 158, 11,0.12)] shadow-[0_0_0_1px_rgba(253, 230, 138,0.2),0_12px_28px_rgba(245, 158, 11,0.14)]"
       : "border-transparent";
 
   const finishPreviewPan = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -5468,7 +5468,7 @@ function DesktopScreenshotEditor({
                           className={cn(
                             "flex items-start justify-between gap-2.5 rounded-[9px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
-                              ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
+                              ? "border-[#b45309] bg-[rgba(245, 158, 11,0.14)] text-white"
                               : "border-transparent bg-white/[0.045] hover:border-white/8 hover:bg-white/[0.065]",
                           )}
                         >
@@ -5557,7 +5557,7 @@ function DesktopScreenshotEditor({
                     ) : null}
                     {cropRect ? (
                       <div
-                        className="absolute border-2 border-[#07c160] bg-[rgba(7,193,96,0.12)] shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
+                        className="absolute border-2 border-[#f59e0b] bg-[rgba(245, 158, 11,0.12)] shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
                         style={{
                           left: `${cropRect.x * 100}%`,
                           top: `${cropRect.y * 100}%`,
@@ -5592,7 +5592,7 @@ function DesktopScreenshotEditor({
                             onPointerUp={onCropResizeEnd}
                             onPointerCancel={onCropResizeEnd}
                             className={cn(
-                              "absolute border-2 border-white bg-[#07c160] shadow-[0_6px_14px_rgba(7,193,96,0.28)]",
+                              "absolute border-2 border-white bg-[#f59e0b] shadow-[0_6px_14px_rgba(245, 158, 11,0.28)]",
                               handle === "nw"
                                 ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
                                 : "",
@@ -5633,11 +5633,11 @@ function DesktopScreenshotEditor({
                           height: `${previewRect.height * 100}%`,
                           borderColor:
                             selection?.mode === "crop"
-                              ? "#07c160"
+                              ? "#f59e0b"
                               : activeAnnotationPalette.stroke,
                           backgroundColor:
                             selection?.mode === "crop"
-                              ? "rgba(7,193,96,0.14)"
+                              ? "rgba(245, 158, 11,0.14)"
                               : activeAnnotationPalette.fill,
                         }}
                       >
@@ -6071,7 +6071,7 @@ function DesktopScreenshotEditor({
                 onClick={onSendCropped}
                 disabled={pending || !crop}
                 title={t(msg`裁剪后发送 (Enter)`)}
-                className="rounded-[9px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+                className="rounded-[9px] bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
               >
                 <Scissors size={14} />
                 {pending ? t(msg`发送中...`) : t(msg`裁剪后发送`)}
@@ -6106,15 +6106,15 @@ function ReplyPreviewBar({
     <div
       className={`flex items-start justify-between gap-2.5 ${
         isDesktop
-          ? "mb-2.5 rounded-[12px] border border-[rgba(7,193,96,0.14)] border-l-[3px] border-l-[#07c160] bg-[#f8fbf8] px-3.5 py-2.5"
-          : "mb-1.5 rounded-[12px] border border-[rgba(7,193,96,0.14)] border-l-[3px] border-l-[#07c160] bg-white px-3 py-1.5 shadow-none"
+          ? "mb-2.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-[#fffdf2] px-3.5 py-2.5"
+          : "mb-1.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-white px-3 py-1.5 shadow-none"
       }`}
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <div
             className={`text-[11px] font-medium ${
-              isDesktop ? "text-[#07a35a]" : "text-[10px] text-[#07c160]"
+              isDesktop ? "text-[#b45309]" : "text-[10px] text-[#f59e0b]"
             }`}
           >
             {t(msg`回复 ${senderName}`)}
@@ -6124,7 +6124,7 @@ function ReplyPreviewBar({
               className={`rounded-full px-2 py-0.5 text-[10px] ${
                 isDesktop
                   ? "bg-white text-[color:var(--text-dim)]"
-                  : "bg-[rgba(7,193,96,0.1)] text-[9px] text-[#07c160]"
+                  : "bg-[rgba(245, 158, 11,0.1)] text-[9px] text-[#f59e0b]"
               }`}
             >
               {modeLabel}
@@ -6216,7 +6216,7 @@ function DesktopMentionPicker({
             onClick={() => onSelect(candidate)}
             className={cn(
               "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
-              index === activeIndex ? "bg-[#f5f5f5]" : "hover:bg-[#fafafa]",
+              index === activeIndex ? "bg-[#f5f1e6]" : "hover:bg-[#fafafa]",
             )}
           >
             <AvatarChip

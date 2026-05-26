@@ -991,7 +991,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     return (
       <AppPage className="min-h-full bg-[#f3f3f3] px-0 py-0">
         <div className="flex min-h-full flex-col">
-          <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+          <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f8f5ec] px-6 py-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -1030,7 +1030,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 {t(msg`桌面通话工作区`)}
               </div>
               <div className="mt-5 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.10)] text-[#1f8f4f]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(245, 158, 11,0.10)] text-[#1f8f4f]">
                   {mode === "video" ? <Camera size={24} /> : <Mic size={24} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1085,7 +1085,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   type="button"
                   variant="primary"
                   onClick={handleBack}
-                  className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+                  className="rounded-[10px] bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
                 >
                   <Users size={16} />
                   {t(msg`返回群聊继续`)}

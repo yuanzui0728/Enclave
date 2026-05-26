@@ -210,9 +210,9 @@ export function SplashPage() {
   ]);
 
   return (
-    <AppPage className="flex min-h-full flex-col items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center">
+    <AppPage className="flex min-h-full flex-col items-center justify-center bg-[#f5f1e6] px-4 py-10 text-center">
       <AppSection className="w-full max-w-xs border-black/5 bg-white px-8 py-10 shadow-none">
-        <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,#07c160,#34c759)] text-xl font-semibold text-white shadow-none">
+        <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,#f59e0b,#84cc16)] text-xl font-semibold text-white shadow-none">
           {t(msg`隐界`)}
         </div>
         <p className="mt-6 text-sm leading-6 text-[color:var(--text-secondary)]">

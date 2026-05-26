@@ -11,7 +11,7 @@ export function resolveResultCardFooterActionClassName(
   tone: ResultCardFooterTone,
 ) {
   if (tone === "success") {
-    return "text-[#15803d]";
+    return "text-[#b45309]";
   }
 
   if (tone === "warning") {

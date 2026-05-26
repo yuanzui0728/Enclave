@@ -316,7 +316,7 @@ export function ContactsManagementModal({
           {header}
           <div
             ref={scrollContainerRef}
-            className="min-h-0 flex-1 overflow-y-auto bg-[#f7f7f7]"
+            className="min-h-0 flex-1 overflow-y-auto bg-[#f8f5ec]"
           >
             {body}
           </div>
@@ -346,7 +346,7 @@ export function ContactsManagementModal({
         {header}
         <div
           ref={scrollContainerRef}
-          className="min-h-0 flex-1 overflow-y-auto bg-[#f7f7f7]"
+          className="min-h-0 flex-1 overflow-y-auto bg-[#f8f5ec]"
         >
           {body}
         </div>

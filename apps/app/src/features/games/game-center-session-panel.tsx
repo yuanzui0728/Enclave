@@ -50,10 +50,10 @@ export function GameCenterSessionPanel({
     isDesktopLayout,
   });
   const metricAccentClass = compact
-    ? "text-[#15803d]"
+    ? "text-[#b45309]"
     : "text-[color:var(--brand-secondary)]";
   const rewardAccentClass = compact
-    ? "text-[#15803d]"
+    ? "text-[#b45309]"
     : "text-[color:var(--brand-primary)]";
   const resolvedCopyActionIcon =
     copyActionIcon ??
@@ -186,7 +186,7 @@ export function GameCenterSessionPanel({
           onClick={() => onLaunch(game.id)}
           className={
             compact
-              ? "h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white shadow-none hover:bg-[#06ad56]"
+              ? "h-8 rounded-full bg-[#f59e0b] px-3.5 text-[11px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
               : undefined
           }
         >
@@ -199,7 +199,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(245, 158, 11,0.16)] hover:bg-white"
                 : undefined
             }
           >

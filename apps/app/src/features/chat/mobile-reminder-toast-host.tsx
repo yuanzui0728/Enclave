@@ -301,7 +301,7 @@ export function MobileReminderToastHost() {
       {actionNotice ? (
         <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[rgba(249,255,251,0.97)] shadow-[0_12px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.12)] text-[#07c160]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
               <Check size={16} />
             </div>
             <div className="min-w-0 flex-1 text-[13px] font-medium text-[#111827]">
@@ -321,7 +321,7 @@ export function MobileReminderToastHost() {
       {!shouldHideActiveReminder && activeReminder ? (
         <div className="pointer-events-auto overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.82)] bg-[rgba(255,252,246,0.96)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl">
           <div className="flex items-start gap-3 px-4 py-3.5">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(7,193,96,0.12)] text-[#07c160]">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
               <BellRing size={18} />
             </div>
             <div className="min-w-0 flex-1">
@@ -380,7 +380,7 @@ export function MobileReminderToastHost() {
                   <button
                     type="button"
                     onClick={handleOpen}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#07c160] px-3 py-1.5 text-[12px] font-medium text-white"
+                    className="inline-flex items-center gap-1 rounded-full bg-[#f59e0b] px-3 py-1.5 text-[12px] font-medium text-[#3b2206]"
                   >
                     <span>{t(msg`查看`)}</span>
                     <ChevronRight size={13} />

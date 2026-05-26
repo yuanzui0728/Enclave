@@ -72,7 +72,7 @@ export function MobileChatAttachmentPreview({
             ))}
           </div>
         ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] text-[#15803d]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[rgba(245, 158, 11,0.14)] bg-[rgba(247,251,248,0.98)] text-[#b45309]">
             <FileText size={22} />
           </div>
         )}
@@ -117,7 +117,7 @@ export function MobileChatAttachmentPreview({
           variant="primary"
           onClick={() => void onSend()}
           disabled={pending}
-          className="h-8 rounded-full bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
+          className="h-8 rounded-full bg-[#f59e0b] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
         >
           {pending
             ? t(msg`发送中...`)

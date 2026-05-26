@@ -2496,7 +2496,7 @@ export function ChannelsPage() {
         title={t(msg`视频号`)}
         subtitle={t(msg`内容推荐与视频动态`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => {
@@ -2543,7 +2543,7 @@ export function ChannelsPage() {
                 className={cn(
                   "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
                   selected
-                    ? "bg-[rgba(7,193,96,0.12)] font-medium text-[#07c160]"
+                    ? "bg-[rgba(245, 158, 11,0.12)] font-medium text-[#f59e0b]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
                 )}
               >
@@ -3819,7 +3819,7 @@ function MobileChannelsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}
@@ -4477,7 +4477,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     "rounded-full px-2.5 py-1 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
                       ? "border border-white/20 bg-white/10 text-white/72"
-                      : "bg-[#07c160] text-white",
+                      : "bg-[#f59e0b] text-[#3b2206]",
                   )}
                 >
                   {followPending
@@ -4663,7 +4663,7 @@ function ActionRailButton({
       <span
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur transition-colors",
-          active && "bg-[#07c160] shadow-[0_10px_24px_rgba(7,193,96,0.14)]",
+          active && "bg-[#f59e0b] shadow-[0_10px_24px_rgba(245, 158, 11,0.14)]",
         )}
       >
         {children}
@@ -4754,7 +4754,7 @@ const CommentItemView = memo(function CommentItemView({
               {comment.authorName}
             </span>
             {isAuthor ? (
-              <span className="shrink-0 rounded-[3px] bg-[rgba(7,193,96,0.12)] px-1 py-px text-[10px] leading-[14px] text-[#07c160]">
+              <span className="shrink-0 rounded-[3px] bg-[rgba(245, 158, 11,0.12)] px-1 py-px text-[10px] leading-[14px] text-[#f59e0b]">
                 {t(msg`作者`)}
               </span>
             ) : null}
@@ -5588,7 +5588,7 @@ function MobileChannelCommentsSheet({
         */}
         <div className="border-t border-[#ededed] bg-white px-3 pt-2">
           {replyTarget ? (
-            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(7,193,96,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
+            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(245, 158, 11,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
               {/*
                 走查 R1（本轮）：原 truncate 没有 min-w-0 + flex-1，flex item 默认
                 min-width:auto，超长 authorName（比如用户用户名 yuanzui0728_5999 +
@@ -5657,7 +5657,7 @@ function MobileChannelCommentsSheet({
                 className={cn(
                   "h-9 shrink-0 rounded-[4px] px-4 text-[14px] font-medium transition-colors",
                   draft.trim() && !submitPending
-                    ? "bg-[#07c160] text-white active:bg-[#06ad56]"
+                    ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
                     : "bg-[#e5e5e5] text-[#b0b0b0]",
                 )}
               >
@@ -5668,7 +5668,7 @@ function MobileChannelCommentsSheet({
             <button
               type="button"
               onClick={() => setInputExpanded(true)}
-              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f7f7f7] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#ededed]"
+              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#fcfff4]"
             >
               <span className="truncate">
                 {replyTarget

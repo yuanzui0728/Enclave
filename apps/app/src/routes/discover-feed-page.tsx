@@ -2268,7 +2268,7 @@ export function DiscoverFeedPage() {
         title={t(msg`广场动态`)}
         subtitle={t(msg`世界居民公开可见`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -2542,7 +2542,7 @@ export function DiscoverFeedPage() {
                 body={
                   <div className="space-y-3">
                     {post.authorType === "user" ? (
-                      <div className="inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
+                      <div className="inline-flex rounded-full bg-[rgba(245, 158, 11,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]">
                         {t(msg`居民公开可见`)}
                       </div>
                     ) : null}
@@ -2628,7 +2628,7 @@ export function DiscoverFeedPage() {
                   // O(1) 命中；高频 setState 也不重建。
                   const commentById = cached?.byId ?? new Map<string, FeedComment>();
                   return (
-                    <div className="overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#F7F7F7]">
+                    <div className="overflow-hidden rounded-[3px] border border-[#EDEDED] bg-[#f8f5ec]">
                       <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
                         {renderedComments.map(({ comment, cleanText }) => {
                           const replyToComment = comment.replyToCommentId
@@ -2936,7 +2936,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
+                      className="h-8 rounded-full bg-[#f59e0b] px-3.5 text-[11px] text-[#3b2206] hover:bg-[#d97706]"
                       onClick={() => void fetchNextFeedPage()}
                     >
                       {t(msg`重试加载更多`)}
@@ -2968,7 +2968,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
+                      className="h-8 rounded-full bg-[#f59e0b] px-3.5 text-[11px] text-[#3b2206] hover:bg-[#d97706]"
                       onClick={() => void navigate({ to: "/tabs/contacts" })}
                     >
                       {t(msg`打开通讯录`)}
@@ -2990,7 +2990,7 @@ export function DiscoverFeedPage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
+                    className="h-8 rounded-full bg-[#f59e0b] px-3.5 text-[11px] text-[#3b2206] hover:bg-[#d97706]"
                     onClick={handleEmptyStateAction}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`发一条广场动态`)}
@@ -3171,7 +3171,7 @@ function MobileFeedStatusCard({
         className={
           tone === "danger"
             ? "mx-auto inline-flex rounded-full bg-[rgba(220,38,38,0.08)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--state-danger-text)]"
-            : "mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#07c160]"
+            : "mx-auto inline-flex rounded-full bg-[rgba(245, 158, 11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]"
         }
       >
         {badge}

@@ -57,7 +57,7 @@ export function OfficialServiceMessageBubble({
               ? "rounded-[20px] shadow-[0_10px_28px_rgba(15,23,42,0.05)]"
               : "rounded-[15px] shadow-[0_4px_12px_rgba(15,23,42,0.035)]",
             articleCardActive
-              ? "border-[rgba(7,193,96,0.18)]"
+              ? "border-[rgba(245, 158, 11,0.18)]"
               : "border-black/6",
           )}
         >

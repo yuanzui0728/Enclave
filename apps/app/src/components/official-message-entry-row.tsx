@@ -55,12 +55,12 @@ export function OfficialMessageEntryRow({
       className={cn(
         isDesktop
           ? active
-            ? "flex w-full items-center gap-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-white px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+            ? "flex w-full items-center gap-3 rounded-[10px] border border-[rgba(245, 158, 11,0.14)] bg-white px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
             : contextMenuOpen
               ? "flex w-full items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5 text-left"
               : "flex w-full items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80"
           : active
-            ? "flex w-full items-center gap-2.5 bg-[rgba(7,193,96,0.07)] px-4 py-2.5 text-left"
+            ? "flex w-full items-center gap-2.5 bg-[rgba(245, 158, 11,0.07)] px-4 py-2.5 text-left"
             : "flex w-full items-center gap-2.5 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left",
         className,
       )}

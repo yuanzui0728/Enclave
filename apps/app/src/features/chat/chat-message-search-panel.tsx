@@ -690,7 +690,7 @@ export function ChatMessageSearchPanel({
                         className={cn(
                           "flex h-8.5 w-8.5 items-center justify-center rounded-[9px]",
                           active
-                            ? "bg-[rgba(7,193,96,0.12)] text-[#15803d]"
+                            ? "bg-[rgba(245, 158, 11,0.12)] text-[#b45309]"
                             : "bg-[color:var(--surface-panel)] text-[color:var(--text-secondary)]",
                         )}
                       >
@@ -713,7 +713,7 @@ export function ChatMessageSearchPanel({
                         className={cn(
                           "mt-1 text-[10px]",
                           active
-                            ? "text-[#15803d]"
+                            ? "text-[#b45309]"
                             : "text-[color:var(--text-muted)]",
                         )}
                       >
@@ -869,7 +869,7 @@ export function ChatMessageSearchPanel({
               <div>
                 {resultSections.map((section) => (
                   <section key={section.key}>
-                    <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] backdrop-blur-xl">
+                    <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.96)] px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] backdrop-blur-xl">
                       {section.label}
                     </div>
                     <div className="divide-y divide-[color:var(--border-faint)]">
@@ -937,7 +937,7 @@ export function ChatMessageSearchPanel({
                   </section>
                 ))}
                 {isPartialResult ? (
-                  <div className="border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
+                  <div className="border-t border-[color:var(--border-faint)] bg-[rgba(252, 255, 244,0.96)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
                     {t(
                       msg`当前仅展示前 ${MAX_VISIBLE_RESULTS} 条结果，请继续缩小范围查找。`,
                     )}
@@ -1356,7 +1356,7 @@ function MobileSearchStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+            : "bg-[rgba(245, 158, 11,0.1)] text-[#f59e0b]",
         )}
       >
         {badge}
@@ -1391,9 +1391,9 @@ function SearchStatPill({
       className={cn(
         "rounded-full px-2.5 py-1 text-[10px] leading-none",
         tone === "brand" &&
-          "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]",
+          "bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.08)] text-[#2563eb]",
-        tone === "active" && "bg-[rgba(7,193,96,0.12)] text-[#15803d]",
+        tone === "active" && "bg-[rgba(245, 158, 11,0.12)] text-[#b45309]",
         tone === "neutral" &&
           "bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]",
       )}
@@ -1419,7 +1419,7 @@ function SearchFilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] text-[#15803d]"
+          ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(247,251,248,0.96)] text-[#b45309]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
       )}
     >
