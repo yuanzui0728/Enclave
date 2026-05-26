@@ -39,6 +39,7 @@ import { PushModule } from './modules/push/push.module';
 import { PushTokenEntity } from './modules/push/push-token.entity';
 import { TenantModule } from './modules/tenancy/tenant.module';
 import { TenantOwnershipSubscriber } from './modules/tenancy/tenant-ownership.subscriber';
+import { isSharedWorldMode } from './modules/tenancy/tenant-context';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -232,7 +233,11 @@ import {
           // wiki entity 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。
           PushTokenEntity,
         ],
-        synchronize: true,
+        // shared 模式必须关 synchronize：迁移产出的共享库是复合主键 (ownerId,id) + 去掉了
+        // users 的 UNIQUE(username/email)，而实体仍声明单 id PK + cloudPhone unique；若开
+        // synchronize，TypeORM 启动时会按实体把复合主键/唯一约束「重建回去」→ 撞 fixed-id /
+        // 模板重复 username → 串号或启动卡死。LPP 每用户库 / wiki 库无此冲突，照旧 true 自动建表。
+        synchronize: !isSharedWorldMode(),
         // 多租户写入侧纵深防御。只在 shared 模式 + 已注册 scoped 实体时生效（见
         // TenantOwnershipSubscriber）；LPP / wiki 进程里整段 no-op。
         subscribers: [TenantOwnershipSubscriber],
