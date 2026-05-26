@@ -54,6 +54,8 @@ import { WikiUserController } from './controllers/wiki-user.controller';
 import { WikiTalkController } from './controllers/wiki-talk.controller';
 import { WikiWatchlistController } from './controllers/wiki-watchlist.controller';
 import { WikiPrivateCharacterController } from './controllers/wiki-private-character.controller';
+import { WikiCommunityCharacterController } from './controllers/wiki-community-character.controller';
+import { WikiCommunityAdminController } from './controllers/wiki-community-admin.controller';
 import { WikiSoftDeleteController } from './controllers/wiki-soft-delete.controller';
 import { WikiReportController } from './controllers/wiki-report.controller';
 import { WikiAvatarController } from './controllers/wiki-avatar.controller';
@@ -64,6 +66,15 @@ import { CharacterDraftService } from './services/character-draft.service';
 import { AiGenerationJobService } from './services/ai-generation-job.service';
 import { AiGenerationJobSweeperService } from './services/ai-generation-job-sweeper.service';
 import { WikiAiGenerateJobController } from './controllers/wiki-ai-generate-job.controller';
+import { GamePageEntity } from './entities/game-page.entity';
+import { GameRevisionEntity } from './entities/game-revision.entity';
+import { GameGenerationJobEntity } from './entities/game-generation-job.entity';
+import { WikiGameService } from './services/wiki-game.service';
+import { WikiGameAiService } from './services/wiki-game-ai.service';
+import { GameGenerationJobService } from './services/game-generation-job.service';
+import { WikiGameController } from './controllers/wiki-game.controller';
+import { WikiGameAiGenerateController } from './controllers/wiki-game-ai-generate.controller';
+import { WikiGameJobController } from './controllers/wiki-game-job.controller';
 
 @Module({
   imports: [
@@ -90,6 +101,9 @@ import { WikiAiGenerateJobController } from './controllers/wiki-ai-generate-job.
       UserPrivateCharacterEntity,
       CharacterDraftEntity,
       AiGenerationJobEntity,
+      GamePageEntity,
+      GameRevisionEntity,
+      GameGenerationJobEntity,
     ]),
   ],
   controllers: [
@@ -107,10 +121,15 @@ import { WikiAiGenerateJobController } from './controllers/wiki-ai-generate-job.
     WikiFieldProtectionController,
     WikiStatsController,
     WikiPrivateCharacterController,
+    WikiCommunityCharacterController,
+    WikiCommunityAdminController,
     WikiAvatarController,
     WikiAiGenerateController,
     CharacterDraftController,
     WikiAiGenerateJobController,
+    WikiGameController,
+    WikiGameAiGenerateController,
+    WikiGameJobController,
   ],
   providers: [
     WikiPageService,
@@ -134,6 +153,9 @@ import { WikiAiGenerateJobController } from './controllers/wiki-ai-generate-job.
     CharacterDraftService,
     AiGenerationJobService,
     AiGenerationJobSweeperService,
+    WikiGameService,
+    WikiGameAiService,
+    GameGenerationJobService,
     WikiRoleGuard,
     WikiRateLimitGuard,
     WikiAiGenerateRateLimitGuard,

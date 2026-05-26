@@ -3610,7 +3610,7 @@ export function ChatComposer({
           ref={isDesktop ? desktopStickerRef : undefined}
           className={`relative ${
             isDesktop
-              ? "rounded-[16px] border border-black/8 bg-white shadow-[0_10px_26px_rgba(180, 130, 20, 0.06)]"
+              ? "rounded-[16px] border border-black/8 bg-[color:var(--surface-card)] shadow-[0_10px_26px_rgba(180, 130, 20, 0.06)]"
               : "space-y-1.5"
           }`}
         >
@@ -3734,7 +3734,7 @@ export function ChatComposer({
                         />
                         {desktopPlusMenuOpen &&
                         desktopPlusMenuView === "favorites" ? (
-                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(180, 130, 20, 0.14)]">
+                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(180, 130, 20, 0.14)]">
                             <DesktopFavoritePicker
                               favorites={desktopFavoriteRecords}
                               busy={composerPending}
@@ -3811,7 +3811,7 @@ export function ChatComposer({
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2 border-l border-black/6 pl-3">
-                  <div className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-dim)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+                  <div className="rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-dim)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                     {desktopEditorExpanded
                       ? t(msg`Ctrl/Cmd + Enter 发送`)
                       : sendMessageShortcut === "enter"
@@ -3845,7 +3845,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "speech"
-                      ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={
@@ -3878,7 +3878,7 @@ export function ChatComposer({
                   }
                   title={speechDisabledReason ?? undefined}
                   className={cn(
-                    "flex min-h-[38px] min-w-0 flex-1 select-none items-center justify-center rounded-[20px] border border-black/8 bg-white px-3.5 py-2 text-[13px] transition touch-none shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]",
+                    "flex min-h-[38px] min-w-0 flex-1 select-none items-center justify-center rounded-[20px] border border-black/8 bg-[color:var(--surface-card)] px-3.5 py-2 text-[13px] transition touch-none shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]",
                     mobileSpeechPressing
                       ? mobileSpeechCancelIntent
                         ? "border-[#ff4d4f]/45 bg-[#fff5f5] text-[#ff4d4f]"
@@ -3899,7 +3899,7 @@ export function ChatComposer({
                       : t(msg`按住说话`)}
                 </button>
               ) : (
-                <div className="flex min-w-0 flex-1 items-end rounded-[20px] border border-black/8 bg-white px-3 py-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+                <div className="flex min-w-0 flex-1 items-end rounded-[20px] border border-black/8 bg-[color:var(--surface-card)] px-3 py-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
                   <textarea
                     ref={mobileTextareaRef}
                     rows={1}
@@ -3943,7 +3943,7 @@ export function ChatComposer({
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition",
                   mobileComposerMode === "sticker"
-                    ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
+                    ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                     : "bg-transparent active:bg-white/90",
                 )}
                 aria-label={
@@ -3976,7 +3976,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "plus"
-                      ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={t(msg`更多功能`)}
@@ -4233,7 +4233,7 @@ function DesktopToolbarButton({
 
 function DesktopToolbarGroup({ children }: { children: ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-[12px] border border-black/6 bg-white px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+    <div className="inline-flex items-center gap-0.5 rounded-[12px] border border-black/6 bg-[color:var(--surface-card)] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       {children}
     </div>
   );
@@ -4268,7 +4268,7 @@ function DesktopComposerStatusStrip({
           ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
           : tone === "success"
             ? "border-[rgba(245, 158, 11,0.16)] bg-[#fffdf2] text-[#b45309]"
-            : "border-black/6 bg-white text-[color:var(--text-secondary)]",
+            : "border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
       )}
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -4279,8 +4279,8 @@ function DesktopComposerStatusStrip({
           className={cn(
             "shrink-0 rounded-full px-2 py-0.5 font-medium transition",
             tone === "danger"
-              ? "bg-white text-[#b42318] hover:bg-[#fffafa]"
-              : "bg-white text-[#b45309] hover:bg-[#f5f1e6]",
+              ? "bg-[color:var(--surface-card)] text-[#b42318] hover:bg-[#fffafa]"
+              : "bg-[color:var(--surface-card)] text-[#b45309] hover:bg-[#f5f1e6]",
           )}
         >
           {primaryActionLabel}
@@ -4290,7 +4290,7 @@ function DesktopComposerStatusStrip({
         <button
           type="button"
           onClick={onSecondaryAction}
-          className="shrink-0 rounded-full px-2 py-0.5 font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+          className="shrink-0 rounded-full px-2 py-0.5 font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)]"
         >
           {secondaryActionLabel}
         </button>
@@ -4336,7 +4336,7 @@ function MobileComposerStatusRail({
             label={actionLabel}
             onClick={onAction}
             className={cn(
-              "shrink-0 bg-white",
+              "shrink-0 bg-[color:var(--surface-card)]",
               tone === "danger"
                 ? "border-[#fecaca] text-[#b42318]"
                 : tone === "success"
@@ -4350,7 +4350,7 @@ function MobileComposerStatusRail({
             <InlineNoticeActionButton
               label={secondaryActionLabel}
               onClick={onSecondaryAction}
-              className="shrink-0 border-black/6 bg-white text-[color:var(--text-secondary)]"
+              className="shrink-0 border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
             />
           ) : null}
         </div>
@@ -4358,7 +4358,7 @@ function MobileComposerStatusRail({
         <InlineNoticeActionButton
           label={secondaryActionLabel}
           onClick={onSecondaryAction}
-          className="shrink-0 border-black/6 bg-white text-[color:var(--text-secondary)]"
+          className="shrink-0 border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
         />
       ) : null}
     </div>
@@ -4438,7 +4438,7 @@ function DesktopAttachmentDraftBar({
           </div>
         </>
       ) : (
-        <div className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-3 py-2.5">
+        <div className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-[color:var(--surface-card)] px-3 py-2.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
             <FileText size={18} />
           </div>
@@ -4496,7 +4496,7 @@ function DesktopScreenshotToolButton({
       className={cn(
         "rounded-full px-3 py-1.5 text-[12px] transition",
         active
-          ? "bg-white text-[color:var(--text-primary)]"
+          ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
           : "bg-white/8 text-white/78 hover:bg-white/12 hover:text-white",
       )}
     >
@@ -6107,7 +6107,7 @@ function ReplyPreviewBar({
       className={`flex items-start justify-between gap-2.5 ${
         isDesktop
           ? "mb-2.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-[#fffdf2] px-3.5 py-2.5"
-          : "mb-1.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-white px-3 py-1.5 shadow-none"
+          : "mb-1.5 rounded-[12px] border border-[rgba(245, 158, 11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
       }`}
     >
       <div className="min-w-0 flex-1">
@@ -6123,7 +6123,7 @@ function ReplyPreviewBar({
             <div
               className={`rounded-full px-2 py-0.5 text-[10px] ${
                 isDesktop
-                  ? "bg-white text-[color:var(--text-dim)]"
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-dim)]"
                   : "bg-[rgba(245, 158, 11,0.1)] text-[9px] text-[#f59e0b]"
               }`}
             >
@@ -6148,7 +6148,7 @@ function ReplyPreviewBar({
           onClick={onClose}
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition ${
             isDesktop
-              ? "h-7 w-7 rounded-[8px] hover:bg-white hover:text-[color:var(--text-primary)]"
+              ? "h-7 w-7 rounded-[8px] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
               : "h-6.5 w-6.5 active:bg-black/[0.05]"
           }`}
           aria-label={t(msg`取消回复`)}
@@ -6197,7 +6197,7 @@ function DesktopMentionPicker({
     <div
       role="listbox"
       aria-label={t(msg`@提及成员候选`)}
-      className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(180, 130, 20, 0.10)]"
+      className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-[color:var(--surface-card)] py-1.5 shadow-[0_10px_24px_rgba(180, 130, 20, 0.10)]"
     >
       <div
         aria-hidden="true"

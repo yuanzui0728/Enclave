@@ -73,6 +73,16 @@ const MyCharactersPage = lazyWithReload(async () => {
   return { default: mod.MyCharactersPage };
 });
 
+const CommunityCharactersPage = lazyWithReload(async () => {
+  const mod = await import("./routes/community-characters-page");
+  return { default: mod.CommunityCharactersPage };
+});
+
+const CommunityCharacterPage = lazyWithReload(async () => {
+  const mod = await import("./routes/community-character-page");
+  return { default: mod.CommunityCharacterPage };
+});
+
 const MyCharacterCreatePage = lazyWithReload(async () => {
   const mod = await import("./routes/my-character-edit-page");
   const Component = mod.MyCharacterEditPage;
@@ -140,6 +150,11 @@ const AdminStatsPage = lazyWithReload(async () => {
   return { default: mod.AdminStatsPage };
 });
 
+const AdminCreatorRewardsPage = lazyWithReload(async () => {
+  const mod = await import("./routes/admin-creator-rewards-page");
+  return { default: mod.AdminCreatorRewardsPage };
+});
+
 const AccountPage = lazyWithReload(async () => {
   const mod = await import("./routes/account-page");
   return { default: mod.AccountPage };
@@ -148,6 +163,31 @@ const AccountPage = lazyWithReload(async () => {
 const MyDraftsPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-drafts-page");
   return { default: mod.MyDraftsPage };
+});
+
+const GamesPage = lazyWithReload(async () => {
+  const mod = await import("./routes/games-page");
+  return { default: mod.GamesPage };
+});
+
+const GameViewPage = lazyWithReload(async () => {
+  const mod = await import("./routes/game-view-page");
+  return { default: mod.GameViewPage };
+});
+
+const MyGamesPage = lazyWithReload(async () => {
+  const mod = await import("./routes/my-games-page");
+  return { default: mod.MyGamesPage };
+});
+
+const MyGameCreatePage = lazyWithReload(async () => {
+  const mod = await import("./routes/my-game-create-page");
+  return { default: mod.MyGameCreatePage };
+});
+
+const MyGameEditPage = lazyWithReload(async () => {
+  const mod = await import("./routes/my-game-edit-page");
+  return { default: mod.MyGameEditPage };
 });
 
 const rootRoute = createRootRoute({ component: RootLayout });
@@ -212,6 +252,18 @@ const myCharactersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/my-characters",
   component: MyCharactersPage,
+});
+
+const communityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/community",
+  component: CommunityCharactersPage,
+});
+
+const communityCharacterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/community/$id",
+  component: CommunityCharacterPage,
 });
 
 const myCharacterCreateRoute = createRoute({
@@ -293,6 +345,40 @@ const myDraftsRoute = createRoute({
   component: MyDraftsPage,
 });
 
+const gamesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/games",
+  component: GamesPage,
+});
+
+const gameViewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/games/$gameId",
+  component: GameViewPage,
+});
+
+const myGamesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-games",
+  component: MyGamesPage,
+});
+
+const myGameCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-games/new",
+  validateSearch: (search: Record<string, unknown>): { jobId?: string } =>
+    typeof search.jobId === "string" && search.jobId.length > 0
+      ? { jobId: search.jobId }
+      : {},
+  component: MyGameCreatePage,
+});
+
+const myGameEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-games/$id",
+  component: MyGameEditPage,
+});
+
 const adminReportsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/reports",
@@ -311,6 +397,12 @@ const adminStatsRoute = createRoute({
   component: AdminStatsPage,
 });
 
+const adminCreatorRewardsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/creator-rewards",
+  component: AdminCreatorRewardsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -320,6 +412,8 @@ const routeTree = rootRoute.addChildren([
   worldCharacterEditRoute,
   createCharacterRoute,
   myCharactersRoute,
+  communityRoute,
+  communityCharacterRoute,
   myCharacterCreateRoute,
   myCharacterEditRoute,
   pendingReviewsRoute,
@@ -331,11 +425,17 @@ const routeTree = rootRoute.addChildren([
     adminReportsRoute,
     adminAbuseFiltersRoute,
     adminStatsRoute,
+    adminCreatorRewardsRoute,
   ]),
   watchlistRoute,
   searchRoute,
   accountRoute,
   myDraftsRoute,
+  gamesRoute,
+  gameViewRoute,
+  myGamesRoute,
+  myGameCreateRoute,
+  myGameEditRoute,
 ]);
 
 export const router = createRouter({

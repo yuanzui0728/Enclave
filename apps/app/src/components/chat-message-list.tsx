@@ -3563,7 +3563,7 @@ export function ChatMessageList({
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
-                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
                 : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(180, 130, 20, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
@@ -4162,8 +4162,8 @@ export function ChatMessageList({
                             ? "rounded-[16px] bg-[#95ec69] text-[#111827] shadow-none"
                             : "rounded-[20px] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
-                            ? "rounded-[16px] border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
-                            : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
+                            ? "rounded-[16px] border border-black/6 bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
+                            : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                       } whitespace-pre-wrap break-words`}
                     >
                       {renderTextWithMentions(displayText)}
@@ -4936,7 +4936,7 @@ function MessageTimestampDivider({
         onClick={onToggle}
         className={
           isDesktop
-            ? "inline-flex items-center rounded-full border border-black/6 bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[#8c8c8c] transition hover:bg-white"
+            ? "inline-flex items-center rounded-full border border-black/6 bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[#8c8c8c] transition hover:bg-[color:var(--surface-card)]"
             : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
         }
         aria-label={
@@ -6027,7 +6027,7 @@ function ImageMessage({
         className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
           isDesktop
             ? "h-28 w-28 rounded-[24px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
-            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
+            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
         }`}
       >
         {label || translateRuntimeMessage(msg`[图片]`)}
@@ -6043,7 +6043,7 @@ function ImageMessage({
       height={renderedSize?.height}
       onError={() => setLoadFailed(true)}
       onLoad={onMediaReady}
-      className={`bg-white object-cover shadow-none ${
+      className={`bg-[color:var(--surface-card)] object-cover shadow-none ${
         isDesktop
           ? "rounded-[16px] border border-black/6"
           : "rounded-[12px] border border-[color:var(--border-subtle)]"
@@ -6155,7 +6155,7 @@ function ContactCardMessage({
     : undefined;
   const card = (
     <div
-      className={`bg-white shadow-none ${
+      className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
@@ -6299,7 +6299,7 @@ function NoteCardMessage({
   const fileCount = assets.filter((asset) => asset.kind === "file").length;
   const card = (
     <div
-      className={`overflow-hidden bg-white shadow-none ${
+      className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
           ? "w-[248px] rounded-[16px] border border-black/6"
           : "w-[220px] rounded-[12px] border border-[color:var(--border-subtle)]"
@@ -6461,7 +6461,7 @@ function FeedPostCardMessage({
   })();
   const card = (
     <div
-      className={`overflow-hidden bg-white shadow-none ${
+      className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
           ? "w-[260px] rounded-[16px] border border-black/6"
           : "w-[228px] rounded-[12px] border border-[color:var(--border-subtle)]"
@@ -6556,7 +6556,7 @@ function FileAttachmentMessage({
   const isDesktop = variant === "desktop";
   const card = (
     <div
-      className={`bg-white shadow-none ${
+      className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
@@ -6627,7 +6627,7 @@ function LocationCardMessage({
   const isDesktop = variant === "desktop";
   const card = (
     <div
-      className={`bg-white shadow-none ${
+      className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
           : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
@@ -6760,8 +6760,8 @@ function VoiceMessage({
             ? "bg-[#95ec69] text-[#111827]"
             : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00]"
           : isDesktop
-            ? "rounded-[20px] border border-black/5 bg-white text-[color:var(--text-primary)]"
-            : "rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)]"
+            ? "rounded-[20px] border border-black/5 bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+            : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
       }`}
     >
       <button
@@ -8260,7 +8260,7 @@ function NoteViewerOverlay({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto bg-white">
+      <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]">
         {noteMissing ? (
           <div className="flex h-full flex-col items-center justify-center px-8 text-center">
             <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
@@ -8505,7 +8505,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-1 rounded-[12px] bg-white px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]"
+          className="mt-1 rounded-[12px] bg-[color:var(--surface-card)] px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]"
         >
           {translateRuntimeMessage(msg`取消`)}
         </button>

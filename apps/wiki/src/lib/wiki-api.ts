@@ -2,6 +2,14 @@ import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { clearSession, getToken } from "./auth-store";
 import type { CharacterBlueprintRecipe } from "@yinjie/contracts";
+import type {
+  WikiGameArtifact,
+  WikiGameJobEnqueueResult,
+  WikiGameJobView,
+  WikiGameRevisionSummary,
+  WikiGameSummary,
+  WikiGameView,
+} from "@yinjie/contracts";
 
 const API_BASE = "/api";
 
@@ -1037,6 +1045,75 @@ export const wikiApi = {
       `/wiki/ai-generation-jobs/${encodeURIComponent(id)}`,
     );
   },
+
+  // ── 自然语言造游戏 / 一键复刻 / 游戏画廊 ──────────────────────────────────
+  /** 公共画廊：所有已公开的游戏（轻量摘要，不含 html）。 */
+  listWikiGames() {
+    return request<WikiGameSummary[]>("/wiki/games");
+  },
+  /** 公共游戏详情（含产物，供预览 + 复刻）。 */
+  getWikiGame(gameId: string) {
+    return request<WikiGameView>(`/wiki/games/${encodeURIComponent(gameId)}`);
+  },
+  /** 一键复刻一个公开游戏到自己的私有副本，返回新 gameId。 */
+  cloneWikiGame(gameId: string) {
+    return request<{ gameId: string }>(
+      `/wiki/games/${encodeURIComponent(gameId)}/clone`,
+      { method: "POST" },
+    );
+  },
+  /** 我的游戏列表。 */
+  listMyGames() {
+    return request<WikiGameSummary[]>("/wiki/my-games");
+  },
+  getMyGame(id: string) {
+    return request<WikiGameView>(`/wiki/my-games/${encodeURIComponent(id)}`);
+  },
+  getMyGameHistory(id: string) {
+    return request<WikiGameRevisionSummary[]>(
+      `/wiki/my-games/${encodeURIComponent(id)}/history`,
+    );
+  },
+  /** 自然语言一键造游戏：异步 enqueue，返回 jobId，前端走 getGameJob 轮询。 */
+  createGameFromAi(input: { prompt: string; title?: string }) {
+    return request<WikiGameJobEnqueueResult>("/wiki/my-games/ai-create", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  /** 对已有游戏发一条自然语言修改指令（Claude Code 式回合），异步返回 jobId。 */
+  refineGame(id: string, instruction: string) {
+    return request<WikiGameJobEnqueueResult>(
+      `/wiki/my-games/${encodeURIComponent(id)}/ai-refine`,
+      { method: "POST", body: JSON.stringify({ instruction }) },
+    );
+  },
+  /** 查询游戏 AI 生成任务状态。前端短轮询（3s）调它。 */
+  getGameJob(id: string) {
+    return request<WikiGameJobView>(
+      `/wiki/game-jobs/${encodeURIComponent(id)}`,
+    );
+  },
+  /** 手动保存编辑后的产物（前端微调 spec / html）。 */
+  saveGameRevision(id: string, artifact: WikiGameArtifact) {
+    return request<{ id: string; version: number }>(
+      `/wiki/my-games/${encodeURIComponent(id)}/revisions`,
+      { method: "POST", body: JSON.stringify({ artifact }) },
+    );
+  },
+  /** 公开 / 私有切换。 */
+  setGameVisibility(id: string, visibility: "public" | "private") {
+    return request<{ success: true; visibility: string }>(
+      `/wiki/my-games/${encodeURIComponent(id)}/visibility`,
+      { method: "PATCH", body: JSON.stringify({ visibility }) },
+    );
+  },
+  deleteMyGame(id: string) {
+    return request<{ success: true }>(
+      `/wiki/my-games/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+  },
   /** 列出当前用户的所有草稿，按 updatedAt 倒序。 */
   listMyDrafts() {
     return request<MyDraftSummary[]>("/wiki/my-drafts");
@@ -1178,6 +1255,91 @@ export const wikiApi = {
       },
     );
   },
+  /** 切换自己私有角色的公开/私有状态（公开后进入「角色广场」）。 */
+  setCharacterVisibility(id: string, isPublic: boolean) {
+    return request<{
+      id: string;
+      isPublic: boolean;
+      viewCount: number;
+      downloadCount: number;
+      publishedAt: string | null;
+    }>(`/wiki/my-characters/${encodeURIComponent(id)}/visibility`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublic }),
+    });
+  },
+  /** 角色广场：列出所有公开角色（匿名可访问）。 */
+  listCommunityCharacters() {
+    return request<PublicCharacterSummary[]>("/wiki/community-characters", {
+      auth: false,
+    });
+  },
+  /**
+   * 角色广场详情（含浏览量自增）。默认带 token（若已登录）：后端据此把
+   * owner 自看排除在浏览量之外。未登录时 request() 不会附 token，匿名访问仍可。
+   */
+  getCommunityCharacter(id: string) {
+    return request<PublicCharacterDetail>(
+      `/wiki/community-characters/${encodeURIComponent(id)}`,
+    );
+  },
+  /** 下载公开角色的 .character.json（强制登录；触发浏览器下载 + 后端下载量自增）。 */
+  async downloadCommunityCharacter(
+    id: string,
+    fallbackName: string,
+  ): Promise<void> {
+    const token = getToken();
+    const res = await fetch(
+      `${API_BASE}/wiki/community-characters/${encodeURIComponent(id)}/export`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      },
+    );
+    if (!res.ok) {
+      if (res.status === 401) {
+        clearSession();
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login") &&
+          !window.location.pathname.startsWith("/register")
+        ) {
+          const redirect = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+        }
+      }
+      throw new WikiApiError(
+        res.status,
+        null,
+        translateRuntimeMessage(msg`下载失败 (${res.status})`),
+      );
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const safeName = (fallbackName || "character").replace(
+      /[\\/:*?"<>|\r\n\t]+/g,
+      "_",
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeName}.character.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  },
+  /** 管理员：创作者激励榜单（公开角色浏览/下载聚合 + 联系方式）。 */
+  adminCreatorRewards() {
+    return request<CreatorRewardListResponse>(
+      "/wiki/admin/community/creator-rewards",
+    );
+  },
+  /** 管理员：强制下架某个公开角色。 */
+  adminUnpublishCommunityCharacter(id: string) {
+    return request<{ changed: boolean }>(
+      `/wiki/admin/community/characters/${encodeURIComponent(id)}/unpublish`,
+      { method: "POST" },
+    );
+  },
 };
 
 export type PrivateCharacterRecord = {
@@ -1206,8 +1368,54 @@ export type PrivateCharacterRecord = {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  // —— 2026-05-26 起：公开 / 角色广场 / 浏览·下载统计 ——
+  isPublic?: boolean;
+  viewCount?: number;
+  downloadCount?: number;
+  publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+/** 角色广场列表卡 / 详情对外摘要（后端 PublicCharacterSummary 镜像）。 */
+export type PublicCharacterSummary = {
+  id: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  relationship: string;
+  relationshipType: string;
+  expertDomains: string[];
+  viewCount: number;
+  downloadCount: number;
+  publishedAt: string | null;
+  updatedAt: string;
+  ownerUserId: string;
+  ownerName: string;
+};
+
+export type PublicCharacterDetail = PublicCharacterSummary & {
+  personality: string | null;
+  region: string | null;
+};
+
+/** 创作者激励榜单（后端 CreatorRewardListResponse 镜像）。 */
+export type CreatorRewardStat = {
+  ownerUserId: string;
+  username: string;
+  email: string | null;
+  cloudPhone: string | null;
+  publicCharacterCount: number;
+  totalViews: number;
+  totalDownloads: number;
+};
+
+export type CreatorRewardListResponse = {
+  items: CreatorRewardStat[];
+  totalCreators: number;
+  totalPublicCharacters: number;
+  totalViews: number;
+  totalDownloads: number;
 };
 
 export type PrivateCharacterDto = {

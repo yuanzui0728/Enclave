@@ -35,6 +35,10 @@ import { FarmModule } from './modules/games/farm/farm.module';
 import { ParkingWarModule } from './modules/games/parking-war/parking-war.module';
 import { OfficialAccountsModule } from './modules/official-accounts/official-accounts.module';
 import { WorldModule } from './modules/world/world.module';
+// TenantModule 是 @Global 并 export TenantService；多租户重构后 ChatGateway 依赖它。
+// wiki 进程（非 shared 模式）下 TenantContextMiddleware 直接 next() 零行为变化，
+// 但仍需 import 以满足 ChatGateway 的 DI（否则 wiki-api 启动即崩）。
+import { TenantModule } from './modules/tenancy/tenant.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { NarrativeModule } from './modules/narrative/narrative.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -147,6 +151,9 @@ import { WikiWatchlistEntity } from './modules/wiki/entities/wiki-watchlist.enti
 import { UserPrivateCharacterEntity } from './modules/wiki/entities/user-private-character.entity';
 import { CharacterDraftEntity } from './modules/wiki/entities/character-draft.entity';
 import { AiGenerationJobEntity } from './modules/wiki/entities/ai-generation-job.entity';
+import { GamePageEntity } from './modules/wiki/entities/game-page.entity';
+import { GameRevisionEntity } from './modules/wiki/entities/game-revision.entity';
+import { GameGenerationJobEntity } from './modules/wiki/entities/game-generation-job.entity';
 import { WikiFieldProtectionEntity } from './modules/wiki/entities/wiki-field-protection.entity';
 import { AbuseFilterEntity } from './modules/wiki/entities/abuse-filter.entity';
 import { AbuseFilterHitEntity } from './modules/wiki/entities/abuse-filter-hit.entity';
@@ -286,6 +293,9 @@ function resolveWikiDatabasePath(config: ConfigService): string {
           UserPrivateCharacterEntity,
           CharacterDraftEntity,
           AiGenerationJobEntity,
+          GamePageEntity,
+          GameRevisionEntity,
+          GameGenerationJobEntity,
           WikiFieldProtectionEntity,
           AbuseFilterEntity,
           AbuseFilterHitEntity,
@@ -293,6 +303,7 @@ function resolveWikiDatabasePath(config: ConfigService): string {
         synchronize: true,
       }),
     }),
+    TenantModule,
     AiModule,
     AuthModule,
     ChatModule,

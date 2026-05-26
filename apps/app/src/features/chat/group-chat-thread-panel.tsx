@@ -187,7 +187,7 @@ export function GroupChatThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
         onClick={onBack}
       >
         {t(msg`返回上一页`)}
@@ -201,7 +201,7 @@ export function GroupChatThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
         onClick={() => {
           void query.refetch();
         }}
@@ -1441,7 +1441,7 @@ export function GroupChatThreadPanel({
       }`}
     >
       {isDesktop ? (
-        <header className="relative z-20 flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-6 py-3">
+        <header className="relative z-20 flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {groupQuery.data?.name || t(msg`群聊`)}
@@ -1544,7 +1544,7 @@ export function GroupChatThreadPanel({
                 }),
               });
             }}
-            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
             aria-label={t(msg`打开群公告页`)}
             title={t(msg`打开群公告页`)}
           >
@@ -1558,7 +1558,7 @@ export function GroupChatThreadPanel({
           <button
             type="button"
             onClick={openGroupDetails}
-            className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(245, 158, 11,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-white"
+            className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(245, 158, 11,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
           >
             <span className="shrink-0 rounded-full bg-[rgba(245, 158, 11,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#b45309]">
               {t(msg`群公告`)}
@@ -1587,7 +1587,7 @@ export function GroupChatThreadPanel({
               role="status"
               aria-live="polite"
               tone="info"
-              className="border-[color:var(--border-faint)] bg-white"
+              className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span className="min-w-0 flex-1 text-xs leading-6 text-[color:var(--text-secondary)]">

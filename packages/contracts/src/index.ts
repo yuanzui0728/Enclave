@@ -24,6 +24,7 @@ export * from "./favorites";
 export * from "./feedback";
 export * from "./followup-runtime";
 export * from "./games";
+export * from "./wiki-game";
 export * from "./inference";
 export * from "./locales";
 export * from "./moments";

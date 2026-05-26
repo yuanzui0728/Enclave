@@ -23,7 +23,9 @@ export type GameCenterPrimarySectionId =
 export type GamePublisherKind =
   | "platform_official"
   | "third_party"
-  | "character_creator";
+  | "character_creator"
+  // 2026-05-26：wiki 平台用户用自然语言创作并自助发布的社区游戏。
+  | "wiki_user";
 
 export type GameProductionKind =
   | "human_authored"

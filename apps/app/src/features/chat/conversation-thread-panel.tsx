@@ -155,7 +155,7 @@ export function ConversationThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
         onClick={onBack}
       >
         {t(msg`返回上一页`)}
@@ -167,7 +167,7 @@ export function ConversationThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
         onClick={() => {
           void messagesQuery.refetch();
         }}
@@ -698,7 +698,7 @@ export function ConversationThreadPanel({
       }`}
     >
       {isDesktop ? (
-        <header className="relative z-20 flex min-h-[64px] items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-6 py-3">
+        <header className="relative z-20 flex min-h-[64px] items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
             {/* 走查电脑端单聊 R143：和姊妹 R140 / R141 / R142 同款 ——
                 桌面 /tabs/chat workspace 主区右栏 conversationTitle 是
@@ -792,7 +792,7 @@ export function ConversationThreadPanel({
             tone="info"
             className={
               isDesktop
-                ? "border-[color:var(--border-faint)] bg-white"
+                ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
                 : "rounded-[12px] border-[rgba(245, 158, 11,0.14)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[#166534] shadow-none"
             }
           >
