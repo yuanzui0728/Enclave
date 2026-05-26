@@ -929,6 +929,7 @@ export class SystemService {
       activityMode: 'auto',
       socialOpenness: 'normal',
       proactiveBrowseChance: 0.3,
+      ownerId: null,
     } as CharacterEntity;
   }
 

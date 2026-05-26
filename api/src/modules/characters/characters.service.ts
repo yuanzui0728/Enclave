@@ -29,6 +29,7 @@ import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.en
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
 import {
   RealWorldRuntimeProfileService,
@@ -65,18 +66,30 @@ export class CharactersService implements OnModuleInit {
     private readonly blueprintService: CharacterBlueprintService,
   ) {}
 
+  // 租户作用域 repo：shared 模式自动并 ownerId 进 where / 盖到写入行；LPP/wiki 透传（零变化）。
+  // 请求/cron-fanout 路径用它（都在租户帧里）；onModuleInit 全局自愈路径仍用裸 this.repo。
+  // 直接 new（TenantRepository 只依赖 tenant-context 叶子模块）——不注入 TenantService，
+  // 避免 CharactersService→TenantService→SocialService→CharactersService 的 ES import 环
+  // 把 TenantService 在装饰期解析成 undefined（会连累 ChatGateway 等的 TenantService 注入）。
+  private get scopedRepo(): TenantRepository<CharacterEntity> {
+    return new TenantRepository(this.repo);
+  }
+
   async onModuleInit() {
     await this.backfillCharacterAvatarAssets();
     await this.backfillEmptyPrivateImportProfiles();
   }
 
   async findAll(): Promise<CharacterEntity[]> {
-    const characters = await this.repo.find({ order: { name: 'ASC' } });
+    // shared 模式自动按当前租户 ownerId 过滤（passthrough in LPP）。这是 /api/characters
+    // 等所有「列当前世界角色」入口的根，scope 在此一处即覆盖 findAllVisibleToOwner /
+    // findByDomains 及 feed/moments 等外部调用。
+    const characters = await this.scopedRepo.find({ order: { name: 'ASC' } });
     return this.normalizeCharacterAvatars(characters);
   }
 
   async findById(id: string): Promise<CharacterEntity | null> {
-    const character = await this.repo.findOneBy({ id });
+    const character = await this.scopedRepo.findOneBy({ id });
     return this.normalizeCharacterAvatar(character);
   }
 
@@ -85,7 +98,7 @@ export class CharactersService implements OnModuleInit {
       new Set(ids.map((id) => id?.trim()).filter((id): id is string => !!id)),
     );
     if (!unique.length) return [];
-    const characters = await this.repo.findBy({ id: In(unique) });
+    const characters = await this.scopedRepo.findBy({ id: In(unique) });
     return this.normalizeCharacterAvatars(characters);
   }
 
@@ -118,7 +131,7 @@ export class CharactersService implements OnModuleInit {
   }
 
   async getProfile(id: string): Promise<PersonalityProfile | undefined> {
-    const char = await this.repo.findOneBy({ id });
+    const char = await this.scopedRepo.findOneBy({ id });
     return this.getRuntimeProfileFromCharacter(char);
   }
 

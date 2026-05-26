@@ -799,6 +799,7 @@ export class WechatSyncAdminService {
       activityMode: 'auto',
       socialOpenness: 'normal',
       proactiveBrowseChance: 0.3,
+      ownerId: null,
     };
   }
 

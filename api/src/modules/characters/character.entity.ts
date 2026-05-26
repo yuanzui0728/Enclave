@@ -127,4 +127,10 @@ export class CharacterEntity {
   // 开了之后仍需要 WebSearchService 关键词命中才会真发请求。
   @Column({ default: false })
   webSearchEnabled: boolean;
+
+  // 共享 world 多租户归属用户。LPP 单库下为 NULL（物理隔离，findAll 不按 owner 过滤）；
+  // shared 模式下迁移已回填、读查询按它过滤（见 findAllVisibleToOwner）。DB 层是复合主键
+  // (ownerId,id)，实体仍声明单 id 主键（synchronize:false 不调和），不在实体层改。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
 }
