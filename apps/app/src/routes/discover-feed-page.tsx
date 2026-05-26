@@ -2379,7 +2379,7 @@ export function DiscoverFeedPage() {
                             });
                           }
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionLabel}
                       </button>
@@ -2396,7 +2396,7 @@ export function DiscoverFeedPage() {
                           setNoticeActionLabel(null);
                           setNoticeAction(null);
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {t(msg`知道了`)}
                       </button>
@@ -2417,7 +2417,7 @@ export function DiscoverFeedPage() {
                           setNoticeAction(null);
                           handleStatusBack();
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {safeReturnPath ? t(msg`返回上一页`) : t(msg`重试读取`)}
                       </button>
@@ -2457,7 +2457,7 @@ export function DiscoverFeedPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryLoad}
                   >
                     {t(msg`重试读取`)}
@@ -2471,7 +2471,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                       onClick={handleStatusBack}
                     >
                       {t(msg`返回上一页`)}
@@ -2798,7 +2798,7 @@ export function DiscoverFeedPage() {
                       likeMutation.reset();
                     }
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试点赞`)}
                 </button>
@@ -2863,7 +2863,7 @@ export function DiscoverFeedPage() {
                       },
                     );
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试发送`)}
                 </button>

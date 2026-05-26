@@ -219,7 +219,7 @@ export function ProfileInfoSignaturePage() {
           // 本 textarea autoFocus，进页就 focus，字号偏小会让整页抖一下。
           // disabled={isPending}: 上传中继续敲会被 onSuccess→goBack 一起带走，
           //   见 profile-info-avatar-page 同款修法（commit 5fe4e7e3）。
-          className="min-h-[5.5rem] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          className="min-h-[5.5rem] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(

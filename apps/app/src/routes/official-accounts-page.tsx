@@ -249,7 +249,7 @@ function MobileOfficialAccountsPage() {
             placeholder={t(msg`搜索公众号`)}
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
-            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-white"
+            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-[color:var(--surface-card)]"
           />
         </label>
       </TabPageTopBar>
@@ -277,7 +277,7 @@ function MobileOfficialAccountsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryAccounts}
                   >
                     {t(msg`重试读取`)}
@@ -285,7 +285,7 @@ function MobileOfficialAccountsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回通讯录`)}
@@ -358,7 +358,7 @@ function MobileOfficialAccountsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   onClick={handleEmptyStateAction}
                 >
                   {safeReturnPath
@@ -391,7 +391,7 @@ function MobileOfficialAccountsPage() {
           variant="ghost"
           size="icon"
           aria-label={t(msg`返回`)}
-          className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-white"
+          className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
         >
           <ArrowLeft aria-hidden="true" size={18} />
         </Button>

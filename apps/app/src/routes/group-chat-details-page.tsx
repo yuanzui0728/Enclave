@@ -187,7 +187,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       type="button"
       variant="secondary"
       size="sm"
-      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
       onClick={() => {
         if (navigateToRouteStateReturn()) {
           return;

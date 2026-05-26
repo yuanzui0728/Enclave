@@ -294,7 +294,7 @@ function MobileOfficialAccountArticlePage({
   }
 
   return (
-    <AppPage className="space-y-0 bg-white px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-card)] px-0 py-0">
       <TabPageTopBar
         title={article?.account.name ?? t(msg`公众号文章`)}
         subtitle={
@@ -384,7 +384,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryArticle}
                   >
                     {t(msg`重试读取`)}
@@ -393,7 +393,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -417,7 +417,7 @@ function MobileOfficialAccountArticlePage({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                       onClick={handleRetryMarkRead}
                     >
                       {t(msg`重试同步`)}
@@ -427,7 +427,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -452,7 +452,7 @@ function MobileOfficialAccountArticlePage({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                         onClick={shareNotice.onAction}
                       >
                         {shareNotice.actionLabel}
@@ -462,7 +462,7 @@ function MobileOfficialAccountArticlePage({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                       onClick={handleStatusBack}
                     >
                       {statusBackLabel}
@@ -487,7 +487,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryArticle}
                   >
                     {t(msg`重试读取`)}
@@ -496,7 +496,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}

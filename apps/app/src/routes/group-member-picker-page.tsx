@@ -791,14 +791,14 @@ function MobileGroupMemberPickerPage({
                   <button
                     type="button"
                     onClick={handleRetrySubmit}
-                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {mode === "add" ? t(msg`重试添加`) : t(msg`重试移除`)}
                   </button>
                   <button
                     type="button"
                     onClick={openGroupDetails}
-                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                   >
                     {t(msg`返回群聊信息`)}
                   </button>
@@ -960,7 +960,7 @@ function CandidateRow({
           checked
             ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
             : isDesktop
-              ? "border-[color:var(--border-faint)] bg-white text-transparent"
+              ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-transparent"
               : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",
         )}
       >

@@ -622,7 +622,7 @@ function MobileAddFriend() {
         }}
       >
         <div className="flex items-center gap-2">
-          <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[8px] bg-white px-3">
+          <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[8px] bg-[color:var(--surface-card)] px-3">
             <Search aria-hidden="true" size={15} className="shrink-0 text-[color:var(--text-dim)]" />
             <input
               ref={inputRef}
@@ -745,7 +745,7 @@ function MobileAddFriend() {
                     void friendRequestsQuery.refetch();
                     void blockedQuery.refetch();
                   }}
-                  className="rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-3 py-1 text-[11px] font-medium text-[color:var(--state-danger-text)]"
+                  className="rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-3 py-1 text-[11px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {t(msg`重试读取`)}
                 </button>
@@ -880,7 +880,7 @@ function MobileAddFriendWelcomeState({
             {history.map((item) => (
               <div
                 key={item.keyword}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
               >
                 <button
                   type="button"
@@ -888,7 +888,7 @@ function MobileAddFriendWelcomeState({
                   // active:opacity-70 给点按反馈：X 按钮有 active:bg-black/5、
                   // 清空有 active:opacity-60；这个 keyword button 漏掉的话用户在
                   // iOS 上点了没任何视觉反应，像点了没用。不用 bg-hover 是因为
-                  // 它跟外层 pill 已经是 bg-white，再叠 hover 会破坏 pill 整体
+                  // 它跟外层 pill 已经是 bg-[color:var(--surface-card)]，再叠 hover 会破坏 pill 整体
                   // 视觉；opacity 在 keyword 部分单独表达"按下了"足够。
                   className="inline-flex min-w-0 items-center gap-1 active:opacity-70"
                 >
@@ -1050,7 +1050,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
                 "h-8 rounded-full px-3.5 text-[12px] shadow-none",
                 item.status === "available"
                   ? "bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
-                  : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]",
+                  : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
                 // 按 meta.disabled 加 opacity-70 而不是按 status：Bug W 之后
                 // inbound pending（acceptAt=null）按钮其实是可点的（跳 /friend-requests），
                 // 旧 status==="pending" 一刀切的话会把 inbound 也变成 70% 透明，
@@ -1280,7 +1280,7 @@ function MobileAddFriendSendSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-add-friend-sheet-title"
-        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.18)] sm:rounded-[16px]"
+        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-[color:var(--surface-card)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.18)] sm:rounded-[16px]"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <button
@@ -1344,7 +1344,7 @@ function MobileAddFriendSendSheet({
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.42)]"
+              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.42)]"
             />
             <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
               {greeting.length}/60

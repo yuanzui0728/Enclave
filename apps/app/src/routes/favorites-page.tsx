@@ -604,7 +604,7 @@ function DesktopFavoritesPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索已收藏内容`)}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 shadow-none"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none"
             />
           </div>
 
@@ -638,7 +638,7 @@ function DesktopFavoritesPage() {
               })}
             </div>
 
-            <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
+            <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`收藏概览`)}
               </div>
@@ -703,7 +703,7 @@ function DesktopFavoritesPage() {
                       summary={selectedFavoriteNoteSummary}
                     />
                   ) : (
-                    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4">
+                    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                       <div className="text-xs text-[color:var(--text-muted)]">
                         {t(msg`内容摘要`)}
                       </div>
@@ -713,7 +713,7 @@ function DesktopFavoritesPage() {
                     </div>
                   )}
 
-                  <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4">
+                  <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                     <div className="text-xs text-[color:var(--text-muted)]">
                       {t(msg`收藏信息`)}
                     </div>
@@ -780,7 +780,7 @@ function DesktopFavoritesPage() {
                         removeMutation.variables?.sourceId ===
                           selectedFavorite.sourceId
                       }
-                      className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {removeMutation.isPending &&
                       removeMutation.variables?.sourceId ===
@@ -906,7 +906,7 @@ function DesktopFavoritesPage() {
                     "flex w-full items-start gap-4 rounded-[16px] border px-4 py-4 text-left transition",
                     item.sourceId === effectiveSelectedSourceId
                       ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)] shadow-[var(--shadow-soft)]"
-                      : "border-[color:var(--border-faint)] bg-white hover:bg-[rgba(255,255,255,0.92)]",
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[rgba(255,255,255,0.92)]",
                   )}
                 >
                   <AvatarChip
@@ -972,7 +972,7 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
         </div>
       </div>
       <div className="space-y-4 px-4 py-4">
-        <div className="rounded-[16px] border border-[rgba(180, 130, 20, 0.06)] bg-white px-4 py-4 text-[13px] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <div className="rounded-[16px] border border-[rgba(180, 130, 20, 0.06)] bg-[color:var(--surface-card)] px-4 py-4 text-[13px] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
           {summary.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
         {summary.tags.length ? (

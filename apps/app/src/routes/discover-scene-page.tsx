@@ -399,7 +399,7 @@ function MobileDiscoverScenePage() {
                 <button
                   type="button"
                   onClick={handleGoToRequests}
-                  className="shrink-0 rounded-full border border-[rgba(245, 158, 11,0.24)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
+                  className="shrink-0 rounded-full border border-[rgba(245, 158, 11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
                 >
                   {t(msg`去通过`)}
                 </button>
@@ -469,7 +469,7 @@ function MobileDiscoverScenePage() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
+      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-[color:var(--surface-card)]">
         <div className="grid grid-cols-2 gap-0.5 bg-black/5 p-0.5">
           {scenes.map((scene) => {
             const Icon = scene.icon;
@@ -488,7 +488,7 @@ function MobileDiscoverScenePage() {
                 // scene 是 busy，其余 15 个是普通 disabled。
                 aria-busy={busy || undefined}
                 className={cn(
-                  "bg-white px-4 py-4 text-left transition active:bg-[#f5f1e6]",
+                  "bg-[color:var(--surface-card)] px-4 py-4 text-left transition active:bg-[#f5f1e6]",
                   disabled && !busy && "opacity-60",
                 )}
               >
@@ -567,7 +567,7 @@ function MobileDiscoverScenePage() {
                 <button
                   type="button"
                   onClick={() => sceneMutation.mutate(sceneMutation.variables)}
-                  className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试场景相遇`)}
                 </button>
@@ -575,7 +575,7 @@ function MobileDiscoverScenePage() {
               <button
                 type="button"
                 onClick={handleErrorNoticeBack}
-                className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
                   ? t(msg`返回上一页`)

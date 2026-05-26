@@ -343,7 +343,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       type="button"
       variant="secondary"
       size="sm"
-      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
       onClick={handleOperationBack}
     >
       {statusBackLabel}

@@ -274,7 +274,7 @@ function MobileFriendRequestsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryRequests}
                   >
                     {t(msg`重试读取`)}
@@ -283,7 +283,7 @@ function MobileFriendRequestsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath
@@ -422,7 +422,7 @@ function MobileFriendRequestsPage() {
                                 ? handleRetryAccept
                                 : handleRetryDecline
                             }
-                            className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                            className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                           >
                             {acceptErrorForRow
                               ? t(msg`重试通过`)
@@ -445,7 +445,7 @@ function MobileFriendRequestsPage() {
                         }
                         variant="secondary"
                         size="sm"
-                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                       >
                         {declineMutation.isPending &&
                         declineMutation.variables?.requestId === request.id
@@ -495,7 +495,7 @@ function MobileFriendRequestsPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath

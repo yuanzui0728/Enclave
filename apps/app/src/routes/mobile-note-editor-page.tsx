@@ -1228,7 +1228,7 @@ function MobileNoteEditor({
   ) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
-        <div className="w-full max-w-md rounded-[20px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-md rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 shadow-[var(--shadow-card)]">
           <ErrorBlock
             message={
               noteQuery.error instanceof Error
@@ -1240,7 +1240,7 @@ function MobileNoteEditor({
             <Button
               variant="secondary"
               onClick={() => void leaveEditor()}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             >
               {t(msg`回到来源`)}
             </Button>
@@ -1409,12 +1409,12 @@ function MobileNoteEditor({
                 }}
                 placeholder={t(msg`输入标签后回车`)}
                 // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="h-9 w-[160px] rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
+                className="h-9 w-[160px] rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
               />
               <Button
                 variant="secondary"
                 onClick={handleTagCommit}
-                className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 shadow-none"
+                className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-none"
               >
                 {t(msg`添加`)}
               </Button>
@@ -1423,7 +1423,7 @@ function MobileNoteEditor({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-auto bg-white px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)] px-4 py-4">
         <div className="relative">
           {/* 走查 R4（第三轮）：原条件只看 contentText.trim() 空，没有 assets 兜底。
               新建笔记 → 直接传图（不打任何字）这条路径，contentText="" 但
@@ -1593,7 +1593,7 @@ function ToolbarButton({
         "inline-flex h-9 items-center gap-1.5 rounded-[12px] border px-2.5 text-[12px] transition",
         active
           ? "border-[rgba(245, 158, 11,0.16)] bg-[rgba(245, 158, 11,0.08)] text-[color:var(--brand-primary)]"
-          : "border-transparent bg-white text-[color:var(--text-secondary)] active:bg-black/5",
+          : "border-transparent bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-black/5",
         disabled ? "cursor-not-allowed opacity-55" : undefined,
       )}
       aria-label={label}
@@ -1639,7 +1639,7 @@ function ConfirmSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-white pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {title}
@@ -1661,7 +1661,7 @@ function ConfirmSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-white text-[15px] shadow-none"
+            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] shadow-none"
           >
             {t(msg`取消`)}
           </Button>
@@ -1699,7 +1699,7 @@ function UnsavedSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-white pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {t(msg`这条笔记还没有保存`)}
@@ -1734,7 +1734,7 @@ function UnsavedSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-white text-[15px] shadow-none"
+            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] shadow-none"
           >
             {t(msg`继续编辑`)}
           </Button>

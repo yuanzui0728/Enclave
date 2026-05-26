@@ -497,7 +497,7 @@ export function CharacterDetailPage() {
       type="button"
       variant="secondary"
       size="sm"
-      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
       onClick={() => {
         if (navigateToRouteStateReturn()) {
           return;
@@ -514,7 +514,7 @@ export function CharacterDetailPage() {
       type="button"
       variant="secondary"
       size="sm"
-      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[10px]"
       onClick={() => {
         void characterQuery.refetch();
       }}
@@ -1830,7 +1830,7 @@ export function CharacterDetailPage() {
 
             <section
               className={cn(
-                "overflow-hidden bg-white",
+                "overflow-hidden bg-[color:var(--surface-card)]",
                 isDesktopLayout
                   ? "rounded-[20px] border border-black/5"
                   : "-mx-3 border-y border-[color:var(--border-faint)]",
@@ -1913,7 +1913,7 @@ export function CharacterDetailPage() {
             </section>
 
             {isDesktopLayout ? (
-              <section className="overflow-hidden rounded-[20px] border border-black/5 bg-white p-4">
+              <section className="overflow-hidden rounded-[20px] border border-black/5 bg-[color:var(--surface-card)] p-4">
                 <div
                   className={cn(
                     "grid gap-2",
@@ -1941,7 +1941,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           handleVoiceCall();
                         }}
-                        className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-white text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[#f5f7f7]"
                         disabled={openCallMutation.isPending}
                       >
                         {openCallMutation.isPending
@@ -2036,7 +2036,7 @@ export function CharacterDetailPage() {
                           remarkName: friendship?.remarkName ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2098,7 +2098,7 @@ export function CharacterDetailPage() {
                           tags: friendship?.tags?.join("，") ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2548,7 +2548,7 @@ function MobileProfileActionButton({
         "flex min-h-11 items-center justify-center rounded-[12px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
         primary
           ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] active:bg-[#f2f3f5]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] active:bg-[#f2f3f5]",
       )}
     >
       {label}
@@ -2570,7 +2570,7 @@ function ProfileSection({
   return (
     <section
       className={cn(
-        "overflow-hidden bg-white",
+        "overflow-hidden bg-[color:var(--surface-card)]",
         flatOnMobile
           ? "-mx-3 rounded-none border-y border-[color:var(--border-faint)]"
           : "rounded-[20px] border border-[color:var(--border-faint)]",
@@ -2732,8 +2732,8 @@ function ProfileSwitchRow({
         <span
           className={cn(
             compact
-              ? "absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform"
-              : "absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+              ? "absolute left-1 top-1 h-5 w-5 rounded-full bg-[color:var(--surface-card)] shadow-sm transition-transform"
+              : "absolute left-1 top-1 h-6 w-6 rounded-full bg-[color:var(--surface-card)] shadow-sm transition-transform",
             checked
               ? compact
                 ? "translate-x-4"
@@ -2800,7 +2800,7 @@ function DetailInputField({
         // (备注名 / 备注标签 / 朋友圈权限 ...)，挨个点过去整页会反复弹缩。
         // 移动端固定 16px；桌面端没有 zoom 问题继续用 14px 维持视觉密度。
         className={cn(
-          "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
+          "w-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(245, 158, 11,0.18)] focus:bg-[color:var(--surface-card)] placeholder:text-[color:var(--text-dim)]",
           compact
             ? "rounded-[12px] py-2.5 text-[16px]"
             : "rounded-[12px] py-3 text-sm",

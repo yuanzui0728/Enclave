@@ -375,7 +375,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryAccount}
                   >
                     {t(msg`重试读取`)}
@@ -384,7 +384,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -406,7 +406,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryAccount}
                   >
                     {t(msg`重试读取`)}
@@ -415,7 +415,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -440,7 +440,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                         onClick={actionNotice.onAction}
                       >
                         {actionNotice.actionLabel}
@@ -450,7 +450,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                       onClick={handleStatusBack}
                     >
                       {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -466,7 +466,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
         {account ? (
           <>
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-4 pt-5">
               <div className="flex flex-col items-center text-center">
                 <AvatarChip
                   name={account.name}
@@ -543,7 +543,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                            className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                             onClick={handleRetryFollow}
                           >
                             {account.isFollowing ? t(msg`重试取消关注`) : t(msg`重试关注`)}
@@ -553,7 +553,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                          className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                           onClick={handleStatusBack}
                         >
                           {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -565,7 +565,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               ) : null}
             </section>
 
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
               <button
                 type="button"
                 disabled={!account.isFollowing}
@@ -615,7 +615,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               </button>
             </section>
 
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
               <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
                 <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                   {t(msg`最近文章`)}

@@ -709,7 +709,7 @@ export function CreateGroupPage() {
                 <button
                   type="button"
                   onClick={exitPage}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {statusBackLabel}
                 </button>
@@ -872,7 +872,7 @@ function FriendSelectionRow({
           checked
             ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
             : isDesktop
-              ? "border-[color:var(--border-faint)] bg-white text-transparent"
+              ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-transparent"
               : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",
         )}
       >

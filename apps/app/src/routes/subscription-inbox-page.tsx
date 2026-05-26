@@ -242,7 +242,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleRetryInbox}
                   >
                     {t(msg`重试读取`)}
@@ -251,7 +251,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}
@@ -276,7 +276,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                     onClick={handleRetryMarkRead}
                   >
                     {t(msg`重试同步`)}
@@ -285,7 +285,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}
@@ -300,7 +300,7 @@ function MobileSubscriptionInboxPage() {
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white shadow-none"
+              className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             >
               <button
                 type="button"
@@ -367,7 +367,7 @@ function MobileSubscriptionInboxPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}

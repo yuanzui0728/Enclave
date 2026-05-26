@@ -277,7 +277,7 @@ export function ProfileFeedbackPage() {
                     "flex flex-col items-center justify-center gap-1 rounded-[12px] border px-2 py-3 text-[12px] transition-colors",
                     active
                       ? "border-[#b45309] bg-[rgba(245, 158, 11,0.10)] text-[#b45309]"
-                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
                   )}
                 >
                   <Icon size={16} />
@@ -307,7 +307,7 @@ export function ProfileFeedbackPage() {
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in；反馈页又是一句话标题 + 一大段详情两连敲，缩放完用户
             // 还要双指捏才能回到原大小，几乎肯定会放弃。
-            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
+            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
           />
         </section>
 
@@ -331,7 +331,7 @@ export function ProfileFeedbackPage() {
             rows={8}
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in，详情这种长文本框 zoom 完用户基本看不到提交按钮。
-            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
+            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
           />
         </section>
 
