@@ -4763,7 +4763,7 @@ const CommentItemView = memo(function CommentItemView({
             {replyTargetName ? (
               <>
                 <span className="text-[#888888]">{t(msg`回复`)} </span>
-                <span className="text-[#576b95]">
+                <span className="text-[#b45309]">
                   @{replyTargetName}
                 </span>
                 <span className="text-[#888888]">：</span>
@@ -5400,7 +5400,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#576b95] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#b45309] active:opacity-60"
                     >
                       {t(msg`—— 展开 ${hiddenCount} 条回复 ∨`)}
                     </button>
@@ -5408,7 +5408,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#576b95] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#b45309] active:opacity-60"
                     >
                       {t(msg`—— 收起 ∧`)}
                     </button>

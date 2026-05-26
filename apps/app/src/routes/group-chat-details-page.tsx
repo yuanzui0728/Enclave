@@ -765,7 +765,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               <button
                 type="button"
                 onClick={() => setMemberGridExpanded((current) => !current)}
-                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[#576b95]"
+                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[#b45309]"
               >
                 {memberGridExpanded
                   ? t(msg`收起群成员`)

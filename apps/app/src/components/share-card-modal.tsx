@@ -449,10 +449,10 @@ export function ShareCardModal({
 
       {/* i18n-ignore-line: dev comment - 用户可见的预览 + 操作 */}
       <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-[color:var(--surface-card)] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <div
             id="share-card-modal-title"
-            className="text-[15px] font-medium text-gray-900"
+            className="text-[15px] font-medium text-[color:var(--text-primary)]"
           >
             {modalTitle}
           </div>
@@ -460,7 +460,7 @@ export function ShareCardModal({
             type="button"
             onClick={onClose}
             aria-label={t(msg`关闭`)}
-            className="rounded-md px-2 py-1 text-sm text-gray-500 active:bg-gray-100"
+            className="rounded-md px-2 py-1 text-sm text-[color:var(--text-muted)] active:bg-[color:var(--surface-card-hover)]"
           >
             ✕
           </button>
@@ -487,14 +487,14 @@ export function ShareCardModal({
               {generationError}
             </div>
           ) : (
-            <div className="py-12 text-center text-sm text-gray-500">
+            <div className="py-12 text-center text-sm text-[color:var(--text-muted)]">
               {t(msg`生成图片中…`)}
             </div>
           )}
         </div>
 
-        <div className="border-t border-gray-100 px-4 py-3">
-          <div className="mb-3 text-center text-[12px] text-gray-500">
+        <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
+          <div className="mb-3 text-center text-[12px] text-[color:var(--text-muted)]">
             {bottomHint}
           </div>
           <button

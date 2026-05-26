@@ -300,7 +300,7 @@ export function OfficialArticleViewer({
           isDesktopReader ? "mt-3 gap-x-2.5 text-[13px]" : undefined,
         )}
       >
-        <span className="font-medium text-[#576b95]">{article.authorName}</span>
+        <span className="font-medium text-[#b45309]">{article.authorName}</span>
         <span>{publishedLabel}</span>
         <span>{article.readCount} {t(msg`阅读`)}</span>
       </div>
