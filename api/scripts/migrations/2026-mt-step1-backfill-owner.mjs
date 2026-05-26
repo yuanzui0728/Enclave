@@ -68,25 +68,48 @@ if (owners.length > 1) {
 const ownerId = owners[0].id;
 console.log(`world_owner = ${ownerId}`);
 
+// wiki 域表的 userId 指向 wiki_member（非 world_owner），且 wiki 已是独立库，不回填到 owner。
+const WIKI_EXCLUDE = /^wiki_/i;
+const WIKI_EXTRA = new Set(['user_wiki_profiles']);
+const allTables = () =>
+  db
+    .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`)
+    .all()
+    .map((r) => r.name);
+// owner 列：优先 ownerId，否则 userId（与 step0/step1b/step2 一致）。
+function ownerColOf(table) {
+  const cols = db.prepare(`PRAGMA table_info("${table}")`).all().map((c) => c.name);
+  if (cols.includes('ownerId')) return 'ownerId';
+  if (cols.includes('userId')) return 'userId';
+  return null;
+}
+
 let totalAddedCols = 0;
 let totalBackfilled = 0;
 
 const run = db.transaction(() => {
+  // 1) 给「本轮新加 ownerId 列」的表确保列存在（旧 LPP 库 synchronize 还没加过）。
   for (const table of OWNER_COLUMN_TABLES) {
-    if (!tableExists(table)) {
-      continue; // 该库无此表（功能未触发过），跳过
-    }
-    // 加列（幂等）：synchronize 已加则跳过；脚本独立运行时自己加，不依赖先跑新代码。
+    if (!tableExists(table)) continue;
     if (!hasColumn(table, 'ownerId')) {
       db.exec(`ALTER TABLE ${table} ADD COLUMN ownerId TEXT`);
       totalAddedCols++;
     }
-    // 回填（幂等）：只改 NULL 行。单 owner 库每行都归该 owner。
+  }
+  // 2) 回填：覆盖**全部** owner-scoped 表（自动发现，排除 wiki 域），把 owner 列的 NULL 行
+  //    回填成该库唯一 world_owner。早期版本只回填硬编码 OWNER_COLUMN_TABLES，漏掉了
+  //    ai_usage_ledger 等「已带 ownerId 但有历史 NULL 行」的存量表，导致 step1b 复合主键
+  //    重建撞 NULL（如 ai_usage_ledger 331 行 ownerId NULL 的角色级 token 用量）。单 owner
+  //    库里每行都归该 owner，回填 NULL 永远正确且幂等。
+  for (const table of allTables()) {
+    if (WIKI_EXCLUDE.test(table) || WIKI_EXTRA.has(table)) continue;
+    const oc = ownerColOf(table);
+    if (!oc) continue;
     const res = db
-      .prepare(`UPDATE ${table} SET ownerId = ? WHERE ownerId IS NULL`)
+      .prepare(`UPDATE "${table}" SET "${oc}" = ? WHERE "${oc}" IS NULL`)
       .run(ownerId);
     if (res.changes > 0) {
-      console.log(`  ${table}: 回填 ${res.changes} 行`);
+      console.log(`  ${table}.${oc}: 回填 ${res.changes} 行`);
       totalBackfilled += res.changes;
     }
   }
@@ -95,13 +118,16 @@ const run = db.transaction(() => {
 run();
 db.pragma('wal_checkpoint(TRUNCATE)');
 
-// 校验：确认目标表无残留 NULL ownerId。
+// 校验：确认**全部** owner-scoped 表（排除 wiki）无残留 NULL owner 列——这是 step1b 复合主键
+// 重建的前置（NULL 进不了复合 PK）。
 let leftoverNull = 0;
-for (const table of OWNER_COLUMN_TABLES) {
-  if (!tableExists(table) || !hasColumn(table, 'ownerId')) continue;
-  const n = db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ownerId IS NULL`).get().n;
+for (const table of allTables()) {
+  if (WIKI_EXCLUDE.test(table) || WIKI_EXTRA.has(table)) continue;
+  const oc = ownerColOf(table);
+  if (!oc) continue;
+  const n = db.prepare(`SELECT COUNT(*) AS n FROM "${table}" WHERE "${oc}" IS NULL`).get().n;
   if (n > 0) {
-    console.error(`  ⚠️ ${table} 仍有 ${n} 行 ownerId NULL`);
+    console.error(`  ⚠️ ${table}.${oc} 仍有 ${n} 行 NULL`);
     leftoverNull += n;
   }
 }

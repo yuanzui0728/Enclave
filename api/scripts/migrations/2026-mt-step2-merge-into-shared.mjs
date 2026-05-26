@@ -59,11 +59,21 @@ const recordMerge = (ownerId, srcPath) =>
   db.prepare(`INSERT OR REPLACE INTO merge_ledger (ownerId, srcPath, mergedAt) VALUES (?,?,?)`)
     .run(ownerId, srcPath, new Date().toISOString());
 
+// wiki 域表的 userId 指向 wiki_member（非 world_owner），且 wiki 已是独立库
+// data/wiki/wiki.sqlite（AppModule 已剥离 WikiModule，shared world 不读/不 synchronize 这些表）。
+// 不能按 world-owner union（模板播种导致 user_wiki_profiles.userId 等跨账号重复 → 撞 PK）。
+// 当作全局表 INSERT OR IGNORE 取首库（非破坏性；是否彻底从 shared 库剔除留作后续清理）。
+const WIKI_EXCLUDE = /^wiki_/i;
+const WIKI_EXTRA = new Set(['user_wiki_profiles']);
+const isWikiDomain = (t) => WIKI_EXCLUDE.test(t) || WIKI_EXTRA.has(t);
+
 const tables = allTables();
 const ownerScoped = [], globalTables = [];
 for (const t of tables) {
   if (t === 'users' || t === 'merge_ledger') continue;
-  (ownerColOf(columnsOf(t)) ? ownerScoped : globalTables).push(t);
+  // wiki 域强制归全局；其余按是否有 owner 列分类。
+  const scoped = !isWikiDomain(t) && ownerColOf(columnsOf(t));
+  (scoped ? ownerScoped : globalTables).push(t);
 }
 console.log(`owner-scoped 表 ${ownerScoped.length}，全局表 ${globalTables.length}`);
 
