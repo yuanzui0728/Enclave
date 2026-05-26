@@ -108,7 +108,29 @@ for (let i = 1; i < sources.length; i++) {
       continue;
     }
     const merge = db.transaction(() => {
-      db.exec(`INSERT OR IGNORE INTO main.users SELECT * FROM src.users WHERE userType='world_owner'`);
+      // 用显式列清单（不是 SELECT *）：陈旧账号即便过了 prep，users 列序/列集也可能和 main
+      // （取自首库）不同，SELECT * 按位置映射会把值塞错列、触 NOT NULL → 被 OR IGNORE 静默吞掉，
+      // 结果 world_owner 行没并进来、但它的角色/动态数据并进来了 = 孤儿（实测 8 账号 union 的
+      // 陈旧账号 17757541197 正是如此）。显式列清单只并两边都有的列，稳。
+      const userCols = columnsOf('users')
+        .filter((c) => srcColumnSet('users').has(c))
+        .map((c) => `"${c}"`)
+        .join(',');
+      db.exec(
+        `INSERT OR IGNORE INTO main.users (${userCols}) SELECT ${userCols} FROM src.users WHERE userType='world_owner'`,
+      );
+      // 断言：每个 src world_owner 必须已落 main.users，否则它的 owner-scoped 数据会变孤儿。
+      // 直接抛错回滚，绝不静默合并出孤儿（旧版就是因为没断言才悄悄留下 78 角色等孤儿行）。
+      for (const o of srcOwners) {
+        const landed = db
+          .prepare(`SELECT 1 FROM main.users WHERE id=? AND userType='world_owner'`)
+          .get(o);
+        if (!landed) {
+          throw new Error(
+            `world_owner ${o}（src ${src}）未能并入 main.users（列不匹配/约束？），拒绝合并其数据以防孤儿`,
+          );
+        }
+      }
       for (const t of ownerScoped) {
         if (!db.prepare(`SELECT 1 FROM src.sqlite_master WHERE type='table' AND name=?`).get(t)) continue;
         const srcCols = srcColumnSet(t);

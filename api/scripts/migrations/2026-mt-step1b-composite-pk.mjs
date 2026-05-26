@@ -99,11 +99,38 @@ function rewriteCreateSql(originalSql, newTableName, ownerCol, pkCol) {
     throw new Error(`无法在 CREATE TABLE 中定位 "${pkCol}" 的内联 PRIMARY KEY，拒绝重建`);
   }
   sql = sql.replace(inlinePk, '$1$2');
+  // owner-blind 的表级 UNIQUE 约束（如 farm_npc_states 的 UNIQUE("characterId")、
+  // push_tokens 的 UNIQUE("platform","bundleId","token")）并入 owner 列——否则多 owner
+  // union 进同库时不同 owner 的同 characterId/同 token 撞 UNIQUE（实测 8 账号 union 报
+  // farm_npc_states.characterId 冲突）。已含 owner 列的（UNIQUE("ownerId"…)）原样保留。
+  sql = sql.replace(
+    /(CONSTRAINT\s+"[^"]+"\s+UNIQUE\s*\()([^)]*)(\))/gi,
+    (full, pre, cols, post) => {
+      const names = cols
+        .split(',')
+        .map((c) => c.trim().replace(/^["'`[]+|["'`\]]+$/g, '').split(/\s+/)[0]);
+      if (names.includes(ownerCol)) return full;
+      return `${pre}"${ownerCol}", ${cols}${post}`;
+    },
+  );
   // 末尾右括号前插入表级复合主键。
   const lastParen = sql.lastIndexOf(')');
   if (lastParen < 0) throw new Error('无法定位 CREATE TABLE 结尾右括号');
   sql = sql.slice(0, lastParen) + `, PRIMARY KEY ("${ownerCol}", "${pkCol}")` + sql.slice(lastParen);
   return sql;
+}
+
+// 把 owner-scoped 表的 UNIQUE 索引改成「owner 列在前」的复合唯一，确保多 owner union 不撞。
+// 只动 UNIQUE 索引（普通索引不影响 union）；已含 owner 列的（如 (userId,postId,type)）原样返回。
+function ownerScopeUniqueIndexSql(idxSql, ownerCol) {
+  if (!/CREATE\s+UNIQUE\s+INDEX/i.test(idxSql)) return idxSql;
+  const m = idxSql.match(/\(([^)]*)\)/); // 第一组括号 = 列清单
+  if (!m) return idxSql;
+  const colNames = m[1]
+    .split(',')
+    .map((c) => c.trim().replace(/^["'`[]+|["'`\]]+$/g, '').split(/\s+/)[0]);
+  if (colNames.includes(ownerCol)) return idxSql; // 已是 owner-aware
+  return idxSql.replace(/\(([^)]*)\)/, `("${ownerCol}", $1)`);
 }
 
 let rebuilt = 0;
@@ -162,7 +189,11 @@ const migrate = db.transaction(() => {
     db.exec(`DROP TABLE "${table}"`);
     db.exec(`ALTER TABLE "${tmpName}" RENAME TO "${table}"`);
     for (const idxSql of indexes) {
-      db.exec(idxSql); // 索引定义里带表名，rename 后表名一致，直接重放
+      // owner-scoped 表的 owner-blind UNIQUE 索引（如 character_friendships 的
+      // (characterAId,characterBId)、media_insight_jobs 的 (threadType,threadId,sourceMessageId)）
+      // 必须把 owner 列并进去——否则 step2 把多个 owner union 进同库时，不同 owner 的同一对/同
+      // 一组键会撞 UNIQUE（实测 8 账号 union 报 SQLITE_CONSTRAINT_UNIQUE）。普通索引不影响 union，原样重放。
+      db.exec(ownerScopeUniqueIndexSql(idxSql, ownerCol));
     }
 
     const afterCount = db.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).get().n;
