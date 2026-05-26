@@ -70,6 +70,9 @@ export function DeleteAccountPanel() {
   const [expanded, setExpanded] = useState(false);
   const [code, setCode] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
+  // 注销成功后短暂展示成功态再跳转。没有它的话 clearCloudRuntimeSession() 会让
+  // sessionExpired 立刻翻 true，把"已注销"成功提示瞬间换成"会话已失效"红条，体感困惑。
+  const [deleted, setDeleted] = useState(false);
   const [feedback, setFeedback] = useState<{
     tone: "success" | "danger";
     message: string;
@@ -150,6 +153,7 @@ export function DeleteAccountPanel() {
       );
     },
     onSuccess: () => {
+      setDeleted(true);
       setFeedback({
         tone: "success",
         message: t(msg`账号已注销，即将退出。`),
@@ -198,6 +202,16 @@ export function DeleteAccountPanel() {
         deleteInFlightRef.current = false;
       },
     });
+  }
+
+  // 注销成功后：只渲染成功提示，等 setTimeout 跳转 /welcome。必须排在 sessionExpired
+  // 之前——此时 session 已被清空，否则会落进下面的"会话已失效"分支。
+  if (deleted) {
+    return (
+      <InlineNotice tone="success" role="status">
+        {t(msg`账号已注销，即将退出。`)}
+      </InlineNotice>
+    );
   }
 
   if (sessionExpired) {

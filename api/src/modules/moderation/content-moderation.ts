@@ -39,26 +39,39 @@ const SHARED_RULES: ModerationRule[] = [
   {
     id: "csam",
     category: "minor_sexual",
-    // 未成年 + 性 的明确共现。\b 在中文不可靠，用显式中英关键词共现近邻匹配。
+    // 未成年指称 + 明确性行为/裸露词的近邻共现。刻意**不收 bare「性」「裸」**——否则
+    // 「未成年人的性格」「裸眼视力」这类正常文本会误伤；也**不收「性侵」**，避免
+    // 「防性侵」这种保护性内容被拦。窗口遇标点即断，降低跨句误命中。
     pattern:
-      /(未成年|幼女|幼童|小学生|loli|underage|minor|child)[^。.\n]{0,12}(性|裸|做爱|sex|nude|naked|porn)/i,
+      /(未成年|幼女|幼童|小学生|loli|underage|minor|child)[^。.,，!?！？\n]{0,12}(性行为|性交|做爱|性爱|裸照|裸体|猥亵|sexual|\bsex\b|nude|naked|porn)/i,
   },
   {
     id: "weapon_explosive_making",
     category: "illicit_instructions",
+    // 制作动词 + 爆炸物近邻共现。**不收 bare「毒品/海洛因」**——避免「海洛因的危害」
+    // 「怎么戒毒」这类正常/求助文本误伤；制毒类放到独立高精度规则。
     pattern:
-      /(制作|制造|合成|怎么做|how to (make|build|synthesize))[^。.\n]{0,10}(炸弹|炸药|爆炸物|tnt|bomb|explosive|毒品|冰毒|海洛因|methamphetamine|heroin)/i,
+      /(制作|制造|合成|怎么做|教你做|how to (make|build))[^。.,，!?！？\n]{0,10}(炸弹|炸药|爆炸物|tnt|bomb|explosive)/i,
+  },
+  {
+    id: "drug_manufacture",
+    category: "illicit_instructions",
+    // 高精度制毒/贩毒短语，几乎不出现在正常对话里。
+    pattern:
+      /(制毒|制贩毒|贩卖毒品|合成冰毒|制造冰毒|how to (make|synthesize) (meth|methamphetamine|heroin))/i,
   },
 ];
 
 // 国内扩展位 —— 生产应以托管内容安全服务为主判定，这里仅留极少兜底 + 扩展入口。
 // 不在代码里硬编码涉政词表（不合规、易误伤、靠词表防不住）。
 const CN_EXTRA_RULES: ModerationRule[] = [
-  // 示例兜底：明确的赌博/诈骗导流话术。生产由内容安全服务覆盖更全。
+  // 示例兜底：明确的赌博引流话术。**要求带拉客/引流意图词**，避免「反对赌博」
+  // 「赌博的危害」这类中性提及误伤。生产由内容安全服务覆盖更全。
   {
     id: "cn_gambling_promo",
     category: "gambling",
-    pattern: /(博彩|赌博)[^。.\n]{0,8}(网址|平台|入口|链接|加微信|包赢)/,
+    pattern:
+      /(博彩|赌博|网赌)[^。.,，!?！？\n]{0,8}(加微信|加群|包赢|稳赚|首充|返水|代理|开户)/,
   },
 ];
 
