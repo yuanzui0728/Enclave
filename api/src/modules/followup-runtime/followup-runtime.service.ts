@@ -5,7 +5,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
-import { sanitizeAiText } from '../ai/ai-text-sanitizer';
+import { sanitizeAiText, sanitizeAiMessageText } from '../ai/ai-text-sanitizer';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersService } from '../characters/characters.service';
@@ -1639,7 +1639,8 @@ function sanitizeSignalText(value: string) {
 }
 
 function sanitizeHandoffText(value: string) {
-  return sanitizeAiText(value || '')
+  // 用户可见的 followup 交接/通知消息：sanitizeAiMessageText 叠内容审核（命中→话术）。
+  return sanitizeAiMessageText(value || '')
     .split('\n')
     .map((item) => item.trim())
     .filter(Boolean)
@@ -1648,7 +1649,8 @@ function sanitizeHandoffText(value: string) {
 }
 
 function sanitizeFriendRequestGreeting(value: string) {
-  return sanitizeAiText(value || '')
+  // 用户可见的 AI 好友申请问候语：叠内容审核。
+  return sanitizeAiMessageText(value || '')
     .split('\n')
     .map((item) => item.trim())
     .filter(Boolean)
