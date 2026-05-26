@@ -2309,7 +2309,7 @@ export function DiscoverFeedPage() {
       <div ref={pullContainerRef} className="relative">
         {pullState.offset || pullState.refreshing ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[#9A9A9A]"
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
             style={{ top: 0, height: `${pullState.offset || 60}px` }}
           >
             <span>
@@ -2342,7 +2342,7 @@ export function DiscoverFeedPage() {
           </div>
           {notice ? (
             <InlineNotice
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={noticeTone}
             >
               {noticeTone === "info" ? (
@@ -2379,7 +2379,7 @@ export function DiscoverFeedPage() {
                             });
                           }
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionLabel}
                       </button>
@@ -2396,7 +2396,7 @@ export function DiscoverFeedPage() {
                           setNoticeActionLabel(null);
                           setNoticeAction(null);
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {t(msg`知道了`)}
                       </button>
@@ -2417,7 +2417,7 @@ export function DiscoverFeedPage() {
                           setNoticeAction(null);
                           handleStatusBack();
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {safeReturnPath ? t(msg`返回上一页`) : t(msg`重试读取`)}
                       </button>
@@ -2674,7 +2674,7 @@ export function DiscoverFeedPage() {
                                   openReply();
                                 }
                               }}
-                              className="block w-full cursor-pointer text-left text-[#1A1A1A] active:bg-[#EFEFEF]"
+                              className="block w-full cursor-pointer text-left text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
                             >
                               {/* 长名字（wiki 走查角色叫 "走查词条_1778866835578221688"、
                                   群里改备注成一句话等）会按字宽 wrap，把后面的
@@ -2756,7 +2756,7 @@ export function DiscoverFeedPage() {
                           </button>
                         ) : null}
                         {expandedAllFiltered ? (
-                          <div className="mt-1 text-[12px] text-[#9A9A9A]">
+                          <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
                             {t(msg`评论暂时无法显示`)}
                           </div>
                         ) : null}
@@ -2772,7 +2772,7 @@ export function DiscoverFeedPage() {
           {likeMutation.isError && likeMutation.error instanceof Error ? (
             <InlineNotice
               tone="info"
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -2798,7 +2798,7 @@ export function DiscoverFeedPage() {
                       likeMutation.reset();
                     }
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试点赞`)}
                 </button>
@@ -2808,7 +2808,7 @@ export function DiscoverFeedPage() {
           {commentMutation.isError && commentMutation.error instanceof Error ? (
             <InlineNotice
               tone="info"
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -2863,7 +2863,7 @@ export function DiscoverFeedPage() {
                       },
                     );
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试发送`)}
                 </button>
@@ -3163,8 +3163,8 @@ function MobileFeedStatusCard({
     <section
       className={
         tone === "danger"
-          ? "rounded-[18px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-4 py-5 text-center shadow-none"
-          : "rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none"
+          ? "rounded-[20px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-4 py-5 text-center shadow-none"
+          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none"
       }
     >
       <div

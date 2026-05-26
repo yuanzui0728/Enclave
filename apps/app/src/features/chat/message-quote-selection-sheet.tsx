@@ -104,7 +104,7 @@ export function MessageQuoteSelectionSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(180, 130, 20, 0.14)]">
       <button
         type="button"
         aria-label={t(msg`关闭部分引用面板`)}
@@ -133,8 +133,8 @@ export function MessageQuoteSelectionSheet({
         aria-labelledby={titleId}
         className={`absolute ${
           isDesktop
-            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[22px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
-            : "inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[24px] bg-white p-5 shadow-[0_24px_60px_rgba(180, 130, 20, 0.18)]"
+            : "inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
         }`}
       >
         {isDesktop ? null : (
@@ -198,7 +198,7 @@ export function MessageQuoteSelectionSheet({
         </div>
 
         <div
-          className={`mt-3 rounded-[14px] px-3 py-2 text-[12px] leading-5 ${
+          className={`mt-3 rounded-[16px] px-3 py-2 text-[12px] leading-5 ${
             selectedText
               ? isDesktop
                 ? "bg-[rgba(245, 158, 11,0.10)] text-[#11925a]"
@@ -223,7 +223,7 @@ export function MessageQuoteSelectionSheet({
             className={
               isDesktop
                 ? "rounded-full"
-                : "h-11 flex-1 rounded-[14px] border-[color:var(--border-subtle)] bg-white text-[15px] active:bg-[color:var(--surface-card-hover)]"
+                : "h-11 flex-1 rounded-[16px] border-[color:var(--border-subtle)] bg-white text-[15px] active:bg-[color:var(--surface-card-hover)]"
             }
           >
             {t(msg`取消`)}
@@ -240,7 +240,7 @@ export function MessageQuoteSelectionSheet({
             className={
               isDesktop
                 ? "rounded-full"
-                : "h-11 flex-1 rounded-[14px] text-[15px]"
+                : "h-11 flex-1 rounded-[16px] text-[15px]"
             }
           >
             {t(msg`引用所选文字`)}

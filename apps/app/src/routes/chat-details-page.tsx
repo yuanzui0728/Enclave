@@ -1149,7 +1149,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         <div className="px-2.5">
           <InlineNotice
             tone={notice.tone}
-            className="flex items-center justify-between gap-2.5 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            className="flex items-center justify-between gap-2.5 rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             <span>{notice.message}</span>
             {notice.actionLabel && notice.onAction ? (
@@ -1242,7 +1242,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 size="wechat"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[15px] text-[#111827]">
+                <div className="truncate text-[15px] text-[color:var(--text-primary)]">
                   {contactDisplayName}
                 </div>
                 <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
@@ -1424,7 +1424,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1439,7 +1439,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1454,7 +1454,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1469,7 +1469,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1485,7 +1485,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1500,7 +1500,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1515,7 +1515,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">

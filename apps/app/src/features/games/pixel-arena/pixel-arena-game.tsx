@@ -206,7 +206,7 @@ export function PixelArenaGame({
                   onClick={() => actions.selectPlayer(f.id)}
                   disabled={isFighting}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-[12px]",
+                    "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
                     active
                       ? "border-violet-400 bg-violet-50"
                       : "border-[color:var(--border-faint)] bg-white",

@@ -35,7 +35,7 @@ export const AvatarChip = memo(function AvatarChip({
   const [loadFailed, setLoadFailed] = useState(false);
   const classes =
     size === "xs"
-      ? "h-7 w-7 rounded-[10px] text-xs"
+      ? "h-7 w-7 rounded-[12px] text-xs"
       : size === "sm"
         ? "h-9 w-9 rounded-[16px] text-sm"
         : size === "xl"

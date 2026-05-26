@@ -440,7 +440,7 @@ function MobileOfficialAccountArticlePage({
         {shareNotice ? (
           <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <InlineNotice
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={shareNotice.tone}
             >
               {shareNotice.tone === "info" ? (

@@ -386,7 +386,7 @@ function MobileGroupChatEditPage({
             // createMutation error R(新一轮 R1) 同款修法。
             role="alert"
             tone="danger"
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
@@ -394,7 +394,7 @@ function MobileGroupChatEditPage({
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试保存`)}
                 </button>
@@ -495,7 +495,7 @@ function MobileGroupChatEditPage({
                   event.preventDefault();
                   handleSave();
                 }}
-                className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
+                className="h-11 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
                 <span>
@@ -505,7 +505,7 @@ function MobileGroupChatEditPage({
                 </span>
                 <span>{t(msg`${trimmedDraft.length} 字`)}</span>
               </div>
-              <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
                 {t(msg`当前内容：${initialValue.trim() || t(msg`暂未设置`)}`)}
               </div>
             </div>
@@ -518,7 +518,7 @@ function MobileGroupChatEditPage({
               size="lg"
               disabled={submitDisabled}
               onClick={handleSave}
-              className="h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="h-10 w-full rounded-[12px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存`)}
             </Button>

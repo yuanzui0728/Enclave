@@ -352,7 +352,7 @@ export function MobileChatPlusPanel({
     favoritesQuery.isError && favoriteRecords.length === 0;
 
   return (
-    <div className="mt-1.5 min-h-[232px] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] shadow-none">
+    <div className="mt-1.5 min-h-[232px] overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] shadow-none">
       {activeView === "root" ? (
         <div className="pb-4 pt-3">
           <PanelHeader t={t} title={t(msg`更多功能`)} onClose={onClose} />
@@ -520,7 +520,7 @@ export function MobileChatPlusPanel({
           ) : null}
 
           {unavailableAction ? (
-            <div className="mx-3 mt-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3 shadow-none">
+            <div className="mx-3 mt-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3 shadow-none">
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
@@ -531,7 +531,7 @@ export function MobileChatPlusPanel({
                   {UnavailableIcon ? <UnavailableIcon size={18} /> : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[12px] font-medium text-[#111827]">
+                  <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
                     {unavailableAction.unavailableTitle
                       ? t(unavailableAction.unavailableTitle)
                       : t(msg`${t(unavailableAction.label)} 暂未接入`)}
@@ -599,7 +599,7 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {friends.length ? (
-            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
+            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
               {friends.map((item, index) => {
                 const { character, friendship } = item;
                 // 走查 R1：联系人列表跟通讯录 / 群成员选择 / 桌面拓展面板里都
@@ -697,7 +697,7 @@ export function MobileChatPlusPanel({
             // 走查新一轮 R2：description 跟 title 一样时（笔记 favorite 几乎都是
             // 这种），picker 第三行只是把 title 又写一遍——share text 那边已经
             // 在 buildFavoriteShareText 去重了，这里 UI 上同步把那行藏掉。
-            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
+            <div className="mx-2.5 max-h-[40dvh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
               {favoriteRecords.map((item, index) => {
                 const trimmedTitle = item.title.trim();
                 const trimmedDescription = item.description.trim();
@@ -761,7 +761,7 @@ export function MobileChatPlusPanel({
             onBack={() => setActiveView("root")}
             onClose={onClose}
           />
-          <div className="mx-2.5 overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
+          <div className="mx-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
             {CHAT_LOCATION_SCENES.map((scene) => (
               <button
                 key={scene.id}
@@ -806,8 +806,8 @@ function PanelStatusBlock({
   onSecondary?: () => void;
 }) {
   return (
-    <div className="mx-2.5 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center shadow-none">
-      <div className="text-[13px] font-medium text-[#111827]">{title}</div>
+    <div className="mx-2.5 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center shadow-none">
+      <div className="text-[13px] font-medium text-[color:var(--text-primary)]">{title}</div>
       <div className="mx-auto mt-1.5 max-w-[18rem] text-[11px] leading-[18px] text-[color:var(--text-muted)]">
         {description}
       </div>
@@ -856,7 +856,7 @@ function PanelHeader({
           <ChevronLeft size={18} />
         </button>
       ) : null}
-      <div className="text-[13px] font-medium text-[#111827]">{title}</div>
+      <div className="text-[13px] font-medium text-[color:var(--text-primary)]">{title}</div>
       {onClose ? (
         <button
           type="button"

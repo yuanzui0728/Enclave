@@ -294,7 +294,7 @@ function ProfileEntry({
     >
       <div
         className={cn(
-          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px]",
+          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px]",
           iconClassName,
         )}
       >
@@ -331,7 +331,7 @@ function ProfileActionEntry({
     >
       <div
         className={cn(
-          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px]",
+          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px]",
           iconClassName,
         )}
       >

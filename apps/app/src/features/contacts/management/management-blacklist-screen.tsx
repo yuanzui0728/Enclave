@@ -76,7 +76,7 @@ export function ManagementBlacklistScreen() {
       <div className="px-3 py-4">
         <InlineNotice
           tone="danger"
-          className="rounded-[11px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
+          className="rounded-[12px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="min-w-0 flex-1">
@@ -116,12 +116,12 @@ export function ManagementBlacklistScreen() {
       {unblockMutation.isError && unblockMutation.error instanceof Error ? (
         <InlineNotice
           tone="danger"
-          className="mb-3 rounded-[11px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
+          className="mb-3 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
         >
           {unblockMutation.error.message}
         </InlineNotice>
       ) : null}
-      <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
         {blocked.map((entry, index) => {
           const character = characterMap.get(entry.characterId);
           // R2 走查：原 fallback 是 entry.characterId.slice(0,8)，charactersQuery 还在

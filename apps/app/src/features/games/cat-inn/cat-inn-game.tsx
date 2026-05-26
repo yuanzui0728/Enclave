@@ -183,7 +183,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                           )
                         }
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-[12px] transition-colors",
+                          "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px] transition-colors",
                           placedSpec
                             ? "border-emerald-200 bg-emerald-50"
                             : "border-dashed border-[color:var(--border-faint)] bg-white",
@@ -204,7 +204,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                         )}
                       </button>
                       {isPicker ? (
-                        <div className="absolute z-10 mt-1 w-[260px] rounded-[10px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
+                        <div className="absolute z-10 mt-1 w-[260px] rounded-[12px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
                           <div className="mb-1 text-[11px] text-[color:var(--text-secondary)]">
                             {t(msg`选一件家具放进 ${roomSpec.name}`)}
                           </div>

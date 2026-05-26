@@ -49,7 +49,7 @@ export function MobileSocialComposerCard({
   return (
     <section
       id={sectionId}
-      className="overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+      className="overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
     >
       <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-3">
         <div className="min-w-0">
@@ -103,7 +103,7 @@ export function MobileSocialComposerCard({
         </div>
 
         {errorMessage ? (
-          <div className="mt-2.5 rounded-[14px] border border-[#f2c6c3] bg-[#fff7f5] px-3.5 py-3 text-[11px] leading-[1.35rem] text-[#b42318]">
+          <div className="mt-2.5 rounded-[16px] border border-[#f2c6c3] bg-[#fff7f5] px-3.5 py-3 text-[11px] leading-[1.35rem] text-[#b42318]">
             {errorActionLabel && onErrorAction ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{errorMessage}</span>

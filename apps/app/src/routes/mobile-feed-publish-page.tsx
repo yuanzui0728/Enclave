@@ -639,7 +639,7 @@ export function MobileFeedPublishPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
               >
                 {statusBackLabel}
               </button>
@@ -647,8 +647,8 @@ export function MobileFeedPublishPage() {
           </InlineNotice>
         ) : null}
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(15,23,42,0.05)]">
-          <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-3">
+        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
+          <div className="border-b border-[rgba(180, 130, 20, 0.06)] px-4 py-3">
             <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
               {t(msg`这一刻`)}
             </div>
@@ -683,7 +683,7 @@ export function MobileFeedPublishPage() {
               // 唯一漏网；readOnly 比 disabled 更合适，disabled 会把已敲内容置
               // 灰看起来像出错，readOnly 视觉一致、又能让 IME 把候选窗压下去。
               readOnly={createMutation.isPending}
-              className="min-h-[11rem] resize-none rounded-[18px] border-0 bg-[color:var(--surface-console)] px-4 py-3.5 text-[16px] leading-7 shadow-none"
+              className="min-h-[11rem] resize-none rounded-[20px] border-0 bg-[color:var(--surface-console)] px-4 py-3.5 text-[16px] leading-7 shadow-none"
               autoFocus
             />
 
@@ -753,7 +753,7 @@ export function MobileFeedPublishPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(15,23,42,0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -767,7 +767,7 @@ export function MobileFeedPublishPage() {
               {t(msg`公开可见`)}
             </span>
           </div>
-          <div className="border-t border-[rgba(15,23,42,0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <div className="border-t border-[rgba(180, 130, 20, 0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
             {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。`)}
           </div>
         </section>
@@ -798,7 +798,7 @@ export function MobileFeedPublishPage() {
             onClick={() => setDiscardConfirmOpen(false)}
             className="absolute inset-0"
           />
-          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[18px] bg-white shadow-[var(--shadow-overlay)]">
+          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[20px] bg-white shadow-[var(--shadow-overlay)]">
             <div className="px-6 pb-3 pt-6 text-center">
               <div
                 id="discard-confirm-title"

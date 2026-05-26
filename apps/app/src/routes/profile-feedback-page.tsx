@@ -343,7 +343,7 @@ export function ProfileFeedbackPage() {
           <div
             role={notice.tone === "danger" ? "alert" : "status"}
             className={cn(
-              "rounded-[10px] px-3 py-2 text-[12px]",
+              "rounded-[12px] px-3 py-2 text-[12px]",
               notice.tone === "success"
                 ? "bg-[rgba(245, 158, 11,0.08)] text-[#b45309]"
                 : "bg-[rgba(220,38,38,0.08)] text-[#b42318]",

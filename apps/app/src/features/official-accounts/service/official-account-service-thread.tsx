@@ -450,7 +450,7 @@ export function OfficialAccountServiceThread({
                 <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[0_18px_50px_rgba(180, 130, 20, 0.12)]">
                   <button
                     type="button"
                     onClick={() => {
@@ -769,7 +769,7 @@ function ServiceDesktopStatusPane({
     <div className="mx-auto flex min-h-full max-w-[720px] items-center px-8 py-14">
       <div
         className={cn(
-          "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
+          "w-full rounded-[24px] border px-8 py-10 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
             : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
@@ -834,7 +834,7 @@ function ServiceThreadStatusPane({
     <div className="mx-auto w-full max-w-[34rem]">
       <div
         className={cn(
-          "rounded-[22px] border px-6 py-8 text-center shadow-none",
+          "rounded-[24px] border px-6 py-8 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
             : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",

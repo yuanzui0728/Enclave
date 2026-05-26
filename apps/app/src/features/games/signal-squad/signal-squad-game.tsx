@@ -118,7 +118,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
         </div>
       </header>
 
-      <div className="rounded-[14px] bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3">
+      <div className="rounded-[16px] bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3">
         <div className="flex items-end justify-between text-[12px] text-emerald-900/80">
           <span>{t(msg`信号塔压制`)}</span>
           <span>
@@ -437,7 +437,7 @@ function SquadChooser({
                 onClick={() => toggle(mate.id)}
                 disabled={disabled}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-[12px]",
+                  "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
                   active
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-[color:var(--border-faint)] bg-white",

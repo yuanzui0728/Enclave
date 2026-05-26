@@ -28,7 +28,7 @@ export function OfficialAccountListItem({
       className={cn(
         "flex w-full items-center text-left transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
+          ? "gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
             ? "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3 hover:bg-[rgba(247,250,250,0.92)]"
             : "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3.5 hover:bg-[rgba(247,250,250,0.92)]",

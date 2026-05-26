@@ -396,7 +396,7 @@ export function LiveCompanionPage() {
                 value={ownerName ?? t(msg`世界主人`)}
               />
 
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+              <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
                 <div className="text-xs font-medium text-[color:var(--text-muted)]">
                   {t(msg`开播检查清单`)}
                 </div>
@@ -873,7 +873,7 @@ export function LiveCompanionPage() {
                 liveHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                    className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -926,7 +926,7 @@ export function LiveCompanionPage() {
                   </div>
                 ))
               ) : (
-                <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+                <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
                   {t(msg`还没有直播记录。先准备一场直播并切到"直播中"，这里就会开始积累桌面伴侣历史。`)}
                 </div>
               )}
@@ -1080,7 +1080,7 @@ function ToggleCard({
       aria-pressed={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "rounded-[18px] border px-4 py-4 text-left transition",
+        "rounded-[20px] border px-4 py-4 text-left transition",
         checked
           ? "border-[rgba(245, 158, 11,0.14)] bg-[rgba(245, 158, 11,0.07)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
@@ -1095,7 +1095,7 @@ function ToggleCard({
             "rounded-md px-2.5 py-1 text-[11px] font-medium",
             checked
               ? "bg-white text-[color:var(--brand-primary)]"
-              : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+              : "bg-[rgba(180, 130, 20, 0.06)] text-[color:var(--text-secondary)]",
           )}
         >
           {checked ? t(msg`开启`) : t(msg`关闭`)}
@@ -1144,7 +1144,7 @@ function PostReferenceCard({
   const hasTitle = Boolean(post.title?.trim());
   const showBody = Boolean(cleanText && cleanText !== post.title);
   return (
-    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip
           name={post.authorName}
@@ -1206,7 +1206,7 @@ function StatusRow({ label, value }: { label: string; value: string }) {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
         {value}

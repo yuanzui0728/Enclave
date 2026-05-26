@@ -627,7 +627,7 @@ function MobileGroupMemberPickerPage({
             )}
           </div>
 
-          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -781,7 +781,7 @@ function MobileGroupMemberPickerPage({
               // role="alert"+assertive 立刻播报错误并提示有可继续重试的剩余条。
               role="alert"
               tone="danger"
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -791,7 +791,7 @@ function MobileGroupMemberPickerPage({
                   <button
                     type="button"
                     onClick={handleRetrySubmit}
-                    className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {mode === "add" ? t(msg`重试添加`) : t(msg`重试移除`)}
                   </button>

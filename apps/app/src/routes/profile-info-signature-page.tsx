@@ -219,7 +219,7 @@ export function ProfileInfoSignaturePage() {
           // 本 textarea autoFocus，进页就 focus，字号偏小会让整页抖一下。
           // disabled={isPending}: 上传中继续敲会被 onSuccess→goBack 一起带走，
           //   见 profile-info-avatar-page 同款修法（commit 5fe4e7e3）。
-          className="min-h-[5.5rem] resize-none rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          className="min-h-[5.5rem] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(
@@ -252,7 +252,7 @@ export function ProfileInfoSignaturePage() {
 
       {/* overLimit 走查 R1：legacy DB 里超过 SIGNATURE_MAX_LENGTH 的旧签名进编辑页时 sanitized 直接超限、「完成」灰着但没文字说明，跟 name-page 同款修。i18n-ignore-line */}
       {overLimit ? (
-        <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`签名太长啦，最多 ${SIGNATURE_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -261,7 +261,7 @@ export function ProfileInfoSignaturePage() {
         // role="alert"：屏幕阅读器立即朗读保存失败原因，跟红字 banner 视觉同步。
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

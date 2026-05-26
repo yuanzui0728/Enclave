@@ -581,7 +581,7 @@ function FavoriteRow({
       onPointerUp={clearTimer}
       onPointerCancel={clearTimer}
       onPointerLeave={clearTimer}
-      className="flex w-full items-start gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)]"
       style={{ touchAction: "manipulation", WebkitUserSelect: "none" }}
     >
       <AvatarChip
@@ -623,7 +623,7 @@ function FavoriteRow({
               </span>
             ))}
             {noteSummary.assets.length ? (
-              <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="rounded-full bg-[rgba(180, 130, 20, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 {t(msg`附件 ${noteSummary.assets.length}`)}
               </span>
             ) : null}

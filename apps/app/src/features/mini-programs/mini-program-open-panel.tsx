@@ -99,7 +99,7 @@ export function MiniProgramOpenPanel({
       className={cn(
         compact
           ? "rounded-[16px] border p-3.5 shadow-none"
-          : "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]",
+          : "rounded-[24px] border p-5 shadow-[var(--shadow-soft)]",
         tone.mutedPanelClassName,
       )}
     >
@@ -232,8 +232,8 @@ export function MiniProgramOpenPanel({
               <div
                 key={task.id}
                 className={cn(
-                  "border border-[rgba(15,23,42,0.06)] bg-white/86",
-                  compact ? "rounded-[15px] px-3 py-2.5" : "rounded-[20px] px-4 py-4",
+                  "border border-[rgba(180, 130, 20, 0.06)] bg-white/86",
+                  compact ? "rounded-[16px] px-3 py-2.5" : "rounded-[20px] px-4 py-4",
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -351,7 +351,7 @@ function PanelMetric({
     <div
       className={cn(
         "border border-white/80 bg-white/84",
-        compact ? "rounded-[15px] px-2.5 py-2.5" : "rounded-[22px] px-4 py-4",
+        compact ? "rounded-[16px] px-2.5 py-2.5" : "rounded-[24px] px-4 py-4",
       )}
     >
       <div

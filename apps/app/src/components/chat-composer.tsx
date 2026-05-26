@@ -3447,7 +3447,7 @@ export function ChatComposer({
         }}
       >
         {isDesktop && desktopDropActive ? (
-          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#f59e0b]/35 bg-[rgba(250, 245, 237,0.96)] text-sm font-medium text-[#b45309]">
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[16px] border border-dashed border-[#f59e0b]/35 bg-[rgba(250, 245, 237,0.96)] text-sm font-medium text-[#b45309]">
             {t(msg`松开鼠标发送图片或文件`)}
           </div>
         ) : null}
@@ -3610,7 +3610,7 @@ export function ChatComposer({
           ref={isDesktop ? desktopStickerRef : undefined}
           className={`relative ${
             isDesktop
-              ? "rounded-[16px] border border-black/8 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.06)]"
+              ? "rounded-[16px] border border-black/8 bg-white shadow-[0_10px_26px_rgba(180, 130, 20, 0.06)]"
               : "space-y-1.5"
           }`}
         >
@@ -3620,7 +3620,7 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={toggleDesktopEditorExpanded}
-                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[9px] text-[color:var(--text-secondary)] transition hover:bg-[#f4f4f4] hover:text-[color:var(--text-primary)]"
+                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f4f4f4] hover:text-[color:var(--text-primary)]"
                   aria-label={
                     desktopEditorExpanded
                       ? t(msg`收起输入框`)
@@ -3734,7 +3734,7 @@ export function ChatComposer({
                         />
                         {desktopPlusMenuOpen &&
                         desktopPlusMenuView === "favorites" ? (
-                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(180, 130, 20, 0.14)]">
                             <DesktopFavoritePicker
                               favorites={desktopFavoriteRecords}
                               busy={composerPending}
@@ -3822,7 +3822,7 @@ export function ChatComposer({
                     onClick={onSubmit}
                     disabled={composerPending || !value.trim()}
                     className={cn(
-                      "h-[34px] min-w-[76px] rounded-[9px] px-4 text-[13px] font-medium shadow-none disabled:opacity-100",
+                      "h-[34px] min-w-[76px] rounded-[8px] px-4 text-[13px] font-medium shadow-none disabled:opacity-100",
                       value.trim()
                         ? "bg-[#f59e0b] !text-[#3b2206] hover:bg-[#d97706]"
                         : "bg-[#e8e8e8] !text-[#70757a] hover:bg-[#e8e8e8]",
@@ -3834,7 +3834,7 @@ export function ChatComposer({
               </div>
             </>
           ) : (
-            <div className="flex items-end gap-1.5 rounded-[18px] bg-[#f8f5ec]">
+            <div className="flex items-end gap-1.5 rounded-[20px] bg-[#f8f5ec]">
               {showSpeechEntry ? (
                 <button
                   type="button"
@@ -3845,7 +3845,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "speech"
-                      ? "bg-white text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+                      ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={
@@ -3932,7 +3932,7 @@ export function ChatComposer({
                     // viewport zoom-in（导致整页布局抖一下 + 退出 focus 后
                     // 不会自动 zoom 回去）。这里聊天 composer 是 web 移动端
                     // 用户最常 focus 的输入框，必须 ≥16px。
-                    className="min-h-[34px] max-h-[96px] flex-1 resize-none bg-transparent py-1.5 text-[16px] leading-[22px] text-[#111827] outline-none placeholder:text-[#a3a3a3]"
+                    className="min-h-[34px] max-h-[96px] flex-1 resize-none bg-transparent py-1.5 text-[16px] leading-[22px] text-[color:var(--text-primary)] outline-none placeholder:text-[#a3a3a3]"
                   />
                 </div>
               )}
@@ -3943,7 +3943,7 @@ export function ChatComposer({
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition",
                   mobileComposerMode === "sticker"
-                    ? "bg-white text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+                    ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                     : "bg-transparent active:bg-white/90",
                 )}
                 aria-label={
@@ -3964,7 +3964,7 @@ export function ChatComposer({
                   type="button"
                   onClick={onSubmit}
                   disabled={composerPending}
-                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-[10px] bg-[#f59e0b] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_rgba(245, 158, 11,0.18)] disabled:opacity-45"
+                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-full bg-[#f59e0b] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_rgba(245, 158, 11,0.18)] disabled:opacity-45"
                 >
                   {t(msg`发送`)}
                 </button>
@@ -3976,7 +3976,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "plus"
-                      ? "bg-white text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+                      ? "bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180, 130, 20, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={t(msg`更多功能`)}
@@ -4134,7 +4134,7 @@ function DesktopFavoritePicker({
         <button
           type="button"
           onClick={onBack}
-          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]"
+          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]"
           aria-label={t(msg`关闭发送收藏`)}
         >
           <ChevronLeft size={16} />
@@ -4220,7 +4220,7 @@ function DesktopToolbarButton({
       aria-pressed={isToggle ? active : undefined}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[10px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[12px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
         active
           ? "border-black/6 bg-[#f3f4f6] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
           : "text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]",
@@ -4233,7 +4233,7 @@ function DesktopToolbarButton({
 
 function DesktopToolbarGroup({ children }: { children: ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-[11px] border border-black/6 bg-white px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+    <div className="inline-flex items-center gap-0.5 rounded-[12px] border border-black/6 bg-white px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       {children}
     </div>
   );
@@ -4263,7 +4263,7 @@ function DesktopComposerStatusStrip({
       role={tone === "danger" ? "alert" : "status"}
       aria-live={tone === "danger" ? "assertive" : "polite"}
       className={cn(
-        "flex min-w-0 flex-1 items-center gap-2 rounded-[11px] border px-2.5 py-1.5 text-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
+        "flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-2.5 py-1.5 text-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
           : tone === "success"
@@ -4468,7 +4468,7 @@ function DesktopAttachmentDraftBar({
           variant="primary"
           onClick={onSend}
           disabled={pending}
-          className="h-8 rounded-[8px] bg-[#f59e0b] px-3 text-[#3b2206] hover:bg-[#d97706]"
+          className="h-8 rounded-full bg-[#f59e0b] px-3 text-[#3b2206] hover:bg-[#d97706]"
         >
           {pending ? t(msg`正在发送...`) : t(msg`发送附件`)}
         </Button>
@@ -4496,7 +4496,7 @@ function DesktopScreenshotToolButton({
       className={cn(
         "rounded-full px-3 py-1.5 text-[12px] transition",
         active
-          ? "bg-white text-[#111827]"
+          ? "bg-white text-[color:var(--text-primary)]"
           : "bg-white/8 text-white/78 hover:bg-white/12 hover:text-white",
       )}
     >
@@ -5219,7 +5219,7 @@ function DesktopScreenshotEditor({
             onClick={onCancel}
             disabled={pending}
             aria-label={t(msg`关闭截图预览`)}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/12 bg-white/6 text-white transition hover:bg-white/10 disabled:opacity-45"
+            className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-white/12 bg-white/6 text-white transition hover:bg-white/10 disabled:opacity-45"
           >
             <X size={16} />
           </button>
@@ -5332,7 +5332,7 @@ function DesktopScreenshotEditor({
                     // 标注文字 空」（部分实现读 placeholder、部分不读）。补
                     // aria-label 跟选中的工具上下文（"文字" tool）对齐。
                     aria-label={t(msg`输入标注文字`)}
-                    className="ml-2 h-9 min-w-[180px] rounded-[10px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
+                    className="ml-2 h-9 min-w-[180px] rounded-[12px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
                   />
                 ) : null}
               </div>
@@ -5348,7 +5348,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(previewZoom - 0.25)}
                   disabled={pending || previewZoom <= 1}
-                  className="rounded-[9px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
                 >
                   -
                 </Button>
@@ -5360,7 +5360,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(previewZoom + 0.25)}
                   disabled={pending || previewZoom >= 3}
-                  className="rounded-[9px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
                 >
                   +
                 </Button>
@@ -5369,7 +5369,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(1)}
                   disabled={pending || previewZoom === 1}
-                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   {t(msg`适应`)}
                 </Button>
@@ -5386,7 +5386,7 @@ function DesktopScreenshotEditor({
                   onClick={onUndoAnnotation}
                   disabled={pending || !annotations.length}
                   title={t(msg`撤销标注 (Cmd/Ctrl+Z)`)}
-                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   {t(msg`撤销标注`)}
                   <span className="text-[10px] text-white/50">⌘/Ctrl+Z</span>
@@ -5397,7 +5397,7 @@ function DesktopScreenshotEditor({
                   onClick={onRedoAnnotation}
                   disabled={pending || !canRedoAnnotations}
                   title={t(msg`重做标注 (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)`)}
-                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   {t(msg`重做标注`)}
                   <span className="text-[10px] text-white/50">
@@ -5410,7 +5410,7 @@ function DesktopScreenshotEditor({
                   onClick={onDeleteSelectedAnnotation}
                   disabled={pending || !selectedAnnotationId}
                   title={t(msg`删除标注 (Delete / Backspace)`)}
-                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   {t(msg`删除标注`)}
                   <span className="text-[10px] text-white/50">Del</span>
@@ -5420,7 +5420,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={onClearAnnotations}
                   disabled={pending || !annotations.length}
-                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   {t(msg`清空标注`)}
                 </Button>
@@ -5445,7 +5445,7 @@ function DesktopScreenshotEditor({
                 {shortcutHelpVisible ? (
                   <div
                     className={cn(
-                      "absolute -right-1 top-full z-30 mt-1.5 w-[288px] origin-top-right rounded-[14px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
+                      "absolute -right-1 top-full z-30 mt-1.5 w-[288px] origin-top-right rounded-[16px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
                       shortcutHelpEntered
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-0.5 opacity-0",
@@ -5466,7 +5466,7 @@ function DesktopScreenshotEditor({
                           type="button"
                           onClick={() => triggerShortcutDemo(item.id)}
                           className={cn(
-                            "flex items-start justify-between gap-2.5 rounded-[9px] border px-2.5 py-1.5 text-left transition",
+                            "flex items-start justify-between gap-2.5 rounded-[8px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
                               ? "border-[#b45309] bg-[rgba(245, 158, 11,0.14)] text-white"
                               : "border-transparent bg-white/[0.045] hover:border-white/8 hover:bg-white/[0.065]",
@@ -5476,7 +5476,7 @@ function DesktopScreenshotEditor({
                             {item.label}
                           </span>
                           <span className="text-right">
-                            <span className="inline-flex rounded-[7px] border border-white/10 bg-white/8 px-2 py-1 text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                            <span className="inline-flex rounded-[8px] border border-white/10 bg-white/8 px-2 py-1 text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                               {item.primary}
                             </span>
                             <span className="mt-0.5 block text-[10px] text-white/50">
@@ -5495,7 +5495,7 @@ function DesktopScreenshotEditor({
               ref={previewViewportRef}
               onWheel={handlePreviewWheel}
               onDoubleClick={handlePreviewDoubleClick}
-              className="relative min-h-0 flex-1 overflow-auto rounded-[18px] border border-white/8 bg-[#111]"
+              className="relative min-h-0 flex-1 overflow-auto rounded-[20px] border border-white/8 bg-[#111]"
             >
               <div className="flex min-h-full min-w-full items-center justify-center p-5">
                 <div
@@ -5526,7 +5526,7 @@ function DesktopScreenshotEditor({
                     decoding="async"
                     draggable={false}
                     className={cn(
-                      "block rounded-[14px] shadow-[0_24px_64px_rgba(0,0,0,0.32)]",
+                      "block rounded-[16px] shadow-[0_24px_64px_rgba(0,0,0,0.32)]",
                       zoomedViewportSize
                         ? "h-full w-full object-fill"
                         : "max-h-[calc(86vh-240px)] max-w-full object-contain",
@@ -5576,7 +5576,7 @@ function DesktopScreenshotEditor({
                           onPointerMove={onCropMove}
                           onPointerUp={onCropMoveEnd}
                           onPointerCancel={onCropMoveEnd}
-                          className="absolute inset-2 cursor-move rounded-[10px] border border-white/14 bg-white/0 text-transparent"
+                          className="absolute inset-2 cursor-move rounded-[12px] border border-white/14 bg-white/0 text-transparent"
                           aria-label={t(msg`移动裁剪区域`)}
                         />
                         {(
@@ -5986,7 +5986,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onClearCrop}
                 disabled={pending}
-                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 {t(msg`还原`)}
               </Button>
@@ -5996,7 +5996,7 @@ function DesktopScreenshotEditor({
               variant="ghost"
               onClick={onSaveOriginal}
               disabled={pending}
-              className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
             >
               <Download size={14} />
               {t(msg`保存原图`)}
@@ -6007,7 +6007,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onSaveCropped}
                 disabled={pending}
-                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 <Download size={14} />
                 {t(msg`保存裁剪图`)}
@@ -6018,7 +6018,7 @@ function DesktopScreenshotEditor({
               variant="ghost"
               onClick={onCopyOriginal}
               disabled={pending}
-              className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
             >
               {t(msg`复制原图`)}
             </Button>
@@ -6028,7 +6028,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onCopyCropped}
                 disabled={pending}
-                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 {t(msg`复制裁剪图`)}
               </Button>
@@ -6045,7 +6045,7 @@ function DesktopScreenshotEditor({
                 onClick={onCancel}
                 disabled={pending}
                 title={t(msg`关闭截图预览 (Esc)`)}
-                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 {t(msg`取消`)}
                 <span className="text-[10px] text-white/50">Esc</span>
@@ -6056,7 +6056,7 @@ function DesktopScreenshotEditor({
                 onClick={onSendOriginal}
                 disabled={pending}
                 title={t(msg`按原图发送 (Cmd/Ctrl+Enter)`)}
-                className="rounded-[9px] bg-[#2f855a] text-white hover:bg-[#276749]"
+                className="rounded-[8px] bg-[#2f855a] text-white hover:bg-[#276749]"
               >
                 {pending ? t(msg`发送中...`) : t(msg`按原图发送`)}
                 {pending ? null : (
@@ -6071,7 +6071,7 @@ function DesktopScreenshotEditor({
                 onClick={onSendCropped}
                 disabled={pending || !crop}
                 title={t(msg`裁剪后发送 (Enter)`)}
-                className="rounded-[9px] bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
+                className="rounded-full bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
               >
                 <Scissors size={14} />
                 {pending ? t(msg`发送中...`) : t(msg`裁剪后发送`)}
@@ -6197,7 +6197,7 @@ function DesktopMentionPicker({
     <div
       role="listbox"
       aria-label={t(msg`@提及成员候选`)}
-      className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]"
+      className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(180, 130, 20, 0.10)]"
     >
       <div
         aria-hidden="true"

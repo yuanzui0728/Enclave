@@ -1985,7 +1985,7 @@ export function WelcomePage() {
             disabled={isContinuing || ownerSyncing || cloudWorldPending}
             variant="primary"
             size="lg"
-            className="w-full rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+            className="w-full rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
           >
             {describeCloudButtonLabel(
               t,
@@ -2047,7 +2047,7 @@ export function WelcomePage() {
           disabled={!normalizedLocalApiBaseUrl || isContinuing}
           variant="primary"
           size="lg"
-          className="w-full rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+          className="w-full rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
         >
           {isContinuing ? t(msg`连接中...`) : t(msg`连接本地世界`)}
         </Button>
@@ -2064,7 +2064,7 @@ export function WelcomePage() {
             上、"为世界主人命名"在下两行叠着）。把 H2 删掉，统一让外层 H1 根据
             showOwnerStep 切到 "为世界主人命名"（同时把 badge 也切到"世界主人"），
             owner step 内部只剩纯交互卡。 */}
-        <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-none">
+        <div className="rounded-[24px] border border-black/5 bg-white p-5 shadow-none">
           <TextField
             // 没有可见 label，靠 aria-label 让屏幕阅读器知道这是世界主人名字。
             aria-label={t(msg`世界主人名字`)}
@@ -2136,7 +2136,7 @@ export function WelcomePage() {
               }
               variant="primary"
               size="lg"
-              className="rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+              className="rounded-full bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
             >
               {isContinuing ? t(msg`保存中...`) : t(msg`进入世界`)}
             </Button>
@@ -2361,8 +2361,8 @@ export function WelcomePage() {
         <div className="pointer-events-none absolute inset-0 bg-[rgba(30,20,10,0.14)] backdrop-blur-[18px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,248,230,0.16),rgba(30,20,10,0.22)_74%)]" />
         <div className="relative z-10 w-full max-w-3xl">
-          <div className="pointer-events-none absolute inset-0 rounded-[44px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
-          <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
+          <AppSection className="relative mx-auto w-full max-w-xl rounded-[24px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
               {/* 走查 R5：owner step 时切到"世界主人"，跟下方 H1 文案对齐 */}
               {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}

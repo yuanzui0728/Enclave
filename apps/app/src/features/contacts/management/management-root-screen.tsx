@@ -53,7 +53,7 @@ export function ManagementRootScreen({
 
   return (
     <div className="px-3 py-3">
-      <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
         {items.map((item, index) => {
           const Icon = item.icon;
           return (
@@ -68,7 +68,7 @@ export function ManagementRootScreen({
                     : undefined,
                 )}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[#f0f0f0] text-[color:var(--text-secondary)]">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[#f0f0f0] text-[color:var(--text-secondary)]">
                   <Icon aria-hidden="true" size={15} />
                 </div>
                 <span className="min-w-0 flex-1 text-[15px] text-[color:var(--text-primary)]">

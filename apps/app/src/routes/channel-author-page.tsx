@@ -493,18 +493,18 @@ export function ChannelAuthorPage() {
         {notice ? (
           <InlineNotice
             tone={notice.tone}
-            className="mb-4 rounded-[14px] border-[color:var(--border-faint)] bg-white"
+            className="mb-4 rounded-[16px] border-[color:var(--border-faint)] bg-white"
           >
             {notice.message}
           </InlineNotice>
         ) : null}
         {profileQuery.isLoading ? (
-          <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
             <LoadingBlock label={t(msg`正在读取作者主页...`)} />
           </div>
         ) : null}
         {profileQuery.isError && profileQuery.error instanceof Error ? (
-          <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`作者主页暂时不可用`)}
@@ -534,7 +534,7 @@ export function ChannelAuthorPage() {
           </div>
         ) : null}
         {followMutation.isError && followMutation.error instanceof Error ? (
-          <div className="mb-4 rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
+          <div className="mb-4 rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`关注失败`)}
               title={t(msg`作者状态暂未更新`)}
@@ -569,7 +569,7 @@ export function ChannelAuthorPage() {
         ) : null}
 
         {!profileQuery.isLoading && !profileQuery.isError && profile ? (
-          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[26px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
             <section
               className={cn(
                 "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
@@ -587,7 +587,7 @@ export function ChannelAuthorPage() {
                     <div className="truncate text-[24px] font-semibold text-[color:var(--text-primary)]">
                       {profile.authorName}
                     </div>
-                    <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="rounded-full bg-[rgba(180, 130, 20, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                       {profile.authorType === "character"
                         ? t(msg`居民作者`)
                         : t(msg`世界主人`)}
@@ -778,7 +778,7 @@ export function ChannelAuthorPage() {
                         key={post.id}
                         type="button"
                         onClick={() => openChannelPost(post)}
-                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(15,23,42,0.02)]"
+                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(180, 130, 20, 0.02)]"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -915,7 +915,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
     // <img src> 这类标签拿不到 Authorization header，必须用 resolveAppMediaUrl
     // 把 token 拼到 query string，否则 CloudClientAuthGuard 401，封面变破图。
     return (
-      <div className="relative h-[8.75rem] w-[7rem] shrink-0 overflow-hidden rounded-[18px] bg-[#d8e5de]">
+      <div className="relative h-[8.75rem] w-[7rem] shrink-0 overflow-hidden rounded-[20px] bg-[#d8e5de]">
         <img
           src={resolveAppMediaUrl(post.coverUrl)}
           alt={post.title || post.authorName}
@@ -952,7 +952,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
   return (
     <div
       className={cn(
-        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[18px] px-3 py-3 text-white",
+        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[20px] px-3 py-3 text-white",
         coverPresentation.panelClassName,
       )}
     >
@@ -1097,9 +1097,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`视频`),
       metaLabel: t(msg`短片更新`),
       primaryBadgeClassName:
-        "border-[rgba(15,23,42,0.08)] bg-[rgba(15,23,42,0.05)] text-[#0f172a]",
+        "border-[rgba(180, 130, 20, 0.08)] bg-[rgba(180, 130, 20, 0.05)] text-[#0f172a]",
       secondaryBadgeClassName:
-        "border-[rgba(15,23,42,0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+        "border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 1000))} 秒短片`)
         : t(msg`视频号短片`),
@@ -1208,7 +1208,7 @@ function MobileChannelAuthorStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        "rounded-[20px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1219,7 +1219,7 @@ function MobileChannelAuthorStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+            : "bg-[rgba(180, 130, 20, 0.06)] text-[color:var(--text-secondary)]",
         )}
       >
         {badge}

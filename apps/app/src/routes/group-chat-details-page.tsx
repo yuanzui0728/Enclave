@@ -721,7 +721,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             role="status"
             aria-live="polite"
             tone="info"
-            className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             {notice.showBackAction ||
             (notice.actionLabel && notice.onAction) ? (
@@ -938,7 +938,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -959,7 +959,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -979,7 +979,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -999,7 +999,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1019,7 +1019,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">

@@ -102,7 +102,7 @@ const quickScopeCards: Array<{
     title: msg`广场动态`,
     description: msg`搜广场里公开发布的内容`,
     icon: Newspaper,
-    iconClassName: "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]",
+    iconClassName: "bg-[rgba(180, 130, 20, 0.08)] text-[color:var(--text-primary)]",
   },
 ];
 
@@ -336,7 +336,7 @@ export function MobileSearchWorkspace({
             收藏 / 小程序），新到的索引数据会继续接力进来。 */}
         {!error && hasKeyword && loading ? (
           <InlineNotice
-            className="mb-2 rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="mb-2 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone="info"
           >
             {t(msg`正在补全搜索范围，结果会继续完善。`)}
@@ -452,7 +452,7 @@ export function MobileSearchWorkspace({
                   >
                     <div
                       className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px]",
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px]",
                         item.iconClassName,
                       )}
                     >
@@ -549,7 +549,7 @@ export function MobileSearchWorkspace({
                         <button
                           type="button"
                           onClick={() => setActiveCategory(section.category)}
-                          className="flex w-full items-center justify-between gap-2 rounded-[10px] px-3 py-2 text-left text-[12px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                          className="flex w-full items-center justify-between gap-2 rounded-[12px] px-3 py-2 text-left text-[12px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                         >
                           {/* 走查 R1：原文"查看更多 ${total} 条 ${分类}"。total 是
                               该分类下所有命中的总数（含已展示的 3 条），但措辞"查看更多"

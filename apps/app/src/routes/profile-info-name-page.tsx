@@ -229,7 +229,7 @@ export function ProfileInfoNamePage() {
           // 本输入框 autoFocus，进页就 focus，字号偏小会让整页抖一下。
           // disabled={isPending}: 上传中再敲字也会被 onSuccess→goBack 一起带走，
           //   见 profile-info-avatar-page 同款修法（commit 5fe4e7e3）。
-          className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(
@@ -267,15 +267,15 @@ export function ProfileInfoNamePage() {
           ② 全空白/控制字符 → 文案 "请输入有效的名字（不能只有空白或换行符）"
           ③ 1 字符 → 文案 "至少 N 字符"  */}
       {sanitized.length === 0 && draft.length === 0 ? (
-        <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`请输入名字。`)}
         </div>
       ) : sanitized.length === 0 && draft.length > 0 ? (
-        <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`请输入有效的名字（不能只有空白或换行符）。`)}
         </div>
       ) : sanitized.length > 0 && sanitized.length < NAME_MIN_LENGTH ? (
-        <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`名字太短啦，至少要 ${NAME_MIN_LENGTH} 个字符。`)}
         </div>
       ) : overLimit ? (
@@ -283,7 +283,7 @@ export function ProfileInfoNamePage() {
         // 的旧 username（早期版本没卡上限）。这类用户一进编辑页 sanitized 立刻超限、
         // 「完成」永远灰着、计数器虽然变红但没文字说明，跟之前"clear 后看灰按钮以为
         // 是 bug"的体验同款。补一条 banner，让用户明确知道要删掉几个字。
-        <div className="mx-4 mt-3 rounded-[10px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
           {t(msg`名字太长啦，最多 ${NAME_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -292,7 +292,7 @@ export function ProfileInfoNamePage() {
         // role="alert"：屏幕阅读器立即朗读保存失败原因，跟红字 banner 视觉同步。
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

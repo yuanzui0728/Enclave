@@ -76,7 +76,7 @@ export function GameCenterSessionPanel({
     <section
       className={cn(
         compact
-          ? "rounded-[18px] border p-4 shadow-none"
+          ? "rounded-[20px] border p-4 shadow-none"
           : "rounded-[24px] border p-5 shadow-[var(--shadow-card)]",
         tone.mutedPanelClassName,
       )}
@@ -125,7 +125,7 @@ export function GameCenterSessionPanel({
               "shrink-0 border",
               compact
                 ? "h-9 w-9 rounded-full border-white/80 bg-white/72"
-                : "rounded-[14px] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
+                : "rounded-[16px] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
             )}
           >
             <X size={16} />
@@ -241,7 +241,7 @@ function SessionMetric({
         "border",
         compact
           ? "rounded-[16px] border-white/80 bg-white/82 px-3 py-3"
-          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
+          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(180, 130, 20, 0.04)]",
       )}
     >
       <div

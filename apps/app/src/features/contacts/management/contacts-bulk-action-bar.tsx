@@ -354,7 +354,7 @@ export function ContactsBulkActionBar({
                 // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
                 // zoom-in，autoFocus 一打开就抖；text-[14px] 时还会把 dialog
                 // 推出可视区一截。
-                className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#f59e0b] disabled:opacity-60"
+                className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none focus:border-[#f59e0b] disabled:opacity-60"
               />
               <div className="mt-1 flex items-center justify-between text-[11px] text-[color:var(--text-muted)]">
                 <span>{t(msg`已选 ${selectedIds.length} 项`)}</span>

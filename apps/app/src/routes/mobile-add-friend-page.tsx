@@ -684,7 +684,7 @@ function MobileAddFriend() {
             <Button
               type="submit"
               variant="primary"
-              className="h-9 shrink-0 rounded-[8px] bg-[#f59e0b] px-3.5 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+              className="h-9 shrink-0 rounded-full bg-[#f59e0b] px-3.5 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -696,7 +696,7 @@ function MobileAddFriend() {
         <div className="px-3 pt-2">
           <InlineNotice
             tone={notice.tone}
-            className="rounded-[10px] px-3 py-2 text-[12px] leading-5 shadow-none"
+            className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
           >
             {notice.message}
           </InlineNotice>
@@ -921,7 +921,7 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
   const t = useRuntimeTranslator();
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(180, 130, 20, 0.05)] text-[color:var(--text-secondary)]">
         <Search aria-hidden="true" size={22} />
       </div>
       {/* 走查 R3：原版标题没 max-w / break-words，submittedKeyword 来自 URL
@@ -1280,7 +1280,7 @@ function MobileAddFriendSendSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-add-friend-sheet-title"
-        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(15,23,42,0.18)] sm:rounded-[14px]"
+        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-white pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(180, 130, 20, 0.18)] sm:rounded-[16px]"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <button
@@ -1315,7 +1315,7 @@ function MobileAddFriendSendSheet({
         </div>
 
         <div className="px-4 pt-3.5">
-          <div className="flex items-center gap-3 rounded-[10px] bg-[#f8f5ec] px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-[12px] bg-[#f8f5ec] px-3 py-2.5">
             <AvatarChip
               name={displayName}
               src={result.character.avatar}
@@ -1344,7 +1344,7 @@ function MobileAddFriendSendSheet({
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-h-[112px] w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.42)]"
+              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.42)]"
             />
             <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
               {greeting.length}/60
@@ -1357,7 +1357,7 @@ function MobileAddFriendSendSheet({
           {errorMessage ? (
             <div
               role="alert"
-              className="mt-2.5 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.94)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+              className="mt-2.5 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.94)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
             >
               {errorMessage}
             </div>

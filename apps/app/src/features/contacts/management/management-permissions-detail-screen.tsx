@@ -197,7 +197,7 @@ export function ManagementPermissionsDetailScreen({
 
   return (
     <div className="px-3 py-3">
-      <div className="flex items-center gap-3 rounded-[12px] bg-white px-3 py-3 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <div className="flex items-center gap-3 rounded-[12px] bg-white px-3 py-3 shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
         {/* 通讯录 mobile 走查 R3：朋友权限详情头卡：character.name / remarkName /
             relationship 三处都是用户输入端，避免 U+202E 把开关行 layout 反转 →
             用户误开关。跟 friend-row / blacklist row 同口径补 strip。 */}
@@ -226,13 +226,13 @@ export function ManagementPermissionsDetailScreen({
         // mutation.error。
         <InlineNotice
           tone="danger"
-          className="mt-3 rounded-[11px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
+          className="mt-3 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
         >
           {mutation.error.message || t(msg`权限修改失败，请稍后再试。`)}
         </InlineNotice>
       ) : null}
 
-      <ul className="mt-3 overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <ul className="mt-3 overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
         {/* R2 走查：mutation.isPending 时锁住三个 switch。原写法没锁，
             用户连点 hideMine on / off / on 时多次 mutate 并发起飞，server
             可能乱序完成；如果其中一条失败，单条 onError 用 setX(!next.X) 朴素

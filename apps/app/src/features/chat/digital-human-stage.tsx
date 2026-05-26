@@ -37,8 +37,8 @@ export function DigitalHumanStage({
       className={cn(
         "relative overflow-hidden border text-white",
         mobile
-          ? "rounded-[30px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(15,23,42,0.34)]"
-          : "flex min-h-0 flex-1 rounded-[28px] border-[rgba(15,23,42,0.06)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(15,23,42,0.22)]",
+          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(180, 130, 20, 0.34)]"
+          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(180, 130, 20, 0.06)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(180, 130, 20, 0.22)]",
       )}
     >
       <div
@@ -72,7 +72,7 @@ export function DigitalHumanStage({
           </div>
           <div
             className={cn(
-              "rounded-[18px] border border-white/10 bg-white/8 px-3 py-2 text-right",
+              "rounded-[20px] border border-white/10 bg-white/8 px-3 py-2 text-right",
               mobile ? "max-w-[136px]" : "max-w-[156px]",
             )}
           >
@@ -161,7 +161,7 @@ export function DigitalHumanStage({
           </div>
         </div>
 
-        <div className="rounded-[22px] border border-white/8 bg-white/6 px-4 py-3">
+        <div className="rounded-[24px] border border-white/8 bg-white/6 px-4 py-3">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">
             {t(msg`通话提示`)}
           </div>

@@ -576,7 +576,7 @@ function AvatarConfirmDialog({
         {errorMessage ? (
           <div
             role="alert"
-            className="mx-4 mt-3 rounded-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+            className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
           >
             {errorMessage}
           </div>
@@ -602,7 +602,7 @@ function AvatarConfirmDialog({
             // 走查新 R3：「完成」按钮 mobile tap 没按压反馈——hover:opacity-95
             // 是桌面鼠标悬停的渐变，mobile tap 不触发 hover。补 active:opacity-90
             // 让按下瞬间有视觉响应；跟 profile-subscription 复制/开通按钮同款补漏。
-            className="flex-1 rounded-[12px] bg-[#f59e0b] py-2 text-[#3b2206] shadow-none hover:opacity-95 active:opacity-90"
+            className="flex-1 rounded-[16px] bg-[#f59e0b] py-2 text-[#3b2206] shadow-none hover:opacity-95 active:opacity-90"
           >
             {isSaving ? t(msg`保存中`) : t(msg`完成`)}
           </Button>

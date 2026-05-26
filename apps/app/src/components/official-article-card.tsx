@@ -29,7 +29,7 @@ export function OfficialArticleCard({
       className={cn(
         "group w-full transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
+          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
             ? "border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
             : "border-b border-[color:var(--border-faint)] bg-white px-5 py-4 hover:bg-[color:var(--surface-console)]",
@@ -109,7 +109,7 @@ export function OfficialArticleCard({
               className={cn(
                 "inline-flex items-center gap-1 border font-medium transition",
                 dense
-                  ? "h-[1.625rem] rounded-[10px] px-2 text-[10px]"
+                  ? "h-[1.625rem] rounded-[12px] px-2 text-[10px]"
                   : "h-8 rounded-lg px-3 text-[11px]",
                 favorite
                   ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"

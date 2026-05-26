@@ -299,7 +299,7 @@ function MobileFriendRequestsPage() {
           <div className="px-3 pt-2">
             <InlineNotice
               tone="success"
-              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               {successNotice}
             </InlineNotice>
@@ -410,7 +410,7 @@ function MobileFriendRequestsPage() {
                     </div>
 
                     {acceptErrorForRow || declineErrorForRow ? (
-                      <div className="mt-2 rounded-[10px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[11px] leading-4 text-[color:var(--state-danger-text)]">
+                      <div className="mt-2 rounded-[12px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[11px] leading-4 text-[color:var(--state-danger-text)]">
                         <div className="flex items-start justify-between gap-2">
                           <span className="min-w-0 flex-1">
                             {(acceptErrorForRow ?? declineErrorForRow)?.message}
@@ -445,7 +445,7 @@ function MobileFriendRequestsPage() {
                         }
                         variant="secondary"
                         size="sm"
-                        className="h-8 min-w-[3.5rem] rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                       >
                         {declineMutation.isPending &&
                         declineMutation.variables?.requestId === request.id
@@ -465,7 +465,7 @@ function MobileFriendRequestsPage() {
                           onClick={() => acceptMutation.mutate(request.id)}
                           variant="primary"
                           size="sm"
-                          className="h-8 min-w-[3.5rem] rounded-[10px] bg-[#f59e0b] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                          className="h-8 min-w-[3.5rem] rounded-full bg-[#f59e0b] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                         >
                           {acceptMutation.isPending &&
                           acceptMutation.variables === request.id

@@ -14,7 +14,7 @@ type MiniProgramGlyphProps = {
 };
 
 const sizeClassName = {
-  sm: "h-10 w-10 rounded-[14px] text-[11px]",
+  sm: "h-10 w-10 rounded-[16px] text-[11px]",
   md: "h-12 w-12 rounded-[16px] text-sm",
   lg: "h-16 w-16 rounded-[20px] text-base",
 };

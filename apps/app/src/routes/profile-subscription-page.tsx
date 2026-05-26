@@ -222,7 +222,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
   }, [shareUrl, invite.shareTitle, invite.shareBody, handleCopy, t]);
 
   return (
-    <AppSection className="rounded-[28px] border-black/5 bg-white px-6 py-6 shadow-none">
+    <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
       <div className="text-sm font-semibold text-[color:var(--text-primary)]">
         {t(msg`邀请奖励`)}
       </div>
@@ -271,7 +271,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
           {shareUrl && invite.code ? (
             <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-1 space-y-3">
-                <div className="rounded-[18px] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
+                <div className="rounded-[20px] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
                   <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                     {invite.shareTitle}
                   </div>
@@ -280,7 +280,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                   </div>
                 </div>
 
-                <div className="rounded-[18px] bg-[#f8f5ec] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
+                <div className="rounded-[20px] bg-[#f8f5ec] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
                   {shareUrl}
                 </div>
 
@@ -292,7 +292,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                     // → toast 闪 2 帧（feedback 自清 timer 互踩）+ writeClipboardText
                     // bridge 也跑 2 次。给 active:bg-[#069750] 比 hover 更深一档的绿
                     // 让按下瞬间能看到颜色变化，跟 wechat 的"复制成功"按钮按压反馈一致。
-                    className="rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#069750]"
+                    className="rounded-full bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#069750]"
                     onClick={() =>
                       void handleCopy(shareUrl, t(msg`已复制邀请链接。`))
                     }
@@ -338,7 +338,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
               </div>
 
               <div className="flex flex-col items-center gap-2 self-center sm:self-start">
-                <div className="rounded-[18px] border border-black/5 bg-white p-3">
+                <div className="rounded-[20px] border border-black/5 bg-white p-3">
                   {qrDataUrl ? (
                     <img
                       src={qrDataUrl}
@@ -611,7 +611,7 @@ export function ProfileSubscriptionPage() {
         />
       ) : null}
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
-        <AppSection className="overflow-hidden rounded-[28px] border-black/5 bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
+        <AppSection className="overflow-hidden rounded-[24px] border-black/5 bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               {isDesktopLayout ? (
@@ -670,7 +670,7 @@ export function ProfileSubscriptionPage() {
         </AppSection>
 
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.95fr]">
-          <AppSection className="rounded-[28px] border-black/5 bg-white px-6 py-6 shadow-none">
+          <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
             <div className="text-sm font-semibold text-[color:var(--text-primary)]">
               {t(msg`可购套餐`)}
             </div>
@@ -688,7 +688,7 @@ export function ProfileSubscriptionPage() {
               {purchasePlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-4"
+                  className="rounded-[24px] border border-black/5 bg-[#fafafa] px-4 py-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -708,7 +708,7 @@ export function ProfileSubscriptionPage() {
                         variant="primary"
                         // 走查新 R3：「联系开通」按钮 mobile tap 没按压反馈 ——
                         // 给 active:bg- 比 hover 更深一档的绿；同 R3 上方「复制链接」修法。
-                        className="mt-3 rounded-2xl bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#069750]"
+                        className="mt-3 rounded-full bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#069750]"
                         disabled={checkoutMutation.isPending}
                         onClick={() => {
                           if (checkoutInFlightRef.current) return;
@@ -745,7 +745,7 @@ export function ProfileSubscriptionPage() {
           <div className="space-y-4">
             <InviteShareCard invite={invite} />
 
-            <AppSection className="rounded-[28px] border-black/5 bg-white px-6 py-6 shadow-none">
+            <AppSection className="rounded-[24px] border-black/5 bg-white px-6 py-6 shadow-none">
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                 {t(msg`最近邀请记录`)}
               </div>
@@ -758,7 +758,7 @@ export function ProfileSubscriptionPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-[18px] border border-black/5 bg-[#fafafa] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                      className="rounded-[20px] border border-black/5 bg-[#fafafa] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
                     >
                       <div className="font-medium text-[color:var(--text-primary)]">
                         {item.inviteePhoneMasked}

@@ -57,7 +57,7 @@ export function ChatMemberGrid({
                 <div
                   className={cn(
                     "flex h-11 w-11 items-center justify-center rounded-[12px] border text-2xl shadow-none transition-colors",
-                    isWechat && "h-9 w-9 rounded-[9px] text-[20px]",
+                    isWechat && "h-9 w-9 rounded-[8px] text-[20px]",
                     item.kind === "remove"
                       ? "border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.72)] text-[#d74b45]"
                       : isWechat

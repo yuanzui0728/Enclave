@@ -74,7 +74,7 @@ export function ChatSettingRow({
         className,
       )}
     >
-      <span className={cn("text-[16px]", isWechat && "text-[14px] text-[#111827]")}>
+      <span className={cn("text-[16px]", isWechat && "text-[14px] text-[color:var(--text-primary)]")}>
         {label}
       </span>
       <span className="flex shrink-0 items-center gap-2">
@@ -100,7 +100,7 @@ export function ChatSettingRow({
           >
             <span
               className={cn(
-                "absolute top-1 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
+                "absolute top-1 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(180, 130, 20, 0.12)] transition-transform",
                 isWechat && "top-[1px] h-[22px] w-[22px]",
                 checked
                   ? isWechat

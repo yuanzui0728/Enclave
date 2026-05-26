@@ -69,7 +69,7 @@ export function MobileChatThreadHeader({
           <button
             type="button"
             onClick={guardAction(onBack)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
             aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={20} />
@@ -85,7 +85,7 @@ export function MobileChatThreadHeader({
             right: `${titleRightInset}px`,
           }}
         >
-          <div className="truncate text-[17px] font-medium text-[#111827]">
+          <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
           {subtitle ? (
@@ -104,7 +104,7 @@ export function MobileChatThreadHeader({
                 key={action.key}
                 type="button"
                 onClick={guardAction(action.onClick)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
                 aria-label={action.label}
                 title={action.label}
               >
@@ -116,7 +116,7 @@ export function MobileChatThreadHeader({
           <button
             type="button"
             onClick={guardAction(onMore)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
             aria-label={moreLabel}
           >
             <Ellipsis size={20} />

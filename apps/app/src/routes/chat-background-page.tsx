@@ -544,7 +544,7 @@ export function ChatBackgroundPage() {
         ) : (
           <InlineNotice
             tone="danger"
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{pageError}</span>
@@ -565,7 +565,7 @@ export function ChatBackgroundPage() {
           className={
             isDesktopLayout
               ? undefined
-              : "rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              : "rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           }
         >
           {notice}
@@ -784,7 +784,7 @@ export function ChatBackgroundPage() {
                     : {}),
                 });
               }}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`返回聊天信息`)}
             </Button>
@@ -929,7 +929,7 @@ function EmptyPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
+    <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
       <div className="text-lg font-semibold text-[color:var(--text-primary)]">
         {title}
       </div>

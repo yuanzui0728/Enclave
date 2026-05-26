@@ -702,7 +702,7 @@ function DesktopDiscoverWorkspace() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[26px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[24px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[11px] uppercase tracking-[0.16em] text-[#2f7a3f]">
                     {t(msg`朋友圈`)}
                   </div>
@@ -715,7 +715,7 @@ function DesktopDiscoverWorkspace() {
                     )}
                   </div>
                 </div>
-                <div className="rounded-[26px] border border-[rgba(93,103,201,0.16)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[24px] border border-[rgba(93,103,201,0.16)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[11px] uppercase tracking-[0.16em] text-[#4951a3]">
                     {t(msg`广场动态`)}
                   </div>
@@ -732,7 +732,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-              <div className="rounded-[26px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[24px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] uppercase tracking-[0.18em] text-emerald-600">
@@ -850,7 +850,7 @@ function DesktopDiscoverWorkspace() {
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
+              <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
                 <textarea
                   value={composeDraft.text}
                   onChange={(event) => composeDraft.setText(event.target.value)}
@@ -933,7 +933,7 @@ function DesktopDiscoverWorkspace() {
           </div>
 
           <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(248,249,255,0.98),rgba(255,255,255,0.96))]">
-            <div className="rounded-[26px] border border-[rgba(93,103,201,0.14)] bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[24px] border border-[rgba(93,103,201,0.14)] bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-[#4951a3]">
@@ -1034,7 +1034,7 @@ function DesktopDiscoverWorkspace() {
                   }
                   secondary={
                     post.commentsPreview.length > 0 ? (
-                      <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
+                      <div className="space-y-2 rounded-[24px] bg-[color:var(--surface-soft)] p-3">
                         {post.commentsPreview.map((comment) => (
                           <div
                             key={comment.id}
@@ -1247,7 +1247,7 @@ function DiscoverMobileEntryRow({
     >
       <div
         className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px]",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px]",
           item.iconClassName,
         )}
       >
@@ -1271,7 +1271,7 @@ function DiscoverMobileEntryRow({
 
 function DiscoverMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] bg-white/82 px-3 py-3 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[24px] bg-white/82 px-3 py-3 shadow-[var(--shadow-soft)]">
       <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
         {label}
       </div>

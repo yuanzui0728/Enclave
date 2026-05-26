@@ -306,11 +306,11 @@ body.yj-mobile::after {
   --shadow-overlay: 0 -8px 28px rgba(180, 130, 20, 0.08);
   --shadow-focus: 0 0 0 3px rgba(245, 158, 11, 0.16);
 
-  /* 圆角放大 = 结构差异关键(原 0.5~1rem 太微信) */
-  --radius-sm: 0.75rem;
-  --radius-md: 1.125rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 1.875rem;
+  /* 统一圆角尺度 8/12/16/20/24(收紧自 12/18/24/30，更协调) */
+  --radius-sm: 0.75rem; /* 12px */
+  --radius-md: 1rem; /* 16px */
+  --radius-lg: 1.25rem; /* 20px */
+  --radius-xl: 1.5rem; /* 24px */
 }
 
 .yj-mobile-shell,

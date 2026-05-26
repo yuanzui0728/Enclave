@@ -204,7 +204,7 @@ export function OfficialArticleViewer({
           ? "w-full bg-white px-4 py-4"
           : desktopSurface === "reader"
             ? "mx-auto w-full max-w-[720px] bg-white px-6 py-8 sm:px-8"
-            : "mx-auto w-full max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
+            : "mx-auto w-full max-w-[760px] rounded-[24px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
       }
     >
       <div
@@ -257,7 +257,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => onToggleFavorite(article)}
-              className={mobile ? "h-7 rounded-[10px] px-2.5 text-[12px]" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[12px] px-2.5 text-[12px]" : "rounded-xl"}
             >
               <Star size={14} className={favorite ? "fill-current" : ""} />
               {favorite ? t(msg`已收藏`) : t(msg`收藏`)}
@@ -269,7 +269,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => void handleShareArticle()}
-              className={mobile ? "h-7 rounded-[10px] px-2.5 text-[12px]" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[12px] px-2.5 text-[12px]" : "rounded-xl"}
             >
               {nativeMobileShareSupported ? (
                 <Share2 size={14} />
@@ -365,7 +365,7 @@ export function OfficialArticleViewer({
             mobile
               ? "mt-5 overflow-hidden rounded-[12px] bg-[color:var(--surface-console)]"
               : isDesktopReader
-                ? "mt-7 overflow-hidden rounded-[10px] bg-[color:var(--surface-console)]"
+                ? "mt-7 overflow-hidden rounded-[12px] bg-[color:var(--surface-console)]"
                 : "mt-6 overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           }
         >
@@ -398,9 +398,9 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[14px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(15,23,42,0.08)] [&_blockquote]:bg-[rgba(15,23,42,0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
+            ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(180, 130, 20, 0.08)] [&_blockquote]:bg-[rgba(180, 130, 20, 0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
             : isDesktopReader
-              ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[14px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(15,23,42,0.08)] [&_blockquote]:bg-[rgba(15,23,42,0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
+              ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(180, 130, 20, 0.08)] [&_blockquote]:bg-[rgba(180, 130, 20, 0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
               : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(245, 158, 11,0.2)] [&_blockquote]:bg-[rgba(245, 158, 11,0.07)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         }
         onClick={(event) => void handleContentLinkClick(event)}
@@ -449,10 +449,10 @@ export function OfficialArticleViewer({
                 }
                 className={
                   mobile
-                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(15,23,42,0.03)]"
+                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(180, 130, 20, 0.03)]"
                     : isDesktopReader
-                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(15,23,42,0.02)]"
-                      : "flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
+                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(180, 130, 20, 0.02)]"
+                      : "flex w-full items-start justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                 }
               >
                 <div className={cn("min-w-0 flex-1", isDesktopReader ? "pr-4" : undefined)}>

@@ -428,7 +428,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         {actionNotice ? (
           <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={actionNotice.tone}
             >
               {actionNotice.tone === "info" ? (
@@ -466,7 +466,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
         {account ? (
           <>
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
               <div className="flex flex-col items-center text-center">
                 <AvatarChip
                   name={account.name}
@@ -530,7 +530,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               followMutation.error instanceof Error ? (
                 <div className="mt-3">
                   <InlineNotice
-                    className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+                    className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
                     tone="danger"
                   >
                     <div className="flex items-start justify-between gap-2">

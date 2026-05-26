@@ -2719,7 +2719,7 @@ export function ContactsPage() {
                 <div
                   role="menu"
                   aria-label={t(msg`快捷操作`)}
-                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]"
+                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(180, 130, 20, 0.2)]"
                 >
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
@@ -2732,7 +2732,7 @@ export function ContactsPage() {
                           type="button"
                           role="menuitem"
                           onClick={() => handleMobileQuickActionNavigate(to)}
-                          className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                         >
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
                             <Icon aria-hidden="true" size={14} />
@@ -2762,7 +2762,7 @@ export function ContactsPage() {
                         aria-label={disabledItemLabel}
                         tabIndex={item.disabled ? -1 : undefined}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                          "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                           item.disabled
                             ? "cursor-not-allowed opacity-55"
                             : "hover:bg-white/10 active:bg-white/12",
@@ -2832,7 +2832,7 @@ export function ContactsPage() {
                 <InlineNotice
                   tone={notice.tone}
                   className={cn(
-                    "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+                    "rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
                     notice.tone === "danger"
                       ? "border-[rgba(220,38,38,0.18)]"
                       : "border-[rgba(96,165,250,0.16)]",
@@ -2845,7 +2845,7 @@ export function ContactsPage() {
                 <InlineNotice
                   key={item.key}
                   tone="danger"
-                  className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                  className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{item.message}</span>
@@ -2854,7 +2854,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onAction}
-                          className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                          className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                         >
                           {item.actionLabel}
                         </button>
@@ -3199,7 +3199,7 @@ function MobileContactsStatusCard({
   const loading = tone === "loading";
 
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
+    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
       <div className="mx-auto inline-flex rounded-full bg-[rgba(245, 158, 11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]">
         {badge}
       </div>

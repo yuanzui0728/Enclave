@@ -217,7 +217,7 @@ export function CheckoutContactDialog({
             {contacts.map((item) => (
               <div
                 key={`${item.label}:${item.value}`}
-                className="flex items-center justify-between gap-3 rounded-[14px] bg-[#f6f7f7] px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-[16px] bg-[#f6f7f7] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] text-[color:var(--text-muted)]">
@@ -230,7 +230,7 @@ export function CheckoutContactDialog({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] shadow-none"
+                  className="shrink-0 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] shadow-none"
                   onClick={() => void handleCopy(item.value, item.successMessage)}
                 >
                   {t(msg`复制`)}
@@ -240,7 +240,7 @@ export function CheckoutContactDialog({
           </div>
         ) : contact ? (
           <div className="px-6 pt-3 pb-2">
-            <div className="rounded-[14px] bg-[#f6f7f7] px-3 py-2 text-[13px] leading-6 break-all text-[color:var(--text-secondary)]">
+            <div className="rounded-[16px] bg-[#f6f7f7] px-3 py-2 text-[13px] leading-6 break-all text-[color:var(--text-secondary)]">
               {contact}
             </div>
           </div>
@@ -268,7 +268,7 @@ export function CheckoutContactDialog({
           <Button
             type="button"
             variant="primary"
-            className="flex-1 rounded-[12px] bg-[#f59e0b] py-2 text-[#3b2206] shadow-none hover:bg-[#d97706]"
+            className="flex-1 rounded-[16px] bg-[#f59e0b] py-2 text-[#3b2206] shadow-none hover:bg-[#d97706]"
             onClick={onClose}
           >
             {t(msg`我知道了`)}

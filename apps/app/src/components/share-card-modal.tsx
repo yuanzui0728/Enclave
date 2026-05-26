@@ -501,7 +501,7 @@ export function ShareCardModal({
             type="button"
             onClick={handleSaveOrShare}
             disabled={!pngDataUrl || savingPending}
-            className="w-full rounded-full bg-[#f59e0b] py-3 text-[15px] font-medium text-[#3b2206] active:bg-[#d97706] disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="w-full rounded-[16px] bg-[#f59e0b] py-3 text-[15px] font-medium text-[#3b2206] active:bg-[#d97706] disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {savingPending ? t(msg`处理中…`) : t(msg`保存 / 分享图片`)}
           </button>

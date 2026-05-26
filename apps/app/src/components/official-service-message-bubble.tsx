@@ -42,8 +42,8 @@ export function OfficialServiceMessageBubble({
           <div
             className={
               isDesktop
-                ? "rounded-full bg-[rgba(15,23,42,0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
-                : "rounded-full bg-[rgba(15,23,42,0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
+                ? "rounded-full bg-[rgba(180, 130, 20, 0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
+                : "rounded-full bg-[rgba(180, 130, 20, 0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
             }
           >
             {formatMessageTimestamp(message.createdAt)}
@@ -54,8 +54,8 @@ export function OfficialServiceMessageBubble({
           className={cn(
             "overflow-hidden border bg-white text-left",
             isDesktop
-              ? "rounded-[20px] shadow-[0_10px_28px_rgba(15,23,42,0.05)]"
-              : "rounded-[15px] shadow-[0_4px_12px_rgba(15,23,42,0.035)]",
+              ? "rounded-[20px] shadow-[0_10px_28px_rgba(180, 130, 20, 0.05)]"
+              : "rounded-[16px] shadow-[0_4px_12px_rgba(180, 130, 20, 0.035)]",
             articleCardActive
               ? "border-[rgba(245, 158, 11,0.18)]"
               : "border-black/6",
@@ -90,8 +90,8 @@ export function OfficialServiceMessageBubble({
                 className={cn(
                   "block w-full text-left transition",
                   isDesktop
-                    ? "hover:bg-[rgba(15,23,42,0.02)]"
-                    : "active:bg-[rgba(15,23,42,0.03)]",
+                    ? "hover:bg-[rgba(180, 130, 20, 0.02)]"
+                    : "active:bg-[rgba(180, 130, 20, 0.03)]",
                 )}
               >
                 <div className={isDesktop ? "px-4 py-4" : "px-3 py-3"}>
@@ -143,7 +143,7 @@ export function OfficialServiceMessageBubble({
                         className={
                           isDesktop
                             ? "h-20 w-20 shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
-                            : "h-[3.75rem] w-[3.75rem] shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
+                            : "h-[3.75rem] w-[3.75rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
                         }
                       />
                     ) : (
@@ -151,7 +151,7 @@ export function OfficialServiceMessageBubble({
                         className={
                           isDesktop
                             ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
-                            : "flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-[10px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
+                            : "flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
                         }
                       >
                         <FileText size={isDesktop ? 20 : 18} />

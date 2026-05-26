@@ -265,7 +265,7 @@ function NoteRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)]"
     >
       <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(245, 158, 11,0.08)]">
         {previewImage?.url ? (
@@ -312,9 +312,9 @@ function DraftRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[14px] border border-dashed border-[color:var(--border-strong)]/40 bg-white/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[16px] border border-dashed border-[color:var(--border-strong)]/40 bg-white/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(180, 130, 20, 0.05)] text-[color:var(--text-secondary)]">
         <FileText size={18} />
       </div>
       <div className="min-w-0 flex-1">

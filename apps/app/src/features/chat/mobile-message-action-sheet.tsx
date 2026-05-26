@@ -39,7 +39,7 @@ type MobileMessageActionSheetProps = {
   deleteLabel?: string;
   // 视频号评论 wechat-clone：长按弹「举报」槽位。chat 消息暂不用，留 optional
   // 不影响现有调用方；danger 风格但不像「删除」那样默认走红字（举报是中性，
-  // 非破坏性操作），用普通 text-[#111827]。
+  // 非破坏性操作），用普通 text-[color:var(--text-primary)]。
   onReport?: () => void;
   reportLabel?: string;
 };
@@ -187,7 +187,7 @@ export function MobileMessageActionSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(180, 130, 20, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -213,7 +213,7 @@ export function MobileMessageActionSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
@@ -225,7 +225,7 @@ export function MobileMessageActionSheet({
           {title}
         </div>
         {preview ? (
-          <div className="mb-2.5 overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5">
+          <div className="mb-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5">
             {preview.senderName ? (
               <div className="pb-1 text-[10px] text-[#8c8c8c]">
                 {preview.senderName}
@@ -235,10 +235,10 @@ export function MobileMessageActionSheet({
               className={`flex ${preview.own ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[88%] rounded-[15px] px-3 py-2 text-[13px] leading-5 ${
+                className={`max-w-[88%] rounded-[16px] px-3 py-2 text-[13px] leading-5 ${
                   preview.own
-                    ? "bg-[rgba(245, 158, 11,0.16)] text-[#111827]"
-                    : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[#111827]"
+                    ? "bg-[rgba(245, 158, 11,0.16)] text-[color:var(--text-primary)]"
+                    : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]"
                 }`}
               >
                 <div className="line-clamp-3 whitespace-pre-wrap break-words">
@@ -248,7 +248,7 @@ export function MobileMessageActionSheet({
             </div>
           </div>
         ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
           {onReply ? <ActionButton label={t(msg`回复`)} onClick={guardAction(onReply)!} /> : null}
           {onQuoteSelection ? (
             <ActionButton
@@ -304,7 +304,7 @@ export function MobileMessageActionSheet({
         <button
           type="button"
           onClick={guardClose}
-          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {t(msg`取消`)}
         </button>
@@ -327,7 +327,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={`flex min-h-[52px] w-full items-center justify-center border-b border-[color:var(--border-subtle)] px-4 py-2.5 text-[16px] transition active:bg-[color:var(--surface-card-hover)] last:border-b-0 ${
-        danger ? "text-[#d74b45]" : "text-[#111827]"
+        danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"
       }`}
     >
       {label}

@@ -46,7 +46,7 @@ export function DigitalHumanEntryNotice({
       tone={tone}
       className={
         compact
-          ? "rounded-[13px] px-3 py-2 text-[11px] leading-[17px] shadow-none"
+          ? "rounded-[12px] px-3 py-2 text-[11px] leading-[17px] shadow-none"
           : undefined
       }
     >

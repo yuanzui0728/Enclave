@@ -711,7 +711,7 @@ export function MobileMomentsPublishPage() {
     <AppPage className="space-y-0 bg-[#f8f5ec] px-0 py-0">
       <TabPageTopBar
         title="" // i18n-ignore-line: intentionally empty
-        className="mx-0 mb-0 mt-0 border-b border-[#ECECEC] bg-[#f8f5ec] px-3 pb-1.5 pt-1.5 text-[#1A1A1A] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[#f8f5ec] px-3 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <button
             type="button"
@@ -721,7 +721,7 @@ export function MobileMomentsPublishPage() {
               "h-9 px-2 text-[15px] active:opacity-70",
               createMutation.isPending
                 ? "text-[#B0B0B0]"
-                : "text-[#1A1A1A]",
+                : "text-[color:var(--text-primary)]",
             )}
           >
             {t(msg`取消`)}
@@ -759,10 +759,10 @@ export function MobileMomentsPublishPage() {
             className={cn(
               // min-w 让"发表"(2 字) → "发表中"(3 字) 的状态切换不再撑大按钮，
               // 避免顶栏右上角看起来抖一下；按住够装下 isPending 文案。
-              "h-7 min-w-[3.75rem] rounded-[3px] px-3 text-[14px] font-medium transition",
+              "h-7 min-w-[3.75rem] rounded-full px-3 text-[14px] font-medium transition",
               canSubmit
                 ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
-                : "bg-[#9DD9B0] text-white",
+                : "bg-[#e8e0d2] text-[#b3a591]",
             )}
           >
             {createMutation.isPending ? t(msg`发表中`) : t(msg`发表`)}
@@ -818,7 +818,7 @@ export function MobileMomentsPublishPage() {
             // tokens.css 里 :focus-visible 的全局 3px 绿光 box-shadow——autoFocus
             // 一进页面就吃这一圈、看起来像微信里冒出来一个绿色描边的输入框，
             // 实际 WeChat compose 没有这层 ring。
-            className="block w-full resize-none border-0 bg-transparent text-[17px] leading-[26px] text-[#1A1A1A] outline-none placeholder:text-[#B0B0B0] focus:shadow-none focus-visible:shadow-none"
+            className="block w-full resize-none border-0 bg-transparent text-[17px] leading-[26px] text-[color:var(--text-primary)] outline-none placeholder:text-[#B0B0B0] focus:shadow-none focus-visible:shadow-none"
             style={{ minHeight: "104px" }}
             autoFocus
           />
@@ -964,7 +964,7 @@ export function MobileMomentsPublishPage() {
           />
         </section>
 
-        <div className="px-4 pt-3 text-[11px] leading-5 text-[#9A9A9A]">
+        <div className="px-4 pt-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
           {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。`)}
         </div>
 
@@ -1027,21 +1027,21 @@ export function MobileMomentsPublishPage() {
             <button
               type="button"
               onClick={handleKeepDraft}
-              className="block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#F2F2F2]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#F2F2F2]"
             >
               {t(msg`保留`)}
             </button>
             <button
               type="button"
               onClick={handleConfirmDiscard}
-              className="block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[#F2F2F2]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[#F2F2F2]"
             >
               {t(msg`不保留`)}
             </button>
             <button
               type="button"
               onClick={dismissExitSheet}
-              className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
+              className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
             >
               {t(msg`取消`)}
             </button>
@@ -1080,11 +1080,11 @@ function SettingRow({
       onClick={onTap}
       className={cn(
         "flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-[#F2F2F2]",
-        isLast ? "" : "border-b border-[#ECECEC]",
+        isLast ? "" : "border-b border-[color:var(--border-subtle)]",
       )}
     >
-      <span className="text-[15px] text-[#1A1A1A]">{label}</span>
-      <span className="flex items-center gap-1 text-[14px] text-[#9A9A9A]">
+      <span className="text-[15px] text-[color:var(--text-primary)]">{label}</span>
+      <span className="flex items-center gap-1 text-[14px] text-[color:var(--text-muted)]">
         {value ? <span>{value}</span> : null}
         <ChevronRight size={16} aria-hidden="true" className="text-[#C5C5C5]" />
       </span>
@@ -1120,7 +1120,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onPickImages}
-          className="block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#F2F2F2]"
+          className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#F2F2F2]"
         >
           {t(msg`从相册选择图片`)}
         </button>
@@ -1129,8 +1129,8 @@ function MediaPickerSheet({
           onClick={onPickVideo}
           disabled={videoDisabled}
           className={cn(
-            "block w-full border-b border-[#ECECEC] py-3.5 text-center text-[16px] active:bg-[#F2F2F2]",
-            videoDisabled ? "text-[#B0B0B0]" : "text-[#1A1A1A]",
+            "block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] active:bg-[#F2F2F2]",
+            videoDisabled ? "text-[#B0B0B0]" : "text-[color:var(--text-primary)]",
           )}
         >
           {t(msg`选择视频`)}
@@ -1138,7 +1138,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[#1A1A1A] active:bg-[#EFEFEF]"
+          className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
         >
           {t(msg`取消`)}
         </button>

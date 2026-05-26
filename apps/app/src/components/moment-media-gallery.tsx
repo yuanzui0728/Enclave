@@ -213,7 +213,7 @@ function MomentMediaGalleryInner({
               />
             )}
 
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),rgba(15,23,42,0.42))]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(180, 130, 20, 0.04),rgba(180, 130, 20, 0.42))]" />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-white transition group-hover:scale-[1.04] group-active:scale-[0.98]">
                 <Play size={22} className="translate-x-[1px] fill-current" />
@@ -482,7 +482,7 @@ function MomentMediaGalleryInner({
                 index,
               });
             }}
-            className="relative overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-left"
+            className="relative overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-left"
             style={{
               aspectRatio:
                 images.length === 1 && asset.width && asset.height

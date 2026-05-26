@@ -179,7 +179,7 @@ export function MobileMiniProgramsWorkspace({
       <div className="space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         {successNotice ? (
           <InlineNotice
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
             {noticeTone === "info" &&
@@ -192,7 +192,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onNoticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -201,7 +201,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {statusBackLabel}
                     </button>
@@ -538,7 +538,7 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
 
 function MobileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[15px] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
+    <div className="rounded-[16px] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
       <div className="text-[11px] uppercase tracking-[0.12em] text-white/68">
         {label}
       </div>

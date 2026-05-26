@@ -127,7 +127,7 @@ export function CloudFarmGame({
               }}
             />
             {picker === plot.id ? (
-              <div className="absolute z-10 mt-1 w-[200px] rounded-[10px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
+              <div className="absolute z-10 mt-1 w-[200px] rounded-[12px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
                 <div className="mb-1 text-[11px] text-[color:var(--text-secondary)]">
                   {t(msg`种什么`)}
                 </div>
@@ -360,7 +360,7 @@ function PlotCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-[100px] flex-col items-center justify-between rounded-[10px] border p-2 text-[10px] transition-colors",
+        "flex h-[100px] flex-col items-center justify-between rounded-[12px] border p-2 text-[10px] transition-colors",
         tone,
       )}
     >

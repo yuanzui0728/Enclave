@@ -114,7 +114,7 @@ export function MobileMentionPickerSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(180, 130, 20, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -133,7 +133,7 @@ export function MobileMentionPickerSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="absolute inset-x-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+        className="absolute inset-x-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
         style={{ bottom: keyboardInset > 0 ? `${keyboardInset}px` : 0 }}
       >
         <div className="flex justify-center pb-1.5">
@@ -145,12 +145,12 @@ export function MobileMentionPickerSheet({
           </div>
           <div
             id={headingId}
-            className="mt-1 text-[13px] font-medium text-[#111827]"
+            className="mt-1 text-[13px] font-medium text-[color:var(--text-primary)]"
           >
             {t(msg`选择要提醒的人`)}
           </div>
         </div>
-        <div className="mx-3 max-h-[46vh] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
+        <div className="mx-3 max-h-[46vh] overflow-auto rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
           {candidates.map((candidate, index) => (
             <button
               key={candidate.id}
@@ -168,7 +168,7 @@ export function MobileMentionPickerSheet({
                 size="wechat"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] text-[#111827]">
+                <div className="truncate text-[13px] text-[color:var(--text-primary)]">
                   {candidate.name}
                 </div>
                 {candidate.subtitle ? (
@@ -184,7 +184,7 @@ export function MobileMentionPickerSheet({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-full items-center justify-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+            className="flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {t(msg`取消`)}
           </button>

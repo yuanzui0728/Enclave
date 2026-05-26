@@ -184,7 +184,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                       "relative flex h-8 w-8 items-center justify-center transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
                         ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)]"
-                        : "rounded-[10px] bg-transparent",
+                        : "rounded-[12px] bg-transparent",
                     )}
                   >
                     <Icon size={18} />

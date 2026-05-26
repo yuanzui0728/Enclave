@@ -2570,7 +2570,7 @@ export function ChannelsPage() {
         >
         {notice ? (
           <InlineNotice
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
             {noticeTone === "info" &&
@@ -2583,7 +2583,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={noticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -2596,7 +2596,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={handleStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -3779,7 +3779,7 @@ function ChannelsPullToRefreshIndicator({
       : t(msg`下拉刷新`);
   return (
     <div
-      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[#9A9A9A]"
+      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
       style={{
         top: 0,
         height: `${state.offset || 60}px`,
@@ -4328,7 +4328,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
     <article
       ref={setCardRef}
       data-post-id={post.id}
-      className="snap-start scroll-mt-2 overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-white shadow-none"
+      className="snap-start scroll-mt-2 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-white shadow-none"
     >
       <div className="relative min-h-[calc(100dvh-12rem)] bg-[#0f1115]">
         <MobileChannelMediaSurface
@@ -4759,7 +4759,7 @@ const CommentItemView = memo(function CommentItemView({
               </span>
             ) : null}
           </div>
-          <div className={cn("mt-1 break-words text-[#1a1a1a]", bodySize)}>
+          <div className={cn("mt-1 break-words text-[color:var(--text-primary)]", bodySize)}>
             {replyTargetName ? (
               <>
                 <span className="text-[#888888]">{t(msg`回复`)} </span>
@@ -4776,7 +4776,7 @@ const CommentItemView = memo(function CommentItemView({
             <button
               type="button"
               onClick={() => onReply(comment)}
-              className="transition active:text-[#1a1a1a]"
+              className="transition active:text-[color:var(--text-primary)]"
             >
               {t(msg`回复`)}
             </button>
@@ -4794,7 +4794,7 @@ const CommentItemView = memo(function CommentItemView({
             "flex shrink-0 flex-col items-center gap-0.5 pl-1 pt-0.5 transition disabled:cursor-not-allowed",
             comment.likedByOwner
               ? "text-[#fa5151]"
-              : "text-[#888888] active:text-[#1a1a1a]",
+              : "text-[#888888] active:text-[color:var(--text-primary)]",
           )}
         >
           <Heart
@@ -5440,7 +5440,7 @@ function MobileChannelCommentsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(180, 130, 20, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -5464,7 +5464,7 @@ function MobileChannelCommentsSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-channels-comments-sheet-title"
-        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
@@ -5479,7 +5479,7 @@ function MobileChannelCommentsSheet({
           <div className="w-8 shrink-0" aria-hidden />
           <div
             id="mobile-channels-comments-sheet-title"
-            className="min-w-0 flex-1 truncate text-center text-[14px] font-medium text-[#1a1a1a]"
+            className="min-w-0 flex-1 truncate text-center text-[14px] font-medium text-[color:var(--text-primary)]"
           >
             {post.commentCount > 0
               ? t(msg`${post.commentCount} 条评论`)
@@ -5511,7 +5511,7 @@ function MobileChannelCommentsSheet({
             <div className="px-4 pt-3">
               <InlineNotice
                 tone="warning"
-                className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
+                className="rounded-[16px] border-[color:var(--border-danger)] bg-white"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1">{errorMessage}</span>
@@ -5528,7 +5528,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
+                      className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
                     >
                       {t(msg`返回视频号`)}
                     </button>
@@ -5614,7 +5614,7 @@ function MobileChannelCommentsSheet({
           ) : null}
           {inputExpanded ? (
             <div className="flex items-end gap-2 py-1.5">
-              <div className="min-w-0 flex-1 rounded-[6px] border border-[#e5e5e5] bg-white px-3 py-2 text-[15px] text-[#1a1a1a]">
+              <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
                 <textarea
                   ref={inputTextareaRef}
                   value={draft}
@@ -5655,7 +5655,7 @@ function MobileChannelCommentsSheet({
                 disabled={!draft.trim() || submitPending}
                 onClick={handleSubmitClick}
                 className={cn(
-                  "h-9 shrink-0 rounded-[4px] px-4 text-[14px] font-medium transition-colors",
+                  "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
                   draft.trim() && !submitPending
                     ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
                     : "bg-[#e5e5e5] text-[#b0b0b0]",
@@ -5668,7 +5668,7 @@ function MobileChannelCommentsSheet({
             <button
               type="button"
               onClick={() => setInputExpanded(true)}
-              className="flex h-9 w-full items-center justify-between rounded-[18px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#f4ede0]"
+              className="flex h-9 w-full items-center justify-between rounded-[20px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#f4ede0]"
             >
               <span className="truncate">
                 {replyTarget

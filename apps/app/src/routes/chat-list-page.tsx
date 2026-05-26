@@ -1276,7 +1276,7 @@ function MobileChatListPage() {
               <div
                 role="menu"
                 aria-label={t(msg`快捷操作`)}
-                className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]"
+                className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(180, 130, 20, 0.2)]"
               >
                 {quickActionItems.map((item) => {
                   const Icon = item.icon;
@@ -1289,7 +1289,7 @@ function MobileChatListPage() {
                         type="button"
                         role="menuitem"
                         onClick={() => handleNavigate(to)}
-                        className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
+                        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                       >
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
                           {/*
@@ -1325,7 +1325,7 @@ function MobileChatListPage() {
                       aria-label={disabledItemLabel}
                       tabIndex={item.disabled ? -1 : undefined}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                        "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                         item.disabled
                           ? "cursor-not-allowed opacity-55"
                           : "hover:bg-white/10 active:bg-white/12",
@@ -1403,7 +1403,7 @@ function MobileChatListPage() {
             <InlineNotice
               tone="info"
               role="status"
-              className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              className="rounded-[12px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate">
@@ -1427,7 +1427,7 @@ function MobileChatListPage() {
               tone={notice.tone}
               role={notice.tone === "danger" ? "alert" : "status"}
               className={cn(
-                "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+                "rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
                 notice.tone === "info"
                   ? "border-[rgba(96,165,250,0.16)]"
                   : undefined,
@@ -1442,7 +1442,7 @@ function MobileChatListPage() {
             <InlineNotice
               tone="danger"
               role="alert"
-              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -1452,7 +1452,7 @@ function MobileChatListPage() {
                   <button
                     type="button"
                     onClick={openOfficialAccountsList}
-                    className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {t(msg`查看公众号`)}
                   </button>
@@ -1509,7 +1509,7 @@ function MobileChatListPage() {
             <InlineNotice
               tone="danger"
               role="alert"
-              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -1532,7 +1532,7 @@ function MobileChatListPage() {
         {reminderEntries.length ? (
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             <div className="flex items-center justify-between px-4 py-1.25">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#111827]">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--text-primary)]">
                 <BellRing
                   size={13}
                   className="text-[#f59e0b]"
@@ -1688,7 +1688,7 @@ function MobileChatListPage() {
                                   >
                                     {getChatReminderStatusLabel(entry)}
                                   </span>
-                                  <span className="min-w-0 truncate text-[11px] font-medium text-[#111827]">
+                                  <span className="min-w-0 truncate text-[11px] font-medium text-[color:var(--text-primary)]">
                                     {entry.title}
                                   </span>
                                 </div>
@@ -1899,7 +1899,7 @@ function MobileChatListStatusCard({
       role={loading ? "status" : tone === "danger" ? "alert" : undefined}
       aria-busy={loading || undefined}
       className={cn(
-        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        "rounded-[20px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",

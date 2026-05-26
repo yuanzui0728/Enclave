@@ -1220,12 +1220,12 @@ export function ProfileMomentsPage() {
       <TabPageTopBar
         title={t(msg`我的朋友圈`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[#ECECEC] bg-white px-4 pb-1.5 pt-1.5 text-[#1A1A1A] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-white px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#1A1A1A] transition-colors active:bg-black/[0.05]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
             aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={17} />
@@ -1235,7 +1235,7 @@ export function ProfileMomentsPage() {
           <button
             type="button"
             onClick={goPublish}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#1A1A1A] transition-colors active:bg-black/[0.05]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
             aria-label={t(msg`发条朋友圈`)}
           >
             <Camera size={20} strokeWidth={1.6} />
@@ -1250,7 +1250,7 @@ export function ProfileMomentsPage() {
       >
         {pullState.offset || pullState.refreshing ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[#9A9A9A]"
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
             style={{ top: 0, height: `${pullState.offset || 60}px` }}
           >
             <span>
@@ -1281,7 +1281,7 @@ export function ProfileMomentsPage() {
                 // role="alert"（assertive 立即朗读），success/info 用 status（polite
                 // 待空隙）。和 R1 profile-feedback / favorites notice 一并补齐。
                 role={notice.tone === "danger" ? "alert" : "status"}
-                className="rounded-[8px] border border-[#ECECEC] bg-white px-3 py-2 text-[12px] shadow-none"
+                className="rounded-[8px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[12px] shadow-none"
               >
                 {/* 走查 R2：之前 mobile 分支只渲 notice.message，但点赞/删除失败
                     时 likeMutation/deleteMutation onError 已经把 actionLabel +
@@ -1296,7 +1296,7 @@ export function ProfileMomentsPage() {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[#E5E5E5] bg-white px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
                       onClick={notice.action}
                     >
                       {notice.actionLabel}
@@ -1339,7 +1339,7 @@ export function ProfileMomentsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[#E5E5E5] bg-white px-3.5 text-[12px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[12px]"
                     onClick={() => {
                       void momentsQuery.refetch();
                     }}
@@ -1388,7 +1388,7 @@ export function ProfileMomentsPage() {
                 className={
                   index === 0
                     ? "yj-list-item-virtual-card"
-                    : "yj-list-item-virtual-card border-t border-[#ECECEC]"
+                    : "yj-list-item-virtual-card border-t border-[color:var(--border-subtle)]"
                 }
               >
                 <PersonalAlbumRow
@@ -1581,10 +1581,10 @@ function PersonalAlbumRow({
       <div className="w-12 shrink-0 pt-1 text-right" aria-hidden={!showDate}>
         {showDate ? (
           <>
-            <div className="text-[26px] font-semibold leading-none text-[#1A1A1A]">
+            <div className="text-[26px] font-semibold leading-none text-[color:var(--text-primary)]">
               {dayLabel}
             </div>
-            <div className="mt-1 text-[11px] tracking-[0.04em] text-[#9A9A9A]">
+            <div className="mt-1 text-[11px] tracking-[0.04em] text-[color:var(--text-muted)]">
               {monthLabel}
             </div>
           </>

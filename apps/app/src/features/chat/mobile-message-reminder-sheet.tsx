@@ -110,7 +110,7 @@ export function MobileMessageReminderSheet({
       className={`fixed inset-0 z-50 ${
         isDesktop
           ? "flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
-          : "bg-[rgba(15,23,42,0.14)]"
+          : "bg-[rgba(180, 130, 20, 0.14)]"
       }`}
     >
       <button
@@ -144,7 +144,7 @@ export function MobileMessageReminderSheet({
         className={
           isDesktop
             ? "relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
-            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]"
         }
       >
         {isDesktop ? null : (
@@ -168,7 +168,7 @@ export function MobileMessageReminderSheet({
               className={
                 isDesktop
                   ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
-                  : "mt-2 line-clamp-2 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[12px] leading-5 text-[#4b5563]"
+                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[12px] leading-5 text-[#4b5563]"
               }
             >
               {previewText}
@@ -179,7 +179,7 @@ export function MobileMessageReminderSheet({
           className={
             isDesktop
               ? "mt-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-white"
-              : "overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)] bg-white"
+              : "overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
           }
         >
           {options.map((option) => (
@@ -198,7 +198,7 @@ export function MobileMessageReminderSheet({
                   className={
                     isDesktop
                       ? "text-[14px] text-[color:var(--text-primary)]"
-                      : "text-[15px] text-[#111827]"
+                      : "text-[15px] text-[color:var(--text-primary)]"
                   }
                 >
                   {option.label}
@@ -225,7 +225,7 @@ export function MobileMessageReminderSheet({
               type="button"
               variant="secondary"
               onClick={onClose}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -234,7 +234,7 @@ export function MobileMessageReminderSheet({
           <button
             type="button"
             onClick={onClose}
-            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {t(msg`取消`)}
           </button>

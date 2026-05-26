@@ -401,7 +401,7 @@ function PickPanel({
               onClick={() => onToggle(item.id)}
               disabled={item.disabled}
               className={cn(
-                "flex w-full items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-[12px]",
+                "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
                 item.active
                   ? "border-orange-400 bg-orange-50"
                   : "border-[color:var(--border-faint)] bg-white",

@@ -660,7 +660,7 @@ export function GamesPage() {
         {successNotice ? (
           <div className="bg-white px-4 pt-3">
             <InlineNotice
-              className="rounded-[10px] px-3 py-2 text-[12px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-3 py-2 text-[12px] leading-[1.35rem] shadow-none"
               tone={noticeTone}
             >
               {noticeTone === "info" &&
@@ -675,7 +675,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={noticeActionState.onAction}
-                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionState.label}
                       </button>
@@ -684,7 +684,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={handleBack}
-                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {statusBackLabel}
                       </button>
@@ -836,10 +836,10 @@ function GameAvatar({
   const tone = getGameCenterToneStyle(game.tone);
   const sizeClass =
     size === "sm"
-      ? "h-10 w-10 rounded-[10px] text-[15px]"
+      ? "h-10 w-10 rounded-[12px] text-[15px]"
       : size === "lg"
-        ? "h-14 w-14 rounded-[14px] text-[20px]"
-        : "h-[52px] w-[52px] rounded-[14px] text-[18px]";
+        ? "h-14 w-14 rounded-[16px] text-[20px]"
+        : "h-[52px] w-[52px] rounded-[16px] text-[18px]";
   // 用 game.id 的首字符做 avatar，跟 locale 无关。早前用 [...game.name][0]
   // 在非中文 locale 也会撞到中文（gameCenterGames 在模块加载时就把
   // t(msg`...`) 求好值并冻住，locale 后续切换不会重译）。
@@ -891,7 +891,7 @@ function BannerCard({
       type="button"
       onClick={onLaunch}
       className={cn(
-        "relative block w-full overflow-hidden rounded-[14px] text-left shadow-none",
+        "relative block w-full overflow-hidden rounded-[16px] text-left shadow-none",
         tone.heroCardClassName,
       )}
       style={{ aspectRatio: "2 / 1" }}

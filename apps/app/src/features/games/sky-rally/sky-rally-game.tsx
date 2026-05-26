@@ -184,7 +184,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
         onClick={actions.tapBoost}
         disabled={!isRacing}
         className={cn(
-          "flex items-center justify-center gap-1.5 rounded-[14px] py-4 text-[15px] font-semibold transition-colors",
+          "flex items-center justify-center gap-1.5 rounded-[16px] py-4 text-[15px] font-semibold transition-colors",
           isRacing
             ? "bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg shadow-sky-200 hover:from-sky-600 hover:to-violet-600"
             : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -243,7 +243,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
                   onClick={() => actions.selectTrack(tr.id)}
                   disabled={!unlocked || isRacing}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-left transition-colors",
+                    "flex w-full items-center gap-2 rounded-[12px] border px-3 py-2 text-left transition-colors",
                     active
                       ? "border-sky-400 bg-sky-50"
                       : "border-[color:var(--border-faint)] bg-white",

@@ -82,7 +82,7 @@ export function ManagementPermissionsScreen({
   return (
     <div className="flex h-full flex-col">
       <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2">
-        <label className="flex h-9 items-center gap-2 rounded-[10px] bg-white px-3 text-[13px] text-[color:var(--text-dim)]">
+        <label className="flex h-9 items-center gap-2 rounded-[12px] bg-white px-3 text-[13px] text-[color:var(--text-dim)]">
           <Search aria-hidden="true" size={14} />
           <input
             type="search"
@@ -132,7 +132,7 @@ export function ManagementPermissionsScreen({
         <div className="px-3 py-4">
           <InlineNotice
             tone="danger"
-            className="rounded-[11px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
+            className="rounded-[12px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">
@@ -161,7 +161,7 @@ export function ManagementPermissionsScreen({
               <div className="px-1 pb-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {section.title}
               </div>
-              <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+              <ul className="overflow-hidden rounded-[12px] bg-white shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]">
                 {section.items.map((item, index) => (
                   <li
                     key={item.character.id}

@@ -33,9 +33,9 @@ export function ContactShortcutList({
     <section
       className={cn(
         variant === "desktop-flat"
-          ? "overflow-hidden rounded-[14px] bg-transparent"
+          ? "overflow-hidden rounded-[16px] bg-transparent"
           : "overflow-hidden border border-[color:var(--border-faint)] bg-white",
-        compact && variant !== "desktop-flat" ? "rounded-[18px]" : "rounded-none",
+        compact && variant !== "desktop-flat" ? "rounded-[20px]" : "rounded-none",
         className,
       )}
     >
@@ -72,7 +72,7 @@ export function ContactShortcutList({
                   ? "border-t border-[color:var(--border-faint)]"
                   : undefined,
               variant === "desktop-flat" && item.active
-                ? "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+                ? "bg-white shadow-[0_1px_2px_rgba(180, 130, 20, 0.05)]"
                 : undefined,
             )}
           >
@@ -80,7 +80,7 @@ export function ContactShortcutList({
               className={cn(
                 "flex shrink-0 items-center justify-center text-white",
                 variant === "desktop-flat"
-                  ? "h-8 w-8 rounded-[10px]"
+                  ? "h-8 w-8 rounded-[12px]"
                   : "rounded-[12px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
                 variant === "desktop-flat"
                   ? undefined

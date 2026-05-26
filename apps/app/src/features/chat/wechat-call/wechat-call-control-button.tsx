@@ -34,7 +34,7 @@ export function WeChatCallControlButton({
           variant === "danger"
             ? "bg-[#fa5151] text-white active:bg-[#e84747]"
             : variant === "active"
-              ? "bg-white text-[#1a1a1a]"
+              ? "bg-white text-[color:var(--text-primary)]"
               : "bg-white/15 text-white active:bg-white/25",
         )}
       >

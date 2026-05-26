@@ -607,7 +607,7 @@ export function CreateGroupPage() {
             </div>
           ) : null}
 
-          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -700,7 +700,7 @@ export function CreateGroupPage() {
               // 让 SR 立刻读出 error.message。读取失败 status card 是用户主动
               // 触发的 friendsQuery，retry 按钮在场不需要 alert。
               role="alert"
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">

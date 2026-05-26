@@ -437,7 +437,7 @@ export function ChatMessageSearchPanel({
     >
       <ChatDetailsSection title={t(msg`搜索`)} variant="wechat">
         <div className="px-4 py-3">
-          <label className="flex items-center gap-2 rounded-[11px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
+          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
             <Search
               size={16}
               className="shrink-0 text-[color:var(--text-dim)]"
@@ -494,7 +494,7 @@ export function ChatMessageSearchPanel({
             ) : null}
           </div>
           {activeFilterLabels.length ? (
-            <div className="mt-2.5 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-2.5">
+            <div className="mt-2.5 rounded-[12px] bg-[color:var(--surface-panel)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
                   {t(msg`已筛选 ${activeFilterLabels.length} 项`)}
@@ -516,7 +516,7 @@ export function ChatMessageSearchPanel({
               </div>
             </div>
           ) : null}
-          <div className="mt-2.5 space-y-3 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-3">
+          <div className="mt-2.5 space-y-3 rounded-[12px] bg-[color:var(--surface-panel)] px-3 py-3">
             <div>
               <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {t(msg`时间`)}
@@ -562,7 +562,7 @@ export function ChatMessageSearchPanel({
               enableSenderFilter ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
             }`}
           >
-            <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+            <label className="flex min-w-0 flex-col gap-1 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
               <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                 {t(msg`指定日期`)}
               </span>
@@ -580,7 +580,7 @@ export function ChatMessageSearchPanel({
               />
             </label>
             {enableSenderFilter ? (
-              <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+              <label className="flex min-w-0 flex-col gap-1 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
                 <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                   {t(msg`成员`)}
                 </span>
@@ -688,7 +688,7 @@ export function ChatMessageSearchPanel({
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={cn(
-                          "flex h-8.5 w-8.5 items-center justify-center rounded-[9px]",
+                          "flex h-8.5 w-8.5 items-center justify-center rounded-[8px]",
                           active
                             ? "bg-[rgba(245, 158, 11,0.12)] text-[#b45309]"
                             : "bg-[color:var(--surface-panel)] text-[color:var(--text-secondary)]",

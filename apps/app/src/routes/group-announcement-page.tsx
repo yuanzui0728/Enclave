@@ -438,7 +438,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             role={notice.tone === "info" ? "alert" : "status"}
             aria-live={notice.tone === "info" ? "assertive" : "polite"}
             tone={notice.tone}
-            className="rounded-[14px] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+            className="rounded-[16px] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
             {notice.tone === "info" ? (
               <div className="flex items-center justify-between gap-2">
@@ -481,7 +481,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             // group-chat-edit-page saveMutation error 同款修法。
             role="alert"
             tone="danger"
-            className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+            className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
@@ -489,7 +489,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试保存`)}
                 </button>
@@ -559,7 +559,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 // 的标题一致。
                 aria-label={t(msg`群公告`)}
                 // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
+                className="min-h-44 w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white"
               />
               {/* 走查 2026-05-22 R1：原版无论有没有现有公告，都常驻一条
                   "留空后保存，会清空当前群公告。"——在 announcement 还是
@@ -575,7 +575,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 </span>
                 <span>{t(msg`${draft.trim().length} 字`)}</span>
               </div>
-              <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
                 {t(
                   msg`当前公告：${groupQuery.data.announcement?.trim() || t(msg`暂未设置`)}`,
                 )}
@@ -594,7 +594,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                   (groupQuery.data.announcement?.trim() ?? "")
               }
               onClick={triggerSave}
-              className="h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
+              className="h-10 w-full rounded-[12px] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存群公告`)}
             </Button>

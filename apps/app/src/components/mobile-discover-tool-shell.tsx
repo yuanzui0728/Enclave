@@ -162,7 +162,7 @@ export function MobileDiscoverToolShell({
       <div className="space-y-2.5 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         {shareNotice ? (
           <InlineNotice
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={shareNotice.tone}
           >
             {shareNotice.tone === "info" ? (
@@ -173,7 +173,7 @@ export function MobileDiscoverToolShell({
                     <button
                       type="button"
                       onClick={shareNotice.onAction}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {shareNotice.actionLabel}
                     </button>
@@ -181,7 +181,7 @@ export function MobileDiscoverToolShell({
                   <button
                     type="button"
                     onClick={onBack}
-                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="shrink-0 rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {t(msg`返回上一页`)}
                   </button>
@@ -199,7 +199,7 @@ export function MobileDiscoverToolShell({
               <div className="inline-flex rounded-full bg-[rgba(245, 158, 11,0.12)] px-3 py-1 text-[11px] font-medium text-[#f59e0b]">
                 {resolvedHeroBadge}
               </div>
-              <div className="mt-3 text-[22px] font-semibold leading-tight text-[#111827]">
+              <div className="mt-3 text-[22px] font-semibold leading-tight text-[color:var(--text-primary)]">
                 {heroTitle}
               </div>
               {heroDescription ? (

@@ -977,7 +977,7 @@ export function ConversationThreadPanel({
                   role="alert"
                   aria-live="assertive"
                   tone="danger"
-                  className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                  className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{socketError}</span>

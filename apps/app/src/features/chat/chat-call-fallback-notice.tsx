@@ -100,7 +100,7 @@ export function ChatCallFallbackNotice({
       aria-live="polite"
       tone="info"
       className={cn(
-        "rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
+        "rounded-[16px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
         className,
       )}
     >

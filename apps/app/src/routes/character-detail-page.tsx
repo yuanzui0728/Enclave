@@ -1606,7 +1606,7 @@ export function CharacterDetailPage() {
                 className={
                   isDesktopLayout
                     ? undefined
-                    : "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                    : "rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 }
               >
                 {!isDesktopLayout &&
@@ -1832,7 +1832,7 @@ export function CharacterDetailPage() {
               className={cn(
                 "overflow-hidden bg-white",
                 isDesktopLayout
-                  ? "rounded-[18px] border border-black/5"
+                  ? "rounded-[20px] border border-black/5"
                   : "-mx-3 border-y border-[color:var(--border-faint)]",
               )}
             >
@@ -1913,7 +1913,7 @@ export function CharacterDetailPage() {
             </section>
 
             {isDesktopLayout ? (
-              <section className="overflow-hidden rounded-[18px] border border-black/5 bg-white p-4">
+              <section className="overflow-hidden rounded-[20px] border border-black/5 bg-white p-4">
                 <div
                   className={cn(
                     "grid gap-2",
@@ -1928,7 +1928,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           startChatMutation.mutate();
                         }}
-                        className="h-11 rounded-[12px] bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                        className="h-11 rounded-full bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                         disabled={startChatMutation.isPending}
                       >
                         {startChatMutation.isPending
@@ -1956,7 +1956,7 @@ export function CharacterDetailPage() {
                         setNotice(null);
                         handleAddToContacts();
                       }}
-                      className="h-11 rounded-[12px] bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                      className="h-11 rounded-full bg-[#f59e0b] text-[15px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       // 走查新 R1：disabled 没把 friendsQuery.isLoading 算进去。
                       // characterQuery 命中缓存秒回时底部 bar 已经渲染，friendsQuery
                       // 还在拉就 isAlreadyFriend=false 走非好友 layout，按钮显示
@@ -2036,7 +2036,7 @@ export function CharacterDetailPage() {
                           remarkName: friendship?.remarkName ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2044,7 +2044,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("remark")}
-                      className="h-9 flex-1 rounded-[10px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                      className="h-9 flex-1 rounded-[16px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH
@@ -2098,7 +2098,7 @@ export function CharacterDetailPage() {
                           tags: friendship?.tags?.join("，") ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
+                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2106,7 +2106,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("tags")}
-                      className="h-9 flex-1 rounded-[10px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                      className="h-9 flex-1 rounded-[16px] bg-[#f59e0b] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
@@ -2514,7 +2514,7 @@ function MobileCharacterErrorNotice({
   return (
     <InlineNotice
       tone="danger"
-      className="rounded-[11px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+      className="rounded-[12px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
     >
       {action ? (
         <div className="flex items-start justify-between gap-2">
@@ -2545,7 +2545,7 @@ function MobileProfileActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex min-h-11 items-center justify-center rounded-[11px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
+        "flex min-h-11 items-center justify-center rounded-[12px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
         primary
           ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] active:bg-[#f2f3f5]",
@@ -2573,7 +2573,7 @@ function ProfileSection({
         "overflow-hidden bg-white",
         flatOnMobile
           ? "-mx-3 rounded-none border-y border-[color:var(--border-faint)]"
-          : "rounded-[18px] border border-[color:var(--border-faint)]",
+          : "rounded-[20px] border border-[color:var(--border-faint)]",
       )}
     >
       <div
@@ -2802,7 +2802,7 @@ function DetailInputField({
         className={cn(
           "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(245, 158, 11,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
           compact
-            ? "rounded-[11px] py-2.5 text-[16px]"
+            ? "rounded-[12px] py-2.5 text-[16px]"
             : "rounded-[12px] py-3 text-sm",
         )}
       />

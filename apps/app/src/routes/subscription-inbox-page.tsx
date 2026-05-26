@@ -264,7 +264,7 @@ function MobileSubscriptionInboxPage() {
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
           <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
-              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone="danger"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -314,7 +314,7 @@ function MobileSubscriptionInboxPage() {
                     }),
                   });
                 }}
-                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(15,23,42,0.02)]"
+                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180, 130, 20, 0.02)]"
               >
                 <AvatarChip
                   name={group.account.name}
@@ -398,7 +398,7 @@ function MobileSubscriptionArticleRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(15,23,42,0.03)]"
+      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180, 130, 20, 0.03)]"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
@@ -420,10 +420,10 @@ function MobileSubscriptionArticleRow({
         <img
           src={delivery.article.coverImage}
           alt={delivery.article.title}
-          className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
+          className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
         />
       ) : (
-        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
+        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
           {t(msg`文章`)}
         </div>
       )}

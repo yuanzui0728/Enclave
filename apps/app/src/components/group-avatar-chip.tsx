@@ -36,13 +36,13 @@ export const GroupAvatarChip = memo(function GroupAvatarChip({
       ? "h-9 w-9 rounded-[16px] p-[2px]"
       : size === "wechat"
         ? "h-12 w-12 rounded-xl p-[3px]"
-        : "h-11 w-11 rounded-[18px] p-[2px]";
+        : "h-11 w-11 rounded-[20px] p-[2px]";
   const cellClassName =
     size === "sm"
       ? "rounded-[6px]"
       : size === "wechat"
-        ? "rounded-[7px]"
-        : "rounded-[7px]";
+        ? "rounded-[8px]"
+        : "rounded-[8px]";
   const sources = buildGroupAvatarSources(name, members);
 
   return (

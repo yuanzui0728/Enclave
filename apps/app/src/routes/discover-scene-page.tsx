@@ -385,7 +385,7 @@ function MobileDiscoverScenePage() {
       notice={
         message ? (
           <InlineNotice
-            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={tone}
             // 走查 R1（移动端发现-场景相遇）：success / fallback / "暂时没有新相遇了"
             // 三种 notice 是异步 mutation 4-20s 后才 settle 的反馈，屏幕阅读器用户
@@ -500,14 +500,14 @@ function MobileDiscoverScenePage() {
                   discover-encounter-page 的视觉：busy 时把场景图标替成 LoaderCircle
                   自旋，明确告诉用户"正在跑、不要乱点"。
                 */}
-                <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
                   {busy ? (
                     <LoaderCircle size={18} className="animate-spin" />
                   ) : (
                     <Icon size={18} />
                   )}
                 </div>
-                <div className="mt-3 text-[15px] font-medium text-[#111827]">
+                <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
                   {busy
                     ? t(msg`正在前往${t(scene.label)}...`)
                     : t(scene.label)}
@@ -520,7 +520,7 @@ function MobileDiscoverScenePage() {
 
       {sceneMutation.isError && sceneMutation.error instanceof Error ? (
         <InlineNotice
-          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           tone="danger"
           // 走查 R1（移动端发现-场景相遇）：错误条目是阻塞用户继续动作的硬反馈
           // （DAILY_LIMIT / INVALID / 网络异常），用 role=alert 让屏幕阅读器
@@ -567,7 +567,7 @@ function MobileDiscoverScenePage() {
                 <button
                   type="button"
                   onClick={() => sceneMutation.mutate(sceneMutation.variables)}
-                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试场景相遇`)}
                 </button>

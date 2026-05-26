@@ -331,10 +331,10 @@ function SelectionModeActionButton({
       onClick={onClick}
       disabled={disabled}
       className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-1 text-[11px] font-medium transition active:bg-[color:var(--surface-card-hover)] disabled:bg-[color:var(--bg-canvas)] disabled:text-[#b8b8b8] ${
-        danger ? "text-[#d74b45]" : "text-[#111827]"
+        danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"
       }`}
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(180, 130, 20, 0.04)]">
         {icon}
       </span>
       <span>{label}</span>
@@ -3564,7 +3564,7 @@ export function ChatMessageList({
             className={
               isDesktop
                 ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(180, 130, 20, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
             {loadingOlderMessages ? t(msg`正在加载更早消息...`) : t(msg`查看更多消息`)}
@@ -3657,11 +3657,11 @@ export function ChatMessageList({
             <button
               type="button"
               onClick={resetSelectionMode}
-              className="flex h-9 min-w-14 items-center justify-start rounded-[10px] px-2.5 text-[15px] text-[color:var(--text-secondary)] transition active:bg-white/80"
+              className="flex h-9 min-w-14 items-center justify-start rounded-[12px] px-2.5 text-[15px] text-[color:var(--text-secondary)] transition active:bg-white/80"
             >
               {t(msg`取消`)}
             </button>
-            <div className="text-[15px] font-medium text-[#111827]">
+            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
               {t(msg`已选 ${selectedMessageIds.length} 条`)}
             </div>
             <button
@@ -3670,7 +3670,7 @@ export function ChatMessageList({
                 !visibleMessages.length || selectionActionPending !== null
               }
               onClick={handleToggleSelectAllMessages}
-              className="flex h-9 min-w-16 items-center justify-end rounded-[10px] px-2.5 text-[15px] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[#b8b8b8]"
+              className="flex h-9 min-w-16 items-center justify-end rounded-[12px] px-2.5 text-[15px] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[#b8b8b8]"
             >
               {allVisibleSelected ? t(msg`全不选`) : t(msg`全选`)}
             </button>
@@ -3800,7 +3800,7 @@ export function ChatMessageList({
                   className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
                       ? "rounded-full border border-black/6 bg-[#f8f5ec] px-3 py-1.5 text-[11px]"
-                      : "rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
+                      : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
@@ -3932,7 +3932,7 @@ export function ChatMessageList({
                           : "mb-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium",
                         isUser
                           ? "bg-[rgba(148,163,184,0.18)] text-[color:var(--text-secondary)]"
-                          : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+                          : "bg-[rgba(180, 130, 20, 0.06)] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {t(msg`聊天记录`)}
@@ -4159,10 +4159,10 @@ export function ChatMessageList({
                       className={`px-3.5 py-2 text-[15px] leading-6 ${
                         isUser
                           ? isDesktop
-                            ? "rounded-[17px] bg-[#95ec69] text-[#111827] shadow-none"
+                            ? "rounded-[16px] bg-[#95ec69] text-[#111827] shadow-none"
                             : "rounded-[20px] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
-                            ? "rounded-[17px] border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
+                            ? "rounded-[16px] border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
                             : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
                       } whitespace-pre-wrap break-words`}
                     >
@@ -5084,7 +5084,7 @@ function SharedHistorySummaryNotice({
         "mx-auto max-w-[84%] border text-center",
         isDesktop
           ? "rounded-[16px] border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
-          : "rounded-[14px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
+          : "rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
           ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
           : "",
@@ -5917,10 +5917,10 @@ function ReplyQuoteCard({
         align === "right"
           ? isDesktop
             ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
-            : "mb-1.5 rounded-[11px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
             ? "mb-2 rounded-[12px] border-black/6 bg-[#f8f5ec] px-3 py-2 text-[color:var(--text-primary)]"
-            : "mb-1.5 rounded-[11px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[12px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
       } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
       <div className={`flex items-center ${isDesktop ? "gap-2" : "gap-1.5"}`}>
@@ -6026,7 +6026,7 @@ function ImageMessage({
       <div
         className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
           isDesktop
-            ? "h-28 w-28 rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            ? "h-28 w-28 rounded-[24px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
             : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
         }`}
       >
@@ -6046,7 +6046,7 @@ function ImageMessage({
       className={`bg-white object-cover shadow-none ${
         isDesktop
           ? "rounded-[16px] border border-black/6"
-          : "rounded-[13px] border border-[color:var(--border-subtle)]"
+          : "rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
       style={imageStyle}
       loading="lazy"
@@ -6158,7 +6158,7 @@ function ContactCardMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
+          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       {recommendation ? (
@@ -6302,7 +6302,7 @@ function NoteCardMessage({
       className={`overflow-hidden bg-white shadow-none ${
         isDesktop
           ? "w-[248px] rounded-[16px] border border-black/6"
-          : "w-[220px] rounded-[13px] border border-[color:var(--border-subtle)]"
+          : "w-[220px] rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
     >
       {previewImageSrc ? (
@@ -6331,7 +6331,7 @@ function NoteCardMessage({
           }`}
         >
           <div
-            className={`rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
+            className={`rounded-[16px] border border-[rgba(180, 130, 20, 0.08)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
               isDesktop
                 ? "px-3 py-2 text-[11px] tracking-[0.16em]"
                 : "px-2.5 py-1.5 text-[10px] tracking-[0.14em]"
@@ -6360,7 +6360,7 @@ function NoteCardMessage({
         >
           {excerpt || translateRuntimeMessage(msg`点击查看完整笔记`)}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-[rgba(15,23,42,0.06)] pt-2.5">
+        <div className="flex items-center justify-between gap-3 border-t border-[rgba(180, 130, 20, 0.06)] pt-2.5">
           <div className="flex min-w-0 flex-wrap gap-1.5">
             {tags.slice(0, 2).map((tag) => (
               <span
@@ -6464,7 +6464,7 @@ function FeedPostCardMessage({
       className={`overflow-hidden bg-white shadow-none ${
         isDesktop
           ? "w-[260px] rounded-[16px] border border-black/6"
-          : "w-[228px] rounded-[13px] border border-[color:var(--border-subtle)]"
+          : "w-[228px] rounded-[12px] border border-[color:var(--border-subtle)]"
       }`}
     >
       {cover && !coverFailed ? (
@@ -6513,7 +6513,7 @@ function FeedPostCardMessage({
             translateRuntimeMessage(msg`视频号动态`)}
         </div>
         <div
-          className={`flex items-center justify-between gap-3 border-t border-[rgba(15,23,42,0.06)] pt-2 text-[color:var(--text-muted)] ${
+          className={`flex items-center justify-between gap-3 border-t border-[rgba(180, 130, 20, 0.06)] pt-2 text-[color:var(--text-muted)] ${
             isDesktop ? "text-[11px]" : "text-[10px]"
           }`}
         >
@@ -6559,15 +6559,15 @@ function FileAttachmentMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
+          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       <div className={`flex items-center ${isDesktop ? "gap-3" : "gap-2.5"}`}>
         <div
           className={`flex items-center justify-center text-[color:var(--text-secondary)] ${
             isDesktop
-              ? "h-12 w-12 rounded-[14px] bg-[#f3f4f6]"
-              : "h-10 w-10 rounded-[11px] bg-[color:var(--surface-console)]"
+              ? "h-12 w-12 rounded-[16px] bg-[#f3f4f6]"
+              : "h-10 w-10 rounded-[12px] bg-[color:var(--surface-console)]"
           }`}
         >
           <FileText size={isDesktop ? 20 : 18} />
@@ -6630,7 +6630,7 @@ function LocationCardMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
+          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       <div
@@ -6760,7 +6760,7 @@ function VoiceMessage({
             ? "bg-[#95ec69] text-[#111827]"
             : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00]"
           : isDesktop
-            ? "rounded-[18px] border border-black/5 bg-white text-[color:var(--text-primary)]"
+            ? "rounded-[20px] border border-black/5 bg-white text-[color:var(--text-primary)]"
             : "rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)]"
       }`}
     >
@@ -6883,11 +6883,11 @@ function GroupRelaySummaryMessage({
       className={`border shadow-none ${
         isDesktop
           ? own
-            ? "w-[252px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[252px] rounded-[18px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[252px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[252px] rounded-[20px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[236px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
-            : "w-[236px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
+            ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[236px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -6996,8 +6996,8 @@ function GroupRelaySummaryMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7177,7 +7177,7 @@ function CallLogMessage({
   return (
     <div
       className={cn(
-        "inline-flex max-w-[280px] items-center gap-2.5 rounded-[14px] border px-3 py-2 text-[12px] leading-[18px]",
+        "inline-flex max-w-[280px] items-center gap-2.5 rounded-[16px] border px-3 py-2 text-[12px] leading-[18px]",
         tone === "warning"
           ? "border-[rgba(245,158,11,0.20)] bg-[rgba(245,158,11,0.08)] text-[color:var(--text-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]",
@@ -7309,11 +7309,11 @@ function GroupCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
-            : "w-[238px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
+            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -7356,8 +7356,8 @@ function GroupCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7419,8 +7419,8 @@ function ResultCardMetric({
     <div
       className={
         isDesktop
-          ? "rounded-[14px] bg-white/72 px-3 py-2"
-          : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
+          ? "rounded-[16px] bg-white/72 px-3 py-2"
+          : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
       }
     >
       <div
@@ -7471,11 +7471,11 @@ function DirectCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
-            : "w-[238px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
+            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -7512,8 +7512,8 @@ function DirectCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7596,7 +7596,7 @@ function StickerMessage({
 
   if (loadFailed) {
     return (
-      <div className="flex h-24 w-24 items-center justify-center rounded-[22px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
+      <div className="flex h-24 w-24 items-center justify-center rounded-[24px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
         {label || translateRuntimeMessage(msg`[表情包]`)}
       </div>
     );
@@ -7624,7 +7624,7 @@ function StickerMessage({
       // 图片链接当文字；drop 到桌面则触发"保存这张表情到桌面"。和兄弟
       // sticker 同款 draggable={false} 防御。
       draggable={false}
-      className="rounded-[18px] bg-white/70 object-contain shadow-none"
+      className="rounded-[20px] bg-white/70 object-contain shadow-none"
       style={stickerStyle}
     />
   );
@@ -7952,7 +7952,7 @@ function ImageViewerOverlay({
           decoding="async"
           draggable={false}
           className={`max-h-full max-w-full object-contain shadow-[0_32px_80px_rgba(0,0,0,0.34)] ${
-            isDesktop ? "rounded-[20px]" : "rounded-[14px]"
+            isDesktop ? "rounded-[20px]" : "rounded-[16px]"
           }`}
         />
       </div>
@@ -8039,7 +8039,7 @@ function LocationViewerOverlay({
         // 秒关。Esc keydown 已挂；onClick 鼠标点击关闭路径不受影响。
         tabIndex={-1}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.12),rgba(15,23,42,0.72))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(180, 130, 20, 0.12),rgba(15,23,42,0.72))]" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
           <div>
@@ -8070,11 +8070,11 @@ function LocationViewerOverlay({
           }}
         >
           <div
-            className={`relative h-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
+            className={`relative h-full overflow-hidden rounded-[24px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
               isDesktop ? "mx-auto max-w-4xl" : ""
             }`}
           >
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(15,23,42,0.3))]" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(180, 130, 20, 0.3))]" />
             <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:36px_36px]" />
             <div className="absolute inset-x-[14%] top-[18%] h-24 rounded-full bg-[rgba(74,222,128,0.12)] blur-3xl" />
             <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[rgba(59,130,246,0.12)] blur-3xl" />
@@ -8085,7 +8085,7 @@ function LocationViewerOverlay({
               </div>
 
               <div className="flex flex-1 items-center justify-center">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(15,23,42,0.32)]">
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(180, 130, 20, 0.32)]">
                   <div className="absolute inset-3 rounded-full border border-white/12" />
                   <MapPin size={34} className="text-white" />
                 </div>
@@ -8282,16 +8282,16 @@ function NoteViewerOverlay({
             <div className="mt-4">
               {noteQuery.isLoading && !document ? (
                 <div className="space-y-2.5">
-                  <div className="h-4 w-3/4 rounded bg-[rgba(15,23,42,0.06)]" />
-                  <div className="h-4 w-full rounded bg-[rgba(15,23,42,0.06)]" />
-                  <div className="h-4 w-5/6 rounded bg-[rgba(15,23,42,0.06)]" />
+                  <div className="h-4 w-3/4 rounded bg-[rgba(180, 130, 20, 0.06)]" />
+                  <div className="h-4 w-full rounded bg-[rgba(180, 130, 20, 0.06)]" />
+                  <div className="h-4 w-5/6 rounded bg-[rgba(180, 130, 20, 0.06)]" />
                 </div>
               ) : hasContentHtml ? (
                 <div
                   className={cn(
                     "text-[15px] leading-7 text-[color:var(--text-primary)]",
-                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(15,23,42,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[14px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(15,23,42,0.08)]",
+                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180, 130, 20, 0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180, 130, 20, 0.08)]",
                     "[&_[data-note-checkbox='false']]:cursor-default [&_[data-note-checkbox='true']]:cursor-default [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
                   )}
                   dangerouslySetInnerHTML={{
@@ -8316,7 +8316,7 @@ function NoteViewerOverlay({
                       // 整段滚动手势被吞，drag URL 还可能被释放到桌面意外触发
                       // "下载该图到桌面"。和姊妹 viewer img 一致挂 draggable={false}。
                       draggable={false}
-                      className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
+                      className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(180, 130, 20, 0.08)] object-cover"
                     />
                   ) : null}
                   <div className="text-[15px] leading-7 text-[color:var(--text-primary)]">
@@ -8342,7 +8342,7 @@ function NoteViewerOverlay({
                         // 任一张内嵌图上轻微 drag 都被浏览器接管成 native drag，
                         // 干扰滚动手势。
                         draggable={false}
-                        className="my-2 max-h-[60vw] w-full rounded-[14px] border border-[rgba(15,23,42,0.08)] object-cover"
+                        className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(180, 130, 20, 0.08)] object-cover"
                       />
                     ))}
                   {fileAssets.map((asset) => (
@@ -8353,7 +8353,7 @@ function NoteViewerOverlay({
                       href={resolveAppMediaUrl(asset.url)}
                       target="_blank"
                       rel="noreferrer"
-                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(15,23,42,0.08)] bg-[rgba(243,244,246,0.82)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
+                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(180, 130, 20, 0.08)] bg-[rgba(243,244,246,0.82)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
                     >
                       <FileText size={14} />
                       <span className="max-w-[60vw] truncate">
@@ -8448,7 +8448,7 @@ function NoteDetailActionSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] bg-[rgba(15,23,42,0.14)]">
+    <div className="fixed inset-0 z-[60] bg-[rgba(180, 130, 20, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -8466,7 +8466,7 @@ function NoteDetailActionSheet({
         // 闭路径不受影响。
         tabIndex={-1}
       />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(180, 130, 20, 0.10)]">
         <div className="flex justify-center pb-2">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
@@ -8505,7 +8505,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-1 rounded-[12px] bg-white px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+          className="mt-1 rounded-[12px] bg-white px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(180, 130, 20, 0.04)]"
         >
           {translateRuntimeMessage(msg`取消`)}
         </button>

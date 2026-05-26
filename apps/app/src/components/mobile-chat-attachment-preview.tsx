@@ -32,7 +32,7 @@ export function MobileChatAttachmentPreview({
   const t = translateRuntimeMessage;
 
   return (
-    <div className="mb-1.5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
+    <div className="mb-1.5 rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
       <div className="flex items-center gap-2.5">
         {kind === "images" && imagePreviews?.length ? (
           <div className="grid max-h-[10rem] w-[10rem] grid-cols-3 gap-1 overflow-auto pr-1">

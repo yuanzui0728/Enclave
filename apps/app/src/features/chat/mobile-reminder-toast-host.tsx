@@ -299,12 +299,12 @@ export function MobileReminderToastHost() {
       }}
     >
       {actionNotice ? (
-        <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[rgba(249,255,251,0.97)] shadow-[0_12px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+        <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[rgba(249,255,251,0.97)] shadow-[0_12px_28px_rgba(180, 130, 20, 0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
               <Check size={16} />
             </div>
-            <div className="min-w-0 flex-1 text-[13px] font-medium text-[#111827]">
+            <div className="min-w-0 flex-1 text-[13px] font-medium text-[color:var(--text-primary)]">
               {actionNotice}
             </div>
             <button
@@ -319,7 +319,7 @@ export function MobileReminderToastHost() {
         </div>
       ) : null}
       {!shouldHideActiveReminder && activeReminder ? (
-        <div className="pointer-events-auto overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.82)] bg-[rgba(255,252,246,0.96)] shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+        <div className="pointer-events-auto overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.82)] bg-[rgba(255,252,246,0.96)] shadow-[0_18px_40px_rgba(180, 130, 20, 0.16)] backdrop-blur-xl">
           <div className="flex items-start gap-3 px-4 py-3.5">
             <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(245, 158, 11,0.12)] text-[#f59e0b]">
               <BellRing size={18} />
@@ -327,7 +327,7 @@ export function MobileReminderToastHost() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <div className="truncate text-[14px] font-medium text-[#111827]">
+                  <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
                     {t(msg`消息提醒`)}
                   </div>
                   {remainingCount > 0 ? (

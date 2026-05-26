@@ -239,7 +239,7 @@ export function ForestTrainGame({
                   onClick={() => actions.selectRoute(r.id)}
                   disabled={!unlocked || isRunning}
                   className={cn(
-                    "flex w-full items-start gap-2 rounded-[10px] border px-3 py-2 text-left",
+                    "flex w-full items-start gap-2 rounded-[12px] border px-3 py-2 text-left",
                     active
                       ? "border-emerald-400 bg-emerald-50"
                       : "border-[color:var(--border-faint)] bg-white",

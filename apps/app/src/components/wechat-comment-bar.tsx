@@ -236,7 +236,7 @@ export function WeChatCommentBar({
           </div>
         ) : null}
         <div className="flex items-end gap-2 px-3 py-2.5">
-          <div className="min-w-0 flex-1 rounded-[6px] border border-[#E5E5E5] bg-white px-3 py-2 text-[15px] text-[#1A1A1A]">
+          <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
             <textarea
               ref={textAreaRef}
               value={value}
@@ -277,7 +277,7 @@ export function WeChatCommentBar({
             disabled={!canSubmit}
             onClick={handleSubmit}
             className={cn(
-              "h-[36px] shrink-0 rounded-[4px] px-4 text-[14px] font-medium transition-colors",
+              "h-[36px] shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
               canSubmit
                 ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
                 : "bg-[#E5E5E5] text-[#B0B0B0]",

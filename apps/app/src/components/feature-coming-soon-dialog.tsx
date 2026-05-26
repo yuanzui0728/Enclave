@@ -135,7 +135,7 @@ export function FeatureComingSoonDialog({
         </div>
 
         <div className="px-6 pt-3">
-          <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[#f6f7f7] px-3 py-2.5">
+          <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[#f6f7f7] px-3 py-2.5">
             <div className="text-[11px] text-[color:var(--text-muted)]">
               {t(msg`微信号（点一下选中，也可直接复制）`)}
             </div>
@@ -158,7 +158,7 @@ export function FeatureComingSoonDialog({
               <Button
                 type="button"
                 variant="primary"
-                className="shrink-0 rounded-[10px] bg-[#f59e0b] px-3 py-1.5 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                className="shrink-0 rounded-full bg-[#f59e0b] px-3 py-1.5 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
                 onClick={() => void handleCopy()}
               >
                 <Copy size={12} className="mr-1" />
