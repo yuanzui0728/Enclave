@@ -22,6 +22,7 @@ import {
 import { DesktopChatConfirmDialog } from "../features/desktop/chat/desktop-chat-confirm-dialog";
 import { DesktopUtilityShell } from "../features/shell/desktop-utility-shell";
 import { AccountSecurityPanel } from "../features/account-security/account-security-panel";
+import { DeleteAccountPanel } from "../features/account-security/delete-account-panel";
 import { SubscriptionPanel } from "../features/subscription/subscription-panel";
 import {
   clearCloudRuntimeSession,
@@ -607,12 +608,20 @@ export function ProfileSettingsDesktop() {
         </SettingsSection>
       ) : null}
       {showCloudAccountEntries && activeTab === "account-security" ? (
-        <SettingsSection
-          title={t(msg`账号安全`)}
-          description={t(msg`修改云账号登录密码，需要邮箱验证码确认。`)}
-        >
-          <AccountSecurityPanel />
-        </SettingsSection>
+        <>
+          <SettingsSection
+            title={t(msg`账号安全`)}
+            description={t(msg`修改云账号登录密码，需要邮箱验证码确认。`)}
+          >
+            <AccountSecurityPanel />
+          </SettingsSection>
+          <SettingsSection
+            title={t(msg`注销账号`)}
+            description={t(msg`注销云账号并删除数据，需要邮箱验证码确认；操作不可恢复。`)}
+          >
+            <DeleteAccountPanel />
+          </SettingsSection>
+        </>
       ) : null}
       <DesktopChatConfirmDialog
         open={logoutConfirmOpen}

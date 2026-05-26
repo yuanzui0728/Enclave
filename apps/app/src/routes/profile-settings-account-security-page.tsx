@@ -6,6 +6,7 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { AccountSecurityPanel } from "../features/account-security/account-security-panel";
+import { DeleteAccountPanel } from "../features/account-security/delete-account-panel";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 
@@ -53,8 +54,14 @@ export function ProfileSettingsAccountSecurityPage() {
         }
       />
 
-      <div className="mt-3 px-4 pb-6">
+      <div className="mt-3 space-y-5 px-4 pb-6">
         <AccountSecurityPanel />
+        <div className="space-y-2">
+          <h2 className="px-1 text-[13px] font-semibold text-[color:var(--text-primary)]">
+            {t(msg`注销账号`)}
+          </h2>
+          <DeleteAccountPanel />
+        </div>
       </div>
     </AppPage>
   );

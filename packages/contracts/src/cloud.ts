@@ -183,6 +183,18 @@ export interface ChangePasswordResponse {
   passwordUpdatedAt: string;
 }
 
+// Apple App Store 5.1.1(v)：注册类 App 必须支持 App 内自助注销账号。两步走，与
+// 改密码同构——sendCode 复用 SendChangePasswordCodeResponse（往绑定邮箱发码），
+// confirm 提交验证码后软删除生效。后端实现见 cloud-api AccountDeletionService。
+export interface ConfirmAccountDeletionRequest {
+  code: string;
+}
+
+export interface ConfirmAccountDeletionResponse {
+  ok: true;
+  deletedAt: string;
+}
+
 export interface VerifyGoogleIdTokenRequest {
   idToken: string;
   inviteCode?: string;

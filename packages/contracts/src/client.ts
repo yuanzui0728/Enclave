@@ -39,6 +39,8 @@ import type {
   ResolveWorldAccessResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  ConfirmAccountDeletionRequest,
+  ConfirmAccountDeletionResponse,
   LoginWithPasswordRequest,
   LoginWithPasswordResponse,
   SendChangePasswordCodeResponse,
@@ -1367,6 +1369,34 @@ export function changeCloudPassword(
 ) {
   return requestCloudApi<ChangePasswordResponse>(
     "/cloud/auth/password/change",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+// 账号注销（Apple 5.1.1(v)）：与改密码同构的两步。send-code 往绑定邮箱发码，
+// 复用 SendChangePasswordCodeResponse 形状；confirm 提交验证码后服务端软删除。
+export function sendCloudAccountDeletionCode(
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<SendChangePasswordCodeResponse>(
+    "/cloud/auth/account/deletion/send-code",
+    buildCloudAuthHeaders(accessToken, { method: "POST" }),
+    baseUrl,
+  );
+}
+
+export function confirmCloudAccountDeletion(
+  payload: ConfirmAccountDeletionRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<ConfirmAccountDeletionResponse>(
+    "/cloud/auth/account/deletion/confirm",
     buildCloudAuthHeaders(accessToken, {
       method: "POST",
       body: JSON.stringify(payload),
