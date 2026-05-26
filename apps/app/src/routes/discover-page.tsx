@@ -120,7 +120,8 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`朋友圈`,
     badge: msg`朋友`,
     icon: Users,
-    iconClassName: "bg-[linear-gradient(135deg,#38b16d,#1f9d55)] text-white",
+    iconClassName:
+      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
     to: "/discover/moments",
     buildHash: ({ hash, pathname }) =>
       buildDesktopMomentsRouteHash({
@@ -134,7 +135,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`随机`,
     icon: Sparkles,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,#fdba74,#f97316)] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -147,7 +148,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`场景相遇`,
     badge: msg`场景`,
     icon: MapPin,
-    iconClassName: "bg-[linear-gradient(135deg,#16a34a,#0f766e)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,#a3e635,#65a30d)] text-white",
     to: "/discover/scene",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -189,7 +190,8 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`游戏`,
     badge: msg`娱乐`,
     icon: Gamepad2,
-    iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
+    iconClassName:
+      "bg-[linear-gradient(135deg,#fde047,#facc15)] text-[color:var(--text-on-brand)]",
     to: "/discover/games",
     buildSearch: ({ hash, pathname }) =>
       buildMobileGamesRouteSearch({
@@ -679,7 +681,7 @@ function DesktopDiscoverWorkspace() {
 
         <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4">
-            <AppSection className="space-y-4 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,247,236,0.94)_44%,rgba(240,251,245,0.92))]">
+            <AppSection className="space-y-4 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,247,236,0.94)_44%,rgba(255,248,238,0.92))]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--brand-secondary)]">
@@ -700,7 +702,7 @@ function DesktopDiscoverWorkspace() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[26px] border border-[rgba(47,122,63,0.16)] bg-[linear-gradient(180deg,rgba(247,252,248,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[26px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[11px] uppercase tracking-[0.16em] text-[#2f7a3f]">
                     {t(msg`朋友圈`)}
                   </div>
@@ -730,7 +732,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-              <div className="rounded-[26px] border border-[rgba(34,197,94,0.12)] bg-[linear-gradient(180deg,rgba(244,252,247,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[26px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] uppercase tracking-[0.18em] text-emerald-600">
@@ -812,7 +814,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-              <div className="rounded-[24px] border border-[rgba(245, 158, 11,0.14)] bg-[linear-gradient(180deg,rgba(246,252,248,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[24px] border border-[rgba(245, 158, 11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] tracking-[0.14em] text-[#b45309]">

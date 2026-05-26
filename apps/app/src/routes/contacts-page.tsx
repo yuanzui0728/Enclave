@@ -1766,7 +1766,7 @@ export function ContactsPage() {
       badgeCount: pendingRequestCount,
       active: desktopSelection?.kind === "new-friends",
       icon: UserPlus,
-      iconClassName: "bg-[linear-gradient(135deg,#34d399,#16a34a)]",
+      iconClassName: "bg-[linear-gradient(135deg,#fde047,#f59e0b)]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/friend-requests");
@@ -1812,7 +1812,7 @@ export function ContactsPage() {
       subtitle: t(msg`查看已上线的内容账号`),
       active: desktopSelection?.kind === "official-accounts",
       icon: BookText,
-      iconClassName: "bg-[linear-gradient(135deg,#10b981,#0f766e)]",
+      iconClassName: "bg-[linear-gradient(135deg,#bef264,#65a30d)]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/contacts/official-accounts");
@@ -1845,7 +1845,7 @@ export function ContactsPage() {
         (isDesktopLayout && showWorldCharacters) ||
         desktopSelection?.kind === "world-character",
       icon: BookUser,
-      iconClassName: "bg-[linear-gradient(135deg,#22c55e,#0f766e)]",
+      iconClassName: "bg-[linear-gradient(135deg,#fcd34d,#d97706)]",
       onClick: handleOpenWorldCharacters,
     },
   ];

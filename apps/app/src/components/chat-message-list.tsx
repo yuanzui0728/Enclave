@@ -4160,7 +4160,7 @@ export function ChatMessageList({
                         isUser
                           ? isDesktop
                             ? "rounded-[17px] bg-[#95ec69] text-[#111827] shadow-none"
-                            : "rounded-[20px] rounded-br-[6px] bg-[#e8f8c8] text-[#3f4d12] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
+                            : "rounded-[20px] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
                             ? "rounded-[17px] border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
                             : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
@@ -6758,7 +6758,7 @@ function VoiceMessage({
         own
           ? isDesktop
             ? "bg-[#95ec69] text-[#111827]"
-            : "bg-[#e8f8c8] text-[#3f4d12]"
+            : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00]"
           : isDesktop
             ? "rounded-[18px] border border-black/5 bg-white text-[color:var(--text-primary)]"
             : "rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)]"
