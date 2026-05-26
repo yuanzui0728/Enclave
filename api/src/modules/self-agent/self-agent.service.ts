@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThanOrEqual } from 'typeorm';
+import { TenantContextStore } from '../tenancy/tenant-context';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { ActionRunEntity } from '../action-runtime/action-run.entity';
@@ -532,10 +533,16 @@ export class SelfAgentService {
   }
 
   private async requireOwner() {
-    const owner = await this.userRepo.findOne({
-      where: {},
-      order: { createdAt: 'ASC' },
-    });
+    // 共享 world：owner 必须由请求/cron 租户帧决定。原 findOne({where:{}}) 取最早一行用户
+    // 会在 shared 模式恒返第一个 owner → self-agent run 写成别 owner 的（实测 309 行
+    // TENANT_WRITE_OWNER_MISMATCH）。有帧按 ctx.ownerId 取；无帧（LPP）沿用旧路径。
+    const ctx = TenantContextStore.get();
+    const owner = ctx
+      ? await this.userRepo.findOne({ where: { id: ctx.ownerId } })
+      : await this.userRepo.findOne({
+          where: {},
+          order: { createdAt: 'ASC' },
+        });
     if (!owner) {
       throw new AppError('WORLD_OWNER_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

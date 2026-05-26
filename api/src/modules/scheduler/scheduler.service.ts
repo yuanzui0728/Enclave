@@ -280,9 +280,11 @@ export class SchedulerService {
       };
     }
 
-    const newsDesk = await this.characterRepo.findOneBy({
-      id: WORLD_NEWS_DESK_CHARACTER_ID,
-    });
+    // 共享 world：news desk 是固定角色 id，跨租户共用，按当前 owner 取（裸 findOneBy 会
+    // 读到别 owner 的同 id 角色 → 读守卫抛）。
+    const newsDesk = await this.tenantService
+      .scoped(this.characterRepo)
+      .findOneBy({ id: WORLD_NEWS_DESK_CHARACTER_ID });
     if (!newsDesk) {
       return {
         success: false,
@@ -1619,7 +1621,10 @@ export class SchedulerService {
           continue;
         }
 
-        const convs = filterUserFacingConversations(await this.convRepo.find());
+        // 共享 world：只取当前 owner 的会话（裸 find 读全租户 → 读守卫抛）。
+        const convs = filterUserFacingConversations(
+          await this.tenantService.scoped(this.convRepo).find(),
+        );
         let sentForCharacter = 0;
         for (const conv of convs) {
           if (!conv.participants.includes(char.id)) continue;
@@ -2016,7 +2021,10 @@ export class SchedulerService {
     for (const char of chars) {
       try {
         // 找该角色参与的所有对话
-        const convs = filterUserFacingConversations(await this.convRepo.find());
+        // 共享 world：只取当前 owner 的会话（裸 find 读全租户 → 读守卫抛）。
+        const convs = filterUserFacingConversations(
+          await this.tenantService.scoped(this.convRepo).find(),
+        );
         const charConvIds = convs
           .filter((c) => c.participants?.includes(char.id))
           .map((c) => c.id);
@@ -2114,7 +2122,10 @@ export class SchedulerService {
     for (const char of chars) {
       try {
         // 找该角色参与的所有对话
-        const convs = filterUserFacingConversations(await this.convRepo.find());
+        // 共享 world：只取当前 owner 的会话（裸 find 读全租户 → 读守卫抛）。
+        const convs = filterUserFacingConversations(
+          await this.tenantService.scoped(this.convRepo).find(),
+        );
         const charConvIds = convs
           .filter((c) => c.participants?.includes(char.id))
           .map((c) => c.id);

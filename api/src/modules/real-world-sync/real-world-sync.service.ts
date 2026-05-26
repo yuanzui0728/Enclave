@@ -918,7 +918,9 @@ export class RealWorldSyncService {
     character: Pick<CharacterEntity, 'id' | 'name' | 'sourceKey'>,
     rules: RealWorldSyncRulesValue,
   ) {
-    const blueprint = await this.blueprintRepo.findOneBy({
+    // 共享 world：blueprint 按 owner 隔离（复合主键），裸 findOneBy({characterId}) 会读到
+    // 别租户的同 characterId blueprint（preset/SELF 等固定 id 跨租户共用）→ 读守卫抛。
+    const blueprint = await new TenantRepository(this.blueprintRepo).findOneBy({
       characterId: character.id,
     });
     const builtInRealityLink =
