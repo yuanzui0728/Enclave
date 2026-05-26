@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
-import { Heart, MessageCircle, Share2, Star } from "lucide-react";
+import { Flag, Heart, MessageCircle, Share2, Star } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
@@ -25,6 +25,12 @@ type WeChatActionBubbleProps = {
    */
   onFavorite?: () => void;
   favorited?: boolean;
+  /**
+   * 可选 — 提供时气泡里多出一个「举报」入口（提交内容投诉）。
+   * 面向他人 / AI 生成的内容（朋友圈、广场动态）应提供；自己发布的内容不传即可隐藏。
+   * 应用商店审核要求 UGC / AI 内容在浏览处可直接举报。
+   */
+  onReport?: () => void;
   onClose: () => void;
 };
 
@@ -37,6 +43,7 @@ export function WeChatActionBubble({
   onShare,
   onFavorite,
   favorited = false,
+  onReport,
   onClose,
 }: WeChatActionBubbleProps) {
   const [mounted, setMounted] = useState(false);
@@ -220,6 +227,24 @@ export function WeChatActionBubble({
           >
             <Share2 size={14} />
             <span>{t(msg`分享`)}</span>
+          </button>
+        </>
+      ) : null}
+      {onReport ? (
+        <>
+          <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={(event) => {
+              event.stopPropagation();
+              onReport();
+              onClose();
+            }}
+            className="flex items-center gap-1 px-3.5 transition-colors active:bg-black/30"
+          >
+            <Flag size={14} />
+            <span>{t(msg`举报`)}</span>
           </button>
         </>
       ) : null}

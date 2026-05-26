@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   addMomentComment,
+  createModerationReport,
   getBlockedCharacters,
   getCharacter,
   getCharacterMoments,
@@ -178,6 +179,28 @@ export function MobileFriendMomentsPage() {
   // false，会真的再发一次。改用页面级 commentInflightRef，按 momentId 维度记账，
   // 跟 moments-page / profile-moments-page 同模板。
   const commentInflightRef = useRef<Record<string, boolean>>({});
+  // 举报好友（AI 角色）朋友圈。后端 /moderation/reports 支持 targetType=moment。
+  // inflight 守卫防连点重复堆 report，与 like/comment 同模板。
+  const reportInflightRef = useRef<Record<string, boolean>>({});
+  const reportMutation = useMutation({
+    mutationFn: (momentId: string) =>
+      createModerationReport(
+        { targetType: "moment", targetId: momentId, reason: "moments_report" },
+        baseUrl,
+      ),
+    onSuccess: () => {
+      setNotice({
+        tone: "success",
+        message: t(msg`已提交举报，我们会尽快处理。`),
+      });
+    },
+    onError: () => {
+      setNotice({
+        tone: "danger",
+        message: t(msg`举报提交失败，请稍后再试。`),
+      });
+    },
+  });
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -1294,6 +1317,23 @@ export function MobileFriendMomentsPage() {
           if (actionBubble) {
             setShareMomentId(actionBubble.momentId);
           }
+        }}
+        onReport={() => {
+          if (!actionBubble) return;
+          const id = actionBubble.momentId;
+          if (reportInflightRef.current[id]) return;
+          if (
+            typeof window !== "undefined" &&
+            !window.confirm(t(msg`确定举报这条朋友圈吗？`))
+          ) {
+            return;
+          }
+          reportInflightRef.current[id] = true;
+          reportMutation.mutate(id, {
+            onSettled: () => {
+              delete reportInflightRef.current[id];
+            },
+          });
         }}
         onClose={() => setActionBubble(null)}
       />

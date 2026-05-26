@@ -20,6 +20,7 @@ import { msg } from "@lingui/macro";
 import { ArrowLeft, Camera } from "lucide-react";
 import {
   addMomentComment,
+  createModerationReport,
   deleteMoment,
   getBlockedCharacters,
   getMomentsPage,
@@ -963,6 +964,26 @@ export function MomentsPage() {
       }
     },
   });
+  // 举报朋友圈（应用商店要求 UGC / AI 内容在浏览处可直接举报）。后端
+  // /moderation/reports 支持 targetType=moment；与 like/delete 同款 inflight 守卫
+  // 防连点重复堆 report。成功/失败走现有 notice 系统。
+  const reportInflightRef = useRef<Record<string, boolean>>({});
+  const reportMutation = useMutation({
+    mutationFn: (momentId: string) =>
+      createModerationReport(
+        { targetType: "moment", targetId: momentId, reason: "moments_report" },
+        baseUrl,
+      ),
+    onSuccess: () => {
+      setNoticeTone("success");
+      setNotice(t(msg`已提交举报，我们会尽快处理。`));
+    },
+    onError: () => {
+      setNoticeTone("danger");
+      setNotice(t(msg`举报提交失败，请稍后再试。`));
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (momentId: string) => deleteMoment(momentId, baseUrl),
     onMutate: async (momentId) => {
@@ -2299,6 +2320,26 @@ export function MomentsPage() {
           throw mutateError;
         }
       }}
+      onReportMoment={(momentId) => {
+        if (reportInflightRef.current[momentId]) return;
+        if (
+          typeof window !== "undefined" &&
+          !window.confirm(t(msg`确定举报这条朋友圈吗？`))
+        ) {
+          return;
+        }
+        reportInflightRef.current[momentId] = true;
+        try {
+          reportMutation.mutate(momentId, {
+            onSettled: () => {
+              delete reportInflightRef.current[momentId];
+            },
+          });
+        } catch (mutateError) {
+          delete reportInflightRef.current[momentId];
+          throw mutateError;
+        }
+      }}
       onDeleteMoment={(momentId) => {
         // ref guard 必须在 window.confirm 之前 set，否则 confirm 阻塞期间
         // 队列里的第二个 click 拿同一份闭包跑出来时 isPending 仍是旧 false，
@@ -2519,6 +2560,7 @@ type MobileMomentsViewProps = {
   onAuthorTap: (moment: Moment) => void;
   onLikeAuthorTap: (like: MomentLike) => void;
   onLikeMoment: (momentId: string) => void;
+  onReportMoment: (momentId: string) => void;
   onDeleteMoment: (momentId: string) => void;
   onOpenActionMenu: (momentId: string, anchorRect: DOMRect) => void;
   onCloseActionMenu: () => void;
@@ -2566,6 +2608,7 @@ function MobileMomentsView({
   onAuthorTap,
   onLikeAuthorTap,
   onLikeMoment,
+  onReportMoment,
   onDeleteMoment,
   onOpenActionMenu,
   onCloseActionMenu,
@@ -3037,6 +3080,11 @@ function MobileMomentsView({
         onShare={() => {
           if (actionBubble) {
             setShareMomentId(actionBubble.momentId);
+          }
+        }}
+        onReport={() => {
+          if (actionBubble) {
+            onReportMoment(actionBubble.momentId);
           }
         }}
         onClose={onCloseActionMenu}

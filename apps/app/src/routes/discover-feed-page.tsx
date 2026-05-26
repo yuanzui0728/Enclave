@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import {
   addFeedComment,
+  createModerationReport,
   getBlockedCharacters,
   getFeed,
   likeFeedPost,
@@ -521,6 +522,25 @@ export function DiscoverFeedPage() {
   // DB 里没任何变化。改成 onMutate 第一时间读 cache、把 BEFORE 状态钉进
   // likeBeforeStateRef，mutationFn 直接读 ref，绕开 cache 已被翻动的窗口期。
   const likeBeforeStateRef = useRef<Map<string, boolean>>(new Map());
+  // 举报广场动态（应用商店要求 AI / UGC 内容在浏览处可直接举报）。后端
+  // /moderation/reports 支持 targetType=feedPost。inflight Set 防连点重复堆 report。
+  const reportInflightPostIds = useRef<Set<string>>(new Set());
+  const reportMutation = useMutation({
+    mutationFn: (postId: string) =>
+      createModerationReport(
+        { targetType: "feedPost", targetId: postId, reason: "feed_report" },
+        baseUrl,
+      ),
+    onSuccess: () => {
+      setNoticeTone("success");
+      setNotice(t(msg`已提交举报，我们会尽快处理。`));
+    },
+    onError: () => {
+      setNoticeTone("info");
+      setNotice(t(msg`举报提交失败，请稍后再试。`));
+    },
+  });
+
   const likeMutation = useMutation({
     mutationFn: (postId: string) => {
       const wasLiked = likeBeforeStateRef.current.get(postId) ?? false;
@@ -3037,6 +3057,23 @@ export function DiscoverFeedPage() {
         onFavorite={() => {
           if (!actionBubble) return;
           toggleFavoriteByPostId(actionBubble.postId);
+        }}
+        onReport={() => {
+          if (!actionBubble) return;
+          const postId = actionBubble.postId;
+          if (reportInflightPostIds.current.has(postId)) return;
+          if (
+            typeof window !== "undefined" &&
+            !window.confirm(t(msg`确定举报这条动态吗？`))
+          ) {
+            return;
+          }
+          reportInflightPostIds.current.add(postId);
+          reportMutation.mutate(postId, {
+            onSettled: () => {
+              reportInflightPostIds.current.delete(postId);
+            },
+          });
         }}
         onClose={() => setActionBubble(null)}
       />
