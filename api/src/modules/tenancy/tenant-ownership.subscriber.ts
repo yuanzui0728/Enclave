@@ -3,6 +3,7 @@ import {
   EntitySubscriberInterface,
   EventSubscriber,
   type InsertEvent,
+  type LoadEvent,
   type RemoveEvent,
   type UpdateEvent,
 } from 'typeorm';
@@ -18,6 +19,28 @@ import { isTenantScopedEntity } from './tenant-scoped.decorator';
 @EventSubscriber()
 export class TenantOwnershipSubscriber implements EntitySubscriberInterface {
   private readonly logger = new Logger(TenantOwnershipSubscriber.name);
+
+  // 读取侧 fail-closed 安全网：shared 模式下，任何被加载的租户实体若 ownerId 与当前
+  // 租户不符，直接抛 —— 把「忘了写 WHERE ownerId 的查询读到别人数据」从静默泄漏变成
+  // 响亮的错误。配合 leak 测试，逐个 service 的读查询改写就变成「修被它拦下来的查询」，
+  // 而不是盲目审计上百处。NULL ownerId（理论上 shared 库新数据不会有）放行，避免误伤
+  // 偶发的全局种子行。
+  afterLoad(
+    entity: Record<string, unknown>,
+    event?: LoadEvent<Record<string, unknown>>,
+  ): void {
+    if (!isSharedWorldMode()) return;
+    if (!event || !isTenantScopedEntity(event.metadata.target as Function)) return;
+    const ctx = TenantContextStore.get();
+    if (!ctx) return;
+    if (!entity) return;
+    const owned = entity['ownerId'];
+    if (owned !== undefined && owned !== null && owned !== ctx.ownerId) {
+      throw new Error(
+        `TENANT_READ_LEAK entity=${event.metadata.name} row=${String(owned)} ctx=${ctx.ownerId}`,
+      );
+    }
+  }
 
   beforeInsert(event: InsertEvent<Record<string, unknown>>): void {
     if (!isSharedWorldMode()) return;

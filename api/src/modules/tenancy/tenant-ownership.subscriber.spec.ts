@@ -28,6 +28,10 @@ function insertEvent(entity: object, target: Function, name = target.name) {
   } as never;
 }
 
+function loadEvent(target: Function, name = target.name) {
+  return { metadata: { target, name } } as never;
+}
+
 describe('scoped entity registry', () => {
   it('registers the 30 already-ownerId entities', () => {
     registerAllScopedEntities();
@@ -96,5 +100,45 @@ describe('TenantOwnershipSubscriber (shared mode)', () => {
       subscriber.beforeInsert(insertEvent(entity, ScopedThing)),
     ).not.toThrow();
     expect(entity.ownerId).toBeUndefined();
+  });
+
+  describe('afterLoad read-leak guard', () => {
+    it('throws when a loaded scoped row belongs to another owner', () => {
+      const row = { ownerId: 'owner-B', id: 'x' };
+      TenantContextStore.run({ ownerId: 'owner-A', phone: 'pa' }, () => {
+        expect(() => subscriber.afterLoad(row, loadEvent(ScopedThing))).toThrow(
+          /TENANT_READ_LEAK/,
+        );
+      });
+    });
+
+    it('allows a loaded row that matches the current owner', () => {
+      const row = { ownerId: 'owner-A', id: 'x' };
+      TenantContextStore.run({ ownerId: 'owner-A', phone: 'pa' }, () => {
+        expect(() => subscriber.afterLoad(row, loadEvent(ScopedThing))).not.toThrow();
+      });
+    });
+
+    it('does not guard global (non-scoped) entities', () => {
+      const row = { ownerId: 'owner-B', id: 'x' };
+      TenantContextStore.run({ ownerId: 'owner-A', phone: 'pa' }, () => {
+        expect(() => subscriber.afterLoad(row, loadEvent(GlobalThing))).not.toThrow();
+      });
+    });
+
+    it('lets NULL ownerId pass (transition / global seed rows)', () => {
+      const row = { ownerId: null, id: 'x' };
+      TenantContextStore.run({ ownerId: 'owner-A', phone: 'pa' }, () => {
+        expect(() => subscriber.afterLoad(row, loadEvent(ScopedThing))).not.toThrow();
+      });
+    });
+
+    it('is a no-op outside shared mode', () => {
+      delete process.env.MAIN_MODE;
+      const row = { ownerId: 'owner-B', id: 'x' };
+      TenantContextStore.run({ ownerId: 'owner-A', phone: 'pa' }, () => {
+        expect(() => subscriber.afterLoad(row, loadEvent(ScopedThing))).not.toThrow();
+      });
+    });
   });
 });
