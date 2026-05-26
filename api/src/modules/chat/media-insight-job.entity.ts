@@ -30,6 +30,10 @@ export class MediaInsightJobEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属用户（后台任务必须不跨租户）。LPP 为 NULL，shared 盖当前 owner。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   threadType: MediaInsightJobThreadType;
 

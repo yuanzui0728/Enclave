@@ -25,6 +25,10 @@ export class FavoriteNoteEntity {
   @PrimaryColumn()
   id: string;
 
+  // 共享 world 多租户归属用户。LPP 为 NULL，shared 模式盖当前 owner。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   title: string;
 

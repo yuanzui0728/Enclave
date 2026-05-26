@@ -24,6 +24,19 @@ import { FeedPostLikeEntity } from '../feed/feed-post-like.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { MomentCommentEntity } from '../moments/moment-comment.entity';
 import { MomentLikeEntity } from '../moments/moment-like.entity';
+import { MomentEntity } from '../moments/moment.entity';
+import { MessageEntity } from '../chat/message.entity';
+import { GroupEntity } from '../chat/group.entity';
+import { GroupMemberEntity } from '../chat/group-member.entity';
+import { GroupMessageEntity } from '../chat/group-message.entity';
+import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
+import { ReplyArtifactJobEntity } from '../chat/reply-artifact-job.entity';
+import { MediaInsightJobEntity } from '../chat/media-insight-job.entity';
+import { FavoriteEntity } from '../chat/favorite.entity';
+import { FavoriteNoteEntity } from '../chat/favorite-note.entity';
+import { AIRelationshipEntity } from '../social/ai-relationship.entity';
+import { CharacterFriendshipEntity } from '../social/character-friendship.entity';
+import { WorldContextEntity } from '../world/world-context.entity';
 import { FarmCheckinEntity } from '../games/farm/entities/farm-checkin.entity';
 import { FarmEventLogEntity } from '../games/farm/entities/farm-event-log.entity';
 import { FarmNpcStateEntity } from '../games/farm/entities/farm-npc-state.entity';
@@ -87,6 +100,23 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   MomentPostEntity,
   MomentCommentEntity,
   MomentLikeEntity,
+  MomentEntity,
+  // chat（会话子表 message 经 conversationId、群及其成员/消息、回复/媒体后台任务、收藏）
+  MessageEntity,
+  GroupEntity,
+  GroupMemberEntity,
+  GroupMessageEntity,
+  GroupReplyTaskEntity,
+  ReplyArtifactJobEntity,
+  MediaInsightJobEntity,
+  FavoriteEntity,
+  FavoriteNoteEntity,
+  // social（角色-角色关系，按 world 隔离）
+  AIRelationshipEntity,
+  CharacterFriendshipEntity,
+  // world（每用户世界时间/天气快照）
+  WorldContextEntity,
+  // characters 暂不登记：复合主键 (ownerId,id) + fixed-id 冲突随迁移期 Phase 8。
 ];
 
 let registered = false;

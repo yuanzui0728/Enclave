@@ -6,6 +6,11 @@ export class WorldContextEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属用户（每用户各自的世界时间/天气快照）。LPP 为 NULL，
+  // shared 模式盖当前 owner；getLatest 等查询须按 ownerId 过滤，否则串号。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   localTime: string; // "下午三点"
 

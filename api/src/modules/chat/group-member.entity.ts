@@ -19,6 +19,10 @@ export class GroupMemberEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world 多租户归属用户（子表冗余 ownerId，经 groupId→group.ownerId）。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   groupId: string;
 

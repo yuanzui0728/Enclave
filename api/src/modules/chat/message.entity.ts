@@ -7,6 +7,11 @@ export class MessageEntity {
   @PrimaryColumn()
   id: string;
 
+  // 共享 world 多租户归属用户（子表冗余 ownerId，经 conversationId→conversation.ownerId）。
+  // LPP 为 NULL，shared 模式由 TenantRepository/subscriber 盖当前 owner。
+  @Column({ type: 'text', nullable: true })
+  ownerId: string | null;
+
   @Column()
   conversationId: string;
 
