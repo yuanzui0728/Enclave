@@ -20,6 +20,8 @@
     "wiki:prod": "node dist/main-wiki.js",
     "wiki:prod:stop": "pkill -f 'main-wiki.js' || true",
     "wiki:prod:restart": "pkill -f 'main-wiki.js' || true; sleep 1; node dist/main-wiki.js &",
+    "shared-world:prod": "node dist/main-shared-world.js",
+    "shared-world:prod:stop": "pkill -f 'main-shared-world.js' || true",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
