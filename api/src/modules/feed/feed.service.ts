@@ -23,6 +23,7 @@ import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import type { AiMessagePart } from '../ai/ai.types';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
 import {
@@ -4405,6 +4406,10 @@ export class FeedService implements OnModuleInit {
   }
 
   private async backfillFeedAuthorAvatars() {
+    // 单 owner 时代的 boot 迁移：补历史行作者头像。shared 模式没有「boot 期单 owner」
+    // 概念（每 owner 数据首触懒建、共享库初始为空），跳过；否则 getOwnerOrThrow 无上下文
+    // 会 fail-closed 抛、卡死共享进程启动。
+    if (isSharedWorldMode()) return;
     const [owner, characters, posts, comments] = await Promise.all([
       this.worldOwnerService.getOwnerOrThrow(),
       this.characters.findAll(),

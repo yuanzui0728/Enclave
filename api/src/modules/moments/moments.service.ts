@@ -19,6 +19,7 @@ import { MomentPostEntity } from './moment-post.entity';
 import { MomentCommentEntity } from './moment-comment.entity';
 import { MomentLikeEntity } from './moment-like.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
 import {
@@ -1855,6 +1856,9 @@ export class MomentsService implements OnModuleInit {
   }
 
   private async backfillMomentAuthorAvatars() {
+    // 单 owner 时代的 boot 迁移；shared 模式跳过（无 boot 期单 owner，否则 getOwnerOrThrow
+    // 无上下文 fail-closed 抛卡死共享进程启动）。
+    if (isSharedWorldMode()) return;
     const [owner, characters, posts, comments, likes] = await Promise.all([
       this.worldOwnerService.getOwnerOrThrow(),
       this.characters.findAll(),

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -297,7 +298,11 @@ export class WorldOwnerService {
 
     try {
       const owner = this.userRepo.create({
-        username: '',
+        // users.username 有 unique 索引：LPP 单 owner 用 '' 永不撞；shared 多 owner 必须
+        // 唯一占位（onboardingCompleted=false 驱动 onboarding，落地时 updateOwner 覆盖真名）。
+        // ⚠️ Phase 8 schema：world_owner 的 username 全局唯一约束需放宽（多用户同名 / onboarding
+        // 取同名会撞）——unique 应仅对 wiki_member 句柄生效或按 userType 作用域化。
+        username: `__pending_${randomUUID()}`,
         passwordHash: this.generatePlaceholderPasswordHash(),
         onboardingCompleted: false,
         avatar: '',

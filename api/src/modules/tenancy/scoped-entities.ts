@@ -34,8 +34,6 @@ import { ReplyArtifactJobEntity } from '../chat/reply-artifact-job.entity';
 import { MediaInsightJobEntity } from '../chat/media-insight-job.entity';
 import { FavoriteEntity } from '../chat/favorite.entity';
 import { FavoriteNoteEntity } from '../chat/favorite-note.entity';
-import { AIRelationshipEntity } from '../social/ai-relationship.entity';
-import { CharacterFriendshipEntity } from '../social/character-friendship.entity';
 import { WorldContextEntity } from '../world/world-context.entity';
 import { FarmCheckinEntity } from '../games/farm/entities/farm-checkin.entity';
 import { FarmEventLogEntity } from '../games/farm/entities/farm-event-log.entity';
@@ -111,12 +109,14 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   MediaInsightJobEntity,
   FavoriteEntity,
   FavoriteNoteEntity,
-  // social（角色-角色关系，按 world 隔离）
-  AIRelationshipEntity,
-  CharacterFriendshipEntity,
   // world（每用户世界时间/天气快照）
   WorldContextEntity,
-  // characters 暂不登记：复合主键 (ownerId,id) + fixed-id 冲突随迁移期 Phase 8。
+  // ⚠️ 暂不登记（随 characters 一起到 Phase 8）：
+  //   - characters：复合主键 (ownerId,id) + fixed-id 冲突
+  //   - AIRelationshipEntity / CharacterFriendshipEntity：角色-角色关系，由全局 boot
+  //     种子 ensureAiRelationshipSeed 创建（无租户上下文），且引用的 characters 当前仍是
+  //     全局行；过早登记会让 boot 种子撞写守卫 TENANT_WRITE_WITHOUT_CONTEXT。等 characters
+  //     转 per-owner、关系种子移到首触后再登记。ownerId 列已加（additive，无害）。
 ];
 
 let registered = false;

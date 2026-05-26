@@ -115,7 +115,8 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  const port = process.env.SHARED_WORLD_PORT ?? process.env.PORT ?? 3100;
+  // 默认 4100：避开 LPP 每用户 child 的端口区间（3010 起，规模上已用到 3100+）。
+  const port = process.env.SHARED_WORLD_PORT ?? process.env.PORT ?? 4100;
   await app.listen(Number(port), host);
   console.log(`隐界 shared-world API running on ${host}:${port}`);
 }
