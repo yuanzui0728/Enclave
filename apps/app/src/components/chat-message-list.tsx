@@ -6566,7 +6566,7 @@ function FileAttachmentMessage({
         <div
           className={`flex items-center justify-center text-[color:var(--text-secondary)] ${
             isDesktop
-              ? "h-12 w-12 rounded-[16px] bg-[#f3f4f6]"
+              ? "h-12 w-12 rounded-[16px] bg-[color:var(--surface-secondary)]"
               : "h-10 w-10 rounded-[12px] bg-[color:var(--surface-console)]"
           }`}
         >
@@ -6771,7 +6771,7 @@ function VoiceMessage({
           own
             ? "bg-white/55"
             : isDesktop
-              ? "bg-[#f3f4f6]"
+              ? "bg-[color:var(--surface-secondary)]"
               : "bg-[color:var(--surface-console)]"
         }`}
         aria-label={

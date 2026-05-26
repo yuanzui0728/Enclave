@@ -4202,7 +4202,7 @@ function DesktopToolbarButton({
       className={cn(
         "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[12px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
         active
-          ? "border-[color:var(--border-faint)] bg-[#f3f4f6] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
           : "text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]",
       )}
     >
@@ -4419,7 +4419,7 @@ function DesktopAttachmentDraftBar({
         </>
       ) : (
         <div className="flex items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]">
             <FileText size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -4486,7 +4486,7 @@ function DesktopScreenshotToolButton({
           className={cn(
             "ml-1 rounded-full px-1.5 py-0.5 text-[10px]",
             active
-              ? "bg-[#e5e7eb] text-[color:var(--text-secondary)]"
+              ? "bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]"
               : "bg-white/10 text-white/46",
           )}
         >

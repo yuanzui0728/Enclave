@@ -4750,7 +4750,7 @@ const CommentItemView = memo(function CommentItemView({
         />
         <div className="min-w-0 flex-1">
           <div className={cn("flex items-center gap-1.5", nameSize)}>
-            <span className="min-w-0 truncate text-[#888888]">
+            <span className="min-w-0 truncate text-[color:var(--text-muted)]">
               {comment.authorName}
             </span>
             {isAuthor ? (
@@ -4762,11 +4762,11 @@ const CommentItemView = memo(function CommentItemView({
           <div className={cn("mt-1 break-words text-[color:var(--text-primary)]", bodySize)}>
             {replyTargetName ? (
               <>
-                <span className="text-[#888888]">{t(msg`回复`)} </span>
+                <span className="text-[color:var(--text-muted)]">{t(msg`回复`)} </span>
                 <span className="text-[#b45309]">
                   @{replyTargetName}
                 </span>
-                <span className="text-[#888888]">：</span>
+                <span className="text-[color:var(--text-muted)]">：</span>
               </>
             ) : null}
             {cleanText}
@@ -4794,7 +4794,7 @@ const CommentItemView = memo(function CommentItemView({
             "flex shrink-0 flex-col items-center gap-0.5 pl-1 pt-0.5 transition disabled:cursor-not-allowed",
             comment.likedByOwner
               ? "text-[#fa5151]"
-              : "text-[#888888] active:text-[color:var(--text-primary)]",
+              : "text-[color:var(--text-muted)] active:text-[color:var(--text-primary)]",
           )}
         >
           <Heart
@@ -5569,7 +5569,7 @@ function MobileChannelCommentsSheet({
                 <MessageCircle
                   size={56}
                   strokeWidth={1.2}
-                  className="text-[#d1d5db]"
+                  className="text-[color:var(--text-dim)]"
                 />
                 <span className="text-[14px] text-[color:var(--text-dim)]">
                   {t(msg`还没有评论，快来抢沙发`)}
@@ -5658,7 +5658,7 @@ function MobileChannelCommentsSheet({
                   "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
                   draft.trim() && !submitPending
                     ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
-                    : "bg-[#e5e5e5] text-[#b0b0b0]",
+                    : "bg-[color:var(--surface-secondary)] text-[#b0b0b0]",
                 )}
               >
                 {submitPending ? t(msg`发送中`) : t(msg`发送`)}
