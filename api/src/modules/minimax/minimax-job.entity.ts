@@ -47,6 +47,14 @@ export class MinimaxJobEntity {
   @Column({ type: 'text', nullable: true })
   characterAvatar?: string | null;
 
+  // 共享 world：入队时（请求/cron 帧内）捕获租户，处理 job 的 @Cron 轮询脱帧后据此
+  // runForOwner 重建帧再 persist 媒体（owners/<ownerId>/）+ 写回 target。LPP 为 NULL。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  phone?: string | null;
+
   @Column({ type: 'text', nullable: true })
   taskId?: string | null;
 

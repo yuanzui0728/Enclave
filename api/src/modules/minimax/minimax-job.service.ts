@@ -27,6 +27,8 @@ import {
   todayInShanghai,
 } from './minimax-quota.service';
 import type { MinimaxJobCallback } from './minimax-job.callbacks';
+import { TenantService } from '../tenancy/tenant.service';
+import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
 import type { MinimaxVideoModel, MinimaxMusicModel } from './minimax.types';
 
 const VIDEO_POLL_INTERVAL_MS = 30_000;
@@ -81,7 +83,19 @@ export class MinimaxJobService {
     private readonly client: MinimaxClient,
     private readonly storage: MinimaxAssetStorage,
     private readonly quota: MinimaxQuotaService,
+    private readonly tenantService: TenantService,
   ) {}
+
+  // @Cron 轮询处理 job 时脱了入队时的租户帧；用 job 上捕获的 ownerId 重建帧，
+  // 让 advance*Job 里的媒体 persist（owners/<ownerId>/）+ owner-scoped 写回落到对的租户。
+  // LPP（无 ownerId / 非 shared）直接跑，行为不变。
+  private runJobInTenantFrame<T>(
+    job: MinimaxJobEntity,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    if (!isSharedWorldMode() || !job.ownerId) return fn();
+    return this.tenantService.runForOwner(job.ownerId, job.phone ?? '', fn);
+  }
 
   registerCallback(targetType: MinimaxJobTargetType, cb: MinimaxJobCallback) {
     this.callbacks.set(targetType, cb);
@@ -114,6 +128,8 @@ export class MinimaxJobService {
       characterId: args.characterId,
       characterName: args.characterName,
       characterAvatar: args.characterAvatar ?? null,
+      ownerId: TenantContextStore.get()?.ownerId ?? null,
+      phone: TenantContextStore.get()?.phone ?? null,
       executeAfter: new Date(),
       attemptCount: 0,
     });
@@ -164,6 +180,8 @@ export class MinimaxJobService {
       characterId: args.characterId,
       characterName: args.characterName,
       characterAvatar: args.characterAvatar ?? null,
+      ownerId: TenantContextStore.get()?.ownerId ?? null,
+      phone: TenantContextStore.get()?.phone ?? null,
       executeAfter: new Date(),
       attemptCount: 0,
     });
@@ -222,7 +240,7 @@ export class MinimaxJobService {
       });
       for (const job of jobs) {
         try {
-          await this.advanceVideoJob(job);
+          await this.runJobInTenantFrame(job, () => this.advanceVideoJob(job));
         } catch (error) {
           this.logger.error(
             `video job ${job.id} unexpected error: ${(error as Error)?.message}`,
@@ -251,7 +269,7 @@ export class MinimaxJobService {
       });
       for (const job of jobs) {
         try {
-          await this.advanceMusicJob(job);
+          await this.runJobInTenantFrame(job, () => this.advanceMusicJob(job));
         } catch (error) {
           this.logger.error(
             `music job ${job.id} unexpected error: ${(error as Error)?.message}`,
