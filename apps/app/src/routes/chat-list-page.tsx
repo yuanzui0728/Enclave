@@ -1414,7 +1414,7 @@ function MobileChatListPage() {
                 <button
                   type="button"
                   onClick={handleUndoHideConversation}
-                  className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
+                  className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
                 >
                   {t(msg`撤销`)}
                 </button>
@@ -1452,7 +1452,7 @@ function MobileChatListPage() {
                   <button
                     type="button"
                     onClick={openOfficialAccountsList}
-                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {t(msg`查看公众号`)}
                   </button>
@@ -1461,7 +1461,7 @@ function MobileChatListPage() {
                     onClick={() => {
                       void messageEntriesQuery.refetch();
                     }}
-                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                   >
                     {t(msg`重试读取`)}
                   </button>
@@ -1496,7 +1496,7 @@ function MobileChatListPage() {
                     void conversationsQuery.refetch();
                     void messageEntriesQuery.refetch();
                   }}
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                 >
                   {t(msg`重试读取`)}
                 </Button>
@@ -1521,7 +1521,7 @@ function MobileChatListPage() {
                     void conversationsQuery.refetch();
                     void messageEntriesQuery.refetch();
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {t(msg`重试`)}
                 </button>
@@ -1859,7 +1859,7 @@ function MobileChatListPage() {
                     onClick={() => {
                       void navigate({ to: "/tabs/contacts" });
                     }}
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                   >
                     {t(msg`去通讯录看看`)}
                   </Button>

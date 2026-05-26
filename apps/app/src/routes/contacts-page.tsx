@@ -2854,7 +2854,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onAction}
-                          className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                          className="rounded-full border border-[rgba(180, 130, 20, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                         >
                           {item.actionLabel}
                         </button>
@@ -2863,7 +2863,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onRetry}
-                          className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                          className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                         >
                           {item.retryLabel ?? t(msg`重试`)}
                         </button>
@@ -2914,7 +2914,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={() => setSearchText("")}
-                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                       >
                         {t(msg`清空搜索`)}
                       </Button>
@@ -2922,7 +2922,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={handleOpenWorldCharacters}
-                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
                       >
                         {t(msg`查看世界角色`)}
                       </Button>
@@ -3087,7 +3087,7 @@ const FriendListRow = memo(function FriendListRow({
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
               ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
-              : "border-[color:var(--border-subtle)] bg-white",
+              : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]",
           )}
         >
           {selected ? (
