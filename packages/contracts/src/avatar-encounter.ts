@@ -113,10 +113,5 @@ export interface AvatarEncounterOverview {
   planCode: string | null;
 }
 
-export interface UpdateAvatarEncounterSettingsRequest {
-  optedIn: boolean;
-}
-
-export interface AvatarEncounterSettings {
-  optedIn: boolean;
-}
+// opt-in 不在 cloud-api 契约里：唯一真源是 world owner 的 encounterOptedIn 列，
+// 前端用 world-api updateWorldOwner({ encounterOptedIn }) 写。

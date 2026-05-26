@@ -35,10 +35,8 @@ import type {
   AvatarEncounterInboxResponse,
   AvatarEncounterOverview,
   AvatarEncounterSession,
-  AvatarEncounterSettings,
   AvatarEncounterView,
   DecideAvatarEncounterRequest,
-  UpdateAvatarEncounterSettingsRequest,
 } from "./avatar-encounter";
 import type { Character, CharacterDraft } from "./characters";
 import type {
@@ -4467,20 +4465,8 @@ export function listReceivedAvatarEncounters(
   );
 }
 
-export function setAvatarEncounterOptIn(
-  payload: UpdateAvatarEncounterSettingsRequest,
-  accessToken: string,
-  baseUrl?: string,
-) {
-  return requestCloudApi<AvatarEncounterSettings>(
-    "/cloud/social/avatar-encounters/settings",
-    buildCloudAuthHeaders(accessToken, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }),
-    baseUrl,
-  );
-}
+// 注：opt-in 不走 cloud-api。它的唯一真源是 world owner 列，前端用 world-api
+// updateWorldOwner({ encounterOptedIn }) 写，world 改字段即时推快照同步撮合池。
 
 export function redeemMyCloudInvite(
   payload: RedeemInviteRequest,
