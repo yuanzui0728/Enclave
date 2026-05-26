@@ -1,4 +1,5 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { applyOwnerIdColumn } from '../tenancy/tenant-entity';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 @Entity('conversations')
@@ -6,7 +7,9 @@ export class ConversationEntity {
   @PrimaryColumn()
   id: string;
 
-  @Column({ name: 'userId' })
+  // 列定义按运行模式应用（见文件末尾）：DB 列名是 userId。shared 模式下是复合主键
+  // (userId,id) 的一部分（DB 由 step1b 建成复合主键）——会话 id 形如 direct_<charId>，
+  // 跨租户重复，靠复合主键避免 save() 误覆盖别人的同 id 会话；LPP 为普通必填列。
   ownerId: string;
 
   @Column({ default: 'direct' })
@@ -63,4 +66,11 @@ export class ConversationEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+// 模式感知主键：shared=复合 (userId,id)；LPP/wiki/prep=单 id + 普通必填 userId 列。
+applyOwnerIdColumn(ConversationEntity.prototype, 'ownerId', {
+  name: 'userId',
+  type: 'varchar',
+  nullable: false,
+});
 // i18n-ignore-end

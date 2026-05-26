@@ -281,6 +281,10 @@ export class MomentsService implements OnModuleInit {
   // 「MiniMax M1 拍了一段画面记录今天。」这样的模板朋友圈。这里硬删 post 本体
   // + 关联 moment_likes / moment_comments。重复执行无副作用。
   private async cleanupLegacyDemoMomentPosts() {
+    // 一次性的 May-9 之前 demo 视频朋友圈清理（按 mediaPayload LIKE 全表删，无 ownerId）。
+    // 共享库里会跨全租户删，且新 owner 首触种子根本不含这些 legacy 文件 —— shared 跳过；
+    // 若合并库仍有残留，另走离线 per-owner 迁移脚本清。
+    if (isSharedWorldMode()) return;
     try {
       const LEGACY_FILES = [
         '1778311410821-a746c78f-minimax-video.mp4',

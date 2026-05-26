@@ -1,14 +1,12 @@
+// 必须是第一个 import：在任何实体文件被求值之前设好 MAIN_MODE（实体复合主键按它定形，
+// 见 shared-world-mode.ts / tenant-entity.ts）。TenantContextMiddleware / subscriber /
+// getOwnerOrThrow 也靠 isSharedWorldMode() 切行为。
+import './shared-world-mode';
 import './proxy-bootstrap';
-// 必须在 NestFactory 之前标记 shared 模式：TenantContextMiddleware / subscriber /
-// getOwnerOrThrow 都靠 isSharedWorldMode() 切行为。
-process.env.MAIN_MODE = 'shared-world';
 import * as express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { getDataSourceToken } from '@nestjs/typeorm';
 import { resolveApiPath } from './database/database-path';
-import { seedCharacters } from './database/seed';
-import { ensureAiRelationshipSeed } from './database/relationship-seed';
 import { AppErrorFilter } from './common/app-error.filter';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -18,9 +16,9 @@ import { AppErrorFilter } from './common/app-error.filter';
 //
 // 与 main.ts 的差别：
 //   - 设 MAIN_MODE=shared-world（启用 ALS 租户隔离 + 写/读守卫）
-//   - 只跑全局种子（characters / ai_relationship 全局表）；**不**跑 owner 级 boot 种子
-//     （ensureSingleOwnerMigration / ensureDefaultFriendships）——那些改由首触 ensureTenant
-//     时按 owner 懒跑（避免单 owner 假设 + 防 ensureSingleOwnerMigration 删全租户数据）
+//   - **不跑任何全局 boot 种子**：characters / ai_relationship / character_friendship /
+//     ensureDefaultFriendships 等全部改由首触 ensureTenant→seedNewOwner 按 owner 懒跑
+//     （避免写 NULL-owner 全局 junk + 撞写守卫 TENANT_WRITE_WITHOUT_CONTEXT + 单 owner 假设）
 //   - 只绑 loopback：受信头 x-cloud-user-phone 的信任边界依赖「只能经 cloud-api 反代进来」
 function resolveConfiguredCorsOrigins() {
   return process.env.CORS_ALLOWED_ORIGINS
@@ -108,11 +106,9 @@ async function bootstrap() {
     res.json({ status: 'ok', mode: 'shared-world' });
   });
 
-  // 仅全局种子（不依赖 owner）。owner 级种子改由首触懒跑（TenantService.ensureTenant）。
-  const dataSource = app.get(getDataSourceToken());
-  await seedCharacters(dataSource);
-  await ensureAiRelationshipSeed(dataSource);
-
+  // 不在此跑任何全局种子：所有 owner 级数据（角色/关系/好友）都由首触 ensureTenant→
+  // seedNewOwner 按 owner 懒跑。共享库的全局/平台数据（provider 目录、games 目录等）不靠
+  // 这里的 boot 种子，由各自迁移/管理路径维护。
   app.enableShutdownHooks();
 
   // 默认 4100：避开 LPP 每用户 child 的端口区间（3010 起，规模上已用到 3100+）。

@@ -45,7 +45,7 @@ const SCOPED_ENTITY_NAMES = new Set([
   'GroupEntity', 'GroupMemberEntity', 'GroupMessageEntity', 'GroupReplyTaskEntity',
   'ReplyArtifactJobEntity', 'MediaInsightJobEntity', 'FavoriteEntity',
   'FavoriteNoteEntity', 'AIRelationshipEntity', 'CharacterFriendshipEntity',
-  'WorldContextEntity',
+  'WorldContextEntity', 'CharacterEntity',
 ]);
 
 const HIGH_METHODS = ['createQueryBuilder', 'query'];

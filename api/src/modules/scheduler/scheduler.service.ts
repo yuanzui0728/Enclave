@@ -1461,10 +1461,14 @@ export class SchedulerService {
         const activityChanged = char.currentActivity !== defaultActivity;
         const onlineChanged = char.isOnline !== defaultOnline;
         if (activityChanged || onlineChanged) {
-          await this.characterRepo.update(char.id, {
-            currentActivity: defaultActivity,
-            isOnline: defaultOnline,
-          });
+          // scoped：复合主键下标量 id 不再成立，且共享库需按 ownerId 限定 WHERE。
+          await this.tenantService.scoped(this.characterRepo).update(
+            { id: char.id },
+            {
+              currentActivity: defaultActivity,
+              isOnline: defaultOnline,
+            },
+          );
           updatedCount += 1;
           if (activityChanged) {
             const activityLabel =
@@ -1502,7 +1506,9 @@ export class SchedulerService {
         continue;
       }
 
-      await this.characterRepo.update(char.id, { currentActivity: activity });
+      await this.tenantService
+        .scoped(this.characterRepo)
+        .update({ id: char.id }, { currentActivity: activity });
       updatedCount += 1;
       const activityLabel =
         runtimeRules.semanticLabels.activityLabels[
@@ -1688,12 +1694,16 @@ export class SchedulerService {
         }
 
         const [characterIdA, characterIdB] = [left.id, right.id].sort();
-        const existing = await this.aiRelationshipRepo.findOne({
-          where: [
-            { characterIdA, characterIdB },
-            { characterIdA: characterIdB, characterIdB: characterIdA },
-          ],
-        });
+        // scoped：共享库按当前 owner 限定，避免读到别的租户的同对角色关系（afterLoad
+        // 雷达也会拦），且复合主键让随后的 save(existing) 不会跨租户覆盖同 id 行。
+        const existing = await this.tenantService
+          .scoped(this.aiRelationshipRepo)
+          .findOne({
+            where: [
+              { characterIdA, characterIdB },
+              { characterIdA: characterIdB, characterIdB: characterIdA },
+            ],
+          });
 
         if (existing) {
           existing.strength = Math.min(

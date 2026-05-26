@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, ObjectLiteral, Repository } from 'typeorm';
 import { CharacterEntity } from './character.entity';
 import { PersonalityProfile } from '../ai/ai.types';
 import { applyPersistentNaturalDialogueProfile } from '../ai/prompt-naturalness';
@@ -30,6 +30,7 @@ import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
 import {
   RealWorldRuntimeProfileService,
@@ -76,6 +77,9 @@ export class CharactersService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    // 这两个是 LPP 历史单库数据自愈（无租户上下文的全局 find+save）。共享库由迁移管线已
+    // 规整，且 boot 期没有租户帧 —— 全局跑既无必要又会绕过租户隔离。shared 模式跳过。
+    if (isSharedWorldMode()) return;
     await this.backfillCharacterAvatarAssets();
     await this.backfillEmptyPrivateImportProfiles();
   }
@@ -157,7 +161,9 @@ export class CharactersService implements OnModuleInit {
   }
 
   async upsert(character: CharacterEntity): Promise<void> {
-    await this.repo.save(character);
+    // scoped：shared 模式盖当前 owner（复合主键让 save 按 (ownerId,id) 定位，固定 id 角色
+    // 不会跨租户覆盖）；LPP 透传。
+    await this.scopedRepo.save(character);
   }
 
   /**
@@ -192,7 +198,7 @@ export class CharactersService implements OnModuleInit {
   async ensurePresetCharacterInstalled(
     characterId: string,
   ): Promise<CharacterEntity | null> {
-    const existing = await this.repo.findOneBy({ id: characterId });
+    const existing = await this.scopedRepo.findOneBy({ id: characterId });
     if (existing) return this.normalizeCharacterAvatar(existing);
 
     const preset = BUILT_IN_CHARACTER_PRESETS.find((p) => p.id === characterId);
@@ -207,7 +213,7 @@ export class CharactersService implements OnModuleInit {
     // 的 protected default_seed 落库，不是 preset_catalog）。否则这些角色在
     // 目录里会被错误展示成"未安装 + 可安装"按钮。
     const presetIds = BUILT_IN_CHARACTER_PRESETS.map((preset) => preset.id);
-    const installedCharacters = await this.repo.find({
+    const installedCharacters = await this.scopedRepo.find({
       where: [
         { sourceType: 'preset_catalog' },
         { id: In(presetIds) },
@@ -269,7 +275,7 @@ export class CharactersService implements OnModuleInit {
   private async materializePresetCharacter(
     preset: NonNullable<ReturnType<typeof getBuiltInCharacterPreset>>,
   ): Promise<CharacterEntity> {
-    const existing = await this.repo.findOne({
+    const existing = await this.scopedRepo.findOne({
       where: [
         { id: preset.id },
         { sourceType: 'preset_catalog', sourceKey: preset.presetKey },
@@ -279,7 +285,8 @@ export class CharactersService implements OnModuleInit {
       return this.normalizeCharacterAvatar(existing) ?? existing;
     }
 
-    return this.repo.save(
+    // scoped.save 盖当前 owner ownerId；复合主键下对该 owner 是 INSERT，不碰其他租户同 id 行。
+    return this.scopedRepo.save(
       this.repo.create({
         ...preset.character,
         id: preset.id,
@@ -333,7 +340,7 @@ export class CharactersService implements OnModuleInit {
   }
 
   async delete(id: string): Promise<void> {
-    const character = await this.repo.findOneBy({ id });
+    const character = await this.scopedRepo.findOneBy({ id });
     if (!character) {
       return;
     }
@@ -346,6 +353,15 @@ export class CharactersService implements OnModuleInit {
         legacyMessage: '默认保底角色不可删除。',
       });
     }
+
+    // shared 模式：固定/preset 角色 id 跨租户共用，级联删除必须按 ownerId 限定，否则 A 删
+    // 自己的角色会把 B 的同 id 角色的会话/动态/关系一起删掉。owner-scoped 表经 scoped()
+    // 包装（shared 注入 ownerId / LPP 透传）；ai_relationships 的 QB delete 手工加 ownerId。
+    // 注：character_blueprints / ai_behavior_logs / need_discovery_candidates 尚无 ownerId 列
+    //（未纳入租户隔离，属后续 Phase），仍按 characterId 删 —— 多 owner 下会过删，记为已知缺口。
+    const ownerId = character.ownerId; // shared=当前 owner；LPP=NULL
+    const scoped = <T extends ObjectLiteral>(r: Repository<T>) =>
+      new TenantRepository<T>(r);
 
     await this.dataSource.transaction(async (manager) => {
       const conversationRepo = manager.getRepository(ConversationEntity);
@@ -381,7 +397,9 @@ export class CharactersService implements OnModuleInit {
       );
       const characterRepo = manager.getRepository(CharacterEntity);
 
-      const directConversations = (await conversationRepo.find()).filter(
+      // owner-scoped find：只取当前 owner 的会话（shared 注入 ownerId；LPP 透传返回全部=
+      // 单 owner 全部）。原裸 find() 在共享库会拉全租户会话并触 afterLoad 读泄漏。
+      const directConversations = (await scoped(conversationRepo).find()).filter(
         (conversation) =>
           conversation.type !== 'group' &&
           conversation.participants.includes(id),
@@ -391,71 +409,78 @@ export class CharactersService implements OnModuleInit {
       );
 
       if (directConversationIds.length > 0) {
-        await messageRepo.delete({
+        await scoped(messageRepo).delete({
           conversationId: In(directConversationIds),
         });
-        await conversationRepo.delete({ id: In(directConversationIds) });
+        await scoped(conversationRepo).delete({ id: In(directConversationIds) });
       }
 
-      const createdGroups = await groupRepo.find({
+      const createdGroups = await scoped(groupRepo).find({
         where: { creatorId: id, creatorType: 'character' },
       });
       const createdGroupIds = createdGroups.map((group) => group.id);
       if (createdGroupIds.length > 0) {
-        await groupMessageRepo.delete({ groupId: In(createdGroupIds) });
-        await groupMemberRepo.delete({ groupId: In(createdGroupIds) });
-        await groupRepo.delete({ id: In(createdGroupIds) });
+        await scoped(groupMessageRepo).delete({ groupId: In(createdGroupIds) });
+        await scoped(groupMemberRepo).delete({ groupId: In(createdGroupIds) });
+        await scoped(groupRepo).delete({ id: In(createdGroupIds) });
       }
 
-      await groupMessageRepo.delete({ senderId: id, senderType: 'character' });
-      await groupMemberRepo.delete({ memberId: id, memberType: 'character' });
+      await scoped(groupMessageRepo).delete({ senderId: id, senderType: 'character' });
+      await scoped(groupMemberRepo).delete({ memberId: id, memberType: 'character' });
 
       const momentPostIds = (
-        await momentPostRepo.find({
+        await scoped(momentPostRepo).find({
           where: { authorId: id, authorType: 'character' },
         })
       ).map((post) => post.id);
 
-      await momentCommentRepo.delete({ authorId: id, authorType: 'character' });
-      await momentLikeRepo.delete({ authorId: id, authorType: 'character' });
+      await scoped(momentCommentRepo).delete({ authorId: id, authorType: 'character' });
+      await scoped(momentLikeRepo).delete({ authorId: id, authorType: 'character' });
       if (momentPostIds.length > 0) {
-        await momentCommentRepo.delete({ postId: In(momentPostIds) });
-        await momentLikeRepo.delete({ postId: In(momentPostIds) });
-        await momentPostRepo.delete({ id: In(momentPostIds) });
+        await scoped(momentCommentRepo).delete({ postId: In(momentPostIds) });
+        await scoped(momentLikeRepo).delete({ postId: In(momentPostIds) });
+        await scoped(momentPostRepo).delete({ id: In(momentPostIds) });
       }
 
       const feedPostIds = (
-        await feedPostRepo.find({
+        await scoped(feedPostRepo).find({
           where: { authorId: id, authorType: 'character' },
         })
       ).map((post) => post.id);
 
-      await feedCommentRepo.delete({ authorId: id, authorType: 'character' });
+      await scoped(feedCommentRepo).delete({ authorId: id, authorType: 'character' });
       if (feedPostIds.length > 0) {
-        await feedCommentRepo.delete({ postId: In(feedPostIds) });
-        await feedInteractionRepo.delete({ postId: In(feedPostIds) });
-        await feedPostRepo.delete({ id: In(feedPostIds) });
+        await scoped(feedCommentRepo).delete({ postId: In(feedPostIds) });
+        await scoped(feedInteractionRepo).delete({ postId: In(feedPostIds) });
+        await scoped(feedPostRepo).delete({ id: In(feedPostIds) });
       }
 
-      await friendRequestRepo.delete({ characterId: id });
-      await friendshipRepo.delete({ characterId: id });
-      await videoChannelFollowRepo.delete({
+      await scoped(friendRequestRepo).delete({ characterId: id });
+      await scoped(friendshipRepo).delete({ characterId: id });
+      await scoped(videoChannelFollowRepo).delete({
         authorId: id,
         authorType: 'character',
       });
-      await narrativeArcRepo.delete({ characterId: id });
+      await scoped(narrativeArcRepo).delete({ characterId: id });
+      // ai_behavior_logs / blueprints / need_discovery_candidates 暂无 ownerId 列：按
+      // characterId 删（多 owner 下对共享 id 会过删，属未纳入隔离的已知缺口）。
       await aiBehaviorLogRepo.delete({ characterId: id });
-      await moderationReportRepo.delete({
+      await scoped(moderationReportRepo).delete({
         targetType: 'character',
         targetId: id,
       });
       await blueprintRevisionRepo.delete({ characterId: id });
       await blueprintRepo.delete({ characterId: id });
-      await aiRelationshipRepo
-        .createQueryBuilder()
-        .delete()
-        .where('characterIdA = :id OR characterIdB = :id', { id })
-        .execute();
+      // ai_relationships 有 ownerId：QB delete 手工加 ownerId（仅 shared；LPP ownerId 为
+      // NULL 不能进 WHERE，否则 NULL=:id 永假会漏删）。
+      {
+        let q = aiRelationshipRepo
+          .createQueryBuilder()
+          .delete()
+          .where('characterIdA = :id OR characterIdB = :id', { id });
+        if (ownerId) q = q.andWhere('ownerId = :__ownerId', { __ownerId: ownerId });
+        await q.execute();
+      }
       await needDiscoveryCandidateRepo
         .createQueryBuilder()
         .update()
@@ -468,7 +493,8 @@ export class CharactersService implements OnModuleInit {
           lockedStatuses: ['declined', 'expired', 'deleted'],
         })
         .execute();
-      await characterRepo.delete(id);
+      // 复合主键下不能用标量 id；scoped delete 按 (ownerId,id) 只删当前 owner 的角色行。
+      await scoped(characterRepo).delete({ id });
     });
   }
 
@@ -553,7 +579,9 @@ export class CharactersService implements OnModuleInit {
     // 直接走新建。owner 是 world-shared 单例，调用极轻；提前不影响热路径性能。
     const owner = await this.worldOwnerService.getOwnerOrThrow();
 
-    const existing = await this.repo.findOne({
+    // scoped：按 name 找现存只在当前 owner 内找，避免跨租户撞名（否则 A 导入会看到 B 的
+    // 同名角色，误判冲突或覆盖）。
+    const existing = await this.scopedRepo.findOne({
       where: { name: trimmedName },
     });
 
@@ -867,9 +895,9 @@ export class CharactersService implements OnModuleInit {
     if (existing) {
       Object.assign(existing, patch);
       existing.name = trimmedName;
-      saved = await this.repo.save(existing);
+      saved = await this.scopedRepo.save(existing);
     } else {
-      saved = await this.repo.save(
+      saved = await this.scopedRepo.save(
         this.repo.create({
           id: desiredId,
           name: trimmedName,

@@ -10,6 +10,7 @@ import { CharacterEntity } from '../characters/character.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   DEFAULT_CHARACTER_IDS,
@@ -99,6 +100,11 @@ export class SocialService implements OnModuleInit {
    * 子查询的 UPDATE QueryBuilder 写起来更别扭，改成 count-before 拿日志计数。
    */
   async onModuleInit(): Promise<void> {
+    // 这是 LPP 历史单库的 friendship.source 全局回填（无租户上下文的裸 SQL UPDATE，跨全表）。
+    // 共享库里 friendships 按 owner 隔离，不该在 boot 全局跑；新 owner 的 source 由
+    // ensureDefaultFriendships 首触按 owner 写好。若合并库需补历史 source，另走离线 per-owner
+    // 迁移脚本，不在共享进程 boot 做。
+    if (isSharedWorldMode()) return;
     try {
       const seedCharacterIds = DEFAULT_CHARACTER_IDS.filter(
         (id) => id !== SELF_CHARACTER_ID,

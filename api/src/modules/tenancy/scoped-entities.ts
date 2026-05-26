@@ -53,6 +53,9 @@ import { ReminderTaskEntity } from '../reminder-runtime/reminder-task.entity';
 import { SelfAgentRunEntity } from '../self-agent/self-agent-run.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
+import { CharacterEntity } from '../characters/character.entity';
+import { AIRelationshipEntity } from '../social/ai-relationship.entity';
+import { CharacterFriendshipEntity } from '../social/character-friendship.entity';
 
 // 已带 ownerId 的存量实体（30 个）。
 const ALREADY_SCOPED_ENTITIES: Function[] = [
@@ -111,12 +114,12 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   FavoriteNoteEntity,
   // world（每用户世界时间/天气快照）
   WorldContextEntity,
-  // ⚠️ 暂不登记（随 characters 一起到 Phase 8）：
-  //   - characters：复合主键 (ownerId,id) + fixed-id 冲突
-  //   - AIRelationshipEntity / CharacterFriendshipEntity：角色-角色关系，由全局 boot
-  //     种子 ensureAiRelationshipSeed 创建（无租户上下文），且引用的 characters 当前仍是
-  //     全局行；过早登记会让 boot 种子撞写守卫 TENANT_WRITE_WITHOUT_CONTEXT。等 characters
-  //     转 per-owner、关系种子移到首触后再登记。ownerId 列已加（additive，无害）。
+  // characters + 角色-角色关系（模式感知复合主键 (ownerId,id)，见 tenant-entity.ts）。
+  // 全局 boot 种子已搬到首触 per-owner（TenantService.seedNewOwner），boot 不再无上下文写
+  // 这三张表，故现在登记安全：afterLoad 读泄漏雷达 + beforeInsert/Update 写盖章/校验生效。
+  CharacterEntity,
+  AIRelationshipEntity,
+  CharacterFriendshipEntity,
 ];
 
 let registered = false;

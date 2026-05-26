@@ -39,10 +39,15 @@ describe('scoped entity registry', () => {
     expect(isTenantScopedEntity(ConversationEntity)).toBe(true);
   });
 
-  it('does NOT register tables that still need ownerId (characters)', () => {
+  it('registers characters (composite PK + per-owner seed landed)', () => {
     registerAllScopedEntities();
-    // characters 复合主键 + ownerId 迁移尚未做，暂不登记，避免 subscriber 误盖到无列实体。
-    expect(isTenantScopedEntity(CharacterEntity)).toBe(false);
+    // characters 已转模式感知复合主键 (ownerId,id) + 种子搬到首触 per-owner，登记为租户级：
+    // afterLoad 读泄漏雷达 + 写盖章生效。
+    expect(isTenantScopedEntity(CharacterEntity)).toBe(true);
+  });
+
+  it('does NOT register non-tenant (global) entities', () => {
+    registerAllScopedEntities();
     expect(isTenantScopedEntity(GlobalThing)).toBe(false);
   });
 });

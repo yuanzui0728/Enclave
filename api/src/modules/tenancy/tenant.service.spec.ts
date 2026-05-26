@@ -1,15 +1,30 @@
+// 种子函数是模块级 import，首触 seedNewOwner 会调它们；单测里 stub 掉，避免拉真 DB。
+jest.mock('../../database/seed', () => ({
+  seedCharacters: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('../../database/relationship-seed', () => ({
+  ensureAiRelationshipSeed: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { TenantService } from './tenant.service';
 import { TenantContextStore } from './tenant-context';
+import { seedCharacters } from '../../database/seed';
+import { ensureAiRelationshipSeed } from '../../database/relationship-seed';
 
 type FakeWorldOwner = {
   ensureOwnerForPhone: jest.Mock;
   listTenantOwners: jest.Mock;
 };
 
-function createService(worldOwner: Partial<FakeWorldOwner>, moduleRef?: unknown) {
+function createService(
+  worldOwner: Partial<FakeWorldOwner>,
+  moduleRef?: unknown,
+  dataSource?: unknown,
+) {
   return new TenantService(
     worldOwner as never,
     (moduleRef ?? { get: jest.fn() }) as never,
+    (dataSource ?? {}) as never,
   );
 }
 
@@ -68,9 +83,20 @@ describe('TenantService', () => {
   });
 
   describe('runAsTenant', () => {
-    it('binds context and seeds default friendships for a newly-created owner', async () => {
+    beforeEach(() => {
+      (seedCharacters as jest.Mock).mockClear();
+      (ensureAiRelationshipSeed as jest.Mock).mockClear();
+    });
+
+    it('binds context and seeds the new owner (characters→friendships→relationships→char-friendships)', async () => {
       const ensureDefaultFriendships = jest.fn().mockResolvedValue(undefined);
-      const moduleRef = { get: jest.fn().mockReturnValue({ ensureDefaultFriendships }) };
+      const seedFromAiRelationships = jest.fn().mockResolvedValue(0);
+      // moduleRef.get 对 SocialService / CharacterFriendshipService 都返回这个兼具两法的桩。
+      const moduleRef = {
+        get: jest
+          .fn()
+          .mockReturnValue({ ensureDefaultFriendships, seedFromAiRelationships }),
+      };
       const service = createService(
         {
           ensureOwnerForPhone: jest
@@ -78,6 +104,7 @@ describe('TenantService', () => {
             .mockResolvedValue({ owner: { id: 'new-1' }, created: true }),
         },
         moduleRef,
+        { fake: 'dataSource' },
       );
 
       const ownerInside = await service.runAsTenant('p1', async () =>
@@ -85,12 +112,24 @@ describe('TenantService', () => {
       );
 
       expect(ownerInside).toBe('new-1');
+      // 全部按 owner 种、且都在租户帧里跑。
+      expect(seedCharacters).toHaveBeenCalledWith({ fake: 'dataSource' }, 'new-1');
       expect(ensureDefaultFriendships).toHaveBeenCalledWith('new-1');
+      expect(ensureAiRelationshipSeed).toHaveBeenCalledWith(
+        { fake: 'dataSource' },
+        'new-1',
+      );
+      expect(seedFromAiRelationships).toHaveBeenCalledWith('new-1');
     });
 
     it('does not re-seed an existing owner', async () => {
       const ensureDefaultFriendships = jest.fn();
-      const moduleRef = { get: jest.fn().mockReturnValue({ ensureDefaultFriendships }) };
+      const seedFromAiRelationships = jest.fn();
+      const moduleRef = {
+        get: jest
+          .fn()
+          .mockReturnValue({ ensureDefaultFriendships, seedFromAiRelationships }),
+      };
       const service = createService(
         {
           ensureOwnerForPhone: jest
@@ -101,7 +140,9 @@ describe('TenantService', () => {
       );
 
       await service.runAsTenant('p1', async () => undefined);
+      expect(seedCharacters).not.toHaveBeenCalled();
       expect(ensureDefaultFriendships).not.toHaveBeenCalled();
+      expect(seedFromAiRelationships).not.toHaveBeenCalled();
     });
   });
 });

@@ -23,13 +23,22 @@ const SEED_CHARACTERS = buildDefaultCharacters().map((character) => ({
     : character.profile,
 }));
 
-export async function seedCharacters(dataSource: DataSource): Promise<void> {
+// ownerId 传入 = 共享 world 首触按 owner 种（每个 create/save 盖 ownerId、存在性检查按
+// owner 限定；复合主键让 save() 的存在性检查/UPDATE 都走 (ownerId,id)，对新 owner 是
+// INSERT、对已有 owner 是 in-place UPDATE，不会碰其他租户的同 id 行）。不传 = LPP/wiki
+// 全局单库种子（行为与改造前逐字一致）。
+export async function seedCharacters(
+  dataSource: DataSource,
+  ownerId?: string,
+): Promise<void> {
   console.log('🌱 Reconciling built-in default characters...');
+  const ownerPatch = ownerId ? { ownerId } : {};
+  const ownerWhere = ownerId ? { ownerId } : {};
 
   await dataSource.transaction(async (manager) => {
     const characterRepo = manager.getRepository(CharacterEntity);
     for (const charData of SEED_CHARACTERS) {
-      await characterRepo.save(charData as CharacterEntity);
+      await characterRepo.save({ ...charData, ...ownerPatch } as CharacterEntity);
     }
   });
 
@@ -53,8 +62,8 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
 
     const existing = await repo.findOne({
       where: [
-        { id: preset.id },
-        { sourceType: 'preset_catalog', sourceKey: preset.presetKey },
+        { id: preset.id, ...ownerWhere },
+        { sourceType: 'preset_catalog', sourceKey: preset.presetKey, ...ownerWhere },
       ],
     });
     if (!existing) {
@@ -67,6 +76,7 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
           sourceKey: preset.presetKey,
           deletionPolicy: 'archive_allowed',
           isTemplate: false,
+          ...ownerPatch,
         }),
       );
       seeded++;
@@ -115,7 +125,7 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
       patch.region = presetRegion;
     }
     if (Object.keys(patch).length > 0) {
-      await repo.update({ id: existing.id }, patch);
+      await repo.update({ id: existing.id, ...ownerWhere }, patch);
       if (
         patch.sourceType !== undefined ||
         patch.sourceKey !== undefined ||
@@ -141,19 +151,24 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     console.log(`✓ Canonicalized ${refreshedMetadata} built-in preset records`);
   }
 
-  await dataSource.query(
-    `UPDATE friendships
-       SET region = (
-         SELECT region FROM characters
-          WHERE characters.id = friendships.characterId
-       )
-     WHERE (region IS NULL OR region = '')
-       AND EXISTS (
-         SELECT 1 FROM characters c
-          WHERE c.id = friendships.characterId
-            AND c.region IS NOT NULL
-            AND c.region <> ''
-       )`,
-  );
-  console.log('✓ Backfilled friendship.region from character.region');
+  // 全局 friendship.region 回填只在 LPP/单库下跑：共享库里 friendships/characters 都按
+  // owner 隔离，跨 owner join 会串号；per-owner 首触种子的 region 同步由 ensureDefaultFriendships
+  // 自己做（social.service），这里跳过。
+  if (!ownerId) {
+    await dataSource.query(
+      `UPDATE friendships
+         SET region = (
+           SELECT region FROM characters
+            WHERE characters.id = friendships.characterId
+         )
+       WHERE (region IS NULL OR region = '')
+         AND EXISTS (
+           SELECT 1 FROM characters c
+            WHERE c.id = friendships.characterId
+              AND c.region IS NOT NULL
+              AND c.region <> ''
+         )`,
+    );
+    console.log('✓ Backfilled friendship.region from character.region');
+  }
 }

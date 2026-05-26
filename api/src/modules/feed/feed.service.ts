@@ -3555,6 +3555,9 @@ export class FeedService implements OnModuleInit {
   // 1. coverUrl 指向 placehold.co（早期占位封面）
   // 2. mediaUrl 指向 3 个已知 legacy 视频文件之一（一份 demo 被多角色复用）
   private async cleanupLegacyDemoChannelPosts() {
+    // 与 moments 对称的 demo 视频频道贴一次性清理（全表 LIKE 删，无 ownerId）。共享库会跨
+    // 全租户删、新 owner 也不含这些 legacy 文件 —— shared 跳过；残留另走离线 per-owner 脚本。
+    if (isSharedWorldMode()) return;
     try {
       const candidates = await this.postRepo
         .createQueryBuilder('post')

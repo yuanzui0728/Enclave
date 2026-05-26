@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { Repository, ObjectLiteral } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, type Repository, type ObjectLiteral } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SocialService } from '../social/social.service';
+import { CharacterFriendshipService } from '../social/character-friendship.service';
+import { seedCharacters } from '../../database/seed';
+import { ensureAiRelationshipSeed } from '../../database/relationship-seed';
 import { TenantContext, TenantContextStore } from './tenant-context';
 import { TenantRepository } from './tenant-scoped.repository';
 
@@ -17,6 +21,8 @@ export class TenantService {
   constructor(
     private readonly worldOwner: WorldOwnerService,
     private readonly moduleRef: ModuleRef,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   getContext(): TenantContext {
@@ -84,14 +90,25 @@ export class TenantService {
     }
   }
 
-  // 首触种子：避免 Auth ↔ Social 模块循环，通过 ModuleRef 懒解析 SocialService。
-  // ensureDefaultFriendships 自身幂等（已存在则不重复补），失败只告警不阻断请求。
+  // 首触种子：在 owner 租户帧里按依赖顺序把这个新用户的「私有世界」种起来。各步都幂等
+  // （已存在则不重复），失败只告警不阻断请求。用 ModuleRef 懒解析 service，避开
+  // Auth ↔ Social ↔ Characters 的模块循环。
+  //   1. seedCharacters(owner)         —— 默认保底角色 + 自动 preset，每行盖 ownerId
+  //   2. ensureDefaultFriendships(owner)—— owner↔默认角色好友（依赖 1 的角色行存在）
+  //   3. ensureAiRelationshipSeed(owner)—— 角色-角色关系（按 owner 的角色建，依赖 1）
+  //   4. seedFromAiRelationships(owner) —— character_friendship 亲密度种子（依赖 1/3）
   private async seedNewOwner(ownerId: string, phone: string): Promise<void> {
     try {
       const social = this.moduleRef.get(SocialService, { strict: false });
-      await TenantContextStore.run({ ownerId, phone }, () =>
-        social.ensureDefaultFriendships(ownerId),
-      );
+      const charFriendship = this.moduleRef.get(CharacterFriendshipService, {
+        strict: false,
+      });
+      await TenantContextStore.run({ ownerId, phone }, async () => {
+        await seedCharacters(this.dataSource, ownerId);
+        await social.ensureDefaultFriendships(ownerId);
+        await ensureAiRelationshipSeed(this.dataSource, ownerId);
+        await charFriendship.seedFromAiRelationships(ownerId);
+      });
     } catch (error) {
       this.logger.warn(
         `seed new owner failed owner=${ownerId}: ${error instanceof Error ? error.message : String(error)}`,

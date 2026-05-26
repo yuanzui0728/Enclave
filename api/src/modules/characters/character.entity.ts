@@ -1,5 +1,6 @@
 import { Entity, PrimaryColumn, Column } from 'typeorm';
 import type { PersonalityProfile } from '../ai/ai.types';
+import { applyOwnerIdColumn } from '../tenancy/tenant-entity';
 
 @Entity('characters')
 export class CharacterEntity {
@@ -129,8 +130,15 @@ export class CharacterEntity {
   webSearchEnabled: boolean;
 
   // 共享 world 多租户归属用户。LPP 单库下为 NULL（物理隔离，findAll 不按 owner 过滤）；
-  // shared 模式下迁移已回填、读查询按它过滤（见 findAllVisibleToOwner）。DB 层是复合主键
-  // (ownerId,id)，实体仍声明单 id 主键（synchronize:false 不调和），不在实体层改。
-  @Column({ type: 'text', nullable: true })
+  // shared 模式下迁移已回填、读查询按它过滤（见 findAllVisibleToOwner）。
+  // 列定义按运行模式应用（见文件末尾 applyOwnerIdColumn）：shared 模式下 ownerId 是复合
+  // 主键 (ownerId,id) 的一部分（DB 已由 step1b 建成复合主键），让 save() 按完整复合主键
+  // 定位，杜绝固定 id 角色（char-default-self 等）被跨租户 save 覆盖；LPP 为普通可空列。
   ownerId: string | null;
 }
+
+// 模式感知主键：shared=复合 (ownerId,id)；LPP/wiki/prep=单 id + 普通可空 ownerId 列。
+applyOwnerIdColumn(CharacterEntity.prototype, 'ownerId', {
+  type: 'text',
+  nullable: true,
+});
