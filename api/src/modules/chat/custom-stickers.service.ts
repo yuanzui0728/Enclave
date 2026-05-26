@@ -12,9 +12,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   resolveApiPath,
-  resolveDataPath,
+  resolveOwnerDataPath,
   resolveRepoPath,
 } from '../../database/database-path';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import {
   resolveReadableChatAttachmentPath,
@@ -225,10 +226,13 @@ export class CustomStickersService {
 
   resolveReadableCustomStickerPath(fileName: string) {
     const normalized = this.normalizeCustomStickerFileName(fileName);
-    const candidates = [
-      path.join(this.resolveCustomStickerStorageDir(), normalized),
-      path.join(this.resolveLegacyCustomStickerStorageDir(), normalized),
-    ];
+    // 共享模式只在当前 owner 子树找；绝不回退扁平 legacy（跨 owner）。
+    const candidates = isSharedWorldMode()
+      ? [path.join(this.resolveCustomStickerStorageDir(), normalized)]
+      : [
+          path.join(this.resolveCustomStickerStorageDir(), normalized),
+          path.join(this.resolveLegacyCustomStickerStorageDir(), normalized),
+        ];
     return candidates.find((candidatePath) => existsSync(candidatePath)) ?? candidates[0];
   }
 
@@ -604,7 +608,7 @@ export class CustomStickersService {
   }
 
   private resolveCustomStickerStorageDir(): string {
-    return resolveDataPath('chat-stickers');
+    return resolveOwnerDataPath('chat-stickers');
   }
 
   private resolveLegacyCustomStickerStorageDir(): string {

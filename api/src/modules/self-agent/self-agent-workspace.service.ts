@@ -3,7 +3,7 @@ import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
-import { resolveDataPath } from '../../database/database-path';
+import { resolveOwnerDataPath } from '../../database/database-path';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 type SelfAgentWorkspaceFileName =
@@ -298,7 +298,9 @@ export class SelfAgentWorkspaceService {
   }
 
   private resolveWorkspaceRoot() {
-    return resolveDataPath('self-agent-workspace');
+    // 共享模式 → owners/<ownerId>/self-agent-workspace；LPP → 扁平。self-agent run 都在
+    // 请求/cron 租户帧里跑，ALS 有 owner。
+    return resolveOwnerDataPath('self-agent-workspace');
   }
 
   private resolveMemoryDir() {

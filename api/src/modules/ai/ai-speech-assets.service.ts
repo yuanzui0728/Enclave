@@ -6,8 +6,9 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import {
   resolveApiPath,
-  resolveDataPath,
+  resolveOwnerDataPath,
 } from '../../database/database-path';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 
 @Injectable()
 export class AiSpeechAssetsService {
@@ -64,7 +65,7 @@ export class AiSpeechAssetsService {
 // 同样的 free function 形态，避免在 ai-orchestrator 里注入 AiSpeechAssetsService
 // 引入模块内循环依赖。
 export function resolvePrimaryAiSpeechStorageDir() {
-  return resolveDataPath('ai-speech');
+  return resolveOwnerDataPath('ai-speech');
 }
 
 export function resolveLegacyAiSpeechStorageDir() {
@@ -72,10 +73,13 @@ export function resolveLegacyAiSpeechStorageDir() {
 }
 
 export function resolveReadableAiSpeechPath(fileName: string) {
-  const candidatePaths = [
-    path.join(resolvePrimaryAiSpeechStorageDir(), fileName),
-    path.join(resolveLegacyAiSpeechStorageDir(), fileName),
-  ];
+  // 共享模式只在当前 owner 子树找；绝不回退扁平 legacy（跨 owner）。
+  const candidatePaths = isSharedWorldMode()
+    ? [path.join(resolvePrimaryAiSpeechStorageDir(), fileName)]
+    : [
+        path.join(resolvePrimaryAiSpeechStorageDir(), fileName),
+        path.join(resolveLegacyAiSpeechStorageDir(), fileName),
+      ];
   return (
     candidatePaths.find((candidatePath) => existsSync(candidatePath)) ??
     candidatePaths[0]

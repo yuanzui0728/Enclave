@@ -12,8 +12,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   resolveApiPath,
-  resolveDataPath,
+  resolveOwnerDataPath,
 } from '../../database/database-path';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
@@ -202,10 +203,13 @@ export class ChatBackgroundsService {
 
   resolveReadableBackgroundPath(fileName: string) {
     const normalized = this.normalizeBackgroundFileName(fileName);
-    const candidates = [
-      path.join(this.resolveBackgroundStorageDir(), normalized),
-      path.join(this.resolveLegacyBackgroundStorageDir(), normalized),
-    ];
+    // 共享模式只在当前 owner 子树找；绝不回退扁平 legacy（跨 owner）。
+    const candidates = isSharedWorldMode()
+      ? [path.join(this.resolveBackgroundStorageDir(), normalized)]
+      : [
+          path.join(this.resolveBackgroundStorageDir(), normalized),
+          path.join(this.resolveLegacyBackgroundStorageDir(), normalized),
+        ];
     return candidates.find((candidatePath) => existsSync(candidatePath)) ?? candidates[0];
   }
 
@@ -259,7 +263,7 @@ export class ChatBackgroundsService {
   }
 
   private resolveBackgroundStorageDir() {
-    return resolveDataPath('chat-backgrounds');
+    return resolveOwnerDataPath('chat-backgrounds');
   }
 
   private resolveLegacyBackgroundStorageDir() {

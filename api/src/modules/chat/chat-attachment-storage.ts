@@ -2,11 +2,13 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
   resolveApiPath,
-  resolveDataPath,
+  resolveOwnerDataPath,
 } from '../../database/database-path';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 
 export function resolvePrimaryChatAttachmentStorageDir() {
-  return resolveDataPath('chat-attachments');
+  // 共享模式 → owners/<ownerId>/chat-attachments；LPP → 扁平。
+  return resolveOwnerDataPath('chat-attachments');
 }
 
 export function resolveLegacyChatAttachmentStorageDir() {
@@ -14,10 +16,13 @@ export function resolveLegacyChatAttachmentStorageDir() {
 }
 
 export function resolveReadableChatAttachmentPath(fileName: string) {
-  const candidatePaths = [
-    path.join(resolvePrimaryChatAttachmentStorageDir(), fileName),
-    path.join(resolveLegacyChatAttachmentStorageDir(), fileName),
-  ];
+  // 共享模式只在当前 owner 子树找；绝不回退扁平 legacy（跨 owner）。
+  const candidatePaths = isSharedWorldMode()
+    ? [path.join(resolvePrimaryChatAttachmentStorageDir(), fileName)]
+    : [
+        path.join(resolvePrimaryChatAttachmentStorageDir(), fileName),
+        path.join(resolveLegacyChatAttachmentStorageDir(), fileName),
+      ];
 
   return (
     candidatePaths.find((candidatePath) => existsSync(candidatePath)) ??

@@ -1,6 +1,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import Database from 'better-sqlite3';
+import {
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../modules/tenancy/tenant-context';
 
 const API_ROOT = path.resolve(__dirname, '../..');
 const REPO_ROOT = path.resolve(API_ROOT, '..');
@@ -32,6 +36,17 @@ export function resolveDataRoot() {
 
 export function resolveDataPath(...segments: string[]) {
   return path.resolve(resolveDataRoot(), ...segments);
+}
+
+// 共享 world 多租户：媒体/文件按 owner 子目录隔离 —— <dataRoot>/owners/<ownerId>/<seg...>。
+// LPP/wiki 透传到扁平 <dataRoot>/<seg...>（每账号独立 data root，行为逐字不变）。
+// ownerId 从 ALS 租户帧取；shared 模式无帧即 fail-closed 抛 TENANT_CONTEXT_MISSING（绝不
+// 把别人的媒体目录返给当前请求）。媒体存储/服务统一改走这个，避免全 owner 挤一个扁平目录
+// 互相覆盖 / 跨用户取文件。delete process.env 不影响——纯读 env + ALS。
+export function resolveOwnerDataPath(...segments: string[]) {
+  if (!isSharedWorldMode()) return resolveDataPath(...segments);
+  const ownerId = TenantContextStore.getOrThrow().ownerId;
+  return resolveDataPath('owners', ownerId, ...segments);
 }
 
 export function resolveDatabasePath(configuredPath?: string | null) {
