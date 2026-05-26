@@ -48,6 +48,8 @@ import {
   WORLD_NEWS_DESK_CHARACTER_ID,
 } from '../characters/world-news-desk-character';
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
+import { TenantService } from '../tenancy/tenant.service';
+import { isSharedWorldMode } from '../tenancy/tenant-context';
 
 // Default jitter for AI-heavy crons in scheduler.service.ts: 0-60s per world.
 // 把 30 个 world 的整点 burst 抹平，避免 minimax token plan 2062 并发限流。
@@ -130,6 +132,7 @@ export class SchedulerService {
     private readonly momentsService: MomentsService,
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly tenantService: TenantService,
   ) {}
 
   // 提醒触发：5min→10min。reminder 命中窗口最差延迟 +10min，可接受。
@@ -518,6 +521,28 @@ export class SchedulerService {
     handler: () => Promise<TrackedJobResult>,
     errorMessage: string,
   ) {
+    // shared 模式：一个进程服务所有 owner，cron 每 tick 只触发一次，必须在每个 owner
+    // 的租户帧里各跑一遍（否则 handler 里的 getOwnerOrThrow 无上下文会 fail-closed 抛）。
+    // runForAllTenants 逐 owner 独立 try/catch，一个 owner 失败不连累其余。
+    // LPP / wiki 模式：单 owner 独占库，沿用旧路径跑一次（getOwnerOrThrow 走 legacy 分支）。
+    if (isSharedWorldMode()) {
+      await this.tenantService.runForAllTenants(async () => {
+        try {
+          await this.executeTrackedJob(jobId, handler);
+        } catch (error) {
+          if (error instanceof SubscriptionExpiredException) {
+            this.logger.debug(
+              `${errorMessage}: subscription expired, cron skipped`,
+            );
+            return;
+          }
+          // 抛回给 runForAllTenants 记录 per-owner 失败（不连累其它 owner）。
+          throw error;
+        }
+      });
+      return;
+    }
+
     try {
       await this.executeTrackedJob(jobId, handler);
     } catch (error) {
