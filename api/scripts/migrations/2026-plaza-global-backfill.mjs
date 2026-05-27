@@ -78,6 +78,22 @@ if (!globalRow) {
   process.exit(1);
 }
 
+// 「世界居民」全局角色集 = 哨兵 owner 名下已种的 preset 角色 id。只搬 authorId 命中这套
+// 角色的帖子 —— 即仅源 owner 的**预设世界居民**角色帖进全局池；源 owner 的自建/私有导入
+// 角色（sourceType 不在自动播种集里）的帖**不进全局**（符合「仅预设世界居民」决策，且避免
+// 别的用户点进去落到不存在的角色）。authorId 是稳定 preset id → 各用户点进去落自己的副本。
+const globalCastIds = db
+  .prepare(`SELECT id FROM characters WHERE ownerId = ?`)
+  .all(GLOBAL_OWNER)
+  .map((r) => r.id);
+if (!globalCastIds.length) {
+  console.error(
+    `全局世界居民角色集为空（characters WHERE ownerId='${GLOBAL_OWNER}'）。请先启动 shared-world 让 GlobalWorldSeedService 种好全局 cast 再回填。`,
+  );
+  process.exit(1);
+}
+const castPlaceholders = globalCastIds.map(() => '?').join(',');
+
 console.log(
   `[plaza-backfill] db=${dbPath} source=${sourceOwner} global=${GLOBAL_OWNER} mode=${COMMIT ? 'COMMIT' : 'DRY-RUN'}`,
 );
@@ -99,9 +115,11 @@ const candidatePosts = db
        AND surface = 'feed'
        AND authorType = 'character'
        AND publishStatus = 'published'
+       AND visibility <> 'private'
+       AND authorId IN (${castPlaceholders})
        AND id NOT IN (SELECT postId FROM plaza_global_backfill_ledger)`,
   )
-  .all(sourceOwner)
+  .all(sourceOwner, ...globalCastIds)
   .map((r) => r.id);
 
 if (!candidatePosts.length) {
@@ -177,6 +195,12 @@ const txn = db.transaction(() => {
        (SELECT COUNT(*) FROM feed_comments WHERE postId = ? AND ownerId = ? AND status='published'), 0)
      WHERE id = ?`,
   );
+  // favoriteCount：收藏走 user_feed_interactions(type='favorite', 按用户)，没有全局子行 →
+  // 全局基数归 0。否则源 owner 旧的收藏数会留在基数里，叠上读时本人增量 → 源用户双计、
+  // 其他用户基数虚高。归 0 后每个用户只看自己的收藏增量。
+  const resetFavorite = db.prepare(
+    `UPDATE feed_posts SET favoriteCount = 0 WHERE id = ?`,
+  );
 
   let moved = 0;
   for (const postId of candidatePosts) {
@@ -188,6 +212,7 @@ const txn = db.transaction(() => {
     cleanupLeftoverLikes.run(postId, sourceOwner);
     recountLike.run(postId, GLOBAL_OWNER, postId);
     recountComment.run(postId, GLOBAL_OWNER, postId);
+    resetFavorite.run(postId);
     moved += 1;
   }
   return moved;
