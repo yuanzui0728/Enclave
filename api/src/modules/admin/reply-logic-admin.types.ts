@@ -46,6 +46,7 @@ export interface ReplyLogicPromptSection {
     | 'internal_reasoning'
     | 'collaboration_routing'
     | 'memory'
+    | 'user_profile'
     | 'current_context'
     | 'real_world_context'
     | 'group_chat'

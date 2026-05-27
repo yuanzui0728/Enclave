@@ -48,6 +48,13 @@ export class WorldController {
       contact?: string;
       contactKind?: string;
       encounterOptedIn?: boolean;
+      gender?: string | null;
+      age?: number | null;
+      occupation?: string;
+      region?: string;
+      interests?: string;
+      aiAddressTone?: string;
+      avoidTopics?: string;
     },
   ) {
     const owner = await this.worldOwnerService.updateOwner(body);

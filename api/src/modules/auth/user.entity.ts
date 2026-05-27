@@ -68,6 +68,34 @@ export class UserEntity {
   @Column({ default: true })
   encounterOptedIn: boolean;
 
+  // 个人资料：用户主动填写的结构化信息，用于注入 AI 角色对话 prompt（让角色「知道」
+  // 与自己对话的真人是谁），更好地服务用户。全部 nullable —— synchronize 加可空列是
+  // 纯增量、存量行不受影响（注意：只有 unique 复合索引才是 synchronize 陷阱）。
+  // 隐私边界：联系方式(encounterContactField) 故意不在此列、不进 prompt，仍仅用于分身相遇双向披露。
+  @Column({ type: 'text', nullable: true })
+  gender: string | null; // 'male' | 'female' | 'other'
+
+  @Column({ type: 'int', nullable: true })
+  age: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  occupation: string | null;
+
+  // 常驻城市/所在地：用户手填，跟 GPS 派生的 locationName（雷达/相遇定位）区分开。
+  @Column({ type: 'text', nullable: true })
+  region: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  interests: string | null;
+
+  // 希望 AI 怎么称呼你 / 语气偏好。
+  @Column({ type: 'text', nullable: true })
+  aiAddressTone: string | null;
+
+  // 不希望聊到的话题。
+  @Column({ type: 'text', nullable: true })
+  avoidTopics: string | null;
+
   @Column({ default: 'newcomer' })
   role: string; // wiki RBAC: 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
 

@@ -55,6 +55,17 @@ export interface WorldOwner {
   contactKind?: "wechat" | "phone" | "other" | null;
   /** 是否允许我的分身参与社交相遇（默认 true）。关闭后从匹配池移除。 */
   encounterOptedIn?: boolean;
+  /** 个人资料：注入 AI 角色对话 prompt 的结构化信息（联系方式故意不在此列、不进 prompt）。 */
+  gender?: "male" | "female" | "other" | null;
+  age?: number | null;
+  occupation?: string | null;
+  /** 常驻城市/所在地，用户手填（区别于 GPS 派生定位）。 */
+  region?: string | null;
+  interests?: string | null;
+  /** 希望 AI 怎么称呼你 / 语气偏好。 */
+  aiAddressTone?: string | null;
+  /** 不希望聊到的话题。 */
+  avoidTopics?: string | null;
 }
 
 export interface UpdateWorldOwnerRequest {
@@ -65,6 +76,13 @@ export interface UpdateWorldOwnerRequest {
   contact?: string;
   contactKind?: "wechat" | "phone" | "other";
   encounterOptedIn?: boolean;
+  gender?: "male" | "female" | "other" | null;
+  age?: number | null;
+  occupation?: string;
+  region?: string;
+  interests?: string;
+  aiAddressTone?: string;
+  avoidTopics?: string;
 }
 
 export interface UpdateWorldOwnerApiKeyRequest {

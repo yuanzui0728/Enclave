@@ -318,6 +318,19 @@ export class AiProviderAuthError extends Error {
   }
 }
 
+// 用户在「个人资料」里主动填写的信息，注入聊天 prompt 让角色更贴合地服务对方。
+// 隐私边界：联系方式(分身相遇专用)故意不在此。定义放在 ai.types 避免 prompt-builder ↔ ai.types 循环依赖。
+export interface UserProfileContext {
+  displayName?: string | null;
+  gender?: 'male' | 'female' | 'other' | null;
+  age?: number | null;
+  occupation?: string | null;
+  region?: string | null;
+  interests?: string | null;
+  aiAddressTone?: string | null;
+  avoidTopics?: string | null;
+}
+
 export interface GenerateReplyOptions {
   profile: PersonalityProfile;
   conversationHistory: ChatMessage[];
@@ -325,7 +338,11 @@ export interface GenerateReplyOptions {
   userMessageParts?: AiMessagePart[];
   isGroupChat?: boolean;
   otherParticipants?: PersonalityProfile[]; // 群聊中其他 AI
-  chatContext?: { currentActivity?: string; lastChatAt?: Date };
+  chatContext?: {
+    currentActivity?: string;
+    lastChatAt?: Date;
+    userProfile?: UserProfileContext;
+  };
   extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;
   usageContext?: AiUsageContext;

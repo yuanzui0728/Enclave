@@ -1179,6 +1179,19 @@ export class ChatService {
     const chatContext = {
       currentActivity: charEntity?.currentActivity,
       lastChatAt: lastMsg?.createdAt,
+      // 用户「个人资料」注入：让角色更贴合地服务对方。owner 是当前租户行（getOwnerOrThrow
+      // 已按 TenantContext 作用域，绝不跨 owner）。联系方式故意不带（分身相遇专用，不进 prompt）。
+      userProfile: {
+        // 占位用户名（未 onboarding 的 __pending_xxx / 全局哨兵 __xxx）不当真名注入。
+        displayName: owner.username?.startsWith('__') ? null : owner.username,
+        gender: owner.gender as 'male' | 'female' | 'other' | null,
+        age: owner.age,
+        occupation: owner.occupation,
+        region: owner.region,
+        interests: owner.interests,
+        aiAddressTone: owner.aiAddressTone,
+        avoidTopics: owner.avoidTopics,
+      },
     };
     const isSelfConversation = Boolean(
       charEntity &&

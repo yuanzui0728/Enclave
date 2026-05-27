@@ -65,6 +65,7 @@ const SearchPage = lazyNamed(() => import("./routes/search-page"), "SearchPage")
 const GamesPage = lazyNamed(() => import("./routes/games-page"), "GamesPage");
 
 const YinjieFarmPage = lazyNamed(() => import("./routes/yinjie-farm-page"), "YinjieFarmPage");
+const GamePlayPage = lazyNamed(() => import("./routes/game-play-page"), "GamePlayPage");
 
 const MiniProgramsPage = lazyNamed(() => import("./routes/mini-programs-page"), "MiniProgramsPage");
 
@@ -73,6 +74,7 @@ const DiscoverPage = lazyNamed(() => import("./routes/discover-page"), "Discover
 const DiscoverEncounterPage = lazyNamed(() => import("./routes/discover-encounter-page"), "DiscoverEncounterPage");
 
 const DiscoverAvatarEncounterPage = lazyNamed(() => import("./routes/discover-avatar-encounter-page"), "DiscoverAvatarEncounterPage");
+const CyberAvatarPage = lazyNamed(() => import("./routes/cyber-avatar-page"), "CyberAvatarPage");
 
 const DiscoverScenePage = lazyNamed(() => import("./routes/discover-scene-page"), "DiscoverScenePage");
 
@@ -116,7 +118,13 @@ const ProfileInfoSignaturePage = lazyNamed(() => import("./routes/profile-info-s
 
 const ProfileInfoContactPage = lazyNamed(() => import("./routes/profile-info-contact-page"), "ProfileInfoContactPage");
 
+const ProfileInfoFieldPage = lazyNamed(() => import("./routes/profile-info-field-page"), "ProfileInfoFieldPage");
+
 const ProfileSubscriptionPage = lazyNamed(() => import("./routes/profile-subscription-page"), "ProfileSubscriptionPage");
+
+const WalletPage = lazyNamed(() => import("./routes/wallet-page"), "WalletPage");
+
+const WalletTransactionsPage = lazyNamed(() => import("./routes/wallet-transactions-page"), "WalletTransactionsPage");
 
 const ProfileFavoritesPage = lazyNamed(() => import("./routes/profile-favorites-page"), "ProfileFavoritesPage");
 
@@ -328,6 +336,13 @@ const yinjieFarmRoute = createRoute({
   path: "/games/yinjie-farm",
   beforeLoad: requireWorldReady,
   component: YinjieFarmPage,
+});
+
+const gamePlayRoute = createRoute({
+  getParentRoute: () => tabsRoute,
+  path: "/games/play/$gameId",
+  beforeLoad: requireWorldReady,
+  component: GamePlayPage,
 });
 
 const miniProgramsRoute = createRoute({
@@ -606,6 +621,13 @@ const discoverAvatarEncounterRoute = createRoute({
   component: DiscoverAvatarEncounterPage,
 });
 
+const cyberAvatarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cyber-avatar",
+  beforeLoad: requireWorldReady,
+  component: CyberAvatarPage,
+});
+
 const discoverSceneRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/discover/scene",
@@ -690,11 +712,33 @@ const profileInfoContactRoute = createRoute({
   component: ProfileInfoContactPage,
 });
 
+// 个人资料通用字段编辑页：$field 指明编辑哪个字段（gender/age/occupation/...）。
+const profileInfoFieldRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/info/field/$field",
+  beforeLoad: requireWorldReady,
+  component: ProfileInfoFieldPage,
+});
+
 const profileSubscriptionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/subscription",
   beforeLoad: requireWorldReady,
   component: ProfileSubscriptionPage,
+});
+
+const walletRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/wallet",
+  beforeLoad: requireWorldReady,
+  component: WalletPage,
+});
+
+const walletTransactionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/wallet/transactions",
+  beforeLoad: requireWorldReady,
+  component: WalletTransactionsPage,
 });
 
 const profileFavoritesRoute = createRoute({
@@ -842,6 +886,7 @@ const routeTree = rootRoute.addChildren([
     searchRoute,
     gamesRoute,
     yinjieFarmRoute,
+    gamePlayRoute,
     miniProgramsRoute,
     discoverRoute,
     contactsRoute,
@@ -883,6 +928,7 @@ const routeTree = rootRoute.addChildren([
   discoverMomentsPublishRoute,
   discoverEncounterRoute,
   discoverAvatarEncounterRoute,
+  cyberAvatarRoute,
   discoverSceneRoute,
   discoverFeedRoute,
   discoverFeedPublishRoute,
@@ -896,7 +942,10 @@ const routeTree = rootRoute.addChildren([
   profileInfoNameRoute,
   profileInfoSignatureRoute,
   profileInfoContactRoute,
+  profileInfoFieldRoute,
   profileSubscriptionRoute,
+  walletRoute,
+  walletTransactionsRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
   profileFeedRoute,

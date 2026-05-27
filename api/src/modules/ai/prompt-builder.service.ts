@@ -4,6 +4,7 @@ import {
   MomentGenerationContext,
   PersonalityProfile,
   SceneKey,
+  UserProfileContext,
 } from './ai.types';
 import { buildNaturalDialogueGuideline } from './prompt-naturalness';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
@@ -17,6 +18,9 @@ import type {
 export interface ChatContext {
   currentActivity?: string;
   lastChatAt?: Date;
+  // 用户在「个人资料」里填写的信息（注入聊天 prompt，让角色更贴合地服务对方）。
+  // 类型定义在 ai.types 避免循环依赖。
+  userProfile?: UserProfileContext;
 }
 
 export interface ChatSystemPromptSection {
@@ -30,6 +34,7 @@ export interface ChatSystemPromptSection {
     | 'internal_reasoning'
     | 'collaboration_routing'
     | 'memory'
+    | 'user_profile'
     | 'real_world_context'
     | 'current_context'
     | 'group_chat'
@@ -214,6 +219,15 @@ export class PromptBuilderService {
       if (recentSummary)
         memContent += `${coreMemory ? '\n' : ''}【近期记忆】\n${recentSummary}`;
       parts.push(`<memory>\n${memContent.trim()}\n</memory>`);
+    }
+
+    // 3.5 用户个人资料（仅 chat / proactive：跟「与对方对话」相关；moments/feed
+    // 等对外发布场景注入「与你对话的人是谁」没有意义，故同 current_context 一起 gate）。
+    if (scene === 'chat' || scene === 'proactive') {
+      const userProfileBlock = this.buildUserProfileBlock(context?.userProfile);
+      if (userProfileBlock) {
+        parts.push(userProfileBlock);
+      }
     }
 
     // 4. 当前上下文（仅 chat / proactive 场景）
@@ -640,6 +654,10 @@ export class PromptBuilderService {
     }
     memorySection += `\n</memory>`;
 
+    const userProfileSection = this.buildUserProfileBlock(
+      context?.userProfile,
+    );
+
     const realWorldContextSection = this.buildRealWorldContextSection(
       profile,
       'chat',
@@ -754,6 +772,12 @@ ${templates.behavioralGuideline}
         active: true,
       },
       {
+        key: 'user_profile',
+        label: 'User Profile',
+        content: userProfileSection,
+        active: Boolean(userProfileSection),
+      },
+      {
         key: 'real_world_context',
         label: 'Real World Context',
         content: realWorldContextSection,
@@ -778,6 +802,39 @@ ${templates.behavioralGuideline}
         active: Boolean(rulesBody),
       },
     ];
+  }
+
+  // 把用户「个人资料」拼成一段 prompt 块。只渲染非空字段；全空返回 ''（调用方据此
+  // 决定是否注入），避免给没填资料的用户塞一个空壳块。提示模型自然代入、别生硬复述。
+  private buildUserProfileBlock(userProfile?: UserProfileContext): string {
+    if (!userProfile) return '';
+    const lines: string[] = [];
+    const name = userProfile.displayName?.trim();
+    if (name) lines.push(`- 自称：${name}`);
+    const genderLabel = userProfile.gender
+      ? { male: '男', female: '女', other: '其他' }[userProfile.gender]
+      : '';
+    if (genderLabel) lines.push(`- 性别：${genderLabel}`);
+    if (typeof userProfile.age === 'number' && userProfile.age > 0) {
+      lines.push(`- 年龄：${userProfile.age} 岁`);
+    }
+    if (userProfile.occupation?.trim()) {
+      lines.push(`- 职业：${userProfile.occupation.trim()}`);
+    }
+    if (userProfile.region?.trim()) {
+      lines.push(`- 所在地：${userProfile.region.trim()}`);
+    }
+    if (userProfile.interests?.trim()) {
+      lines.push(`- 兴趣爱好：${userProfile.interests.trim()}`);
+    }
+    if (userProfile.aiAddressTone?.trim()) {
+      lines.push(`- Ta 希望你这样称呼 / 对待：${userProfile.aiAddressTone.trim()}`);
+    }
+    if (userProfile.avoidTopics?.trim()) {
+      lines.push(`- 请避免和 Ta 聊：${userProfile.avoidTopics.trim()}`);
+    }
+    if (lines.length === 0) return '';
+    return `<user_profile>\n【关于与你对话的人——请自然地放在心上，不要生硬复述或逐条念出来】\n${lines.join('\n')}\n</user_profile>`;
   }
 
   private resolveTimeOfDayLabel(

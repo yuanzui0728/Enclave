@@ -43,7 +43,7 @@ msgstr ""
 
 #: apps/app/src/components/avatar-chip.tsx:115
 #: apps/app/src/components/avatar-chip.tsx:132
-#: apps/app/src/routes/profile-info-page.tsx:251
+#: apps/app/src/routes/profile-info-page.tsx:280
 msgid "头像"
 msgstr "アバター"
 
@@ -60,7 +60,7 @@ msgid "已想要 · 等待对方"
 msgstr ""
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:44
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:49
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:58
 msgid "已略过"
 msgstr ""
 
@@ -76,19 +76,20 @@ msgstr ""
 msgid "已匹配"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:40
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:42
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:49
 msgid "待查看"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:44
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:53
 msgid "等待对方"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:49
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:58
 msgid "对方略过"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:51
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:60
 #: apps/app/src/components/chat-message-list.tsx:7333
 #: apps/app/src/components/chat-message-list.tsx:7494
 #: apps/app/src/features/games/island-concert/island-concert-game.tsx:89
@@ -215,7 +216,7 @@ msgstr "チャットに転送"
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1666
 #: apps/app/src/routes/moments-page.tsx:2175
 #: apps/app/src/routes/profile-feed-page.tsx:526
-#: apps/app/src/routes/profile-info-page.tsx:614
+#: apps/app/src/routes/profile-info-page.tsx:695
 msgid "取消"
 msgstr "キャンセル"
 
@@ -629,6 +630,7 @@ msgstr "Enter で送信"
 #: apps/app/src/components/chat-composer.tsx:4693
 #: apps/app/src/components/moment-comment-composer.tsx:39
 #: apps/app/src/components/wechat-comment-bar.tsx:286
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:173
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3717
 #: apps/app/src/features/desktop/chat/desktop-message-forward-dialog.tsx:540
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:324
@@ -636,7 +638,7 @@ msgstr "Enter で送信"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
 #: apps/app/src/routes/channels-page.tsx:5664
-#: apps/app/src/routes/discover-page.tsx:1092
+#: apps/app/src/routes/discover-page.tsx:1109
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1333
 msgid "发送"
@@ -920,7 +922,7 @@ msgstr "元画像で送信 (Cmd/Ctrl+Enter)"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-result-card.tsx:115
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/routes/character-detail-page.tsx:389
-#: apps/app/src/routes/discover-page.tsx:1091
+#: apps/app/src/routes/discover-page.tsx:1108
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1120
 #: apps/app/src/routes/welcome-page.tsx:1771
 msgid "发送中..."
@@ -1100,7 +1102,7 @@ msgid "继续删除"
 msgstr "削除を続行"
 
 #: apps/app/src/components/chat-message-list.tsx:1315
-#: apps/app/src/lib/error-translate.ts:442
+#: apps/app/src/lib/error-translate.ts:438
 msgid "当前消息暂不支持添加到表情。"
 msgstr "現在のメッセージはスタンプへの追加に対応していません。"
 
@@ -1782,7 +1784,7 @@ msgstr "マイ"
 #: apps/app/src/lib/conversation-preview.ts:113
 #: apps/app/src/routes/character-detail-page.tsx:143
 #: apps/app/src/routes/chat-details-page.tsx:120
-#: apps/app/src/routes/discover-page.tsx:497
+#: apps/app/src/routes/discover-page.tsx:514
 #: apps/app/src/routes/friend-moments-page.tsx:463
 #: apps/app/src/routes/group-chat-details-page.tsx:467
 #: apps/app/src/routes/mobile-add-friend-page.tsx:118
@@ -2271,7 +2273,7 @@ msgstr ""
 #: apps/app/src/lib/message-attachment-semantic.ts:311
 #: apps/app/src/routes/channels-page.tsx:2188
 #: apps/app/src/routes/channels-page.tsx:2496
-#: apps/app/src/routes/discover-page.tsx:193
+#: apps/app/src/routes/discover-page.tsx:210
 #: apps/app/src/routes/favorites-page.tsx:82
 #: apps/app/src/routes/mobile-favorites-page.tsx:129
 msgid "视频号"
@@ -2569,8 +2571,9 @@ msgstr ""
 #: apps/app/src/routes/profile-feed-page.tsx:469
 #: apps/app/src/routes/profile-feedback-page.tsx:255
 #: apps/app/src/routes/profile-info-contact-page.tsx:143
+#: apps/app/src/routes/profile-info-field-page.tsx:256
 #: apps/app/src/routes/profile-info-name-page.tsx:164
-#: apps/app/src/routes/profile-info-page.tsx:241
+#: apps/app/src/routes/profile-info-page.tsx:270
 #: apps/app/src/routes/profile-info-signature-page.tsx:157
 #: apps/app/src/routes/profile-moments-page.tsx:1229
 #: apps/app/src/routes/profile-settings-account-security-page.tsx:50
@@ -2726,7 +2729,7 @@ msgstr "ダイアログを閉じる"
 #: apps/app/src/routes/live-companion-page.tsx:1101
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1261
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1117
-#: apps/app/src/routes/profile-info-page.tsx:559
+#: apps/app/src/routes/profile-info-page.tsx:640
 msgid "关闭"
 msgstr "閉じる"
 
@@ -2789,11 +2792,11 @@ msgstr "画像を保存して X / 小紅書 / Weibo に投稿、もっと多く�
 #: apps/app/src/routes/discover-feed-page.tsx:2237
 #: apps/app/src/routes/discover-feed-page.tsx:2507
 #: apps/app/src/routes/discover-feed-page.tsx:3014
-#: apps/app/src/routes/discover-page.tsx:1000
+#: apps/app/src/routes/discover-page.tsx:1017
 #: apps/app/src/routes/live-companion-page.tsx:396
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:1350
 #: apps/app/src/routes/moments-page.tsx:2685
-#: apps/app/src/routes/profile-info-page.tsx:194
+#: apps/app/src/routes/profile-info-page.tsx:201
 #: apps/app/src/routes/profile-moments-page.tsx:928
 #: apps/app/src/routes/profile-page.tsx:115
 #: apps/app/src/routes/profile-page.tsx:122
@@ -2805,8 +2808,8 @@ msgstr "世界の主人"
 
 #: apps/app/src/components/feed-post-share-card-modal.tsx:73
 #: apps/app/src/routes/discover-feed-page.tsx:2508
-#: apps/app/src/routes/discover-page.tsx:775
-#: apps/app/src/routes/discover-page.tsx:1000
+#: apps/app/src/routes/discover-page.tsx:792
+#: apps/app/src/routes/discover-page.tsx:1017
 msgid "居民动态"
 msgstr "住民の投稿"
 
@@ -3100,7 +3103,7 @@ msgstr "ツールを共有"
 #: apps/app/src/routes/chat-background-page.tsx:602
 #: apps/app/src/routes/chat-details-page.tsx:316
 #: apps/app/src/routes/create-group-page.tsx:414
-#: apps/app/src/routes/discover-encounter-page.tsx:346
+#: apps/app/src/routes/discover-encounter-page.tsx:327
 #: apps/app/src/routes/discover-feed-page.tsx:2422
 #: apps/app/src/routes/discover-feed-page.tsx:2477
 #: apps/app/src/routes/discover-feed-page.tsx:2996
@@ -3195,8 +3198,8 @@ msgstr "連絡先"
 
 #: apps/app/src/components/mobile-shell.tsx:33
 #: apps/app/src/routes/desktop-mobile-page.tsx:169
-#: apps/app/src/routes/discover-page.tsx:691
-#: apps/app/src/routes/discover-page.tsx:1172
+#: apps/app/src/routes/discover-page.tsx:708
+#: apps/app/src/routes/discover-page.tsx:1189
 msgid "发现"
 msgstr "発見"
 
@@ -4177,7 +4180,7 @@ msgid "视频通话暂未开放"
 msgstr "ビデオ通話はまだ利用できません"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:10
-#: apps/app/src/routes/discover-page.tsx:81
+#: apps/app/src/routes/discover-page.tsx:82
 #: apps/app/src/routes/discover-scene-page.tsx:49
 msgid "咖啡馆"
 msgstr "カフェ"
@@ -4187,7 +4190,7 @@ msgid "窗边有热咖啡和低声播放的爵士乐。"
 msgstr "窓際にはホットコーヒーと小さく流れるジャズ。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:15
-#: apps/app/src/routes/discover-page.tsx:83
+#: apps/app/src/routes/discover-page.tsx:84
 #: apps/app/src/routes/discover-scene-page.tsx:51
 msgid "图书馆"
 msgstr "図書館"
@@ -4197,7 +4200,7 @@ msgid "安静的阅读区里，翻页声比说话声更清楚。"
 msgstr "静かな読書エリアでは、ページをめくる音が話し声よりはっきり聞こえます。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:20
-#: apps/app/src/routes/discover-page.tsx:84
+#: apps/app/src/routes/discover-page.tsx:85
 #: apps/app/src/routes/discover-scene-page.tsx:52
 msgid "公园"
 msgstr "公園"
@@ -4207,7 +4210,7 @@ msgid "树荫、长椅和慢下来的傍晚风。"
 msgstr "木陰、ベンチ、そしてゆっくり吹く夕方の風。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:25
-#: apps/app/src/routes/discover-page.tsx:82
+#: apps/app/src/routes/discover-page.tsx:83
 #: apps/app/src/routes/discover-scene-page.tsx:50
 msgid "健身房"
 msgstr "ジム"
@@ -4675,8 +4678,9 @@ msgstr "未通知"
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1296
 #: apps/app/src/routes/mini-programs-page.tsx:365
 #: apps/app/src/routes/profile-info-contact-page.tsx:160
+#: apps/app/src/routes/profile-info-field-page.tsx:273
 #: apps/app/src/routes/profile-info-name-page.tsx:181
-#: apps/app/src/routes/profile-info-page.tsx:626
+#: apps/app/src/routes/profile-info-page.tsx:707
 #: apps/app/src/routes/profile-info-signature-page.tsx:174
 msgid "完成"
 msgstr "完了"
@@ -4865,7 +4869,7 @@ msgid "该功能暂未开放，敬请期待。"
 msgstr "この機能は未公開です。お楽しみに。"
 
 #: apps/app/src/features/chat/digital-human-entry-guard.ts:20
-#: apps/app/src/lib/error-translate.ts:512
+#: apps/app/src/lib/error-translate.ts:508
 msgid "视频通话暂不可用"
 msgstr "ビデオ通話利用不可"
 
@@ -5894,7 +5898,7 @@ msgid "下次提醒 {nextLabel}"
 msgstr "次回のリマインダー {nextLabel}"
 
 #: apps/app/src/features/chat/stickers/prepare-custom-sticker-upload.ts:38
-#: apps/app/src/lib/error-translate.ts:446
+#: apps/app/src/lib/error-translate.ts:442
 msgid "只能上传图片或动图作为表情。"
 msgstr "画像または GIF のみスタンプとしてアップロードできます。"
 
@@ -5905,7 +5909,7 @@ msgstr "GIF スタンプの最大辺は {MAX_GIF_STICKER_EDGE}px を超えられ
 #. placeholder {0}: String(params.maxBytesText ?? "?")
 #. placeholder {0}: formatFileSize(MAX_GIF_SIZE_BYTES)
 #: apps/app/src/features/chat/stickers/prepare-custom-sticker-upload.ts:55
-#: apps/app/src/lib/error-translate.ts:489
+#: apps/app/src/lib/error-translate.ts:485
 msgid "GIF 表情不能超过 {0}，请先压缩后再试。"
 msgstr "GIF スタンプは {0} を超えられません。圧縮してから再試行してください。"
 
@@ -6738,7 +6742,7 @@ msgstr "通話が未接続です、もう一度お試しください"
 #: apps/app/src/features/chat/use-digital-human-call-session.ts:150
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:174
 #: apps/app/src/features/chat/use-voice-call-session.ts:158
-#: apps/app/src/lib/error-translate.ts:288
+#: apps/app/src/lib/error-translate.ts:284
 msgid "请先录一段语音再试。"
 msgstr "まず音声を録音してから再試行してください。"
 
@@ -6876,7 +6880,7 @@ msgid "这段语音没有识别出有效文字，请再试一次。"
 msgstr "この音声から有効な文字を認識できませんでした。もう一度お試しください。"
 
 #: apps/app/src/features/chat/use-speech-input.ts:611
-#: apps/app/src/lib/error-translate.ts:320
+#: apps/app/src/lib/error-translate.ts:316
 msgid "语音转写失败，请稍后再试。"
 msgstr "音声の文字起こしに失敗しました。しばらくしてからもう一度お試しください。"
 
@@ -7065,8 +7069,8 @@ msgstr "ニックネーム: {0}"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-result-card.tsx:169
 #: apps/app/src/features/search/desktop-search-launcher.tsx:821
 #: apps/app/src/routes/contacts-page.tsx:1832
-#: apps/app/src/routes/discover-encounter-page.tsx:139
-#: apps/app/src/routes/discover-page.tsx:349
+#: apps/app/src/routes/discover-encounter-page.tsx:131
+#: apps/app/src/routes/discover-page.tsx:366
 #: apps/app/src/routes/world-characters-page.tsx:338
 #: apps/app/src/routes/world-characters-page.tsx:496
 msgid "世界角色"
@@ -7169,8 +7173,8 @@ msgstr "ニックネーム"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-result-card.tsx:166
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:507
 #: apps/app/src/i18n/static-dom-seed.ts:554
-#: apps/app/src/routes/profile-info-page.tsx:273
-#: apps/app/src/routes/profile-info-page.tsx:301
+#: apps/app/src/routes/profile-info-page.tsx:302
+#: apps/app/src/routes/profile-info-page.tsx:330
 msgid "隐界号"
 msgstr "Yinjie ID"
 
@@ -7237,8 +7241,8 @@ msgstr "ソーシャルとコンテンツ"
 #: apps/app/src/features/shell/desktop-shell.tsx:980
 #: apps/app/src/i18n/static-dom-seed.ts:33
 #: apps/app/src/routes/character-detail-page.tsx:401
-#: apps/app/src/routes/discover-page.tsx:123
-#: apps/app/src/routes/discover-page.tsx:723
+#: apps/app/src/routes/discover-page.tsx:126
+#: apps/app/src/routes/discover-page.tsx:740
 #: apps/app/src/routes/favorites-page.tsx:80
 #: apps/app/src/routes/friend-moments-page.tsx:1172
 #: apps/app/src/routes/mobile-favorites-page.tsx:127
@@ -7305,7 +7309,7 @@ msgstr "追加情報"
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:379
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:839
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:887
-#: apps/app/src/routes/profile-info-page.tsx:314
+#: apps/app/src/routes/profile-info-page.tsx:343
 #: apps/app/src/routes/profile-info-signature-page.tsx:150
 msgid "个性签名"
 msgstr "シグネチャ"
@@ -7656,7 +7660,7 @@ msgstr "{0} 件選択中"
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:498
 #: apps/app/src/routes/channel-author-page.tsx:651
 #: apps/app/src/routes/channels-page.tsx:4484
-#: apps/app/src/routes/discover-page.tsx:1045
+#: apps/app/src/routes/discover-page.tsx:1062
 #: apps/app/src/routes/official-account-detail-page.tsx:511
 msgid "处理中..."
 msgstr "処理中..."
@@ -7778,6 +7782,187 @@ msgstr "連絡先はまだ空です"
 #: apps/app/src/features/contacts/management/management-root-screen.tsx:48
 msgid "批量管理"
 msgstr "一括管理"
+
+#. placeholder {0}: profile.signalCount
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:48
+msgid "已分析 {0} 条行为信号"
+msgstr ""
+
+#. placeholder {0}: profile.pendingSignalCount
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:50
+msgid "还有 {0} 条待分析"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:63
+#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
+#: apps/app/src/i18n/static-dom-seed.ts:40
+#: apps/app/src/routes/desktop-mobile-page.tsx:1198
+#: apps/app/src/routes/desktop-mobile-page.tsx:1263
+#: apps/app/src/routes/desktop-mobile-page.tsx:1375
+msgid "刷新"
+msgstr "更新"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:73
+#: apps/app/src/routes/cyber-avatar-page.tsx:184
+msgid "还没有新的互动可以更新，多去世界里逛逛再来。"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:78
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
+#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
+#: apps/app/src/i18n/static-dom-seed.ts:163
+#: apps/app/src/i18n/static-dom-seed.ts:899
+#: apps/app/src/routes/character-detail-page.tsx:409
+#: apps/app/src/routes/live-companion-page.tsx:379
+msgid "当前状态"
+msgstr "現在の状態"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:79
+msgid "心情"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:80
+msgid "精力"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:81
+msgid "专注"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:82
+msgid "当前话题"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:83
+msgid "未了的事"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:87
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:122
+msgid "稳定内核"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:91
+msgid "身份速写"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:99
+msgid "沟通风格"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:100
+msgid "决策风格"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:101
+msgid "偏好"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:102
+msgid "社交姿态"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:106
+#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
+msgid "近期动向"
+msgstr "最近の動向"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:107
+msgid "反复出现"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:108
+msgid "最近目标"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:112
+msgid "了解程度"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:114
+msgid "实时状态"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:118
+msgid "近期状态"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:127
+msgid "数据来源"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:147
+msgid "正在生成结论…"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:152
+msgid "重新生成结论"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:152
+msgid "生成结论报告"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:177
+msgid "性格速写"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:183
+msgid "优势"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:184
+msgid "盲点"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:186
+msgid "行为模式"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:190
+msgid "社交风格"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:196
+msgid "建议"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:70
+msgid "我最近在纠结什么？"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:71
+msgid "我的沟通风格是怎样的？"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:72
+msgid "给我一些建议"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:84
+msgid "正在加载对话…"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:93
+msgid "你好，我是你的赛博分身。问我任何关于你自己的问题吧。"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:119
+msgid "对方正在输入…"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:135
+msgid "发送失败，请重试。"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:148
+msgid "重发"
+msgstr ""
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:166
+msgid "问问你的分身…"
+msgstr ""
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:814
 #: apps/app/src/routes/channels-page.tsx:2527
@@ -9700,15 +9885,6 @@ msgstr "再生中"
 msgid "结束通话失败，请稍后再试。"
 msgstr "通話を終了できませんでした。後ほど再試行してください。"
 
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
-#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
-#: apps/app/src/i18n/static-dom-seed.ts:163
-#: apps/app/src/i18n/static-dom-seed.ts:899
-#: apps/app/src/routes/character-detail-page.tsx:409
-#: apps/app/src/routes/live-companion-page.tsx:379
-msgid "当前状态"
-msgstr "現在の状態"
-
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:525
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:450
 #: apps/app/src/i18n/static-dom-seed.ts:989
@@ -9738,13 +9914,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr ""
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "マイクのミュートを解除"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "マイクをミュート"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "マイクのミュートを解除"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -11260,14 +11436,14 @@ msgid "图片最多 9 张，视频当前支持 1 条且不超过 5 分钟。图�
 msgstr "画像は最大 9 枚、動画は 1 本かつ 5 分以内。画像と動画の混在投稿には今のところ対応していません。"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:160
-#: apps/app/src/routes/discover-page.tsx:873
+#: apps/app/src/routes/discover-page.tsx:890
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:664
 msgid "写点想让世界居民都能看到的内容..."
 msgstr "世界の住民に見せたい内容を書いてください..."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:185
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:162
-#: apps/app/src/routes/discover-page.tsx:902
+#: apps/app/src/routes/discover-page.tsx:919
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:726
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:920
 msgid "添加图片"
@@ -11275,14 +11451,14 @@ msgstr "画像を追加"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:194
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:171
-#: apps/app/src/routes/discover-page.tsx:917
+#: apps/app/src/routes/discover-page.tsx:934
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:750
 msgid "更换视频"
 msgstr "動画を変更"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:194
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:171
-#: apps/app/src/routes/discover-page.tsx:918
+#: apps/app/src/routes/discover-page.tsx:935
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:750
 msgid "添加视频"
 msgstr "動画を追加"
@@ -11293,7 +11469,7 @@ msgid "发布后会直接插入到公开流顶部。"
 msgstr "公開フィードの先頭に直接挿入されます。"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:237
-#: apps/app/src/routes/discover-page.tsx:931
+#: apps/app/src/routes/discover-page.tsx:948
 msgid "发布到广场"
 msgstr "広場に公開"
 
@@ -11303,7 +11479,7 @@ msgid "发布中..."
 msgstr "投稿中..."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:109
-#: apps/app/src/routes/discover-page.tsx:983
+#: apps/app/src/routes/discover-page.tsx:1000
 msgid "正在读取广场动态..."
 msgstr "広場投稿を読み込み中..."
 
@@ -11354,13 +11530,13 @@ msgid "打开通讯录"
 msgstr "連絡先を開く"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:226
-#: apps/app/src/routes/discover-page.tsx:1113
+#: apps/app/src/routes/discover-page.tsx:1130
 msgid "广场还没有新动态"
 msgstr "広場にはまだ新しい投稿がありません"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:227
 #: apps/app/src/routes/discover-feed-page.tsx:2987
-#: apps/app/src/routes/discover-page.tsx:1115
+#: apps/app/src/routes/discover-page.tsx:1132
 msgid "你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
 msgstr "住民に公開される投稿を先に出すか、世界の住民が話し始めるのを待ちましょう。"
 
@@ -11371,7 +11547,7 @@ msgstr "{0} のプロフィールを見る"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:296
 #: apps/app/src/routes/discover-feed-page.tsx:2546
-#: apps/app/src/routes/discover-page.tsx:1006
+#: apps/app/src/routes/discover-page.tsx:1023
 msgid "居民公开可见"
 msgstr "住民に公開表示"
 
@@ -11389,13 +11565,13 @@ msgstr "もう一度タップでいいね解除"
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:412
 #: apps/app/src/i18n/static-dom-seed.ts:366
 #: apps/app/src/routes/channels-page.tsx:4791
-#: apps/app/src/routes/discover-page.tsx:1047
+#: apps/app/src/routes/discover-page.tsx:1064
 msgid "已赞"
 msgstr "いいね済み"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:354
 #: apps/app/src/routes/channels-page.tsx:4791
-#: apps/app/src/routes/discover-page.tsx:1048
+#: apps/app/src/routes/discover-page.tsx:1065
 msgid "点赞"
 msgstr "いいね"
 
@@ -11454,7 +11630,7 @@ msgstr "「{0}」"
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:573
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:594
 #: apps/app/src/i18n/static-dom-seed.ts:431
-#: apps/app/src/routes/discover-page.tsx:1078
+#: apps/app/src/routes/discover-page.tsx:1095
 msgid "写评论..."
 msgstr "コメントを書く..."
 
@@ -11475,9 +11651,9 @@ msgstr "："
 #: apps/app/src/routes/discover-feed-page.tsx:1050
 #: apps/app/src/routes/discover-feed-page.tsx:1942
 #: apps/app/src/routes/discover-feed-page.tsx:2268
-#: apps/app/src/routes/discover-page.tsx:177
-#: apps/app/src/routes/discover-page.tsx:736
-#: apps/app/src/routes/discover-page.tsx:959
+#: apps/app/src/routes/discover-page.tsx:194
+#: apps/app/src/routes/discover-page.tsx:753
+#: apps/app/src/routes/discover-page.tsx:976
 #: apps/app/src/routes/favorites-page.tsx:81
 #: apps/app/src/routes/mobile-favorites-page.tsx:128
 msgid "广场动态"
@@ -11492,15 +11668,6 @@ msgstr "世界公開フィード"
 #: apps/app/src/i18n/static-dom-seed.ts:15
 msgid "这里不只看朋友，世界主人和居民的公开发言都会进入这条流。"
 msgstr "ここは友だちだけでなく、世界主人と住民の公開投稿も流れます。"
-
-#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
-#: apps/app/src/i18n/static-dom-seed.ts:40
-#: apps/app/src/routes/desktop-mobile-page.tsx:1198
-#: apps/app/src/routes/desktop-mobile-page.tsx:1263
-#: apps/app/src/routes/desktop-mobile-page.tsx:1375
-msgid "刷新"
-msgstr "更新"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:65
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:76
@@ -11585,7 +11752,7 @@ msgstr "ゲーム開始"
 #: apps/app/src/features/shell/desktop-nav-matching.ts:104
 #: apps/app/src/i18n/static-dom-seed.ts:74
 #: apps/app/src/routes/desktop-mobile-page.tsx:129
-#: apps/app/src/routes/discover-page.tsx:206
+#: apps/app/src/routes/discover-page.tsx:223
 #: apps/app/src/routes/games-page.tsx:620
 msgid "游戏"
 msgstr "ゲーム"
@@ -12028,7 +12195,7 @@ msgstr "{0} さんのモーメンツを見る"
 #. placeholder {1}: post.commentCount
 #. placeholder {1}: visibleComments.length
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:385
-#: apps/app/src/routes/discover-page.tsx:1022
+#: apps/app/src/routes/discover-page.tsx:1039
 msgid "{0} 赞 · {1} 评论"
 msgstr "{0} いいね · {1} コメント"
 
@@ -13179,17 +13346,17 @@ msgid "买了种子"
 msgstr "種を購入しました"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:82
+#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:295
+msgid "卖了"
+msgstr "売りました"
+
+#: apps/app/src/features/games/farm/components/event-log-panel.tsx:82
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:94
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:283
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:285
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:295
 msgid "作物"
 msgstr "作物"
-
-#: apps/app/src/features/games/farm/components/event-log-panel.tsx:82
-#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:295
-msgid "卖了"
-msgstr "売りました"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:84
 msgid "升到 Lv."
@@ -13358,13 +13525,13 @@ msgid "忽略"
 msgstr "閉じる"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "送る相手"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "贈り物"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "送る相手"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -13469,10 +13636,6 @@ msgstr "盗み可"
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:225
 msgid "点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。"
 msgstr "成熟（金縁）の畑をタップすると 1 つ盗めます。1 日最大 10 回、相手のあなたへの好感度が下がります。"
-
-#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-msgid "近期动向"
-msgstr "最近の動向"
 
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:257
 msgid "顺走"
@@ -17076,7 +17239,7 @@ msgstr "申し込み、リレー、グループ協業、関係の流れに向い
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:97
 #: apps/app/src/i18n/static-dom-seed.ts:149
 #: apps/app/src/lib/character-i18n.ts:43
-#: apps/app/src/routes/discover-page.tsx:194
+#: apps/app/src/routes/discover-page.tsx:211
 msgid "内容"
 msgstr "コンテンツ"
 
@@ -17097,7 +17260,7 @@ msgstr "手続き、地図、イベント、住民サービスに向いていま
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:107
 #: apps/app/src/i18n/static-dom-seed.ts:151
-#: apps/app/src/routes/discover-page.tsx:221
+#: apps/app/src/routes/discover-page.tsx:238
 msgid "工具"
 msgstr "ツール"
 
@@ -18004,7 +18167,7 @@ msgstr "チャットソースフィルターを使って、最近見返した一
 #: apps/app/src/features/shell/desktop-nav-matching.ts:110
 #: apps/app/src/i18n/static-dom-seed.ts:66
 #: apps/app/src/routes/desktop-mobile-page.tsx:124
-#: apps/app/src/routes/discover-page.tsx:220
+#: apps/app/src/routes/discover-page.tsx:237
 #: apps/app/src/routes/mini-programs-page.tsx:383
 #: apps/app/src/routes/mini-programs-page.tsx:384
 #: apps/app/src/routes/mini-programs-page.tsx:499
@@ -18107,7 +18270,7 @@ msgid "请选择视频文件。"
 msgstr "動画ファイルを選択してください。"
 
 #: apps/app/src/features/moments/moment-compose-media.ts:583
-#: apps/app/src/lib/error-translate.ts:627
+#: apps/app/src/lib/error-translate.ts:623
 msgid "视频时长不能超过 5 分钟。"
 msgstr "動画の長さは 5 分を超えられません。"
 
@@ -19202,7 +19365,6 @@ msgid "需要会员才能继续"
 msgstr "続けるにはメンバーシップが必要です"
 
 #: apps/app/src/features/subscription/subscription-expired-dialog-host.tsx:42
-#: apps/app/src/routes/discover-encounter-page.tsx:337
 msgid "去开通会员"
 msgstr "メンバーシップを開始"
 
@@ -19559,7 +19721,7 @@ msgstr "おすすめコンテンツと動画更新"
 
 #: apps/app/src/i18n/static-dom-seed.ts:51
 #: apps/app/src/routes/channels-page.tsx:1642
-#: apps/app/src/routes/discover-page.tsx:124
+#: apps/app/src/routes/discover-page.tsx:127
 msgid "朋友"
 msgstr "友だち"
 
@@ -20101,12 +20263,12 @@ msgid "这一刻的想法..."
 msgstr "この瞬間の考え..."
 
 #: apps/app/src/i18n/static-dom-seed.ts:441
-#: apps/app/src/routes/discover-encounter-page.tsx:247
+#: apps/app/src/routes/discover-encounter-page.tsx:239
 msgid "随机遇见新的世界居民"
 msgstr "新しい世界住民とランダムに出会う"
 
 #: apps/app/src/i18n/static-dom-seed.ts:443
-#: apps/app/src/routes/discover-encounter-page.tsx:248
+#: apps/app/src/routes/discover-encounter-page.tsx:240
 msgid "随机相遇"
 msgstr "ランダムな出会い"
 
@@ -21068,8 +21230,8 @@ msgid "白石"
 msgstr "Baishi"
 
 #: apps/app/src/i18n/static-dom-seed.ts:690
-msgid "懂酒吧和鸡尾酒的人"
-msgstr ""
+msgid "懂酒吧和酒水的人"
+msgstr "バーとお酒に詳しい人"
 
 #: apps/app/src/i18n/static-dom-seed.ts:691
 msgid "帮你把证据和边界理清的人"
@@ -21112,8 +21274,8 @@ msgid "创业与写作导师映射"
 msgstr "起業と執筆メンター写像"
 
 #: apps/app/src/i18n/static-dom-seed.ts:701
-msgid "一个人就能陪你长期学英语的老师型搭子"
-msgstr "長期英語学習を支える先生型の相棒"
+msgid "一个人就能帮你长期学英语的老师型助手"
+msgstr ""
 
 #: apps/app/src/i18n/static-dom-seed.ts:702
 msgid "专门替你记事、盯时间、到点提醒的人"
@@ -21132,8 +21294,8 @@ msgid "X/Twitter运营全栈导师"
 msgstr "X/Twitter運用フルスタックメンター"
 
 #: apps/app/src/i18n/static-dom-seed.ts:706
-msgid "一个人就能陪你把训练和恢复做下去的健身教练型助手"
-msgstr "トレーニングと回復を続けるためのコーチ型アシスタント"
+msgid "一个人就能帮你把训练和恢复做下去的健身教练型助手"
+msgstr ""
 
 #: apps/app/src/i18n/static-dom-seed.ts:707
 msgid "历史产品领袖映射"
@@ -21771,6 +21933,8 @@ msgid "哲学"
 msgstr "哲学"
 
 #: apps/app/src/lib/character-i18n.ts:50
+#: apps/app/src/routes/profile-info-field-page.tsx:82
+#: apps/app/src/routes/profile-info-page.tsx:395
 msgid "职业"
 msgstr "キャリア"
 
@@ -22228,13 +22392,13 @@ msgid "图片朋友圈当前只支持图片资源。"
 msgstr "画像モーメンツは画像リソースのみ対応。"
 
 #: apps/app/src/lib/error-translate.ts:142
-#: apps/app/src/lib/error-translate.ts:611
+#: apps/app/src/lib/error-translate.ts:607
 msgid "评论内容不能为空。"
 msgstr "コメントは空にできません。"
 
 #. placeholder {0}: String(params.max ?? 500)
 #: apps/app/src/lib/error-translate.ts:145
-#: apps/app/src/lib/error-translate.ts:614
+#: apps/app/src/lib/error-translate.ts:610
 msgid "评论最多 {0} 字。"
 msgstr "コメントは最大 {0} 文字までです。"
 
@@ -22348,809 +22512,804 @@ msgstr "利用可能なシェイク方向がありません。"
 msgid "摇一摇生成失败，请稍后重试。"
 msgstr "シェイクの生成に失敗しました。しばらくしてからもう一度お試しください。"
 
-#. placeholder {0}: String(params.cap ?? 3)
-#: apps/app/src/lib/error-translate.ts:221
-msgid "免费用户最多保留 {0} 个摇一摇好友，删除一个或开通会员后即可继续。"
-msgstr "無料ユーザーが保持できるシェイクで見つけた友だちは最大 {0} 人です。1 人削除するか、メンバーシップに登録すると続けられます。"
-
-#: apps/app/src/lib/error-translate.ts:224
+#: apps/app/src/lib/error-translate.ts:220
 msgid "请选择一个场景。"
 msgstr "シーンを選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:226
+#: apps/app/src/lib/error-translate.ts:222
 msgid "别走太急，过一会再去下一个地方。"
 msgstr "急がず、少し時間を置いてから次の場所へ向かいましょう。"
 
-#: apps/app/src/lib/error-translate.ts:228
+#: apps/app/src/lib/error-translate.ts:224
 #: apps/app/src/routes/discover-scene-page.tsx:461
 msgid "今天的场景相遇次数已经用完，明天再试试。"
 msgstr "本日のシーン遭遇回数を使い切りました。明日また試してください。"
 
-#: apps/app/src/lib/error-translate.ts:230
+#: apps/app/src/lib/error-translate.ts:226
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:379
 msgid "今日的分身相遇次数已用完，明天再来。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:232
+#: apps/app/src/lib/error-translate.ts:228
 msgid "暂时没有合适的相遇对象，过会再试试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:235
+#: apps/app/src/lib/error-translate.ts:231
 msgid "请先在「我 › 个人信息 › 联系方式」里填写联系方式。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:238
+#: apps/app/src/lib/error-translate.ts:234
 msgid "请先在设置里开启「分身相遇」。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:240
+#: apps/app/src/lib/error-translate.ts:236
 msgid "对方已退出社交相遇。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:242
+#: apps/app/src/lib/error-translate.ts:238
 msgid "这次相遇没能生成，请再试一次。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:244
+#: apps/app/src/lib/error-translate.ts:240
 msgid "你的分身正在唤醒，请稍后重试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:246
+#: apps/app/src/lib/error-translate.ts:242
 msgid "这次相遇不存在或已失效。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:248
+#: apps/app/src/lib/error-translate.ts:244
 msgid "你已经做过选择了。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:250
+#: apps/app/src/lib/error-translate.ts:246
 msgid "用户名与密码不能为空。"
 msgstr "ユーザー名とパスワードは空にできません。"
 
-#: apps/app/src/lib/error-translate.ts:252
+#: apps/app/src/lib/error-translate.ts:248
 msgid "用户名已被占用。"
 msgstr "そのユーザー名は既に使用されています。"
 
-#: apps/app/src/lib/error-translate.ts:254
+#: apps/app/src/lib/error-translate.ts:250
 msgid "账号或密码错误。"
 msgstr "アカウントまたはパスワードが正しくありません。"
 
-#: apps/app/src/lib/error-translate.ts:257
+#: apps/app/src/lib/error-translate.ts:253
 msgid "该账号通过邮箱验证码注册，请使用邮箱验证码登录。"
 msgstr "このアカウントはメール認証コードで登録されました、メール認証コードでサインインしてください。"
 
-#: apps/app/src/lib/error-translate.ts:260
+#: apps/app/src/lib/error-translate.ts:256
 msgid "服务器登录组件未配置，请联系管理员。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:262
+#: apps/app/src/lib/error-translate.ts:258
 msgid "验证码不能为空。"
 msgstr "認証コードは空にできません。"
 
-#: apps/app/src/lib/error-translate.ts:264
+#: apps/app/src/lib/error-translate.ts:260
 msgid "验证码错误。"
 msgstr "認証コードが正しくありません。"
 
-#: apps/app/src/lib/error-translate.ts:266
+#: apps/app/src/lib/error-translate.ts:262
 msgid "该验证码已使用。"
 msgstr "この認証コードは使用済みです。"
 
-#: apps/app/src/lib/error-translate.ts:268
+#: apps/app/src/lib/error-translate.ts:264
 msgid "验证码已过期。"
 msgstr "認証コードの有効期限が切れました。"
 
-#: apps/app/src/lib/error-translate.ts:270
+#: apps/app/src/lib/error-translate.ts:266
 msgid "邮箱格式不正确。"
 msgstr "メールアドレスの形式が正しくありません。"
 
-#: apps/app/src/lib/error-translate.ts:272
+#: apps/app/src/lib/error-translate.ts:268
 msgid "缺少访问令牌。"
 msgstr "アクセストークンがありません。"
 
-#: apps/app/src/lib/error-translate.ts:274
+#: apps/app/src/lib/error-translate.ts:270
 msgid "访问令牌无效或已过期。"
 msgstr "アクセストークンが無効または期限切れ。"
 
-#: apps/app/src/lib/error-translate.ts:276
+#: apps/app/src/lib/error-translate.ts:272
 msgid "用户不存在。"
 msgstr "ユーザーが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:278
+#: apps/app/src/lib/error-translate.ts:274
 msgid "邮箱绑定失败，请稍后重试。"
 msgstr "メールアドレスの紐付けに失敗、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:280
+#: apps/app/src/lib/error-translate.ts:276
 msgid "验证码发送失败，请稍后重试。"
 msgstr "認証コードの送信に失敗、しばらくしてから再試行してください。"
 
 #. placeholder {0}: String(params.retryAfter ?? "?")
-#: apps/app/src/lib/error-translate.ts:283
+#: apps/app/src/lib/error-translate.ts:279
 msgid "验证码发送过于频繁，请在 {0} 秒后重试。"
 msgstr "認証コードの送信頻度が高すぎます、{0} 秒後に再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:286
+#: apps/app/src/lib/error-translate.ts:282
 msgid "该邮箱验证码请求次数过多，请稍后再试。"
 msgstr "このメールアドレスの認証コード要求が多すぎます、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:290
+#: apps/app/src/lib/error-translate.ts:286
 msgid "当前语音模式暂不支持。"
 msgstr "現在の音声モードは未対応です。"
 
-#: apps/app/src/lib/error-translate.ts:292
+#: apps/app/src/lib/error-translate.ts:288
 msgid "请先提供要播报的文本。"
 msgstr "読み上げるテキストを先に入力してください。"
 
-#: apps/app/src/lib/error-translate.ts:294
+#: apps/app/src/lib/error-translate.ts:290
 msgid "语音生成结果为空，请稍后再试。"
 msgstr "音声生成結果が空でした、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:296
+#: apps/app/src/lib/error-translate.ts:292
 msgid "语音请求重试失败。"
 msgstr "音声リクエストの再試行に失敗。"
 
 #. placeholder {0}: String(params.message)
-#: apps/app/src/lib/error-translate.ts:300
+#: apps/app/src/lib/error-translate.ts:296
 msgid "请求过于频繁：{0}"
 msgstr "リクエストが多すぎます：{0}"
 
-#: apps/app/src/lib/error-translate.ts:301
+#: apps/app/src/lib/error-translate.ts:297
 msgid "请求过于频繁，请稍后再试。"
 msgstr "リクエストが多すぎます、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:304
+#: apps/app/src/lib/error-translate.ts:300
 msgid "当前 AI 服务不可用，请稍后再试。"
 msgstr "現在 AI サービスが利用できません、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:306
+#: apps/app/src/lib/error-translate.ts:302
 msgid "请先提供图片生成描述。"
 msgstr "画像生成の説明を先に入力してください。"
 
-#: apps/app/src/lib/error-translate.ts:308
+#: apps/app/src/lib/error-translate.ts:304
 msgid "图片生成结果为空，请稍后再试。"
 msgstr "画像生成結果が空でした、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:310
+#: apps/app/src/lib/error-translate.ts:306
 msgid "图片生成服务不可用，请稍后再试。"
 msgstr "画像生成サービスが利用できません、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:312
+#: apps/app/src/lib/error-translate.ts:308
 msgid "没有收到可转写的音频内容。"
 msgstr "文字起こし可能な音声を受信していません。"
 
-#: apps/app/src/lib/error-translate.ts:314
+#: apps/app/src/lib/error-translate.ts:310
 msgid "录音文件过大，请缩短单次语音输入时长。"
 msgstr "録音ファイルが大きすぎます、1 回の音声入力を短くしてください。"
 
-#: apps/app/src/lib/error-translate.ts:316
+#: apps/app/src/lib/error-translate.ts:312
 msgid "录音文件格式不受支持，请重试。"
 msgstr "録音ファイルの形式が未対応、再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:318
+#: apps/app/src/lib/error-translate.ts:314
 msgid "语音转写服务不可用，请稍后再试。"
 msgstr "音声文字起こしサービスが利用できません、しばらくしてから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:322
+#: apps/app/src/lib/error-translate.ts:318
 msgid "语音资源不存在。"
 msgstr "音声リソースが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:324
+#: apps/app/src/lib/error-translate.ts:320
 msgid "Provider 账户名称不能为空。"
 msgstr "プロバイダーのアカウント名は空にできません。"
 
-#: apps/app/src/lib/error-translate.ts:326
+#: apps/app/src/lib/error-translate.ts:322
 msgid "Provider 接口地址不能为空。"
 msgstr "プロバイダーのエンドポイント URL は空にできません。"
 
 #. placeholder {0}: String(params.id ?? params.providerAccountId ?? "")
-#: apps/app/src/lib/error-translate.ts:329
+#: apps/app/src/lib/error-translate.ts:325
 msgid "Provider 账户不存在：{0}"
 msgstr "プロバイダーアカウントが存在しません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:332
+#: apps/app/src/lib/error-translate.ts:328
 msgid "请先启用该 Provider 账户，再设为默认。"
 msgstr "このプロバイダーアカウントを有効にしてからデフォルトに設定してください。"
 
-#: apps/app/src/lib/error-translate.ts:335
+#: apps/app/src/lib/error-translate.ts:331
 msgid "请先启用目标 Provider 账户，再批量换绑模型人格角色。"
 msgstr "対象プロバイダーアカウントを有効化してから、モデル人格キャラを一括で再紐付けしてください。"
 
-#: apps/app/src/lib/error-translate.ts:338
+#: apps/app/src/lib/error-translate.ts:334
 msgid "请先填写默认模型 ID。"
 msgstr "先にデフォルトモデル ID を入力してください。"
 
-#: apps/app/src/lib/error-translate.ts:340
+#: apps/app/src/lib/error-translate.ts:336
 msgid "默认 Provider 账户不存在。"
 msgstr "デフォルトのプロバイダーアカウントが存在しません。"
 
-#: apps/app/src/lib/error-translate.ts:342
+#: apps/app/src/lib/error-translate.ts:338
 msgid "至少选择一个可安装的模型目录项。"
 msgstr "インストール可能なモデル目録項目を 1 つ以上選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:344
+#: apps/app/src/lib/error-translate.ts:340
 msgid "至少选择一个已登记的模型目录项。"
 msgstr "登録済みのモデル目録項目を 1 つ以上選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:346
+#: apps/app/src/lib/error-translate.ts:342
 msgid "管理后台尚未配置访问密钥。"
 msgstr "管理バックエンドにアクセスキーが設定されていません。"
 
-#: apps/app/src/lib/error-translate.ts:348
+#: apps/app/src/lib/error-translate.ts:344
 msgid "管理后台访问密钥无效。"
 msgstr "管理バックエンドのアクセスキーが無効です。"
 
-#: apps/app/src/lib/error-translate.ts:350
+#: apps/app/src/lib/error-translate.ts:346
 msgid "内容列表不能为空。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:353
+#: apps/app/src/lib/error-translate.ts:349
 msgid "角色 ID 和稳定版本 ID 不能为空。"
 msgstr ""
 
 #. placeholder {0}: String(params.conversationId ?? "")
-#: apps/app/src/lib/error-translate.ts:357
+#: apps/app/src/lib/error-translate.ts:353
 msgid "对话不存在：{0}"
 msgstr "会話が見つかりません：{0}"
 
 #. placeholder {0}: String(params.conversationId ?? "")
-#: apps/app/src/lib/error-translate.ts:361
+#: apps/app/src/lib/error-translate.ts:357
 msgid "对话 {0} 没有角色参与者。"
 msgstr "会話 {0} にキャラクター参加者がいません。"
 
 #. placeholder {0}: String(params.messageId ?? "")
-#: apps/app/src/lib/error-translate.ts:365
-#: apps/app/src/lib/error-translate.ts:423
+#: apps/app/src/lib/error-translate.ts:361
+#: apps/app/src/lib/error-translate.ts:419
 msgid "消息不存在：{0}"
 msgstr "メッセージが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:368
+#: apps/app/src/lib/error-translate.ts:364
 msgid "World owner 不存在。"
 msgstr "World オーナーが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:370
+#: apps/app/src/lib/error-translate.ts:366
 msgid "未知的自我角色面板文档名。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:372
+#: apps/app/src/lib/error-translate.ts:368
 msgid "至少选择一个联系人。"
 msgstr "連絡先を 1 件以上選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:374
+#: apps/app/src/lib/error-translate.ts:370
 msgid "单次最多预览 20 个联系人。"
 msgstr "1 回のプレビューは最大 20 件まで。"
 
-#: apps/app/src/lib/error-translate.ts:376
+#: apps/app/src/lib/error-translate.ts:372
 msgid "至少选择一个预览通过的联系人。"
 msgstr "プレビュー通過の連絡先を 1 件以上選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:378
+#: apps/app/src/lib/error-translate.ts:374
 msgid "单次最多导入 20 个联系人。"
 msgstr "1 回のインポートは最大 20 件まで。"
 
-#: apps/app/src/lib/error-translate.ts:380
+#: apps/app/src/lib/error-translate.ts:376
 msgid "联系人导入角色不存在。"
 msgstr "連絡先インポート用のキャラクターが存在しません。"
 
-#: apps/app/src/lib/error-translate.ts:382
+#: apps/app/src/lib/error-translate.ts:378
 msgid "只支持补建联系人导入角色的好友关系。"
 msgstr "連絡先インポートキャラの友達関係のみ後追い作成可能。"
 
-#: apps/app/src/lib/error-translate.ts:384
+#: apps/app/src/lib/error-translate.ts:380
 msgid "好友关系补建失败。"
 msgstr "友達関係の補追作成に失敗。"
 
-#: apps/app/src/lib/error-translate.ts:386
+#: apps/app/src/lib/error-translate.ts:382
 msgid "只支持回滚联系人导入角色。"
 msgstr "連絡先インポートキャラのみロールバック可能。"
 
-#: apps/app/src/lib/error-translate.ts:388
+#: apps/app/src/lib/error-translate.ts:384
 msgid "请先选择一张聊天背景。"
 msgstr "まずチャット背景を選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:390
+#: apps/app/src/lib/error-translate.ts:386
 msgid "聊天背景不存在。"
 msgstr "チャット背景が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:392
+#: apps/app/src/lib/error-translate.ts:388
 msgid "当前只支持上传图片作为聊天背景。"
 msgstr "現在チャット背景としては画像のみアップロードできます。"
 
-#: apps/app/src/lib/error-translate.ts:394
+#: apps/app/src/lib/error-translate.ts:390
 msgid "收藏消息缺少必要参数。"
 msgstr "お気に入りメッセージに必要なパラメータがありません。"
 
-#: apps/app/src/lib/error-translate.ts:396
+#: apps/app/src/lib/error-translate.ts:392
 msgid "收藏标识不能为空。"
 msgstr "お気に入り識別子は空にできません。"
 
-#: apps/app/src/lib/error-translate.ts:398
+#: apps/app/src/lib/error-translate.ts:394
 msgid "笔记标识不能为空。"
 msgstr "ノートの識別子は空にできません。"
 
 #. placeholder {0}: String(params.noteId ?? "")
-#: apps/app/src/lib/error-translate.ts:401
+#: apps/app/src/lib/error-translate.ts:397
 msgid "笔记不存在：{0}"
 msgstr "ノートが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:404
+#: apps/app/src/lib/error-translate.ts:400
 msgid "提醒消息缺少必要参数。"
 msgstr "リマインダーメッセージに必要なパラメータがありません。"
 
-#: apps/app/src/lib/error-translate.ts:406
+#: apps/app/src/lib/error-translate.ts:402
 msgid "提醒时间格式无效。"
 msgstr "リマインダー時刻の形式が無効です。"
 
-#: apps/app/src/lib/error-translate.ts:408
+#: apps/app/src/lib/error-translate.ts:404
 msgid "提醒标识不能为空。"
 msgstr "リマインダーの識別子は空にできません。"
 
 #. placeholder {0}: String(params.reminderId ?? "")
-#: apps/app/src/lib/error-translate.ts:411
+#: apps/app/src/lib/error-translate.ts:407
 msgid "提醒不存在：{0}"
 msgstr "リマインダーが見つかりません：{0}"
 
 #. placeholder {0}: String(params.messageId ?? "")
-#: apps/app/src/lib/error-translate.ts:415
+#: apps/app/src/lib/error-translate.ts:411
 msgid "群消息不存在：{0}"
 msgstr "グループメッセージが見つかりません：{0}"
 
 #. placeholder {0}: String(params.conversationId ?? params.threadId ?? "")
-#: apps/app/src/lib/error-translate.ts:419
+#: apps/app/src/lib/error-translate.ts:415
 msgid "聊天会话不存在：{0}"
 msgstr "チャット会話が見つかりません：{0}"
 
 #. placeholder {0}: String(params.groupId ?? params.threadId ?? "")
-#: apps/app/src/lib/error-translate.ts:427
+#: apps/app/src/lib/error-translate.ts:423
 msgid "群聊不存在：{0}"
 msgstr "グループが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:430
+#: apps/app/src/lib/error-translate.ts:426
 msgid "搜索词不能为空。"
 msgstr "検索ワードは空にできません。"
 
-#: apps/app/src/lib/error-translate.ts:432
+#: apps/app/src/lib/error-translate.ts:428
 msgid "自定义表情不存在。"
 msgstr "カスタムスタンプが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:434
+#: apps/app/src/lib/error-translate.ts:430
 msgid "自定义表情资源不存在。"
 msgstr "カスタムスタンプの資源が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:436
+#: apps/app/src/lib/error-translate.ts:432
 msgid "内置表情资源不存在。"
 msgstr "ビルトインスタンプの資源が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:438
+#: apps/app/src/lib/error-translate.ts:434
 msgid "图片资源不存在。"
 msgstr "画像資源が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:440
+#: apps/app/src/lib/error-translate.ts:436
 msgid "这条消息没有可导入的表情内容。"
 msgstr "このメッセージにはインポート可能なスタンプ内容がありません。"
 
-#: apps/app/src/lib/error-translate.ts:444
+#: apps/app/src/lib/error-translate.ts:440
 msgid "当前资源暂不支持添加到表情。"
 msgstr "現在の資源はスタンプ追加に対応していません。"
 
-#: apps/app/src/lib/error-translate.ts:448
+#: apps/app/src/lib/error-translate.ts:444
 msgid "上传的表情资源无效，请重新选择。"
 msgstr "アップロードしたスタンプ資源が無効です。再選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:450
+#: apps/app/src/lib/error-translate.ts:446
 msgid "资源不存在。"
 msgstr "リソースが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:452
+#: apps/app/src/lib/error-translate.ts:448
 msgid "请先选择一个附件。"
 msgstr "まず添付ファイルを選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:454
+#: apps/app/src/lib/error-translate.ts:450
 msgid "请先选择一个表情文件。"
 msgstr "まずスタンプファイルを選択してください。"
 
-#: apps/app/src/lib/error-translate.ts:456
+#: apps/app/src/lib/error-translate.ts:452
 msgid "缺少合法的 threadType。"
 msgstr "有効な threadType がありません。"
 
-#: apps/app/src/lib/error-translate.ts:458
+#: apps/app/src/lib/error-translate.ts:454
 msgid "缺少 threadId 或 messageId。"
 msgstr "threadId または messageId がありません。"
 
-#: apps/app/src/lib/error-translate.ts:460
+#: apps/app/src/lib/error-translate.ts:456
 msgid "缺少 conversationId。"
 msgstr "conversationId がありません。"
 
-#: apps/app/src/lib/error-translate.ts:462
+#: apps/app/src/lib/error-translate.ts:458
 msgid "缺少合法的 renderStatus。"
 msgstr "有効な renderStatus がありません。"
 
-#: apps/app/src/lib/error-translate.ts:464
+#: apps/app/src/lib/error-translate.ts:460
 msgid "status 非法。"
 msgstr "status が不正です。"
 
-#: apps/app/src/lib/error-translate.ts:466
+#: apps/app/src/lib/error-translate.ts:462
 msgid "视频画面鉴权失败"
 msgstr "画面認証失敗"
 
-#: apps/app/src/lib/error-translate.ts:468
+#: apps/app/src/lib/error-translate.ts:464
 msgid "只能撤回自己发送的消息。"
 msgstr "自分が送信したメッセージのみ取り消せます。"
 
-#: apps/app/src/lib/error-translate.ts:470
+#: apps/app/src/lib/error-translate.ts:466
 msgid "附件不存在。"
 msgstr "添付ファイルが見つかりません。"
 
 #. placeholder {0}: String(params.characterId ?? "")
-#: apps/app/src/lib/error-translate.ts:473
+#: apps/app/src/lib/error-translate.ts:469
 msgid "角色档案不存在：{0}"
 msgstr "キャラクターのプロファイルが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:476
+#: apps/app/src/lib/error-translate.ts:472
 msgid "附件内容无效。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:478
+#: apps/app/src/lib/error-translate.ts:474
 msgid "消息文本不能为空。"
 msgstr "メッセージ本文は空にできません。"
 
 #. placeholder {0}: String(params.max ?? "?")
-#: apps/app/src/lib/error-translate.ts:481
+#: apps/app/src/lib/error-translate.ts:477
 msgid "自定义表情最多只能保存 {0} 个。"
 msgstr "カスタムスタンプは最大 {0} 個まで保存できます。"
 
 #. placeholder {0}: String(params.maxEdge ?? "?")
-#: apps/app/src/lib/error-translate.ts:485
+#: apps/app/src/lib/error-translate.ts:481
 msgid "表情最大边长不能超过 {0}px，请先压缩后再试。"
 msgstr "スタンプの最大辺は {0}px を超えられません。先に圧縮してください。"
 
-#: apps/app/src/lib/error-translate.ts:492
+#: apps/app/src/lib/error-translate.ts:488
 msgid "当前资源无法添加到表情。"
 msgstr "現在の資源をスタンプに追加できません。"
 
 #. placeholder {0}: String(params.groupId ?? "")
-#: apps/app/src/lib/error-translate.ts:495
+#: apps/app/src/lib/error-translate.ts:491
 msgid "群主成员记录不存在：{0}"
 msgstr "グループ主のメンバー記録がありません：{0}"
 
 #. placeholder {0}: String(params.memberId ?? "")
-#: apps/app/src/lib/error-translate.ts:499
+#: apps/app/src/lib/error-translate.ts:495
 msgid "群成员不存在：{0}"
 msgstr "グループメンバーが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:502
+#: apps/app/src/lib/error-translate.ts:498
 msgid "只有世界主人可以加为用户成员。"
 msgstr "ワールドの主人のみがユーザーメンバーとして追加できます。"
 
-#: apps/app/src/lib/error-translate.ts:504
+#: apps/app/src/lib/error-translate.ts:500
 msgid "语音通话记录不存在。"
 msgstr "音声通話の記録が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:506
+#: apps/app/src/lib/error-translate.ts:502
 msgid "语音通话当前状态不允许此操作。"
 msgstr "音声通話の現在の状態ではこの操作を許可していません。"
 
-#: apps/app/src/lib/error-translate.ts:508
+#: apps/app/src/lib/error-translate.ts:504
 msgid "你不是这通通话的发起方。"
 msgstr "あなたはこの通話の発信者ではありません。"
 
-#: apps/app/src/lib/error-translate.ts:510
+#: apps/app/src/lib/error-translate.ts:506
 msgid "请先录一段语音再继续。"
 msgstr "続行する前に音声を録音してください。"
 
-#: apps/app/src/lib/error-translate.ts:514
+#: apps/app/src/lib/error-translate.ts:510
 msgid "视频任务不存在"
 msgstr "画面タスク不存在"
 
-#: apps/app/src/lib/error-translate.ts:516
+#: apps/app/src/lib/error-translate.ts:512
 msgid "视频任务参数无效"
 msgstr "画面タスクパラメータ無効"
 
-#: apps/app/src/lib/error-translate.ts:518
+#: apps/app/src/lib/error-translate.ts:514
 msgid "回复任务不存在。"
 msgstr "返信タスクが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:520
+#: apps/app/src/lib/error-translate.ts:516
 msgid "回复任务当前状态不允许此操作。"
 msgstr "返信タスクの現在の状態ではこの操作を許可していません。"
 
 #. placeholder {0}: String(params.caseId ?? "")
-#: apps/app/src/lib/error-translate.ts:523
+#: apps/app/src/lib/error-translate.ts:519
 msgid "Eval 用例不存在：{0}"
 msgstr "Eval ケースが見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:527
+#: apps/app/src/lib/error-translate.ts:523
 msgid "两两对比需要相同的数据集。"
 msgstr "ペア比較には同じデータセットが必要です。"
 
-#: apps/app/src/lib/error-translate.ts:530
+#: apps/app/src/lib/error-translate.ts:526
 msgid "Eval 数据集不存在。"
 msgstr "Eval データセットが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:532
+#: apps/app/src/lib/error-translate.ts:528
 msgid "Eval 实验预设不存在。"
 msgstr "Eval 実験プリセットが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:534
+#: apps/app/src/lib/error-translate.ts:530
 msgid "Eval 操作不合法。"
 msgstr "Eval 操作が不正です。"
 
-#: apps/app/src/lib/error-translate.ts:536
+#: apps/app/src/lib/error-translate.ts:532
 msgid "Eval 运行记录不存在。"
 msgstr "Eval 実行記録が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:538
+#: apps/app/src/lib/error-translate.ts:534
 msgid "生成轨迹不存在。"
 msgstr "生成トレースが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:540
+#: apps/app/src/lib/error-translate.ts:536
 msgid "Eval 报告不存在。"
 msgstr "Eval レポートが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:542
+#: apps/app/src/lib/error-translate.ts:538
 msgid "该 Eval 功能尚未实现。"
 msgstr "この Eval 機能はまだ実装されていません。"
 
-#: apps/app/src/lib/error-translate.ts:544
+#: apps/app/src/lib/error-translate.ts:540
 msgid "默认自我角色还没建好。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:546
+#: apps/app/src/lib/error-translate.ts:542
 msgid "世界主人不存在。"
 msgstr "World owner が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:551
+#: apps/app/src/lib/error-translate.ts:547
 msgid "世界主人昵称至少 {minLength} 个字。"
 msgstr "世界のオーナーのニックネームは {minLength} 文字以上である必要があります。"
 
-#: apps/app/src/lib/error-translate.ts:558
+#: apps/app/src/lib/error-translate.ts:554
 msgid "世界主人昵称最多 {maxLength} 个字符。"
 msgstr "ワールドオーナーのニックネームは最大 {maxLength} 文字までです。"
 
-#: apps/app/src/lib/error-translate.ts:565
+#: apps/app/src/lib/error-translate.ts:561
 msgid "个性签名最多 {maxLength} 个字符。"
 msgstr "プロフィール署名は最大 {maxLength} 文字までです。"
 
-#: apps/app/src/lib/error-translate.ts:570
+#: apps/app/src/lib/error-translate.ts:566
 msgid "头像图片超过 2MB 上限，请压缩后再试。"
 msgstr "アバター画像が 2MB の上限を超えています。圧縮してから再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:574
+#: apps/app/src/lib/error-translate.ts:570
 msgid "头像链接必须是 http/https 图片地址，或 data:image/ 开头的图片数据。"
 msgstr "アバターの URL は http/https 画像 URL、または data:image/ で始まる画像データである必要があります。"
 
-#: apps/app/src/lib/error-translate.ts:577
+#: apps/app/src/lib/error-translate.ts:573
 msgid "世界主人昵称必须是字符串。"
 msgstr "ワールドオーナーのニックネームは文字列で指定してください。"
 
-#: apps/app/src/lib/error-translate.ts:579
+#: apps/app/src/lib/error-translate.ts:575
 msgid "个性签名必须是字符串。"
 msgstr "プロフィール署名は文字列で指定してください。"
 
-#: apps/app/src/lib/error-translate.ts:582
+#: apps/app/src/lib/error-translate.ts:578
 msgid "头像必须是字符串（URL 或 data:image/ 数据）。"
 msgstr "アバターは文字列（URL または data:image/ データ）で指定してください。"
 
-#: apps/app/src/lib/error-translate.ts:585
+#: apps/app/src/lib/error-translate.ts:581
 msgid "公众号关注关系不存在。"
 msgstr "公式アカウントのフォロー関係がありません。"
 
-#: apps/app/src/lib/error-translate.ts:587
+#: apps/app/src/lib/error-translate.ts:583
 msgid "推送记录不存在。"
 msgstr "プッシュ記録が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:589
+#: apps/app/src/lib/error-translate.ts:585
 msgid "公众号不存在。"
 msgstr "公式アカウントが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:591
+#: apps/app/src/lib/error-translate.ts:587
 msgid "服务号不存在。"
 msgstr "サービスアカウントが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:593
+#: apps/app/src/lib/error-translate.ts:589
 msgid "文章不存在。"
 msgstr "記事が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:595
+#: apps/app/src/lib/error-translate.ts:591
 msgid "不支持的举报对象类型。"
 msgstr "サポートされていない通報対象タイプです。"
 
-#: apps/app/src/lib/error-translate.ts:597
+#: apps/app/src/lib/error-translate.ts:593
 msgid "请提供举报对象的 ID。"
 msgstr "通報対象の ID を入力してください。"
 
-#: apps/app/src/lib/error-translate.ts:599
+#: apps/app/src/lib/error-translate.ts:595
 msgid "请提供举报理由。"
 msgstr "通報理由を入力してください。"
 
-#: apps/app/src/lib/error-translate.ts:601
+#: apps/app/src/lib/error-translate.ts:597
 msgid "不支持的处理状态。"
 msgstr "サポートされていない処理ステータスです。"
 
-#: apps/app/src/lib/error-translate.ts:603
+#: apps/app/src/lib/error-translate.ts:599
 msgid "举报记录不存在。"
 msgstr "通報記録が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:605
+#: apps/app/src/lib/error-translate.ts:601
 msgid "邮件验证码发送失败，请稍后重试。"
 msgstr "メール認証コードの送信に失敗しました。後ほどお試しください。"
 
-#: apps/app/src/lib/error-translate.ts:607
+#: apps/app/src/lib/error-translate.ts:603
 msgid "视频号作者不存在。"
 msgstr "チャネルの作成者が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:609
+#: apps/app/src/lib/error-translate.ts:605
 msgid "评论不存在。"
 msgstr "コメントが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:617
+#: apps/app/src/lib/error-translate.ts:613
 msgid "动态内容和媒体不能同时为空。"
 msgstr "投稿の本文とメディアは同時に空にできません。"
 
 #. placeholder {0}: String(params.max ?? 2000)
-#: apps/app/src/lib/error-translate.ts:620
+#: apps/app/src/lib/error-translate.ts:616
 msgid "广场动态正文最多 {0} 字。"
 msgstr "広場投稿の本文は最大 {0} 文字までです。"
 
-#: apps/app/src/lib/error-translate.ts:623
+#: apps/app/src/lib/error-translate.ts:619
 msgid "纯文本动态不能附带图片或视频。"
 msgstr "テキストのみの投稿は画像や動画を添付できません。"
 
-#: apps/app/src/lib/error-translate.ts:625
+#: apps/app/src/lib/error-translate.ts:621
 msgid "视频动态必须且只能包含 1 条视频。"
 msgstr "動画投稿は動画 1 本のみ含む必要があります。"
 
 #. placeholder {0}: String(params.max ?? 9)
-#: apps/app/src/lib/error-translate.ts:630
+#: apps/app/src/lib/error-translate.ts:626
 msgid "图片动态最多支持 {0} 张图片。"
 msgstr "画像投稿は最大 {0} 枚までです。"
 
-#: apps/app/src/lib/error-translate.ts:633
+#: apps/app/src/lib/error-translate.ts:629
 msgid "图片动态当前只支持图片资源。"
 msgstr "画像投稿は現在画像資源のみサポートしています。"
 
-#: apps/app/src/lib/error-translate.ts:635
+#: apps/app/src/lib/error-translate.ts:631
 msgid "动态不存在。"
 msgstr "投稿が見つかりません。"
 
 #. placeholder {0}: String(params.runId ?? "")
-#: apps/app/src/lib/error-translate.ts:638
+#: apps/app/src/lib/error-translate.ts:634
 msgid "赛博分身运行记录不存在：{0}"
 msgstr "サイバーアバターの実行記録がありません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:641
+#: apps/app/src/lib/error-translate.ts:637
 msgid "不支持的世界语言。"
 msgstr "サポートされていない世界の言語です。"
 
 #. placeholder {0}: String(params.id ?? "")
-#: apps/app/src/lib/error-translate.ts:644
+#: apps/app/src/lib/error-translate.ts:640
 msgid "Connector 不存在：{0}"
 msgstr "Connector が見つかりません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:647
+#: apps/app/src/lib/error-translate.ts:643
 msgid "Action 操作不合法。"
 msgstr "Action 操作が不正です。"
 
 #. placeholder {0}: String(params.id ?? "")
-#: apps/app/src/lib/error-translate.ts:650
+#: apps/app/src/lib/error-translate.ts:646
 msgid "Action 运行记录不存在：{0}"
 msgstr "Action 実行記録がありません：{0}"
 
-#: apps/app/src/lib/error-translate.ts:653
+#: apps/app/src/lib/error-translate.ts:649
 msgid "该动作没有保留执行计划，当前无法重试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:655
+#: apps/app/src/lib/error-translate.ts:651
 msgid "好友申请 ID 不能为空。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:657
+#: apps/app/src/lib/error-translate.ts:653
 msgid "回访记录不存在。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:659
+#: apps/app/src/lib/error-translate.ts:655
 msgid "词条不存在。"
 msgstr "ページが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:661
+#: apps/app/src/lib/error-translate.ts:657
 msgid "该词条已被删除，无法编辑。"
 msgstr "このページは削除されているため編集できません。"
 
-#: apps/app/src/lib/error-translate.ts:663
+#: apps/app/src/lib/error-translate.ts:659
 msgid "存在编辑冲突，请基于最新版本重新提交。"
 msgstr "編集競合があります。最新版に基づき再送信してください。"
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:667
+#: apps/app/src/lib/error-translate.ts:663
 msgid "Wiki 校验失败：{0}"
 msgstr "Wiki 検証に失敗しました：{0}"
 
-#: apps/app/src/lib/error-translate.ts:668
+#: apps/app/src/lib/error-translate.ts:664
 msgid "Wiki 校验失败。"
 msgstr "Wiki 検証に失敗しました。"
 
 #. placeholder {0}: String(params.reason)
-#: apps/app/src/lib/error-translate.ts:673
+#: apps/app/src/lib/error-translate.ts:669
 msgid "Wiki 操作被拒绝：{0}"
 msgstr "Wiki 操作が拒否されました：{0}"
 
-#: apps/app/src/lib/error-translate.ts:674
+#: apps/app/src/lib/error-translate.ts:670
 msgid "Wiki 操作被拒绝。"
 msgstr "Wiki 操作が拒否されました。"
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:679
+#: apps/app/src/lib/error-translate.ts:675
 msgid "Wiki 冲突：{0}"
 msgstr "Wiki 競合：{0}"
 
-#: apps/app/src/lib/error-translate.ts:680
+#: apps/app/src/lib/error-translate.ts:676
 msgid "Wiki 冲突。"
 msgstr "Wiki 競合。"
 
-#: apps/app/src/lib/error-translate.ts:683
+#: apps/app/src/lib/error-translate.ts:679
 msgid "Wiki 操作过于频繁，请稍后再试。"
 msgstr "Wiki 操作が頻繁すぎます。後ほどお試しください。"
 
-#: apps/app/src/lib/error-translate.ts:685
+#: apps/app/src/lib/error-translate.ts:681
 msgid "Wiki 内容触发过滤规则。"
 msgstr "Wiki コンテンツがフィルタールールに該当しました。"
 
-#: apps/app/src/lib/error-translate.ts:687
+#: apps/app/src/lib/error-translate.ts:683
 msgid "Wiki 审核记录不存在。"
 msgstr "Wiki レビューが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:689
+#: apps/app/src/lib/error-translate.ts:685
 msgid "Wiki 审核当前状态不允许此操作。"
 msgstr "Wiki レビューの現在の状態ではこの操作を許可していません。"
 
-#: apps/app/src/lib/error-translate.ts:691
+#: apps/app/src/lib/error-translate.ts:687
 msgid "Wiki 讨论不存在。"
 msgstr "Wiki ディスカッションが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:693
+#: apps/app/src/lib/error-translate.ts:689
 msgid "Wiki 讨论当前状态不允许此操作。"
 msgstr "Wiki ディスカッションの現在の状態ではこの操作を許可していません。"
 
-#: apps/app/src/lib/error-translate.ts:695
+#: apps/app/src/lib/error-translate.ts:691
 msgid "Wiki 封禁记录不存在。"
 msgstr "Wiki ブロックが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:697
+#: apps/app/src/lib/error-translate.ts:693
 msgid "Wiki 封禁当前状态不允许此操作。"
 msgstr "Wiki ブロックの現在の状態ではこの操作を許可していません。"
 
-#: apps/app/src/lib/error-translate.ts:699
+#: apps/app/src/lib/error-translate.ts:695
 msgid "Wiki 举报不存在。"
 msgstr "Wiki の通報が見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:701
+#: apps/app/src/lib/error-translate.ts:697
 msgid "Wiki 举报当前状态不允许此操作。"
 msgstr "Wiki の通報の現在の状態ではこの操作を許可していません。"
 
-#: apps/app/src/lib/error-translate.ts:703
+#: apps/app/src/lib/error-translate.ts:699
 msgid "游戏不存在。"
 msgstr "ゲームが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:705
+#: apps/app/src/lib/error-translate.ts:701
 msgid "游戏修订不存在。"
 msgstr "ゲームのリビジョンが見つかりません。"
 
-#: apps/app/src/lib/error-translate.ts:707
+#: apps/app/src/lib/error-translate.ts:703
 msgid "游戏投稿不存在。"
 msgstr "ゲーム投稿が見つかりません。"
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:711
+#: apps/app/src/lib/error-translate.ts:707
 msgid "游戏校验失败：{0}"
 msgstr "ゲームの検証に失敗しました：{0}"
 
-#: apps/app/src/lib/error-translate.ts:712
+#: apps/app/src/lib/error-translate.ts:708
 msgid "游戏校验失败。"
 msgstr "ゲームの検証に失敗しました。"
 
-#: apps/app/src/lib/error-translate.ts:715
+#: apps/app/src/lib/error-translate.ts:711
 msgid "提交的数据无效，请检查后重试。"
 msgstr "送信されたデータが無効です。確認して再試行してください。"
 
-#: apps/app/src/lib/error-translate.ts:717
+#: apps/app/src/lib/error-translate.ts:713
 msgid "服务暂时不可用，请稍后再试。"
 msgstr "サービスは一時的に利用できません。後ほどお試しください。"
 
@@ -23423,7 +23582,7 @@ msgstr "チャンネルのインタラクションを更新しました。"
 
 #: apps/app/src/routes/channels-page.tsx:484
 #: apps/app/src/routes/discover-feed-page.tsx:708
-#: apps/app/src/routes/discover-page.tsx:537
+#: apps/app/src/routes/discover-page.tsx:554
 #: apps/app/src/routes/friend-moments-page.tsx:536
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:421
 #: apps/app/src/routes/moments-page.tsx:839
@@ -24718,6 +24877,71 @@ msgstr "結果なし"
 msgid "没有找到联系人"
 msgstr "連絡先が見つかりません"
 
+#: apps/app/src/routes/cyber-avatar-page.tsx:46
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:56
+#: apps/app/src/routes/discover-encounter-page.tsx:44
+#: apps/app/src/routes/discover-scene-page.tsx:156
+msgid "正在切换到桌面发现页"
+msgstr "デスクトップの発見ページに切り替え中"
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:47
+msgid "赛博分身当前只在移动端开放，先回到主发现页。"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:48
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:58
+#: apps/app/src/routes/discover-encounter-page.tsx:46
+#: apps/app/src/routes/discover-scene-page.tsx:158
+msgid "正在切换到桌面发现页..."
+msgstr "デスクトップの発見ページに切り替え中..."
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:94
+msgid "你的数字镜像，由你在世界里的全部互动塑造而成。"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:124
+#: apps/app/src/routes/cyber-avatar-page.tsx:127
+#: apps/app/src/routes/discover-page.tsx:167
+msgid "赛博分身"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:125
+msgid "和你的数字镜像对话"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:126
+#: apps/app/src/routes/discover-page.tsx:168
+msgid "镜像"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:135
+msgid "正在加载你的赛博分身…"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:150
+msgid "你的赛博分身还在成形中"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:152
+msgid "多去世界里互动吧——聊天、发动态、参与讨论，你的分身会越来越像你。"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:167
+msgid "正在重建…"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:170
+msgid "重建分身"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:192
+msgid "分身画像"
+msgstr ""
+
+#: apps/app/src/routes/cyber-avatar-page.tsx:193
+msgid "与分身对话"
+msgstr ""
+
 #: apps/app/src/routes/desktop-chat-files-page.tsx:516
 msgid "已打开图片。"
 msgstr "画像を開きました。"
@@ -24809,7 +25033,7 @@ msgstr "{0} さんが共有したチャットの添付"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:964
 #: apps/app/src/routes/desktop-mobile-page.tsx:1538
 #: apps/app/src/routes/desktop-mobile-page.tsx:1558
-#: apps/app/src/routes/discover-page.tsx:1000
+#: apps/app/src/routes/discover-page.tsx:1017
 msgid "{0} · {1}"
 msgstr "{0} · {1}"
 
@@ -25084,8 +25308,9 @@ msgstr "優先度：{priorityRawLabel}"
 #: apps/app/src/routes/desktop-feedback-page.tsx:713
 #: apps/app/src/routes/desktop-feedback-page.tsx:714
 #: apps/app/src/routes/desktop-feedback-page.tsx:715
-#: apps/app/src/routes/profile-info-page.tsx:325
-#: apps/app/src/routes/profile-info-page.tsx:342
+#: apps/app/src/routes/profile-info-page.tsx:224
+#: apps/app/src/routes/profile-info-page.tsx:354
+#: apps/app/src/routes/profile-info-page.tsx:371
 msgid "未填写"
 msgstr "未記入"
 
@@ -25191,6 +25416,8 @@ msgid "通讯录、发现、设置等全局入口。"
 msgstr "連絡先、発見、設定などのグローバル入口です。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:144
+#: apps/app/src/routes/profile-info-field-page.tsx:46
+#: apps/app/src/routes/profile-info-page.tsx:213
 msgid "其他"
 msgstr "その他"
 
@@ -25726,21 +25953,9 @@ msgstr "この公式アカウント記事のウィンドウパラメーターは
 msgid "默认浏览器打开"
 msgstr "既定のブラウザーで開く"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:56
-#: apps/app/src/routes/discover-encounter-page.tsx:44
-#: apps/app/src/routes/discover-scene-page.tsx:156
-msgid "正在切换到桌面发现页"
-msgstr "デスクトップの発見ページに切り替え中"
-
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:57
 msgid "分身相遇当前只在移动端开放，先回到主发现页。"
 msgstr ""
-
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:58
-#: apps/app/src/routes/discover-encounter-page.tsx:46
-#: apps/app/src/routes/discover-scene-page.tsx:158
-msgid "正在切换到桌面发现页..."
-msgstr "デスクトップの発見ページに切り替え中..."
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:74
 #: apps/app/src/routes/profile-info-contact-page.tsx:36
@@ -25749,9 +25964,9 @@ msgstr ""
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:79
 #: apps/app/src/routes/profile-info-contact-page.tsx:136
-#: apps/app/src/routes/profile-info-page.tsx:331
+#: apps/app/src/routes/profile-info-page.tsx:360
 msgid "联系方式"
-msgstr ""
+msgstr "連絡先"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:124
 msgid "让你的分身替你去认识新的人。"
@@ -25763,7 +25978,7 @@ msgstr ""
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:153
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:155
-#: apps/app/src/routes/discover-page.tsx:151
+#: apps/app/src/routes/discover-page.tsx:154
 msgid "分身相遇"
 msgstr ""
 
@@ -25860,64 +26075,64 @@ msgstr ""
 msgid "桌面端的发现入口已经收口到桌面发现，先回到主发现页。"
 msgstr ""
 
-#: apps/app/src/routes/discover-encounter-page.tsx:135
-#: apps/app/src/routes/discover-page.tsx:344
+#: apps/app/src/routes/discover-encounter-page.tsx:127
+#: apps/app/src/routes/discover-page.tsx:361
 msgid "附近暂时没有新的相遇。"
 msgstr "近くにはまだ新しい出会いがありません。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:140
-#: apps/app/src/routes/discover-page.tsx:350
+#: apps/app/src/routes/discover-encounter-page.tsx:132
+#: apps/app/src/routes/discover-page.tsx:367
 msgid "刚刚和你打了招呼。"
 msgstr "今あなたに挨拶しました。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:143
-#: apps/app/src/routes/discover-page.tsx:351
+#: apps/app/src/routes/discover-encounter-page.tsx:135
+#: apps/app/src/routes/discover-page.tsx:368
 msgid "{characterName} 已加入通讯录：{greeting}"
 msgstr "{characterName} を連絡先に追加しました：{greeting}"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:175
+#: apps/app/src/routes/discover-encounter-page.tsx:167
 msgid "晃动手机即可开始相遇，也可以直接点下方按钮。每次相遇都会直接加入你的通讯录。"
 msgstr "スマホを振ると出会いが始まります。下のボタンをタップしても OK です。出会った相手は自動的に連絡先に追加されます。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:177
+#: apps/app/src/routes/discover-encounter-page.tsx:169
 msgid "首次使用请点下方按钮授权动作传感器，之后晃动手机即可触发相遇。"
 msgstr "初回はモーションセンサーを許可するために下のボタンをタップしてください。以降はスマホを振ると出会いが始まります。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:179
+#: apps/app/src/routes/discover-encounter-page.tsx:171
 msgid "已拒绝动作传感器授权，可在系统设置开启，或点下方按钮手动触发相遇。"
 msgstr "モーションセンサーの利用が拒否されました。システム設定で許可するか、下のボタンから手動で出会いを開始してください。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:184
+#: apps/app/src/routes/discover-encounter-page.tsx:176
 msgid "当前设备不支持晃动触发，点下方按钮手动触发相遇，每次结果都会直接加入你的通讯录。"
 msgstr "このデバイスはシェイク検出に対応していません。下のボタンで手動で遭遇をトリガーしてください。結果は毎回連絡先に追加されます。"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:190
-#: apps/app/src/routes/discover-page.tsx:796
+#: apps/app/src/routes/discover-encounter-page.tsx:182
+#: apps/app/src/routes/discover-page.tsx:813
 msgid "正在寻找..."
 msgstr "探しています..."
 
-#: apps/app/src/routes/discover-encounter-page.tsx:193
+#: apps/app/src/routes/discover-encounter-page.tsx:185
 msgid "开启摇一摇"
 msgstr "シェイクを有効化"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:195
-#: apps/app/src/routes/discover-encounter-page.tsx:246
-#: apps/app/src/routes/discover-page.tsx:137
-#: apps/app/src/routes/discover-page.tsx:797
+#: apps/app/src/routes/discover-encounter-page.tsx:187
+#: apps/app/src/routes/discover-encounter-page.tsx:238
+#: apps/app/src/routes/discover-page.tsx:140
+#: apps/app/src/routes/discover-page.tsx:814
 msgid "摇一摇"
 msgstr "シェイク"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:326
+#: apps/app/src/routes/discover-encounter-page.tsx:318
 msgid "重试摇一摇"
 msgstr "シェイクを再試行"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:347
+#: apps/app/src/routes/discover-encounter-page.tsx:328
 #: apps/app/src/routes/discover-scene-page.tsx:582
 msgid "回发现页"
 msgstr "発見ページに戻る"
 
 #: apps/app/src/routes/discover-feed-page.tsx:513
-#: apps/app/src/routes/discover-page.tsx:289
+#: apps/app/src/routes/discover-page.tsx:306
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:245
 msgid "广场动态已发布，世界居民公开可见。"
 msgstr "広場投稿を公開しました。世界の住民に表示されます。"
@@ -25936,8 +26151,8 @@ msgstr ""
 
 #: apps/app/src/routes/discover-feed-page.tsx:689
 #: apps/app/src/routes/discover-feed-page.tsx:864
-#: apps/app/src/routes/discover-page.tsx:465
-#: apps/app/src/routes/discover-page.tsx:554
+#: apps/app/src/routes/discover-page.tsx:482
+#: apps/app/src/routes/discover-page.tsx:571
 msgid "广场互动已更新。"
 msgstr "広場のリアクションを更新しました。"
 
@@ -25964,7 +26179,7 @@ msgid "读取全部评论失败，请稍后重试。"
 msgstr "全コメントの読み込みに失敗しました。後ほど再度お試しください。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:1607
-#: apps/app/src/routes/discover-page.tsx:671
+#: apps/app/src/routes/discover-page.tsx:688
 #: apps/app/src/routes/friend-moments-page.tsx:781
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:475
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:634
@@ -25974,7 +26189,7 @@ msgid "图片选择失败，请稍后重试。"
 msgstr "画像の選択に失敗しました。しばらくしてからもう一度お試しください。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:1619
-#: apps/app/src/routes/discover-page.tsx:683
+#: apps/app/src/routes/discover-page.tsx:700
 #: apps/app/src/routes/friend-moments-page.tsx:791
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:514
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:666
@@ -26026,18 +26241,18 @@ msgid "正在打开桌面发现..."
 msgstr ""
 
 #: apps/app/src/routes/discover-feed-page.tsx:2269
-#: apps/app/src/routes/discover-page.tsx:739
+#: apps/app/src/routes/discover-page.tsx:756
 msgid "世界居民公开可见"
 msgstr "世界住民に公開"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2302
 #: apps/app/src/routes/discover-feed-page.tsx:2996
-#: apps/app/src/routes/discover-page.tsx:840
+#: apps/app/src/routes/discover-page.tsx:857
 msgid "发一条广场动态"
 msgstr "広場に投稿"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2340
-#: apps/app/src/routes/discover-page.tsx:962
+#: apps/app/src/routes/discover-page.tsx:979
 msgid "这里不只看朋友，也能看到世界里的居民正在说什么。"
 msgstr "ここでは友だちだけでなく、世界の住民が何を話しているかも見られます。"
 
@@ -26080,181 +26295,181 @@ msgstr "まだ新しい投稿はありません"
 msgid "确定举报这条动态吗？"
 msgstr ""
 
-#: apps/app/src/routes/discover-page.tsx:138
+#: apps/app/src/routes/discover-page.tsx:141
 msgid "随机"
 msgstr "ランダム"
 
-#: apps/app/src/routes/discover-page.tsx:152
+#: apps/app/src/routes/discover-page.tsx:155
 msgid "分身"
 msgstr ""
 
-#: apps/app/src/routes/discover-page.tsx:164
+#: apps/app/src/routes/discover-page.tsx:181
 #: apps/app/src/routes/discover-scene-page.tsx:376
 msgid "场景相遇"
 msgstr "シーンで出会う"
 
-#: apps/app/src/routes/discover-page.tsx:165
-#: apps/app/src/routes/discover-page.tsx:771
+#: apps/app/src/routes/discover-page.tsx:182
+#: apps/app/src/routes/discover-page.tsx:788
 msgid "场景"
 msgstr "シーン"
 
-#: apps/app/src/routes/discover-page.tsx:178
+#: apps/app/src/routes/discover-page.tsx:195
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:961
 msgid "公开"
 msgstr "公開"
 
-#: apps/app/src/routes/discover-page.tsx:207
+#: apps/app/src/routes/discover-page.tsx:224
 msgid "娱乐"
 msgstr "エンタメ"
 
-#: apps/app/src/routes/discover-page.tsx:348
+#: apps/app/src/routes/discover-page.tsx:365
 msgid "随机相遇已写入通讯录。"
 msgstr "ランダムな出会いを連絡先に追加しました。"
 
-#: apps/app/src/routes/discover-page.tsx:381
+#: apps/app/src/routes/discover-page.tsx:398
 msgid "{translatedSceneLabel}里和别处都暂时没有新的相遇了。"
 msgstr "{translatedSceneLabel}でも他の場所でも、今は新しい出会いがありません。"
 
-#: apps/app/src/routes/discover-page.tsx:386
+#: apps/app/src/routes/discover-page.tsx:403
 msgid "场景相遇已写入好友申请列表。"
 msgstr "シーンでの出会いを友だち申請リストに追加しました。"
 
-#: apps/app/src/routes/discover-page.tsx:387
+#: apps/app/src/routes/discover-page.tsx:404
 #: apps/app/src/routes/discover-scene-page.tsx:279
 msgid "对你产生了兴趣。"
 msgstr "あなたに興味を持ちました。"
 
 #. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-page.tsx:391
+#: apps/app/src/routes/discover-page.tsx:408
 msgid "{0} 不在{translatedSceneLabel}，但顺路碰到了你：{greeting}"
 msgstr "{0}は{translatedSceneLabel}にはいませんでしたが、たまたまあなたに会いました：{greeting}"
 
 #. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-page.tsx:397
+#: apps/app/src/routes/discover-page.tsx:414
 msgid "{0} 在{translatedSceneLabel}里注意到了你：{greeting}"
 msgstr "{0} が{translatedSceneLabel}であなたに気づきました：{greeting}"
 
-#: apps/app/src/routes/discover-page.tsx:692
+#: apps/app/src/routes/discover-page.tsx:709
 msgid "朋友圈给世界角色，广场给居民"
 msgstr "モーメンツは世界キャラクターへ、広場は住民へ"
 
-#: apps/app/src/routes/discover-page.tsx:694
+#: apps/app/src/routes/discover-page.tsx:711
 msgid "发现页把随机相遇、场景相遇和居民公开动态拆开排布，让桌面上的探索节奏更清晰，也把角色近况流和居民公开流分得更明白。"
 msgstr "発見ページではランダムな出会い、シーンでの出会い、住民の公開投稿を分け、デスクトップでの探索をわかりやすくします。"
 
-#: apps/app/src/routes/discover-page.tsx:704
+#: apps/app/src/routes/discover-page.tsx:721
 msgid "内容视角"
 msgstr "コンテンツ視点"
 
-#: apps/app/src/routes/discover-page.tsx:707
+#: apps/app/src/routes/discover-page.tsx:724
 msgid "先决定发给好友，还是发给居民"
 msgstr "友だちに出すか住民に出すかを先に決める"
 
-#: apps/app/src/routes/discover-page.tsx:711
+#: apps/app/src/routes/discover-page.tsx:728
 msgid "朋友圈和广场动态共用同一套发现入口，但可见范围完全不同。"
 msgstr "モーメンツと広場の投稿は同じ発見入口を共有していますが、公開範囲は全く違います。"
 
-#: apps/app/src/routes/discover-page.tsx:726
+#: apps/app/src/routes/discover-page.tsx:743
 msgid "世界角色日常"
 msgstr "世界キャラクターの日常"
 
-#: apps/app/src/routes/discover-page.tsx:730
+#: apps/app/src/routes/discover-page.tsx:747
 msgid "世界里的角色会自然更新近况，你也可以随时把这一刻发进去。"
 msgstr "世界のキャラクターは自然に近況を更新します。あなたもいつでも今の瞬間を投稿できます。"
 
-#: apps/app/src/routes/discover-page.tsx:743
+#: apps/app/src/routes/discover-page.tsx:760
 msgid "把这一刻发到居民广场，让世界里的居民也能看见并回应。"
 msgstr "この瞬間を住民広場に投稿し、世界の住民にも見えて反応できるようにします。"
 
-#: apps/app/src/routes/discover-page.tsx:758
+#: apps/app/src/routes/discover-page.tsx:775
 msgid "今日相遇"
 msgstr "今日の出会い"
 
-#: apps/app/src/routes/discover-page.tsx:761
+#: apps/app/src/routes/discover-page.tsx:778
 msgid "轻轻试一次，就可能遇到一段新的关系线索。"
 msgstr "軽く試すだけで、新しい関係の手がかりに出会えるかもしれません。"
 
-#: apps/app/src/routes/discover-page.tsx:765
+#: apps/app/src/routes/discover-page.tsx:782
 msgid "探索区"
 msgstr "探索エリア"
 
-#: apps/app/src/routes/discover-page.tsx:779
+#: apps/app/src/routes/discover-page.tsx:796
 msgid "反馈状态"
 msgstr "フィードバック状態"
 
-#: apps/app/src/routes/discover-page.tsx:782
+#: apps/app/src/routes/discover-page.tsx:799
 msgid "已过滤"
 msgstr "フィルター済み"
 
-#: apps/app/src/routes/discover-page.tsx:783
+#: apps/app/src/routes/discover-page.tsx:800
 msgid "开放"
 msgstr "オープン"
 
-#: apps/app/src/routes/discover-page.tsx:800
+#: apps/app/src/routes/discover-page.tsx:817
 msgid "先生成临时候选，你决定要不要把他留下。"
 msgstr "まず一時候補を生成し、残すかどうかを決めます。"
 
 #. placeholder {0}: t(scene.label)
-#: apps/app/src/routes/discover-page.tsx:815
+#: apps/app/src/routes/discover-page.tsx:832
 #: apps/app/src/routes/discover-scene-page.tsx:512
 msgid "正在前往{0}..."
 msgstr "{0}へ移動中..."
 
-#: apps/app/src/routes/discover-page.tsx:837
+#: apps/app/src/routes/discover-page.tsx:854
 msgid "广场发布"
 msgstr "広場への投稿"
 
-#: apps/app/src/routes/discover-page.tsx:844
+#: apps/app/src/routes/discover-page.tsx:861
 msgid "把你的想法发到居民广场，让世界里的居民都可能看到并回应。"
 msgstr "あなたの考えを住民広場に投稿し、世界の住民が見て反応できるようにします。"
 
-#: apps/app/src/routes/discover-page.tsx:849
+#: apps/app/src/routes/discover-page.tsx:866
 msgid "发帖区"
 msgstr "投稿エリア"
 
-#: apps/app/src/routes/discover-page.tsx:855
-#: apps/app/src/routes/discover-page.tsx:975
+#: apps/app/src/routes/discover-page.tsx:872
+#: apps/app/src/routes/discover-page.tsx:992
 msgid "范围"
 msgstr "範囲"
 
-#: apps/app/src/routes/discover-page.tsx:856
-#: apps/app/src/routes/discover-page.tsx:975
+#: apps/app/src/routes/discover-page.tsx:873
+#: apps/app/src/routes/discover-page.tsx:992
 msgid "居民公开"
 msgstr "住民公開"
 
-#: apps/app/src/routes/discover-page.tsx:859
+#: apps/app/src/routes/discover-page.tsx:876
 msgid "发布状态"
 msgstr "公開状態"
 
-#: apps/app/src/routes/discover-page.tsx:862
+#: apps/app/src/routes/discover-page.tsx:879
 msgid "发布中"
 msgstr "公開中"
 
-#: apps/app/src/routes/discover-page.tsx:863
+#: apps/app/src/routes/discover-page.tsx:880
 msgid "待发送"
 msgstr "送信待ち"
 
-#: apps/app/src/routes/discover-page.tsx:930
+#: apps/app/src/routes/discover-page.tsx:947
 msgid "正在发布..."
 msgstr "公開中..."
 
-#: apps/app/src/routes/discover-page.tsx:934
+#: apps/app/src/routes/discover-page.tsx:951
 msgid "发布后会直接进入右侧公开流，世界居民公开可见。"
 msgstr "公開後は右側の公開フィードに入り、世界の住民に表示されます。"
 
-#: apps/app/src/routes/discover-page.tsx:966
+#: apps/app/src/routes/discover-page.tsx:983
 msgid "公开流"
 msgstr "公開フィード"
 
-#: apps/app/src/routes/discover-page.tsx:972
+#: apps/app/src/routes/discover-page.tsx:989
 msgid "可见动态"
 msgstr "表示中の投稿"
 
-#: apps/app/src/routes/discover-page.tsx:1176
+#: apps/app/src/routes/discover-page.tsx:1193
 msgid "社交与动态"
 msgstr "ソーシャルと更新"
 
-#: apps/app/src/routes/discover-page.tsx:1182
+#: apps/app/src/routes/discover-page.tsx:1199
 msgid "内容与服务"
 msgstr "コンテンツとサービス"
 
@@ -27656,8 +27871,9 @@ msgstr "タグは最大 8 個までです。先に 1 つ削除してください
 
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1357
 #: apps/app/src/routes/profile-info-contact-page.tsx:160
+#: apps/app/src/routes/profile-info-field-page.tsx:273
 #: apps/app/src/routes/profile-info-name-page.tsx:181
-#: apps/app/src/routes/profile-info-page.tsx:626
+#: apps/app/src/routes/profile-info-page.tsx:707
 #: apps/app/src/routes/profile-info-signature-page.tsx:174
 msgid "保存中"
 msgstr "保存中…"
@@ -28135,8 +28351,93 @@ msgstr ""
 msgid "联系方式太长啦，最多 {CONTACT_MAX_LENGTH} 个字符，请删掉一些。"
 msgstr ""
 
+#: apps/app/src/routes/profile-info-field-page.tsx:44
+#: apps/app/src/routes/profile-info-page.tsx:209
+msgid "男"
+msgstr "男性"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:45
+#: apps/app/src/routes/profile-info-page.tsx:211
+msgid "女"
+msgstr "女性"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:71
+#: apps/app/src/routes/profile-info-page.tsx:383
+msgid "性别"
+msgstr "性別"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:72
+msgid "再次点选当前选项可取消填写。"
+msgstr "選択中の項目をもう一度タップすると未入力に戻せます。"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:76
+#: apps/app/src/routes/profile-info-page.tsx:389
+msgid "年龄"
+msgstr "年齢"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:77
+msgid "你的年龄"
+msgstr "あなたの年齢"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:78
+msgid "填 {AGE_MIN}-{AGE_MAX} 之间的数字；留空表示不填写。"
+msgstr "{AGE_MIN}〜{AGE_MAX} の数字を入力してください。空欄にすると未入力になります。"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:83
+msgid "你的职业，例如 产品经理"
+msgstr "あなたの職業（例：プロダクトマネージャー）"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:88
+#: apps/app/src/routes/profile-info-page.tsx:401
+msgid "所在地"
+msgstr "所在地"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:89
+msgid "常驻城市，例如 上海"
+msgstr "よくいる都市（例：上海）"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:94
+#: apps/app/src/routes/profile-info-page.tsx:407
+msgid "兴趣爱好"
+msgstr "趣味"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:95
+msgid "你的兴趣爱好，例如 爬山、摄影、独立游戏"
+msgstr "あなたの趣味（例：登山、写真、インディーゲーム）"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:100
+#: apps/app/src/routes/profile-info-page.tsx:413
+msgid "互动偏好"
+msgstr "やり取りの好み"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:101
+msgid "希望角色怎么称呼你、用什么语气，例如 叫我老王，轻松一点"
+msgstr "キャラにどう呼ばれたいか・口調の好み（例：「ラオワンと呼んで、気楽に」）"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:106
+#: apps/app/src/routes/profile-info-page.tsx:419
+msgid "回避话题"
+msgstr "避けたい話題"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:107
+msgid "不希望被聊到的话题，例如 催婚、工作压力"
+msgstr "話題にしてほしくないこと（例：結婚の催促、仕事のストレス）"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:377
+msgid "这些信息只用来让你的 AI 伙伴更懂你、回复更贴合，不会公开给其他用户。"
+msgstr "この情報はAIの相棒があなたをより理解し、返信を合わせるためだけに使われ、他のユーザーには公開されません。"
+
+#: apps/app/src/routes/profile-info-field-page.tsx:383
+msgid "请填写 {AGE_MIN}-{AGE_MAX} 之间的年龄。"
+msgstr "{AGE_MIN}〜{AGE_MAX} の年齢を入力してください。"
+
+#. placeholder {0}: config.maxLength
+#: apps/app/src/routes/profile-info-field-page.tsx:387
+msgid "内容太长啦，最多 {0} 个字符，请删掉一些。"
+msgstr "長すぎます。最大 {0} 文字です。少し減らしてください。"
+
 #: apps/app/src/routes/profile-info-name-page.tsx:157
-#: apps/app/src/routes/profile-info-page.tsx:263
+#: apps/app/src/routes/profile-info-page.tsx:292
 msgid "名字"
 msgstr "名前"
 
@@ -28168,51 +28469,55 @@ msgstr "名前が短すぎます — 最低 {NAME_MIN_LENGTH} 文字必要です
 msgid "名字太长啦，最多 {NAME_MAX_LENGTH} 个字符，请删掉一些。"
 msgstr "名前が長すぎます — 最大 {NAME_MAX_LENGTH} 文字以内にしてください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:126
+#: apps/app/src/routes/profile-info-page.tsx:133
 msgid "打开相册失败，请重试。"
 msgstr "フォトライブラリを開けませんでした。もう一度お試しください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:136
+#: apps/app/src/routes/profile-info-page.tsx:143
 msgid "图片过大，请压缩到 1MB 以内再试。"
 msgstr "画像が大きすぎます。1MB以下に圧縮してから再試行してください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:144
+#: apps/app/src/routes/profile-info-page.tsx:151
 msgid "这张图片是空文件，请换一张试试。"
 msgstr "この画像は空のファイルです。別の画像をお試しください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:152
+#: apps/app/src/routes/profile-info-page.tsx:159
 msgid "只能选择图片文件。"
 msgstr "画像ファイルのみ選択できます。"
 
-#: apps/app/src/routes/profile-info-page.tsx:167
+#: apps/app/src/routes/profile-info-page.tsx:174
 msgid "读取图片失败，请换一张试试。"
 msgstr "画像の読み込みに失敗しました。別の画像をお試しください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:213
+#: apps/app/src/routes/profile-info-page.tsx:242
 msgid "已复制隐界号"
 msgstr "隠界 ID をコピーしました"
 
-#: apps/app/src/routes/profile-info-page.tsx:213
+#: apps/app/src/routes/profile-info-page.tsx:242
 msgid "复制失败，请重试"
 msgstr "コピーに失敗しました。再試行してください。"
 
-#: apps/app/src/routes/profile-info-page.tsx:229
+#: apps/app/src/routes/profile-info-page.tsx:258
 msgid "个人信息"
 msgstr "プロフィール"
 
-#: apps/app/src/routes/profile-info-page.tsx:256
+#: apps/app/src/routes/profile-info-page.tsx:285
 msgid "更换头像"
 msgstr "アバターを変更"
 
-#: apps/app/src/routes/profile-info-page.tsx:297
+#: apps/app/src/routes/profile-info-page.tsx:326
 msgid "复制隐界号 {yinjieIdText}"
 msgstr "隠界 ID {yinjieIdText} をコピー"
 
-#: apps/app/src/routes/profile-info-page.tsx:304
+#: apps/app/src/routes/profile-info-page.tsx:333
 msgid "未生成"
 msgstr "未生成"
 
-#: apps/app/src/routes/profile-info-page.tsx:585
+#: apps/app/src/routes/profile-info-page.tsx:379
+msgid "补充资料，让 AI 更懂你"
+msgstr "情報を追加してAIに理解してもらおう"
+
+#: apps/app/src/routes/profile-info-page.tsx:666
 msgid "本地图片"
 msgstr "ローカル画像"
 

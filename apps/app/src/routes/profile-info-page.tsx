@@ -47,6 +47,13 @@ export function ProfileInfoPage() {
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
   const contact = useWorldOwnerStore((state) => state.contact);
+  const gender = useWorldOwnerStore((state) => state.gender);
+  const age = useWorldOwnerStore((state) => state.age);
+  const occupation = useWorldOwnerStore((state) => state.occupation);
+  const region = useWorldOwnerStore((state) => state.region);
+  const interests = useWorldOwnerStore((state) => state.interests);
+  const aiAddressTone = useWorldOwnerStore((state) => state.aiAddressTone);
+  const avoidTopics = useWorldOwnerStore((state) => state.avoidTopics);
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   // 隐界号像微信号一样要能复制给好友——之前这一行是 readOnly、点不动也长按
   // 没菜单（mobile webview 长按选中文本经常被 yj-no-callout 一类的祖先样式吃掉），
@@ -196,6 +203,28 @@ export function ProfileInfoPage() {
   const trimmedContact = contact?.trim() ?? "";
   const yinjieIdText = ownerId ? buildYinjieId(ownerId) : null;
 
+  // 个人资料各行的值预览：填了显示内容、没填显示「未填写」（同 signature/contact 行）。
+  const genderLabel =
+    gender === "male"
+      ? t(msg`男`)
+      : gender === "female"
+        ? t(msg`女`)
+        : gender === "other"
+          ? t(msg`其他`)
+          : "";
+  const fieldValueSpan = (text: string) => (
+    <span
+      className={cn(
+        "max-w-[55vw] truncate text-[13px]",
+        text
+          ? "text-[color:var(--text-muted)]"
+          : "text-[color:var(--text-dim)]",
+      )}
+    >
+      {text || t(msg`未填写`)}
+    </span>
+  );
+
   async function handleCopyYinjieId() {
     if (!yinjieIdText) {
       return;
@@ -344,6 +373,55 @@ export function ProfileInfoPage() {
             }
           />
         </InfoRowGroup>
+
+        {/* 补充资料：注入 AI 角色对话上下文，让陪伴更贴合你（不公开给其他用户）。 */}
+        <div className="px-4 pt-5 pb-1.5 text-[12px] text-[color:var(--text-dim)]">
+          {t(msg`补充资料，让 AI 更懂你`)}
+        </div>
+        <InfoRowGroup>
+          <InfoRow
+            label={t(msg`性别`)}
+            to="/profile/info/field/$field"
+            params={{ field: "gender" }}
+            value={fieldValueSpan(genderLabel)}
+          />
+          <InfoRow
+            label={t(msg`年龄`)}
+            to="/profile/info/field/$field"
+            params={{ field: "age" }}
+            value={fieldValueSpan(age != null ? String(age) : "")}
+          />
+          <InfoRow
+            label={t(msg`职业`)}
+            to="/profile/info/field/$field"
+            params={{ field: "occupation" }}
+            value={fieldValueSpan(occupation?.trim() ?? "")}
+          />
+          <InfoRow
+            label={t(msg`所在地`)}
+            to="/profile/info/field/$field"
+            params={{ field: "region" }}
+            value={fieldValueSpan(region?.trim() ?? "")}
+          />
+          <InfoRow
+            label={t(msg`兴趣爱好`)}
+            to="/profile/info/field/$field"
+            params={{ field: "interests" }}
+            value={fieldValueSpan(interests?.trim() ?? "")}
+          />
+          <InfoRow
+            label={t(msg`互动偏好`)}
+            to="/profile/info/field/$field"
+            params={{ field: "aiAddressTone" }}
+            value={fieldValueSpan(aiAddressTone?.trim() ?? "")}
+          />
+          <InfoRow
+            label={t(msg`回避话题`)}
+            to="/profile/info/field/$field"
+            params={{ field: "avoidTopics" }}
+            value={fieldValueSpan(avoidTopics?.trim() ?? "")}
+          />
+        </InfoRowGroup>
       </div>
 
       <AvatarConfirmDialog
@@ -412,6 +490,8 @@ type InfoRowProps = {
   label: string;
   value?: React.ReactNode;
   to?: string;
+  // 参数路由（如 /profile/info/field/$field）的 params；仅 Link 分支用。
+  params?: Record<string, string>;
   readOnly?: boolean;
   denseValue?: boolean;
   // onClick：纯按钮型行（如「点一下复制隐界号」/「点一下换头像」），不导航也不是 readOnly。
@@ -427,6 +507,7 @@ function InfoRow({
   label,
   value,
   to,
+  params,
   readOnly,
   denseValue,
   onClick,
@@ -498,7 +579,7 @@ function InfoRow({
   }
 
   return (
-    <Link to={to as never} className={cellClass}>
+    <Link to={to as never} params={params as never} className={cellClass}>
       {inner}
     </Link>
   );

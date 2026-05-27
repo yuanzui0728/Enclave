@@ -9,6 +9,8 @@ import { createSessionStateStorage } from "../runtime/session-storage";
 // 未填写」靠空串区分「真没填」与「填了一段空白」。contactKind 默认 "wechat"
 // （联系方式编辑页若不带 kind 选择器就落这个），保持 contracts 的 union 收窄。
 type WorldOwnerContactKind = "wechat" | "phone" | "other";
+// 个人资料里的性别：空串 = 未填（沿用 signature/contact 的空串约定）。
+type WorldOwnerGender = "male" | "female" | "other" | "";
 
 type WorldOwnerState = {
   id: string | null;
@@ -20,6 +22,14 @@ type WorldOwnerState = {
   contactKind: WorldOwnerContactKind;
   // 分身相遇 opt-in：world owner 列是唯一真源（cloud-api 撮合池由 world 推快照同步）。
   encounterOptedIn: boolean;
+  // 个人资料：注入 AI prompt 的结构化信息。空串/null = 未填。
+  gender: WorldOwnerGender;
+  age: number | null;
+  occupation: string;
+  region: string;
+  interests: string;
+  aiAddressTone: string;
+  avoidTopics: string;
   hasCustomApiKey: boolean;
   customApiBase: string | null;
   createdAt: string | null;
@@ -59,6 +69,17 @@ const DEFAULT_CONTACT = "";
 const DEFAULT_CONTACT_KIND: WorldOwnerContactKind = "wechat";
 // 默认进池（产品决策：默认开启可关）。
 const DEFAULT_ENCOUNTER_OPTED_IN = true;
+// 个人资料字段的空态：登出 / 清户时必须一并重置，否则共用设备上一个账号的资料
+// 会残留进下一个账号（跨账号泄漏）。三处 reset（initial / logout / clearOwner）共用。
+const DEFAULT_PROFILE_FIELDS = {
+  gender: "" as WorldOwnerGender,
+  age: null as number | null,
+  occupation: "",
+  region: "",
+  interests: "",
+  aiAddressTone: "",
+  avoidTopics: "",
+};
 
 function resolveOwnerAvatar(avatar?: string | null) {
   return avatar && avatar.trim() ? avatar : defaultAvatar;
@@ -74,6 +95,14 @@ function resolveContactKind(
     : DEFAULT_CONTACT_KIND;
 }
 
+// contracts 的 gender 是 "male"|"female"|"other"|null|undefined，store 收窄到
+// 带空串的 union（空串 = 未填）。非法 / 缺省都回落到 ""。
+function resolveGender(gender?: WorldOwner["gender"]): WorldOwnerGender {
+  return gender === "male" || gender === "female" || gender === "other"
+    ? gender
+    : "";
+}
+
 export const useWorldOwnerStore = create<WorldOwnerState>()(
   persist(
     (set) => ({
@@ -85,6 +114,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       contact: DEFAULT_CONTACT,
       contactKind: DEFAULT_CONTACT_KIND,
       encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
+      ...DEFAULT_PROFILE_FIELDS,
       hasCustomApiKey: false,
       customApiBase: null,
       createdAt: null,
@@ -98,6 +128,13 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           contact: owner.contact ?? DEFAULT_CONTACT,
           contactKind: resolveContactKind(owner.contactKind),
           encounterOptedIn: owner.encounterOptedIn !== false,
+          gender: resolveGender(owner.gender),
+          age: typeof owner.age === "number" ? owner.age : null,
+          occupation: owner.occupation ?? "",
+          region: owner.region ?? "",
+          interests: owner.interests ?? "",
+          aiAddressTone: owner.aiAddressTone ?? "",
+          avoidTopics: owner.avoidTopics ?? "",
           hasCustomApiKey: owner.hasCustomApiKey,
           customApiBase: owner.customApiBase ?? null,
           createdAt: owner.createdAt,
@@ -142,6 +179,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           contact: DEFAULT_CONTACT,
           contactKind: DEFAULT_CONTACT_KIND,
           encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
+          ...DEFAULT_PROFILE_FIELDS,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,
@@ -156,6 +194,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           contact: DEFAULT_CONTACT,
           contactKind: DEFAULT_CONTACT_KIND,
           encounterOptedIn: DEFAULT_ENCOUNTER_OPTED_IN,
+          ...DEFAULT_PROFILE_FIELDS,
           hasCustomApiKey: false,
           customApiBase: null,
           createdAt: null,
