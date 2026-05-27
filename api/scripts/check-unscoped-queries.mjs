@@ -39,6 +39,7 @@ const SCOPED_ENTITY_NAMES = new Set([
   'ParkingWarPlayerStateEntity', 'ModerationReportEntity', 'NarrativeArcEntity',
   'OfficialAccountDeliveryEntity', 'OfficialAccountFollowEntity',
   'OfficialAccountServiceMessageEntity', 'ReminderTaskEntity', 'SelfAgentRunEntity',
+  'SelfAgentHeartbeatRunEntity',
   'FriendRequestEntity', 'FriendshipEntity',
   // 本轮新加 ownerId
   'FeedPostEntity', 'FeedCommentEntity', 'FeedPostLikeEntity', 'MomentPostEntity',

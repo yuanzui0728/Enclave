@@ -1,8 +1,8 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, OnModuleInit } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThanOrEqual } from 'typeorm';
-import { TenantContextStore } from '../tenancy/tenant-context';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository, In, LessThanOrEqual } from 'typeorm';
+import { TenantContextStore, isSharedWorldMode } from '../tenancy/tenant-context';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { ActionRunEntity } from '../action-runtime/action-run.entity';
@@ -86,8 +86,10 @@ type SelfAgentRunRecordInput = {
 };
 
 @Injectable()
-export class SelfAgentService {
+export class SelfAgentService implements OnModuleInit {
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
     @InjectRepository(UserEntity)
@@ -106,6 +108,20 @@ export class SelfAgentService {
     private readonly rulesService: SelfAgentRulesService,
     private readonly workspace: SelfAgentWorkspaceService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    // 共享 world：self_agent_heartbeat_runs 新增 ownerId 列（synchronize:false 不会建）。
+    // 幂等自愈——SQLite 的 ADD COLUMN 无 IF NOT EXISTS，列已存在抛错吞掉即可（仿 8u·4 occupancy）。
+    if (isSharedWorldMode()) {
+      try {
+        await this.dataSource.query(
+          `ALTER TABLE self_agent_heartbeat_runs ADD COLUMN ownerId text`,
+        );
+      } catch {
+        // 列已存在：忽略。
+      }
+    }
+  }
 
   async handleConversationTurn(input: {
     conversationId: string;
@@ -285,7 +301,9 @@ export class SelfAgentService {
         },
       }),
       this.rulesService.getRules(),
-      this.heartbeatRunRepo.find({
+      // 共享 world：心跳 run 按 owner 隔离（getAdminOverview 在当前 owner 帧内）。裸 find 会
+      // afterLoad 抛/跨 owner 混 → 经 TenantRepository 注入当前 owner。
+      new TenantRepository(this.heartbeatRunRepo).find({
         order: { updatedAt: 'DESC', createdAt: 'DESC' },
         take: 12,
       }),
@@ -358,7 +376,7 @@ export class SelfAgentService {
     };
 
     if (!rules.heartbeat.enabled) {
-      const disabledRun = await this.heartbeatRunRepo.save(
+      const disabledRun = await new TenantRepository(this.heartbeatRunRepo).save(
         this.heartbeatRunRepo.create({
           triggerType: trigger,
           status: 'noop',
@@ -383,7 +401,7 @@ export class SelfAgentService {
       !rules.heartbeat.allowNightlySilentScan &&
       !this.isWithinHeartbeatWindow(now, rules)
     ) {
-      const skippedRun = await this.heartbeatRunRepo.save(
+      const skippedRun = await new TenantRepository(this.heartbeatRunRepo).save(
         this.heartbeatRunRepo.create({
           triggerType: trigger,
           status: 'noop',
@@ -493,7 +511,7 @@ export class SelfAgentService {
       findingsPayload: findings,
       errorMessage: null,
     });
-    const saved = await this.heartbeatRunRepo.save(run);
+    const saved = await new TenantRepository(this.heartbeatRunRepo).save(run);
     await this.saveRunRecord({
       triggerType: 'heartbeat',
       status: findings.length > 0 ? 'suggested' : 'skipped',

@@ -52,6 +52,7 @@ import { OfficialAccountFollowEntity } from '../official-accounts/official-accou
 import { OfficialAccountServiceMessageEntity } from '../official-accounts/official-account-service-message.entity';
 import { ReminderTaskEntity } from '../reminder-runtime/reminder-task.entity';
 import { SelfAgentRunEntity } from '../self-agent/self-agent-run.entity';
+import { SelfAgentHeartbeatRunEntity } from '../self-agent/self-agent-heartbeat-run.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { CharacterEntity } from '../characters/character.entity';
@@ -152,6 +153,9 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   // parking-war occupancy（Phase 8u·4 补 ownerId 收口——原表 npc 侧 keyed 用跨 owner 共用
   // 的 characterId，shared 下裸读/QB 删跨 owner）。uuid id 全局唯一 → 普通可空 ownerId 列。
   ParkingWarOccupancyEntity,
+  // self-agent 心跳 run-ledger（Phase 8v 补 ownerId——原漏建、shared 下 getAdminOverview /
+  // heartbeat cron 裸 find 跨 owner 静默混）。uuid id 全局唯一 → 普通可空 ownerId 列。
+  SelfAgentHeartbeatRunEntity,
 ];
 
 let registered = false;
