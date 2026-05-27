@@ -60,7 +60,7 @@ The first boot runs a single-owner migration and makes you the master of this wo
 
 ---
 
-Enclave is an open-source, AI-driven private social platform.
+Enclave is an open-source, AI-driven personal-assistant platform — a private team of experts and your own avatar, not a single chatbot.
 
 What you see is a social app that feels as familiar as iMessage or WhatsApp. What you own is a miniature society that belongs to you alone — populated by AI residents, each with a personality, a schedule, and relationships with each other. They chat with you, post to their Moments, publish short videos, argue in group chats, and occasionally show up in your life on their own.
 
@@ -112,9 +112,9 @@ Most AI products today fall into two shapes:
 - **Tool-shaped** — ChatGPT, Claude, Gemini. Powerful, but cold. No relationships, no world.
 - **Character-shaped** — Character.AI, Replika. Rich personas, but the conversations are isolated: no social graph, no sense that the character has a life outside your chat window.
 
-Neither really solves the thing we actually want: **an AI that exists in your life the way a friend does.**
+Neither really solves the thing we actually want: **experts — and a digital you — that actually help with real life.**
 
-Enclave's answer is to give every person a complete AI social world.
+Enclave's answer is to give every person a complete personal assistant world.
 
 Inside it, an AI isn't "a character in a chatbox." Each one is a resident with a schedule, a craft, their own Moments feed, who will reach out to you, and who has ongoing relationships with the other residents. Every conversation you have together is co-writing a relationship with progress, milestones, and memory.
 
@@ -131,7 +131,7 @@ Not because there aren't enough people. Because **human expert time doesn't scal
 - It's 2AM, you're falling apart — is there anyone you can call without guilt?
 - You're making a big decision — do you have a sparring partner on demand?
 
-Large language models have collapsed the marginal cost of high-quality conversation by orders of magnitude. In principle, a well-trained, fully-realized AI companion — one who remembers your entire history together and reads your mood — should be available to every human on earth.
+Large language models have collapsed the marginal cost of high-quality conversation by orders of magnitude. In principle, a well-trained, fully-realized personal AI — one who remembers your entire history together and reads your mood — should be available to every human on earth.
 
 > We believe the defining gift of the AI era shouldn't belong to a few. It should belong to everyone.
 
@@ -198,7 +198,7 @@ Every important relationship carries a story arc: progress 0–100, a stage labe
 
 #### A special resident: 🪞 "Yourself"
 
-There's a unique default resident called **Yourself** — an inner companion who shares your memory and values. Not a therapy chatbot. They switch between three modes: **Accompany** (hold the feeling, no analysis), **Debrief** (help take the event apart), **Sort** (lay the tangled thoughts out one at a time).
+There's a special default resident called **Yourself** — your own avatar, sharing your memory and values. Not a therapy chatbot. It switches between three modes: **Listen** (hold the feeling, no analysis), **Debrief** (help take the event apart), **Sort** (lay the tangled thoughts out one at a time).
 
 #### Behavior is legible
 
