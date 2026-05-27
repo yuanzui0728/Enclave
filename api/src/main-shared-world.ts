@@ -122,6 +122,17 @@ async function bootstrap() {
   // 这里的 boot 种子，由各自迁移/管理路径维护。
   app.enableShutdownHooks();
 
+  // keep-alive 保活对齐 cloud-api 反代（world-api-proxy.service.ts 用 keepAlive Agent
+  // 复用到本进程的连接）：Node http server 默认 keepAliveTimeout=5s，会先于反代回收热
+  // 连接而 FIN 掉空闲 socket；反代下一拍（用户发消息 / 前端 ~30s 轮询）复用这条已被服务端
+  // 关闭的 socket → ECONNRESET → 502 WORLD_UPSTREAM_UNAVAILABLE → App 误判「世界离线」
+  // 弹重登（线上「一发消息就让重新登录」即此竞态）。把服务端空闲保活拉到 125s（> 反代
+  // PROXY_IDLE_TIMEOUT_MS=120s、远大于前端轮询节奏），让反代永远是先关一方，消除 socket
+  // 复用竞态。headersTimeout 须 > keepAliveTimeout（Node 约束）。
+  const httpServer = app.getHttpServer();
+  httpServer.keepAliveTimeout = 125_000;
+  httpServer.headersTimeout = 130_000;
+
   // 默认 4100：避开 LPP 每用户 child 的端口区间（3010 起，规模上已用到 3100+）。
   const port = process.env.SHARED_WORLD_PORT ?? process.env.PORT ?? 4100;
   await app.listen(Number(port), host);
