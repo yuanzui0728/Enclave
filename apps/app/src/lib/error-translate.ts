@@ -216,6 +216,10 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`摇一摇生成失败，请稍后重试。`);
     case "SHAKE_AI_GENERATION_FAILED":
       return translateRuntimeMessage(msg`摇一摇生成失败，请稍后重试。`);
+    case "SHAKE_FRIEND_LIMIT":
+      return translateRuntimeMessage(
+        msg`免费用户最多保留 ${String(params.cap ?? 3)} 个摇一摇好友，删除一个或开通会员后即可继续。`,
+      );
     case "SOCIAL_SCENE_INVALID":
       return translateRuntimeMessage(msg`请选择一个场景。`);
     case "SOCIAL_SCENE_COOLDOWN":

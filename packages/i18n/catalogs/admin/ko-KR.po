@@ -1048,7 +1048,7 @@ msgstr "Approved"
 #: apps/admin/src/routes/games-page.tsx:138
 #: apps/admin/src/routes/need-discovery-page.tsx:93
 #: apps/admin/src/routes/need-discovery-page.tsx:1088
-#: apps/admin/src/routes/need-discovery-page.tsx:3364
+#: apps/admin/src/routes/need-discovery-page.tsx:3375
 msgid "已拒绝"
 msgstr "Rejected"
 
@@ -1475,7 +1475,7 @@ msgid "补齐推理 Provider、实例连通性和运行前置条件。"
 msgstr "추론 프로바이더, 인스턴스 연결성, 실행 전제 조건을 완비합니다."
 
 #: apps/admin/src/components/root-layout.tsx:180
-#: apps/admin/src/lib/route-breadcrumb.ts:147
+#: apps/admin/src/lib/route-breadcrumb.ts:157
 msgid "Token 用量"
 msgstr "Token 사용량"
 
@@ -1484,7 +1484,7 @@ msgid "查看 AI 请求、Token 花费、预算预警和价格配置。"
 msgstr "AI 요청, Token 비용, 예산 알림, 가격 설정을 확인합니다."
 
 #: apps/admin/src/components/root-layout.tsx:185
-#: apps/admin/src/lib/route-breadcrumb.ts:197
+#: apps/admin/src/lib/route-breadcrumb.ts:207
 msgid "评测分析"
 msgstr "평가 분석"
 
@@ -1493,6 +1493,7 @@ msgid "集中查看 runs、compare 和 trace。"
 msgstr "runs, compare, trace를 한곳에서 확인합니다."
 
 #: apps/admin/src/components/root-layout.tsx:192
+#: apps/admin/src/routes/behavior-records-page.tsx:179
 msgid "角色与内容"
 msgstr "캐릭터 및 콘텐츠"
 
@@ -1520,6 +1521,7 @@ msgstr "AI 게임 센터 카탈로그, 소스 구조, 현재 심사 상태를 �
 
 #: apps/admin/src/components/root-layout.tsx:207
 #: apps/admin/src/lib/route-breadcrumb.ts:137
+#: apps/admin/src/routes/chat-records-page.tsx:298
 msgid "聊天记录"
 msgstr "채팅 기록"
 
@@ -1528,78 +1530,88 @@ msgid "回看世界主人与角色的真实单聊样本、搜索命中和会话�
 msgstr "세계 주인과 캐릭터의 실제 1:1 채팅 샘플, 검색 결과, 세션 비용을 확인합니다."
 
 #: apps/admin/src/components/root-layout.tsx:214
-#: apps/admin/src/lib/route-breadcrumb.ts:187
+#: apps/admin/src/lib/route-breadcrumb.ts:147
+#: apps/admin/src/routes/behavior-records-page.tsx:180
+msgid "用户行为"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:216
+msgid "回看世界主人在朋友圈、广场、视频号的真实互动行为与分析。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:221
+#: apps/admin/src/lib/route-breadcrumb.ts:197
 #: apps/admin/src/routes/reminder-runtime-page.tsx:70
 msgid "现实联动"
 msgstr "현실 연동"
 
-#: apps/admin/src/components/root-layout.tsx:215
+#: apps/admin/src/components/root-layout.tsx:222
 msgid "承接：界闻/联动角色"
 msgstr "담당: 지에원 / 연동 캐릭터"
 
-#: apps/admin/src/components/root-layout.tsx:217
+#: apps/admin/src/components/root-layout.tsx:224
 msgid "查看角色现实新闻同步、每日 digest、scene patch 和现实发圈锚点。"
 msgstr "캐릭터의 현실 뉴스 동기화, 일일 digest, scene patch, 현실 연동 Moments 앵커를 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:224
+#: apps/admin/src/components/root-layout.tsx:231
 msgid "智能与模型"
 msgstr "지능 및 모델"
 
-#: apps/admin/src/components/root-layout.tsx:229
+#: apps/admin/src/components/root-layout.tsx:236
 #: apps/admin/src/lib/route-breadcrumb.ts:48
 #: apps/admin/src/routes/character-editor-page.tsx:763
 #: apps/admin/src/routes/inference-page.tsx:690
 msgid "模型与路由"
 msgstr "모델 및 라우팅"
 
-#: apps/admin/src/components/root-layout.tsx:231
+#: apps/admin/src/components/root-layout.tsx:238
 msgid "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。"
 msgstr "Provider 계정, 모델 카탈로그, 기본 라우팅, 모델 페르소나 캐릭터 일괄 설치를 관리합니다."
 
-#: apps/admin/src/components/root-layout.tsx:236
+#: apps/admin/src/components/root-layout.tsx:243
 #: apps/admin/src/routes/digital-human-page.tsx:267
 msgid "数字人 Provider"
 msgstr ""
 
-#: apps/admin/src/components/root-layout.tsx:238
+#: apps/admin/src/components/root-layout.tsx:245
 msgid "配置外部数字人播放器模板、回调 token 和扩展参数，把内置播放器替换成真实数字人服务。"
 msgstr ""
 
-#: apps/admin/src/components/root-layout.tsx:243
-#: apps/admin/src/lib/route-breadcrumb.ts:157
+#: apps/admin/src/components/root-layout.tsx:250
+#: apps/admin/src/lib/route-breadcrumb.ts:167
 msgid "回复逻辑"
 msgstr "답변 로직"
 
-#: apps/admin/src/components/root-layout.tsx:244
+#: apps/admin/src/components/root-layout.tsx:251
 msgid "围绕角色、会话和全局规则排查回复链路。"
 msgstr "캐릭터, 세션, 글로벌 규칙을 중심으로 답장 흐름을 조사합니다."
 
-#: apps/admin/src/components/root-layout.tsx:248
+#: apps/admin/src/components/root-layout.tsx:255
 #: apps/admin/src/lib/route-breadcrumb.ts:68
 #: apps/admin/src/routes/cyber-avatar-page.tsx:133
 #: apps/admin/src/routes/need-discovery-page.tsx:475
 msgid "需求发现"
 msgstr "니즈 탐색"
 
-#: apps/admin/src/components/root-layout.tsx:249
+#: apps/admin/src/components/root-layout.tsx:256
 msgid "配置短期/长期角色生成策略，并查看候选与运行记录。"
 msgstr "단기/장기 캐릭터 생성 전략을 설정하고 후보와 실행 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:253
-#: apps/admin/src/lib/route-breadcrumb.ts:177
+#: apps/admin/src/components/root-layout.tsx:260
+#: apps/admin/src/lib/route-breadcrumb.ts:187
 msgid "赛博分身"
 msgstr "사이버 아바타"
 
-#: apps/admin/src/components/root-layout.tsx:254
+#: apps/admin/src/components/root-layout.tsx:261
 msgid "查看行为信号、画像状态、投影提示词与建模运行记录。"
 msgstr "행동 신호, 프로필 상태, 투영 프롬프트, 모델링 실행 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:260
+#: apps/admin/src/components/root-layout.tsx:267
 #: apps/admin/src/routes/character-factory-page.tsx:1308
 msgid "运行时"
 msgstr "런타임"
 
-#: apps/admin/src/components/root-layout.tsx:265
+#: apps/admin/src/components/root-layout.tsx:272
 #: apps/admin/src/lib/route-breadcrumb.ts:78
 #: apps/admin/src/routes/cyber-avatar-page.tsx:94
 #: apps/admin/src/routes/cyber-avatar-page.tsx:103
@@ -1610,52 +1622,52 @@ msgstr "런타임"
 msgid "主动跟进"
 msgstr "선제 후속 조치"
 
-#: apps/admin/src/components/root-layout.tsx:266
+#: apps/admin/src/components/root-layout.tsx:273
 msgid "承接：我自己"
 msgstr "담당: 나 자신"
 
-#: apps/admin/src/components/root-layout.tsx:267
+#: apps/admin/src/components/root-layout.tsx:274
 msgid "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。"
 msgstr "자신이 미해결 open loop를 회수하기 위한 규칙, Prompt, 추천 흐름을 설정합니다."
 
-#: apps/admin/src/components/root-layout.tsx:271
+#: apps/admin/src/components/root-layout.tsx:278
 msgid "主代理"
 msgstr "메인 에이전트"
 
-#: apps/admin/src/components/root-layout.tsx:272
+#: apps/admin/src/components/root-layout.tsx:279
 msgid "承接：我自己主代理"
 msgstr "담당: 나 자신 메인 에이전트"
 
-#: apps/admin/src/components/root-layout.tsx:274
+#: apps/admin/src/components/root-layout.tsx:281
 msgid "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。"
 msgstr "self-agent workspace, heartbeat, standing orders 및 최근 점검 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:279
+#: apps/admin/src/components/root-layout.tsx:286
 #: apps/admin/src/lib/route-breadcrumb.ts:98
 #: apps/admin/src/routes/reminder-runtime-page.tsx:2137
 msgid "提醒运行时"
 msgstr "리마인더 런타임"
 
-#: apps/admin/src/components/root-layout.tsx:280
+#: apps/admin/src/components/root-layout.tsx:287
 msgid "承接：小盯"
 msgstr "담당: 샤오딩"
 
-#: apps/admin/src/components/root-layout.tsx:282
+#: apps/admin/src/components/root-layout.tsx:289
 msgid "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。"
 msgstr "샤오딩의 활성 리마인더, 최근 트리거/완료, 개인 채팅 발송, 가벼운 Moments 리마인더 게시 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:287
-#: apps/admin/src/lib/route-breadcrumb.ts:167
+#: apps/admin/src/components/root-layout.tsx:294
+#: apps/admin/src/lib/route-breadcrumb.ts:177
 #: apps/admin/src/routes/cyber-avatar-page.tsx:158
 #: apps/admin/src/routes/cyber-avatar-page.tsx:189
 msgid "真实世界动作"
 msgstr "현실 세계 액션"
 
-#: apps/admin/src/components/root-layout.tsx:288
+#: apps/admin/src/components/root-layout.tsx:295
 msgid "承接：行动助理"
 msgstr "담당: 액션 어시스턴트"
 
-#: apps/admin/src/components/root-layout.tsx:289
+#: apps/admin/src/components/root-layout.tsx:296
 msgid "查看行动助理的动作门控、连接器、规则和执行轨迹。"
 msgstr "액션 어시스턴트의 게이트, 커넥터, 규칙, 실행 추적을 확인합니다."
 
@@ -2037,68 +2049,77 @@ msgid "集中查看世界主人与各角色的真实单聊历史、搜索命中�
 msgstr "세계 주인과 각 캐릭터의 실제 1:1 대화 기록, 검색 결과 문맥, 세션 단위 Token 비용을 한곳에서 확인합니다."
 
 #: apps/admin/src/lib/route-breadcrumb.ts:148
+msgid "互动行为收集与分析"
+msgstr ""
+
+#: apps/admin/src/lib/route-breadcrumb.ts:150
+msgid "集中查看世界主人在朋友圈、广场、视频号的评论、点赞、转发、收藏、浏览、关注等真实互动行为。"
+msgstr ""
+
+#: apps/admin/src/lib/route-breadcrumb.ts:158
 msgid "AI 成本与请求账本"
 msgstr "AI 비용 및 요청 장부"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:150
+#: apps/admin/src/lib/route-breadcrumb.ts:160
 msgid "集中查看 Token 消耗、时间趋势、角色分布、预算预警和价格配置。"
 msgstr "Token 소비, 시간 추세, 캐릭터 분포, 예산 알림, 가격 설정을 한곳에서 확인합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:158
+#: apps/admin/src/lib/route-breadcrumb.ts:168
 msgid "世界级回复调试台"
 msgstr "세계 단위 답변 디버거"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:160
+#: apps/admin/src/lib/route-breadcrumb.ts:170
 msgid "围绕角色、会话和全局规则排查回复链路，而不是在长页面里找模块。"
 msgstr "긴 페이지에서 모듈을 찾는 대신 캐릭터, 세션, 전역 규칙을 중심으로 답변 파이프라인을 점검합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:168
+#: apps/admin/src/lib/route-breadcrumb.ts:178
 msgid "行动助理动作运行时"
 msgstr "액션 어시스턴트 런타임"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:170
+#: apps/admin/src/lib/route-breadcrumb.ts:180
 msgid "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。"
 msgstr "동작 인식, 명확화, 확인, 커넥터, 실행 추적을 중심으로 현실 세계 동작 기능을 확인합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:178
+#: apps/admin/src/lib/route-breadcrumb.ts:188
 msgid "用户行为建模与 Prompt 投影"
 msgstr "사용자 행동 모델링 및 Prompt 투영"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:180
+#: apps/admin/src/lib/route-breadcrumb.ts:190
 msgid "集中查看赛博分身如何从行为信号收敛成画像，再投影成后续世界内外可消费的提示词。"
 msgstr "사이버 분신이 행동 신호에서 프로필로 수렴한 뒤 세계 안팎에서 사용할 수 있는 프롬프트로 투영되는 과정을 한곳에서 확인합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:188
+#: apps/admin/src/lib/route-breadcrumb.ts:198
 msgid "角色现实世界同步与日更"
 msgstr "캐릭터 현실 세계 동기화 및 일일 업데이트"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:190
+#: apps/admin/src/lib/route-breadcrumb.ts:200
 msgid "集中查看每日外部信号、摘要 digest、scene patch 和现实发圈锚点。"
 msgstr "일일 외부 신호, 요약 digest, scene patch, 현실 연동 Moments 앵커를 한곳에서 확인합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:198
+#: apps/admin/src/lib/route-breadcrumb.ts:208
 msgid "评测运行与 Trace 工作台"
 msgstr "평가 실행 및 Trace 워크벤치"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:200
+#: apps/admin/src/lib/route-breadcrumb.ts:210
 msgid "集中查看 runs、compare 和 trace，逐步收口成更清晰的多视图结构。"
 msgstr "runs, compare, trace를 한곳에서 확인하고 더 명확한 다중 뷰 구조로 점진적으로 정리합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:206
+#: apps/admin/src/lib/route-breadcrumb.ts:216
 msgid "管理后台"
 msgstr "관리 콘솔"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:207
+#: apps/admin/src/lib/route-breadcrumb.ts:217
+#: apps/admin/src/routes/chat-records-page.tsx:297
 #: apps/admin/src/routes/followup-runtime-page.tsx:334
 #: apps/admin/src/routes/real-world-sync-page.tsx:1166
 msgid "运营工作台"
 msgstr "운영 워크스페이스"
 
-#: apps/admin/src/lib/route-breadcrumb.ts:208
+#: apps/admin/src/lib/route-breadcrumb.ts:218
 msgid "围绕实例运行、角色运营和回复分析组织后台操作。"
 msgstr "인스턴스 실행, 캐릭터 운영, 답변 분석을 중심으로 관리자 작업을 구성합니다."
 
-#: apps/admin/src/lib/route-breadcrumb.ts:215
+#: apps/admin/src/lib/route-breadcrumb.ts:225
 msgid "后台"
 msgstr "백엔드"
 
@@ -2360,11 +2381,12 @@ msgid "待补参数"
 msgstr "파라미터 보충 대기"
 
 #. placeholder {0}: detail.activeDigest.signalIds.length
+#. placeholder {0}: group.records.length
 #. placeholder {0}: group.tasks.length
-#. placeholder {0}: overview.counts.awaitingConfirmation
 #: apps/admin/src/routes/action-runtime-page.tsx:816
 #: apps/admin/src/routes/action-runtime-page.tsx:820
 #: apps/admin/src/routes/action-runtime-page.tsx:824
+#: apps/admin/src/routes/behavior-records-page.tsx:301
 #: apps/admin/src/routes/cyber-avatar-page.tsx:1109
 #: apps/admin/src/routes/dashboard-page.tsx:1850
 #: apps/admin/src/routes/real-world-sync-page.tsx:1203
@@ -3234,7 +3256,7 @@ msgstr "성공했습니다"
 #: apps/admin/src/routes/evals-page.tsx:2754
 #: apps/admin/src/routes/followup-runtime-page.tsx:1747
 #: apps/admin/src/routes/need-discovery-page.tsx:1297
-#: apps/admin/src/routes/need-discovery-page.tsx:3338
+#: apps/admin/src/routes/need-discovery-page.tsx:3349
 #: apps/admin/src/routes/real-world-sync-page.tsx:77
 #: apps/admin/src/routes/real-world-sync-page.tsx:91
 #: apps/admin/src/routes/reply-logic-page.tsx:1859
@@ -3272,7 +3294,7 @@ msgstr "실행 중"
 #: apps/admin/src/routes/inference-page.tsx:990
 #: apps/admin/src/routes/need-discovery-page.tsx:90
 #: apps/admin/src/routes/need-discovery-page.tsx:1297
-#: apps/admin/src/routes/need-discovery-page.tsx:3372
+#: apps/admin/src/routes/need-discovery-page.tsx:3383
 #: apps/admin/src/routes/real-world-sync-page.tsx:88
 msgid "草稿"
 msgstr "초안"
@@ -3291,7 +3313,7 @@ msgstr "오류"
 #: apps/admin/src/routes/need-discovery-page.tsx:939
 #: apps/admin/src/routes/need-discovery-page.tsx:949
 #: apps/admin/src/routes/need-discovery-page.tsx:2254
-#: apps/admin/src/routes/need-discovery-page.tsx:2522
+#: apps/admin/src/routes/need-discovery-page.tsx:2533
 msgid "已停用"
 msgstr "비활성화됨"
 
@@ -3318,6 +3340,245 @@ msgstr "states 휴리스틱"
 #: apps/admin/src/routes/action-runtime-page.tsx:2843
 msgid "名称启发式"
 msgstr "이름 휴리스틱"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:28
+#: apps/admin/src/routes/character-runtime-page.tsx:388
+#: apps/admin/src/routes/cyber-avatar-page.tsx:167
+#: apps/admin/src/routes/cyber-avatar-page.tsx:181
+#: apps/admin/src/routes/dashboard-page.tsx:1280
+msgid "朋友圈"
+msgstr "피드"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:29
+#: apps/admin/src/routes/cyber-avatar-page.tsx:168
+msgid "广场"
+msgstr "광장"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:30
+#: apps/admin/src/routes/character-runtime-page.tsx:390
+#: apps/admin/src/routes/chat-records-page.tsx:847
+#: apps/admin/src/routes/cyber-avatar-page.tsx:169
+#: apps/admin/src/routes/cyber-avatar-page.tsx:183
+msgid "视频号"
+msgstr "비디오 계정"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:34
+msgid "评论"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:35
+msgid "点赞"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:36
+msgid "分享"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:37
+msgid "转发"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:38
+msgid "收藏"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:39
+msgid "浏览"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:40
+#: apps/admin/src/routes/dashboard-page.tsx:421
+#: apps/admin/src/routes/dashboard-page.tsx:435
+#: apps/admin/src/routes/dashboard-page.tsx:450
+#: apps/admin/src/routes/dashboard-page.tsx:470
+msgid "关注"
+msgstr "팔로우"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:41
+msgid "不感兴趣"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:42
+msgid "评论点赞"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:49
+msgid "全部场景"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:59
+msgid "全部行为"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:182
+msgid "回看世界主人在朋友圈、广场、视频号的真实互动行为——评论、点赞、转发、收藏、浏览、关注，支持按场景与行为类型筛选、分析与导出。"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:189
+msgid "概览加载失败"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:237
+msgid "至"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:248
+msgid "含隐藏评论"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:264
+msgid "导出 Markdown"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:272
+msgid "导出 JSON"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:279
+msgid "行为时间线"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:280
+msgid "明细"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:287
+msgid "行为记录加载失败"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:327
+msgid "暂无行为记录"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:329
+msgid "当前筛选条件下没有命中世界主人的互动行为，换个场景或时间范围再看看。"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:348
+msgid "按行为类型"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:348
+msgid "分布"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:365
+#: apps/admin/src/routes/behavior-records-page.tsx:421
+msgid "暂无数据"
+msgstr ""
+
+#. placeholder {0}: overview.activeDays7d
+#. placeholder {1}: overview.activeDays30d
+#: apps/admin/src/routes/behavior-records-page.tsx:382
+msgid "近 7 天活跃 {0} 天 · 近 30 天活跃 {1} 天"
+msgstr ""
+
+#. placeholder {0}: overview.mostActiveWeekday
+#: apps/admin/src/routes/behavior-records-page.tsx:385
+msgid "最活跃 {0}"
+msgstr ""
+
+#. placeholder {0}: overview.mostActiveDay
+#: apps/admin/src/routes/behavior-records-page.tsx:388
+msgid "峰值日 {0}"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:394
+msgid "高频互动对象"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:395
+msgid "Top"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:409
+msgid "(用户)"
+msgstr ""
+
+#. placeholder {0}: record.targetAuthorName
+#: apps/admin/src/routes/behavior-records-page.tsx:453
+msgid "关注 {0}"
+msgstr ""
+
+#. placeholder {0}: record.targetAuthorName
+#: apps/admin/src/routes/behavior-records-page.tsx:454
+msgid "对 {0}"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:459
+msgid "帖子已删除"
+msgstr ""
+
+#. placeholder {0}: payload.channel
+#: apps/admin/src/routes/behavior-records-page.tsx:505
+msgid "渠道 {0}"
+msgstr ""
+
+#. placeholder {0}: Math.round(payload.progressSeconds)
+#: apps/admin/src/routes/behavior-records-page.tsx:509
+msgid "进度 {0}s"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:512
+msgid "已看完"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:516
+msgid "已静音"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:522
+msgid "回复"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:554
+msgid "总行为数"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:555
+#: apps/admin/src/routes/chat-records-page.tsx:92
+#: apps/admin/src/routes/token-usage-page.tsx:826
+msgid "近 7 天"
+msgstr "최근 7일"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:556
+#: apps/admin/src/routes/chat-records-page.tsx:93
+#: apps/admin/src/routes/token-usage-page.tsx:831
+msgid "近 30 天"
+msgstr "최근 30일"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:558
+#: apps/admin/src/routes/cyber-avatar-page.tsx:171
+#: apps/admin/src/routes/dashboard-page.tsx:654
+#: apps/admin/src/routes/dashboard-page.tsx:732
+#: apps/admin/src/routes/reply-logic-page.tsx:5240
+msgid "世界主人"
+msgstr "월드 소유자"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:599
+#: apps/admin/src/routes/chat-records-page.tsx:571
+msgid "共 {total} 条 · 第 {page} / {safeTotalPages} 页"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:610
+#: apps/admin/src/routes/chat-records-page.tsx:582
+msgid "{option} / 页"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:621
+#: apps/admin/src/routes/chat-records-page.tsx:593
+msgid "上一页"
+msgstr "이전"
+
+#: apps/admin/src/routes/behavior-records-page.tsx:633
+#: apps/admin/src/routes/chat-records-page.tsx:606
+msgid "跳页"
+msgstr ""
+
+#: apps/admin/src/routes/behavior-records-page.tsx:643
+#: apps/admin/src/routes/chat-records-page.tsx:616
+msgid "下一页"
+msgstr "다음"
 
 #: apps/admin/src/routes/character-editor-page.tsx:283
 msgid "默认种子"
@@ -4928,7 +5189,7 @@ msgstr "즉시 답장"
 #: apps/admin/src/routes/evals-page.tsx:2442
 #: apps/admin/src/routes/evals-page.tsx:2756
 #: apps/admin/src/routes/followup-runtime-page.tsx:1745
-#: apps/admin/src/routes/need-discovery-page.tsx:3340
+#: apps/admin/src/routes/need-discovery-page.tsx:3351
 #: apps/admin/src/routes/real-world-sync-page.tsx:76
 #: apps/admin/src/routes/token-usage-page.tsx:1228
 msgid "成功"
@@ -4941,19 +5202,6 @@ msgstr "온라인 상태"
 #: apps/admin/src/routes/character-runtime-page.tsx:386
 msgid "活动状态"
 msgstr "활동 상태"
-
-#: apps/admin/src/routes/character-runtime-page.tsx:388
-#: apps/admin/src/routes/cyber-avatar-page.tsx:167
-#: apps/admin/src/routes/cyber-avatar-page.tsx:181
-#: apps/admin/src/routes/dashboard-page.tsx:1280
-msgid "朋友圈"
-msgstr "피드"
-
-#: apps/admin/src/routes/character-runtime-page.tsx:390
-#: apps/admin/src/routes/cyber-avatar-page.tsx:169
-#: apps/admin/src/routes/cyber-avatar-page.tsx:183
-msgid "视频号"
-msgstr "비디오 계정"
 
 #: apps/admin/src/routes/character-runtime-page.tsx:392
 msgid "场景好友"
@@ -5225,6 +5473,7 @@ msgid "当前还没有填写角色 bio。"
 msgstr "현재 캐릭터 bio가 입력되지 않았습니다."
 
 #: apps/admin/src/routes/characters-page.tsx:744
+#: apps/admin/src/routes/chat-records-page.tsx:82
 msgid "最近活跃"
 msgstr "최근 활성"
 
@@ -5640,184 +5889,217 @@ msgstr "Recipe 경로 ({0})"
 msgid "选择 recipe 路径 {0}"
 msgstr "recipe 경로 {0} 선택"
 
-#: apps/admin/src/routes/chat-records-page.tsx:37
+#: apps/admin/src/routes/chat-records-page.tsx:42
 msgid "全部类型"
 msgstr "모든 유형"
 
-#: apps/admin/src/routes/chat-records-page.tsx:38
+#: apps/admin/src/routes/chat-records-page.tsx:43
 #: apps/admin/src/routes/inference-page.tsx:168
 #: apps/admin/src/routes/reply-logic-page.tsx:5253
 msgid "文本"
 msgstr "텍스트"
 
-#: apps/admin/src/routes/chat-records-page.tsx:39
+#: apps/admin/src/routes/chat-records-page.tsx:44
 #: apps/admin/src/routes/reply-logic-page.tsx:5257
 msgid "主动消息"
 msgstr "능동 메시지"
 
-#: apps/admin/src/routes/chat-records-page.tsx:40
+#: apps/admin/src/routes/chat-records-page.tsx:45
 #: apps/admin/src/routes/reply-logic-page.tsx:5259
 msgid "图片"
 msgstr "이미지"
 
-#: apps/admin/src/routes/chat-records-page.tsx:41
+#: apps/admin/src/routes/chat-records-page.tsx:46
 #: apps/admin/src/routes/reply-logic-page.tsx:5261
 msgid "文件"
 msgstr "파일"
 
-#: apps/admin/src/routes/chat-records-page.tsx:42
+#: apps/admin/src/routes/chat-records-page.tsx:47
 msgid "语音"
 msgstr "음성"
 
-#: apps/admin/src/routes/chat-records-page.tsx:43
-#: apps/admin/src/routes/chat-records-page.tsx:612
+#: apps/admin/src/routes/chat-records-page.tsx:48
+#: apps/admin/src/routes/chat-records-page.tsx:835
 msgid "表情"
 msgstr "이모지"
 
-#: apps/admin/src/routes/chat-records-page.tsx:44
+#: apps/admin/src/routes/chat-records-page.tsx:49
 #: apps/admin/src/routes/evals-page.tsx:2902
 #: apps/admin/src/routes/reply-logic-page.tsx:5244
 #: apps/admin/src/routes/reply-logic-page.tsx:5255
 msgid "系统"
 msgstr "시스템"
 
-#: apps/admin/src/routes/chat-records-page.tsx:51
+#: apps/admin/src/routes/chat-records-page.tsx:56
 msgid "待复盘"
 msgstr "리뷰 대기"
 
-#: apps/admin/src/routes/chat-records-page.tsx:52
+#: apps/admin/src/routes/chat-records-page.tsx:57
 msgid "持续观察"
 msgstr "지속 관찰"
 
-#: apps/admin/src/routes/chat-records-page.tsx:53
+#: apps/admin/src/routes/chat-records-page.tsx:58
 msgid "重点样本"
 msgstr "주요 샘플"
 
-#: apps/admin/src/routes/chat-records-page.tsx:54
+#: apps/admin/src/routes/chat-records-page.tsx:59
 msgid "已处理"
 msgstr "처리됨"
 
-#: apps/admin/src/routes/chat-records-page.tsx:214
+#: apps/admin/src/routes/chat-records-page.tsx:83
+#: apps/admin/src/routes/chat-records-page.tsx:153
+msgid "30 天消息数"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:84
+msgid "留存消息数"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:91
+msgid "全部时间"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:150
+msgid "会话总数"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:151
+msgid "7 天活跃会话"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:152
+msgid "7 天消息数"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:300
+msgid "查看与审阅用户和角色的对话，支持按活跃度筛选、会话内搜索与分页浏览。"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:337
+msgid "含隐藏会话"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:344
+msgid "仅看已复盘"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:359
+msgid "已按角色筛选"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:372
 msgid "会话列表加载失败"
 msgstr "세션 목록 로드 실패"
 
-#: apps/admin/src/routes/chat-records-page.tsx:235
+#: apps/admin/src/routes/chat-records-page.tsx:403
 msgid "暂无会话"
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:246
-msgid "上一页"
-msgstr "이전"
-
-#: apps/admin/src/routes/chat-records-page.tsx:261
-msgid "下一页"
-msgstr "다음"
-
-#: apps/admin/src/routes/chat-records-page.tsx:286
+#: apps/admin/src/routes/chat-records-page.tsx:426
 msgid "清除搜索"
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:295
-msgid "返回最新消息"
-msgstr "최신 메시지로 돌아가기"
+#: apps/admin/src/routes/chat-records-page.tsx:435
+msgid "返回分页浏览"
+msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:310
+#: apps/admin/src/routes/chat-records-page.tsx:450
 msgid "在此会话内搜索关键词，回车搜索"
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:315
+#: apps/admin/src/routes/chat-records-page.tsx:455
 msgid "正在搜索命中消息..."
 msgstr "적중 메시지 검색 중..."
 
-#: apps/admin/src/routes/chat-records-page.tsx:321
+#: apps/admin/src/routes/chat-records-page.tsx:461
 msgid "命中 {searchedTotal} 条 · 点击跳到上下文"
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:340
-#: apps/admin/src/routes/chat-records-page.tsx:581
-#: apps/admin/src/routes/chat-records-page.tsx:631
+#: apps/admin/src/routes/chat-records-page.tsx:480
+#: apps/admin/src/routes/chat-records-page.tsx:804
+#: apps/admin/src/routes/chat-records-page.tsx:872
 msgid "空消息"
 msgstr "빈 메시지"
 
-#: apps/admin/src/routes/chat-records-page.tsx:352
+#: apps/admin/src/routes/chat-records-page.tsx:492
 msgid "没有命中消息"
 msgstr "적중 메시지 없음"
 
-#: apps/admin/src/routes/chat-records-page.tsx:357
+#: apps/admin/src/routes/chat-records-page.tsx:497
 msgid "正在读取聊天记录..."
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:367
+#: apps/admin/src/routes/chat-records-page.tsx:507
 msgid "当前会话还没有消息"
 msgstr "현재 세션에는 아직 메시지가 없습니다"
 
-#: apps/admin/src/routes/chat-records-page.tsx:382
-msgid "加载中..."
-msgstr ""
-
-#: apps/admin/src/routes/chat-records-page.tsx:383
-msgid "加载更早消息"
-msgstr "이전 메시지 로드"
-
-#: apps/admin/src/routes/chat-records-page.tsx:390
+#: apps/admin/src/routes/chat-records-page.tsx:525
 msgid "选一个好友查看聊天记录"
 msgstr ""
 
-#: apps/admin/src/routes/chat-records-page.tsx:428
+#: apps/admin/src/routes/chat-records-page.tsx:651
 #: apps/admin/src/routes/token-usage-page.tsx:2500
 #: apps/admin/src/routes/token-usage-page.tsx:2578
 msgid "当前"
 msgstr "현재"
 
-#: apps/admin/src/routes/chat-records-page.tsx:433
+#: apps/admin/src/routes/chat-records-page.tsx:656
 msgid "未标注关系"
 msgstr "관계 표시되지 않음"
 
-#: apps/admin/src/routes/chat-records-page.tsx:447
+#: apps/admin/src/routes/chat-records-page.tsx:670
 msgid "可见"
 msgstr "표시"
 
-#: apps/admin/src/routes/chat-records-page.tsx:448
+#: apps/admin/src/routes/chat-records-page.tsx:671
 msgid "留存"
 msgstr "유지"
 
-#: apps/admin/src/routes/chat-records-page.tsx:449
+#: apps/admin/src/routes/chat-records-page.tsx:672
 msgid "30 天"
 msgstr "30일"
 
-#: apps/admin/src/routes/chat-records-page.tsx:452
+#: apps/admin/src/routes/chat-records-page.tsx:675
 msgid "已隐藏"
 msgstr "숨김"
 
-#: apps/admin/src/routes/chat-records-page.tsx:457
+#: apps/admin/src/routes/chat-records-page.tsx:680
 msgid "含清空前历史"
 msgstr "정리 전 기록 포함"
 
-#: apps/admin/src/routes/chat-records-page.tsx:563
+#: apps/admin/src/routes/chat-records-page.tsx:786
 msgid "命中"
 msgstr "적중"
 
-#: apps/admin/src/routes/chat-records-page.tsx:581
+#: apps/admin/src/routes/chat-records-page.tsx:804
 msgid "无额外文本描述"
 msgstr "추가 텍스트 설명 없음"
 
-#: apps/admin/src/routes/chat-records-page.tsx:615
-#: apps/admin/src/routes/chat-records-page.tsx:646
+#: apps/admin/src/routes/chat-records-page.tsx:838
+#: apps/admin/src/routes/chat-records-page.tsx:887
 #: apps/admin/src/routes/reply-logic-page.tsx:5263
 msgid "名片"
 msgstr "명함"
 
-#: apps/admin/src/routes/chat-records-page.tsx:618
-#: apps/admin/src/routes/chat-records-page.tsx:649
+#: apps/admin/src/routes/chat-records-page.tsx:841
+#: apps/admin/src/routes/chat-records-page.tsx:890
 msgid "位置"
 msgstr "위치"
 
-#: apps/admin/src/routes/chat-records-page.tsx:620
-#: apps/admin/src/routes/chat-records-page.tsx:652
+#: apps/admin/src/routes/chat-records-page.tsx:844
+#: apps/admin/src/routes/chat-records-page.tsx:893
 msgid "笔记"
 msgstr "노트"
 
-#: apps/admin/src/routes/chat-records-page.tsx:626
+#: apps/admin/src/routes/chat-records-page.tsx:853
+msgid "视频通话"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:853
+msgid "语音通话"
+msgstr ""
+
+#: apps/admin/src/routes/chat-records-page.tsx:867
 msgid "暂无消息"
 msgstr "메시지 없음"
 
@@ -6046,20 +6328,9 @@ msgstr "채팅"
 msgid "群聊"
 msgstr "그룹 채팅"
 
-#: apps/admin/src/routes/cyber-avatar-page.tsx:168
-msgid "广场"
-msgstr "광장"
-
 #: apps/admin/src/routes/cyber-avatar-page.tsx:170
 msgid "社交"
 msgstr "소셜"
-
-#: apps/admin/src/routes/cyber-avatar-page.tsx:171
-#: apps/admin/src/routes/dashboard-page.tsx:654
-#: apps/admin/src/routes/dashboard-page.tsx:732
-#: apps/admin/src/routes/reply-logic-page.tsx:5240
-msgid "世界主人"
-msgstr "월드 소유자"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:172
 msgid "真实世界"
@@ -6923,22 +7194,22 @@ msgid "允许领域"
 msgstr "허용 도메인"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:2308
-#: apps/admin/src/routes/need-discovery-page.tsx:3450
+#: apps/admin/src/routes/need-discovery-page.tsx:3461
 msgid "医疗"
 msgstr "의료"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:2309
-#: apps/admin/src/routes/need-discovery-page.tsx:3451
+#: apps/admin/src/routes/need-discovery-page.tsx:3462
 msgid "法律"
 msgstr "법률"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:2310
-#: apps/admin/src/routes/need-discovery-page.tsx:3452
+#: apps/admin/src/routes/need-discovery-page.tsx:3463
 msgid "金融"
 msgstr "금융"
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:2313
-#: apps/admin/src/routes/need-discovery-page.tsx:3455
+#: apps/admin/src/routes/need-discovery-page.tsx:3466
 msgid "全部关闭"
 msgstr "모두 닫기"
 
@@ -7139,13 +7410,6 @@ msgstr "추론 설정 보완"
 #: apps/admin/src/routes/dashboard-page.tsx:419
 msgid "当前实例不满足单世界主人约束，需要先确认数据状态，再继续做运营操作。"
 msgstr "현재 인스턴스가 단일 월드 소유자 제약 조건을 충족하지 않습니다. 데이터 상태를 먼저 확인한 후 운영 작업을 계속하세요."
-
-#: apps/admin/src/routes/dashboard-page.tsx:421
-#: apps/admin/src/routes/dashboard-page.tsx:435
-#: apps/admin/src/routes/dashboard-page.tsx:450
-#: apps/admin/src/routes/dashboard-page.tsx:470
-msgid "关注"
-msgstr "팔로우"
 
 #: apps/admin/src/routes/dashboard-page.tsx:425
 msgid "查看运行体征"
@@ -8648,13 +8912,13 @@ msgid "实验报告"
 msgstr "실험 보고서"
 
 #: apps/admin/src/routes/evals-page.tsx:1147
-msgid "用例聚焦"
-msgstr "사용 사례 포커스"
-
-#: apps/admin/src/routes/evals-page.tsx:1147
 #: apps/admin/src/routes/token-usage-page.tsx:1098
 msgid "未聚焦"
 msgstr "포커스 없음"
+
+#: apps/admin/src/routes/evals-page.tsx:1147
+msgid "用例聚焦"
+msgstr "사용 사례 포커스"
 
 #: apps/admin/src/routes/evals-page.tsx:1148
 #: apps/admin/src/routes/evals-page.tsx:1254
@@ -9836,14 +10100,14 @@ msgstr ""
 #: apps/admin/src/routes/need-discovery-page.tsx:939
 #: apps/admin/src/routes/need-discovery-page.tsx:949
 #: apps/admin/src/routes/need-discovery-page.tsx:2254
-#: apps/admin/src/routes/need-discovery-page.tsx:2522
+#: apps/admin/src/routes/need-discovery-page.tsx:2533
 msgid "启用中"
 msgstr "활성화됨"
 
 #: apps/admin/src/routes/followup-runtime-page.tsx:210
 #: apps/admin/src/routes/followup-runtime-page.tsx:973
-#: apps/admin/src/routes/need-discovery-page.tsx:2531
-#: apps/admin/src/routes/need-discovery-page.tsx:2583
+#: apps/admin/src/routes/need-discovery-page.tsx:2542
+#: apps/admin/src/routes/need-discovery-page.tsx:2594
 msgid "执行模式"
 msgstr "실행 모드"
 
@@ -10404,8 +10668,8 @@ msgstr "해결됨"
 #: apps/admin/src/routes/need-discovery-page.tsx:94
 #: apps/admin/src/routes/need-discovery-page.tsx:107
 #: apps/admin/src/routes/need-discovery-page.tsx:1092
-#: apps/admin/src/routes/need-discovery-page.tsx:3366
-#: apps/admin/src/routes/need-discovery-page.tsx:3395
+#: apps/admin/src/routes/need-discovery-page.tsx:3377
+#: apps/admin/src/routes/need-discovery-page.tsx:3406
 msgid "已过期"
 msgstr "만료됨"
 
@@ -10438,7 +10702,7 @@ msgid "尚未加友"
 msgstr "아직 친구가 없습니다"
 
 #: apps/admin/src/routes/followup-runtime-page.tsx:1749
-#: apps/admin/src/routes/need-discovery-page.tsx:3340
+#: apps/admin/src/routes/need-discovery-page.tsx:3351
 msgid "跳过"
 msgstr "건너뛰기"
 
@@ -11509,22 +11773,22 @@ msgstr "셰이크 매칭"
 #: apps/admin/src/routes/need-discovery-page.tsx:70
 #: apps/admin/src/routes/need-discovery-page.tsx:1339
 #: apps/admin/src/routes/need-discovery-page.tsx:1607
-#: apps/admin/src/routes/need-discovery-page.tsx:2788
-#: apps/admin/src/routes/need-discovery-page.tsx:3408
+#: apps/admin/src/routes/need-discovery-page.tsx:2799
+#: apps/admin/src/routes/need-discovery-page.tsx:3419
 msgid "短周期"
 msgstr "단기 사이클"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:71
 #: apps/admin/src/routes/need-discovery-page.tsx:1343
 #: apps/admin/src/routes/need-discovery-page.tsx:1608
-#: apps/admin/src/routes/need-discovery-page.tsx:2791
-#: apps/admin/src/routes/need-discovery-page.tsx:3408
+#: apps/admin/src/routes/need-discovery-page.tsx:2802
+#: apps/admin/src/routes/need-discovery-page.tsx:3419
 msgid "每日"
 msgstr "일일"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:72
 #: apps/admin/src/routes/need-discovery-page.tsx:957
-#: apps/admin/src/routes/need-discovery-page.tsx:2768
+#: apps/admin/src/routes/need-discovery-page.tsx:2779
 msgid "共享约束"
 msgstr "공유 제약"
 
@@ -11538,62 +11802,62 @@ msgstr "설정"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:81
 #: apps/admin/src/routes/need-discovery-page.tsx:2184
-#: apps/admin/src/routes/need-discovery-page.tsx:2463
+#: apps/admin/src/routes/need-discovery-page.tsx:2474
 msgid "方向规划 Prompt"
 msgstr "방향 계획 Prompt"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:82
 #: apps/admin/src/routes/need-discovery-page.tsx:2184
-#: apps/admin/src/routes/need-discovery-page.tsx:2480
-#: apps/admin/src/routes/need-discovery-page.tsx:2931
+#: apps/admin/src/routes/need-discovery-page.tsx:2491
+#: apps/admin/src/routes/need-discovery-page.tsx:2942
 msgid "角色生成 Prompt"
 msgstr "캐릭터 생성 Prompt"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:91
 #: apps/admin/src/routes/need-discovery-page.tsx:1294
-#: apps/admin/src/routes/need-discovery-page.tsx:3360
+#: apps/admin/src/routes/need-discovery-page.tsx:3371
 msgid "待通过"
 msgstr "승인 대기"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:92
 #: apps/admin/src/routes/need-discovery-page.tsx:1088
-#: apps/admin/src/routes/need-discovery-page.tsx:3362
+#: apps/admin/src/routes/need-discovery-page.tsx:3373
 msgid "已接受"
 msgstr "수락됨"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:95
 #: apps/admin/src/routes/need-discovery-page.tsx:1092
-#: apps/admin/src/routes/need-discovery-page.tsx:3368
+#: apps/admin/src/routes/need-discovery-page.tsx:3379
 msgid "已删除"
 msgstr "삭제됨"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:96
 #: apps/admin/src/routes/need-discovery-page.tsx:108
 #: apps/admin/src/routes/need-discovery-page.tsx:1058
-#: apps/admin/src/routes/need-discovery-page.tsx:3370
-#: apps/admin/src/routes/need-discovery-page.tsx:3397
+#: apps/admin/src/routes/need-discovery-page.tsx:3381
+#: apps/admin/src/routes/need-discovery-page.tsx:3408
 msgid "生成失败"
 msgstr "생성 실패"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:104
 #: apps/admin/src/routes/need-discovery-page.tsx:1874
 #: apps/admin/src/routes/need-discovery-page.tsx:1945
-#: apps/admin/src/routes/need-discovery-page.tsx:3389
+#: apps/admin/src/routes/need-discovery-page.tsx:3400
 msgid "待决定"
 msgstr "결정 대기"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:105
-#: apps/admin/src/routes/need-discovery-page.tsx:3391
+#: apps/admin/src/routes/need-discovery-page.tsx:3402
 msgid "已保留"
 msgstr "보존됨"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:106
-#: apps/admin/src/routes/need-discovery-page.tsx:3393
+#: apps/admin/src/routes/need-discovery-page.tsx:3404
 msgid "已跳过"
 msgstr "건너뜀"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:109
-#: apps/admin/src/routes/need-discovery-page.tsx:3399
+#: apps/admin/src/routes/need-discovery-page.tsx:3410
 msgid "生成中"
 msgstr "생성 중"
 
@@ -11751,7 +12015,7 @@ msgid "查看每日规则"
 msgstr "일일 규칙 보기"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:964
-#: apps/admin/src/routes/need-discovery-page.tsx:3213
+#: apps/admin/src/routes/need-discovery-page.tsx:3224
 msgid "查看共享约束"
 msgstr "공유 제약 보기"
 
@@ -11784,7 +12048,7 @@ msgid "通常应优先处理，避免长期积压。"
 msgstr "일반적으로 우선 처리하여 장기 적체를 피해야 합니다."
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1041
-#: apps/admin/src/routes/need-discovery-page.tsx:3155
+#: apps/admin/src/routes/need-discovery-page.tsx:3166
 msgid "打开候选队列"
 msgstr "후보 대기열 열기"
 
@@ -11817,12 +12081,6 @@ msgid "当前候选池"
 msgstr ""
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1080
-#: apps/admin/src/routes/need-discovery-page.tsx:1286
-#: apps/admin/src/routes/need-discovery-page.tsx:1315
-msgid "当前候选"
-msgstr "현재 후보"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1080
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1278
 #: apps/admin/src/routes/need-discovery-page.tsx:1289
@@ -11836,6 +12094,12 @@ msgstr "현재 후보"
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "건"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1080
+#: apps/admin/src/routes/need-discovery-page.tsx:1286
+#: apps/admin/src/routes/need-discovery-page.tsx:1315
+msgid "当前候选"
+msgstr "현재 후보"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1083
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
@@ -12132,7 +12396,7 @@ msgstr "쿨다운"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:2265
 #: apps/admin/src/routes/need-discovery-page.tsx:2268
-#: apps/admin/src/routes/need-discovery-page.tsx:2539
+#: apps/admin/src/routes/need-discovery-page.tsx:2550
 msgid "分钟"
 msgstr "분"
 
@@ -12153,7 +12417,7 @@ msgid "方向"
 msgstr "방향"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:2274
-#: apps/admin/src/routes/need-discovery-page.tsx:2554
+#: apps/admin/src/routes/need-discovery-page.tsx:2565
 msgid "个"
 msgstr "개"
 
@@ -12162,7 +12426,7 @@ msgid "回看"
 msgstr "되돌아보기"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:2277
-#: apps/admin/src/routes/need-discovery-page.tsx:2548
+#: apps/admin/src/routes/need-discovery-page.tsx:2559
 msgid "小时"
 msgstr "시간"
 
@@ -12218,459 +12482,467 @@ msgstr "일일 최대 셰이크 매칭"
 msgid "控制单日即时相遇曝光量。"
 msgstr "하루 즉시 만남 노출량을 제어합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2348
+#: apps/admin/src/routes/need-discovery-page.tsx:2345
+msgid "非会员摇一摇好友上限"
+msgstr "비회원 흔들기 친구 상한"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:2346
+msgid "非会员最多保留的摇一摇好友数，达到后需删除或开通会员；0 = 不限制，会员不受限。"
+msgstr "비회원이 보유할 수 있는 흔들기 친구의 최대 수입니다. 상한에 도달하면 삭제하거나 멤버십에 가입해야 합니다. 0 = 무제한. 회원은 제외됩니다."
+
+#: apps/admin/src/routes/need-discovery-page.tsx:2359
 msgid "方向采样与权重"
 msgstr "방향 샘플링 및 가중치"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2349
+#: apps/admin/src/routes/need-discovery-page.tsx:2360
 msgid "控制一次摇一摇从多少证据里取样，以及生成方向的新鲜感和惊喜程度。"
 msgstr "한 번의 셰이크 매칭에서 얼마나 많은 증거에서 샘플링할지, 그리고 생성된 방향의 신선도와 놀라움 정도를 제어합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2353
-#: apps/admin/src/routes/need-discovery-page.tsx:2626
+#: apps/admin/src/routes/need-discovery-page.tsx:2364
+#: apps/admin/src/routes/need-discovery-page.tsx:2637
 msgid "回看小时"
 msgstr "되돌아볼 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2354
+#: apps/admin/src/routes/need-discovery-page.tsx:2365
 msgid "越长越稳定，越短越贴近当下状态。"
 msgstr "길수록 안정적이고, 짧을수록 현재 상태에 가깝습니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2364
+#: apps/admin/src/routes/need-discovery-page.tsx:2375
 msgid "最多证据条数"
 msgstr "최대 증거 수"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2365
+#: apps/admin/src/routes/need-discovery-page.tsx:2376
 msgid "限制一次规划时注入多少上游信号。"
 msgstr "한 번의 계획 시 주입되는 상류 신호의 양을 제한합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2375
+#: apps/admin/src/routes/need-discovery-page.tsx:2386
 msgid "候选方向数"
 msgstr "후보 방향 수"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2376
+#: apps/admin/src/routes/need-discovery-page.tsx:2387
 msgid "方向数越多，运营可观察到的相遇分布越丰富。"
 msgstr "방향 수가 많을수록 운영이 관찰할 수 있는 만남 분포가 풍부해집니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2386
+#: apps/admin/src/routes/need-discovery-page.tsx:2397
 msgid "新鲜感权重"
 msgstr "신선도 가중치"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2387
+#: apps/admin/src/routes/need-discovery-page.tsx:2398
 msgid "提高后更容易避开重复方向。"
 msgstr "높이면 중복 방향을 피하기 쉬워집니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2398
+#: apps/admin/src/routes/need-discovery-page.tsx:2409
 msgid "惊喜系数"
 msgstr "놀라움 계수"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2399
+#: apps/admin/src/routes/need-discovery-page.tsx:2410
 msgid "提高后会更愿意抽取非最稳妥但仍合理的方向。"
 msgstr "높이면 가장 안전하지 않지만 여전히 합리적인 방향을 추출하려는 의지가 강해집니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2413
+#: apps/admin/src/routes/need-discovery-page.tsx:2424
 msgid "高风险领域"
 msgstr "고위험 영역"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2414
+#: apps/admin/src/routes/need-discovery-page.tsx:2425
 msgid "手动摇一摇可以允许更强的即时性，但高风险领域仍要严格控边界。"
 msgstr "수동 셰이크 매칭은 더 강한 즉시성을 허용할 수 있지만 고위험 영역은 여전히 엄격한 경계 제어가 필요합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2418
-#: apps/admin/src/routes/need-discovery-page.tsx:2898
+#: apps/admin/src/routes/need-discovery-page.tsx:2429
+#: apps/admin/src/routes/need-discovery-page.tsx:2909
 msgid "允许医疗类角色"
 msgstr "의료 분야 캐릭터 허용"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2428
-#: apps/admin/src/routes/need-discovery-page.tsx:2908
+#: apps/admin/src/routes/need-discovery-page.tsx:2439
+#: apps/admin/src/routes/need-discovery-page.tsx:2919
 msgid "允许法律类角色"
 msgstr "법률 분야 캐릭터 허용"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2438
-#: apps/admin/src/routes/need-discovery-page.tsx:2918
+#: apps/admin/src/routes/need-discovery-page.tsx:2449
+#: apps/admin/src/routes/need-discovery-page.tsx:2929
 msgid "允许金融类角色"
 msgstr "금융 분야 캐릭터 허용"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2450
+#: apps/admin/src/routes/need-discovery-page.tsx:2461
 msgid "启用实时信号增强 (web_search)"
 msgstr ""
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2464
+#: apps/admin/src/routes/need-discovery-page.tsx:2475
 msgid "决定这次摇一摇应该往哪几类真实联系人方向去想。"
 msgstr "이번 셰이크 매칭이 어떤 종류의 실제 연락처 방향을 고려할지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2467
+#: apps/admin/src/routes/need-discovery-page.tsx:2478
 msgid "方向规划提示词"
 msgstr "방향 계획 프롬프트"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2481
+#: apps/admin/src/routes/need-discovery-page.tsx:2492
 msgid "决定方向确定后，如何把它落成一个用户愿意决定是否添加的真实联系人。"
 msgstr "방향이 결정된 후, 사용자가 추가 여부를 결정할 수 있는 실제 연락처로 어떻게 구체화할지."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2484
-#: apps/admin/src/routes/need-discovery-page.tsx:2935
+#: apps/admin/src/routes/need-discovery-page.tsx:2495
+#: apps/admin/src/routes/need-discovery-page.tsx:2946
 msgid "角色生成提示词"
 msgstr "캐릭터 생성 프롬프트"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2536
+#: apps/admin/src/routes/need-discovery-page.tsx:2547
 msgid "运行节奏"
 msgstr "실행 리듬"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2539
+#: apps/admin/src/routes/need-discovery-page.tsx:2550
 msgid "每"
 msgstr "매"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2540
+#: apps/admin/src/routes/need-discovery-page.tsx:2551
 msgid "每天"
 msgstr "매일"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2545
+#: apps/admin/src/routes/need-discovery-page.tsx:2556
 msgid "回看窗口"
 msgstr "되돌아볼 윈도우"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2549
-#: apps/admin/src/routes/need-discovery-page.tsx:2788
-#: apps/admin/src/routes/need-discovery-page.tsx:2791
+#: apps/admin/src/routes/need-discovery-page.tsx:2560
+#: apps/admin/src/routes/need-discovery-page.tsx:2799
+#: apps/admin/src/routes/need-discovery-page.tsx:2802
 msgid "天"
 msgstr "일"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2552
-#: apps/admin/src/routes/need-discovery-page.tsx:2695
+#: apps/admin/src/routes/need-discovery-page.tsx:2563
+#: apps/admin/src/routes/need-discovery-page.tsx:2706
 msgid "候选阈值"
 msgstr "후보 임계값"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2554
+#: apps/admin/src/routes/need-discovery-page.tsx:2565
 #: apps/admin/src/routes/reply-logic-page.tsx:2381
 msgid "最多"
 msgstr "최대"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2557
-#: apps/admin/src/routes/need-discovery-page.tsx:2714
+#: apps/admin/src/routes/need-discovery-page.tsx:2568
+#: apps/admin/src/routes/need-discovery-page.tsx:2725
 msgid "最低置信度"
 msgstr "최소 신뢰도"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2564
+#: apps/admin/src/routes/need-discovery-page.tsx:2575
 msgid "开关与执行模式"
 msgstr "스위치 및 실행 모드"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2565
+#: apps/admin/src/routes/need-discovery-page.tsx:2576
 msgid "决定这条 cadence 是否参与自动补位，以及是直接发申请还是只生成草稿。"
 msgstr "이 cadence가 자동 보충에 참여할지, 요청을 직접 보낼지 아니면 초안만 생성할지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2569
+#: apps/admin/src/routes/need-discovery-page.tsx:2580
 msgid "启用该节奏"
 msgstr "이 리듬 활성화"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2570
+#: apps/admin/src/routes/need-discovery-page.tsx:2581
 msgid "关闭后，该 cadence 不再产出新候选。"
 msgstr "끄면 이 cadence는 더 이상 새 후보를 생성하지 않습니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2584
+#: apps/admin/src/routes/need-discovery-page.tsx:2595
 msgid "dry run 适合先观察候选质量，auto send 适合直接补位。"
 msgstr "dry run은 후보 품질을 먼저 관찰할 때, auto send는 직접 보충할 때 적합합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2587
-#: apps/admin/src/routes/need-discovery-page.tsx:3412
+#: apps/admin/src/routes/need-discovery-page.tsx:2598
+#: apps/admin/src/routes/need-discovery-page.tsx:3423
 msgid "直接创建并发起好友申请"
 msgstr "직접 생성하고 친구 요청 시작"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2588
+#: apps/admin/src/routes/need-discovery-page.tsx:2599
 msgid "只生成候选草稿"
 msgstr "후보 초안만 생성"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2605
+#: apps/admin/src/routes/need-discovery-page.tsx:2616
 msgid "节奏与窗口"
 msgstr "리듬 및 윈도우"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2606
+#: apps/admin/src/routes/need-discovery-page.tsx:2617
 msgid "决定这条 cadence 什么时候跑、看多久的信号，以及是否允许空跑。"
 msgstr "이 cadence가 언제 실행되고, 얼마나 긴 신호를 보며, 빈 실행을 허용할지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2612
+#: apps/admin/src/routes/need-discovery-page.tsx:2623
 msgid "间隔分钟"
 msgstr "간격 분"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2613
+#: apps/admin/src/routes/need-discovery-page.tsx:2624
 msgid "越短越敏感，越长越稳。"
 msgstr "짧을수록 민감하고, 길수록 안정적입니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2627
+#: apps/admin/src/routes/need-discovery-page.tsx:2638
 msgid "决定短周期会读到多长时间窗口的信号。"
 msgstr "단기 사이클이 얼마나 긴 시간 창의 신호를 읽을지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2640
+#: apps/admin/src/routes/need-discovery-page.tsx:2651
 msgid "无新信号则跳过"
 msgstr "새 신호가 없으면 건너뛰기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2641
+#: apps/admin/src/routes/need-discovery-page.tsx:2652
 msgid "开启后能降低无效运行。"
 msgstr "활성화하면 무효한 실행을 줄일 수 있습니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2657
+#: apps/admin/src/routes/need-discovery-page.tsx:2668
 msgid "执行小时"
 msgstr "실행 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2658
+#: apps/admin/src/routes/need-discovery-page.tsx:2669
 msgid "按本地时间设置每日启动点。"
 msgstr "현지 시간 기준으로 일일 시작 시간을 설정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2668
+#: apps/admin/src/routes/need-discovery-page.tsx:2679
 msgid "执行分钟"
 msgstr "실행 분"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2669
+#: apps/admin/src/routes/need-discovery-page.tsx:2680
 msgid "和执行小时组合成固定的日调度时间。"
 msgstr "실행 시간과 결합하여 고정된 일일 스케줄 시간을 구성합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2679
+#: apps/admin/src/routes/need-discovery-page.tsx:2690
 msgid "回看天数"
 msgstr "되돌아볼 일수"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2680
+#: apps/admin/src/routes/need-discovery-page.tsx:2691
 msgid "越长越偏向结构性缺口。"
 msgstr "길수록 구조적 갭 쪽으로 기울어집니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2696
+#: apps/admin/src/routes/need-discovery-page.tsx:2707
 msgid "控制每轮最多生成多少候选，以及需要多高的置信度才允许通过。"
 msgstr "라운드당 최대 몇 개의 후보를 생성할 수 있는지, 그리고 승인을 허용하기 위해 필요한 신뢰도 높이를 제어합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2700
+#: apps/admin/src/routes/need-discovery-page.tsx:2711
 msgid "单次最多候选"
 msgstr "회당 최대 후보 수"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2701
+#: apps/admin/src/routes/need-discovery-page.tsx:2712
 msgid "太高会让候选池快速堆积。"
 msgstr "너무 높으면 후보 풀이 빠르게 쌓입니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2715
+#: apps/admin/src/routes/need-discovery-page.tsx:2726
 msgid "太低会引入噪音，太高会错过边缘但有价值的候选。"
 msgstr "너무 낮으면 노이즈가 들어오고, 너무 높으면 경계에 있지만 가치 있는 후보를 놓칩니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2732
+#: apps/admin/src/routes/need-discovery-page.tsx:2743
 msgid "分析 Prompt"
 msgstr "분석 Prompt"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2733
+#: apps/admin/src/routes/need-discovery-page.tsx:2744
 msgid "决定这条 cadence 如何从最近信号中识别角色缺口和 need key。"
 msgstr "이 cadence가 최근 신호에서 캐릭터 갭과 need key를 어떻게 식별할지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2736
+#: apps/admin/src/routes/need-discovery-page.tsx:2747
 msgid "分析提示词"
 msgstr "분석 프롬프트"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2769
+#: apps/admin/src/routes/need-discovery-page.tsx:2780
 msgid "跨节奏统一"
 msgstr "리듬 통합"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2772
+#: apps/admin/src/routes/need-discovery-page.tsx:2783
 msgid "这里不是单条 cadence 的细节，而是所有自动补位统一遵守的队列上限、抑制期和风险域边界。"
 msgstr "여기는 단일 cadence의 상세가 아니라 모든 자동 보충이 통일되게 따르는 대기열 한도, 억제 기간 및 위험 영역 경계입니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2776
+#: apps/admin/src/routes/need-discovery-page.tsx:2787
 msgid "队列上限"
 msgstr "대기열 한도"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2778
+#: apps/admin/src/routes/need-discovery-page.tsx:2789
 msgid "待处理最多"
 msgstr "처리 대기 최대"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2781
+#: apps/admin/src/routes/need-discovery-page.tsx:2792
 msgid "创建上限"
 msgstr "생성 한도"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2783
+#: apps/admin/src/routes/need-discovery-page.tsx:2794
 msgid "每日最多"
 msgstr "일일 최대"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2786
+#: apps/admin/src/routes/need-discovery-page.tsx:2797
 msgid "抑制期"
 msgstr "억제 기간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2794
+#: apps/admin/src/routes/need-discovery-page.tsx:2805
 msgid "风险域"
 msgstr "위험 영역"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2807
+#: apps/admin/src/routes/need-discovery-page.tsx:2818
 msgid "容量与过期"
 msgstr "용량 및 만료"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2808
+#: apps/admin/src/routes/need-discovery-page.tsx:2819
 msgid "控制候选池最多允许积压多少条，以及好友申请多久后视为无效。"
 msgstr "후보 풀이 최대 몇 개까지 적체될 수 있는지, 친구 요청이 얼마 후 무효로 간주되는지를 제어합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2812
+#: apps/admin/src/routes/need-discovery-page.tsx:2823
 msgid "待处理候选上限"
 msgstr "처리 대기 후보 한도"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2813
+#: apps/admin/src/routes/need-discovery-page.tsx:2824
 msgid "达到上限后，新候选会受抑制。"
 msgstr "한도에 도달하면 새 후보가 억제됩니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2823
+#: apps/admin/src/routes/need-discovery-page.tsx:2834
 msgid "每日创建上限"
 msgstr "일일 생성 한도"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2824
+#: apps/admin/src/routes/need-discovery-page.tsx:2835
 msgid "控制单日自动补位的整体产量。"
 msgstr "하루 자동 보충의 전체 산출량을 제어합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2834
+#: apps/admin/src/routes/need-discovery-page.tsx:2845
 msgid "好友申请有效期（天）"
 msgstr "친구 요청 유효 기간 (일)"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2835
+#: apps/admin/src/routes/need-discovery-page.tsx:2846
 msgid "超时后会自动按过期处理。"
 msgstr "시간 초과 후 자동으로 만료로 처리됩니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2848
+#: apps/admin/src/routes/need-discovery-page.tsx:2859
 msgid "去重与抑制"
 msgstr "중복 제거 및 억제"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2849
+#: apps/admin/src/routes/need-discovery-page.tsx:2860
 msgid "避免相似方向反复命中，以及同一 need 在短期内被重复生成。"
 msgstr "유사한 방향의 반복 적중, 그리고 동일한 need가 단기간에 반복 생성되는 것을 방지합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2853
+#: apps/admin/src/routes/need-discovery-page.tsx:2864
 msgid "短周期抑制期（天）"
 msgstr "단기 사이클 억제 기간 (일)"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2854
+#: apps/admin/src/routes/need-discovery-page.tsx:2865
 msgid "避免最近刚触发过的短期 need 反复进入候选池。"
 msgstr "최근 막 트리거된 단기 need가 반복적으로 후보 풀에 들어오는 것을 방지합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2864
+#: apps/admin/src/routes/need-discovery-page.tsx:2875
 msgid "每日抑制期（天）"
 msgstr "일일 억제 기간 (일)"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2865
+#: apps/admin/src/routes/need-discovery-page.tsx:2876
 msgid "避免每日策略反复生成同类稳定角色位。"
 msgstr "일일 전략이 같은 종류의 안정적인 캐릭터 자리를 반복 생성하는 것을 방지합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2875
+#: apps/admin/src/routes/need-discovery-page.tsx:2886
 msgid "领域重叠阈值"
 msgstr "영역 중복 임계값"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2876
+#: apps/admin/src/routes/need-discovery-page.tsx:2887
 msgid "值越低，越严格地把相似角色当成已覆盖。"
 msgstr "값이 낮을수록 유사 캐릭터를 이미 커버된 것으로 더 엄격하게 처리합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2893
+#: apps/admin/src/routes/need-discovery-page.tsx:2904
 msgid "高风险领域边界"
 msgstr "고위험 영역 경계"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2894
+#: apps/admin/src/routes/need-discovery-page.tsx:2905
 msgid "医疗、法律、金融角色属于高风险方向，是否允许需要明确管理。"
 msgstr "의료, 법률, 금융 캐릭터는 고위험 분야이며 허용 여부를 명확하게 관리해야 합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:2932
+#: apps/admin/src/routes/need-discovery-page.tsx:2943
 msgid "当 need 确认通过后，决定最终角色草稿和好友申请文案如何生成。"
 msgstr "need가 승인된 후 최종 캐릭터 초안과 친구 요청 문구를 어떻게 생성할지 결정합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3141
+#: apps/admin/src/routes/need-discovery-page.tsx:3152
 msgid "先处理未保存草稿"
 msgstr "먼저 저장되지 않은 초안 처리"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3143
+#: apps/admin/src/routes/need-discovery-page.tsx:3154
 msgid "当前页面的规则改动还没写回服务端。先确认是否保存，再继续看候选或运行，避免判断基于旧配置。"
 msgstr "현재 페이지의 규칙 변경 사항이 아직 서버에 반영되지 않았습니다. 저장 여부를 확인한 후 후보나 실행을 계속 보아 이전 설정 기반 판단을 피하세요."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3144
+#: apps/admin/src/routes/need-discovery-page.tsx:3155
 msgid "去看规则"
 msgstr "규칙 보기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3153
+#: apps/admin/src/routes/need-discovery-page.tsx:3164
 msgid "候选池已到上限"
 msgstr "후보 풀이 한도에 도달함"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3164
+#: apps/admin/src/routes/need-discovery-page.tsx:3175
 msgid "最近调度失败"
 msgstr "최근 스케줄링 실패"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3168
+#: apps/admin/src/routes/need-discovery-page.tsx:3179
 msgid "最近一次运行失败，但没有返回更多摘要。"
 msgstr "가장 최근 실행이 실패했지만 추가 요약이 반환되지 않았습니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3169
+#: apps/admin/src/routes/need-discovery-page.tsx:3180
 msgid "查看运行详情"
 msgstr "실행 상세 보기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3178
+#: apps/admin/src/routes/need-discovery-page.tsx:3189
 msgid "有候选即将过期"
 msgstr "곧 만료되는 후보 있음"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3180
+#: apps/admin/src/routes/need-discovery-page.tsx:3191
 msgid "查看待通过候选"
 msgstr "승인 대기 후보 보기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3189
+#: apps/admin/src/routes/need-discovery-page.tsx:3200
 msgid "摇一摇存在待决定 session"
 msgstr "셰이크 매칭에 결정 대기 session 존재"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3191
+#: apps/admin/src/routes/need-discovery-page.tsx:3202
 msgid "查看摇一摇 session"
 msgstr "셰이크 매칭 session 보기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3201
+#: apps/admin/src/routes/need-discovery-page.tsx:3212
 msgid "当前状态稳定"
 msgstr "현재 상태 안정"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3203
+#: apps/admin/src/routes/need-discovery-page.tsx:3214
 msgid "自动补位没有明显阻塞。可以抽查候选质量，或者微调短周期 / 每日规则。"
 msgstr "자동 보충에 명확한 차단이 없습니다. 후보 품질을 점검하거나 단기/일일 규칙을 미세 조정할 수 있습니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3204
+#: apps/admin/src/routes/need-discovery-page.tsx:3215
 msgid "打开候选处理"
 msgstr "후보 처리 열기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3210
+#: apps/admin/src/routes/need-discovery-page.tsx:3221
 msgid "规则可按需微调"
 msgstr "필요에 따라 규칙 미세 조정 가능"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3212
+#: apps/admin/src/routes/need-discovery-page.tsx:3223
 msgid "如果想更保守地控量，优先看共享约束；如果想提速补位，优先看短周期。"
 msgstr "더 보수적으로 양을 제어하려면 공유 제약을 우선시하고, 보충을 빠르게 하려면 단기 사이클을 우선시합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3219
+#: apps/admin/src/routes/need-discovery-page.tsx:3230
 msgid "摇一摇可做抽样巡检"
 msgstr "셰이크 매칭으로 샘플 검사 가능"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3221
+#: apps/admin/src/routes/need-discovery-page.tsx:3232
 msgid "当前没有明显待处理堆积，适合抽查 session 文案是否自然、方向是否足够多样。"
 msgstr "명확한 처리 대기 누적이 없으며, session 문구가 자연스러운지, 방향이 충분히 다양한지 점검하기에 적합합니다."
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3222
+#: apps/admin/src/routes/need-discovery-page.tsx:3233
 msgid "打开摇一摇"
 msgstr "셰이크 매칭 열기"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3412
+#: apps/admin/src/routes/need-discovery-page.tsx:3423
 msgid "只生成草稿"
 msgstr "초안만 생성"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3417
+#: apps/admin/src/routes/need-discovery-page.tsx:3428
 msgid "接受于"
 msgstr "수락 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3420
+#: apps/admin/src/routes/need-discovery-page.tsx:3431
 msgid "拒绝于"
 msgstr "거부 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3423
+#: apps/admin/src/routes/need-discovery-page.tsx:3434
 msgid "过期于"
 msgstr "만료 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3426
+#: apps/admin/src/routes/need-discovery-page.tsx:3437
 msgid "抑制到"
 msgstr "억제 종료"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3429
+#: apps/admin/src/routes/need-discovery-page.tsx:3440
 msgid "删除于"
 msgstr "삭제 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3431
+#: apps/admin/src/routes/need-discovery-page.tsx:3442
 #: apps/admin/src/routes/token-usage-page.tsx:1258
 msgid "更新于"
 msgstr "업데이트 시간"
 
-#: apps/admin/src/routes/need-discovery-page.tsx:3436
+#: apps/admin/src/routes/need-discovery-page.tsx:3447
 msgid "未记录窗口"
 msgstr "윈도우 미기록"
 
@@ -16593,14 +16865,6 @@ msgstr "여기서 인스턴스 내 AI 요청을 운영 장부로 정리하여, �
 #: apps/admin/src/routes/token-usage-page.tsx:2722
 msgid "今日"
 msgstr "오늘"
-
-#: apps/admin/src/routes/token-usage-page.tsx:826
-msgid "近 7 天"
-msgstr "최근 7일"
-
-#: apps/admin/src/routes/token-usage-page.tsx:831
-msgid "近 30 天"
-msgstr "최근 30일"
 
 #: apps/admin/src/routes/token-usage-page.tsx:836
 #: apps/admin/src/routes/token-usage-page.tsx:2676

@@ -44,6 +44,7 @@ import {
   WorldLanguageService,
   type WorldLanguageCode,
 } from '../config/world-language.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 const ACTIVE_FRIEND_STATUSES = ['friend', 'close', 'best'] as const;
 type CyberAvatarProfile = Awaited<ReturnType<CyberAvatarService['getProfile']>>;
@@ -88,7 +89,53 @@ export class ShakeDiscoveryService {
     private readonly characterBlueprintService: CharacterBlueprintService,
     private readonly socialService: SocialService,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
+
+  // 非会员摇一摇好友配额校验（上限取 config.freeFriendLimit，0 = 不限制）。
+  // 会员判定与 SubscriptionService.assertCanUseAi 同口径：hardBlock 总开关关闭（本地
+  // 直连 / 未启用会员硬拦）或活跃会员（含试用）一律不受限；达到上限即 402 拦截。
+  // 注：cloud-api 失联且本地无缓存时 getStatus 返回 status='expired'+hardBlock=true
+  // （保守），付费用户在故障窗口内会被按非会员限流——与 assertCanUseAi 同口径，可接受
+  // （摇一摇配额比 AI 硬拦更宽松，不引入新回归）。
+  private async assertShakeFriendQuota(
+    ownerId: string,
+    freeFriendLimit: number,
+  ): Promise<void> {
+    if (!Number.isFinite(freeFriendLimit) || freeFriendLimit <= 0) {
+      return;
+    }
+    const status = await this.subscriptionService.getStatus();
+    if (!status.hardBlockEnabled || status.status === 'active') {
+      return;
+    }
+    // 取该 owner 的活跃好友（排除软删 'removed' 与 'blocked'，因此删除好友能腾出名额）。
+    const activeFriendships = await this.friendshipRepo.find({
+      where: { ownerId, status: In([...ACTIVE_FRIEND_STATUSES]) },
+    });
+    // "摇一摇来源"好友 ⊆ 活跃好友：总活跃数都不到上限就一定没超，省掉 character 查询。
+    if (activeFriendships.length < freeFriendLimit) {
+      return;
+    }
+    // 按 character.sourceType==='shake_generated' 计"摇一摇按需生成"的好友数，而非
+    // friendship.source —— 真实数据里 shake 好友的 source 既有 'shake_keep' 也有空值，
+    // 且 source='shake' 多指向 preset 角色（另一条"摇到预设"路径，非按需生成）。按
+    // sourceType 才能精确覆盖按需生成角色并与历史 source label 漂移解耦。TenantRepository
+    // 按当前 owner 限定，避免共享/preset 角色同 id 行跨租户串号。
+    const characterIds = activeFriendships.map((item) => item.characterId);
+    const shakeFriendCount = await new TenantRepository(
+      this.characterRepo,
+    ).count({
+      where: { id: In(characterIds), sourceType: 'shake_generated' },
+    });
+    if (shakeFriendCount >= freeFriendLimit) {
+      throw new AppError('SHAKE_FRIEND_LIMIT', {
+        status: HttpStatus.PAYMENT_REQUIRED,
+        params: { cap: freeFriendLimit },
+        legacyMessage: `免费用户最多保留 ${freeFriendLimit} 个摇一摇好友，删除一个或开通会员后可继续。`,
+      });
+    }
+  }
 
   async createSessionPreview(options?: {
     mode?: 'new' | 'reroll';
@@ -100,6 +147,9 @@ export class ShakeDiscoveryService {
         legacyMessage: '摇一摇当前已在后台停用。',
       });
     }
+    // fail-fast：非会员到达摇一摇好友上限时直接拦截，省下后续昂贵的 AI planning /
+    // generation 开销（移动端 shake() 成功后会立刻自动 keep）。reroll 同样在此被拦。
+    await this.assertShakeFriendQuota(owner.id, config.freeFriendLimit);
 
     const mode = options?.mode === 'reroll' ? 'reroll' : 'new';
     const now = new Date();
@@ -509,6 +559,20 @@ export class ShakeDiscoveryService {
 
     const targetCharacterId =
       session.characterId?.trim() || buildShakeCharacterId(session.id);
+
+    // 权威兜底：createSessionPreview 的 fail-fast 可能被 activeSession 早返回或陈旧
+    // preview 绕过，这里在真正落库（创建角色 / 加好友）前再校验一次配额。仅当不是
+    // "重新 keep 一个已活跃好友"时才查——re-keep 不新增好友，既不该被拦，也不该在
+    // 超额时白白创建出孤儿角色。
+    const existingShakeFriendship = await this.friendshipRepo.findOneBy({
+      ownerId: owner.id,
+      characterId: targetCharacterId,
+    });
+    if (!isActiveFriendshipStatus(existingShakeFriendship?.status)) {
+      const config = await this.getConfig();
+      await this.assertShakeFriendQuota(owner.id, config.freeFriendLimit);
+    }
+
     let character = await this.findExistingShakeCharacter(
       targetCharacterId,
       sourceKey,
@@ -1075,6 +1139,12 @@ function normalizeConfig(
     allowMedical: sanitizeBoolean(input.allowMedical, fallback.allowMedical),
     allowLegal: sanitizeBoolean(input.allowLegal, fallback.allowLegal),
     allowFinance: sanitizeBoolean(input.allowFinance, fallback.allowFinance),
+    freeFriendLimit: sanitizeInteger(
+      input.freeFriendLimit,
+      fallback.freeFriendLimit,
+      0,
+      1000,
+    ),
     enableRealtimeSignalEnhance: sanitizeBoolean(
       input.enableRealtimeSignalEnhance,
       fallback.enableRealtimeSignalEnhance,

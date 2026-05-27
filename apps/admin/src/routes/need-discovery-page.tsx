@@ -2341,6 +2341,17 @@ function ShakeConfigCard({
                 })
               }
             />
+            <ConfigNumber
+              label={t(msg`非会员摇一摇好友上限`)}
+              hint={t(msg`非会员最多保留的摇一摇好友数，达到后需删除或开通会员；0 = 不限制，会员不受限。`)}
+              value={config.freeFriendLimit}
+              onChange={(value) =>
+                onChange({
+                  ...config,
+                  freeFriendLimit: value,
+                })
+              }
+            />
           </div>
         </ConfigBlock>
 
@@ -3561,6 +3572,12 @@ function parseShakeDiscoveryConfig(raw?: string | null): ShakeDiscoveryConfig {
         typeof parsed.allowFinance === "boolean"
           ? parsed.allowFinance
           : fallback.allowFinance,
+      freeFriendLimit: normalizeNumber(
+        parsed.freeFriendLimit,
+        fallback.freeFriendLimit,
+        0,
+        1000,
+      ),
       enableRealtimeSignalEnhance:
         typeof parsed.enableRealtimeSignalEnhance === "boolean"
           ? parsed.enableRealtimeSignalEnhance

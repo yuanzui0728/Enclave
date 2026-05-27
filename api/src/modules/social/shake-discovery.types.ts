@@ -27,6 +27,10 @@ export type ShakeDiscoveryConfig = {
   allowMedical: boolean;
   allowLegal: boolean;
   allowFinance: boolean;
+  // 非会员最多可保留的"摇一摇来源"好友数（character.sourceType==='shake_generated'
+  // 且 friendship 仍有效）。达到上限后非会员发起/保留摇一摇被拦，需删除已有的或开通会员。
+  // 0 = 不限制。会员（status==='active' 或 hardBlock 关闭）不受限制。
+  freeFriendLimit: number;
   // 系统级 flag：true 时 planning 阶段会调一次 web_search（按 cyber avatar top 兴趣词
   // 搜热点）把结果注入 signals。默认 false 避免每次摇一摇都烧 token-plan 搜索配额。
   enableRealtimeSignalEnhance: boolean;
@@ -123,6 +127,7 @@ export const DEFAULT_SHAKE_DISCOVERY_CONFIG: ShakeDiscoveryConfig = {
   allowMedical: true,
   allowLegal: true,
   allowFinance: true,
+  freeFriendLimit: 3,
   enableRealtimeSignalEnhance: false,
   planningPrompt: `你是隐界的“摇一摇相遇策划器”。你的任务不是直接生成角色，而是先根据用户当前可见的全部行为线索，规划 {{candidateDirectionCount}} 个都合理、但风格明显不同的相遇方向。
 
