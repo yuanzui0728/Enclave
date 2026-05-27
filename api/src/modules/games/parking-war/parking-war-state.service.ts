@@ -10,6 +10,8 @@ import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../../../common/app-error.exception';
 import { WorldOwnerService } from '../../auth/world-owner.service';
+import { isSharedWorldMode } from '../../tenancy/tenant-context';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { ParkingWarPlayerStateEntity } from './entities/parking-war-player-state.entity';
 import { ParkingWarNpcStateEntity } from './entities/parking-war-npc-state.entity';
 import { ParkingWarOccupancyEntity } from './entities/parking-war-occupancy.entity';
@@ -83,6 +85,12 @@ export class ParkingWarStateService implements OnModuleInit {
     private readonly neighborService: ParkingWarNeighborService,
   ) {}
 
+  // 共享 world：occupancy 读 / 按条件删改经此注入当前 owner（排除 NULL 孤儿 + 防跨 owner）；
+  // LPP 透传。写(create/save，含数组 save)走裸 occupancyRepo + beforeInsert subscriber 盖章。
+  private get scopedOccupancy(): TenantRepository<ParkingWarOccupancyEntity> {
+    return new TenantRepository(this.occupancyRepo);
+  }
+
   /**
    * 唯一复合索引在这里建（不要写 @Index({unique:true}) — synchronize 早于 onModuleInit，
    * 老库重复行会卡死服务启动；见 memory feedback_entity_unique_index_synchronize_trap.md）。
@@ -91,15 +99,43 @@ export class ParkingWarStateService implements OnModuleInit {
    * - 一辆车不能同时停两个地方
    */
   async onModuleInit(): Promise<void> {
+    // 共享 world：occupancy 新增 ownerId 列（synchronize:false 不建）。幂等自愈——SQLite
+    // 的 ADD COLUMN 无 IF NOT EXISTS，列已存在抛错吞掉即可。独立 try 不连累索引创建。
+    if (isSharedWorldMode()) {
+      try {
+        await this.dataSource.query(
+          `ALTER TABLE parking_war_occupancies ADD COLUMN ownerId text`,
+        );
+      } catch {
+        // 列已存在：忽略。
+      }
+    }
     try {
-      await this.dataSource.query(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_slot
-         ON parking_war_occupancies (lotOwnerKind, lotOwnerId, slotIndex)`,
-      );
-      await this.dataSource.query(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_car
-         ON parking_war_occupancies (visitorKind, visitorId, carId)`,
-      );
+      if (isSharedWorldMode()) {
+        // 共享 world：lotOwnerId/visitorId 的 npc 侧用跨 owner 共用的 characterId，
+        // 唯一索引必须并入 ownerId，否则两 owner 在同一共享 NPC 的同槽位/同 carId 上
+        // 停车会撞唯一约束。先 drop 旧 2 列索引再建 3 列（含 ownerId）版。
+        // ownerId 为 NULL 的旧孤儿行在 SQLite 唯一索引里视作互异，不阻挡创建。
+        await this.dataSource.query(`DROP INDEX IF EXISTS uniq_pw_occupancy_slot`);
+        await this.dataSource.query(`DROP INDEX IF EXISTS uniq_pw_occupancy_car`);
+        await this.dataSource.query(
+          `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_slot_owner
+           ON parking_war_occupancies (ownerId, lotOwnerKind, lotOwnerId, slotIndex)`,
+        );
+        await this.dataSource.query(
+          `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_car_owner
+           ON parking_war_occupancies (ownerId, visitorKind, visitorId, carId)`,
+        );
+      } else {
+        await this.dataSource.query(
+          `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_slot
+           ON parking_war_occupancies (lotOwnerKind, lotOwnerId, slotIndex)`,
+        );
+        await this.dataSource.query(
+          `CREATE UNIQUE INDEX IF NOT EXISTS uniq_pw_occupancy_car
+           ON parking_war_occupancies (visitorKind, visitorId, carId)`,
+        );
+      }
     } catch (error) {
       this.logger.warn(
         `parking-war unique index creation failed: ${
@@ -285,10 +321,10 @@ export class ParkingWarStateService implements OnModuleInit {
     // 同时满足 home(lotOwnerKind=player) 和 away(visitorKind=player) 两边的过滤条件，
     // 会被双重计费 / 双重 save / 双重出现在 view 里。强制 npc-only 才算真"在外面"。
     const [homeOccupancies, awayOccupancies] = await Promise.all([
-      this.occupancyRepo.find({
+      this.scopedOccupancy.find({
         where: { lotOwnerKind: 'player', lotOwnerId: state.ownerId },
       }),
-      this.occupancyRepo.find({
+      this.scopedOccupancy.find({
         where: {
           visitorKind: 'player',
           visitorId: state.ownerId,
@@ -396,7 +432,7 @@ export class ParkingWarStateService implements OnModuleInit {
             lotOwnerId: ownerId,
             slotIndex,
           };
-    const occupancies = await this.occupancyRepo.find({ where });
+    const occupancies = await this.scopedOccupancy.find({ where });
     if (occupancies.length === 0) {
       throw new AppError('PARKING_WAR_NOTHING_TO_COLLECT', {
         legacyMessage: '车位上没有可收的车',
@@ -632,7 +668,7 @@ export class ParkingWarStateService implements OnModuleInit {
     const state = await this.getOrCreatePlayerState(ownerId);
     await this.tickPlayerHomeOccupancies(state);
 
-    const occ = await this.occupancyRepo.findOneBy({ id: occupancyId });
+    const occ = await this.scopedOccupancy.findOneBy({ id: occupancyId });
     if (!occ) {
       throw new AppError('PARKING_WAR_OCCUPANCY_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -669,7 +705,7 @@ export class ParkingWarStateService implements OnModuleInit {
         s.index === occ.slotIndex ? { ...s, occupancyId: null } : s,
       );
       state.homeSlotsPayload = homeSlots;
-      await this.occupancyRepo.delete({ id: occupancyId });
+      await this.scopedOccupancy.delete({ id: occupancyId });
     } else if (occ.lotOwnerKind === 'npc') {
       await this.neighborService.releaseOccupancyOnNeighbor(occ);
       if (hostShare > 0) {
@@ -721,7 +757,7 @@ export class ParkingWarStateService implements OnModuleInit {
 
     await this.assertDailyTicketBudgetAvailable(ownerId);
 
-    const occ = await this.occupancyRepo.findOneBy({ id: occupancyId });
+    const occ = await this.scopedOccupancy.findOneBy({ id: occupancyId });
     if (!occ) {
       throw new AppError('PARKING_WAR_OCCUPANCY_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -806,7 +842,7 @@ export class ParkingWarStateService implements OnModuleInit {
     const state = await this.getOrCreatePlayerState(ownerId);
     await this.tickPlayerHomeOccupancies(state);
 
-    const occ = await this.occupancyRepo.findOneBy({ id: occupancyId });
+    const occ = await this.scopedOccupancy.findOneBy({ id: occupancyId });
     if (!occ) {
       throw new AppError('PARKING_WAR_OCCUPANCY_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -835,7 +871,7 @@ export class ParkingWarStateService implements OnModuleInit {
       s.index === occ.slotIndex ? { ...s, occupancyId: null } : s,
     );
     state.homeSlotsPayload = homeSlots;
-    await this.occupancyRepo.delete({ id: occupancyId });
+    await this.scopedOccupancy.delete({ id: occupancyId });
 
     // 给访客车上冷却 + 扣耐久（访客是玩家时直接改 ownedCarsPayload）
     if (occ.visitorKind === 'player' && occ.visitorId === ownerId) {
@@ -1095,7 +1131,7 @@ export class ParkingWarStateService implements OnModuleInit {
 
     // 升级后同步在场 occupancy 的 carLevel（确保收益马上生效）
     if (car.parkedRef) {
-      await this.occupancyRepo.update(
+      await this.scopedOccupancy.update(
         { id: car.parkedRef.occupancyId },
         { carLevel: car.level + 1 },
       );
@@ -1138,7 +1174,7 @@ export class ParkingWarStateService implements OnModuleInit {
 
     const parkedRef = cars[idx].parkedRef;
     if (parkedRef) {
-      await this.occupancyRepo.update(
+      await this.scopedOccupancy.update(
         { id: parkedRef.occupancyId },
         { carPaintIndex: paintIndex },
       );
@@ -1352,10 +1388,10 @@ export class ParkingWarStateService implements OnModuleInit {
       awayOccupancies = preloaded.away;
     } else {
       [homeOccupancies, awayOccupancies] = await Promise.all([
-        this.occupancyRepo.find({
+        this.scopedOccupancy.find({
           where: { lotOwnerKind: 'player', lotOwnerId: state.ownerId },
         }),
-        this.occupancyRepo.find({
+        this.scopedOccupancy.find({
           where: {
             visitorKind: 'player',
             visitorId: state.ownerId,

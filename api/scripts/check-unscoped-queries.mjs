@@ -35,6 +35,7 @@ const SCOPED_ENTITY_NAMES = new Set([
   'VideoChannelFollowEntity', 'FarmCheckinEntity', 'FarmEventLogEntity',
   'FarmNpcStateEntity', 'FarmPlayerStateEntity', 'FarmQuestProgressEntity',
   'GameOwnerStateEntity', 'ParkingWarEventLogEntity', 'ParkingWarNpcStateEntity',
+  'ParkingWarOccupancyEntity',
   'ParkingWarPlayerStateEntity', 'ModerationReportEntity', 'NarrativeArcEntity',
   'OfficialAccountDeliveryEntity', 'OfficialAccountFollowEntity',
   'OfficialAccountServiceMessageEntity', 'ReminderTaskEntity', 'SelfAgentRunEntity',

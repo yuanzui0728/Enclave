@@ -5,8 +5,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AppError } from '../../../common/app-error.exception';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { CharacterEntity } from '../../characters/character.entity';
 import { CharactersService } from '../../characters/characters.service';
 import { ParkingWarNpcStateEntity } from './entities/parking-war-npc-state.entity';
@@ -42,6 +43,12 @@ export class ParkingWarNeighborService {
     private readonly charactersService: CharactersService,
     private readonly eventService: ParkingWarEventService,
   ) {}
+
+  // 共享 world：occupancy 读 / 按条件删经此注入当前 owner（排除 NULL 孤儿 + 防跨 owner）；
+  // LPP 透传。写(create/save)走裸 occupancyRepo + beforeInsert subscriber 盖章。
+  private get scopedOccupancy(): TenantRepository<ParkingWarOccupancyEntity> {
+    return new TenantRepository(this.occupancyRepo);
+  }
 
   // ============================================================
   // 角色 → 邻居发现
@@ -158,7 +165,7 @@ export class ParkingWarNeighborService {
       });
     }
     const npc = await this.getOrCreateNpcState(character, ownerId);
-    const occupancies = await this.occupancyRepo.find({
+    const occupancies = await this.scopedOccupancy.find({
       where: { lotOwnerKind: 'npc', lotOwnerId: characterId },
     });
     const summary = buildNeighborSummary(character, npc, occupancies.length);
@@ -307,7 +314,7 @@ export class ParkingWarNeighborService {
       characterId: occupancy.lotOwnerId,
     });
     if (!npc) {
-      await this.occupancyRepo.delete({ id: occupancy.id });
+      await this.scopedOccupancy.delete({ id: occupancy.id });
       return;
     }
     const slots =
@@ -322,7 +329,7 @@ export class ParkingWarNeighborService {
     npc.homeSlotsPayload = newSlots;
     npc.lastActedAt = new Date();
     await this.npcRepo.save(npc);
-    await this.occupancyRepo.delete({ id: occupancy.id });
+    await this.scopedOccupancy.delete({ id: occupancy.id });
   }
 
   /**
@@ -359,14 +366,14 @@ export class ParkingWarNeighborService {
     const aliveIds = new Set(characters.map((c) => c.id));
     const orphans = all.filter((n) => !aliveIds.has(n.characterId));
     if (orphans.length === 0) return 0;
-    // 有车停在 orphan NPC 家的占用一并清掉，避免外键悬挂
+    // 有车停在 orphan NPC 家的占用一并清掉，避免外键悬挂。
+    // 共享 world：orphanCharIds 是跨 owner 共用的 characterId，原裸 QB delete 会删掉
+    // 别 owner 同 characterId NPC 家的占用 → 经 TenantRepository.delete 注入当前 ownerId。
     const orphanCharIds = orphans.map((n) => n.characterId);
-    await this.occupancyRepo
-      .createQueryBuilder()
-      .delete()
-      .where('lotOwnerKind = :k', { k: 'npc' })
-      .andWhere('lotOwnerId IN (:...ids)', { ids: orphanCharIds })
-      .execute();
+    await this.scopedOccupancy.delete({
+      lotOwnerKind: 'npc',
+      lotOwnerId: In(orphanCharIds),
+    });
     await this.npcRepo.remove(orphans);
     return orphans.length;
   }
@@ -379,11 +386,13 @@ export class ParkingWarNeighborService {
     characterIds: string[],
   ): Promise<Map<string, number>> {
     if (characterIds.length === 0) return new Map();
-    const rows = await this.occupancyRepo
+    // 共享 world：scopedOccupancy.createQueryBuilder 自动 andWhere ownerId（mode-aware）；
+    // 其后只能用 .andWhere（.where 会重置掉注入的 ownerId 过滤）。否则跨 owner 全局计数。
+    const rows = await this.scopedOccupancy
       .createQueryBuilder('occ')
       .select('occ.lotOwnerId', 'characterId')
       .addSelect('COUNT(*)', 'cnt')
-      .where('occ.lotOwnerKind = :k', { k: 'npc' })
+      .andWhere('occ.lotOwnerKind = :k', { k: 'npc' })
       .andWhere('occ.lotOwnerId IN (:...ids)', { ids: characterIds })
       .groupBy('occ.lotOwnerId')
       .getRawMany<{ characterId: string; cnt: string }>();

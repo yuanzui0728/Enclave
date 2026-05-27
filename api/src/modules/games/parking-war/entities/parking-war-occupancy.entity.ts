@@ -29,6 +29,13 @@ export class ParkingWarOccupancyEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // 共享 world：每条 occupancy（玩家↔本 owner 的 NPC 停车关系）归属唯一 owner。
+  // 原表无此列（lotOwner/visitor 的 npc 侧用跨 owner 共用的 characterId keyed）→ shared
+  // 模式必须按 ownerId 隔离。uuid 主键不撞 → 普通可空列即可（同 followup/need-discovery）。
+  // LPP / wiki 单库下保持 NULL，TenantRepository 透传不过滤。
+  @Column({ type: 'text', nullable: true })
+  ownerId?: string | null;
+
   @Column({ type: 'text' })
   lotOwnerKind: ParkingWarActorKind;
 

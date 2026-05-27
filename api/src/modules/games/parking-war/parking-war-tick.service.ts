@@ -1,9 +1,9 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { isSharedWorldMode } from '../../tenancy/tenant-context';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { randomUUID } from 'node:crypto';
 import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { WorldOwnerService } from '../../auth/world-owner.service';
@@ -55,10 +55,16 @@ export class ParkingWarTickService {
     private readonly charactersService: CharactersService,
   ) {}
 
+  // 共享 world：occupancy 读 / 按条件删改经此注入当前 owner（排除 NULL 孤儿 + 防跨 owner）；
+  // LPP 透传。写(create/save，含数组 save)走裸 occupancyRepo + beforeInsert subscriber 盖章。
+  private get scopedOccupancy(): TenantRepository<ParkingWarOccupancyEntity> {
+    return new TenantRepository(this.occupancyRepo);
+  }
+
   @Cron(PARKING_WAR_TICK_CRON)
   async runScheduledTick(): Promise<void> {
-    // 共享 world：同 farm tick——per-owner fan-out + 内层 npcRepo 读未安全化；专项前跳过。
-    if (isSharedWorldMode()) return;
+    // 共享 world：单进程一个 tick 在每个 owner 的租户帧里各跑一遍 runTick（内层 npc/
+    // occupancy 读 scoped）。jitter + running 闸全局一次。LPP/wiki：无帧跑一次=等价旧行为。
     await sleepForWorldJitter(60_000);
     if (this.running) {
       this.logger.warn('上一次 parking-war tick 仍在执行，跳过本轮');
@@ -66,15 +72,12 @@ export class ParkingWarTickService {
     }
     this.running = true;
     try {
-      const summary = await this.runTick();
-      this.logger.log(
-        `parking-war tick: NPC ${summary.scannedNpcCount}，访问 ${summary.npcVisitCount} 次 / 警告 ${summary.warningCount} / 罚单 ${summary.ticketCount} / 拖车 ${summary.towCount} / 广播 ${summary.incidentBroadcastCount}，用时 ${summary.durationMs}ms`,
-      );
-    } catch (error) {
-      this.logger.error(
-        'parking-war tick 执行失败',
-        error instanceof Error ? error.stack : String(error),
-      );
+      await this.worldOwnerService.forEachOwner(async () => {
+        const summary = await this.runTick();
+        this.logger.log(
+          `parking-war tick: NPC ${summary.scannedNpcCount}，访问 ${summary.npcVisitCount} 次 / 警告 ${summary.warningCount} / 罚单 ${summary.ticketCount} / 拖车 ${summary.towCount} / 广播 ${summary.incidentBroadcastCount}，用时 ${summary.durationMs}ms`,
+        );
+      }, 'parking-war tick');
     } finally {
       this.running = false;
     }
@@ -203,7 +206,7 @@ export class ParkingWarTickService {
   private async collectNpcHomeSelfEarnings(
     npc: ParkingWarNpcStateEntity,
   ): Promise<void> {
-    const occs = await this.occupancyRepo.find({
+    const occs = await this.scopedOccupancy.find({
       where: {
         lotOwnerKind: 'npc',
         lotOwnerId: npc.characterId,
@@ -244,7 +247,7 @@ export class ParkingWarTickService {
     playerState: ParkingWarPlayerStateEntity,
     npcName: string,
   ): Promise<{ tickets: number; tows: number }> {
-    const occs = await this.occupancyRepo.find({
+    const occs = await this.scopedOccupancy.find({
       where: {
         lotOwnerKind: 'npc',
         lotOwnerId: npc.characterId,
@@ -525,7 +528,7 @@ export class ParkingWarTickService {
   private async bumpWarningLevels(
     npc: ParkingWarNpcStateEntity,
   ): Promise<number> {
-    const occs = await this.occupancyRepo.find({
+    const occs = await this.scopedOccupancy.find({
       where: { lotOwnerKind: 'npc', lotOwnerId: npc.characterId },
     });
     let bumped = 0;

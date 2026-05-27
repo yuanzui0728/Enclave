@@ -43,6 +43,7 @@ import { FarmQuestProgressEntity } from '../games/farm/entities/farm-quest-progr
 import { GameOwnerStateEntity } from '../games/game-owner-state.entity';
 import { ParkingWarEventLogEntity } from '../games/parking-war/entities/parking-war-event-log.entity';
 import { ParkingWarNpcStateEntity } from '../games/parking-war/entities/parking-war-npc-state.entity';
+import { ParkingWarOccupancyEntity } from '../games/parking-war/entities/parking-war-occupancy.entity';
 import { ParkingWarPlayerStateEntity } from '../games/parking-war/entities/parking-war-player-state.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
@@ -148,6 +149,9 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   CharacterRealWorldDigestEntity,
   CharacterRealWorldSignalEntity,
   CharacterRealWorldSyncRunEntity,
+  // parking-war occupancy（Phase 8u·4 补 ownerId 收口——原表 npc 侧 keyed 用跨 owner 共用
+  // 的 characterId，shared 下裸读/QB 删跨 owner）。uuid id 全局唯一 → 普通可空 ownerId 列。
+  ParkingWarOccupancyEntity,
 ];
 
 let registered = false;
