@@ -29,16 +29,6 @@ export const SELECTED_SQUAD_SIZE = 3;
 // 与 parking-war-data.ts 同源；新加的角色用 char-* 占位即可，UI 端只用 emoji 渲染。
 export const SQUADMATE_POOL: Squadmate[] = [
   {
-    id: "squad-axun",
-    name: t(msg`阿巡`),
-    worldCharacterId: "char-manual-axun",
-    emoji: "👮",
-    blurb: t(msg`巷口扫一眼就知道哪条街最闹。`),
-    skill: "scout",
-    maxHp: 100,
-    maxMorale: 100,
-  },
-  {
     id: "squad-zhouran",
     name: t(msg`周冉`),
     worldCharacterId: "char-manual-zhou-ran",

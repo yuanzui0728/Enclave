@@ -40,17 +40,6 @@ export const FIGHTERS: Fighter[] = [
     blurb: t(msg`一拳贴墙，特技节奏猛。`),
   },
   {
-    id: "fighter-axun",
-    name: t(msg`阿巡`),
-    emoji: "👮",
-    worldCharacterId: "char-manual-axun",
-    hp: 75,
-    atkBonus: 1,
-    defBonus: 2,
-    specialBias: "balance",
-    blurb: t(msg`节奏均衡，盾招更稳。`),
-  },
-  {
     id: "fighter-suyu",
     name: t(msg`苏屿`),
     emoji: "🌸",

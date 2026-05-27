@@ -126,15 +126,6 @@ export const GUEST_POOL: GuestSpec[] = [
     quote: t(msg`太困了，能睡到一只猫旁边吗。`),
   },
   {
-    id: "guest-axun",
-    name: t(msg`阿巡`),
-    emoji: "👮",
-    worldCharacterId: "char-manual-axun",
-    preferredRoom: "lobby",
-    prefersFurniture: ["rug", "lamp"],
-    quote: t(msg`先在大堂坐会儿，灯亮一点更安心。`),
-  },
-  {
     id: "guest-linchen",
     name: t(msg`林沉`),
     emoji: "🌙",

@@ -48,14 +48,6 @@ export const PASSENGERS: Passenger[] = [
     fragment: t(msg`她说昨晚把多余的花插进了空咖啡杯。`),
   },
   {
-    id: "p-axun",
-    name: t(msg`阿巡`),
-    emoji: "👮",
-    worldCharacterId: "char-manual-axun",
-    fragmentTitle: t(msg`巷口的灯`),
-    fragment: t(msg`他每晚都顺路把巷口那盏不亮的灯敲一敲。`),
-  },
-  {
     id: "p-linmian",
     name: t(msg`林眠`),
     emoji: "😴",
@@ -123,7 +115,7 @@ export const ROUTES: Route[] = [
     blurb: t(msg`默认线路，6 站慢车。`),
     unlockTickets: 0,
     stations: [
-      station(0, t(msg`晨雾站`), "🌫", "p-axun"),
+      station(0, t(msg`晨雾站`), "🌫", null),
       station(1, t(msg`花田站`), "🌷", "p-suyu"),
       station(2, t(msg`原野站`), "🌾", null),
       station(3, t(msg`午枕站`), "🛏", "p-linmian"),
@@ -153,7 +145,7 @@ export const ROUTES: Route[] = [
     unlockTickets: 4,
     stations: [
       station(0, t(msg`霓虹站`), "🌃", "p-xuzhe"),
-      station(1, t(msg`小巷站`), "🏮", "p-axun"),
+      station(1, t(msg`小巷站`), "🏮", null),
       station(2, t(msg`广场站`), "🛐", null),
       station(3, t(msg`高架站`), "🛣", "p-zhouran"),
       station(4, t(msg`零点站`), "🌌", "p-linchen"),

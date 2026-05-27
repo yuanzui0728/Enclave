@@ -119,7 +119,6 @@ describe('celebrity character presets', () => {
 
   it('includes fixed world character presets alongside celebrity presets', () => {
     const presets = listBuiltInCharacterPresets();
-    const axunPreset = getBuiltInCharacterPreset('moments_interactor_axun');
     const linChenPreset = getBuiltInCharacterPreset('lin_chen_sleep_support');
     const linMianPreset = getBuiltInCharacterPreset('lin_mian_sleep_support');
     const xuZhePreset = getBuiltInCharacterPreset('xu_zhe_career_growth');
@@ -129,11 +128,6 @@ describe('celebrity character presets', () => {
     expect(presets.length).toBeGreaterThan(
       listCelebrityCharacterPresets().length,
     );
-    expect(axunPreset).toMatchObject({
-      id: 'char-manual-axun',
-      name: '朋友圈活跃熟人',
-      groupKey: 'public_expression',
-    });
     expect(linChenPreset).toMatchObject({
       id: 'char_need_e9a84d01-9ab',
       name: '睡眠陪伴医生',
@@ -159,9 +153,6 @@ describe('celebrity character presets', () => {
       name: '健身教练',
       groupKey: 'health_and_wellness',
     });
-    expect(
-      axunPreset?.character.profile?.scenePrompts?.moments_comment,
-    ).toContain('错别字');
     expect(xuZhePreset?.character.profile?.coreLogic).toContain('职业规划');
     expect(suYuPreset?.character.relationshipType).toBe('mentor');
     expect(suYuPreset?.character.profile?.coreLogic).toContain(
