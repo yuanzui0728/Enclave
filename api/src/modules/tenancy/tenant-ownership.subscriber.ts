@@ -7,7 +7,11 @@ import {
   type RemoveEvent,
   type UpdateEvent,
 } from 'typeorm';
-import { isSharedWorldMode, TenantContextStore } from './tenant-context';
+import {
+  GLOBAL_WORLD_OWNER_ID,
+  isSharedWorldMode,
+  TenantContextStore,
+} from './tenant-context';
 import { isTenantScopedEntity } from './tenant-scoped.decorator';
 
 // 写入侧的纵深防御：兜住绕过 TenantRepository 的裸 manager.save / 级联写。
@@ -35,7 +39,16 @@ export class TenantOwnershipSubscriber implements EntitySubscriberInterface {
     if (!ctx) return;
     if (!entity) return;
     const owned = entity['ownerId'];
-    if (owned !== undefined && owned !== null && owned !== ctx.ownerId) {
+    // 「世界居民」全局哨兵 owner 的行是有意全员可读的（广场动态共享池）。普通 scoped 查询经
+    // TenantRepository 自带 WHERE ownerId=ctx，永远 SELECT 不到全局行；只有广场 union 这类
+    // 故意读全局行的查询会命中这里 —— 放行。写守卫（beforeUpdate/beforeRemove）不放行，
+    // 保证全局行世界可读、用户帧不可写。
+    if (
+      owned !== undefined &&
+      owned !== null &&
+      owned !== ctx.ownerId &&
+      owned !== GLOBAL_WORLD_OWNER_ID
+    ) {
       throw new Error(
         `TENANT_READ_LEAK entity=${event.metadata.name} row=${String(owned)} ctx=${ctx.ownerId}`,
       );

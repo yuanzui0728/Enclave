@@ -23,7 +23,12 @@ import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import type { AiMessagePart } from '../ai/ai.types';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
+import {
+  GLOBAL_WORLD_OWNER_ID,
+  isGlobalWorldOwner,
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
@@ -391,18 +396,24 @@ export class FeedService implements OnModuleInit {
       total = visiblePosts.length;
     }
 
-    const [commentsPreviewMap, ownerStateMap] = await Promise.all([
+    const [commentsPreviewMap, ownerStateMap, countDeltaMap] = await Promise.all([
       this.buildCommentsPreviewMap(
         pagedPosts.map((post) => post.id),
         owner.id,
         avatarContext,
       ),
       this.buildOwnerStateMap(pagedPosts, owner.id),
+      this.buildGlobalCountDeltaMap(pagedPosts, owner.id),
     ]);
 
     return {
       posts: pagedPosts.map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
+        ...this.serializePost(
+          post,
+          ownerStateMap.get(post.id),
+          avatarContext,
+          countDeltaMap.get(post.id),
+        ),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
       total,
@@ -549,12 +560,22 @@ export class FeedService implements OnModuleInit {
     // authorId)——单作者主页要 SELECT * + 5 个并行 owner/social 查询，浪费明显。
     // 改成只拉这位作者的 post，按需做 blocked / not_interested / visible / media
     // 可播放 这四道过滤，逻辑等价但 IO 量与作者贴数成线性，不再被全站规模放大。
+    // 共享 world：视频号 = 全局共享池(ownerId=GLOBAL) + 本人帖。收口到 ownerId IN
+    // (GLOBAL, 本人)，与列表 union / getComments 可见范围对齐——否则裸 find 会命中别
+    // owner 的同作者帖触 afterLoad 读守卫（500）。
     const authorPostsRaw = await this.postRepo.find({
-      where: {
-        authorId,
-        surface: 'channels',
-        publishStatus: 'published',
-      },
+      where: isSharedWorldMode()
+        ? {
+            authorId,
+            surface: 'channels',
+            publishStatus: 'published',
+            ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]),
+          }
+        : {
+            authorId,
+            surface: 'channels',
+            publishStatus: 'published',
+          },
       order: { recommendationScore: 'DESC', createdAt: 'DESC' },
     });
     const [
@@ -581,10 +602,14 @@ export class FeedService implements OnModuleInit {
     ]);
     const authorPosts = authorPostsRaw.filter((post) => {
       if (post.authorType === 'character') {
-        if (!visibleCharacterIds.has(post.authorId)) return false;
+        // 世界居民（全局池）公开：不按本人 visibleIds / friends 门禁；本人侧（私有角色
+        // 扇出副本）保留 per-owner 可见性。屏蔽 / not_interested / 可播放对两段都生效。
+        const isGlobal = isGlobalWorldOwner(post.ownerId);
+        if (!isGlobal && !visibleCharacterIds.has(post.authorId)) return false;
         if (blockedCharacterIdSet.has(post.authorId)) return false;
         if (post.visibility === 'private') return false;
         if (
+          !isGlobal &&
           post.visibility === 'friends' &&
           !avatarContext.ownerFriendCharacterIds.has(post.authorId)
         ) {
@@ -598,7 +623,14 @@ export class FeedService implements OnModuleInit {
     const latestPost =
       authorPosts[0] ??
       (await this.postRepo.findOne({
-        where: { authorId, surface: 'channels', publishStatus: 'published' },
+        where: isSharedWorldMode()
+          ? {
+              authorId,
+              surface: 'channels',
+              publishStatus: 'published',
+              ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]),
+            }
+          : { authorId, surface: 'channels', publishStatus: 'published' },
         order: { createdAt: 'DESC' },
       }));
 
@@ -671,19 +703,33 @@ export class FeedService implements OnModuleInit {
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
     });
-    const post = await this.postRepo.findOneBy({ id: postId });
+    // 共享 world：feed_posts 是「全局世界居民池(ownerId=GLOBAL) + 本人帖」两段可见。
+    // 裸 findOneBy({id}) 命中别 owner 的私有帖会触 afterLoad 读守卫(500)而非干净 404；
+    // 但又不能只 scope 到本人（否则点开广场全局帖会 404）。与 getComments / 列表
+    // findVisibleFeedPostsPaged 的可见范围对齐：ownerId IN (GLOBAL, 本人)。
+    const post = await this.postRepo.findOne({
+      where: isSharedWorldMode()
+        ? { id: postId, ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]) }
+        : { id: postId },
+    });
 
     if (!post || post.publishStatus === 'deleted') {
       return null;
     }
 
-    const [comments, ownerStateMap] = await Promise.all([
+    const [comments, ownerStateMap, countDeltaMap] = await Promise.all([
       this.getComments(postId, avatarContext),
       this.buildOwnerStateMap([post], owner.id),
+      this.buildGlobalCountDeltaMap([post], owner.id),
     ]);
 
     return {
-      ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
+      ...this.serializePost(
+        post,
+        ownerStateMap.get(post.id),
+        avatarContext,
+        countDeltaMap.get(post.id),
+      ),
       comments,
     };
   }
@@ -702,8 +748,17 @@ export class FeedService implements OnModuleInit {
     // 是低频操作，硬上限 MAX_FEED_COMMENT_FETCH_LIMIT 兜底；超过时取最近
     // 的一批（按 createdAt DESC 取 limit 再倒回 ASC），并在响应里通过 .length
     // 让前端能感知（DB 实际数还是从 commentCount 字段读，老 cache 不变）。
+    // 全局帖（世界居民共享池）的评论里混着多个用户各自的评论 —— 必须收口到「全局 AI 评论
+    // + 本人评论」，否则既会把别人对全局帖的评论读出来（泄漏），又会触发 afterLoad 读守卫抛。
+    // 普通帖（ownerId=本人）的评论本就都归本人，加这层过滤等价、无副作用。
     const rawComments = await this.commentRepo.find({
-      where: { postId, status: 'published' },
+      where: isSharedWorldMode()
+        ? {
+            postId,
+            status: 'published',
+            ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]),
+          }
+        : { postId, status: 'published' },
       order: { createdAt: 'DESC' },
       take: MAX_FEED_COMMENT_FETCH_LIMIT,
     });
@@ -1102,7 +1157,7 @@ export class FeedService implements OnModuleInit {
     replyToCommentId?: string | null;
     replyToAuthorId?: string | null;
   }): Promise<FeedCommentEntity> {
-    await this.assertPostExists(input.postId);
+    const post = await this.assertPostExists(input.postId);
     const comment = this.commentRepo.create({
       postId: input.postId,
       authorId: input.authorId,
@@ -1116,7 +1171,11 @@ export class FeedService implements OnModuleInit {
       status: 'published',
     });
     const saved = await this.commentRepo.save(comment);
-    await this.postRepo.increment({ id: input.postId }, 'commentCount', 1);
+    // 拥有父行才 bump commentCount：全局帖的 AI 评论（全局帧 ctx=GLOBAL=post.owner）维护基数；
+    // 用户评论全局帖（ctx=用户≠GLOBAL）只落自己名下评论行、不动全局基数（读时合并本人增量）。
+    if (this.tenantOwnsRow(post.ownerId)) {
+      await this.postRepo.increment({ id: input.postId }, 'commentCount', 1);
+    }
     if (input.authorType === 'user') {
       void this.cyberAvatar.captureSignal({
         ownerId: input.authorId,
@@ -1277,7 +1336,7 @@ export class FeedService implements OnModuleInit {
     channel?: 'native' | 'copy' | 'system' | 'unknown',
   ): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    await this.assertPostExists(postId);
+    const post = await this.assertPostExists(postId);
     // 走查 R3：controller @Body 的 enum 是 TS-only，运行时是 any。curl 实测可
     // 以送 `channel=<script>...`、`channel=999`、`channel=null`（字符串）等等，
     // 任意脏字符串都会落进 user_feed_interactions.payload + cyberAvatar
@@ -1312,7 +1371,9 @@ export class FeedService implements OnModuleInit {
       },
       occurredAt: interaction.createdAt ?? new Date(),
     });
-    await this.postRepo.increment({ id: postId }, 'shareCount', 1);
+    if (this.tenantOwnsRow(post.ownerId)) {
+      await this.postRepo.increment({ id: postId }, 'shareCount', 1);
+    }
   }
 
   /**
@@ -1582,7 +1643,10 @@ export class FeedService implements OnModuleInit {
     payload?: { progressSeconds?: number; completed?: boolean },
   ): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    await this.assertPostExists(postId);
+    const post = await this.assertPostExists(postId);
+    // 全局帖在用户帧下不拥有父行 → 浏览/观看/完成等计数不动全局基数（裸 QB 会静默篡改）；
+    // 用户的 view interaction 行仍按 owner 落，逐用户行为照常记录。
+    const ownsPost = this.tenantOwnsRow(post.ownerId);
 
     const existing = await this.interactionRepo.findOneBy({
       ownerId: owner.id,
@@ -1635,15 +1699,17 @@ export class FeedService implements OnModuleInit {
         },
         occurredAt: savedInteraction.createdAt ?? new Date(),
       });
-      await this.postRepo.increment({ id: postId }, 'viewCount', 1);
-      if (
-        typeof nextPayload.progressSeconds === 'number' &&
-        nextPayload.progressSeconds > 0
-      ) {
-        await this.postRepo.increment({ id: postId }, 'watchCount', 1);
-      }
-      if (nextPayload.completed) {
-        await this.postRepo.increment({ id: postId }, 'completeCount', 1);
+      if (ownsPost) {
+        await this.postRepo.increment({ id: postId }, 'viewCount', 1);
+        if (
+          typeof nextPayload.progressSeconds === 'number' &&
+          nextPayload.progressSeconds > 0
+        ) {
+          await this.postRepo.increment({ id: postId }, 'watchCount', 1);
+        }
+        if (nextPayload.completed) {
+          await this.postRepo.increment({ id: postId }, 'completeCount', 1);
+        }
       }
       return;
     }
@@ -1657,10 +1723,10 @@ export class FeedService implements OnModuleInit {
     };
     await this.interactionRepo.save(existing);
 
-    if (previousProgress <= 0 && (nextPayload.progressSeconds ?? 0) > 0) {
+    if (ownsPost && previousProgress <= 0 && (nextPayload.progressSeconds ?? 0) > 0) {
       await this.postRepo.increment({ id: postId }, 'watchCount', 1);
     }
-    if (!previousCompleted && nextPayload.completed) {
+    if (ownsPost && !previousCompleted && nextPayload.completed) {
       await this.postRepo.increment({ id: postId }, 'completeCount', 1);
     }
   }
@@ -1711,7 +1777,8 @@ export class FeedService implements OnModuleInit {
     // 可能落到负值；TypeORM decrement 不带 MAX(0, ...) clamp）。手动读改写，
     // 让 commentCount 永远 >= 0；并发误差 1-2 可接受，下一次 invalidate 会修正。
     const post = await this.postRepo.findOneBy({ id: comment.postId });
-    if (post) {
+    // 全局帖在用户帧下不拥有父行 → 不动全局基数（用户删的是自己名下评论，本人增量随之减少）。
+    if (post && this.tenantOwnsRow(post.ownerId)) {
       const nextCount = Math.max(0, post.commentCount - idsToDelete.length);
       await this.postRepo.update({ id: post.id }, { commentCount: nextCount });
     }
@@ -1790,7 +1857,11 @@ export class FeedService implements OnModuleInit {
         payload: { commentId },
       }),
     );
-    await this.commentRepo.increment({ id: commentId }, 'likeCount', 1);
+    // 全局帖里的 AI 评论归属哨兵 owner → 用户帧不拥有 → 不动其 likeCount 基数（裸 QB 会静默篡改）。
+    // 用户「赞过该评论」状态仍按 comment_like interaction 行逐用户记录（buildLikedCommentIdSet）。
+    if (this.tenantOwnsRow(comment.ownerId)) {
+      await this.commentRepo.increment({ id: commentId }, 'likeCount', 1);
+    }
   }
 
   async followChannelAuthor(authorId: string) {
@@ -3211,6 +3282,16 @@ export class FeedService implements OnModuleInit {
     // 撞 createdAt undefined → Invalid Date → serializeComment.toISOString 抛
     // RangeError）。QueryBuilder 用子查询限定 id 范围，hydration 由 TypeORM
     // 自己跑，跟原 commentRepo.find 路径行为一致。
+    // 全局帖（世界居民共享池）的评论混着多用户各自的评论。预览窗函数必须按「全局 AI 评论 +
+    // 本人评论」收口，否则会把别人对全局帖的评论拉进预览（泄漏）+ getMany() hydration 触发
+    // afterLoad 读守卫抛。普通帖（ownerId=本人）加这层过滤等价、无副作用。
+    const sharedScope = isSharedWorldMode()
+      ? ` AND "ownerId" IN (:...commentOwnerScope)`
+      : '';
+    const previewParams: Record<string, unknown> = { postIds };
+    if (isSharedWorldMode()) {
+      previewParams.commentOwnerScope = [GLOBAL_WORLD_OWNER_ID, ownerId];
+    }
     const previewComments = await this.commentRepo
       .createQueryBuilder('c')
       .where(
@@ -3218,11 +3299,11 @@ export class FeedService implements OnModuleInit {
           SELECT id FROM (
             SELECT id, ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "createdAt" DESC) AS rn
             FROM feed_comments
-            WHERE "postId" IN (:...postIds) AND "status" = 'published'
+            WHERE "postId" IN (:...postIds) AND "status" = 'published'${sharedScope}
           ) AS ranked
           WHERE rn <= 3
         )`,
-        { postIds },
+        previewParams,
       )
       .orderBy('c.postId', 'ASC')
       .addOrderBy('c.createdAt', 'ASC')
@@ -3352,6 +3433,62 @@ export class FeedService implements OnModuleInit {
     }
 
     return stateMap;
+  }
+
+  // 全局帖（世界居民共享池）的「本人增量」：用户对全局帖的赞/收藏/评论按 tenantOwnsRow 不计进
+  // 全局基数，读时按本人补回，让 likeCount/favoriteCount/commentCount 体感正确（基数=全局 AI
+  // 互动，增量=自己）。仅 shared 模式 + 仅命中的全局帖才查，普通帖跳过、零开销。
+  private async buildGlobalCountDeltaMap(
+    posts: FeedPostEntity[],
+    ownerId: string,
+  ): Promise<
+    Map<string, { likeDelta: number; favoriteDelta: number; commentDelta: number }>
+  > {
+    const map = new Map<
+      string,
+      { likeDelta: number; favoriteDelta: number; commentDelta: number }
+    >();
+    if (!isSharedWorldMode()) return map;
+    const globalPostIds = posts
+      .filter((post) => isGlobalWorldOwner(post.ownerId))
+      .map((post) => post.id);
+    if (!globalPostIds.length) return map;
+
+    for (const id of globalPostIds) {
+      map.set(id, { likeDelta: 0, favoriteDelta: 0, commentDelta: 0 });
+    }
+
+    // 本人对全局帖的 like / favorite interaction（ownerId=本人，没计进全局基数）
+    const interactions = await this.interactionRepo.find({
+      where: {
+        ownerId,
+        postId: In(globalPostIds),
+        type: In(['like', 'favorite']),
+      },
+    });
+    for (const it of interactions) {
+      const entry = map.get(it.postId);
+      if (!entry) continue;
+      if (it.type === 'like') entry.likeDelta += 1;
+      else if (it.type === 'favorite') entry.favoriteDelta += 1;
+    }
+
+    // 本人对全局帖发的评论（ownerId=本人, published）—— 裸 select 不触发 afterLoad
+    const commentRows = await this.commentRepo
+      .createQueryBuilder('c')
+      .select('c.postId', 'postId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('c.postId IN (:...ids)', { ids: globalPostIds })
+      .andWhere('c.ownerId = :ownerId', { ownerId })
+      .andWhere("c.status = 'published'")
+      .groupBy('c.postId')
+      .getRawMany<{ postId: string; cnt: string | number }>();
+    for (const row of commentRows) {
+      const entry = map.get(row.postId);
+      if (entry) entry.commentDelta = Number(row.cnt) || 0;
+    }
+
+    return map;
   }
 
   private async buildLikedCommentIdSet(commentIds: string[], ownerId: string) {
@@ -3709,8 +3846,50 @@ export class FeedService implements OnModuleInit {
   }
 
   private async getVisibleFeedPosts(surface: FeedSurface, ownerId: string) {
-    // 共享 world：裸 find 按 surface 读全 owner 的 feed/channels 帖（读守卫抛 / 跨用户泄漏）。
-    // 走 TenantRepository 自动并 ownerId（LPP 透传）。
+    const [visibleCharacterIds, ownerFriendIds] = await Promise.all([
+      this.getVisibleCharacterIdSet(ownerId),
+      this.characters.getActiveFriendCharacterIdSet(ownerId),
+    ]);
+
+    // 视频号（channels）= 全局共享社交场：与广场（findVisibleFeedPostsPaged）同构。
+    //   - 世界居民（全局哨兵 owner）的公开角色视频 → 全员可见的「视频号」共享池，
+    //     不按用户 visibleIds 门禁（preset 角色对所有人公开，含未导入者 / 新用户）。
+    //   - 当前用户自己名下的 channels 帖（私有角色扇出副本 + 自己上传）→ 仅本人，
+    //     保留 per-owner 可见性（visibleIds / friends）。
+    // QueryBuilder 而非 TenantRepository：后者会强并 ownerId=本人，读不到全局池。
+    // 只选 (globalOwner | currentOwner) 两段，afterLoad 读守卫对这两段都放行、不泄漏。
+    if (surface === 'channels' && isSharedWorldMode()) {
+      const posts = await this.postRepo
+        .createQueryBuilder('post')
+        .where('post.surface = :surface', { surface: 'channels' })
+        .andWhere('post.publishStatus = :status', { status: 'published' })
+        .andWhere(
+          `(
+             (post.ownerId = :globalOwner AND post.authorType = 'character' AND post.visibility <> 'private')
+             OR (post.ownerId = :currentOwner)
+           )`,
+          { globalOwner: GLOBAL_WORLD_OWNER_ID, currentOwner: ownerId },
+        )
+        .orderBy('post.recommendationScore', 'DESC')
+        .addOrderBy('post.createdAt', 'DESC')
+        .getMany();
+      return posts.filter((post) => {
+        if (post.authorType !== 'character') return true;
+        if (post.visibility === 'private') return false;
+        if (!this.isPostMediaPlayable(post)) return false;
+        // 世界居民（全局池）公开：不按本人 visibleIds / friends 门禁。
+        if (isGlobalWorldOwner(post.ownerId)) return true;
+        // 本人侧（私有角色扇出副本）：保留 per-owner 可见性门禁。
+        if (!visibleCharacterIds.has(post.authorId)) return false;
+        if (post.visibility === 'friends') {
+          return ownerFriendIds.has(post.authorId);
+        }
+        return true;
+      });
+    }
+
+    // 共享 world（feed surface）/ LPP / wiki：裸 find 按 surface 读会跨 owner 泄漏，
+    // 走 TenantRepository 自动并 ownerId（LPP 透传，ownerId 为 NULL）。
     const posts = await new TenantRepository(this.postRepo).find({
       where: { surface, publishStatus: 'published' },
       order:
@@ -3718,10 +3897,6 @@ export class FeedService implements OnModuleInit {
           ? { recommendationScore: 'DESC', createdAt: 'DESC' }
           : { createdAt: 'DESC' },
     });
-    const [visibleCharacterIds, ownerFriendIds] = await Promise.all([
-      this.getVisibleCharacterIdSet(ownerId),
-      this.characters.getActiveFriendCharacterIdSet(ownerId),
-    ]);
     return posts.filter((post) => {
       if (post.authorType !== 'character') return true;
       if (!visibleCharacterIds.has(post.authorId)) return false;
@@ -3752,31 +3927,44 @@ export class FeedService implements OnModuleInit {
     page: number,
     limit: number,
   ): Promise<{ posts: FeedPostEntity[]; total: number }> {
-    const visibleCharacterIds = await this.getVisibleCharacterIdSet(ownerId);
-    const visibleIds = Array.from(visibleCharacterIds);
-
     const qb = this.postRepo
       .createQueryBuilder('post')
       .where('post.surface = :surface', { surface: 'feed' })
       .andWhere('post.publishStatus = :status', { status: 'published' });
 
-    // 共享 world：authorId 是跨租户共用的角色 id，仅按 authorId IN visibleIds 过滤会命中
-    // 别 owner 同角色发的广场帖（afterLoad 读守卫抛 / 跨用户内容泄漏）。显式按 ownerId 收口
-    // （shared 才加；LPP 的 ownerId 为 NULL，加了会全空——故 mode-gate）。
     if (isSharedWorldMode()) {
-      qb.andWhere('post.ownerId = :ownerId', { ownerId });
-    }
-
-    if (visibleIds.length === 0) {
-      qb.andWhere("post.authorType <> 'character'");
-    } else {
+      // 广场 = 全局共享池 union 本人帖：
+      //   - 世界居民（全局哨兵 owner）的公开角色帖 → 全员（含新用户）实时可见的「广场动态」
+      //   - 当前用户自己发的 user 帖 → 仅本人可见（隐私：不展示别人的 user 帖）
+      // 不再按用户 visibleIds 过滤全局角色帖：世界居民对所有人公开，含 mid-seed 的新用户；
+      // authorId 是稳定 preset id，点进去落用户自己的副本。afterLoad 已放行全局行。
+      // per-owner 角色帖（旧 moment→feed sync 产物 ownerId=用户 & authorType=character）
+      // 不再进任何广场 —— 朋友圈（moment_posts 按 owner 读）不受影响。
       qb.andWhere(
-        "(post.authorType <> 'character' OR (post.authorId IN (:...visibleIds) AND post.visibility <> 'private'))",
-        { visibleIds },
+        `(
+           (post.ownerId = :globalOwner AND post.authorType = 'character' AND post.visibility <> 'private')
+           OR (post.ownerId = :currentOwner AND post.authorType = 'user')
+         )`,
+        { globalOwner: GLOBAL_WORLD_OWNER_ID, currentOwner: ownerId },
       );
+    } else {
+      // LPP / wiki 单库：沿用旧 visibleIds 过滤（无全局池概念，ownerId 为 NULL）。
+      const visibleCharacterIds = await this.getVisibleCharacterIdSet(ownerId);
+      const visibleIds = Array.from(visibleCharacterIds);
+      if (visibleIds.length === 0) {
+        qb.andWhere("post.authorType <> 'character'");
+      } else {
+        qb.andWhere(
+          "(post.authorType <> 'character' OR (post.authorId IN (:...visibleIds) AND post.visibility <> 'private'))",
+          { visibleIds },
+        );
+      }
     }
 
     qb.orderBy('post.createdAt', 'DESC')
+      // createdAt 是秒级 datetime，同秒批量发帖会撞 → 补 id DESC 次级排序保证分页确定
+      // （与 findOwnFeedPostsPaged 对齐），避免跨页边界漏/重。
+      .addOrderBy('post.id', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -3910,8 +4098,18 @@ export class FeedService implements OnModuleInit {
 
   private async resolveChannelAuthor(authorId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    // 共享 world：视频号是「全局共享池 + 本人帖」两段可见。裸 findOneBy(authorId) 会命中
+    // 别 owner 的同作者帖触 afterLoad 读守卫（500）；收口到 ownerId IN (GLOBAL, 本人)，
+    // 与 getComments / getPostWithComments / 列表 union 的可见范围对齐。
     const latestPost = await this.postRepo.findOne({
-      where: { authorId, surface: 'channels', publishStatus: 'published' },
+      where: isSharedWorldMode()
+        ? {
+            authorId,
+            surface: 'channels',
+            publishStatus: 'published',
+            ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]),
+          }
+        : { authorId, surface: 'channels', publishStatus: 'published' },
       order: { createdAt: 'DESC' },
     });
 
@@ -4350,6 +4548,9 @@ export class FeedService implements OnModuleInit {
     post: FeedPostEntity,
     ownerState?: FeedOwnerState,
     avatarContext?: FeedAvatarContext,
+    // 全局帖（世界居民共享池）的展示计数 = 全局基数 + 本人增量。本人对全局帖的赞/收藏/评论
+    // 不计进全局基数（见 tenantOwnsRow），所以读时按本人补回 delta。普通帖 delta 为空，不变。
+    countDelta?: { likeDelta: number; favoriteDelta: number; commentDelta: number },
   ) {
     const media = this.resolveFeedPostMedia(post);
     const primaryMedia = media[0];
@@ -4408,10 +4609,10 @@ export class FeedService implements OnModuleInit {
         | 'published'
         | 'hidden'
         | 'deleted',
-      likeCount: post.likeCount,
-      commentCount: post.commentCount,
+      likeCount: post.likeCount + (countDelta?.likeDelta ?? 0),
+      commentCount: post.commentCount + (countDelta?.commentDelta ?? 0),
       shareCount: post.shareCount,
-      favoriteCount: post.favoriteCount,
+      favoriteCount: post.favoriteCount + (countDelta?.favoriteDelta ?? 0),
       viewCount: post.viewCount,
       watchCount: post.watchCount,
       completeCount: post.completeCount,
@@ -4620,7 +4821,7 @@ export class FeedService implements OnModuleInit {
     incrementColumn?: 'likeCount' | 'favoriteCount';
     payload?: Record<string, unknown> | null;
   }) {
-    await this.assertPostExists(input.postId);
+    const post = await this.assertPostExists(input.postId);
 
     // 用 unique(userId, postId, type) + INSERT OR IGNORE 保证幂等：
     // 双击 / 多端同时点收藏，不会重复插行也不会让 favoriteCount 漂移。
@@ -4663,7 +4864,8 @@ export class FeedService implements OnModuleInit {
         .values(entity as never)
         .orIgnore()
         .execute();
-      if (input.incrementColumn) {
+      // 仅拥有父行时 bump（全局帖在用户帧下不拥有 → 用户的赞/收藏只落子行，不动全局基数）。
+      if (input.incrementColumn && this.tenantOwnsRow(post.ownerId)) {
         await postRepo.increment(
           { id: input.postId },
           input.incrementColumn,
@@ -4732,10 +4934,43 @@ export class FeedService implements OnModuleInit {
       .getOne();
   }
 
+  // ── 全局共享池计数守卫 ──────────────────────────────────────────────
+  // 广场是全局共享池：世界居民帖归属哨兵 owner（GLOBAL_WORLD_OWNER_ID）。
+  // ⚠ TypeORM 的 increment()/update()/decrement() 走裸 QB，**不**触发 beforeUpdate 写守卫
+  // → 用户帧对全局帖做计数会「静默篡改」全局基数（而非抛错）。所以父行计数器只在「当前租户
+  // 拥有该父行」时才动；用户对全局帖的赞/评只落自己名下子行（beforeInsert 盖用户 ownerId），
+  // 展示计数 = 全局基数 + 本人增量（读时 buildGlobalCountDeltaMap 合并）。
+  // 真正拥有该父行的写者（per-owner 生成在用户帧写自己的帖、全局生成在全局帧写全局帖）
+  // ownsRow=true → 照常 bump 维护基数。
+  private tenantOwnsRow(rowOwnerId: string | null | undefined): boolean {
+    if (!isSharedWorldMode()) return true;
+    if (rowOwnerId === undefined || rowOwnerId === null || rowOwnerId === '') {
+      return true;
+    }
+    const ctx = TenantContextStore.get();
+    return !ctx || ctx.ownerId === rowOwnerId;
+  }
+
+  // 只有 postId 时取归属 owner（裸 select，不构造实体 → 不触发 afterLoad）。
+  private async fetchPostOwnerId(
+    postId: string,
+  ): Promise<string | null | undefined> {
+    const row = await this.postRepo
+      .createQueryBuilder('p')
+      .select('p.ownerId', 'ownerId')
+      .where('p.id = :id', { id: postId })
+      .getRawOne<{ ownerId: string | null }>();
+    return row?.ownerId;
+  }
+
   private async decrementPostCounter(
     postId: string,
     key: 'favoriteCount' | 'likeCount',
   ) {
+    // 全局帖在用户帧下 → 不拥有父行 → 跳过（否则裸 QB 静默扣减全局基数）。
+    if (!this.tenantOwnsRow(await this.fetchPostOwnerId(postId))) {
+      return;
+    }
     // 走查 R1：旧实现是 findOneBy + 内存里 `currentValue > 0 ? -1 : 0` + update —
     // 经典 TOCTOU。两条并发 unlike（mid-flight 用户连点 / 桌面端两 row 同时
     // 取消赞）都能读到 currentValue=1 → 都写回 0，但实际只有一行 interaction

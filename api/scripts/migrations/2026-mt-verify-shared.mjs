@@ -37,11 +37,16 @@ const pkOf = (t) => colsOf(t).filter((c) => c.pk > 0).sort((a, b) => a.pk - b.pk
 let problems = 0;
 
 // 1) owner 数守恒
+// 「世界居民」全局共享池哨兵 owner：是 world_owner 行（让 getOwnerOrThrow / 全局生成能跑），
+// 但不是被 merge 进来的真实租户（boot 时建），所以不计入 merge_ledger 守恒比较。它名下的
+// feed/moment 行是有意全局共享的，仍在 ownerSet 里 → 不会被判串号/孤儿。
+const GLOBAL_WORLD_OWNER_ID = 'global-world-owner';
 const owners = db.prepare(`SELECT id FROM users WHERE userType='world_owner'`).all().map((r) => r.id);
 const ownerSet = new Set(owners);
+const tenantOwners = owners.filter((id) => id !== GLOBAL_WORLD_OWNER_ID);
 const ledgerOwners = db.prepare(`SELECT COUNT(*) n FROM merge_ledger`).get().n;
-console.log(`world_owner ${owners.length}，merge_ledger ${ledgerOwners}`);
-if (ledgerOwners !== owners.length) {
+console.log(`world_owner ${owners.length}（真实租户 ${tenantOwners.length}），merge_ledger ${ledgerOwners}`);
+if (ledgerOwners !== tenantOwners.length) {
   console.error(`  ✗ owner 数不匹配（疑似某 owner 被 INSERT OR IGNORE 吞掉）`);
   problems++;
 }

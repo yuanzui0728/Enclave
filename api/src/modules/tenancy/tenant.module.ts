@@ -6,6 +6,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { GlobalWorldSeedService } from './global-world-seed.service';
 import { registerAllScopedEntities } from './scoped-entities';
 import { TenantContextMiddleware } from './tenant-context.middleware';
 import { TenantService } from './tenant.service';
@@ -19,7 +20,7 @@ registerAllScopedEntities();
 @Global()
 @Module({
   imports: [AuthModule],
-  providers: [TenantService, TenantContextMiddleware],
+  providers: [TenantService, TenantContextMiddleware, GlobalWorldSeedService],
   exports: [TenantService],
 })
 export class TenantModule implements NestModule {

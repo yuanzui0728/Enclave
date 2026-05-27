@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { AppError } from '../../common/app-error.exception';
-import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
+import {
+  GLOBAL_WORLD_OWNER_ID,
+  GLOBAL_WORLD_OWNER_PHONE,
+  isSharedWorldMode,
+  TenantContextStore,
+} from '../tenancy/tenant-context';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { UserEntity } from './user.entity';
 import { decryptUserApiKey, encryptUserApiKey } from './api-key-crypto';
@@ -65,6 +70,47 @@ function sanitizeOwnerContact(value: string): string {
   return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// 个人资料字段（职业 / 所在地 / 兴趣 / 称呼语气 / 回避话题）：同款单行 sanitize
+// （剥控制字符 + 折叠空白 + trim）。这些会被注入 AI prompt，控制字符 / 多余换行
+// 既污染 prompt 结构也无意义。各设上限挡住塞整段文本。
+function sanitizeProfileField(value: string): string {
+  return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
+}
+const OWNER_GENDERS = new Set(['male', 'female', 'other']);
+const MIN_OWNER_AGE = 1;
+const MAX_OWNER_AGE = 120;
+const MAX_OWNER_OCCUPATION_LENGTH = 40;
+const MAX_OWNER_REGION_LENGTH = 40;
+const MAX_OWNER_INTERESTS_LENGTH = 200;
+const MAX_OWNER_ADDRESS_TONE_LENGTH = 100;
+const MAX_OWNER_AVOID_TOPICS_LENGTH = 200;
+
+// 个人资料里的可空文本字段：统一「校类型 → sanitize → 校长度」。空串归一成 null
+// （= 清空该字段）。返回 `undefined` 表示调用方没传这个字段、不动库里现值。
+function normalizeProfileTextField(
+  value: string | undefined,
+  maxLength: number,
+  errorCode: string,
+  fieldLabel: string,
+): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') {
+    throw new AppError(errorCode, {
+      status: HttpStatus.BAD_REQUEST,
+      legacyMessage: `${fieldLabel}必须是字符串。`,
+    });
+  }
+  const sanitized = sanitizeProfileField(value);
+  if (sanitized.length > maxLength) {
+    throw new AppError(errorCode, {
+      status: HttpStatus.BAD_REQUEST,
+      params: { maxLength },
+      legacyMessage: `${fieldLabel}最多 ${maxLength} 个字符。`,
+    });
+  }
+  return sanitized.length > 0 ? sanitized : null;
+}
+
 // 跟客户端 profile-info-avatar-page.tsx 的 MIN_AVATAR_DATA_URL_LENGTH 同步：
 // 短于 32 字符的 data URL（如 "data:image/x;," / "data:image/png;base64," 等）
 // 解码后没有像素内容，AvatarChip 加载会失败回 fallback——用户以为头像改好
@@ -117,6 +163,14 @@ type UpdateWorldOwnerInput = {
   contact?: string;
   contactKind?: string;
   encounterOptedIn?: boolean;
+  // 个人资料：注入 AI prompt 的结构化信息。
+  gender?: string | null;
+  age?: number | null;
+  occupation?: string;
+  region?: string;
+  interests?: string;
+  aiAddressTone?: string;
+  avoidTopics?: string;
 };
 
 type WorldOwnerProfile = {
@@ -132,6 +186,13 @@ type WorldOwnerProfile = {
   contact: string | null;
   contactKind: 'wechat' | 'phone' | 'other' | null;
   encounterOptedIn: boolean;
+  gender: 'male' | 'female' | 'other' | null;
+  age: number | null;
+  occupation: string | null;
+  region: string | null;
+  interests: string | null;
+  aiAddressTone: string | null;
+  avoidTopics: string | null;
 };
 
 @Injectable()
@@ -377,10 +438,51 @@ export class WorldOwnerService {
     }
   }
 
+  // 「世界居民」全局哨兵 owner 建档（固定 id，幂等）。getOwnerOrThrow 依赖此行存在；
+  // 全局广场内容（feed surface='feed' 的 preset 角色帖 + AI 互动）都归属它。
+  // 不能复用 ensureOwnerForPhone —— 那个生成随机 id，这里需要固定 GLOBAL_WORLD_OWNER_ID。
+  async ensureGlobalOwnerRow(): Promise<UserEntity> {
+    const existing = await this.userRepo.findOne({
+      where: { id: GLOBAL_WORLD_OWNER_ID },
+    });
+    if (existing) {
+      return existing;
+    }
+    try {
+      const owner = this.userRepo.create({
+        id: GLOBAL_WORLD_OWNER_ID,
+        username: '__global_world_owner__',
+        passwordHash: this.generatePlaceholderPasswordHash(),
+        // onboarding 完成态：哨兵 owner 不走引导流程。
+        onboardingCompleted: true,
+        avatar: '',
+        signature: '',
+        customApiKey: null,
+        customApiBase: null,
+        defaultChatBackgroundPayload: null,
+        userType: 'world_owner',
+        cloudPhone: GLOBAL_WORLD_OWNER_PHONE,
+      });
+      return await this.userRepo.save(owner);
+    } catch (error) {
+      // 并发首触 / 重启：UNIQUE(id|username|cloudPhone) 冲突 = 已建档，回查。
+      const raced = await this.userRepo.findOne({
+        where: { id: GLOBAL_WORLD_OWNER_ID },
+      });
+      if (raced) {
+        return raced;
+      }
+      throw error;
+    }
+  }
+
   // cron fan-out 用：列出共享库里所有 world_owner 租户（带 phone）。
+  // 排除「世界居民」全局哨兵 owner —— 它不是真实用户，全局广场内容由专门的全局帧
+  // (runForOwner(GLOBAL_WORLD_OWNER_ID)) 驱动，绝不能被 per-owner fan-out 当普通用户跑。
+  // 这是单一收口点，同时挡住 TenantService.runForAllTenants 和 WorldOwnerService.forEachOwner。
   async listTenantOwners(): Promise<UserEntity[]> {
     return this.userRepo.find({
-      where: { userType: 'world_owner' },
+      where: { userType: 'world_owner', id: Not(GLOBAL_WORLD_OWNER_ID) },
       order: { createdAt: 'ASC' },
     });
   }
@@ -553,6 +655,76 @@ export class WorldOwnerService {
       owner.encounterOptedIn = input.encounterOptedIn;
     }
 
+    // 个人资料字段（会注入 AI prompt）。统一规则：undefined=不动现值，
+    // 空串/null=清空(落 null)，否则 sanitize + 校长度/枚举/范围后落库。
+    if (input.gender !== undefined) {
+      const raw =
+        typeof input.gender === 'string' ? input.gender.trim() : input.gender;
+      if (raw === null || raw === '') {
+        owner.gender = null;
+      } else if (typeof raw === 'string' && OWNER_GENDERS.has(raw)) {
+        owner.gender = raw;
+      } else {
+        throw new AppError('WORLD_OWNER_GENDER_INVALID', {
+          status: HttpStatus.BAD_REQUEST,
+          legacyMessage: '性别取值不合法。',
+        });
+      }
+    }
+    if (input.age !== undefined) {
+      if (input.age === null) {
+        owner.age = null;
+      } else if (
+        typeof input.age === 'number' &&
+        Number.isInteger(input.age) &&
+        input.age >= MIN_OWNER_AGE &&
+        input.age <= MAX_OWNER_AGE
+      ) {
+        owner.age = input.age;
+      } else {
+        throw new AppError('WORLD_OWNER_AGE_INVALID', {
+          status: HttpStatus.BAD_REQUEST,
+          params: { minAge: MIN_OWNER_AGE, maxAge: MAX_OWNER_AGE },
+          legacyMessage: `年龄需是 ${MIN_OWNER_AGE}-${MAX_OWNER_AGE} 之间的整数。`,
+        });
+      }
+    }
+    const nextOccupation = normalizeProfileTextField(
+      input.occupation,
+      MAX_OWNER_OCCUPATION_LENGTH,
+      'WORLD_OWNER_OCCUPATION_TOO_LONG',
+      '职业',
+    );
+    if (nextOccupation !== undefined) owner.occupation = nextOccupation;
+    const nextRegion = normalizeProfileTextField(
+      input.region,
+      MAX_OWNER_REGION_LENGTH,
+      'WORLD_OWNER_REGION_TOO_LONG',
+      '所在地',
+    );
+    if (nextRegion !== undefined) owner.region = nextRegion;
+    const nextInterests = normalizeProfileTextField(
+      input.interests,
+      MAX_OWNER_INTERESTS_LENGTH,
+      'WORLD_OWNER_INTERESTS_TOO_LONG',
+      '兴趣爱好',
+    );
+    if (nextInterests !== undefined) owner.interests = nextInterests;
+    const nextAddressTone = normalizeProfileTextField(
+      input.aiAddressTone,
+      MAX_OWNER_ADDRESS_TONE_LENGTH,
+      'WORLD_OWNER_ADDRESS_TONE_TOO_LONG',
+      '称呼/语气偏好',
+    );
+    if (nextAddressTone !== undefined) owner.aiAddressTone = nextAddressTone;
+    const nextAvoidTopics = normalizeProfileTextField(
+      input.avoidTopics,
+      MAX_OWNER_AVOID_TOPICS_LENGTH,
+      'WORLD_OWNER_AVOID_TOPICS_TOO_LONG',
+      '回避话题',
+    );
+    if (nextAvoidTopics !== undefined) owner.avoidTopics = nextAvoidTopics;
+
     await this.userRepo.save(owner);
     return this.serializeOwner(owner);
   }
@@ -630,6 +802,14 @@ export class WorldOwnerService {
         null,
       // 列默认 true；存量行经 ADD COLUMN DEFAULT 1 回填，但防御性地把 null/undefined 视为开启。
       encounterOptedIn: owner.encounterOptedIn !== false,
+      gender:
+        (owner.gender as 'male' | 'female' | 'other' | null) ?? null,
+      age: owner.age ?? null,
+      occupation: owner.occupation ?? null,
+      region: owner.region ?? null,
+      interests: owner.interests ?? null,
+      aiAddressTone: owner.aiAddressTone ?? null,
+      avoidTopics: owner.avoidTopics ?? null,
     };
   }
 

@@ -99,20 +99,27 @@ export class TenantService {
   //   4. seedFromAiRelationships(owner) —— character_friendship 亲密度种子（依赖 1/3）
   private async seedNewOwner(ownerId: string, phone: string): Promise<void> {
     try {
-      const social = this.moduleRef.get(SocialService, { strict: false });
-      const charFriendship = this.moduleRef.get(CharacterFriendshipService, {
-        strict: false,
-      });
-      await TenantContextStore.run({ ownerId, phone }, async () => {
-        await seedCharacters(this.dataSource, ownerId);
-        await social.ensureDefaultFriendships(ownerId);
-        await ensureAiRelationshipSeed(this.dataSource, ownerId);
-        await charFriendship.seedFromAiRelationships(ownerId);
-      });
+      await this.seedOwnerWorld(ownerId, phone);
     } catch (error) {
       this.logger.warn(
         `seed new owner failed owner=${ownerId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  // 在 owner 租户帧里按依赖顺序种「私有世界」（角色 + 好友 + 角色关系 + 亲密度）。
+  // 抽出来供首触种子 (seedNewOwner) 和「世界居民」全局哨兵种子 (GlobalWorldSeedService)
+  // 共用，保证两条路径种出的世界结构一致。各步幂等，可重复跑。调用方负责 try/catch。
+  async seedOwnerWorld(ownerId: string, phone: string): Promise<void> {
+    const social = this.moduleRef.get(SocialService, { strict: false });
+    const charFriendship = this.moduleRef.get(CharacterFriendshipService, {
+      strict: false,
+    });
+    await TenantContextStore.run({ ownerId, phone }, async () => {
+      await seedCharacters(this.dataSource, ownerId);
+      await social.ensureDefaultFriendships(ownerId);
+      await ensureAiRelationshipSeed(this.dataSource, ownerId);
+      await charFriendship.seedFromAiRelationships(ownerId);
+    });
   }
 }

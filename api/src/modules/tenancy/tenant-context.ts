@@ -32,3 +32,18 @@ export const TenantContextStore = {
 export function isSharedWorldMode(): boolean {
   return process.env.MAIN_MODE === 'shared-world';
 }
+
+// 「世界居民」全局共享池的保留哨兵 owner。广场动态（feed surface='feed'）里 preset 角色
+// 的公开帖 + 角色间 AI 互动都写在这个 owner 名下，所有真实用户（含新用户）读路径 union
+// 进来 → 全员看到同一份历史。固定保留串（绝不用 randomUUID），且绝不进 listTenantOwners()
+// （否则 per-owner cron 会把它当普通用户跑一遍）。
+//   - 读：afterLoad 读守卫放行该 ownerId 的行（世界居民内容本就全员可读）
+//   - 写：只能由「全局帧」(runForOwner(GLOBAL_WORLD_OWNER_ID)) 写；用户帧改/删全局行仍被写守卫拦
+export const GLOBAL_WORLD_OWNER_ID = 'global-world-owner';
+// 哨兵 owner 的占位 phone：永远不是真实 cloud phone。subscription 对它短路成 active，
+// 避免 lookup 落空 → fallback hardBlock 把全局生成挡住。
+export const GLOBAL_WORLD_OWNER_PHONE = '__global_world__';
+
+export function isGlobalWorldOwner(ownerId?: string | null): boolean {
+  return ownerId === GLOBAL_WORLD_OWNER_ID;
+}

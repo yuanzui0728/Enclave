@@ -8,6 +8,7 @@ import {
   SubscriptionExpiredException,
   type SubscriptionExpiredMeta,
 } from './subscription-expired.exception';
+import { GLOBAL_WORLD_OWNER_PHONE } from '../tenancy/tenant-context';
 
 const CACHE_TTL_MS = 60 * 1000;
 
@@ -71,6 +72,12 @@ export class SubscriptionService {
     const phone = this.cloudClient.resolveOwnerPhone();
     if (!phone) {
       // 本地直连或未托管模式：放行
+      return FALLBACK_LOOKUP;
+    }
+    if (phone === GLOBAL_WORLD_OWNER_PHONE) {
+      // 「世界居民」全局哨兵 owner：不是真实付费用户，永远放行（active / 不 hardBlock）。
+      // 否则它的 phone 在 cloud-api 永远 lookup 落空 → fallback hardBlock=true 会把全局
+      // 广场内容生成整个掐断。
       return FALLBACK_LOOKUP;
     }
     const now = Date.now();
