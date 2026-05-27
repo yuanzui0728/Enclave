@@ -55,9 +55,9 @@ const NON_RETRYABLE_SHAKE_ERROR_CODES = new Set([
   "SHAKE_DAILY_LIMIT",
   "SHAKE_DISABLED",
   "SHAKE_CYBER_AVATAR_NO_SIGNAL",
-  // 非会员摇一摇好友已达上限：重试只会撞同一面墙，必须先删好友或开通会员。
-  // 隐掉「重试摇一摇」，改在错误条里给「去开通会员」CTA。
-  "SHAKE_FRIEND_LIMIT",
+  // 非会员摇一摇好友已达上限：后端抛 402 SUBSCRIPTION_EXPIRED，全局 handler 会弹出
+  // 会员开通对话框。重试只会撞同一面墙（必须先删好友或开通会员），隐掉「重试摇一摇」。
+  "SUBSCRIPTION_EXPIRED",
   // 走查 Round 1：cooldown 是时间窗口，立刻重试只会再次拿到同一个 SHAKE_COOLDOWN。
   // legacyMessage 已经告诉用户「请至少间隔 X 分钟」，再放个「重试摇一摇」按钮等于
   // 鼓励用户撞同一面墙；归到 non-retryable，只留「回发现页」让用户体面退出。
@@ -73,14 +73,6 @@ function isShakeErrorRetryable(error: Error) {
     return true;
   }
   return !NON_RETRYABLE_SHAKE_ERROR_CODES.has(code);
-}
-
-// 非会员摇一摇好友达上限：错误条里额外给一个「去开通会员」CTA，引导删好友或升级。
-function isShakeFriendLimitError(error: Error) {
-  if (!isApiRequestError(error)) {
-    return false;
-  }
-  return (error.code ?? error.errorCode) === "SHAKE_FRIEND_LIMIT";
 }
 
 function MobileDiscoverEncounterPage() {
@@ -324,17 +316,6 @@ function MobileDiscoverEncounterPage() {
                   className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试摇一摇`)}
-                </button>
-              ) : null}
-              {isShakeFriendLimitError(shakeMutation.error) ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigate({ to: "/profile/subscription" });
-                  }}
-                  className="rounded-full border border-[rgba(180,130,20,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-primary)]"
-                >
-                  {t(msg`去开通会员`)}
                 </button>
               ) : null}
               <button

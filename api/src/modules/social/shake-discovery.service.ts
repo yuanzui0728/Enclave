@@ -45,6 +45,10 @@ import {
   type WorldLanguageCode,
 } from '../config/world-language.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import {
+  SubscriptionExpiredException,
+  type SubscriptionExpiredMeta,
+} from '../subscription/subscription-expired.exception';
 
 const ACTIVE_FRIEND_STATUSES = ['friend', 'close', 'best'] as const;
 type CyberAvatarProfile = Awaited<ReturnType<CyberAvatarService['getProfile']>>;
@@ -129,11 +133,23 @@ export class ShakeDiscoveryService {
       where: { id: In(characterIds), sourceType: 'shake_generated' },
     });
     if (shakeFriendCount >= freeFriendLimit) {
-      throw new AppError('SHAKE_FRIEND_LIMIT', {
-        status: HttpStatus.PAYMENT_REQUIRED,
-        params: { cap: freeFriendLimit },
-        legacyMessage: `免费用户最多保留 ${freeFriendLimit} 个摇一摇好友，删除一个或开通会员后可继续。`,
-      });
+      // 复用会员付费弹窗（402 + SUBSCRIPTION_EXPIRED）：前端全局 handler 会弹出
+      // subscription-expired 对话框，主按钮「去开通会员」直达订阅页。沿用当前 owner
+      // 的真实 plans/copy（hardBlock 开启时 cloud lookup 已带齐），仅覆盖标题/正文/提示
+      // 为"摇一摇好友上限"语义，并明确写出"删除一个"这条非付费出路。
+      const message = `免费用户最多保留 ${freeFriendLimit} 个摇一摇好友。删除一个已有的摇一摇好友，或开通会员后可继续添加。`;
+      const meta: SubscriptionExpiredMeta = {
+        expiredAt: status.expiresAt,
+        plans: status.plans,
+        copy: {
+          ...status.copy,
+          expiredTitle: '摇一摇好友已达上限',
+          expiredMessage: message,
+          expiredHint: '删除一个摇一摇好友也可以继续添加',
+        },
+        ctaUrl: '/profile/subscription',
+      };
+      throw new SubscriptionExpiredException(message, meta);
     }
   }
 
