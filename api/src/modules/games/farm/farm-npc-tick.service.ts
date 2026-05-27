@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { isSharedWorldMode } from '../../tenancy/tenant-context';
 import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -51,9 +50,9 @@ export class FarmNpcTickService {
 
   @Cron(FARM_NPC_TICK_CRON)
   async runScheduledTick(): Promise<void> {
-    // 共享 world：runTick per-owner fan-out + 内层读 scoped 未做（getOwnerOrThrow 无帧
-    // fail-closed；npcRepo.findOneBy({characterId}) 跨 owner）。专项前跳过，避免半执行/串号。
-    if (isSharedWorldMode()) return;
+    // 共享 world：单进程一个 tick 在每个 owner 的租户帧里各跑一遍 runTick（内层
+    // getOwnerOrThrow 走 ALS、npc/player 读按 ownerId 过滤）。jitter + running 闸全局
+    // 一次。forEachOwner 逐 owner 独立吞错。LPP / wiki：无帧跑一次=逐字等价旧行为。
     await sleepForWorldJitter(60_000);
     if (this.running) {
       this.logger.warn('上一次 farm tick 仍在执行，跳过本轮');
@@ -61,15 +60,12 @@ export class FarmNpcTickService {
     }
     this.running = true;
     try {
-      const summary = await this.runTick();
-      this.logger.log(
-        `farm tick: 扫描 ${summary.scannedCharacterCount} 个角色，触发 ${summary.actedCount} 次动作（种植 ${summary.plantCount} / 收获 ${summary.harvestCount} / 偷菜 ${summary.stealCount} / 派发 ${summary.incidentBroadcastCount}），用时 ${summary.durationMs}ms`,
-      );
-    } catch (error) {
-      this.logger.error(
-        'farm tick 执行失败',
-        error instanceof Error ? error.stack : String(error),
-      );
+      await this.worldOwnerService.forEachOwner(async () => {
+        const summary = await this.runTick();
+        this.logger.log(
+          `farm tick: 扫描 ${summary.scannedCharacterCount} 个角色，触发 ${summary.actedCount} 次动作（种植 ${summary.plantCount} / 收获 ${summary.harvestCount} / 偷菜 ${summary.stealCount} / 派发 ${summary.incidentBroadcastCount}），用时 ${summary.durationMs}ms`,
+        );
+      }, 'farm tick');
     } finally {
       this.running = false;
     }
@@ -94,7 +90,12 @@ export class FarmNpcTickService {
     await this.degradePlayerPlots(owner.id, ownerHasScarecrow);
 
     for (const character of characters) {
-      const npc = await this.npcRepo.findOneBy({ characterId: character.id });
+      // 共享 world：characterId 是跨 owner 共用的预设 id，必须并 ownerId 过滤
+      // （farm npc 行两模式都写 ownerId）。否则裸读命中别 owner 的 npc → afterLoad 抛。
+      const npc = await this.npcRepo.findOneBy({
+        characterId: character.id,
+        ownerId: owner.id,
+      });
       if (!npc) continue;
       const onlineLikelihood = computeOnlineLikelihood(character);
       if (Math.random() > onlineLikelihood) continue;
@@ -266,9 +267,11 @@ export class FarmNpcTickService {
       return this.stealFromOwner(ownerId, thief, thiefNpc);
     }
 
+    // 共享 world：偷菜目标候选必须限定在当前 owner 自己的 npc 内，否则跨 owner 偷。
     const otherNpcs = await this.npcRepo
       .createQueryBuilder('npc')
       .where('npc.characterId != :id', { id: thief.id })
+      .andWhere('npc.ownerId = :ownerId', { ownerId })
       .getMany();
     if (otherNpcs.length === 0) return noResult;
     const candidates = otherNpcs.filter((row) => characterById.has(row.characterId));

@@ -546,7 +546,8 @@ export class FarmStateService {
         legacyMessage: '该角色当前不可见',
       });
     }
-    const npc = await this.npcRepo.findOneBy({ characterId });
+    // 共享 world：characterId 跨 owner 共用，并 ownerId 过滤防串号（npc 两模式都写 ownerId）。
+    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
     if (!npc) {
       throw new AppError('FARM_NPC_NO_FARM', {
         status: HttpStatus.NOT_FOUND,
@@ -1169,7 +1170,7 @@ export class FarmStateService {
       });
     }
     state.coins -= amount;
-    const npc = await this.npcRepo.findOneBy({ characterId });
+    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
     if (npc) {
       npc.coins += amount;
       await this.npcRepo.save(npc);
@@ -1299,7 +1300,7 @@ export class FarmStateService {
       await this.charactersService.upsert(character);
     }
     const saved = await this.playerRepo.save(state);
-    const npc = await this.npcRepo.findOneBy({ characterId });
+    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
     await this.eventService.recordEvent({
       ownerId,
       kind: 'intimacy_change',
