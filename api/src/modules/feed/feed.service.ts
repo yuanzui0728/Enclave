@@ -3057,24 +3057,45 @@ export class FeedService implements OnModuleInit {
     const remainingGlobalQuota =
       MAX_FORWARDS_PER_OWNER_PER_DAY - totalProactiveForwardsToday;
 
-    // 候选帖
-    const candidatePostsRaw = await new TenantRepository(this.postRepo).find({
-      where: [
-        {
-          surface: 'channels',
-          publishStatus: 'published',
-          mediaType: 'video',
-          createdAt: MoreThanOrEqual(recentSince),
-        },
-        {
-          surface: 'channels',
-          publishStatus: 'published',
-          mediaType: 'audio',
-          createdAt: MoreThanOrEqual(recentSince),
-        },
-      ],
-      order: { recommendationScore: 'DESC', createdAt: 'DESC' },
-    });
+    // 候选帖。proactive-forward 本身是 per-owner（角色把视频转进当前用户的会话），但候选
+    // 池要含「全局共享池(世界居民视频)」——否则迁移后用户名下无 channels 帖、转发空转。
+    // 共享 world：union 全局池(ownerId=GLOBAL 角色帖) + 本人帖；裸 TenantRepository 只读本人。
+    const candidatePostsRaw = isSharedWorldMode()
+      ? await this.postRepo
+          .createQueryBuilder('post')
+          .where('post.surface = :surface', { surface: 'channels' })
+          .andWhere('post.publishStatus = :status', { status: 'published' })
+          .andWhere('post.mediaType IN (:...types)', {
+            types: ['video', 'audio'],
+          })
+          .andWhere('post.createdAt >= :since', { since: recentSince })
+          .andWhere(
+            `(
+               (post.ownerId = :globalOwner AND post.authorType = 'character' AND post.visibility <> 'private')
+               OR post.ownerId = :currentOwner
+             )`,
+            { globalOwner: GLOBAL_WORLD_OWNER_ID, currentOwner: owner.id },
+          )
+          .orderBy('post.recommendationScore', 'DESC')
+          .addOrderBy('post.createdAt', 'DESC')
+          .getMany()
+      : await new TenantRepository(this.postRepo).find({
+          where: [
+            {
+              surface: 'channels',
+              publishStatus: 'published',
+              mediaType: 'video',
+              createdAt: MoreThanOrEqual(recentSince),
+            },
+            {
+              surface: 'channels',
+              publishStatus: 'published',
+              mediaType: 'audio',
+              createdAt: MoreThanOrEqual(recentSince),
+            },
+          ],
+          order: { recommendationScore: 'DESC', createdAt: 'DESC' },
+        });
     const candidatePosts = candidatePostsRaw.filter(
       (post) =>
         (post.recommendationScore ?? 0) >= RECOMMENDATION_THRESHOLD &&
@@ -3538,14 +3559,18 @@ export class FeedService implements OnModuleInit {
     const authorIds = unique(posts.map((post) => post.authorId));
 
     if (authorIds.length > 0) {
-      const follows = await this.followRepo.find({
-        where: { authorId: In(authorIds) },
-      });
-      for (const follow of follows) {
-        followerMap.set(
-          follow.authorId,
-          (followerMap.get(follow.authorId) ?? 0) + 1,
-        );
+      // 粉丝数 = 跨 owner 聚合（视频号是全局社交场，关注数取全站口径）。用 getRawMany 走
+      // COUNT 聚合、不 hydrate 实体 —— 避免 afterLoad 读守卫对跨 owner 的 follow 行抛
+      // （全局作者会被多个 owner 关注，find() 会 hydrate 到别 owner 的行）。
+      const rows = await this.followRepo
+        .createQueryBuilder('f')
+        .select('f.authorId', 'authorId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('f.authorId IN (:...authorIds)', { authorIds })
+        .groupBy('f.authorId')
+        .getRawMany<{ authorId: string; cnt: string | number }>();
+      for (const row of rows) {
+        followerMap.set(row.authorId, Number(row.cnt) || 0);
       }
     }
 

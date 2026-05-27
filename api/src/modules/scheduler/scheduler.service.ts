@@ -49,7 +49,11 @@ import {
 } from '../characters/world-news-desk-character';
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { TenantService } from '../tenancy/tenant.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
+import {
+  GLOBAL_WORLD_OWNER_ID,
+  GLOBAL_WORLD_OWNER_PHONE,
+  isSharedWorldMode,
+} from '../tenancy/tenant-context';
 
 // Default jitter for AI-heavy crons in scheduler.service.ts: 0-60s per world.
 // 把 30 个 world 的整点 burst 抹平，避免 minimax token plan 2062 并发限流。
@@ -393,10 +397,14 @@ export class SchedulerService {
   @Cron('1-59/5 * * * *')
   async processPendingFeedReactions() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
+    // global+per-owner：全局帧给「广场/视频号全局共享池」帖生成 AI 评论/点赞（盖全局 owner →
+    // 全员可见）；per-owner 帧给各自 per-owner 帖（私有角色扇出副本 / 自己上传）生成（仅本人）。
+    // 两帧的读各被 TenantRepository 隔离，互不读到对方帖 → 无双重反应。
     await this.runScheduledJob(
       'process_pending_feed_reactions',
       () => this.handleProcessPendingFeedReactions(),
       'Failed to process pending feed reactions',
+      'global+per-owner',
     );
   }
 
@@ -405,10 +413,14 @@ export class SchedulerService {
   @Cron('8 9,13,17,21 * * *')
   async checkChannelsSchedule() {
     await sleepForWorldJitter(AI_CRON_JITTER_MS);
+    // global：预设角色视频号内容只在全局帧生成一次（盖全局 owner → 全员看同一份），不再逐
+    // owner 各生成一遍（既是 N× 重复内容，也 N× 烧 MiniMax 全局配额）。私有角色视频走
+    // cloud-api 扇出（per-owner），不经此 job。
     await this.runScheduledJob(
       'check_channels_schedule',
       () => this.handleCheckChannelsSchedule(),
       'Failed to check channels schedule',
+      'global',
     );
   }
 
@@ -524,13 +536,18 @@ export class SchedulerService {
     jobId: SchedulerJobId,
     handler: () => Promise<TrackedJobResult>,
     errorMessage: string,
+    // 帧模式（仅 shared 生效）：
+    //   'per-owner'（默认）—— 逐真实 owner 各跑一遍（per-owner 私有世界内容）。
+    //   'global' —— 只在「世界居民」全局帧跑一次（视频号等全局共享池内容，生成一份全员可见）。
+    //   'global+per-owner' —— 全局帧跑一遍（处理全局池帖）+ 逐 owner 跑一遍（处理各自 per-owner 帖）。
+    // 全局帧与 per-owner 帧的读各被 TenantRepository 隔离到各自 owner，互不串号、无双重处理。
+    frame: 'per-owner' | 'global' | 'global+per-owner' = 'per-owner',
   ) {
-    // shared 模式：一个进程服务所有 owner，cron 每 tick 只触发一次，必须在每个 owner
-    // 的租户帧里各跑一遍（否则 handler 里的 getOwnerOrThrow 无上下文会 fail-closed 抛）。
-    // runForAllTenants 逐 owner 独立 try/catch，一个 owner 失败不连累其余。
-    // LPP / wiki 模式：单 owner 独占库，沿用旧路径跑一次（getOwnerOrThrow 走 legacy 分支）。
+    // shared 模式：一个进程服务所有 owner，cron 每 tick 只触发一次，必须在对应租户帧里跑
+    // （否则 handler 里的 getOwnerOrThrow 无上下文会 fail-closed 抛）。各帧独立 try/catch，
+    // 一帧失败不连累其余。LPP / wiki 模式：单 owner 独占库，沿用旧路径跑一次。
     if (isSharedWorldMode()) {
-      await this.tenantService.runForAllTenants(async () => {
+      const runInFrame = async () => {
         try {
           await this.executeTrackedJob(jobId, handler);
         } catch (error) {
@@ -540,10 +557,27 @@ export class SchedulerService {
             );
             return;
           }
-          // 抛回给 runForAllTenants 记录 per-owner 失败（不连累其它 owner）。
+          // 抛回给上层记录 per-frame 失败（不连累其它帧）。
           throw error;
         }
-      });
+      };
+      if (frame === 'global' || frame === 'global+per-owner') {
+        // 全局帧：「世界居民」哨兵 owner（订阅永远放行，见 SubscriptionService）。
+        try {
+          await this.tenantService.runForOwner(
+            GLOBAL_WORLD_OWNER_ID,
+            GLOBAL_WORLD_OWNER_PHONE,
+            runInFrame,
+          );
+        } catch (error) {
+          this.logger.warn(
+            `${errorMessage} (global frame): ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+      if (frame === 'per-owner' || frame === 'global+per-owner') {
+        await this.tenantService.runForAllTenants(runInFrame);
+      }
       return;
     }
 
