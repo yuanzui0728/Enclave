@@ -47,6 +47,7 @@ export * from "./subscription";
 export * from "./system";
 export * from "./telemetry";
 export * from "./token-usage";
+export * from "./wallet";
 export * from "./wechat-sync";
 export * from "./wiki-admin";
 export * from "./wiki-sync";

@@ -287,8 +287,27 @@ export interface CloudTokenUsageWorldListResponse {
   pageSize: number;
 }
 
+export interface CloudTokenUsageCurrencyCost {
+  currency: "CNY" | "USD";
+  estimatedCost: number;
+}
+
+export interface CloudTokenUsageModelCostItem {
+  model: string;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  estimatedCost: number;
+  requestCount: number;
+}
+
 export interface CloudTokenUsageOverviewResponse extends TokenUsageOverview {
   activeWorldCount: number;
+  // Cost split per currency. The legacy `estimatedCost` / `currency` fields hold
+  // the dominant currency's total only (no cross-currency summing).
+  estimatedCostByCurrency: CloudTokenUsageCurrencyCost[];
+  // Top models by token volume across all worlds in range (cost in dominant currency).
+  topModels: CloudTokenUsageModelCostItem[];
 }
 
 export interface CloudTokenUsageBreakdownPushItem {
