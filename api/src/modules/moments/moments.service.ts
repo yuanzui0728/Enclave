@@ -470,7 +470,9 @@ export class MomentsService implements OnModuleInit {
       ownerAvatar: owner.avatar,
       ownerUsername: owner.username,
     });
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (
       !post ||
       !this.canOwnerViewPost(
@@ -516,7 +518,9 @@ export class MomentsService implements OnModuleInit {
         this.characters.getActiveFriendCharacterIdSet(owner.id),
         this.remarkResolver.getMomentsHiddenFromMeCharacterIds(owner.id),
       ]);
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (
       !post ||
       !this.canOwnerViewPost(
@@ -807,7 +811,9 @@ export class MomentsService implements OnModuleInit {
 
   async deleteOwnerPost(postId: string): Promise<{ success: true; id: string }> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (!post) {
       // 同上：复数前缀对齐 contracts errors.ts + i18n 字典；单数前缀走不进 i18n。
       throw new AppError('MOMENTS_NOT_FOUND', {
@@ -1283,7 +1289,9 @@ export class MomentsService implements OnModuleInit {
       text: string;
     },
   ) {
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (!post || post.authorType !== 'character') return;
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
@@ -1467,7 +1475,9 @@ export class MomentsService implements OnModuleInit {
       this.characters.getActiveFriendCharacterIdSet(owner.id),
       this.remarkResolver.getMomentsHiddenFromMeCharacterIds(owner.id),
     ]);
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (
       !post ||
       !this.canOwnerViewPost(
@@ -3103,7 +3113,9 @@ export class MomentsService implements OnModuleInit {
     postId: string,
     audio: MomentAudioAsset,
   ): Promise<void> {
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (!post) {
       this.logger.warn(`applyMinimaxMusicToPost: post ${postId} missing`);
       return;
@@ -3123,7 +3135,9 @@ export class MomentsService implements OnModuleInit {
     postId: string,
     video: MomentVideoAsset,
   ): Promise<void> {
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (!post) {
       this.logger.warn(`applyMinimaxVideoToPost: post ${postId} missing`);
       return;
@@ -3179,7 +3193,9 @@ export class MomentsService implements OnModuleInit {
     // try/finally 确保 BGM 临时文件在任何返回路径上都被回收，避免磁盘泄漏。
     // unlinkIfExists 幂等，重复调用安全。
     try {
-      const post = await this.postRepo.findOneBy({ id: postId });
+      const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
       if (!post) {
         this.logger.warn(`applyBgmToVideoMomentPost: post ${postId} missing`);
         return false;
@@ -3243,7 +3259,9 @@ export class MomentsService implements OnModuleInit {
   }
 
   async deleteMinimaxPlaceholderPost(postId: string): Promise<void> {
-    const post = await this.postRepo.findOneBy({ id: postId });
+    const post = await new TenantRepository(this.postRepo).findOneBy({
+      id: postId,
+    });
     if (!post) return;
     const meta = (post.generationMetadata ?? {}) as Record<string, unknown>;
     if (meta?.pending !== true) {
