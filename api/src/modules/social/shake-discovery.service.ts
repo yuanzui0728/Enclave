@@ -678,7 +678,7 @@ export class ShakeDiscoveryService {
             text: resolvedGreeting,
           }),
         );
-        await this.conversationRepo.update(
+        await new TenantRepository(this.conversationRepo).update(
           { id: conversationId, ownerId: owner.id },
           { lastActivityAt: new Date() },
         );
@@ -770,7 +770,7 @@ export class ShakeDiscoveryService {
       favoriteNotes,
       searchHistory,
     ] = await Promise.all([
-      this.conversationRepo.find({
+      new TenantRepository(this.conversationRepo).find({
         where: {
           ownerId,
           type: 'direct',
@@ -779,7 +779,7 @@ export class ShakeDiscoveryService {
         order: { lastActivityAt: 'DESC' },
         take: 10,
       }),
-      this.groupMemberRepo.find({
+      new TenantRepository(this.groupMemberRepo).find({
         where: {
           memberId: ownerId,
           memberType: 'user',
@@ -807,7 +807,7 @@ export class ShakeDiscoveryService {
           })
         : Promise.resolve([] as CharacterEntity[]),
       userGroupIds.length
-        ? this.groupRepo.find({
+        ? new TenantRepository(this.groupRepo).find({
             where: {
               ownerId,
               id: In(userGroupIds),
@@ -828,7 +828,7 @@ export class ShakeDiscoveryService {
       // 的会话 id 在多个 owner 间相同，只按 conversationId 查会捞到别 owner 的消息 →
       // afterLoad 读守卫抛 TENANT_READ_LEAK（整个摇一摇 500）。MessageEntity 已冗余
       // ownerId 列正是为此。
-      const messages = await this.messageRepo.find({
+      const messages = await new TenantRepository(this.messageRepo).find({
         where: {
           ownerId,
           conversationId: In(conversationIds),
@@ -867,7 +867,7 @@ export class ShakeDiscoveryService {
       feedInteractions,
     ] = await Promise.all([
       activeGroupIds.length
-        ? this.groupMessageRepo.find({
+        ? new TenantRepository(this.groupMessageRepo).find({
             where: {
               ownerId,
               groupId: In(activeGroupIds),
@@ -877,7 +877,7 @@ export class ShakeDiscoveryService {
             take: 24,
           })
         : Promise.resolve([] as GroupMessageEntity[]),
-      this.momentPostRepo.find({
+      new TenantRepository(this.momentPostRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -886,7 +886,7 @@ export class ShakeDiscoveryService {
         order: { postedAt: 'DESC' },
         take: 6,
       }),
-      this.momentCommentRepo.find({
+      new TenantRepository(this.momentCommentRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -895,7 +895,7 @@ export class ShakeDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 6,
       }),
-      this.momentLikeRepo.find({
+      new TenantRepository(this.momentLikeRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -904,7 +904,7 @@ export class ShakeDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 8,
       }),
-      this.feedPostRepo.find({
+      new TenantRepository(this.feedPostRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -913,7 +913,7 @@ export class ShakeDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 6,
       }),
-      this.feedCommentRepo.find({
+      new TenantRepository(this.feedCommentRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -922,7 +922,7 @@ export class ShakeDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 6,
       }),
-      this.feedInteractionRepo.find({
+      new TenantRepository(this.feedInteractionRepo).find({
         where: {
           ownerId,
           createdAt: Between(windowStartedAt, windowEndedAt),
@@ -973,7 +973,7 @@ export class ShakeDiscoveryService {
       const likedPostIds = [...new Set(momentLikes.map((item) => item.postId))];
       const likedPostMap = new Map(
         (likedPostIds.length
-          ? await this.momentPostRepo.find({
+          ? await new TenantRepository(this.momentPostRepo).find({
               where: { id: In(likedPostIds) },
             })
           : []
@@ -1018,7 +1018,7 @@ export class ShakeDiscoveryService {
       ];
       const postMap = new Map(
         (interactedPostIds.length
-          ? await this.feedPostRepo.find({
+          ? await new TenantRepository(this.feedPostRepo).find({
               where: { id: In(interactedPostIds) },
             })
           : []

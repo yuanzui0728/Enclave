@@ -135,7 +135,9 @@ export class WechatSyncAdminService {
 
   async getHistory(): Promise<WechatSyncHistoryResponseValue> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const characters = await this.characterRepo.find({
+    // 共享 world：getHistory 是当前 owner 的导入历史；CharacterEntity 复合主键、裸 find
+    // 会 dump 全 owner 的 wechat_import 角色 → 经 TenantRepository 限当前 owner。
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { sourceType: 'wechat_import' },
       order: { name: 'ASC' },
     });
@@ -153,7 +155,8 @@ export class WechatSyncAdminService {
         where: { ownerId: owner.id, characterId: In(characterIds) },
         order: { createdAt: 'DESC' },
       }),
-      this.momentPostRepo.find({
+      // 共享 world：MomentPostEntity 按 authorId(角色) 计数仍要并当前 owner，裸 find 跨 owner。
+      new TenantRepository(this.momentPostRepo).find({
         where: { authorType: 'character', authorId: In(characterIds) },
       }),
     ]);
@@ -293,7 +296,8 @@ export class WechatSyncAdminService {
       }
 
       const sourceKey = buildImportedSourceKey(contact);
-      const existing = await this.characterRepo.findOneBy({
+      // 共享 world：复用 existing 角色（upsert 探测）必须限当前 owner，sourceKey 跨 owner 可重合。
+      const existing = await new TenantRepository(this.characterRepo).findOneBy({
         sourceType: 'wechat_import',
         sourceKey,
       });
@@ -978,7 +982,8 @@ export class WechatSyncAdminService {
 
   private async hasCharacterMoments(characterId: string) {
     return (
-      (await this.momentPostRepo.count({
+      // 共享 world：按 authorId(角色) count 仍要并当前 owner，裸 count 跨 owner 全局统计。
+      (await new TenantRepository(this.momentPostRepo).count({
         where: { authorId: characterId, authorType: 'character' },
       })) > 0
     );

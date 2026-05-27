@@ -403,13 +403,24 @@ export class BehaviorRecordsAdminService {
       followWhere.createdAt = createdAtWhere;
     }
 
+    // 共享 world：行为记录子表 (moment/feed comments & likes、interactions、follows) 均带
+    // ownerId 且为租户级实体；in-world admin 按当前 owner 限定 → 经 TenantRepository 叠加
+    // ownerId WHERE（裸 find 在共享库会跨 owner 读，仅靠 authorId/ownerId 局部约束不够稳）。
     const [momentComments, momentLikes, feedComments, interactions, follows] =
       await Promise.all([
-        this.momentCommentRepo.find({ where: momentCommentWhere }),
-        this.momentLikeRepo.find({ where: momentLikeWhere }),
-        this.feedCommentRepo.find({ where: feedCommentWhere }),
-        this.interactionRepo.find({ where: interactionWhere }),
-        this.followRepo.find({ where: followWhere }),
+        new TenantRepository(this.momentCommentRepo).find({
+          where: momentCommentWhere,
+        }),
+        new TenantRepository(this.momentLikeRepo).find({
+          where: momentLikeWhere,
+        }),
+        new TenantRepository(this.feedCommentRepo).find({
+          where: feedCommentWhere,
+        }),
+        new TenantRepository(this.interactionRepo).find({
+          where: interactionWhere,
+        }),
+        new TenantRepository(this.followRepo).find({ where: followWhere }),
       ]);
 
     // 批量补帖子上下文，避免逐行查询。

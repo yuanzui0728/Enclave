@@ -1222,16 +1222,18 @@ export class ReplyLogicAdminService {
       taskEntities,
       archiveStore,
     ] = await Promise.all([
-      this.groupReplyTaskRepo.count({
+      // 共享 world：群回复任务按 groupId 过滤，但 GroupReplyTaskEntity 是租户级实体；
+      // in-world admin 按当前 owner 限定 → 经 TenantRepository 叠加 ownerId WHERE。
+      new TenantRepository(this.groupReplyTaskRepo).count({
         where: { groupId, status: 'pending' },
       }),
-      this.groupReplyTaskRepo.count({
+      new TenantRepository(this.groupReplyTaskRepo).count({
         where: { groupId, status: 'processing' },
       }),
-      this.groupReplyTaskRepo.count({
+      new TenantRepository(this.groupReplyTaskRepo).count({
         where: { groupId, status: 'failed' },
       }),
-      this.groupReplyTaskRepo.find({
+      new TenantRepository(this.groupReplyTaskRepo).find({
         where: { groupId },
         order: {
           triggerMessageCreatedAt: 'DESC',
