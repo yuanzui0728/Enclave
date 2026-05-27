@@ -445,7 +445,14 @@ export class FeedService implements OnModuleInit {
     );
     const pagedPosts = paginate(postsForSection, page, limit);
 
-    const ownerStateMap = await this.buildOwnerStateMap(pagedPosts, owner.id);
+    // 全局帖（视频号共享池）展示计数 = 全局基数 + 本人增量。本人对全局帖的赞/评/收藏只落
+    // 自己名下子行、不计进全局基数，须读时 buildGlobalCountDeltaMap 合并回来 —— 否则视频号
+    // 首屏卡显示全局基数（如 likeCount=3），与详情页（getPostWithComments 已合并增量=4）+
+    // hasLiked 状态（心已点亮）对不上。与 getFeed 同款。普通帖 delta 为空、不变。
+    const [ownerStateMap, countDeltaMap] = await Promise.all([
+      this.buildOwnerStateMap(pagedPosts, owner.id),
+      this.buildGlobalCountDeltaMap(pagedPosts, owner.id),
+    ]);
 
     return {
       // 装饰位 sections.count 由 /decorations 接口回填；首屏先返回结构占位 0。
@@ -458,7 +465,12 @@ export class FeedService implements OnModuleInit {
       })),
       activeSection: section,
       posts: pagedPosts.map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
+        ...this.serializePost(
+          post,
+          ownerStateMap.get(post.id),
+          avatarContext,
+          countDeltaMap.get(post.id),
+        ),
         commentsPreview: [],
       })),
       authors: [],
@@ -646,18 +658,27 @@ export class FeedService implements OnModuleInit {
       });
     }
 
-    const [ownerStateMap, commentsPreviewMap, followerCount, isFollowing, bio] =
-      await Promise.all([
-        this.buildOwnerStateMap(authorPosts.slice(0, 12), owner.id),
-        this.buildCommentsPreviewMap(
-          authorPosts.slice(0, 12).map((post) => post.id),
-          owner.id,
-          avatarContext,
-        ),
-        this.followRepo.count({ where: { authorId } }),
-        this.followRepo.findOneBy({ ownerId: owner.id, authorId }),
-        this.resolveAuthorBio(latestPost.authorId, latestPost.authorType),
-      ]);
+    const [
+      ownerStateMap,
+      countDeltaMap,
+      commentsPreviewMap,
+      followerCount,
+      isFollowing,
+      bio,
+    ] = await Promise.all([
+      this.buildOwnerStateMap(authorPosts.slice(0, 12), owner.id),
+      // 全局帖展示计数 = 全局基数 + 本人增量（同 getChannelHome / getFeed）；不合并则作者
+      // 主页卡显示全局基数、与详情页 + hasLiked 状态对不上。
+      this.buildGlobalCountDeltaMap(authorPosts.slice(0, 12), owner.id),
+      this.buildCommentsPreviewMap(
+        authorPosts.slice(0, 12).map((post) => post.id),
+        owner.id,
+        avatarContext,
+      ),
+      this.followRepo.count({ where: { authorId } }),
+      this.followRepo.findOneBy({ ownerId: owner.id, authorId }),
+      this.resolveAuthorBio(latestPost.authorId, latestPost.authorType),
+    ]);
 
     // 走查 2026-05-18 新会话 R8（本轮）：原 response 只回 recentPosts.slice(0, 12)
     // 让前端 author overlay 的 "N 条内容" / "N 条直播回放" 两个 badge 直接拿
@@ -691,7 +712,12 @@ export class FeedService implements OnModuleInit {
       postCount: authorPosts.length,
       liveClipCount,
       recentPosts: authorPosts.slice(0, 12).map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
+        ...this.serializePost(
+          post,
+          ownerStateMap.get(post.id),
+          avatarContext,
+          countDeltaMap.get(post.id),
+        ),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
     };
