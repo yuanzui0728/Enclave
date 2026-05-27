@@ -1,112 +1,19 @@
-import './proxy-bootstrap';
-import * as express from 'express';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { getDataSourceToken } from '@nestjs/typeorm';
-import { resolveApiPath } from './database/database-path';
-import { seedCharacters } from './database/seed';
-import { ensureAiRelationshipSeed } from './database/relationship-seed';
-import { WorldOwnerService } from './modules/auth/world-owner.service';
-import { SocialService } from './modules/social/social.service';
-import { AppErrorFilter } from './common/app-error.filter';
-
-// i18n-ignore-start: data / seed / preset content — not user-facing UI.
-function resolveConfiguredCorsOrigins() {
-  return process.env.CORS_ALLOWED_ORIGINS
-    ?.split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-}
-
-function resolveAllowedCorsOrigin(origin: string | undefined) {
-  const configuredOrigins = resolveConfiguredCorsOrigins();
-
-  if (
-    origin === 'http://localhost' ||
-    origin === 'https://localhost' ||
-    origin?.startsWith('http://localhost:') ||
-    origin?.startsWith('https://localhost:')
-  ) {
-    return origin;
-  }
-
-  if (!configuredOrigins?.length || configuredOrigins.includes('*')) {
-    return origin ?? '*';
-  }
-
-  return origin && configuredOrigins.includes(origin) ? origin : undefined;
-}
-
-function applyCorsHeaders(
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) {
-  const requestOrigin = req.headers.origin;
-  const origin = typeof requestOrigin === 'string' ? requestOrigin : undefined;
-  const allowedOrigin = resolveAllowedCorsOrigin(origin);
-
-  if (allowedOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  }
-  res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  if (req.method === 'OPTIONS') {
-    res.setHeader(
-      'Access-Control-Allow-Methods',
-      'GET,HEAD,PUT,PATCH,POST,DELETE',
-    );
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      req.headers['access-control-request-headers'] ?? 'Content-Type',
-    );
-    res.status(204).end();
-    return;
-  }
-
-  next();
-}
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bodyParser: false,
-  });
-  app.use(express.json({ limit: '25mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
-  app.getHttpAdapter().getInstance().set('trust proxy', true);
-  app.use(applyCorsHeaders);
-  app.setGlobalPrefix('api', { exclude: ['health'] });
-  app.useGlobalFilters(new AppErrorFilter());
-  // character-assets 都是相对稳定的 SVG（角色头像 / 默认资产），默认
-  // Cache-Control: public, max-age=0 → 每次进 chat-list 把 73 个会话头像
-  // 全部走条件 GET → 公网隧道 ~600ms RTT 下肉眼可见的"灰色框 → 头像"延迟。
-  // 给 1 天的强缓存：浏览器零网络命中本地副本；偶尔的资产更新走 ETag
-  // 在缓存失效后兜底。
-  app.use(
-    '/api/character-assets',
-    express.static(resolveApiPath('public/character-assets'), {
-      maxAge: '1d',
-    }),
-  );
-
-  // Health check endpoint for Docker / load balancer
-  const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/health', (_req: unknown, res: { json: (v: object) => void }) => {
-    res.json({ status: 'ok' });
-  });
-
-  // Run seed on startup
-  const dataSource = app.get(getDataSourceToken());
-  await seedCharacters(dataSource);
-  await ensureAiRelationshipSeed(dataSource);
-  const owner = await app.get(WorldOwnerService).ensureSingleOwnerMigration();
-  await app.get(SocialService).ensureDefaultFriendships(owner.id);
-
-  app.enableShutdownHooks();
-
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`隐界 API running on port ${process.env.PORT ?? 3000}`);
-}
-void bootstrap();
+// main.ts — 旧 LPP（每用户单进程）world 入口已于 Phase 8w 彻底退役。
+//
+// world 运行时现在只剩两种形态：
+//   - 共享多租户 world：main-shared-world.ts（MAIN_MODE=shared-world，:4100，单进程服务全部用户）
+//   - wiki 站点：main-wiki.ts（MAIN_MODE=wiki，:3500，独立库）
+//
+// cloud-api 不再为任何 phone spawn 每用户 LPP 子进程：路由全量走 shared:4100、新注册经
+// ensureOwnerForPhone 首触建租户，compute provider 默认 mock + local-process provider 已中性化。
+//
+// 此文件仅作墓碑保留（nest entryFile / package.json start:prod / 历史 spawn 路径仍指向它）：
+// 直接拒绝启动，杜绝误起一个无租户隔离的单库 world 把数据写进错误的库。
+// i18n-ignore-start: operator-facing process bootstrap, not user UI.
+console.error(
+  '[LPP retired] api/dist/main.js 这个旧的每用户 world 入口已退役（Phase 8w）。\n' +
+    '  - 共享 world 用：node dist/main-shared-world.js（MAIN_MODE=shared-world）\n' +
+    '  - wiki 用：node dist/main-wiki.js（MAIN_MODE=wiki）',
+);
+process.exit(1);
 // i18n-ignore-end
