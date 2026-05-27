@@ -5,7 +5,7 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = "image/png";
 
 export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
-  const title = i18n._("一个属于你的 AI 虚拟世界");
+  const title = i18n._("一个属于你的私人助手世界");
   const subtitle = i18n._("私人 AI 世界 · 浏览器即开即用 · 多端同步");
   const tagline = i18n._("免费开始");
   const brandLine = i18n._("隐界 Enclave");

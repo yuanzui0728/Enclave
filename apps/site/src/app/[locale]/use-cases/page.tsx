@@ -26,7 +26,7 @@ export async function generateMetadata({
   const i18n = await getServerI18n(locale);
   const title = i18n._("用例");
   const description = i18n._(
-    "看看真实场景下隐界能做什么：长期 AI 陪伴、多角色群聊、自部署隐私优先。",
+    "看看真实场景下隐界能做什么：私人 AI 专家助手、多角色群聊、自部署隐私优先。",
   );
   return {
     title,

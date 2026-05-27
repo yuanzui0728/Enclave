@@ -7,10 +7,10 @@ import { siteLinks } from "@/lib/site-links";
 export async function HeroSection({ locale }: { locale: SupportedLocale }) {
   const i18n = await getServerI18n(locale);
   const labels = {
-    eyebrow: i18n._("AI 虚拟世界 · 一键开始"),
-    title: i18n._("一个属于你的 AI 虚拟世界"),
+    eyebrow: i18n._("你的 AI 助手世界 · 一键开始"),
+    title: i18n._("一个属于你的私人助手世界"),
     subtitle: i18n._(
-      "在隐界，你不是和一个 chatbot 聊天，而是拥有一个有居民、有时间、有关系的私人世界。它不与现实对立，让现实里的你，多出一种可能。",
+      "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。",
     ),
     cta1: i18n._("免费开始"),
     cta2: i18n._("了解能做什么"),

@@ -14,7 +14,7 @@ export async function HomeJsonLd({ locale }: { locale: SupportedLocale }) {
   const i18n = await getServerI18n(locale);
   const name = i18n._("隐界 Enclave");
   const description = i18n._(
-    "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。",
+    "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。",
   );
 
   const featureList = CAPABILITIES.map((c) => i18n._(c.title));

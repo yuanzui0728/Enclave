@@ -133,7 +133,7 @@ export default async function PressKitPage({
             <div>
               <p className="text-sm font-semibold text-(--text-primary)">{i18n._("隐界 Enclave")}</p>
               <p className="mt-1 text-sm text-(--text-secondary)">
-                {i18n._("一个属于你的 AI 虚拟世界")}
+                {i18n._("一个属于你的私人助手世界")}
               </p>
             </div>
           </div>

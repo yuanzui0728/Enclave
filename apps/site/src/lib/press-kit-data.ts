@@ -63,11 +63,11 @@ export const PRESS_KIT_FACTS: Array<{
   },
   {
     title: msg`一句话介绍`,
-    body: msg`一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。`,
+    body: msg`一个属于你的私人助手世界：各行各业的 AI 专家 + 你的分身，记得你、主动帮你，浏览器即开即用。`,
   },
   {
     title: msg`核心定位`,
-    body: msg`面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。`,
+    body: msg`面向真实生活的私人 AI 助手世界——多职业专家 + 你的分身，而不是问答式 chatbot。`,
   },
   {
     title: msg`许可`,

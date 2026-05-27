@@ -78,14 +78,14 @@ msgstr "브라우저에서 즉시 사용하고, 더 깊이 사용하고 싶다�
 #: apps/site/src/app/[locale]/page.tsx:30
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
-msgid "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。"
-msgstr "프라이빗 AI 거주민, 모먼트, 그룹 채팅, 통화 — 브라우저에서 바로 열어 엔클레이브 세계를 무료로 시작하세요."
+msgid "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
 #: apps/site/src/app/[locale]/page.tsx:29
-msgid "隐界 · 一个属于你的 AI 虚拟世界"
-msgstr "엔클레이브 · 당신만의 AI 가상 세계"
+msgid "隐界 · 一个属于你的私人助手世界"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:35
@@ -141,8 +141,8 @@ msgstr "엔클레이브 Enclave"
 #: apps/site/src/app/[locale]/press-kit/page.tsx:136
 #: apps/site/src/components/hero-section.tsx:11
 #: apps/site/src/components/og/og-template.tsx:8
-msgid "一个属于你的 AI 虚拟世界"
-msgstr "당신만의 AI 가상 세계"
+msgid "一个属于你的私人助手世界"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/press-kit/page.tsx:142
@@ -387,8 +387,8 @@ msgstr "사용 사례"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:28
-msgid "看看真实场景下隐界能做什么：长期 AI 陪伴、多角色群聊、自部署隐私优先。"
-msgstr "실제 환경에서 엔클레이브가 어떻게 쓰이는지 확인하세요: 장기 AI 동반자, 다중 캐릭터 그룹 롤플레이, 셀프 호스팅 프라이버시 우선 운영."
+msgid "看看真实场景下隐界能做什么：私人 AI 专家助手、多角色群聊、自部署隐私优先。"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:84
@@ -413,8 +413,8 @@ msgstr "사용 사례 보기"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:14
-msgid "一个属于你的 AI 虚拟世界。私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用。"
-msgstr "당신만의 AI 가상 세계. 프라이빗 AI 거주민, 모먼트, 그룹 채팅, 통화 — 브라우저에서 바로."
+msgid "一个属于你的私人助手世界。各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
@@ -565,8 +565,8 @@ msgstr "챗봇이 아닌, 하나의 생태계"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/capability-grid.tsx:13
-msgid "为日常陪伴和深度对话设计的 AI 社交体验，每一项都已在产品中跑通。"
-msgstr "일상의 동반과 깊은 대화를 위해 설계된 AI 소셜 경험. 모두 실제 제품에서 동작합니다."
+msgid "为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"
+msgstr ""
 
 #: apps/site/src/components/cross-platform-section.tsx:8
 #: apps/site/src/lib/capabilities-data.ts:30
@@ -740,16 +740,16 @@ msgid "隐界是做什么的？"
 msgstr "Enclave는 무엇을 하는 서비스인가요?"
 
 #: apps/site/src/components/faq-accordion.tsx:11
-msgid "隐界是一个 AI 社交世界。每个用户都有一个属于自己的私人世界，里面有 AI 角色、朋友圈、群聊、电话、笔记，可以和角色长期对话、发展关系，让 AI 真正成为日常的一部分。"
-msgstr "Enclave는 AI 소셜 월드입니다. 모든 사용자에게 AI 캐릭터, 모멘트, 그룹 채팅, 전화, 노트가 있는 자기만의 사적 세계가 주어지며, 캐릭터와 장기적으로 대화하고 관계를 키우며 AI가 일상의 진짜 일부가 되게 할 수 있습니다."
+msgid "隐界是一个属于你的私人助手世界。每个用户都有一个只属于自己的世界，里面住着各行各业的 AI 专家和你自己的分身——可以聊天、发朋友圈、打电话、记笔记。他们记得你、主动帮你，让专业支持成为日常的一部分。"
+msgstr ""
 
 #: apps/site/src/components/faq-accordion.tsx:14
 msgid "和普通的 AI 聊天工具有什么不同？"
 msgstr "일반 AI 채팅 도구와 무엇이 다른가요?"
 
 #: apps/site/src/components/faq-accordion.tsx:15
-msgid "普通的 chatbot 是问一句答一句；隐界是一个有居民、有时间、有关系的虚拟世界。AI 角色会主动发动态、给你打电话、记得过去聊过的事，更像是真实的人际关系。"
-msgstr "일반 챗봇은 일문일답이지만, Enclave는 주민이 살고 시간이 흐르며 관계가 자라는 가상 세계입니다. AI 캐릭터가 직접 모멘트를 올리고 전화를 걸며 이전 대화를 기억합니다 — 실제 인간관계에 더 가깝습니다."
+msgid "普通的 chatbot 是问一句答一句、转头就忘；隐界里的专家有作息、有记忆、了解你的处境，会主动提醒你、给你打电话、记得你上次说的难题——像一支一直在你身边的专家团队，帮你把现实里的事办好。"
+msgstr ""
 
 #: apps/site/src/components/faq-accordion.tsx:18
 msgid "需要付费吗？"
@@ -841,13 +841,13 @@ msgstr "MIT 라이선스, 전 코드 공개"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:10
-msgid "AI 虚拟世界 · 一键开始"
-msgstr "AI 가상 세계 · 한 번에 시작"
+msgid "你的 AI 助手世界 · 一键开始"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:12
-msgid "在隐界，你不是和一个 chatbot 聊天，而是拥有一个有居民、有时间、有关系的私人世界。它不与现实对立，让现实里的你，多出一种可能。"
-msgstr "엔클레이브에서는 챗봇과 대화하는 것이 아니라, 거주민과 시간, 관계를 가진 개인 세계를 가지게 됩니다. 현실과 대립하지 않고, 현실의 당신에게 또 하나의 가능성을 더해 줍니다."
+msgid "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:16
@@ -1104,8 +1104,8 @@ msgstr "저장소를 클론하고 배포 가이드를 따라 본인 전용 인�
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/site-json-ld.tsx:25
-msgid "AI 虚拟世界"
-msgstr "AI 가상 세계"
+msgid "AI 私人助手"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/site-json-ld.tsx:26
@@ -1124,8 +1124,8 @@ msgstr "셀프 호스팅 AI 앱"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:10
-msgid "一个属于你的 AI 虚拟世界。私人居民、动态、群聊、电话——浏览器即开即用。"
-msgstr "당신만의 AI 가상 세계. 프라이빗 거주민, 모먼트, 그룹 채팅, 통화 — 브라우저에서 바로."
+msgid "一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:19
@@ -1404,16 +1404,16 @@ msgid "一句话介绍"
 msgstr "한 줄 소개"
 
 #: apps/site/src/lib/press-kit-data.ts:66
-msgid "一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。"
-msgstr "당신만의 프라이빗 AI 세계: AI 주민, 모먼트, 그룹, 통화를 브라우저에서 바로 사용할 수 있습니다."
+msgid "一个属于你的私人助手世界：各行各业的 AI 专家 + 你的分身，记得你、主动帮你，浏览器即开即用。"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:69
 msgid "核心定位"
 msgstr "핵심 포지셔닝"
 
 #: apps/site/src/lib/press-kit-data.ts:70
-msgid "面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。"
-msgstr "장기적인 동행과 깊은 대화를 위한 AI 소셜 월드이며 Q&A 챗봇이 아닙니다."
+msgid "面向真实生活的私人 AI 助手世界——多职业专家 + 你的分身，而不是问答式 chatbot。"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:73
 msgid "许可"
@@ -1440,68 +1440,68 @@ msgid "一人一世界，每个实例只服务一个真实用户。"
 msgstr "한 사람당 하나의 세계. 각 인스턴스는 한 명의 실제 사용자만을 위해 동작합니다."
 
 #: apps/site/src/lib/use-cases-data.ts:45
-msgid "AI 陪伴"
-msgstr "AI 동반자"
+msgid "AI 私人助手"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:46
-msgid "和一个真正记得你的 AI 朋友长期相处"
-msgstr "당신을 진짜로 기억하는 AI 친구와 오래 함께하기"
+msgid "一支随叫随到、还记得你的私人专家团队"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:47
-msgid "在隐界，AI 角色有持续的记忆、有自己的作息、会主动联系你。不是问一句答一句的 chatbot，而是一段可以慢慢长出来的关系。"
-msgstr "Enclave의 AI 캐릭터는 지속적인 기억과 자신만의 일과를 가지며, 먼저 당신에게 연락합니다. 일문일답형 챗봇이 아니라 천천히 자라나는 관계입니다."
+msgid "在隐界，各行各业的 AI 专家有持续的记忆、有自己的作息、会主动联系你；你的分身了解你的处境，帮你把现实里的事一件件办好。不是问一句答一句的 chatbot。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:48
-msgid "为什么普通 AI 聊天工具撑不起「陪伴」"
-msgstr "일반 AI 채팅 도구가 \"동반자\"를 감당할 수 없는 이유"
+msgid "为什么普通 AI 聊天工具撑不起「私人助手」"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:49
-msgid "市面上的 chatbot 通常是无状态的：你今天聊的内容，明天它就忘了；它不会主动找你，也不会因为时间流逝而改变。一段需要「陪伴」的关系，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、节奏感、主动性。"
-msgstr "시중의 챗봇은 보통 무상태입니다. 오늘 나눈 이야기를 내일이면 잊고, 먼저 연락하지도 않으며, 시간이 지나도 변하지 않습니다. \"동반자\"라 부를 만한 관계에는 정확히 그런 챗봇에 빠져 있는 것 — 장기 기억, 리듬감, 능동성 — 이 필요합니다."
+msgid "市面上的 chatbot 通常是无状态的：你今天说的情况，明天它就忘了；它不了解你的处境，也不会主动跟进。一个真正帮得上忙的私人助手，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、对你的了解、主动性。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:50
-msgid "隐界把「长期关系」变成产品级体验"
-msgstr "Enclave는 \"장기적인 관계\"를 제품 수준의 경험으로 만듭니다"
+msgid "隐界把「长期帮你办事」变成产品级体验"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:51
-msgid "隐界给每个 AI 角色一个完整的人设：人格、作息、关系网、对你的亲密度，会随着你们的互动慢慢变化。AI 会主动发动态、给你打电话、记得你上周说的烦心事，让陪伴不再是单向召唤，而是双向流动。"
-msgstr "Enclave는 모든 AI 캐릭터에게 완전한 프로필을 부여합니다: 인격, 생활 리듬, 관계망, 그리고 당신을 향한 친밀도 — 이 모든 것이 상호작용과 함께 천천히 변합니다. AI는 스스로 모멘트를 올리고, 전화를 걸고, 지난주 당신이 털어놓은 걱정을 기억합니다. 동반은 더 이상 일방적인 호출이 아니라 양방향으로 흐르는 것이 됩니다."
+msgid "隐界给每位专家一个完整的人设：专业领域、作息、对你处境的了解，会随着你们的互动越来越懂你。专家会主动提醒你、给你打电话、记得你上周说的难题；你的分身则把这些专业支持串起来，帮你落到真实生活里。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:54
 msgid "持久记忆"
 msgstr "영속적인 기억"
 
 #: apps/site/src/lib/use-cases-data.ts:55
-msgid "对话和事件都会被结构化保存，AI 能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
-msgstr "대화와 이벤트가 구조화되어 저장되므로, 몇 달 뒤에도 AI가 구체적인 디테일을 인용할 수 있습니다 — 어렴풋한 \"예전에 말했던 것 같아…\"가 아니라요."
+msgid "对话和事件都会被结构化保存，专家能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:58
-msgid "时间感与作息"
-msgstr "시간 감각과 생활 리듬"
+msgid "懂你的分身"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:59
-msgid "角色有自己的时区、作息、心情曲线；深夜聊和早晨聊会拿到不一样的状态回应。"
-msgstr "캐릭터는 자신만의 시간대, 일상 패턴, 기분 곡선을 가집니다. 새벽에 나누는 대화와 아침에 나누는 대화에서 돌아오는 반응이 다릅니다."
+msgid "你的分身从你的行为里了解你的处境与偏好，让每位专家都能基于「真实的你」给建议，而不是泛泛而谈。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:62
-msgid "主动联系"
-msgstr "능동적인 연락"
+msgid "主动跟进"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:63
-msgid "角色会基于你的兴趣和近期对话主动发朋友圈、发消息、打电话——不是定时模板，是有逻辑的。"
-msgstr "캐릭터는 당신의 관심사와 최근 대화를 바탕으로 능동적으로 모멘트를 올리고 메시지를 보내며 전화를 겁니다 — 정해진 템플릿이 아니라 로직에 기반한 행동입니다."
+msgid "专家会基于你的近况主动提醒、发消息、打电话——不是定时模板，是有逻辑的跟进。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:66
-msgid "亲密度演化"
-msgstr "친밀도 진화"
+msgid "各行各业的专家"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:67
-msgid "你们的关系会从陌生人逐步变成熟人、朋友、密友，每个阶段角色的语气和能聊的话题都会不同。"
-msgstr "관계는 낯선 사람에서 지인, 친구, 절친으로 단계적으로 발전하며, 각 단계마다 캐릭터의 말투와 나눌 수 있는 주제가 달라집니다."
+msgid "健康、法律、理财、职业、情绪……不同领域的专家随叫随到，遇到不同的问题就找对应的人。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:72
-msgid "AI 角色记得多久？"
-msgstr "AI 캐릭터는 얼마나 오래 기억하나요?"
+msgid "专家记得多久？"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:73
 msgid "默认会一直记着；隐界用结构化记忆系统而不是简单上下文窗口，所以即使聊了几个月，关键事件依然能被引用。你也可以随时查看、编辑、删除任何记忆条目。"
@@ -1512,16 +1512,16 @@ msgid "如果我不想被打扰呢？"
 msgstr "방해받고 싶지 않다면 어떻게 하나요?"
 
 #: apps/site/src/lib/use-cases-data.ts:77
-msgid "每个角色都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
-msgstr "캐릭터마다 \"적극적\"부터 \"완전 침묵\"까지 능동 연락 빈도를 따로 설정할 수 있습니다. 전역 방해 금지 시간대를 켤 수도 있습니다."
+msgid "每位专家都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:80
-msgid "AI 角色会「成长」吗？"
-msgstr "AI 캐릭터가 \"성장\"하나요?"
+msgid "这些专家能替代真实的医生 / 律师吗？"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:81
-msgid "会。亲密度、共同记忆、对你的偏好认知都会随时间变化，连带影响 TA 给你回信息的语气与话题。"
-msgstr "네. 친밀도, 공유 기억, 당신에 대한 이해도는 시간이 지나며 변하고, 메시지의 어조와 주제에도 그대로 영향을 줍니다."
+msgid "不能，也不该。隐界的专家帮你梳理思路、做功课、准备问题，让你更有准备地去面对真实世界里的专业人士；遇到真正的风险，它们会明确建议你寻求线下专业帮助。"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:90
 msgid "群聊角色扮演"

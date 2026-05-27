@@ -8,7 +8,7 @@ export async function SiteJsonLd({ locale }: { locale: SupportedLocale }) {
   const i18n = await getServerI18n(locale);
   const orgName = i18n._("隐界 Enclave");
   const orgDescription = i18n._(
-    "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。",
+    "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。",
   );
 
   const organization = {
@@ -22,7 +22,7 @@ export async function SiteJsonLd({ locale }: { locale: SupportedLocale }) {
     description: orgDescription,
     foundingDate: "2026",
     knowsAbout: [
-      i18n._("AI 虚拟世界"),
+      i18n._("AI 私人助手"),
       i18n._("AI 角色社交"),
       i18n._("AI 朋友圈"),
       i18n._("自部署 AI 应用"),

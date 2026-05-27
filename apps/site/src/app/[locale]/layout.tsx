@@ -27,11 +27,11 @@ export async function generateMetadata({
   if (!isSupportedLocale(locale)) return {};
   const i18n = await getServerI18n(locale);
   const tagline = i18n._(
-    "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。",
+    "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。",
   );
   return {
     title: {
-      default: i18n._("隐界 · 一个属于你的 AI 虚拟世界"),
+      default: i18n._("隐界 · 一个属于你的私人助手世界"),
       template: i18n._("%s · 隐界 Enclave"),
     },
     description: tagline,

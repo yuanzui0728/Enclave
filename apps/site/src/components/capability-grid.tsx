@@ -10,7 +10,7 @@ export async function CapabilityGrid({ locale }: { locale: SupportedLocale }) {
   const titles = {
     eyebrow: i18n._("核心能力"),
     title: i18n._("不是 chatbot，而是一整个生态"),
-    subtitle: i18n._("为日常陪伴和深度对话设计的 AI 社交体验，每一项都已在产品中跑通。"),
+    subtitle: i18n._("为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"),
     seeUseCases: i18n._("查看用例"),
   };
 

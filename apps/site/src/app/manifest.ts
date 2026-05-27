@@ -12,7 +12,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name: i18n._("隐界 Enclave"),
     short_name: "Enclave",
     description: i18n._(
-      "一个属于你的 AI 虚拟世界。私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用。",
+      "一个属于你的私人助手世界。各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用。",
     ),
     start_url: `/${locale}`,
     scope: "/",

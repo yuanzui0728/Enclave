@@ -78,14 +78,14 @@ msgstr "浏览器即开即用，桌面端体验更佳；移动端与小程序在
 #: apps/site/src/app/[locale]/page.tsx:30
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
-msgid "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。"
-msgstr "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。"
+msgid "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。"
+msgstr "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
 #: apps/site/src/app/[locale]/page.tsx:29
-msgid "隐界 · 一个属于你的 AI 虚拟世界"
-msgstr "隐界 · 一个属于你的 AI 虚拟世界"
+msgid "隐界 · 一个属于你的私人助手世界"
+msgstr "隐界 · 一个属于你的私人助手世界"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:35
@@ -141,8 +141,8 @@ msgstr "隐界 Enclave"
 #: apps/site/src/app/[locale]/press-kit/page.tsx:136
 #: apps/site/src/components/hero-section.tsx:11
 #: apps/site/src/components/og/og-template.tsx:8
-msgid "一个属于你的 AI 虚拟世界"
-msgstr "一个属于你的 AI 虚拟世界"
+msgid "一个属于你的私人助手世界"
+msgstr "一个属于你的私人助手世界"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/press-kit/page.tsx:142
@@ -387,8 +387,8 @@ msgstr "用例"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:28
-msgid "看看真实场景下隐界能做什么：长期 AI 陪伴、多角色群聊、自部署隐私优先。"
-msgstr "看看真实场景下隐界能做什么：长期 AI 陪伴、多角色群聊、自部署隐私优先。"
+msgid "看看真实场景下隐界能做什么：私人 AI 专家助手、多角色群聊、自部署隐私优先。"
+msgstr "看看真实场景下隐界能做什么：私人 AI 专家助手、多角色群聊、自部署隐私优先。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:84
@@ -413,8 +413,8 @@ msgstr "查看用例"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:14
-msgid "一个属于你的 AI 虚拟世界。私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用。"
-msgstr "一个属于你的 AI 虚拟世界。私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用。"
+msgid "一个属于你的私人助手世界。各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
+msgstr "一个属于你的私人助手世界。各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
@@ -565,8 +565,8 @@ msgstr "不是 chatbot，而是一整个生态"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/capability-grid.tsx:13
-msgid "为日常陪伴和深度对话设计的 AI 社交体验，每一项都已在产品中跑通。"
-msgstr "为日常陪伴和深度对话设计的 AI 社交体验，每一项都已在产品中跑通。"
+msgid "为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"
+msgstr "为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"
 
 #: apps/site/src/components/cross-platform-section.tsx:8
 #: apps/site/src/lib/capabilities-data.ts:30
@@ -740,16 +740,16 @@ msgid "隐界是做什么的？"
 msgstr "隐界是做什么的？"
 
 #: apps/site/src/components/faq-accordion.tsx:11
-msgid "隐界是一个 AI 社交世界。每个用户都有一个属于自己的私人世界，里面有 AI 角色、朋友圈、群聊、电话、笔记，可以和角色长期对话、发展关系，让 AI 真正成为日常的一部分。"
-msgstr "隐界是一个 AI 社交世界。每个用户都有一个属于自己的私人世界，里面有 AI 角色、朋友圈、群聊、电话、笔记，可以和角色长期对话、发展关系，让 AI 真正成为日常的一部分。"
+msgid "隐界是一个属于你的私人助手世界。每个用户都有一个只属于自己的世界，里面住着各行各业的 AI 专家和你自己的分身——可以聊天、发朋友圈、打电话、记笔记。他们记得你、主动帮你，让专业支持成为日常的一部分。"
+msgstr "隐界是一个属于你的私人助手世界。每个用户都有一个只属于自己的世界，里面住着各行各业的 AI 专家和你自己的分身——可以聊天、发朋友圈、打电话、记笔记。他们记得你、主动帮你，让专业支持成为日常的一部分。"
 
 #: apps/site/src/components/faq-accordion.tsx:14
 msgid "和普通的 AI 聊天工具有什么不同？"
 msgstr "和普通的 AI 聊天工具有什么不同？"
 
 #: apps/site/src/components/faq-accordion.tsx:15
-msgid "普通的 chatbot 是问一句答一句；隐界是一个有居民、有时间、有关系的虚拟世界。AI 角色会主动发动态、给你打电话、记得过去聊过的事，更像是真实的人际关系。"
-msgstr "普通的 chatbot 是问一句答一句；隐界是一个有居民、有时间、有关系的虚拟世界。AI 角色会主动发动态、给你打电话、记得过去聊过的事，更像是真实的人际关系。"
+msgid "普通的 chatbot 是问一句答一句、转头就忘；隐界里的专家有作息、有记忆、了解你的处境，会主动提醒你、给你打电话、记得你上次说的难题——像一支一直在你身边的专家团队，帮你把现实里的事办好。"
+msgstr "普通的 chatbot 是问一句答一句、转头就忘；隐界里的专家有作息、有记忆、了解你的处境，会主动提醒你、给你打电话、记得你上次说的难题——像一支一直在你身边的专家团队，帮你把现实里的事办好。"
 
 #: apps/site/src/components/faq-accordion.tsx:18
 msgid "需要付费吗？"
@@ -841,13 +841,13 @@ msgstr "MIT 协议，代码全部公开"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:10
-msgid "AI 虚拟世界 · 一键开始"
-msgstr "AI 虚拟世界 · 一键开始"
+msgid "你的 AI 助手世界 · 一键开始"
+msgstr "你的 AI 助手世界 · 一键开始"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:12
-msgid "在隐界，你不是和一个 chatbot 聊天，而是拥有一个有居民、有时间、有关系的私人世界。它不与现实对立，让现实里的你，多出一种可能。"
-msgstr "在隐界，你不是和一个 chatbot 聊天，而是拥有一个有居民、有时间、有关系的私人世界。它不与现实对立，让现实里的你，多出一种可能。"
+msgid "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。"
+msgstr "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:16
@@ -1104,8 +1104,8 @@ msgstr "克隆仓库按部署文档跑一份属于自己的实例，数据 100% 
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/site-json-ld.tsx:25
-msgid "AI 虚拟世界"
-msgstr "AI 虚拟世界"
+msgid "AI 私人助手"
+msgstr "AI 私人助手"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/site-json-ld.tsx:26
@@ -1124,8 +1124,8 @@ msgstr "自部署 AI 应用"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:10
-msgid "一个属于你的 AI 虚拟世界。私人居民、动态、群聊、电话——浏览器即开即用。"
-msgstr "一个属于你的 AI 虚拟世界。私人居民、动态、群聊、电话——浏览器即开即用。"
+msgid "一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
+msgstr "一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:19
@@ -1404,16 +1404,16 @@ msgid "一句话介绍"
 msgstr "一句话介绍"
 
 #: apps/site/src/lib/press-kit-data.ts:66
-msgid "一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。"
-msgstr "一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。"
+msgid "一个属于你的私人助手世界：各行各业的 AI 专家 + 你的分身，记得你、主动帮你，浏览器即开即用。"
+msgstr "一个属于你的私人助手世界：各行各业的 AI 专家 + 你的分身，记得你、主动帮你，浏览器即开即用。"
 
 #: apps/site/src/lib/press-kit-data.ts:69
 msgid "核心定位"
 msgstr "核心定位"
 
 #: apps/site/src/lib/press-kit-data.ts:70
-msgid "面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。"
-msgstr "面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。"
+msgid "面向真实生活的私人 AI 助手世界——多职业专家 + 你的分身，而不是问答式 chatbot。"
+msgstr "面向真实生活的私人 AI 助手世界——多职业专家 + 你的分身，而不是问答式 chatbot。"
 
 #: apps/site/src/lib/press-kit-data.ts:73
 msgid "许可"
@@ -1440,68 +1440,68 @@ msgid "一人一世界，每个实例只服务一个真实用户。"
 msgstr "一人一世界，每个实例只服务一个真实用户。"
 
 #: apps/site/src/lib/use-cases-data.ts:45
-msgid "AI 陪伴"
-msgstr "AI 陪伴"
+msgid "AI 私人助手"
+msgstr "AI 私人助手"
 
 #: apps/site/src/lib/use-cases-data.ts:46
-msgid "和一个真正记得你的 AI 朋友长期相处"
-msgstr "和一个真正记得你的 AI 朋友长期相处"
+msgid "一支随叫随到、还记得你的私人专家团队"
+msgstr "一支随叫随到、还记得你的私人专家团队"
 
 #: apps/site/src/lib/use-cases-data.ts:47
-msgid "在隐界，AI 角色有持续的记忆、有自己的作息、会主动联系你。不是问一句答一句的 chatbot，而是一段可以慢慢长出来的关系。"
-msgstr "在隐界，AI 角色有持续的记忆、有自己的作息、会主动联系你。不是问一句答一句的 chatbot，而是一段可以慢慢长出来的关系。"
+msgid "在隐界，各行各业的 AI 专家有持续的记忆、有自己的作息、会主动联系你；你的分身了解你的处境，帮你把现实里的事一件件办好。不是问一句答一句的 chatbot。"
+msgstr "在隐界，各行各业的 AI 专家有持续的记忆、有自己的作息、会主动联系你；你的分身了解你的处境，帮你把现实里的事一件件办好。不是问一句答一句的 chatbot。"
 
 #: apps/site/src/lib/use-cases-data.ts:48
-msgid "为什么普通 AI 聊天工具撑不起「陪伴」"
-msgstr "为什么普通 AI 聊天工具撑不起「陪伴」"
+msgid "为什么普通 AI 聊天工具撑不起「私人助手」"
+msgstr "为什么普通 AI 聊天工具撑不起「私人助手」"
 
 #: apps/site/src/lib/use-cases-data.ts:49
-msgid "市面上的 chatbot 通常是无状态的：你今天聊的内容，明天它就忘了；它不会主动找你，也不会因为时间流逝而改变。一段需要「陪伴」的关系，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、节奏感、主动性。"
-msgstr "市面上的 chatbot 通常是无状态的：你今天聊的内容，明天它就忘了；它不会主动找你，也不会因为时间流逝而改变。一段需要「陪伴」的关系，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、节奏感、主动性。"
+msgid "市面上的 chatbot 通常是无状态的：你今天说的情况，明天它就忘了；它不了解你的处境，也不会主动跟进。一个真正帮得上忙的私人助手，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、对你的了解、主动性。"
+msgstr "市面上的 chatbot 通常是无状态的：你今天说的情况，明天它就忘了；它不了解你的处境，也不会主动跟进。一个真正帮得上忙的私人助手，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、对你的了解、主动性。"
 
 #: apps/site/src/lib/use-cases-data.ts:50
-msgid "隐界把「长期关系」变成产品级体验"
-msgstr "隐界把「长期关系」变成产品级体验"
+msgid "隐界把「长期帮你办事」变成产品级体验"
+msgstr "隐界把「长期帮你办事」变成产品级体验"
 
 #: apps/site/src/lib/use-cases-data.ts:51
-msgid "隐界给每个 AI 角色一个完整的人设：人格、作息、关系网、对你的亲密度，会随着你们的互动慢慢变化。AI 会主动发动态、给你打电话、记得你上周说的烦心事，让陪伴不再是单向召唤，而是双向流动。"
-msgstr "隐界给每个 AI 角色一个完整的人设：人格、作息、关系网、对你的亲密度，会随着你们的互动慢慢变化。AI 会主动发动态、给你打电话、记得你上周说的烦心事，让陪伴不再是单向召唤，而是双向流动。"
+msgid "隐界给每位专家一个完整的人设：专业领域、作息、对你处境的了解，会随着你们的互动越来越懂你。专家会主动提醒你、给你打电话、记得你上周说的难题；你的分身则把这些专业支持串起来，帮你落到真实生活里。"
+msgstr "隐界给每位专家一个完整的人设：专业领域、作息、对你处境的了解，会随着你们的互动越来越懂你。专家会主动提醒你、给你打电话、记得你上周说的难题；你的分身则把这些专业支持串起来，帮你落到真实生活里。"
 
 #: apps/site/src/lib/use-cases-data.ts:54
 msgid "持久记忆"
 msgstr "持久记忆"
 
 #: apps/site/src/lib/use-cases-data.ts:55
-msgid "对话和事件都会被结构化保存，AI 能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
-msgstr "对话和事件都会被结构化保存，AI 能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
+msgid "对话和事件都会被结构化保存，专家能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
+msgstr "对话和事件都会被结构化保存，专家能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
 
 #: apps/site/src/lib/use-cases-data.ts:58
-msgid "时间感与作息"
-msgstr "时间感与作息"
+msgid "懂你的分身"
+msgstr "懂你的分身"
 
 #: apps/site/src/lib/use-cases-data.ts:59
-msgid "角色有自己的时区、作息、心情曲线；深夜聊和早晨聊会拿到不一样的状态回应。"
-msgstr "角色有自己的时区、作息、心情曲线；深夜聊和早晨聊会拿到不一样的状态回应。"
+msgid "你的分身从你的行为里了解你的处境与偏好，让每位专家都能基于「真实的你」给建议，而不是泛泛而谈。"
+msgstr "你的分身从你的行为里了解你的处境与偏好，让每位专家都能基于「真实的你」给建议，而不是泛泛而谈。"
 
 #: apps/site/src/lib/use-cases-data.ts:62
-msgid "主动联系"
-msgstr "主动联系"
+msgid "主动跟进"
+msgstr "主动跟进"
 
 #: apps/site/src/lib/use-cases-data.ts:63
-msgid "角色会基于你的兴趣和近期对话主动发朋友圈、发消息、打电话——不是定时模板，是有逻辑的。"
-msgstr "角色会基于你的兴趣和近期对话主动发朋友圈、发消息、打电话——不是定时模板，是有逻辑的。"
+msgid "专家会基于你的近况主动提醒、发消息、打电话——不是定时模板，是有逻辑的跟进。"
+msgstr "专家会基于你的近况主动提醒、发消息、打电话——不是定时模板，是有逻辑的跟进。"
 
 #: apps/site/src/lib/use-cases-data.ts:66
-msgid "亲密度演化"
-msgstr "亲密度演化"
+msgid "各行各业的专家"
+msgstr "各行各业的专家"
 
 #: apps/site/src/lib/use-cases-data.ts:67
-msgid "你们的关系会从陌生人逐步变成熟人、朋友、密友，每个阶段角色的语气和能聊的话题都会不同。"
-msgstr "你们的关系会从陌生人逐步变成熟人、朋友、密友，每个阶段角色的语气和能聊的话题都会不同。"
+msgid "健康、法律、理财、职业、情绪……不同领域的专家随叫随到，遇到不同的问题就找对应的人。"
+msgstr "健康、法律、理财、职业、情绪……不同领域的专家随叫随到，遇到不同的问题就找对应的人。"
 
 #: apps/site/src/lib/use-cases-data.ts:72
-msgid "AI 角色记得多久？"
-msgstr "AI 角色记得多久？"
+msgid "专家记得多久？"
+msgstr "专家记得多久？"
 
 #: apps/site/src/lib/use-cases-data.ts:73
 msgid "默认会一直记着；隐界用结构化记忆系统而不是简单上下文窗口，所以即使聊了几个月，关键事件依然能被引用。你也可以随时查看、编辑、删除任何记忆条目。"
@@ -1512,16 +1512,16 @@ msgid "如果我不想被打扰呢？"
 msgstr "如果我不想被打扰呢？"
 
 #: apps/site/src/lib/use-cases-data.ts:77
-msgid "每个角色都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
-msgstr "每个角色都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
+msgid "每位专家都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
+msgstr "每位专家都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
 
 #: apps/site/src/lib/use-cases-data.ts:80
-msgid "AI 角色会「成长」吗？"
-msgstr "AI 角色会「成长」吗？"
+msgid "这些专家能替代真实的医生 / 律师吗？"
+msgstr "这些专家能替代真实的医生 / 律师吗？"
 
 #: apps/site/src/lib/use-cases-data.ts:81
-msgid "会。亲密度、共同记忆、对你的偏好认知都会随时间变化，连带影响 TA 给你回信息的语气与话题。"
-msgstr "会。亲密度、共同记忆、对你的偏好认知都会随时间变化，连带影响 TA 给你回信息的语气与话题。"
+msgid "不能，也不该。隐界的专家帮你梳理思路、做功课、准备问题，让你更有准备地去面对真实世界里的专业人士；遇到真正的风险，它们会明确建议你寻求线下专业帮助。"
+msgstr "不能，也不该。隐界的专家帮你梳理思路、做功课、准备问题，让你更有准备地去面对真实世界里的专业人士；遇到真正的风险，它们会明确建议你寻求线下专业帮助。"
 
 #: apps/site/src/lib/use-cases-data.ts:90
 msgid "群聊角色扮演"

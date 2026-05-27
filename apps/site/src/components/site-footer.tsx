@@ -7,7 +7,7 @@ import { siteLinks } from "@/lib/site-links";
 
 export async function SiteFooter({ locale }: { locale: SupportedLocale }) {
   const i18n = await getServerI18n(locale);
-  const tagline = i18n._("一个属于你的 AI 虚拟世界。私人居民、动态、群聊、电话——浏览器即开即用。");
+  const tagline = i18n._("一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。");
   const labels = {
     startNow: i18n._("免费开始"),
     download: i18n._("下载"),

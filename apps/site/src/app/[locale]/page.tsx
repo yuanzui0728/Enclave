@@ -26,9 +26,9 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const i18n = await getServerI18n(locale);
-  const title = i18n._("隐界 · 一个属于你的 AI 虚拟世界");
+  const title = i18n._("隐界 · 一个属于你的私人助手世界");
   const description = i18n._(
-    "私人 AI 居民、朋友圈、群聊、电话——浏览器即开即用，免费开始你的隐界世界。",
+    "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。",
   );
   return {
     title,
