@@ -589,7 +589,7 @@ export class RealWorldSyncService {
         order: { appliedAt: 'DESC', updatedAt: 'DESC' },
         take: 20,
       }),
-      this.momentPostRepo.find({
+      new TenantRepository(this.momentPostRepo).find({
         where: {
           generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
           postedAt: MoreThanOrEqual(todayStart),
@@ -601,7 +601,9 @@ export class RealWorldSyncService {
     const todaySignals = recentSignals.filter(
       (item) => item.syncDate === today,
     );
-    const realityLinkedMomentsToday = await this.momentPostRepo.count({
+    const realityLinkedMomentsToday = await new TenantRepository(
+      this.momentPostRepo,
+    ).count({
       where: {
         generationKind: In([...REALITY_LINKED_GENERATION_KINDS]),
         postedAt: MoreThanOrEqual(todayStart),
@@ -629,7 +631,9 @@ export class RealWorldSyncService {
         (acceptedSignalsTodayByCharacterId.get(signal.characterId) ?? 0) + 1,
       );
     }
-    const realityLinkedMoments = await this.momentPostRepo.find({
+    const realityLinkedMoments = await new TenantRepository(
+      this.momentPostRepo,
+    ).find({
       where: {
         generationKind: In([...REALITY_LINKED_GENERATION_KINDS]),
       },
@@ -731,14 +735,14 @@ export class RealWorldSyncService {
           order: { updatedAt: 'DESC' },
           take: 10,
         }),
-        this.momentPostRepo.count({
+        new TenantRepository(this.momentPostRepo).count({
           where: {
             authorId: characterId,
             generationKind: In([...REALITY_LINKED_GENERATION_KINDS]),
             postedAt: MoreThanOrEqual(startOfDay(new Date())),
           },
         }),
-        this.momentPostRepo.find({
+        new TenantRepository(this.momentPostRepo).find({
           where: {
             authorId: characterId,
             generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
