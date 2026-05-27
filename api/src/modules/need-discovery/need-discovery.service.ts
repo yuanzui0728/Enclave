@@ -424,7 +424,7 @@ export class NeedDiscoveryService {
         order: { lastActivityAt: 'DESC' },
         take: 10,
       }),
-      this.groupMemberRepo.find({
+      new TenantRepository(this.groupMemberRepo).find({
         where: {
           memberId: ownerId,
           memberType: 'user',
@@ -451,7 +451,7 @@ export class NeedDiscoveryService {
           })
         : Promise.resolve([] as CharacterEntity[]),
       userGroupIds.length
-        ? this.groupRepo.find({
+        ? new TenantRepository(this.groupRepo).find({
             where: {
               id: In(userGroupIds),
               lastActivityAt: MoreThanOrEqual(windowStartedAt),
@@ -514,7 +514,7 @@ export class NeedDiscoveryService {
       realWorldBriefs,
     ] = await Promise.all([
       activeGroupIds.length
-        ? this.groupMessageRepo.find({
+        ? new TenantRepository(this.groupMessageRepo).find({
             where: {
               groupId: In(activeGroupIds),
               createdAt: Between(windowStartedAt, windowEndedAt),
@@ -523,7 +523,10 @@ export class NeedDiscoveryService {
             take: 32,
           })
         : Promise.resolve([] as GroupMessageEntity[]),
-      this.momentPostRepo.find({
+      // 🔴 共享 world：`authorId: ownerId` 只按内容作者过滤，**不**约束租户 ownerId 列；
+      // 迁移后存量库里存在 authorId=本 owner 但 tenant ownerId=别 owner 的行（:4200 雷达
+      // 实测 momentPost 泄漏 row=86ae8149 ctx=B）→ 必须经 TenantRepository 注入租户 ownerId。
+      new TenantRepository(this.momentPostRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -532,7 +535,7 @@ export class NeedDiscoveryService {
         order: { postedAt: 'DESC' },
         take: 8,
       }),
-      this.momentCommentRepo.find({
+      new TenantRepository(this.momentCommentRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -541,7 +544,7 @@ export class NeedDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 8,
       }),
-      this.momentLikeRepo.find({
+      new TenantRepository(this.momentLikeRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -550,7 +553,7 @@ export class NeedDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 10,
       }),
-      this.feedPostRepo.find({
+      new TenantRepository(this.feedPostRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -559,7 +562,7 @@ export class NeedDiscoveryService {
         order: { createdAt: 'DESC' },
         take: 8,
       }),
-      this.feedCommentRepo.find({
+      new TenantRepository(this.feedCommentRepo).find({
         where: {
           authorId: ownerId,
           authorType: 'user',
@@ -636,7 +639,7 @@ export class NeedDiscoveryService {
       const likedPostIds = [...new Set(momentLikes.map((item) => item.postId))];
       const likedPostMap = new Map(
         (likedPostIds.length
-          ? await this.momentPostRepo.find({
+          ? await new TenantRepository(this.momentPostRepo).find({
               where: { id: In(likedPostIds) },
             })
           : []
@@ -683,7 +686,7 @@ export class NeedDiscoveryService {
       ];
       const postMap = new Map(
         (interactedPostIds.length
-          ? await this.feedPostRepo.find({
+          ? await new TenantRepository(this.feedPostRepo).find({
               where: { id: In(interactedPostIds) },
             })
           : []
