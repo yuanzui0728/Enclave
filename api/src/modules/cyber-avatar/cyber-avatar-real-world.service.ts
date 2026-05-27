@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 import { Cron } from '@nestjs/schedule';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -204,20 +203,21 @@ export class CyberAvatarRealWorldService {
 
   @Cron(CYBER_AVATAR_REAL_WORLD_SYNC_CRON)
   async runSyncCron() {
-    // 共享 world：runSync per-owner fan-out 未做（getOwnerOrThrow 无帧 fail-closed）；专项前跳过。
-    if (isSharedWorldMode()) return;
+    // 共享 world：per-owner fan-out（rules per-owner、runSync 内 getOwnerOrThrow 走 ALS）；
+    // jitter 全局只睡一次。LPP / wiki：forEachOwner 无帧跑一次，逐字等价旧行为。
     await sleepForWorldJitter(60_000);
-    const rules = await this.rulesService.getRules();
-    if (
-      !rules.enabled ||
-      !rules.interaction.enabled ||
-      !rules.interaction.realWorldSyncEnabled ||
-      rules.pauseAutoUpdates
-    ) {
-      return;
-    }
-
-    await this.runSync({ trigger: 'scheduler' });
+    await this.worldOwnerService.forEachOwner(async () => {
+      const rules = await this.rulesService.getRules();
+      if (
+        !rules.enabled ||
+        !rules.interaction.enabled ||
+        !rules.interaction.realWorldSyncEnabled ||
+        rules.pauseAutoUpdates
+      ) {
+        return;
+      }
+      await this.runSync({ trigger: 'scheduler' });
+    }, 'cyber-avatar real-world sync');
   }
 
   async getOverview() {

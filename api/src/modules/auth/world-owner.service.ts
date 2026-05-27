@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { AppError } from '../../common/app-error.exception';
 import { isSharedWorldMode, TenantContextStore } from '../tenancy/tenant-context';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { UserEntity } from './user.entity';
 import { decryptUserApiKey, encryptUserApiKey } from './api-key-crypto';
 import type { AiKeyOverride } from '../ai/ai.types';
@@ -135,12 +136,47 @@ type WorldOwnerProfile = {
 
 @Injectable()
 export class WorldOwnerService {
+  private readonly logger = new Logger(WorldOwnerService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
+
+  // cron fan-out 助手：shared 模式下把回调在每个 world_owner 的租户帧里各跑一遍，
+  // 逐 owner 独立 try/catch（一个 owner 失败不连累其余），SubscriptionExpiredException
+  // 只 debug 不刷 error。语义与 TenantService.runForAllTenants 一致，但直接用
+  // listTenantOwners + TenantContextStore（纯工具、无 DI），避免 cyber-avatar/games
+  // 注入 TenantService 引入 CyberAvatar→TenantService→Social→CyberAvatar 这条 DI 环。
+  // LPP / wiki：单 owner 独占库，直接跑一次（无帧，getOwnerOrThrow 走 legacy 分支）。
+  async forEachOwner(
+    fn: (ctx: { ownerId: string; phone: string }) => Promise<void>,
+    label = 'tenant cron',
+  ): Promise<void> {
+    if (!isSharedWorldMode()) {
+      await fn({ ownerId: '', phone: '' });
+      return;
+    }
+    const owners = await this.listTenantOwners();
+    for (const owner of owners) {
+      const ctx = { ownerId: owner.id, phone: owner.cloudPhone ?? '' };
+      try {
+        await TenantContextStore.run(ctx, () => fn(ctx));
+      } catch (error) {
+        if (error instanceof SubscriptionExpiredException) {
+          this.logger.debug(`${label} owner=${owner.id}: subscription expired, skipped`);
+          continue;
+        }
+        this.logger.warn(
+          `${label} failed owner=${owner.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+  }
 
   async ensureSingleOwnerMigration(): Promise<UserEntity> {
     // 硬门禁：这个方法会把「多余的」world_owner 连同其数据全部删掉，是单进程单 owner

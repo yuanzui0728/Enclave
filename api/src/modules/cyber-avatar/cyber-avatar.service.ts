@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
@@ -143,41 +142,41 @@ export class CyberAvatarService {
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
   async runIncrementalRefreshCron() {
-    // 共享 world：本 cron 尚未做 per-owner fan-out（executeRefresh 走 getOwnerOrThrow，
-    // 无帧 fail-closed 抛 TENANT_CONTEXT_MISSING）。在专项把它逐 owner 安全化之前，shared
-    // 模式直接跳过（保持 cutover 后现状=未运行，避免日志刷 CONTEXT_MISSING）。见 memory
-    // project_shared_world_multitenant 的 cyber-avatar/games 专项跟进项。
-    if (isSharedWorldMode()) return;
+    // 共享 world：单进程一个 tick 只触发一次，必须在每个 owner 的租户帧里各跑一遍
+    // （rules per-owner、executeRefresh 内的 getOwnerOrThrow 走 ALS）。jitter 全局只睡
+    // 一次（不 per-owner，否则 104 owner × 60s 串行会拖死整个 cron）。
+    // LPP / wiki：forEachOwner 无帧直接跑一次，行为与改造前逐字一致。
     await sleepForWorldJitter(60_000);
-    const rules = await this.rulesService.getRules();
-    if (
-      !rules.enabled ||
-      !rules.captureEnabled ||
-      !rules.incrementalUpdateEnabled ||
-      rules.pauseAutoUpdates
-    ) {
-      return;
-    }
-
-    await this.runIncrementalRefresh({ trigger: 'scheduler' });
+    await this.worldOwnerService.forEachOwner(async () => {
+      const rules = await this.rulesService.getRules();
+      if (
+        !rules.enabled ||
+        !rules.captureEnabled ||
+        !rules.incrementalUpdateEnabled ||
+        rules.pauseAutoUpdates
+      ) {
+        return;
+      }
+      await this.runIncrementalRefresh({ trigger: 'scheduler' });
+    }, 'cyber-avatar incremental');
   }
 
   @Cron(CYBER_AVATAR_DEEP_REFRESH_CRON)
   async runDeepRefreshCron() {
-    // 共享 world：同 runIncrementalRefreshCron，专项前跳过。
-    if (isSharedWorldMode()) return;
+    // 共享 world：同 runIncrementalRefreshCron，per-owner fan-out + 全局单次 jitter。
     await sleepForWorldJitter(600_000);
-    const rules = await this.rulesService.getRules();
-    if (
-      !rules.enabled ||
-      !rules.deepRefreshEnabled ||
-      !rules.captureEnabled ||
-      rules.pauseAutoUpdates
-    ) {
-      return;
-    }
-
-    await this.runDeepRefresh({ trigger: 'scheduler' });
+    await this.worldOwnerService.forEachOwner(async () => {
+      const rules = await this.rulesService.getRules();
+      if (
+        !rules.enabled ||
+        !rules.deepRefreshEnabled ||
+        !rules.captureEnabled ||
+        rules.pauseAutoUpdates
+      ) {
+        return;
+      }
+      await this.runDeepRefresh({ trigger: 'scheduler' });
+    }, 'cyber-avatar deep refresh');
   }
 
   async captureSignal(input: CyberAvatarSignalInput) {
