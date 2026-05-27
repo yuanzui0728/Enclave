@@ -113,6 +113,24 @@ describe('CharactersService.importPersonalCharacter', () => {
     ).resolves.toBeDefined();
   });
 
+  it('rejects bad currentActivity enum value', async () => {
+    // 走查：currentActivity 是 working/eating/resting/commuting/free/sleeping 状态机枚举
+    // （UI chip + scene-matching ACTIVITY_AFFINITY 弱信号键）。历史上只查控制字符不查枚举值，
+    // 手搓 bundle 写任意字符串都能落库。和 onlineMode / activityMode 同款走白名单。
+    const { svc } = makeService({ existing: null });
+    await expect(
+      svc.importPersonalCharacter({ name: '小紫', currentActivity: 'PARTYING' }),
+    ).rejects.toThrow(/currentActivity/);
+    // 合法值放过
+    await expect(
+      svc.importPersonalCharacter({ name: '小青', currentActivity: 'free' }),
+    ).resolves.toBeDefined();
+    // 空串视作「清空」，不应被枚举校验拦下
+    await expect(
+      svc.importPersonalCharacter({ name: '小橙', currentActivity: '' }),
+    ).resolves.toBeDefined();
+  });
+
   it('rejects aiRelationships above the size cap', async () => {
     // 走查 R1：aiRelationships 是独立列、不进 profile JSON cap，500+ relation
     // 都能落库；social-graph tick 会按这个数组迭代，超量值是显著 CPU 放大器。

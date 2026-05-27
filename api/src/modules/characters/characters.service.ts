@@ -1437,6 +1437,17 @@ const SOCIAL_OPENNESS_VALUES = ['open', 'normal', 'private'] as const;
 // 时一头雾水。和 socialOpenness 同样走白名单。
 const ONLINE_MODE_VALUES = ['auto', 'manual'] as const;
 const ACTIVITY_MODE_VALUES = ['auto', 'manual'] as const;
+// currentActivity 是状态机枚举（UI 状态 chip + scene-matching.ts 的 ACTIVITY_AFFINITY
+// 弱信号匹配键）。同 onlineMode / activityMode：任意字符串能从导入 bundle 写进 DB，
+// 非法值不崩但污染数据 + 匹配不上场景。和兄弟字段对齐走白名单。
+const CURRENT_ACTIVITY_VALUES = [
+  'working',
+  'eating',
+  'resting',
+  'commuting',
+  'free',
+  'sleeping',
+] as const;
 
 export function assertPrivateCharacterFieldLimits(input: {
   name?: string;
@@ -1455,6 +1466,7 @@ export function assertPrivateCharacterFieldLimits(input: {
   intimacyLevel?: number;
   onlineMode?: string;
   activityMode?: string;
+  currentActivity?: string | null;
   aiRelationships?:
     | { characterId: string; relationshipType: string; strength: number }[]
     | null;
@@ -1614,6 +1626,22 @@ export function assertPrivateCharacterFieldLimits(input: {
     throw new AppError('PRIVATE_IMPORT_INVALID', {
       status: HttpStatus.BAD_REQUEST,
       legacyMessage: `activityMode 取值只能是 ${ACTIVITY_MODE_VALUES.join(' / ')}。`,
+    });
+  }
+  // currentActivity 走 working / eating / resting / commuting / free / sleeping 白名单。
+  // 空串 / 纯空白放过（service 侧 `?? undefined` 把它当「清空」处理，不入库非法值）；
+  // 非空但不在白名单 → 400，与 onlineMode / activityMode 同款（控制字符已在导入路径
+  // 内联拒，这里补枚举值校验）。
+  if (
+    typeof input.currentActivity === 'string' &&
+    input.currentActivity.trim() !== '' &&
+    !CURRENT_ACTIVITY_VALUES.includes(
+      input.currentActivity.trim() as (typeof CURRENT_ACTIVITY_VALUES)[number],
+    )
+  ) {
+    throw new AppError('PRIVATE_IMPORT_INVALID', {
+      status: HttpStatus.BAD_REQUEST,
+      legacyMessage: `currentActivity 取值只能是 ${CURRENT_ACTIVITY_VALUES.join(' / ')}。`,
     });
   }
   // aiRelationships 独立列，不进 profile JSON cap，500+ relation 也能落库。
