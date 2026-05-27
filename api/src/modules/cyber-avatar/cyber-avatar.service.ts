@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
@@ -659,7 +660,13 @@ export class CyberAvatarService {
 
       return this.serializeRunDetail(run);
     } catch (error) {
-      this.logger.error('Cyber avatar refresh failed', error);
+      // 共享 world：会员到期是预期的功能门禁（非故障）。per-owner fan-out 后若对每个到期
+      // owner 都走 logger.error 会刷爆日志（同 scheduler 8m 处理）→ 降到 debug。
+      if (error instanceof SubscriptionExpiredException) {
+        this.logger.debug('cyber-avatar refresh: subscription expired, skipped');
+      } else {
+        this.logger.error('Cyber avatar refresh failed', error);
+      }
       if (input.mode === 'incremental' && sourceSignals.length) {
         await this.signalRepo.update(
           { id: In(sourceSignals.map((item) => item.id)), ownerId: owner.id },

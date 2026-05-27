@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CYBER_AVATAR_REAL_WORLD_SYNC_CRON,
@@ -507,7 +508,15 @@ export class CyberAvatarRealWorldService {
       );
       return this.serializeRunDetail(run);
     } catch (error) {
-      this.logger.error('Cyber avatar real world sync failed', error);
+      // 共享 world：会员到期是预期门禁（非故障）。real-world sync 每 owner 跑（hourly），
+      // 到期 owner 走 logger.error 会刷日志 + 写 failed run → 降 debug（同 8m/上面 executeRefresh）。
+      if (error instanceof SubscriptionExpiredException) {
+        this.logger.debug(
+          'cyber-avatar real-world sync: subscription expired, skipped',
+        );
+      } else {
+        this.logger.error('Cyber avatar real world sync failed', error);
+      }
       const run = await this.runRepo.save(
         this.runRepo.create({
           ownerId: owner.id,
