@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Not, Repository } from 'typeorm';
 import { AppError } from '../../common/app-error.exception';
@@ -12,7 +12,7 @@ import {
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { UserEntity } from './user.entity';
 import { decryptUserApiKey, encryptUserApiKey } from './api-key-crypto';
-import type { AiKeyOverride } from '../ai/ai.types';
+import type { AiKeyOverride, UserProfileContext } from '../ai/ai.types';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { GroupEntity } from '../chat/group.entity';
@@ -196,7 +196,7 @@ type WorldOwnerProfile = {
 };
 
 @Injectable()
-export class WorldOwnerService {
+export class WorldOwnerService implements OnModuleInit {
   private readonly logger = new Logger(WorldOwnerService.name);
 
   constructor(
@@ -205,6 +205,34 @@ export class WorldOwnerService {
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
+
+  // 自愈：shared 模式 synchronize:false，新加的 UserEntity 列不会自动建。个人资料字段
+  // （gender/age/occupation/... 由「个人资料注入 AI 对话」功能新增）若 live 库缺列，
+  // TenantContextMiddleware 读 users 会 `no such column` 崩 → 所有租户上下文建立失败 =
+  // 全员 500（实测：未补列时 :4200 每请求都 "no such column: UserEntity.gender"）。这里
+  // 幂等补列（SQLite ADD COLUMN 无 IF NOT EXISTS，已存在抛错吞掉即可；仿 self-agent /
+  // parking-war occupancy 的 onModuleInit 自愈）。LPP/wiki 走 synchronize:true 自动建，跳过。
+  async onModuleInit(): Promise<void> {
+    if (!isSharedWorldMode()) return;
+    const profileColumns: Array<[string, string]> = [
+      ['gender', 'text'],
+      ['age', 'integer'],
+      ['occupation', 'text'],
+      ['region', 'text'],
+      ['interests', 'text'],
+      ['aiAddressTone', 'text'],
+      ['avoidTopics', 'text'],
+    ];
+    for (const [name, type] of profileColumns) {
+      try {
+        await this.dataSource.query(
+          `ALTER TABLE users ADD COLUMN ${name} ${type}`,
+        );
+      } catch {
+        // 列已存在（幂等自愈），忽略。
+      }
+    }
+  }
 
   // cron fan-out 助手：shared 模式下把回调在每个 world_owner 的租户帧里各跑一遍，
   // 逐 owner 独立 try/catch（一个 owner 失败不连累其余），SubscriptionExpiredException
@@ -525,6 +553,33 @@ export class WorldOwnerService {
   async getOwnerProfile(): Promise<WorldOwnerProfile> {
     const owner = await this.getOwnerOrThrow();
     return this.serializeOwner(owner);
+  }
+
+  // 把当前 owner 的「个人资料」映射成注入聊天 prompt 的 UserProfileContext。
+  // 单聊/群聊/主动消息各路径共用，避免重复映射逻辑。联系方式故意不带（分身相遇专用）。
+  // 占位用户名（__pending_xxx / 全局哨兵 __xxx）不当真名注入。
+  buildUserProfileContext(owner: UserEntity): UserProfileContext {
+    return {
+      displayName: owner.username?.startsWith('__') ? null : owner.username,
+      gender: owner.gender as 'male' | 'female' | 'other' | null,
+      age: owner.age,
+      occupation: owner.occupation,
+      region: owner.region,
+      interests: owner.interests,
+      aiAddressTone: owner.aiAddressTone,
+      avoidTopics: owner.avoidTopics,
+    };
+  }
+
+  // 没有现成 owner 实体的调用方（群聊编排 / 调度器主动消息）用这个——按当前租户帧取
+  // owner 再映射。失败返回 undefined，调用方据此跳过注入而不是让整轮回复崩。
+  async getUserProfileContext(): Promise<UserProfileContext | undefined> {
+    try {
+      const owner = await this.getOwnerOrThrow();
+      return this.buildUserProfileContext(owner);
+    } catch {
+      return undefined;
+    }
   }
 
   async updateOwner(input: UpdateWorldOwnerInput): Promise<WorldOwnerProfile> {
