@@ -3897,6 +3897,10 @@ export class FeedService implements OnModuleInit {
         )
         .orderBy('post.recommendationScore', 'DESC')
         .addOrderBy('post.createdAt', 'DESC')
+        // 视频号帖 recommendationScore 常聚簇（一批 100/0）、createdAt 秒级会撞，
+        // getChannelHome 跨页分页前需要确定序 —— 补 id DESC 次级排序，与广场对齐，
+        // 避免同分同秒帖在翻页边界漏/重。
+        .addOrderBy('post.id', 'DESC')
         .getMany();
       return posts.filter((post) => {
         if (post.authorType !== 'character') return true;
