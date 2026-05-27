@@ -2585,9 +2585,9 @@ export class SystemService {
     ] =
       await Promise.all([
         this.userRepo.count({ where: { userType: 'world_owner' } }),
-        this.characterRepo.count(),
-        this.narrativeArcRepo.count(),
-        this.behaviorLogRepo.count(),
+        new TenantRepository(this.characterRepo).count(),
+        new TenantRepository(this.narrativeArcRepo).count(),
+        new TenantRepository(this.behaviorLogRepo).count(),
         this.resolveProviderConfig(),
         this.resolveDigitalHumanConfig(),
         this.inferenceService.getLatestDiagnosticSnapshot(),

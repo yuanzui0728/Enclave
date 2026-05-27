@@ -66,7 +66,7 @@ export class ParkingWarNeighborService {
     if (characters.length === 0) return [];
     const ids = characters.map((c) => c.id);
     // 共享 world：characterId 跨租户共用，必须带 ownerId 否则读到别人世界的 NPC state。
-    const existing = await this.npcRepo.find({
+    const existing = await new TenantRepository(this.npcRepo).find({
       where: ids.map((characterId) => ({ characterId, ownerId })),
     });
     const existingByCharId = new Map(existing.map((s) => [s.characterId, s]));
@@ -87,7 +87,7 @@ export class ParkingWarNeighborService {
         }`,
       );
       // 并发情况下重新读一遍
-      created = await this.npcRepo.find({
+      created = await new TenantRepository(this.npcRepo).find({
         where: toCreate.map((s) => ({ characterId: s.characterId, ownerId })),
       });
     }
@@ -98,7 +98,7 @@ export class ParkingWarNeighborService {
     character: CharacterEntity,
     ownerId: string,
   ): Promise<ParkingWarNpcStateEntity> {
-    const existing = await this.npcRepo.findOneBy({
+    const existing = await new TenantRepository(this.npcRepo).findOneBy({
       characterId: character.id,
       ownerId,
     });
@@ -310,7 +310,7 @@ export class ParkingWarNeighborService {
     occupancy: ParkingWarOccupancyEntity,
   ): Promise<void> {
     if (occupancy.lotOwnerKind !== 'npc') return;
-    const npc = await this.npcRepo.findOneBy({
+    const npc = await new TenantRepository(this.npcRepo).findOneBy({
       characterId: occupancy.lotOwnerId,
     });
     if (!npc) {
@@ -340,7 +340,7 @@ export class ParkingWarNeighborService {
     cents: number,
   ): Promise<void> {
     if (cents <= 0) return;
-    const npc = await this.npcRepo.findOneBy({ characterId });
+    const npc = await new TenantRepository(this.npcRepo).findOneBy({ characterId });
     if (!npc) return;
     npc.balanceCents += cents;
     npc.totalEarnedCents += cents;
@@ -350,7 +350,7 @@ export class ParkingWarNeighborService {
   async getNpcState(
     characterId: string,
   ): Promise<ParkingWarNpcStateEntity | null> {
-    return this.npcRepo.findOneBy({ characterId });
+    return new TenantRepository(this.npcRepo).findOneBy({ characterId });
   }
 
   /**
@@ -359,7 +359,7 @@ export class ParkingWarNeighborService {
    * 删了，榜单查询 + tick 全走它们一遍，体感很卡。每天清一次。
    */
   async pruneOrphanNpcStates(ownerId: string): Promise<number> {
-    const all = await this.npcRepo.find({ where: { ownerId } });
+    const all = await new TenantRepository(this.npcRepo).find({ where: { ownerId } });
     if (all.length === 0) return 0;
     const ids = Array.from(new Set(all.map((n) => n.characterId)));
     const characters = await this.charactersService.findManyByIds(ids);

@@ -157,7 +157,7 @@ export class ParkingWarStateService implements OnModuleInit {
   async getOrCreatePlayerState(
     ownerId: string,
   ): Promise<ParkingWarPlayerStateEntity> {
-    let state = await this.playerRepo.findOneBy({ ownerId });
+    let state = await new TenantRepository(this.playerRepo).findOneBy({ ownerId });
     if (state) return state;
 
     const starterCarId = randomUUID();
@@ -200,7 +200,7 @@ export class ParkingWarStateService implements OnModuleInit {
     try {
       await this.parkOwnedCarAtHomeInternal(state, starterCarId, 0);
       // re-read after side-effects
-      state = (await this.playerRepo.findOneBy({ ownerId })) ?? state;
+      state = (await new TenantRepository(this.playerRepo).findOneBy({ ownerId })) ?? state;
     } catch (error) {
       this.logger.warn(
         `parking-war auto-park starter car failed: ${
@@ -485,7 +485,7 @@ export class ParkingWarStateService implements OnModuleInit {
     await this.tickPlayerHomeOccupancies(state);
     await this.parkOwnedCarAtHomeInternal(state, carId, slotIndex);
     const refreshed =
-      (await this.playerRepo.findOneBy({ ownerId })) ?? state;
+      (await new TenantRepository(this.playerRepo).findOneBy({ ownerId })) ?? state;
     return this.toPlayerView(refreshed);
   }
 

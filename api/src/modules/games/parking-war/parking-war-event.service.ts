@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import { CharacterEntity } from '../../characters/character.entity';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FeedService } from '../../feed/feed.service';
 import { ParkingWarEventLogEntity } from './entities/parking-war-event-log.entity';
 import {
@@ -133,7 +134,7 @@ export class ParkingWarEventService {
     actorId: string,
     limit = 5,
   ): Promise<ParkingWarEventLogEntity[]> {
-    return this.repo.find({
+    return new TenantRepository(this.repo).find({
       where: [
         { ownerId, actorId },
         { ownerId, targetId: actorId },
@@ -200,7 +201,7 @@ export class ParkingWarEventService {
 
   async pruneOldEvents(ownerId: string, keepDays: number): Promise<number> {
     const cutoff = new Date(Date.now() - keepDays * 24 * 3600 * 1000);
-    const result = await this.repo.delete({
+    const result = await new TenantRepository(this.repo).delete({
       ownerId,
       createdAt: LessThan(cutoff),
     });

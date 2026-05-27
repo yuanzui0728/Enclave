@@ -90,7 +90,7 @@ export class FarmNpcService {
     character: CharacterEntity,
     ownerId: string,
   ): Promise<FarmNpcStateEntity> {
-    const existing = await this.npcRepo.findOneBy({
+    const existing = await new TenantRepository(this.npcRepo).findOneBy({
       characterId: character.id,
       ownerId,
     });

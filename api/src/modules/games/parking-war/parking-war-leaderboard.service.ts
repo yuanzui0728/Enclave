@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharactersService } from '../../characters/characters.service';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { ParkingWarNpcStateEntity } from './entities/parking-war-npc-state.entity';
 import { ParkingWarPlayerStateEntity } from './entities/parking-war-player-state.entity';
 import {
@@ -39,8 +40,8 @@ export class ParkingWarLeaderboardService {
     // 共享 world：用户间不互通，连 scope='global' 也只能是「当前 owner 自己世界的全部」，
     // 不能跨租户 find(undefined)（那会串到别人的玩家/NPC）。两个 scope 都按 ownerId 限定；
     // 'friends' 与 'global' 的差异由后续 friended 过滤体现，不在此处放开租户边界。
-    const players = await this.playerRepo.find({ where: { ownerId } });
-    const npcs = await this.npcRepo.find({ where: { ownerId } });
+    const players = await new TenantRepository(this.playerRepo).find({ where: { ownerId } });
+    const npcs = await new TenantRepository(this.npcRepo).find({ where: { ownerId } });
 
     const rows: Array<ParkingWarLeaderboardRow & { score: number }> = [];
 

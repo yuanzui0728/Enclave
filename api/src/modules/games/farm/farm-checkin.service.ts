@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppError } from '../../../common/app-error.exception';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmCheckinEntity } from './entities/farm-checkin.entity';
 import { FarmPlayerStateEntity } from './entities/farm-player-state.entity';
 import { todayLocalDate, yesterdayLocalDate } from './quest-catalog';
@@ -77,7 +78,7 @@ export class FarmCheckinService {
   }
 
   private async ensureCheckin(ownerId: string): Promise<FarmCheckinEntity> {
-    let row = await this.checkinRepo.findOneBy({ ownerId });
+    let row = await new TenantRepository(this.checkinRepo).findOneBy({ ownerId });
     if (!row) {
       row = this.checkinRepo.create({
         ownerId,
