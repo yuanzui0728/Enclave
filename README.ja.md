@@ -12,9 +12,9 @@
 [![HF Dataset](https://img.shields.io/badge/🤗%20Dataset-Character%20Recipes-yellow)](https://huggingface.co/datasets/w9000/enclave-character-recipes)
 [![HF Schema](https://img.shields.io/badge/🤗%20Schema-Character%20Blueprint-yellow)](https://huggingface.co/w9000/enclave-character-blueprint)
 
-> あなただけの、AI による小さな世界。
+> あなただけの、パーソナルアシスタントの世界。
 >
-> 住人がいて、時間が流れ、関係が育ち、物語が重なっていく——でも、それは現実の代わりではありません。現実の人生に、もう一つの次元を与えるためのものです。
+> あらゆる分野の専門家と、あなた自身の分身が暮らしています——彼らはあなたを覚え、自分から手を貸し、かつて一握りの人しか得られなかった専門的なサポートを、いつでも使える日常に変えます。
 
 > 🌐 **ライブデモ**：<http://1gw06751dd053.vicp.fun/>（共有ワールド。プロダクトの手ざわりを試す用）
 > 🤗 **Hugging Face**：[Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)

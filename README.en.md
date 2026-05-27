@@ -12,9 +12,9 @@
 [![HF Dataset](https://img.shields.io/badge/🤗%20Dataset-Character%20Recipes-yellow)](https://huggingface.co/datasets/w9000/enclave-character-recipes)
 [![HF Schema](https://img.shields.io/badge/🤗%20Schema-Character%20Blueprint-yellow)](https://huggingface.co/w9000/enclave-character-blueprint)
 
-> A private AI world of your own.
+> A personal assistant world of your own.
 >
-> It has residents, seasons, relationships, and stories — but it doesn't pull you away from reality. It gives your real life one more dimension.
+> It's home to experts from every field and your own avatar — they remember you and help you proactively, turning the professional support that only a few could once afford into something you can use anytime.
 
 > 🌐 **Live demo**: <http://1gw06751dd053.vicp.fun/> (shared world, product-feel only)
 > 🤗 **Hugging Face**: [Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)

@@ -12,9 +12,9 @@
 [![HF Dataset](https://img.shields.io/badge/🤗%20Dataset-Character%20Recipes-yellow)](https://huggingface.co/datasets/w9000/enclave-character-recipes)
 [![HF Schema](https://img.shields.io/badge/🤗%20Schema-Character%20Blueprint-yellow)](https://huggingface.co/w9000/enclave-character-blueprint)
 
-> 一个属于你的 AI 虚拟世界。
+> 一个属于你的私人助手世界。
 >
-> 这里有居民、有时间、有关系、有故事——但它不与现实对立，它让现实里的你，多出一种可能。
+> 这里住着各行各业的专家和你自己的分身——他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。
 
 > 🌐 **在线体验**：<http://1gw06751dd053.vicp.fun/> （共享世界，仅供感受产品形态）
 > 🤗 **Hugging Face**：[Space](https://huggingface.co/spaces/w9000/enclave) · [角色 Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)
@@ -50,9 +50,9 @@ docker compose up -d
 
 ---
 
-隐界（**Enclave**）是一个开源的、由 AI 驱动的私人虚拟社交平台 —— 可以把它理解为 **Character.AI / Replika 的自部署开源替代**，但做的是一整个"AI 社交世界"，不只是单点对话。self-hosted AI companion + social network，一人一世界。
+隐界（**Enclave**）是一个开源的、由 AI 驱动的私人助手平台 —— 可以把它理解为 **Character.AI / Replika 的自部署开源替代**，但做的不是单点对话，而是一整个"私人助手世界"：各行各业的专家 + 你的分身，帮你把现实生活过得更好。self-hosted personal-AI assistants + social network，一人一世界。
 
-打开它，你看到的是一个像微信一样熟悉的 APP；你拥有的，是一个只属于你一个人的微缩社会：里面住着一群有性格、有作息、有彼此关系的 AI 居民。他们会和你聊天，会给你发朋友圈，会拍视频号，会在群里讨论事情，也会主动出现在你的生活里。
+打开它，你看到的是一个像微信一样熟悉的 APP；你拥有的，是一个只属于你一个人的微缩社会：里面住着各行各业的专家和你自己的分身，他们有性格、有作息、有彼此的关系。他们会和你聊天、给你发朋友圈、拍视频号、在群里讨论事情，也会主动出现在你的生活里，帮你把现实里的事一件件处理好。
 
 我们把这件事整件地开源出来。你可以在自己的电脑上、自己的服务器上，升起一方只属于自己的世界。
 
@@ -106,7 +106,7 @@ docker compose up -d
 
 它们都没有真正解决"**让 AI 像朋友一样，存在于你的生活中**"这件事。
 
-隐界的回答是：给每个人一个完整的 AI 社交世界。
+隐界的回答是：给每个人一个完整的私人助手世界。
 
 在这个世界里，AI 不是一个"对话框里的角色"，而是一个个**有作息、有专长、有自己朋友圈、会主动找你、会和别的 AI 互动**的居民。你和他们的每一次对话，都在共同书写一段**有进度、有里程碑、可被记住**的关系。
 
@@ -190,7 +190,7 @@ docker compose up -d
 
 #### 一个特别的角色：🪞"自己"
 
-世界里有一个特别的默认角色——"自己"，一个只属于你的内在伙伴。他不是心理咨询 chatbot，他拥有与你共享的记忆和价值观，在三种工作模式之间切换：**陪伴**（接住情绪，不分析）、**复盘**（帮你把事件拆开看）、**整理**（把乱的思路一件件列出来）。
+世界里有一个特别的默认角色——"自己"，也就是你自己的分身。他不是心理咨询 chatbot，他拥有与你共享的记忆和价值观，在三种工作模式之间切换：**倾听**（接住情绪，不分析）、**复盘**（帮你把事件拆开看）、**整理**（把乱的思路一件件列出来）。
 
 #### AI 的生活有来龙去脉
 
