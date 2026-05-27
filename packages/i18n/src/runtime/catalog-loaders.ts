@@ -29,11 +29,41 @@ const adminCatalogLoaders: CatalogLoaderMap = {
   "ko-KR": () => import("../../catalogs/admin/ko-KR.po"),
 };
 
+// cloud-console 运营台并入了隐界后台(world-admin)的页面，这些页面用 admin 的 Lingui
+// catalog（msg`` 源串）。这里把 admin catalog 合并进 cloud-console surface，让 world-admin
+// 的 en/ja/ko 译文在**不嵌套第二个 AppLocaleProvider** 的前提下生效（嵌套会让两个
+// DomTextLocalizer 同 observe document.body 触发 MutationObserver 死循环）。
+// cloud-console 自身的键覆盖 admin 同名键。
+function mergeCloudConsoleCatalog(
+  cloudConsole: CatalogModule,
+  admin: CatalogModule,
+): CatalogModule {
+  return {
+    messages: { ...admin.messages, ...cloudConsole.messages },
+  };
+}
+
 const cloudConsoleCatalogLoaders: CatalogLoaderMap = {
-  "zh-CN": () => import("../../catalogs/cloud-console/zh-CN.po"),
-  "en-US": () => import("../../catalogs/cloud-console/en-US.po"),
-  "ja-JP": () => import("../../catalogs/cloud-console/ja-JP.po"),
-  "ko-KR": () => import("../../catalogs/cloud-console/ko-KR.po"),
+  "zh-CN": async () =>
+    mergeCloudConsoleCatalog(
+      await import("../../catalogs/cloud-console/zh-CN.po"),
+      await import("../../catalogs/admin/zh-CN.po"),
+    ),
+  "en-US": async () =>
+    mergeCloudConsoleCatalog(
+      await import("../../catalogs/cloud-console/en-US.po"),
+      await import("../../catalogs/admin/en-US.po"),
+    ),
+  "ja-JP": async () =>
+    mergeCloudConsoleCatalog(
+      await import("../../catalogs/cloud-console/ja-JP.po"),
+      await import("../../catalogs/admin/ja-JP.po"),
+    ),
+  "ko-KR": async () =>
+    mergeCloudConsoleCatalog(
+      await import("../../catalogs/cloud-console/ko-KR.po"),
+      await import("../../catalogs/admin/ko-KR.po"),
+    ),
 };
 
 const siteCatalogLoaders: CatalogLoaderMap = {

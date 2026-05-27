@@ -19,8 +19,8 @@ const target = process.argv[3] ?? "workspace";
 // fight cloud-api for port 3000 and break the per-account routing. Use
 // `node scripts/dev-services.mjs start api` only for legacy single-tenant debug.
 const serviceGroups = {
-  workspace: ["app", "admin", "wiki", "cloud-api", "cloud-console"],
-  all: ["app", "admin", "wiki", "cloud-api", "cloud-console", "site", "wechat-connector"],
+  workspace: ["app", "wiki", "cloud-api", "cloud-console"],
+  all: ["app", "wiki", "cloud-api", "cloud-console", "site", "wechat-connector"],
 };
 
 const services = {
@@ -40,16 +40,6 @@ const services = {
     },
     port: 5180,
     url: "http://127.0.0.1:5180/",
-  },
-  admin: {
-    cwd: path.join(rootDir, "apps", "admin"),
-    command: nodeBinary,
-    args: [path.join(rootDir, "apps", "admin", "node_modules", "vite", "bin", "vite.js")],
-    env: {
-      VITE_CLOUD_API_BASE_URL: "http://127.0.0.1:3001",
-    },
-    port: 5181,
-    url: "http://127.0.0.1:5181/",
   },
   wiki: {
     cwd: path.join(rootDir, "apps", "wiki"),

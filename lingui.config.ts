@@ -27,14 +27,18 @@ const config: LinguiConfig = {
       exclude: ["**/node_modules/**"],
     },
     {
+      // 隐界后台已并入 cloud-console（apps/cloud-console/src/world-admin），admin
+      // catalog 继续承载这些 msg`` 源串的译文，由 cloud-console surface 合并加载
+      // （见 catalog-loaders.ts 的 cloudConsoleCatalogLoaders）。
       path: "<rootDir>/packages/i18n/catalogs/admin/{locale}",
-      include: ["<rootDir>/apps/admin/src"],
+      include: ["<rootDir>/apps/cloud-console/src/world-admin"],
       exclude: ["**/node_modules/**"],
     },
     {
+      // cloud-console 自身的 msg``；world-admin 子树归 admin catalog，这里排除避免重复。
       path: "<rootDir>/packages/i18n/catalogs/cloud-console/{locale}",
       include: ["<rootDir>/apps/cloud-console/src"],
-      exclude: ["**/node_modules/**"],
+      exclude: ["**/node_modules/**", "**/world-admin/**"],
     },
     {
       path: "<rootDir>/packages/i18n/catalogs/site/{locale}",
