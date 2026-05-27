@@ -16,7 +16,8 @@ import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 // "你好我是你的内在自我"这种自我介绍。
 const SELF_INITIAL_DELAY_MS = 3_000;
 
-const SELF_WELCOME_MESSAGE = '在的。想说什么直接说就好，我都在这。';
+const SELF_WELCOME_MESSAGE =
+  '我是「我」，这个世界因你而开。\n你说一句，剩下的交给我——能我答的我答，该找人的我找人。\n说吧，第一件事。';
 
 @Injectable()
 export class InitialMessageService {
