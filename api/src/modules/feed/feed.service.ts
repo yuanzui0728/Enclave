@@ -1492,7 +1492,12 @@ export class FeedService implements OnModuleInit {
             input.note?.trim() || undefined,
           );
 
-    await this.postRepo.increment({ id: post.id }, 'shareCount', 1);
+    // 全局帖（视频号共享池）在用户帧 / 角色转发帧下不拥有父行 → 不动其全局 shareCount 基数
+    // （增量计数与 shareOwnerPost 对齐：转发动作仍落 per-owner 的 forward_to_chat 互动行）。
+    // 否则用户/角色转发全局视频会刷高全员可见的 shareCount（且 .increment 绕过写守卫不报错）。
+    if (this.tenantOwnsRow(post.ownerId)) {
+      await this.postRepo.increment({ id: post.id }, 'shareCount', 1);
+    }
 
     const interaction = this.interactionRepo.create({
       ownerId: owner.id,
