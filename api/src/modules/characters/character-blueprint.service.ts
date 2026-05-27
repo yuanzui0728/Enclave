@@ -899,7 +899,9 @@ export class CharacterBlueprintService {
   async createCharacterFromRecipe(
     input: CreateCharacterFromRecipeInput,
   ): Promise<CharacterEntity> {
-    const existingById = await this.characterRepo.findOneBy({ id: input.id });
+    // 共享 world：character id / sourceKey 跨 owner 重复，裸读会命中别 owner 的角色。
+    const scopedChars = new TenantRepository(this.characterRepo);
+    const existingById = await scopedChars.findOneBy({ id: input.id });
     if (existingById) {
       throw new AppError('CHARACTER_ALREADY_EXISTS', {
         params: { id: input.id },
@@ -908,7 +910,7 @@ export class CharacterBlueprintService {
     }
 
     if (input.sourceKey?.trim()) {
-      const existingBySourceKey = await this.characterRepo.findOneBy({
+      const existingBySourceKey = await scopedChars.findOneBy({
         sourceKey: input.sourceKey.trim(),
       });
       if (existingBySourceKey) {
@@ -1042,7 +1044,9 @@ export class CharacterBlueprintService {
   }
 
   private async getCharacterOrThrow(characterId: string) {
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       throw new AppError('CHARACTER_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

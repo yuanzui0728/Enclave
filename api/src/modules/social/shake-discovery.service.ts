@@ -25,6 +25,7 @@ import { MessageEntity } from '../chat/message.entity';
 import { MomentCommentEntity } from '../moments/moment-comment.entity';
 import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { FriendshipEntity } from './friendship.entity';
 import { SocialService } from './social.service';
 import {
@@ -609,9 +610,12 @@ export class ShakeDiscoveryService {
     characterId: string,
     sourceKey: string,
   ) {
+    // 共享 world：preset/共享 character id + sourceKey 跨 owner 重复，裸 findOneBy
+    // 会命中别 owner 的角色 → afterLoad 泄漏。按当前帧 ownerId 过滤。
+    const scopedChars = new TenantRepository(this.characterRepo);
     const [byId, bySourceKey] = await Promise.all([
-      this.characterRepo.findOneBy({ id: characterId }),
-      this.characterRepo.findOneBy({ sourceKey }),
+      scopedChars.findOneBy({ id: characterId }),
+      scopedChars.findOneBy({ sourceKey }),
     ]);
     return byId ?? bySourceKey ?? null;
   }
@@ -704,7 +708,9 @@ export class ShakeDiscoveryService {
     ];
     const [characters, activeGroups] = await Promise.all([
       characterIds.length
-        ? this.characterRepo.find({ where: { id: In(characterIds) } })
+        ? new TenantRepository(this.characterRepo).find({
+            where: { id: In(characterIds) },
+          })
         : Promise.resolve([] as CharacterEntity[]),
       userGroupIds.length
         ? this.groupRepo.find({
@@ -1000,7 +1006,7 @@ export class ShakeDiscoveryService {
       return '暂无已建立好友。';
     }
 
-    const characters = await this.characterRepo.find({
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { id: In(friendships.map((item) => item.characterId)) },
     });
     const characterMap = new Map(characters.map((item) => [item.id, item]));

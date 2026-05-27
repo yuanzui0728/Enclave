@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageEntity } from '../chat/message.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { WorldService } from '../world/world.service';
 import type {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -150,7 +151,10 @@ export class MomentGenerationContextService {
     characterId: string,
     seededTopics?: string[],
   ) {
-    const conversation = await this.conversationRepo.findOneBy({
+    // 共享 world：direct_<charId> 会话 id 跨 owner 共用，裸 findOneBy({id}) 会命中
+    // 最早 owner 的会话行 → afterLoad 抛 TENANT_READ_LEAK（实测让 moment-video 文案
+    // 生成对 world-news-desk/预设角色全失败）。经 TenantRepository 注入当前帧 ownerId。
+    const conversation = await new TenantRepository(this.conversationRepo).findOneBy({
       id: `direct_${characterId}`,
     });
     const seeded = dedupeTopics(
@@ -170,7 +174,8 @@ export class MomentGenerationContextService {
       };
     }
 
-    const messages = await this.messageRepo.find({
+    // conversationId 同样跨 owner 共用，messageRepo 也要按当前 owner 过滤。
+    const messages = await new TenantRepository(this.messageRepo).find({
       where: conversation.lastClearedAt
         ? {
             conversationId: conversation.id,

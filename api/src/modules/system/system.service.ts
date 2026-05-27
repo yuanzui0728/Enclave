@@ -17,6 +17,7 @@ import { buildDefaultCharacters } from '../characters/default-characters';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { SystemConfigService } from '../config/config.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { resolveDatabasePath, resolveRepoPath } from '../../database/database-path';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
@@ -836,7 +837,9 @@ export class SystemService {
     input: Record<string, unknown>,
   ) {
     if (characterId) {
-      const storedCharacter = await this.characterRepo.findOneBy({ id: characterId });
+      const storedCharacter = await new TenantRepository(
+        this.characterRepo,
+      ).findOneBy({ id: characterId });
       if (storedCharacter) {
         return storedCharacter;
       }

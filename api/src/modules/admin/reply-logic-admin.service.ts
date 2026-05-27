@@ -179,7 +179,9 @@ export class ReplyLogicAdminService {
     characterId: string,
   ): Promise<ReplyLogicCharacterSnapshot> {
     const owner = await this.getOwnerOrThrow();
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       throw new AppError('CHARACTER_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -426,7 +428,9 @@ export class ReplyLogicAdminService {
     userMessage: string,
   ): Promise<ReplyLogicPreviewResult> {
     const owner = await this.getOwnerOrThrow();
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       throw new AppError('CHARACTER_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

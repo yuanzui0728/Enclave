@@ -15,6 +15,7 @@ import { CharactersService } from '../characters/characters.service';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { SystemConfigService } from '../config/config.service';
@@ -417,7 +418,9 @@ export class WechatSyncAdminService {
     characterId: string,
   ): Promise<WechatSyncRetryFriendshipResponseValue> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       throw new AppError('ADMIN_WECHAT_CONTACT_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -466,7 +469,9 @@ export class WechatSyncAdminService {
   async rollbackImport(
     characterId: string,
   ): Promise<WechatSyncRollbackResponseValue> {
-    const character = await this.characterRepo.findOneBy({ id: characterId });
+    const character = await new TenantRepository(this.characterRepo).findOneBy({
+      id: characterId,
+    });
     if (!character) {
       throw new AppError('ADMIN_WECHAT_CONTACT_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

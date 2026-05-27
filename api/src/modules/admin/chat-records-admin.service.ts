@@ -1026,7 +1026,7 @@ export class ChatRecordsAdminService {
       return null;
     }
 
-    return this.characterRepo.findOneBy({ id: characterId });
+    return new TenantRepository(this.characterRepo).findOneBy({ id: characterId });
   }
 
   private getDirectConversationCharacterId(
