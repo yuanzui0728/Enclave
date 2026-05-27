@@ -38,7 +38,11 @@ import { addDays, formatLocalDate, getSparkTier } from './spark-utils';
 import { InitialMessageService } from './initial-message.service';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
-export const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [...DEFAULT_CHARACTER_IDS];
+// 2026-05-27 起：默认好友只剩「我」一个。提醒助手 / 新闻编辑 退为可手动添加的居民
+// （仍在 DEFAULT_CHARACTER_IDS → 仍 seed 进 characters 表并保持 protected），但不再
+// 出厂自动 friendship。注意这里**不能**直接 [...DEFAULT_CHARACTER_IDS]，那会把居民/保护
+// 列表和默认好友列表重新耦合。
+export const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [SELF_CHARACTER_ID];
 
 // 走查 R1：场景相遇 trigger-scene 没有任何服务端节流，仅靠前端 2.5s 冷却兜底。
 // 直连接口可以无限造好友申请（每次还烧一次 AI greeting），跟"摇一摇" 12/day 形成

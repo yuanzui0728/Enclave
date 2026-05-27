@@ -34,6 +34,12 @@ export const SELF_CHARACTER_ID = 'char-default-self';
  * 它们的角色定义函数（buildActionOperatorCharacter 等）也保留，让历史 world
  * 已经 seed 过这些角色的也能正常加载。
  *
+ * 2026-05-27 起再收敛：默认好友只剩「我」一个。提醒助手 / 新闻编辑 不再出厂自动 friendship，
+ * 但仍然留在下方 DEFAULT_CHARACTER_IDS 里 —— 即仍 seed 进 characters 表、保持 protected，
+ * 用户可通过搜索 / 场景匹配主动添加，只是不再默认建好友。默认好友列表已与本数组解耦，
+ * 单独定义在 social.service.ts 的 DEFAULT_FRIENDSHIP_CHARACTER_IDS（只含 SELF）。
+ * ⚠️ 别再把 DEFAULT_FRIENDSHIP_CHARACTER_IDS 改回 [...DEFAULT_CHARACTER_IDS]，那会让两者重新耦合。
+ *
  * ⚠️ 加默认好友的代价远比想象大：
  *   `ensureDefaultFriendships()` 不只在新 world 启动时跑，`getFriends()` /
  *   `getFriendCharacterIds()` 每次被调用都会顺手把缺失的默认好友补回来

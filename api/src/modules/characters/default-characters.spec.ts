@@ -37,14 +37,22 @@ describe('default characters', () => {
     );
   });
 
-  it('limits automatic friendships to self + reminder + world-news (2026-05-21 精简)', () => {
-    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).toEqual([
-      SELF_CHARACTER_ID,
-      REMINDER_CHARACTER_ID,
-      WORLD_NEWS_DESK_CHARACTER_ID,
-    ]);
+  it('limits automatic friendships to self only (2026-05-27)', () => {
+    // 默认好友只剩「我」。提醒助手 / 新闻编辑 退为居民（见下一条断言：仍在
+    // DEFAULT_CHARACTER_IDS），但不再出厂 friendship。
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).toEqual([SELF_CHARACTER_ID]);
 
-    // 砍出默认好友的角色仍然作为系统角色 seed 进 characters 表，只是不再 friendship。
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      REMINDER_CHARACTER_ID,
+    );
+    expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
+      WORLD_NEWS_DESK_CHARACTER_ID,
+    );
+
+    // 退为居民的角色仍然作为系统角色 seed 进 characters 表并保持 protected，只是不再 friendship。
+    expect(DEFAULT_CHARACTER_IDS).toContain(REMINDER_CHARACTER_ID);
+    expect(DEFAULT_CHARACTER_IDS).toContain(WORLD_NEWS_DESK_CHARACTER_ID);
+
     expect(DEFAULT_FRIENDSHIP_CHARACTER_IDS).not.toContain(
       ACTION_OPERATOR_CHARACTER_ID,
     );
