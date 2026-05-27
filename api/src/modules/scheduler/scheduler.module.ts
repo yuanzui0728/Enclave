@@ -6,6 +6,7 @@ import { FeedPostEntity } from '../feed/feed-post.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { UserEntity } from '../auth/user.entity';
+import { AuthModule } from '../auth/auth.module';
 import { WorldModule } from '../world/world.module';
 import { AiModule } from '../ai/ai.module';
 import { SocialModule } from '../social/social.module';
@@ -39,6 +40,7 @@ import { SystemConfigModule } from '../config/config.module';
       MessageEntity,
       AIRelationshipEntity,
     ]),
+    AuthModule,
     forwardRef(() => WorldModule),
     forwardRef(() => AiModule),
     SocialModule,

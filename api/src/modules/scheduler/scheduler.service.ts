@@ -15,6 +15,7 @@ import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { UserEntity } from '../auth/user.entity';
+import { WorldOwnerService } from '../auth/world-owner.service';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { MessageEntity } from '../chat/message.entity';
@@ -137,6 +138,7 @@ export class SchedulerService {
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly worldLanguage: WorldLanguageService,
     private readonly tenantService: TenantService,
+    private readonly worldOwner: WorldOwnerService,
   ) {}
 
   // 提醒触发：5min→10min。reminder 命中窗口最差延迟 +10min，可接受。
@@ -1620,6 +1622,9 @@ export class SchedulerService {
           'memoryBlock',
         ],
       });
+    // 主动消息面向真人用户：注入其个人资料，让角色主动开口时也「懂」对方。
+    // 本方法在单 owner 租户帧内跑，取一次给本轮所有角色共用。
+    const userProfile = await this.worldOwner.getUserProfileContext();
     let memorySeededCount = 0;
     let sentMessages = 0;
 
@@ -1654,6 +1659,7 @@ export class SchedulerService {
               today,
               noActionToken,
             }),
+          chatContext: { userProfile },
           extraSystemPromptSections:
             char.id === SELF_CHARACTER_ID
               ? selfCyberAvatarPromptSections

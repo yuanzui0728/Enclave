@@ -3,6 +3,7 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
 import { WebSearchService } from '../ai/web-search.service';
+import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import {
@@ -27,6 +28,7 @@ export class GroupReplyOrchestratorService {
     private readonly worldLanguage: WorldLanguageService,
     private readonly characters: CharactersService,
     private readonly webSearch: WebSearchService,
+    private readonly worldOwner: WorldOwnerService,
   ) {}
 
   async generateTaskReply(input: {
@@ -85,6 +87,8 @@ export class GroupReplyOrchestratorService {
       userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
       userMessageParts,
       isGroupChat: true,
+      // 群聊里角色也该「知道」群内真人用户是谁（个人资料注入，同直聊）。
+      chatContext: { userProfile: await this.worldOwner.getUserProfileContext() },
       extraSystemPromptSections,
       emptyTextFallback: '',
       usageContext: {
@@ -132,6 +136,8 @@ export class GroupReplyOrchestratorService {
     const language = await this.worldLanguage.getLanguage();
     const emittedReplies: Array<{ senderName: string; text: string }> = [];
     const rollingHistory: ChatMessage[] = [...conversationHistory];
+    // 群内真人用户的个人资料：本轮取一次，发给所有 actor 共用（避免每个 actor 各查一遍 owner）。
+    const userProfile = await this.worldOwner.getUserProfileContext();
     // 走查 R2：executeTurn 这条 generateReply 路径之前完全没接 web_search 注入。
     // 只要 selectedActors 里有任一角色开了 webSearchEnabled、且用户消息命中时效
     // 关键词，就在循环外预先 fire 一次 search，把结果缓存给所有开了 flag 的 actor
@@ -187,6 +193,7 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
+          chatContext: { userProfile },
           extraSystemPromptSections: turnExtraSections,
           emptyTextFallback: '',
           usageContext: {
