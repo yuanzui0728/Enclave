@@ -285,7 +285,9 @@ export class ReplyLogicAdminService {
         ),
       );
       const characters = (
-        await this.characterRepo.find({
+        // 共享 world：CharacterEntity 复合主键 (ownerId,id)，preset/默认角色 id 跨 owner 重合，
+        // 裸 id IN 会命中别 owner 行 → afterLoad 抛。经 TenantRepository 注入当前帧 owner。
+        await new TenantRepository(this.characterRepo).find({
           where: { id: In(participantIds) },
         })
       ).sort(
@@ -337,7 +339,9 @@ export class ReplyLogicAdminService {
       };
     }
 
-    const group = await this.groupRepo.findOneBy({ id: conversationId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: conversationId,
+    });
     if (!group) {
       throw new AppError('ADMIN_CONVERSATION_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -346,7 +350,7 @@ export class ReplyLogicAdminService {
       });
     }
 
-    const membership = await this.groupMemberRepo.findOneBy({
+    const membership = await new TenantRepository(this.groupMemberRepo).findOneBy({
       groupId: group.id,
       memberId: owner.id,
       memberType: 'user',
@@ -360,7 +364,7 @@ export class ReplyLogicAdminService {
     }
 
     const [members, messages] = await Promise.all([
-      this.groupMemberRepo.find({
+      new TenantRepository(this.groupMemberRepo).find({
         where: { groupId: group.id },
         order: { joinedAt: 'ASC' },
       }),
@@ -370,7 +374,7 @@ export class ReplyLogicAdminService {
       .filter((member) => member.memberType === 'character')
       .map((member) => member.memberId);
     const characters = (
-      await this.characterRepo.find({
+      await new TenantRepository(this.characterRepo).find({
         where: { id: In(characterIds) },
       })
     ).sort(
@@ -499,7 +503,9 @@ export class ReplyLogicAdminService {
       const visibleMessages =
         await this.loadConversationMessages(storedConversation);
       const characters = (
-        await this.characterRepo.find({
+        // 共享 world：CharacterEntity 复合主键 (ownerId,id)，preset/默认角色 id 跨 owner 重合，
+        // 裸 id IN 会命中别 owner 行 → afterLoad 抛。经 TenantRepository 注入当前帧 owner。
+        await new TenantRepository(this.characterRepo).find({
           where: { id: In(participantIds) },
         })
       ).sort(
@@ -540,7 +546,9 @@ export class ReplyLogicAdminService {
       };
     }
 
-    const group = await this.groupRepo.findOneBy({ id: conversationId });
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
+      id: conversationId,
+    });
     if (!group) {
       throw new AppError('ADMIN_CONVERSATION_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -549,7 +557,7 @@ export class ReplyLogicAdminService {
       });
     }
 
-    const membership = await this.groupMemberRepo.findOneBy({
+    const membership = await new TenantRepository(this.groupMemberRepo).findOneBy({
       groupId: group.id,
       memberId: owner.id,
       memberType: 'user',
@@ -563,7 +571,7 @@ export class ReplyLogicAdminService {
     }
 
     const [members, messages] = await Promise.all([
-      this.groupMemberRepo.find({
+      new TenantRepository(this.groupMemberRepo).find({
         where: { groupId: group.id },
         order: { joinedAt: 'ASC' },
       }),
@@ -573,7 +581,7 @@ export class ReplyLogicAdminService {
       .filter((member) => member.memberType === 'character')
       .map((member) => member.memberId);
     const characters = (
-      await this.characterRepo.find({
+      await new TenantRepository(this.characterRepo).find({
         where: { id: In(characterIds) },
       })
     ).sort(
@@ -681,7 +689,7 @@ export class ReplyLogicAdminService {
           where: { ownerId },
           order: { lastActivityAt: 'DESC' },
         }),
-        this.groupMemberRepo.find({
+        new TenantRepository(this.groupMemberRepo).find({
           where: { memberId: ownerId, memberType: 'user' },
         }),
         // scoped：listConversationItems 给 in-world admin 用，角色按当前 owner 限定（裸 find 串号）。
@@ -715,11 +723,11 @@ export class ReplyLogicAdminService {
     }
 
     const [groups, groupMembers] = await Promise.all([
-      this.groupRepo.find({
+      new TenantRepository(this.groupRepo).find({
         where: { id: In(groupIds) },
         order: { lastActivityAt: 'DESC' },
       }),
-      this.groupMemberRepo.find({
+      new TenantRepository(this.groupMemberRepo).find({
         where: { groupId: In(groupIds) },
         order: { joinedAt: 'ASC' },
       }),
@@ -874,14 +882,15 @@ export class ReplyLogicAdminService {
       'trigger_scene_friend_requests',
       'trigger_memory_proactive_messages',
     ];
+    // 共享 world：按 authorId(角色) 计数仍要并当前 owner，否则裸 count 跨 owner 全局统计。
     const [todayMoments, weeklyChannels] = await Promise.all([
-      this.momentPostRepo.count({
+      new TenantRepository(this.momentPostRepo).count({
         where: {
           authorId: character.id,
           postedAt: MoreThanOrEqual(todayStart),
         },
       }),
-      this.feedPostRepo.count({
+      new TenantRepository(this.feedPostRepo).count({
         where: {
           authorId: character.id,
           createdAt: MoreThanOrEqual(weekStart),
@@ -1178,7 +1187,9 @@ export class ReplyLogicAdminService {
   }
 
   private async loadConversationMessages(conversation: ConversationEntity) {
-    return this.messageRepo.find({
+    // 共享 world：conversationId（direct_<char>）跨 owner 共用 → 裸 find 命中别 owner 消息
+    // （:4200 雷达实测泄漏）。经 TenantRepository 注入当前 owner。
+    return new TenantRepository(this.messageRepo).find({
       where: conversation.lastClearedAt
         ? {
             conversationId: conversation.id,
@@ -1190,7 +1201,7 @@ export class ReplyLogicAdminService {
   }
 
   private async loadGroupMessages(group: GroupEntity) {
-    return this.groupMessageRepo.find({
+    return new TenantRepository(this.groupMessageRepo).find({
       where: group.lastClearedAt
         ? {
             groupId: group.id,
@@ -1768,7 +1779,7 @@ export class ReplyLogicAdminService {
   ): Promise<ReplyLogicOverviewConversationItem> {
     const participantIds =
       this.getStoredConversationParticipantIds(conversation);
-    const characters = await this.characterRepo.find({
+    const characters = await new TenantRepository(this.characterRepo).find({
       where: { id: In(participantIds) },
     });
     const characterMap = new Map(

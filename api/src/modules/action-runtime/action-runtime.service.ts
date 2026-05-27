@@ -354,26 +354,29 @@ export class ActionRuntimeService {
   async getAdminOverview() {
     await this.ensureDefaultConnectors();
     const rules = await this.rulesService.getRules();
+    // 共享 world：action_runs 按 owner 隔离（admin overview 也只看当前租户帧 owner）。
+    // count() 裸读会跨 owner 全局计数、find 会 afterLoad 抛——全经 TenantRepository。
+    const scopedRuns = new TenantRepository(this.runRepo);
     const [connectors, recentRuns, operatorCharacter] = await Promise.all([
       this.connectorRepo.find({ order: { displayName: 'ASC' } }),
-      this.runRepo.find({
+      scopedRuns.find({
         order: { updatedAt: 'DESC' },
         take: 12,
       }),
       this.findActionRuntimeEntryCharacter(rules.policy.entryCharacterSourceKey),
     ]);
 
-    const totalRuns = await this.runRepo.count();
-    const awaitingSlots = await this.runRepo.count({
+    const totalRuns = await scopedRuns.count();
+    const awaitingSlots = await scopedRuns.count({
       where: { status: 'awaiting_slots' },
     });
-    const awaitingConfirmation = await this.runRepo.count({
+    const awaitingConfirmation = await scopedRuns.count({
       where: { status: 'awaiting_confirmation' },
     });
-    const succeeded = await this.runRepo.count({
+    const succeeded = await scopedRuns.count({
       where: { status: 'succeeded' },
     });
-    const failed = await this.runRepo.count({
+    const failed = await scopedRuns.count({
       where: { status: 'failed' },
     });
 
@@ -589,7 +592,7 @@ export class ActionRuntimeService {
 
   async listRuns(limit = 20) {
     await this.ensureDefaultConnectors();
-    const runs = await this.runRepo.find({
+    const runs = await new TenantRepository(this.runRepo).find({
       order: { updatedAt: 'DESC' },
       take: Math.max(1, Math.min(100, Math.round(limit))),
     });
@@ -598,7 +601,7 @@ export class ActionRuntimeService {
 
   async getRun(id: string) {
     await this.ensureDefaultConnectors();
-    const run = await this.runRepo.findOneBy({ id });
+    const run = await new TenantRepository(this.runRepo).findOneBy({ id });
     if (!run) {
       throw new AppError('ACTION_RUN_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,
@@ -611,7 +614,7 @@ export class ActionRuntimeService {
 
   async retryRun(id: string): Promise<ActionRunRetryResultValue> {
     await this.ensureDefaultConnectors();
-    const run = await this.runRepo.findOneBy({ id });
+    const run = await new TenantRepository(this.runRepo).findOneBy({ id });
     if (!run) {
       throw new AppError('ACTION_RUN_NOT_FOUND', {
         status: HttpStatus.NOT_FOUND,

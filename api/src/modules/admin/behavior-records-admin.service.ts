@@ -18,6 +18,7 @@ import { FeedPostEntity } from '../feed/feed-post.entity';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
 import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 
 type BehaviorSurface = 'moments' | 'feed' | 'channels';
 
@@ -423,12 +424,14 @@ export class BehaviorRecordsAdminService {
 
     const [momentPosts, feedPosts] = await Promise.all([
       momentPostIds.size
-        ? this.momentPostRepo.find({
+        ? new TenantRepository(this.momentPostRepo).find({
             where: { id: In([...momentPostIds]) },
           })
         : Promise.resolve([]),
       feedPostIds.size
-        ? this.feedPostRepo.find({ where: { id: In([...feedPostIds]) } })
+        ? new TenantRepository(this.feedPostRepo).find({
+            where: { id: In([...feedPostIds]) },
+          })
         : Promise.resolve([]),
     ]);
     const momentPostMap = new Map(momentPosts.map((post) => [post.id, post]));
@@ -440,7 +443,8 @@ export class BehaviorRecordsAdminService {
       .map((follow) => follow.authorId);
     const characterMap = new Map<string, CharacterEntity>();
     if (followAuthorIds.length) {
-      const characters = await this.characterRepo.find({
+      // 共享 world：CharacterEntity 复合主键，preset id 跨 owner 重合 → 经 TenantRepository 限当前 owner。
+      const characters = await new TenantRepository(this.characterRepo).find({
         where: { id: In(followAuthorIds) },
       });
       for (const character of characters) {

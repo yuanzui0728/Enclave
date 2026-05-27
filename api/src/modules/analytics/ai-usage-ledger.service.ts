@@ -858,23 +858,25 @@ export class AiUsageLedgerService {
     const reviewRepo = this.repo.manager.getRepository(
       AdminConversationReviewEntity,
     );
+    // 共享 world：conversationId（direct_<char> 等）跨 owner 共用，按 conversationId IN
+    // 裸读会命中别 owner 的 message/ledger/review → 全经 TenantRepository 注入当前 owner。
     const [messages, followupLedgerRecords, reviews, labelMaps] =
       await Promise.all([
-        messageRepo.find({
+        new TenantRepository(messageRepo).find({
           where: {
             conversationId: In(conversationIds),
             createdAt: Between(earliestOccurredAt, analysisEndAt),
           },
           order: { createdAt: 'ASC' },
         }),
-        this.repo.find({
+        new TenantRepository(this.repo).find({
           where: {
             conversationId: In(conversationIds),
             occurredAt: Between(earliestOccurredAt, analysisEndAt),
           },
           order: { occurredAt: 'ASC' },
         }),
-        reviewRepo.find({
+        new TenantRepository(reviewRepo).find({
           where: {
             conversationId: In(conversationIds),
           },
@@ -1732,6 +1734,12 @@ export class AiUsageLedgerService {
       occurredAt: Between(query.from, query.to),
     };
 
+    // 共享 world：token-usage admin 视图按当前租户帧 owner 隔离（overview/trend/breakdown/
+    // records/downgrade-* 全走 buildWhere）。不加则裸读跨 owner 聚合 + afterLoad 抛。
+    if (isSharedWorldMode()) {
+      where.ownerId = TenantContextStore.getOrThrow().ownerId;
+    }
+
     if (query.characterId) {
       where.characterId = query.characterId;
     }
@@ -2531,19 +2539,21 @@ export class AiUsageLedgerService {
       ),
     );
 
+    // 共享 world：conversation/character 复合主键（direct_<char>、preset id 跨 owner 重合），
+    // group uuid 不撞但一并 scope 防陈旧外部引用触 leak → 全经 TenantRepository 注入当前 owner。
     const [conversations, groups, characters] = await Promise.all([
       conversationIds.length
-        ? this.conversationRepo.find({
+        ? new TenantRepository(this.conversationRepo).find({
             where: { id: In(conversationIds) },
           })
         : Promise.resolve([]),
       groupIds.length
-        ? this.groupRepo.find({
+        ? new TenantRepository(this.groupRepo).find({
             where: { id: In(groupIds) },
           })
         : Promise.resolve([]),
       characterIds.length
-        ? this.characterRepo.find({
+        ? new TenantRepository(this.characterRepo).find({
             where: { id: In(characterIds) },
           })
         : Promise.resolve([]),

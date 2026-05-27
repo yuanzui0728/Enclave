@@ -84,7 +84,9 @@ export class AdminService {
   }
 
   async getFriendCharacterIds(): Promise<string[]> {
-    const friendships = await this.friendshipRepo.find({
+    // 共享 world：in-world admin = 当前 owner 自己的后台（见类注释）；裸 find 会 dump 全 owner
+    // 好友 + 首个外部行触 leak → 经 TenantRepository 限当前 owner 的好友列表。
+    const friendships = await new TenantRepository(this.friendshipRepo).find({
       select: ['characterId'],
       where: { status: 'friend' },
     });

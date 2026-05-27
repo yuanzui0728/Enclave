@@ -1605,7 +1605,9 @@ ${personaSummary || '（暂无更多信息）'}
     // ownerId，只清当前 owner 的到期火花（下面 whereInIds 用本 owner 的 id，唯一 id 安全）。
     const stale = await new TenantRepository(this.friendshipRepo)
       .createQueryBuilder('f')
-      .where('f.sparkStreak > 0')
+      // 🔴 必须 .andWhere——TenantRepository.createQueryBuilder 已 andWhere 注入当前
+      // ownerId，这里用 .where 会重置掉它（lesson①）→ 扫到别 owner 的 friendship 泄漏。
+      .andWhere('f.sparkStreak > 0')
       .andWhere(
         '(f.sparkLastDay IS NULL OR (f.sparkLastDay <> :today AND f.sparkLastDay <> :yesterday))',
         { today, yesterday },
@@ -1619,7 +1621,9 @@ ${personaSummary || '（暂无更多信息）'}
       .createQueryBuilder()
       .update(FriendshipEntity)
       .set({ sparkStreak: 0, sparkStartedAt: null })
-      .whereInIds(stale.map((f) => f.id))
+      // 复合主键 (userId,id)：默认好友 id 跨 owner 重复，必须按完整复合主键定位，
+      // 否则裸 id 数组会更新别 owner 同 id 的 friendship。stale 已是当前 owner 的行。
+      .whereInIds(stale.map((f) => ({ id: f.id, ownerId: f.ownerId })))
       .andWhere(
         '(sparkLastDay IS NULL OR (sparkLastDay <> :today AND sparkLastDay <> :yesterday))',
         { today, yesterday },

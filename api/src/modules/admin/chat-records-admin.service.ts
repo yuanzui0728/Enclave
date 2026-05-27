@@ -426,7 +426,10 @@ export class ChatRecordsAdminService {
       where.insightKind = kind;
     }
 
-    const [jobs, total] = await this.mediaInsightJobRepo.findAndCount({
+    // 共享 world：admin 也只看当前租户帧 owner 的 media-insight job（按 owner 隔离）。
+    const [jobs, total] = await new TenantRepository(
+      this.mediaInsightJobRepo,
+    ).findAndCount({
       where,
       order: {
         updatedAt: 'DESC',
