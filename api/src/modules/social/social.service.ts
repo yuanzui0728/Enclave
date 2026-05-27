@@ -207,7 +207,7 @@ export class SocialService implements OnModuleInit {
     } else if (direction === 'outbound') {
       where.acceptAt = Not(IsNull());
     }
-    return this.friendRequestRepo.find({
+    return new TenantRepository(this.friendRequestRepo).find({
       where,
       order: { createdAt: 'DESC' },
     });
@@ -221,7 +221,7 @@ export class SocialService implements OnModuleInit {
     const ownerId =
       options?.ownerId ??
       (await this.worldOwnerService.getOwnerOrThrow()).id;
-    const req = await this.friendRequestRepo.findOneBy({
+    const req = await new TenantRepository(this.friendRequestRepo).findOneBy({
       id: requestId,
       ownerId,
     });
@@ -286,7 +286,9 @@ export class SocialService implements OnModuleInit {
 
   async declineRequest(requestId: string): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const request = await this.friendRequestRepo.findOneBy({
+    const request = await new TenantRepository(
+      this.friendRequestRepo,
+    ).findOneBy({
       id: requestId,
       ownerId: owner.id,
     });
@@ -332,7 +334,7 @@ export class SocialService implements OnModuleInit {
   > {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.ensureDefaultFriendships(owner.id);
-    const friendships = await this.friendshipRepo.find({
+    const friendships = await new TenantRepository(this.friendshipRepo).find({
       where: { ownerId: owner.id, status: Not(In(['blocked', 'removed'])) },
     });
     if (!friendships.length) {
@@ -368,7 +370,9 @@ export class SocialService implements OnModuleInit {
     starred: boolean,
   ): Promise<FriendshipEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({
+    const friendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -416,7 +420,9 @@ export class SocialService implements OnModuleInit {
     },
   ): Promise<FriendshipEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({
+    const friendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -482,7 +488,7 @@ export class SocialService implements OnModuleInit {
     const resolvedOwnerId =
       ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
     await this.ensureDefaultFriendships(resolvedOwnerId);
-    const friendships = await this.friendshipRepo.find({
+    const friendships = await new TenantRepository(this.friendshipRepo).find({
       where: {
         ownerId: resolvedOwnerId,
         status: Not(In(['blocked', 'removed'])),
@@ -508,7 +514,7 @@ export class SocialService implements OnModuleInit {
     }>
   > {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const blocked = await this.friendshipRepo.find({
+    const blocked = await new TenantRepository(this.friendshipRepo).find({
       where: { ownerId: owner.id, status: 'blocked' },
       order: { createdAt: 'DESC' },
     });
@@ -524,7 +530,7 @@ export class SocialService implements OnModuleInit {
   async getBlockedCharacterIds(ownerId?: string): Promise<string[]> {
     const resolvedOwnerId =
       ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
-    const blocked = await this.friendshipRepo.find({
+    const blocked = await new TenantRepository(this.friendshipRepo).find({
       where: { ownerId: resolvedOwnerId, status: 'blocked' },
       order: { createdAt: 'DESC' },
     });
@@ -561,7 +567,9 @@ export class SocialService implements OnModuleInit {
       return;
     }
     const characterById = new Map(characters.map((c) => [c.id, c]));
-    const existingFriendships = await this.friendshipRepo.find({
+    const existingFriendships = await new TenantRepository(
+      this.friendshipRepo,
+    ).find({
       where: {
         ownerId: resolvedOwnerId,
         characterId: In(characters.map((c) => c.id)),
@@ -672,9 +680,12 @@ export class SocialService implements OnModuleInit {
         triggerScene: In([...SCENE_IDS]),
         createdAt: MoreThanOrEqual(startOfDay),
       } as const;
+      const scopedFriendRequestRepo = new TenantRepository(
+        this.friendRequestRepo,
+      );
       const [count, lastRequest] = await Promise.all([
-        this.friendRequestRepo.count({ where: dailyWhere }),
-        this.friendRequestRepo.findOne({
+        scopedFriendRequestRepo.count({ where: dailyWhere }),
+        scopedFriendRequestRepo.findOne({
           where: dailyWhere,
           select: ['id', 'createdAt'],
           order: { createdAt: 'DESC' },
@@ -707,8 +718,10 @@ export class SocialService implements OnModuleInit {
     // 显式加 expiresAt > now (null 兼容历史数据) 把 dead pending 当作"空位"释放。
     const now = new Date();
     const [existingFriendships, pendingRequests] = await Promise.all([
-      this.friendshipRepo.find({ where: { ownerId: owner.id } }),
-      this.friendRequestRepo.find({
+      new TenantRepository(this.friendshipRepo).find({
+        where: { ownerId: owner.id },
+      }),
+      new TenantRepository(this.friendRequestRepo).find({
         where: [
           {
             ownerId: owner.id,
@@ -832,7 +845,9 @@ export class SocialService implements OnModuleInit {
 
     // 从硬编码预设中选，不依赖 DB
     const allPresets = listCelebrityCharacterPresets();
-    const existingFriendships = await this.friendshipRepo.find({
+    const existingFriendships = await new TenantRepository(
+      this.friendshipRepo,
+    ).find({
       where: { ownerId: owner.id },
     });
     const existingIds = new Set(
@@ -920,7 +935,9 @@ export class SocialService implements OnModuleInit {
         legacyMessage: 'Character not found',
       });
 
-    const existing = await this.friendRequestRepo.findOneBy({
+    const existing = await new TenantRepository(
+      this.friendRequestRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
       status: 'pending',
@@ -1193,7 +1210,7 @@ ${personaSummary || '（暂无更多信息）'}
       });
     }
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const existing = await this.friendshipRepo.findOneBy({
+    const existing = await new TenantRepository(this.friendshipRepo).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1260,7 +1277,7 @@ ${personaSummary || '（暂无更多信息）'}
 
   async unblockCharacter(characterId: string): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const existing = await this.friendshipRepo.findOneBy({
+    const existing = await new TenantRepository(this.friendshipRepo).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1324,7 +1341,7 @@ ${personaSummary || '（暂无更多信息）'}
       });
     }
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const existing = await this.friendshipRepo.findOneBy({
+    const existing = await new TenantRepository(this.friendshipRepo).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1387,7 +1404,9 @@ ${personaSummary || '（暂无更多信息）'}
       });
     }
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({
+    const friendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1448,7 +1467,9 @@ ${personaSummary || '（暂无更多信息）'}
                 legacyMessage: 'tag required',
               });
             const owner = await this.worldOwnerService.getOwnerOrThrow();
-            const fs = await this.friendshipRepo.findOneBy({
+            const fs = await new TenantRepository(
+              this.friendshipRepo,
+            ).findOneBy({
               ownerId: owner.id,
               characterId,
             });
@@ -1473,7 +1494,9 @@ ${personaSummary || '（暂无更多信息）'}
                 legacyMessage: 'tag required',
               });
             const owner = await this.worldOwnerService.getOwnerOrThrow();
-            const fs = await this.friendshipRepo.findOneBy({
+            const fs = await new TenantRepository(
+              this.friendshipRepo,
+            ).findOneBy({
               ownerId: owner.id,
               characterId,
             });
@@ -1513,7 +1536,9 @@ ${personaSummary || '（暂无更多信息）'}
 
   async updateIntimacy(characterId: string, delta: number): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({
+    const friendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1546,7 +1571,9 @@ ${personaSummary || '（暂无更多信息）'}
     characterId: string,
   ): Promise<{ streak: number; tier: number; isNew: boolean }> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({
+    const friendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId,
     });
@@ -1645,7 +1672,7 @@ ${personaSummary || '（暂无更多信息）'}
     characterName: string,
     options?: { notifyConversation?: boolean; source?: string | null },
   ): Promise<FriendshipEntity> {
-    const existing = await this.friendshipRepo.findOneBy({
+    const existing = await new TenantRepository(this.friendshipRepo).findOneBy({
       ownerId,
       characterId,
     });

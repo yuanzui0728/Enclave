@@ -16,6 +16,7 @@ import {
   resolveRepoPath,
 } from '../../database/database-path';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import {
   resolveReadableChatAttachmentPath,
@@ -117,7 +118,7 @@ export class CustomStickersService {
 
   async getStickerCatalog(): Promise<StickerCatalogResponse> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const customStickers = await this.customStickerRepo.find({
+    const customStickers = await new TenantRepository(this.customStickerRepo).find({
       where: { ownerId: owner.id },
       order: {
         updatedAt: 'DESC',
@@ -177,7 +178,7 @@ export class CustomStickersService {
 
   async deleteCustomSticker(id: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const sticker = await this.customStickerRepo.findOne({
+    const sticker = await new TenantRepository(this.customStickerRepo).findOne({
       where: {
         id,
         ownerId: owner.id,
@@ -275,7 +276,7 @@ export class CustomStickersService {
     });
 
     const assetHash = createHash('sha256').update(buffer).digest('hex');
-    const existing = await this.customStickerRepo.findOne({
+    const existing = await new TenantRepository(this.customStickerRepo).findOne({
       where: {
         ownerId: owner.id,
         assetHash,
@@ -290,7 +291,7 @@ export class CustomStickersService {
       return this.serializeCustomSticker(existing);
     }
 
-    const count = await this.customStickerRepo.count({
+    const count = await new TenantRepository(this.customStickerRepo).count({
       where: {
         ownerId: owner.id,
       },
@@ -351,7 +352,7 @@ export class CustomStickersService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
 
     if (input.threadType === 'conversation') {
-      const conversation = await this.conversationRepo.findOne({
+      const conversation = await new TenantRepository(this.conversationRepo).findOne({
         where: {
           id: input.threadId,
           ownerId: owner.id,
@@ -364,7 +365,7 @@ export class CustomStickersService {
         });
       }
 
-      const message = await this.messageRepo.findOne({
+      const message = await new TenantRepository(this.messageRepo).findOne({
         where: {
           id: input.messageId,
           conversationId: input.threadId,
@@ -389,7 +390,7 @@ export class CustomStickersService {
       });
     }
 
-    const group = await this.groupRepo.findOne({
+    const group = await new TenantRepository(this.groupRepo).findOne({
       where: {
         id: input.threadId,
       },
@@ -401,7 +402,7 @@ export class CustomStickersService {
       });
     }
 
-    const membership = await this.groupMemberRepo.findOne({
+    const membership = await new TenantRepository(this.groupMemberRepo).findOne({
       where: {
         groupId: input.threadId,
         memberId: owner.id,
@@ -414,7 +415,7 @@ export class CustomStickersService {
       });
     }
 
-    const message = await this.groupMessageRepo.findOne({
+    const message = await new TenantRepository(this.groupMessageRepo).findOne({
       where: {
         id: input.messageId,
         groupId: input.threadId,
@@ -570,7 +571,7 @@ export class CustomStickersService {
     stickerId: string,
   ): Promise<StickerAttachment | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const entity = await this.customStickerRepo.findOne({
+    const entity = await new TenantRepository(this.customStickerRepo).findOne({
       where: {
         id: stickerId,
         ownerId: owner.id,

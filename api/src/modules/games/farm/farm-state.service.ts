@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharactersService } from '../../characters/characters.service';
 import { WorldOwnerService } from '../../auth/world-owner.service';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmEventService } from './farm-event.service';
 import { FarmQuestService } from './farm-quest.service';
 import { FarmNpcStateEntity } from './entities/farm-npc-state.entity';
@@ -89,7 +90,7 @@ export class FarmStateService {
   async getOrCreatePlayerState(
     ownerId: string,
   ): Promise<FarmPlayerStateEntity> {
-    let state = await this.playerRepo.findOneBy({ ownerId });
+    let state = await new TenantRepository(this.playerRepo).findOneBy({ ownerId });
     if (!state) {
       state = this.playerRepo.create({
         ownerId,
@@ -547,7 +548,7 @@ export class FarmStateService {
       });
     }
     // 共享 world：characterId 跨 owner 共用，并 ownerId 过滤防串号（npc 两模式都写 ownerId）。
-    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
+    const npc = await new TenantRepository(this.npcRepo).findOneBy({ characterId, ownerId });
     if (!npc) {
       throw new AppError('FARM_NPC_NO_FARM', {
         status: HttpStatus.NOT_FOUND,
@@ -1115,7 +1116,7 @@ export class FarmStateService {
 
   // 已放置装饰里是否包含 scarecrow（影响 NPC tick 的 bug 生成）。
   async hasScarecrow(ownerId: string): Promise<boolean> {
-    const state = await this.playerRepo.findOneBy({ ownerId });
+    const state = await new TenantRepository(this.playerRepo).findOneBy({ ownerId });
     if (!state) return false;
     return (state.placedDecorationsPayload ?? []).some((p) => p.type === 'scarecrow');
   }
@@ -1170,7 +1171,7 @@ export class FarmStateService {
       });
     }
     state.coins -= amount;
-    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
+    const npc = await new TenantRepository(this.npcRepo).findOneBy({ characterId, ownerId });
     if (npc) {
       npc.coins += amount;
       await this.npcRepo.save(npc);
@@ -1300,7 +1301,7 @@ export class FarmStateService {
       await this.charactersService.upsert(character);
     }
     const saved = await this.playerRepo.save(state);
-    const npc = await this.npcRepo.findOneBy({ characterId, ownerId });
+    const npc = await new TenantRepository(this.npcRepo).findOneBy({ characterId, ownerId });
     await this.eventService.recordEvent({
       ownerId,
       kind: 'intimacy_change',

@@ -3,6 +3,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
 import { OfficialAccountDeliveryEntity } from './official-account-delivery.entity';
@@ -145,7 +146,7 @@ export class OfficialAccountsService {
       return [];
     }
 
-    const follows = await this.followRepo.find({
+    const follows = await new TenantRepository(this.followRepo).find({
       where: {
         ownerId: owner.id,
         accountId: In(accounts.map((account) => account.id)),
@@ -169,7 +170,7 @@ export class OfficialAccountsService {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const account = await this.getAccountEntityOrThrow(id);
-    const follow = await this.followRepo.findOneBy({
+    const follow = await new TenantRepository(this.followRepo).findOneBy({
       ownerId: owner.id,
       accountId: account.id,
     });
@@ -236,14 +237,14 @@ export class OfficialAccountsService {
           isEnabled: true,
         },
       }),
-      this.followRepo.find({
+      new TenantRepository(this.followRepo).find({
         where: {
           ownerId: owner.id,
           accountId: In(serviceAccountIds),
         },
       }),
       this.getRecentArticlesForAccounts(serviceAccountIds),
-      this.serviceMessageRepo.find({
+      new TenantRepository(this.serviceMessageRepo).find({
         where: {
           ownerId: owner.id,
           accountId: In(serviceAccountIds),
@@ -282,7 +283,7 @@ export class OfficialAccountsService {
     const account = await this.getServiceAccountEntityOrThrow(accountId);
     await this.ensureServiceMessages(owner.id, [account.id]);
 
-    const messages = await this.serviceMessageRepo.find({
+    const messages = await new TenantRepository(this.serviceMessageRepo).find({
       where: {
         ownerId: owner.id,
         accountId: account.id,
@@ -306,7 +307,7 @@ export class OfficialAccountsService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.getServiceAccountEntityOrThrow(accountId);
 
-    const unreadMessages = await this.serviceMessageRepo.find({
+    const unreadMessages = await new TenantRepository(this.serviceMessageRepo).find({
       where: {
         ownerId: owner.id,
         accountId,
@@ -335,7 +336,7 @@ export class OfficialAccountsService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.getServiceAccountEntityOrThrow(accountId);
 
-    const follow = await this.followRepo.findOneBy({
+    const follow = await new TenantRepository(this.followRepo).findOneBy({
       ownerId: owner.id,
       accountId,
     });
@@ -359,7 +360,7 @@ export class OfficialAccountsService {
   async markDeliveryRead(deliveryId: string) {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const delivery = await this.deliveryRepo.findOneBy({
+    const delivery = await new TenantRepository(this.deliveryRepo).findOneBy({
       id: deliveryId,
       ownerId: owner.id,
     });
@@ -390,7 +391,7 @@ export class OfficialAccountsService {
       return this.buildSubscriptionInbox(owner.id);
     }
 
-    const unreadDeliveries = await this.deliveryRepo.find({
+    const unreadDeliveries = await new TenantRepository(this.deliveryRepo).find({
       where: {
         ownerId: owner.id,
         accountId: In(subscriptionAccountIds),
@@ -417,7 +418,7 @@ export class OfficialAccountsService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const account = await this.getAccountEntityOrThrow(id);
 
-    const existing = await this.followRepo.findOneBy({
+    const existing = await new TenantRepository(this.followRepo).findOneBy({
       ownerId: owner.id,
       accountId: id,
     });
@@ -443,7 +444,7 @@ export class OfficialAccountsService {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.getAccountEntityOrThrow(id);
-    await this.followRepo.delete({
+    await new TenantRepository(this.followRepo).delete({
       ownerId: owner.id,
       accountId: id,
     });
@@ -473,13 +474,13 @@ export class OfficialAccountsService {
         },
         order: { lastPublishedAt: 'DESC', createdAt: 'DESC' },
       }),
-      this.followRepo.find({
+      new TenantRepository(this.followRepo).find({
         where: {
           ownerId,
           accountId: In(subscriptionAccountIds),
         },
       }),
-      this.deliveryRepo.find({
+      new TenantRepository(this.deliveryRepo).find({
         where: {
           ownerId,
           accountId: In(subscriptionAccountIds),
@@ -591,7 +592,7 @@ export class OfficialAccountsService {
       return;
     }
 
-    const existingMessages = await this.serviceMessageRepo.find({
+    const existingMessages = await new TenantRepository(this.serviceMessageRepo).find({
       where: {
         ownerId,
         accountId: In(accounts.map((account) => account.id)),
@@ -649,7 +650,7 @@ export class OfficialAccountsService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const article = await this.getArticleEntityOrThrow(articleId);
     const account = await this.getAccountEntityOrThrow(article.accountId);
-    const follow = await this.followRepo.findOneBy({
+    const follow = await new TenantRepository(this.followRepo).findOneBy({
       ownerId: owner.id,
       accountId: account.id,
     });
@@ -719,7 +720,7 @@ export class OfficialAccountsService {
       return;
     }
 
-    const existingDeliveries = await this.deliveryRepo.find({
+    const existingDeliveries = await new TenantRepository(this.deliveryRepo).find({
       where: {
         ownerId,
         articleId: In(articles.map((article) => article.id)),
@@ -747,7 +748,7 @@ export class OfficialAccountsService {
   }
 
   private async getFollowedSubscriptionAccountIds(ownerId: string) {
-    const follows = await this.followRepo.find({
+    const follows = await new TenantRepository(this.followRepo).find({
       where: { ownerId },
     });
 
@@ -768,7 +769,7 @@ export class OfficialAccountsService {
   }
 
   private async getFollowedServiceAccountIds(ownerId: string) {
-    const follows = await this.followRepo.find({
+    const follows = await new TenantRepository(this.followRepo).find({
       where: { ownerId },
     });
 

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharactersService } from '../../characters/characters.service';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmNpcStateEntity } from './entities/farm-npc-state.entity';
 import { FarmPlayerStateEntity } from './entities/farm-player-state.entity';
 import {
@@ -25,10 +26,10 @@ export class FarmLeaderboardService {
     type: FarmLeaderboardType,
     limit = 30,
   ): Promise<FarmLeaderboardView> {
-    const player = await this.playerRepo.findOneBy({ ownerId });
+    const player = await new TenantRepository(this.playerRepo).findOneBy({ ownerId });
     // 共享 world：排行榜只算当前 owner 自己世界的 NPC（用户间不互通），裸 find() 会捞全租户
     // NPC → 串号。NPC state 行始终带 ownerId（两种模式都写），显式过滤安全。
-    const npcs = await this.npcRepo.find({ where: { ownerId } });
+    const npcs = await new TenantRepository(this.npcRepo).find({ where: { ownerId } });
     const characterIds = npcs.map((n) => n.characterId);
     // 之前对每个 NPC 都 findById 一次 — 145 个角色就是 145 次 SQL，
     // 排行榜 / 邻居列表本来是热路径（leaderboard sheet 一开就触发 3 tab + neighbor 列表）。

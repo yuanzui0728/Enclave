@@ -2,6 +2,7 @@ import { forwardRef, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppError } from '../../../common/app-error.exception';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmPlayerStateEntity } from './entities/farm-player-state.entity';
 import { FarmQuestProgressEntity } from './entities/farm-quest-progress.entity';
 import {
@@ -104,7 +105,7 @@ export class FarmQuestService {
       });
     }
     const def = getQuestDefinition(questId);
-    let row = await this.questRepo.findOneBy({ ownerId, questId });
+    let row = await new TenantRepository(this.questRepo).findOneBy({ ownerId, questId });
     if (!row) {
       row = await this.bumpProgress(ownerId, questId, 0);
     }
@@ -146,7 +147,7 @@ export class FarmQuestService {
   }
 
   private async ensureAll(ownerId: string): Promise<FarmQuestProgressEntity[]> {
-    const existing = await this.questRepo.findBy({ ownerId });
+    const existing = await new TenantRepository(this.questRepo).findBy({ ownerId });
     const haveIds = new Set(existing.map((r) => r.questId));
     const today = todayLocalDate();
     // 第一次访问 /quests 要 seed N=任务总数 行，之前是 N 次串行 await save
@@ -177,7 +178,7 @@ export class FarmQuestService {
     delta: number,
   ): Promise<FarmQuestProgressEntity> {
     const def = getQuestDefinition(questId);
-    let row = await this.questRepo.findOneBy({ ownerId, questId });
+    let row = await new TenantRepository(this.questRepo).findOneBy({ ownerId, questId });
     const today = todayLocalDate();
     if (!row) {
       row = this.questRepo.create({
@@ -205,7 +206,7 @@ export class FarmQuestService {
     value: number,
   ): Promise<FarmQuestProgressEntity> {
     const def = getQuestDefinition(questId);
-    let row = await this.questRepo.findOneBy({ ownerId, questId });
+    let row = await new TenantRepository(this.questRepo).findOneBy({ ownerId, questId });
     if (!row) {
       row = this.questRepo.create({
         ownerId,

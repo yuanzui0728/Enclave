@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { FriendshipEntity } from './friendship.entity';
 
 export type FriendRemarkMap = Map<string, string>;
@@ -13,7 +14,7 @@ export class FriendRemarkResolver {
   ) {}
 
   async getOwnerRemarkMap(ownerId: string): Promise<FriendRemarkMap> {
-    const rows = await this.friendshipRepo.find({
+    const rows = await new TenantRepository(this.friendshipRepo).find({
       where: { ownerId, status: Not(In(['blocked', 'removed'])) },
       select: ['characterId', 'remarkName'],
     });
@@ -42,7 +43,7 @@ export class FriendRemarkResolver {
     // 又是 dead flag。把 chatOnly=true 当作 momentsHiddenFromMe + ...FromThem
     // 同时为 true 来对待：TA 的 moment 不进 owner 的 view，owner 的 moment
     // 也不进 TA 的 NPC 候选池，跟描述里"不出现在朋友圈/动态"语义一致。
-    const rows = await this.friendshipRepo.find({
+    const rows = await new TenantRepository(this.friendshipRepo).find({
       where: [
         {
           ownerId,
@@ -70,7 +71,7 @@ export class FriendRemarkResolver {
   async getMomentsHiddenFromThemCharacterIds(
     ownerId: string,
   ): Promise<Set<string>> {
-    const rows = await this.friendshipRepo.find({
+    const rows = await new TenantRepository(this.friendshipRepo).find({
       where: [
         {
           ownerId,
@@ -111,7 +112,7 @@ export class FriendRemarkResolver {
     remarkMap: FriendRemarkMap;
     momentsHiddenFromMeCharacterIds: Set<string>;
   }> {
-    const rows = await this.friendshipRepo.find({
+    const rows = await new TenantRepository(this.friendshipRepo).find({
       where: { ownerId, status: Not(In(['blocked', 'removed'])) },
       select: [
         'characterId',

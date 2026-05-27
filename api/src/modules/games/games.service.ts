@@ -5,6 +5,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import {
   createDefaultGameCenterOwnerState,
   GAME_CENTER_HOME_SEED,
@@ -1285,7 +1286,7 @@ export class GamesService {
 
   private async ensureOwnerState() {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const existing = await this.ownerStateRepo.findOne({
+    const existing = await new TenantRepository(this.ownerStateRepo).findOne({
       where: { ownerId: owner.id },
     });
 

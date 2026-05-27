@@ -4,6 +4,7 @@ import { LessThan, Repository } from 'typeorm';
 import { CharacterEntity } from '../../characters/character.entity';
 import { CharactersService } from '../../characters/characters.service';
 import { FeedService } from '../../feed/feed.service';
+import { TenantRepository } from '../../tenancy/tenant-scoped.repository';
 import { FarmEventLogEntity } from './entities/farm-event-log.entity';
 import { getCropDefinition } from './crop-catalog';
 import {
@@ -170,7 +171,7 @@ export class FarmEventService {
     actorId: string,
     limit = 5,
   ): Promise<FarmEventLogEntity[]> {
-    return this.repo.find({
+    return new TenantRepository(this.repo).find({
       where: [
         { ownerId, actorId },
         { ownerId, targetId: actorId },
@@ -182,7 +183,7 @@ export class FarmEventService {
 
   async pruneOldEvents(ownerId: string, keepDays: number): Promise<number> {
     const cutoff = new Date(Date.now() - keepDays * 24 * 3600 * 1000);
-    const result = await this.repo.delete({
+    const result = await new TenantRepository(this.repo).delete({
       ownerId,
       createdAt: LessThan(cutoff),
     });

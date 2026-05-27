@@ -116,7 +116,9 @@ export class ShakeDiscoveryService {
       return;
     }
     // 取该 owner 的活跃好友（排除软删 'removed' 与 'blocked'，因此删除好友能腾出名额）。
-    const activeFriendships = await this.friendshipRepo.find({
+    const activeFriendships = await new TenantRepository(
+      this.friendshipRepo,
+    ).find({
       where: { ownerId, status: In([...ACTIVE_FRIEND_STATUSES]) },
     });
     // "摇一摇来源"好友 ⊆ 活跃好友：总活跃数都不到上限就一定没超，省掉 character 查询。
@@ -588,7 +590,9 @@ export class ShakeDiscoveryService {
     // preview 绕过，这里在真正落库（创建角色 / 加好友）前再校验一次配额。仅当不是
     // "重新 keep 一个已活跃好友"时才查——re-keep 不新增好友，既不该被拦，也不该在
     // 超额时白白创建出孤儿角色。
-    const existingShakeFriendship = await this.friendshipRepo.findOneBy({
+    const existingShakeFriendship = await new TenantRepository(
+      this.friendshipRepo,
+    ).findOneBy({
       ownerId: owner.id,
       characterId: targetCharacterId,
     });
@@ -637,10 +641,12 @@ export class ShakeDiscoveryService {
       await this.writeSessions(owner.id, sessions);
     }
 
-    const friendship = await this.friendshipRepo.findOneBy({
-      ownerId: owner.id,
-      characterId: character.id,
-    });
+    const friendship = await new TenantRepository(this.friendshipRepo).findOneBy(
+      {
+        ownerId: owner.id,
+        characterId: character.id,
+      },
+    );
     const resolvedGreeting =
       session.greeting?.trim() ||
       (await this.worldLanguage.buildGenericGreetingFallback(character.name));
@@ -1089,7 +1095,7 @@ export class ShakeDiscoveryService {
   }
 
   private async buildExistingCoverageSummary(ownerId: string) {
-    const friendships = await this.friendshipRepo.find({
+    const friendships = await new TenantRepository(this.friendshipRepo).find({
       where: {
         ownerId,
         status: In([...ACTIVE_FRIEND_STATUSES]),

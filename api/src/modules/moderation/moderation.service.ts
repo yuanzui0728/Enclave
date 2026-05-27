@@ -3,6 +3,7 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { ModerationReportEntity } from './moderation-report.entity';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -33,7 +34,7 @@ export class ModerationService {
 
   async listReports() {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const reports = await this.moderationRepo.find({
+    const reports = await new TenantRepository(this.moderationRepo).find({
       where: { ownerId: owner.id },
       order: { createdAt: 'DESC' },
     });
@@ -87,7 +88,7 @@ export class ModerationService {
       });
     }
 
-    const report = await this.moderationRepo.findOneBy({
+    const report = await new TenantRepository(this.moderationRepo).findOneBy({
       id: reportId,
       ownerId: owner.id,
     });

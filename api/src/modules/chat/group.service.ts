@@ -324,7 +324,7 @@ export class GroupService {
         legacyMessage: 'Cannot add self mirror character as a group member',
       });
     }
-    const existing = await this.memberRepo.findOne({
+    const existing = await new TenantRepository(this.memberRepo).findOne({
       where: { groupId, memberId: trimmedMemberId },
     });
 
@@ -366,7 +366,7 @@ export class GroupService {
 
   async listGroups(): Promise<Group[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const memberships = await this.memberRepo.find({
+    const memberships = await new TenantRepository(this.memberRepo).find({
       where: {
         memberId: owner.id,
         memberType: 'user',
@@ -414,7 +414,7 @@ export class GroupService {
 
   async getMembers(groupId: string): Promise<GroupMemberEntity[]> {
     await this.requireAccessibleGroup(groupId);
-    const members = await this.memberRepo.find({
+    const members = await new TenantRepository(this.memberRepo).find({
       where: { groupId },
       order: { joinedAt: 'ASC' },
     });
@@ -479,7 +479,7 @@ export class GroupService {
 
     const limit = options.limit;
     if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
-      const messages = await this.messageRepo.find({
+      const messages = await new TenantRepository(this.messageRepo).find({
         where: this.buildGroupMessageWhere(
           groupId,
           group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
@@ -613,7 +613,7 @@ export class GroupService {
 
   async markGroupUnread(groupId: string): Promise<Group> {
     const group = await this.requireAccessibleGroup(groupId);
-    const lastCharacterMessage = await this.messageRepo.findOne({
+    const lastCharacterMessage = await new TenantRepository(this.messageRepo).findOne({
       where: group.lastClearedAt
         ? {
             groupId,
@@ -655,7 +655,7 @@ export class GroupService {
   ): Promise<GroupMessage> {
     await this.requireAccessibleGroup(groupId);
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const message = await this.messageRepo.findOneBy({
+    const message = await new TenantRepository(this.messageRepo).findOneBy({
       id: messageId,
       groupId,
     });
@@ -708,7 +708,7 @@ export class GroupService {
     messageId: string,
   ): Promise<{ success: true }> {
     const group = await this.requireAccessibleGroup(groupId);
-    const message = await this.messageRepo.findOneBy({
+    const message = await new TenantRepository(this.messageRepo).findOneBy({
       id: messageId,
       groupId,
     });
@@ -721,7 +721,7 @@ export class GroupService {
       });
     }
 
-    await this.messageRepo.delete({ id: message.id });
+    await new TenantRepository(this.messageRepo).delete({ id: message.id });
     await this.replyArtifactJobs.cancelGroupJobs(
       groupId,
       'source_message_deleted',
@@ -773,7 +773,7 @@ export class GroupService {
         legacyMessage: 'Group nickname cannot be empty',
       });
     }
-    const member = await this.memberRepo.findOne({
+    const member = await new TenantRepository(this.memberRepo).findOne({
       where: {
         groupId,
         memberId: owner.id,
@@ -810,7 +810,7 @@ export class GroupService {
     // 让另一端 chat-list 收到 conversation_updated → invalidate
     // /conversations 列表 → 列表里没了这条群，自然从 UI 消失。不 emit 的话
     // 多端在线时另一端要等到 60s 兜底轮询；期间用户点进去会撞 404 死页。
-    const membersBeforeDelete = await this.memberRepo.find({
+    const membersBeforeDelete = await new TenantRepository(this.memberRepo).find({
       where: { groupId: group.id },
       order: { joinedAt: 'ASC' },
     });
@@ -835,16 +835,16 @@ export class GroupService {
       group.id,
       'group_disbanded',
     );
-    await this.memberRepo.delete({ groupId: group.id });
-    await this.messageRepo.delete({ groupId: group.id });
-    await this.groupRepo.delete({ id: group.id });
+    await new TenantRepository(this.memberRepo).delete({ groupId: group.id });
+    await new TenantRepository(this.messageRepo).delete({ groupId: group.id });
+    await new TenantRepository(this.groupRepo).delete({ id: group.id });
 
     return { success: true };
   }
 
   async removeMember(groupId: string, memberId: string) {
     await this.requireOwnedGroup(groupId);
-    const member = await this.memberRepo.findOne({
+    const member = await new TenantRepository(this.memberRepo).findOne({
       where: {
         groupId,
         memberId,
@@ -860,7 +860,7 @@ export class GroupService {
       });
     }
 
-    await this.memberRepo.delete({ id: member.id });
+    await new TenantRepository(this.memberRepo).delete({ id: member.id });
     await this.emitGroupConversationUpdated(groupId);
     return { success: true as const };
   }
@@ -1057,7 +1057,7 @@ export class GroupService {
   } | null> {
     const group = await this.requireAccessibleGroup(groupId);
     const members = (
-      await this.memberRepo.find({
+      await new TenantRepository(this.memberRepo).find({
         where: { groupId, memberType: 'character' },
       })
     ).filter((member) => member.memberId !== SELF_CHARACTER_ID);
@@ -1066,7 +1066,7 @@ export class GroupService {
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
-    const recentMessages = await this.messageRepo.find({
+    const recentMessages = await new TenantRepository(this.messageRepo).find({
       where: this.buildGroupMessageWhere(
         groupId,
         group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
@@ -1229,7 +1229,7 @@ export class GroupService {
     const replyContent = extractChatReplyMetadata(message.text);
     const mentionSummary = summarizeChatMentions(replyContent.body);
     const replyTargetMessage = replyContent.reply
-      ? await this.messageRepo.findOne({
+      ? await new TenantRepository(this.messageRepo).findOne({
           where: {
             id: replyContent.reply.messageId,
             groupId,
@@ -1602,7 +1602,7 @@ export class GroupService {
   }
 
   private listVisibleGroupMessageEntities(group: GroupEntity) {
-    return this.messageRepo.find({
+    return new TenantRepository(this.messageRepo).find({
       where: this.buildGroupMessageWhere(
         group.id,
         group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
@@ -1615,7 +1615,7 @@ export class GroupService {
     groupId: string,
   ): Promise<GroupEntity | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const membership = await this.memberRepo.findOne({
+    const membership = await new TenantRepository(this.memberRepo).findOne({
       where: {
         groupId,
         memberId: owner.id,
@@ -1856,7 +1856,7 @@ export class GroupService {
       return;
     }
 
-    const members = await this.memberRepo.find({
+    const members = await new TenantRepository(this.memberRepo).find({
       where: { groupId },
       order: { joinedAt: 'ASC' },
     });
@@ -1886,7 +1886,7 @@ export class GroupService {
   }
 
   private async syncGroupLastActivity(group: GroupEntity): Promise<void> {
-    const lastMessage = await this.messageRepo.findOne({
+    const lastMessage = await new TenantRepository(this.messageRepo).findOne({
       where: group.lastClearedAt
         ? {
             groupId: group.id,

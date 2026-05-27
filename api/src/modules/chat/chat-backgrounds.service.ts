@@ -15,6 +15,7 @@ import {
   resolveOwnerDataPath,
 } from '../../database/database-path';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
@@ -227,7 +228,7 @@ export class ChatBackgroundsService {
 
   private async requireOwnedConversation(conversationId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const conversation = await this.conversationRepo.findOneBy({
+    const conversation = await new TenantRepository(this.conversationRepo).findOneBy({
       id: conversationId,
       ownerId: owner.id,
     });
@@ -245,7 +246,7 @@ export class ChatBackgroundsService {
 
   private async requireOwnedGroup(groupId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const group = await this.groupRepo.findOneBy({
+    const group = await new TenantRepository(this.groupRepo).findOneBy({
       id: groupId,
       creatorId: owner.id,
       creatorType: 'user',

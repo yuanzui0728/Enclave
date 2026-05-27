@@ -383,7 +383,7 @@ export class FavoritesService implements OnModuleInit {
       return this.removeFavoriteNote(noteId);
     }
 
-    await this.favoriteRepo.delete({ sourceId: normalizedSourceId });
+    await new TenantRepository(this.favoriteRepo).delete({ sourceId: normalizedSourceId });
     return { success: true as const };
   }
 
@@ -492,7 +492,7 @@ export class FavoritesService implements OnModuleInit {
         legacyMessage: '笔记内容不能为空。',
       });
     }
-    await this.favoriteNoteRepo.update(
+    await new TenantRepository(this.favoriteNoteRepo).update(
       { id: normalizedId },
       {
         title: nextNote.title,
@@ -536,7 +536,7 @@ export class FavoritesService implements OnModuleInit {
       ? this.rowToFavoriteNoteDocument(removedRow)
       : null;
     if (removedNote) {
-      await this.favoriteNoteRepo.delete({ id: normalizedId });
+      await new TenantRepository(this.favoriteNoteRepo).delete({ id: normalizedId });
     }
 
     if (removedNote) {
@@ -561,7 +561,7 @@ export class FavoritesService implements OnModuleInit {
     input: CreateMessageFavoriteInput,
   ): Promise<FavoriteRecord> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const conversation = await this.conversationRepo.findOneBy({
+    const conversation = await new TenantRepository(this.conversationRepo).findOneBy({
       id: input.threadId,
       ownerId: owner.id,
     });
@@ -574,7 +574,7 @@ export class FavoritesService implements OnModuleInit {
       });
     }
 
-    const message = await this.messageRepo.findOneBy({
+    const message = await new TenantRepository(this.messageRepo).findOneBy({
       id: input.messageId,
       conversationId: conversation.id,
     });
@@ -630,7 +630,7 @@ export class FavoritesService implements OnModuleInit {
     input: CreateMessageFavoriteInput,
   ): Promise<FavoriteRecord> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const membership = await this.groupMemberRepo.findOneBy({
+    const membership = await new TenantRepository(this.groupMemberRepo).findOneBy({
       groupId: input.threadId,
       memberId: owner.id,
       memberType: 'user',
