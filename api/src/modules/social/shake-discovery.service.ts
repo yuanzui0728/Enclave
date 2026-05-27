@@ -803,6 +803,7 @@ export class ShakeDiscoveryService {
       userGroupIds.length
         ? this.groupRepo.find({
             where: {
+              ownerId,
               id: In(userGroupIds),
               lastActivityAt: MoreThanOrEqual(windowStartedAt),
             },
@@ -817,8 +818,13 @@ export class ShakeDiscoveryService {
     const groupMap = new Map(activeGroups.map((item) => [item.id, item.name]));
 
     if (conversationIds.length > 0) {
+      // 必须按 ownerId 过滤：direct 会话 id 形如 `direct_{characterId}`，预设/共享角色
+      // 的会话 id 在多个 owner 间相同，只按 conversationId 查会捞到别 owner 的消息 →
+      // afterLoad 读守卫抛 TENANT_READ_LEAK（整个摇一摇 500）。MessageEntity 已冗余
+      // ownerId 列正是为此。
       const messages = await this.messageRepo.find({
         where: {
+          ownerId,
           conversationId: In(conversationIds),
           createdAt: Between(windowStartedAt, windowEndedAt),
         },
@@ -857,6 +863,7 @@ export class ShakeDiscoveryService {
       activeGroupIds.length
         ? this.groupMessageRepo.find({
             where: {
+              ownerId,
               groupId: In(activeGroupIds),
               createdAt: Between(windowStartedAt, windowEndedAt),
             },
