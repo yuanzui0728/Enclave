@@ -2911,8 +2911,13 @@ export class AiOrchestratorService {
     maxTokens?: number;
     temperature?: number;
     fallback?: Record<string, unknown>;
+    // 调用方已自行完成访问控制时跳过会员硬拦（如摇一摇免费档由
+    // assertShakeFriendQuota 负责门禁）。默认 false，其余调用方行为不变。
+    skipSubscriptionGate?: boolean;
   }): Promise<Record<string, unknown>> {
-    await this.subscription.assertCanUseAi('text');
+    if (!options.skipSubscriptionGate) {
+      await this.subscription.assertCanUseAi('text');
+    }
     try {
       const prompt = await this.worldLanguage.prependTaskLanguageInstruction(
         options.prompt,

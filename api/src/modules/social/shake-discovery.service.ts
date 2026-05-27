@@ -97,11 +97,13 @@ export class ShakeDiscoveryService {
   ) {}
 
   // 非会员摇一摇好友配额校验（上限取 config.freeFriendLimit，0 = 不限制）。
-  // 会员判定与 SubscriptionService.assertCanUseAi 同口径：hardBlock 总开关关闭（本地
-  // 直连 / 未启用会员硬拦）或活跃会员（含试用）一律不受限；达到上限即 402 拦截。
-  // 注：cloud-api 失联且本地无缓存时 getStatus 返回 status='expired'+hardBlock=true
-  // （保守），付费用户在故障窗口内会被按非会员限流——与 assertCanUseAi 同口径，可接受
-  // （摇一摇配额比 AI 硬拦更宽松，不引入新回归）。
+  // 「免费档」语义：摇一摇本身对非会员开放（AI 生成已豁免 hardBlock，见 createSessionPreview
+  // 的 skipSubscriptionGate），但保留的"按需生成"好友数对非会员封顶 freeFriendLimit；
+  // 活跃会员（含试用）不受限。**故意不再耦合 hardBlock** —— 好友上限是独立产品规则，
+  // 即便运营把 AI 硬拦总开关关掉（feature.aiHardBlock=false）也照样对非会员生效。
+  // 本地直连 / 未托管：getStatus 回 status='active'（FALLBACK_LOOKUP）→ 豁免，符合预期。
+  // cloud-api 失联且本地无缓存：getStatus 回 status='expired'（保守）→ 付费用户在故障
+  // 窗口内会被按非会员限流，可接受（仅冷缓存+故障期；与既有 AI 保守拦同口径）。
   private async assertShakeFriendQuota(
     ownerId: string,
     freeFriendLimit: number,
@@ -110,7 +112,7 @@ export class ShakeDiscoveryService {
       return;
     }
     const status = await this.subscriptionService.getStatus();
-    if (!status.hardBlockEnabled || status.status === 'active') {
+    if (status.status === 'active') {
       return;
     }
     // 取该 owner 的活跃好友（排除软删 'removed' 与 'blocked'，因此删除好友能腾出名额）。
@@ -271,6 +273,10 @@ export class ShakeDiscoveryService {
     try {
       const planningRaw = await this.ai.generateJsonObject({
         prompt: planningPrompt,
+        // 摇一摇是非会员免费档：AI 生成不走 hardBlock 会员闸，访问控制改由
+        // assertShakeFriendQuota（保留好友数封顶）统一负责。否则 hardBlock 开启时
+        // 非会员连一次都摇不动，"免费 N 个"无从谈起。
+        skipSubscriptionGate: true,
         // 推理模型（n1n 把 gpt-4.1 偶发路由到带 thinking 的变体）一发 <think>
         // 就吃掉一两千 tokens，原来 1800 在 thinking + 4 directions JSON 之间常被
         // 截断；给到 4000 后再算上 extractJsonFromModelOutput 的截断 fence 兜底，
@@ -350,6 +356,8 @@ export class ShakeDiscoveryService {
         });
         const generationRaw = await this.ai.generateJsonObject({
           prompt: candidatePrompt,
+          // 同 planning：摇一摇免费档，AI 生成豁免 hardBlock 会员闸。
+          skipSubscriptionGate: true,
           // 同 planning：给 thinking 留够余量。
           maxTokens: 4000,
           temperature: 0.82,
