@@ -1,7 +1,7 @@
 import { Cron } from '@nestjs/schedule';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
@@ -501,8 +501,10 @@ export class CyberAvatarService {
     }
 
     if (input.mode === 'incremental') {
+      // 共享 world：signal id 跨 owner 重复，update-by-id 必须并 ownerId，否则把别 owner
+      // 同 id 的 signal 一起改状态（复合主键下裸 id 数组 update 也不安全）。
       await this.signalRepo.update(
-        sourceSignals.map((item) => item.id),
+        { id: In(sourceSignals.map((item) => item.id)), ownerId: owner.id },
         {
           status: 'processing',
         },
@@ -638,7 +640,7 @@ export class CyberAvatarService {
 
       if (input.mode === 'incremental' && sourceSignals.length) {
         await this.signalRepo.update(
-          sourceSignals.map((item) => item.id),
+          { id: In(sourceSignals.map((item) => item.id)), ownerId: owner.id },
           { status: 'merged' },
         );
       }
@@ -660,7 +662,7 @@ export class CyberAvatarService {
       this.logger.error('Cyber avatar refresh failed', error);
       if (input.mode === 'incremental' && sourceSignals.length) {
         await this.signalRepo.update(
-          sourceSignals.map((item) => item.id),
+          { id: In(sourceSignals.map((item) => item.id)), ownerId: owner.id },
           { status: 'failed' },
         );
       }
