@@ -16,6 +16,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { useAppearance } from "../hooks/use-appearance";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
@@ -51,6 +52,9 @@ export function MobileShell({ children }: PropsWithChildren) {
     ? pathname
     : null;
   const runtimeConfig = useAppRuntimeConfig();
+  // 解析生效主题（day/night），render 期直接挂到 shell 的 data-appearance，
+  // 配合同步 rehydrate 的 appearance-store 做到首帧即正确、零闪烁。
+  const { resolved: resolvedAppearance } = useAppearance();
   const { reminders } = useMessageReminders();
 
   // 走查 R4（第 4 轮）：和 chat-list-page / chat-room-page / chat-details /
@@ -122,7 +126,10 @@ export function MobileShell({ children }: PropsWithChildren) {
     // fixed inset-0 锚定 viewport：cold start 时 Capacitor WebView 短暂会把
     // 100dvh 报为 0，h-dvh 容器 flex-col 会塌缩导致 shrink-0 的 <nav> 临时
     // 浮到顶部。锚到 viewport 后 nav 永远贴底部，不再有 1-2s 双 tab 闪烁。
-    <div className="yj-mobile-shell fixed inset-0 overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
+    <div
+      data-appearance={resolvedAppearance}
+      className="yj-mobile-shell fixed inset-0 overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]"
+    >
       <MobileReminderToastHost />
       <div className="flex h-full min-h-0 flex-col">
         <div className="relative min-h-0 flex-1">
@@ -183,7 +190,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                     className={cn(
                       "relative flex h-8 w-8 items-center justify-center transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
-                        ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)] [background-image:linear-gradient(135deg,rgba(245,158,11,0.20),rgba(132,204,22,0.16))]"
+                        ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)]"
                         : "rounded-[12px] bg-transparent",
                     )}
                   >

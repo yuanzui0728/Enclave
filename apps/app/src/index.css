@@ -50,7 +50,7 @@ body {
 
 html.yj-mobile,
 body.yj-mobile {
-  background: #f4ede0;
+  background: #f4f1fb;
 }
 
 @keyframes page-in {
@@ -247,83 +247,180 @@ body.yj-mobile::after {
 }
 
 .yj-mobile-shell {
-  /* === 青柠蜜橙(Citrus)：阳光暖色，与微信绿/灰区分 ===
-   * 表面阶梯：画布(暖奶油) < 分组/面板(暖) < 卡片/行(暖象牙白+暖渐变)
-   * 卡片用暖象牙白替纯白，再叠纵向暖渐变(--surface-card-gradient)，
-   * 像被阳光打到，既保留浮起层次又不刺眼(替原"纯白大色块") */
-  --bg-canvas: #f4ede0;
-  --bg-canvas-elevated: #fffaf3;
+  /* === 兰花薰衣(Orchid Lavender)·白天默认主题 ===
+   * 把原「青柠蜜橙」整套换成紫调（品牌 #7C5BD9 / 点缀 #C77DFF）。
+   * 表面阶梯：画布(极浅薰衣草白) < 分组/面板 < 卡片(纯白+极淡紫渐变)，
+   * 靠柔和紫光阴影 + 发丝描边浮起，替「随机彩虹色块」做克制高级感。
+   * 既有组件读 var(--brand-primary/secondary/accent)，此处只换值不改名，
+   * 全局即刻变紫；散落硬编码 citrus hex 留待 Phase 3 sweep（可共存）。 */
+  --bg-canvas: #f4f1fb;
+  --bg-canvas-elevated: #fdfcff;
   --bg-accent: none;
   --bg-glow-top: none;
   --bg-glow-bottom: none;
   --bg-grid: none;
 
-  --surface-primary: rgba(255, 250, 243, 0.96);
-  --surface-shell: #f4ede0;
-  --surface-section: #fffaf3;
-  --surface-card: #fffaf3;
-  --surface-card-hover: #f6ecd9;
-  --surface-soft: rgba(245, 158, 11, 0.08);
-  --surface-secondary: #faf4ea;
-  --surface-panel: #faf4ea;
-  --surface-tertiary: rgba(132, 204, 22, 0.12);
-  --surface-overlay: rgba(250, 245, 237, 0.94);
-  --surface-console: #faf5ec;
-  --surface-input: #fff8ee;
+  --surface-primary: rgba(253, 252, 255, 0.96);
+  --surface-shell: #f4f1fb;
+  --surface-section: #fdfcff;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f6f3fd;
+  --surface-soft: rgba(124, 91, 217, 0.07);
+  --surface-secondary: #f2eefb;
+  --surface-panel: #f2eefb;
+  --surface-tertiary: rgba(124, 91, 217, 0.1);
+  --surface-overlay: rgba(249, 247, 254, 0.94);
+  --surface-console: #f5f2fc;
+  --surface-input: #faf8fe;
 
-  /* 暖渐变卡：顶亮→底浅蜜桃。仅移动端定义；桌面/base 未定义此变量，
+  /* 极淡紫渐变卡：顶纯白→底浅薰衣。仅移动端定义；桌面/base 未定义此变量，
    * 共享组件用 bg-[image:var(--surface-card-gradient)] 时桌面回退 none，
    * 只显示各自纯色底，互不影响。 */
-  --surface-card-gradient: linear-gradient(180deg, #fffefb 0%, #fcf3e3 100%);
+  --surface-card-gradient: linear-gradient(180deg, #ffffff 0%, #f6f2fd 100%);
   --accent-dot: var(--brand-primary);
-  --avatar-ring: 0 0 0 1.5px rgba(245, 158, 11, 0.14);
+  --avatar-ring: 0 0 0 1.5px rgba(124, 91, 217, 0.16);
   --topbar-bg: linear-gradient(
     180deg,
-    rgba(255, 251, 244, 0.96),
-    rgba(250, 243, 231, 0.92)
+    rgba(250, 248, 254, 0.96),
+    rgba(243, 240, 251, 0.92)
   );
 
-  --border-faint: rgba(120, 70, 20, 0.06);
-  --border-subtle: rgba(120, 70, 20, 0.1);
-  --border-strong: rgba(120, 70, 20, 0.16);
-  --border-brand: rgba(245, 158, 11, 0.28);
+  --border-faint: rgba(76, 40, 130, 0.06);
+  --border-subtle: rgba(76, 40, 130, 0.1);
+  --border-strong: rgba(76, 40, 130, 0.16);
+  --border-brand: rgba(124, 91, 217, 0.28);
 
-  --text-primary: #1a1206;
-  --text-secondary: #4b3a24;
-  --text-muted: #8c7a5f;
-  --text-dim: #b4a48a;
-  --text-on-brand: #3b2206;
+  --text-primary: #1c1430;
+  --text-secondary: #463a5c;
+  --text-muted: #837791;
+  --text-dim: #ada4bd;
+  --text-on-brand: #ffffff;
 
-  --brand-primary: #f59e0b;
-  --brand-secondary: #84cc16;
-  --brand-accent: #facc15;
-  --brand-soft: rgba(245, 158, 11, 0.1);
-  --brand-gradient: linear-gradient(135deg, #facc15 0%, #f59e0b 55%, #84cc16 100%);
+  --brand-primary: #7c5bd9;
+  --brand-secondary: #9b7deb;
+  --brand-accent: #c77dff;
+  --brand-soft: rgba(124, 91, 217, 0.1);
+  --brand-gradient: linear-gradient(135deg, #7c5bd9 0%, #9b6be0 55%, #c77dff 100%);
 
-  /* 成功态保留真绿，避免与品牌绿语义混淆 */
+  /* 成功态保留真绿，避免与品牌色语义混淆 */
   --state-success-bg: rgba(34, 197, 94, 0.1);
   --state-success-text: #15803d;
   --state-warning-bg: rgba(250, 173, 20, 0.12);
   --state-warning-text: #ad6800;
   --state-danger-bg: rgba(250, 81, 81, 0.1);
   --state-danger-text: #cf1322;
-  --state-info-bg: rgba(64, 169, 255, 0.08);
-  --state-info-text: #0958d9;
+  --state-info-bg: rgba(99, 102, 241, 0.1);
+  --state-info-text: #4338ca;
 
-  /* 暖琥珀柔光，替微信的冷灰阴影 */
+  /* 柔和紫光，替暖琥珀阴影 */
   --shadow-shell: none;
-  --shadow-section: 0 1px 2px rgba(180, 130, 20, 0.05);
-  --shadow-card: 0 8px 20px rgba(180, 130, 20, 0.08);
-  --shadow-soft: 0 4px 12px rgba(180, 130, 20, 0.06);
-  --shadow-lift: 0 12px 24px rgba(180, 130, 20, 0.1);
-  --shadow-overlay: 0 -8px 28px rgba(180, 130, 20, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(245, 158, 11, 0.16);
+  --shadow-section: 0 1px 2px rgba(60, 40, 110, 0.05);
+  --shadow-card: 0 8px 20px rgba(60, 40, 110, 0.08);
+  --shadow-soft: 0 4px 12px rgba(60, 40, 110, 0.06);
+  --shadow-lift: 0 12px 24px rgba(60, 40, 110, 0.1);
+  --shadow-overlay: 0 -8px 28px rgba(60, 40, 110, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(124, 91, 217, 0.16);
 
-  /* 统一圆角尺度 8/12/16/20/24(收紧自 12/18/24/30，更协调) */
+  /* 统一圆角尺度 12/16/20/24 */
   --radius-sm: 0.75rem; /* 12px */
   --radius-md: 1rem; /* 16px */
   --radius-lg: 1.25rem; /* 20px */
   --radius-xl: 1.5rem; /* 24px */
+
+  /* === 字阶 / 字重 / 间距 token（移动端统一尺度，逐步替换 magic number） === */
+  --text-eyebrow: 0.6875rem; /* 11px 标签/eyebrow（配大写字距） */
+  --text-caption: 0.75rem; /* 12px 辅助说明 */
+  --text-body: 0.875rem; /* 14px 次正文 */
+  --text-base: 0.9375rem; /* 15px 正文 */
+  --text-title: 1.0625rem; /* 17px 卡片/行标题 */
+  --text-section: 1.375rem; /* 22px 区块标题 */
+  --text-display: 1.75rem; /* 28px 页面大标题 */
+  --text-hero: 2.25rem; /* 36px 首屏强调数字 */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.25rem; /* 20 */
+  --space-6: 1.5rem; /* 24 */
+  --space-7: 2rem; /* 32 */
+  --space-8: 2.5rem; /* 40 */
+}
+
+/* === 深空夜紫(Deep Space Violet)·夜间主题 ===
+ * 由 appearance-store 解析后挂 data-appearance="night" 激活（默认 day 走基础块）。
+ * 品牌提亮到 #8B7BF0、点缀换金 #E7B85C；深紫近黑画布 + 提亮文字/状态色。
+ * 仅限 .yj-mobile-shell，桌面端 (features/desktop) 不受影响。 */
+.yj-mobile-shell[data-appearance="night"] {
+  --bg-canvas: #0f0c1a;
+  --bg-canvas-elevated: #171326;
+  --bg-accent: none;
+  --bg-glow-top: none;
+  --bg-glow-bottom: none;
+  --bg-grid: none;
+
+  --surface-primary: rgba(28, 23, 48, 0.96);
+  --surface-shell: #0f0c1a;
+  --surface-section: #171326;
+  --surface-card: #1c1730;
+  --surface-card-hover: #241d3d;
+  --surface-soft: rgba(139, 123, 240, 0.12);
+  --surface-secondary: #1a1530;
+  --surface-panel: #1a1530;
+  --surface-tertiary: rgba(139, 123, 240, 0.14);
+  --surface-overlay: rgba(21, 17, 36, 0.9);
+  --surface-console: #161127;
+  --surface-input: #211b38;
+
+  --surface-card-gradient: linear-gradient(180deg, #211b38 0%, #1a1530 100%);
+  --accent-dot: var(--brand-primary);
+  --avatar-ring: 0 0 0 1.5px rgba(139, 123, 240, 0.26);
+  --topbar-bg: linear-gradient(
+    180deg,
+    rgba(23, 19, 38, 0.92),
+    rgba(15, 12, 26, 0.88)
+  );
+
+  --border-faint: rgba(180, 165, 255, 0.08);
+  --border-subtle: rgba(180, 165, 255, 0.12);
+  --border-strong: rgba(180, 165, 255, 0.2);
+  --border-brand: rgba(139, 123, 240, 0.4);
+
+  --text-primary: #f1edff;
+  --text-secondary: #c5bce0;
+  --text-muted: #8e85a8;
+  --text-dim: #645c7d;
+  --text-on-brand: #ffffff;
+
+  --brand-primary: #8b7bf0;
+  --brand-secondary: #a99bf5;
+  --brand-accent: #e7b85c;
+  --brand-soft: rgba(139, 123, 240, 0.16);
+  --brand-gradient: linear-gradient(135deg, #8b7bf0 0%, #a185ee 55%, #c9a2f0 100%);
+
+  --state-success-bg: rgba(34, 197, 94, 0.16);
+  --state-success-text: #4ade80;
+  --state-warning-bg: rgba(250, 173, 20, 0.16);
+  --state-warning-text: #fbbf24;
+  --state-danger-bg: rgba(250, 81, 81, 0.16);
+  --state-danger-text: #f87171;
+  --state-info-bg: rgba(129, 140, 248, 0.18);
+  --state-info-text: #a5b4fc;
+
+  --shadow-shell: none;
+  --shadow-section: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 14px 30px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-focus: 0 0 0 3px rgba(139, 123, 240, 0.3);
+
+  color-scheme: dark;
 }
 
 .yj-mobile-shell,
