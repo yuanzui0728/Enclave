@@ -1,10 +1,10 @@
 # WeChat Connector Notes
 
-`apps/wechat-connector` 是管理后台微信同步页使用的本地适配层，默认跑在
+`apps/wechat-connector` 是运维侧微信同步（后端 `/admin/*` 接口 / cloud console）使用的本地适配层，默认跑在
 `http://127.0.0.1:17364`。
 
 它不直接碰微信进程，也不直接解密数据库；它的职责是把不同上游来源统一整理成
-项目内部使用的 `WechatSyncContactBundle`，再暴露给后台页面。
+项目内部使用的 `WechatSyncContactBundle`，再暴露给运维侧导入。
 
 ## 当前支持的数据源
 

@@ -13,7 +13,7 @@
 ## 影响范围
 - [ ] 后端 api（NestJS，端口 3000）
 - [ ] 主 App（apps/app，端口 5180）
-- [ ] 管理后台（apps/admin，端口 5181）
+- [ ] Cloud Console（云平台 / 运维后台，端口 5182）
 - [ ] 桌面端（apps/desktop，Tauri）
 
 ## 涉及模块 / 页面

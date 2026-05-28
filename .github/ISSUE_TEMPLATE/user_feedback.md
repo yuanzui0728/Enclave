@@ -32,7 +32,7 @@ assignees: ''
 
 ## 你在哪个端体验的？
 - [ ] 主 App（Web / iOS / Android）
-- [ ] 管理后台
+- [ ] Cloud Console（运维后台）
 - [ ] 桌面端
 
 </td>
