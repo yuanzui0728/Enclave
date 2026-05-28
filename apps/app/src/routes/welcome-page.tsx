@@ -790,6 +790,74 @@ export function WelcomePage() {
     }
   }, [hydrateOwner, navigate, normalizedCloudApiBaseUrl, t]);
 
+  // 世界创建/唤醒是异步的：resolveMyCloudWorldAccess 常返回 status=waiting（新用户要
+  // 等后台 lifecycle worker provision 完才 ready）。原来只靠 cloudAccessSessionQuery 的
+  // refetchInterval + 监听 currentCloudSession==="ready" 的 effect 驱动 connect。但当世界
+  // 创建较慢时（首个 ready 轮询要 ~25s+），那条 react-query 轮询会停摆、currentCloudSession
+  // 退回 undefined，effect 再也拿不到 ready → 新用户永远卡在 /welcome（DB 里一堆 __pending
+  // owner 即此）。世界秒级 ready 时 effect 能跑通，慢一点就丢——纯属脆弱的时序依赖。
+  // 这里加一条**显式轮询**兜底：拿到 waiting session 后自己轮询到 ready 再 connect，与
+  // effect 共用 cloudConnectKeyRef 去重（谁先连上谁置 key，另一边短路）。
+  const pollWorldAccessUntilConnected = useCallback(
+    async (
+      initialSession: WorldAccessSessionSummary,
+      accessToken: string,
+      verifiedPhone: string,
+    ) => {
+      let session = initialSession;
+      const deadline = Date.now() + 4 * 60 * 1000;
+      for (;;) {
+        if (FAILURE_CLOUD_SESSION_STATUSES.has(session.status)) {
+          setEntryError(describeCloudSessionFailure(t, session));
+          return;
+        }
+        if (session.status === "ready" && session.resolvedApiBaseUrl) {
+          const connectKey = `${session.id}:${session.resolvedApiBaseUrl}`;
+          if (cloudConnectKeyRef.current === connectKey) {
+            return;
+          }
+          cloudConnectKeyRef.current = connectKey;
+          try {
+            await connectToResolvedCloudWorld(accessToken, verifiedPhone, session);
+          } finally {
+            if (cloudConnectKeyRef.current === connectKey) {
+              cloudConnectKeyRef.current = null;
+            }
+          }
+          return;
+        }
+        if (Date.now() > deadline) {
+          setEntryError(t(msg`世界还在创建中，请稍后重试进入。`));
+          return;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max((session.retryAfterSeconds || 2) * 1000, 1500)),
+        );
+        try {
+          const next = await getMyCloudWorldAccessSession(
+            initialSession.id,
+            accessToken,
+            normalizedCloudApiBaseUrl || undefined,
+          );
+          session = next;
+          // 把最新 session 灌回 react-query 缓存，让 currentCloudSession 渲染的
+          // "正在创建世界..." / "世界已就绪" notice 跟实际进度保持一致。
+          queryClient.setQueryData(
+            buildCloudAccessSessionQueryKey(
+              normalizedCloudApiBaseUrl,
+              initialSession.id,
+              accessToken,
+            ),
+            next,
+          );
+        } catch {
+          // 单次轮询抖动不该让用户卡死：保留上一帧 session 继续重试。
+        }
+      }
+    },
+    [connectToResolvedCloudWorld, normalizedCloudApiBaseUrl, queryClient, t],
+  );
+
   useEffect(() => {
     // 走查新一轮 R6：mode 守恒——cloud session 在 waiting 态，用户切到 "本地
     // 世界" tile，cloudAccessSessionQuery 继续 polling；当服务端把 session 翻成
@@ -1084,21 +1152,10 @@ export function WelcomePage() {
       // ready 状态下也多余：connectToResolvedCloudWorld 自己会 setNotice("已连接到云
       // 世界。")，立刻覆盖。
 
-      if (session.status === "ready") {
-        // 见 continueWithCloudWorld 的同名修复：内联 await 与 useEffect 监听
-        // currentCloudSession 重复触发会让 getWorldOwner 跑两次。
-        const connectKey = `${session.id}:${session.resolvedApiBaseUrl ?? ""}`;
-        if (cloudConnectKeyRef.current !== connectKey) {
-          cloudConnectKeyRef.current = connectKey;
-          try {
-            await connectToResolvedCloudWorld(accessToken, "", session);
-          } finally {
-            if (cloudConnectKeyRef.current === connectKey) {
-              cloudConnectKeyRef.current = null;
-            }
-          }
-        }
-      }
+      // ready 立即连，waiting 则后台轮询到 ready 再连（见 pollWorldAccessUntilConnected）。
+      // 不 await：waiting 世界可能要等几十秒，不该把按钮锁在 "解析中..."；currentCloudSession
+      // 的 notice 会显示创建进度，连上后 showOwnerStep/navigate 接管。
+      void pollWorldAccessUntilConnected(session, accessToken, "");
     } catch (error) {
       setReadyBaseUrl(null);
       setEntryError(describeRequestError(error, t(msg`Google 登录失败，请稍后重试。`)));
@@ -1340,24 +1397,10 @@ export function WelcomePage() {
       // currentCloudSession 渲染的 notice 视觉重复且色调对不上（waiting 状态本该是
       // info，setNotice 写的 notice 是硬编码 success 绿色）。
 
-      if (session.status === "ready") {
-        // 老用户回归 / 世界已经在跑：resolveMyCloudWorldAccess 直接回 status=ready，
-        // 这一行内联 await 跟 [currentCloudSession.status==="ready"] 那个 useEffect
-        // 会同时跑 connectToResolvedCloudWorld（setQueryData 把 currentCloudSession
-        // 即时填好，effect 一 commit 就触发），两边各发一次 getWorldOwner——白送
-        // 一次网络请求。借用同一个 cloudConnectKeyRef 让 effect 那边短路，只跑这一次。
-        const connectKey = `${session.id}:${session.resolvedApiBaseUrl ?? ""}`;
-        if (cloudConnectKeyRef.current !== connectKey) {
-          cloudConnectKeyRef.current = connectKey;
-          try {
-            await connectToResolvedCloudWorld(accessToken, verifiedPhone, session);
-          } finally {
-            if (cloudConnectKeyRef.current === connectKey) {
-              cloudConnectKeyRef.current = null;
-            }
-          }
-        }
-      }
+      // ready 立即连；waiting（新世界正在创建 / 旧世界正在唤醒）则后台轮询到 ready
+      // 再连——原来只靠 cloudAccessSessionQuery + currentCloudSession effect，世界创建
+      // 慢时会丢 ready 把新用户卡死在 /welcome。共用 cloudConnectKeyRef 与 effect 去重。
+      void pollWorldAccessUntilConnected(session, accessToken, verifiedPhone);
     } catch (error) {
       setReadyBaseUrl(null);
       setEntryError(describeRequestError(error, t(msg`解析云世界访问失败。`)));
