@@ -17829,7 +17829,3 @@ msgstr "비공개 캐릭터 생성·장면 설정"
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3655
 msgid "私有角色生成·记忆设定"
 msgstr "비공개 캐릭터 생성·기억 설정"
-
-#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3658
-msgid "私有角色生成·全量生成"
-msgstr "비공개 캐릭터 생성·전체 생성"

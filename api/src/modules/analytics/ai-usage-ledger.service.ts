@@ -2524,7 +2524,6 @@ export class AiUsageLedgerService {
       wiki_private_character_generate_chat: '私有角色生成·对话风格',
       wiki_private_character_generate_scenes: '私有角色生成·场景设定',
       wiki_private_character_generate_memory: '私有角色生成·记忆设定',
-      wiki_private_character_generate_all: '私有角色生成·全量生成',
     };
 
     return sceneMap[scene] ?? scene;

@@ -17829,7 +17829,3 @@ msgstr "Private Character Gen · Scenes"
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3655
 msgid "私有角色生成·记忆设定"
 msgstr "Private Character Gen · Memory"
-
-#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3658
-msgid "私有角色生成·全量生成"
-msgstr "Private Character Gen · Full Rebuild"
