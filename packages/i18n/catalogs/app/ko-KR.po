@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "음악"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
-#: apps/app/src/routes/channels-page.tsx:3453
-#: apps/app/src/routes/channels-page.tsx:3722
-msgid "暂停"
-msgstr "일시정지"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/i18n/static-dom-seed.ts:349
 #: apps/app/src/routes/channels-page.tsx:3453
 #: apps/app/src/routes/channels-page.tsx:3722
 msgid "播放"
 msgstr "재생"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
+#: apps/app/src/routes/channels-page.tsx:3453
+#: apps/app/src/routes/channels-page.tsx:3722
+msgid "暂停"
+msgstr "일시정지"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -47,28 +47,41 @@ msgstr ""
 msgid "头像"
 msgstr "아바타"
 
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:40
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:58
+msgid "轮到对方了，等 TA 看完这一轮"
+msgstr ""
+
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:68
 msgid "已想要 · 已匹配"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:42
-msgid "想要了，但这次没匹配上"
-msgstr ""
-
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:43
-msgid "已想要 · 等待对方"
-msgstr ""
-
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:44
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:58
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:73
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:86
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
 msgid "已略过"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:73
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:75
+msgid "这次相遇结束了"
+msgstr ""
+
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:79
+msgid "已选择继续 · 等待对方也想继续"
+msgstr ""
+
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:82
+msgid "已想要 · 等待对方"
+msgstr ""
+
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:124
+msgid "继续聊下去"
+msgstr ""
+
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:139
 msgid "略过"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-decision-bar.tsx:90
+#: apps/app/src/components/avatar-encounter-decision-bar.tsx:156
 msgid "想要TA的联系方式"
 msgstr ""
 
@@ -77,19 +90,21 @@ msgid "已匹配"
 msgstr ""
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:42
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:49
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:53
 msgid "待查看"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:53
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:46
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:57
 msgid "等待对方"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:58
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:66
 msgid "对方略过"
 msgstr ""
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:60
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:68
 #: apps/app/src/components/chat-message-list.tsx:7522
 #: apps/app/src/components/chat-message-list.tsx:7683
 #: apps/app/src/features/games/island-concert/island-concert-game.tsx:89
@@ -100,6 +115,12 @@ msgstr "종료됨"
 #: apps/app/src/components/avatar-encounter-transcript.tsx:50
 msgid "匹配理由"
 msgstr ""
+
+#: apps/app/src/components/avatar-encounter-transcript.tsx:76
+#: apps/app/src/components/chat-message-list.tsx:6224
+#: apps/app/src/i18n/static-dom-seed.ts:719
+msgid "继续聊"
+msgstr "계속 대화"
 
 #: apps/app/src/components/bootstrap-screen.tsx:43
 #: apps/app/src/routes/splash-page.tsx:222
@@ -1106,7 +1127,7 @@ msgid "继续删除"
 msgstr "계속 삭제"
 
 #: apps/app/src/components/chat-message-list.tsx:1341
-#: apps/app/src/lib/error-translate.ts:442
+#: apps/app/src/lib/error-translate.ts:446
 msgid "当前消息暂不支持添加到表情。"
 msgstr "현재 메시지는 스티커 추가를 지원하지 않습니다."
 
@@ -2205,11 +2226,6 @@ msgstr "메시지 선택 해제"
 #: apps/app/src/components/chat-message-list.tsx:6156
 msgid "选择消息"
 msgstr "메시지 선택"
-
-#: apps/app/src/components/chat-message-list.tsx:6224
-#: apps/app/src/i18n/static-dom-seed.ts:719
-msgid "继续聊"
-msgstr "계속 대화"
 
 #: apps/app/src/components/chat-message-list.tsx:6246
 #: apps/app/src/components/chat-message-list.tsx:8720
@@ -5008,7 +5024,7 @@ msgid "补充点信息给{0}…"
 msgstr ""
 
 #: apps/app/src/features/chat/digital-human-entry-guard.ts:20
-#: apps/app/src/lib/error-translate.ts:512
+#: apps/app/src/lib/error-translate.ts:516
 msgid "视频通话暂不可用"
 msgstr "영상통화 사용 불가"
 
@@ -5546,7 +5562,7 @@ msgstr "다중 선택"
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:275
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:236
 #: apps/app/src/i18n/static-dom-seed.ts:936
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:766
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:802
 msgid "复制"
 msgstr "복사"
 
@@ -6083,7 +6099,7 @@ msgid "下次提醒 {nextLabel}"
 msgstr "다음 알림 {nextLabel}"
 
 #: apps/app/src/features/chat/stickers/prepare-custom-sticker-upload.ts:38
-#: apps/app/src/lib/error-translate.ts:446
+#: apps/app/src/lib/error-translate.ts:450
 msgid "只能上传图片或动图作为表情。"
 msgstr "이미지 또는 움직이는 이미지만 스티커로 업로드할 수 있습니다."
 
@@ -6094,7 +6110,7 @@ msgstr "GIF 스티커의 최대 변 길이는 {MAX_GIF_STICKER_EDGE}px을 초과
 #. placeholder {0}: String(params.maxBytesText ?? "?")
 #. placeholder {0}: formatFileSize(MAX_GIF_SIZE_BYTES)
 #: apps/app/src/features/chat/stickers/prepare-custom-sticker-upload.ts:55
-#: apps/app/src/lib/error-translate.ts:489
+#: apps/app/src/lib/error-translate.ts:493
 msgid "GIF 表情不能超过 {0}，请先压缩后再试。"
 msgstr "GIF 스티커는 {0}을(를) 초과할 수 없습니다. 먼저 압축한 후 다시 시도하세요."
 
@@ -6927,7 +6943,7 @@ msgstr "통화가 연결되지 않음, 다시 시도하세요"
 #: apps/app/src/features/chat/use-digital-human-call-session.ts:150
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:174
 #: apps/app/src/features/chat/use-voice-call-session.ts:158
-#: apps/app/src/lib/error-translate.ts:288
+#: apps/app/src/lib/error-translate.ts:292
 msgid "请先录一段语音再试。"
 msgstr "먼저 음성을 녹음한 뒤 다시 시도하세요."
 
@@ -7065,7 +7081,7 @@ msgid "这段语音没有识别出有效文字，请再试一次。"
 msgstr "이 음성에서 유효한 텍스트를 인식하지 못했습니다. 다시 시도해 주세요."
 
 #: apps/app/src/features/chat/use-speech-input.ts:611
-#: apps/app/src/lib/error-translate.ts:320
+#: apps/app/src/lib/error-translate.ts:324
 msgid "语音转写失败，请稍后再试。"
 msgstr "음성 전사에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
@@ -13476,7 +13492,7 @@ msgstr "연속"
 
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:65
 #: apps/app/src/features/games/farm/farm-page.tsx:236
-#: apps/app/src/features/wallet/checkin-card.tsx:86
+#: apps/app/src/features/wallet/checkin-card.tsx:91
 #: apps/app/src/features/wallet/wallet-format.ts:47
 msgid "每日签到"
 msgstr "매일 체크인"
@@ -15275,17 +15291,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "본진을 지키고 적 탱크 20대를 격파하라."
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "2P"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "픽셀"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "액션"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "2P"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -18548,7 +18564,7 @@ msgid "请选择视频文件。"
 msgstr "동영상 파일을 선택하세요."
 
 #: apps/app/src/features/moments/moment-compose-media.ts:583
-#: apps/app/src/lib/error-translate.ts:627
+#: apps/app/src/lib/error-translate.ts:631
 msgid "视频时长不能超过 5 分钟。"
 msgstr "동영상 길이는 5분을 초과할 수 없습니다."
 
@@ -19467,7 +19483,7 @@ msgstr "포트 사용 중: {portOccupiedLabel}"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:270
 #: apps/app/src/i18n/static-dom-seed.ts:11
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:465
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:482
 msgid "再试一次"
 msgstr "다시 시도"
 
@@ -19902,34 +19918,34 @@ msgstr "거부 사유"
 msgid "暂无邀请记录。"
 msgstr "아직 초대 기록이 없습니다."
 
-#: apps/app/src/features/wallet/checkin-card.tsx:50
+#: apps/app/src/features/wallet/checkin-card.tsx:55
 msgid "签到失败，请稍后重试。"
-msgstr ""
+msgstr "체크인에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/features/wallet/checkin-card.tsx:90
+#: apps/app/src/features/wallet/checkin-card.tsx:95
 msgid "已连续签到 {streak} 天"
-msgstr ""
+msgstr "{streak}일 연속 체크인"
 
-#: apps/app/src/features/wallet/checkin-card.tsx:91
+#: apps/app/src/features/wallet/checkin-card.tsx:96
 msgid "每天签到领随机零钱"
-msgstr ""
+msgstr "매일 체크인하고 랜덤 용돈 받기"
 
-#: apps/app/src/features/wallet/checkin-card.tsx:105
+#: apps/app/src/features/wallet/checkin-card.tsx:110
 msgid "今日已签到"
-msgstr ""
+msgstr "오늘 체크인 완료"
 
-#: apps/app/src/features/wallet/checkin-card.tsx:107
+#: apps/app/src/features/wallet/checkin-card.tsx:112
 msgid "签到中…"
-msgstr ""
+msgstr "체크인 중…"
 
-#: apps/app/src/features/wallet/checkin-card.tsx:108
+#: apps/app/src/features/wallet/checkin-card.tsx:113
 msgid "签到"
-msgstr ""
+msgstr "체크인"
 
 #. placeholder {0}: formatCents(todayRewardCents)
-#: apps/app/src/features/wallet/checkin-card.tsx:113
+#: apps/app/src/features/wallet/checkin-card.tsx:118
 msgid "今日已领 +{0}，已存入零钱"
-msgstr ""
+msgstr "오늘 +{0} 받아 잔액에 추가되었습니다"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:95
 #: apps/app/src/features/wallet/wallet-format.ts:37
@@ -19996,11 +20012,11 @@ msgstr "무작위 만남"
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:155
 #: apps/app/src/routes/discover-page.tsx:157
 msgid "分身相遇"
-msgstr ""
+msgstr "분신 만남"
 
 #: apps/app/src/features/world/world-page.tsx:87
 msgid "分身互访"
-msgstr ""
+msgstr "분신 상호 방문"
 
 #: apps/app/src/features/world/world-page.tsx:95
 #: apps/app/src/routes/discover-page.tsx:184
@@ -20010,18 +20026,18 @@ msgstr "장소 만남"
 
 #: apps/app/src/features/world/world-page.tsx:96
 msgid "特定场景"
-msgstr ""
+msgstr "특정 장면"
 
 #: apps/app/src/features/world/world-page.tsx:104
 #: apps/app/src/routes/cyber-avatar-page.tsx:124
 #: apps/app/src/routes/cyber-avatar-page.tsx:127
 #: apps/app/src/routes/discover-page.tsx:170
 msgid "赛博分身"
-msgstr ""
+msgstr "사이버 분신"
 
 #: apps/app/src/features/world/world-page.tsx:105
 msgid "你的镜像"
-msgstr ""
+msgstr "당신의 거울"
 
 #: apps/app/src/features/world/world-page.tsx:117
 #: apps/app/src/routes/discover-feed-page.tsx:2269
@@ -20038,12 +20054,12 @@ msgstr "세계 캐릭터 일상"
 #: apps/app/src/routes/discover-page.tsx:253
 #: apps/app/src/routes/shop-page.tsx:165
 msgid "商城"
-msgstr ""
+msgstr "상점"
 
 #: apps/app/src/features/world/world-page.tsx:147
 #: apps/app/src/routes/discover-page.tsx:254
 msgid "好物"
-msgstr ""
+msgstr "굿즈"
 
 #: apps/app/src/features/world/world-page.tsx:154
 #: apps/app/src/routes/discover-page.tsx:227
@@ -20052,91 +20068,91 @@ msgstr "엔터테인먼트"
 
 #: apps/app/src/features/world/world-page.tsx:187
 msgid "正在切换到发现页"
-msgstr ""
+msgstr "발견 페이지로 전환 중"
 
 #: apps/app/src/features/world/world-page.tsx:188
 msgid "「世界」首屏当前在移动端开放。"
-msgstr ""
+msgstr "「월드」 홈은 현재 모바일에서 제공됩니다."
 
 #: apps/app/src/features/world/world-page.tsx:189
 msgid "正在切换..."
-msgstr ""
+msgstr "전환 중..."
 
 #: apps/app/src/features/world/world-page.tsx:269
 msgid "分身记下了 {pendingSignals} 条新动向"
-msgstr ""
+msgstr "분신이 새 동향 {pendingSignals}건을 기록했어요"
 
 #: apps/app/src/features/world/world-page.tsx:271
 msgid "分身在你不在时替你留意世界"
-msgstr ""
+msgstr "당신이 없는 동안 분신이 세계를 지켜봐요"
 
 #: apps/app/src/features/world/world-page.tsx:272
 msgid "多在世界里互动，分身会越来越像你"
-msgstr ""
+msgstr "세계에서 더 교류할수록 분신이 당신을 닮아가요"
 
 #: apps/app/src/features/world/world-page.tsx:279
 msgid "你的世界"
-msgstr ""
+msgstr "당신의 세계"
 
 #: apps/app/src/features/world/world-page.tsx:280
 msgid "第 {worldDay} 天"
-msgstr ""
+msgstr "{worldDay}일째"
 
 #: apps/app/src/features/world/world-page.tsx:285
 msgid "个人主页"
-msgstr ""
+msgstr "프로필"
 
 #: apps/app/src/features/world/world-page.tsx:313
 msgid "你的分身"
-msgstr ""
+msgstr "당신의 분신"
 
 #: apps/app/src/features/world/world-page.tsx:316
 msgid "守护中"
-msgstr ""
+msgstr "지키는 중"
 
 #: apps/app/src/features/world/world-page.tsx:318
 msgid "成形中"
-msgstr ""
+msgstr "형성 중"
 
 #: apps/app/src/features/world/world-page.tsx:319
 msgid "待唤醒"
-msgstr ""
+msgstr "대기 중"
 
 #: apps/app/src/features/world/world-page.tsx:342
 msgid "今日 · 主动"
-msgstr ""
+msgstr "오늘 · 능동"
 
 #: apps/app/src/features/world/world-page.tsx:343
 msgid "去消息"
-msgstr ""
+msgstr "메시지로"
 
 #: apps/app/src/features/world/world-page.tsx:360
 msgid "今天还没有新的主动消息"
-msgstr ""
+msgstr "오늘은 아직 새 능동 메시지가 없어요"
 
 #: apps/app/src/features/world/world-page.tsx:363
 msgid "你的专家团队会在合适的时机主动找你"
-msgstr ""
+msgstr "전문가 팀이 적절한 때에 먼저 연락해요"
 
 #: apps/app/src/features/world/world-page.tsx:372
 msgid "专家团队"
-msgstr ""
+msgstr "전문가 팀"
 
 #: apps/app/src/features/world/world-page.tsx:385
 msgid "找专家"
-msgstr ""
+msgstr "전문가 찾기"
 
 #: apps/app/src/features/world/world-page.tsx:396
 msgid "探索"
-msgstr ""
+msgstr "탐색"
 
 #: apps/app/src/features/world/world-page.tsx:399
 msgid "相遇"
-msgstr ""
+msgstr "만남"
 
 #: apps/app/src/features/world/world-page.tsx:419
 msgid "最近对话"
-msgstr ""
+msgstr "최근 대화"
 
 #: apps/app/src/i18n/static-dom-seed.ts:12
 #: apps/app/src/routes/profile-settings-desktop.tsx:476
@@ -22889,13 +22905,13 @@ msgid "图片朋友圈当前只支持图片资源。"
 msgstr "이미지 모멘트는 이미지 리소스만 지원합니다."
 
 #: apps/app/src/lib/error-translate.ts:142
-#: apps/app/src/lib/error-translate.ts:611
+#: apps/app/src/lib/error-translate.ts:615
 msgid "评论内容不能为空。"
 msgstr "댓글은 비워둘 수 없습니다."
 
 #. placeholder {0}: String(params.max ?? 500)
 #: apps/app/src/lib/error-translate.ts:145
-#: apps/app/src/lib/error-translate.ts:614
+#: apps/app/src/lib/error-translate.ts:618
 msgid "评论最多 {0} 字。"
 msgstr "댓글은 최대 {0}자까지 입력할 수 있습니다."
 
@@ -23063,782 +23079,786 @@ msgstr ""
 msgid "你已经做过选择了。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:250
+#: apps/app/src/lib/error-translate.ts:251
+msgid "已经聊到最后一轮了，请选择想要联系方式或略过。"
+msgstr ""
+
+#: apps/app/src/lib/error-translate.ts:254
 msgid "用户名与密码不能为空。"
 msgstr "사용자 이름과 비밀번호는 비워둘 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:252
+#: apps/app/src/lib/error-translate.ts:256
 msgid "用户名已被占用。"
 msgstr "이미 사용 중인 사용자 이름입니다."
 
-#: apps/app/src/lib/error-translate.ts:254
+#: apps/app/src/lib/error-translate.ts:258
 msgid "账号或密码错误。"
 msgstr "계정 또는 비밀번호가 잘못되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:257
+#: apps/app/src/lib/error-translate.ts:261
 msgid "该账号通过邮箱验证码注册，请使用邮箱验证码登录。"
 msgstr "이 계정은 이메일 인증 코드로 가입했습니다. 이메일 인증 코드로 로그인해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:260
+#: apps/app/src/lib/error-translate.ts:264
 msgid "服务器登录组件未配置，请联系管理员。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:262
+#: apps/app/src/lib/error-translate.ts:266
 msgid "验证码不能为空。"
 msgstr "인증 코드를 비워둘 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:264
+#: apps/app/src/lib/error-translate.ts:268
 msgid "验证码错误。"
 msgstr "인증 코드가 잘못되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:266
+#: apps/app/src/lib/error-translate.ts:270
 msgid "该验证码已使用。"
 msgstr "이 인증 코드는 이미 사용되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:268
+#: apps/app/src/lib/error-translate.ts:272
 msgid "验证码已过期。"
 msgstr "인증 코드가 만료되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:270
+#: apps/app/src/lib/error-translate.ts:274
 msgid "邮箱格式不正确。"
 msgstr "이메일 형식이 잘못되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:272
+#: apps/app/src/lib/error-translate.ts:276
 msgid "缺少访问令牌。"
 msgstr "액세스 토큰이 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:274
+#: apps/app/src/lib/error-translate.ts:278
 msgid "访问令牌无效或已过期。"
 msgstr "액세스 토큰이 유효하지 않거나 만료되었습니다."
 
-#: apps/app/src/lib/error-translate.ts:276
+#: apps/app/src/lib/error-translate.ts:280
 msgid "用户不存在。"
 msgstr "사용자를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:278
+#: apps/app/src/lib/error-translate.ts:282
 msgid "邮箱绑定失败，请稍后重试。"
 msgstr "이메일 연결에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:280
+#: apps/app/src/lib/error-translate.ts:284
 msgid "验证码发送失败，请稍后重试。"
 msgstr "인증 코드 전송에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
 #. placeholder {0}: String(params.retryAfter ?? "?")
-#: apps/app/src/lib/error-translate.ts:283
+#: apps/app/src/lib/error-translate.ts:287
 msgid "验证码发送过于频繁，请在 {0} 秒后重试。"
 msgstr "인증 코드 전송이 너무 잦습니다. {0}초 뒤에 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:286
+#: apps/app/src/lib/error-translate.ts:290
 msgid "该邮箱验证码请求次数过多，请稍后再试。"
 msgstr "이 이메일의 인증 코드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:290
+#: apps/app/src/lib/error-translate.ts:294
 msgid "当前语音模式暂不支持。"
 msgstr "현재 음성 모드는 아직 지원되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:292
+#: apps/app/src/lib/error-translate.ts:296
 msgid "请先提供要播报的文本。"
 msgstr "먼저 음성으로 재생할 텍스트를 입력해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:294
+#: apps/app/src/lib/error-translate.ts:298
 msgid "语音生成结果为空，请稍后再试。"
 msgstr "음성 생성 결과가 비어 있습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:296
+#: apps/app/src/lib/error-translate.ts:300
 msgid "语音请求重试失败。"
 msgstr "음성 요청 재시도에 실패했습니다."
 
 #. placeholder {0}: String(params.message)
-#: apps/app/src/lib/error-translate.ts:300
+#: apps/app/src/lib/error-translate.ts:304
 msgid "请求过于频繁：{0}"
 msgstr "요청이 너무 잦습니다: {0}"
 
-#: apps/app/src/lib/error-translate.ts:301
+#: apps/app/src/lib/error-translate.ts:305
 msgid "请求过于频繁，请稍后再试。"
 msgstr "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:304
+#: apps/app/src/lib/error-translate.ts:308
 msgid "当前 AI 服务不可用，请稍后再试。"
 msgstr "현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:306
+#: apps/app/src/lib/error-translate.ts:310
 msgid "请先提供图片生成描述。"
 msgstr "먼저 이미지 생성을 위한 설명을 입력해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:308
+#: apps/app/src/lib/error-translate.ts:312
 msgid "图片生成结果为空，请稍后再试。"
 msgstr "이미지 생성 결과가 비어 있습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:310
+#: apps/app/src/lib/error-translate.ts:314
 msgid "图片生成服务不可用，请稍后再试。"
 msgstr "이미지 생성 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:312
+#: apps/app/src/lib/error-translate.ts:316
 msgid "没有收到可转写的音频内容。"
 msgstr "전사할 수 있는 오디오를 받지 못했습니다."
 
-#: apps/app/src/lib/error-translate.ts:314
+#: apps/app/src/lib/error-translate.ts:318
 msgid "录音文件过大，请缩短单次语音输入时长。"
 msgstr "녹음 파일이 너무 큽니다. 한 번의 음성 입력 길이를 줄여 주세요."
 
-#: apps/app/src/lib/error-translate.ts:316
+#: apps/app/src/lib/error-translate.ts:320
 msgid "录音文件格式不受支持，请重试。"
 msgstr "녹음 파일 형식이 지원되지 않습니다. 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:318
+#: apps/app/src/lib/error-translate.ts:322
 msgid "语音转写服务不可用，请稍后再试。"
 msgstr "음성 전사 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:322
+#: apps/app/src/lib/error-translate.ts:326
 msgid "语音资源不存在。"
 msgstr "음성 리소스를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:324
+#: apps/app/src/lib/error-translate.ts:328
 msgid "Provider 账户名称不能为空。"
 msgstr "공급자 계정 이름을 비워둘 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:326
+#: apps/app/src/lib/error-translate.ts:330
 msgid "Provider 接口地址不能为空。"
 msgstr "공급자 엔드포인트 URL을 비워둘 수 없습니다."
 
 #. placeholder {0}: String(params.id ?? params.providerAccountId ?? "")
-#: apps/app/src/lib/error-translate.ts:329
+#: apps/app/src/lib/error-translate.ts:333
 msgid "Provider 账户不存在：{0}"
 msgstr "공급자 계정을 찾을 수 없습니다: {0}"
 
-#: apps/app/src/lib/error-translate.ts:332
+#: apps/app/src/lib/error-translate.ts:336
 msgid "请先启用该 Provider 账户，再设为默认。"
 msgstr "이 공급자 계정을 활성화한 뒤 기본값으로 설정해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:335
+#: apps/app/src/lib/error-translate.ts:339
 msgid "请先启用目标 Provider 账户，再批量换绑模型人格角色。"
 msgstr "대상 공급자 계정을 먼저 활성화한 뒤 모델 페르소나 캐릭터를 일괄로 다시 연결해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:338
+#: apps/app/src/lib/error-translate.ts:342
 msgid "请先填写默认模型 ID。"
 msgstr "먼저 기본 모델 ID를 입력해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:340
+#: apps/app/src/lib/error-translate.ts:344
 msgid "默认 Provider 账户不存在。"
 msgstr "기본 공급자 계정이 존재하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:342
+#: apps/app/src/lib/error-translate.ts:346
 msgid "至少选择一个可安装的模型目录项。"
 msgstr "설치 가능한 모델 카탈로그 항목을 하나 이상 선택해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:344
+#: apps/app/src/lib/error-translate.ts:348
 msgid "至少选择一个已登记的模型目录项。"
 msgstr "등록된 모델 카탈로그 항목을 하나 이상 선택해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:346
+#: apps/app/src/lib/error-translate.ts:350
 msgid "管理后台尚未配置访问密钥。"
 msgstr "관리 백엔드에 액세스 키가 설정되지 않았습니다."
 
-#: apps/app/src/lib/error-translate.ts:348
+#: apps/app/src/lib/error-translate.ts:352
 msgid "管理后台访问密钥无效。"
 msgstr "관리 백엔드 액세스 키가 유효하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:350
+#: apps/app/src/lib/error-translate.ts:354
 msgid "内容列表不能为空。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:353
+#: apps/app/src/lib/error-translate.ts:357
 msgid "角色 ID 和稳定版本 ID 不能为空。"
 msgstr ""
 
 #. placeholder {0}: String(params.conversationId ?? "")
-#: apps/app/src/lib/error-translate.ts:357
+#: apps/app/src/lib/error-translate.ts:361
 msgid "对话不存在：{0}"
 msgstr "대화를 찾을 수 없습니다: {0}"
 
 #. placeholder {0}: String(params.conversationId ?? "")
-#: apps/app/src/lib/error-translate.ts:361
+#: apps/app/src/lib/error-translate.ts:365
 msgid "对话 {0} 没有角色参与者。"
 msgstr "대화 {0}에 캐릭터 참가자가 없습니다."
 
 #. placeholder {0}: String(params.messageId ?? "")
-#: apps/app/src/lib/error-translate.ts:365
-#: apps/app/src/lib/error-translate.ts:423
+#: apps/app/src/lib/error-translate.ts:369
+#: apps/app/src/lib/error-translate.ts:427
 msgid "消息不存在：{0}"
 msgstr "메시지를 찾을 수 없습니다: {0}"
 
-#: apps/app/src/lib/error-translate.ts:368
+#: apps/app/src/lib/error-translate.ts:372
 msgid "World owner 不存在。"
 msgstr "월드 소유자를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:370
+#: apps/app/src/lib/error-translate.ts:374
 msgid "未知的自我角色面板文档名。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:372
+#: apps/app/src/lib/error-translate.ts:376
 msgid "至少选择一个联系人。"
 msgstr "연락처를 하나 이상 선택해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:374
+#: apps/app/src/lib/error-translate.ts:378
 msgid "单次最多预览 20 个联系人。"
 msgstr "한 번에 최대 20개 연락처까지 미리 볼 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:376
+#: apps/app/src/lib/error-translate.ts:380
 msgid "至少选择一个预览通过的联系人。"
 msgstr "미리보기를 통과한 연락처를 하나 이상 선택해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:378
+#: apps/app/src/lib/error-translate.ts:382
 msgid "单次最多导入 20 个联系人。"
 msgstr "한 번에 최대 20개 연락처까지 가져올 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:380
+#: apps/app/src/lib/error-translate.ts:384
 msgid "联系人导入角色不存在。"
 msgstr "연락처 가져오기 캐릭터가 존재하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:382
+#: apps/app/src/lib/error-translate.ts:386
 msgid "只支持补建联系人导入角色的好友关系。"
 msgstr "연락처 가져오기 캐릭터의 친구 관계만 보완 생성할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:384
+#: apps/app/src/lib/error-translate.ts:388
 msgid "好友关系补建失败。"
 msgstr "친구 관계 보완 생성에 실패했습니다."
 
-#: apps/app/src/lib/error-translate.ts:386
+#: apps/app/src/lib/error-translate.ts:390
 msgid "只支持回滚联系人导入角色。"
 msgstr "연락처 가져오기 캐릭터만 롤백할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:388
+#: apps/app/src/lib/error-translate.ts:392
 msgid "请先选择一张聊天背景。"
 msgstr "먼저 채팅 배경을 선택하세요."
 
-#: apps/app/src/lib/error-translate.ts:390
+#: apps/app/src/lib/error-translate.ts:394
 msgid "聊天背景不存在。"
 msgstr "채팅 배경을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:392
+#: apps/app/src/lib/error-translate.ts:396
 msgid "当前只支持上传图片作为聊天背景。"
 msgstr "현재 채팅 배경으로는 이미지만 업로드할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:394
+#: apps/app/src/lib/error-translate.ts:398
 msgid "收藏消息缺少必要参数。"
 msgstr "즐겨찾기 메시지에 필수 매개변수가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:396
+#: apps/app/src/lib/error-translate.ts:400
 msgid "收藏标识不能为空。"
 msgstr "즐겨찾기 식별자는 비울 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:398
+#: apps/app/src/lib/error-translate.ts:402
 msgid "笔记标识不能为空。"
 msgstr "노트 식별자는 비울 수 없습니다."
 
 #. placeholder {0}: String(params.noteId ?? "")
-#: apps/app/src/lib/error-translate.ts:401
+#: apps/app/src/lib/error-translate.ts:405
 msgid "笔记不存在：{0}"
 msgstr "노트를 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:404
+#: apps/app/src/lib/error-translate.ts:408
 msgid "提醒消息缺少必要参数。"
 msgstr "알림 메시지에 필수 매개변수가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:406
+#: apps/app/src/lib/error-translate.ts:410
 msgid "提醒时间格式无效。"
 msgstr "알림 시간 형식이 유효하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:408
+#: apps/app/src/lib/error-translate.ts:412
 msgid "提醒标识不能为空。"
 msgstr "알림 식별자는 비울 수 없습니다."
 
 #. placeholder {0}: String(params.reminderId ?? "")
-#: apps/app/src/lib/error-translate.ts:411
+#: apps/app/src/lib/error-translate.ts:415
 msgid "提醒不存在：{0}"
 msgstr "알림을 찾을 수 없습니다：{0}"
 
 #. placeholder {0}: String(params.messageId ?? "")
-#: apps/app/src/lib/error-translate.ts:415
+#: apps/app/src/lib/error-translate.ts:419
 msgid "群消息不存在：{0}"
 msgstr "그룹 메시지를 찾을 수 없습니다：{0}"
 
 #. placeholder {0}: String(params.conversationId ?? params.threadId ?? "")
-#: apps/app/src/lib/error-translate.ts:419
+#: apps/app/src/lib/error-translate.ts:423
 msgid "聊天会话不存在：{0}"
 msgstr "채팅 대화를 찾을 수 없습니다：{0}"
 
 #. placeholder {0}: String(params.groupId ?? params.threadId ?? "")
-#: apps/app/src/lib/error-translate.ts:427
+#: apps/app/src/lib/error-translate.ts:431
 msgid "群聊不存在：{0}"
 msgstr "그룹을 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:430
+#: apps/app/src/lib/error-translate.ts:434
 msgid "搜索词不能为空。"
 msgstr "검색어는 비울 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:432
+#: apps/app/src/lib/error-translate.ts:436
 msgid "自定义表情不存在。"
 msgstr "사용자 지정 스티커를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:434
+#: apps/app/src/lib/error-translate.ts:438
 msgid "自定义表情资源不存在。"
 msgstr "사용자 지정 스티커 리소스를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:436
+#: apps/app/src/lib/error-translate.ts:440
 msgid "内置表情资源不存在。"
 msgstr "기본 스티커 리소스를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:438
+#: apps/app/src/lib/error-translate.ts:442
 msgid "图片资源不存在。"
 msgstr "이미지 리소스를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:440
+#: apps/app/src/lib/error-translate.ts:444
 msgid "这条消息没有可导入的表情内容。"
 msgstr "이 메시지에는 가져올 수 있는 스티커 콘텐츠가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:444
+#: apps/app/src/lib/error-translate.ts:448
 msgid "当前资源暂不支持添加到表情。"
 msgstr "현재 리소스는 스티커 추가를 지원하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:448
+#: apps/app/src/lib/error-translate.ts:452
 msgid "上传的表情资源无效，请重新选择。"
 msgstr "업로드한 스티커 리소스가 유효하지 않습니다. 다시 선택해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:450
+#: apps/app/src/lib/error-translate.ts:454
 msgid "资源不存在。"
 msgstr "리소스를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:452
+#: apps/app/src/lib/error-translate.ts:456
 msgid "请先选择一个附件。"
 msgstr "먼저 첨부 파일을 선택하세요."
 
-#: apps/app/src/lib/error-translate.ts:454
+#: apps/app/src/lib/error-translate.ts:458
 msgid "请先选择一个表情文件。"
 msgstr "먼저 스티커 파일을 선택하세요."
 
-#: apps/app/src/lib/error-translate.ts:456
+#: apps/app/src/lib/error-translate.ts:460
 msgid "缺少合法的 threadType。"
 msgstr "유효한 threadType이 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:458
+#: apps/app/src/lib/error-translate.ts:462
 msgid "缺少 threadId 或 messageId。"
 msgstr "threadId 또는 messageId가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:460
+#: apps/app/src/lib/error-translate.ts:464
 msgid "缺少 conversationId。"
 msgstr "conversationId가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:462
+#: apps/app/src/lib/error-translate.ts:466
 msgid "缺少合法的 renderStatus。"
 msgstr "유효한 renderStatus가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:464
+#: apps/app/src/lib/error-translate.ts:468
 msgid "status 非法。"
 msgstr "status가 유효하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:466
+#: apps/app/src/lib/error-translate.ts:470
 msgid "视频画面鉴权失败"
 msgstr "화면 인증 실패"
 
-#: apps/app/src/lib/error-translate.ts:468
+#: apps/app/src/lib/error-translate.ts:472
 msgid "只能撤回自己发送的消息。"
 msgstr "본인이 보낸 메시지만 취소할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:470
+#: apps/app/src/lib/error-translate.ts:474
 msgid "附件不存在。"
 msgstr "첨부 파일을 찾을 수 없습니다."
 
 #. placeholder {0}: String(params.characterId ?? "")
-#: apps/app/src/lib/error-translate.ts:473
+#: apps/app/src/lib/error-translate.ts:477
 msgid "角色档案不存在：{0}"
 msgstr "캐릭터 프로필을 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:476
+#: apps/app/src/lib/error-translate.ts:480
 msgid "附件内容无效。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:478
+#: apps/app/src/lib/error-translate.ts:482
 msgid "消息文本不能为空。"
 msgstr "메시지 본문은 비울 수 없습니다."
 
 #. placeholder {0}: String(params.max ?? "?")
-#: apps/app/src/lib/error-translate.ts:481
+#: apps/app/src/lib/error-translate.ts:485
 msgid "自定义表情最多只能保存 {0} 个。"
 msgstr "사용자 지정 스티커는 최대 {0}개까지 저장할 수 있습니다."
 
 #. placeholder {0}: String(params.maxEdge ?? "?")
-#: apps/app/src/lib/error-translate.ts:485
+#: apps/app/src/lib/error-translate.ts:489
 msgid "表情最大边长不能超过 {0}px，请先压缩后再试。"
 msgstr "스티커의 최대 변은 {0}px를 초과할 수 없습니다. 먼저 압축해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:492
+#: apps/app/src/lib/error-translate.ts:496
 msgid "当前资源无法添加到表情。"
 msgstr "현재 리소스를 스티커에 추가할 수 없습니다."
 
 #. placeholder {0}: String(params.groupId ?? "")
-#: apps/app/src/lib/error-translate.ts:495
+#: apps/app/src/lib/error-translate.ts:499
 msgid "群主成员记录不存在：{0}"
 msgstr "그룹장 멤버 기록이 없습니다：{0}"
 
 #. placeholder {0}: String(params.memberId ?? "")
-#: apps/app/src/lib/error-translate.ts:499
+#: apps/app/src/lib/error-translate.ts:503
 msgid "群成员不存在：{0}"
 msgstr "그룹 멤버를 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:502
+#: apps/app/src/lib/error-translate.ts:506
 msgid "只有世界主人可以加为用户成员。"
 msgstr "월드 주인만 사용자 멤버로 추가할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:504
+#: apps/app/src/lib/error-translate.ts:508
 msgid "语音通话记录不存在。"
 msgstr "음성 통화 기록을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:506
+#: apps/app/src/lib/error-translate.ts:510
 msgid "语音通话当前状态不允许此操作。"
 msgstr "음성 통화의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:508
+#: apps/app/src/lib/error-translate.ts:512
 msgid "你不是这通通话的发起方。"
 msgstr "이 통화의 발신자가 아닙니다."
 
-#: apps/app/src/lib/error-translate.ts:510
+#: apps/app/src/lib/error-translate.ts:514
 msgid "请先录一段语音再继续。"
 msgstr "계속하기 전에 음성을 녹음하세요."
 
-#: apps/app/src/lib/error-translate.ts:514
+#: apps/app/src/lib/error-translate.ts:518
 msgid "视频任务不存在"
 msgstr "화면 작업 없음"
 
-#: apps/app/src/lib/error-translate.ts:516
+#: apps/app/src/lib/error-translate.ts:520
 msgid "视频任务参数无效"
 msgstr "화면 작업 매개변수 무효"
 
-#: apps/app/src/lib/error-translate.ts:518
+#: apps/app/src/lib/error-translate.ts:522
 msgid "回复任务不存在。"
 msgstr "답장 작업을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:520
+#: apps/app/src/lib/error-translate.ts:524
 msgid "回复任务当前状态不允许此操作。"
 msgstr "답장 작업의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
 #. placeholder {0}: String(params.caseId ?? "")
-#: apps/app/src/lib/error-translate.ts:523
+#: apps/app/src/lib/error-translate.ts:527
 msgid "Eval 用例不存在：{0}"
 msgstr "Eval 케이스를 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:527
+#: apps/app/src/lib/error-translate.ts:531
 msgid "两两对比需要相同的数据集。"
 msgstr "쌍별 비교는 동일한 데이터셋이 필요합니다."
 
-#: apps/app/src/lib/error-translate.ts:530
+#: apps/app/src/lib/error-translate.ts:534
 msgid "Eval 数据集不存在。"
 msgstr "Eval 데이터셋을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:532
+#: apps/app/src/lib/error-translate.ts:536
 msgid "Eval 实验预设不存在。"
 msgstr "Eval 실험 프리셋을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:534
+#: apps/app/src/lib/error-translate.ts:538
 msgid "Eval 操作不合法。"
 msgstr "Eval 작업이 유효하지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:536
+#: apps/app/src/lib/error-translate.ts:540
 msgid "Eval 运行记录不存在。"
 msgstr "Eval 실행 기록을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:538
+#: apps/app/src/lib/error-translate.ts:542
 msgid "生成轨迹不存在。"
 msgstr "생성 추적을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:540
+#: apps/app/src/lib/error-translate.ts:544
 msgid "Eval 报告不存在。"
 msgstr "Eval 보고서를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:542
+#: apps/app/src/lib/error-translate.ts:546
 msgid "该 Eval 功能尚未实现。"
 msgstr "이 Eval 기능은 아직 구현되지 않았습니다."
 
-#: apps/app/src/lib/error-translate.ts:544
+#: apps/app/src/lib/error-translate.ts:548
 msgid "默认自我角色还没建好。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:546
+#: apps/app/src/lib/error-translate.ts:550
 msgid "世界主人不存在。"
 msgstr "World owner를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:551
+#: apps/app/src/lib/error-translate.ts:555
 msgid "世界主人昵称至少 {minLength} 个字。"
 msgstr "월드 주인의 닉네임은 최소 {minLength}자 이상이어야 합니다."
 
-#: apps/app/src/lib/error-translate.ts:558
+#: apps/app/src/lib/error-translate.ts:562
 msgid "世界主人昵称最多 {maxLength} 个字符。"
 msgstr "월드 주인 닉네임은 최대 {maxLength}자까지 입력할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:565
+#: apps/app/src/lib/error-translate.ts:569
 msgid "个性签名最多 {maxLength} 个字符。"
 msgstr "프로필 서명은 최대 {maxLength}자까지 입력할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:570
+#: apps/app/src/lib/error-translate.ts:574
 msgid "头像图片超过 2MB 上限，请压缩后再试。"
 msgstr "프로필 이미지가 2MB 제한을 초과합니다. 압축 후 다시 시도하세요."
 
-#: apps/app/src/lib/error-translate.ts:574
+#: apps/app/src/lib/error-translate.ts:578
 msgid "头像链接必须是 http/https 图片地址，或 data:image/ 开头的图片数据。"
 msgstr "프로필 사진 URL은 http/https 이미지 URL이거나 data:image/로 시작하는 이미지 데이터여야 합니다."
 
-#: apps/app/src/lib/error-translate.ts:577
+#: apps/app/src/lib/error-translate.ts:581
 msgid "世界主人昵称必须是字符串。"
 msgstr "월드 주인 닉네임은 문자열이어야 합니다."
 
-#: apps/app/src/lib/error-translate.ts:579
+#: apps/app/src/lib/error-translate.ts:583
 msgid "个性签名必须是字符串。"
 msgstr "프로필 서명은 문자열이어야 합니다."
 
-#: apps/app/src/lib/error-translate.ts:582
+#: apps/app/src/lib/error-translate.ts:586
 msgid "头像必须是字符串（URL 或 data:image/ 数据）。"
 msgstr "프로필 사진은 문자열(URL 또는 data:image/ 데이터)이어야 합니다."
 
-#: apps/app/src/lib/error-translate.ts:585
+#: apps/app/src/lib/error-translate.ts:589
 msgid "公众号关注关系不存在。"
 msgstr "공식 계정 팔로우 관계가 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:587
+#: apps/app/src/lib/error-translate.ts:591
 msgid "推送记录不存在。"
 msgstr "푸시 기록을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:589
+#: apps/app/src/lib/error-translate.ts:593
 msgid "公众号不存在。"
 msgstr "공식 계정을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:591
+#: apps/app/src/lib/error-translate.ts:595
 msgid "服务号不存在。"
 msgstr "서비스 계정을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:593
+#: apps/app/src/lib/error-translate.ts:597
 msgid "文章不存在。"
 msgstr "게시물을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:595
+#: apps/app/src/lib/error-translate.ts:599
 msgid "不支持的举报对象类型。"
 msgstr "지원되지 않는 신고 대상 유형입니다."
 
-#: apps/app/src/lib/error-translate.ts:597
+#: apps/app/src/lib/error-translate.ts:601
 msgid "请提供举报对象的 ID。"
 msgstr "신고 대상의 ID를 입력하세요."
 
-#: apps/app/src/lib/error-translate.ts:599
+#: apps/app/src/lib/error-translate.ts:603
 msgid "请提供举报理由。"
 msgstr "신고 사유를 입력하세요."
 
-#: apps/app/src/lib/error-translate.ts:601
+#: apps/app/src/lib/error-translate.ts:605
 msgid "不支持的处理状态。"
 msgstr "지원되지 않는 처리 상태입니다."
 
-#: apps/app/src/lib/error-translate.ts:603
+#: apps/app/src/lib/error-translate.ts:607
 msgid "举报记录不存在。"
 msgstr "신고 기록을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:605
+#: apps/app/src/lib/error-translate.ts:609
 msgid "邮件验证码发送失败，请稍后重试。"
 msgstr "이메일 인증코드 전송에 실패했습니다. 잠시 후 다시 시도하세요."
 
-#: apps/app/src/lib/error-translate.ts:607
+#: apps/app/src/lib/error-translate.ts:611
 msgid "视频号作者不存在。"
 msgstr "채널 작성자를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:609
+#: apps/app/src/lib/error-translate.ts:613
 msgid "评论不存在。"
 msgstr "댓글을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:617
+#: apps/app/src/lib/error-translate.ts:621
 msgid "动态内容和媒体不能同时为空。"
 msgstr "피드 콘텐츠와 미디어는 동시에 비울 수 없습니다."
 
 #. placeholder {0}: String(params.max ?? 2000)
-#: apps/app/src/lib/error-translate.ts:620
+#: apps/app/src/lib/error-translate.ts:624
 msgid "广场动态正文最多 {0} 字。"
 msgstr "광장 게시물 본문은 최대 {0}자까지 입력할 수 있습니다."
 
-#: apps/app/src/lib/error-translate.ts:623
+#: apps/app/src/lib/error-translate.ts:627
 msgid "纯文本动态不能附带图片或视频。"
 msgstr "텍스트 전용 피드는 이미지나 동영상을 첨부할 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:625
+#: apps/app/src/lib/error-translate.ts:629
 msgid "视频动态必须且只能包含 1 条视频。"
 msgstr "동영상 피드는 정확히 1개의 동영상만 포함해야 합니다."
 
 #. placeholder {0}: String(params.max ?? 9)
-#: apps/app/src/lib/error-translate.ts:630
+#: apps/app/src/lib/error-translate.ts:634
 msgid "图片动态最多支持 {0} 张图片。"
 msgstr "이미지 피드는 최대 {0}장입니다."
 
-#: apps/app/src/lib/error-translate.ts:633
+#: apps/app/src/lib/error-translate.ts:637
 msgid "图片动态当前只支持图片资源。"
 msgstr "이미지 피드는 현재 이미지 리소스만 지원합니다."
 
-#: apps/app/src/lib/error-translate.ts:635
+#: apps/app/src/lib/error-translate.ts:639
 msgid "动态不存在。"
 msgstr "게시물을 찾을 수 없습니다."
 
 #. placeholder {0}: String(params.runId ?? "")
-#: apps/app/src/lib/error-translate.ts:638
+#: apps/app/src/lib/error-translate.ts:642
 msgid "赛博分身运行记录不存在：{0}"
 msgstr "사이버 아바타 실행 기록이 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:641
+#: apps/app/src/lib/error-translate.ts:645
 msgid "请先输入内容。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:643
+#: apps/app/src/lib/error-translate.ts:647
 msgid "赛博分身暂时没法回应，请稍后再试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:645
+#: apps/app/src/lib/error-translate.ts:649
 msgid "结论生成失败，请稍后再试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:647
+#: apps/app/src/lib/error-translate.ts:651
 msgid "赛博分身刚刚更新过，请稍后再试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:649
+#: apps/app/src/lib/error-translate.ts:653
 msgid "不支持的世界语言。"
 msgstr "지원되지 않는 세계 언어입니다."
 
 #. placeholder {0}: String(params.id ?? "")
-#: apps/app/src/lib/error-translate.ts:652
+#: apps/app/src/lib/error-translate.ts:656
 msgid "Connector 不存在：{0}"
 msgstr "Connector를 찾을 수 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:655
+#: apps/app/src/lib/error-translate.ts:659
 msgid "Action 操作不合法。"
 msgstr "Action 작업이 유효하지 않습니다."
 
 #. placeholder {0}: String(params.id ?? "")
-#: apps/app/src/lib/error-translate.ts:658
+#: apps/app/src/lib/error-translate.ts:662
 msgid "Action 运行记录不存在：{0}"
 msgstr "Action 실행 기록이 없습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:661
+#: apps/app/src/lib/error-translate.ts:665
 msgid "该动作没有保留执行计划，当前无法重试。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:663
+#: apps/app/src/lib/error-translate.ts:667
 msgid "好友申请 ID 不能为空。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:665
+#: apps/app/src/lib/error-translate.ts:669
 msgid "回访记录不存在。"
 msgstr ""
 
-#: apps/app/src/lib/error-translate.ts:667
+#: apps/app/src/lib/error-translate.ts:671
 msgid "词条不存在。"
 msgstr "페이지를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:669
+#: apps/app/src/lib/error-translate.ts:673
 msgid "该词条已被删除，无法编辑。"
 msgstr "이 페이지는 삭제되어 편집할 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:671
+#: apps/app/src/lib/error-translate.ts:675
 msgid "存在编辑冲突，请基于最新版本重新提交。"
 msgstr "편집 충돌이 발생했습니다. 최신 버전을 기반으로 다시 제출하세요."
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:675
+#: apps/app/src/lib/error-translate.ts:679
 msgid "Wiki 校验失败：{0}"
 msgstr "Wiki 검증에 실패했습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:676
+#: apps/app/src/lib/error-translate.ts:680
 msgid "Wiki 校验失败。"
 msgstr "Wiki 검증에 실패했습니다."
 
 #. placeholder {0}: String(params.reason)
-#: apps/app/src/lib/error-translate.ts:681
+#: apps/app/src/lib/error-translate.ts:685
 msgid "Wiki 操作被拒绝：{0}"
 msgstr "Wiki 작업이 거부되었습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:682
+#: apps/app/src/lib/error-translate.ts:686
 msgid "Wiki 操作被拒绝。"
 msgstr "Wiki 작업이 거부되었습니다."
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:687
+#: apps/app/src/lib/error-translate.ts:691
 msgid "Wiki 冲突：{0}"
 msgstr "Wiki 충돌：{0}"
 
-#: apps/app/src/lib/error-translate.ts:688
+#: apps/app/src/lib/error-translate.ts:692
 msgid "Wiki 冲突。"
 msgstr "Wiki 충돌."
 
-#: apps/app/src/lib/error-translate.ts:691
+#: apps/app/src/lib/error-translate.ts:695
 msgid "Wiki 操作过于频繁，请稍后再试。"
 msgstr "Wiki 작업이 너무 빈번합니다. 잠시 후 다시 시도하세요."
 
-#: apps/app/src/lib/error-translate.ts:693
+#: apps/app/src/lib/error-translate.ts:697
 msgid "Wiki 内容触发过滤规则。"
 msgstr "Wiki 콘텐츠가 필터 규칙에 걸렸습니다."
 
-#: apps/app/src/lib/error-translate.ts:695
+#: apps/app/src/lib/error-translate.ts:699
 msgid "Wiki 审核记录不存在。"
 msgstr "Wiki 검토를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:697
+#: apps/app/src/lib/error-translate.ts:701
 msgid "Wiki 审核当前状态不允许此操作。"
 msgstr "Wiki 검토의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:699
+#: apps/app/src/lib/error-translate.ts:703
 msgid "Wiki 讨论不存在。"
 msgstr "Wiki 토론을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:701
+#: apps/app/src/lib/error-translate.ts:705
 msgid "Wiki 讨论当前状态不允许此操作。"
 msgstr "Wiki 토론의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:703
+#: apps/app/src/lib/error-translate.ts:707
 msgid "Wiki 封禁记录不存在。"
 msgstr "Wiki 차단을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:705
+#: apps/app/src/lib/error-translate.ts:709
 msgid "Wiki 封禁当前状态不允许此操作。"
 msgstr "Wiki 차단의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:707
+#: apps/app/src/lib/error-translate.ts:711
 msgid "Wiki 举报不存在。"
 msgstr "Wiki 신고를 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:709
+#: apps/app/src/lib/error-translate.ts:713
 msgid "Wiki 举报当前状态不允许此操作。"
 msgstr "Wiki 신고의 현재 상태에서는 이 작업이 허용되지 않습니다."
 
-#: apps/app/src/lib/error-translate.ts:711
+#: apps/app/src/lib/error-translate.ts:715
 msgid "游戏不存在。"
 msgstr "게임을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:713
+#: apps/app/src/lib/error-translate.ts:717
 msgid "游戏修订不存在。"
 msgstr "게임 리비전을 찾을 수 없습니다."
 
-#: apps/app/src/lib/error-translate.ts:715
+#: apps/app/src/lib/error-translate.ts:719
 msgid "游戏投稿不存在。"
 msgstr "게임 제출을 찾을 수 없습니다."
 
 #. placeholder {0}: String(params.detail)
-#: apps/app/src/lib/error-translate.ts:719
+#: apps/app/src/lib/error-translate.ts:723
 msgid "游戏校验失败：{0}"
 msgstr "게임 검증에 실패했습니다：{0}"
 
-#: apps/app/src/lib/error-translate.ts:720
+#: apps/app/src/lib/error-translate.ts:724
 msgid "游戏校验失败。"
 msgstr "게임 검증에 실패했습니다."
 
-#: apps/app/src/lib/error-translate.ts:729
+#: apps/app/src/lib/error-translate.ts:733
 msgid "余额不足，本次需 ¥{priceYuan}，请充值后再试。"
 msgstr "잔액이 부족합니다. 이번에 ¥{priceYuan}가 필요합니다. 충전 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:730
+#: apps/app/src/lib/error-translate.ts:734
 msgid "钱包余额不足，请充值后再试。"
 msgstr "지갑 잔액이 부족합니다. 충전 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:734
+#: apps/app/src/lib/error-translate.ts:738
 msgid "计费服务暂时不可用，请稍后再试。"
 msgstr "결제 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:736
+#: apps/app/src/lib/error-translate.ts:740
 msgid "提交的数据无效，请检查后重试。"
 msgstr "제출된 데이터가 유효하지 않습니다. 확인 후 다시 시도해 주세요."
 
-#: apps/app/src/lib/error-translate.ts:738
+#: apps/app/src/lib/error-translate.ts:742
 msgid "服务暂时不可用，请稍后再试。"
 msgstr "서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
 
@@ -26600,47 +26620,59 @@ msgstr ""
 msgid "了解会员"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:427
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:408
+msgid "等对方也选择继续，就会生成下一轮对话。稍后可在「我的相遇」里查看进展。"
+msgstr ""
+
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:411
+msgid "已记录你的选择，等对方决定。结果会出现在「我的相遇」里。"
+msgstr ""
+
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:444
 msgid "回到发现"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:427
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:444
 msgid "再相遇一次"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:518
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:535
 msgid "正在加载我的相遇…"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:534
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:551
 msgid "还没有相遇记录"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:537
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:554
 msgid "你发起的、以及别人和你分身的相遇都会出现在这里。"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:630
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:642
 msgid "‹ 返回我的相遇"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:636
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:648
 msgid "正在加载这次相遇…"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:704
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:713
+msgid "第 {currentRound} / {maxRounds} 轮对话"
+msgstr ""
+
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:740
 msgid "想要对方联系方式，需先填写你自己的。这次相遇已存到「我的相遇」，填好后回到那里继续即可。"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:710
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:746
 msgid "去填写"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:746
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:782
 msgid "对方的联系方式"
 msgstr ""
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:766
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:802
 msgid "已复制"
 msgstr ""
 
@@ -29425,15 +29457,15 @@ msgstr "언어 전환 중…"
 
 #: apps/app/src/routes/profile-settings-page.tsx:81
 msgid "浅色"
-msgstr ""
+msgstr "라이트"
 
 #: apps/app/src/routes/profile-settings-page.tsx:82
 msgid "深色"
-msgstr ""
+msgstr "다크"
 
 #: apps/app/src/routes/profile-settings-page.tsx:83
 msgid "跟随系统"
-msgstr ""
+msgstr "시스템 설정"
 
 #: apps/app/src/routes/profile-settings-page.tsx:153
 msgid "返回资料页"
@@ -29441,16 +29473,16 @@ msgstr "프로필 페이지로 돌아가기"
 
 #: apps/app/src/routes/profile-settings-page.tsx:212
 msgid "外观"
-msgstr ""
+msgstr "외관"
 
 #: apps/app/src/routes/profile-settings-page.tsx:250
 #: apps/app/src/routes/profile-settings-page.tsx:260
 msgid "允许我的分身参与社交相遇"
-msgstr ""
+msgstr "내 분신의 소셜 만남 허용"
 
 #: apps/app/src/routes/profile-settings-page.tsx:253
 msgid "关闭后别人无法和你的分身相遇，你也收不到新的相遇。"
-msgstr ""
+msgstr "끄면 다른 사람이 당신의 분신과 만날 수 없고 새 만남도 받지 못해요."
 
 #: apps/app/src/routes/profile-subscription-page.tsx:513
 msgid "会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。"
