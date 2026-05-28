@@ -246,6 +246,19 @@ export function resolveAttachmentSemanticText(
     return "";
   }
 
+  if (attachment.kind === "red_packet") {
+    const note = attachment.message?.trim();
+    return truncateSemanticText(
+      note ? t(msg`红包，${note}`) : t(msg`红包`),
+      maxChars,
+    );
+  }
+
+  if (attachment.kind === "gift") {
+    const name = attachment.goodsName;
+    return truncateSemanticText(t(msg`礼物，${name}`), maxChars);
+  }
+
   // 走查 2026-05-18 移动端单聊 R9：和 use-conversation-thread R7（commit 154b556fe）
   // 同款 ?? vs || 漏防——StickerAttachment.label 在 schema 上是 `string | undefined`，
   // 用户自定义贴纸不填 label 时偶发以空串落库（旧版 reminder 卡 / 老 wiki import
@@ -324,6 +337,14 @@ function buildAttachmentFallbackLabel(
             ? t(msg`未接通`)
             : durationStr;
     return buildNamedFallbackLabel(label, detail, bracketed);
+  }
+
+  if (attachment.kind === "red_packet") {
+    return buildNamedFallbackLabel(t(msg`红包`), undefined, bracketed);
+  }
+
+  if (attachment.kind === "gift") {
+    return buildNamedFallbackLabel(t(msg`礼物`), attachment.goodsName, bracketed);
   }
 
   // 走查 2026-05-18 移动端单聊 R9：同上 resolveAttachmentSemanticText sticker 分支
