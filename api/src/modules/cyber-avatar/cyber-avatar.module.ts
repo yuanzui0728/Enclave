@@ -11,6 +11,7 @@ import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarService } from './cyber-avatar.service';
 import { WorldContextHubService } from './world-context-hub.service';
 import { PassiveProfileInferenceService } from './passive-profile-inference.service';
+import { FeedPreferenceDigestService } from './feed-preference-digest.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
 import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
@@ -22,6 +23,8 @@ import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
 import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { MessageEntity } from '../chat/message.entity';
+import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
+import { FeedPostEntity } from '../feed/feed-post.entity';
 
 @Module({
   imports: [
@@ -32,6 +35,8 @@ import { MessageEntity } from '../chat/message.entity';
       CyberAvatarRunEntity,
       CyberAvatarSignalEntity,
       MessageEntity,
+      UserFeedInteractionEntity,
+      FeedPostEntity,
     ]),
     SystemConfigModule,
     AuthModule,
@@ -44,6 +49,7 @@ import { MessageEntity } from '../chat/message.entity';
     CyberAvatarService,
     WorldContextHubService,
     PassiveProfileInferenceService,
+    FeedPreferenceDigestService,
     CyberAvatarSelfService,
     CyberAvatarMatchmakingSyncService,
     CyberAvatarEncounterService,

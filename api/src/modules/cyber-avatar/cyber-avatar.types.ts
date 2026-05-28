@@ -29,7 +29,9 @@ export type CyberAvatarSignalType =
   | 'real_world_brief'
   // P4 信号回填：游戏中心行为（日常打开 / 置顶等里程碑），喂用户兴趣画像。
   | 'game_session'
-  | 'game_action';
+  | 'game_action'
+  // P4 信号回填：发现页 feed 互动的周期性偏好摘要（话题/创作者/明确不感兴趣）。
+  | 'feed_preference_digest';
 
 export type CyberAvatarRunMode =
   | 'incremental'
