@@ -117,6 +117,11 @@ type SyncConfig = {
 const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
 const SHUTDOWN_FLUSH_TIMEOUT_MS = 5_000;
 
+// NOTE: 共享 world 多租户 cutover 后，daily-push（getConfig 需 LPP 注入的
+// CLOUD_WORLD_ID/CALLBACK_TOKEN）在共享单进程下永远拿不到配置 → runSync 的推送半边
+// 是 no-op。平台 token 统计改由 cloud-api 主动拉取（apps/cloud-api 的
+// TokenUsagePullService）。本服务仍保留：pullPlatformDefaults + 三个 admin 端点
+// （cloud-sync/run、platform-defaults、platform-defaults/apply）仍在用。
 @Injectable()
 export class CloudTokenUsageSyncService
   implements OnModuleInit, OnModuleDestroy, OnApplicationShutdown
