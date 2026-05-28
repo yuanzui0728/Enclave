@@ -29,6 +29,7 @@ import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
+import { CharacterSkillRuntimeService } from '../character-skill/character-skill-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
 import { KnowledgeRetrievalService } from '../knowledge/knowledge-retrieval.service';
@@ -225,6 +226,7 @@ export class ChatService {
     @Inject(forwardRef(() => AgentDelegationService))
     private readonly agentDelegation: AgentDelegationService,
     private readonly hongbaoCloud: HongbaoCloudClient,
+    private readonly characterSkillRuntime: CharacterSkillRuntimeService,
   ) {}
 
   private async getRemarkMapForCurrentOwner(): Promise<FriendRemarkMap> {
@@ -465,7 +467,40 @@ export class ChatService {
       });
     }
 
-    result.sort((left, right) => {
+    // self 去重：历史多租户迁移给部分 owner 留了两条 self 会话——canonical
+    // direct_char-default-self（含全部真实历史、app 各处导航都指向它）+ 旧的
+    // direct_char-default-self__<ownerId> 后缀 stub（仅 1~5 条残留消息、活跃时间更早）。
+    // 恒置顶会把两条都顶到最上面 → 列表出现两个「我」。只保留 lastActivityAt 最新的
+    // 那条（即活跃 canonical，tiebreak 取裸 id），其余 self 会话从列表隐藏（不删数据）。
+    const selfItems = result.filter(
+      (c) =>
+        c.type === 'direct' &&
+        c.participants?.[0]?.trim() === SELF_CHARACTER_ID,
+    );
+    const dropSelfIds = new Set<string>();
+    if (selfItems.length > 1) {
+      const canonicalId = `direct_${SELF_CHARACTER_ID}`;
+      // canonical 裸 id 优先（app 各处导航都指向它、且它装着全部真实历史）；
+      // 没有 canonical 时才在后缀副本里取 lastActivityAt 最新的。不靠 lastActivityAt
+      // 选 canonical——存在极个别 owner 的 stub 活跃时间反而更新，那样会误留空 stub。
+      const keep = selfItems.reduce((best, cur) => {
+        const bestCanon = best.id === canonicalId;
+        const curCanon = cur.id === canonicalId;
+        if (bestCanon !== curCanon) return curCanon ? cur : best;
+        return this.getSortableTimestamp(cur.lastActivityAt) >
+          this.getSortableTimestamp(best.lastActivityAt)
+          ? cur
+          : best;
+      });
+      for (const item of selfItems) {
+        if (item !== keep) dropSelfIds.add(item.id);
+      }
+    }
+    const ordered = dropSelfIds.size
+      ? result.filter((c) => !dropSelfIds.has(c.id))
+      : result;
+
+    ordered.sort((left, right) => {
       // 「我」（self mirror）永远在最顶部——压过用户手动置顶的其他会话。
       const leftSelf =
         left.type === 'direct' &&
@@ -494,7 +529,7 @@ export class ChatService {
       );
     });
 
-    return result;
+    return ordered;
   }
 
   async markConversationRead(convId: string): Promise<void> {
@@ -1300,6 +1335,25 @@ export class ChatService {
             sourceMessageId: userMsgEntity.id,
           })
         : { handled: false };
+    // 第四层：角色技能（PPT/Word/Excel 真实产出）。仅非 self 角色、且前面拦截层未接管时进入。
+    // 命中产出意图 → 需求收集/报价/确认/扣费/排渲染 job，返回文本（确认语/追问/报价）；
+    // 文件成品由 SkillArtifactJobService 异步补发。未命中 → handled:false 放回标准 LLM 回复。
+    const skillResult =
+      charEntity &&
+      !isSelfConversation &&
+      !actionResult.handled &&
+      !reminderResult.handled
+        ? await this.characterSkillRuntime.handleConversationTurn({
+            conversationId: convId,
+            ownerId: owner.id,
+            character: charEntity,
+            userMessage: resolvedInput.promptText,
+            sourceMessageId: userMsgEntity.id,
+            sourceMessageCreatedAt: userMsgEntity.createdAt ?? new Date(),
+            characterName: profile.name,
+            characterAvatar: charEntity.avatar ?? null,
+          })
+        : { handled: false };
     const replyModalities = await this.planAssistantReplyModalities({
       characterId: charId,
       // 复用上面行 1031 已经 findById 的 character，避免再来一次 PK lookup
@@ -1335,6 +1389,7 @@ export class ChatService {
       !selfAgentResult.handled &&
       !actionResult.handled &&
       !reminderResult.handled &&
+      !skillResult.handled &&
       this.webSearch.shouldTriggerForUserMessage(resolvedInput.promptText)
     ) {
       const injection = await this.webSearch.searchAndFormat(
@@ -1351,7 +1406,9 @@ export class ChatService {
         ? (actionResult.responseText?.trim() ?? '')
         : reminderResult.handled
           ? (reminderResult.responseText?.trim() ?? '')
-          : (
+          : skillResult.handled
+            ? (skillResult.responseText?.trim() ?? '')
+            : (
               await this.ai.generateReply({
                 profile,
                 conversationHistory: history,

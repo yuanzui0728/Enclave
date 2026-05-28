@@ -34,6 +34,7 @@ import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runti
 import { MinimaxModule } from './modules/minimax/minimax.module';
 import { XhsPromoModule } from './modules/xhs-promo/xhs-promo.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { VideoChannelPromptModule } from './modules/config/video-channel-prompt.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
 // WikiModule 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。普通 world child 不再
@@ -68,6 +69,8 @@ import { GroupMemberEntity } from './modules/chat/group-member.entity';
 import { GroupMessageEntity } from './modules/chat/group-message.entity';
 import { GroupReplyTaskEntity } from './modules/chat/group-reply-task.entity';
 import { ReplyArtifactJobEntity } from './modules/chat/reply-artifact-job.entity';
+import { SkillRunEntity } from './modules/character-skill/skill-run.entity';
+import { SkillArtifactJobEntity } from './modules/character-skill/skill-artifact-job.entity';
 import { MinimaxQuotaEntity } from './modules/minimax/minimax-quota.entity';
 import { MinimaxJobEntity } from './modules/minimax/minimax-job.entity';
 import { MediaInsightJobEntity } from './modules/chat/media-insight-job.entity';
@@ -185,6 +188,8 @@ import {
           GroupMessageEntity,
           GroupReplyTaskEntity,
           ReplyArtifactJobEntity,
+          SkillRunEntity,
+          SkillArtifactJobEntity,
           MinimaxQuotaEntity,
           MinimaxJobEntity,
           MediaInsightJobEntity,
@@ -288,6 +293,7 @@ import {
     XhsPromoModule,
     InferenceModule,
     SubscriptionModule,
+    BillingModule,
     VideoChannelPromptModule,
     CloudRuntimeModule,
     SystemModule,

@@ -32,6 +32,8 @@ import { GroupMessageEntity } from '../chat/group-message.entity';
 import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
 import { ReplyArtifactJobEntity } from '../chat/reply-artifact-job.entity';
 import { MediaInsightJobEntity } from '../chat/media-insight-job.entity';
+import { SkillRunEntity } from '../character-skill/skill-run.entity';
+import { SkillArtifactJobEntity } from '../character-skill/skill-artifact-job.entity';
 import { FavoriteEntity } from '../chat/favorite.entity';
 import { FavoriteNoteEntity } from '../chat/favorite-note.entity';
 import { WorldContextEntity } from '../world/world-context.entity';
@@ -125,6 +127,10 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   GroupReplyTaskEntity,
   ReplyArtifactJobEntity,
   MediaInsightJobEntity,
+  // 角色技能产出（PPT/Word/Excel）的跨回合状态 + 异步渲染 job。
+  // 均带 ownerId；job 仿 ReplyArtifactJob 全局轮询后逐 owner 帧执行。
+  SkillRunEntity,
+  SkillArtifactJobEntity,
   FavoriteEntity,
   FavoriteNoteEntity,
   // world（每用户世界时间/天气快照）
