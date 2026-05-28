@@ -41,6 +41,7 @@ import { SystemConfigModule } from '../config/config.module';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { AgentDelegationModule } from '../agent-delegation/agent-delegation.module';
 import { CharacterSkillModule } from '../character-skill/character-skill.module';
+import { SkillArtifactJobService } from '../character-skill/skill-artifact-job.service';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { KnowledgeModule } from '../knowledge/knowledge.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
@@ -115,6 +116,7 @@ import { EventsModule } from '../events/events.module';
     GroupReplyOrchestratorService,
     GroupReplyTaskService,
     ReplyArtifactJobService,
+    SkillArtifactJobService,
     MediaInsightJobService,
     DocumentExtractionService,
     FavoritesService,

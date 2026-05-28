@@ -204,7 +204,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitTypingStart(
     roomId: string,
     characterId: string,
-    stage: 'reply' | 'image_generation' = 'reply',
+    stage: 'reply' | 'image_generation' | 'document_generation' = 'reply',
   ) {
     if (!this.server) {
       return;
@@ -218,7 +218,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitTypingStop(
     roomId: string,
     characterId: string,
-    stage: 'reply' | 'image_generation' = 'reply',
+    stage: 'reply' | 'image_generation' | 'document_generation' = 'reply',
   ) {
     if (!this.server) {
       return;
