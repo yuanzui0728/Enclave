@@ -68,6 +68,20 @@ describe('recommendation-matching — fuzzy domain relevance', () => {
     expect(computeDomainRelevance(['睡眠'], ['财务投资'])).toBe(0);
   });
 
+  it('matches sibling tags sharing a meaningful bigram (情绪支持 ↔ 情绪疏导)', () => {
+    // 两边都不是另一方的子串、各自只有一个 token，但共享 bigram「情绪」——靠 bigram-Dice
+    // 兜底击穿 RELEVANCE_FLOOR；典型的「新角色用近义标签」需要被推荐的场景。
+    const rel = computeDomainRelevance(['情绪支持'], ['情绪疏导']);
+    expect(rel).toBeGreaterThan(0.15);
+    expect(rel).toBeLessThan(0.5); // 弱于整串包含/精确匹配，不喧宾夺主
+  });
+
+  it('bigram noise does not fabricate spurious matches', () => {
+    // 完全无关的 CJK 短串，bigram 无交集 → 应为 0
+    expect(computeDomainRelevance(['学生'], ['学校'])).toBe(0);
+    expect(computeDomainRelevance(['健康'], ['健身'])).toBe(0);
+  });
+
   it('exact match scores higher than partial match', () => {
     expect(domainTermSimilarity('睡眠', '睡眠')).toBe(1);
     const partial = domainTermSimilarity('睡眠', '睡眠医学');

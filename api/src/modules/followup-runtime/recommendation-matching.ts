@@ -126,7 +126,12 @@ function bigrams(value: string): Set<string> {
   return out;
 }
 
-/** 字符 bigram Dice 系数（缩放到 [0,0.5]，CJK 无分隔时兜底）。 */
+/**
+ * 字符 bigram Dice 系数（缩放到 [0,0.65]，CJK 无分隔时兜底）。
+ * 缩放到 0.65 而非更低，是为了让真实近义对（如「情绪支持」↔「情绪疏导」，共享 1/3 bigram
+ * → Dice≈0.333 → 0.217）能越过 RELEVANCE_FLOOR=0.2；同时 Dice≤0.25 仍落在 floor 下
+ * 被噪声丢弃。两者各自有 2-3 个 bigram 时共享 1 个就是有意义的近义信号。
+ */
 function bigramDiceScore(a: string, b: string): number {
   const setA = bigrams(a);
   const setB = bigrams(b);
@@ -136,7 +141,7 @@ function bigramDiceScore(a: string, b: string): number {
     if (setB.has(gram)) inter += 1;
   }
   const dice = (2 * inter) / (setA.size + setB.size);
-  return dice * 0.5;
+  return dice * 0.65;
 }
 
 /** 单个 loop 领域词 vs 单个角色领域词的模糊相似度 -> [0,1]。 */
