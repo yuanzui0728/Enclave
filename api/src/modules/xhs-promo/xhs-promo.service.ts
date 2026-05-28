@@ -65,31 +65,36 @@ export class XhsPromoService {
       });
     }
 
+    // 只有「调用本身失败（未产出）」才 release；调用成功即已计费 → 一律 commit，
+    // 之后的解析失败也不能 release（否则 commit+release 双动作会让配额计数失真，
+    // 见 minimax billed-empty 教训）。所以 commit/release 不放在同一个 try/catch。
+    let content: string;
     try {
-      const { content } = await this.minimaxClient.chatCompletion({
-        model: 'MiniMax-M2.7',
-        messages,
-        temperature: 1.0,
-        maxTokens: 2400,
-      });
-      await this.minimaxQuota.commit('MiniMax-M2.7');
-      const options = parseCopyOptions(content, count);
-      if (!options.length) {
-        throw new AppError('XHS_PROMO_COPY_FAILED', {
-          status: HttpStatus.SERVICE_UNAVAILABLE,
-          legacyMessage: '文案生成失败，请重试。',
-        });
-      }
-      return { options };
+      content = (
+        await this.minimaxClient.chatCompletion({
+          model: 'MiniMax-M2.7',
+          messages,
+          temperature: 1.0,
+          maxTokens: 2400,
+        })
+      ).content;
     } catch (err) {
       await this.minimaxQuota.release('MiniMax-M2.7');
-      if (err instanceof AppError) throw err;
       this.logger.warn(`xhs promo copy gen failed: ${(err as Error)?.message}`);
       throw new AppError('XHS_PROMO_COPY_FAILED', {
         status: HttpStatus.SERVICE_UNAVAILABLE,
         legacyMessage: '文案生成暂时不可用，请稍后再试。',
       });
     }
+    await this.minimaxQuota.commit('MiniMax-M2.7');
+    const options = parseCopyOptions(content, count);
+    if (!options.length) {
+      throw new AppError('XHS_PROMO_COPY_FAILED', {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        legacyMessage: '文案生成失败，请重试。',
+      });
+    }
+    return { options };
   }
 
   async generateImage(input: {
