@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminGuard } from '../admin/admin.guard';
 import { MinimaxClient } from './minimax.client';
+import { MinimaxKeyPoolService } from './minimax-key-pool.service';
 import { MinimaxAssetStorage } from './minimax-asset.storage';
 import { MinimaxQuotaEntity } from './minimax-quota.entity';
 import { MinimaxQuotaController } from './minimax-quota.controller';
@@ -21,6 +22,7 @@ import { MinimaxUsageReporterService } from './minimax-usage-reporter.service';
   providers: [
     AdminGuard,
     MinimaxClient,
+    MinimaxKeyPoolService,
     MinimaxAssetStorage,
     MinimaxQuotaService,
     MinimaxQuotaCloudSyncService,
@@ -29,6 +31,7 @@ import { MinimaxUsageReporterService } from './minimax-usage-reporter.service';
   ],
   exports: [
     MinimaxClient,
+    MinimaxKeyPoolService,
     MinimaxAssetStorage,
     MinimaxQuotaService,
     MinimaxQuotaCloudSyncService,

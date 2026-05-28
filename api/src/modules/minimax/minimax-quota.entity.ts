@@ -7,7 +7,12 @@ import {
 } from 'typeorm';
 
 @Entity('minimax_quota_usage')
-@Index('uq_minimax_quota_model_date', ['model', 'usageDate'], { unique: true })
+// 多租户：shared-world 单进程持有多把 token-plan key，配额/熔断按 key 分桶
+// （keyFingerprint = key 末 4 位），一把 plan 耗尽不连累另一把。空池兜底哨兵
+// '__single__'，单 key 部署等价于单桶（与改造前一致）。
+@Index('uq_minimax_quota_model_date_key', ['model', 'usageDate', 'keyFingerprint'], {
+  unique: true,
+})
 export class MinimaxQuotaEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -17,6 +22,11 @@ export class MinimaxQuotaEntity {
 
   @Column()
   usageDate!: string;
+
+  // token-plan key 末 4 位；按 key 分桶配额与熔断。存量行迁移时回填到历史承载
+  // 文本流量的那把 key 的 fingerprint。
+  @Column({ default: '' })
+  keyFingerprint!: string;
 
   @Column({ default: 0 })
   reserved!: number;

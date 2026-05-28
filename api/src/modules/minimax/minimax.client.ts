@@ -2,6 +2,7 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { MinimaxKeyPoolService } from './minimax-key-pool.service';
 import { MinimaxUsageReporterService } from './minimax-usage-reporter.service';
 import {
   type MinimaxBaseResp,
@@ -78,55 +79,47 @@ export class MinimaxClientError extends Error {
 @Injectable()
 export class MinimaxClient {
   private readonly logger = new Logger(MinimaxClient.name);
-  // 同进程内的 token plan key 池。:3000 dev-watch 主进程读到根 .env 的
-  // MINIMAX_API_KEYS（多 key）；cloud-api 派的 world child 那边 cloud-api 显式
-  // delete 了 MINIMAX_API_KEYS、只注入单 MINIMAX_API_KEY——所以池子里就 1 个，
-  // 行为与改造前等价。同进程内多 key 时按轮询挑，避免单进程偏置某一把。
-  private readonly apiKeys: readonly string[];
+  // token plan key 选择委托给 MinimaxKeyPoolService（按当前租户 ownerId 稳定
+  // 选池中一把）。改造前这里是进程内调用序号 round-robin；shared-world 多租户
+  // 后改为「同一租户的媒体调用与其文本/TTS 调用落同一把」，与 inference 链路
+  // (resolveRuntimeProvider) 选 key 口径一致，per-key 熔断才连贯。
   private readonly baseUrl: string;
-  private callCounter = 0;
 
   constructor(
     config: ConfigService,
     private readonly subscription: SubscriptionService,
+    private readonly keyPool: MinimaxKeyPoolService,
     @Optional()
     private readonly usageReporter?: MinimaxUsageReporterService,
   ) {
-    const rawKeys = config.get<string>('MINIMAX_API_KEYS');
-    const rawSingle = config.get<string>('MINIMAX_API_KEY');
-    const fromCsv = (rawKeys ?? '')
-      .split(',')
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
-    const single = (rawSingle ?? '').trim();
-    this.apiKeys = fromCsv.length > 0 ? fromCsv : single ? [single] : [];
     this.baseUrl = (
       config.get<string>('MINIMAX_BASE_URL') ?? DEFAULT_BASE_URL
     )
       .replace(/\/+$/, '')
       // 路径都自带 /v1 前缀，base 末尾若也带 /v1 会拼成 /v1/v1/... → 404
       .replace(/\/v1$/, '');
-    if (this.apiKeys.length === 0) {
+    if (!this.keyPool.isConfigured()) {
       this.logger.warn(
         'MINIMAX_API_KEY missing — token-plan video/music generation disabled',
-      );
-    } else if (this.apiKeys.length > 1) {
-      const fps = this.apiKeys.map((k) => k.slice(-4)).join(',');
-      this.logger.log(
-        `MinimaxClient using ${this.apiKeys.length} keys round-robin: [${fps}]`,
       );
     }
   }
 
   isConfigured(): boolean {
-    return this.apiKeys.length > 0;
+    return this.keyPool.isConfigured();
   }
 
   private pickKey(): string {
-    // 轮询：第 1 把、第 2 把、第 1 把… 进程内调用序号 % 池大小。
-    // 单 key 池时永远返回同一把（与改造前等价）。
-    const idx = this.callCounter++ % this.apiKeys.length;
-    return this.apiKeys[idx];
+    // 按当前租户黏性选 key（单 key 池永远同一把，与改造前等价）。
+    const selection = this.keyPool.currentKey();
+    if (!selection) {
+      throw new MinimaxClientError(
+        'MINIMAX_API_KEY_MISSING',
+        'no MiniMax API key configured',
+        false,
+      );
+    }
+    return selection.key;
   }
 
   async submitVideo(
@@ -510,7 +503,7 @@ export class MinimaxClient {
     pathname: string,
     body?: unknown,
   ): Promise<T> {
-    if (this.apiKeys.length === 0) {
+    if (!this.keyPool.isConfigured()) {
       throw new MinimaxClientError(
         'MINIMAX_API_KEY_MISSING',
         'MINIMAX_API_KEY not configured',

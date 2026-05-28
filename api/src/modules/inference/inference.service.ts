@@ -31,7 +31,9 @@ const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const DEFAULT_PROVIDER_ID = 'provider_default';
-const MINIMAX_PROVIDER_ID = 'provider_minimax';
+// 多租户负载均衡：ai-orchestrator 据此识别「MiniMax token-plan 默认 provider」，
+// 把单数 MINIMAX_API_KEY 换成按租户选的池中一把。
+export const MINIMAX_PROVIDER_ID = 'provider_minimax';
 const MINIMAX_PROVIDER_NAME = 'MiniMax Token Plan';
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimaxi.com/v1';
 const MINIMAX_DEFAULT_TEXT_MODEL = 'MiniMax-M2.7';

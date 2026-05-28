@@ -7,8 +7,10 @@ import { MinimaxQuotaService, type QuotaSnapshot } from './minimax-quota.service
 export interface MinimaxQuotaResponse {
   // Asia/Shanghai 计费日 yyyy-MM-dd
   date: string;
-  // 每个 model 的当日 used / reserved / committed / limit / remaining
+  // 每个 model 的当日 used / reserved / committed / limit / remaining（跨 key 求和的整池视图）
   byModel: Record<string, QuotaSnapshot>;
+  // 按 token-plan key fingerprint 拆开（每把 plan 用各自 per-key 日限）→ 核对两把是否均衡
+  byKey: Record<string, Record<string, QuotaSnapshot>>;
   // remaining ≤ 1 的 model（用于 admin 面板高亮）
   warnings: string[];
 }
@@ -29,7 +31,10 @@ export class MinimaxQuotaController {
 
   @Get()
   async getQuota(): Promise<MinimaxQuotaResponse> {
-    const byModel = await this.quota.snapshotToday();
+    const [byModel, byKey] = await Promise.all([
+      this.quota.snapshotToday(),
+      this.quota.snapshotTodayByKey(),
+    ]);
     const warnings: string[] = [];
     for (const model of Object.keys(TOKEN_PLAN_DAILY_LIMITS)) {
       if (byModel[model] && byModel[model].remaining <= 1) {
@@ -39,6 +44,7 @@ export class MinimaxQuotaController {
     return {
       date: shanghaiDateString(),
       byModel,
+      byKey,
       warnings,
     };
   }

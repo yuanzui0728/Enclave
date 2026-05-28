@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MinimaxQuotaEntity } from './minimax-quota.entity';
+import { MinimaxKeyPoolService } from './minimax-key-pool.service';
 import { getDailyLimit, TOKEN_PLAN_DAILY_LIMITS } from './minimax-quota.constants';
 
 const SHANGHAI_OFFSET_MINUTES = 8 * 60;
@@ -98,7 +99,14 @@ export class MinimaxQuotaService {
   constructor(
     @InjectRepository(MinimaxQuotaEntity)
     private readonly repo: Repository<MinimaxQuotaEntity>,
+    private readonly keyPool: MinimaxKeyPoolService,
   ) {}
+
+  // 当前租户命中的 token-plan key fingerprint（配额/熔断按 key 分桶）。
+  // 单 key 池 / 空池退化为稳定哨兵，单桶行为与改造前等价。
+  private fp(): string {
+    return this.keyPool.currentFingerprint();
+  }
 
   // CloudSync 在 onModuleInit 注册；不注册时所有行为与单机一致。
   setExhaustedListener(cb: (model: string, until: Date) => void): void {
@@ -117,11 +125,15 @@ export class MinimaxQuotaService {
     if (!entries.length) return;
     const day = todayInShanghai();
     const now = Date.now();
+    // remote entries 不带 fingerprint（cloud-api 侧已按 worldId→key 分桶）。本进程
+    // 用当前 fp 落桶：shared-world 下 cloud-sync 是 no-op（无 CLOUD_WORLD_ID）不会
+    // 走到这；LPP 单 key 进程下 fp 即那把 key，单桶等价改前。
+    const fp = this.fp();
     let added = 0;
     let extended = 0;
     for (const { model, untilMs } of entries) {
       if (untilMs <= now) continue; // 已过 reset 时间，不熔断
-      const key = `${model}:${day}`;
+      const key = `${model}:${fp}:${day}`;
       const existing = this.exhaustedUntilByKey.get(key);
       if (existing === undefined) {
         this.exhaustedUntilByKey.set(key, untilMs);
@@ -140,7 +152,8 @@ export class MinimaxQuotaService {
   }
 
   private exhaustedKey(model: string): string {
-    return `${model}:${todayInShanghai()}`;
+    // 内存熔断 key 含 fingerprint → 一把 key 熔断不波及另一把（同一 model）。
+    return `${model}:${this.fp()}:${todayInShanghai()}`;
   }
 
   // 当 minimax 真的回 2056/1042 时，调用方在 catch 里调这个。
@@ -195,15 +208,17 @@ export class MinimaxQuotaService {
     });
 
     const usageDate = todayInShanghai();
+    const keyFingerprint = this.fp();
     try {
       await this.repo.manager.transaction(async (mgr) => {
         const row = await mgr.findOne(MinimaxQuotaEntity, {
-          where: { model, usageDate },
+          where: { model, usageDate, keyFingerprint },
         });
         if (!row) {
           const created = mgr.create(MinimaxQuotaEntity, {
             model,
             usageDate,
+            keyFingerprint,
             reserved: 0,
             committed: 0,
             exhaustedAt: new Date(),
@@ -244,7 +259,7 @@ export class MinimaxQuotaService {
     let untilMs = 0;
     try {
       const row = await this.repo.findOne({
-        where: { model, usageDate: todayInShanghai() },
+        where: { model, usageDate: todayInShanghai(), keyFingerprint: this.fp() },
       });
       // 走查 yuanzui0728 本次 R5：兼容旧行（exhaustedUntil=NULL but exhaustedAt set）
       // → 兜底成 next-day Shanghai 00:00（行为与改前等价）。
@@ -273,11 +288,12 @@ export class MinimaxQuotaService {
   // 方便 ops 在日志里抓，避免频繁 reserve 触发日志洪水。
   private maybeWarnLowRemaining(model: string, remaining: number): void {
     if (remaining > 1) return;
-    const key = `${model}:${todayInShanghai()}`;
+    const fp = this.fp();
+    const key = `${model}:${fp}:${todayInShanghai()}`;
     if (this.warnedToday.has(key)) return;
     this.warnedToday.add(key);
     this.logger.warn(
-      `minimax quota low: model=${model} remaining=${remaining} (day=${todayInShanghai()})`,
+      `minimax quota low: model=${model} key=${fp} remaining=${remaining} (day=${todayInShanghai()})`,
     );
   }
 
@@ -289,7 +305,7 @@ export class MinimaxQuotaService {
     // 会"假装"还有额度，构建 prompt 后才在 tryReserve 撞墙白费 LLM tokens / DB 查询。
     if (await this.isExhaustedToday(model)) return 0;
     const row = await this.repo.findOne({
-      where: { model, usageDate: todayInShanghai() },
+      where: { model, usageDate: todayInShanghai(), keyFingerprint: this.fp() },
     });
     if (!row) return limit;
     return Math.max(0, limit - row.reserved - row.committed);
@@ -306,16 +322,18 @@ export class MinimaxQuotaService {
       return false;
     }
     const usageDate = todayInShanghai();
+    const keyFingerprint = this.fp();
     // 全天匀速 gate：按 Shanghai 时间到现在为止"线性预算"应该消费多少。
     // EARLY_BURST=2 固定缓冲：0:00 起允许直接消费 2 个，避免极小流量任务被锁死。
     // 例：lyrics 100/天，6:00 (25%) 允许 27 个；12:00 允许 52 个；24:00 前烧完 100。
+    // per-key 分桶后，每把 key 各自按 per-key 日限独立配速（反而更准）。
     const elapsedRatio = shanghaiDayElapsedRatio();
     const linearBudget = Math.ceil(limit * elapsedRatio) + PACING_EARLY_BURST;
     let ok: boolean;
     try {
       ok = await this.repo.manager.transaction(async (mgr) => {
         const row = await mgr.findOne(MinimaxQuotaEntity, {
-          where: { model, usageDate },
+          where: { model, usageDate, keyFingerprint },
         });
         // 事务内再 race-safe 查一次 exhaustedAt/exhaustedUntil：从 isExhaustedToday()
         // 到这里之间，同进程的 markExhaustedToday（另一个 async 路径，例如 moments
@@ -340,6 +358,7 @@ export class MinimaxQuotaService {
           const created = mgr.create(MinimaxQuotaEntity, {
             model,
             usageDate,
+            keyFingerprint,
             reserved: 1,
             committed: 0,
           });
@@ -403,7 +422,10 @@ export class MinimaxQuotaService {
         reserved: () => 'CASE WHEN reserved > 0 THEN reserved - 1 ELSE 0 END',
         committed: () => 'committed + 1',
       })
-      .where('model = :model AND usageDate = :usageDate', { model, usageDate })
+      .where(
+        'model = :model AND usageDate = :usageDate AND keyFingerprint = :keyFingerprint',
+        { model, usageDate, keyFingerprint: this.fp() },
+      )
       .execute();
   }
 
@@ -415,24 +437,59 @@ export class MinimaxQuotaService {
       .set({
         reserved: () => 'CASE WHEN reserved > 0 THEN reserved - 1 ELSE 0 END',
       })
-      .where('model = :model AND usageDate = :usageDate', { model, usageDate })
+      .where(
+        'model = :model AND usageDate = :usageDate AND keyFingerprint = :keyFingerprint',
+        { model, usageDate, keyFingerprint: this.fp() },
+      )
       .execute();
   }
 
+  // 全 fleet 维度（跨 key 求和）的当日配额快照。per-key 分桶后每把 key 各有一行，
+  // 这里把同 model 各 key 的 used 相加，limit 按 key 数放大成「整池总额」，remaining
+  // 仍是「整池还剩多少」。单 key 池 → 与改造前完全等价。
   async snapshotToday(): Promise<Record<string, QuotaSnapshot>> {
     const usageDate = todayInShanghai();
     const rows = await this.repo.find({ where: { usageDate } });
-    const byModel = new Map(rows.map((r) => [r.model, r] as const));
+    const usedByModel = new Map<string, { reserved: number; committed: number }>();
+    for (const r of rows) {
+      const agg = usedByModel.get(r.model) ?? { reserved: 0, committed: 0 };
+      agg.reserved += r.reserved;
+      agg.committed += r.committed;
+      usedByModel.set(r.model, agg);
+    }
+    const keyCount = Math.max(1, this.keyPool.size());
     const out: Record<string, QuotaSnapshot> = {};
-    for (const [model, limit] of Object.entries(TOKEN_PLAN_DAILY_LIMITS)) {
-      const row = byModel.get(model);
-      const reserved = row?.reserved ?? 0;
-      const committed = row?.committed ?? 0;
+    for (const [model, perKeyLimit] of Object.entries(TOKEN_PLAN_DAILY_LIMITS)) {
+      const agg = usedByModel.get(model);
+      const reserved = agg?.reserved ?? 0;
+      const committed = agg?.committed ?? 0;
       const used = reserved + committed;
+      const limit = perKeyLimit * keyCount;
       out[model] = {
         used,
         reserved,
         committed,
+        limit,
+        remaining: Math.max(0, limit - used),
+      };
+    }
+    return out;
+  }
+
+  // 按 key fingerprint 拆开的当日快照（每把 plan 用各自 per-key 日限）。
+  // 用于核对两把 plan 是否均衡消耗。
+  async snapshotTodayByKey(): Promise<Record<string, Record<string, QuotaSnapshot>>> {
+    const usageDate = todayInShanghai();
+    const rows = await this.repo.find({ where: { usageDate } });
+    const out: Record<string, Record<string, QuotaSnapshot>> = {};
+    for (const r of rows) {
+      const limit = getDailyLimit(r.model);
+      if (limit <= 0) continue;
+      const used = r.reserved + r.committed;
+      (out[r.keyFingerprint] ??= {})[r.model] = {
+        used,
+        reserved: r.reserved,
+        committed: r.committed,
         limit,
         remaining: Math.max(0, limit - used),
       };

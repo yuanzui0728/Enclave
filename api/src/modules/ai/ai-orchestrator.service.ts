@@ -46,6 +46,7 @@ import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage'
 import { resolveReadableAiSpeechPath } from './ai-speech-assets.service';
 import {
   InferenceService,
+  MINIMAX_PROVIDER_ID,
   type ResolvedInferenceCapabilityProfile,
 } from '../inference/inference.service';
 import { SubscriptionService } from '../subscription/subscription.service';
@@ -59,6 +60,7 @@ import {
   MinimaxClient,
   MinimaxClientError,
 } from '../minimax/minimax.client';
+import { MinimaxKeyPoolService } from '../minimax/minimax-key-pool.service';
 import {
   executeChatCompletion,
   type ChatCompletionTaskResult,
@@ -224,6 +226,7 @@ export class AiOrchestratorService {
     private readonly subscription: SubscriptionService,
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly minimaxClient: MinimaxClient,
+    private readonly minimaxKeyPool: MinimaxKeyPoolService,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -257,29 +260,42 @@ export class AiOrchestratorService {
       characterId: options?.characterId,
     });
 
+    const usingOwnerKey =
+      Boolean(options?.override?.apiKey?.trim()) &&
+      provider.allowOwnerKeyOverride !== false;
+
+    // 多租户负载均衡：MiniMax token-plan 默认 provider 不再恒用单数 MINIMAX_API_KEY。
+    // 按当前租户黏性从池中选一把（文本/TTS/转写/出图同租户落同一把，与 MinimaxClient
+    // 媒体链路口径一致 → per-key 配额/熔断连贯，两把 plan 均衡消耗）。
+    // BYOK（owner 自带 key）时不介入。非 MiniMax 默认 provider / 单 key 池 → undefined，
+    // 完全沿用原逻辑。
+    const minimaxKey =
+      provider.accountId === MINIMAX_PROVIDER_ID &&
+      !usingOwnerKey &&
+      this.minimaxKeyPool.isConfigured()
+        ? this.minimaxKeyPool.currentKey()?.key
+        : undefined;
+
     return {
       ...provider,
-      appliedOwnerKeyOverride:
-        Boolean(options?.override?.apiKey?.trim()) &&
-        provider.allowOwnerKeyOverride !== false,
+      appliedOwnerKeyOverride: usingOwnerKey,
       endpoint:
         options?.override?.apiBase && provider.allowOwnerKeyOverride !== false
           ? this.normalizeProviderEndpoint(options.override.apiBase)
           : provider.endpoint,
-      apiKey:
-        provider.allowOwnerKeyOverride !== false
-          ? options?.override?.apiKey?.trim() || provider.apiKey
-          : provider.apiKey,
+      apiKey: usingOwnerKey
+        ? (options?.override?.apiKey?.trim() as string)
+        : (minimaxKey ?? provider.apiKey),
       model: provider.model,
       transcriptionEndpoint: provider.transcriptionEndpoint,
-      transcriptionApiKey: provider.transcriptionApiKey,
+      transcriptionApiKey: minimaxKey ?? provider.transcriptionApiKey,
       transcriptionModel: provider.transcriptionModel,
       ttsEndpoint: provider.ttsEndpoint,
-      ttsApiKey: provider.ttsApiKey,
+      ttsApiKey: minimaxKey ?? provider.ttsApiKey,
       ttsModel: provider.ttsModel,
       ttsVoice: provider.ttsVoice,
       imageGenerationEndpoint: provider.imageGenerationEndpoint,
-      imageGenerationApiKey: provider.imageGenerationApiKey,
+      imageGenerationApiKey: minimaxKey ?? provider.imageGenerationApiKey,
       imageGenerationModel: provider.imageGenerationModel,
       apiStyle: provider.apiStyle,
       mode: provider.mode,
