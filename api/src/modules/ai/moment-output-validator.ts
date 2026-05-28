@@ -12,7 +12,7 @@ export type MomentOutputValidationResult = {
   reasons: string[];
 };
 
-const META_PATTERNS = [
+export const META_PATTERNS = [
   /作为AI/u,
   /语言模型/u,
   /^朋友圈[：:]/u,
@@ -21,7 +21,7 @@ const META_PATTERNS = [
   /(只输出|不要解释|说明如下)/u,
 ];
 
-const GENERIC_PATTERNS = [
+export const GENERIC_PATTERNS = [
   /生活碎片/u,
   /记录一下/u,
   /随手一发/u,
@@ -36,7 +36,7 @@ const GENERIC_PATTERNS = [
   /一切都会/u,
 ];
 
-const STRUCTURE_PATTERNS = [
+export const STRUCTURE_PATTERNS = [
   /首先/u,
   /其次/u,
   /最后/u,
@@ -45,7 +45,7 @@ const STRUCTURE_PATTERNS = [
   /分(?:三|3)点/u,
 ];
 
-const STAGE_DIRECTION_PATTERNS = [
+export const STAGE_DIRECTION_PATTERNS = [
   /^[（(](?:轻笑|笑了笑|笑|苦笑|叹气|叹了口气|沉默|停顿|顿了顿|停了停|想了想|看了看|看向|看着|低头|抬头|耸肩|皱眉|挑眉|扶额|点头|摇头|拍拍|抱抱|凑近|后退|清了清嗓|咳了一声|压低声音|轻声|无奈|认真)[^）)]{0,12}[)）]/u,
   /^[*＊](?:轻笑|笑了笑|笑|苦笑|叹气|叹了口气|沉默|停顿|顿了顿|停了停|想了想|看了看|看向|看着|低头|抬头|耸肩|皱眉|挑眉|扶额|点头|摇头|拍拍|抱抱|凑近|后退|清了清嗓|咳了一声|压低声音|轻声|无奈|认真)[^*＊\n]{0,12}[*＊]/u,
 ];
@@ -72,14 +72,14 @@ const STOPWORDS = new Set([
   '大家',
 ]);
 
-function normalizeText(value: string) {
+export function normalizeMomentText(value: string) {
   return sanitizeAiText(value)
     .replace(/\s+/g, ' ')
     .replace(/[“”"'`]/g, '')
     .trim();
 }
 
-function extractAnchorTokens(
+export function extractAnchorTokens(
   context: MomentGenerationContext | undefined,
   profile: PersonalityProfile,
 ) {
@@ -114,7 +114,7 @@ function extractAnchorTokens(
   return [...tokens];
 }
 
-function hasConcreteSignal(text: string) {
+export function hasConcreteSignal(text: string) {
   return (
     /\d/u.test(text) ||
     /(晴|雨|雪|风|云|雷|雾|降温|升温|堵|晚高峰|清晨|午后|夜里|凌晨|傍晚|周[一二三四五六日天])/u.test(
@@ -171,7 +171,7 @@ export function validateGeneratedSceneOutput(input: {
   profile: PersonalityProfile;
   sceneKey?: SceneKey;
 }): MomentOutputValidationResult {
-  const normalizedText = normalizeText(input.text);
+  const normalizedText = normalizeMomentText(input.text);
   const reasons: string[] = [];
   const sceneKey = input.sceneKey ?? 'moments_post';
 

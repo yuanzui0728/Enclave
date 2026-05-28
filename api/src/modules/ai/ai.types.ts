@@ -342,6 +342,9 @@ export interface GenerateReplyOptions {
     currentActivity?: string;
     lastChatAt?: Date;
     userProfile?: UserProfileContext;
+    // 单人世界中枢渲染好的 <owner_portrait> 块（第三人称用户画像，Stratum A）。
+    // 由调用方按当前 owner 装配后传入；prompt-builder 不依赖 cyber-avatar 模块（防循环）。
+    ownerPortrait?: string;
   };
   extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;
@@ -388,6 +391,19 @@ export interface MomentGenerationContext {
   generationHints?: MomentGenerationHints;
 }
 
+// 全局共享池（广场）专用的高质量管线开关。仅当调用方（MomentsService 在全局帧）
+// 显式填充时启用；缺省 / candidateCount<=1 → 完全走现有单发 2 次重试路径，零行为变化。
+export interface MomentQualityPipelineOptions {
+  // 候选数 N（best-of-N）；缺省 1。
+  candidateCount?: number;
+  // 综合分低于此值则整条不发（返回 ''，调用方跳过）。0..1。
+  minAcceptScore?: number;
+  // 是否启用 LLM 评委（便宜默认模型，批量打分；失败回落启发式）。
+  judge?: boolean;
+  // 本角色 + 全局池近期帖文，供新颖度/近重复判定。
+  recentTexts?: string[];
+}
+
 export interface GenerateMomentOptions {
   profile: PersonalityProfile;
   currentTime: Date;
@@ -396,5 +412,7 @@ export interface GenerateMomentOptions {
   usageContext?: AiUsageContext;
   // 调用方可注入额外 system prompt 段（如 web_search 实时资料），追加到 systemPrompt 末尾。
   extraSystemPromptSections?: string[];
+  // 全局共享池高质量管线（best-of-N + 打分 + 评委 + 遥测）。
+  qualityPipeline?: MomentQualityPipelineOptions;
 }
 // i18n-ignore-end

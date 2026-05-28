@@ -19,8 +19,13 @@ import { MomentPostEntity } from './moment-post.entity';
 import { MomentCommentEntity } from './moment-comment.entity';
 import { MomentLikeEntity } from './moment-like.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { isGlobalWorldOwner, isSharedWorldMode } from '../tenancy/tenant-context';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
+import {
+  buildDiversityPromptSection,
+  extractOpening,
+} from './moment-diversity';
+import { planMomentAngle } from './moment-editorial-planner';
 import { SocialService } from '../social/social.service';
 import { CharacterFriendshipService } from '../social/character-friendship.service';
 import {
@@ -870,12 +875,47 @@ export class MomentsService implements OnModuleInit {
         const injection = await this.webSearch.searchAndFormat(trendQuery);
         if (injection) momentExtraSystemSections.push(injection.markdown);
       }
+
+      // 全局共享池（广场）：每条都被全网用户看到同一份 → 注入选题轮换 + 多样性避让，
+      // 并开启 best-of-N + 打分 + 评委质量管线。私有角色（用户自建）行为不变。
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      const isGlobalPool = !reminderMoment && isGlobalWorldOwner(owner.id);
+      let qualityPipeline:
+        | NonNullable<Parameters<typeof this.ai.generateMoment>[0]['qualityPipeline']>
+        | undefined;
+      if (isGlobalPool) {
+        const signals = await this.collectGlobalMomentDiversitySignals(
+          characterId,
+          currentTime,
+        );
+        const angle = planMomentAngle({
+          characterId,
+          now: currentTime,
+          recentOwnTopics: signals.ownOpenings,
+          globalRecentTopics: signals.globalOpenings,
+        });
+        const diversitySection = buildDiversityPromptSection({
+          ownOpenings: signals.ownOpenings,
+          ownTopics: signals.ownOpenings,
+          globalOpenings: signals.globalOpenings,
+        });
+        if (angle.promptSection)
+          momentExtraSystemSections.push(angle.promptSection);
+        if (diversitySection) momentExtraSystemSections.push(diversitySection);
+        qualityPipeline = {
+          candidateCount: 3,
+          minAcceptScore: 0.5,
+          judge: true,
+          recentTexts: signals.recentTexts,
+        };
+      }
       const text =
         reminderMoment?.text ??
         (await this.ai.generateMoment({
           profile,
           currentTime,
           extraSystemPromptSections: momentExtraSystemSections,
+          qualityPipeline,
           usageContext: {
             surface: 'app',
             scene: 'moment_post_generate',
@@ -3001,6 +3041,46 @@ export class MomentsService implements OnModuleInit {
     const text = recent?.text?.replace(/\s+/g, ' ').trim();
     if (!text) return null;
     return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  }
+
+  // 全局共享池多样性信号：本角色近 14 天（自我重复）+ 全局池所有角色近 7 天（跨角色撞题/
+  // 撞开头）。跑在全局帧里，TenantRepository 自动把 ownerId 限到 GLOBAL_WORLD_OWNER_ID。
+  private async collectGlobalMomentDiversitySignals(
+    charId: string,
+    now: Date,
+  ): Promise<{
+    ownOpenings: string[];
+    globalOpenings: string[];
+    recentTexts: string[];
+  }> {
+    const repo = new TenantRepository(this.postRepo);
+    const ownSince = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const globalSince = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const [own, global] = await Promise.all([
+      repo.find({
+        where: { authorId: charId, postedAt: MoreThanOrEqual(ownSince) },
+        order: { postedAt: 'DESC' },
+        take: 12,
+      }),
+      repo.find({
+        where: { authorType: 'character', postedAt: MoreThanOrEqual(globalSince) },
+        order: { postedAt: 'DESC' },
+        take: 24,
+      }),
+    ]);
+    const cleanText = (value?: string | null) =>
+      (value ?? '').replace(/\s+/g, ' ').trim();
+    const ownTexts = own.map((p) => cleanText(p.text)).filter(Boolean);
+    const globalTexts = global.map((p) => cleanText(p.text)).filter(Boolean);
+    const ownOpenings = ownTexts.map(extractOpening).filter(Boolean);
+    const globalOpenings = global
+      .filter((p) => p.authorId !== charId)
+      .map((p) => extractOpening(cleanText(p.text)))
+      .filter(Boolean);
+    const recentTexts = Array.from(
+      new Set([...ownTexts, ...globalTexts]),
+    ).slice(0, 24);
+    return { ownOpenings, globalOpenings, recentTexts };
   }
 
   async scheduleMinimaxVideoMoment(

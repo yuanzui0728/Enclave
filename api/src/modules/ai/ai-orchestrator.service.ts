@@ -20,6 +20,9 @@ import {
   GenerateReplyOptions,
   GenerateReplyResult,
   GenerateMomentOptions,
+  MomentGenerationContext,
+  MomentQualityPipelineOptions,
+  SceneKey,
   ChatMessage,
   PersonalityProfile,
   AiKeyOverride,
@@ -32,6 +35,16 @@ import {
   sanitizeAiText,
 } from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
+import {
+  type QualityScore,
+  type QualityScoreComponents,
+  combineWithJudge,
+  scoreHeuristic,
+} from './moment-quality-scorer';
+import {
+  buildMomentJudgePrompt,
+  parseMomentJudgeResponse,
+} from './moment-judge';
 import { MomentGenerationContextService } from './moment-generation-context.service';
 import { buildNativeAudioModelCandidates } from './native-audio-routing';
 import { WorldService } from '../world/world.service';
@@ -2725,6 +2738,24 @@ export class AiOrchestratorService {
       wrapMomentPrompt(promptRequest.retryUserPrompt),
     ];
 
+    // 全局共享池：best-of-N + 打分 + 评委 + 遥测。否则走下方现有单发 2 次重试路径。
+    const candidateCount = Math.max(
+      1,
+      Math.floor(options.qualityPipeline?.candidateCount ?? 1),
+    );
+    if (candidateCount > 1) {
+      return await this.generateMomentViaQualityPipeline({
+        profile,
+        sceneKey,
+        promptSystem: promptRequest.systemPrompt,
+        userPrompts,
+        resolvedUsageContext,
+        generationContext: resolvedGenerationContext,
+        pipeline: options.qualityPipeline ?? {},
+        candidateCount,
+      });
+    }
+
     for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
       const response = await this.requestChatTaskWithFallback({
         usageContext: resolvedUsageContext,
@@ -2762,6 +2793,221 @@ export class AiOrchestratorService {
       `Skipped moment generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
     );
     return '';
+  }
+
+  // ===== 全局共享池高质量管线（best-of-N + 打分 + 评委 + 遥测）=====
+
+  private async generateMomentViaQualityPipeline(input: {
+    profile: PersonalityProfile;
+    sceneKey: SceneKey;
+    promptSystem: string;
+    userPrompts: string[];
+    resolvedUsageContext: AiUsageContext;
+    generationContext?: MomentGenerationContext;
+    pipeline: MomentQualityPipelineOptions;
+    candidateCount: number;
+  }): Promise<string> {
+    const {
+      profile,
+      sceneKey,
+      generationContext,
+      resolvedUsageContext,
+      pipeline,
+    } = input;
+    const recentTexts = pipeline.recentTexts ?? [];
+    const minAcceptScore = pipeline.minAcceptScore ?? 0;
+
+    const candidates = await this.generateMomentCandidates(input);
+    const valid = candidates.filter((c) => c.valid);
+    if (valid.length === 0) {
+      this.logger.warn(
+        `[moment-quality] no valid candidate for ${profile.name} (tried ${candidates.length})`,
+      );
+      await this.recordMomentQualityDecision({
+        accepted: false,
+        profile,
+        resolvedUsageContext,
+        candidateCount: candidates.length,
+        winningScore: null,
+        reasons: ['no_valid_candidate'],
+      });
+      return '';
+    }
+
+    let scored = valid.map((c) => ({
+      text: c.text,
+      score: scoreHeuristic({
+        text: c.text,
+        profile,
+        context: generationContext,
+        recentTexts,
+      }),
+    }));
+
+    // 评委：≥2 个候选才有意义；失败回落启发式（永不阻塞发帖）。
+    if (pipeline.judge && scored.length > 1) {
+      const judged = await this.scoreCandidatesWithJudge({
+        candidates: scored.map((s) => s.text),
+        profile,
+        resolvedUsageContext,
+      });
+      scored = scored.map((s, i) => {
+        const jc = judged[i];
+        return jc ? { text: s.text, score: combineWithJudge(s.score, jc) } : s;
+      });
+    }
+
+    scored.sort((a, b) => b.score.total - a.score.total);
+    const best = scored[0];
+
+    if (best.score.total < minAcceptScore) {
+      this.logger.warn(
+        `[moment-quality] best ${best.score.total.toFixed(2)} < min ${minAcceptScore} for ${profile.name}; skip`,
+      );
+      await this.recordMomentQualityDecision({
+        accepted: false,
+        profile,
+        resolvedUsageContext,
+        candidateCount: candidates.length,
+        winningScore: best.score,
+        reasons: ['below_min_score', ...best.score.reasons],
+      });
+      return '';
+    }
+
+    await this.recordMomentQualityDecision({
+      accepted: true,
+      profile,
+      resolvedUsageContext,
+      candidateCount: candidates.length,
+      winningScore: best.score,
+      reasons: best.score.reasons,
+    });
+    this.logger.log(
+      `[moment-quality] ${profile.name}: picked ${best.score.total.toFixed(2)} from ${valid.length}/${candidates.length} valid (src=${best.score.source})`,
+    );
+    return best.text;
+  }
+
+  private async generateMomentCandidates(input: {
+    profile: PersonalityProfile;
+    sceneKey: SceneKey;
+    promptSystem: string;
+    userPrompts: string[];
+    resolvedUsageContext: AiUsageContext;
+    generationContext?: MomentGenerationContext;
+    candidateCount: number;
+  }): Promise<Array<{ text: string; valid: boolean }>> {
+    const temps = [0.95, 0.85, 0.75];
+    const results: Array<{ text: string; valid: boolean }> = [];
+    // 错误直接 propagate（与现有单发路径一致）：MomentsService 会处理 SubscriptionExpired。
+    for (let i = 0; i < input.candidateCount; i += 1) {
+      const userPrompt = input.userPrompts[i % input.userPrompts.length];
+      const temperature = temps[i % temps.length];
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: input.resolvedUsageContext,
+        characterId: input.profile.characterId,
+        label: 'moment generation (candidate)',
+        request: (client, activeProvider) =>
+          executeChatCompletion(client, {
+            model: activeProvider.model,
+            messages: [
+              { role: 'system', content: input.promptSystem },
+              { role: 'user', content: userPrompt },
+            ],
+            max_tokens: 180,
+            temperature,
+          }),
+      });
+      const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
+      const validation = validateGeneratedSceneOutput({
+        text,
+        context: input.generationContext,
+        profile: input.profile,
+        sceneKey: input.sceneKey,
+      });
+      results.push({ text: validation.normalizedText, valid: validation.valid });
+    }
+    return results;
+  }
+
+  private async scoreCandidatesWithJudge(input: {
+    candidates: string[];
+    profile: PersonalityProfile;
+    resolvedUsageContext: AiUsageContext;
+  }): Promise<Array<QualityScoreComponents | null>> {
+    try {
+      const prompt = buildMomentJudgePrompt({
+        candidates: input.candidates,
+        personaSummary: this.buildJudgePersonaSummary(input.profile),
+      });
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: { ...input.resolvedUsageContext, scene: 'moment_quality_judge' },
+        // 不指定 characterId → 用便宜的默认实例模型，不走角色 override。
+        characterId: undefined,
+        label: 'moment quality judge',
+        request: (client, activeProvider) =>
+          executeChatCompletion(client, {
+            model: activeProvider.model,
+            messages: [
+              { role: 'system', content: prompt.system },
+              { role: 'user', content: prompt.user },
+            ],
+            max_tokens: 320,
+            temperature: 0,
+          }),
+      });
+      return parseMomentJudgeResponse(
+        response.choices[0]?.message?.content ?? '',
+        input.candidates.length,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `[moment-quality] judge failed, fallback to heuristic: ${this.extractErrorMessage(error)}`,
+      );
+      return input.candidates.map(() => null);
+    }
+  }
+
+  private buildJudgePersonaSummary(profile: PersonalityProfile): string {
+    const parts = [profile.name];
+    if (profile.relationship) parts.push(`关系：${profile.relationship}`);
+    if (profile.expertDomains?.length)
+      parts.push(`擅长：${profile.expertDomains.slice(0, 3).join('、')}`);
+    if (profile.traits?.emotionalTone)
+      parts.push(`语气：${profile.traits.emotionalTone}`);
+    return parts.filter(Boolean).join('；');
+  }
+
+  private async recordMomentQualityDecision(input: {
+    accepted: boolean;
+    profile: PersonalityProfile;
+    resolvedUsageContext: AiUsageContext;
+    candidateCount: number;
+    winningScore: QualityScore | null;
+    reasons: string[];
+  }): Promise<void> {
+    const score = input.winningScore;
+    const detail = {
+      candidateCount: input.candidateCount,
+      winningScore: score ? Number(score.total.toFixed(3)) : null,
+      components: score?.components ?? null,
+      source: score?.source ?? null,
+      reasons: input.reasons.slice(0, 8),
+    };
+    await this.safeRecordUsage({
+      status: input.accepted ? 'success' : 'failed',
+      surface: input.resolvedUsageContext.surface ?? 'app',
+      scene: 'moment_quality_decision',
+      scopeType: 'character',
+      scopeId: input.profile.characterId,
+      scopeLabel: input.profile.name,
+      ownerId: input.resolvedUsageContext.ownerId,
+      characterId: input.profile.characterId,
+      characterName: input.profile.name,
+      errorCode: input.accepted ? null : 'QUALITY_REJECTED',
+      errorMessage: JSON.stringify(detail),
+    });
   }
 
   async extractPersonality(
