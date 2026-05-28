@@ -203,7 +203,7 @@ export function ReminderTaskPanel({
         >
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#f59e0b]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]">
                 <BellRing size={16} />
               </span>
               <div className="min-w-0">

@@ -18,7 +18,7 @@ const TIER_TEXT_COLOR: Record<1 | 2 | 3 | 4 | 5, string> = {
   2: "text-[#e8423d]",
   3: "text-[#3578e5]",
   4: "text-[#c81d39]",
-  5: "text-[#d97706]",
+  5: "text-[color:var(--brand-primary)]",
 };
 
 const SIZE_PRESETS = {

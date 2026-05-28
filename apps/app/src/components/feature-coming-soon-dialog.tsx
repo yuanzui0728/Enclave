@@ -158,7 +158,7 @@ export function FeatureComingSoonDialog({
               <Button
                 type="button"
                 variant="primary"
-                className="shrink-0 rounded-full bg-[#f59e0b] px-3 py-1.5 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                className="shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
                 onClick={() => void handleCopy()}
               >
                 <Copy size={12} className="mr-1" />

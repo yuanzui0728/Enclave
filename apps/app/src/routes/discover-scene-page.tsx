@@ -399,7 +399,7 @@ function MobileDiscoverScenePage() {
                 <button
                   type="button"
                   onClick={handleGoToRequests}
-                  className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
+                  className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
                 >
                   {t(msg`去通过`)}
                 </button>
@@ -500,7 +500,7 @@ function MobileDiscoverScenePage() {
                   discover-encounter-page 的视觉：busy 时把场景图标替成 LoaderCircle
                   自旋，明确告诉用户"正在跑、不要乱点"。
                 */}
-                <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[rgba(245,158,11,0.12)] text-[#f59e0b]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]">
                   {busy ? (
                     <LoaderCircle size={18} className="animate-spin" />
                   ) : (

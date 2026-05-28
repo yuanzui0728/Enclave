@@ -42,7 +42,7 @@ function resolveStatusPill(
         }
       : {
           label: msg`等待对方`,
-          className: "bg-[color:var(--brand-soft)] text-[#b45309]",
+          className: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
         };
   }
   if (status === "closed_recipient_skipped") {

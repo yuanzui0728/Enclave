@@ -884,7 +884,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   type="button"
                   variant="primary"
                   onClick={handleBack}
-                  className="rounded-full bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
+                  className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
                 >
                   <MessageCircleMore size={16} />
                   {t(msg`返回聊天继续`)}

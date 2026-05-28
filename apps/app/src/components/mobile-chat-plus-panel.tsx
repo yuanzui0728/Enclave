@@ -120,7 +120,7 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     key: "video-call",
     label: msg`视频通话`,
     icon: Video,
-    iconClassName: "bg-[#f59e0b]",
+    iconClassName: "bg-[color:var(--brand-primary)]",
     disabled: true,
     disabledLabel: msg`待接入`,
     unavailableTitle: msg`视频通话暂未接入`,
@@ -142,7 +142,7 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     key: "gift",
     label: msg`礼物`,
     icon: PackageOpen,
-    iconClassName: "bg-[#f59e0b]",
+    iconClassName: "bg-[color:var(--brand-primary)]",
     // disabled 状态改由「父级是否传 onSendGift」动态决定（仅单聊启用）。
     disabledLabel: msg`待接入`,
     unavailableTitle: msg`礼物暂未接入`,
@@ -543,7 +543,7 @@ export function MobileChatPlusPanel({
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     activeRootPage === pageIndex
-                      ? "w-5 bg-[#f59e0b]"
+                      ? "w-5 bg-[color:var(--brand-primary)]"
                       : "w-1.5 bg-[rgba(148,163,184,0.42)]",
                   )}
                   aria-label={t(msg`切换到第 ${pageIndex + 1} 页`)}
@@ -587,7 +587,7 @@ export function MobileChatPlusPanel({
                         unavailableAction.key,
                       );
                     }}
-                    className="mr-2 rounded-full bg-[#f59e0b] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
+                    className="mr-2 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
                   >
                     {t(unavailableFallbackLabel)}
                   </button>
@@ -761,7 +761,7 @@ export function MobileChatPlusPanel({
                         <div className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-primary)]">
                           {item.title}
                         </div>
-                        <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.10)] px-2 py-0.5 text-[10px] text-[#f59e0b]">
+                        <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                           {item.badge}
                         </span>
                       </div>
@@ -848,7 +848,7 @@ function PanelStatusBlock({
         <button
           type="button"
           onClick={onPrimary}
-          className="rounded-full bg-[#f59e0b] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
+          className="rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
         >
           {primaryLabel}
         </button>

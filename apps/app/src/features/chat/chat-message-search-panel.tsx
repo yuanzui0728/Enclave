@@ -690,7 +690,7 @@ export function ChatMessageSearchPanel({
                         className={cn(
                           "flex h-8.5 w-8.5 items-center justify-center rounded-[8px]",
                           active
-                            ? "bg-[rgba(245,158,11,0.12)] text-[#b45309]"
+                            ? "bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]"
                             : "bg-[color:var(--surface-panel)] text-[color:var(--text-secondary)]",
                         )}
                       >
@@ -713,7 +713,7 @@ export function ChatMessageSearchPanel({
                         className={cn(
                           "mt-1 text-[10px]",
                           active
-                            ? "text-[#b45309]"
+                            ? "text-[color:var(--brand-primary)]"
                             : "text-[color:var(--text-muted)]",
                         )}
                       >
@@ -1356,7 +1356,7 @@ function MobileSearchStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -1393,7 +1393,7 @@ function SearchStatPill({
         tone === "brand" &&
           "bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.08)] text-[#2563eb]",
-        tone === "active" && "bg-[rgba(245,158,11,0.12)] text-[#b45309]",
+        tone === "active" && "bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]",
         tone === "neutral" &&
           "bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]",
       )}
@@ -1419,7 +1419,7 @@ function SearchFilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
         active
-          ? "border-[rgba(245,158,11,0.14)] bg-[rgba(247,251,248,0.96)] text-[#b45309]"
+          ? "border-[rgba(245,158,11,0.14)] bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
       )}
     >

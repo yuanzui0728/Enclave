@@ -99,7 +99,7 @@ export function WorldUnavailableDialogHost() {
             variant="primary"
             // 走查新一轮 R1：补 active:bg- 让移动 tap 有按压反馈（同 R3 修过的
             // profile-subscription 邀请「复制链接」/「联系开通」）。
-            className="w-full rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#069750]"
+            className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)] active:bg-[#069750]"
             onClick={handleRelogin}
           >
             {t(msg`重新登录`)}

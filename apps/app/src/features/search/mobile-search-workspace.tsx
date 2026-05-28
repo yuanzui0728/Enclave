@@ -74,7 +74,7 @@ const quickScopeCards: Array<{
     title: msg`聊天记录`,
     description: msg`搜会话、群聊和历史消息`,
     icon: Search,
-    iconClassName: "bg-[rgba(245,158,11,0.12)] text-[#f59e0b]",
+    iconClassName: "bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]",
   },
   {
     key: "contacts",
@@ -95,7 +95,7 @@ const quickScopeCards: Array<{
     title: msg`朋友圈`,
     description: msg`搜好友动态、评论和点赞`,
     icon: Sprout,
-    iconClassName: "bg-[rgba(34,197,94,0.12)] text-[#b45309]",
+    iconClassName: "bg-[rgba(34,197,94,0.12)] text-[color:var(--brand-primary)]",
   },
   {
     key: "feed",
@@ -303,7 +303,7 @@ export function MobileSearchWorkspace({
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
                   activeCategory === item.id
-                    ? "bg-[#f59e0b] text-[#3b2206]"
+                    ? "bg-[color:var(--brand-primary)] text-[#3b2206]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -650,7 +650,7 @@ function MobileSearchStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

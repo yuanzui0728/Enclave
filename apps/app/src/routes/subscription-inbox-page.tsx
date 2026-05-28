@@ -458,7 +458,7 @@ function MobileSubscriptionInboxStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

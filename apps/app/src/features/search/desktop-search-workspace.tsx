@@ -1764,7 +1764,7 @@ function DesktopSearchScopeCard({
   const t = useRuntimeTranslator();
   const iconToneClassName =
     category === "favorites"
-      ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
+      ? "bg-[rgba(180,132,23,0.12)] text-[color:var(--brand-primary)]"
       : category === "moments"
         ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
         : category === "feed"

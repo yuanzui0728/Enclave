@@ -1985,7 +1985,7 @@ export function WelcomePage() {
             disabled={isContinuing || ownerSyncing || cloudWorldPending}
             variant="primary"
             size="lg"
-            className="w-full rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+            className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
           >
             {describeCloudButtonLabel(
               t,
@@ -2047,7 +2047,7 @@ export function WelcomePage() {
           disabled={!normalizedLocalApiBaseUrl || isContinuing}
           variant="primary"
           size="lg"
-          className="w-full rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+          className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
         >
           {isContinuing ? t(msg`连接中...`) : t(msg`连接本地世界`)}
         </Button>
@@ -2136,7 +2136,7 @@ export function WelcomePage() {
               }
               variant="primary"
               size="lg"
-              className="rounded-full bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+              className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
             >
               {isContinuing ? t(msg`保存中...`) : t(msg`进入世界`)}
             </Button>
@@ -2381,7 +2381,7 @@ export function WelcomePage() {
   return (
     <AppPage className="bg-[#f5f1e6] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-8 shadow-none">
-        <div className="inline-flex rounded-full border border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#b45309]">
+        <div className="inline-flex rounded-full border border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
           {/* 走查 R5：见 desktop 分支同改 */}
           {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
         </div>
@@ -2413,7 +2413,7 @@ function MobileWelcomeStatusCard({
   const badgeClassName =
     tone === "danger"
       ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
-      : "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[#b45309]";
+      : "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]";
 
   return (
     <div className={`rounded-[24px] border px-4 py-4 shadow-none ${toneClassName}`}>
@@ -2439,7 +2439,7 @@ function MobileWelcomeNotice({
     tone === "danger"
       ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
       : tone === "success"
-        ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[#b45309]"
+        ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]"
         : tone === "muted"
           ? "border-[color:var(--border-faint)] bg-[#f7f7f5] text-[color:var(--text-secondary)]"
           : "border-[rgba(22,163,74,0.12)] bg-[#fffdf2] text-[color:var(--text-secondary)]";

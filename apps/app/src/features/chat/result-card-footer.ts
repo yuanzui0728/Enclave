@@ -11,11 +11,11 @@ export function resolveResultCardFooterActionClassName(
   tone: ResultCardFooterTone,
 ) {
   if (tone === "success") {
-    return "text-[#b45309]";
+    return "text-[color:var(--brand-primary)]";
   }
 
   if (tone === "warning") {
-    return "text-[#b45309]";
+    return "text-[color:var(--brand-primary)]";
   }
 
   if (tone === "muted") {

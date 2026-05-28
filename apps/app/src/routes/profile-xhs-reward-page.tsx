@@ -455,7 +455,7 @@ export function ProfileXhsRewardPage() {
 
               <Button
                 variant="primary"
-                className="mt-5 w-full rounded-full bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706] active:bg-[#b45309]"
+                className="mt-5 w-full rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)] active:bg-[color:var(--brand-primary)]"
                 disabled={submitMutation.isPending}
                 onClick={handleSubmit}
               >

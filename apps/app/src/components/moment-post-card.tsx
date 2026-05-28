@@ -59,7 +59,7 @@ export function MomentPostCard({
       {/* Right: Content */}
       <div className="min-w-0 flex-1">
         {/* Author name */}
-        <div className="text-[15px] font-medium text-[#b45309]">{authorName}</div>
+        <div className="text-[15px] font-medium text-[color:var(--brand-primary)]">{authorName}</div>
 
         {/* Post text */}
         <div className="mt-1 text-[15px] leading-[1.6] text-[color:var(--text-primary)]">{text}</div>
@@ -80,14 +80,14 @@ export function MomentPostCard({
               type="button"
               onClick={onLike}
               disabled={likeLoading}
-              className="flex items-center gap-1 text-[color:var(--text-muted)] transition-colors hover:text-[#b45309] disabled:opacity-50"
+              className="flex items-center gap-1 text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--brand-primary)] disabled:opacity-50"
             >
               <Heart size={16} />
             </button>
             <button
               type="button"
               onClick={() => setShowCommentBox((v) => !v)}
-              className="flex items-center gap-1 text-[color:var(--text-muted)] transition-colors hover:text-[#b45309]"
+              className="flex items-center gap-1 text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--brand-primary)]"
             >
               <MessageCircle size={16} />
             </button>
@@ -100,8 +100,8 @@ export function MomentPostCard({
             {/* Likes */}
             {likes.length > 0 ? (
               <div className="flex flex-wrap items-center gap-x-1">
-                <Heart size={12} className="shrink-0 fill-[#b45309] text-[#b45309]" />
-                <span className="text-[#b45309]">
+                <Heart size={12} className="shrink-0 fill-[color:var(--brand-primary)] text-[color:var(--brand-primary)]" />
+                <span className="text-[color:var(--brand-primary)]">
                   {likes.map((l) => l.authorName).join("，")}
                 </span>
               </div>
@@ -120,11 +120,11 @@ export function MomentPostCard({
                   : null;
               return (
                 <div key={comment.id} className="text-[color:var(--text-primary)]">
-                  <span className="font-medium text-[#b45309]">{comment.authorName}</span>
+                  <span className="font-medium text-[color:var(--brand-primary)]">{comment.authorName}</span>
                   {replyToName ? (
                     <>
                       <span className="text-[color:var(--text-muted)]">{t(msg` 回复 `)}</span>
-                      <span className="font-medium text-[#b45309]">{replyToName}</span>
+                      <span className="font-medium text-[color:var(--brand-primary)]">{replyToName}</span>
                     </>
                   ) : null}
                   <span className="text-[color:var(--text-muted)]">：</span>
@@ -146,7 +146,7 @@ export function MomentPostCard({
               placeholder={t(msg`评论...`)}
               className="w-full"
               inputClassName="rounded-full py-1.5 text-[16px]"
-              buttonClassName="bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+              buttonClassName="bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
             />
           </div>
         ) : null}

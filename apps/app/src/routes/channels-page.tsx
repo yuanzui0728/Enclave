@@ -2543,7 +2543,7 @@ export function ChannelsPage() {
                 className={cn(
                   "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
                   selected
-                    ? "bg-[rgba(245,158,11,0.12)] font-medium text-[#f59e0b]"
+                    ? "bg-[rgba(245,158,11,0.12)] font-medium text-[color:var(--brand-primary)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
                 )}
               >
@@ -3819,7 +3819,7 @@ function MobileChannelsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -4477,7 +4477,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     "rounded-full px-2.5 py-1 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
                       ? "border border-white/20 bg-white/10 text-white/72"
-                      : "bg-[#f59e0b] text-[#3b2206]",
+                      : "bg-[color:var(--brand-primary)] text-[#3b2206]",
                   )}
                 >
                   {followPending
@@ -4663,7 +4663,7 @@ function ActionRailButton({
       <span
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur transition-colors",
-          active && "bg-[#f59e0b] shadow-[0_10px_24px_rgba(245,158,11,0.14)]",
+          active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_rgba(245,158,11,0.14)]",
         )}
       >
         {children}
@@ -4754,7 +4754,7 @@ const CommentItemView = memo(function CommentItemView({
               {comment.authorName}
             </span>
             {isAuthor ? (
-              <span className="shrink-0 rounded-[3px] bg-[rgba(245,158,11,0.12)] px-1 py-px text-[10px] leading-[14px] text-[#f59e0b]">
+              <span className="shrink-0 rounded-[3px] bg-[rgba(245,158,11,0.12)] px-1 py-px text-[10px] leading-[14px] text-[color:var(--brand-primary)]">
                 {t(msg`作者`)}
               </span>
             ) : null}
@@ -4763,7 +4763,7 @@ const CommentItemView = memo(function CommentItemView({
             {replyTargetName ? (
               <>
                 <span className="text-[color:var(--text-muted)]">{t(msg`回复`)} </span>
-                <span className="text-[#b45309]">
+                <span className="text-[color:var(--brand-primary)]">
                   @{replyTargetName}
                 </span>
                 <span className="text-[color:var(--text-muted)]">：</span>
@@ -5400,7 +5400,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#b45309] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[color:var(--brand-primary)] active:opacity-60"
                     >
                       {t(msg`—— 展开 ${hiddenCount} 条回复 ∨`)}
                     </button>
@@ -5408,7 +5408,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[#b45309] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[color:var(--brand-primary)] active:opacity-60"
                     >
                       {t(msg`—— 收起 ∧`)}
                     </button>
@@ -5657,7 +5657,7 @@ function MobileChannelCommentsSheet({
                 className={cn(
                   "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
                   draft.trim() && !submitPending
-                    ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
+                    ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
                     : "bg-[color:var(--surface-secondary)] text-[#b0b0b0]",
                 )}
               >

@@ -3029,7 +3029,7 @@ function MobileMomentsView({
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[#f59e0b] px-3.5 text-[12px] text-[#3b2206] hover:bg-[#d97706]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[12px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
                       onClick={onOpenContacts}
                     >
                       {t(msg`打开通讯录`)}
@@ -3049,7 +3049,7 @@ function MobileMomentsView({
                   <Button
                     variant="primary"
                     size="sm"
-                    className="h-8 rounded-full bg-[#f59e0b] px-3.5 text-[12px] text-[#3b2206] hover:bg-[#d97706]"
+                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[12px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
                     onClick={onEmptyAction}
                   >
                     {hasReturnPath ? t(msg`返回上一页`) : t(msg`发一条朋友圈`)}

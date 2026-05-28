@@ -1560,7 +1560,7 @@ export function GroupChatThreadPanel({
             onClick={openGroupDetails}
             className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(245,158,11,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
           >
-            <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#b45309]">
+            <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
               {t(msg`群公告`)}
             </span>
             <span className="min-w-0 flex-1 truncate text-[11px] text-[color:var(--text-primary)]">
@@ -2045,7 +2045,7 @@ function MobileGroupThreadStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

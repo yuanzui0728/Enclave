@@ -398,7 +398,7 @@ function MobileTagsPage() {
               >
                 <div className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
-                    <Tag aria-hidden="true" size={14} className="text-[#b45309]" />
+                    <Tag aria-hidden="true" size={14} className="text-[color:var(--brand-primary)]" />
                     {/* 通讯录 mobile 走查 R1：tag 名也是用户输入端（contacts-bulk-
                         action-bar 打标签 dialog / 资料页 tags 编辑），含 U+202E
                         可以反转后面的"N 位联系人"计数视觉。bulk action bar 在
@@ -511,7 +511,7 @@ function MobileTagStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

@@ -81,7 +81,7 @@ export function ProfileSettingsLanguagePage() {
                 {SUPPORTED_LOCALE_LABELS[locale]}
               </span>
               {selected ? (
-                <Check size={17} className="text-[#f59e0b]" />
+                <Check size={17} className="text-[color:var(--brand-primary)]" />
               ) : null}
             </button>
           );

@@ -279,7 +279,7 @@ export function WeChatCommentBar({
             className={cn(
               "h-[36px] shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
               canSubmit
-                ? "bg-[#f59e0b] text-[#3b2206] active:bg-[#d97706]"
+                ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
                 : "bg-[#E5E5E5] text-[#B0B0B0]",
             )}
           >

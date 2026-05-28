@@ -205,7 +205,7 @@ export function MobileDocumentShell({
           </div>
         ) : null}
         <section className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#b45309]">
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
             {eyebrow}
           </div>
           <div className="mt-2 text-[16px] font-medium text-[color:var(--text-primary)]">

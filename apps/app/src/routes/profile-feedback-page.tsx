@@ -276,7 +276,7 @@ export function ProfileFeedbackPage() {
                   className={cn(
                     "flex flex-col items-center justify-center gap-1 rounded-[12px] border px-2 py-3 text-[12px] transition-colors",
                     active
-                      ? "border-[#b45309] bg-[rgba(245,158,11,0.10)] text-[#b45309]"
+                      ? "border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
                   )}
                 >
@@ -307,7 +307,7 @@ export function ProfileFeedbackPage() {
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in；反馈页又是一句话标题 + 一大段详情两连敲，缩放完用户
             // 还要双指捏才能回到原大小，几乎肯定会放弃。
-            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
+            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </section>
 
@@ -331,7 +331,7 @@ export function ProfileFeedbackPage() {
             rows={8}
             // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in，详情这种长文本框 zoom 完用户基本看不到提交按钮。
-            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[#b45309]"
+            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </section>
 
@@ -345,7 +345,7 @@ export function ProfileFeedbackPage() {
             className={cn(
               "rounded-[12px] px-3 py-2 text-[12px]",
               notice.tone === "success"
-                ? "bg-[rgba(245,158,11,0.08)] text-[#b45309]"
+                ? "bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]"
                 : "bg-[rgba(220,38,38,0.08)] text-[#b42318]",
             )}
           >
@@ -363,7 +363,7 @@ export function ProfileFeedbackPage() {
             "flex w-full items-center justify-center rounded-[12px] px-4 py-3 text-[14px] font-medium text-white transition-colors",
             submitting
               ? "bg-[#86d2a8]"
-              : "bg-[#b45309] active:bg-[#0f6f33]",
+              : "bg-[color:var(--brand-primary)] active:bg-[#0f6f33]",
           )}
         >
           {submitting ? t(msg`提交中…`) : t(msg`提交反馈`)}

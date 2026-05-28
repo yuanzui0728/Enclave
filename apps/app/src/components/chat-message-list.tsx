@@ -4953,7 +4953,7 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
-            : "rounded-full border border-[rgba(245,158,11,0.18)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[#b45309]"
+            : "rounded-full border border-[rgba(245,158,11,0.18)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
         }
       >
         {label}
@@ -6217,7 +6217,7 @@ function ContactCardMessage({
     >
       {recommendation ? (
         <div
-          className={`inline-flex rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[10px] font-medium text-[#b45309] ${
+          className={`inline-flex rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] ${
             isDesktop ? "mb-2.5" : "mb-2"
           }`}
         >
@@ -7376,7 +7376,7 @@ function CallLogMessage({
         size={16}
         className={cn(
           tone === "warning"
-            ? "text-[#b45309]"
+            ? "text-[color:var(--brand-primary)]"
             : "text-[color:var(--text-muted)]",
         )}
       />

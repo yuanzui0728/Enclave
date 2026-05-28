@@ -237,10 +237,10 @@ export function MobileSpeechInputSheet({
                 holding && cancelIntent
                   ? "border-[#ff7875]/36 bg-[#ef4444]"
                   : listening || holding
-                    ? "border-[#f59e0b]/30 bg-[#f59e0b]"
+                    ? "border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]"
                     : processing
                       ? "border-[color:var(--border-faint)] bg-[#f0f1f3] text-[#606266]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#f59e0b]",
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]",
               )}
             >
               {processing ? (
@@ -292,7 +292,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10 items-center justify-center rounded-full bg-[#f59e0b] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_rgba(245,158,11,0.18)] transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_rgba(245,158,11,0.18)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />

@@ -326,7 +326,7 @@ function SwitchRow({
           onClick={() => onChange(!checked)}
           className={cn(
             "relative inline-flex h-[26px] w-[44px] shrink-0 items-center rounded-full transition-colors",
-            checked ? "bg-[#f59e0b]" : "bg-[#e0e0e0]",
+            checked ? "bg-[color:var(--brand-primary)]" : "bg-[#e0e0e0]",
             disabled ? "opacity-60" : undefined,
           )}
         >

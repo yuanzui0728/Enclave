@@ -915,7 +915,7 @@ function ModeChip({
       } ${
         active
           ? compact
-            ? "border-[rgba(245,158,11,0.16)] bg-[rgba(247,251,248,0.96)] text-[#b45309]"
+            ? "border-[rgba(245,158,11,0.16)] bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
           : compact
             ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card)]"
@@ -982,7 +982,7 @@ function MobileGroupBackgroundStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

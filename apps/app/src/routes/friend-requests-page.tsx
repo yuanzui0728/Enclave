@@ -465,7 +465,7 @@ function MobileFriendRequestsPage() {
                           onClick={() => acceptMutation.mutate(request.id)}
                           variant="primary"
                           size="sm"
-                          className="h-8 min-w-[3.5rem] rounded-full bg-[#f59e0b] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+                          className="h-8 min-w-[3.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
                         >
                           {acceptMutation.isPending &&
                           acceptMutation.variables === request.id
@@ -575,7 +575,7 @@ function MobileFriendRequestsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

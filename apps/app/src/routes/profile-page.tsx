@@ -129,7 +129,7 @@ export function ProfilePage() {
                 // 父 flex 会把 chip 一起压缩，原本是单行的「世界主人」chip 会被
                 // 挤成「世界 / 主人」两行，视觉破。这里把 chip 钉成不可压缩 +
                 // 文字不许换行，让 username 这一侧 truncate 让出空间。
-                <div className="shrink-0 whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#b45309]">
+                <div className="shrink-0 whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
                   {t(msg`世界主人`)}
                 </div>
               ) : null}
@@ -147,7 +147,7 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-1">
           <ProfileEntry
             icon={Settings}
-            iconClassName="bg-[rgba(245,158,11,0.10)] text-[#b45309]"
+            iconClassName="bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]"
             label={t(msg`设置`)}
             to={settingsPath}
           />
@@ -156,7 +156,7 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry
             icon={Star}
-            iconClassName="bg-[rgba(250,173,20,0.12)] text-[#d48806]"
+            iconClassName="bg-[rgba(250,173,20,0.12)] text-[color:var(--brand-primary)]"
             label={t(msg`收藏`)}
             to="/profile/favorites"
           />
@@ -181,7 +181,7 @@ export function ProfilePage() {
           <ProfileEntryGroup className="mt-3">
             <ProfileEntry
               icon={CreditCard}
-              iconClassName="bg-[rgba(22,163,74,0.12)] text-[#b45309]"
+              iconClassName="bg-[rgba(22,163,74,0.12)] text-[color:var(--brand-primary)]"
               label={t(msg`会员中心`)}
               to="/profile/subscription"
             />
@@ -212,7 +212,7 @@ export function ProfilePage() {
           />
           <ProfileEntry
             icon={FileText}
-            iconClassName="bg-[rgba(250,173,20,0.12)] text-[#d48806]"
+            iconClassName="bg-[rgba(250,173,20,0.12)] text-[color:var(--brand-primary)]"
             label={t(msg`服务条款`)}
             to="/legal/terms"
           />

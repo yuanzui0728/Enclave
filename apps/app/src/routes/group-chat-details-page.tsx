@@ -765,7 +765,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               <button
                 type="button"
                 onClick={() => setMemberGridExpanded((current) => !current)}
-                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[#b45309]"
+                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[color:var(--brand-primary)]"
               >
                 {memberGridExpanded
                   ? t(msg`收起群成员`)
@@ -1182,7 +1182,7 @@ function MobileGroupDetailsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

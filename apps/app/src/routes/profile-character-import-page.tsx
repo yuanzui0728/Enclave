@@ -490,7 +490,7 @@ export function ProfileCharacterImportPage() {
           // 朗读不打断主操作流。
           <div
             role="status"
-            className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[#92400e]"
+            className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[color:var(--brand-primary)]"
           >
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
@@ -586,7 +586,7 @@ function FilePreviewCard({
             "rounded-lg px-3 py-2 text-[11px] leading-relaxed",
             schemaMismatch
               ? "bg-[rgba(220,38,38,0.08)] text-[#b42318]"
-              : "bg-[rgba(245,158,11,0.10)] text-[#92400e]",
+              : "bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]",
           )}
         >
           {schemaMismatch
@@ -652,7 +652,7 @@ function SuccessCard({
       <div
         className={cn(
           "flex items-start gap-2 text-[13px] font-medium",
-          isBlocked ? "text-[#b45309]" : "text-[#047857]",
+          isBlocked ? "text-[color:var(--brand-primary)]" : "text-[#047857]",
         )}
       >
         <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
@@ -665,7 +665,7 @@ function SuccessCard({
       <div
         className={cn(
           "text-[11px]",
-          isBlocked ? "text-[#b45309]/80" : "text-[#047857]/80",
+          isBlocked ? "text-[color:var(--brand-primary)]/80" : "text-[#047857]/80",
         )}
       >
         {isBlocked

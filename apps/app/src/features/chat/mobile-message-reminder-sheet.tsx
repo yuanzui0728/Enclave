@@ -213,7 +213,7 @@ export function MobileMessageReminderSheet({
                   {option.detail}
                 </div>
               </div>
-              <div className="shrink-0 text-[11px] text-[#f59e0b]">
+              <div className="shrink-0 text-[11px] text-[color:var(--brand-primary)]">
                 {t(msg`设为提醒`)}
               </div>
             </button>

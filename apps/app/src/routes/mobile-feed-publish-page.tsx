@@ -602,7 +602,7 @@ export function MobileFeedPublishPage() {
               composeDraft.hasContent &&
                 !createMutation.isPending &&
                 !isMediaPreparing
-                ? "bg-[#f59e0b] text-[#3b2206] active:opacity-90"
+                ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -763,7 +763,7 @@ export function MobileFeedPublishPage() {
                 {t(msg`当前发布到广场`)}
               </div>
             </div>
-            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[#f59e0b]">
+            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
               {t(msg`公开可见`)}
             </span>
           </div>

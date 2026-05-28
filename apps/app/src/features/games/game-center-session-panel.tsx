@@ -50,10 +50,10 @@ export function GameCenterSessionPanel({
     isDesktopLayout,
   });
   const metricAccentClass = compact
-    ? "text-[#b45309]"
+    ? "text-[color:var(--brand-primary)]"
     : "text-[color:var(--brand-secondary)]";
   const rewardAccentClass = compact
-    ? "text-[#b45309]"
+    ? "text-[color:var(--brand-primary)]"
     : "text-[color:var(--brand-primary)]";
   const resolvedCopyActionIcon =
     copyActionIcon ??
@@ -186,7 +186,7 @@ export function GameCenterSessionPanel({
           onClick={() => onLaunch(game.id)}
           className={
             compact
-              ? "h-8 rounded-full bg-[#f59e0b] px-3.5 text-[11px] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+              ? "h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
               : undefined
           }
         >

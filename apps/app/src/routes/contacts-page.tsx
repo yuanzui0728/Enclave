@@ -3086,7 +3086,7 @@ const FriendListRow = memo(function FriendListRow({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
-              ? "border-[#f59e0b] bg-[#f59e0b] text-[#3b2206]"
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[#3b2206]"
               : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]",
           )}
         >
@@ -3206,7 +3206,7 @@ function MobileContactsStatusCard({
 
   return (
     <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#f59e0b]">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
       {loading ? (

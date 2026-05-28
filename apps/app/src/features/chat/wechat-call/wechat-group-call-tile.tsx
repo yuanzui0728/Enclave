@@ -30,7 +30,7 @@ export function WeChatGroupCallTile({
         className={cn(
           "relative rounded-xl transition",
           isActiveSpeaker &&
-            "ring-2 ring-[#f59e0b] ring-offset-2 ring-offset-[#0b0b0c]",
+            "ring-2 ring-[color:var(--brand-primary)] ring-offset-2 ring-offset-[#0b0b0c]",
           !joined && "opacity-45 grayscale",
         )}
       >

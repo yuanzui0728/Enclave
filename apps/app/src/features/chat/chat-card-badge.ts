@@ -7,11 +7,11 @@ export type ChatCardBadgeTone =
 
 export function resolveChatCardBadgeClassName(tone: ChatCardBadgeTone) {
   if (tone === "success") {
-    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(34,197,94,0.14)] text-[#b45309]";
+    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(34,197,94,0.14)] text-[color:var(--brand-primary)]";
   }
 
   if (tone === "warning") {
-    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(245,158,11,0.16)] text-[#b45309]";
+    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(245,158,11,0.16)] text-[color:var(--brand-primary)]";
   }
 
   if (tone === "danger") {

@@ -1414,7 +1414,7 @@ function MobileChatListPage() {
                 <button
                   type="button"
                   onClick={handleUndoHideConversation}
-                  className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#f59e0b]"
+                  className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
                 >
                   {t(msg`撤销`)}
                 </button>
@@ -1535,7 +1535,7 @@ function MobileChatListPage() {
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--text-primary)]">
                 <BellRing
                   size={13}
-                  className="text-[#f59e0b]"
+                  className="text-[color:var(--brand-primary)]"
                   aria-hidden="true"
                 />
                 <span>{t(msg`消息提醒`)}</span>
@@ -1572,10 +1572,10 @@ function MobileChatListPage() {
                               className={cn(
                                 "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                 group.status === "notified"
-                                  ? "bg-[#fff7e6] text-[#d48806]"
+                                  ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
-                                    : "bg-[#eaf8ef] text-[#f59e0b]",
+                                    : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
                               )}
                             >
                               {group.title}
@@ -1624,10 +1624,10 @@ function MobileChatListPage() {
                               className={cn(
                                 "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                 group.status === "notified"
-                                  ? "bg-[#fff7e6] text-[#d48806]"
+                                  ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
-                                    : "bg-[#eaf8ef] text-[#f59e0b]",
+                                    : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
                               )}
                             >
                               {group.title}
@@ -1680,10 +1680,10 @@ function MobileChatListPage() {
                                       "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                       getChatReminderStatus(entry) ===
                                         "notified"
-                                        ? "bg-[#fff7e6] text-[#d48806]"
+                                        ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
                                         : entry.isDue
                                           ? "bg-[#fff1f0] text-[#d74b45]"
-                                          : "bg-[#eaf8ef] text-[#f59e0b]",
+                                          : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
                                     )}
                                   >
                                     {getChatReminderStatusLabel(entry)}
@@ -1910,7 +1910,7 @@ function MobileChatListStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[#f59e0b]",
+            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -1971,7 +1971,7 @@ function ConversationListItemLinkImpl({
   const readActionLabel =
     conversation.unreadCount > 0 ? t(msg`标已读`) : t(msg`标未读`);
   const muteActionClassName = conversation.isMuted
-    ? "bg-[#f59e0b]"
+    ? "bg-[color:var(--brand-primary)]"
     : "bg-[#9aa0a6]";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
   const swipeOffsetRef = useRef(swipeOffset);

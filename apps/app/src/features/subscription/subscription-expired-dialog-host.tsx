@@ -80,7 +80,7 @@ export function SubscriptionExpiredDialogHost() {
           </Button>
           <Button
             variant="primary"
-            className="flex-1 rounded-[16px] bg-[#f59e0b] text-[#3b2206] shadow-none hover:bg-[#d97706]"
+            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
             onClick={() => {
               closeDialog();
               void navigate({ to: "/profile/subscription" });

@@ -165,7 +165,7 @@ export function MobileMiniProgramsWorkspace({
                 className={cn(
                   "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
                   activeCategory === tab.id
-                    ? "bg-[#f59e0b] text-[#3b2206]"
+                    ? "bg-[color:var(--brand-primary)] text-[#3b2206]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -562,7 +562,7 @@ function MobileMiniProgramsStatusCard({
 }) {
   return (
     <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#f59e0b]">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
       <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
@@ -697,7 +697,7 @@ function MiniProgramListCard({
             event.stopPropagation();
             onOpen(miniProgram.id);
           }}
-          className="h-7.5 rounded-full bg-[#f59e0b] px-3 text-[10px] text-[#3b2206] hover:bg-[#d97706]"
+          className="h-7.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-[10px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
         >
           {t(msg`打开`)}
         </Button>

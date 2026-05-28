@@ -267,7 +267,7 @@ export function ProfileInfoFieldPage() {
               "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
-                : "text-[#f59e0b] active:bg-black/[0.05]",
+                : "text-[color:var(--brand-primary)] active:bg-black/[0.05]",
             )}
           >
             {saveMutation.isPending ? t(msg`保存中`) : t(msg`完成`)}
@@ -379,11 +379,11 @@ export function ProfileInfoFieldPage() {
       </div>
 
       {ageInvalid ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请填写 ${AGE_MIN}-${AGE_MAX} 之间的年龄。`)}
         </div>
       ) : overLimit && config.maxLength !== undefined ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[#92400e]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`内容太长啦，最多 ${config.maxLength} 个字符，请删掉一些。`)}
         </div>
       ) : null}
