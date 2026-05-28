@@ -310,7 +310,7 @@ export function VoicePickerModal({
                       className={cn(
                         "flex items-center gap-2 rounded-[14px] px-3 py-2.5",
                         selected
-                          ? "bg-[color:var(--brand-primary-soft,rgba(245,158,11,0.12))]"
+                          ? "bg-[color:var(--brand-primary-soft,color-mix(in_srgb,var(--brand-primary)_12%,transparent))]"
                           : "hover:bg-[color:var(--surface-card-hover)]",
                       )}
                     >

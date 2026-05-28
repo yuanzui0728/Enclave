@@ -113,7 +113,7 @@ export function ShopCheckoutPage() {
                 </div>
                 <div className="text-[12px] text-[color:var(--text-muted)]">{t(msg`实物商品`)}</div>
               </div>
-              <div className="text-[16px] font-semibold text-[#b45309]">
+              <div className="text-[16px] font-semibold text-[color:var(--brand-primary)]">
                 {formatCents(goods.priceCents, goods.currency)}
               </div>
             </AppSection>
@@ -154,7 +154,7 @@ export function ShopCheckoutPage() {
 
             <Button
               variant="primary"
-              className="w-full rounded-full bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
+              className="w-full rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
               disabled={buyMutation.isPending}
               onClick={submit}
             >

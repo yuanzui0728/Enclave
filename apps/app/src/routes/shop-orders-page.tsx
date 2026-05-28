@@ -41,7 +41,7 @@ function statusLabel(status: GoodsOrderStatus, t: ReturnType<typeof useRuntimeTr
 
 const STATUS_COLOR: Record<GoodsOrderStatus, string> = {
   completed: "bg-[rgba(34,197,94,0.14)] text-[#15803d]",
-  pending: "bg-[rgba(245,158,11,0.16)] text-[#b45309]",
+  pending: "bg-[color:var(--brand-primary)]/16 text-[color:var(--brand-primary)]",
   shipped: "bg-[rgba(59,130,246,0.14)] text-[#2563eb]",
   delivered: "bg-[rgba(34,197,94,0.14)] text-[#15803d]",
   cancelled: "bg-black/[0.06] text-[color:var(--text-muted)]",
@@ -149,7 +149,7 @@ export function ShopOrdersPage() {
             </div>
             <div className="flex items-center justify-between text-[12px] text-[color:var(--text-muted)]">
               <span>{formatDateTime(order.createdAt)}</span>
-              <span className="text-[14px] font-semibold text-[#b45309]">
+              <span className="text-[14px] font-semibold text-[color:var(--brand-primary)]">
                 {formatCents(order.totalPriceCents, order.currency)}
               </span>
             </div>

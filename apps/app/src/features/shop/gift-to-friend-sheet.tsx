@@ -92,7 +92,7 @@ export function GiftToFriendSheet({
             <InlineNotice tone="muted">{t(msg`你还没有可赠送的礼物。`)}</InlineNotice>
             <Button
               variant="primary"
-              className="rounded-full bg-[#f59e0b] text-[#3b2206]"
+              className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206]"
               onClick={() => {
                 onClose();
                 void navigate({ to: "/shop" });
@@ -113,7 +113,7 @@ export function GiftToFriendSheet({
                 onClick={() => send(item.goodsCode, item.name)}
                 className="flex flex-col items-center gap-1.5 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-3 text-center transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-50"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(132,204,22,0.16))] text-[#b45309]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
                   {item.iconUrl ? (
                     <img src={item.iconUrl} alt="" className="h-8 w-8 rounded-[9px] object-cover" />
                   ) : (

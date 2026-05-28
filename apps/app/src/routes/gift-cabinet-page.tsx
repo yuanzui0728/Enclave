@@ -23,7 +23,7 @@ type Tab = "received" | "collection";
 
 function GiftIcon({ iconUrl }: { iconUrl: string | null }) {
   return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(132,204,22,0.16))] text-[#b45309]">
+    <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
       {iconUrl ? (
         <img src={iconUrl} alt="" className="h-9 w-9 rounded-[10px] object-cover" />
       ) : (
@@ -70,7 +70,7 @@ export function GiftCabinetPage() {
         <Button
           variant="ghost"
           size="sm"
-          className="rounded-full bg-transparent text-[13px] text-[#b45309] shadow-none active:bg-black/[0.05]"
+          className="rounded-full bg-transparent text-[13px] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
           onClick={() => void navigate({ to: "/shop/orders" })}
         >
           {t(msg`我的订单`)}
@@ -130,7 +130,7 @@ export function GiftCabinetPage() {
               onClick={() => setTab(item.key)}
               className={`flex-1 rounded-full py-1.5 transition-colors ${
                 tab === item.key
-                  ? "bg-[#f59e0b] font-medium text-[#3b2206]"
+                  ? "bg-[color:var(--brand-primary)] font-medium text-[#3b2206]"
                   : "text-[color:var(--text-secondary)]"
               }`}
             >

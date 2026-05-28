@@ -37,7 +37,7 @@ function GoodsCard({
       onClick={() => onPick(goods)}
       className="flex flex-col items-center gap-1.5 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-4 text-center transition-colors active:bg-[color:var(--surface-card-hover)]"
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(132,204,22,0.16))] text-[#b45309]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
         {goods.iconUrl ? (
           <img src={goods.iconUrl} alt="" className="h-9 w-9 rounded-[10px] object-cover" />
         ) : goods.kind === "physical" ? (
@@ -49,7 +49,7 @@ function GoodsCard({
       <div className="line-clamp-1 text-[13px] font-medium text-[color:var(--text-primary)]">
         {goods.name}
       </div>
-      <div className="text-[13px] font-semibold text-[#b45309]">
+      <div className="text-[13px] font-semibold text-[color:var(--brand-primary)]">
         {formatCents(goods.priceCents, goods.currency)}
       </div>
       {goods.stock !== null ? (
@@ -179,7 +179,7 @@ export function ShopPage() {
         <Button
           variant="ghost"
           size="sm"
-          className="rounded-full bg-transparent text-[13px] text-[#b45309] shadow-none active:bg-black/[0.05]"
+          className="rounded-full bg-transparent text-[13px] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
           onClick={() => void navigate({ to: "/gift-cabinet" })}
         >
           {t(msg`礼物柜`)}
@@ -281,7 +281,7 @@ export function ShopPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(132,204,22,0.16))] text-[#b45309]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
                 {picked.iconUrl ? (
                   <img src={picked.iconUrl} alt="" className="h-9 w-9 rounded-[10px] object-cover" />
                 ) : (
@@ -292,7 +292,7 @@ export function ShopPage() {
                 <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
                   {picked.name}
                 </div>
-                <div className="text-[13px] font-semibold text-[#b45309]">
+                <div className="text-[13px] font-semibold text-[color:var(--brand-primary)]">
                   {formatCents(picked.priceCents, picked.currency)}
                 </div>
               </div>
@@ -347,7 +347,7 @@ export function ShopPage() {
               </Button>
               <Button
                 variant="primary"
-                className="flex-1 rounded-full bg-[#f59e0b] text-[#3b2206] hover:bg-[#d97706]"
+                className="flex-1 rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
                 disabled={buyMutation.isPending}
                 onClick={confirmBuy}
               >
