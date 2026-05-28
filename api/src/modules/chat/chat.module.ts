@@ -55,6 +55,9 @@ import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
+import { MomentPostEntity } from '../moments/moment-post.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
+import { MomentCommentEntity } from '../moments/moment-comment.entity';
 import { FriendRemarkResolverModule } from '../social/friend-remark-resolver.module';
 import { CharacterSocialContextService } from './character-social-context.service';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
@@ -88,6 +91,9 @@ import { EventsModule } from '../events/events.module';
       CharacterEntity,
       FriendshipEntity,
       AIRelationshipEntity,
+      MomentPostEntity,
+      MomentLikeEntity,
+      MomentCommentEntity,
       FavoriteEntity,
       FavoriteNoteEntity,
     ]),
