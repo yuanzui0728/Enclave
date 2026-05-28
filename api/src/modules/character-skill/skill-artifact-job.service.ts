@@ -32,6 +32,11 @@ import { SkillRunEntity } from './skill-run.entity';
 const SKILL_JOB_BATCH_SIZE = 6;
 const SKILL_JOB_PROCESSING_RETRY_MS = 3 * 60 * 1000;
 
+// 规格生成的输出纪律：硬压住推理型模型的「思考过程」，直接吐可解析 JSON——否则 <think> 会
+// 吃光 token 预算把 JSON 截断，解析失败回退空规格 → 近空文件（真 LLM e2e 发现 PPT 踩此坑）。
+const SPEC_OUTPUT_DISCIPLINE =
+  '\n\n【输出纪律】立即只输出最终 JSON 对象本身：不要任何思考过程/分析/解释，不要 <think> 标签，不要 markdown 代码块或 ``` 包裹。第一个字符必须是 {。';
+
 // 异步渲染 job 处理器：仿 ReplyArtifactJobService 的范式（Cron + owner 帧 + 自旋锁 +
 // stale 重排 + 存附件 + emit），但产物是 .pptx/.docx/.xlsx 文件消息，且渲染失败会退费。
 @Injectable()
@@ -165,12 +170,13 @@ export class SkillArtifactJobService {
     );
     try {
       const spec = await this.ai.generateJsonObject({
-        prompt: skill.specPromptBuilder({
-          characterName: job.characterName,
-          userGoal: run.userGoal,
-          slots: run.slotPayload ?? {},
-          outline: run.outlineSpec ?? {},
-        }),
+        prompt:
+          skill.specPromptBuilder({
+            characterName: job.characterName,
+            userGoal: run.userGoal,
+            slots: run.slotPayload ?? {},
+            outline: run.outlineSpec ?? {},
+          }) + SPEC_OUTPUT_DISCIPLINE,
         usageContext: {
           surface: 'app',
           scene: 'skill_document_spec',
@@ -181,8 +187,10 @@ export class SkillArtifactJobService {
           characterName: job.characterName,
           conversationId: job.conversationId,
         },
-        maxTokens: 4000,
-        temperature: 0.5,
+        // 给足预算：推理型模型会先 <think> 再出 JSON，规格(尤其 deck)较大，4000 易被思考耗尽截断
+        // 致 JSON 不闭合解析失败 → 空规格 → 近空文件。8000 容纳思考+完整规格。
+        maxTokens: 8000,
+        temperature: 0.4,
         fallback: {},
       });
 
