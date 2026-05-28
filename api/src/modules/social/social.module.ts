@@ -13,6 +13,7 @@ import { CharacterFriendshipService } from './character-friendship.service';
 import { GiftWorldService } from './gift-world.service';
 import { GiftWorldController } from './gift-world.controller';
 import { GiftInternalServiceTokenGuard } from './gift-internal-service-token.guard';
+import { CloudGiftClient } from './cloud-gift.client';
 import { CharacterEntity } from '../characters/character.entity';
 import { AiModule } from '../ai/ai.module';
 import { NarrativeModule } from '../narrative/narrative.module';
@@ -69,6 +70,7 @@ import { MomentLikeEntity } from '../moments/moment-like.entity';
     InitialMessageService,
     GiftWorldService,
     GiftInternalServiceTokenGuard,
+    CloudGiftClient,
   ],
   controllers: [SocialController, GiftWorldController],
   exports: [SocialService, CharacterFriendshipService],
