@@ -2542,7 +2542,7 @@ export function DiscoverFeedPage() {
                 body={
                   <div className="space-y-3">
                     {post.authorType === "user" ? (
-                      <div className="inline-flex rounded-full bg-[rgba(245,158,11,0.12)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                      <div className="inline-flex rounded-full bg-[color:var(--brand-primary)]/12 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
                         {t(msg`居民公开可见`)}
                       </div>
                     ) : null}
@@ -3171,7 +3171,7 @@ function MobileFeedStatusCard({
         className={
           tone === "danger"
             ? "mx-auto inline-flex rounded-full bg-[rgba(220,38,38,0.08)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--state-danger-text)]"
-            : "mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]"
+            : "mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]"
         }
       >
         {badge}

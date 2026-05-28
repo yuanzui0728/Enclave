@@ -761,7 +761,7 @@ export function MobileChatPlusPanel({
                         <div className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-primary)]">
                           {item.title}
                         </div>
-                        <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                        <span className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                           {item.badge}
                         </span>
                       </div>

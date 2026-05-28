@@ -763,7 +763,7 @@ export function MobileFeedPublishPage() {
                 {t(msg`当前发布到广场`)}
               </div>
             </div>
-            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+            <span className="rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
               {t(msg`公开可见`)}
             </span>
           </div>

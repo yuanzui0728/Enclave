@@ -388,7 +388,7 @@ export function MobileFavoritesPage({
               className={cn(
                 "rounded-full border px-3 py-1 text-[12px] transition-colors",
                 activeFilter === filter.id
-                  ? "border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]"
+                  ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
               )}
             >
@@ -595,7 +595,7 @@ function FavoriteRow({
             {item.title}
           </div>
           {item.badge ? (
-            <span className="shrink-0 rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+            <span className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/8 px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
               {item.badge}
             </span>
           ) : null}
@@ -617,7 +617,7 @@ function FavoriteRow({
             {noteSummary.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[rgba(245,158,11,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color:var(--brand-primary)]/8 px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]"
               >
                 #{tag}
               </span>

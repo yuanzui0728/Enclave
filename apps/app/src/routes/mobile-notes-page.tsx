@@ -267,7 +267,7 @@ function NoteRow({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)] active:bg-none"
     >
-      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[rgba(245,158,11,0.08)]">
+      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[color:var(--brand-primary)]/8">
         {previewImage?.url ? (
           <img
             // 2026-05-21 修：公网隧道下 /api/chat/attachments/<file> 必须经 /cloud/world-api

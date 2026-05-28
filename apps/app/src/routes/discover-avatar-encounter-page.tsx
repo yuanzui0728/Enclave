@@ -364,7 +364,7 @@ function DiscoverTab({
                       ),
                     })
                   }
-                  className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
+                  className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
                 >
                   {t(msg`了解会员`)}
                 </button>
@@ -705,7 +705,7 @@ function EncounterDecideError({ error }: { error: unknown }) {
           </span>
           <Link
             to="/profile/info/contact"
-            className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
+            className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
           >
             {t(msg`去填写`)}
           </Link>

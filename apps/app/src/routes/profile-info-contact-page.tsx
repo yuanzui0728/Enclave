@@ -242,7 +242,7 @@ export function ProfileInfoContactPage() {
       </div>
 
       {overLimit ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`联系方式太长啦，最多 ${CONTACT_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}

@@ -3899,7 +3899,7 @@ export function ChatMessageList({
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
                   : isSelected
-                    ? "bg-[rgba(245,158,11,0.06)] shadow-[0_0_0_1px_rgba(245,158,11,0.14)]"
+                    ? "bg-[color:var(--brand-primary)]/6 shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
                     : ""
               }`}
             >
@@ -3930,7 +3930,7 @@ export function ChatMessageList({
 
                         handleMobileCharacterAvatarClick(event, message);
                       }}
-                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.4)] focus-visible:ring-offset-2"
+                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/40 focus-visible:ring-offset-2"
                       aria-label={t(msg`查看${message.senderName?.trim() || t(msg`联系人`)}资料`)}
                     >
                       <AvatarChip
@@ -4254,7 +4254,7 @@ export function ChatMessageList({
                     <button
                       type="button"
                       onClick={handleDesktopOwnerAvatarClick}
-                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.4)] focus-visible:ring-offset-2"
+                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/40 focus-visible:ring-offset-2"
                       aria-label={t(msg`查看${ownerName?.trim() || t(msg`我的`)}资料`)}
                     >
                       <AvatarChip
@@ -4946,14 +4946,14 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "h-px flex-1 bg-black/8"
-            : "h-px flex-1 bg-[rgba(245,158,11,0.14)]"
+            : "h-px flex-1 bg-[color:var(--brand-primary)]/14"
         }
       />
       <div
         className={
           isDesktop
             ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
-            : "rounded-full border border-[rgba(245,158,11,0.18)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
+            : "rounded-full border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
         }
       >
         {label}
@@ -4962,7 +4962,7 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "h-px flex-1 bg-black/10"
-            : "h-px flex-1 bg-[rgba(245,158,11,0.14)]"
+            : "h-px flex-1 bg-[color:var(--brand-primary)]/14"
         }
       />
     </div>
@@ -6150,8 +6150,8 @@ function SelectionToggle({
       }}
       className={`mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium transition ${
         checked
-          ? "border-[rgba(245,158,11,0.24)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-[0_4px_10px_rgba(245,158,11,0.2)]"
-          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[rgba(245,158,11,0.3)]"
+          ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-[0_4px_10px_color-mix(in_srgb,var(--brand-primary)_20%,transparent)]"
+          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[color:var(--brand-primary)]/30"
       }`}
       aria-label={checked ? translateRuntimeMessage(msg`取消选择消息`) : translateRuntimeMessage(msg`选择消息`)}
       // 走查电脑端群聊 R17：和姊妹 R32 时间戳 divider toggle / R13 群通话面板
@@ -7073,7 +7073,7 @@ function GroupRelaySummaryMessage({
         isDesktop
           ? own
             ? "w-[252px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[252px] rounded-[20px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[252px] rounded-[20px] border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
             ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
             : "w-[236px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
@@ -7368,7 +7368,7 @@ function CallLogMessage({
       className={cn(
         "inline-flex max-w-[280px] items-center gap-2.5 rounded-[16px] border px-3 py-2 text-[12px] leading-[18px]",
         tone === "warning"
-          ? "border-[rgba(245,158,11,0.20)] bg-[rgba(245,158,11,0.08)] text-[color:var(--text-primary)]"
+          ? "border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/8 text-[color:var(--text-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]",
       )}
     >

@@ -201,8 +201,8 @@ export function MessageQuoteSelectionSheet({
           className={`mt-3 rounded-[16px] px-3 py-2 text-[12px] leading-5 ${
             selectedText
               ? isDesktop
-                ? "bg-[rgba(245,158,11,0.10)] text-[#11925a]"
-                : "bg-[rgba(245,158,11,0.10)] text-[#11925a]"
+                ? "bg-[color:var(--brand-primary)]/10 text-[#11925a]"
+                : "bg-[color:var(--brand-primary)]/10 text-[#11925a]"
               : isDesktop
                 ? "bg-[color:var(--surface-card)] text-[color:var(--text-muted)]"
                 : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]"

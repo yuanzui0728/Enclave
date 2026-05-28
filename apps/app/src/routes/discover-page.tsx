@@ -747,7 +747,7 @@ function DesktopDiscoverWorkspace() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[24px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[24px] border border-[color:var(--brand-primary)]/18 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[11px] uppercase tracking-[0.16em] text-[#2f7a3f]">
                     {t(msg`朋友圈`)}
                   </div>
@@ -777,7 +777,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-              <div className="rounded-[24px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[24px] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] uppercase tracking-[0.18em] text-emerald-600">
@@ -859,7 +859,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-[color:var(--border-faint)] shadow-none">
-              <div className="rounded-[24px] border border-[rgba(245,158,11,0.14)] bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[24px] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[11px] tracking-[0.14em] text-[color:var(--brand-primary)]">
@@ -874,7 +874,7 @@ function DesktopDiscoverWorkspace() {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-full bg-[rgba(245,158,11,0.1)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                  <div className="rounded-full bg-[color:var(--brand-primary)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
                     {t(msg`发帖区`)}
                   </div>
                 </div>
@@ -1060,7 +1060,7 @@ function DesktopDiscoverWorkspace() {
                       size="sm"
                       className={
                         post.ownerState?.hasLiked
-                          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(245,158,11,0.06)] text-[color:var(--brand-primary)]"
+                          ? "border-[color:var(--brand-primary)]/18 bg-[color:var(--brand-primary)]/6 text-[color:var(--brand-primary)]"
                           : undefined
                       }
                     >
@@ -1302,7 +1302,7 @@ function DiscoverMobileEntryRow({
         <div className="truncate text-[13px] text-[color:var(--text-primary)]">
           {t(item.label)}
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(245,158,11,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[color:var(--brand-primary)]">
+        <div className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/8 px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[color:var(--brand-primary)]">
           {t(item.badge)}
         </div>
       </div>

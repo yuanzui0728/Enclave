@@ -267,15 +267,15 @@ export function ProfileInfoNamePage() {
           ② 全空白/控制字符 → 文案 "请输入有效的名字（不能只有空白或换行符）"
           ③ 1 字符 → 文案 "至少 N 字符"  */}
       {sanitized.length === 0 && draft.length === 0 ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请输入名字。`)}
         </div>
       ) : sanitized.length === 0 && draft.length > 0 ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请输入有效的名字（不能只有空白或换行符）。`)}
         </div>
       ) : sanitized.length > 0 && sanitized.length < NAME_MIN_LENGTH ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`名字太短啦，至少要 ${NAME_MIN_LENGTH} 个字符。`)}
         </div>
       ) : overLimit ? (
@@ -283,7 +283,7 @@ export function ProfileInfoNamePage() {
         // 的旧 username（早期版本没卡上限）。这类用户一进编辑页 sanitized 立刻超限、
         // 「完成」永远灰着、计数器虽然变红但没文字说明，跟之前"clear 后看灰按钮以为
         // 是 bug"的体验同款。补一条 banner，让用户明确知道要删掉几个字。
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`名字太长啦，最多 ${NAME_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}

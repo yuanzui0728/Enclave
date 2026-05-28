@@ -829,7 +829,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 {t(msg`桌面通话工作区`)}
               </div>
               <div className="mt-5 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(245,158,11,0.10)] text-[#1f8f4f]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/10 text-[#1f8f4f]">
                   {isVideoMode ? <Camera size={24} /> : <Mic size={24} />}
                 </div>
                 <div className="min-w-0 flex-1">

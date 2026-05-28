@@ -72,7 +72,7 @@ export function MobileChatAttachmentPreview({
             ))}
           </div>
         ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[rgba(245,158,11,0.14)] bg-[rgba(247,251,248,0.98)] text-[color:var(--brand-primary)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[color:var(--brand-primary)]/14 bg-[rgba(247,251,248,0.98)] text-[color:var(--brand-primary)]">
             <FileText size={22} />
           </div>
         )}

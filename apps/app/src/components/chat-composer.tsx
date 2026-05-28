@@ -3948,7 +3948,7 @@ export function ChatComposer({
                   type="button"
                   onClick={onSubmit}
                   disabled={composerPending}
-                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_rgba(245,158,11,0.18)] disabled:opacity-45"
+                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-45"
                 >
                   {t(msg`发送`)}
                 </button>
@@ -4153,7 +4153,7 @@ function DesktopFavoritePicker({
                   <div className="truncate text-sm text-[color:var(--text-primary)]">
                     {item.title}
                   </div>
-                  <span className="rounded-full bg-[rgba(245,158,11,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                  <span className="rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                     {item.badge}
                   </span>
                 </div>
@@ -4253,7 +4253,7 @@ function DesktopComposerStatusStrip({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
           : tone === "success"
-            ? "border-[rgba(245,158,11,0.16)] bg-[#fffdf2] text-[color:var(--brand-primary)]"
+            ? "border-[color:var(--brand-primary)]/16 bg-[#fffdf2] text-[color:var(--brand-primary)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
       )}
     >
@@ -4309,7 +4309,7 @@ function MobileComposerStatusRail({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff5f5] text-[#b42318]"
           : tone === "success"
-            ? "border-[rgba(245,158,11,0.14)] bg-[#fffdf2] text-[color:var(--brand-primary)]"
+            ? "border-[color:var(--brand-primary)]/14 bg-[#fffdf2] text-[color:var(--brand-primary)]"
             : tone === "info"
               ? "border-[rgba(96,165,250,0.18)] bg-[#f7fbff] text-[#1d4ed8]"
               : "border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] text-[color:var(--text-muted)]",
@@ -4326,7 +4326,7 @@ function MobileComposerStatusRail({
               tone === "danger"
                 ? "border-[#fecaca] text-[#b42318]"
                 : tone === "success"
-                  ? "border-[rgba(245,158,11,0.14)] text-[color:var(--brand-primary)]"
+                  ? "border-[color:var(--brand-primary)]/14 text-[color:var(--brand-primary)]"
                   : tone === "info"
                     ? "border-[#bfdbfe] text-[#1d4ed8]"
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)]",
@@ -4366,7 +4366,7 @@ function DesktopAttachmentDraftBar({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="mb-2.5 rounded-[12px] border border-[rgba(245,158,11,0.14)] bg-[#fffdf2] px-3.5 py-3">
+    <div className="mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[#fffdf2] px-3.5 py-3">
       <div className="mb-2.5 text-[11px] font-medium text-[color:var(--brand-primary)]">
         {t(msg`待发送附件`)}
       </div>
@@ -5167,7 +5167,7 @@ function DesktopScreenshotEditor({
 
   const getShortcutDemoClass = (groupId: ScreenshotShortcutHelpGroupId) =>
     shortcutDemoGroup === groupId
-      ? "border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.12)] shadow-[0_0_0_1px_rgba(253,230,138,0.2),0_12px_28px_rgba(245,158,11,0.14)]"
+      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/12 shadow-[0_0_0_1px_rgba(253,230,138,0.2),0_12px_28px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
       : "border-transparent";
 
   const finishPreviewPan = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -5454,7 +5454,7 @@ function DesktopScreenshotEditor({
                           className={cn(
                             "flex items-start justify-between gap-2.5 rounded-[8px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
-                              ? "border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.14)] text-white"
+                              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/14 text-white"
                               : "border-transparent bg-white/[0.045] hover:border-white/8 hover:bg-white/[0.065]",
                           )}
                         >
@@ -5543,7 +5543,7 @@ function DesktopScreenshotEditor({
                     ) : null}
                     {cropRect ? (
                       <div
-                        className="absolute border-2 border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.12)] shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
+                        className="absolute border-2 border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/12 shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
                         style={{
                           left: `${cropRect.x * 100}%`,
                           top: `${cropRect.y * 100}%`,
@@ -5578,7 +5578,7 @@ function DesktopScreenshotEditor({
                             onPointerUp={onCropResizeEnd}
                             onPointerCancel={onCropResizeEnd}
                             className={cn(
-                              "absolute border-2 border-white bg-[color:var(--brand-primary)] shadow-[0_6px_14px_rgba(245,158,11,0.28)]",
+                              "absolute border-2 border-white bg-[color:var(--brand-primary)] shadow-[0_6px_14px_color-mix(in_srgb,var(--brand-primary)_28%,transparent)]",
                               handle === "nw"
                                 ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
                                 : "",
@@ -6092,8 +6092,8 @@ function ReplyPreviewBar({
     <div
       className={`flex items-start justify-between gap-2.5 ${
         isDesktop
-          ? "mb-2.5 rounded-[12px] border border-[rgba(245,158,11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-[#fffdf2] px-3.5 py-2.5"
-          : "mb-1.5 rounded-[12px] border border-[rgba(245,158,11,0.14)] border-l-[3px] border-l-[#f59e0b] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
+          ? "mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[#f59e0b] bg-[#fffdf2] px-3.5 py-2.5"
+          : "mb-1.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[#f59e0b] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
       }`}
     >
       <div className="min-w-0 flex-1">
@@ -6110,7 +6110,7 @@ function ReplyPreviewBar({
               className={`rounded-full px-2 py-0.5 text-[10px] ${
                 isDesktop
                   ? "bg-[color:var(--surface-card)] text-[color:var(--text-dim)]"
-                  : "bg-[rgba(245,158,11,0.1)] text-[9px] text-[color:var(--brand-primary)]"
+                  : "bg-[color:var(--brand-primary)]/10 text-[9px] text-[color:var(--brand-primary)]"
               }`}
             >
               {modeLabel}

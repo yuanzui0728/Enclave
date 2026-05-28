@@ -2345,7 +2345,7 @@ export function StickerPanel({
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
                         : customStorageTone === "warning"
-                          ? "border-[rgba(245,158,11,0.24)] bg-[rgba(255,251,235,0.96)]"
+                          ? "border-[color:var(--brand-primary)]/24 bg-[rgba(255,251,235,0.96)]"
                           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
                     } ${
                       customDeleteFeedbackFlashActive
@@ -2356,7 +2356,7 @@ export function StickerPanel({
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
                         : customStorageTone === "warning"
-                          ? "border-[rgba(245,158,11,0.24)] bg-[rgba(255,251,235,0.96)]"
+                          ? "border-[color:var(--brand-primary)]/24 bg-[rgba(255,251,235,0.96)]"
                           : "border-[color:var(--border-subtle)] bg-white/84"
                     } ${
                       customDeleteFeedbackFlashActive
@@ -2379,7 +2379,7 @@ export function StickerPanel({
                     customStorageTone === "danger"
                       ? "bg-[rgba(239,68,68,0.12)] text-[#b91c1c]"
                       : customStorageTone === "warning"
-                        ? "bg-[rgba(245,158,11,0.14)] text-[color:var(--brand-primary)]"
+                        ? "bg-[color:var(--brand-primary)]/14 text-[color:var(--brand-primary)]"
                         : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-primary)]"
                   } ${customDeleteFeedbackFlashActive ? "animate-pulse" : ""}`}
                 >
@@ -2493,7 +2493,7 @@ export function StickerPanel({
                         </button>
                       ) : null}
                       {mobileShowsCustomDeleteHint ? (
-                        <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)]">
+                        <span className="rounded-full bg-[color:var(--brand-primary)]/12 px-2 py-1 text-[10px] text-[color:var(--brand-primary)]">
                           {mobileDeleteHintLabel}
                         </span>
                       ) : null}
@@ -2768,8 +2768,8 @@ export function StickerPanel({
             <div
               className={
                 isMobile
-                  ? "mb-2 rounded-[16px] border border-[rgba(245,158,11,0.28)] bg-[rgba(255,251,235,0.92)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]"
-                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(245,158,11,0.26)] bg-[rgba(255,251,235,0.92)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
+                  ? "mb-2 rounded-[16px] border border-[color:var(--brand-primary)]/28 bg-[rgba(255,251,235,0.92)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]"
+                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--brand-primary)]/26 bg-[rgba(255,251,235,0.92)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
               }
             >
               <span>{customCapacityNotice}</span>

@@ -11,7 +11,7 @@ export function resolveChatCardBadgeClassName(tone: ChatCardBadgeTone) {
   }
 
   if (tone === "warning") {
-    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(245,158,11,0.16)] text-[color:var(--brand-primary)]";
+    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[color:var(--brand-primary)]/16 text-[color:var(--brand-primary)]";
   }
 
   if (tone === "danger") {

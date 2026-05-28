@@ -1761,7 +1761,7 @@ export function WelcomePage() {
                   }
                   variant="secondary"
                   size="lg"
-                  className="shrink-0 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] px-5 shadow-none hover:border-[rgba(245,158,11,0.16)] hover:bg-[color:var(--surface-card)]"
+                  className="shrink-0 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] px-5 shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
                 >
                   {(
                     accountType === "phone"
@@ -2124,7 +2124,7 @@ export function WelcomePage() {
               disabled={isContinuing}
               variant="secondary"
               size="lg"
-              className="rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none hover:border-[rgba(245,158,11,0.16)] hover:bg-[color:var(--surface-card)]"
+              className="rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`返回`)}
             </Button>
@@ -2167,8 +2167,8 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-cloud-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
-                ? "border-[rgba(245,158,11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(245,158,11,0.16)]"
+                ? "border-[color:var(--brand-primary)]/24 bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--brand-primary)]/16"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2192,8 +2192,8 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-local-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
-                ? "border-[rgba(245,158,11,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
-                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(245,158,11,0.16)]"
+                ? "border-[color:var(--brand-primary)]/24 bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--brand-primary)]/16"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -2381,7 +2381,7 @@ export function WelcomePage() {
   return (
     <AppPage className="bg-[#f5f1e6] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-8 shadow-none">
-        <div className="inline-flex rounded-full border border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
+        <div className="inline-flex rounded-full border border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
           {/* 走查 R5：见 desktop 分支同改 */}
           {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}
         </div>
@@ -2413,7 +2413,7 @@ function MobileWelcomeStatusCard({
   const badgeClassName =
     tone === "danger"
       ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
-      : "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]";
+      : "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]";
 
   return (
     <div className={`rounded-[24px] border px-4 py-4 shadow-none ${toneClassName}`}>
@@ -2439,7 +2439,7 @@ function MobileWelcomeNotice({
     tone === "danger"
       ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
       : tone === "success"
-        ? "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]"
+        ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]"
         : tone === "muted"
           ? "border-[color:var(--border-faint)] bg-[#f7f7f5] text-[color:var(--text-secondary)]"
           : "border-[rgba(22,163,74,0.12)] bg-[#fffdf2] text-[color:var(--text-secondary)]";

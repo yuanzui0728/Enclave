@@ -3076,7 +3076,7 @@ const FriendListRow = memo(function FriendListRow({
           : "bg-transparent py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "border border-[rgba(245,158,11,0.16)] bg-[rgba(245,238,225,0.94)] shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
+          ? "border border-[color:var(--brand-primary)]/16 bg-[rgba(245,238,225,0.94)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
           : undefined,
       )}
     >
@@ -3206,7 +3206,7 @@ function MobileContactsStatusCard({
 
   return (
     <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
+      <div className="mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
       {loading ? (

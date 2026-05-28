@@ -276,7 +276,7 @@ export function ProfileFeedbackPage() {
                   className={cn(
                     "flex flex-col items-center justify-center gap-1 rounded-[12px] border px-2 py-3 text-[12px] transition-colors",
                     active
-                      ? "border-[color:var(--brand-primary)] bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]"
+                      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
                   )}
                 >
@@ -345,7 +345,7 @@ export function ProfileFeedbackPage() {
             className={cn(
               "rounded-[12px] px-3 py-2 text-[12px]",
               notice.tone === "success"
-                ? "bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]"
+                ? "bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]"
                 : "bg-[rgba(220,38,38,0.08)] text-[#b42318]",
             )}
           >

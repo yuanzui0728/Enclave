@@ -690,7 +690,7 @@ export function ChatMessageSearchPanel({
                         className={cn(
                           "flex h-8.5 w-8.5 items-center justify-center rounded-[8px]",
                           active
-                            ? "bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]"
+                            ? "bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]"
                             : "bg-[color:var(--surface-panel)] text-[color:var(--text-secondary)]",
                         )}
                       >
@@ -1161,7 +1161,7 @@ function renderHighlightedText(text: string, keyword: string) {
     parts.push(
       <mark
         key={`m-${matchStart}`}
-        className="rounded-[4px] bg-[rgba(250,204,21,0.28)] px-0.5 text-current"
+        className="rounded-[4px] bg-[color:var(--brand-accent)]/28 px-0.5 text-current"
       >
         {text.slice(matchStart, matchEnd)}
       </mark>,
@@ -1356,7 +1356,7 @@ function MobileSearchStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -1391,9 +1391,9 @@ function SearchStatPill({
       className={cn(
         "rounded-full px-2.5 py-1 text-[10px] leading-none",
         tone === "brand" &&
-          "bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]",
+          "bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.08)] text-[#2563eb]",
-        tone === "active" && "bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]",
+        tone === "active" && "bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]",
         tone === "neutral" &&
           "bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]",
       )}
@@ -1419,7 +1419,7 @@ function SearchFilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
         active
-          ? "border-[rgba(245,158,11,0.14)] bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
+          ? "border-[color:var(--brand-primary)]/14 bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
       )}
     >

@@ -929,10 +929,10 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[rgba(245,158,11,0.18)] bg-[rgba(245,238,225,0.96)] shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]"
+            ? "rounded-[12px] border border-[color:var(--brand-primary)]/18 bg-[rgba(245,238,225,0.96)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
             : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[rgba(245,158,11,0.06)]"
+            ? "bg-[color:var(--brand-primary)]/6"
             : "bg-[color:var(--bg-canvas-elevated)]",
         !isDesktop && withDivider
           ? "border-t border-[color:var(--border-faint)]"
@@ -1013,7 +1013,7 @@ function MobileGroupMemberPickerStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

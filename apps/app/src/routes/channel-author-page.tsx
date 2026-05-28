@@ -887,7 +887,7 @@ function ChannelAuthorHeaderStat({
 }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-2 text-[color:var(--text-primary)]">
-      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]">
+      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]">
         {icon}
       </div>
       <div>
@@ -1065,7 +1065,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   }
 
   return {
-    badgeClassName: "bg-[rgba(245,158,11,0.18)] text-white",
+    badgeClassName: "bg-[color:var(--brand-primary)]/18 text-white",
     icon: <MessageCircleMore size={14} />,
     label: t(msg`动态`),
     overlayClassName:
@@ -1126,7 +1126,7 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
     label: t(msg`动态`),
     metaLabel: t(msg`内容卡片`),
     primaryBadgeClassName:
-      "border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]",
+      "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]",
     secondaryBadgeClassName:
       "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
     secondaryLabel: post.topicTags?.length

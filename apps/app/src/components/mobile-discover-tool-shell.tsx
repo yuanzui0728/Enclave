@@ -192,11 +192,11 @@ export function MobileDiscoverToolShell({
             )}
           </InlineNotice>
         ) : null}
-        <section className="relative overflow-hidden rounded-[20px] border border-[rgba(245,158,11,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
-          <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[rgba(245,158,11,0.08)] blur-3xl" />
+        <section className="relative overflow-hidden rounded-[20px] border border-[color:var(--brand-primary)]/12 bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
+          <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[color:var(--brand-primary)]/8 blur-3xl" />
           <div className="relative flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <div className="inline-flex rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+              <div className="inline-flex rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
                 {resolvedHeroBadge}
               </div>
               <div className="mt-3 text-[22px] font-semibold leading-tight text-[color:var(--text-primary)]">
@@ -208,7 +208,7 @@ export function MobileDiscoverToolShell({
                 </div>
               ) : null}
             </div>
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
               {heroVisual}
             </div>
           </div>

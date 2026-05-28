@@ -389,7 +389,7 @@ function MobileFriendRequestsPage() {
                             {t(getFriendRequestSourceLabel(request.triggerScene))}
                           </span>
                           {expired ? (
-                            <span className="inline-flex h-[14px] items-center rounded-full bg-[rgba(245,158,11,0.12)] px-1.5 text-[9px] font-medium leading-none tracking-[0.04em] text-[color:var(--state-warning-text)]">
+                            <span className="inline-flex h-[14px] items-center rounded-full bg-[color:var(--brand-primary)]/12 px-1.5 text-[9px] font-medium leading-none tracking-[0.04em] text-[color:var(--state-warning-text)]">
                               {t(msg`已过期`)}
                             </span>
                           ) : null}
@@ -575,7 +575,7 @@ function MobileFriendRequestsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
         {badge}

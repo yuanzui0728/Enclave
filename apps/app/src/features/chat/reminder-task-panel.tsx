@@ -191,7 +191,7 @@ export function ReminderTaskPanel({
             ? isDesktop
               ? "px-4 py-3"
               : "px-4 py-3"
-            : "rounded-[20px] border border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(180,130,20,0.45)]",
+            : "rounded-[20px] border border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(180,130,20,0.45)]",
           !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >
@@ -203,7 +203,7 @@ export function ReminderTaskPanel({
         >
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[color:var(--brand-primary)]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
                 <BellRing size={16} />
               </span>
               <div className="min-w-0">

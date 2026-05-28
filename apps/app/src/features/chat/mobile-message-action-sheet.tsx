@@ -237,7 +237,7 @@ export function MobileMessageActionSheet({
               <div
                 className={`max-w-[88%] rounded-[16px] px-3 py-2 text-[13px] leading-5 ${
                   preview.own
-                    ? "bg-[rgba(245,158,11,0.16)] text-[color:var(--text-primary)]"
+                    ? "bg-[color:var(--brand-primary)]/16 text-[color:var(--text-primary)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]"
                 }`}
               >

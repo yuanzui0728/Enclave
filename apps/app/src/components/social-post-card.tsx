@@ -51,7 +51,7 @@ export function SocialPostCard({
           <button
             type="button"
             onClick={onAuthorClick}
-            className="shrink-0 rounded-[20px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.34)] focus-visible:ring-offset-2"
+            className="shrink-0 rounded-[20px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
             aria-label={authorActionLabel}
           >
             <AvatarChip name={authorName} src={authorAvatar} />
@@ -64,7 +64,7 @@ export function SocialPostCard({
             <button
               type="button"
               onClick={onAuthorClick}
-              className="max-w-full truncate text-left text-[13px] font-medium text-[color:var(--text-primary)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(245,158,11,0.34)] focus-visible:ring-offset-2"
+              className="max-w-full truncate text-left text-[13px] font-medium text-[color:var(--text-primary)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
               aria-label={authorActionLabel}
             >
               {authorName}

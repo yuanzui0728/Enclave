@@ -2543,7 +2543,7 @@ export function ChannelsPage() {
                 className={cn(
                   "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
                   selected
-                    ? "bg-[rgba(245,158,11,0.12)] font-medium text-[color:var(--brand-primary)]"
+                    ? "bg-[color:var(--brand-primary)]/12 font-medium text-[color:var(--brand-primary)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
                 )}
               >
@@ -3819,7 +3819,7 @@ function MobileChannelsStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -4663,7 +4663,7 @@ function ActionRailButton({
       <span
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur transition-colors",
-          active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_rgba(245,158,11,0.14)]",
+          active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]",
         )}
       >
         {children}
@@ -4754,7 +4754,7 @@ const CommentItemView = memo(function CommentItemView({
               {comment.authorName}
             </span>
             {isAuthor ? (
-              <span className="shrink-0 rounded-[3px] bg-[rgba(245,158,11,0.12)] px-1 py-px text-[10px] leading-[14px] text-[color:var(--brand-primary)]">
+              <span className="shrink-0 rounded-[3px] bg-[color:var(--brand-primary)]/12 px-1 py-px text-[10px] leading-[14px] text-[color:var(--brand-primary)]">
                 {t(msg`作者`)}
               </span>
             ) : null}
@@ -5588,7 +5588,7 @@ function MobileChannelCommentsSheet({
         */}
         <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 pt-2">
           {replyTarget ? (
-            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(245,158,11,0.08)] px-2.5 py-1.5 text-[11px] text-[#166534]">
+            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[color:var(--brand-primary)]/8 px-2.5 py-1.5 text-[11px] text-[#166534]">
               {/*
                 走查 R1（本轮）：原 truncate 没有 min-w-0 + flex-1，flex item 默认
                 min-width:auto，超长 authorName（比如用户用户名 yuanzui0728_5999 +

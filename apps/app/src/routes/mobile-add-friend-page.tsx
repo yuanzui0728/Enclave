@@ -853,7 +853,7 @@ function MobileAddFriendWelcomeState({
 
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(245,158,11,0.08)] text-[color:var(--brand-primary)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]">
         <Search aria-hidden="true" size={22} />
       </div>
       <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
@@ -1344,7 +1344,7 @@ function MobileAddFriendSendSheet({
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245,158,11,0.42)]"
+              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/42"
             />
             <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
               {greeting.length}/60

@@ -379,11 +379,11 @@ export function ProfileInfoFieldPage() {
       </div>
 
       {ageInvalid ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请填写 ${AGE_MIN}-${AGE_MAX} 之间的年龄。`)}
         </div>
       ) : overLimit && config.maxLength !== undefined ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[rgba(245,158,11,0.20)] bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`内容太长啦，最多 ${config.maxLength} 个字符，请删掉一些。`)}
         </div>
       ) : null}

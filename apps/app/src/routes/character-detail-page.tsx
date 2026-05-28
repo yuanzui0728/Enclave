@@ -2536,7 +2536,7 @@ function MobileCharacterStatusCard({
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(245,158,11,0.1)] text-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
         {badge}
@@ -2855,7 +2855,7 @@ function DetailInputField({
         // (备注名 / 备注标签 / 朋友圈权限 ...)，挨个点过去整页会反复弹缩。
         // 移动端固定 16px；桌面端没有 zoom 问题继续用 14px 维持视觉密度。
         className={cn(
-          "w-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(245,158,11,0.18)] focus:bg-[color:var(--surface-card)] placeholder:text-[color:var(--text-dim)]",
+          "w-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)] placeholder:text-[color:var(--text-dim)]",
           compact
             ? "rounded-[12px] py-2.5 text-[16px]"
             : "rounded-[12px] py-3 text-sm",

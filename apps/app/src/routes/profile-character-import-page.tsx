@@ -490,7 +490,7 @@ export function ProfileCharacterImportPage() {
           // 朗读不打断主操作流。
           <div
             role="status"
-            className="flex items-start gap-3 rounded-2xl bg-[rgba(245,158,11,0.10)] px-4 py-3 text-[13px] text-[color:var(--brand-primary)]"
+            className="flex items-start gap-3 rounded-2xl bg-[color:var(--brand-primary)]/10 px-4 py-3 text-[13px] text-[color:var(--brand-primary)]"
           >
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
@@ -586,7 +586,7 @@ function FilePreviewCard({
             "rounded-lg px-3 py-2 text-[11px] leading-relaxed",
             schemaMismatch
               ? "bg-[rgba(220,38,38,0.08)] text-[#b42318]"
-              : "bg-[rgba(245,158,11,0.10)] text-[color:var(--brand-primary)]",
+              : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
           )}
         >
           {schemaMismatch
@@ -645,7 +645,7 @@ function SuccessCard({
       className={cn(
         "space-y-3 rounded-2xl border p-4",
         isBlocked
-          ? "border-amber-400/30 bg-[rgba(245,158,11,0.08)]"
+          ? "border-amber-400/30 bg-[color:var(--brand-primary)]/8"
           : "border-emerald-400/30 bg-[rgba(16,185,129,0.08)]",
       )}
     >

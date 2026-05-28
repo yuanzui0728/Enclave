@@ -143,7 +143,7 @@ export function MobileMiniProgramsWorkspace({
               placeholder={t(msg`搜索小程序、服务或场景`)}
               // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。
-              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(245,158,11,0.22)] focus:bg-[color:var(--surface-card)]"
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/22 focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -562,7 +562,7 @@ function MobileMiniProgramsStatusCard({
 }) {
   return (
     <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(245,158,11,0.1)] px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
+      <div className="mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
       <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
@@ -594,7 +594,7 @@ function MiniProgramTile({
       className={cn(
         "rounded-[16px] border px-2.5 py-2.5 text-left transition",
         active
-          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(243,251,246,0.96)]"
+          ? "border-[color:var(--brand-primary)]/18 bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -656,7 +656,7 @@ function MiniProgramListCard({
       className={cn(
         "w-full cursor-pointer rounded-[16px] border px-3 py-3 text-left shadow-none transition",
         active
-          ? "border-[rgba(245,158,11,0.18)] bg-[rgba(243,251,246,0.96)]"
+          ? "border-[color:var(--brand-primary)]/18 bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
