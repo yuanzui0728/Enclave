@@ -31,9 +31,11 @@ import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.ser
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
+import { KnowledgeRetrievalService } from '../knowledge/knowledge-retrieval.service';
 import { CharacterSocialContextService } from './character-social-context.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { SelfAgentService } from '../self-agent/self-agent.service';
+import { AgentDelegationService } from '../agent-delegation/agent-delegation.service';
 import { FriendshipEntity } from '../social/friendship.entity';
 import {
   FriendRemarkResolver,
@@ -65,6 +67,7 @@ import {
   Message,
   MessageAttachment,
   NoteCardAttachment,
+  RedPacketAttachment,
   VoiceAttachment,
 } from './chat.types';
 import { CustomStickersService } from './custom-stickers.service';
@@ -92,6 +95,7 @@ import { MediaInsightJobService } from './media-insight-job.service';
 import { buildDocumentPromptExcerpt } from './document-chunk-selection';
 import { resolveGeneratedAttachmentHistoryText } from './assistant-attachment-history';
 import { describeAttachmentForDisplay } from './attachment-semantic-text';
+import { HongbaoCloudClient } from './hongbao-cloud.client';
 
 type SendConversationMessageInput =
   | {
@@ -141,6 +145,12 @@ type SendConversationMessageInput =
       type: 'feed_post_card';
       text?: string;
       attachment: FeedPostCardAttachment;
+    }
+  | {
+      type: 'red_packet';
+      text?: string;
+      // 红包发送只携带金额 + 祝福语；hongbaoId 由 world 调 cloud-api 创建后回填。
+      redPacket: { amountCents: number; message?: string };
     };
 
 type UploadedAttachmentFile = {
@@ -160,6 +170,8 @@ type DeferredAssistantImageReply = {
 type SendConversationResult = {
   messages: Message[];
   scheduledReplyArtifactJobIds?: string[];
+  // 用户刚发出的出账红包引用：网关在 AI 回复后据此调 claim 翻成「已领取」并重发气泡。
+  outgoingRedPacket?: { hongbaoId: string; messageId: string };
 };
 
 type ConversationMessageListQuery = {
@@ -187,6 +199,7 @@ export class ChatService {
     private readonly actionRuntime: ActionRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly contextHub: WorldContextHubService,
+    private readonly knowledgeRetrieval: KnowledgeRetrievalService,
     private readonly socialContext: CharacterSocialContextService,
     private readonly customStickersService: CustomStickersService,
     private readonly reminderRuntime: ReminderRuntimeService,
@@ -209,6 +222,9 @@ export class ChatService {
     private friendshipRepo: Repository<FriendshipEntity>,
     private readonly remarkResolver: FriendRemarkResolver,
     private readonly webSearch: WebSearchService,
+    @Inject(forwardRef(() => AgentDelegationService))
+    private readonly agentDelegation: AgentDelegationService,
+    private readonly hongbaoCloud: HongbaoCloudClient,
   ) {}
 
   private async getRemarkMapForCurrentOwner(): Promise<FriendRemarkMap> {
@@ -450,6 +466,17 @@ export class ChatService {
     }
 
     result.sort((left, right) => {
+      // 「我」（self mirror）永远在最顶部——压过用户手动置顶的其他会话。
+      const leftSelf =
+        left.type === 'direct' &&
+        left.participants?.[0]?.trim() === SELF_CHARACTER_ID;
+      const rightSelf =
+        right.type === 'direct' &&
+        right.participants?.[0]?.trim() === SELF_CHARACTER_ID;
+      if (leftSelf !== rightSelf) {
+        return leftSelf ? -1 : 1;
+      }
+
       if (left.isPinned !== right.isPinned) {
         return left.isPinned ? -1 : 1;
       }
@@ -603,13 +630,24 @@ export class ChatService {
     pinned: boolean,
   ): Promise<Conversation> {
     const entity = await this.requireOwnedConversation(convId);
+    // 「我」（self mirror）恒置顶不可取消：静默把取消请求 force 回 true，
+    // 不抛错（前端已隐藏取消控件，老客户端误发也不该弹错误 toast）。
+    const effectivePinned = this.isSelfDirectConversation(entity)
+      ? true
+      : pinned;
     const updated = await this.convRepo.save({
       ...entity,
-      isPinned: pinned,
-      pinnedAt: pinned ? new Date() : null,
+      isPinned: effectivePinned,
+      pinnedAt: effectivePinned ? (entity.pinnedAt ?? new Date()) : null,
     });
 
     return this.serializeConversation(updated);
+  }
+
+  private isSelfDirectConversation(entity: {
+    participants?: string[] | null;
+  }): boolean {
+    return (entity.participants?.[0]?.trim() ?? '') === SELF_CHARACTER_ID;
   }
 
   async setConversationMuted(
@@ -1082,7 +1120,20 @@ export class ChatService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const aiKeyOverride =
       (await this.worldOwnerService.getOwnerAiConfig()) ?? undefined;
-    const normalizedInput = await this.normalizeOutgoingMessageInput(input);
+    // 红包目前只支持单聊（群红包后续）。其它附件类型不受影响。
+    if (input.type === 'red_packet' && entity.type !== 'direct') {
+      throw new AppError('CHAT_RED_PACKET_GROUP_UNSUPPORTED', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '群聊红包暂未开放。',
+      });
+    }
+    const counterpartyCharacterId = entity.participants?.[0] ?? '';
+    const normalizedInput = await this.normalizeOutgoingMessageInput(input, {
+      conversationId: convId,
+      counterpartyCharacterId,
+      counterpartyCharacterName: entity.title || counterpartyCharacterId,
+      senderName: owner.username?.trim() || 'You',
+    });
 
     const userMsgEntity = this.msgRepo.create({
       id: `msg_${Date.now()}`,
@@ -1098,6 +1149,15 @@ export class ChatService {
         : null,
     });
     await this.msgRepo.save(userMsgEntity);
+    // 出账红包：记下 hongbaoId + messageId，AI 回复后由网关 claim 翻「已领取」。
+    const outgoingRedPacket =
+      normalizedInput.type === 'red_packet' &&
+      normalizedInput.attachment?.kind === 'red_packet'
+        ? {
+            hongbaoId: normalizedInput.attachment.hongbaoId,
+            messageId: userMsgEntity.id,
+          }
+        : undefined;
     await this.touchConversationActivity(
       entity,
       userMsgEntity.createdAt ?? new Date(),
@@ -1183,12 +1243,18 @@ export class ChatService {
     // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B,近期+语义相关召回) + 当前角色社交上下文(C)。
     // 当前用户消息作为语义相关召回的查询，能把'上个月聊过的相关事'拉回来。
     // best-effort，取不到返回 ''；并行查询，避免主路径多一次串行 round-trip。
-    const [ownerContext, socialContextBlock] = await Promise.all([
-      this.contextHub.buildOwnerContextBlocks({
-        relevanceQuery: resolvedInput.promptText,
-      }),
-      this.socialContext.buildSocialContext(charId),
-    ]);
+    const [ownerContext, socialContextBlock, retrievedKnowledge] =
+      await Promise.all([
+        this.contextHub.buildOwnerContextBlocks({
+          relevanceQuery: resolvedInput.promptText,
+        }),
+        this.socialContext.buildSocialContext(charId),
+        // 知识库 RAG：按当前消息检索 owner 个人库 + 当前角色专业库，取不到返回 ''。
+        this.knowledgeRetrieval.retrieve({
+          query: resolvedInput.promptText,
+          characterId: charId,
+        }),
+      ]);
     const chatContext = {
       currentActivity: charEntity?.currentActivity,
       lastChatAt: lastMsg?.createdAt,
@@ -1198,6 +1264,7 @@ export class ChatService {
       ownerPortrait: ownerContext.portrait,
       ownerSharedMemory: ownerContext.sharedMemory,
       relevantMemory: ownerContext.relevantMemory,
+      retrievedKnowledge,
       socialContext: socialContextBlock,
     };
     const isSelfConversation = Boolean(
@@ -1351,6 +1418,14 @@ export class ChatService {
           latestAiEntity.createdAt ?? new Date(),
         );
       }
+      // 专家派发命中：把「我」这条 ack 气泡的 messageId 回填给本批 delegation，
+      // 让协作线程折叠到这条气泡下，并把 pending_anchor 翻成 queued（Cron 才会处理）。
+      if (selfAgentResult.delegationBatchId && latestAiEntity) {
+        await this.agentDelegation.attachAnchorMessage(
+          selfAgentResult.delegationBatchId,
+          latestAiEntity.id,
+        );
+      }
       if (
         this.shouldIncludeAssistantMessageInHistory(
           normalizedAssistantReplyText,
@@ -1426,6 +1501,7 @@ export class ChatService {
         return {
           messages: results,
           scheduledReplyArtifactJobIds: [scheduledImageJob.id],
+          outgoingRedPacket,
         };
       }
     }
@@ -1472,6 +1548,97 @@ export class ChatService {
     await this.syncNarrativeArc(entity);
     return {
       messages: results,
+      outgoingRedPacket,
+    };
+  }
+
+  // AI「领取」用户发来的红包：翻红包状态为 claimed，回写消息快照供网关重发气泡。
+  // 失败不阻断会话（保留 pending，靠 24h sweep 退回），返回 null。
+  async claimOutgoingRedPacket(
+    messageId: string,
+    hongbaoId: string,
+  ): Promise<Message | null> {
+    try {
+      const res = await this.hongbaoCloud.claim({ hongbaoId, by: 'character' });
+      const msg = await new TenantRepository(this.msgRepo).findOneBy({
+        id: messageId,
+      });
+      if (
+        !msg ||
+        msg.attachmentKind !== 'red_packet' ||
+        !msg.attachmentPayload
+      ) {
+        return null;
+      }
+      const payload = JSON.parse(msg.attachmentPayload) as RedPacketAttachment;
+      payload.status = res.hongbao.status as RedPacketAttachment['status'];
+      msg.attachmentPayload = JSON.stringify(payload);
+      await this.msgRepo.save(msg);
+      return this.serializeMessage(msg);
+    } catch (err) {
+      this.logger.warn(
+        `claim outgoing red packet failed (${hongbaoId}): ${(err as Error).message}`,
+      );
+      return null;
+    }
+  }
+
+  // AI 给用户发系统红包（incoming）：cloud-api 出资创建 → 落 proactive 红包消息。
+  // 供 AI 自动发红包 / 调试触发用；返回落库的消息（status=pending，待用户打开）。
+  async issueIncomingRedPacket(input: {
+    conversationId: string;
+    characterId: string;
+    characterName: string;
+    amountCents: number;
+    message: string;
+  }): Promise<Message> {
+    const res = await this.hongbaoCloud.issue({
+      conversationId: input.conversationId,
+      counterpartyCharacterId: input.characterId,
+      counterpartyCharacterName: input.characterName,
+      amountCents: input.amountCents,
+      message: input.message,
+    });
+    const h = res.hongbao;
+    const attachment: RedPacketAttachment = {
+      kind: 'red_packet',
+      hongbaoId: h.id,
+      direction: 'incoming',
+      status: h.status as RedPacketAttachment['status'],
+      amountCents: h.amountCents,
+      currency: h.currency,
+      message: h.message,
+      senderName: input.characterName,
+      expiresAt: h.expiresAt,
+    };
+    return this.saveProactiveAttachmentMessage(
+      input.conversationId,
+      input.characterId,
+      input.characterName,
+      attachment,
+    );
+  }
+
+  // 用户打开收到的红包（incoming）：cloud-api 入账 → 翻消息状态 → 回写气泡。
+  // 返回最新余额（供前端刷新钱包）。message=null 表示该消息不是可领红包。
+  async openIncomingRedPacket(
+    messageId: string,
+    hongbaoId: string,
+  ): Promise<{ message: Message | null; balanceCents: number | null }> {
+    const res = await this.hongbaoCloud.claim({ hongbaoId, by: 'user' });
+    const msg = await new TenantRepository(this.msgRepo).findOneBy({
+      id: messageId,
+    });
+    if (!msg || msg.attachmentKind !== 'red_packet' || !msg.attachmentPayload) {
+      return { message: null, balanceCents: res.balanceCents };
+    }
+    const payload = JSON.parse(msg.attachmentPayload) as RedPacketAttachment;
+    payload.status = res.hongbao.status as RedPacketAttachment['status'];
+    msg.attachmentPayload = JSON.stringify(payload);
+    await this.msgRepo.save(msg);
+    return {
+      message: await this.serializeMessage(msg),
+      balanceCents: res.balanceCents,
     };
   }
 
@@ -1889,6 +2056,9 @@ export class ChatService {
     const remarkedTitle = primaryCharacterId
       ? remarkMap?.get(primaryCharacterId)
       : undefined;
+    // 「我」（self mirror）恒置顶：DTO 唯一收口，列表 / 单条 GET / 写回 echo
+    // 全部一致读成置顶。pinnedAt 必须非空才能进「pinnedAt desc」排序档，缺失回退 createdAt。
+    const isSelf = primaryCharacterId?.trim() === SELF_CHARACTER_ID;
     return {
       id: entity.id,
       type: 'direct',
@@ -1897,8 +2067,10 @@ export class ChatService {
       avatar: undefined,
       participants: entity.participants,
       messages: [],
-      isPinned: entity.isPinned ?? false,
-      pinnedAt: entity.pinnedAt ?? undefined,
+      isPinned: isSelf ? true : (entity.isPinned ?? false),
+      pinnedAt: isSelf
+        ? (entity.pinnedAt ?? entity.createdAt)
+        : (entity.pinnedAt ?? undefined),
       isMuted: entity.isMuted ?? false,
       mutedAt: entity.mutedAt ?? undefined,
       strongReminderUntil: entity.strongReminderUntil ?? undefined,
@@ -2310,6 +2482,12 @@ export class ChatService {
 
   private async normalizeOutgoingMessageInput(
     input: SendConversationMessageInput,
+    context: {
+      conversationId: string;
+      counterpartyCharacterId: string;
+      counterpartyCharacterName: string;
+      senderName: string;
+    },
   ): Promise<{
     type:
       | 'text'
@@ -2320,12 +2498,47 @@ export class ChatService {
       | 'contact_card'
       | 'location_card'
       | 'note_card'
-      | 'feed_post_card';
+      | 'feed_post_card'
+      | 'red_packet';
     text: string;
     promptText: string;
     aiParts: AiMessagePart[];
     attachment?: MessageAttachment;
   }> {
+    if (input.type === 'red_packet') {
+      const amountCents = Math.round(input.redPacket.amountCents);
+      const message =
+        input.redPacket.message?.trim() || '恭喜发财，大吉大利';
+      // world 调 cloud-api 创建红包（扣款托管）；失败（如余额不足）直接抛错回前端。
+      const sendRes = await this.hongbaoCloud.send({
+        conversationId: context.conversationId,
+        counterpartyCharacterId: context.counterpartyCharacterId,
+        counterpartyCharacterName: context.counterpartyCharacterName,
+        amountCents,
+        message,
+      });
+      const h = sendRes.hongbao;
+      const attachment: RedPacketAttachment = {
+        kind: 'red_packet',
+        hongbaoId: h.id,
+        direction: 'outgoing',
+        status: h.status as RedPacketAttachment['status'],
+        amountCents: h.amountCents,
+        currency: h.currency,
+        message: h.message,
+        senderName: context.senderName,
+        expiresAt: h.expiresAt,
+      };
+      const promptText = this.buildMessagePromptText('', attachment);
+      return {
+        type: 'red_packet',
+        text: this.getAttachmentFallbackText(attachment),
+        promptText,
+        aiParts: this.buildTextAiParts(promptText),
+        attachment,
+      };
+    }
+
     if (input.type === 'sticker') {
       const attachment =
         await this.customStickersService.resolveStickerAttachment({
@@ -2519,6 +2732,16 @@ export class ChatService {
       return this.buildTextAiParts(promptText);
     }
 
+    if (attachment.kind === 'red_packet') {
+      // 红包以纯文本信号进 prompt（金额 + 祝福语），让角色据此致谢/回应。
+      return this.buildTextAiParts(promptText);
+    }
+
+    if (attachment.kind === 'gift') {
+      // 礼物以纯文本信号进 prompt（商品名 + 留言），让角色据此致谢/回应。
+      return this.buildTextAiParts(promptText);
+    }
+
     return [
       {
         type: 'sticker',
@@ -2662,9 +2885,27 @@ export class ChatService {
       return `${detailParts.join('，')}${captionText}`.trim();
     }
 
+    if (attachment.kind === 'red_packet') {
+      const yuan = (attachment.amountCents / 100).toFixed(2);
+      const note = attachment.message?.trim();
+      const action =
+        attachment.direction === 'outgoing'
+          ? '给你发了一个红包'
+          : '发来一个红包';
+      return `${action}（¥${yuan}）${note ? `，祝福语：${note}` : ''}`.trim();
+    }
+
     if (attachment.kind === 'call_log') {
       // call_log 是系统消息，不会进入 user prompt 路径；保留兜底字符串。
       return '';
+    }
+
+    if (attachment.kind === 'gift') {
+      const note = attachment.message?.trim();
+      const action =
+        attachment.direction === 'outgoing' ? '送了你一个礼物' : '送来一个礼物';
+      const qty = attachment.quantity > 1 ? ` ×${attachment.quantity}` : '';
+      return `${action}（${attachment.goodsName}${qty}）${note ? `，留言：${note}` : ''}`.trim();
     }
 
     return caption

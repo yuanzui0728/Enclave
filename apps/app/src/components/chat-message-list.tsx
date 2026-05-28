@@ -55,6 +55,7 @@ import {
   recallGroupMessage,
   removeFavorite,
   sendGroupMessage,
+  type AgentDelegation,
   type ConversationListItem,
   type FavoriteNoteDocument,
   type GroupMessage,
@@ -76,6 +77,7 @@ import {
   writeDetailedTimestampModeEnabled,
 } from "../features/chat/detailed-timestamp-mode";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
+import { DelegationCollaborationFold } from "../features/chat/delegation-collaboration-fold";
 import {
   hideLocalChatMessage,
   readLocalChatMessageActionState,
@@ -244,10 +246,18 @@ type ChatMessageListProps = {
     recordedAt?: string | null;
     snapshotRecordedAt?: string | null;
   }) => void;
+  // 收到的红包（incoming + pending）点击领取；用户自己发出的红包不可点。
+  onOpenRedPacket?: (message: ChatRenderableMessage) => void;
   onSelectionModeChange?: (active: boolean) => void;
   errorActionLabel?: string;
   onErrorAction?: (() => void) | null;
   onMediaReady?: () => void;
+  // 「我↔专家」协作线程：折叠挂在 anchorMessageId 对应的「我」气泡下。
+  delegations?: AgentDelegation[];
+  onInterveneDelegation?: (
+    delegationId: string,
+    text: string,
+  ) => Promise<unknown>;
 };
 
 const DesktopMessageForwardDialog = lazy(async () => {
@@ -361,11 +371,27 @@ export function ChatMessageList({
   onRetryMessage,
   onOpenDirectCallInvite,
   onOpenGroupCallInvite,
+  onOpenRedPacket,
   onSelectionModeChange,
   errorActionLabel,
   onErrorAction = null,
   onMediaReady,
+  delegations,
+  onInterveneDelegation,
 }: ChatMessageListProps) {
+  // anchorMessageId → 该气泡下要折叠展示的协作线程（同一轮派发的多专家归一组）。
+  const delegationsByAnchorId = useMemo(() => {
+    const map = new Map<string, AgentDelegation[]>();
+    for (const delegation of delegations ?? []) {
+      if (!delegation.anchorMessageId) {
+        continue;
+      }
+      const list = map.get(delegation.anchorMessageId) ?? [];
+      list.push(delegation);
+      map.set(delegation.anchorMessageId, list);
+    }
+    return map;
+  }, [delegations]);
   const t = useRuntimeTranslator();
   const isDesktop = variant === "desktop";
   const navigate = useNavigate();
@@ -4075,6 +4101,24 @@ export function ChatMessageList({
                   ) : message.type === "call_log" &&
                     message.attachment?.kind === "call_log" ? (
                     <CallLogMessage attachment={message.attachment} />
+                  ) : message.type === "red_packet" &&
+                    message.attachment?.kind === "red_packet" ? (
+                    <RedPacketMessage
+                      attachment={message.attachment}
+                      own={isUser}
+                      variant={variant}
+                      onOpen={
+                        selectionMode ||
+                        isUser ||
+                        message.attachment.status !== "pending" ||
+                        message.attachment.direction !== "incoming" ||
+                        !onOpenRedPacket
+                          ? undefined
+                          : () => onOpenRedPacket(message)
+                      }
+                    />
+                  ) : message.attachment?.kind === "gift" ? (
+                    <GiftMessage attachment={message.attachment} variant={variant} />
                   ) : directCallInvite ? (
                     <DirectCallInviteMessage
                       own={isUser}
@@ -4235,6 +4279,16 @@ export function ChatMessageList({
                 ) : null}
               </div>
             </div>
+            {(() => {
+              const anchored = delegationsByAnchorId.get(message.id);
+              return anchored && anchored.length ? (
+                <DelegationCollaborationFold
+                  delegations={anchored}
+                  isDesktop={isDesktop}
+                  onIntervene={onInterveneDelegation}
+                />
+              ) : null;
+            })()}
           </div>
         );
       })}
@@ -6672,6 +6726,141 @@ function LocationCardMessage({
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(msg`查看位置`)} ${attachment.title}`}
+    >
+      {card}
+    </button>
+  );
+}
+
+function GiftMessage({
+  attachment,
+  variant,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "gift" }>;
+  variant: "mobile" | "desktop";
+}) {
+  const isDesktop = variant === "desktop";
+  const note = attachment.message?.trim();
+  const qty = attachment.quantity > 1 ? ` ×${attachment.quantity}` : "";
+  return (
+    <div
+      className={`overflow-hidden shadow-none ${
+        isDesktop ? "w-[228px] rounded-[16px]" : "w-[208px] rounded-[14px]"
+      }`}
+      style={{ background: "linear-gradient(135deg,#f59e0b,#fb923c)" }}
+    >
+      <div
+        className={`flex items-center gap-2.5 px-3 ${isDesktop ? "py-3" : "py-2.5"}`}
+      >
+        {attachment.iconUrl ? (
+          <img
+            src={attachment.iconUrl}
+            alt=""
+            className="h-7 w-7 rounded-[8px] object-cover"
+          />
+        ) : (
+          <span className="text-[22px] leading-none">🎁</span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div
+            className={`truncate font-medium text-white ${
+              isDesktop ? "text-sm" : "text-[13px]"
+            }`}
+          >
+            {attachment.goodsName}
+            {qty}
+          </div>
+          <div className="mt-0.5 truncate text-[11px] text-[rgba(255,255,255,0.85)]">
+            {note || translateRuntimeMessage(msg`送你一份礼物`)}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between bg-[rgba(0,0,0,0.10)] px-3 py-1.5">
+        <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.85)]">
+          {translateRuntimeMessage(msg`隐界礼物`)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function RedPacketMessage({
+  attachment,
+  own,
+  variant,
+  onOpen,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "red_packet" }>;
+  own: boolean;
+  variant: "mobile" | "desktop";
+  onOpen?: () => void;
+}) {
+  const isDesktop = variant === "desktop";
+  const settled =
+    attachment.status === "claimed" ||
+    attachment.status === "refunded" ||
+    attachment.status === "expired";
+  const statusLabel =
+    attachment.status === "claimed"
+      ? translateRuntimeMessage(msg`已领取`)
+      : attachment.status === "refunded"
+        ? translateRuntimeMessage(msg`已退回`)
+        : attachment.status === "expired"
+          ? translateRuntimeMessage(msg`已过期`)
+          : own
+            ? translateRuntimeMessage(msg`等待对方领取`)
+            : translateRuntimeMessage(msg`领取红包`);
+  const greeting =
+    attachment.message?.trim() ||
+    translateRuntimeMessage(msg`恭喜发财，大吉大利`);
+  // 金额：自己发的随时可见；收到的红包仅领取后展示（贴近微信「拆开才见金额」）。
+  const showAmount = own || attachment.status === "claimed";
+  const amountText = `¥${(attachment.amountCents / 100).toFixed(2)}`;
+  const card = (
+    <div
+      className={`overflow-hidden shadow-none ${
+        isDesktop ? "w-[228px] rounded-[16px]" : "w-[208px] rounded-[14px]"
+      }`}
+      style={{ background: settled ? "#dcab7d" : "#f0654f" }}
+    >
+      <div
+        className={`flex items-center gap-2.5 px-3 ${
+          isDesktop ? "py-3" : "py-2.5"
+        }`}
+      >
+        <span className="text-[22px] leading-none">🧧</span>
+        <div className="min-w-0 flex-1">
+          <div
+            className={`truncate font-medium text-white ${
+              isDesktop ? "text-sm" : "text-[13px]"
+            }`}
+          >
+            {greeting}
+          </div>
+          <div className="mt-0.5 text-[11px] text-[rgba(255,255,255,0.85)]">
+            {statusLabel}
+            {showAmount ? ` · ${amountText}` : ""}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between bg-[rgba(0,0,0,0.10)] px-3 py-1.5">
+        <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.85)]">
+          {translateRuntimeMessage(msg`隐界红包`)}
+        </span>
+      </div>
+    </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={translateRuntimeMessage(msg`查看红包`)}
     >
       {card}
     </button>

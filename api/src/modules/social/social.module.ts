@@ -10,6 +10,9 @@ import { FriendRequestEntity } from './friend-request.entity';
 import { AIRelationshipEntity } from './ai-relationship.entity';
 import { CharacterFriendshipEntity } from './character-friendship.entity';
 import { CharacterFriendshipService } from './character-friendship.service';
+import { GiftWorldService } from './gift-world.service';
+import { GiftWorldController } from './gift-world.controller';
+import { GiftInternalServiceTokenGuard } from './gift-internal-service-token.guard';
 import { CharacterEntity } from '../characters/character.entity';
 import { AiModule } from '../ai/ai.module';
 import { NarrativeModule } from '../narrative/narrative.module';
@@ -64,8 +67,10 @@ import { MomentLikeEntity } from '../moments/moment-like.entity';
     ShakeDiscoveryService,
     CharacterFriendshipService,
     InitialMessageService,
+    GiftWorldService,
+    GiftInternalServiceTokenGuard,
   ],
-  controllers: [SocialController],
+  controllers: [SocialController, GiftWorldController],
   exports: [SocialService, CharacterFriendshipService],
 })
 export class SocialModule {}

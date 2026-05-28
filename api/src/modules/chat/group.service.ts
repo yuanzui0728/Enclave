@@ -1509,6 +1509,13 @@ export class GroupService {
     } else if (attachment.kind === 'call_log') {
       // call_log 是系统记录，不进 user prompt 路径；返回空让 prompt-text 走兜底。
       attachmentSummary = '';
+    } else if (attachment.kind === 'red_packet') {
+      // 群红包暂未开放；保留兜底摘要，避免 sticker 分支访问 label/stickerId。
+      const yuan = (attachment.amountCents / 100).toFixed(2);
+      attachmentSummary = `发了一个红包（¥${yuan}）${attachment.message ? `，祝福语：${attachment.message}` : ''}`.trim();
+    } else if (attachment.kind === 'gift') {
+      // 群礼物暂未开放；保留兜底摘要，避免 sticker 分支访问 label/stickerId。
+      attachmentSummary = `送了一个礼物（${attachment.goodsName}）${attachment.message ? `，留言：${attachment.message}` : ''}`.trim();
     } else {
       attachmentSummary = caption
         ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`

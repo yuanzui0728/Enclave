@@ -36,6 +36,7 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
+import { GiftToFriendSheet } from "../features/shop/gift-to-friend-sheet";
 import { SparkBadge } from "../components/spark-badge";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-state";
@@ -138,6 +139,7 @@ export function CharacterDetailPage() {
   const t = useRuntimeTranslator();
   const { i18n } = useLingui();
   const [voicePickerOpen, setVoicePickerOpen] = useState(false);
+  const [giftSheetOpen, setGiftSheetOpen] = useState(false);
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -1994,6 +1996,18 @@ export function CharacterDetailPage() {
                     </Button>
                   )}
                 </div>
+                {isFriend && !isSelfMirror ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setNotice(null);
+                      setGiftSheetOpen(true);
+                    }}
+                    className="mt-2 h-11 w-full rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                  >
+                    {t(msg`送礼物`)}
+                  </Button>
+                ) : null}
               </section>
             ) : null}
 
@@ -2483,6 +2497,14 @@ export function CharacterDetailPage() {
           onClose={() => setVoicePickerOpen(false)}
         />
       ) : null}
+
+      <GiftToFriendSheet
+        open={giftSheetOpen}
+        characterId={characterId}
+        characterName={displayName}
+        characterAvatar={character?.avatar ?? null}
+        onClose={() => setGiftSheetOpen(false)}
+      />
     </AppPage>
   );
 }

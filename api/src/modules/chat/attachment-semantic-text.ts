@@ -75,6 +75,10 @@ export function resolveAttachmentSearchableText(attachment?: MessageAttachment) 
     );
   } else if (attachment.kind === 'sticker') {
     parts.push(attachment.label ?? '', attachment.stickerId);
+  } else if (attachment.kind === 'red_packet') {
+    parts.push('红包', attachment.message ?? '');
+  } else if (attachment.kind === 'gift') {
+    parts.push('礼物', attachment.goodsName, attachment.message ?? '');
   }
 
   return parts
@@ -235,6 +239,19 @@ export function resolveAttachmentSemanticText(
     return '';
   }
 
+  if (attachment.kind === 'red_packet') {
+    const note = attachment.message?.trim();
+    return truncateSemanticText(note ? `红包，${note}` : '红包', maxChars);
+  }
+
+  if (attachment.kind === 'gift') {
+    const note = attachment.message?.trim();
+    return truncateSemanticText(
+      note ? `礼物，${attachment.goodsName}，${note}` : `礼物，${attachment.goodsName}`,
+      maxChars,
+    );
+  }
+
   // 走查 2026-05-18 移动端单聊 R9 server-side 镜像：和 client
   // apps/app/src/lib/message-attachment-semantic.ts 同款 ?? vs || 漏防 —— sticker.label
   // 是 `string | undefined`，老 wiki import / 旧 reminder 卡 / 用户自定义贴纸都见过
@@ -287,6 +304,14 @@ function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
   if (attachment.kind === 'feed_post_card') {
     const label = attachment.title?.trim() || attachment.authorName;
     return label ? `视频号 · ${label}` : '视频号';
+  }
+
+  if (attachment.kind === 'red_packet') {
+    return '红包';
+  }
+
+  if (attachment.kind === 'gift') {
+    return attachment.goodsName ? `礼物 · ${attachment.goodsName}` : '礼物';
   }
 
   if (attachment.kind === 'call_log') {
