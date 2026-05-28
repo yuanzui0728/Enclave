@@ -133,6 +133,8 @@ type ChatComposerProps = {
   onMobileShortcutHandled?: () => void;
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
+  onSendRedPacket?: () => void;
+  onSendGift?: () => void;
   // 当前会话里不该出现在"+面板/选择名片"里的 character id 集合。单聊里至少要排
   // 掉对方自己（包括"我自己"自聊场景下的 self-character），不然用户会看到"把对方
   // 的名片再发给对方"这种没意义的入口。
@@ -317,6 +319,8 @@ export function ChatComposer({
   onMobileShortcutHandled,
   onStartVoiceCall,
   onStartVideoCall,
+  onSendRedPacket,
+  onSendGift,
   contactPickerExcludeIds,
   onCancelReply,
   onChange,
@@ -3992,6 +3996,8 @@ export function ChatComposer({
             }}
             onStartVoiceCall={onStartVoiceCall}
             onStartVideoCall={onStartVideoCall}
+            onSendRedPacket={onSendRedPacket}
+            onSendGift={onSendGift}
             onPickAlbum={pickAlbum}
             onPickCamera={pickCamera}
             onPickFile={pickFile}

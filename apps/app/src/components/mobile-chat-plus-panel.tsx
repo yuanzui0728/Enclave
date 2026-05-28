@@ -19,6 +19,7 @@ import {
   ImagePlus,
   Keyboard,
   MapPin,
+  PackageOpen,
   Phone,
   Star,
   Video,
@@ -48,6 +49,10 @@ type MobileChatPlusPanelProps = {
   onClose?: () => void;
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
+  // 提供则启用「红包」入口（仅单聊）；点击由父级打开发红包弹窗。
+  onSendRedPacket?: () => void;
+  // 提供则启用「礼物」入口（仅单聊）；点击由父级打开送礼选择器。
+  onSendGift?: () => void;
   onPickAlbum: () => void;
   onPickCamera: () => void;
   onPickFile: () => void;
@@ -78,6 +83,7 @@ type RootAction = {
     | "camera"
     | "video-call"
     | "red-packet"
+    | "gift"
     | "transfer"
     | "contact"
     | "location"
@@ -127,10 +133,20 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     label: msg`红包`,
     icon: Gift,
     iconClassName: "bg-[#ef6a62]",
-    disabled: true,
+    // disabled 状态改由「父级是否传 onSendRedPacket」动态决定（仅单聊启用）。
     disabledLabel: msg`待接入`,
     unavailableTitle: msg`红包暂未接入`,
-    unavailableDescription: msg`支付和到账还没开放，红包入口先放在这里。`,
+    unavailableDescription: msg`红包仅在单聊中可用。`,
+  },
+  gift: {
+    key: "gift",
+    label: msg`礼物`,
+    icon: PackageOpen,
+    iconClassName: "bg-[#f59e0b]",
+    // disabled 状态改由「父级是否传 onSendGift」动态决定（仅单聊启用）。
+    disabledLabel: msg`待接入`,
+    unavailableTitle: msg`礼物暂未接入`,
+    unavailableDescription: msg`送礼物仅在单聊中可用。`,
   },
   transfer: {
     key: "transfer",
@@ -185,6 +201,7 @@ const PRIMARY_ROOT_ACTION_ORDER: RootAction["key"][] = [
   "camera",
   "file",
   "favorite",
+  "gift",
   "contact",
   "location",
   "video-call",
@@ -202,6 +219,8 @@ export function MobileChatPlusPanel({
   onClose,
   onStartVoiceCall,
   onStartVideoCall,
+  onSendRedPacket,
+  onSendGift,
   onPickAlbum,
   onPickCamera,
   onPickFile,
@@ -395,13 +414,21 @@ export function MobileChatPlusPanel({
                         ? !onStartVoiceCall
                         : item.key === "video-call"
                           ? !onStartVideoCall
-                          : (item.disabled ?? false);
+                          : item.key === "red-packet"
+                            ? !onSendRedPacket
+                            : item.key === "gift"
+                              ? !onSendGift
+                              : (item.disabled ?? false);
                     const itemDisabledLabel =
                       item.key === "voice-call" && onStartVoiceCall
                         ? undefined
                         : item.key === "video-call" && onStartVideoCall
                           ? undefined
-                          : item.disabledLabel;
+                          : item.key === "red-packet" && onSendRedPacket
+                            ? undefined
+                            : item.key === "gift" && onSendGift
+                              ? undefined
+                              : item.disabledLabel;
                     const Icon = item.icon;
                     // 走查 R1：原版是 9 层嵌套三元，每个 tile 每帧 new 6+ 个
                     // 闭包候选 + 跟踪起来眼睛要瞎。归并成单条 dispatcher，可读
@@ -448,6 +475,12 @@ export function MobileChatPlusPanel({
                           return;
                         case "video-call":
                           onStartVideoCall?.();
+                          return;
+                        case "red-packet":
+                          onSendRedPacket?.();
+                          return;
+                        case "gift":
+                          onSendGift?.();
                           return;
                         default:
                           return;

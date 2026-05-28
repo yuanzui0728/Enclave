@@ -15,6 +15,9 @@ import { translateRuntimeMessage } from "@yinjie/i18n";
 import { track } from "@yinjie/analytics";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
+import { emitChatMessage, emitOpenRedPacket } from "../../lib/socket";
+import { RedPacketComposeDialog } from "./red-packet-compose-dialog";
+import { GiftToFriendSheet } from "../shop/gift-to-friend-sheet";
 import { FeatureUnavailableDialog } from "../../components/feature-unavailable-dialog";
 import {
   ChatMessageList,
@@ -119,6 +122,8 @@ export function ConversationThreadPanel({
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  const [redPacketOpen, setRedPacketOpen] = useState(false);
+  const [giftSheetOpen, setGiftSheetOpen] = useState(false);
   const {
     baseUrl,
     conversationTitle,
@@ -133,6 +138,8 @@ export function ConversationThreadPanel({
     loadOlderMessages,
     messagesQuery,
     participants,
+    delegations,
+    interveneDelegation,
     renderedMessages,
     scrollAnchor,
     sendMutation,
@@ -563,6 +570,26 @@ export function ConversationThreadPanel({
   // 按 2 次返回才能回到聊天。把 onStartVoiceCall/onStartVideoCall 改成统一走
   // startDirectCall，再给 startDirectCall（mobile 路径）补 sync ref 锁；header
   // 路径不动（header 的 guardAction 已经兜了），多一层无副作用。
+  // 发红包：直接 emit（服务端创建红包+扣款+回显气泡+触发 AI 领取/致谢）。
+  // 余额预校验在弹窗内完成；余额不足等后端错误经 socket error 走 composer 错误栏。
+  const handleSendRedPacket = (amountCents: number, message: string) => {
+    const targetCharacterId = participants[0];
+    if (conversationType !== "direct" || !targetCharacterId) return;
+    if (socketError) setSocketError(null);
+    emitChatMessage({
+      conversationId,
+      characterId: targetCharacterId,
+      type: "red_packet",
+      redPacket: { amountCents, message },
+    });
+    setRedPacketOpen(false);
+    track("chat_message_sent", {
+      conversationKind: "direct",
+      kind: "red_packet",
+    });
+    scrollToBottom("smooth");
+  };
+
   const startDirectCallFiredRef = useRef(false);
   const startDirectCall = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
@@ -998,6 +1025,8 @@ export function ConversationThreadPanel({
               threadContext={messageListThreadContext}
               buildMessageReturnTo={buildMessageReturnTo}
               groupMode={conversationType === "group"}
+              delegations={delegations}
+              onInterveneDelegation={interveneDelegation}
               variant={isDesktop ? "desktop" : "mobile"}
               highlightedMessageId={highlightedMessageId}
               hasOlderMessages={hasOlderMessages}
@@ -1009,6 +1038,15 @@ export function ConversationThreadPanel({
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
               onRetryMessage={(message) => retryMessage(message.id)}
+              onOpenRedPacket={(message) => {
+                if (message.attachment?.kind !== "red_packet") return;
+                if (socketError) setSocketError(null);
+                emitOpenRedPacket({
+                  conversationId,
+                  messageId: message.id,
+                  hongbaoId: message.attachment.hongbaoId,
+                });
+              }}
               onOpenDirectCallInvite={(input) => {
                 // mobile 有真实的 /voice-call & /video-call 路由；之前一刀切
                 // 走 handleDesktopCallAction 让移动端用户点"通话开始/结束"卡片
@@ -1117,6 +1155,18 @@ export function ConversationThreadPanel({
             }}
             onStartVoiceCall={() => startDirectCall("voice")}
             onStartVideoCall={() => startDirectCall("video")}
+            onSendRedPacket={
+              conversationType === "direct" && !isReminderConversation
+                ? () => setRedPacketOpen(true)
+                : undefined
+            }
+            onSendGift={
+              conversationType === "direct" &&
+              !isReminderConversation &&
+              participants[0]
+                ? () => setGiftSheetOpen(true)
+                : undefined
+            }
             contactPickerExcludeIds={contactPickerExcludeIds}
             replyPreview={replyPreview}
             onCancelReply={() => setReplyDraft(null)}
@@ -1124,6 +1174,24 @@ export function ConversationThreadPanel({
           />
         </>
       ) : null}
+
+      <RedPacketComposeDialog
+        open={redPacketOpen}
+        pending={false}
+        onClose={() => setRedPacketOpen(false)}
+        onSubmit={handleSendRedPacket}
+        onGoRecharge={() => {
+          setRedPacketOpen(false);
+          void navigate({ to: "/profile/wallet" });
+        }}
+      />
+
+      <GiftToFriendSheet
+        open={giftSheetOpen}
+        characterId={participants[0] ?? ""}
+        characterName={conversationTitle || participants[0] || ""}
+        onClose={() => setGiftSheetOpen(false)}
+      />
 
       <FeatureUnavailableDialog
         open={callUnavailableKind !== null}
