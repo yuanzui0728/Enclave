@@ -71,7 +71,7 @@ export function AvatarEncounterInboxCard({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-3 text-left transition-colors active:bg-black/[0.04]"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(244,63,94,0.1)] text-[#f43f5e]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
         <UserRound size={18} />
       </div>
       <div className="min-w-0 flex-1">
