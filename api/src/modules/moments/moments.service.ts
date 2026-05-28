@@ -3086,16 +3086,13 @@ export class MomentsService implements OnModuleInit {
       characterId,
       now,
     );
-    const angle = planMomentAngle({
-      characterId,
-      now,
-      recentOwnTopics: signals.ownOpenings,
-      globalRecentTopics: signals.globalOpenings,
-    });
+    // 只取「当天写哪类」的角度轮换；不把 openings 当 topics 传给 planner——
+    // openings 是「整句开头/句式」（如「下雨的静安路上」），当成「避开这些选题」会让
+    // 模型连角色本职话题（咖啡/天气）都不敢写，过度抑制。开头重复的避让由
+    // diversitySection 负责（框定为「换个开头/句式」而非「换主题」），语义才对。
+    const angle = planMomentAngle({ characterId, now });
     const diversitySection = buildDiversityPromptSection({
       ownOpenings: signals.ownOpenings,
-      // 选题/话题在 editorial planner 已落「避开这些选题」，这里不再重复 ownTopics
-      // 那段，避免 prompt 内同一信号双出。
       ownTopics: [],
       globalOpenings: signals.globalOpenings,
     });
