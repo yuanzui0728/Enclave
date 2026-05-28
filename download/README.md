@@ -23,12 +23,9 @@
 
 ```
 download/
-├── platforms/         # 按平台分类的推广物料（10 个国内平台）
-│   ├── baijiahao/     # 百家号 — 7 天泛娱乐信息流（44K）
+├── platforms/         # 按平台分类的推广物料
 │   ├── bilibili/      # B 站 — 7 天 UP 主稿件 + 截图 + v1 包（5.4M）
-│   ├── douban/        # 豆瓣 — 7 天笔记/话题（44K）
 │   ├── kuaishou/      # 快手 — 完整 v1 包（936K）
-│   ├── taptap/        # TapTap — 7 天游戏化向（36K）
 │   └── wechat-channels/  # 微信视频号 — 完整 v1 包 + tar.gz（8.1M）
 ├── _shared/           # 跨平台共享素材
 │   ├── marketing/     # Reddit 测试稿、复盘模板（each 7-day 的 retro 落地点）
@@ -45,7 +42,6 @@ download/
 
 | 平台 | 状态 | 路径 | 含什么 |
 |---|---|---|---|
-| 百家号 | ✅ | `platforms/baijiahao/7day-content.md` | 7 篇信息流稿 + SEO 布局 + 数据复盘指标 |
 | 微信公众号 | 🟡 | `../docs/wechat-7day-content.md` | 7 篇深度文案（被 12 处引用，保留原位） |
 | 抖音 | 🟡 | `../docs/douyin-package/` | 抖音内容包（19 处强引用） |
 | 微信视频号 | ✅ | `platforms/wechat-channels/` | 完整内容包 + v1.tar.gz |
@@ -53,8 +49,6 @@ download/
 | 快手 | ✅ | `platforms/kuaishou/package/` | 完整 v1 包（character bible / publish schedule / day-N） |
 | 今日头条 | 🟡 | `../docs/toutiao-package/` | 完整内容包（10 处强引用） |
 | V2EX | 🟡 | `../docs/v2ex-week1-posts.md` + `../docs/v2ex-screenshots/` | 7 篇技术贴（与 toutiao 互相引用，保留原位） |
-| 豆瓣 | ✅ | `platforms/douban/7day-content.md` | 7 篇笔记/话题 |
-| TapTap | ✅ | `platforms/taptap/7day-content.md` | 7 天游戏化内容 |
 
 > 🟡 项目搬到 download/ 后会破坏 30+ 处内部引用，因此保留在 `docs/`。运营用的时候按上面"路径"列直接打开即可，物理位置不影响使用。
 
