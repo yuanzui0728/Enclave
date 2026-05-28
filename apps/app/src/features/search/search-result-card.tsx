@@ -19,16 +19,16 @@ export function SearchResultCard({
     item.category === "messages"
       ? "border-[#d7e5fb] bg-[#f3f7ff] text-[#315b9a]"
       : item.category === "contacts"
-        ? "border-[#cfe8d6] bg-[#f2f8f3] text-[#1d6a37]"
+        ? "border-[#cfe8d6] bg-[color:var(--surface-secondary)] text-[#1d6a37]"
         : item.category === "favorites"
-          ? "border-[#eadbb4] bg-[#fff8e8] text-[#9a6b12]"
+          ? "border-[#eadbb4] bg-[color:var(--surface-card)] text-[#9a6b12]"
         : item.category === "officialAccounts"
           ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)]"
           : item.category === "miniPrograms"
             ? "border-[#d3e7df] bg-[#eff8f4] text-[#226448]"
           : item.category === "moments"
-            ? "border-[#d9e7d4] bg-[#f5faf3] text-[#557d37]"
-            : "border-[#d6e2db] bg-[#f2f7f4] text-[#3c6a53]";
+            ? "border-[#d9e7d4] bg-[color:var(--surface-card)] text-[#557d37]"
+            : "border-[#d6e2db] bg-[color:var(--surface-secondary)] text-[#3c6a53]";
 
   return (
     <button

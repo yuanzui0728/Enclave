@@ -181,7 +181,7 @@ export function ReminderTaskPanel({
     <section
       className={cn(
         !isDetailsSurface &&
-          "border-t border-[color:var(--border-faint)] bg-[rgba(248,250,249,0.96)]",
+          "border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
         isDetailsSurface ? "px-0 py-0" : isDesktop ? "px-5 py-3" : "px-2.5 py-2.5",
       )}
     >

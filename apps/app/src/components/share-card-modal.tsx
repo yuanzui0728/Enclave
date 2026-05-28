@@ -466,7 +466,7 @@ export function ShareCardModal({
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-auto bg-[#F2F2F2] p-3">
+        <div className="max-h-[60vh] overflow-auto bg-[color:var(--surface-secondary)] p-3">
           {pngDataUrl ? (
             <>
               {saveError ? (

@@ -98,7 +98,7 @@ export function ManagementBlacklistScreen() {
   if (!blocked.length) {
     return (
       <div className="px-6 py-12 text-center">
-        <div className="mx-auto inline-flex rounded-full bg-[#eef2f6] px-3 py-1 text-[10px] font-medium text-[color:var(--text-muted)]">
+        <div className="mx-auto inline-flex rounded-full bg-[color:var(--surface-secondary)] px-3 py-1 text-[10px] font-medium text-[color:var(--text-muted)]">
           {t(msg`黑名单`)}
         </div>
         <div className="mt-3 text-[14px] font-medium text-[color:var(--text-primary)]">

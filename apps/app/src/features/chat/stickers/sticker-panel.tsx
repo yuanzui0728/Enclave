@@ -2060,7 +2060,7 @@ export function StickerPanel({
           </label>
           {showManageSearchPauseHint ? (
             <div className="px-1 pt-2">
-              <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[rgba(160,90,10,0.18)] bg-[color:var(--surface-card)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
                 <div className="min-w-0 flex-1">
                   <div>{pausedManagePrimaryHint}</div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
@@ -2107,8 +2107,8 @@ export function StickerPanel({
                 <div
                   className={`mb-2 flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2 text-[11px] transition ${
                     searchPreviewFlashKey === highlightedSearchStickerKey
-                      ? "border-[rgba(160,90,10,0.26)] bg-[rgba(255,248,220,0.98)] shadow-[0_8px_18px_rgba(160,90,10,0.12)]"
-                      : "border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)]"
+                      ? "border-[rgba(160,90,10,0.26)] bg-[color:var(--surface-secondary)] shadow-[0_8px_18px_rgba(160,90,10,0.12)]"
+                      : "border-[rgba(160,90,10,0.18)] bg-[color:var(--surface-card)]"
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-3">
@@ -2345,7 +2345,7 @@ export function StickerPanel({
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
                         : customStorageTone === "warning"
-                          ? "border-[color:var(--brand-primary)]/24 bg-[rgba(255,251,235,0.96)]"
+                          ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)]"
                           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
                     } ${
                       customDeleteFeedbackFlashActive
@@ -2356,7 +2356,7 @@ export function StickerPanel({
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
                         : customStorageTone === "warning"
-                          ? "border-[color:var(--brand-primary)]/24 bg-[rgba(255,251,235,0.96)]"
+                          ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)]"
                           : "border-[color:var(--border-subtle)] bg-white/84"
                     } ${
                       customDeleteFeedbackFlashActive
@@ -2645,7 +2645,7 @@ export function StickerPanel({
             <div
               className={`mb-3 flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2.5 text-xs text-[color:var(--text-secondary)] transition ${
                 customDeleteFeedbackFlashActive
-                  ? "border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] shadow-[0_8px_20px_rgba(160,90,10,0.08)]"
+                  ? "border-[rgba(160,90,10,0.18)] bg-[color:var(--surface-card)] shadow-[0_8px_20px_rgba(160,90,10,0.08)]"
                   : "border-[rgba(180,130,20,0.08)] bg-white/82"
               }`}
             >
@@ -2768,8 +2768,8 @@ export function StickerPanel({
             <div
               className={
                 isMobile
-                  ? "mb-2 rounded-[16px] border border-[color:var(--brand-primary)]/28 bg-[rgba(255,251,235,0.92)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]"
-                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--brand-primary)]/26 bg-[rgba(255,251,235,0.92)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
+                  ? "mb-2 rounded-[16px] border border-[color:var(--brand-primary)]/28 bg-[color:var(--surface-card)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]"
+                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--brand-primary)]/26 bg-[color:var(--surface-card)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
               }
             >
               <span>{customCapacityNotice}</span>
@@ -2811,7 +2811,7 @@ export function StickerPanel({
             searching ? (
               <div className={isMobile ? "space-y-3" : "space-y-4"}>
                 {mobileSearchPreview ? (
-                  <div className="rounded-[16px] border border-[rgba(160,90,10,0.16)] bg-[rgba(255,251,235,0.94)] px-3 py-2.5 text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="rounded-[16px] border border-[rgba(160,90,10,0.16)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[11px] text-[color:var(--text-secondary)]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-[color:var(--brand-primary)]">
                         {searchRecommendedFromLabel}
@@ -2841,7 +2841,7 @@ export function StickerPanel({
                           ? "space-y-1.5"
                           : `space-y-2 rounded-[20px] px-2 py-2 transition ${
                               sectionState.containsHighlighted
-                                ? "bg-[rgba(255,248,220,0.52)] ring-1 ring-[rgba(160,90,10,0.12)]"
+                                ? "bg-[color:var(--surface-secondary)] ring-1 ring-[rgba(160,90,10,0.12)]"
                                 : sectionState.containsRecommended
                                   ? "bg-white/52"
                                   : ""
@@ -3248,7 +3248,7 @@ function StickerButton({
         compact
           ? `group relative flex flex-col items-center justify-center rounded-[12px] border p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out active:bg-[color:var(--surface-card-hover)] ${
               searchRecommended
-                ? "border-[rgba(160,90,10,0.28)] bg-[rgba(255,248,220,0.92)] shadow-[0_6px_14px_rgba(160,90,10,0.12)]"
+                ? "border-[rgba(160,90,10,0.28)] bg-[color:var(--surface-secondary)] shadow-[0_6px_14px_rgba(160,90,10,0.12)]"
                 : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
             } ${
               deleting

@@ -4523,7 +4523,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                 {post.topicTags.slice(0, 3).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-[rgba(255,255,255,0.12)] px-2 py-1"
+                    className="rounded-full bg-[color:var(--surface-card)] px-2 py-1"
                   >
                     #{tag}
                   </span>
@@ -4533,7 +4533,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
             <div className="mt-2 text-[9px] text-white/65">
               {formatChannelMeta(post, t)}
             </div>
-            <div className="mt-2 rounded-[16px] bg-[rgba(255,255,255,0.12)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
+            <div className="mt-2 rounded-[16px] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
               {(() => {
                 // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
                 // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条
@@ -4622,7 +4622,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
           variant="secondary"
           size="sm"
           onClick={onOpenComments}
-          className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[#f8f8f8] px-3 text-[11px] text-[color:var(--text-primary)] shadow-none"
+          className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px] text-[color:var(--text-primary)] shadow-none"
         >
           {t(msg`打开评论`)}
         </Button>
@@ -5668,7 +5668,7 @@ function MobileChannelCommentsSheet({
             <button
               type="button"
               onClick={() => setInputExpanded(true)}
-              className="flex h-9 w-full items-center justify-between rounded-[20px] bg-[#f8f5ec] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[#f4ede0]"
+              className="flex h-9 w-full items-center justify-between rounded-[20px] bg-[color:var(--surface-secondary)] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[color:var(--surface-secondary)]"
             >
               <span className="truncate">
                 {replyTarget

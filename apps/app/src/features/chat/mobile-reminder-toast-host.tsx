@@ -299,7 +299,7 @@ export function MobileReminderToastHost() {
       }}
     >
       {actionNotice ? (
-        <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[rgba(249,255,251,0.97)] shadow-[0_12px_28px_rgba(180,130,20,0.12)] backdrop-blur-xl">
+        <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(180,130,20,0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
               <Check size={16} />
@@ -371,8 +371,8 @@ export function MobileReminderToastHost() {
                     className={[
                       "rounded-full px-3 py-1.5 text-[12px] transition-colors",
                       getChatReminderActionTone(activeReminder) === "warning"
-                        ? "border border-[#f1d5a6] bg-[#fff8ec] text-[#b76a08]"
-                        : "border border-transparent bg-[#f3f6f4] text-[#5f6b63]",
+                        ? "border border-[#f1d5a6] bg-[color:var(--surface-card)] text-[#b76a08]"
+                        : "border border-transparent bg-[color:var(--surface-secondary)] text-[#5f6b63]",
                     ].join(" ")}
                   >
                     {getChatReminderActionLabel(activeReminder)}

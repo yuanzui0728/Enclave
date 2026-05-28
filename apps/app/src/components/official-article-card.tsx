@@ -112,7 +112,7 @@ export function OfficialArticleCard({
                   ? "h-[1.625rem] rounded-[12px] px-2 text-[10px]"
                   : "h-8 rounded-lg px-3 text-[11px]",
                 favorite
-                  ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
+                  ? "border-[#d8d1a9] bg-[color:var(--surface-secondary)] text-[#8a6b11]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
               )}
             >

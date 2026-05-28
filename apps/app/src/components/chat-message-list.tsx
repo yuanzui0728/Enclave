@@ -3589,7 +3589,7 @@ export function ChatMessageList({
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
-                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
+                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
                 : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(180,130,20,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
@@ -3599,7 +3599,7 @@ export function ChatMessageList({
       ) : null}
       {selectionMode ? (
         isDesktop ? (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[#f8f5ec] px-4 py-3 backdrop-blur">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 backdrop-blur">
             <div>
               <div className="text-sm text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedMessageIds.length} 条消息`)}
@@ -3825,7 +3825,7 @@ export function ChatMessageList({
                   id={`chat-message-${message.id}`}
                   className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
-                      ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1.5 text-[11px]"
+                      ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-[11px]"
                       : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
@@ -4952,7 +4952,7 @@ function UnreadMarkerDivider({
       <div
         className={
           isDesktop
-            ? "rounded-full border border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
+            ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
             : "rounded-full border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
         }
       >
@@ -5971,9 +5971,9 @@ function ReplyQuoteCard({
         align === "right"
           ? isDesktop
             ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
-            : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
-            ? "mb-2 rounded-[12px] border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[12px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
       } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
@@ -7075,7 +7075,7 @@ function GroupRelaySummaryMessage({
             ? "w-[252px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[252px] rounded-[20px] border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
             : "w-[236px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
       }`}
     >
@@ -7501,7 +7501,7 @@ function GroupCallInviteMessage({
             ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
             : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
@@ -7663,7 +7663,7 @@ function DirectCallInviteMessage({
             ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
             : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
@@ -8421,7 +8421,7 @@ function NoteViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={translateRuntimeMessage(msg`笔记查看器`)}
-      className="fixed inset-0 z-50 flex flex-col bg-[#f4ede0]"
+      className="fixed inset-0 z-50 flex flex-col bg-[color:var(--surface-secondary)]"
     >
       <div className="flex items-center gap-1 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-2 pb-1.5 pt-[max(env(safe-area-inset-top,0px),0.5rem)] text-[color:var(--text-primary)]">
         <Button
@@ -8479,7 +8479,7 @@ function NoteViewerOverlay({
                 <div
                   className={cn(
                     "text-[15px] leading-7 text-[color:var(--text-primary)]",
-                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
                     "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180,130,20,0.08)]",
                     "[&_[data-note-checkbox='false']]:cursor-default [&_[data-note-checkbox='true']]:cursor-default [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
                   )}
@@ -8542,7 +8542,7 @@ function NoteViewerOverlay({
                       href={resolveAppMediaUrl(asset.url)}
                       target="_blank"
                       rel="noreferrer"
-                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(180,130,20,0.08)] bg-[rgba(243,244,246,0.82)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
+                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
                     >
                       <FileText size={14} />
                       <span className="max-w-[60vw] truncate">

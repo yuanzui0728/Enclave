@@ -64,7 +64,7 @@ export function SubscriptionExpiredDialogHost() {
           </p>
         ) : null}
         {meta?.copy.checkoutContactInfo ? (
-          <p className="mt-4 rounded-2xl bg-[#f6f7f7] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]">
+          <p className="mt-4 rounded-2xl bg-[color:var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]">
             {meta.copy.checkoutManualHint}
             <br />
             {meta.copy.checkoutContactInfo}

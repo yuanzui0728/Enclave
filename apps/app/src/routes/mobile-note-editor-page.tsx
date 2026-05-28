@@ -1251,7 +1251,7 @@ function MobileNoteEditor({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#f4ede0] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-secondary)] px-0 py-0">
       <input
         ref={fileInputRef}
         type="file"
@@ -1449,7 +1449,7 @@ function MobileNoteEditor({
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // contentEditable 也算 focusable form control，同样受影响。
               "text-[16px] leading-7 text-[color:var(--text-primary)]",
-              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
               "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180,130,20,0.08)]",
               "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
             )}

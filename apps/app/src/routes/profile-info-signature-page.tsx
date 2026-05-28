@@ -252,7 +252,7 @@ export function ProfileInfoSignaturePage() {
 
       {/* overLimit 走查 R1：legacy DB 里超过 SIGNATURE_MAX_LENGTH 的旧签名进编辑页时 sanitized 直接超限、「完成」灰着但没文字说明，跟 name-page 同款修。i18n-ignore-line */}
       {overLimit ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[rgba(255,251,235,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`签名太长啦，最多 ${SIGNATURE_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}

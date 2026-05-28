@@ -19,7 +19,7 @@ export function ChatBackgroundPreview({
 }: ChatBackgroundPreviewProps) {
   return (
     <div className="overflow-hidden rounded-[24px] border border-white/80 bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
-      <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] px-4 py-3 backdrop-blur">
+      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 backdrop-blur">
         <div className="text-sm font-medium text-[color:var(--text-primary)]">
           {title}
         </div>
@@ -33,7 +33,7 @@ export function ChatBackgroundPreview({
           className="absolute inset-0 bg-[linear-gradient(180deg,#fffaf3,#f7efe4)]"
           style={buildChatBackgroundStyle(background)}
         />
-        <div className="absolute inset-0 bg-[rgba(255,249,242,0.34)]" />
+        <div className="absolute inset-0 bg-[color:var(--surface-card)]" />
         <div className="relative flex h-full flex-col justify-end gap-3 px-4 py-4">
           <PreviewBubble align="left" tone="soft">
             {t(msg`今天这张背景，像不像我们刚刚路过的天气？`)}

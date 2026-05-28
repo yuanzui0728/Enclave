@@ -219,7 +219,7 @@ export function MobileSpeechInputSheet({
             <button
               type="button"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#7a7a7a] transition active:bg-[#f1f1f1]",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#7a7a7a] transition active:bg-[color:var(--surface-secondary)]",
                 holding ? "pointer-events-none opacity-0" : "opacity-100",
               )}
               onClick={onClose}
@@ -239,7 +239,7 @@ export function MobileSpeechInputSheet({
                   : listening || holding
                     ? "border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]"
                     : processing
-                      ? "border-[color:var(--border-faint)] bg-[#f0f1f3] text-[#606266]"
+                      ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[#606266]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]",
               )}
             >
@@ -264,7 +264,7 @@ export function MobileSpeechInputSheet({
               "mt-4 min-h-[76px] rounded-[20px] border px-4 py-3 text-[13px] leading-6",
               text
                 ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-                : "border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] text-[#a3a3a3]",
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#a3a3a3]",
             )}
           >
             {text ||
@@ -284,7 +284,7 @@ export function MobileSpeechInputSheet({
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex h-10 items-center justify-center rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[14px] font-medium text-[#606266] transition active:bg-[#f1f1f1]"
+                className="flex h-10 items-center justify-center rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[14px] font-medium text-[#606266] transition active:bg-[color:var(--surface-secondary)]"
               >
                 {t(msg`取消`)}
               </button>

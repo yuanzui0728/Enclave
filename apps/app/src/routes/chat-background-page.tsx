@@ -721,7 +721,7 @@ export function ChatBackgroundPage() {
                 </div>
               </>
             ) : (
-              <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.62)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
                 {supportsConversationOverride
                   ? t(msg`当前聊天会直接沿用默认背景图。切换到"单独设置"后，可以挑选好友专属背景。`)
                   : t(msg`群聊当前只会使用默认背景图或系统背景。`)}

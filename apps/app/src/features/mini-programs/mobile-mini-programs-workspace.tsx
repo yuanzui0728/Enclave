@@ -594,7 +594,7 @@ function MiniProgramTile({
       className={cn(
         "rounded-[16px] border px-2.5 py-2.5 text-left transition",
         active
-          ? "border-[color:var(--brand-primary)]/18 bg-[rgba(243,251,246,0.96)]"
+          ? "border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-card)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -656,7 +656,7 @@ function MiniProgramListCard({
       className={cn(
         "w-full cursor-pointer rounded-[16px] border px-3 py-3 text-left shadow-none transition",
         active
-          ? "border-[color:var(--brand-primary)]/18 bg-[rgba(243,251,246,0.96)]"
+          ? "border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-card)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

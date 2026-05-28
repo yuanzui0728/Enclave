@@ -81,7 +81,7 @@ export function ManagementPermissionsScreen({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2">
+      <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2">
         <label className="flex h-9 items-center gap-2 rounded-[12px] bg-[color:var(--surface-card)] px-3 text-[13px] text-[color:var(--text-dim)]">
           <Search aria-hidden="true" size={14} />
           <input

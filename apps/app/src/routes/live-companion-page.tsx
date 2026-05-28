@@ -373,7 +373,7 @@ export function LiveCompanionPage() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
+          <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-secondary)] px-4 py-4">
             <div className="space-y-3">
               <MetricCard
                 label={t(msg`当前状态`)}
@@ -427,7 +427,7 @@ export function LiveCompanionPage() {
           </div>
         </div>
       }
-      contentClassName="bg-[rgba(255,255,255,0.62)]"
+      contentClassName="bg-[color:var(--surface-card)]"
     >
       <div className="space-y-5 p-5">
         {notice ? (

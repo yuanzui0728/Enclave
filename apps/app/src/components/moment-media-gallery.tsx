@@ -281,7 +281,7 @@ function MomentMediaGalleryInner({
               event.stopPropagation();
               setViewerState({ kind: "image", index: 0 });
             }}
-            className="relative block overflow-hidden rounded-[3px] bg-[#EAEAEA] text-left"
+            className="relative block overflow-hidden rounded-[3px] bg-[color:var(--surface-secondary)] text-left"
             style={computeWeChatSingleImageStyle(single)}
           >
             <img
@@ -820,7 +820,7 @@ function WeChatGridCell({
         event.stopPropagation();
         onOpen();
       }}
-      className="relative overflow-hidden rounded-[3px] bg-[#EAEAEA] text-left"
+      className="relative overflow-hidden rounded-[3px] bg-[color:var(--surface-secondary)] text-left"
       style={{ width: `${size}px`, height: `${size}px` }}
     >
       <img

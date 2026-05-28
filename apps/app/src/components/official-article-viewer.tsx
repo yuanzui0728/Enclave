@@ -345,7 +345,7 @@ export function OfficialArticleViewer({
               ? "mt-2.5 flex items-center justify-between gap-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[12px] leading-5"
               : "mt-4 flex items-center justify-between gap-3 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
             isDesktopReader
-              ? "mt-4 rounded-[16px] bg-[#f6f8f6] text-[13px] leading-6"
+              ? "mt-4 rounded-[16px] bg-[color:var(--surface-card)] text-[13px] leading-6"
               : undefined,
           )}
           tone={shareNotice.tone}

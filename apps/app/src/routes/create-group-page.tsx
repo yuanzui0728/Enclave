@@ -840,7 +840,7 @@ function FriendSelectionRow({
         "flex w-full items-center gap-3 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[color:var(--brand-primary)]/18 bg-[rgba(245,238,225,0.96)] px-4 py-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
+            ? "rounded-[12px] border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-secondary)] px-4 py-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
             : "rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
             ? "bg-[color:var(--brand-primary)]/6 px-4 py-3.5"

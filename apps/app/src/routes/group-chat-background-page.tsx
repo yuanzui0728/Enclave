@@ -693,7 +693,7 @@ export function GroupChatBackgroundPage() {
               <div
                 className={
                   isDesktopLayout
-                    ? "rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.62)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
+                    ? "rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
                     : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
                 }
               >
@@ -915,7 +915,7 @@ function ModeChip({
       } ${
         active
           ? compact
-            ? "border-[color:var(--brand-primary)]/16 bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
+            ? "border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
           : compact
             ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card)]"

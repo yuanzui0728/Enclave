@@ -468,7 +468,7 @@ export function ChannelAuthorPage() {
     <AppPage
       className={cn(
         "space-y-0 px-0 py-0",
-        isDesktopLayout ? "bg-[rgba(244,247,246,0.98)]" : "bg-[color:var(--bg-canvas)]",
+        isDesktopLayout ? "bg-[color:var(--surface-secondary)]" : "bg-[color:var(--bg-canvas)]",
       )}
     >
       <TabPageTopBar
@@ -1010,7 +1010,7 @@ function matchesChannelAuthorCollection(
 function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListItem) {
   if (post.sourceKind === "live_clip") {
     return {
-      badgeClassName: "bg-[rgba(255,255,255,0.14)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-white",
       icon: <RadioTower size={14} />,
       label: t(msg`直播回放`),
       overlayClassName:
@@ -1026,7 +1026,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
 
   if (post.mediaType === "video") {
     return {
-      badgeClassName: "bg-[rgba(255,255,255,0.14)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-white",
       icon: <PlaySquare size={14} />,
       label: t(msg`视频`),
       overlayClassName:
@@ -1048,7 +1048,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   // 既误导分类又跟整套 audio 沉浸式播放 UI 不一致。给 audio 一套独立陈述。
   if (post.mediaType === "audio") {
     return {
-      badgeClassName: "bg-[rgba(255,255,255,0.18)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-white",
       icon: <Music2 size={14} />,
       label: t(msg`音乐`),
       overlayClassName:

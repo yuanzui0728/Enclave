@@ -708,10 +708,10 @@ export function MobileMomentsPublishPage() {
   const showImageGrid = imageCount > 0;
 
   return (
-    <AppPage className="space-y-0 bg-[#f8f5ec] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-secondary)] px-0 py-0">
       <TabPageTopBar
         title="" // i18n-ignore-line: intentionally empty
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[#f8f5ec] px-3 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-3 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <button
             type="button"
@@ -836,7 +836,7 @@ export function MobileMomentsPublishPage() {
               {composeDraft.imageDrafts.map((draft) => (
                 <div
                   key={draft.id}
-                  className="relative overflow-hidden bg-[#EAEAEA]"
+                  className="relative overflow-hidden bg-[color:var(--surface-secondary)]"
                   style={{ aspectRatio: "1 / 1" }}
                 >
                   <img
@@ -915,7 +915,7 @@ export function MobileMomentsPublishPage() {
                     void handlePickImages();
                   }}
                   disabled={createMutation.isPending}
-                  className="flex items-center justify-center bg-[#f8f5ec] text-[#B0B0B0] disabled:opacity-50 active:bg-[#EFEFEF]"
+                  className="flex items-center justify-center bg-[color:var(--surface-secondary)] text-[#B0B0B0] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
                   style={{ aspectRatio: "1 / 1" }}
                   aria-label={t(msg`添加图片`)}
                 >
@@ -931,7 +931,7 @@ export function MobileMomentsPublishPage() {
                 type="button"
                 onClick={() => setMediaPickerOpen(true)}
                 disabled={createMutation.isPending}
-                className="flex h-[110px] w-[110px] items-center justify-center bg-[#F2F2F2] text-[#B0B0B0] disabled:opacity-50 active:bg-[#EAEAEA]"
+                className="flex h-[110px] w-[110px] items-center justify-center bg-[color:var(--surface-secondary)] text-[#B0B0B0] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
                 // aria-label 要描述真实行为：这个入口走的是 picker sheet（图片
                 // 和视频两路都开），不是 grid 内的纯图片 +。错描述会让无障碍
                 // 用户以为没法发视频。
@@ -1027,21 +1027,21 @@ export function MobileMomentsPublishPage() {
             <button
               type="button"
               onClick={handleKeepDraft}
-              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#F2F2F2]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`保留`)}
             </button>
             <button
               type="button"
               onClick={handleConfirmDiscard}
-              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[#F2F2F2]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`不保留`)}
             </button>
             <button
               type="button"
               onClick={dismissExitSheet}
-              className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
+              className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`取消`)}
             </button>
@@ -1079,7 +1079,7 @@ function SettingRow({
       type="button"
       onClick={onTap}
       className={cn(
-        "flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-[#F2F2F2]",
+        "flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-[color:var(--surface-secondary)]",
         isLast ? "" : "border-b border-[color:var(--border-subtle)]",
       )}
     >
@@ -1120,7 +1120,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onPickImages}
-          className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#F2F2F2]"
+          className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
         >
           {t(msg`从相册选择图片`)}
         </button>
@@ -1129,7 +1129,7 @@ function MediaPickerSheet({
           onClick={onPickVideo}
           disabled={videoDisabled}
           className={cn(
-            "block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] active:bg-[#F2F2F2]",
+            "block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] active:bg-[color:var(--surface-secondary)]",
             videoDisabled ? "text-[#B0B0B0]" : "text-[color:var(--text-primary)]",
           )}
         >
@@ -1138,7 +1138,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 block w-full bg-[#f8f5ec] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
+          className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
         >
           {t(msg`取消`)}
         </button>

@@ -1572,7 +1572,7 @@ function MobileChatListPage() {
                               className={cn(
                                 "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                 group.status === "notified"
-                                  ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
+                                  ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
                                     : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
@@ -1624,7 +1624,7 @@ function MobileChatListPage() {
                               className={cn(
                                 "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                 group.status === "notified"
-                                  ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
+                                  ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
                                   : group.status === "due"
                                     ? "bg-[#fff1f0] text-[#d74b45]"
                                     : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
@@ -1680,7 +1680,7 @@ function MobileChatListPage() {
                                       "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                       getChatReminderStatus(entry) ===
                                         "notified"
-                                        ? "bg-[#fff7e6] text-[color:var(--brand-primary)]"
+                                        ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
                                         : entry.isDue
                                           ? "bg-[#fff1f0] text-[#d74b45]"
                                           : "bg-[#eaf8ef] text-[color:var(--brand-primary)]",
@@ -1713,8 +1713,8 @@ function MobileChatListPage() {
                                 className={cn(
                                   "shrink-0 self-center rounded-full px-2 py-1 text-[11px] leading-none transition-colors",
                                   getChatReminderActionTone(entry) === "warning"
-                                    ? "border border-[#f3ddba] bg-[#fff9ef] text-[#ba740f] hover:bg-[#fff2df]"
-                                    : "border border-transparent bg-[#f5f7f5] text-[#6b736d] hover:bg-[#edf1ee]",
+                                    ? "border border-[#f3ddba] bg-[color:var(--surface-card)] text-[#ba740f] hover:bg-[color:var(--surface-secondary)]"
+                                    : "border border-transparent bg-[color:var(--surface-secondary)] text-[#6b736d] hover:bg-[color:var(--surface-secondary)]",
                                 )}
                               >
                                 {getChatReminderActionLabel(entry)}

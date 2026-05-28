@@ -681,7 +681,7 @@ export function ChatMessageSearchPanel({
                     className={cn(
                       "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
                       active
-                        ? "bg-[rgba(247,251,248,0.96)]"
+                        ? "bg-[color:var(--surface-card)]"
                         : "bg-[color:var(--bg-canvas-elevated)] active:bg-[color:var(--surface-card-hover)]",
                     )}
                   >
@@ -1419,7 +1419,7 @@ function SearchFilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
         active
-          ? "border-[color:var(--brand-primary)]/14 bg-[rgba(247,251,248,0.96)] text-[color:var(--brand-primary)]"
+          ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
       )}
     >

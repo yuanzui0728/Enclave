@@ -135,7 +135,7 @@ export function FeatureComingSoonDialog({
         </div>
 
         <div className="px-6 pt-3">
-          <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[#f6f7f7] px-3 py-2.5">
+          <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2.5">
             <div className="text-[11px] text-[color:var(--text-muted)]">
               {t(msg`微信号（点一下选中，也可直接复制）`)}
             </div>

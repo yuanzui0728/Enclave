@@ -2210,7 +2210,7 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-cloud-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
-                ? "border-[color:var(--brand-primary)]/24 bg-[rgba(247,251,248,0.98)] shadow-none"
+                ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)] shadow-none"
                 : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--brand-primary)]/16"
             }`}
           >
@@ -2235,7 +2235,7 @@ export function WelcomePage() {
             aria-describedby="welcome-mode-local-desc"
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
-                ? "border-[color:var(--brand-primary)]/24 bg-[rgba(247,251,248,0.98)] shadow-none"
+                ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)] shadow-none"
                 : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--brand-primary)]/16"
             }`}
           >
@@ -2404,7 +2404,7 @@ export function WelcomePage() {
         <div className="pointer-events-none absolute inset-0 bg-[rgba(30,20,10,0.14)] backdrop-blur-[18px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,248,230,0.16),rgba(30,20,10,0.22)_74%)]" />
         <div className="relative z-10 w-full max-w-3xl">
-          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
+          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[color:var(--surface-card)] blur-3xl" />
           <AppSection className="relative mx-auto w-full max-w-xl rounded-[24px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
               {/* 走查 R5：owner step 时切到"世界主人"，跟下方 H1 文案对齐 */}
@@ -2452,7 +2452,7 @@ function MobileWelcomeStatusCard({
   const toneClassName =
     tone === "danger"
       ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
-      : "border-[color:var(--border-faint)] bg-[#f7faf8] text-[color:var(--text-secondary)]";
+      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]";
   const badgeClassName =
     tone === "danger"
       ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
@@ -2484,8 +2484,8 @@ function MobileWelcomeNotice({
       : tone === "success"
         ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]"
         : tone === "muted"
-          ? "border-[color:var(--border-faint)] bg-[#f7f7f5] text-[color:var(--text-secondary)]"
-          : "border-[rgba(22,163,74,0.12)] bg-[#fffdf2] text-[color:var(--text-secondary)]";
+          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]"
+          : "border-[rgba(22,163,74,0.12)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]";
 
   // role=alert + aria-live=assertive 让 VoiceOver/TalkBack 在错误出现的时候即时
   // 念出来；走查 r6 发现密码错误/验证码错误整块就是普通 div，盲读用户根本不知

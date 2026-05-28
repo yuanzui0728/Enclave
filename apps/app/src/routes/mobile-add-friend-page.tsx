@@ -567,7 +567,7 @@ function MobileAddFriend() {
   );
 
   return (
-    <AppPage className="space-y-0 bg-[#f4ede0] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--surface-secondary)] px-0 py-0">
       <TabPageTopBar
         title={t(msg`添加朋友`)}
         titleAlign="center"
@@ -615,7 +615,7 @@ function MobileAddFriend() {
       />
 
       <form
-        className="border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-3 py-2.5"
+        className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2.5"
         onSubmit={(event) => {
           event.preventDefault();
           submitSearch(searchText);
@@ -1315,7 +1315,7 @@ function MobileAddFriendSendSheet({
         </div>
 
         <div className="px-4 pt-3.5">
-          <div className="flex items-center gap-3 rounded-[12px] bg-[#f8f5ec] px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-[12px] bg-[color:var(--surface-secondary)] px-3 py-2.5">
             <AvatarChip
               name={displayName}
               src={result.character.avatar}

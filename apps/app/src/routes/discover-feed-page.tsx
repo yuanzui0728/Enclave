@@ -2588,7 +2588,7 @@ export function DiscoverFeedPage() {
                         setActionBubble({ postId: post.id, anchorRect: rect });
                       }}
                       aria-label={t(msg`更多操作`)}
-                      className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                      className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5]"
                     >
                       <MoreHorizontalDots />
                     </button>
@@ -2628,7 +2628,7 @@ export function DiscoverFeedPage() {
                   // O(1) 命中；高频 setState 也不重建。
                   const commentById = cached?.byId ?? new Map<string, FeedComment>();
                   return (
-                    <div className="overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[#f8f5ec]">
+                    <div className="overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]">
                       <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
                         {renderedComments.map(({ comment, cleanText }) => {
                           const replyToComment = comment.replyToCommentId
@@ -2674,7 +2674,7 @@ export function DiscoverFeedPage() {
                                   openReply();
                                 }
                               }}
-                              className="block w-full cursor-pointer text-left text-[color:var(--text-primary)] active:bg-[#EFEFEF]"
+                              className="block w-full cursor-pointer text-left text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
                             >
                               {/* 长名字（wiki 走查角色叫 "走查词条_1778866835578221688"、
                                   群里改备注成一句话等）会按字宽 wrap，把后面的

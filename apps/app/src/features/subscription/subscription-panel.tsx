@@ -268,7 +268,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                   </div>
                 </div>
 
-                <div className="rounded-[20px] bg-[#f8f5ec] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
+                <div className="rounded-[20px] bg-[color:var(--surface-secondary)] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
                   {shareUrl}
                 </div>
 

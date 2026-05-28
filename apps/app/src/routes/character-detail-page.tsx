@@ -1292,7 +1292,7 @@ export function CharacterDetailPage() {
 
   if (isDesktopLayout && character && friendship) {
     return (
-      <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f4ede0] px-0 py-0">
+      <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--surface-secondary)] px-0 py-0">
         <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-3 py-2 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
             <button
@@ -1494,7 +1494,7 @@ export function CharacterDetailPage() {
   return (
     <AppPage
       className={cn(
-        "min-h-full space-y-0 bg-[#f4ede0] px-0 py-0 text-[color:var(--text-primary)]",
+        "min-h-full space-y-0 bg-[color:var(--surface-secondary)] px-0 py-0 text-[color:var(--text-primary)]",
         isDesktopLayout
           ? "h-full overflow-y-auto"
           : "flex h-full min-h-0 flex-col overflow-hidden",
@@ -2035,7 +2035,7 @@ export function CharacterDetailPage() {
               {isFriend && editingProfileField === "remark" ? (
                 // border-t 由父级 ProfileSection 的 divide-y 统一管（走查 R5），
                 // 这里只留 background 跟 padding 避免叠成双线。
-                <div className="bg-[#f8f5ec] px-4 py-3">
+                <div className="bg-[color:var(--surface-secondary)] px-4 py-3">
                   <DetailInputField
                     label={remarkLabel}
                     value={profileForm.remarkName}
@@ -2097,7 +2097,7 @@ export function CharacterDetailPage() {
                 />
               ) : null}
               {isFriend && editingProfileField === "tags" ? (
-                <div className="bg-[#f8f5ec] px-4 py-3">
+                <div className="bg-[color:var(--surface-secondary)] px-4 py-3">
                   <DetailInputField
                     label={tagsLabel}
                     value={profileForm.tags}
@@ -2603,7 +2603,7 @@ function MobileProfileActionButton({
         "flex min-h-11 items-center justify-center rounded-[12px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
         primary
           ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] active:bg-[#f2f3f5]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]",
       )}
     >
       {label}

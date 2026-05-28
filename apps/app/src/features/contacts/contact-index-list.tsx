@@ -178,7 +178,7 @@ export function ContactIndexList({
     >
       <div
         className={cn(
-          "flex flex-col items-center rounded-full bg-[rgba(255,255,255,0.84)] backdrop-blur",
+          "flex flex-col items-center rounded-full bg-[color:var(--surface-card)] backdrop-blur",
           compact
             ? "gap-px px-0.5 py-1.5 text-[9px] shadow-[0_8px_24px_rgba(180,130,20,0.10)]"
             : "gap-0.5 px-1 py-2 text-[10px] shadow-[0_10px_30px_rgba(180,130,20,0.10)]",

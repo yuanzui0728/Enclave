@@ -2195,7 +2195,7 @@ export function ContactsPage() {
               // 居中，跟 pane 自带的 loading 状态视觉一致。
               <Suspense
                 fallback={
-                  <div className="flex h-full items-center justify-center bg-[rgba(245,247,247,0.96)]">
+                  <div className="flex h-full items-center justify-center bg-[color:var(--surface-secondary)]">
                     <LoadingBlock label={t(msg`正在打开新的朋友...`)} />
                   </div>
                 }
@@ -2244,7 +2244,7 @@ export function ContactsPage() {
               // 用户瞬间失去通讯录上下文。跟 new-friends pane 对齐。
               <Suspense
                 fallback={
-                  <div className="flex h-full items-center justify-center bg-[rgba(245,247,247,0.96)]">
+                  <div className="flex h-full items-center justify-center bg-[color:var(--surface-secondary)]">
                     <LoadingBlock label={t(msg`正在打开星标朋友...`)} />
                   </div>
                 }
@@ -3076,7 +3076,7 @@ const FriendListRow = memo(function FriendListRow({
           : "bg-transparent py-2.5 pl-4 pr-7 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "border border-[color:var(--brand-primary)]/16 bg-[rgba(245,238,225,0.94)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
+          ? "border border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-secondary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
           : undefined,
       )}
     >

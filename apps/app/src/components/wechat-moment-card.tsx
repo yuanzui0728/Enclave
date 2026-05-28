@@ -517,7 +517,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                   type="button"
                   onClick={handleListenTap}
                   aria-label={t(msg`朗读这条朋友圈`)}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5] disabled:opacity-50"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5] disabled:opacity-50"
                   data-no-doubletap
                   disabled={narrationLoading}
                   title={
@@ -537,7 +537,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                   type="button"
                   onClick={openMoreMenu}
                   aria-label={t(msg`更多操作`)}
-                  className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[#F2F2F2] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                  className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5]"
                   data-no-doubletap
                   // 走查移动端朋友圈/Round 3 R1：让 WeChatActionBubble 的 pointerdown
                   // capture handler 把这颗按钮排除掉，二次点 ⋯ 才能关菜单（否则
@@ -577,7 +577,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           ) : null}
 
           {showFooterBlock ? (
-            <div className="mt-2 overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[#f8f5ec]">
+            <div className="mt-2 overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]">
               {hasLikes ? (
                 <div className="flex flex-wrap items-start gap-1 px-2.5 py-1.5 text-[13px] leading-[20px]">
                   <Heart
@@ -620,7 +620,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               ) : null}
 
               {hasLikes && hasComments ? (
-                <div className="h-px bg-[#EDEDED]" />
+                <div className="h-px bg-[color:var(--surface-secondary)]" />
               ) : null}
 
               {hasComments ? (
@@ -641,7 +641,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                           event.stopPropagation();
                           onCommentTap?.(comment);
                         }}
-                        className="block w-full text-left active:bg-[#EFEFEF]"
+                        className="block w-full text-left active:bg-[color:var(--surface-secondary)]"
                         style={{ color: WECHAT_TEXT_COLOR }}
                         data-no-doubletap
                       >

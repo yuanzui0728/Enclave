@@ -514,7 +514,7 @@ export function getMiniProgramToneStyle(
     case "jade":
       return {
         badgeClassName:
-          "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]",
+          "border-[rgba(47,122,63,0.18)] bg-[color:var(--surface-card)] text-[#2f7a3f]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#2f7a3f_0%,#4ea96f_45%,#d9f5df_120%)] text-white",
         iconClassName: "bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]",
@@ -525,12 +525,12 @@ export function getMiniProgramToneStyle(
     case "amber":
       return {
         badgeClassName:
-          "border-[rgba(255,138,61,0.18)] bg-[rgba(255,244,233,0.94)] text-[#e16d1f]",
+          "border-[rgba(255,138,61,0.18)] bg-[color:var(--surface-secondary)] text-[#e16d1f]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#d56c18_0%,#ff9c42_45%,#ffe0bf_120%)] text-white",
         iconClassName: "bg-[rgba(255,138,61,0.12)] text-[#e16d1f]",
         mutedPanelClassName:
-          "border-[rgba(255,138,61,0.16)] bg-[rgba(255,247,238,0.92)]",
+          "border-[rgba(255,138,61,0.16)] bg-[color:var(--surface-card)]",
         softTextClassName: "text-[#d56c18]",
       };
     case "ocean":
@@ -559,12 +559,12 @@ export function getMiniProgramToneStyle(
     default:
       return {
         badgeClassName:
-          "border-[rgba(71,85,105,0.16)] bg-[rgba(241,245,249,0.94)] text-[#475569]",
+          "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)] text-[#475569]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#344256_0%,#5f748f_45%,#e3ebf5_120%)] text-white",
         iconClassName: "bg-[rgba(71,85,105,0.12)] text-[#475569]",
         mutedPanelClassName:
-          "border-[rgba(71,85,105,0.16)] bg-[rgba(243,247,251,0.94)]",
+          "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)]",
         softTextClassName: "text-[#475569]",
       };
   }

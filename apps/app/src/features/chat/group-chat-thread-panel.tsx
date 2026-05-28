@@ -1436,7 +1436,7 @@ export function GroupChatThreadPanel({
     <div
       className={`flex h-full min-h-0 flex-col ${
         isDesktop
-          ? "bg-[rgba(245,247,247,0.96)]"
+          ? "bg-[color:var(--surface-secondary)]"
           : "bg-[color:var(--bg-canvas)]"
       }`}
     >
@@ -1505,7 +1505,7 @@ export function GroupChatThreadPanel({
       )}
 
       {isDesktop ? (
-        <div className="flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3">
+        <div className="flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
           <button
             type="button"
             onClick={() => {
@@ -1558,7 +1558,7 @@ export function GroupChatThreadPanel({
           <button
             type="button"
             onClick={openGroupDetails}
-            className="flex w-full items-center gap-2 rounded-[12px] border border-[color:var(--brand-primary)]/12 bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
+            className="flex w-full items-center gap-2 rounded-[12px] border border-[color:var(--brand-primary)]/12 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
           >
             <span className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
               {t(msg`群公告`)}
@@ -1575,7 +1575,7 @@ export function GroupChatThreadPanel({
 
       {routeContextNotice ? (
         isDesktop ? (
-          <div className="border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
             <InlineNotice
               // 新会话走查 R3：routeContextNotice 是用户从群语音/视频通话页返回
               // 群聊页时展示的过渡反馈，描述 "本轮群语音通话已结束。你可以继续
@@ -1627,7 +1627,7 @@ export function GroupChatThreadPanel({
             <div
               role="status"
               aria-live="polite"
-              className="rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 shadow-none"
+              className="rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 shadow-none"
             >
               <div className="text-[10px] leading-4 text-[#166534]">
                 {routeContextNotice.description}
@@ -1661,15 +1661,15 @@ export function GroupChatThreadPanel({
       <div className="relative flex-1 overflow-hidden">
         <div
           className={`absolute inset-0 ${
-            isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
+            isDesktop ? "bg-[color:var(--surface-secondary)]" : "bg-[color:var(--bg-canvas)]"
           }`}
           style={backgroundStyle}
         />
         <div
           className={`absolute inset-0 ${
             isDesktop
-              ? "bg-[rgba(245,245,245,0.64)]"
-              : "bg-[rgba(239,243,244,0.72)]"
+              ? "bg-[color:var(--surface-secondary)]"
+              : "bg-[color:var(--surface-secondary)]"
           }`}
         />
 

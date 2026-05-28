@@ -721,7 +721,7 @@ export function ConversationThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop ? "bg-[rgba(245,247,247,0.96)]" : "bg-[#f4ede0]"
+        isDesktop ? "bg-[color:var(--surface-secondary)]" : "bg-[color:var(--surface-secondary)]"
       }`}
     >
       {isDesktop ? (
@@ -800,7 +800,7 @@ export function ConversationThreadPanel({
         <div
           className={
             isDesktop
-              ? "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3"
+              ? "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3"
               : "border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1"
           }
         >
@@ -820,7 +820,7 @@ export function ConversationThreadPanel({
             className={
               isDesktop
                 ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
-                : "rounded-[12px] border-[color:var(--brand-primary)]/14 bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[#166534] shadow-none"
+                : "rounded-[12px] border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[#166534] shadow-none"
             }
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -878,20 +878,20 @@ export function ConversationThreadPanel({
       </div>
       <div
         className={`relative flex-1 overflow-hidden ${
-          isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
+          isDesktop ? "bg-[color:var(--surface-secondary)]" : "bg-[color:var(--bg-canvas)]"
         }`}
       >
         <div
           className={`absolute inset-0 ${
-            isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
+            isDesktop ? "bg-[color:var(--surface-secondary)]" : "bg-[color:var(--bg-canvas)]"
           }`}
           style={backgroundStyle}
         />
         <div
           className={`absolute inset-0 ${
             isDesktop
-              ? "bg-[rgba(245,245,245,0.64)]"
-              : "bg-[rgba(239,243,244,0.74)]"
+              ? "bg-[color:var(--surface-secondary)]"
+              : "bg-[color:var(--surface-secondary)]"
           }`}
         />
 

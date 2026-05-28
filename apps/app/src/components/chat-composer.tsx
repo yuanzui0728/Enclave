@@ -3414,8 +3414,8 @@ export function ChatComposer({
       <div
         className={
           isDesktop
-            ? "relative isolate z-30 border-t border-[color:var(--border-faint)] bg-[#f4ede0] px-3.5 py-3"
-            : "border-t border-[color:var(--border-faint)] bg-[#f8f5ec] px-2 pb-2 pt-1"
+            ? "relative isolate z-30 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3.5 py-3"
+            : "border-t border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-2 pb-2 pt-1"
         }
         // 走查 R74：原版每次 render new 一个 {paddingBottom:...} 对象。
         // composer 在用户每个 keystroke 都 re-render（value state 变），
@@ -3604,7 +3604,7 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={toggleDesktopEditorExpanded}
-                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f4f4f4] hover:text-[color:var(--text-primary)]"
+                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-secondary)] hover:text-[color:var(--text-primary)]"
                   aria-label={
                     desktopEditorExpanded
                       ? t(msg`收起输入框`)
@@ -3809,7 +3809,7 @@ export function ChatComposer({
                       "h-[34px] min-w-[76px] rounded-[8px] px-4 text-[13px] font-medium shadow-none disabled:opacity-100",
                       value.trim()
                         ? "bg-[color:var(--brand-primary)] !text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
-                        : "bg-[#e8e8e8] !text-[#70757a] hover:bg-[#e8e8e8]",
+                        : "bg-[color:var(--surface-secondary)] !text-[#70757a] hover:bg-[color:var(--surface-secondary)]",
                     )}
                   >
                     {t(msg`发送`)}
@@ -3818,7 +3818,7 @@ export function ChatComposer({
               </div>
             </>
           ) : (
-            <div className="flex items-end gap-1.5 rounded-[20px] bg-[#f8f5ec]">
+            <div className="flex items-end gap-1.5 rounded-[20px] bg-[color:var(--surface-secondary)]">
               {showSpeechEntry ? (
                 <button
                   type="button"
@@ -3866,7 +3866,7 @@ export function ChatComposer({
                     mobileSpeechPressing
                       ? mobileSpeechCancelIntent
                         ? "border-[#ff4d4f]/45 bg-[#fff5f5] text-[#ff4d4f]"
-                        : "border-[color:var(--brand-primary)]/35 bg-[#fffdf2] text-[color:var(--brand-primary)]"
+                        : "border-[color:var(--brand-primary)]/35 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
                       : "text-[#7a7a7a]",
                     speech.status === "processing"
                       ? "border-[color:var(--border-faint)] bg-black/[0.03] text-[#8b8b8b]"
@@ -4253,7 +4253,7 @@ function DesktopComposerStatusStrip({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
           : tone === "success"
-            ? "border-[color:var(--brand-primary)]/16 bg-[#fffdf2] text-[color:var(--brand-primary)]"
+            ? "border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
       )}
     >
@@ -4265,7 +4265,7 @@ function DesktopComposerStatusStrip({
           className={cn(
             "shrink-0 rounded-full px-2 py-0.5 font-medium transition",
             tone === "danger"
-              ? "bg-[color:var(--surface-card)] text-[#b42318] hover:bg-[#fffafa]"
+              ? "bg-[color:var(--surface-card)] text-[#b42318] hover:bg-[color:var(--surface-card)]"
               : "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)] hover:bg-[color:var(--bg-canvas)]",
           )}
         >
@@ -4309,9 +4309,9 @@ function MobileComposerStatusRail({
         tone === "danger"
           ? "border-[#fecaca] bg-[#fff5f5] text-[#b42318]"
           : tone === "success"
-            ? "border-[color:var(--brand-primary)]/14 bg-[#fffdf2] text-[color:var(--brand-primary)]"
+            ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
             : tone === "info"
-              ? "border-[rgba(96,165,250,0.18)] bg-[#f7fbff] text-[#1d4ed8]"
+              ? "border-[rgba(96,165,250,0.18)] bg-[color:var(--surface-card)] text-[#1d4ed8]"
               : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)]",
       )}
     >
@@ -4366,7 +4366,7 @@ function DesktopAttachmentDraftBar({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[#fffdf2] px-3.5 py-3">
+    <div className="mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3.5 py-3">
       <div className="mb-2.5 text-[11px] font-medium text-[color:var(--brand-primary)]">
         {t(msg`待发送附件`)}
       </div>
@@ -4376,7 +4376,7 @@ function DesktopAttachmentDraftBar({
             {draft.items.map((item, index) => (
               <div
                 key={`${item.previewUrl}-${index}`}
-                className="relative h-14 w-14 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[#f4f4f4]"
+                className="relative h-14 w-14 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]"
               >
                 <img
                   src={item.previewUrl}
@@ -6092,7 +6092,7 @@ function ReplyPreviewBar({
     <div
       className={`flex items-start justify-between gap-2.5 ${
         isDesktop
-          ? "mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[color:var(--brand-primary)] bg-[#fffdf2] px-3.5 py-2.5"
+          ? "mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[color:var(--brand-primary)] bg-[color:var(--surface-card)] px-3.5 py-2.5"
           : "mb-1.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[color:var(--brand-primary)] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
       }`}
     >
