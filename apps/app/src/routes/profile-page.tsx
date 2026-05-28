@@ -156,7 +156,7 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry
             icon={Star}
-            iconClassName="bg-[rgba(250,173,20,0.12)] text-[color:var(--brand-primary)]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`收藏`)}
             to="/profile/favorites"
           />
@@ -165,13 +165,13 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry
             icon={Camera}
-            iconClassName="bg-[rgba(168,85,247,0.12)] text-[#7e22ce]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`朋友圈`)}
             to="/profile/moments"
           />
           <ProfileEntry
             icon={LayoutGrid}
-            iconClassName="bg-[rgba(99,102,241,0.12)] text-[#4f46e5]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`广场`)}
             to="/profile/feed"
           />
@@ -181,7 +181,7 @@ export function ProfilePage() {
           <ProfileEntryGroup className="mt-3">
             <ProfileEntry
               icon={CreditCard}
-              iconClassName="bg-[rgba(22,163,74,0.12)] text-[color:var(--brand-primary)]"
+              iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
               label={t(msg`会员中心`)}
               to="/profile/subscription"
             />
@@ -191,13 +191,13 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry
             icon={UserPlus}
-            iconClassName="bg-[rgba(139,92,246,0.12)] text-[#7c3aed]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`导入角色`)}
             to="/profile/character-import"
           />
           <ProfileEntry
             icon={MessageSquareText}
-            iconClassName="bg-[rgba(56,189,248,0.12)] text-[#0891b2]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`反馈`)}
             to="/profile/feedback"
           />
@@ -206,19 +206,19 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry
             icon={ShieldCheck}
-            iconClassName="bg-[rgba(64,169,255,0.12)] text-[#1677ff]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`隐私政策`)}
             to="/legal/privacy"
           />
           <ProfileEntry
             icon={FileText}
-            iconClassName="bg-[rgba(250,173,20,0.12)] text-[color:var(--brand-primary)]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`服务条款`)}
             to="/legal/terms"
           />
           <ProfileEntry
             icon={BookText}
-            iconClassName="bg-[rgba(56,189,248,0.12)] text-[#0891b2]"
+            iconClassName="bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
             label={t(msg`社区规范`)}
             to="/legal/community"
           />
@@ -228,7 +228,7 @@ export function ProfilePage() {
           <ProfileEntryGroup className="mt-3">
             <ProfileActionEntry
               icon={LogOut}
-              iconClassName="bg-[rgba(220,38,38,0.10)] text-[#b42318]"
+              iconClassName="bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
               label={t(msg`退出登录`)}
               onClick={() => setLogoutConfirmOpen(true)}
             />
