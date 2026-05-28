@@ -37,10 +37,11 @@ cp api/.env.example api/.env
 # api/.env 편집: 최소한 DEEPSEEK_API_KEY 와 ADMIN_SECRET 채우기
 pnpm dev:api                       # NestJS 백엔드(:3000)
 pnpm dev:app                       # 메인 앱 Vite dev(:5180)
-# 관리 콘솔도 띄우려면: pnpm dev:admin(:5181)
 ```
 
-> ⚠️ 여기서 `pnpm dev` 를 그냥 실행하지 마세요: 이 명령은 멀티테넌트 클라우드 흐름용(app + admin + wiki + cloud-api + cloud-console 기동)이며 **의도적으로 api 를 포함하지 않습니다** —— 셀프호스트 / 싱글테넌트 개발에서는 오히려 api 가 :3000 에 단독으로 떠 있어야 합니다.
+> 🛠 독립 운영 콘솔 `apps/admin` 은 폐지되어 cloud console 로 통합되었습니다. 셀프호스트 / 싱글테넌트에서는 백엔드의 `/admin/*` API(`ADMIN_SECRET` 로 인증)를 직접 호출하면 되며, 별도 프런트를 띄울 필요가 없습니다.
+
+> ⚠️ 여기서 `pnpm dev` 를 그냥 실행하지 마세요: 이 명령은 멀티테넌트 클라우드 흐름용(app + wiki + cloud-api + cloud-console 기동)이며 **의도적으로 api 를 포함하지 않습니다** —— 셀프호스트 / 싱글테넌트 개발에서는 오히려 api 가 :3000 에 단독으로 떠 있어야 합니다.
 
 `pnpm dev:*` 는 프로세스를 백그라운드로 detach 하며, **로그는 `logs/dev-services/<service>.{out,err}.log` 로 떨어지고 터미널에는 스트리밍되지 않습니다**. 실시간으로 따라가려면:
 
@@ -51,8 +52,7 @@ tail -f logs/dev-services/api.out.log
 열기:
 
 - 메인 앱: <http://localhost:5180>
-- 관리 콘솔: <http://localhost:5181>(`pnpm dev:admin` 을 띄운 경우에만)
-- 백엔드 API: <http://localhost:3000>
+- 백엔드 API: <http://localhost:3000>(운영 엔드포인트는 `/admin/*`, `ADMIN_SECRET` 로 인증)
 
 ---
 
@@ -62,7 +62,6 @@ tail -f logs/dev-services/api.out.log
 |------|------|------|
 | 백엔드 API(NestJS) | `pnpm dev:api` | 3000 |
 | 메인 앱(Vite) | `pnpm dev:app` | 5180 |
-| 관리 콘솔(Vite) | `pnpm dev:admin` | 5181 |
 | Cloud Console | `pnpm dev:cloud-console` | 5182 |
 | Cloud API | `pnpm dev:cloud-api` | 3001 |
 | Wiki | `pnpm dev:wiki` | 5184 |
@@ -86,7 +85,6 @@ pnpm dev:all        # workspace + cloud 까지 같이
 ```bash
 pnpm dev:api:restart
 pnpm dev:app:restart
-pnpm dev:admin:restart
 pnpm dev:cloud-api:restart
 pnpm dev:cloud-console:restart
 pnpm dev:wiki:restart
@@ -99,7 +97,6 @@ pnpm 스크립트 이름 외우기 귀찮을 때 동등하게 쓸 수 있는 진
 
 ```
 ./restart-app.sh            # 메인 앱 + 필요한 의존 서비스 재기동
-./restart-admin.sh          # 관리 콘솔 재기동
 ./restart-cloud-api.sh      # Cloud API 재기동
 ./restart-cloud-console.sh  # Cloud Console 재기동
 ./restart-wiki.sh           # Wiki 재기동
@@ -124,7 +121,7 @@ pnpm 스크립트 이름 외우기 귀찮을 때 동등하게 쓸 수 있는 진
 - `PORT`(기본 3000)
 - `DATABASE_PATH`(기본 `./data/database.sqlite`)
 - `PUBLIC_API_BASE_URL` — 단일 도메인 배포 시 공개 Web 루트(예: `https://app.your-domain.com`). **`/api` 접미사 붙이지 않음.**
-- `CORS_ALLOWED_ORIGINS` — `localhost:5180/5181/5182` 등은 기본 포함
+- `CORS_ALLOWED_ORIGINS` — `localhost:5180/5182` 등은 기본 포함
 - `SMTP_*` / `MAIL_FROM_ADDRESS` — 채워두면 메일로 인증 코드 발송. 비워두면 코드가 **API 로그에 출력**(로컬 개발에 편리)
 - `USER_API_KEY_ENCRYPTION_SECRET` — 사용자가 자기 API 키를 가져올 때 암호화에 사용
 

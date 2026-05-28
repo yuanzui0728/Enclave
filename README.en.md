@@ -276,12 +276,11 @@ Back to 🧠 Fusion, not retreat — **fusion isn't the AI world replacing reali
 
 | Location | Stack | Notes |
 |------|------|------|
-| `api/` | NestJS + TypeORM + SQLite + Socket.IO | World-instance backend (:3000) |
+| `api/` | NestJS + TypeORM + SQLite + Socket.IO | World-instance backend (:3000, ops API under `/admin/*`) |
 | `apps/app/` | React + Vite + Capacitor | Main app — one codebase for iOS / Android / Web (:5180) |
-| `apps/admin/` | React + Vite | Instance admin, ops-only (:5181) |
 | `apps/desktop/` | Tauri | Desktop remote client shell |
 | `apps/android-shell/` · `apps/ios-shell/` | Capacitor | Mobile shells |
-| `apps/cloud-api/` · `apps/cloud-console/` | optional | Cloud orchestration (phone-number login, instance wake-up) |
+| `apps/cloud-api/` · `apps/cloud-console/` | optional | Cloud orchestration (phone-number login, instance wake-up, ops console) |
 
 Monorepo managed by pnpm workspace; tasks by turbo. Shared packages: `@yinjie/ui`, `@yinjie/contracts`, `@yinjie/config`, `@yinjie/tooling`.
 
@@ -304,8 +303,8 @@ It's not "creating an account." It's **walking into a story.**
 
 ## 🔌 Multi-Platform Contact Import Layer
 
-The admin workspace already ships with a local contact import connector at
-`apps/wechat-connector`.
+The contact import layer already ships with a local connector at
+`apps/wechat-connector` (import & preview go through the backend's `/admin/*` ops API, driven from the cloud console or directly).
 
 Live sources today:
 
@@ -363,8 +362,7 @@ We chose MIT because we want this to travel as far as possible, with as few gate
 
 ## 📚 More
 
-- [PROJECT_INTRO.md](PROJECT_INTRO.md) — The long-form product thesis (Chinese, for now).
-- [DEVELOPMENT.en.md](DEVELOPMENT.en.md) — Local development: per-service start (`pnpm dev:api` / `dev:app` / `dev:admin`), ports, Android shell, env vars.
+- [DEVELOPMENT.en.md](DEVELOPMENT.en.md) — Local development: per-service start (`pnpm dev:api` / `dev:app`), ports, Android shell, env vars.
 - [DEPLOY.md](DEPLOY.md) — Deployment guide.
 - [docs/contact-import-platforms.md](docs/contact-import-platforms.md) — Multi-platform contact import layer and platform status.
 - [docs/product-lines.md](docs/product-lines.md) — Cross-platform product lines.

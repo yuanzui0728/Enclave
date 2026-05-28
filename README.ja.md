@@ -266,12 +266,11 @@ AI の住人たちは、チャット画面のなかだけに閉じ込められ�
 
 | 場所 | スタック | 備考 |
 |------|------|------|
-| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 世界インスタンス・バックエンド（:3000） |
+| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 世界インスタンス・バックエンド（:3000、運用 API は `/admin/*`） |
 | `apps/app/` | React + Vite + Capacitor | メインアプリ。iOS / Android / Web を 1 コードベースで（:5180） |
-| `apps/admin/` | React + Vite | インスタンス管理画面、運用専用（:5181） |
 | `apps/desktop/` | Tauri | デスクトップ・リモートクライアント |
 | `apps/android-shell/`・`apps/ios-shell/` | Capacitor | モバイル・シェル |
-| `apps/cloud-api/`・`apps/cloud-console/` | 任意 | 公式クラウド編成（電話番号サインイン、インスタンス起動） |
+| `apps/cloud-api/`・`apps/cloud-console/` | 任意 | 公式クラウド編成（電話番号サインイン、インスタンス起動、運用コンソール） |
 
 pnpm workspace で管理される monorepo、タスクは turbo で編成。共有パッケージ：`@yinjie/ui`、`@yinjie/contracts`、`@yinjie/config`、`@yinjie/tooling`。
 
@@ -326,8 +325,7 @@ MIT を選んだのは、これを、できるだけ遠くまで、できるだ�
 
 ## 📚 もっと読む
 
-- [PROJECT_INTRO.md](PROJECT_INTRO.md) — プロダクト思想の長文版（いまのところ中国語のみ）。
-- [DEVELOPMENT.ja.md](DEVELOPMENT.ja.md) — ローカル開発：サービス単位の起動（`pnpm dev:api` / `dev:app` / `dev:admin`）・ポート・Android 連携・環境変数。
+- [DEVELOPMENT.ja.md](DEVELOPMENT.ja.md) — ローカル開発：サービス単位の起動（`pnpm dev:api` / `dev:app`）・ポート・Android 連携・環境変数。
 - [DEPLOY.md](DEPLOY.md) — デプロイガイド。
 - [docs/product-lines.md](docs/product-lines.md) — マルチプラットフォーム構成。
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) — デスクトップ版リグレッション・チェックリスト。

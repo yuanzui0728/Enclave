@@ -37,10 +37,11 @@ cp api/.env.example api/.env
 # Edit api/.env — at minimum set DEEPSEEK_API_KEY and ADMIN_SECRET
 pnpm dev:api                       # NestJS backend (:3000)
 pnpm dev:app                       # main app Vite dev (:5180)
-# Want the admin console too? add: pnpm dev:admin (:5181)
 ```
 
-> ⚠️ Don't just run `pnpm dev` here: that command targets the multi-tenant cloud flow (it starts app + admin + wiki + cloud-api + cloud-console) and **deliberately excludes api** — for self-hosted / single-tenant dev you need api running on :3000 directly.
+> 🛠 The standalone `apps/admin` ops console has been retired and folded into the cloud console; for self-hosted / single-tenant setups just hit the backend's `/admin/*` API (authenticated with `ADMIN_SECRET`) — no separate admin frontend needed.
+
+> ⚠️ Don't just run `pnpm dev` here: that command targets the multi-tenant cloud flow (it starts app + wiki + cloud-api + cloud-console) and **deliberately excludes api** — for self-hosted / single-tenant dev you need api running on :3000 directly.
 
 `pnpm dev:*` detaches each service to the background, and **logs land in `logs/dev-services/<service>.{out,err}.log` — they are not streamed to your terminal**. To tail them live:
 
@@ -51,8 +52,7 @@ tail -f logs/dev-services/api.out.log
 Open:
 
 - Main app: <http://localhost:5180>
-- Admin console: <http://localhost:5181> (only if you started `pnpm dev:admin`)
-- Backend API: <http://localhost:3000>
+- Backend API: <http://localhost:3000> (ops endpoints under `/admin/*`, authenticated with `ADMIN_SECRET`)
 
 ---
 
@@ -62,7 +62,6 @@ Open:
 |------|------|------|
 | Backend API (NestJS) | `pnpm dev:api` | 3000 |
 | Main App (Vite) | `pnpm dev:app` | 5180 |
-| Admin (Vite) | `pnpm dev:admin` | 5181 |
 | Cloud Console | `pnpm dev:cloud-console` | 5182 |
 | Cloud API | `pnpm dev:cloud-api` | 3001 |
 | Wiki | `pnpm dev:wiki` | 5184 |
@@ -86,7 +85,6 @@ pnpm dev:all        # workspace + cloud combined
 ```bash
 pnpm dev:api:restart
 pnpm dev:app:restart
-pnpm dev:admin:restart
 pnpm dev:cloud-api:restart
 pnpm dev:cloud-console:restart
 pnpm dev:wiki:restart
@@ -99,7 +97,6 @@ Equivalent to the pnpm scripts above, handier if you live in a terminal:
 
 ```
 ./restart-app.sh            # restart Main App + required deps
-./restart-admin.sh          # restart Admin
 ./restart-cloud-api.sh      # restart Cloud API
 ./restart-cloud-console.sh  # restart Cloud Console
 ./restart-wiki.sh           # restart Wiki
@@ -124,7 +121,7 @@ Equivalent to the pnpm scripts above, handier if you live in a terminal:
 - `PORT` (default 3000)
 - `DATABASE_PATH` (default `./data/database.sqlite`)
 - `PUBLIC_API_BASE_URL` — for single-domain deploys, set to your public web root (e.g. `https://app.your-domain.com`). **No `/api` suffix.**
-- `CORS_ALLOWED_ORIGINS` — defaults already cover `localhost:5180/5181/5182`
+- `CORS_ALLOWED_ORIGINS` — defaults already cover `localhost:5180/5182`
 - `SMTP_*` / `MAIL_FROM_ADDRESS` — fill these to send email codes; leave blank and codes get **printed to the API log** (handy for local dev)
 - `USER_API_KEY_ENCRYPTION_SECRET` — needed for user-supplied API key encryption
 

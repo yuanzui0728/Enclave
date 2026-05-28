@@ -32,7 +32,7 @@ OPENAI_BASE_URL=https://api.deepseek.com
 AI_MODEL=deepseek-chat
 ADMIN_SECRET=replace-with-a-long-random-secret
 DATABASE_PATH=/app/data/database.sqlite
-CORS_ALLOWED_ORIGINS=https://app.your-domain.com,https://admin.your-domain.com
+CORS_ALLOWED_ORIGINS=https://app.your-domain.com
 PUBLIC_API_BASE_URL=https://app.your-domain.com
 USER_API_KEY_ENCRYPTION_SECRET=replace-with-a-second-long-random-secret
 ```
@@ -133,14 +133,11 @@ DELETE /api/world/owner/api-key
 
 当前根目录 `docker-compose.yml` 默认交付世界实例 `web + api`。
 
-如果要部署官方云平台，还需要额外部署：
+如果要部署官方云平台（含运维后台），还需要额外部署：
 - `apps/cloud-api/`
-- `apps/cloud-console/`
+- `apps/cloud-console/`（独立的 `apps/admin` 运维后台已退役，能力并入 cloud console）
 
-如果要部署实例管理后台，还需要额外部署：
-- `apps/admin/`
-
-这些端当前不包含在根 compose 的默认交付里。
+这些端当前不包含在根 compose 的默认交付里。单世界实例的运维直接走 api 的 `/admin/*` 接口（`ADMIN_SECRET` 鉴权）即可。
 
 ## 环境变量
 
@@ -149,7 +146,7 @@ DELETE /api/world/owner/api-key
 | `DEEPSEEK_API_KEY` | 是 | 实例默认 Provider 的 API Key |
 | `OPENAI_BASE_URL` | 否 | 默认 Provider 的 OpenAI 兼容地址 |
 | `AI_MODEL` | 否 | 默认模型 |
-| `ADMIN_SECRET` | 是 | 管理后台鉴权密钥 |
+| `ADMIN_SECRET` | 是 | `/admin/*` 运维接口鉴权密钥 |
 | `PORT` | 否 | 服务端端口，默认 `3000` |
 | `DATABASE_PATH` | 否 | SQLite 文件路径 |
 | `CORS_ALLOWED_ORIGINS` | 建议 | 允许访问的客户端域名，逗号分隔 |

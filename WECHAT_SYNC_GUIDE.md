@@ -1,7 +1,9 @@
 # 一键同步微信朋友操作指南
 
-这份文档说明隐界 APP 管理后台里的“微信朋友同步”现在支持哪些接入方式、
+这份文档说明隐界运维侧的“微信朋友同步”现在支持哪些接入方式、
 依赖哪些第三方开源项目，以及从准备环境到完成导入的完整操作流程。
+
+> ⚠️ 入口变更：独立的 `apps/admin` 运维后台（旧 :5181）已退役。微信同步如今是后端 `api` 的 `/admin/*` 运维接口（`X-Admin-Secret` 鉴权），操作界面在官方云端运维控制台（cloud console）。下文凡提到“运维控制台 / 后台页面”均指此入口；自部署也可直接调用 `/admin/*` 接口完成同样流程。
 
 > 说明：页面名称当前仍然是“微信朋友同步”，但底层 `apps/wechat-connector`
 > 已经按“多平台标准化导入层”方向推进。现阶段真实可用的是“微信实时链路 +
@@ -18,15 +20,15 @@
 2. `apps/wechat-connector`
    - 运行在 `http://127.0.0.1:17364`
    - 把不同来源的数据统一整理成项目自己的联系人快照格式
-3. `apps/admin`
-   - 运行在 `http://127.0.0.1:5181`
-   - 提供“选择联系人 -> 生成预览 -> 导入角色”的完整 UI
+3. 运维控制台（cloud console）/ 后端 `/admin/*` 接口
+   - 原独立 `apps/admin`（:5181）已退役，能力并入云端运维控制台
+   - 提供“选择联系人 -> 生成预览 -> 导入角色”的完整流程（UI 在 cloud console，或直接打 `/admin/*` 接口）
 
 可以把它理解为：
 
-- `微信 -> wechat-decrypt:5678 -> wechat-connector:17364 -> admin:5181`
-- `WeFlow -> weflow-http:5031 -> wechat-connector:17364 -> admin:5181`
-- `JSON 快照 -> wechat-connector:17364 / 页面手动导入 -> admin:5181`
+- `微信 -> wechat-decrypt:5678 -> wechat-connector:17364 -> /admin/* 运维控制台`
+- `WeFlow -> weflow-http:5031 -> wechat-connector:17364 -> /admin/* 运维控制台`
+- `JSON 快照 -> wechat-connector:17364 / 手动导入 -> /admin/* 运维控制台`
 
 ## 2. 用到的第三方开源项目
 
@@ -120,9 +122,9 @@
 - `POST /api/upstream-services/:service/start`
 - `POST /api/upstream-services/:service/open`
 
-### `apps/admin`
+### 运维控制台 / 后端 `/admin/*`
 
-- 负责“数据源配置、联系人筛选、角色预览、导入历史”的界面
+- 负责“数据源配置、联系人筛选、角色预览、导入历史”的界面与接口（原 `apps/admin` 已退役并入云端运维控制台）
 - 不直接读取微信数据库
 - 只通过 `17364` 与本地连接器交互
 - 现在可以通过连接器触发本地 `wechat-decrypt` / WeFlow 启动
@@ -134,7 +136,7 @@
 | `wechat-decrypt` | 读取微信历史与标签 | `http://127.0.0.1:5678` |
 | `WeFlow API` | 读取联系人、会话、消息 | `http://127.0.0.1:5031` |
 | `wechat-connector` | 本地适配层 | `http://127.0.0.1:17364` |
-| `admin` | 管理后台页面 | `http://127.0.0.1:5181` |
+| 运维控制台 | 微信同步操作界面（云端 cloud console / 后端 `/admin/*`） | — |
 
 ## 5. 前置条件
 
@@ -236,15 +238,11 @@ pnpm dev:wechat-connector
 
 - [http://127.0.0.1:17364/health](http://127.0.0.1:17364/health)
 
-## 7. 管理后台的一键同步操作流程
+## 7. 运维控制台的一键同步操作流程
 
-### 7.1 打开后台
+### 7.1 打开运维控制台
 
-打开：
-
-- [http://127.0.0.1:5181](http://127.0.0.1:5181)
-
-进入“微信朋友同步”页面。
+打开云端运维控制台（cloud console），进入“微信朋友同步”页面（自部署也可直接调用后端 `/admin/*` 同步接口完成同样流程）。
 
 ### 7.2 配置数据源
 
@@ -390,7 +388,7 @@ pnpm dev:wechat-connector
 1. 启动微信
 2. 启动 `wechat-decrypt`（可直接用后台按钮）
 3. 启动 `wechat-connector`
-4. 打开管理后台微信同步页
+4. 打开运维控制台微信同步页
 5. 把数据源切到 `wechat-decrypt HTTP`
 6. 如未启动，点击 `启动 wechat-decrypt`
 7. 刷新连接状态
@@ -405,7 +403,7 @@ pnpm dev:wechat-connector
 2. 启动 WeFlow（可直接用后台按钮），并在设置里开启 API
 3. 记下 `5031` 地址和 Access Token
 4. 启动 `wechat-connector`
-5. 打开管理后台微信同步页
+5. 打开运维控制台微信同步页
 6. 把数据源切到 `WeFlow API`
 7. 填写地址和 Token
 8. 如未启动，点击 `启动 WeFlow`
@@ -418,7 +416,7 @@ pnpm dev:wechat-connector
 ### 方案 C：手动 JSON
 
 1. 准备好 `WechatSyncContactBundle[]` JSON
-2. 打开管理后台微信同步页
+2. 打开运维控制台微信同步页
 3. 直接粘贴或导入 JSON
 4. 生成预览并导入
 

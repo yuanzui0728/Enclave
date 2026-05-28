@@ -37,10 +37,11 @@ cp api/.env.example api/.env
 # api/.env を編集：最低限 DEEPSEEK_API_KEY と ADMIN_SECRET を入れる
 pnpm dev:api                       # NestJS バックエンド（:3000）
 pnpm dev:app                       # メインアプリ Vite dev（:5180）
-# 管理画面も欲しい場合：pnpm dev:admin（:5181）
 ```
 
-> ⚠️ ここで `pnpm dev` を直接叩かないでください：このコマンドはマルチテナントのクラウド向けで（app + admin + wiki + cloud-api + cloud-console を起動）、**意図的に api を含みません** —— セルフホスト／シングルテナントの開発では逆に api を :3000 で単独で動かす必要があります。
+> 🛠 独立した運用画面 `apps/admin` は廃止され、cloud console に統合されました。セルフホスト／シングルテナントではバックエンドの `/admin/*` API（`ADMIN_SECRET` で認証）を直接叩けばよく、別途フロントを立てる必要はありません。
+
+> ⚠️ ここで `pnpm dev` を直接叩かないでください：このコマンドはマルチテナントのクラウド向けで（app + wiki + cloud-api + cloud-console を起動）、**意図的に api を含みません** —— セルフホスト／シングルテナントの開発では逆に api を :3000 で単独で動かす必要があります。
 
 `pnpm dev:*` はプロセスをバックグラウンドに detach し、**ログは `logs/dev-services/<service>.{out,err}.log` に出力されます。ターミナルには流れません**。リアルタイムで追うなら：
 
@@ -51,8 +52,7 @@ tail -f logs/dev-services/api.out.log
 開く：
 
 - メインアプリ：<http://localhost:5180>
-- 管理画面：<http://localhost:5181>（`pnpm dev:admin` を起動した場合のみ）
-- バックエンド API：<http://localhost:3000>
+- バックエンド API：<http://localhost:3000>（運用エンドポイントは `/admin/*`、`ADMIN_SECRET` で認証）
 
 ---
 
@@ -62,7 +62,6 @@ tail -f logs/dev-services/api.out.log
 |------|------|------|
 | バックエンド API（NestJS） | `pnpm dev:api` | 3000 |
 | メインアプリ（Vite） | `pnpm dev:app` | 5180 |
-| 管理画面（Vite） | `pnpm dev:admin` | 5181 |
 | Cloud Console | `pnpm dev:cloud-console` | 5182 |
 | Cloud API | `pnpm dev:cloud-api` | 3001 |
 | Wiki | `pnpm dev:wiki` | 5184 |
@@ -86,7 +85,6 @@ pnpm dev:all        # workspace + cloud をまとめて
 ```bash
 pnpm dev:api:restart
 pnpm dev:app:restart
-pnpm dev:admin:restart
 pnpm dev:cloud-api:restart
 pnpm dev:cloud-console:restart
 pnpm dev:wiki:restart
@@ -99,7 +97,6 @@ pnpm script 名を覚えるのが面倒なときに。挙動は等価：
 
 ```
 ./restart-app.sh            # メインアプリ + 必要なサービスを再起動
-./restart-admin.sh          # 管理画面を再起動
 ./restart-cloud-api.sh      # Cloud API を再起動
 ./restart-cloud-console.sh  # Cloud Console を再起動
 ./restart-wiki.sh           # Wiki を再起動
@@ -124,7 +121,7 @@ pnpm script 名を覚えるのが面倒なときに。挙動は等価：
 - `PORT`（既定 3000）
 - `DATABASE_PATH`（既定 `./data/database.sqlite`）
 - `PUBLIC_API_BASE_URL` — 同一ドメイン配信時、公開 Web ルートを設定（例：`https://app.your-domain.com`）。**末尾に `/api` は付けない。**
-- `CORS_ALLOWED_ORIGINS` — `localhost:5180/5181/5182` などは既定で含む
+- `CORS_ALLOWED_ORIGINS` — `localhost:5180/5182` などは既定で含む
 - `SMTP_*` / `MAIL_FROM_ADDRESS` — 設定するとメール認証コードを送信。未設定なら**コードは API のログに出力**（ローカル開発に便利）
 - `USER_API_KEY_ENCRYPTION_SECRET` — ユーザーが自分の API キーを持ち込むときに必要
 

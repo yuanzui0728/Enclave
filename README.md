@@ -268,12 +268,11 @@ AI 居民不必只停留在对话框里。在你开口之后，他们可以真�
 
 | 位置 | 技术 | 说明 |
 |------|------|------|
-| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 世界实例后端（:3000） |
+| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 世界实例后端（:3000，运维接口在 `/admin/*`） |
 | `apps/app/` | React + Vite + Capacitor | 主 App，一套代码同时覆盖 iOS / Android / Web（:5180） |
-| `apps/admin/` | React + Vite | 实例管理后台，只管运维（:5181） |
 | `apps/desktop/` | Tauri | 桌面端远程客户端壳 |
 | `apps/android-shell/` · `apps/ios-shell/` | Capacitor | 移动端壳 |
-| `apps/cloud-api/` · `apps/cloud-console/` | 可选 | 官方云编排平台（手机号验证、实例唤起） |
+| `apps/cloud-api/` · `apps/cloud-console/` | 可选 | 官方云编排平台（手机号验证、实例唤起、运维后台） |
 
 工程层面：pnpm workspace 管理的 monorepo，turbo 编排任务。共享包 `@yinjie/ui`、`@yinjie/contracts`、`@yinjie/config`、`@yinjie/tooling`。
 
@@ -296,7 +295,7 @@ AI 居民不必只停留在对话框里。在你开口之后，他们可以真�
 
 ## 🔌 多平台联系人导入层
 
-管理后台当前已经落地基于 `apps/wechat-connector` 的本地联系人导入连接器。
+联系人导入层当前已经落地基于 `apps/wechat-connector` 的本地连接器（导入与预览走 api 的 `/admin/*` 运维接口，可经 cloud console 或直连 API 操作）。
 
 现阶段真实可用的数据源是：
 
@@ -366,8 +365,7 @@ AI 居民不必只停留在对话框里。在你开口之后，他们可以真�
 
 ## 📚 更多
 
-- [PROJECT_INTRO.md](PROJECT_INTRO.md) —— 产品理念与世界观的完整阐述
-- [DEVELOPMENT.md](DEVELOPMENT.md) —— 本地开发：分服务启动（`pnpm dev:api` / `dev:app` / `dev:admin`）、端口、Android 联调、环境变量
+- [DEVELOPMENT.md](DEVELOPMENT.md) —— 本地开发：分服务启动（`pnpm dev:api` / `dev:app`）、端口、Android 联调、环境变量
 - [DEPLOY.md](DEPLOY.md) —— 部署指南
 - [docs/contact-import-platforms.md](docs/contact-import-platforms.md) —— 多平台联系人导入层与平台支持状态
 - [docs/product-lines.md](docs/product-lines.md) —— 多端产品线说明

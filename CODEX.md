@@ -10,14 +10,13 @@
   - `api/`：主后端，NestJS + TypeORM + SQLite + Socket.IO，端口 `3000`
   - `apps/cloud-api/`：云世界平台后端，端口 `3001`
   - `apps/app/`：主 App，React + Vite，端口 `5180`
-  - `apps/admin/`：管理后台，React + Vite + `@yinjie/ui`，端口 `5181`
-  - `apps/cloud-console/`：云世界管理平台，端口 `5182`
+  - `apps/cloud-console/`：云世界管理平台（含运维后台，原独立 `apps/admin` 已退役并入），端口 `5182`
   - `apps/wechat-connector/`：微信同步本地连接器，端口 `17364`
 - 主 App 路由集中在 `apps/app/src/routes/`
 - 后端模块集中在 `api/src/modules/`
 - 当前项目采用单世界主人约束：`1 个服务端实例 = 1 个真实用户的世界`
 - 所有客户端均为 `remote-connected` 模式，客户端不在本地拉起 Core API
-- Admin 只面向实例拥有者，不承担实例内多用户管理
+- 运维只面向实例拥有者（走 api 的 `/admin/*` 接口 + cloud console），不承担实例内多用户管理
 
 ## Codex 执行约定
 

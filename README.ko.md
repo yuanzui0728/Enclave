@@ -264,12 +264,11 @@ AI 주민들은 채팅창 안에만 갇혀 있을 필요가 없습니다. 당신
 
 | 위치 | 스택 | 설명 |
 |------|------|------|
-| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 세계 인스턴스 백엔드(:3000) |
+| `api/` | NestJS + TypeORM + SQLite + Socket.IO | 세계 인스턴스 백엔드(:3000, 운영 API는 `/admin/*`) |
 | `apps/app/` | React + Vite + Capacitor | 메인 앱. iOS / Android / Web을 하나의 코드베이스로(:5180) |
-| `apps/admin/` | React + Vite | 인스턴스 관리 페이지, 운영 전용(:5181) |
 | `apps/desktop/` | Tauri | 데스크톱 원격 클라이언트 |
 | `apps/android-shell/` · `apps/ios-shell/` | Capacitor | 모바일 셸 |
-| `apps/cloud-api/` · `apps/cloud-console/` | 선택 | 공식 클라우드 오케스트레이션(휴대폰 로그인, 인스턴스 기동) |
+| `apps/cloud-api/` · `apps/cloud-console/` | 선택 | 공식 클라우드 오케스트레이션(휴대폰 로그인, 인스턴스 기동, 운영 콘솔) |
 
 pnpm workspace로 관리되는 monorepo, 작업 편성은 turbo. 공유 패키지: `@yinjie/ui`, `@yinjie/contracts`, `@yinjie/config`, `@yinjie/tooling`.
 
@@ -324,8 +323,7 @@ MIT를 고른 이유는 이 프로젝트를 가능한 한 멀리, 가능한 한 
 
 ## 📚 더 읽기
 
-- [PROJECT_INTRO.md](PROJECT_INTRO.md) — 제품 철학의 긴 버전(지금은 중국어만).
-- [DEVELOPMENT.ko.md](DEVELOPMENT.ko.md) — 로컬 개발: 서비스별 기동(`pnpm dev:api` / `dev:app` / `dev:admin`) · 포트 · Android 연동 · 환경 변수.
+- [DEVELOPMENT.ko.md](DEVELOPMENT.ko.md) — 로컬 개발: 서비스별 기동(`pnpm dev:api` / `dev:app`) · 포트 · Android 연동 · 환경 변수.
 - [DEPLOY.md](DEPLOY.md) — 배포 가이드.
 - [docs/product-lines.md](docs/product-lines.md) — 멀티 플랫폼 구성 설명.
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) — 데스크톱 리그레션 체크리스트.

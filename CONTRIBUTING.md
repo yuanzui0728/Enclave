@@ -12,7 +12,6 @@
 pnpm install
 cp .env.example .env
 cp api/.env.example api/.env
-cp apps/admin/.env.example apps/admin/.env
 # 编辑 .env 文件填入你的 API Key
 pnpm dev
 ```

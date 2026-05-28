@@ -36,12 +36,9 @@
 ### iOS 壳
 - `apps/ios-shell`
 
-### 实例管理后台
-- `apps/admin`
-
-### 官方云平台
+### 官方云平台（含运维后台）
 - `apps/cloud-api`
-- `apps/cloud-console`
+- `apps/cloud-console`（独立的 `apps/admin` 运维后台已退役并入；单实例运维改走后端 `/admin/*` 接口）
 
 ## 首次启动流程
 
@@ -62,7 +59,7 @@
 ### 实例拥有者
 - 部署世界实例
 - 配置实例默认 Provider
-- 使用实例管理后台查看系统状态和诊断信息
+- 通过后端 `/admin/*` 接口（`X-Admin-Secret` 鉴权）查看系统状态和诊断信息
 
 ### 官方云平台运营侧
 - 审核云世界申请单

@@ -37,10 +37,11 @@ cp api/.env.example api/.env
 # 编辑 api/.env：至少填 DEEPSEEK_API_KEY 和 ADMIN_SECRET
 pnpm dev:api                       # 后端 NestJS（:3000）
 pnpm dev:app                       # 主 App Vite dev（:5180）
-# 想看管理后台再来一条：pnpm dev:admin（:5181）
 ```
 
-> ⚠️ 不要直接跑 `pnpm dev`：这条命令是为多租户云模式准备的（启 app + admin + wiki + cloud-api + cloud-console），**故意不含 api** —— 自部署 / 单租户场景反而需要 api 单独在 :3000 上跑。
+> 🛠 独立运维后台 `apps/admin` 已退役，能力并入 cloud console；自部署 / 单租户场景直接用 api 暴露的 `/admin/*` 接口（`ADMIN_SECRET` 鉴权）即可，无需单独起后台前端。
+
+> ⚠️ 不要直接跑 `pnpm dev`：这条命令是为多租户云模式准备的（启 app + wiki + cloud-api + cloud-console），**故意不含 api** —— 自部署 / 单租户场景反而需要 api 单独在 :3000 上跑。
 
 `pnpm dev:*` 把进程 detach 到后台，**日志落在 `logs/dev-services/<服务>.{out,err}.log`，不会刷在终端窗口里**。想跟实时日志：
 
@@ -51,8 +52,7 @@ tail -f logs/dev-services/api.out.log
 打开：
 
 - 主 App：<http://localhost:5180>
-- 管理后台：<http://localhost:5181>（跑了 `pnpm dev:admin` 才有）
-- 后端 API：<http://localhost:3000>
+- 后端 API：<http://localhost:3000>（运维接口在 `/admin/*`，用 `ADMIN_SECRET` 鉴权）
 
 ---
 
@@ -62,7 +62,6 @@ tail -f logs/dev-services/api.out.log
 |------|------|------|
 | 后端 API（NestJS） | `pnpm dev:api` | 3000 |
 | 主 App（Vite） | `pnpm dev:app` | 5180 |
-| 管理后台（Vite） | `pnpm dev:admin` | 5181 |
 | Cloud Console | `pnpm dev:cloud-console` | 5182 |
 | Cloud API | `pnpm dev:cloud-api` | 3001 |
 | Wiki | `pnpm dev:wiki` | 5184 |
@@ -86,7 +85,6 @@ pnpm dev:all        # 启动 workspace + cloud 全套
 ```bash
 pnpm dev:api:restart
 pnpm dev:app:restart
-pnpm dev:admin:restart
 pnpm dev:cloud-api:restart
 pnpm dev:cloud-console:restart
 pnpm dev:wiki:restart
@@ -99,7 +97,6 @@ pnpm dev:site:restart
 
 ```
 ./restart-app.sh            # 重启主 App + 同步必要服务
-./restart-admin.sh          # 重启管理后台
 ./restart-cloud-api.sh      # 重启 Cloud API
 ./restart-cloud-console.sh  # 重启 Cloud Console
 ./restart-wiki.sh           # 重启 Wiki
@@ -124,7 +121,7 @@ pnpm dev:site:restart
 - `PORT`（默认 3000）
 - `DATABASE_PATH`（默认 `./data/database.sqlite`）
 - `PUBLIC_API_BASE_URL` — 同域部署时写公开 Web 根地址（如 `https://app.your-domain.com`），**不要带 `/api`**
-- `CORS_ALLOWED_ORIGINS` — 默认已包含 `localhost:5180/5181/5182` 等
+- `CORS_ALLOWED_ORIGINS` — 默认已包含 `localhost:5180/5182` 等
 - `SMTP_*` / `MAIL_FROM_ADDRESS` — 配齐则发送邮箱验证码；不配，验证码会**打印到 API 日志**，方便本地开发
 - `USER_API_KEY_ENCRYPTION_SECRET` — 用户自带密钥加密所需
 

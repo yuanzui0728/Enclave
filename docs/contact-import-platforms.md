@@ -2,7 +2,7 @@
 
 ## 定位
 
-管理后台当前入口名仍然叫“微信朋友同步”，但 `apps/wechat-connector` 的真实职责已经不应再被理解成“只给微信写一个临时适配器”。
+联系人导入在后端 `/admin/*` 下的入口名仍然叫“微信朋友同步”，但 `apps/wechat-connector` 的真实职责已经不应再被理解成“只给微信写一个临时适配器”。
 
 更准确的定位应该是：
 
@@ -106,7 +106,7 @@
 职责：
 
 - 从标准化消息流推导联系人卡片
-- 生成管理后台真正消费的预览输入
+- 生成运维侧（`/admin/*`）真正消费的预览输入
 
 这里继续保留我们自己产品化的判断逻辑：
 
@@ -213,8 +213,7 @@
 
 - `packages/contracts/src/characters.ts`
 - `packages/contracts/src/wechat-sync.ts`
-- `api/src/modules/admin/wechat-sync-admin.service.ts`
-- `apps/admin/src/routes/wechat-sync-page.tsx`
+- `api/src/modules/admin/wechat-sync-admin.service.ts`（运维入口在云端控制台，原 `apps/admin` 前端已退役）
 
 ### Phase 4：UI 与审计升级
 
