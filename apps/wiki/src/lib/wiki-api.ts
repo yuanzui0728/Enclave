@@ -10,6 +10,11 @@ import type {
   WikiGameSummary,
   WikiGameView,
 } from "@yinjie/contracts";
+import type {
+  CharacterVideoEnqueueResult,
+  CharacterVideoView,
+} from "@yinjie/contracts";
+import type { VoiceCatalog } from "@yinjie/contracts";
 
 const API_BASE = "/api";
 
@@ -383,6 +388,17 @@ export const wikiApi = {
         characterId: input.characterId,
         voice: input.voice ?? undefined,
       }),
+    });
+  },
+  // 音色目录（预设 + 克隆，Phase 1 克隆为空）。供创作者编辑角色时选音色。
+  listVoices() {
+    return request<VoiceCatalog>("/ai/voices", { method: "GET" });
+  },
+  // 试听某音色：create 模式下还没有 characterId，故 characterId 可省略。
+  synthesizeVoicePreview(input: { text: string; voice: string }) {
+    return request<SynthesizePageNarrationResult>("/ai/speech", {
+      method: "POST",
+      body: JSON.stringify({ text: input.text, voice: input.voice }),
     });
   },
   register(username: string, password: string) {
@@ -1114,6 +1130,33 @@ export const wikiApi = {
       { method: "DELETE" },
     );
   },
+
+  // ── 私有角色自然语言造视频 ─────────────────────────────────────────────
+  /** 用一句自然语言为自己的私有角色造一条视频：异步 enqueue，返回 videoId 轮询。 */
+  createCharacterVideo(input: { privateCharacterId: string; prompt: string }) {
+    return request<CharacterVideoEnqueueResult>("/wiki/my-character-videos", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  /** 轮询单条视频生成状态（generating/ready/failed）。 */
+  getCharacterVideo(id: string) {
+    return request<CharacterVideoView>(
+      `/wiki/my-character-videos/${encodeURIComponent(id)}`,
+    );
+  },
+  /** 我的视频列表（按更新时间倒序）。 */
+  listCharacterVideos() {
+    return request<CharacterVideoView[]>("/wiki/my-character-videos");
+  },
+  /** 软删一条我的视频。 */
+  deleteCharacterVideo(id: string) {
+    return request<{ ok: true }>(
+      `/wiki/my-character-videos/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+  },
+
   /** 列出当前用户的所有草稿，按 updatedAt 倒序。 */
   listMyDrafts() {
     return request<MyDraftSummary[]>("/wiki/my-drafts");
@@ -1435,6 +1478,7 @@ export type PrivateCharacterDto = {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  voicePreset?: string | null;
 };
 
 /**

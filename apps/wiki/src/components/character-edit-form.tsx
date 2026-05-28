@@ -19,6 +19,7 @@ import type { FormEvent, ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import {
   isCustomRelationshipType,
   type CharacterBlueprintRecipe,
@@ -39,6 +40,7 @@ import {
   type AiGeneratedDraft,
   type PrivateCharacterDto,
 } from "../lib/wiki-api";
+import type { VoiceCatalog } from "@yinjie/contracts";
 import { QuotaExhaustedNotice } from "./quota-exhausted-notice";
 import {
   isSafeAvatarValue,
@@ -382,6 +384,16 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
   const [proactiveBrowseChance, setProactiveBrowseChance] = useState("0.3");
   const [intimacyLevel, setIntimacyLevel] = useState("0");
 
+  // —— 音色 —— ""（空）= 跟随系统默认；否则是一个 MiniMax voice_id。
+  const { i18n } = useLingui();
+  const [voicePreset, setVoicePreset] = useState("");
+  const [voiceCatalog, setVoiceCatalog] = useState<VoiceCatalog | null>(null);
+  const [voicePreviewing, setVoicePreviewing] = useState(false);
+  const [voicePreviewError, setVoicePreviewError] = useState<string | null>(
+    null,
+  );
+  const voicePreviewAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [savedFlash, setSavedFlash] = useState(false);
   const [aiFlash, setAiFlash] = useState<{
     section: AiGenerateSection;
@@ -426,6 +438,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     socialOpenness: "normal",
     proactiveBrowseChance: 0.3,
     intimacyLevel: 0,
+    voicePreset: null,
   }));
   const skipSnapshotOnUnmountRef = useRef(false);
   // 同步防重入闸：isSavePending 是父组件 mutation.isPending 透传进来的 prop，
@@ -513,6 +526,9 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     if (typeof r.intimacyLevel === "number") {
       setIntimacyLevel(String(r.intimacyLevel));
     }
+    if (typeof r.voicePreset === "string" || r.voicePreset === null) {
+      setVoicePreset(r.voicePreset ?? "");
+    }
     const rp = r.recipe;
     // 存一份 hydrate 时的完整 recipe（深拷贝，避免后续 buildDto 输出与之共享引用）；
     // buildDto 用它透传本编辑器不暴露的非 UI 子结构。无 recipe（create）→ null。
@@ -576,6 +592,9 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
     }
     if (typeof snap.intimacyLevel === "number") {
       setIntimacyLevel(String(snap.intimacyLevel));
+    }
+    if (typeof snap.voicePreset === "string") {
+      setVoicePreset(snap.voicePreset);
     }
     const rp = snap.recipe;
     if (!rp) return;
@@ -732,6 +751,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
       socialOpenness: socialOpenness || "normal",
       proactiveBrowseChance: pbc ?? 0.3,
       intimacyLevel: il ?? 0,
+      voicePreset: voicePreset.trim() === "" ? null : voicePreset.trim(),
     };
   }
 
@@ -751,11 +771,68 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
         socialOpenness: socialOpenness || "normal",
         proactiveBrowseChance: parseFloatInRange(proactiveBrowseChance, 0, 1) ?? 0.3,
         intimacyLevel: parseIntInRange(intimacyLevel, 0, 100) ?? 0,
+        voicePreset: voicePreset.trim() === "" ? null : voicePreset.trim(),
       }
     );
   }
 
   buildCurrentDraftRef.current = buildCurrentDraft;
+
+  useEffect(() => {
+    let cancelled = false;
+    wikiApi
+      .listVoices()
+      .then((catalog) => {
+        if (!cancelled) setVoiceCatalog(catalog);
+      })
+      .catch(() => {
+        // 拉取失败不阻塞表单：音色下拉退化成「默认 + 当前值」两项。
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (voicePreviewAudioRef.current) {
+        voicePreviewAudioRef.current.pause();
+        voicePreviewAudioRef.current = null;
+      }
+    },
+    [],
+  );
+
+  async function handleVoicePreview(): Promise<void> {
+    const voice = voicePreset.trim();
+    if (!voice) return;
+    if (voicePreviewAudioRef.current) {
+      voicePreviewAudioRef.current.pause();
+      voicePreviewAudioRef.current = null;
+    }
+    setVoicePreviewError(null);
+    setVoicePreviewing(true);
+    try {
+      const result = await wikiApi.synthesizeVoicePreview({
+        text: t(msg`你好呀，很高兴认识你，这是我现在的声音。`),
+        voice,
+      });
+      const audio = new Audio(result.audioUrl);
+      voicePreviewAudioRef.current = audio;
+      audio.onended = () => {
+        if (voicePreviewAudioRef.current === audio) {
+          voicePreviewAudioRef.current = null;
+        }
+      };
+      await audio.play();
+    } catch (err) {
+      setVoicePreviewError(
+        err instanceof Error ? err.message : t(msg`试听生成失败，请稍后再试。`),
+      );
+    } finally {
+      setVoicePreviewing(false);
+    }
+  }
 
   function isSectionFull(section: AiGenerateSection): boolean {
     const s = (v: string) => v.trim().length > 0;
@@ -1342,6 +1419,51 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                         msg`例如：心理学背景，慢热而锋利。喜欢半夜读书，习惯先观察再回应。`,
                       )}
                     />
+                  </FormRow>
+                  <FormRow
+                    label={t(msg`音色`)}
+                    hint={t(msg`选一个声音，点「试听」听效果；留空走系统默认。`)}
+                    effect={t(msg`语音回复 / 朗读时用这个音色`)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <SelectField
+                        value={voicePreset}
+                        onChange={(e) => setVoicePreset(e.target.value)}
+                      >
+                        <option value="">
+                          {t(msg`默认（跟随系统）`)}
+                        </option>
+                        {(voiceCatalog?.presets ?? []).map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {i18n.locale.startsWith("zh")
+                              ? p.labelZh
+                              : p.labelEn}
+                          </option>
+                        ))}
+                        {voicePreset.trim() &&
+                        !(voiceCatalog?.presets ?? []).some(
+                          (p) => p.id === voicePreset.trim(),
+                        ) ? (
+                          <option value={voicePreset.trim()}>
+                            {voicePreset.trim()}
+                          </option>
+                        ) : null}
+                      </SelectField>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="shrink-0"
+                        disabled={!voicePreset.trim() || voicePreviewing}
+                        onClick={() => void handleVoicePreview()}
+                      >
+                        {voicePreviewing ? t(msg`生成中…`) : t(msg`试听`)}
+                      </Button>
+                    </div>
+                    {voicePreviewError ? (
+                      <p className="mt-1 text-sm text-[color:var(--state-danger-text)]">
+                        {voicePreviewError}
+                      </p>
+                    ) : null}
                   </FormRow>
                 </fieldset>
               </AppSection>

@@ -114,6 +114,7 @@ export type PrivateCharacterDto = {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  voicePreset?: string | null;
 };
 
 export type PrivateCharacterExportBundle = {
@@ -132,6 +133,7 @@ export type PrivateCharacterExportBundle = {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  voicePreset?: string | null;
   // 源私有角色 id：world 导入时落到 CharacterEntity.wikiSourceCharacterId，作为
   // 「私有角色视频」跨-world 扇出的关联键（cloud-api 据此把视频投到导入者视频号）。
   sourceCharacterId?: string;
@@ -646,6 +648,7 @@ export class WikiPrivateCharacterService {
       socialOpenness: record.socialOpenness,
       proactiveBrowseChance: record.proactiveBrowseChance,
       intimacyLevel: record.intimacyLevel,
+      voicePreset: record.voicePreset ?? null,
       // 源 id = 该私有角色自身 id。owner 自导出与角色广场导出都走这里，故导入者
       // 拿到的恒为原始角色 id，与创作者生成视频时的 sourceCharacterId 对齐。
       sourceCharacterId: record.id,
@@ -718,6 +721,12 @@ export class WikiPrivateCharacterService {
           : undefined,
       intimacyLevel:
         typeof p.intimacyLevel === 'number' ? p.intimacyLevel : undefined,
+      voicePreset:
+        typeof p.voicePreset === 'string'
+          ? p.voicePreset
+          : p.voicePreset === null
+            ? null
+            : undefined,
     };
   }
 
@@ -796,6 +805,15 @@ export class WikiPrivateCharacterService {
     }
     if (typeof dto.intimacyLevel === 'number') {
       target.intimacyLevel = dto.intimacyLevel;
+    }
+    // voicePreset：string → trim 后写回（空 → null）；显式 null → 清空；undefined 跳过。
+    if (dto.voicePreset !== undefined) {
+      if (typeof dto.voicePreset === 'string') {
+        const trimmed = dto.voicePreset.trim();
+        target.voicePreset = trimmed === '' ? null : trimmed;
+      } else if (dto.voicePreset === null) {
+        target.voicePreset = null;
+      }
     }
     // aiRelationships 已于 2026-05-15 从 wiki 编辑路径下线（admin-only）；
     // 即便 PUT body 强塞也直接忽略。

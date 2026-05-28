@@ -99,6 +99,11 @@ export class UserPrivateCharacterEntity {
   @Column({ type: 'integer', default: 0 })
   intimacyLevel: number; // 0-100 种子，运行时会被 farm-state / social 服务自动改写
 
+  // 角色专属 MiniMax voice_id（如 male-qn-qingse）。null/空 → 走全局默认音色。
+  // 导出 bundle / 导入世界时随 CharacterEntity.voicePreset 一起带过去。
+  @Column({ type: 'text', nullable: true })
+  voicePreset?: string | null;
+
   @Column('simple-json', { nullable: true })
   aiRelationships?:
     | { characterId: string; relationshipType: string; strength: number }[]

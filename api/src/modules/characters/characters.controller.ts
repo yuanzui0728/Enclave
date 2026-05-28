@@ -11,12 +11,18 @@ import {
 } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { CharactersService } from './characters.service';
+import { CharacterUnlockService } from './character-unlock.service';
 import { CharacterEntity } from './character.entity';
 import { AdminGuard } from '../admin/admin.guard';
+import { WorldOwnerService } from '../auth/world-owner.service';
 
 @Controller('characters')
 export class CharactersController {
-  constructor(private readonly charactersService: CharactersService) {}
+  constructor(
+    private readonly charactersService: CharactersService,
+    private readonly characterUnlock: CharacterUnlockService,
+    private readonly worldOwnerService: WorldOwnerService,
+  ) {}
 
   @Get()
   findAll() {
@@ -40,6 +46,65 @@ export class CharactersController {
         legacyMessage: `Character ${id} not found`,
       });
     return char;
+  }
+
+  // 付费角色解锁状态查询：供广场 CTA / 角色详情页展示「解锁 ¥X 加为好友」。
+  // 免费角色返回 locked=false。
+  @Get(':id/unlock-offer')
+  async unlockOffer(@Param('id') id: string) {
+    const char =
+      (await this.charactersService.findById(id)) ??
+      (await this.charactersService.ensurePresetCharacterInstalled(id));
+    if (!char)
+      throw new AppError('CHARACTER_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        params: { id },
+        legacyMessage: `Character ${id} not found`,
+      });
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const alreadyUnlocked = char.isPaid
+      ? await this.characterUnlock.hasUnlocked(owner.id, char.id)
+      : true;
+    return {
+      characterId: char.id,
+      isPaid: !!char.isPaid,
+      unlockPriceCents: char.unlockPriceCents ?? null,
+      unlockCurrency: char.unlockCurrency ?? null,
+      alreadyUnlocked,
+      locked: !!char.isPaid && !alreadyUnlocked,
+    };
+  }
+
+  // 解锁发放（管理端 / 人工 / 联调）。真实自助按角色付费的收银对接后续接入——
+  // TODO：支付成功回调里调 characterUnlock.grantUnlock(owner, char, {source:'purchase', orderId})。
+  // 当前不提供「自助免费解锁」端点，避免日后某角色标 isPaid 后成漏洞。
+  @Post(':id/unlock')
+  @UseGuards(AdminGuard)
+  async grantUnlock(
+    @Param('id') id: string,
+    @Body() body?: { source?: string; priceCents?: number | null },
+  ) {
+    // 与 unlock-offer 一致：findById 找不到时回落 preset 安装，允许对可安装的付费 preset 发放。
+    const char =
+      (await this.charactersService.findById(id)) ??
+      (await this.charactersService.ensurePresetCharacterInstalled(id));
+    if (!char)
+      throw new AppError('CHARACTER_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        params: { id },
+        legacyMessage: `Character ${id} not found`,
+      });
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const unlock = await this.characterUnlock.grantUnlock(owner.id, char.id, {
+      source: body?.source ?? 'admin_grant',
+      priceCents: body?.priceCents ?? null,
+    });
+    return {
+      unlocked: true,
+      characterId: char.id,
+      source: unlock.source,
+      unlockedAt: unlock.unlockedAt,
+    };
   }
 
   @Post()
@@ -108,6 +173,27 @@ export class CharactersController {
     return { id, defaultVoiceReply: existing.defaultVoiceReply };
   }
 
+  // 用户可为某角色选择音色（MiniMax voice_id）。null/空 → 回落 inference
+  // provider 全局默认。不挂 guard：与 setDefaultVoiceReply 一致（见上方注释）。
+  @Patch(':id/voice-preset')
+  async setVoicePreset(
+    @Param('id') id: string,
+    @Body() body: { voicePreset?: string | null },
+  ) {
+    const existing = await this.charactersService.findById(id);
+    if (!existing) {
+      throw new AppError('CHARACTER_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        params: { id },
+        legacyMessage: `Character ${id} not found`,
+      });
+    }
+    const raw = body?.voicePreset?.trim();
+    existing.voicePreset = raw ? raw : null;
+    await this.charactersService.upsert(existing);
+    return { id, voicePreset: existing.voicePreset };
+  }
+
   /**
    * Tenant-facing 导入端点：接收 wiki "我的私有角色" 导出 JSON，按 name upsert
    * 到 characters 表，并自动为 world-owner 建 friendship。
@@ -159,6 +245,7 @@ function parsePrivateCharacterImportBody(payload: unknown): {
   socialOpenness?: string;
   proactiveBrowseChance?: number;
   intimacyLevel?: number;
+  voicePreset?: string | null;
   sourceCharacterId?: string;
   aiRelationships?:
     | { characterId: string; relationshipType: string; strength: number }[]
@@ -248,6 +335,12 @@ function parsePrivateCharacterImportBody(payload: unknown): {
         : undefined,
     intimacyLevel:
       typeof p.intimacyLevel === 'number' ? p.intimacyLevel : undefined,
+    voicePreset:
+      typeof p.voicePreset === 'string'
+        ? p.voicePreset
+        : p.voicePreset === null
+          ? null
+          : undefined,
     // wiki 私有角色源 id（导出 bundle 携带）。world 落到 CharacterEntity.wikiSourceCharacterId，
     // 作为「私有角色视频」跨-world 扇出的关联键。
     sourceCharacterId:

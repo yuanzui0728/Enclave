@@ -19,6 +19,25 @@ export interface SpeechSynthesisRequest {
   voice?: string;
 }
 
+export type VoiceGender = "male" | "female" | "neutral";
+
+export interface VoicePresetOption {
+  id: string;
+  labelZh: string;
+  labelEn: string;
+  gender: VoiceGender;
+}
+
+export interface VoiceCloneSummary {
+  id: string;
+  displayName: string;
+}
+
+export interface VoiceCatalog {
+  presets: VoicePresetOption[];
+  clones: VoiceCloneSummary[];
+}
+
 export interface SpeechSynthesisResult {
   audioUrl: string;
   mimeType: string;

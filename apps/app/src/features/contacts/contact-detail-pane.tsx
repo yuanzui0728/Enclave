@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
 import { MessageCircleMore } from "lucide-react";
 import {
   SELF_CHARACTER_ID,
@@ -29,6 +30,11 @@ import {
 } from "./desktop-contact-profile-blocks";
 import { resolveFriendshipSourceText } from "./friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "./invalidate-friend-display";
+import {
+  VoicePickerModal,
+  resolveVoiceLabel,
+  useVoiceCatalog,
+} from "./voice-picker";
 
 type ContactDetailPaneProps = {
   character?: Character | null;
@@ -115,6 +121,15 @@ export function ContactDetailPane({
     remarkName: "",
     tags: "",
   });
+  const { i18n } = useLingui();
+  const [voicePickerOpen, setVoicePickerOpen] = useState(false);
+  const voiceCatalogQuery = useVoiceCatalog(baseUrl);
+  const voiceLabel = resolveVoiceLabel(
+    voiceCatalogQuery.data,
+    character?.voicePreset ?? null,
+    i18n.locale,
+    t(msg`默认（跟随系统）`),
+  );
 
   useEffect(() => {
     setEditingField(null);
@@ -445,6 +460,13 @@ export function ContactDetailPane({
                 onToggle={onToggleDefaultVoiceReply}
               />
             ) : null}
+            {onToggleDefaultVoiceReply && character ? (
+              <DesktopContactProfileActionRow
+                label={t(msg`音色`)}
+                value={voiceLabel}
+                onClick={() => setVoicePickerOpen(true)}
+              />
+            ) : null}
           </DesktopContactProfileSection>
 
           <DesktopContactProfileSection title={t(msg`管理`)}>
@@ -552,6 +574,14 @@ export function ContactDetailPane({
             setDangerConfirm(null);
             onDeleteFriend();
           }}
+        />
+      ) : null}
+      {voicePickerOpen && character ? (
+        <VoicePickerModal
+          characterId={character.id}
+          currentVoicePreset={character.voicePreset ?? null}
+          baseUrl={baseUrl}
+          onClose={() => setVoicePickerOpen(false)}
         />
       ) : null}
     </DesktopContactProfileShell>

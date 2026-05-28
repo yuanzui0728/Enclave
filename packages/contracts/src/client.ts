@@ -9,6 +9,7 @@ import type {
   AddGroupMemberRequest,
   ChatMessageSearchResponse,
   ChatMessageSearchItem,
+  AgentDelegation,
   Conversation,
   ConversationListItem,
   CreateGroupRequest,
@@ -39,6 +40,15 @@ import type {
   DecideAvatarEncounterRequest,
 } from "./avatar-encounter";
 import type { Character, CharacterDraft } from "./characters";
+import type {
+  CyberAvatarSelfProfile,
+  CyberAvatarSelfChatRequest,
+  CyberAvatarSelfChatResponse,
+  CyberAvatarSelfChatHistoryResponse,
+  CyberAvatarSelfAnalysisReport,
+  CyberAvatarSelfRebuildRequest,
+  CyberAvatarSelfRebuildResponse,
+} from "./cyber-avatar";
 import type {
   CloudWorldLookupResponse,
   CloudWorldRequestRecord,
@@ -78,6 +88,7 @@ import type {
   FeedChannelHomeDecorationsResponse,
   FeedChannelHomeResponse,
   FeedChannelHomeSection,
+  FeedChannelWatchHistoryResponse,
   FeedListResponse,
   FeedPost,
   FeedPostListItem,
@@ -193,6 +204,7 @@ import type {
   SpeechTranscriptionResult,
   UpdateDigitalHumanProviderStateRequest,
   VoiceCallTurnResult,
+  VoiceCatalog,
 } from "./speech";
 import type {
   InferencePreviewRequest,
@@ -264,6 +276,14 @@ import type {
   XhsRewardClaimSummary,
   XhsRewardSummaryResponse,
 } from "./subscription";
+import type {
+  CreateRechargeRequestPayload,
+  CreateRechargeResponse,
+  WalletCheckinResult,
+  WalletCheckinStatus,
+  WalletStateResponse,
+  WalletTransactionListResponse,
+} from "./wallet";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
@@ -1072,6 +1092,16 @@ function normalizeFeedChannelHomeResponse(
   };
 }
 
+function normalizeFeedChannelWatchHistoryResponse(
+  response: FeedChannelWatchHistoryResponse,
+  baseUrl?: string,
+): FeedChannelWatchHistoryResponse {
+  return {
+    ...response,
+    posts: response.posts.map((post) => normalizeFeedPost(post, baseUrl)),
+  };
+}
+
 function normalizeFeedChannelHomeDecorationsResponse(
   response: FeedChannelHomeDecorationsResponse,
   baseUrl?: string,
@@ -1862,6 +1892,62 @@ export function updateWorldOwner(
   );
 }
 
+// ---- 用户态「赛博分身」(self) ----------------------------------------------
+// owner-scoped 世界 API（requestLegacyApi，经 cloud-api 反代注入 phone→TenantContext）。
+export function getCyberAvatarSelfProfile(baseUrl?: string) {
+  return requestLegacyApi<CyberAvatarSelfProfile>(
+    "/cyber-avatar/me",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getCyberAvatarSelfChatHistory(baseUrl?: string) {
+  return requestLegacyApi<CyberAvatarSelfChatHistoryResponse>(
+    "/cyber-avatar/chat/history",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function chatWithCyberAvatarSelf(
+  payload: CyberAvatarSelfChatRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<CyberAvatarSelfChatResponse>(
+    "/cyber-avatar/chat",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getCyberAvatarSelfAnalysis(baseUrl?: string) {
+  return requestLegacyApi<CyberAvatarSelfAnalysisReport>(
+    "/cyber-avatar/analysis",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function rebuildCyberAvatarSelf(
+  payload: CyberAvatarSelfRebuildRequest = {},
+  baseUrl?: string,
+) {
+  return requestLegacyApi<CyberAvatarSelfRebuildResponse>(
+    "/cyber-avatar/rebuild",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
 export function setWorldOwnerApiKey(
   payload: UpdateWorldOwnerApiKeyRequest,
   baseUrl?: string,
@@ -1939,6 +2025,47 @@ export function listCharacters(baseUrl?: string) {
   return requestLegacyApi<Character[]>("/characters", undefined, baseUrl);
 }
 
+// ── 隐界社区游戏板块 + embedded_web 游戏运行时桥 ──────────────────────────────
+/** App 游戏板块：拉 cloud-api 全局社区游戏列表（直连 cloud-api，公开读）。 */
+export function fetchCommunityGameBoard(baseUrl?: string) {
+  return requestCloudApi<import("./wiki-game").CommunityGameBoardResponse>(
+    "/cloud/games/board",
+    undefined,
+    baseUrl,
+  );
+}
+
+/** 取某社区游戏的可玩产物（自包含 HTML），用于沙箱 iframe srcdoc。 */
+export function fetchCommunityGameArtifact(gameId: string, baseUrl?: string) {
+  return requestCloudApi<import("./wiki-game").CommunityGameArtifactContent>(
+    `/cloud/games/${encodeURIComponent(gameId)}/artifact`,
+    undefined,
+    baseUrl,
+  );
+}
+
+/** 游戏内桥：列出当前世界里可陪玩的 AI 角色（走 world child）。 */
+export function listGamePlayCharacters(gameId: string, baseUrl?: string) {
+  return requestLegacyApi<import("./wiki-game").GamePlayCharacter[]>(
+    `/games/${encodeURIComponent(gameId)}/play-characters`,
+    undefined,
+    baseUrl,
+  );
+}
+
+/** 游戏内桥：请求某 AI 角色的回合回应（走 world child，扣 owner AI 配额）。 */
+export function requestGameAiTurn(
+  gameId: string,
+  body: import("./wiki-game").GameAiTurnRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<import("./wiki-game").GameAiTurnResult>(
+    `/games/${encodeURIComponent(gameId)}/ai-turn`,
+    { method: "POST", body: JSON.stringify(body) },
+    baseUrl,
+  );
+}
+
 export function listPresetCatalog(baseUrl?: string) {
   return requestLegacyApi<Character[]>(
     "/characters/preset-catalog",
@@ -1997,6 +2124,25 @@ export function setCharacterDefaultVoiceReply(
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
+    },
+    baseUrl,
+  );
+}
+
+export function listVoices(baseUrl?: string) {
+  return requestLegacyApi<VoiceCatalog>("/ai/voices", undefined, baseUrl);
+}
+
+export function setCharacterVoicePreset(
+  id: string,
+  voicePreset: string | null,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<{ id: string; voicePreset: string | null }>(
+    `/characters/${id}/voice-preset`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ voicePreset }),
     },
     baseUrl,
   );
@@ -2141,6 +2287,32 @@ export function getConversationMessages(
     baseUrl,
   ).then((messages) =>
     messages.map((message) => normalizeMessage(message, resolvedBaseUrl)),
+  );
+}
+
+export function getConversationDelegations(id: string, baseUrl?: string) {
+  return requestLegacyApi<AgentDelegation[]>(
+    `/conversations/${encodeURIComponent(id)}/delegations`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function interveneAgentDelegation(
+  conversationId: string,
+  delegationId: string,
+  text: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<AgentDelegation | null>(
+    `/conversations/${encodeURIComponent(conversationId)}/delegations/${encodeURIComponent(
+      delegationId,
+    )}/intervene`,
+    {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    },
+    baseUrl,
   );
 }
 
@@ -3897,6 +4069,34 @@ export function getChannelHomeDecorations(
   );
 }
 
+export function getChannelWatchHistory(
+  baseUrl?: string,
+  options?: {
+    page?: number;
+    limit?: number;
+  },
+) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  const params = new URLSearchParams();
+
+  if (typeof options?.page === "number") {
+    params.set("page", String(options.page));
+  }
+  if (typeof options?.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+
+  return requestLegacyApi<FeedChannelWatchHistoryResponse>(
+    `/feed/channels/history${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  ).then((response) =>
+    normalizeFeedChannelWatchHistoryResponse(response, resolvedBaseUrl),
+  );
+}
+
 export function getChannelAuthorProfile(authorId: string, baseUrl?: string) {
   const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
     allowDefault: false,
@@ -4596,6 +4796,65 @@ export function createCheckout(
   baseUrl?: string,
 ) {
   return postMyCloudCheckout(payload, accessToken, baseUrl);
+}
+
+// ── 钱包（现金 ¥零钱，cloud-api /cloud/me/wallet） ────────────────────────────
+
+export function getMyCloudWallet(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<WalletStateResponse>(
+    "/cloud/me/wallet",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function listMyCloudWalletTransactions(
+  accessToken: string,
+  params?: { page?: number; pageSize?: number },
+  baseUrl?: string,
+) {
+  const search = new URLSearchParams();
+  if (params?.page) search.set("page", String(params.page));
+  if (params?.pageSize) search.set("pageSize", String(params.pageSize));
+  const query = search.toString();
+  return requestCloudApi<WalletTransactionListResponse>(
+    `/cloud/me/wallet/transactions${query ? `?${query}` : ""}`,
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function createCloudWalletRechargeRequest(
+  payload: CreateRechargeRequestPayload,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CreateRechargeResponse>(
+    "/cloud/me/wallet/recharge-request",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+// 每日签到状态：今天是否已签 / 连签天数 / 今日已得金额。
+export function getMyCloudWalletCheckin(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<WalletCheckinStatus>(
+    "/cloud/me/wallet/checkin",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+// 执行签到：随机 0.2–0.5¥ 入钱包，返回本次奖励 + 最新余额 + 连签天数。
+export function claimCloudWalletCheckin(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<WalletCheckinResult>(
+    "/cloud/me/wallet/checkin",
+    buildCloudAuthHeaders(accessToken, { method: "POST" }),
+    baseUrl,
+  );
 }
 
 function buildCloudAdminHeaders(init?: RequestInit): RequestInit {

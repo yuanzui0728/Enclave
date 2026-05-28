@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Star } from "lucide-react";
@@ -41,6 +42,11 @@ import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-sta
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
+import {
+  VoicePickerModal,
+  resolveVoiceLabel,
+  useVoiceCatalog,
+} from "../features/contacts/voice-picker";
 import { stripBidiControl } from "../features/contacts/contact-utils";
 import { resolveFriendshipSourceText } from "../features/contacts/friend-request-scene-label";
 import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
@@ -130,6 +136,8 @@ export function CharacterDetailPage() {
   // 因别的 state 推渲染才补上。chat-details-page (L96) 已经在用 useRuntimeTranslator
   // 解决同样问题（背后 deps 列了 activationVersion + locale）。
   const t = useRuntimeTranslator();
+  const { i18n } = useLingui();
+  const [voicePickerOpen, setVoicePickerOpen] = useState(false);
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -140,6 +148,7 @@ export function CharacterDetailPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const voiceCatalogQuery = useVoiceCatalog(baseUrl);
   const ownerName = useWorldOwnerStore((state) => state.username) ?? t(msg`我`);
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
@@ -2309,6 +2318,22 @@ export function CharacterDetailPage() {
                   compact={!isDesktopLayout}
                 />
               ) : null}
+              {isFriend ? (
+                <ProfileRow
+                  label={t(msg`音色`)}
+                  value={resolveVoiceLabel(
+                    voiceCatalogQuery.data,
+                    character.voicePreset ?? null,
+                    i18n.locale,
+                    t(msg`默认（跟随系统）`),
+                  )}
+                  onClick={() => {
+                    setNotice(null);
+                    setVoicePickerOpen(true);
+                  }}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
               {/* 走查 R5：char-default-self 是用户自我镜像，后端 social.service
                   在 block / delete 两端都装了 SELF_CHARACTER_ID 守卫；前端必须
                   对应把这两 row 整体隐藏，不然用户从通讯录或私聊点到自我镜像
@@ -2448,6 +2473,14 @@ export function CharacterDetailPage() {
               },
             })) ?? []
           }
+        />
+      ) : null}
+      {voicePickerOpen && character ? (
+        <VoicePickerModal
+          characterId={character.id}
+          currentVoicePreset={character.voicePreset ?? null}
+          baseUrl={baseUrl}
+          onClose={() => setVoicePickerOpen(false)}
         />
       ) : null}
     </AppPage>

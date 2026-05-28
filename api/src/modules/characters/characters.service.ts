@@ -606,6 +606,7 @@ export class CharactersService implements OnModuleInit {
     socialOpenness?: string;
     proactiveBrowseChance?: number;
     intimacyLevel?: number;
+    voicePreset?: string | null;
     sourceCharacterId?: string;
     aiRelationships?:
       | { characterId: string; relationshipType: string; strength: number }[]
@@ -903,6 +904,16 @@ export class CharactersService implements OnModuleInit {
     }
     if (typeof input.intimacyLevel === 'number') {
       patch.intimacyLevel = input.intimacyLevel;
+    }
+    // voicePreset：bundle 带来的角色专属音色（MiniMax voice_id）。string → trim
+    // 后落（空 → null）；显式 null → 清空；undefined（bundle 没写）→ 跳过不动。
+    if (input.voicePreset !== undefined) {
+      if (typeof input.voicePreset === 'string') {
+        const trimmed = input.voicePreset.trim();
+        patch.voicePreset = trimmed === '' ? null : trimmed;
+      } else if (input.voicePreset === null) {
+        patch.voicePreset = null;
+      }
     }
     if (input.aiRelationships !== undefined) {
       // 走查第 3 次 R1：

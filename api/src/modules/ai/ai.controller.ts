@@ -14,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { AiOrchestratorService } from './ai-orchestrator.service';
 import { AiSpeechAssetsService } from './ai-speech-assets.service';
+import { VOICE_PRESETS } from './voice-presets.constants';
 
 type UploadedAudioFile = {
   buffer: Buffer;
@@ -59,6 +60,16 @@ export class AiController {
       characterId: body.characterId,
       mode: body.mode ?? 'dictation',
     });
+  }
+
+  // 列出可用音色：预设音色库 + 当前 owner 的克隆音色（Phase 2 填充，现返回空）。
+  // 供 App / wiki 的音色选择器拉取。
+  @Get('voices')
+  listVoices() {
+    return {
+      presets: VOICE_PRESETS,
+      clones: [] as Array<{ id: string; displayName: string }>,
+    };
   }
 
   @Post('speech')
