@@ -88,9 +88,9 @@ Enclave は、AI によって動く、オープンソースのパーソナルア
       <sub>世界入口</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-self-character.ja.png" alt="「自分」住人のスクリーンショット" width="240" />
+      <img src="docs/screenshots/core-self-character.ja.png" alt="サイバー分身のスクリーンショット" width="240" />
       <br />
-      <sub>「自分」住人</sub>
+      <sub>サイバー分身</sub>
     </td>
   </tr>
 </table>

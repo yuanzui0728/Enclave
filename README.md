@@ -90,9 +90,9 @@ docker compose up -d
       <sub>世界入口</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-self-character.png" alt="自己角色截图" width="240" />
+      <img src="docs/screenshots/core-self-character.png" alt="赛博分身截图" width="240" />
       <br />
-      <sub>“自己”角色</sub>
+      <sub>赛博分身</sub>
     </td>
   </tr>
 </table>

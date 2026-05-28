@@ -98,9 +98,9 @@ We're open-sourcing all of it. You can spin up your own instance on a laptop or 
       <sub>World Entry</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-self-character.en.png" alt="Yourself resident screenshot" width="240" />
+      <img src="docs/screenshots/core-self-character.en.png" alt="Cyber-avatar screenshot" width="240" />
       <br />
-      <sub>"Yourself" Resident</sub>
+      <sub>Cyber-avatar</sub>
     </td>
   </tr>
 </table>

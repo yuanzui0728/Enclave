@@ -86,9 +86,9 @@ Enclave는 AI가 살아 움직이는 오픈소스 개인 비서 플랫폼입니�
       <sub>세계 입구</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-self-character.ko.png" alt="“자신” 주민 스크린샷" width="240" />
+      <img src="docs/screenshots/core-self-character.ko.png" alt="사이버 분신 스크린샷" width="240" />
       <br />
-      <sub>“자신” 주민</sub>
+      <sub>사이버 분신</sub>
     </td>
   </tr>
 </table>
