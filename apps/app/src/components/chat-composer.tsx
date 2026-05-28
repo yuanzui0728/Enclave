@@ -6092,8 +6092,8 @@ function ReplyPreviewBar({
     <div
       className={`flex items-start justify-between gap-2.5 ${
         isDesktop
-          ? "mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[#f59e0b] bg-[#fffdf2] px-3.5 py-2.5"
-          : "mb-1.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[#f59e0b] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
+          ? "mb-2.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[color:var(--brand-primary)] bg-[#fffdf2] px-3.5 py-2.5"
+          : "mb-1.5 rounded-[12px] border border-[color:var(--brand-primary)]/14 border-l-[3px] border-l-[color:var(--brand-primary)] bg-[color:var(--surface-card)] px-3 py-1.5 shadow-none"
       }`}
     >
       <div className="min-w-0 flex-1">
