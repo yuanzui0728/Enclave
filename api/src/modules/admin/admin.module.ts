@@ -23,6 +23,7 @@ import { ChatModule } from '../chat/chat.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 import { ChatRecordsAdminController } from './chat-records-admin.controller';
+import { OwnerArchiveAdminController } from './owner-archive-admin.controller';
 import { BehaviorRecordsAdminService } from './behavior-records-admin.service';
 import { BehaviorRecordsAdminController } from './behavior-records-admin.controller';
 import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
@@ -107,6 +108,7 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     AdminController,
     ChatRecordsAdminController,
     BehaviorRecordsAdminController,
+    OwnerArchiveAdminController,
   ],
 })
 export class AdminModule {}

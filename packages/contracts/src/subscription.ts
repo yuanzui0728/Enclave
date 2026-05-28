@@ -271,6 +271,11 @@ export interface CloudUserDetail extends CloudUserSummary {
   redemptionAsInvitee: InviteRedemptionSummary | null;
   worldId: string | null;
   worldApiBaseUrl: string | null;
+  // 账号注销（status='archived'）后：注销时刻 + 注销前原始手机号/邮箱（本体已置 null
+  // 释放给重新注册，这两列供后台展示「这是谁的注销账号」）。非注销用户为 null。
+  archivedAt: string | null;
+  archivedPhone: string | null;
+  archivedEmail: string | null;
 }
 
 export interface GrantSubscriptionRequest {

@@ -466,6 +466,38 @@ export class WorldOwnerService implements OnModuleInit {
     }
   }
 
+  // 账号注销：把当前租户帧 owner 的身份键 cloudPhone 解绑成 tombstone（cloud-api 传入
+  // `archived:<cloudUserId>`，仍满足 UNIQUE）。解绑后 ensureOwnerForPhone(原phone) 查不到
+  // → 同号重新注册建全新 owner + 跑全新种子（不追回旧数据）；而本 owner 连同全部 world
+  // 内数据原样保留，凭 tombstone（= 归档 cloud_worlds 行的 phone）仍可被后台 world-admin
+  // 反代寻址浏览。cloud-api 注入 x-cloud-user-phone=原phone，本方法在该租户帧内执行。
+  //
+  // 幂等/重试安全：若已存在 cloudPhone=tombstone 的 owner（上一次已解绑成功），直接 no-op
+  // 返回——避免重试时把「中间件按原phone新建的空 owner」也强行写成同一 tombstone 撞 UNIQUE。
+  async archiveCurrentOwner(
+    tombstone: string,
+  ): Promise<{ ownerId: string; alreadyArchived: boolean }> {
+    const normalized = tombstone?.trim();
+    if (!normalized) {
+      throw new AppError('OWNER_ARCHIVE_TOMBSTONE_REQUIRED', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: '缺少注销 tombstone。',
+      });
+    }
+
+    const already = await this.userRepo.findOne({
+      where: { cloudPhone: normalized },
+    });
+    if (already) {
+      return { ownerId: already.id, alreadyArchived: true };
+    }
+
+    const owner = await this.getOwnerOrThrow();
+    owner.cloudPhone = normalized;
+    await this.userRepo.save(owner);
+    return { ownerId: owner.id, alreadyArchived: false };
+  }
+
   // 「世界居民」全局哨兵 owner 建档（固定 id，幂等）。getOwnerOrThrow 依赖此行存在；
   // 全局广场内容（feed surface='feed' 的 preset 角色帖 + AI 互动）都归属它。
   // 不能复用 ensureOwnerForPhone —— 那个生成随机 id，这里需要固定 GLOBAL_WORLD_OWNER_ID。

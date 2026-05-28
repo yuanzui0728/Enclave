@@ -69,6 +69,8 @@ export function DeleteAccountPanel() {
   // 折叠态：注销是破坏性操作，默认收起在一个"危险区"按钮后面，避免误触。
   const [expanded, setExpanded] = useState(false);
   const [code, setCode] = useState("");
+  // 发码后服务端告知验证码走了哪条渠道（手机短信 / 绑定邮箱），用来切换提示文案。
+  const [channel, setChannel] = useState<"email" | "phone" | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   // 注销成功后短暂展示成功态再跳转。没有它的话 clearCloudRuntimeSession() 会让
   // sessionExpired 立刻翻 true，把"已注销"成功提示瞬间换成"会话已失效"红条，体感困惑。
@@ -119,11 +121,14 @@ export function DeleteAccountPanel() {
       return sendCloudAccountDeletionCode(accessToken, cloudApiBaseUrl || undefined);
     },
     onSuccess: (result) => {
+      setChannel(result.channel);
       setFeedback({
         tone: "success",
         message: result.debugCode
           ? t(msg`开发模式：验证码已打印到服务端日志。`)
-          : t(msg`验证码已发送至绑定邮箱，请查收（含垃圾邮件箱）。`),
+          : result.channel === "phone"
+            ? t(msg`验证码已发送至你的手机，请查收短信。`)
+            : t(msg`验证码已发送至绑定邮箱，请查收（含垃圾邮件箱）。`),
       });
       if (result.debugCode) {
         setCode(result.debugCode);
@@ -177,7 +182,7 @@ export function DeleteAccountPanel() {
     if (!code.trim()) {
       setFeedback({
         tone: "danger",
-        message: t(msg`请输入邮箱收到的 6 位验证码。`),
+        message: t(msg`请输入收到的 6 位验证码。`),
       });
       return;
     }
@@ -234,7 +239,7 @@ export function DeleteAccountPanel() {
     <div className="space-y-3">
       <InlineNotice tone="muted">
         {t(
-          msg`注销将停用你的云账号并取消生效中的订阅。账号进入删除流程后无法登录；30 天后数据将被永久删除，此操作不可恢复。`,
+          msg`注销将停用你的云账号并取消生效中的订阅。注销后账号无法登录，数据将被永久归档且不可恢复；用同一手机号/邮箱重新注册将得到一个全新的空账号，不会找回任何原有数据。`,
         )}
       </InlineNotice>
 
@@ -254,13 +259,13 @@ export function DeleteAccountPanel() {
         <div className="space-y-3 rounded-2xl border border-[color:var(--border-danger)] bg-[rgba(255,241,241,0.5)] p-4">
           <p className="text-[13px] leading-relaxed text-[color:var(--text-secondary)]">
             {t(
-              msg`为确认是你本人操作，我们会向绑定邮箱发送验证码。输入验证码并勾选确认后，账号将被注销。`,
+              msg`为确认是你本人操作，我们会向你的手机或绑定邮箱发送验证码。输入验证码并勾选确认后，账号将被注销。`,
             )}
           </p>
 
           <label className="block space-y-2">
             <span className="text-[12px] font-medium text-[color:var(--text-secondary)]">
-              {t(msg`邮箱验证码`)}
+              {channel === "phone" ? t(msg`手机验证码`) : t(msg`验证码`)}
             </span>
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
@@ -314,7 +319,7 @@ export function DeleteAccountPanel() {
               className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--state-danger-text)]"
             />
             <span className="text-[12px] leading-relaxed text-[color:var(--text-secondary)]">
-              {t(msg`我已了解：注销后账号无法登录，数据将在 30 天后永久删除，且不可恢复。`)}
+              {t(msg`我已了解：注销后账号无法登录，数据将被永久归档且不可恢复；重新注册不会找回原有数据。`)}
             </span>
           </label>
 
@@ -327,6 +332,7 @@ export function DeleteAccountPanel() {
               onClick={() => {
                 setExpanded(false);
                 setCode("");
+                setChannel(null);
                 setAcknowledged(false);
                 setFeedback(null);
               }}

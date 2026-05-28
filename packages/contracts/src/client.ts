@@ -279,6 +279,7 @@ import type {
   XhsRewardSummaryResponse,
 } from "./subscription";
 import type {
+  CloudBillableCatalogResponse,
   CreateRechargeRequestPayload,
   CreateRechargeResponse,
   WalletCheckinResult,
@@ -4842,6 +4843,15 @@ export function createCheckout(
 export function getMyCloudWallet(accessToken: string, baseUrl?: string) {
   return requestCloudApi<WalletStateResponse>(
     "/cloud/me/wallet",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+// 钱包按量付费计费目录（启用中的特殊高消耗动作 + 每次计费价 cents）。
+export function getMyCloudBillableCatalog(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<CloudBillableCatalogResponse>(
+    "/cloud/me/wallet/billable-catalog",
     buildCloudAuthHeaders(accessToken),
     baseUrl,
   );
