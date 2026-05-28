@@ -906,7 +906,7 @@ function DesktopFavoritesPage() {
                     "flex w-full items-start gap-4 rounded-[16px] border px-4 py-4 text-left transition",
                     item.sourceId === effectiveSelectedSourceId
                       ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 shadow-[var(--shadow-soft)]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[rgba(255,255,255,0.92)]",
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[color:var(--surface-card)]",
                   )}
                 >
                   <AvatarChip

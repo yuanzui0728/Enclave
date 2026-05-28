@@ -167,7 +167,7 @@ export function ChatReminderControlButton({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit transition-[background-color,border-color,color] hover:border-white hover:bg-white",
+        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit transition-[background-color,border-color,color] hover:border-white hover:bg-[color:var(--surface-card)]",
         className,
       )}
       {...props}

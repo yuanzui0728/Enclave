@@ -110,7 +110,7 @@ export function MobileSocialComposerCard({
                 <button
                   type="button"
                   onClick={onErrorAction}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                 >
                   {errorActionLabel}
                 </button>

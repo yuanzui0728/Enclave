@@ -10,7 +10,10 @@ const buttonVariants = cva(
         primary:
           "border-transparent bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] px-4 py-2.5 text-[color:var(--text-on-brand)] shadow-[var(--shadow-card)] hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[var(--shadow-lift)]",
         secondary:
-          "border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.92)] px-4 py-2.5 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]",
+          // bg 用 --surface-primary token（base :root 即 rgba(255,255,255,0.92) 同值，
+          // 桌面/console/wiki/site 渲染零变化；移动 .yj-mobile-shell 下白天近白、
+          // 夜间自适应变暗 → 修复深色下 secondary 按钮白岛）。
+          "border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-4 py-2.5 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]",
         ghost:
           "border-transparent bg-transparent px-3 py-2 text-[color:var(--text-secondary)] hover:bg-[rgba(249,115,22,0.09)] hover:text-[color:var(--text-primary)]",
         danger:

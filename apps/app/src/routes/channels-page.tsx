@@ -3118,12 +3118,12 @@ function MediaProgressBar({
         )}
       >
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-white"
+          className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--surface-card)]"
           style={{ width: `${progress * 100}%` }}
         />
         {scrubbing ? (
           <div
-            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow"
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--surface-card)] shadow"
             style={{ left: `${progress * 100}%` }}
           />
         ) : null}
@@ -3539,7 +3539,7 @@ function ChannelAudioPictorial({
               className={cn(
                 "h-1.5 rounded-full transition-all",
                 idx === imageIndex
-                  ? "w-5 bg-white"
+                  ? "w-5 bg-[color:var(--surface-card)]"
                   : "w-1.5 bg-white/45",
               )}
             />

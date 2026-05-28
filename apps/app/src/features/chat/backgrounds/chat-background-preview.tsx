@@ -67,7 +67,7 @@ function PreviewBubble({
         className={`max-w-[74%] rounded-[20px] px-4 py-3 text-sm leading-6 shadow-[0_10px_20px_rgba(60,40,10,0.10)] ${
           tone === "brand"
             ? "bg-[linear-gradient(135deg,rgba(251,191,36,0.96),rgba(249,115,22,0.92))] text-[color:var(--text-on-brand)]"
-            : "border border-white/75 bg-[rgba(255,255,255,0.85)] text-[color:var(--text-primary)]"
+            : "border border-white/75 bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
         }`}
       >
         {children}

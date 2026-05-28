@@ -598,7 +598,7 @@ export function OfficialAccountServiceThread({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
-      <header className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 backdrop-blur-xl">
+      <header className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-2 pt-2 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <Button
             onClick={() => {

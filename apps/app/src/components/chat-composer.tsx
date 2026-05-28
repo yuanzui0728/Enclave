@@ -4312,7 +4312,7 @@ function MobileComposerStatusRail({
             ? "border-[color:var(--brand-primary)]/14 bg-[#fffdf2] text-[color:var(--brand-primary)]"
             : tone === "info"
               ? "border-[rgba(96,165,250,0.18)] bg-[#f7fbff] text-[#1d4ed8]"
-              : "border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] text-[color:var(--text-muted)]",
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)]",
       )}
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>

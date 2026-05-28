@@ -303,7 +303,7 @@ function MobileOfficialAccountArticlePage({
             : undefined
         }
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => {

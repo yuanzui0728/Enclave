@@ -501,7 +501,7 @@ export function MobileChatPlusPanel({
                       >
                         <div
                           className={cn(
-                            "flex h-13 w-13 items-center justify-center rounded-[12px] border bg-white text-white shadow-none",
+                            "flex h-13 w-13 items-center justify-center rounded-[12px] border bg-[color:var(--surface-card)] text-white shadow-none",
                             "border-[color:var(--border-subtle)]",
                             itemDisabled ? null : item.iconClassName,
                             itemDisabled ? "bg-[#cfcfcf]" : null,

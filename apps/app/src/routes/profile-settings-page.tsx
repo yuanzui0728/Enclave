@@ -270,7 +270,7 @@ function ProfileSettingsMobileEntry() {
             >
               <span
                 className={cn(
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-[var(--shadow-soft)] transition-[left]",
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)] transition-[left]",
                   optedIn ? "left-[1.375rem]" : "left-0.5",
                 )}
               />

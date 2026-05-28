@@ -260,7 +260,7 @@ export function ReminderTaskPanel({
                 {t(msg`正在同步提醒任务…`)}
               </div>
             ) : tasks.length === 0 ? (
-              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(180,130,20,0.1)] bg-[rgba(255,255,255,0.86)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(180,130,20,0.1)] bg-[color:var(--surface-card)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
                 {t(msg`还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。`)}
               </div>
             ) : (
