@@ -43,11 +43,11 @@ function slotText(slots: Record<string, unknown>, key: string): string {
 }
 
 // ---- 本地报价估算（仅用于"约 ¥X"展示）；真实扣费以 cloud actionCatalog × markup 为权威。----
-// 与 cloud-api seed (1779800000000-seed-billable-action-catalog) 对齐。markup 默认 2。
+// 三类文档产出（pptx/docx/xlsx）统一复用 cloud 已 seed 的 `ppt.generate`(unitCostCents:30,
+// 标签"生成PPT/报告")计费——避免为 docx/xlsx 单独加 cloud 计费目录键、省一次 cloud-api 部署+迁移，
+// 仍按 ×markup(默认2) 正确扣费；运营可经该键统一开关/调价整个"AI 文档生成"品类。
 const UNIT_COST_HINT_CENTS: Record<string, number> = {
   'ppt.generate': 30,
-  'document.docx.generate': 20,
-  'document.xlsx.generate': 20,
 };
 const MARKUP_HINT = 2;
 
@@ -133,7 +133,7 @@ const MEETING_MINUTES_SKILL: SkillDefinition = {
   artifactType: 'docx',
   artifactName: '会议纪要',
   unit: '页',
-  billingActionKey: 'document.docx.generate',
+  billingActionKey: 'ppt.generate',
   intentKeywords: [
     '会议纪要',
     '纪要',
@@ -196,7 +196,7 @@ const SOCIAL_ANALYTICS_SKILL: SkillDefinition = {
   artifactType: 'xlsx',
   artifactName: 'Excel 表格',
   unit: '张表',
-  billingActionKey: 'document.xlsx.generate',
+  billingActionKey: 'ppt.generate',
   intentKeywords: [
     '表格',
     'excel',
@@ -251,11 +251,190 @@ const SOCIAL_ANALYTICS_SKILL: SkillDefinition = {
   fileNameBuilder: (ctx) => `${slotText(ctx.slots, 'subject') || '数据'}.xlsx`,
 };
 
+// ---- 共享规格 prompt + 量算（P5 扩面的产出型专家复用，三类渲染器同一套 schema）----
+function pptxSpecPrompt(outline: unknown, styleNote: string): string {
+  return `把以下大纲扩成可直接渲染的 deck 规格 JSON，只输出 JSON：
+{"title":"封面标题","subtitle":"副标题","theme":"light",
+ "slides":[{"layout":"section","title":"分隔标题"},
+   {"layout":"bullets","title":"页标题","bullets":["要点(<=40字)"]},
+   {"layout":"two_column","title":"页标题","columns":{"left":["..."],"right":["..."]}}]}
+规则：不要再放封面页(渲染器自动生成)；每节先一张 section 再跟 1~3 张内容页；bullets 每页 3~6 条口语可讲；总页数贴合大纲。${styleNote}
+大纲：${JSON.stringify(outline)}`;
+}
+function docxSpecPrompt(outline: unknown, styleNote: string): string {
+  return `把以下大纲扩成可渲染的 Word 文档规格 JSON，只输出 JSON：
+{"title":"标题","blocks":[{"type":"heading","level":1,"text":"小节标题"},
+  {"type":"paragraph","text":"正文"},{"type":"bullets","items":["要点"]},
+  {"type":"table","table":{"headers":["列1","列2"],"rows":[["..","..]]}}]}
+规则：用 heading 分小节；要点用 bullets；结构化清单用 table；缺失信息写"待确认"不杜撰。${styleNote}
+大纲：${JSON.stringify(outline)}`;
+}
+function xlsxSpecPrompt(outline: unknown, styleNote: string): string {
+  return `把以下表结构扩成可渲染的 Excel 规格 JSON，只输出 JSON：
+{"sheets":[{"name":"工作表名","columns":[{"header":"列名","key":"列key(英文/拼音)","width":16}],
+  "rows":[{"列key":"值"}],"freezeHeader":true}]}
+规则：rows 每个对象 key 必须与 columns 的 key 完全一致；有真实数据填真实数据否则给合理示例行(3~10行)；数值用数字不加引号。${styleNote}
+表结构：${JSON.stringify(outline)}`;
+}
+function pptxQty(outline: unknown): number {
+  const o = (outline ?? {}) as { estimatedSlides?: number; sections?: unknown[] };
+  const n =
+    typeof o.estimatedSlides === 'number'
+      ? o.estimatedSlides
+      : Array.isArray(o.sections)
+        ? o.sections.length * 2 + 1
+        : 8;
+  return clamp(n, 4, 40);
+}
+function docxQty(outline: unknown): number {
+  const o = (outline ?? {}) as { estimatedBlocks?: number; sections?: unknown[] };
+  const blocks =
+    typeof o.estimatedBlocks === 'number'
+      ? o.estimatedBlocks
+      : Array.isArray(o.sections)
+        ? o.sections.length * 3
+        : 12;
+  return clamp(Math.ceil(blocks / 6), 1, 30);
+}
+function xlsxQty(outline: unknown): number {
+  const o = (outline ?? {}) as { sheets?: Array<{ estimatedRows?: number }> };
+  const sheets = Array.isArray(o.sheets) ? o.sheets : [];
+  const blocks = sheets.reduce(
+    (s, x) => s + Math.ceil((x?.estimatedRows ?? 20) / 50),
+    0,
+  );
+  return clamp(blocks || 1, 1, 20);
+}
+
+// P5：把其余产出型专家接上技能（统一复用 ppt.generate 计费 + 三类渲染器）。
+const CONTENT_PLAN_SKILL: SkillDefinition = {
+  skillKey: 'doc.content_plan',
+  artifactType: 'docx',
+  artifactName: '内容方案',
+  unit: '页',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['内容方案', '长图文', '发帖计划', '运营方案', '选题', '周报', '内容策划', '排期'],
+  requiredSlots: [
+    { key: 'topic', label: '主题', ask: '这份内容方案围绕什么主题/账号？' },
+    { key: 'platform_goal', label: '平台与目标', ask: '发哪个平台、想达成什么(涨粉/转化/种草)？' },
+  ],
+  outlinePromptBuilder: (c) => `你是新媒体内容运营「${c.characterName}」。基于主题与目标，产出内容方案大纲 JSON：
+{"title":"方案标题","sections":[{"heading":"小节(如 选题方向/内容结构/发帖排期/钩子与CTA/复盘指标)","points":["要点"]}],"estimatedBlocks":整数}
+主题：${c.slots['topic'] ?? ''} 平台/目标：${c.slots['platform_goal'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => docxSpecPrompt(c.outline, '风格：可执行、给具体钩子与排期，不空谈。'),
+  quantityFromOutline: docxQty,
+  rendererKey: 'docx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'topic') || '内容'}方案.docx`,
+};
+const PROPOSAL_SKILL: SkillDefinition = {
+  skillKey: 'doc.proposal',
+  artifactType: 'docx',
+  artifactName: '标书方案',
+  unit: '页',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['标书', '技术标', '投标方案', '招标', '应答', '商务标', '方案框架'],
+  requiredSlots: [
+    { key: 'project', label: '项目', ask: '是什么项目/采购内容的标？' },
+    { key: 'scoring', label: '评分重点', ask: '评分办法或关注的技术/商务要点是什么(有原文更好)？' },
+  ],
+  outlinePromptBuilder: (c) => `你是招投标顾问「${c.characterName}」。按评分点反推标书章节，产出大纲 JSON：
+{"title":"标书标题","sections":[{"heading":"章节(项目理解/技术方案/实施组织/质量保障/服务承诺等)","points":["对齐评分点的要点"]}],"estimatedBlocks":整数}
+不保证中标、不碰围标串标。项目：${c.slots['project'] ?? ''} 评分重点：${c.slots['scoring'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => docxSpecPrompt(c.outline, '风格：逐章对齐评分点、可落地；不写违规内容。'),
+  quantityFromOutline: docxQty,
+  rendererKey: 'docx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'project') || '投标'}技术标.docx`,
+};
+const SOLUTION_DECK_SKILL: SkillDefinition = {
+  skillKey: 'ppt.solution',
+  artifactType: 'pptx',
+  artifactName: '解决方案 PPT',
+  unit: '页',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['解决方案', '售前', '方案ppt', '提案', '述标', '客户方案', '产品方案'],
+  requiredSlots: [
+    { key: 'customer', label: '客户/场景', ask: '面向哪个客户、什么场景或痛点？' },
+    { key: 'offering', label: '方案内容', ask: '你的产品/方案能力是什么、想突出什么价值？' },
+  ],
+  outlinePromptBuilder: (c) => `你是售前方案顾问「${c.characterName}」。产出解决方案演示大纲 JSON：
+{"title":"方案标题","subtitle":"副标题","sections":[{"heading":"小节(现状痛点/方案总览/能力亮点/实施路径/价值收益/案例)","bullets":["要点"]}],"estimatedSlides":整数}
+客户/场景：${c.slots['customer'] ?? ''} 方案：${c.slots['offering'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => pptxSpecPrompt(c.outline, '风格：先痛点后价值、主线清晰、不堆术语。'),
+  quantityFromOutline: pptxQty,
+  rendererKey: 'pptx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'customer') || '客户'}解决方案.pptx`,
+};
+const PROJECT_WORKBOOK_SKILL: SkillDefinition = {
+  skillKey: 'sheet.project',
+  artifactType: 'xlsx',
+  artifactName: '项目套表',
+  unit: '张表',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['项目表', '套表', '对账', '台账', '日报表', '交付表', '进度表', '跟进表'],
+  requiredSlots: [
+    { key: 'purpose', label: '用途', ask: '这套表用来管什么(项目进度/费用对账/跟进记录)？' },
+    { key: 'fields', label: '字段', ask: '想要哪些字段/列？有数据也可直接发我。' },
+  ],
+  outlinePromptBuilder: (c) => `你是项目交付与运营经理「${c.characterName}」。设计项目套表结构，产出 JSON：
+{"title":"表名","sheets":[{"name":"工作表名","columns":["列1","列2"],"estimatedRows":整数}]}
+用途：${c.slots['purpose'] ?? ''} 字段/数据：${c.slots['fields'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => xlsxSpecPrompt(c.outline, '风格：列贴合用途、可直接录入；含合计/状态等实用列。'),
+  quantityFromOutline: xlsxQty,
+  rendererKey: 'xlsx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'purpose') || '项目'}套表.xlsx`,
+};
+const BENCHMARK_SKILL: SkillDefinition = {
+  skillKey: 'sheet.benchmark',
+  artifactType: 'xlsx',
+  artifactName: '竞品对标表',
+  unit: '张表',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['竞品', '对标', '对比表', '竞争分析', '矩阵', 'benchmark', '友商'],
+  requiredSlots: [
+    { key: 'category', label: '品类/对手', ask: '对标哪个品类或哪些竞品？' },
+    { key: 'dimensions', label: '对比维度', ask: '从哪些维度对比(功能/价格/获客/口碑)？' },
+  ],
+  outlinePromptBuilder: (c) => `你是竞品情报分析师「${c.characterName}」。设计竞品对标矩阵，产出 JSON：
+{"title":"对标表名","sheets":[{"name":"对标矩阵","columns":["维度","我方","竞品A","竞品B"],"estimatedRows":整数}]}
+不直接抓平台数据，给对标框架与可填结构。品类/对手：${c.slots['category'] ?? ''} 维度：${c.slots['dimensions'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => xlsxSpecPrompt(c.outline, '风格：维度成行、对象成列；拿不准的格子填"待核实"。'),
+  quantityFromOutline: xlsxQty,
+  rendererKey: 'xlsx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'category') || '竞品'}对标.xlsx`,
+};
+const EVENT_PLAN_SKILL: SkillDefinition = {
+  skillKey: 'doc.event_plan',
+  artifactType: 'docx',
+  artifactName: '活动方案',
+  unit: '页',
+  billingActionKey: 'ppt.generate',
+  intentKeywords: ['活动方案', '活动策划', '策划案', '礼品方案', '促销方案', '活动执行'],
+  requiredSlots: [
+    { key: 'occasion', label: '活动场景', ask: '什么活动/场景(节日促销/客户答谢/新品发布)？' },
+    { key: 'budget_goal', label: '预算与目标', ask: '大致预算和想达成的目标是什么？' },
+  ],
+  outlinePromptBuilder: (c) => `你是活动策划与礼品选品专家「${c.characterName}」。产出活动方案大纲 JSON：
+{"title":"活动方案标题","sections":[{"heading":"小节(活动目标/玩法机制/礼品方向/执行排期/预算分配/风险与复盘)","points":["要点"]}],"estimatedBlocks":整数}
+场景：${c.slots['occasion'] ?? ''} 预算/目标：${c.slots['budget_goal'] ?? c.userGoal}`,
+  specPromptBuilder: (c) => docxSpecPrompt(c.outline, '风格：玩法可落地、礼品给方向与比价要点，不替下单。'),
+  quantityFromOutline: docxQty,
+  rendererKey: 'docx',
+  fileNameBuilder: (c) => `${slotText(c.slots, 'occasion') || '活动'}方案.docx`,
+};
+
 // characterSourceKey → 该角色可触发的技能（一对一）。
 export const SKILL_REGISTRY: Record<string, SkillDefinition> = {
+  // P3 首发（三类渲染器各一）
   reporting_ppt_designer: PPT_DECK_SKILL,
   meeting_minutes_aide: MEETING_MINUTES_SKILL,
   social_media_analyst: SOCIAL_ANALYTICS_SKILL,
+  // P5 扩面
+  content_ops_strategist: CONTENT_PLAN_SKILL,
+  bidding_consultant: PROPOSAL_SKILL,
+  presales_solution_advisor: SOLUTION_DECK_SKILL,
+  delivery_ops_manager: PROJECT_WORKBOOK_SKILL,
+  competitive_intel_analyst: BENCHMARK_SKILL,
+  event_gift_planner: EVENT_PLAN_SKILL,
 };
 
 export function getSkillForSourceKey(
