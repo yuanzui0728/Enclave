@@ -2405,7 +2405,7 @@ export function WelcomePage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,248,230,0.16),rgba(30,20,10,0.22)_74%)]" />
         <div className="relative z-10 w-full max-w-3xl">
           <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[color:var(--surface-card)] blur-3xl" />
-          <AppSection className="relative mx-auto w-full max-w-xl rounded-[24px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
+          <AppSection className="relative mx-auto w-full max-w-xl rounded-[24px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(60, 40, 110, 0.22)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
               {/* 走查 R5：owner step 时切到"世界主人"，跟下方 H1 文案对齐 */}
               {showOwnerStep ? t(msg`世界主人`) : t(msg`世界入口`)}

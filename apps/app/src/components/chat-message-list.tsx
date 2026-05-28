@@ -5970,7 +5970,7 @@ function ReplyQuoteCard({
       className={`w-full overflow-hidden border text-left transition ${
         align === "right"
           ? isDesktop
-            ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[12px] border-[rgba(124, 91, 217, 0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
             : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
             ? "mb-2 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[color:var(--text-primary)]"
@@ -7072,7 +7072,7 @@ function GroupRelaySummaryMessage({
       className={`border shadow-none ${
         isDesktop
           ? own
-            ? "w-[252px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[252px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[252px] rounded-[20px] border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
             ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
@@ -7498,7 +7498,7 @@ function GroupCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
             ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
@@ -7660,7 +7660,7 @@ function DirectCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[20px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
             : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
             ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
