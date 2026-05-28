@@ -90,6 +90,22 @@ export const PRESET_CHARACTER_BIOS = {
   intergen_communication_he_ning: '先翻译情绪，再翻译事实，最后才是道理。',
   journaling_daily_mu_xu: '三句早安，三句晚安，不写也行。',
   review_weekly_ruan_zhou: '输入、输出、卡点。下周改一件小事。',
+  // 2026-05-28 新增：13 个职场与运营领域专家（autoSeed:false，仅 preset 目录可搜可装）。
+  // 由 ~/claude/mytool 平台 74 个工具的能力沉淀而来，已剥离汽车/代理品牌特化，
+  // 统一以「方法、口径、可执行下一步」为专长，不假装能直接抓数据/执行自动化。
+  bidding_consultant: '先抓评分表权重和废标项，再决定标书往哪里写。',
+  presales_solution_advisor: '先把客户、决策链和预算摆出来，再谈方案怎么写。',
+  meeting_minutes_aide: '先确认这场会要拿到什么，再决定问谁、记什么。',
+  content_ops_strategist: '先想清楚是给谁看、要他做什么，再决定话题和文案怎么写。',
+  social_media_analyst: '先定要回答的问题和口径，再决定看哪几个数。',
+  content_risk_reviewer: '先把红线和送审口径摆清，再逐条判断命中。',
+  competitive_intel_analyst: '先定对标对象和维度，再拆对手的打法和差距。',
+  event_gift_planner: '先定人群、预算和场景，再选机制和礼品。',
+  reporting_ppt_designer: '先想清楚这份汇报要让人记住一句话，再排页面。',
+  info_extraction_specialist: '先定字段表和校验规则，再决定怎么把图变成结构化数据。',
+  knowledge_base_engineer: '先定问答场景和召回口径，再决定切块、向量化和元数据。',
+  delivery_ops_manager: '先把交付节点、对账口径和谁负责什么摆清，再排进度。',
+  automation_rpa_engineer: '先判断该不该自动化，再判断能不能、再设计怎么做。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

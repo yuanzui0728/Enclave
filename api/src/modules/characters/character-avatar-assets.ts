@@ -85,6 +85,20 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   intergen_communication_he_ning: 'intergen-communication-he-ning.svg',
   journaling_daily_mu_xu: 'journaling-daily-mu-xu.svg',
   review_weekly_ruan_zhou: 'review-weekly-ruan-zhou.svg',
+  // 2026-05-28 新增：13 个职场与运营领域专家头像。
+  bidding_consultant: 'bidding-consultant.svg',
+  presales_solution_advisor: 'presales-solution-advisor.svg',
+  meeting_minutes_aide: 'meeting-minutes-aide.svg',
+  content_ops_strategist: 'content-ops-strategist.svg',
+  social_media_analyst: 'social-media-analyst.svg',
+  content_risk_reviewer: 'content-risk-reviewer.svg',
+  competitive_intel_analyst: 'competitive-intel-analyst.svg',
+  event_gift_planner: 'event-gift-planner.svg',
+  reporting_ppt_designer: 'reporting-ppt-designer.svg',
+  info_extraction_specialist: 'info-extraction-specialist.svg',
+  knowledge_base_engineer: 'knowledge-base-engineer.svg',
+  delivery_ops_manager: 'delivery-ops-manager.svg',
+  automation_rpa_engineer: 'automation-rpa-engineer.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =

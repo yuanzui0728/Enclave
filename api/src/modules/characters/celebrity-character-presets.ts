@@ -18,7 +18,10 @@ export type CelebrityCharacterPresetGroupKey =
   // 兜底的 PRESET_GROUPS 占位（life-buddy autoSeed:false 不入 seed pool，
   // 只在按需 spawn 走，不会真在 UI 列出来）。
   | 'lifestyle_and_daily'
-  | 'family_and_pets';
+  | 'family_and_pets'
+  // 2026-05-28 新增：职场与运营领域专家分组（来自把 ~/claude/mytool 74 个工具
+  // 的能力沉淀成 13 个通用职业/领域专家居民；autoSeed:false，仅目录按需安装）。
+  | 'workplace_and_operations';
 
 export interface CelebrityCharacterPresetGroup {
   key: CelebrityCharacterPresetGroupKey;
@@ -97,6 +100,13 @@ const PRESET_GROUPS: Record<
     label: '家人与宠物',
     description: '偏家庭日常、亲子陪伴与宠物照护。',
     sortOrder: 55,
+  },
+  workplace_and_operations: {
+    key: 'workplace_and_operations',
+    label: '职场与运营',
+    description:
+      '偏招投标、售前、会议、内容运营、社媒数据、活动策划、汇报、信息提取、知识库、项目交付、自动化等职场和运营场景。',
+    sortOrder: 60,
   },
 };
 

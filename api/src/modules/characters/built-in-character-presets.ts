@@ -12,6 +12,7 @@ import { LIFE_BUDDY_CHARACTER_PRESETS } from './life-buddy-character-presets';
 import { LIFESTYLE_BUDDY_CHARACTER_PRESETS } from './lifestyle-buddy-character-presets';
 import { SERVICE_EXPERT_CHARACTER_PRESETS } from './service-expert-character-presets';
 import { TEACHER_CHARACTER_PRESETS } from './teacher-character-presets';
+import { WORKPLACE_OPS_EXPERT_CHARACTER_PRESETS } from './workplace-ops-expert-character-presets';
 
 /**
  * 三层模型（2026-05-14 起的统一术语）：
@@ -48,6 +49,9 @@ export const BUILT_IN_CHARACTER_PRESETS: CelebrityCharacterPreset[] = [
   ...DATING_AIDE_CHARACTER_PRESETS,
   ...LIFESTYLE_BUDDY_CHARACTER_PRESETS,
   ...LIFE_BUDDY_CHARACTER_PRESETS,
+  // 2026-05-28：mytool 工具能力沉淀的 13 个职场与运营领域专家。autoSeed:false，
+  // 不入 seed pool，只走 listPresetCatalog → 用户主动安装路径。
+  ...WORKPLACE_OPS_EXPERT_CHARACTER_PRESETS,
 ];
 
 export function listBuiltInCharacterPresets() {
