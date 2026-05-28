@@ -123,7 +123,7 @@ export function FeatureComingSoonDialog({
         </button>
 
         <div className="px-6 pt-7 pb-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(139,92,246,0.12)] text-[#7c3aed]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
             <Sparkles size={22} />
           </div>
           <h2 className="mt-3 text-[16px] font-semibold text-[color:var(--text-primary)]">

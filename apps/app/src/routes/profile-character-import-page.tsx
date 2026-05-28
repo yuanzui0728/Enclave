@@ -746,7 +746,7 @@ function PreviewAvatar({ avatar, name }: { avatar: string; name: string }) {
       ? Array.from(trimmed).slice(0, 2).join("")
       : Array.from(name)[0] ?? "";
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[rgba(139,92,246,0.12)] text-lg text-[#7c3aed]">
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color:var(--brand-soft)] text-lg text-[color:var(--brand-primary)]">
       {display || "🪞"}
     </div>
   );
