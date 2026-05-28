@@ -8,6 +8,7 @@ import {
   getWorldOwner,
   setWorldOwnerApiKey,
   updateWorldOwner,
+  type UpdateWorldOwnerRequest,
 } from "@yinjie/contracts";
 import { LanguageSwitcher, useRuntimeTranslator } from "@yinjie/i18n";
 import {
@@ -44,6 +45,48 @@ const MIN_OWNER_NAME_LENGTH = 2;
 // 字符串比移动端列表/卡片渲染时预期的更长。
 const MAX_OWNER_NAME_LENGTH = 20;
 const MAX_OWNER_SIGNATURE_LENGTH = 60;
+
+// 「补充资料，让 AI 更懂你」字段约束——与移动端 profile-info-field-page 及后端
+// world-owner.service 完全对齐（桌面端之前完全缺这一组字段，desktop-only 用户无从
+// 填写自我设定，AI 对话拿不到画像；这里补齐到与移动端等价）。
+const AGE_MIN = 1;
+const AGE_MAX = 120;
+const MAX_OCCUPATION_LENGTH = 40;
+const MAX_REGION_LENGTH = 40;
+const MAX_INTERESTS_LENGTH = 200;
+const MAX_ADDRESS_TONE_LENGTH = 100;
+const MAX_AVOID_TOPICS_LENGTH = 200;
+
+type ProfileGender = "male" | "female" | "other" | "";
+const GENDER_OPTIONS: {
+  value: Exclude<ProfileGender, "">;
+  label: ReturnType<typeof msg>;
+}[] = [
+  { value: "male", label: msg`男` },
+  { value: "female", label: msg`女` },
+  { value: "other", label: msg`其他` },
+];
+
+// 剥控制字符 + 折叠空白 + trim（与移动端字段页 / 后端 sanitizeProfileField 同款）。
+// 这些值注入 AI prompt，换行/制表既污染结构也无意义。new RegExp(string) 形式避免
+// no-control-regex（该规则只针对正则字面量里的控制字符）。
+const CONTROL_CHAR_PATTERN = new RegExp(
+  // eslint-disable-next-line no-control-regex
+  "[\\u0000-\\u001f\\u007f-\\u009f]+",
+  "g",
+);
+function sanitizeProfileText(value: string): string {
+  return value.replace(CONTROL_CHAR_PATTERN, " ").replace(/\s+/g, " ").trim();
+}
+// 年龄字符串 → 入库值：空=null（清空）、非法=undefined（禁止保存）、否则 1-120 整数。
+function parseDesktopAge(draft: string): number | null | undefined {
+  const trimmed = draft.trim();
+  if (trimmed === "") return null;
+  if (!/^\d{1,3}$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  if (!Number.isInteger(n) || n < AGE_MIN || n > AGE_MAX) return undefined;
+  return n;
+}
 
 type SettingsTab =
   | "profile"
@@ -121,6 +164,13 @@ export function ProfileSettingsDesktop() {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const username = useWorldOwnerStore((state) => state.username);
   const signature = useWorldOwnerStore((state) => state.signature);
+  const genderStore = useWorldOwnerStore((state) => state.gender);
+  const ageStore = useWorldOwnerStore((state) => state.age);
+  const occupationStore = useWorldOwnerStore((state) => state.occupation);
+  const regionStore = useWorldOwnerStore((state) => state.region);
+  const interestsStore = useWorldOwnerStore((state) => state.interests);
+  const aiAddressToneStore = useWorldOwnerStore((state) => state.aiAddressTone);
+  const avoidTopicsStore = useWorldOwnerStore((state) => state.avoidTopics);
   const cloudAccessToken = useCloudSessionStore((state) => state.accessToken);
   const cloudPhone = useCloudSessionStore((state) => state.phone);
   const updateOwnerStore = useWorldOwnerStore((state) => state.updateOwner);
@@ -138,6 +188,15 @@ export function ProfileSettingsDesktop() {
 
   const [draftName, setDraftName] = useState(username ?? "");
   const [draftSignature, setDraftSignature] = useState(signature);
+  const [draftGender, setDraftGender] = useState<ProfileGender>(genderStore);
+  const [draftAge, setDraftAge] = useState(
+    ageStore != null ? String(ageStore) : "",
+  );
+  const [draftOccupation, setDraftOccupation] = useState(occupationStore);
+  const [draftRegion, setDraftRegion] = useState(regionStore);
+  const [draftInterests, setDraftInterests] = useState(interestsStore);
+  const [draftAddressTone, setDraftAddressTone] = useState(aiAddressToneStore);
+  const [draftAvoidTopics, setDraftAvoidTopics] = useState(avoidTopicsStore);
   const [apiKeyDraft, setApiKeyDraft] = useState("");
   const [apiBaseDraft, setApiBaseDraft] = useState("");
 
@@ -161,6 +220,30 @@ export function ProfileSettingsDesktop() {
   useEffect(() => {
     setDraftSignature(signature);
   }, [signature]);
+
+  // 补充资料的 draft 跟随 store hydrate 同步（owner.id 只 hydrate 一次，
+  // hydratedOwnerKeyRef 守卫，不会在用户编辑中途被 refetch 覆盖）。
+  useEffect(() => {
+    setDraftGender(genderStore);
+  }, [genderStore]);
+  useEffect(() => {
+    setDraftAge(ageStore != null ? String(ageStore) : "");
+  }, [ageStore]);
+  useEffect(() => {
+    setDraftOccupation(occupationStore);
+  }, [occupationStore]);
+  useEffect(() => {
+    setDraftRegion(regionStore);
+  }, [regionStore]);
+  useEffect(() => {
+    setDraftInterests(interestsStore);
+  }, [interestsStore]);
+  useEffect(() => {
+    setDraftAddressTone(aiAddressToneStore);
+  }, [aiAddressToneStore]);
+  useEffect(() => {
+    setDraftAvoidTopics(avoidTopicsStore);
+  }, [avoidTopicsStore]);
 
   // 桌面端打开 /desktop/settings 时，hydrateOwner 会写 zustand 触发本组件
   // 重渲染；若 ownerQuery 还在 staleTime 窗口外，会被 react-query 视为需要
@@ -259,6 +342,66 @@ export function ProfileSettingsDesktop() {
     },
   });
 
+  // ---- 补充资料（注入 AI 的自我设定）：归一 + dirty + 校验 ----
+  const sanitizedOccupation = sanitizeProfileText(draftOccupation);
+  const sanitizedRegion = sanitizeProfileText(draftRegion);
+  const sanitizedInterests = sanitizeProfileText(draftInterests);
+  const sanitizedAddressTone = sanitizeProfileText(draftAddressTone);
+  const sanitizedAvoidTopics = sanitizeProfileText(draftAvoidTopics);
+  const parsedAge = parseDesktopAge(draftAge);
+  const ageInvalid = parsedAge === undefined;
+  const occupationDirty =
+    sanitizedOccupation !== sanitizeProfileText(occupationStore);
+  const regionDirty = sanitizedRegion !== sanitizeProfileText(regionStore);
+  const interestsDirty =
+    sanitizedInterests !== sanitizeProfileText(interestsStore);
+  const addressToneDirty =
+    sanitizedAddressTone !== sanitizeProfileText(aiAddressToneStore);
+  const avoidTopicsDirty =
+    sanitizedAvoidTopics !== sanitizeProfileText(avoidTopicsStore);
+  const genderDirty = draftGender !== genderStore;
+  // 按原始字符串比对（同移动端字段页），而非 parsedAge——否则非法年龄（如 "500"）
+  // parsedAge=undefined 经 `?? null` 会与空 store 的 null 相等，被误判为「没改」而
+  // 静默丢弃、不报错。字符串比对让非法非空输入也算 dirty → 触发 ageInvalid 拦截。
+  const ageStoreStr = ageStore != null ? String(ageStore) : "";
+  const ageDirty = draftAge.trim() !== ageStoreStr;
+  const supplementaryDirty =
+    genderDirty ||
+    ageDirty ||
+    occupationDirty ||
+    regionDirty ||
+    interestsDirty ||
+    addressToneDirty ||
+    avoidTopicsDirty;
+  const supplementaryOverLimit =
+    sanitizedOccupation.length > MAX_OCCUPATION_LENGTH ||
+    sanitizedRegion.length > MAX_REGION_LENGTH ||
+    sanitizedInterests.length > MAX_INTERESTS_LENGTH ||
+    sanitizedAddressTone.length > MAX_ADDRESS_TONE_LENGTH ||
+    sanitizedAvoidTopics.length > MAX_AVOID_TOPICS_LENGTH;
+  // ageInvalid 只在年龄字段本身被改脏时才挡保存——否则用户只想改职业、年龄维持
+  // 旧值（永远合法）却被 ageInvalid 卡住。
+  const canSaveSupplementary =
+    supplementaryDirty && !supplementaryOverLimit && !(ageDirty && ageInvalid);
+
+  const saveSupplementaryMutation = useMutation({
+    mutationFn: async () => {
+      // 只发改过的字段：避免重发未变值、也不无谓覆盖被动推断刚回填的空字段。
+      const payload: UpdateWorldOwnerRequest = {};
+      if (genderDirty) payload.gender = draftGender === "" ? null : draftGender;
+      if (ageDirty) payload.age = parsedAge ?? null;
+      if (occupationDirty) payload.occupation = sanitizedOccupation;
+      if (regionDirty) payload.region = sanitizedRegion;
+      if (interestsDirty) payload.interests = sanitizedInterests;
+      if (addressToneDirty) payload.aiAddressTone = sanitizedAddressTone;
+      if (avoidTopicsDirty) payload.avoidTopics = sanitizedAvoidTopics;
+      const owner = await updateWorldOwner(payload, baseUrl);
+      queryClient.setQueryData(["world-owner", baseUrl], owner);
+      // hydrateOwner 写回 store → 上面 7 个同步 effect 把 draft 拉回已保存值。
+      hydrateOwner(owner);
+    },
+  });
+
   // 没改昵称就不挡 save——老"w"用户改签名/头像不应该被 username 校验波及。
   const nameValid = trimmedDraftName.length >= MIN_OWNER_NAME_LENGTH;
   const canSaveProfile =
@@ -303,6 +446,7 @@ export function ProfileSettingsDesktop() {
   const content = (
     <>
       {activeTab === "profile" ? (
+        <div className="space-y-4">
         <SettingsSection
           title={t(msg`个人资料`)}
           description={t(
@@ -363,6 +507,161 @@ export function ProfileSettingsDesktop() {
             <InlineNotice tone="success">{t(msg`资料已更新。`)}</InlineNotice>
           ) : null}
         </SettingsSection>
+
+        <SettingsSection
+          title={t(msg`补充资料，让 AI 更懂你`)}
+          description={t(
+            msg`这些信息只用来让你的 AI 伙伴更懂你、回复更贴合，不会公开给其他用户。`,
+          )}
+        >
+          <div className="space-y-3">
+            {/* 性别：三选一 toggle，再次点选当前项可清空（同移动端字段页） */}
+            <div className="block">
+              <div className="mb-1 text-[11px] font-medium text-[color:var(--text-secondary)]">
+                {t(msg`性别`)}
+              </div>
+              <div className="flex gap-2">
+                {GENDER_OPTIONS.map((option) => {
+                  const active = option.value === draftGender;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        setDraftGender(active ? "" : option.value)
+                      }
+                      className={cn(
+                        "flex-1 rounded-[10px] border px-3 py-2 text-[12px] font-medium transition-colors",
+                        active
+                          ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
+                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card-hover)]",
+                      )}
+                    >
+                      {t(option.label)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <SettingsFieldGroup label={t(msg`年龄`)}>
+              <TextField
+                value={draftAge}
+                inputMode="numeric"
+                maxLength={3}
+                placeholder={t(msg`你的年龄`)}
+                onChange={(event) =>
+                  setDraftAge(event.target.value.replace(/\D/g, ""))
+                }
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+              />
+              {ageDirty && ageInvalid ? (
+                <div className="mt-1 text-[10px] text-[color:var(--state-danger-text)]">
+                  {t(msg`请填写 ${AGE_MIN}-${AGE_MAX} 之间的年龄。`)}
+                </div>
+              ) : null}
+            </SettingsFieldGroup>
+
+            <SettingsFieldGroup label={t(msg`职业`)}>
+              <TextField
+                value={draftOccupation}
+                maxLength={MAX_OCCUPATION_LENGTH}
+                placeholder={t(msg`你的职业，例如 产品经理`)}
+                onChange={(event) =>
+                  setDraftOccupation(
+                    event.target.value.replace(/[\r\n\t]/g, " "),
+                  )
+                }
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+              />
+            </SettingsFieldGroup>
+
+            <SettingsFieldGroup label={t(msg`所在地`)}>
+              <TextField
+                value={draftRegion}
+                maxLength={MAX_REGION_LENGTH}
+                placeholder={t(msg`常驻城市，例如 上海`)}
+                onChange={(event) =>
+                  setDraftRegion(event.target.value.replace(/[\r\n\t]/g, " "))
+                }
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+              />
+            </SettingsFieldGroup>
+
+            <SettingsFieldGroup label={t(msg`兴趣爱好`)}>
+              <TextAreaField
+                value={draftInterests}
+                maxLength={MAX_INTERESTS_LENGTH}
+                placeholder={t(msg`你的兴趣爱好，例如 爬山、摄影、独立游戏`)}
+                onChange={(event) => setDraftInterests(event.target.value)}
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+              />
+              <div
+                className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
+                data-i18n-skip="true"
+              >
+                {sanitizedInterests.length}/{MAX_INTERESTS_LENGTH}
+              </div>
+            </SettingsFieldGroup>
+
+            <SettingsFieldGroup label={t(msg`互动偏好`)}>
+              <TextAreaField
+                value={draftAddressTone}
+                maxLength={MAX_ADDRESS_TONE_LENGTH}
+                placeholder={t(
+                  msg`希望角色怎么称呼你、用什么语气，例如 叫我老王，轻松一点`,
+                )}
+                onChange={(event) => setDraftAddressTone(event.target.value)}
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+              />
+              <div
+                className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
+                data-i18n-skip="true"
+              >
+                {sanitizedAddressTone.length}/{MAX_ADDRESS_TONE_LENGTH}
+              </div>
+            </SettingsFieldGroup>
+
+            <SettingsFieldGroup label={t(msg`回避话题`)}>
+              <TextAreaField
+                value={draftAvoidTopics}
+                maxLength={MAX_AVOID_TOPICS_LENGTH}
+                placeholder={t(msg`不希望被聊到的话题，例如 催婚、工作压力`)}
+                onChange={(event) => setDraftAvoidTopics(event.target.value)}
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+              />
+              <div
+                className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
+                data-i18n-skip="true"
+              >
+                {sanitizedAvoidTopics.length}/{MAX_AVOID_TOPICS_LENGTH}
+              </div>
+            </SettingsFieldGroup>
+          </div>
+
+          <div className="pt-1">
+            <Button
+              onClick={() => saveSupplementaryMutation.mutate()}
+              disabled={
+                !canSaveSupplementary || saveSupplementaryMutation.isPending
+              }
+              variant="primary"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[12px] text-white shadow-none hover:opacity-95"
+            >
+              {saveSupplementaryMutation.isPending
+                ? t(msg`保存中...`)
+                : t(msg`保存资料`)}
+            </Button>
+          </div>
+          {saveSupplementaryMutation.isError &&
+          saveSupplementaryMutation.error instanceof Error ? (
+            <ErrorBlock message={saveSupplementaryMutation.error.message} />
+          ) : null}
+          {saveSupplementaryMutation.isSuccess ? (
+            <InlineNotice tone="success">{t(msg`资料已更新。`)}</InlineNotice>
+          ) : null}
+        </SettingsSection>
+        </div>
       ) : null}
 
       {activeTab === "chat" ? (
