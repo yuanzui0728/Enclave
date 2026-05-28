@@ -165,6 +165,24 @@ export interface RedPacketAttachment {
   expiresAt: string;
 }
 
+/**
+ * 礼物卡片：聊天里送/收商城虚拟礼物的最小展示快照。账本真值在 cloud-api
+ * （GiftRecordEntity / GoodsInventoryEntity，见 shop.ts 契约）；这里只存渲染气泡的引用字段。
+ * - direction: outgoing=用户送给 AI；incoming=AI 送给用户。
+ * 与红包不同：礼物无领取态（送出即转移虚拟物），故无 status/expiresAt。
+ */
+export interface GiftAttachment {
+  kind: "gift";
+  giftRecordId: string;
+  direction: "outgoing" | "incoming";
+  goodsCode: string;
+  goodsName: string;
+  iconUrl: string | null;
+  quantity: number;
+  message: string;
+  senderName: string;
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
@@ -175,7 +193,8 @@ export type MessageAttachment =
   | NoteCardAttachment
   | FeedPostCardAttachment
   | CallLogAttachment
-  | RedPacketAttachment;
+  | RedPacketAttachment
+  | GiftAttachment;
 
 export type UploadableAttachment =
   | ImageAttachment
