@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Languages,
   ShieldCheck,
+  SunMoon,
   UsersRound,
 } from "lucide-react";
 import { updateWorldOwner } from "@yinjie/contracts";
@@ -17,6 +18,8 @@ import {
 } from "@yinjie/i18n";
 import { AppPage, cn } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { useAppearance } from "../hooks/use-appearance";
+import type { AppearanceMode } from "../store/appearance-store";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { shouldShowCloudAccountControls } from "../lib/cloud-session";
 import { navigateBackOrFallback } from "../lib/history-back";
@@ -72,6 +75,13 @@ function ProfileSettingsMobileEntry() {
   const cloudAccessToken = useCloudSessionStore((state) => state.accessToken);
   const cloudPhone = useCloudSessionStore((state) => state.phone);
   const { requestedLocale } = useAppLocale();
+  const { mode: appearanceMode, setMode: setAppearanceMode } = useAppearance();
+
+  const appearanceOptions: Array<{ value: AppearanceMode; label: string }> = [
+    { value: "light", label: t(msg`浅色`) },
+    { value: "dark", label: t(msg`深色`) },
+    { value: "system", label: t(msg`跟随系统`) },
+  ];
 
   const showCloudAccountEntries = shouldShowCloudAccountControls({
     worldAccessMode: runtimeConfig.worldAccessMode,
@@ -120,7 +130,7 @@ function ProfileSettingsMobileEntry() {
       <TabPageTopBar
         title={t(msg`设置`)}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           // 第三轮 R1：之前用 UI <Button variant="ghost"> + className "shadow-none"
           // 直接把 tokens.css 全局 :focus-visible 的 box-shadow 焦点环压成 0——
@@ -189,6 +199,42 @@ function ProfileSettingsMobileEntry() {
             />
           </button>
         ) : null}
+      </div>
+
+      {/* 外观：浅色 / 深色 / 跟随系统。纯前端，写 appearance-store（localStorage 持久），
+          mobile-shell 按解析结果挂 data-appearance 切兰花薰衣(白天)/深空夜紫(夜间)。 */}
+      <div className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+        <div className="flex w-full items-center gap-2.5 px-4 pb-1.5 pt-2.75 text-left">
+          <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
+            <SunMoon size={15} />
+          </div>
+          <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+            {t(msg`外观`)}
+          </div>
+        </div>
+        <div className="px-4 pb-3 pt-1">
+          <div className="flex gap-1 rounded-[12px] bg-[color:var(--surface-soft)] p-1">
+            {appearanceOptions.map((option) => {
+              const active = appearanceMode === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setAppearanceMode(option.value)}
+                  aria-pressed={active}
+                  className={cn(
+                    "flex-1 rounded-[10px] py-1.5 text-[12px] font-medium transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    active
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                      : "text-[color:var(--text-secondary)]",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 分身相遇 opt-in：跨用户撮合池开关，默认开。写走 world-api（owner 列为真源），

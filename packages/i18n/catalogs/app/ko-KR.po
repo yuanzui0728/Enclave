@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "음악"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3453
-#: apps/app/src/routes/channels-page.tsx:3722
-msgid "播放"
-msgstr "재생"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3453
 #: apps/app/src/routes/channels-page.tsx:3722
 msgid "暂停"
 msgstr "일시정지"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3453
+#: apps/app/src/routes/channels-page.tsx:3722
+msgid "播放"
+msgstr "재생"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -183,7 +183,7 @@ msgstr "채팅으로 전달"
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:309
 #: apps/app/src/features/chat/mobile-message-reminder-sheet.tsx:230
 #: apps/app/src/features/chat/mobile-message-reminder-sheet.tsx:239
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:215
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:219
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:651
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:230
 #: apps/app/src/features/contacts/management/contacts-bulk-action-bar.tsx:372
@@ -928,7 +928,7 @@ msgstr "원본으로 보내기 (Cmd/Ctrl+Enter)"
 #: apps/app/src/routes/character-detail-page.tsx:400
 #: apps/app/src/routes/discover-page.tsx:1120
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1120
-#: apps/app/src/routes/welcome-page.tsx:1771
+#: apps/app/src/routes/welcome-page.tsx:1814
 msgid "发送中..."
 msgstr "전송 중..."
 
@@ -2346,7 +2346,7 @@ msgid "领取红包"
 msgstr ""
 
 #: apps/app/src/components/chat-message-list.tsx:6815
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:178
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:182
 msgid "恭喜发财，大吉大利"
 msgstr ""
 
@@ -2645,7 +2645,7 @@ msgstr ""
 #: apps/app/src/routes/subscription-inbox-page.tsx:194
 #: apps/app/src/routes/wallet-page.tsx:109
 #: apps/app/src/routes/wallet-transactions-page.tsx:80
-#: apps/app/src/routes/welcome-page.tsx:2129
+#: apps/app/src/routes/welcome-page.tsx:2172
 msgid "返回"
 msgstr "뒤로"
 
@@ -2749,7 +2749,7 @@ msgid "复制失败，请长按微信号手动复制。"
 msgstr "복사에 실패했습니다. WeChat ID를 길게 눌러 직접 복사해 주세요."
 
 #: apps/app/src/components/feature-coming-soon-dialog.tsx:110
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:103
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:107
 #: apps/app/src/features/contacts/voice-picker.tsx:271
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:173
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:79
@@ -2868,8 +2868,8 @@ msgstr "이미지를 갤러리에 저장한 뒤 X / 샤오훙수 / 웨이보에 
 #: apps/app/src/routes/profile-page.tsx:116
 #: apps/app/src/routes/profile-page.tsx:123
 #: apps/app/src/routes/profile-page.tsx:135
-#: apps/app/src/routes/welcome-page.tsx:2368
-#: apps/app/src/routes/welcome-page.tsx:2386
+#: apps/app/src/routes/welcome-page.tsx:2411
+#: apps/app/src/routes/welcome-page.tsx:2429
 msgid "世界主人"
 msgstr "세계 주인"
 
@@ -3271,7 +3271,7 @@ msgstr "문서 공유"
 
 #: apps/app/src/components/mobile-shell.tsx:33
 #: apps/app/src/i18n/static-dom-seed.ts:178
-#: apps/app/src/routes/welcome-page.tsx:2226
+#: apps/app/src/routes/welcome-page.tsx:2269
 msgid "世界"
 msgstr "세계"
 
@@ -3928,8 +3928,8 @@ msgstr "클라우드 계정 세션이 만료되었습니다. 다시 로그인한
 
 #: apps/app/src/features/account-security/account-security-panel.tsx:200
 #: apps/app/src/features/account-security/delete-account-panel.tsx:128
-#: apps/app/src/routes/welcome-page.tsx:853
-#: apps/app/src/routes/welcome-page.tsx:893
+#: apps/app/src/routes/welcome-page.tsx:921
+#: apps/app/src/routes/welcome-page.tsx:961
 msgid "开发模式：验证码已打印到服务端日志。"
 msgstr "개발 모드: 인증 코드가 서버 로그에 출력되었습니다."
 
@@ -4010,7 +4010,7 @@ msgstr "6자리 숫자"
 
 #: apps/app/src/features/account-security/account-security-panel.tsx:433
 #: apps/app/src/features/account-security/delete-account-panel.tsx:306
-#: apps/app/src/routes/welcome-page.tsx:1774
+#: apps/app/src/routes/welcome-page.tsx:1817
 msgid "发送验证码"
 msgstr "코드 보내기"
 
@@ -4078,8 +4078,8 @@ msgid "为确认是你本人操作，我们会向你的手机或绑定邮箱发�
 msgstr ""
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:268
-#: apps/app/src/routes/welcome-page.tsx:1705
-#: apps/app/src/routes/welcome-page.tsx:1713
+#: apps/app/src/routes/welcome-page.tsx:1748
+#: apps/app/src/routes/welcome-page.tsx:1756
 msgid "验证码"
 msgstr "인증 코드"
 
@@ -5145,7 +5145,7 @@ msgstr "영상"
 
 #: apps/app/src/features/chat/digital-human-player.tsx:61
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:959
-#: apps/app/src/routes/welcome-page.tsx:2263
+#: apps/app/src/routes/welcome-page.tsx:2306
 msgid "重新连接"
 msgstr "다시 연결"
 
@@ -5752,14 +5752,14 @@ msgstr "음성으로 전환"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "끊는 중..."
-
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
 msgid "挂断"
 msgstr "끊기"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
+msgid "挂断中..."
+msgstr "끊는 중..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -5948,49 +5948,49 @@ msgstr "아직 {remainingCount}건 남음"
 msgid "暂时关闭提醒浮条"
 msgstr "알림 플로팅 바 일시 닫기"
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:119
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:123
 #: apps/app/src/features/wallet/wallet-format.ts:49
 msgid "发红包"
 msgstr ""
 
 #. placeholder {0}: formatCents(balanceCents, currency)
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:123
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:127
 msgid "钱包余额 {0}，金额将从钱包扣除。"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:124
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:128
 msgid "金额将从钱包余额扣除。"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:167
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:171
 msgid "自定义金额（最高 ¥{MAX_YUAN}）"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:168
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:172
 msgid "自定义红包金额"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:179
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:183
 msgid "红包祝福语"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:185
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:189
 msgid "单个红包最高 ¥{MAX_YUAN}。"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:189
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:193
 msgid "钱包余额不足。"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:196
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:200
 msgid "去充值"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:227
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:232
 msgid "发送中…"
 msgstr ""
 
-#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:227
+#: apps/app/src/features/chat/red-packet-compose-dialog.tsx:232
 msgid "塞钱进红包"
 msgstr ""
 
@@ -10967,7 +10967,7 @@ msgstr "즐겨찾기에 저장됨"
 #: apps/app/src/routes/profile-settings-desktop.tsx:498
 #: apps/app/src/routes/profile-settings-desktop.tsx:652
 #: apps/app/src/routes/profile-settings-desktop.tsx:785
-#: apps/app/src/routes/welcome-page.tsx:2141
+#: apps/app/src/routes/welcome-page.tsx:2184
 msgid "保存中..."
 msgstr "저장 중..."
 
@@ -11978,8 +11978,8 @@ msgstr "좋아요 다시 시도"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:153
 #: apps/app/src/routes/discover-feed-page.tsx:2868
-#: apps/app/src/routes/welcome-page.tsx:2295
-#: apps/app/src/routes/welcome-page.tsx:2321
+#: apps/app/src/routes/welcome-page.tsx:2338
+#: apps/app/src/routes/welcome-page.tsx:2364
 msgid "重试发送"
 msgstr "전송 다시 시도"
 
@@ -19352,7 +19352,7 @@ msgstr "피드백"
 #: apps/app/src/routes/desktop-mobile-page.tsx:176
 #: apps/app/src/routes/profile-page.tsx:156
 #: apps/app/src/routes/profile-settings-desktop.tsx:941
-#: apps/app/src/routes/profile-settings-page.tsx:121
+#: apps/app/src/routes/profile-settings-page.tsx:131
 msgid "设置"
 msgstr "설정"
 
@@ -19627,7 +19627,7 @@ msgid "已复制微信号"
 msgstr "WeChat ID를 복사했습니다"
 
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:66
-#: apps/app/src/routes/welcome-page.tsx:1616
+#: apps/app/src/routes/welcome-page.tsx:1659
 msgid "邮箱"
 msgstr "이메일"
 
@@ -19827,7 +19827,7 @@ msgstr "이메일 계정"
 #: apps/app/src/routes/profile-info-contact-page.tsx:37
 #: apps/app/src/routes/profile-subscription-page.tsx:641
 #: apps/app/src/routes/shop-checkout-page.tsx:132
-#: apps/app/src/routes/welcome-page.tsx:1575
+#: apps/app/src/routes/welcome-page.tsx:1618
 msgid "手机号"
 msgstr "전화번호"
 
@@ -29185,7 +29185,7 @@ msgstr "로그아웃하면 월드 입구로 돌아가며, 다음에는 클라우
 #: apps/app/src/routes/profile-settings-account-security-page.tsx:42
 #: apps/app/src/routes/profile-settings-desktop.tsx:114
 #: apps/app/src/routes/profile-settings-desktop.tsx:912
-#: apps/app/src/routes/profile-settings-page.tsx:184
+#: apps/app/src/routes/profile-settings-page.tsx:194
 msgid "账号安全"
 msgstr "계정 보안"
 
@@ -29415,7 +29415,7 @@ msgid "设置分类"
 msgstr "설정 분류"
 
 #: apps/app/src/routes/profile-settings-language-page.tsx:42
-#: apps/app/src/routes/profile-settings-page.tsx:159
+#: apps/app/src/routes/profile-settings-page.tsx:169
 msgid "多语言"
 msgstr "언어"
 
@@ -29423,16 +29423,32 @@ msgstr "언어"
 msgid "正在切换语言..."
 msgstr "언어 전환 중…"
 
-#: apps/app/src/routes/profile-settings-page.tsx:143
+#: apps/app/src/routes/profile-settings-page.tsx:81
+msgid "浅色"
+msgstr ""
+
+#: apps/app/src/routes/profile-settings-page.tsx:82
+msgid "深色"
+msgstr ""
+
+#: apps/app/src/routes/profile-settings-page.tsx:83
+msgid "跟随系统"
+msgstr ""
+
+#: apps/app/src/routes/profile-settings-page.tsx:153
 msgid "返回资料页"
 msgstr "프로필 페이지로 돌아가기"
 
-#: apps/app/src/routes/profile-settings-page.tsx:204
-#: apps/app/src/routes/profile-settings-page.tsx:214
+#: apps/app/src/routes/profile-settings-page.tsx:212
+msgid "外观"
+msgstr ""
+
+#: apps/app/src/routes/profile-settings-page.tsx:250
+#: apps/app/src/routes/profile-settings-page.tsx:260
 msgid "允许我的分身参与社交相遇"
 msgstr ""
 
-#: apps/app/src/routes/profile-settings-page.tsx:207
+#: apps/app/src/routes/profile-settings-page.tsx:253
 msgid "关闭后别人无法和你的分身相遇，你也收不到新的相遇。"
 msgstr ""
 
@@ -29973,7 +29989,7 @@ msgstr "{translatedDisplayStatus} 예상 대기 시간: {0}초."
 
 #: apps/app/src/routes/welcome-page.tsx:232
 #: apps/app/src/routes/welcome-page.tsx:247
-#: apps/app/src/routes/welcome-page.tsx:2052
+#: apps/app/src/routes/welcome-page.tsx:2095
 msgid "连接中..."
 msgstr "연결 중..."
 
@@ -30009,276 +30025,280 @@ msgstr "클라우드 세계에 연결되었습니다."
 msgid "世界已就绪，但暂时还无法访问。"
 msgstr "세계는 준비되었지만 아직 접근할 수 없습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:854
+#: apps/app/src/routes/welcome-page.tsx:830
+msgid "世界还在创建中，请稍后重试进入。"
+msgstr ""
+
+#: apps/app/src/routes/welcome-page.tsx:922
 msgid "验证码已发送。"
 msgstr "인증 코드가 전송되었습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:894
+#: apps/app/src/routes/welcome-page.tsx:962
 msgid "验证码已发送，请查收邮箱（含垃圾邮件箱）。"
 msgstr "인증 코드를 보냈습니다. 메일함(스팸 포함)을 확인하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:944
+#: apps/app/src/routes/welcome-page.tsx:1012
 msgid "请输入本地世界 API 地址。"
 msgstr "로컬 세계 API 주소를 입력하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:991
+#: apps/app/src/routes/welcome-page.tsx:1059
 msgid "已连接到本地世界。"
 msgstr "로컬 세계에 연결되었습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:994
+#: apps/app/src/routes/welcome-page.tsx:1062
 msgid "无法连接到本地世界。"
 msgstr "로컬 세계에 연결할 수 없습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:1104
-#: apps/app/src/routes/welcome-page.tsx:1857
+#: apps/app/src/routes/welcome-page.tsx:1161
+#: apps/app/src/routes/welcome-page.tsx:1900
 msgid "Google 登录失败，请稍后重试。"
 msgstr "Google 로그인 실패. 잠시 후 다시 시도하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1124
+#: apps/app/src/routes/welcome-page.tsx:1181
 msgid "请输入手机号。"
 msgstr "전화번호를 입력하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1128
+#: apps/app/src/routes/welcome-page.tsx:1185
 msgid "请输入邮箱。"
 msgstr "이메일을 입력하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1132
+#: apps/app/src/routes/welcome-page.tsx:1189
 msgid "邮箱格式不正确，请检查后重试。"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1138
+#: apps/app/src/routes/welcome-page.tsx:1195
 msgid "请输入验证码。"
 msgstr "인증 코드를 입력하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1142
+#: apps/app/src/routes/welcome-page.tsx:1199
 msgid "请输入密码。"
 msgstr "비밀번호를 입력해 주세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1156
+#: apps/app/src/routes/welcome-page.tsx:1213
 msgid "密码长度需在 8-32 位之间。"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1160
+#: apps/app/src/routes/welcome-page.tsx:1217
 msgid "密码不能包含空格。"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1363
+#: apps/app/src/routes/welcome-page.tsx:1406
 msgid "解析云世界访问失败。"
 msgstr "클라우드 세계 접근 해석에 실패했습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:1426
+#: apps/app/src/routes/welcome-page.tsx:1469
 msgid "请输入世界主人的名字。"
 msgstr "세계 주인의 이름을 입력하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1431
+#: apps/app/src/routes/welcome-page.tsx:1474
 msgid "名字至少 {MIN_OWNER_NAME_LENGTH} 个字，请取一个真正的昵称。"
 msgstr "이름은 최소 {MIN_OWNER_NAME_LENGTH}자 이상이어야 합니다. 실제 사용할 닉네임을 입력해 주세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1437
+#: apps/app/src/routes/welcome-page.tsx:1480
 msgid "请先连接世界，再设置世界主人名称。"
 msgstr "먼저 세계에 연결한 뒤 세계 주인 이름을 설정하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1461
+#: apps/app/src/routes/welcome-page.tsx:1504
 msgid "保存世界主人资料失败。"
 msgstr "세계 주인 정보 저장에 실패했습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:1524
+#: apps/app/src/routes/welcome-page.tsx:1567
 msgid "登录或注册"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1543
+#: apps/app/src/routes/welcome-page.tsx:1586
 msgid "登录"
 msgstr "로그인"
 
-#: apps/app/src/routes/welcome-page.tsx:1568
+#: apps/app/src/routes/welcome-page.tsx:1611
 msgid "注册"
 msgstr "회원가입"
 
-#: apps/app/src/routes/welcome-page.tsx:1610
+#: apps/app/src/routes/welcome-page.tsx:1653
 msgid "请输入手机号"
 msgstr "전화번호 입력"
 
-#: apps/app/src/routes/welcome-page.tsx:1654
+#: apps/app/src/routes/welcome-page.tsx:1697
 msgid "you@example.com"
 msgstr "you@example.com"
 
-#: apps/app/src/routes/welcome-page.tsx:1661
+#: apps/app/src/routes/welcome-page.tsx:1704
 msgid "登录方式"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1679
+#: apps/app/src/routes/welcome-page.tsx:1722
 msgid "使用验证码登录"
 msgstr "인증 코드로 로그인"
 
-#: apps/app/src/routes/welcome-page.tsx:1698
+#: apps/app/src/routes/welcome-page.tsx:1741
 msgid "使用密码登录"
 msgstr "비밀번호로 로그인"
 
-#: apps/app/src/routes/welcome-page.tsx:1745
+#: apps/app/src/routes/welcome-page.tsx:1788
 msgid "6 位短信验证码"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1746
+#: apps/app/src/routes/welcome-page.tsx:1789
 msgid "6 位邮箱验证码"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1773
+#: apps/app/src/routes/welcome-page.tsx:1816
 msgid "{effectiveCooldownSeconds}s 后重发"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1780
+#: apps/app/src/routes/welcome-page.tsx:1823
 msgid "设置登录密码（选填）"
 msgstr "로그인 비밀번호 설정(선택)"
 
-#: apps/app/src/routes/welcome-page.tsx:1799
+#: apps/app/src/routes/welcome-page.tsx:1842
 msgid "8-32 位，任意字符（不含空格）"
 msgstr "8~32자, 임의의 문자(공백 제외)"
 
-#: apps/app/src/routes/welcome-page.tsx:1800
-#: apps/app/src/routes/welcome-page.tsx:1828
+#: apps/app/src/routes/welcome-page.tsx:1843
+#: apps/app/src/routes/welcome-page.tsx:1871
 msgid "显示密码"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1801
-#: apps/app/src/routes/welcome-page.tsx:1829
+#: apps/app/src/routes/welcome-page.tsx:1844
+#: apps/app/src/routes/welcome-page.tsx:1872
 msgid "隐藏密码"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:1809
-#: apps/app/src/routes/welcome-page.tsx:1814
+#: apps/app/src/routes/welcome-page.tsx:1852
+#: apps/app/src/routes/welcome-page.tsx:1857
 msgid "密码"
 msgstr "비밀번호"
 
-#: apps/app/src/routes/welcome-page.tsx:1827
+#: apps/app/src/routes/welcome-page.tsx:1870
 msgid "请输入密码"
 msgstr "비밀번호를 입력해 주세요"
 
-#: apps/app/src/routes/welcome-page.tsx:1832
+#: apps/app/src/routes/welcome-page.tsx:1875
 msgid "忘记密码？请用验证码登录后到设置页修改"
 msgstr "비밀번호를 잊으셨나요? 먼저 인증 코드로 로그인한 다음 설정에서 변경해 주세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1842
+#: apps/app/src/routes/welcome-page.tsx:1885
 msgid "或"
 msgstr "또는"
 
-#: apps/app/src/routes/welcome-page.tsx:1865
+#: apps/app/src/routes/welcome-page.tsx:1908
 msgid "Google 登录失败，请检查网络后重试。"
 msgstr "Google 로그인 실패. 네트워크 연결을 확인한 후 다시 시도하세요."
 
-#: apps/app/src/routes/welcome-page.tsx:1893
+#: apps/app/src/routes/welcome-page.tsx:1936
 msgid "邀请码（选填）"
 msgstr "초대 코드 (선택)"
 
-#: apps/app/src/routes/welcome-page.tsx:1928
+#: apps/app/src/routes/welcome-page.tsx:1971
 msgid "填写邀请人给你的 6 位邀请码"
 msgstr "초대자가 보낸 6자리 초대 코드를 입력하세요"
 
-#: apps/app/src/routes/welcome-page.tsx:1932
+#: apps/app/src/routes/welcome-page.tsx:1975
 msgid "已通过邀请链接自动填入，可手动修改。"
 msgstr "초대 링크로 자동 입력되었습니다. 직접 수정할 수 있습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:1942
+#: apps/app/src/routes/welcome-page.tsx:1985
 msgid "正在解析你的云世界..."
 msgstr "클라우드 세계 해석 중..."
 
-#: apps/app/src/routes/welcome-page.tsx:1946
-#: apps/app/src/routes/welcome-page.tsx:2166
-#: apps/app/src/routes/welcome-page.tsx:2175
+#: apps/app/src/routes/welcome-page.tsx:1989
+#: apps/app/src/routes/welcome-page.tsx:2209
+#: apps/app/src/routes/welcome-page.tsx:2218
 msgid "云世界"
 msgstr "클라우드 세계"
 
-#: apps/app/src/routes/welcome-page.tsx:1947
+#: apps/app/src/routes/welcome-page.tsx:1990
 msgid "正在解析你的世界"
 msgstr "세계 해석 중"
 
-#: apps/app/src/routes/welcome-page.tsx:1949
+#: apps/app/src/routes/welcome-page.tsx:1992
 msgid "我们正在判断是为这个邮箱创建新世界，还是唤醒它已拥有的世界。"
 msgstr "이 이메일로 새 월드를 만들지, 이미 있는 월드를 깨울지 확인하고 있습니다."
 
 #. placeholder {0}: currentCloudSession.resolvedApiBaseUrl
-#: apps/app/src/routes/welcome-page.tsx:1971
-#: apps/app/src/routes/welcome-page.tsx:1977
+#: apps/app/src/routes/welcome-page.tsx:2014
+#: apps/app/src/routes/welcome-page.tsx:2020
 msgid "已解析到世界地址：{0}"
 msgstr "해석된 세계 주소: {0}"
 
-#: apps/app/src/routes/welcome-page.tsx:2006
+#: apps/app/src/routes/welcome-page.tsx:2049
 msgid "本地世界地址"
 msgstr "로컬 세계 주소"
 
-#: apps/app/src/routes/welcome-page.tsx:2037
+#: apps/app/src/routes/welcome-page.tsx:2080
 msgid "检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：{normalizedLocalApiBaseUrl}"
 msgstr "/api 경로가 감지되어 해당 세계 입구 주소로 변환했습니다: {normalizedLocalApiBaseUrl}"
 
-#: apps/app/src/routes/welcome-page.tsx:2040
+#: apps/app/src/routes/welcome-page.tsx:2083
 msgid "检测到你输入的是本机应用地址，已自动换算为对应的世界地址：{normalizedLocalApiBaseUrl}"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:2052
+#: apps/app/src/routes/welcome-page.tsx:2095
 msgid "连接本地世界"
 msgstr "로컬 세계 연결"
 
-#: apps/app/src/routes/welcome-page.tsx:2070
+#: apps/app/src/routes/welcome-page.tsx:2113
 msgid "世界主人名字"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:2087
+#: apps/app/src/routes/welcome-page.tsx:2130
 msgid "你希望被怎么称呼？"
 msgstr ""
 
-#: apps/app/src/routes/welcome-page.tsx:2093
+#: apps/app/src/routes/welcome-page.tsx:2136
 msgid "这是世界里所有 AI 朋友对你的称呼，名字至少 {MIN_OWNER_NAME_LENGTH} 个字。"
 msgstr "월드 안의 모든 AI 친구가 당신을 부르는 이름입니다. 최소 {MIN_OWNER_NAME_LENGTH}자 이상이어야 합니다."
 
-#: apps/app/src/routes/welcome-page.tsx:2111
+#: apps/app/src/routes/welcome-page.tsx:2154
 msgid "返回上一步"
 msgstr "이전 단계로 돌아가기"
 
-#: apps/app/src/routes/welcome-page.tsx:2141
+#: apps/app/src/routes/welcome-page.tsx:2184
 msgid "进入世界"
 msgstr "세계 들어가기"
 
-#: apps/app/src/routes/welcome-page.tsx:2182
+#: apps/app/src/routes/welcome-page.tsx:2225
 msgid "通过邮箱登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。"
 msgstr "이메일로 로그인하세요. 신규 사용자는 새 월드를 받고, 기존 사용자는 보유한 월드를 다시 깨울 수 있습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:2191
-#: apps/app/src/routes/welcome-page.tsx:2200
+#: apps/app/src/routes/welcome-page.tsx:2234
+#: apps/app/src/routes/welcome-page.tsx:2243
 msgid "本地世界"
 msgstr "로컬 세계"
 
-#: apps/app/src/routes/welcome-page.tsx:2207
+#: apps/app/src/routes/welcome-page.tsx:2250
 msgid "输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。"
 msgstr "세계 입구 주소를 입력해 바로 연결합니다. /api 주소가 있다면 그대로 붙여넣을 수 있습니다."
 
-#: apps/app/src/routes/welcome-page.tsx:2222
+#: apps/app/src/routes/welcome-page.tsx:2265
 msgid "正在加载世界主人..."
 msgstr "세계 주인 불러오는 중..."
 
-#: apps/app/src/routes/welcome-page.tsx:2227
+#: apps/app/src/routes/welcome-page.tsx:2270
 msgid "正在加载世界主人"
 msgstr "세계 주인 불러오는 중"
 
-#: apps/app/src/routes/welcome-page.tsx:2229
+#: apps/app/src/routes/welcome-page.tsx:2272
 msgid "世界地址已连通，正在进入应用前同步世界主人资料。"
 msgstr "세계 주소에 연결되었습니다. 앱에 들어가기 전에 세계 주인 정보를 동기화하는 중입니다."
 
-#: apps/app/src/routes/welcome-page.tsx:2263
-#: apps/app/src/routes/welcome-page.tsx:2345
+#: apps/app/src/routes/welcome-page.tsx:2306
+#: apps/app/src/routes/welcome-page.tsx:2388
 msgid "重新解析"
 msgstr "다시 해석"
 
-#: apps/app/src/routes/welcome-page.tsx:2368
-#: apps/app/src/routes/welcome-page.tsx:2386
+#: apps/app/src/routes/welcome-page.tsx:2411
+#: apps/app/src/routes/welcome-page.tsx:2429
 msgid "世界入口"
 msgstr "세계 입구"
 
-#: apps/app/src/routes/welcome-page.tsx:2371
-#: apps/app/src/routes/welcome-page.tsx:2389
+#: apps/app/src/routes/welcome-page.tsx:2414
+#: apps/app/src/routes/welcome-page.tsx:2432
 msgid "为世界主人命名"
 msgstr "세계 주인 이름 정하기"
 
-#: apps/app/src/routes/welcome-page.tsx:2371
-#: apps/app/src/routes/welcome-page.tsx:2389
+#: apps/app/src/routes/welcome-page.tsx:2414
+#: apps/app/src/routes/welcome-page.tsx:2432
 msgid "连接你的世界"
 msgstr "세계 연결"
 

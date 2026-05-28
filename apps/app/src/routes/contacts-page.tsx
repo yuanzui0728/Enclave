@@ -2664,7 +2664,7 @@ export function ContactsPage() {
         <TabPageTopBar
           title={t(msg`通讯录`)}
           titleAlign="center"
-          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
             bulkMode ? (
               <Button
@@ -3175,7 +3175,7 @@ function SectionHeader({
         "z-10 flex items-center gap-1.5 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
-          : "text-[11px] bg-[rgba(250,245,237,0.82)]",
+          : "text-[11px] bg-[color:var(--surface-overlay)]",
       )}
     >
       {!desktop ? (

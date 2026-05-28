@@ -3431,7 +3431,7 @@ export function ChatComposer({
         }}
       >
         {isDesktop && desktopDropActive ? (
-          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[16px] border border-dashed border-[color:var(--brand-primary)]/35 bg-[rgba(250,245,237,0.96)] text-sm font-medium text-[color:var(--brand-primary)]">
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[16px] border border-dashed border-[color:var(--brand-primary)]/35 bg-[color:var(--surface-overlay)] text-sm font-medium text-[color:var(--brand-primary)]">
             {t(msg`松开鼠标发送图片或文件`)}
           </div>
         ) : null}

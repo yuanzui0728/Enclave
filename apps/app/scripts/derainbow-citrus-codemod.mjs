@@ -43,8 +43,9 @@ const HEX_TO_TOKEN = {
   eab308: "--brand-accent",
 };
 
-// 只处理这些明确取颜色的 Tailwind 工具（都接受 [color:var(--x)] 提示）
-const UTILS = "bg|text|border|ring|fill|stroke|outline|caret|accent|decoration|divide";
+// 只处理这些明确取颜色的 Tailwind 工具（都接受 [color:var(--x)] 提示）。
+// border 含方向变体 border-l/t/r/b/x/y（如 border-l-[#f59e0b] 左强调边）。
+const UTILS = "bg|text|border-[trblxy]|border|ring|fill|stroke|outline|caret|accent|decoration|divide";
 const hexAlt = Object.keys(HEX_TO_TOKEN).join("|");
 // 形如 bg-[#f59e0b] / text-[#b45309]（不含 /opacity 后缀的简单形态）
 const RE = new RegExp(`\\b(${UTILS})-\\[#(${hexAlt})\\]`, "g");
@@ -60,12 +61,17 @@ export function transformSource(src) {
   return [out, hits];
 }
 
-// 收集目标文件：apps/app/src 下 tracked 的 .ts/.tsx，排除桌面专属。
+// 收集目标文件：HEAD 树里 apps/app/src 的 .ts/.tsx，排除桌面专属。
+// 用 ls-tree HEAD 而非 ls-files：并发会话会把部分文件搞成 staged-deletion，
+// 那样 ls-files 不列它们就漏改（shop/gift/wallet 长尾即此因）。
 export function listTargetFiles() {
   const repoRoot = execSync("git rev-parse --show-toplevel", {
     encoding: "utf8",
   }).trim();
-  return execSync("git ls-files apps/app/src", { encoding: "utf8", cwd: repoRoot })
+  return execSync("git ls-tree -r --name-only HEAD apps/app/src", {
+    encoding: "utf8",
+    cwd: repoRoot,
+  })
     .split("\n")
     .filter(Boolean)
     .filter((f) => /\.(ts|tsx)$/.test(f))

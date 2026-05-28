@@ -869,7 +869,7 @@ export function ChatMessageSearchPanel({
               <div>
                 {resultSections.map((section) => (
                   <section key={section.key}>
-                    <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] backdrop-blur-xl">
+                    <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] backdrop-blur-xl">
                       {section.label}
                     </div>
                     <div className="divide-y divide-[color:var(--border-faint)]">
@@ -937,7 +937,7 @@ export function ChatMessageSearchPanel({
                   </section>
                 ))}
                 {isPartialResult ? (
-                  <div className="border-t border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
+                  <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
                     {t(
                       msg`当前仅展示前 ${MAX_VISIBLE_RESULTS} 条结果，请继续缩小范围查找。`,
                     )}

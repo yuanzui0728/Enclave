@@ -1289,7 +1289,7 @@ function MobileNoteEditor({
           />
         }
         titleAlign="left"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         titleClassName="text-[16px] font-medium tracking-normal"
         leftActions={
           <Button
@@ -1459,7 +1459,7 @@ function MobileNoteEditor({
 
       <div
         className={cn(
-          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-2.5 py-2 backdrop-blur-xl",
+          "sticky bottom-0 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-2.5 py-2 backdrop-blur-xl",
           "pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]",
         )}
       >

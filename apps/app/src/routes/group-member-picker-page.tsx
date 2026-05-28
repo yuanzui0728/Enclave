@@ -533,7 +533,7 @@ function MobileGroupMemberPickerPage({
       <TabPageTopBar
         title={pageTitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"

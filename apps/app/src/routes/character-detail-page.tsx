@@ -1293,7 +1293,7 @@ export function CharacterDetailPage() {
   if (isDesktopLayout && character && friendship) {
     return (
       <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f4ede0] px-0 py-0">
-        <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.95)] px-3 py-2 backdrop-blur-xl">
+        <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-3 py-2 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
             <button
               type="button"
@@ -1502,7 +1502,7 @@ export function CharacterDetailPage() {
     >
       <header
         className={cn(
-          "z-20 border-b border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.95)] px-2 py-2 backdrop-blur-xl",
+          "z-20 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-2 py-2 backdrop-blur-xl",
           isDesktopLayout ? "sticky top-0" : "shrink-0",
         )}
       >
@@ -2395,7 +2395,7 @@ export function CharacterDetailPage() {
         // "发消息 / 音视频通话 / 添加到通讯录"会被横条盖到一半。和
         // chat-message-list / message-quote-selection-sheet 已经在用的写法对齐，
         // pb 走 env(safe-area-inset-bottom)。
-        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(250,245,237,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
+        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
           <div
             className={cn(
               "grid gap-2",
