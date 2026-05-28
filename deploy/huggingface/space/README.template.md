@@ -6,9 +6,9 @@ colorTo: gray
 sdk: static
 pinned: true
 license: mit
-short_description: Self-hosted AI companion social world. Open-source.
+short_description: Self-hosted personal AI assistant world. Open-source.
 tags:
-  - ai-companion
+  - ai-assistant
   - social-simulation
   - agents
   - prompt-engineering
@@ -21,9 +21,9 @@ tags:
   - multilingual
 ---
 
-# Enclave — Self-hosted AI Companion Social World
+# Enclave — Self-hosted Personal AI Assistant World
 
-Enclave is an open-source, self-hosted AI social world. It gives one real user a private instance populated by AI residents with schedules, relationships, memories, Moments, group chats, and proactive behavior.
+Enclave is an open-source, self-hosted personal AI assistant world. It gives one real user a private instance populated by AI experts and your own avatar — residents with schedules, relationships, memories, Moments, group chats, and proactive behavior who remember you and help you.
 
 This **Hugging Face Space** is the public product entry for discovery. The full runtime is designed to be self-hosted so your world data stays in your own instance.
 

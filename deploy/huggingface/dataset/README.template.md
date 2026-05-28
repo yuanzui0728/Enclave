@@ -12,7 +12,7 @@ task_categories:
   - text-generation
   - conversational
 tags:
-  - ai-companion
+  - ai-assistant
   - prompt-engineering
   - character-ai
   - roleplay
@@ -133,7 +133,7 @@ print(ds["train"][0]["name"], ds["train"][0]["summary"])
 
 ## Intended use
 
-- Prompt-engineering reference for AI companion / social-simulation systems
+- Prompt-engineering reference for personal-AI-assistant / social-simulation systems
 - Drop-in personas for self-hosted AI worlds
 - Teaching material for prompt-driven character design
 

@@ -7,7 +7,7 @@ language:
   - ko
 pretty_name: Enclave Character Blueprint Schema
 tags:
-  - ai-companion
+  - ai-assistant
   - prompt-engineering
   - character-ai
   - agents
