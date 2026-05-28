@@ -97,7 +97,7 @@ function MobileAvatarEncounterPage() {
     select: (state) => state.location.hash,
   });
   const runtimeConfig = useAppRuntimeConfig();
-  const cloudApiBaseUrl = runtimeConfig.cloudApiBaseUrl;
+  const cloudApiBaseUrl = runtimeConfig.cloudApiBaseUrl ?? "";
   const accessToken = useCloudSessionStore((state) => state.accessToken);
   const contactKindLabel = useContactKindLabel();
 
@@ -285,10 +285,6 @@ function DiscoverTab({
     startMutation.isError &&
     isApiRequestError(startMutation.error) &&
     startMutation.error.errorCode === "AVATAR_ENCOUNTER_DAILY_LIMIT";
-  const contactRequired =
-    startMutation.isError &&
-    isApiRequestError(startMutation.error) &&
-    startMutation.error.errorCode === "AVATAR_ENCOUNTER_CONTACT_REQUIRED";
   const creditsExhausted = remainingCredits !== null && remainingCredits <= 0;
   const startDisabled =
     startMutation.isPending || dailyLimitHit || creditsExhausted;
@@ -348,26 +344,7 @@ function DiscoverTab({
             </div>
           )}
 
-          {/* 联系方式未填：提示去填。优先于普通错误条展示。 */}
-          {contactRequired ? (
-            <InlineNotice
-              className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
-              tone="warning"
-              role="alert"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 flex-1">
-                  {t(msg`需要先填写联系方式，匹配成功后才能互相分享。`)}
-                </span>
-                <Link
-                  to="/profile/info/contact"
-                  className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b45309]"
-                >
-                  {t(msg`去填写`)}
-                </Link>
-              </div>
-            </InlineNotice>
-          ) : dailyLimitHit || creditsExhausted ? (
+          {dailyLimitHit || creditsExhausted ? (
             <InlineNotice
               className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
               tone="warning"
@@ -724,7 +701,7 @@ function EncounterDecideError({ error }: { error: unknown }) {
       >
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 flex-1">
-            {t(msg`想要对方联系方式前，需要先填写你的联系方式。`)}
+            {t(msg`想要对方联系方式，需先填写你自己的。这次相遇已存到「我的相遇」，填好后回到那里继续即可。`)}
           </span>
           <Link
             to="/profile/info/contact"
