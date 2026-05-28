@@ -1,6 +1,7 @@
 // i18n-ignore-start: prompt content — injected into LLM system prompt, not user-facing UI.
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { CyberAvatarService } from './cyber-avatar.service';
+import { OwnerOpenQuestionService } from './owner-open-question.service';
 
 // CyberAvatarService.listSignals 返回的序列化信号里，本服务只用到这几个字段。
 type SignalLike = {
@@ -77,7 +78,11 @@ export class WorldContextHubService {
   private static readonly RELEVANT_RECENCY_DAYS = 120; // 相关召回窗口比近期宽（4 个月）
   private static readonly RELEVANT_QUERY_MIN_LEN = 4;
 
-  constructor(private readonly cyberAvatar: CyberAvatarService) {}
+  constructor(
+    private readonly cyberAvatar: CyberAvatarService,
+    // @Optional + 可空：生产环境由 DI 注入；既有单测以单参构造 hub 时也不破（按空块处理）。
+    @Optional() private readonly openQuestions?: OwnerOpenQuestionService,
+  ) {}
 
   /**
    * Stratum A：把当前 owner 的赛博分身画像渲染成第三人称 <owner_portrait> 块，
@@ -196,16 +201,21 @@ export class WorldContextHubService {
     sharedMemory: string;
     relevantMemory: string;
   }> {
-    const [profile, signals] = await Promise.all([
+    const [profile, signals, openQuestions] = await Promise.all([
       this.getProfileSafe(),
       this.fetchSignals().catch(() => [] as SignalLike[]),
+      this.openQuestions?.renderOpenQuestionsBlock().catch(() => '') ?? '',
     ]);
     const portrait = this.renderPortrait(profile);
     // Stratum D（世界协同·首版）：把用户「当下最该被关心的一件事」作为世界焦点，前置到共享记忆里，
     // 让全世界角色围绕同一件事协同（自然带过、不要每个都追问）——而非各自为战。
     const worldFocus = this.renderWorldFocus(profile);
     const recent = this.renderRecentEpisodes(signals);
-    const sharedMemory = [worldFocus, recent].filter(Boolean).join('\n\n');
+    // <world_open_questions>（显式未解决疑问）随 sharedMemory 一并下发——复用已铺好的 ownerSharedMemory
+    // 注入槽，无需改 chat/group/scheduler 消费侧。焦点事件之后、近期事件之前，让「还没着落的事」突出。
+    const sharedMemory = [worldFocus, openQuestions, recent]
+      .filter(Boolean)
+      .join('\n\n');
     const relevantMemory = opts?.relevanceQuery
       ? this.renderRelevantEpisodes(signals, opts.relevanceQuery)
       : '';

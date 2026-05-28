@@ -12,6 +12,7 @@ import { CyberAvatarService } from './cyber-avatar.service';
 import { WorldContextHubService } from './world-context-hub.service';
 import { PassiveProfileInferenceService } from './passive-profile-inference.service';
 import { FeedPreferenceDigestService } from './feed-preference-digest.service';
+import { OwnerOpenQuestionService } from './owner-open-question.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
 import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
@@ -50,6 +51,7 @@ import { FeedPostEntity } from '../feed/feed-post.entity';
     WorldContextHubService,
     PassiveProfileInferenceService,
     FeedPreferenceDigestService,
+    OwnerOpenQuestionService,
     CyberAvatarSelfService,
     CyberAvatarMatchmakingSyncService,
     CyberAvatarEncounterService,
