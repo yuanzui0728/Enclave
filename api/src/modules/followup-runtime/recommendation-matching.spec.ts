@@ -367,5 +367,29 @@ describe('scoreCandidate — penalties and relationship match preserved', () => 
     );
     expect(best?.candidateId).toBe('on-topic');
   });
+
+  it('rejects an eligible-but-heavily-penalized sole candidate (score<=0 floor)', () => {
+    // 仅靠 relationshipMatch 进了 eligible（relevance=0），但 sameSource+pending+recent
+    // 三连罚把 score 砸到负数 → selectBestRecommendation 必须回 null（gate 之外的最后兜底，
+    // 防止「为了推而推」推出一个原地踏步又冷却中的对象）。
+    const relLoop = makeLoop({
+      domainHints: ['睡眠'],
+      targetRelationshipType: 'expert',
+    });
+    const penalizedExpert = makeCandidate({
+      id: 'penalized',
+      expertDomains: ['股票'], // 不相关 → relevance 0
+      relationshipType: 'expert', // 仅靠关系匹配进 eligible
+      relationshipState: 'pending',
+      isSameSource: true,
+      isRecentlyRecommended: true,
+    });
+    const scored = scoreCandidate(relLoop, penalizedExpert, WEIGHTS);
+    expect(scored.eligible).toBe(true); // 进了候选
+    expect(scored.score).toBeLessThanOrEqual(0); // 但分数被罚成负
+    expect(
+      selectBestRecommendation(relLoop, [penalizedExpert], WEIGHTS),
+    ).toBeNull();
+  });
 });
 // i18n-ignore-end
