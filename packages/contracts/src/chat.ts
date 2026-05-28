@@ -24,7 +24,8 @@ export type MessageType =
   | "location_card"
   | "note_card"
   | "feed_post_card"
-  | "call_log";
+  | "call_log"
+  | "red_packet";
 export type GroupMemberType = "user" | "character";
 export type ChatMessageSearchCategory = "all" | "media" | "files" | "links";
 
@@ -75,6 +76,49 @@ export interface Message {
   text: string;
   attachment?: MessageAttachment;
   createdAt: string;
+}
+
+// 「我」(分身) 把用户请求派发给专家居民当子 agent 的协作线程。折叠在「我」的 ack 气泡
+// (anchorMessageId) 下，用户可展开看「我↔专家」全过程并随时介入。
+export type AgentDelegationStatus =
+  | "pending_anchor"
+  | "queued"
+  | "working"
+  | "awaiting_synthesis"
+  | "completed"
+  | "failed";
+
+export type AgentDelegationTranscriptSenderType =
+  | "self"
+  | "expert"
+  | "user"
+  | "system";
+
+export interface AgentDelegationTranscriptMessage {
+  id: string;
+  senderType: AgentDelegationTranscriptSenderType;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface AgentDelegation {
+  id: string;
+  batchId: string;
+  parentConversationId: string;
+  anchorMessageId: string | null;
+  expertCharacterId: string;
+  expertName: string;
+  taskBrief: string;
+  status: AgentDelegationStatus;
+  messages: AgentDelegationTranscriptMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InterveneAgentDelegationRequest {
+  text: string;
 }
 
 export interface Conversation {

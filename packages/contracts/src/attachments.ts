@@ -147,6 +147,24 @@ export interface CallLogAttachment {
   participantCount?: number;
 }
 
+/**
+ * 红包卡片：聊天里发/收红包的最小展示快照。账本真值在 cloud-api（HongbaoEntity，
+ * 见 wallet.ts 的 Hongbao* 契约）；这里只存渲染气泡 + 领取所需的引用字段。
+ * - direction: outgoing=用户发给 AI；incoming=AI 发给用户。
+ * - status: pending 未领取 / claimed 已领取 / refunded 已退回 / expired 已过期。
+ */
+export interface RedPacketAttachment {
+  kind: "red_packet";
+  hongbaoId: string;
+  direction: "outgoing" | "incoming";
+  status: "pending" | "claimed" | "refunded" | "expired";
+  amountCents: number;
+  currency: string;
+  message: string;
+  senderName: string;
+  expiresAt: string;
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
@@ -156,7 +174,8 @@ export type MessageAttachment =
   | LocationCardAttachment
   | NoteCardAttachment
   | FeedPostCardAttachment
-  | CallLogAttachment;
+  | CallLogAttachment
+  | RedPacketAttachment;
 
 export type UploadableAttachment =
   | ImageAttachment
