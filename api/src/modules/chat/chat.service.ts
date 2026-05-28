@@ -1619,20 +1619,27 @@ export class ChatService {
     );
   }
 
-  // 用户打开收到的红包（incoming）：cloud-api 入账 → 翻消息状态 → 回写气泡。
+  // 用户打开收到的红包：以「消息」为准（租户限定 + 从消息附件取 hongbaoId，不信客户端
+  // 传值，避免 messageId/hongbaoId 错配领错包/翻错气泡）→ cloud-api 入账 → 回写气泡。
   // 返回最新余额（供前端刷新钱包）。message=null 表示该消息不是可领红包。
   async openIncomingRedPacket(
     messageId: string,
-    hongbaoId: string,
   ): Promise<{ message: Message | null; balanceCents: number | null }> {
-    const res = await this.hongbaoCloud.claim({ hongbaoId, by: 'user' });
     const msg = await new TenantRepository(this.msgRepo).findOneBy({
       id: messageId,
     });
     if (!msg || msg.attachmentKind !== 'red_packet' || !msg.attachmentPayload) {
-      return { message: null, balanceCents: res.balanceCents };
+      return { message: null, balanceCents: null };
     }
     const payload = JSON.parse(msg.attachmentPayload) as RedPacketAttachment;
+    // 只领「收到的（incoming）」红包；自己发出的由对方（AI）领取，不在此路径。
+    if (payload.direction !== 'incoming') {
+      return { message: await this.serializeMessage(msg), balanceCents: null };
+    }
+    const res = await this.hongbaoCloud.claim({
+      hongbaoId: payload.hongbaoId,
+      by: 'user',
+    });
     payload.status = res.hongbao.status as RedPacketAttachment['status'];
     msg.attachmentPayload = JSON.stringify(payload);
     await this.msgRepo.save(msg);

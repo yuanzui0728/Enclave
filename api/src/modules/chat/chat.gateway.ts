@@ -362,14 +362,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('open_red_packet')
   async handleOpenRedPacket(
     @MessageBody()
-    payload: { conversationId: string; messageId: string; hongbaoId: string },
+    payload: { conversationId: string; messageId: string; hongbaoId?: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
       return await this.withTenant(client, async () => {
+        // hongbaoId 不信客户端——服务端按 messageId 从消息附件取，避免错配。
         const { message } = await this.chatService.openIncomingRedPacket(
           payload.messageId,
-          payload.hongbaoId,
         );
         if (message) {
           this.emitThreadMessage(payload.conversationId, message);

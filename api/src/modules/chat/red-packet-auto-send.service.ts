@@ -4,6 +4,8 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { ChatGateway } from './chat.gateway';
@@ -87,7 +89,13 @@ export class RedPacketAutoSendService {
       where: { status: In(['friend', 'close', 'best']) },
     });
     const eligible = friendships
-      .filter((f) => (f.intimacyLevel ?? 0) >= opts.minIntimacy)
+      .filter(
+        (f) =>
+          (f.intimacyLevel ?? 0) >= opts.minIntimacy &&
+          // 排除「我自己」/提醒等功能角色——它们发系统红包毫无语义。
+          f.characterId !== SELF_CHARACTER_ID &&
+          f.characterId !== REMINDER_CHARACTER_ID,
+      )
       .sort(() => Math.random() - 0.5);
 
     for (const friendship of eligible) {
