@@ -29,9 +29,9 @@ export function AvatarEncounterTranscript({
   return (
     <section className="space-y-3">
       {/* 匿名对方画像卡：昵称 + 一句画像简介 + 为什么匹配上你。 */}
-      <div className="rounded-[16px] border border-[rgba(244,63,94,0.16)] bg-[linear-gradient(180deg,rgba(255,241,242,0.96),rgba(255,255,255,0.96))] px-4 py-3.5">
+      <div className="rounded-[16px] border border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-card)] px-4 py-3.5">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(244,63,94,0.12)] text-[#f43f5e]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
             <UserRound size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -46,7 +46,7 @@ export function AvatarEncounterTranscript({
           </div>
         </div>
         {partner.matchReason ? (
-          <div className="mt-2.5 rounded-[12px] bg-[rgba(244,63,94,0.06)] px-3 py-2 text-[12px] leading-5 text-[#9f1239]">
+          <div className="mt-2.5 rounded-[12px] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
             {t(msg`匹配理由`)}：{partner.matchReason}
           </div>
         ) : null}

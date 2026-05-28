@@ -327,7 +327,7 @@ function DiscoverTab({
             <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-5 text-center">
               <LoaderCircle
                 size={22}
-                className="mx-auto animate-spin text-[#f43f5e]"
+                className="mx-auto animate-spin text-[color:var(--brand-primary)]"
               />
               <div className="mt-2 text-[13px] text-[color:var(--text-secondary)]">
                 {t(msg`你的分身正在替你相遇…`)}
@@ -625,7 +625,7 @@ function ReceivedDetail({
       <button
         type="button"
         onClick={onBack}
-        className="text-[13px] font-medium text-[#f43f5e] active:opacity-80"
+        className="text-[13px] font-medium text-[color:var(--brand-primary)] active:opacity-80"
       >
         {t(msg`‹ 返回我的相遇`)}
       </button>
@@ -740,8 +740,8 @@ function MatchedContactBlock({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="rounded-[16px] border border-[rgba(244,63,94,0.2)] bg-[linear-gradient(180deg,rgba(255,241,242,0.96),rgba(255,255,255,0.96))] px-4 py-3.5">
-      <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#9f1239]">
+    <div className="rounded-[16px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-4 py-3.5">
+      <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--brand-primary)]">
         <Phone size={13} />
         {t(msg`对方的联系方式`)}
       </div>
@@ -760,7 +760,7 @@ function MatchedContactBlock({
         <button
           type="button"
           onClick={onCopy}
-          className="flex shrink-0 items-center gap-1 rounded-full bg-[#f43f5e] px-3 py-1.5 text-[12px] font-medium text-white active:opacity-90"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] font-medium text-white active:opacity-90"
         >
           <Copy size={13} />
           {copied ? t(msg`已复制`) : t(msg`复制`)}
