@@ -73,6 +73,10 @@ const MiniProgramsPage = lazyNamed(() => import("./routes/mini-programs-page"), 
 
 const DiscoverPage = lazyNamed(() => import("./routes/discover-page"), "DiscoverPage");
 
+// 世界改造 Phase 1：新「世界」首屏（排版 C 双核）。先 gated——挂在 tabsRoute 下
+// （自动 requireWorldReady），但不进 mobile-shell 的 nav，仅可直接访问 /tabs/world 预览。
+const WorldPage = lazyNamed(() => import("./features/world/world-page"), "WorldPage");
+
 const DiscoverEncounterPage = lazyNamed(() => import("./routes/discover-encounter-page"), "DiscoverEncounterPage");
 
 const DiscoverAvatarEncounterPage = lazyNamed(() => import("./routes/discover-avatar-encounter-page"), "DiscoverAvatarEncounterPage");
@@ -371,6 +375,12 @@ const discoverRoute = createRoute({
   getParentRoute: () => tabsRoute,
   path: "/discover",
   component: DiscoverPage,
+});
+
+const worldRoute = createRoute({
+  getParentRoute: () => tabsRoute,
+  path: "/world",
+  component: WorldPage,
 });
 
 const contactsRoute = createRoute({
@@ -940,6 +950,7 @@ const routeTree = rootRoute.addChildren([
     gamePlayRoute,
     miniProgramsRoute,
     discoverRoute,
+    worldRoute,
     contactsRoute,
     profileRoute,
   ]),
