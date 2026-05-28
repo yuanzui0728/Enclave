@@ -261,6 +261,8 @@ import type {
   SubscriptionStateResponse,
   UpsertCloudConfigRequest,
   UpsertSubscriptionPlanRequest,
+  XhsRewardClaimSummary,
+  XhsRewardSummaryResponse,
 } from "./subscription";
 import { LEGACY_API_PREFIX } from "./api";
 
@@ -4397,6 +4399,80 @@ export function getMyCloudInviteSummary(accessToken: string, baseUrl?: string) {
   return requestCloudApi<InviteSummaryResponse>(
     "/cloud/me/invite/summary",
     buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+// ── 小红书发帖赠会员（cloud-api，带 accessToken） ─────────────────────────────
+export function getMyXhsRewardSummary(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<XhsRewardSummaryResponse>(
+    "/cloud/me/xhs-reward/summary",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function listMyXhsRewardClaims(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<XhsRewardClaimSummary[]>(
+    "/cloud/me/xhs-reward/claims",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+// payload: FormData，字段 `postUrl`、可选 `userNote`、文件 `screenshot`。
+// FormData body 时 request() 不会手设 Content-Type（让浏览器带 boundary）。
+export function submitMyXhsRewardClaim(
+  payload: FormData,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<XhsRewardClaimSummary>(
+    "/cloud/me/xhs-reward/submit",
+    buildCloudAuthHeaders(accessToken, { method: "POST", body: payload }),
+    baseUrl,
+  );
+}
+
+// ── 小红书发帖文案/配图生成（world 端，requestLegacyApi，Bearer 由
+//    cloudWorldApiTokenProvider 注入，同 uploadMomentMedia）。 ────────────────
+export interface XhsPromoCopyResponse {
+  options: string[];
+}
+
+export interface XhsPromoImageResponse {
+  // url 是相对路径 `/api/moments/media/<file>`，展示/下载前用 normalizeAttachmentAssetUrl
+  // 绝对化（不要在这里预绝对化，理由同 uploadMomentMedia）。
+  images: Array<{ url: string; fileName: string }>;
+  quotaExhausted?: boolean;
+}
+
+export function generateXhsPromoCopy(
+  payload: { count?: number; angle?: string },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<XhsPromoCopyResponse>(
+    "/xhs-promo/generate-copy",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+    },
+    baseUrl,
+  );
+}
+
+export function generateXhsPromoImage(
+  payload: { promptHint?: string },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<XhsPromoImageResponse>(
+    "/xhs-promo/generate-image",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+    },
     baseUrl,
   );
 }

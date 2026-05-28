@@ -31,6 +31,7 @@ import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runti
 import { InferenceModule } from './modules/inference/inference.module';
 import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runtime.module';
 import { MinimaxModule } from './modules/minimax/minimax.module';
+import { XhsPromoModule } from './modules/xhs-promo/xhs-promo.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
 // WikiModule 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。普通 world child 不再
@@ -269,6 +270,7 @@ import {
     FollowupRuntimeModule,
     ReminderRuntimeModule,
     MinimaxModule,
+    XhsPromoModule,
     InferenceModule,
     SubscriptionModule,
     CloudRuntimeModule,

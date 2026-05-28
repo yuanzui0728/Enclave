@@ -743,6 +743,19 @@ export function ProfileSubscriptionPage() {
           </AppSection>
 
           <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => void navigate({ to: "/profile/xhs-reward" })}
+              className="w-full rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-5 text-left shadow-none active:bg-black/[0.03]"
+            >
+              <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                {t(msg`发小红书赢会员`)}
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
+                {t(msg`在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →`)}
+              </div>
+            </button>
+
             <InviteShareCard invite={invite} />
 
             <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">

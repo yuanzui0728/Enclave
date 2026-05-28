@@ -1,5 +1,10 @@
 export type SubscriptionStatus = "active" | "expired" | "none";
-export type SubscriptionSource = "trial" | "purchase" | "invite_reward" | "admin_grant";
+export type SubscriptionSource =
+  | "trial"
+  | "purchase"
+  | "invite_reward"
+  | "admin_grant"
+  | "xhs_reward";
 export type CloudUserStatus = "active" | "banned" | "archived";
 export type InviteRedemptionStatus = "rewarded" | "rejected";
 
@@ -117,6 +122,51 @@ export interface RedeemInviteResponse {
   status: InviteRedemptionStatus;
   rejectReason: string | null;
   rewardDays: number;
+}
+
+// ── 小红书发帖赠会员 ──────────────────────────────────────────────────────
+export type XhsRewardClaimStatus = "pending" | "approved" | "rejected";
+
+export interface XhsRewardClaimSummary {
+  id: string;
+  status: XhsRewardClaimStatus;
+  postUrl: string;
+  screenshotUrl: string | null;
+  reviewNote: string | null;
+  rewardSubscriptionId: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+}
+
+export interface XhsRewardSummaryResponse {
+  enabled: boolean;
+  rewardDays: number;
+  maxApprovedPerUser: number;
+  // max(0, maxApprovedPerUser - 当前 pending+approved 数)：还能再提交几次。
+  remainingQuota: number;
+  title: string;
+  body: string;
+  submitHint: string;
+  recentClaims: XhsRewardClaimSummary[];
+}
+
+// 管理端记录（含用户身份 + 取证字段，仅 AdminGuard 可见）。
+export interface XhsRewardClaimAdminRecord extends XhsRewardClaimSummary {
+  userId: string;
+  userPhone: string;
+  userEmail: string | null;
+  normalizedPostUrl: string;
+  submittedIp: string | null;
+  submittedDeviceFingerprint: string | null;
+  reviewedBy: string | null;
+}
+
+export interface XhsRewardClaimListResponse {
+  items: XhsRewardClaimAdminRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface CheckoutRequest {

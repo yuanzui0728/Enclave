@@ -122,6 +122,8 @@ const ProfileInfoFieldPage = lazyNamed(() => import("./routes/profile-info-field
 
 const ProfileSubscriptionPage = lazyNamed(() => import("./routes/profile-subscription-page"), "ProfileSubscriptionPage");
 
+const ProfileXhsRewardPage = lazyNamed(() => import("./routes/profile-xhs-reward-page"), "ProfileXhsRewardPage");
+
 const WalletPage = lazyNamed(() => import("./routes/wallet-page"), "WalletPage");
 
 const WalletTransactionsPage = lazyNamed(() => import("./routes/wallet-transactions-page"), "WalletTransactionsPage");
@@ -727,6 +729,13 @@ const profileSubscriptionRoute = createRoute({
   component: ProfileSubscriptionPage,
 });
 
+const profileXhsRewardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/xhs-reward",
+  beforeLoad: requireWorldReady,
+  component: ProfileXhsRewardPage,
+});
+
 const walletRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/wallet",
@@ -944,6 +953,7 @@ const routeTree = rootRoute.addChildren([
   profileInfoContactRoute,
   profileInfoFieldRoute,
   profileSubscriptionRoute,
+  profileXhsRewardRoute,
   walletRoute,
   walletTransactionsRoute,
   profileFavoritesRoute,
