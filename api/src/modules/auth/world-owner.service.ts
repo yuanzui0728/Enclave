@@ -582,6 +582,50 @@ export class WorldOwnerService implements OnModuleInit {
     }
   }
 
+  // 被动推断回填（Phase 4）：把赛博分身从行为里推断出来的资料，**只填到当前为空的字段**，
+  // 用户手填过的字段（非空）绝不覆盖（默认静默推断，但「用户显式声明」永远优先）。
+  // 故意走独立路径而非 updateOwner——updateOwner 会触发 owner_profile_update 信号捕获，
+  // 而本方法由赛博分身深度刷新尾部调用，若再发信号会形成「推断→信号→再推断」反馈环。
+  // 返回被填充的字段名列表（供日志/可观测）。
+  async fillInferredProfileFields(inferred: {
+    occupation?: string | null;
+    region?: string | null;
+    interests?: string | null;
+    aiAddressTone?: string | null;
+  }): Promise<{ filled: string[] }> {
+    const owner = await this.getOwnerOrThrow();
+    const filled: string[] = [];
+    const fillIfEmpty = (
+      field: 'occupation' | 'region' | 'interests' | 'aiAddressTone',
+      value: string | null | undefined,
+      maxLength: number,
+    ) => {
+      const current = owner[field];
+      if (typeof current === 'string' && current.trim()) {
+        return; // 用户手填过，永不覆盖
+      }
+      if (typeof value !== 'string') return;
+      const sanitized = sanitizeProfileField(value);
+      if (!sanitized) return;
+      owner[field] = sanitized.slice(0, maxLength);
+      filled.push(field);
+    };
+
+    fillIfEmpty('occupation', inferred.occupation, MAX_OWNER_OCCUPATION_LENGTH);
+    fillIfEmpty('region', inferred.region, MAX_OWNER_REGION_LENGTH);
+    fillIfEmpty('interests', inferred.interests, MAX_OWNER_INTERESTS_LENGTH);
+    fillIfEmpty(
+      'aiAddressTone',
+      inferred.aiAddressTone,
+      MAX_OWNER_ADDRESS_TONE_LENGTH,
+    );
+
+    if (filled.length > 0) {
+      await this.userRepo.save(owner);
+    }
+    return { filled };
+  }
+
   async updateOwner(input: UpdateWorldOwnerInput): Promise<WorldOwnerProfile> {
     const owner = await this.getOwnerOrThrow();
     // 类型守卫：controller 拿 `@Body() body: {...}` 是 TypeScript 编译期类型，

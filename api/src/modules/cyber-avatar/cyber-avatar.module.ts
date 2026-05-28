@@ -10,6 +10,7 @@ import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarService } from './cyber-avatar.service';
 import { WorldContextHubService } from './world-context-hub.service';
+import { PassiveProfileInferenceService } from './passive-profile-inference.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
 import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
@@ -42,6 +43,7 @@ import { MessageEntity } from '../chat/message.entity';
     CyberAvatarRulesService,
     CyberAvatarService,
     WorldContextHubService,
+    PassiveProfileInferenceService,
     CyberAvatarSelfService,
     CyberAvatarMatchmakingSyncService,
     CyberAvatarEncounterService,

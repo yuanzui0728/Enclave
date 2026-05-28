@@ -18,6 +18,7 @@ import {
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
+import { PassiveProfileInferenceService } from './passive-profile-inference.service';
 import type {
   CyberAvatarAggregationPayload,
   CyberAvatarLiveState,
@@ -139,6 +140,7 @@ export class CyberAvatarService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly rulesService: CyberAvatarRulesService,
     private readonly matchmakingSync: CyberAvatarMatchmakingSyncService,
+    private readonly passiveInference: PassiveProfileInferenceService,
   ) {}
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
@@ -177,6 +179,14 @@ export class CyberAvatarService {
         return;
       }
       await this.runDeepRefresh({ trigger: 'scheduler' });
+      // Phase 4 被动推断：深度刷新后，用刚建好的画像回填用户「个人资料」的空字段
+      // （默认静默、只填空、不覆盖用户手填）。best-effort，失败不影响刷新主流程。
+      try {
+        const profile = await this.getProfile();
+        await this.passiveInference.inferAndFillFromProfile(profile);
+      } catch {
+        // ignore — 推断回填永远不阻塞画像构建
+      }
     }, 'cyber-avatar deep refresh');
   }
 
