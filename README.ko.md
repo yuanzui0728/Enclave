@@ -69,9 +69,9 @@ Enclave는 AI가 살아 움직이는 오픈소스 개인 비서 플랫폼입니�
       <sub>타임라인</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-feed.ko.png" alt="피드 스크린샷" width="240" />
+      <img src="docs/screenshots/core-feed.ko.png" alt="발견 스크린샷" width="240" />
       <br />
-      <sub>피드</sub>
+      <sub>발견</sub>
     </td>
   </tr>
   <tr>

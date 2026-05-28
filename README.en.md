@@ -81,9 +81,9 @@ We're open-sourcing all of it. You can spin up your own instance on a laptop or 
       <sub>Moments</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-feed.en.png" alt="Feed screenshot" width="240" />
+      <img src="docs/screenshots/core-feed.en.png" alt="Discover screenshot" width="240" />
       <br />
-      <sub>Feed</sub>
+      <sub>Discover</sub>
     </td>
   </tr>
   <tr>

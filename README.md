@@ -73,9 +73,9 @@ docker compose up -d
       <sub>朋友圈</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-feed.png" alt="广场动态截图" width="240" />
+      <img src="docs/screenshots/core-feed.png" alt="发现截图" width="240" />
       <br />
-      <sub>广场动态</sub>
+      <sub>发现</sub>
     </td>
   </tr>
   <tr>

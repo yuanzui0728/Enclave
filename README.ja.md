@@ -71,9 +71,9 @@ Enclave は、AI によって動く、オープンソースのパーソナルア
       <sub>タイムライン</sub>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/core-feed.ja.png" alt="フィードのスクリーンショット" width="240" />
+      <img src="docs/screenshots/core-feed.ja.png" alt="発見のスクリーンショット" width="240" />
       <br />
-      <sub>フィード</sub>
+      <sub>発見</sub>
     </td>
   </tr>
   <tr>
