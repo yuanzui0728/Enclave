@@ -1789,7 +1789,7 @@ export function ContactsPage() {
         groupCount > 0 ? t(msg`${groupCount} 个群聊`) : t(msg`查看全部群聊`),
       active: desktopSelection?.kind === "groups",
       icon: Users,
-      iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/contacts/groups");
@@ -1812,7 +1812,7 @@ export function ContactsPage() {
       subtitle: t(msg`查看已上线的内容账号`),
       active: desktopSelection?.kind === "official-accounts",
       icon: BookText,
-      iconClassName: "bg-[linear-gradient(135deg,#bef264,var(--brand-secondary))]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-secondary),var(--brand-secondary))]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/contacts/official-accounts");
@@ -1845,7 +1845,7 @@ export function ContactsPage() {
         (isDesktopLayout && showWorldCharacters) ||
         desktopSelection?.kind === "world-character",
       icon: BookUser,
-      iconClassName: "bg-[linear-gradient(135deg,#fcd34d,var(--brand-primary))]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))]",
       onClick: handleOpenWorldCharacters,
     },
   ];

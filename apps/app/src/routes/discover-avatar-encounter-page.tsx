@@ -306,7 +306,7 @@ function DiscoverTab({
             disabled={startDisabled}
             aria-busy={startMutation.isPending || undefined}
             className={cn(
-              "flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#fb7185,#f43f5e)] text-[14px] font-semibold text-white transition-opacity active:opacity-90",
+              "flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[14px] font-semibold text-white transition-opacity active:opacity-90",
               startDisabled && "opacity-60",
             )}
           >

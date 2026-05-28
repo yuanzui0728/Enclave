@@ -157,7 +157,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`分身相遇`,
     badge: msg`分身`,
     icon: UsersRound,
-    iconClassName: "bg-[linear-gradient(135deg,#fb7185,#f43f5e)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
     to: "/discover/avatar-encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -197,7 +197,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`广场动态`,
     badge: msg`公开`,
     icon: Newspaper,
-    iconClassName: "bg-[linear-gradient(135deg,#4f7cff,#2f5fe6)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
     to: "/discover/feed",
     buildHash: ({ hash, pathname }) =>
       buildFeedRouteHash({
@@ -213,7 +213,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`视频号`,
     badge: msg`内容`,
     icon: PlaySquare,
-    iconClassName: "bg-[linear-gradient(135deg,#ff8a3d,#ff5f45)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
     to: "/discover/channels",
     buildHash: ({ hash, pathname }) =>
       buildDesktopChannelsRouteHash({
@@ -240,7 +240,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`小程序`,
     badge: msg`工具`,
     icon: Blocks,
-    iconClassName: "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
     to: "/discover/mini-programs",
     buildSearch: ({ hash, pathname }) =>
       buildMobileMiniProgramsRouteSearch({
