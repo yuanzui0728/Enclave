@@ -95,7 +95,9 @@ export class GroupReplyOrchestratorService {
       // 渲染的用户画像(A) + 跨角色共享记忆(B)，让群里所有角色共享同一份「世界对 Ta 的认知」+ 近期事件。
       chatContext: await (async () => {
         const [ctx, social, userProfile] = await Promise.all([
-          this.contextHub.buildOwnerContextBlocks(),
+          this.contextHub.buildOwnerContextBlocks({
+            relevanceQuery: baseUserPrompt,
+          }),
           this.socialContextService.buildSocialContext(actor.character.id),
           this.worldOwner.getUserProfileContext(),
         ]);
@@ -103,6 +105,7 @@ export class GroupReplyOrchestratorService {
           userProfile,
           ownerPortrait: ctx.portrait,
           ownerSharedMemory: ctx.sharedMemory,
+          relevantMemory: ctx.relevantMemory,
           socialContext: social,
         };
       })(),
@@ -155,11 +158,14 @@ export class GroupReplyOrchestratorService {
     const rollingHistory: ChatMessage[] = [...conversationHistory];
     // 群内真人用户的个人资料：本轮取一次，发给所有 actor 共用（避免每个 actor 各查一遍 owner）。
     const userProfile = await this.worldOwner.getUserProfileContext();
-    // 单人世界中枢的画像(A) + 跨角色共享记忆(B)：本轮取一次给全 actor 共用——
-    // 这一群所有角色看到的「世界对用户的认知」+「近期发生过的事」必须一致。
-    const ownerContextBlocks = await this.contextHub.buildOwnerContextBlocks();
+    // 单人世界中枢的画像(A) + 跨角色共享记忆(B,近期+语义相关召回)：本轮取一次给全 actor 共用——
+    // 这一群所有角色看到的「世界对用户的认知」+「近期事件」+「相关召回」必须一致。
+    const ownerContextBlocks = await this.contextHub.buildOwnerContextBlocks({
+      relevanceQuery: currentUserContext.promptText,
+    });
     const ownerPortrait = ownerContextBlocks.portrait;
     const ownerSharedMemory = ownerContextBlocks.sharedMemory;
+    const relevantMemory = ownerContextBlocks.relevantMemory;
     // 走查 R2：executeTurn 这条 generateReply 路径之前完全没接 web_search 注入。
     // 只要 selectedActors 里有任一角色开了 webSearchEnabled、且用户消息命中时效
     // 关键词，就在循环外预先 fire 一次 search，把结果缓存给所有开了 flag 的 actor
@@ -224,6 +230,7 @@ export class GroupReplyOrchestratorService {
             userProfile,
             ownerPortrait,
             ownerSharedMemory,
+            relevantMemory,
             socialContext: socialContextBlock,
           },
           extraSystemPromptSections: turnExtraSections,

@@ -2,6 +2,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CyberAvatarService } from './cyber-avatar.service';
 
+// CyberAvatarService.listSignals 返回的序列化信号里，本服务只用到这几个字段。
+type SignalLike = {
+  summaryText?: string | null;
+  weight?: number | null;
+  occurredAt?: string | null;
+};
+
 /**
  * 「单人世界 · 用户上下文中枢」(per-owner World Context Hub)。
  *
@@ -24,9 +31,9 @@ export class WorldContextHubService {
   private static readonly PORTRAIT_MAX_CHARS = 1100;
   private static readonly SHARED_MEMORY_MAX_CHARS = 1000;
 
-  // Stratum B 拉取范围：从最近的信号里取 80 条，过滤出有意义的、近 30 天的，再压到 ≤10 条。
-  // 这个数量级在 sqlite 上是 ms 级查询；不去 LLM 蒸馏，省一遍调用 + 保留原始事实粒度。
-  private static readonly SHARED_MEMORY_FETCH_LIMIT = 80;
+  // Stratum B 拉取范围：取最近 200 条信号（一次查询，同时喂「近期(recency)」和
+  // 「相关(relevance)」两个派生块）。sqlite 上仍是 ms 级；不调 LLM，保留原始事实粒度。
+  private static readonly SHARED_MEMORY_FETCH_LIMIT = 200;
   private static readonly SHARED_MEMORY_RENDER_LIMIT = 10;
   private static readonly SHARED_MEMORY_RECENCY_DAYS = 30;
   private static readonly SHARED_MEMORY_PER_LINE_MAX = 120;
@@ -34,6 +41,14 @@ export class WorldContextHubService {
   // 阈值参考 cyber-avatar.constants.ts signalWeights：≥1.0 = direct_message/group_message/moment_post
   // /feed_post/channel_post/feed_post(各 1.1+)/friendship_event/favorite_action/real_world_*。
   private static readonly SHARED_MEMORY_MIN_WEIGHT = 1.0;
+
+  // Stratum B·语义召回（Phase 5 首版，词法相关性，非向量）：按当前消息相关度从**全部** 200
+  // 条信号里捞最相关的几条——突破「只按最近 N 条」的窗口，让"上个月聊过的相关事"也能被召回。
+  // 真·embedding 向量召回是后续升级（需迁移 1.8G 库 + 接 embedding provider + 用户授权）。
+  private static readonly RELEVANT_RENDER_LIMIT = 5;
+  private static readonly RELEVANCE_FLOOR = 0.2; // 与 followup recommendation-matching 同阈值
+  private static readonly RELEVANT_RECENCY_DAYS = 120; // 相关召回窗口比近期宽（4 个月）
+  private static readonly RELEVANT_QUERY_MIN_LEN = 4;
 
   constructor(private readonly cyberAvatar: CyberAvatarService) {}
 
@@ -115,63 +130,8 @@ export class WorldContextHubService {
    */
   async buildWorldRecentEpisodes(): Promise<string> {
     try {
-      const signals = await this.cyberAvatar.listSignals({
-        limit: WorldContextHubService.SHARED_MEMORY_FETCH_LIMIT,
-      });
-      if (!signals || signals.length === 0) {
-        return '';
-      }
-
-      const cutoff =
-        Date.now() -
-        WorldContextHubService.SHARED_MEMORY_RECENCY_DAYS * 86_400_000;
-      const seen = new Set<string>();
-      const lines: string[] = [];
-
-      for (const signal of signals) {
-        if (lines.length >= WorldContextHubService.SHARED_MEMORY_RENDER_LIMIT) {
-          break;
-        }
-        const summary = signal.summaryText?.trim();
-        if (!summary) continue;
-        if ((signal.weight ?? 0) < WorldContextHubService.SHARED_MEMORY_MIN_WEIGHT) {
-          continue;
-        }
-        const occurredAt = signal.occurredAt
-          ? new Date(signal.occurredAt).getTime()
-          : NaN;
-        if (Number.isFinite(occurredAt) && occurredAt < cutoff) {
-          continue;
-        }
-        // 去重：summaryText 前 50 字相同视为同一事件（兜底 dedupeKey 漏网）。
-        const dedupe = summary.slice(0, 50);
-        if (seen.has(dedupe)) continue;
-        seen.add(dedupe);
-
-        const when = this.relativeDayLabel(occurredAt);
-        const trimmedSummary = this.truncate(
-          summary,
-          WorldContextHubService.SHARED_MEMORY_PER_LINE_MAX,
-        );
-        lines.push(`- ${when ? `(${when}) ` : ''}${trimmedSummary}`);
-      }
-
-      if (lines.length === 0) {
-        return '';
-      }
-
-      const body = this.truncate(
-        lines.join('\n'),
-        WorldContextHubService.SHARED_MEMORY_MAX_CHARS,
-      );
-
-      return [
-        '<world_recent_episodes>',
-        '【近期世界对 Ta 的具体观察——任一角色、朋友圈、视频号或现实世界里发生过的事，',
-        '其他角色也该自然知晓；可主动关心进展、续上未了结的话题，但不要逐条复读或盘问】',
-        body,
-        '</world_recent_episodes>',
-      ].join('\n');
+      const signals = await this.fetchSignals();
+      return this.renderRecentEpisodes(signals);
     } catch (error) {
       this.logger.debug(
         `buildWorldRecentEpisodes skipped: ${
@@ -183,18 +143,184 @@ export class WorldContextHubService {
   }
 
   /**
-   * 一次性装配 owner 的所有中枢块（portrait + shared memory）。调用方按需用。
-   * 并行取，避免聊天主路径多花一次 round-trip。
+   * 一次性装配 owner 的所有中枢块。signals 只查一次，同时派生「近期(recency)」+
+   * 「相关(relevance)」两块，避免聊天主路径重复查询。
+   * @param opts.relevanceQuery 当前用户消息——传入则额外产出语义相关召回块（Stratum B·Phase 5）。
    */
-  async buildOwnerContextBlocks(): Promise<{
+  async buildOwnerContextBlocks(opts?: { relevanceQuery?: string }): Promise<{
     portrait: string;
     sharedMemory: string;
+    relevantMemory: string;
   }> {
-    const [portrait, sharedMemory] = await Promise.all([
+    const [portrait, signals] = await Promise.all([
       this.buildOwnerPortrait(),
-      this.buildWorldRecentEpisodes(),
+      this.fetchSignals().catch(() => [] as SignalLike[]),
     ]);
-    return { portrait, sharedMemory };
+    const sharedMemory = this.renderRecentEpisodes(signals);
+    const relevantMemory = opts?.relevanceQuery
+      ? this.renderRelevantEpisodes(signals, opts.relevanceQuery)
+      : '';
+    return { portrait, sharedMemory, relevantMemory };
+  }
+
+  private async fetchSignals(): Promise<SignalLike[]> {
+    const signals = await this.cyberAvatar.listSignals({
+      limit: WorldContextHubService.SHARED_MEMORY_FETCH_LIMIT,
+    });
+    return (signals ?? []) as SignalLike[];
+  }
+
+  /** 近期（recency）：按时间倒序、过滤噪声/超窗、去重，渲染 <world_recent_episodes>。 */
+  private renderRecentEpisodes(signals: SignalLike[]): string {
+    if (!signals || signals.length === 0) return '';
+    const cutoff =
+      Date.now() -
+      WorldContextHubService.SHARED_MEMORY_RECENCY_DAYS * 86_400_000;
+    const seen = new Set<string>();
+    const lines: string[] = [];
+
+    for (const signal of signals) {
+      if (lines.length >= WorldContextHubService.SHARED_MEMORY_RENDER_LIMIT) {
+        break;
+      }
+      const summary = signal.summaryText?.trim();
+      if (!summary) continue;
+      if ((signal.weight ?? 0) < WorldContextHubService.SHARED_MEMORY_MIN_WEIGHT) {
+        continue;
+      }
+      const occurredAt = this.occurredAtMs(signal);
+      if (Number.isFinite(occurredAt) && occurredAt < cutoff) continue;
+      const dedupe = summary.slice(0, 50);
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+
+      const when = this.relativeDayLabel(occurredAt);
+      lines.push(
+        `- ${when ? `(${when}) ` : ''}${this.truncate(
+          summary,
+          WorldContextHubService.SHARED_MEMORY_PER_LINE_MAX,
+        )}`,
+      );
+    }
+    if (lines.length === 0) return '';
+
+    return [
+      '<world_recent_episodes>',
+      '【近期世界对 Ta 的具体观察——任一角色、朋友圈、视频号或现实世界里发生过的事，',
+      '其他角色也该自然知晓；可主动关心进展、续上未了结的话题，但不要逐条复读或盘问】',
+      this.truncate(
+        lines.join('\n'),
+        WorldContextHubService.SHARED_MEMORY_MAX_CHARS,
+      ),
+      '</world_recent_episodes>',
+    ].join('\n');
+  }
+
+  /**
+   * 相关召回（relevance，Phase 5 首版）：用词法相似度从全部信号里捞和当前消息最相关的几条，
+   * 突破「只按最近 N 条」的窗口——上个月聊过的相关事也能被召回到当前对话。
+   * 词法相似 = token 重合 ∪ CJK bigram Dice（与 followup recommendation-matching 同思路）。
+   */
+  private renderRelevantEpisodes(signals: SignalLike[], query: string): string {
+    const q = query?.trim() ?? '';
+    if (q.length < WorldContextHubService.RELEVANT_QUERY_MIN_LEN) return '';
+    if (!signals || signals.length === 0) return '';
+
+    const cutoff =
+      Date.now() -
+      WorldContextHubService.RELEVANT_RECENCY_DAYS * 86_400_000;
+    const seen = new Set<string>();
+    const scored: Array<{ summary: string; score: number; when: number }> = [];
+
+    for (const signal of signals) {
+      const summary = signal.summaryText?.trim();
+      if (!summary) continue;
+      if ((signal.weight ?? 0) < WorldContextHubService.SHARED_MEMORY_MIN_WEIGHT) {
+        continue;
+      }
+      const occurredAt = this.occurredAtMs(signal);
+      if (Number.isFinite(occurredAt) && occurredAt < cutoff) continue;
+      const dedupe = summary.slice(0, 50);
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+
+      const score = this.relevanceScore(q, summary);
+      if (score < WorldContextHubService.RELEVANCE_FLOOR) continue;
+      scored.push({ summary, score, when: occurredAt });
+    }
+
+    if (scored.length === 0) return '';
+    scored.sort((a, b) => b.score - a.score);
+
+    const lines = scored
+      .slice(0, WorldContextHubService.RELEVANT_RENDER_LIMIT)
+      .map((s) => {
+        const when = this.relativeDayLabel(s.when);
+        return `- ${when ? `(${when}) ` : ''}${this.truncate(
+          s.summary,
+          WorldContextHubService.SHARED_MEMORY_PER_LINE_MAX,
+        )}`;
+      });
+
+    return [
+      '<relevant_memory>',
+      '【和当前话题相关的过往——从 Ta 在这个世界里的历史里捞出来的，可能不是最近发生的，',
+      '但和现在聊的相关；自然续上即可，不确定是否同一件事就别强行联系】',
+      this.truncate(
+        lines.join('\n'),
+        WorldContextHubService.SHARED_MEMORY_MAX_CHARS,
+      ),
+      '</relevant_memory>',
+    ].join('\n');
+  }
+
+  // ---- 词法相关性（自包含，避免耦合 followup-runtime 内部） ----
+
+  private relevanceScore(query: string, text: string): number {
+    const overlap = this.tokenOverlap(query, text);
+    const bigram = this.bigramDice(query, text);
+    return Math.max(overlap, bigram);
+  }
+
+  private tokenize(value: string): string[] {
+    const lower = value.toLowerCase();
+    // 拉丁词（≥2 字符）
+    const latin = lower.match(/[a-z0-9]{2,}/g) ?? [];
+    // CJK 单字
+    const cjk = lower.match(/[一-龥]/g) ?? [];
+    return [...latin, ...cjk];
+  }
+
+  private tokenOverlap(a: string, b: string): number {
+    const setA = new Set(this.tokenize(a));
+    const setB = new Set(this.tokenize(b));
+    if (setA.size === 0 || setB.size === 0) return 0;
+    let hit = 0;
+    for (const t of setA) if (setB.has(t)) hit += 1;
+    // 以查询侧为分母：查询里有多少比例的词在历史事件里出现
+    return hit / setA.size;
+  }
+
+  private cjkBigrams(value: string): Set<string> {
+    const chars = value.toLowerCase().match(/[一-龥a-z0-9]/g) ?? [];
+    const out = new Set<string>();
+    for (let i = 0; i < chars.length - 1; i += 1) {
+      out.add(chars[i] + chars[i + 1]);
+    }
+    return out;
+  }
+
+  private bigramDice(a: string, b: string): number {
+    const setA = this.cjkBigrams(a);
+    const setB = this.cjkBigrams(b);
+    if (setA.size === 0 || setB.size === 0) return 0;
+    let inter = 0;
+    for (const g of setA) if (setB.has(g)) inter += 1;
+    return (2 * inter) / (setA.size + setB.size);
+  }
+
+  private occurredAtMs(signal: SignalLike): number {
+    return signal.occurredAt ? new Date(signal.occurredAt).getTime() : NaN;
   }
 
   private relativeDayLabel(occurredAtMs: number): string {

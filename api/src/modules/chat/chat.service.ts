@@ -1180,10 +1180,13 @@ export class ChatService {
       where: this.buildMessageWhere(convId, undefined, { senderType: 'user' }),
       order: { createdAt: 'DESC' },
     });
-    // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B) + 当前角色社交上下文(C)。
+    // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B,近期+语义相关召回) + 当前角色社交上下文(C)。
+    // 当前用户消息作为语义相关召回的查询，能把'上个月聊过的相关事'拉回来。
     // best-effort，取不到返回 ''；并行查询，避免主路径多一次串行 round-trip。
     const [ownerContext, socialContextBlock] = await Promise.all([
-      this.contextHub.buildOwnerContextBlocks(),
+      this.contextHub.buildOwnerContextBlocks({
+        relevanceQuery: resolvedInput.promptText,
+      }),
       this.socialContext.buildSocialContext(charId),
     ]);
     const chatContext = {
@@ -1194,6 +1197,7 @@ export class ChatService {
       userProfile: this.worldOwnerService.buildUserProfileContext(owner),
       ownerPortrait: ownerContext.portrait,
       ownerSharedMemory: ownerContext.sharedMemory,
+      relevantMemory: ownerContext.relevantMemory,
       socialContext: socialContextBlock,
     };
     const isSelfConversation = Boolean(

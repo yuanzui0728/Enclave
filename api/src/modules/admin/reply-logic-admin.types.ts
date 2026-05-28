@@ -49,6 +49,7 @@ export interface ReplyLogicPromptSection {
     | 'user_profile'
     | 'owner_portrait'
     | 'owner_shared_memory'
+    | 'relevant_memory'
     | 'social_context'
     | 'current_context'
     | 'real_world_context'

@@ -350,6 +350,9 @@ export interface GenerateReplyOptions {
     ownerSharedMemory?: string;
     // 角色互知 + 用户社交全景（Stratum C，<character_relationships> + <world_social>）。
     socialContext?: string;
+    // 语义相关召回（Stratum B·Phase 5，<relevant_memory>）——和当前消息相关的过往事件，
+    // 突破「只按最近 N 条」窗口。仅在有当前用户消息可作查询时装配。
+    relevantMemory?: string;
   };
   extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;

@@ -265,6 +265,85 @@ describe('WorldContextHubService.buildWorldRecentEpisodes (Stratum B 跨角色�
     expect(result.portrait).toContain('<owner_portrait>');
     expect(result.sharedMemory).toContain('<world_recent_episodes>');
     expect(result.sharedMemory).toContain('测试事件');
+    // 没传 relevanceQuery → 不产相关召回块
+    expect(result.relevantMemory).toBe('');
+  });
+});
+
+describe('WorldContextHubService relevance recall (Phase 5 语义长期记忆)', () => {
+  function hubWithSignals(signals: any[]) {
+    const cyberAvatar = {
+      getProfile: jest.fn(async () => ({
+        signalCount: signals.length,
+        stableCore: { identitySummary: '测试' },
+        recentState: {},
+        liveState: {},
+        confidence: { stableCore: 0.8 },
+      })),
+      listSignals: jest.fn(async () => signals),
+    } as any;
+    return new WorldContextHubService(cyberAvatar);
+  }
+
+  it('surfaces a topically-relevant OLD episode outside the recency window', async () => {
+    const day = 86_400_000;
+    const now = Date.now();
+    const signals = [
+      // 90 天前（超出近期 30 天窗口）但和查询高度相关
+      {
+        id: 'old-relevant',
+        summaryText: '单聊对 工程教练 发送：东京出差的客户会议准备得怎么样',
+        weight: 1.5,
+        occurredAt: new Date(now - 90 * day).toISOString(),
+      },
+      // 近期但不相关
+      {
+        id: 'recent-irrelevant',
+        summaryText: '发了朋友圈：今天午饭吃了拉面',
+        weight: 1.4,
+        occurredAt: new Date(now - 1 * day).toISOString(),
+      },
+    ];
+    const hub = hubWithSignals(signals);
+
+    const { relevantMemory, sharedMemory } = await hub.buildOwnerContextBlocks({
+      relevanceQuery: '我东京出差的事进展如何',
+    });
+
+    // 相关召回应捞到 90 天前那条（近期块因 30 天窗口不会有它）
+    expect(relevantMemory).toContain('<relevant_memory>');
+    expect(relevantMemory).toContain('东京出差');
+    expect(sharedMemory).not.toContain('东京出差'); // 超 30 天,近期块拿不到
+  });
+
+  it('returns empty relevant block when query too short', async () => {
+    const hub = hubWithSignals([
+      {
+        id: '1',
+        summaryText: '单聊对 Bob 发送：东京出差',
+        weight: 1.5,
+        occurredAt: new Date().toISOString(),
+      },
+    ]);
+    const { relevantMemory } = await hub.buildOwnerContextBlocks({
+      relevanceQuery: '嗯',
+    });
+    expect(relevantMemory).toBe('');
+  });
+
+  it('returns empty relevant block when nothing is relevant enough', async () => {
+    const hub = hubWithSignals([
+      {
+        id: '1',
+        summaryText: '发了朋友圈：今天天气不错',
+        weight: 1.5,
+        occurredAt: new Date().toISOString(),
+      },
+    ]);
+    const { relevantMemory } = await hub.buildOwnerContextBlocks({
+      relevanceQuery: '帮我写一段 Rust 的异步代码',
+    });
+    expect(relevantMemory).toBe('');
   });
 });
 // i18n-ignore-end
