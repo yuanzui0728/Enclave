@@ -330,14 +330,19 @@ export class GamesService {
   private captureGameSignal(input: {
     signalType: 'game_session' | 'game_action';
     gameId: string;
-    gameName: string;
-    summaryText: string;
     weight: number;
     dedupeKey: string;
   }): void {
+    // 全程 fire-and-forget：owner 解析、游戏名查询、信号写入都在异步 IIFE 内，
+    // 绝不给游戏开局/置顶响应加任何 await 延迟。
     void (async () => {
       try {
         const owner = await this.worldOwnerService.getOwnerOrThrow();
+        const gameName = await this.resolveGameName(input.gameId);
+        const summaryText =
+          input.signalType === 'game_action'
+            ? `把游戏「${gameName}」设为常玩（置顶）`
+            : `打开了游戏「${gameName}」`;
         await this.cyberAvatar.captureSignal({
           ownerId: owner.id,
           signalType: input.signalType,
@@ -345,8 +350,8 @@ export class GamesService {
           sourceEntityType: input.signalType,
           sourceEntityId: input.gameId,
           dedupeKey: input.dedupeKey,
-          summaryText: input.summaryText,
-          payload: { gameId: input.gameId, gameName: input.gameName },
+          summaryText,
+          payload: { gameId: input.gameId, gameName },
           weight: input.weight,
         });
       } catch (error) {
@@ -444,15 +449,12 @@ export class GamesService {
       knownGameIds,
     );
 
-    // P4 信号回填（fire-and-forget）：日常打开 weight 0.8（不进共享记忆，只喂画像）；
+    // P4 信号回填（fire-and-forget，不 await）：日常打开 weight 0.8（不进共享记忆，只喂画像）；
     // dedupeKey 按「游戏×小时」桶，避免反复进出游戏刷屏信号表。
     const hourBucket = openedAt.slice(0, 13); // YYYY-MM-DDTHH
-    const gameName = await this.resolveGameName(gameId);
     this.captureGameSignal({
       signalType: 'game_session',
       gameId,
-      gameName,
-      summaryText: `打开了游戏「${gameName}」`,
       weight: 0.8,
       dedupeKey: `game_open:${gameId}:${hourBucket}`,
     });
@@ -494,12 +496,9 @@ export class GamesService {
 
     // 置顶（新设）是高置信兴趣信号 weight 1.2（进共享记忆 episodes）。取消置顶不发信号。
     if (pinned && !alreadyPinned) {
-      const gameName = await this.resolveGameName(gameId);
       this.captureGameSignal({
         signalType: 'game_action',
         gameId,
-        gameName,
-        summaryText: `把游戏「${gameName}」设为常玩（置顶）`,
         weight: 1.2,
         dedupeKey: `game_pin:${gameId}`,
       });

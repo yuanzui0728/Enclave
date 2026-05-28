@@ -9,6 +9,7 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
   function makeService(opts: {
     ownerId?: string;
     ownerThrows?: boolean;
+    gameName?: string;
     captureImpl?: jest.Mock;
   }) {
     const captureSignal = opts.captureImpl ?? jest.fn(async () => ({}));
@@ -19,10 +20,16 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
         return { id: opts.ownerId ?? 'owner-1' };
       }),
     } as any;
+    // resolveGameName 内部走 catalogRepo.findOne（第 2 个构造参数）。
+    const catalogRepo = {
+      findOne: jest.fn(async () =>
+        opts.gameName ? { name: opts.gameName } : null,
+      ),
+    } as any;
     // 其余 repo 依赖在本用例不触达，传占位即可。
     const svc = new GamesService(
       {} as any,
-      {} as any,
+      catalogRepo,
       {} as any,
       {} as any,
       {} as any,
@@ -39,13 +46,11 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
     return new Promise((r) => setImmediate(r));
   };
 
-  it('打开游戏发 game_session，weight 0.8 + 小时桶 dedupeKey', async () => {
-    const { svc, captureSignal } = makeService({});
+  it('打开游戏发 game_session，weight 0.8 + 小时桶 dedupeKey + 内部查名建摘要', async () => {
+    const { svc, captureSignal } = makeService({ gameName: '开心农场' });
     await invoke(svc, {
       signalType: 'game_session',
       gameId: 'g-farm',
-      gameName: '开心农场',
-      summaryText: '打开了游戏「开心农场」',
       weight: 0.8,
       dedupeKey: 'game_open:g-farm:2026-05-28T10',
     });
@@ -60,16 +65,14 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
       dedupeKey: 'game_open:g-farm:2026-05-28T10',
     });
     expect(arg.payload).toEqual({ gameId: 'g-farm', gameName: '开心农场' });
-    expect(arg.summaryText).toContain('开心农场');
+    expect(arg.summaryText).toBe('打开了游戏「开心农场」');
   });
 
-  it('置顶发 game_action，weight 1.2（进共享记忆）', async () => {
-    const { svc, captureSignal } = makeService({});
+  it('置顶发 game_action，weight 1.2（进共享记忆）+ 置顶措辞', async () => {
+    const { svc, captureSignal } = makeService({ gameName: '停车大战' });
     await invoke(svc, {
       signalType: 'game_action',
       gameId: 'g-park',
-      gameName: '停车大战',
-      summaryText: '把游戏「停车大战」设为常玩（置顶）',
       weight: 1.2,
       dedupeKey: 'game_pin:g-park',
     });
@@ -77,6 +80,18 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
     expect(arg.signalType).toBe('game_action');
     expect(arg.weight).toBe(1.2);
     expect(arg.dedupeKey).toBe('game_pin:g-park');
+    expect(arg.summaryText).toBe('把游戏「停车大战」设为常玩（置顶）');
+  });
+
+  it('查不到游戏名时回退用 gameId', async () => {
+    const { svc, captureSignal } = makeService({}); // catalogRepo.findOne → null
+    await invoke(svc, {
+      signalType: 'game_session',
+      gameId: 'g-unknown',
+      weight: 0.8,
+      dedupeKey: 'k',
+    });
+    expect(captureSignal.mock.calls[0][0].summaryText).toContain('g-unknown');
   });
 
   it('fire-and-forget：无 tenant 上下文时吞掉，不抛、不调 captureSignal', async () => {
@@ -85,8 +100,6 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
       invoke(svc, {
         signalType: 'game_session',
         gameId: 'g-x',
-        gameName: 'X',
-        summaryText: 's',
         weight: 0.8,
         dedupeKey: 'k',
       }),
@@ -98,13 +111,11 @@ describe('GamesService P4 游戏信号回填 (captureGameSignal)', () => {
     const captureImpl = jest.fn(async () => {
       throw new Error('db down');
     });
-    const { svc } = makeService({ captureImpl });
+    const { svc } = makeService({ gameName: 'X', captureImpl });
     await expect(
       invoke(svc, {
         signalType: 'game_session',
         gameId: 'g-x',
-        gameName: 'X',
-        summaryText: 's',
         weight: 0.8,
         dedupeKey: 'k',
       }),

@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, Repository } from 'typeorm';
 import { sleepForWorldJitter } from '../../common/cron-jitter.util';
+import { GLOBAL_WORLD_OWNER_ID } from '../tenancy/tenant-context';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
@@ -98,10 +99,10 @@ export class FeedPreferenceDigestService {
     }
     if (positivePostIds.size === 0 && dislikePostIds.size === 0) return;
 
-    const posts = await this.loadPosts([
-      ...positivePostIds,
-      ...dislikePostIds,
-    ]);
+    const posts = await this.loadPosts(
+      [...positivePostIds, ...dislikePostIds],
+      owner.id,
+    );
 
     const likedTopics = new Map<string, number>();
     const likedCreators = new Map<string, number>();
@@ -168,11 +169,16 @@ export class FeedPreferenceDigestService {
 
   private async loadPosts(
     postIds: string[],
+    ownerId: string,
   ): Promise<Map<string, FeedPostEntity>> {
     const map = new Map<string, FeedPostEntity>();
     if (postIds.length === 0) return map;
-    // feed_posts 是全员共享内容池（无 per-owner 读守卫），按 id 取元数据即可。
-    const rows = await this.postRepo.find({ where: { id: In(postIds) } });
+    // feed_posts 是 scoped 实体（TenantOwnershipSubscriber afterLoad 读守卫）：广场是全员共享
+    // 内容池，帖子 ownerId 多为 GLOBAL_WORLD_OWNER_ID 或当前 owner。必须按 [owner, 全局哨兵]
+    // 过滤，否则裸 find 命中第三方 owner 行会触发 TENANT_READ_LEAK（与 feed.service 同手法）。
+    const rows = await this.postRepo.find({
+      where: { id: In(postIds), ownerId: In([ownerId, GLOBAL_WORLD_OWNER_ID]) },
+    });
     for (const r of rows) map.set(r.id, r);
     return map;
   }
