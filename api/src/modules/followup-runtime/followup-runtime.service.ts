@@ -44,6 +44,11 @@ import { FollowupOpenLoopEntity } from './followup-open-loop.entity';
 import { FollowupRecommendationEntity } from './followup-recommendation.entity';
 import { FollowupRunEntity } from './followup-run.entity';
 import { FollowupRuntimeRulesService } from './followup-runtime-rules.service';
+import {
+  selectBestRecommendation,
+  type RecommendationCandidateInput,
+  type RecommendationScoringWeights,
+} from './recommendation-matching';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
@@ -1050,87 +1055,69 @@ export class FollowupRuntimeService {
     const recentRecommendationTargets = new Set(
       recentRecommendations.map((item) => item.targetCharacterId),
     );
-    const loopDomains = new Set(loop.domainHints.map(normalizeDomainKey));
     const sourceCharacterIds = new Set(loop.sourceCharacterIds);
-    const candidates = characters
-      .filter((character) => character.id !== SELF_CHARACTER_ID)
-      .map((character) => {
-        const friendship = friendshipMap.get(character.id) ?? null;
-        const pendingRequest = pendingRequestMap.get(character.id) ?? null;
-        const relationshipState: FollowupRecommendationRelationshipStateValue =
-          friendship && ACTIVE_FRIENDSHIP_STATUSES.has(friendship.status)
-            ? 'friend'
-            : pendingRequest
-              ? 'pending'
-              : 'not_friend';
-        const overlap = computeDomainOverlap(
-          loopDomains,
-          character.expertDomains,
-        );
-        const relationshipMatch =
-          normalizeText(loop.targetRelationshipType) &&
-          normalizeText(character.relationshipType) ===
-            normalizeText(loop.targetRelationshipType);
-        let score =
-          0.22 +
-          loop.handoffNeedScore * 0.3 +
-          loop.urgencyScore * 0.18 +
-          (1 - loop.closureScore) * 0.14 +
-          overlap * rules.candidateWeights.domainMatchWeight;
-        const matchReasons: string[] = [];
-
-        if (relationshipState === 'friend') {
-          score += rules.candidateWeights.existingFriendBoost;
-          matchReasons.push('已有好友，能直接细聊');
-        }
-
-        if (relationshipMatch) {
-          score += rules.candidateWeights.relationshipMatchWeight;
-          matchReasons.push('关系定位匹配');
-        }
-
-        if (overlap > 0) {
-          matchReasons.push(`领域重合度 ${Math.round(overlap * 100)}%`);
-        }
-
-        if (sourceCharacterIds.has(character.id)) {
-          score -= rules.candidateWeights.sameSourcePenalty;
-        }
-
-        if (relationshipState === 'pending') {
-          score -= rules.candidateWeights.pendingRequestPenalty;
-        }
-
-        if (recentRecommendationTargets.has(character.id)) {
-          score -= rules.candidateWeights.recentRecommendationPenalty;
-        }
-
-        return {
-          character,
-          friendship,
-          pendingRequest,
-          relationshipState,
-          score,
-          matchReasons,
-        } satisfies RecommendationCandidate;
-      })
-      .sort((left, right) => {
-        if (right.score !== left.score) {
-          return right.score - left.score;
-        }
-
-        return (
-          relationshipPriority(right.relationshipState) -
-          relationshipPriority(left.relationshipState)
-        );
+    // 隔离仍只在上面的 DB 加载层（findAllVisibleToOwner(ownerId) + ownerId-scoped 查询）。
+    // 这里把已加载好的角色映射成纯打分视图，模糊领域匹配 + 相关性门槛 + 确定性选优
+    // 全部下沉到 recommendation-matching（纯函数，见 recommendation-matching.spec.ts）。
+    const weights: RecommendationScoringWeights = { ...rules.candidateWeights };
+    const characterById = new Map<string, CharacterEntity>();
+    const candidateInputs: RecommendationCandidateInput[] = [];
+    for (const character of characters) {
+      if (character.id === SELF_CHARACTER_ID) {
+        continue;
+      }
+      characterById.set(character.id, character);
+      const friendship = friendshipMap.get(character.id) ?? null;
+      const pendingRequest = pendingRequestMap.get(character.id) ?? null;
+      const relationshipState: FollowupRecommendationRelationshipStateValue =
+        friendship && ACTIVE_FRIENDSHIP_STATUSES.has(friendship.status)
+          ? 'friend'
+          : pendingRequest
+            ? 'pending'
+            : 'not_friend';
+      candidateInputs.push({
+        id: character.id,
+        name: character.name,
+        expertDomains: character.expertDomains ?? [],
+        relationshipType: character.relationshipType ?? null,
+        topicsOfInterest: character.profile?.traits?.topicsOfInterest ?? [],
+        bio: character.bio ?? null,
+        personality: character.personality ?? null,
+        relationshipState,
+        isSameSource: sourceCharacterIds.has(character.id),
+        isRecentlyRecommended: recentRecommendationTargets.has(character.id),
       });
+    }
 
-    const best = candidates[0] ?? null;
-    if (!best || best.score <= 0) {
+    const best = selectBestRecommendation(
+      {
+        domainHints: loop.domainHints,
+        targetRelationshipType: loop.targetRelationshipType ?? null,
+        summary: loop.summary,
+        urgencyScore: loop.urgencyScore,
+        closureScore: loop.closureScore,
+        handoffNeedScore: loop.handoffNeedScore,
+      },
+      candidateInputs,
+      weights,
+    );
+    if (!best) {
       return null;
     }
 
-    return best;
+    const character = characterById.get(best.candidateId);
+    if (!character) {
+      return null;
+    }
+
+    return {
+      character,
+      relationshipState: best.relationshipState,
+      friendship: friendshipMap.get(best.candidateId) ?? null,
+      pendingRequest: pendingRequestMap.get(best.candidateId) ?? null,
+      score: best.score,
+      matchReasons: best.matchReasons,
+    } satisfies RecommendationCandidate;
   }
 
   private async buildHandoffMessage(input: {
@@ -1660,41 +1647,7 @@ function sanitizeFriendRequestGreeting(value: string) {
     .trim();
 }
 
-function normalizeDomainKey(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function computeDomainOverlap(
-  loopDomains: Set<string>,
-  expertDomains: string[],
-) {
-  if (loopDomains.size === 0 || !expertDomains.length) {
-    return 0;
-  }
-
-  const characterDomains = new Set(expertDomains.map(normalizeDomainKey));
-  let overlapCount = 0;
-  loopDomains.forEach((item) => {
-    if (characterDomains.has(item)) {
-      overlapCount += 1;
-    }
-  });
-
-  return overlapCount / Math.max(loopDomains.size, characterDomains.size);
-}
-
-function relationshipPriority(
-  state: FollowupRecommendationRelationshipStateValue,
-) {
-  switch (state) {
-    case 'friend':
-      return 3;
-    case 'not_friend':
-      return 2;
-    case 'pending':
-      return 1;
-    default:
-      return 0;
-  }
-}
+// 旧 normalizeDomainKey / computeDomainOverlap / relationshipPriority 已下沉到
+// ./recommendation-matching（带模糊匹配 + 相关性门槛），并由 resolveRecommendationCandidate
+// 通过 selectBestRecommendation 调用。
 // i18n-ignore-end

@@ -33,6 +33,13 @@ export type FollowupRuntimeCandidateWeightsValue = {
   sameSourcePenalty: number;
   pendingRequestPenalty: number;
   recentRecommendationPenalty: number;
+  // 相关性门槛：低于它且关系不匹配的候选直接出局（修复「阈值>0 形同虚设」，
+  // 避免无关老好友靠 +existingFriendBoost 压过对口非好友）。
+  minRelevanceToRecommend: number;
+  // profile.traits.topicsOfInterest 次级相关性权重（封顶加成）。
+  topicsOfInterestWeight: number;
+  // loop.summary 关键词次级相关性权重（最弱信号，权重 < 门槛，单独不足以让候选 eligible）。
+  keywordRelevanceWeight: number;
 };
 
 export type FollowupRuntimePromptTemplatesValue = {
@@ -255,6 +262,12 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
     sameSourcePenalty: 0.9,
     pendingRequestPenalty: 0.2,
     recentRecommendationPenalty: 0.35,
+    // 0.12 足以放行清晰模糊匹配（"睡眠"↔"睡眠医学" 领域相关性 ~0.8），
+    // 又能拒绝相关性为 0 的纯基础分候选；对外可调，非硬编码魔数。
+    minRelevanceToRecommend: 0.12,
+    topicsOfInterestWeight: 0.35,
+    // 0.1 < minRelevanceToRecommend(0.12)：关键词命中再满也无法单独让候选过门槛。
+    keywordRelevanceWeight: 0.1,
   },
   promptTemplates: {
     openLoopExtractionPrompt: `你在替“我”翻最近慢下来的聊天，找出那些“用户明显还没放下、后面值得再接一下”的事项。
@@ -485,6 +498,24 @@ export function normalizeFollowupRuntimeRules(
       recentRecommendationPenalty: clampFloat(
         candidateWeights.recentRecommendationPenalty,
         defaults.candidateWeights.recentRecommendationPenalty,
+        0,
+        2,
+      ),
+      minRelevanceToRecommend: clampFloat(
+        candidateWeights.minRelevanceToRecommend,
+        defaults.candidateWeights.minRelevanceToRecommend,
+        0,
+        1,
+      ),
+      topicsOfInterestWeight: clampFloat(
+        candidateWeights.topicsOfInterestWeight,
+        defaults.candidateWeights.topicsOfInterestWeight,
+        0,
+        2,
+      ),
+      keywordRelevanceWeight: clampFloat(
+        candidateWeights.keywordRelevanceWeight,
+        defaults.candidateWeights.keywordRelevanceWeight,
         0,
         2,
       ),
