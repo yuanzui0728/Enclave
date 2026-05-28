@@ -9,6 +9,33 @@ type SignalLike = {
   occurredAt?: string | null;
 };
 
+// CyberAvatarService.getProfile 序列化画像里本服务用到的字段（宽松类型，避免跨模块强耦合）。
+type ProfileLike = {
+  signalCount?: number | null;
+  confidence?: { stableCore?: number } | null;
+  stableCore?: {
+    identitySummary?: string;
+    communicationStyle?: string[];
+    decisionStyle?: string[];
+    preferenceModel?: string[];
+    socialPosture?: string[];
+    routinePatterns?: string[];
+    boundaries?: string[];
+    riskTolerance?: string[];
+  } | null;
+  recentState?: {
+    recurringTopics?: string[];
+    recentGoals?: string[];
+    recentFriction?: string[];
+  } | null;
+  liveState?: {
+    activeTopics?: string[];
+    mood?: string;
+    energy?: string;
+    openLoops?: string[];
+  } | null;
+};
+
 /**
  * 「单人世界 · 用户上下文中枢」(per-owner World Context Hub)。
  *
@@ -57,8 +84,25 @@ export class WorldContextHubService {
    * 供「服务这个用户的其他角色」自然代入。无信号 / 取不到 → 返回 ''（调用方据此跳过注入）。
    */
   async buildOwnerPortrait(): Promise<string> {
+    const profile = await this.getProfileSafe();
+    return this.renderPortrait(profile);
+  }
+
+  private async getProfileSafe(): Promise<ProfileLike | null> {
     try {
-      const profile = await this.cyberAvatar.getProfile();
+      return (await this.cyberAvatar.getProfile()) as ProfileLike | null;
+    } catch (error) {
+      this.logger.debug(
+        `getProfile skipped: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
+  }
+
+  private renderPortrait(profile: ProfileLike | null): string {
+    try {
       if (!profile || (profile.signalCount ?? 0) <= 0) {
         return '';
       }
@@ -152,15 +196,51 @@ export class WorldContextHubService {
     sharedMemory: string;
     relevantMemory: string;
   }> {
-    const [portrait, signals] = await Promise.all([
-      this.buildOwnerPortrait(),
+    const [profile, signals] = await Promise.all([
+      this.getProfileSafe(),
       this.fetchSignals().catch(() => [] as SignalLike[]),
     ]);
-    const sharedMemory = this.renderRecentEpisodes(signals);
+    const portrait = this.renderPortrait(profile);
+    // Stratum D（世界协同·首版）：把用户「当下最该被关心的一件事」作为世界焦点，前置到共享记忆里，
+    // 让全世界角色围绕同一件事协同（自然带过、不要每个都追问）——而非各自为战。
+    const worldFocus = this.renderWorldFocus(profile);
+    const recent = this.renderRecentEpisodes(signals);
+    const sharedMemory = [worldFocus, recent].filter(Boolean).join('\n\n');
     const relevantMemory = opts?.relevanceQuery
       ? this.renderRelevantEpisodes(signals, opts.relevanceQuery)
       : '';
     return { portrait, sharedMemory, relevantMemory };
+  }
+
+  /**
+   * Stratum D：从画像里挑出用户「当下最该被关心的一件事」——优先未了结的事(openLoops)，
+   * 其次最近目标(recentGoals)，再次最近摩擦(recentFriction)。渲染成 <world_focus> 块。
+   *
+   * 设计为「软协同」：块里明确提示其他角色也知道这件事、自然带过即可、别每个都追着问——
+   * 用提示词约束防刷屏，而非真去调度多条主动消息（后者改 proactive 节奏、上线 spam 风险高，
+   * 留作授权后的增量；见 roadmap Phase 6）。这一版让世界「围绕同一件事协同」零新增消息。
+   */
+  private renderWorldFocus(profile: ProfileLike | null): string {
+    if (!profile || (profile.signalCount ?? 0) <= 0) return '';
+    const pick = (arr?: string[]): string | null => {
+      const first = (arr ?? [])
+        .map((x) => (typeof x === 'string' ? x.trim() : ''))
+        .find(Boolean);
+      return first || null;
+    };
+    const focus =
+      pick(profile.liveState?.openLoops) ??
+      pick(profile.recentState?.recentGoals) ??
+      pick(profile.recentState?.recentFriction);
+    if (!focus) return '';
+
+    return [
+      '<world_focus>',
+      '【这个用户当下最放不下的一件事——整个世界的角色都隐约知道，可以自然地关心、接得上，',
+      '但别每个角色都追着盘问同一件事；谁更合适谁来提，点到为止】',
+      `- ${this.truncate(focus, WorldContextHubService.SHARED_MEMORY_PER_LINE_MAX)}`,
+      '</world_focus>',
+    ].join('\n');
   }
 
   private async fetchSignals(): Promise<SignalLike[]> {

@@ -346,4 +346,69 @@ describe('WorldContextHubService relevance recall (Phase 5 语义长期记忆)',
     expect(relevantMemory).toBe('');
   });
 });
+
+describe('WorldContextHubService world focus (Phase 6 世界协同)', () => {
+  function hub(profile: any, signals: any[] = []) {
+    const cyberAvatar = {
+      getProfile: jest.fn(async () => profile),
+      listSignals: jest.fn(async () => signals),
+    } as any;
+    return new WorldContextHubService(cyberAvatar);
+  }
+
+  const base = {
+    signalCount: 20,
+    stableCore: { identitySummary: '测试' },
+    recentState: { recurringTopics: [], recentGoals: [], recentFriction: [] },
+    liveState: { openLoops: [], activeTopics: [], mood: '', energy: '' },
+    confidence: { stableCore: 0.7 },
+  };
+
+  it('surfaces the top open loop as <world_focus> prepended to shared memory', async () => {
+    const h = hub(
+      {
+        ...base,
+        liveState: { ...base.liveState, openLoops: ['在等东京客户的最终答复'] },
+      },
+      [
+        {
+          id: '1',
+          summaryText: '发了朋友圈：午饭吃了拉面',
+          weight: 1.4,
+          occurredAt: new Date().toISOString(),
+        },
+      ],
+    );
+    const { sharedMemory } = await h.buildOwnerContextBlocks();
+    expect(sharedMemory).toContain('<world_focus>');
+    expect(sharedMemory).toContain('在等东京客户的最终答复');
+    expect(sharedMemory).toContain('别每个角色都追着盘问');
+    // focus 排在 recent episodes 之前
+    expect(sharedMemory.indexOf('<world_focus>')).toBeLessThan(
+      sharedMemory.indexOf('<world_recent_episodes>'),
+    );
+  });
+
+  it('falls back to recentGoals then recentFriction when no open loops', async () => {
+    const h1 = hub({
+      ...base,
+      recentState: { ...base.recentState, recentGoals: ['上线 MVP'] },
+    });
+    const r1 = await h1.buildOwnerContextBlocks();
+    expect(r1.sharedMemory).toContain('上线 MVP');
+
+    const h2 = hub({
+      ...base,
+      recentState: { ...base.recentState, recentFriction: ['和合伙人有分歧'] },
+    });
+    const r2 = await h2.buildOwnerContextBlocks();
+    expect(r2.sharedMemory).toContain('和合伙人有分歧');
+  });
+
+  it('no world_focus when profile empty / no signals', async () => {
+    const h = hub({ ...base, signalCount: 0 });
+    const { sharedMemory } = await h.buildOwnerContextBlocks();
+    expect(sharedMemory).not.toContain('<world_focus>');
+  });
+});
 // i18n-ignore-end
