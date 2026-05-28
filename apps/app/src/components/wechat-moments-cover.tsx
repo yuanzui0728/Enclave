@@ -66,7 +66,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
         style={{ height: 260, ...coverStyle }}
       >
         {!coverUrl ? (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_28%,rgba(255,255,255,0.35),transparent_55%),radial-gradient(circle_at_82%_82%,rgba(180,130,20,0.22),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_28%,rgba(255,255,255,0.35),transparent_55%),radial-gradient(circle_at_82%_82%,rgba(60, 40, 110, 0.22),transparent_50%)]" />
         ) : null}
 
         {showCoverEditHint ? (

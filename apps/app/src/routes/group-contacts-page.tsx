@@ -459,7 +459,7 @@ function MobileGroupContactsPage() {
                   </div>
                   {!group.savedToContacts ? (
                     <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
-                      <span className="inline-flex items-center rounded-full bg-[rgba(180,130,20,0.04)] px-1.5 py-0.5 text-[9px] text-[color:var(--text-muted)]">
+                      <span className="inline-flex items-center rounded-full bg-[rgba(60, 40, 110, 0.04)] px-1.5 py-0.5 text-[9px] text-[color:var(--text-muted)]">
                         {t(msg`未保存到通讯录`)}
                       </span>
                     </div>

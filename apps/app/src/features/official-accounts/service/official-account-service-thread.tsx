@@ -450,7 +450,7 @@ export function OfficialAccountServiceThread({
                 <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(180,130,20,0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(60, 40, 110, 0.12)]">
                   <button
                     type="button"
                     onClick={() => {

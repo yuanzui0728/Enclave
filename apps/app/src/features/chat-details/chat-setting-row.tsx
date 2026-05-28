@@ -100,7 +100,7 @@ export function ChatSettingRow({
           >
             <span
               className={cn(
-                "absolute top-1 h-6 w-6 rounded-full bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(180,130,20,0.12)] transition-transform",
+                "absolute top-1 h-6 w-6 rounded-full bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.12)] transition-transform",
                 isWechat && "top-[1px] h-[22px] w-[22px]",
                 checked
                   ? isWechat

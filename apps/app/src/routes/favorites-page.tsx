@@ -964,15 +964,15 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
   ).length;
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-[rgba(180,130,20,0.08)] bg-[linear-gradient(180deg,#ffffff_0%,#f8faf9_100%)] shadow-[var(--shadow-soft)]">
-      <div className="border-b border-[rgba(180,130,20,0.06)] px-4 py-3">
+    <div className="overflow-hidden rounded-[20px] border border-[rgba(60, 40, 110, 0.08)] bg-[linear-gradient(180deg,#ffffff_0%,#f8faf9_100%)] shadow-[var(--shadow-soft)]">
+      <div className="border-b border-[rgba(60, 40, 110, 0.06)] px-4 py-3">
         <div className="text-xs text-[color:var(--text-muted)]">{t(msg`笔记预览`)}</div>
         <div className="mt-2 line-clamp-2 text-[15px] font-medium leading-7 text-[color:var(--text-primary)]">
           {summary.title}
         </div>
       </div>
       <div className="space-y-4 px-4 py-4">
-        <div className="rounded-[16px] border border-[rgba(180,130,20,0.06)] bg-[color:var(--surface-card)] px-4 py-4 text-[13px] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <div className="rounded-[16px] border border-[rgba(60, 40, 110, 0.06)] bg-[color:var(--surface-card)] px-4 py-4 text-[13px] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
           {summary.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
         {summary.tags.length ? (
@@ -990,12 +990,12 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
         {summary.assets.length ? (
           <div className="flex flex-wrap gap-2">
             {imageCount ? (
-              <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                 {t(msg`图片 ${imageCount}`)}
               </span>
             ) : null}
             {fileCount ? (
-              <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                 {t(msg`文件 ${fileCount}`)}
               </span>
             ) : null}
@@ -1068,7 +1068,7 @@ function renderFavoriteListExtra(
         </span>
       ))}
       {summary.assets.length ? (
-        <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+        <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
           {t(msg`附件 ${summary.assets.length}`)}
         </span>
       ) : null}

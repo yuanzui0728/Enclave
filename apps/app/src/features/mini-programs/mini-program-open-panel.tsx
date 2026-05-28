@@ -232,7 +232,7 @@ export function MiniProgramOpenPanel({
               <div
                 key={task.id}
                 className={cn(
-                  "border border-[rgba(180,130,20,0.06)] bg-white/86",
+                  "border border-[rgba(60, 40, 110, 0.06)] bg-white/86",
                   compact ? "rounded-[16px] px-3 py-2.5" : "rounded-[20px] px-4 py-4",
                 )}
               >

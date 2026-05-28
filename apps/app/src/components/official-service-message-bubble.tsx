@@ -42,8 +42,8 @@ export function OfficialServiceMessageBubble({
           <div
             className={
               isDesktop
-                ? "rounded-full bg-[rgba(180,130,20,0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
-                : "rounded-full bg-[rgba(180,130,20,0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
+                ? "rounded-full bg-[rgba(60, 40, 110, 0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
+                : "rounded-full bg-[rgba(60, 40, 110, 0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
             }
           >
             {formatMessageTimestamp(message.createdAt)}
@@ -54,8 +54,8 @@ export function OfficialServiceMessageBubble({
           className={cn(
             "overflow-hidden border bg-[color:var(--surface-card)] text-left",
             isDesktop
-              ? "rounded-[20px] shadow-[0_10px_28px_rgba(180,130,20,0.05)]"
-              : "rounded-[16px] shadow-[0_4px_12px_rgba(180,130,20,0.035)]",
+              ? "rounded-[20px] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]"
+              : "rounded-[16px] shadow-[0_4px_12px_rgba(60, 40, 110, 0.035)]",
             articleCardActive
               ? "border-[color:var(--brand-primary)]/18"
               : "border-[color:var(--border-faint)]",
@@ -90,8 +90,8 @@ export function OfficialServiceMessageBubble({
                 className={cn(
                   "block w-full text-left transition",
                   isDesktop
-                    ? "hover:bg-[rgba(180,130,20,0.02)]"
-                    : "active:bg-[rgba(180,130,20,0.03)]",
+                    ? "hover:bg-[rgba(60, 40, 110, 0.02)]"
+                    : "active:bg-[rgba(60, 40, 110, 0.03)]",
                 )}
               >
                 <div className={isDesktop ? "px-4 py-4" : "px-3 py-3"}>

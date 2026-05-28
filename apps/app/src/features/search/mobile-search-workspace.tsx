@@ -102,7 +102,7 @@ const quickScopeCards: Array<{
     title: msg`广场动态`,
     description: msg`搜广场里公开发布的内容`,
     icon: Newspaper,
-    iconClassName: "bg-[rgba(180,130,20,0.08)] text-[color:var(--text-primary)]",
+    iconClassName: "bg-[rgba(60, 40, 110, 0.08)] text-[color:var(--text-primary)]",
   },
 ];
 

@@ -192,7 +192,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onNoticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -201,7 +201,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {statusBackLabel}
                     </button>

@@ -1449,8 +1449,8 @@ function MobileNoteEditor({
               // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // contentEditable 也算 focusable form control，同样受影响。
               "text-[16px] leading-7 text-[color:var(--text-primary)]",
-              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180,130,20,0.08)]",
+              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(60, 40, 110, 0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(60, 40, 110, 0.08)]",
               "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
             )}
           />
@@ -1639,7 +1639,7 @@ function ConfirmSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180,130,20,0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {title}
@@ -1699,7 +1699,7 @@ function UnsavedSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
-      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(180,130,20,0.16)]">
+      <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.16)]">
         <div className="px-5 pb-5 pt-6">
           <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
             {t(msg`这条笔记还没有保存`)}

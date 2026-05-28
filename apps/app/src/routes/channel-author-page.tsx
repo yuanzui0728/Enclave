@@ -587,7 +587,7 @@ export function ChannelAuthorPage() {
                     <div className="truncate text-[24px] font-semibold text-[color:var(--text-primary)]">
                       {profile.authorName}
                     </div>
-                    <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                       {profile.authorType === "character"
                         ? t(msg`居民作者`)
                         : t(msg`世界主人`)}
@@ -778,7 +778,7 @@ export function ChannelAuthorPage() {
                         key={post.id}
                         type="button"
                         onClick={() => openChannelPost(post)}
-                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(180,130,20,0.02)]"
+                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(60, 40, 110, 0.02)]"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -1097,9 +1097,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`视频`),
       metaLabel: t(msg`短片更新`),
       primaryBadgeClassName:
-        "border-[rgba(180,130,20,0.08)] bg-[rgba(180,130,20,0.05)] text-[#0f172a]",
+        "border-[rgba(60, 40, 110, 0.08)] bg-[rgba(60, 40, 110, 0.05)] text-[#0f172a]",
       secondaryBadgeClassName:
-        "border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+        "border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 1000))} 秒短片`)
         : t(msg`视频号短片`),
@@ -1219,7 +1219,7 @@ function MobileChannelAuthorStatusCard({
           "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]",
+            : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
         )}
       >
         {badge}

@@ -200,7 +200,7 @@ export function MobileSpeechInputSheet({
         aria-labelledby={titleId}
         className="pointer-events-auto relative w-full max-w-[19.5rem]"
       >
-        <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(180,130,20,0.18)] backdrop-blur-xl">
+        <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(60, 40, 110, 0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>

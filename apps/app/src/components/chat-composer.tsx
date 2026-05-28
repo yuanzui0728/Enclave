@@ -3594,7 +3594,7 @@ export function ChatComposer({
           ref={isDesktop ? desktopStickerRef : undefined}
           className={`relative ${
             isDesktop
-              ? "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_26px_rgba(180,130,20,0.06)]"
+              ? "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_26px_rgba(60, 40, 110, 0.06)]"
               : "space-y-1.5"
           }`}
         >
@@ -3718,7 +3718,7 @@ export function ChatComposer({
                         />
                         {desktopPlusMenuOpen &&
                         desktopPlusMenuView === "favorites" ? (
-                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(180,130,20,0.14)]">
+                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-50 w-80 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(60, 40, 110, 0.14)]">
                             <DesktopFavoritePicker
                               favorites={desktopFavoriteRecords}
                               busy={composerPending}
@@ -3829,7 +3829,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "speech"
-                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180,130,20,0.08)]"
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={
@@ -3927,7 +3927,7 @@ export function ChatComposer({
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition",
                   mobileComposerMode === "sticker"
-                    ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180,130,20,0.08)]"
+                    ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
                     : "bg-transparent active:bg-white/90",
                 )}
                 aria-label={
@@ -3960,7 +3960,7 @@ export function ChatComposer({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#606266] transition disabled:opacity-45",
                     mobileComposerMode === "plus"
-                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(180,130,20,0.08)]"
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
                   aria-label={t(msg`更多功能`)}
@@ -6183,7 +6183,7 @@ function DesktopMentionPicker({
     <div
       role="listbox"
       aria-label={t(msg`@提及成员候选`)}
-      className="mb-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-1.5 shadow-[0_10px_24px_rgba(180,130,20,0.10)]"
+      className="mb-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-1.5 shadow-[0_10px_24px_rgba(60, 40, 110, 0.10)]"
     >
       <div
         aria-hidden="true"

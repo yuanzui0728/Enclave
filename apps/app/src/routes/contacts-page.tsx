@@ -2719,7 +2719,7 @@ export function ContactsPage() {
                 <div
                   role="menu"
                   aria-label={t(msg`快捷操作`)}
-                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(180,130,20,0.2)]"
+                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(60, 40, 110, 0.2)]"
                 >
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
@@ -2854,7 +2854,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onAction}
-                          className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                          className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                         >
                           {item.actionLabel}
                         </button>

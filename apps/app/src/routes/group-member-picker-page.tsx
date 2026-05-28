@@ -791,7 +791,7 @@ function MobileGroupMemberPickerPage({
                   <button
                     type="button"
                     onClick={handleRetrySubmit}
-                    className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {mode === "add" ? t(msg`重试添加`) : t(msg`重试移除`)}
                   </button>

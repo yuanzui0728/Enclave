@@ -314,7 +314,7 @@ function MobileSubscriptionInboxPage() {
                     }),
                   });
                 }}
-                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180,130,20,0.02)]"
+                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(60, 40, 110, 0.02)]"
               >
                 <AvatarChip
                   name={group.account.name}
@@ -398,7 +398,7 @@ function MobileSubscriptionArticleRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(180,130,20,0.03)]"
+      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(60, 40, 110, 0.03)]"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">

@@ -639,7 +639,7 @@ export function MobileFeedPublishPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
               >
                 {statusBackLabel}
               </button>
@@ -647,8 +647,8 @@ export function MobileFeedPublishPage() {
           </InlineNotice>
         ) : null}
 
-        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
-          <div className="border-b border-[rgba(180,130,20,0.06)] px-4 py-3">
+        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
+          <div className="border-b border-[rgba(60, 40, 110, 0.06)] px-4 py-3">
             <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
               {t(msg`这一刻`)}
             </div>
@@ -753,7 +753,7 @@ export function MobileFeedPublishPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(180,130,20,0.05)]">
+        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -767,7 +767,7 @@ export function MobileFeedPublishPage() {
               {t(msg`公开可见`)}
             </span>
           </div>
-          <div className="border-t border-[rgba(180,130,20,0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <div className="border-t border-[rgba(60, 40, 110, 0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
             {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。`)}
           </div>
         </section>

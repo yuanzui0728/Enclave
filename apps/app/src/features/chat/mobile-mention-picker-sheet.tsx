@@ -114,7 +114,7 @@ export function MobileMentionPickerSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(180,130,20,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -133,7 +133,7 @@ export function MobileMentionPickerSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="absolute inset-x-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180,130,20,0.10)]"
+        className="absolute inset-x-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
         style={{ bottom: keyboardInset > 0 ? `${keyboardInset}px` : 0 }}
       >
         <div className="flex justify-center pb-1.5">

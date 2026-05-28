@@ -2583,7 +2583,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={noticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -2596,7 +2596,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={handleStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -5440,7 +5440,7 @@ function MobileChannelCommentsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(180,130,20,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -5464,7 +5464,7 @@ function MobileChannelCommentsSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-channels-comments-sheet-title"
-        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(180,130,20,0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
@@ -5528,7 +5528,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-full border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]"
+                      className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]"
                     >
                       {t(msg`返回视频号`)}
                     </button>

@@ -344,7 +344,7 @@ function SelectionModeActionButton({
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"
       }`}
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(180,130,20,0.04)]">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(60, 40, 110, 0.04)]">
         {icon}
       </span>
       <span>{label}</span>
@@ -3590,7 +3590,7 @@ export function ChatMessageList({
             className={
               isDesktop
                 ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(180,130,20,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
             {loadingOlderMessages ? t(msg`正在加载更早消息...`) : t(msg`查看更多消息`)}
@@ -3958,7 +3958,7 @@ export function ChatMessageList({
                           : "mb-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium",
                         isUser
                           ? "bg-[rgba(148,163,184,0.18)] text-[color:var(--text-secondary)]"
-                          : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]",
+                          : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {t(msg`聊天记录`)}
@@ -6385,7 +6385,7 @@ function NoteCardMessage({
           }`}
         >
           <div
-            className={`rounded-[16px] border border-[rgba(180,130,20,0.08)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
+            className={`rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
               isDesktop
                 ? "px-3 py-2 text-[11px] tracking-[0.16em]"
                 : "px-2.5 py-1.5 text-[10px] tracking-[0.14em]"
@@ -6414,7 +6414,7 @@ function NoteCardMessage({
         >
           {excerpt || translateRuntimeMessage(msg`点击查看完整笔记`)}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-[rgba(180,130,20,0.06)] pt-2.5">
+        <div className="flex items-center justify-between gap-3 border-t border-[rgba(60, 40, 110, 0.06)] pt-2.5">
           <div className="flex min-w-0 flex-wrap gap-1.5">
             {tags.slice(0, 2).map((tag) => (
               <span
@@ -6567,7 +6567,7 @@ function FeedPostCardMessage({
             translateRuntimeMessage(msg`视频号动态`)}
         </div>
         <div
-          className={`flex items-center justify-between gap-3 border-t border-[rgba(180,130,20,0.06)] pt-2 text-[color:var(--text-muted)] ${
+          className={`flex items-center justify-between gap-3 border-t border-[rgba(60, 40, 110, 0.06)] pt-2 text-[color:var(--text-muted)] ${
             isDesktop ? "text-[11px]" : "text-[10px]"
           }`}
         >
@@ -8228,7 +8228,7 @@ function LocationViewerOverlay({
         // 秒关。Esc keydown 已挂；onClick 鼠标点击关闭路径不受影响。
         tabIndex={-1}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(180,130,20,0.12),rgba(15,23,42,0.72))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(60, 40, 110, 0.12),rgba(15,23,42,0.72))]" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
           <div>
@@ -8263,7 +8263,7 @@ function LocationViewerOverlay({
               isDesktop ? "mx-auto max-w-4xl" : ""
             }`}
           >
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(180,130,20,0.3))]" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(60, 40, 110, 0.3))]" />
             <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:36px_36px]" />
             <div className="absolute inset-x-[14%] top-[18%] h-24 rounded-full bg-[rgba(74,222,128,0.12)] blur-3xl" />
             <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[rgba(59,130,246,0.12)] blur-3xl" />
@@ -8274,7 +8274,7 @@ function LocationViewerOverlay({
               </div>
 
               <div className="flex flex-1 items-center justify-center">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(180,130,20,0.32)]">
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(60, 40, 110, 0.32)]">
                   <div className="absolute inset-3 rounded-full border border-white/12" />
                   <MapPin size={34} className="text-white" />
                 </div>
@@ -8471,16 +8471,16 @@ function NoteViewerOverlay({
             <div className="mt-4">
               {noteQuery.isLoading && !document ? (
                 <div className="space-y-2.5">
-                  <div className="h-4 w-3/4 rounded bg-[rgba(180,130,20,0.06)]" />
-                  <div className="h-4 w-full rounded bg-[rgba(180,130,20,0.06)]" />
-                  <div className="h-4 w-5/6 rounded bg-[rgba(180,130,20,0.06)]" />
+                  <div className="h-4 w-3/4 rounded bg-[rgba(60, 40, 110, 0.06)]" />
+                  <div className="h-4 w-full rounded bg-[rgba(60, 40, 110, 0.06)]" />
+                  <div className="h-4 w-5/6 rounded bg-[rgba(60, 40, 110, 0.06)]" />
                 </div>
               ) : hasContentHtml ? (
                 <div
                   className={cn(
                     "text-[15px] leading-7 text-[color:var(--text-primary)]",
-                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(180,130,20,0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(180,130,20,0.08)]",
+                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(60, 40, 110, 0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(60, 40, 110, 0.08)]",
                     "[&_[data-note-checkbox='false']]:cursor-default [&_[data-note-checkbox='true']]:cursor-default [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
                   )}
                   dangerouslySetInnerHTML={{
@@ -8505,7 +8505,7 @@ function NoteViewerOverlay({
                       // 整段滚动手势被吞，drag URL 还可能被释放到桌面意外触发
                       // "下载该图到桌面"。和姊妹 viewer img 一致挂 draggable={false}。
                       draggable={false}
-                      className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(180,130,20,0.08)] object-cover"
+                      className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] object-cover"
                     />
                   ) : null}
                   <div className="text-[15px] leading-7 text-[color:var(--text-primary)]">
@@ -8531,7 +8531,7 @@ function NoteViewerOverlay({
                         // 任一张内嵌图上轻微 drag 都被浏览器接管成 native drag，
                         // 干扰滚动手势。
                         draggable={false}
-                        className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(180,130,20,0.08)] object-cover"
+                        className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] object-cover"
                       />
                     ))}
                   {fileAssets.map((asset) => (
@@ -8542,7 +8542,7 @@ function NoteViewerOverlay({
                       href={resolveAppMediaUrl(asset.url)}
                       target="_blank"
                       rel="noreferrer"
-                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(180,130,20,0.08)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
+                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
                     >
                       <FileText size={14} />
                       <span className="max-w-[60vw] truncate">
@@ -8637,7 +8637,7 @@ function NoteDetailActionSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] bg-[rgba(180,130,20,0.14)]">
+    <div className="fixed inset-0 z-[60] bg-[rgba(60, 40, 110, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -8655,7 +8655,7 @@ function NoteDetailActionSheet({
         // 闭路径不受影响。
         tabIndex={-1}
       />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(180,130,20,0.10)]">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]">
         <div className="flex justify-center pb-2">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
@@ -8694,7 +8694,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-1 rounded-[12px] bg-[color:var(--surface-card)] px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(180,130,20,0.04)]"
+          className="mt-1 rounded-[12px] bg-[color:var(--surface-card)] px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]"
         >
           {translateRuntimeMessage(msg`取消`)}
         </button>

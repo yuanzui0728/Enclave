@@ -1095,7 +1095,7 @@ function ToggleCard({
             "rounded-md px-2.5 py-1 text-[11px] font-medium",
             checked
               ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
-              : "bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]",
+              : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
           )}
         >
           {checked ? t(msg`开启`) : t(msg`关闭`)}

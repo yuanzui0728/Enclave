@@ -19,7 +19,7 @@ export function resolveChatCardBadgeClassName(tone: ChatCardBadgeTone) {
   }
 
   if (tone === "neutral") {
-    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(180,130,20,0.06)] text-[color:var(--text-secondary)]";
+    return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]";
   }
 
   return "rounded-full px-2.5 py-1 text-[10px] font-medium bg-[rgba(59,130,246,0.12)] text-[#2563eb]";

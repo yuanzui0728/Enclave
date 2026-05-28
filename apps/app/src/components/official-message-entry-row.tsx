@@ -55,7 +55,7 @@ export function OfficialMessageEntryRow({
       className={cn(
         isDesktop
           ? active
-            ? "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(180,130,20,0.04)]"
+            ? "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(60, 40, 110, 0.04)]"
             : contextMenuOpen
               ? "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5 text-left"
               : "flex w-full items-center gap-3 rounded-[12px] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80"

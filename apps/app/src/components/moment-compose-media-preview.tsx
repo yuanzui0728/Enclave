@@ -128,7 +128,7 @@ export function MomentComposeMediaPreview({
                 />
               )}
 
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(180,130,20,0.02),rgba(180,130,20,0.36))]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(60, 40, 110, 0.02),rgba(60, 40, 110, 0.36))]" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-white transition group-hover:scale-[1.04]">
                   <Play size={22} className="translate-x-[1px] fill-current" />
@@ -216,7 +216,7 @@ export function MomentComposeMediaPreview({
                       : "h-full w-full object-cover",
                   )}
                 />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(180,130,20,0.46))] px-3 py-2 text-[10px] text-white/88">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(60, 40, 110, 0.46))] px-3 py-2 text-[10px] text-white/88">
                   {draft.width} × {draft.height}
                 </div>
               </button>

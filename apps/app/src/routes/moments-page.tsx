@@ -2135,7 +2135,7 @@ export function MomentsPage() {
             // 行为依赖外层布局——desktop panel 的 z-20 + 自己 transparent
             // backdrop 叠加时遮罩可能漏到 panel 之外。fixed 直接对 viewport，
             // 行为稳定可控。z-[1300] 和 mobile sheet 一致，盖住所有底层 popover。
-            className="fixed inset-0 z-[1300] flex items-center justify-center bg-[rgba(180,130,20,0.32)] backdrop-blur-[3px]"
+            className="fixed inset-0 z-[1300] flex items-center justify-center bg-[rgba(60, 40, 110, 0.32)] backdrop-blur-[3px]"
           >
             <button
               type="button"

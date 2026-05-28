@@ -187,7 +187,7 @@ export function MobileMessageActionSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(180,130,20,0.14)]">
+    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -213,7 +213,7 @@ export function MobileMessageActionSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(180,130,20,0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />

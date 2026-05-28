@@ -69,8 +69,8 @@ export function DigitalHumanPlayer({
           className={cn(
             "relative overflow-hidden border text-white",
             variant === "mobile"
-              ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(180,130,20,0.34)]"
-              : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(180,130,20,0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(180,130,20,0.22)]",
+              ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+              : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(60, 40, 110, 0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
           )}
         >
           <iframe
@@ -156,8 +156,8 @@ export function DigitalHumanPlayer({
       className={cn(
         "relative overflow-hidden border text-white",
         variant === "mobile"
-          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(180,130,20,0.34)]"
-          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(180,130,20,0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(180,130,20,0.22)]",
+          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(60, 40, 110, 0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
       )}
     >
       {/* 走查电脑端单聊 R136：和姊妹 R133 (CameraPreviewCard <video>) 同款。本

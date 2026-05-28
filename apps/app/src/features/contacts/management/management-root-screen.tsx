@@ -53,7 +53,7 @@ export function ManagementRootScreen({
 
   return (
     <div className="px-3 py-3">
-      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(180,130,20,0.04)]">
+      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
         {items.map((item, index) => {
           const Icon = item.icon;
           return (

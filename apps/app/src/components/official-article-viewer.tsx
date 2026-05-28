@@ -398,9 +398,9 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(180,130,20,0.08)] [&_blockquote]:bg-[rgba(180,130,20,0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
+            ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(60, 40, 110, 0.08)] [&_blockquote]:bg-[rgba(60, 40, 110, 0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
             : isDesktopReader
-              ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(180,130,20,0.08)] [&_blockquote]:bg-[rgba(180,130,20,0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
+              ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(60, 40, 110, 0.08)] [&_blockquote]:bg-[rgba(60, 40, 110, 0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
               : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[color:var(--brand-primary)]/20 [&_blockquote]:bg-[color:var(--brand-primary)]/7 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         }
         onClick={(event) => void handleContentLinkClick(event)}
@@ -449,9 +449,9 @@ export function OfficialArticleViewer({
                 }
                 className={
                   mobile
-                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(180,130,20,0.03)]"
+                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(60, 40, 110, 0.03)]"
                     : isDesktopReader
-                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(180,130,20,0.02)]"
+                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(60, 40, 110, 0.02)]"
                       : "flex w-full items-start justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                 }
               >

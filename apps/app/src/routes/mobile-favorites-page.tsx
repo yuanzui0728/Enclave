@@ -623,7 +623,7 @@ function FavoriteRow({
               </span>
             ))}
             {noteSummary.assets.length ? (
-              <span className="rounded-full bg-[rgba(180,130,20,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 {t(msg`附件 ${noteSummary.assets.length}`)}
               </span>
             ) : null}

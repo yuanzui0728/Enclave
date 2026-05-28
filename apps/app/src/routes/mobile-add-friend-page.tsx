@@ -921,7 +921,7 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
   const t = useRuntimeTranslator();
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(180,130,20,0.05)] text-[color:var(--text-secondary)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(60, 40, 110, 0.05)] text-[color:var(--text-secondary)]">
         <Search aria-hidden="true" size={22} />
       </div>
       {/* 走查 R3：原版标题没 max-w / break-words，submittedKeyword 来自 URL
@@ -1280,7 +1280,7 @@ function MobileAddFriendSendSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-add-friend-sheet-title"
-        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-[color:var(--surface-card)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(180,130,20,0.18)] sm:rounded-[16px]"
+        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-[color:var(--surface-card)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.18)] sm:rounded-[16px]"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <button

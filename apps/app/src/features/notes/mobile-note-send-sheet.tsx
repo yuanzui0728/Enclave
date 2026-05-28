@@ -94,7 +94,7 @@ export function MobileNoteSendSheet({
 
       <div
         className={cn(
-          "relative flex max-h-[88vh] min-h-0 flex-col rounded-t-[22px] bg-[color:var(--surface-card)] shadow-[0_-12px_32px_rgba(180,130,20,0.16)]",
+          "relative flex max-h-[88vh] min-h-0 flex-col rounded-t-[22px] bg-[color:var(--surface-card)] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.16)]",
           // pb 接 --keyboard-inset：sheet 里有「搜索最近会话」TextField，iOS
           // WKWebView 上聚焦后软键盘弹起会盖住底部「会以笔记卡片形式出现…/
           // 取消」action 栏 —— 跟 mobile-add-friend 的 SendSheet 一样要用
