@@ -175,10 +175,12 @@ function isAtRootRoute() {
     return true;
   }
   const path = window.location.pathname.replace(/\/+$/, "");
-  // 4 个主 tab + 根路径 → 视为根
+  // 主 tab + 根路径 → 视为根（世界改造后：世界/消息/通讯录/我；
+  // 发现退出 nav 后仍按根处理，深链落到它按返回直接退出）
   return (
     path === "" ||
     path === "/" ||
+    path === "/tabs/world" ||
     path === "/tabs/chat" ||
     path === "/tabs/contacts" ||
     path === "/tabs/discover" ||

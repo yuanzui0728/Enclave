@@ -7,6 +7,7 @@ import { AppPage, AppSection } from "@yinjie/ui";
 
 const t = translateRuntimeMessage;
 import { readPersistedMobileWebRoute } from "../features/shell/mobile-web-route-persistence";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { clearCloudRuntimeSession } from "../lib/cloud-session";
 import { persistInviteCode } from "../lib/invite-code-storage";
 import {
@@ -24,10 +25,14 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 export function SplashPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
+  const isDesktopLayout = useDesktopLayout();
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   const setCloudProfile = useCloudSessionStore((state) => state.setProfile);
 
   useEffect(() => {
+    // 世界改造 cutover：移动端默认落地「世界」首屏；桌面端继续落地聊天工作台
+    //（世界页在桌面会 guard 回发现，直接给桌面 chat 避免无谓跳转）。
+    const homeTab = isDesktopLayout ? "/tabs/chat" : "/tabs/world";
     // 通过 https://app/?invite=XXX 进来时，splash 立即 navigate 到 /welcome
     // 会丢掉 query string，需要先把邀请码落到 localStorage，让 welcome 页能继续读到。
     if (typeof window !== "undefined") {
@@ -90,7 +95,7 @@ export function SplashPage() {
         ? readPersistedMobileWebRoute()
         : null;
       void navigate({
-        to: restoredRoute ?? "/tabs/chat",
+        to: restoredRoute ?? homeTab,
         replace: true,
       });
 
@@ -188,7 +193,7 @@ export function SplashPage() {
         : null;
       void navigate({
         to: onboardingCompletedNow
-          ? restoredRoute ?? "/tabs/chat"
+          ? restoredRoute ?? homeTab
           : "/welcome",
         replace: true,
       });
@@ -201,6 +206,7 @@ export function SplashPage() {
     };
   }, [
     hydrateOwner,
+    isDesktopLayout,
     navigate,
     runtimeConfig.apiBaseUrl,
     runtimeConfig.appPlatform,

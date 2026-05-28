@@ -10,7 +10,7 @@ import { msg } from "@lingui/macro";
 import { getConversations } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
-  Compass,
+  Globe,
   MessageCircleMore,
   UserRound,
   UsersRound,
@@ -29,9 +29,9 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 const EMPTY_CONVERSATIONS = Object.freeze([]);
 
 const tabs = [
+  { to: "/tabs/world", label: msg`世界`, icon: Globe },
   { to: "/tabs/chat", label: msg`消息`, icon: MessageCircleMore },
   { to: "/tabs/contacts", label: msg`通讯录`, icon: UsersRound },
-  { to: "/tabs/discover", label: msg`发现`, icon: Compass },
   { to: "/tabs/profile", label: msg`我`, icon: UserRound },
 ];
 const KEEP_ALIVE_TAB_PATHS = new Set(tabs.map((tab) => tab.to));
