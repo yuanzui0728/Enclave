@@ -238,6 +238,10 @@ export function translateAppErrorCode(
       return translateRuntimeMessage(msg`这次相遇没能生成，请再试一次。`);
     case "AVATAR_ENCOUNTER_WORLD_NOT_READY":
       return translateRuntimeMessage(msg`你的分身正在唤醒，请稍后重试。`);
+    case "AVATAR_ENCOUNTER_PROFILE_NOT_READY":
+      return translateRuntimeMessage(
+        msg`你的分身还在生成画像，过一会儿再来发起相遇。`,
+      );
     case "AVATAR_ENCOUNTER_NOT_FOUND":
       return translateRuntimeMessage(msg`这次相遇不存在或已失效。`);
     case "AVATAR_ENCOUNTER_ALREADY_DECIDED":

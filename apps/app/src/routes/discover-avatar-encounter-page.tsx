@@ -429,16 +429,8 @@ function DiscoverTab({
             />
           ) : null}
 
-          {decideMutation.isError && decideMutation.error instanceof Error ? (
-            <InlineNotice
-              className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
-              tone="danger"
-              role="alert"
-            >
-              {(isApiRequestError(decideMutation.error)
-                ? translateAppErrorCode(decideMutation.error)
-                : null) ?? decideMutation.error.message}
-            </InlineNotice>
+          {decideMutation.isError ? (
+            <EncounterDecideError error={decideMutation.error} />
           ) : null}
 
           {/* 已做完决策后给一个「再来一次 / 回发现」收口（额度允许时）。 */}
@@ -701,20 +693,58 @@ function ReceivedDetail({
             />
           ) : null}
 
-          {decideMutation.isError && decideMutation.error instanceof Error ? (
-            <InlineNotice
-              className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
-              tone="danger"
-              role="alert"
-            >
-              {(isApiRequestError(decideMutation.error)
-                ? translateAppErrorCode(decideMutation.error)
-                : null) ?? decideMutation.error.message}
-            </InlineNotice>
+          {decideMutation.isError ? (
+            <EncounterDecideError error={decideMutation.error} />
           ) : null}
         </>
       ) : null}
     </div>
+  );
+}
+
+// ── 决策报错条（发现 / 收件箱共用） ──────────────────────────────────────────
+
+// 想认识对方（want）前要先填联系方式：后端拦 CONTACT_REQUIRED → 这里出友好提示 +
+// 「去填写」链接（跳 /profile/info/contact，填完 world 推快照回池，回来再点 want 即过；
+// 这次相遇已落库 awaiting_*，也能从「我的相遇」找回，不会丢脚本）。其余错误走普通 danger。
+function EncounterDecideError({ error }: { error: unknown }) {
+  const t = useRuntimeTranslator();
+  if (!(error instanceof Error)) {
+    return null;
+  }
+  const contactRequired =
+    isApiRequestError(error) &&
+    error.errorCode === "AVATAR_ENCOUNTER_CONTACT_REQUIRED";
+  if (contactRequired) {
+    return (
+      <InlineNotice
+        className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+        tone="warning"
+        role="alert"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 flex-1">
+            {t(msg`想要对方联系方式前，需要先填写你的联系方式。`)}
+          </span>
+          <Link
+            to="/profile/info/contact"
+            className="shrink-0 rounded-full border border-[rgba(245,158,11,0.24)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b45309]"
+          >
+            {t(msg`去填写`)}
+          </Link>
+        </div>
+      </InlineNotice>
+    );
+  }
+  return (
+    <InlineNotice
+      className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+      tone="danger"
+      role="alert"
+    >
+      {(isApiRequestError(error) ? translateAppErrorCode(error) : null) ??
+        error.message}
+    </InlineNotice>
   );
 }
 
