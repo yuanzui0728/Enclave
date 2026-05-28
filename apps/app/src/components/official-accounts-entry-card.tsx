@@ -28,7 +28,7 @@ export function OfficialAccountsEntryCard({
       timestampLabel={formatConversationTimestamp(lastActivityAt)}
       unreadCount={unreadCount}
       leading={
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,#facc15,#f59e0b)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">
           <BookOpenText size={18} />
         </div>
       }

@@ -130,7 +130,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`朋友`,
     icon: Users,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/moments",
     buildHash: ({ hash, pathname }) =>
       buildDesktopMomentsRouteHash({
@@ -144,7 +144,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`随机`,
     icon: Sparkles,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fdba74,#f97316)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -171,7 +171,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`镜像`,
     icon: Fingerprint,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/cyber-avatar",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -184,7 +184,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`场景相遇`,
     badge: msg`场景`,
     icon: MapPin,
-    iconClassName: "bg-[linear-gradient(135deg,#a3e635,#65a30d)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-secondary),var(--brand-secondary))] text-white",
     to: "/discover/scene",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -227,7 +227,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`娱乐`,
     icon: Gamepad2,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fde047,#facc15)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-accent))] text-[color:var(--text-on-brand)]",
     to: "/discover/games",
     buildSearch: ({ hash, pathname }) =>
       buildMobileGamesRouteSearch({
@@ -254,7 +254,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     badge: msg`好物`,
     icon: ShoppingBag,
     iconClassName:
-      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/shop",
   },
 ];

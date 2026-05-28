@@ -44,7 +44,7 @@ export function RouteTransitionIndicator() {
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(90deg, transparent 0%, #f59e0b 30%, #84cc16 50%, #f59e0b 70%, transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, var(--brand-primary) 30%, var(--brand-secondary) 50%, var(--brand-primary) 70%, transparent 100%)",
           animation: "yinjie-route-progress 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
         }}
       />

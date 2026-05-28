@@ -1766,7 +1766,7 @@ export function ContactsPage() {
       badgeCount: pendingRequestCount,
       active: desktopSelection?.kind === "new-friends",
       icon: UserPlus,
-      iconClassName: "bg-[linear-gradient(135deg,#fde047,#f59e0b)]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-accent),var(--brand-primary))]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/friend-requests");
@@ -1812,7 +1812,7 @@ export function ContactsPage() {
       subtitle: t(msg`查看已上线的内容账号`),
       active: desktopSelection?.kind === "official-accounts",
       icon: BookText,
-      iconClassName: "bg-[linear-gradient(135deg,#bef264,#65a30d)]",
+      iconClassName: "bg-[linear-gradient(135deg,#bef264,var(--brand-secondary))]",
       onClick: () => {
         if (!isDesktopLayout) {
           handleShortcutNavigate("/contacts/official-accounts");
@@ -1845,7 +1845,7 @@ export function ContactsPage() {
         (isDesktopLayout && showWorldCharacters) ||
         desktopSelection?.kind === "world-character",
       icon: BookUser,
-      iconClassName: "bg-[linear-gradient(135deg,#fcd34d,#d97706)]",
+      iconClassName: "bg-[linear-gradient(135deg,#fcd34d,var(--brand-primary))]",
       onClick: handleOpenWorldCharacters,
     },
   ];
@@ -1860,7 +1860,7 @@ export function ContactsPage() {
           : t(msg`快速查看设为星标的联系人`),
       active: desktopSelection?.kind === "starred-friends",
       icon: Star,
-      iconClassName: "bg-[linear-gradient(135deg,#f59e0b,#d97706)]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))]",
       onClick: () => {
         // 已经在 starred-friends pane 里再点这个 shortcut 时，不要把 selection 强
         // 行重置回 starredFriends[0]——用户可能已经在中间列表里选中了第 N 位，
@@ -1888,7 +1888,7 @@ export function ContactsPage() {
           : t(msg`按标签整理联系人`),
       active: desktopSelection?.kind === "tags",
       icon: Tag,
-      iconClassName: "bg-[linear-gradient(135deg,#a3e635,#65a30d)]",
+      iconClassName: "bg-[linear-gradient(135deg,var(--brand-secondary),var(--brand-secondary))]",
       onClick: () => {
         const nextSelection = {
           kind: "tags",

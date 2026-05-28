@@ -6747,7 +6747,7 @@ function GiftMessage({
       className={`overflow-hidden shadow-none ${
         isDesktop ? "w-[228px] rounded-[16px]" : "w-[208px] rounded-[14px]"
       }`}
-      style={{ background: "linear-gradient(135deg,#f59e0b,#fb923c)" }}
+      style={{ background: "linear-gradient(135deg,var(--brand-primary),var(--brand-primary))" }}
     >
       <div
         className={`flex items-center gap-2.5 px-3 ${isDesktop ? "py-3" : "py-2.5"}`}

@@ -2390,10 +2390,10 @@ export function StickerPanel({
                 <div
                   className={`h-full rounded-full transition-[width] ${
                     customStorageTone === "danger"
-                      ? "bg-[linear-gradient(90deg,#ef4444,#f97316)]"
+                      ? "bg-[linear-gradient(90deg,#ef4444,var(--brand-primary))]"
                       : customStorageTone === "warning"
-                        ? "bg-[linear-gradient(90deg,#f59e0b,#f97316)]"
-                        : "bg-[linear-gradient(90deg,#f59e0b,#d97706)]"
+                        ? "bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-primary))]"
+                        : "bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-primary))]"
                   }`}
                   style={{
                     width: `${
