@@ -2515,7 +2515,7 @@ export class AiUsageLedgerService {
       encounter_transcript: '分身相遇对话生成',
       minimax_moment_video: '朋友圈视频生成',
       channel_forward_quip: '视频号转发短评生成',
-      friend_request_accept_delay: '好友申请延迟通过文案',
+      friend_request_accept_delay: '好友申请通过时机决策',
       reminder_runtime_parse_fallback: '提醒解析兜底',
       cyber_avatar_self_chat: '赛博分身自我对话',
       cyber_avatar_self_analysis: '赛博分身自我分析',

@@ -17795,8 +17795,8 @@ msgid "视频号转发短评生成"
 msgstr "채널 전달 짧은 평 생성"
 
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3635
-msgid "好友申请延迟通过文案"
-msgstr "친구 신청 지연 수락 문구"
+msgid "好友申请通过时机决策"
+msgstr "친구 신청 수락 시점 결정"
 
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3638
 msgid "提醒解析兜底"

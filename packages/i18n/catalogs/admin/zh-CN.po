@@ -17795,8 +17795,8 @@ msgid "视频号转发短评生成"
 msgstr "视频号转发短评生成"
 
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3635
-msgid "好友申请延迟通过文案"
-msgstr "好友申请延迟通过文案"
+msgid "好友申请通过时机决策"
+msgstr "好友申请通过时机决策"
 
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3638
 msgid "提醒解析兜底"
