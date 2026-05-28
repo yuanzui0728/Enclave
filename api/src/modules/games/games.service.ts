@@ -1,10 +1,11 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 import { randomUUID } from 'crypto';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import {
   createDefaultGameCenterOwnerState,
@@ -303,6 +304,8 @@ const GAME_SUBMISSION_SEED: Array<{
 
 @Injectable()
 export class GamesService {
+  private readonly logger = new Logger(GamesService.name);
+
   constructor(
     @InjectRepository(GameOwnerStateEntity)
     private readonly ownerStateRepo: Repository<GameOwnerStateEntity>,
@@ -315,7 +318,55 @@ export class GamesService {
     @InjectRepository(GameSubmissionEntity)
     private readonly submissionRepo: Repository<GameSubmissionEntity>,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
+
+  /**
+   * 单人世界中枢 P4 信号回填：把「用户在玩什么游戏」沉淀成赛博分身信号，喂用户画像
+   * （让全世界角色知道 Ta 最近的兴趣/消遣）。fire-and-forget，绝不阻塞游戏开局/置顶；
+   * 任何异常吞掉。weight 由调用方显式传：日常打开 0.8（< 共享记忆阈值 1.0，只喂画像
+   * 不刷屏 episodes），置顶/里程碑 1.2（进 episodes）。dedupeKey 按小时桶防刷屏。
+   */
+  private captureGameSignal(input: {
+    signalType: 'game_session' | 'game_action';
+    gameId: string;
+    gameName: string;
+    summaryText: string;
+    weight: number;
+    dedupeKey: string;
+  }): void {
+    void (async () => {
+      try {
+        const owner = await this.worldOwnerService.getOwnerOrThrow();
+        await this.cyberAvatar.captureSignal({
+          ownerId: owner.id,
+          signalType: input.signalType,
+          sourceSurface: 'game_center',
+          sourceEntityType: input.signalType,
+          sourceEntityId: input.gameId,
+          dedupeKey: input.dedupeKey,
+          summaryText: input.summaryText,
+          payload: { gameId: input.gameId, gameName: input.gameName },
+          weight: input.weight,
+        });
+      } catch (error) {
+        this.logger.debug(
+          `captureGameSignal skipped: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    })();
+  }
+
+  private async resolveGameName(gameId: string): Promise<string> {
+    try {
+      const entry = await this.catalogRepo.findOne({ where: { id: gameId } });
+      return entry?.name?.trim() || gameId;
+    } catch {
+      return gameId;
+    }
+  }
 
   async getGameCenterHome() {
     const seed = cloneGameCenterHomeSeed();
@@ -371,7 +422,7 @@ export class GamesService {
     const current = this.serializeOwnerState(entity, knownGameIds);
     const openedAt = new Date().toISOString();
 
-    return this.persistOwnerState(
+    const result = await this.persistOwnerState(
       entity,
       {
         ...current,
@@ -392,6 +443,21 @@ export class GamesService {
       },
       knownGameIds,
     );
+
+    // P4 信号回填（fire-and-forget）：日常打开 weight 0.8（不进共享记忆，只喂画像）；
+    // dedupeKey 按「游戏×小时」桶，避免反复进出游戏刷屏信号表。
+    const hourBucket = openedAt.slice(0, 13); // YYYY-MM-DDTHH
+    const gameName = await this.resolveGameName(gameId);
+    this.captureGameSignal({
+      signalType: 'game_session',
+      gameId,
+      gameName,
+      summaryText: `打开了游戏「${gameName}」`,
+      weight: 0.8,
+      dedupeKey: `game_open:${gameId}:${hourBucket}`,
+    });
+
+    return result;
   }
 
   async setPinnedState(gameId: string, pinned: boolean) {
@@ -408,6 +474,7 @@ export class GamesService {
     }
 
     const current = this.serializeOwnerState(entity, knownGameIds);
+    const alreadyPinned = current.pinnedGameIds.includes(gameId);
     const pinnedGameIds = pinned
       ? [gameId, ...current.pinnedGameIds.filter((id) => id !== gameId)].slice(
           0,
@@ -415,7 +482,7 @@ export class GamesService {
         )
       : current.pinnedGameIds.filter((id) => id !== gameId);
 
-    return this.persistOwnerState(
+    const result = await this.persistOwnerState(
       entity,
       {
         ...current,
@@ -424,6 +491,21 @@ export class GamesService {
       },
       knownGameIds,
     );
+
+    // 置顶（新设）是高置信兴趣信号 weight 1.2（进共享记忆 episodes）。取消置顶不发信号。
+    if (pinned && !alreadyPinned) {
+      const gameName = await this.resolveGameName(gameId);
+      this.captureGameSignal({
+        signalType: 'game_action',
+        gameId,
+        gameName,
+        summaryText: `把游戏「${gameName}」设为常玩（置顶）`,
+        weight: 1.2,
+        dedupeKey: `game_pin:${gameId}`,
+      });
+    }
+
+    return result;
   }
 
   async dismissActiveGame() {

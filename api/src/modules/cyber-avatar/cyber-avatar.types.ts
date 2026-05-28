@@ -26,7 +26,10 @@ export type CyberAvatarSignalType =
   | 'real_world_action'
   | 'location_update'
   | 'real_world_item'
-  | 'real_world_brief';
+  | 'real_world_brief'
+  // P4 信号回填：游戏中心行为（日常打开 / 置顶等里程碑），喂用户兴趣画像。
+  | 'game_session'
+  | 'game_action';
 
 export type CyberAvatarRunMode =
   | 'incremental'

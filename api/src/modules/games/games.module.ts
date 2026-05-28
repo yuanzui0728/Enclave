@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
 import { AiModule } from '../ai/ai.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { GamesController } from './games.controller';
 import { GamesService } from './games.service';
 import { AdminGamesController } from './admin-games.controller';
@@ -27,6 +28,7 @@ import { GameSubmissionEntity } from './game-submission.entity';
     AuthModule,
     CharactersModule,
     AiModule,
+    CyberAvatarModule,
   ],
   providers: [GamesService, GamePlayService, AdminGuard],
   controllers: [GamesController, AdminGamesController, GamePlayController],
