@@ -28,7 +28,8 @@ function giftIntimacyDelta(quantity: number): number {
   return Math.min(10, Math.max(2, 2 * Math.max(1, quantity)));
 }
 
-// 亲密度首次越过此线 → AI 惊喜回礼一次。
+// 亲密度首次越过此线 → AI 惊喜回礼一次。「首次越过」靠 newLevel-delta<里程碑 推断旧值，
+// 该推断仅在里程碑远离 updateIntimacy 的 0/100 clamp 边界时成立——勿把此值设到接近 100。
 const RECIPROCATE_INTIMACY_MILESTONE = 50;
 // AI 回礼固定送这件平价虚拟礼物（seed 商品）；不存在时 cloud-api 拒绝、回礼静默跳过。
 const RECIPROCATE_GOODS_CODE = 'gift_coffee';

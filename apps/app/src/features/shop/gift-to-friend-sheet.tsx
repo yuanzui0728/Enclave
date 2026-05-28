@@ -42,7 +42,14 @@ export function GiftToFriendSheet({
     setError("");
     setDone("");
     giftMutation.mutate(
-      { goodsCode, characterId, quantity: 1, characterName, characterAvatar: characterAvatar ?? undefined },
+      {
+        goodsCode,
+        characterId,
+        quantity: 1,
+        idempotencyKey: crypto.randomUUID(),
+        characterName,
+        characterAvatar: characterAvatar ?? undefined,
+      },
       {
         onSuccess: () => setDone(t(msg`已把「${name}」送给 ${characterName}`)),
         onError: (e) => setError(describeRequestError(e, t(msg`赠送失败，请稍后重试。`))),

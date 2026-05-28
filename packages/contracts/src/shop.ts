@@ -135,6 +135,8 @@ export interface GiftToCharacterPayload {
   goodsCode: string;
   characterId: string;
   quantity: number;
+  // 客户端生成的幂等键（每次赠送一个 UUID）：兜重试/双标签页重复扣库存。
+  idempotencyKey: string;
   message?: string;
   // 角色名/头像快照（前端从好友列表带上，cloud-api 不查 world）。
   characterName?: string;
