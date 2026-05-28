@@ -31,6 +31,7 @@ import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.ser
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
+import { CharacterSocialContextService } from './character-social-context.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { SelfAgentService } from '../self-agent/self-agent.service';
 import { FriendshipEntity } from '../social/friendship.entity';
@@ -186,6 +187,7 @@ export class ChatService {
     private readonly actionRuntime: ActionRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly contextHub: WorldContextHubService,
+    private readonly socialContext: CharacterSocialContextService,
     private readonly customStickersService: CustomStickersService,
     private readonly reminderRuntime: ReminderRuntimeService,
     private readonly worldLanguage: WorldLanguageService,
@@ -1178,9 +1180,12 @@ export class ChatService {
       where: this.buildMessageWhere(convId, undefined, { senderType: 'user' }),
       order: { createdAt: 'DESC' },
     });
-    // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B)，给当前角色用。
+    // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B) + 当前角色社交上下文(C)。
     // best-effort，取不到返回 ''；并行查询，避免主路径多一次串行 round-trip。
-    const ownerContext = await this.contextHub.buildOwnerContextBlocks();
+    const [ownerContext, socialContextBlock] = await Promise.all([
+      this.contextHub.buildOwnerContextBlocks(),
+      this.socialContext.buildSocialContext(charId),
+    ]);
     const chatContext = {
       currentActivity: charEntity?.currentActivity,
       lastChatAt: lastMsg?.createdAt,
@@ -1189,6 +1194,7 @@ export class ChatService {
       userProfile: this.worldOwnerService.buildUserProfileContext(owner),
       ownerPortrait: ownerContext.portrait,
       ownerSharedMemory: ownerContext.sharedMemory,
+      socialContext: socialContextBlock,
     };
     const isSelfConversation = Boolean(
       charEntity &&

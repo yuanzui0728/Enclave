@@ -42,6 +42,7 @@ import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.ser
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
+import { CharacterSocialContextService } from '../chat/character-social-context.service';
 import { SelfAgentService } from '../self-agent/self-agent.service';
 import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 import { WorldLanguageService } from '../config/world-language.service';
@@ -135,6 +136,7 @@ export class SchedulerService {
     private readonly reminderRuntimeService: ReminderRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly contextHub: WorldContextHubService,
+    private readonly socialContextService: CharacterSocialContextService,
     private readonly selfAgentService: SelfAgentService,
     private readonly momentsService: MomentsService,
     private readonly minimaxQuota: MinimaxQuotaService,
@@ -1665,7 +1667,15 @@ export class SchedulerService {
               today,
               noActionToken,
             }),
-          chatContext: { userProfile, ownerPortrait, ownerSharedMemory },
+          chatContext: {
+            userProfile,
+            ownerPortrait,
+            ownerSharedMemory,
+            // Stratum C：per-actor 装配（本 char 的关系+用户社交全景）。
+            socialContext: await this.socialContextService.buildSocialContext(
+              char.id,
+            ),
+          },
           extraSystemPromptSections:
             char.id === SELF_CHARACTER_ID
               ? selfCyberAvatarPromptSections

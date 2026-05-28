@@ -348,6 +348,8 @@ export interface GenerateReplyOptions {
     // 单人世界中枢的跨角色共享记忆块（Stratum B，<world_recent_episodes>）——
     // 把任一角色/朋友圈/视频号里发生过的具体事件传递给当前角色，实现「彻底打通」。
     ownerSharedMemory?: string;
+    // 角色互知 + 用户社交全景（Stratum C，<character_relationships> + <world_social>）。
+    socialContext?: string;
   };
   extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;

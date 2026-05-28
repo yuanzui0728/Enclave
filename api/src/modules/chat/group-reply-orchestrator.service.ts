@@ -5,6 +5,7 @@ import { type ChatMessage } from '../ai/ai.types';
 import { WebSearchService } from '../ai/web-search.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
+import { CharacterSocialContextService } from './character-social-context.service';
 import { CharactersService } from '../characters/characters.service';
 import { WorldLanguageService } from '../config/world-language.service';
 import {
@@ -31,6 +32,7 @@ export class GroupReplyOrchestratorService {
     private readonly webSearch: WebSearchService,
     private readonly worldOwner: WorldOwnerService,
     private readonly contextHub: WorldContextHubService,
+    private readonly socialContextService: CharacterSocialContextService,
   ) {}
 
   async generateTaskReply(input: {
@@ -92,11 +94,16 @@ export class GroupReplyOrchestratorService {
       // 群聊里角色也该「知道」群内真人用户是谁（个人资料注入，同直聊）+ 单人世界中枢
       // 渲染的用户画像(A) + 跨角色共享记忆(B)，让群里所有角色共享同一份「世界对 Ta 的认知」+ 近期事件。
       chatContext: await (async () => {
-        const ctx = await this.contextHub.buildOwnerContextBlocks();
+        const [ctx, social, userProfile] = await Promise.all([
+          this.contextHub.buildOwnerContextBlocks(),
+          this.socialContextService.buildSocialContext(actor.character.id),
+          this.worldOwner.getUserProfileContext(),
+        ]);
         return {
-          userProfile: await this.worldOwner.getUserProfileContext(),
+          userProfile,
           ownerPortrait: ctx.portrait,
           ownerSharedMemory: ctx.sharedMemory,
+          socialContext: social,
         };
       })(),
       extraSystemPromptSections,
@@ -198,6 +205,11 @@ export class GroupReplyOrchestratorService {
       ) {
         turnExtraSections.push(sharedWebSearchMarkdown);
       }
+      // 每个 actor 的「我和其他角色的关系」是不同的——必须 per-actor 装配；
+      // 世界社交全景在 buildSocialContext 内部按当前 owner 装配，所有 actor 看到相同的一份。
+      const socialContextBlock = await this.socialContextService.buildSocialContext(
+        actor.character.id,
+      );
       try {
         const reply = await this.ai.generateReply({
           profile: actor.profile,
@@ -208,7 +220,12 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
-          chatContext: { userProfile, ownerPortrait, ownerSharedMemory },
+          chatContext: {
+            userProfile,
+            ownerPortrait,
+            ownerSharedMemory,
+            socialContext: socialContextBlock,
+          },
           extraSystemPromptSections: turnExtraSections,
           emptyTextFallback: '',
           usageContext: {

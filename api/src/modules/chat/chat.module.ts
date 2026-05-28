@@ -54,7 +54,9 @@ import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
+import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { FriendRemarkResolverModule } from '../social/friend-remark-resolver.module';
+import { CharacterSocialContextService } from './character-social-context.service';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
 import { DocumentExtractionService } from './document-extraction.service';
@@ -85,6 +87,7 @@ import { EventsModule } from '../events/events.module';
       ChatCustomStickerEntity,
       CharacterEntity,
       FriendshipEntity,
+      AIRelationshipEntity,
       FavoriteEntity,
       FavoriteNoteEntity,
     ]),
@@ -108,6 +111,7 @@ import { EventsModule } from '../events/events.module';
     VoiceCallsService,
     GroupVoiceCallsService,
     CustomStickersService,
+    CharacterSocialContextService,
   ],
   controllers: [
     ChatController,
@@ -135,6 +139,7 @@ import { EventsModule } from '../events/events.module';
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,
+    CharacterSocialContextService,
   ],
 })
 export class ChatModule {}

@@ -28,6 +28,9 @@ export interface ChatContext {
   // 单人世界中枢预渲染的 <world_recent_episodes> 块（Stratum B，跨角色共享记忆）。
   // 「彻底打通」核心：把任一角色/朋友圈/视频号里发生过的具体事件传递给当前角色。
   ownerSharedMemory?: string;
+  // 角色互知 + 用户社交全景（Stratum C，<character_relationships> + <world_social>）。
+  // 由调用方在知道 characterId 时装配（per-actor 可变）。
+  socialContext?: string;
 }
 
 export interface ChatSystemPromptSection {
@@ -44,6 +47,7 @@ export interface ChatSystemPromptSection {
     | 'user_profile'
     | 'owner_portrait'
     | 'owner_shared_memory'
+    | 'social_context'
     | 'real_world_context'
     | 'current_context'
     | 'group_chat'
@@ -248,6 +252,12 @@ export class PromptBuilderService {
       const ownerSharedMemory = context?.ownerSharedMemory?.trim();
       if (ownerSharedMemory) {
         parts.push(ownerSharedMemory);
+      }
+      // 单人世界中枢 Stratum C：当前角色和其他角色的关系 + 用户最近的社交全景。
+      // 已是预渲染好的多块字符串（character_relationships + world_social）。
+      const socialContext = context?.socialContext?.trim();
+      if (socialContext) {
+        parts.push(socialContext);
       }
     }
 
@@ -682,6 +692,8 @@ export class PromptBuilderService {
     const ownerPortraitSection = context?.ownerPortrait?.trim() ?? '';
     // 单人世界中枢的跨角色共享记忆（Stratum B，<world_recent_episodes>）。
     const ownerSharedMemorySection = context?.ownerSharedMemory?.trim() ?? '';
+    // 单人世界中枢 Stratum C：角色互知 + 用户社交全景。
+    const socialContextSection = context?.socialContext?.trim() ?? '';
 
     const realWorldContextSection = this.buildRealWorldContextSection(
       profile,
@@ -813,6 +825,12 @@ ${templates.behavioralGuideline}
         label: 'Owner Shared Memory',
         content: ownerSharedMemorySection,
         active: Boolean(ownerSharedMemorySection),
+      },
+      {
+        key: 'social_context',
+        label: 'Social Context',
+        content: socialContextSection,
+        active: Boolean(socialContextSection),
       },
       {
         key: 'real_world_context',
