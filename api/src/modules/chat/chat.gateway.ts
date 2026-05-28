@@ -94,6 +94,13 @@ type SendMessagePayload =
       type: 'note_card';
       text?: string;
       attachment: NoteCardAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'red_packet';
+      text?: string;
+      redPacket: { amountCents: number; message?: string };
     };
 
 const configuredSocketOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',')
@@ -235,6 +242,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(payload.id).emit('conversation_updated', payload);
   }
 
+  // 「我↔专家」协作线程更新（专家产出 / 状态变化 / 用户介入后）。推到父会话房间，
+  // 前端按 anchorMessageId 折叠到对应「我」气泡下。payload 形状见 contracts 的 AgentDelegation。
+  emitDelegationUpdate(conversationId: string, payload: unknown) {
+    if (!this.server) {
+      return;
+    }
+    this.server.to(conversationId).emit('delegation_update', payload);
+  }
+
   // 群聊 / 调度器 cron 路径里抓到 SubscriptionExpiredException 时通过 socket
   // 推一条 error,前端 useConversationThread 已挂 handleSocketSubscriptionExpiredError,
   // 不至于让用户陷在"发完消息 AI 沉默"的无感状态。1v1 路径有外层 try/catch + client.emit
@@ -342,6 +358,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  // 用户打开收到的红包（incoming + pending）：cloud-api 入账 → 翻状态 → 重发气泡。
+  @SubscribeMessage('open_red_packet')
+  async handleOpenRedPacket(
+    @MessageBody()
+    payload: { conversationId: string; messageId: string; hongbaoId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      return await this.withTenant(client, async () => {
+        const { message } = await this.chatService.openIncomingRedPacket(
+          payload.messageId,
+          payload.hongbaoId,
+        );
+        if (message) {
+          this.emitThreadMessage(payload.conversationId, message);
+        }
+        return {
+          event: 'red_packet_opened',
+          data: { messageId: payload.messageId },
+        };
+      });
+    } catch (err) {
+      this.logger.error('Error opening red packet', err);
+      client.emit(
+        'error',
+        this.toChatErrorPayload(await this.describeReplyFailure(err), err),
+      );
+    }
+  }
+
   async sendProactiveMessage(
     convId: string,
     characterId: string,
@@ -414,13 +460,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.emitTypingStart(convId, characterId, 'reply');
 
     try {
-      const { messages, scheduledReplyArtifactJobIds } =
+      const { messages, scheduledReplyArtifactJobIds, outgoingRedPacket } =
         await this.chatService.sendMessageDetailed(convId, payload);
 
       this.emitTypingStop(convId, characterId, 'reply');
 
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
+      }
+
+      // 用户发出的红包：AI 回复后由角色「领取」，翻成已领取并重发气泡。
+      if (outgoingRedPacket) {
+        const claimed = await this.chatService.claimOutgoingRedPacket(
+          outgoingRedPacket.messageId,
+          outgoingRedPacket.hongbaoId,
+        );
+        if (claimed) {
+          this.emitThreadMessage(convId, claimed);
+        }
       }
 
       void this.chatService.activateReplyArtifactJobs(

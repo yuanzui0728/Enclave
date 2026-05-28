@@ -2,6 +2,8 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
+import { HongbaoCloudClient } from './hongbao-cloud.client';
+import { RedPacketAutoSendService } from './red-packet-auto-send.service';
 import {
   ChatBackgroundAssetsController,
   ConversationBackgroundController,
@@ -37,7 +39,9 @@ import { CharactersModule } from '../characters/characters.module';
 import { NarrativeModule } from '../narrative/narrative.module';
 import { SystemConfigModule } from '../config/config.module';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
+import { AgentDelegationModule } from '../agent-delegation/agent-delegation.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { KnowledgeModule } from '../knowledge/knowledge.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { SelfAgentModule } from '../self-agent/self-agent.module';
 import { ConversationEntity } from './conversation.entity';
@@ -74,8 +78,10 @@ import { EventsModule } from '../events/events.module';
     SystemConfigModule,
     ActionRuntimeModule,
     forwardRef(() => CyberAvatarModule),
+    KnowledgeModule,
     ReminderRuntimeModule,
     SelfAgentModule,
+    forwardRef(() => AgentDelegationModule),
     EventsModule,
     FriendRemarkResolverModule,
     TypeOrmModule.forFeature([
@@ -118,6 +124,8 @@ import { EventsModule } from '../events/events.module';
     GroupVoiceCallsService,
     CustomStickersService,
     CharacterSocialContextService,
+    HongbaoCloudClient,
+    RedPacketAutoSendService,
   ],
   controllers: [
     ChatController,
@@ -146,6 +154,7 @@ import { EventsModule } from '../events/events.module';
     SearchActivityService,
     MessageRemindersService,
     CharacterSocialContextService,
+    HongbaoCloudClient,
   ],
 })
 export class ChatModule {}

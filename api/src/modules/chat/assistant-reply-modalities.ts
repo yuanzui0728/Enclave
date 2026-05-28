@@ -12,7 +12,8 @@ export type AssistantReplyTargetMessage = {
     | 'contact_card'
     | 'location_card'
     | 'note_card'
-    | 'feed_post_card';
+    | 'feed_post_card'
+    | 'red_packet';
   text: string;
   attachment?: MessageAttachment;
 };
