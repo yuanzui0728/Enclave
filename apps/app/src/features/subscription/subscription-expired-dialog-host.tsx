@@ -73,7 +73,7 @@ export function SubscriptionExpiredDialogHost() {
         <div className="mt-6 flex gap-3">
           <Button
             variant="secondary"
-            className="flex-1 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none"
+            className="flex-1 rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-none"
             onClick={() => closeDialog()}
           >
             {t(msg`稍后再说`)}

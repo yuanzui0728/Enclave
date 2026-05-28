@@ -1565,7 +1565,7 @@ export function WelcomePage() {
           <div
             role="tablist"
             aria-label={t(msg`登录或注册`)}
-            className="flex rounded-2xl bg-[#f5f1e6] p-1"
+            className="flex rounded-2xl bg-[color:var(--bg-canvas)] p-1"
           >
             <Button
               type="button"
@@ -1702,7 +1702,7 @@ export function WelcomePage() {
           <div
             role="tablist"
             aria-label={t(msg`登录方式`)}
-            className="flex items-center gap-2 rounded-2xl bg-[#f5f1e6] p-1"
+            className="flex items-center gap-2 rounded-2xl bg-[color:var(--bg-canvas)] p-1"
           >
             <Button
               role="tab"
@@ -1804,7 +1804,7 @@ export function WelcomePage() {
                   }
                   variant="secondary"
                   size="lg"
-                  className="shrink-0 rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] px-5 shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
+                  className="shrink-0 rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-5 shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
                 >
                   {(
                     accountType === "phone"
@@ -2167,7 +2167,7 @@ export function WelcomePage() {
               disabled={isContinuing}
               variant="secondary"
               size="lg"
-              className="rounded-2xl border-[color:var(--border-faint)] bg-[#f5f1e6] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
+              className="rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`返回`)}
             </Button>
@@ -2422,7 +2422,7 @@ export function WelcomePage() {
   }
 
   return (
-    <AppPage className="bg-[#f5f1e6] px-4 py-8">
+    <AppPage className="bg-[color:var(--bg-canvas)] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-8 shadow-none">
         <div className="inline-flex rounded-full border border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
           {/* 走查 R5：见 desktop 分支同改 */}

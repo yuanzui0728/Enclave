@@ -2088,11 +2088,11 @@ function ConversationListItemLinkImpl({
     <div
       className={cn(
         "flex items-center gap-2.5 px-4 py-2.5",
-        isPinned ? "bg-[#f5f1e6]" : "bg-[color:var(--bg-canvas-elevated)]",
+        isPinned ? "bg-[color:var(--bg-canvas)]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       {/* 走查第 3 次 R1：和 desktop-chat-workspace R35 同款——会话 isPinned 在
-          移动端只通过 bg-[#f5f1e6] 视觉差 + 列表顶部位置表达，盲人 SR 用户
+          移动端只通过 bg-[color:var(--bg-canvas)] 视觉差 + 列表顶部位置表达，盲人 SR 用户
           只能听到会话名 / preview / 时间戳 / 未读数，听不出"这条是置顶的"。
           右侧的 Pin 图标仅在 !hasUnreadMessages 分支才渲染——有未读的置顶
           会话（典型用例：刚刚收到消息的我自己 / 工作群）SR 完全没有 pin

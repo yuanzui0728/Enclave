@@ -121,7 +121,7 @@ export function MobileDocumentShell({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#f5f1e6] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title={title}
         titleAlign="center"

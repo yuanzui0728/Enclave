@@ -488,7 +488,7 @@ function MobileDiscoverScenePage() {
                 // scene 是 busy，其余 15 个是普通 disabled。
                 aria-busy={busy || undefined}
                 className={cn(
-                  "bg-[color:var(--surface-card)] px-4 py-4 text-left transition active:bg-[#f5f1e6]",
+                  "bg-[color:var(--surface-card)] px-4 py-4 text-left transition active:bg-[color:var(--bg-canvas)]",
                   disabled && !busy && "opacity-60",
                 )}
               >

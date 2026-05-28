@@ -4120,7 +4120,7 @@ function DesktopFavoritePicker({
         <button
           type="button"
           onClick={onBack}
-          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]"
+          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--bg-canvas)] hover:text-[color:var(--text-primary)]"
           aria-label={t(msg`关闭发送收藏`)}
         >
           <ChevronLeft size={16} />
@@ -4139,7 +4139,7 @@ function DesktopFavoritePicker({
               onClick={() => onSelect(item)}
               disabled={busy}
               className={cn(
-                "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[#f5f1e6] disabled:cursor-not-allowed disabled:opacity-60",
+                "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[color:var(--bg-canvas)] disabled:cursor-not-allowed disabled:opacity-60",
                 index > 0 ? "border-t border-black/[0.06]" : "",
               )}
             >
@@ -4209,7 +4209,7 @@ function DesktopToolbarButton({
         "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[12px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
         active
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
-          : "text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-[#f5f1e6] hover:text-[color:var(--text-primary)]",
+          : "text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--bg-canvas)] hover:text-[color:var(--text-primary)]",
       )}
     >
       <span>{icon}</span>
@@ -4266,7 +4266,7 @@ function DesktopComposerStatusStrip({
             "shrink-0 rounded-full px-2 py-0.5 font-medium transition",
             tone === "danger"
               ? "bg-[color:var(--surface-card)] text-[#b42318] hover:bg-[#fffafa]"
-              : "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)] hover:bg-[#f5f1e6]",
+              : "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)] hover:bg-[color:var(--bg-canvas)]",
           )}
         >
           {primaryActionLabel}
@@ -6202,7 +6202,7 @@ function DesktopMentionPicker({
             onClick={() => onSelect(candidate)}
             className={cn(
               "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
-              index === activeIndex ? "bg-[#f5f1e6]" : "hover:bg-[color:var(--surface-card-hover)]",
+              index === activeIndex ? "bg-[color:var(--bg-canvas)]" : "hover:bg-[color:var(--surface-card-hover)]",
             )}
           >
             <AvatarChip

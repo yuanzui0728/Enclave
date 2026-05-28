@@ -216,7 +216,7 @@ export function SplashPage() {
   ]);
 
   return (
-    <AppPage className="flex min-h-full flex-col items-center justify-center bg-[#f5f1e6] px-4 py-10 text-center">
+    <AppPage className="flex min-h-full flex-col items-center justify-center bg-[color:var(--bg-canvas)] px-4 py-10 text-center">
       <AppSection className="w-full max-w-xs border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
         <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-[24px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))] text-xl font-semibold text-white shadow-none">
           {t(msg`隐界`)}

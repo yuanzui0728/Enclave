@@ -23,7 +23,7 @@ export function SearchResultCard({
         : item.category === "favorites"
           ? "border-[#eadbb4] bg-[#fff8e8] text-[#9a6b12]"
         : item.category === "officialAccounts"
-          ? "border-[color:var(--border-subtle)] bg-[#f5f1e6] text-[color:var(--text-secondary)]"
+          ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)]"
           : item.category === "miniPrograms"
             ? "border-[#d3e7df] bg-[#eff8f4] text-[#226448]"
           : item.category === "moments"

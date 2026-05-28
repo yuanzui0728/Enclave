@@ -468,7 +468,7 @@ export function ChannelAuthorPage() {
     <AppPage
       className={cn(
         "space-y-0 px-0 py-0",
-        isDesktopLayout ? "bg-[rgba(244,247,246,0.98)]" : "bg-[#f5f1e6]",
+        isDesktopLayout ? "bg-[rgba(244,247,246,0.98)]" : "bg-[color:var(--bg-canvas)]",
       )}
     >
       <TabPageTopBar
