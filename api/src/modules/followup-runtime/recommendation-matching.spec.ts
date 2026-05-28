@@ -1,3 +1,4 @@
+// i18n-ignore-start: 单元测试断言文案 / 测试夹具，不进 UI。
 import { DEFAULT_FOLLOWUP_RUNTIME_RULES } from './followup-runtime.types';
 import {
   computeDomainRelevance,
@@ -58,9 +59,9 @@ describe('recommendation-matching — fuzzy domain relevance', () => {
   });
 
   it('matches multi-word english tags', () => {
-    expect(computeDomainRelevance(['sleep'], ['sleep medicine'])).toBeGreaterThan(
-      0.5,
-    );
+    expect(
+      computeDomainRelevance(['sleep'], ['sleep medicine']),
+    ).toBeGreaterThan(0.5);
   });
 
   it('returns 0 for unrelated tags (no spurious noise match)', () => {
@@ -98,15 +99,18 @@ describe('recommendation-matching — fuzzy domain relevance', () => {
 
 describe('recommendation-matching — secondary signals', () => {
   it('computeTopicsRelevance matches topicsOfInterest fuzzily', () => {
-    expect(computeTopicsRelevance(['睡眠'], ['睡眠管理', '跑步'])).toBeGreaterThan(
-      0.5,
-    );
+    expect(
+      computeTopicsRelevance(['睡眠'], ['睡眠管理', '跑步']),
+    ).toBeGreaterThan(0.5);
     expect(computeTopicsRelevance(['睡眠'], ['理财', '跑步'])).toBe(0);
   });
 
   it('computeKeywordRelevance picks up summary keywords in character text', () => {
     expect(
-      computeKeywordRelevance('用户还在纠结要不要换工作', '我是职业顾问，帮人换工作'),
+      computeKeywordRelevance(
+        '用户还在纠结要不要换工作',
+        '我是职业顾问，帮人换工作',
+      ),
     ).toBeGreaterThan(0);
     expect(computeKeywordRelevance('换工作', '我教做菜')).toBe(0);
   });
@@ -137,7 +141,11 @@ describe('recommendation-matching — secondary signals', () => {
     // topics 单独命中：0.35 加成，足以过门槛但低于领域直命中
     expect(onlyTopics).toBeGreaterThan(WEIGHTS.minRelevanceToRecommend);
     expect(onlyTopics).toBeLessThan(
-      computeRelevance(loop, makeCandidate({ expertDomains: ['睡眠'] }), WEIGHTS),
+      computeRelevance(
+        loop,
+        makeCandidate({ expertDomains: ['睡眠'] }),
+        WEIGHTS,
+      ),
     );
   });
 });
@@ -164,7 +172,9 @@ describe('selectBestRecommendation — relevance gate over friend boost', () => 
     expect(best?.candidateId).toBe('relevant');
 
     // 无关老好友被门槛挡在外面：+existingFriendBoost 加在已淘汰候选上无从取胜。
-    expect(scoreCandidate(loop, irrelevantFriend, WEIGHTS).eligible).toBe(false);
+    expect(scoreCandidate(loop, irrelevantFriend, WEIGHTS).eligible).toBe(
+      false,
+    );
   });
 
   it('a relevant existing friend still legitimately wins (no regression)', () => {
@@ -227,7 +237,10 @@ describe('selectBestRecommendation — precision among ~300 characters', () => {
   });
 
   it('returns null when nothing is topically relevant (gate, not score>0)', () => {
-    const loop = makeLoop({ domainHints: ['睡眠'], targetRelationshipType: null });
+    const loop = makeLoop({
+      domainHints: ['睡眠'],
+      targetRelationshipType: null,
+    });
     const pool = buildNoise(300); // 全无关，含大量老好友
     expect(selectBestRecommendation(loop, pool, WEIGHTS)).toBeNull();
   });
@@ -289,7 +302,10 @@ describe('scoreCandidate — penalties and relationship match preserved', () => 
     const plain = scoreCandidate(loop, base(), WEIGHTS);
     const recent = scoreCandidate(
       loop,
-      makeCandidate({ expertDomains: ['睡眠医学'], isRecentlyRecommended: true }),
+      makeCandidate({
+        expertDomains: ['睡眠医学'],
+        isRecentlyRecommended: true,
+      }),
       WEIGHTS,
     );
     expect(recent.score).toBeCloseTo(
@@ -352,3 +368,4 @@ describe('scoreCandidate — penalties and relationship match preserved', () => 
     expect(best?.candidateId).toBe('on-topic');
   });
 });
+// i18n-ignore-end

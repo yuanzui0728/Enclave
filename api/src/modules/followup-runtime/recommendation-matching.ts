@@ -5,7 +5,10 @@
 // 多租户隔离仍只在 service 的 DB 加载层（findAllVisibleToOwner(ownerId) + ownerId-scoped
 // 查询）完成；本模块只处理 caller 已加载好的纯数据，不感知 tenant。
 
-export type RecommendationRelationshipState = 'friend' | 'pending' | 'not_friend';
+export type RecommendationRelationshipState =
+  | 'friend'
+  | 'pending'
+  | 'not_friend';
 
 /** 打分所需的候选角色视图（service 把 CharacterEntity 映射成它，解耦实体）。 */
 export interface RecommendationCandidateInput {
@@ -145,7 +148,10 @@ function bigramDiceScore(a: string, b: string): number {
 }
 
 /** 单个 loop 领域词 vs 单个角色领域词的模糊相似度 -> [0,1]。 */
-export function domainTermSimilarity(loopTerm: string, charTerm: string): number {
+export function domainTermSimilarity(
+  loopTerm: string,
+  charTerm: string,
+): number {
   const a = normalizeDomainKey(loopTerm);
   const b = normalizeDomainKey(charTerm);
   if (!a || !b) return 0;
@@ -255,7 +261,10 @@ export function computeRelevance(
   candidate: RecommendationCandidateInput,
   weights: RecommendationScoringWeights,
 ): number {
-  const domain = computeDomainRelevance(loop.domainHints, candidate.expertDomains);
+  const domain = computeDomainRelevance(
+    loop.domainHints,
+    candidate.expertDomains,
+  );
   const topics = computeTopicsRelevance(
     loop.domainHints,
     candidate.topicsOfInterest,
@@ -366,7 +375,8 @@ export function selectBestRecommendation(
 
   eligible.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
-    if (right.relevance !== left.relevance) return right.relevance - left.relevance;
+    if (right.relevance !== left.relevance)
+      return right.relevance - left.relevance;
     const prio =
       relationshipPriority(right.relationshipState) -
       relationshipPriority(left.relationshipState);
