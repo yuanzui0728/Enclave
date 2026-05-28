@@ -205,6 +205,7 @@ import type {
   UpdateDigitalHumanProviderStateRequest,
   VoiceCallTurnResult,
   VoiceCatalog,
+  VoiceCloneItem,
 } from "./speech";
 import type {
   InferencePreviewRequest,
@@ -2131,6 +2132,31 @@ export function setCharacterDefaultVoiceReply(
 
 export function listVoices(baseUrl?: string) {
   return requestLegacyApi<VoiceCatalog>("/ai/voices", undefined, baseUrl);
+}
+
+export function listVoiceClones(baseUrl?: string) {
+  return requestLegacyApi<VoiceCloneItem[]>(
+    "/ai/voice-clones",
+    undefined,
+    baseUrl,
+  );
+}
+
+// payload: FormData with `file` (音频样本) + `displayName`。
+export function createVoiceClone(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<VoiceCloneItem>(
+    "/ai/voice-clones",
+    { method: "POST", body: payload },
+    baseUrl,
+  );
+}
+
+export function deleteVoiceClone(id: string, baseUrl?: string) {
+  return requestLegacyApi<{ success: boolean }>(
+    `/ai/voice-clones/${id}`,
+    { method: "DELETE" },
+    baseUrl,
+  );
 }
 
 export function setCharacterVoicePreset(

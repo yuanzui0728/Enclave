@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { useLingui } from "@lingui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Play, X } from "lucide-react";
+import { Check, Loader2, Play, Trash2, Upload, X } from "lucide-react";
 import {
   createSpeechSynthesis,
+  createVoiceClone,
+  deleteVoiceClone,
+  listVoiceClones,
   listVoices,
   setCharacterVoicePreset,
   type VoiceCatalog,
@@ -73,6 +76,74 @@ export function VoicePickerModal({
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previewSeqRef = useRef(0);
+
+  // —— 「克隆我的声音」 ——
+  const clonesQuery = useQuery({
+    queryKey: ["app-voice-clones", baseUrl],
+    queryFn: () => listVoiceClones(baseUrl),
+    staleTime: 60 * 1000,
+  });
+  const [cloneName, setCloneName] = useState("");
+  const cloneFileRef = useRef<HTMLInputElement | null>(null);
+  const [cloneFileName, setCloneFileName] = useState<string | null>(null);
+
+  const createCloneMutation = useMutation({
+    mutationFn: (form: FormData) => createVoiceClone(form, baseUrl),
+    onSuccess: async (item) => {
+      setCloneName("");
+      setCloneFileName(null);
+      if (cloneFileRef.current) cloneFileRef.current.value = "";
+      setNotice(
+        item.status === "ready"
+          ? { tone: "success", message: t(msg`声音克隆完成，可以选用啦。`) }
+          : {
+              tone: "danger",
+              message: t(msg`克隆未成功，请换段更清晰的样本再试。`),
+            },
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["app-voice-clones", baseUrl],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["app-voices", baseUrl] });
+    },
+    onError: (error: unknown) => {
+      setNotice({
+        tone: "danger",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : t(msg`声音克隆失败，请稍后再试。`),
+      });
+    },
+  });
+
+  const deleteCloneMutation = useMutation({
+    mutationFn: (id: string) => deleteVoiceClone(id, baseUrl),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["app-voice-clones", baseUrl],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["app-voices", baseUrl] });
+    },
+  });
+
+  const handleCloneSubmit = useCallback(() => {
+    const file = cloneFileRef.current?.files?.[0];
+    if (!file) {
+      setNotice({ tone: "danger", message: t(msg`请先选择一段声音样本。`) });
+      return;
+    }
+    const name = cloneName.trim();
+    if (!name) {
+      setNotice({ tone: "danger", message: t(msg`请给音色起个名字。`) });
+      return;
+    }
+    setNotice(null);
+    const form = new FormData();
+    form.append("displayName", name);
+    form.append("file", file, file.name);
+    createCloneMutation.mutate(form);
+  }, [cloneName, createCloneMutation, t]);
 
   const stopPreview = useCallback(() => {
     previewSeqRef.current += 1;
@@ -283,6 +354,93 @@ export function VoicePickerModal({
               })}
             </ul>
           )}
+
+          <div className="mt-4 border-t border-[color:var(--border-faint)] pt-3">
+            <div className="px-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+              {t(msg`克隆我的声音`)}
+            </div>
+            <p className="mt-1 px-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
+              {t(
+                msg`上传一段清晰的人声样本（10 秒以上，mp3 / m4a / wav）。请仅上传你本人或已授权的声音。`,
+              )}
+            </p>
+
+            {(clonesQuery.data ?? []).length > 0 ? (
+              <ul className="mt-2 flex flex-col gap-1">
+                {(clonesQuery.data ?? []).map((clone) => (
+                  <li
+                    key={clone.id}
+                    className="flex items-center gap-2 rounded-[12px] px-2 py-1.5 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[color:var(--text-primary)]">
+                      {clone.displayName}
+                    </span>
+                    <span className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+                      {clone.status === "ready"
+                        ? t(msg`可用`)
+                        : clone.status === "pending"
+                          ? t(msg`处理中`)
+                          : t(msg`失败`)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t(msg`删除`)}
+                      onClick={() => deleteCloneMutation.mutate(clone.id)}
+                      disabled={deleteCloneMutation.isPending}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] transition-colors hover:bg-black/[0.04] disabled:opacity-60"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="mt-2 flex flex-col gap-2 px-1">
+              <input
+                value={cloneName}
+                onChange={(e) => setCloneName(e.target.value)}
+                maxLength={40}
+                placeholder={t(msg`音色名字，如「我的声音」`)}
+                className="w-full rounded-[10px] border border-[color:var(--border-faint)] bg-transparent px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary,#f59e0b)]"
+              />
+              <input
+                ref={cloneFileRef}
+                type="file"
+                accept="audio/*,.mp3,.m4a,.wav"
+                className="hidden"
+                onChange={(e) =>
+                  setCloneFileName(e.target.files?.[0]?.name ?? null)
+                }
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => cloneFileRef.current?.click()}
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[color:var(--border-faint)] px-3 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-black/[0.04]"
+                >
+                  <Upload size={14} />
+                  {t(msg`选择样本`)}
+                </button>
+                <span className="min-w-0 flex-1 truncate text-[12px] text-[color:var(--text-muted)]">
+                  {cloneFileName ?? t(msg`未选择文件`)}
+                </span>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleCloneSubmit}
+                  disabled={createCloneMutation.isPending}
+                  className="shrink-0 rounded-[10px] px-3 py-2 text-[13px]"
+                >
+                  {createCloneMutation.isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    t(msg`开始克隆`)
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="border-t border-[color:var(--border-faint)] px-4 py-3">

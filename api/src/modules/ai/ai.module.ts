@@ -3,6 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiOrchestratorService } from './ai-orchestrator.service';
 import { AiSpeechAssetsService } from './ai-speech-assets.service';
 import { AiController } from './ai.controller';
+import { VoiceCloneController } from './voice-clone.controller';
+import { VoiceCloneService } from './voice-clone.service';
+import { VoiceCloneEntity } from './voice-clone.entity';
 import { PromptBuilderService } from './prompt-builder.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { MomentGenerationContextService } from './moment-generation-context.service';
@@ -33,12 +36,14 @@ import { SubscriptionModule } from '../subscription/subscription.module';
       ConversationEntity,
       GroupEntity,
       MessageEntity,
+      VoiceCloneEntity,
     ]),
   ],
-  controllers: [AiController],
+  controllers: [AiController, VoiceCloneController],
   providers: [
     AiOrchestratorService,
     AiSpeechAssetsService,
+    VoiceCloneService,
     PromptBuilderService,
     ReplyLogicRulesService,
     AiUsageLedgerService,
@@ -49,6 +54,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
   exports: [
     AiOrchestratorService,
     AiSpeechAssetsService,
+    VoiceCloneService,
     PromptBuilderService,
     ReplyLogicRulesService,
     AiUsageLedgerService,

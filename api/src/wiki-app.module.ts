@@ -61,6 +61,8 @@ import { PushTokenEntity } from './modules/push/push-token.entity';
 
 // Entities — chat 侧
 import { CharacterEntity } from './modules/characters/character.entity';
+import { CharacterUnlockEntity } from './modules/characters/character-unlock.entity';
+import { VoiceCloneEntity } from './modules/ai/voice-clone.entity';
 import { CharacterBlueprintEntity } from './modules/characters/character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './modules/characters/character-blueprint-revision.entity';
 import { UserEntity } from './modules/auth/user.entity';
@@ -137,6 +139,8 @@ import { InferenceProviderAccountEntity } from './modules/inference/inference-pr
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
+import { AgentDelegationEntity } from './modules/agent-delegation/agent-delegation.entity';
+import { AgentDelegationMessageEntity } from './modules/agent-delegation/agent-delegation-message.entity';
 
 // Entities — wiki 侧（AppModule 已剥离，仅在 WikiAppModule 注册）
 import { UserWikiProfileEntity } from './modules/wiki/entities/user-wiki-profile.entity';
@@ -204,6 +208,8 @@ function resolveWikiDatabasePath(config: ConfigService): string {
           // chat-side entities（wiki 进程内 transit-imported 的 Auth/Characters/Ai/Admin 等
           // 模块仍然 forFeature 这些 entity，因此必须在 root 注册）
           CharacterEntity,
+          CharacterUnlockEntity,
+          VoiceCloneEntity,
           UserEntity,
           EmailVerificationSessionEntity,
           ConversationEntity,
@@ -280,6 +286,8 @@ function resolveWikiDatabasePath(config: ConfigService): string {
           InferenceModelCatalogEntryEntity,
           SelfAgentHeartbeatRunEntity,
           SelfAgentRunEntity,
+          AgentDelegationEntity,
+          AgentDelegationMessageEntity,
           PushTokenEntity,
           // wiki-side entities（这些只在 wiki 进程的 sqlite 里建表，AppModule 不含）
           UserWikiProfileEntity,

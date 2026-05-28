@@ -25,6 +25,7 @@ import { CloudRuntimeModule } from './modules/cloud-runtime/cloud-runtime.module
 import { SystemModule } from './modules/system/system.module';
 import { ActionRuntimeModule } from './modules/action-runtime/action-runtime.module';
 import { CyberAvatarModule } from './modules/cyber-avatar/cyber-avatar.module';
+import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { NeedDiscoveryModule } from './modules/need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
@@ -44,6 +45,8 @@ import { isSharedWorldMode } from './modules/tenancy/tenant-context';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
+import { CharacterUnlockEntity } from './modules/characters/character-unlock.entity';
+import { VoiceCloneEntity } from './modules/ai/voice-clone.entity';
 import { CharacterBlueprintEntity } from './modules/characters/character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './modules/characters/character-blueprint-revision.entity';
 import { UserEntity } from './modules/auth/user.entity';
@@ -120,6 +123,10 @@ import { InferenceProviderAccountEntity } from './modules/inference/inference-pr
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
+import { AgentDelegationEntity } from './modules/agent-delegation/agent-delegation.entity';
+import { AgentDelegationMessageEntity } from './modules/agent-delegation/agent-delegation-message.entity';
+import { KnowledgeDocumentEntity } from './modules/knowledge/knowledge-document.entity';
+import { KnowledgeChunkEntity } from './modules/knowledge/knowledge-chunk.entity';
 // wiki entity imports 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。
 import {
   prepareDatabasePath,
@@ -155,6 +162,8 @@ import {
         },
         entities: [
           CharacterEntity,
+          CharacterUnlockEntity,
+          VoiceCloneEntity,
           UserEntity,
           EmailVerificationSessionEntity,
           ConversationEntity,
@@ -231,6 +240,10 @@ import {
           InferenceModelCatalogEntryEntity,
           SelfAgentHeartbeatRunEntity,
           SelfAgentRunEntity,
+          AgentDelegationEntity,
+          AgentDelegationMessageEntity,
+          KnowledgeDocumentEntity,
+          KnowledgeChunkEntity,
           // wiki entity 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。
           PushTokenEntity,
         ],
@@ -266,6 +279,7 @@ import {
     AdminModule,
     ActionRuntimeModule,
     CyberAvatarModule,
+    KnowledgeModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,
     ReminderRuntimeModule,

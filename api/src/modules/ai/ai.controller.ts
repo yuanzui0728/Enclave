@@ -14,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { AiOrchestratorService } from './ai-orchestrator.service';
 import { AiSpeechAssetsService } from './ai-speech-assets.service';
+import { VoiceCloneService } from './voice-clone.service';
 import { VOICE_PRESETS } from './voice-presets.constants';
 
 type UploadedAudioFile = {
@@ -28,6 +29,7 @@ export class AiController {
   constructor(
     private readonly ai: AiOrchestratorService,
     private readonly speechAssets: AiSpeechAssetsService,
+    private readonly voiceClones: VoiceCloneService,
   ) {}
 
   @Post('transcriptions')
@@ -62,13 +64,14 @@ export class AiController {
     });
   }
 
-  // 列出可用音色：预设音色库 + 当前 owner 的克隆音色（Phase 2 填充，现返回空）。
-  // 供 App / wiki 的音色选择器拉取。
+  // 列出可用音色：预设音色库 + 当前 owner 的（ready）克隆音色。
+  // 供 App / wiki 的音色选择器拉取。clones[].id = 可直接当 voicePreset 用的 voice_id。
   @Get('voices')
-  listVoices() {
+  async listVoices() {
+    const clones = await this.voiceClones.listReadyForOwner();
     return {
       presets: VOICE_PRESETS,
-      clones: [] as Array<{ id: string; displayName: string }>,
+      clones,
     };
   }
 

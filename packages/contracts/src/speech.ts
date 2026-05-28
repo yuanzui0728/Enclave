@@ -38,6 +38,17 @@ export interface VoiceCatalog {
   clones: VoiceCloneSummary[];
 }
 
+export type VoiceCloneStatus = "pending" | "ready" | "failed";
+
+// 「我的克隆音色」管理项（含 pending/failed 态）。voiceId 仅 ready 时非空，
+// 可直接当 character.voicePreset 用。
+export interface VoiceCloneItem {
+  id: string;
+  displayName: string;
+  voiceId: string | null;
+  status: VoiceCloneStatus;
+}
+
 export interface SpeechSynthesisResult {
   audioUrl: string;
   mimeType: string;

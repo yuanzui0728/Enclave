@@ -3866,6 +3866,54 @@ export class AiOrchestratorService {
     throw this.toSpeechTranscriptionException(lastError);
   }
 
+  // 声音克隆：上传样本 → MiniMax voice_clone → 返回 fileId（上层落库）。
+  // 复用 TTS 的 provider 解析（含按 owner 选 MiniMax key）。仅 MiniMax 支持克隆；
+  // 无 MiniMax provider 或缺 MINIMAX_GROUP_ID 时抛清晰错误由上层降级。
+  async cloneVoiceFromSample(input: {
+    buffer: Buffer;
+    mime: string;
+    fileName: string;
+    voiceId: string;
+  }): Promise<{ fileId: string }> {
+    await this.subscription.assertCanUseAi('audio');
+    const primary = await this.resolveRuntimeProvider({});
+    const fallbacks = await this.resolveFallbackProviders({
+      currentProvider: primary,
+      capability: 'tts',
+    });
+    const candidates = [primary, ...fallbacks.map((f) => f.provider)];
+    const minimax = candidates.find(
+      (p) =>
+        MinimaxNativeClient.isMinimaxEndpoint(p.ttsEndpoint) &&
+        !!p.ttsApiKey?.trim(),
+    );
+    if (!minimax) {
+      throw new AppError('AI_VOICE_CLONE_UNAVAILABLE', {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        legacyMessage: '当前实例未配置可用于声音克隆的 MiniMax Key。',
+      });
+    }
+    const groupId = process.env.MINIMAX_GROUP_ID?.trim();
+    if (!groupId) {
+      throw new AppError('AI_VOICE_CLONE_NOT_CONFIGURED', {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        legacyMessage: '声音克隆暂未开放（缺少 MINIMAX_GROUP_ID 配置）。',
+      });
+    }
+    const client = new MinimaxNativeClient(
+      minimax.ttsEndpoint,
+      minimax.ttsApiKey,
+    );
+    const { fileId } = await client.uploadVoiceCloneSample({
+      buffer: input.buffer,
+      mime: input.mime,
+      fileName: input.fileName,
+      groupId,
+    });
+    await client.cloneVoice({ fileId, voiceId: input.voiceId, groupId });
+    return { fileId };
+  }
+
   async synthesizeSpeech(
     options: SpeechSynthesisOptions,
   ): Promise<SpeechSynthesisResult> {

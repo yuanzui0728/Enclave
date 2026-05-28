@@ -56,6 +56,8 @@ import { SelfAgentHeartbeatRunEntity } from '../self-agent/self-agent-heartbeat-
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { CharacterEntity } from '../characters/character.entity';
+import { CharacterUnlockEntity } from '../characters/character-unlock.entity';
+import { VoiceCloneEntity } from '../ai/voice-clone.entity';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { CharacterFriendshipEntity } from '../social/character-friendship.entity';
 import { CharacterBlueprintEntity } from '../characters/character-blueprint.entity';
@@ -131,6 +133,8 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   // 全局 boot 种子已搬到首触 per-owner（TenantService.seedNewOwner），boot 不再无上下文写
   // 这三张表，故现在登记安全：afterLoad 读泄漏雷达 + beforeInsert/Update 写盖章/校验生效。
   CharacterEntity,
+  // 付费角色解锁权益（模式感知复合主键 (ownerId,id)）。owner-scoped：读守卫 + 写盖章。
+  CharacterUnlockEntity,
   AIRelationshipEntity,
   CharacterFriendshipEntity,
   // 角色工厂/行为日志/需求发现候选（原「无 ownerId 已知缺口」，Phase 8r 补收口）。
@@ -156,6 +160,8 @@ const NEWLY_SCOPED_ENTITIES: Function[] = [
   // self-agent 心跳 run-ledger（Phase 8v 补 ownerId——原漏建、shared 下 getAdminOverview /
   // heartbeat cron 裸 find 跨 owner 静默混）。uuid id 全局唯一 → 普通可空 ownerId 列。
   SelfAgentHeartbeatRunEntity,
+  // 用户声音克隆（owner-scoped）。uuid id 全局唯一 → 普通可空 ownerId 列；读守卫 + 写盖章。
+  VoiceCloneEntity,
 ];
 
 let registered = false;
