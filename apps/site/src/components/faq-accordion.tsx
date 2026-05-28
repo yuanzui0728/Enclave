@@ -24,7 +24,7 @@ const FAQS: Array<{ q: MessageDescriptor; a: MessageDescriptor }> = [
   },
   {
     q: msg`我能信你不会偷偷用我的数据吗？`,
-    a: msg`整套代码完全开源（MIT 许可，github.com/yuanzui0728/yinjie-app），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署。`,
+    a: msg`整套代码完全开源（MIT 许可），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署一份，数据全部留在你自己的机器上。`,
   },
   {
     q: msg`支持哪些设备？`,

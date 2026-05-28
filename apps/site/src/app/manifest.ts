@@ -34,11 +34,11 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     // form_factor: "narrow" 让 Chrome / Edge 在移动端弹窗优先用这组图。
     screenshots: [
       {
-        src: `/screenshots/${locale}/onboarding.png`,
+        src: `/screenshots/${locale}/experts.png`,
         sizes: "390x844",
         type: "image/png",
         form_factor: "narrow",
-        label: i18n._("欢迎页"),
+        label: i18n._("专家居民"),
       },
       {
         src: `/screenshots/${locale}/chat.png`,

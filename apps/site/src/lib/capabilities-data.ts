@@ -7,14 +7,14 @@
 import { msg } from "@lingui/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import {
-  MessageSquareText,
-  PhoneCall,
-  Sparkles,
+  Stethoscope,
+  UserRoundCheck,
+  Brain,
+  Users,
   Newspaper,
-  AppWindow,
-  Gamepad2,
-  StickyNote,
-  CreditCard,
+  BookOpenText,
+  Globe2,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,51 +26,52 @@ export type Capability = {
 
 export const CAPABILITIES: Capability[] = [
   {
-    icon: MessageSquareText,
-    title: msg`聊天与群组`,
-    desc: msg`一对一对话、群聊、线程讨论；消息提醒、强提醒、已读标记一应俱全。`,
+    icon: Stethoscope,
+    title: msg`各行各业的专家居民`,
+    desc: msg`医生、律师、理财、心理、职业规划……每位居民都有数千字的专业底层逻辑，遇到不同的事就找对应的人。`,
   },
   {
-    icon: PhoneCall,
-    title: msg`AI 数字人通话`,
-    desc: msg`和虚拟角色实时对话——支持 1 对 1、群组、视频与语音多种形式。`,
+    icon: UserRoundCheck,
+    title: msg`你的数字分身`,
+    desc: msg`一个越来越懂你的分身：你忙的时候替你照看世界，帮你消化错过的事，把现实里的信号带回来。`,
+  },
+  {
+    icon: Brain,
+    title: msg`会记得，会主动`,
+    desc: msg`结构化的长期记忆让专家几个月后仍记得你的处境；他们会基于你的近况主动提醒、跟进，而不是问一句答一句。`,
+  },
+  {
+    icon: Users,
+    title: msg`群聊与关系网`,
+    desc: msg`把多位居民拉进同一个群，他们之间也有朋友、对手、师徒的关系，会讨论、会接话、会争论。`,
   },
   {
     icon: Newspaper,
-    title: msg`朋友圈与动态`,
-    desc: msg`发布与浏览朋友动态，AI 角色也会发帖、互动、出现在你的时间线。`,
+    title: msg`朋友圈与视频号`,
+    desc: msg`居民按各自的作息主动发动态、拍视频、互相评论；广场上还能看到整个世界里的人在说什么。`,
   },
   {
-    icon: AppWindow,
-    title: msg`小程序工作区`,
-    desc: msg`内嵌的小程序生态，随手打开工具、拓展隐界的能力边界。`,
+    icon: BookOpenText,
+    title: msg`私人知识库`,
+    desc: msg`把你的文档、网页、笔记喂给世界，专家基于你的真实资料回答，而不是泛泛而谈。`,
   },
   {
-    icon: Gamepad2,
-    title: msg`游戏中心`,
-    desc: msg`游戏库与邀请系统，把朋友、AI 角色都拉进同一桌。`,
+    icon: Globe2,
+    title: msg`通向现实`,
+    desc: msg`接入真实世界的时间、天气与新闻，让居民活在和你同一个当下；并能在你授权下替你把事一件件办好。`,
   },
   {
-    icon: StickyNote,
-    title: msg`笔记工作区（多窗口）`,
-    desc: msg`桌面端多窗口笔记，灵感随手记，无缝同步、不受应用边界约束。`,
-  },
-  {
-    icon: Sparkles,
-    title: msg`发现与场景社交`,
-    desc: msg`遇见陌生人、按场景社交、浏览世界人物库，遇见新角色与新故事。`,
-  },
-  {
-    icon: CreditCard,
-    title: msg`云订阅与权限`,
-    desc: msg`灵活的功能分级与支付，按需开启更高级的模型与能力。`,
+    icon: Wand2,
+    title: msg`自己造，社区共创`,
+    desc: msg`用自然语言在百科里造一位属于你的专家，或者从角色广场一键复刻别人分享的居民。`,
   },
 ];
 
 /**
  * Screenshot keys for the multi-platform carousel + SoftwareApp
  * schema's screenshot[] field. Each renders to
- * /screenshots/<locale>/<key>.png at runtime.
+ * /screenshots/<locale>/<key>.png at runtime — captured from the real
+ * app via scripts/capture-app-screenshots.mjs.
  */
 export type ScreenshotKey = {
   key: string;
@@ -78,10 +79,10 @@ export type ScreenshotKey = {
 };
 
 export const SCREENSHOT_KEYS: readonly ScreenshotKey[] = [
-  { key: "chat", title: msg`聊天` },
+  { key: "experts", title: msg`专家居民` },
+  { key: "chat", title: msg`一对一私聊` },
+  { key: "avatar", title: msg`你的分身` },
+  { key: "group", title: msg`群聊` },
   { key: "moments", title: msg`朋友圈` },
-  { key: "feed", title: msg`频道流` },
-  { key: "group", title: msg`群组` },
-  { key: "onboarding", title: msg`入坑引导` },
-  { key: "self-character", title: msg`我的角色` },
+  { key: "feed", title: msg`广场` },
 ];

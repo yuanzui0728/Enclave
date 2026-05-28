@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
  * 同步仓库现有资产到 apps/site/public：
- *   docs/screenshots/core-{key}{,.en,.ja,.ko}.png  → public/screenshots/{locale}/{key}.png
- *   docs/assets/yinjie-core-loop{,.en,.ja,.ko}.gif → public/animations/{locale}.webp (动画 WebP，体积 ~80% 小于 GIF)
- *   apps/desktop/src-tauri/icons/icon.png          → public/favicon.png
+ *   apps/desktop/src-tauri/icons/icon.png → public/favicon.png + 多尺寸 favicon + press-kit logo
  * 幂等：仅在源更新时复制。
+ *
+ * 注意：产品截图 public/screenshots/{locale}/*.png 由 scripts/capture-app-screenshots.mjs
+ * 直接从真实 app 截取，不再从 docs 同步，本脚本不碰它们（避免覆盖真实截图）。
+ * 首页 Hero 已改用真实截图，不再使用动画 WebP。
  */
 import { copyFileSync, existsSync, mkdirSync, statSync } from "node:fs";
 import path from "node:path";
@@ -13,22 +15,6 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const siteRoot = path.dirname(path.dirname(__filename));
 const repoRoot = path.resolve(siteRoot, "../../");
-
-const LOCALE_SUFFIX = {
-  "zh-CN": "",
-  "en-US": ".en",
-  "ja-JP": ".ja",
-  "ko-KR": ".ko",
-};
-
-const SCREENSHOT_KEYS = [
-  "chat",
-  "moments",
-  "feed",
-  "group",
-  "onboarding",
-  "self-character",
-];
 
 function ensureDir(dir) {
   if (!existsSync(dir)) {
@@ -54,53 +40,6 @@ function copyIfChanged(src, dst) {
 
 let copied = 0;
 let skipped = 0;
-
-// Screenshots
-for (const [locale, suffix] of Object.entries(LOCALE_SUFFIX)) {
-  for (const key of SCREENSHOT_KEYS) {
-    const src = path.join(repoRoot, "docs", "screenshots", `core-${key}${suffix}.png`);
-    const dst = path.join(siteRoot, "public", "screenshots", locale, `${key}.png`);
-    if (copyIfChanged(src, dst)) copied++;
-    else skipped++;
-  }
-}
-
-// Animations: only emit animated WebP (LCP optimization).
-// Sharp keeps animated WebP about 70-80% smaller than the source GIF, and
-// hero-section.tsx only references the .webp — shipping the GIF too just
-// bloats the public bundle.
-const ANIM_SOURCES = Object.entries(LOCALE_SUFFIX).map(([locale, suffix]) => ({
-  locale,
-  src: path.join(repoRoot, "docs", "assets", `yinjie-core-loop${suffix}.gif`),
-  webpDst: path.join(siteRoot, "public", "animations", `${locale}.webp`),
-}));
-
-async function emitAnimatedWebp() {
-  let sharp;
-  try {
-    sharp = (await import("sharp")).default;
-  } catch {
-    console.warn("[site:sync-assets] sharp unavailable, skipping animated WebP");
-    return 0;
-  }
-  let written = 0;
-  for (const { src, webpDst } of ANIM_SOURCES) {
-    if (!existsSync(src)) continue;
-    if (existsSync(webpDst)) {
-      const s = statSync(src).mtimeMs;
-      const d = statSync(webpDst).mtimeMs;
-      if (d >= s) continue;
-    }
-    await sharp(src, { animated: true })
-      .webp({ quality: 80, effort: 4 })
-      .toFile(webpDst);
-    written++;
-  }
-  return written;
-}
-
-const webpExtra = await emitAnimatedWebp();
-copied += webpExtra;
 
 // Favicon (Tauri icon as PNG source)
 const faviconSrc = path.join(repoRoot, "apps", "desktop", "src-tauri", "icons", "icon.png");

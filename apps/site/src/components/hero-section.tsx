@@ -14,8 +14,10 @@ export async function HeroSection({ locale }: { locale: SupportedLocale }) {
     ),
     cta1: i18n._("免费开始"),
     cta2: i18n._("了解能做什么"),
-    coreLoop: i18n._("核心闭环演示（动图）"),
-    gifAlt: i18n._("隐界核心闭环演示动图：聊天、朋友圈、群聊、电话、笔记一气呵成"),
+    heroShotAlt: i18n._("隐界手机界面：像微信一样的消息列表，住着你的专家居民和数字分身"),
+    floatName: i18n._("林医生"),
+    floatTag: i18n._("主动关心"),
+    floatBody: i18n._("最近睡得还好吗？有什么不舒服随时找我。"),
     statWorld: i18n._("私人世界"),
     statWorldDesc: i18n._("一人一实例"),
     statSync: i18n._("多端同步"),
@@ -75,31 +77,38 @@ export async function HeroSection({ locale }: { locale: SupportedLocale }) {
           </div>
         </div>
 
-        <div className="relative lg:col-span-6">
-          <div className="relative overflow-hidden rounded-3xl border border-(--border-subtle) bg-(--surface-card) shadow-(--shadow-shell)">
-            <div className="flex items-center gap-1.5 border-b border-(--border-faint) px-4 py-2.5" aria-hidden="true">
-              <span className="size-2.5 rounded-full bg-rose-300/80" />
-              <span className="size-2.5 rounded-full bg-amber-300/80" />
-              <span className="size-2.5 rounded-full bg-emerald-300/80" />
-              <span className="ml-3 text-[11px] font-medium text-(--text-dim)">{labels.coreLoop}</span>
-            </div>
+        <div className="relative flex justify-center lg:col-span-6 lg:justify-end">
+          <div className="relative">
             {/*
-              Animated WebP cuts the GIF payload by ~80%, dramatically
-              improving LCP on the hero. unoptimized: skip Next's image
-              optimizer (which would lose animation frames).
+              Real screenshot of the live app (captured via
+              scripts/capture-app-screenshots.mjs), framed as a phone so the
+              hero shows the actual product rather than a mockup or animation.
             */}
-            <Image
-              src={`/animations/${locale}.webp`}
-              alt={labels.gifAlt}
-              width={1200}
-              height={750}
-              unoptimized
-              priority
-              fetchPriority="high"
-              className="block w-full h-auto"
-            />
+            <div className="relative w-[270px] overflow-hidden rounded-[2.5rem] border-[10px] border-(--text-primary)/80 bg-(--text-primary)/80 shadow-(--shadow-shell) sm:w-[300px]">
+              <Image
+                src={`/screenshots/${locale}/chatlist.png`}
+                alt={labels.heroShotAlt}
+                width={390}
+                height={844}
+                priority
+                fetchPriority="high"
+                className="block h-auto w-full rounded-[1.75rem]"
+              />
+            </div>
+            <div className="absolute -left-4 bottom-20 hidden w-48 rotate-[-5deg] rounded-2xl border border-(--border-subtle) bg-(--surface-card) p-3 shadow-(--shadow-lift) sm:block">
+              <div className="flex items-center gap-2">
+                <span className="grid size-7 place-items-center rounded-full bg-(--brand-gradient) text-[11px] font-semibold text-white">
+                  医
+                </span>
+                <span className="text-sm font-semibold text-(--text-primary)">{labels.floatName}</span>
+                <span className="ml-auto rounded-full bg-(--brand-primary)/12 px-2 py-0.5 text-[10px] font-medium text-(--brand-primary)">
+                  {labels.floatTag}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-(--text-secondary)">{labels.floatBody}</p>
+            </div>
+            <div aria-hidden className="absolute -inset-6 -z-10 rounded-[3rem] bg-(--brand-gradient) opacity-20 blur-3xl" />
           </div>
-          <div aria-hidden className="absolute -inset-4 -z-10 rounded-3xl bg-(--brand-gradient) opacity-20 blur-3xl" />
         </div>
       </div>
     </section>

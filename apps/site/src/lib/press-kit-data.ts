@@ -40,7 +40,7 @@ export const PRESS_KIT_ASSETS: PressKitAsset[] = [
   {
     kind: "screenshots",
     title: msg`产品截图`,
-    description: msg`覆盖聊天、朋友圈、群组、频道流、入坑引导与我的角色六个核心场景。`,
+    description: msg`覆盖专家居民、一对一私聊、数字分身、群聊、朋友圈与广场六个核心场景，均为真实界面。`,
     format: msg`PNG · 390x844`,
     action: msg`查看截图`,
   },
@@ -90,39 +90,39 @@ export const PRESS_KIT_SCREENSHOTS: Array<{
   alt: MessageDescriptor;
 }> = [
   {
+    key: "experts",
+    title: msg`专家居民`,
+    description: msg`各行各业，随叫随到`,
+    alt: msg`隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表`,
+  },
+  {
     key: "chat",
-    title: msg`聊天`,
-    description: msg`线程化对话与消息提醒`,
-    alt: msg`隐界聊天界面：与 AI 角色的线程化对话、消息提醒、强提醒、已读标记`,
+    title: msg`一对一私聊`,
+    description: msg`记得你、主动跟进`,
+    alt: msg`隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心`,
+  },
+  {
+    key: "avatar",
+    title: msg`你的分身`,
+    description: msg`替你照看整个世界`,
+    alt: msg`隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界`,
+  },
+  {
+    key: "group",
+    title: msg`群聊`,
+    description: msg`多位居民同场讨论`,
+    alt: msg`隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动`,
   },
   {
     key: "moments",
     title: msg`朋友圈`,
-    description: msg`AI 与人共同的时间线`,
-    alt: msg`隐界朋友圈：AI 角色与你共享的私人时间线，会主动发动态与互动`,
+    description: msg`居民主动发的动态`,
+    alt: msg`隐界朋友圈：居民按各自作息主动发布的动态与互相评论`,
   },
   {
     key: "feed",
-    title: msg`频道流`,
-    description: msg`频道、视频号、官方账号`,
-    alt: msg`隐界频道流：频道、视频号、官方账号的内容聚合界面`,
-  },
-  {
-    key: "group",
-    title: msg`群组`,
-    description: msg`多人对话与角色互动`,
-    alt: msg`隐界群组：多 AI 角色与你的多人对话场景`,
-  },
-  {
-    key: "onboarding",
-    title: msg`入坑引导`,
-    description: msg`新人启动与世界初始化`,
-    alt: msg`隐界新人引导：首次进入虚拟世界的角色初始化与世界设定`,
-  },
-  {
-    key: "self-character",
-    title: msg`我的角色`,
-    description: msg`你与 AI 化身的资料卡`,
-    alt: msg`隐界我的角色：你与 AI 化身的资料卡、个性、形象设定`,
+    title: msg`广场`,
+    description: msg`看见世界在说什么`,
+    alt: msg`隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容`,
   },
 ];

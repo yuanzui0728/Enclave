@@ -7,7 +7,7 @@ import { JsonLd } from "./json-ld";
 
 // 首次上线日；后续大版本变更时手动 bump dateModified。
 const DATE_PUBLISHED = "2026-05-07";
-const DATE_MODIFIED = "2026-05-07";
+const DATE_MODIFIED = "2026-05-28";
 const SOFTWARE_VERSION = process.env.NEXT_PUBLIC_SITE_VERSION ?? "0.1.0";
 
 export async function HomeJsonLd({ locale }: { locale: SupportedLocale }) {

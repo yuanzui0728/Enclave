@@ -360,7 +360,7 @@ msgstr "浏览器即开即用，不需要注册任何信用卡。"
 #: apps/site/src/app/[locale]/use-cases/[slug]/page.tsx:212
 #: apps/site/src/components/get-started-cta.tsx:14
 #: apps/site/src/components/hero-section.tsx:15
-#: apps/site/src/components/hero-section.tsx:23
+#: apps/site/src/components/hero-section.tsx:25
 #: apps/site/src/components/og/og-template.tsx:10
 #: apps/site/src/components/site-footer.tsx:12
 #: apps/site/src/components/site-header.tsx:20
@@ -418,8 +418,8 @@ msgstr "一个属于你的私人助手世界。各行各业的 AI 专家 + 你�
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
-msgid "欢迎页"
-msgstr "欢迎页"
+msgid "专家居民"
+msgstr "专家居民"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:48
@@ -569,32 +569,26 @@ msgid "为帮你处理真实生活而设计的 AI 助手体验，每一项都已
 msgstr "为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"
 
 #: apps/site/src/components/cross-platform-section.tsx:8
-#: apps/site/src/lib/capabilities-data.ts:30
 msgid "聊天与群组"
 msgstr "聊天与群组"
 
 #: apps/site/src/components/cross-platform-section.tsx:9
-#: apps/site/src/lib/capabilities-data.ts:40
 msgid "朋友圈与动态"
 msgstr "朋友圈与动态"
 
 #: apps/site/src/components/cross-platform-section.tsx:10
-#: apps/site/src/lib/capabilities-data.ts:35
 msgid "AI 数字人通话"
 msgstr "AI 数字人通话"
 
 #: apps/site/src/components/cross-platform-section.tsx:11
-#: apps/site/src/lib/capabilities-data.ts:45
 msgid "小程序工作区"
 msgstr "小程序工作区"
 
 #: apps/site/src/components/cross-platform-section.tsx:12
-#: apps/site/src/lib/capabilities-data.ts:50
 msgid "游戏中心"
 msgstr "游戏中心"
 
 #: apps/site/src/components/cross-platform-section.tsx:13
-#: apps/site/src/lib/capabilities-data.ts:60
 msgid "发现与场景社交"
 msgstr "发现与场景社交"
 
@@ -603,7 +597,6 @@ msgid "聊天工作区（多窗口）"
 msgstr "聊天工作区（多窗口）"
 
 #: apps/site/src/components/cross-platform-section.tsx:18
-#: apps/site/src/lib/capabilities-data.ts:55
 msgid "笔记工作区（多窗口）"
 msgstr "笔记工作区（多窗口）"
 
@@ -772,8 +765,8 @@ msgid "我能信你不会偷偷用我的数据吗？"
 msgstr "我能信你不会偷偷用我的数据吗？"
 
 #: apps/site/src/components/faq-accordion.tsx:27
-msgid "整套代码完全开源（MIT 许可，github.com/yuanzui0728/yinjie-app），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署。"
-msgstr "整套代码完全开源（MIT 许可，github.com/yuanzui0728/yinjie-app），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署。"
+msgid "整套代码完全开源（MIT 许可），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署一份，数据全部留在你自己的机器上。"
+msgstr "整套代码完全开源（MIT 许可），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署一份，数据全部留在你自己的机器上。"
 
 #: apps/site/src/components/faq-accordion.tsx:30
 msgid "支持哪些设备？"
@@ -856,134 +849,144 @@ msgstr "了解能做什么"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:17
-msgid "核心闭环演示（动图）"
-msgstr "核心闭环演示（动图）"
+msgid "隐界手机界面：像微信一样的消息列表，住着你的专家居民和数字分身"
+msgstr "隐界手机界面：像微信一样的消息列表，住着你的专家居民和数字分身"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:18
-msgid "隐界核心闭环演示动图：聊天、朋友圈、群聊、电话、笔记一气呵成"
-msgstr "隐界核心闭环演示动图：聊天、朋友圈、群聊、电话、笔记一气呵成"
+msgid "林医生"
+msgstr "林医生"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:19
+msgid "主动关心"
+msgstr "主动关心"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/hero-section.tsx:20
+msgid "最近睡得还好吗？有什么不舒服随时找我。"
+msgstr "最近睡得还好吗？有什么不舒服随时找我。"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/hero-section.tsx:21
 msgid "私人世界"
 msgstr "私人世界"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:20
+#: apps/site/src/components/hero-section.tsx:22
 msgid "一人一实例"
 msgstr "一人一实例"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:21
+#: apps/site/src/components/hero-section.tsx:23
 msgid "多端同步"
 msgstr "多端同步"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:22
+#: apps/site/src/components/hero-section.tsx:24
 msgid "浏览器 / 桌面 / 手机"
 msgstr "浏览器 / 桌面 / 手机"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:24
+#: apps/site/src/components/hero-section.tsx:26
 msgid "注册即用，无需安装"
 msgstr "注册即用，无需安装"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:15
-#: apps/site/src/lib/capabilities-data.ts:81
+#: apps/site/src/lib/capabilities-data.ts:82
 #: apps/site/src/lib/press-kit-data.ts:94
-msgid "聊天"
-msgstr "聊天"
+msgid "专家居民"
+msgstr "专家居民"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:16
 #: apps/site/src/lib/press-kit-data.ts:95
-msgid "线程化对话与消息提醒"
-msgstr "线程化对话与消息提醒"
+msgid "各行各业，随叫随到"
+msgstr "各行各业，随叫随到"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:17
 #: apps/site/src/lib/press-kit-data.ts:96
-msgid "隐界聊天界面：与 AI 角色的线程化对话、消息提醒、强提醒、已读标记"
-msgstr "隐界聊天界面：与 AI 角色的线程化对话、消息提醒、强提醒、已读标记"
+msgid "隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表"
+msgstr "隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:21
-#: apps/site/src/lib/capabilities-data.ts:82
+#: apps/site/src/lib/capabilities-data.ts:83
 #: apps/site/src/lib/press-kit-data.ts:100
-msgid "朋友圈"
-msgstr "朋友圈"
+msgid "一对一私聊"
+msgstr "一对一私聊"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:22
 #: apps/site/src/lib/press-kit-data.ts:101
-msgid "AI 与人共同的时间线"
-msgstr "AI 与人共同的时间线"
+msgid "记得你、主动跟进"
+msgstr "记得你、主动跟进"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:23
 #: apps/site/src/lib/press-kit-data.ts:102
-msgid "隐界朋友圈：AI 角色与你共享的私人时间线，会主动发动态与互动"
-msgstr "隐界朋友圈：AI 角色与你共享的私人时间线，会主动发动态与互动"
+msgid "隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心"
+msgstr "隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:27
-#: apps/site/src/lib/capabilities-data.ts:83
+#: apps/site/src/lib/capabilities-data.ts:84
 #: apps/site/src/lib/press-kit-data.ts:106
-msgid "频道流"
-msgstr "频道流"
+msgid "你的分身"
+msgstr "你的分身"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:28
 #: apps/site/src/lib/press-kit-data.ts:107
-msgid "频道、视频号、官方账号"
-msgstr "频道、视频号、官方账号"
+msgid "替你照看整个世界"
+msgstr "替你照看整个世界"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:29
 #: apps/site/src/lib/press-kit-data.ts:108
-msgid "隐界频道流：频道、视频号、官方账号的内容聚合界面"
-msgstr "隐界频道流：频道、视频号、官方账号的内容聚合界面"
+msgid "隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界"
+msgstr "隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:33
-#: apps/site/src/lib/capabilities-data.ts:84
+#: apps/site/src/lib/capabilities-data.ts:85
 #: apps/site/src/lib/press-kit-data.ts:112
-msgid "群组"
-msgstr "群组"
+msgid "群聊"
+msgstr "群聊"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:34
 #: apps/site/src/lib/press-kit-data.ts:113
-msgid "多人对话与角色互动"
-msgstr "多人对话与角色互动"
+msgid "多位居民同场讨论"
+msgstr "多位居民同场讨论"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:35
 #: apps/site/src/lib/press-kit-data.ts:114
-msgid "隐界群组：多 AI 角色与你的多人对话场景"
-msgstr "隐界群组：多 AI 角色与你的多人对话场景"
+msgid "隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动"
+msgstr "隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:39
-#: apps/site/src/lib/capabilities-data.ts:85
+#: apps/site/src/lib/capabilities-data.ts:86
 #: apps/site/src/lib/press-kit-data.ts:118
-msgid "入坑引导"
-msgstr "入坑引导"
+msgid "朋友圈"
+msgstr "朋友圈"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:40
 #: apps/site/src/lib/press-kit-data.ts:119
-msgid "新人启动与世界初始化"
-msgstr "新人启动与世界初始化"
+msgid "居民主动发的动态"
+msgstr "居民主动发的动态"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:41
 #: apps/site/src/lib/press-kit-data.ts:120
-msgid "隐界新人引导：首次进入虚拟世界的角色初始化与世界设定"
-msgstr "隐界新人引导：首次进入虚拟世界的角色初始化与世界设定"
+msgid "隐界朋友圈：居民按各自作息主动发布的动态与互相评论"
+msgstr "隐界朋友圈：居民按各自作息主动发布的动态与互相评论"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:45
-#: apps/site/src/lib/capabilities-data.ts:86
+#: apps/site/src/lib/capabilities-data.ts:87
 #: apps/site/src/lib/press-kit-data.ts:124
-msgid "我的角色"
-msgstr "我的角色"
+msgid "广场"
+msgstr "广场"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:46
 #: apps/site/src/lib/press-kit-data.ts:125
-msgid "你与 AI 化身的资料卡"
-msgstr "你与 AI 化身的资料卡"
+msgid "看见世界在说什么"
+msgstr "看见世界在说什么"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:47
 #: apps/site/src/lib/press-kit-data.ts:126
-msgid "隐界我的角色：你与 AI 化身的资料卡、个性、形象设定"
-msgstr "隐界我的角色：你与 AI 化身的资料卡、个性、形象设定"
+msgid "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
+msgstr "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:54
@@ -992,13 +995,13 @@ msgstr "产品截图"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:55
-msgid "从入坑到日常使用"
-msgstr "从入坑到日常使用"
+msgid "走进一个真实的隐界世界"
+msgstr "走进一个真实的隐界世界"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:56
-msgid "六个核心场景一起看，画面均来自当前线上版本。"
-msgstr "六个核心场景一起看，画面均来自当前线上版本。"
+msgid "下面每一张都来自真实运行的隐界，不是设计稿。"
+msgstr "下面每一张都来自真实运行的隐界，不是设计稿。"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/og/og-template.tsx:9
@@ -1167,41 +1170,69 @@ msgstr "Enclave 首页"
 msgid "语言"
 msgstr "语言"
 
+#: apps/site/src/lib/capabilities-data.ts:30
+msgid "各行各业的专家居民"
+msgstr "各行各业的专家居民"
+
 #: apps/site/src/lib/capabilities-data.ts:31
-msgid "一对一对话、群聊、线程讨论；消息提醒、强提醒、已读标记一应俱全。"
-msgstr "一对一对话、群聊、线程讨论；消息提醒、强提醒、已读标记一应俱全。"
+msgid "医生、律师、理财、心理、职业规划……每位居民都有数千字的专业底层逻辑，遇到不同的事就找对应的人。"
+msgstr "医生、律师、理财、心理、职业规划……每位居民都有数千字的专业底层逻辑，遇到不同的事就找对应的人。"
+
+#: apps/site/src/lib/capabilities-data.ts:35
+msgid "你的数字分身"
+msgstr "你的数字分身"
 
 #: apps/site/src/lib/capabilities-data.ts:36
-msgid "和虚拟角色实时对话——支持 1 对 1、群组、视频与语音多种形式。"
-msgstr "和虚拟角色实时对话——支持 1 对 1、群组、视频与语音多种形式。"
+msgid "一个越来越懂你的分身：你忙的时候替你照看世界，帮你消化错过的事，把现实里的信号带回来。"
+msgstr "一个越来越懂你的分身：你忙的时候替你照看世界，帮你消化错过的事，把现实里的信号带回来。"
+
+#: apps/site/src/lib/capabilities-data.ts:40
+msgid "会记得，会主动"
+msgstr "会记得，会主动"
 
 #: apps/site/src/lib/capabilities-data.ts:41
-msgid "发布与浏览朋友动态，AI 角色也会发帖、互动、出现在你的时间线。"
-msgstr "发布与浏览朋友动态，AI 角色也会发帖、互动、出现在你的时间线。"
+msgid "结构化的长期记忆让专家几个月后仍记得你的处境；他们会基于你的近况主动提醒、跟进，而不是问一句答一句。"
+msgstr "结构化的长期记忆让专家几个月后仍记得你的处境；他们会基于你的近况主动提醒、跟进，而不是问一句答一句。"
+
+#: apps/site/src/lib/capabilities-data.ts:45
+msgid "群聊与关系网"
+msgstr "群聊与关系网"
 
 #: apps/site/src/lib/capabilities-data.ts:46
-msgid "内嵌的小程序生态，随手打开工具、拓展隐界的能力边界。"
-msgstr "内嵌的小程序生态，随手打开工具、拓展隐界的能力边界。"
+msgid "把多位居民拉进同一个群，他们之间也有朋友、对手、师徒的关系，会讨论、会接话、会争论。"
+msgstr "把多位居民拉进同一个群，他们之间也有朋友、对手、师徒的关系，会讨论、会接话、会争论。"
+
+#: apps/site/src/lib/capabilities-data.ts:50
+msgid "朋友圈与视频号"
+msgstr "朋友圈与视频号"
 
 #: apps/site/src/lib/capabilities-data.ts:51
-msgid "游戏库与邀请系统，把朋友、AI 角色都拉进同一桌。"
-msgstr "游戏库与邀请系统，把朋友、AI 角色都拉进同一桌。"
+msgid "居民按各自的作息主动发动态、拍视频、互相评论；广场上还能看到整个世界里的人在说什么。"
+msgstr "居民按各自的作息主动发动态、拍视频、互相评论；广场上还能看到整个世界里的人在说什么。"
+
+#: apps/site/src/lib/capabilities-data.ts:55
+msgid "私人知识库"
+msgstr "私人知识库"
 
 #: apps/site/src/lib/capabilities-data.ts:56
-msgid "桌面端多窗口笔记，灵感随手记，无缝同步、不受应用边界约束。"
-msgstr "桌面端多窗口笔记，灵感随手记，无缝同步、不受应用边界约束。"
+msgid "把你的文档、网页、笔记喂给世界，专家基于你的真实资料回答，而不是泛泛而谈。"
+msgstr "把你的文档、网页、笔记喂给世界，专家基于你的真实资料回答，而不是泛泛而谈。"
+
+#: apps/site/src/lib/capabilities-data.ts:60
+msgid "通向现实"
+msgstr "通向现实"
 
 #: apps/site/src/lib/capabilities-data.ts:61
-msgid "遇见陌生人、按场景社交、浏览世界人物库，遇见新角色与新故事。"
-msgstr "遇见陌生人、按场景社交、浏览世界人物库，遇见新角色与新故事。"
+msgid "接入真实世界的时间、天气与新闻，让居民活在和你同一个当下；并能在你授权下替你把事一件件办好。"
+msgstr "接入真实世界的时间、天气与新闻，让居民活在和你同一个当下；并能在你授权下替你把事一件件办好。"
 
 #: apps/site/src/lib/capabilities-data.ts:65
-msgid "云订阅与权限"
-msgstr "云订阅与权限"
+msgid "自己造，社区共创"
+msgstr "自己造，社区共创"
 
 #: apps/site/src/lib/capabilities-data.ts:66
-msgid "灵活的功能分级与支付，按需开启更高级的模型与能力。"
-msgstr "灵活的功能分级与支付，按需开启更高级的模型与能力。"
+msgid "用自然语言在百科里造一位属于你的专家，或者从角色广场一键复刻别人分享的居民。"
+msgstr "用自然语言在百科里造一位属于你的专家，或者从角色广场一键复刻别人分享的居民。"
 
 #: apps/site/src/lib/changelog-data.ts:27
 msgid "首次公开之后第一个节奏更新：把\"能跑起来\"升级到\"路人点开就能玩得顺\"。"
@@ -1364,8 +1395,8 @@ msgid "产品截图"
 msgstr "产品截图"
 
 #: apps/site/src/lib/press-kit-data.ts:43
-msgid "覆盖聊天、朋友圈、群组、频道流、入坑引导与我的角色六个核心场景。"
-msgstr "覆盖聊天、朋友圈、群组、频道流、入坑引导与我的角色六个核心场景。"
+msgid "覆盖专家居民、一对一私聊、数字分身、群聊、朋友圈与广场六个核心场景，均为真实界面。"
+msgstr "覆盖专家居民、一对一私聊、数字分身、群聊、朋友圈与广场六个核心场景，均为真实界面。"
 
 #: apps/site/src/lib/press-kit-data.ts:44
 msgid "PNG · 390x844"
