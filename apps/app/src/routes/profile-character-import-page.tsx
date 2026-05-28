@@ -363,7 +363,7 @@ export function ProfileCharacterImportPage() {
         {/* 步骤引导 */}
         <ol className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4 text-[13px] leading-relaxed text-[color:var(--text-secondary)]">
           <li className="flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(56,189,248,0.12)] text-[11px] font-semibold text-[#0891b2]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
               1
             </span>
             <span>
@@ -373,7 +373,7 @@ export function ProfileCharacterImportPage() {
             </span>
           </li>
           <li className="mt-2 flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(56,189,248,0.12)] text-[11px] font-semibold text-[#0891b2]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
               2
             </span>
             <span>
@@ -381,7 +381,7 @@ export function ProfileCharacterImportPage() {
             </span>
           </li>
           <li className="mt-2 flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(56,189,248,0.12)] text-[11px] font-semibold text-[#0891b2]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
               3
             </span>
             <span>
@@ -419,11 +419,11 @@ export function ProfileCharacterImportPage() {
             className={cn(
               "flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-4 py-10 text-center transition-colors",
               dragging
-                ? "border-[#0891b2] bg-[rgba(56,189,248,0.06)]"
+                ? "border-[color:var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
                 : "border-[color:var(--border-default)] bg-[color:var(--bg-canvas-elevated)]",
             )}
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(56,189,248,0.12)] text-[#0891b2]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
               <FileUp size={24} />
             </div>
             <div className="space-y-1">

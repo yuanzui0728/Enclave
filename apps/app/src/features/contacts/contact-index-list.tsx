@@ -206,7 +206,7 @@ export function ContactIndexList({
               "flex items-center justify-center rounded-full leading-none transition-colors",
               compact ? "h-3.5 w-3.5 text-[9px]" : "h-4 w-4 text-[10px]",
               activeKey === item.key
-                ? "bg-[rgba(22,163,74,0.14)] font-semibold text-[#16a34a]"
+                ? "bg-[color:var(--brand-soft)] font-semibold text-[color:var(--brand-primary)]"
                 : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]",
             )}
           >
