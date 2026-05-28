@@ -41,6 +41,7 @@ import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
 import { SelfAgentService } from '../self-agent/self-agent.service';
 import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 import { WorldLanguageService } from '../config/world-language.service';
@@ -133,6 +134,7 @@ export class SchedulerService {
     private readonly followupRuntimeService: FollowupRuntimeService,
     private readonly reminderRuntimeService: ReminderRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly contextHub: WorldContextHubService,
     private readonly selfAgentService: SelfAgentService,
     private readonly momentsService: MomentsService,
     private readonly minimaxQuota: MinimaxQuotaService,
@@ -1625,6 +1627,8 @@ export class SchedulerService {
     // 主动消息面向真人用户：注入其个人资料，让角色主动开口时也「懂」对方。
     // 本方法在单 owner 租户帧内跑，取一次给本轮所有角色共用。
     const userProfile = await this.worldOwner.getUserProfileContext();
+    // 单人世界中枢的画像（Stratum A）：本轮全体主动角色共享同一份「世界对 Ta 的认知」。
+    const ownerPortrait = await this.contextHub.buildOwnerPortrait();
     let memorySeededCount = 0;
     let sentMessages = 0;
 
@@ -1659,7 +1663,7 @@ export class SchedulerService {
               today,
               noActionToken,
             }),
-          chatContext: { userProfile },
+          chatContext: { userProfile, ownerPortrait },
           extraSystemPromptSections:
             char.id === SELF_CHARACTER_ID
               ? selfCyberAvatarPromptSections

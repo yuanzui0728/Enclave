@@ -21,6 +21,10 @@ export interface ChatContext {
   // 用户在「个人资料」里填写的信息（注入聊天 prompt，让角色更贴合地服务对方）。
   // 类型定义在 ai.types 避免循环依赖。
   userProfile?: UserProfileContext;
+  // 单人世界中枢预渲染的 <owner_portrait> 块（Stratum A，第三人称用户画像）。
+  // 由调用方（chat / group / proactive）按当前 owner 装配后传入，prompt-builder 只负责插入，
+  // 不反向依赖 cyber-avatar 模块（避免 ai ↔ cyber-avatar 循环）。
+  ownerPortrait?: string;
 }
 
 export interface ChatSystemPromptSection {
@@ -35,6 +39,7 @@ export interface ChatSystemPromptSection {
     | 'collaboration_routing'
     | 'memory'
     | 'user_profile'
+    | 'owner_portrait'
     | 'real_world_context'
     | 'current_context'
     | 'group_chat'
@@ -227,6 +232,12 @@ export class PromptBuilderService {
       const userProfileBlock = this.buildUserProfileBlock(context?.userProfile);
       if (userProfileBlock) {
         parts.push(userProfileBlock);
+      }
+      // 单人世界中枢：整个世界对这个用户的共享认知（Stratum A 用户画像）。
+      // 紧跟手填资料之后——手填是「用户自己声明的」，画像是「世界观察到的」，互补。
+      const ownerPortrait = context?.ownerPortrait?.trim();
+      if (ownerPortrait) {
+        parts.push(ownerPortrait);
       }
     }
 
@@ -657,6 +668,8 @@ export class PromptBuilderService {
     const userProfileSection = this.buildUserProfileBlock(
       context?.userProfile,
     );
+    // 单人世界中枢预渲染的用户画像块（Stratum A，第三人称）。空串时下方 active:false 自动隐藏。
+    const ownerPortraitSection = context?.ownerPortrait?.trim() ?? '';
 
     const realWorldContextSection = this.buildRealWorldContextSection(
       profile,
@@ -776,6 +789,12 @@ ${templates.behavioralGuideline}
         label: 'User Profile',
         content: userProfileSection,
         active: Boolean(userProfileSection),
+      },
+      {
+        key: 'owner_portrait',
+        label: 'Owner Portrait',
+        content: ownerPortraitSection,
+        active: Boolean(ownerPortraitSection),
       },
       {
         key: 'real_world_context',

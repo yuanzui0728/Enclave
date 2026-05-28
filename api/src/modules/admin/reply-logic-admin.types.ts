@@ -47,6 +47,7 @@ export interface ReplyLogicPromptSection {
     | 'collaboration_routing'
     | 'memory'
     | 'user_profile'
+    | 'owner_portrait'
     | 'current_context'
     | 'real_world_context'
     | 'group_chat'

@@ -9,14 +9,18 @@ import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import { CyberAvatarService } from './cyber-avatar.service';
+import { WorldContextHubService } from './world-context-hub.service';
 import { CyberAvatarMatchmakingSyncService } from './cyber-avatar-matchmaking-sync.service';
 import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
 import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
+import { CyberAvatarSelfController } from './cyber-avatar-self.controller';
+import { CyberAvatarSelfService } from './cyber-avatar-self.service';
 import { MatchmakingServiceTokenGuard } from './matchmaking-service-token.guard';
 import { SystemConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
 import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
+import { MessageEntity } from '../chat/message.entity';
 
 @Module({
   imports: [
@@ -26,16 +30,19 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
       CyberAvatarRealWorldBriefEntity,
       CyberAvatarRunEntity,
       CyberAvatarSignalEntity,
+      MessageEntity,
     ]),
     SystemConfigModule,
     AuthModule,
     forwardRef(() => AiModule),
     forwardRef(() => NeedDiscoveryModule),
   ],
-  controllers: [CyberAvatarMatchmakingController],
+  controllers: [CyberAvatarMatchmakingController, CyberAvatarSelfController],
   providers: [
     CyberAvatarRulesService,
     CyberAvatarService,
+    WorldContextHubService,
+    CyberAvatarSelfService,
     CyberAvatarMatchmakingSyncService,
     CyberAvatarEncounterService,
     MatchmakingServiceTokenGuard,
@@ -45,6 +52,7 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
   exports: [
     CyberAvatarRulesService,
     CyberAvatarService,
+    WorldContextHubService,
     CyberAvatarRealWorldService,
     CyberAvatarAdminService,
   ],

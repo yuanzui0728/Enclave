@@ -30,6 +30,7 @@ import { NarrativeService } from '../narrative/narrative.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { WorldContextHubService } from '../cyber-avatar/world-context-hub.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { SelfAgentService } from '../self-agent/self-agent.service';
 import { FriendshipEntity } from '../social/friendship.entity';
@@ -184,6 +185,7 @@ export class ChatService {
     private readonly selfAgent: SelfAgentService,
     private readonly actionRuntime: ActionRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly contextHub: WorldContextHubService,
     private readonly customStickersService: CustomStickersService,
     private readonly reminderRuntime: ReminderRuntimeService,
     private readonly worldLanguage: WorldLanguageService,
@@ -1182,6 +1184,8 @@ export class ChatService {
       // 用户「个人资料」注入：让角色更贴合地服务对方。owner 是当前租户行（getOwnerOrThrow
       // 已按 TenantContext 作用域，绝不跨 owner）。联系方式故意不带（分身相遇专用，不进 prompt）。
       userProfile: this.worldOwnerService.buildUserProfileContext(owner),
+      // 单人世界中枢：整个世界对这个用户的共享画像（Stratum A）。best-effort，取不到返回 ''。
+      ownerPortrait: await this.contextHub.buildOwnerPortrait(),
     };
     const isSelfConversation = Boolean(
       charEntity &&
