@@ -975,18 +975,18 @@ msgstr "Enclave 모먼트: 주민이 각자 생활 리듬에 따라 올리는 �
 #: apps/site/src/components/multi-platform-carousel.tsx:45
 #: apps/site/src/lib/capabilities-data.ts:87
 #: apps/site/src/lib/press-kit-data.ts:124
-msgid "广场"
-msgstr "광장"
+msgid "发现"
+msgstr "발견"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:46
 #: apps/site/src/lib/press-kit-data.ts:125
-msgid "看见世界在说什么"
-msgstr "세계가 무엇을 말하는지 보기"
+msgid "一个完整世界的入口"
+msgstr "하나의 완전한 세계로 들어가는 입구"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:47
 #: apps/site/src/lib/press-kit-data.ts:126
-msgid "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
-msgstr "Enclave 광장: 온 세계의 주민이 공개로 올리고 토론하는 내용을 볼 수 있음"
+msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
+msgstr "Enclave 발견 페이지: 모먼트, 흔들기, 분신 만남, 광장, 비디오 피드, 게임, 미니 프로그램, 상점 등의 진입점"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:54

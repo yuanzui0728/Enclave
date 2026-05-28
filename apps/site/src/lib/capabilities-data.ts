@@ -84,5 +84,5 @@ export const SCREENSHOT_KEYS: readonly ScreenshotKey[] = [
   { key: "avatar", title: msg`你的分身` },
   { key: "group", title: msg`群聊` },
   { key: "moments", title: msg`朋友圈` },
-  { key: "feed", title: msg`广场` },
+  { key: "discover", title: msg`发现` },
 ];

@@ -120,9 +120,9 @@ export const PRESS_KIT_SCREENSHOTS: Array<{
     alt: msg`隐界朋友圈：居民按各自作息主动发布的动态与互相评论`,
   },
   {
-    key: "feed",
-    title: msg`广场`,
-    description: msg`看见世界在说什么`,
-    alt: msg`隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容`,
+    key: "discover",
+    title: msg`发现`,
+    description: msg`一个完整世界的入口`,
+    alt: msg`隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口`,
   },
 ];

@@ -975,18 +975,18 @@ msgstr "Enclave Moments: posts residents publish on their own schedule, plus the
 #: apps/site/src/components/multi-platform-carousel.tsx:45
 #: apps/site/src/lib/capabilities-data.ts:87
 #: apps/site/src/lib/press-kit-data.ts:124
-msgid "广场"
-msgstr "Square"
+msgid "发现"
+msgstr "Discover"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:46
 #: apps/site/src/lib/press-kit-data.ts:125
-msgid "看见世界在说什么"
-msgstr "See what the world is saying"
+msgid "一个完整世界的入口"
+msgstr "One door into a whole world"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:47
 #: apps/site/src/lib/press-kit-data.ts:126
-msgid "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
-msgstr "Enclave Square: see what residents across the whole world are publicly posting and discussing"
+msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
+msgstr "Enclave Discover page: entry points for Moments, Shake, avatar encounters, the Square, video feed, games, mini-programs, the shop and more"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:54

@@ -53,12 +53,12 @@ const IPHONE_UA =
 
 // key → in-app route. Settle gives REST results + media time to paint.
 const SHOTS = [
-  { key: "chatlist", path: "/tabs/chat", settle: 1800 },
-  { key: "chat", path: "/chat/direct_char_need_3d1789f2-306", settle: 3500, scrollBottom: true },
-  { key: "group", path: "/group/group-douyin-d2-trio", settle: 3500, scrollBottom: true },
-  { key: "moments", path: "/discover/moments", settle: 2800 },
-  { key: "feed", path: "/discover/feed", settle: 3200 },
-  { key: "experts", path: "/contacts/world-characters", settle: 2200 },
+  { key: "chatlist", path: "/tabs/chat", settle: 2500 },
+  { key: "chat", path: "/chat/direct_char-default-bar-expert", settle: 5500, scrollBottom: true },
+  { key: "group", path: "/group/group-douyin-d2-trio", settle: 5500, scrollBottom: true },
+  { key: "moments", path: "/discover/moments", settle: 5000 },
+  { key: "discover", path: "/tabs/discover", settle: 3500 },
+  { key: "experts", path: "/tabs/contacts", settle: 4500 },
   { key: "avatar", path: "/cyber-avatar", settle: 2600 },
   { key: "profile", path: "/tabs/profile", settle: 1800 },
 ];
@@ -98,6 +98,11 @@ async function scrollAllToBottom(page) {
     for (const e of scrollers) e.scrollTop = e.scrollHeight;
   });
 }
+
+// Optional KEYS=experts,chat,... env limits which shots to (re)capture so a
+// rerun can refresh a subset without overwriting the others (e.g. keep avatar).
+const ONLY = (process.env.KEYS || "").split(",").map((s) => s.trim()).filter(Boolean);
+const ACTIVE_SHOTS = ONLY.length ? SHOTS.filter((s) => ONLY.includes(s.key)) : SHOTS;
 
 const owner = { id: OWNER_ID, username: OWNER_NAME, onboardingCompleted: true };
 
@@ -159,7 +164,7 @@ async function main() {
         { ownerValue: owner, runtimeConfigValue: runtimeConfigFor(), localeValue: locale },
       );
 
-      for (const shot of SHOTS) {
+      for (const shot of ACTIVE_SHOTS) {
         const page = await context.newPage();
         const errors = [];
         page.on("console", (m) => {
@@ -181,7 +186,7 @@ async function main() {
                 !/正在读取|读取中|加载中|同步这段|载入|Loading|Syncing|読み込|동기화|불러오/.test(
                   document.body.innerText || "",
                 ),
-              { timeout: 16000 },
+              { timeout: 30000 },
             )
             .catch(() => {});
           await page.waitForTimeout(shot.settle ?? 1800);

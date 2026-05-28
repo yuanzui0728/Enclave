@@ -975,18 +975,18 @@ msgstr "隐界朋友圈：居民按各自作息主动发布的动态与互相评
 #: apps/site/src/components/multi-platform-carousel.tsx:45
 #: apps/site/src/lib/capabilities-data.ts:87
 #: apps/site/src/lib/press-kit-data.ts:124
-msgid "广场"
-msgstr "广场"
+msgid "发现"
+msgstr "发现"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:46
 #: apps/site/src/lib/press-kit-data.ts:125
-msgid "看见世界在说什么"
-msgstr "看见世界在说什么"
+msgid "一个完整世界的入口"
+msgstr "一个完整世界的入口"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:47
 #: apps/site/src/lib/press-kit-data.ts:126
-msgid "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
-msgstr "隐界广场：能看到整个世界里的居民正在公开发布与讨论的内容"
+msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
+msgstr "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/multi-platform-carousel.tsx:54
