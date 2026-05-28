@@ -9,8 +9,8 @@ import { CyberAvatarService } from './cyber-avatar.service';
  * 每个日常角色的聊天 prompt——让全世界的角色都「懂用户」、围绕一个人协同。
  *
  * 分层（见 .claude/plans/context-context-rustling-lagoon.md）：
- *   A 用户画像      —— 本阶段：复用赛博分身三层画像，第三人称渲染成 <owner_portrait>
- *   B 跨角色共享记忆 —— Phase 2 接入
+ *   A 用户画像        —— 复用赛博分身三层画像，第三人称渲染成 <owner_portrait>
+ *   B 跨角色共享记忆  —— 跨任何角色/朋友圈/视频号的具体事实/事件，渲染成 <world_recent_episodes>
  *   C 角色互知/社交全景 —— Phase 3 接入
  *
  * 关键红线：所有读取都经 CyberAvatarService（getOwnerOrThrow → TenantContext 作用域），
@@ -22,6 +22,18 @@ export class WorldContextHubService {
 
   // 单块上限，控制每轮注入的 token 体量（中枢未来会叠 B/C，给 A 留个保守上限）。
   private static readonly PORTRAIT_MAX_CHARS = 1100;
+  private static readonly SHARED_MEMORY_MAX_CHARS = 1000;
+
+  // Stratum B 拉取范围：从最近的信号里取 80 条，过滤出有意义的、近 30 天的，再压到 ≤10 条。
+  // 这个数量级在 sqlite 上是 ms 级查询；不去 LLM 蒸馏，省一遍调用 + 保留原始事实粒度。
+  private static readonly SHARED_MEMORY_FETCH_LIMIT = 80;
+  private static readonly SHARED_MEMORY_RENDER_LIMIT = 10;
+  private static readonly SHARED_MEMORY_RECENCY_DAYS = 30;
+  private static readonly SHARED_MEMORY_PER_LINE_MAX = 120;
+  // 权重低于这个阈值的信号视为「噪声」（feed_interaction/location_update 等），不进共享记忆。
+  // 阈值参考 cyber-avatar.constants.ts signalWeights：≥1.0 = direct_message/group_message/moment_post
+  // /feed_post/channel_post/feed_post(各 1.1+)/friendship_event/favorite_action/real_world_*。
+  private static readonly SHARED_MEMORY_MIN_WEIGHT = 1.0;
 
   constructor(private readonly cyberAvatar: CyberAvatarService) {}
 
@@ -90,6 +102,115 @@ export class WorldContextHubService {
       );
       return '';
     }
+  }
+
+  /**
+   * Stratum B：跨任何角色/朋友圈/视频号的「具体事实/近期事件」时间线，第三人称注入到
+   * 当前角色的 prompt。这是「打通」的核心——角色 A 在直聊里学到的事实（"用户下周三去东京"）
+   * 经信号管线沉淀后，自动出现在角色 B 的 prompt 里。
+   *
+   * 实现路径：直接读取最近的高权重 signals（已是跨面采集），按时间倒序 / 去重 / 截长。
+   * 不再调一次 LLM 蒸馏——signal 的 summaryText 已是事实级粒度（"单聊对 Alice 发送：..."），
+   * 保留原始事实比 LLM 二次概括更准。后续如需进一步抽象，可在深度刷新里追加。
+   */
+  async buildWorldRecentEpisodes(): Promise<string> {
+    try {
+      const signals = await this.cyberAvatar.listSignals({
+        limit: WorldContextHubService.SHARED_MEMORY_FETCH_LIMIT,
+      });
+      if (!signals || signals.length === 0) {
+        return '';
+      }
+
+      const cutoff =
+        Date.now() -
+        WorldContextHubService.SHARED_MEMORY_RECENCY_DAYS * 86_400_000;
+      const seen = new Set<string>();
+      const lines: string[] = [];
+
+      for (const signal of signals) {
+        if (lines.length >= WorldContextHubService.SHARED_MEMORY_RENDER_LIMIT) {
+          break;
+        }
+        const summary = signal.summaryText?.trim();
+        if (!summary) continue;
+        if ((signal.weight ?? 0) < WorldContextHubService.SHARED_MEMORY_MIN_WEIGHT) {
+          continue;
+        }
+        const occurredAt = signal.occurredAt
+          ? new Date(signal.occurredAt).getTime()
+          : NaN;
+        if (Number.isFinite(occurredAt) && occurredAt < cutoff) {
+          continue;
+        }
+        // 去重：summaryText 前 50 字相同视为同一事件（兜底 dedupeKey 漏网）。
+        const dedupe = summary.slice(0, 50);
+        if (seen.has(dedupe)) continue;
+        seen.add(dedupe);
+
+        const when = this.relativeDayLabel(occurredAt);
+        const trimmedSummary = this.truncate(
+          summary,
+          WorldContextHubService.SHARED_MEMORY_PER_LINE_MAX,
+        );
+        lines.push(`- ${when ? `(${when}) ` : ''}${trimmedSummary}`);
+      }
+
+      if (lines.length === 0) {
+        return '';
+      }
+
+      const body = this.truncate(
+        lines.join('\n'),
+        WorldContextHubService.SHARED_MEMORY_MAX_CHARS,
+      );
+
+      return [
+        '<world_recent_episodes>',
+        '【近期世界对 Ta 的具体观察——任一角色、朋友圈、视频号或现实世界里发生过的事，',
+        '其他角色也该自然知晓；可主动关心进展、续上未了结的话题，但不要逐条复读或盘问】',
+        body,
+        '</world_recent_episodes>',
+      ].join('\n');
+    } catch (error) {
+      this.logger.debug(
+        `buildWorldRecentEpisodes skipped: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return '';
+    }
+  }
+
+  /**
+   * 一次性装配 owner 的所有中枢块（portrait + shared memory）。调用方按需用。
+   * 并行取，避免聊天主路径多花一次 round-trip。
+   */
+  async buildOwnerContextBlocks(): Promise<{
+    portrait: string;
+    sharedMemory: string;
+  }> {
+    const [portrait, sharedMemory] = await Promise.all([
+      this.buildOwnerPortrait(),
+      this.buildWorldRecentEpisodes(),
+    ]);
+    return { portrait, sharedMemory };
+  }
+
+  private relativeDayLabel(occurredAtMs: number): string {
+    if (!Number.isFinite(occurredAtMs)) return '';
+    const diffMs = Date.now() - occurredAtMs;
+    if (diffMs < 0) return '刚刚';
+    const days = Math.floor(diffMs / 86_400_000);
+    if (days <= 0) {
+      const hours = Math.floor(diffMs / 3_600_000);
+      if (hours <= 0) return '刚刚';
+      return `${hours}小时前`;
+    }
+    if (days === 1) return '昨天';
+    if (days <= 7) return `${days}天前`;
+    if (days <= 30) return `${Math.floor(days / 7)}周前`;
+    return `${Math.floor(days / 30)}个月前`;
   }
 
   private kv(label: string, value?: string | string[] | null): string {

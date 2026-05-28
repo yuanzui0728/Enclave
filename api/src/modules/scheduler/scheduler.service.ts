@@ -1627,8 +1627,10 @@ export class SchedulerService {
     // 主动消息面向真人用户：注入其个人资料，让角色主动开口时也「懂」对方。
     // 本方法在单 owner 租户帧内跑，取一次给本轮所有角色共用。
     const userProfile = await this.worldOwner.getUserProfileContext();
-    // 单人世界中枢的画像（Stratum A）：本轮全体主动角色共享同一份「世界对 Ta 的认知」。
-    const ownerPortrait = await this.contextHub.buildOwnerPortrait();
+    // 单人世界中枢的画像(A) + 跨角色共享记忆(B)：全体主动角色共享同一份「世界对 Ta 的认知」+「近期事件」。
+    const ownerContextBlocks = await this.contextHub.buildOwnerContextBlocks();
+    const ownerPortrait = ownerContextBlocks.portrait;
+    const ownerSharedMemory = ownerContextBlocks.sharedMemory;
     let memorySeededCount = 0;
     let sentMessages = 0;
 
@@ -1663,7 +1665,7 @@ export class SchedulerService {
               today,
               noActionToken,
             }),
-          chatContext: { userProfile, ownerPortrait },
+          chatContext: { userProfile, ownerPortrait, ownerSharedMemory },
           extraSystemPromptSections:
             char.id === SELF_CHARACTER_ID
               ? selfCyberAvatarPromptSections
@@ -1994,12 +1996,25 @@ export class SchedulerService {
               seedKey: `scheduler:${options?.generationKind ?? 'routine'}:${currentTime.toISOString().slice(0, 10)}`,
             })
           : null;
+      // 全局共享池（广场）：每条都被全网用户看到同一份。MomentsService 暴露
+      // buildGlobalPoolPromptAddons 作单一闸点；私有角色 / 非全局帧返回空 addons。
+      // 走 options.text（如新闻简报固定文案）或 reminderMoment 时不调 AI 生成，
+      // 不必查询多样性信号 → 直接空 addons。
+      const addons =
+        options?.text || reminderMoment
+          ? { extraSystemPromptSections: [] as string[], qualityPipeline: undefined }
+          : await this.momentsService.buildGlobalPoolPromptAddons(
+              char.id,
+              currentTime,
+            );
       const text =
         options?.text ??
         reminderMoment?.text ??
         (await this.ai.generateMoment({
           profile: runtimeProfile,
           currentTime,
+          extraSystemPromptSections: addons.extraSystemPromptSections,
+          qualityPipeline: addons.qualityPipeline,
           usageContext: {
             surface: 'scheduler',
             scene: 'moment_post_generate',

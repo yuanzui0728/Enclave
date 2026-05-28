@@ -1178,14 +1178,17 @@ export class ChatService {
       where: this.buildMessageWhere(convId, undefined, { senderType: 'user' }),
       order: { createdAt: 'DESC' },
     });
+    // 单人世界中枢：本轮一次装配画像(A) + 跨角色共享记忆(B)，给当前角色用。
+    // best-effort，取不到返回 ''；并行查询，避免主路径多一次串行 round-trip。
+    const ownerContext = await this.contextHub.buildOwnerContextBlocks();
     const chatContext = {
       currentActivity: charEntity?.currentActivity,
       lastChatAt: lastMsg?.createdAt,
       // 用户「个人资料」注入：让角色更贴合地服务对方。owner 是当前租户行（getOwnerOrThrow
       // 已按 TenantContext 作用域，绝不跨 owner）。联系方式故意不带（分身相遇专用，不进 prompt）。
       userProfile: this.worldOwnerService.buildUserProfileContext(owner),
-      // 单人世界中枢：整个世界对这个用户的共享画像（Stratum A）。best-effort，取不到返回 ''。
-      ownerPortrait: await this.contextHub.buildOwnerPortrait(),
+      ownerPortrait: ownerContext.portrait,
+      ownerSharedMemory: ownerContext.sharedMemory,
     };
     const isSelfConversation = Boolean(
       charEntity &&

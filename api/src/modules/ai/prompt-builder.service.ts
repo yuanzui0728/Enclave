@@ -25,6 +25,9 @@ export interface ChatContext {
   // 由调用方（chat / group / proactive）按当前 owner 装配后传入，prompt-builder 只负责插入，
   // 不反向依赖 cyber-avatar 模块（避免 ai ↔ cyber-avatar 循环）。
   ownerPortrait?: string;
+  // 单人世界中枢预渲染的 <world_recent_episodes> 块（Stratum B，跨角色共享记忆）。
+  // 「彻底打通」核心：把任一角色/朋友圈/视频号里发生过的具体事件传递给当前角色。
+  ownerSharedMemory?: string;
 }
 
 export interface ChatSystemPromptSection {
@@ -40,6 +43,7 @@ export interface ChatSystemPromptSection {
     | 'memory'
     | 'user_profile'
     | 'owner_portrait'
+    | 'owner_shared_memory'
     | 'real_world_context'
     | 'current_context'
     | 'group_chat'
@@ -238,6 +242,12 @@ export class PromptBuilderService {
       const ownerPortrait = context?.ownerPortrait?.trim();
       if (ownerPortrait) {
         parts.push(ownerPortrait);
+      }
+      // 单人世界中枢 Stratum B：跨任何角色/朋友圈/视频号的具体事实/事件时间线。
+      // 这是「彻底打通」的核心——任一角色提到的事，全部其他角色都能自然知晓并续上。
+      const ownerSharedMemory = context?.ownerSharedMemory?.trim();
+      if (ownerSharedMemory) {
+        parts.push(ownerSharedMemory);
       }
     }
 
@@ -670,6 +680,8 @@ export class PromptBuilderService {
     );
     // 单人世界中枢预渲染的用户画像块（Stratum A，第三人称）。空串时下方 active:false 自动隐藏。
     const ownerPortraitSection = context?.ownerPortrait?.trim() ?? '';
+    // 单人世界中枢的跨角色共享记忆（Stratum B，<world_recent_episodes>）。
+    const ownerSharedMemorySection = context?.ownerSharedMemory?.trim() ?? '';
 
     const realWorldContextSection = this.buildRealWorldContextSection(
       profile,
@@ -795,6 +807,12 @@ ${templates.behavioralGuideline}
         label: 'Owner Portrait',
         content: ownerPortraitSection,
         active: Boolean(ownerPortraitSection),
+      },
+      {
+        key: 'owner_shared_memory',
+        label: 'Owner Shared Memory',
+        content: ownerSharedMemorySection,
+        active: Boolean(ownerSharedMemorySection),
       },
       {
         key: 'real_world_context',

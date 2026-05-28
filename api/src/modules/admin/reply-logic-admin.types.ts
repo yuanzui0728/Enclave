@@ -48,6 +48,7 @@ export interface ReplyLogicPromptSection {
     | 'memory'
     | 'user_profile'
     | 'owner_portrait'
+    | 'owner_shared_memory'
     | 'current_context'
     | 'real_world_context'
     | 'group_chat'

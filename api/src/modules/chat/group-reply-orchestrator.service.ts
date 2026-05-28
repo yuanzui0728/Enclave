@@ -90,11 +90,15 @@ export class GroupReplyOrchestratorService {
       userMessageParts,
       isGroupChat: true,
       // 群聊里角色也该「知道」群内真人用户是谁（个人资料注入，同直聊）+ 单人世界中枢
-      // 渲染的用户画像（Stratum A，第三人称）让群里所有角色共享同一份「世界对 Ta 的认知」。
-      chatContext: {
-        userProfile: await this.worldOwner.getUserProfileContext(),
-        ownerPortrait: await this.contextHub.buildOwnerPortrait(),
-      },
+      // 渲染的用户画像(A) + 跨角色共享记忆(B)，让群里所有角色共享同一份「世界对 Ta 的认知」+ 近期事件。
+      chatContext: await (async () => {
+        const ctx = await this.contextHub.buildOwnerContextBlocks();
+        return {
+          userProfile: await this.worldOwner.getUserProfileContext(),
+          ownerPortrait: ctx.portrait,
+          ownerSharedMemory: ctx.sharedMemory,
+        };
+      })(),
       extraSystemPromptSections,
       emptyTextFallback: '',
       usageContext: {
@@ -144,8 +148,11 @@ export class GroupReplyOrchestratorService {
     const rollingHistory: ChatMessage[] = [...conversationHistory];
     // 群内真人用户的个人资料：本轮取一次，发给所有 actor 共用（避免每个 actor 各查一遍 owner）。
     const userProfile = await this.worldOwner.getUserProfileContext();
-    // 单人世界中枢的画像（Stratum A）同样本轮取一次共用——这一群所有角色看到的「世界对用户的认知」必须一致。
-    const ownerPortrait = await this.contextHub.buildOwnerPortrait();
+    // 单人世界中枢的画像(A) + 跨角色共享记忆(B)：本轮取一次给全 actor 共用——
+    // 这一群所有角色看到的「世界对用户的认知」+「近期发生过的事」必须一致。
+    const ownerContextBlocks = await this.contextHub.buildOwnerContextBlocks();
+    const ownerPortrait = ownerContextBlocks.portrait;
+    const ownerSharedMemory = ownerContextBlocks.sharedMemory;
     // 走查 R2：executeTurn 这条 generateReply 路径之前完全没接 web_search 注入。
     // 只要 selectedActors 里有任一角色开了 webSearchEnabled、且用户消息命中时效
     // 关键词，就在循环外预先 fire 一次 search，把结果缓存给所有开了 flag 的 actor
@@ -201,7 +208,7 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
-          chatContext: { userProfile, ownerPortrait },
+          chatContext: { userProfile, ownerPortrait, ownerSharedMemory },
           extraSystemPromptSections: turnExtraSections,
           emptyTextFallback: '',
           usageContext: {
