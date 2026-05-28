@@ -22,12 +22,14 @@ import {
 import {
   Blocks,
   ChevronRight,
+  Fingerprint,
   Gamepad2,
   Heart,
   ImagePlus,
   MapPin,
   Newspaper,
   PlaySquare,
+  ShoppingBag,
   Sparkles,
   Users,
   UsersRound,
@@ -89,11 +91,13 @@ type MobileDiscoverEntry = {
     | "moments"
     | "encounter"
     | "avatarEncounter"
+    | "cyberAvatarSelf"
     | "scene"
     | "feed"
     | "channels"
     | "games"
-    | "miniPrograms";
+    | "miniPrograms"
+    | "shop";
   label: DiscoverMessage;
   badge: DiscoverMessage;
   icon: typeof Users;
@@ -102,11 +106,13 @@ type MobileDiscoverEntry = {
     | "/discover/moments"
     | "/discover/encounter"
     | "/discover/avatar-encounter"
+    | "/cyber-avatar"
     | "/discover/scene"
     | "/discover/feed"
     | "/discover/channels"
     | "/discover/games"
-    | "/discover/mini-programs";
+    | "/discover/mini-programs"
+    | "/shop";
   buildSearch?: (context: {
     hash: string;
     pathname: string;
@@ -153,6 +159,20 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     icon: UsersRound,
     iconClassName: "bg-[linear-gradient(135deg,#fb7185,#f43f5e)] text-white",
     to: "/discover/avatar-encounter",
+    buildHash: ({ hash, pathname }) =>
+      buildMobileDiscoverToolRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
+  },
+  {
+    key: "cyberAvatarSelf",
+    label: msg`赛博分身`,
+    badge: msg`镜像`,
+    icon: Fingerprint,
+    iconClassName:
+      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+    to: "/cyber-avatar",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
         returnPath: pathname,
@@ -227,6 +247,15 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
         returnPath: pathname,
         returnHash: hash || undefined,
       }),
+  },
+  {
+    key: "shop",
+    label: msg`商城`,
+    badge: msg`好物`,
+    icon: ShoppingBag,
+    iconClassName:
+      "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] text-[color:var(--text-on-brand)]",
+    to: "/shop",
   },
 ];
 

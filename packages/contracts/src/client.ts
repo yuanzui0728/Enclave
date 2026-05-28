@@ -61,6 +61,7 @@ import type {
   ConfirmAccountDeletionResponse,
   LoginWithPasswordRequest,
   LoginWithPasswordResponse,
+  SendAccountDeletionCodeResponse,
   SendChangePasswordCodeResponse,
   SendEmailCodeRequest,
   SendEmailCodeResponse,
@@ -285,6 +286,18 @@ import type {
   WalletStateResponse,
   WalletTransactionListResponse,
 } from "./wallet";
+import type {
+  CreateGoodsOrderPayload,
+  CreateGoodsOrderResponse,
+  GiftCabinetResponse,
+  GiftToCharacterPayload,
+  GiftToCharacterResponse,
+  GoodsKind,
+  GoodsListResponse,
+  GoodsOrderListResponse,
+  GoodsOrderStatus,
+  InventoryItemSummary,
+} from "./shop";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
@@ -1418,13 +1431,13 @@ export function changeCloudPassword(
   );
 }
 
-// 账号注销（Apple 5.1.1(v)）：与改密码同构的两步。send-code 往绑定邮箱发码，
-// 复用 SendChangePasswordCodeResponse 形状；confirm 提交验证码后服务端软删除。
+// 账号注销（Apple 5.1.1(v)）：两步。send-code 按用户标识自动选渠道（邮箱/手机），
+// 响应 channel 告诉前端用哪种文案；confirm 提交验证码后服务端软删除（永久归档）。
 export function sendCloudAccountDeletionCode(
   accessToken: string,
   baseUrl?: string,
 ) {
-  return requestCloudApi<SendChangePasswordCodeResponse>(
+  return requestCloudApi<SendAccountDeletionCodeResponse>(
     "/cloud/auth/account/deletion/send-code",
     buildCloudAuthHeaders(accessToken, { method: "POST" }),
     baseUrl,
@@ -4857,6 +4870,83 @@ export function createCloudWalletRechargeRequest(
 ) {
   return requestCloudApi<CreateRechargeResponse>(
     "/cloud/me/wallet/recharge-request",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+// ── 商城 + 礼物柜（cloud-api，钱包扣款）─────────────────────────────
+export function listStoreGoods(
+  accessToken: string,
+  params?: { kind?: GoodsKind },
+  baseUrl?: string,
+) {
+  const qs = params?.kind ? `?kind=${encodeURIComponent(params.kind)}` : "";
+  return requestCloudApi<GoodsListResponse>(
+    `/cloud/me/store/goods${qs}`,
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function createStoreOrder(
+  payload: CreateGoodsOrderPayload,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CreateGoodsOrderResponse>(
+    "/cloud/me/store/orders",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+export function listMyStoreOrders(
+  accessToken: string,
+  params?: { page?: number; pageSize?: number; status?: GoodsOrderStatus },
+  baseUrl?: string,
+) {
+  const search = new URLSearchParams();
+  if (params?.page) search.set("page", String(params.page));
+  if (params?.pageSize) search.set("pageSize", String(params.pageSize));
+  if (params?.status) search.set("status", params.status);
+  const qs = search.toString();
+  return requestCloudApi<GoodsOrderListResponse>(
+    `/cloud/me/store/orders${qs ? `?${qs}` : ""}`,
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function getMyStoreInventory(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<InventoryItemSummary[]>(
+    "/cloud/me/store/inventory",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function getMyGiftCabinet(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<GiftCabinetResponse>(
+    "/cloud/me/store/gifts",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function giftGoodsToCharacter(
+  payload: GiftToCharacterPayload,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<GiftToCharacterResponse>(
+    "/cloud/me/store/gifts",
     buildCloudAuthHeaders(accessToken, {
       method: "POST",
       body: JSON.stringify(payload),

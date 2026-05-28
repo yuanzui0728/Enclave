@@ -60,6 +60,8 @@ const ChannelsPage = lazyNamed(() => import("./routes/channels-page"), "Channels
 
 const ChannelAuthorPage = lazyNamed(() => import("./routes/channel-author-page"), "ChannelAuthorPage");
 
+const ChannelHistoryPage = lazyNamed(() => import("./routes/channel-history-page"), "ChannelHistoryPage");
+
 const SearchPage = lazyNamed(() => import("./routes/search-page"), "SearchPage");
 
 const GamesPage = lazyNamed(() => import("./routes/games-page"), "GamesPage");
@@ -127,6 +129,10 @@ const ProfileXhsRewardPage = lazyNamed(() => import("./routes/profile-xhs-reward
 const WalletPage = lazyNamed(() => import("./routes/wallet-page"), "WalletPage");
 
 const WalletTransactionsPage = lazyNamed(() => import("./routes/wallet-transactions-page"), "WalletTransactionsPage");
+const ShopPage = lazyNamed(() => import("./routes/shop-page"), "ShopPage");
+const ShopCheckoutPage = lazyNamed(() => import("./routes/shop-checkout-page"), "ShopCheckoutPage");
+const ShopOrdersPage = lazyNamed(() => import("./routes/shop-orders-page"), "ShopOrdersPage");
+const GiftCabinetPage = lazyNamed(() => import("./routes/gift-cabinet-page"), "GiftCabinetPage");
 
 const ProfileFavoritesPage = lazyNamed(() => import("./routes/profile-favorites-page"), "ProfileFavoritesPage");
 
@@ -319,6 +325,14 @@ const channelAuthorRoute = createRoute({
   path: "/channels/authors/$authorId",
   beforeLoad: requireWorldReady,
   component: ChannelAuthorPage,
+});
+
+// 视频号「观看历史」——pushed detail（仿 channelAuthorRoute 挂 rootRoute，不在 tabs 下）。
+const channelHistoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/channels/history",
+  beforeLoad: requireWorldReady,
+  component: ChannelHistoryPage,
 });
 
 const searchRoute = createRoute({
@@ -743,6 +757,34 @@ const walletRoute = createRoute({
   component: WalletPage,
 });
 
+const shopRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shop",
+  beforeLoad: requireWorldReady,
+  component: ShopPage,
+});
+
+const shopCheckoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shop/checkout/$goodsId",
+  beforeLoad: requireWorldReady,
+  component: ShopCheckoutPage,
+});
+
+const shopOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shop/orders",
+  beforeLoad: requireWorldReady,
+  component: ShopOrdersPage,
+});
+
+const giftCabinetRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/gift-cabinet",
+  beforeLoad: requireWorldReady,
+  component: GiftCabinetPage,
+});
+
 const walletTransactionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/wallet/transactions",
@@ -902,6 +944,7 @@ const routeTree = rootRoute.addChildren([
     profileRoute,
   ]),
   channelAuthorRoute,
+  channelHistoryRoute,
   subscriptionInboxRoute,
   chatRoomRoute,
   chatDetailsRoute,
@@ -956,6 +999,10 @@ const routeTree = rootRoute.addChildren([
   profileXhsRewardRoute,
   walletRoute,
   walletTransactionsRoute,
+  shopRoute,
+  shopCheckoutRoute,
+  shopOrdersRoute,
+  giftCabinetRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
   profileFeedRoute,
