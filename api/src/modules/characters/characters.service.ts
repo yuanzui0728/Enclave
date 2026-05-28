@@ -29,6 +29,7 @@ import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.en
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { CharacterImportRegisterClient } from './character-import-register.client';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import { isSharedWorldMode } from '../tenancy/tenant-context';
@@ -67,7 +68,52 @@ export class CharactersService implements OnModuleInit {
     private readonly realWorldRuntimeProfile: RealWorldRuntimeProfileService,
     private readonly blueprintService: CharacterBlueprintService,
     private readonly importRegisterClient: CharacterImportRegisterClient,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
+
+  /**
+   * 单人世界中枢 P4 信号回填：用户把 wiki 私有角色导入/更新进自己世界 = 兴趣强信号
+   * （创建心理咨询师 → 关注心理健康）。fire-and-forget，绝不阻断导入主流程；异常吞掉。
+   */
+  private captureWikiCharacterSignal(
+    ownerId: string,
+    character: CharacterEntity,
+    expertDomains: string[] | undefined,
+    edited: boolean,
+  ): void {
+    void (async () => {
+      try {
+        const name = character.name?.trim();
+        if (!name) return;
+        const domains = (expertDomains ?? [])
+          .filter((d) => typeof d === 'string' && d.trim())
+          .map((d) => d.trim())
+          .slice(0, 4);
+        const domainHint = domains.length ? `（领域：${domains.join('/')}）` : '';
+        await this.cyberAvatar.captureSignal({
+          ownerId,
+          signalType: edited ? 'wiki_character_edited' : 'wiki_character_created',
+          sourceSurface: 'wiki',
+          sourceEntityType: 'private_character_import',
+          sourceEntityId: character.id,
+          dedupeKey: edited
+            ? `wiki_char_edit:${character.id}:${new Date().toISOString().slice(0, 10)}`
+            : `wiki_char_create:${character.id}`,
+          summaryText: edited
+            ? `更新了私有角色「${name}」${domainHint}`
+            : `把私有角色「${name}」导入了自己的世界${domainHint}`,
+          payload: { characterId: character.id, name, domains },
+          weight: edited ? 1.0 : 1.4,
+        });
+      } catch (error) {
+        this.logger.debug(
+          `captureWikiCharacterSignal skipped: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    })();
+  }
 
   // 租户作用域 repo：shared 模式自动并 ownerId 进 where / 盖到写入行；LPP/wiki 透传（零变化）。
   // 请求/cron-fanout 路径用它（都在租户帧里）；onModuleInit 全局自愈路径仍用裸 this.repo。
@@ -1017,6 +1063,14 @@ export class CharactersService implements OnModuleInit {
         })
         .catch(() => {});
     }
+
+    // 单人世界中枢 P4：把「用户把私有角色导入/更新进世界」沉淀成兴趣信号，喂全世界角色画像。
+    this.captureWikiCharacterSignal(
+      owner.id,
+      saved,
+      input.expertDomains,
+      !!existing,
+    );
 
     // 第 5 次走查 R3：return 出 friendshipStatus 让 UI 判定显示哪条文案。
     // 之前 UI 无脑说"已自动加为你的好友"，但 blocked 状态的角色 re-import 后

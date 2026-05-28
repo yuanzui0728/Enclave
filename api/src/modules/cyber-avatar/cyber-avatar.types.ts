@@ -31,7 +31,10 @@ export type CyberAvatarSignalType =
   | 'game_session'
   | 'game_action'
   // P4 信号回填：发现页 feed 互动的周期性偏好摘要（话题/创作者/明确不感兴趣）。
-  | 'feed_preference_digest';
+  | 'feed_preference_digest'
+  // P4 信号回填：用户把 wiki 私有角色导入/更新进自己的世界（领域=兴趣强信号）。
+  | 'wiki_character_created'
+  | 'wiki_character_edited';
 
 export type CyberAvatarRunMode =
   | 'incremental'

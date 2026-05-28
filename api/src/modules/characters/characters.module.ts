@@ -10,6 +10,7 @@ import { CharacterImportRegisterClient } from './character-import-register.clien
 import { AiModule } from '../ai/ai.module';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { AuthModule } from '../auth/auth.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { AdminGuard } from '../admin/admin.guard';
 import { PrivateCharacterRateLimitGuard } from './guards/private-character-rate-limit.guard';
@@ -18,6 +19,7 @@ import { PrivateCharacterRateLimitGuard } from './guards/private-character-rate-
   imports: [
     forwardRef(() => AiModule),
     AuthModule,
+    forwardRef(() => CyberAvatarModule),
     RealWorldSyncModule,
     TypeOrmModule.forFeature([
       CharacterEntity,
