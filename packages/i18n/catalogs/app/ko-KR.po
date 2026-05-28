@@ -29410,3 +29410,165 @@ msgstr "저장을 취소했습니다."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "파일을 열었습니다."
+
+#: apps/app/src/routes/profile-subscription-page.tsx:752
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:212
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:279
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:300
+msgid "发小红书赢会员"
+msgstr "샤오훙수 게시로 멤버십 받기"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:755
+msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
+msgstr "샤오훙수에 인클레이브 체험 글을 올리고 승인되면 멤버십 지급. 여기서 문구 생성 및 인증 제출 →"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:109
+msgid "文案生成失败，请稍后重试。"
+msgstr "문구 생성에 실패했습니다. 잠시 후 다시 시도해 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:121
+msgid "今日配图额度已用完，可直接用文案发布。"
+msgstr "오늘 이미지 생성 한도를 모두 사용했습니다. 문구만으로 게시할 수 있어요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:134
+msgid "配图生成失败，请稍后重试。"
+msgstr "이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:145
+msgid "已提交，请等待运营审核。"
+msgstr "제출되었습니다. 검토를 기다려 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:156
+msgid "提交失败，请稍后重试。"
+msgstr "제출에 실패했습니다. 잠시 후 다시 시도해 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:174
+msgid "已复制文案。"
+msgstr "문구를 복사했습니다."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:181
+msgid "请填写小红书帖子链接。"
+msgstr "샤오훙수 게시물 링크를 입력해 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:185
+msgid "请上传发帖截图。"
+msgstr "게시물 스크린샷을 업로드해 주세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:234
+msgid "此功能需要登录隐界云账号。"
+msgstr "이 기능을 사용하려면 인클레이브 클라우드 계정 로그인이 필요합니다."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:249
+msgid "正在加载…"
+msgstr "불러오는 중…"
+
+#. placeholder {0}: summary.rewardDays
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:308
+msgid "每条审核通过 = {0} 天会员"
+msgstr "승인 1건당 = 멤버십 {0}일"
+
+#. placeholder {0}: summary.remainingQuota
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:311
+msgid "还可提交 {0} 次"
+msgstr "{0}회 더 제출 가능"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:316
+msgid "活动暂未开放。"
+msgstr "이 이벤트는 아직 시작되지 않았습니다."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:327
+msgid "第一步 · 准备文案"
+msgstr "1단계 · 문구 준비"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成中…"
+msgstr "생성 중…"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+msgid "帮我生成文案"
+msgstr "문구 생성하기"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:339
+msgid "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
+msgstr "직접 작성하거나 위 버튼으로 생성할 수 있어요(매번 달라집니다)."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:355
+msgid "点一条放入下方编辑框，可再修改。"
+msgstr "하나를 선택하면 아래 편집창에 들어갑니다. 수정도 가능해요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:364
+msgid "在这里写你的小红书文案，或点「帮我生成文案」。"
+msgstr "여기에 샤오훙수 문구를 작성하거나 '문구 생성하기'를 누르세요."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:374
+msgid "复制文案"
+msgstr "문구 복사"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:383
+msgid "第二步 · 生成配图（可选）"
+msgstr "2단계 · 이미지 생성(선택)"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成配图"
+msgstr "이미지 생성"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:395
+msgid "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
+msgstr "다운로드해 샤오훙수에 올릴 소재이며, 아래의 '게시물 스크린샷'과는 다릅니다."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:401
+msgid "生成的配图"
+msgstr "생성된 이미지"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:411
+msgid "下载配图（或长按保存）"
+msgstr "이미지 다운로드(길게 눌러 저장)"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:420
+msgid "第三步 · 提交发帖凭证"
+msgstr "3단계 · 게시 인증 제출"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:427
+msgid "小红书帖子链接"
+msgstr "샤오훙수 게시물 링크"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:432
+msgid "粘贴你发布的小红书帖子链接"
+msgstr "게시한 글의 링크를 붙여넣기"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:437
+msgid "发帖截图"
+msgstr "게시물 스크린샷"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "重新选择"
+msgstr "다시 선택"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "选择截图"
+msgstr "스크린샷 선택"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:462
+msgid "提交审核"
+msgstr "검토 요청"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:481
+msgid "我的提交记录"
+msgstr "내 제출 내역"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:494
+msgid "审核中"
+msgstr "검토 중"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:495
+msgid "已通过"
+msgstr "승인됨"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:503
+msgid "还没有提交记录。"
+msgstr "아직 제출 내역이 없습니다."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:528
+msgid "提交时间"
+msgstr "제출 시각"

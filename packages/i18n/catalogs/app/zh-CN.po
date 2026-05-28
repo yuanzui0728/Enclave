@@ -29410,3 +29410,165 @@ msgstr "已取消保存。"
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "已打开文件。"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:752
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:212
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:279
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:300
+msgid "发小红书赢会员"
+msgstr "发小红书赢会员"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:755
+msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
+msgstr "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:109
+msgid "文案生成失败，请稍后重试。"
+msgstr "文案生成失败，请稍后重试。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:121
+msgid "今日配图额度已用完，可直接用文案发布。"
+msgstr "今日配图额度已用完，可直接用文案发布。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:134
+msgid "配图生成失败，请稍后重试。"
+msgstr "配图生成失败，请稍后重试。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:145
+msgid "已提交，请等待运营审核。"
+msgstr "已提交，请等待运营审核。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:156
+msgid "提交失败，请稍后重试。"
+msgstr "提交失败，请稍后重试。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:174
+msgid "已复制文案。"
+msgstr "已复制文案。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:181
+msgid "请填写小红书帖子链接。"
+msgstr "请填写小红书帖子链接。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:185
+msgid "请上传发帖截图。"
+msgstr "请上传发帖截图。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:234
+msgid "此功能需要登录隐界云账号。"
+msgstr "此功能需要登录隐界云账号。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:249
+msgid "正在加载…"
+msgstr "正在加载…"
+
+#. placeholder {0}: summary.rewardDays
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:308
+msgid "每条审核通过 = {0} 天会员"
+msgstr "每条审核通过 = {0} 天会员"
+
+#. placeholder {0}: summary.remainingQuota
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:311
+msgid "还可提交 {0} 次"
+msgstr "还可提交 {0} 次"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:316
+msgid "活动暂未开放。"
+msgstr "活动暂未开放。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:327
+msgid "第一步 · 准备文案"
+msgstr "第一步 · 准备文案"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成中…"
+msgstr "生成中…"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+msgid "帮我生成文案"
+msgstr "帮我生成文案"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:339
+msgid "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
+msgstr "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:355
+msgid "点一条放入下方编辑框，可再修改。"
+msgstr "点一条放入下方编辑框，可再修改。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:364
+msgid "在这里写你的小红书文案，或点「帮我生成文案」。"
+msgstr "在这里写你的小红书文案，或点「帮我生成文案」。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:374
+msgid "复制文案"
+msgstr "复制文案"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:383
+msgid "第二步 · 生成配图（可选）"
+msgstr "第二步 · 生成配图（可选）"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成配图"
+msgstr "生成配图"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:395
+msgid "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
+msgstr "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:401
+msgid "生成的配图"
+msgstr "生成的配图"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:411
+msgid "下载配图（或长按保存）"
+msgstr "下载配图（或长按保存）"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:420
+msgid "第三步 · 提交发帖凭证"
+msgstr "第三步 · 提交发帖凭证"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:427
+msgid "小红书帖子链接"
+msgstr "小红书帖子链接"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:432
+msgid "粘贴你发布的小红书帖子链接"
+msgstr "粘贴你发布的小红书帖子链接"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:437
+msgid "发帖截图"
+msgstr "发帖截图"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "重新选择"
+msgstr "重新选择"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "选择截图"
+msgstr "选择截图"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:462
+msgid "提交审核"
+msgstr "提交审核"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:481
+msgid "我的提交记录"
+msgstr "我的提交记录"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:494
+msgid "审核中"
+msgstr "审核中"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:495
+msgid "已通过"
+msgstr "已通过"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:503
+msgid "还没有提交记录。"
+msgstr "还没有提交记录。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:528
+msgid "提交时间"
+msgstr "提交时间"

@@ -29410,3 +29410,165 @@ msgstr "保存をキャンセルしました。"
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "ファイルを開きました。"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:752
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:212
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:279
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:300
+msgid "发小红书赢会员"
+msgstr "小紅書（RED）投稿で会員をゲット"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:755
+msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
+msgstr "小紅書で隠界の体験を投稿し、承認されると会員に。ここで文章を生成して証明を提出 →"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:109
+msgid "文案生成失败，请稍后重试。"
+msgstr "文章の生成に失敗しました。後でもう一度お試しください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:121
+msgid "今日配图额度已用完，可直接用文案发布。"
+msgstr "本日の画像生成枠を使い切りました。文章だけで投稿できます。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:134
+msgid "配图生成失败，请稍后重试。"
+msgstr "画像の生成に失敗しました。後でもう一度お試しください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:145
+msgid "已提交，请等待运营审核。"
+msgstr "送信しました。運営の審査をお待ちください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:156
+msgid "提交失败，请稍后重试。"
+msgstr "送信に失敗しました。後でもう一度お試しください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:174
+msgid "已复制文案。"
+msgstr "文章をコピーしました。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:181
+msgid "请填写小红书帖子链接。"
+msgstr "小紅書の投稿リンクを入力してください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:185
+msgid "请上传发帖截图。"
+msgstr "投稿のスクリーンショットをアップロードしてください。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:234
+msgid "此功能需要登录隐界云账号。"
+msgstr "この機能を使うには隠界クラウドアカウントへのログインが必要です。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:249
+msgid "正在加载…"
+msgstr "読み込み中…"
+
+#. placeholder {0}: summary.rewardDays
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:308
+msgid "每条审核通过 = {0} 天会员"
+msgstr "承認1件につき＝会員{0}日分"
+
+#. placeholder {0}: summary.remainingQuota
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:311
+msgid "还可提交 {0} 次"
+msgstr "あと{0}回提出できます"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:316
+msgid "活动暂未开放。"
+msgstr "このキャンペーンはまだ公開されていません。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:327
+msgid "第一步 · 准备文案"
+msgstr "ステップ1 · 文章を準備"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成中…"
+msgstr "生成中…"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+msgid "帮我生成文案"
+msgstr "文章を生成してもらう"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:339
+msgid "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
+msgstr "自分で書いても、上のボタンで生成してもOK（毎回内容が変わります）。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:355
+msgid "点一条放入下方编辑框，可再修改。"
+msgstr "1つ選ぶと下の編集欄に入ります。編集も可能です。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:364
+msgid "在这里写你的小红书文案，或点「帮我生成文案」。"
+msgstr "ここに小紅書の文章を書くか、「文章を生成してもらう」をタップ。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:374
+msgid "复制文案"
+msgstr "文章をコピー"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:383
+msgid "第二步 · 生成配图（可选）"
+msgstr "ステップ2 · 画像を生成（任意）"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成配图"
+msgstr "画像を生成"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:395
+msgid "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
+msgstr "これはダウンロードして小紅書に投稿する素材で、下の「投稿スクリーンショット」とは別物です。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:401
+msgid "生成的配图"
+msgstr "生成された画像"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:411
+msgid "下载配图（或长按保存）"
+msgstr "画像をダウンロード（長押しで保存）"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:420
+msgid "第三步 · 提交发帖凭证"
+msgstr "ステップ3 · 投稿の証明を提出"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:427
+msgid "小红书帖子链接"
+msgstr "小紅書の投稿リンク"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:432
+msgid "粘贴你发布的小红书帖子链接"
+msgstr "公開した投稿のリンクを貼り付け"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:437
+msgid "发帖截图"
+msgstr "投稿のスクリーンショット"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "重新选择"
+msgstr "選び直す"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "选择截图"
+msgstr "スクリーンショットを選択"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:462
+msgid "提交审核"
+msgstr "審査に提出"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:481
+msgid "我的提交记录"
+msgstr "提出履歴"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:494
+msgid "审核中"
+msgstr "審査中"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:495
+msgid "已通过"
+msgstr "承認済み"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:503
+msgid "还没有提交记录。"
+msgstr "まだ提出履歴がありません。"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:528
+msgid "提交时间"
+msgstr "提出日時"

@@ -29410,3 +29410,165 @@ msgstr "Save cancelled."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "File opened."
+
+#: apps/app/src/routes/profile-subscription-page.tsx:752
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:212
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:279
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:300
+msgid "发小红书赢会员"
+msgstr "Earn membership by posting on Xiaohongshu"
+
+#: apps/app/src/routes/profile-subscription-page.tsx:755
+msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
+msgstr "Post about your Enclave experience on Xiaohongshu—get membership once approved. Tap here to generate copy and submit proof →"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:109
+msgid "文案生成失败，请稍后重试。"
+msgstr "Failed to generate copy. Please try again later."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:121
+msgid "今日配图额度已用完，可直接用文案发布。"
+msgstr "Today's image quota is used up—you can post with just the copy."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:134
+msgid "配图生成失败，请稍后重试。"
+msgstr "Failed to generate image. Please try again later."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:145
+msgid "已提交，请等待运营审核。"
+msgstr "Submitted. Please wait for review."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:156
+msgid "提交失败，请稍后重试。"
+msgstr "Submission failed. Please try again later."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:174
+msgid "已复制文案。"
+msgstr "Text copied."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:181
+msgid "请填写小红书帖子链接。"
+msgstr "Please enter the Xiaohongshu post link."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:185
+msgid "请上传发帖截图。"
+msgstr "Please upload a screenshot of your post."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:234
+msgid "此功能需要登录隐界云账号。"
+msgstr "This feature requires signing in to your Enclave cloud account."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:249
+msgid "正在加载…"
+msgstr "Loading…"
+
+#. placeholder {0}: summary.rewardDays
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:308
+msgid "每条审核通过 = {0} 天会员"
+msgstr "Each approved post = {0} days of membership"
+
+#. placeholder {0}: summary.remainingQuota
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:311
+msgid "还可提交 {0} 次"
+msgstr "{0} submissions left"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:316
+msgid "活动暂未开放。"
+msgstr "This campaign isn't open yet."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:327
+msgid "第一步 · 准备文案"
+msgstr "Step 1 · Prepare your copy"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成中…"
+msgstr "Generating…"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:335
+msgid "帮我生成文案"
+msgstr "Generate copy for me"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:339
+msgid "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
+msgstr "Write your own, or tap the button above to have us generate it (different every time)."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:355
+msgid "点一条放入下方编辑框，可再修改。"
+msgstr "Tap one to drop it into the editor below, then tweak it."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:364
+msgid "在这里写你的小红书文案，或点「帮我生成文案」。"
+msgstr "Write your Xiaohongshu copy here, or tap \"Generate copy for me\"."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:374
+msgid "复制文案"
+msgstr "Copy text"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:383
+msgid "第二步 · 生成配图（可选）"
+msgstr "Step 2 · Generate an image (optional)"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:391
+msgid "生成配图"
+msgstr "Generate image"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:395
+msgid "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
+msgstr "This is material for you to download and post on Xiaohongshu—not the same as the \"post screenshot\" below."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:401
+msgid "生成的配图"
+msgstr "Generated image"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:411
+msgid "下载配图（或长按保存）"
+msgstr "Download image (or long-press to save)"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:420
+msgid "第三步 · 提交发帖凭证"
+msgstr "Step 3 · Submit your proof"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:427
+msgid "小红书帖子链接"
+msgstr "Xiaohongshu post link"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:432
+msgid "粘贴你发布的小红书帖子链接"
+msgstr "Paste the link to the post you published"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:437
+msgid "发帖截图"
+msgstr "Post screenshot"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "重新选择"
+msgstr "Choose again"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:445
+msgid "选择截图"
+msgstr "Choose screenshot"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:462
+msgid "提交审核"
+msgstr "Submit for review"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:481
+msgid "我的提交记录"
+msgstr "My submissions"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:494
+msgid "审核中"
+msgstr "Under review"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:495
+msgid "已通过"
+msgstr "Approved"
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:503
+msgid "还没有提交记录。"
+msgstr "No submissions yet."
+
+#: apps/app/src/routes/profile-xhs-reward-page.tsx:528
+msgid "提交时间"
+msgstr "Submitted at"
