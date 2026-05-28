@@ -13,6 +13,7 @@ import type { CharacterVideoView } from '../character-video.types';
 import { CharacterVideoEntity } from '../entities/character-video.entity';
 import { WikiPrivateCharacterService } from './wiki-private-character.service';
 import { WikiCharacterVideoPublishSyncService } from './wiki-character-video-publish-sync.service';
+import { VideoChannelPromptClient } from '../../config/video-channel-prompt.client';
 import { MinimaxJobService } from '../../minimax/minimax-job.service';
 import { MinimaxQuotaService } from '../../minimax/minimax-quota.service';
 import type { MinimaxJobEntity } from '../../minimax/minimax-job.entity';
@@ -33,6 +34,7 @@ export class WikiCharacterVideoService implements OnModuleInit {
     private readonly minimaxJobs: MinimaxJobService,
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly publishSync: WikiCharacterVideoPublishSyncService,
+    private readonly videoPrompt: VideoChannelPromptClient,
   ) {}
 
   /** 启动即清：上个进程被重启而孤立的 generating 任务标 failed，前端轮询拿终态。 */
@@ -99,7 +101,7 @@ export class WikiCharacterVideoService implements OnModuleInit {
       throw new ServiceUnavailableException('今日视频生成额度已用完，请明天再试。');
     }
 
-    const refinedPrompt = composeCharacterVideoPrompt(
+    const refinedPrompt = await this.videoPrompt.composeVideoChannelPrompt(
       character.name,
       character.relationship,
       trimmed.slice(0, PROMPT_MAX),
@@ -275,25 +277,5 @@ export class WikiCharacterVideoService implements OnModuleInit {
       updatedAt: row.updatedAt.toISOString(),
     };
   }
-}
-
-/** 视频号短片提示词（与 feed.composeChannelVideoPrompt 同款风格，9:16/6s）。 */
-function composeCharacterVideoPrompt(
-  characterName: string,
-  relationship: string | null | undefined,
-  text: string,
-): string {
-  const personaSnippet = relationship?.trim()
-    ? `角色定位：${relationship.slice(0, 120)}。`
-    : '';
-  const trimmedText = text.replace(/\s+/g, ' ').trim().slice(0, 300);
-  return [
-    `${characterName} 的视频号短片，9:16 竖屏，6 秒。`,
-    personaSnippet,
-    `画面主题：${trimmedText || '城市夜景慢镜头，空气中带着 AI 隐界的氛围'}。`,
-    '风格：电影感、低饱和、柔和光线、轻微镜头运动。',
-  ]
-    .filter(Boolean)
-    .join(' ');
 }
 // i18n-ignore-end

@@ -54,6 +54,7 @@ import {
   npcRelationCoolingFactor,
 } from '../social/npc-engagement.utils';
 import { WorldLanguageService } from '../config/world-language.service';
+import { VideoChannelPromptClient } from '../config/video-channel-prompt.client';
 import { MinimaxJobService } from '../minimax/minimax-job.service';
 import { MinimaxQuotaService } from '../minimax/minimax-quota.service';
 import { MinimaxClient } from '../minimax/minimax.client';
@@ -218,6 +219,7 @@ export class FeedService implements OnModuleInit {
     private readonly characterFriendships: CharacterFriendshipService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly worldLanguage: WorldLanguageService,
+    private readonly videoPrompt: VideoChannelPromptClient,
     private readonly minimaxJobs: MinimaxJobService,
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly minimaxClient: MinimaxClient,
@@ -2048,7 +2050,7 @@ export class FeedService implements OnModuleInit {
       }
     }
 
-    const videoPrompt = composeChannelVideoPrompt(
+    const videoPrompt = await this.videoPrompt.composeVideoChannelPrompt(
       selectedCharacter.name,
       profile?.relationship,
       text,
@@ -5049,25 +5051,6 @@ export class FeedService implements OnModuleInit {
       .execute();
   }
 
-}
-
-function composeChannelVideoPrompt(
-  characterName: string,
-  relationship: string | undefined,
-  text: string,
-): string {
-  const personaSnippet = relationship?.trim()
-    ? `角色定位：${relationship.slice(0, 120)}。`
-    : '';
-  const trimmedText = text.replace(/\s+/g, ' ').trim().slice(0, 300);
-  return [
-    `${characterName} 的视频号短片，9:16 竖屏，6 秒。`,
-    personaSnippet,
-    `画面主题：${trimmedText || '城市夜景慢镜头，空气中带着 AI 隐界的氛围'}。`,
-    '风格：电影感、低饱和、柔和光线、轻微镜头运动。',
-  ]
-    .filter(Boolean)
-    .join(' ');
 }
 
 function composeChannelTitle(characterName: string, text: string): string {

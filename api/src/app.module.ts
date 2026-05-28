@@ -34,6 +34,7 @@ import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runti
 import { MinimaxModule } from './modules/minimax/minimax.module';
 import { XhsPromoModule } from './modules/xhs-promo/xhs-promo.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { VideoChannelPromptModule } from './modules/config/video-channel-prompt.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
 // WikiModule 已剥离到 wiki-app.module.ts（main-wiki.ts 独立进程）。普通 world child 不再
 // 加载 wiki 代码 / 不跑 wiki cron / 不在 sqlite 里建 wiki_* 表。2026-05-20 wiki 拆库改造。
@@ -287,6 +288,7 @@ import {
     XhsPromoModule,
     InferenceModule,
     SubscriptionModule,
+    VideoChannelPromptModule,
     CloudRuntimeModule,
     SystemModule,
     PushModule,

@@ -54,6 +54,7 @@ import { InferenceModule } from './modules/inference/inference.module';
 import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runtime.module';
 import { MinimaxModule } from './modules/minimax/minimax.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { VideoChannelPromptModule } from './modules/config/video-channel-prompt.module';
 import { SubscriptionExpiredFilter } from './modules/subscription/subscription-expired.filter';
 import { WikiModule } from './modules/wiki/wiki.module';
 import { PushModule } from './modules/push/push.module';
@@ -340,6 +341,7 @@ function resolveWikiDatabasePath(config: ConfigService): string {
     MinimaxModule,
     InferenceModule,
     SubscriptionModule,
+    VideoChannelPromptModule,
     CloudRuntimeModule,
     SystemModule,
     WikiModule,
