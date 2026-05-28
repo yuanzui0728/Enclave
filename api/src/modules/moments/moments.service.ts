@@ -4,13 +4,17 @@ import path from 'path';
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
+import { DataSource, In, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiMessageText } from '../ai/ai-text-sanitizer';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
 import { WebSearchService } from '../ai/web-search.service';
-import type { AiMessagePart, PersonalityProfile } from '../ai/ai.types';
+import type {
+  AiMessagePart,
+  MomentQualityPipelineOptions,
+  PersonalityProfile,
+} from '../ai/ai.types';
 import { pickThemeAndStyle } from './music-theme-catalog';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
@@ -876,52 +880,28 @@ export class MomentsService implements OnModuleInit {
         if (injection) momentExtraSystemSections.push(injection.markdown);
       }
 
-      // 全局共享池（广场）：每条都被全网用户看到同一份 → 注入选题轮换 + 多样性避让，
-      // 并开启 best-of-N + 打分 + 评委质量管线。私有角色（用户自建）行为不变。
+      // 全局共享池（广场）：每条都被全网用户看到同一份 → buildGlobalPoolPromptAddons
+      // 注入选题轮换 + 多样性避让，并开启 best-of-N + 打分 + 评委质量管线。
+      // 私有角色（用户自建）→ 返回空 addons，行为不变。reminder 不走 AI 生成，跳过。
+      const addons = reminderMoment
+        ? { extraSystemPromptSections: [], qualityPipeline: undefined }
+        : await this.buildGlobalPoolPromptAddons(characterId, currentTime);
+      momentExtraSystemSections.push(...addons.extraSystemPromptSections);
       const owner = await this.worldOwnerService.getOwnerOrThrow();
-      const isGlobalPool = !reminderMoment && isGlobalWorldOwner(owner.id);
-      let qualityPipeline:
-        | NonNullable<Parameters<typeof this.ai.generateMoment>[0]['qualityPipeline']>
-        | undefined;
-      if (isGlobalPool) {
-        const signals = await this.collectGlobalMomentDiversitySignals(
-          characterId,
-          currentTime,
-        );
-        const angle = planMomentAngle({
-          characterId,
-          now: currentTime,
-          recentOwnTopics: signals.ownOpenings,
-          globalRecentTopics: signals.globalOpenings,
-        });
-        const diversitySection = buildDiversityPromptSection({
-          ownOpenings: signals.ownOpenings,
-          ownTopics: signals.ownOpenings,
-          globalOpenings: signals.globalOpenings,
-        });
-        if (angle.promptSection)
-          momentExtraSystemSections.push(angle.promptSection);
-        if (diversitySection) momentExtraSystemSections.push(diversitySection);
-        qualityPipeline = {
-          candidateCount: 3,
-          minAcceptScore: 0.5,
-          judge: true,
-          recentTexts: signals.recentTexts,
-        };
-      }
       const text =
         reminderMoment?.text ??
         (await this.ai.generateMoment({
           profile,
           currentTime,
           extraSystemPromptSections: momentExtraSystemSections,
-          qualityPipeline,
+          qualityPipeline: addons.qualityPipeline,
           usageContext: {
             surface: 'app',
             scene: 'moment_post_generate',
             scopeType: 'character',
             scopeId: char.id,
             scopeLabel: char.name,
+            ownerId: owner.id,
             characterId: char.id,
             characterName: char.name,
           },
@@ -3043,8 +3023,10 @@ export class MomentsService implements OnModuleInit {
     return text.length > 80 ? `${text.slice(0, 80)}…` : text;
   }
 
-  // 全局共享池多样性信号：本角色近 14 天（自我重复）+ 全局池所有角色近 7 天（跨角色撞题/
+  // 全局共享池多样性信号：本角色近 14 天（自我重复）+ 其它全局角色近 7 天（跨角色撞题/
   // 撞开头）。跑在全局帧里，TenantRepository 自动把 ownerId 限到 GLOBAL_WORLD_OWNER_ID。
+  // 全局查询用 Not(charId) 直接 DB 端排除自己，避免本角色高频发帖把 take:24 名额吃光、
+  // 真实跨角色信号被挤掉。
   private async collectGlobalMomentDiversitySignals(
     charId: string,
     now: Date,
@@ -3056,14 +3038,18 @@ export class MomentsService implements OnModuleInit {
     const repo = new TenantRepository(this.postRepo);
     const ownSince = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
     const globalSince = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const [own, global] = await Promise.all([
+    const [own, otherGlobal] = await Promise.all([
       repo.find({
         where: { authorId: charId, postedAt: MoreThanOrEqual(ownSince) },
         order: { postedAt: 'DESC' },
         take: 12,
       }),
       repo.find({
-        where: { authorType: 'character', postedAt: MoreThanOrEqual(globalSince) },
+        where: {
+          authorType: 'character',
+          authorId: Not(charId),
+          postedAt: MoreThanOrEqual(globalSince),
+        },
         order: { postedAt: 'DESC' },
         take: 24,
       }),
@@ -3071,16 +3057,62 @@ export class MomentsService implements OnModuleInit {
     const cleanText = (value?: string | null) =>
       (value ?? '').replace(/\s+/g, ' ').trim();
     const ownTexts = own.map((p) => cleanText(p.text)).filter(Boolean);
-    const globalTexts = global.map((p) => cleanText(p.text)).filter(Boolean);
+    const otherTexts = otherGlobal.map((p) => cleanText(p.text)).filter(Boolean);
     const ownOpenings = ownTexts.map(extractOpening).filter(Boolean);
-    const globalOpenings = global
-      .filter((p) => p.authorId !== charId)
-      .map((p) => extractOpening(cleanText(p.text)))
-      .filter(Boolean);
+    const globalOpenings = otherTexts.map(extractOpening).filter(Boolean);
     const recentTexts = Array.from(
-      new Set([...ownTexts, ...globalTexts]),
+      new Set([...ownTexts, ...otherTexts]),
     ).slice(0, 24);
     return { ownOpenings, globalOpenings, recentTexts };
+  }
+
+  // 全局共享池高质量管线的「调用方一行接入」。两处调用方共用：
+  //   - MomentsService.generateMomentForCharacter（手动/批量触发）
+  //   - SchedulerService.generateMomentForChar（生产 cron 触发，原本绕过 MomentsService）
+  // 私有角色（非全局帧）返回空 addons，行为零变化。reminder/特殊文案（如新闻简报）
+  // 不应进入 AI 生成，应由调用方在调用本方法前自行短路。
+  async buildGlobalPoolPromptAddons(
+    characterId: string,
+    now: Date,
+  ): Promise<{
+    extraSystemPromptSections: string[];
+    qualityPipeline?: MomentQualityPipelineOptions;
+  }> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    if (!isGlobalWorldOwner(owner.id)) {
+      return { extraSystemPromptSections: [] };
+    }
+    const signals = await this.collectGlobalMomentDiversitySignals(
+      characterId,
+      now,
+    );
+    const angle = planMomentAngle({
+      characterId,
+      now,
+      recentOwnTopics: signals.ownOpenings,
+      globalRecentTopics: signals.globalOpenings,
+    });
+    const diversitySection = buildDiversityPromptSection({
+      ownOpenings: signals.ownOpenings,
+      // 选题/话题在 editorial planner 已落「避开这些选题」，这里不再重复 ownTopics
+      // 那段，避免 prompt 内同一信号双出。
+      ownTopics: [],
+      globalOpenings: signals.globalOpenings,
+    });
+    const extraSystemPromptSections: string[] = [];
+    if (angle.promptSection) extraSystemPromptSections.push(angle.promptSection);
+    if (diversitySection) extraSystemPromptSections.push(diversitySection);
+    return {
+      extraSystemPromptSections,
+      qualityPipeline: {
+        candidateCount: 3,
+        // 0.6 = 拒掉「过了 validator 硬门但仍带 generic/template 措辞」那一档；
+        // 干净具体候选 ~0.85+，模板腔 ~0.5-0.65 → 0.6 是分水岭。
+        minAcceptScore: 0.6,
+        judge: true,
+        recentTexts: signals.recentTexts,
+      },
+    };
   }
 
   async scheduleMinimaxVideoMoment(

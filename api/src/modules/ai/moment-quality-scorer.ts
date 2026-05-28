@@ -35,12 +35,13 @@ export interface QualityScore {
   hardRejected: boolean;
 }
 
-// total 权重（和为 1）。
+// total 权重（和为 1）。noTemplate 给到 0.25 来真正惩罚「过了 validator 但仍带模板腔」
+// 的候选——validator 已剔除最差，这里继续把 generic 措辞从「能过」拉到「拉不开分」。
 const WEIGHTS: QualityScoreComponents = {
-  specificity: 0.3,
-  novelty: 0.25,
+  specificity: 0.25,
+  novelty: 0.2,
   naturalness: 0.2,
-  noTemplate: 0.15,
+  noTemplate: 0.25,
   voiceFit: 0.1,
 };
 

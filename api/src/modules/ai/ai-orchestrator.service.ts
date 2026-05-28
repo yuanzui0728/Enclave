@@ -45,6 +45,7 @@ import {
   buildMomentJudgePrompt,
   parseMomentJudgeResponse,
 } from './moment-judge';
+import { TenantContextStore } from '../tenancy/tenant-context';
 import { MomentGenerationContextService } from './moment-generation-context.service';
 import { buildNativeAudioModelCandidates } from './native-audio-routing';
 import { WorldService } from '../world/world.service';
@@ -2899,26 +2900,32 @@ export class AiOrchestratorService {
     candidateCount: number;
   }): Promise<Array<{ text: string; valid: boolean }>> {
     const temps = [0.95, 0.85, 0.75];
-    const results: Array<{ text: string; valid: boolean }> = [];
-    // 错误直接 propagate（与现有单发路径一致）：MomentsService 会处理 SubscriptionExpired。
-    for (let i = 0; i < input.candidateCount; i += 1) {
-      const userPrompt = input.userPrompts[i % input.userPrompts.length];
-      const temperature = temps[i % temps.length];
-      const response = await this.requestChatTaskWithFallback({
-        usageContext: input.resolvedUsageContext,
-        characterId: input.profile.characterId,
-        label: 'moment generation (candidate)',
-        request: (client, activeProvider) =>
-          executeChatCompletion(client, {
-            model: activeProvider.model,
-            messages: [
-              { role: 'system', content: input.promptSystem },
-              { role: 'user', content: userPrompt },
-            ],
-            max_tokens: 180,
-            temperature,
-          }),
-      });
+    // 并行发 N 个候选请求 —— 全局池 N=3 时单条朋友圈延迟从 ~3× 降到 ~1×。
+    // 错误直接 propagate（Promise.all 行为=任一失败即 reject，与现有单发路径
+    // 一致）：MomentsService 的 try/catch 会处理 SubscriptionExpired。
+    const indices = Array.from({ length: input.candidateCount }, (_, i) => i);
+    const responses = await Promise.all(
+      indices.map((i) => {
+        const userPrompt = input.userPrompts[i % input.userPrompts.length];
+        const temperature = temps[i % temps.length];
+        return this.requestChatTaskWithFallback({
+          usageContext: input.resolvedUsageContext,
+          characterId: input.profile.characterId,
+          label: 'moment generation (candidate)',
+          request: (client, activeProvider) =>
+            executeChatCompletion(client, {
+              model: activeProvider.model,
+              messages: [
+                { role: 'system', content: input.promptSystem },
+                { role: 'user', content: userPrompt },
+              ],
+              max_tokens: 180,
+              temperature,
+            }),
+        });
+      }),
+    );
+    return responses.map((response) => {
       const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
       const validation = validateGeneratedSceneOutput({
         text,
@@ -2926,9 +2933,8 @@ export class AiOrchestratorService {
         profile: input.profile,
         sceneKey: input.sceneKey,
       });
-      results.push({ text: validation.normalizedText, valid: validation.valid });
-    }
-    return results;
+      return { text: validation.normalizedText, valid: validation.valid };
+    });
   }
 
   private async scoreCandidatesWithJudge(input: {
@@ -2995,6 +3001,12 @@ export class AiOrchestratorService {
       source: score?.source ?? null,
       reasons: input.reasons.slice(0, 8),
     };
+    // ownerId 优先：usageContext 显式传的 → TenantContext 帧 → null。
+    // 全局帧下 TenantContext.ownerId = GLOBAL_WORLD_OWNER_ID，遥测查询能按 owner 切片。
+    const ownerId =
+      input.resolvedUsageContext.ownerId ??
+      TenantContextStore.get()?.ownerId ??
+      null;
     await this.safeRecordUsage({
       status: input.accepted ? 'success' : 'failed',
       surface: input.resolvedUsageContext.surface ?? 'app',
@@ -3002,7 +3014,7 @@ export class AiOrchestratorService {
       scopeType: 'character',
       scopeId: input.profile.characterId,
       scopeLabel: input.profile.name,
-      ownerId: input.resolvedUsageContext.ownerId,
+      ownerId,
       characterId: input.profile.characterId,
       characterName: input.profile.name,
       errorCode: input.accepted ? null : 'QUALITY_REJECTED',
