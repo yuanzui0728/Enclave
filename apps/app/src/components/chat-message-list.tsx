@@ -3827,7 +3827,7 @@ export function ChatMessageList({
                     isDesktop
                       ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-[11px]"
                       : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
-                  } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
+                  } ${isHighlighted ? "ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
                   {isRecalled
@@ -3897,7 +3897,7 @@ export function ChatMessageList({
                     }`
               } ${
                 isHighlighted
-                  ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
+                  ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_22%,transparent)]"
                   : isSelected
                     ? "bg-[color:var(--brand-primary)]/6 shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
                     : ""
@@ -5140,7 +5140,7 @@ function SharedHistorySummaryNotice({
           ? "rounded-[16px] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
           : "rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
-          ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
+          ? "ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] ring-offset-2 ring-offset-transparent"
           : "",
       )}
     >
@@ -5916,8 +5916,8 @@ function renderTextWithMentions(text: string): ReactNode {
         key={`mention-${index}-${segment.text}`}
         className={
           segment.tone === "all"
-            ? "rounded-[8px] bg-[rgba(249,115,22,0.14)] px-1 py-0.5 text-[#c2410c]"
-            : "rounded-[8px] bg-[rgba(59,130,246,0.12)] px-1 py-0.5 text-[#2563eb]"
+            ? "rounded-[8px] bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] px-1 py-0.5 text-[color:var(--brand-primary)]"
+            : "rounded-[8px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-1 py-0.5 text-[color:var(--brand-primary)]"
         }
       >
         {segment.text}
