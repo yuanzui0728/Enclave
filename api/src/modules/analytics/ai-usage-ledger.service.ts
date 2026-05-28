@@ -2511,6 +2511,20 @@ export class AiUsageLedgerService {
       cyber_avatar_full_rebuild: '赛博分身全量重建',
       cyber_avatar_real_world_brief: '赛博分身现实摘要',
       action_runtime_plan: '动作执行规划',
+      game_ai_turn: '游戏 AI 回合生成',
+      encounter_transcript: '分身相遇对话生成',
+      minimax_moment_video: '朋友圈视频生成',
+      channel_forward_quip: '视频号转发短评生成',
+      friend_request_accept_delay: '好友申请延迟通过文案',
+      reminder_runtime_parse_fallback: '提醒解析兜底',
+      cyber_avatar_self_chat: '赛博分身自我对话',
+      cyber_avatar_self_analysis: '赛博分身自我分析',
+      wiki_private_character_generate_basics: '私有角色生成·基础资料',
+      wiki_private_character_generate_core_logic: '私有角色生成·核心逻辑',
+      wiki_private_character_generate_chat: '私有角色生成·对话风格',
+      wiki_private_character_generate_scenes: '私有角色生成·场景设定',
+      wiki_private_character_generate_memory: '私有角色生成·记忆设定',
+      wiki_private_character_generate_all: '私有角色生成·全量生成',
     };
 
     return sceneMap[scene] ?? scene;

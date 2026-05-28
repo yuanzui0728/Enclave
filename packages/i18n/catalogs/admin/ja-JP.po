@@ -17777,3 +17777,59 @@ msgstr "サイバー分身現実概要"
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3629
 msgid "动作执行规划"
 msgstr "アクション実行プランニング"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3630
+msgid "游戏 AI 回合生成"
+msgstr "ゲームAIターン生成"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3631
+msgid "分身相遇对话生成"
+msgstr "分身遭遇対話生成"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3632
+msgid "朋友圈视频生成"
+msgstr "モーメンツ動画生成"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3633
+msgid "视频号转发短评生成"
+msgstr "チャンネル転送コメント生成"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3635
+msgid "好友申请延迟通过文案"
+msgstr "友達申請遅延承認メッセージ"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3638
+msgid "提醒解析兜底"
+msgstr "リマインダー解析フォールバック"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3640
+msgid "赛博分身自我对话"
+msgstr "サイバー分身セルフ対話"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3641
+msgid "赛博分身自我分析"
+msgstr "サイバー分身自己分析"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3643
+msgid "私有角色生成·基础资料"
+msgstr "プライベートキャラ生成・基本情報"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3646
+msgid "私有角色生成·核心逻辑"
+msgstr "プライベートキャラ生成・コアロジック"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3649
+msgid "私有角色生成·对话风格"
+msgstr "プライベートキャラ生成・会話スタイル"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3652
+msgid "私有角色生成·场景设定"
+msgstr "プライベートキャラ生成・シーン設定"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3655
+msgid "私有角色生成·记忆设定"
+msgstr "プライベートキャラ生成・記憶設定"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3658
+msgid "私有角色生成·全量生成"
+msgstr "プライベートキャラ生成・全量生成"

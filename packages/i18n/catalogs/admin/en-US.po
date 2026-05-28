@@ -17777,3 +17777,59 @@ msgstr "Cyber Avatar Reality Summary"
 #: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3629
 msgid "动作执行规划"
 msgstr "Action Execution Planning"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3630
+msgid "游戏 AI 回合生成"
+msgstr "Game AI Turn Generation"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3631
+msgid "分身相遇对话生成"
+msgstr "Avatar Encounter Dialogue"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3632
+msgid "朋友圈视频生成"
+msgstr "Moments Video Generation"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3633
+msgid "视频号转发短评生成"
+msgstr "Channel Repost Quip Generation"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3635
+msgid "好友申请延迟通过文案"
+msgstr "Friend Request Delayed-Accept Copy"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3638
+msgid "提醒解析兜底"
+msgstr "Reminder Parse Fallback"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3640
+msgid "赛博分身自我对话"
+msgstr "Cyber Avatar Self-Chat"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3641
+msgid "赛博分身自我分析"
+msgstr "Cyber Avatar Self-Analysis"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3643
+msgid "私有角色生成·基础资料"
+msgstr "Private Character Gen · Basics"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3646
+msgid "私有角色生成·核心逻辑"
+msgstr "Private Character Gen · Core Logic"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3649
+msgid "私有角色生成·对话风格"
+msgstr "Private Character Gen · Chat Style"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3652
+msgid "私有角色生成·场景设定"
+msgstr "Private Character Gen · Scenes"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3655
+msgid "私有角色生成·记忆设定"
+msgstr "Private Character Gen · Memory"
+
+#: apps/cloud-console/src/world-admin/routes/token-usage-page.tsx:3658
+msgid "私有角色生成·全量生成"
+msgstr "Private Character Gen · Full Rebuild"
