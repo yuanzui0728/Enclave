@@ -85,7 +85,16 @@ export class MessageRemindersService {
   async createMessageReminder(
     input: CreateMessageReminderInput,
   ): Promise<MessageReminderRecord> {
-    if (!input.threadId.trim() || !input.messageId.trim()) {
+    // 走查：原版 input.threadId.trim() 在 input 缺字段/非字符串时抛 TypeError → 500
+    // INTERNAL_ERROR 泄漏 JS 栈，反而绕过了下面这条本应返回 400 的业务守卫。客户端漏传/
+    // 字段名写错（如误用 conversationId）都应得到干净的 CHAT_REMINDER_PARAMS_REQUIRED。
+    // 与 favorites.service.createMessageFavoriteInput 的守卫写法对齐（typeof string）。
+    if (
+      typeof input?.threadId !== 'string' ||
+      !input.threadId.trim() ||
+      typeof input?.messageId !== 'string' ||
+      !input.messageId.trim()
+    ) {
       throw new AppError('CHAT_REMINDER_PARAMS_REQUIRED', {
         legacyMessage: '提醒消息缺少必要参数。',
       });
