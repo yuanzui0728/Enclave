@@ -30,6 +30,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { MonoIconTile } from "../../components/mono-icon-tile";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 import { buildChatComposeTextSearch } from "../chat/chat-compose-shortcut-route";
+import { CyberAvatarFigure } from "../cyber-avatar/cyber-avatar-figure";
 import { buildDesktopChannelsRouteHash } from "../channels/channels-route-state";
 import { buildMobileDiscoverToolRouteHash } from "../discover/mobile-discover-tool-route-state";
 import { buildFeedRouteHash } from "../feed/feed-route-state";
@@ -203,6 +204,8 @@ function MobileWorldPage() {
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const ownerCreatedAt = useWorldOwnerStore((state) => state.createdAt);
+  // 分身剪影按资料性别取男/女像（未填=女像），与 /cyber-avatar 详情页同源。
+  const ownerGender = useWorldOwnerStore((state) => state.gender);
 
   const worldDay = useMemo(() => computeWorldDay(ownerCreatedAt), [ownerCreatedAt]);
 
@@ -244,7 +247,11 @@ function MobileWorldPage() {
 
       <div className="space-y-6 px-4 pb-24">
         {/* 赛博分身状态大区（世界页主角） */}
-        <CyberAvatarStatusHero profile={avatarProfile} pathname={pathname} />
+        <CyberAvatarStatusHero
+          profile={avatarProfile}
+          pathname={pathname}
+          gender={ownerGender}
+        />
 
         {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹） */}
         <section className="space-y-4">
@@ -348,9 +355,11 @@ function computeWorldDay(createdAt: string | null): number {
 function CyberAvatarStatusHero({
   profile,
   pathname,
+  gender,
 }: {
   profile: CyberAvatarSelfProfile | undefined;
   pathname: string;
+  gender?: "male" | "female" | "other" | "";
 }) {
   const t = useRuntimeTranslator();
 
@@ -396,8 +405,10 @@ function CyberAvatarStatusHero({
     <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
       {/* 头部：分身标识 + 标题 + 就绪度徽标 */}
       <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
-          <Fingerprint size={24} strokeWidth={1.6} />
+        {/* 分身剪影：露出 /cyber-avatar 同源的紫调人形像（未填性别=女像），
+            放在 3:4 竖版柔光框里，替代原来的指纹图标。 */}
+        <span className="relative flex h-16 w-12 shrink-0 items-end justify-center overflow-hidden rounded-[var(--radius-md)] bg-[radial-gradient(120%_90%_at_50%_18%,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-primary)_5%,transparent)_60%,transparent)]">
+          <CyberAvatarFigure gender={gender} className="h-[60px] w-auto" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
