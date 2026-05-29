@@ -1030,8 +1030,10 @@ export class AiOrchestratorService {
           rotatedKey: Boolean(altKey),
           errorMessage: this.extractErrorMessage(error),
         });
+        // 指数退避 + 随机抖动：抖动避免一拨被 429 的请求在同一刻齐步重试再次打爆
+        // (thundering herd)。600/1200ms 基线 + 0~400ms 随机。
         await new Promise((resolve) => {
-          setTimeout(resolve, 600 * attempt + Math.floor(200 * attempt));
+          setTimeout(resolve, 600 * attempt + Math.floor(Math.random() * 400));
         });
       }
     }
@@ -1051,6 +1053,14 @@ export class AiOrchestratorService {
 
   // 捕获到 403 配额/余额耗尽时标熔断冷却。
   private markProviderQuotaExhausted(provider: ResolvedProviderConfig) {
+    // 绝不熔断 MiniMax token-plan 主通道：它是唯一真实容量。熔断 key 是 mode:endpoint
+    // 级（buildProviderKey），而 MiniMax 两把 key 共享同一 endpoint——按 endpoint 熔断
+    // 会因某把 key / 某租户撞 2056(当日额度，会重置) 误锁另一把还有额度的 key + 全体租户。
+    // MiniMax 的 429/2056 已由 invokeChatWithTransientRetry 退避重试 + 换 key 处理，
+    // 撞 2056 当次失败但下一请求照常重试，不锁出。熔断只针对死掉的共享账户 fallback（n1n）。
+    if (provider.accountId === MINIMAX_PROVIDER_ID) {
+      return;
+    }
     const key = this.buildProviderKey(provider);
     this.quotaExhaustedUntil.set(key, Date.now() + QUOTA_EXHAUSTED_COOLDOWN_MS);
     this.logger.warn('provider quota exhausted — circuit open', {

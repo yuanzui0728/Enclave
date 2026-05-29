@@ -2144,7 +2144,9 @@ export class AiUsageLedgerService {
   }
 
   private normalizeStatus(value?: string | null): LedgerStatus | undefined {
-    return value === 'failed' || value === 'success' ? value : undefined;
+    return value === 'failed' || value === 'success' || value === 'retried'
+      ? value
+      : undefined;
   }
 
   private normalizeBillingSource(
