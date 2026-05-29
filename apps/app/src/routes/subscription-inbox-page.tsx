@@ -332,7 +332,7 @@ function MobileSubscriptionInboxPage() {
                   </div>
                 </div>
                 {group.unreadCount > 0 ? (
-                  <span className="rounded-full bg-[color:var(--state-danger-solid)] px-1.5 py-0.5 text-[10px] leading-none text-[color:var(--text-on-brand)]">
+                  <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] leading-none text-[color:var(--text-on-brand)]">
                     {group.unreadCount}
                   </span>
                 ) : null}

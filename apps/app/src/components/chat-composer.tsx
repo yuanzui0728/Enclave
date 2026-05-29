@@ -6042,7 +6042,7 @@ function DesktopScreenshotEditor({
                 onClick={onSendOriginal}
                 disabled={pending}
                 title={t(msg`按原图发送 (Cmd/Ctrl+Enter)`)}
-                className="rounded-[8px] bg-[color:var(--state-success-solid)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-success-solid)]"
+                className="rounded-[8px] bg-[color:var(--state-success-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-success-bg)]"
               >
                 {pending ? t(msg`发送中...`) : t(msg`按原图发送`)}
                 {pending ? null : (

@@ -57,7 +57,7 @@ export function DigitalHumanStage({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[#34d399]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--state-success-text)]">
               <Video size={13} />
               {t(msg`视频通话`)}
             </div>
@@ -79,7 +79,7 @@ export function DigitalHumanStage({
             <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/38">
               {t(msg`状态`)}
             </div>
-            <div className="mt-1 text-sm font-medium text-[#34d399]">
+            <div className="mt-1 text-sm font-medium text-[color:var(--state-success-text)]">
               {statusLabel}
             </div>
           </div>

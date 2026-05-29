@@ -203,9 +203,9 @@ export function DesktopChatConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[520px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[520px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
             <div
               id={titleId}
@@ -231,7 +231,7 @@ export function DesktopChatConfirmDialog({
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <Button
             ref={cancelButtonRef}
             type="button"
@@ -255,7 +255,7 @@ export function DesktopChatConfirmDialog({
             disabled={pending}
             className={
               danger
-                ? "rounded-[10px] bg-[color:var(--state-danger-solid)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-solid)]"
+                ? "rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
                 : "rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] hover:opacity-95"
             }
           >

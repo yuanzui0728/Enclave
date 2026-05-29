@@ -32,7 +32,7 @@ export function WeChatCallControlButton({
           "flex items-center justify-center rounded-full transition active:scale-95 disabled:opacity-40",
           size === "lg" ? "h-[68px] w-[68px]" : "h-[58px] w-[58px]",
           variant === "danger"
-            ? "bg-[color:var(--state-danger-solid)] text-[color:var(--text-on-brand)] active:bg-[color:var(--state-danger-solid)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:bg-[color:var(--state-danger-bg)]"
             : variant === "active"
               ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
               : "bg-[color:var(--surface-card)]/15 text-[color:var(--text-on-brand)] active:bg-[color:var(--surface-card)]/25",

@@ -782,7 +782,7 @@ export function DesktopChannelsWorkspace({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[color:var(--surface-section)]">
-      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] backdrop-blur-xl">
+      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
           {/*
             走查 2026-05-18 新会话（本会话）R3：原 section tabs（推荐 / 朋友 / 关注
@@ -936,7 +936,7 @@ export function DesktopChannelsWorkspace({
         modal，用户在 picker 内时本来就不需要看 notice，让它盖掉无妨）。
       */}
       {successNotice || errorMessage ? (
-        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-2 backdrop-blur-xl">
+        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/92 px-6 py-2 backdrop-blur-xl">
           {successNotice ? (
             <div className="pointer-events-auto">
               <InlineNotice
@@ -1339,8 +1339,8 @@ function ForwardNotice({
       className={cn(
         "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-lg",
         isDanger
-          ? "bg-[color:var(--state-danger-solid)]"
-          : "bg-[color:var(--state-info-solid)]",
+          ? "bg-[color:var(--state-danger-bg)]"
+          : "bg-[color:var(--state-info-bg)]",
       )}
     >
       {message}
@@ -2049,7 +2049,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             unmuted={unmuted}
             onToggleUnmuted={onToggleUnmuted}
           />
-          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[color:var(--state-info-solid)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
+          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
             {sectionBadge}
           </div>
 

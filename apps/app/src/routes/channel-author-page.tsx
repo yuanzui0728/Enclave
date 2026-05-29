@@ -572,7 +572,7 @@ export function ChannelAuthorPage() {
           <div className="mx-auto max-w-[820px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
             <section
               className={cn(
-                "bg-[image:var(--surface-card-gradient)]",
+                "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
                 isDesktopLayout ? "px-6 pb-6 pt-6" : "px-4 pb-5 pt-5",
               )}
             >

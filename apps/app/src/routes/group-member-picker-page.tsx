@@ -566,7 +566,7 @@ function MobileGroupMemberPickerPage({
               selectedIds.length && !submitMutation.isPending
                 ? mode === "add"
                   ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
-                  : "bg-[color:var(--state-danger-solid)] text-[color:var(--text-on-brand)] active:opacity-90"
+                  : "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >

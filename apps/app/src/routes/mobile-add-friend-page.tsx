@@ -605,7 +605,7 @@ function MobileAddFriend() {
             {pendingRequestCount > 0 ? (
               <span
                 aria-hidden="true"
-                className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[color:var(--state-danger-solid)] px-[3px] text-[9px] font-medium leading-[14px] text-[color:var(--text-on-brand)]"
+                className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[color:var(--state-danger-bg)] px-[3px] text-[9px] font-medium leading-[14px] text-[color:var(--text-on-brand)]"
               >
                 {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
               </span>

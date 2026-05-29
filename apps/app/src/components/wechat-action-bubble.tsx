@@ -171,7 +171,7 @@ export function WeChatActionBubble({
       >
         <Heart
           size={14}
-          className={liked ? "fill-[color:var(--state-danger-solid)] text-[color:var(--state-danger-text)]" : "text-[color:var(--text-on-brand)]"}
+          className={liked ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]" : "text-[color:var(--text-on-brand)]"}
         />
         <span>{liked ? t(msg`取消`) : t(msg`赞`)}</span>
       </button>
@@ -205,7 +205,7 @@ export function WeChatActionBubble({
             <Star
               size={14}
               className={
-                favorited ? "fill-[color:var(--state-warning-solid)] text-[color:var(--state-warning-text)]" : "text-[color:var(--text-on-brand)]"
+                favorited ? "fill-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]" : "text-[color:var(--text-on-brand)]"
               }
             />
             <span>{favorited ? t(msg`取消收藏`) : t(msg`收藏`)}</span>

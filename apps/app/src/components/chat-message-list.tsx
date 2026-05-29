@@ -4204,7 +4204,7 @@ export function ChatMessageList({
                         isUser
                           ? isDesktop
                             ? "rounded-[var(--radius-md)] bg-[color:var(--state-success-bg)] text-[color:var(--text-primary)] shadow-none"
-                            : "rounded-[var(--radius-lg)] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#1c1430] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
+                            : "rounded-[var(--radius-lg)] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[color:var(--text-primary)] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
                             ? "rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
                             : "rounded-[var(--radius-lg)] rounded-bl-[6px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
@@ -5137,7 +5137,7 @@ function SharedHistorySummaryNotice({
       className={cn(
         "mx-auto max-w-[84%] border text-center",
         isDesktop
-          ? "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[image:var(--surface-card-gradient)] px-4 py-3"
+          ? "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
           : "rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
           ? "ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] ring-offset-2 ring-offset-transparent"
@@ -6380,7 +6380,7 @@ function NoteCardMessage({
         </div>
       ) : (
         <div
-          className={`flex items-end bg-[image:var(--surface-card-gradient)] ${
+          className={`flex items-end bg-[linear-gradient(160deg,#f3f6f5_0%,#dde6e3_100%)] ${
             isDesktop ? "h-[104px] px-3.5 py-3.5" : "h-[92px] px-3 py-3"
           }`}
         >
@@ -6947,7 +6947,7 @@ function VoiceMessage({
         own
           ? isDesktop
             ? "bg-[color:var(--state-success-bg)] text-[color:var(--text-primary)]"
-            : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#1c1430]"
+            : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[color:var(--text-primary)]"
           : isDesktop
             ? "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
             : "rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
@@ -8280,7 +8280,7 @@ function LocationViewerOverlay({
                 </div>
               </div>
 
-              <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/12 bg-[color:var(--state-info-solid)] p-4 text-[color:var(--text-on-brand)] shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/12 bg-[color:var(--state-info-bg)] p-4 text-[color:var(--text-on-brand)] shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 rounded-full bg-[color:var(--state-success-bg)] p-2 text-[color:var(--state-success-text)]">
                     <LocateFixed size={16} />

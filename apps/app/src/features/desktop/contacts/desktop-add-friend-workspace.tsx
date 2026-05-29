@@ -530,7 +530,7 @@ export function DesktopAddFriendWorkspace() {
           }}
         >
           <div className="flex items-center gap-3">
-            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-3.5 shadow-[inset_0_1px_0_var(--hairline-light)]">
+            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <Search
                 size={18}
                 className="shrink-0 text-[color:var(--text-dim)]"
@@ -838,7 +838,7 @@ function DesktopAddFriendSidebarEntry({
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px]",
           active
             ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
-            : "bg-[color:var(--surface-primary)] text-[color:var(--text-secondary)]",
+            : "bg-[color:var(--surface-card)]/70 text-[color:var(--text-secondary)]",
         )}
       >
         <Icon size={16} />
@@ -850,7 +850,7 @@ function DesktopAddFriendSidebarEntry({
         </div>
       </div>
       {badge ? (
-        <span className="rounded-full bg-[color:var(--state-danger-solid)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-on-brand)]">
+        <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-on-brand)]">
           {badge}
         </span>
       ) : null}

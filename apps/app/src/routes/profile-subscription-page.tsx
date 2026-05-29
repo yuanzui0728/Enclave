@@ -271,7 +271,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
           {shareUrl && invite.code ? (
             <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-1 space-y-3">
-                <div className="rounded-[var(--radius-lg)] bg-[image:var(--surface-card-gradient)] px-4 py-3">
+                <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
                   <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                     {invite.shareTitle}
                   </div>
@@ -611,7 +611,7 @@ export function ProfileSubscriptionPage() {
         />
       ) : null}
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
-        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[image:var(--surface-card-gradient)] px-6 py-6 shadow-none">
+        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               {isDesktopLayout ? (
@@ -746,7 +746,7 @@ export function ProfileSubscriptionPage() {
             <button
               type="button"
               onClick={() => void navigate({ to: "/profile/xhs-reward" })}
-              className="w-full rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[image:var(--surface-card-gradient)] px-6 py-5 text-left shadow-none active:bg-black/[0.03]"
+              className="w-full rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-5 text-left shadow-none active:bg-black/[0.03]"
             >
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                 {t(msg`发小红书赢会员`)}

@@ -192,10 +192,10 @@ export function DesktopGroupMemberRemovalPicker({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-5 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-4 backdrop-blur-xl">
             <div
               id={titleId}
               className="text-[18px] font-medium text-[color:var(--text-primary)]"
@@ -257,8 +257,8 @@ export function DesktopGroupMemberRemovalPicker({
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-1 flex-col bg-[color:var(--surface-primary)]">
-          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-4 backdrop-blur-xl">
+        <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
+          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div>
               <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`已选成员`)}
@@ -313,7 +313,7 @@ export function DesktopGroupMemberRemovalPicker({
               </div>
             ) : (
               <div className="flex h-full items-center justify-center px-8">
-                <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-8 text-center">
+                <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/84 px-6 py-8 text-center">
                   <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`右侧会显示待移除成员`)}
                   </div>
@@ -325,7 +325,7 @@ export function DesktopGroupMemberRemovalPicker({
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-6 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`世界主人不会出现在移除列表里。`)}
             </div>
@@ -344,7 +344,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="primary"
                 onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
-                className="rounded-[10px] bg-[color:var(--state-danger-solid)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-solid)]"
+                className="rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
               >
                 {pending ? t(msg`正在移除...`) : t(msg`移出群聊`)}
               </Button>
