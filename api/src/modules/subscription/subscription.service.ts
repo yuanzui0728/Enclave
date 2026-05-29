@@ -93,8 +93,15 @@ export class SubscriptionService {
     if (cached && cached.expiresAt > now) {
       return cached.value;
     }
-    const fresh = await this.cloudClient.lookup(phone);
-    if (!fresh) {
+    const outcome = await this.cloudClient.lookup(phone);
+    if (outcome.kind === 'unmanaged') {
+      // phone 非法/非托管（cloud-api 400 或本地未配置）= 不是真实托管订阅。当作放行
+      // （active / 不 hardBlock），绝不能误当"会员到期"硬拦 AI。正常 TTL 缓存，避免对
+      // 同一个非法 phone 每次都打一轮 cloud-api 400。
+      this.setCache(phone, FALLBACK_LOOKUP, now + CACHE_TTL_MS);
+      return FALLBACK_LOOKUP;
+    }
+    if (outcome.kind === 'transient') {
       // 拉取失败 30 秒短缓存。有上次 cache 就沿用（含 hardBlockEnabled，让 active 用户
       // 在 cloud-api 抖动期间不受影响）；没 cache 时保守拒绝（防止 expired 用户利用
       // cloud-api 失联绕过会员校验）。
@@ -104,8 +111,8 @@ export class SubscriptionService {
       this.setCache(phone, fallback, now + 30 * 1000);
       return fallback;
     }
-    this.setCache(phone, fresh, now + CACHE_TTL_MS);
-    return fresh;
+    this.setCache(phone, outcome.value, now + CACHE_TTL_MS);
+    return outcome.value;
   }
 
   private setCache(phone: string, value: CloudSubscriptionLookup, expiresAt: number) {
