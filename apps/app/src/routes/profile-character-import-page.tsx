@@ -76,13 +76,12 @@ export function ProfileCharacterImportPage() {
   // state 的 propagation gap，跟 account-security-panel.tsx changeInFlightRef 同款。
   const importInFlightRef = useRef(false);
 
+  // 可从「世界」tab 和「我」tab 两处进入，不硬编码 expectedPreviousPath，
+  // 否则从世界进来返回会被甩到「我」tab。history.back() 回真实来处，冷启动兜底。
   const goBack = () =>
-    navigateBackOrFallback(
-      () => {
-        void navigate({ to: "/tabs/profile", replace: true });
-      },
-      "/tabs/profile",
-    );
+    navigateBackOrFallback(() => {
+      void navigate({ to: "/tabs/profile", replace: true });
+    });
 
   async function readFile(file: File, postReadWarning?: string | null) {
     const readId = ++latestReadIdRef.current;

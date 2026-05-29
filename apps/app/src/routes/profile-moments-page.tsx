@@ -900,11 +900,10 @@ export function ProfileMomentsPage() {
     enabled: !isDesktopLayout,
   });
 
+  // 可从「世界」tab 和「我」tab 两处进入，不硬编码 expectedPreviousPath，
+  // 否则从世界进来返回会被甩到「我」tab。history.back() 回真实来处，冷启动兜底。
   const goBack = () =>
-    navigateBackOrFallback(
-      () => navigate({ to: "/tabs/profile", replace: true }),
-      "/tabs/profile",
-    );
+    navigateBackOrFallback(() => navigate({ to: "/tabs/profile", replace: true }));
 
   const openLikerCharacterDetail = (like: MomentLike) => {
     if (like.authorType !== "character") {

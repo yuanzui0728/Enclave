@@ -243,10 +243,14 @@ export function KnowledgeBasePage() {
     importMutation.mutate();
   };
 
+  // 知识库可从「世界」tab 探索入口和「我」tab 两处进入，不能硬编码
+  // expectedPreviousPath=/tabs/profile：从世界进来时真实 prev=/tabs/world，
+  // 比对失败会 fallback push /tabs/profile，把用户甩到「我」tab。去掉 hint →
+  // history.back() 回到真正来处（世界或我），仅冷启动/深链兜底回 /tabs/profile。
   const goBack = () =>
     navigateBackOrFallback(() => {
       void navigate({ to: "/tabs/profile", replace: true });
-    }, "/tabs/profile");
+    });
 
   const mobileTopBar = !isDesktopLayout ? (
     <TabPageTopBar
@@ -299,10 +303,10 @@ export function KnowledgeBasePage() {
 
         {/* 添加个人知识卡 */}
         <AppSection className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
-          <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`添加个人知识`)}
           </div>
-          <div className="mt-1 text-[12px] leading-relaxed text-[color:var(--text-muted)]">
+          <div className="mt-1 text-[length:var(--text-caption)] leading-relaxed text-[color:var(--text-muted)]">
             {t(msg`上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。`)}
           </div>
 
@@ -316,7 +320,7 @@ export function KnowledgeBasePage() {
                   type="button"
                   onClick={() => setMode(chip.key)}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2 text-[13px] transition-colors",
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2 text-[length:var(--text-caption)] transition-colors",
                     active
                       ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
                       : "bg-[color:var(--brand-soft)] text-[color:var(--text-muted)]",
@@ -338,13 +342,13 @@ export function KnowledgeBasePage() {
                 className="flex w-full flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[color:var(--border-strong)] bg-[color:var(--bg-canvas)] px-4 py-7 text-center transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
               >
                 <UploadCloud size={22} className="text-[color:var(--brand-primary)]" />
-                <span className="text-[14px] text-[color:var(--text-primary)]">
+                <span className="text-[length:var(--text-body)] text-[color:var(--text-primary)]">
                   {uploadMutation.isPending
                     ? t(msg`正在上传…`)
                     : t(msg`点击选择文件`)}
                 </span>
               </button>
-              <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`支持 txt / md / pdf / docx / doc，单个文件最大 16MB。`)}
               </div>
             </div>
@@ -357,14 +361,14 @@ export function KnowledgeBasePage() {
                 value={textTitle}
                 onChange={(event) => setTextTitle(event.target.value)}
                 placeholder={t(msg`标题（可选）`)}
-                className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[length:var(--text-body)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
               <textarea
                 value={textBody}
                 onChange={(event) => setTextBody(event.target.value)}
                 placeholder={t(msg`粘贴或输入你想让角色记住的内容…`)}
                 rows={5}
-                className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[14px] leading-relaxed text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="w-full resize-none rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[length:var(--text-body)] leading-relaxed text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
               <Button
                 onClick={handleSubmitText}
@@ -383,14 +387,14 @@ export function KnowledgeBasePage() {
                 value={urlValue}
                 onChange={(event) => setUrlValue(event.target.value)}
                 placeholder={t(msg`https://…`)}
-                className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[length:var(--text-body)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
               <input
                 type="text"
                 value={urlTitle}
                 onChange={(event) => setUrlTitle(event.target.value)}
                 placeholder={t(msg`标题（可选）`)}
-                className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5 text-[length:var(--text-body)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
               <Button
                 onClick={handleSubmitUrl}
@@ -414,12 +418,12 @@ export function KnowledgeBasePage() {
             <Sparkles size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[14px] text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-body)] text-[color:var(--text-primary)]">
               {importMutation.isPending
                 ? t(msg`正在导入世界记忆…`)
                 : t(msg`导入世界记忆`)}
             </div>
-            <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {t(msg`把世界里已发生的重要经历整理进你的知识库。`)}
             </div>
           </div>
@@ -427,7 +431,7 @@ export function KnowledgeBasePage() {
 
         {/* 我的知识库列表 */}
         <AppSection className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
-          <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`我的知识库`)}
           </div>
           <div className="mt-3">
@@ -493,17 +497,17 @@ function KnowledgeRow({
   onDelete: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5">
+    <div className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-3 py-2.5">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
         <FileText size={15} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-[14px] text-[color:var(--text-primary)]">
+          <span className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
             {doc.title}
           </span>
         </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[color:var(--brand-primary)]">
             {sourceLabel}
           </span>

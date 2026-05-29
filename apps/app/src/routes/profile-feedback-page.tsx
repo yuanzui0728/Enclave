@@ -147,18 +147,14 @@ export function ProfileFeedbackPage() {
     return null;
   }
 
+  // 可从「世界」tab 和「我」tab 两处进入，不硬编码 expectedPreviousPath，
+  // 否则从世界进来返回会被甩到「我」tab。history.back() 回真实来处。
   const goBack = () =>
-    navigateBackOrFallback(
-      () => {
-        // 走查 R1（移动端我-tab 端到端走查 2026-05-22）：fallback 路径之前不加
-        // replace，从「无 history 可退」走到这一支时会再往 stack 推一格
-        // /tabs/profile —— 用户从 profile 进 feedback → 没 history → Android Back
-        // 一下到 fallback，再 Back 又能回到 feedback。和 profile-info-* / favorites
-        // / settings 等其它兄弟 goBack 同款 replace:true 兜底。
-        void navigate({ to: "/tabs/profile", replace: true });
-      },
-      "/tabs/profile",
-    );
+    navigateBackOrFallback(() => {
+      // fallback 用 replace:true：从「无 history 可退」走到这一支时不再往 stack 推一格
+      // /tabs/profile —— 否则 Android Back 一下到 fallback、再 Back 又回到 feedback。
+      void navigate({ to: "/tabs/profile", replace: true });
+    });
 
   const handleSubmit = async () => {
     // 新走查 R1：sync ref 守卫先于 React state 守卫——同帧双击 React state 同

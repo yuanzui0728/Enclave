@@ -467,16 +467,15 @@ export function ProfileSubscriptionPage() {
   const goBackToSettings = () =>
     void navigate({ to: "/desktop/settings" });
 
+  // 会员中心可从「世界」tab 和「我」tab 两处进入，不硬编码 expectedPreviousPath，
+  // 否则从世界进来返回会被甩到「我」tab。history.back() 回真实来处。
   const goBack = () =>
     navigateBackOrFallback(
       () => {
-        // 走查 R1（移动端我-tab 端到端走查 2026-05-22）：fallback 无 replace 会再
-        // 推一格 /tabs/profile，跟其它子页 goBack 不一致（profile-info-* /
-        // settings-language 等都是 replace:true）。Android Back 一下走 fallback
-        // 再 Back 又能回到 subscription，体感是"返回没生效"。
+        // fallback 用 replace:true，避免再推一格 /tabs/profile（Android Back 一下走
+        // fallback 再 Back 又回到 subscription，体感是"返回没生效"）。
         void navigate({ to: "/tabs/profile", replace: true });
       },
-      "/tabs/profile",
     );
 
   // local-world / 还没登过云账号的世界主人会落到这里：原本直接 navigate(/welcome)

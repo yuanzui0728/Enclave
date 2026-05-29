@@ -273,12 +273,13 @@ export function MobileFavoritesPage({
   });
 
   function handleBack() {
-    navigateBackOrFallback(
-      () => {
-        void navigate({ to: "/tabs/profile" });
-      },
-      "/tabs/profile",
-    );
+    // 收藏可从「世界」tab 和「我」tab 两处进入，不能硬编码 expectedPreviousPath=
+    // /tabs/profile：从世界进来时真实 prev=/tabs/world，比对失败会 fallback push
+    // /tabs/profile 把用户甩到「我」tab。去掉 hint → history.back() 回到真实来处，
+    // 仅冷启动/深链兜底回 /tabs/profile。
+    navigateBackOrFallback(() => {
+      void navigate({ to: "/tabs/profile" });
+    });
   }
 
   function handleCreateNote() {
