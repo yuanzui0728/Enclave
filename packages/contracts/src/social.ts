@@ -80,9 +80,18 @@ export interface TriggerSceneRequest {
 
 export type SceneMatchSource = "scene" | "fallback" | "none";
 
+// 匹配到的角色多维信息（仅响应期透传，不落库）。供「场景相遇」就地卡片在用户
+// 抉择前展示更丰富的人物信息（对齐摇一摇决策卡）。字段全可选，缺失即不渲染。
+export interface SceneEncounterCharacterPreview {
+  relationship?: string;
+  expertDomains?: string[];
+  bio?: string;
+}
+
 export interface TriggerSceneResponse {
   request: FriendRequest | null;
   matchSource: SceneMatchSource;
+  characterPreview?: SceneEncounterCharacterPreview | null;
 }
 
 export interface ShakePreviewCharacter extends Pick<CharacterDraft, "id" | "name" | "avatar" | "relationship" | "expertDomains"> {

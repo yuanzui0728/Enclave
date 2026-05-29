@@ -193,6 +193,9 @@ function MobileDiscoverScenePage() {
     greeting: string;
     matchSource: "scene" | "fallback";
     sceneLabel: string;
+    relationship?: string;
+    expertDomains?: string[];
+    bio?: string;
   } | null>(null);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -315,7 +318,7 @@ function MobileDiscoverScenePage() {
         setNow(Date.now());
       }
     },
-    onSuccess: ({ request, matchSource, scene, capturedBaseUrl }) => {
+    onSuccess: ({ request, matchSource, characterPreview, scene, capturedBaseUrl }) => {
       if (capturedBaseUrl !== baseUrl) {
         // 走查 R2-Round2：在 await 期间用户切了 world，settle 已经不属于当前
         // 这一屏的语义，全部丢弃。请求本身已经在旧 world 落库，登回旧 world
@@ -348,6 +351,9 @@ function MobileDiscoverScenePage() {
         greeting,
         matchSource,
         sceneLabel,
+        relationship: characterPreview?.relationship,
+        expertDomains: characterPreview?.expertDomains,
+        bio: characterPreview?.bio,
       });
 
       const nextCount = saveEncounter(baseUrl, {
@@ -533,8 +539,36 @@ function MobileDiscoverScenePage() {
                   ? t(msg`不在${pendingEncounter.sceneLabel}，但顺路碰到了你`)
                   : t(msg`在${pendingEncounter.sceneLabel}里注意到了你`)}
               </div>
+              {/* 关系（如「设计师朋友」）：服务端数据，原样渲染，非空才显示。对齐摇一摇决策卡。 */}
+              {pendingEncounter.relationship?.trim() ? (
+                <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+                  {pendingEncounter.relationship}
+                </div>
+              ) : null}
             </div>
           </div>
+
+          {/* 专长标签：取前 4 个 chip，复用摇一摇同款样式，让用户抉择前看到 TA 擅长什么 */}
+          {pendingEncounter.expertDomains &&
+          pendingEncounter.expertDomains.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {pendingEncounter.expertDomains.slice(0, 4).map((domain, index) => (
+                <span
+                  key={`${domain}-${index}`}
+                  className="inline-flex items-center rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
+                >
+                  {domain}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {/* 简介：服务端 bio，两行截断，补充人物背景信息 */}
+          {pendingEncounter.bio?.trim() ? (
+            <div className="mt-2 line-clamp-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+              {pendingEncounter.bio}
+            </div>
+          ) : null}
 
           {pendingEncounter.greeting.trim() ? (
             <div className="mt-2.5 whitespace-pre-line break-words rounded-[var(--radius-sm)] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
