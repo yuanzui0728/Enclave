@@ -34,6 +34,62 @@ type RouteMeta = {
 
 // i18n-ignore-start: Cloud console route metadata is localized by the surface text dictionary.
 function getRouteMeta(pathname: string): RouteMeta {
+  // 平台全局后台页（隐界后台并入：不选 world、直接管平台级配置）。
+  if (pathname.startsWith("/platform/")) {
+    const platformMeta: Record<string, { title: string; detail: string }> = {
+      "/platform/inference": {
+        title: "Models & Routing",
+        detail:
+          "Manage inference provider accounts, model catalog, and default routing. Affects all users.",
+      },
+      "/platform/digital-human": {
+        title: "Digital Human Provider",
+        detail:
+          "Configure the external digital-human player template, callback token, and parameters. Affects all users.",
+      },
+      "/platform/reply-logic": {
+        title: "Reply Logic Rules",
+        detail:
+          "Platform-wide reply-logic rules. Per-character / per-conversation diagnosis lives under a selected world.",
+      },
+      "/platform/real-world-sync": {
+        title: "Real-World Sync Rules",
+        detail:
+          "Platform-wide real-world sync strategy, sources, and news bulletins. Per-character detail lives under a selected world.",
+      },
+      "/platform/cyber-avatar": {
+        title: "Cyber Avatar Rules",
+        detail:
+          "Platform-wide cyber-avatar modeling strategy. Runs and profiles live under a selected world.",
+      },
+      "/platform/action-runtime": {
+        title: "Action Runtime Rules",
+        detail:
+          "Platform-wide action gating, connectors, and policy. Run traces live under a selected world.",
+      },
+      "/platform/character-behavior": {
+        title: "Character Behavior",
+        detail:
+          "Platform-wide character behavior definitions (core logic, scene prompts, traits). Applies to the same preset character for every user; personalization (memory, intimacy, frequency, voice) stays per-owner.",
+      },
+      "/platform/operator-stats": {
+        title: "Operator Stats",
+        detail:
+          "Cross-tenant platform aggregates: user worlds, owners, characters, and token consumption.",
+      },
+      "/platform/video-prompt": {
+        title: "Video Channel Prompt",
+        detail:
+          "Edit the generation prompt template for character channel videos (wiki + world). Affects all users.",
+      },
+    };
+    const found = platformMeta[pathname] ?? {
+      title: "Platform",
+      detail: "Platform-global administration that applies to every user.",
+    };
+    return { eyebrow: "Platform global", ...found };
+  }
+
   if (pathname.startsWith("/users/")) {
     return {
       eyebrow: "SaaS operations",
@@ -97,6 +153,39 @@ function getRouteMeta(pathname: string): RouteMeta {
     };
   }
 
+  if (pathname.startsWith("/xhs-reward-claims")) {
+    return {
+      eyebrow: "SaaS operations",
+      title: "Xiaohongshu reward claims",
+      detail:
+        "Review user posts on Xiaohongshu, verify the link and screenshot, then approve to grant membership.",
+    };
+  }
+
+  if (pathname.startsWith("/wallet-recharges")) {
+    return {
+      eyebrow: "Cloud monetization",
+      title: "Wallet Recharges",
+      detail: "Review users' manual wallet top-up requests and credit their balance.",
+    };
+  }
+
+  if (pathname.startsWith("/shop-goods")) {
+    return {
+      eyebrow: "Cloud monetization",
+      title: "Shop Goods",
+      detail: "Manage virtual and physical store goods, pricing, and availability.",
+    };
+  }
+
+  if (pathname.startsWith("/shop-orders")) {
+    return {
+      eyebrow: "Cloud monetization",
+      title: "Shop Orders",
+      detail: "Fulfill physical goods orders, manage shipping, and track logistics.",
+    };
+  }
+
   if (pathname.startsWith("/feedbacks")) {
     return {
       eyebrow: "SaaS operations",
@@ -109,18 +198,18 @@ function getRouteMeta(pathname: string): RouteMeta {
   if (pathname.startsWith("/worlds/")) {
     return {
       eyebrow: "Cloud operations",
-      title: "World detail",
+      title: "User world detail",
       detail:
-        "Inspect instance placement, runtime status, bootstrap material, and lifecycle jobs.",
+        "Inspect this user world's status, owner account, and operations history.",
     };
   }
 
   if (pathname.startsWith("/worlds")) {
     return {
       eyebrow: "Cloud operations",
-      title: "Worlds",
+      title: "User worlds",
       detail:
-        "Track provider placement, power state, heartbeat freshness, and operator attention.",
+        "Track each user world's activity, health, and items that need attention.",
     };
   }
 
@@ -129,7 +218,7 @@ function getRouteMeta(pathname: string): RouteMeta {
       eyebrow: "Cloud operations",
       title: "Jobs",
       detail:
-        "Inspect provisioning, resume, suspend, and reconcile work across the managed world fleet.",
+        "Review pause, resume, and recovery work across all user worlds.",
     };
   }
 
@@ -165,7 +254,7 @@ function getRouteMeta(pathname: string): RouteMeta {
       eyebrow: "Cloud monetization",
       title: "Token Usage Detail",
       detail:
-        "Drill into one world's LLM token consumption by character, model, scene, and conversation.",
+        "Drill into one user world's LLM token consumption by character, model, scene, and conversation.",
     };
   }
 
@@ -174,7 +263,7 @@ function getRouteMeta(pathname: string): RouteMeta {
       eyebrow: "Cloud monetization",
       title: "Token Usage",
       detail:
-        "Track LLM token consumption and cost across worlds, with platform-level budgets and pricing.",
+        "Track LLM token consumption and cost across user worlds, with platform-level budgets and pricing.",
     };
   }
 
@@ -182,7 +271,7 @@ function getRouteMeta(pathname: string): RouteMeta {
     eyebrow: "Cloud operations",
     title: "Dashboard",
     detail:
-      "Monitor world availability, lifecycle jobs, request flow, and cloud runtime drift.",
+      "Monitor user world availability, request flow, and platform health.",
   };
 }
 // i18n-ignore-end
@@ -310,8 +399,8 @@ function RootLayoutContent() {
           aria-current={pathname.startsWith("/worlds") ? "page" : undefined}
         >
           <NavLinkContent
-            label={t("Worlds")}
-            hint={t("Instances and health")}
+            label={t("User worlds")}
+            hint={t("User worlds and health")}
           />
         </WorldsPermalinkLink>
       ),
@@ -391,6 +480,25 @@ function RootLayoutContent() {
       ),
     },
     {
+      key: "xhs-reward-claims",
+      content: (
+        <Link
+          to="/xhs-reward-claims"
+          className={
+            pathname.startsWith("/xhs-reward-claims") ? NAV_LINK_ACTIVE : NAV_LINK
+          }
+          aria-current={
+            pathname.startsWith("/xhs-reward-claims") ? "page" : undefined
+          }
+        >
+          <NavLinkContent
+            label={t("Xiaohongshu Rewards")}
+            hint={t("Review and grant")}
+          />
+        </Link>
+      ),
+    },
+    {
       key: "feedbacks",
       content: (
         <Link
@@ -458,7 +566,60 @@ function RootLayoutContent() {
         </Link>
       ),
     },
+    {
+      key: "wallet-recharges",
+      content: (
+        <Link
+          to="/wallet-recharges"
+          className={
+            pathname.startsWith("/wallet-recharges") ? NAV_LINK_ACTIVE : NAV_LINK
+          }
+          aria-current={
+            pathname.startsWith("/wallet-recharges") ? "page" : undefined
+          }
+        >
+          <NavLinkContent
+            label={t("Wallet Recharges")}
+            hint={t("Manual top-up requests")}
+          />
+        </Link>
+      ),
+    },
+    {
+      key: "shop-goods",
+      content: (
+        <Link
+          to="/shop-goods"
+          className={pathname.startsWith("/shop-goods") ? NAV_LINK_ACTIVE : NAV_LINK}
+          aria-current={pathname.startsWith("/shop-goods") ? "page" : undefined}
+        >
+          <NavLinkContent
+            label={t("Shop Goods")}
+            hint={t("Store catalog (virtual + physical)")}
+          />
+        </Link>
+      ),
+    },
+    {
+      key: "shop-orders",
+      content: (
+        <Link
+          to="/shop-orders"
+          className={pathname.startsWith("/shop-orders") ? NAV_LINK_ACTIVE : NAV_LINK}
+          aria-current={pathname.startsWith("/shop-orders") ? "page" : undefined}
+        >
+          <NavLinkContent
+            label={t("Shop Orders")}
+            hint={t("Physical order fulfillment")}
+          />
+        </Link>
+      ),
+    },
   ] as const;
+
+  // world-admin（隐界后台）区自带完整 shell（WorldAdminLayout），这里不要再套
+  // cloud-console 的侧栏/顶栏，否则双层 chrome。直接渲染 Outlet 让子路由全权接管。
+  const isWorldAdmin = pathname.startsWith("/world-admin");
 
   const moreNavItems = [
     {
@@ -521,7 +682,71 @@ function RootLayoutContent() {
       ),
     },
   ] as const;
+
+  // 「平台运营」组：隐界后台并入后的平台全局页。不选 world、直接管平台级配置/聚合
+  // （走 cloud-api 的 platform-admin 反代 / cloud 聚合）。per-owner 检视页仍在 /world-admin
+  // 下、由 worlds 页「Enter admin」选中某 world 后进入。
+  const platformNavItems = [
+    {
+      key: "platform-operator-stats",
+      to: "/platform/operator-stats" as const,
+      label: t("Operator Stats"),
+      hint: t("User worlds & token aggregates"),
+    },
+    {
+      key: "platform-inference",
+      to: "/platform/inference" as const,
+      label: t("Models & Routing"),
+      hint: t("Providers and default routing"),
+    },
+    {
+      key: "platform-digital-human",
+      to: "/platform/digital-human" as const,
+      label: t("Digital Human Provider"),
+      hint: t("Player template and callbacks"),
+    },
+    {
+      key: "platform-reply-logic",
+      to: "/platform/reply-logic" as const,
+      label: t("Reply Logic Rules"),
+      hint: t("Platform-wide reply rules"),
+    },
+    {
+      key: "platform-character-behavior",
+      to: "/platform/character-behavior" as const,
+      label: t("Character Behavior"),
+      hint: t("Unified per-character behavior"),
+    },
+    {
+      key: "platform-real-world-sync",
+      to: "/platform/real-world-sync" as const,
+      label: t("Real-World Sync Rules"),
+      hint: t("Sync strategy and bulletins"),
+    },
+    {
+      key: "platform-cyber-avatar",
+      to: "/platform/cyber-avatar" as const,
+      label: t("Cyber Avatar Rules"),
+      hint: t("Modeling strategy"),
+    },
+    {
+      key: "platform-action-runtime",
+      to: "/platform/action-runtime" as const,
+      label: t("Action Runtime Rules"),
+      hint: t("Action gating and connectors"),
+    },
+    {
+      key: "platform-video-prompt",
+      to: "/platform/video-prompt" as const,
+      label: t("Video Channel Prompt"),
+      hint: t("Generation template for channel videos"),
+    },
+  ] as const;
   // i18n-ignore-end
+
+  if (isWorldAdmin) {
+    return <Outlet />;
+  }
 
   return (
     <div className="relative min-h-screen text-[color:var(--text-primary)]">
@@ -577,6 +802,26 @@ function RootLayoutContent() {
               <div className="mt-2 space-y-1">
                 {primaryNavItems.map((item) => (
                   <div key={item.key}>{item.content}</div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <div className="px-1 text-[10px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                {t("Platform global")}
+              </div>
+              <div className="mt-2 space-y-1">
+                {platformNavItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    to={item.to}
+                    className={
+                      pathname === item.to ? NAV_LINK_ACTIVE : NAV_LINK
+                    }
+                    aria-current={pathname === item.to ? "page" : undefined}
+                  >
+                    <NavLinkContent label={item.label} hint={item.hint} />
+                  </Link>
                 ))}
               </div>
             </section>
