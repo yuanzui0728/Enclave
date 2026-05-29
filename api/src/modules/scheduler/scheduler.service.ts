@@ -627,7 +627,26 @@ export class SchedulerService {
         }
       }
       if (frame === 'per-owner' || frame === 'global+per-owner') {
-        await this.tenantService.runForAllTenants(runInFrame);
+        // AI 重活类 cron：在枚举阶段就用会员状态预筛掉到期 owner，根治每 tick 逐个进帧
+        // 再短路的遍历洪流（成百上千条 "frame skipped" debug + 上百次空跑的租户帧切换）。
+        // 预筛走显式 phone（不依赖 ALS 帧），命中会员缓存时是 Map 查找；查询失败/哨兵放行。
+        const gated = SchedulerService.AI_HEAVY_GATED_JOBS.has(jobId);
+        const { skipped } = await this.tenantService.runForAllTenants(
+          runInFrame,
+          gated
+            ? {
+                filter: async (ctx) =>
+                  !(await this.subscription.isAiHardBlockedForPhone(
+                    ctx.phone,
+                  )),
+              }
+            : undefined,
+        );
+        if (gated && skipped > 0) {
+          this.logger.debug(
+            `${jobId}: ${skipped} AI-hard-blocked owner(s) skipped at enumeration`,
+          );
+        }
       }
       return;
     }

@@ -73,6 +73,57 @@ describe('TenantService', () => {
       expect(ran).toEqual(['A', 'B', 'C']);
     });
 
+    it('filter skips owners before establishing a frame and reports counts', async () => {
+      const owners = [
+        { id: 'A', cloudPhone: 'pa' },
+        { id: 'B', cloudPhone: 'pb' },
+        { id: 'C', cloudPhone: 'pc' },
+      ];
+      const service = createService({
+        listTenantOwners: jest.fn().mockResolvedValue(owners),
+      });
+      const ran: string[] = [];
+      const filtered: string[] = [];
+
+      const result = await service.runForAllTenants(
+        async (ctx) => {
+          // 跳过的 owner 绝不进帧：此处不该看到 B。
+          ran.push(ctx.ownerId);
+        },
+        {
+          filter: (ctx) => {
+            filtered.push(ctx.ownerId);
+            return ctx.ownerId !== 'B';
+          },
+        },
+      );
+
+      expect(filtered).toEqual(['A', 'B', 'C']);
+      expect(ran).toEqual(['A', 'C']);
+      expect(result).toEqual({ ran: 2, skipped: 1 });
+    });
+
+    it('filter that throws falls open (runs the owner) instead of dropping it', async () => {
+      const service = createService({
+        listTenantOwners: jest
+          .fn()
+          .mockResolvedValue([{ id: 'A', cloudPhone: 'pa' }]),
+      });
+      const ran: string[] = [];
+
+      const result = await service.runForAllTenants(
+        async (ctx) => ran.push(ctx.ownerId),
+        {
+          filter: () => {
+            throw new Error('lookup jitter');
+          },
+        },
+      );
+
+      expect(ran).toEqual(['A']);
+      expect(result).toEqual({ ran: 1, skipped: 0 });
+    });
+
     it('leaves no context bound after completion', async () => {
       const service = createService({
         listTenantOwners: jest.fn().mockResolvedValue([{ id: 'A', cloudPhone: 'pa' }]),

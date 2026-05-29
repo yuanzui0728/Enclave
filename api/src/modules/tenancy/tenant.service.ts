@@ -73,15 +73,40 @@ export class TenantService {
   // cron fan-out：逐 owner 在各自租户帧里跑 fn；一个 owner 抛错只记录、不连累其余。
   async runForAllTenants(
     fn: (ctx: TenantContext) => Promise<void>,
-  ): Promise<void> {
+    options?: {
+      // 在「建立租户帧之前」对每个 owner 做的轻量预筛（命中会员缓存时是 Map 查找）。
+      // 返回 false 的 owner 直接跳过——不建 ALS 帧、不跑 fn，省掉到期 owner 每 tick 的
+      // 全角色 DB 读 + LLM 抛错风暴 + per-owner 日志洪流。AI 重活类 cron 用它在枚举阶段
+      // 就排除到期 owner（见 SchedulerService.AI_HEAVY_GATED_JOBS）。预筛抛错按「放行进帧」
+      // 处理，让帧内原有 gate 兜底，绝不因预筛抖动漏跑正常 owner。
+      filter?: (ctx: TenantContext) => boolean | Promise<boolean>;
+    },
+  ): Promise<{ ran: number; skipped: number }> {
     const owners = await this.worldOwner.listTenantOwners();
+    let ran = 0;
+    let skipped = 0;
     for (const owner of owners) {
       const ctx: TenantContext = {
         ownerId: owner.id,
         phone: owner.cloudPhone ?? '',
       };
+      if (options?.filter) {
+        let eligible = true;
+        try {
+          eligible = await options.filter(ctx);
+        } catch {
+          eligible = true;
+        }
+        if (!eligible) {
+          // 跳过的 owner 不建帧、不跑 fn。预筛冷缓存命中 cloud-api 时 await 天然让出，
+          // 暖缓存是同步 Map 查找——一串跳过不会饿死事件循环，无需额外 setImmediate。
+          skipped += 1;
+          continue;
+        }
+      }
       try {
         await TenantContextStore.run(ctx, () => fn(ctx));
+        ran += 1;
       } catch (error) {
         this.logger.warn(
           `tenant job failed owner=${owner.id}: ${error instanceof Error ? error.message : String(error)}`,
@@ -93,6 +118,7 @@ export class TenantService {
       // WorldOwnerService.forEachOwner 同款注释。
       await new Promise((resolve) => setImmediate(resolve));
     }
+    return { ran, skipped };
   }
 
   // 首触种子：在 owner 租户帧里按依赖顺序把这个新用户的「私有世界」种起来。各步都幂等

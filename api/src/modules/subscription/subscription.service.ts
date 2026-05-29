@@ -69,7 +69,15 @@ export class SubscriptionService {
   constructor(private readonly cloudClient: CloudSubscriptionClient) {}
 
   async getStatus(): Promise<CloudSubscriptionLookup> {
-    const phone = this.cloudClient.resolveOwnerPhone();
+    return this.getStatusForPhone(this.cloudClient.resolveOwnerPhone());
+  }
+
+  // 按显式 phone 查会员状态——不依赖 ALS 租户帧。供后台 cron 在「建立租户帧之前」
+  // 预筛到期 owner（见 SchedulerService），避免逐个进帧再短路的遍历洪流。getStatus()
+  // 委托到此，语义逐字一致（缓存 / 哨兵放行 / 失败兜底全共用）。
+  async getStatusForPhone(
+    phone: string | null | undefined,
+  ): Promise<CloudSubscriptionLookup> {
     if (!phone) {
       // 本地直连或未托管模式：放行
       return FALLBACK_LOOKUP;
@@ -133,8 +141,17 @@ export class SubscriptionService {
   // 是纯浪费，还持续占用共享世界单事件循环把全员拖到 504。全局哨兵 owner（getStatus 永远
   // 返 active）/ 未托管 / 查询失败一律放行（返 false），绝不误伤正常生成。
   async isAiHardBlockedForCurrentOwner(): Promise<boolean> {
+    return this.isAiHardBlockedForPhone(this.cloudClient.resolveOwnerPhone());
+  }
+
+  // 同上判定，但按显式 phone（无需 ALS 帧）。cron fan-out 的 enumeration 预筛用：
+  // 命中 30s/CACHE_TTL phone 缓存时是 Map 查找，冷缓存才打 cloud-api（与进帧后查同价，
+  // 不新增 lookup）。哨兵 / 未托管 / 查询失败一律放行（返 false），绝不误伤正常生成。
+  async isAiHardBlockedForPhone(
+    phone: string | null | undefined,
+  ): Promise<boolean> {
     try {
-      const status = await this.getStatus();
+      const status = await this.getStatusForPhone(phone);
       return status.hardBlockEnabled && status.status !== 'active';
     } catch {
       return false;
