@@ -32,7 +32,8 @@ export const DEFAULT_REAL_WORLD_SYNC_RULES: RealWorldSyncRulesValue =
       editionRegion: 'CN',
       editionCeid: 'CN:zh-Hans',
       maxEntriesPerQuery: 12,
-      fallbackToMockOnEmpty: true,
+      // 真实新闻为空时不再回落假新闻（mock 仅 REAL_WORLD_SYNC_ALLOW_MOCK=1 开发环境放行）。
+      fallbackToMockOnEmpty: false,
     },
     promptTemplates: {
       signalNormalizationPrompt:

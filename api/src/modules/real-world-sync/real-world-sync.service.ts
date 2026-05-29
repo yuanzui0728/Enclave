@@ -30,6 +30,15 @@ import type {
   RealWorldSyncRunStatusValue,
 } from './real-world-sync.types';
 
+// 现实链路在真实 provider（google news 等）返回空时，历史上会 fabricate 一批假新闻
+// （硬编码「全球市场关注主要经济体最新政策信号」+ 假来源 + example.com URL）喂给角色，
+// 经 digest→scenePatch 影响其聊天/发圈/评论——等于让角色把假事实当真新闻讲给用户。
+// 生产环境绝不允许：未显式置 REAL_WORLD_SYNC_ALLOW_MOCK=1 时，宁可没有现实概览（返回空），
+// 也不伪造。仅开发/测试可放行。
+function isRealWorldMockAllowed() {
+  return process.env.REAL_WORLD_SYNC_ALLOW_MOCK === '1';
+}
+
 function formatSyncDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
@@ -1952,6 +1961,10 @@ export class RealWorldSyncService {
     rules: RealWorldSyncRulesValue,
     now: Date,
   ): SignalSeed[] {
+    // 生产环境不伪造现实信号：返回空让角色按本来人设走，而不是带着假新闻进世界。
+    if (!isRealWorldMockAllowed()) {
+      return [];
+    }
     if (character.sourceKey === WORLD_NEWS_DESK_SOURCE_KEY) {
       return this.buildMockWorldNewsSignals(config, now);
     }

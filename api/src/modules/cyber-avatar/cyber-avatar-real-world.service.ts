@@ -25,6 +25,14 @@ import type {
   CyberAvatarRunTrigger,
 } from './cyber-avatar.types';
 
+// 赛博分身的「现实情报」在真实 provider 返回空时，历史上会 fabricate 假新闻种子
+// （'Mock Intelligence' 来源 + example.com + 模板化「XX 进入新的公开讨论周期」）当成
+// accepted 真情报存库，用作分身上下文/给世界主人的观察 → 假事实泄漏给用户。
+// 生产环境绝不允许：未显式置 CYBER_AVATAR_ALLOW_MOCK=1 时返回空，不伪造。
+function isCyberAvatarMockAllowed() {
+  return process.env.CYBER_AVATAR_ALLOW_MOCK === '1';
+}
+
 function normalizeString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -640,6 +648,10 @@ export class CyberAvatarRealWorldService {
     rules: CyberAvatarInteractionRules,
     now: Date,
   ) {
+    // 生产环境不伪造情报：返回空，宁可没有现实背景也不给分身灌假新闻。
+    if (!isCyberAvatarMockAllowed()) {
+      return [];
+    }
     return queryPlan.flatMap((plan, index) => {
       const topic = plan.topicTags[0] ?? plan.queryText;
       return [

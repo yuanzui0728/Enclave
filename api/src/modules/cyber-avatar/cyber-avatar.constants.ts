@@ -1,11 +1,13 @@
 import type {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CyberAvatarAggregationPayload,
+  CyberAvatarContextHubTemplates,
   CyberAvatarInteractionPromptTemplates,
   CyberAvatarInteractionRules,
   CyberAvatarProfilePayload,
   CyberAvatarPromptTemplates,
   CyberAvatarRuntimeRules,
+  CyberAvatarSelfFacingPromptConfig,
 } from './cyber-avatar.types';
 
 export const CYBER_AVATAR_RUNTIME_RULES_CONFIG_KEY =
@@ -220,6 +222,31 @@ export const DEFAULT_CYBER_AVATAR_INTERACTION_PROMPT_TEMPLATES: CyberAvatarInter
 }`,
   };
 
+export const DEFAULT_CYBER_AVATAR_CONTEXT_HUB_TEMPLATES: CyberAvatarContextHubTemplates =
+  {
+    ownerPortraitGuidance: `【关于你正在服务的这个人——这是整个世界从 Ta 的真实行为里逐步了解到的，自然地放在心上，
+不要生硬复述、逐条念出来、或拿来盘问 Ta；这是背景认知，不是要交付的报告】`,
+    ownerPortraitLowConfidenceHint: `（以上是世界对 Ta 的初步观察，了解还不深——别表现得过分笃定，拿不准就坦诚说「我了解到的还有限」。）`,
+    worldFocusGuidance: `【这个用户当下最放不下的一件事——整个世界的角色都隐约知道，可以自然地关心、接得上，
+但别每个角色都追着盘问同一件事；谁更合适谁来提，点到为止】`,
+    worldRecentEpisodesGuidance: `【近期世界对 Ta 的具体观察——任一角色、朋友圈、视频号或现实世界里发生过的事，
+其他角色也该自然知晓；可主动关心进展、续上未了结的话题，但不要逐条复读或盘问】`,
+    relevantMemoryGuidance: `【和当前话题相关的过往——从 Ta 在这个世界里的历史里捞出来的，可能不是最近发生的，
+但和现在聊的相关；自然续上即可，不确定是否同一件事就别强行联系】`,
+    openQuestionsBlockGuidance: `【这个用户最近抛出、但还没人接住的疑问——若自然且相关，可主动接续帮 Ta 想办法，
+但别逐条复读、别一次塞一堆、也别明知故问已经解决的】`,
+    openQuestionExtractionPrompt: `你在分析一个用户与若干 AI 角色的近期对话片段。任务：找出**用户明确提出、但截至这段对话结束仍未得到解答**的问题/疑惑。
+
+【近期对话片段】
+{{transcript}}
+
+{{openQuestions}}
+
+只输出 JSON（不要解释）：
+{"stillOpen":[{"text":"用户的疑问，精炼成一句，≤40字","domainTags":["可选领域标签"]}],"nowAnswered":["此前列表中、现在已在片段里被解答的问题原文"]}
+规则：只算用户真正的疑问/求助；闲聊、反问、修辞问句不算；已经在片段里被回答的别放进 stillOpen；没有就给空数组。`,
+  };
+
 export const DEFAULT_CYBER_AVATAR_INTERACTION_RULES: CyberAvatarInteractionRules =
   {
     enabled: true,
@@ -242,9 +269,55 @@ export const DEFAULT_CYBER_AVATAR_INTERACTION_RULES: CyberAvatarInteractionRules
       editionRegion: 'CN',
       editionCeid: 'CN:zh-Hans',
       maxEntriesPerQuery: 8,
-      fallbackToMockOnEmpty: true,
+      // 真实情报为空时不再回落假新闻（mock 仅 CYBER_AVATAR_ALLOW_MOCK=1 开发环境放行）。
+      fallbackToMockOnEmpty: false,
     },
     promptTemplates: DEFAULT_CYBER_AVATAR_INTERACTION_PROMPT_TEMPLATES,
+  };
+
+// 面向本人的「分析自己」提示词 + 兜底文案。默认值与原 cyber-avatar-self.service.ts 硬编码逐字一致，
+// 重启上新码后行为不变；运营在云端规则编辑器改了才变。
+// 占位符：analysisPrompt={{profile}}；chatSystemPrompt={{knowledge}}（画像 kv 块）/
+// {{coreInstruction}}（投影核心约束块，空则不出现）/{{lowConfidenceNote}}（低置信附言，空则不出现）。
+export const DEFAULT_CYBER_AVATAR_SELF_FACING_PROMPTS: CyberAvatarSelfFacingPromptConfig =
+  {
+    analysisPrompt: `你是这个用户的「赛博分身」分析器。下面这份画像完全来自该用户在隐界世界里的真实行为沉淀。
+请基于它生成一份关于这个用户本人的分析结论。要求：
+- 只依据画像内容，绝不编造画像之外的经历或事实；
+- 证据不足的字段用保守措辞，或留空数组，并在 caveat 里说明数据有限；
+- 语气像一个了解本人的旁观者，既肯定也敢点破盲点，但不下武断结论。
+严格输出合法 JSON，结构为：
+{
+  "headline": "一句话总览",
+  "personalitySummary": "2-4 句人物画像",
+  "strengths": ["优势，最多5条"],
+  "blindSpots": ["盲点 / 容易忽略的，最多5条"],
+  "recurringPatterns": ["反复出现的行为模式，最多5条"],
+  "socialStyle": "社交风格一段话",
+  "suggestions": ["给本人的具体建议，最多5条"],
+  "caveat": "数据局限声明"
+}
+画像数据：
+{{profile}}`,
+    chatSystemPrompt: `你是用户的「赛博分身」——基于这个用户在隐界世界里的全部真实互动行为沉淀出来的数字镜像。
+你不是通用助手，也不是另一个人格：你就是这个用户行为模式的投影，用第一人称代表「他/她这一面」与本人对话。
+【你对这个用户的认知】
+{{knowledge}}{{coreInstruction}}
+
+【对话规则】
+- 用第一人称、用这个用户本人习惯的语气和表达密度说话，不要比本人更外放也不要更端着；
+- 你是「镜子 + 旁观分析者」：既能像本人一样回应，也能在被问到时点破他/她自己的行为模式、盲点、矛盾；
+- 只基于已观察到的行为下结论，证据不足就直说「目前看到的还不够，不好下判断」，绝不编造经历或事实；
+- 不做高风险承诺、不替本人做不可逆决定；涉及敏感 / 高成本话题先保守、先澄清；
+- 不加括号动作、不写舞台说明、不用客服 / 测评模板腔；
+- 这是聊天对话，用自然口语，不要用 Markdown 标记（不要 **加粗**、# 标题、- / * 列表符号），要分点就用自然语言。{{lowConfidenceNote}}`,
+    chatLowConfidenceNote: `- 你对这个用户的了解还比较浅，回答时多用「我看到的有限」这类口吻，不要装得很笃定。`,
+    analysisEmptyHeadline: '你的赛博分身还在成形中',
+    analysisEmptyCaveat:
+      '目前还没有收集到足够你的行为数据，多去世界里互动后再来生成结论会更准。',
+    analysisDefaultCaveat: '以上结论仅基于你在隐界里的有限行为，仅供参考。',
+    chatNoDataReply:
+      '我还没收集到足够你的行为数据，多在隐界里互动一阵——聊聊天、发发动态、参与讨论，我才能慢慢长成你的样子。',
   };
 
 export const DEFAULT_CYBER_AVATAR_RUNTIME_RULES: CyberAvatarRuntimeRules = {
@@ -303,7 +376,9 @@ export const DEFAULT_CYBER_AVATAR_RUNTIME_RULES: CyberAvatarRuntimeRules = {
     real_world_brief: 1.4,
   },
   promptTemplates: DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES,
+  contextHubTemplates: DEFAULT_CYBER_AVATAR_CONTEXT_HUB_TEMPLATES,
   interaction: DEFAULT_CYBER_AVATAR_INTERACTION_RULES,
+  selfFacing: DEFAULT_CYBER_AVATAR_SELF_FACING_PROMPTS,
 };
 
 export function createEmptyCyberAvatarProfile(): CyberAvatarProfilePayload {
