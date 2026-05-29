@@ -159,7 +159,10 @@ export function MobileDiscoverToolShell({
         }
       />
 
-      <div className="space-y-2.5 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      {/* mobile-web 在平板/横屏/触屏笔记本等大视口下被强制走移动布局（不重定向桌面），
+          内容若不限宽会整页拉满 → 赛博分身立绘舞台被拉成大letterbox、按钮/分段/对话气泡
+          也全宽变形。这里把工具内容收成居中的手机宽列（≤480px 视口无影响）。 */}
+      <div className="mx-auto w-full max-w-[480px] space-y-2.5 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         {shareNotice ? (
           <InlineNotice
             className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
