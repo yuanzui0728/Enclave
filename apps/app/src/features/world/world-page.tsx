@@ -13,17 +13,26 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, cn } from "@yinjie/ui";
 import {
   Blocks,
+  Camera,
   ChevronRight,
+  CreditCard,
   Fingerprint,
   Gamepad2,
+  Gift,
+  LayoutGrid,
+  Library,
   MapPin,
+  MessageSquareText,
   Newspaper,
   PlaySquare,
   Send,
   ShoppingBag,
   Sparkles,
+  Star,
+  UserPlus,
   Users,
   UsersRound,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
@@ -38,10 +47,15 @@ import { buildMobileGamesRouteSearch } from "../games/mobile-games-route-state";
 import { buildMobileMiniProgramsRouteSearch } from "../mini-programs/mobile-mini-programs-route-state";
 import { buildDesktopMomentsRouteHash } from "../moments/moments-route-state";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
+import { CheckinCard } from "../wallet/checkin-card";
 import { RouteRedirectState } from "../../components/route-redirect-state";
+import { shouldShowCloudAccountControls } from "../../lib/cloud-session";
 import { searchStringToObject } from "../../lib/route-search";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
-import { useHasCloudSession } from "../../store/cloud-session-store";
+import {
+  useCloudSessionStore,
+  useHasCloudSession,
+} from "../../store/cloud-session-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
 type WorldMessage = ReturnType<typeof msg>;
@@ -58,7 +72,17 @@ type ExploreTo =
   | "/discover/channels"
   | "/discover/games"
   | "/discover/mini-programs"
-  | "/shop";
+  | "/shop"
+  // 「我」tab 镜像到世界 tab 的功能入口（普通 Link，不需返回路径）。
+  | "/profile/knowledge"
+  | "/profile/favorites"
+  | "/profile/moments"
+  | "/profile/feed"
+  | "/profile/wallet"
+  | "/profile/subscription"
+  | "/gift-cabinet"
+  | "/profile/character-import"
+  | "/profile/feedback";
 
 type ExploreEntry = {
   key: string;
@@ -168,6 +192,77 @@ const lifeEntries: ExploreEntry[] = [
   },
 ];
 
+// 「我」tab 功能项镜像到世界 tab：常显的个人功能（普通 Link，无返回路径）。
+const personalEntries: ExploreEntry[] = [
+  {
+    key: "knowledge",
+    label: msg`知识库`,
+    hint: msg`我的资料库`,
+    icon: Library,
+    to: "/profile/knowledge",
+  },
+  {
+    key: "favorites",
+    label: msg`收藏`,
+    hint: msg`收藏的角色`,
+    icon: Star,
+    to: "/profile/favorites",
+  },
+  {
+    key: "myMoments",
+    label: msg`我的朋友圈`,
+    hint: msg`我发布的动态`,
+    icon: Camera,
+    to: "/profile/moments",
+  },
+  {
+    key: "myFeed",
+    label: msg`我的广场`,
+    hint: msg`我的广场帖`,
+    icon: LayoutGrid,
+    to: "/profile/feed",
+  },
+  {
+    key: "characterImport",
+    label: msg`导入角色`,
+    hint: msg`添加新角色`,
+    icon: UserPlus,
+    to: "/profile/character-import",
+  },
+  {
+    key: "feedback",
+    label: msg`反馈`,
+    hint: msg`意见与建议`,
+    icon: MessageSquareText,
+    to: "/profile/feedback",
+  },
+];
+
+// 钱包相关（仅云账号可见，与「我」tab 同款门控）。
+const walletEntries: ExploreEntry[] = [
+  {
+    key: "wallet",
+    label: msg`钱包`,
+    hint: msg`余额与账单`,
+    icon: Wallet,
+    to: "/profile/wallet",
+  },
+  {
+    key: "subscription",
+    label: msg`会员中心`,
+    hint: msg`订阅与权益`,
+    icon: CreditCard,
+    to: "/profile/subscription",
+  },
+  {
+    key: "giftCabinet",
+    label: msg`礼物柜`,
+    hint: msg`收到的礼物`,
+    icon: Gift,
+    to: "/gift-cabinet",
+  },
+];
+
 export function WorldPage() {
   const t = useRuntimeTranslator();
   const isDesktopLayout = useDesktopLayout();
@@ -204,8 +299,21 @@ function MobileWorldPage() {
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const ownerCreatedAt = useWorldOwnerStore((state) => state.createdAt);
+  const ownerId = useWorldOwnerStore((state) => state.id);
   // 分身剪影按资料性别取男/女像（未填=女像），与 /cyber-avatar 详情页同源。
   const ownerGender = useWorldOwnerStore((state) => state.gender);
+  const cloudAccessToken = useCloudSessionStore((state) => state.accessToken);
+  const cloudPhone = useCloudSessionStore((state) => state.phone);
+
+  // 与「我」tab 同款门控：钱包/会员中心/礼物柜/签到仅云账号可见。
+  const showCloudAccountEntries = shouldShowCloudAccountControls({
+    worldAccessMode: runtimeConfig.worldAccessMode,
+    runtimeApiBaseUrl: runtimeConfig.apiBaseUrl,
+    runtimeCloudPhone: runtimeConfig.cloudPhone,
+    accessToken: cloudAccessToken,
+    sessionPhone: cloudPhone,
+    worldOwnerId: ownerId,
+  });
 
   const worldDay = useMemo(() => computeWorldDay(ownerCreatedAt), [ownerCreatedAt]);
 
@@ -253,6 +361,9 @@ function MobileWorldPage() {
           gender={ownerGender}
         />
 
+        {/* 每日签到卡：仅云账号用户可见（奖励入 cloud 零钱钱包），与「我」tab 同源。 */}
+        {showCloudAccountEntries ? <CheckinCard /> : null}
+
         {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹） */}
         <section className="space-y-4">
           <SectionHeader title={t(msg`探索`)} />
@@ -272,6 +383,19 @@ function MobileWorldPage() {
             entries={lifeEntries}
             pathname={pathname}
           />
+          {/* 「我」tab 功能项镜像：个人功能常显，钱包组仅云账号可见。 */}
+          <ExploreGroup
+            title={t(msg`我的`)}
+            entries={personalEntries}
+            pathname={pathname}
+          />
+          {showCloudAccountEntries ? (
+            <ExploreGroup
+              title={t(msg`钱包`)}
+              entries={walletEntries}
+              pathname={pathname}
+            />
+          ) : null}
         </section>
       </div>
 

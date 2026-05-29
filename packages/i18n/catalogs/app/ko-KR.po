@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "음악"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "暂停"
-msgstr "일시정지"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/i18n/static-dom-seed.ts:349
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "播放"
 msgstr "재생"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "暂停"
+msgstr "일시정지"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -573,6 +573,7 @@ msgstr "스티커"
 #: apps/app/src/features/search/search-types.ts:121
 #: apps/app/src/features/shell/desktop-nav-matching.ts:65
 #: apps/app/src/features/shell/desktop-nav-matching.ts:66
+#: apps/app/src/features/world/world-page.tsx:206
 #: apps/app/src/i18n/static-dom-seed.ts:65
 #: apps/app/src/routes/channels-page.tsx:4402
 #: apps/app/src/routes/desktop-chat-files-page.tsx:978
@@ -667,7 +668,7 @@ msgstr "Enter로 보내기"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1192
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/features/world/world-page.tsx:331
+#: apps/app/src/features/world/world-page.tsx:455
 #: apps/app/src/routes/channels-page.tsx:5677
 #: apps/app/src/routes/discover-page.tsx:1139
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
@@ -1802,6 +1803,7 @@ msgid "发送失败"
 msgstr "보내기 실패"
 
 #: apps/app/src/components/chat-message-list.tsx:4298
+#: apps/app/src/features/world/world-page.tsx:388
 msgid "我的"
 msgstr "내 정보"
 
@@ -1824,7 +1826,7 @@ msgstr "내 정보"
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:134
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1257
 #: apps/app/src/features/moments/use-optimistic-like.ts:107
-#: apps/app/src/features/world/world-page.tsx:243
+#: apps/app/src/features/world/world-page.tsx:351
 #: apps/app/src/i18n/static-dom-seed.ts:672
 #: apps/app/src/lib/conversation-preview.ts:113
 #: apps/app/src/routes/character-detail-page.tsx:154
@@ -2309,7 +2311,7 @@ msgstr ""
 #: apps/app/src/components/chat-message-list.tsx:6562
 #: apps/app/src/features/shell/desktop-nav-matching.ts:91
 #: apps/app/src/features/shell/desktop-nav-matching.ts:92
-#: apps/app/src/features/world/world-page.tsx:134
+#: apps/app/src/features/world/world-page.tsx:158
 #: apps/app/src/i18n/static-dom-seed.ts:47
 #: apps/app/src/lib/message-attachment-semantic.ts:324
 #: apps/app/src/routes/channels-page.tsx:2190
@@ -2887,7 +2889,7 @@ msgstr "이미지를 갤러리에 저장한 뒤 X / 샤오훙수 / 웨이보에 
 #: apps/app/src/features/desktop/moments/desktop-moments-workspace.tsx:184
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:261
 #: apps/app/src/features/shell/desktop-shell.tsx:75
-#: apps/app/src/features/world/world-page.tsx:229
+#: apps/app/src/features/world/world-page.tsx:337
 #: apps/app/src/routes/channel-author-page.tsx:593
 #: apps/app/src/routes/desktop-feedback-page.tsx:122
 #: apps/app/src/routes/desktop-mobile-page.tsx:197
@@ -3222,7 +3224,7 @@ msgstr "도구 공유"
 #: apps/app/src/routes/chat-background-page.tsx:602
 #: apps/app/src/routes/chat-details-page.tsx:316
 #: apps/app/src/routes/create-group-page.tsx:414
-#: apps/app/src/routes/discover-encounter-page.tsx:545
+#: apps/app/src/routes/discover-encounter-page.tsx:549
 #: apps/app/src/routes/discover-feed-page.tsx:2423
 #: apps/app/src/routes/discover-feed-page.tsx:2478
 #: apps/app/src/routes/discover-feed-page.tsx:2997
@@ -4114,14 +4116,14 @@ msgid "为确认是你本人操作，我们会向你的手机或绑定邮箱发�
 msgstr ""
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:268
-msgid "手机验证码"
-msgstr ""
-
-#: apps/app/src/features/account-security/delete-account-panel.tsx:268
 #: apps/app/src/routes/welcome-page.tsx:1748
 #: apps/app/src/routes/welcome-page.tsx:1756
 msgid "验证码"
 msgstr "인증 코드"
+
+#: apps/app/src/features/account-security/delete-account-panel.tsx:268
+msgid "手机验证码"
+msgstr ""
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:322
 msgid "我已了解：注销后账号无法登录，数据将被永久归档且不可恢复；重新注册不会找回原有数据。"
@@ -5790,14 +5792,14 @@ msgstr "음성으로 전환"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "끊는 중..."
-
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
 msgid "挂断"
 msgstr "끊기"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
+msgid "挂断中..."
+msgstr "끊는 중..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -7474,7 +7476,7 @@ msgstr "소셜 및 콘텐츠"
 #: apps/app/src/features/shell/desktop-nav-matching.ts:71
 #: apps/app/src/features/shell/desktop-nav-matching.ts:72
 #: apps/app/src/features/shell/desktop-shell.tsx:989
-#: apps/app/src/features/world/world-page.tsx:125
+#: apps/app/src/features/world/world-page.tsx:149
 #: apps/app/src/i18n/static-dom-seed.ts:33
 #: apps/app/src/routes/character-detail-page.tsx:412
 #: apps/app/src/routes/discover-page.tsx:129
@@ -8116,7 +8118,7 @@ msgid "开始克隆"
 msgstr ""
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-figure.tsx:28
-#: apps/app/src/features/world/world-page.tsx:104
+#: apps/app/src/features/world/world-page.tsx:128
 #: apps/app/src/routes/cyber-avatar-page.tsx:139
 #: apps/app/src/routes/cyber-avatar-page.tsx:142
 #: apps/app/src/routes/discover-page.tsx:170
@@ -8209,7 +8211,7 @@ msgstr ""
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-#: apps/app/src/features/world/world-page.tsx:472
+#: apps/app/src/features/world/world-page.tsx:596
 msgid "近期动向"
 msgstr "최근 동향"
 
@@ -8540,7 +8542,7 @@ msgid "图集"
 msgstr "사진 갤러리"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3121
-#: apps/app/src/features/world/world-page.tsx:266
+#: apps/app/src/features/world/world-page.tsx:377
 #: apps/app/src/i18n/static-dom-seed.ts:1051
 #: apps/app/src/routes/channel-author-page.tsx:415
 #: apps/app/src/routes/channel-author-page.tsx:1070
@@ -10681,6 +10683,7 @@ msgstr "프로필 보기"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:655
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:278
+#: apps/app/src/features/world/world-page.tsx:213
 #: apps/app/src/routes/profile-moments-page.tsx:1221
 msgid "我的朋友圈"
 msgstr "내 모먼트"
@@ -11983,7 +11986,7 @@ msgstr ": "
 #: apps/app/src/features/search/search-types.ts:125
 #: apps/app/src/features/search/use-search-index.ts:502
 #: apps/app/src/features/shell/desktop-nav-matching.ts:85
-#: apps/app/src/features/world/world-page.tsx:116
+#: apps/app/src/features/world/world-page.tsx:140
 #: apps/app/src/i18n/static-dom-seed.ts:67
 #: apps/app/src/routes/discover-feed-page.tsx:1051
 #: apps/app/src/routes/discover-feed-page.tsx:1943
@@ -12087,7 +12090,7 @@ msgstr "게임 시작"
 #: apps/app/src/features/desktop/games/desktop-games-workspace.tsx:107
 #: apps/app/src/features/games/night-market/night-market-data.ts:65
 #: apps/app/src/features/shell/desktop-nav-matching.ts:104
-#: apps/app/src/features/world/world-page.tsx:153
+#: apps/app/src/features/world/world-page.tsx:177
 #: apps/app/src/i18n/static-dom-seed.ts:74
 #: apps/app/src/routes/desktop-mobile-page.tsx:129
 #: apps/app/src/routes/discover-page.tsx:226
@@ -13544,7 +13547,7 @@ msgstr "매일 체크인"
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:81
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:80
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:88
-#: apps/app/src/features/world/world-page.tsx:402
+#: apps/app/src/features/world/world-page.tsx:526
 #: apps/app/src/routes/profile-feed-page.tsx:438
 #: apps/app/src/routes/wallet-transactions-page.tsx:162
 msgid "加载中…"
@@ -15336,17 +15339,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "본진을 지키고 적 탱크 20대를 격파하라."
 
 #: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "2P"
+
+#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "픽셀"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "액션"
-
-#: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "2P"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -17589,7 +17592,7 @@ msgid "偏创作、分发、沉淀和内容协同。"
 msgstr "제작, 배포, 축적, 콘텐츠 협업에 적합합니다."
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:102
-#: apps/app/src/features/world/world-page.tsx:271
+#: apps/app/src/features/world/world-page.tsx:382
 #: apps/app/src/i18n/static-dom-seed.ts:150
 msgid "生活"
 msgstr "생활"
@@ -17600,7 +17603,7 @@ msgid "偏办事、地图、活动和居民服务。"
 msgstr "민원, 지도, 이벤트, 주민 서비스에 적합합니다."
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:107
-#: apps/app/src/features/world/world-page.tsx:163
+#: apps/app/src/features/world/world-page.tsx:187
 #: apps/app/src/i18n/static-dom-seed.ts:151
 #: apps/app/src/routes/discover-page.tsx:241
 msgid "工具"
@@ -18503,7 +18506,7 @@ msgstr "채팅 소스 필터로 최근 다시 본 이미지들을 한 번 더 �
 #: apps/app/src/features/search/search-types.ts:98
 #: apps/app/src/features/search/search-types.ts:123
 #: apps/app/src/features/shell/desktop-nav-matching.ts:110
-#: apps/app/src/features/world/world-page.tsx:162
+#: apps/app/src/features/world/world-page.tsx:186
 #: apps/app/src/i18n/static-dom-seed.ts:66
 #: apps/app/src/routes/desktop-mobile-page.tsx:124
 #: apps/app/src/routes/discover-page.tsx:240
@@ -18992,7 +18995,7 @@ msgid "支持好友动态和评论命中。"
 msgstr "친구 업데이트와 댓글 일치를 지원합니다."
 
 #: apps/app/src/features/search/desktop-search-workspace.tsx:138
-#: apps/app/src/features/world/world-page.tsx:135
+#: apps/app/src/features/world/world-page.tsx:159
 #: apps/app/src/i18n/static-dom-seed.ts:335
 #: apps/app/src/routes/favorites-page.tsx:647
 msgid "内容流"
@@ -19493,6 +19496,7 @@ msgid "意见反馈"
 msgstr "의견 피드백"
 
 #: apps/app/src/features/shell/desktop-nav-config.ts:117
+#: apps/app/src/features/world/world-page.tsx:234
 #: apps/app/src/routes/profile-feedback-page.tsx:246
 #: apps/app/src/routes/profile-page.tsx:233
 msgid "反馈"
@@ -19954,6 +19958,7 @@ msgid "订阅"
 msgstr "구독"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:515
+#: apps/app/src/features/world/world-page.tsx:252
 #: apps/app/src/routes/profile-page.tsx:205
 #: apps/app/src/routes/profile-settings-desktop.tsx:109
 #: apps/app/src/routes/profile-settings-desktop.tsx:903
@@ -20129,7 +20134,7 @@ msgstr ""
 msgid "红包退回"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:77
+#: apps/app/src/features/world/world-page.tsx:101
 #: apps/app/src/routes/discover-encounter-page.tsx:280
 #: apps/app/src/routes/discover-encounter-page.tsx:367
 #: apps/app/src/routes/discover-page.tsx:143
@@ -20137,147 +20142,214 @@ msgstr ""
 msgid "摇一摇"
 msgstr "흔들기"
 
-#: apps/app/src/features/world/world-page.tsx:78
+#: apps/app/src/features/world/world-page.tsx:102
 #: apps/app/src/i18n/static-dom-seed.ts:443
 #: apps/app/src/routes/discover-encounter-page.tsx:369
 msgid "随机相遇"
 msgstr "무작위 만남"
 
-#: apps/app/src/features/world/world-page.tsx:86
+#: apps/app/src/features/world/world-page.tsx:110
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:154
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:156
 #: apps/app/src/routes/discover-page.tsx:157
 msgid "分身相遇"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:87
+#: apps/app/src/features/world/world-page.tsx:111
 msgid "分身互访"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:95
+#: apps/app/src/features/world/world-page.tsx:119
 #: apps/app/src/routes/discover-page.tsx:184
 #: apps/app/src/routes/discover-scene-page.tsx:377
 msgid "场景相遇"
 msgstr "장소 만남"
 
-#: apps/app/src/features/world/world-page.tsx:96
+#: apps/app/src/features/world/world-page.tsx:120
 msgid "特定场景"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:105
+#: apps/app/src/features/world/world-page.tsx:129
 msgid "你的镜像"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:117
+#: apps/app/src/features/world/world-page.tsx:141
 #: apps/app/src/routes/discover-feed-page.tsx:2270
 #: apps/app/src/routes/discover-page.tsx:786
 msgid "世界居民公开可见"
 msgstr "세계 주민에게 공개"
 
-#: apps/app/src/features/world/world-page.tsx:126
+#: apps/app/src/features/world/world-page.tsx:150
 #: apps/app/src/routes/discover-page.tsx:773
 msgid "世界角色日常"
 msgstr "세계 캐릭터 일상"
 
-#: apps/app/src/features/world/world-page.tsx:146
+#: apps/app/src/features/world/world-page.tsx:170
 #: apps/app/src/routes/discover-page.tsx:253
 #: apps/app/src/routes/profile-page.tsx:211
 #: apps/app/src/routes/shop-page.tsx:166
 msgid "商城"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:147
+#: apps/app/src/features/world/world-page.tsx:171
 #: apps/app/src/routes/discover-page.tsx:254
 msgid "好物"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:154
+#: apps/app/src/features/world/world-page.tsx:178
 #: apps/app/src/routes/discover-page.tsx:227
 msgid "娱乐"
 msgstr "엔터테인먼트"
 
-#: apps/app/src/features/world/world-page.tsx:187
+#: apps/app/src/features/world/world-page.tsx:199
+#: apps/app/src/routes/knowledge-base-page.tsx:253
+#: apps/app/src/routes/profile-page.tsx:168
+msgid "知识库"
+msgstr ""
+
+#: apps/app/src/features/world/world-page.tsx:200
+msgid "我的资料库"
+msgstr "내 자료실"
+
+#: apps/app/src/features/world/world-page.tsx:207
+msgid "收藏的角色"
+msgstr "즐겨찾기한 캐릭터"
+
+#: apps/app/src/features/world/world-page.tsx:214
+msgid "我发布的动态"
+msgstr "내가 올린 모먼트"
+
+#: apps/app/src/features/world/world-page.tsx:220
+msgid "我的广场"
+msgstr "내 광장"
+
+#: apps/app/src/features/world/world-page.tsx:221
+msgid "我的广场帖"
+msgstr "내 광장 게시물"
+
+#: apps/app/src/features/world/world-page.tsx:227
+#: apps/app/src/routes/profile-character-import-page.tsx:340
+#: apps/app/src/routes/profile-page.tsx:227
+msgid "导入角色"
+msgstr "캐릭터 가져오기"
+
+#: apps/app/src/features/world/world-page.tsx:228
+msgid "添加新角色"
+msgstr "새 캐릭터 추가"
+
+#: apps/app/src/features/world/world-page.tsx:235
+msgid "意见与建议"
+msgstr "의견 및 제안"
+
+#: apps/app/src/features/world/world-page.tsx:245
+#: apps/app/src/features/world/world-page.tsx:394
+#: apps/app/src/routes/profile-page.tsx:199
+#: apps/app/src/routes/wallet-page.tsx:101
+msgid "钱包"
+msgstr ""
+
+#: apps/app/src/features/world/world-page.tsx:246
+msgid "余额与账单"
+msgstr "잔액 및 청구"
+
+#: apps/app/src/features/world/world-page.tsx:253
+msgid "订阅与权益"
+msgstr "구독 및 혜택"
+
+#: apps/app/src/features/world/world-page.tsx:259
+#: apps/app/src/routes/gift-cabinet-page.tsx:59
+#: apps/app/src/routes/profile-page.tsx:217
+#: apps/app/src/routes/shop-page.tsx:186
+msgid "礼物柜"
+msgstr ""
+
+#: apps/app/src/features/world/world-page.tsx:260
+#: apps/app/src/routes/gift-cabinet-page.tsx:125
+msgid "收到的礼物"
+msgstr "받은 선물"
+
+#: apps/app/src/features/world/world-page.tsx:282
 msgid "正在切换到发现页"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:188
+#: apps/app/src/features/world/world-page.tsx:283
 msgid "「世界」首屏当前在移动端开放。"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:189
+#: apps/app/src/features/world/world-page.tsx:284
 msgid "正在切换..."
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:234
+#: apps/app/src/features/world/world-page.tsx:342
 msgid "你的世界"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:235
+#: apps/app/src/features/world/world-page.tsx:343
 msgid "第 {worldDay} 天"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:240
+#: apps/app/src/features/world/world-page.tsx:348
 msgid "个人主页"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:258
+#: apps/app/src/features/world/world-page.tsx:369
 msgid "探索"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:261
+#: apps/app/src/features/world/world-page.tsx:372
 msgid "相遇"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:324
-#: apps/app/src/features/world/world-page.tsx:325
+#: apps/app/src/features/world/world-page.tsx:448
+#: apps/app/src/features/world/world-page.tsx:449
 msgid "和我说点什么…"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:397
+#: apps/app/src/features/world/world-page.tsx:521
 msgid "守护中"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:399
+#: apps/app/src/features/world/world-page.tsx:523
 msgid "成形中"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:401
+#: apps/app/src/features/world/world-page.tsx:525
 msgid "待唤醒"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:419
+#: apps/app/src/features/world/world-page.tsx:543
 msgid "你的分身"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:424
+#: apps/app/src/features/world/world-page.tsx:548
 msgid "心情 {mood}"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:425
+#: apps/app/src/features/world/world-page.tsx:549
 msgid "能量 {energy}"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:450
+#: apps/app/src/features/world/world-page.tsx:574
 msgid "多在世界里互动，分身会越来越像你"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:461
+#: apps/app/src/features/world/world-page.tsx:585
 msgid "已分析 {signalCount} 条信号"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:462
+#: apps/app/src/features/world/world-page.tsx:586
 msgid " · 待分析 {pendingCount} 条"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:469
+#: apps/app/src/features/world/world-page.tsx:593
 msgid "当前关注"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:486
+#: apps/app/src/features/world/world-page.tsx:610
 msgid "去看看你的赛博分身"
 msgstr ""
 
-#: apps/app/src/features/world/world-page.tsx:486
+#: apps/app/src/features/world/world-page.tsx:610
 msgid "看完整画像与对话"
 msgstr ""
 
@@ -26904,18 +26976,18 @@ msgid "跳过"
 msgstr "건너뛰기"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
-msgid "加为好友"
-msgstr ""
-
-#: apps/app/src/routes/discover-encounter-page.tsx:491
 msgid "添加中..."
 msgstr "추가 중..."
 
-#: apps/app/src/routes/discover-encounter-page.tsx:536
+#: apps/app/src/routes/discover-encounter-page.tsx:491
+msgid "加为好友"
+msgstr ""
+
+#: apps/app/src/routes/discover-encounter-page.tsx:540
 msgid "重试摇一摇"
 msgstr "흔들기 재시도"
 
-#: apps/app/src/routes/discover-encounter-page.tsx:546
+#: apps/app/src/routes/discover-encounter-page.tsx:550
 #: apps/app/src/routes/discover-scene-page.tsx:583
 msgid "回发现页"
 msgstr "발견 페이지로 돌아가기"
@@ -27647,12 +27719,6 @@ msgstr "게임 준비 중…"
 msgid "开始"
 msgstr "시작"
 
-#: apps/app/src/routes/gift-cabinet-page.tsx:59
-#: apps/app/src/routes/profile-page.tsx:217
-#: apps/app/src/routes/shop-page.tsx:186
-msgid "礼物柜"
-msgstr ""
-
 #: apps/app/src/routes/gift-cabinet-page.tsx:79
 #: apps/app/src/routes/shop-orders-page.tsx:78
 msgid "我的订单"
@@ -27660,10 +27726,6 @@ msgstr ""
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:96
 msgid "礼物柜需要登录隐界云账号。"
-msgstr ""
-
-#: apps/app/src/routes/gift-cabinet-page.tsx:125
-msgid "收到的礼物"
 msgstr ""
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:126
@@ -28249,11 +28311,6 @@ msgstr "삭제에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
 #: apps/app/src/routes/knowledge-base-page.tsx:212
 msgid "文件超过 16MB 上限，请换一份更小的文件。"
-msgstr ""
-
-#: apps/app/src/routes/knowledge-base-page.tsx:253
-#: apps/app/src/routes/profile-page.tsx:168
-msgid "知识库"
 msgstr ""
 
 #: apps/app/src/routes/knowledge-base-page.tsx:270
@@ -29153,11 +29210,6 @@ msgstr "파일 {0}개가 감지되었습니다. 첫 번째({1})만 처리됩니�
 msgid "导入失败，请稍后再试"
 msgstr "가져오기에 실패했습니다. 잠시 후 다시 시도해 주세요."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:340
-#: apps/app/src/routes/profile-page.tsx:227
-msgid "导入角色"
-msgstr "캐릭터 가져오기"
-
 #: apps/app/src/routes/profile-character-import-page.tsx:371
 msgid "在「世界角色管理平台 → 我的私有角色」编辑或新建角色，点「📤 导出 JSON」下载文件"
 msgstr "「월드 캐릭터 관리 플랫폼 → 내 비공개 캐릭터」에서 캐릭터를 편집하거나 새로 만든 뒤 \"📤 JSON 내보내기\"를 눌러 파일을 다운로드하세요"
@@ -29552,11 +29604,6 @@ msgstr "다시 불러오는 중…"
 #: apps/app/src/routes/profile-page.tsx:143
 msgid "查看与编辑个人资料"
 msgstr "프로필 보기 및 편집"
-
-#: apps/app/src/routes/profile-page.tsx:199
-#: apps/app/src/routes/wallet-page.tsx:101
-msgid "钱包"
-msgstr ""
 
 #: apps/app/src/routes/profile-page.tsx:264
 #: apps/app/src/routes/profile-page.tsx:277
