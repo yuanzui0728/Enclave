@@ -340,7 +340,7 @@ function MobileWorldPage() {
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
-        className="mx-0 mt-0 sm:mx-0"
+        className="mx-0 mt-0 px-4 sm:mx-0 sm:px-4"
         title={t(msg`你的世界`)}
         subtitle={t(msg`第 ${worldDay} 天`)}
         rightActions={
