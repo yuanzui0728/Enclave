@@ -30656,3 +30656,7 @@ msgstr "저장을 취소했습니다."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "파일을 열었습니다."
+
+#: apps/app/src/routes/discover-encounter-page.tsx:111
+msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
+msgstr "흔들기 대기 시간이 초과되었습니다. 네트워크나 서버가 혼잡할 수 있으니 잠시 후 다시 시도해 주세요."

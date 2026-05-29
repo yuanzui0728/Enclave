@@ -285,6 +285,11 @@ export class ShakeDiscoveryService {
         // 实测能稳住。
         maxTokens: 4000,
         temperature: 0.45,
+        // 摇一摇是「用户对着 spinner 同步等」的链路。不设 timeout 时上游卡住会走
+        // SDK 默认 10min×retry×fallback，前端「正在寻找...」干转几十分钟无反应。
+        // 给单 attempt 45s 上界：正常推理 < 30s，卡住则快速失败→抛
+        // SHAKE_AI_PLANNING_FAILED，前端展示可重试错误。
+        timeoutMs: 45_000,
         usageContext: {
           surface: 'app',
           scene: 'shake_discovery_plan',
@@ -363,6 +368,8 @@ export class ShakeDiscoveryService {
           // 同 planning：给 thinking 留够余量。
           maxTokens: 4000,
           temperature: 0.82,
+          // 同 planning：45s 单 attempt 上界，避免上游卡住时前端无限转圈。
+          timeoutMs: 45_000,
           usageContext: {
             surface: 'app',
             scene: 'shake_discovery_generate',

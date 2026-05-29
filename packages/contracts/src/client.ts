@@ -128,6 +128,12 @@ import type {
   FavoriteNoteSummary,
   FavoriteRecord,
   UpsertFavoriteNoteRequest,
+  NoteAiToolRequest,
+  NoteAiToolResponse,
+  NoteAskRequest,
+  NoteAskResponse,
+  NoteFromMessageRequest,
+  NoteFromVoiceResponse,
 } from "./favorites";
 import type {
   SubmitCloudFeedbackRequest,
@@ -3191,6 +3197,75 @@ export function removeFavoriteNote(id: string, baseUrl?: string) {
   );
 }
 
+// ===== 第二大脑 AI 能力客户端 =====
+
+// AI 工具栏：总结/润色/续写/翻译/大纲/提取待办/起标题。
+export function runNoteAiTool(payload: NoteAiToolRequest, baseUrl?: string) {
+  return requestLegacyApi<NoteAiToolResponse>(
+    "/favorites/notes/ai-tools",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+// 与笔记对话（基于全部笔记的 RAG 问答）。
+export function askFavoriteNotes(payload: NoteAskRequest, baseUrl?: string) {
+  return requestLegacyApi<NoteAskResponse>(
+    "/favorites/notes/ask",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+// 聊天/群聊消息一键转笔记。
+export function createNoteFromMessage(
+  payload: NoteFromMessageRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FavoriteNoteDocument>(
+    "/favorites/notes/from-message",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+// 语音转笔记（payload: FormData，字段 file + 可选 autoSummarize='true'）。
+export function createNoteFromVoice(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<NoteFromVoiceResponse>(
+    "/favorites/notes/from-voice",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
+// 置顶/取消置顶。
+export function pinFavoriteNote(
+  id: string,
+  pinned: boolean,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FavoriteNoteDocument>(
+    `/favorites/notes/${encodeURIComponent(id)}/pin`,
+    {
+      method: "POST",
+      body: JSON.stringify({ pinned }),
+    },
+    baseUrl,
+  );
+}
+
 export function removeFavorite(sourceId: string, baseUrl?: string) {
   return requestLegacyApi<SuccessResponse>(
     `/favorites/${encodeURIComponent(sourceId)}`,
@@ -4665,6 +4740,10 @@ export function markOfficialAccountArticleRead(
 export function shake(
   payload?: CreateShakeDiscoverySessionRequest,
   baseUrl?: string,
+  // 摇一摇后端要跑 planning + 角色生成两次 LLM 推理，正常 ~60s；公网隧道 / 移动
+  // 网络 / 上游卡住时这个 fetch 本身无 timeout 会一直挂着，前端「正在寻找...」干转。
+  // 调用方传 signal（通常是 AbortSignal.timeout(...)）给一个有界上限，超时即 abort。
+  signal?: AbortSignal,
 ) {
   return requestLegacyApi<ShakeDiscoverySessionPreview | null>(
     "/social/shake",
@@ -4673,6 +4752,7 @@ export function shake(
       body: JSON.stringify({
         mode: payload?.mode === "reroll" ? "reroll" : "new",
       }),
+      signal,
     },
     baseUrl,
   );

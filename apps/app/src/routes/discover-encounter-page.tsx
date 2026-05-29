@@ -94,7 +94,25 @@ function MobileDiscoverEncounterPage() {
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
-      const preview = await shake(undefined, baseUrl);
+      // 后端 planning + 角色生成两次推理 + fallback provider，正常 ~60s。后端已给
+      // 单次 attempt 加了 45s 上界，但隧道 / 网络层若整体卡住，fetch 本身没有
+      // timeout 会无限挂起，按钮一直停在「正在寻找...」。给整个请求一个 150s 的
+      // 兜底上限（够正常流程 + 一次 provider fallback），超时 abort 并转成可重试
+      // 的友好错误，绝不让用户对着 spinner 干等。
+      let preview: Awaited<ReturnType<typeof shake>>;
+      try {
+        preview = await shake(undefined, baseUrl, AbortSignal.timeout(150_000));
+      } catch (error) {
+        if (
+          error instanceof DOMException &&
+          (error.name === "TimeoutError" || error.name === "AbortError")
+        ) {
+          throw new Error(
+            t(msg`摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。`),
+          );
+        }
+        throw error;
+      }
       if (!preview) {
         return null;
       }

@@ -30656,3 +30656,7 @@ msgstr "Save cancelled."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "File opened."
+
+#: apps/app/src/routes/discover-encounter-page.tsx:111
+msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
+msgstr "Shake timed out — the network or server may be busy. Please try again later."

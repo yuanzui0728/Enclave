@@ -3431,6 +3431,11 @@ export class AiOrchestratorService {
     // 调用方已自行完成访问控制时跳过会员硬拦（如摇一摇免费档由
     // assertShakeFriendQuota 负责门禁）。默认 false，其余调用方行为不变。
     skipSubscriptionGate?: boolean;
+    // 单次 attempt 的硬超时（毫秒）。不传 → 沿用 OpenAI SDK 默认 timeout（10min）
+    // + maxRetries(2)，上游卡住时单次调用能干转几十分钟。摇一摇这类「用户对着
+    // spinner 等」的同步链路必须传一个有界值（见 generateQuickCharacter 同款），
+    // 把卡死收敛成快速失败，由调用方/前端展示可重试错误。
+    timeoutMs?: number;
   }): Promise<Record<string, unknown>> {
     if (!options.skipSubscriptionGate) {
       await this.subscription.assertCanUseAi('text');
@@ -3439,18 +3444,26 @@ export class AiOrchestratorService {
       const prompt = await this.worldLanguage.prependTaskLanguageInstruction(
         options.prompt,
       );
+      const requestTimeout =
+        typeof options.timeoutMs === 'number' && options.timeoutMs > 0
+          ? { timeout: Math.min(options.timeoutMs, 120_000), maxRetries: 0 }
+          : undefined;
       const response = await this.requestChatTaskWithFallback({
         usageContext: options.usageContext,
         characterId: options.usageContext.characterId,
         label: 'json generation',
         request: (client, provider) =>
-          executeChatCompletion(client, {
-            model: provider.model,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: options.maxTokens ?? 1200,
-            temperature: options.temperature ?? 0.3,
-            response_format: { type: 'json_object' },
-          }),
+          executeChatCompletion(
+            client,
+            {
+              model: provider.model,
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: options.maxTokens ?? 1200,
+              temperature: options.temperature ?? 0.3,
+              response_format: { type: 'json_object' },
+            },
+            requestTimeout,
+          ),
       });
 
       const raw = response.choices[0]?.message?.content ?? '{}';
