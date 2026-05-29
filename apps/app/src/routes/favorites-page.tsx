@@ -964,7 +964,7 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
   ).length;
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[linear-gradient(180deg,#ffffff_0%,#f8faf9_100%)] shadow-[var(--shadow-soft)]">
+    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] shadow-[var(--shadow-soft)]">
       <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
         <div className="text-xs text-[color:var(--text-muted)]">{t(msg`笔记预览`)}</div>
         <div className="mt-2 line-clamp-2 text-[length:var(--text-base)] font-medium leading-7 text-[color:var(--text-primary)]">

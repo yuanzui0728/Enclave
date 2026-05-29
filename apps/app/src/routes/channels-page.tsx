@@ -4354,7 +4354,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
         <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
-          <div className="rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-[color:var(--text-on-brand)]">
+          <div className="rounded-full bg-[color:var(--state-info-solid)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-[color:var(--text-on-brand)]">
             {getChannelsSectionBadge(activeSection, t)}
           </div>
         </div>

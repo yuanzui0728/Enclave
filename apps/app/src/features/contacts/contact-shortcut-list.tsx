@@ -164,7 +164,7 @@ export function ContactShortcutList({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] font-medium leading-none text-[color:var(--text-on-brand)]",
+                  "flex items-center justify-center rounded-full bg-[color:var(--state-danger-solid)] font-medium leading-none text-[color:var(--text-on-brand)]",
                   variant === "desktop-flat"
                     ? "min-w-4.5 px-1.5 py-0.5 text-[10px]"
                     : mobileDense

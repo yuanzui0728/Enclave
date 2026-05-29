@@ -829,7 +829,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 {t(msg`桌面通话工作区`)}
               </div>
               <div className="mt-5 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/10 text-[color:var(--state-success-text)]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/10 text-[#34d399]">
                   {isVideoMode ? <Camera size={24} /> : <Mic size={24} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1180,8 +1180,8 @@ function MobileCallStatusCard({
           className={cn(
             "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
             tone === "danger"
-              ? "bg-[#ef4444]/14 text-[color:var(--state-danger-text)]"
-              : "bg-[#34d399]/12 text-[color:var(--state-success-text)]",
+              ? "bg-[#ef4444]/14 text-[#f87171]"
+              : "bg-[#34d399]/12 text-[#34d399]",
           )}
         >
           {badge}
@@ -1216,7 +1216,7 @@ function MobileCallActionButton({
       className={cn(
         "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition disabled:opacity-45",
         tone === "danger"
-          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[color:var(--state-danger-text)] active:bg-[#ef4444]/20"
+          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[#f87171] active:bg-[#ef4444]/20"
           : "border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] active:bg-[color:var(--surface-card)]/14",
         className,
       )}
