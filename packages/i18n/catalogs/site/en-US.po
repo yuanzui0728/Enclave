@@ -418,7 +418,7 @@ msgstr "A personal assistant world of your own. AI experts from every field, plu
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
 msgid "你的世界首屏"
-msgstr "Your world's home screen"
+msgstr "Your world home screen"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:48
@@ -920,7 +920,7 @@ msgstr "Don't see your question? Drop us an email."
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:11
 msgid "立即开始"
-msgstr "Start now"
+msgstr "Get started"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:12
@@ -1065,7 +1065,7 @@ msgstr "Remembers: you're studying for an exam, you've been sleeping poorly, you
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:18
 msgid "主动跟进"
-msgstr "Following up"
+msgstr "Proactive follow-up"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:19
@@ -1127,7 +1127,7 @@ msgstr "Languages"
 
 #: apps/site/src/components/one-person-world.tsx:16
 msgid "一人一世界"
-msgstr "One world per person"
+msgstr "One person, one world"
 
 #: apps/site/src/components/one-person-world.tsx:17
 msgid "每位用户拥有完全独立的世界，互不打扰、互不可见。你的对话只属于你。"
@@ -1135,7 +1135,7 @@ msgstr "Each user has a fully independent world—no overlap, no visibility into
 
 #: apps/site/src/components/one-person-world.tsx:21
 msgid "数据自主"
-msgstr "Data autonomy"
+msgstr "Data sovereignty"
 
 #: apps/site/src/components/one-person-world.tsx:22
 msgid "全部数据可一键导出，随时带走；不绑定平台，不锁定关系。"

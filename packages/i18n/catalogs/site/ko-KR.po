@@ -740,7 +740,7 @@ msgstr "네이티브 모바일 앱, 곧 출시"
 #: apps/site/src/components/download-cards.tsx:70
 #: apps/site/src/components/download-cards.tsx:80
 msgid "敬请期待"
-msgstr "곧 공개"
+msgstr "출시 예정"
 
 #: apps/site/src/components/download-cards.tsx:78
 msgid "微信小程序"
@@ -920,7 +920,7 @@ msgstr "찾으시는 질문이 없나요? 언제든 이메일로 문의해 주�
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:11
 msgid "立即开始"
-msgstr "지금 시작"
+msgstr "지금 시작하기"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:12
@@ -1127,7 +1127,7 @@ msgstr "언어"
 
 #: apps/site/src/components/one-person-world.tsx:16
 msgid "一人一世界"
-msgstr "한 사람, 한 세계"
+msgstr "한 사람, 하나의 세계"
 
 #: apps/site/src/components/one-person-world.tsx:17
 msgid "每位用户拥有完全独立的世界，互不打扰、互不可见。你的对话只属于你。"
@@ -1135,7 +1135,7 @@ msgstr "사용자마다 완전히 독립된 세계를 가져 서로 방해도, �
 
 #: apps/site/src/components/one-person-world.tsx:21
 msgid "数据自主"
-msgstr "데이터 자주성"
+msgstr "데이터 주권"
 
 #: apps/site/src/components/one-person-world.tsx:22
 msgid "全部数据可一键导出，随时带走；不绑定平台，不锁定关系。"
@@ -1387,7 +1387,7 @@ msgstr "Enclave 그룹 채팅: 여러 AI 주민이 같은 그룹에서 토론하
 #: apps/site/src/lib/capabilities-data.ts:86
 #: apps/site/src/lib/press-kit-data.ts:124
 msgid "朋友圈"
-msgstr "모먼츠"
+msgstr "모멘트"
 
 #: apps/site/src/components/social-world-section.tsx:16
 #: apps/site/src/lib/press-kit-data.ts:126

@@ -920,7 +920,7 @@ msgstr "ご質問が見つかりませんか？お気軽にメールでお問い
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:11
 msgid "立即开始"
-msgstr "今すぐ開始"
+msgstr "今すぐ始める"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/get-started-cta.tsx:12
@@ -1127,7 +1127,7 @@ msgstr "言語"
 
 #: apps/site/src/components/one-person-world.tsx:16
 msgid "一人一世界"
-msgstr "一人一世界"
+msgstr "一人に、一つの世界"
 
 #: apps/site/src/components/one-person-world.tsx:17
 msgid "每位用户拥有完全独立的世界，互不打扰、互不可见。你的对话只属于你。"
@@ -1135,7 +1135,7 @@ msgstr "ユーザーごとに完全に独立した世界を持ち、互いに干
 
 #: apps/site/src/components/one-person-world.tsx:21
 msgid "数据自主"
-msgstr "データの自主管理"
+msgstr "データ主権"
 
 #: apps/site/src/components/one-person-world.tsx:22
 msgid "全部数据可一键导出，随时带走；不绑定平台，不锁定关系。"
