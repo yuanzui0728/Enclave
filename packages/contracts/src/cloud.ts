@@ -15,7 +15,8 @@ export type CloudWorldLifecycleStatus =
   | "stopping"
   | "failed"
   | "disabled"
-  | "deleting";
+  | "deleting"
+  | "archived";
 
 export type CloudWorldStatus =
   | CloudWorldRequestStatus

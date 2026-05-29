@@ -1983,6 +1983,7 @@ export class CloudService {
       case "failed":
       case "disabled":
       case "deleting":
+      case "archived":
         return value;
       case "pending":
         return "queued";
