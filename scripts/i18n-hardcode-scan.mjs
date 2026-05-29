@@ -638,6 +638,10 @@ function scanChangedLines(options) {
   let currentLineNumber = 0;
   let previousAddedLine = "";
   let ignoreBlock = false;
+  // Block-comment state is best-effort in diff mode (only changed lines are
+  // visible): reset at file and hunk boundaries so a comment whose close is
+  // outside the diff cannot silently suppress real issues in later hunks.
+  let inBlockComment = false;
   let scope = null;
 
   for (const line of lines) {
@@ -646,6 +650,7 @@ function scanChangedLines(options) {
       currentLineNumber = 0;
       previousAddedLine = "";
       ignoreBlock = false;
+      inBlockComment = false;
       scope = shouldIgnoreFile(currentFile)
         ? null
         : resolveScope(currentFile, options.scopes);
@@ -657,6 +662,7 @@ function scanChangedLines(options) {
       currentLineNumber = 0;
       previousAddedLine = "";
       ignoreBlock = false;
+      inBlockComment = false;
       scope = null;
       continue;
     }
@@ -665,6 +671,7 @@ function scanChangedLines(options) {
     if (hunkMatch) {
       currentLineNumber = Number(hunkMatch[1]);
       previousAddedLine = "";
+      inBlockComment = false;
       continue;
     }
 
@@ -686,20 +693,30 @@ function scanChangedLines(options) {
         currentLineNumber += 1;
         continue;
       }
+      const { code, endInBlock } = stripCommentsTrackingBlock(
+        addedLine,
+        inBlockComment,
+      );
+      const startedInBlock = inBlockComment;
+      inBlockComment = endInBlock;
       if (ignoreBlock) {
         previousAddedLine = addedLine;
         currentLineNumber += 1;
         continue;
       }
-      issues.push(
-        ...collectLineIssues(
-          currentFile,
-          scope,
-          currentLineNumber,
-          addedLine,
-          previousAddedLine,
-        ),
-      );
+      // A line fully inside a block comment has no code to test.
+      if (!(startedInBlock && endInBlock)) {
+        issues.push(
+          ...collectLineIssues(
+            currentFile,
+            scope,
+            currentLineNumber,
+            addedLine,
+            previousAddedLine,
+            code,
+          ),
+        );
+      }
       previousAddedLine = addedLine;
       currentLineNumber += 1;
       continue;
@@ -712,6 +729,10 @@ function scanChangedLines(options) {
       } else if (contextLine.includes("i18n-ignore-end")) {
         ignoreBlock = false;
       }
+      inBlockComment = stripCommentsTrackingBlock(
+        contextLine,
+        inBlockComment,
+      ).endInBlock;
       previousAddedLine = contextLine;
       currentLineNumber += 1;
     }
