@@ -49,6 +49,18 @@ export function resolveOwnerDataPath(...segments: string[]) {
   return resolveDataPath('owners', ownerId, ...segments);
 }
 
+// 显式指定 ownerId 的子目录解析（不依赖当前 ALS 租户帧）。仅用于「公开/全局池」
+// 这类需要跨租户读取的固定 owner（如 global-world-owner 的公共媒体），调用方需自行
+// 保证传入的是公开 owner，绝不可拿它去取某个真实用户的私有目录绕过租户隔离。
+// LPP/wiki（非共享模式）回落到扁平 data root，与 resolveOwnerDataPath 行为一致。
+export function resolveSpecificOwnerDataPath(
+  ownerId: string,
+  ...segments: string[]
+) {
+  if (!isSharedWorldMode()) return resolveDataPath(...segments);
+  return resolveDataPath('owners', ownerId, ...segments);
+}
+
 export function resolveDatabasePath(configuredPath?: string | null) {
   const normalizedPath = configuredPath?.trim();
   if (normalizedPath) {

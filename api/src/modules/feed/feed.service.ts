@@ -123,6 +123,12 @@ function normalizeChannelHomeSection(
 const CHANNEL_VIDEO_TOPIC_TAGS = ['AI世界', '隐界'];
 const CHANNEL_VIDEO_ASPECT_RATIO = 9 / 16;
 
+// 视频号「看过降权 / 池子够大彻底排除」阈值：当未看过的视频号帖 ≥ 该值时，
+// 已看过的帖完全不再进 feed（用户彻底刷不到）；不足时已看过的沉底（降低出现频率）
+// 而非消失，避免小内容池被刷空。绑定默认 limit=20——40 = 2 屏未看内容，第一/二页
+// 都不会因排除已看而见底。内容池变大后可上调。见 rankChannelPostsByWatched。
+const CHANNEL_FRESH_POOL_MIN = 40;
+
 const MAX_FEED_IMAGE_COUNT = 9;
 const MAX_FEED_VIDEO_DURATION_MS = 5 * 60 * 1000;
 
@@ -394,8 +400,11 @@ export class FeedService implements OnModuleInit {
         owner.id,
         'recommended',
       );
-      pagedPosts = paginate(visiblePosts, page, limit);
-      total = visiblePosts.length;
+      // 看过降权，与 getChannelHome 同口径（total 用 rank 后长度）。
+      const viewedPostIds = await this.getViewedChannelPostIds(owner.id);
+      const rankedPosts = rankChannelPostsByWatched(visiblePosts, viewedPostIds);
+      pagedPosts = paginate(rankedPosts, page, limit);
+      total = rankedPosts.length;
     }
 
     const [commentsPreviewMap, ownerStateMap, countDeltaMap] = await Promise.all([
@@ -445,7 +454,13 @@ export class FeedService implements OnModuleInit {
       owner.id,
       section,
     );
-    const pagedPosts = paginate(postsForSection, page, limit);
+    // 看过降权：未看过的优先、已看过的沉底；未看过够多（≥CHANNEL_FRESH_POOL_MIN）时
+    // 已看过的彻底排除。rankedPosts.length 才是有效总数 → total 必须用它（否则排除
+    // 已看后前端 hasMore 仍以为有后续页 → 翻到空尾页）。decorations 接口不走这条，
+    // 作者位/分组计数仍基于全量池、不随观看收缩。
+    const viewedPostIds = await this.getViewedChannelPostIds(owner.id);
+    const rankedPosts = rankChannelPostsByWatched(postsForSection, viewedPostIds);
+    const pagedPosts = paginate(rankedPosts, page, limit);
 
     // 全局帖（视频号共享池）展示计数 = 全局基数 + 本人增量。本人对全局帖的赞/评/收藏只落
     // 自己名下子行、不计进全局基数，须读时 buildGlobalCountDeltaMap 合并回来 —— 否则视频号
@@ -477,7 +492,7 @@ export class FeedService implements OnModuleInit {
       })),
       authors: [],
       liveEntries: [],
-      total: postsForSection.length,
+      total: rankedPosts.length,
     };
   }
 
@@ -560,6 +575,76 @@ export class FeedService implements OnModuleInit {
       liveEntries,
       // postId → 最近 3 条评论；前端按 postId 合并到 posts[].commentsPreview 上。
       commentsPreviewByPostId: Object.fromEntries(commentsPreviewMap.entries()),
+    };
+  }
+
+  // 观看历史：按最近观看（view 行 updatedAt DESC）倒序返回当前 owner 看过的视频号帖。
+  // total = view 行数（权威），单页 posts 可能因「已删/不可播/越权」过滤而短于 limit；
+  // 前端 hasMore 用 page*limit < total 判断（与 getChannelHome「服务端过滤、total 权威」
+  // 同口径）。注意：看过后被删的帖 view 行仍在 → map miss 自然丢弃，绝不 500。
+  async getChannelWatchHistory(input?: { page?: number; limit?: number }) {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
+    const page = clampFeedPaginationPage(input?.page ?? 1);
+    const limit = clampFeedPaginationLimit(input?.limit ?? 20);
+
+    const viewRows = await this.interactionRepo.find({
+      where: { ownerId: owner.id, type: 'view' },
+      // updatedAt 是秒级，同秒多条会撞 → 补 id 次级排序，保证翻页确定（与广场/朋友圈
+      // stableOrder 一致），避免跨页边界漏/重。
+      order: { updatedAt: 'DESC', id: 'DESC' },
+    });
+    const total = viewRows.length;
+    const pagedRows = paginate(viewRows, page, limit);
+    const postIds = pagedRows.map((row) => row.postId);
+
+    // 收口到混合可见域（全局共享池 + 本人帖），照 getPostWithComments /
+    // getChannelAuthorProfile——裸 In(postIds) 命中别 owner 的行会触 afterLoad 读守卫 500。
+    const posts =
+      postIds.length === 0
+        ? []
+        : await this.postRepo.find({
+            where: isSharedWorldMode()
+              ? {
+                  id: In(postIds),
+                  surface: 'channels',
+                  publishStatus: 'published',
+                  ownerId: In([GLOBAL_WORLD_OWNER_ID, owner.id]),
+                }
+              : {
+                  id: In(postIds),
+                  surface: 'channels',
+                  publishStatus: 'published',
+                },
+          });
+    const postById = new Map(posts.map((post) => [post.id, post]));
+    // 按 view 行的观看倒序回排，丢弃已删/越权（map miss）+ 不可播放媒体。
+    const orderedPosts = pagedRows
+      .map((row) => postById.get(row.postId))
+      .filter(
+        (post): post is FeedPostEntity =>
+          !!post && this.isPostMediaPlayable(post),
+      );
+
+    const [ownerStateMap, countDeltaMap] = await Promise.all([
+      this.buildOwnerStateMap(orderedPosts, owner.id),
+      this.buildGlobalCountDeltaMap(orderedPosts, owner.id),
+    ]);
+
+    return {
+      posts: orderedPosts.map((post) => ({
+        ...this.serializePost(
+          post,
+          ownerStateMap.get(post.id),
+          avatarContext,
+          countDeltaMap.get(post.id),
+        ),
+        commentsPreview: [],
+      })),
+      total,
     };
   }
 
@@ -3811,6 +3896,11 @@ export class FeedService implements OnModuleInit {
         if (!fileName) return false;
         return existsSync(resolveReadableMomentMediaPath(fileName));
       }
+      // 其它站内绝对路径（如 cloud-api 中心媒体 /cloud/public/...，由 App 解析到
+      // cloud-api 自身提供）：本进程无法验证文件是否存在，且这些是跨 world 扇出的
+      // 角色视频的合法来源 —— 不能用 new URL 解析（相对路径会抛错→误判死链→把
+      // 扇出视频全隐藏）。一律视为可播放，可达性交给客户端 + cloud-api。
+      if (url.startsWith('/')) return true;
       try {
         const host = new URL(url).hostname.toLowerCase();
         return !FEED_DEAD_MEDIA_HOSTS.has(host);
@@ -3967,10 +4057,11 @@ export class FeedService implements OnModuleInit {
       if (surface === 'channels' && !this.isPostMediaPlayable(post)) {
         return false;
       }
-      // 广场（surface='feed'）公开可见：所有非屏蔽角色都展示，无论是否好友；
-      // 视频号（surface='channels'）保留 friends 仅好友可见的语义。
+      // 广场（surface='feed'）=非好友宣传位：当前用户已加为好友的角色帖退出广场
+      // （与 findVisibleFeedPostsPaged 的好友过滤同语义）；非好友（含未解锁付费角色）才展示。
+      // 视频号（surface='channels'）不受影响，保留 friends 仅好友可见的语义。
       if (surface === 'feed') {
-        return true;
+        return !ownerFriendIds.has(post.authorId);
       }
       if (post.visibility === 'friends') {
         return ownerFriendIds.has(post.authorId);
@@ -3994,20 +4085,35 @@ export class FeedService implements OnModuleInit {
       .where('post.surface = :surface', { surface: 'feed' })
       .andWhere('post.publishStatus = :status', { status: 'published' });
 
+    // 广场=非好友宣传位：当前用户已加为好友的角色，其广场帖从「该用户」广场退出
+    // （转 朋友圈 语义）。付费角色未解锁=非好友→留在广场宣传；解锁并加好友后退出。
+    // 全局共享池只能读时按当前用户的好友集过滤（不能写时删——全局帖对其他未加的用户仍可见）。
+    const friendIds = Array.from(
+      await this.characters.getActiveFriendCharacterIdSet(ownerId),
+    );
+    const hasFriends = friendIds.length > 0;
+
     if (isSharedWorldMode()) {
       // 广场 = 全局共享池 union 本人帖：
-      //   - 世界居民（全局哨兵 owner）的公开角色帖 → 全员（含新用户）实时可见的「广场动态」
+      //   - 世界居民（全局哨兵 owner）的公开、且**当前用户尚未加为好友**的角色帖 →「广场动态」
       //   - 当前用户自己发的 user 帖 → 仅本人可见（隐私：不展示别人的 user 帖）
       // 不再按用户 visibleIds 过滤全局角色帖：世界居民对所有人公开，含 mid-seed 的新用户；
       // authorId 是稳定 preset id，点进去落用户自己的副本。afterLoad 已放行全局行。
       // per-owner 角色帖（旧 moment→feed sync 产物 ownerId=用户 & authorType=character）
       // 不再进任何广场 —— 朋友圈（moment_posts 按 owner 读）不受影响。
+      const friendExclusion = hasFriends
+        ? ' AND post.authorId NOT IN (:...friendIds)'
+        : '';
       qb.andWhere(
         `(
-           (post.ownerId = :globalOwner AND post.authorType = 'character' AND post.visibility <> 'private')
+           (post.ownerId = :globalOwner AND post.authorType = 'character' AND post.visibility <> 'private'${friendExclusion})
            OR (post.ownerId = :currentOwner AND post.authorType = 'user')
          )`,
-        { globalOwner: GLOBAL_WORLD_OWNER_ID, currentOwner: ownerId },
+        {
+          globalOwner: GLOBAL_WORLD_OWNER_ID,
+          currentOwner: ownerId,
+          ...(hasFriends ? { friendIds } : {}),
+        },
       );
     } else {
       // LPP / wiki 单库：沿用旧 visibleIds 过滤（无全局池概念，ownerId 为 NULL）。
@@ -4019,6 +4125,13 @@ export class FeedService implements OnModuleInit {
         qb.andWhere(
           "(post.authorType <> 'character' OR (post.authorId IN (:...visibleIds) AND post.visibility <> 'private'))",
           { visibleIds },
+        );
+      }
+      // 好友角色帖退出广场（与 shared 分支同语义）。
+      if (hasFriends) {
+        qb.andWhere(
+          "(post.authorType <> 'character' OR post.authorId NOT IN (:...friendIds))",
+          { friendIds },
         );
       }
     }
@@ -4151,6 +4264,26 @@ export class FeedService implements OnModuleInit {
       }
       return true;
     });
+  }
+
+  // 当前 owner 全部「看过」(type='view') 的 postId 集合。
+  // 不按候选 postId IN(...) 过滤：视频号池子做大后（正是「看过的不再刷到」要生效的
+  // 场景）候选可达上千，IN(...) 会撞 SQLite 变量上限直接把整条视频号打挂。改为按
+  // (userId,type) 索引一把取该 owner 全量 view 行——规模受用户自身观看历史约束、可控。
+  // 这是首屏关键路径（getChannelHome 每次都调），且 view 行随用户一生只增不减、可达数千，
+  // 故只 select postId 列（裸 getRawMany，不水合实体、不解析 payload JSON、不触 afterLoad），
+  // 与 buildGlobalCountDeltaMap 取法一致。返回 Set 仅作成员测试，混入非 channels / 旧帖无副作用；
+  // 无观看 → 空 Set，rankChannelPostsByWatched 走原样快路径。
+  private async getViewedChannelPostIds(
+    ownerId: string,
+  ): Promise<Set<string>> {
+    const rows = await this.interactionRepo
+      .createQueryBuilder('uf')
+      .select('uf.postId', 'postId')
+      .where('uf.ownerId = :ownerId', { ownerId })
+      .andWhere("uf.type = 'view'")
+      .getRawMany<{ postId: string }>();
+    return new Set(rows.map((row) => row.postId));
   }
 
   private async getVisibleCharacterIdSet(ownerId: string) {
@@ -5183,5 +5316,29 @@ function paginate<T>(items: T[], page: number, limit: number) {
   const normalizedLimit = Number.isFinite(limit) && limit > 0 ? limit : 20;
   const start = (normalizedPage - 1) * normalizedLimit;
   return items.slice(start, start + normalizedLimit);
+}
+
+// 视频号推荐：把当前用户已看过的帖降权。posts 进来时已是
+// recommendationScore/createdAt/id 的稳定序。
+//   - 未看过的帖 ≥ CHANNEL_FRESH_POOL_MIN → 只返回未看过的（已看彻底排除，刷不到）
+//   - 否则未看过的在前 + 已看过的沉底（降低出现频率，但小池子不刷空）
+// 两个分桶各自保留原推荐序（已看过的不按 lastViewedAt 重排——保留推荐序最简单，
+// 也是沉底内容最合理的次序；如需「最近看的排沉底最前」可改为传入观看时间另排）。
+function rankChannelPostsByWatched(
+  posts: FeedPostEntity[],
+  viewedPostIds: Set<string>,
+): FeedPostEntity[] {
+  if (viewedPostIds.size === 0) {
+    return posts;
+  }
+  const unwatched: FeedPostEntity[] = [];
+  const watched: FeedPostEntity[] = [];
+  for (const post of posts) {
+    (viewedPostIds.has(post.id) ? watched : unwatched).push(post);
+  }
+  if (unwatched.length >= CHANNEL_FRESH_POOL_MIN) {
+    return unwatched;
+  }
+  return [...unwatched, ...watched];
 }
 // i18n-ignore-end
