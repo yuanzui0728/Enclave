@@ -20,6 +20,23 @@
          /socket.io、/assets/* 共用同一个连接）。 -->
     <link rel="preconnect" href="/" crossorigin />
     <link rel="dns-prefetch" href="/" />
+    <!--
+      MiSans 品牌字体清单：unicode-range 切块（每块 ~10-20KB）+ font-display:swap，
+      浏览器只下载当前页面用到的中文字形块；基础 ASCII/数字不在块内，按 body 的
+      font-family 栈优雅回落系统字体（保护首屏带宽，无 tofu）。生成脚本见
+      apps/app/scripts/build-misans-subset.mjs。
+      刻意用 preload→onload 异步形态（与 vite asyncCssPlugin 同款），让这份较大的
+      @font-face 清单**不并进首屏关键 CSS、也不阻塞渲染**：boot 屏（上方 inline CSS）
+      与 App UI 先按系统字体画出来，清单到位后 swap 切 MiSans，零白屏。
+      boot 屏自身（index.html 内联）保持系统字体即时首帧，不等任何字体。
+    -->
+    <link
+      rel="preload"
+      as="style"
+      href="/fonts/misans/misans.css"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript><link rel="stylesheet" href="/fonts/misans/misans.css" /></noscript>
     <script>
       // 自动 reload 已下线：dev 环境下后端 nest watch 一编译就换 build-id，
       // 让前端轮询触发 reload 会把页面卡进死循环；改为手动刷新。
