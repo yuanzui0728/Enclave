@@ -361,8 +361,15 @@ function MobileWorldPage() {
           gender={ownerGender}
         />
 
-        {/* 每日签到卡：仅云账号用户可见（奖励入 cloud 零钱钱包），与「我」tab 同源。 */}
-        {showCloudAccountEntries ? <CheckinCard /> : null}
+        {/* 每日签到卡：仅云账号用户可见（奖励入 cloud 零钱钱包），与「我」tab 同源。
+            CheckinCard 自带 px-4 wrapper（为「我」页 px-0 容器设计），这里父级是
+            px-4，用 -mx-4 抵消父级内边距，让卡片与上方 hero / 下方探索卡左右对齐，
+            不被双重内边距挤窄。 */}
+        {showCloudAccountEntries ? (
+          <div className="-mx-4">
+            <CheckinCard />
+          </div>
+        ) : null}
 
         {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹） */}
         <section className="space-y-4">
