@@ -1748,7 +1748,6 @@ ${personaSummary || '（暂无更多信息）'}
       characterId,
     });
     let friendship: FriendshipEntity;
-    let shouldNotifyConversation = options?.notifyConversation === true;
 
     // 复合主键 (ownerId,id)：裸 findOneBy({id}) 跨 owner 命中 → 走 TenantRepository。
     const character = await new TenantRepository(this.characterRepo).findOneBy({
@@ -1760,7 +1759,6 @@ ${personaSummary || '（暂无更多信息）'}
     if (existing) {
       if (ACTIVE_FRIENDSHIP_STATUSES.has(existing.status)) {
         friendship = existing;
-        shouldNotifyConversation = false;
       } else {
         existing.status = 'friend';
         if ((!existing.region || !existing.region.trim()) && characterRegion) {
@@ -1790,13 +1788,21 @@ ${personaSummary || '（暂无更多信息）'}
 
     await this.narrativeService.ensureArc(characterId, characterName);
 
-    if (shouldNotifyConversation) {
+    // 只要本次是「通过好友申请」（notifyConversation=true，由 acceptRequest 按
+    // req.status !== 'accepted' 传入），就始终确保会话存在且可见 —— 即便 friendship
+    // 早已是 active（例如 default_seed 预置联系人、或历史上由其它路径建出的好友关系，
+    // 它们往往还没有 direct_<charId> 会话）。否则用户「通过」后对方不进消息列表、
+    // 也收不到开场白系统消息。开场白用 hasAnyMessages 守门，只在会话还没有任何消息时
+    // 补一次，避免对已有聊天历史的会话重复刷「你已添加了…」。
+    if (options?.notifyConversation === true) {
       const conversation =
         await this.chatService.getOrCreateConversation(characterId);
-      await this.chatService.saveSystemMessage(
-        conversation.id,
-        await this.buildFriendAddedSystemMessage(characterName),
-      );
+      if (!(await this.chatService.hasAnyMessages(conversation.id))) {
+        await this.chatService.saveSystemMessage(
+          conversation.id,
+          await this.buildFriendAddedSystemMessage(characterName),
+        );
+      }
     }
 
     return friendship;

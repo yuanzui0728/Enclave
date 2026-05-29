@@ -286,6 +286,16 @@ export class ChatService {
     this.conversationHistory.delete(conversationId);
   }
 
+  // 会话里是否已有任何消息（含 system）。buildMessageWhere 已自动按当前租户 ownerId
+  // 守卫，跨 owner 不会误读。用于「通过好友申请」时幂等补开场白：只在空会话补一次。
+  async hasAnyMessages(conversationId: string): Promise<boolean> {
+    return (
+      (await this.msgRepo.count({
+        where: this.buildMessageWhere(conversationId),
+      })) > 0
+    );
+  }
+
   async getConversation(convId: string): Promise<Conversation | undefined> {
     // 共享 world：direct_<charId> 会话 id 跨租户共用，裸 findOneBy({id}) 会读到别的租户的
     // 同 id 会话 → 串号。走 TenantRepository（shared 注入 ownerId / LPP 透传）。
