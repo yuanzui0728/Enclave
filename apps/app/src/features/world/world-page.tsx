@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import {
   getConversations,
   getCyberAvatarSelfProfile,
-  getFriends,
   SELF_CHARACTER_ID,
   type ConversationListItem,
-  type FriendListItem,
+  type CyberAvatarSelfProfile,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, cn } from "@yinjie/ui";
@@ -19,10 +18,8 @@ import {
   Gamepad2,
   MapPin,
   Newspaper,
-  Plus,
   PlaySquare,
   Send,
-  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Users,
@@ -41,7 +38,6 @@ import { buildMobileMiniProgramsRouteSearch } from "../mini-programs/mobile-mini
 import { buildDesktopMomentsRouteHash } from "../moments/moments-route-state";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { RouteRedirectState } from "../../components/route-redirect-state";
-import { formatConversationTimestamp } from "../../lib/format";
 import { searchStringToObject } from "../../lib/route-search";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useHasCloudSession } from "../../store/cloud-session-store";
@@ -219,60 +215,13 @@ function MobileWorldPage() {
   });
   const conversationList = conversations ?? EMPTY_CONVERSATIONS;
 
-  // 专家团队：好友（世界角色）。与 discover 的失效 key 对齐。
-  const { data: friends } = useQuery({
-    queryKey: ["app-friends", baseUrl],
-    queryFn: () => getFriends(baseUrl),
-    enabled: hasCloudSession,
-    staleTime: 30_000,
-  });
-  const expertList = friends ?? EMPTY_FRIENDS;
-
-  // 分身：用于双核右卡的「守护中」状态与今日信号兜底。
+  // 赛博分身 profile：世界页主角，状态大区只读展示（重建/深刷留在 /cyber-avatar）。
   const { data: avatarProfile } = useQuery({
     queryKey: ["cyber-avatar-me", baseUrl],
     queryFn: () => getCyberAvatarSelfProfile(baseUrl),
     enabled: hasCloudSession,
     staleTime: 60_000,
   });
-
-  // 今日 · 主动：专家主动找你 = 有未读的会话（最近活跃在前，取前 3）。
-  const proactive = useMemo(
-    () =>
-      [...conversationList]
-        .filter((c) => !c.isMuted && c.unreadCount > 0)
-        .sort(
-          (a, b) =>
-            new Date(b.lastActivityAt).getTime() -
-            new Date(a.lastActivityAt).getTime(),
-        )
-        .slice(0, 3),
-    [conversationList],
-  );
-
-  // 最近对话：最近活跃在前，取前 4。
-  const recentConversations = useMemo(
-    () =>
-      [...conversationList]
-        .sort(
-          (a, b) =>
-            new Date(b.lastActivityAt).getTime() -
-            new Date(a.lastActivityAt).getTime(),
-        )
-        .slice(0, 4),
-    [conversationList],
-  );
-
-  const avatarReady = avatarProfile?.readiness === "ready";
-  const avatarBuilding = avatarProfile?.readiness === "building";
-  const pendingSignals = avatarProfile?.pendingSignalCount ?? 0;
-  // 分身「今天替你看着世界」的兜底信号：待处理信号数（无聚合时用可得信号）。
-  const avatarSignalHint =
-    pendingSignals > 0
-      ? t(msg`分身记下了 ${pendingSignals} 条新动向`)
-      : avatarReady
-        ? t(msg`分身在你不在时替你留意世界`)
-        : t(msg`多在世界里互动，分身会越来越像你`);
 
   const ownerDisplayName = ownerName?.trim() || t(msg`世界主人`);
 
@@ -294,105 +243,8 @@ function MobileWorldPage() {
       />
 
       <div className="space-y-6 px-4 pb-24">
-        {/* 双核 header：你 ⟷ 你的分身 */}
-        <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
-          <div className="flex items-stretch gap-2">
-            <DualCoreCard
-              avatar={
-                <AvatarChip name={ownerDisplayName} src={ownerAvatar} size="lg" />
-              }
-              title={ownerDisplayName}
-              caption={t(msg`世界主人`)}
-            />
-            <div className="flex flex-col items-center justify-center px-1 text-[color:var(--brand-primary)]">
-              <span className="text-[18px] leading-none">⟷</span>
-            </div>
-            <DualCoreCard
-              avatar={
-                <span className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
-                  <Fingerprint size={24} strokeWidth={1.6} />
-                </span>
-              }
-              title={t(msg`你的分身`)}
-              caption={
-                avatarReady
-                  ? t(msg`守护中`)
-                  : avatarBuilding
-                    ? t(msg`成形中`)
-                    : t(msg`待唤醒`)
-              }
-              captionTone={avatarReady ? "online" : "muted"}
-            />
-          </div>
-          <Link
-            to="/cyber-avatar"
-            className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-left"
-          >
-            <ShieldCheck
-              size={16}
-              className="shrink-0 text-[color:var(--brand-primary)]"
-            />
-            <span className="min-w-0 flex-1 truncate text-[12px] leading-5 text-[color:var(--text-secondary)]">
-              {avatarSignalHint}
-            </span>
-            <ChevronRight size={15} className="shrink-0 text-[color:var(--text-dim)]" />
-          </Link>
-        </section>
-
-        {/* 今日 · 主动 */}
-        <section className="space-y-2.5">
-          <SectionHeader
-            title={t(msg`今日 · 主动`)}
-            actionLabel={proactive.length > 0 ? t(msg`去消息`) : undefined}
-            to={proactive.length > 0 ? "/tabs/chat" : undefined}
-          />
-          {proactive.length > 0 ? (
-            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)]">
-              {proactive.map((conversation, index) => (
-                <ProactiveRow
-                  key={conversation.id}
-                  conversation={conversation}
-                  first={index === 0}
-                  fallbackName={t(msg`世界角色`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-5 text-center">
-              <div className="text-[13px] font-medium text-[color:var(--text-secondary)]">
-                {t(msg`今天还没有新的主动消息`)}
-              </div>
-              <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                {t(msg`你的专家团队会在合适的时机主动找你`)}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* 专家团队 roster */}
-        <section className="space-y-2.5">
-          <SectionHeader
-            title={t(msg`专家团队`)}
-            actionLabel={t(msg`全部`)}
-            to="/tabs/contacts"
-          />
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <Link
-              to="/add-friend"
-              className="flex w-16 shrink-0 flex-col items-center gap-1.5"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-dashed border-[color:var(--border-strong)] text-[color:var(--brand-primary)]">
-                <Plus size={22} />
-              </span>
-              <span className="truncate text-[11px] text-[color:var(--text-muted)]">
-                {t(msg`找专家`)}
-              </span>
-            </Link>
-            {expertList.slice(0, 12).map((friend) => (
-              <ExpertChip key={friend.character.id} friend={friend} />
-            ))}
-          </div>
-        </section>
+        {/* 赛博分身状态大区（世界页主角） */}
+        <CyberAvatarStatusHero profile={avatarProfile} pathname={pathname} />
 
         {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹） */}
         <section className="space-y-4">
@@ -414,27 +266,6 @@ function MobileWorldPage() {
             pathname={pathname}
           />
         </section>
-
-        {/* 最近对话 */}
-        {recentConversations.length > 0 ? (
-          <section className="space-y-2.5">
-            <SectionHeader
-              title={t(msg`最近对话`)}
-              actionLabel={t(msg`全部消息`)}
-              to="/tabs/chat"
-            />
-            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)]">
-              {recentConversations.map((conversation, index) => (
-                <ProactiveRow
-                  key={conversation.id}
-                  conversation={conversation}
-                  first={index === 0}
-                  fallbackName={t(msg`世界角色`)}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
       </div>
 
       {/* 底部常驻「和我快聊」：敲字发送 → 跳到「我」会话(direct_char-default-self)
@@ -500,7 +331,6 @@ function SelfQuickChatBar({
 }
 
 const EMPTY_CONVERSATIONS: ConversationListItem[] = [];
-const EMPTY_FRIENDS: FriendListItem[] = [];
 
 function computeWorldDay(createdAt: string | null): number {
   if (!createdAt) {
@@ -514,35 +344,160 @@ function computeWorldDay(createdAt: string | null): number {
   return days < 1 ? 1 : days;
 }
 
-function DualCoreCard({
-  avatar,
-  title,
-  caption,
-  captionTone = "muted",
+// 赛博分身状态大区（世界页主角，只读展示；重建/深刷留在 /cyber-avatar）。
+function CyberAvatarStatusHero({
+  profile,
+  pathname,
 }: {
-  avatar: ReactNode;
-  title: string;
-  caption: string;
-  captionTone?: "muted" | "online";
+  profile: CyberAvatarSelfProfile | undefined;
+  pathname: string;
 }) {
+  const t = useRuntimeTranslator();
+
+  const detailHash = buildMobileDiscoverToolRouteHash({ returnPath: pathname });
+
+  const readiness = profile?.readiness;
+  const ready = readiness === "ready";
+  const building = readiness === "building";
+  const empty = readiness === "empty";
+
+  const mood = profile?.liveState.mood?.trim() || "";
+  const energy = profile?.liveState.energy?.trim() || "";
+  const focus = pickItems(
+    profile?.liveState.focus,
+    profile?.liveState.activeTopics,
+  );
+  const recent = pickItems(
+    profile?.recentState.recentGoals,
+    profile?.recentState.recurringTopics,
+  );
+  const signalCount = profile?.signalCount ?? 0;
+  const pendingCount = profile?.pendingSignalCount ?? 0;
+  // 「了解程度」进度 = 三档置信度均值（缺失按 0）。
+  const formedPct = profile
+    ? Math.round(
+        ((profile.confidence.liveState +
+          profile.confidence.recentState +
+          profile.confidence.stableCore) /
+          3) *
+          100,
+      )
+    : 0;
+
+  const readinessLabel = ready
+    ? t(msg`守护中`)
+    : building
+      ? t(msg`成形中`)
+      : empty
+        ? t(msg`待唤醒`)
+        : t(msg`加载中…`);
+
   return (
-    <div className="flex flex-1 flex-col items-center gap-1.5 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2 py-3 text-center shadow-[var(--shadow-soft)]">
-      {avatar}
-      <div className="mt-0.5 max-w-full truncate text-[13px] font-semibold text-[color:var(--text-primary)]">
-        {title}
+    <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
+      {/* 头部：分身标识 + 标题 + 就绪度徽标 */}
+      <div className="flex items-center gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
+          <Fingerprint size={24} strokeWidth={1.6} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+            {t(msg`你的分身`)}
+          </div>
+          {ready && (mood || energy) ? (
+            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+              {[
+                mood ? t(msg`心情 ${mood}`) : "",
+                energy ? t(msg`能量 ${energy}`) : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          ) : null}
+        </div>
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 text-[11px]",
+            ready
+              ? "text-[color:var(--brand-primary)]"
+              : "text-[color:var(--text-muted)]",
+          )}
+        >
+          {ready ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
+          ) : null}
+          {readinessLabel}
+        </span>
       </div>
-      <div
-        className={cn(
-          "inline-flex items-center gap-1 text-[11px]",
-          captionTone === "online"
-            ? "text-[color:var(--brand-primary)]"
-            : "text-[color:var(--text-muted)]",
-        )}
+
+      {/* 信号进度（empty 态不展示进度，给引导语） */}
+      {empty ? (
+        <p className="mt-3 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+          {t(msg`多在世界里互动，分身会越来越像你`)}
+        </p>
+      ) : (
+        <div className="mt-3 space-y-1">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
+            <div
+              className="h-full rounded-full bg-[color:var(--brand-primary)] transition-[width] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              style={{ width: `${Math.max(0, Math.min(100, formedPct))}%` }}
+            />
+          </div>
+          <div className="text-[11px] text-[color:var(--text-muted)]">
+            {t(msg`已分析 ${signalCount} 条信号`)}
+            {pendingCount > 0 ? t(msg` · 待分析 ${pendingCount} 条`) : ""}
+          </div>
+        </div>
+      )}
+
+      {/* 当前关注 / 近期动向 */}
+      {focus.length > 0 ? (
+        <HeroChipRow label={t(msg`当前关注`)} items={focus} />
+      ) : null}
+      {recent.length > 0 ? (
+        <HeroChipRow label={t(msg`近期动向`)} items={recent} />
+      ) : null}
+
+      {/* 看完整画像 */}
+      <Link
+        to="/cyber-avatar"
+        hash={detailHash}
+        className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-left"
       >
-        {captionTone === "online" ? (
-          <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
-        ) : null}
-        {caption}
+        <Sparkles
+          size={16}
+          className="shrink-0 text-[color:var(--brand-primary)]"
+        />
+        <span className="min-w-0 flex-1 truncate text-[12px] leading-5 text-[color:var(--text-secondary)]">
+          {empty ? t(msg`去看看你的赛博分身`) : t(msg`看完整画像与对话`)}
+        </span>
+        <ChevronRight size={15} className="shrink-0 text-[color:var(--text-dim)]" />
+      </Link>
+    </section>
+  );
+}
+
+// 取首选数组，空则回退到次选；过滤空白，最多 6 个，避免主区过长。
+function pickItems(primary?: string[], fallback?: string[]): string[] {
+  const source = (primary ?? []).filter((s) => s && s.trim());
+  const list = source.length > 0 ? source : (fallback ?? []).filter((s) => s && s.trim());
+  return list.slice(0, 6);
+}
+
+function HeroChipRow({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div className="mt-3">
+      <div className="mb-1.5 text-[12px] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((item, index) => (
+          <span
+            key={`${item}-${index}`}
+            className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-0.5 text-[11px] text-[color:var(--brand-primary)]"
+          >
+            {item}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -572,73 +527,6 @@ function SectionHeader({
         </Link>
       ) : null}
     </div>
-  );
-}
-
-function ProactiveRow({
-  conversation,
-  first,
-  fallbackName,
-}: {
-  conversation: ConversationListItem;
-  first: boolean;
-  fallbackName: string;
-}) {
-  const name = conversation.title?.trim() || fallbackName;
-  const lastText = conversation.lastMessage?.text?.trim() ?? "";
-  return (
-    <Link
-      to="/chat/$conversationId"
-      params={{ conversationId: conversation.id }}
-      className={cn(
-        "flex items-center gap-3 px-3.5 py-2.5",
-        first ? undefined : "border-t border-[color:var(--border-faint)]",
-      )}
-    >
-      <AvatarChip name={name} src={conversation.avatar} size="sm" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
-            {name}
-          </span>
-          <span className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
-            {formatConversationTimestamp(conversation.lastActivityAt)}
-          </span>
-        </div>
-        {lastText ? (
-          <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
-            {lastText}
-          </div>
-        ) : null}
-      </div>
-      {conversation.unreadCount > 0 ? (
-        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-[#fa5151] px-1 text-[11px] leading-none text-white">
-          {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
-function ExpertChip({ friend }: { friend: FriendListItem }) {
-  const { character } = friend;
-  const subtitle = character.expertDomains?.[0] ?? character.relationship ?? "";
-  return (
-    <Link
-      to="/character/$characterId"
-      params={{ characterId: character.id }}
-      className="flex w-16 shrink-0 flex-col items-center gap-1.5"
-    >
-      <AvatarChip name={character.name} src={character.avatar} size="lg" />
-      <span className="max-w-full truncate text-[11px] font-medium text-[color:var(--text-primary)]">
-        {character.name}
-      </span>
-      {subtitle ? (
-        <span className="-mt-1 max-w-full truncate text-[10px] text-[color:var(--text-muted)]">
-          {subtitle}
-        </span>
-      ) : null}
-    </Link>
   );
 }
 
