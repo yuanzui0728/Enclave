@@ -1290,7 +1290,7 @@ function MobileNoteEditor({
         }
         titleAlign="left"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
-        titleClassName="text-[length:var(--text-title)] font-medium tracking-normal"
+        titleClassName="tracking-normal"
         leftActions={
           <Button
             type="button"

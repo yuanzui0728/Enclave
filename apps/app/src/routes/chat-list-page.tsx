@@ -22,6 +22,7 @@ import {
   markConversationUnread,
   markGroupRead,
   markGroupUnread,
+  SELF_CHARACTER_ID,
   setConversationMuted,
   setConversationPinned,
   setGroupPinned,
@@ -107,6 +108,7 @@ import {
   onChatSocketConnect,
   onConversationUpdated,
 } from "../lib/socket";
+import { prefetchConversationMessages } from "../features/chat/use-conversation-thread";
 
 type QuickActionItem = {
   key: string;
@@ -1251,7 +1253,7 @@ function MobileChatListPage() {
         title={t(msg`消息`)}
         className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
-        titleClassName="text-[length:var(--text-title)] font-medium tracking-normal"
+        titleClassName="tracking-normal"
         rightActions={
           <div ref={quickMenuRef} className="relative">
             <Button
@@ -1959,6 +1961,8 @@ function ConversationListItemLinkImpl({
   className,
 }: ConversationListItemLinkProps) {
   const t = useRuntimeTranslator();
+  const queryClient = useQueryClient();
+  const baseUrl = useAppRuntimeConfig().apiBaseUrl;
   const gestureRef = useRef<{
     startX: number;
     startY: number;
@@ -1967,7 +1971,13 @@ function ConversationListItemLinkImpl({
   } | null>(null);
   const showReadAction =
     conversation.unreadCount > 0 || canConversationBeMarkedUnread(conversation);
-  const swipeActionWidth = (showReadAction ? 4 : 3) * SWIPE_ACTION_BUTTON_WIDTH;
+  // 「我」（self mirror）恒置顶不可取消——不渲染滑动里的置顶按钮，少一个动作。
+  const isSelfConversation =
+    conversation.type === "direct" &&
+    conversation.participants[0] === SELF_CHARACTER_ID;
+  const swipeActionWidth =
+    ((showReadAction ? 4 : 3) - (isSelfConversation ? 1 : 0)) *
+    SWIPE_ACTION_BUTTON_WIDTH;
   const readActionLabel =
     conversation.unreadCount > 0 ? t(msg`标已读`) : t(msg`标未读`);
   const muteActionClassName = conversation.isMuted
@@ -2277,10 +2287,15 @@ function ConversationListItemLinkImpl({
       style={{ transform: `translateX(${swipeOffset}px)` }}
       onClick={(event) => {
         if (open || swipeOffset !== 0) {
+          // swipe 取消点击：不导航，不预取。
           event.preventDefault();
           updateSwipeOffset(0);
           onOpenChange(false);
+          return;
         }
+        // 真正进入聊天：把首屏消息窗口提前打进缓存，与路由切换+挂载动画重叠，
+        // 挂载时直接命中、跳过冷请求和「正在同步」卡片。
+        prefetchConversationMessages(queryClient, conversation.id, baseUrl);
       }}
     >
       {content}
@@ -2347,18 +2362,20 @@ function ConversationListItemLinkImpl({
         inert={!open || undefined}
         aria-hidden={!open || undefined}
       >
-        <button
-          type="button"
-          onClick={onTogglePinned}
-          className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-white active:brightness-[0.96]"
-        >
-          <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
-            <Pin size={13} aria-hidden="true" />
-            <span>
-              {conversation.isPinned ? t(msg`取消置顶`) : t(msg`置顶`)}
-            </span>
-          </div>
-        </button>
+        {isSelfConversation ? null : (
+          <button
+            type="button"
+            onClick={onTogglePinned}
+            className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-white active:brightness-[0.96]"
+          >
+            <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
+              <Pin size={13} aria-hidden="true" />
+              <span>
+                {conversation.isPinned ? t(msg`取消置顶`) : t(msg`置顶`)}
+              </span>
+            </div>
+          </button>
+        )}
         <button
           type="button"
           onClick={onToggleMuted}
@@ -2437,7 +2454,15 @@ function sortConversationsByBackendOrder<T extends ConversationListItem>(
     return Number.isNaN(ms) ? 0 : ms;
   };
 
+  const isSelf = (c: T) =>
+    c.type === "direct" && c.participants[0] === SELF_CHARACTER_ID;
+
   return [...conversations].sort((left, right) => {
+    // 「我」（self mirror）永远在最顶部，镜像后端 getConversations 排序。
+    if (isSelf(left) !== isSelf(right)) {
+      return isSelf(left) ? -1 : 1;
+    }
+
     if (left.isPinned !== right.isPinned) {
       return left.isPinned ? -1 : 1;
     }
