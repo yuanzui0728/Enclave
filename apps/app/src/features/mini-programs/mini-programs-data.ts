@@ -512,15 +512,16 @@ export function getMiniProgramToneStyle(
 ): MiniProgramToneStyle {
   switch (tone) {
     case "jade":
+      // 原微信绿残留，去绿对齐品牌紫；用 shell 主题变量，日/夜自动适配。
       return {
         badgeClassName:
-          "border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-success-text)]",
+          "border-[color:var(--brand-soft)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#2f7a3f_0%,#4ea96f_45%,#d9f5df_120%)] text-[color:var(--text-on-brand)]",
-        iconClassName: "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
+          "bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] text-[color:var(--text-on-brand)]",
+        iconClassName: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
         mutedPanelClassName:
-          "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)]",
-        softTextClassName: "text-[color:var(--state-success-text)]",
+          "border-[color:var(--brand-soft)] bg-[color:var(--brand-soft)]",
+        softTextClassName: "text-[color:var(--brand-primary)]",
       };
     case "amber":
       return {
