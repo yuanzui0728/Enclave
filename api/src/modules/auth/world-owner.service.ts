@@ -76,6 +76,20 @@ function sanitizeOwnerContact(value: string): string {
 function sanitizeProfileField(value: string): string {
   return value.replace(CONTROL_CHAR_REGEX, ' ').replace(/\s+/g, ' ').trim();
 }
+
+// 内部占位用户名，不是用户真名，绝不能当显示名 / 注入 prompt：
+//   - `__pending_<uuid>`：ensureOwnerForPhone 给新租户的临时名（含 uuid，泄漏出去会
+//     在 onboarding 输入框里被 setOwnerName 预填成一串乱码，用户得先删掉才能打字）。
+//   - `__global_world_owner__`：全局广场哨兵 owner（不是真实用户）。
+// 故意只匹配这两类确切占位，**不**用宽泛的 startsWith('__') —— 用户可以合法把昵称
+// 取成 "__xx__"，宽泛匹配会把人家真名也抹掉。serializeOwner / buildUserProfileContext
+// 共用，保持「对外永远看不到占位名」一致。
+function isInternalPlaceholderUsername(username: string | null | undefined): boolean {
+  if (!username) return false;
+  return (
+    username.startsWith('__pending_') || username === '__global_world_owner__'
+  );
+}
 const OWNER_GENDERS = new Set(['male', 'female', 'other']);
 const MIN_OWNER_AGE = 1;
 const MAX_OWNER_AGE = 120;
@@ -541,10 +555,16 @@ export class WorldOwnerService implements OnModuleInit {
   // (runForOwner(GLOBAL_WORLD_OWNER_ID)) 驱动，绝不能被 per-owner fan-out 当普通用户跑。
   // 这是单一收口点，同时挡住 TenantService.runForAllTenants 和 WorldOwnerService.forEachOwner。
   async listTenantOwners(): Promise<UserEntity[]> {
-    return this.userRepo.find({
+    const owners = await this.userRepo.find({
       where: { userType: 'world_owner', id: Not(GLOBAL_WORLD_OWNER_ID) },
       order: { createdAt: 'ASC' },
     });
+    // 已注销账号(注销后 cloudPhone 改成 tombstone 'archived:<cloudUserId>')不该被任何
+    // per-owner 后台 cron 迭代:cloud-api 不认 archived: 手机号、订阅查询必返 400→fallback
+    // hardBlock,AI 全程拦死,纯浪费 + 刷日志(每 tick 一次失败网络调用)。在唯一收口点
+    // (forEachOwner + runForAllTenants 都走这里)滤掉,scheduler/cyber-avatar/games 全受益。
+    // null-safe:cloudPhone 为 null(未绑定/本地 owner)的不是 archived,保留。
+    return owners.filter((o) => !o.cloudPhone?.startsWith('archived:'));
   }
 
   async getOwnerOrThrow(): Promise<UserEntity> {
@@ -592,7 +612,9 @@ export class WorldOwnerService implements OnModuleInit {
   // 占位用户名（__pending_xxx / 全局哨兵 __xxx）不当真名注入。
   buildUserProfileContext(owner: UserEntity): UserProfileContext {
     return {
-      displayName: owner.username?.startsWith('__') ? null : owner.username,
+      displayName: isInternalPlaceholderUsername(owner.username)
+        ? null
+        : owner.username,
       gender: owner.gender as 'male' | 'female' | 'other' | null,
       age: owner.age,
       occupation: owner.occupation,
@@ -918,7 +940,12 @@ export class WorldOwnerService implements OnModuleInit {
   private serializeOwner(owner: UserEntity): WorldOwnerProfile {
     return {
       id: owner.id,
-      username: owner.username,
+      // 占位名（__pending_<uuid> / 全局哨兵）对外归一成空串：未 onboarding 的新用户
+      // GET /world/owner 不该拿到一串内部 uuid，否则 welcome 页 setOwnerName 会把它
+      // 预填进昵称输入框。空串后前端各处的「username?.trim() || 世界主人」兜底自然生效。
+      username: isInternalPlaceholderUsername(owner.username)
+        ? ''
+        : owner.username,
       onboardingCompleted: owner.onboardingCompleted,
       avatar: owner.avatar ?? '',
       signature: owner.signature ?? '',
