@@ -4240,7 +4240,7 @@ export class FeedService implements OnModuleInit {
         .then((ids) => new Set(ids)),
     ]);
 
-    return posts.filter((post) => {
+    const filtered = posts.filter((post) => {
       if (
         post.authorType === 'character' &&
         blockedCharacterIds.has(post.authorId)
@@ -4264,6 +4264,52 @@ export class FeedService implements OnModuleInit {
       }
       return true;
     });
+
+    return this.dedupeChannelPostsPreferOwn(filtered, ownerId);
+  }
+
+  // 全局共享池(global-world-owner)里有一批从各 owner 健康视频镜像来的帖，与原帖
+  // 共享同一份媒体文件。拥有原帖的 owner 同时能看到「自己的原帖 + 全局镜像」→ 视频号
+  // 里出现重复。按主媒体文件名去重，同一媒体优先保留【当前 owner 自己的帖】（保住其
+  // 互动/归属），其次才留全局镜像；无媒体的帖（text）按 id 唯一不参与去重。
+  private dedupeChannelPostsPreferOwn(
+    posts: FeedPostEntity[],
+    viewerOwnerId: string,
+  ): FeedPostEntity[] {
+    const mediaKeyOf = (post: FeedPostEntity): string | null => {
+      const url = this.resolvePrimaryFeedMediaUrl(post);
+      if (!url) return null;
+      const clean = url.split('?')[0].split('#')[0];
+      const base = clean.startsWith('/api/moments/media/')
+        ? clean.slice('/api/moments/media/'.length)
+        : clean;
+      const name = base.split('/').filter(Boolean).pop();
+      return name ? name.trim() || null : null;
+    };
+    const isOwn = (post: FeedPostEntity) => post.ownerId === viewerOwnerId;
+    const chosenByKey = new Map<string, FeedPostEntity>();
+    const result: FeedPostEntity[] = [];
+    for (const post of posts) {
+      const key = mediaKeyOf(post);
+      if (!key) {
+        result.push(post); // 无媒体（text 帖等）不去重
+        continue;
+      }
+      const existing = chosenByKey.get(key);
+      if (!existing) {
+        chosenByKey.set(key, post);
+        result.push(post);
+        continue;
+      }
+      // 已有同媒体帖：若当前是 owner 自己的、而已选的不是 → 用自己的替换
+      if (isOwn(post) && !isOwn(existing)) {
+        const idx = result.indexOf(existing);
+        if (idx >= 0) result[idx] = post;
+        chosenByKey.set(key, post);
+      }
+      // 否则丢弃当前重复帖
+    }
+    return result;
   }
 
   // 当前 owner 全部「看过」(type='view') 的 postId 集合。
