@@ -42,7 +42,7 @@ export function stripToolCallSyntax(input: string): string {
   const isCotProse =
     trimmed.length > 80 &&
     /\n/.test(trimmed) &&
-    /^(用户[发让想要求希望给需要在说作为问]|让我(想|数|考虑|分析|看看|思考)|我需要|我应该|我可以|我得|我会|我必须|我打算|这条朋友圈|这是一条|这条动态|The user (wants|is|asks|asked|said|told|wants me|is asking)|Let me (think|analy[sz]e|see|consider|look)|I (need|should|want|have|will|must) to|Looking at|Analy[sz]ing)/i.test(
+    /^(用户[发让想要求希望给需要在说作为问]|让我(想|数|考虑|分析|看看|思考)|我需要|我应该|我可以|我得|我会|我必须|我打算|这条朋友圈|这是一条|这条动态|The user (wants|is|asks|asked|said|told|wants me|is asking)|Let me (think|analy[sz]e|see|consider|look)|I (need|should|want|have|will|must) to|Looking at|Analy[sz]ing)/i.test( // i18n-ignore-line: 内部启发式正则，非展示文案
       trimmed,
     );
   if (isCotProse) {

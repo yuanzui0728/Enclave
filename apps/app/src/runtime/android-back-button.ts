@@ -108,9 +108,9 @@ function runInterceptors(canGoBack: boolean) {
 // 也不在 AppLocaleProvider context 下。直接读 localStorage 的 locale
 // 偏好（apps/app 自己维护的 key），加 navigator.language 做兜底。
 const EXIT_HINT_MESSAGES: Record<string, string> = {
-  "zh-CN": "再按一次返回键退出",
+  "zh-CN": "再按一次返回键退出", // i18n-ignore-line: 组件自带多语言字典条目
   "en-US": "Press back again to exit",
-  "ja-JP": "もう一度押して終了",
+  "ja-JP": "もう一度押して終了", // i18n-ignore-line: 组件自带多语言字典条目
   "ko-KR": "한 번 더 누르면 종료",
 };
 

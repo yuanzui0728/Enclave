@@ -244,7 +244,7 @@ function MobileOfficialAccountArticlePage({
 
     try {
       if (!(await writeClipboardText(articleUrl))) {
-        throw new Error("clipboard copy failed");
+        throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示
       }
       setShareNotice({
         message: nativeMobileShareSupported

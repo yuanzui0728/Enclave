@@ -247,7 +247,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
     try {
       if (!(await writeClipboardText(accountSummary))) {
-        throw new Error("clipboard copy failed");
+        throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示
       }
       setActionNotice({
         tone: "success",

@@ -28,7 +28,7 @@ type ConversationPreviewOptions = {
 // 不会被任何 i18n catalog 命中，UI 上仍然渲染原始中文，违反"语言偏好立即生效"
 // 的契约。服务端不知道当前用户的 locale，只能写一个稳定占位；这里在客户端
 // 渲染时统一把这两个 sentinel 翻译成当前 locale。
-const LEGACY_UNKNOWN_CONTACT_TITLE = "未知联系人";
+const LEGACY_UNKNOWN_CONTACT_TITLE = "未知联系人"; // i18n-ignore-line: 遗留服务端 sentinel，已在 getConversationDisplayTitle 翻译
 const LEGACY_DIRECT_CONVERSATION_TITLE = "Direct conversation";
 
 export function getConversationDisplayTitle(title: string): string {

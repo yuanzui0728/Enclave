@@ -416,7 +416,7 @@ export function MiniProgramsPage() {
 
       try {
         if (!(await writeClipboardText(link))) {
-          throw new Error("clipboard copy failed");
+          throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示
         }
         setNoticeTone("success");
         setNoticeActionState(null);
@@ -455,7 +455,7 @@ export function MiniProgramsPage() {
 
       try {
         if (!(await writeClipboardText(link))) {
-          throw new Error("clipboard copy failed");
+          throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示
         }
         setNoticeTone("success");
         setNoticeActionState(null);
@@ -493,7 +493,7 @@ export function MiniProgramsPage() {
 
     try {
       if (!(await writeClipboardText(link))) {
-        throw new Error("clipboard copy failed");
+        throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示
       }
       pushMobileHandoffRecord({
         category: "mini_program",

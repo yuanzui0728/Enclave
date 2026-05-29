@@ -49,10 +49,10 @@ export const PALETTE: Record<string, string> = {
 export type Pixels = string[];
 
 function p(rows: string[]): Pixels {
-  if (rows.length !== 16) throw new Error("sprite rows != 16");
+  if (rows.length !== 16) throw new Error("sprite rows != 16"); // i18n-ignore-line: 内部断言错误，非用户展示
   for (let i = 0; i < rows.length; i++) {
     if ((rows[i] as string).length !== 16) {
-      throw new Error(`sprite row ${i} length != 16`);
+      throw new Error(`sprite row ${i} length != 16`); // i18n-ignore-line: 内部断言错误，非用户展示
     }
   }
   return rows;
@@ -228,10 +228,10 @@ export const BULLET_PIXELS: Pixels = (() => {
 export type HalfPixels = string[];
 
 function h8(rows: string[]): HalfPixels {
-  if (rows.length !== 8) throw new Error("half tile rows != 8");
+  if (rows.length !== 8) throw new Error("half tile rows != 8"); // i18n-ignore-line: 内部断言错误，非用户展示
   for (let i = 0; i < rows.length; i++) {
     if ((rows[i] as string).length !== 8) {
-      throw new Error(`half tile row ${i} length != 8`);
+      throw new Error(`half tile row ${i} length != 8`); // i18n-ignore-line: 内部断言错误，非用户展示
     }
   }
   return rows;

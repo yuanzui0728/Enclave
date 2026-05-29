@@ -64,18 +64,20 @@ const RULES = [
     name: "jsx-literal-prop",
     message:
       "Literal UI prop. Use <Trans>, msg, or a translated runtime value.",
+    // Require a non-empty literal: an empty string is never user-facing copy.
     test: (line) =>
       new RegExp(
-        `\\b(?:${UI_PROP_NAMES})\\s*=\\s*(?:"[^"]*"|'[^']*'|\`[^\`]*\`)`,
+        `\\b(?:${UI_PROP_NAMES})\\s*=\\s*(?:"[^"]+"|'[^']+'|\`[^\`]+\`)`,
       ).test(line),
   },
   {
     name: "object-ui-string",
     message:
       "Literal UI field in an object or config array. Store a message descriptor instead.",
+    // Require a non-empty literal: an empty string is never user-facing copy.
     test: (line) =>
       new RegExp(
-        `\\b(?:${UI_PROP_NAMES})\\s*:\\s*(?:"[^"]*"|'[^']*'|\`[^\`]*\`)`,
+        `\\b(?:${UI_PROP_NAMES})\\s*:\\s*(?:"[^"]+"|'[^']+'|\`[^\`]+\`)`,
       ).test(line),
   },
   {
@@ -96,8 +98,9 @@ const RULES = [
     name: "setter-message-string",
     message:
       "Literal setter message. Store a message descriptor or translate at the call site.",
+    // Require a non-empty literal: clearing state with "" is not a UI string.
     test: (line) =>
-      /\bset(?:Error|Message|StatusMessage|Toast|Notice)\(\s*["'`]/.test(
+      /\bset(?:Error|Message|StatusMessage|Toast|Notice)\(\s*(?:"[^"]+"|'[^']+'|`[^`]+`)/.test(
         line,
       ),
   },
@@ -369,6 +372,64 @@ function isKnownI18nLine(line) {
   return I18N_LINE_PATTERNS.some((pattern) => pattern.test(line));
 }
 
+// Remove comment content from a single line while tracking multi-line block
+// comment state. String/template literals are respected so that `//` or `/*`
+// appearing inside a string (e.g. a URL "https://…") is not mistaken for a
+// comment. Returns the code with comments stripped plus whether the line ends
+// still inside an open block comment.
+function stripCommentsTrackingBlock(line, startInBlock) {
+  let inBlock = startInBlock;
+  let quote = null; // active string delimiter: " ' or `
+  let code = "";
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (inBlock) {
+      if (char === "*" && next === "/") {
+        inBlock = false;
+        i += 1;
+      }
+      continue;
+    }
+
+    if (quote) {
+      code += char;
+      if (char === "\\") {
+        code += next ?? "";
+        i += 1;
+        continue;
+      }
+      if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      code += char;
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      // Rest of the line is a line comment.
+      break;
+    }
+
+    if (char === "/" && next === "*") {
+      inBlock = true;
+      i += 1;
+      continue;
+    }
+
+    code += char;
+  }
+
+  return { code, endInBlock: inBlock };
+}
+
 function shouldIgnoreLine(line, previousLine) {
   return (
     line.includes("i18n-ignore-line") ||
@@ -390,14 +451,21 @@ function addIssue(summary, fileSummary, issue) {
   fileSummary.rules[issue.rule] = (fileSummary.rules[issue.rule] ?? 0) + 1;
 }
 
-function collectLineIssues(filePath, scope, lineNumber, line, previousLine) {
+function collectLineIssues(
+  filePath,
+  scope,
+  lineNumber,
+  line,
+  previousLine,
+  codeForTest,
+) {
   if (shouldIgnoreLine(line, previousLine)) {
     return [];
   }
 
   const issues = [];
   for (const rule of RULES) {
-    if (!rule.test(line)) {
+    if (!rule.test(codeForTest)) {
       continue;
     }
 
@@ -415,7 +483,25 @@ function collectLineIssues(filePath, scope, lineNumber, line, previousLine) {
 }
 
 function scanFile(filePath, scope, includeIssues) {
-  const text = readFileSync(filePath, "utf8");
+  let text;
+  try {
+    text = readFileSync(filePath, "utf8");
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      // File was removed from the working tree but still listed in the index
+      // (e.g. a staged deletion). Nothing to scan.
+      return {
+        fileSummary: {
+          file: filePath,
+          rules: makeEmptyRuleCounts(),
+          scope,
+          totalIssues: 0,
+        },
+        issues: [],
+      };
+    }
+    throw error;
+  }
   const lines = text.split(/\r?\n/);
   const fileSummary = {
     file: filePath,
@@ -425,10 +511,19 @@ function scanFile(filePath, scope, includeIssues) {
   };
   const issues = [];
   let ignoreBlock = false;
+  let inBlockComment = false;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     const previousLine = index > 0 ? (lines[index - 1] ?? "") : "";
+
+    // Track block-comment state and strip comment content before rule tests so
+    // multi-line `/* … */` and `{/* … */}` comment bodies are never flagged.
+    const { code, endInBlock } = stripCommentsTrackingBlock(
+      line,
+      inBlockComment,
+    );
+    inBlockComment = endInBlock;
 
     if (line.includes("i18n-ignore-start")) {
       ignoreBlock = true;
@@ -450,6 +545,7 @@ function scanFile(filePath, scope, includeIssues) {
       index + 1,
       line,
       previousLine,
+      code,
     )) {
       addIssue({ rules: {}, totalIssues: 0 }, fileSummary, issue);
       if (includeIssues) {

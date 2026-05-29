@@ -535,7 +535,7 @@ export function WelcomePage() {
   // 反而让原 identity 的 cooldown 显示在不该显示的输入上。
   function startCooldownFromError(error: unknown) {
     if (!isApiRequestError(error) || error.statusCode !== 429) return;
-    const match = error.message.match(/(\d+)\s*秒/);
+    const match = error.message.match(/(\d+)\s*秒/); // i18n-ignore-line: 解析服务端错误的正则，非展示文案
     const seconds = match ? Number(match[1]) : 60;
     const clamped = Math.min(seconds, 60) || 60;
     setCodeCooldownEndAt(Date.now() + clamped * 1000);
@@ -2050,8 +2050,8 @@ export function WelcomePage() {
           </span>
           <TextField
             // placeholder 之前误把 "i18n-ignore-line" 注释当成展示字符串塞进去了，
-            // 直接出现在 UI 里。
-            // i18n-ignore-line
+            // 直接出现在 UI 里。配置用 URL，非展示文案。
+            // i18n-ignore-next-line
             placeholder="http://127.0.0.1:3000"
             type="url"
             inputMode="url"

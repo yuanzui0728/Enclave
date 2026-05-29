@@ -103,7 +103,7 @@ export function MobileDiscoverToolShell({
 
     try {
       if (!(await writeClipboardText(shareText))) {
-        throw new Error("clipboard copy failed");
+        throw new Error("clipboard copy failed"); // i18n-ignore-line: 内部技术错误，非用户展示文案
       }
       setShareNotice({
         tone: "success",

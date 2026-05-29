@@ -5101,7 +5101,7 @@ function parseSharedHistorySummaryMessage(t: Translator, text: string) {
   // `\d+`)，对长汉字消息更费 CPU。protocol-data 固定为中文 `已分享你和...的...条聊天记录`
   // （buildSharedHistoryNotice 写死），用 prefix 早退 99% 不命中的情况，剩下少数命中
   // path 仍走原 regex 严格校验。
-  if (!text.includes("已分享你和")) {
+  if (!text.includes("已分享你和")) { // i18n-ignore-line: 服务端字面匹配，协议标记非展示文案
     return null;
   }
   const normalized = text.trim();

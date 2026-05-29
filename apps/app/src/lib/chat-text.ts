@@ -127,7 +127,7 @@ export function sanitizeDisplayedChatText(text: string): string {
 // 这是 owner 自己撤回 → 翻译要走"你"actor 分支（buildRecalledMessageNotice
 // 里 senderType === "user" 这条），因为服务端 recall 在 chat-only-own
 // guard 后才允许写入，能落到这条 marker 上的一定是 owner 自己撤回的。
-export const SERVER_RECALL_MARKER_TEXT = "你撤回了一条消息";
+export const SERVER_RECALL_MARKER_TEXT = "你撤回了一条消息"; // i18n-ignore-line: 服务端字面匹配，协议标记
 
 export function isServerRecalledSystemMessage(message: {
   senderType?: string | null;

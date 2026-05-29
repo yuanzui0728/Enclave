@@ -106,7 +106,7 @@ export const PAINT_COLORS: Array<{ id: number; label: string; hex: string }> = [
 export function formatYuan(cents: number): string {
   const yuan = cents / 100;
   if (Math.abs(yuan) >= 10000) {
-    return `¥${(yuan / 10000).toFixed(1)}万`;
+    return `¥${(yuan / 10000).toFixed(1)}万`; // i18n-ignore-line: 游戏内金额格式(万)，游戏数据
   }
   return `¥${yuan.toFixed(2)}`;
 }

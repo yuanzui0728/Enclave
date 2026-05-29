@@ -131,11 +131,11 @@ async function readNativeBridgeImageAssetFile(
 ): Promise<File> {
   const source = resolveAssetSource(asset);
   if (!source) {
-    throw new Error("native asset source unavailable");
+    throw new Error("native asset source unavailable"); // i18n-ignore-line: 内部技术错误，非用户展示
   }
   const response = await fetch(source);
   if (!response.ok) {
-    throw new Error("native asset fetch failed");
+    throw new Error("native asset fetch failed"); // i18n-ignore-line: 内部技术错误，非用户展示
   }
   const blob = await response.blob();
   const mimeType =
