@@ -30,7 +30,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { MonoIconTile } from "../../components/mono-icon-tile";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 import { buildChatComposeTextSearch } from "../chat/chat-compose-shortcut-route";
-import { CyberAvatarFigure } from "../cyber-avatar/cyber-avatar-figure";
+import { CyberAvatarPortrait } from "../cyber-avatar/cyber-avatar-portrait";
 import { buildDesktopChannelsRouteHash } from "../channels/channels-route-state";
 import { buildMobileDiscoverToolRouteHash } from "../discover/mobile-discover-tool-route-state";
 import { buildFeedRouteHash } from "../feed/feed-route-state";
@@ -405,10 +405,14 @@ function CyberAvatarStatusHero({
     <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
       {/* 头部：分身标识 + 标题 + 就绪度徽标 */}
       <div className="flex items-center gap-3">
-        {/* 分身剪影：露出 /cyber-avatar 同源的紫调人形像（未填性别=女像），
+        {/* 分身人像：有专属 AI 立绘则显立绘，无图回退到同源 SVG 剪影（未填性别=女像），
             放在 3:4 竖版柔光框里，替代原来的指纹图标。 */}
         <span className="relative flex h-16 w-12 shrink-0 items-end justify-center overflow-hidden rounded-[var(--radius-md)] bg-[radial-gradient(120%_90%_at_50%_18%,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-primary)_5%,transparent)_60%,transparent)]">
-          <CyberAvatarFigure gender={gender} className="h-[60px] w-auto" />
+          <CyberAvatarPortrait
+            portraitImageUrl={profile?.portraitImageUrl}
+            gender={gender}
+            className="h-[60px]"
+          />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">

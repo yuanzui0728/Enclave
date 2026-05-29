@@ -18,10 +18,12 @@ import { CyberAvatarEncounterService } from './cyber-avatar-encounter.service';
 import { CyberAvatarMatchmakingController } from './cyber-avatar-matchmaking.controller';
 import { CyberAvatarSelfController } from './cyber-avatar-self.controller';
 import { CyberAvatarSelfService } from './cyber-avatar-self.service';
+import { CyberAvatarPortraitService } from './cyber-avatar-portrait.service';
 import { MatchmakingServiceTokenGuard } from './matchmaking-service-token.guard';
 import { SystemConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
+import { MinimaxModule } from '../minimax/minimax.module';
 import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { MessageEntity } from '../chat/message.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
@@ -43,6 +45,7 @@ import { CharacterEntity } from '../characters/character.entity';
     ]),
     SystemConfigModule,
     AuthModule,
+    MinimaxModule,
     forwardRef(() => AiModule),
     forwardRef(() => NeedDiscoveryModule),
   ],
@@ -55,6 +58,7 @@ import { CharacterEntity } from '../characters/character.entity';
     FeedPreferenceDigestService,
     OwnerOpenQuestionService,
     CyberAvatarSelfService,
+    CyberAvatarPortraitService,
     CyberAvatarMatchmakingSyncService,
     CyberAvatarEncounterService,
     MatchmakingServiceTokenGuard,

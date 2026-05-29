@@ -60,6 +60,17 @@ export class CyberAvatarProfileEntity {
   @Column({ type: 'text', nullable: true })
   lastRunId?: string | null;
 
+  // 分身专属 AI 立绘：相对 URL（/api/moments/media/:file）。空=未生成。
+  @Column({ type: 'text', nullable: true })
+  portraitImageUrl?: string | null;
+
+  // 立绘最后生成时间 + 生成所用 prompt（留痕，便于排查/复现，不对外暴露给前台）。
+  @Column({ type: 'datetime', nullable: true })
+  portraitUpdatedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  portraitPrompt?: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

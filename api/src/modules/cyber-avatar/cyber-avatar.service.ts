@@ -1432,9 +1432,27 @@ export class CyberAvatarService {
       lastBuiltAt: safeDate(entity.lastBuiltAt),
       lastProjectedAt: safeDate(entity.lastProjectedAt),
       lastRunId: entity.lastRunId ?? null,
+      portraitImageUrl: entity.portraitImageUrl ?? null,
+      portraitUpdatedAt: safeDate(entity.portraitUpdatedAt),
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };
+  }
+
+  // 写入分身专属立绘 URL（+ 留痕 prompt）。spread ensureProfile 结果保留复合主键
+  // (ownerId,id)，避免 save 按单 id reload 命中别的 owner（见 entity 顶部注释）。
+  async persistPortrait(
+    ownerId: string,
+    portraitImageUrl: string,
+    portraitPrompt: string,
+  ): Promise<void> {
+    const entity = await this.ensureProfile(ownerId);
+    await this.profileRepo.save({
+      ...entity,
+      portraitImageUrl,
+      portraitPrompt,
+      portraitUpdatedAt: new Date(),
+    });
   }
 
   private serializeSignal(entity: CyberAvatarSignalEntity) {

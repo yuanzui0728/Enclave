@@ -177,6 +177,32 @@ export interface CyberAvatarInteractionPromptTemplates {
   realWorldBriefPrompt: string;
 }
 
+// 单人世界中枢注入块的引导语 / 抽取 prompt（外部化自 world-context-hub + owner-open-question）。
+// <tag> 包裹与结构留在代码里，只有可读引导语 / LLM 抽取 prompt 走配置。
+export interface CyberAvatarContextHubTemplates {
+  ownerPortraitGuidance: string;
+  ownerPortraitLowConfidenceHint: string;
+  worldFocusGuidance: string;
+  worldRecentEpisodesGuidance: string;
+  relevantMemoryGuidance: string;
+  openQuestionsBlockGuidance: string;
+  // 占位符 {{transcript}}=对话片段、{{openQuestions}}=此前已记录的待解决问题区块。
+  openQuestionExtractionPrompt: string;
+}
+
+// 面向本人的「分析自己」提示词 + 兜底展示文案（原先硬编码在 cyber-avatar-self.service.ts）。
+export interface CyberAvatarSelfFacingPromptConfig {
+  // —— LLM 提示词 ——
+  analysisPrompt: string; // 占位符 {{profile}}
+  chatSystemPrompt: string; // 占位符 {{knowledge}} {{coreInstruction}} {{lowConfidenceNote}}
+  chatLowConfidenceNote: string; // 仅 confidence.stableCore < 0.4 时填进 {{lowConfidenceNote}}
+  // —— 兜底展示文案 ——
+  analysisEmptyHeadline: string;
+  analysisEmptyCaveat: string;
+  analysisDefaultCaveat: string;
+  chatNoDataReply: string;
+}
+
 export interface CyberAvatarSourceToggles {
   includeDirectMessages: boolean;
   includeGroupMessages: boolean;
@@ -252,7 +278,9 @@ export interface CyberAvatarRuntimeRules {
   mergeRules: CyberAvatarMergeRules;
   signalWeights: Record<string, number>;
   promptTemplates: CyberAvatarPromptTemplates;
+  contextHubTemplates: CyberAvatarContextHubTemplates;
   interaction: CyberAvatarInteractionRules;
+  selfFacing: CyberAvatarSelfFacingPromptConfig;
 }
 
 export interface CyberAvatarRealWorldItem {
@@ -314,4 +342,79 @@ export interface CyberAvatarOverview {
   recentSignals: CyberAvatarSignal[];
   recentRuns: CyberAvatarRunSummary[];
   realWorld: CyberAvatarRealWorldOverview;
+}
+
+// ---- 用户态「赛博分身」(self) ----------------------------------------------
+// 前台用户查看自己的分身画像 / 对话 / 结论分析 / 重建。区别于跨用户的「分身相遇」。
+
+export type CyberAvatarSelfReadiness = "empty" | "building" | "ready";
+
+// 分身专属 AI 立绘状态：none=未生成（前台回退 SVG 剪影占位）；ready=已生成有图。
+// 生成中/失败是前台 mutation 瞬时态，不落库、不在此枚举。
+export type CyberAvatarPortraitStatus = "none" | "ready";
+
+export interface CyberAvatarSelfProfile {
+  status: CyberAvatarProfileStatus;
+  readiness: CyberAvatarSelfReadiness;
+  version: number;
+  liveState: CyberAvatarLiveState;
+  recentState: CyberAvatarRecentState;
+  stableCore: CyberAvatarStableCore;
+  confidence: CyberAvatarConfidence;
+  sourceCoverage: CyberAvatarSourceCoverage;
+  signalCount: number;
+  pendingSignalCount: number;
+  lastBuiltAt?: string | null;
+  lastSignalAt?: string | null;
+  // 分身专属 AI 立绘（相对 URL，经 /api/moments/media/:file 内容寻址永久缓存 serve）。
+  // 为空 → 前台渲 SVG 剪影占位（CyberAvatarFigure）；有值 → <img> 懒加载叠在占位上。
+  portraitImageUrl?: string | null;
+  portraitUpdatedAt?: string | null;
+  portraitStatus?: CyberAvatarPortraitStatus;
+}
+
+export interface CyberAvatarSelfChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface CyberAvatarSelfChatRequest {
+  message: string;
+}
+
+export interface CyberAvatarSelfChatResponse {
+  reply: string;
+  readiness: CyberAvatarSelfReadiness;
+  signalCount: number;
+}
+
+export interface CyberAvatarSelfChatHistoryResponse {
+  turns: CyberAvatarSelfChatTurn[];
+}
+
+export interface CyberAvatarSelfAnalysisReport {
+  generatedAt: string;
+  basedOnSignalCount: number;
+  confidenceLevel: "low" | "medium" | "high";
+  headline: string;
+  personalitySummary: string;
+  strengths: string[];
+  blindSpots: string[];
+  recurringPatterns: string[];
+  socialStyle: string;
+  suggestions: string[];
+  caveat: string;
+}
+
+export interface CyberAvatarSelfRebuildRequest {
+  mode?: "incremental" | "full";
+}
+
+export interface CyberAvatarSelfRebuildResponse {
+  status: CyberAvatarRunStatus;
+  mode: CyberAvatarRunMode;
+  signalCount: number;
+  profileVersion: number;
+  skipReason?: string | null;
+  cooldownUntil?: string | null;
 }

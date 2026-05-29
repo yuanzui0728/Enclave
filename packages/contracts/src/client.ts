@@ -1978,6 +1978,18 @@ export function rebuildCyberAvatarSelf(
   );
 }
 
+// 生成/重新生成分身专属 AI 立绘。后端同步出图+存盘，返回更新后的完整 self profile
+// （含 portraitImageUrl），前台直接用它回填 query。首张免费、重生走钱包按量计费。
+export function generateCyberAvatarSelfPortrait(baseUrl?: string) {
+  return requestLegacyApi<CyberAvatarSelfProfile>(
+    "/cyber-avatar/portrait/generate",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function setWorldOwnerApiKey(
   payload: UpdateWorldOwnerApiKeyRequest,
   baseUrl?: string,
