@@ -99,7 +99,15 @@ export class FarmNpcTickService {
     // 顺手给玩家自己的菜地长点杂草和（除非有稻草人的）害虫，让浇水/除草/杀虫/农药/稻草人都用得上。
     await this.degradePlayerPlots(owner.id, ownerHasScarecrow);
 
+    // 单 owner 内逐角色让出计数:per-character 循环里每角色都 await save(lastTickAt)+
+    // 事件写,~92 角色全是同步 resolve 的微任务,会饿死宏任务队列(I/O)~1-2s,
+    // 单 owner 就能造成 health 延迟尖峰(实测最差 ~6s)。每 16 角色让一拍 setImmediate
+    // (宏任务),把单 owner 阻塞打散成 ~0.3s 块,让 :4100 在 owner 内部也保持响应。
+    let yieldCounter = 0;
     for (const character of characters) {
+      if (++yieldCounter % 16 === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
       // 复用上面批量查到的 npc(owner-scoped,已并 ownerId 过滤,无串号风险),不再逐角色查库。
       const npc = npcByCharacterId.get(character.id);
       if (!npc) continue;
