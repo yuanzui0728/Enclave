@@ -130,7 +130,9 @@ export function CyberAvatarReportSheet({
               {report ? (
                 <div className="space-y-3">
                   {report.headline ? (
-                    <div className="rounded-[16px] border border-[rgba(124,91,217,0.18)] bg-[linear-gradient(180deg,rgba(244,241,251,0.96),rgba(255,255,255,0.96))] px-4 py-3.5 text-[14px] font-semibold leading-6 text-[color:var(--text-primary)]">
+                    // 品牌色淡染高亮卡：用 color-mix 叠在 surface-card 上，日/夜主题都自适配
+                    // （别用写死的近白渐变——夜间浅文字会糊在白底上读不清）。
+                    <div className="rounded-[16px] border border-[color:var(--brand-primary)]/18 bg-[color-mix(in_srgb,var(--brand-primary)_8%,var(--surface-card))] px-4 py-3.5 text-[14px] font-semibold leading-6 text-[color:var(--text-primary)]">
                       {report.headline}
                     </div>
                   ) : null}
