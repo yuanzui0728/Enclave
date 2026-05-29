@@ -20,6 +20,7 @@ import {
   Bookmark,
   EyeOff,
   Heart,
+  History,
   ImageIcon,
   MessageCircle,
   MessageCircleMore,
@@ -80,6 +81,7 @@ import {
 import { usePullToRefresh } from "../features/moments/use-pull-to-refresh";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp, formatWeChatCommentTime } from "../lib/format";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { describeRequestError } from "../lib/request-error";
@@ -2510,9 +2512,9 @@ export function ChannelsPage() {
                     return;
                   }
 
-                  void navigate({ to: "/tabs/discover" });
+                  void navigate({ to: resolveExploreHomePath(isDesktopLayout) });
                 },
-                safeReturnPath ?? "/tabs/discover",
+                safeReturnPath ?? resolveExploreHomePath(isDesktopLayout),
               );
             }}
             variant="ghost"
@@ -2521,6 +2523,17 @@ export function ChannelsPage() {
             aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={17} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            onClick={() => void navigate({ to: "/channels/history" })}
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
+            aria-label={t(msg`观看历史`)}
+          >
+            <History size={17} />
           </Button>
         }
       >

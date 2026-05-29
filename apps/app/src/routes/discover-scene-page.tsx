@@ -36,6 +36,7 @@ import { translateAppErrorCode } from "../lib/error-translate";
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-discover-tool-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { MOBILE_EXPLORE_HOME_PATH } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -353,7 +354,7 @@ function MobileDiscoverScenePage() {
       return;
     }
 
-    void navigate({ to: "/tabs/discover" });
+    void navigate({ to: MOBILE_EXPLORE_HOME_PATH });
   };
 
   const cooldownActive = cooldownUntil > now;
@@ -417,11 +418,11 @@ function MobileDiscoverScenePage() {
               return;
             }
 
-            void navigate({ to: "/tabs/discover" });
+            void navigate({ to: MOBILE_EXPLORE_HOME_PATH });
           },
           (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
             ? routeState.returnPath
-            : undefined) ?? "/tabs/discover",
+            : undefined) ?? MOBILE_EXPLORE_HOME_PATH,
         )
       }
     >

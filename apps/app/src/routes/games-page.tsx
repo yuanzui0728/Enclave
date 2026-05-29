@@ -28,8 +28,10 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { buildGameInvitePath } from "../features/games/game-invite-route";
+import { CommunityGamesSection } from "../features/games/embedded/community-games-section";
 import { AvatarChip } from "../components/avatar-chip";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { searchStringToObject } from "../lib/route-search";
@@ -564,7 +566,7 @@ export function GamesPage() {
         return;
       }
 
-      void navigate({ to: "/tabs/discover" });
+      void navigate({ to: resolveExploreHomePath(isDesktopLayout) });
     });
   }
 
@@ -743,6 +745,10 @@ export function GamesPage() {
             </ul>
           </div>
         ) : null}
+
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3">
+          <CommunityGamesSection />
+        </div>
 
         {featuredRest.length > 0 ? (
           <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">

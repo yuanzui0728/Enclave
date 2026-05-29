@@ -13,7 +13,9 @@ import {
   LoadingBlock,
 } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { clearCloudRuntimeSession } from "../lib/cloud-session";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
 import { useCloudSessionStore } from "../store/cloud-session-store";
@@ -36,6 +38,7 @@ function GiftIcon({ iconUrl }: { iconUrl: string | null }) {
 export function GiftCabinetPage() {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
+  const isDesktopLayout = useDesktopLayout();
   const accessToken = useCloudSessionStore((s) => s.accessToken);
   const [tab, setTab] = useState<Tab>("received");
 
@@ -43,8 +46,8 @@ export function GiftCabinetPage() {
 
   const goBack = () =>
     navigateBackOrFallback(() => {
-      void navigate({ to: "/tabs/discover", replace: true });
-    }, "/tabs/discover");
+      void navigate({ to: resolveExploreHomePath(isDesktopLayout), replace: true });
+    });
 
   const handleGoLogin = () => {
     clearCloudRuntimeSession();

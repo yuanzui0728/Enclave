@@ -26,6 +26,7 @@ import {
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { searchStringToObject } from "../lib/route-search";
@@ -536,7 +537,7 @@ export function MiniProgramsPage() {
         return;
       }
 
-      void navigate({ to: "/tabs/discover" });
+      void navigate({ to: resolveExploreHomePath(isDesktopLayout) });
     });
   }
 

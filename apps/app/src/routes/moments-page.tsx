@@ -82,6 +82,7 @@ import {
   stripToolCallSyntax,
 } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
 import { describeRequestError } from "../lib/request-error";
@@ -2259,7 +2260,7 @@ export function MomentsPage() {
             return;
           }
 
-          void navigate({ to: "/tabs/discover" });
+          void navigate({ to: resolveExploreHomePath(isDesktopLayout) });
         })
       }
       onCompose={openMobileMomentsPublishPage}

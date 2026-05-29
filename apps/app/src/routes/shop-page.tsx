@@ -17,6 +17,7 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatCents } from "../features/wallet/wallet-format";
 import { clearCloudRuntimeSession } from "../lib/cloud-session";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
 import { useCloudSessionStore } from "../store/cloud-session-store";
@@ -92,8 +93,8 @@ export function ShopPage() {
 
   const goBack = () =>
     navigateBackOrFallback(() => {
-      void navigate({ to: "/tabs/discover", replace: true });
-    }, "/tabs/discover");
+      void navigate({ to: resolveExploreHomePath(isDesktopLayout), replace: true });
+    });
 
   const closeSheet = () => {
     if (buyMutation.isPending) return;

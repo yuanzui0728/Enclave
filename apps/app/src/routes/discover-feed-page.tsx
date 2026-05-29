@@ -78,6 +78,7 @@ import {
 } from "../features/feed/feed-media";
 import { stripToolCallSyntax } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
+import { resolveExploreHomePath } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { describeRequestError } from "../lib/request-error";
 import { buildPublicShareUrl } from "../lib/share-url";
@@ -2281,7 +2282,7 @@ export function DiscoverFeedPage() {
                   return;
                 }
 
-                void navigate({ to: "/tabs/discover" });
+                void navigate({ to: resolveExploreHomePath(isDesktopLayout) });
               })
             }
             variant="ghost"

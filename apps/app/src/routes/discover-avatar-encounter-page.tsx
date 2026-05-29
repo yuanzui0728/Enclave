@@ -10,8 +10,8 @@ import {
   isApiRequestError,
   listReceivedAvatarEncounters,
   startAvatarEncounter,
+  type AvatarEncounterChoice,
   type AvatarEncounterContact,
-  type AvatarEncounterDecision,
   type AvatarEncounterStatus,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -24,6 +24,7 @@ import { RouteRedirectState } from "../components/route-redirect-state";
 import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-discover-tool-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { translateAppErrorCode } from "../lib/error-translate";
+import { MOBILE_EXPLORE_HOME_PATH } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { openSubscriptionExpiredDialog } from "../lib/subscription-expired";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -141,11 +142,11 @@ function MobileAvatarEncounterPage() {
         if (navigateToRouteStateReturn()) {
           return;
         }
-        void navigate({ to: "/tabs/discover" });
+        void navigate({ to: MOBILE_EXPLORE_HOME_PATH });
       },
       (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
         ? routeState.returnPath
-        : undefined) ?? "/tabs/discover",
+        : undefined) ?? MOBILE_EXPLORE_HOME_PATH,
     );
 
   return (
@@ -236,32 +237,14 @@ function DiscoverTab({
 }: DiscoverTabProps) {
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
-  // 当前这次相遇的本地状态：脚本 + 决策。startMutation 成功后落进来。
-  const [decision, setDecision] = useState<AvatarEncounterDecision | null>(
-    null,
-  );
+  // 当前这次相遇的本地状态：脚本 + 披露。startMutation 成功后落进来。
+  // 多轮决策状态（status/currentRound/myRoundChoice/canContinue）从 decideMutation.data ?? session 取，不再单存 decision。
   const [revealedContact, setRevealedContact] =
     useState<AvatarEncounterContact | null>(null);
   const [contactCopied, setContactCopied] = useState(false);
 
-  const startMutation = useMutation({
-    mutationFn: () => startAvatarEncounter(accessToken ?? "", cloudApiBaseUrl),
-    onMutate: () => {
-      // 新一次相遇起手时把上一次的决策 / 披露状态清掉。
-      setDecision(null);
-      setRevealedContact(null);
-      setContactCopied(false);
-    },
-    onSuccess: () => {
-      // 扣了 1 次额度，刷新 hero 上的剩余次数。
-      onRefetchOverview();
-    },
-  });
-
-  const session = startMutation.data ?? null;
-
   const decideMutation = useMutation({
-    mutationFn: (next: AvatarEncounterDecision) => {
+    mutationFn: (next: AvatarEncounterChoice) => {
       if (!session) {
         throw new Error("no session"); // i18n-ignore-line: guard
       }
@@ -272,13 +255,31 @@ function DiscoverTab({
         cloudApiBaseUrl,
       );
     },
-    onSuccess: (result, variables) => {
-      setDecision(variables);
+    onSuccess: (result) => {
       if (result.status === "matched" && result.contact) {
         setRevealedContact(result.contact);
       }
     },
   });
+
+  const startMutation = useMutation({
+    mutationFn: () => startAvatarEncounter(accessToken ?? "", cloudApiBaseUrl),
+    onMutate: () => {
+      // 新一次相遇起手时把上一次的决策 / 披露状态清掉。
+      decideMutation.reset();
+      setRevealedContact(null);
+      setContactCopied(false);
+    },
+    onSuccess: () => {
+      // 扣了 1 次额度，刷新 hero 上的剩余次数。
+      onRefetchOverview();
+    },
+  });
+
+  const session = startMutation.data ?? null;
+  // 发起方是每轮的先手：本轮 want/continue 后转 awaiting_recipient 等对方，
+  // 不会在本页直接 matched / 进下一轮（那要回「我的相遇」看）。effective 取最新决策结果或初始 session。
+  const effective = decideMutation.data ?? session;
 
   // 日额度撞墙：禁用按钮 + 提示「了解会员」。
   const dailyLimitHit =
@@ -377,8 +378,13 @@ function DiscoverTab({
             />
           ) : null}
         </div>
-      ) : (
+      ) : effective ? (
         <div className="space-y-3">
+          <RoundIndicator
+            currentRound={effective.currentRound}
+            maxRounds={effective.maxRounds}
+          />
+
           <AvatarEncounterTranscript
             summary={session.transcript.summary}
             turns={session.transcript.turns}
@@ -386,15 +392,27 @@ function DiscoverTab({
           />
 
           <AvatarEncounterDecisionBar
-            decision={decision}
-            status={
-              // 决策成功后用 decideMutation 返回的 status；否则用 session 初始 status。
-              decideMutation.data?.status ?? session.status
-            }
+            status={effective.status}
+            myRoundChoice={effective.myRoundChoice}
+            canContinue={effective.canContinue}
             pending={decideMutation.isPending}
+            onContinue={() => decideMutation.mutate("continue")}
             onWant={() => decideMutation.mutate("want")}
             onSkip={() => decideMutation.mutate("skip")}
           />
+
+          {/* 本轮已落子但还没结束（等对方）：引导去「我的相遇」回看进展。 */}
+          {effective.myRoundChoice && !isDecidedStatus(effective.status) ? (
+            <div className="rounded-[12px] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+              {effective.myRoundChoice === "continue"
+                ? t(
+                    msg`等对方也选择继续，就会生成下一轮对话。稍后可在「我的相遇」里查看进展。`,
+                  )
+                : t(
+                    msg`已记录你的选择，等对方决定。结果会出现在「我的相遇」里。`,
+                  )}
+            </div>
+          ) : null}
 
           {/* 匹配成功披露对方联系方式（仅 status==='matched' && contact）。 */}
           {revealedContact ? (
@@ -410,13 +428,13 @@ function DiscoverTab({
             <EncounterDecideError error={decideMutation.error} />
           ) : null}
 
-          {/* 已做完决策后给一个「再来一次 / 回发现」收口（额度允许时）。 */}
-          {decision ? (
+          {/* 本轮已落子 / 已结束后给一个「再来一次 / 回发现」收口（额度允许时）。 */}
+          {effective.myRoundChoice || isDecidedStatus(effective.status) ? (
             <button
               type="button"
               onClick={() => {
                 if (creditsExhausted) {
-                  void navigate({ to: "/tabs/discover" });
+                  void navigate({ to: MOBILE_EXPLORE_HOME_PATH });
                   return;
                 }
                 startMutation.reset();
@@ -428,7 +446,7 @@ function DiscoverTab({
             </button>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -566,9 +584,6 @@ function ReceivedDetail({
   onBack,
 }: ReceivedDetailProps) {
   const t = useRuntimeTranslator();
-  const [decision, setDecision] = useState<AvatarEncounterDecision | null>(
-    null,
-  );
   const [revealedContact, setRevealedContact] =
     useState<AvatarEncounterContact | null>(null);
   const [contactCopied, setContactCopied] = useState(false);
@@ -582,28 +597,27 @@ function ReceivedDetail({
 
   const view = viewQuery.data ?? null;
 
-  // 进详情时把服务端已有的决策 / 披露 seed 进本地状态。
+  // 进详情 / 刷新后把服务端已披露的联系方式 seed 进来。
   useEffect(() => {
-    if (!view) return;
-    setDecision(view.myDecision);
-    if (view.status === "matched" && view.contact) {
+    if (view?.status === "matched" && view.contact) {
       setRevealedContact(view.contact);
     }
   }, [view]);
 
   const decideMutation = useMutation({
-    mutationFn: (next: AvatarEncounterDecision) =>
+    mutationFn: (next: AvatarEncounterChoice) =>
       decideAvatarEncounter(
         encounterId,
         { decision: next },
         accessToken ?? "",
         cloudApiBaseUrl,
       ),
-    onSuccess: (result, variables) => {
-      setDecision(variables);
+    onSuccess: (result) => {
       if (result.status === "matched" && result.contact) {
         setRevealedContact(result.contact);
       }
+      // 续聊推进会改 transcript / 轮次 / 轮到谁——重拉 view 拿最新（DecisionResult 不带脚本）。
+      void viewQuery.refetch();
     },
   });
 
@@ -613,12 +627,11 @@ function ReceivedDetail({
     setContactCopied(ok);
   }
 
-  const effectiveStatus = decideMutation.data?.status ?? view?.status;
-  // 服务端已 decided（myDecision 非空 / 终态）时锁住决策条。
-  const locked =
-    Boolean(view?.myDecision) ||
-    Boolean(decision) ||
-    (effectiveStatus ? isDecidedStatus(effectiveStatus) : false);
+  // 是否轮到我落子：发起方在 awaiting_initiator、被匹配方在 awaiting_recipient。
+  const myTurn = view
+    ? (view.role === "initiator" && view.status === "awaiting_initiator") ||
+      (view.role === "recipient" && view.status === "awaiting_recipient")
+    : false;
 
   return (
     <div className="space-y-3">
@@ -647,6 +660,11 @@ function ReceivedDetail({
         </InlineNotice>
       ) : view ? (
         <>
+          <RoundIndicator
+            currentRound={view.currentRound}
+            maxRounds={view.maxRounds}
+          />
+
           <AvatarEncounterTranscript
             summary={view.transcript.summary}
             turns={view.transcript.turns}
@@ -654,12 +672,23 @@ function ReceivedDetail({
           />
 
           <AvatarEncounterDecisionBar
-            decision={locked ? decision ?? view.myDecision : null}
-            status={effectiveStatus ?? view.status}
+            status={view.status}
+            myRoundChoice={view.myRoundChoice}
+            canContinue={view.canContinue}
+            awaitingPartner={!myTurn}
             pending={decideMutation.isPending}
+            onContinue={() => decideMutation.mutate("continue")}
             onWant={() => decideMutation.mutate("want")}
             onSkip={() => decideMutation.mutate("skip")}
           />
+
+          {/* 选「继续聊」触发续写时要等对方 world 生成下一轮（可能十几秒），给个明确提示。 */}
+          {decideMutation.isPending && decideMutation.variables === "continue" ? (
+            <div className="flex items-center justify-center gap-2 rounded-[12px] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+              <LoaderCircle size={14} className="animate-spin" />
+              {t(msg`正在生成下一轮对话，请稍候…`)}
+            </div>
+          ) : null}
 
           {revealedContact ? (
             <MatchedContactBlock
@@ -675,6 +704,22 @@ function ReceivedDetail({
           ) : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+// 轮次小标：第 N / M 轮。
+function RoundIndicator({
+  currentRound,
+  maxRounds,
+}: {
+  currentRound: number;
+  maxRounds: number;
+}) {
+  const t = useRuntimeTranslator();
+  return (
+    <div className="text-center text-[11px] font-medium text-[color:var(--text-muted)]">
+      {t(msg`第 ${currentRound} / ${maxRounds} 轮对话`)}
     </div>
   );
 }

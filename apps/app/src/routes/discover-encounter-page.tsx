@@ -15,6 +15,7 @@ import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-d
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useShakeDetector } from "../hooks/use-shake-detector";
 import { translateAppErrorCode } from "../lib/error-translate";
+import { MOBILE_EXPLORE_HOME_PATH } from "../lib/explore-home";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -225,11 +226,11 @@ function MobileDiscoverEncounterPage() {
           return;
         }
 
-        void navigate({ to: "/tabs/discover" });
+        void navigate({ to: MOBILE_EXPLORE_HOME_PATH });
       },
       (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
         ? routeState.returnPath
-        : undefined) ?? "/tabs/discover",
+        : undefined) ?? MOBILE_EXPLORE_HOME_PATH,
     );
   };
 
