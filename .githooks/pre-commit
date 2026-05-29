@@ -1,0 +1,122 @@
+#!/usr/bin/env node
+/**
+ * i18n 漂移告警 hook（warn-only，永远不拦提交）
+ *
+ * 为什么存在：本项目线上 = 本机工作树 dist 直接 serve；Lingui 生产 build 会剥掉
+ * 源串只留哈希 id，靠 catalog 还原。任何新加的 <Trans>/msg`` 串只要没跑
+ * `pnpm i18n:extract` 把 .po 一起 commit，线上就渲染哈希 id（如 seiCmi）。
+ * cloud-console 则走「手维护 surface 字典」(非 Lingui)，新 t("...") key 漏补
+ * 三语就漏英文。这个 hook 在提交时把这两类漂移当场喊出来。
+ *
+ * 设计红线（这台是 live 多会话机）：
+ *   - 只读：绝不跑 extract / 不动工作树文件；
+ *   - 只看本次 staged 范围，不受并发会话脏 catalog 干扰；
+ *   - 单次 git 调用；任何内部异常都吞掉并 exit 0，绝不连累任何会话的提交。
+ *
+ * 设 I18N_HOOK_SILENT=1 可彻底静音。
+ */
+
+const { execFileSync } = require("node:child_process");
+
+function git(args) {
+  return execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+}
+
+function main() {
+  if (process.env.I18N_HOOK_SILENT === "1") return;
+
+  const stagedNames = git(["diff", "--cached", "--name-only", "--diff-filter=ACM"])
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (stagedNames.length === 0) return;
+
+  const catalogStaged = stagedNames.some((p) => p.startsWith("packages/i18n/catalogs/"));
+  const surfaceStaged = stagedNames.some((p) =>
+    p.includes("surface-text-dictionaries"),
+  );
+
+  // 走 Lingui catalog 的源码 surface（漏 extract → 线上哈希 id）
+  const isLinguiSource = (p) =>
+    /^(apps\/(app|wiki|site)|packages\/(ui|i18n))\/src\/.*\.(ts|tsx)$/.test(p) ||
+    /^apps\/cloud-console\/src\/world-admin\/.*\.(ts|tsx)$/.test(p);
+  // 走手维护 surface 字典的 cloud-console 主体（world-admin 除外，那块走 Lingui）
+  const isConsoleSurfaceSource = (p) =>
+    /^apps\/cloud-console\/src\/.*\.(ts|tsx)$/.test(p) &&
+    !/^apps\/cloud-console\/src\/world-admin\//.test(p);
+
+  const skip = (p) =>
+    p.endsWith(".d.ts") ||
+    /\.(test|spec)\.(ts|tsx)$/.test(p) ||
+    /(^|\/)(__tests__|__mocks__)\//.test(p);
+
+  const linguiFiles = stagedNames.filter((p) => isLinguiSource(p) && !skip(p));
+  const consoleFiles = stagedNames.filter((p) => isConsoleSurfaceSource(p) && !skip(p));
+  if (linguiFiles.length === 0 && consoleFiles.length === 0) return;
+
+  // 一次 git 调用拿到全部 staged 新增行，按文件归并
+  const targets = [...new Set([...linguiFiles, ...consoleFiles])];
+  const diff = git(["diff", "--cached", "-U0", "--diff-filter=ACM", "--", ...targets]);
+
+  const addedByFile = new Map();
+  let current = null;
+  for (const line of diff.split("\n")) {
+    const m = /^\+\+\+ b\/(.+)$/.exec(line);
+    if (m) {
+      current = m[1];
+      if (!addedByFile.has(current)) addedByFile.set(current, []);
+      continue;
+    }
+    if (current && line.startsWith("+") && !line.startsWith("+++")) {
+      addedByFile.get(current).push(line.slice(1));
+    }
+  }
+
+  // Lingui 宏的高信号特征（避免误报：t` 用 \b 边界，排除 at`/format` 等）
+  const LINGUI_RE = /(<Trans[\s/>]|\bmsg`|\bdefineMessage\b|\bi18n\._\(|\bt`)/;
+  // cloud-console surface t() 调用：t("...") / t('...') / t(`...`)
+  const SURFACE_RE = /\bt\(\s*["'`]/;
+
+  const linguiHits = [];
+  for (const f of linguiFiles) {
+    const added = addedByFile.get(f) || [];
+    if (added.some((l) => LINGUI_RE.test(l))) linguiHits.push(f);
+  }
+  const surfaceHits = [];
+  for (const f of consoleFiles) {
+    const added = addedByFile.get(f) || [];
+    if (added.some((l) => SURFACE_RE.test(l))) surfaceHits.push(f);
+  }
+
+  const warn = (s) => process.stderr.write(s + "\n");
+
+  if (linguiHits.length > 0 && !catalogStaged) {
+    warn("");
+    warn("⚠️  i18n 告警：staged 源码新增了 Lingui 翻译串，但本次没 stage 任何 catalog");
+    linguiHits.slice(0, 12).forEach((f) => warn("      · " + f));
+    if (linguiHits.length > 12) warn(`      · …还有 ${linguiHits.length - 12} 个`);
+    warn("   后果：若这些是新 msgid，生产 build 剥源串后线上会渲染哈希 id（如 seiCmi）。");
+    warn("   修复：pnpm i18n:extract && git add packages/i18n/catalogs   （或全量校验 pnpm i18n:check:staged）");
+    warn("        若确认全是复用旧串、extract 无 diff，可忽略本告警。");
+    warn("");
+  }
+
+  if (surfaceHits.length > 0 && !surfaceStaged) {
+    warn("");
+    warn("⚠️  i18n 告警：staged 的 cloud-console 源码新增了 t(\"...\") 调用，但没 stage surface 字典");
+    surfaceHits.slice(0, 12).forEach((f) => warn("      · " + f));
+    if (surfaceHits.length > 12) warn(`      · …还有 ${surfaceHits.length - 12} 个`);
+    warn("   cloud-console 走手维护 surface 字典（非 Lingui，空 .po 不参与）。新 key 必须补");
+    warn("   zh/ja/ko 三语，否则线上漏英文。文件：");
+    warn("        packages/i18n/src/runtime/surface-text-dictionaries-cloud-console.ts");
+    warn("        若 key 已存在则忽略本告警。");
+    warn("");
+  }
+}
+
+try {
+  main();
+} catch {
+  // warn-only：hook 自身任何异常都不得影响提交
+}
+process.exit(0);
