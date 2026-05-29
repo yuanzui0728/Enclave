@@ -118,6 +118,9 @@ const HARD_RULES = `硬性规则：
 function clampUntrusted(text: string, maxLen: number): string {
   return text
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    // 中和「栅栏逃逸」：内容含 """ / ``` 可能提前闭合包裹它的三引号栅栏，把后文当指令。
+    .replace(/"{3,}/g, '"')
+    .replace(/`{3,}/g, '`')
     .replace(/\s*\n\s*/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
