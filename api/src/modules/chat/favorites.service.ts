@@ -336,8 +336,15 @@ export class FavoritesService implements OnModuleInit {
       input.threadType === 'group'
         ? await this.buildGroupMessageFavorite(input)
         : await this.buildConversationMessageFavorite(input);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    // 走查：shared 模式下 chat_favorites 的主键被 tenant-entity 重塑成复合 (ownerId, sourceId)
+    // （见迁移 step1b）。原版 upsert 只给 conflictPaths=['sourceId']，生成 ON CONFLICT(sourceId)
+    // 在复合主键库里不匹配任何唯一约束 → SQLite 抛「ON CONFLICT clause does not match any
+    // PRIMARY KEY or UNIQUE constraint」→ 收藏消息整条 500。冲突列必须与真实主键对齐，且
+    // 显式写入 ownerId（beforeInsert 虽会盖章，但 ON CONFLICT 目标列需有确定值）。
     await this.favoriteRepo.upsert(
       {
+        ...(isSharedWorldMode() ? { ownerId: owner.id } : {}),
         sourceId: favorite.sourceId,
         recordId: favorite.id,
         category: favorite.category,
@@ -350,10 +357,9 @@ export class FavoritesService implements OnModuleInit {
         avatarSrc: favorite.avatarSrc ?? null,
         collectedAt: favorite.collectedAt,
       },
-      ['sourceId'],
+      isSharedWorldMode() ? ['ownerId', 'sourceId'] : ['sourceId'],
     );
     await this.trimFavoritesIfNeeded();
-    const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.captureFavoriteAction(owner.id, {
       sourceEntityType: 'favorite_message',
       sourceEntityId: favorite.sourceId,
