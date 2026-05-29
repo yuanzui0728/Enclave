@@ -30805,3 +30805,7 @@ msgstr "Save cancelled."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "File opened."
+
+#: apps/app/src/features/world/world-page.tsx
+msgid "世界此刻"
+msgstr "Happening Now"

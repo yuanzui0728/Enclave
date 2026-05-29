@@ -30805,3 +30805,7 @@ msgstr "저장을 취소했습니다."
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "파일을 열었습니다."
+
+#: apps/app/src/features/world/world-page.tsx
+msgid "世界此刻"
+msgstr "지금 세계는"

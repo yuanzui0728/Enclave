@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -14,6 +14,7 @@ import { AppPage, cn } from "@yinjie/ui";
 import {
   Blocks,
   Camera,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   Fingerprint,
@@ -371,11 +372,17 @@ function MobileWorldPage() {
           </div>
         ) : null}
 
-        {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹） */}
+        {/* 世界此刻：最近有动静的会话横滑条（复用已拉会话数据，空则整条不渲染），
+            让默认首屏「活」起来，而不是一屏静态导航。 */}
+        <WorldNowStrip conversations={conversationList} />
+
+        {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹）。
+            相遇组提升为 featured 层（摇一摇大主卡），动态/生活标准层，
+            「我」tab 镜像来的个人/钱包入口折叠收纳到「更多」降权。 */}
         <section className="space-y-4">
           <SectionHeader title={t(msg`探索`)} />
 
-          <ExploreGroup
+          <FeaturedExploreGroup
             title={t(msg`相遇`)}
             entries={encounterEntries}
             pathname={pathname}
@@ -390,19 +397,17 @@ function MobileWorldPage() {
             entries={lifeEntries}
             pathname={pathname}
           />
-          {/* 「我」tab 功能项镜像：个人功能常显，钱包组仅云账号可见。 */}
-          <ExploreGroup
-            title={t(msg`我的`)}
-            entries={personalEntries}
+          {/* 「我」tab 功能镜像：个人功能常显 + 钱包组仅云账号可见，
+              合并折叠到「更多」（默认收起、中性色、纯图标），零功能丢失。 */}
+          <CondensedEntryGroup
+            title={t(msg`更多`)}
+            entries={
+              showCloudAccountEntries
+                ? [...personalEntries, ...walletEntries]
+                : personalEntries
+            }
             pathname={pathname}
           />
-          {showCloudAccountEntries ? (
-            <ExploreGroup
-              title={t(msg`钱包`)}
-              entries={walletEntries}
-              pathname={pathname}
-            />
-          ) : null}
         </section>
       </div>
 
@@ -454,7 +459,7 @@ function SelfQuickChatBar({
         rows={1}
         placeholder={t(msg`和我说点什么…`)}
         aria-label={t(msg`和我说点什么…`)}
-        className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-none rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-body)] leading-6 text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary)]"
+        className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-none rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-body)] leading-6 text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary)]"
       />
       <button
         type="button"
@@ -469,6 +474,73 @@ function SelfQuickChatBar({
 }
 
 const EMPTY_CONVERSATIONS: ConversationListItem[] = [];
+const WORLD_NOW_MAX = 6;
+
+// 世界此刻：最近有动静的会话横滑条。复用已在拉的 getConversations 数据，
+// 按 lastActivityAt 降序取前几条有最新消息的，点进直接进聊天。空则整条不渲染。
+function WorldNowStrip({
+  conversations,
+}: {
+  conversations: ConversationListItem[];
+}) {
+  const t = useRuntimeTranslator();
+  const navigate = useNavigate();
+
+  const recent = useMemo(() => {
+    return conversations
+      .filter((c) => Boolean(c.lastMessage?.text?.trim()))
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.lastActivityAt).getTime() -
+          new Date(a.lastActivityAt).getTime(),
+      )
+      .slice(0, WORLD_NOW_MAX);
+  }, [conversations]);
+
+  if (recent.length === 0) {
+    return null;
+  }
+
+  return (
+    <section>
+      <div className="mb-1.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
+        {t(msg`世界此刻`)}
+      </div>
+      {/* 负 margin + padding 让两端贴屏边滑，隐藏滚动条 */}
+      <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {recent.map((conv) => (
+          <button
+            key={conv.id}
+            type="button"
+            onClick={() =>
+              void navigate({
+                to: "/chat/$conversationId",
+                params: { conversationId: conv.id },
+              })
+            }
+            className="flex w-[150px] shrink-0 flex-col gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3 text-left shadow-[var(--shadow-soft)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
+          >
+            <div className="flex items-center gap-2">
+              <span className="relative shrink-0">
+                <AvatarChip name={conv.title} src={conv.avatar} size="sm" />
+                {conv.unreadCount > 0 ? (
+                  <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[color:var(--surface-card)] bg-[color:var(--brand-accent)]" />
+                ) : null}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
+                {conv.title}
+              </span>
+            </div>
+            <p className="line-clamp-2 min-h-[2.5em] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+              {conv.lastMessage?.text ?? ""}
+            </p>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function computeWorldDay(createdAt: string | null): number {
   if (!createdAt) {
@@ -538,11 +610,11 @@ function CyberAvatarStatusHero({
       <div className="flex items-center gap-3">
         {/* 分身人像：有专属 AI 立绘则显立绘，无图回退到同源 SVG 剪影（未填性别=女像），
             放在 3:4 竖版柔光框里，替代原来的指纹图标。 */}
-        <span className="relative flex h-16 w-12 shrink-0 items-end justify-center overflow-hidden rounded-[var(--radius-md)] bg-[radial-gradient(120%_90%_at_50%_18%,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-primary)_5%,transparent)_60%,transparent)]">
+        <span className="relative flex aspect-[3/4] w-12 shrink-0 items-end justify-center overflow-hidden rounded-[var(--radius-md)] bg-[radial-gradient(120%_90%_at_50%_18%,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-primary)_5%,transparent)_60%,transparent)]">
           <CyberAvatarPortrait
             portraitImageUrl={profile?.portraitImageUrl}
             gender={gender}
-            className="h-[60px]"
+            className="h-full"
           />
         </span>
         <div className="min-w-0 flex-1">
@@ -703,6 +775,92 @@ function ExploreGroup({
   );
 }
 
+// 探索入口共享导航逻辑：buildSearch/buildHash 的入口走 navigate 带状态，
+// 普通入口走 Link 默认跳转。ExploreTile / FeaturedExploreTile / 「更多」格子共用。
+function useExploreLinkProps(entry: ExploreEntry, pathname: string) {
+  const navigate = useNavigate();
+  const nextSearch = entry.buildSearch?.({ hash: "", pathname });
+  const nextHash = entry.buildHash?.({ hash: "", pathname });
+  return {
+    to: entry.to,
+    onClick: (event: MouseEvent) => {
+      if (!nextSearch && !nextHash) {
+        return;
+      }
+      event.preventDefault();
+      void navigate({
+        to: entry.to,
+        search: searchStringToObject(nextSearch),
+        hash: nextHash,
+      });
+    },
+  };
+}
+
+// featured 组：首个入口整宽大主卡，其余走标准 2 列网格（相遇组专用）。
+function FeaturedExploreGroup({
+  title,
+  entries,
+  pathname,
+}: {
+  title: string;
+  entries: ExploreEntry[];
+  pathname: string;
+}) {
+  const [featured, ...rest] = entries;
+  return (
+    <div>
+      <div className="mb-1.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
+        {title}
+      </div>
+      <div className="space-y-2.5">
+        {featured ? (
+          <FeaturedExploreTile entry={featured} pathname={pathname} />
+        ) : null}
+        {rest.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {rest.map((entry) => (
+              <ExploreTile key={entry.key} entry={entry} pathname={pathname} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function FeaturedExploreTile({
+  entry,
+  pathname,
+}: {
+  entry: ExploreEntry;
+  pathname: string;
+}) {
+  const t = useRuntimeTranslator();
+  const linkProps = useExploreLinkProps(entry, pathname);
+
+  return (
+    <Link
+      {...linkProps}
+      className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] px-4 py-3.5 shadow-[var(--shadow-card)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
+    >
+      <MonoIconTile icon={entry.icon} size="lg" tone="brand" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
+          {t(entry.label)}
+        </div>
+        <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
+          {t(entry.hint)}
+        </div>
+      </div>
+      <ChevronRight
+        size={18}
+        className="shrink-0 text-[color:var(--text-dim)]"
+      />
+    </Link>
+  );
+}
+
 function ExploreTile({
   entry,
   pathname,
@@ -711,24 +869,11 @@ function ExploreTile({
   pathname: string;
 }) {
   const t = useRuntimeTranslator();
-  const navigate = useNavigate();
-  const nextSearch = entry.buildSearch?.({ hash: "", pathname });
-  const nextHash = entry.buildHash?.({ hash: "", pathname });
+  const linkProps = useExploreLinkProps(entry, pathname);
 
   return (
     <Link
-      to={entry.to}
-      onClick={(event) => {
-        if (!nextSearch && !nextHash) {
-          return;
-        }
-        event.preventDefault();
-        void navigate({
-          to: entry.to,
-          search: searchStringToObject(nextSearch),
-          hash: nextHash,
-        });
-      }}
+      {...linkProps}
       className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2.5 shadow-[var(--shadow-soft)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
     >
       <MonoIconTile icon={entry.icon} size="sm" />
@@ -740,6 +885,74 @@ function ExploreTile({
           {t(entry.hint)}
         </div>
       </div>
+    </Link>
+  );
+}
+
+// 「更多」：折叠收纳「我」tab 镜像来的个人/钱包入口。默认收起、中性色、
+// 纯图标 4 列网格——三重降权，明确次于上方 brand 色 featured/标准组，且零功能丢失。
+function CondensedEntryGroup({
+  title,
+  entries,
+  pathname,
+}: {
+  title: string;
+  entries: ExploreEntry[];
+  pathname: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-center justify-between py-0.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]"
+      >
+        <span>{title}</span>
+        <ChevronDown
+          size={16}
+          className={cn(
+            "shrink-0 transition-transform duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+            expanded ? "rotate-180" : "rotate-0",
+          )}
+        />
+      </button>
+      {expanded ? (
+        <div className="mt-2 grid grid-cols-4 gap-x-2 gap-y-3">
+          {entries.map((entry) => (
+            <CondensedEntryCell
+              key={entry.key}
+              entry={entry}
+              pathname={pathname}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CondensedEntryCell({
+  entry,
+  pathname,
+}: {
+  entry: ExploreEntry;
+  pathname: string;
+}) {
+  const t = useRuntimeTranslator();
+  const linkProps = useExploreLinkProps(entry, pathname);
+
+  return (
+    <Link
+      {...linkProps}
+      className="flex flex-col items-center gap-1.5 rounded-[var(--radius-md)] py-1 text-center transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
+    >
+      <MonoIconTile icon={entry.icon} size="md" tone="neutral" />
+      <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
+        {t(entry.label)}
+      </span>
     </Link>
   );
 }
