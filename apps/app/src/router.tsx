@@ -131,6 +131,7 @@ const ProfileSubscriptionPage = lazyNamed(() => import("./routes/profile-subscri
 const ProfileXhsRewardPage = lazyNamed(() => import("./routes/profile-xhs-reward-page"), "ProfileXhsRewardPage");
 
 const WalletPage = lazyNamed(() => import("./routes/wallet-page"), "WalletPage");
+const KnowledgeBasePage = lazyNamed(() => import("./routes/knowledge-base-page"), "KnowledgeBasePage");
 
 const WalletTransactionsPage = lazyNamed(() => import("./routes/wallet-transactions-page"), "WalletTransactionsPage");
 const ShopPage = lazyNamed(() => import("./routes/shop-page"), "ShopPage");
@@ -767,6 +768,13 @@ const walletRoute = createRoute({
   component: WalletPage,
 });
 
+const knowledgeBaseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/knowledge",
+  beforeLoad: requireWorldReady,
+  component: KnowledgeBasePage,
+});
+
 const shopRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/shop",
@@ -1009,6 +1017,7 @@ const routeTree = rootRoute.addChildren([
   profileSubscriptionRoute,
   profileXhsRewardRoute,
   walletRoute,
+  knowledgeBaseRoute,
   walletTransactionsRoute,
   shopRoute,
   shopCheckoutRoute,

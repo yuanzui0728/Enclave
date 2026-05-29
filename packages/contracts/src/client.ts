@@ -288,6 +288,15 @@ import type {
   WalletTransactionListResponse,
 } from "./wallet";
 import type {
+  DeleteKnowledgeDocumentResult,
+  ImportKnowledgeWorldMemoryResult,
+  IngestGlobalKnowledgeRequest,
+  IngestKnowledgeTextRequest,
+  IngestKnowledgeUrlRequest,
+  KnowledgeDocumentSummary,
+  ListKnowledgeDocumentsParams,
+} from "./knowledge";
+import type {
   CreateGoodsOrderPayload,
   CreateGoodsOrderResponse,
   GiftCabinetResponse,
@@ -2649,6 +2658,119 @@ export function uploadChatBackground(payload: FormData, baseUrl?: string) {
     {
       method: "POST",
       body: payload,
+    },
+    baseUrl,
+  );
+}
+
+// --- 知识库（个人 context）：owner-scoped 入口，鉴权由全局 token provider 按 baseUrl 注入 ---
+
+export function listKnowledgeDocuments(
+  params?: ListKnowledgeDocumentsParams,
+  baseUrl?: string,
+) {
+  const search = new URLSearchParams();
+  if (params?.scope) search.set("scope", params.scope);
+  if (params?.characterId) search.set("characterId", params.characterId);
+  const qs = search.toString();
+  return requestLegacyApi<KnowledgeDocumentSummary[]>(
+    `/knowledge/documents${qs ? `?${qs}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function ingestKnowledgeText(
+  payload: IngestKnowledgeTextRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<KnowledgeDocumentSummary>(
+    "/knowledge/documents/text",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+// 任意格式文件上传。FormData 直接当 body，request() 会自动跳过 Content-Type
+// 让浏览器加 multipart boundary——绝不手设 Content-Type。
+export function uploadKnowledgeDocument(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<KnowledgeDocumentSummary>(
+    "/knowledge/documents/upload",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function ingestKnowledgeUrl(
+  payload: IngestKnowledgeUrlRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<KnowledgeDocumentSummary>(
+    "/knowledge/documents/url",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+// import 是保留字，函数名加动词前缀。
+export function importKnowledgeWorldMemory(baseUrl?: string) {
+  return requestLegacyApi<ImportKnowledgeWorldMemoryResult>(
+    "/knowledge/import/world-memory",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function deleteKnowledgeDocument(id: string, baseUrl?: string) {
+  return requestLegacyApi<DeleteKnowledgeDocumentResult>(
+    `/knowledge/documents/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+// --- 平台运营态：全局预设知识库（admin，X-Admin-Secret；cloud-console 平台页用） ---
+
+export function listGlobalKnowledgeDocuments(baseUrl?: string) {
+  return requestLegacyApi<KnowledgeDocumentSummary[]>(
+    "/admin/knowledge/global",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function ingestGlobalKnowledgeText(
+  payload: IngestGlobalKnowledgeRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<KnowledgeDocumentSummary>(
+    "/admin/knowledge/global",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function deleteGlobalKnowledgeDocument(id: string, baseUrl?: string) {
+  return requestLegacyApi<DeleteKnowledgeDocumentResult>(
+    `/admin/knowledge/global/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );
