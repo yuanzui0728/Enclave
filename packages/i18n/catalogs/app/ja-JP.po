@@ -7500,7 +7500,7 @@ msgstr "モーメンツ"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:910
 #: apps/app/src/routes/character-detail-page.tsx:413
 msgid "查看这位角色最近的朋友圈"
-msgstr "このキャラクターの最近のモーメンツを見る"
+msgstr "最近のモーメンツを見る"
 
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:357
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:385
@@ -7777,7 +7777,7 @@ msgstr "スマートフォローアップから"
 
 #: apps/app/src/features/contacts/friend-request-scene-label.ts:42
 msgid "隐界初始好友"
-msgstr "界の初期フレンド"
+msgstr "Yinjie の初期フレンド"
 
 #: apps/app/src/features/contacts/friend-request-scene-label.ts:44
 msgid "来自导入角色"
