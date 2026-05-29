@@ -75,7 +75,17 @@ export class FarmNpcTickService {
     const startedAt = Date.now();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const characters = await this.npcService.listEligibleCharacters(owner.id);
-    await this.npcService.ensureNpcStateForCharacters(characters, owner.id);
+    // ensureNpcStateForCharacters 内部已对全部角色做一次 owner-scoped 批量查询并返回
+    // 所有 npc 实体([...existing, ...created])。直接复用它建 Map,消除下面循环里
+    // 逐角色 findOneBy 的 N+1(原本 ~92 角色 = ~92 次 DB 查询/owner × 138 owner =
+    // 上万次查询/tick,是 farm tick 拖垮共享事件循环的主要来源之一)。
+    const npcStates = await this.npcService.ensureNpcStateForCharacters(
+      characters,
+      owner.id,
+    );
+    const npcByCharacterId = new Map(
+      npcStates.map((npc) => [npc.characterId, npc]),
+    );
 
     let actedCount = 0;
     let plantCount = 0;
@@ -90,12 +100,8 @@ export class FarmNpcTickService {
     await this.degradePlayerPlots(owner.id, ownerHasScarecrow);
 
     for (const character of characters) {
-      // 共享 world：characterId 是跨 owner 共用的预设 id，必须并 ownerId 过滤
-      // （farm npc 行两模式都写 ownerId）。否则裸读命中别 owner 的 npc → afterLoad 抛。
-      const npc = await this.npcRepo.findOneBy({
-        characterId: character.id,
-        ownerId: owner.id,
-      });
+      // 复用上面批量查到的 npc(owner-scoped,已并 ownerId 过滤,无串号风险),不再逐角色查库。
+      const npc = npcByCharacterId.get(character.id);
       if (!npc) continue;
       const onlineLikelihood = computeOnlineLikelihood(character);
       if (Math.random() > onlineLikelihood) continue;
