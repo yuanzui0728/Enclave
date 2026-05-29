@@ -70,7 +70,7 @@ export function TelemetryTopWorldsTable({
   if (total === 0) {
     return (
       <div className="rounded-2xl border border-(--border-subtle) bg-(--surface-card) p-8 text-center text-sm text-(--text-muted)">
-        {t("No world activity in the current range.")}
+        {t("No user world activity in the current range.")}
       </div>
     );
   }
@@ -89,7 +89,7 @@ export function TelemetryTopWorldsTable({
         <table className="min-w-full divide-y divide-(--border-faint) text-sm">
           <thead className="bg-(--surface-soft)">
             <tr>
-              <Th>{t("World")}</Th>
+              <Th>{t("User world")}</Th>
               <Th
                 align="right"
                 sortKey="humanActionCount"
@@ -127,7 +127,15 @@ export function TelemetryTopWorldsTable({
               >
                 {t("Active days")}
               </Th>
-              <Th align="right">{t("Last user activity")}</Th>
+              <Th
+                align="right"
+                sortKey="lastUserMessageAt"
+                activeKey={sort.by}
+                activeDir={sort.dir}
+                onSort={handleSort}
+              >
+                {t("Last user activity")}
+              </Th>
               <Th
                 align="right"
                 sortKey="errorCount"

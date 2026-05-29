@@ -572,6 +572,7 @@ export class TelemetryService {
       "humanActionCount",
       "sessionCount",
       "activeDays",
+      "lastUserMessageAt",
     ];
     const sortBy: TelemetryTopWorldsSortKey =
       opts.sortBy && SORTABLE_KEYS.includes(opts.sortBy)
@@ -616,8 +617,21 @@ export class TelemetryService {
       .addSelect("COUNT(DISTINCT substr(e.occurredAt, 1, 10))", "activeDays")
       .where("e.worldId IS NOT NULL")
       .andWhere("e.occurredAt >= :start", { start: startIso })
-      .groupBy("e.worldId")
-      .orderBy(sortBy, sortDir);
+      .groupBy("e.worldId");
+    if (sortBy === "lastUserMessageAt") {
+      // 最近真人互动时间不在事件聚合里，来自 cloud_worlds.lastUserMessageAt。
+      // 1:1 join（w.id = e.worldId）不会在 GROUP BY e.worldId 下产生笛卡尔积。
+      // NULL（从未真人发言）恒沉底，不随 asc/desc 漂到「最近」头部。
+      rowsQb
+        .leftJoin(CloudWorldEntity, "w", "w.id = e.worldId")
+        .orderBy(
+          "CASE WHEN w.lastUserMessageAt IS NULL THEN 1 ELSE 0 END",
+          "ASC",
+        )
+        .addOrderBy("w.lastUserMessageAt", sortDir);
+    } else {
+      rowsQb.orderBy(sortBy, sortDir);
+    }
     // tiebreaker：同主排序值时，依次用 humanActionCount、eventCount、worldId 兜底，
     // 保证分页稳定（同值行在翻页时不会乱序重复 / 漏掉）。
     if (sortBy !== "humanActionCount")

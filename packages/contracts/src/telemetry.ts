@@ -163,7 +163,8 @@ export type TelemetryTopWorldsSortKey =
   | "errorCount"
   | "humanActionCount"
   | "sessionCount"
-  | "activeDays";
+  | "activeDays"
+  | "lastUserMessageAt";
 
 export type TelemetryTopWorldsSortDir = "asc" | "desc";
 

@@ -83,6 +83,7 @@ const TOP_WORLDS_SORT_BY_VALUES = [
   "humanActionCount",
   "sessionCount",
   "activeDays",
+  "lastUserMessageAt",
 ] as const;
 const TOP_WORLDS_SORT_DIR_VALUES = ["asc", "desc"] as const;
 
