@@ -102,6 +102,14 @@ function shouldDropUnhandled(
 
 function shouldDropFrontendError(event: ErrorEvent): boolean {
   if (event.message === "Script error." && !event.filename) return true;
+  // ResizeObserver 的 loop 通知是浏览器良性告警（布局抖动时触发），不是真实异常、
+  // 无调试价值；不挡会持续往 frontend_error 里灌噪声。
+  if (
+    event.message === "ResizeObserver loop limit exceeded" ||
+    event.message === "ResizeObserver loop completed with undelivered notifications"
+  ) {
+    return true;
+  }
   const stack = (event.error as Error | undefined)?.stack;
   if (stack && EXTENSION_STACK_PATTERN.test(stack)) return true;
   if (event.filename && EXTENSION_STACK_PATTERN.test(event.filename)) return true;
@@ -112,6 +120,34 @@ function shouldDropFrontendError(event: ErrorEvent): boolean {
   if (!event.filename && isLocalLikeUrl(extractFirstUrlFromStack(stack ?? null))) {
     return true;
   }
+  return false;
+}
+
+// 占位 / 测试资源 URL：种子或 QA 数据把假值写进了角色头像 / bio 图字段，渲染成
+// <img src> 后必 404。按 host / 文件名识别，不误伤真实资源（moment 媒体是时间戳命名、
+// 头像是 hash 命名，绝无字面 a.png）。
+function isPlaceholderResourceUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = parsed.hostname.toLowerCase();
+  // RFC 2606 文档保留域，永远不是真实生产资源
+  if (
+    host === "example.com" ||
+    host === "example.net" ||
+    host === "example.org" ||
+    host.endsWith(".example")
+  ) {
+    return true;
+  }
+  // 裸主机名（无点、非 localhost）：https://x/0.jpg —— 非法 URL，必是占位
+  if (!host.includes(".") && host !== "localhost") return true;
+  // x.com 是真实域名，故不按 host 整段丢，只丢字面占位文件名
+  const base = (parsed.pathname.split("/").pop() ?? "").toLowerCase();
+  if (base === "a.png" || base === "abc.png" || base === "x.png") return true;
   return false;
 }
 
@@ -155,6 +191,11 @@ function buildResourceErrorProps(
   // 生产事件，drop 掉避免淹没真信号——历史上 24h 累计 3650 条 LAN-IP
   // resource_error 把 wiki avatar 404 这种生产 bug 淹得几乎看不见。
   if (isLocalLikeUrl(url)) return null;
+  // 种子 / QA 占位资源 URL：RFC 2606 文档保留域、裸主机名、字面占位文件名
+  // （a.png / abc.png / x.png）。这些从不是真实生产资源，序列化进 <img src> 后
+  // 必 404，霸占 Errors tab（example.com 1424、x.com/a.png 879），把真 404 淹没。
+  // 与上面 isLocalLikeUrl 同理 drop。
+  if (isPlaceholderResourceUrl(url)) return null;
   return {
     tag,
     url: url.slice(0, 1000),
