@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { UserRound } from "lucide-react";
 import type {
@@ -15,6 +15,9 @@ type AvatarEncounterTranscriptProps = {
   // 初次相遇时一来一回逐条揭示（带「正在输入」指示器），让等待像真的在聊；
   // 查看历史相遇 / 续聊回看时不传 → 即时全量渲染，不重播。
   revealProgressively?: boolean;
+  // 全部气泡揭示完（或被点击跳过/即时全量）后回调一次，调用方据此再放出决策栏，
+  // 避免用户在对话还没出来时就误点「略过/想要」。
+  onRevealComplete?: () => void;
 };
 
 // 揭示节奏：首条略等一下，之后每条之间停顿，模拟一来一回。
@@ -47,6 +50,7 @@ export function AvatarEncounterTranscript({
   turns,
   partner,
   revealProgressively = false,
+  onRevealComplete,
 }: AvatarEncounterTranscriptProps) {
   const t = useRuntimeTranslator();
 
@@ -58,30 +62,52 @@ export function AvatarEncounterTranscript({
   );
   const [typing, setTyping] = useState(false);
 
+  // onRevealComplete 放进 ref，避免它作为 effect 依赖导致重排定时器。
+  const onRevealCompleteRef = useRef(onRevealComplete);
+  onRevealCompleteRef.current = onRevealComplete;
+  // 定时器放 ref，点击跳过时也能清掉。
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
   useEffect(() => {
-    if (!revealProgressively) {
+    const clearTimers = () => {
+      for (const timer of timersRef.current) clearTimeout(timer);
+      timersRef.current = [];
+    };
+    clearTimers();
+    if (!revealProgressively || turns.length === 0) {
+      // 全量渲染（或空脚本）：立即放完并通知，调用方据此放出决策栏。
       setVisibleCount(turns.length);
       setTyping(false);
+      onRevealCompleteRef.current?.();
       return;
     }
     setVisibleCount(0);
-    setTyping(turns.length > 0);
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    setTyping(true);
     for (let i = 0; i < turns.length; i += 1) {
-      timers.push(
-        setTimeout(
-          () => {
-            setVisibleCount(i + 1);
-            setTyping(i + 1 < turns.length);
-          },
-          REVEAL_FIRST_DELAY_MS + i * REVEAL_STEP_MS,
-        ),
+      const timer = setTimeout(
+        () => {
+          setVisibleCount(i + 1);
+          const isLast = i + 1 >= turns.length;
+          setTyping(!isLast);
+          if (isLast) onRevealCompleteRef.current?.();
+        },
+        REVEAL_FIRST_DELAY_MS + i * REVEAL_STEP_MS,
       );
+      timersRef.current.push(timer);
     }
-    return () => {
-      for (const timer of timers) clearTimeout(timer);
-    };
+    return clearTimers;
   }, [turns, revealProgressively]);
+
+  // 点击对话区跳过逐条动画：清掉定时器、立即全量、补发完成回调。
+  const revealing = revealProgressively && visibleCount < turns.length;
+  const skipReveal = () => {
+    if (!revealing) return;
+    for (const timer of timersRef.current) clearTimeout(timer);
+    timersRef.current = [];
+    setVisibleCount(turns.length);
+    setTyping(false);
+    onRevealCompleteRef.current?.();
+  };
 
   const visibleTurns = turns.slice(0, visibleCount);
   const nextSpeaker = turns[visibleCount]?.speaker;
@@ -119,8 +145,12 @@ export function AvatarEncounterTranscript({
       ) : null}
 
       {/* 对话气泡：mine 右对齐（--brand-soft 蜜橙底），theirs 左对齐（白底 + 浅边框）。
-          多轮续聊时在轮次切换处插「继续聊」分隔线（turn.round 缺省视为单轮，向后兼容）。 */}
-      <div className="space-y-2.5">
+          多轮续聊时在轮次切换处插「继续聊」分隔线（turn.round 缺省视为单轮，向后兼容）。
+          逐条揭示进行中时，点一下整段直接看全部。 */}
+      <div
+        className={cn("space-y-2.5", revealing && "cursor-pointer")}
+        onClick={revealing ? skipReveal : undefined}
+      >
         {visibleTurns.map((turn, index) => {
           const isMine = turn.speaker === "mine";
           const prevRound = index > 0 ? turns[index - 1]?.round : undefined;
@@ -176,6 +206,13 @@ export function AvatarEncounterTranscript({
             >
               <TypingDots />
             </div>
+          </div>
+        ) : null}
+
+        {/* 揭示进行中给个「点这里看全部」的轻提示。 */}
+        {revealing ? (
+          <div className="pt-1 text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+            {t(msg`点这里直接看全部`)}
           </div>
         ) : null}
       </div>

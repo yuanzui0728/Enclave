@@ -271,6 +271,8 @@ function DiscoverTab({
   const [revealedContact, setRevealedContact] =
     useState<AvatarEncounterContact | null>(null);
   const [contactCopied, setContactCopied] = useState(false);
+  // 对话逐条揭示完成前不放出决策栏，避免还没读到内容就误点「略过/想要」。
+  const [revealDone, setRevealDone] = useState(false);
 
   const decideMutation = useMutation({
     mutationFn: (next: AvatarEncounterChoice) => {
@@ -294,10 +296,11 @@ function DiscoverTab({
   const startMutation = useMutation({
     mutationFn: () => startAvatarEncounter(accessToken ?? "", cloudApiBaseUrl),
     onMutate: () => {
-      // 新一次相遇起手时把上一次的决策 / 披露状态清掉。
+      // 新一次相遇起手时把上一次的决策 / 披露 / 揭示状态清掉。
       decideMutation.reset();
       setRevealedContact(null);
       setContactCopied(false);
+      setRevealDone(false);
     },
     onSuccess: () => {
       // 扣了 1 次额度，刷新 hero 上的剩余次数。
@@ -361,7 +364,7 @@ function DiscoverTab({
                 size={22}
                 className="mx-auto animate-spin text-[color:var(--brand-primary)]"
               />
-              <div className="mt-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)] transition-opacity duration-300">
+              <div className="mt-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
                 {t(stageHint)}
               </div>
             </div>
@@ -418,17 +421,21 @@ function DiscoverTab({
             turns={session.transcript.turns}
             partner={session.partner}
             revealProgressively
+            onRevealComplete={() => setRevealDone(true)}
           />
 
-          <AvatarEncounterDecisionBar
-            status={effective.status}
-            myRoundChoice={effective.myRoundChoice}
-            canContinue={effective.canContinue}
-            pending={decideMutation.isPending}
-            onContinue={() => decideMutation.mutate("continue")}
-            onWant={() => decideMutation.mutate("want")}
-            onSkip={() => decideMutation.mutate("skip")}
-          />
+          {/* 对话还在逐条浮现时先不放决策栏，揭示完（或被点击跳过）再出现。 */}
+          {revealDone ? (
+            <AvatarEncounterDecisionBar
+              status={effective.status}
+              myRoundChoice={effective.myRoundChoice}
+              canContinue={effective.canContinue}
+              pending={decideMutation.isPending}
+              onContinue={() => decideMutation.mutate("continue")}
+              onWant={() => decideMutation.mutate("want")}
+              onSkip={() => decideMutation.mutate("skip")}
+            />
+          ) : null}
 
           {/* 本轮已落子但还没结束（等对方）：引导去「我的相遇」回看进展。 */}
           {effective.myRoundChoice && !isDecidedStatus(effective.status) ? (
