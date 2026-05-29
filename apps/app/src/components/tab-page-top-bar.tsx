@@ -9,6 +9,10 @@ type TabPageTopBarProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   rightActions?: ReactNode;
   titleAlign?: "left" | "center";
   titleClassName?: string;
+  // 顶部栏内部控件行的附加 class（背景/边框仍走外层全宽）。默认空 = 行为不变。
+  // 大视口下正文限宽居中时，传 max-w + mx-auto 让返回/标题/操作与正文列对齐，
+  // 不被甩到屏幕两边。
+  innerClassName?: string;
 };
 
 export function TabPageTopBar({
@@ -20,6 +24,7 @@ export function TabPageTopBar({
   rightActions,
   titleAlign = "left",
   titleClassName,
+  innerClassName,
   children,
   ...props
 }: TabPageTopBarProps) {
@@ -76,7 +81,12 @@ export function TabPageTopBar({
       )}
       {...props}
     >
-      <div className="relative flex min-h-11 items-center justify-between gap-3">
+      <div
+        className={cn(
+          "relative flex min-h-11 items-center justify-between gap-3",
+          innerClassName,
+        )}
+      >
         {titleAlign === "center" ? (
           <div ref={leftActionsRef} className="shrink-0">
             {leftActions ? leftActions : <div className="w-9 shrink-0" aria-hidden="true" />}

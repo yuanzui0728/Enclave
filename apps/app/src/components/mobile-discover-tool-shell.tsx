@@ -132,6 +132,9 @@ export function MobileDiscoverToolShell({
         subtitle={subtitle}
         titleAlign="center"
         className="mx-0 mt-0 mb-0 border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        // 大视口下正文已收成 max-w-[480px] 居中列，顶部栏控件行同样限宽居中，
+        // 返回/标题/分享跟正文对齐，不被甩到屏幕两边。
+        innerClassName="mx-auto w-full max-w-[480px]"
         leftActions={
           <Button
             onClick={onBack}
