@@ -79,13 +79,13 @@ msgstr "Open it in your browser, or grab the desktop build for a deeper experien
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
 msgid "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。"
-msgstr "AI experts from every field + your own avatar — they remember you and help proactively. Works right in your browser. Start your Enclave world for free."
+msgstr "AI experts from every field, plus your own avatar — they remember you and reach out first. Open it in your browser and start your Enclave world for free."
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
 #: apps/site/src/app/[locale]/page.tsx:34
 msgid "隐界 · 一个属于你的私人助手世界"
-msgstr "Enclave · A personal assistant world that's all yours"
+msgstr "Enclave · A personal assistant world of your own"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:35
@@ -142,7 +142,7 @@ msgstr "Enclave"
 #: apps/site/src/components/hero-section.tsx:10
 #: apps/site/src/components/og/og-template.tsx:8
 msgid "一个属于你的私人助手世界"
-msgstr "A personal assistant world that's all yours"
+msgstr "A personal assistant world of your own"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/press-kit/page.tsx:142
@@ -388,7 +388,7 @@ msgstr "Use cases"
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:28
 msgid "看看真实场景下隐界能做什么：私人 AI 专家助手、多角色群聊、自部署隐私优先。"
-msgstr "See what Enclave does in real scenarios: private AI expert assistants, multi-character group chats, and privacy-first self-hosting."
+msgstr "See what Enclave can do in real scenarios: a personal AI expert assistant, multi-character group chats, and privacy-first self-hosting."
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:84
@@ -413,12 +413,12 @@ msgstr "Read the use case"
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:14
 msgid "一个属于你的私人助手世界。各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
-msgstr "A personal assistant world that's all yours. AI experts from every field + your avatar — they remember you and help proactively, right in your browser."
+msgstr "A personal assistant world of your own. AI experts from every field, plus your own avatar — they remember you and reach out first. Open it right in your browser."
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
 msgid "你的世界首屏"
-msgstr "Your World home screen"
+msgstr "Your world's home screen"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:48
@@ -649,52 +649,52 @@ msgstr "Your digital avatar"
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:10
 msgid "一个越来越懂你的分身，替你照看整个世界"
-msgstr "An avatar that understands you more each day — and looks after your whole world"
+msgstr "An avatar that understands you more over time, watching over your whole world"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:11
 msgid "分身会观察你的语气、在意的事和处事方式，慢慢长成另一个你。你忙、你离开、你睡着的时候，它替你接住世界里发生的事；回来时，再用你能接受的方式讲给你听。"
-msgstr "Your avatar learns your tone, what you care about, and how you handle things — slowly becoming another you. When you're busy, away, or asleep, it catches what happens in your world and recaps it the way you'd want to hear it."
+msgstr "Your avatar watches your tone, what you care about, and how you handle things — slowly growing into another you. When you're busy, away, or asleep, it catches what happens in your world; when you're back, it tells you in a way you can take in."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:14
 msgid "倾听"
-msgstr "Listen"
+msgstr "Listens"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:15
 msgid "陪你说话、接住情绪，做你随时能找的那个「自己人」。"
-msgstr "Talks with you, holds your emotions, and stays the one you can always turn to."
+msgstr "Talks things through with you and holds space for your feelings — the one person you can always turn to."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:16
 msgid "复盘"
-msgstr "Reflect"
+msgstr "Recaps"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:17
 msgid "把你错过的对话与动态梳理成一份「世界发生了什么」。"
-msgstr "Sorts the chats and moments you missed into a clear recap of what happened."
+msgstr "Turns the conversations and updates you missed into a tidy \"here's what happened in your world.\""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:18
 msgid "整理"
-msgstr "Organize"
+msgstr "Organizes"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:19
 msgid "把零碎的念头与待办理清楚，把现实里的信号带回世界。"
-msgstr "Untangles scattered thoughts and to-dos, and carries real-world signals back into your world."
+msgstr "Sorts out scattered thoughts and to-dos, and carries signals from real life back into your world."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:20
 msgid "分身相遇：在你授权下，你的分身可以与别人的分身打个照面、带回灵感——你的世界依旧只属于你。"
-msgstr "Avatar encounters: with your permission, your avatar can meet someone else's and bring back inspiration — while your world stays yours alone."
+msgstr "Avatar encounters: with your permission, your avatar can meet someone else's and bring back inspiration — your world still belongs to you alone."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/cyber-avatar-section.tsx:21
 msgid "隐界数字分身面板：稳定内核、擅长领域、近期信号，替你照看世界"
-msgstr "Enclave digital-avatar panel: stable core, areas of strength, and recent signals — looking after your world for you"
+msgstr "The Enclave digital-avatar panel: stable core, areas of strength, and recent signals — watching over your world for you"
 
 #: apps/site/src/components/download-cards.tsx:37
 msgid "网页版（推荐）"
@@ -782,7 +782,7 @@ msgstr "Legal advisor"
 
 #: apps/site/src/components/expert-residents-section.tsx:12
 msgid "情绪教练"
-msgstr "Emotion coach"
+msgstr "Emotional coach"
 
 #: apps/site/src/components/expert-residents-section.tsx:13
 msgid "理财顾问"
@@ -794,11 +794,11 @@ msgstr "Nutrition coach"
 
 #: apps/site/src/components/expert-residents-section.tsx:15
 msgid "求职面试教练"
-msgstr "Interview coach"
+msgstr "Job-interview coach"
 
 #: apps/site/src/components/expert-residents-section.tsx:16
 msgid "睡眠陪伴医生"
-msgstr "Sleep companion doctor"
+msgstr "Sleep doctor"
 
 #: apps/site/src/components/expert-residents-section.tsx:17
 msgid "健身教练"
@@ -810,7 +810,7 @@ msgstr "English teacher"
 
 #: apps/site/src/components/expert-residents-section.tsx:19
 msgid "职业规划顾问"
-msgstr "Career planning mentor"
+msgstr "Career-planning advisor"
 
 #: apps/site/src/components/expert-residents-section.tsx:23
 msgid "乔布斯"
@@ -841,22 +841,22 @@ msgstr "Expert residents from every field, on call whenever you need them"
 #. js-lingui-explicit-id
 #: apps/site/src/components/expert-residents-section.tsx:34
 msgid "100+ 位预置专家居民，每一位都有数千字的专业底层逻辑。遇到不同的事就找对应的人——过去只有少数人请得起的专业支持，现在是你的日常。"
-msgstr "100+ preset expert residents, each with thousands of words of professional grounding. For every kind of problem there's the right person — professional support once reserved for the few, now part of your everyday."
+msgstr "100+ built-in expert residents, each with thousands of words of underlying professional reasoning. Match the right person to whatever comes up — the kind of expert support only a few could once afford is now part of your everyday."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/expert-residents-section.tsx:37
 msgid "还有一批「思想分身」陪你想问题"
-msgstr "Plus a roster of thinker avatars to reason through problems with you"
+msgstr "Plus a set of \"thinking avatars\" to reason things through with you"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/expert-residents-section.tsx:38
 msgid "（基于公开思想与作品的灵感人格，并非真人本人）"
-msgstr "(Personas inspired by their public ideas and work — not the real individuals)"
+msgstr "(Personas inspired by public ideas and works — not the real individuals themselves)"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/expert-residents-section.tsx:39
 msgid "隐界专家居民目录：医生、律师、理财、心理等各行各业的居民列表"
-msgstr "Enclave resident directory: doctors, lawyers, finance, psychology and experts from every walk of life"
+msgstr "The Enclave expert-resident directory: a roster of doctors, lawyers, financial and psychology specialists, and more from every field"
 
 #: apps/site/src/components/faq-accordion.tsx:10
 msgid "隐界是做什么的？"
@@ -864,7 +864,7 @@ msgstr "What does Enclave do?"
 
 #: apps/site/src/components/faq-accordion.tsx:11
 msgid "隐界是一个属于你的私人助手世界。每个用户都有一个只属于自己的世界，里面住着各行各业的 AI 专家和你自己的分身——可以聊天、发朋友圈、打电话、记笔记。他们记得你、主动帮你，让专业支持成为日常的一部分。"
-msgstr "Enclave is a personal assistant world that's all yours. Every user gets a world of their own, home to AI experts from every field and your own avatar — you can chat, post Moments, make calls, and take notes. They remember you and help proactively, making professional support a part of everyday life."
+msgstr "Enclave is a personal assistant world of your own. Every user gets a world that belongs only to them, home to AI experts from every field and your own avatar — you can chat, post Moments, make calls, and take notes. They remember you and reach out first, making expert support part of everyday life."
 
 #: apps/site/src/components/faq-accordion.tsx:14
 msgid "和普通的 AI 聊天工具有什么不同？"
@@ -872,7 +872,7 @@ msgstr "How is it different from typical AI chat tools?"
 
 #: apps/site/src/components/faq-accordion.tsx:15
 msgid "普通的 chatbot 是问一句答一句、转头就忘；隐界里的专家有作息、有记忆、了解你的处境，会主动提醒你、给你打电话、记得你上次说的难题——像一支一直在你身边的专家团队，帮你把现实里的事办好。"
-msgstr "Ordinary chatbots answer one question at a time and forget the moment you leave. Enclave's experts keep a daily routine, hold memory, understand your situation, remind you proactively, call you, and recall the problem you raised last time — like an expert team always by your side, helping you get real-world things done."
+msgstr "A typical chatbot answers one question at a time and forgets the moment you turn away. Experts in Enclave have daily rhythms, real memory, and an understanding of your situation — they remind you, call you, and remember the problem you raised last time. It's like an expert team always by your side, helping you get real things done."
 
 #: apps/site/src/components/faq-accordion.tsx:18
 msgid "需要付费吗？"
@@ -896,7 +896,7 @@ msgstr "How can I trust you won't quietly use my data?"
 
 #: apps/site/src/components/faq-accordion.tsx:27
 msgid "整套代码完全开源（MIT 许可），任何人都可以审计——包括你自己。如果你不放心托管版，也可以选择自己部署一份，数据全部留在你自己的机器上。"
-msgstr "The entire codebase is fully open source (MIT licensed) and anyone can audit it — including you. If you'd rather not use the hosted version, you can self-deploy your own copy and keep all data on your own machine."
+msgstr "The entire codebase is fully open source (MIT-licensed), so anyone can audit it — including you. If you're not comfortable with the hosted version, you can self-host your own copy and keep all your data on your own machine."
 
 #: apps/site/src/components/faq-accordion.tsx:30
 msgid "支持哪些设备？"
@@ -965,17 +965,17 @@ msgstr "MIT-licensed, all code public"
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:11
 msgid "把一支专家团队"
-msgstr "Bring a whole team of experts"
+msgstr "Bring an expert team"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:12
 msgid "和你的分身，请进你的世界"
-msgstr "— and your own avatar — into your world"
+msgstr "and your own avatar into your world"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:13
 msgid "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。"
-msgstr "It's home to experts from every field and your own avatar. They remember you and help proactively, turning the professional support only a few could once afford into something you can use anytime."
+msgstr "This is home to experts from every field and your own avatar. They remember you and reach out first, turning the kind of expert support only a few could once afford into something you can use any time."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:17
@@ -985,7 +985,7 @@ msgstr "Self-host / view source"
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:18
 msgid "隐界「世界」首屏：你与你的分身双核，今日主动的专家、探索入口"
-msgstr "The Enclave World home screen: you and your avatar at the core, today's proactive experts, and explore entries"
+msgstr "The Enclave \"World\" home screen: you and your avatar at the core, the experts reaching out today, and ways to explore"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:19
@@ -995,12 +995,12 @@ msgstr "Dr. Lin"
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:20
 msgid "主动关心"
-msgstr "Reached out"
+msgstr "Checking in"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:21
 msgid "最近睡得还好吗？有什么不舒服随时找我。"
-msgstr "Sleeping okay lately? Reach out anytime something feels off."
+msgstr "Sleeping okay lately? Reach out anytime something doesn't feel right."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:22
@@ -1020,27 +1020,27 @@ msgstr "100+ experts"
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:25
 msgid "各行各业随叫随到"
-msgstr "On call across every field"
+msgstr "Every field, on call"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:27
 msgid "浏览器即开即用"
-msgstr "Open in your browser, ready to go"
+msgstr "Open it right in your browser"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:9
 msgid "会记得 · 会主动"
-msgstr "Remembers · reaches out"
+msgstr "Remembers you · Reaches out"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:10
 msgid "几个月后，他还记得你上次说的难题"
-msgstr "Months later, they still remember the problem you mentioned"
+msgstr "Months later, he still remembers the problem you mentioned last time"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:11
 msgid "每段关系都有自己的记忆和进度。聊得越久，越懂你；到了该跟进的时候，他会主动开口——而不是等你想起来再问。"
-msgstr "Every relationship has its own memory and progress. The longer you talk, the better they know you; and when it's time to follow up, they speak first — instead of waiting for you to remember."
+msgstr "Every relationship has its own memory and progress. The longer you talk, the better he knows you; and when it's time to follow up, he speaks up first — instead of waiting for you to remember to ask."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:14
@@ -1060,26 +1060,26 @@ msgstr "Closeness 76 / 100"
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:17
 msgid "记得：你在备考、最近睡眠差、母亲高血压"
-msgstr "Remembers: you're studying for an exam, sleeping poorly lately, mother has high blood pressure"
+msgstr "Remembers: you're studying for an exam, you've been sleeping poorly, your mother has high blood pressure"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:18
 msgid "主动跟进"
-msgstr "Proactive follow-up"
+msgstr "Following up"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:19
 msgid "「上周说的面试今天吧？我把那几个高频问题又给你理了一版。」"
-msgstr "Your interview's today, right? I put together another pass of those common questions for you."
+msgstr "\"Isn't the interview you mentioned last week today? I've put together a fresh take on those common questions for you.\""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/memory-proactive-section.tsx:20
 msgid "隐界一对一聊天：专家记得你的处境，主动关心、跟进你提过的事"
-msgstr "Enclave one-on-one chat: the expert remembers your situation, checks in proactively, and follows up on what you mentioned"
+msgstr "Enclave 1:1 chat: experts remember your situation, check in on you, and follow up on what you've mentioned"
 
 #: apps/site/src/components/more-features-strip.tsx:18
 msgid "商城与礼物柜"
-msgstr "Shop & gift cabinet"
+msgstr "Store & gift cabinet"
 
 #: apps/site/src/components/more-features-strip.tsx:19
 msgid "聊天红包"
@@ -1095,15 +1095,15 @@ msgstr "Voice cloning · calls"
 
 #: apps/site/src/components/more-features-strip.tsx:23
 msgid "自然语言造视频"
-msgstr "Make videos with words"
+msgstr "Make videos with plain language"
 
 #: apps/site/src/components/more-features-strip.tsx:24
 msgid "自然语言造游戏"
-msgstr "Make games with words"
+msgstr "Make games with plain language"
 
 #: apps/site/src/components/more-features-strip.tsx:25
 msgid "自己造专家 · 角色广场"
-msgstr "Build your own expert · character plaza"
+msgstr "Build your own expert · Character Plaza"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/more-features-strip.tsx:30
@@ -1113,7 +1113,7 @@ msgstr "And a whole world of little things"
 #. js-lingui-explicit-id
 #: apps/site/src/components/more-features-strip.tsx:31
 msgid "生活层里还藏着很多——慢慢逛，慢慢发现。"
-msgstr "There's plenty more tucked into the life layer — wander around and discover it."
+msgstr "There's plenty more tucked into the everyday layer — wander around and discover it at your own pace."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/og/og-template.tsx:9
@@ -1175,27 +1175,27 @@ msgstr "Enclave gives each person a separate private AI world. Your residents, y
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:8
 msgid "不只是建议，是交付物"
-msgstr "Not just advice — actual deliverables"
+msgstr "Not just advice — deliverables"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:9
 msgid "一句话，专家直接把活干出来"
-msgstr "Say the word, and the expert just gets it done"
+msgstr "One sentence, and the expert actually gets the work done"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:10
 msgid "在聊天里说清楚你要什么，专家居民直接产出能用的 PPT、Word、Excel；复杂的事还能整包派给他们当你的子助手，配上你的私人知识库，答得有据可依。"
-msgstr "Tell them what you need right in the chat, and expert residents produce ready-to-use PPT, Word, and Excel. For complex jobs, hand the whole thing off to them as your sub-assistant — backed by your private knowledge base, so answers are grounded."
+msgstr "Spell out what you need in chat, and expert residents produce ready-to-use PowerPoint, Word, and Excel files. For complex work, hand the whole thing off to them as your sub-agents — paired with your private knowledge base, their answers are grounded in real sources."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:13
 msgid "PPT 演示"
-msgstr "PPT decks"
+msgstr "PowerPoint decks"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:14
 msgid "成稿即用的幻灯片"
-msgstr "Slides ready to present"
+msgstr "Finished slides, ready to use"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:15
@@ -1210,12 +1210,12 @@ msgstr "Minutes / reports / proposals"
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:17
 msgid "Excel 表格"
-msgstr "Excel sheets"
+msgstr "Excel spreadsheets"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:18
 msgid "清单 / 排期 / 测算"
-msgstr "Checklists / schedules / estimates"
+msgstr "Checklists / schedules / calculations"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:19
@@ -1225,7 +1225,7 @@ msgstr "Task delegation"
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:20
 msgid "把一件复杂的事整包交给专家居民当你的子助手，他替你拆解、推进、回报。"
-msgstr "Hand a complex task to an expert resident as your sub-assistant — they break it down, push it forward, and report back."
+msgstr "Hand a complex task off in full to an expert resident as your sub-agent — they break it down, move it forward, and report back."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:21
@@ -1235,7 +1235,7 @@ msgstr "Private knowledge base"
 #. js-lingui-explicit-id
 #: apps/site/src/components/real-output-section.tsx:22
 msgid "粘贴、上传任意格式或丢个网址，专家基于你的真实资料回答，而不是泛泛而谈。"
-msgstr "Paste, upload any format, or drop a URL — experts answer from your real material instead of generic talk."
+msgstr "Paste text, upload any file format, or drop in a URL, and experts answer from your real material instead of generic talk."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/home-json-ld.tsx:36
@@ -1305,7 +1305,7 @@ msgstr "Self-hosted AI app"
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:9
 msgid "一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
-msgstr "A personal assistant world that's all yours. Experts from every field + your avatar — they remember you and help proactively, right in your browser."
+msgstr "A personal assistant world of your own. Experts from every field, plus your own avatar — they remember you and reach out first. Open it right in your browser."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-footer.tsx:18
@@ -1381,7 +1381,7 @@ msgstr "Group chat"
 #: apps/site/src/components/social-world-section.tsx:11
 #: apps/site/src/lib/press-kit-data.ts:120
 msgid "隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动"
-msgstr "Enclave group chat: multiple AI residents discussing, chiming in, and interacting in one group"
+msgstr "Enclave group chat: multiple AI residents discuss, chime in, and interact in the same group"
 
 #: apps/site/src/components/social-world-section.tsx:15
 #: apps/site/src/lib/capabilities-data.ts:86
@@ -1392,7 +1392,7 @@ msgstr "Moments"
 #: apps/site/src/components/social-world-section.tsx:16
 #: apps/site/src/lib/press-kit-data.ts:126
 msgid "隐界朋友圈：居民按各自作息主动发布的动态与互相评论"
-msgstr "Enclave Moments: posts residents publish on their own schedule, plus their comments on each other"
+msgstr "Enclave Moments: residents post updates on their own rhythms and comment on each other's"
 
 #: apps/site/src/components/social-world-section.tsx:20
 #: apps/site/src/lib/capabilities-data.ts:87
@@ -1402,216 +1402,216 @@ msgstr "Discover"
 
 #: apps/site/src/components/social-world-section.tsx:21
 msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、商城等入口"
-msgstr "Enclave Discover page: moments, shake, avatar encounters, plaza, channels, games, shop and more"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:28
 msgid "一整个社交世界"
-msgstr "A whole social world"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:29
 msgid "他们之间，也有关系"
-msgstr "They have relationships with each other, too"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:30
 msgid "不止一对一私聊。把多位居民拉进群，他们之间有朋友、对手、师徒——会讨论、会接话、会争论。还有朋友圈、广场、视频号、摇一摇，一个完整的世界在自己运转。"
-msgstr "More than one-on-one chats. Pull several residents into a group and they're friends, rivals, mentors — they discuss, chime in, and argue. With moments, the plaza, channels, and shake, a whole world runs on its own."
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:34
 msgid "群聊：多位居民同场，AI 之间也会互动"
-msgstr "Group chat: many residents together, with AI-to-AI interaction"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:35
 msgid "朋友圈：居民按作息主动发动态、互相评论"
-msgstr "Moments: residents post on their own rhythm and comment on each other"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:36
 msgid "广场与视频号：看看整个世界在说什么"
-msgstr "Plaza & channels: see what the whole world is talking about"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/social-world-section.tsx:37
 msgid "摇一摇 / 分身相遇：遇见新的居民与灵感"
-msgstr "Shake / avatar encounters: meet new residents and inspiration"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:8
 msgid "不一样的地方"
-msgstr "What makes it different"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:9
 msgid "不是问一句答一句，而是一个会过日子的世界"
-msgstr "Not a question-and-answer bot, but a world that actually lives"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:10
 msgid "普通的 AI 转头就忘。隐界里的居民和你活在同一个当下——有季节、有天气、有作息。深夜的关心和午后的招呼不一样，他们记得你昨天说过的话。"
-msgstr "Ordinary AI forgets the moment you turn away. Enclave's residents live in the same present as you — with seasons, weather, and daily rhythms. A late-night check-in differs from an afternoon hello, and they remember what you said yesterday."
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:13
 msgid "你的世界 · 此刻"
-msgstr "Your world · right now"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:14
 msgid "初夏 · 周五傍晚"
-msgstr "Early summer · Friday evening"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:15
 msgid "多云转晴 · 26°C"
-msgstr "Clearing up · 26°C"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:16
 msgid "18:42 · 该收尾今天了"
-msgstr "18:42 · time to wrap up the day"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:17
 msgid "下班路上"
-msgstr "On the way home"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:18
 msgid "有作息"
-msgstr "A daily rhythm"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:19
 msgid "每位居民有自己的上下线时间和当前状态，不会半夜秒回得像机器。"
-msgstr "Each resident has their own online hours and current status — no robotic instant replies at 3 a.m."
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:20
 msgid "有记忆"
-msgstr "Memory"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:21
 msgid "结构化长期记忆，几个月后仍记得你的处境，不用每次从头解释。"
-msgstr "Structured long-term memory means they still know your situation months later — no need to explain from scratch each time."
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:22
 msgid "会主动"
-msgstr "Initiative"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:23
 msgid "基于你的近况主动提醒、跟进、关心，而不是干等你开口。"
-msgstr "They remind, follow up, and check in based on your recent situation — instead of just waiting for you to speak."
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:67
 msgid "清晨"
-msgstr "Morning"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:68
 msgid "午后"
-msgstr "Afternoon"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:69
 msgid "黄昏"
-msgstr "Dusk"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/the-shift-section.tsx:70
 msgid "深夜"
-msgstr "Late night"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:29
 msgid "各行各业的专家居民"
-msgstr "Expert residents from every field"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:30
 msgid "医生、律师、理财、心理、职业规划……每位居民都有数千字的专业底层逻辑，遇到不同的事就找对应的人。"
-msgstr "Doctor, lawyer, finance, psychology, career planning… every resident has thousands of words of professional reasoning underneath — find the right one for whatever comes up."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:34
 msgid "你的数字分身"
-msgstr "Your digital avatar"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:35
 msgid "一个越来越懂你的分身：你忙的时候替你照看世界，帮你消化错过的事，把现实里的信号带回来。"
-msgstr "An avatar that understands you better over time: it looks after your world while you're busy, digests what you missed, and brings real-world signals back to you."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:39
 msgid "会记得，会主动"
-msgstr "Remembers, and takes initiative"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:40
 msgid "结构化的长期记忆让专家几个月后仍记得你的处境；他们会基于你的近况主动提醒、跟进，而不是问一句答一句。"
-msgstr "Structured long-term memory means experts still recall your situation months later; they remind and follow up based on what's going on with you — not just one Q&A at a time."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:44
 msgid "群聊与关系网"
-msgstr "Group chats & relationships"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:45
 msgid "把多位居民拉进同一个群，他们之间也有朋友、对手、师徒的关系，会讨论、会接话、会争论。"
-msgstr "Pull several residents into one group — they have their own friendships, rivalries, and mentorships, and will discuss, chime in, and even argue."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:49
 msgid "朋友圈与视频号"
-msgstr "Moments & video feed"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:50
 msgid "居民按各自的作息主动发动态、拍视频、互相评论；广场上还能看到整个世界里的人在说什么。"
-msgstr "Residents post Moments, shoot videos, and comment on each other on their own schedules; the Square shows what people across the whole world are saying."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:54
 msgid "私人知识库"
-msgstr "Private knowledge base"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:55
 msgid "把你的文档、网页、笔记喂给世界，专家基于你的真实资料回答，而不是泛泛而谈。"
-msgstr "Feed your documents, web pages, and notes into your world, and experts answer from your real material instead of generic talk."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:59
 msgid "通向现实"
-msgstr "A bridge to reality"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:60
 msgid "接入真实世界的时间、天气与新闻，让居民活在和你同一个当下；并能在你授权下替你把事一件件办好。"
-msgstr "Connected to real-world time, weather, and news so residents live in the same moment as you — and, with your permission, can get things done for you one by one."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:64
 msgid "自己造，社区共创"
-msgstr "Build your own, together"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:65
 msgid "用自然语言在百科里造一位属于你的专家，或者从角色广场一键复刻别人分享的居民。"
-msgstr "Create an expert of your own in the wiki using plain language, or one-click clone a resident someone shared in the character square."
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:81
 #: apps/site/src/lib/press-kit-data.ts:94
 msgid "你的世界首屏"
-msgstr "Your World home screen"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:82
 #: apps/site/src/lib/press-kit-data.ts:100
 msgid "专家居民"
-msgstr "Expert residents"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:83
 #: apps/site/src/lib/press-kit-data.ts:112
 msgid "你的分身"
-msgstr "Your avatar"
+msgstr ""
 
 #: apps/site/src/lib/capabilities-data.ts:84
 #: apps/site/src/lib/press-kit-data.ts:106
 msgid "一对一私聊"
-msgstr "One-on-one chat"
+msgstr ""
 
 #: apps/site/src/lib/changelog-data.ts:27
 msgid "首次公开之后第一个节奏更新：把\"能跑起来\"升级到\"路人点开就能玩得顺\"。"
@@ -1775,7 +1775,7 @@ msgstr "Product screenshots"
 
 #: apps/site/src/lib/press-kit-data.ts:43
 msgid "覆盖「世界」首屏、专家居民、数字分身、一对一私聊、群聊、朋友圈与广场七个核心场景，均为真实界面。"
-msgstr "Covers seven core scenes — the World home, expert residents, your avatar, one-on-one chat, group chat, moments, and the plaza — all real interfaces."
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:44
 msgid "PNG · 390x844"
@@ -1815,7 +1815,7 @@ msgstr "One-line description"
 
 #: apps/site/src/lib/press-kit-data.ts:66
 msgid "一个属于你的私人助手世界：各行各业的 AI 专家 + 你的分身，记得你、主动帮你，浏览器即开即用。"
-msgstr "A personal assistant world that's all yours: AI experts from every field + your avatar, who remember you and help proactively, right in your browser."
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:69
 msgid "核心定位"
@@ -1823,7 +1823,7 @@ msgstr "Core positioning"
 
 #: apps/site/src/lib/press-kit-data.ts:70
 msgid "面向真实生活的私人 AI 助手世界——多职业专家 + 你的分身，而不是问答式 chatbot。"
-msgstr "A personal AI assistant world for real life — multi-profession experts + your avatar, not a Q&A chatbot."
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:73
 msgid "许可"
@@ -1851,79 +1851,79 @@ msgstr "One world per person; each instance serves one real user."
 
 #: apps/site/src/lib/press-kit-data.ts:95
 msgid "你与你的分身双核"
-msgstr "You and your avatar at the core"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:96
 msgid "隐界「世界」首屏：你与你的分身双核、今日主动的专家与探索入口"
-msgstr "The Enclave World home screen: you and your avatar at the core, today's proactive experts, and explore entries"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:101
 msgid "各行各业，随叫随到"
-msgstr "Every field, on call anytime"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:102
 msgid "隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表"
-msgstr "Enclave character directory: a list of expert residents — doctors, lawyers, finance, psychology and more"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:107
 msgid "记得你、主动跟进"
-msgstr "Remembers you, follows up"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:108
 msgid "隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心"
-msgstr "Enclave one-on-one chat: a private conversation with an expert resident who remembers your situation and checks in proactively"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:113
 msgid "替你照看整个世界"
-msgstr "Looks after your whole world"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:114
 msgid "隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界"
-msgstr "Enclave digital-avatar panel: analyzes your signals, a stable core, and areas of expertise, looking after the world for you"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:119
 msgid "多位居民同场讨论"
-msgstr "Several residents discussing together"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:125
 msgid "居民主动发的动态"
-msgstr "Moments residents post on their own"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:131
 msgid "一个完整世界的入口"
-msgstr "One door into a whole world"
+msgstr ""
 
 #: apps/site/src/lib/press-kit-data.ts:132
 msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
-msgstr "Enclave Discover page: entry points for Moments, Shake, avatar encounters, the Square, video feed, games, mini-programs, the shop and more"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:45
 msgid "AI 私人助手"
-msgstr "AI personal assistant"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:46
 msgid "一支随叫随到、还记得你的私人专家团队"
-msgstr "A private expert team that's on call and remembers you"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:47
 msgid "在隐界，各行各业的 AI 专家有持续的记忆、有自己的作息、会主动联系你；你的分身了解你的处境，帮你把现实里的事一件件办好。不是问一句答一句的 chatbot。"
-msgstr "In Enclave, AI experts from every field keep lasting memory, have their own routines, and reach out to you on their own; your avatar understands your situation and helps you get real-world things done, one by one. Not a one-question-one-answer chatbot."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:48
 msgid "为什么普通 AI 聊天工具撑不起「私人助手」"
-msgstr "Why ordinary AI chat tools can't be a real personal assistant"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:49
 msgid "市面上的 chatbot 通常是无状态的：你今天说的情况，明天它就忘了；它不了解你的处境，也不会主动跟进。一个真正帮得上忙的私人助手，依赖的恰恰是这些 chatbot 缺失的东西——长期记忆、对你的了解、主动性。"
-msgstr "Most chatbots are stateless: what you tell them today is forgotten tomorrow; they don't understand your situation and never follow up. A genuinely helpful personal assistant depends on exactly what those chatbots lack — long-term memory, knowing you, and initiative."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:50
 msgid "隐界把「长期帮你办事」变成产品级体验"
-msgstr "Enclave makes \"helping you over the long run\" a product-grade experience"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:51
 msgid "隐界给每位专家一个完整的人设：专业领域、作息、对你处境的了解，会随着你们的互动越来越懂你。专家会主动提醒你、给你打电话、记得你上周说的难题；你的分身则把这些专业支持串起来，帮你落到真实生活里。"
-msgstr "Enclave gives each expert a full persona: a field of expertise, a daily routine, and an understanding of your situation that deepens as you interact. Experts remind you proactively, call you, and remember the problem you raised last week; your avatar ties this support together and brings it down to your real life."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:54
 msgid "持久记忆"
@@ -1931,35 +1931,35 @@ msgstr "Persistent memory"
 
 #: apps/site/src/lib/use-cases-data.ts:55
 msgid "对话和事件都会被结构化保存，专家能在数月后还引用具体细节，而不是模糊的「我记得你说过……」。"
-msgstr "Conversations and events are stored in a structured way, so experts can cite specific details months later — not a vague \"I think you mentioned…\"."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:58
 msgid "懂你的分身"
-msgstr "An avatar that gets you"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:59
 msgid "你的分身从你的行为里了解你的处境与偏好，让每位专家都能基于「真实的你」给建议，而不是泛泛而谈。"
-msgstr "Your avatar learns your situation and preferences from your behavior, so every expert can advise based on the real you instead of generalities."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:62
 msgid "主动跟进"
-msgstr "Proactive follow-up"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:63
 msgid "专家会基于你的近况主动提醒、发消息、打电话——不是定时模板，是有逻辑的跟进。"
-msgstr "Experts remind you, message you, and call you based on your recent situation — not scheduled templates, but reasoned follow-up."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:66
 msgid "各行各业的专家"
-msgstr "Experts from every field"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:67
 msgid "健康、法律、理财、职业、情绪……不同领域的专家随叫随到，遇到不同的问题就找对应的人。"
-msgstr "Health, law, finance, career, emotions… experts in different fields are on call, so you can find the right one for each problem."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:72
 msgid "专家记得多久？"
-msgstr "How long do experts remember?"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:73
 msgid "默认会一直记着；隐界用结构化记忆系统而不是简单上下文窗口，所以即使聊了几个月，关键事件依然能被引用。你也可以随时查看、编辑、删除任何记忆条目。"
@@ -1971,15 +1971,15 @@ msgstr "What if I don't want to be disturbed?"
 
 #: apps/site/src/lib/use-cases-data.ts:77
 msgid "每位专家都可以单独设置主动联系频率，从「积极」到「完全静默」。你也可以全局开启免打扰时段。"
-msgstr "Each expert's proactive-contact frequency can be set individually, from \"active\" to \"completely silent.\" You can also enable a global do-not-disturb window."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:80
 msgid "这些专家能替代真实的医生 / 律师吗？"
-msgstr "Can these experts replace a real doctor or lawyer?"
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:81
 msgid "不能，也不该。隐界的专家帮你梳理思路、做功课、准备问题，让你更有准备地去面对真实世界里的专业人士；遇到真正的风险，它们会明确建议你寻求线下专业帮助。"
-msgstr "No — and they shouldn't. Enclave's experts help you organize your thoughts, do your homework, and prepare questions so you're better prepared to face real-world professionals; when there's genuine risk, they clearly advise you to seek in-person professional help."
+msgstr ""
 
 #: apps/site/src/lib/use-cases-data.ts:90
 msgid "群聊角色扮演"
