@@ -702,7 +702,7 @@ function AvatarConfirmDialog({
             // 走查新 R3：「完成」按钮 mobile tap 没按压反馈——hover:opacity-95
             // 是桌面鼠标悬停的渐变，mobile tap 不触发 hover。补 active:opacity-90
             // 让按下瞬间有视觉响应；跟 profile-subscription 复制/开通按钮同款补漏。
-            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[#3b2206] shadow-none hover:opacity-95 active:opacity-90"
+            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:opacity-95 active:opacity-90"
           >
             {isSaving ? t(msg`保存中`) : t(msg`完成`)}
           </Button>

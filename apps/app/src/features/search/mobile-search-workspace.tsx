@@ -303,7 +303,7 @@ export function MobileSearchWorkspace({
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
                   activeCategory === item.id
-                    ? "bg-[color:var(--brand-primary)] text-[#3b2206]"
+                    ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
                 )}
               >

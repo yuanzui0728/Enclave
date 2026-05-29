@@ -2028,7 +2028,7 @@ export function WelcomePage() {
             disabled={isContinuing || ownerSyncing || cloudWorldPending}
             variant="primary"
             size="lg"
-            className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+            className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
           >
             {describeCloudButtonLabel(
               t,
@@ -2090,7 +2090,7 @@ export function WelcomePage() {
           disabled={!normalizedLocalApiBaseUrl || isContinuing}
           variant="primary"
           size="lg"
-          className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+          className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
         >
           {isContinuing ? t(msg`连接中...`) : t(msg`连接本地世界`)}
         </Button>
@@ -2179,7 +2179,7 @@ export function WelcomePage() {
               }
               variant="primary"
               size="lg"
-              className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              className="rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             >
               {isContinuing ? t(msg`保存中...`) : t(msg`进入世界`)}
             </Button>

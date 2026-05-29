@@ -275,7 +275,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="primary"
-                    className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                    className="rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                     onClick={() =>
                       void handleCopy(shareUrl, t(msg`已复制邀请链接。`))
                     }
@@ -589,7 +589,7 @@ export function SubscriptionPanel({
                     </div>
                     <Button
                       variant="primary"
-                      className="mt-3 rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="mt-3 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       disabled={checkoutMutation.isPending}
                       onClick={() =>
                         checkoutMutation.mutate({

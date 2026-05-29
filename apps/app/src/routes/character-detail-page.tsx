@@ -1939,7 +1939,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           startChatMutation.mutate();
                         }}
-                        className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                        className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                         disabled={startChatMutation.isPending}
                       >
                         {startChatMutation.isPending
@@ -1967,7 +1967,7 @@ export function CharacterDetailPage() {
                         setNotice(null);
                         handleAddToContacts();
                       }}
-                      className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       // 走查新 R1：disabled 没把 friendsQuery.isLoading 算进去。
                       // characterQuery 命中缓存秒回时底部 bar 已经渲染，friendsQuery
                       // 还在拉就 isAlreadyFriend=false 走非好友 layout，按钮显示
@@ -2067,7 +2067,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("remark")}
-                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH
@@ -2129,7 +2129,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("tags")}
-                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
@@ -2602,7 +2602,7 @@ function MobileProfileActionButton({
       className={cn(
         "flex min-h-11 items-center justify-center rounded-[12px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
         primary
-          ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
+          ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]",
       )}
     >

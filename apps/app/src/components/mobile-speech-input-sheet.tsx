@@ -292,7 +292,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[14px] font-medium text-[#3b2206] shadow-[0_6px_16px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[14px] font-medium text-[color:var(--text-on-brand)] shadow-[0_6px_16px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />

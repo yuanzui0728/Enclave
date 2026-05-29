@@ -154,7 +154,7 @@ export function ShopCheckoutPage() {
 
             <Button
               variant="primary"
-              className="w-full rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+              className="w-full rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
               disabled={buyMutation.isPending}
               onClick={submit}
             >

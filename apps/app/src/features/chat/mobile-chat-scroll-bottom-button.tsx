@@ -32,7 +32,7 @@ export function MobileChatScrollBottomButton({
       <span
         className={`flex h-5 w-5 items-center justify-center rounded-full ${
           hasPending
-            ? "bg-[color:var(--brand-primary)] text-[#3b2206]"
+            ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
             : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]"
         }`}
       >

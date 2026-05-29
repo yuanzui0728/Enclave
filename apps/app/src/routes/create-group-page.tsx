@@ -509,7 +509,7 @@ export function CreateGroupPage() {
             className={cn(
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
               selectedIds.length && !createMutation.isPending
-                ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:opacity-90"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -870,7 +870,7 @@ function FriendSelectionRow({
           "flex shrink-0 items-center justify-center rounded-full border transition-colors",
           isDesktop ? "h-6 w-6" : "h-5 w-5",
           checked
-            ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[#3b2206]"
+            ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
             : isDesktop
               ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-transparent"
               : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",

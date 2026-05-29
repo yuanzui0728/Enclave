@@ -380,7 +380,7 @@ export function MobileReminderToastHost() {
                   <button
                     type="button"
                     onClick={handleOpen}
-                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] font-medium text-[#3b2206]"
+                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] font-medium text-[color:var(--text-on-brand)]"
                   >
                     <span>{t(msg`查看`)}</span>
                     <ChevronRight size={13} />

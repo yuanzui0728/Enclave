@@ -3086,7 +3086,7 @@ const FriendListRow = memo(function FriendListRow({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
-              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[#3b2206]"
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
               : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]",
           )}
         >

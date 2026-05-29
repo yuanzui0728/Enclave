@@ -587,7 +587,7 @@ export function MobileChatPlusPanel({
                         unavailableAction.key,
                       );
                     }}
-                    className="mr-2 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
+                    className="mr-2 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[color:var(--text-on-brand)] transition active:opacity-90"
                   >
                     {t(unavailableFallbackLabel)}
                   </button>
@@ -848,7 +848,7 @@ function PanelStatusBlock({
         <button
           type="button"
           onClick={onPrimary}
-          className="rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[#3b2206] transition active:opacity-90"
+          className="rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[11px] font-medium text-[color:var(--text-on-brand)] transition active:opacity-90"
         >
           {primaryLabel}
         </button>

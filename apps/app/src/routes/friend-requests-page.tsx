@@ -465,7 +465,7 @@ function MobileFriendRequestsPage() {
                           onClick={() => acceptMutation.mutate(request.id)}
                           variant="primary"
                           size="sm"
-                          className="h-8 min-w-[3.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                          className="h-8 min-w-[3.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                         >
                           {acceptMutation.isPending &&
                           acceptMutation.variables === request.id

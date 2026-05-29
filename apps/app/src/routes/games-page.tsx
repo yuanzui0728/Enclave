@@ -969,7 +969,7 @@ function GameListRow({
       <button
         type="button"
         onClick={onLaunch}
-        className="h-7 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] font-medium text-[#3b2206] active:bg-[color:var(--brand-primary)]"
+        className="h-7 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] font-medium text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
       >
         {resolvedTrailingLabel}
       </button>
@@ -1017,7 +1017,7 @@ function FriendActivityRow({
           "h-7 shrink-0 rounded-full px-4 text-[12px] font-medium",
           invited
             ? "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
-            : "bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]",
+            : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]",
         )}
       >
         {invited ? t(msg`已邀约`) : t(msg`邀请`)}

@@ -602,7 +602,7 @@ export function MobileFeedPublishPage() {
               composeDraft.hasContent &&
                 !createMutation.isPending &&
                 !isMediaPreparing
-                ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:opacity-90"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >

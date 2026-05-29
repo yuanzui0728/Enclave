@@ -347,7 +347,7 @@ export function ShopPage() {
               </Button>
               <Button
                 variant="primary"
-                className="flex-1 rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                className="flex-1 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                 disabled={buyMutation.isPending}
                 onClick={confirmBuy}
               >

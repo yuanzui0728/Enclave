@@ -96,7 +96,7 @@ export function MobileSocialComposerCard({
             variant="primary"
             disabled={disabled}
             onClick={onSubmit}
-            className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+            className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
           >
             {pending ? submittingLabel : submitLabel}
           </Button>

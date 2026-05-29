@@ -684,7 +684,7 @@ function MobileAddFriend() {
             <Button
               type="submit"
               variant="primary"
-              className="h-9 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[13px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              className="h-9 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -1049,7 +1049,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
               className={cn(
                 "h-8 rounded-full px-3.5 text-[12px] shadow-none",
                 item.status === "available"
-                  ? "bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                  ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
                 // 按 meta.disabled 加 opacity-70 而不是按 status：Bug W 之后
                 // inbound pending（acceptAt=null）按钮其实是可点的（跳 /friend-requests），

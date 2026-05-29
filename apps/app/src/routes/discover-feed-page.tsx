@@ -2936,7 +2936,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                       onClick={() => void fetchNextFeedPage()}
                     >
                       {t(msg`重试加载更多`)}
@@ -2968,7 +2968,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                       onClick={() => void navigate({ to: "/tabs/contacts" })}
                     >
                       {t(msg`打开通讯录`)}
@@ -2990,7 +2990,7 @@ export function DiscoverFeedPage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                     onClick={handleEmptyStateAction}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`发一条广场动态`)}

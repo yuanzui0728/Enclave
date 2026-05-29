@@ -290,7 +290,7 @@ export function ContactsBulkActionBar({
                     desktop ? "px-2.5" : "px-3",
                     btn.danger
                       ? "bg-[#fef2f2] text-[#d74b45] disabled:opacity-50"
-                      : "bg-[color:var(--brand-primary)] text-[#3b2206] disabled:opacity-50",
+                      : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] disabled:opacity-50",
                   )}
                 >
                   <Icon aria-hidden="true" size={13} />
@@ -375,7 +375,7 @@ export function ContactsBulkActionBar({
                   type="button"
                   onClick={runTag}
                   disabled={!tagDraft.trim() || bulk.isPending}
-                  className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[13px] font-medium text-[#3b2206] disabled:opacity-50"
+                  className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[13px] font-medium text-[color:var(--text-on-brand)] disabled:opacity-50"
                 >
                   {bulk.isPending ? t(msg`处理中...`) : t(msg`确定`)}
                 </button>

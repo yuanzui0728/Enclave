@@ -3808,7 +3808,7 @@ export function ChatComposer({
                     className={cn(
                       "h-[34px] min-w-[76px] rounded-[8px] px-4 text-[13px] font-medium shadow-none disabled:opacity-100",
                       value.trim()
-                        ? "bg-[color:var(--brand-primary)] !text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                        ? "bg-[color:var(--brand-primary)] !text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                         : "bg-[color:var(--surface-secondary)] !text-[#70757a] hover:bg-[color:var(--surface-secondary)]",
                     )}
                   >
@@ -3948,7 +3948,7 @@ export function ChatComposer({
                   type="button"
                   onClick={onSubmit}
                   disabled={composerPending}
-                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] px-3 text-[13px] font-medium text-[#3b2206] shadow-[0_2px_6px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-45"
+                  className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] px-3 text-[13px] font-medium text-[color:var(--text-on-brand)] shadow-[0_2px_6px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-45"
                 >
                   {t(msg`发送`)}
                 </button>
@@ -4454,7 +4454,7 @@ function DesktopAttachmentDraftBar({
           variant="primary"
           onClick={onSend}
           disabled={pending}
-          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
         >
           {pending ? t(msg`正在发送...`) : t(msg`发送附件`)}
         </Button>
@@ -6057,7 +6057,7 @@ function DesktopScreenshotEditor({
                 onClick={onSendCropped}
                 disabled={pending || !crop}
                 title={t(msg`裁剪后发送 (Enter)`)}
-                className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
               >
                 <Scissors size={14} />
                 {pending ? t(msg`发送中...`) : t(msg`裁剪后发送`)}

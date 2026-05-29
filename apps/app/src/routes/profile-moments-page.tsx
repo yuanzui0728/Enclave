@@ -1362,7 +1362,7 @@ export function ProfileMomentsPage() {
                 action={
                   <Button
                     variant="primary"
-                    className="rounded-full bg-[color:var(--brand-primary)] px-5 text-[13px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+                    className="rounded-full bg-[color:var(--brand-primary)] px-5 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                     onClick={goPublish}
                   >
                     {t(msg`发条朋友圈`)}

@@ -4477,7 +4477,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     "rounded-full px-2.5 py-1 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
                       ? "border border-white/20 bg-white/10 text-white/72"
-                      : "bg-[color:var(--brand-primary)] text-[#3b2206]",
+                      : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]",
                   )}
                 >
                   {followPending
@@ -5657,7 +5657,7 @@ function MobileChannelCommentsSheet({
                 className={cn(
                   "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
                   draft.trim() && !submitPending
-                    ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
+                    ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
                     : "bg-[color:var(--surface-secondary)] text-[#b0b0b0]",
                 )}
               >

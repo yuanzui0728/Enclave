@@ -761,7 +761,7 @@ export function MobileMomentsPublishPage() {
               // 避免顶栏右上角看起来抖一下；按住够装下 isPending 文案。
               "h-7 min-w-[3.75rem] rounded-full px-3 text-[14px] font-medium transition",
               canSubmit
-                ? "bg-[color:var(--brand-primary)] text-[#3b2206] active:bg-[color:var(--brand-primary)]"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
                 : "bg-[#e8e0d2] text-[#b3a591]",
             )}
           >

@@ -130,7 +130,7 @@ export function GiftCabinetPage() {
               onClick={() => setTab(item.key)}
               className={`flex-1 rounded-full py-1.5 transition-colors ${
                 tab === item.key
-                  ? "bg-[color:var(--brand-primary)] font-medium text-[#3b2206]"
+                  ? "bg-[color:var(--brand-primary)] font-medium text-[color:var(--text-on-brand)]"
                   : "text-[color:var(--text-secondary)]"
               }`}
             >

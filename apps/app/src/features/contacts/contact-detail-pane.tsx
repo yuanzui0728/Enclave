@@ -258,7 +258,7 @@ export function ContactDetailPane({
             <Button
               variant="primary"
               size="lg"
-              className="min-w-28 rounded-full bg-[color:var(--brand-primary)] px-6 text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              className="min-w-28 rounded-full bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
               onClick={onStartChat}
               disabled={chatPending}
             >
@@ -269,7 +269,7 @@ export function ContactDetailPane({
             <Button
               variant="primary"
               size="lg"
-              className="min-w-28 rounded-full bg-[color:var(--brand-primary)] px-6 text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              className="min-w-28 rounded-full bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
               onClick={onOpenProfile}
             >
               {t(msg`查看详细资料`)}

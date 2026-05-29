@@ -146,7 +146,7 @@ export function MomentPostCard({
               placeholder={t(msg`评论...`)}
               className="w-full"
               inputClassName="rounded-full py-1.5 text-[16px]"
-              buttonClassName="bg-[color:var(--brand-primary)] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              buttonClassName="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             />
           </div>
         ) : null}

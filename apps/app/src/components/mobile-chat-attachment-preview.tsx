@@ -117,7 +117,7 @@ export function MobileChatAttachmentPreview({
           variant="primary"
           onClick={() => void onSend()}
           disabled={pending}
-          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
         >
           {pending
             ? t(msg`发送中...`)

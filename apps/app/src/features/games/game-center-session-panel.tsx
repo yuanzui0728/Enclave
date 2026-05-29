@@ -186,7 +186,7 @@ export function GameCenterSessionPanel({
           onClick={() => onLaunch(game.id)}
           className={
             compact
-              ? "h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+              ? "h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
               : undefined
           }
         >

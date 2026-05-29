@@ -268,7 +268,7 @@ export function CheckoutContactDialog({
           <Button
             type="button"
             variant="primary"
-            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[#3b2206] shadow-none hover:bg-[color:var(--brand-primary)]"
+            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             onClick={onClose}
           >
             {t(msg`我知道了`)}

@@ -92,7 +92,7 @@ export function GiftToFriendSheet({
             <InlineNotice tone="muted">{t(msg`你还没有可赠送的礼物。`)}</InlineNotice>
             <Button
               variant="primary"
-              className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206]"
+              className="rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
               onClick={() => {
                 onClose();
                 void navigate({ to: "/shop" });

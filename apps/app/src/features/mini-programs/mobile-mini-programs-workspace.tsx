@@ -165,7 +165,7 @@ export function MobileMiniProgramsWorkspace({
                 className={cn(
                   "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
                   activeCategory === tab.id
-                    ? "bg-[color:var(--brand-primary)] text-[#3b2206]"
+                    ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -697,7 +697,7 @@ function MiniProgramListCard({
             event.stopPropagation();
             onOpen(miniProgram.id);
           }}
-          className="h-7.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-[10px] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+          className="h-7.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-[10px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
         >
           {t(msg`打开`)}
         </Button>

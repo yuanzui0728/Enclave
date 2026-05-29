@@ -1085,7 +1085,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   type="button"
                   variant="primary"
                   onClick={handleBack}
-                  className="rounded-full bg-[color:var(--brand-primary)] text-[#3b2206] hover:bg-[color:var(--brand-primary)]"
+                  className="rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                 >
                   <Users size={16} />
                   {t(msg`返回群聊继续`)}
