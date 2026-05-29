@@ -572,7 +572,7 @@ export function ChannelAuthorPage() {
           <div className="mx-auto max-w-[820px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
             <section
               className={cn(
-                "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
+                "bg-[image:var(--surface-card-gradient)]",
                 isDesktopLayout ? "px-6 pb-6 pt-6" : "px-4 pb-5 pt-5",
               )}
             >
@@ -1010,7 +1010,7 @@ function matchesChannelAuthorCollection(
 function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListItem) {
   if (post.sourceKind === "live_clip") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
       icon: <RadioTower size={14} />,
       label: t(msg`直播回放`),
       overlayClassName:
@@ -1026,7 +1026,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
 
   if (post.mediaType === "video") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
       icon: <PlaySquare size={14} />,
       label: t(msg`视频`),
       overlayClassName:
@@ -1048,7 +1048,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   // 既误导分类又跟整套 audio 沉浸式播放 UI 不一致。给 audio 一套独立陈述。
   if (post.mediaType === "audio") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
       icon: <Music2 size={14} />,
       label: t(msg`音乐`),
       overlayClassName:

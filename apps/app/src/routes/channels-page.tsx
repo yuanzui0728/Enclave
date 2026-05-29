@@ -4354,7 +4354,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
         <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
-          <div className="rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-[color:var(--text-on-brand)]">
+          <div className="rounded-full bg-[color:var(--state-info-solid)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-[color:var(--text-on-brand)]">
             {getChannelsSectionBadge(activeSection, t)}
           </div>
         </div>
@@ -4546,7 +4546,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
             <div className="mt-2 text-[9px] text-[color:var(--text-on-brand)]/65">
               {formatChannelMeta(post, t)}
             </div>
-            <div className="mt-2 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-[color:var(--text-on-brand)]/86 backdrop-blur">
+            <div className="mt-2 rounded-[var(--radius-md)] bg-black/30 px-2.5 py-2 text-[10px] leading-4 text-[color:var(--text-on-brand)]/86 backdrop-blur">
               {(() => {
                 // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
                 // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条

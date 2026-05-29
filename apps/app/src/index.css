@@ -133,6 +133,7 @@ body.yj-desktop-window {
     linear-gradient(rgba(255, 255, 255, 0.56) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.56) 1px, transparent 1px);
   --surface-primary: rgba(255, 255, 255, 0.94);
+  --surface-frosted: rgba(255, 255, 255, 0.78);
   --surface-shell: rgba(250, 252, 252, 0.92);
   --surface-section: #ffffff;
   --surface-card: rgba(255, 255, 255, 0.98);
@@ -165,6 +166,9 @@ body.yj-desktop-window {
   --state-danger-bg: rgba(239, 68, 68, 0.1);
   --state-danger-text: #b42318;
   --state-danger-solid: #fa5151;
+  --state-info-solid: #3b82f6;
+  --state-success-solid: #16a34a;
+  --state-warning-solid: #f5a623;
   --state-info-bg: rgba(99, 102, 241, 0.1);
   --state-info-text: #4338ca;
   --shadow-shell: 0 18px 52px rgba(15, 23, 42, 0.14);
@@ -217,6 +221,7 @@ body.yj-desktop-window[data-appearance="night"] {
     linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   --surface-primary: rgba(28, 23, 48, 0.96);
+  --surface-frosted: rgba(28, 23, 48, 0.8);
   --surface-shell: rgba(23, 19, 38, 0.92);
   --surface-section: #171326;
   --surface-card: #1c1730;
@@ -249,6 +254,9 @@ body.yj-desktop-window[data-appearance="night"] {
   --state-danger-bg: rgba(250, 81, 81, 0.16);
   --state-danger-text: #f87171;
   --state-danger-solid: #ff6b6b;
+  --state-info-solid: #5b8efc;
+  --state-success-solid: #16a34a;
+  --state-warning-solid: #fbbf24;
   --state-info-bg: rgba(129, 140, 248, 0.18);
   --state-info-text: #a5b4fc;
   --shadow-shell: 0 18px 52px rgba(0, 0, 0, 0.5);
@@ -405,6 +413,9 @@ body.yj-mobile::after {
   --state-danger-bg: rgba(250, 81, 81, 0.1);
   --state-danger-text: #cf1322;
   --state-danger-solid: #fa5151;
+  --state-info-solid: #3b82f6;
+  --state-success-solid: #16a34a;
+  --state-warning-solid: #f5a623;
   --state-info-bg: rgba(99, 102, 241, 0.1);
   --state-info-text: #4338ca;
 
@@ -506,6 +517,9 @@ body.yj-mobile::after {
   --state-danger-bg: rgba(250, 81, 81, 0.16);
   --state-danger-text: #f87171;
   --state-danger-solid: #ff6b6b;
+  --state-info-solid: #5b8efc;
+  --state-success-solid: #16a34a;
+  --state-warning-solid: #fbbf24;
   --state-info-bg: rgba(129, 140, 248, 0.18);
   --state-info-text: #a5b4fc;
 
@@ -573,4 +587,72 @@ input[type="search"]::-webkit-search-cancel-button,
 input[type="search"]::-webkit-search-decoration {
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* 赛博分身「数字镜像」全身像动效（cyber-avatar-figure.tsx 内嵌 SVG 用）。
+ * 极克制：人物缓慢呼吸缩放 + 光晕明暗脉动 + 数据微粒上浮。
+ * 颜色全走 var(--brand-*)，随 data-appearance 自动切日/夜紫调，这里只管运动。 */
+@keyframes yjCyberBreathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.012) translateY(-1.5px);
+  }
+}
+@keyframes yjCyberAura {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
+  }
+}
+@keyframes yjCyberMote {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  30% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+.yj-cyber-breathe {
+  transform-box: fill-box;
+  transform-origin: 50% 60%;
+  animation: yjCyberBreathe 5.5s ease-in-out infinite;
+}
+.yj-cyber-aura {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: yjCyberAura 6s ease-in-out infinite;
+}
+.yj-cyber-mote {
+  transform-box: fill-box;
+  animation: yjCyberMote 7s ease-in-out infinite;
+}
+/* 系统「减少动态效果」时停在稳定中间态——不消失、不抖动。 */
+@media (prefers-reduced-motion: reduce) {
+  .yj-cyber-breathe,
+  .yj-cyber-aura,
+  .yj-cyber-mote {
+    animation: none;
+  }
+  .yj-cyber-aura {
+    opacity: 0.55;
+  }
+  .yj-cyber-mote {
+    opacity: 0.55;
+  }
 }
