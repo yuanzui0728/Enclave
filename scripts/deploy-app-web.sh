@@ -53,10 +53,32 @@ if ! grep -rqs "$GOOGLE_ID" "$STAGING/assets"; then
   exit 1
 fi
 
-echo "[app-deploy] 4/4 零停机切换（旧版 → dist-prev-walk）"
+echo "[app-deploy] 4/4 零停机切换（旧版 → dist-prev-walk，并保留旧 chunk 供已打开的 tab）"
+# 旧 chunk 保留窗口（天）：覆盖「tab 开着跨越一次部署」的现实场景。可用 env 覆盖。
+RETENTION_DAYS="${ASSET_RETENTION_DAYS:-3}"
 rm -rf "$BACKUP.tmp"
 [ -d "$DIST" ] && mv "$DIST" "$BACKUP.tmp"   # 把旧 dist 挪走（同 fs 原子 rename）
 mv "$STAGING" "$DIST"                          # 新版就位（紧接上一步，间隙微秒级）
+
+# ── 根治 stale-chunk（missing export / vite:preloadError）────────────────────
+# 根因：每次部署都清空重建 → 旧 hash chunk 被删；已打开的旧 tab（entry bundle 已在
+# 内存里、index 引用的是旧 hash）lazy-import 旧 chunk 时 404 → 触发自愈 reload，用户
+# 看到一次「报错+刷新」。
+# 解法：把上一版（及它已携带的更早几代）的 hashed 旧 chunk 叠回新 dist。资源名是内容
+# 指纹、immutable，同名必同内容 → 叠加零冲突；旧 tab 仍能拉到它引用的旧 chunk，于是
+# 根本不再 404、不再 reload，等用户自然刷新/导航时才经 no-cache 的 index.html 换到新版。
+# 只叠 assets/（hashed，含 .gz/.br 预压缩件），绝不碰 index.html / runtime-config.json
+# —— 那些必须是新版的。
+# vite.config shouldEmptyOutDir 历史上「就地不清空」失败过（无裁剪 → 25k 文件/434MB）；
+# 这里关键补上「按 mtime 上界裁剪」：新 build 的 chunk mtime=now 绝不会被裁，只有超过
+# 保留窗口的旧 chunk 被回收，池子恒定有界。
+if [ -d "$BACKUP.tmp/assets" ]; then
+  cp -rn --preserve=timestamps "$BACKUP.tmp/assets/." "$DIST/assets/" 2>/dev/null || true
+  PRUNED=$(find "$DIST/assets" -type f -mtime +"$RETENTION_DAYS" -print -delete 2>/dev/null | wc -l)
+  KEPT=$(find "$DIST/assets" -type f 2>/dev/null | wc -l)
+  echo "  保留旧 chunk：assets 现 $KEPT 文件（裁掉 $PRUNED 个 >${RETENTION_DAYS}天 的旧件）"
+fi
+
 rm -rf "$BACKUP"
 [ -d "$BACKUP.tmp" ] && mv "$BACKUP.tmp" "$BACKUP"
 
