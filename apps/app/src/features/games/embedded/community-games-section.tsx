@@ -55,7 +55,7 @@ export function CommunityGamesSection() {
                 params: { gameId: g.gameId },
               })
             }
-            className="flex w-44 shrink-0 flex-col gap-1 rounded-2xl border border-black/5 bg-white/70 p-3 text-left shadow-sm"
+            className="flex w-44 shrink-0 flex-col gap-1 rounded-2xl border border-black/5 bg-[color:var(--surface-card)]/70 p-3 text-left shadow-sm"
           >
             <div className="truncate text-sm font-semibold text-[color:var(--yj-text,#1e143a)]">
               {g.name}

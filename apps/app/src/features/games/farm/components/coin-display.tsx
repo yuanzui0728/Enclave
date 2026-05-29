@@ -31,17 +31,17 @@ export function CoinDisplay({ state }: CoinDisplayProps) {
       );
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/65 px-4 py-3 shadow-md backdrop-blur-md">
+    <div className="flex flex-col gap-2 rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/65 px-4 py-3 shadow-md backdrop-blur-md">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1 text-base font-semibold text-amber-700 drop-shadow-sm">
+        <span className="flex items-center gap-1 text-base font-semibold text-[color:var(--brand-primary)] drop-shadow-sm">
           <span className="text-lg">🪙</span>
           {state.coins.toLocaleString()}
         </span>
-        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
+        <span className="rounded-full bg-[color:var(--brand-primary)] px-2 py-0.5 text-xs font-medium text-[color:var(--text-on-brand)] shadow-sm">
           Lv.{currentLevel}
         </span>
       </div>
-      <div className="flex items-center justify-between text-xs text-stone-600">
+      <div className="flex items-center justify-between text-xs text-[color:var(--text-muted)]">
         <span>
           {isMaxLevel
             ? t(msg`经验 ${state.experience}（已满级）`)
@@ -51,9 +51,9 @@ export function CoinDisplay({ state }: CoinDisplayProps) {
         </span>
         <span>{t(msg`田块 ${state.plotCount}`)}</span>
       </div>
-      <div className="relative h-1.5 overflow-hidden rounded-full bg-stone-200/80">
+      <div className="relative h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-soft)]/80">
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-primary)] transition-all"
           style={{ width: `${progress * 100}%` }}
         />
       </div>

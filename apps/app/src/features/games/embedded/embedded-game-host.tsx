@@ -163,16 +163,16 @@ export function EmbeddedGameHost({
 
   if (load.status === "loading") {
     return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-white/70">
+      <div className="flex h-full w-full items-center justify-center text-sm text-[color:var(--text-on-brand)]/70">
         {t(msg`正在载入游戏…`)}
       </div>
     );
   }
   if (load.status === "error") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-white/70">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-[color:var(--text-on-brand)]/70">
         <div>{t(msg`游戏载入失败`)}</div>
-        <div className="text-xs text-white/40">{load.message}</div>
+        <div className="text-xs text-[color:var(--text-on-brand)]/40">{load.message}</div>
       </div>
     );
   }

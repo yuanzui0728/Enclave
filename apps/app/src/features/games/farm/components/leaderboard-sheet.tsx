@@ -41,20 +41,20 @@ export function LeaderboardSheet({ open, onClose }: LeaderboardSheetProps) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-[color:var(--surface-card)] shadow-xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+        <header className="flex items-center justify-between border-b border-[color:var(--border-subtle)] px-4 py-3">
           <h2 className="text-base font-semibold">🏆 {t(msg`排行榜`)}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
+            className="rounded-full px-2 py-1 text-sm text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"
           >
             {t(msg`关闭`)}
           </button>
         </header>
-        <div className="flex gap-1 border-b border-stone-100 px-4 py-2">
+        <div className="flex gap-1 border-b border-[color:var(--border-subtle)] px-4 py-2">
           {TAB_OPTIONS.map((opt) => (
             <button
               key={opt.id}
@@ -62,8 +62,8 @@ export function LeaderboardSheet({ open, onClose }: LeaderboardSheetProps) {
               onClick={() => setTab(opt.id)}
               className={`rounded-full px-3 py-1 text-xs ${
                 tab === opt.id
-                  ? "bg-emerald-600 text-white"
-                  : "bg-stone-100 text-stone-600"
+                  ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                  : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
               }`}
             >
               {opt.emoji} {opt.label()}
@@ -71,16 +71,16 @@ export function LeaderboardSheet({ open, onClose }: LeaderboardSheetProps) {
           ))}
         </div>
         {ownerRank > 0 && (
-          <div className="bg-amber-50 px-4 py-2 text-xs text-amber-700">
+          <div className="bg-[color:var(--brand-soft)] px-4 py-2 text-xs text-[color:var(--brand-primary)]">
             {t(msg`你目前排名第`)} {ownerRank}
           </div>
         )}
         <ul className="flex-1 overflow-y-auto px-2 py-2">
           {query.isLoading && (
-            <li className="px-4 py-3 text-xs text-stone-500">{t(msg`加载中…`)}</li>
+            <li className="px-4 py-3 text-xs text-[color:var(--text-muted)]">{t(msg`加载中…`)}</li>
           )}
           {query.error && (
-            <li className="px-4 py-3 text-xs text-rose-500">
+            <li className="px-4 py-3 text-xs text-[color:var(--brand-primary)]">
               {(query.error as Error).message}
             </li>
           )}
@@ -102,19 +102,19 @@ export function LeaderboardSheet({ open, onClose }: LeaderboardSheetProps) {
                 key={entry.characterId ?? "owner"}
                 className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
                   entry.isOwner
-                    ? "bg-emerald-50 ring-1 ring-emerald-200"
+                    ? "bg-[color:var(--brand-soft)] ring-1 ring-[color:var(--border-brand)]"
                     : ""
                 }`}
               >
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                     entry.rank === 1
-                      ? "bg-amber-100 text-amber-700"
+                      ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
                       : entry.rank === 2
-                        ? "bg-stone-100 text-stone-700"
+                        ? "bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]"
                         : entry.rank === 3
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-stone-50 text-stone-500"
+                          ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
+                          : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
                   }`}
                 >
                   {entry.rank}
@@ -126,17 +126,17 @@ export function LeaderboardSheet({ open, onClose }: LeaderboardSheetProps) {
                     className="h-7 w-7 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-100 text-sm">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--surface-soft)] text-sm">
                     {entry.isOwner ? "🧑‍🌾" : "🙂"}
                   </span>
                 )}
                 <span className="flex-1 truncate text-sm">
                   {entry.isOwner ? t(msg`我`) : entry.name}
                 </span>
-                <span className="text-xs text-stone-500">
+                <span className="text-xs text-[color:var(--text-muted)]">
                   Lv.{entry.level}
                 </span>
-                <span className="text-sm font-medium text-emerald-700">
+                <span className="text-sm font-medium text-[color:var(--brand-primary)]">
                   {metric.toLocaleString()} {metricSuffix}
                 </span>
               </li>

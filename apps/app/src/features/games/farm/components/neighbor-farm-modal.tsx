@@ -96,22 +96,22 @@ export function NeighborFarmModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-t-3xl bg-[color:var(--surface-card)] shadow-xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         {detailQuery.isLoading && (
-          <div className="flex items-center justify-center py-12 text-sm text-stone-400">
+          <div className="flex items-center justify-center py-12 text-sm text-[color:var(--text-dim)]">
             {t(msg`正在串门……`)}
           </div>
         )}
         {detailQuery.error && (
-          <div className="px-4 py-6 text-center text-sm text-rose-600">
+          <div className="px-4 py-6 text-center text-sm text-[color:var(--brand-primary)]">
             {(detailQuery.error as Error).message}
           </div>
         )}
         {detailQuery.data && (
           <>
-            <header className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+            <header className="flex items-center justify-between border-b border-[color:var(--border-subtle)] px-4 py-3">
               <div className="flex items-center gap-2">
                 <AvatarChip
                   name={detailQuery.data.characterName}
@@ -122,7 +122,7 @@ export function NeighborFarmModal({
                   <div className="text-sm font-semibold">
                     {detailQuery.data.characterName} {t(msg`的农场`)}
                   </div>
-                  <div className="text-[length:var(--text-eyebrow)] text-stone-500">
+                  <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     Lv.{detailQuery.data.level} · {t(msg`好感`)} {detailQuery.data.intimacyLevel} ·{" "}
                     {translateExpertDomains(
                       t,
@@ -136,14 +136,14 @@ export function NeighborFarmModal({
                 <button
                   type="button"
                   onClick={() => setGiftOpen(true)}
-                  className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700 hover:bg-amber-200"
+                  className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1 text-xs text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
                 >
                   🎁 {t(msg`送礼`)}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
+                  className="rounded-full px-2 py-1 text-sm text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"
                 >
                   {t(msg`关闭`)}
                 </button>
@@ -151,7 +151,7 @@ export function NeighborFarmModal({
             </header>
 
             {errorMsg && (
-              <div className="bg-rose-50 px-4 py-2 text-xs text-rose-600">
+              <div className="bg-[color:var(--brand-soft)] px-4 py-2 text-xs text-[color:var(--brand-primary)]">
                 {errorMsg}
               </div>
             )}
@@ -191,15 +191,15 @@ export function NeighborFarmModal({
                       className={[
                         "relative flex aspect-square flex-col items-center justify-center rounded-xl border-2 px-1 py-1 text-center text-[10px] transition",
                         canSteal
-                          ? "border-amber-400 bg-amber-50 hover:bg-amber-100"
-                          : "border-stone-200 bg-stone-50",
+                          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] hover:bg-[color:var(--brand-soft)]"
+                          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]",
                         isRotten ? "opacity-60" : "",
                       ].join(" ")}
                     >
                       <span className="text-2xl">
                         {getStageEmoji(stage, plot.cropId)}
                       </span>
-                      <span className="mt-0.5 text-[10px] text-stone-500">
+                      <span className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
                         {!plot.cropId
                           ? t(msg`空`)
                           : isRotten
@@ -213,7 +213,7 @@ export function NeighborFarmModal({
                                 : ""}
                       </span>
                       {def && (
-                        <span className="text-[9px] text-stone-400">
+                        <span className="text-[9px] text-[color:var(--text-dim)]">
                           {def.nameZh}
                         </span>
                       )}
@@ -221,19 +221,19 @@ export function NeighborFarmModal({
                   );
                 })}
               </div>
-              <p className="text-center text-[length:var(--text-eyebrow)] text-stone-400">
+              <p className="text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                 {t(msg`点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。`)}
               </p>
 
               {detailQuery.data.recentEvents.length > 0 && (
                 <section className="mt-4">
-                  <h3 className="mb-1 text-xs font-medium text-stone-500">
+                  <h3 className="mb-1 text-xs font-medium text-[color:var(--text-muted)]">
                     {t(msg`近期动向`)}
                   </h3>
-                  <ul className="space-y-1 text-[length:var(--text-eyebrow)] text-stone-500">
+                  <ul className="space-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     {detailQuery.data.recentEvents.slice(0, 5).map((event) => (
-                      <li key={event.id} className="rounded-md bg-stone-50 px-2 py-1">
-                        <span className="text-stone-400 mr-1">
+                      <li key={event.id} className="rounded-md bg-[color:var(--surface-soft)] px-2 py-1">
+                        <span className="text-[color:var(--text-dim)] mr-1">
                           {new Date(event.createdAt).toLocaleString("zh-CN", {
                             month: "2-digit",
                             day: "2-digit",
@@ -253,7 +253,7 @@ export function NeighborFarmModal({
       </div>
 
       {toast && (
-        <div className="pointer-events-none fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-amber-600 px-4 py-2 text-sm text-white shadow-lg">
+        <div className="pointer-events-none fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-[color:var(--brand-primary)] px-4 py-2 text-sm text-[color:var(--text-on-brand)] shadow-lg">
           {t(msg`顺走`)} {FARM_CROP_CATALOG[toast.cropId].nameZh} ×{toast.amount} ·
           🪙+{toast.coinsGained} · {toast.characterName} {t(msg`好感`)}{toast.intimacyDelta}
         </div>

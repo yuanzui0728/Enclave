@@ -64,7 +64,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
 
   if (plotIndex == null || !plot) {
     return (
-      <div className="rounded-2xl border border-white/60 bg-white/55 p-3 text-center text-xs text-stone-500 shadow-sm backdrop-blur-md">
+      <div className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/55 p-3 text-center text-xs text-[color:var(--text-muted)] shadow-sm backdrop-blur-md">
         {t(msg`点一块田看看能干啥`)}
       </div>
     );
@@ -136,23 +136,23 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
           state.coins >= FARM_CROP_CATALOG[id].seedCost),
     );
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200/70 bg-emerald-50/85 p-3 shadow-sm backdrop-blur-md">
-        <div className="flex items-center justify-between text-xs text-emerald-900">
+      <div className="flex flex-col gap-2 rounded-2xl border border-[color:var(--border-brand)]/70 bg-[color:var(--brand-soft)]/85 p-3 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between text-xs text-[color:var(--brand-primary)]">
           <span>{t(msg`第`)} {plotIndex + 1} {t(msg`块田 · 选个种子下地`)}</span>
           {plot.stage === "rotten" && (
-            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-rose-600">
+            <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[color:var(--brand-primary)]">
               {t(msg`上一茬已腐烂`)}
             </span>
           )}
         </div>
         {errorMsg && (
-          <div className="rounded-md bg-rose-100 px-2 py-1 text-xs text-rose-600">
+          <div className="rounded-md bg-[color:var(--brand-soft)] px-2 py-1 text-xs text-[color:var(--brand-primary)]">
             {errorMsg}
           </div>
         )}
         <div className="flex flex-wrap gap-2">
           {eligibleCrops.length === 0 && (
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-[color:var(--text-muted)]">
               {t(msg`金币和种子都不够，先去仓库卖点东西`)}
             </span>
           )}
@@ -165,11 +165,11 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
                 type="button"
                 onClick={() => handlePlant(cropId)}
                 disabled={isPending}
-                className="inline-flex min-h-[40px] items-center gap-1 rounded-full bg-white px-3.5 py-2 text-sm shadow-sm hover:bg-emerald-100 disabled:opacity-60"
+                className="inline-flex min-h-[40px] items-center gap-1 rounded-full bg-[color:var(--surface-card)] px-3.5 py-2 text-sm shadow-sm hover:bg-[color:var(--brand-soft)] disabled:opacity-60"
               >
                 <span>{def.emoji}</span>
                 <span className="truncate">{def.nameZh}</span>
-                <span className="text-stone-400">
+                <span className="text-[color:var(--text-dim)]">
                   {owned > 0 ? `×${owned}` : `🪙${def.seedCost}`}
                 </span>
               </button>
@@ -187,23 +187,23 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
     plot.maturedAt != null ? plot.maturedAt - nowMs : 0;
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200/70 bg-emerald-50/85 p-3 shadow-sm backdrop-blur-md">
-      <div className="flex items-center justify-between text-xs text-emerald-900">
+    <div className="flex flex-col gap-2 rounded-2xl border border-[color:var(--border-brand)]/70 bg-[color:var(--brand-soft)]/85 p-3 shadow-sm backdrop-blur-md">
+      <div className="flex items-center justify-between text-xs text-[color:var(--brand-primary)]">
         <span className="flex items-center gap-1">
           <span>{def.emoji}</span>
           {t(msg`第`)} {plotIndex + 1} {t(msg`块田 ·`)} {def.nameZh}
           {isPerennial && harvestCount > 0 && (
-            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">
+            <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
               {t(msg`已收`)} {harvestCount} {t(msg`茬`)}
             </span>
           )}
         </span>
-        <span className="text-stone-500">
+        <span className="text-[color:var(--text-muted)]">
           {isRipe ? t(msg`已成熟`) : `${t(msg`还差`)} ${formatRemainingMs(remainingMs)}`}
         </span>
       </div>
       {errorMsg && (
-        <div className="rounded-md bg-rose-100 px-2 py-1 text-xs text-rose-600">
+        <div className="rounded-md bg-[color:var(--brand-soft)] px-2 py-1 text-xs text-[color:var(--brand-primary)]">
           {errorMsg}
         </div>
       )}
@@ -213,7 +213,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
             type="button"
             onClick={handleHarvest}
             disabled={isPending}
-            className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-amber-600 disabled:opacity-60"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-[color:var(--text-on-brand)] shadow hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
           >
             🪙 {t(msg`收获`)}
           </button>
@@ -236,7 +236,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
                 );
               }}
               disabled={isPending || plot.watered}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-sky-500 px-3.5 py-2 text-sm text-white shadow-sm hover:bg-sky-600 disabled:opacity-60"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3.5 py-2 text-sm text-[color:var(--text-on-brand)] shadow-sm hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
             >
               💧 {t(msg`浇水`)}
             </button>
@@ -254,7 +254,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
                 );
               }}
               disabled={isPending || plot.weeds <= 0}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-emerald-600 px-3.5 py-2 text-sm text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3.5 py-2 text-sm text-[color:var(--text-on-brand)] shadow-sm hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
             >
               🌿 {t(msg`除草`)}
             </button>
@@ -272,7 +272,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
                 );
               }}
               disabled={isPending || plot.bugs <= 0}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-rose-500 px-3.5 py-2 text-sm text-white shadow-sm hover:bg-rose-600 disabled:opacity-60"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3.5 py-2 text-sm text-[color:var(--text-on-brand)] shadow-sm hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
             >
               🐛 {t(msg`除虫`)}
             </button>
@@ -301,11 +301,11 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
                     ? t(msg`化肥不足`)
                     : t(msg`施肥`)
               }
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-amber-600 px-3.5 py-2 text-sm text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3.5 py-2 text-sm text-[color:var(--text-on-brand)] shadow-sm hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
             >
               💩 {t(msg`施肥`)}
               {fertilizerCount > 0 && (
-                <span className="text-xs text-amber-100">×{fertilizerCount}</span>
+                <span className="text-xs text-[color:var(--brand-primary)]">×{fertilizerCount}</span>
               )}
             </button>
             <button
@@ -325,11 +325,11 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
               title={
                 pesticideCount <= 0 ? t(msg`农药不足`) : t(msg`喷洒农药`)
               }
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-lime-600 px-3.5 py-2 text-sm text-white shadow-sm hover:bg-lime-700 disabled:opacity-60"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3.5 py-2 text-sm text-[color:var(--text-on-brand)] shadow-sm hover:bg-[color:var(--brand-primary)] disabled:opacity-60"
             >
               🧴 {t(msg`农药`)}
               {pesticideCount > 0 && (
-                <span className="text-xs text-lime-100">×{pesticideCount}</span>
+                <span className="text-xs text-[color:var(--brand-primary)]">×{pesticideCount}</span>
               )}
             </button>
           </>
@@ -352,7 +352,7 @@ export function PlotActionBar({ state, plotIndex, onHarvested, onPulse }: PlotAc
             );
           }}
           disabled={isPending}
-          className="ml-auto inline-flex min-h-[36px] items-center gap-1 rounded-full bg-stone-200 px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-60"
+          className="ml-auto inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[color:var(--surface-soft)] px-3 py-1.5 text-xs text-[color:var(--text-muted)] hover:bg-stone-300 disabled:opacity-60"
         >
           🪓 {isPerennial ? t(msg`砍树`) : t(msg`铲除`)}
         </button>

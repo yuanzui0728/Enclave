@@ -33,12 +33,12 @@ export function FarmMascot({ state }: FarmMascotProps) {
       onClick={() => setCursor((c) => c + 1)}
       title={t(msg`点我换一句`)}
     >
-      <span className="farm-mascot__bubble pointer-events-none max-w-[180px] rounded-2xl rounded-br-sm bg-white/90 px-3 py-1.5 text-[length:var(--text-eyebrow)] text-stone-700 shadow-md backdrop-blur-sm">
+      <span className="farm-mascot__bubble pointer-events-none max-w-[180px] rounded-2xl rounded-br-sm bg-[color:var(--surface-card)]/90 px-3 py-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)] shadow-md backdrop-blur-sm">
         {message}
       </span>
-      <span className="farm-mascot__avatar relative grid h-12 w-12 place-items-center rounded-full bg-amber-100 text-3xl shadow-md ring-2 ring-white">
+      <span className="farm-mascot__avatar relative grid h-12 w-12 place-items-center rounded-full bg-[color:var(--brand-soft)] text-3xl shadow-md ring-2 ring-[color:var(--border-faint)]">
         🦊
-        <span className="farm-mascot__tag absolute -bottom-1 right-0 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-medium text-white">
+        <span className="farm-mascot__tag absolute -bottom-1 right-0 rounded-full bg-[color:var(--brand-primary)] px-1.5 py-0.5 text-[9px] font-medium text-[color:var(--text-on-brand)]">
           {t(msg`管家`)}
         </span>
       </span>

@@ -41,7 +41,7 @@ export function TankWarTouchControls({ inputRef }: Props) {
     [inputRef],
   );
 
-  const dirBtnClass = "flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 text-white active:bg-white/40";
+  const dirBtnClass = "flex h-12 w-12 items-center justify-center rounded-lg bg-[color:var(--surface-card)]/20 text-[color:var(--text-on-brand)] active:bg-[color:var(--surface-card)]/40";
 
   const onPointerHandlers = (dir: Dir | "fire") => ({
     onPointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => press(e, dir, true),
@@ -75,7 +75,7 @@ export function TankWarTouchControls({ inputRef }: Props) {
         type="button"
         {...onPointerHandlers("fire")}
         className={cn(
-          "flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg active:bg-red-700 select-none touch-none",
+          "flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-lg active:bg-[color:var(--brand-primary)] select-none touch-none",
         )}
       >
         <Target size={28} />

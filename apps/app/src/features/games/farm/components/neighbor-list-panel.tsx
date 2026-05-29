@@ -14,25 +14,25 @@ export function NeighborListPanel({ onSelectNeighbor }: NeighborListPanelProps) 
   const neighborsQuery = useFarmNeighbors({ limit: 30 });
 
   return (
-    <section className="rounded-2xl border border-white/60 bg-white/75 p-3 shadow-md backdrop-blur-md">
+    <section className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 p-3 shadow-md backdrop-blur-md">
       <header className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-stone-700">{t(msg`世界邻居`)}</h2>
-        <span className="text-[length:var(--text-eyebrow)] text-stone-400">
+        <h2 className="text-sm font-semibold text-[color:var(--text-secondary)]">{t(msg`世界邻居`)}</h2>
+        <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
           {neighborsQuery.data?.length ?? 0} {t(msg`位`)}
         </span>
       </header>
       {neighborsQuery.isLoading && (
-        <p className="py-4 text-center text-xs text-stone-400">
+        <p className="py-4 text-center text-xs text-[color:var(--text-dim)]">
           {t(msg`正在打听邻居们的动向……`)}
         </p>
       )}
       {neighborsQuery.error && (
-        <p className="py-4 text-center text-xs text-rose-600">
+        <p className="py-4 text-center text-xs text-[color:var(--brand-primary)]">
           {t(msg`邻居列表加载失败：`)}{(neighborsQuery.error as Error).message}
         </p>
       )}
       {neighborsQuery.data && neighborsQuery.data.length === 0 && (
-        <p className="py-4 text-center text-xs text-stone-400">
+        <p className="py-4 text-center text-xs text-[color:var(--text-dim)]">
           {t(msg`世界里还没有可串门的人。`)}
         </p>
       )}
@@ -61,7 +61,7 @@ function NeighborRow({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-emerald-50"
+        className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-[color:var(--brand-soft)]"
       >
         <div className="relative shrink-0">
           <AvatarChip
@@ -70,7 +70,7 @@ function NeighborRow({
             size="sm"
           />
           {neighbor.isOnline && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-emerald-500" />
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--brand-primary)]" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -78,17 +78,17 @@ function NeighborRow({
             <span className="truncate text-sm font-medium">
               {neighbor.characterName}
             </span>
-            <span className="text-[10px] text-stone-400">
+            <span className="text-[10px] text-[color:var(--text-dim)]">
               Lv.{neighbor.level}
             </span>
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-stone-500">
+          <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {neighbor.ripePlotCount > 0 ? (
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700">
+              <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[color:var(--brand-primary)]">
                 ✨ {neighbor.ripePlotCount} {t(msg`块成熟`)}
               </span>
             ) : (
-              <span className="text-stone-400">
+              <span className="text-[color:var(--text-dim)]">
                 {neighbor.totalPlotCount} {t(msg`块田，暂无成熟`)}
               </span>
             )}
@@ -97,7 +97,7 @@ function NeighborRow({
             )}
           </div>
         </div>
-        <span className="text-stone-300">›</span>
+        <span className="text-[color:var(--text-dim)]">›</span>
       </button>
     </li>
   );

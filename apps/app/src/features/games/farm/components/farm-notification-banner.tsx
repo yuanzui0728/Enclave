@@ -129,10 +129,10 @@ export function FarmNotificationBanner({ state }: NotificationBannerProps) {
           className={[
             "flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs shadow-sm backdrop-blur-md",
             b.tone === "danger"
-              ? "border-rose-200 bg-rose-50/85 text-rose-700"
+              ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]/85 text-[color:var(--brand-primary)]"
               : b.tone === "warn"
-                ? "border-amber-200 bg-amber-50/85 text-amber-700"
-                : "border-emerald-200 bg-emerald-50/85 text-emerald-700",
+                ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]/85 text-[color:var(--brand-primary)]"
+                : "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]/85 text-[color:var(--brand-primary)]",
           ].join(" ")}
         >
           <span className="text-lg">{b.emoji}</span>
@@ -140,7 +140,7 @@ export function FarmNotificationBanner({ state }: NotificationBannerProps) {
           <button
             type="button"
             onClick={() => setDismissed((s) => new Set([...s, b.id]))}
-            className="rounded-full px-1.5 text-stone-500 hover:bg-white/60"
+            className="rounded-full px-1.5 text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]/60"
             title={t(msg`忽略`)}
           >
             ✕

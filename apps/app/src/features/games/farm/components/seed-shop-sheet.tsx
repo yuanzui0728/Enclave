@@ -108,27 +108,27 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-[color:var(--surface-card)] shadow-xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+        <header className="flex items-center justify-between border-b border-[color:var(--border-subtle)] px-4 py-3">
           <h2 className="text-base font-semibold">{t(msg`农资店`)}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
+            className="rounded-full px-2 py-1 text-sm text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"
           >
             {t(msg`关闭`)}
           </button>
         </header>
-        <div className="flex gap-1 border-b border-stone-100 px-4 py-2">
+        <div className="flex gap-1 border-b border-[color:var(--border-subtle)] px-4 py-2">
           <button
             type="button"
             onClick={() => setTab("seed")}
             className={`rounded-full px-3 py-1 text-xs ${
               tab === "seed"
-                ? "bg-emerald-600 text-white"
-                : "bg-stone-100 text-stone-600"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
             }`}
           >
             🌱 {t(msg`种子`)}
@@ -138,8 +138,8 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
             onClick={() => setTab("consumable")}
             className={`rounded-full px-3 py-1 text-xs ${
               tab === "consumable"
-                ? "bg-emerald-600 text-white"
-                : "bg-stone-100 text-stone-600"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
             }`}
           >
             🧴 {t(msg`化肥 / 农药 / 狗粮`)}
@@ -149,15 +149,15 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
             onClick={() => setTab("decoration")}
             className={`rounded-full px-3 py-1 text-xs ${
               tab === "decoration"
-                ? "bg-emerald-600 text-white"
-                : "bg-stone-100 text-stone-600"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
             }`}
           >
             🌸 {t(msg`装饰`)}
           </button>
         </div>
         {errorMsg && (
-          <div className="bg-rose-50 px-4 py-2 text-xs text-rose-600">
+          <div className="bg-[color:var(--brand-soft)] px-4 py-2 text-xs text-[color:var(--brand-primary)]">
             {errorMsg}
           </div>
         )}
@@ -175,21 +175,21 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
               return (
                 <li
                   key={id}
-                  className="flex items-center gap-3 border-b border-stone-100 py-3 last:border-b-0"
+                  className="flex items-center gap-3 border-b border-[color:var(--border-subtle)] py-3 last:border-b-0"
                 >
                   <span className="text-2xl">{def.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-medium">{def.nameZh}</span>
-                      <span className="text-xs text-stone-500">🪙 {def.price}</span>
+                      <span className="text-xs text-[color:var(--text-muted)]">🪙 {def.price}</span>
                     </div>
-                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-500">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {def.descriptionZh}
                     </div>
-                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-400">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                       {t(msg`库存`)} {owned} · {t(msg`已摆`)} {placeCount}
                       {locked && (
-                        <span className="ml-2 text-amber-600">
+                        <span className="ml-2 text-[color:var(--brand-primary)]">
                           Lv.{def.unlockLevel} {t(msg`解锁`)}
                         </span>
                       )}
@@ -203,8 +203,8 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                       className={[
                         "rounded-full px-3 py-1 text-xs font-medium transition",
                         locked || !affordable
-                          ? "cursor-not-allowed bg-stone-100 text-stone-400"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700",
+                          ? "cursor-not-allowed bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
+                          : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]",
                       ].join(" ")}
                     >
                       {isPending
@@ -220,7 +220,7 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                         type="button"
                         onClick={() => handlePlaceDecoration(id)}
                         disabled={placeDecorationMutation.isPending}
-                        className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700 hover:bg-amber-200 disabled:opacity-50"
+                        className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1 text-xs text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)] disabled:opacity-50"
                       >
                         {t(msg`摆出来`)}
                       </button>
@@ -241,23 +241,23 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
               return (
                 <li
                   key={id}
-                  className="flex items-center gap-3 border-b border-stone-100 py-3 last:border-b-0"
+                  className="flex items-center gap-3 border-b border-[color:var(--border-subtle)] py-3 last:border-b-0"
                 >
                   <span className="text-2xl">{def.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-medium">{def.nameZh}</span>
-                      <span className="text-xs text-stone-500">
+                      <span className="text-xs text-[color:var(--text-muted)]">
                         🪙 {def.price} {t(msg`/ 个`)}
                       </span>
                     </div>
-                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-500">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {def.descriptionZh}
                     </div>
-                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-400">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                       {t(msg`已存`)} {owned}
                       {locked && (
-                        <span className="ml-2 text-amber-600">
+                        <span className="ml-2 text-[color:var(--brand-primary)]">
                           Lv.{def.unlockLevel} {t(msg`解锁`)}
                         </span>
                       )}
@@ -270,8 +270,8 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                     className={[
                       "rounded-full px-3 py-1 text-xs font-medium transition",
                       locked || !affordable
-                        ? "cursor-not-allowed bg-stone-100 text-stone-400"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700",
+                        ? "cursor-not-allowed bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
+                        : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]",
                     ].join(" ")}
                   >
                     {isPending
@@ -296,24 +296,24 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
             return (
               <li
                 key={crop.id}
-                className="flex items-center gap-3 border-b border-stone-100 py-3 last:border-b-0"
+                className="flex items-center gap-3 border-b border-[color:var(--border-subtle)] py-3 last:border-b-0"
               >
                 <span className="text-2xl">{crop.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-medium">{crop.nameZh}</span>
-                    <span className="text-xs text-stone-500">
+                    <span className="text-xs text-[color:var(--text-muted)]">
                       {crop.growHours}{t(msg`h 成熟`)}
                     </span>
                   </div>
-                  <div className="mt-0.5 flex items-center justify-between text-[length:var(--text-eyebrow)] text-stone-500">
+                  <div className="mt-0.5 flex items-center justify-between text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     <span>
                       🪙 {crop.seedCost} {t(msg`/ 包，售价`)} {crop.sellPrice} {t(msg`/ 个`)}
                     </span>
                     <span>{t(msg`已存`)} {owned}</span>
                   </div>
                   {locked && (
-                    <div className="mt-1 text-[length:var(--text-eyebrow)] text-amber-600">
+                    <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
                       Lv.{crop.unlockLevel} {t(msg`解锁`)}
                     </div>
                   )}
@@ -325,8 +325,8 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                   className={[
                     "rounded-full px-3 py-1 text-xs font-medium transition",
                     locked || !affordable
-                      ? "cursor-not-allowed bg-stone-100 text-stone-400"
-                      : "bg-emerald-600 text-white hover:bg-emerald-700",
+                      ? "cursor-not-allowed bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
+                      : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]",
                   ].join(" ")}
                 >
                   {isPending ? t(msg`购买中`) : locked ? t(msg`未解锁`) : !affordable ? t(msg`金币不足`) : t(msg`购买 1`)}

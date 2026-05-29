@@ -133,19 +133,19 @@ export function ParkingWarGame({
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-zinc-50">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+      <div className="flex h-full w-full items-center justify-center bg-[color:var(--surface-soft)]">
+        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--text-muted)]" />
       </div>
     );
   }
   if (isError || !state) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-zinc-50 px-6 text-center">
-        <p className="text-zinc-700">{t(msg`车场连不上服务端`)}</p>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[color:var(--surface-soft)] px-6 text-center">
+        <p className="text-[color:var(--text-secondary)]">{t(msg`车场连不上服务端`)}</p>
         {onExit && (
           <button
             type="button"
-            className="rounded-full bg-zinc-800 px-4 py-2 text-sm text-white"
+            className="rounded-full bg-zinc-800 px-4 py-2 text-sm text-[color:var(--text-on-brand)]"
             onClick={onExit}
           >
             {t(msg`返回`)}
@@ -161,7 +161,7 @@ export function ParkingWarGame({
     // 的卡片里，fixed 定位会让 tab 栏漂到整页底部覆盖宿主导航
     <div
       className={cn(
-        "relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-b from-sky-50 to-amber-50",
+        "relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-b from-[color:var(--brand-soft)] to-[color:var(--brand-soft)]",
         variant === "fullscreen" && "min-h-[100dvh]",
       )}
     >
@@ -177,7 +177,7 @@ export function ParkingWarGame({
       <BottomTabs activeTab={tab} onChange={setTab} />
       {toast && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center">
-          <div className="rounded-full bg-zinc-900/90 px-4 py-2 text-sm text-white shadow-lg">
+          <div className="rounded-full bg-zinc-900/90 px-4 py-2 text-sm text-[color:var(--text-on-brand)] shadow-lg">
             {toast}
           </div>
         </div>
@@ -216,28 +216,28 @@ function TopBar({
   };
 
   return (
-    <div className="flex flex-col gap-2 border-b border-zinc-200/60 bg-white/70 px-4 py-3 backdrop-blur">
+    <div className="flex flex-col gap-2 border-b border-[color:var(--border-subtle)]/60 bg-[color:var(--surface-card)]/70 px-4 py-3 backdrop-blur">
       <div className="flex items-center gap-3">
         {onExit && (
           <button
             type="button"
             onClick={onExit}
-            className="-ml-2 rounded-full p-2 hover:bg-zinc-100"
+            className="-ml-2 rounded-full p-2 hover:bg-[color:var(--surface-soft)]"
             aria-label={t(msg`返回`)}
           >
-            <ArrowLeft className="h-5 w-5 text-zinc-700" />
+            <ArrowLeft className="h-5 w-5 text-[color:var(--text-secondary)]" />
           </button>
         )}
         <div className="flex-1">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-lg font-semibold text-zinc-900">
+            <h1 className="text-lg font-semibold text-[color:var(--text-primary)]">
               {t(msg`抢车位`)}
             </h1>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-[color:var(--text-muted)]">
               {t(msg`完美复刻 · 服务端`)}
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-zinc-600">
+          <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 ring-1",
@@ -248,13 +248,13 @@ function TopBar({
               {surface.name} · {multiplierPct}%
             </span>
             {isVip && state.dailyShieldRemaining > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
+              <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[color:var(--brand-primary)]">
                 <ShieldCheck className="h-3 w-3" />
                 {t(msg`今日免罚 ×${state.dailyShieldRemaining}`)}
               </span>
             )}
             {state.streakDays > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-rose-700">
+              <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[color:var(--brand-primary)]">
                 <Sparkles className="h-3 w-3" />
                 {t(msg`连签 ${state.streakDays} 天`)}
               </span>
@@ -262,7 +262,7 @@ function TopBar({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span className="text-base font-semibold text-amber-700">
+          <span className="text-base font-semibold text-[color:var(--brand-primary)]">
             <Coins className="mr-1 inline h-4 w-4" />
             {formatYuan(state.balanceCents)}
           </span>
@@ -273,8 +273,8 @@ function TopBar({
             className={cn(
               "flex items-center gap-1 rounded-full px-3 py-1 text-xs",
               state.dailyBonusAvailable
-                ? "bg-rose-500 text-white"
-                : "bg-zinc-200 text-zinc-400",
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]",
             )}
           >
             <Gift className="h-3.5 w-3.5" />
@@ -300,7 +300,7 @@ function BottomTabs({
   onChange: (tab: TabId) => void;
 }) {
   return (
-    <div className="absolute inset-x-0 bottom-0 z-40 flex justify-around border-t border-zinc-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <div className="absolute inset-x-0 bottom-0 z-40 flex justify-around border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       {TABS.map(({ id, label, Icon }) => {
         const active = activeTab === id;
         return (
@@ -310,10 +310,10 @@ function BottomTabs({
             onClick={() => onChange(id)}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs",
-              active ? "text-amber-700" : "text-zinc-500",
+              active ? "text-[color:var(--brand-primary)]" : "text-[color:var(--text-muted)]",
             )}
           >
-            <Icon className={cn("h-5 w-5", active && "fill-amber-100")} />
+            <Icon className={cn("h-5 w-5", active && "fill-[color:var(--brand-soft)]")} />
             <span>{label}</span>
           </button>
         );
@@ -374,7 +374,7 @@ function HomeTab({
 
   return (
     <div className="px-4 py-4">
-      <div className="mb-3 flex items-center justify-between text-xs text-zinc-500">
+      <div className="mb-3 flex items-center justify-between text-xs text-[color:var(--text-muted)]">
         <span>
           {t(msg`车位 ${state.homeOccupancies.length} / ${state.lotSize}`)}
         </span>
@@ -441,11 +441,11 @@ function HomeSlotCard({
       <button
         type="button"
         onClick={onClickEmpty}
-        className="flex aspect-[4/5] flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-white/60 text-xs text-zinc-400 hover:border-amber-400 hover:text-amber-500"
+        className="flex aspect-[4/5] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[color:var(--border-strong)] bg-[color:var(--surface-card)]/60 text-xs text-[color:var(--text-dim)] hover:border-[color:var(--border-brand)] hover:text-[color:var(--brand-primary)]"
       >
         <span className="text-2xl">+</span>
         <span>{t(msg`空位`)}</span>
-        <span className="mt-1 text-[10px] text-zinc-300">
+        <span className="mt-1 text-[10px] text-[color:var(--text-dim)]">
           #{slot.index + 1}
         </span>
       </button>
@@ -457,16 +457,16 @@ function HomeSlotCard({
       type="button"
       onClick={onClickOccupied}
       className={cn(
-        "relative flex aspect-[4/5] flex-col items-center justify-between gap-1 rounded-xl bg-white p-2 ring-1 ring-inset",
+        "relative flex aspect-[4/5] flex-col items-center justify-between gap-1 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1 ring-inset",
         RARITY_DISPLAY[occ.carRarity].ringClass,
       )}
     >
       <CarSprite tier={occ.carTier} rarity={occ.carRarity} size={48} />
       <div className="flex w-full flex-col gap-0.5 text-[10px]">
-        <span className={cn("truncate", isSelf ? "text-zinc-600" : "text-orange-700 font-medium")}>
+        <span className={cn("truncate", isSelf ? "text-[color:var(--text-muted)]" : "text-[color:var(--brand-primary)] font-medium")}>
           {isSelf ? t(msg`我的车`) : t(msg`访客`)}
         </span>
-        <span className="text-amber-700">
+        <span className="text-[color:var(--brand-primary)]">
           ¥{(occ.pendingEarningsCents / 100).toFixed(2)}
         </span>
       </div>
@@ -480,10 +480,10 @@ function HomeSlotCard({
 function WarningPill({ level }: { level: number }) {
   const tone =
     level >= 3
-      ? "bg-rose-600 text-white"
+      ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
       : level >= 2
-        ? "bg-orange-500 text-white"
-        : "bg-amber-300 text-amber-900";
+        ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+        : "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]";
   const label =
     level >= 3 ? t(msg`可拖车`) : level >= 2 ? t(msg`罚单`) : t(msg`警告`);
   return (
@@ -606,10 +606,10 @@ function OccupancySheet({
       <div className="flex items-center gap-3">
         <CarSprite tier={occupancy.carTier} rarity={occupancy.carRarity} size={64} />
         <div className="flex-1">
-          <div className="text-base font-semibold text-zinc-900">
+          <div className="text-base font-semibold text-[color:var(--text-primary)]">
             {tierName} · {rarityName} · L{occupancy.carLevel}
           </div>
-          <div className="mt-1 text-sm text-zinc-500">
+          <div className="mt-1 text-sm text-[color:var(--text-muted)]">
             {isSelf
               ? t(msg`你的车，停在自家车位 #${occupancy.slotIndex + 1}`)
               : t(msg`访客车，占用 #${occupancy.slotIndex + 1}`)}
@@ -632,7 +632,7 @@ function OccupancySheet({
               disabled={
                 collect.isPending || occupancy.pendingEarningsCents <= 0
               }
-              className="rounded-xl bg-amber-500 px-4 py-3 text-white disabled:bg-zinc-200 disabled:text-zinc-400"
+              className="rounded-xl bg-[color:var(--brand-primary)] px-4 py-3 text-[color:var(--text-on-brand)] disabled:bg-[color:var(--surface-soft)] disabled:text-[color:var(--text-dim)]"
             >
               {t(msg`收钱（不召回）`)}
             </button>
@@ -640,7 +640,7 @@ function OccupancySheet({
               type="button"
               onClick={handleRecall}
               disabled={recall.isPending}
-              className="rounded-xl bg-zinc-800 px-4 py-3 text-white disabled:bg-zinc-300"
+              className="rounded-xl bg-zinc-800 px-4 py-3 text-[color:var(--text-on-brand)] disabled:bg-zinc-300"
             >
               {t(msg`召回车辆`)}
             </button>
@@ -656,7 +656,7 @@ function OccupancySheet({
                 occupancy.warningLevel >= 2 ||
                 occupancy.pendingEarningsCents <= 0
               }
-              className="rounded-xl bg-orange-500 px-4 py-3 text-white disabled:bg-zinc-200 disabled:text-zinc-400"
+              className="rounded-xl bg-[color:var(--brand-primary)] px-4 py-3 text-[color:var(--text-on-brand)] disabled:bg-[color:var(--surface-soft)] disabled:text-[color:var(--text-dim)]"
             >
               {occupancy.warningLevel >= 2
                 ? t(msg`已开过罚单`)
@@ -668,7 +668,7 @@ function OccupancySheet({
               type="button"
               onClick={handleTow}
               disabled={tow.isPending || occupancy.warningLevel < 3}
-              className="rounded-xl bg-rose-600 px-4 py-3 text-white disabled:bg-zinc-200 disabled:text-zinc-400"
+              className="rounded-xl bg-[color:var(--brand-primary)] px-4 py-3 text-[color:var(--text-on-brand)] disabled:bg-[color:var(--surface-soft)] disabled:text-[color:var(--text-dim)]"
             >
               {t(msg`拖车（需 ≥ 可拖车）`)}
             </button>
@@ -681,9 +681,9 @@ function OccupancySheet({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-zinc-100 px-3 py-2">
-      <div className="text-[length:var(--text-eyebrow)] text-zinc-500">{label}</div>
-      <div className="text-sm font-medium text-zinc-800">{value}</div>
+    <div className="rounded-lg bg-[color:var(--surface-soft)] px-3 py-2">
+      <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">{label}</div>
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">{value}</div>
     </div>
   );
 }
@@ -732,13 +732,13 @@ function CarPickerSheet({
   };
   return (
     <BottomSheet onClose={onClose}>
-      <div className="mb-3 text-base font-semibold text-zinc-900">
+      <div className="mb-3 text-base font-semibold text-[color:var(--text-primary)]">
         {characterId
           ? t(msg`挑一辆车停过去`)
           : t(msg`挑一辆车停 #${slotIndex + 1}`)}
       </div>
       {idleCars.length === 0 ? (
-        <p className="rounded-lg bg-zinc-100 p-3 text-sm text-zinc-500">
+        <p className="rounded-lg bg-[color:var(--surface-soft)] p-3 text-sm text-[color:var(--text-muted)]">
           {t(msg`车库里没有闲置车（被外出 / 冷却中）。先收回一辆。`)}
         </p>
       ) : (
@@ -749,7 +749,7 @@ function CarPickerSheet({
               type="button"
               onClick={() => handlePick(car)}
               disabled={park.isPending}
-              className="flex items-center gap-2 rounded-xl bg-white p-2 ring-1 ring-zinc-200 hover:ring-amber-400 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1 ring-[color:var(--border-subtle)] hover:ring-[color:var(--border-brand)] disabled:opacity-60"
             >
               <CarSprite
                 tier={car.tier}
@@ -758,10 +758,10 @@ function CarPickerSheet({
                 paintIndex={car.paintIndex}
               />
               <div className="flex-1 text-left">
-                <div className="text-xs text-zinc-700">
+                <div className="text-xs text-[color:var(--text-secondary)]">
                   {TIER_DISPLAY[car.tier].name}
                 </div>
-                <div className="text-[10px] text-zinc-400">
+                <div className="text-[10px] text-[color:var(--text-dim)]">
                   {RARITY_DISPLAY[car.rarity].name} · L{car.level}
                 </div>
               </div>
@@ -789,12 +789,12 @@ function NeighborsTab({
 
   return (
     <div className="px-4 py-4">
-      <p className="mb-3 text-xs text-zinc-500">
+      <p className="mb-3 text-xs text-[color:var(--text-muted)]">
         {t(msg`点谁的车场，把你的车停过去开始挂机`)}
       </p>
       {isLoading && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+          <Loader2 className="h-5 w-5 animate-spin text-[color:var(--text-muted)]" />
         </div>
       )}
       <div className="flex flex-col gap-2">
@@ -806,7 +806,7 @@ function NeighborsTab({
           />
         ))}
         {!isLoading && (neighbors ?? []).length === 0 && (
-          <p className="rounded-xl bg-white p-4 text-sm text-zinc-500 ring-1 ring-zinc-200">
+          <p className="rounded-xl bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-muted)] ring-1 ring-[color:var(--border-subtle)]">
             {t(msg`你的 world 里还没有可访问的角色 —— 添加些 contacts 再回来。`)}
           </p>
         )}
@@ -835,9 +835,9 @@ function NeighborRow({
     <button
       type="button"
       onClick={onTap}
-      className="flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 hover:ring-amber-400"
+      className="flex items-center gap-3 rounded-xl bg-[color:var(--surface-card)] p-3 ring-1 ring-[color:var(--border-subtle)] hover:ring-[color:var(--border-brand)]"
     >
-      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-zinc-200">
+      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
         {n.characterAvatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -846,17 +846,17 @@ function NeighborRow({
             className="h-full w-full object-cover"
           />
         ) : (
-          <Users className="h-5 w-5 text-zinc-500" />
+          <Users className="h-5 w-5 text-[color:var(--text-muted)]" />
         )}
       </div>
       <div className="flex-1 text-left">
-        <div className="flex items-center gap-2 text-sm font-medium text-zinc-900">
+        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
           {n.characterName}
           {n.isOnline && (
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="h-2 w-2 rounded-full bg-[color:var(--brand-primary)]" />
           )}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-zinc-500">
+        <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           <span className={cn("rounded-full px-2", surface.bgClass)}>
             {surface.name}
           </span>
@@ -866,7 +866,7 @@ function NeighborRow({
           <span>{t(msg`亲密度 ${n.intimacyLevel}`)}</span>
         </div>
       </div>
-      <ChevronLeft className="h-4 w-4 rotate-180 text-zinc-400" />
+      <ChevronLeft className="h-4 w-4 rotate-180 text-[color:var(--text-dim)]" />
     </button>
   );
 }
@@ -890,12 +890,12 @@ function NeighborDetailSheet({
     <BottomSheet onClose={onClose}>
       {isLoading || !detail ? (
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+          <Loader2 className="h-5 w-5 animate-spin text-[color:var(--text-muted)]" />
         </div>
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 overflow-hidden rounded-full bg-zinc-200">
+            <div className="h-12 w-12 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
               {detail.characterAvatar && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -906,10 +906,10 @@ function NeighborDetailSheet({
               )}
             </div>
             <div className="flex-1">
-              <div className="text-base font-semibold text-zinc-900">
+              <div className="text-base font-semibold text-[color:var(--text-primary)]">
                 {detail.characterName}
               </div>
-              <div className="mt-0.5 text-xs text-zinc-500">
+              <div className="mt-0.5 text-xs text-[color:var(--text-muted)]">
                 {SURFACE_DISPLAY[detail.lotSurface].name} ·{" "}
                 {t(msg`车位 ${detail.homeOccupancies.length} / ${detail.lotSize}`)}
               </div>
@@ -930,8 +930,8 @@ function NeighborDetailSheet({
                   className={cn(
                     "flex aspect-square flex-col items-center justify-center rounded-lg ring-1",
                     occ
-                      ? "bg-zinc-100 ring-zinc-200"
-                      : "bg-white ring-emerald-300 hover:bg-emerald-50",
+                      ? "bg-[color:var(--surface-soft)] ring-[color:var(--border-subtle)]"
+                      : "bg-[color:var(--surface-card)] ring-[color:var(--border-brand)] hover:bg-[color:var(--brand-soft)]",
                   )}
                 >
                   {occ ? (
@@ -941,9 +941,9 @@ function NeighborDetailSheet({
                       size={32}
                     />
                   ) : (
-                    <span className="text-2xl text-emerald-500">+</span>
+                    <span className="text-2xl text-[color:var(--brand-primary)]">+</span>
                   )}
-                  <span className="mt-1 text-[10px] text-zinc-400">
+                  <span className="mt-1 text-[10px] text-[color:var(--text-dim)]">
                     #{slot.index + 1}
                   </span>
                 </button>
@@ -1007,7 +1007,7 @@ function GarageTab({
             <div
               key={car.carId}
               className={cn(
-                "flex flex-col gap-2 rounded-xl bg-white p-2 ring-1",
+                "flex flex-col gap-2 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1",
                 RARITY_DISPLAY[car.rarity].ringClass,
               )}
             >
@@ -1019,23 +1019,23 @@ function GarageTab({
                   paintIndex={car.paintIndex}
                 />
                 <div className="flex-1">
-                  <div className="text-xs font-medium text-zinc-800">
+                  <div className="text-xs font-medium text-[color:var(--text-primary)]">
                     {TIER_DISPLAY[car.tier].name}
                   </div>
-                  <div className="text-[10px] text-zinc-400">
+                  <div className="text-[10px] text-[color:var(--text-dim)]">
                     {RARITY_DISPLAY[car.rarity].name} · L{car.level}
                   </div>
                 </div>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
                 <div
                   className={cn(
                     "h-full",
                     car.durability >= 60
-                      ? "bg-emerald-500"
+                      ? "bg-[color:var(--brand-primary)]"
                       : car.durability >= 30
-                        ? "bg-amber-500"
-                        : "bg-rose-500",
+                        ? "bg-[color:var(--brand-primary)]"
+                        : "bg-[color:var(--brand-primary)]",
                   )}
                   style={{ width: `${car.durability}%` }}
                 />
@@ -1050,7 +1050,7 @@ function GarageTab({
                       t(msg`升级成功`),
                     )
                   }
-                  className="flex-1 rounded-md bg-zinc-100 px-2 py-1 text-[10px] text-zinc-700"
+                  className="flex-1 rounded-md bg-[color:var(--surface-soft)] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
                 >
                   {t(msg`升级`)}
                 </button>
@@ -1066,7 +1066,7 @@ function GarageTab({
                       t(msg`已换色`),
                     )
                   }
-                  className="rounded-md bg-zinc-100 px-2 py-1 text-[10px]"
+                  className="rounded-md bg-[color:var(--surface-soft)] px-2 py-1 text-[10px]"
                   aria-label={t(msg`换色`)}
                 >
                   <Palette className="h-3 w-3" />
@@ -1079,7 +1079,7 @@ function GarageTab({
                       t(msg`已修复`),
                     )
                   }
-                  className="rounded-md bg-zinc-100 px-2 py-1 text-[10px]"
+                  className="rounded-md bg-[color:var(--surface-soft)] px-2 py-1 text-[10px]"
                   aria-label={t(msg`维修`)}
                 >
                   <Wrench className="h-3 w-3" />
@@ -1092,7 +1092,7 @@ function GarageTab({
 
       <section>
         <SectionTitle title={t(msg`车场升级`)} />
-        <div className="flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-zinc-200">
+        <div className="flex flex-col gap-2 rounded-xl bg-[color:var(--surface-card)] p-3 ring-1 ring-[color:var(--border-subtle)]">
           <div className="flex flex-wrap gap-2">
             {[4, 6, 8, 12].map((size) => (
               <button
@@ -1109,10 +1109,10 @@ function GarageTab({
                 className={cn(
                   "rounded-full px-3 py-1 text-xs ring-1",
                   size === state.lotSize
-                    ? "bg-amber-100 text-amber-700 ring-amber-300"
+                    ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] ring-[color:var(--border-brand)]"
                     : size < state.lotSize
-                      ? "bg-zinc-100 text-zinc-400 ring-zinc-200"
-                      : "bg-white text-zinc-700 ring-zinc-300 hover:bg-amber-50",
+                      ? "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)] ring-[color:var(--border-subtle)]"
+                      : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] ring-[color:var(--border-strong)] hover:bg-[color:var(--brand-soft)]",
                 )}
               >
                 {t(msg`${size} 车位`)}
@@ -1139,8 +1139,8 @@ function GarageTab({
                   className={cn(
                     "rounded-full px-3 py-1 text-xs ring-1",
                     sf === state.lotSurface
-                      ? "bg-amber-100 text-amber-700 ring-amber-300"
-                      : "bg-white text-zinc-700 ring-zinc-300 hover:bg-amber-50",
+                      ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] ring-[color:var(--border-brand)]"
+                      : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] ring-[color:var(--border-strong)] hover:bg-[color:var(--brand-soft)]",
                   )}
                 >
                   {SURFACE_DISPLAY[sf].name}
@@ -1156,7 +1156,7 @@ function GarageTab({
                 t(msg`车库 +1`),
               )
             }
-            className="mt-1 self-start rounded-full bg-zinc-800 px-4 py-1.5 text-xs text-white disabled:bg-zinc-300"
+            className="mt-1 self-start rounded-full bg-zinc-800 px-4 py-1.5 text-xs text-[color:var(--text-on-brand)] disabled:bg-zinc-300"
           >
             {t(msg`车库扩容（当前 ${state.garageSlots}）`)}
           </button>
@@ -1165,11 +1165,11 @@ function GarageTab({
 
       <section>
         <SectionTitle title={t(msg`买车`)} />
-        <div className="space-y-2 rounded-xl bg-white p-3 ring-1 ring-zinc-200">
+        <div className="space-y-2 rounded-xl bg-[color:var(--surface-card)] p-3 ring-1 ring-[color:var(--border-subtle)]">
           {TIER_ORDER.filter((t) => t !== "starter").map((tier) => (
             <div key={tier} className="flex items-center gap-2">
               <CarSprite tier={tier} rarity="common" size={28} />
-              <span className="flex-1 text-xs text-zinc-700">
+              <span className="flex-1 text-xs text-[color:var(--text-secondary)]">
                 {TIER_DISPLAY[tier].name}
               </span>
               {RARITY_ORDER.map((r) => (
@@ -1192,7 +1192,7 @@ function GarageTab({
               ))}
             </div>
           ))}
-          <p className="mt-1 text-[10px] text-zinc-400">
+          <p className="mt-1 text-[10px] text-[color:var(--text-dim)]">
             {t(msg`价格 = 档位 × 稀有度倍率（服务端计算）`)}
           </p>
         </div>
@@ -1231,7 +1231,7 @@ function RankTab({
     <div className="space-y-4 px-4 py-4">
       <section>
         <SectionTitle title={t(msg`财富榜`)} />
-        <ol className="space-y-1 rounded-xl bg-white p-2 ring-1 ring-zinc-200">
+        <ol className="space-y-1 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1 ring-[color:var(--border-subtle)]">
           {(board ?? []).map((row) => {
             const isMe =
               row.actorKind === "player" && row.actorId === state.ownerId;
@@ -1240,30 +1240,30 @@ function RankTab({
                 key={`${row.actorKind}:${row.actorId}`}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-2 py-1.5",
-                  isMe && "bg-amber-50 ring-1 ring-amber-200",
+                  isMe && "bg-[color:var(--brand-soft)] ring-1 ring-[color:var(--border-brand)]",
                 )}
               >
                 <span
                   className={cn(
                     "w-6 text-center text-xs font-semibold",
-                    row.rank === 1 && "text-amber-500",
-                    row.rank === 2 && "text-zinc-400",
-                    row.rank === 3 && "text-orange-500",
+                    row.rank === 1 && "text-[color:var(--brand-primary)]",
+                    row.rank === 2 && "text-[color:var(--text-dim)]",
+                    row.rank === 3 && "text-[color:var(--brand-primary)]",
                   )}
                 >
                   {row.rank}
                 </span>
-                <div className="flex-1 truncate text-sm text-zinc-800">
+                <div className="flex-1 truncate text-sm text-[color:var(--text-primary)]">
                   {isMe ? t(msg`我`) : row.actorName}
                 </div>
-                <span className="text-xs text-amber-700">
+                <span className="text-xs text-[color:var(--brand-primary)]">
                   {formatYuan(row.balanceCents)}
                 </span>
               </li>
             );
           })}
           {(board ?? []).length === 0 && (
-            <p className="px-2 py-3 text-xs text-zinc-400">
+            <p className="px-2 py-3 text-xs text-[color:var(--text-dim)]">
               {t(msg`榜单加载中...`)}
             </p>
           )}
@@ -1272,9 +1272,9 @@ function RankTab({
 
       <section>
         <SectionTitle title={t(msg`每日任务`)} icon={ListChecks} />
-        <div className="space-y-2 rounded-xl bg-white p-2 ring-1 ring-zinc-200">
+        <div className="space-y-2 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1 ring-[color:var(--border-subtle)]">
           {state.dailyTasks.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-zinc-400">
+            <p className="px-2 py-3 text-xs text-[color:var(--text-dim)]">
               {t(msg`今日任务即将刷新`)}
             </p>
           ) : (
@@ -1286,18 +1286,18 @@ function RankTab({
                   className="flex items-center justify-between gap-3 px-2 py-1.5"
                 >
                   <div className="flex-1">
-                    <div className="text-xs text-zinc-700">
+                    <div className="text-xs text-[color:var(--text-secondary)]">
                       {dailyTaskLabel(task.id)}
                     </div>
-                    <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-zinc-100">
+                    <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
                       <div
-                        className="h-full bg-emerald-500"
+                        className="h-full bg-[color:var(--brand-primary)]"
                         style={{
                           width: `${Math.min(100, (task.progress / Math.max(1, task.goal)) * 100)}%`,
                         }}
                       />
                     </div>
-                    <div className="text-[10px] text-zinc-400">
+                    <div className="text-[10px] text-[color:var(--text-dim)]">
                       {task.progress}/{task.goal} · {formatYuan(task.rewardCents)}
                     </div>
                   </div>
@@ -1308,10 +1308,10 @@ function RankTab({
                     className={cn(
                       "rounded-full px-3 py-1 text-[10px]",
                       task.claimed
-                        ? "bg-zinc-100 text-zinc-400"
+                        ? "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
                         : done
-                          ? "bg-emerald-500 text-white"
-                          : "bg-zinc-100 text-zinc-400",
+                          ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                          : "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]",
                     )}
                   >
                     {task.claimed
@@ -1329,13 +1329,13 @@ function RankTab({
 
       <section>
         <SectionTitle title={t(msg`事件`)} icon={History} />
-        <ul className="space-y-1 rounded-xl bg-white p-2 ring-1 ring-zinc-200">
+        <ul className="space-y-1 rounded-xl bg-[color:var(--surface-card)] p-2 ring-1 ring-[color:var(--border-subtle)]">
           {(events ?? []).slice(0, 20).map((e) => (
             <li
               key={e.id}
-              className="flex items-center gap-2 px-2 py-1 text-xs text-zinc-600"
+              className="flex items-center gap-2 px-2 py-1 text-xs text-[color:var(--text-muted)]"
             >
-              <span className="w-14 text-[10px] text-zinc-400">
+              <span className="w-14 text-[10px] text-[color:var(--text-dim)]">
                 {formatRelative(Date.parse(e.createdAt), state.serverNowMs)}
               </span>
               <span className="flex-1 truncate">{renderEventLabel(e)}</span>
@@ -1343,7 +1343,7 @@ function RankTab({
                 <span
                   className={cn(
                     "text-[length:var(--text-eyebrow)]",
-                    e.amountCents > 0 ? "text-amber-700" : "text-rose-600",
+                    e.amountCents > 0 ? "text-[color:var(--brand-primary)]" : "text-[color:var(--brand-primary)]",
                   )}
                 >
                   {e.amountCents > 0 ? "+" : ""}
@@ -1353,7 +1353,7 @@ function RankTab({
             </li>
           ))}
           {(events ?? []).length === 0 && (
-            <p className="px-2 py-3 text-xs text-zinc-400">
+            <p className="px-2 py-3 text-xs text-[color:var(--text-dim)]">
               {t(msg`暂时还没有事件`)}
             </p>
           )}
@@ -1375,7 +1375,7 @@ function SectionTitle({
   icon?: typeof LayoutGrid;
 }) {
   return (
-    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-700">
+    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-[color:var(--text-secondary)]">
       <Icon className="h-3.5 w-3.5" />
       {title}
     </div>
@@ -1395,19 +1395,19 @@ function BottomSheet({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl rounded-t-2xl bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-xl"
+        className="relative w-full max-w-xl rounded-t-2xl bg-[color:var(--surface-card)] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex justify-center">
-          <span className="h-1 w-10 rounded-full bg-zinc-200" />
+          <span className="h-1 w-10 rounded-full bg-[color:var(--surface-soft)]" />
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-zinc-100"
+          className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-[color:var(--surface-soft)]"
           aria-label={t(msg`关闭`)}
         >
-          <X className="h-4 w-4 text-zinc-500" />
+          <X className="h-4 w-4 text-[color:var(--text-muted)]" />
         </button>
         {children}
       </div>

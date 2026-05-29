@@ -471,7 +471,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(67, 47, 122, 0.14)] bg-[rgba(246, 244, 252, 0.92)] text-[#432f7a]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#2c214c_0%,#432f7a_40%,#7c67b6_100%)] text-white",
+      "bg-[linear-gradient(135deg,#2c214c_0%,#432f7a_40%,#7c67b6_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(67, 47, 122, 0.14)] text-[#432f7a]",
     mutedPanelClassName:
       "border-[rgba(67, 47, 122, 0.12)] bg-[linear-gradient(180deg,rgba(247, 245, 252, 0.98),rgba(255, 255, 255, 0.94))]",
@@ -481,7 +481,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(72, 39, 164, 0.14)] bg-[rgba(242, 239, 251, 0.92)] text-[#4827a4]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#28155c_0%,#532cbe_48%,#8d70dd_100%)] text-white",
+      "bg-[linear-gradient(135deg,#28155c_0%,#532cbe_48%,#8d70dd_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(72, 39, 164, 0.14)] text-[#4827a4]",
     mutedPanelClassName:
       "border-[rgba(72, 39, 164, 0.12)] bg-[linear-gradient(180deg,rgba(245, 242, 252, 0.98),rgba(255, 255, 255, 0.94))]",
@@ -491,7 +491,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(84, 45, 191, 0.14)] bg-[rgba(245, 243, 252, 0.92)] text-[#542dbf]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#2a1660_0%,#542dbf_46%,#9378df_100%)] text-white",
+      "bg-[linear-gradient(135deg,#2a1660_0%,#542dbf_46%,#9378df_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(84, 45, 191, 0.14)] text-[#542dbf]",
     mutedPanelClassName:
       "border-[rgba(84, 45, 191, 0.12)] bg-[linear-gradient(180deg,rgba(246, 244, 252, 0.98),rgba(255, 255, 255, 0.94))]",
@@ -501,7 +501,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(108, 82, 179, 0.14)] bg-[rgba(246, 244, 252, 0.92)] text-[#6c52b3]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#2d2050_0%,#6c52b3_46%,#b5a2e9_100%)] text-white",
+      "bg-[linear-gradient(135deg,#2d2050_0%,#6c52b3_46%,#b5a2e9_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(108, 82, 179, 0.14)] text-[#6c52b3]",
     mutedPanelClassName:
       "border-[rgba(108, 82, 179, 0.12)] bg-[linear-gradient(180deg,rgba(247, 245, 253, 0.98),rgba(255, 255, 255, 0.94))]",
@@ -511,7 +511,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(94, 53, 208, 0.14)] bg-[rgba(245, 242, 252, 0.92)] text-[#5e35d0]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#2f196a_0%,#5e35d0_48%,#9175df_100%)] text-white",
+      "bg-[linear-gradient(135deg,#2f196a_0%,#5e35d0_48%,#9175df_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(94, 53, 208, 0.14)] text-[#5e35d0]",
     mutedPanelClassName:
       "border-[rgba(94, 53, 208, 0.12)] bg-[linear-gradient(180deg,rgba(245, 243, 252, 0.98),rgba(255, 255, 255, 0.94))]",
@@ -521,7 +521,7 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
     badgeClassName:
       "border-[rgba(49, 26, 112, 0.14)] bg-[rgba(241, 238, 251, 0.92)] text-[#311a70]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#190d3a_0%,#311a70_44%,#886bd8_100%)] text-white",
+      "bg-[linear-gradient(135deg,#190d3a_0%,#311a70_44%,#886bd8_100%)] text-[color:var(--text-on-brand)]",
     iconClassName: "bg-[rgba(49, 26, 112, 0.14)] text-[#311a70]",
     mutedPanelClassName:
       "border-[rgba(49, 26, 112, 0.12)] bg-[linear-gradient(180deg,rgba(242, 239, 251, 0.98),rgba(255, 255, 255, 0.94))]",

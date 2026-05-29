@@ -124,8 +124,8 @@ export function GameCenterSessionPanel({
             className={cn(
               "shrink-0 border",
               compact
-                ? "h-9 w-9 rounded-full border-white/80 bg-white/72"
-                : "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
+                ? "h-9 w-9 rounded-full border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/72"
+                : "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/86 text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]",
             )}
           >
             <X size={16} />
@@ -166,8 +166,8 @@ export function GameCenterSessionPanel({
             className={cn(
               "rounded-full text-[color:var(--text-muted)]",
               compact
-                ? "bg-white/82 px-2 py-0.5 text-[10px]"
-                : "border border-white/72 bg-white/88 px-2.5 py-1 text-[length:var(--text-eyebrow)]",
+                ? "bg-[color:var(--surface-card)]/82 px-2 py-0.5 text-[10px]"
+                : "border border-[color:var(--border-faint)]/72 bg-[color:var(--surface-card)]/88 px-2.5 py-1 text-[length:var(--text-eyebrow)]",
             )}
           >
             {tag}
@@ -178,7 +178,7 @@ export function GameCenterSessionPanel({
       <div
         className={cn(
           "mt-5 flex flex-wrap",
-          compact ? "gap-2" : "gap-3 border-t border-white/74 pt-4",
+          compact ? "gap-2" : "gap-3 border-t border-[color:var(--border-faint)]/74 pt-4",
         )}
       >
         <Button
@@ -199,7 +199,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3.5 text-[length:var(--text-eyebrow)] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-white"
+                ? "h-8 rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-card)]"
                 : undefined
             }
           >
@@ -240,8 +240,8 @@ function SessionMetric({
       className={cn(
         "border",
         compact
-          ? "rounded-[var(--radius-md)] border-white/80 bg-white/82 px-3 py-3"
-          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(71, 38, 162, 0.04)]",
+          ? "rounded-[var(--radius-md)] border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/82 px-3 py-3"
+          : "border-[color:var(--border-faint)]/72 bg-[color:var(--surface-card)]/88 shadow-[0_8px_18px_rgba(71, 38, 162, 0.04)]",
       )}
     >
       <div

@@ -56,7 +56,7 @@ export function CloudFarmGame({
 
   const containerCls =
     variant === "embedded"
-      ? "rounded-[var(--radius-md)] bg-white"
+      ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]"
       : "min-h-screen bg-[color:var(--bg-app)]";
   const completedOrders = state.weeklyOrders.filter((o) => o.completed).length;
 
@@ -67,12 +67,12 @@ export function CloudFarmGame({
           <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`云上农场`)}
           </span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-emerald-800">
+          <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
             Lv.{state.level}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
             <Coins size={12} />
             {state.coin}
           </span>
@@ -90,16 +90,16 @@ export function CloudFarmGame({
       </header>
 
       {/* 经验进度 */}
-      <div className="rounded-[var(--radius-sm)] bg-emerald-50 px-3 py-2 text-[length:var(--text-caption)] text-emerald-900">
+      <div className="rounded-[var(--radius-sm)] bg-[color:var(--brand-soft)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]">
         <div className="flex items-center justify-between">
           <span>{t(msg`经验 ${state.experience} / ${state.level * 30}`)}</span>
           <span>
             {t(msg`累计收 ${state.totalHarvested} 株 · 互访 ${state.totalNeighborHelps} 次`)}
           </span>
         </div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white">
+        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-card)]">
           <div
-            className="h-full rounded-full bg-emerald-400"
+            className="h-full rounded-full bg-[color:var(--brand-primary)]"
             style={{
               width: `${Math.min(100, (state.experience / (state.level * 30)) * 100)}%`,
             }}
@@ -127,7 +127,7 @@ export function CloudFarmGame({
               }}
             />
             {picker === plot.id ? (
-              <div className="absolute z-10 mt-1 w-[200px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
+              <div className="absolute z-10 mt-1 w-[200px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-2 shadow-lg">
                 <div className="mb-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {t(msg`种什么`)}
                 </div>
@@ -147,7 +147,7 @@ export function CloudFarmGame({
                           className={cn(
                             "flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-[length:var(--text-caption)]",
                             canAfford
-                              ? "hover:bg-emerald-50"
+                              ? "hover:bg-[color:var(--brand-soft)]"
                               : "cursor-not-allowed opacity-50",
                           )}
                         >
@@ -187,7 +187,7 @@ export function CloudFarmGame({
           className={cn(
             "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--text-caption)] font-medium",
             now >= state.neighborCooldownUntilMs
-              ? "bg-emerald-500 text-white hover:bg-emerald-600"
+              ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
               : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
           )}
         >
@@ -212,7 +212,7 @@ export function CloudFarmGame({
       </div>
 
       {/* 周任务 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
         <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium">
           <span>{t(msg`本周联营订单`)}</span>
           <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
@@ -232,7 +232,7 @@ export function CloudFarmGame({
                     className={cn(
                       "truncate",
                       order.completed
-                        ? "text-emerald-700 line-through"
+                        ? "text-[color:var(--brand-primary)] line-through"
                         : "text-[color:var(--text-primary)]",
                     )}
                   >
@@ -244,7 +244,7 @@ export function CloudFarmGame({
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[color:var(--bg-app)]">
                   <div
-                    className="h-full rounded-full bg-emerald-400 transition-all"
+                    className="h-full rounded-full bg-[color:var(--brand-primary)] transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -255,7 +255,7 @@ export function CloudFarmGame({
       </div>
 
       {/* 日志 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`农场日志`)}</span>
           <button
@@ -278,8 +278,8 @@ export function CloudFarmGame({
                 key={entry.id}
                 className={cn(
                   "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
-                  entry.tone === "success" && "text-emerald-700",
-                  entry.tone === "warn" && "text-amber-700",
+                  entry.tone === "success" && "text-[color:var(--brand-primary)]",
+                  entry.tone === "warn" && "text-[color:var(--brand-primary)]",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
                 )}
               >
@@ -328,21 +328,21 @@ function PlotCard({
           : t(msg`枯萎`);
   const tone =
     stage === "empty"
-      ? "border-dashed border-[color:var(--border-faint)] bg-white"
+      ? "border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
       : stage === "growing"
-        ? "border-emerald-200 bg-emerald-50"
+        ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]"
         : stage === "ripe"
-          ? "border-amber-300 bg-amber-50 ring-2 ring-amber-200"
-          : "border-rose-200 bg-rose-50";
+          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] ring-2 ring-[color:var(--border-brand)]"
+          : "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]";
   const actionIcon =
     stage === "empty" ? (
-      <Sprout size={11} className="text-emerald-600" />
+      <Sprout size={11} className="text-[color:var(--brand-primary)]" />
     ) : stage === "growing" ? (
-      <Droplet size={11} className="text-sky-500" />
+      <Droplet size={11} className="text-[color:var(--brand-primary)]" />
     ) : stage === "ripe" ? (
-      <Coins size={11} className="text-amber-700" />
+      <Coins size={11} className="text-[color:var(--brand-primary)]" />
     ) : (
-      <Trash2 size={11} className="text-rose-500" />
+      <Trash2 size={11} className="text-[color:var(--brand-primary)]" />
     );
   const actionLabel =
     stage === "empty"

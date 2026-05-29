@@ -33,11 +33,11 @@ type SkyRallyGameProps = {
 };
 
 const TRACK_BADGE_TONE: Record<string, string> = {
-  ocean: "bg-sky-100 text-sky-800",
-  violet: "bg-violet-100 text-violet-800",
-  sunset: "bg-orange-100 text-orange-800",
-  forest: "bg-emerald-100 text-emerald-800",
-  gold: "bg-amber-100 text-amber-800",
+  ocean: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+  violet: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+  sunset: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+  forest: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+  gold: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
 };
 
 function formatTime(ms: number) {
@@ -66,7 +66,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
   const track = getTrack(state.currentTrackId);
   const containerCls =
     variant === "embedded"
-      ? "rounded-[var(--radius-md)] bg-white"
+      ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   const upcomingGate = state.gates[state.upcomingGateIndex];
@@ -87,7 +87,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium",
-                TRACK_BADGE_TONE[track.badgeColor] ?? "bg-sky-100 text-sky-800",
+                TRACK_BADGE_TONE[track.badgeColor] ?? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
               )}
             >
               {track.name}
@@ -95,12 +95,12 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
             <Star size={13} />
             ×{state.starShards}
           </span>
           {state.paintTokens > 0 ? (
-            <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-violet-800">
+            <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
               <PaintBucket size={13} />
               ×{state.paintTokens}
             </span>
@@ -119,8 +119,8 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
       </header>
 
       {/* 赛道可视化 */}
-      <div className="rounded-[var(--radius-sm)] border border-sky-200 bg-gradient-to-r from-sky-50 to-violet-50 p-3">
-        <div className="flex items-center justify-between text-[length:var(--text-caption)] text-sky-900">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-brand)] bg-gradient-to-r from-[color:var(--brand-soft)] to-[color:var(--brand-soft)] p-3">
+        <div className="flex items-center justify-between text-[length:var(--text-caption)] text-[color:var(--brand-primary)]">
           <span className="flex items-center gap-1">
             <Timer size={12} />
             {isRacing
@@ -133,15 +133,15 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
             {Math.round(state.trackProgress)}% / {formatRemaining(remainingMs)}
           </span>
         </div>
-        <div className="relative mt-2 h-7 overflow-hidden rounded-full bg-white">
+        <div className="relative mt-2 h-7 overflow-hidden rounded-full bg-[color:var(--surface-card)]">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-100",
               isPenalty
-                ? "bg-rose-300"
+                ? "bg-[color:var(--brand-soft)]"
                 : isBoosting
-                  ? "bg-violet-400"
-                  : "bg-sky-400",
+                  ? "bg-[color:var(--brand-primary)]"
+                  : "bg-[color:var(--brand-primary)]",
             )}
             style={{ width: `${(state.trackProgress / TRACK_LENGTH) * 100}%` }}
           />
@@ -150,11 +150,11 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
             const left = (gate.perfectAtProgress / TRACK_LENGTH) * 100;
             const tone =
               gate.resolved === "perfect"
-                ? "bg-emerald-500"
+                ? "bg-[color:var(--brand-primary)]"
                 : gate.resolved === "good"
-                  ? "bg-emerald-300"
+                  ? "bg-[color:var(--brand-soft)]"
                   : gate.resolved === "missed"
-                    ? "bg-rose-300"
+                    ? "bg-[color:var(--brand-soft)]"
                     : "bg-slate-400";
             return (
               <span
@@ -168,7 +168,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
             );
           })}
         </div>
-        <div className="mt-2 flex items-center justify-between text-[length:var(--text-eyebrow)] text-sky-900/80">
+        <div className="mt-2 flex items-center justify-between text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]/80">
           <span>
             {t(msg`完美 ${state.hits.perfect} · 稳点 ${state.hits.good} · 失误 ${state.hits.missed}`)}
           </span>
@@ -186,7 +186,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
         className={cn(
           "flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] py-4 text-[length:var(--text-base)] font-semibold transition-colors",
           isRacing
-            ? "bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg shadow-sky-200 hover:from-sky-600 hover:to-violet-600"
+            ? "bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-lg shadow-sky-200 hover:from-[color:var(--brand-primary)] hover:to-[color:var(--brand-primary)]"
             : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
         )}
       >
@@ -204,7 +204,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
           <button
             type="button"
             onClick={actions.start}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-sky-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-sky-600"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[color:var(--brand-primary)] px-4 py-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
           >
             <Play size={14} />
             {isEnded ? t(msg`再跑一圈`) : t(msg`出发（2 分钟内冲线）`)}
@@ -214,14 +214,14 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
         <button
           type="button"
           onClick={actions.abandon}
-          className="rounded-full border border-rose-200 bg-rose-50 py-1.5 text-[length:var(--text-caption)] font-medium text-rose-700"
+          className="rounded-full border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] py-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]"
         >
           {t(msg`弃赛`)}
         </button>
       )}
 
       {/* 赛道选择 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
         <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium">
           <span>{t(msg`选择赛道`)}</span>
           <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
@@ -245,8 +245,8 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
                   className={cn(
                     "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-left transition-colors",
                     active
-                      ? "border-sky-400 bg-sky-50"
-                      : "border-[color:var(--border-faint)] bg-white",
+                      ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
                     !unlocked && "opacity-50",
                     isRacing && "opacity-60",
                   )}
@@ -254,7 +254,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
                   <span
                     className={cn(
                       "flex h-7 w-7 items-center justify-center rounded-full text-[length:var(--text-caption)] font-medium",
-                      TRACK_BADGE_TONE[tr.badgeColor] ?? "bg-sky-100 text-sky-800",
+                      TRACK_BADGE_TONE[tr.badgeColor] ?? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
                     )}
                   >
                     {tr.totalGates}
@@ -263,7 +263,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
                     <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                       {tr.name}
                       {tr.isLimited ? (
-                        <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] text-violet-700">
+                        <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                           {t(msg`限时`)}
                         </span>
                       ) : null}
@@ -300,7 +300,7 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`赛道日志`)}</span>
           <button
@@ -324,8 +324,8 @@ export function SkyRallyGame({ variant = "fullscreen", onExit }: SkyRallyGamePro
                 key={entry.id}
                 className={cn(
                   "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
-                  entry.tone === "success" && "text-emerald-700",
-                  entry.tone === "warn" && "text-amber-700",
+                  entry.tone === "success" && "text-[color:var(--brand-primary)]",
+                  entry.tone === "warn" && "text-[color:var(--brand-primary)]",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
                 )}
               >
@@ -358,15 +358,15 @@ function SummaryCard({
         ? t(msg`时间到`)
         : t(msg`弃赛`);
   return (
-    <div className="rounded-[var(--radius-sm)] border border-sky-200 bg-sky-50 p-3 text-center">
-      <p className="text-[length:var(--text-caption)] font-medium text-sky-900">{title}</p>
-      <p className="mt-1 text-[length:var(--text-caption)] text-sky-900/80">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] p-3 text-center">
+      <p className="text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">{title}</p>
+      <p className="mt-1 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]/80">
         {t(
           msg`${track?.name ?? t(msg`赛道`)} · 圈速 ${lap} · 完美 ${state.hits.perfect} / 稳点 ${state.hits.good} / 失误 ${state.hits.missed}`,
         )}
       </p>
       {best !== undefined ? (
-        <p className="mt-1 text-[length:var(--text-eyebrow)] text-sky-900/70">
+        <p className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]/70">
           {t(msg`最佳圈速 ${formatTime(best)}`)}
         </p>
       ) : null}
@@ -374,7 +374,7 @@ function SummaryCard({
         <button
           type="button"
           onClick={onRestart}
-          className="rounded-full bg-sky-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-sky-600"
+          className="rounded-full bg-[color:var(--brand-primary)] px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
         >
           {t(msg`再跑一圈`)}
         </button>

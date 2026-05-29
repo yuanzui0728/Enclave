@@ -45,25 +45,25 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-3xl bg-[color:var(--surface-card)] shadow-xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+        <header className="flex items-center justify-between border-b border-[color:var(--border-subtle)] px-4 py-3">
           <h2 className="text-base font-semibold">📋 {t(msg`任务`)}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-2 py-1 text-sm text-stone-500 hover:bg-stone-100"
+            className="rounded-full px-2 py-1 text-sm text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"
           >
             {t(msg`关闭`)}
           </button>
         </header>
-        <div className="flex gap-1 border-b border-stone-100 px-4 py-2">
+        <div className="flex gap-1 border-b border-[color:var(--border-subtle)] px-4 py-2">
           <button
             type="button"
             onClick={() => setTab("daily")}
             className={`rounded-full px-3 py-1 text-xs ${
-              tab === "daily" ? "bg-emerald-600 text-white" : "bg-stone-100 text-stone-600"
+              tab === "daily" ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]" : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
             }`}
           >
             🌅 {t(msg`日常`)}
@@ -73,22 +73,22 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
             onClick={() => setTab("achievement")}
             className={`rounded-full px-3 py-1 text-xs ${
               tab === "achievement"
-                ? "bg-emerald-600 text-white"
-                : "bg-stone-100 text-stone-600"
+                ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
             }`}
           >
             🏅 {t(msg`成就`)}
           </button>
         </div>
         {errorMsg && (
-          <div className="bg-rose-50 px-4 py-2 text-xs text-rose-600">{errorMsg}</div>
+          <div className="bg-[color:var(--brand-soft)] px-4 py-2 text-xs text-[color:var(--brand-primary)]">{errorMsg}</div>
         )}
         <ul className="flex-1 overflow-y-auto px-2 py-2">
           {query.isLoading && (
-            <li className="px-3 py-3 text-xs text-stone-500">{t(msg`加载中…`)}</li>
+            <li className="px-3 py-3 text-xs text-[color:var(--text-muted)]">{t(msg`加载中…`)}</li>
           )}
           {items.length === 0 && !query.isLoading && (
-            <li className="px-3 py-3 text-xs text-stone-400">
+            <li className="px-3 py-3 text-xs text-[color:var(--text-dim)]">
               {t(msg`暂无任务`)}
             </li>
           )}
@@ -98,23 +98,23 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
             return (
               <li
                 key={q.id}
-                className="flex flex-col gap-1 border-b border-stone-100 px-2 py-2 last:border-b-0"
+                className="flex flex-col gap-1 border-b border-[color:var(--border-subtle)] px-2 py-2 last:border-b-0"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-sm font-medium">{q.nameZh}</span>
-                  <span className="text-xs text-stone-500">
+                  <span className="text-xs text-[color:var(--text-muted)]">
                     {q.progress} / {q.goal}
                   </span>
                 </div>
-                <span className="text-[length:var(--text-eyebrow)] text-stone-500">{q.descriptionZh}</span>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">{q.descriptionZh}</span>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
                   <div
-                    className={`h-full ${done ? "bg-emerald-500" : "bg-amber-400"} transition-all`}
+                    className={`h-full ${done ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--brand-primary)]"} transition-all`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[length:var(--text-eyebrow)]">
-                  <span className="text-stone-500">
+                  <span className="text-[color:var(--text-muted)]">
                     🪙{q.rewardCoins}
                     {q.rewardExperience > 0 && ` · ✨${q.rewardExperience}`}
                   </span>
@@ -124,10 +124,10 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
                     disabled={!done || q.claimed || claim.isPending}
                     className={`rounded-full px-3 py-1 text-[length:var(--text-eyebrow)] font-medium ${
                       q.claimed
-                        ? "bg-stone-100 text-stone-400"
+                        ? "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
                         : done
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-stone-100 text-stone-400"
+                          ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                          : "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]"
                     }`}
                   >
                     {q.claimed

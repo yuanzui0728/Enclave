@@ -50,23 +50,23 @@ export const RARITY_DISPLAY: Record<
 > = {
   common: {
     name: t(msg`普通`),
-    badgeClass: "bg-zinc-200 text-zinc-700",
-    ringClass: "ring-zinc-300",
+    badgeClass: "bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]",
+    ringClass: "ring-[color:var(--border-strong)]",
   },
   rare: {
     name: t(msg`稀有`),
-    badgeClass: "bg-blue-100 text-blue-700",
-    ringClass: "ring-blue-300",
+    badgeClass: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+    ringClass: "ring-[color:var(--border-brand)]",
   },
   epic: {
     name: t(msg`史诗`),
-    badgeClass: "bg-purple-100 text-purple-700",
-    ringClass: "ring-purple-400",
+    badgeClass: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+    ringClass: "ring-[color:var(--border-brand)]",
   },
   legend: {
     name: t(msg`传说`),
-    badgeClass: "bg-amber-100 text-amber-700",
-    ringClass: "ring-amber-400",
+    badgeClass: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+    ringClass: "ring-[color:var(--border-brand)]",
   },
 };
 
@@ -76,13 +76,13 @@ export const SURFACE_DISPLAY: Record<
 > = {
   concrete: {
     name: t(msg`水泥地`),
-    bgClass: "bg-zinc-200",
-    ringClass: "ring-zinc-400",
+    bgClass: "bg-[color:var(--surface-soft)]",
+    ringClass: "ring-[color:var(--border-strong)]",
   },
   grass: {
     name: t(msg`草坪`),
-    bgClass: "bg-emerald-200",
-    ringClass: "ring-emerald-400",
+    bgClass: "bg-[color:var(--brand-soft)]",
+    ringClass: "ring-[color:var(--border-brand)]",
   },
   asphalt: {
     name: t(msg`沥青`),
@@ -91,8 +91,8 @@ export const SURFACE_DISPLAY: Record<
   },
   vip: {
     name: t(msg`VIP 镀金`),
-    bgClass: "bg-gradient-to-br from-amber-200 to-yellow-400",
-    ringClass: "ring-amber-500",
+    bgClass: "bg-gradient-to-br from-[color:var(--brand-soft)] to-[color:var(--brand-primary)]",
+    ringClass: "ring-[color:var(--border-brand)]",
   },
 };
 

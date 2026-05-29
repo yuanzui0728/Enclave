@@ -107,7 +107,7 @@ function FarmPageInner() {
 
   if (stateQuery.isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-sm text-stone-500">
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-[color:var(--text-muted)]">
         {t(msg`正在准备隐界农场……`)}
       </div>
     );
@@ -115,9 +115,9 @@ function FarmPageInner() {
 
   if (stateQuery.error) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-sm text-rose-600">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-sm text-[color:var(--brand-primary)]">
         <span>{t(msg`农场加载失败`)}</span>
-        <span className="text-xs text-stone-500">
+        <span className="text-xs text-[color:var(--text-muted)]">
           {(stateQuery.error as Error).message}
         </span>
       </div>
@@ -150,7 +150,7 @@ function FarmPageInner() {
   return (
     <FarmSky>
       <div
-        className="mx-auto flex max-w-6xl flex-col gap-3 p-4 text-stone-800"
+        className="mx-auto flex max-w-6xl flex-col gap-3 p-4 text-[color:var(--text-primary)]"
         style={{ paddingTop: "max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))" }}
       >
         <header className="flex items-center justify-between">
@@ -163,7 +163,7 @@ function FarmPageInner() {
                   hash: customReturnTarget.hash,
                 })
               }
-              className="rounded-full px-2 py-1 text-xs text-stone-500 hover:bg-white/60"
+              className="rounded-full px-2 py-1 text-xs text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]/60"
             >
               ← {t(msg`返回`)}
             </button>
@@ -171,12 +171,12 @@ function FarmPageInner() {
             <Link
               to="/tabs/games"
               search={{ game: "yinjie-farm" }}
-              className="rounded-full px-2 py-1 text-xs text-stone-500 hover:bg-white/60"
+              className="rounded-full px-2 py-1 text-xs text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]/60"
             >
               ← {t(msg`返回`)}
             </Link>
           )}
-          <h1 className="flex-1 text-center text-lg font-semibold text-emerald-900">
+          <h1 className="flex-1 text-center text-lg font-semibold text-[color:var(--brand-primary)]">
             {t(msg`隐界农场`)}
           </h1>
           <button
@@ -187,7 +187,7 @@ function FarmPageInner() {
               setFarmSfxMuted(next);
             }}
             title={sfxMuted ? t(msg`点开音效`) : t(msg`关掉音效`)}
-            className="w-12 rounded-full px-2 py-1 text-base text-stone-500 hover:bg-white/60"
+            className="w-12 rounded-full px-2 py-1 text-base text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]/60"
           >
             {sfxMuted ? "🔇" : "🔊"}
           </button>
@@ -201,61 +201,61 @@ function FarmPageInner() {
             <button
               type="button"
               onClick={() => setSeedShopOpen(true)}
-              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-emerald-50/85"
+              className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-[color:var(--brand-soft)]/85"
             >
-              <div className="font-medium text-emerald-700">🛒 {t(msg`种子店`)}</div>
-              <div className="mt-0.5 text-stone-500">
+              <div className="font-medium text-[color:var(--brand-primary)]">🛒 {t(msg`种子店`)}</div>
+              <div className="mt-0.5 text-[color:var(--text-muted)]">
                 {t(msg`种子袋共`)} {seedBagTotal} {t(msg`包`)}
               </div>
             </button>
             <button
               type="button"
               onClick={() => setWarehouseOpen(true)}
-              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-amber-50/85"
+              className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-[color:var(--brand-soft)]/85"
             >
-              <div className="font-medium text-amber-700">🏠 {t(msg`仓库`)}</div>
-              <div className="mt-0.5 text-stone-500">
+              <div className="font-medium text-[color:var(--brand-primary)]">🏠 {t(msg`仓库`)}</div>
+              <div className="mt-0.5 text-[color:var(--text-muted)]">
                 {t(msg`存货共`)} {warehouseTotal} {t(msg`个`)}
               </div>
             </button>
             <button
               type="button"
               onClick={() => setLeaderboardOpen(true)}
-              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-rose-50/85"
+              className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-[color:var(--brand-soft)]/85"
             >
-              <div className="font-medium text-rose-700">🏆 {t(msg`排行榜`)}</div>
-              <div className="mt-0.5 text-stone-500">
+              <div className="font-medium text-[color:var(--brand-primary)]">🏆 {t(msg`排行榜`)}</div>
+              <div className="mt-0.5 text-[color:var(--text-muted)]">
                 {t(msg`和邻居比一比`)}
               </div>
             </button>
             <button
               type="button"
               onClick={() => setCheckinOpen(true)}
-              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-amber-50/85"
+              className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-[color:var(--brand-soft)]/85"
             >
-              <div className="font-medium text-amber-800">📅 {t(msg`每日签到`)}</div>
-              <div className="mt-0.5 text-stone-500">
+              <div className="font-medium text-[color:var(--brand-primary)]">📅 {t(msg`每日签到`)}</div>
+              <div className="mt-0.5 text-[color:var(--text-muted)]">
                 {t(msg`连签 7 天有大礼`)}
               </div>
             </button>
             <button
               type="button"
               onClick={() => setQuestsOpen(true)}
-              className="rounded-2xl border border-white/60 bg-white/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-sky-50/85"
+              className="rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/75 px-3 py-2 text-left text-xs shadow-md backdrop-blur-md transition hover:bg-[color:var(--brand-soft)]/85"
             >
-              <div className="font-medium text-sky-700">📋 {t(msg`任务`)}</div>
-              <div className="mt-0.5 text-stone-500">
+              <div className="font-medium text-[color:var(--brand-primary)]">📋 {t(msg`任务`)}</div>
+              <div className="mt-0.5 text-[color:var(--text-muted)]">
                 {t(msg`日常 + 成就`)}
               </div>
             </button>
             <DogHouse state={state} />
-            <p className="hidden rounded-2xl border border-white/60 bg-white/55 p-3 text-[length:var(--text-eyebrow)] leading-relaxed text-stone-600 shadow-sm backdrop-blur-md lg:block">
+            <p className="hidden rounded-2xl border border-[color:var(--border-faint)]/60 bg-[color:var(--surface-card)]/55 p-3 text-[length:var(--text-eyebrow)] leading-relaxed text-[color:var(--text-muted)] shadow-sm backdrop-blur-md lg:block">
               {t(msg`作物按真实小时数成熟。下线时世界角色仍在自己的田里忙活——回来时看到的状态是世界自治后的结果。`)}
             </p>
           </aside>
 
           <section className="flex flex-col gap-3 lg:order-2 lg:col-span-1">
-            <div className="rounded-2xl bg-white/70 p-2 shadow-sm backdrop-blur-sm">
+            <div className="rounded-2xl bg-[color:var(--surface-card)]/70 p-2 shadow-sm backdrop-blur-sm">
               <FarmIsoGrid
                 plots={state.plots}
                 selectedIndex={selectedPlotIndex}
@@ -279,7 +279,7 @@ function FarmPageInner() {
           </aside>
         </div>
 
-        <p className="text-center text-[10px] text-stone-400 lg:hidden">
+        <p className="text-center text-[10px] text-[color:var(--text-dim)] lg:hidden">
           {t(msg`作物按真实小时数成熟。下线时世界角色仍在自己的田里忙活。`)}
         </p>
       </div>
@@ -288,7 +288,7 @@ function FarmPageInner() {
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-emerald-700 px-4 py-2 text-sm text-white shadow-lg"
+          className="pointer-events-none fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-[color:var(--brand-primary)] px-4 py-2 text-sm text-[color:var(--text-on-brand)] shadow-lg"
           style={{
             bottom:
               "max(5rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)))",

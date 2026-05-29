@@ -83,7 +83,7 @@ export function FarmIsoTile({
           </span>
         )}
         {!plot.cropId && (
-          <span className="farm-iso-tile__caption text-stone-400">{t(msg`空地`)}</span>
+          <span className="farm-iso-tile__caption text-[color:var(--text-dim)]">{t(msg`空地`)}</span>
         )}
 
         <span className="farm-iso-tile__badges">
@@ -91,14 +91,14 @@ export function FarmIsoTile({
           {plot.bugs > 0 && <span title={t(msg`害虫`)}>🐛</span>}
           {plot.watered && !isRipe && <span title={t(msg`已浇水`)}>💧</span>}
           {plot.fertilized && !isRipe && (
-            <span title={t(msg`已施肥`)} className="text-amber-600">💩</span>
+            <span title={t(msg`已施肥`)} className="text-[color:var(--brand-primary)]">💩</span>
           )}
           {plot.pesticideUntilMs != null &&
             nowMs < plot.pesticideUntilMs && (
-              <span title={t(msg`农药生效中`)} className="text-lime-600">🧴</span>
+              <span title={t(msg`农药生效中`)} className="text-[color:var(--brand-primary)]">🧴</span>
             )}
           {(plot.stolenBy?.length ?? 0) > 0 && (
-            <span title={t(msg`被偷过`)} className="text-rose-500">⚠️</span>
+            <span title={t(msg`被偷过`)} className="text-[color:var(--brand-primary)]">⚠️</span>
           )}
         </span>
 

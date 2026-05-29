@@ -8,9 +8,9 @@ export function FarmSky({ children }: FarmSkyProps) {
   return (
     <div className="farm-sky relative h-full overflow-hidden">
       <div aria-hidden className="farm-sky__bg pointer-events-none absolute inset-0">
-        <div className="farm-sky__gradient absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-50" />
-        <div className="farm-sky__grass absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-b from-emerald-50 via-emerald-100 to-emerald-200" />
-        <div className="farm-sky__hill absolute inset-x-0 bottom-0 h-24 bg-emerald-300/40" style={{ clipPath: "ellipse(70% 70% at 50% 100%)" }} />
+        <div className="farm-sky__gradient absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[color:var(--brand-soft)] via-[color:var(--brand-soft)] to-[color:var(--brand-soft)]" />
+        <div className="farm-sky__grass absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-b from-[color:var(--brand-soft)] via-[color:var(--brand-soft)] to-[color:var(--brand-soft)]" />
+        <div className="farm-sky__hill absolute inset-x-0 bottom-0 h-24 bg-[color:var(--brand-soft)]/40" style={{ clipPath: "ellipse(70% 70% at 50% 100%)" }} />
 
         <span className="farm-sky__sun absolute right-6 top-6 select-none text-4xl drop-shadow-md">
           ☀️

@@ -55,7 +55,7 @@ export function PixelArenaGame({
   const isEnded = state.status === "ended";
   const containerCls =
     variant === "embedded"
-      ? "rounded-[var(--radius-md)] bg-white"
+      ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]"
       : "min-h-screen bg-[color:var(--bg-app)]";
   const player = getFighter(state.playerFighterId);
   const npc = getFighter(state.npcFighterId);
@@ -71,16 +71,16 @@ export function PixelArenaGame({
           <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`像素擂台`)}
           </span>
-          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-violet-800">
+          <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
             {t(msg`5 回合制`)}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-violet-800">
+          <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
             <Award size={12} />
             {t(msg`连胜 ${state.winStreak}`)}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
             <Sparkles size={12} />
             ×{state.skinTokens}
           </span>
@@ -117,22 +117,22 @@ export function PixelArenaGame({
 
       {/* 最近回合 / 状态 */}
       {lastRound ? (
-        <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-center text-[length:var(--text-caption)]">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-center text-[length:var(--text-caption)]">
           {t(
             msg`第 ${lastRound.round} 回合：你${moveLabel(lastRound.playerMove)} / 对手${moveLabel(lastRound.npcMove)}`,
           )}
           {lastRound.outcome.summary === "p_hits" ? (
-            <span className="ml-2 text-emerald-700">
+            <span className="ml-2 text-[color:var(--brand-primary)]">
               {t(msg`命中 -${lastRound.outcome.npcDamage}`)}
             </span>
           ) : null}
           {lastRound.outcome.summary === "n_hits" ? (
-            <span className="ml-2 text-rose-700">
+            <span className="ml-2 text-[color:var(--brand-primary)]">
               {t(msg`受击 -${lastRound.outcome.playerDamage}`)}
             </span>
           ) : null}
           {lastRound.outcome.summary === "trade" ? (
-            <span className="ml-2 text-amber-700">
+            <span className="ml-2 text-[color:var(--brand-primary)]">
               {t(
                 msg`互伤：你 -${lastRound.outcome.playerDamage} / 对手 -${lastRound.outcome.npcDamage}`,
               )}
@@ -182,19 +182,19 @@ export function PixelArenaGame({
         <button
           type="button"
           onClick={actions.start}
-          className="flex items-center justify-center gap-1.5 rounded-full bg-violet-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-violet-600"
+          className="flex items-center justify-center gap-1.5 rounded-full bg-[color:var(--brand-primary)] px-4 py-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
         >
           <Play size={14} />
           {isEnded ? t(msg`再战一场`) : t(msg`开始对打`)}
         </button>
       ) : (
-        <div className="rounded-[var(--radius-sm)] bg-violet-50 px-3 py-1.5 text-center text-[length:var(--text-caption)] text-violet-900">
+        <div className="rounded-[var(--radius-sm)] bg-[color:var(--brand-soft)] px-3 py-1.5 text-center text-[length:var(--text-caption)] text-[color:var(--brand-primary)]">
           {t(msg`第 ${state.round} / ${ROUND_COUNT} 回合`)}
         </div>
       )}
 
       {/* 选角 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
         <div className="mb-2 text-[length:var(--text-caption)] font-medium">{t(msg`选择我的角色`)}</div>
         <ul className="grid grid-cols-2 gap-2">
           {FIGHTERS.map((f) => {
@@ -208,8 +208,8 @@ export function PixelArenaGame({
                   className={cn(
                     "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-2 text-left text-[length:var(--text-caption)]",
                     active
-                      ? "border-violet-400 bg-violet-50"
-                      : "border-[color:var(--border-faint)] bg-white",
+                      ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
                     isFighting && "opacity-60",
                   )}
                 >
@@ -233,7 +233,7 @@ export function PixelArenaGame({
       </div>
 
       {/* 战绩 */}
-      <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3 text-center text-[length:var(--text-caption)]">
+      <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3 text-center text-[length:var(--text-caption)]">
         <Stat label={t(msg`总胜场`)} value={state.totalWins} />
         <Stat label={t(msg`最佳连胜`)} value={state.bestStreak} />
         <Stat label={t(msg`连胜章`)} value={state.badge} />
@@ -241,15 +241,15 @@ export function PixelArenaGame({
 
       {/* 结算 */}
       {isEnded ? (
-        <div className="rounded-[var(--radius-sm)] border border-violet-200 bg-violet-50 p-3 text-center">
-          <p className="text-[length:var(--text-caption)] font-medium text-violet-900">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] p-3 text-center">
+          <p className="text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
             {state.playerHp > state.npcHp
               ? t(msg`赢下这场！`)
               : state.playerHp < state.npcHp
                 ? t(msg`这场让对手压制了。`)
                 : t(msg`平局，下次见胜负。`)}
           </p>
-          <p className="mt-1 text-[length:var(--text-caption)] text-violet-900/80">
+          <p className="mt-1 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]/80">
             {t(
               msg`HP 残：你 ${state.playerHp} / 对手 ${state.npcHp} · 当前连胜 ${state.winStreak}`,
             )}
@@ -258,7 +258,7 @@ export function PixelArenaGame({
             <button
               type="button"
               onClick={actions.start}
-              className="rounded-full bg-violet-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-violet-600"
+              className="rounded-full bg-[color:var(--brand-primary)] px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
             >
               {t(msg`再战一场`)}
             </button>
@@ -274,7 +274,7 @@ export function PixelArenaGame({
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`擂台日志`)}</span>
           <button
@@ -297,8 +297,8 @@ export function PixelArenaGame({
                 key={entry.id}
                 className={cn(
                   "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
-                  entry.tone === "success" && "text-emerald-700",
-                  entry.tone === "warn" && "text-rose-700",
+                  entry.tone === "success" && "text-[color:var(--brand-primary)]",
+                  entry.tone === "warn" && "text-[color:var(--brand-primary)]",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
                 )}
               >
@@ -329,8 +329,8 @@ function FighterCard({
   if (!fighter) return null;
   const toneCls =
     tone === "violet"
-      ? "border-violet-200 bg-violet-50"
-      : "border-rose-200 bg-rose-50";
+      ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]"
+      : "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]";
   return (
     <div className={cn("rounded-[var(--radius-sm)] border p-3", toneCls)}>
       <div
@@ -352,13 +352,13 @@ function FighterCard({
       <div className="mt-2 flex items-center gap-1">
         <Heart
           size={11}
-          className={tone === "violet" ? "text-violet-500" : "text-rose-500"}
+          className={tone === "violet" ? "text-[color:var(--brand-primary)]" : "text-[color:var(--brand-primary)]"}
         />
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--surface-card)]">
           <div
             className={cn(
               "h-full rounded-full",
-              tone === "violet" ? "bg-violet-400" : "bg-rose-400",
+              tone === "violet" ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--brand-primary)]",
             )}
             style={{ width: `${pct}%` }}
           />
@@ -383,16 +383,16 @@ function ActionButton({
 }) {
   const toneCls =
     tone === "rose"
-      ? "bg-rose-500 hover:bg-rose-600"
+      ? "bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]"
       : tone === "sky"
-        ? "bg-sky-500 hover:bg-sky-600"
-        : "bg-violet-500 hover:bg-violet-600";
+        ? "bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]"
+        : "bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]";
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] py-3 text-white shadow-md",
+        "flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] py-3 text-[color:var(--text-on-brand)] shadow-md",
         toneCls,
       )}
     >
