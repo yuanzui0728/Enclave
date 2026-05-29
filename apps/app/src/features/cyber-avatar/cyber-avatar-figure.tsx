@@ -34,8 +34,12 @@ export function CyberAvatarFigure({
           <stop offset="55%" stopColor="var(--brand-secondary)" stopOpacity="0.32" />
           <stop offset="100%" stopColor="var(--brand-secondary)" stopOpacity="0" />
         </radialGradient>
+        {/* 身形渐变全程走紫：顶端用 secondary（亮紫），中段 primary，底部
+            secondary 淡出。绝不用 --brand-accent —— 夜间 accent 是金色，会让
+            头/上身整片镶金，失去「数字镜像」的紫调通透感（accent 的「点一下」
+            只留给 MoteField 的数据微粒）。 */}
         <linearGradient id="yjCyberBodyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--brand-accent)" stopOpacity="0.95" />
+          <stop offset="0%" stopColor="var(--brand-secondary)" stopOpacity="0.95" />
           <stop offset="45%" stopColor="var(--brand-primary)" stopOpacity="0.9" />
           <stop offset="100%" stopColor="var(--brand-secondary)" stopOpacity="0.55" />
         </linearGradient>
