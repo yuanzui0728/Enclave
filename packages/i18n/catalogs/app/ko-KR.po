@@ -668,7 +668,7 @@ msgstr "Enter로 보내기"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1192
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/features/world/world-page.tsx:467
+#: apps/app/src/features/world/world-page.tsx:471
 #: apps/app/src/routes/channels-page.tsx:5717
 #: apps/app/src/routes/discover-page.tsx:1335
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
@@ -1217,7 +1217,7 @@ msgstr "음성 생성에 실패했습니다. 잠시 후 다시 시도해 주세�
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:709
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:810
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:115
-#: apps/app/src/routes/channel-history-page.tsx:93
+#: apps/app/src/routes/channel-history-page.tsx:94
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
 #: apps/app/src/routes/discover-feed-page.tsx:1457
@@ -2640,7 +2640,7 @@ msgstr "노트 뷰어"
 #: apps/app/src/features/notes/note-ai-sheet.tsx:348
 #: apps/app/src/features/search/mobile-search-workspace.tsx:219
 #: apps/app/src/routes/channel-author-page.tsx:485
-#: apps/app/src/routes/channel-history-page.tsx:70
+#: apps/app/src/routes/channel-history-page.tsx:71
 #: apps/app/src/routes/channels-page.tsx:2523
 #: apps/app/src/routes/character-detail-page.tsx:386
 #: apps/app/src/routes/create-group-page.tsx:489
@@ -2805,6 +2805,7 @@ msgstr "팝업 닫기"
 #: apps/app/src/features/contacts/management/contacts-management-modal.tsx:305
 #: apps/app/src/features/contacts/management/contacts-management-modal.tsx:332
 #: apps/app/src/features/contacts/voice-picker.tsx:285
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:74
 #: apps/app/src/features/desktop/chat/desktop-chat-confirm-dialog.tsx:228
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2788
 #: apps/app/src/features/desktop/chat/desktop-chat-history-dialog.tsx:135
@@ -3228,7 +3229,7 @@ msgstr "도구 공유"
 #: apps/app/src/routes/discover-feed-page.tsx:2423
 #: apps/app/src/routes/discover-feed-page.tsx:2478
 #: apps/app/src/routes/discover-feed-page.tsx:2997
-#: apps/app/src/routes/discover-scene-page.tsx:685
+#: apps/app/src/routes/discover-scene-page.tsx:693
 #: apps/app/src/routes/friend-moments-page.tsx:967
 #: apps/app/src/routes/friend-requests-page.tsx:290
 #: apps/app/src/routes/friend-requests-page.tsx:502
@@ -4321,7 +4322,7 @@ msgstr "영상 통화는 아직 지원되지 않습니다"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:10
 #: apps/app/src/routes/discover-page.tsx:88
-#: apps/app/src/routes/discover-scene-page.tsx:57
+#: apps/app/src/routes/discover-scene-page.tsx:58
 msgid "咖啡馆"
 msgstr "카페"
 
@@ -4331,7 +4332,7 @@ msgstr "창가에는 따뜻한 커피와 낮게 흐르는 재즈가 있습니다
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:15
 #: apps/app/src/routes/discover-page.tsx:90
-#: apps/app/src/routes/discover-scene-page.tsx:59
+#: apps/app/src/routes/discover-scene-page.tsx:60
 msgid "图书馆"
 msgstr "도서관"
 
@@ -4341,7 +4342,7 @@ msgstr "조용한 독서 구역에서는 책장 넘기는 소리가 말소리보
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:20
 #: apps/app/src/routes/discover-page.tsx:91
-#: apps/app/src/routes/discover-scene-page.tsx:60
+#: apps/app/src/routes/discover-scene-page.tsx:61
 msgid "公园"
 msgstr "공원"
 
@@ -4351,7 +4352,7 @@ msgstr "나무 그늘, 벤치, 그리고 느려진 저녁 바람."
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:25
 #: apps/app/src/routes/discover-page.tsx:89
-#: apps/app/src/routes/discover-scene-page.tsx:58
+#: apps/app/src/routes/discover-scene-page.tsx:59
 msgid "健身房"
 msgstr "헬스장"
 
@@ -7308,8 +7309,8 @@ msgstr "닉네임: {0}"
 #: apps/app/src/routes/discover-encounter-page.tsx:430
 #: apps/app/src/routes/discover-page.tsx:443
 #: apps/app/src/routes/discover-page.tsx:965
-#: apps/app/src/routes/discover-scene-page.tsx:250
-#: apps/app/src/routes/discover-scene-page.tsx:521
+#: apps/app/src/routes/discover-scene-page.tsx:251
+#: apps/app/src/routes/discover-scene-page.tsx:529
 #: apps/app/src/routes/world-characters-page.tsx:338
 #: apps/app/src/routes/world-characters-page.tsx:496
 msgid "世界角色"
@@ -8122,165 +8123,67 @@ msgstr "복제 시작"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-figure.tsx:28
 #: apps/app/src/features/world/world-page.tsx:129
-#: apps/app/src/routes/cyber-avatar-page.tsx:139
-#: apps/app/src/routes/cyber-avatar-page.tsx:142
+#: apps/app/src/routes/cyber-avatar-page.tsx:125
+#: apps/app/src/routes/cyber-avatar-page.tsx:128
 #: apps/app/src/routes/discover-page.tsx:175
 msgid "赛博分身"
 msgstr "사이버 아바타"
 
-#. placeholder {0}: profile.signalCount
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:87
-msgid "已分析 {0} 条行为信号"
-msgstr "{0}개의 행동 신호 분석 완료"
-
-#. placeholder {0}: profile.pendingSignalCount
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:89
-msgid "还有 {0} 条待分析"
-msgstr "{0}개 분석 대기 중"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:102
-#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
-#: apps/app/src/i18n/static-dom-seed.ts:40
-#: apps/app/src/routes/channels-page.tsx:2701
-#: apps/app/src/routes/desktop-mobile-page.tsx:1198
-#: apps/app/src/routes/desktop-mobile-page.tsx:1263
-#: apps/app/src/routes/desktop-mobile-page.tsx:1375
-msgid "刷新"
-msgstr "새로고침"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:114
-#: apps/app/src/routes/cyber-avatar-page.tsx:235
-msgid "还没有新的互动可以更新，多去世界里逛逛再来。"
-msgstr "아직 업데이트할 새 인터랙션이 없어요. 세계를 더 탐험하고 다시 확인해 보세요."
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:124
-msgid "刷新失败，请稍后再试。"
-msgstr "새로 고침에 실패했습니다. 잠시 후 다시 시도해 주세요."
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:130
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
-#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
-#: apps/app/src/i18n/static-dom-seed.ts:163
-#: apps/app/src/i18n/static-dom-seed.ts:899
-#: apps/app/src/routes/character-detail-page.tsx:420
-#: apps/app/src/routes/live-companion-page.tsx:379
-msgid "当前状态"
-msgstr "현재 상태"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:131
-msgid "心情"
-msgstr "기분"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:132
-msgid "精力"
-msgstr "에너지"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:133
-msgid "专注"
-msgstr "집중"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:134
-msgid "当前话题"
-msgstr "현재 주제"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:135
-msgid "未了的事"
-msgstr "미완의 일"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:141
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:179
-msgid "稳定内核"
-msgstr "안정적 핵심"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:145
-msgid "身份速写"
-msgstr "정체성 스케치"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:153
-msgid "沟通风格"
-msgstr "소통 방식"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:154
-msgid "决策风格"
-msgstr "의사결정 방식"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:155
-msgid "偏好"
-msgstr "선호"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:156
-msgid "社交姿态"
-msgstr "사교 자세"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
-#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-msgid "近期动向"
-msgstr "최근 동향"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:163
-msgid "反复出现"
-msgstr "반복 패턴"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:164
-msgid "最近目标"
-msgstr "최근 목표"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:169
-msgid "了解程度"
-msgstr "이해 수준"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:171
-msgid "实时状态"
-msgstr "실시간 상태"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:175
-msgid "近期状态"
-msgstr "최근 상태"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:184
-msgid "数据来源"
-msgstr "데이터 출처"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:204
-msgid "正在生成结论…"
-msgstr "인사이트 생성 중…"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
-msgid "重新生成结论"
-msgstr "인사이트 재생성"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
-msgid "生成结论报告"
-msgstr "인사이트 리포트 생성"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:234
-msgid "性格速写"
-msgstr "성격 스케치"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:240
-msgid "优势"
-msgstr "강점"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:241
-msgid "盲点"
-msgstr "맹점"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:243
-msgid "行为模式"
-msgstr "행동 패턴"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:247
-msgid "社交风格"
-msgstr "소셜 스타일"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:253
-msgid "建议"
-msgstr "제안"
-
 #: apps/app/src/features/cyber-avatar/cyber-avatar-portrait.tsx:46
 msgid "赛博分身立绘"
 msgstr "사이버 아바타 일러스트"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:62
+msgid "关闭结论报告"
+msgstr "결론 리포트 닫기"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:70
+msgid "结论报告"
+msgstr "결론 리포트"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:89
+msgid "数据还不够，先去世界里多聊聊、发发动态，再回来生成专属报告。"
+msgstr "아직 데이터가 충분하지 않아요. 월드에서 더 대화하고 글을 올린 뒤 다시 와서 리포트를 생성하세요."
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:107
+msgid "正在生成结论…"
+msgstr "인사이트 생성 중…"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:112
+msgid "重新生成结论"
+msgstr "인사이트 재생성"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:112
+msgid "生成结论报告"
+msgstr "인사이트 리포트 생성"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:138
+msgid "性格速写"
+msgstr "성격 스케치"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:144
+msgid "优势"
+msgstr "강점"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:145
+msgid "盲点"
+msgstr "맹점"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:147
+msgid "行为模式"
+msgstr "행동 패턴"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:151
+msgid "社交风格"
+msgstr "소셜 스타일"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:157
+msgid "建议"
+msgstr "제안"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:166
+msgid "生成一份基于你全部互动的自我画像报告。"
+msgstr "모든 상호작용을 바탕으로 한 자기 분석 리포트를 생성합니다."
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:91
 msgid "我最近在纠结什么？"
@@ -8546,7 +8449,7 @@ msgid "图集"
 msgstr "사진 갤러리"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3121
-#: apps/app/src/features/world/world-page.tsx:391
+#: apps/app/src/features/world/world-page.tsx:393
 #: apps/app/src/i18n/static-dom-seed.ts:1051
 #: apps/app/src/routes/channel-author-page.tsx:415
 #: apps/app/src/routes/channel-author-page.tsx:1070
@@ -9382,7 +9285,7 @@ msgstr "통화 작업 메뉴"
 #: apps/app/src/features/desktop/contacts/desktop-contacts-groups-pane.tsx:343
 #: apps/app/src/features/shell/desktop-nav-matching.ts:124
 #: apps/app/src/features/shell/desktop-nav-matching.ts:125
-#: apps/app/src/features/world/world-page.tsx:403
+#: apps/app/src/features/world/world-page.tsx:407
 #: apps/app/src/routes/games-page.tsx:757
 #: apps/app/src/routes/games-page.tsx:771
 #: apps/app/src/routes/games-page.tsx:788
@@ -10232,6 +10135,15 @@ msgstr "재생 중"
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:472
 msgid "结束通话失败，请稍后再试。"
 msgstr "통화 종료에 실패했습니다. 잠시 후 다시 시도하세요."
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
+#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
+#: apps/app/src/i18n/static-dom-seed.ts:163
+#: apps/app/src/i18n/static-dom-seed.ts:899
+#: apps/app/src/routes/character-detail-page.tsx:420
+#: apps/app/src/routes/live-companion-page.tsx:379
+msgid "当前状态"
+msgstr "현재 상태"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:525
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:450
@@ -12014,6 +11926,16 @@ msgstr "세계 공개 피드"
 msgid "这里不只看朋友，世界主人和居民的公开发言都会进入这条流。"
 msgstr "여기는 친구뿐 아니라 세계 주인과 주민의 공개 게시물도 들어옵니다."
 
+#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
+#: apps/app/src/i18n/static-dom-seed.ts:40
+#: apps/app/src/routes/channels-page.tsx:2701
+#: apps/app/src/routes/desktop-mobile-page.tsx:1198
+#: apps/app/src/routes/desktop-mobile-page.tsx:1263
+#: apps/app/src/routes/desktop-mobile-page.tsx:1375
+msgid "刷新"
+msgstr "새로고침"
+
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:65
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:76
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1876
@@ -13552,7 +13474,7 @@ msgstr "매일 체크인"
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:81
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:80
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:88
-#: apps/app/src/features/world/world-page.tsx:605
+#: apps/app/src/features/world/world-page.tsx:615
 #: apps/app/src/routes/profile-feed-page.tsx:437
 #: apps/app/src/routes/wallet-transactions-page.tsx:162
 msgid "加载中…"
@@ -13987,6 +13909,10 @@ msgstr "훔치기 가능"
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:225
 msgid "点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。"
 msgstr "성숙한(금색 테두리) 밭 칸을 누르면 한 몫을 훔칠 수 있습니다. 하루 최대 10번이며, 상대방의 호감도가 떨어집니다."
+
+#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
+msgid "近期动向"
+msgstr "최근 동향"
 
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:257
 msgid "顺走"
@@ -15344,17 +15270,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "본진을 지키고 적 탱크 20대를 격파하라."
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "2P"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "픽셀"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "액션"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "2P"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -17597,7 +17523,7 @@ msgid "偏创作、分发、沉淀和内容协同。"
 msgstr "제작, 배포, 축적, 콘텐츠 협업에 적합합니다."
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:102
-#: apps/app/src/features/world/world-page.tsx:396
+#: apps/app/src/features/world/world-page.tsx:399
 #: apps/app/src/i18n/static-dom-seed.ts:150
 msgid "生活"
 msgstr "생활"
@@ -20166,7 +20092,7 @@ msgstr "아바타 방문"
 
 #: apps/app/src/features/world/world-page.tsx:120
 #: apps/app/src/routes/discover-page.tsx:189
-#: apps/app/src/routes/discover-scene-page.tsx:422
+#: apps/app/src/routes/discover-scene-page.tsx:423
 msgid "场景相遇"
 msgstr "장소 만남"
 
@@ -20300,64 +20226,64 @@ msgstr "프로필"
 msgid "探索"
 msgstr "탐색"
 
-#: apps/app/src/features/world/world-page.tsx:386
+#: apps/app/src/features/world/world-page.tsx:387
 msgid "相遇"
 msgstr "만남"
 
-#: apps/app/src/features/world/world-page.tsx:460
-#: apps/app/src/features/world/world-page.tsx:461
+#: apps/app/src/features/world/world-page.tsx:464
+#: apps/app/src/features/world/world-page.tsx:465
 msgid "和我说点什么…"
 msgstr "말 걸어보세요…"
 
-#: apps/app/src/features/world/world-page.tsx:508
+#: apps/app/src/features/world/world-page.tsx:518
 msgid "世界此刻"
 msgstr "지금 세계는"
 
-#: apps/app/src/features/world/world-page.tsx:600
+#: apps/app/src/features/world/world-page.tsx:610
 msgid "守护中"
 msgstr "수호 중"
 
-#: apps/app/src/features/world/world-page.tsx:602
+#: apps/app/src/features/world/world-page.tsx:612
 msgid "成形中"
 msgstr "형성 중"
 
-#: apps/app/src/features/world/world-page.tsx:604
+#: apps/app/src/features/world/world-page.tsx:614
 msgid "待唤醒"
 msgstr "활성화 대기"
 
-#: apps/app/src/features/world/world-page.tsx:622
+#: apps/app/src/features/world/world-page.tsx:632
 msgid "你的分身"
 msgstr "나의 아바타"
 
-#: apps/app/src/features/world/world-page.tsx:627
+#: apps/app/src/features/world/world-page.tsx:637
 msgid "心情 {mood}"
 msgstr "기분 {mood}"
 
-#: apps/app/src/features/world/world-page.tsx:628
+#: apps/app/src/features/world/world-page.tsx:638
 msgid "能量 {energy}"
 msgstr "에너지 {energy}"
 
-#: apps/app/src/features/world/world-page.tsx:653
+#: apps/app/src/features/world/world-page.tsx:663
 msgid "多在世界里互动，分身会越来越像你"
 msgstr "월드에서 더 많이 교류할수록 아바타가 점점 당신을 닮아갑니다"
 
-#: apps/app/src/features/world/world-page.tsx:664
+#: apps/app/src/features/world/world-page.tsx:674
 msgid "已分析 {signalCount} 条信号"
 msgstr "{signalCount}개 신호 분석 완료"
 
-#: apps/app/src/features/world/world-page.tsx:665
+#: apps/app/src/features/world/world-page.tsx:675
 msgid " · 待分析 {pendingCount} 条"
 msgstr " · {pendingCount}개 대기 중"
 
-#: apps/app/src/features/world/world-page.tsx:673
+#: apps/app/src/features/world/world-page.tsx:683
 msgid "当前关注"
 msgstr "현재 관심사"
 
-#: apps/app/src/features/world/world-page.tsx:689
+#: apps/app/src/features/world/world-page.tsx:699
 msgid "去看看你的赛博分身"
 msgstr "사이버 아바타 보러 가기"
 
-#: apps/app/src/features/world/world-page.tsx:689
+#: apps/app/src/features/world/world-page.tsx:699
 msgid "看完整画像与对话"
 msgstr "전체 프로필 및 대화 보기"
 
@@ -21020,7 +20946,7 @@ msgid "换一个地点，换一种相遇方式"
 msgstr "장소를 바꾸고 만나는 방식을 바꾸기"
 
 #: apps/app/src/i18n/static-dom-seed.ts:452
-#: apps/app/src/routes/discover-scene-page.tsx:424
+#: apps/app/src/routes/discover-scene-page.tsx:425
 msgid "选择一个地点"
 msgstr "장소 선택"
 
@@ -23241,7 +23167,7 @@ msgid "别走太急，过一会再去下一个地方。"
 msgstr "너무 서두르지 말고 잠시 후에 다음 장소로 이동하세요."
 
 #: apps/app/src/lib/error-translate.ts:224
-#: apps/app/src/routes/discover-scene-page.tsx:494
+#: apps/app/src/routes/discover-scene-page.tsx:495
 msgid "今天的场景相遇次数已经用完，明天再试试。"
 msgstr "오늘의 장면 만남 횟수를 모두 사용했습니다. 내일 다시 시도하세요."
 
@@ -24328,25 +24254,25 @@ msgstr "시청 기록"
 msgid "你看过的视频号"
 msgstr "시청한 채널"
 
-#: apps/app/src/routes/channel-history-page.tsx:79
+#: apps/app/src/routes/channel-history-page.tsx:80
 msgid "正在读取观看历史…"
 msgstr "시청 기록 불러오는 중…"
 
 #. placeholder {0}: describeRequestError(historyQuery.error)
-#: apps/app/src/routes/channel-history-page.tsx:84
+#: apps/app/src/routes/channel-history-page.tsx:85
 msgid "观看历史加载失败：{0}"
 msgstr "시청 기록 불러오기 실패: {0}"
 
-#: apps/app/src/routes/channel-history-page.tsx:99
+#: apps/app/src/routes/channel-history-page.tsx:100
 msgid "还没有观看记录"
 msgstr "아직 시청 기록이 없습니다"
 
-#: apps/app/src/routes/channel-history-page.tsx:100
+#: apps/app/src/routes/channel-history-page.tsx:101
 msgid "你在视频号看过的内容会出现在这里。"
 msgstr "채널에서 시청한 콘텐츠가 여기에 표시됩니다."
 
 #. placeholder {0}: formatWeChatCommentTime(lastViewedAt)
-#: apps/app/src/routes/channel-history-page.tsx:167
+#: apps/app/src/routes/channel-history-page.tsx:168
 msgid "{0} 看过"
 msgstr "{0} 시청함"
 
@@ -25699,96 +25625,72 @@ msgstr "결과 없음"
 msgid "没有找到联系人"
 msgstr "연락처를 찾을 수 없습니다"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:51
+#: apps/app/src/routes/cyber-avatar-page.tsx:50
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:57
 #: apps/app/src/routes/discover-encounter-page.tsx:52
-#: apps/app/src/routes/discover-scene-page.tsx:164
+#: apps/app/src/routes/discover-scene-page.tsx:165
 msgid "正在切换到桌面发现页"
 msgstr "데스크톱 발견 페이지로 전환 중"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:52
+#: apps/app/src/routes/cyber-avatar-page.tsx:51
 msgid "赛博分身当前只在移动端开放，先回到主发现页。"
 msgstr "사이버 분신은 현재 모바일에서만 이용할 수 있습니다 — 메인 탐색 페이지로 돌아갑니다."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:53
+#: apps/app/src/routes/cyber-avatar-page.tsx:52
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:59
 #: apps/app/src/routes/discover-encounter-page.tsx:54
-#: apps/app/src/routes/discover-scene-page.tsx:166
+#: apps/app/src/routes/discover-scene-page.tsx:167
 msgid "正在切换到桌面发现页..."
 msgstr "데스크톱 발견 페이지로 전환 중..."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:109
+#: apps/app/src/routes/cyber-avatar-page.tsx:95
 msgid "你的数字镜像，由你在世界里的全部互动塑造而成。"
 msgstr "세상에서 나눈 모든 교류로 만들어진 나의 디지털 분신."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:140
+#: apps/app/src/routes/cyber-avatar-page.tsx:126
 msgid "和你的数字镜像对话"
 msgstr "나의 디지털 분신과 대화하기"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:141
+#: apps/app/src/routes/cyber-avatar-page.tsx:127
 #: apps/app/src/routes/discover-page.tsx:176
 msgid "镜像"
 msgstr "미러"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:150
+#: apps/app/src/routes/cyber-avatar-page.tsx:136
 msgid "正在加载你的赛博分身…"
 msgstr "사이버 분신을 불러오는 중…"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:165
+#: apps/app/src/routes/cyber-avatar-page.tsx:152
 msgid "你的赛博分身还在成形中"
 msgstr "사이버 분신이 아직 만들어지는 중이에요"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:167
+#: apps/app/src/routes/cyber-avatar-page.tsx:154
 msgid "多去世界里互动吧——聊天、发动态、参与讨论，你的分身会越来越像你。"
 msgstr "채팅, 게시물, 토론 등 세상에서 더 많이 교류할수록 분신이 점점 나를 닮아갑니다."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:183
-msgid "正在重建…"
-msgstr "재생성 중…"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:186
-msgid "重建分身"
-msgstr "분신 재생성"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:198
-msgid "还没有足够的互动数据，先去世界里聊聊、发发动态吧。"
-msgstr "아직 상호작용 데이터가 부족해요 — 세상에서 채팅하고 게시물을 올려보세요."
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:212
-msgid "重建失败，请稍后再试。"
-msgstr "재생성에 실패했습니다. 나중에 다시 시도해 주세요."
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:220
-msgid "分身已更新，稍等片刻刷新查看。"
-msgstr "분신이 업데이트되었습니다 — 잠시 후 새로 고침하면 확인할 수 있습니다."
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:264
+#: apps/app/src/routes/cyber-avatar-page.tsx:184
 msgid "正在生成你的专属立绘…"
 msgstr "나만의 캐릭터 일러스트를 생성하는 중…"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:270
+#: apps/app/src/routes/cyber-avatar-page.tsx:190
 msgid "重新生成立绘"
 msgstr "캐릭터 일러스트 다시 생성"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:271
+#: apps/app/src/routes/cyber-avatar-page.tsx:191
 msgid "生成我的专属立绘"
 msgstr "내 캐릭터 일러스트 생성하기"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:284
+#: apps/app/src/routes/cyber-avatar-page.tsx:204
 msgid "立绘生成失败，请稍后再试。"
 msgstr "캐릭터 일러스트 생성에 실패했습니다. 나중에 다시 시도해 주세요."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:288
+#: apps/app/src/routes/cyber-avatar-page.tsx:208
 msgid "首张免费，重新生成将消耗少量钱包余额"
 msgstr "첫 번째는 무료 — 다시 생성하면 소량의 지갑 잔액이 사용됩니다"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:297
-msgid "分身画像"
-msgstr "분신 초상화"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:298
-msgid "与分身对话"
-msgstr "분신과 대화하기"
+#: apps/app/src/routes/cyber-avatar-page.tsx:221
+msgid "了解你自己 · 结论报告"
+msgstr "나 자신 알기 · 결론 리포트"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:516
 msgid "已打开图片。"
@@ -26967,7 +26869,7 @@ msgstr "{characterName}님을 연락처에 추가했습니다: {greeting}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:217
 #: apps/app/src/routes/discover-page.tsx:456
-#: apps/app/src/routes/discover-scene-page.tsx:269
+#: apps/app/src/routes/discover-scene-page.tsx:270
 msgid "已跳过这次相遇。"
 msgstr "이번 만남을 건너뛰었습니다."
 
@@ -27010,19 +26912,19 @@ msgstr "만난 이유: {0}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:475
 #: apps/app/src/routes/discover-page.tsx:1013
-#: apps/app/src/routes/discover-scene-page.tsx:546
+#: apps/app/src/routes/discover-scene-page.tsx:554
 msgid "跳过"
 msgstr "건너뛰기"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1031
-#: apps/app/src/routes/discover-scene-page.tsx:562
+#: apps/app/src/routes/discover-scene-page.tsx:570
 msgid "添加中..."
 msgstr "추가 중..."
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1032
-#: apps/app/src/routes/discover-scene-page.tsx:562
+#: apps/app/src/routes/discover-scene-page.tsx:570
 msgid "加为好友"
 msgstr "친구 추가"
 
@@ -27031,7 +26933,7 @@ msgid "重试摇一摇"
 msgstr "흔들기 재시도"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:550
-#: apps/app/src/routes/discover-scene-page.tsx:686
+#: apps/app/src/routes/discover-scene-page.tsx:694
 msgid "回发现页"
 msgstr "발견 페이지로 돌아가기"
 
@@ -27225,7 +27127,7 @@ msgid "场景相遇已写入好友申请列表。"
 msgstr "장소 만남이 친구 요청 목록에 추가되었습니다."
 
 #: apps/app/src/routes/discover-page.tsx:492
-#: apps/app/src/routes/discover-scene-page.tsx:337
+#: apps/app/src/routes/discover-scene-page.tsx:338
 msgid "对你产生了兴趣。"
 msgstr "당신에게 관심을 보였습니다."
 
@@ -27297,7 +27199,7 @@ msgstr "임시 후보를 먼저 만들고 남길지 결정하세요."
 
 #. placeholder {0}: t(scene.label)
 #: apps/app/src/routes/discover-page.tsx:1058
-#: apps/app/src/routes/discover-scene-page.tsx:616
+#: apps/app/src/routes/discover-scene-page.tsx:624
 msgid "正在前往{0}..."
 msgstr "{0}(으)로 이동 중..."
 
@@ -27359,93 +27261,93 @@ msgstr "소셜 및 동향"
 msgid "内容与服务"
 msgstr "콘텐츠와 서비스"
 
-#: apps/app/src/routes/discover-scene-page.tsx:61
+#: apps/app/src/routes/discover-scene-page.tsx:62
 msgid "教室"
 msgstr "교실"
 
-#: apps/app/src/routes/discover-scene-page.tsx:62
+#: apps/app/src/routes/discover-scene-page.tsx:63
 msgid "实验室"
 msgstr "실험실"
 
-#: apps/app/src/routes/discover-scene-page.tsx:63
+#: apps/app/src/routes/discover-scene-page.tsx:64
 msgid "办公室"
 msgstr "사무실"
 
-#: apps/app/src/routes/discover-scene-page.tsx:64
+#: apps/app/src/routes/discover-scene-page.tsx:65
 msgid "联合办公空间"
 msgstr "코워킹 스페이스"
 
-#: apps/app/src/routes/discover-scene-page.tsx:65
+#: apps/app/src/routes/discover-scene-page.tsx:66
 msgid "自习室"
 msgstr "자습실"
 
-#: apps/app/src/routes/discover-scene-page.tsx:66
+#: apps/app/src/routes/discover-scene-page.tsx:67
 msgid "餐厅"
 msgstr "레스토랑"
 
-#: apps/app/src/routes/discover-scene-page.tsx:67
+#: apps/app/src/routes/discover-scene-page.tsx:68
 msgid "博物馆"
 msgstr "박물관"
 
-#: apps/app/src/routes/discover-scene-page.tsx:68
+#: apps/app/src/routes/discover-scene-page.tsx:69
 msgid "书店"
 msgstr "서점"
 
-#: apps/app/src/routes/discover-scene-page.tsx:69
+#: apps/app/src/routes/discover-scene-page.tsx:70
 msgid "旅途"
 msgstr "여행 중"
 
-#: apps/app/src/routes/discover-scene-page.tsx:70
+#: apps/app/src/routes/discover-scene-page.tsx:71
 msgid "夜晚的街道"
 msgstr "야간 거리"
 
-#: apps/app/src/routes/discover-scene-page.tsx:71
+#: apps/app/src/routes/discover-scene-page.tsx:72
 msgid "剧场"
 msgstr "극장"
 
-#: apps/app/src/routes/discover-scene-page.tsx:72
+#: apps/app/src/routes/discover-scene-page.tsx:73
 msgid "居家场景"
 msgstr "집"
 
-#: apps/app/src/routes/discover-scene-page.tsx:165
+#: apps/app/src/routes/discover-scene-page.tsx:166
 msgid "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
 msgstr "데스크탑 장면 만남 입구가 데스크탑 탐색으로 통합됐어요. 먼저 메인 탐색 페이지로 돌아가세요."
 
-#: apps/app/src/routes/discover-scene-page.tsx:253
+#: apps/app/src/routes/discover-scene-page.tsx:254
 msgid "{characterName} 已加入通讯录"
 msgstr "{characterName} 님을 연락처에 추가했어요"
 
-#: apps/app/src/routes/discover-scene-page.tsx:332
+#: apps/app/src/routes/discover-scene-page.tsx:333
 msgid "{sceneLabel}里和别处都暂时没有新的相遇了。"
 msgstr "{sceneLabel}이나 다른 곳에도 지금은 새로운 만남이 없습니다."
 
-#: apps/app/src/routes/discover-scene-page.tsx:423
+#: apps/app/src/routes/discover-scene-page.tsx:424
 msgid "在熟悉的场景里偶遇世界居民"
 msgstr "익숙한 장소에서 세계의 주민과 우연히 마주치세요."
 
-#: apps/app/src/routes/discover-scene-page.tsx:428
+#: apps/app/src/routes/discover-scene-page.tsx:429
 msgid "今日已偶遇 {encounterCount} 人"
 msgstr "오늘 {encounterCount}명과 만났습니다"
 
-#: apps/app/src/routes/discover-scene-page.tsx:429
+#: apps/app/src/routes/discover-scene-page.tsx:430
 msgid "挑一个常去的地方，附近的居民会主动打招呼。"
 msgstr "자주 가는 장소를 골라보세요. 근처 주민이 먼저 말을 걸어옵니다."
 
-#: apps/app/src/routes/discover-scene-page.tsx:501
+#: apps/app/src/routes/discover-scene-page.tsx:502
 msgid "稍等 {cooldownRemainSec} 秒再出发吧。"
 msgstr "{cooldownRemainSec}초 뒤에 다시 출발하세요."
 
 #. placeholder {0}: pendingEncounter.sceneLabel
-#: apps/app/src/routes/discover-scene-page.tsx:525
+#: apps/app/src/routes/discover-scene-page.tsx:533
 msgid "不在{0}，但顺路碰到了你"
 msgstr "{0}에는 없었지만 가는 길에 당신과 마주쳤어요"
 
 #. placeholder {0}: pendingEncounter.sceneLabel
-#: apps/app/src/routes/discover-scene-page.tsx:526
+#: apps/app/src/routes/discover-scene-page.tsx:534
 msgid "在{0}里注意到了你"
 msgstr "{0}에서 당신을 발견했어요"
 
-#: apps/app/src/routes/discover-scene-page.tsx:676
+#: apps/app/src/routes/discover-scene-page.tsx:684
 msgid "重试场景相遇"
 msgstr "장면 만남 재시도"
 

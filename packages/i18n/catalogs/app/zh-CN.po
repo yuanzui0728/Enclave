@@ -668,7 +668,7 @@ msgstr "Enter 发送"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1192
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/features/world/world-page.tsx:467
+#: apps/app/src/features/world/world-page.tsx:471
 #: apps/app/src/routes/channels-page.tsx:5717
 #: apps/app/src/routes/discover-page.tsx:1335
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
@@ -1217,7 +1217,7 @@ msgstr "生成语音失败，请稍后再试。"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:709
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:810
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:115
-#: apps/app/src/routes/channel-history-page.tsx:93
+#: apps/app/src/routes/channel-history-page.tsx:94
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
 #: apps/app/src/routes/discover-feed-page.tsx:1457
@@ -2640,7 +2640,7 @@ msgstr "笔记查看器"
 #: apps/app/src/features/notes/note-ai-sheet.tsx:348
 #: apps/app/src/features/search/mobile-search-workspace.tsx:219
 #: apps/app/src/routes/channel-author-page.tsx:485
-#: apps/app/src/routes/channel-history-page.tsx:70
+#: apps/app/src/routes/channel-history-page.tsx:71
 #: apps/app/src/routes/channels-page.tsx:2523
 #: apps/app/src/routes/character-detail-page.tsx:386
 #: apps/app/src/routes/create-group-page.tsx:489
@@ -2805,6 +2805,7 @@ msgstr "关闭弹窗"
 #: apps/app/src/features/contacts/management/contacts-management-modal.tsx:305
 #: apps/app/src/features/contacts/management/contacts-management-modal.tsx:332
 #: apps/app/src/features/contacts/voice-picker.tsx:285
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:74
 #: apps/app/src/features/desktop/chat/desktop-chat-confirm-dialog.tsx:228
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2788
 #: apps/app/src/features/desktop/chat/desktop-chat-history-dialog.tsx:135
@@ -3228,7 +3229,7 @@ msgstr "分享工具"
 #: apps/app/src/routes/discover-feed-page.tsx:2423
 #: apps/app/src/routes/discover-feed-page.tsx:2478
 #: apps/app/src/routes/discover-feed-page.tsx:2997
-#: apps/app/src/routes/discover-scene-page.tsx:685
+#: apps/app/src/routes/discover-scene-page.tsx:693
 #: apps/app/src/routes/friend-moments-page.tsx:967
 #: apps/app/src/routes/friend-requests-page.tsx:290
 #: apps/app/src/routes/friend-requests-page.tsx:502
@@ -4321,7 +4322,7 @@ msgstr "视频通话暂未开放"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:10
 #: apps/app/src/routes/discover-page.tsx:88
-#: apps/app/src/routes/discover-scene-page.tsx:57
+#: apps/app/src/routes/discover-scene-page.tsx:58
 msgid "咖啡馆"
 msgstr "咖啡馆"
 
@@ -4331,7 +4332,7 @@ msgstr "窗边有热咖啡和低声播放的爵士乐。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:15
 #: apps/app/src/routes/discover-page.tsx:90
-#: apps/app/src/routes/discover-scene-page.tsx:59
+#: apps/app/src/routes/discover-scene-page.tsx:60
 msgid "图书馆"
 msgstr "图书馆"
 
@@ -4341,7 +4342,7 @@ msgstr "安静的阅读区里，翻页声比说话声更清楚。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:20
 #: apps/app/src/routes/discover-page.tsx:91
-#: apps/app/src/routes/discover-scene-page.tsx:60
+#: apps/app/src/routes/discover-scene-page.tsx:61
 msgid "公园"
 msgstr "公园"
 
@@ -4351,7 +4352,7 @@ msgstr "树荫、长椅和慢下来的傍晚风。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:25
 #: apps/app/src/routes/discover-page.tsx:89
-#: apps/app/src/routes/discover-scene-page.tsx:58
+#: apps/app/src/routes/discover-scene-page.tsx:59
 msgid "健身房"
 msgstr "健身房"
 
@@ -7308,8 +7309,8 @@ msgstr "昵称：{0}"
 #: apps/app/src/routes/discover-encounter-page.tsx:430
 #: apps/app/src/routes/discover-page.tsx:443
 #: apps/app/src/routes/discover-page.tsx:965
-#: apps/app/src/routes/discover-scene-page.tsx:250
-#: apps/app/src/routes/discover-scene-page.tsx:521
+#: apps/app/src/routes/discover-scene-page.tsx:251
+#: apps/app/src/routes/discover-scene-page.tsx:529
 #: apps/app/src/routes/world-characters-page.tsx:338
 #: apps/app/src/routes/world-characters-page.tsx:496
 msgid "世界角色"
@@ -8122,165 +8123,67 @@ msgstr "开始克隆"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-figure.tsx:28
 #: apps/app/src/features/world/world-page.tsx:129
-#: apps/app/src/routes/cyber-avatar-page.tsx:139
-#: apps/app/src/routes/cyber-avatar-page.tsx:142
+#: apps/app/src/routes/cyber-avatar-page.tsx:125
+#: apps/app/src/routes/cyber-avatar-page.tsx:128
 #: apps/app/src/routes/discover-page.tsx:175
 msgid "赛博分身"
 msgstr "赛博分身"
 
-#. placeholder {0}: profile.signalCount
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:87
-msgid "已分析 {0} 条行为信号"
-msgstr "已分析 {0} 条行为信号"
-
-#. placeholder {0}: profile.pendingSignalCount
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:89
-msgid "还有 {0} 条待分析"
-msgstr "还有 {0} 条待分析"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:102
-#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
-#: apps/app/src/i18n/static-dom-seed.ts:40
-#: apps/app/src/routes/channels-page.tsx:2701
-#: apps/app/src/routes/desktop-mobile-page.tsx:1198
-#: apps/app/src/routes/desktop-mobile-page.tsx:1263
-#: apps/app/src/routes/desktop-mobile-page.tsx:1375
-msgid "刷新"
-msgstr "刷新"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:114
-#: apps/app/src/routes/cyber-avatar-page.tsx:235
-msgid "还没有新的互动可以更新，多去世界里逛逛再来。"
-msgstr "还没有新的互动可以更新，多去世界里逛逛再来。"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:124
-msgid "刷新失败，请稍后再试。"
-msgstr "刷新失败，请稍后再试。"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:130
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
-#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
-#: apps/app/src/i18n/static-dom-seed.ts:163
-#: apps/app/src/i18n/static-dom-seed.ts:899
-#: apps/app/src/routes/character-detail-page.tsx:420
-#: apps/app/src/routes/live-companion-page.tsx:379
-msgid "当前状态"
-msgstr "当前状态"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:131
-msgid "心情"
-msgstr "心情"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:132
-msgid "精力"
-msgstr "精力"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:133
-msgid "专注"
-msgstr "专注"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:134
-msgid "当前话题"
-msgstr "当前话题"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:135
-msgid "未了的事"
-msgstr "未了的事"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:141
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:179
-msgid "稳定内核"
-msgstr "稳定内核"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:145
-msgid "身份速写"
-msgstr "身份速写"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:153
-msgid "沟通风格"
-msgstr "沟通风格"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:154
-msgid "决策风格"
-msgstr "决策风格"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:155
-msgid "偏好"
-msgstr "偏好"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:156
-msgid "社交姿态"
-msgstr "社交姿态"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
-#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-msgid "近期动向"
-msgstr "近期动向"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:163
-msgid "反复出现"
-msgstr "反复出现"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:164
-msgid "最近目标"
-msgstr "最近目标"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:169
-msgid "了解程度"
-msgstr "了解程度"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:171
-msgid "实时状态"
-msgstr "实时状态"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:175
-msgid "近期状态"
-msgstr "近期状态"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:184
-msgid "数据来源"
-msgstr "数据来源"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:204
-msgid "正在生成结论…"
-msgstr "正在生成结论…"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
-msgid "重新生成结论"
-msgstr "重新生成结论"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
-msgid "生成结论报告"
-msgstr "生成结论报告"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:234
-msgid "性格速写"
-msgstr "性格速写"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:240
-msgid "优势"
-msgstr "优势"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:241
-msgid "盲点"
-msgstr "盲点"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:243
-msgid "行为模式"
-msgstr "行为模式"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:247
-msgid "社交风格"
-msgstr "社交风格"
-
-#: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:253
-msgid "建议"
-msgstr "建议"
-
 #: apps/app/src/features/cyber-avatar/cyber-avatar-portrait.tsx:46
 msgid "赛博分身立绘"
 msgstr "赛博分身立绘"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:62
+msgid "关闭结论报告"
+msgstr "关闭结论报告"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:70
+msgid "结论报告"
+msgstr "结论报告"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:89
+msgid "数据还不够，先去世界里多聊聊、发发动态，再回来生成专属报告。"
+msgstr "数据还不够，先去世界里多聊聊、发发动态，再回来生成专属报告。"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:107
+msgid "正在生成结论…"
+msgstr "正在生成结论…"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:112
+msgid "重新生成结论"
+msgstr "重新生成结论"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:112
+msgid "生成结论报告"
+msgstr "生成结论报告"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:138
+msgid "性格速写"
+msgstr "性格速写"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:144
+msgid "优势"
+msgstr "优势"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:145
+msgid "盲点"
+msgstr "盲点"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:147
+msgid "行为模式"
+msgstr "行为模式"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:151
+msgid "社交风格"
+msgstr "社交风格"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:157
+msgid "建议"
+msgstr "建议"
+
+#: apps/app/src/features/cyber-avatar/cyber-avatar-report-sheet.tsx:166
+msgid "生成一份基于你全部互动的自我画像报告。"
+msgstr "生成一份基于你全部互动的自我画像报告。"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:91
 msgid "我最近在纠结什么？"
@@ -8546,7 +8449,7 @@ msgid "图集"
 msgstr "图集"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3121
-#: apps/app/src/features/world/world-page.tsx:391
+#: apps/app/src/features/world/world-page.tsx:393
 #: apps/app/src/i18n/static-dom-seed.ts:1051
 #: apps/app/src/routes/channel-author-page.tsx:415
 #: apps/app/src/routes/channel-author-page.tsx:1070
@@ -9382,7 +9285,7 @@ msgstr "通话操作菜单"
 #: apps/app/src/features/desktop/contacts/desktop-contacts-groups-pane.tsx:343
 #: apps/app/src/features/shell/desktop-nav-matching.ts:124
 #: apps/app/src/features/shell/desktop-nav-matching.ts:125
-#: apps/app/src/features/world/world-page.tsx:403
+#: apps/app/src/features/world/world-page.tsx:407
 #: apps/app/src/routes/games-page.tsx:757
 #: apps/app/src/routes/games-page.tsx:771
 #: apps/app/src/routes/games-page.tsx:788
@@ -10232,6 +10135,15 @@ msgstr "播放中"
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:472
 msgid "结束通话失败，请稍后再试。"
 msgstr "结束通话失败，请稍后再试。"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
+#: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:169
+#: apps/app/src/i18n/static-dom-seed.ts:163
+#: apps/app/src/i18n/static-dom-seed.ts:899
+#: apps/app/src/routes/character-detail-page.tsx:420
+#: apps/app/src/routes/live-companion-page.tsx:379
+msgid "当前状态"
+msgstr "当前状态"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:525
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:450
@@ -12014,6 +11926,16 @@ msgstr "世界公开流"
 msgid "这里不只看朋友，世界主人和居民的公开发言都会进入这条流。"
 msgstr "这里不只看朋友，世界主人和居民的公开发言都会进入这条流。"
 
+#: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
+#: apps/app/src/i18n/static-dom-seed.ts:40
+#: apps/app/src/routes/channels-page.tsx:2701
+#: apps/app/src/routes/desktop-mobile-page.tsx:1198
+#: apps/app/src/routes/desktop-mobile-page.tsx:1263
+#: apps/app/src/routes/desktop-mobile-page.tsx:1375
+msgid "刷新"
+msgstr "刷新"
+
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:65
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:76
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1876
@@ -13552,7 +13474,7 @@ msgstr "每日签到"
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:81
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:80
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:88
-#: apps/app/src/features/world/world-page.tsx:605
+#: apps/app/src/features/world/world-page.tsx:615
 #: apps/app/src/routes/profile-feed-page.tsx:437
 #: apps/app/src/routes/wallet-transactions-page.tsx:162
 msgid "加载中…"
@@ -13987,6 +13909,10 @@ msgstr "可顺"
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:225
 msgid "点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。"
 msgstr "点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。"
+
+#: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
+msgid "近期动向"
+msgstr "近期动向"
 
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:257
 msgid "顺走"
@@ -15344,17 +15270,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "守住基地，消灭 20 辆敌方坦克。"
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "双人"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "像素"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "动作"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "双人"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -17597,7 +17523,7 @@ msgid "偏创作、分发、沉淀和内容协同。"
 msgstr "偏创作、分发、沉淀和内容协同。"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:102
-#: apps/app/src/features/world/world-page.tsx:396
+#: apps/app/src/features/world/world-page.tsx:399
 #: apps/app/src/i18n/static-dom-seed.ts:150
 msgid "生活"
 msgstr "生活"
@@ -20166,7 +20092,7 @@ msgstr "分身互访"
 
 #: apps/app/src/features/world/world-page.tsx:120
 #: apps/app/src/routes/discover-page.tsx:189
-#: apps/app/src/routes/discover-scene-page.tsx:422
+#: apps/app/src/routes/discover-scene-page.tsx:423
 msgid "场景相遇"
 msgstr "场景相遇"
 
@@ -20300,64 +20226,64 @@ msgstr "个人主页"
 msgid "探索"
 msgstr "探索"
 
-#: apps/app/src/features/world/world-page.tsx:386
+#: apps/app/src/features/world/world-page.tsx:387
 msgid "相遇"
 msgstr "相遇"
 
-#: apps/app/src/features/world/world-page.tsx:460
-#: apps/app/src/features/world/world-page.tsx:461
+#: apps/app/src/features/world/world-page.tsx:464
+#: apps/app/src/features/world/world-page.tsx:465
 msgid "和我说点什么…"
 msgstr "和我说点什么…"
 
-#: apps/app/src/features/world/world-page.tsx:508
+#: apps/app/src/features/world/world-page.tsx:518
 msgid "世界此刻"
 msgstr "世界此刻"
 
-#: apps/app/src/features/world/world-page.tsx:600
+#: apps/app/src/features/world/world-page.tsx:610
 msgid "守护中"
 msgstr "守护中"
 
-#: apps/app/src/features/world/world-page.tsx:602
+#: apps/app/src/features/world/world-page.tsx:612
 msgid "成形中"
 msgstr "成形中"
 
-#: apps/app/src/features/world/world-page.tsx:604
+#: apps/app/src/features/world/world-page.tsx:614
 msgid "待唤醒"
 msgstr "待唤醒"
 
-#: apps/app/src/features/world/world-page.tsx:622
+#: apps/app/src/features/world/world-page.tsx:632
 msgid "你的分身"
 msgstr "你的分身"
 
-#: apps/app/src/features/world/world-page.tsx:627
+#: apps/app/src/features/world/world-page.tsx:637
 msgid "心情 {mood}"
 msgstr "心情 {mood}"
 
-#: apps/app/src/features/world/world-page.tsx:628
+#: apps/app/src/features/world/world-page.tsx:638
 msgid "能量 {energy}"
 msgstr "能量 {energy}"
 
-#: apps/app/src/features/world/world-page.tsx:653
+#: apps/app/src/features/world/world-page.tsx:663
 msgid "多在世界里互动，分身会越来越像你"
 msgstr "多在世界里互动，分身会越来越像你"
 
-#: apps/app/src/features/world/world-page.tsx:664
+#: apps/app/src/features/world/world-page.tsx:674
 msgid "已分析 {signalCount} 条信号"
 msgstr "已分析 {signalCount} 条信号"
 
-#: apps/app/src/features/world/world-page.tsx:665
+#: apps/app/src/features/world/world-page.tsx:675
 msgid " · 待分析 {pendingCount} 条"
 msgstr " · 待分析 {pendingCount} 条"
 
-#: apps/app/src/features/world/world-page.tsx:673
+#: apps/app/src/features/world/world-page.tsx:683
 msgid "当前关注"
 msgstr "当前关注"
 
-#: apps/app/src/features/world/world-page.tsx:689
+#: apps/app/src/features/world/world-page.tsx:699
 msgid "去看看你的赛博分身"
 msgstr "去看看你的赛博分身"
 
-#: apps/app/src/features/world/world-page.tsx:689
+#: apps/app/src/features/world/world-page.tsx:699
 msgid "看完整画像与对话"
 msgstr "看完整画像与对话"
 
@@ -21020,7 +20946,7 @@ msgid "换一个地点，换一种相遇方式"
 msgstr "换一个地点，换一种相遇方式"
 
 #: apps/app/src/i18n/static-dom-seed.ts:452
-#: apps/app/src/routes/discover-scene-page.tsx:424
+#: apps/app/src/routes/discover-scene-page.tsx:425
 msgid "选择一个地点"
 msgstr "选择一个地点"
 
@@ -23241,7 +23167,7 @@ msgid "别走太急，过一会再去下一个地方。"
 msgstr "别走太急，过一会再去下一个地方。"
 
 #: apps/app/src/lib/error-translate.ts:224
-#: apps/app/src/routes/discover-scene-page.tsx:494
+#: apps/app/src/routes/discover-scene-page.tsx:495
 msgid "今天的场景相遇次数已经用完，明天再试试。"
 msgstr "今天的场景相遇次数已经用完，明天再试试。"
 
@@ -24328,25 +24254,25 @@ msgstr "观看历史"
 msgid "你看过的视频号"
 msgstr "你看过的视频号"
 
-#: apps/app/src/routes/channel-history-page.tsx:79
+#: apps/app/src/routes/channel-history-page.tsx:80
 msgid "正在读取观看历史…"
 msgstr "正在读取观看历史…"
 
 #. placeholder {0}: describeRequestError(historyQuery.error)
-#: apps/app/src/routes/channel-history-page.tsx:84
+#: apps/app/src/routes/channel-history-page.tsx:85
 msgid "观看历史加载失败：{0}"
 msgstr "观看历史加载失败：{0}"
 
-#: apps/app/src/routes/channel-history-page.tsx:99
+#: apps/app/src/routes/channel-history-page.tsx:100
 msgid "还没有观看记录"
 msgstr "还没有观看记录"
 
-#: apps/app/src/routes/channel-history-page.tsx:100
+#: apps/app/src/routes/channel-history-page.tsx:101
 msgid "你在视频号看过的内容会出现在这里。"
 msgstr "你在视频号看过的内容会出现在这里。"
 
 #. placeholder {0}: formatWeChatCommentTime(lastViewedAt)
-#: apps/app/src/routes/channel-history-page.tsx:167
+#: apps/app/src/routes/channel-history-page.tsx:168
 msgid "{0} 看过"
 msgstr "{0} 看过"
 
@@ -25699,96 +25625,72 @@ msgstr "暂无结果"
 msgid "没有找到联系人"
 msgstr "没有找到联系人"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:51
+#: apps/app/src/routes/cyber-avatar-page.tsx:50
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:57
 #: apps/app/src/routes/discover-encounter-page.tsx:52
-#: apps/app/src/routes/discover-scene-page.tsx:164
+#: apps/app/src/routes/discover-scene-page.tsx:165
 msgid "正在切换到桌面发现页"
 msgstr "正在切换到桌面发现页"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:52
+#: apps/app/src/routes/cyber-avatar-page.tsx:51
 msgid "赛博分身当前只在移动端开放，先回到主发现页。"
 msgstr "赛博分身当前只在移动端开放，先回到主发现页。"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:53
+#: apps/app/src/routes/cyber-avatar-page.tsx:52
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:59
 #: apps/app/src/routes/discover-encounter-page.tsx:54
-#: apps/app/src/routes/discover-scene-page.tsx:166
+#: apps/app/src/routes/discover-scene-page.tsx:167
 msgid "正在切换到桌面发现页..."
 msgstr "正在切换到桌面发现页..."
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:109
+#: apps/app/src/routes/cyber-avatar-page.tsx:95
 msgid "你的数字镜像，由你在世界里的全部互动塑造而成。"
 msgstr "你的数字镜像，由你在世界里的全部互动塑造而成。"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:140
+#: apps/app/src/routes/cyber-avatar-page.tsx:126
 msgid "和你的数字镜像对话"
 msgstr "和你的数字镜像对话"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:141
+#: apps/app/src/routes/cyber-avatar-page.tsx:127
 #: apps/app/src/routes/discover-page.tsx:176
 msgid "镜像"
 msgstr "镜像"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:150
+#: apps/app/src/routes/cyber-avatar-page.tsx:136
 msgid "正在加载你的赛博分身…"
 msgstr "正在加载你的赛博分身…"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:165
+#: apps/app/src/routes/cyber-avatar-page.tsx:152
 msgid "你的赛博分身还在成形中"
 msgstr "你的赛博分身还在成形中"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:167
+#: apps/app/src/routes/cyber-avatar-page.tsx:154
 msgid "多去世界里互动吧——聊天、发动态、参与讨论，你的分身会越来越像你。"
 msgstr "多去世界里互动吧——聊天、发动态、参与讨论，你的分身会越来越像你。"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:183
-msgid "正在重建…"
-msgstr "正在重建…"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:186
-msgid "重建分身"
-msgstr "重建分身"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:198
-msgid "还没有足够的互动数据，先去世界里聊聊、发发动态吧。"
-msgstr "还没有足够的互动数据，先去世界里聊聊、发发动态吧。"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:212
-msgid "重建失败，请稍后再试。"
-msgstr "重建失败，请稍后再试。"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:220
-msgid "分身已更新，稍等片刻刷新查看。"
-msgstr "分身已更新，稍等片刻刷新查看。"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:264
+#: apps/app/src/routes/cyber-avatar-page.tsx:184
 msgid "正在生成你的专属立绘…"
 msgstr "正在生成你的专属立绘…"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:270
+#: apps/app/src/routes/cyber-avatar-page.tsx:190
 msgid "重新生成立绘"
 msgstr "重新生成立绘"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:271
+#: apps/app/src/routes/cyber-avatar-page.tsx:191
 msgid "生成我的专属立绘"
 msgstr "生成我的专属立绘"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:284
+#: apps/app/src/routes/cyber-avatar-page.tsx:204
 msgid "立绘生成失败，请稍后再试。"
 msgstr "立绘生成失败，请稍后再试。"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:288
+#: apps/app/src/routes/cyber-avatar-page.tsx:208
 msgid "首张免费，重新生成将消耗少量钱包余额"
 msgstr "首张免费，重新生成将消耗少量钱包余额"
 
-#: apps/app/src/routes/cyber-avatar-page.tsx:297
-msgid "分身画像"
-msgstr "分身画像"
-
-#: apps/app/src/routes/cyber-avatar-page.tsx:298
-msgid "与分身对话"
-msgstr "与分身对话"
+#: apps/app/src/routes/cyber-avatar-page.tsx:221
+msgid "了解你自己 · 结论报告"
+msgstr "了解你自己 · 结论报告"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:516
 msgid "已打开图片。"
@@ -26967,7 +26869,7 @@ msgstr "{characterName} 已加入通讯录：{greeting}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:217
 #: apps/app/src/routes/discover-page.tsx:456
-#: apps/app/src/routes/discover-scene-page.tsx:269
+#: apps/app/src/routes/discover-scene-page.tsx:270
 msgid "已跳过这次相遇。"
 msgstr "已跳过这次相遇。"
 
@@ -27010,19 +26912,19 @@ msgstr "相遇理由：{0}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:475
 #: apps/app/src/routes/discover-page.tsx:1013
-#: apps/app/src/routes/discover-scene-page.tsx:546
+#: apps/app/src/routes/discover-scene-page.tsx:554
 msgid "跳过"
 msgstr "跳过"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1031
-#: apps/app/src/routes/discover-scene-page.tsx:562
+#: apps/app/src/routes/discover-scene-page.tsx:570
 msgid "添加中..."
 msgstr "添加中..."
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1032
-#: apps/app/src/routes/discover-scene-page.tsx:562
+#: apps/app/src/routes/discover-scene-page.tsx:570
 msgid "加为好友"
 msgstr "加为好友"
 
@@ -27031,7 +26933,7 @@ msgid "重试摇一摇"
 msgstr "重试摇一摇"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:550
-#: apps/app/src/routes/discover-scene-page.tsx:686
+#: apps/app/src/routes/discover-scene-page.tsx:694
 msgid "回发现页"
 msgstr "回发现页"
 
@@ -27225,7 +27127,7 @@ msgid "场景相遇已写入好友申请列表。"
 msgstr "场景相遇已写入好友申请列表。"
 
 #: apps/app/src/routes/discover-page.tsx:492
-#: apps/app/src/routes/discover-scene-page.tsx:337
+#: apps/app/src/routes/discover-scene-page.tsx:338
 msgid "对你产生了兴趣。"
 msgstr "对你产生了兴趣。"
 
@@ -27297,7 +27199,7 @@ msgstr "先生成临时候选，你决定要不要把他留下。"
 
 #. placeholder {0}: t(scene.label)
 #: apps/app/src/routes/discover-page.tsx:1058
-#: apps/app/src/routes/discover-scene-page.tsx:616
+#: apps/app/src/routes/discover-scene-page.tsx:624
 msgid "正在前往{0}..."
 msgstr "正在前往{0}..."
 
@@ -27359,93 +27261,93 @@ msgstr "社交与动态"
 msgid "内容与服务"
 msgstr "内容与服务"
 
-#: apps/app/src/routes/discover-scene-page.tsx:61
+#: apps/app/src/routes/discover-scene-page.tsx:62
 msgid "教室"
 msgstr "教室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:62
+#: apps/app/src/routes/discover-scene-page.tsx:63
 msgid "实验室"
 msgstr "实验室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:63
+#: apps/app/src/routes/discover-scene-page.tsx:64
 msgid "办公室"
 msgstr "办公室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:64
+#: apps/app/src/routes/discover-scene-page.tsx:65
 msgid "联合办公空间"
 msgstr "联合办公空间"
 
-#: apps/app/src/routes/discover-scene-page.tsx:65
+#: apps/app/src/routes/discover-scene-page.tsx:66
 msgid "自习室"
 msgstr "自习室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:66
+#: apps/app/src/routes/discover-scene-page.tsx:67
 msgid "餐厅"
 msgstr "餐厅"
 
-#: apps/app/src/routes/discover-scene-page.tsx:67
+#: apps/app/src/routes/discover-scene-page.tsx:68
 msgid "博物馆"
 msgstr "博物馆"
 
-#: apps/app/src/routes/discover-scene-page.tsx:68
+#: apps/app/src/routes/discover-scene-page.tsx:69
 msgid "书店"
 msgstr "书店"
 
-#: apps/app/src/routes/discover-scene-page.tsx:69
+#: apps/app/src/routes/discover-scene-page.tsx:70
 msgid "旅途"
 msgstr "旅途"
 
-#: apps/app/src/routes/discover-scene-page.tsx:70
+#: apps/app/src/routes/discover-scene-page.tsx:71
 msgid "夜晚的街道"
 msgstr "夜晚的街道"
 
-#: apps/app/src/routes/discover-scene-page.tsx:71
+#: apps/app/src/routes/discover-scene-page.tsx:72
 msgid "剧场"
 msgstr "剧场"
 
-#: apps/app/src/routes/discover-scene-page.tsx:72
+#: apps/app/src/routes/discover-scene-page.tsx:73
 msgid "居家场景"
 msgstr "居家场景"
 
-#: apps/app/src/routes/discover-scene-page.tsx:165
+#: apps/app/src/routes/discover-scene-page.tsx:166
 msgid "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
 msgstr "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:253
+#: apps/app/src/routes/discover-scene-page.tsx:254
 msgid "{characterName} 已加入通讯录"
 msgstr "{characterName} 已加入通讯录"
 
-#: apps/app/src/routes/discover-scene-page.tsx:332
+#: apps/app/src/routes/discover-scene-page.tsx:333
 msgid "{sceneLabel}里和别处都暂时没有新的相遇了。"
 msgstr "{sceneLabel}里和别处都暂时没有新的相遇了。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:423
+#: apps/app/src/routes/discover-scene-page.tsx:424
 msgid "在熟悉的场景里偶遇世界居民"
 msgstr "在熟悉的场景里偶遇世界居民"
 
-#: apps/app/src/routes/discover-scene-page.tsx:428
+#: apps/app/src/routes/discover-scene-page.tsx:429
 msgid "今日已偶遇 {encounterCount} 人"
 msgstr "今日已偶遇 {encounterCount} 人"
 
-#: apps/app/src/routes/discover-scene-page.tsx:429
+#: apps/app/src/routes/discover-scene-page.tsx:430
 msgid "挑一个常去的地方，附近的居民会主动打招呼。"
 msgstr "挑一个常去的地方，附近的居民会主动打招呼。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:501
+#: apps/app/src/routes/discover-scene-page.tsx:502
 msgid "稍等 {cooldownRemainSec} 秒再出发吧。"
 msgstr "稍等 {cooldownRemainSec} 秒再出发吧。"
 
 #. placeholder {0}: pendingEncounter.sceneLabel
-#: apps/app/src/routes/discover-scene-page.tsx:525
+#: apps/app/src/routes/discover-scene-page.tsx:533
 msgid "不在{0}，但顺路碰到了你"
 msgstr "不在{0}，但顺路碰到了你"
 
 #. placeholder {0}: pendingEncounter.sceneLabel
-#: apps/app/src/routes/discover-scene-page.tsx:526
+#: apps/app/src/routes/discover-scene-page.tsx:534
 msgid "在{0}里注意到了你"
 msgstr "在{0}里注意到了你"
 
-#: apps/app/src/routes/discover-scene-page.tsx:676
+#: apps/app/src/routes/discover-scene-page.tsx:684
 msgid "重试场景相遇"
 msgstr "重试场景相遇"
 
