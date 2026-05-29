@@ -20,31 +20,30 @@ export function WorldUnavailableDialogHost() {
   // 走查新一轮 R1（移动端我-tab 端到端 2026-05-22）：原 dialog 完全无 a11y +
   // 防双击。补：
   // 1) role="dialog" + aria-modal + aria-labelledby/describedby —— modal 必备语义；
-  // 2) 打开时 focus 「重新登录」按钮（这里是唯一 action，安全，不像 confirm dialog
-  //    可能误触发 destructive 操作），让键盘/SR 用户立刻能 Enter 触发；
-  // 3) reloginButtonRef + reloginInFlightRef 同款 sync ref 锁防同帧双击 ——
-  //    clearSession 是幂等但 navigate 会推 2 格 history（无 replace 也能撞）。
-  const reloginButtonRef = useRef<HTMLButtonElement | null>(null);
+  // 2) 打开时 focus 主操作「重试」按钮（非 destructive，安全默认），让键盘/SR
+  //    用户立刻能 Enter 触发；
+  // 3) reloginInFlightRef 同帧双击锁仅给次级「重新登录」用 —— clearSession 幂等但
+  //    navigate 会推 2 格 history；主「重试」全幂等无需锁。
+  const primaryButtonRef = useRef<HTMLButtonElement | null>(null);
   const reloginInFlightRef = useRef(false);
 
   // dialog 一旦打开就立即把 socket 关掉，避免 socket.io 自己后台重连 503 风暴；
-  // session 这里不直接清，留给用户按"重新登录"按钮 → 主动 clear → 跳 /welcome。
-  // （这样用户能看到对话框知道发生了什么；他们不点也不至于陷入死循环。）
+  // session 不动，留给用户：主「重试」→ 重连 socket 复活；次级「重新登录」→ 清
+  // session 跳 /welcome。（用户能看到对话框知道发生了什么，不至于陷入死循环。）
   useEffect(() => {
     if (open) {
       disconnectChatSocket();
     }
   }, [open]);
 
-  // 走查新一轮 R1：focus management —— open 翻 true 时把焦点放到「重新登录」
-  // 按钮上。setTimeout(0) 避开 click→pointerup 序列里 chromium 把 focus 还原
-  // 回触发按钮的兜底（和 desktop-chat-confirm-dialog R5 同款）。这里 dialog
-  // 关闭后会立即 navigate /welcome，所以不还原 previousFocus（welcome 自己
-  // 接管 focus）。
+  // 走查新一轮 R1：focus management —— open 翻 true 时把焦点放到主「重试」按钮。
+  // setTimeout(0) 避开 click→pointerup 序列里 chromium 把 focus 还原回触发按钮的
+  // 兜底（和 desktop-chat-confirm-dialog R5 同款）。「重试」关闭对话框后停在原页
+  // （不 navigate），不还原 previousFocus 也无碍。
   useEffect(() => {
     if (!open) return;
     const timer = window.setTimeout(() => {
-      reloginButtonRef.current?.focus();
+      primaryButtonRef.current?.focus();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -56,14 +55,12 @@ export function WorldUnavailableDialogHost() {
   // 主操作：温和重试。共享世界是常驻多租户进程，从不真的「休眠」——绝大多数
   // 这个弹窗是服务端短暂繁忙/恢复中（502/503），登出对恢复毫无帮助，只会白白
   // 让用户重新登录。这里只重连 socket + 重新拉取查询，不动 session。
+  // 全部同步且幂等（getChatSocket 按 baseUrl 去重、invalidateQueries 自去抖），
+  // 重复点击无副作用，不需要 in-flight 锁（不像 relogin 会推 history）。
   const handleRetry = () => {
-    if (reloginInFlightRef.current) return;
-    reloginInFlightRef.current = true;
     closeDialog();
     getChatSocket();
     void queryClient.invalidateQueries();
-    // 解锁让用户下次仍能重试（与 relogin 的一次性跳转不同）。
-    reloginInFlightRef.current = false;
   };
 
   const handleRelogin = () => {
@@ -78,11 +75,10 @@ export function WorldUnavailableDialogHost() {
     void navigate({ to: "/welcome", replace: true });
   };
 
-  // 历史上这里标题是「世界已休眠，请重新登录」+ 把后端英文 message
-  // ("World instance is not ready for this account.") 当 fine-print 渲染。
-  // 新注册用户 world 暖机几秒内若命中这条 503，会把 "this account" 误读为
-  // 「我账号没建上」→ 报"验证码过了但没建号"。改成中性表述：world 启动中
-  // 或已休眠都用同一条文案，避免暗示注册失败；后端英文 message 不再渲染。
+  // 文案沿革：早期标题「世界已休眠，请重新登录」+ 渲染后端英文 message，
+  // 误导新注册用户以为账号没建上。现彻底中性化：共享 world 是常驻多租户进程，
+  // 不存在「休眠」，502/503 基本是服务端短暂繁忙/恢复中，故标题「连接暂时中断」、
+  // 主操作温和「重试」而非强制登出；后端英文 message 不渲染。
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-4 sm:items-center">
       <div
@@ -109,7 +105,7 @@ export function WorldUnavailableDialogHost() {
         </p>
         <div className="mt-6">
           <Button
-            ref={reloginButtonRef}
+            ref={primaryButtonRef}
             variant="primary"
             // 走查新一轮 R1：补 active:bg- 让移动 tap 有按压反馈（同 R3 修过的
             // profile-subscription 邀请「复制链接」/「联系开通」）。
