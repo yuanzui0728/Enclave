@@ -212,6 +212,24 @@ async function bootstrap() {
     </React.StrictMode>,
   );
 
+  // Boot watchdog 信号（见 index.html 内联看门狗）：entry bundle 已执行且 React
+  // 已开始渲染。看门狗见到这个标志就 no-op；没见到（entry chunk 404 等导致整个
+  // bundle 没跑起来）才会自愈 reload。同时清掉重试计数，让未来真正的失败有新预算；
+  // 并把自愈时带上的 ?_swr= cache-bust query 抹掉，保持地址栏干净。
+  try {
+    (window as unknown as { __YINJIE_APP_BOOTED__?: boolean }).__YINJIE_APP_BOOTED__ = true;
+    window.sessionStorage.removeItem("yinjie:boot-recover");
+    if (window.location.search.indexOf("_swr=") !== -1) {
+      const cleaned =
+        window.location.pathname +
+        window.location.search.replace(/[?&]_swr=\d+/, "").replace(/^&/, "?") +
+        window.location.hash;
+      window.history.replaceState(window.history.state, "", cleaned);
+    }
+  } catch {
+    // ignore（SSR / 隐私模式 sessionStorage 抛错等）
+  }
+
   // SW 注册放在 React 挂载之后再触发（内部 idleCallback），不抢首屏带宽。
   registerAppServiceWorker();
 }

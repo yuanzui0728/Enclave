@@ -339,6 +339,109 @@
         }
       })();
     </script>
+    <script>
+      // ===== Boot watchdog（入口 bundle 没起来时自愈）=====
+      // 背景：index.html 是静态 no-cache 页，#root 先画一屏 boot 占位；React entry
+      // bundle (/assets/index-*.js + 它的 modulepreload 静态依赖 vendor-core /
+      // workspace-* 等) 执行后才会把占位替换掉。线上 app dist 若被「就地 vite build」
+      // 轮换了 hash（删掉旧 chunk，绕过 scripts/deploy-app-web.sh 的原子 swap + 旧
+      // chunk 保留），任何在 rebuild 前拿到旧 index.html 的客户端，请求旧 entry chunk
+      // 会 404 → entry bundle 根本没执行 → main.tsx 里的 stale-asset-recovery 也没机会
+      // 装上 → 永远卡在这屏静态 boot 占位（用户反馈「一直卡住」）。
+      //
+      // 这个看门狗是唯一保证会跑的代码（不依赖任何 chunk），且跟历史上下线的「版本
+      // 轮询 reload」本质不同：健康的 app 会在 render 后置 window.__YINJIE_APP_BOOTED__，
+      // 看门狗见到即 no-op，绝不打扰正常页面 —— 因此不会有当年 dev build-id 抖动导致的
+      // reload 死循环。只在「真的没启动起来」时才自愈：location.replace 带 cache-bust
+      // query 重新拉 index.html（no-cache，且唯一 URL 能击穿无视 no-cache 的隧道/运营商
+      // 缓存）→ 拿到当前 hash 的 chunk。有限重试后停手改人工提示，避免真网络故障无限刷。
+      (function () {
+        if (typeof window === "undefined") return;
+        // 原生壳（Capacitor / Tauri）走本地 bundle，自有生命周期，不参与 web 自愈，
+        // 否则 ?cache-bust reload 在深路径 / 自定义 scheme 下会把壳加载死。
+        try {
+          if (
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === "function" &&
+            window.Capacitor.isNativePlatform()
+          ) {
+            return;
+          }
+        } catch (e) {}
+        if (window.__TAURI__ || window.__TAURI_INTERNALS__) return;
+
+        var RETRY_KEY = "yinjie:boot-recover";
+        var MAX_RETRY = 2;
+        var TIMEOUT_MS = 12000;
+        var done = false;
+
+        function readRetry() {
+          try {
+            return parseInt(window.sessionStorage.getItem(RETRY_KEY) || "0", 10) || 0;
+          } catch (e) {
+            return 0;
+          }
+        }
+
+        function reloadFresh() {
+          // 同 path + 唯一 query，强制击穿任何中间缓存重新解析 index.html → 新 hash chunk。
+          window.location.replace(
+            window.location.pathname + "?_swr=" + Date.now() + window.location.hash,
+          );
+        }
+
+        function showManualPrompt() {
+          var notice = document.querySelector(".boot-notice");
+          if (!notice) return;
+          notice.innerHTML =
+            "版本更新中或网络异常，未能载入最新版本。请彻底关闭 App 后重新打开；" +
+            '如仍无法进入，<a href="#" id="boot-retry" style="color:#7c5bd9;text-decoration:underline">点此重试</a>。';
+          var btn = document.getElementById("boot-retry");
+          if (btn) {
+            btn.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              try { window.sessionStorage.removeItem(RETRY_KEY); } catch (e) {}
+              reloadFresh();
+            });
+          }
+        }
+
+        function recover() {
+          if (done) return;
+          // entry bundle 已执行（main.tsx 置了标志）→ 一切正常，啥也不做。
+          if (window.__YINJIE_APP_BOOTED__) return;
+          done = true;
+          var n = readRetry();
+          if (n >= MAX_RETRY) {
+            showManualPrompt();
+            return;
+          }
+          try { window.sessionStorage.setItem(RETRY_KEY, String(n + 1)); } catch (e) {}
+          reloadFresh();
+        }
+
+        // 1) entry / modulepreload chunk 加载失败：资源 error 不冒泡，必须 capture 阶段抓。
+        window.addEventListener(
+          "error",
+          function (e) {
+            var t = e && e.target;
+            if (!t || !t.tagName) return;
+            var src = t.src || t.href || "";
+            if (
+              (t.tagName === "SCRIPT" || t.tagName === "LINK") &&
+              src.indexOf("/assets/") !== -1
+            ) {
+              recover();
+            }
+          },
+          true,
+        );
+
+        // 2) 兜底：bundle 始终没把 __YINJIE_APP_BOOTED__ 置上（chunk 静默没执行 /
+        //    bootstrap await 卡死等），超时后自愈一次。
+        window.setTimeout(recover, TIMEOUT_MS);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
   </html>
