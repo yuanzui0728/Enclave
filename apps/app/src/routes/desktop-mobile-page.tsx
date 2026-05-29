@@ -813,7 +813,7 @@ export function DesktopMobilePage() {
       title={t(msg`手机接力`)}
       subtitle={t(msg`把桌面内容带到移动端继续处理。`)}
       toolbar={
-        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+        <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
           {t(msg`${activeHandoffHistory.length} 条最近接力`)}
         </div>
       }
@@ -906,7 +906,7 @@ export function DesktopMobilePage() {
         callHandoffMobilePath &&
         callHandoffDesktopPath &&
         callHandoffConversationExists ? (
-          <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -966,7 +966,7 @@ export function DesktopMobilePage() {
         ) : null}
 
         {resolvedOfficialHandoffState && officialHandoffPath ? (
-          <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1679,7 +1679,7 @@ export function DesktopMobilePage() {
                         {group.description}
                       </div>
                     </div>
-                    <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                    <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
                       {t(msg`${group.items.length} 条`)}
                     </div>
                   </div>
@@ -1901,7 +1901,7 @@ function MiniProgramHandoffCard({
             {pinned ? t(msg` · 已加入我的小程序`) : ""}
           </div>
         </div>
-        <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+        <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
           {t(msg`${launchCount} 次`)}
         </div>
       </div>

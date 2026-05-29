@@ -108,7 +108,7 @@ export function DesktopAddFriendResultCard({
           : {
               badge: msg`可添加到通讯录`,
               badgeClassName:
-                "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[#15803d]",
+                "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[#15803d]",
               helperText: msg`发送验证申请后，对方通过即可成为朋友。`,
               icon: UserPlus,
               primaryLabel: actionPending

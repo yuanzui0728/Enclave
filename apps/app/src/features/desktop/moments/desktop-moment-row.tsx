@@ -158,7 +158,7 @@ function DesktopMomentRowInner({
       ? commentReplyTarget
       : null;
   const activeActionClassName =
-    "border-[rgba(7,193,96,0.12)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
+    "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
 
   const commentsById = useMemo(
     () =>
@@ -330,7 +330,7 @@ function DesktopMomentRowInner({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium tracking-[0.12em]",
                   moment.authorType === "character"
-                    ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                    ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -457,7 +457,7 @@ function DesktopMomentRowInner({
                           event.stopPropagation();
                           onSelectLiker(event, like);
                         }}
-                        className="text-[color:var(--brand-primary)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-1"
+                        className="text-[color:var(--brand-primary)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-1"
                       >
                         {like.authorName}
                       </button>
@@ -524,7 +524,7 @@ function DesktopMomentRowInner({
                       className={cn(
                         "block w-full rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
                         isActiveReply
-                          ? "bg-[rgba(7,193,96,0.12)]"
+                          ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
                           : "hover:bg-white",
                       )}
                       title={t(msg`回复这条评论`)}
@@ -554,7 +554,7 @@ function DesktopMomentRowInner({
                   activeReply.commentId,
                 );
                 return (
-                  <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
+                  <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="truncate">
                         {t(msg`正在回复 ${activeReply.authorName}`)}
@@ -593,7 +593,7 @@ function DesktopMomentRowInner({
                       ? t(msg`回复 ${activeReply.authorName}...`)
                       : t(msg`写评论...`)
                   }
-                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
                   buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                 />
               ) : (
@@ -650,13 +650,13 @@ function CommentLine({
   const translate = useRuntimeTranslator();
   return (
     <span>
-      <span className="font-medium text-[#07c160]">{authorName}</span>
+      <span className="font-medium text-[color:var(--brand-primary)]">{authorName}</span>
       {replyToName ? (
         <>
           <span className="text-[color:var(--text-secondary)]">
             {translate(msg` 回复 `)}
           </span>
-          <span className="font-medium text-[#07c160]">{replyToName}</span>
+          <span className="font-medium text-[color:var(--brand-primary)]">{replyToName}</span>
         </>
       ) : null}
       <span className="text-[color:var(--text-secondary)]">

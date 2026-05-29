@@ -87,6 +87,7 @@ type DesktopChannelsWorkspaceProps = {
   // 透传，按钮按 mutation 锁。
   favoritePendingPostId: string | null;
   followPendingAuthorId: string | null;
+  isPostFavorite?: (postId: string) => boolean;
   posts: FeedPostListItem[];
   refreshPending?: boolean;
   routeSelectedAuthorId?: string | null;
@@ -1403,10 +1404,10 @@ function ChannelActionButton({
           "flex h-11 w-11 items-center justify-center rounded-full border transition-colors",
           isDark
             ? active
-              ? "border-[rgba(7,193,96,0.65)] bg-white/12 text-[color:var(--brand-primary)]"
+              ? "border-[color-mix(in_srgb,var(--brand-primary)_65%,transparent)] bg-white/12 text-[color:var(--brand-primary)]"
               : "border-white/14 bg-white/12 text-white group-hover:bg-white/22"
             : active
-              ? "border-[rgba(7,193,96,0.42)] bg-white text-[color:var(--brand-primary)] shadow-[var(--shadow-section)]"
+              ? "border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] bg-white text-[color:var(--brand-primary)] shadow-[var(--shadow-section)]"
               : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-[var(--shadow-section)] group-hover:bg-[color:var(--surface-console)] group-hover:text-[color:var(--text-primary)]",
         )}
       >
@@ -3088,7 +3089,7 @@ function DesktopChannelAuthorPanel({
                     className={cn(
                       "w-full rounded-[16px] border px-3 py-3 text-left transition",
                       selectedPostId === post.id
-                        ? "border-[rgba(7,193,96,0.14)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
+                        ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
                         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
                     )}
                   >
@@ -3638,7 +3639,7 @@ function DesktopChannelCommentsPanel({
 
       <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
         {replyTarget ? (
-          <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
             <div className="truncate">
               {t(msg`正在回复 ${replyTarget.authorName}`)}
             </div>
@@ -3705,7 +3706,7 @@ function DesktopChannelCommentsPanel({
                   : t(msg`先选择一条内容`)
             }
             disabled={!selectedPost}
-            className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+            className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
           />
           <Button
             variant="primary"
@@ -3787,7 +3788,7 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
   );
 
   return (
-    <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
+    <div className="mt-3 rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-white px-3 py-3">
       <button
         type="button"
         // 走查 2026-05-18 第二轮 R13："楼中楼" 折叠/展开按钮是经典的 disclosure
@@ -3828,7 +3829,7 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
           )}
         </div>
       ) : (
-        <div className="mt-3 space-y-2 border-l border-[rgba(7,193,96,0.14)] pl-3">
+        <div className="mt-3 space-y-2 border-l border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] pl-3">
           {replies.map((comment) => (
             <DesktopThreadCommentCard
               key={comment.id}
@@ -3911,7 +3912,7 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           : "border-[color:var(--border-faint)] bg-white",
         active &&
-          "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] shadow-[inset_3px_0_0_0_var(--brand-primary)]",
+          "border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -3929,7 +3930,7 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
               className={cn(
                 "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                 comment.authorType === "character"
-                  ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                  ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
               )}
             >

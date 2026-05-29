@@ -436,7 +436,7 @@ export function DesktopFeedbackPage() {
                       className={cn(
                         "rounded-[12px] border p-4 text-left transition",
                         draft.category === item.id
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.04)]"
+                          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                       )}
                     >
@@ -499,7 +499,7 @@ export function DesktopFeedbackPage() {
                       className={cn(
                         "flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium transition",
                         draft.priority === item.id
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
                           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
                       )}
                     >
@@ -812,7 +812,7 @@ function FeedbackTextarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-h-[116px] w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)]"
+        className="min-h-[116px] w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
       />
     </div>
   );

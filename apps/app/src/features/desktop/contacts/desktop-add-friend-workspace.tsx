@@ -546,7 +546,7 @@ export function DesktopAddFriendWorkspace() {
             <Button
               type="submit"
               variant="primary"
-              className="h-10 rounded-[8px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
+              className="h-10 rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -740,7 +740,7 @@ function DesktopAddFriendWelcomeState({
   return (
     <div className="flex h-full w-full items-center justify-center px-6 py-6">
       <div className="w-full max-w-[560px] text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(7,193,96,0.08)] text-[#07c160]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]">
           <Search size={28} />
         </div>
         <div className="mt-5 text-[24px] font-medium tracking-[-0.02em] text-[color:var(--text-primary)]">
@@ -829,7 +829,7 @@ function DesktopAddFriendSidebarEntry({
       className={cn(
         "flex w-full items-center gap-3 rounded-[8px] px-3 py-3 text-left transition",
         active
-          ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]"
+          ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--text-primary)]"
           : "text-[color:var(--text-primary)] hover:bg-[rgba(15,23,42,0.04)]",
       )}
     >
@@ -837,7 +837,7 @@ function DesktopAddFriendSidebarEntry({
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px]",
           active
-            ? "bg-white text-[#07c160]"
+            ? "bg-white text-[color:var(--brand-primary)]"
             : "bg-white/70 text-[color:var(--text-secondary)]",
         )}
       >
@@ -900,7 +900,7 @@ function DesktopAddFriendResultRow({
       className={cn(
         "flex w-full items-center gap-3 rounded-[8px] border px-3 py-3 text-left transition",
         selected
-          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.08)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
           : "border-transparent bg-transparent hover:border-[rgba(15,23,42,0.06)] hover:bg-white",
       )}
     >

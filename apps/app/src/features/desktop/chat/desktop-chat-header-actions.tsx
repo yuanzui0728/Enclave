@@ -105,7 +105,7 @@ export function DesktopChatHeaderActions({
             <CallMenuButton
               label={t(msg`语音通话`)}
               icon={
-                <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]">
                   <Phone size={15} />
                 </span>
               }
@@ -117,7 +117,7 @@ export function DesktopChatHeaderActions({
             <CallMenuButton
               label={t(msg`视频通话`)}
               icon={
-                <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]">
                   <Video size={15} />
                 </span>
               }
@@ -177,7 +177,7 @@ function DesktopChatHeaderButton({
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color,box-shadow] duration-150",
         active && tone === "brand"
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.04)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
           : null,
         active && tone === "neutral"
           ? "border-[rgba(0,0,0,0.04)] bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"

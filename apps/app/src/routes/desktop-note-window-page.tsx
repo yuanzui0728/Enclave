@@ -97,7 +97,7 @@ export function DesktopNoteWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
         <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
+          <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立笔记窗口`)}
           </div>
           <EmptyState

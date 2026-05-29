@@ -165,7 +165,7 @@ export function DesktopAddFriendSendDialog({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
-              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.42)] focus:shadow-[0_0_0_3px_rgba(7,193,96,0.10)]"
+              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-[color:var(--text-dim)]">
               <span>{t(msg`支持按 \`Ctrl/Cmd + Enter\` 直接发送`)}</span>
@@ -189,7 +189,7 @@ export function DesktopAddFriendSendDialog({
             variant="primary"
             disabled={pending || !greeting.trim()}
             onClick={() => void onSubmit(greeting.trim())}
-            className="rounded-[8px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
+            className="rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
           >
             {pending ? t(msg`发送中...`) : t(msg`发送`)}
           </Button>

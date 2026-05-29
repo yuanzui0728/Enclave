@@ -306,7 +306,7 @@ export function DesktopSubscriptionWorkspace({
                     "flex w-full items-start gap-3 px-4 py-3 text-left transition",
                     index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                     activeArticleId === delivery.articleId
-                      ? "bg-[rgba(7,193,96,0.05)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]"
                       : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
                   )}
                 >
@@ -461,7 +461,7 @@ function ReaderStatusPane({
               ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
               : tone === "loading"
                 ? "bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]"
-                : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+                : "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--brand-primary)]",
           )}
         >
           {badge}

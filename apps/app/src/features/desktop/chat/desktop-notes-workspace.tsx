@@ -1255,7 +1255,7 @@ export function DesktopNotesWorkspace({
           <Tag size={15} />
         </ToolbarButton>
         {attachmentPending ? (
-          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
             {t(msg`正在上传附件...`)}
           </span>
         ) : null}
@@ -1266,13 +1266,13 @@ export function DesktopNotesWorkspace({
           {editorState.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+              className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
             >
               <span>#{tag}</span>
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
-                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition hover:bg-[rgba(7,193,96,0.12)]"
+                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
                 aria-label={t(msg`移除标签 ${tag}`)}
               >
                 <X size={12} />
@@ -1452,7 +1452,7 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[13px] transition",
         active
-          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >

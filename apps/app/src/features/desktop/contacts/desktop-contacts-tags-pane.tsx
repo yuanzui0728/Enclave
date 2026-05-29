@@ -495,11 +495,11 @@ export function DesktopContactsTagsPane() {
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
                       selectedTag === group.tag
-                        ? "bg-[rgba(7,193,96,0.10)]"
+                        ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
                         : "hover:bg-[color:var(--surface-console)]",
                     )}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#17803d]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[#17803d]">
                       <Tag size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -536,7 +536,7 @@ export function DesktopContactsTagsPane() {
                           ? "border-t border-[color:var(--border-faint)]"
                           : undefined,
                         selectedCharacterId === item.character.id
-                          ? "bg-[rgba(7,193,96,0.08)]"
+                          ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
                           : "hover:bg-[color:var(--surface-console)]",
                       )}
                     >

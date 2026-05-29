@@ -405,7 +405,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
             {note.tags.slice(0, 6).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] text-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[11px] text-[color:var(--brand-primary)]"
               >
                 #{tag}
               </span>

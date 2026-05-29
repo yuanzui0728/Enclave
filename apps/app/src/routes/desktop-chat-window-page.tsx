@@ -225,7 +225,7 @@ export function DesktopChatWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
         <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
+          <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立聊天窗口`)}
           </div>
           <EmptyState
@@ -256,7 +256,7 @@ export function DesktopChatWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
         <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
+          <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立聊天窗口`)}
           </div>
           <EmptyState
@@ -283,7 +283,7 @@ export function DesktopChatWindowPage() {
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-4 py-3 backdrop-blur-xl">
         <div className="min-w-0">
-          <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[color:var(--brand-primary)]">
+          <div className="inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[color:var(--brand-primary)]">
             {headerType === "group" ? t(msg`群聊独立窗口`) : t(msg`聊天独立窗口`)}
           </div>
           {/* 走查电脑端单聊 R140：独立聊天窗口（右键会话「在独立窗口打开」/

@@ -238,7 +238,7 @@ function DesktopFeedRowInner({
           <button
             type="button"
             onClick={handleSelectAuthor}
-            className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-1"
+            className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-1"
             aria-label={t(msg`查看 ${post.authorName} 的资料`)}
           >
             <AvatarChip
@@ -264,7 +264,7 @@ function DesktopFeedRowInner({
                 <button
                   type="button"
                   onClick={handleSelectAuthor}
-                  className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-1"
+                  className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-1"
                 >
                   {post.authorName}
                 </button>
@@ -277,7 +277,7 @@ function DesktopFeedRowInner({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                   post.authorType === "character"
-                    ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                    ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -342,7 +342,7 @@ function DesktopFeedRowInner({
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] transition-[background-color,color,border-color] disabled:opacity-55",
                   liked
-                    ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                    ? "border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
@@ -485,7 +485,7 @@ function DesktopFeedRowInner({
                       className={cn(
                         "block w-full cursor-pointer rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
                         isActiveReply
-                          ? "bg-[rgba(7,193,96,0.12)]"
+                          ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
                           : "hover:bg-white",
                       )}
                       title={t(msg`回复这条评论`)}
@@ -536,7 +536,7 @@ function DesktopFeedRowInner({
             ) : null}
 
             {activeReply ? (
-              <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
+              <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="truncate">
                     {t(msg`正在回复 ${activeReply.authorName}`)}
@@ -572,7 +572,7 @@ function DesktopFeedRowInner({
                     ? t(msg`回复 ${activeReply.authorName}...`)
                     : t(msg`写评论...`)
                 }
-                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
                 buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               />
             </div>
@@ -603,12 +603,12 @@ function CommentLine({
         <button
           type="button"
           onClick={onAuthorClick}
-          className="font-medium text-[#07c160] hover:opacity-80"
+          className="font-medium text-[color:var(--brand-primary)] hover:opacity-80"
         >
           {authorName}
         </button>
       ) : (
-        <span className="font-medium text-[#07c160]">{authorName}</span>
+        <span className="font-medium text-[color:var(--brand-primary)]">{authorName}</span>
       )}
       {replyToName ? (
         <>
@@ -619,12 +619,12 @@ function CommentLine({
             <button
               type="button"
               onClick={onReplyToClick}
-              className="font-medium text-[#07c160] hover:opacity-80"
+              className="font-medium text-[color:var(--brand-primary)] hover:opacity-80"
             >
               {replyToName}
             </button>
           ) : (
-            <span className="font-medium text-[#07c160]">{replyToName}</span>
+            <span className="font-medium text-[color:var(--brand-primary)]">{replyToName}</span>
           )}
         </>
       ) : null}

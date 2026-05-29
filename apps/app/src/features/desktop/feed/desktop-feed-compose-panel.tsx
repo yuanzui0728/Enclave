@@ -158,7 +158,7 @@ export function DesktopFeedComposePanel({
               value={text}
               onChange={(event) => onTextChange(event.target.value)}
               placeholder={t(msg`写点想让世界居民都能看到的内容...`)}
-              className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:bg-white focus:shadow-none"
+              className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
               maxLength={FEED_TEXT_MAX_LENGTH}
               autoFocus
             />

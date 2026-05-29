@@ -163,7 +163,7 @@ export function DesktopMiniProgramsWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                      ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
@@ -461,7 +461,7 @@ export function DesktopMiniProgramsWorkspace({
                         )}
                       </div>
                     </div>
-                    <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                    <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
                       {t(msg`群接龙闭环`)}
                     </div>
                   </div>
@@ -638,7 +638,7 @@ function SidebarMiniProgramButton({
       className={cn(
         "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
       )}
     >

@@ -688,7 +688,7 @@ export function ProfileSettingsDesktop() {
                     "flex w-full items-center gap-3 px-4 py-2 text-left transition",
                     index > 0 && "border-t border-[color:var(--border-faint)]",
                     selected
-                      ? "bg-[rgba(7,193,96,0.07)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
                       : "hover:bg-[color:var(--surface-card-hover)]",
                   )}
                 >
@@ -981,7 +981,7 @@ export function ProfileSettingsDesktop() {
                   className={cn(
                     "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
                     activeTab === tab.id
-                      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--text-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
                   )}
                 >

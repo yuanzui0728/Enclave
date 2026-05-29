@@ -484,7 +484,7 @@ export function DesktopDirectCallPanel({
       <div className="flex min-w-0 flex-[1.06] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
               {kind === "video" ? <Video size={13} /> : <Mic size={13} />}
               {callLabel}
             </div>
@@ -770,7 +770,7 @@ export function DesktopDirectCallPanel({
             className={cn(
               "rounded-full border px-3 py-1 text-[11px] font-medium",
               activeCall.playbackState === "playing"
-                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
                 : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
             )}
           >
@@ -855,7 +855,7 @@ function RecordButton({
         }
       }}
       disabled={disabled}
-      className="flex h-[184px] w-[184px] items-center justify-center rounded-full border border-[rgba(7,193,96,0.12)] bg-[radial-gradient(circle_at_top,rgba(236,251,241,0.98),rgba(115,208,153,0.9)_58%,rgba(48,163,106,0.92))] text-white shadow-[0_16px_34px_rgba(15,23,42,0.08),0_8px_18px_rgba(7,193,96,0.1)] transition active:scale-[0.985] active:shadow-[0_10px_22px_rgba(15,23,42,0.08),0_6px_14px_rgba(7,193,96,0.08)] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex h-[184px] w-[184px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[radial-gradient(circle_at_top,rgba(236,251,241,0.98),rgba(115,208,153,0.9)_58%,rgba(48,163,106,0.92))] text-white shadow-[0_16px_34px_rgba(15,23,42,0.08),0_8px_18px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)] transition active:scale-[0.985] active:shadow-[0_10px_22px_rgba(15,23,42,0.08),0_6px_14px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span className="flex flex-col items-center gap-3">
         {turnPending ? (
@@ -928,7 +928,7 @@ function CallControlButton({
       className={cn(
         "inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-sm transition",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
         disabled
           ? "cursor-not-allowed opacity-45"
@@ -1027,7 +1027,7 @@ function TranscriptCard({
       className={cn(
         "rounded-[14px] px-4 py-4 shadow-[var(--shadow-soft)]",
         own
-          ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+          ? "border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
           : "border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
       )}
     >

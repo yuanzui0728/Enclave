@@ -355,7 +355,7 @@ function DesktopFriendListRow({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
-              ? "border-[#07c160] bg-[#07c160] text-white"
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
               : "border-[color:var(--border-subtle)] bg-white",
           )}
         >

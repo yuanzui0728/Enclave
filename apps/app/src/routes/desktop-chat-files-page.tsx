@@ -603,7 +603,7 @@ export function DesktopChatFilesPage() {
             : t(msg`按会话聚合最近发送的图片和文件。`)
         }
         toolbar={
-          <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+          <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
             {t(msg`${resolveFileFilterLabel(filter, t)} · ${attachmentRows.length} 项`)}
           </div>
         }
@@ -656,7 +656,7 @@ export function DesktopChatFilesPage() {
                   className={cn(
                     "rounded-[10px] border px-3 py-1.5 text-xs transition",
                     filter === item
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--text-primary)] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
+                      ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--text-primary)] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
                       : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-white",
                   )}
                 >
@@ -700,7 +700,7 @@ export function DesktopChatFilesPage() {
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
                     !selectedConversationId
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                      ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
                       : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]",
                   )}
                 >
@@ -731,7 +731,7 @@ export function DesktopChatFilesPage() {
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
                       conversation.id === selectedConversationId
-                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                        ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
                         : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]",
                     )}
                   >

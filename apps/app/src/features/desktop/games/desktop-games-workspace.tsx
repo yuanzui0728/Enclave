@@ -308,7 +308,7 @@ export function DesktopGamesWorkspace({
                   type="button"
                   variant="primary"
                   onClick={handleLaunchClick}
-                  className="h-11 rounded-full bg-[#07C160] px-6 text-[14px] font-medium text-white hover:bg-[#06ad57]"
+                  className="h-11 rounded-full bg-[color:var(--brand-primary)] px-6 text-[14px] font-medium text-white hover:bg-[#06ad57]"
                 >
                   <Play size={16} />
                   {launchLabel}
@@ -432,7 +432,7 @@ function DesktopGameRow({
         className={cn(
           "flex w-full items-center gap-2.5 px-4 py-2 text-left transition",
           active
-            ? "bg-[rgba(7,193,96,0.08)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
+            ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
             : "hover:bg-[rgba(0,0,0,0.03)]",
         )}
       >
@@ -484,7 +484,7 @@ function DesktopFriendListRow({
         className={cn(
           "flex w-full items-center gap-2.5 px-4 py-2 text-left transition",
           active
-            ? "bg-[rgba(7,193,96,0.08)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
+            ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
             : "hover:bg-[rgba(0,0,0,0.03)]",
         )}
       >
@@ -556,7 +556,7 @@ function DesktopFriendDetailRow({
           "h-8 shrink-0 rounded-full px-4 text-[12px] font-medium",
           invited
             ? "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]"
-            : "bg-[#07C160] text-white hover:bg-[#06ad57]",
+            : "bg-[color:var(--brand-primary)] text-white hover:bg-[#06ad57]",
         )}
       >
         {invited ? t(msg`已邀约`) : t(msg`邀请`)}

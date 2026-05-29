@@ -526,7 +526,7 @@ export function DesktopMessageForwardDialog({
                       className={cn(
                         "shrink-0 text-xs",
                         isMobile
-                          ? "rounded-full bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]"
+                          ? "rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-2.5 py-1 text-[color:var(--brand-primary)]"
                           : "rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]",
                       )}
                     >
@@ -600,7 +600,7 @@ function ForwardModeButton({
       className={cn(
         "flex min-w-0 flex-1 flex-col items-start rounded-[14px] border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-60",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
           : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]",
       )}
     >
@@ -686,7 +686,7 @@ function ForwardPreviewCard({
         className={cn(
           "shrink-0 rounded-full px-2.5 py-1 text-[11px]",
           mobile
-            ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+            ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
             : "rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
         )}
       >

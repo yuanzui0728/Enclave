@@ -1294,7 +1294,7 @@ function SearchLauncherStatusCard({
       : status === "empty"
         ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
         : status === "recording"
-          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]";
   const badgeClassName =
     status === "error"

@@ -48,6 +48,7 @@ import {
   markOfficialAccountSubscriptionInboxRead,
   type OfficialAccountServiceConversationSummary,
   type OfficialAccountSubscriptionInboxSummary,
+  SELF_CHARACTER_ID,
   setConversationMuted,
   setConversationPinned,
   setGroupPinned,
@@ -118,6 +119,11 @@ import {
   ChatReminderToggleButton,
 } from "../../chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../../chat/use-message-reminders";
+import {
+  cancelHoverPrefetch,
+  prefetchConversationMessages,
+  prefetchConversationMessagesOnHover,
+} from "../../chat/use-conversation-thread";
 import {
   splitChatTextSegments,
   summarizeChatMentions,
@@ -1979,7 +1985,7 @@ export function DesktopChatWorkspace({
                           onClick={() => handleQuickAction(item.key)}
                           className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]">
                             <Icon size={16} />
                           </div>
                           <span>{t(item.label)}</span>
@@ -2059,11 +2065,11 @@ export function DesktopChatWorkspace({
                   // utility shell h1 / R143 thread header h1 一脉的"把
                   // visible section title 也对 AT 暴露"思路。
                   aria-label={t(msg`消息提醒`)}
-                  className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none"
+                  className="overflow-hidden rounded-[12px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)] p-2 shadow-none"
                 >
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
                     <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]">
                         <BellRing size={14} />
                       </div>
                       <span>{t(msg`消息提醒`)}</span>
@@ -2098,7 +2104,7 @@ export function DesktopChatWorkspace({
                                       ? "bg-[#fff7e6] text-[#d48806]"
                                       : group.status === "due"
                                         ? "bg-[#fff1f0] text-[#d74b45]"
-                                        : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+                                        : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
                                   {group.title}
@@ -2152,7 +2158,7 @@ export function DesktopChatWorkspace({
                                       ? "bg-[#fff7e6] text-[#d48806]"
                                       : group.status === "due"
                                         ? "bg-[#fff1f0] text-[#d74b45]"
-                                        : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+                                        : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
                                   {group.title}
@@ -2572,6 +2578,11 @@ export function DesktopChatWorkspace({
           showMarkUnread={canConversationBeMarkedUnread(
             conversationContextMenu.conversation,
           )}
+          hidePinAction={
+            conversationContextMenu.conversation.type === "direct" &&
+            conversationContextMenu.conversation.participants[0] ===
+              SELF_CHARACTER_ID
+          }
           busy={conversationActionMutation.isPending}
           onClose={() => setConversationContextMenu(null)}
           onTogglePinned={() =>
@@ -2995,7 +3006,7 @@ function DesktopReminderCard({
       className={cn(
         "flex items-center gap-2.5 rounded-[14px] border px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-white shadow-[0_8px_18px_rgba(7,193,96,0.06)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white shadow-[0_8px_18px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
           : "border-white/70 bg-white/88 hover:bg-white",
       )}
     >
@@ -3035,7 +3046,7 @@ function DesktopReminderCard({
                   ? "bg-[#fff7e6] text-[#d48806]"
                   : entry.isDue
                     ? "bg-[#fff1f0] text-[#d74b45]"
-                    : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+                    : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
               )}
             >
               {getChatReminderStatusLabel(entry)}
@@ -3092,8 +3103,10 @@ const ConversationCardLink = memo(function ConversationCardLink({
   ) => void;
 }) {
   const t = useRuntimeTranslator();
+  const queryClient = useQueryClient();
+  const baseUrl = useAppRuntimeConfig().apiBaseUrl;
   const className = active
-    ? "flex items-center gap-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+    ? "flex items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
     : contextMenuOpen
       ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5"
       : conversation.isPinned
@@ -3154,7 +3167,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
               {displayTitle}
             </div>
             {isGroupConversation ? (
-              <span className="shrink-0 rounded-full border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 {t(msg`群聊`)}
               </span>
             ) : null}
@@ -3266,6 +3279,26 @@ const ConversationCardLink = memo(function ConversationCardLink({
       // 都已有）；桌面端单聊这条入口长期缺。
       aria-current={active ? "page" : undefined}
       onContextMenu={(event) => onContextMenu(event, conversation)}
+      // 桌面 hover 常先于点击 200-400ms，往往能覆盖整段隧道 RTT：悬停（带 180ms
+      // 意图延迟，避免扫过长列表时挨个预取抢带宽）即把首屏消息窗口预取进缓存，
+      // 点击进入时直接命中、跳过冷请求和「正在同步」卡片。点击则立即预取（不等
+      // 延迟）。仅 direct 会话（群走 app-group-messages 另一套 key/loader）。
+      onMouseEnter={() => {
+        if (!isGroupConversation) {
+          prefetchConversationMessagesOnHover(
+            queryClient,
+            conversation.id,
+            baseUrl,
+          );
+        }
+      }}
+      onMouseLeave={cancelHoverPrefetch}
+      onClick={() => {
+        if (!isGroupConversation) {
+          cancelHoverPrefetch();
+          prefetchConversationMessages(queryClient, conversation.id, baseUrl);
+        }
+      }}
     >
       {content}
     </Link>
@@ -3371,7 +3404,7 @@ function renderConversationPreviewText(text: string): ReactNode {
         className={
           segment.tone === "all"
             ? "rounded-[7px] bg-[#fff4df] px-1 py-0.5 text-[#b67206]"
-            : "rounded-[7px] bg-[rgba(7,193,96,0.07)] px-1 py-0.5 text-[color:var(--brand-primary)]"
+            : "rounded-[7px] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-1 py-0.5 text-[color:var(--brand-primary)]"
         }
       >
         {segment.text}

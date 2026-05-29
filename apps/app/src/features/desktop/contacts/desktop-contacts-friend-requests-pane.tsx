@@ -220,7 +220,7 @@ export function DesktopContactsFriendRequestsPane({
                             aria-label={t(
                               msg`接受 ${request.characterName} 的好友申请`,
                             )}
-                            className="rounded-[12px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
+                            className="rounded-[12px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
                           >
                             {acceptPendingId === request.id
                               ? t(msg`接受中...`)

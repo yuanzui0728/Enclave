@@ -29,6 +29,7 @@ import {
   hideConversation,
   leaveGroup,
   removeGroupMember,
+  SELF_CHARACTER_ID,
   setConversationMuted,
   setConversationPinned,
   setFriendStarred,
@@ -207,6 +208,8 @@ function DirectChatDetailsPanel({
   });
   const backgroundQuery = useConversationBackground(conversation.id);
   const targetCharacterId = conversation.participants[0] ?? "";
+  // 「我」（self mirror）恒置顶不可取消——隐掉「置顶聊天」开关。
+  const isSelfMirror = targetCharacterId === SELF_CHARACTER_ID;
 
   useEffect(() => {
     setNotice(null);
@@ -806,7 +809,7 @@ function DirectChatDetailsPanel({
               variant="primary"
               onClick={handleAddToContacts}
               disabled={busy || !targetCharacterId}
-              className="rounded-[10px] bg-[#07c160] px-4 text-white shadow-none hover:bg-[#06ad56]"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
             >
               {hasPendingFriendRequest ? t(msg`待处理`) : t(msg`添加到通讯录`)}
             </Button>
@@ -1028,12 +1031,14 @@ function DirectChatDetailsPanel({
                   handleToggleStarred(!(friendship?.isStarred ?? false))
                 }
               />
-              <DesktopContactProfileToggleRow
-                label={t(msg`置顶聊天`)}
-                checked={conversation.isPinned}
-                disabled={busy}
-                onToggle={() => handleTogglePin(!conversation.isPinned)}
-              />
+              {isSelfMirror ? null : (
+                <DesktopContactProfileToggleRow
+                  label={t(msg`置顶聊天`)}
+                  checked={conversation.isPinned}
+                  disabled={busy}
+                  onToggle={() => handleTogglePin(!conversation.isPinned)}
+                />
+              )}
               <DesktopContactProfileToggleRow
                 label={t(msg`消息免打扰`)}
                 checked={conversation.isMuted}
@@ -2837,7 +2842,7 @@ function DesktopGroupMemberBrowserDialog({
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs transition",
                         activeFilter === tab.id
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
+                          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
                           : "border-transparent bg-white text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-white",
                       )}
                     >
@@ -2925,12 +2930,12 @@ function DesktopGroupMemberBrowserDialog({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[12px] border px-4 py-2.5 text-left transition",
                       canViewProfile && activeMemberId === member.id
-                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_0_0_1px_rgba(7,193,96,0.06)]"
+                        ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
                         : canViewProfile
                           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white"
                           : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
                       canViewProfile
-                        ? "focus-visible:border-[rgba(7,193,96,0.14)] focus-visible:bg-[rgba(7,193,96,0.07)] focus-visible:outline-none"
+                        ? "focus-visible:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] focus-visible:outline-none"
                         : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
                       pending || !canViewProfile
                         ? "cursor-default"

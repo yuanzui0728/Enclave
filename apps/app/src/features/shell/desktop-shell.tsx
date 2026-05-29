@@ -23,6 +23,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { recordAppNavigation } from "../../lib/history-back";
 import { normalizePathname } from "../../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import { useAppearance } from "../../hooks/use-appearance";
 import {
   DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
   shouldNavigateCurrentWindow,
@@ -62,6 +63,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const standaloneDesktopRoute = isStandaloneDesktopRoute(pathname);
   const profileRouteActive = isDesktopProfileRoute(pathname);
   const runtimeConfig = useAppRuntimeConfig();
+  // 解析后的浅/深主题（复用移动端同一 appearance-store + 共享外观设置）
+  const { resolved: resolvedAppearance } = useAppearance();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
@@ -112,12 +115,18 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
     document.documentElement.classList.add("yj-desktop-window");
     document.body.classList.add("yj-desktop-window");
+    // 桌面 class 挂在 html/body（无包裹 div 可挂 JSX 属性），故 data-appearance
+    // 也挂这两处，驱动 index.css 的桌面夜间块（[data-appearance="night"]）。
+    document.documentElement.setAttribute("data-appearance", resolvedAppearance);
+    document.body.setAttribute("data-appearance", resolvedAppearance);
 
     return () => {
       document.documentElement.classList.remove("yj-desktop-window");
       document.body.classList.remove("yj-desktop-window");
+      document.documentElement.removeAttribute("data-appearance");
+      document.body.removeAttribute("data-appearance");
     };
-  }, []);
+  }, [resolvedAppearance]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -478,8 +487,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
         )}
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-[-8%] top-0 h-56 w-56 rounded-full bg-[rgba(7,193,96,0.12)] blur-3xl" />
-          <div className="absolute right-[-4%] top-[10%] h-48 w-48 rounded-full bg-[rgba(56,189,248,0.08)] blur-3xl" />
+          <div className="absolute left-[-8%] top-0 h-56 w-56 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] blur-3xl" />
+          <div className="absolute right-[-4%] top-[10%] h-48 w-48 rounded-full bg-[color-mix(in_srgb,var(--brand-accent)_8%,transparent)] blur-3xl" />
           <div className="absolute bottom-[-6%] left-1/3 h-44 w-44 rounded-full bg-[rgba(148,163,184,0.08)] blur-3xl" />
         </div>
 
@@ -542,7 +551,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       "rounded-[14px] border transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       compactDesktopNav ? "p-1" : "p-1.5",
                       isOwnerCardOpen || profileRouteActive
-                        ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
+                        ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] shadow-[0_8px_20px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
                         : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
                     )}
                   >
@@ -672,7 +681,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(17,24,39,0.34)] p-6 backdrop-blur-md">
             <div className="w-full max-w-md rounded-[24px] border border-white/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(7,193,96,0.10)]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]">
                   <AvatarChip
                     name={ownerDisplayName}
                     src={ownerAvatar}
@@ -730,7 +739,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
 
               {lockNotice ? (
-                <div className="mt-4 rounded-[14px] bg-[rgba(7,193,96,0.10)] px-4 py-3 text-sm text-[#0b7a3b]">
+                <div className="mt-4 rounded-[14px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-4 py-3 text-sm text-[color:var(--state-success-text)]">
                   {lockNotice}
                 </div>
               ) : null}
@@ -938,7 +947,7 @@ function DesktopOwnerQuickCard({
 
   return (
     <div className="absolute left-[calc(100%+0.75rem)] top-0 z-30 w-[300px] rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
-      <div className="rounded-[18px] bg-[linear-gradient(180deg,rgba(7,193,96,0.12),rgba(255,255,255,0.92))] px-4 py-4">
+      <div className="rounded-[18px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--brand-primary)_12%,transparent),rgba(255,255,255,0.92))] px-4 py-4">
         <div className="flex items-center gap-3">
           <AvatarChip name={ownerDisplayName} src={ownerAvatar} size="lg" />
           <div className="min-w-0 flex-1">
@@ -1023,7 +1032,7 @@ function DesktopOwnerShortcutButton({
         "flex w-full items-center gap-3 rounded-[14px] border bg-transparent px-3 py-2.5 text-left appearance-none transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         disabled
           ? "cursor-wait border-[color:var(--border-faint)] bg-[rgba(148,163,184,0.08)] text-[color:var(--text-muted)]"
-          : "border-transparent bg-transparent text-[color:var(--text-primary)] hover:border-[rgba(7,193,96,0.2)] hover:bg-[rgba(7,193,96,0.08)]",
+          : "border-transparent bg-transparent text-[color:var(--text-primary)] hover:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]",
       )}
     >
       <div
@@ -1031,7 +1040,7 @@ function DesktopOwnerShortcutButton({
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
           disabled
             ? "bg-[rgba(148,163,184,0.16)]"
-            : "bg-[rgba(7,193,96,0.12)] text-[#15803d]",
+            : "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[#15803d]",
         )}
       >
         <Icon size={17} />
@@ -1085,7 +1094,7 @@ function DesktopNavLink({
           "flex items-center justify-center border transition-[background-color,border-color,color]",
           compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
-            ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
+            ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] text-[color:var(--brand-secondary)]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
@@ -1139,7 +1148,7 @@ function DesktopActionButton({
           "flex items-center justify-center border transition-[background-color,border-color,color]",
           compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
-            ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
+            ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] text-[color:var(--brand-secondary)]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
@@ -1172,7 +1181,7 @@ function DesktopMoreMenuButton({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[12px] border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]">
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">

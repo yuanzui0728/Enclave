@@ -367,7 +367,7 @@ export function DesktopFriendMomentsWorkspace({
                     <button
                       type="button"
                       onClick={(event) => openProfilePopover(event.currentTarget)}
-                      className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
+                      className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-2"
                       aria-label={profileActionAriaLabel}
                     >
                       <AvatarChip
@@ -379,7 +379,7 @@ export function DesktopFriendMomentsWorkspace({
                     <button
                       type="button"
                       onClick={(event) => openProfilePopover(event.currentTarget)}
-                      className="min-w-0 text-left transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
+                      className="min-w-0 text-left transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-2"
                       aria-label={profileActionAriaLabel}
                     >
                       <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">

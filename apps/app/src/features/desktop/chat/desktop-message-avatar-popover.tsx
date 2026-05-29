@@ -487,7 +487,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       <div
         className={
           isOwner
-            ? "bg-[linear-gradient(180deg,rgba(7,193,96,0.12),rgba(255,255,255,0.96))]"
+            ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--brand-primary)_12%,transparent),rgba(255,255,255,0.96))]"
             : undefined
         }
       >
@@ -505,7 +505,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               <span
                 className={
                   isOwner
-                    ? "rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] text-[#15803d]"
+                    ? "rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] px-2 py-0.5 text-[10px] text-[#15803d]"
                     : "rounded-full bg-[rgba(0,0,0,0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]"
                 }
               >

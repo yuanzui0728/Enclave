@@ -75,23 +75,23 @@ type DesktopSearchWorkspaceProps = {
 };
 
 const desktopSearchFocusRingClassName =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.22)] focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 const desktopSearchCardFocusClassName = cn(
   desktopSearchFocusRingClassName,
-  "focus-visible:-translate-y-0.5 focus-visible:shadow-[0_18px_44px_rgba(7,193,96,0.12)]",
+  "focus-visible:-translate-y-0.5 focus-visible:shadow-[0_18px_44px_color-mix(in_srgb,var(--brand-primary)_12%,transparent)]",
 );
 const desktopSearchRowFocusClassName = cn(
   desktopSearchFocusRingClassName,
-  "focus-visible:shadow-[0_12px_28px_rgba(7,193,96,0.10)]",
+  "focus-visible:shadow-[0_12px_28px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]",
 );
 const desktopSearchChipFocusClassName = cn(
   desktopSearchFocusRingClassName,
-  "focus-visible:shadow-[0_10px_24px_rgba(7,193,96,0.08)]",
+  "focus-visible:shadow-[0_10px_24px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)]",
 );
 const desktopSearchSelectedCardClassName =
-  "border-[rgba(7,193,96,0.24)] shadow-[0_20px_44px_rgba(7,193,96,0.10)]";
+  "border-[color-mix(in_srgb,var(--brand-primary)_24%,transparent)] shadow-[0_20px_44px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]";
 const desktopSearchSelectedRowClassName =
-  "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.05)] shadow-[0_12px_28px_rgba(7,193,96,0.08)]";
+  "border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)] shadow-[0_12px_28px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)]";
 
 type DesktopSearchFocusRegion = "input" | "categories" | "results";
 
@@ -1125,7 +1125,7 @@ export function DesktopSearchWorkspace({
                 "absolute left-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-[10px] transition",
                 hasKeyword ? "h-7 w-7" : "h-8 w-8",
                 searchPending && trimmedInputKeyword
-                  ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)] hover:bg-[rgba(7,193,96,0.16)]"
+                  ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)]"
                   : "text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
               )}
             >
@@ -1139,7 +1139,7 @@ export function DesktopSearchWorkspace({
               onKeyDown={handleSearchInputKeyDown}
               placeholder={t(msg`搜索聊天记录、联系人、收藏和朋友圈`)}
               className={cn(
-                "w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pr-20 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow,height,font-size,padding] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:bg-white focus:shadow-[0_0_0_3px_rgba(7,193,96,0.08)]",
+                "w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pr-20 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow,height,font-size,padding] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_40%,transparent)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)]",
                 hasKeyword ? "h-9 pl-10 text-sm" : "h-11 pl-11 text-[15px]",
               )}
             />
@@ -1158,7 +1158,7 @@ export function DesktopSearchWorkspace({
             className={cn(
               "-mx-1 mt-2 flex gap-0.5 overflow-x-auto px-1 pb-1 transition-[background-color]",
               keyboardFocusRegion === "categories"
-                ? "rounded-[8px] bg-[rgba(7,193,96,0.04)]"
+                ? "rounded-[8px] bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
                 : null,
               !hasKeyword ? "justify-center" : null,
             )}
@@ -1187,7 +1187,7 @@ export function DesktopSearchWorkspace({
                     "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[13px] transition",
                     desktopSearchChipFocusClassName,
                     activeCategory === item.id
-                      ? "bg-[rgba(7,193,96,0.10)] font-medium text-[color:var(--brand-primary)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] font-medium text-[color:var(--brand-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                   )}
                 >
@@ -1614,7 +1614,7 @@ function DesktopSearchActionButton({
 }) {
   const toneClassName =
     tone === "brand"
-      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)] hover:bg-[rgba(7,193,96,0.12)]"
+      ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
       : tone === "danger"
         ? "border-[rgba(225,29,72,0.10)] bg-[rgba(225,29,72,0.06)] text-[#be123c] hover:bg-[rgba(225,29,72,0.10)]"
         : "border-[rgba(15,23,42,0.06)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]";
@@ -1654,7 +1654,7 @@ function DesktopSearchOpenCue({
         ? "border-[rgba(15,118,110,0.16)] bg-[rgba(15,118,110,0.08)] text-[#226448] group-hover:bg-[rgba(15,118,110,0.12)] group-focus-visible:bg-[rgba(15,118,110,0.12)]"
         : tone === "olive"
           ? "border-[rgba(134,181,96,0.18)] bg-[rgba(134,181,96,0.10)] text-[#587d38] group-hover:bg-[rgba(134,181,96,0.14)] group-focus-visible:bg-[rgba(134,181,96,0.14)]"
-          : "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)] group-hover:bg-[rgba(7,193,96,0.12)] group-focus-visible:bg-[rgba(7,193,96,0.12)]";
+          : "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)] group-hover:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] group-focus-visible:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]";
 
   return (
     <span
@@ -1709,7 +1709,7 @@ function DesktopSearchStatusCard({
       ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
       : status === "empty"
         ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
-        : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]";
+        : "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]";
   const badgeClassName =
     status === "error"
       ? "bg-white text-[#be123c]"
@@ -1769,14 +1769,14 @@ function DesktopSearchScopeCard({
         ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
         : category === "feed"
           ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
-          : "bg-[rgba(7,193,96,0.10)] text-[#15803d]";
+          : "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]";
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition hover:border-[rgba(7,193,96,0.20)] hover:bg-[rgba(7,193,96,0.04)]",
+        "group flex items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition hover:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]",
         desktopSearchCardFocusClassName,
       )}
     >
@@ -1895,7 +1895,7 @@ function DesktopSearchContextBar({
                   "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[11px] transition",
                   desktopSearchChipFocusClassName,
                   activeSection === item.category
-                    ? "bg-[rgba(7,193,96,0.10)] font-medium text-[color:var(--brand-primary)]"
+                    ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] font-medium text-[color:var(--brand-primary)]"
                     : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
@@ -1934,13 +1934,13 @@ function DesktopSearchDrilldownBanner({
   const getCategoryTitle = useSearchCategoryTitle();
   const categoryTitle = getCategoryTitle(category);
   return (
-    <section className="rounded-[18px] border border-[#dce9dd] bg-[linear-gradient(135deg,rgba(7,193,96,0.10),rgba(7,193,96,0.04)_40%,white)] p-4">
+    <section className="rounded-[18px] border border-[#dce9dd] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_10%,transparent),color-mix(in_srgb,var(--brand-primary)_4%,transparent)_40%,white)] p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-dim)]">
             <span className="rounded-full bg-white px-2.5 py-1">{t(msg`全部结果`)}</span>
             <ChevronRight size={12} />
-            <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[color:var(--brand-primary)]">
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-2.5 py-1 text-[color:var(--brand-primary)]">
               {categoryTitle}
             </span>
           </div>
@@ -1987,7 +1987,7 @@ function DesktopSearchResultsPanel({
       className={cn(
         "scroll-mt-36 rounded-[20px] border bg-[color:var(--surface-console)] p-4 transition-[border-color,box-shadow,transform]",
         highlighted
-          ? "border-[rgba(7,193,96,0.24)] shadow-[0_20px_44px_rgba(7,193,96,0.10)]"
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_24%,transparent)] shadow-[0_20px_44px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
           : "border-[color:var(--border-faint)]",
       )}
     >
@@ -2002,7 +2002,7 @@ function DesktopSearchResultsPanel({
         </div>
         <div className="flex items-center gap-2">
           {highlighted ? (
-            <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+            <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
               {t(msg`刚刚定位`)}
             </div>
           ) : null}
@@ -2268,7 +2268,7 @@ function DesktopSearchFeatureCard({
         : "border-[#d8e7df] bg-[linear-gradient(180deg,#f7fbf9,white)]";
   const badgeClassName =
     category === "contacts"
-      ? "bg-[rgba(7,193,96,0.10)] text-[#1d6a37]"
+      ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#1d6a37]"
       : category === "favorites"
         ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
         : "bg-[rgba(15,118,110,0.10)] text-[#226448]";
@@ -2480,7 +2480,7 @@ function DesktopSearchMessageGroupCard({
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
           desktopSearchRowFocusClassName,
-          isHeaderSelected ? "bg-[rgba(7,193,96,0.05)]" : null,
+          isHeaderSelected ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]" : null,
         )}
       >
         <AvatarChip
@@ -2502,7 +2502,7 @@ function DesktopSearchMessageGroupCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+          <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
             {t(msg`${group.totalHits} 条相关记录`)}
           </div>
           <DesktopSearchOpenCue compact label={t(msg`进入会话`)} tone="brand" />
@@ -2524,12 +2524,12 @@ function DesktopSearchMessageGroupCard({
               onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
-                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
                 selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]">
                 <MessageSquareText size={15} />
               </div>
               <div className="min-w-0 flex-1">
@@ -2592,7 +2592,7 @@ function DesktopSearchOfficialAccountGroupCard({
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
           desktopSearchRowFocusClassName,
-          isHeaderSelected ? "bg-[rgba(7,193,96,0.05)]" : null,
+          isHeaderSelected ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]" : null,
         )}
       >
         <AvatarChip
@@ -2617,7 +2617,7 @@ function DesktopSearchOfficialAccountGroupCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+          <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
             {t(msg`${group.totalHits} 篇相关文章`)}
           </div>
           <DesktopSearchOpenCue compact label={t(msg`进入账号`)} tone="brand" />
@@ -2639,12 +2639,12 @@ function DesktopSearchOfficialAccountGroupCard({
               onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
-                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
                 selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]">
                 <Newspaper size={15} />
               </div>
               <div className="min-w-0 flex-1">
@@ -2804,7 +2804,7 @@ function DesktopSearchResultRow({
       onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+        "group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
         desktopSearchRowFocusClassName,
         selected ? desktopSearchSelectedRowClassName : null,
       )}
@@ -2819,7 +2819,7 @@ function DesktopSearchResultRow({
           <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
             {renderHighlightedText(item.title, keyword)}
           </div>
-          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
             {item.badge}
           </span>
         </div>

@@ -331,7 +331,7 @@ export function DesktopGroupMemberPicker({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
                       checked
-                        ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
+                        ? "border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[var(--shadow-soft)]"
                         : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
                     )}
                   >

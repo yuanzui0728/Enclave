@@ -394,7 +394,7 @@ export function DesktopChatHistoryPanel({
         >
         <label
           className={cn(
-            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[#f4f4f4] transition-[border-color,background-color] focus-within:border-[rgba(7,193,96,0.2)] focus-within:bg-white",
+            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[#f4f4f4] transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white",
             isDialog ? "px-3 py-2" : "px-3 py-2.5",
           )}
         >
@@ -442,7 +442,7 @@ export function DesktopChatHistoryPanel({
               {getConversationDisplayTitle(conversation.title)}
             </span>
             {openedFromDetails ? (
-              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.14)]">
+              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]">
                 {t(msg`聊天信息入口`)}
               </span>
             ) : null}
@@ -569,7 +569,7 @@ export function DesktopChatHistoryPanel({
                     className={cn(
                       "h-7 rounded-full px-3 text-[12px] transition",
                       active
-                        ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]"
+                        ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
                         : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
                     )}
                   >
@@ -607,7 +607,7 @@ export function DesktopChatHistoryPanel({
                   className={cn(
                     "h-7 inline-flex items-center gap-1 rounded-full px-3 text-[12px] transition",
                     customDate
-                      ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
                       : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
                   )}
                 >
@@ -660,7 +660,7 @@ export function DesktopChatHistoryPanel({
               isDialog ? "mx-auto w-full max-w-[680px]" : "",
             )}
           >
-            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#f4f4f4] px-2.5 transition-[border-color,background-color] focus-within:border-[rgba(7,193,96,0.2)] focus-within:bg-white">
+            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#f4f4f4] px-2.5 transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white">
               <Search
                 size={13}
                 className="shrink-0 text-[color:var(--text-muted)]"
@@ -733,7 +733,7 @@ export function DesktopChatHistoryPanel({
                     className={cn(
                       "h-7 rounded-full px-3 text-[12px] transition",
                       !senderId
-                        ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]"
+                        ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
                         : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
                     )}
                   >
@@ -752,7 +752,7 @@ export function DesktopChatHistoryPanel({
                       className={cn(
                         "h-7 max-w-[180px] truncate rounded-full px-3 text-[12px] transition",
                         senderId === option.id
-                          ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]"
+                          ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
                           : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
                       )}
                     >
@@ -903,7 +903,7 @@ function DesktopSearchResultRow({
       type="button"
       onClick={() => onOpenMessage(item.messageId)}
       aria-label={t(msg`定位到 ${item.senderName || t(msg`消息`)} 的这条消息`)}
-      className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[rgba(7,193,96,0.28)] hover:bg-[#f3f9f4] focus-visible:border-l-[rgba(7,193,96,0.28)] focus-visible:bg-[#f3f9f4] focus-visible:outline-none"
+      className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] hover:bg-[#f3f9f4] focus-visible:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] focus-visible:bg-[#f3f9f4] focus-visible:outline-none"
     >
       <div className="flex gap-3">
         <span

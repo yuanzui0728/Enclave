@@ -152,7 +152,7 @@ export function DesktopContactsGroupsPane({
                       className={cn(
                         "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                         isSelected
-                          ? "bg-[rgba(7,193,96,0.07)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
+                          ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
                           : "bg-white hover:bg-[color:var(--surface-console)]",
                         index > 0
                           ? "border-t border-[color:var(--border-faint)]"

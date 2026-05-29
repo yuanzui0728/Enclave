@@ -236,7 +236,7 @@ export function DesktopContactsStarredFriendsPane({
                       ? "border-t border-[color:var(--border-faint)]"
                       : undefined,
                     selectedCharacterId === item.character.id
-                      ? "bg-[rgba(7,193,96,0.07)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
+                      ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
                       : undefined,
                   )}
                 >

@@ -709,7 +709,7 @@ export function DesktopOfficialAccountsWorkspace({
                 ? t(msg`搜索常看公众号或文章`)
                 : t(msg`搜索公众号`)
             }
-            className="rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:translate-y-0 focus:border-[rgba(7,193,96,0.14)] focus:bg-white focus:shadow-none"
+            className="rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:translate-y-0 focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
           />
           {displayMode === "accounts" ? (
             <div className="flex gap-2">
@@ -720,7 +720,7 @@ export function DesktopOfficialAccountsWorkspace({
                 onClick={() => setAccountFilter("all")}
                 className={
                   accountFilter === "all"
-                    ? "rounded-full border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)] shadow-none hover:bg-[rgba(7,193,96,0.08)]"
+                    ? "rounded-full border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)] shadow-none hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
                     : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 }
               >
@@ -733,7 +733,7 @@ export function DesktopOfficialAccountsWorkspace({
                 onClick={() => setAccountFilter("following")}
                 className={
                   accountFilter === "following"
-                    ? "rounded-full border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)] shadow-none hover:bg-[rgba(7,193,96,0.08)]"
+                    ? "rounded-full border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)] shadow-none hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
                     : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 }
               >
@@ -867,7 +867,7 @@ export function DesktopOfficialAccountsWorkspace({
                         {account.name}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
-                        <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]">
+                        <span className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-2.5 py-1 text-[color:var(--brand-primary)]">
                           {account.accountType === "service"
                             ? t(msg`服务号`)
                             : t(msg`订阅号`)}
@@ -969,7 +969,7 @@ export function DesktopOfficialAccountsWorkspace({
                         onClick={() => setDetailTab("updates")}
                         className={
                           detailTab === "updates"
-                            ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
+                            ? "rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
                             : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         }
                       >
@@ -980,7 +980,7 @@ export function DesktopOfficialAccountsWorkspace({
                         onClick={() => setDetailTab("profile")}
                         className={
                           detailTab === "profile"
-                            ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
+                            ? "rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
                             : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         }
                       >
@@ -1325,7 +1325,7 @@ function DesktopOfficialFeedArticleRow({
     <div
       className={cn(
         "border-b border-[color:var(--border-faint)] px-7 py-4 transition",
-        active ? "bg-[rgba(7,193,96,0.04)]" : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
+        active ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]" : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1388,14 +1388,14 @@ function DesktopOfficialFeedArticleRow({
         className={cn(
           "mt-3 flex w-full items-start gap-3 rounded-[18px] border px-4 py-4 text-left transition",
           active
-            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.06)]"
+            ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
             : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] hover:bg-white",
         )}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
             {item.article.isPinned ? (
-              <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
+              <span className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
                 {t(msg`置顶`)}
               </span>
             ) : null}

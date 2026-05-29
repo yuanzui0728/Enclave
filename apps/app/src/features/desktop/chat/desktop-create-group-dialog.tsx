@@ -737,11 +737,11 @@ export function DesktopCreateGroupDialog({
         className={cn(
           "flex w-full items-center gap-3 rounded-none border-b border-transparent px-4 py-2.5 text-left transition disabled:opacity-60",
           checked
-            ? "bg-[rgba(7,193,96,0.08)]"
+            ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
             : isSourceFriend
-              ? "bg-[rgba(7,193,96,0.04)] hover:bg-[rgba(7,193,96,0.06)]"
+              ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
               : "hover:bg-[rgba(0,0,0,0.028)]",
-          focused ? "bg-[rgba(7,193,96,0.05)]" : "",
+          focused ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]" : "",
         )}
       >
         <AvatarChip name={displayName} src={item.character.avatar} size="md" />
@@ -751,7 +751,7 @@ export function DesktopCreateGroupDialog({
               {displayName}
             </div>
             {isSourceFriend ? (
-              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+              <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                 {t(msg`当前聊天`)}
               </span>
             ) : null}
@@ -936,7 +936,7 @@ export function DesktopCreateGroupDialog({
                         {displayName}
                       </span>
                       {isSourceFriend ? (
-                        <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                        <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                           {t(msg`当前`)}
                         </span>
                       ) : null}
@@ -1126,7 +1126,7 @@ export function DesktopCreateGroupDialog({
                         className={cn(
                           "rounded-full border px-2.5 py-1 transition",
                           recentPresetSelectionState.get(count)
-                            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                            ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
                             : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                         )}
                       >
@@ -1144,7 +1144,7 @@ export function DesktopCreateGroupDialog({
                       className={cn(
                         "rounded-full border px-2.5 py-1 transition",
                         allShareableMessagesSelected
-                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                          ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
                           : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                       )}
                     >
@@ -1163,7 +1163,7 @@ export function DesktopCreateGroupDialog({
                 <div
                   tabIndex={0}
                   onKeyDown={handleSharedMessagesKeyDown}
-                  className="max-h-56 overflow-auto rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.14)]"
+                  className="max-h-56 overflow-auto rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
                   aria-label={t(msg`可分享聊天记录列表`)}
                 >
                   {shareableMessageSections.map((section) => (
@@ -1191,9 +1191,9 @@ export function DesktopCreateGroupDialog({
                               className={cn(
                                 "flex w-full items-start gap-3 border-b border-[rgba(15,23,42,0.05)] px-3 py-2.5 text-left transition",
                                 checked
-                                  ? "bg-[rgba(7,193,96,0.08)]"
+                                  ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
                                   : "hover:bg-[rgba(0,0,0,0.028)]",
-                                focused ? "bg-[rgba(7,193,96,0.05)]" : "",
+                                focused ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]" : "",
                               )}
                             >
                               <div
@@ -1264,7 +1264,7 @@ export function DesktopCreateGroupDialog({
                 className={cn(
                   "rounded-full px-3 py-1 transition",
                   shareHistory
-                    ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                    ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
                     : "bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                 )}
               >
