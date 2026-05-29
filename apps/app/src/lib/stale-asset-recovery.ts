@@ -9,17 +9,20 @@
 // 防循环策略（2026-05-29 修）：旧实现用一个「整 session 只自愈一次」的 sessionStorage
 // 闸（key=="1" 后永不再 reload）。问题是线上会多次重新部署，第二次部署再撞 stale
 // 时闸已是 "1"，于是不 reload、直接把用户摔进 ErrorBoundary，表现为「每次切 tab 都报错、
-// 得手动刷新」。改成：
-//   - 记录上次自愈 reload 的时间戳；reload 后若在 COOLDOWN 内又撞 stale，判定为
-//     「这个 build 根本加载不出来」的死循环，放手让 ErrorBoundary 兜底；
-//   - app 成功启动后调用 markStaleRecoverySuccess() 清掉时间戳，于是每一次「真正的
-//     新部署」都能再拿到一次干净的自愈 reload，而不是一辈子只许一次。
+// 得手动刷新」。改成记录上次自愈 reload 的时间戳：
+//   - reload 后若在 COOLDOWN 内又撞 stale，判定为「这个 build 根本加载不出来」的
+//     死循环，放手让 ErrorBoundary 兜底；
+//   - 超过 COOLDOWN 再撞 stale，则视作「换了新 build」自动再 reload 一次。
+// 时间戳到点自动「过期」即完成再武装——真实重新部署的间隔（构建+swap，远 > COOLDOWN）
+// 一定落在窗口外，所以每一次新部署都能再拿到一次干净的自愈 reload，而不是一辈子只许
+// 一次。注意：不要再引入「启动成功就提前清零」之类的提前再武装——那会在 [清零, COOLDOWN]
+// 之间留出一段「时间戳已清但其实刚 reload 过」的缝隙，stale 在缝隙内复发会被误判成新
+// 部署而反复 reload，正是 COOLDOWN 要掐断的死循环。
 
 const RECOVERY_TS_KEY = "yinjie-app-stale-recovery-ts";
 
-// 两次自愈 reload 的最小间隔。reload 后只要 app 成功跑起来就会清掉时间戳（见
-// markStaleRecoverySuccess），所以正常重新部署不受这个间隔限制；它只用来掐断
-// 「reload→启动就又撞 stale→再 reload」的死循环。
+// 两次自愈 reload 的最小间隔，兼任「再武装窗口」：撞 stale 距上次自愈 < 此值即判死循环
+// 停手，>= 此值即当作新 build 再自愈。真实重新部署间隔远大于它，故不影响正常自愈。
 const RECOVERY_COOLDOWN_MS = 10_000;
 
 function isCapacitorNativeShell() {
@@ -61,20 +64,6 @@ function shouldRecoverFromStaleAssets() {
     // sessionStorage 不可用（隐私模式等）：宁可冒一次循环风险也要尽力自愈
   }
   return true;
-}
-
-// app 成功启动后由 main.tsx 调用：清掉自愈时间戳，让下一次真正的新部署能再次
-// 触发干净的自愈 reload。若启动本身就因 stale 失败（死循环场景），这个清除不会
-// 在 COOLDOWN 内发生，循环仍被掐断。
-export function markStaleRecoverySuccess() {
-  if (typeof window === "undefined") {
-    return;
-  }
-  try {
-    window.sessionStorage.removeItem(RECOVERY_TS_KEY);
-  } catch {
-    // ignore
-  }
 }
 
 export function recoverFromStaleAssets() {

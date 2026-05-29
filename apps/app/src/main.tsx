@@ -44,10 +44,7 @@ import {
   refreshCloudSessionIfNeeded,
 } from "./store/cloud-session-store";
 import { hydrateNativeRuntimeConfig } from "./runtime/runtime-config-store";
-import {
-  markStaleRecoverySuccess,
-  recoverFromStaleAssets,
-} from "./lib/stale-asset-recovery";
+import { recoverFromStaleAssets } from "./lib/stale-asset-recovery";
 
 function installStaleAssetRecovery() {
   if (typeof window === "undefined") {
@@ -210,13 +207,6 @@ async function bootstrap() {
 
   // SW 注册放在 React 挂载之后再触发（内部 idleCallback），不抢首屏带宽。
   registerAppServiceWorker();
-
-  // 启动后若过了几秒还没因 stale chunk 触发自愈 reload，说明当前 build 确实加载得
-  // 起来——清掉自愈时间戳，让下一次「真正的新部署」能再拿到一次干净的自愈 reload，
-  // 而不是整个 session 只许自愈一次。延迟要大于动态 chunk 的加载耗时、但远小于
-  // RECOVERY_COOLDOWN_MS：真死循环里 stale 会在 reload 后 ~1s 内复发并被 cooldown
-  // 掐断，发生在这个清除之前，所以循环防护不受影响。
-  window.setTimeout(markStaleRecoverySuccess, 4000);
 }
 
 void bootstrap();
