@@ -595,12 +595,12 @@ function CyberAvatarStatusHero({
         </div>
       )}
 
-      {/* 当前关注 / 近期动向 */}
-      {focus.length > 0 ? (
-        <HeroChipRow label={t(msg`当前关注`)} items={focus} />
-      ) : null}
-      {recent.length > 0 ? (
-        <HeroChipRow label={t(msg`近期动向`)} items={recent} />
+      {/* 当前关注：只留一行精简列表（focus 为空回退 recent），最多 3 条，长句单行截断 */}
+      {(focus.length > 0 ? focus : recent).length > 0 ? (
+        <HeroFocusList
+          label={t(msg`当前关注`)}
+          items={(focus.length > 0 ? focus : recent).slice(0, 3)}
+        />
       ) : null}
 
       {/* 看完整画像 */}
@@ -629,22 +629,26 @@ function pickItems(primary?: string[], fallback?: string[]): string[] {
   return list.slice(0, 6);
 }
 
-function HeroChipRow({ label, items }: { label: string; items: string[] }) {
+// 当前关注：竖排精简列表（替代会换行的 chip 行）。每条单行截断，遗留长句也能裁干净。
+function HeroFocusList({ label, items }: { label: string; items: string[] }) {
   return (
     <div className="mt-3">
       <div className="mb-1.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
         {label}
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <ul className="space-y-1">
         {items.map((item, index) => (
-          <span
+          <li
             key={`${item}-${index}`}
-            className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
+            className="flex items-start gap-1.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]"
           >
-            {item}
-          </span>
+            <span className="mt-px shrink-0 text-[color:var(--brand-primary)]">
+              ·
+            </span>
+            <span className="min-w-0 flex-1 truncate">{item}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
