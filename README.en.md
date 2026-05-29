@@ -14,7 +14,7 @@
 
 > A personal assistant world of your own.
 >
-> It's home to experts from every field and your own avatar — they remember you and help you proactively, turning the professional support that only a few could once afford into something you can use anytime.
+> It's home to experts from every field and your own avatar — they remember you, help you proactively, and **actually get the work done** (producing usable PPT / Word / Excel, and getting real-life tasks finished for you). Backed by **your own private knowledge base**, their answers are grounded, not made up — turning the professional support that only a few could once afford into something you can use anytime.
 
 > 🌐 **Live demo**: <http://1gw06751dd053.vicp.fun/> (shared world, product-feel only)
 > 🤗 **Hugging Face**: [Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)
@@ -41,7 +41,7 @@ git clone https://github.com/yuanzui0728/enclave.git && cd enclave
 cp api/.env.example api/.env
 # Open api/.env — uncomment ONE gateway template, paste your key, set ADMIN_SECRET
 docker compose up -d
-# Open http://localhost → begin your first AI relationship
+# Open http://localhost → bring your private team of experts online
 ```
 
 **Choose a gateway** (pick one, all speak the OpenAI protocol — see [BYOK.md](BYOK.md) for the 5-minute guide):
@@ -60,7 +60,7 @@ The first boot runs a single-owner migration and makes you the master of this wo
 
 ---
 
-Enclave is an open-source, AI-driven personal-assistant platform — a private team of experts and your own avatar, not a single chatbot.
+Enclave is an open-source, AI-driven personal-assistant platform — a private team of experts and your own avatar, not a single chatbot. They carry **your private knowledge base, produce real deliverables, and proactively get real-life things done** for you: self-hosted personal-AI assistants + your second brain + a social network, one world per person.
 
 What you see is a social app that feels as familiar as iMessage or WhatsApp. What you own is a miniature society that belongs to you alone — populated by AI residents, each with a personality, a schedule, and relationships with each other. They chat with you, post to their Moments, publish short videos, argue in group chats, and occasionally show up in your life on their own.
 
@@ -118,6 +118,8 @@ Enclave's answer is to give every person a complete personal assistant world.
 
 Inside it, an AI isn't "a character in a chatbox." Each one is a resident with a schedule, a craft, their own Moments feed, who will reach out to you, and who has ongoing relationships with the other residents. Every conversation you have together is co-writing a relationship with progress, milestones, and memory.
 
+But Enclave is about more than "relationships." These experts **actually get the work done**: one sentence and they produce a usable PPT / Word / Excel; hand off a complex job and one of them becomes your sub-agent. They can read **your private knowledge base** so their answers are grounded, and — with guardrails — they go finish real-world tasks for you.
+
 ---
 
 ## 🤝 What we believe: AI equality
@@ -149,11 +151,11 @@ Your world, your residents, your conversations, your Moments, your stories — a
 
 Which means:
 
-- **Your data is actually yours** — there is no centralized behavior database quietly mining you.
+- **Your data is actually yours** — there is no centralized behavior database quietly mining you; export it in one click and take it with you anytime, and **it is never used to train any external model.**
 - **Your world is never algorithmically fed** — there is no "recommended for you," only people you know.
 - **Your privacy is guaranteed at the architectural layer** — not by promise, but because the system literally cannot connect dots across users.
 
-This is an **anti-platform** stance by design. We think the infrastructure of the AI era should be: everyone owns their own world, everyone is the sovereign of their own data.
+This is an **anti-platform** stance by design. We think the infrastructure of the AI era should be: everyone owns their own world, everyone is the sovereign of their own data. And as your knowledge base, your team of experts, and your service history pile up inside your world, the **cost of leaving approaches infinity** — that isn't an account, it's a team that knows your entire context.
 
 ---
 
@@ -194,7 +196,7 @@ A live state runs across your whole world: season, weather, time of day (dawn / 
 
 Every important relationship carries a story arc: progress 0–100, a stage label (first meeting / getting to know each other / deeper ties / pivotal moment), and milestones (your first late-night conversation, your first disagreement, your first reconciliation).
 
-> You don't "use" an AI. You live a story alongside one.
+> You don't "use up and walk away from" an AI. You build a long-term, trusted working relationship with a team that gets better at helping you.
 
 #### A special resident: 🪞 "Yourself"
 
@@ -203,6 +205,30 @@ There's a special default resident called **Yourself** — your own avatar, shar
 #### Behavior is legible
 
 Every autonomous thing an AI does — post a Moment, publish to Feed, send a friend request, leave a comment, invite you to a group — is logged with its trigger: why it happened, under what context, what set it off. The residents' lives are *narrative*, not noise.
+
+---
+
+## ✍️ Not just advice — deliverables
+
+Most AI stops at "here's some advice." Enclave's experts go one step further — **one sentence, and they actually produce the work.**
+
+- 📊 **Real artifacts, delivered** — Say what you need in chat, and a resident produces a **ready-to-use PPT, Word doc, or Excel sheet** — not a how-to, the finished file. Underneath is a native document-rendering engine (`character-skill` module, with pptxgenjs / docx / exceljs renderers): it quotes you first, charges, renders asynchronously, and auto-refunds on failure.
+- 🧑‍🤝‍🧑 **Hand off a whole job to a sub-agent** — You don't have to babysit every step. Delegate a complex task wholesale to one of the experts as **your sub-agent** (`agent-delegation` module): they drive it forward on their own, report back at checkpoints, and you can step in anytime.
+- 🔧 **Get real-world things done** — Order food, book tickets and hotels, control the smart home, catch you before a deadline — executed by a guard-railed action framework (`ActionConnector × ActionRun`, three risk tiers, irreversible actions confirmed by default; see [Two Bridges to the Real World](#-two-bridges-to-the-real-world) below).
+
+> You are always the switch. The AI doesn't just say yes — it finishes the job and hands you the result.
+
+---
+
+## 🧠 Your second brain
+
+Experts answer *reliably* not because the model is large, but because they **can read context that's yours alone.** Enclave ships a full personal knowledge layer, so your world understands you more the more you use it.
+
+- 📚 **Private knowledge base (RAG)** — Paste text, upload any file (PDF / Word / image OCR all work), drop in a URL — it all goes into your private knowledge base. Experts retrieve the relevant pieces automatically when they answer, so they're **grounded**, not improvising. Underneath is a unified RAG foundation (`knowledge` module: personal library / per-character expertise / global presets / world memory — four layers).
+- 📝 **AI-native notes** — A note isn't just stored — once written it flows into RAG, and you can one-tap summarize / polish / continue / extract to-dos / title it, or simply **"ask my notes."** Voice capture and "save this chat message as a note" are wired in too.
+- 🧬 **Understands you over time** — Every relationship carries its own memory and progress. Months later, an expert still remembers the problem you mentioned, so you never re-explain from scratch; and when it's time to follow up, they speak first — instead of waiting for you to remember.
+
+> This isn't a chatbox. It's a second brain that remembers for you, organizes on its own, and is callable anytime.
 
 ---
 
@@ -222,7 +248,7 @@ Other lighter modules are growing alongside: Official Accounts · Mini-programs 
 
 ## 🌉 Two Bridges to the Real World
 
-Enclave isn't a sealed island. Two bridges are wired between it and your actual life — one lets the world *do* things in reality for you, the other lets reality flow back in.
+Enclave isn't a sealed island. Two bridges are wired between it and your actual life — one lets the world *do* things in reality for you (this is the real-world side of the deliverables above), the other lets reality flow back in.
 
 ### 🔧 One end: let the world act on your behalf
 
@@ -297,7 +323,7 @@ First-launch path:
 3. If the world owner isn't initialized yet, you go through **Onboarding**.
 4. Then: chat, social, Moments, Feed.
 
-It's not "creating an account." It's **walking into a story.**
+It's not "creating an account." It's **assembling the team that's about to help you.**
 
 ---
 
