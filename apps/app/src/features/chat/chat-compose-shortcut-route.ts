@@ -5,6 +5,7 @@ export type ChatCallReturnKind = "voice" | "video";
 const CHAT_COMPOSE_SHORTCUT_QUERY_KEY = "composeShortcut";
 const CHAT_CALL_RETURN_QUERY_KEY = "callReturn";
 const CHAT_COMPOSE_TEXT_QUERY_KEY = "composeText";
+const CHAT_COMPOSE_SEND_QUERY_KEY = "composeSend";
 
 type ChatComposeShortcutSearchInput =
   | string
@@ -51,17 +52,36 @@ export function parseChatComposeText(
   return text ? text : null;
 }
 
+// 世界 tab「和我快聊」自动发送开关：开了之后聊天页不预填 composer，而是直接把
+// composeText 经成熟发送链路发出去。和 composeText 同生命周期（一次性、用完即抹）。
+export function parseChatComposeAutoSend(
+  search: ChatComposeShortcutSearchInput,
+): boolean {
+  return (
+    toSearchParams(search).get(CHAT_COMPOSE_SEND_QUERY_KEY)?.trim() === "1"
+  );
+}
+
 export function buildChatComposeTextSearch(input?: {
   search?: ChatComposeShortcutSearchInput;
   text?: string | null;
+  autoSend?: boolean;
 }): Record<string, string> | undefined {
   const params = toSearchParams(input?.search);
 
   const text = input?.text?.trim();
   if (text) {
     params.set(CHAT_COMPOSE_TEXT_QUERY_KEY, text);
+    if (input?.autoSend) {
+      params.set(CHAT_COMPOSE_SEND_QUERY_KEY, "1");
+    } else {
+      params.delete(CHAT_COMPOSE_SEND_QUERY_KEY);
+    }
   } else {
+    // text 清空时把自动发送开关一起抹掉，这样聊天页清 URL（text:null）会同时清掉
+    // composeText + composeSend，调用方无需单独处理。
     params.delete(CHAT_COMPOSE_TEXT_QUERY_KEY);
+    params.delete(CHAT_COMPOSE_SEND_QUERY_KEY);
   }
 
   // 同 buildChatComposeShortcutSearch：返回 Record 而非 `?<qs>` 字符串，否则

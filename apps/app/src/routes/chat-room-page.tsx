@@ -10,6 +10,7 @@ import {
   buildChatComposeShortcutSearch,
   buildChatComposeTextSearch,
   parseChatCallReturnKind,
+  parseChatComposeAutoSend,
   parseChatComposeShortcutAction,
   parseChatComposeText,
   type ChatCallReturnKind,
@@ -56,6 +57,8 @@ export function ChatRoomPage() {
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
   const [routeComposeText, setRouteComposeText] = useState<string | null>(null);
+  const [routeComposeAutoSend, setRouteComposeAutoSend] =
+    useState<boolean>(false);
   // 移动端走查 R2：本组件只用 conversationsQuery 判定「这是不是群聊会话」并
   // redirect 到 /group/$groupId（mobile）或 /tabs/chat#... (desktop)。chat-list-page
   // 进入前刚拉过 app-conversations（15s staleTime）；这条 observer 没 staleTime
@@ -101,6 +104,7 @@ export function ChatRoomPage() {
     setRouteMobileShortcutAction(null);
     setRouteCallReturnKind(null);
     setRouteComposeText(null);
+    setRouteComposeAutoSend(false);
   }, [conversationId]);
 
   useEffect(() => {
@@ -177,6 +181,7 @@ export function ChatRoomPage() {
     }
 
     setRouteComposeText(nextText);
+    setRouteComposeAutoSend(parseChatComposeAutoSend(search));
 
     const nextSearch = buildChatComposeTextSearch({
       search,
@@ -403,7 +408,11 @@ export function ChatRoomPage() {
           routeMobileShortcutAction={routeMobileShortcutAction}
           onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeComposeText={routeComposeText}
-          onRouteComposeTextHandled={() => setRouteComposeText(null)}
+          routeComposeAutoSend={routeComposeAutoSend}
+          onRouteComposeTextHandled={() => {
+            setRouteComposeText(null);
+            setRouteComposeAutoSend(false);
+          }}
           routeContextNotice={
             callReturnNotice ??
             (safeRouteContext

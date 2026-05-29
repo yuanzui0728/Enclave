@@ -79,6 +79,7 @@ type ConversationThreadPanelProps = {
   routeMobileShortcutAction?: ChatComposeShortcutAction | null;
   onRouteMobileShortcutHandled?: () => void;
   routeComposeText?: string | null;
+  routeComposeAutoSend?: boolean;
   onRouteComposeTextHandled?: () => void;
 };
 
@@ -108,6 +109,7 @@ export function ConversationThreadPanel({
   routeMobileShortcutAction = null,
   onRouteMobileShortcutHandled,
   routeComposeText = null,
+  routeComposeAutoSend = false,
   onRouteComposeTextHandled,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
@@ -163,15 +165,25 @@ export function ConversationThreadPanel({
 
   // 世界 tab「和我快聊」带进来的预填文字：仅预填 composer（不自动发），真正的
   // 发送交给下方成熟的发送钮/socket 链路。ref 守卫确保只灌一次，灌完通知父级清掉。
+  // 自动发送模式（routeComposeAutoSend）下不预填——下方独立 effect 直接发出去。
   const composeTextSeededRef = useRef(false);
   useEffect(() => {
-    if (!routeComposeText || composeTextSeededRef.current) {
+    if (
+      !routeComposeText ||
+      routeComposeAutoSend ||
+      composeTextSeededRef.current
+    ) {
       return;
     }
     composeTextSeededRef.current = true;
     setText(routeComposeText);
     onRouteComposeTextHandled?.();
-  }, [routeComposeText, onRouteComposeTextHandled, setText]);
+  }, [
+    routeComposeText,
+    routeComposeAutoSend,
+    onRouteComposeTextHandled,
+    setText,
+  ]);
   const renderStatusBackAction = () =>
     !isDesktop && onBack ? (
       <Button
@@ -452,30 +464,36 @@ export function ConversationThreadPanel({
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideText?: string) => {
     // onSubmit prop 上挂的是 `() => void handleSubmit()` 形态的 fire-and-forget。
     // sendTextMessage 在 resolveTargetCharacterId 拿不到 char id（角色被删/
     // participants 还没回 + conversationId 不是 direct_ 前缀）会同步 throw
     // "目标角色还没准备好"——这条 throw 发生在 runSendMutation 之前，外层吞
     // mutation error 的 try/catch 兜不到，rejection 一路冒到 window.unhandled
     // rejection 污染 telemetry。
+    // overrideText：世界 tab「和我快聊」自动发送传入；不传时仍走 composer `text`，
+    // 现有调用点 handleSubmit() 行为完全不变。
     if (sendingTextRef.current) {
       return;
     }
-    if (!text.trim()) {
+    const sourceText = overrideText ?? text;
+    if (!sourceText.trim()) {
       return;
     }
     sendingTextRef.current = true;
-    const submittedTextLength = text.length;
+    const submittedTextLength = sourceText.length;
     try {
       try {
         await sendTextMessage(
-          replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
+          replyDraft
+            ? encodeChatReplyText(sourceText, replyDraft)
+            : overrideText,
           // 走查 R1：明确告诉 use-conversation-thread 这次是「用户从 composer
           // 真按了发送」，可以把 composer 清掉。preset / 通话邀请 / 附件等
           // 走同一个 mutation 但 overrideText 用法不一样，那些路径不传这个
-          // flag → 用户在 composer 里没发完的草稿不会被秒清。
-          { clearComposerDraft: true },
+          // flag → 用户在 composer 里没发完的草稿不会被秒清。自动发送（带
+          // overrideText）也不动 composer。
+          { clearComposerDraft: overrideText === undefined },
         );
       } catch (sendError) {
         setSocketError(
@@ -497,6 +515,25 @@ export function ConversationThreadPanel({
       sendingTextRef.current = false;
     }
   };
+
+  // 世界 tab「和我快聊」自动发送：带 routeComposeAutoSend 进来时不预填 composer，
+  // 直接把文字经 handleSubmit(overrideText) 发出去（复用防重入 / socket 兜底 /
+  // 埋点 / 滚动）。ref 守卫保证只发一次，发完通知父级清掉一次性状态。
+  const composeAutoSentRef = useRef(false);
+  useEffect(() => {
+    if (
+      !routeComposeText ||
+      !routeComposeAutoSend ||
+      composeAutoSentRef.current
+    ) {
+      return;
+    }
+    composeAutoSentRef.current = true;
+    void handleSubmit(routeComposeText);
+    onRouteComposeTextHandled?.();
+    // handleSubmit 每次 render 重建，但本 effect 由 ref 守卫只跑一次，故意不进依赖。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeComposeText, routeComposeAutoSend, onRouteComposeTextHandled]);
 
   // 走查电脑端单聊 R85：和上方 handleSubmit (line 443-460) 内层 try/catch 同款
   // 兜底——sendTextMessage / sendStickerMessage / sendAttachmentMessage 在

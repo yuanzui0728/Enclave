@@ -432,7 +432,7 @@ function SelfQuickChatBar({
     void navigate({
       to: "/chat/$conversationId",
       params: { conversationId: selfConversationId },
-      search: buildChatComposeTextSearch({ text: text || null }),
+      search: buildChatComposeTextSearch({ text: text || null, autoSend: true }),
     });
     setDraft("");
   }
