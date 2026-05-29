@@ -30660,3 +30660,27 @@ msgstr "파일을 열었습니다."
 #: apps/app/src/routes/discover-encounter-page.tsx:111
 msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
 msgstr "흔들기 대기 시간이 초과되었습니다. 네트워크나 서버가 혼잡할 수 있으니 잠시 후 다시 시도해 주세요."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "跳过"
+msgstr "건너뛰기"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "添加中..."
+msgstr "추가 중..."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "已跳过这次相遇。"
+msgstr "이번 만남을 건너뛰었습니다."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "相遇理由：{0}"
+msgstr "만난 이유: {0}"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "晃动手机即可开始相遇，也可以直接点下方按钮。摇出后由你决定是否加为好友。"
+msgstr "휴대폰을 흔들면 만남이 시작됩니다. 아래 버튼을 눌러도 됩니다. 만난 상대를 친구로 추가할지는 직접 결정합니다."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "当前设备不支持晃动触发，点下方按钮手动触发相遇，摇出后由你决定是否加为好友。"
+msgstr "이 기기는 흔들어서 실행하는 기능을 지원하지 않습니다. 아래 버튼을 눌러 수동으로 만남을 시작하세요. 만난 상대를 친구로 추가할지는 직접 결정합니다."

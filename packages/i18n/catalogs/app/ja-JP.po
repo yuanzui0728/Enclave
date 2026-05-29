@@ -30660,3 +30660,27 @@ msgstr "ファイルを開きました。"
 #: apps/app/src/routes/discover-encounter-page.tsx:111
 msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
 msgstr "シェイクがタイムアウトしました。ネットワークまたはサーバーが混雑している可能性があります。しばらくしてからもう一度お試しください。"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "跳过"
+msgstr "スキップ"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "添加中..."
+msgstr "追加中..."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "已跳过这次相遇。"
+msgstr "この出会いをスキップしました。"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "相遇理由：{0}"
+msgstr "出会った理由：{0}"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "晃动手机即可开始相遇，也可以直接点下方按钮。摇出后由你决定是否加为好友。"
+msgstr "スマホを振ると出会いが始まります。下のボタンを押してもOK。出会った相手を友だちに追加するかは、あなたが決められます。"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "当前设备不支持晃动触发，点下方按钮手动触发相遇，摇出后由你决定是否加为好友。"
+msgstr "このデバイスは振っての起動に対応していません。下のボタンを押して手動で出会いを始めてください。出会った相手を友だちに追加するかは、あなたが決められます。"

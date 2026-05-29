@@ -1,9 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
-import { Compass, LoaderCircle, Sparkles } from "lucide-react";
-import { isApiRequestError, keepShakeSession, shake } from "@yinjie/contracts";
+import { Compass, LoaderCircle, Sparkles, UserPlus } from "lucide-react";
+import {
+  dismissShakeSession,
+  getActiveShakeSession,
+  isApiRequestError,
+  keepShakeSession,
+  shake,
+  type ShakeDiscoverySessionPreview,
+} from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
   Button,
@@ -87,10 +94,27 @@ function MobileDiscoverEncounterPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [message, setMessage] = useState("");
   const [tone, setTone] = useState<"info" | "success" | "warning">("info");
+  // 摇出后的待确认相遇：此刻后端只建了 preview（status='preview_ready'），尚未
+  // 创角色、未加好友。用户点「加为好友」才 keep（落库 + 入通讯录），点「跳过」/
+  // 「换一个」才 dismiss。null = 当前没有待确认的相遇。
+  const [preview, setPreview] = useState<ShakeDiscoverySessionPreview | null>(
+    null,
+  );
   const routeState = useMemo(
     () => parseMobileDiscoverToolRouteState(hash),
     [hash],
   );
+
+  // 摇完 preview 后用户切走再回来（或刷新），preview 只存在组件 state 里会丢——
+  // 后端 active session 仍是 preview_ready，挂载时拉一次恢复，避免「同意闸」把已经
+  // 摇到的相遇白白扔掉。只在用户尚未对本页做任何操作前 seed 一次（seededRef）。
+  const seededFromActiveRef = useRef(false);
+  const activeShakeQuery = useQuery({
+    queryKey: ["app-shake-active", baseUrl],
+    queryFn: () => getActiveShakeSession(baseUrl),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
@@ -106,9 +130,9 @@ function MobileDiscoverEncounterPage() {
       // name（浏览器 TimeoutError vs undici AbortError）更稳。
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 150_000);
-      let preview: Awaited<ReturnType<typeof shake>>;
+      let previewResult: Awaited<ReturnType<typeof shake>>;
       try {
-        preview = await shake(undefined, baseUrl, controller.signal);
+        previewResult = await shake(undefined, baseUrl, controller.signal);
       } catch (error) {
         if (controller.signal.aborted) {
           throw new Error(
@@ -119,25 +143,9 @@ function MobileDiscoverEncounterPage() {
       } finally {
         clearTimeout(timeoutId);
       }
-      if (!preview) {
-        return null;
-      }
-
-      await keepShakeSession(preview.id, baseUrl);
-
-      // 走查 Round 2：invalidate 放在 onSuccess 里，组件在 AI ~60s 期间被用户
-      // 切走（去 chat / contacts 看角色到没到）时 mutation observer 已 unmount，
-      // 后端虽然真的创角成功，但 friend-requests / friends / conversations 三
-      // 个 cache 不会被刷——用户回去看通讯录还得自己下拉。queryClient 是 app
-      // 级单例，挪到 mutationFn 里保证无论组件是否还活着，下一次切回 chat/contacts
-      // 都能拿到最新数据。
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
-      ]);
-
-      return preview;
+      // 只摇出 preview，绝不在这里 keep——是否加为好友交给用户在卡片上点「加为
+      // 好友」决定（同意闸）。此刻后端没建角色、没加好友。
+      return previewResult ?? null;
     },
     onMutate: () => {
       // 上一次"X 已加入通讯录"的 success notice 在新一次摇一摇等 AI（~60s）期间
@@ -145,35 +153,89 @@ function MobileDiscoverEncounterPage() {
       // 怀疑是不是还没真的开始摇。统一在 mutate 起手时清掉旧 notice。
       setMessage(""); // i18n-ignore-line: clearing state
       setTone("info");
+      // 一旦用户主动摇，就别再让 active-session 查询把旧 preview seed 回来盖掉。
+      seededFromActiveRef.current = true;
     },
     onSuccess: (result) => {
       if (!result) {
+        setPreview(null);
         setTone("warning");
         setMessage(t(msg`附近暂时没有新的相遇。`));
         return;
       }
-
-      const characterName = result.character.name ?? t(msg`世界角色`);
-      const greeting = result.greeting ?? t(msg`刚刚和你打了招呼。`);
-      setTone("success");
-      setMessage(
-        t(msg`${characterName} 已加入通讯录：${greeting}`),
-      );
+      // 摇到了人：展示待确认卡片，等用户点「加为好友」/「跳过」。
+      setPreview(result);
+      setMessage(""); // i18n-ignore-line: clearing state
+      setTone("info");
     },
   });
 
+  // 用户点「加为好友」= 同意，这一步才真正落库（建角色 + 加好友 + 落 greeting）。
+  const keepMutation = useMutation({
+    mutationFn: async (target: ShakeDiscoverySessionPreview) => {
+      const result = await keepShakeSession(target.id, baseUrl);
+      // 走查 Round 2：invalidate 放在 mutationFn 里，组件在请求期间被切走时也能
+      // 刷新 friend-requests / friends / conversations 三个 cache（queryClient 是
+      // app 级单例），下次切回 chat/contacts 直接看到新好友。
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
+      return { result, target };
+    },
+    onSuccess: ({ result, target }) => {
+      setPreview(null);
+      const characterName =
+        result.characterName ?? target.character.name ?? t(msg`世界角色`);
+      const greeting = target.greeting?.trim() || t(msg`刚刚和你打了招呼。`);
+      setTone("success");
+      setMessage(t(msg`${characterName} 已加入通讯录：${greeting}`));
+    },
+  });
+
+  // 用户点「跳过」= 不加为好友，丢弃这次相遇（不入通讯录）。
+  const dismissMutation = useMutation({
+    mutationFn: async (target: ShakeDiscoverySessionPreview) => {
+      await dismissShakeSession(target.id, { reason: "user_skipped" }, baseUrl);
+    },
+    onMutate: () => {
+      // 乐观清掉卡片：dismiss 是「不要这个人」，无论后端成功与否用户都不该再看到它。
+      setPreview(null);
+      setTone("info");
+      setMessage(t(msg`已跳过这次相遇。`));
+    },
+  });
+
+  // 发起一次摇一摇。若当前已有待确认 preview，「再摇」语义 =「换一个」：先 best-effort
+  // dismiss 掉当前的（reason=user_rerolled，不等结果、不入通讯录），再摇新的。
+  const triggerShake = () => {
+    if (shakeMutation.isPending || keepMutation.isPending) {
+      return;
+    }
+    if (preview) {
+      const previous = preview;
+      setPreview(null);
+      void dismissShakeSession(
+        previous.id,
+        { reason: "user_rerolled" },
+        baseUrl,
+      ).catch(() => {
+        // best-effort：换一个时旧 preview 丢弃失败不影响摇新的，它会自然过期。
+      });
+    }
+    shakeMutation.mutate();
+  };
+
   const { permissionState, requestPermission } = useShakeDetector({
-    enabled: !shakeMutation.isPending,
+    enabled: !shakeMutation.isPending && !keepMutation.isPending,
     onShake: () => {
-      if (shakeMutation.isPending) {
-        return;
-      }
-      shakeMutation.mutate();
+      triggerShake();
     },
   });
 
   const handleShakeButtonClick = async () => {
-    if (shakeMutation.isPending) {
+    if (shakeMutation.isPending || keepMutation.isPending) {
       return;
     }
     if (permissionState === "needs-permission") {
@@ -183,13 +245,13 @@ function MobileDiscoverEncounterPage() {
       await requestPermission();
       return;
     }
-    shakeMutation.mutate();
+    triggerShake();
   };
 
   const heroDescription = (() => {
     switch (permissionState) {
       case "granted":
-        return t(msg`晃动手机即可开始相遇，也可以直接点下方按钮。每次相遇都会直接加入你的通讯录。`);
+        return t(msg`晃动手机即可开始相遇，也可以直接点下方按钮。摇出后由你决定是否加为好友。`);
       case "needs-permission":
         return t(msg`首次使用请点下方按钮授权动作传感器，之后晃动手机即可触发相遇。`);
       case "denied":
@@ -198,7 +260,7 @@ function MobileDiscoverEncounterPage() {
         // 走查 Round 1：'unsupported'（设备没有动作传感器 / 桌面浏览器 / WebView 屏蔽）
         // 走兜底分支，但兜底文案完全没提到「点按钮」也能摇一摇——用户看不到怎么触发。
         // 与 'denied' 分支对齐，明确告诉用户：只能点按钮。
-        return t(msg`当前设备不支持晃动触发，点下方按钮手动触发相遇，每次结果都会直接加入你的通讯录。`);
+        return t(msg`当前设备不支持晃动触发，点下方按钮手动触发相遇，摇出后由你决定是否加为好友。`);
     }
   })();
 
@@ -206,20 +268,46 @@ function MobileDiscoverEncounterPage() {
     if (shakeMutation.isPending) {
       return t(msg`正在寻找...`);
     }
+    if (preview) {
+      // 已有待确认 preview 时，再点主按钮 =「换一个」（丢弃当前再摇）。
+      return t(msg`换一个`);
+    }
     if (permissionState === "needs-permission") {
       return t(msg`开启摇一摇`);
     }
     return t(msg`摇一摇`);
   })();
 
+  // 挂载（或 active session 查询返回）时恢复未决 preview——只 seed 一次，且仅在用户
+  // 尚未对本页做任何摇/确认操作前。
+  useEffect(() => {
+    if (seededFromActiveRef.current) {
+      return;
+    }
+    if (activeShakeQuery.isSuccess) {
+      const active = activeShakeQuery.data;
+      seededFromActiveRef.current = true;
+      if (active && active.status === "preview_ready") {
+        setPreview(active);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeShakeQuery.isSuccess, activeShakeQuery.data]);
+
   useEffect(() => {
     setMessage(""); // i18n-ignore-line: clearing state
     setTone("info");
+    // 切换 world 时清掉上一个 world 的待确认 preview，并允许新 world 的 active session
+    // 重新 seed 一次。
+    setPreview(null);
+    seededFromActiveRef.current = false;
     // 走查 Round 5：之前只清 setMessage，但 shakeMutation.isError / error 仍挂着
     // world A 的失败状态——切到 world B 后红色错误条还在显示 SHAKE_DAILY_LIMIT
     // 这种带 worldId 含义的提示。reset() 把 mutation 也归零，确保新 world 上看到
     // 的是干净状态。
     shakeMutation.reset();
+    keepMutation.reset();
+    dismissMutation.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl]);
 
@@ -268,7 +356,7 @@ function MobileDiscoverEncounterPage() {
       heroAction={
         <Button
           onClick={() => void handleShakeButtonClick()}
-          disabled={shakeMutation.isPending}
+          disabled={shakeMutation.isPending || keepMutation.isPending}
           aria-busy={shakeMutation.isPending || undefined}
           variant="primary"
           // 走查 Round 3：variant=primary 自带 [background-image:var(--brand-gradient)]
@@ -309,6 +397,95 @@ function MobileDiscoverEncounterPage() {
       }
       onBack={handleBack}
     >
+      {preview ? (
+        // 待确认相遇卡片：摇出后展示对方信息，用户点「加为好友」才入通讯录（同意闸），
+        // 点「跳过」丢弃。role=status + aria-live=polite，让 SR 在 AI 跑完一刻读出结果。
+        <section
+          role="status"
+          aria-live="polite"
+          className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3.5 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/12 text-[length:var(--text-section)]">
+              {preview.character.avatar?.trim() || "🙂"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[length:var(--text-body)] font-semibold text-[color:var(--text-primary)]">
+                {preview.character.name?.trim() || t(msg`世界角色`)}
+              </div>
+              {preview.character.relationship?.trim() ? (
+                <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+                  {preview.character.relationship}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {preview.character.expertDomains &&
+          preview.character.expertDomains.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {preview.character.expertDomains.slice(0, 4).map((domain) => (
+                <span
+                  key={domain}
+                  className="inline-flex items-center rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
+                >
+                  {domain}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {preview.greeting?.trim() ? (
+            <div className="mt-2.5 whitespace-pre-line break-words rounded-[var(--radius-sm)] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
+              {preview.greeting}
+            </div>
+          ) : null}
+
+          {preview.matchReason?.trim() ? (
+            <div className="mt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+              {t(msg`相遇理由：${preview.matchReason}`)}
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              disabled={keepMutation.isPending}
+              onClick={() => dismissMutation.mutate(preview)}
+              variant="secondary"
+              size="sm"
+              className="h-9 min-w-[4rem] rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+            >
+              {t(msg`跳过`)}
+            </Button>
+            <Button
+              type="button"
+              disabled={keepMutation.isPending}
+              aria-busy={keepMutation.isPending || undefined}
+              onClick={() => keepMutation.mutate(preview)}
+              variant="primary"
+              size="sm"
+              className="h-9 min-w-[5.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] [background-image:none]"
+            >
+              {keepMutation.isPending ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <UserPlus size={14} />
+              )}
+              {keepMutation.isPending ? t(msg`添加中...`) : t(msg`加为好友`)}
+            </Button>
+          </div>
+
+          {keepMutation.isError && keepMutation.error instanceof Error ? (
+            <div className="mt-2 rounded-[var(--radius-sm)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--state-danger-text)]">
+              {(isApiRequestError(keepMutation.error)
+                ? translateAppErrorCode(keepMutation.error)
+                : null) ?? keepMutation.error.message}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       {shakeMutation.isError && shakeMutation.error instanceof Error ? (
         // 走查 Round 1（a11y）：danger 错误（SHAKE_DAILY_LIMIT / SHAKE_COOLDOWN /
         // SHAKE_AI_*_FAILED 等）必须立即打断 SR 当前朗读告诉用户摇失败了，挂 role=alert

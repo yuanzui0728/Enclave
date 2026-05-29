@@ -30660,3 +30660,27 @@ msgstr "File opened."
 #: apps/app/src/routes/discover-encounter-page.tsx:111
 msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
 msgstr "Shake timed out — the network or server may be busy. Please try again later."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "跳过"
+msgstr "Skip"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "添加中..."
+msgstr "Adding..."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "已跳过这次相遇。"
+msgstr "Skipped this encounter."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "相遇理由：{0}"
+msgstr "Why you met: {0}"
+
+#: src/routes/discover-encounter-page.tsx
+msgid "晃动手机即可开始相遇，也可以直接点下方按钮。摇出后由你决定是否加为好友。"
+msgstr "Shake your phone to start an encounter, or just tap the button below. Once someone appears, you decide whether to add them as a friend."
+
+#: src/routes/discover-encounter-page.tsx
+msgid "当前设备不支持晃动触发，点下方按钮手动触发相遇，摇出后由你决定是否加为好友。"
+msgstr "This device doesn't support shake to trigger. Tap the button below to start an encounter manually. Once someone appears, you decide whether to add them as a friend."
