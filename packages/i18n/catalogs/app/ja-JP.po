@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "音楽"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "暂停"
-msgstr "一時停止"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/i18n/static-dom-seed.ts:349
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "播放"
 msgstr "再生"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "暂停"
+msgstr "一時停止"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -2641,7 +2641,7 @@ msgstr "ノートビューア"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1320
-#: apps/app/src/routes/mobile-notes-page.tsx:193
+#: apps/app/src/routes/mobile-notes-page.tsx:249
 #: apps/app/src/routes/moments-page.tsx:2769
 #: apps/app/src/routes/official-accounts-page.tsx:222
 #: apps/app/src/routes/official-accounts-page.tsx:393
@@ -4396,6 +4396,7 @@ msgstr "すべてのメッセージ"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:663
 #: apps/app/src/routes/desktop-chat-files-page.tsx:708
 #: apps/app/src/routes/mobile-favorites-page.tsx:123
+#: apps/app/src/routes/mobile-notes-page.tsx:312
 msgid "全部"
 msgstr "すべて"
 
@@ -5776,14 +5777,14 @@ msgstr "音声に切替"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "切断中..."
-
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
 msgid "挂断"
 msgstr "切断"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
+msgid "挂断中..."
+msgstr "切断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -9644,8 +9645,8 @@ msgstr "友だちを追加"
 #: apps/app/src/routes/favorites-page.tsx:596
 #: apps/app/src/routes/mobile-favorites-page.tsx:365
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1389
-#: apps/app/src/routes/mobile-notes-page.tsx:205
-#: apps/app/src/routes/mobile-notes-page.tsx:275
+#: apps/app/src/routes/mobile-notes-page.tsx:261
+#: apps/app/src/routes/mobile-notes-page.tsx:371
 msgid "新建笔记"
 msgstr "新規ノート"
 
@@ -10232,13 +10233,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "成功すると、現在のチャットメッセージに同期されます。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "マイクのミュートを解除"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "マイクをミュート"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "マイクのミュートを解除"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10867,7 +10868,7 @@ msgstr "{0} に更新"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:400
 #: apps/app/src/routes/favorites-page.tsx:976
-#: apps/app/src/routes/mobile-notes-page.tsx:322
+#: apps/app/src/routes/mobile-notes-page.tsx:451
 msgid "这条笔记还没有正文摘要。"
 msgstr "このノートにはまだ本文要約がありません。"
 
@@ -10893,6 +10894,7 @@ msgstr "ノートをお気に入りに保存しました。"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:284
 #: apps/app/src/i18n/static-dom-seed.ts:1067
 #: apps/app/src/routes/mobile-note-editor-page.tsx:377
+#: apps/app/src/routes/mobile-notes-page.tsx:118
 msgid "保存失败，请稍后再试。"
 msgstr "保存に失敗しました。後でもう一度お試しください。"
 
@@ -10960,7 +10962,7 @@ msgstr "ノートを読み込み中..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1089
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1255
-#: apps/app/src/routes/mobile-notes-page.tsx:222
+#: apps/app/src/routes/mobile-notes-page.tsx:278
 msgid "读取笔记失败，请稍后再试。"
 msgstr "ノートの読み込みに失敗しました。後ほど再試行してください。"
 
@@ -11065,7 +11067,7 @@ msgid "添加标签"
 msgstr "タグを追加"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1348
-#: apps/app/src/routes/mobile-notes-page.tsx:230
+#: apps/app/src/routes/mobile-notes-page.tsx:286
 msgid "未保存草稿"
 msgstr "未保存の下書き"
 
@@ -13017,7 +13019,7 @@ msgid "来自 {0}"
 msgstr "{0}から"
 
 #: apps/app/src/features/favorites/note-editor-helpers.ts:203
-#: apps/app/src/routes/mobile-notes-page.tsx:319
+#: apps/app/src/routes/mobile-notes-page.tsx:448
 msgid "无标题笔记"
 msgstr "無題のノート"
 
@@ -13844,13 +13846,13 @@ msgid "忽略"
 msgstr "閉じる"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "送る相手"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "贈り物"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "送る相手"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -27331,7 +27333,7 @@ msgstr "一致するお気に入りがありません"
 
 #: apps/app/src/routes/favorites-page.tsx:872
 #: apps/app/src/routes/mobile-favorites-page.tsx:447
-#: apps/app/src/routes/mobile-notes-page.tsx:266
+#: apps/app/src/routes/mobile-notes-page.tsx:362
 msgid "还没有笔记"
 msgstr "メモはまだありません"
 
@@ -28775,28 +28777,40 @@ msgstr "確認ダイアログを閉じる"
 msgid "附件还在上传，完成后再保存或者直接放弃。"
 msgstr "添付ファイルをまだアップロード中です。完了してから保存するか破棄してください。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:183
+#: apps/app/src/routes/mobile-notes-page.tsx:239
 msgid "我的笔记"
 msgstr "マイメモ"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:214
+#: apps/app/src/routes/mobile-notes-page.tsx:270
 msgid "正在读取我的笔记..."
 msgstr "マイメモを読み込み中…"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:247
+#: apps/app/src/routes/mobile-notes-page.tsx:338
 msgid "已收藏笔记"
 msgstr "保存済みメモ"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:267
+#: apps/app/src/routes/mobile-notes-page.tsx:350
+msgid "这个标签下还没有笔记。"
+msgstr "このタグのノートはまだありません。"
+
+#: apps/app/src/routes/mobile-notes-page.tsx:363
 msgid "记下灵感、待办、链接和图片，发到聊天里也很方便。"
 msgstr "アイデア、ToDoリスト、リンク、画像を記録。チャットでシェアするのも簡単。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:356
+#: apps/app/src/routes/mobile-notes-page.tsx:394
+msgid "随手记一条… 用 #标签 归类"
+msgstr "さっとメモ… #タグ で整理"
+
+#: apps/app/src/routes/mobile-notes-page.tsx:403
+msgid "记下"
+msgstr "メモする"
+
+#: apps/app/src/routes/mobile-notes-page.tsx:485
 msgid "仅含附件的草稿"
 msgstr "添付ファイルのみの下書き"
 
 #. placeholder {0}: formatMessageTimestamp(draft.updatedAt)
-#: apps/app/src/routes/mobile-notes-page.tsx:359
+#: apps/app/src/routes/mobile-notes-page.tsx:488
 msgid "草稿 · 更新于 {0}"
 msgstr "下書き · {0}に更新"
 

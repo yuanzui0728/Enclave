@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "음악"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "暂停"
-msgstr "일시정지"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/i18n/static-dom-seed.ts:349
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "播放"
 msgstr "재생"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "暂停"
+msgstr "일시정지"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -2641,7 +2641,7 @@ msgstr "노트 뷰어"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1320
-#: apps/app/src/routes/mobile-notes-page.tsx:193
+#: apps/app/src/routes/mobile-notes-page.tsx:249
 #: apps/app/src/routes/moments-page.tsx:2769
 #: apps/app/src/routes/official-accounts-page.tsx:222
 #: apps/app/src/routes/official-accounts-page.tsx:393
@@ -4396,6 +4396,7 @@ msgstr "전체 메시지"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:663
 #: apps/app/src/routes/desktop-chat-files-page.tsx:708
 #: apps/app/src/routes/mobile-favorites-page.tsx:123
+#: apps/app/src/routes/mobile-notes-page.tsx:312
 msgid "全部"
 msgstr "전체"
 
@@ -5776,14 +5777,14 @@ msgstr "음성으로 전환"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "끊는 중..."
-
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
 msgid "挂断"
 msgstr "끊기"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
+msgid "挂断中..."
+msgstr "끊는 중..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -9644,8 +9645,8 @@ msgstr "친구 추가"
 #: apps/app/src/routes/favorites-page.tsx:596
 #: apps/app/src/routes/mobile-favorites-page.tsx:365
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1389
-#: apps/app/src/routes/mobile-notes-page.tsx:205
-#: apps/app/src/routes/mobile-notes-page.tsx:275
+#: apps/app/src/routes/mobile-notes-page.tsx:261
+#: apps/app/src/routes/mobile-notes-page.tsx:371
 msgid "新建笔记"
 msgstr "새 노트"
 
@@ -10232,13 +10233,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "성공하면 현재 대화 메시지에 동기화돼요."
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "마이크 음소거 해제"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "마이크 음소거"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "마이크 음소거 해제"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10867,7 +10868,7 @@ msgstr "{0}에 업데이트됨"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:400
 #: apps/app/src/routes/favorites-page.tsx:976
-#: apps/app/src/routes/mobile-notes-page.tsx:322
+#: apps/app/src/routes/mobile-notes-page.tsx:451
 msgid "这条笔记还没有正文摘要。"
 msgstr "이 노트에는 아직 본문 요약이 없습니다."
 
@@ -10893,6 +10894,7 @@ msgstr "노트를 즐겨찾기에 저장했습니다."
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:284
 #: apps/app/src/i18n/static-dom-seed.ts:1067
 #: apps/app/src/routes/mobile-note-editor-page.tsx:377
+#: apps/app/src/routes/mobile-notes-page.tsx:118
 msgid "保存失败，请稍后再试。"
 msgstr "저장에 실패했습니다. 잠시 후 다시 시도하세요."
 
@@ -10960,7 +10962,7 @@ msgstr "노트 불러오는 중..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1089
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1255
-#: apps/app/src/routes/mobile-notes-page.tsx:222
+#: apps/app/src/routes/mobile-notes-page.tsx:278
 msgid "读取笔记失败，请稍后再试。"
 msgstr "노트 불러오기에 실패했습니다. 잠시 후 다시 시도하세요."
 
@@ -11065,7 +11067,7 @@ msgid "添加标签"
 msgstr "태그 추가"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1348
-#: apps/app/src/routes/mobile-notes-page.tsx:230
+#: apps/app/src/routes/mobile-notes-page.tsx:286
 msgid "未保存草稿"
 msgstr "저장되지 않은 초안"
 
@@ -13017,7 +13019,7 @@ msgid "来自 {0}"
 msgstr "{0}에서"
 
 #: apps/app/src/features/favorites/note-editor-helpers.ts:203
-#: apps/app/src/routes/mobile-notes-page.tsx:319
+#: apps/app/src/routes/mobile-notes-page.tsx:448
 msgid "无标题笔记"
 msgstr "제목 없는 노트"
 
@@ -13844,13 +13846,13 @@ msgid "忽略"
 msgstr "닫기"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "받는 사람"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "선물"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "받는 사람"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -27331,7 +27333,7 @@ msgstr "일치하는 즐겨찾기가 없습니다"
 
 #: apps/app/src/routes/favorites-page.tsx:872
 #: apps/app/src/routes/mobile-favorites-page.tsx:447
-#: apps/app/src/routes/mobile-notes-page.tsx:266
+#: apps/app/src/routes/mobile-notes-page.tsx:362
 msgid "还没有笔记"
 msgstr "메모가 없습니다"
 
@@ -28775,28 +28777,40 @@ msgstr "확인 창 닫기"
 msgid "附件还在上传，完成后再保存或者直接放弃。"
 msgstr "첨부 파일을 아직 업로드 중이에요. 완료된 뒤 저장하거나 버려 주세요."
 
-#: apps/app/src/routes/mobile-notes-page.tsx:183
+#: apps/app/src/routes/mobile-notes-page.tsx:239
 msgid "我的笔记"
 msgstr "내 메모"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:214
+#: apps/app/src/routes/mobile-notes-page.tsx:270
 msgid "正在读取我的笔记..."
 msgstr "내 메모 불러오는 중…"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:247
+#: apps/app/src/routes/mobile-notes-page.tsx:338
 msgid "已收藏笔记"
 msgstr "저장된 메모"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:267
+#: apps/app/src/routes/mobile-notes-page.tsx:350
+msgid "这个标签下还没有笔记。"
+msgstr "이 태그에는 아직 노트가 없어요."
+
+#: apps/app/src/routes/mobile-notes-page.tsx:363
 msgid "记下灵感、待办、链接和图片，发到聊天里也很方便。"
 msgstr "아이디어, 할 일, 링크, 이미지를 기록하세요. 채팅에서 공유하기도 편합니다."
 
-#: apps/app/src/routes/mobile-notes-page.tsx:356
+#: apps/app/src/routes/mobile-notes-page.tsx:394
+msgid "随手记一条… 用 #标签 归类"
+msgstr "간단히 메모… #태그로 분류"
+
+#: apps/app/src/routes/mobile-notes-page.tsx:403
+msgid "记下"
+msgstr "기록하기"
+
+#: apps/app/src/routes/mobile-notes-page.tsx:485
 msgid "仅含附件的草稿"
 msgstr "첨부 파일만 있는 임시 저장"
 
 #. placeholder {0}: formatMessageTimestamp(draft.updatedAt)
-#: apps/app/src/routes/mobile-notes-page.tsx:359
+#: apps/app/src/routes/mobile-notes-page.tsx:488
 msgid "草稿 · 更新于 {0}"
 msgstr "임시 저장 · {0}에 업데이트됨"
 
