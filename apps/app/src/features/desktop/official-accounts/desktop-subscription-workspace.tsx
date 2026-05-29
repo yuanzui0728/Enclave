@@ -327,7 +327,7 @@ export function DesktopSubscriptionWorkspace({
                     <div className="mt-1.5 flex items-center gap-1.5">
                       {!delivery.readAt ? (
                         <div
-                          className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-bg)]"
+                          className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-solid)]"
                           aria-label={t(msg`未读`)}
                         />
                       ) : null}

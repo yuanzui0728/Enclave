@@ -1339,8 +1339,8 @@ function ForwardNotice({
       className={cn(
         "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-lg",
         isDanger
-          ? "bg-[color:var(--state-danger-bg)]"
-          : "bg-[color:var(--state-info-bg)]",
+          ? "bg-[color:var(--state-danger-solid)]"
+          : "bg-[color:var(--state-info-solid)]",
       )}
     >
       {message}

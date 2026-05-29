@@ -86,7 +86,7 @@ export function DesktopMomentsToolbar({
                 // 保证点击穿透到 Button。
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-[color:var(--border-faint)]"
+                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-solid)] ring-2 ring-[color:var(--border-faint)]"
                 />
               ) : null}
             </span>

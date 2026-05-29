@@ -1355,7 +1355,7 @@ function DesktopOfficialFeedArticleRow({
                 <span>{t(msg`最近更新`)}</span>
               )}
               {item.unread ? (
-                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-bg)]" />
+                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-solid)]" />
               ) : null}
             </div>
           </div>
