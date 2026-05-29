@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { UserRound } from "lucide-react";
 import type {
@@ -11,7 +12,29 @@ type AvatarEncounterTranscriptProps = {
   summary: string;
   turns: AvatarEncounterTurn[];
   partner: AvatarEncounterPartner;
+  // 初次相遇时一来一回逐条揭示（带「正在输入」指示器），让等待像真的在聊；
+  // 查看历史相遇 / 续聊回看时不传 → 即时全量渲染，不重播。
+  revealProgressively?: boolean;
 };
+
+// 揭示节奏：首条略等一下，之后每条之间停顿，模拟一来一回。
+const REVEAL_FIRST_DELAY_MS = 360;
+const REVEAL_STEP_MS = 880;
+
+// 「对方正在输入」三点跳动。
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 animate-bounce rounded-full bg-[color:var(--text-dim)]"
+          style={{ animationDelay: `${i * 0.16}s` }}
+        />
+      ))}
+    </span>
+  );
+}
 
 // 分身相遇脚本：一段匿名对方画像头部 + 多轮气泡。turns[].speaker 已经是
 // **相对查看者**视角（"mine" = 自己分身，"theirs" = 对方分身），后端按请求者
@@ -23,8 +46,45 @@ export function AvatarEncounterTranscript({
   summary,
   turns,
   partner,
+  revealProgressively = false,
 }: AvatarEncounterTranscriptProps) {
   const t = useRuntimeTranslator();
+
+  // 逐条揭示：visibleCount 从 0 增到 turns.length；typing 表示下一条还在「输入中」。
+  // 非渐进（默认）直接全量。turns 引用稳定（来自 react-query 缓存的 session/view），
+  // 依赖它只在首次拿到脚本时跑一次。
+  const [visibleCount, setVisibleCount] = useState(
+    revealProgressively ? 0 : turns.length,
+  );
+  const [typing, setTyping] = useState(false);
+
+  useEffect(() => {
+    if (!revealProgressively) {
+      setVisibleCount(turns.length);
+      setTyping(false);
+      return;
+    }
+    setVisibleCount(0);
+    setTyping(turns.length > 0);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < turns.length; i += 1) {
+      timers.push(
+        setTimeout(
+          () => {
+            setVisibleCount(i + 1);
+            setTyping(i + 1 < turns.length);
+          },
+          REVEAL_FIRST_DELAY_MS + i * REVEAL_STEP_MS,
+        ),
+      );
+    }
+    return () => {
+      for (const timer of timers) clearTimeout(timer);
+    };
+  }, [turns, revealProgressively]);
+
+  const visibleTurns = turns.slice(0, visibleCount);
+  const nextSpeaker = turns[visibleCount]?.speaker;
 
   return (
     <section className="space-y-3">
@@ -58,31 +118,66 @@ export function AvatarEncounterTranscript({
         </div>
       ) : null}
 
-      {/* 对话气泡：mine 右对齐（--brand-soft 蜜橙底），theirs 左对齐（白底 + 浅边框）。 */}
+      {/* 对话气泡：mine 右对齐（--brand-soft 蜜橙底），theirs 左对齐（白底 + 浅边框）。
+          多轮续聊时在轮次切换处插「继续聊」分隔线（turn.round 缺省视为单轮，向后兼容）。 */}
       <div className="space-y-2.5">
-        {turns.map((turn, index) => {
+        {visibleTurns.map((turn, index) => {
           const isMine = turn.speaker === "mine";
+          const prevRound = index > 0 ? turns[index - 1]?.round : undefined;
+          const showDivider =
+            typeof turn.round === "number" &&
+            turn.round > 1 &&
+            turn.round !== prevRound;
           return (
-            <div
-              key={index}
-              className={cn(
-                "flex",
-                isMine ? "justify-end" : "justify-start",
-              )}
-            >
+            <div key={index}>
+              {showDivider ? (
+                <div className="my-2 flex items-center gap-2 px-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+                  <span className="h-px flex-1 bg-[color:var(--border-faint)]" />
+                  {t(msg`继续聊`)}
+                  <span className="h-px flex-1 bg-[color:var(--border-faint)]" />
+                </div>
+              ) : null}
               <div
                 className={cn(
-                  "max-w-[78%] whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-6",
-                  isMine
-                    ? "bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
-                    : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]",
+                  "flex",
+                  isMine ? "justify-end" : "justify-start",
                 )}
               >
-                {turn.text}
+                <div
+                  className={cn(
+                    "max-w-[78%] whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-6",
+                    isMine
+                      ? "bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
+                      : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]",
+                  )}
+                >
+                  {turn.text}
+                </div>
               </div>
             </div>
           );
         })}
+
+        {/* 下一条还在「输入中」：在对应说话人一侧显示三点跳动气泡。 */}
+        {typing ? (
+          <div
+            className={cn(
+              "flex",
+              nextSpeaker === "mine" ? "justify-end" : "justify-start",
+            )}
+          >
+            <div
+              className={cn(
+                "rounded-[18px] px-3.5 py-3",
+                nextSpeaker === "mine"
+                  ? "bg-[color:var(--brand-soft)]"
+                  : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
+              )}
+            >
+              <TypingDots />
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

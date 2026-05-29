@@ -220,6 +220,35 @@ function MobileAvatarEncounterPage() {
 
 // ── 发现相遇 ────────────────────────────────────────────────────────────────
 
+// 等待分身相遇时轮播的阶段文案：顺序推进、封顶停在最后一条（请求再久也不空转），
+// 让「干等」变成「分身正在一步步行动」的过程感。
+const ENCOUNTER_STAGE_HINTS = [
+  msg`你的分身出门了，去找聊得来的人…`,
+  msg`遇到一个有点意思的，正在打招呼…`,
+  msg`聊开了，发现你们有不少共同话题…`,
+  msg`越聊越投机，正在替你多说几句…`,
+];
+const ENCOUNTER_STAGE_INTERVAL_MS = 1800;
+
+// active 为发起相遇的 pending 态；推进到末条后停住，active 复位时归零。
+function useStagedEncounterHint(active: boolean) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      setIndex(0);
+      return;
+    }
+    setIndex(0);
+    const timer = setInterval(() => {
+      setIndex((prev) =>
+        prev < ENCOUNTER_STAGE_HINTS.length - 1 ? prev + 1 : prev,
+      );
+    }, ENCOUNTER_STAGE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [active]);
+  return ENCOUNTER_STAGE_HINTS[index];
+}
+
 type DiscoverTabProps = {
   accessToken: string | null;
   cloudApiBaseUrl: string;
@@ -276,6 +305,8 @@ function DiscoverTab({
     },
   });
 
+  const stageHint = useStagedEncounterHint(startMutation.isPending);
+
   const session = startMutation.data ?? null;
   // 发起方是每轮的先手：本轮 want/continue 后转 awaiting_recipient 等对方，
   // 不会在本页直接 matched / 进下一轮（那要回「我的相遇」看）。effective 取最新决策结果或初始 session。
@@ -330,18 +361,15 @@ function DiscoverTab({
                 size={22}
                 className="mx-auto animate-spin text-[color:var(--brand-primary)]"
               />
-              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
-                {t(msg`你的分身正在替你相遇…`)}
-              </div>
-              <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
-                {t(msg`生成对话可能需要一点时间，请耐心等待。`)}
+              <div className="mt-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)] transition-opacity duration-300">
+                {t(stageHint)}
               </div>
             </div>
           ) : (
             <div className="text-center text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
               {remainingCredits !== null
-                ? t(msg`每次相遇会消耗 1 次额度，今日剩余 ${remainingCredits} 次。`)
-                : t(msg`每次相遇会消耗 1 次额度。`)}
+                ? t(msg`今天还能再认识 ${remainingCredits} 个人。`)
+                : t(msg`让分身替你去认识聊得来的人。`)}
             </div>
           )}
 
@@ -354,7 +382,7 @@ function DiscoverTab({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  {t(msg`今日的分身相遇次数已用完，明天再来。`)}
+                  {t(msg`今天的相遇都用完啦，明天分身再替你出门。`)}
                 </span>
                 <button
                   type="button"
@@ -389,6 +417,7 @@ function DiscoverTab({
             summary={session.transcript.summary}
             turns={session.transcript.turns}
             partner={session.partner}
+            revealProgressively
           />
 
           <AvatarEncounterDecisionBar
@@ -406,10 +435,10 @@ function DiscoverTab({
             <div className="rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               {effective.myRoundChoice === "continue"
                 ? t(
-                    msg`等对方也选择继续，就会生成下一轮对话。稍后可在「我的相遇」里查看进展。`,
+                    msg`等 TA 也想继续，你们就会接着聊下去。回「我的相遇」就能看到后来。`,
                   )
                 : t(
-                    msg`已记录你的选择，等对方决定。结果会出现在「我的相遇」里。`,
+                    msg`你的心意收到啦，就等 TA 决定。有结果会出现在「我的相遇」里。`,
                   )}
             </div>
           ) : null}
@@ -533,7 +562,7 @@ function ReceivedTab({
       {inboxQuery.isLoading ? (
         <div className="flex items-center justify-center gap-2 py-8 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           <LoaderCircle size={16} className="animate-spin" />
-          {t(msg`正在加载我的相遇…`)}
+          {t(msg`正在翻看你的相遇…`)}
         </div>
       ) : inboxQuery.isError && inboxQuery.error instanceof Error ? (
         <InlineNotice
@@ -646,7 +675,7 @@ function ReceivedDetail({
       {viewQuery.isLoading ? (
         <div className="flex items-center justify-center gap-2 py-8 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           <LoaderCircle size={16} className="animate-spin" />
-          {t(msg`正在加载这次相遇…`)}
+          {t(msg`正在翻开这次相遇…`)}
         </div>
       ) : viewQuery.isError && viewQuery.error instanceof Error ? (
         <InlineNotice
@@ -686,7 +715,7 @@ function ReceivedDetail({
           {decideMutation.isPending && decideMutation.variables === "continue" ? (
             <div className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               <LoaderCircle size={14} className="animate-spin" />
-              {t(msg`正在生成下一轮对话，请稍候…`)}
+              {t(msg`你们还在继续聊，稍等一下…`)}
             </div>
           ) : null}
 
