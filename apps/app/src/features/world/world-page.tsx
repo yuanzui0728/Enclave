@@ -51,6 +51,9 @@ import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { CheckinCard } from "../wallet/checkin-card";
 import { RouteRedirectState } from "../../components/route-redirect-state";
 import { shouldShowCloudAccountControls } from "../../lib/cloud-session";
+import { isPersistedGroupConversation } from "../../lib/conversation-route";
+import { getConversationDisplayTitle } from "../../lib/conversation-preview";
+import { resolveMessageSemanticPreview } from "../../lib/message-attachment-semantic";
 import { searchStringToObject } from "../../lib/route-search";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
@@ -482,29 +485,29 @@ const EMPTY_CONVERSATIONS: ConversationListItem[] = [];
 const WORLD_NOW_MAX = 6;
 
 // 世界此刻：最近有动静的会话横滑条。复用已在拉的 getConversations 数据，
-// 按 lastActivityAt 降序取前几条有最新消息的，点进直接进聊天。空则整条不渲染。
+// 按 lastActivityAt 降序取前几条最近活跃的会话，点进直接进对应聊天。空则整条不渲染。
 function WorldNowStrip({
   conversations,
 }: {
   conversations: ConversationListItem[];
 }) {
   const t = useRuntimeTranslator();
-  const navigate = useNavigate();
 
   const recent = useMemo(() => {
     return conversations
       .filter(
         (c) =>
           // 排除「我」自己的会话（底部快聊已专门入口），世界此刻只呈现世界里的动静；
-          // 只取有最新文字消息的会话。
+          // 只取有最新消息的会话（媒体/语音等非文字消息也算，预览走语义占位）。
           !(c.type === "direct" && c.participants[0] === SELF_CHARACTER_ID) &&
-          Boolean(c.lastMessage?.text?.trim()),
+          Boolean(c.lastMessage),
       )
       .slice()
       .sort(
         (a, b) =>
-          new Date(b.lastActivityAt).getTime() -
-          new Date(a.lastActivityAt).getTime(),
+          // NaN 兜底：lastActivityAt 异常时按 0 处理，避免排序不稳定。
+          (new Date(b.lastActivityAt).getTime() || 0) -
+          (new Date(a.lastActivityAt).getTime() || 0),
       )
       .slice(0, WORLD_NOW_MAX);
   }, [conversations]);
@@ -521,35 +524,70 @@ function WorldNowStrip({
       {/* 负 margin + padding 让两端贴屏边滑，隐藏滚动条 */}
       <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {recent.map((conv) => (
-          <button
-            key={conv.id}
-            type="button"
-            onClick={() =>
-              void navigate({
-                to: "/chat/$conversationId",
-                params: { conversationId: conv.id },
-              })
-            }
-            className="flex w-[150px] shrink-0 flex-col gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3 text-left shadow-[var(--shadow-soft)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
-          >
-            <div className="flex items-center gap-2">
-              <span className="relative shrink-0">
-                <AvatarChip name={conv.title} src={conv.avatar} size="sm" />
-                {conv.unreadCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[color:var(--surface-card)] bg-[color:var(--brand-accent)]" />
-                ) : null}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
-                {conv.title}
-              </span>
-            </div>
-            <p className="line-clamp-2 min-h-[2.5rem] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
-              {conv.lastMessage?.text ?? ""}
-            </p>
-          </button>
+          <WorldNowChip key={conv.id} conversation={conv} />
         ))}
       </div>
     </section>
+  );
+}
+
+// 单张「世界此刻」卡：按会话类型路由（群聊→/group、单聊→/chat），用 Link 保留
+// 原生跳转/无障碍语义；预览复用 chat-list 同款语义占位（[图片]/[语音] 等）。
+function WorldNowChip({
+  conversation,
+}: {
+  conversation: ConversationListItem;
+}) {
+  const isGroup = isPersistedGroupConversation(conversation);
+  // 与 chat-list 一致：把服务端遗留 title sentinel 翻成当前 locale。
+  const title = getConversationDisplayTitle(conversation.title);
+  const preview = conversation.lastMessage
+    ? resolveMessageSemanticPreview(conversation.lastMessage, {
+        maxChars: 80,
+        bracketedFallback: true,
+      })
+    : "";
+
+  const className =
+    "flex w-[150px] shrink-0 flex-col gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-3 text-left shadow-[var(--shadow-soft)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]";
+
+  const inner = (
+    <>
+      <div className="flex items-center gap-2">
+        <span className="relative shrink-0">
+          <AvatarChip name={title} src={conversation.avatar} size="sm" />
+          {conversation.unreadCount > 0 ? (
+            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[color:var(--surface-card)] bg-[color:var(--brand-accent)]" />
+          ) : null}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
+          {title}
+        </span>
+      </div>
+      <p className="line-clamp-2 min-h-[2.5rem] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+        {preview}
+      </p>
+    </>
+  );
+
+  return isGroup ? (
+    <Link
+      to="/group/$groupId"
+      params={{ groupId: conversation.id }}
+      search={{}}
+      className={className}
+    >
+      {inner}
+    </Link>
+  ) : (
+    <Link
+      to="/chat/$conversationId"
+      params={{ conversationId: conversation.id }}
+      search={{}}
+      className={className}
+    >
+      {inner}
+    </Link>
   );
 }
 
@@ -894,6 +932,7 @@ function CondensedEntryGroup({
   pathname: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const panelId = "world-more-entries";
 
   return (
     <div>
@@ -901,6 +940,7 @@ function CondensedEntryGroup({
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
+        aria-controls={panelId}
         className="flex w-full items-center justify-between py-0.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]"
       >
         <span>{title}</span>
@@ -913,7 +953,7 @@ function CondensedEntryGroup({
         />
       </button>
       {expanded ? (
-        <div className="mt-2 grid grid-cols-4 gap-x-2 gap-y-3">
+        <div id={panelId} className="mt-2 grid grid-cols-4 gap-x-2 gap-y-3">
           {entries.map((entry) => (
             <CondensedEntryCell
               key={entry.key}
