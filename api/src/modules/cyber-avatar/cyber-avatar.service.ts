@@ -9,6 +9,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
+import { CharacterEntity } from '../characters/character.entity';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CYBER_AVATAR_DEEP_REFRESH_CRON,
@@ -137,6 +138,8 @@ export class CyberAvatarService {
     private readonly signalRepo: Repository<CyberAvatarSignalEntity>,
     @InjectRepository(CyberAvatarRunEntity)
     private readonly runRepo: Repository<CyberAvatarRunEntity>,
+    @InjectRepository(CharacterEntity)
+    private readonly characterRepo: Repository<CharacterEntity>,
     private readonly ai: AiOrchestratorService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly rulesService: CyberAvatarRulesService,
@@ -315,12 +318,16 @@ export class CyberAvatarService {
       const owner = await this.worldOwnerService.getOwnerOrThrow();
       const profile = this.serializeProfile(await this.ensureProfile(owner.id));
       const personaSummary = await this.buildPromptContext();
+      const liveCharacters = await this.loadOwnerCharacterIndex(owner.id);
       const interestTags = this.collectInterestTags(
         profile.liveState,
         profile.recentState,
+        liveCharacters.names,
       );
       await this.matchmakingSync.pushSnapshot({
         owner,
+        // 撮合卡片用真实世界昵称（朋友圈等处显示的名字）；空才回退伪名池（cloud-api 侧）。
+        nickname: owner.username?.trim() || null,
         personaSummary,
         interestTags,
         avatarVersion: profile.version,
@@ -337,12 +344,23 @@ export class CyberAvatarService {
   }
 
   // 兴趣标签 = liveState.activeTopics + recentState.recurringTopics，去重（忽略大小写）后截断。
+  // characterNames：当前 owner 在世角色名——兴趣标签里子串命中任一角色名的整条丢弃，
+  // 确保撮合卡片「常聊 …」是纯兴趣主题、绝不出现人名/角色名（配合 LLM prompt 禁人名规则 +
+  // 重建时剔除已删角色 signal，三层兜底）。
   private collectInterestTags(
     liveState: unknown,
     recentState: unknown,
+    characterNames: string[] = [],
   ): string[] {
     const out: string[] = [];
     const seen = new Set<string>();
+    const nameNeedles = characterNames
+      .map((name) => name.trim().toLowerCase())
+      .filter((name) => name.length >= 2);
+    const mentionsPerson = (tag: string) => {
+      const lower = tag.toLowerCase();
+      return nameNeedles.some((needle) => lower.includes(needle));
+    };
     const collect = (source: unknown, field: string) => {
       const arr = (source as Record<string, unknown> | null)?.[field];
       if (!Array.isArray(arr)) return;
@@ -350,6 +368,7 @@ export class CyberAvatarService {
         if (typeof item !== 'string') continue;
         const trimmed = item.trim();
         if (!trimmed) continue;
+        if (mentionsPerson(trimmed)) continue;
         const key = trimmed.toLowerCase();
         if (seen.has(key)) continue;
         seen.add(key);
@@ -360,6 +379,38 @@ export class CyberAvatarService {
     collect(liveState, 'activeTopics');
     collect(recentState, 'recurringTopics');
     return out;
+  }
+
+  // 分身相遇/画像：取当前 owner 在世角色的 id 集合 + 角色名，用于
+  // （a）重建时剔除引用已删角色的 signal；（b）从兴趣标签里抹掉人名。
+  private async loadOwnerCharacterIndex(
+    ownerId: string,
+  ): Promise<{ ids: Set<string>; names: string[] }> {
+    const rows = await this.characterRepo.find({
+      where: { ownerId },
+      select: { id: true, name: true },
+    });
+    const ids = new Set<string>();
+    const names: string[] = [];
+    for (const row of rows) {
+      if (row.id) ids.add(row.id);
+      const name = row.name?.trim();
+      if (name) names.push(name);
+    }
+    return { ids, names };
+  }
+
+  // 只在 payload 带 characterId 且该角色已不在在世集合时剔除；无 characterId 的 signal 保留。
+  private filterSignalsByLiveCharacters(
+    signals: CyberAvatarSignalEntity[],
+    liveCharacterIds: Set<string>,
+  ): CyberAvatarSignalEntity[] {
+    return signals.filter((signal) => {
+      const characterId = (signal.payload as Record<string, unknown> | null)
+        ?.characterId;
+      if (typeof characterId !== 'string' || !characterId) return true;
+      return liveCharacterIds.has(characterId);
+    });
   }
 
   async buildPromptSections(options?: {
@@ -529,8 +580,17 @@ export class CyberAvatarService {
     }
 
     try {
+      // 分身相遇/画像：剔除引用「已删除角色」的 signal，再喂给聚合 + LLM。
+      // 删角色后旧 signal 仍在（删除路径不清 signal），否则已删角色名会一路灌进
+      // activeTopics/recurringTopics → 兴趣标签 → 撮合卡片「常聊 …」。sourceSignals
+      // 仍按原样推进状态（processing→merged），被剔除的也算消费掉、不再回环重选。
+      const liveCharacters = await this.loadOwnerCharacterIndex(owner.id);
+      const usableSignals = this.filterSignalsByLiveCharacters(
+        sourceSignals,
+        liveCharacters.ids,
+      );
       const currentPayload = this.readProfilePayload(profile);
-      const aggregation = this.aggregateSignals(sourceSignals);
+      const aggregation = this.aggregateSignals(usableSignals);
       const promptSnapshot: Record<string, unknown> = {};
       let nextPayload = currentPayload;
       let llmOutputPayload: Record<string, unknown> | null = null;
@@ -646,7 +706,7 @@ export class CyberAvatarService {
             sourceSignals[sourceSignals.length - 1]?.occurredAt ?? null,
           inputSnapshot: {
             signalIds: sourceSignals.map((item) => item.id),
-            signalSummaries: sourceSignals.map((item) => item.summaryText),
+            signalSummaries: usableSignals.map((item) => item.summaryText),
           },
           aggregationPayload: aggregation,
           promptSnapshot,

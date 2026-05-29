@@ -19,9 +19,16 @@ import type { UserEntity } from '../auth/user.entity';
 const MAX_PERSONA_CHARS = 4000;
 const MAX_TAGS = 12;
 const MAX_ATTEMPTS = 3;
+// 单次快照推送上限。这是个小 POST（只 upsert 一行），不该挂久；尤其 shared-world
+// 单进程服务全部租户，cloud-api 故障时若无超时，每个 owner 重建都会留下 ~300s（undici
+// 默认）的悬挂 fetch × 3 次重试，在同一进程里堆积。超时即当本次失败、走重试/下次重建。
+const PUSH_TIMEOUT_MS = 15_000;
 
 export type MatchmakingSnapshotInput = {
   owner: UserEntity;
+  // 世界主人昵称（owner.username，朋友圈等处显示的名字）。cloud-api 撮合卡片优先用它，
+  // 缺失才回退伪名池。CyberAvatarService 取好传进来。
+  nickname: string | null;
   personaSummary: string;
   interestTags: string[];
   avatarVersion: number;
@@ -32,6 +39,7 @@ export type MatchmakingSnapshotInput = {
 type SnapshotPayload = {
   phone: string;
   optedIn: boolean;
+  nickname: string | null;
   contactField: string | null;
   contactKind: string | null;
   personaSummary: string;
@@ -60,6 +68,7 @@ export class CyberAvatarMatchmakingSyncService {
       phone,
       // 列默认 true；防御性地把 null/undefined 视为开启。opt-out 也要推（让 cloud-api 移出池）。
       optedIn: input.owner.encounterOptedIn !== false,
+      nickname: input.nickname?.trim() ? input.nickname.trim() : null,
       contactField: input.owner.encounterContactField?.trim()
         ? input.owner.encounterContactField.trim()
         : null,
@@ -126,6 +135,8 @@ export class CyberAvatarMatchmakingSyncService {
       return false;
     }
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PUSH_TIMEOUT_MS);
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -133,11 +144,15 @@ export class CyberAvatarMatchmakingSyncService {
         'X-Service-Token': token,
       },
       body: JSON.stringify(payload),
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Matchmaking snapshot push request error: ${message}`);
-      return null;
-    });
+      signal: controller.signal,
+    })
+      .catch((error: unknown) => {
+        // 超时 abort 也落这里 → 返回 null → 当本次推送失败（postWithRetry 会重试/兜底）。
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`Matchmaking snapshot push request error: ${message}`);
+        return null;
+      })
+      .finally(() => clearTimeout(timer));
 
     if (!response) {
       return false;
