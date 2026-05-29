@@ -37,6 +37,7 @@ import {
 } from "@yinjie/ui";
 
 type MessageDescriptor = Parameters<ReturnType<typeof useRuntimeTranslator>>[0];
+import { AvatarChip } from "../components/avatar-chip";
 import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { translateAppErrorCode } from "../lib/error-translate";
@@ -513,8 +514,15 @@ function MobileDiscoverScenePage() {
           className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3.5 shadow-sm"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/12 text-[length:var(--text-section)]">
-              {pendingEncounter.characterAvatar.trim() || "🙂"}
+            {/* 场景相遇的 characterAvatar 是图片 URL（如 /api/character-assets/*.svg），
+                不是 emoji——必须走 AvatarChip 渲染 <img>（含 URL 解析/加载失败回退），
+                直接当文字渲染会把 URL 字符串原样显示出来。与好友申请页同口径。 */}
+            <div className="shrink-0">
+              <AvatarChip
+                name={pendingEncounter.characterName}
+                src={pendingEncounter.characterAvatar}
+                size="wechat"
+              />
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[length:var(--text-body)] font-semibold text-[color:var(--text-primary)]">
