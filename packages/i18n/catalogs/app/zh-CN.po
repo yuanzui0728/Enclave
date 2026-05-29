@@ -18,24 +18,24 @@ msgstr ""
 #: apps/app/src/routes/channel-author-page.tsx:414
 #: apps/app/src/routes/channel-author-page.tsx:1053
 #: apps/app/src/routes/channel-author-page.tsx:1113
-#: apps/app/src/routes/channels-page.tsx:2915
-#: apps/app/src/routes/channels-page.tsx:4626
+#: apps/app/src/routes/channels-page.tsx:2955
+#: apps/app/src/routes/channels-page.tsx:4666
 msgid "音乐"
 msgstr "音乐"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "暂停"
-msgstr "暂停"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
+#: apps/app/src/routes/channels-page.tsx:3494
+#: apps/app/src/routes/channels-page.tsx:3763
 msgid "播放"
 msgstr "播放"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
+#: apps/app/src/routes/channels-page.tsx:3494
+#: apps/app/src/routes/channels-page.tsx:3763
+msgid "暂停"
+msgstr "暂停"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -57,7 +57,7 @@ msgstr "已想要 · 已匹配"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:73
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:86
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:64
 msgid "已略过"
 msgstr "已略过"
 
@@ -89,22 +89,22 @@ msgstr "想要TA的联系方式"
 msgid "已匹配"
 msgstr "已匹配"
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:42
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:53
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:44
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:55
 msgid "待查看"
 msgstr "待查看"
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:46
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:57
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:48
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:59
 msgid "等待对方"
 msgstr "等待对方"
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:66
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:64
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:68
 msgid "对方略过"
 msgstr "对方略过"
 
-#: apps/app/src/components/avatar-encounter-inbox-card.tsx:68
+#: apps/app/src/components/avatar-encounter-inbox-card.tsx:70
 #: apps/app/src/components/chat-message-list.tsx:7570
 #: apps/app/src/components/chat-message-list.tsx:7731
 #: apps/app/src/features/games/island-concert/island-concert-game.tsx:89
@@ -112,17 +112,17 @@ msgstr "对方略过"
 msgid "已结束"
 msgstr "已结束"
 
-#: apps/app/src/components/avatar-encounter-transcript.tsx:136
+#: apps/app/src/components/avatar-encounter-transcript.tsx:137
 msgid "匹配理由"
 msgstr "匹配理由"
 
-#: apps/app/src/components/avatar-encounter-transcript.tsx:166
+#: apps/app/src/components/avatar-encounter-transcript.tsx:167
 #: apps/app/src/components/chat-message-list.tsx:6272
 #: apps/app/src/i18n/static-dom-seed.ts:719
 msgid "继续聊"
 msgstr "继续聊"
 
-#: apps/app/src/components/avatar-encounter-transcript.tsx:215
+#: apps/app/src/components/avatar-encounter-transcript.tsx:216
 msgid "点这里直接看全部"
 msgstr "点这里直接看全部"
 
@@ -230,7 +230,7 @@ msgstr "转发到聊天"
 #: apps/app/src/features/games/signal-squad/signal-squad-game.tsx:472
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:225
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:161
-#: apps/app/src/routes/channels-page.tsx:5624
+#: apps/app/src/routes/channels-page.tsx:5664
 #: apps/app/src/routes/character-detail-page.tsx:407
 #: apps/app/src/routes/contacts-page.tsx:2675
 #: apps/app/src/routes/contacts-page.tsx:2677
@@ -241,7 +241,7 @@ msgstr "转发到聊天"
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1143
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1793
 #: apps/app/src/routes/moments-page.tsx:2176
-#: apps/app/src/routes/profile-feed-page.tsx:526
+#: apps/app/src/routes/profile-feed-page.tsx:525
 #: apps/app/src/routes/profile-info-page.tsx:695
 #: apps/app/src/routes/shop-page.tsx:347
 msgid "取消"
@@ -573,12 +573,12 @@ msgstr "表情"
 #: apps/app/src/features/search/search-types.ts:121
 #: apps/app/src/features/shell/desktop-nav-matching.ts:65
 #: apps/app/src/features/shell/desktop-nav-matching.ts:66
-#: apps/app/src/features/world/world-page.tsx:206
+#: apps/app/src/features/world/world-page.tsx:207
 #: apps/app/src/i18n/static-dom-seed.ts:65
-#: apps/app/src/routes/channels-page.tsx:4402
+#: apps/app/src/routes/channels-page.tsx:4442
 #: apps/app/src/routes/desktop-chat-files-page.tsx:978
 #: apps/app/src/routes/favorites-page.tsx:563
-#: apps/app/src/routes/mobile-favorites-page.tsx:341
+#: apps/app/src/routes/mobile-favorites-page.tsx:342
 #: apps/app/src/routes/profile-page.tsx:174
 msgid "收藏"
 msgstr "收藏"
@@ -668,8 +668,8 @@ msgstr "Enter 发送"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1192
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/features/world/world-page.tsx:462
-#: apps/app/src/routes/channels-page.tsx:5677
+#: apps/app/src/features/world/world-page.tsx:467
+#: apps/app/src/routes/channels-page.tsx:5717
 #: apps/app/src/routes/discover-page.tsx:1335
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1422
@@ -1221,9 +1221,9 @@ msgstr "生成语音失败，请稍后再试。"
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
 #: apps/app/src/routes/discover-feed-page.tsx:1457
-#: apps/app/src/routes/profile-feed-page.tsx:306
-#: apps/app/src/routes/profile-feed-page.tsx:335
-#: apps/app/src/routes/profile-moments-page.tsx:1348
+#: apps/app/src/routes/profile-feed-page.tsx:305
+#: apps/app/src/routes/profile-feed-page.tsx:334
+#: apps/app/src/routes/profile-moments-page.tsx:1347
 msgid "重试"
 msgstr "重试"
 
@@ -1715,10 +1715,10 @@ msgstr "删除中..."
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1385
 #: apps/app/src/features/search/mobile-search-workspace.tsx:418
 #: apps/app/src/routes/chat-list-page.tsx:2417
-#: apps/app/src/routes/knowledge-base-page.tsx:461
+#: apps/app/src/routes/knowledge-base-page.tsx:465
 #: apps/app/src/routes/mobile-add-friend-page.tsx:907
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1651
-#: apps/app/src/routes/profile-feed-page.tsx:533
+#: apps/app/src/routes/profile-feed-page.tsx:532
 msgid "删除"
 msgstr "删除"
 
@@ -1803,7 +1803,6 @@ msgid "发送失败"
 msgstr "发送失败"
 
 #: apps/app/src/components/chat-message-list.tsx:4298
-#: apps/app/src/features/world/world-page.tsx:395
 msgid "我的"
 msgstr "我的"
 
@@ -1826,7 +1825,7 @@ msgstr "我的"
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:134
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1257
 #: apps/app/src/features/moments/use-optimistic-like.ts:107
-#: apps/app/src/features/world/world-page.tsx:351
+#: apps/app/src/features/world/world-page.tsx:352
 #: apps/app/src/i18n/static-dom-seed.ts:672
 #: apps/app/src/lib/conversation-preview.ts:113
 #: apps/app/src/routes/character-detail-page.tsx:154
@@ -1882,7 +1881,7 @@ msgstr "消息内容已复制。"
 #: apps/app/src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx:958
 #: apps/app/src/routes/desktop-chat-files-page.tsx:978
 #: apps/app/src/routes/favorites-page.tsx:789
-#: apps/app/src/routes/mobile-favorites-page.tsx:494
+#: apps/app/src/routes/mobile-favorites-page.tsx:495
 #: apps/app/src/routes/official-account-detail-page.tsx:524
 msgid "取消收藏"
 msgstr "取消收藏"
@@ -2231,10 +2230,10 @@ msgstr "[聊天记录]"
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:256
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3969
 #: apps/app/src/i18n/static-dom-seed.ts:934
-#: apps/app/src/routes/channels-page.tsx:4778
-#: apps/app/src/routes/channels-page.tsx:4794
+#: apps/app/src/routes/channels-page.tsx:4818
+#: apps/app/src/routes/channels-page.tsx:4834
 #: apps/app/src/routes/discover-feed-page.tsx:2711
-#: apps/app/src/routes/profile-feed-page.tsx:420
+#: apps/app/src/routes/profile-feed-page.tsx:419
 msgid "回复"
 msgstr "回复"
 
@@ -2311,11 +2310,12 @@ msgstr "文字动态"
 #: apps/app/src/components/chat-message-list.tsx:6562
 #: apps/app/src/features/shell/desktop-nav-matching.ts:91
 #: apps/app/src/features/shell/desktop-nav-matching.ts:92
-#: apps/app/src/features/world/world-page.tsx:158
+#: apps/app/src/features/world/world-page.tsx:159
 #: apps/app/src/i18n/static-dom-seed.ts:47
 #: apps/app/src/lib/message-attachment-semantic.ts:324
 #: apps/app/src/routes/channels-page.tsx:2190
 #: apps/app/src/routes/channels-page.tsx:2498
+#: apps/app/src/routes/channels-page.tsx:2668
 #: apps/app/src/routes/discover-page.tsx:218
 #: apps/app/src/routes/favorites-page.tsx:82
 #: apps/app/src/routes/mobile-favorites-page.tsx:129
@@ -2368,7 +2368,7 @@ msgstr "已退回"
 #: apps/app/src/features/desktop/contacts/desktop-contacts-friend-requests-pane.tsx:174
 #: apps/app/src/features/subscription/subscription-panel.tsx:485
 #: apps/app/src/routes/friend-requests-page.tsx:393
-#: apps/app/src/routes/profile-subscription-page.tsx:584
+#: apps/app/src/routes/profile-subscription-page.tsx:583
 msgid "已过期"
 msgstr "已过期"
 
@@ -2625,7 +2625,7 @@ msgstr "笔记查看器"
 
 #: apps/app/src/components/chat-message-list.tsx:8481
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:887
-#: apps/app/src/components/mobile-discover-tool-shell.tsx:141
+#: apps/app/src/components/mobile-discover-tool-shell.tsx:144
 #: apps/app/src/components/mobile-document-shell.tsx:143
 #: apps/app/src/features/chat-details/chat-details-shell.tsx:45
 #: apps/app/src/features/chat/mobile-chat-thread-header.tsx:73
@@ -2650,9 +2650,9 @@ msgstr "笔记查看器"
 #: apps/app/src/routes/games-page.tsx:632
 #: apps/app/src/routes/gift-cabinet-page.tsx:67
 #: apps/app/src/routes/group-member-picker-page.tsx:554
-#: apps/app/src/routes/knowledge-base-page.tsx:261
+#: apps/app/src/routes/knowledge-base-page.tsx:265
 #: apps/app/src/routes/mobile-add-friend-page.tsx:582
-#: apps/app/src/routes/mobile-favorites-page.tsx:352
+#: apps/app/src/routes/mobile-favorites-page.tsx:353
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1390
@@ -2661,27 +2661,27 @@ msgstr "笔记查看器"
 #: apps/app/src/routes/official-accounts-page.tsx:222
 #: apps/app/src/routes/official-accounts-page.tsx:393
 #: apps/app/src/routes/official-accounts-page.tsx:423
-#: apps/app/src/routes/profile-character-import-page.tsx:346
-#: apps/app/src/routes/profile-feed-page.tsx:469
-#: apps/app/src/routes/profile-feedback-page.tsx:255
+#: apps/app/src/routes/profile-character-import-page.tsx:345
+#: apps/app/src/routes/profile-feed-page.tsx:468
+#: apps/app/src/routes/profile-feedback-page.tsx:251
 #: apps/app/src/routes/profile-info-contact-page.tsx:143
 #: apps/app/src/routes/profile-info-field-page.tsx:256
 #: apps/app/src/routes/profile-info-name-page.tsx:164
 #: apps/app/src/routes/profile-info-page.tsx:270
 #: apps/app/src/routes/profile-info-signature-page.tsx:157
-#: apps/app/src/routes/profile-moments-page.tsx:1229
+#: apps/app/src/routes/profile-moments-page.tsx:1228
 #: apps/app/src/routes/profile-settings-account-security-page.tsx:50
 #: apps/app/src/routes/profile-settings-language-page.tsx:50
-#: apps/app/src/routes/profile-subscription-page.tsx:504
-#: apps/app/src/routes/profile-subscription-page.tsx:536
-#: apps/app/src/routes/profile-subscription-page.tsx:606
+#: apps/app/src/routes/profile-subscription-page.tsx:503
+#: apps/app/src/routes/profile-subscription-page.tsx:535
+#: apps/app/src/routes/profile-subscription-page.tsx:605
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:239
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:309
 #: apps/app/src/routes/shop-checkout-page.tsx:94
 #: apps/app/src/routes/shop-orders-page.tsx:86
 #: apps/app/src/routes/shop-page.tsx:174
 #: apps/app/src/routes/subscription-inbox-page.tsx:194
-#: apps/app/src/routes/wallet-page.tsx:109
+#: apps/app/src/routes/wallet-page.tsx:111
 #: apps/app/src/routes/wallet-transactions-page.tsx:80
 #: apps/app/src/routes/welcome-page.tsx:2172
 msgid "返回"
@@ -2889,7 +2889,7 @@ msgstr "保存图片到相册，发到 X / 小红书 / 微博 引发更多人来
 #: apps/app/src/features/desktop/moments/desktop-moments-workspace.tsx:184
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:261
 #: apps/app/src/features/shell/desktop-shell.tsx:75
-#: apps/app/src/features/world/world-page.tsx:337
+#: apps/app/src/features/world/world-page.tsx:338
 #: apps/app/src/routes/channel-author-page.tsx:593
 #: apps/app/src/routes/desktop-feedback-page.tsx:122
 #: apps/app/src/routes/desktop-mobile-page.tsx:197
@@ -2902,7 +2902,7 @@ msgstr "保存图片到相册，发到 X / 小红书 / 微博 引发更多人来
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:1350
 #: apps/app/src/routes/moments-page.tsx:2686
 #: apps/app/src/routes/profile-info-page.tsx:201
-#: apps/app/src/routes/profile-moments-page.tsx:928
+#: apps/app/src/routes/profile-moments-page.tsx:927
 #: apps/app/src/routes/profile-page.tsx:119
 #: apps/app/src/routes/profile-page.tsx:126
 #: apps/app/src/routes/profile-page.tsx:138
@@ -2921,9 +2921,9 @@ msgstr "居民动态"
 #. placeholder {0}: post.likeCount
 #: apps/app/src/components/feed-post-share-card-modal.tsx:157
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:325
-#: apps/app/src/routes/channels-page.tsx:4631
+#: apps/app/src/routes/channels-page.tsx:4671
 #: apps/app/src/routes/discover-feed-page.tsx:2571
-#: apps/app/src/routes/profile-feed-page.tsx:378
+#: apps/app/src/routes/profile-feed-page.tsx:377
 msgid "{0} 赞"
 msgstr "{0} 赞"
 
@@ -2931,9 +2931,9 @@ msgstr "{0} 赞"
 #: apps/app/src/components/feed-post-share-card-modal.tsx:160
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:328
 #: apps/app/src/routes/channel-author-page.tsx:854
-#: apps/app/src/routes/channels-page.tsx:4632
+#: apps/app/src/routes/channels-page.tsx:4672
 #: apps/app/src/routes/discover-feed-page.tsx:2574
-#: apps/app/src/routes/profile-feed-page.tsx:381
+#: apps/app/src/routes/profile-feed-page.tsx:380
 msgid "{0} 评论"
 msgstr "{0} 评论"
 
@@ -3186,18 +3186,18 @@ msgstr "工具摘要已复制。"
 msgid "复制工具摘要失败，请稍后重试。"
 msgstr "复制工具摘要失败，请稍后重试。"
 
-#: apps/app/src/components/mobile-discover-tool-shell.tsx:154
+#: apps/app/src/components/mobile-discover-tool-shell.tsx:157
 #: apps/app/src/i18n/static-dom-seed.ts:450
 #: apps/app/src/i18n/static-dom-seed.ts:873
 msgid "复制工具摘要"
 msgstr "复制工具摘要"
 
-#: apps/app/src/components/mobile-discover-tool-shell.tsx:154
+#: apps/app/src/components/mobile-discover-tool-shell.tsx:157
 #: apps/app/src/i18n/static-dom-seed.ts:872
 msgid "分享工具"
 msgstr "分享工具"
 
-#: apps/app/src/components/mobile-discover-tool-shell.tsx:186
+#: apps/app/src/components/mobile-discover-tool-shell.tsx:192
 #: apps/app/src/components/mobile-document-shell.tsx:197
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:644
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:196
@@ -3228,7 +3228,7 @@ msgstr "分享工具"
 #: apps/app/src/routes/discover-feed-page.tsx:2423
 #: apps/app/src/routes/discover-feed-page.tsx:2478
 #: apps/app/src/routes/discover-feed-page.tsx:2997
-#: apps/app/src/routes/discover-scene-page.tsx:582
+#: apps/app/src/routes/discover-scene-page.tsx:685
 #: apps/app/src/routes/friend-moments-page.tsx:967
 #: apps/app/src/routes/friend-requests-page.tsx:290
 #: apps/app/src/routes/friend-requests-page.tsx:502
@@ -3292,7 +3292,7 @@ msgstr "复制文档摘要失败，请稍后重试。"
 #: apps/app/src/components/mobile-document-shell.tsx:143
 #: apps/app/src/i18n/static-dom-seed.ts:620
 #: apps/app/src/i18n/static-dom-seed.ts:884
-#: apps/app/src/routes/profile-subscription-page.tsx:660
+#: apps/app/src/routes/profile-subscription-page.tsx:659
 msgid "返回设置"
 msgstr "返回设置"
 
@@ -3513,7 +3513,7 @@ msgstr "关闭图片预览"
 #: apps/app/src/components/moment-compose-media-preview.tsx:355
 #: apps/app/src/components/moment-media-gallery.tsx:641
 #: apps/app/src/i18n/static-dom-seed.ts:867
-#: apps/app/src/routes/channels-page.tsx:3503
+#: apps/app/src/routes/channels-page.tsx:3543
 #: apps/app/src/routes/desktop-chat-files-page.tsx:1333
 msgid "上一张"
 msgstr "上一张"
@@ -3521,7 +3521,7 @@ msgstr "上一张"
 #: apps/app/src/components/moment-compose-media-preview.tsx:364
 #: apps/app/src/components/moment-media-gallery.tsx:650
 #: apps/app/src/i18n/static-dom-seed.ts:868
-#: apps/app/src/routes/channels-page.tsx:3514
+#: apps/app/src/routes/channels-page.tsx:3554
 #: apps/app/src/routes/desktop-chat-files-page.tsx:1344
 msgid "下一张"
 msgstr "下一张"
@@ -3639,7 +3639,7 @@ msgstr "订阅号"
 #: apps/app/src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx:1089
 #: apps/app/src/i18n/static-dom-seed.ts:778
 #: apps/app/src/routes/channel-author-page.tsx:653
-#: apps/app/src/routes/channels-page.tsx:4499
+#: apps/app/src/routes/channels-page.tsx:4539
 #: apps/app/src/routes/official-account-detail-page.tsx:493
 msgid "已关注"
 msgstr "已关注"
@@ -3676,7 +3676,7 @@ msgstr "置顶"
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:376
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:426
 #: apps/app/src/i18n/static-dom-seed.ts:919
-#: apps/app/src/routes/channels-page.tsx:4401
+#: apps/app/src/routes/channels-page.tsx:4441
 msgid "已收藏"
 msgstr "已收藏"
 
@@ -3734,7 +3734,7 @@ msgstr "复制链接"
 #: apps/app/src/components/official-article-viewer.tsx:335
 #: apps/app/src/components/wechat-action-bubble.tsx:229
 #: apps/app/src/i18n/static-dom-seed.ts:460
-#: apps/app/src/routes/channels-page.tsx:4413
+#: apps/app/src/routes/channels-page.tsx:4453
 msgid "分享"
 msgstr "分享"
 
@@ -3877,8 +3877,8 @@ msgstr "赞"
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:396
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:480
 #: apps/app/src/i18n/static-dom-seed.ts:318
-#: apps/app/src/routes/channels-page.tsx:5499
-#: apps/app/src/routes/channels-page.tsx:5638
+#: apps/app/src/routes/channels-page.tsx:5539
+#: apps/app/src/routes/channels-page.tsx:5678
 msgid "评论"
 msgstr "评论"
 
@@ -3890,8 +3890,8 @@ msgstr "举报"
 #. placeholder {0}: replyTarget.authorName
 #. placeholder {0}: replyTo.authorName
 #: apps/app/src/components/wechat-comment-bar.tsx:169
-#: apps/app/src/routes/channels-page.tsx:5637
-#: apps/app/src/routes/channels-page.tsx:5688
+#: apps/app/src/routes/channels-page.tsx:5677
+#: apps/app/src/routes/channels-page.tsx:5728
 msgid "回复 {0}："
 msgstr "回复 {0}："
 
@@ -3911,7 +3911,7 @@ msgstr "发表评论"
 #: apps/app/src/components/wechat-comment-bar.tsx:286
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:324
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/routes/channels-page.tsx:5677
+#: apps/app/src/routes/channels-page.tsx:5717
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
 msgid "发送中"
 msgstr "发送中"
@@ -4025,11 +4025,11 @@ msgstr "云账号会话已失效，请重新登录后再尝试修改密码。"
 #: apps/app/src/features/account-security/account-security-panel.tsx:348
 #: apps/app/src/features/account-security/delete-account-panel.tsx:229
 #: apps/app/src/routes/gift-cabinet-page.tsx:99
-#: apps/app/src/routes/profile-subscription-page.tsx:516
+#: apps/app/src/routes/profile-subscription-page.tsx:515
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:256
 #: apps/app/src/routes/shop-orders-page.tsx:106
 #: apps/app/src/routes/shop-page.tsx:206
-#: apps/app/src/routes/wallet-page.tsx:132
+#: apps/app/src/routes/wallet-page.tsx:134
 msgid "去登录云账号"
 msgstr "去登录云账号"
 
@@ -4272,7 +4272,7 @@ msgstr "云纸留白"
 #: apps/app/src/routes/character-detail-page.tsx:364
 #: apps/app/src/routes/chat-details-page.tsx:431
 #: apps/app/src/routes/group-chat-details-page.tsx:887
-#: apps/app/src/routes/profile-subscription-page.tsx:586
+#: apps/app/src/routes/profile-subscription-page.tsx:585
 msgid "未设置"
 msgstr "未设置"
 
@@ -4321,7 +4321,7 @@ msgstr "视频通话暂未开放"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:10
 #: apps/app/src/routes/discover-page.tsx:88
-#: apps/app/src/routes/discover-scene-page.tsx:50
+#: apps/app/src/routes/discover-scene-page.tsx:57
 msgid "咖啡馆"
 msgstr "咖啡馆"
 
@@ -4331,7 +4331,7 @@ msgstr "窗边有热咖啡和低声播放的爵士乐。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:15
 #: apps/app/src/routes/discover-page.tsx:90
-#: apps/app/src/routes/discover-scene-page.tsx:52
+#: apps/app/src/routes/discover-scene-page.tsx:59
 msgid "图书馆"
 msgstr "图书馆"
 
@@ -4341,7 +4341,7 @@ msgstr "安静的阅读区里，翻页声比说话声更清楚。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:20
 #: apps/app/src/routes/discover-page.tsx:91
-#: apps/app/src/routes/discover-scene-page.tsx:53
+#: apps/app/src/routes/discover-scene-page.tsx:60
 msgid "公园"
 msgstr "公园"
 
@@ -4351,7 +4351,7 @@ msgstr "树荫、长椅和慢下来的傍晚风。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:25
 #: apps/app/src/routes/discover-page.tsx:89
-#: apps/app/src/routes/discover-scene-page.tsx:51
+#: apps/app/src/routes/discover-scene-page.tsx:58
 msgid "健身房"
 msgstr "健身房"
 
@@ -5202,8 +5202,8 @@ msgstr "通话提示"
 #: apps/app/src/features/subscription/subscription-panel.tsx:541
 #: apps/app/src/features/subscription/subscription-panel.tsx:639
 #: apps/app/src/i18n/static-dom-seed.ts:121
-#: apps/app/src/routes/profile-subscription-page.tsx:645
-#: apps/app/src/routes/profile-subscription-page.tsx:780
+#: apps/app/src/routes/profile-subscription-page.tsx:644
+#: apps/app/src/routes/profile-subscription-page.tsx:779
 msgid "状态"
 msgstr "状态"
 
@@ -5586,7 +5586,7 @@ msgstr "多选"
 #: apps/app/src/features/notes/note-ai-sheet.tsx:369
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:236
 #: apps/app/src/i18n/static-dom-seed.ts:936
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:847
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:868
 msgid "复制"
 msgstr "复制"
 
@@ -5792,14 +5792,14 @@ msgstr "切换到语音"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "挂断中..."
-
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
-#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
 msgid "挂断"
 msgstr "挂断"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
+msgid "挂断中..."
+msgstr "挂断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -7308,6 +7308,8 @@ msgstr "昵称：{0}"
 #: apps/app/src/routes/discover-encounter-page.tsx:430
 #: apps/app/src/routes/discover-page.tsx:443
 #: apps/app/src/routes/discover-page.tsx:965
+#: apps/app/src/routes/discover-scene-page.tsx:250
+#: apps/app/src/routes/discover-scene-page.tsx:521
 #: apps/app/src/routes/world-characters-page.tsx:338
 #: apps/app/src/routes/world-characters-page.tsx:496
 msgid "世界角色"
@@ -7477,7 +7479,7 @@ msgstr "社交与内容"
 #: apps/app/src/features/shell/desktop-nav-matching.ts:71
 #: apps/app/src/features/shell/desktop-nav-matching.ts:72
 #: apps/app/src/features/shell/desktop-shell.tsx:989
-#: apps/app/src/features/world/world-page.tsx:149
+#: apps/app/src/features/world/world-page.tsx:150
 #: apps/app/src/i18n/static-dom-seed.ts:33
 #: apps/app/src/routes/character-detail-page.tsx:412
 #: apps/app/src/routes/discover-page.tsx:134
@@ -7488,7 +7490,7 @@ msgstr "社交与内容"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:897
 #: apps/app/src/routes/moments-page.tsx:1990
 #: apps/app/src/routes/moments-page.tsx:2759
-#: apps/app/src/routes/profile-moments-page.tsx:1139
+#: apps/app/src/routes/profile-moments-page.tsx:1138
 #: apps/app/src/routes/profile-page.tsx:183
 msgid "朋友圈"
 msgstr "朋友圈"
@@ -7739,7 +7741,7 @@ msgstr "支持留空保存"
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:267
 #: apps/app/src/routes/group-announcement-page.tsx:576
 #: apps/app/src/routes/group-chat-edit-page.tsx:506
-#: apps/app/src/routes/knowledge-base-page.tsx:456
+#: apps/app/src/routes/knowledge-base-page.tsx:460
 msgid "{0} 字"
 msgstr "{0} 字"
 
@@ -7904,7 +7906,7 @@ msgstr "已选 {0} 项"
 #: apps/app/src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx:945
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:498
 #: apps/app/src/routes/channel-author-page.tsx:651
-#: apps/app/src/routes/channels-page.tsx:4497
+#: apps/app/src/routes/channels-page.tsx:4537
 #: apps/app/src/routes/discover-page.tsx:1288
 #: apps/app/src/routes/official-account-detail-page.tsx:511
 msgid "处理中..."
@@ -8092,8 +8094,8 @@ msgstr "可用"
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2250
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3986
 #: apps/app/src/features/search/desktop-search-launcher.tsx:1315
-#: apps/app/src/routes/channels-page.tsx:4367
-#: apps/app/src/routes/channels-page.tsx:4399
+#: apps/app/src/routes/channels-page.tsx:4407
+#: apps/app/src/routes/channels-page.tsx:4439
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:612
 msgid "处理中"
 msgstr "处理中"
@@ -8119,7 +8121,7 @@ msgid "开始克隆"
 msgstr "开始克隆"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-figure.tsx:28
-#: apps/app/src/features/world/world-page.tsx:128
+#: apps/app/src/features/world/world-page.tsx:129
 #: apps/app/src/routes/cyber-avatar-page.tsx:139
 #: apps/app/src/routes/cyber-avatar-page.tsx:142
 #: apps/app/src/routes/discover-page.tsx:175
@@ -8140,6 +8142,7 @@ msgstr "还有 {0} 条待分析"
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
 #: apps/app/src/i18n/static-dom-seed.ts:40
+#: apps/app/src/routes/channels-page.tsx:2701
 #: apps/app/src/routes/desktop-mobile-page.tsx:1198
 #: apps/app/src/routes/desktop-mobile-page.tsx:1263
 #: apps/app/src/routes/desktop-mobile-page.tsx:1375
@@ -8212,7 +8215,6 @@ msgstr "社交姿态"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-#: apps/app/src/features/world/world-page.tsx:603
 msgid "近期动向"
 msgstr "近期动向"
 
@@ -8347,29 +8349,30 @@ msgid "正在读取视频号内容..."
 msgstr "正在读取视频号内容..."
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1041
+#: apps/app/src/routes/channels-page.tsx:2692
 msgid "去推荐看看"
 msgstr "去推荐看看"
 
 #. placeholder {0}: target.name
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1249
-#: apps/app/src/routes/channels-page.tsx:2860
+#: apps/app/src/routes/channels-page.tsx:2900
 msgid "已转发给 {0}。"
 msgstr "已转发给 {0}。"
 
 #. placeholder {0}: input.targetName
 #. placeholder {1}: input.message
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1277
-#: apps/app/src/routes/channels-page.tsx:2883
+#: apps/app/src/routes/channels-page.tsx:2923
 msgid "转发给 {0} 失败：{1}"
 msgstr "转发给 {0} 失败：{1}"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1640
-#: apps/app/src/routes/channels-page.tsx:3012
+#: apps/app/src/routes/channels-page.tsx:3052
 msgid "暂无可播放内容"
 msgstr "暂无可播放内容"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1643
-#: apps/app/src/routes/channels-page.tsx:3015
+#: apps/app/src/routes/channels-page.tsx:3055
 msgid "稍后再来看看"
 msgstr "稍后再来看看"
 
@@ -8403,7 +8406,7 @@ msgstr "取消关注 {0}"
 #. placeholder {0}: profile.authorName
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2127
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3039
-#: apps/app/src/routes/channels-page.tsx:4487
+#: apps/app/src/routes/channels-page.tsx:4527
 msgid "关注 {0}"
 msgstr "关注 {0}"
 
@@ -8418,7 +8421,7 @@ msgstr "已点赞，当前 {0} 赞"
 
 #. placeholder {0}: post.likeCount
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2197
-#: apps/app/src/routes/channels-page.tsx:4371
+#: apps/app/src/routes/channels-page.tsx:4411
 msgid "点赞，当前 {0} 赞"
 msgstr "点赞，当前 {0} 赞"
 
@@ -8429,7 +8432,7 @@ msgstr "关闭评论，当前 {0} 条"
 
 #. placeholder {0}: post.commentCount
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2212
-#: apps/app/src/routes/channels-page.tsx:4389
+#: apps/app/src/routes/channels-page.tsx:4429
 msgid "打开评论，当前 {0} 条"
 msgstr "打开评论，当前 {0} 条"
 
@@ -8513,7 +8516,7 @@ msgstr "{liveClipCount} 条直播回放"
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3055
 #: apps/app/src/i18n/static-dom-seed.ts:347
 #: apps/app/src/routes/channel-author-page.tsx:654
-#: apps/app/src/routes/channels-page.tsx:4500
+#: apps/app/src/routes/channels-page.tsx:4540
 msgid "+关注"
 msgstr "+关注"
 
@@ -8538,12 +8541,12 @@ msgid "直播回放"
 msgstr "直播回放"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3120
-#: apps/app/src/routes/channels-page.tsx:4628
+#: apps/app/src/routes/channels-page.tsx:4668
 msgid "图集"
 msgstr "图集"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3121
-#: apps/app/src/features/world/world-page.tsx:384
+#: apps/app/src/features/world/world-page.tsx:391
 #: apps/app/src/i18n/static-dom-seed.ts:1051
 #: apps/app/src/routes/channel-author-page.tsx:415
 #: apps/app/src/routes/channel-author-page.tsx:1070
@@ -8568,12 +8571,12 @@ msgid "{viewCount} 播放"
 msgstr "{viewCount} 播放"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3192
-#: apps/app/src/routes/channels-page.tsx:5755
+#: apps/app/src/routes/channels-page.tsx:5795
 msgid "{seconds} 秒"
 msgstr "{seconds} 秒"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3551
-#: apps/app/src/routes/channels-page.tsx:5555
+#: apps/app/src/routes/channels-page.tsx:5595
 msgid "正在读取评论..."
 msgstr "正在读取评论..."
 
@@ -8600,7 +8603,7 @@ msgstr "全部收起"
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3644
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:542
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:560
-#: apps/app/src/routes/channels-page.tsx:5614
+#: apps/app/src/routes/channels-page.tsx:5654
 msgid "正在回复 {0}"
 msgstr "正在回复 {0}"
 
@@ -9379,6 +9382,7 @@ msgstr "通话操作菜单"
 #: apps/app/src/features/desktop/contacts/desktop-contacts-groups-pane.tsx:343
 #: apps/app/src/features/shell/desktop-nav-matching.ts:124
 #: apps/app/src/features/shell/desktop-nav-matching.ts:125
+#: apps/app/src/features/world/world-page.tsx:403
 #: apps/app/src/routes/games-page.tsx:757
 #: apps/app/src/routes/games-page.tsx:771
 #: apps/app/src/routes/games-page.tsx:788
@@ -9668,7 +9672,7 @@ msgstr "添加朋友"
 #: apps/app/src/i18n/static-dom-seed.ts:389
 #: apps/app/src/routes/chat-list-page.tsx:139
 #: apps/app/src/routes/favorites-page.tsx:596
-#: apps/app/src/routes/mobile-favorites-page.tsx:365
+#: apps/app/src/routes/mobile-favorites-page.tsx:366
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1459
 #: apps/app/src/routes/mobile-notes-page.tsx:328
 #: apps/app/src/routes/mobile-notes-page.tsx:438
@@ -10684,8 +10688,8 @@ msgstr "查看资料"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:655
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:278
-#: apps/app/src/features/world/world-page.tsx:213
-#: apps/app/src/routes/profile-moments-page.tsx:1221
+#: apps/app/src/features/world/world-page.tsx:214
+#: apps/app/src/routes/profile-moments-page.tsx:1220
 msgid "我的朋友圈"
 msgstr "我的朋友圈"
 
@@ -11904,13 +11908,13 @@ msgstr "再点一次取消赞"
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:353
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:412
 #: apps/app/src/i18n/static-dom-seed.ts:366
-#: apps/app/src/routes/channels-page.tsx:4804
+#: apps/app/src/routes/channels-page.tsx:4844
 #: apps/app/src/routes/discover-page.tsx:1290
 msgid "已赞"
 msgstr "已赞"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:354
-#: apps/app/src/routes/channels-page.tsx:4804
+#: apps/app/src/routes/channels-page.tsx:4844
 #: apps/app/src/routes/discover-page.tsx:1291
 msgid "点赞"
 msgstr "点赞"
@@ -11931,7 +11935,7 @@ msgstr "正在读取完整评论..."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:417
 #: apps/app/src/routes/discover-feed-page.tsx:2761
-#: apps/app/src/routes/profile-feed-page.tsx:444
+#: apps/app/src/routes/profile-feed-page.tsx:443
 msgid "评论暂时无法显示"
 msgstr "评论暂时无法显示"
 
@@ -11956,7 +11960,7 @@ msgstr "重试读取全部评论"
 #. placeholder {0}: post.commentCount
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:534
 #: apps/app/src/routes/discover-feed-page.tsx:2756
-#: apps/app/src/routes/profile-feed-page.tsx:439
+#: apps/app/src/routes/profile-feed-page.tsx:438
 msgid "查看全部 {0} 条评论"
 msgstr "查看全部 {0} 条评论"
 
@@ -11987,7 +11991,7 @@ msgstr "："
 #: apps/app/src/features/search/search-types.ts:125
 #: apps/app/src/features/search/use-search-index.ts:502
 #: apps/app/src/features/shell/desktop-nav-matching.ts:85
-#: apps/app/src/features/world/world-page.tsx:140
+#: apps/app/src/features/world/world-page.tsx:141
 #: apps/app/src/i18n/static-dom-seed.ts:67
 #: apps/app/src/routes/discover-feed-page.tsx:1051
 #: apps/app/src/routes/discover-feed-page.tsx:1943
@@ -12091,7 +12095,7 @@ msgstr "开始游戏"
 #: apps/app/src/features/desktop/games/desktop-games-workspace.tsx:107
 #: apps/app/src/features/games/night-market/night-market-data.ts:65
 #: apps/app/src/features/shell/desktop-nav-matching.ts:104
-#: apps/app/src/features/world/world-page.tsx:177
+#: apps/app/src/features/world/world-page.tsx:178
 #: apps/app/src/i18n/static-dom-seed.ts:74
 #: apps/app/src/routes/desktop-mobile-page.tsx:129
 #: apps/app/src/routes/discover-page.tsx:231
@@ -12595,23 +12599,23 @@ msgid "已加载 {loadedCount} / 共 {totalCount} 条动态"
 msgstr "已加载 {loadedCount} / 共 {totalCount} 条动态"
 
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:168
-#: apps/app/src/routes/profile-moments-page.tsx:1314
+#: apps/app/src/routes/profile-moments-page.tsx:1313
 msgid "正在加载我的朋友圈"
 msgstr "正在加载我的朋友圈"
 
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:200
-#: apps/app/src/routes/profile-moments-page.tsx:1360
+#: apps/app/src/routes/profile-moments-page.tsx:1359
 msgid "还没有发布过朋友圈"
 msgstr "还没有发布过朋友圈"
 
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:201
-#: apps/app/src/routes/profile-moments-page.tsx:1361
+#: apps/app/src/routes/profile-moments-page.tsx:1360
 msgid "记录此刻，你的朋友圈会出现在这里。"
 msgstr "记录此刻，你的朋友圈会出现在这里。"
 
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:204
-#: apps/app/src/routes/profile-moments-page.tsx:1239
-#: apps/app/src/routes/profile-moments-page.tsx:1368
+#: apps/app/src/routes/profile-moments-page.tsx:1238
+#: apps/app/src/routes/profile-moments-page.tsx:1367
 msgid "发条朋友圈"
 msgstr "发条朋友圈"
 
@@ -13548,8 +13552,8 @@ msgstr "每日签到"
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:81
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:80
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:88
-#: apps/app/src/features/world/world-page.tsx:533
-#: apps/app/src/routes/profile-feed-page.tsx:438
+#: apps/app/src/features/world/world-page.tsx:605
+#: apps/app/src/routes/profile-feed-page.tsx:437
 #: apps/app/src/routes/wallet-transactions-page.tsx:162
 msgid "加载中…"
 msgstr "加载中…"
@@ -17593,7 +17597,7 @@ msgid "偏创作、分发、沉淀和内容协同。"
 msgstr "偏创作、分发、沉淀和内容协同。"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:102
-#: apps/app/src/features/world/world-page.tsx:389
+#: apps/app/src/features/world/world-page.tsx:396
 #: apps/app/src/i18n/static-dom-seed.ts:150
 msgid "生活"
 msgstr "生活"
@@ -17604,7 +17608,7 @@ msgid "偏办事、地图、活动和居民服务。"
 msgstr "偏办事、地图、活动和居民服务。"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:107
-#: apps/app/src/features/world/world-page.tsx:187
+#: apps/app/src/features/world/world-page.tsx:188
 #: apps/app/src/i18n/static-dom-seed.ts:151
 #: apps/app/src/routes/discover-page.tsx:246
 msgid "工具"
@@ -18507,7 +18511,7 @@ msgstr "用聊天来源筛选把最近回看过的一批图片再扫一遍。"
 #: apps/app/src/features/search/search-types.ts:98
 #: apps/app/src/features/search/search-types.ts:123
 #: apps/app/src/features/shell/desktop-nav-matching.ts:110
-#: apps/app/src/features/world/world-page.tsx:186
+#: apps/app/src/features/world/world-page.tsx:187
 #: apps/app/src/i18n/static-dom-seed.ts:66
 #: apps/app/src/routes/desktop-mobile-page.tsx:124
 #: apps/app/src/routes/discover-page.tsx:245
@@ -18742,7 +18746,7 @@ msgstr "插入到笔记"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:317
 #: apps/app/src/features/notes/note-ai-sheet.tsx:369
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:847
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:868
 msgid "已复制"
 msgstr "已复制"
 
@@ -18996,7 +19000,7 @@ msgid "支持好友动态和评论命中。"
 msgstr "支持好友动态和评论命中。"
 
 #: apps/app/src/features/search/desktop-search-workspace.tsx:138
-#: apps/app/src/features/world/world-page.tsx:159
+#: apps/app/src/features/world/world-page.tsx:160
 #: apps/app/src/i18n/static-dom-seed.ts:335
 #: apps/app/src/routes/favorites-page.tsx:647
 msgid "内容流"
@@ -19497,8 +19501,8 @@ msgid "意见反馈"
 msgstr "意见反馈"
 
 #: apps/app/src/features/shell/desktop-nav-config.ts:117
-#: apps/app/src/features/world/world-page.tsx:234
-#: apps/app/src/routes/profile-feedback-page.tsx:246
+#: apps/app/src/features/world/world-page.tsx:235
+#: apps/app/src/routes/profile-feedback-page.tsx:242
 #: apps/app/src/routes/profile-page.tsx:233
 msgid "反馈"
 msgstr "反馈"
@@ -19624,7 +19628,7 @@ msgstr "端口占用：{portOccupiedLabel}"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:277
 #: apps/app/src/i18n/static-dom-seed.ts:11
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:519
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:532
 msgid "再试一次"
 msgstr "再试一次"
 
@@ -19801,7 +19805,7 @@ msgstr "复制失败，请手动选中复制。"
 
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:195
 #: apps/app/src/features/subscription/subscription-panel.tsx:603
-#: apps/app/src/routes/profile-subscription-page.tsx:731
+#: apps/app/src/routes/profile-subscription-page.tsx:730
 msgid "联系开通"
 msgstr "联系开通"
 
@@ -19939,124 +19943,124 @@ msgid "提交开通申请失败，请稍后重试。"
 msgstr "提交开通申请失败，请稍后重试。"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:460
-#: apps/app/src/routes/profile-subscription-page.tsx:551
+#: apps/app/src/routes/profile-subscription-page.tsx:550
 msgid "正在加载会员信息…"
 msgstr "正在加载会员信息…"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:483
-#: apps/app/src/routes/profile-subscription-page.tsx:582
+#: apps/app/src/routes/profile-subscription-page.tsx:581
 msgid "生效中"
 msgstr "生效中"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:486
-#: apps/app/src/routes/profile-subscription-page.tsx:585
+#: apps/app/src/routes/profile-subscription-page.tsx:584
 msgid "未开通"
 msgstr "未开通"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:512
-#: apps/app/src/routes/profile-subscription-page.tsx:622
+#: apps/app/src/routes/profile-subscription-page.tsx:621
 msgid "订阅"
 msgstr "订阅"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:515
-#: apps/app/src/features/world/world-page.tsx:252
+#: apps/app/src/features/world/world-page.tsx:253
 #: apps/app/src/routes/profile-page.tsx:205
 #: apps/app/src/routes/profile-settings-desktop.tsx:109
 #: apps/app/src/routes/profile-settings-desktop.tsx:903
-#: apps/app/src/routes/profile-subscription-page.tsx:496
-#: apps/app/src/routes/profile-subscription-page.tsx:528
-#: apps/app/src/routes/profile-subscription-page.tsx:598
-#: apps/app/src/routes/profile-subscription-page.tsx:625
+#: apps/app/src/routes/profile-subscription-page.tsx:495
+#: apps/app/src/routes/profile-subscription-page.tsx:527
+#: apps/app/src/routes/profile-subscription-page.tsx:597
+#: apps/app/src/routes/profile-subscription-page.tsx:624
 msgid "会员中心"
 msgstr "会员中心"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:531
-#: apps/app/src/routes/profile-subscription-page.tsx:635
+#: apps/app/src/routes/profile-subscription-page.tsx:634
 msgid "账号"
 msgstr "账号"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:532
-#: apps/app/src/routes/profile-subscription-page.tsx:636
+#: apps/app/src/routes/profile-subscription-page.tsx:635
 msgid "邮箱账号"
 msgstr "邮箱账号"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:537
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:77
 #: apps/app/src/routes/profile-info-contact-page.tsx:37
-#: apps/app/src/routes/profile-subscription-page.tsx:641
+#: apps/app/src/routes/profile-subscription-page.tsx:640
 #: apps/app/src/routes/shop-checkout-page.tsx:132
 #: apps/app/src/routes/welcome-page.tsx:1618
 msgid "手机号"
 msgstr "手机号"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:543
-#: apps/app/src/routes/profile-subscription-page.tsx:647
+#: apps/app/src/routes/profile-subscription-page.tsx:646
 msgid "当前套餐"
 msgstr "当前套餐"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:544
-#: apps/app/src/routes/profile-subscription-page.tsx:648
+#: apps/app/src/routes/profile-subscription-page.tsx:647
 msgid "无"
 msgstr "无"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:546
-#: apps/app/src/routes/profile-subscription-page.tsx:650
+#: apps/app/src/routes/profile-subscription-page.tsx:649
 msgid "到期时间"
 msgstr "到期时间"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:563
-#: apps/app/src/routes/profile-subscription-page.tsx:675
+#: apps/app/src/routes/profile-subscription-page.tsx:674
 msgid "可购套餐"
 msgstr "可购套餐"
 
 #. placeholder {0}: plan.durationDays
 #: apps/app/src/features/subscription/subscription-panel.tsx:583
-#: apps/app/src/routes/profile-subscription-page.tsx:700
+#: apps/app/src/routes/profile-subscription-page.tsx:699
 msgid "时长 {0} 天"
 msgstr "时长 {0} 天"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:602
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:173
-#: apps/app/src/routes/profile-feedback-page.tsx:369
-#: apps/app/src/routes/profile-subscription-page.tsx:730
+#: apps/app/src/routes/profile-feedback-page.tsx:365
+#: apps/app/src/routes/profile-subscription-page.tsx:729
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:497
 #: apps/app/src/routes/shop-checkout-page.tsx:162
 msgid "提交中…"
 msgstr "提交中…"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:611
-#: apps/app/src/routes/profile-subscription-page.tsx:739
+#: apps/app/src/routes/profile-subscription-page.tsx:738
 msgid "云端管理后台暂未开放可购套餐。"
 msgstr "云端管理后台暂未开放可购套餐。"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:622
-#: apps/app/src/routes/profile-subscription-page.tsx:763
+#: apps/app/src/routes/profile-subscription-page.tsx:762
 msgid "最近邀请记录"
 msgstr "最近邀请记录"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:628
-#: apps/app/src/routes/profile-subscription-page.tsx:769
+#: apps/app/src/routes/profile-subscription-page.tsx:768
 msgid "已发放"
 msgstr "已发放"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:629
-#: apps/app/src/routes/profile-subscription-page.tsx:770
+#: apps/app/src/routes/profile-subscription-page.tsx:769
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:531
 msgid "已拒绝"
 msgstr "已拒绝"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:642
-#: apps/app/src/routes/profile-subscription-page.tsx:783
+#: apps/app/src/routes/profile-subscription-page.tsx:782
 msgid "创建时间"
 msgstr "创建时间"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:647
-#: apps/app/src/routes/profile-subscription-page.tsx:788
+#: apps/app/src/routes/profile-subscription-page.tsx:787
 msgid "拒绝原因"
 msgstr "拒绝原因"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:655
-#: apps/app/src/routes/profile-subscription-page.tsx:796
+#: apps/app/src/routes/profile-subscription-page.tsx:795
 msgid "暂无邀请记录。"
 msgstr "暂无邀请记录。"
 
@@ -20091,7 +20095,7 @@ msgstr "今日已领 +{0}，已存入零钱"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:95
 #: apps/app/src/features/wallet/wallet-format.ts:37
-#: apps/app/src/routes/wallet-page.tsx:199
+#: apps/app/src/routes/wallet-page.tsx:201
 msgid "充值"
 msgstr "充值"
 
@@ -20135,7 +20139,7 @@ msgstr "收红包"
 msgid "红包退回"
 msgstr "红包退回"
 
-#: apps/app/src/features/world/world-page.tsx:101
+#: apps/app/src/features/world/world-page.tsx:102
 #: apps/app/src/routes/discover-encounter-page.tsx:280
 #: apps/app/src/routes/discover-encounter-page.tsx:367
 #: apps/app/src/routes/discover-page.tsx:148
@@ -20143,214 +20147,217 @@ msgstr "红包退回"
 msgid "摇一摇"
 msgstr "摇一摇"
 
-#: apps/app/src/features/world/world-page.tsx:102
+#: apps/app/src/features/world/world-page.tsx:103
 #: apps/app/src/i18n/static-dom-seed.ts:443
 #: apps/app/src/routes/discover-encounter-page.tsx:369
 msgid "随机相遇"
 msgstr "随机相遇"
 
-#: apps/app/src/features/world/world-page.tsx:110
+#: apps/app/src/features/world/world-page.tsx:111
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:154
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:156
 #: apps/app/src/routes/discover-page.tsx:162
 msgid "分身相遇"
 msgstr "分身相遇"
 
-#: apps/app/src/features/world/world-page.tsx:111
+#: apps/app/src/features/world/world-page.tsx:112
 msgid "分身互访"
 msgstr "分身互访"
 
-#: apps/app/src/features/world/world-page.tsx:119
+#: apps/app/src/features/world/world-page.tsx:120
 #: apps/app/src/routes/discover-page.tsx:189
-#: apps/app/src/routes/discover-scene-page.tsx:377
+#: apps/app/src/routes/discover-scene-page.tsx:422
 msgid "场景相遇"
 msgstr "场景相遇"
 
-#: apps/app/src/features/world/world-page.tsx:120
+#: apps/app/src/features/world/world-page.tsx:121
 msgid "特定场景"
 msgstr "特定场景"
 
-#: apps/app/src/features/world/world-page.tsx:129
+#: apps/app/src/features/world/world-page.tsx:130
 msgid "你的镜像"
 msgstr "你的镜像"
 
-#: apps/app/src/features/world/world-page.tsx:141
+#: apps/app/src/features/world/world-page.tsx:142
 #: apps/app/src/routes/discover-feed-page.tsx:2270
 #: apps/app/src/routes/discover-page.tsx:884
 msgid "世界居民公开可见"
 msgstr "世界居民公开可见"
 
-#: apps/app/src/features/world/world-page.tsx:150
+#: apps/app/src/features/world/world-page.tsx:151
 #: apps/app/src/routes/discover-page.tsx:871
 msgid "世界角色日常"
 msgstr "世界角色日常"
 
-#: apps/app/src/features/world/world-page.tsx:170
+#: apps/app/src/features/world/world-page.tsx:171
 #: apps/app/src/routes/discover-page.tsx:258
 #: apps/app/src/routes/profile-page.tsx:211
 #: apps/app/src/routes/shop-page.tsx:166
 msgid "商城"
 msgstr "商城"
 
-#: apps/app/src/features/world/world-page.tsx:171
+#: apps/app/src/features/world/world-page.tsx:172
 #: apps/app/src/routes/discover-page.tsx:259
 msgid "好物"
 msgstr "好物"
 
-#: apps/app/src/features/world/world-page.tsx:178
+#: apps/app/src/features/world/world-page.tsx:179
 #: apps/app/src/routes/discover-page.tsx:232
 msgid "娱乐"
 msgstr "娱乐"
 
-#: apps/app/src/features/world/world-page.tsx:199
-#: apps/app/src/routes/knowledge-base-page.tsx:253
+#: apps/app/src/features/world/world-page.tsx:200
+#: apps/app/src/routes/knowledge-base-page.tsx:257
 #: apps/app/src/routes/profile-page.tsx:168
 msgid "知识库"
 msgstr "知识库"
 
-#: apps/app/src/features/world/world-page.tsx:200
+#: apps/app/src/features/world/world-page.tsx:201
 msgid "我的资料库"
 msgstr "我的资料库"
 
-#: apps/app/src/features/world/world-page.tsx:207
+#: apps/app/src/features/world/world-page.tsx:208
 msgid "收藏的内容"
 msgstr "收藏的内容"
 
-#: apps/app/src/features/world/world-page.tsx:214
+#: apps/app/src/features/world/world-page.tsx:215
 msgid "我发布的动态"
 msgstr "我发布的动态"
 
-#: apps/app/src/features/world/world-page.tsx:220
+#: apps/app/src/features/world/world-page.tsx:221
 msgid "我的广场"
 msgstr "我的广场"
 
-#: apps/app/src/features/world/world-page.tsx:221
+#: apps/app/src/features/world/world-page.tsx:222
 msgid "我的广场帖"
 msgstr "我的广场帖"
 
-#: apps/app/src/features/world/world-page.tsx:227
-#: apps/app/src/routes/profile-character-import-page.tsx:340
+#: apps/app/src/features/world/world-page.tsx:228
+#: apps/app/src/routes/profile-character-import-page.tsx:339
 #: apps/app/src/routes/profile-page.tsx:227
 msgid "导入角色"
 msgstr "导入角色"
 
-#: apps/app/src/features/world/world-page.tsx:228
+#: apps/app/src/features/world/world-page.tsx:229
 msgid "添加新角色"
 msgstr "添加新角色"
 
-#: apps/app/src/features/world/world-page.tsx:235
+#: apps/app/src/features/world/world-page.tsx:236
 msgid "意见与建议"
 msgstr "意见与建议"
 
-#: apps/app/src/features/world/world-page.tsx:245
-#: apps/app/src/features/world/world-page.tsx:401
+#: apps/app/src/features/world/world-page.tsx:246
 #: apps/app/src/routes/profile-page.tsx:199
-#: apps/app/src/routes/wallet-page.tsx:101
+#: apps/app/src/routes/wallet-page.tsx:103
 msgid "钱包"
 msgstr "钱包"
 
-#: apps/app/src/features/world/world-page.tsx:246
+#: apps/app/src/features/world/world-page.tsx:247
 msgid "余额与账单"
 msgstr "余额与账单"
 
-#: apps/app/src/features/world/world-page.tsx:253
+#: apps/app/src/features/world/world-page.tsx:254
 msgid "订阅与权益"
 msgstr "订阅与权益"
 
-#: apps/app/src/features/world/world-page.tsx:259
+#: apps/app/src/features/world/world-page.tsx:260
 #: apps/app/src/routes/gift-cabinet-page.tsx:59
 #: apps/app/src/routes/profile-page.tsx:217
 #: apps/app/src/routes/shop-page.tsx:186
 msgid "礼物柜"
 msgstr "礼物柜"
 
-#: apps/app/src/features/world/world-page.tsx:260
+#: apps/app/src/features/world/world-page.tsx:261
 #: apps/app/src/routes/gift-cabinet-page.tsx:125
 msgid "收到的礼物"
 msgstr "收到的礼物"
 
-#: apps/app/src/features/world/world-page.tsx:282
+#: apps/app/src/features/world/world-page.tsx:283
 msgid "正在切换到发现页"
 msgstr "正在切换到发现页"
 
-#: apps/app/src/features/world/world-page.tsx:283
+#: apps/app/src/features/world/world-page.tsx:284
 msgid "「世界」首屏当前在移动端开放。"
 msgstr "「世界」首屏当前在移动端开放。"
 
-#: apps/app/src/features/world/world-page.tsx:284
+#: apps/app/src/features/world/world-page.tsx:285
 msgid "正在切换..."
 msgstr "正在切换..."
 
-#: apps/app/src/features/world/world-page.tsx:342
+#: apps/app/src/features/world/world-page.tsx:343
 msgid "你的世界"
 msgstr "你的世界"
 
-#: apps/app/src/features/world/world-page.tsx:343
+#: apps/app/src/features/world/world-page.tsx:344
 msgid "第 {worldDay} 天"
 msgstr "第 {worldDay} 天"
 
-#: apps/app/src/features/world/world-page.tsx:348
+#: apps/app/src/features/world/world-page.tsx:349
 msgid "个人主页"
 msgstr "个人主页"
 
-#: apps/app/src/features/world/world-page.tsx:376
+#: apps/app/src/features/world/world-page.tsx:383
 msgid "探索"
 msgstr "探索"
 
-#: apps/app/src/features/world/world-page.tsx:379
+#: apps/app/src/features/world/world-page.tsx:386
 msgid "相遇"
 msgstr "相遇"
 
-#: apps/app/src/features/world/world-page.tsx:455
-#: apps/app/src/features/world/world-page.tsx:456
+#: apps/app/src/features/world/world-page.tsx:460
+#: apps/app/src/features/world/world-page.tsx:461
 msgid "和我说点什么…"
 msgstr "和我说点什么…"
 
-#: apps/app/src/features/world/world-page.tsx:528
+#: apps/app/src/features/world/world-page.tsx:508
+msgid "世界此刻"
+msgstr "世界此刻"
+
+#: apps/app/src/features/world/world-page.tsx:600
 msgid "守护中"
 msgstr "守护中"
 
-#: apps/app/src/features/world/world-page.tsx:530
+#: apps/app/src/features/world/world-page.tsx:602
 msgid "成形中"
 msgstr "成形中"
 
-#: apps/app/src/features/world/world-page.tsx:532
+#: apps/app/src/features/world/world-page.tsx:604
 msgid "待唤醒"
 msgstr "待唤醒"
 
-#: apps/app/src/features/world/world-page.tsx:550
+#: apps/app/src/features/world/world-page.tsx:622
 msgid "你的分身"
 msgstr "你的分身"
 
-#: apps/app/src/features/world/world-page.tsx:555
+#: apps/app/src/features/world/world-page.tsx:627
 msgid "心情 {mood}"
 msgstr "心情 {mood}"
 
-#: apps/app/src/features/world/world-page.tsx:556
+#: apps/app/src/features/world/world-page.tsx:628
 msgid "能量 {energy}"
 msgstr "能量 {energy}"
 
-#: apps/app/src/features/world/world-page.tsx:581
+#: apps/app/src/features/world/world-page.tsx:653
 msgid "多在世界里互动，分身会越来越像你"
 msgstr "多在世界里互动，分身会越来越像你"
 
-#: apps/app/src/features/world/world-page.tsx:592
+#: apps/app/src/features/world/world-page.tsx:664
 msgid "已分析 {signalCount} 条信号"
 msgstr "已分析 {signalCount} 条信号"
 
-#: apps/app/src/features/world/world-page.tsx:593
+#: apps/app/src/features/world/world-page.tsx:665
 msgid " · 待分析 {pendingCount} 条"
 msgstr " · 待分析 {pendingCount} 条"
 
-#: apps/app/src/features/world/world-page.tsx:600
+#: apps/app/src/features/world/world-page.tsx:673
 msgid "当前关注"
 msgstr "当前关注"
 
-#: apps/app/src/features/world/world-page.tsx:617
+#: apps/app/src/features/world/world-page.tsx:689
 msgid "去看看你的赛博分身"
 msgstr "去看看你的赛博分身"
 
-#: apps/app/src/features/world/world-page.tsx:617
+#: apps/app/src/features/world/world-page.tsx:689
 msgid "看完整画像与对话"
 msgstr "看完整画像与对话"
 
@@ -20795,13 +20802,13 @@ msgstr "0 项内容已收进桌面收藏"
 
 #: apps/app/src/i18n/static-dom-seed.ts:390
 #: apps/app/src/routes/favorites-page.tsx:877
-#: apps/app/src/routes/mobile-favorites-page.tsx:452
+#: apps/app/src/routes/mobile-favorites-page.tsx:453
 msgid "还没有收藏内容"
 msgstr "还没有收藏内容"
 
 #: apps/app/src/i18n/static-dom-seed.ts:391
 #: apps/app/src/routes/favorites-page.tsx:886
-#: apps/app/src/routes/mobile-favorites-page.tsx:461
+#: apps/app/src/routes/mobile-favorites-page.tsx:462
 msgid "先到聊天、内容流或公众号里把重要内容加入收藏。"
 msgstr "先到聊天、内容流或公众号里把重要内容加入收藏。"
 
@@ -20832,7 +20839,7 @@ msgstr "这里会显示摘要、来源和操作入口。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:397
 #: apps/app/src/routes/favorites-page.tsx:606
-#: apps/app/src/routes/mobile-favorites-page.tsx:376
+#: apps/app/src/routes/mobile-favorites-page.tsx:377
 msgid "搜索已收藏内容"
 msgstr "搜索已收藏内容"
 
@@ -21013,7 +21020,7 @@ msgid "换一个地点，换一种相遇方式"
 msgstr "换一个地点，换一种相遇方式"
 
 #: apps/app/src/i18n/static-dom-seed.ts:452
-#: apps/app/src/routes/discover-scene-page.tsx:379
+#: apps/app/src/routes/discover-scene-page.tsx:424
 msgid "选择一个地点"
 msgstr "选择一个地点"
 
@@ -21046,7 +21053,7 @@ msgid "当前播放"
 msgstr "当前播放"
 
 #: apps/app/src/i18n/static-dom-seed.ts:461
-#: apps/app/src/routes/channels-page.tsx:4417
+#: apps/app/src/routes/channels-page.tsx:4457
 msgid "减少推荐"
 msgstr "减少推荐"
 
@@ -21055,12 +21062,12 @@ msgid "· 视频号动态"
 msgstr "· 视频号动态"
 
 #: apps/app/src/i18n/static-dom-seed.ts:463
-#: apps/app/src/routes/channels-page.tsx:4613
+#: apps/app/src/routes/channels-page.tsx:4653
 msgid "还没有评论，先聊一句。"
 msgstr "还没有评论，先聊一句。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:464
-#: apps/app/src/routes/channels-page.tsx:4640
+#: apps/app/src/routes/channels-page.tsx:4680
 msgid "打开评论"
 msgstr "打开评论"
 
@@ -21223,7 +21230,7 @@ msgstr "还没有保存过反馈。先把一个真实问题记下来，后续再
 
 #: apps/app/src/i18n/static-dom-seed.ts:511
 #: apps/app/src/routes/desktop-feedback-page.tsx:408
-#: apps/app/src/routes/profile-feedback-page.tsx:369
+#: apps/app/src/routes/profile-feedback-page.tsx:365
 msgid "提交反馈"
 msgstr "提交反馈"
 
@@ -21294,7 +21301,7 @@ msgstr "提出下一步应该优先补的真实工作区和交互能力。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:524
 #: apps/app/src/routes/desktop-feedback-page.tsx:466
-#: apps/app/src/routes/profile-feedback-page.tsx:293
+#: apps/app/src/routes/profile-feedback-page.tsx:289
 msgid "标题"
 msgstr "标题"
 
@@ -21765,7 +21772,7 @@ msgid "刚刚捕捉到的世界画面"
 msgstr "刚刚捕捉到的世界画面"
 
 #: apps/app/src/i18n/static-dom-seed.ts:642
-#: apps/app/src/routes/channels-page.tsx:4624
+#: apps/app/src/routes/channels-page.tsx:4664
 #: apps/app/src/routes/live-companion-page.tsx:1160
 msgid "短片"
 msgstr "短片"
@@ -21773,7 +21780,7 @@ msgstr "短片"
 #: apps/app/src/i18n/static-dom-seed.ts:643
 #: apps/app/src/routes/channel-author-page.tsx:1076
 #: apps/app/src/routes/channel-author-page.tsx:1127
-#: apps/app/src/routes/channels-page.tsx:4629
+#: apps/app/src/routes/channels-page.tsx:4669
 #: apps/app/src/routes/live-companion-page.tsx:1160
 msgid "内容卡片"
 msgstr "内容卡片"
@@ -23234,7 +23241,7 @@ msgid "别走太急，过一会再去下一个地方。"
 msgstr "别走太急，过一会再去下一个地方。"
 
 #: apps/app/src/lib/error-translate.ts:224
-#: apps/app/src/routes/discover-scene-page.tsx:462
+#: apps/app/src/routes/discover-scene-page.tsx:494
 msgid "今天的场景相遇次数已经用完，明天再试试。"
 msgstr "今天的场景相遇次数已经用完，明天再试试。"
 
@@ -24199,7 +24206,7 @@ msgstr "视频号作者"
 #: apps/app/src/routes/channel-author-page.tsx:529
 #: apps/app/src/routes/channel-author-page.tsx:563
 #: apps/app/src/routes/channel-author-page.tsx:663
-#: apps/app/src/routes/channels-page.tsx:5546
+#: apps/app/src/routes/channels-page.tsx:5586
 #: apps/app/src/routes/live-companion-page.tsx:989
 msgid "返回视频号"
 msgstr "返回视频号"
@@ -24251,7 +24258,7 @@ msgstr "当前分栏：{activeCollectionLabel}，共 {0} 条内容。"
 #: apps/app/src/routes/channel-author-page.tsx:850
 #: apps/app/src/routes/channel-author-page.tsx:1040
 #: apps/app/src/routes/channel-author-page.tsx:1062
-#: apps/app/src/routes/channels-page.tsx:5751
+#: apps/app/src/routes/channels-page.tsx:5791
 msgid "{0} 播放"
 msgstr "{0} 播放"
 
@@ -24518,100 +24525,124 @@ msgstr "正在刷新视频号内容"
 msgid "稍等一下，正在同步推荐流和互动状态。"
 msgstr "稍等一下，正在同步推荐流和互动状态。"
 
-#: apps/app/src/routes/channels-page.tsx:2798
+#: apps/app/src/routes/channels-page.tsx:2671
+msgid "关注的视频号暂时没有新内容"
+msgstr "关注的视频号暂时没有新内容"
+
+#: apps/app/src/routes/channels-page.tsx:2673
+msgid "朋友还没有发布视频号动态"
+msgstr "朋友还没有发布视频号动态"
+
+#: apps/app/src/routes/channels-page.tsx:2675
+msgid "暂时没有正在直播的内容"
+msgstr "暂时没有正在直播的内容"
+
+#: apps/app/src/routes/channels-page.tsx:2676
+msgid "还没有视频内容"
+msgstr "还没有视频内容"
+
+#: apps/app/src/routes/channels-page.tsx:2680
+msgid "稍后再来看看，或下拉刷新试试。"
+msgstr "稍后再来看看，或下拉刷新试试。"
+
+#: apps/app/src/routes/channels-page.tsx:2681
+msgid "去「推荐」看看大家都在发什么吧。"
+msgstr "去「推荐」看看大家都在发什么吧。"
+
+#: apps/app/src/routes/channels-page.tsx:2838
 msgid "已复制评论内容。"
 msgstr "已复制评论内容。"
 
-#: apps/app/src/routes/channels-page.tsx:2805
+#: apps/app/src/routes/channels-page.tsx:2845
 msgid "确认删除这条评论？删除后不可恢复。"
 msgstr "确认删除这条评论？删除后不可恢复。"
 
-#: apps/app/src/routes/channels-page.tsx:2821
+#: apps/app/src/routes/channels-page.tsx:2861
 msgid "已收到举报，我们将尽快核实。"
 msgstr "已收到举报，我们将尽快核实。"
 
-#: apps/app/src/routes/channels-page.tsx:3789
+#: apps/app/src/routes/channels-page.tsx:3829
 #: apps/app/src/routes/discover-feed-page.tsx:2318
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:983
 #: apps/app/src/routes/moments-page.tsx:3141
-#: apps/app/src/routes/profile-moments-page.tsx:1258
+#: apps/app/src/routes/profile-moments-page.tsx:1257
 msgid "正在刷新..."
 msgstr "正在刷新..."
 
-#: apps/app/src/routes/channels-page.tsx:3791
+#: apps/app/src/routes/channels-page.tsx:3831
 #: apps/app/src/routes/discover-feed-page.tsx:2320
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:985
 #: apps/app/src/routes/moments-page.tsx:3143
-#: apps/app/src/routes/profile-moments-page.tsx:1260
+#: apps/app/src/routes/profile-moments-page.tsx:1259
 msgid "松手刷新"
 msgstr "松手刷新"
 
-#: apps/app/src/routes/channels-page.tsx:3792
+#: apps/app/src/routes/channels-page.tsx:3832
 #: apps/app/src/routes/discover-feed-page.tsx:2321
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:986
 #: apps/app/src/routes/moments-page.tsx:3144
-#: apps/app/src/routes/profile-moments-page.tsx:1261
+#: apps/app/src/routes/profile-moments-page.tsx:1260
 msgid "下拉刷新"
 msgstr "下拉刷新"
 
 #. placeholder {0}: post.likeCount
-#: apps/app/src/routes/channels-page.tsx:4370
+#: apps/app/src/routes/channels-page.tsx:4410
 msgid "取消点赞，当前 {0} 赞"
 msgstr "取消点赞，当前 {0} 赞"
 
 #. placeholder {0}: formatTimestamp(post.createdAt)
-#: apps/app/src/routes/channels-page.tsx:4451
+#: apps/app/src/routes/channels-page.tsx:4491
 msgid "{0} · 视频号动态"
 msgstr "{0} · 视频号动态"
 
 #. placeholder {0}: post.authorName
-#: apps/app/src/routes/channels-page.tsx:4486
+#: apps/app/src/routes/channels-page.tsx:4526
 msgid "已关注 {0}，点击取消关注"
 msgstr "已关注 {0}，点击取消关注"
 
-#: apps/app/src/routes/channels-page.tsx:4569
+#: apps/app/src/routes/channels-page.tsx:4609
 msgid "最近评论"
 msgstr "最近评论"
 
-#: apps/app/src/routes/channels-page.tsx:4609
+#: apps/app/src/routes/channels-page.tsx:4649
 msgid "正在载入最近评论..."
 msgstr "正在载入最近评论..."
 
-#: apps/app/src/routes/channels-page.tsx:4771
+#: apps/app/src/routes/channels-page.tsx:4811
 msgid "作者"
 msgstr "作者"
 
-#: apps/app/src/routes/channels-page.tsx:5418
+#: apps/app/src/routes/channels-page.tsx:5458
 msgid "—— 展开 {hiddenCount} 条回复 ∨"
 msgstr "—— 展开 {hiddenCount} 条回复 ∨"
 
-#: apps/app/src/routes/channels-page.tsx:5426
+#: apps/app/src/routes/channels-page.tsx:5466
 msgid "—— 收起 ∧"
 msgstr "—— 收起 ∧"
 
-#: apps/app/src/routes/channels-page.tsx:5460
-#: apps/app/src/routes/channels-page.tsx:5512
+#: apps/app/src/routes/channels-page.tsx:5500
+#: apps/app/src/routes/channels-page.tsx:5552
 msgid "关闭评论面板"
 msgstr "关闭评论面板"
 
 #. placeholder {0}: post.commentCount
-#: apps/app/src/routes/channels-page.tsx:5498
+#: apps/app/src/routes/channels-page.tsx:5538
 msgid "{0} 条评论"
 msgstr "{0} 条评论"
 
-#: apps/app/src/routes/channels-page.tsx:5578
+#: apps/app/src/routes/channels-page.tsx:5618
 msgid "正在读取最近评论..."
 msgstr "正在读取最近评论..."
 
-#: apps/app/src/routes/channels-page.tsx:5588
+#: apps/app/src/routes/channels-page.tsx:5628
 msgid "还没有评论，快来抢沙发"
 msgstr "还没有评论，快来抢沙发"
 
-#: apps/app/src/routes/channels-page.tsx:5689
+#: apps/app/src/routes/channels-page.tsx:5729
 msgid "评论…"
 msgstr "评论…"
 
-#: apps/app/src/routes/channels-page.tsx:5705
+#: apps/app/src/routes/channels-page.tsx:5745
 msgid "评论操作"
 msgstr "评论操作"
 
@@ -25671,7 +25702,7 @@ msgstr "没有找到联系人"
 #: apps/app/src/routes/cyber-avatar-page.tsx:51
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:57
 #: apps/app/src/routes/discover-encounter-page.tsx:52
-#: apps/app/src/routes/discover-scene-page.tsx:157
+#: apps/app/src/routes/discover-scene-page.tsx:164
 msgid "正在切换到桌面发现页"
 msgstr "正在切换到桌面发现页"
 
@@ -25682,7 +25713,7 @@ msgstr "赛博分身当前只在移动端开放，先回到主发现页。"
 #: apps/app/src/routes/cyber-avatar-page.tsx:53
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:59
 #: apps/app/src/routes/discover-encounter-page.tsx:54
-#: apps/app/src/routes/discover-scene-page.tsx:159
+#: apps/app/src/routes/discover-scene-page.tsx:166
 msgid "正在切换到桌面发现页..."
 msgstr "正在切换到桌面发现页..."
 
@@ -26826,87 +26857,87 @@ msgstr "聊开了，发现你们有不少共同话题…"
 msgid "越聊越投机，正在替你多说几句…"
 msgstr "越聊越投机，正在替你多说几句…"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:351
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:364
 msgid "你的分身正在替你相遇…"
 msgstr "你的分身正在替你相遇…"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:356
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:369
 msgid "开始相遇"
 msgstr "开始相遇"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:374
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:387
 msgid "今天还能再认识 {remainingCredits} 个人。"
 msgstr "今天还能再认识 {remainingCredits} 个人。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:375
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:388
 msgid "让分身替你去认识聊得来的人。"
 msgstr "让分身替你去认识聊得来的人。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:388
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:401
 msgid "今天的相遇都用完啦，明天分身再替你出门。"
 msgstr "今天的相遇都用完啦，明天分身再替你出门。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:395
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:408
 msgid "升级会员可获得更多每日分身相遇次数。"
 msgstr "升级会员可获得更多每日分身相遇次数。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:401
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:414
 msgid "了解会员"
 msgstr "了解会员"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:445
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:458
 msgid "等 TA 也想继续，你们就会接着聊下去。回「我的相遇」就能看到后来。"
 msgstr "等 TA 也想继续，你们就会接着聊下去。回「我的相遇」就能看到后来。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:448
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:461
 msgid "你的心意收到啦，就等 TA 决定。有结果会出现在「我的相遇」里。"
 msgstr "你的心意收到啦，就等 TA 决定。有结果会出现在「我的相遇」里。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:481
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:494
 msgid "回到发现"
 msgstr "回到发现"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:481
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:494
 msgid "再相遇一次"
 msgstr "再相遇一次"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:572
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:585
 msgid "正在翻看你的相遇…"
 msgstr "正在翻看你的相遇…"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:588
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:601
 msgid "还没有相遇记录"
 msgstr "还没有相遇记录"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:591
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:604
 msgid "你发起的、以及别人和你分身的相遇都会出现在这里。"
 msgstr "你发起的、以及别人和你分身的相遇都会出现在这里。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:679
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:700
 msgid "‹ 返回我的相遇"
 msgstr "‹ 返回我的相遇"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:685
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:706
 msgid "正在翻开这次相遇…"
 msgstr "正在翻开这次相遇…"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:725
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:746
 msgid "你们还在继续聊，稍等一下…"
 msgstr "你们还在继续聊，稍等一下…"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:758
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:779
 msgid "第 {currentRound} / {maxRounds} 轮对话"
 msgstr "第 {currentRound} / {maxRounds} 轮对话"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:785
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:806
 msgid "想要对方联系方式，需先填写你自己的。这次相遇已存到「我的相遇」，填好后回到那里继续即可。"
 msgstr "想要对方联系方式，需先填写你自己的。这次相遇已存到「我的相遇」，填好后回到那里继续即可。"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:791
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:812
 msgid "去填写"
 msgstr "去填写"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:827
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:848
 msgid "对方的联系方式"
 msgstr "对方的联系方式"
 
@@ -26936,6 +26967,7 @@ msgstr "{characterName} 已加入通讯录：{greeting}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:217
 #: apps/app/src/routes/discover-page.tsx:456
+#: apps/app/src/routes/discover-scene-page.tsx:269
 msgid "已跳过这次相遇。"
 msgstr "已跳过这次相遇。"
 
@@ -26978,16 +27010,19 @@ msgstr "相遇理由：{0}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:475
 #: apps/app/src/routes/discover-page.tsx:1013
+#: apps/app/src/routes/discover-scene-page.tsx:546
 msgid "跳过"
 msgstr "跳过"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1031
+#: apps/app/src/routes/discover-scene-page.tsx:562
 msgid "添加中..."
 msgstr "添加中..."
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
 #: apps/app/src/routes/discover-page.tsx:1032
+#: apps/app/src/routes/discover-scene-page.tsx:562
 msgid "加为好友"
 msgstr "加为好友"
 
@@ -26996,7 +27031,7 @@ msgid "重试摇一摇"
 msgstr "重试摇一摇"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:550
-#: apps/app/src/routes/discover-scene-page.tsx:583
+#: apps/app/src/routes/discover-scene-page.tsx:686
 msgid "回发现页"
 msgstr "回发现页"
 
@@ -27053,7 +27088,7 @@ msgstr "读取全部评论失败，请稍后重试。"
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:475
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:634
 #: apps/app/src/routes/moments-page.tsx:1585
-#: apps/app/src/routes/profile-moments-page.tsx:951
+#: apps/app/src/routes/profile-moments-page.tsx:950
 msgid "图片选择失败，请稍后重试。"
 msgstr "图片选择失败，请稍后重试。"
 
@@ -27063,7 +27098,7 @@ msgstr "图片选择失败，请稍后重试。"
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:514
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:666
 #: apps/app/src/routes/moments-page.tsx:1597
-#: apps/app/src/routes/profile-moments-page.tsx:963
+#: apps/app/src/routes/profile-moments-page.tsx:962
 msgid "视频选择失败，请稍后重试。"
 msgstr "视频选择失败，请稍后重试。"
 
@@ -27190,7 +27225,7 @@ msgid "场景相遇已写入好友申请列表。"
 msgstr "场景相遇已写入好友申请列表。"
 
 #: apps/app/src/routes/discover-page.tsx:492
-#: apps/app/src/routes/discover-scene-page.tsx:280
+#: apps/app/src/routes/discover-scene-page.tsx:337
 msgid "对你产生了兴趣。"
 msgstr "对你产生了兴趣。"
 
@@ -27262,7 +27297,7 @@ msgstr "先生成临时候选，你决定要不要把他留下。"
 
 #. placeholder {0}: t(scene.label)
 #: apps/app/src/routes/discover-page.tsx:1058
-#: apps/app/src/routes/discover-scene-page.tsx:513
+#: apps/app/src/routes/discover-scene-page.tsx:616
 msgid "正在前往{0}..."
 msgstr "正在前往{0}..."
 
@@ -27324,93 +27359,93 @@ msgstr "社交与动态"
 msgid "内容与服务"
 msgstr "内容与服务"
 
-#: apps/app/src/routes/discover-scene-page.tsx:54
+#: apps/app/src/routes/discover-scene-page.tsx:61
 msgid "教室"
 msgstr "教室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:55
+#: apps/app/src/routes/discover-scene-page.tsx:62
 msgid "实验室"
 msgstr "实验室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:56
+#: apps/app/src/routes/discover-scene-page.tsx:63
 msgid "办公室"
 msgstr "办公室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:57
+#: apps/app/src/routes/discover-scene-page.tsx:64
 msgid "联合办公空间"
 msgstr "联合办公空间"
 
-#: apps/app/src/routes/discover-scene-page.tsx:58
+#: apps/app/src/routes/discover-scene-page.tsx:65
 msgid "自习室"
 msgstr "自习室"
 
-#: apps/app/src/routes/discover-scene-page.tsx:59
+#: apps/app/src/routes/discover-scene-page.tsx:66
 msgid "餐厅"
 msgstr "餐厅"
 
-#: apps/app/src/routes/discover-scene-page.tsx:60
+#: apps/app/src/routes/discover-scene-page.tsx:67
 msgid "博物馆"
 msgstr "博物馆"
 
-#: apps/app/src/routes/discover-scene-page.tsx:61
+#: apps/app/src/routes/discover-scene-page.tsx:68
 msgid "书店"
 msgstr "书店"
 
-#: apps/app/src/routes/discover-scene-page.tsx:62
+#: apps/app/src/routes/discover-scene-page.tsx:69
 msgid "旅途"
 msgstr "旅途"
 
-#: apps/app/src/routes/discover-scene-page.tsx:63
+#: apps/app/src/routes/discover-scene-page.tsx:70
 msgid "夜晚的街道"
 msgstr "夜晚的街道"
 
-#: apps/app/src/routes/discover-scene-page.tsx:64
+#: apps/app/src/routes/discover-scene-page.tsx:71
 msgid "剧场"
 msgstr "剧场"
 
-#: apps/app/src/routes/discover-scene-page.tsx:65
+#: apps/app/src/routes/discover-scene-page.tsx:72
 msgid "居家场景"
 msgstr "居家场景"
 
-#: apps/app/src/routes/discover-scene-page.tsx:158
+#: apps/app/src/routes/discover-scene-page.tsx:165
 msgid "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
 msgstr "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:275
+#: apps/app/src/routes/discover-scene-page.tsx:253
+msgid "{characterName} 已加入通讯录"
+msgstr "{characterName} 已加入通讯录"
+
+#: apps/app/src/routes/discover-scene-page.tsx:332
 msgid "{sceneLabel}里和别处都暂时没有新的相遇了。"
 msgstr "{sceneLabel}里和别处都暂时没有新的相遇了。"
 
-#. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-scene-page.tsx:286
-msgid "{0} 不在{sceneLabel}，但顺路碰到了你：{greeting}"
-msgstr "{0} 不在{sceneLabel}，但顺路碰到了你：{greeting}"
-
-#. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-scene-page.tsx:293
-msgid "{0} 在{sceneLabel}里注意到了你：{greeting}"
-msgstr "{0} 在{sceneLabel}里注意到了你：{greeting}"
-
-#: apps/app/src/routes/discover-scene-page.tsx:378
+#: apps/app/src/routes/discover-scene-page.tsx:423
 msgid "在熟悉的场景里偶遇世界居民"
 msgstr "在熟悉的场景里偶遇世界居民"
 
-#: apps/app/src/routes/discover-scene-page.tsx:383
+#: apps/app/src/routes/discover-scene-page.tsx:428
 msgid "今日已偶遇 {encounterCount} 人"
 msgstr "今日已偶遇 {encounterCount} 人"
 
-#: apps/app/src/routes/discover-scene-page.tsx:384
+#: apps/app/src/routes/discover-scene-page.tsx:429
 msgid "挑一个常去的地方，附近的居民会主动打招呼。"
 msgstr "挑一个常去的地方，附近的居民会主动打招呼。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:405
-msgid "去通过"
-msgstr "去通过"
-
-#: apps/app/src/routes/discover-scene-page.tsx:469
+#: apps/app/src/routes/discover-scene-page.tsx:501
 msgid "稍等 {cooldownRemainSec} 秒再出发吧。"
 msgstr "稍等 {cooldownRemainSec} 秒再出发吧。"
 
-#: apps/app/src/routes/discover-scene-page.tsx:573
+#. placeholder {0}: pendingEncounter.sceneLabel
+#: apps/app/src/routes/discover-scene-page.tsx:525
+msgid "不在{0}，但顺路碰到了你"
+msgstr "不在{0}，但顺路碰到了你"
+
+#. placeholder {0}: pendingEncounter.sceneLabel
+#: apps/app/src/routes/discover-scene-page.tsx:526
+msgid "在{0}里注意到了你"
+msgstr "在{0}里注意到了你"
+
+#: apps/app/src/routes/discover-scene-page.tsx:676
 msgid "重试场景相遇"
 msgstr "重试场景相遇"
 
@@ -27493,28 +27528,28 @@ msgid "正在打开桌面笔记..."
 msgstr "正在打开桌面笔记..."
 
 #: apps/app/src/routes/favorites-page.tsx:868
-#: apps/app/src/routes/mobile-favorites-page.tsx:441
+#: apps/app/src/routes/mobile-favorites-page.tsx:442
 msgid "没有匹配的收藏"
 msgstr "没有匹配的收藏"
 
 #: apps/app/src/routes/favorites-page.tsx:872
-#: apps/app/src/routes/mobile-favorites-page.tsx:447
+#: apps/app/src/routes/mobile-favorites-page.tsx:448
 #: apps/app/src/routes/mobile-notes-page.tsx:429
 msgid "还没有笔记"
 msgstr "还没有笔记"
 
 #: apps/app/src/routes/favorites-page.tsx:876
-#: apps/app/src/routes/mobile-favorites-page.tsx:451
+#: apps/app/src/routes/mobile-favorites-page.tsx:452
 msgid "该分类下还没有收藏"
 msgstr "该分类下还没有收藏"
 
 #: apps/app/src/routes/favorites-page.tsx:881
-#: apps/app/src/routes/mobile-favorites-page.tsx:456
+#: apps/app/src/routes/mobile-favorites-page.tsx:457
 msgid "换个关键词，或者切回其他分类继续查看。"
 msgstr "换个关键词，或者切回其他分类继续查看。"
 
 #: apps/app/src/routes/favorites-page.tsx:885
-#: apps/app/src/routes/mobile-favorites-page.tsx:460
+#: apps/app/src/routes/mobile-favorites-page.tsx:461
 msgid "切到其他分类继续查看，或去对应入口把内容加入收藏。"
 msgstr "切到其他分类继续查看，或去对应入口把内容加入收藏。"
 
@@ -27533,7 +27568,7 @@ msgstr "文件 {fileCount}"
 #. placeholder {0}: noteSummary.assets.length
 #. placeholder {0}: summary.assets.length
 #: apps/app/src/routes/favorites-page.tsx:1072
-#: apps/app/src/routes/mobile-favorites-page.tsx:627
+#: apps/app/src/routes/mobile-favorites-page.tsx:628
 msgid "附件 {0}"
 msgstr "附件 {0}"
 
@@ -28321,93 +28356,93 @@ msgstr "删除失败，请稍后重试。"
 msgid "文件超过 16MB 上限，请换一份更小的文件。"
 msgstr "文件超过 16MB 上限，请换一份更小的文件。"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:270
+#: apps/app/src/routes/knowledge-base-page.tsx:274
 msgid "上传文件"
 msgstr "上传文件"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:271
+#: apps/app/src/routes/knowledge-base-page.tsx:275
 msgid "粘贴文本"
 msgstr "粘贴文本"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:272
-#: apps/app/src/routes/knowledge-base-page.tsx:400
+#: apps/app/src/routes/knowledge-base-page.tsx:276
+#: apps/app/src/routes/knowledge-base-page.tsx:404
 msgid "添加网址"
 msgstr "添加网址"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:303
+#: apps/app/src/routes/knowledge-base-page.tsx:307
 msgid "添加个人知识"
 msgstr "添加个人知识"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:306
+#: apps/app/src/routes/knowledge-base-page.tsx:310
 msgid "上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。"
 msgstr "上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:343
+#: apps/app/src/routes/knowledge-base-page.tsx:347
 msgid "正在上传…"
 msgstr "正在上传…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:344
+#: apps/app/src/routes/knowledge-base-page.tsx:348
 msgid "点击选择文件"
 msgstr "点击选择文件"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:348
+#: apps/app/src/routes/knowledge-base-page.tsx:352
 msgid "支持 txt / md / pdf / docx / doc，单个文件最大 16MB。"
 msgstr "支持 txt / md / pdf / docx / doc，单个文件最大 16MB。"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:359
-#: apps/app/src/routes/knowledge-base-page.tsx:392
+#: apps/app/src/routes/knowledge-base-page.tsx:363
+#: apps/app/src/routes/knowledge-base-page.tsx:396
 msgid "标题（可选）"
 msgstr "标题（可选）"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:365
+#: apps/app/src/routes/knowledge-base-page.tsx:369
 msgid "粘贴或输入你想让角色记住的内容…"
 msgstr "粘贴或输入你想让角色记住的内容…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:374
+#: apps/app/src/routes/knowledge-base-page.tsx:378
 msgid "保存中…"
 msgstr "保存中…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:374
+#: apps/app/src/routes/knowledge-base-page.tsx:378
 msgid "保存文本"
 msgstr "保存文本"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:385
+#: apps/app/src/routes/knowledge-base-page.tsx:389
 msgid "https://…"
 msgstr "https://…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:400
+#: apps/app/src/routes/knowledge-base-page.tsx:404
 msgid "添加中…"
 msgstr "添加中…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:419
+#: apps/app/src/routes/knowledge-base-page.tsx:423
 msgid "正在导入世界记忆…"
 msgstr "正在导入世界记忆…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:420
+#: apps/app/src/routes/knowledge-base-page.tsx:424
 msgid "导入世界记忆"
 msgstr "导入世界记忆"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:423
+#: apps/app/src/routes/knowledge-base-page.tsx:427
 msgid "把世界里已发生的重要经历整理进你的知识库。"
 msgstr "把世界里已发生的重要经历整理进你的知识库。"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:431
+#: apps/app/src/routes/knowledge-base-page.tsx:435
 msgid "我的知识库"
 msgstr "我的知识库"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:435
+#: apps/app/src/routes/knowledge-base-page.tsx:439
 msgid "正在加载知识库…"
 msgstr "正在加载知识库…"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:443
+#: apps/app/src/routes/knowledge-base-page.tsx:447
 msgid "还没有任何内容，先上传一个文件或粘贴一段文字吧。"
 msgstr "还没有任何内容，先上传一个文件或粘贴一段文字吧。"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:453
+#: apps/app/src/routes/knowledge-base-page.tsx:457
 msgid "已向量化"
 msgstr "已向量化"
 
-#: apps/app/src/routes/knowledge-base-page.tsx:453
+#: apps/app/src/routes/knowledge-base-page.tsx:457
 msgid "词法检索"
 msgstr "词法检索"
 
@@ -28693,15 +28728,15 @@ msgstr "好友申请"
 msgid "发送验证申请，对方通过后即可成为朋友。"
 msgstr "发送验证申请，对方通过后即可成为朋友。"
 
-#: apps/app/src/routes/mobile-favorites-page.tsx:434
+#: apps/app/src/routes/mobile-favorites-page.tsx:435
 msgid "正在读取收藏…"
 msgstr "正在读取收藏…"
 
-#: apps/app/src/routes/mobile-favorites-page.tsx:458
+#: apps/app/src/routes/mobile-favorites-page.tsx:459
 msgid "点击右上角\"新建笔记\"，把第一条收藏笔记写下来。"
 msgstr "点击右上角\"新建笔记\"，把第一条收藏笔记写下来。"
 
-#: apps/app/src/routes/mobile-favorites-page.tsx:487
+#: apps/app/src/routes/mobile-favorites-page.tsx:488
 msgid "收藏操作"
 msgstr "收藏操作"
 
@@ -29033,7 +29068,7 @@ msgid "保留后下次继续编辑这条草稿。"
 msgstr "保留后下次继续编辑这条草稿。"
 
 #: apps/app/src/routes/moments-page.tsx:2353
-#: apps/app/src/routes/profile-moments-page.tsx:1430
+#: apps/app/src/routes/profile-moments-page.tsx:1429
 msgid "确定删除这条朋友圈吗？"
 msgstr "确定删除这条朋友圈吗？"
 
@@ -29178,126 +29213,126 @@ msgid "换个名字、简称或关键词试试。"
 msgstr "换个名字、简称或关键词试试。"
 
 #. placeholder {0}: formatFileSize(file.size)
-#: apps/app/src/routes/profile-character-import-page.tsx:102
+#: apps/app/src/routes/profile-character-import-page.tsx:101
 msgid "文件太大（{0}），上限 5 MB。确认是 .character.json 文件后再试。"
 msgstr "文件太大（{0}），上限 5 MB。确认是 .character.json 文件后再试。"
 
 #. placeholder {0}: (err as Error).message
-#: apps/app/src/routes/profile-character-import-page.tsx:114
+#: apps/app/src/routes/profile-character-import-page.tsx:113
 msgid "读取文件失败：{0}"
 msgstr "读取文件失败：{0}"
 
 #. placeholder {0}: (err as Error).message
-#: apps/app/src/routes/profile-character-import-page.tsx:132
+#: apps/app/src/routes/profile-character-import-page.tsx:131
 msgid "JSON 解析失败，请确认文件没被破坏：{0}"
 msgstr "JSON 解析失败，请确认文件没被破坏：{0}"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:140
+#: apps/app/src/routes/profile-character-import-page.tsx:139
 msgid "文件内容不是有效的 JSON 对象。"
 msgstr "文件内容不是有效的 JSON 对象。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:148
+#: apps/app/src/routes/profile-character-import-page.tsx:147
 msgid "文件缺少 name 字段；这不是一个合法的角色 bundle。"
 msgstr "文件缺少 name 字段；这不是一个合法的角色 bundle。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:157
+#: apps/app/src/routes/profile-character-import-page.tsx:156
 msgid "name 不能是仅零宽字符的空白文本，请编辑文件后再试。"
 msgstr "name 不能是仅零宽字符的空白文本，请编辑文件后再试。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:176
+#: apps/app/src/routes/profile-character-import-page.tsx:175
 msgid "name 不能包含换行符或控制字符，请编辑文件后再试。"
 msgstr "name 不能包含换行符或控制字符，请编辑文件后再试。"
 
 #. placeholder {0}: files.length
 #. placeholder {1}: file.name
-#: apps/app/src/routes/profile-character-import-page.tsx:219
+#: apps/app/src/routes/profile-character-import-page.tsx:218
 msgid "检测到 {0} 个文件，只处理第一个（{1}）。请逐个导入。"
 msgstr "检测到 {0} 个文件，只处理第一个（{1}）。请逐个导入。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:316
+#: apps/app/src/routes/profile-character-import-page.tsx:315
 msgid "导入失败，请稍后再试"
 msgstr "导入失败，请稍后再试"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:371
+#: apps/app/src/routes/profile-character-import-page.tsx:370
 msgid "在「世界角色管理平台 → 我的私有角色」编辑或新建角色，点「📤 导出 JSON」下载文件"
 msgstr "在「世界角色管理平台 → 我的私有角色」编辑或新建角色，点「📤 导出 JSON」下载文件"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:380
+#: apps/app/src/routes/profile-character-import-page.tsx:379
 msgid "回到这里，拖入或选择刚才下载的 .character.json 文件"
 msgstr "回到这里，拖入或选择刚才下载的 .character.json 文件"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:389
+#: apps/app/src/routes/profile-character-import-page.tsx:388
 msgid "确认无误后点「导入到我的世界」。同名会覆盖（保留原 id 和好友关系），不同名则新建并加为好友。"
 msgstr "确认无误后点「导入到我的世界」。同名会覆盖（保留原 id 和好友关系），不同名则新建并加为好友。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:432
+#: apps/app/src/routes/profile-character-import-page.tsx:431
 msgid "松手即可读取"
 msgstr "松手即可读取"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:433
+#: apps/app/src/routes/profile-character-import-page.tsx:432
 msgid "拖入文件，或点下面按钮选择"
 msgstr "拖入文件，或点下面按钮选择"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:436
+#: apps/app/src/routes/profile-character-import-page.tsx:435
 msgid "仅支持 .character.json / application/json"
 msgstr "仅支持 .character.json / application/json"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:445
+#: apps/app/src/routes/profile-character-import-page.tsx:444
 msgid "选择文件"
 msgstr "选择文件"
 
 #. placeholder {0}: expertDomains.length - 6
-#: apps/app/src/routes/profile-character-import-page.tsx:577
+#: apps/app/src/routes/profile-character-import-page.tsx:576
 msgid "+{0}"
 msgstr "+{0}"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:594
+#: apps/app/src/routes/profile-character-import-page.tsx:593
 msgid "文件 $schema 是 \"{schema}\"，与期望的 \"yinjie-private-character/v1\" 不一致。请到「世界角色管理平台 → 我的私有角色」重新导出文件。"
 msgstr "文件 $schema 是 \"{schema}\"，与期望的 \"yinjie-private-character/v1\" 不一致。请到「世界角色管理平台 → 我的私有角色」重新导出文件。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:597
+#: apps/app/src/routes/profile-character-import-page.tsx:596
 msgid "文件缺少 $schema 标识；仍可尝试导入，但建议检查内容是否齐全。"
 msgstr "文件缺少 $schema 标识；仍可尝试导入，但建议检查内容是否齐全。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:609
+#: apps/app/src/routes/profile-character-import-page.tsx:608
 msgid "导入中…"
 msgstr "导入中…"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:609
+#: apps/app/src/routes/profile-character-import-page.tsx:608
 msgid "✅ 导入到我的世界"
 msgstr "✅ 导入到我的世界"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:617
+#: apps/app/src/routes/profile-character-import-page.tsx:616
 msgid "换一个文件"
 msgstr "换一个文件"
 
 #. placeholder {0}: character.name
-#: apps/app/src/routes/profile-character-import-page.tsx:661
+#: apps/app/src/routes/profile-character-import-page.tsx:660
 msgid "已覆盖同名角色：{0}"
 msgstr "已覆盖同名角色：{0}"
 
 #. placeholder {0}: character.name
-#: apps/app/src/routes/profile-character-import-page.tsx:662
+#: apps/app/src/routes/profile-character-import-page.tsx:661
 msgid "已导入新角色：{0}"
 msgstr "已导入新角色：{0}"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:673
+#: apps/app/src/routes/profile-character-import-page.tsx:672
 msgid "这位仍在你的黑名单里——角色数据已更新，但需要先解除拉黑才能继续对话。"
 msgstr "这位仍在你的黑名单里——角色数据已更新，但需要先解除拉黑才能继续对话。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:676
+#: apps/app/src/routes/profile-character-import-page.tsx:675
 msgid "原有 id 和好友关系都保留了。"
 msgstr "原有 id 和好友关系都保留了。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:677
+#: apps/app/src/routes/profile-character-import-page.tsx:676
 msgid "已自动加为你的好友，可以在通讯录里找到。"
 msgstr "已自动加为你的好友，可以在通讯录里找到。"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:686
+#: apps/app/src/routes/profile-character-import-page.tsx:685
 msgid "去通讯录"
 msgstr "去通讯录"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:695
+#: apps/app/src/routes/profile-character-import-page.tsx:694
 msgid "再导入一个"
 msgstr "再导入一个"
 
@@ -29309,68 +29344,68 @@ msgstr "评论加载失败，请稍后重试。"
 msgid "已删除这条广场动态。"
 msgstr "已删除这条广场动态。"
 
-#: apps/app/src/routes/profile-feed-page.tsx:286
+#: apps/app/src/routes/profile-feed-page.tsx:285
 msgid "广场动态加载失败，请稍后重试。"
 msgstr "广场动态加载失败，请稍后重试。"
 
-#: apps/app/src/routes/profile-feed-page.tsx:314
+#: apps/app/src/routes/profile-feed-page.tsx:313
 msgid "还没有发布广场动态"
 msgstr "还没有发布广场动态"
 
-#: apps/app/src/routes/profile-feed-page.tsx:315
+#: apps/app/src/routes/profile-feed-page.tsx:314
 msgid "你在广场发布的动态会出现在这里，可随时删除管理。"
 msgstr "你在广场发布的动态会出现在这里，可随时删除管理。"
 
-#: apps/app/src/routes/profile-feed-page.tsx:335
+#: apps/app/src/routes/profile-feed-page.tsx:334
 msgid "重新加载中…"
 msgstr "重新加载中…"
 
-#: apps/app/src/routes/profile-feed-page.tsx:354
+#: apps/app/src/routes/profile-feed-page.tsx:353
 msgid "删除这条广场动态"
 msgstr "删除这条广场动态"
 
-#: apps/app/src/routes/profile-feed-page.tsx:461
+#: apps/app/src/routes/profile-feed-page.tsx:460
 msgid "我的广场动态"
 msgstr "我的广场动态"
 
-#: apps/app/src/routes/profile-feed-page.tsx:514
+#: apps/app/src/routes/profile-feed-page.tsx:513
 msgid "删除这条广场动态？"
 msgstr "删除这条广场动态？"
 
-#: apps/app/src/routes/profile-feed-page.tsx:517
+#: apps/app/src/routes/profile-feed-page.tsx:516
 msgid "删除后将一并移除它的评论与互动记录，且无法恢复。"
 msgstr "删除后将一并移除它的评论与互动记录，且无法恢复。"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:173
+#: apps/app/src/routes/profile-feedback-page.tsx:169
 msgid "请填写标题和详细描述"
 msgstr "请填写标题和详细描述"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:212
+#: apps/app/src/routes/profile-feedback-page.tsx:208
 msgid "反馈已提交，感谢你的支持"
 msgstr "反馈已提交，感谢你的支持"
 
 #. placeholder {0}: describeRequestError(error)
-#: apps/app/src/routes/profile-feedback-page.tsx:229
+#: apps/app/src/routes/profile-feedback-page.tsx:225
 msgid "提交失败：{0}"
 msgstr "提交失败：{0}"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:265
+#: apps/app/src/routes/profile-feedback-page.tsx:261
 msgid "反馈类型"
 msgstr "反馈类型"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:306
+#: apps/app/src/routes/profile-feedback-page.tsx:302
 msgid "一句话描述问题"
 msgstr "一句话描述问题"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:316
+#: apps/app/src/routes/profile-feedback-page.tsx:312
 msgid "详细描述"
 msgstr "详细描述"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:329
+#: apps/app/src/routes/profile-feedback-page.tsx:325
 msgid "说说你看到了什么、期望是什么，越具体越好，比如：在哪个页面、怎么复现、希望的结果"
 msgstr "说说你看到了什么、期望是什么，越具体越好，比如：在哪个页面、怎么复现、希望的结果"
 
-#: apps/app/src/routes/profile-feedback-page.tsx:374
+#: apps/app/src/routes/profile-feedback-page.tsx:370
 msgid "反馈会同步到隐界云端控制台，处理结果可能不会逐条回复。涉及账号问题请前往设置。"
 msgstr "反馈会同步到隐界云端控制台，处理结果可能不会逐条回复。涉及账号问题请前往设置。"
 
@@ -29593,19 +29628,19 @@ msgstr "签名太长啦，最多 {SIGNATURE_MAX_LENGTH} 个字符，请删掉一
 msgid "刷新失败：{localized}"
 msgstr "刷新失败：{localized}"
 
-#: apps/app/src/routes/profile-moments-page.tsx:972
+#: apps/app/src/routes/profile-moments-page.tsx:971
 msgid "正在打开桌面我的朋友圈"
 msgstr "正在打开桌面我的朋友圈"
 
-#: apps/app/src/routes/profile-moments-page.tsx:973
+#: apps/app/src/routes/profile-moments-page.tsx:972
 msgid "正在打开桌面端我的朋友圈。"
 msgstr "正在打开桌面端我的朋友圈。"
 
-#: apps/app/src/routes/profile-moments-page.tsx:974
+#: apps/app/src/routes/profile-moments-page.tsx:973
 msgid "正在打开桌面我的朋友圈..."
 msgstr "正在打开桌面我的朋友圈..."
 
-#: apps/app/src/routes/profile-moments-page.tsx:1348
+#: apps/app/src/routes/profile-moments-page.tsx:1347
 msgid "重新加载中..."
 msgstr "重新加载中..."
 
@@ -29900,18 +29935,18 @@ msgstr "允许我的分身参与社交相遇"
 msgid "关闭后别人无法和你的分身相遇，你也收不到新的相遇。"
 msgstr "关闭后别人无法和你的分身相遇，你也收不到新的相遇。"
 
-#: apps/app/src/routes/profile-subscription-page.tsx:513
+#: apps/app/src/routes/profile-subscription-page.tsx:512
 msgid "会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。"
 msgstr "会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。"
 
-#: apps/app/src/routes/profile-subscription-page.tsx:752
+#: apps/app/src/routes/profile-subscription-page.tsx:751
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:231
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:301
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:322
 msgid "发小红书赢会员"
 msgstr "发小红书赢会员"
 
-#: apps/app/src/routes/profile-subscription-page.tsx:755
+#: apps/app/src/routes/profile-subscription-page.tsx:754
 msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
 msgstr "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
 
@@ -30315,44 +30350,44 @@ msgstr "稍等一下，正在同步联系人标签和分组。"
 msgid "先在联系人资料里补上标签，通讯录标签页就会自动聚合。"
 msgstr "先在联系人资料里补上标签，通讯录标签页就会自动聚合。"
 
-#: apps/app/src/routes/wallet-page.tsx:94
+#: apps/app/src/routes/wallet-page.tsx:96
 msgid "提交充值申请失败，请稍后重试。"
 msgstr "提交充值申请失败，请稍后重试。"
 
-#: apps/app/src/routes/wallet-page.tsx:129
+#: apps/app/src/routes/wallet-page.tsx:131
 msgid "钱包需要登录隐界云账号。当前只登录了本地世界，无法查看余额。"
 msgstr "钱包需要登录隐界云账号。当前只登录了本地世界，无法查看余额。"
 
-#: apps/app/src/routes/wallet-page.tsx:144
+#: apps/app/src/routes/wallet-page.tsx:146
 msgid "正在加载钱包信息…"
 msgstr "正在加载钱包信息…"
 
-#: apps/app/src/routes/wallet-page.tsx:178
+#: apps/app/src/routes/wallet-page.tsx:180
 msgid "我的零钱"
 msgstr "我的零钱"
 
-#: apps/app/src/routes/wallet-page.tsx:186
+#: apps/app/src/routes/wallet-page.tsx:188
 msgid "钱包已被冻结，暂时无法变动余额，请联系运营。"
 msgstr "钱包已被冻结，暂时无法变动余额，请联系运营。"
 
-#: apps/app/src/routes/wallet-page.tsx:207
+#: apps/app/src/routes/wallet-page.tsx:209
 msgid "提现"
 msgstr "提现"
 
-#: apps/app/src/routes/wallet-page.tsx:211
+#: apps/app/src/routes/wallet-page.tsx:213
 msgid "提现功能即将开放"
 msgstr "提现功能即将开放"
 
-#: apps/app/src/routes/wallet-page.tsx:225
+#: apps/app/src/routes/wallet-page.tsx:227
 #: apps/app/src/routes/wallet-transactions-page.tsx:72
 msgid "零钱明细"
 msgstr "零钱明细"
 
-#: apps/app/src/routes/wallet-page.tsx:234
+#: apps/app/src/routes/wallet-page.tsx:236
 msgid "最近交易"
 msgstr "最近交易"
 
-#: apps/app/src/routes/wallet-page.tsx:258
+#: apps/app/src/routes/wallet-page.tsx:260
 #: apps/app/src/routes/wallet-transactions-page.tsx:149
 msgid "暂无交易记录。"
 msgstr "暂无交易记录。"
@@ -30805,7 +30840,3 @@ msgstr "已取消保存。"
 #: apps/app/src/runtime/file-runtime-i18n.ts:62
 msgid "已打开文件。"
 msgstr "已打开文件。"
-
-#: apps/app/src/features/world/world-page.tsx
-msgid "世界此刻"
-msgstr "世界此刻"

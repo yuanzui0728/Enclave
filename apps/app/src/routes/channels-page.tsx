@@ -2660,10 +2660,50 @@ export function ChannelsPage() {
           />
         ) : null}
 
-        {/* 0 帖空态卡已删——原"关注的视频号暂时没有新内容 / 朋友还没有视频号
-            动态 / 暂无正在直播 / 还没有内容"那套提示 + 内嵌「换一批 / 去推荐
-            看看」按钮入口都被下拉刷新接管。0 帖时这里直接留白，用户下拉就刷
-            新；refetch 后若仍 0 帖也不再弹文案。 */}
+        {/* 0 帖空态卡：之前为留白（靠下拉刷新接管），但真实数据下大量用户视频号
+            长期 0 帖（内容按 owner 隔离、缺自动铺帖），留白看起来像坏掉。恢复一张
+            按 section 文案的空态卡 + 「去推荐看看 / 刷新」入口，避免空屏歧义。 */}
+        {!channelsQuery.isLoading && !errorMessage && visiblePosts.length === 0 ? (
+          <MobileChannelsStatusCard
+            badge={t(msg`视频号`)}
+            title={
+              activeSection === "following"
+                ? t(msg`关注的视频号暂时没有新内容`)
+                : activeSection === "friends"
+                  ? t(msg`朋友还没有发布视频号动态`)
+                  : activeSection === "live"
+                    ? t(msg`暂时没有正在直播的内容`)
+                    : t(msg`还没有视频内容`)
+            }
+            description={
+              activeSection === "recommended"
+                ? t(msg`稍后再来看看，或下拉刷新试试。`)
+                : t(msg`去「推荐」看看大家都在发什么吧。`)
+            }
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {activeSection !== "recommended" ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
+                    onClick={() => setActiveSection("recommended")}
+                  >
+                    {t(msg`去推荐看看`)}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
+                  onClick={handleRetryLoad}
+                >
+                  {t(msg`刷新`)}
+                </Button>
+              </div>
+            }
+          />
+        ) : null}
         {!channelsQuery.isLoading && visiblePosts.length ? (
           <MobileChannelsViewport
             activeSection={activeSection}
