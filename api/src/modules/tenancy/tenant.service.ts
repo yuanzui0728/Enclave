@@ -87,6 +87,11 @@ export class TenantService {
           `tenant job failed owner=${owner.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
+      // 每个 owner 之间让出事件循环：per-owner cron 里一长串 await 的同步 better-sqlite3
+      // 查询是微任务，会饿死宏任务队列(I/O/HTTP)，整轮 fan-out 期间 :4100 不响应 → 全员
+      // 504。setImmediate(宏任务)强制服务待处理 I/O，把整块阻塞打散。详见
+      // WorldOwnerService.forEachOwner 同款注释。
+      await new Promise((resolve) => setImmediate(resolve));
     }
   }
 

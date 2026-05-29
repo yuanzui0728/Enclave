@@ -270,14 +270,20 @@ export class WorldOwnerService implements OnModuleInit {
       } catch (error) {
         if (error instanceof SubscriptionExpiredException) {
           this.logger.debug(`${label} owner=${owner.id}: subscription expired, skipped`);
-          continue;
+        } else {
+          this.logger.warn(
+            `${label} failed owner=${owner.id}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
         }
-        this.logger.warn(
-          `${label} failed owner=${owner.id}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
       }
+      // 每个 owner 之间让出一拍事件循环。per-owner cron(尤以 farm tick：138 owner ×
+      // 逐角色 findOneBy/写）里一长串 await 的 better-sqlite3 查询是**同步 resolve 的微
+      // 任务**，会饿死宏任务队列(I/O/HTTP)——整轮 fan-out 期间 :4100 完全不响应 health/
+      // 用户请求 → 全员 504「世界离线」。setImmediate 是宏任务，强制事件循环在 owner 之间
+      // 服务待处理 I/O，把数分钟的整块阻塞打散成单 owner 级短 blip。轻量 cron 开销可忽略。
+      await new Promise((resolve) => setImmediate(resolve));
     }
   }
 
