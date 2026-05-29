@@ -53,14 +53,13 @@ const IPHONE_UA =
 
 // key → in-app route. Settle gives REST results + media time to paint.
 const SHOTS = [
-  { key: "chatlist", path: "/tabs/chat", settle: 2500 },
+  { key: "world", path: "/tabs/world", settle: 3200 },
+  { key: "experts", path: "/tabs/contacts", settle: 4500 },
+  { key: "avatar", path: "/cyber-avatar", settle: 2600 },
   { key: "chat", path: "/chat/direct_char-default-bar-expert", settle: 5500, scrollBottom: true },
   { key: "group", path: "/group/group-douyin-d2-trio", settle: 5500, scrollBottom: true },
   { key: "moments", path: "/discover/moments", settle: 5000 },
   { key: "discover", path: "/tabs/discover", settle: 3500 },
-  { key: "experts", path: "/tabs/contacts", settle: 4500 },
-  { key: "avatar", path: "/cyber-avatar", settle: 2600 },
-  { key: "profile", path: "/tabs/profile", settle: 1800 },
 ];
 
 // Chat/group render oldest-first and only jump to newest once the message list

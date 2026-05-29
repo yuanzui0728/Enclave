@@ -10,23 +10,23 @@ const publicRoot = path.join(siteRoot, "public");
 const brandRoot = path.join(publicRoot, "brand");
 
 const COLORS = {
-  brandPrimary: "#f97316",
-  brandSecondary: "#fb923c",
-  brandAmber: "#fbbf24",
-  brandAccent: "#10b981",
-  canvas: "#fffcf5",
+  brandPrimary: "#7c5bd9",
+  brandSecondary: "#9b7de8",
+  brandAmber: "#c77dff",
+  brandAccent: "#c77dff",
+  canvas: "#fbfaff",
   white: "#ffffff",
-  textPrimary: "#1a0f05",
-  textSecondary: "#4a3728",
-  textMuted: "#7a6454",
+  textPrimary: "#1a1430",
+  textSecondary: "#423a5c",
+  textMuted: "#6b6385",
 };
 
 const COLOR_LIST = [
-  { name: "Brand Primary", token: "--brand-primary", hex: COLORS.brandPrimary, usage: "Primary actions and logo gradient depth" },
-  { name: "Brand Secondary", token: "--brand-secondary", hex: COLORS.brandSecondary, usage: "Hover states and warm highlights" },
-  { name: "Brand Amber", token: "--brand-gradient-start", hex: COLORS.brandAmber, usage: "Gradient start and sunny accents" },
-  { name: "Brand Accent", token: "--brand-accent", hex: COLORS.brandAccent, usage: "Success accents and contrast detail" },
-  { name: "Canvas", token: "--bg-canvas", hex: COLORS.canvas, usage: "Warm page and poster background" },
+  { name: "Brand Primary", token: "--brand-primary", hex: COLORS.brandPrimary, usage: "Primary actions and logo gradient depth (兰花薰衣紫)" },
+  { name: "Brand Secondary", token: "--brand-secondary", hex: COLORS.brandSecondary, usage: "Hover states and lighter violet highlights" },
+  { name: "Brand Orchid", token: "--brand-gradient-start", hex: COLORS.brandAmber, usage: "Gradient start and orchid accents" },
+  { name: "Brand Accent", token: "--brand-accent", hex: COLORS.brandAccent, usage: "Accent details and contrast highlights" },
+  { name: "Canvas", token: "--bg-canvas", hex: COLORS.canvas, usage: "Page and poster background" },
   { name: "Surface", token: "--surface-section", hex: COLORS.white, usage: "Cards, phone frames, and elevated surfaces" },
   { name: "Text Primary", token: "--text-primary", hex: COLORS.textPrimary, usage: "Primary copy" },
   { name: "Text Secondary", token: "--text-secondary", hex: COLORS.textSecondary, usage: "Body copy" },
@@ -153,13 +153,13 @@ function logoSvg(size = 512) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="Enclave logo">
   <defs>
     <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffa32f"/>
-      <stop offset="1" stop-color="#ff741a"/>
+      <stop offset="0" stop-color="#c77dff"/>
+      <stop offset="1" stop-color="#7c5bd9"/>
     </linearGradient>
   </defs>
   <rect width="${size}" height="${size}" rx="${r}" fill="url(#logo-bg)"/>
   <g${transform}>
-    <path d="M203 177h29l24 58 31-69h31l-47 100v58h-31v-58z" fill="#8a3a08" opacity=".78"/>
+    <path d="M203 177h29l24 58 31-69h31l-47 100v58h-31v-58z" fill="#3a2580" opacity=".78"/>
     <path d="M194 166h31l31 69 31-69h31l-47 100v58h-31v-58z" fill="#fffdf7"/>
   </g>
 </svg>

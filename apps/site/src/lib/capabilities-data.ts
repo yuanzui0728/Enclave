@@ -1,8 +1,7 @@
 /**
- * Single source of truth for the 8 capability cards on the home page.
- * Both <CapabilityGrid> (UI) and <HomeJsonLd> (SoftwareApplication
- * schema, featureList field) consume this list — keep them in sync by
- * editing here.
+ * Capability copy reused for the SoftwareApplication JSON-LD featureList
+ * (<HomeJsonLd>). The homepage itself now tells these as narrative sections
+ * rather than a flat grid; keep this list aligned with the headline features.
  */
 import { msg } from "@lingui/macro";
 import type { MessageDescriptor } from "@lingui/core";
@@ -79,9 +78,10 @@ export type ScreenshotKey = {
 };
 
 export const SCREENSHOT_KEYS: readonly ScreenshotKey[] = [
+  { key: "world", title: msg`你的世界首屏` },
   { key: "experts", title: msg`专家居民` },
-  { key: "chat", title: msg`一对一私聊` },
   { key: "avatar", title: msg`你的分身` },
+  { key: "chat", title: msg`一对一私聊` },
   { key: "group", title: msg`群聊` },
   { key: "moments", title: msg`朋友圈` },
   { key: "discover", title: msg`发现` },

@@ -18,8 +18,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     scope: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#fffcf5",
-    theme_color: "#f97316",
+    background_color: "#fbfaff",
+    theme_color: "#7c5bd9",
     lang: locale,
     categories: ["social", "entertainment", "lifestyle"],
     icons: [
@@ -33,6 +33,13 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     // 安装弹窗里展示的应用预览。390x844 是 iPhone 13 mini 实拍尺寸，
     // form_factor: "narrow" 让 Chrome / Edge 在移动端弹窗优先用这组图。
     screenshots: [
+      {
+        src: `/screenshots/${locale}/world.png`,
+        sizes: "390x844",
+        type: "image/png",
+        form_factor: "narrow",
+        label: i18n._("你的世界首屏"),
+      },
       {
         src: `/screenshots/${locale}/experts.png`,
         sizes: "390x844",

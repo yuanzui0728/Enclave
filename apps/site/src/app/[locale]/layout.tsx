@@ -67,7 +67,7 @@ export default async function LocaleLayout({
           解析 HTML 时就并行抓取，省 ~300-500ms。 */}
       <link
         rel="preload"
-        href={`/screenshots/${safeLocale}/chatlist.png`}
+        href={`/screenshots/${safeLocale}/world.png`}
         as="image"
         type="image/png"
         fetchPriority="high"

@@ -9,11 +9,16 @@ import {
   pageUrl,
 } from "@/lib/seo-metadata";
 import { HeroSection } from "@/components/hero-section";
-import { BYOKAndCloudSection } from "@/components/byok-and-cloud-section";
-import { CapabilityGrid } from "@/components/capability-grid";
-import { MultiPlatformCarousel } from "@/components/multi-platform-carousel";
+import { TheShiftSection } from "@/components/the-shift-section";
+import { ExpertResidentsSection } from "@/components/expert-residents-section";
+import { CyberAvatarSection } from "@/components/cyber-avatar-section";
+import { MemoryProactiveSection } from "@/components/memory-proactive-section";
+import { RealOutputSection } from "@/components/real-output-section";
+import { SocialWorldSection } from "@/components/social-world-section";
+import { MoreFeaturesStrip } from "@/components/more-features-strip";
 import { OnePersonWorld } from "@/components/one-person-world";
 import { CrossPlatformSection } from "@/components/cross-platform-section";
+import { BYOKAndCloudSection } from "@/components/byok-and-cloud-section";
 import { GetStartedCta } from "@/components/get-started-cta";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { HomeJsonLd } from "@/components/seo/home-json-ld";
@@ -58,16 +63,20 @@ export default async function HomePage({
   return (
     <>
       <HomeJsonLd locale={safeLocale} />
+      {/* 叙事弧：钩子 → 是什么 → 谁住在这 → 分身 → 会记得/主动 → 出活 →
+          社交世界 → 长尾 → 属于你 → 跨端 → 开源定价 → CTA → FAQ */}
       <HeroSection locale={safeLocale} />
-      <BYOKAndCloudSection locale={safeLocale} />
-      <CapabilityGrid locale={safeLocale} />
-      {/* 折叠下方组件用 Suspense 让 Next.js 走 streaming HTML，首屏 Hero+Capability
-          能提前 flush，后端 i18n/数据并行渲染。Suspense 完成后整页仍是完整 HTML，
-          对 SEO 无影响。 */}
+      <TheShiftSection locale={safeLocale} />
+      <ExpertResidentsSection locale={safeLocale} />
       <Suspense fallback={null}>
-        <MultiPlatformCarousel locale={safeLocale} />
+        <CyberAvatarSection locale={safeLocale} />
+        <MemoryProactiveSection locale={safeLocale} />
+        <RealOutputSection locale={safeLocale} />
+        <SocialWorldSection locale={safeLocale} />
+        <MoreFeaturesStrip locale={safeLocale} />
         <OnePersonWorld locale={safeLocale} />
         <CrossPlatformSection locale={safeLocale} />
+        <BYOKAndCloudSection locale={safeLocale} />
         <GetStartedCta locale={safeLocale} />
         <FaqAccordion locale={safeLocale} />
       </Suspense>

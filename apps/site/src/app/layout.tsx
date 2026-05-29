@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     other: Object.keys(verificationOther).length ? verificationOther : undefined,
   },
   other: {
-    "msapplication-TileColor": "#f97316",
+    "msapplication-TileColor": "#7c5bd9",
   },
   icons: {
     // 浏览器 favicon 只用一个，多列只是徒增首屏 link 标签 + 潜在预拉。
@@ -77,10 +77,18 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f97316",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#7c5bd9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0b1a" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
+
+// Apply the persisted theme before first paint so dark mode never flashes.
+// SSG HTML is locale-shared and theme-agnostic; the real theme is resolved
+// here from localStorage + prefers-color-scheme and set on <html> pre-hydration.
+const THEME_INIT_SCRIPT = `(function(){try{var m=localStorage.getItem('yinjie-site-theme')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches);var t=d?'dark':'light';var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorScheme=t;}catch(e){}})();`;
 
 function pickLocaleFromPath(pathname: string | null): SupportedLocale {
   if (!pathname) return DEFAULT_LOCALE;
@@ -92,8 +100,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const h = await headers();
   const locale = pickLocaleFromPath(h.get("x-pathname"));
   return (
-    <html lang={locale} className={`${inter.variable} ${notoSansSC.variable}`}>
+    <html
+      lang={locale}
+      className={`${inter.variable} ${notoSansSC.variable}`}
+      suppressHydrationWarning
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {SAAS_ORIGIN ? (
           <>
             <link rel="preconnect" href={SAAS_ORIGIN} />

@@ -40,7 +40,7 @@ export const PRESS_KIT_ASSETS: PressKitAsset[] = [
   {
     kind: "screenshots",
     title: msg`产品截图`,
-    description: msg`覆盖专家居民、一对一私聊、数字分身、群聊、朋友圈与广场六个核心场景，均为真实界面。`,
+    description: msg`覆盖「世界」首屏、专家居民、数字分身、一对一私聊、群聊、朋友圈与广场七个核心场景，均为真实界面。`,
     format: msg`PNG · 390x844`,
     action: msg`查看截图`,
   },
@@ -89,6 +89,12 @@ export const PRESS_KIT_SCREENSHOTS: Array<{
   description: MessageDescriptor;
   alt: MessageDescriptor;
 }> = [
+  {
+    key: "world",
+    title: msg`你的世界首屏`,
+    description: msg`你与你的分身双核`,
+    alt: msg`隐界「世界」首屏：你与你的分身双核、今日主动的专家与探索入口`,
+  },
   {
     key: "experts",
     title: msg`专家居民`,

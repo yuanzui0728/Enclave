@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { getServerI18n } from "@/i18n/server";
 import type { SupportedLocale } from "@/lib/locales";
@@ -7,6 +6,7 @@ import { buildLocalePath } from "@/lib/locale-routing";
 import { siteLinks } from "@/lib/site-links";
 import { LanguageSwitcherLink } from "./language-switcher-link";
 import { SiteMobileMenu } from "./site-mobile-menu";
+import { ThemeToggle } from "./theme-toggle";
 
 export async function SiteHeader({ locale }: { locale: SupportedLocale }) {
   const i18n = await getServerI18n(locale);
@@ -23,6 +23,10 @@ export async function SiteHeader({ locale }: { locale: SupportedLocale }) {
     brand: i18n._("隐界"),
     homeAria: i18n._("Enclave 首页"),
     languageAria: i18n._("语言"),
+    themeLight: i18n._("浅色"),
+    themeDark: i18n._("深色"),
+    themeSystem: i18n._("跟随系统"),
+    themeToggle: i18n._("主题"),
   };
 
   return (
@@ -33,7 +37,7 @@ export async function SiteHeader({ locale }: { locale: SupportedLocale }) {
             aria-hidden="true"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-(--brand-gradient) text-base font-semibold text-white shadow-(--shadow-soft)"
           >
-            <Image src="/favicon.png" alt="" aria-hidden="true" width={28} height={28} className="rounded-lg" />
+            隐
           </span>
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-(--text-primary)">{labels.brand}</span>
@@ -60,6 +64,14 @@ export async function SiteHeader({ locale }: { locale: SupportedLocale }) {
         </nav>
 
         <div className="flex min-w-0 items-center gap-2">
+          <ThemeToggle
+            labels={{
+              light: labels.themeLight,
+              dark: labels.themeDark,
+              system: labels.themeSystem,
+              toggle: labels.themeToggle,
+            }}
+          />
           <LanguageSwitcherLink current={locale} ariaLabel={labels.languageAria} />
           <a
             href={siteLinks.app}

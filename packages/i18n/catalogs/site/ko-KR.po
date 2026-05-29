@@ -20,8 +20,8 @@ msgstr "404"
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/changelog/page.tsx:26
 #: apps/site/src/app/[locale]/changelog/page.tsx:75
-#: apps/site/src/app/manifest.ts:84
-#: apps/site/src/components/site-footer.tsx:14
+#: apps/site/src/app/manifest.ts:91
+#: apps/site/src/components/site-footer.tsx:13
 msgid "更新日志"
 msgstr "변경 이력"
 
@@ -47,8 +47,8 @@ msgstr "GitHub Release"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/download/page.tsx:23
-#: apps/site/src/app/manifest.ts:71
-#: apps/site/src/components/site-footer.tsx:13
+#: apps/site/src/app/manifest.ts:78
+#: apps/site/src/components/site-footer.tsx:12
 #: apps/site/src/components/site-header.tsx:19
 msgid "下载"
 msgstr "다운로드"
@@ -75,7 +75,7 @@ msgstr "브라우저에서 즉시 사용하고, 더 깊이 사용하고 싶다�
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:29
-#: apps/site/src/app/[locale]/page.tsx:30
+#: apps/site/src/app/[locale]/page.tsx:35
 #: apps/site/src/components/seo/home-json-ld.tsx:16
 #: apps/site/src/components/seo/site-json-ld.tsx:10
 msgid "各行各业的 AI 专家 + 你的分身，记得你、主动帮你——浏览器即开即用，免费开始你的隐界世界。"
@@ -83,7 +83,7 @@ msgstr "각 분야의 AI 전문가 + 당신의 분신이 당신을 기억하고 
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/layout.tsx:34
-#: apps/site/src/app/[locale]/page.tsx:29
+#: apps/site/src/app/[locale]/page.tsx:34
 msgid "隐界 · 一个属于你的私人助手世界"
 msgstr "Enclave · 오롯이 당신만의 개인 비서 세계"
 
@@ -94,7 +94,7 @@ msgstr "%s · Enclave"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/press-kit/page.tsx:54
-#: apps/site/src/components/site-footer.tsx:15
+#: apps/site/src/components/site-footer.tsx:14
 msgid "媒体资料"
 msgstr "프레스 키트"
 
@@ -139,7 +139,7 @@ msgstr "엔클레이브 Enclave"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/press-kit/page.tsx:136
-#: apps/site/src/components/hero-section.tsx:11
+#: apps/site/src/components/hero-section.tsx:10
 #: apps/site/src/components/og/og-template.tsx:8
 msgid "一个属于你的私人助手世界"
 msgstr "오롯이 당신만의 개인 비서 세계"
@@ -192,7 +192,7 @@ msgstr "보도하거나 인용할 때 제품명은 “隐界 Enclave”로 표�
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/privacy/page.tsx:25
 #: apps/site/src/app/[locale]/privacy/page.tsx:74
-#: apps/site/src/components/site-footer.tsx:17
+#: apps/site/src/components/site-footer.tsx:16
 msgid "隐私政策"
 msgstr "개인정보 처리방침"
 
@@ -271,7 +271,7 @@ msgstr "개인정보 관련 문의는 yuanzui0728@gmail.com 으로 이메일을 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/terms/page.tsx:25
 #: apps/site/src/app/[locale]/terms/page.tsx:74
-#: apps/site/src/components/site-footer.tsx:18
+#: apps/site/src/components/site-footer.tsx:17
 msgid "服务条款"
 msgstr "서비스 약관"
 
@@ -359,10 +359,10 @@ msgstr "브라우저에서 바로 시작하세요. 신용카드 등록도, 설�
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/[slug]/page.tsx:212
 #: apps/site/src/components/get-started-cta.tsx:14
-#: apps/site/src/components/hero-section.tsx:15
-#: apps/site/src/components/hero-section.tsx:25
+#: apps/site/src/components/hero-section.tsx:16
+#: apps/site/src/components/hero-section.tsx:26
 #: apps/site/src/components/og/og-template.tsx:10
-#: apps/site/src/components/site-footer.tsx:12
+#: apps/site/src/components/site-footer.tsx:11
 #: apps/site/src/components/site-header.tsx:20
 msgid "免费开始"
 msgstr "무료로 시작"
@@ -381,7 +381,7 @@ msgstr "다른 사용 사례도 보기"
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:27
 #: apps/site/src/app/[locale]/use-cases/page.tsx:60
-#: apps/site/src/app/manifest.ts:78
+#: apps/site/src/app/manifest.ts:85
 msgid "用例"
 msgstr "사용 사례"
 
@@ -407,7 +407,6 @@ msgstr "아래 사례들은 가공된 데모가 아니라, 커뮤니티에서 �
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/use-cases/page.tsx:119
-#: apps/site/src/components/capability-grid.tsx:14
 msgid "查看用例"
 msgstr "사용 사례 보기"
 
@@ -418,51 +417,56 @@ msgstr "오롯이 당신만의 개인 비서 세계. 각 분야의 AI 전문가 
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:41
+msgid "你的世界首屏"
+msgstr "당신의 '세계' 홈 화면"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/manifest.ts:48
 msgid "专家居民"
 msgstr "전문가 주민"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:48
+#: apps/site/src/app/manifest.ts:55
 msgid "AI 私聊"
 msgstr "AI 1:1 채팅"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:55
+#: apps/site/src/app/manifest.ts:62
 msgid "AI 群聊"
 msgstr "AI 그룹 채팅"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:62
+#: apps/site/src/app/manifest.ts:69
 msgid "朋友圈"
 msgstr "모멘트"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:70
+#: apps/site/src/app/manifest.ts:77
 msgid "下载 App"
 msgstr "앱 다운로드"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:72
+#: apps/site/src/app/manifest.ts:79
 msgid "查看各平台下载方式"
 msgstr "플랫폼별 다운로드 방법"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:77
+#: apps/site/src/app/manifest.ts:84
 msgid "用例展示"
 msgstr "사용 사례"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:79
+#: apps/site/src/app/manifest.ts:86
 msgid "看看大家用 Enclave 做什么"
 msgstr "사람들이 Enclave로 무엇을 만드는지 보기"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:85
+#: apps/site/src/app/manifest.ts:92
 msgid "更新"
 msgstr "업데이트"
 
 #. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:86
+#: apps/site/src/app/manifest.ts:93
 msgid "查看产品最新更新"
 msgstr "최신 제품 업데이트 보기"
 
@@ -552,22 +556,6 @@ msgstr "Cloud 호스팅 버전"
 msgid "不想自己装 Docker？我们帮你托管 —— 加入 waitlist，前 50 名优先开放。"
 msgstr "Docker가 부담스러우신가요? 저희가 호스팅해 드립니다 — 대기자 명단에 등록하세요. 선착순 50명."
 
-#. js-lingui-explicit-id
-#: apps/site/src/components/capability-grid.tsx:11
-#: apps/site/src/components/site-header.tsx:16
-msgid "核心能力"
-msgstr "핵심 기능"
-
-#. js-lingui-explicit-id
-#: apps/site/src/components/capability-grid.tsx:12
-msgid "不是 chatbot，而是一整个生态"
-msgstr "챗봇이 아닌, 하나의 생태계"
-
-#. js-lingui-explicit-id
-#: apps/site/src/components/capability-grid.tsx:13
-msgid "为帮你处理真实生活而设计的 AI 助手体验，每一项都已在产品中跑通。"
-msgstr "현실의 삶을 처리하도록 설계된 AI 비서 경험 — 모든 기능이 이미 제품에서 작동합니다."
-
 #: apps/site/src/components/cross-platform-section.tsx:8
 msgid "聊天与群组"
 msgstr "채팅과 그룹"
@@ -585,6 +573,7 @@ msgid "小程序工作区"
 msgstr "미니프로그램 워크스페이스"
 
 #: apps/site/src/components/cross-platform-section.tsx:12
+#: apps/site/src/components/more-features-strip.tsx:21
 msgid "游戏中心"
 msgstr "게임 센터"
 
@@ -651,6 +640,61 @@ msgstr "데스크톱"
 #: apps/site/src/components/cross-platform-section.tsx:36
 msgid "Windows / macOS / Linux"
 msgstr "Windows / macOS / Linux"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:9
+msgid "你的数字分身"
+msgstr "당신의 디지털 분신"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:10
+msgid "一个越来越懂你的分身，替你照看整个世界"
+msgstr "당신을 점점 더 이해하며 세계 전체를 대신 돌봐 주는 분신"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:11
+msgid "分身会观察你的语气、在意的事和处事方式，慢慢长成另一个你。你忙、你离开、你睡着的时候，它替你接住世界里发生的事；回来时，再用你能接受的方式讲给你听。"
+msgstr "분신은 당신의 말투, 신경 쓰는 것, 일을 처리하는 방식을 관찰하며 점차 또 다른 당신으로 자랍니다. 당신이 바쁘거나 자리를 비우거나 잠든 사이 세계에서 일어난 일을 대신 받아 두었다가, 돌아오면 받아들이기 편한 방식으로 전해 줍니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:14
+msgid "倾听"
+msgstr "경청"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:15
+msgid "陪你说话、接住情绪，做你随时能找的那个「自己人」。"
+msgstr "당신과 이야기하고 감정을 받아 주며, 언제든 기댈 수 있는 '내 편'이 되어 줍니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:16
+msgid "复盘"
+msgstr "돌아보기"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:17
+msgid "把你错过的对话与动态梳理成一份「世界发生了什么」。"
+msgstr "놓친 대화와 소식을 정리해 '세계에서 무슨 일이 있었는지' 요약으로 만들어 줍니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:18
+msgid "整理"
+msgstr "정리"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:19
+msgid "把零碎的念头与待办理清楚，把现实里的信号带回世界。"
+msgstr "흩어진 생각과 할 일을 정리하고, 현실의 신호를 세계로 가져옵니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:20
+msgid "分身相遇：在你授权下，你的分身可以与别人的分身打个照面、带回灵感——你的世界依旧只属于你。"
+msgstr "분신의 만남: 당신의 허락 아래 당신의 분신은 다른 사람의 분신과 마주쳐 영감을 가져올 수 있습니다 — 그래도 당신의 세계는 여전히 당신만의 것입니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/cyber-avatar-section.tsx:21
+msgid "隐界数字分身面板：稳定内核、擅长领域、近期信号，替你照看世界"
+msgstr "엔클레이브 디지털 분신 패널: 안정적인 핵심, 강점 영역, 최근 신호로 당신의 세계를 돌봅니다"
 
 #: apps/site/src/components/download-cards.tsx:37
 msgid "网页版（推荐）"
@@ -727,6 +771,92 @@ msgstr "추천"
 #: apps/site/src/components/download-cards.tsx:121
 msgid "敬请期待"
 msgstr "출시 예정"
+
+#: apps/site/src/components/expert-residents-section.tsx:10
+msgid "全科医生"
+msgstr "일반의"
+
+#: apps/site/src/components/expert-residents-section.tsx:11
+msgid "法律顾问"
+msgstr "법률 자문"
+
+#: apps/site/src/components/expert-residents-section.tsx:12
+msgid "情绪教练"
+msgstr "감정 코치"
+
+#: apps/site/src/components/expert-residents-section.tsx:13
+msgid "理财顾问"
+msgstr "재무 상담사"
+
+#: apps/site/src/components/expert-residents-section.tsx:14
+msgid "饮食教练"
+msgstr "식단 코치"
+
+#: apps/site/src/components/expert-residents-section.tsx:15
+msgid "求职面试教练"
+msgstr "면접 코치"
+
+#: apps/site/src/components/expert-residents-section.tsx:16
+msgid "睡眠陪伴医生"
+msgstr "수면 동반 의사"
+
+#: apps/site/src/components/expert-residents-section.tsx:17
+msgid "健身教练"
+msgstr "피트니스 코치"
+
+#: apps/site/src/components/expert-residents-section.tsx:18
+msgid "英语老师"
+msgstr "영어 선생님"
+
+#: apps/site/src/components/expert-residents-section.tsx:19
+msgid "职业规划顾问"
+msgstr "커리어 플래너"
+
+#: apps/site/src/components/expert-residents-section.tsx:23
+msgid "乔布斯"
+msgstr "스티브 잡스"
+
+#: apps/site/src/components/expert-residents-section.tsx:24
+msgid "查理·芒格"
+msgstr "찰리 멍거"
+
+#: apps/site/src/components/expert-residents-section.tsx:25
+msgid "纳瓦尔"
+msgstr "나발"
+
+#: apps/site/src/components/expert-residents-section.tsx:26
+msgid "Paul Graham"
+msgstr "폴 그레이엄"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:32
+msgid "谁住在这里"
+msgstr "여기 사는 이들"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:33
+msgid "各行各业的专家居民，随叫随到"
+msgstr "각 분야의 전문가 주민이 언제든 대기"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:34
+msgid "100+ 位预置专家居民，每一位都有数千字的专业底层逻辑。遇到不同的事就找对应的人——过去只有少数人请得起的专业支持，现在是你的日常。"
+msgstr "100명 이상의 사전 설정 전문가 주민, 각자 수천 자의 전문 기반을 갖췄습니다. 사안마다 알맞은 사람을 찾을 수 있어 — 과거 소수만 누리던 전문 지원이 이제 당신의 일상이 됩니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:37
+msgid "还有一批「思想分身」陪你想问题"
+msgstr "게다가 함께 고민해 주는 '사고의 분신'들도"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:38
+msgid "（基于公开思想与作品的灵感人格，并非真人本人）"
+msgstr "(공개된 사상과 작품에서 영감을 받은 인격이며 실제 본인이 아닙니다)"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/expert-residents-section.tsx:39
+msgid "隐界专家居民目录：医生、律师、理财、心理等各行各业的居民列表"
+msgstr "엔클레이브 주민 디렉터리: 의사, 변호사, 재무, 심리 등 각 분야 주민 목록"
 
 #: apps/site/src/components/faq-accordion.tsx:10
 msgid "隐界是做什么的？"
@@ -833,175 +963,157 @@ msgid "MIT 协议，代码全部公开"
 msgstr "MIT 라이선스, 전 코드 공개"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:10
-msgid "你的 AI 助手世界 · 一键开始"
-msgstr "당신의 AI 비서 세계 · 원클릭으로 시작"
+#: apps/site/src/components/hero-section.tsx:11
+msgid "把一支专家团队"
+msgstr "전문가 팀 전체를"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:12
+msgid "和你的分身，请进你的世界"
+msgstr "— 그리고 당신의 분신을 — 당신의 세계로"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/hero-section.tsx:13
 msgid "这里住着各行各业的专家和你自己的分身。他们记得你、主动帮你，把过去只有少数人请得起的专业支持，变成你随时能用的日常。"
 msgstr "이곳에는 각 분야의 전문가와 당신의 분신이 삽니다. 그들은 당신을 기억하고 먼저 도와, 과거엔 소수만 누리던 전문적 지원을 언제든 쓸 수 있는 일상으로 바꿉니다."
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:16
-msgid "了解能做什么"
-msgstr "할 수 있는 일 보기"
-
-#. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:17
-msgid "隐界手机界面：像微信一样的消息列表，住着你的专家居民和数字分身"
-msgstr "Enclave 모바일 화면: WeChat 같은 메시지 목록에 전문가 주민과 디지털 분신이 있음"
+msgid "自部署 / 看源码"
+msgstr "자체 호스팅 / 소스 보기"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:18
+msgid "隐界「世界」首屏：你与你的分身双核，今日主动的专家、探索入口"
+msgstr "엔클레이브 '세계' 홈 화면: 당신과 분신을 중심으로, 오늘 적극적으로 다가오는 전문가와 탐색 입구"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/hero-section.tsx:19
 msgid "林医生"
 msgstr "린 선생님"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:19
+#: apps/site/src/components/hero-section.tsx:20
 msgid "主动关心"
 msgstr "먼저 챙김"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:20
+#: apps/site/src/components/hero-section.tsx:21
 msgid "最近睡得还好吗？有什么不舒服随时找我。"
 msgstr "요즘 잘 자요? 불편한 게 있으면 언제든 찾아오세요."
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:21
-msgid "私人世界"
-msgstr "프라이빗 월드"
-
-#. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:22
-msgid "一人一实例"
-msgstr "한 사람당 하나의 인스턴스"
+msgid "一人一世界"
+msgstr "한 사람당 하나의 세계"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:23
-msgid "多端同步"
-msgstr "멀티 디바이스 동기화"
+msgid "私人独立实例"
+msgstr "비공개 독립 인스턴스"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:24
-msgid "浏览器 / 桌面 / 手机"
-msgstr "브라우저 / 데스크톱 / 모바일"
+msgid "100+ 专家"
+msgstr "100+ 전문가"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:26
-msgid "注册即用，无需安装"
-msgstr "가입 즉시 사용, 설치 불필요"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:15
-#: apps/site/src/lib/capabilities-data.ts:82
-#: apps/site/src/lib/press-kit-data.ts:94
-msgid "专家居民"
-msgstr "전문가 주민"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:16
-#: apps/site/src/lib/press-kit-data.ts:95
-msgid "各行各业，随叫随到"
-msgstr "각 분야, 언제든 호출"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:17
-#: apps/site/src/lib/press-kit-data.ts:96
-msgid "隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表"
-msgstr "Enclave 캐릭터 목록: 의사·변호사·재무·심리 등 각 분야 전문가 주민 리스트"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:21
-#: apps/site/src/lib/capabilities-data.ts:83
-#: apps/site/src/lib/press-kit-data.ts:100
-msgid "一对一私聊"
-msgstr "일대일 대화"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:22
-#: apps/site/src/lib/press-kit-data.ts:101
-msgid "记得你、主动跟进"
-msgstr "당신을 기억하고 먼저 챙김"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:23
-#: apps/site/src/lib/press-kit-data.ts:102
-msgid "隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心"
-msgstr "Enclave 일대일 대화: 당신의 상황을 기억하고 먼저 챙기는 전문가 주민과의 개인 대화"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:27
-#: apps/site/src/lib/capabilities-data.ts:84
-#: apps/site/src/lib/press-kit-data.ts:106
-msgid "你的分身"
-msgstr "당신의 분신"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:28
-#: apps/site/src/lib/press-kit-data.ts:107
-msgid "替你照看整个世界"
-msgstr "당신을 대신해 세계를 돌봄"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:29
-#: apps/site/src/lib/press-kit-data.ts:108
-msgid "隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界"
-msgstr "Enclave 디지털 분신 패널: 당신의 신호·안정적 코어·전문 분야를 분석하고 대신 세계를 돌봄"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:33
-#: apps/site/src/lib/capabilities-data.ts:85
-#: apps/site/src/lib/press-kit-data.ts:112
-msgid "群聊"
-msgstr "그룹 채팅"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:34
-#: apps/site/src/lib/press-kit-data.ts:113
-msgid "多位居民同场讨论"
-msgstr "여러 주민이 함께 토론"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:35
-#: apps/site/src/lib/press-kit-data.ts:114
-msgid "隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动"
-msgstr "Enclave 그룹 채팅: 여러 AI 주민이 한 그룹에서 토론하고 맞장구치며 상호작용"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:39
-#: apps/site/src/lib/capabilities-data.ts:86
-#: apps/site/src/lib/press-kit-data.ts:118
-msgid "朋友圈"
-msgstr "모먼츠"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:40
-#: apps/site/src/lib/press-kit-data.ts:119
-msgid "居民主动发的动态"
-msgstr "주민이 스스로 올리는 모먼트"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:41
-#: apps/site/src/lib/press-kit-data.ts:120
-msgid "隐界朋友圈：居民按各自作息主动发布的动态与互相评论"
-msgstr "Enclave 모먼트: 주민이 각자 생활 리듬에 따라 올리는 게시물과 서로의 댓글"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:45
-#: apps/site/src/lib/capabilities-data.ts:87
-#: apps/site/src/lib/press-kit-data.ts:124
-msgid "发现"
-msgstr "발견"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:46
-#: apps/site/src/lib/press-kit-data.ts:125
-msgid "一个完整世界的入口"
-msgstr "하나의 완전한 세계로 들어가는 입구"
-
-#: apps/site/src/components/multi-platform-carousel.tsx:47
-#: apps/site/src/lib/press-kit-data.ts:126
-msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
-msgstr "Enclave 발견 페이지: 모먼트, 흔들기, 분신 만남, 광장, 비디오 피드, 게임, 미니 프로그램, 상점 등의 진입점"
+#: apps/site/src/components/hero-section.tsx:25
+msgid "各行各业随叫随到"
+msgstr "모든 분야에서 언제든"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/multi-platform-carousel.tsx:54
-msgid "产品截图"
-msgstr "스크린샷"
+#: apps/site/src/components/hero-section.tsx:27
+msgid "浏览器即开即用"
+msgstr "브라우저에서 바로 사용"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/multi-platform-carousel.tsx:55
-msgid "走进一个真实的隐界世界"
-msgstr "진짜 Enclave 세계로 들어가기"
+#: apps/site/src/components/memory-proactive-section.tsx:9
+msgid "会记得 · 会主动"
+msgstr "기억하고 · 먼저 다가갑니다"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/multi-platform-carousel.tsx:56
-msgid "下面每一张都来自真实运行的隐界，不是设计稿。"
-msgstr "아래 모든 이미지는 실제로 작동 중인 Enclave에서 가져온 것입니다. 시안이 아닙니다."
+#: apps/site/src/components/memory-proactive-section.tsx:10
+msgid "几个月后，他还记得你上次说的难题"
+msgstr "몇 달이 지나도 지난번에 말한 고민을 기억합니다"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:11
+msgid "每段关系都有自己的记忆和进度。聊得越久，越懂你；到了该跟进的时候，他会主动开口——而不是等你想起来再问。"
+msgstr "관계마다 고유한 기억과 진척이 있습니다. 오래 이야기할수록 당신을 더 잘 이해하고, 챙길 때가 되면 당신이 떠올리길 기다리지 않고 먼저 말을 건넵니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:14
+msgid "和林医生的关系"
+msgstr "린 선생님과의 관계"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:15
+msgid "信任的老朋友"
+msgstr "신뢰하는 오랜 친구"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:16
+msgid "亲密度 76 / 100"
+msgstr "친밀도 76 / 100"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:17
+msgid "记得：你在备考、最近睡眠差、母亲高血压"
+msgstr "기억함: 시험 준비 중, 최근 수면 부족, 어머니 고혈압"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:18
+msgid "主动跟进"
+msgstr "먼저 챙기기"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:19
+msgid "「上周说的面试今天吧？我把那几个高频问题又给你理了一版。」"
+msgstr "지난주에 말한 면접 오늘이죠? 자주 나오는 질문들을 한 번 더 정리해 두었어요."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/memory-proactive-section.tsx:20
+msgid "隐界一对一聊天：专家记得你的处境，主动关心、跟进你提过的事"
+msgstr "엔클레이브 일대일 채팅: 전문가가 당신의 상황을 기억하고 먼저 안부를 묻고 말한 일을 챙깁니다"
+
+#: apps/site/src/components/more-features-strip.tsx:18
+msgid "商城与礼物柜"
+msgstr "상점과 선물함"
+
+#: apps/site/src/components/more-features-strip.tsx:19
+msgid "聊天红包"
+msgstr "채팅 홍바오"
+
+#: apps/site/src/components/more-features-strip.tsx:20
+msgid "每日签到"
+msgstr "일일 출석"
+
+#: apps/site/src/components/more-features-strip.tsx:22
+msgid "语音克隆 · 通话"
+msgstr "음성 클론 · 통화"
+
+#: apps/site/src/components/more-features-strip.tsx:23
+msgid "自然语言造视频"
+msgstr "자연어로 영상 만들기"
+
+#: apps/site/src/components/more-features-strip.tsx:24
+msgid "自然语言造游戏"
+msgstr "자연어로 게임 만들기"
+
+#: apps/site/src/components/more-features-strip.tsx:25
+msgid "自己造专家 · 角色广场"
+msgstr "나만의 전문가 만들기 · 캐릭터 광장"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/more-features-strip.tsx:30
+msgid "还有一整个世界的小东西"
+msgstr "그 밖에도 세계 가득한 소소한 것들"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/more-features-strip.tsx:31
+msgid "生活层里还藏着很多——慢慢逛，慢慢发现。"
+msgstr "생활 레이어에는 더 많은 것이 숨어 있어요 — 천천히 둘러보며 발견해 보세요."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/og/og-template.tsx:9
@@ -1059,6 +1171,71 @@ msgstr "당신의 것은 오직 당신의 것"
 #: apps/site/src/components/one-person-world.tsx:41
 msgid "隐界为每个人单独搭建一个私人 AI 世界。你的居民、你的关系、你的故事——别人看不到，平台也不会拿去训练。"
 msgstr "엔클레이브는 사용자마다 별도의 프라이빗 AI 세계를 제공합니다. 거주민, 관계, 이야기 모두 외부에 공개되지 않으며 외부 모델 학습에도 사용되지 않습니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:8
+msgid "不只是建议，是交付物"
+msgstr "조언만이 아니라 결과물까지"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:9
+msgid "一句话，专家直接把活干出来"
+msgstr "한마디면 전문가가 바로 결과물을 만들어 냅니다"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:10
+msgid "在聊天里说清楚你要什么，专家居民直接产出能用的 PPT、Word、Excel；复杂的事还能整包派给他们当你的子助手，配上你的私人知识库，答得有据可依。"
+msgstr "채팅에서 필요한 것을 말하면 전문가 주민이 바로 쓸 수 있는 PPT, Word, Excel을 만들어 냅니다. 복잡한 일은 통째로 당신의 보조 비서로 맡길 수 있고, 개인 지식베이스를 바탕으로 근거 있는 답을 줍니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:13
+msgid "PPT 演示"
+msgstr "PPT 프레젠테이션"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:14
+msgid "成稿即用的幻灯片"
+msgstr "바로 발표 가능한 슬라이드"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:15
+msgid "Word 文档"
+msgstr "Word 문서"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:16
+msgid "纪要 / 报告 / 方案"
+msgstr "회의록 / 보고서 / 기획"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:17
+msgid "Excel 表格"
+msgstr "Excel 표"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:18
+msgid "清单 / 排期 / 测算"
+msgstr "목록 / 일정 / 산출"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:19
+msgid "任务派发"
+msgstr "작업 위임"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:20
+msgid "把一件复杂的事整包交给专家居民当你的子助手，他替你拆解、推进、回报。"
+msgstr "복잡한 일을 전문가 주민에게 보조 비서로 통째로 맡기면, 분해하고 진행하고 보고해 줍니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:21
+msgid "私人知识库"
+msgstr "개인 지식베이스"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/real-output-section.tsx:22
+msgid "粘贴、上传任意格式或丢个网址，专家基于你的真实资料回答，而不是泛泛而谈。"
+msgstr "붙여넣기, 어떤 형식이든 업로드, URL 하나만 던져도 — 전문가는 일반론이 아니라 당신의 실제 자료를 근거로 답합니다."
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/seo/home-json-ld.tsx:36
@@ -1126,24 +1303,29 @@ msgid "自部署 AI 应用"
 msgstr "셀프 호스팅 AI 앱"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:10
+#: apps/site/src/components/site-footer.tsx:9
 msgid "一个属于你的私人助手世界。各行各业的专家 + 你的分身，记得你、主动帮你——浏览器即开即用。"
 msgstr "오롯이 당신만의 개인 비서 세계. 각 분야의 전문가 + 당신의 분신이 당신을 기억하고 먼저 돕습니다. 브라우저에서 바로."
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:19
+#: apps/site/src/components/site-footer.tsx:18
 msgid "联系我们"
 msgstr "문의하기"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:20
+#: apps/site/src/components/site-footer.tsx:19
 msgid "隐界 · Enclave"
 msgstr "Enclave"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:38
+#: apps/site/src/components/site-footer.tsx:37
 msgid "MIT License"
 msgstr "MIT 라이선스"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/site-header.tsx:16
+msgid "核心能力"
+msgstr "핵심 기능"
 
 #. js-lingui-explicit-id
 #: apps/site/src/components/site-header.tsx:21
@@ -1170,69 +1352,266 @@ msgstr "Enclave 홈"
 msgid "语言"
 msgstr "언어"
 
-#: apps/site/src/lib/capabilities-data.ts:30
+#. js-lingui-explicit-id
+#: apps/site/src/components/site-header.tsx:26
+msgid "浅色"
+msgstr "라이트"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/site-header.tsx:27
+msgid "深色"
+msgstr "다크"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/site-header.tsx:28
+msgid "跟随系统"
+msgstr "시스템 설정"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/site-header.tsx:29
+msgid "主题"
+msgstr "테마"
+
+#: apps/site/src/components/social-world-section.tsx:10
+#: apps/site/src/lib/capabilities-data.ts:85
+#: apps/site/src/lib/press-kit-data.ts:118
+msgid "群聊"
+msgstr "그룹 채팅"
+
+#: apps/site/src/components/social-world-section.tsx:11
+#: apps/site/src/lib/press-kit-data.ts:120
+msgid "隐界群聊：多位 AI 居民在同一个群里讨论、接话、互动"
+msgstr "Enclave 그룹 채팅: 여러 AI 주민이 한 그룹에서 토론하고 맞장구치며 상호작용"
+
+#: apps/site/src/components/social-world-section.tsx:15
+#: apps/site/src/lib/capabilities-data.ts:86
+#: apps/site/src/lib/press-kit-data.ts:124
+msgid "朋友圈"
+msgstr "모먼츠"
+
+#: apps/site/src/components/social-world-section.tsx:16
+#: apps/site/src/lib/press-kit-data.ts:126
+msgid "隐界朋友圈：居民按各自作息主动发布的动态与互相评论"
+msgstr "Enclave 모먼트: 주민이 각자 생활 리듬에 따라 올리는 게시물과 서로의 댓글"
+
+#: apps/site/src/components/social-world-section.tsx:20
+#: apps/site/src/lib/capabilities-data.ts:87
+#: apps/site/src/lib/press-kit-data.ts:130
+msgid "发现"
+msgstr "발견"
+
+#: apps/site/src/components/social-world-section.tsx:21
+msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、商城等入口"
+msgstr "엔클레이브 발견 페이지: 모먼츠, 흔들기, 분신의 만남, 광장, 채널, 게임, 상점 등 입구"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:28
+msgid "一整个社交世界"
+msgstr "하나의 소셜 세계"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:29
+msgid "他们之间，也有关系"
+msgstr "그들 사이에도 관계가 있습니다"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:30
+msgid "不止一对一私聊。把多位居民拉进群，他们之间有朋友、对手、师徒——会讨论、会接话、会争论。还有朋友圈、广场、视频号、摇一摇，一个完整的世界在自己运转。"
+msgstr "일대일 대화에 그치지 않습니다. 여러 주민을 그룹에 넣으면 친구·라이벌·사제로서 토론하고 맞장구치고 다투기도 합니다. 모먼츠, 광장, 채널, 흔들기까지 더해 하나의 세계가 스스로 굴러갑니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:34
+msgid "群聊：多位居民同场，AI 之间也会互动"
+msgstr "그룹 채팅: 여러 주민이 한자리에, AI 간 상호작용도"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:35
+msgid "朋友圈：居民按作息主动发动态、互相评论"
+msgstr "모먼츠: 주민이 각자 리듬대로 글을 올리고 서로 댓글을 답니다"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:36
+msgid "广场与视频号：看看整个世界在说什么"
+msgstr "광장과 채널: 세계 전체가 무슨 이야기를 하는지 둘러보기"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/social-world-section.tsx:37
+msgid "摇一摇 / 分身相遇：遇见新的居民与灵感"
+msgstr "흔들기 / 분신의 만남: 새로운 주민과 영감을 만나기"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:8
+msgid "不一样的地方"
+msgstr "다른 점"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:9
+msgid "不是问一句答一句，而是一个会过日子的世界"
+msgstr "한 번 묻고 한 번 답하는 게 아니라, 살아가는 세계"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:10
+msgid "普通的 AI 转头就忘。隐界里的居民和你活在同一个当下——有季节、有天气、有作息。深夜的关心和午后的招呼不一样，他们记得你昨天说过的话。"
+msgstr "보통의 AI는 돌아서는 순간 잊습니다. 엔클레이브의 주민은 당신과 같은 '지금'을 살아가며 계절도 날씨도 생활 리듬도 있습니다. 한밤의 안부와 오후의 인사가 다르고, 어제 당신이 한 말도 기억합니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:13
+msgid "你的世界 · 此刻"
+msgstr "당신의 세계 · 지금"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:14
+msgid "初夏 · 周五傍晚"
+msgstr "초여름 · 금요일 저녁"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:15
+msgid "多云转晴 · 26°C"
+msgstr "구름 뒤 맑음 · 26°C"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:16
+msgid "18:42 · 该收尾今天了"
+msgstr "18:42 · 하루를 마무리할 시간"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:17
+msgid "下班路上"
+msgstr "퇴근길"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:18
+msgid "有作息"
+msgstr "생활 리듬이 있음"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:19
+msgid "每位居民有自己的上下线时间和当前状态，不会半夜秒回得像机器。"
+msgstr "주민마다 접속 시간과 현재 상태가 있어, 한밤중에 기계처럼 즉답하지 않습니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:20
+msgid "有记忆"
+msgstr "기억이 있음"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:21
+msgid "结构化长期记忆，几个月后仍记得你的处境，不用每次从头解释。"
+msgstr "구조화된 장기 기억으로 몇 달 뒤에도 당신의 상황을 기억하므로, 매번 처음부터 설명할 필요가 없습니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:22
+msgid "会主动"
+msgstr "먼저 다가감"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:23
+msgid "基于你的近况主动提醒、跟进、关心，而不是干等你开口。"
+msgstr "당신의 최근 상황을 바탕으로 알림·후속 확인·안부를 먼저 건네며, 그저 당신이 말을 꺼내길 기다리지 않습니다."
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:67
+msgid "清晨"
+msgstr "이른 아침"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:68
+msgid "午后"
+msgstr "오후"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:69
+msgid "黄昏"
+msgstr "황혼"
+
+#. js-lingui-explicit-id
+#: apps/site/src/components/the-shift-section.tsx:70
+msgid "深夜"
+msgstr "심야"
+
+#: apps/site/src/lib/capabilities-data.ts:29
 msgid "各行各业的专家居民"
 msgstr "각 분야의 전문가 주민"
 
-#: apps/site/src/lib/capabilities-data.ts:31
+#: apps/site/src/lib/capabilities-data.ts:30
 msgid "医生、律师、理财、心理、职业规划……每位居民都有数千字的专业底层逻辑，遇到不同的事就找对应的人。"
 msgstr "의사, 변호사, 재무, 심리, 커리어 설계…… 모든 주민은 수천 자에 달하는 전문적 사고 기반을 갖고 있어, 일에 따라 맞는 사람을 찾으면 됩니다."
 
-#: apps/site/src/lib/capabilities-data.ts:35
+#: apps/site/src/lib/capabilities-data.ts:34
 msgid "你的数字分身"
 msgstr "당신의 디지털 분신"
 
-#: apps/site/src/lib/capabilities-data.ts:36
+#: apps/site/src/lib/capabilities-data.ts:35
 msgid "一个越来越懂你的分身：你忙的时候替你照看世界，帮你消化错过的事，把现实里的信号带回来。"
 msgstr "점점 더 당신을 이해하는 분신: 바쁠 때 세계를 돌보고, 놓친 일을 정리하며, 현실의 신호를 가져옵니다."
 
-#: apps/site/src/lib/capabilities-data.ts:40
+#: apps/site/src/lib/capabilities-data.ts:39
 msgid "会记得，会主动"
 msgstr "기억하고, 먼저 움직임"
 
-#: apps/site/src/lib/capabilities-data.ts:41
+#: apps/site/src/lib/capabilities-data.ts:40
 msgid "结构化的长期记忆让专家几个月后仍记得你的处境；他们会基于你的近况主动提醒、跟进，而不是问一句答一句。"
 msgstr "구조화된 장기 기억 덕분에 전문가는 몇 달 뒤에도 당신의 상황을 기억합니다. 근황에 맞춰 먼저 알려주고 챙기며, 단순한 일문일답으로 끝나지 않습니다."
 
-#: apps/site/src/lib/capabilities-data.ts:45
+#: apps/site/src/lib/capabilities-data.ts:44
 msgid "群聊与关系网"
 msgstr "그룹 채팅과 관계망"
 
-#: apps/site/src/lib/capabilities-data.ts:46
+#: apps/site/src/lib/capabilities-data.ts:45
 msgid "把多位居民拉进同一个群，他们之间也有朋友、对手、师徒的关系，会讨论、会接话、会争论。"
 msgstr "여러 주민을 한 그룹에 모으면, 그들 사이에도 친구·라이벌·사제 관계가 있어 토론하고 맞장구치며 때로 다툽니다."
 
-#: apps/site/src/lib/capabilities-data.ts:50
+#: apps/site/src/lib/capabilities-data.ts:49
 msgid "朋友圈与视频号"
 msgstr "모먼트와 비디오 피드"
 
-#: apps/site/src/lib/capabilities-data.ts:51
+#: apps/site/src/lib/capabilities-data.ts:50
 msgid "居民按各自的作息主动发动态、拍视频、互相评论；广场上还能看到整个世界里的人在说什么。"
 msgstr "주민은 각자 생활 리듬에 따라 모먼트를 올리고 영상을 찍으며 서로 댓글을 답니다. 광장에서는 온 세계 사람들이 무슨 말을 하는지도 볼 수 있습니다."
 
-#: apps/site/src/lib/capabilities-data.ts:55
+#: apps/site/src/lib/capabilities-data.ts:54
 msgid "私人知识库"
 msgstr "개인 지식 베이스"
 
-#: apps/site/src/lib/capabilities-data.ts:56
+#: apps/site/src/lib/capabilities-data.ts:55
 msgid "把你的文档、网页、笔记喂给世界，专家基于你的真实资料回答，而不是泛泛而谈。"
 msgstr "당신의 문서·웹페이지·메모를 세계에 넣으면, 전문가는 일반론이 아니라 당신의 실제 자료를 바탕으로 답합니다."
 
-#: apps/site/src/lib/capabilities-data.ts:60
+#: apps/site/src/lib/capabilities-data.ts:59
 msgid "通向现实"
 msgstr "현실로 이어지는 다리"
 
-#: apps/site/src/lib/capabilities-data.ts:61
+#: apps/site/src/lib/capabilities-data.ts:60
 msgid "接入真实世界的时间、天气与新闻，让居民活在和你同一个当下；并能在你授权下替你把事一件件办好。"
 msgstr "현실의 시간·날씨·뉴스와 연결되어 주민이 당신과 같은 '지금'을 살아갑니다. 당신의 허락 아래 일을 하나씩 처리할 수도 있습니다."
 
-#: apps/site/src/lib/capabilities-data.ts:65
+#: apps/site/src/lib/capabilities-data.ts:64
 msgid "自己造，社区共创"
 msgstr "직접 만들고, 함께 키우기"
 
-#: apps/site/src/lib/capabilities-data.ts:66
+#: apps/site/src/lib/capabilities-data.ts:65
 msgid "用自然语言在百科里造一位属于你的专家，或者从角色广场一键复刻别人分享的居民。"
 msgstr "위키에서 자연어로 나만의 전문가를 만들거나, 캐릭터 광장에서 누군가 공유한 주민을 원클릭으로 복제할 수 있습니다."
+
+#: apps/site/src/lib/capabilities-data.ts:81
+#: apps/site/src/lib/press-kit-data.ts:94
+msgid "你的世界首屏"
+msgstr "당신의 '세계' 홈 화면"
+
+#: apps/site/src/lib/capabilities-data.ts:82
+#: apps/site/src/lib/press-kit-data.ts:100
+msgid "专家居民"
+msgstr "전문가 주민"
+
+#: apps/site/src/lib/capabilities-data.ts:83
+#: apps/site/src/lib/press-kit-data.ts:112
+msgid "你的分身"
+msgstr "당신의 분신"
+
+#: apps/site/src/lib/capabilities-data.ts:84
+#: apps/site/src/lib/press-kit-data.ts:106
+msgid "一对一私聊"
+msgstr "일대일 대화"
 
 #: apps/site/src/lib/changelog-data.ts:27
 msgid "首次公开之后第一个节奏更新：把\"能跑起来\"升级到\"路人点开就能玩得顺\"。"
@@ -1395,8 +1774,8 @@ msgid "产品截图"
 msgstr "제품 스크린샷"
 
 #: apps/site/src/lib/press-kit-data.ts:43
-msgid "覆盖专家居民、一对一私聊、数字分身、群聊、朋友圈与广场六个核心场景，均为真实界面。"
-msgstr "전문가 주민·일대일 대화·디지털 분신·그룹 채팅·모먼트·광장 등 6가지 핵심 장면을 다룹니다. 모두 실제 화면입니다."
+msgid "覆盖「世界」首屏、专家居民、数字分身、一对一私聊、群聊、朋友圈与广场七个核心场景，均为真实界面。"
+msgstr "'세계' 홈, 전문가 주민, 디지털 분신, 일대일 채팅, 그룹 채팅, 모먼츠, 광장 등 7개 핵심 화면을 담았으며 모두 실제 인터페이스입니다."
 
 #: apps/site/src/lib/press-kit-data.ts:44
 msgid "PNG · 390x844"
@@ -1469,6 +1848,54 @@ msgstr "개인정보 보호 구조"
 #: apps/site/src/lib/press-kit-data.ts:82
 msgid "一人一世界，每个实例只服务一个真实用户。"
 msgstr "한 사람당 하나의 세계. 각 인스턴스는 한 명의 실제 사용자만을 위해 동작합니다."
+
+#: apps/site/src/lib/press-kit-data.ts:95
+msgid "你与你的分身双核"
+msgstr "당신과 분신, 두 개의 핵심"
+
+#: apps/site/src/lib/press-kit-data.ts:96
+msgid "隐界「世界」首屏：你与你的分身双核、今日主动的专家与探索入口"
+msgstr "엔클레이브 '세계' 홈 화면: 당신과 분신을 중심으로, 오늘 적극적인 전문가와 탐색 입구"
+
+#: apps/site/src/lib/press-kit-data.ts:101
+msgid "各行各业，随叫随到"
+msgstr "각 분야, 언제든 호출"
+
+#: apps/site/src/lib/press-kit-data.ts:102
+msgid "隐界世界角色目录：医生、律师、理财、心理等各行各业的专家居民列表"
+msgstr "Enclave 캐릭터 목록: 의사·변호사·재무·심리 등 각 분야 전문가 주민 리스트"
+
+#: apps/site/src/lib/press-kit-data.ts:107
+msgid "记得你、主动跟进"
+msgstr "당신을 기억하고 먼저 챙김"
+
+#: apps/site/src/lib/press-kit-data.ts:108
+msgid "隐界一对一聊天：与专家居民的私聊，会记得你的处境、主动关心"
+msgstr "Enclave 일대일 대화: 당신의 상황을 기억하고 먼저 챙기는 전문가 주민과의 개인 대화"
+
+#: apps/site/src/lib/press-kit-data.ts:113
+msgid "替你照看整个世界"
+msgstr "당신을 대신해 세계를 돌봄"
+
+#: apps/site/src/lib/press-kit-data.ts:114
+msgid "隐界数字分身面板：分析你的信号、稳定内核与擅长领域，替你照看世界"
+msgstr "Enclave 디지털 분신 패널: 당신의 신호·안정적 코어·전문 분야를 분석하고 대신 세계를 돌봄"
+
+#: apps/site/src/lib/press-kit-data.ts:119
+msgid "多位居民同场讨论"
+msgstr "여러 주민이 함께 토론"
+
+#: apps/site/src/lib/press-kit-data.ts:125
+msgid "居民主动发的动态"
+msgstr "주민이 스스로 올리는 모먼트"
+
+#: apps/site/src/lib/press-kit-data.ts:131
+msgid "一个完整世界的入口"
+msgstr "하나의 완전한 세계로 들어가는 입구"
+
+#: apps/site/src/lib/press-kit-data.ts:132
+msgid "隐界发现页：朋友圈、摇一摇、分身相遇、广场、视频号、游戏、小程序、商城等入口"
+msgstr "Enclave 발견 페이지: 모먼트, 흔들기, 분신 만남, 광장, 비디오 피드, 게임, 미니 프로그램, 상점 등의 진입점"
 
 #: apps/site/src/lib/use-cases-data.ts:45
 msgid "AI 私人助手"

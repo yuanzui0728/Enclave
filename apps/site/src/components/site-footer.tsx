@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { getServerI18n } from "@/i18n/server";
 import type { SupportedLocale } from "@/lib/locales";
@@ -28,9 +27,9 @@ export async function SiteFooter({ locale }: { locale: SupportedLocale }) {
           <div className="flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
             <span
               aria-hidden="true"
-              className="grid h-6 w-6 place-items-center rounded-md bg-(--brand-gradient) shadow-(--shadow-soft)"
+              className="grid h-6 w-6 place-items-center rounded-md bg-(--brand-gradient) text-[13px] font-semibold text-white shadow-(--shadow-soft)"
             >
-              <Image src="/favicon.png" alt="" aria-hidden="true" width={18} height={18} className="rounded-[5px]" />
+              隐
             </span>
             <span>{labels.brand}</span>
           </div>

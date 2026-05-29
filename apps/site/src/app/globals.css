@@ -1,6 +1,142 @@
 @import "tailwindcss";
 @import "@yinjie/ui/tokens.css";
 
+/*
+  官网紫调双主题 —— 本地覆盖，仅作用于 site 包。
+  绝不改 packages/ui/src/tokens.css 的 :root（桌面 / cloud-console / wiki 共用）。
+  白天「兰花薰衣紫」#7C5BD9 / #C77DFF；夜间「深空夜紫」#8B7BF0 / 暖金 #E7B85C。
+  主题由 <html data-theme="light|dark"> 切换（layout 内联脚本 paint 前生效，无闪烁）。
+*/
+:root {
+  color-scheme: light;
+
+  /* 背景：白底 + 紫调径向光晕 */
+  --page-gradient: linear-gradient(180deg, #fcfbff, #f3efff);
+  --bg-canvas: #fbfaff;
+  --bg-canvas-elevated: #ffffff;
+  --bg-accent:
+    radial-gradient(ellipse at 20% 0%, rgba(124, 91, 217, 0.16), transparent 55%),
+    radial-gradient(ellipse at 85% 18%, rgba(199, 125, 255, 0.12), transparent 50%),
+    radial-gradient(ellipse at 40% 95%, rgba(139, 123, 240, 0.1), transparent 50%);
+  --bg-glow-top: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+  --bg-glow-bottom: linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
+
+  /* Surface：白 + 紫微调 */
+  --surface-primary: rgba(255, 255, 255, 0.92);
+  --surface-shell: rgba(250, 248, 255, 0.9);
+  --surface-section: #ffffff;
+  --surface-card: rgba(255, 255, 255, 0.98);
+  --surface-card-hover: #fbfaff;
+  --surface-soft: rgba(124, 91, 217, 0.07);
+  --surface-secondary: rgba(255, 255, 255, 0.78);
+  --surface-panel: var(--surface-secondary);
+  --surface-tertiary: rgba(124, 91, 217, 0.1);
+  --surface-overlay: rgba(250, 248, 255, 0.96);
+  --surface-input: rgba(255, 255, 255, 0.94);
+
+  /* 边框：紫调透明 */
+  --border-faint: rgba(90, 60, 160, 0.1);
+  --border-subtle: rgba(90, 60, 160, 0.16);
+  --border-strong: rgba(90, 60, 160, 0.24);
+  --border-brand: rgba(124, 91, 217, 0.32);
+  --hairline-light: rgba(255, 255, 255, 0.5);
+
+  /* 文字：紫墨系（去暖棕） */
+  --text-primary: #1a1430;
+  --text-secondary: #423a5c;
+  --text-muted: #6b6385;
+  --text-dim: #9890ad;
+  --text-on-brand: #ffffff;
+
+  /* 品牌色：兰花薰衣紫 */
+  --brand-primary: #7c5bd9;
+  --brand-secondary: #9b7de8;
+  --brand-accent: #c77dff;
+  --brand-soft: rgba(124, 91, 217, 0.08);
+  --brand-gradient: linear-gradient(135deg, rgba(199, 125, 255, 0.96), rgba(124, 91, 217, 0.96));
+
+  /* 状态色 */
+  --state-success-bg: rgba(16, 185, 129, 0.1);
+  --state-success-text: #047857;
+  --state-warning-bg: rgba(245, 158, 11, 0.1);
+  --state-warning-text: #92400e;
+  --state-danger-bg: rgba(239, 68, 68, 0.1);
+  --state-danger-text: #991b1b;
+  --state-info-bg: rgba(124, 91, 217, 0.1);
+  --state-info-text: #5b3aa8;
+
+  /* 阴影：紫调投影 */
+  --shadow-shell: 0 20px 64px rgba(60, 40, 110, 0.16);
+  --shadow-section: 0 12px 32px rgba(60, 40, 110, 0.08);
+  --shadow-card: 0 8px 24px rgba(60, 40, 110, 0.1);
+  --shadow-soft: 0 4px 16px rgba(60, 40, 110, 0.07);
+  --shadow-lift: 0 18px 44px rgba(60, 40, 110, 0.14);
+  --shadow-overlay: 0 24px 52px rgba(60, 40, 110, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(124, 91, 217, 0.28);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* 深空夜紫 */
+  --page-gradient: linear-gradient(180deg, #0e0b1a, #080611);
+  --bg-canvas: #0e0b1a;
+  --bg-canvas-elevated: #16122a;
+  --bg-accent:
+    radial-gradient(ellipse at 20% 0%, rgba(139, 123, 240, 0.2), transparent 55%),
+    radial-gradient(ellipse at 85% 18%, rgba(124, 91, 217, 0.16), transparent 50%),
+    radial-gradient(ellipse at 40% 95%, rgba(231, 184, 92, 0.07), transparent 50%);
+  --bg-glow-top: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  --bg-glow-bottom: linear-gradient(0deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+
+  --surface-primary: rgba(30, 24, 55, 0.82);
+  --surface-shell: rgba(18, 15, 33, 0.85);
+  --surface-section: #14112a;
+  --surface-card: rgba(32, 26, 58, 0.92);
+  --surface-card-hover: #241d44;
+  --surface-soft: rgba(139, 123, 240, 0.12);
+  --surface-secondary: rgba(28, 22, 52, 0.7);
+  --surface-panel: var(--surface-secondary);
+  --surface-tertiary: rgba(139, 123, 240, 0.16);
+  --surface-overlay: rgba(22, 18, 40, 0.96);
+  --surface-input: rgba(32, 26, 58, 0.9);
+
+  --border-faint: rgba(180, 165, 240, 0.1);
+  --border-subtle: rgba(180, 165, 240, 0.16);
+  --border-strong: rgba(180, 165, 240, 0.26);
+  --border-brand: rgba(139, 123, 240, 0.4);
+  --hairline-light: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #f2effb;
+  --text-secondary: #c9c2e4;
+  --text-muted: #948bb5;
+  --text-dim: #6e6690;
+  --text-on-brand: #0e0b1a;
+
+  --brand-primary: #8b7bf0;
+  --brand-secondary: #a99bf5;
+  --brand-accent: #e7b85c;
+  --brand-soft: rgba(139, 123, 240, 0.14);
+  --brand-gradient: linear-gradient(135deg, rgba(169, 155, 245, 0.96), rgba(139, 123, 240, 0.96));
+
+  --state-success-bg: rgba(16, 185, 129, 0.14);
+  --state-success-text: #6ee7b7;
+  --state-warning-bg: rgba(245, 158, 11, 0.16);
+  --state-warning-text: #fcd34d;
+  --state-danger-bg: rgba(239, 68, 68, 0.16);
+  --state-danger-text: #fca5a5;
+  --state-info-bg: rgba(139, 123, 240, 0.16);
+  --state-info-text: #c4b5fd;
+
+  --shadow-shell: 0 20px 64px rgba(0, 0, 0, 0.5);
+  --shadow-section: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 18px 44px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: 0 24px 52px rgba(0, 0, 0, 0.55);
+  --shadow-focus: 0 0 0 3px rgba(139, 123, 240, 0.4);
+}
+
 @theme inline {
   --color-brand: var(--brand-primary);
   --color-brand-secondary: var(--brand-secondary);
@@ -17,7 +153,7 @@
 
 html {
   scroll-behavior: smooth;
-  background: linear-gradient(180deg, #fffdf7, #fff8ee);
+  background: var(--page-gradient);
 }
 
 body {
@@ -55,7 +191,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(249, 115, 22, 0.16);
+  background: rgba(124, 91, 217, 0.18);
   color: var(--text-primary);
 }
 

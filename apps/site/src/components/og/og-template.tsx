@@ -20,7 +20,7 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
         flexDirection: "column",
         justifyContent: "center",
         padding: "72px",
-        background: "linear-gradient(135deg, #fffcf5 0%, #fff4e0 60%, #ffe4bf 100%)",
+        background: "linear-gradient(135deg, #fbfaff 0%, #f3efff 60%, #e9e0ff 100%)",
         fontFamily: "sans-serif",
       }}
     >
@@ -37,7 +37,7 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: "linear-gradient(135deg, #fbbf24, #f97316)",
+            background: "linear-gradient(135deg, #c77dff, #7c5bd9)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -49,10 +49,10 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
           隐
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ color: "#1a0f05", fontSize: 22, fontWeight: 600 }}>
+          <span style={{ color: "#1a1430", fontSize: 22, fontWeight: 600 }}>
             {brandLine}
           </span>
-          <span style={{ color: "#7a6454", fontSize: 14 }}>{locale}</span>
+          <span style={{ color: "#6b6385", fontSize: 14 }}>{locale}</span>
         </div>
       </div>
       <div
@@ -60,7 +60,7 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
           fontSize: 64,
           fontWeight: 700,
           lineHeight: 1.15,
-          background: "linear-gradient(120deg, #f97316, #fb923c)",
+          background: "linear-gradient(120deg, #7c5bd9, #c77dff)",
           backgroundClip: "text",
           WebkitBackgroundClip: "text",
           color: "transparent",
@@ -72,7 +72,7 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
       <div
         style={{
           marginTop: 32,
-          color: "#4a3728",
+          color: "#423a5c",
           fontSize: 28,
           maxWidth: "82%",
           lineHeight: 1.4,
@@ -85,7 +85,7 @@ export function renderOgTemplate(locale: SupportedLocale, i18n: I18n) {
         style={{
           display: "flex",
           gap: 24,
-          color: "#7a6454",
+          color: "#6b6385",
           fontSize: 22,
         }}
       >

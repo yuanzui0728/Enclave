@@ -80,7 +80,7 @@ export async function BYOKAndCloudSection({
                 rel="noreferrer"
                 data-cta="byok-github"
                 data-cta-location="byok-section"
-                className="inline-flex items-center gap-2 rounded-xl border border-(--border-subtle) bg-(--surface-base) px-4 py-2.5 text-sm font-semibold transition hover:border-(--brand-primary)"
+                className="inline-flex items-center gap-2 rounded-xl border border-(--border-subtle) bg-(--surface-card) px-4 py-2.5 text-sm font-semibold transition hover:border-(--brand-primary)"
               >
                 <Github size={16} />
                 {labels.selfHostCta1}
