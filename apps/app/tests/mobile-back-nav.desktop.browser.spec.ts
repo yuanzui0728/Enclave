@@ -123,6 +123,33 @@ test("从「世界」tab 进入镜像入口页，返回回到世界 tab", async 
   }
 });
 
+test("移动端 视频号→观看历史 返回回到视频号(/discover/channels)", async ({
+  page,
+}) => {
+  await page.goto(`${BASE_URL}/tabs/world`);
+  await expect.poll(() => pathnameOf(page)).toBe("/tabs/world");
+
+  // 世界 tab 的「视频号」入口 → /discover/channels（带 returnPath）。
+  const channelsTile = page.locator('a[href^="/discover/channels"]').first();
+  await expect(channelsTile).toBeVisible();
+  await channelsTile.click();
+  await expect.poll(() => pathnameOf(page)).toBe("/discover/channels");
+  await assertNoCrash(page, "channels");
+
+  // 顶部「观看历史」→ /channels/history。
+  await page.locator('button[aria-label="观看历史"]:visible').first().click();
+  await expect.poll(() => pathnameOf(page)).toBe("/channels/history");
+  await assertNoCrash(page, "channel-history");
+
+  // 返回应回到 /discover/channels（来处），而非桌面 tab 路径 /tabs/channels。
+  await clickBack(page);
+  await expect
+    .poll(() => pathnameOf(page), {
+      message: "观看历史返回应回到 /discover/channels",
+    })
+    .toBe("/discover/channels");
+});
+
 test("从「我」tab 进入镜像入口页，返回回到我 tab", async ({ page }) => {
   await page.goto(`${BASE_URL}/tabs/profile`);
   await expect.poll(() => pathnameOf(page)).toBe("/tabs/profile");
