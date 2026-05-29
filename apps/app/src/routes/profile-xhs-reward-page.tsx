@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import {
   generateXhsPromoCopy,
   generateXhsPromoImage,
+  getMyCloudBillableCatalog,
   getMyXhsRewardSummary,
   resolveCoreApiBaseUrl,
   submitMyXhsRewardClaim,
@@ -94,6 +95,21 @@ export function ProfileXhsRewardPage() {
     refetchOnMount: "always",
   });
 
+  // 按量付费：生成配图属特殊高消耗行为，从钱包扣费。拉计费目录展示「本次将消耗 ¥X」。
+  const billableCatalogQuery = useQuery({
+    queryKey: ["cloud-billable-catalog", accessToken],
+    queryFn: () => getMyCloudBillableCatalog(accessToken ?? ""),
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+  });
+  const imagePriceCents =
+    billableCatalogQuery.data?.actions.find((a) => a.key === "image.generate")
+      ?.priceCents ?? null;
+  const imagePriceLabel =
+    imagePriceCents && imagePriceCents > 0
+      ? `¥${(imagePriceCents / 100).toFixed(2)}`
+      : null;
+
   const copyMutation = useMutation({
     mutationFn: () => generateXhsPromoCopy({ count: 3 }, baseUrl),
     onSuccess: (result) => {
@@ -137,8 +153,11 @@ export function ProfileXhsRewardPage() {
   });
 
   const submitMutation = useMutation({
+    // submit 是 cloud-api 端点（同 summary / listClaims），不传 baseUrl，让它走
+    // cloudApiBaseUrl provider；传 baseUrl(=core/world 的 apiBaseUrl) 会在原生壳/
+    // 远程 web 这种 cloud 与 world 分域名的部署里把上传打到 world 主机 → 404。
     mutationFn: (payload: FormData) =>
-      submitMyXhsRewardClaim(payload, accessToken ?? "", baseUrl),
+      submitMyXhsRewardClaim(payload, accessToken ?? ""),
     onSuccess: () => {
       setFeedback({
         tone: "success",
@@ -266,6 +285,9 @@ export function ProfileXhsRewardPage() {
   const summary = summaryQuery.data;
   if (!summary) return null;
 
+  // 名额用完时禁用提交并提示，避免用户填完再撞后端 400「已达上限」的无效往返。
+  const quotaUsedUp = summary.remainingQuota <= 0;
+
   return (
     <AppPage
       className="bg-[color:var(--bg-canvas)] px-4 pt-6"
@@ -294,7 +316,7 @@ export function ProfileXhsRewardPage() {
 
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         {/* 规则说明 */}
-        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-6 shadow-none">
+        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[image:var(--surface-card-gradient)] px-6 py-6 shadow-none">
           {isDesktopLayout ? (
             <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">
               {summary.title || t(msg`发小红书赢会员`)}
@@ -382,14 +404,21 @@ export function ProfileXhsRewardPage() {
                 <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                   {t(msg`第二步 · 生成配图（可选）`)}
                 </div>
-                <Button
-                  variant="secondary"
-                  className="rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
-                  disabled={imageMutation.isPending}
-                  onClick={() => imageMutation.mutate()}
-                >
-                  {imageMutation.isPending ? t(msg`生成中…`) : t(msg`生成配图`)}
-                </Button>
+                <div className="flex flex-col items-end gap-1">
+                  <Button
+                    variant="secondary"
+                    className="rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
+                    disabled={imageMutation.isPending}
+                    onClick={() => imageMutation.mutate()}
+                  >
+                    {imageMutation.isPending ? t(msg`生成中…`) : t(msg`生成配图`)}
+                  </Button>
+                  {imagePriceLabel ? (
+                    <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+                      {t(msg`本次将消耗 ${imagePriceLabel}`)}
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <p className="mt-2 text-xs text-[color:var(--text-muted)]">
                 {t(msg`这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。`)}
@@ -453,10 +482,16 @@ export function ProfileXhsRewardPage() {
                 ) : null}
               </div>
 
+              {quotaUsedUp ? (
+                <InlineNotice className="mt-4" tone="muted">
+                  {t(msg`你的发帖奖励名额已用完，暂时无法继续提交。`)}
+                </InlineNotice>
+              ) : null}
+
               <Button
                 variant="primary"
                 className="mt-5 w-full rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] active:bg-[color:var(--brand-primary)]"
-                disabled={submitMutation.isPending}
+                disabled={submitMutation.isPending || quotaUsedUp}
                 onClick={handleSubmit}
               >
                 {submitMutation.isPending ? t(msg`提交中…`) : t(msg`提交审核`)}

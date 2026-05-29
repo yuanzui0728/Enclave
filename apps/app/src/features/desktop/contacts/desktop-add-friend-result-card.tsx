@@ -108,7 +108,7 @@ export function DesktopAddFriendResultCard({
           : {
               badge: msg`可添加到通讯录`,
               badgeClassName:
-                "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--state-success-text)]",
+                "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
               helperText: msg`发送验证申请后，对方通过即可成为朋友。`,
               icon: UserPlus,
               primaryLabel: actionPending
@@ -218,10 +218,10 @@ export function DesktopAddFriendResultCard({
             className={cn(
               "rounded-[8px] px-5 shadow-none",
               status === "pending"
-                ? "bg-[color:var(--state-info-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-info-bg)]"
+                ? "bg-[color:var(--state-info-solid)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-info-solid)]"
                 : undefined,
               status === "blocked"
-                ? "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
+                ? "bg-[color:var(--state-danger-solid)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-solid)]"
                 : undefined,
             )}
           >

@@ -1010,7 +1010,7 @@ function matchesChannelAuthorCollection(
 function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListItem) {
   if (post.sourceKind === "live_clip") {
     return {
-      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <RadioTower size={14} />,
       label: t(msg`直播回放`),
       overlayClassName:
@@ -1026,7 +1026,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
 
   if (post.mediaType === "video") {
     return {
-      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <PlaySquare size={14} />,
       label: t(msg`视频`),
       overlayClassName:
@@ -1048,7 +1048,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   // 既误导分类又跟整套 audio 沉浸式播放 UI 不一致。给 audio 一套独立陈述。
   if (post.mediaType === "audio") {
     return {
-      badgeClassName: "bg-black/45 text-[color:var(--text-on-brand)]",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <Music2 size={14} />,
       label: t(msg`音乐`),
       overlayClassName:
@@ -1210,7 +1210,7 @@ function MobileChannelAuthorStatusCard({
       className={cn(
         "rounded-[var(--radius-lg)] border px-4 py-5 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

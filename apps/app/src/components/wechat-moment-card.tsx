@@ -719,7 +719,7 @@ function FloatingHeart({ liked }: { liked: boolean }) {
         className={cn(
           "drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)]",
           liked
-            ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
+            ? "fill-[color:var(--state-danger-solid)] text-[color:var(--state-danger-text)]"
             : "fill-[color:var(--surface-card)]/0 text-[color:var(--text-on-brand)]/90",
         )}
         style={style}
