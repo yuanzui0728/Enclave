@@ -372,11 +372,13 @@ export function GamesPage() {
     if (gameId === "yinjie-farm") {
       // farm 是独立路由 /tabs/games/yinjie-farm。
       // 用 safeReturnPath（用户真正的来源）；若没有，从 /discover/games 进
-      //   farm 时 fallback 到 /tabs/discover，避免 farm → 返回 → /tabs/games
-      //   → 返回 → history.back 又跳回 farm 形成死循环。
+      //   farm 时 fallback 到探索家（移动=世界/桌面=发现），避免 farm → 返回
+      //   → /tabs/games → 返回 → history.back 又跳回 farm 形成死循环。
       const farmReturnPath =
         safeReturnPath ??
-        (normalizedPathname === "/discover/games" ? "/tabs/discover" : undefined);
+        (normalizedPathname === "/discover/games"
+          ? resolveExploreHomePath(isDesktopLayout)
+          : undefined);
       void navigate({
         to: "/tabs/games/yinjie-farm",
         search: farmReturnPath
