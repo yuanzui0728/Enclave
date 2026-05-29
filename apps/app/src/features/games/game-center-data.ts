@@ -469,63 +469,63 @@ export const gameCenterEvents: GameCenterEvent[] = [
 export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> = {
   forest: {
     badgeClassName:
-      "border-[rgba(47,122,63,0.14)] bg-[rgba(244,252,247,0.92)] text-[#2f7a3f]",
+      "border-[rgba(67, 47, 122, 0.14)] bg-[rgba(246, 244, 252, 0.92)] text-[#432f7a]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#214c33_0%,#2f7a3f_40%,#77b667_100%)] text-white",
-    iconClassName: "bg-[rgba(47,122,63,0.14)] text-[#2f7a3f]",
+      "bg-[linear-gradient(135deg,#2c214c_0%,#432f7a_40%,#7c67b6_100%)] text-white",
+    iconClassName: "bg-[rgba(67, 47, 122, 0.14)] text-[#432f7a]",
     mutedPanelClassName:
-      "border-[rgba(47,122,63,0.12)] bg-[linear-gradient(180deg,rgba(245,252,247,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#2f7a3f]",
+      "border-[rgba(67, 47, 122, 0.12)] bg-[linear-gradient(180deg,rgba(247, 245, 252, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#432f7a]",
   },
   gold: {
     badgeClassName:
-      "border-[rgba(180,123,23,0.14)] bg-[rgba(255,249,235,0.92)] text-[#b47b17]",
+      "border-[rgba(72, 39, 164, 0.14)] bg-[rgba(242, 239, 251, 0.92)] text-[#4827a4]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#5c4015_0%,#c78b23_48%,#f2c15b_100%)] text-white",
-    iconClassName: "bg-[rgba(180,123,23,0.14)] text-[#b47b17]",
+      "bg-[linear-gradient(135deg,#28155c_0%,#532cbe_48%,#8d70dd_100%)] text-white",
+    iconClassName: "bg-[rgba(72, 39, 164, 0.14)] text-[#4827a4]",
     mutedPanelClassName:
-      "border-[rgba(180,123,23,0.12)] bg-[linear-gradient(180deg,rgba(255,250,239,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#b47b17]",
+      "border-[rgba(72, 39, 164, 0.12)] bg-[linear-gradient(180deg,rgba(245, 242, 252, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#4827a4]",
   },
   ocean: {
     badgeClassName:
-      "border-[rgba(39,111,197,0.14)] bg-[rgba(240,247,255,0.92)] text-[#276fc5]",
+      "border-[rgba(84, 45, 191, 0.14)] bg-[rgba(245, 243, 252, 0.92)] text-[#542dbf]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#123764_0%,#276fc5_46%,#63b4f4_100%)] text-white",
-    iconClassName: "bg-[rgba(39,111,197,0.14)] text-[#276fc5]",
+      "bg-[linear-gradient(135deg,#2a1660_0%,#542dbf_46%,#9378df_100%)] text-white",
+    iconClassName: "bg-[rgba(84, 45, 191, 0.14)] text-[#542dbf]",
     mutedPanelClassName:
-      "border-[rgba(39,111,197,0.12)] bg-[linear-gradient(180deg,rgba(241,247,255,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#276fc5]",
+      "border-[rgba(84, 45, 191, 0.12)] bg-[linear-gradient(180deg,rgba(246, 244, 252, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#542dbf]",
   },
   violet: {
     badgeClassName:
-      "border-[rgba(121,82,179,0.14)] bg-[rgba(246,241,255,0.92)] text-[#7952b3]",
+      "border-[rgba(108, 82, 179, 0.14)] bg-[rgba(246, 244, 252, 0.92)] text-[#6c52b3]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#352050_0%,#7952b3_46%,#b38cff_100%)] text-white",
-    iconClassName: "bg-[rgba(121,82,179,0.14)] text-[#7952b3]",
+      "bg-[linear-gradient(135deg,#2d2050_0%,#6c52b3_46%,#b5a2e9_100%)] text-white",
+    iconClassName: "bg-[rgba(108, 82, 179, 0.14)] text-[#6c52b3]",
     mutedPanelClassName:
-      "border-[rgba(121,82,179,0.12)] bg-[linear-gradient(180deg,rgba(246,243,255,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#7952b3]",
+      "border-[rgba(108, 82, 179, 0.12)] bg-[linear-gradient(180deg,rgba(247, 245, 253, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#6c52b3]",
   },
   sunset: {
     badgeClassName:
-      "border-[rgba(214,94,47,0.14)] bg-[rgba(255,244,239,0.92)] text-[#d65e2f]",
+      "border-[rgba(94, 53, 208, 0.14)] bg-[rgba(245, 242, 252, 0.92)] text-[#5e35d0]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#6b2b18_0%,#d65e2f_48%,#f8a65c_100%)] text-white",
-    iconClassName: "bg-[rgba(214,94,47,0.14)] text-[#d65e2f]",
+      "bg-[linear-gradient(135deg,#2f196a_0%,#5e35d0_48%,#9175df_100%)] text-white",
+    iconClassName: "bg-[rgba(94, 53, 208, 0.14)] text-[#5e35d0]",
     mutedPanelClassName:
-      "border-[rgba(214,94,47,0.12)] bg-[linear-gradient(180deg,rgba(255,245,240,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#d65e2f]",
+      "border-[rgba(94, 53, 208, 0.12)] bg-[linear-gradient(180deg,rgba(245, 243, 252, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#5e35d0]",
   },
   mint: {
     badgeClassName:
-      "border-[rgba(15,123,117,0.14)] bg-[rgba(238,251,249,0.92)] text-[#0f7b75]",
+      "border-[rgba(49, 26, 112, 0.14)] bg-[rgba(241, 238, 251, 0.92)] text-[#311a70]",
     heroCardClassName:
-      "bg-[linear-gradient(135deg,#0d3a39_0%,#0f7b75_44%,#6bd8c7_100%)] text-white",
-    iconClassName: "bg-[rgba(15,123,117,0.14)] text-[#0f7b75]",
+      "bg-[linear-gradient(135deg,#190d3a_0%,#311a70_44%,#886bd8_100%)] text-white",
+    iconClassName: "bg-[rgba(49, 26, 112, 0.14)] text-[#311a70]",
     mutedPanelClassName:
-      "border-[rgba(15,123,117,0.12)] bg-[linear-gradient(180deg,rgba(239,251,249,0.98),rgba(255,255,255,0.94))]",
-    softTextClassName: "text-[#0f7b75]",
+      "border-[rgba(49, 26, 112, 0.12)] bg-[linear-gradient(180deg,rgba(242, 239, 251, 0.98),rgba(255, 255, 255, 0.94))]",
+    softTextClassName: "text-[#311a70]",
   },
 };
 

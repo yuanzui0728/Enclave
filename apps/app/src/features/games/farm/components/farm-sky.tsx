@@ -27,12 +27,12 @@ export function FarmSky({ children }: FarmSkyProps) {
         .farm-sky__sun {
           animation: farm-sky-sun 22s linear infinite;
           transform-origin: center;
-          filter: drop-shadow(0 2px 6px rgba(255,200,80,0.55));
+          filter: drop-shadow(0 2px 6px rgba(142, 113, 222, 0.55));
         }
         .farm-sky__cloud {
           position: absolute;
           opacity: 0.75;
-          filter: drop-shadow(0 2px 4px rgba(255,255,255,0.6));
+          filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.6));
           will-change: transform;
         }
         .farm-sky__cloud--a {

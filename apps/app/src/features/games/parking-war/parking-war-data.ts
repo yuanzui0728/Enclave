@@ -98,9 +98,9 @@ export const SURFACE_DISPLAY: Record<
 
 /** 喷漆色 — 3 档玩家可在车库里切换；SVG 的 currentColor 直接吃这个。 */
 export const PAINT_COLORS: Array<{ id: number; label: string; hex: string }> = [
-  { id: 0, label: t(msg`原色`), hex: "#6b7280" }, // zinc-500
-  { id: 1, label: t(msg`暗酒红`), hex: "#9f1239" }, // rose-800
-  { id: 2, label: t(msg`湖蓝`), hex: "#0e7490" }, // cyan-700
+  { id: 0, label: t(msg`原色`), hex: "#716b80" }, // zinc-500
+  { id: 1, label: t(msg`暗酒红`), hex: "#3f228f" }, // rose-800
+  { id: 2, label: t(msg`湖蓝`), hex: "#381e80" }, // cyan-700
 ];
 
 export function formatYuan(cents: number): string {

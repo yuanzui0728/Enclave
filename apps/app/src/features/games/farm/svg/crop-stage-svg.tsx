@@ -12,39 +12,39 @@ interface ArchetypeMapping {
 
 // 32 个 crop 的 archetype + 配色，code-generated SVG 全靠这张表驱动。
 const CROP_VISUAL: Record<FarmCropId, ArchetypeMapping> = {
-  cabbage: { archetype: "root", primary: "#86efac", secondary: "#15803d" },
-  potato: { archetype: "root", primary: "#fde68a", secondary: "#92400e" },
-  carrot: { archetype: "root", primary: "#fb923c", secondary: "#166534" },
-  radish: { archetype: "root", primary: "#fda4af", secondary: "#15803d" },
-  lettuce: { archetype: "root", primary: "#bbf7d0", secondary: "#166534" },
-  spinach: { archetype: "root", primary: "#22c55e", secondary: "#14532d" },
-  onion: { archetype: "root", primary: "#fef3c7", secondary: "#a16207", accent: "#f59e0b" },
-  peanut: { archetype: "root", primary: "#fbbf24", secondary: "#92400e" },
-  soybean: { archetype: "root", primary: "#fde68a", secondary: "#166534" },
-  sugarcane: { archetype: "root", primary: "#a3e635", secondary: "#365314" },
-  wheat: { archetype: "leafy", primary: "#fcd34d", secondary: "#a16207" },
-  corn: { archetype: "leafy", primary: "#fde047", secondary: "#15803d", accent: "#fbbf24" },
-  rice: { archetype: "leafy", primary: "#fef9c3", secondary: "#65a30d" },
-  mint: { archetype: "leafy", primary: "#5eead4", secondary: "#0f766e" },
-  tomato: { archetype: "fruit", primary: "#ef4444", secondary: "#15803d" },
-  strawberry: { archetype: "fruit", primary: "#f87171", secondary: "#15803d", accent: "#fef9c3" },
-  cucumber: { archetype: "fruit", primary: "#84cc16", secondary: "#3f6212" },
-  eggplant: { archetype: "fruit", primary: "#a855f7", secondary: "#15803d" },
-  pumpkin: { archetype: "fruit", primary: "#f97316", secondary: "#15803d", accent: "#fb923c" },
-  watermelon: { archetype: "fruit", primary: "#22c55e", secondary: "#14532d", accent: "#ef4444" },
-  lavender: { archetype: "fruit", primary: "#c084fc", secondary: "#365314" },
-  goji: { archetype: "fruit", primary: "#dc2626", secondary: "#365314" },
-  dragon_fruit: { archetype: "fruit", primary: "#ec4899", secondary: "#15803d", accent: "#fef3c7" },
-  sunflower: { archetype: "flower", primary: "#fbbf24", secondary: "#15803d", accent: "#92400e" },
-  ginseng: { archetype: "flower", primary: "#fef3c7", secondary: "#a16207" },
-  snow_lotus: { archetype: "flower", primary: "#e0f2fe", secondary: "#94a3b8", accent: "#fef9c3" },
-  plum_blossom: { archetype: "flower", primary: "#fda4af", secondary: "#451a03", accent: "#fef9c3" },
-  osmanthus: { archetype: "flower", primary: "#fde047", secondary: "#a16207" },
-  apple_tree: { archetype: "tree", primary: "#dc2626", secondary: "#15803d", accent: "#7c2d12" },
-  peach_tree: { archetype: "tree", primary: "#fda4af", secondary: "#15803d", accent: "#7c2d12" },
-  grape_vine: { archetype: "tree", primary: "#a855f7", secondary: "#15803d", accent: "#7c2d12" },
-  orange_tree: { archetype: "tree", primary: "#fb923c", secondary: "#15803d", accent: "#7c2d12" },
-  cherry_tree: { archetype: "tree", primary: "#dc2626", secondary: "#15803d", accent: "#7c2d12" },
+  cabbage: { archetype: "root", primary: "#a790e5", secondary: "#351c79" },
+  potato: { archetype: "root", primary: "#b29fe8", secondary: "#391e82" },
+  carrot: { archetype: "root", primary: "#7f5ed9", secondary: "#2c1764" },
+  radish: { archetype: "root", primary: "#c3b4ed", secondary: "#351c79" },
+  lettuce: { archetype: "root", primary: "#cec1f1", secondary: "#2c1764" },
+  spinach: { archetype: "root", primary: "#522cbb", secondary: "#251453" },
+  onion: { archetype: "root", primary: "#dad1f4", secondary: "#3c2088", accent: "#5b31cf" },
+  peanut: { archetype: "root", primary: "#6f4ad5", secondary: "#391e82" },
+  soybean: { archetype: "root", primary: "#b29fe8", secondary: "#2c1764" },
+  sugarcane: { archetype: "root", primary: "#6d47d4", secondary: "#251453" },
+  wheat: { archetype: "leafy", primary: "#8a6cdd", secondary: "#3c2088" },
+  corn: { archetype: "leafy", primary: "#8768dc", secondary: "#351c79", accent: "#6f4ad5" },
+  rice: { archetype: "leafy", primary: "#d8cef3", secondary: "#3f218f" },
+  mint: { archetype: "leafy", primary: "#8a6cdc", secondary: "#2f196c" },
+  tomato: { archetype: "fruit", primary: "#7c5bd8", secondary: "#351c79" },
+  strawberry: { archetype: "fruit", primary: "#9f86e3", secondary: "#351c79", accent: "#d8cef3" },
+  cucumber: { archetype: "fruit", primary: "#502bb7", secondary: "#29165e" },
+  eggplant: { archetype: "fruit", primary: "#8c6fdd", secondary: "#351c79" },
+  pumpkin: { archetype: "fruit", primary: "#653dd2", secondary: "#351c79", accent: "#7f5ed9" },
+  watermelon: { archetype: "fruit", primary: "#522cbb", secondary: "#251453", accent: "#7c5bd8" },
+  lavender: { archetype: "fruit", primary: "#ae99e7", secondary: "#251453" },
+  goji: { archetype: "fruit", primary: "#5d33cf", secondary: "#251453" },
+  dragon_fruit: { archetype: "fruit", primary: "#7d5bd9", secondary: "#351c79", accent: "#dad1f4" },
+  sunflower: { archetype: "flower", primary: "#6f4ad5", secondary: "#351c79", accent: "#391e82" },
+  ginseng: { archetype: "flower", primary: "#dad1f4", secondary: "#3c2088" },
+  snow_lotus: { archetype: "flower", primary: "#eae5f9", secondary: "#9e94b8", accent: "#d8cef3" },
+  plum_blossom: { archetype: "flower", primary: "#c3b4ed", secondary: "#1a0e3a", accent: "#d8cef3" },
+  osmanthus: { archetype: "flower", primary: "#8768dc", secondary: "#3c2088" },
+  apple_tree: { archetype: "tree", primary: "#5d33cf", secondary: "#351c79", accent: "#321b73" },
+  peach_tree: { archetype: "tree", primary: "#c3b4ed", secondary: "#351c79", accent: "#321b73" },
+  grape_vine: { archetype: "tree", primary: "#8c6fdd", secondary: "#351c79", accent: "#321b73" },
+  orange_tree: { archetype: "tree", primary: "#7f5ed9", secondary: "#351c79", accent: "#321b73" },
+  cherry_tree: { archetype: "tree", primary: "#5d33cf", secondary: "#351c79", accent: "#321b73" },
 };
 
 export interface CropStageSvgProps {
@@ -80,7 +80,7 @@ export function CropStageSvg({
 function renderArchetype(v: ArchetypeMapping, stage: FarmPlotStage) {
   // 通用：先画一小堆土（每个 archetype 都顶在土上）
   const soil = (
-    <ellipse cx="32" cy="58" rx="20" ry="4" fill="#92400e" opacity="0.6" />
+    <ellipse cx="32" cy="58" rx="20" ry="4" fill="#391e82" opacity="0.6" />
   );
   if (stage === "seed") {
     return (
@@ -118,10 +118,10 @@ function renderArchetype(v: ArchetypeMapping, stage: FarmPlotStage) {
         {soil}
         <path
           d="M28 50 L32 56 L36 50 L34 44 L30 44 Z"
-          fill="#78716c"
+          fill="#6f6c78"
           opacity="0.7"
         />
-        <text x="32" y="42" fontSize="10" textAnchor="middle" fill="#57534e">
+        <text x="32" y="42" fontSize="10" textAnchor="middle" fill="#504e57">
           🥀
         </text>
       </>
@@ -141,7 +141,7 @@ function growingSvg(v: ArchetypeMapping) {
     case "tree":
       return (
         <>
-          <rect x="30" y="36" width="4" height="22" fill={v.accent ?? "#7c2d12"} />
+          <rect x="30" y="36" width="4" height="22" fill={v.accent ?? "#321b73"} />
           <circle cx="32" cy="32" r="12" fill={v.secondary} opacity="0.85" />
         </>
       );
@@ -199,7 +199,7 @@ function ripeSvg(v: ArchetypeMapping) {
     case "tree":
       return (
         <>
-          <rect x="30" y="38" width="4" height="20" fill={v.accent ?? "#7c2d12"} />
+          <rect x="30" y="38" width="4" height="20" fill={v.accent ?? "#321b73"} />
           <circle cx="32" cy="30" r="16" fill={v.secondary} />
           {/* 三颗果点缀 */}
           <circle cx="26" cy="28" r="3" fill={v.primary} />

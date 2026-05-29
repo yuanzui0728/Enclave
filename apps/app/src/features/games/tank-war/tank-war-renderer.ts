@@ -113,7 +113,7 @@ function drawBrickHalf(
   ctx.drawImage(sheet.brick, x, y);
   if (nibble === 0) return;
   // 擦除被破坏的 4 个 4x4 quadrant
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#000000";
   for (let q = 0; q < 4; q++) {
     if (((nibble >> q) & 1) === 0) continue;
     const qx = x + (q & 1) * 4;
@@ -141,7 +141,7 @@ function drawTank(
   }
   ctx.drawImage(sprite, t.x, t.y);
   if (t.frozen) {
-    ctx.fillStyle = "rgba(120, 200, 255, 0.4)";
+    ctx.fillStyle = "rgba(168, 146, 229, 0.4)";
     ctx.fillRect(t.x, t.y, 16, 16);
   }
   if (now < t.shieldUntilMs) {
@@ -223,7 +223,7 @@ function drawFloats(
   world: GameWorld,
 ): void {
   const now = performance.now();
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle = "#ffffff";
   ctx.font = "8px monospace";
   for (const f of world.floats) {
     const dt = now - f.startedAt;
@@ -241,7 +241,7 @@ function drawHud(
   // 会缺 16px 灰条 — 玩家眼里看到一截黑边贴着 HUD 柱子。
   ctx.fillStyle = "#7c7c7c";
   ctx.fillRect(HUD_X, 0, HUD_WIDTH, LOGIC_HEIGHT);
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#000000";
   ctx.font = "8px monospace";
 
   // 敌人剩余 icons
@@ -306,7 +306,7 @@ function drawTransition(
   const p = Math.max(0, Math.min(1, 1 - remaining / total));
   // p=0 完全黑，p=1 完全打开
   const half = (BATTLEFIELD / 2) * (1 - p);
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, BATTLEFIELD, half);
   ctx.fillRect(0, BATTLEFIELD - half, BATTLEFIELD, half);
 }
@@ -317,11 +317,11 @@ export function drawWorld(
   sheet: SpriteSheet | null,
 ): void {
   // 全局黑底
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, 256, 224);
   if (!sheet) return;
   if (!world || world.status === "boot") {
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = "#ffffff";
     ctx.font = "16px monospace";
     ctx.fillText("TANK WAR", 80, 110);
     ctx.font = "8px monospace";
@@ -348,7 +348,7 @@ export function drawWorld(
   // PAUSE 闪烁
   if (world.status === "paused") {
     if ((world.frame >> 4) % 2 === 0) {
-      ctx.fillStyle = "#fc0000";
+      ctx.fillStyle = "#5a30cc";
       ctx.font = "16px monospace";
       ctx.fillText("PAUSE", BATTLEFIELD / 2 - 24, BATTLEFIELD / 2);
     }
@@ -362,7 +362,7 @@ export function drawWorld(
     const targetY = BATTLEFIELD / 2;
     const fromY = BATTLEFIELD - 8;
     const y = fromY + (targetY - fromY) * t;
-    ctx.fillStyle = "#fc0000";
+    ctx.fillStyle = "#5a30cc";
     ctx.font = "16px monospace";
     ctx.fillText("GAME", BATTLEFIELD / 2 - 32, y);
     ctx.fillText("OVER", BATTLEFIELD / 2 - 32, y + 16);

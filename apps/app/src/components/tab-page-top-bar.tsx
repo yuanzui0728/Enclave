@@ -104,16 +104,16 @@ export function TabPageTopBar({
           <h1
             className={cn(
               "truncate tracking-[0.01em] text-current",
-              titleAlign === "center"
-                ? "text-[length:var(--text-title)] font-medium"
-                : "text-[length:var(--text-section)] font-semibold",
+              // 标题字号/字重统一：center 与 left 都用 --text-section(22)/semibold，
+              // titleAlign 只保留定位几何（下方居中绝对定位），切 tab 时标题不再跳大小
+              "text-[length:var(--text-section)] font-semibold",
               eyebrow ? "mt-1" : undefined,
               titleClassName,
             )}
           >
             {title}
           </h1>
-          {subtitle ? <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">{subtitle}</div> : null}
+          {subtitle ? <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{subtitle}</div> : null}
         </div>
         {rightActions ? (
           <div

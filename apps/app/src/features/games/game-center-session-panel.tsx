@@ -241,7 +241,7 @@ function SessionMetric({
         "border",
         compact
           ? "rounded-[var(--radius-md)] border-white/80 bg-white/82 px-3 py-3"
-          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(180,130,20,0.04)]",
+          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(71, 38, 162, 0.04)]",
       )}
     >
       <div

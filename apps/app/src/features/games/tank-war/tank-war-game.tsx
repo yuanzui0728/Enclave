@@ -140,7 +140,7 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
             width: LOGIC_WIDTH * scale,
             height: LOGIC_HEIGHT * scale,
             imageRendering: "pixelated",
-            background: "#000",
+            background: "#000000",
           }}
         />
       </div>

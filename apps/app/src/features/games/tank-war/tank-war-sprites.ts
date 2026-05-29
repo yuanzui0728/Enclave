@@ -11,38 +11,38 @@ export const PALETTE: Record<string, string> = {
   G: "#7c7c7c", // gray
   D: "#3c3c3c", // dark gray
   // yellow (player 1)
-  Y: "#ffe300", // bright yellow
-  y: "#cd9a00", // dark yellow
+  Y: "#5b30cf", // bright yellow
+  y: "#4927a6", // dark yellow
   // green (player 2 / power tank green / tree)
-  N: "#00a800", // emerald
-  n: "#005800", // dark green
+  N: "#3c2088", // emerald
+  n: "#1f1147", // dark green
   // brick orange
-  O: "#cc4824", // brick mid
-  o: "#a02b1c", // brick dark
-  P: "#fcc090", // brick highlight
+  O: "#552ec2", // brick mid
+  o: "#432498", // brick dark
+  P: "#b6a3e9", // brick highlight
   // steel blue/gray
   S: "#bcbcbc",
   s: "#7c7c7c",
   // ice
-  I: "#bce8fc",
-  i: "#5cbcfc",
+  I: "#d2c6f2",
+  i: "#9479df",
   // water (animated frame 1)
-  Q: "#0058f8",
-  q: "#0000bc",
+  Q: "#582fc9",
+  q: "#432498",
   // tree dark
-  T: "#003800",
+  T: "#140b2d",
   // red (power 4hp / explosion / game over)
-  R: "#fc0000",
-  r: "#a01818",
+  R: "#5a30cc",
+  r: "#412395",
   // bonus pickup background
   B: "#fcfcfc",
   // explosion orange
-  E: "#fcb800",
-  e: "#fc7800",
+  E: "#5a30cc",
+  e: "#5a30cc",
   // shadow purple
-  V: "#6844fc",
+  V: "#8565db",
   // base eagle accents
-  X: "#a05030",
+  X: "#4e30a0",
 };
 
 // 16x16 sprite rendered as 16 strings of 16 chars

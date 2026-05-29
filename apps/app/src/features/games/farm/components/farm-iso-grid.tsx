@@ -100,44 +100,44 @@ export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGr
           inset: 0;
           border-radius: 12px;
           background:
-            radial-gradient(ellipse at 30% 20%, rgba(255,225,180,0.55), transparent 60%),
-            linear-gradient(140deg, #b07939 0%, #8a5a2a 55%, #6a3f17 100%);
+            radial-gradient(ellipse at 30% 20%, rgba(207, 194, 241, 0.55), transparent 60%),
+            linear-gradient(140deg, #5939b0 0%, #442a8a 55%, #2e1968 100%);
           box-shadow:
-            inset 0 -3px 0 rgba(0,0,0,0.18),
-            inset 0 2px 0 rgba(255,255,255,0.18),
-            0 6px 10px rgba(60,30,5,0.30);
+            inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.18),
+            0 6px 10px rgba(23, 12, 53, 0.30);
         }
         .farm-iso-tile.is-selected .farm-iso-tile__dirt {
           box-shadow:
-            inset 0 -3px 0 rgba(0,0,0,0.18),
-            inset 0 2px 0 rgba(255,255,255,0.22),
-            0 0 0 3px rgba(16,185,129,0.85),
-            0 0 0 6px rgba(16,185,129,0.25),
-            0 8px 14px rgba(0,0,0,0.32);
+            inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.22),
+            0 0 0 3px rgba(71, 38, 163, 0.85),
+            0 0 0 6px rgba(71, 38, 163, 0.25),
+            0 8px 14px rgba(0, 0, 0, 0.32);
         }
         .farm-iso-tile.is-ripe .farm-iso-tile__dirt {
           box-shadow:
-            inset 0 -3px 0 rgba(0,0,0,0.18),
-            inset 0 2px 0 rgba(255,255,255,0.22),
-            0 0 0 2px rgba(252,211,77,0.85),
-            0 6px 12px rgba(120,80,10,0.45);
+            inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.22),
+            0 0 0 2px rgba(138, 108, 221, 0.85),
+            0 6px 12px rgba(46, 25, 105, 0.45);
         }
         .farm-iso-tile.is-ripe-pulse .farm-iso-tile__dirt {
           animation: farm-iso-ripe-pulse 1.6s ease-in-out infinite;
         }
         @keyframes farm-iso-ripe-pulse {
           0%, 100% { box-shadow:
-            inset 0 -3px 0 rgba(0,0,0,0.18),
-            inset 0 2px 0 rgba(255,255,255,0.22),
-            0 0 0 2px rgba(252,211,77,0.85),
-            0 6px 12px rgba(120,80,10,0.45);
+            inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.22),
+            0 0 0 2px rgba(138, 108, 221, 0.85),
+            0 6px 12px rgba(46, 25, 105, 0.45);
           }
           50% { box-shadow:
-            inset 0 -3px 0 rgba(0,0,0,0.18),
-            inset 0 2px 0 rgba(255,255,255,0.22),
-            0 0 0 4px rgba(252,211,77,1),
-            0 0 18px rgba(252,211,77,0.5),
-            0 6px 12px rgba(120,80,10,0.45);
+            inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.22),
+            0 0 0 4px rgba(138, 108, 221, 1),
+            0 0 18px rgba(138, 108, 221, 0.5),
+            0 6px 12px rgba(46, 25, 105, 0.45);
           }
         }
 
@@ -146,7 +146,7 @@ export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGr
           inset: auto 0 -8px 0;
           height: 8px;
           border-radius: 0 0 12px 12px;
-          background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0));
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0));
           transform: translateZ(-4px);
         }
 
@@ -172,12 +172,12 @@ export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGr
         .farm-iso-tile__crop {
           font-size: 30px;
           line-height: 1;
-          filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+          filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
         }
         .farm-iso-tile__caption {
           font-size: 10px;
-          color: rgba(255,255,255,0.92);
-          background: rgba(0,0,0,0.35);
+          color: rgba(255, 255, 255, 0.92);
+          background: rgba(0, 0, 0, 0.35);
           padding: 1px 6px;
           border-radius: 999px;
           backdrop-filter: blur(4px);
@@ -216,7 +216,7 @@ export function FarmIsoGrid({ plots, selectedIndex, pulse, onSelect }: FarmIsoGr
           line-height: 1;
           pointer-events: none;
           will-change: transform, opacity;
-          filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+          filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
         }
         .farm-iso-tile__pulse--water {
           animation: farm-iso-pulse-water 1200ms ease-out forwards;
